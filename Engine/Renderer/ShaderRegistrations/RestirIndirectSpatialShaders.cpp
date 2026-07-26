@@ -7,6 +7,7 @@
 #include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
 #include "Shaders/Authoring/GlobalShader.h"
 #include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/MorphTargetShaderData.h"
 #include "ShaderData/RenderViewLightingData.h"
 #include "ShaderData/SkyUniformData.h"
 
@@ -35,12 +36,14 @@ class RestirIndirectSpatialCS final : public TGlobalShader<RestirIndirectSpatial
 	SHADER_PARAMETER_TEXTURE(Texture2D, SkyTexture)
 	SHADER_PARAMETER_SAMPLER(SamplerState, SamplerLinearClamp)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(MorphTargetDeltaData, MorphTargetDeltas)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(uint32_t, RayTracingHitIndices)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(MeshInstanceData, MeshInstances)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, JointMatrices)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(float, MorphWeights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(DirectionalLightConstantBufferData, DirectionalLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(PointLightConstantBufferData, PointLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(SpotLightConstantBufferData, SpotLights)

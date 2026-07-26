@@ -23,6 +23,7 @@ void AddRaytracedGBufferPass(
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
 	parameters->SceneTlas = builder.Read(sceneTlas);
 	parameters->RayTracingHitVertices = builder.CreateSRV(externalResources.Scene.RayTracing.Vertices);
+	parameters->MorphTargetDeltas = builder.CreateSRV(externalResources.Scene.RayTracing.MorphTargetDeltas);
 	parameters->SkinInfluences = builder.CreateSRV(externalResources.Scene.RayTracing.SkinInfluences);
 	parameters->RayTracingHitIndices = builder.CreateSRV(externalResources.Scene.RayTracing.Indices);
 	parameters->RayTracingHitInstances = builder.CreateSRV(externalResources.Scene.RayTracing.Instances);
@@ -30,5 +31,7 @@ void AddRaytracedGBufferPass(
 	parameters->MeshInstances = builder.CreateSRV(externalResources.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(externalResources.Scene.Geometry.JointMatrices);
 	parameters->PreviousJointMatrices = builder.CreateSRV(externalResources.Scene.Geometry.PreviousJointMatrices);
+	parameters->MorphWeights = builder.CreateSRV(externalResources.Scene.Geometry.MorphWeights);
+	parameters->PreviousMorphWeights = builder.CreateSRV(externalResources.Scene.Geometry.PreviousMorphWeights);
 	builder.Dispatch<RaytracedGBufferPass>(parameters);
 }

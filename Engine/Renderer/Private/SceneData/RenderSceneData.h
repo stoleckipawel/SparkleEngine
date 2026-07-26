@@ -41,6 +41,8 @@ struct RenderSceneData
 	std::vector<MeshInstanceBatch> meshInstanceBatches;
 	std::vector<DirectX::XMFLOAT4X4> jointMatrices;
 	std::vector<DirectX::XMFLOAT4X4> previousJointMatrices;
+	std::vector<float> morphWeights;
+	std::vector<float> previousMorphWeights;
 	RenderMeshWorkloadSummary meshWorkload;
 	std::vector<MaterialData> materials;
 	ResolvedMaterialTextureTable materialTextureTable = {};

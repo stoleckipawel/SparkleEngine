@@ -33,6 +33,10 @@ void PathTracedIndirectLightingPassParameters::Describe(ShaderParameterStructBui
 	    &PathTracedIndirectLightingPassParameters::RayTracingHitVertices,
 	    ShaderStageVisibility::Compute);
 	builder.ReadBuffer(
+	    "MorphTargetDeltas",
+	    &PathTracedIndirectLightingPassParameters::MorphTargetDeltas,
+	    ShaderStageVisibility::Compute);
+	builder.ReadBuffer(
 	    "RayTracingHitIndices",
 	    &PathTracedIndirectLightingPassParameters::RayTracingHitIndices,
 	    ShaderStageVisibility::Compute);
@@ -47,6 +51,7 @@ void PathTracedIndirectLightingPassParameters::Describe(ShaderParameterStructBui
 	builder.ReadBuffer("MeshInstances", &PathTracedIndirectLightingPassParameters::MeshInstances, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("SkinInfluences", &PathTracedIndirectLightingPassParameters::SkinInfluences, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("JointMatrices", &PathTracedIndirectLightingPassParameters::JointMatrices, ShaderStageVisibility::Compute);
+	builder.ReadBuffer("MorphWeights", &PathTracedIndirectLightingPassParameters::MorphWeights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("DirectionalLights", &PathTracedIndirectLightingPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("PointLights", &PathTracedIndirectLightingPassParameters::PointLights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("SpotLights", &PathTracedIndirectLightingPassParameters::SpotLights, ShaderStageVisibility::Compute);

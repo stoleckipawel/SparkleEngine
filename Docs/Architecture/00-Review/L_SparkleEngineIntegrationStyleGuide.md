@@ -23,11 +23,13 @@ The intended result is a compact renderer-first engine whose code is:
 
 The target engineering persona is defined in [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md): technically deep, measurable when needed, clean enough for other engineers to extend, and capable of translating research ambiguity into lean product-quality implementation.
 
+The canonical product workload is defined in [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md): Sponza is the rapid regression tier, Bistro is the primary Tier 1 workload, and San Miguel is the supported Tier 1 secondary workload. Relevant changes must advance or preserve those gates without scene-specific engine branches.
+
 ## How to Attach This Guide to Future Prompts
 
 Add this block to each implementation prompt:
 
-> Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+> Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and apply the Sponza/Bistro/San Miguel workload contract from I when the touched behavior affects it; classify each requirement and workload gate as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only or scene-specific scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 
 Referencing the guide is sufficient; do not copy its rules into another policy document. A prompt may impose stricter requirements. It may not silently weaken ownership, correctness, feature-preservation, deterministic behavior, backend parity, `PGE-*` preservation, or evidence requirements.
 
@@ -40,6 +42,7 @@ This guide is grounded in:
 - [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md)
 - [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md)
 - [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
+- [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md)
 - [J. Multithreaded Engine Architecture and Learning Program](J_MultithreadedEngineArchitectureAndLearningProgram.md)
 - [K. Multithreaded Engine Implementation Prompt Series](K_MultithreadedEngineImplementationPromptSeries.md)
 - the enforced repository configuration in [.clang-format](../../../.clang-format), [.clang-tidy](../../../.clang-tidy), module `CMakeLists.txt` files, and [ArchitectureBoundaryCheck.cmake](../../../CMake/ArchitectureBoundaryCheck.cmake)

@@ -13,6 +13,7 @@ namespace GPUMeshUploadDescBuilder
 		if (const auto* skeletalMesh = dynamic_cast<const SkeletalCookedMesh*>(&cpuMesh))
 		{
 			uploadDesc.skinInfluences = skeletalMesh->GetSkeletalMeshData().skinInfluences;
+			uploadDesc.morphTargets = &skeletalMesh->GetSkeletalMeshData().morphTargets;
 		}
 		return uploadDesc;
 	}

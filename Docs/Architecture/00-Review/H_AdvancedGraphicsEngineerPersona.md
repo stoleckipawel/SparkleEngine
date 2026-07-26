@@ -20,6 +20,8 @@ The center of gravity is:
 - neural rendering and GPU inference readiness without bloating the engine
 - practical productization: small APIs, clean ownership, useful tools, and code that other engineers can maintain
 
+The concrete proving ground is [the canonical workload ladder](I_BistroAcceptanceWorkload.md): Sponza for fast regression, Bistro as the primary flagship, and San Miguel as a supported secondary scene. The persona must be able to make both Tier 1 scenes correct, beautiful, performant, measurable, and easy to present without hardcoding the renderer around either asset.
+
 ## Principal Graphics Engineering Additive Target
 
 The supplied principal graphics engineering role set raises this persona beyond strong internal renderer ownership. The target must also demonstrate the ability to help demanding game teams adopt advanced rendering and AI technology, tune it on real hardware, work at the architecture/driver boundary, and communicate the result at principal level.
@@ -37,10 +39,10 @@ The identifiers are defined authoritatively in [A. Principal Graphics Engineerin
 | ID | Capability expectation | Additive Sparkle interpretation | Required evidence |
 |---|---|---|---|
 | `PGE-01` | Collaborate with leading game developers to adopt advanced GPU and AI technology | Design narrow integration contracts, diagnose partner-shaped workloads, preserve product constraints, and leave handoff-quality code and guidance | One integration case study with requirements, constraints, before-state, design review, adoption steps, failure handling, and measured result |
-| `PGE-02` | Advanced real-time rendering including path tracing | Own a path-traced feature through renderer, shaders, frame graph, RHI, temporal state, tools, and both supported APIs | Correctness images, D3D12/Vulkan validation, GPU captures, quality/performance comparison, and documented limitations |
+| `PGE-02` | Advanced real-time rendering including path tracing | Own a path-traced feature through renderer, shaders, frame graph, RHI, temporal state, tools, and both supported APIs | Bistro flagship and San Miguel cross-scene correctness images, D3D12/Vulkan validation, GPU captures, quality/performance comparison, and documented limitations |
 | `PGE-03` | Neural graphics and broader AI adoption in games | Deliver at least one real neural-graphics vertical slice that replaces or materially improves an existing denoising, reconstruction, sampling, texture/material, animation, or rendering path | Real model/operator path, classical baseline/fallback, deterministic assets, runtime integration, quality metrics, latency, memory, and backend/capability matrix |
 | `PGE-04` | Translate models into optimized GPU kernels | Read model graphs, understand operator mathematics, choose layout/precision/fusion deliberately, implement fixed-topology GPU shaders or kernels, profile end-to-end inference, and tune the actual bottleneck rather than wrapper overhead | Operator derivation, tensor shapes/layouts, numerical conformance, precision/fusion study, per-stage capture, ablation, quality/performance frontier, and retained negative results |
-| `PGE-05` | Optimize GPU and system performance for fluid gameplay and complex AI behavior | Treat frame time, pacing, input-to-present latency, CPU/GPU overlap, memory, and background AI contention as one product budget | Correlated CPU/GPU timelines, p50/p95/p99, memory high-water, queue behavior, frame pacing, and bounded degradation under representative load |
+| `PGE-05` | Optimize GPU and system performance for fluid gameplay and complex AI behavior | Treat frame time, pacing, input-to-present latency, CPU/GPU overlap, memory, and background AI contention as one product budget | Correlated Bistro/San Miguel CPU/GPU timelines, p50/p95/p99, memory high-water, queue behavior, frame pacing, and bounded degradation under representative load |
 | `PGE-06` | Analyze graphics workloads and solve application/API/driver problems | Analyze D3D12/Vulkan workloads with PIX, RenderDoc, native validation, captures, and counters; separate application, API, driver, compiler, and hardware causes; produce minimal reproducers | Workload comparison, hardware/driver/config matrix, capability gates, backend-native validation, disassembly/counters where useful, root-cause analysis, and a reduced reproducer |
 | `PGE-07` | Expert C++ and practical Python software engineering | Build ownership-correct, low-overhead, reviewable C++ systems; use Python for reproducible analysis/training/automation; debug races, lifetime faults, API misuse, memory pressure, and performance pathologies | Code review evidence, useful Python tool, clean build, tests, CI, sanitizer/native validation where available, incident reports, and before/after implementation-shape reconciliation |
 | `PGE-08` | Strong mathematics including linear algebra and calculus for problem solving and performance modeling | Derive coordinate transforms, sampling estimators, reconstruction filters, gradients, error metrics, numerical stability, and cost models rather than copying formulas blindly | A math note tied to executable tests, reference values, numerical-error bounds, and a prediction checked against measurements |
@@ -48,7 +50,7 @@ The identifiers are defined authoritatively in [A. Principal Graphics Engineerin
 | `PGE-10` | In-depth CPU/GPU architecture and concurrency with hands-on low-level optimization | Explain CPU caches/SIMD/topology/threading and GPU cache, bandwidth, waves, divergence, occupancy, registers, scheduling, atomics, memory model, driver submission, and useful ISA evidence | Causal experiments using counters/disassembly/traces, serial controls, concurrency stress evidence, rejected alternatives, and architecture-specific conclusions |
 | `PGE-11` | Solid AI fundamentals and effective use of AI tools to program and design new solutions | Understand training/inference, optimization, generalization, datasets, loss/metrics, quantization, deployment, and tool-assisted engineering while independently verifying generated work | Model card/provenance, train/validation separation, reproducible export, inference contract, verification of AI-assisted code/design, and no unreviewed generated code |
 | `PGE-12` | Machine-learning algorithms plus inference and training workload optimization | Treat training and inference as different workloads; keep training/offline experimentation isolated from the runtime while proving informed optimization of both | Profiled training or fine-tuning study, runtime inference profile, batch/precision/memory/concurrency sweeps, deterministic artifact export, and deployment tradeoff |
-| `PGE-13` | Productize research, build useful tools, and communicate through demos, papers, and talks | Turn one bounded research or architecture hypothesis into a product-relevant experiment/tool, keep it only if evidence wins, document best practices, and make the result teachable and reproducible | Hypothesis and rejected alternatives, prototype-to-product/deletion decision, tool or integration surface, polished demo, technical note, talk/deck, review record, and priority/deletion ledger |
+| `PGE-13` | Productize research, build useful tools, and communicate through demos, papers, and talks | Turn one bounded research or architecture hypothesis into a product-relevant experiment/tool, keep it only if evidence wins, document best practices, and make the result teachable and reproducible | Hypothesis and rejected alternatives, prototype-to-product/deletion decision, tool or integration surface, polished Bistro demo, San Miguel breadth proof, technical note, talk/deck, review record, and priority/deletion ledger |
 | `PGE-14` | Platform, debugger, build, and ecosystem breadth | Deepen Windows/D3D12 and Vulkan driver-facing work now; demonstrate native Linux/Vulkan before claiming it; use build, source-control, debugger, profiler, English communication, and travel workflows professionally | Correct API/driver ownership, clean-clone build, validation/capture/crash workflow, platform audit, and Linux evidence only after native build/run/validation on Linux |
 | `PGE-15` | Principal maturity, education-equivalent depth, and sustained influence | Demonstrate repeated end-to-end ownership, adversarial review, honest tradeoffs, cross-domain debugging, technical direction, mentoring-quality explanation, and sustained simplification | Multiple completed vertical slices, shipped outcomes, partner/peer validation, teaching/review evidence, and incident reports that can be independently reproduced and defended |
 
@@ -245,6 +247,9 @@ The repo should gradually show this persona through code, not through more docum
 14. A hardware/driver issue can be reduced, classified, validated, and communicated professionally.
 15. Completed work has an adoption-quality integration note, a whitepaper-quality result, and a live technical demonstration.
 16. AI-assisted contributions are reviewed and validated to the same bar as manually authored work.
+17. Bistro exterior/interior satisfies the primary material, lighting, paired-API, path-tracing, neural, and whole-system performance gates in I.
+18. San Miguel is a supported secondary scene with deterministic import/cook/run, reference quality, benchmark evidence, and held-out neural evaluation.
+19. Sponza remains the cheap regression tier; the renderer contains no Bistro- or San-Miguel-specific shader or architecture fork.
 
 ## Refactor Plan Contract
 
@@ -262,6 +267,7 @@ A staged refactor is aligned with the persona only when it does at least one of 
 - delays profiling until there is a stable feature path worth measuring
 - advances a concrete `PGE-*` requirement with code and evidence
 - improves partner adoption, reproducibility, mathematical rigor, hardware/driver diagnosis, or technical communication
+- advances a named Bistro or San Miguel acceptance gate through general renderer/content behavior
 
 A staged refactor is misaligned when it:
 
@@ -322,7 +328,7 @@ Avoid becoming:
 - the engineer who adds logs instead of fixing ownership
 - the engineer who adds validation systems instead of simplifying the path
 - the engineer who adds wrappers because the current boundary is uncomfortable
-- the engineer who adds sample scenes, panels, reports, and toggles to make a feature feel real
+- the engineer who accumulates unrelated sample scenes, panels, reports, and toggles to make a feature feel real instead of completing the declared Sponza/Bistro/San Miguel ladder
 - the engineer who profiles too early before the feature path is stable
 - the engineer who treats PTLAS, upscaling, denoising, or neural rendering as branding instead of implementation work
 - the engineer who copies external architecture without adapting it to the engine's actual shape

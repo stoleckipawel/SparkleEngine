@@ -57,6 +57,10 @@ void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<
 	    "RayTracingHitVertices",
 	    &RestirIndirectSpatialPassParameters::RayTracingHitVertices,
 	    ShaderStageVisibility::Compute);
+	builder.ReadBuffer(
+	    "MorphTargetDeltas",
+	    &RestirIndirectSpatialPassParameters::MorphTargetDeltas,
+	    ShaderStageVisibility::Compute);
 	builder.ReadBuffer("RayTracingHitIndices", &RestirIndirectSpatialPassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
 	builder.ReadBuffer(
 	    "RayTracingHitInstances",
@@ -69,12 +73,19 @@ void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<
 	builder.ReadBuffer("MeshInstances", &RestirIndirectSpatialPassParameters::MeshInstances, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("SkinInfluences", &RestirIndirectSpatialPassParameters::SkinInfluences, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("JointMatrices", &RestirIndirectSpatialPassParameters::JointMatrices, ShaderStageVisibility::Compute);
+	builder.ReadBuffer("MorphWeights", &RestirIndirectSpatialPassParameters::MorphWeights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("DirectionalLights", &RestirIndirectSpatialPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("PointLights", &RestirIndirectSpatialPassParameters::PointLights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("SpotLights", &RestirIndirectSpatialPassParameters::SpotLights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("RectLights", &RestirIndirectSpatialPassParameters::RectLights, ShaderStageVisibility::Compute);
 	builder.ReadTexture("MaterialTextureTable", &RestirIndirectSpatialPassParameters::MaterialTextureTable, ShaderStageVisibility::Compute);
 	builder.Sampler("MaterialTextureSampler", &RestirIndirectSpatialPassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
+}
+
+RestirIndirectSpatialPass::RestirIndirectSpatialPass(
+    const ComputePassPipelineRuntime& runtime) noexcept :
+	m_runtime(runtime)
+{
 }
 
 const RestirIndirectSpatialPass::ParameterMetadata& RestirIndirectSpatialPass::GetParameterMetadata() noexcept

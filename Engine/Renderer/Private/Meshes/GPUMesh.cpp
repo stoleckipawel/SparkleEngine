@@ -125,6 +125,13 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create skin influence resources");
 		return false;
 	}
+	if (!m_morphTargets.Upload(
+	        renderHardwareInterface,
+	        m_vertexCount,
+	        uploadDesc.morphTargets))
+	{
+		return false;
+	}
 
 	return true;
 }

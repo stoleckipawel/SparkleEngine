@@ -4,12 +4,15 @@ Status: execution plan
 Date: 2026-07-26
 Governing requirements: [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md)
 Current-state evidence: [C. Candidate and Repository Gap Assessment](C_CandidateAndRepositoryGapAssessment.md)
+Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md)
 
 ## Outcome
 
 At six months, the public body of evidence should support this claim:
 
 > I can own a modern rendering feature across C++, shaders, D3D12/Vulkan, GPU architecture, profiling, math, and integration; I can train a bounded neural model, translate it into a real-time GPU path, measure the quality/performance frontier, and hand the result to another engineer.
+
+The visible proof is a high-quality, performant Bistro exterior/interior flagship backed by San Miguel as a supported cross-scene correctness, indirect-lighting, and neural-generalization workload. Sponza remains the rapid regression loop.
 
 At twelve months, it should additionally support:
 
@@ -34,7 +37,7 @@ Do not allocate more than 10% to editor, launcher, general engine usability, con
 
 ## Non-Negotiable Constraints
 
-- One curated distributable scene, not a content library.
+- One curated three-tier workload ladder: Sponza fast regression, Bistro primary, San Miguel secondary. Bistro and San Miguel remain external optional packs rather than source-depot weight.
 - One classical flagship and one neural flagship, not ten incomplete effects.
 - One Python evidence/analysis tool, not a tooling platform.
 - One fixed neural topology and artifact format, not a general inference framework.
@@ -55,21 +58,21 @@ Do not allocate more than 10% to editor, launcher, general engine usability, con
 - Freeze new engine features.
 - Create a one-page backlog containing only tasks that advance `PGE-02`–`PGE-13`.
 - Select the primary test GPU, OS build, driver, compiler, resolution, and two rendering configurations.
-- Select one legally distributable scene with:
-  - diffuse, glossy, emissive, and textured surfaces;
-  - direct and indirect light;
-  - motion or a deterministic camera path;
-  - enough geometry/material variety to exercise the renderer;
-  - a license that permits redistribution and captured output.
+- Adopt the scene decision and exact gates in [I](I_BistroAcceptanceWorkload.md):
+  - Sponza for startup and short regression;
+  - Bistro exterior/interior for the flagship;
+  - San Miguel 2.0 for supported cross-scene breadth and neural held-out evaluation;
+  - external-pack provenance, attribution, immutable source hashes, deterministic transformations, and no heavyweight asset commit by default.
 - Write the three case-study titles now:
   1. shipped performance and partner integration, public-safe;
-  2. path tracing and D3D12/Vulkan workload analysis;
-  3. neural GI denoising from PyTorch graph to real-time shader.
+  2. Bistro from source to path-traced, profiled output across D3D12/Vulkan, with San Miguel breadth;
+  3. neural GI denoising from PyTorch graph to real-time shader, presented on Bistro and tested on San Miguel.
 
 ### Gate
 
 - The backlog has at most 20 items.
 - Every item names a `PGE-*` gap and an expected evidence-level transition.
+- The backlog contains the week-2 through week-26 Bistro/San Miguel gates from I and does not add a fourth user-facing scene.
 - Anything unrelated is moved to “after application” or deleted.
 
 ## Phase 1 — Credibility Spine, Weeks 1–2
@@ -95,6 +98,8 @@ Do not allocate more than 10% to editor, launcher, general engine usability, con
 6. Replace the placeholder license identity and add required third-party/content notices.
 7. Set repository description, website, and topics.
 8. Tag a known-good baseline release.
+9. Record Bistro and San Miguel source pages, licenses, attribution, archive identity/hash, transformation policy, and external-pack layout.
+10. Build the reusable asset inspection record needed to count geometry, materials, textures, alpha/emissive state, warnings, conversions, cooked size/time, and deterministic output.
 
 ### Gate
 
@@ -103,17 +108,21 @@ Do not allocate more than 10% to editor, launcher, general engine usability, con
 - No stale `add_test` or deleted script reference remains.
 - A reviewer reaches the executable path, flagship code, and limitations from the README in under two minutes.
 - Do not start Phase 2 while the default branch is red.
+- Bistro inspection is reproducible, San Miguel provenance is frozen, and no result depends on an undocumented workstation-only conversion.
 
 ## Phase 2 — Classical Rendering Proof, Weeks 3–6
 
 ### Scope
 
-Use Sparkle’s existing reference path tracing and ReSTIR/real-time lighting work. Do not implement a new renderer.
+Use Sparkle’s existing reference path tracing and ReSTIR/real-time lighting work on Bistro and San Miguel. Do not implement a new renderer. Bistro is the case-study spine; San Miguel proves that the content, material, reference, and lighting result is not scene-specific.
 
 ### Work
 
-- Freeze a deterministic camera path, seeds, scene revision, shader revision, and settings.
-- Define a high-sample reference and one or two real-time configurations.
+- Import/cook/load Bistro exterior/interior and San Miguel high/low content through the shared deterministic inspection/conversion path.
+- Classify every discovered material as exact, converted, approximated, or rejected; retain the honest support/fallback matrix.
+- Treat transparent raster materials as a measured P0 gap: the current inspected pipelines disable blending. Implement only the scene-required ordering/compositing/depth behavior and validate it on both APIs; do not confuse stored alpha with rendered transparency.
+- Freeze the `BIS-*` and `SMG-*` routes, seeds, scene revisions, shader revision, and settings defined in I.
+- Define high-sample references and one or two real-time configurations for both scenes.
 - Add CPU or analytical reference checks for the material/sampling components most likely to be wrong.
 - Validate:
   - coordinate spaces and depth/motion conventions;
@@ -132,12 +141,17 @@ Use Sparkle’s existing reference path tracing and ReSTIR/real-time lighting wo
   - queue utilization and visible synchronization;
   - validation-layer status.
 - Compare quality with at least PSNR or FLIP and an explicit temporal/error visualization. Use perceptual images as supporting, not sole, proof.
+- Produce material/debug contact sheets and difficult close-ups for both Tier 1 scenes.
+- Use the matched San Miguel high/low variants as a controlled geometry-scaling experiment for CPU extraction, draw generation, memory, BLAS/TLAS, and traversal cost.
 - Investigate one real performance or correctness issue to root cause and retain the reduced reproducer or smallest failing scene.
 - Explain any backend delta above 10%; do not force identical performance.
 
 ### Deliverables
 
-- `Case Study 1: Real-Time Path-Traced Lighting Across Two Explicit APIs`
+- `CASE-01: Bistro And San Miguel From Source Asset To Correct Pixel`
+- `CASE-02: One Bistro Frame Across Two Explicit APIs`
+- `CASE-03: Path-Traced Bistro Under Budget`
+- San Miguel hero/reference comparison and cross-scene performance appendix.
 - 60–90 second no-narration comparison video.
 - Five-minute narrated architecture/performance video.
 - One-page architecture map linked to exact code.
@@ -150,6 +164,7 @@ Use Sparkle’s existing reference path tracing and ReSTIR/real-time lighting wo
 - `PGE-02`, `PGE-05`, `PGE-06`, `PGE-08`, and `PGE-09` reach at least `E3`.
 - A specialist can reproduce the result without reading broad architecture documents.
 - No validation error is hidden.
+- San Miguel renders through the same material/shader path without a scene-specific shader fork.
 
 ## Phase 3 — Python And Workload Lab, Weeks 7–9
 
@@ -162,6 +177,7 @@ Build a narrow analysis tool that serves the case studies. Do not build a genera
 - Learn and use Python packaging, typing, `pytest`, NumPy, pandas or Polars, and Matplotlib only as needed.
 - Emit one versioned, stable benchmark record from Sparkle containing:
   - build and git identity;
+  - scene, route, source/cooked manifest, camera, and material-support identity;
   - backend and capability state;
   - hardware/driver/configuration;
   - per-frame CPU/GPU timings;
@@ -176,7 +192,7 @@ Build a narrow analysis tool that serves the case studies. Do not build a genera
   - applies explicit regression thresholds;
   - never claims causality from timing data alone.
 - Add unit tests with malformed, missing, warm-up, and outlier cases.
-- Use the tool for the classical case study and later neural ablations.
+- Use the tool across Bistro and San Miguel for the classical case study and later neural ablations.
 
 ### Gate
 
@@ -235,7 +251,7 @@ The target is a hypothesis. If the hardware cannot meet it, publish the measured
 ### Training work
 
 - Generate inputs and high-sample targets from frozen Sparkle scenes and seeds.
-- Separate training, validation, and held-out test scenes/cameras.
+- Separate training, validation, and held-out test scenes/cameras. Bistro supplies the primary presentation routes; the final `SMG-*` cameras remain excluded from training and model selection.
 - Record color space, exposure, demodulation, clamping, normalization, and target-sample count.
 - Implement a deterministic PyTorch training pipeline.
 - Start with L1/Charbonnier and justify any structural or perceptual term.
@@ -278,6 +294,7 @@ The target is a hypothesis. If the hardware cannot meet it, publish the measured
 - Preserve a classical fallback and explicit capability/failure state.
 - Integrate into the existing frame graph with declared resources and history invalidation.
 - Run both D3D12 and Vulkan using the same model artifact.
+- Run the same artifact on Bistro and the held-out San Miguel routes; no scene-specific weights or shader branch is allowed.
 
 ### Required experiments
 
@@ -300,8 +317,8 @@ The target is a hypothesis. If the hardware cannot meet it, publish the measured
 
 ### Work
 
-- Freeze model, code, scene, capture, and benchmark versions.
-- Run the full held-out and temporal evaluation.
+- Freeze model, code, Bistro/San Miguel manifests, routes, captures, and benchmark versions.
+- Run the full held-out and temporal evaluation, including San Miguel generalization and failure cases.
 - Produce:
   - PSNR/SSIM or justified quality metrics;
   - FLIP or another rendering-aware error view;
@@ -325,12 +342,14 @@ The target is a hypothesis. If the hardware cannot meet it, publish the measured
   - ten-slide talk;
   - 90-second comparison video;
   - ten-minute narrated deep dive.
+- Publish the Bistro exterior/interior hero pair, the San Miguel hero, and the deterministic Bistro door traversal without forcing reviewers through the editor.
 
 ### Gate
 
 - Another engineer reproduces the result.
 - The code has an explicit owner, artifact version, capability gate, fallback, and deletion condition.
 - The case study states whether the neural result won, lost, or traded quality for performance.
+- Bistro and San Miguel each have an honest material/quality/performance support record; the neural result states whether it generalized to the frozen San Miguel test routes.
 - Relevant requirements reach `E3`, with `PGE-01` or `PGE-13` reaching `E4` through transfer or publication.
 
 ## Phase 7 — Application Package, Weeks 25–26
@@ -351,7 +370,7 @@ The target is a hypothesis. If the hardware cannot meet it, publish the measured
 - About section: four sentences—scope, strongest shipped result, independent flagship, collaboration/communication.
 - Featured section:
   1. 90-second reel;
-  2. path-tracing workload case;
+  2. Bistro path-tracing/workload case with San Miguel cross-scene appendix;
   3. neural model-to-shader case;
   4. strongest talk or article.
 - Experience bullets match the CV and do not overclaim confidential work.
@@ -399,6 +418,7 @@ Choose two, not all:
 ### Native Linux/Vulkan slice
 
 - Add platform/window/input/build support sufficient for the curated scene.
+- Use Sponza for the first native smoke, then one Tier 1 route; do not make Linux support wait for every external asset pack.
 - Build and run natively on Linux.
 - Capture with Vulkan validation and RenderDoc.
 - Add non-GPU Linux CI.
@@ -412,7 +432,7 @@ Choose two, not all:
 
 ### Second-hardware study
 
-- Run the same model and classical workload on a materially different GPU architecture.
+- Run the same Bistro and San Miguel model/classical records on a materially different GPU architecture.
 - Predict the likely bottleneck before capturing.
 - Explain changed cache/bandwidth/occupancy behavior.
 - Avoid a universal conclusion from two devices.
@@ -430,7 +450,7 @@ Quarter-3 gate: at least one `PGE-06`, `PGE-10`, or `PGE-14` item reaches `E4`.
 - Begin indie-engine usability work only where a real external user is blocked:
   - binary/source onboarding;
   - one project template;
-  - asset import for the supported scene set;
+  - asset import and external-pack onboarding for the supported Sponza/Bistro/San Miguel set;
   - crash/issue reporting;
   - stable versioning.
 

@@ -2,6 +2,7 @@
 
 #include "RayTracing/RayTracingHitData.h"
 #include "ShaderData/MeshInstanceShaderData.h"
+#include "ShaderData/MorphTargetShaderData.h"
 #include "ShaderData/RenderConstantBufferData.h"
 #include "ShaderData/RenderViewLightingData.h"
 
@@ -23,12 +24,15 @@ struct RenderGpuGeometryPayloads final
 	std::vector<std::uint32_t> MeshInstanceSlots;
 	std::vector<JointMatrixData> JointMatrices;
 	std::vector<JointMatrixData> PreviousJointMatrices;
+	std::vector<float> MorphWeights;
+	std::vector<float> PreviousMorphWeights;
 };
 
 struct RenderGpuRayTracingPayloads final
 {
 	std::vector<RayTracingHitVertex> Vertices;
 	std::vector<VertexSkinInfluenceData> SkinInfluences;
+	std::vector<MorphTargetDeltaData> MorphTargetDeltas;
 	std::vector<std::uint32_t> Indices;
 	std::vector<RayTracingHitInstance> Instances;
 	std::vector<RayTracingHitMaterial> Materials;

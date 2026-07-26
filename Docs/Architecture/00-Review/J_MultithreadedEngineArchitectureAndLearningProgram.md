@@ -7,10 +7,20 @@ Last external architecture naming review: 2026-07-18 (repository revisions pinne
 Last persistent-identity source review: 2026-07-21 (NVIDIA/AMD revisions pinned in the source trail)
 Last principal graphics engineering requirements review: 2026-07-24 (requirements `PGE-01` through `PGE-15`)
 Scope: runtime, renderer, RHI, editor, asset and shader tools, principal graphics engineering evidence, learning evidence, and portfolio presentation
-Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), and [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
+Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md), and [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md)
 Repository context: [D. Whole Repository Architecture Map](D_WholeRepositoryArchitectureMap.md)
 Implementation companion: [K. Multithreaded Engine Implementation Prompt Series](K_MultithreadedEngineImplementationPromptSeries.md)
 Coding and integration contract: [L. SparkleEngine Integration Style Guide](L_SparkleEngineIntegrationStyleGuide.md)
+
+## Acceptance Workload Binding
+
+The architectural program must serve the canonical three-tier workload ladder in I:
+
+- Sponza is the small startup and regression path;
+- Bistro exterior/interior is the primary acceptance and presentation workload;
+- San Miguel is the supported secondary workload for different indirect-lighting, visibility, material, and generalization behavior.
+
+Historical prompt evidence below correctly states that Bistro was missing or unavailable at the time of those stages; do not rewrite those facts. Future work must turn the existing external Bistro hook and a new external San Miguel pack into deterministic, generic content paths without hardcoded scene branches. A concurrency, persistent-scene, residency, descriptor, frame-graph, RT-AS, material, or profiling change that affects Tier 1 behavior must name the relevant `BIS-*`/`SMG-*` routes and acceptance artifact from I.
 
 ## How to Use This as a Learning Document
 

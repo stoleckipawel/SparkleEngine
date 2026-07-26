@@ -59,6 +59,10 @@ void RestirIndirectTemporalPassParameters::Describe(ShaderParameterStructBuilder
 	    "RayTracingHitVertices",
 	    &RestirIndirectTemporalPassParameters::RayTracingHitVertices,
 	    ShaderStageVisibility::Compute);
+	builder.ReadBuffer(
+	    "MorphTargetDeltas",
+	    &RestirIndirectTemporalPassParameters::MorphTargetDeltas,
+	    ShaderStageVisibility::Compute);
 	builder.ReadBuffer("RayTracingHitIndices", &RestirIndirectTemporalPassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
 	builder.ReadBuffer(
 	    "RayTracingHitInstances",
@@ -71,6 +75,7 @@ void RestirIndirectTemporalPassParameters::Describe(ShaderParameterStructBuilder
 	builder.ReadBuffer("MeshInstances", &RestirIndirectTemporalPassParameters::MeshInstances, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("SkinInfluences", &RestirIndirectTemporalPassParameters::SkinInfluences, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("JointMatrices", &RestirIndirectTemporalPassParameters::JointMatrices, ShaderStageVisibility::Compute);
+	builder.ReadBuffer("MorphWeights", &RestirIndirectTemporalPassParameters::MorphWeights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("DirectionalLights", &RestirIndirectTemporalPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("PointLights", &RestirIndirectTemporalPassParameters::PointLights, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("SpotLights", &RestirIndirectTemporalPassParameters::SpotLights, ShaderStageVisibility::Compute);
@@ -83,6 +88,12 @@ void RestirIndirectTemporalPassParameters::Describe(ShaderParameterStructBuilder
 	    "MaterialTextureSampler",
 	    &RestirIndirectTemporalPassParameters::MaterialTextureSampler,
 	    ShaderStageVisibility::Compute);
+}
+
+RestirIndirectTemporalPass::RestirIndirectTemporalPass(
+    const ComputePassPipelineRuntime& runtime) noexcept :
+	m_runtime(runtime)
+{
 }
 
 const RestirIndirectTemporalPass::ParameterMetadata& RestirIndirectTemporalPass::GetParameterMetadata() noexcept

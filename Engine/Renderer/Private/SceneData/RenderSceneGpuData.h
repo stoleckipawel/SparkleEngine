@@ -34,15 +34,19 @@ struct RenderSceneGpuGeometryData final
 	RenderSceneGpuBuffer MeshInstanceSlots;
 	RenderSceneGpuBuffer JointMatrices;
 	RenderSceneGpuBuffer PreviousJointMatrices;
+	RenderSceneGpuBuffer MorphWeights;
+	RenderSceneGpuBuffer PreviousMorphWeights;
 
 	bool HasMeshInstances() const noexcept;
 	bool HasSkinning() const noexcept;
+	bool HasMorphing() const noexcept;
 };
 
 struct RenderSceneGpuRayTracingData final
 {
 	RenderSceneGpuBuffer Vertices;
 	RenderSceneGpuBuffer SkinInfluences;
+	RenderSceneGpuBuffer MorphTargetDeltas;
 	RenderSceneGpuBuffer Indices;
 	RenderSceneGpuBuffer Instances;
 	RenderSceneGpuBuffer Materials;
@@ -73,12 +77,15 @@ struct RenderSceneGpuGeometryResources final
 	FrameGraphBufferHandle MeshInstanceSlots = FrameGraphBufferHandle::Invalid();
 	FrameGraphBufferHandle JointMatrices = FrameGraphBufferHandle::Invalid();
 	FrameGraphBufferHandle PreviousJointMatrices = FrameGraphBufferHandle::Invalid();
+	FrameGraphBufferHandle MorphWeights = FrameGraphBufferHandle::Invalid();
+	FrameGraphBufferHandle PreviousMorphWeights = FrameGraphBufferHandle::Invalid();
 };
 
 struct RenderSceneGpuRayTracingResources final
 {
 	FrameGraphBufferHandle Vertices = FrameGraphBufferHandle::Invalid();
 	FrameGraphBufferHandle SkinInfluences = FrameGraphBufferHandle::Invalid();
+	FrameGraphBufferHandle MorphTargetDeltas = FrameGraphBufferHandle::Invalid();
 	FrameGraphBufferHandle Indices = FrameGraphBufferHandle::Invalid();
 	FrameGraphBufferHandle Instances = FrameGraphBufferHandle::Invalid();
 	FrameGraphBufferHandle Materials = FrameGraphBufferHandle::Invalid();

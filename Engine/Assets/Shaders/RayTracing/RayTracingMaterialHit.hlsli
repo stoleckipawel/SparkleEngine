@@ -3,6 +3,7 @@
 #include "Common/Math.hlsli"
 #include "Resources/ConstantBuffers.hlsli"
 #include "Geometry/Basis.hlsli"
+#include "Geometry/Morphing.hlsli"
 #include "Geometry/Skinning.hlsli"
 #include "Material/MaterialNormal.hlsli"
 #include "Material/MaterialTextureTable.hlsli"
@@ -30,7 +31,7 @@ struct RayTracingHitInstance
 	uint AlphaMode;
 	uint MaterialTextureFlags;
 	uint AbiVersion;
-	uint Padding0;
+	uint MorphTargetDeltaOffset;
 };
 
 struct RayTracingHitMaterial
@@ -359,12 +360,96 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.AlphaMode = hitInstance.AlphaMode;
 
 	const MeshInstanceData meshInstance = MeshInstances[trace.InstanceId];
-	const SkinnedVertexAttributes skinned0 = ApplySkinning(meshInstance, vertexIndices.x, v0.Position, v0.Normal, v0.Tangent.xyz);
-	const SkinnedVertexAttributes skinned1 = ApplySkinning(meshInstance, vertexIndices.y, v1.Position, v1.Normal, v1.Tangent.xyz);
-	const SkinnedVertexAttributes skinned2 = ApplySkinning(meshInstance, vertexIndices.z, v2.Position, v2.Normal, v2.Tangent.xyz);
-	const SkinnedVertexAttributes previousSkinned0 = ApplyPreviousSkinning(meshInstance, vertexIndices.x, v0.Position, v0.Normal, v0.Tangent.xyz);
-	const SkinnedVertexAttributes previousSkinned1 = ApplyPreviousSkinning(meshInstance, vertexIndices.y, v1.Position, v1.Normal, v1.Tangent.xyz);
-	const SkinnedVertexAttributes previousSkinned2 = ApplyPreviousSkinning(meshInstance, vertexIndices.z, v2.Position, v2.Normal, v2.Tangent.xyz);
+	const MorphedVertexAttributes morphed0 =
+	    ApplyMorphing(
+	        meshInstance,
+	        hitInstance.MorphTargetDeltaOffset,
+	        vertexIndices.x - hitInstance.FirstVertex,
+	        v0.Position,
+	        v0.Normal,
+	        v0.Tangent.xyz);
+	const MorphedVertexAttributes morphed1 =
+	    ApplyMorphing(
+	        meshInstance,
+	        hitInstance.MorphTargetDeltaOffset,
+	        vertexIndices.y - hitInstance.FirstVertex,
+	        v1.Position,
+	        v1.Normal,
+	        v1.Tangent.xyz);
+	const MorphedVertexAttributes morphed2 =
+	    ApplyMorphing(
+	        meshInstance,
+	        hitInstance.MorphTargetDeltaOffset,
+	        vertexIndices.z - hitInstance.FirstVertex,
+	        v2.Position,
+	        v2.Normal,
+	        v2.Tangent.xyz);
+	const MorphedVertexAttributes previousMorphed0 =
+	    ApplyPreviousMorphing(
+	        meshInstance,
+	        hitInstance.MorphTargetDeltaOffset,
+	        vertexIndices.x - hitInstance.FirstVertex,
+	        v0.Position,
+	        v0.Normal,
+	        v0.Tangent.xyz);
+	const MorphedVertexAttributes previousMorphed1 =
+	    ApplyPreviousMorphing(
+	        meshInstance,
+	        hitInstance.MorphTargetDeltaOffset,
+	        vertexIndices.y - hitInstance.FirstVertex,
+	        v1.Position,
+	        v1.Normal,
+	        v1.Tangent.xyz);
+	const MorphedVertexAttributes previousMorphed2 =
+	    ApplyPreviousMorphing(
+	        meshInstance,
+	        hitInstance.MorphTargetDeltaOffset,
+	        vertexIndices.z - hitInstance.FirstVertex,
+	        v2.Position,
+	        v2.Normal,
+	        v2.Tangent.xyz);
+	const SkinnedVertexAttributes skinned0 =
+	    ApplySkinning(
+	        meshInstance,
+	        vertexIndices.x,
+	        morphed0.Position,
+	        morphed0.Normal,
+	        morphed0.Tangent);
+	const SkinnedVertexAttributes skinned1 =
+	    ApplySkinning(
+	        meshInstance,
+	        vertexIndices.y,
+	        morphed1.Position,
+	        morphed1.Normal,
+	        morphed1.Tangent);
+	const SkinnedVertexAttributes skinned2 =
+	    ApplySkinning(
+	        meshInstance,
+	        vertexIndices.z,
+	        morphed2.Position,
+	        morphed2.Normal,
+	        morphed2.Tangent);
+	const SkinnedVertexAttributes previousSkinned0 =
+	    ApplyPreviousSkinning(
+	        meshInstance,
+	        vertexIndices.x,
+	        previousMorphed0.Position,
+	        previousMorphed0.Normal,
+	        previousMorphed0.Tangent);
+	const SkinnedVertexAttributes previousSkinned1 =
+	    ApplyPreviousSkinning(
+	        meshInstance,
+	        vertexIndices.y,
+	        previousMorphed1.Position,
+	        previousMorphed1.Normal,
+	        previousMorphed1.Tangent);
+	const SkinnedVertexAttributes previousSkinned2 =
+	    ApplyPreviousSkinning(
+	        meshInstance,
+	        vertexIndices.z,
+	        previousMorphed2.Position,
+	        previousMorphed2.Normal,
+	        previousMorphed2.Tangent);
 	const float3 localPosition =
 	    skinned0.Position * barycentricWeights.x + skinned1.Position * barycentricWeights.y + skinned2.Position * barycentricWeights.z;
 	const float3 previousLocalPosition =

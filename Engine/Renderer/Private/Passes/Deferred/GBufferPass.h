@@ -6,6 +6,7 @@
 #include "Frame/Targets/FrameRenderTargets.h"
 
 #include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/MorphTargetShaderData.h"
 
 #include <cstddef>
 
@@ -37,6 +38,8 @@ struct GBufferPassParameters
 	ShaderBuffer<std::uint32_t> MeshInstanceSlots;
 	ShaderBuffer<JointMatrixData> JointMatrices;
 	ShaderBuffer<JointMatrixData> PreviousJointMatrices;
+	ShaderBuffer<float> MorphWeights;
+	ShaderBuffer<float> PreviousMorphWeights;
 
 	static void Describe(
 	    ShaderParameterStructBuilder<GBufferPassParameters>& builder);
@@ -48,8 +51,11 @@ struct GBufferDrawParameters
 	ShaderBuffer<MeshInstanceData> MeshInstances;
 	ShaderBuffer<std::uint32_t> MeshInstanceSlots;
 	ShaderBuffer<VertexSkinInfluenceData> SkinInfluences;
+	ShaderBuffer<MorphTargetDeltaData> MorphTargetDeltas;
 	ShaderBuffer<JointMatrixData> JointMatrices;
 	ShaderBuffer<JointMatrixData> PreviousJointMatrices;
+	ShaderBuffer<float> MorphWeights;
+	ShaderBuffer<float> PreviousMorphWeights;
 	ShaderUniform<PerObjectPSConstantBufferData> PerObjectPS;
 	ShaderTexture2DSRV TextureBaseColor;
 	ShaderTexture2DSRV TextureNormal;

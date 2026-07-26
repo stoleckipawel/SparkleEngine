@@ -7,6 +7,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "ShaderData/MeshInstanceShaderData.h"
+#include "ShaderData/MorphTargetShaderData.h"
 #include "ShaderData/RenderConstantBufferData.h"
 
 class RenderSceneGpuResourceBindings final
@@ -69,10 +70,17 @@ bool RenderSceneGpuGeometryData::HasSkinning() const noexcept
 	       PreviousJointMatrices.IsValid();
 }
 
+bool RenderSceneGpuGeometryData::HasMorphing() const noexcept
+{
+	return MorphWeights.IsValid() &&
+	       PreviousMorphWeights.IsValid();
+}
+
 bool RenderSceneGpuRayTracingData::IsValid() const noexcept
 {
-	return Vertices && SkinInfluences && Indices && Instances &&
-	       Materials && InstanceCount > 0 && MaterialCount > 0;
+	return Vertices && SkinInfluences && MorphTargetDeltas &&
+	       Indices && Instances && Materials && InstanceCount > 0 &&
+	       MaterialCount > 0;
 }
 
 RenderSceneGpuResources DeclareRenderSceneGpuResources(
@@ -122,7 +130,15 @@ RenderSceneGpuResources DeclareRenderSceneGpuResources(
 	                RenderSceneGpuResourceBindings::Declare<
 	                    JointMatrixData>(
 	                    builder,
-	                    "PreviousJointMatrices")},
+	                    "PreviousJointMatrices"),
+	            .MorphWeights =
+	                RenderSceneGpuResourceBindings::Declare<float>(
+	                    builder,
+	                    "MorphWeights"),
+	            .PreviousMorphWeights =
+	                RenderSceneGpuResourceBindings::Declare<float>(
+	                    builder,
+	                    "PreviousMorphWeights")},
 	    .RayTracing =
 	        RenderSceneGpuRayTracingResources{
 	            .Vertices =
@@ -135,6 +151,11 @@ RenderSceneGpuResources DeclareRenderSceneGpuResources(
 	                    VertexSkinInfluenceData>(
 	                    builder,
 	                    "RayTracingHitSkinInfluences"),
+	            .MorphTargetDeltas =
+	                RenderSceneGpuResourceBindings::Declare<
+	                    MorphTargetDeltaData>(
+	                    builder,
+	                    "RayTracingHitMorphTargetDeltas"),
 	            .Indices =
 	                RenderSceneGpuResourceBindings::Declare<
 	                    std::uint32_t>(
@@ -199,6 +220,16 @@ void BindRenderSceneGpuResources(
 	    "PreviousJointMatrices");
 	RenderSceneGpuResourceBindings::Bind(
 	    graph,
+	    resources.Geometry.MorphWeights,
+	    sceneGpuData.Geometry.MorphWeights,
+	    "MorphWeights");
+	RenderSceneGpuResourceBindings::Bind(
+	    graph,
+	    resources.Geometry.PreviousMorphWeights,
+	    sceneGpuData.Geometry.PreviousMorphWeights,
+	    "PreviousMorphWeights");
+	RenderSceneGpuResourceBindings::Bind(
+	    graph,
 	    resources.RayTracing.Vertices,
 	    sceneGpuData.RayTracing.Vertices,
 	    "RayTracingHitVertices");
@@ -207,6 +238,11 @@ void BindRenderSceneGpuResources(
 	    resources.RayTracing.SkinInfluences,
 	    sceneGpuData.RayTracing.SkinInfluences,
 	    "RayTracingHitSkinInfluences");
+	RenderSceneGpuResourceBindings::Bind(
+	    graph,
+	    resources.RayTracing.MorphTargetDeltas,
+	    sceneGpuData.RayTracing.MorphTargetDeltas,
+	    "RayTracingHitMorphTargetDeltas");
 	RenderSceneGpuResourceBindings::Bind(
 	    graph,
 	    resources.RayTracing.Indices,

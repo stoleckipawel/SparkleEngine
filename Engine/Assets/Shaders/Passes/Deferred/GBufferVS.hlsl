@@ -1,6 +1,7 @@
 #include "CommonVS.hlsli"
 #include "Resources/TemporalConstantBuffer.hlsli"
 #include "Geometry/Basis.hlsli"
+#include "Geometry/Morphing.hlsli"
 #include "Geometry/Skinning.hlsli"
 
 void main(in VS::Input Input, out VS::Output Output)
@@ -12,9 +13,36 @@ void main(in VS::Input Input, out VS::Output Output)
 	const float4x4 previousWorldMatrix = meshInstance.PreviousWorldMTX;
 	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
 
-	const SkinnedVertexAttributes localVertex = ApplySkinning(meshInstance, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
+	const MorphedVertexAttributes morphedVertex =
+	    ApplyMorphing(
+	        meshInstance,
+	        0u,
+	        Input.VertexId,
+	        Input.Position,
+	        Input.Normal,
+	        Input.Tangent.xyz);
+	const MorphedVertexAttributes previousMorphedVertex =
+	    ApplyPreviousMorphing(
+	        meshInstance,
+	        0u,
+	        Input.VertexId,
+	        Input.Position,
+	        Input.Normal,
+	        Input.Tangent.xyz);
+	const SkinnedVertexAttributes localVertex =
+	    ApplySkinning(
+	        meshInstance,
+	        Input.VertexId,
+	        morphedVertex.Position,
+	        morphedVertex.Normal,
+	        morphedVertex.Tangent);
 	const SkinnedVertexAttributes previousLocalVertex =
-	    ApplyPreviousSkinning(meshInstance, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
+	    ApplyPreviousSkinning(
+	        meshInstance,
+	        Input.VertexId,
+	        previousMorphedVertex.Position,
+	        previousMorphedVertex.Normal,
+	        previousMorphedVertex.Tangent);
 
 	const float4 positionWorld = mul(float4(localVertex.Position, 1.0f), worldMatrix);
 	const float4 previousPositionWorld = mul(float4(previousLocalVertex.Position, 1.0f), previousWorldMatrix);

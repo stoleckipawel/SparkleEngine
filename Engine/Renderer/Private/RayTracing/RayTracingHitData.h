@@ -7,7 +7,7 @@
 
 namespace RayTracingHitData
 {
-	inline constexpr std::uint32_t AbiVersion = 3u;
+	inline constexpr std::uint32_t AbiVersion = 4u;
 
 	inline constexpr std::uint32_t InstanceFlag_Valid = 1u << 0u;
 	inline constexpr std::uint32_t InstanceFlag_Opaque = 1u << 1u;
@@ -66,7 +66,7 @@ struct RayTracingHitInstance
 	std::uint32_t AlphaMode = 0u;
 	std::uint32_t MaterialTextureFlags = 0u;
 	std::uint32_t AbiVersion = RayTracingHitData::AbiVersion;
-	std::uint32_t Padding0 = 0u;
+	std::uint32_t MorphTargetDeltaOffset = 0u;
 };
 
 static_assert(std::is_standard_layout_v<RayTracingHitInstance>, "RayTracingHitInstance must be standard-layout");

@@ -28,12 +28,14 @@ void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, const FrameAssembl
 	parameters->SpotLights = builder.CreateSRV(resources.External.Scene.Lighting.SpotLights);
 	parameters->RectLights = builder.CreateSRV(resources.External.Scene.Lighting.RectLights);
 	parameters->RayTracingHitVertices = builder.CreateSRV(resources.External.Scene.RayTracing.Vertices);
+	parameters->MorphTargetDeltas = builder.CreateSRV(resources.External.Scene.RayTracing.MorphTargetDeltas);
 	parameters->SkinInfluences = builder.CreateSRV(resources.External.Scene.RayTracing.SkinInfluences);
 	parameters->RayTracingHitIndices = builder.CreateSRV(resources.External.Scene.RayTracing.Indices);
 	parameters->RayTracingHitInstances = builder.CreateSRV(resources.External.Scene.RayTracing.Instances);
 	parameters->RayTracingHitMaterials = builder.CreateSRV(resources.External.Scene.RayTracing.Materials);
 	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
+	parameters->MorphWeights = builder.CreateSRV(resources.External.Scene.Geometry.MorphWeights);
 	LightingRayTracingPasses::DispatchSceneTlas<RestirIndirectResolvePass>(
 	    builder,
 	    parameters,

@@ -41,6 +41,8 @@ void RenderMeshDrawBuilder::ResetHistory() noexcept
 {
 	m_previousWorldMatrices.clear();
 	m_previousSkinningMatrices.clear();
+	m_currentSkinningMatrices.clear();
+	m_morphBuilder.Reset();
 }
 
 void RenderMeshDrawBuilder::Build(const RenderWorld& world, const RenderFrameDynamicData& dynamic, RenderSceneData& sceneData)
@@ -53,6 +55,7 @@ void RenderMeshDrawBuilder::Build(const RenderWorld& world, const RenderFrameDyn
 
 	std::map<RenderObjectId, std::uint32_t> jointMatrixOffsets;
 	AppendSkinningData(dynamic, sceneData, jointMatrixOffsets);
+	m_morphBuilder.Prepare(dynamic, sceneData);
 
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(dynamic.Objects.size());
@@ -63,6 +66,7 @@ void RenderMeshDrawBuilder::Build(const RenderWorld& world, const RenderFrameDyn
 	m_previousWorldMatrices = std::move(currentWorldMatrices);
 	m_previousSkinningMatrices = std::move(m_currentSkinningMatrices);
 	m_currentSkinningMatrices.clear();
+	m_morphBuilder.Commit();
 }
 
 void RenderMeshDrawBuilder::AppendSkinningData(
@@ -127,6 +131,11 @@ void RenderMeshDrawBuilder::AppendVisibleMeshItems(
 		draw.Geometry.LocalBoundsMin = gpuMesh->GetLocalBounds().Min;
 		draw.Geometry.LocalBoundsMax = gpuMesh->GetLocalBounds().Max;
 		draw.Geometry.HasLocalBounds = gpuMesh->GetLocalBounds().Valid;
+		m_morphBuilder.Append(
+		    object.Object,
+		    *gpuMesh,
+		    sceneData,
+		    draw);
 
 		outItems.push_back({.draw = draw,
 		                    .materialGpuHandle = draw.Material.Slot < sceneData.materials.size()

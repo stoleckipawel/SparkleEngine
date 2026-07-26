@@ -21,6 +21,8 @@ struct RenderGpuDynamicFrameStorage final
 	PersistentStructuredBuffer MeshInstanceSlots;
 	PersistentStructuredBuffer JointMatrices;
 	PersistentStructuredBuffer PreviousJointMatrices;
+	PersistentStructuredBuffer MorphWeights;
+	PersistentStructuredBuffer PreviousMorphWeights;
 	PersistentStructuredBuffer RayTracingInstances;
 	PersistentStructuredBuffer RayTracingMaterials;
 	RenderSceneGpuData Data;
@@ -30,6 +32,7 @@ struct RenderGpuRayTracingStorage final
 {
 	PersistentStructuredBuffer Vertices;
 	PersistentStructuredBuffer SkinInfluences;
+	PersistentStructuredBuffer MorphTargetDeltas;
 	PersistentStructuredBuffer Indices;
 };
 
@@ -74,6 +77,8 @@ class PersistentRenderGpuSceneOperations final
 		storage.MeshInstanceSlots.Reset();
 		storage.JointMatrices.Reset();
 		storage.PreviousJointMatrices.Reset();
+		storage.MorphWeights.Reset();
+		storage.PreviousMorphWeights.Reset();
 		storage.RayTracingInstances.Reset();
 		storage.RayTracingMaterials.Reset();
 		storage.Data = {};
@@ -83,6 +88,7 @@ class PersistentRenderGpuSceneOperations final
 	{
 		storage.Vertices.Reset();
 		storage.SkinInfluences.Reset();
+		storage.MorphTargetDeltas.Reset();
 		storage.Indices.Reset();
 	}
 };
@@ -172,6 +178,16 @@ struct PersistentRenderGpuScene::Impl final
 		    *ResourceService,
 		    payloads.PreviousJointMatrices,
 		    L"PreviousSkinningJointMatrices");
+		PersistentRenderGpuSceneOperations::Update(
+		    storage.MorphWeights,
+		    *ResourceService,
+		    payloads.MorphWeights,
+		    L"MorphWeights");
+		PersistentRenderGpuSceneOperations::Update(
+		    storage.PreviousMorphWeights,
+		    *ResourceService,
+		    payloads.PreviousMorphWeights,
+		    L"PreviousMorphWeights");
 
 		storage.Data.Geometry = RenderSceneGpuGeometryData{
 		    .MeshInstances =
@@ -181,7 +197,11 @@ struct PersistentRenderGpuScene::Impl final
 		    .JointMatrices =
 		        storage.JointMatrices.GetBinding(),
 		    .PreviousJointMatrices =
-		        storage.PreviousJointMatrices.GetBinding()};
+		        storage.PreviousJointMatrices.GetBinding(),
+		    .MorphWeights =
+		        storage.MorphWeights.GetBinding(),
+		    .PreviousMorphWeights =
+		        storage.PreviousMorphWeights.GetBinding()};
 	}
 
 	void UpdateRayTracing(
@@ -206,7 +226,8 @@ struct PersistentRenderGpuScene::Impl final
 		        *Meshes);
 			if (topologyChanged ||
 			    RayTracingPayloads.InstanceCount == 0u ||
-			    !RayTracing.Vertices.GetBinding())
+			    !RayTracing.Vertices.GetBinding() ||
+			    !RayTracing.MorphTargetDeltas.GetBinding())
 			{
 				UpdateRayTracingTopology();
 			}
@@ -237,6 +258,8 @@ struct PersistentRenderGpuScene::Impl final
 		                  RayTracing.Vertices.GetBinding(),
 		              .SkinInfluences =
 		                  RayTracing.SkinInfluences.GetBinding(),
+		              .MorphTargetDeltas =
+		                  RayTracing.MorphTargetDeltas.GetBinding(),
 		              .Indices =
 		                  RayTracing.Indices.GetBinding(),
 		              .Instances =
@@ -268,6 +291,11 @@ struct PersistentRenderGpuScene::Impl final
 		    *ResourceService,
 		    RayTracingPayloads.SkinInfluences,
 		    L"RayTracingHitSkinInfluences");
+		PersistentRenderGpuSceneOperations::Replace(
+		    RayTracing.MorphTargetDeltas,
+		    *ResourceService,
+		    RayTracingPayloads.MorphTargetDeltas,
+		    L"RayTracingHitMorphTargetDeltas");
 		PersistentRenderGpuSceneOperations::Replace(
 		    RayTracing.Indices,
 		    *ResourceService,

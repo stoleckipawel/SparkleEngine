@@ -34,12 +34,14 @@ struct RestirIndirectResolvePassParameters
 	ShaderTexture2D<void> SkyTexture;
 	ShaderSamplerSet SamplerLinearClamp;
 	ShaderBuffer<void> RayTracingHitVertices;
+	ShaderBuffer<void> MorphTargetDeltas;
 	ShaderBuffer<void> RayTracingHitIndices;
 	ShaderBuffer<void> RayTracingHitInstances;
 	ShaderBuffer<void> RayTracingHitMaterials;
 	ShaderBuffer<void> MeshInstances;
 	ShaderBuffer<void> SkinInfluences;
 	ShaderBuffer<void> JointMatrices;
+	ShaderBuffer<void> MorphWeights;
 	ShaderBuffer<void> DirectionalLights;
 	ShaderBuffer<void> PointLights;
 	ShaderBuffer<void> SpotLights;
@@ -61,7 +63,8 @@ struct RestirIndirectResolvePassParameters
 class RestirIndirectResolvePass final
 {
   public:
-	explicit RestirIndirectResolvePass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+	explicit RestirIndirectResolvePass(
+	    const ComputePassPipelineRuntime& runtime) noexcept;
 	static constexpr const char* PassName = "RestirIndirectResolve";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Rendering/RenderObjectId.h"
+#include "SceneData/Builders/RenderMeshMorphBuilder.h"
 
 #include <DirectXMath.h>
 #include <map>
@@ -39,4 +40,5 @@ class RenderMeshDrawBuilder final
 	std::map<RenderObjectId, DirectX::XMFLOAT4X4> m_previousWorldMatrices;
 	std::map<RenderObjectId, std::vector<DirectX::XMFLOAT4X4>> m_previousSkinningMatrices;
 	std::map<RenderObjectId, std::vector<DirectX::XMFLOAT4X4>> m_currentSkinningMatrices;
+	RenderMeshMorphBuilder m_morphBuilder;
 };

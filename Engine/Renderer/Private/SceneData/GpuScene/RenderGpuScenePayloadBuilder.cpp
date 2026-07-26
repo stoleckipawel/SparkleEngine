@@ -14,6 +14,7 @@ struct RenderGpuMeshHitDataOffsets final
 {
 	std::uint32_t FirstVertex = 0;
 	std::uint32_t FirstIndex = 0;
+	std::uint32_t FirstMorphTargetDelta = 0;
 	std::uint32_t VertexCount = 0;
 	std::uint32_t IndexCount = 0;
 };
@@ -195,14 +196,25 @@ RenderGpuGeometryPayloads RenderGpuScenePayloadBuilder::BuildGeometry(
 		            draw.Transform.WorldInvTranspose,
 		        .MaterialSlot = draw.Material.Slot,
 		        .Flags =
-		            draw.Geometry.MeshKind ==
+		            (draw.Geometry.MeshKind ==
 		                        RenderMeshKind::Skeletal &&
 		                    draw.Skinning.JointMatrixOffset !=
 		                        kInvalidMeshInstanceJointMatrixOffset
 		                ? MeshInstanceFlag_Skinned
-		                : 0u,
+		                : 0u) |
+		            (draw.Morph.TargetCount > 0u &&
+		                     draw.Morph.WeightOffset !=
+		                         kInvalidMeshInstanceMorphWeightOffset
+		                 ? MeshInstanceFlag_Morphed
+		                 : 0u),
 		        .JointMatrixOffset =
 		            draw.Skinning.JointMatrixOffset,
+		        .MorphWeightOffset =
+		            draw.Morph.WeightOffset,
+		        .MorphTargetCount =
+		            draw.Morph.TargetCount,
+		        .MorphTargetVertexCount =
+		            draw.Morph.VertexCount,
 		        .DebugData = draw.Source.GpuSceneSlot};
 		payloads.MeshInstanceSlots.push_back(
 		    draw.Source.GpuSceneSlot);
@@ -224,24 +236,39 @@ RenderGpuGeometryPayloads RenderGpuScenePayloadBuilder::BuildGeometry(
 		    .SkinningMTX = MathUtils::IdentityFloat4x4()};
 		payloads.JointMatrices.push_back(identity);
 		payloads.PreviousJointMatrices.push_back(identity);
-		return payloads;
+	}
+	else
+	{
+		for (const DirectX::XMFLOAT4X4& matrix :
+		     sceneData.jointMatrices)
+		{
+			payloads.JointMatrices.push_back(
+			    JointMatrixData{.SkinningMTX = matrix});
+		}
+		const std::vector<DirectX::XMFLOAT4X4>&
+		    previousMatrices =
+		        sceneData.previousJointMatrices.size() ==
+		                sceneData.jointMatrices.size()
+		            ? sceneData.previousJointMatrices
+		            : sceneData.jointMatrices;
+		for (const DirectX::XMFLOAT4X4& matrix :
+		     previousMatrices)
+		{
+			payloads.PreviousJointMatrices.push_back(
+			    JointMatrixData{.SkinningMTX = matrix});
+		}
 	}
 
-	for (const DirectX::XMFLOAT4X4& matrix :
-	     sceneData.jointMatrices)
+	payloads.MorphWeights = sceneData.morphWeights;
+	payloads.PreviousMorphWeights =
+	    sceneData.previousMorphWeights.size() ==
+	            sceneData.morphWeights.size()
+	        ? sceneData.previousMorphWeights
+	        : sceneData.morphWeights;
+	if (payloads.MorphWeights.empty())
 	{
-		payloads.JointMatrices.push_back(
-		    JointMatrixData{.SkinningMTX = matrix});
-	}
-	const std::vector<DirectX::XMFLOAT4X4>& previousMatrices =
-	    sceneData.previousJointMatrices.size() ==
-	            sceneData.jointMatrices.size()
-	        ? sceneData.previousJointMatrices
-	        : sceneData.jointMatrices;
-	for (const DirectX::XMFLOAT4X4& matrix : previousMatrices)
-	{
-		payloads.PreviousJointMatrices.push_back(
-		    JointMatrixData{.SkinningMTX = matrix});
+		payloads.MorphWeights.push_back(0.0f);
+		payloads.PreviousMorphWeights.push_back(0.0f);
 	}
 	return payloads;
 }
@@ -376,6 +403,9 @@ RenderGpuScenePayloadBuilder::BuildRayTracing(
 			    .FirstIndex =
 			        static_cast<std::uint32_t>(
 			            payloads.Indices.size()),
+			    .FirstMorphTargetDelta =
+			        static_cast<std::uint32_t>(
+			            payloads.MorphTargetDeltas.size()),
 			    .VertexCount =
 			        static_cast<std::uint32_t>(
 			            meshVertices.size()),
@@ -404,6 +434,13 @@ RenderGpuScenePayloadBuilder::BuildRayTracing(
 			    payloads.Indices.end(),
 			    meshIndices.begin(),
 			    meshIndices.end());
+			const std::span<const MorphTargetDeltaData>
+			    morphTargetDeltas =
+			        gpuMesh->GetMorphTargetDeltas();
+			payloads.MorphTargetDeltas.insert(
+			    payloads.MorphTargetDeltas.end(),
+			    morphTargetDeltas.begin(),
+			    morphTargetDeltas.end());
 			meshOffsets.emplace(gpuMesh, offsets);
 		}
 
@@ -432,6 +469,8 @@ RenderGpuScenePayloadBuilder::BuildRayTracing(
 		    .RejectionReason = RayTracingHitData::Reason_None,
 		    .AlphaMode = material->alphaMode,
 		    .MaterialTextureFlags = material->textureFlags};
+		instance.MorphTargetDeltaOffset =
+		    offsets.FirstMorphTargetDelta;
 		++validInstanceCount;
 	}
 
@@ -444,6 +483,10 @@ RenderGpuScenePayloadBuilder::BuildRayTracing(
 	    static_cast<std::uint32_t>(payloads.Instances.size());
 	payloads.MaterialCount =
 	    static_cast<std::uint32_t>(payloads.Materials.size());
+	if (payloads.MorphTargetDeltas.empty())
+	{
+		payloads.MorphTargetDeltas.emplace_back();
+	}
 	return payloads;
 }
 

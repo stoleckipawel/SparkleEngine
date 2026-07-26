@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Meshes/GpuMorphTargetBuffer.h"
 #include "Meshes/GPUSkinInfluenceBuffer.h"
 #include "Renderer/Public/Meshes/GpuMeshHandle.h"
 #include "RayTracing/RayTracingHitData.h"
@@ -18,6 +19,7 @@
 class RenderCommandContext;
 class RenderHardwareInterface;
 struct MeshData;
+struct MeshMorphData;
 
 struct GPUMeshBounds final
 {
@@ -30,6 +32,7 @@ struct GPUMeshUploadDesc
 {
 	const MeshData& meshData;
 	std::span<const VertexSkinInfluence> skinInfluences = {};
+	const MeshMorphData* morphTargets = nullptr;
 };
 
 class GPUMesh final
@@ -59,6 +62,7 @@ class GPUMesh final
 	RhiOwnedResourceHandle GetVertexBufferResource() const noexcept { return m_vertexBuffer; }
 	RhiOwnedResourceHandle GetIndexBufferResource() const noexcept { return m_indexBuffer; }
 	RhiGpuDescriptorHandle GetSkinInfluencesShaderResourceView() const noexcept { return m_skinInfluences.GetShaderResourceView(); }
+	RhiGpuDescriptorHandle GetMorphTargetDeltasShaderResourceView() const noexcept { return m_morphTargets.GetShaderResourceView(); }
 	RhiRayTracingGeometryDesc GetRayTracingGeometry() const noexcept;
 	const GPUMeshBounds& GetLocalBounds() const noexcept { return m_localBounds; }
 	bool HasRayTracingHitData() const noexcept { return !m_rayTracingHitVertices.empty() && !m_rayTracingHitIndices.empty(); }
@@ -66,6 +70,9 @@ class GPUMesh final
 	std::span<const std::uint32_t> GetRayTracingHitIndices() const noexcept { return m_rayTracingHitIndices; }
 	bool HasSkinInfluences() const noexcept { return m_cpuSkinInfluences.size() == m_vertexCount; }
 	std::span<const VertexSkinInfluence> GetSkinInfluences() const noexcept { return m_cpuSkinInfluences; }
+	bool HasMorphTargets() const noexcept { return m_morphTargets.HasTargets(); }
+	std::uint32_t GetMorphTargetCount() const noexcept { return m_morphTargets.GetTargetCount(); }
+	std::span<const MorphTargetDeltaData> GetMorphTargetDeltas() const noexcept { return m_morphTargets.GetDeltas(); }
 
   private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
@@ -73,6 +80,7 @@ class GPUMesh final
 	RhiOwnedResourceHandle m_vertexBuffer = {};
 	RhiOwnedResourceHandle m_indexBuffer = {};
 	GPUSkinInfluenceBuffer m_skinInfluences;
+	GpuMorphTargetBuffer m_morphTargets;
 	RhiVertexBufferView m_vertexBufferView{};
 	RhiIndexBufferView m_indexBufferView{};
 

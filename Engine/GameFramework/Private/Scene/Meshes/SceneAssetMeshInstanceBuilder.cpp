@@ -86,8 +86,7 @@ namespace SceneAssetMeshInstanceBuilder
 			    ECS::SceneMeshInstanceData{
 			        .Resource = std::make_unique<SkeletalCookedMesh>(
 			            SkeletalMeshData(std::move(asset.mesh)),
-			            asset.assetId,
-			            instance.morphWeights),
+			            asset.assetId),
 			        .LocalTransform = instance.transform,
 			        .Material = SceneAssetMeshInstanceBuilderOperations::ResolveMaterial(instance.material, materialBaseHandle, materials),
 			        .MeshAssetId = asset.assetId,

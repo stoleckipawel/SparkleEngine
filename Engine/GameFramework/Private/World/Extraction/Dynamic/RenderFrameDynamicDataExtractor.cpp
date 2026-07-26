@@ -2,6 +2,7 @@
 #include "World/Extraction/Dynamic/RenderFrameDynamicDataExtractor.h"
 
 #include "World/ECS/Components/AnimationComponents.h"
+#include "World/ECS/ComponentStorage.h"
 #include "World/Extraction/Identity/RenderObjectIdentityMap.h"
 #include "World/Extraction/Structural/RenderObjectDeltaExtractor.h"
 #include "World/Extraction/WorldExtractionStorage.h"
@@ -9,10 +10,19 @@
 #include "World/Resources/GameWorldResourceStores.h"
 #include "World/WorldReadView.h"
 
+#include <limits>
 #include <map>
+#include <utility>
 
 namespace ECS
 {
+	struct RenderMorphMetadata final
+	{
+		RenderAnimationAssetHandle Animation;
+		std::uint32_t TargetNodeIndex =
+		    (std::numeric_limits<std::uint32_t>::max)();
+	};
+
 	void RenderFrameDynamicDataExtractor::Extract(
 	    GameWorldState& state,
 	    const GameWorldResourceStores& resources,
@@ -77,22 +87,79 @@ namespace ECS
 	{
 		const AnimationOutput& output = state.m_animationOutput.GetOutput();
 		const auto samples = state.m_animationOutput.GetMorphSamples();
+		std::map<EntityId, RenderMorphMetadata> metadata;
 		for (const AnimationOutputStorage::MorphTargetBinding& binding : state.m_animationOutput.GetMorphBindings())
 		{
 			if (binding.SampleIndex >= samples.size()) continue;
 			const std::uint32_t outputIndex = samples[binding.SampleIndex].OutputIndex;
 			if (outputIndex >= output.morphWeights.size()) continue;
-			const RenderObjectId object = objects.FindObject(binding.TargetEntity);
-			if (!object.IsValid()) continue;
 			const MorphWeightOutput& morph = output.morphWeights[outputIndex];
 			const AnimationState* animation = state.m_registry.Get<AnimationState>(morph.animationEntity);
+			metadata.insert_or_assign(
+			    binding.TargetEntity,
+			    RenderMorphMetadata{
+			        .Animation =
+			            animation != nullptr
+			                ? RenderAnimationAssetHandle(
+			                      animation->AnimationAssetId)
+			                : RenderAnimationAssetHandle{},
+			        .TargetNodeIndex =
+			            morph.targetNodeIndex});
+		}
+
+		const ComponentStorage<MorphState>* morphStates =
+		    state.m_registry.FindStorage<MorphState>();
+		if (morphStates == nullptr)
+		{
+			return;
+		}
+
+		std::map<RenderObjectId, RenderMorphData> ordered;
+		const std::span<const EntityId> entities =
+		    morphStates->GetEntities();
+		const std::span<const MorphState> components =
+		    morphStates->GetComponents();
+		for (std::size_t index = 0;
+		     index < entities.size();
+		     ++index)
+		{
+			const RenderObjectId object =
+			    objects.FindObject(entities[index]);
+			const std::span<const float> weights =
+			    state.m_morphWeights.Read(
+			        components[index].Weights);
+			if (!object.IsValid() || weights.empty())
+			{
+				continue;
+			}
+
+			const auto animationMetadata =
+			    metadata.find(entities[index]);
+			ordered.emplace(
+			    object,
+			    RenderMorphData{
+			        .Object = object,
+			        .Animation =
+			            animationMetadata != metadata.end()
+			                ? animationMetadata->second.Animation
+			                : RenderAnimationAssetHandle{},
+			        .TargetNodeIndex =
+			            animationMetadata != metadata.end()
+			                ? animationMetadata->second
+			                      .TargetNodeIndex
+			                : (std::numeric_limits<
+			                      std::uint32_t>::max)(),
+			        .Weights =
+			            std::vector<float>(
+			                weights.begin(),
+			                weights.end())});
+		}
+		dynamic.MorphWeights.reserve(
+		    dynamic.MorphWeights.size() + ordered.size());
+		for (auto& entry : ordered)
+		{
 			dynamic.MorphWeights.push_back(
-			    {object,
-			     animation != nullptr
-			         ? RenderAnimationAssetHandle(animation->AnimationAssetId)
-			         : RenderAnimationAssetHandle{},
-			     morph.targetNodeIndex,
-			     morph.weights});
+			    std::move(entry.second));
 		}
 	}
 

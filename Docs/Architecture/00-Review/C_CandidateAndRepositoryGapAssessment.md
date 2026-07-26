@@ -18,7 +18,8 @@ The decisive gaps are not another raster feature, another editor panel, or more 
 3. weak public verification around the engine: no root README, no repository description/topics/site, no release, no active source-level test suite, no CI, and a placeholder license;
 4. no native Linux build/run/capture evidence;
 5. a CV that hides relevant detail from both ATS extraction and a skeptical software-engineering reviewer;
-6. a principal-tenure gap that cannot be solved by repository size and must be compensated by exceptional proof, influence, and transferability.
+6. the showcase has only a Sponza-class verified loop: the existing external Bistro catalog hook is unavailable, and neither Bistro nor San Miguel has a runnable level, frozen reference, workload record, or public result;
+7. a principal-tenure gap that cannot be solved by repository size and must be compensated by exceptional proof, influence, and transferability.
 
 Directional grade today:
 
@@ -49,6 +50,21 @@ The repository was inspected locally rather than inferred from folder names. The
 
 The working tree contained ongoing renderer/residency edits before this review. No source code was changed by the review. Build findings must therefore be read as a worktree snapshot, not as a claim about the last committed revision.
 
+## Acceptance-Scene Readiness
+
+The scene decision is binding in [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md): Sponza is Tier 0, Bistro is the Tier 1 primary flagship, and San Miguel is the Tier 1 secondary supported scene.
+
+| Capability | Current level | Repository fact | Next truthful gate |
+| --- | ---: | --- | --- |
+| Sponza fast loop | `E2.5` | Required startup level and committed glTF/textures exist; raster and RT-related paths are exercised in prior focused validation. | Freeze visual references and short automated regression thresholds. |
+| Bistro catalog/product intent | `E1` | `Levels.catalog` declares an unavailable external optional pack rooted at `Assets/Meshes/Bistro`. | Record provenance, acquire immutable source, create deterministic import/cook inventory, and add explicit exterior/interior levels. |
+| Bistro material correctness | `E0` | No Bistro content or support/fallback matrix exists. | Account for every source material/texture, render debug contact sheets, and compare frozen cameras to a high-sample reference. |
+| Bistro performance evidence | `E0` | No load, route, capture, timing distribution, memory high-water, residency trace, or AS record exists. | Run the protocol in I and complete three causal bottleneck studies. |
+| San Miguel support | `E0` | No catalog entry, content pack, level, deterministic route, or reference exists. | Add high/low variants as an external optional pack through the same inventory pipeline; publish correct raster/reference views, controlled geometry-scaling benchmark, and high-detail hero result. |
+| Cross-scene neural evidence | `E0` | No trained model exists; therefore no generalization result exists. | Keep final San Miguel cameras held out, implement real shader inference, and report Bistro plus held-out San Miguel quality/cost/failures. |
+
+The selection is strong because it reduces ambiguity rather than adding content breadth. Bistro forces production-shaped outdoor/interior scale and material/performance work; San Miguel forces a distinct, iconic indirect-lighting case; Sponza keeps iteration affordable.
+
 ## Requirement-By-Requirement Scorecard
 
 Scale: `E0` absent, `E1` claimed/scaffolded, `E2` implemented, `E3` verified, `E4` transferred. Half levels express a mixed body of evidence; they are not a new formal level.
@@ -56,10 +72,10 @@ Scale: `E0` absent, `E1` claimed/scaffolded, `E2` implemented, `E3` verified, `E
 | ID | Current level | Strongest current evidence | Missing proof / next gate | Priority |
 | --- | ---: | --- | --- | --- |
 | `PGE-01` | `E3` professional / `E1` public repo | Current-role partner coordination; cross-functional recommendations; training and talks. | An independent Sparkle integration/adoption exercise with peer feedback and reproducible handoff. | P1 |
-| `PGE-02` | `E2.5` | Shipped lighting work; tracing/denoising recommendation; Sparkle reference path tracing, path-traced lighting, ReSTIR, and RT scene code. | One frozen workload with reference checks, convergence/quality study, captures, latency/memory table, and paired backend result. | P0 |
+| `PGE-02` | `E2.5` | Shipped lighting work; tracing/denoising recommendation; Sparkle reference path tracing, path-traced lighting, ReSTIR, and RT scene code. | Frozen Bistro flagship and San Miguel breadth routes with reference checks, convergence/quality study, captures, latency/memory table, and paired backend result. | P0 |
 | `PGE-03` | `E0` | Provider-ready reconstruction plumbing is not a neural feature. | A trained neural rendering vertical slice that replaces a classical path and has a real fallback. | P0 |
 | `PGE-04` | `E0` | No tensor/operator/model-to-kernel path found. | PyTorch/ONNX graph analysis, fixed-topology export, HLSL/Slang inference kernels, numerical checks, and optimization study. | P0 |
-| `PGE-05` | `E3` professional / `E1.5` repo | 60 FPS console target; cross-platform CPU/GPU/memory optimization; renderer timing/memory/residency surfaces. | Reproducible public benchmark protocol with percentile frame data, causal captures, and regression gates. | P0 |
+| `PGE-05` | `E3` professional / `E1.5` repo | 60 FPS console target; cross-platform CPU/GPU/memory optimization; renderer timing/memory/residency surfaces. | Reproducible Bistro and San Miguel benchmark protocol with percentile frame data, causal captures, and regression gates. | P0 |
 | `PGE-06` | `E2.5` | Public recommendation names GPU profiling/frame debugging; D3D12/Vulkan diagnostics, markers, validation, capture, and disassembly code exist. | Named PIX/RenderDoc walkthroughs, backend workload comparison, difficult incident report, and reduced reproducer. | P0 |
 | `PGE-07` | `E2` | Large modern C++20 codebase, CMake, shader/cooking tools, narrow module boundaries, format/tidy policies. | No Python; no active source test targets; no CI; current worktree does not build; public API and report surfaces remain broad. | P0 |
 | `PGE-08` | `E2` | PBR/light-transport talk; BRDF, sampling, temporal, denoising, and reservoir code. | Derivations, CPU references, numerical-error tests, statistics, and predicted-versus-measured performance. | P1 |
@@ -67,7 +83,7 @@ Scale: `E0` absent, `E1` claimed/scaffolded, `E2` implemented, `E3` verified, `E
 | `PGE-10` | `E2.5` | Professional low-level profiling; task system; render thread/frame queue; allocators, descriptor and queue ownership; shader disassembly. | Counter-driven cache/bandwidth/occupancy experiment, low-level ISA reading, concurrency stress suite, and architecture-scoped conclusions. | P1 |
 | `PGE-11` | `E0.5` | A public LLM-systems credential and use of AI tools do not prove ML fundamentals. | A reproducible training project with data split, loss/metric rationale, baselines, ablations, failure cases, and independent verification. | P0 |
 | `PGE-12` | `E0` | No training, export, model artifact, or inference workload found. | Separate training and inference profiles, deterministic export, artifact versioning, precision/layout/batch study, and runtime deployment. | P0 |
-| `PGE-13` | `E3` | Multiple public talks; four-part frame-graph series; shader/compiler/cooker/launcher tools; extensive design material. | Convert documentation volume into three concise evidence packages; add a bounded graphics-analysis tool and a productization/deletion case study. | P1 |
+| `PGE-13` | `E3` | Multiple public talks; four-part frame-graph series; shader/compiler/cooker/launcher tools; extensive design material. | Convert documentation volume into Bistro-led evidence packages with San Miguel breadth; add a bounded graphics-analysis tool and a productization/deletion case study. | P1 |
 | `PGE-14` | `E2` | Windows, PC, and multiple console contexts; D3D12 and Vulkan code; English talks and writing; Git/CMake/debugger experience. | Native Linux/Vulkan windowing/build/run/capture; explicit travel status; clean-clone instructions and automation. | P2 at six months, P1 at twelve |
 | `PGE-15` | `E2.5` | Approximately nine years across technical-art/rendering roles; shipped titles; current technical leadership; teaching, talks, partner work, and recommendations. | Target source asks as much as 15+ years for the highest level. Need repeated public end-to-end decisions, mentoring/review evidence, external adoption, and simplification. | Continuous |
 
@@ -149,7 +165,7 @@ Required site structure:
 | Shader toolchain | [ShaderCompiler](../../../Tools/Shaders/ShaderCompiler) has DXC and Slang backends, reflection, contracts, cache, cooking, inspection, and runtime package support. | Distinctive evidence; stronger than another visual effect. |
 | Frame graph | [FrameGraph](../../../Engine/Renderer/Private/FrameGraph) plus the public article series. | Code and communication reinforce one another. |
 | Concurrency | [Tasks](../../../Engine/Tasks), immutable extraction, render thread, bounded frame queue, and persistent render data. | Useful for `PGE-05`, `PGE-07`, and `PGE-10` once tested and measured. |
-| Asset/cook pipeline | Source import, scene/material/texture cooking, shader cooking, and launcher workflows. | Productization evidence, but not a current flagship. |
+| Asset/cook pipeline | Source import, scene/material/texture cooking, shader cooking, and launcher workflows; FBX and glTF importers already exist. | Bistro FBX and San Miguel OBJ conversion/import can turn this into productization evidence if inventory losses and deterministic outputs are exposed. |
 
 ### Trust and verification defects
 
@@ -170,7 +186,7 @@ These defects matter more than their implementation cost suggests:
 The correct response is not a large testing framework or telemetry platform. It is a small credibility spine:
 
 1. clean-clone configure/build;
-2. one deterministic scene;
+2. deterministic Sponza, Bistro, and San Miguel routes at their declared test tiers;
 3. one headless or scripted validation path;
 4. focused math/ABI/reference tests;
 5. Windows CI for build and non-GPU tests;
@@ -255,7 +271,7 @@ They market recognizable outcomes, repeated ownership, expert depth, transfer to
 ### Focus now
 
 1. Fix public trust and build reproducibility.
-2. Turn the existing path tracer/ReSTIR/backend work into one rigorous classical graphics case study.
+2. Turn the existing path tracer/ReSTIR/backend work into one rigorous Bistro-led classical graphics case study, with San Miguel proving cross-scene breadth.
 3. Learn Python and ML through a fixed neural-denoising feature whose output enters Sparkle.
 4. Translate that trained model into a small GPU inference implementation and optimize it.
 5. Produce a workload-debugging incident and D3D12/Vulkan comparison with real captures.
@@ -266,7 +282,7 @@ They market recognizable outcomes, repeated ownership, expert depth, transfer to
 - D3D12/Vulkan RHI;
 - frame graph;
 - shader compiler/reflection/cook/runtime ABI;
-- one curated scene and content path;
+- the curated Sponza/Bistro/San Miguel ladder and one shared deterministic content-inspection path;
 - task/render-thread/persistent-scene work needed by the flagship;
 - one fallback upscaler/denoiser path;
 - essential editor controls for the demo.

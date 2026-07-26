@@ -133,6 +133,8 @@ class GBufferMeshBatchDrawerOperations final
 		drawParameters->MeshInstanceSlots = passParameters.MeshInstanceSlots;
 		drawParameters->JointMatrices = passParameters.JointMatrices;
 		drawParameters->PreviousJointMatrices = passParameters.PreviousJointMatrices;
+		drawParameters->MorphWeights = passParameters.MorphWeights;
+		drawParameters->PreviousMorphWeights = passParameters.PreviousMorphWeights;
 		if (!BindMaterial(sceneData, drawParameters, batch.materialSlot))
 		{
 			SPDLOG_LOGGER_WARN(
@@ -154,6 +156,7 @@ class GBufferMeshBatchDrawerOperations final
 
 		PassBindingOverrides overrides;
 		overrides.SetDescriptorTable("SkinInfluences", gpuMesh.GetSkinInfluencesShaderResourceView());
+		overrides.SetDescriptorTable("MorphTargetDeltas", gpuMesh.GetMorphTargetDeltasShaderResourceView());
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    resources,
 		    cmd,

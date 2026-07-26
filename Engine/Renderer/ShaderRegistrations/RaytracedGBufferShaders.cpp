@@ -8,6 +8,7 @@
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
 #include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/MorphTargetShaderData.h"
 
 class RaytracedGBufferCS final : public TGlobalShader<RaytracedGBufferCS>
 {
@@ -28,6 +29,7 @@ class RaytracedGBufferCS final : public TGlobalShader<RaytracedGBufferCS>
 	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(RaytracedGBufferConstants, RaytracedGBufferUniformData, RaytracedGBufferUniformData)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(MorphTargetDeltaData, MorphTargetDeltas)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(uint32_t, RayTracingHitIndices)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
@@ -35,6 +37,8 @@ class RaytracedGBufferCS final : public TGlobalShader<RaytracedGBufferCS>
 	SHADER_PARAMETER_RDG_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, JointMatrices)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, PreviousJointMatrices)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(float, MorphWeights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(float, PreviousMorphWeights)
 	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	END_SHADER_PARAMETER_STRUCT()

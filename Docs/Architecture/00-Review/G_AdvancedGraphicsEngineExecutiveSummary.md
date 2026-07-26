@@ -15,6 +15,7 @@ Use this as the short entry point. For the durable sources and decisions:
 - [C](C_CandidateAndRepositoryGapAssessment.md) grades the current candidate, public profile, and repository.
 - [F](F_6_12_MonthPrincipalGraphicsRoadmap.md) defines the six-to-twelve-month execution order and gates.
 - [H](H_AdvancedGraphicsEngineerPersona.md) defines the target operating persona.
+- [I](I_BistroAcceptanceWorkload.md) defines the Sponza/Bistro/San Miguel workload ladder and the flagship acceptance evidence.
 
 The engine should read as a compact, serious renderer-first engine that proves:
 
@@ -33,6 +34,8 @@ The engine should read as a compact, serious renderer-first engine that proves:
 ## Executive Decision
 
 Prioritize making SparkleEngine smaller, more explicit, and more evidence-rich.
+
+The product goal is no longer an abstract “representative scene.” Sparkle must render Bistro exterior/interior at high material and lighting quality under declared performance budgets, while San Miguel is a fully supported secondary scene that proves the result survives different interior visibility and indirect-light transport. Sponza remains the rapid regression path.
 
 Do not chase feature count. Build a repo where a senior reviewer can quickly answer:
 
@@ -55,6 +58,7 @@ Near-term change gate:
 - The next major feature is one fixed neural GI denoiser from training data to shader inference; do not build a generic ML runtime.
 - Add diagnostics, records, scripts, or documentation only when they directly produce one of the three flagship evidence packages.
 - Preserve the shader compiler/cook/runtime ABI and paired API ownership while deleting superseded validation, report, provider, and planning surfaces.
+- Route every relevant material, lighting, ray tracing, neural, residency, profiling, and presentation task through the exact Tier 1 gates in I. Sponza-only evidence cannot close the flagship.
 
 ## Principal Graphics Engineering Success Contract
 
@@ -79,7 +83,8 @@ Write and enforce a short product identity:
 
 - Sparkle is a renderer-first engine.
 - It supports multiple projects and levels as a first-class workflow.
-- The default review path uses a curated level set, while heavyweight media is optional.
+- The supported review ladder is Sponza for fast regression, Bistro as the primary acceptance workload, and San Miguel as the secondary supported/generalization workload.
+- Bistro and San Miguel media remain external optional packs with deterministic acquisition/import/cook manifests.
 - Level/content organization must prevent source, cook, launch, and package clutter.
 - Tools exist only for build, cook, launch, shader pipeline, package if owned, and workload inspection.
 - Unowned research scaffolding is gated, minimized, or deleted.
@@ -87,6 +92,7 @@ Write and enforce a short product identity:
 Why this matters:
 
 - Senior graphics roles value judgment. A slim, declared product scope is stronger than a sprawling codebase.
+- Bistro supplies the coherent flagship story; San Miguel supplies recognizable cross-scene proof without forcing the reviewer to learn another engine narrative.
 
 ### P0. D3D12/Vulkan Workload Analysis
 
@@ -97,6 +103,7 @@ Target evidence:
 - one frame-graph/RHI workload summary that reports passes, queues, resource classes, barriers, transient allocations, descriptor pressure, pipeline count, shader packages, ray tracing builds, and GPU timing
 - backend capability comparison for D3D12 versus Vulkan
 - a small workflow that opens the data in text/CSV/JSON only when explicitly requested
+- identical record semantics for the frozen Bistro and San Miguel routes, with differences explained rather than hidden
 
 Deletion-first rule:
 
@@ -156,6 +163,7 @@ Target evidence:
 - direct lighting reservoir path described as native reservoir-based direct lighting
 - reference path tracing defined as either debug reference or progressive/offline reference
 - GI/path tracing work tied to material/light transport correctness, not to extra debug views
+- Bistro reference and real-time quality/performance results plus San Miguel cross-scene convergence and failure cases
 
 Cut:
 
@@ -182,6 +190,7 @@ Feature evidence:
 - quality metrics and visual failure cases are reported beside CPU/GPU latency, memory, and frame pacing
 - D3D12/Vulkan and hardware capability status are explicit; unsupported paths fall back honestly
 - the accepted feature deletes its temporary experiment and compatibility scaffolding
+- the final model is presented on Bistro and evaluated on held-out San Miguel cameras without scene-specific weights or shader forks
 
 Skip:
 
@@ -202,6 +211,7 @@ Target evidence:
 - memory budget and transient allocation pressure
 - descriptor allocator occupancy
 - pipeline/shader package count
+- Bistro exterior/interior and San Miguel route records with asset/load/cook identity, texture residency, material coverage, and acceleration-structure build/memory data
 
 Rule:
 
@@ -235,7 +245,7 @@ These are the capabilities the repo should grow toward, mostly by replacing and 
 | Math and performance modeling | Derivation/reference tests, numerical limits, and predicted-versus-measured CPU/GPU cost. | Keep evidence with the owning algorithm and existing tools. |
 | Driver/hardware diagnosis | Exact hardware/driver/config, native validation, reduced reproducer, capability fallback. | Backend-private fixes and scoped conclusions. |
 | Technology transfer | Partner-shaped adoption case, live demo, concise whitepaper/talk-quality explanation. | Produce after the implementation and evidence are complete. |
-| Productization | Curated level set, optional content packs, smaller launcher, clear packages. | Remove bloat before adding polish. |
+| Productization | Sponza/Bistro/San Miguel level ladder, external optional content packs, smaller launcher, clear packages. | Remove bloat before adding polish. |
 
 ## What To Prioritize
 

@@ -35,11 +35,23 @@ struct MeshInstanceData
 	uint MaterialSlot;
 	uint Flags;
 	uint JointMatrixOffset;
+	uint MorphWeightOffset;
+	uint MorphTargetCount;
+	uint MorphTargetVertexCount;
 	uint DebugData;
+	uint Reserved;
 };
 
 static const uint MeshInstanceFlag_Skinned = 1u << 0u;
+static const uint MeshInstanceFlag_Morphed = 1u << 1u;
 static const uint InvalidMeshInstanceJointMatrixOffset = 0xFFFFFFFFu;
+
+struct MorphTargetDeltaData
+{
+	float4 Position;
+	float4 Normal;
+	float4 Tangent;
+};
 
 struct VertexSkinInfluenceData
 {
@@ -63,6 +75,9 @@ StructuredBuffer<uint> MeshInstanceSlots;
 StructuredBuffer<VertexSkinInfluenceData> SkinInfluences;
 StructuredBuffer<JointMatrixData> JointMatrices;
 StructuredBuffer<JointMatrixData> PreviousJointMatrices;
+StructuredBuffer<MorphTargetDeltaData> MorphTargetDeltas;
+StructuredBuffer<float> MorphWeights;
+StructuredBuffer<float> PreviousMorphWeights;
 ConstantBuffer<ViewLightingData> ViewLighting;
 StructuredBuffer<DirectionalLightConstantBufferData> DirectionalLights;
 StructuredBuffer<PointLightConstantBufferData> PointLights;

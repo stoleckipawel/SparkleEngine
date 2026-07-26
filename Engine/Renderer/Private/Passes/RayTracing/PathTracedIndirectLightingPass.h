@@ -37,12 +37,14 @@ struct PathTracedIndirectLightingPassParameters
 	ShaderTexture2D<void> SkyTexture;
 	ShaderSamplerSet SamplerLinearClamp;
 	ShaderBuffer<void> RayTracingHitVertices;
+	ShaderBuffer<void> MorphTargetDeltas;
 	ShaderBuffer<void> RayTracingHitIndices;
 	ShaderBuffer<void> RayTracingHitInstances;
 	ShaderBuffer<void> RayTracingHitMaterials;
 	ShaderBuffer<void> MeshInstances;
 	ShaderBuffer<void> SkinInfluences;
 	ShaderBuffer<void> JointMatrices;
+	ShaderBuffer<void> MorphWeights;
 	ShaderBuffer<void> DirectionalLights;
 	ShaderBuffer<void> PointLights;
 	ShaderBuffer<void> SpotLights;

@@ -45,6 +45,7 @@ struct RaytracedGBufferPassParameters
 	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderUniform<RaytracedGBufferUniformData> RaytracedGBufferConstants;
 	ShaderBuffer<void> RayTracingHitVertices;
+	ShaderBuffer<void> MorphTargetDeltas;
 	ShaderBuffer<void> RayTracingHitIndices;
 	ShaderBuffer<void> RayTracingHitInstances;
 	ShaderBuffer<void> RayTracingHitMaterials;
@@ -52,43 +53,14 @@ struct RaytracedGBufferPassParameters
 	ShaderBuffer<void> SkinInfluences;
 	ShaderBuffer<void> JointMatrices;
 	ShaderBuffer<void> PreviousJointMatrices;
+	ShaderBuffer<void> MorphWeights;
+	ShaderBuffer<void> PreviousMorphWeights;
 	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
 	ShaderSamplerSet MaterialTextureSampler;
 
-	static void Describe(ShaderParameterStructBuilder<RaytracedGBufferPassParameters>& builder)
-	{
-		builder.RWTexture("GBufferBaseColor", &RaytracedGBufferPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
-		builder.RWTexture("GBufferNormal", &RaytracedGBufferPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
-		builder.RWTexture("GBufferMaterial", &RaytracedGBufferPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
-		builder.RWTexture("GBufferEmissive", &RaytracedGBufferPassParameters::GBufferEmissive, ShaderStageVisibility::Compute);
-		builder.RWTexture("GBufferSubsurface", &RaytracedGBufferPassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
-		builder.RWTexture("GBufferDeviceZ", &RaytracedGBufferPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
-		builder.RWTexture("GBufferMotionVector", &RaytracedGBufferPassParameters::GBufferMotionVector, ShaderStageVisibility::Compute);
-		builder.AccelerationStructure("SceneTlas", &RaytracedGBufferPassParameters::SceneTlas, ShaderStageVisibility::Compute);
-		builder.Uniform("PerFrame", &RaytracedGBufferPassParameters::PerFrame, ShaderStageVisibility::Compute);
-		builder.Uniform("PerView", &RaytracedGBufferPassParameters::PerView, ShaderStageVisibility::Compute);
-		builder.Uniform("PerTemporal", &RaytracedGBufferPassParameters::PerTemporal, ShaderStageVisibility::Compute);
-		builder.Uniform(
-		    "RaytracedGBufferConstants",
-		    &RaytracedGBufferPassParameters::RaytracedGBufferConstants,
-		    ShaderStageVisibility::Compute);
-		builder.ReadBuffer("RayTracingHitVertices", &RaytracedGBufferPassParameters::RayTracingHitVertices, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("RayTracingHitIndices", &RaytracedGBufferPassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
-		builder.ReadBuffer(
-		    "RayTracingHitInstances",
-		    &RaytracedGBufferPassParameters::RayTracingHitInstances,
-		    ShaderStageVisibility::Compute);
-		builder.ReadBuffer(
-		    "RayTracingHitMaterials",
-		    &RaytracedGBufferPassParameters::RayTracingHitMaterials,
-		    ShaderStageVisibility::Compute);
-		builder.ReadBuffer("MeshInstances", &RaytracedGBufferPassParameters::MeshInstances, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("SkinInfluences", &RaytracedGBufferPassParameters::SkinInfluences, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("JointMatrices", &RaytracedGBufferPassParameters::JointMatrices, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("PreviousJointMatrices", &RaytracedGBufferPassParameters::PreviousJointMatrices, ShaderStageVisibility::Compute);
-		builder.ReadTexture("MaterialTextureTable", &RaytracedGBufferPassParameters::MaterialTextureTable, ShaderStageVisibility::Compute);
-		builder.Sampler("MaterialTextureSampler", &RaytracedGBufferPassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
-	}
+	static void Describe(
+	    ShaderParameterStructBuilder<
+	        RaytracedGBufferPassParameters>& builder);
 };
 
 class RaytracedGBufferPass final

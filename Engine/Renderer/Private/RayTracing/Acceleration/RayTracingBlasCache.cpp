@@ -71,6 +71,61 @@ class RayTracingBlasCacheOperations final
 		DirectX::XMStoreFloat3(&result, totalWeight > 0.0f ? skinnedPosition : sourcePosition);
 		return result;
 	}
+
+	static bool HasValidMorphRange(
+	    const RenderSceneData& sceneData,
+	    const MeshDraw& draw,
+	    const GPUMesh& mesh) noexcept
+	{
+		return draw.Morph.TargetCount > 0u &&
+		       draw.Morph.VertexCount == mesh.GetVertexCount() &&
+		       mesh.GetMorphTargetCount() ==
+		           draw.Morph.TargetCount &&
+		       draw.Morph.WeightOffset <=
+		           sceneData.morphWeights.size() &&
+		       draw.Morph.TargetCount <=
+		           sceneData.morphWeights.size() -
+		               draw.Morph.WeightOffset &&
+		       mesh.GetMorphTargetDeltas().size() ==
+		           static_cast<std::size_t>(
+		               draw.Morph.TargetCount) *
+		               draw.Morph.VertexCount;
+	}
+
+	static DirectX::XMFLOAT3 ApplyMorphPosition(
+	    const DirectX::XMFLOAT3& position,
+	    std::size_t vertexIndex,
+	    const RenderSceneData& sceneData,
+	    const MeshDraw& draw,
+	    const GPUMesh& mesh,
+	    bool hasValidMorphRange) noexcept
+	{
+		DirectX::XMFLOAT3 morphed = position;
+		if (!hasValidMorphRange)
+		{
+			return morphed;
+		}
+
+		const std::span<const MorphTargetDeltaData> deltas =
+		    mesh.GetMorphTargetDeltas();
+		for (std::uint32_t targetIndex = 0u;
+		     targetIndex < draw.Morph.TargetCount;
+		     ++targetIndex)
+		{
+			const float weight =
+			    sceneData.morphWeights[
+			        draw.Morph.WeightOffset + targetIndex];
+			const MorphTargetDeltaData& delta =
+			    deltas[
+			        static_cast<std::size_t>(targetIndex) *
+			            draw.Morph.VertexCount +
+			        vertexIndex];
+			morphed.x += delta.Position.x * weight;
+			morphed.y += delta.Position.y * weight;
+			morphed.z += delta.Position.z * weight;
+		}
+		return morphed;
+	}
 };
 
 bool RayTracingBlasCache::SkinnedEntryKey::operator==(
@@ -338,6 +393,11 @@ bool RayTracingBlasCache::BuildSkinnedGeometry(
 	skinnedPositions.reserve(gpuMesh.GetRayTracingHitVertices().size());
 	const std::span<const RayTracingHitVertex> vertices = gpuMesh.GetRayTracingHitVertices();
 	const std::span<const VertexSkinInfluence> skinInfluences = gpuMesh.GetSkinInfluences();
+	const bool hasValidMorphRange =
+	    RayTracingBlasCacheOperations::HasValidMorphRange(
+	        sceneData,
+	        draw,
+	        gpuMesh);
 	for (std::size_t vertexIndex = 0; vertexIndex < vertices.size(); ++vertexIndex)
 	{
 		for (std::uint32_t influenceIndex = 0u; influenceIndex < 4u; ++influenceIndex)
@@ -355,7 +415,13 @@ bool RayTracingBlasCache::BuildSkinnedGeometry(
 		}
 		skinnedPositions.push_back(
 		    RayTracingBlasCacheOperations::TransformSkinnedPosition(
-		        vertices[vertexIndex].Position,
+		        RayTracingBlasCacheOperations::ApplyMorphPosition(
+		            vertices[vertexIndex].Position,
+		            vertexIndex,
+		            sceneData,
+		            draw,
+		            gpuMesh,
+		            hasValidMorphRange),
 		        skinInfluences[vertexIndex],
 		        draw.Skinning.JointMatrixOffset,
 		        sceneData.jointMatrices));

@@ -34,6 +34,13 @@ struct SPARKLE_RENDERER_API MeshDrawSkinning final
 	std::uint32_t JointMatrixOffset = (std::numeric_limits<std::uint32_t>::max)();
 };
 
+struct SPARKLE_RENDERER_API MeshDrawMorph final
+{
+	std::uint32_t WeightOffset = (std::numeric_limits<std::uint32_t>::max)();
+	std::uint32_t TargetCount = 0u;
+	std::uint32_t VertexCount = 0u;
+};
+
 struct SPARKLE_RENDERER_API MeshDrawSourceIdentity final
 {
 	std::uint32_t GpuSceneSlot = 0;
@@ -55,6 +62,7 @@ struct SPARKLE_RENDERER_API MeshDraw
 	MeshDrawTransform Transform;
 	MeshDrawMaterial Material;
 	MeshDrawSkinning Skinning;
+	MeshDrawMorph Morph;
 	MeshDrawSourceIdentity Source;
 	MeshDrawGeometry Geometry;
 };

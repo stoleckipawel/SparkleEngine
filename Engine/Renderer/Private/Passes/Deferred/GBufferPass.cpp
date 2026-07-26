@@ -97,6 +97,14 @@ void GBufferPassParameters::Describe(
 	    "PreviousJointMatrices",
 	    &GBufferPassParameters::PreviousJointMatrices,
 	    ShaderStageVisibility::Vertex);
+	builder.ReadBuffer(
+	    "MorphWeights",
+	    &GBufferPassParameters::MorphWeights,
+	    ShaderStageVisibility::Vertex);
+	builder.ReadBuffer(
+	    "PreviousMorphWeights",
+	    &GBufferPassParameters::PreviousMorphWeights,
+	    ShaderStageVisibility::Vertex);
 }
 
 void GBufferDrawParameters::Describe(
@@ -119,12 +127,24 @@ void GBufferDrawParameters::Describe(
 	    &GBufferDrawParameters::SkinInfluences,
 	    ShaderStageVisibility::Vertex);
 	builder.ReadBuffer(
+	    "MorphTargetDeltas",
+	    &GBufferDrawParameters::MorphTargetDeltas,
+	    ShaderStageVisibility::Vertex);
+	builder.ReadBuffer(
 	    "JointMatrices",
 	    &GBufferDrawParameters::JointMatrices,
 	    ShaderStageVisibility::Vertex);
 	builder.ReadBuffer(
 	    "PreviousJointMatrices",
 	    &GBufferDrawParameters::PreviousJointMatrices,
+	    ShaderStageVisibility::Vertex);
+	builder.ReadBuffer(
+	    "MorphWeights",
+	    &GBufferDrawParameters::MorphWeights,
+	    ShaderStageVisibility::Vertex);
+	builder.ReadBuffer(
+	    "PreviousMorphWeights",
+	    &GBufferDrawParameters::PreviousMorphWeights,
 	    ShaderStageVisibility::Vertex);
 	builder.Uniform(
 	    "PerObjectPS",

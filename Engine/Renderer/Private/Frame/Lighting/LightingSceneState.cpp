@@ -86,6 +86,9 @@ class LightingSceneStateOperations final
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Material.Slot);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Skinning.SkeletonAssetId);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Skinning.JointMatrixOffset);
+		hash = Hash::ContinueFnv1a64Value(hash, draw.Morph.WeightOffset);
+		hash = Hash::ContinueFnv1a64Value(hash, draw.Morph.TargetCount);
+		hash = Hash::ContinueFnv1a64Value(hash, draw.Morph.VertexCount);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Geometry.MeshKind);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Source.MeshAssetId);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Source.MeshGeneration);
@@ -154,6 +157,12 @@ std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noex
 	for (const DirectX::XMFLOAT4X4& jointMatrix : frame.sceneData.jointMatrices)
 	{
 		hash = LightingStateHash::AppendMatrix(hash, jointMatrix);
+	}
+
+	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.morphWeights);
+	for (float morphWeight : frame.sceneData.morphWeights)
+	{
+		hash = Hash::ContinueFnv1a64Value(hash, morphWeight);
 	}
 
 	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.materials);

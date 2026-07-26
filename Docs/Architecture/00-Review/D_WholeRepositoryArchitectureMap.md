@@ -181,7 +181,7 @@ Level inventory:
 | `Projects/Showcase/Levels/CesiumMan.level` | `CesiumMan` | 1 | `CesiumMan/CesiumMan` | Yes; animation/skinned asset check. |
 | `Projects/Showcase/Levels/DiffuseTransmissionPlant.level` | `DiffuseTransmissionPlant` | 1 | `DiffuseTransmissionPlant/DiffuseTransmissionPlant` | Yes; material/transmission asset check. |
 | `Projects/Showcase/Levels/ABeautifulGame.level` | `ABeautifulGame` | 1 | `ABeautifulGame/ABeautifulGame` | Yes; medium mesh/material scene. |
-| `Projects/Showcase/Levels/Sponza.level` | `Sponza` | 1 | `Sponza/Sponza` | Yes; primary renderer review scene and startup default. |
+| `Projects/Showcase/Levels/Sponza.level` | `Sponza` | 1 | `Sponza/Sponza` | Yes; current renderer review scene and startup default; future Tier 0 regression workload. |
 | `Projects/Showcase/Levels/SponzaPtlas.level` | `SponzaPtlas` | 11 | `Sponza/Sponza`, `CesiumMan/CesiumMan` | Yes; PTLAS/multiple-instance coverage. |
 
 Heavy optional/generated candidates:
@@ -214,6 +214,22 @@ Stage 06 optional pack boundary:
 
 - Optional pack ownership is project-owned. `Projects/Showcase/Levels.catalog` is the single boundary for Showcase optional pack metadata.
 - Optional pack root is the catalog `Root` value relative to `Projects/Showcase`; current root is `Assets/Meshes/Bistro` for pack `Bistro`.
+
+### Canonical Acceptance-Workload Overlay
+
+The inventory above describes current repository truth. It does not define the future evidence bar.
+
+[I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md) adds this product direction:
+
+| Tier | Scene | Current repository state | Required architecture consequence |
+| --- | --- | --- | --- |
+| Tier 0 | Sponza | Available, required, startup default. | Preserve as the low-cost smoke/regression loop. |
+| Tier 1 primary | Bistro exterior/interior | External/unavailable catalog pack; no runnable level. | Re-establish through deterministic provenance/import/cook manifests, material support records, frozen routes, and benchmark/reference artifacts; keep heavyweight media external. |
+| Tier 1 secondary | San Miguel 2.0 | Not cataloged or present. | Add as a second external optional pack through the same generic discovery/import/cook/level path; no scene-specific importer, shader, renderer, or scheduler branch. |
+
+Both Tier 1 scenes must exercise the same scene asset, material, texture, renderer, RHI, ray-tracing, benchmark, and capture ownership. Differences belong in authored data, conversion manifests, camera routes, and declared capability/fallback records.
+
+This makes the external-pack boundary a product requirement rather than a depot-cleanup convenience. Completion evidence is defined in I; this map continues to report only what currently exists.
 - Default levels do not reference `Bistro`, so default build/cook/run does not require the heavy optional pack.
 - Missing optional pack state is non-fatal: catalog levels that name a missing or disabled optional pack are unavailable, while default catalog levels continue to load/cook.
 - Core repo byte reduction target for Stage 07 is at least 1438.80 MB by removing or externalizing `Projects/Showcase/Assets/Meshes/Bistro`, reducing `Projects` source content from about 1527.06 MB to about 88.26 MB before generated-output cleanup.

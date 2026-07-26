@@ -22,5 +22,7 @@ void AddRasterizedGBufferPass(
 	parameters->MeshInstanceSlots = builder.CreateSRV<std::uint32_t>(externalResources.Scene.Geometry.MeshInstanceSlots);
 	parameters->JointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.Scene.Geometry.JointMatrices);
 	parameters->PreviousJointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.Scene.Geometry.PreviousJointMatrices);
+	parameters->MorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.MorphWeights);
+	parameters->PreviousMorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.PreviousMorphWeights);
 	builder.Draw<GBufferPass>(parameters);
 }
