@@ -27,6 +27,7 @@ struct FrameContext;
 class FrameGraph;
 class RendererSystemRoot;
 class RenderInputConsumer;
+class PersistentRenderGpuScene;
 struct TimeInfo;
 
 struct FrameResolutionExtents final
@@ -107,6 +108,7 @@ class FramePipeline final
 	std::optional<std::uint64_t> m_previousReferenceLightingHistoryInvalidationHash;
 	std::optional<std::uint64_t> m_previousRestirLightingHistoryInvalidationHash;
 	std::unique_ptr<RenderInputConsumer> m_renderInputConsumer;
+	std::unique_ptr<PersistentRenderGpuScene> m_gpuScene;
 	std::unique_ptr<EditorRenderPacketPlayer> m_editorRenderPacketPlayer;
 	std::unique_ptr<EditorTextureRegistry> m_editorTextureRegistry;
 	struct PendingViewportCapture final

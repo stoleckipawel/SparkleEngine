@@ -41,7 +41,7 @@ class FrameContextOperations final
 FrameContext BuildFrameContext(
     const RenderWorld& world,
     const RenderFrameDynamicData& dynamic,
-    RhiResourceService& resourceService,
+    PersistentRenderGpuScene& gpuScene,
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,
@@ -56,7 +56,7 @@ FrameContext BuildFrameContext(
 	{
 		renderRayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
 	}
-	frame.sceneGpuData = BuildRenderSceneGpuData(resourceService, frame.sceneData);
+	frame.sceneGpuData = &gpuScene.Update(frame.sceneData);
 	const RhiViewport sceneViewport = FrameContextOperations::BuildSceneViewport(sceneExtent);
 	frame.mainView = perViewDataBuilder.BuildView(cameraData, sceneViewport, FrameContextOperations::BuildSceneScissorRect(sceneExtent));
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(

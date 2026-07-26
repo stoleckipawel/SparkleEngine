@@ -7,9 +7,11 @@
 #include "RuntimeApplication.h"
 #include "Renderer.h"
 #include "Input/InputSystem.h"
+#include "Time/Timer.h"
 #include "ShaderRecook/ShaderConsoleCommands.h"
 #include "ShaderRecook/ShaderRecookCoordinator.h"
 #include "EditorOperations/EditorOperationService.h"
+#include "Editor/Capture/EditorViewportCaptureCoordinator.h"
 #include "World/GameWorld.h"
 
 EditorApplication::EditorApplication() = default;
@@ -41,6 +43,10 @@ void EditorApplication::Initialize()
 	}
 	if (!m_shaderRecookCoordinator)
 		m_shaderRecookCoordinator = std::make_unique<ShaderRecookCoordinator>(*m_operationService);
+
+	if (!m_viewportCaptureCoordinator)
+		m_viewportCaptureCoordinator = std::make_unique<EditorViewportCaptureCoordinator>(*m_operationService);
+
 	m_runtimeApplication->GetInputSystem().ClearInputCaptureQuery();
 	m_runtimeApplication->GetInputSystem().BeginInputRoutingFrame(false, false);
 
@@ -109,6 +115,10 @@ bool EditorApplication::Tick()
 	}
 
 	Renderer& renderer = m_runtimeApplication->GetRenderer();
+	if (m_viewportCaptureCoordinator)
+	{
+		m_viewportCaptureCoordinator->Update(renderer);
+	}
 	if (m_shaderRecookCoordinator)
 	{
 		if (m_ui->ConsumeShaderRecookRequest())
@@ -122,6 +132,13 @@ bool EditorApplication::Tick()
 	m_runtimeApplication->UpdateRuntime();
 
 	EditorUiFrameRenderer::Render(*m_runtimeApplication, renderer, *m_ui);
+	if (m_viewportCaptureCoordinator &&
+	    m_ui->ConsumeViewportCaptureRequest())
+	{
+		m_viewportCaptureCoordinator->Request(
+		    renderer,
+		    m_runtimeApplication->GetTimer().GetFrameCount());
+	}
 	m_runtimeApplication->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());
 	return true;
 }
@@ -134,6 +151,7 @@ void EditorApplication::Shutdown()
 	}
 
 	m_ui.reset();
+	m_viewportCaptureCoordinator.reset();
 	m_shaderRecookCoordinator.reset();
 	m_operationService.reset();
 	m_runtimeApplication->Shutdown();

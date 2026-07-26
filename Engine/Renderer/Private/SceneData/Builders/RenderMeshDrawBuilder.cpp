@@ -111,7 +111,7 @@ void RenderMeshDrawBuilder::AppendVisibleMeshItems(
 		                                         ? previousMatrix->second : object.WorldMatrix;
 		draw.Transform.WorldInvTranspose = object.WorldInverseTranspose;
 		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(proxy->Static.Material, sceneData.materials.size());
-		draw.Source.SourceInstanceIndex = sourceIndex;
+		draw.Source.GpuSceneSlot = proxy->GpuSceneSlot;
 		draw.Source.MeshAssetId = proxy->Static.Mesh.GetAssetId();
 		draw.Skinning.SkeletonAssetId = proxy->Static.Skeleton.GetAssetId();
 		draw.Skinning.JointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;

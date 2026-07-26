@@ -26,6 +26,8 @@ RenderSceneDataBuilder::~RenderSceneDataBuilder() noexcept = default;
 RenderSceneData RenderSceneDataBuilder::Build(const RenderWorld& world, const RenderFrameDynamicData& dynamic)
 {
 	RenderSceneData sceneData = {};
+	sceneData.structuralRevision = world.GetStructuralRevision();
+	sceneData.materialRevision = world.GetMaterialRevision();
 
 	if (!m_materialCache)
 	{

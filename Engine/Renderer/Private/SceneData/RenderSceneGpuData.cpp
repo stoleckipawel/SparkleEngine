@@ -14,6 +14,7 @@
 #include "ShaderData/RenderConstantBufferData.h"
 
 #include <algorithm>
+#include <cstring>
 #include <cstddef>
 #include <span>
 #include <unordered_map>
@@ -156,7 +157,7 @@ class RenderSceneGpuDataImplementation final
 			                     ? MeshInstanceFlag_Skinned
 			                     : 0u,
 			        .JointMatrixOffset = draw.Skinning.JointMatrixOffset,
-			        .DebugData = static_cast<std::uint32_t>(instances.size())});
+			        .DebugData = draw.Source.GpuSceneSlot});
 		}
 
 		std::vector<JointMatrixData> jointMatrices;
@@ -447,12 +448,163 @@ class RenderSceneGpuDataImplementation final
 	}
 };
 
-RenderSceneGpuData BuildRenderSceneGpuData(RhiResourceService& resourceService, const RenderSceneData& sceneData)
+struct PersistentRenderGpuScene::Impl final
 {
-	return RenderSceneGpuData{
-	    .Lighting = RenderSceneGpuDataImplementation::BuildLightingData(resourceService, sceneData),
-	    .Geometry = RenderSceneGpuDataImplementation::BuildGeometryData(resourceService, sceneData),
-	    .RayTracing = RenderSceneGpuDataImplementation::BuildRayTracingData(resourceService, sceneData)};
+	explicit Impl(RhiResourceService& resourceService) noexcept :
+		ResourceService(&resourceService)
+	{
+	}
+
+	template <typename TValue>
+	static std::uint64_t HashValue(
+	    std::uint64_t hash,
+	    const TValue& value) noexcept
+	{
+		const std::byte* bytes =
+		    reinterpret_cast<const std::byte*>(&value);
+		for (std::size_t index = 0; index < sizeof(TValue); ++index)
+		{
+			hash ^= static_cast<std::uint8_t>(bytes[index]);
+			hash *= 1099511628211ull;
+		}
+		return hash;
+	}
+
+	template <typename TCollection>
+	static std::uint64_t HashLights(
+	    std::uint64_t hash,
+	    const TCollection& lights) noexcept
+	{
+		hash = HashValue(hash, lights.size());
+		for (std::size_t index = 0; index < lights.size(); ++index)
+		{
+			hash = HashValue(hash, lights.GetObject(index).GetValue());
+			hash = HashValue(hash, lights.GetObject(index).GetGeneration());
+			hash = HashValue(hash, lights[index]);
+		}
+		return hash;
+	}
+
+	static std::uint64_t BuildLightingFingerprint(
+	    const RenderSceneData& sceneData) noexcept
+	{
+		std::uint64_t hash = 1469598103934665603ull;
+		hash = HashLights(hash, sceneData.directionalLights);
+		hash = HashLights(hash, sceneData.pointLights);
+		hash = HashLights(hash, sceneData.spotLights);
+		return HashLights(hash, sceneData.rectLights);
+	}
+
+	static std::uint64_t BuildGeometryFingerprint(
+	    const RenderSceneData& sceneData) noexcept
+	{
+		std::uint64_t hash = 1469598103934665603ull;
+		hash = HashValue(hash, sceneData.meshInstances.size());
+		for (const MeshDraw& draw : sceneData.meshInstances)
+		{
+			hash = HashValue(hash, draw.Transform.WorldMatrix);
+			hash = HashValue(hash, draw.Transform.PreviousWorldMatrix);
+			hash = HashValue(hash, draw.Transform.WorldInvTranspose);
+			hash = HashValue(hash, draw.Material.Slot);
+			hash = HashValue(hash, draw.Skinning.JointMatrixOffset);
+			hash = HashValue(hash, draw.Geometry.MeshKind);
+			hash = HashValue(hash, draw.Source.GpuSceneSlot);
+		}
+		hash = HashValue(hash, sceneData.jointMatrices.size());
+		for (const DirectX::XMFLOAT4X4& matrix : sceneData.jointMatrices)
+		{
+			hash = HashValue(hash, matrix);
+		}
+		hash = HashValue(hash, sceneData.previousJointMatrices.size());
+		for (const DirectX::XMFLOAT4X4& matrix :
+		     sceneData.previousJointMatrices)
+		{
+			hash = HashValue(hash, matrix);
+		}
+		return hash;
+	}
+
+	static std::uint64_t BuildRayTracingFingerprint(
+	    const RenderSceneData& sceneData) noexcept
+	{
+		std::uint64_t hash = 1469598103934665603ull;
+		hash = HashValue(hash, sceneData.structuralRevision);
+		hash = HashValue(hash, sceneData.materialRevision);
+		hash = HashValue(
+		    hash,
+		    sceneData.materialTextureTable.Generation);
+		return hash;
+	}
+
+	const RenderSceneGpuData& Update(const RenderSceneData& sceneData)
+	{
+		const std::uint64_t lightingFingerprint =
+		    BuildLightingFingerprint(sceneData);
+		if (lightingFingerprint != LightingFingerprint)
+		{
+			Data.Lighting =
+			    RenderSceneGpuDataImplementation::BuildLightingData(
+			        *ResourceService,
+			        sceneData);
+			LightingFingerprint = lightingFingerprint;
+		}
+
+		const std::uint64_t geometryFingerprint =
+		    BuildGeometryFingerprint(sceneData);
+		if (geometryFingerprint != GeometryFingerprint)
+		{
+			Data.Geometry =
+			    RenderSceneGpuDataImplementation::BuildGeometryData(
+			        *ResourceService,
+			        sceneData);
+			GeometryFingerprint = geometryFingerprint;
+		}
+
+		const std::uint64_t rayTracingFingerprint =
+		    BuildRayTracingFingerprint(sceneData);
+		if (rayTracingFingerprint != RayTracingFingerprint)
+		{
+			Data.RayTracing =
+			    RenderSceneGpuDataImplementation::BuildRayTracingData(
+			        *ResourceService,
+			        sceneData);
+			RayTracingFingerprint = rayTracingFingerprint;
+		}
+		return Data;
+	}
+
+	void Reset() noexcept
+	{
+		Data = {};
+		LightingFingerprint = 0;
+		GeometryFingerprint = 0;
+		RayTracingFingerprint = 0;
+	}
+
+	RhiResourceService* ResourceService = nullptr;
+	RenderSceneGpuData Data;
+	std::uint64_t LightingFingerprint = 0;
+	std::uint64_t GeometryFingerprint = 0;
+	std::uint64_t RayTracingFingerprint = 0;
+};
+
+PersistentRenderGpuScene::PersistentRenderGpuScene(
+    RhiResourceService& resourceService) :
+	m_impl(std::make_unique<Impl>(resourceService))
+{
+}
+
+PersistentRenderGpuScene::~PersistentRenderGpuScene() noexcept = default;
+
+const RenderSceneGpuData& PersistentRenderGpuScene::Update(
+    const RenderSceneData& sceneData)
+{
+	return m_impl->Update(sceneData);
+}
+
+void PersistentRenderGpuScene::Reset() noexcept
+{
+	m_impl->Reset();
 }
 
 RenderSceneGpuResources DeclareRenderSceneGpuResources(FrameGraphBuilder& builder)

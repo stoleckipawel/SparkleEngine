@@ -121,7 +121,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
 		        .Flags = resolveInstanceFlags(draw),
-		        .InstanceIndex = draw.Source.SourceInstanceIndex,
+		        .InstanceIndex = draw.Source.GpuSceneSlot,
 		        .PartitionIndex = entry != nullptr ? entry->Assignment.PartitionId : 0u,
 		        .AccelerationStructure = blas.gpuAddress});
 	}

@@ -2,6 +2,7 @@
 
 #include "EditorOperations/Operations/ShaderRecookOperation.h"
 #include "ShaderRecook/ShaderRecookRequest.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <memory>
 #include <string>
@@ -26,6 +27,8 @@ class EditorOperationService final
 	    ShaderRecookRequest request,
 	    std::string& outErrorMessage) noexcept;
 	bool TryConsumeShaderRecook(ShaderRecookExecutionResult& outResult) noexcept;
+	bool StartViewportCaptureWrite(ViewportCaptureReadback readback, std::string& outErrorMessage) noexcept;
+	bool TryConsumeViewportCapture(ViewportCaptureResult& outResult) noexcept;
 	void CancelDocument() noexcept;
 
   private:

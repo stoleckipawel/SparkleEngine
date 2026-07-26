@@ -265,7 +265,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	std::uint32_t maxStableIndex = 0;
 	for (const MeshDraw& draw : sceneData.meshInstances)
 	{
-		maxStableIndex = (std::max)(maxStableIndex, draw.Source.SourceInstanceIndex);
+		maxStableIndex = (std::max)(maxStableIndex, draw.Source.GpuSceneSlot);
 	}
 	std::vector<PreviousInstanceState> nextPrevious(static_cast<std::size_t>(maxStableIndex) + 1u);
 	std::vector<ObservedInstance> observedInstances;
@@ -275,7 +275,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	     ++renderInstanceIndex)
 	{
 		const MeshDraw& draw = sceneData.meshInstances[renderInstanceIndex];
-		const std::uint32_t stableIndex = draw.Source.SourceInstanceIndex;
+		const std::uint32_t stableIndex = draw.Source.GpuSceneSlot;
 		const DirectX::XMFLOAT3 position = ComputeInstancePartitionPosition(draw);
 		const std::uint32_t localPartitionId =
 		    plan.Validation.HasPartitionOverflow
@@ -360,7 +360,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		        RayTracingPtlasPartitionEntryIdentity{
 		            .StableInstanceIndex = observed.StableIndex,
 		            .RenderInstanceIndex = observed.RenderInstanceIndex,
-		            .SourceInstanceIndex = draw.Source.SourceInstanceIndex},
+		            .GpuSceneSlot = draw.Source.GpuSceneSlot},
 		    .Assignment =
 		        RayTracingPtlasPartitionAssignment{
 		            .PartitionId = partitionId,

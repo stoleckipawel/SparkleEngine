@@ -8,7 +8,7 @@
 struct FrameContext
 {
 	RenderSceneData sceneData = {};
-	RenderSceneGpuData sceneGpuData = {};
+	const RenderSceneGpuData* sceneGpuData = nullptr;
 	RayTracingSceneFrameData rayTracingScene = {};
 	RenderViewData mainView = {};
 };

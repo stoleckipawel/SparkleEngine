@@ -24,7 +24,7 @@ namespace RayTracingPartitionedTlasStrategyDetails
 		std::uint32_t instanceCapacity = 0;
 		for (const MeshDraw& draw : sceneData.meshInstances)
 		{
-			instanceCapacity = (std::max)(instanceCapacity, draw.Source.SourceInstanceIndex + 1u);
+			instanceCapacity = (std::max)(instanceCapacity, draw.Source.GpuSceneSlot + 1u);
 		}
 		return instanceCapacity;
 	}

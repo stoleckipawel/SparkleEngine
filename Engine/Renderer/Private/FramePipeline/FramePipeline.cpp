@@ -50,9 +50,12 @@ FramePipeline::FramePipeline(
 	m_windowExtent = {
 	    static_cast<std::uint32_t>(systems.GetWindow().GetWidth()),
 	    static_cast<std::uint32_t>(systems.GetWindow().GetHeight())};
-	m_renderInputConsumer = std::make_unique<RenderInputConsumer>(
-	    systems.GetRenderWorld(), systems.GetBackend(), systems.GetGpuMeshCache(), systems.GetTextureManager(),
-	    systems.GetMaterialCacheManager(), systems.GetRenderRayTracingScene());
+	m_renderInputConsumer =
+	    std::make_unique<RenderInputConsumer>(systems.GetRenderWorld());
+
+	m_gpuScene = std::make_unique<PersistentRenderGpuScene>(
+	    systems.GetRenderHardwareInterface().GetResourceService());
+		
 	m_editorRenderPacketPlayer = std::make_unique<EditorRenderPacketPlayer>();
 	m_editorTextureRegistry = std::make_unique<EditorTextureRegistry>();
 	if (m_ownsEditorUiBackend)
@@ -226,7 +229,12 @@ void FramePipeline::BeginFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	PollViewportCaptures();
-	(void) m_renderInputConsumer->ConsumePending();
+	const RenderInputConsumeResult inputResult =
+	    m_renderInputConsumer->ConsumePending();
+	if (inputResult.SceneReset)
+	{
+		m_gpuScene->Reset();
+	}
 
 	if (m_bResizePending)
 	{
@@ -416,7 +424,7 @@ void FramePipeline::RecordFrame() noexcept
 		return std::make_unique<FrameContext>(BuildFrameContext(
 		    m_systems->GetRenderWorld(),
 		    dynamic,
-		    renderHardwareInterface.GetResourceService(),
+		    *m_gpuScene,
 		    m_systems->GetRenderCamera(),
 		    m_frameGraphRenderExtent,
 		    m_systems->GetRenderSceneDataBuilder(),
@@ -504,7 +512,10 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.External.Sky);
 	}
-	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, frame.sceneGpuData);
+	BindRenderSceneGpuResources(
+	    *m_frameGraph,
+	    m_frameResources.External.Scene,
+	    *frame.sceneGpuData);
 	m_frameGraph->Setup(frame);
 	const FrameGraphPlan& compiledPlan = m_frameGraph->Compile();
 	const RenderRayTracingPassServices rayTracingPassServices{

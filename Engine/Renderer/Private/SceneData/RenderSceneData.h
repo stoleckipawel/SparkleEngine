@@ -30,6 +30,8 @@ struct ResolvedMaterialTextureTable final
 
 struct RenderSceneData
 {
+	std::uint64_t structuralRevision = 0;
+	std::uint64_t materialRevision = 0;
 	RenderLightCollection<DirectionalLight> directionalLights;
 	RenderLightCollection<PointLight> pointLights;
 	RenderLightCollection<SpotLight> spotLights;

@@ -115,6 +115,13 @@ bool UI::ConsumeShaderRecookRequest() noexcept
 	return requested;
 }
 
+bool UI::ConsumeViewportCaptureRequest() noexcept
+{
+	const bool requested = m_viewportCaptureRequested;
+	m_viewportCaptureRequested = false;
+	return requested;
+}
+
 UI::UI(EditorHostServices hostServices) :
 	m_timer(&hostServices.RuntimeTimer),
 	m_levelManager(hostServices.Levels),
@@ -264,6 +271,11 @@ void UI::ConfigureMainMenuBarWindowActions()
 		    {
 			    m_settingsPanel->SetOpen(true);
 		    }
+	    });
+	m_mainMenuBar->SetViewportCaptureHandler(
+	    [this]()
+	    {
+		    m_viewportCaptureRequested = true;
 	    });
 }
 

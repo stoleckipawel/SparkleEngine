@@ -1,26 +1,11 @@
 #include "PCH.h"
 #include "SceneData/Input/RenderInputConsumer.h"
 
-#include "Meshes/GPUMeshCache.h"
-#include "RayTracing/Scene/RenderRayTracingScene.h"
-#include "RHI/Public/Device/RenderDeviceServices.h"
-#include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/RenderWorld.h"
-#include "Textures/TextureManager.h"
 
 RenderInputConsumer::RenderInputConsumer(
-    RenderWorld& world,
-    RenderDeviceServices& backend,
-    GPUMeshCache& meshCache,
-    TextureManager& textureManager,
-    MaterialCacheManager& materialCache,
-    RenderRayTracingScene* rayTracingScene) noexcept :
-    m_world(&world),
-    m_backend(&backend),
-    m_meshCache(&meshCache),
-    m_textureManager(&textureManager),
-    m_materialCache(&materialCache),
-    m_rayTracingScene(rayTracingScene)
+    RenderWorld& world) noexcept :
+    m_world(&world)
 {
 }
 
@@ -39,24 +24,24 @@ RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 	m_pending.reset();
 	if (m_world->Validate(input.WorldDelta, result.Diagnostic) != RenderWorldApplyStatus::Applied) return result;
 
-	bool historyResetRequired = false;
-	if (!m_validator.Validate(*m_world, input, historyResetRequired, result.Diagnostic)) return result;
+	const RenderFrameMetadata& metadata = input.Dynamic.Metadata;
+	if (metadata.FrameGeneration != input.WorldDelta.SceneGeneration ||
+	    metadata.FrameId <= m_lastFrameId)
+	{
+		result.Diagnostic = "Render input metadata is stale or mismatched.";
+		return result;
+	}
 	if (m_world->Apply(input.WorldDelta, result.Diagnostic) != RenderWorldApplyStatus::Applied) return result;
 
-	input.Dynamic.Metadata.ResetHistory |= historyResetRequired;
-	m_validator.Commit(input.Dynamic.Metadata);
+	input.Dynamic.Metadata.ResetHistory |=
+	    m_lastFrameId != 0 &&
+	    (metadata.FrameGeneration != m_frameGeneration ||
+	     metadata.ProviderGeneration != m_providerGeneration);
+	m_lastFrameId = metadata.FrameId;
+	m_frameGeneration = metadata.FrameGeneration;
+	m_providerGeneration = metadata.ProviderGeneration;
 	result.Accepted = true;
 	result.SceneReset = input.WorldDelta.ResetScene;
 	m_dynamic = std::move(input.Dynamic);
-	if (result.SceneReset) ResetSceneResources();
 	return result;
-}
-
-void RenderInputConsumer::ResetSceneResources() noexcept
-{
-	m_backend->WaitForIdle();
-	if (m_rayTracingScene) m_rayTracingScene->Clear();
-	m_meshCache->Clear();
-	m_materialCache->Reset();
-	m_textureManager->UnloadSceneTextures();
 }

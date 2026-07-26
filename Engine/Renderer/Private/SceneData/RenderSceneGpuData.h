@@ -5,6 +5,7 @@
 #include "ShaderData/RenderViewLightingData.h"
 
 #include <cstdint>
+#include <memory>
 
 class FrameGraph;
 class FrameGraphBuilder;
@@ -84,7 +85,24 @@ struct RenderSceneGpuResources final
 	RenderSceneGpuRayTracingResources RayTracing = {};
 };
 
-RenderSceneGpuData BuildRenderSceneGpuData(RhiResourceService& resourceService, const RenderSceneData& sceneData);
+class PersistentRenderGpuScene final
+{
+  public:
+	explicit PersistentRenderGpuScene(
+	    RhiResourceService& resourceService);
+	~PersistentRenderGpuScene() noexcept;
+
+	PersistentRenderGpuScene(const PersistentRenderGpuScene&) = delete;
+	PersistentRenderGpuScene& operator=(const PersistentRenderGpuScene&) = delete;
+
+	const RenderSceneGpuData& Update(const RenderSceneData& sceneData);
+	void Reset() noexcept;
+
+  private:
+	struct Impl;
+	std::unique_ptr<Impl> m_impl;
+};
+
 RenderSceneGpuResources DeclareRenderSceneGpuResources(FrameGraphBuilder& builder);
 void BindRenderSceneGpuResources(
     FrameGraph& graph,

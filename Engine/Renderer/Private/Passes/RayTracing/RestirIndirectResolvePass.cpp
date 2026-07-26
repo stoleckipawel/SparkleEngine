@@ -111,7 +111,7 @@ void RestirIndirectResolvePass::Execute(PassExecutionContext& context, Parameter
 	parameters->PerFrame = context.RuntimeServices.PerFrame;
 	parameters->PerView = context.Frame.mainView.perViewData;
 	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
-	parameters->ViewLighting = context.Frame.sceneGpuData.Lighting.Constants;
+	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
 	parameters->Sky = MakeSkyUniformData(context.Frame.sceneData.sky);
 	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
@@ -127,8 +127,8 @@ void RestirIndirectResolvePass::Execute(PassExecutionContext& context, Parameter
 	    context.RuntimeServices.RayTracing,
 	    context.Frame.rayTracingScene.HasTraceableInstances(),
 	    capabilities.TriangleMaterialDataAvailable,
-	    context.Frame.sceneGpuData.RayTracing.InstanceCount,
-	    context.Frame.sceneGpuData.RayTracing.MaterialCount);
+	    context.Frame.sceneGpuData->RayTracing.InstanceCount,
+	    context.Frame.sceneGpuData->RayTracing.MaterialCount);
 
 	const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
 	parameters->RestirIndirectConstants = RestirIndirectLightingUniformData{

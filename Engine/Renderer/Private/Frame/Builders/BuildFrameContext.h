@@ -4,7 +4,7 @@
 
 class PerViewDataBuilder;
 class RenderCamera;
-class RhiResourceService;
+class PersistentRenderGpuScene;
 class TemporalDataBuilder;
 class RenderSceneDataBuilder;
 class RenderRayTracingScene;
@@ -15,7 +15,7 @@ struct RenderFrameDynamicData;
 FrameContext BuildFrameContext(
     const RenderWorld& world,
     const RenderFrameDynamicData& dynamic,
-    RhiResourceService& resourceService,
+    PersistentRenderGpuScene& gpuScene,
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,

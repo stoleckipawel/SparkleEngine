@@ -15,6 +15,6 @@ namespace DirectLightReservoirPassCommon
 	{
 		parameters.PerFrame = passRuntimeServices.PerFrame;
 		parameters.PerView = viewData.perViewData;
-		parameters.ViewLighting = frame.sceneGpuData.Lighting.Constants;
+		parameters.ViewLighting = frame.sceneGpuData->Lighting.Constants;
 	}
 }

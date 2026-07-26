@@ -126,7 +126,7 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 		                    .SkeletonAssetId = proxy.Static.Skeleton.GetAssetId()},
 		            .Source =
 		                MeshDrawSourceIdentity{
-		                    .SourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())},
+		                    .GpuSceneSlot = proxy.GpuSceneSlot},
 		                    .Geometry =
 		                        MeshDrawGeometry{
 		                            .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy.Static.MeshKind),

@@ -34,8 +34,8 @@ namespace RayTracingPassCapabilityQuery
 		RayTracingPassCapabilities result{
 		    .BoundSceneTlasAvailable = frame.rayTracingScene.HasBoundTlas(),
 		    .SceneTlasShaderAccessMode = frame.rayTracingScene.TlasShaderAccessMode,
-		    .TriangleMaterialDataAvailable = frame.sceneGpuData.RayTracing.IsValid(),
-		    .HitDataAvailable = frame.sceneGpuData.RayTracing.IsValid() && frame.sceneGpuData.Geometry.HasMeshInstances(),
+		    .TriangleMaterialDataAvailable = frame.sceneGpuData->RayTracing.IsValid(),
+		    .HitDataAvailable = frame.sceneGpuData->RayTracing.IsValid() && frame.sceneGpuData->Geometry.HasMeshInstances(),
 		    .MaterialTextureTableAvailable = static_cast<bool>(frame.sceneData.materialTextureTable)};
 
 		if (capabilityReport != nullptr)

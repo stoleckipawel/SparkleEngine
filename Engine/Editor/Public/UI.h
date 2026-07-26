@@ -80,6 +80,7 @@ class SPARKLE_EDITOR_API UI final
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
+	bool ConsumeViewportCaptureRequest() noexcept;
 	EditorRenderPacket ConsumeRenderPacket();
 
 	void Update();
@@ -146,6 +147,7 @@ class SPARKLE_EDITOR_API UI final
 	std::uint64_t m_viewportGeneration = 0;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
+	bool m_viewportCaptureRequested = false;
 	bool m_isImGuiContextInitialized = false;
 	bool m_isWin32BackendInitialized = false;
 

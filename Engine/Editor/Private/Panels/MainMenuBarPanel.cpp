@@ -105,6 +105,11 @@ void MainMenuBarPanel::SetSettingsOpenHandler(std::function<void()> handler)
 	m_settingsOpenHandler = std::move(handler);
 }
 
+void MainMenuBarPanel::SetViewportCaptureHandler(std::function<void()> handler)
+{
+	m_viewportCaptureHandler = std::move(handler);
+}
+
 void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
 {
 	if (m_levelManager == nullptr)
@@ -151,6 +156,17 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 	if (ImGui::MenuItem(saveAllLabel.c_str(), nullptr, false, hasActiveLevel && !levelChangeInProgress))
 	{
 		m_levelManager->SaveActiveLevel();
+	}
+
+	const std::string captureLabel =
+	    UiUtil::MakeIconLabel(UiUtil::EditorIcon::Save, "Capture Viewport");
+	if (ImGui::MenuItem(
+	        captureLabel.c_str(),
+	        nullptr,
+	        false,
+	        static_cast<bool>(m_viewportCaptureHandler)))
+	{
+		m_viewportCaptureHandler();
 	}
 }
 
