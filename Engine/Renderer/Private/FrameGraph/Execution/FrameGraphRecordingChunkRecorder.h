@@ -25,26 +25,22 @@ class FrameGraphRecordingChunkRecorder final
 
 	void Record(
 	    const RecordingChunk& chunk,
-	    RenderCommandList& commandList,
-	    bool allowTiming) const;
+	    RenderCommandList& commandList) const;
 
   private:
 	ScopedGpuScope BeginChunkScope(
 	    const RecordingChunk& chunk,
-	    RenderCommandContext& commands,
-	    bool allowTiming) const;
+	    RenderCommandContext& commands) const;
 	void RecordGroup(
 	    const RecordingGroup& group,
 	    RenderCommandList& commandList,
 	    RenderCommandContext& commands,
-	    FrameGraphExecutionDiagnostics& graphDiagnostics,
-	    bool allowTiming) const;
+	    FrameGraphExecutionDiagnostics& graphDiagnostics) const;
 	void RecordPass(
 	    FrameGraphPassIndex passIndex,
 	    RenderCommandList& commandList,
 	    RenderCommandContext& commands,
-	    FrameGraphExecutionDiagnostics& graphDiagnostics,
-	    bool allowTiming) const;
+	    FrameGraphExecutionDiagnostics& graphDiagnostics) const;
 	void TrackPassResources(
 	    const FrameGraphPassNode& pass,
 	    RenderCommandList& commandList) const;

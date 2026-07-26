@@ -11,12 +11,12 @@ class RhiCommandRecordingLeaseAccess;
 
 struct RhiCommandRecordingOwner final
 {
-	static constexpr std::uint32_t CoordinatorWorkerIndex = ~0u;
+	static constexpr std::uint32_t CoordinatorPartitionIndex = ~0u;
 
-	std::uint32_t WorkerIndex = CoordinatorWorkerIndex;
+	std::uint32_t PartitionIndex = CoordinatorPartitionIndex;
 	std::uint64_t TaskIdentity = 0;
 
-	constexpr bool IsCoordinator() const noexcept { return WorkerIndex == CoordinatorWorkerIndex; }
+	constexpr bool IsCoordinator() const noexcept { return PartitionIndex == CoordinatorPartitionIndex; }
 };
 
 struct RhiCommandRecordingContextId final

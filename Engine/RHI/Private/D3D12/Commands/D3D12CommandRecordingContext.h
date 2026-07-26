@@ -99,7 +99,10 @@ class D3D12CommandRecordingContext final
 	void CreateNativeCommandObjects(CommandSlot& slot);
 	void InitializeSlotResources(CommandSlot& slot);
 	void NameSlotObjects(CommandSlot& slot) const noexcept;
+	void WaitForFrameStateRetirement(
+	    const QueueFrameState& frameState) noexcept;
 	void ResetSlot(CommandSlot& slot) noexcept;
+	void BeginSlot(CommandSlot& slot) noexcept;
 	void CloseSlot(CommandSlot& slot) noexcept;
 	void ReleaseSlot(CommandSlot& slot) noexcept;
 	CommandSlot* ConsumeClosedLease(

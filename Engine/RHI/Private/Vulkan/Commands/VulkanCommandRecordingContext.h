@@ -98,6 +98,7 @@ class VulkanCommandRecordingContext final
 		std::uint32_t ContextIndex = 0;
 		ERhiQueueType QueueType = ERhiQueueType::Graphics;
 		SlotState State = SlotState::Available;
+		bool RequiresPoolReset = false;
 	};
 
 	struct QueueFrameState final
@@ -120,7 +121,10 @@ class VulkanCommandRecordingContext final
 	void AllocateCommandBuffer(CommandSlot& slot);
 	void InitializeRecordingResources(CommandSlot& slot);
 	void NameSlotObjects(const CommandSlot& slot) const noexcept;
+	void WaitForFrameStateRetirement(
+	    const QueueFrameState& frameState) noexcept;
 	void ResetSlot(CommandSlot& slot) noexcept;
+	void ResetCommandPool(CommandSlot& slot) noexcept;
 	void BeginSlot(CommandSlot& slot) noexcept;
 	void CloseSlot(CommandSlot& slot) noexcept;
 	void ReleaseSlot(CommandSlot& slot) noexcept;

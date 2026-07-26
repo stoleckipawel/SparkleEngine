@@ -29,8 +29,7 @@ FrameGraphRecordingChunkRecorder::FrameGraphRecordingChunkRecorder(
 
 void FrameGraphRecordingChunkRecorder::Record(
     const RecordingChunk& chunk,
-    RenderCommandList& commandList,
-    bool allowTiming) const
+    RenderCommandList& commandList) const
 {
 	RenderCommandContext commands(commandList);
 	FrameGraphExecutionDiagnostics graphDiagnostics(m_frameDiagnostics, commands);
@@ -39,7 +38,7 @@ void FrameGraphRecordingChunkRecorder::Record(
 		commands.EnableDrawDispatchDiagnostics();
 	}
 
-	auto chunkScope = BeginChunkScope(chunk, commands, allowTiming);
+	auto chunkScope = BeginChunkScope(chunk, commands);
 	for (std::uint32_t groupOffset = 0; groupOffset < chunk.GroupCount; ++groupOffset)
 	{
 		const RecordingGroupIndex groupIndex = chunk.FirstGroup + groupOffset;
@@ -47,15 +46,13 @@ void FrameGraphRecordingChunkRecorder::Record(
 		    m_plan.recording.Groups[groupIndex],
 		    commandList,
 		    commands,
-		    graphDiagnostics,
-		    allowTiming);
+		    graphDiagnostics);
 	}
 }
 
 ScopedGpuScope FrameGraphRecordingChunkRecorder::BeginChunkScope(
     const RecordingChunk& chunk,
-    RenderCommandContext& commands,
-    bool allowTiming) const
+    RenderCommandContext& commands) const
 {
 	if (CVarRendererDiagnosticMarkerVerbosity.Get() == RendererDiagnosticMarkerVerbosity::Off)
 	{
@@ -72,17 +69,17 @@ ScopedGpuScope FrameGraphRecordingChunkRecorder::BeginChunkScope(
 	    .Green = 200,
 	    .Blue = 220,
 	    .Alpha = 255};
-	return allowTiming
-	           ? m_frameDiagnostics.BeginGpuScope(commands, chunkLabel, color)
-	           : m_frameDiagnostics.BeginGpuEventScope(commands, chunkLabel, color);
+	return m_frameDiagnostics.BeginGpuScope(
+	    commands,
+	    chunkLabel,
+	    color);
 }
 
 void FrameGraphRecordingChunkRecorder::RecordGroup(
     const RecordingGroup& group,
     RenderCommandList& commandList,
     RenderCommandContext& commands,
-    FrameGraphExecutionDiagnostics& graphDiagnostics,
-    bool allowTiming) const
+    FrameGraphExecutionDiagnostics& graphDiagnostics) const
 {
 	for (std::uint32_t passOffset = 0; passOffset < group.PassCount; ++passOffset)
 	{
@@ -90,8 +87,7 @@ void FrameGraphRecordingChunkRecorder::RecordGroup(
 		    m_plan.recording.Passes[group.PassOffset + passOffset],
 		    commandList,
 		    commands,
-		    graphDiagnostics,
-		    allowTiming);
+		    graphDiagnostics);
 	}
 }
 
@@ -99,8 +95,7 @@ void FrameGraphRecordingChunkRecorder::RecordPass(
     FrameGraphPassIndex passIndex,
     RenderCommandList& commandList,
     RenderCommandContext& commands,
-    FrameGraphExecutionDiagnostics& graphDiagnostics,
-    bool allowTiming) const
+    FrameGraphExecutionDiagnostics& graphDiagnostics) const
 {
 	const FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
 	TrackPassResources(passRecord, commandList);
@@ -115,8 +110,7 @@ void FrameGraphRecordingChunkRecorder::RecordPass(
 	    m_frameDiagnostics,
 	    commands,
 	    passRecord.eventScopeLabel,
-	    passRecord.kind,
-	    allowTiming);
+	    passRecord.kind);
 	auto passScope = graphDiagnostics.BeginPassScope(passDiagnostics);
 
 	PassExecutionContext passContext{

@@ -8,13 +8,11 @@ PassExecutionDiagnostics::PassExecutionDiagnostics(
     FrameExecutionDiagnostics& frameDiagnostics,
     RenderCommandContext& commands,
     std::string_view passScopeLabel,
-    EFrameGraphPassKind passKind,
-    bool allowTiming) noexcept :
+    EFrameGraphPassKind passKind) noexcept :
     m_frameDiagnostics(&frameDiagnostics),
     m_commands(&commands),
     m_passScopeLabel(passScopeLabel),
-    m_passColor(GetPassEventColor(passKind)),
-    m_allowTiming(allowTiming)
+    m_passColor(GetPassEventColor(passKind))
 {
 }
 
@@ -25,9 +23,10 @@ ScopedGpuScope PassExecutionDiagnostics::BeginPassGpuScope() noexcept
 		return {};
 	}
 
-	return m_allowTiming
-	           ? m_frameDiagnostics->BeginGpuScope(*m_commands, m_passScopeLabel, m_passColor)
-	           : m_frameDiagnostics->BeginGpuEventScope(*m_commands, m_passScopeLabel, m_passColor);
+	return m_frameDiagnostics->BeginGpuScope(
+	    *m_commands,
+	    m_passScopeLabel,
+	    m_passColor);
 }
 
 ScopedGpuScope PassExecutionDiagnostics::BeginGpuScope(std::string_view label) noexcept
@@ -39,9 +38,10 @@ ScopedGpuScope PassExecutionDiagnostics::BeginGpuScope(std::string_view label) n
 	}
 
 	const std::string eventLabel = FormatEventScopeLabel(label);
-	return m_allowTiming
-	           ? m_frameDiagnostics->BeginGpuScope(*m_commands, eventLabel, m_passColor)
-	           : m_frameDiagnostics->BeginGpuEventScope(*m_commands, eventLabel, m_passColor);
+	return m_frameDiagnostics->BeginGpuScope(
+	    *m_commands,
+	    eventLabel,
+	    m_passColor);
 }
 
 RhiDiagnosticLabelColor PassExecutionDiagnostics::GetPassEventColor(EFrameGraphPassKind passKind) noexcept

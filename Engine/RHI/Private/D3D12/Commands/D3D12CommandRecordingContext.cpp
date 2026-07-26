@@ -33,14 +33,10 @@ void D3D12CommandRecordingContext::BeginFrame(std::uint32_t frameIndex) noexcept
 	{
 		QueueFrameState& frameState = GetQueueFrameState(static_cast<ERhiQueueType>(queueIndex), frameIndex);
 		frameState.CurrentLease.reset();
+		WaitForFrameStateRetirement(frameState);
 
 		for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
 		{
-			if (slot->RetirementToken.IsValid())
-			{
-				m_rhi->WaitForSubmission(slot->RetirementToken);
-			}
-
 			ResetSlot(*slot);
 		}
 	}
@@ -52,13 +48,8 @@ RhiCommandRecordingLease D3D12CommandRecordingContext::Acquire(
     RhiCommandRecordingOwner owner) noexcept
 {
 	CommandSlot& slot = AcquireSlot(queueType, frameIndex);
-	CHECK(slot.Allocator->Reset());
-	CHECK(slot.NativeCommandList->Reset(slot.Allocator.Get(), nullptr));
-
-	slot.CommandList->ResetTrackedResources();
-	slot.CommandList->ResetBoundState();
-	slot.UploadPage.Reset();
-	slot.DescriptorOffset = 0;
+	const RhiSubmissionToken reusableAfter = slot.RetirementToken;
+	slot.RetirementToken = {};
 	slot.RecordingOwner = owner;
 	slot.RecordingThread = {};
 	slot.State = SlotState::Recording;
@@ -75,7 +66,7 @@ RhiCommandRecordingLease D3D12CommandRecordingContext::Acquire(
 	        .CpuBase = RhiCpuDescriptorHandle{.Value = slot.DescriptorPage.GetCPU().ptr},
 	        .GpuBase = RhiGpuDescriptorHandle{.Value = slot.DescriptorPage.GetGPU().ptr},
 	        .Capacity = DescriptorPageCapacity},
-	    .RetirementToken = slot.RetirementToken,
+	    .RetirementToken = reusableAfter,
 	    .Begin = &BeginLease,
 	    .Close = &CloseLease,
 	    .Release = &ReleaseLease,
@@ -301,20 +292,57 @@ void D3D12CommandRecordingContext::NameSlotObjects(CommandSlot& slot) const noex
 	(void)slot.NativeCommandList->SetName(commandListName.c_str());
 }
 
+void D3D12CommandRecordingContext::WaitForFrameStateRetirement(
+    const QueueFrameState& frameState) noexcept
+{
+	RhiSubmissionState retirement;
+	for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
+	{
+		retirement.MarkUsed(slot->RetirementToken);
+	}
+
+	std::array<RhiSubmissionToken, RhiQueueTypeCount> tokens{};
+	const std::size_t tokenCount = retirement.CopyTokens(tokens);
+	for (std::size_t tokenIndex = 0; tokenIndex < tokenCount; ++tokenIndex)
+	{
+		m_rhi->WaitForSubmission(tokens[tokenIndex]);
+	}
+}
+
 void D3D12CommandRecordingContext::ResetSlot(CommandSlot& slot) noexcept
 {
-	assert(slot.State != SlotState::Recording && slot.State != SlotState::Closed);
+	assert(slot.State != SlotState::Recording);
 	slot.UploadPage.Reset();
 	slot.DescriptorOffset = 0;
 	slot.RecordingOwner = {};
 	slot.RecordingThread = {};
-	slot.RetirementToken = {};
 	slot.State = SlotState::Available;
+}
+
+void D3D12CommandRecordingContext::BeginSlot(CommandSlot& slot) noexcept
+{
+	assert(slot.State == SlotState::Recording);
+
+	const std::thread::id thread = std::this_thread::get_id();
+	if (slot.RecordingThread == thread)
+	{
+		return;
+	}
+
+	assert(slot.RecordingThread == std::thread::id{});
+	CHECK(slot.Allocator->Reset());
+	CHECK(slot.NativeCommandList->Reset(slot.Allocator.Get(), nullptr));
+
+	slot.CommandList->ResetTrackedResources();
+	slot.CommandList->ResetBoundState();
+	slot.UploadPage.BeginRecording();
+	slot.RecordingThread = thread;
 }
 
 void D3D12CommandRecordingContext::CloseSlot(CommandSlot& slot) noexcept
 {
 	assert(slot.State == SlotState::Recording);
+	BeginSlot(slot);
 	assert(slot.RecordingThread == std::this_thread::get_id());
 
 	const HRESULT closeResult = slot.NativeCommandList->Close();
@@ -331,18 +359,12 @@ void D3D12CommandRecordingContext::ReleaseSlot(CommandSlot& slot) noexcept
 {
 	if (slot.State == SlotState::Recording)
 	{
-		if (slot.RecordingThread == std::thread::id{})
-		{
-			BeginLease(&slot);
-		}
-
-		assert(slot.RecordingThread == std::this_thread::get_id());
 		CloseSlot(slot);
 	}
 
 	if (slot.State == SlotState::Closed)
 	{
-		slot.State = SlotState::Available;
+		ResetSlot(slot);
 	}
 }
 
@@ -362,8 +384,8 @@ D3D12CommandRecordingContext::ConsumeClosedLease(
 	    leaseState.QueueType != slot->QueueType ||
 	    leaseState.FrameSlot != slot->FrameSlot ||
 	    leaseState.ContextId.Value != slot->ContextIndex ||
-	    leaseState.Owner.WorkerIndex !=
-	        slot->RecordingOwner.WorkerIndex ||
+	    leaseState.Owner.PartitionIndex !=
+	        slot->RecordingOwner.PartitionIndex ||
 	    leaseState.Owner.TaskIdentity !=
 	        slot->RecordingOwner.TaskIdentity)
 	{
@@ -417,6 +439,8 @@ void D3D12CommandRecordingContext::ReleaseDescriptorPages() noexcept
 		for (QueueFrameState& queue : frame)
 		{
 			queue.CurrentLease.reset();
+			WaitForFrameStateRetirement(queue);
+
 			for (const std::unique_ptr<CommandSlot>& slot : queue.Slots)
 			{
 				m_descriptorHeapManager->FreeContiguous(
@@ -437,11 +461,7 @@ void D3D12CommandRecordingContext::CloseLease(void* state) noexcept
 void D3D12CommandRecordingContext::BeginLease(void* state) noexcept
 {
 	auto& slot = *static_cast<CommandSlot*>(state);
-	const std::thread::id thread = std::this_thread::get_id();
-	assert(slot.State == SlotState::Recording);
-	assert(slot.RecordingThread == std::thread::id{} || slot.RecordingThread == thread);
-	slot.RecordingThread = thread;
-	slot.UploadPage.BeginRecording();
+	slot.Owner->BeginSlot(slot);
 }
 
 void D3D12CommandRecordingContext::ReleaseLease(void* state, bool) noexcept

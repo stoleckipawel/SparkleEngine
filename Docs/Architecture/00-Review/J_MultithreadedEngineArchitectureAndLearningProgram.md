@@ -355,7 +355,7 @@ The status words are binding:
 | Transform propagation, world bounds, previous transforms | Implement | `MeshDrawTransform`, snapshot transforms, skinning state | Range ownership, serial equivalence, bounds reduction; Prompts 08, 10, 17, 26 |
 | Per-view frustum visibility, distance/LOD and render relevance | Implement | Current camera/view and mesh classifications, but no complete retained visibility contract | Deterministic visible sets and view identity; Prompt 17 |
 | Light visibility, classification and compact light packets | Implement | Current light arrays and native reservoir-lighting paths | Stable light IDs/order, visible-light lists, serial/parallel reservoir parity; Prompt 17 |
-| Shadow-view setup, light/frustum intersection and caster lists | Implement when shadow path consumes raster caster lists; otherwise build the planning contract with the first such path | Current shadow visibility/direct-shadow feature surface | Per-light/view private results, deterministic caster order, large-light stress; Prompts 17, 21 |
+| Shadow-view setup, light/frustum intersection and caster lists | Implement when shadow path consumes raster caster lists; otherwise build the planning contract with the first such path | Current shadow visibility/direct-shadow feature surface | Per-light/view private results, deterministic caster order, large-light stress; Prompt 17 |
 | Skinning, morph and animation-derived render data | Implement | Existing skeletal mesh, morph weights and joint matrices | Game-system producer plus render preparation consumer; Prompts 10, 17 |
 | Raster pass eligibility and material/pipeline classification | Implement | `MeshRenderItem`, `RenderMeshKind`, material handles and pass runtimes | Immutable tables, no lazy cache mutation, stable pass buckets; Prompt 17 |
 | Static/retained versus dynamic draw preparation | Implement incrementally, using current `MeshDraw` and `MeshInstanceBatch` rather than cloning Unreal's types | `MeshDraw`, `MeshRenderItem`, `MeshInstanceBatchBuilder` | Cache only view-independent state; explicit invalidation/lifetime; Prompt 17 |
@@ -383,9 +383,9 @@ This table deliberately names light and shadow work more precisely than “build
 | Decode/decompress/transcode and upload-copy preparation | Implement staged | Blocking I/O, CPU transform, copy recording, GPU completion and readiness are separate | Prompts 04, 09, 16, 27 |
 | Command allocator/pool/list acquisition, begin, end and reset | Implement | One exclusive lease; GPU token controls reuse | Prompts 18, 19 |
 | Pass-level parallel native command recording | Implement | Same frame-graph plan, private native list/buffer, coordinator submission | Prompt 20 |
-| Intra-pass draw/dispatch/build-input chunk recording | Implement only for measured heavy passes | Bounded chunks, deterministic range order, serial threshold | Prompt 21 |
+| Intra-pass draw/dispatch/build-input chunk recording | Know and defer; future measured candidate only if representative workload evidence identifies one pass as a material CPU-recording critical path | Bounded chunks, deterministic range order, serial threshold, and a separately approved measured change | Prompt 23 candidate record or future renderer program |
 | Platform-neutral software RHI command encoding and later translation | Study/lab; know and defer in production | Unreal's `FRHICommand` replay layer is not present in Sparkle today | Tutorial 16; ADR gate below |
-| Command-list aggregation/chaining and native submission batching | Implement | Aggregation preserves logical order; it does not concatenate native command buffers | Prompts 20, 21, 28 |
+| Command-list aggregation/chaining and native submission batching | Implement | Aggregation preserves logical order; it does not concatenate native command buffers | Prompts 20, 28 |
 | Barrier/preamble/postamble recording | Implement under compiler/coordinator authority | Workers do not discover global state from completion order | Prompt 20 |
 | Graphics/compute/copy queue submit and present | Keep one coordinator owner, not a parallel worker workload | Native queues often require external synchronization; ordering/timeline ownership stays singular | Prompts 20, 28 |
 | Deferred destruction, descriptor/resource retirement and garbage collection | Implement as token-driven owner work | CPU task completion is not GPU last use | Prompts 15, 16, 22 |
@@ -409,7 +409,7 @@ NVIDIA's Vulkan guidance explicitly lists command recording, buffer/image creati
 The prior J/K direction covered the broad architecture but was not sufficiently falsifiable at the use-case level. The additive closure is:
 
 1. Prompt 17 must separately prove visibility/LOD, light preparation, shadow planning/caster lists, retained/dynamic draw preparation, sorting/instancing, skinning/morph, RT inputs, and dirty GPU-scene planning where those paths exist.
-2. Prompts 18-21 must distinguish command preparation, native recording, optional software translation, ordered aggregation, native submission batching, and queue submission.
+2. Prompts 18-20 must distinguish command preparation, native recording, optional software translation, ordered aggregation, native submission batching, and queue submission; Prompt 21 closes advanced-feature preservation across those modes.
 3. Prompt 27 must include shader workers, PSOs, RT pipelines where applicable, buffer/image/view creation, allocation/binding, descriptor updates, and resource readiness as bounded stages rather than one vague “resource creation” task.
 4. Prompts 14/16/22 must prove readback/capture, retirement, validation callback, reload, resize, and shutdown ownership.
 5. Every unavailable product feature is recorded as know/defer, not silently claimed as implemented. Sparkle does not add a fake light baker, RHI thread, or GPU-driven renderer merely to fill a résumé table.
@@ -1002,7 +1002,7 @@ Frame-graph dependencies can expose recording groups, but native APIs constrain 
 
 The solution is per-worker, per-frame, per-queue recording contexts leased to one task, plus preplanned resource states and worker-local/preassigned transient allocation. Workers close command streams; the render coordinator submits them in compiled order.
 
-More command lists are not automatically faster. Each list has CPU close/submit overhead, driver cost, memory, and possible GPU scheduling consequences. Small passes remain grouped/serial; large draw passes may use intra-pass chunks when pass-level parallelism is insufficient.
+More command lists are not automatically faster. Each list has CPU close/submit overhead, driver cost, memory, and possible GPU scheduling consequences. Small passes remain grouped/serial. Intra-pass chunking is not part of the current implementation sequence; it becomes a separately approved future candidate only if representative workload captures show that one large pass materially limits CPU recording after pass-level parallelism.
 
 Learning exercise:
 
@@ -1277,9 +1277,9 @@ Use the qualified term; never say only “merge command lists.”
 
 Native D3D12 command lists and Vulkan command buffers are opaque. Sparkle does not append their bytes, reopen them from another worker, or let a worker “merge” by submitting early.
 
-#### Building Recording Groups and Chunks
+#### Building Recording Groups and Evaluating Future Intra-Pass Chunks
 
-Pass-level recording exploits independent graph work. Intra-pass recording divides one expensive pass. The algorithm is the same shape:
+Pass-level recording exploits independent graph work and is the approved Sparkle path. If later representative evidence justifies a separate intra-pass experiment, use this design gate:
 
 1. estimate CPU recording cost from prior scopes and current draw/dispatch/build-input counts;
 2. retain serial execution below a measured crossover;
@@ -2612,12 +2612,12 @@ Execution becomes:
 
 Parallel completion order must not change GPU submission order.
 
-`RecordingGroup` is a private compiled unit, not automatically one command list, one task, one pass, or one native submission. The execution layer may combine adjacent tiny groups into one recording task, split one measured-heavy group into ordered chunks, aggregate several closed native lists into one submission batch, or submit an early batch to avoid GPU starvation. Those decisions must preserve the same compiled pass/resource order and be observable through existing profiler counters.
+`RecordingGroup` is a private compiled unit, not automatically one command list, one task, one pass, or one native submission. The execution layer may combine adjacent tiny groups into one recording task, aggregate several closed native lists into one submission batch, or submit an early batch to avoid GPU starvation. Splitting one group into intra-pass draw/dispatch/build-input ranges is deferred to a separately approved measured change. Retained decisions must preserve the same compiled pass/resource order and be observable through existing profiler counters.
 
 The following terms are mandatory in implementation and review:
 
 - **recording group**: compiled CPU recording ownership and state contract
-- **recording chunk**: an ordered intra-group range such as draws, instances, shadow views, or RT build inputs
+- **recording chunk**: an ordered recording-task range containing one or more compatible compiled groups; it does not imply intra-pass draw/dispatch/build-input splitting
 - **submission batch**: ordered closed native command objects supplied to one queue operation
 - **translation**: replay of a software RHI command stream into another command representation; not present in the approved Sparkle design
 - **aggregation**: deterministic fan-in/order of closed command objects; never native-buffer concatenation
@@ -2632,13 +2632,14 @@ Pass-level recording:
 - maps naturally to frame-graph dependencies
 - may be too fine for tiny passes
 
-Intra-pass draw chunking:
+Future intra-pass draw chunking candidate:
 
 - useful for depth, shadow, GBuffer, visibility, and other draw-heavy raster passes
 - one setup task partitions a stable sorted draw list
 - workers record chunks
 - primary submission executes chunks in deterministic order
 - backend may use D3D12 direct command lists/bundles and Vulkan primary/secondary command buffers according to measured overhead and render-pass constraints
+- not a prerequisite for the current multithreading program; Prompt 23 may record it as a future candidate only when the measured critical path warrants it
 
 The compiler should group tiny adjacent passes instead of producing hundreds of microtasks. A measured minimum recording-cost threshold belongs in policy.
 
@@ -4588,11 +4589,10 @@ Work:
 3. Add worker-local upload and transient descriptor pages.
 4. Prewarm pass runtime/PSO state before recording fan-out.
 5. Audit and opt in passes, beginning with independent compute/copy and large draw passes.
-6. Add intra-pass chunking where pass-level parallelism is insufficient.
-7. Join and submit on render coordinator in compiled order.
-8. Compare serial/parallel barrier and image results.
-9. Keep provider, frame-generation/presentation, screenshot/readback, and any unaudited native-interoperability work as explicit serial islands.
-10. Verify debugger markers/object names survive recording-group boundaries and command-list splitting.
+6. Join and submit on render coordinator in compiled order.
+7. Compare serial/parallel barrier and image results.
+8. Keep provider, frame-generation/presentation, screenshot/readback, and any unaudited native-interoperability work as explicit serial islands.
+9. Verify debugger markers/object names survive recording-group boundaries and command-list splitting.
 
 Delete:
 
@@ -4746,7 +4746,7 @@ The stages can be organized into reviewable change sets:
 17. D3D12 worker recording contexts
 18. Vulkan worker recording contexts
 19. Frame-graph recording groups and first parallel passes
-20. Draw-heavy intra-pass parallelism
+20. Advanced-feature preservation across serial and parallel recording
 21. Reliability, metrics, and legacy deletion
 22. Atomic protocol and scheduler pathology hardening
 23. CPU topology, worker policy, and false-sharing characterization

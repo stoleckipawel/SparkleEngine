@@ -4,9 +4,9 @@
 #include "FrameGraph/Execution/FrameGraphRecordingChunkRecorder.h"
 #include "RHI/Public/Commands/RhiCommandRecordingLease.h"
 
+#include <array>
 #include <cstdint>
 #include <span>
-#include <vector>
 
 class FrameExecutionDiagnostics;
 class FrameGraph;
@@ -17,7 +17,6 @@ struct PassRuntimeServices;
 
 struct RecordingChunkResult final
 {
-	SubmissionOrderKey SubmissionOrder;
 	RhiCommandRecordingLease Lease;
 	bool UsesInitializationLease = false;
 };
@@ -40,6 +39,11 @@ class FrameGraphRecordingExecutor final
 	std::span<RhiCommandRecordingLease> Aggregate();
 
   private:
+	bool ShouldRecordBatchInParallel(
+	    const FrameGraphSubmissionBatch& batch) const noexcept;
+	void RecordBatchSerial(
+	    const FrameGraphSubmissionBatch& batch,
+	    RhiCommandRecordingLease initializationLease);
 	void AcquireBatchLeases(
 	    const FrameGraphSubmissionBatch& batch,
 	    RhiCommandRecordingLease initializationLease);
@@ -52,7 +56,7 @@ class FrameGraphRecordingExecutor final
 	bool RecordParallelRange(
 	    std::uint32_t firstResult,
 	    std::uint32_t resultCount);
-	void RecordChunk(std::uint32_t resultIndex, bool allowTiming);
+	void RecordChunk(std::uint32_t resultIndex);
 	bool CanRecordParallel(
 	    const RecordingChunkResult& result,
 	    const RecordingChunk& chunk) const noexcept;
@@ -70,7 +74,8 @@ class FrameGraphRecordingExecutor final
 	RhiCommandSubmissionService& m_submissionService;
 	TaskExecutor& m_taskExecutor;
 	FrameGraphRecordingChunkRecorder m_chunkRecorder;
-	std::vector<RecordingChunkResult> m_results;
-	std::vector<RhiCommandRecordingLease> m_aggregatedLeases;
+	std::array<RecordingChunkResult, RecordingPlan::MaximumChunksPerSubmissionBatch> m_results;
+	std::array<RhiCommandRecordingLease, RecordingPlan::MaximumChunksPerSubmissionBatch> m_aggregatedLeases;
 	RecordingChunkIndex m_firstChunk = InvalidRecordingChunkIndex;
+	std::uint32_t m_resultCount = 0;
 };

@@ -53,17 +53,15 @@ void VulkanCommandRecordingContext::BeginFrame(std::uint32_t frameIndex) noexcep
 				    *slot,
 				    "begin a frame while a recording lease remains active");
 			}
-			if (slot->State == SlotState::Available)
-			{
-				continue;
-			}
+		}
 
-			if (slot->RetirementToken.IsValid())
+		WaitForFrameStateRetirement(frameState);
+		for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
+		{
+			if (slot->State != SlotState::Available)
 			{
-				m_rhi->GetCommandQueue(slot->RetirementToken.Queue).WaitForSubmission(slot->RetirementToken.Value);
+				ResetSlot(*slot);
 			}
-
-			ResetSlot(*slot);
 		}
 	}
 }
@@ -75,6 +73,8 @@ RhiCommandRecordingLease VulkanCommandRecordingContext::Acquire(
 {
 	m_owner.AssertAccess();
 	CommandSlot& slot = AcquireSlot(queueType, frameIndex);
+	const RhiSubmissionToken reusableAfter = slot.RetirementToken;
+	slot.RetirementToken = {};
 	slot.RecordingOwner = owner;
 	slot.RecordingThread = {};
 	slot.State = SlotState::Recording;
@@ -89,7 +89,7 @@ RhiCommandRecordingLease VulkanCommandRecordingContext::Acquire(
 	    .Owner = owner,
 	    .UploadPage = RhiCommandRecordingUploadPage{.CapacityInBytes = slot.UploadPage->GetCapacityInBytes()},
 	    .DescriptorPage = RhiCommandRecordingDescriptorPage{.Capacity = slot.DescriptorPool->GetCapacity()},
-	    .RetirementToken = slot.RetirementToken,
+	    .RetirementToken = reusableAfter,
 	    .Begin = &BeginLease,
 	    .Close = &CloseLease,
 	    .Release = &ReleaseLease};
@@ -435,6 +435,24 @@ void VulkanCommandRecordingContext::NameSlotObjects(
 	    descriptorPoolName);
 }
 
+void VulkanCommandRecordingContext::WaitForFrameStateRetirement(
+    const QueueFrameState& frameState) noexcept
+{
+	RhiSubmissionState retirement;
+	for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
+	{
+		retirement.MarkUsed(slot->RetirementToken);
+	}
+
+	std::array<RhiSubmissionToken, RhiQueueTypeCount> tokens{};
+	const std::size_t tokenCount = retirement.CopyTokens(tokens);
+	for (std::size_t tokenIndex = 0; tokenIndex < tokenCount; ++tokenIndex)
+	{
+		const RhiSubmissionToken token = tokens[tokenIndex];
+		m_rhi->GetCommandQueue(token.Queue).WaitForSubmission(token.Value);
+	}
+}
+
 void VulkanCommandRecordingContext::ResetSlot(CommandSlot& slot) noexcept
 {
 	assert(
@@ -444,6 +462,27 @@ void VulkanCommandRecordingContext::ResetSlot(CommandSlot& slot) noexcept
 	    !slot.RetirementToken.IsValid() ||
 	    m_rhi->GetCommandQueue(slot.RetirementToken.Queue)
 	        .IsSubmissionComplete(slot.RetirementToken.Value));
+
+	slot.DescriptorPool->Reset();
+	slot.UploadPage->Reset();
+	slot.CommandList->AbandonTransientAllocationUses();
+	slot.CommandList->ResetTrackedResources();
+	slot.CommandList->ResetBoundState();
+	slot.CommandList->SetRecording(false);
+	slot.CommandList->SetRecordingOwner({});
+	slot.RecordingOwner = {};
+	slot.RecordingThread = {};
+	slot.State = SlotState::Available;
+	slot.RequiresPoolReset = true;
+}
+
+void VulkanCommandRecordingContext::ResetCommandPool(
+    CommandSlot& slot) noexcept
+{
+	if (!slot.RequiresPoolReset)
+	{
+		return;
+	}
 
 	const VkResult result =
 	    vkResetCommandPool(m_rhi->GetDevice(), slot.CommandPool, 0);
@@ -456,17 +495,7 @@ void VulkanCommandRecordingContext::ResetSlot(CommandSlot& slot) noexcept
 		    VulkanResult::FormatFailure("vkResetCommandPool", result));
 	}
 
-	slot.DescriptorPool->Reset();
-	slot.UploadPage->Reset();
-	slot.CommandList->AbandonTransientAllocationUses();
-	slot.CommandList->ResetTrackedResources();
-	slot.CommandList->ResetBoundState();
-	slot.CommandList->SetRecording(false);
-	slot.CommandList->SetRecordingOwner({});
-	slot.RetirementToken = {};
-	slot.RecordingOwner = {};
-	slot.RecordingThread = {};
-	slot.State = SlotState::Available;
+	slot.RequiresPoolReset = false;
 }
 
 void VulkanCommandRecordingContext::BeginSlot(CommandSlot& slot) noexcept
@@ -485,6 +514,8 @@ void VulkanCommandRecordingContext::BeginSlot(CommandSlot& slot) noexcept
 	{
 		FailOwnershipViolation(slot, "record a command buffer from a second thread");
 	}
+
+	ResetCommandPool(slot);
 
 	const VkCommandBufferBeginInfo beginInfo{
 	    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -577,8 +608,8 @@ VulkanCommandRecordingContext::ConsumeClosedLease(
 	    leaseState.QueueType != slot->QueueType ||
 	    leaseState.FrameSlot != slot->FrameSlot ||
 	    leaseState.ContextId.Value != slot->ContextIndex ||
-	    leaseState.Owner.WorkerIndex !=
-	        slot->RecordingOwner.WorkerIndex ||
+	    leaseState.Owner.PartitionIndex !=
+	        slot->RecordingOwner.PartitionIndex ||
 	    leaseState.Owner.TaskIdentity !=
 	        slot->RecordingOwner.TaskIdentity)
 	{

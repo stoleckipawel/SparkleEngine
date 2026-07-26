@@ -341,7 +341,7 @@ Every completed prompt returns this report:
 | 18 | D3D12 worker recording contexts and transient allocation | 17 |
 | 19 | Vulkan worker recording contexts and transient allocation | 17 |
 | 20 | frame-graph recording plan and first parallel passes | 18, 19 |
-| 21 | intra-pass scaling and advanced-feature preservation closure | 20 |
+| 21 | advanced-feature preservation closure | 20 |
 | 22 | tools/editor/reliability/package closure and legacy deletion | 14, 16, 21 |
 | 23 | initial full-system performance characterization and tuning | 22 |
 | 24 | atomic protocol and scheduler-pathology hardening | 23 |
@@ -371,10 +371,10 @@ This ledger is a completeness check, not a substitute for reading J. A prompt ma
 | immutable game/render boundary and bounded pipelining | 12-14, 24, 28 | packet replay, atomic `RenderFrameQueue` tests, input-to-present and backpressure evidence |
 | persistent render/GPU scene and lifetime-safe residency | 15-16 | dirty-range updates, generation retirement, delayed-GPU stress |
 | renderer preparation task graph | 17 | serial/parallel equivalence, critical-path and granularity evidence |
-| view visibility/LOD, light classification, shadow planning/caster lists, retained/dynamic draw preparation | 15, 17, 21, 26 | stable visible/light/caster/draw sets, cache invalidation, transparent order, large-scene critical path |
+| view visibility/LOD, light classification, shadow planning/caster lists, retained/dynamic draw preparation | 15, 17, 26 | stable visible/light/caster/draw sets, cache invalidation, transparent order, large-scene critical path |
 | D3D12 and Vulkan native recording ownership | 18-20 | native validation, token/reset misuse tests, worker migration stress |
 | frame-graph authority, barriers, recording groups, submission | 20 | compiled plan inspection, serial/parallel execution of the same plan |
-| command preparation versus native recording versus optional software translation versus aggregation/submission batching | 17-21, 28 | representation/owner ledger, direct-path parity, list/chunk/batch metrics, explicit RHI-thread ADR rejection |
+| command preparation versus native recording versus optional software translation versus aggregation/submission batching | 17-20, 28 | representation/owner ledger, direct-path parity, list/group/batch metrics, explicit RHI-thread ADR rejection |
 | advanced graphics and vendor-neutral feature preservation | 16, 21-23, 27-29 | backend/feature matrix, image correctness, temporal/history, queue and capture tests |
 | principal path-tracing/math/partner evidence | 30, 34 | derivation/reference tests, paired backend quality/performance, integration case and reproducible handoff |
 | real neural graphics, training/export and inference | 31-34 | real artifact/model path, classical fallback, deterministic export, quality/performance frontier and final demo |
@@ -385,8 +385,8 @@ This ledger is a completeness check, not a substitute for reading J. A prompt ma
 | reduction/scan/compaction and deterministic parallel algorithms | 06, 10, 15, 26 | serial oracle, randomized edge cases, stable merge and crossover measurements |
 | CPU topology, OS scheduling, contention and oversubscription | 03, 23-25 | optimized system traces, topology metadata, worker-count and third-party-thread matrix |
 | staged I/O, PSO/resource creation and first-run hitch policy | 04, 09, 16, 27 | bounded stage stress, cold/warm cache evidence, memory/late/miss/fallback metrics |
-| shader workers, graphics/compute/RT pipeline creation, buffer/image/view creation, allocation/binding and descriptor writes | 16, 18-19, 21, 27 | separate stage ownership, native safety audit, key deduplication, cold-cache memory/concurrency matrix |
-| GPU queue overlap, presentation pacing and latency | 13, 20-21, 28 | correlated frame markers, graphics/compute/copy timelines, pacing and CPU-lead results |
+| shader workers, graphics/compute/RT pipeline creation, buffer/image/view creation, allocation/binding and descriptor writes | 16, 18-19, 27 | separate stage ownership, native safety audit, key deduplication, cold-cache memory/concurrency matrix |
+| GPU queue overlap, presentation pacing and latency | 13, 20, 28 | correlated frame markers, graphics/compute/copy timelines, pacing and CPU-lead results |
 | production concurrency diagnosis and interview defense | 22, 24-29 | injected incidents, exact tool evidence, regressions, coding/whiteboard/trace defense |
 | reliability, determinism, performance, and portfolio teaching proof | every prompt, finalized by 22-29 | stress matrix, reproducible measurements, limitations, independent teach-back |
 | industry-grounded professional failure prevention | every prompt, repository closure in 22 and 29 | MT-01–MT-44 pre-mortem, recognizable source-backed pattern, falsifying evidence, final non-applicability/closure review |
@@ -404,7 +404,7 @@ This is the execution ledger for J's completeness audit. “Covered” means the
 | transforms, bounds and previous-frame data | 08, 10, 17, 26 | exclusive ranges, reduction oracle, temporal parity |
 | per-view visibility, relevance and LOD | 17 | stable visible set per view, 0/1/N parity, large/small crossover |
 | light visibility/classification and compact light data | 17 | stable light IDs/order and reservoir/reference-lighting parity |
-| shadow views/frusta, light-scene intersection and caster lists | 17, 21 | per-light/view ownership, stable caster order, draw-heavy recording proof when path exists |
+| shadow views/frusta, light-scene intersection and caster lists | 17 | per-light/view ownership, stable caster order, large-light proof when path exists |
 | skinning and morph preparation | 10, 17 | world-to-render dependency, range ownership, image/pose parity |
 | pass/material/pipeline eligibility | 17 | immutable lookup tables, no lazy runtime/cache mutation |
 | retained/static and dynamic draw preparation | 15, 17 | current `MeshDraw`/`MeshInstanceBatch` reuse decision, invalidation and lifetime tests |
@@ -417,16 +417,16 @@ This is the execution ledger for J's completeness audit. “Covered” means the
 | shader cook/compile workers | 04, 22, 27 | bounded processes/tasks, deterministic packages, third-party-thread budget |
 | shader package/reflection/layout generation | 16, 27 | immutable generation publish, stale rejection, failure fallback |
 | graphics/compute PSO precache/create | 27 | key discovery/dedup, cold-cache hit/miss/too-late, memory and fallback |
-| RT pipeline/library/collection creation | 21, 27 | backend capability decision; retain only useful measured path |
+| RT pipeline/library/collection creation | 27 | backend capability decision; retain only useful measured path |
 | buffer/image/view creation | 16, 27 | native thread-safety audit, exclusive output, owner commit |
 | memory allocation/suballocation/binding | 15, 16, 27 | lifetime domain, contention/memory budget, native validation |
 | persistent and transient descriptor allocation/update | 18, 19, 27 | lifetime split, no recording hot-lock, update visibility contract |
 | decode/decompress/transcode/upload preparation | 04, 09, 16, 27 | staged states, no blocked frame worker, generation readiness |
 | D3D12 allocator/list and Vulkan pool/buffer leases | 18, 19 | exclusive use, token-gated reset, worker migration stress |
 | pass-level native command recording | 20 | same compiled plan/order/states, both native validation paths |
-| intra-pass draw/dispatch/RT-input recording | 21 | measured selected passes, bounded chunks, deterministic order |
+| intra-pass draw/dispatch/RT-input recording | future renderer program | defer unless Prompt 23 or later workload evidence identifies one pass as a material CPU-recording critical path; require a separately approved measured change |
 | software RHI command stream and translation thread | 20, 29 | explicit know/defer ADR; implementation only after J's profiling/platform gate |
-| recording-group aggregation and native submit batching | 20, 21, 28 | order-key fan-in, list/chunk/batch counters, GPU starvation/latency tradeoff |
+| recording-group aggregation and native submit batching | 20, 28 | order-key fan-in, list/group/batch counters, GPU starvation/latency tradeoff |
 | barriers, preambles/postambles and queue ownership | 20, 28 | compiler authority, coordinator submit, state/wait equivalence |
 | deferred resource/descriptor destruction | 15, 16, 22 | last-use token, delayed-GPU and reload/resize/shutdown tests |
 | readback, screenshot, capture encode/write | 14, 21, 22 | staged GPU/CPU ownership, provider affinity, cancel/shutdown proof |
@@ -453,7 +453,7 @@ This is the minimum hazard pre-mortem scope. A prompt must add any other MT ID m
 | 15–16 | MT-01–10, MT-23, MT-26–31, MT-33, MT-36–39, MT-41–43 | persistent proxies, generation readiness, dirty ranges, delayed-GPU retirement, no ordinary idle, failure retains prior generation |
 | 17 | MT-02–06, MT-09, MT-13, MT-19–31, MT-36, MT-39, MT-41–43 | immutable task inputs, task-private ranges, critical-path DAG, skew/grain tests, deterministic merge, prewarmed runtime |
 | 18–20 | MT-09–10, MT-13, MT-19–21, MT-25–27, MT-29, MT-32–41, MT-43 | exclusive backend leases, token reset, native validation, same compiled order, group-size/list/submit/memory sweep, no worker submit/wait |
-| 21 | MT-19–21, MT-27, MT-29, MT-32–43 | measured intra-pass ranges, deterministic order, full advanced-feature/backend matrix, CPU gain separated from GPU/list/memory cost |
+| 21 | MT-01–13, MT-19–21, MT-27, MT-29, MT-32–43 | full advanced-feature/backend parity matrix, deterministic identity/order, delayed-GPU lifetime, provider affinity, reload/resize/capture stress |
 | 22 | MT-01–44 | repository audit-to-zero, closure of every applicable falsification test, no duplicate/legacy mechanism |
 | 23–25 | MT-17–28, MT-35, MT-38, MT-41–44 | topology and worker matrix, contention/cache/context-switch traces, crossover/negative scaling, profiler-overhead control |
 | 26–27 | MT-04–07, MT-13, MT-16, MT-19–31, MT-33, MT-36–37, MT-41–43 | deterministic parallel algorithm oracle, bounded staged I/O, cold-cache PSO/resource state machine, generation rejection |
@@ -2095,7 +2095,7 @@ Forbidden: allocator mutex around concurrent record, reset by worker without tok
 
 ### Prompt 18 implementation record — 2026-07-26
 
-Status: **source-complete; runtime acceptance is user-owned**. Prompt 17 is source-complete under the explicit prerequisite policy above. The public RHI now uses move-only `RhiCommandRecordingLease` values for non-current command recording. A lease carries queue, buffered-frame slot, context ID, worker/task owner identity, command list access, the completed token that made the slot reusable, and bounded upload/descriptor page descriptions. It binds its recording thread on first command-list/page access, closes at most once, can move to the coordinator after close, and cannot submit itself. `RenderDeviceServices` remains the owner-thread-checked coordinator submission surface. The current graphics list remains an explicitly named coordinator-owned frame continuation; copy and compiled frame-graph batches record through leases and submit in compiled order.
+Status: **source-complete; runtime acceptance is user-owned**. Prompt 17 is source-complete under the explicit prerequisite policy above. The public RHI now uses move-only `RhiCommandRecordingLease` values for non-current command recording. A lease carries queue, buffered-frame slot, context ID, partition/task identity, command list access, the completed token that made the slot reusable, and bounded upload/descriptor page descriptions. It binds its actual recording thread on first command-list/page access, closes at most once, can move to the coordinator after close, and cannot submit itself. `RenderDeviceServices` remains the owner-thread-checked coordinator submission surface. The current graphics list remains an explicitly named coordinator-owned frame continuation; copy and compiled frame-graph batches record through leases and submit in compiled order.
 
 PGE reconciliation:
 
@@ -2121,9 +2121,9 @@ Rule 13 access inventory:
 
 | Data path | Authority, ownership, and layout | Stable identity and deterministic transform | Exact precedent and measured falsifier |
 |---|---|---|---|
-| compiled submission batch -> recording lease | `FrameGraphSubmissionExecutor` selects the queue and dependency tokens; `RenderDeviceServices` owner thread acquires/consumes the lease; backend state remains private | identity is `(queue, frame slot, context ID)` plus worker/task owner; batches still execute and submit in compiled index order | J `AMD-RDNA`, `AMD-RPS`, `NV-VK`, LC-09, and MT-25–27/32–43; falsified by two live leases naming one context or completion-order submission |
-| lease -> D3D12 allocator/list | `D3D12CommandRecordingContext` exclusively owns 48 precreated slots (`2 frames × 3 queues × 8 contexts`); each slot has one state machine: available, recording, closed, submitted | first access binds the recording thread; close is idempotent at the public value and native close retains fatal HRESULT/debug-message handling | J's pinned Microsoft D3D12 multithreading sample and `AMD-RDNA` allocator reset rules; falsified by wrong-thread use not asserting, double close, or allocator reset while its token is incomplete |
-| frame-slot reuse -> retirement wait/reset | the render coordinator visits only the reused buffered-frame row and waits each valid exact queue token before resetting its allocator/list and local cursors | the lease exposes the completed prior retirement token; a new submission replaces the slot token | J LC-09/LC-18; falsified by deliberate reset-before-token success, a task-worker fence wait, or a routine device-idle reset |
+| compiled submission batch -> recording lease | `FrameGraphSubmissionExecutor` selects the queue and dependency tokens; `RenderDeviceServices` owner thread acquires/consumes the lease; backend state remains private | identity is `(queue, frame slot, context ID)` plus partition/task identity; batches still execute and submit in compiled index order | J `AMD-RDNA`, `AMD-RPS`, `NV-VK`, LC-09, and MT-25–27/32–43; falsified by two live leases naming one context or completion-order submission |
+| lease -> D3D12 allocator/list | `D3D12CommandRecordingContext` exclusively owns 48 precreated slots (`2 frames × 3 queues × 8 contexts`); each slot has one state machine: available, recording, closed, submitted | first access on the exclusive recording worker resets the completed allocator/list and binds the actual thread; native close remains on that thread and retains fatal HRESULT/debug-message handling | J's pinned Microsoft D3D12 multithreading sample and `AMD-RDNA` allocator reset rules; falsified by wrong-thread use not asserting, double close, or allocator reset while its token is incomplete |
+| frame-slot reuse -> retirement wait/reset | the render coordinator visits only the reused buffered-frame row, coalesces the greatest outstanding token per queue, waits completion, and resets CPU-side slot pages/cursors; native allocator/list reset is deferred to first exclusive worker access | the lease exposes the completed prior retirement token; a new submission replaces the slot token | J LC-09/LC-18; falsified by deliberate reset-before-token success, a task-worker fence wait, or a routine device-idle reset |
 | pass uniform data -> upload address | `PassBinder` supplies the active `RenderCommandList`; each D3D12 command list has one backend-private direct association with its exclusive 256 KiB page, so binding performs no slot scan, hash lookup, or shared allocation; Vulkan retains its serial backend allocator behind the same RHI signature | 256-byte aligned monotonic offsets within one lease page; the page checks its bound recording thread and no page is shared by live leases | pinned NVRHI command-list-local upload ownership, J LC-13, and the deleted atomic `D3D12LinearAllocator`; falsified by overlapping GPU addresses, a slot scan/shared CAS/mutex in the D3D12 leased path, or overflow escaping the bounded failure policy |
 | lease -> transient descriptor range | every D3D12 slot owns a preassigned 256-descriptor shader-visible block; per-lease allocation increments only the slot-local cursor | base CPU/GPU handles plus deterministic ascending offset/count; allocator/pool pointers never cross the public API | J LC-11; falsified by a draw/dispatch entering `D3D12DescriptorAllocator::m_mutex`, overlapping live ranges, or allocation beyond 256 descriptors succeeding |
 | persistent descriptor request -> global heap | `D3D12DescriptorHeapManager` and `D3D12DescriptorAllocator` remain the persistent registry owner; their mutex is used during owner-side allocation/free and one-time recording-block preassignment only | existing descriptor handle/index identity is preserved | existing descriptor service contract; falsified by leased recording allocating from the persistent registry or holding its mutex across command recording |
@@ -2133,7 +2133,7 @@ Rule 13 access inventory:
 
 Capacity and memory ledger: `RhiFrameConstants::FramesInFlight` is 2, `RhiQueueTypeCount` is 3, and `MaximumContextsPerFrameQueue` is 8. D3D12 therefore precreates 48 allocator/list contexts. Each owns a 256 KiB upload page and 256 transient descriptors: 12 MiB of upload capacity and 12,288 descriptors, plus native allocator/list objects. This replaces the deleted 8 MiB (`2 × 4 MiB`) frame-global constant-buffer pool, a bounded 4 MiB increase that buys disjoint recording ownership across all queue/context combinations. Context exhaustion, upload overflow, and descriptor overflow are bounded failures; slot vectors and native resources are built once, the current coordinator lease uses in-place optional storage, and acquisition/recording performs no heap growth.
 
-Hazard and lock reconciliation: `D3D12CommandRecordingContext::BeginFrame` is the only slot-reset path and is called by the render coordinator. It waits the exact slot token through the owner-checked queue; no SparkleTasks callback invokes a GPU/OS wait. `D3D12CommandQueue` retains its owner-side queue/fence synchronization and now reports queue name, submission token, elapsed milliseconds, and native wait result on development timeout; shipping infinite waits remain confined to owner frame-slot reuse, explicit idle/flush, or shutdown. `D3D12DescriptorAllocator::m_mutex` remains persistent bookkeeping and one-time pool initialization, never a leased recording primitive. D3D12 GPU allocation-record synchronization is paid while upload pages are precreated, not per constant binding. No shared atomic upload cursor remains.
+Hazard and lock reconciliation: `D3D12CommandRecordingContext::BeginFrame` is the submitted-slot reuse authority and is called by the render coordinator. It coalesces and waits the greatest exact token per queue before authorizing slot reuse; a discarded, unsubmitted lease may reset only its CPU-local page/cursor without a GPU wait. Native allocator/list reset is deferred until first access by the next exclusive recording owner. No SparkleTasks callback invokes a GPU/OS wait. `D3D12CommandQueue` retains its owner-side queue/fence synchronization and reports queue name, submission token, elapsed milliseconds, and native wait result on development timeout; shipping infinite waits remain confined to owner frame-slot reuse, explicit idle/flush, or shutdown. `D3D12DescriptorAllocator::m_mutex` remains persistent bookkeeping and one-time pool initialization, never a leased recording primitive. D3D12 GPU allocation-record synchronization is paid while upload pages are precreated, not per constant binding. No shared atomic upload cursor remains.
 
 Rule 12 and implementation-shape reconciliation: `Public/Commands/RhiCommandRecordingLease.h` owns the backend-neutral value vocabulary; `Private/Commands/RhiCommandRecordingLease.*` owns move/close/release mechanics; `Private/D3D12/Commands/D3D12CommandRecordingContext.*` owns slot lifecycle and retirement; `D3D12RecordingUploadPage.*` owns one exclusive mapped page; device services orchestrate creation/submission only; PassBinder supplies data to the active command list; `FrameGraphBuilder` owns typed registration/prewarm; `FrameGraphBatchRecorder.*` owns pass command recording; and `FrameGraphSubmissionExecutor.*` owns compiled waits and submission. Primary types match filenames, substantive behavior is in `.cpp` files, touched non-template headers contain only declarations/trivial accessors, and no function-local type, anonymous namespace, or invented `Details`/`Operations` owner remains. The descriptor manager's former nontrivial inline allocation bodies were moved to its `.cpp`, and its legacy member names were clarified.
 
@@ -2231,8 +2231,8 @@ Rule 13 access inventory:
 | Data path | Authority, derived ownership, and layout | Stable identity and deterministic transform | Exact precedent and measured falsifier |
 |---|---|---|---|
 | compiled frame-graph plan -> recording preparation | `FrameGraph` remains order/state authority; `RhiCommandSubmissionService::PrepareCommandRecording` asks the backend owner to publish final descriptor/resource read views after transient materialization | one publication point precedes all batch recording; D3D12 uses the base no-op and Vulkan publishes its derived tables | AMD RPS compiled-range ownership and NVRHI explicit command-list preparation; falsified by execute-time registry mutation, lazy pipeline/layout creation, or a worker observing a newly mutated owner vector |
-| queue/frame/owner request -> lease | `VulkanCommandRecordingContext` owns a fixed `frame slot * queue type * context index` matrix; the coordinator selects one available slot and publishes only the common move-only lease | `(queue type, frame slot, context ID)` plus worker/task identity; acquisition order is deterministic within the precreated row | Vulkan command-pool external-synchronization rules and NVIDIA command-buffer guidance; falsified by two live leases naming one context or a pool touched from two recording threads |
-| lease -> command pool/buffer | each slot owns one queue-family-specific transient command pool, one primary command buffer, and one `VulkanRenderCommandList`; first use binds the recording thread | slot state is `Available -> Recording -> Closed -> Submitted` or `Discarded`; only the coordinator resets after exact completion | NVIDIA Vulkan dos/don'ts and AMD RPS per-thread command-buffer recording; falsified by CPU-frame-end reset, second-thread begin/close, or reset before the retirement token completes |
+| queue/frame/owner request -> lease | `VulkanCommandRecordingContext` owns a fixed `frame slot * queue type * context index` matrix; the coordinator selects one available slot and publishes only the common move-only lease | `(queue type, frame slot, context ID)` plus partition/task identity; acquisition order is deterministic within the precreated row and the actual thread is bound separately on first use | Vulkan command-pool external-synchronization rules and NVIDIA command-buffer guidance; falsified by two live leases naming one context or a pool touched from two recording threads |
+| lease -> command pool/buffer | each slot owns one queue-family-specific transient command pool, one primary command buffer, and one `VulkanRenderCommandList`; first use on the exclusive worker resets the completed pool, begins the primary buffer with `ONE_TIME_SUBMIT`, and binds the actual thread | slot state is `Available -> Recording -> Closed -> Submitted` or `Discarded`; the coordinator alone waits exact retirement and authorizes reuse, while native reset/begin/end stay on the exclusive recording worker | NVIDIA Vulkan dos/don'ts and AMD RPS per-thread command-buffer recording; falsified by CPU-frame-end reset, second-thread begin/close, or reset before the retirement token completes |
 | lease -> transient descriptors | each slot owns one `VulkanRecordingDescriptorPool`; descriptor sets are allocated only by that exclusive command list and the pool is reset with its slot | fixed 256-set bound; supported descriptor kinds are capability-gated, including classic and partitioned AS descriptors; the common lease reports capacity while Vulkan keeps layout-dependent `VkDescriptorSet` allocation behind its command list rather than fabricating a D3D12-style descriptor range | Vulkan descriptor-pool external-synchronization rules; falsified by a worker entering `m_registryMutex`, two slots sharing one pool, unbounded growth, or exhaustion returning a usable set |
 | persistent descriptors -> recording read view | `VulkanDescriptorAllocator` remains authoritative for registered descriptors/tables; copy-on-write entry arrays and generation records are published through an atomic immutable view | table generational handles and registered descriptor indices remain stable; recording reads perform bounds/generation/type checks before stack-chunked `vkUpdateDescriptorSets` | NVRHI explicit descriptor-table ownership and J LC-12; falsified by a persistent lock held across `vkUpdateDescriptorSets`, a worker mutation, or a stale table generation resolving |
 | resource views -> image-aspect lookup | `VulkanDescriptorManager` owns live/retired image views; a sorted immutable `(VkImageView, aspect mask)` table is derived immediately before recording | native image-view value is the key; lower-bound lookup is deterministic and never traverses the mutable owner vector on a recording worker | Vulkan dynamic-rendering attachment metadata requirements; falsified by worker access to `m_resourceViewRecords`, mismatched depth/stencil aspects, or retirement before the frame-slot token completes |
@@ -2281,7 +2281,7 @@ Required completion report:
 
 1. **Outcome** - Vulkan now supplies the common move-only command-recording lease through exclusive frame/queue/context-owned pools, buffers, descriptor pools, and upload pages while submission remains serial and coordinator-owned.
 2. **Repository audit** - the existing common lease, D3D12 semantics, Vulkan command context, descriptor allocator/manager, memory allocator, upload service, native queues, swap chain, capture path, and frame-graph execution boundary were inspected; the decision was extend the common lease, replace the Vulkan mutable context/linear allocator, and refactor the existing descriptor/resource owners rather than add a second abstraction.
-3. **Ownership** - the render coordinator owns lease acquisition, reset, submit, presentation, publication, and reclamation; one recording thread exclusively owns an active slot; immutable read views and retained-use tokens span recording; exact queue timeline tokens govern reuse and destruction.
+3. **Ownership** - the render coordinator owns lease acquisition, retirement waits/reuse authorization, submit, presentation, publication, and reclamation; one recording thread exclusively owns native pool reset/begin/end for an active slot; immutable read views and retained-use tokens span recording; exact queue timeline tokens govern reuse and destruction.
 4. **Files changed by responsibility** - common RHI files expose only submission preparation and the existing lease; Vulkan `Commands`, `Descriptors`, `Resources`, and `Memory` own their named mechanisms; device services orchestrate; frame-graph execution invokes the single publication boundary.
 5. **Orchestration/capability refinement** - device services read as lifecycle orchestration, `VulkanCommandRecordingContext` owns the slot state machine, `VulkanRecordingResourceTable` separates read-view construction, address projection, lookup, and reference lifetime, and queue submission construction is split from the native call.
 6. **SOLID/DRY reconciliation** - one context tree, descriptor registry, resource registry, upload path, queue path, and submission authority remain; backend-neutral contracts do not expose Vulkan pool/layout rules and Vulkan does not imitate D3D12 descriptor-range mechanics.
@@ -2316,14 +2316,14 @@ Non-negotiable repository rules:
 - Audit FrameGraphCompiler/Execution/Submission, queue batches/waits, barrier planner, pass side effects, immediate command-list use, provider/present/readback islands, pass markers.
 - Extend the existing frame graph; do not create a second render graph or let SparkleTasks decide GPU resource/queue ordering.
 - Do not add an Unreal-style software RHI command stream or `RhiThread` in this prompt. Sparkle currently records `RenderCommandList` calls directly into backend command objects; retain that direct architecture and add an ADR entry pointing to J's five-condition translation gate.
-- Every pass is serial by default and opts in only after an explicit safety audit.
+- Arbitrary callback passes are serial by default. Typed draw/dispatch pass families become compiler-eligible only after their shared execution contract is audited; eligibility is derived privately from execution shape and graph resources, never exposed as a `FrameGraphBuilder`/`AddPass` recording-policy parameter.
 - Refactor execution traversal so serial and parallel modes consume the same compiled plan; delete duplicate executor path.
 - Pre-mortem MT-13, MT-19–21, MT-27, MT-29, and MT-32–43. Preserve the single-thread command/barrier/submission order as Epic and AMD's deterministic render-list examples do; parallel completion order has no GPU semantic authority.
 
 Required implementation:
 1. Add private compiled `RecordingGroup`/`RecordingPlan` with pass range, queue, prerequisites, initial/final resource states, context requirement, estimated command/recording cost, submission position, serial-island reason. Define `RecordingGroup`, `RecordingChunk`, `SubmissionBatch`, `aggregation`, and `translation` exactly as J Tutorial 16; do not use “merge command lists” unqualified.
 2. Preserve frame-graph barrier/aliasing/cross-queue authority. Emit inter-group barriers/primary/coordinator work where independent lists cannot infer transitions.
-3. Add pass parallel-safety declaration/audit: immutable inputs, prewarmed runtime, local transient allocations, no hidden side effects, provider/native affinity documented.
+3. Add a compiler-owned parallel-safety classification/audit for pass execution families: immutable inputs, prewarmed runtime, local transient allocations, no hidden side effects, and documented provider/native affinity. Do not add a recording-policy argument to pass declarations; unaudited callback families remain serial.
 4. Begin with independent coarse compute/copy/draw passes whose CPU recording cost exceeds threshold. Combine adjacent tiny compatible groups for recording; never assume one pass equals one task/list/submission.
 5. Submit recording tasks through SparkleTasks, lease backend contexts, begin/record/end on the worker, close into a preassigned result slot, then aggregate by `SubmissionOrderKey` independent of completion order.
 6. Keep provider/frame-generation/present, screenshot/readback coordination, unaudited interop, and required primary barriers as explicit serial islands.
@@ -2346,65 +2346,137 @@ Validation:
 Acceptance gate:
 - L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
-- Only audited passes run parallel and native validation is clean on both backends.
+- Only compiler-classified, structurally audited pass families run parallel and native validation is clean on both backends; pass declarations contain no authored recording policy.
 - GPU submission order/resource semantics remain frame-graph-defined.
 - Recording-group and submission-batch policies are independently measured; fewer submit calls are not accepted if they create material GPU starvation or latency regression.
 - No lazy state, shared transient cursor, or worker submission in parallel execute.
 - Performance gain does not buy unjustified GPU/list/memory regression.
 
-Positive patterns: opt-in audit, compiled state contract, worker recording/coordinator submit, same serial plan.
-Forbidden: parallelize all passes flag, infer barriers inside independent list, execute-time resource creation, second frame graph.
+Positive patterns: execution-family audit, compiler-derived eligibility, compiled state contract, worker recording/coordinator submit, same serial plan.
+Forbidden: pass-level recording-policy parameter, parallelize-all flag, infer barriers inside independent list, execute-time resource creation, second frame graph.
 ~~~
 
-## Prompt 21 — Add Measured Intra-Pass Scaling and Close Advanced-Feature Preservation
+### Prompt 20 source-completion record — 2026-07-26
 
-Target CL Title: `SparkleRenderer: Add Measured Intra-Pass Scaling and Preserve Advanced Features`
+Status: **source-complete; runtime acceptance is user-owned**. Parallel recording is an internal frame-graph execution decision, not a pass-authoring feature. `FrameGraphBuilder` retains its established `AddPass`, `Draw`, `Dispatch`, `DispatchAsync`, and `DispatchIf` vocabulary with no recording-policy parameter. Arbitrary callback, external-provider, and presentation work compiles to coordinator serial islands. The audited typed shader execution family compiles to exclusive recording groups, adjacent small groups are combined into bounded chunks, and SparkleTasks records eligible chunks into preassigned lease slots. Serial mode, GPU-timing mode, tiny batches, and zero/one-worker configurations record the same plan into one native command object per submission batch.
+
+Primary-source alignment:
+
+- [Microsoft D3D12 recording guidance](https://learn.microsoft.com/en-us/windows/win32/direct3d12/recording-command-lists-and-bundles) requires exclusive command-allocator recording/reset, reuse only after GPU completion, and allocator pooling across recording threads and frame latency. Sparkle precreates a bounded frame/queue/context matrix, waits exact retirement on the coordinator, and performs allocator/list reset, recording, and close on the exclusive worker.
+- [Microsoft D3D12 execution and synchronization guidance](https://learn.microsoft.com/en-us/windows/win32/direct3d12/executing-and-synchronizing-command-lists) keeps queue order and cross-queue synchronization explicit. Sparkle submits one ordered native-list array at each pre-existing compiled `SubmissionBatch` boundary and preserves the frame graph's queue waits and tokens.
+- [Khronos Vulkan threading guidance](https://docs.vulkan.org/guide/latest/threading.html) and the [command-buffer usage sample](https://docs.vulkan.org/samples/latest/samples/performance/command_buffer_usage/README.html) require externally synchronized command pools, recommend exclusive pools per recording thread, prefer whole-pool reset/reuse, and warn against many tiny buffers. Each Sparkle partition lease has a distinct queue-family pool/buffer; only its bound worker resets/begins/ends it; `VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT` is used; individual buffer reset and `SIMULTANEOUS_USE` are absent.
+- [NVIDIA command-buffer guidance](https://developer.nvidia.com/blog/advanced-api-performance-command-buffers/) and [CPU guidance](https://developer.nvidia.com/blog/advanced-api-performance-cpus/) require useful work per list, balanced worker recording, few native submissions, and a light submission thread. Sparkle groups small work, uses a serial crossover, bounds chunks at eight, removes per-frame task-name formatting/allocation, and leaves aggregation/submission on the coordinator. NVIDIA's approximate 5–10 `ExecuteCommandLists` calls per frame is treated as a profiling heuristic, not an API invariant.
+- [AMD RDNA performance guidance](https://gpuopen.com/learn/rdna-performance-guide/) requires application-owned recording threads, allocator/context counts proportional to worker/frame concurrency, reuse rather than per-frame creation, sufficiently coarse command buffers, and batched submission. [AMD RPS range recording](https://gpuopen.com/learn/rps-tutorial/rps-tutorial-part4/) demonstrates parallel range recording followed by deterministic original-order submission with barriers retained in execution order. Sparkle follows that ownership/order model without importing RPS or adding a second graph. AMD's approximate ten-draw/dispatch granularity is retained as a runtime crossover falsifier because Sparkle's compile-time structural-cost estimate is not a draw count.
+
+PGE reconciliation:
+
+| Requirement | Classification | Prompt 20 evidence |
+|---|---|---|
+| `PGE-01` partner adoption | preserve | one backend-neutral lease/submission boundary and one frame-graph authoring vocabulary remain; no pass caller learns D3D12/Vulkan recording policy |
+| `PGE-02` ray/path rendering | preserve | ray-query, classic TLAS, PTLAS, reservoir, reference, temporal, and provider passes retain compiled queue/resource order |
+| `PGE-03` neural feature | not applicable | no model/operator path is changed |
+| `PGE-04` model-to-kernel | not applicable | no model graph, tensor layout, precision, or kernel is changed |
+| `PGE-05` whole-system performance | advance | task count, command-object count, native submits, descriptor/upload capacity, serial crossover, frame latency, and GPU starvation are one bounded measurement contract |
+| `PGE-06` workload debugging | preserve | markers and native validation paths remain; exact PIX/GPUView/RenderDoc/RGP evidence is manual |
+| `PGE-07` C++ engineering | advance | compiler, recorder, executor, submission service, and backend context owners remain separate; hot result storage is fixed and compatibility policy plumbing is absent |
+| `PGE-08` applied mathematics | not applicable | only integer capacity/cost bounds are touched; no rendering or numerical method changes |
+| `PGE-09` explicit APIs | advance | D3D12 allocator/list and Vulkan pool/primary-buffer lifecycle, queue synchronization, flags, and backend-private ownership are explicit |
+| `PGE-10` CPU/GPU architecture | advance | parallel CPU recording is separated from GPU queue execution; oversubscription, useful-work crossover, driver submission, and frame-latency reuse are explicit falsifiers |
+| `PGE-11` ML fundamentals/AI verification | preserve | no ML claim is made; AI-assisted changes were independently traced through compiler, execution, both backends, diagnostics, and submission |
+| `PGE-12` training/inference workloads | not applicable | no training or inference workload is touched |
+| `PGE-13` productization/communication | advance | primary-source decisions, rejected API policy, ownership inventory, limits, and runtime handoff are recorded here |
+| `PGE-14` platform breadth | preserve | both Windows D3D12 and Vulkan source paths are paired; no native Linux, driver, or hardware result is claimed |
+| `PGE-15` principal judgment | advance | the pass-policy API was rejected, backend lifecycle defects were fixed at their owners, small-work overhead was removed, and one graph/submission path remains |
+
+Rule 13 access inventory:
+
+| Data path | Authority, ownership, and layout | Stable identity and deterministic transform | Exact precedent and measured falsifier |
+|---|---|---|---|
+| registered pass -> execution classification | `FrameGraph` owns the cold registered-pass AoS; generic callbacks default to `Callback`, while the existing typed draw/dispatch construction path records `TypedShader` privately | registered pass index and compiled submission position; no caller-authored recording flag or compatibility spelling | AMD RPS compiled ranges and the repository's typed pass/runtime contract; falsified by any public pass-policy parameter or callback entering an exclusive chunk |
+| compiled pass/resource declarations -> recording groups | `FrameGraphRecordingPlanCompiler` derives cold groups, resource-state contracts, prerequisites, queue, serial-island reason, and structural cost | pass/group indices follow compiled order; resource entry/exit state is derived from the authoritative barrier plan | AMD RPS ordered ranges and Microsoft explicit state/order rules; falsified by execute-time hazard inference or a group reordering compiled barriers |
+| adjacent groups -> recording chunks | the compiler combines compatible small groups and caps a submission batch at eight chunks; batches without a useful parallel range collapse to one coordinator chunk | `SubmissionOrderKey {batch, position}`; chunk construction is a forward deterministic transform independent of workers | NVIDIA/AMD coarse-list guidance; falsified by a tiny graph producing multiple native objects or measured crossover showing the retained threshold regresses |
+| chunk range -> SparkleTasks recording | `FrameGraphRecordingExecutor` owns one settled task graph per eligible range and fixed eight-slot result/aggregate arrays; each task writes one exclusive result lease | preassigned partition index plus task identity derived from submission order; completion order cannot select output position | SparkleTasks settled host submission and AMD ordered aggregation; falsified by shared push, completion-order append, worker wait, or per-frame result allocation |
+| lease -> native recording context | the active backend owns a fixed `2 frames × 3 queues × 8 contexts` matrix; each slot owns native command state plus disjoint descriptor/upload storage | `(queue, frame slot, context ID)` is resource identity; partition identity is scheduling metadata and actual thread binding is checked separately | Microsoft allocator rules and Vulkan command-pool external synchronization; falsified by concurrent pool/allocator access or reset before exact retirement |
+| compiled barriers/pass commands -> native object | `FrameGraphRecordingChunkRecorder` emits alias/resource barriers and pass commands into the chunk's exclusive command list/buffer; arbitrary providers/presentation remain coordinator islands | group/pass order inside each chunk is compiled order; native objects are never concatenated or replayed through a software RHI stream | Microsoft ordered list execution and AMD RPS barrier interleaving; falsified by barriers hoisted ahead of dependent worker work or native state inferred from completion |
+| closed native objects -> queue submission | `FrameGraphSubmissionExecutor` aggregates fixed result slots and `RhiCommandSubmissionService` alone submits; D3D12 uses one `ExecuteCommandLists` array and Vulkan one `vkQueueSubmit` command-buffer array per compiled batch | array order is recording-plan order; wait tokens and batch index remain semantic authority | NVIDIA/AMD submit batching and Khronos queue ownership; falsified by worker submit, one native submit per chunk, or changed cross-queue token order |
+| GPU timing/markers -> recording mode | existing marker scopes remain command-list local; enabling shared timestamp timing selects the one-command-object serial path so timestamp allocation/order is not raced | pass/chunk labels follow compiled identity; timing mode never silently loses scopes | NVIDIA profiling guidance and the existing diagnostic owner; falsified by parallel mutation of timing vectors/query allocation or missing timing scopes |
+
+Capacity, memory, and critical-path ledger: each active backend precreates 48 contexts and 12 MiB of upload pages (`2 × 3 × 8 × 256 KiB`) plus 12,288 D3D12 descriptor entries or 12,288 Vulkan descriptor-set slots. Only the selected backend is resident. A submission batch owns at most eight result leases in fixed executor arrays, so recording introduces no per-batch result-vector growth. The compiler's structural-cost values `16` target and `32` parallel minimum are starting heuristics, not measured draw counts. The runtime falsifiers are p50/p95/p99 coordinator record time, task ready/record/close spans, command objects and native submits per frame, average draws/dispatches per object, first GPU work, GPU bubbles, frame latency, upload/descriptor high-water, and serial/1/2/N-worker crossover on representative tiny and heavy scenes.
+
+Concurrency and lifetime reconciliation: SparkleTasks remains the only worker runtime and its settled `Submit` boundary joins recording before stack-owned executor state can retire. Workers receive immutable frame/plan/runtime references and one exclusive lease; they do not submit, present, wait for GPU/OS completion, mutate graph structure, or allocate from another lease's cursor. The coordinator acquires leases, waits only on buffered-frame reuse or final context destruction, deterministically aggregates, submits, and attaches the returned token to every submitted slot. D3D12 allocator/list reset and Vulkan pool reset/begin occur on the exclusive recording worker only after coordinator-authorized completion. Cross-queue waits, submission tokens, and GPU order remain compiled frame-graph data rather than task edges.
+
+Rule 12/16 and SOLID/DRY reconciliation: no new public file or CMake surface was required. `FrameGraphRecordingPlanCompiler` owns classification/chunk construction, `FrameGraphRecordingChunkRecorder` owns native command emission, `FrameGraphRecordingExecutor` owns SparkleTasks recording and fixed aggregation, `FrameGraphSubmissionExecutor` owns batch waits/submission orchestration, and each backend recording context owns native resource lifecycle. Touched headers contain declarations, templates, and trivial accessors only; substantive new behavior is in `.cpp`; no anonymous namespace, function-local type, or role-only owner was introduced. Serial and parallel modes consume the same compiled plan and recorder.
+
+Preservation and deletion ledger: raster/compute/copy, classic TLAS/PTLAS, reservoir/reference lighting, temporal state, providers, presentation, capture, markers, queue waits, and final graphics continuation retain their owners. The temporary pass-level recording-policy design and call-site arguments are deleted. The parallel path no longer disables GPU timing silently; timing selects serial recording. Per-frame formatted task names, heap-growing result/aggregate vectors, completion-order metadata duplication, repeated per-slot reuse waits, coordinator-side native reset/begin, and misleading `WorkerIndex` scheduling identity are removed. No bundle/secondary-buffer abstraction, RHI thread, second frame graph, worker submit, or software command replay stream was added.
+
+Required completion report:
+
+1. **Outcome** — eligible typed frame-graph groups record concurrently on D3D12 and Vulkan, then submit as one deterministic ordered array per compiled batch; pass declarations remain unchanged.
+2. **Repository audit** — compiler, barrier planner, typed/callback pass construction, execution, diagnostics, task runtime, submission services, D3D12/Vulkan contexts/queues, providers, presentation, capture, and RT paths were traced; existing owners were extended/refined rather than duplicated.
+3. **Ownership** — the frame graph owns GPU order/state, the executor owns CPU recording work, leases own exclusive native recording state, the coordinator owns waits/aggregation/submission, and exact tokens own reuse.
+4. **Files changed by responsibility** — common RHI lease identity, D3D12/Vulkan recording lifecycle, renderer recording execution/diagnostics, and this integration record are the only touched groups.
+5. **Orchestration/capability refinement** — high-level batch execution reads as resolve waits → record → aggregate → submit; native reset/record/close remains backend capability code.
+6. **SOLID/DRY reconciliation** — one compiled plan, recorder, submission path, backend context tree, and authoring API remain; serial and parallel behavior do not duplicate pass traversal.
+7. **Preservation ledger** — current rendering features, barriers, queue edges, markers, timing, presentation, capture, and both backend contracts are retained.
+8. **Deletion ledger** — authored recording policy, timing suppression, dynamic result vectors, formatted task names, repeated waits, coordinator native begin/reset, and misleading worker-index naming are removed.
+9. **Structure reconciliation** — all types stay in their established private/public module folders; filenames match primary types; no CMake change is needed.
+10. **Implementation-shape reconciliation** — headers remain declaration-only except templates/accessors; no local type, anonymous namespace, role-only bucket, diagnostic framework, or logging expansion was added.
+11. **DOD reconciliation** — the inventory above records authority, compact fixed layouts, identities, deterministic transforms, capacity, lifetime, precedents, and falsifiers.
+12. **Concurrency reconciliation** — SparkleTasks records exclusive leases; task completion has no semantic order; workers never submit or wait; coordinator reuse and shutdown remain token-settled.
+13. **Validation** — static diff/alias/namespace/local-type/header/lifecycle/submission searches were performed without a build; D3D12 GPU validation, Vulkan synchronization validation, randomized delays, image/state comparison, and worker sweeps remain manual.
+14. **Performance** — source removes small-work multi-object overhead and per-batch allocations; vendor heuristics and the exact runtime crossover/critical-path/memory/GPU evidence are recorded without claiming an unrun speedup.
+15. **Naming audit** — canonical recording group/chunk/batch/lease/partition terms remain; pass-policy, worker-index-as-thread, merge-list, RHI-thread, and secondary-stream compatibility spellings are absent.
+16. **Limitations and unavailable evidence** — no build, executable, native validation layer, capture, hardware/driver comparison, image result, timing result, or Linux claim is reported.
+17. **Acceptance status** — **PASS** under the explicit source-complete/runtime-manual policy, with no pass-level scheduling parameter and no known source-stage gap.
+18. **PGE reconciliation** — `PGE-05/07/09/10/13/15` advance, `PGE-01/02/06/11/14` are preserved, and `PGE-03/04/08/12` are not applicable; AI-assisted work was independently source-traced and no role-only or unsupported performance/platform claim remains.
+
+## Prompt 21 — Close Advanced-Feature Preservation
+
+Target CL Title: `SparkleRenderer: Prove Advanced-Feature Preservation Across Recording Modes`
 
 ~~~text
 Implement Prompt 21 only after Prompt 20 passes.
 
 Objective:
-Add intra-pass chunked recording where pass-level parallelism is insufficient and close the full serial/threaded/parallel preservation matrix for raster, classic TLAS, PTLAS, reservoir lighting, reference path tracing, temporal/providers, shader ABI, capture, and both backends.
+Close the serial/threaded/parallel preservation matrix for raster, classic TLAS, PTLAS, reservoir lighting, reference path tracing, temporal/providers, shader ABI, capture, and both backends. This is a correctness and lifetime gate for the architecture already implemented in Prompts 14-20, not a new scaling feature.
 
 Non-negotiable repository rules:
 - Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
-- Profile first to identify one or two expensive draw/dispatch planning/recording passes; do not add generic chunking to every pass.
-- Reuse RecordingPlan/leases and existing pass/batch structures; no special per-feature thread systems.
-- Apply daily refactor to selected pass data preparation and delete redundant serial-only batching after parity.
-- Do not alter GPU algorithm/queue policy merely to make CPU task graphs look busier.
+- Reuse Prompt 20's recording plan, leases, serial islands, submission batches, and existing validation/profiling surfaces; no special per-feature thread systems or test-only production APIs.
+- Do not add intra-pass draw/dispatch/build-input chunking, backend bundle/secondary-buffer policy, or another recording abstraction in this prompt. Prompt 23 may record a future candidate only if representative measurements identify one pass as a material CPU-recording critical path.
+- Fix only defects exposed by the preservation matrix. Refactor or delete a touched faulty/duplicate path in the same change; do not add unrelated optimization work.
+- Do not alter GPU algorithms, queue policy, feature settings, workload resolution, or capability reporting to make parity pass.
 
 Required implementation:
-1. Profile depth/GBuffer or equivalent opaque mesh work, transparent work, shadow passes, and RT build/trace-input work. Select at least two materially different real consumers when available—one raster draw-heavy path and one shadow-view, dispatch-heavy, or RT-input path. Record non-applicability rather than create fake work.
-2. Choose chunk key/range (draw batches, instances, shadow views/caster ranges, dispatch ranges, RT build inputs) with exclusive recording output and deterministic order. Partition by estimated cost and bound chunks by context/native-memory budgets.
-3. Precompute immutable shared pass state and per-chunk ranges; tasks record D3D12 direct lists/bundles only as measured or Vulkan primary/secondary buffers according to the backend plan. Do not call every backend result a “secondary stream.”
-4. Join and aggregate chunks in deterministic pass-defined order, then feed Prompt 20's `SubmissionBatch` policy. Bound chunk count and use a serial threshold.
-5. For shadow work, keep light/view order and transparent-sensitive caster/draw order stable. Keep pass barriers, render targets, viewport/scissor and rendering-scope setup in primary/coordinator work unless backend validation proves the selected alternative.
-6. Audit classic TLAS and PTLAS initial/update/add/remove/asset replacement/trace identity and lifetime separately, including BLAS scratch/result/compaction inputs where currently supported.
-7. Verify reservoir light ordering/IDs, reference path sample seed/accumulation/reset, temporal motion/depth/jitter/exposure/history tags.
-8. Verify provider supported/enabled/operational/failure state, resource tags, thread affinity, resize/reload, frame generation/present sequencing.
-9. Verify shader package/reflection/layout/generation coherence and capture/debugger continuity.
-10. Record negative/small-work cases where chunking is disabled or slower and retain policy.
+1. Define one capability-gated matrix covering serial recording and every supported threaded/parallel recording mode on D3D12 and Vulkan. Use identical scene revision, camera, settings, seeds, shader generation, provider state, and workload duration for comparable rows.
+2. Verify raster draw/batch order, material/pipeline selection, transparent-sensitive order, frame-graph plan identity, barriers, queue waits, submission order, markers, timestamps, and output/reference images.
+3. Audit classic TLAS and PTLAS separately for initial build, update, add/remove, asset replacement, trace identity, delayed-GPU lifetime, and currently supported BLAS scratch/result/compaction inputs. Unsupported capability rows must report unavailable rather than silently falling back to another AS path.
+4. Verify reservoir light ordering/IDs and weights; reference-path seed, sample count, accumulation, and reset; temporal motion/depth/jitter/exposure/history identity across recording modes.
+5. Verify provider supported/enabled/operational/failure state, resource tags, required thread affinity, resize/reload, frame-generation/present sequencing, and classical fallback.
+6. Verify shader package/reflection/layout/generation coherence through reload and failure, plus screenshot/readback, debugger capture, marker, and object-name continuity.
+7. Stress delayed GPU completion, repeated level/asset/shader reload, resize/recreate, capture, provider failure/recovery, and shutdown. Prove that CPU task completion never substitutes for GPU last-use completion.
+8. Record every matrix row as pass, fail, unsupported by honest capability state, or blocked by a named external prerequisite. Fix failures in the owning existing path; do not create feature-specific scheduling or compatibility paths.
 
 Validation:
 - Full advanced-feature test matrix in J on D3D12/Vulkan where capability reports support.
-- Serial/threaded/parallel recording reference images and deterministic plan identity.
+- Serial/threaded/parallel recording reference images, deterministic plan/order identity, and native validation.
 - Delayed GPU completion plus level/asset/shader reload stress for RT/provider/capture paths.
-- CPU record speedup, command-list/descriptor/transient/GPU-time and submission-latency impact for every selected heavy pass.
-- Tiny/normal cases do not exceed accepted overhead budget.
+- Capability/failure/fallback reports remain truthful; no unsupported row is counted as a pass.
+- Existing Prompt 20 recording/list/descriptor/transient/GPU-time and submission-latency counters show that the validation fixes introduced no material regression. No speedup is required or claimed.
 
 Acceptance gate:
 - L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
-- Intra-pass work is measured, bounded, deterministic, and uses common ownership.
+- One preserved feature path and one common recording/submission architecture serve all supported modes; no feature-specific scheduler or duplicate serial implementation remains.
 - No feature path is silently disabled/demoted to claim multithreading success.
 - Both native backends pass applicable validation and capability truth remains honest.
-- CPU gain and GPU/resource costs are reported separately.
+- Feature identity, temporal state, GPU lifetime, provider affinity, shader generations, and capture/debugger continuity remain correct under stress.
 
-Positive patterns: evidence-selected chunking, feature identity preservation, capability-gated tests, serial fallback.
-Forbidden: task per draw, completion-order draw submission, provider-owned scheduling, CPU gain used to hide GPU regression.
+Positive patterns: feature identity preservation, capability-gated matrix, same-plan serial oracle, defect fixes in existing owners.
+Forbidden: intra-pass scaling, feature-specific scheduling, test-only production API, feature demotion, fake capability success, CPU task completion used as GPU lifetime.
 ~~~
 
 ## Prompt 22 — Reliability, Tools, Packages, and Deletion Closure

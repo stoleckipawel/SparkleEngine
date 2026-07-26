@@ -9,7 +9,6 @@
 #include "Tasks/Public/TaskGraph.h"
 
 #include <cassert>
-#include <format>
 
 FrameGraphRecordingExecutor::FrameGraphRecordingExecutor(
     const FrameGraph& frameGraph,
@@ -35,25 +34,71 @@ bool FrameGraphRecordingExecutor::RecordBatch(
     const FrameGraphSubmissionBatch& batch,
     RhiCommandRecordingLease initializationLease)
 {
+	m_firstChunk = batch.recordingChunkOffset;
+	if (!ShouldRecordBatchInParallel(batch))
+	{
+		RecordBatchSerial(batch, std::move(initializationLease));
+		return true;
+	}
+
 	AcquireBatchLeases(batch, std::move(initializationLease));
 	return RecordChunks();
+}
+
+bool FrameGraphRecordingExecutor::ShouldRecordBatchInParallel(
+    const FrameGraphSubmissionBatch& batch) const noexcept
+{
+	return CVarRendererParallelFrameGraphRecording.Get() &&
+	       !CVarRendererDiagnosticGpuTiming.Get() &&
+	       batch.recordingChunkCount >= 2 &&
+	       m_taskExecutor.GetWorkerCount(TaskLane::FrameCritical) >= 2;
+}
+
+void FrameGraphRecordingExecutor::RecordBatchSerial(
+    const FrameGraphSubmissionBatch& batch,
+    RhiCommandRecordingLease initializationLease)
+{
+	assert(batch.recordingChunkCount != 0);
+	m_resultCount = 1;
+
+	RecordingChunkResult& result = m_results.front();
+	result = RecordingChunkResult{};
+	result.UsesInitializationLease = initializationLease.IsValid();
+	if (result.UsesInitializationLease)
+	{
+		result.Lease = std::move(initializationLease);
+	}
+	else
+	{
+		result.Lease = m_submissionService.AcquireCommandRecordingLease(batch.queue);
+	}
+
+	RenderCommandList& commandList = result.Lease.GetCommandList();
+	for (std::uint32_t chunkOffset = 0;
+	     chunkOffset < batch.recordingChunkCount;
+	     ++chunkOffset)
+	{
+		const RecordingChunkIndex chunkIndex = batch.recordingChunkOffset + chunkOffset;
+		m_chunkRecorder.Record(m_plan.recording.Chunks[chunkIndex], commandList);
+	}
+
+	result.Lease.Close();
 }
 
 void FrameGraphRecordingExecutor::AcquireBatchLeases(
     const FrameGraphSubmissionBatch& batch,
     RhiCommandRecordingLease initializationLease)
 {
-	m_results.clear();
-	m_results.resize(batch.recordingChunkCount);
-	m_firstChunk = batch.recordingChunkOffset;
+	assert(batch.recordingChunkCount <= m_results.size());
+	m_resultCount = batch.recordingChunkCount;
 
 	for (std::uint32_t resultIndex = 0;
-	     resultIndex < batch.recordingChunkCount;
+	     resultIndex < m_resultCount;
 	     ++resultIndex)
 	{
 		const RecordingChunk& chunk = GetChunk(resultIndex);
 		RecordingChunkResult& result = m_results[resultIndex];
-		result.SubmissionOrder = chunk.SubmissionOrder;
+		result = RecordingChunkResult{};
 
 		if (resultIndex == 0 && initializationLease.IsValid())
 		{
@@ -66,25 +111,22 @@ void FrameGraphRecordingExecutor::AcquireBatchLeases(
 		    chunk.ContextRequirement == RecordingContextRequirement::Coordinator
 		        ? RhiCommandRecordingOwner{}
 		        : RhiCommandRecordingOwner{
-		              .WorkerIndex = resultIndex,
-		              .TaskIdentity =
-		                  BuildTaskIdentity(chunk.SubmissionOrder)};
-		result.Lease =
-		    m_submissionService.AcquireCommandRecordingLease(
-		        chunk.Queue,
-		        owner);
+		              .PartitionIndex = resultIndex,
+		              .TaskIdentity = BuildTaskIdentity(chunk.SubmissionOrder)};
+
+		result.Lease = m_submissionService.AcquireCommandRecordingLease(chunk.Queue, owner);
 	}
 }
 
 bool FrameGraphRecordingExecutor::RecordChunks()
 {
 	std::uint32_t resultIndex = 0;
-	while (resultIndex < m_results.size())
+	while (resultIndex < m_resultCount)
 	{
 		const RecordingChunk& chunk = GetChunk(resultIndex);
 		if (!CanRecordParallel(m_results[resultIndex], chunk))
 		{
-			RecordChunk(resultIndex, true);
+			RecordChunk(resultIndex);
 			++resultIndex;
 			continue;
 		}
@@ -112,7 +154,7 @@ std::uint32_t FrameGraphRecordingExecutor::FindParallelRangeEnd(
     std::uint32_t firstResult) const noexcept
 {
 	std::uint32_t endResult = firstResult;
-	while (endResult < m_results.size() &&
+	while (endResult < m_resultCount &&
 	       CanRecordParallel(m_results[endResult], GetChunk(endResult)))
 	{
 		++endResult;
@@ -129,7 +171,7 @@ void FrameGraphRecordingExecutor::RecordSerialRange(
 	     resultIndex < endResult;
 	     ++resultIndex)
 	{
-		RecordChunk(resultIndex, true);
+		RecordChunk(resultIndex);
 	}
 }
 
@@ -147,15 +189,9 @@ bool FrameGraphRecordingExecutor::RecordParallelRange(
 	     ++resultOffset)
 	{
 		const std::uint32_t resultIndex = firstResult + resultOffset;
-		const RecordingChunk& chunk = GetChunk(resultIndex);
 		(void)builder.Add(
 		    TaskDesc{
-		        .Name =
-		            TaskName(
-		                std::format(
-		                    "Renderer.FrameGraph.Record.{}.{}",
-		                    chunk.SubmissionOrder.Batch,
-		                    chunk.SubmissionOrder.Position)),
+		        .Name = TaskName("Renderer.FrameGraph.RecordChunk"),
 		        .Lane = TaskLane::FrameCritical},
 		    [resultIndex](TaskExecutionContext& context)
 		    {
@@ -167,7 +203,7 @@ bool FrameGraphRecordingExecutor::RecordParallelRange(
 				        "Frame-graph recording task has no execution owner.");
 			    }
 
-			    executor->RecordChunk(resultIndex, false);
+			    executor->RecordChunk(resultIndex);
 			    return TaskResult::Success();
 		    });
 	}
@@ -179,18 +215,13 @@ bool FrameGraphRecordingExecutor::RecordParallelRange(
 	return execution.GetStatus() == TaskExecutionStatus::Succeeded;
 }
 
-void FrameGraphRecordingExecutor::RecordChunk(
-    std::uint32_t resultIndex,
-    bool allowTiming)
+void FrameGraphRecordingExecutor::RecordChunk(std::uint32_t resultIndex)
 {
-	assert(resultIndex < m_results.size());
+	assert(resultIndex < m_resultCount);
 	RecordingChunkResult& result = m_results[resultIndex];
 	assert(result.Lease.IsValid());
 
-	m_chunkRecorder.Record(
-	    GetChunk(resultIndex),
-	    result.Lease.GetCommandList(),
-	    allowTiming);
+	m_chunkRecorder.Record(GetChunk(resultIndex), result.Lease.GetCommandList());
 	result.Lease.Close();
 }
 
@@ -198,8 +229,7 @@ bool FrameGraphRecordingExecutor::CanRecordParallel(
     const RecordingChunkResult& result,
     const RecordingChunk& chunk) const noexcept
 {
-	return CVarRendererParallelFrameGraphRecording.Get() &&
-	       !result.UsesInitializationLease &&
+	return !result.UsesInitializationLease &&
 	       chunk.ContextRequirement ==
 	           RecordingContextRequirement::ExclusiveLease;
 }
@@ -208,8 +238,7 @@ bool FrameGraphRecordingExecutor::ShouldExecuteParallelRange(
     std::uint32_t firstResult,
     std::uint32_t resultCount) const noexcept
 {
-	if (resultCount < 2 ||
-	    m_taskExecutor.GetWorkerCount(TaskLane::FrameCritical) == 0)
+	if (resultCount < 2)
 	{
 		return false;
 	}
@@ -227,9 +256,7 @@ std::uint32_t FrameGraphRecordingExecutor::EstimateRangeCost(
 	     resultOffset < resultCount;
 	     ++resultOffset)
 	{
-		estimatedCost +=
-		    GetChunk(firstResult + resultOffset)
-		        .EstimatedRecordingCost;
+		estimatedCost += GetChunk(firstResult + resultOffset).EstimatedRecordingCost;
 	}
 
 	return estimatedCost;
@@ -237,23 +264,21 @@ std::uint32_t FrameGraphRecordingExecutor::EstimateRangeCost(
 
 std::span<RhiCommandRecordingLease> FrameGraphRecordingExecutor::Aggregate()
 {
-	m_aggregatedLeases.clear();
-	m_aggregatedLeases.reserve(m_results.size());
-
-	for (RecordingChunkResult& result : m_results)
+	for (std::uint32_t resultIndex = 0;
+	     resultIndex < m_resultCount;
+	     ++resultIndex)
 	{
-		m_aggregatedLeases.push_back(
-		    std::move(result.Lease));
+		m_aggregatedLeases[resultIndex] = std::move(m_results[resultIndex].Lease);
 	}
 
-	return m_aggregatedLeases;
+	return std::span<RhiCommandRecordingLease>(m_aggregatedLeases.data(), m_resultCount);
 }
 
 const RecordingChunk& FrameGraphRecordingExecutor::GetChunk(
     std::uint32_t resultIndex) const noexcept
 {
 	assert(m_firstChunk != InvalidRecordingChunkIndex);
-	assert(resultIndex < m_results.size());
+	assert(resultIndex < m_resultCount);
 	return m_plan.recording.Chunks[m_firstChunk + resultIndex];
 }
 
