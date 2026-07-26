@@ -5,7 +5,7 @@
 #include "Frame/RhiFrameConstants.h"
 #include "Shaders/CookedShaderPackage.h"
 #include "Vulkan/Capture/VulkanCaptureService.h"
-#include "Vulkan/Commands/VulkanCommandContext.h"
+#include "Vulkan/Commands/VulkanCommandRecordingContext.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
@@ -30,56 +30,11 @@
 
 static const auto g_vulkanRenderHardwareInterfaceLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Interface");
 
-class VulkanRenderHardwareInterfaceOperations final
-{
-  public:
-	static RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport(
-	    const RenderDiagnostics* diagnostics,
-	    bool validationEnabled,
-	    bool supportsDebugLayer) noexcept
-	{
-		if (diagnostics == nullptr)
-		{
-			return RhiBackendDiagnosticsSupport{
-			    .ValidationEnabled = validationEnabled,
-			    .SupportsDebugLayer = supportsDebugLayer};
-		}
-
-		const RhiDiagnosticsCapabilities diagnosticsCapabilities = diagnostics->GetCapabilities();
-		return RhiBackendDiagnosticsSupport{
-		    .ValidationEnabled = validationEnabled,
-		    .SupportsDebugLayer = supportsDebugLayer,
-		    .SupportsObjectNames = diagnosticsCapabilities.SupportsObjectNames,
-		    .SupportsGpuEvents = diagnosticsCapabilities.SupportsGpuEvents,
-		    .SupportsTimestampQueries = diagnosticsCapabilities.SupportsTimestampQueries,
-		    .SupportsDebugMessages = diagnosticsCapabilities.SupportsDebugMessages,
-		    .SupportsLiveObjectReports = diagnosticsCapabilities.SupportsLiveObjectReports,
-		    .SupportsCrashDiagnostics = diagnosticsCapabilities.SupportsCrashDiagnostics};
-	}
-
-	static RhiBackendMemorySupport BuildBackendMemorySupport(const RenderDiagnostics* diagnostics) noexcept
-	{
-		if (diagnostics == nullptr)
-		{
-			return {};
-		}
-
-		const RenderMemoryDiagnostics* const memoryDiagnostics = diagnostics->GetMemoryDiagnostics();
-		return RhiBackendMemorySupport{
-		    .SupportsMemoryDiagnostics = memoryDiagnostics != nullptr,
-		    .SupportsBudgetQueries = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries(),
-		    .SupportsDelayedDestructionTracking = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsDelayedDestructionTracking(),
-		    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
-	}
-
-};
-
 VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
     VulkanRhi& rhi,
     VulkanSwapChain& swapChain,
-    VulkanCommandContext& commandContext,
     VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-    m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext)
+	m_rhi(&rhi), m_swapChain(&swapChain), m_memoryAllocator(&memoryAllocator)
 {
 	m_interopService = std::make_unique<VulkanInteropService>(*this);
 	m_captureService = std::make_unique<VulkanCaptureService>(rhi);
@@ -88,14 +43,10 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
 	m_descriptorManager = std::make_unique<VulkanDescriptorManager>(rhi, memoryAllocator, m_capabilities);
 	m_resourceService = std::make_unique<VulkanResourceService>(rhi, memoryAllocator, *m_descriptorManager, m_capabilities);
-	m_uploadService = std::make_unique<VulkanUploadService>(commandContext, memoryAllocator);
+	m_uploadService = std::make_unique<VulkanUploadService>(memoryAllocator);
 	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorManager);
 	m_descriptorManager->SetSamplerLibrary(*m_samplerLibrary);
 	m_imguiBackend = std::make_unique<VulkanImGuiBackend>(*this, *m_descriptorManager);
-	commandContext.ConfigureCommandLists(
-	    memoryAllocator,
-	    *m_descriptorManager,
-	    m_descriptorManager->GetAllocator());
 	m_diagnostics = CreateVulkanRenderDiagnostics(rhi, memoryAllocator);
 	RebuildSwapChainBackBufferViews();
 	m_capabilities = BuildCapabilities();
@@ -217,7 +168,7 @@ RenderCommandList& VulkanRenderHardwareInterface::GetCommandList(ERhiQueueType q
 	{
 		m_resourceService->DrainCompletedResourceReleases();
 	}
-	return m_commandContext->GetCommandList(queueType, frameIndex);
+	return m_commandRecordingContext->GetCurrentCommandList(queueType, frameIndex);
 }
 
 RhiRayTracingCapabilities VulkanRenderHardwareInterface::GetRayTracingCapabilities() const noexcept
@@ -262,10 +213,7 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
-	capabilities.Diagnostics = VulkanRenderHardwareInterfaceOperations::BuildBackendDiagnosticsSupport(
-	    m_diagnostics.get(),
-	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
-	    m_rhi != nullptr && m_rhi->IsValidationEnabled());
+	capabilities.Diagnostics = BuildBackendDiagnosticsSupport();
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
@@ -282,9 +230,53 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	    hasCopyQueue && m_rhi->HasIndependentQueue(ERhiQueueType::Copy));
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VulkanManaged;
-	capabilities.MemorySupport = VulkanRenderHardwareInterfaceOperations::BuildBackendMemorySupport(m_diagnostics.get());
-	capabilities.ExternalFeatureInterop = BuildVulkanExternalFeatureInteropCapabilities(m_rhi, m_commandContext != nullptr);
+	capabilities.MemorySupport = BuildBackendMemorySupport();
+	capabilities.ExternalFeatureInterop =
+	    BuildVulkanExternalFeatureInteropCapabilities(
+	        m_rhi,
+	        m_commandRecordingContext != nullptr);
 	return capabilities;
+}
+
+RhiBackendDiagnosticsSupport VulkanRenderHardwareInterface::BuildBackendDiagnosticsSupport() const noexcept
+{
+	const bool validationEnabled =
+	    m_rhi != nullptr && m_rhi->IsValidationEnabled();
+	if (m_diagnostics == nullptr)
+	{
+		return RhiBackendDiagnosticsSupport{
+		    .ValidationEnabled = validationEnabled,
+		    .SupportsDebugLayer = validationEnabled};
+	}
+
+	const RhiDiagnosticsCapabilities diagnostics =
+	    m_diagnostics->GetCapabilities();
+	return RhiBackendDiagnosticsSupport{
+	    .ValidationEnabled = validationEnabled,
+	    .SupportsDebugLayer = validationEnabled,
+	    .SupportsObjectNames = diagnostics.SupportsObjectNames,
+	    .SupportsGpuEvents = diagnostics.SupportsGpuEvents,
+	    .SupportsTimestampQueries = diagnostics.SupportsTimestampQueries,
+	    .SupportsDebugMessages = diagnostics.SupportsDebugMessages,
+	    .SupportsLiveObjectReports = diagnostics.SupportsLiveObjectReports,
+	    .SupportsCrashDiagnostics = diagnostics.SupportsCrashDiagnostics};
+}
+
+RhiBackendMemorySupport VulkanRenderHardwareInterface::BuildBackendMemorySupport() const noexcept
+{
+	const RenderMemoryDiagnostics* const diagnostics =
+	    m_diagnostics != nullptr
+	        ? m_diagnostics->GetMemoryDiagnostics()
+	        : nullptr;
+	return RhiBackendMemorySupport{
+	    .SupportsMemoryDiagnostics = diagnostics != nullptr,
+	    .SupportsBudgetQueries =
+	        diagnostics != nullptr && diagnostics->SupportsBudgetQueries(),
+	    .SupportsDelayedDestructionTracking =
+	        diagnostics != nullptr &&
+	        diagnostics->SupportsDelayedDestructionTracking(),
+	    .SupportsResidencyPressure =
+	        diagnostics != nullptr && diagnostics->SupportsBudgetQueries()};
 }
 
 RhiFormatSupport VulkanRenderHardwareInterface::QueryFormatSupport(PixelFormat format) const noexcept
@@ -454,11 +446,18 @@ void VulkanRenderHardwareInterface::SetCurrentFrameIndex(std::uint32_t frameInde
 	m_currentFrameIndex = frameIndex;
 }
 
+void VulkanRenderHardwareInterface::SetCommandRecordingContext(
+    VulkanCommandRecordingContext& commandRecordingContext) noexcept
+{
+	m_commandRecordingContext = &commandRecordingContext;
+	m_capabilities = BuildCapabilities();
+}
+
 void VulkanRenderHardwareInterface::ResetTransientFrameResources() noexcept
 {
-	if (m_uploadService != nullptr)
+	if (m_descriptorManager != nullptr)
 	{
-		m_uploadService->BeginFrame(m_currentFrameIndex);
+		m_descriptorManager->BeginFrame(m_currentFrameIndex);
 	}
 }
 
@@ -492,7 +491,7 @@ RhiResourceViewHandle VulkanRenderHardwareInterface::GetCurrentBackBufferViewHan
 
 void VulkanRenderHardwareInterface::BeginCurrentBackBufferRendering(const float* clearColor, bool clear) noexcept
 {
-	if (m_swapChain == nullptr || m_commandContext == nullptr || m_isPresentRendering)
+	if (m_swapChain == nullptr || m_commandRecordingContext == nullptr || m_isPresentRendering)
 	{
 		return;
 	}
@@ -504,12 +503,14 @@ void VulkanRenderHardwareInterface::BeginCurrentBackBufferRendering(const float*
 		return;
 	}
 
-	RenderCommandList& commandList = GetGraphicsCommandList(m_currentFrameIndex);
+	auto& commandList =
+	    static_cast<VulkanRenderCommandList&>(
+	        GetGraphicsCommandList(m_currentFrameIndex));
 	commandList.SetViewport(GetBackBufferViewport());
 	commandList.SetScissorRect(GetBackBufferScissorRect());
 	commandList.SetRenderTarget(GetBackBufferRenderTargetView());
 
-	VkCommandBuffer commandBuffer = m_commandContext->GetCommandBuffer(m_currentFrameIndex);
+	const VkCommandBuffer commandBuffer = commandList.GetVulkanCommandBuffer();
 	TransitionCurrentBackBuffer(commandBuffer, ResourceState::RenderTarget);
 
 	VkClearValue nativeClearValue = {};
@@ -558,12 +559,17 @@ void VulkanRenderHardwareInterface::BeginCurrentBackBufferRendering(const float*
 
 void VulkanRenderHardwareInterface::EndCurrentBackBufferRendering() noexcept
 {
-	if (m_commandContext == nullptr || !m_isPresentRendering)
+	if (m_commandRecordingContext == nullptr || !m_isPresentRendering)
 	{
 		return;
 	}
 
-	VkCommandBuffer commandBuffer = m_commandContext->GetCommandBuffer(m_currentFrameIndex);
+	const auto& commandList =
+	    static_cast<const VulkanRenderCommandList&>(
+	        m_commandRecordingContext->GetCurrentCommandList(
+	            ERhiQueueType::Graphics,
+	            m_currentFrameIndex));
+	const VkCommandBuffer commandBuffer = commandList.GetVulkanCommandBuffer();
 	vkCmdEndRendering(commandBuffer);
 	TransitionCurrentBackBuffer(commandBuffer, ResourceState::Present);
 	m_isPresentRendering = false;

@@ -2,11 +2,11 @@
 
 #include "Device/RenderDeviceBackendFactory.h"
 
-#include "Commands/RhiCommandRecordingLeaseAccess.h"
 #include "Frame/RhiFrameConstants.h"
-#include "Vulkan/Commands/VulkanCommandContext.h"
+#include "Vulkan/Commands/VulkanCommandRecordingContext.h"
 #include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
+#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
@@ -36,6 +36,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	void WaitForIdle() noexcept override;
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
+	void PrepareCommandRecording() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	RenderCommandList& BeginCurrentGraphicsCommandList() noexcept override;
@@ -64,6 +65,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	void InitializeHardwareInterface();
 	void BeginFrameRecording();
 	void AcquireFrameBackBuffer();
+	void DrainSwapChainQueue() noexcept;
 	RhiSubmissionState ConsumeQueueWaits(
 	    ERhiQueueType queueType,
 	    std::span<const RhiSubmissionToken> waitTokens) noexcept;
@@ -72,14 +74,15 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	void CompletePresentation(
 	    RhiSubmissionToken frameToken,
 	    VkSemaphore renderFinishedSemaphore) noexcept;
-	RhiSubmissionToken SubmitCommandList(
-	    RenderCommandList& commandList,
-	    std::span<const RhiSubmissionToken> waitTokens) noexcept;
+	RhiSubmissionToken SubmitLease(
+	    RhiCommandRecordingLease&& lease,
+	    std::span<const RhiSubmissionToken> waitTokens,
+	    VkSemaphore binarySignalSemaphore = VK_NULL_HANDLE) noexcept;
 
 	std::unique_ptr<VulkanRhi> m_rhi;
 	std::unique_ptr<VulkanGpuMemoryAllocator> m_memoryAllocator;
 	std::unique_ptr<VulkanSwapChain> m_swapChain;
-	std::unique_ptr<VulkanCommandContext> m_commandContext;
+	std::unique_ptr<VulkanCommandRecordingContext> m_commandRecordingContext;
 	std::unique_ptr<VulkanRenderHardwareInterface> m_renderHardwareInterface;
 	std::uint32_t m_currentFrameIndex = 0;
 	std::array<RhiSubmissionState, RhiQueueTypeCount> m_pendingQueueWaits;
@@ -118,7 +121,6 @@ void VulkanRenderDeviceServices::InitializeDevice()
 {
 	m_rhi = std::make_unique<VulkanRhi>();
 	m_memoryAllocator = std::make_unique<VulkanGpuMemoryAllocator>(*m_rhi);
-	m_commandContext = std::make_unique<VulkanCommandContext>(*m_rhi);
 }
 
 void VulkanRenderDeviceServices::InitializePresentation(
@@ -133,14 +135,21 @@ void VulkanRenderDeviceServices::InitializeHardwareInterface()
 	m_renderHardwareInterface = std::make_unique<VulkanRenderHardwareInterface>(
 	    *m_rhi,
 	    *m_swapChain,
-	    *m_commandContext,
 	    *m_memoryAllocator);
+
+	m_commandRecordingContext =
+	    std::make_unique<VulkanCommandRecordingContext>(
+	        *m_rhi,
+	        *m_memoryAllocator,
+	        *m_renderHardwareInterface->m_descriptorManager);
+	m_renderHardwareInterface->SetCommandRecordingContext(
+	    *m_commandRecordingContext);
 }
 
 VulkanRenderDeviceServices::~VulkanRenderDeviceServices() noexcept
 {
+	m_commandRecordingContext.reset();
 	m_renderHardwareInterface.reset();
-	m_commandContext.reset();
 	m_swapChain.reset();
 	m_memoryAllocator.reset();
 	m_rhi.reset();
@@ -170,8 +179,8 @@ void VulkanRenderDeviceServices::WaitForIdle() noexcept
 
 void VulkanRenderDeviceServices::ResizeSwapChain() noexcept
 {
-	m_renderHardwareInterface->WaitForIdle();
-	m_swapChain->ResizeAfterDeviceIdle();
+	DrainSwapChainQueue();
+	m_swapChain->Resize();
 	m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
 }
 
@@ -182,6 +191,12 @@ void VulkanRenderDeviceServices::BeginFrame() noexcept
 	AcquireFrameBackBuffer();
 }
 
+void VulkanRenderDeviceServices::PrepareCommandRecording() noexcept
+{
+	m_renderHardwareInterface->m_descriptorManager->PublishRecordingReadView();
+	m_memoryAllocator->PublishRecordingReadView();
+}
+
 void VulkanRenderDeviceServices::BeginFrameRecording()
 {
 	m_hasConsumedAcquireSemaphore = false;
@@ -190,9 +205,9 @@ void VulkanRenderDeviceServices::BeginFrameRecording()
 		waits.Clear();
 	}
 
-	m_commandContext->BeginFrame(m_currentFrameIndex);
-	(void)BeginCurrentGraphicsCommandList();
+	m_commandRecordingContext->BeginFrame(m_currentFrameIndex);
 	m_renderHardwareInterface->ResetTransientFrameResources();
+	(void)BeginCurrentGraphicsCommandList();
 }
 
 void VulkanRenderDeviceServices::AcquireFrameBackBuffer()
@@ -206,7 +221,7 @@ void VulkanRenderDeviceServices::AcquireFrameBackBuffer()
 	}
 	if (!m_hasAcquiredBackBuffer)
 	{
-		m_commandContext->CancelFrame(m_currentFrameIndex);
+		m_commandRecordingContext->CancelFrame(m_currentFrameIndex);
 		m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
 	}
 }
@@ -223,70 +238,60 @@ RenderCommandList& VulkanRenderDeviceServices::GetGraphicsCommandList(std::uint3
 
 RenderCommandList& VulkanRenderDeviceServices::BeginCurrentGraphicsCommandList() noexcept
 {
-	return m_commandContext->BeginCommandList(ERhiQueueType::Graphics, m_currentFrameIndex);
+	return m_commandRecordingContext->BeginCurrentGraphicsCommandList(
+	    m_currentFrameIndex);
 }
 
 RhiCommandRecordingLease VulkanRenderDeviceServices::AcquireCommandRecordingLease(
     ERhiQueueType queueType,
     RhiCommandRecordingOwner owner) noexcept
 {
-	RenderCommandList& commandList = m_commandContext->BeginCommandList(queueType, m_currentFrameIndex);
-	return RhiCommandRecordingLeaseAccess::Create(
-	    RhiCommandRecordingLeaseInitialization{
-	        .BackendState = &commandList,
-	        .CommandList = &commandList,
-	        .QueueType = queueType,
-	        .FrameSlot = m_currentFrameIndex,
-	        .ContextId = RhiCommandRecordingContextId{.Value = 0},
-	        .Owner = owner});
+	return m_commandRecordingContext->Acquire(
+	    queueType,
+	    m_currentFrameIndex,
+	    owner);
 }
 
 RhiSubmissionToken VulkanRenderDeviceServices::SubmitCommandRecordingLease(
     RhiCommandRecordingLease&& lease,
     std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
-	if (!lease.IsClosed())
-	{
-		lease.Close();
-	}
-
-	const RhiCommandRecordingLeaseBackendState state =
-	    RhiCommandRecordingLeaseAccess::Consume(std::move(lease));
-	if (state.CommandList == nullptr || !state.Closed || state.FrameSlot != m_currentFrameIndex ||
-	    state.QueueType != state.CommandList->GetQueueType())
-	{
-		return {};
-	}
-
-	return SubmitCommandList(*state.CommandList, waitTokens);
+	return SubmitLease(std::move(lease), waitTokens);
 }
 
 RhiSubmissionToken VulkanRenderDeviceServices::SubmitCurrentGraphicsCommandList(
     std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
-	return SubmitCommandList(GetCurrentGraphicsCommandList(), waitTokens);
+	const RhiSubmissionState resolvedWaits =
+	    ConsumeQueueWaits(ERhiQueueType::Graphics, waitTokens);
+	std::array<RhiSubmissionToken, RhiQueueTypeCount> resolvedWaitTokens{};
+	const std::size_t resolvedWaitCount =
+	    resolvedWaits.CopyTokens(resolvedWaitTokens);
+
+	return m_commandRecordingContext->SubmitCurrentGraphicsCommandList(
+	    m_currentFrameIndex,
+	    std::span<const RhiSubmissionToken>(
+	        resolvedWaitTokens.data(),
+	        resolvedWaitCount),
+	    ConsumeAcquireSemaphore(ERhiQueueType::Graphics));
 }
 
-RhiSubmissionToken VulkanRenderDeviceServices::SubmitCommandList(
-    RenderCommandList& commandList,
-    std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiSubmissionToken VulkanRenderDeviceServices::SubmitLease(
+    RhiCommandRecordingLease&& lease,
+    std::span<const RhiSubmissionToken> waitTokens,
+    VkSemaphore binarySignalSemaphore) noexcept
 {
-	const ERhiQueueType queueType = commandList.GetQueueType();
+	const ERhiQueueType queueType = lease.GetQueueType();
 	const RhiSubmissionState resolvedWaits = ConsumeQueueWaits(queueType, waitTokens);
 	std::array<RhiSubmissionToken, RhiQueueTypeCount> resolvedWaitTokens{};
 	const std::size_t resolvedWaitCount = resolvedWaits.CopyTokens(resolvedWaitTokens);
-	const VkSemaphore binaryWaitSemaphore = ConsumeAcquireSemaphore(queueType);
 
-	auto& vulkanCommandList = static_cast<VulkanRenderCommandList&>(commandList);
-	const RhiSubmissionToken token = m_commandContext->SubmitCommandList(
-	    vulkanCommandList,
-	    m_currentFrameIndex,
+	return m_commandRecordingContext->Submit(
+	    std::move(lease),
 	    std::span<const RhiSubmissionToken>(resolvedWaitTokens.data(), resolvedWaitCount),
-	    binaryWaitSemaphore,
-	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-	commandList.ResolveTrackedResources(token);
-	return token;
+	    ConsumeAcquireSemaphore(queueType),
+	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+	    binarySignalSemaphore);
 }
 
 RhiSubmissionState VulkanRenderDeviceServices::ConsumeQueueWaits(
@@ -334,6 +339,20 @@ void VulkanRenderDeviceServices::WaitForSubmission(RhiSubmissionToken token) noe
 	}
 }
 
+void VulkanRenderDeviceServices::DrainSwapChainQueue() noexcept
+{
+	VulkanCommandQueue& graphicsQueue =
+	    m_rhi->GetCommandQueue(ERhiQueueType::Graphics);
+	const RhiSubmissionToken lastSubmission =
+	    graphicsQueue.GetLastSubmittedToken();
+	if (lastSubmission.IsValid())
+	{
+		graphicsQueue.WaitForSubmission(lastSubmission.Value);
+	}
+
+	graphicsQueue.DrainForSwapChainRecreation();
+}
+
 bool VulkanRenderDeviceServices::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
 {
 	return !token.IsValid() || m_rhi->GetCommandQueue(token.Queue).IsSubmissionComplete(token.Value);
@@ -360,15 +379,14 @@ void VulkanRenderDeviceServices::SubmitFrame() noexcept
 	std::array<RhiSubmissionToken, RhiQueueTypeCount> waitTokens{};
 	const std::size_t waitTokenCount = waits.CopyTokens(waitTokens);
 	const VkSemaphore acquireSemaphore = ConsumeAcquireSemaphore(ERhiQueueType::Graphics);
-	const RhiSubmissionToken frameToken = m_commandContext->SubmitCommandList(
-	    vulkanCommandList,
+	const RhiSubmissionToken frameToken =
+	    m_commandRecordingContext->SubmitCurrentGraphicsCommandList(
 	    m_currentFrameIndex,
 	    std::span<const RhiSubmissionToken>(waitTokens.data(), waitTokenCount),
 	    acquireSemaphore,
 	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 	    renderFinishedSemaphore);
 
-	graphicsCommandList.ResolveTrackedResources(frameToken);
 	CompletePresentation(frameToken, renderFinishedSemaphore);
 }
 

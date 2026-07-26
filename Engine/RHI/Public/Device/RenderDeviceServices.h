@@ -43,6 +43,7 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	void WaitForIdle() noexcept override;
 	void ResizeSwapChain() noexcept;
 	void BeginFrame() noexcept;
+	void PrepareCommandRecording() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	RenderCommandList& BeginCurrentGraphicsCommandList() noexcept override;

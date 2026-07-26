@@ -10,7 +10,9 @@
 #include "Vulkan/Device/VulkanRayTracingFeatureQuery.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -148,6 +150,7 @@ class VulkanRhi final
 	    void* userData) noexcept;
 
 	static constexpr std::uint32_t NvidiaVendorId = 0x10DE;
+	static constexpr std::size_t DiagnosticMessageCapacity = 256;
 	static constexpr const char* NvidiaBinaryImportExtensionName = "VK_NVX_binary_import";
 	static constexpr const char* NvidiaImageViewHandleExtensionName = "VK_NVX_image_view_handle";
 
@@ -175,7 +178,7 @@ class VulkanRhi final
 	std::vector<std::string> m_enabledInstanceExtensions;
 	std::vector<std::string> m_enabledDeviceExtensions;
 	std::vector<std::string> m_enabledLayers;
-	std::vector<RhiDiagnosticMessage> m_diagnosticMessages;
+	std::deque<RhiDiagnosticMessage> m_diagnosticMessages;
 	std::mutex m_diagnosticMessagesMutex;
 	bool m_validationEnabled = false;
 };

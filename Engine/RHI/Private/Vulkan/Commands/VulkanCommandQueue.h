@@ -6,9 +6,15 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <span>
 
 class VulkanRhi;
+
+namespace spdlog
+{
+class logger;
+}
 
 struct VulkanQueueSubmission final
 {
@@ -22,6 +28,7 @@ struct VulkanQueueSubmission final
 struct VulkanNativeQueueState final
 {
 	VkQueue Queue = VK_NULL_HANDLE;
+	std::mutex SubmissionMutex;
 };
 
 class VulkanCommandQueue final
@@ -40,6 +47,7 @@ class VulkanCommandQueue final
 
 	RhiSubmissionToken Submit(const VulkanQueueSubmission& submission) noexcept;
 	VkResult Present(const VkPresentInfoKHR& presentInfo) noexcept;
+	void DrainForSwapChainRecreation() noexcept;
 	void WaitForSubmission(std::uint64_t submissionValue) noexcept;
 	bool HasSubmitted(std::uint64_t submissionValue) const noexcept;
 	bool IsSubmissionComplete(std::uint64_t submissionValue) const noexcept;
@@ -47,18 +55,24 @@ class VulkanCommandQueue final
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;
 	std::uint64_t GetCompletedSubmissionValue() const noexcept;
 	ERhiQueueType GetQueueType() const noexcept { return m_queueType; }
-	VkQueue GetNativeQueue() const noexcept
-	{
-		m_owner.AssertAccess();
-		return m_nativeQueue != nullptr ? m_nativeQueue->Queue : VK_NULL_HANDLE;
-	}
-	VkSemaphore GetTimelineSemaphore() const noexcept
-	{
-		m_owner.AssertAccess();
-		return m_timelineSemaphore;
-	}
+	VkQueue GetNativeQueue() const noexcept;
+	VkSemaphore GetTimelineSemaphore() const noexcept;
 
   private:
+	struct NativeSubmission;
+
+	static const std::shared_ptr<spdlog::logger>& GetLogger();
+	static std::uint64_t GetWaitTimeoutNanoseconds() noexcept;
+	bool ResolveWaitState(
+	    std::span<const RhiSubmissionToken> waitTokens,
+	    RhiSubmissionState& waitState) const noexcept;
+	void BuildNativeSubmission(
+	    const VulkanQueueSubmission& submission,
+	    const RhiSubmissionState& waitState,
+	    std::uint64_t submissionValue,
+	    NativeSubmission& nativeSubmission) const noexcept;
+	VkResult SubmitNative(const VkSubmitInfo& submission) noexcept;
+
 	Threading::OwnerThread m_owner{"Vulkan command queue"};
 	VulkanRhi& m_rhi;
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;

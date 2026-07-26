@@ -12,9 +12,16 @@
 #include "Vulkan/VulkanTypeConversions.h"
 #include "Validation/RhiContract.h"
 
+#include <algorithm>
 #include <utility>
 
 static const auto g_vulkanDescriptorManagerLogger = Logging::GetOrCreateLogger("RHI.Vulkan.DescriptorManager");
+
+bool VulkanDescriptorManager::ResourceViewRecord::IsAllocated() const noexcept
+{
+	return Image != VK_NULL_HANDLE || Buffer != VK_NULL_HANDLE || AccelerationStructure != VK_NULL_HANDLE ||
+	       ImageView != VK_NULL_HANDLE || static_cast<bool>(DescriptorHandle);
+}
 
 VulkanDescriptorManager::VulkanDescriptorManager(
     VulkanRhi& rhi,
@@ -58,6 +65,38 @@ std::unique_ptr<RenderBindingSet> VulkanDescriptorManager::CreateBindingSet(cons
 
 void VulkanDescriptorManager::BindGlobalDescriptorState(RenderCommandList&) const noexcept
 {
+}
+
+void VulkanDescriptorManager::PublishRecordingReadView() noexcept
+{
+	auto readView = std::make_shared<RecordingReadView>();
+	readView->ImageViews.reserve(m_resourceViewRecords.size());
+	for (const ResourceViewRecord& record : m_resourceViewRecords)
+	{
+		if (record.ImageView == VK_NULL_HANDLE)
+		{
+			continue;
+		}
+
+		const RhiResourceViewDesc viewDesc{
+		    .Kind = record.Kind,
+		    .Resource = RhiResourceHandle{record.Image},
+		    .Format = record.Format,
+		    .Texture = record.Texture};
+		readView->ImageViews.push_back(
+		    RecordingImageView{
+		        .ImageViewValue = reinterpret_cast<std::uintptr_t>(record.ImageView),
+		        .AspectMask = ResolveViewAspectMask(viewDesc)});
+	}
+	std::ranges::sort(
+	    readView->ImageViews,
+	    {},
+	    &RecordingImageView::ImageViewValue);
+	std::atomic_store(
+	    &m_recordingReadView,
+	    std::shared_ptr<const RecordingReadView>(std::move(readView)));
+
+	m_allocator.PublishRecordingReadView();
 }
 
 RhiDescriptorAllocation VulkanDescriptorManager::AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType)
@@ -309,22 +348,24 @@ VkImageAspectFlags VulkanDescriptorManager::ResolveImageViewAspectMask(VkImageVi
 		return 0;
 	}
 
-	for (const ResourceViewRecord& record : m_resourceViewRecords)
+	const std::shared_ptr<const RecordingReadView> readView =
+	    std::atomic_load(&m_recordingReadView);
+	if (readView == nullptr)
 	{
-		if (record.ImageView != imageView)
-		{
-			continue;
-		}
-
-		const RhiResourceViewDesc viewDesc{
-		    .Kind = record.Kind,
-		    .Resource = RhiResourceHandle{record.Image},
-		    .Format = record.Format,
-		    .Texture = record.Texture};
-		return ResolveViewAspectMask(viewDesc);
+		return VK_IMAGE_ASPECT_COLOR_BIT;
 	}
 
-	return VK_IMAGE_ASPECT_COLOR_BIT;
+	const std::uintptr_t imageViewValue =
+	    reinterpret_cast<std::uintptr_t>(imageView);
+	const auto found = std::ranges::lower_bound(
+	    readView->ImageViews,
+	    imageViewValue,
+	    {},
+	    &RecordingImageView::ImageViewValue);
+	return found != readView->ImageViews.end() &&
+	               found->ImageViewValue == imageViewValue
+	           ? found->AspectMask
+	           : VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
 void VulkanDescriptorManager::RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept

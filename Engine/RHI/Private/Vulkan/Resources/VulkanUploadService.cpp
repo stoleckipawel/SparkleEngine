@@ -3,7 +3,6 @@
 #include "Vulkan/Resources/VulkanUploadService.h"
 
 #include "Commands/RenderCommandList.h"
-#include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
@@ -70,26 +69,25 @@ bool VulkanUploadService::CopyTextureUploadData(
 }
 
 VulkanUploadService::VulkanUploadService(
-    VulkanCommandContext& commandContext,
     VulkanGpuMemoryAllocator& memoryAllocator) :
-	m_commandContext(&commandContext), m_memoryAllocator(&memoryAllocator), m_uniformAllocator(memoryAllocator)
+	m_memoryAllocator(&memoryAllocator)
 {
 }
 
 VulkanUploadService::~VulkanUploadService() noexcept = default;
-
-void VulkanUploadService::BeginFrame(std::uint32_t frameIndex) noexcept
-{
-	m_uniformAllocator.BeginFrame(frameIndex);
-}
 
 RhiGpuVirtualAddress VulkanUploadService::AllocateUniformConstantBuffer(
     RenderCommandList& commandList,
     const void* data,
     std::uint32_t sizeInBytes)
 {
-	(void)commandList;
-	return m_uniformAllocator.AllocateAndCopy(data, sizeInBytes);
+	if (commandList.GetBackendApi() != ERhiBackendApi::Vulkan)
+	{
+		return {};
+	}
+
+	return static_cast<VulkanRenderCommandList&>(commandList)
+	    .AllocateUniformConstantBuffer(data, sizeInBytes);
 }
 
 bool VulkanUploadService::UploadTexture(
@@ -124,7 +122,7 @@ bool VulkanUploadService::UploadTexture(
 	    finalState);
 
 	commandList.TrackResource(RhiResourceHandle{destinationRecord->Image});
-	commandList.TrackResource(RhiResourceHandle{stagingResource->Buffer});
+	vulkanCommandList.TrackTransientAllocation(*stagingResource);
 	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource));
 	return true;
 }
@@ -134,8 +132,7 @@ bool VulkanUploadService::ValidateTextureUploadRequest(
     const VulkanGpuAllocationRecord* destination,
     const RhiTextureUploadDesc& textureUpload) const noexcept
 {
-	if (m_commandContext == nullptr ||
-	    m_memoryAllocator == nullptr ||
+	if (m_memoryAllocator == nullptr ||
 	    destination == nullptr ||
 	    destination->Image == VK_NULL_HANDLE ||
 	    !textureUpload.IsValid() ||
@@ -144,10 +141,11 @@ bool VulkanUploadService::ValidateTextureUploadRequest(
 		return false;
 	}
 
-	const VkCommandBuffer commandBuffer =
-	    static_cast<const VulkanRenderCommandList&>(commandList).GetVulkanCommandBuffer();
-	return commandBuffer != VK_NULL_HANDLE &&
-	       m_commandContext->IsCommandBufferRecording(commandBuffer);
+	const auto& vulkanCommandList =
+	    static_cast<const VulkanRenderCommandList&>(commandList);
+	return vulkanCommandList.GetVulkanCommandBuffer() != VK_NULL_HANDLE &&
+	       vulkanCommandList.IsRecording() &&
+	       vulkanCommandList.IsCoordinatorRecording();
 }
 
 std::unique_ptr<VulkanGpuAllocationRecord> VulkanUploadService::CreateTextureStagingResource(

@@ -25,7 +25,7 @@ class VulkanSwapChain final
 
 	bool AcquireNextImage(std::uint32_t frameIndex) noexcept;
 	bool Present(VkSemaphore renderFinishedSemaphore) noexcept;
-	void ResizeAfterDeviceIdle() noexcept;
+	void Resize() noexcept;
 	bool ConsumeResizeRequest() noexcept;
 
 	std::uint32_t GetCurrentBackBufferIndex() const noexcept { return m_currentBackBufferIndex; }

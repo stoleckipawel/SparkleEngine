@@ -1,13 +1,11 @@
 #pragma once
 
 #include "Resources/RhiUploadService.h"
-#include "Vulkan/Resources/VulkanLinearAllocator.h"
 
 #include <memory>
 #include <span>
 #include <vector>
 
-class VulkanCommandContext;
 class VulkanGpuMemoryAllocator;
 class VulkanRenderCommandList;
 struct VulkanGpuAllocationRecord;
@@ -15,7 +13,7 @@ struct VulkanGpuAllocationRecord;
 class VulkanUploadService final : public RhiUploadService
 {
   public:
-	VulkanUploadService(VulkanCommandContext& commandContext, VulkanGpuMemoryAllocator& memoryAllocator);
+	explicit VulkanUploadService(VulkanGpuMemoryAllocator& memoryAllocator);
 	~VulkanUploadService() noexcept;
 
 	VulkanUploadService(const VulkanUploadService&) = delete;
@@ -23,7 +21,6 @@ class VulkanUploadService final : public RhiUploadService
 	VulkanUploadService(VulkanUploadService&&) = delete;
 	VulkanUploadService& operator=(VulkanUploadService&&) = delete;
 
-	void BeginFrame(std::uint32_t frameIndex) noexcept;
 	RhiGpuVirtualAddress AllocateUniformConstantBuffer(
 	    RenderCommandList& commandList,
 	    const void* data,
@@ -60,7 +57,5 @@ class VulkanUploadService final : public RhiUploadService
 	    std::span<const VkBufferImageCopy> copyRegions,
 	    ResourceState finalState) noexcept;
 
-	VulkanCommandContext* m_commandContext = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
-	VulkanLinearAllocator m_uniformAllocator;
 };

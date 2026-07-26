@@ -5,19 +5,44 @@
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/Descriptors/VulkanDescriptorHandles.h"
 #include "Vulkan/Descriptors/VulkanDescriptorManager.h"
+#include "Vulkan/Descriptors/VulkanRecordingDescriptorPool.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
 #include "Vulkan/Pipeline/VulkanPipelineState.h"
+#include "Vulkan/Resources/VulkanRecordingUploadPage.h"
 #include "Vulkan/VulkanTypeConversions.h"
 #include "Interop/RhiInteropService.h"
 
 #include <algorithm>
+#include <cassert>
 #include <format>
 #include <string_view>
 
 static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("RHI.Vulkan.CommandList");
+
+VulkanRenderCommandList::VulkanRenderCommandList()
+{
+	m_graphicsDescriptorSets.reserve(8);
+	m_computeDescriptorSets.reserve(8);
+	m_graphicsDirtyDescriptorSets.reserve(8);
+	m_computeDirtyDescriptorSets.reserve(8);
+	m_graphicsBoundDescriptorSets.reserve(8);
+	m_computeBoundDescriptorSets.reserve(8);
+
+	m_retainedDescriptorTables.reserve(32);
+	m_retainedDescriptorHandles.reserve(32);
+	m_retainedDescriptorBuffers.reserve(32);
+	m_recordingResourceUses.reserve(32);
+	m_transientAllocationUses.reserve(32);
+}
+
+VulkanRenderCommandList::~VulkanRenderCommandList() noexcept
+{
+	ResetTrackedResources();
+	AbandonTransientAllocationUses();
+}
 
 void VulkanRenderCommandList::ConfigurePartitionedTlasInput(
     const RhiPartitionedTlasDesc& desc,
@@ -41,6 +66,15 @@ void VulkanRenderCommandList::ConfigurePartitionedTlasInput(
 void VulkanRenderCommandList::CloseOpenRendering() noexcept
 {
 	EndDynamicRenderingIfNeeded();
+}
+
+RhiGpuVirtualAddress VulkanRenderCommandList::AllocateUniformConstantBuffer(
+    const void* data,
+    std::uint32_t sizeInBytes) noexcept
+{
+	return m_isRecording && m_recordingUploadPage != nullptr
+	           ? m_recordingUploadPage->AllocateAndCopy(data, sizeInBytes)
+	           : RhiGpuVirtualAddress{};
 }
 
 void VulkanRenderCommandList::SetNativeCommandBuffer(
@@ -73,39 +107,103 @@ ERhiBackendApi VulkanRenderCommandList::GetBackendApi() const noexcept
 	return ERhiBackendApi::Vulkan;
 }
 
+void VulkanRenderCommandList::TrackTransientAllocation(
+    VulkanGpuAllocationRecord& allocation) noexcept
+{
+	allocation.RecordingReferenceCount.fetch_add(
+	    1,
+	    std::memory_order_relaxed);
+	if (allocation.ParentMemoryBlock != nullptr)
+	{
+		allocation.ParentMemoryBlock->RecordingReferenceCount.fetch_add(
+		    1,
+		    std::memory_order_relaxed);
+	}
+
+	m_transientAllocationUses.push_back(&allocation);
+}
+
+void VulkanRenderCommandList::ResolveTransientAllocationUses(
+    RhiSubmissionToken submissionToken) noexcept
+{
+	ReleaseTransientAllocationUses(submissionToken);
+}
+
+void VulkanRenderCommandList::AbandonTransientAllocationUses() noexcept
+{
+	ReleaseTransientAllocationUses({});
+}
+
+void VulkanRenderCommandList::ReleaseTransientAllocationUses(
+    RhiSubmissionToken submissionToken) noexcept
+{
+	for (VulkanGpuAllocationRecord* allocation :
+	     m_transientAllocationUses)
+	{
+		if (allocation == nullptr)
+		{
+			continue;
+		}
+
+		const std::uint32_t previousReferences =
+		    allocation->RecordingReferenceCount.fetch_sub(
+		        1,
+		        std::memory_order_relaxed);
+		assert(previousReferences != 0);
+		if (submissionToken.IsValid())
+		{
+			allocation->LastUse.MarkUsed(submissionToken);
+		}
+
+		if (allocation->ParentMemoryBlock != nullptr)
+		{
+			VulkanGpuMemoryBlockRecord& memoryBlock =
+			    *allocation->ParentMemoryBlock;
+			const std::uint32_t previousBlockReferences =
+			    memoryBlock.RecordingReferenceCount.fetch_sub(
+			        1,
+			        std::memory_order_relaxed);
+			assert(previousBlockReferences != 0);
+			if (submissionToken.IsValid())
+			{
+				memoryBlock.LastUse.MarkUsed(submissionToken);
+			}
+		}
+	}
+	m_transientAllocationUses.clear();
+}
+
 void VulkanRenderCommandList::OnResourceTrackingStarted(RhiResourceHandle resource) noexcept
 {
-	VulkanGpuAllocationRecord* record =
-	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
-	if (record == nullptr)
+	if (m_memoryAllocator == nullptr)
 	{
 		return;
 	}
-	++record->RecordingReferenceCount;
-	if (record->ParentMemoryBlock != nullptr)
-	{
-		++record->ParentMemoryBlock->RecordingReferenceCount;
-	}
+
+	const VulkanRecordingResourceUseToken use =
+	    IsCoordinatorRecording() ? m_memoryAllocator->RetainCoordinatorRecordingResource(resource)
+	                             : m_memoryAllocator->RetainRecordingResource(resource);
+	m_recordingResourceUses.push_back(RecordingResourceUse{.Resource = resource, .Token = use});
 }
 
 void VulkanRenderCommandList::OnResourceTrackingFinished(
 	RhiResourceHandle resource,
 	RhiSubmissionToken submissionToken) noexcept
 {
-	VulkanGpuAllocationRecord* record =
-	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
-	if (record == nullptr)
+	if (m_memoryAllocator == nullptr)
 	{
 		return;
 	}
-	record->RecordingReferenceCount = record->RecordingReferenceCount > 0 ? record->RecordingReferenceCount - 1 : 0;
-	record->LastUse.MarkUsed(submissionToken);
-	if (record->ParentMemoryBlock != nullptr)
+
+	assert(m_recordingResourceReleaseIndex < m_recordingResourceUses.size());
+	const RecordingResourceUse& use = m_recordingResourceUses[m_recordingResourceReleaseIndex++];
+	assert(use.Resource.Value == resource.Value);
+	m_memoryAllocator->ReleaseRecordingResource(use.Token, submissionToken);
+
+	if (m_recordingResourceReleaseIndex == m_recordingResourceUses.size())
 	{
-		VulkanGpuMemoryBlockRecord& memoryBlock = *record->ParentMemoryBlock;
-		memoryBlock.RecordingReferenceCount =
-		    memoryBlock.RecordingReferenceCount > 0 ? memoryBlock.RecordingReferenceCount - 1 : 0;
-		memoryBlock.LastUse.MarkUsed(submissionToken);
+		m_recordingResourceUses.clear();
+		m_recordingResourceReleaseIndex = 0;
 	}
 }
 
@@ -204,27 +302,18 @@ void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIn
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
-		VulkanGpuAllocationRecord* const record =
-		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
-		if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
-		{
-			return;
-		}
-		if (record->IsPartitionedAccelerationStructure)
-		{
-			m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, *binding, record->DeviceAddress);
-		}
-		else
-		{
-			m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
-		}
+		WriteAccelerationStructureBinding(
+		    descriptorSet,
+		    *binding,
+		    gpuAddress);
 	}
 	else
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
-		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
-		m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
+		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
+		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
 	}
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
@@ -240,27 +329,18 @@ void VulkanRenderCommandList::BindGraphicsShaderResource(std::uint32_t bindingIn
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
-		VulkanGpuAllocationRecord* const record =
-		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
-		if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
-		{
-			return;
-		}
-		if (record->IsPartitionedAccelerationStructure)
-		{
-			m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, *binding, record->DeviceAddress);
-		}
-		else
-		{
-			m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
-		}
+		WriteAccelerationStructureBinding(
+		    descriptorSet,
+		    *binding,
+		    gpuAddress);
 	}
 	else
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
-		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
-		m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
+		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
+		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
 	}
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
@@ -333,27 +413,18 @@ void VulkanRenderCommandList::BindComputeConstantBuffer(std::uint32_t bindingInd
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		VulkanGpuAllocationRecord* const record =
-		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
-		if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
-		{
-			return;
-		}
-		if (record->IsPartitionedAccelerationStructure)
-		{
-			m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, *binding, record->DeviceAddress);
-		}
-		else
-		{
-			m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
-		}
+		WriteAccelerationStructureBinding(
+		    descriptorSet,
+		    *binding,
+		    gpuAddress);
 	}
 	else
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
-		m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
+		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
+		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
 	}
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
@@ -369,27 +440,18 @@ void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingInd
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		VulkanGpuAllocationRecord* const record =
-		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
-		if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
-		{
-			return;
-		}
-		if (record->IsPartitionedAccelerationStructure)
-		{
-			m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, *binding, record->DeviceAddress);
-		}
-		else
-		{
-			m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
-		}
+		WriteAccelerationStructureBinding(
+		    descriptorSet,
+		    *binding,
+		    gpuAddress);
 	}
 	else
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
-		m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
+		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
+		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
 	}
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
@@ -682,9 +744,11 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	}
 	EndDynamicRenderingIfNeeded();
 
-	VulkanGpuAllocationRecord* const resultRecord = m_memoryAllocator->FindAllocationRecordByDeviceAddress(resultGpuAddress);
-	if (resultRecord == nullptr || resultRecord->AccelerationStructure == VK_NULL_HANDLE ||
-	    resultRecord->AccelerationStructureType != VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR)
+	VulkanRecordingResource resultResource;
+	if (!ResolveAddress(resultGpuAddress, resultResource) ||
+	    resultResource.AccelerationStructure == VK_NULL_HANDLE ||
+	    resultResource.AccelerationStructureType !=
+	        VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR)
 	{
 		return;
 	}
@@ -712,7 +776,7 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
 	    .mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
 	    .srcAccelerationStructure = VK_NULL_HANDLE,
-	    .dstAccelerationStructure = resultRecord->AccelerationStructure,
+	    .dstAccelerationStructure = resultResource.AccelerationStructure,
 	    .geometryCount = 1,
 	    .pGeometries = &nativeGeometry,
 	    .ppGeometries = nullptr,
@@ -762,9 +826,11 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	}
 	EndDynamicRenderingIfNeeded();
 
-	VulkanGpuAllocationRecord* const resultRecord = m_memoryAllocator->FindAllocationRecordByDeviceAddress(resultGpuAddress);
-	if (resultRecord == nullptr || resultRecord->AccelerationStructure == VK_NULL_HANDLE ||
-	    resultRecord->AccelerationStructureType != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
+	VulkanRecordingResource resultResource;
+	if (!ResolveAddress(resultGpuAddress, resultResource) ||
+	    resultResource.AccelerationStructure == VK_NULL_HANDLE ||
+	    resultResource.AccelerationStructureType !=
+	        VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
 	{
 		return;
 	}
@@ -791,8 +857,11 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .flags = nativeBuildFlags,
 	    .mode = buildMode == ERhiClassicTlasBuildMode::Update ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
 	                                                          : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
-	    .srcAccelerationStructure = buildMode == ERhiClassicTlasBuildMode::Update ? resultRecord->AccelerationStructure : VK_NULL_HANDLE,
-	    .dstAccelerationStructure = resultRecord->AccelerationStructure,
+	    .srcAccelerationStructure =
+	        buildMode == ERhiClassicTlasBuildMode::Update
+	            ? resultResource.AccelerationStructure
+	            : VK_NULL_HANDLE,
+	    .dstAccelerationStructure = resultResource.AccelerationStructure,
 	    .geometryCount = 1,
 	    .pGeometries = &geometry,
 	    .ppGeometries = nullptr,
@@ -902,46 +971,59 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 	}
 	EndDynamicRenderingIfNeeded();
 
-	VulkanGpuAllocationRecord* const destinationRecord = m_memoryAllocator->FindAllocationRecord(destinationResource);
-	VulkanGpuAllocationRecord* const sourceRecord = m_memoryAllocator->FindAllocationRecord(sourceResource);
-	if (destinationRecord == nullptr || sourceRecord == nullptr || destinationRecord->ResourceKind != sourceRecord->ResourceKind)
+	VulkanRecordingResource destination;
+	VulkanRecordingResource source;
+	if (!ResolveResource(destinationResource, destination) ||
+	    !ResolveResource(sourceResource, source) ||
+	    destination.ResourceKind != source.ResourceKind)
 	{
 		return;
 	}
 
-	if (destinationRecord->ResourceKind == VulkanGpuAllocationResourceKind::Buffer && destinationRecord->Buffer != VK_NULL_HANDLE &&
-	    sourceRecord->Buffer != VK_NULL_HANDLE)
+	if (destination.ResourceKind ==
+	        VulkanGpuAllocationResourceKind::Buffer &&
+	    destination.Buffer != VK_NULL_HANDLE &&
+	    source.Buffer != VK_NULL_HANDLE)
 	{
 		const VkBufferCopy copyRegion{
 		    .srcOffset = 0,
 		    .dstOffset = 0,
-		    .size = std::min(destinationRecord->ResourceSizeInBytes, sourceRecord->ResourceSizeInBytes)};
+		    .size = std::min(
+		        destination.ResourceSizeInBytes,
+		        source.ResourceSizeInBytes)};
 		if (copyRegion.size > 0)
 		{
-			vkCmdCopyBuffer(m_commandBuffer, sourceRecord->Buffer, destinationRecord->Buffer, 1, &copyRegion);
+			vkCmdCopyBuffer(
+			    m_commandBuffer,
+			    source.Buffer,
+			    destination.Buffer,
+			    1,
+			    &copyRegion);
 		}
 		return;
 	}
 
-	if (destinationRecord->ResourceKind == VulkanGpuAllocationResourceKind::Image && destinationRecord->Image != VK_NULL_HANDLE &&
-	    sourceRecord->Image != VK_NULL_HANDLE)
+	if (destination.ResourceKind ==
+	        VulkanGpuAllocationResourceKind::Image &&
+	    destination.Image != VK_NULL_HANDLE &&
+	    source.Image != VK_NULL_HANDLE)
 	{
 		const VkExtent3D copyExtent{
-		    .width = std::min(destinationRecord->Extent.width, sourceRecord->Extent.width),
-		    .height = std::min(destinationRecord->Extent.height, sourceRecord->Extent.height),
-		    .depth = std::min(destinationRecord->Extent.depth, sourceRecord->Extent.depth)};
+		    .width = std::min(destination.Extent.width, source.Extent.width),
+		    .height = std::min(destination.Extent.height, source.Extent.height),
+		    .depth = std::min(destination.Extent.depth, source.Extent.depth)};
 		if (copyExtent.width == 0 || copyExtent.height == 0 || copyExtent.depth == 0)
 		{
 			return;
 		}
 
 		const VkImageSubresourceLayers sourceLayers{
-		    .aspectMask = sourceRecord->AspectMask,
+		    .aspectMask = source.AspectMask,
 		    .mipLevel = 0,
 		    .baseArrayLayer = 0,
 		    .layerCount = 1};
 		const VkImageSubresourceLayers destinationLayers{
-		    .aspectMask = destinationRecord->AspectMask,
+		    .aspectMask = destination.AspectMask,
 		    .mipLevel = 0,
 		    .baseArrayLayer = 0,
 		    .layerCount = 1};
@@ -953,9 +1035,9 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 		    .extent = copyExtent};
 		vkCmdCopyImage(
 		    m_commandBuffer,
-		    sourceRecord->Image,
+		    source.Image,
 		    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		    destinationRecord->Image,
+		    destination.Image,
 		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		    1,
 		    &copyRegion);
@@ -1001,29 +1083,18 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 	}
 	EndDynamicRenderingIfNeeded();
 
-	const auto resolveState = [this](ResourceState state)
-	{
-		VulkanResourceStateMapping mapping = VulkanTypeConversions::ToResourceStateMapping(state);
-		if (m_queueType != ERhiQueueType::Compute)
-		{
-			return mapping;
-		}
-		if (state == ResourceState::ShaderResource || state == ResourceState::UnorderedAccess)
-		{
-			mapping.StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-		}
-		else if (state == ResourceState::RayTracingAccelerationStructure)
-		{
-			mapping.StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
-			                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-		}
-		return mapping;
-	};
-	VulkanResourceStateMapping sourceState = resolveState(before);
-	const VulkanResourceStateMapping destinationState = resolveState(after);
-	VulkanGpuAllocationRecord* const record = m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
+	VulkanResourceStateMapping sourceState = ResolveResourceState(before);
+	const VulkanResourceStateMapping destinationState =
+	    ResolveResourceState(after);
 
-	if (record != nullptr && record->ResourceKind == VulkanGpuAllocationResourceKind::Buffer && record->Buffer != VK_NULL_HANDLE)
+	VulkanRecordingResource recordingResource;
+	const bool hasRecordingResource =
+	    ResolveResource(resource, recordingResource);
+
+	if (hasRecordingResource &&
+	    recordingResource.ResourceKind ==
+	        VulkanGpuAllocationResourceKind::Buffer &&
+	    recordingResource.Buffer != VK_NULL_HANDLE)
 	{
 		if (!VulkanTypeConversions::IsBufferResourceStateSupported(before) || !VulkanTypeConversions::IsBufferResourceStateSupported(after))
 		{
@@ -1039,9 +1110,12 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 		    .dstAccessMask = destinationState.AccessMask,
 		    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		    .buffer = record->Buffer,
+		    .buffer = recordingResource.Buffer,
 		    .offset = 0,
-		    .size = record->ResourceSizeInBytes > 0 ? record->ResourceSizeInBytes : VK_WHOLE_SIZE};
+		    .size =
+		        recordingResource.ResourceSizeInBytes > 0
+		            ? recordingResource.ResourceSizeInBytes
+		            : VK_WHOLE_SIZE};
 		const VkDependencyInfo dependencyInfo{
 		    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		    .pNext = nullptr,
@@ -1056,7 +1130,11 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 		return;
 	}
 
-	const VkImage image = record != nullptr && record->Image != VK_NULL_HANDLE ? record->Image : static_cast<VkImage>(resource.Value);
+	const VkImage image =
+	    hasRecordingResource &&
+	            recordingResource.Image != VK_NULL_HANDLE
+	        ? recordingResource.Image
+	        : static_cast<VkImage>(resource.Value);
 	if (image == VK_NULL_HANDLE)
 	{
 		return;
@@ -1065,12 +1143,17 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 	{
 		return;
 	}
-	if (record == nullptr && before == ResourceState::Present && destinationState.ImageLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+	if (!hasRecordingResource &&
+	    before == ResourceState::Present &&
+	    destinationState.ImageLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
 	{
 		sourceState = VulkanResourceStateMapping{};
 	}
 
-	const VkImageAspectFlags aspectMask = record != nullptr && record->AspectMask != 0 ? record->AspectMask : VK_IMAGE_ASPECT_COLOR_BIT;
+	const VkImageAspectFlags aspectMask =
+	    hasRecordingResource && recordingResource.AspectMask != 0
+	        ? recordingResource.AspectMask
+	        : VK_IMAGE_ASPECT_COLOR_BIT;
 	const VkImageMemoryBarrier2 imageBarrier{
 	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 	    .pNext = nullptr,
@@ -1119,9 +1202,9 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource)
 	VkAccessFlags2 srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
 	VkPipelineStageFlags2 dstStageMask = srcStageMask;
 	VkAccessFlags2 dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
-	VulkanGpuAllocationRecord* const record =
-	    m_memoryAllocator != nullptr && resource ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
-	if (record != nullptr && record->AccelerationStructure != VK_NULL_HANDLE)
+	VulkanRecordingResource recordingResource;
+	if (ResolveResource(resource, recordingResource) &&
+	    recordingResource.AccelerationStructure != VK_NULL_HANDLE)
 	{
 		srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
 		srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
@@ -1189,21 +1272,117 @@ VkShaderStageFlags VulkanRenderCommandList::ToVkShaderStages(ShaderStageMask vis
 	return result != 0 ? result : VK_SHADER_STAGE_ALL;
 }
 
+VulkanResourceStateMapping VulkanRenderCommandList::ResolveResourceState(
+    ResourceState state) const noexcept
+{
+	VulkanResourceStateMapping mapping =
+	    VulkanTypeConversions::ToResourceStateMapping(state);
+	if (m_queueType != ERhiQueueType::Compute)
+	{
+		return mapping;
+	}
+
+	if (state == ResourceState::ShaderResource ||
+	    state == ResourceState::UnorderedAccess)
+	{
+		mapping.StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+	}
+	else if (state == ResourceState::RayTracingAccelerationStructure)
+	{
+		mapping.StageMask =
+		    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+		    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+	}
+	return mapping;
+}
+
 VkBuffer VulkanRenderCommandList::ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept
+{
+	return ResolveBufferBinding(gpuAddress).Buffer;
+}
+
+bool VulkanRenderCommandList::ResolveResource(
+    RhiResourceHandle resource,
+    VulkanRecordingResource& outResource) const noexcept
+{
+	return m_memoryAllocator != nullptr &&
+	       m_memoryAllocator->ResolveRecordingResource(
+	           resource,
+	           outResource);
+}
+
+bool VulkanRenderCommandList::ResolveAddress(
+    RhiGpuVirtualAddress address,
+    VulkanRecordingResource& outResource) const noexcept
+{
+	return m_memoryAllocator != nullptr &&
+	       m_memoryAllocator->ResolveRecordingAddress(
+	           address,
+	           outResource);
+}
+
+void VulkanRenderCommandList::WriteAccelerationStructureBinding(
+    VkDescriptorSet descriptorSet,
+    const CompiledBinding& binding,
+    RhiGpuVirtualAddress address) noexcept
+{
+	VulkanRecordingResource resource;
+	if (!ResolveAddress(address, resource) ||
+	    (resource.AccelerationStructure == VK_NULL_HANDLE &&
+	     !resource.IsPartitionedAccelerationStructure))
+	{
+		return;
+	}
+
+	if (resource.IsPartitionedAccelerationStructure)
+	{
+		m_descriptorAllocator
+		    ->WritePartitionedAccelerationStructureDescriptor(
+		        descriptorSet,
+		        binding,
+		        resource.DeviceAddress);
+		return;
+	}
+
+	m_descriptorAllocator->WriteAccelerationStructureDescriptor(
+	    descriptorSet,
+	    binding,
+	    resource.AccelerationStructure);
+}
+
+VulkanRenderCommandList::BufferBinding VulkanRenderCommandList::ResolveBufferBinding(
+    RhiGpuVirtualAddress gpuAddress) const noexcept
 {
 	if (gpuAddress == 0)
 	{
-		return VK_NULL_HANDLE;
+		return {};
 	}
-	if (m_memoryAllocator != nullptr)
+
+	BufferBinding binding;
+	if (m_recordingUploadPage != nullptr &&
+	    m_recordingUploadPage->Resolve(gpuAddress, binding.Buffer, binding.Offset, binding.Range))
 	{
-		VulkanGpuAllocationRecord* const record = m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress);
-		if (record != nullptr && record->Buffer != VK_NULL_HANDLE)
-		{
-			return record->Buffer;
-		}
+		return binding;
 	}
-	return reinterpret_cast<VkBuffer>(gpuAddress);
+
+	VulkanRecordingResource resource;
+	if (ResolveAddress(gpuAddress, resource) &&
+	    resource.Buffer != VK_NULL_HANDLE)
+	{
+		binding.Buffer = resource.Buffer;
+		binding.Offset =
+		    resource.BufferDeviceAddress != 0
+		        ? gpuAddress - resource.BufferDeviceAddress
+		        : 0;
+		binding.Range =
+		    binding.Offset < resource.ResourceSizeInBytes
+		        ? resource.ResourceSizeInBytes - binding.Offset
+		        : VK_WHOLE_SIZE;
+		return binding;
+	}
+
+	binding.Buffer = reinterpret_cast<VkBuffer>(gpuAddress);
+	return binding;
 }
 
 void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
@@ -1277,7 +1456,8 @@ VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
     std::vector<VkDescriptorSet>& descriptorSets,
     std::vector<bool>& boundSets) noexcept
 {
-	if (layout == nullptr || m_descriptorAllocator == nullptr || setIndex >= layout->GetDescriptorSetLayouts().size())
+	if (layout == nullptr || m_descriptorAllocator == nullptr || m_recordingDescriptorPool == nullptr ||
+	    setIndex >= layout->GetDescriptorSetLayouts().size())
 	{
 		return VK_NULL_HANDLE;
 	}
@@ -1293,11 +1473,7 @@ VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
 	if (descriptorSets[setIndex] == VK_NULL_HANDLE || boundSets[setIndex])
 	{
 		const VkDescriptorSet previousSet = descriptorSets[setIndex];
-		descriptorSets[setIndex] = m_descriptorAllocator->AllocateTransientSet(
-		    layout->GetDescriptorSetLayouts()[setIndex],
-		    layout->GetBindings(),
-		    layout->GetBindingCount(),
-		    setIndex);
+		descriptorSets[setIndex] = m_recordingDescriptorPool->AllocateSet(layout->GetDescriptorSetLayouts()[setIndex]);
 		if (descriptorSets[setIndex] != VK_NULL_HANDLE)
 		{
 			m_descriptorAllocator->WriteFallbackDescriptors(
@@ -1339,8 +1515,9 @@ void VulkanRenderCommandList::CopyDescriptorSet(
 		return;
 	}
 
-	std::vector<VkCopyDescriptorSet> copies;
-	copies.reserve(layout->GetBindingCount());
+	std::array<VkCopyDescriptorSet, 32> copies{};
+	std::uint32_t copyCount = 0;
+
 	const CompiledBinding* const bindings = layout->GetBindings();
 	for (std::size_t bindingIndex = 0; bindingIndex < layout->GetBindingCount(); ++bindingIndex)
 	{
@@ -1351,7 +1528,7 @@ void VulkanRenderCommandList::CopyDescriptorSet(
 			continue;
 		}
 
-		copies.push_back(
+		copies[copyCount++] =
 		    VkCopyDescriptorSet{
 		        .sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
 		        .pNext = nullptr,
@@ -1361,12 +1538,28 @@ void VulkanRenderCommandList::CopyDescriptorSet(
 		        .dstSet = destinationSet,
 		        .dstBinding = binding.BindingPoint.Binding,
 		        .dstArrayElement = 0,
-		        .descriptorCount = binding.DescriptorCount});
+		        .descriptorCount = binding.DescriptorCount};
+
+		if (copyCount == copies.size())
+		{
+			vkUpdateDescriptorSets(
+			    m_rhi->GetDevice(),
+			    0,
+			    nullptr,
+			    copyCount,
+			    copies.data());
+			copyCount = 0;
+		}
 	}
 
-	if (!copies.empty())
+	if (copyCount != 0)
 	{
-		vkUpdateDescriptorSets(m_rhi->GetDevice(), 0, nullptr, static_cast<std::uint32_t>(copies.size()), copies.data());
+		vkUpdateDescriptorSets(
+		    m_rhi->GetDevice(),
+		    0,
+		    nullptr,
+		    copyCount,
+		    copies.data());
 	}
 }
 

@@ -50,6 +50,8 @@ class FrameGraph
 	friend class FrameGraphBatchRecorder;
 
   private:
+	struct VirtualTransientResource;
+
 	struct AllocatedParameterInstanceBase
 	{
 		virtual ~AllocatedParameterInstanceBase() noexcept;
@@ -430,6 +432,10 @@ class FrameGraph
 	    const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
+	FrameGraphTransientResourcePlan BuildTransientResourcePlan(
+	    const VirtualTransientResource& transientResource,
+	    const FrameGraphResourceMetadata& resourceMetadata,
+	    const FrameGraphPlan& plan) const noexcept;
 	void EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept;
 	void ReleaseExternalResourceViews() noexcept;
 	void ReleaseExternalResourceViews(FrameGraphResourceHandle handle) noexcept;

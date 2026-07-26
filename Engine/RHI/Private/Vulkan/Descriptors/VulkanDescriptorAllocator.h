@@ -15,6 +15,7 @@
 #include <vector>
 
 class VulkanRhi;
+class VulkanDescriptorManager;
 struct CompiledBinding;
 
 class VulkanDescriptorAllocator final
@@ -49,11 +50,6 @@ class VulkanDescriptorAllocator final
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
 	bool WriteRegisteredDescriptor(RhiCpuDescriptorHandle destination, RhiGpuDescriptorHandle source) noexcept;
 
-	VkDescriptorSet AllocateTransientSet(
-	    VkDescriptorSetLayout layout,
-	    const CompiledBinding* bindings,
-	    std::size_t bindingCount,
-	    std::uint32_t setIndex);
 	void WriteFallbackDescriptors(VkDescriptorSet descriptorSet, const CompiledBinding* bindings, std::size_t bindingCount, std::uint32_t setIndex) noexcept;
 	void WriteDescriptorTable(
 	    VkDescriptorSet descriptorSet,
@@ -76,6 +72,8 @@ class VulkanDescriptorAllocator final
 	    VkDeviceAddress accelerationStructureAddress) noexcept;
 
   private:
+	friend class VulkanDescriptorManager;
+
 	enum class EntryKind : std::uint8_t
 	{
 		Empty,
@@ -87,19 +85,6 @@ class VulkanDescriptorAllocator final
 		AccelerationStructure,
 		PartitionedAccelerationStructure,
 	};
-	enum class PoolClass : std::uint8_t
-	{
-		UniformBuffer,
-		StorageBuffer,
-		SampledImage,
-		StorageImage,
-		Sampler,
-		AccelerationStructure,
-		Count,
-	};
-	static constexpr std::size_t DescriptorPoolTypeCount = static_cast<std::size_t>(PoolClass::Count);
-	using DescriptorCounts = std::array<std::uint32_t, DescriptorPoolTypeCount>;
-
 	struct DescriptorEntry final
 	{
 		EntryKind Kind = EntryKind::Empty;
@@ -109,23 +94,37 @@ class VulkanDescriptorAllocator final
 		VkDeviceAddress PartitionedAccelerationStructureAddress = 0;
 	};
 
+	static constexpr std::size_t DescriptorWriteChunkCapacity = 64;
+
+	struct DescriptorWriteChunk final
+	{
+		std::array<VkDescriptorImageInfo, DescriptorWriteChunkCapacity> ImageInfos;
+		std::array<VkDescriptorBufferInfo, DescriptorWriteChunkCapacity> BufferInfos;
+		std::array<VkAccelerationStructureKHR, DescriptorWriteChunkCapacity> AccelerationStructures;
+		std::array<VkDeviceAddress, DescriptorWriteChunkCapacity> PartitionedAccelerationStructureAddresses;
+		std::uint32_t Count = 0;
+	};
+
 	struct DescriptorTableRecord final
 	{
 		ERhiDescriptorAllocatorType Type = ERhiDescriptorAllocatorType::ShaderResource;
-		std::vector<DescriptorEntry> Entries;
+		std::shared_ptr<std::vector<DescriptorEntry>> Entries;
 		bool Allocated = false;
 		std::uint16_t Generation = 0;
 	};
 
-	struct DescriptorPoolPage final
+	struct DescriptorTableReadRecord final
 	{
-		VkDescriptorPool Pool = VK_NULL_HANDLE;
-		std::uint32_t AllocatedSets = 0;
-		DescriptorCounts Capacity = {};
-		DescriptorCounts Remaining = {};
+		std::shared_ptr<const std::vector<DescriptorEntry>> Entries;
+		bool Allocated = false;
+		std::uint16_t Generation = 0;
 	};
 
-	static constexpr std::uint32_t DescriptorSetsPerPage = 256;
+	struct RecordingReadView final
+	{
+		std::vector<DescriptorTableReadRecord> Tables;
+		std::shared_ptr<const std::vector<DescriptorEntry>> RegisteredDescriptors;
+	};
 
 	static VkDescriptorType ToDescriptorType(EntryKind kind) noexcept;
 	static EntryKind ToImageEntryKind(ERhiResourceViewKind viewKind) noexcept;
@@ -134,31 +133,38 @@ class VulkanDescriptorAllocator final
 
 	DescriptorTableRecord* FindTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
+	std::vector<DescriptorEntry>& EditTableEntries(DescriptorTableRecord& record);
+	std::vector<DescriptorEntry>& EditRegisteredDescriptors();
+	void PublishRecordingReadView() noexcept;
 	void RecycleTableRecord(std::uint32_t tableIndex) noexcept;
 	DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) noexcept;
 	const DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) const noexcept;
-	static DescriptorCounts GetPoolRequirements(
-	    const CompiledBinding* bindings,
-	    std::size_t bindingCount,
-	    std::uint32_t setIndex) noexcept;
-	static bool CanAllocateFromPage(
-	    const DescriptorPoolPage& page,
-	    const DescriptorCounts& requirements) noexcept;
-	static void ConsumePoolCapacity(
-	    DescriptorPoolPage& page,
-	    const DescriptorCounts& requirements) noexcept;
-	VkDescriptorPool CreatePoolPage(const DescriptorCounts& capacity);
-	VkBuffer EnsureFallbackBuffer() noexcept;
+	std::shared_ptr<const RecordingReadView> GetRecordingReadView() const noexcept;
+	void CreateFallbackBuffer() noexcept;
+	static bool EntryKindMatchesBinding(
+	    const CompiledBinding& binding,
+	    EntryKind entryKind) noexcept;
+	static bool BuildWriteChunk(
+	    std::span<const DescriptorEntry> entries,
+	    EntryKind entryKind,
+	    DescriptorWriteChunk& outChunk) noexcept;
+	void CommitWriteChunk(
+	    VkDescriptorSet descriptorSet,
+	    const CompiledBinding& binding,
+	    EntryKind entryKind,
+	    VkDescriptorType descriptorType,
+	    std::uint32_t firstDescriptor,
+	    const DescriptorWriteChunk& chunk) noexcept;
 	void WriteEntries(VkDescriptorSet descriptorSet, const CompiledBinding& binding, std::span<const DescriptorEntry> entries) noexcept;
 
 	VulkanRhi& m_rhi;
-	mutable std::mutex m_mutex;
+	mutable std::mutex m_registryMutex;
 	std::uint32_t m_currentFrameIndex = 0;
-	std::vector<std::vector<DescriptorPoolPage>> m_framePoolPages;
 	std::vector<DescriptorTableRecord> m_tables;
 	std::vector<std::uint32_t> m_freeTableIndices;
 	std::array<std::vector<std::uint32_t>, RhiFrameConstants::FramesInFlight> m_retiredTableIndices;
-	std::vector<DescriptorEntry> m_registeredDescriptors;
+	std::shared_ptr<std::vector<DescriptorEntry>> m_registeredDescriptors;
+	std::shared_ptr<const RecordingReadView> m_recordingReadView;
 	std::vector<std::uint32_t> m_freeRegisteredDescriptorIndices;
 	VkBuffer m_fallbackBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_fallbackBufferMemory = VK_NULL_HANDLE;

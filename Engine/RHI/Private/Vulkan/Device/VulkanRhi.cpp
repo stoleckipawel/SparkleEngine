@@ -137,7 +137,7 @@ bool VulkanRhi::TryPopDiagnosticMessage(RhiDiagnosticMessage& outMessage) noexce
 	}
 
 	outMessage = std::move(m_diagnosticMessages.front());
-	m_diagnosticMessages.erase(m_diagnosticMessages.begin());
+	m_diagnosticMessages.pop_front();
 	return true;
 }
 
@@ -1020,6 +1020,10 @@ void VulkanRhi::PushDiagnosticMessage(
 	std::string text) noexcept
 {
 	std::lock_guard lock(m_diagnosticMessagesMutex);
+	if (m_diagnosticMessages.size() >= DiagnosticMessageCapacity)
+	{
+		m_diagnosticMessages.pop_front();
+	}
 	m_diagnosticMessages.push_back(RhiDiagnosticMessage{.Severity = severity, .Category = category, .Text = std::move(text)});
 }
 
@@ -1179,14 +1183,6 @@ VkBool32 VKAPI_PTR VulkanRhi::DebugUtilsCallback(
 	}
 
 	const char* const message = callbackData->pMessage != nullptr ? callbackData->pMessage : "";
-	if (sparkleSeverity == ERhiDiagnosticMessageSeverity::Error)
-	{
-		SPDLOG_LOGGER_ERROR(g_vulkanRhiLogger, "{}", message);
-	}
-	else if (sparkleSeverity == ERhiDiagnosticMessageSeverity::Warning)
-	{
-		SPDLOG_LOGGER_WARN(g_vulkanRhiLogger, "{}", message);
-	}
 	rhi->PushDiagnosticMessage(sparkleSeverity, sparkleCategory, message);
 	return VK_FALSE;
 }

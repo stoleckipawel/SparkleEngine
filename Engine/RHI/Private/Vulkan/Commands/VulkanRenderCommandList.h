@@ -2,37 +2,42 @@
 
 #include "Commands/RenderCommandList.h"
 #include "Vulkan/Diagnostics/VulkanDebugEvents.h"
+#include "Vulkan/Memory/VulkanRecordingResource.h"
 #include "Vulkan/VulkanIncludes.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
 
 class VulkanGpuMemoryAllocator;
+class VulkanCommandRecordingContext;
 class VulkanDescriptorAllocator;
 class VulkanDescriptorManager;
+class VulkanRecordingDescriptorPool;
+class VulkanRecordingUploadPage;
 class VulkanBindingLayout;
 class VulkanRhi;
+class VulkanUploadService;
+struct VulkanResourceStateMapping;
 class VulkanRenderCommandList final : public RenderCommandList
 {
   public:
-	void SetRhi(const VulkanRhi* rhi) noexcept { m_rhi = rhi; }
-	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
-	void SetDescriptorManager(const VulkanDescriptorManager* descriptorManager) noexcept { m_descriptorManager = descriptorManager; }
-	void SetDescriptorAllocator(VulkanDescriptorAllocator* descriptorAllocator) noexcept { m_descriptorAllocator = descriptorAllocator; }
-	void SetQueueType(ERhiQueueType queueType) noexcept { m_queueType = queueType; }
-	void CloseOpenRendering() noexcept;
-	void SetNativeCommandBuffer(
-	    VkCommandBuffer commandBuffer,
-	    PFN_vkCmdBeginDebugUtilsLabelEXT beginLabel,
-	    PFN_vkCmdEndDebugUtilsLabelEXT endLabel,
-	    PFN_vkCmdInsertDebugUtilsLabelEXT insertLabel) noexcept;
+	VulkanRenderCommandList();
+	~VulkanRenderCommandList() noexcept override;
+
+	RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) noexcept;
 
 	ERhiBackendApi GetBackendApi() const noexcept override;
 	ERhiQueueType GetQueueType() const noexcept override { return m_queueType; }
 	VkCommandBuffer GetVulkanCommandBuffer() const noexcept { return m_commandBuffer; }
+	bool IsRecording() const noexcept { return m_isRecording; }
+	bool IsCoordinatorRecording() const noexcept
+	{
+		return m_recordingOwner.IsCoordinator();
+	}
 	NativeGraphicsCommandListHandle GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept override;
 	bool SupportsDiagnosticScopes() const noexcept override;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept override;
@@ -101,6 +106,41 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept override;
 
   private:
+	friend class VulkanCommandRecordingContext;
+	friend class VulkanUploadService;
+
+	struct BufferBinding final
+	{
+		VkBuffer Buffer = VK_NULL_HANDLE;
+		VkDeviceSize Offset = 0;
+		VkDeviceSize Range = VK_WHOLE_SIZE;
+	};
+
+	struct RecordingResourceUse final
+	{
+		RhiResourceHandle Resource;
+		VulkanRecordingResourceUseToken Token;
+	};
+
+	void SetRhi(const VulkanRhi* rhi) noexcept { m_rhi = rhi; }
+	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
+	void SetDescriptorManager(const VulkanDescriptorManager* descriptorManager) noexcept { m_descriptorManager = descriptorManager; }
+	void SetDescriptorAllocator(VulkanDescriptorAllocator* descriptorAllocator) noexcept { m_descriptorAllocator = descriptorAllocator; }
+	void SetRecordingDescriptorPool(VulkanRecordingDescriptorPool* descriptorPool) noexcept { m_recordingDescriptorPool = descriptorPool; }
+	void SetRecordingUploadPage(VulkanRecordingUploadPage* uploadPage) noexcept { m_recordingUploadPage = uploadPage; }
+	void SetRecording(bool recording) noexcept { m_isRecording = recording; }
+	void SetRecordingOwner(RhiCommandRecordingOwner owner) noexcept { m_recordingOwner = owner; }
+	void SetQueueType(ERhiQueueType queueType) noexcept { m_queueType = queueType; }
+	void CloseOpenRendering() noexcept;
+	void SetNativeCommandBuffer(
+	    VkCommandBuffer commandBuffer,
+	    PFN_vkCmdBeginDebugUtilsLabelEXT beginLabel,
+	    PFN_vkCmdEndDebugUtilsLabelEXT endLabel,
+	    PFN_vkCmdInsertDebugUtilsLabelEXT insertLabel) noexcept;
+	void TrackTransientAllocation(VulkanGpuAllocationRecord& allocation) noexcept;
+	void ResolveTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept;
+	void AbandonTransientAllocationUses() noexcept;
+	void ReleaseTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept;
 	void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept override;
 	void OnResourceTrackingFinished(
 	    RhiResourceHandle resource,
@@ -108,11 +148,24 @@ class VulkanRenderCommandList final : public RenderCommandList
 
 	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
 	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
+	VulkanResourceStateMapping ResolveResourceState(
+	    ResourceState state) const noexcept;
 	static void ConfigurePartitionedTlasInput(
 	    const RhiPartitionedTlasDesc& desc,
 	    VkPartitionedAccelerationStructureInstancesInputNV& input,
 	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
 	VkBuffer ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept;
+	BufferBinding ResolveBufferBinding(RhiGpuVirtualAddress gpuAddress) const noexcept;
+	bool ResolveResource(
+	    RhiResourceHandle resource,
+	    VulkanRecordingResource& outResource) const noexcept;
+	bool ResolveAddress(
+	    RhiGpuVirtualAddress address,
+	    VulkanRecordingResource& outResource) const noexcept;
+	void WriteAccelerationStructureBinding(
+	    VkDescriptorSet descriptorSet,
+	    const CompiledBinding& binding,
+	    RhiGpuVirtualAddress address) noexcept;
 	void BeginDynamicRenderingIfNeeded() noexcept;
 	void EndDynamicRenderingIfNeeded() noexcept;
 	VkDescriptorSet EnsureDescriptorSet(
@@ -141,6 +194,8 @@ class VulkanRenderCommandList final : public RenderCommandList
 	const VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	const VulkanDescriptorManager* m_descriptorManager = nullptr;
 	VulkanDescriptorAllocator* m_descriptorAllocator = nullptr;
+	VulkanRecordingDescriptorPool* m_recordingDescriptorPool = nullptr;
+	VulkanRecordingUploadPage* m_recordingUploadPage = nullptr;
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
 	const VulkanBindingLayout* m_graphicsBindingLayout = nullptr;
@@ -156,6 +211,9 @@ class VulkanRenderCommandList final : public RenderCommandList
 	std::vector<RhiDescriptorTableBinding> m_retainedDescriptorTables;
 	std::vector<RhiGpuDescriptorHandle> m_retainedDescriptorHandles;
 	std::vector<VkBuffer> m_retainedDescriptorBuffers;
+	std::vector<RecordingResourceUse> m_recordingResourceUses;
+	std::vector<VulkanGpuAllocationRecord*> m_transientAllocationUses;
+	std::size_t m_recordingResourceReleaseIndex = 0;
 	VulkanDebugEventFunctions m_debugEvents = {};
 	std::array<VkImageView, MaxRenderTargets> m_renderTargets = {};
 	std::uint32_t m_renderTargetCount = 0;
@@ -164,4 +222,6 @@ class VulkanRenderCommandList final : public RenderCommandList
 	VkRect2D m_scissorRect = {};
 	bool m_hasScissorRect = false;
 	bool m_dynamicRenderingActive = false;
+	bool m_isRecording = false;
+	RhiCommandRecordingOwner m_recordingOwner = {};
 };

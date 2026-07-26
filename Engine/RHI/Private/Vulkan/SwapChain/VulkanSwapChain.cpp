@@ -101,7 +101,7 @@ bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
 	return false;
 }
 
-void VulkanSwapChain::ResizeAfterDeviceIdle() noexcept
+void VulkanSwapChain::Resize() noexcept
 {
 	if (!HasValidWindowSize())
 	{

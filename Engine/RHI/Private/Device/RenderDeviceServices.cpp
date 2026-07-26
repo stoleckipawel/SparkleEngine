@@ -134,6 +134,11 @@ void RenderDeviceServices::BeginFrame() noexcept
 	renderHardwareInterface.GetDescriptorService().BeginFrame(renderHardwareInterface.GetCurrentFrameIndex());
 }
 
+void RenderDeviceServices::PrepareCommandRecording() noexcept
+{
+	m_state->GetBackend().PrepareCommandRecording();
+}
+
 RenderCommandList& RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
 {
 	return m_state->GetBackend().GetCurrentGraphicsCommandList();

@@ -8,21 +8,33 @@
 #include <array>
 #include <format>
 
-class VulkanCommandQueuePolicy final
+struct VulkanCommandQueue::NativeSubmission final
 {
-  public:
-	static const std::shared_ptr<spdlog::logger>& Logger()
-	{
-		static const auto logger = Logging::GetOrCreateLogger("RHI.Vulkan.Queue");
-		return logger;
-	}
-
-	#if SPARKLE_BUILD_SHIPPING
-	static constexpr std::uint64_t GpuWaitTimeoutNanoseconds = UINT64_MAX;
-	#else
-	static constexpr std::uint64_t GpuWaitTimeoutNanoseconds = 30'000'000'000ull;
-	#endif
+	std::array<VkSemaphore, RhiQueueTypeCount + 1> WaitSemaphores;
+	std::array<std::uint64_t, RhiQueueTypeCount + 1> WaitValues;
+	std::array<VkPipelineStageFlags, RhiQueueTypeCount + 1> WaitStages;
+	std::array<VkSemaphore, 2> SignalSemaphores;
+	std::array<std::uint64_t, 2> SignalValues;
+	VkTimelineSemaphoreSubmitInfo TimelineInfo = {};
+	VkSubmitInfo SubmitInfo = {};
+	std::uint32_t WaitCount = 0;
+	std::uint32_t SignalCount = 0;
 };
+
+const std::shared_ptr<spdlog::logger>& VulkanCommandQueue::GetLogger()
+{
+	static const auto logger = Logging::GetOrCreateLogger("RHI.Vulkan.Queue");
+	return logger;
+}
+
+std::uint64_t VulkanCommandQueue::GetWaitTimeoutNanoseconds() noexcept
+{
+	#if SPARKLE_BUILD_SHIPPING
+	return UINT64_MAX;
+	#else
+	return 30'000'000'000ull;
+	#endif
+}
 
 VulkanCommandQueue::VulkanCommandQueue(
 	VulkanRhi& rhi,
@@ -43,7 +55,7 @@ VulkanCommandQueue::VulkanCommandQueue(
 	if (!VulkanResult::Succeeded(result))
 	{
 		Diagnostics::Fail(
-		    VulkanCommandQueuePolicy::Logger(),
+		    GetLogger(),
 		    __FILE__,
 		    __LINE__,
 		    VulkanResult::FormatFailure("vkCreateSemaphore(timeline)", result));
@@ -65,82 +77,25 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	m_owner.AssertAccess();
 	if (m_nativeQueue == nullptr || m_nativeQueue->Queue == VK_NULL_HANDLE || submission.CommandBuffer == VK_NULL_HANDLE)
 	{
-		Diagnostics::Fail(VulkanCommandQueuePolicy::Logger(), __FILE__, __LINE__, "Submit called without a queue or command buffer");
+		Diagnostics::Fail(GetLogger(), __FILE__, __LINE__, "Submit called without a queue or command buffer");
 		return {};
 	}
 
 	RhiSubmissionState waitState;
-	for (const RhiSubmissionToken token : submission.WaitTokens)
+	if (!ResolveWaitState(submission.WaitTokens, waitState))
 	{
-		if (!token.IsValid() || token.Queue == m_queueType)
-		{
-			continue;
-		}
-		if (!m_rhi.GetCommandQueue(token.Queue).HasSubmitted(token.Value))
-		{
-			Diagnostics::Fail(
-			    VulkanCommandQueuePolicy::Logger(),
-			    __FILE__,
-			    __LINE__,
-			    "Submit rejected a wait for an unsubmitted queue value");
-			return {};
-		}
-		waitState.MarkUsed(token);
-	}
-
-	std::array<VkSemaphore, RhiQueueTypeCount + 1> waitSemaphores{};
-	std::array<std::uint64_t, RhiQueueTypeCount + 1> waitValues{};
-	std::array<VkPipelineStageFlags, RhiQueueTypeCount + 1> waitStages{};
-	std::uint32_t waitCount = 0;
-	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
-	{
-		const ERhiQueueType waitQueueType = static_cast<ERhiQueueType>(queueIndex);
-		const RhiSubmissionToken token = waitState.GetToken(waitQueueType);
-		if (!token.IsValid())
-		{
-			continue;
-		}
-
-		waitSemaphores[waitCount] = m_rhi.GetCommandQueue(waitQueueType).GetTimelineSemaphore();
-		waitValues[waitCount] = token.Value;
-		waitStages[waitCount] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-		++waitCount;
-	}
-	if (submission.BinaryWaitSemaphore != VK_NULL_HANDLE)
-	{
-		waitSemaphores[waitCount] = submission.BinaryWaitSemaphore;
-		waitValues[waitCount] = 0;
-		waitStages[waitCount] = submission.BinaryWaitStage;
-		++waitCount;
+		return {};
 	}
 
 	const std::uint64_t submissionValue = m_nextSubmissionValue++;
-	const std::array<VkSemaphore, 2> signalSemaphores = {m_timelineSemaphore, submission.BinarySignalSemaphore};
-	const std::array<std::uint64_t, 2> signalValues = {submissionValue, 0};
-	const std::uint32_t signalCount = submission.BinarySignalSemaphore != VK_NULL_HANDLE ? 2u : 1u;
-	const VkTimelineSemaphoreSubmitInfo timelineInfo{
-	    .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
-	    .pNext = nullptr,
-	    .waitSemaphoreValueCount = waitCount,
-	    .pWaitSemaphoreValues = waitCount != 0 ? waitValues.data() : nullptr,
-	    .signalSemaphoreValueCount = signalCount,
-	    .pSignalSemaphoreValues = signalValues.data()};
-	const VkSubmitInfo submitInfo{
-	    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-	    .pNext = &timelineInfo,
-	    .waitSemaphoreCount = waitCount,
-	    .pWaitSemaphores = waitCount != 0 ? waitSemaphores.data() : nullptr,
-	    .pWaitDstStageMask = waitCount != 0 ? waitStages.data() : nullptr,
-	    .commandBufferCount = 1,
-	    .pCommandBuffers = &submission.CommandBuffer,
-	    .signalSemaphoreCount = signalCount,
-	    .pSignalSemaphores = signalSemaphores.data()};
+	NativeSubmission nativeSubmission;
+	BuildNativeSubmission(submission, waitState, submissionValue, nativeSubmission);
 
-	const VkResult submitResult = vkQueueSubmit(m_nativeQueue->Queue, 1, &submitInfo, VK_NULL_HANDLE);
+	const VkResult submitResult = SubmitNative(nativeSubmission.SubmitInfo);
 	if (!VulkanResult::Succeeded(submitResult))
 	{
 		Diagnostics::Fail(
-		    VulkanCommandQueuePolicy::Logger(),
+		    GetLogger(),
 		    __FILE__,
 		    __LINE__,
 		    VulkanResult::FormatFailure("vkQueueSubmit", submitResult));
@@ -151,6 +106,93 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	return RhiSubmissionToken{.Queue = m_queueType, .Value = submissionValue};
 }
 
+bool VulkanCommandQueue::ResolveWaitState(
+    std::span<const RhiSubmissionToken> waitTokens,
+    RhiSubmissionState& waitState) const noexcept
+{
+	for (const RhiSubmissionToken token : waitTokens)
+	{
+		if (!token.IsValid() || token.Queue == m_queueType)
+		{
+			continue;
+		}
+		if (!m_rhi.GetCommandQueue(token.Queue).HasSubmitted(token.Value))
+		{
+			Diagnostics::Fail(
+			    GetLogger(),
+			    __FILE__,
+			    __LINE__,
+			    "Submit rejected a wait for an unsubmitted queue value");
+			return false;
+		}
+
+		waitState.MarkUsed(token);
+	}
+
+	return true;
+}
+
+void VulkanCommandQueue::BuildNativeSubmission(
+    const VulkanQueueSubmission& submission,
+    const RhiSubmissionState& waitState,
+    std::uint64_t submissionValue,
+    NativeSubmission& nativeSubmission) const noexcept
+{
+	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+	{
+		const ERhiQueueType waitQueueType = static_cast<ERhiQueueType>(queueIndex);
+		const RhiSubmissionToken token = waitState.GetToken(waitQueueType);
+		if (!token.IsValid())
+		{
+			continue;
+		}
+
+		nativeSubmission.WaitSemaphores[nativeSubmission.WaitCount] =
+		    m_rhi.GetCommandQueue(waitQueueType).GetTimelineSemaphore();
+		nativeSubmission.WaitValues[nativeSubmission.WaitCount] = token.Value;
+		nativeSubmission.WaitStages[nativeSubmission.WaitCount] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		++nativeSubmission.WaitCount;
+	}
+	if (submission.BinaryWaitSemaphore != VK_NULL_HANDLE)
+	{
+		nativeSubmission.WaitSemaphores[nativeSubmission.WaitCount] = submission.BinaryWaitSemaphore;
+		nativeSubmission.WaitValues[nativeSubmission.WaitCount] = 0;
+		nativeSubmission.WaitStages[nativeSubmission.WaitCount] = submission.BinaryWaitStage;
+		++nativeSubmission.WaitCount;
+	}
+
+	nativeSubmission.SignalSemaphores = {m_timelineSemaphore, submission.BinarySignalSemaphore};
+	nativeSubmission.SignalValues = {submissionValue, 0};
+	nativeSubmission.SignalCount = submission.BinarySignalSemaphore != VK_NULL_HANDLE ? 2u : 1u;
+
+	nativeSubmission.TimelineInfo = VkTimelineSemaphoreSubmitInfo{
+	    .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+	    .pNext = nullptr,
+	    .waitSemaphoreValueCount = nativeSubmission.WaitCount,
+	    .pWaitSemaphoreValues =
+	        nativeSubmission.WaitCount != 0 ? nativeSubmission.WaitValues.data() : nullptr,
+	    .signalSemaphoreValueCount = nativeSubmission.SignalCount,
+	    .pSignalSemaphoreValues = nativeSubmission.SignalValues.data()};
+	nativeSubmission.SubmitInfo = VkSubmitInfo{
+	    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+	    .pNext = &nativeSubmission.TimelineInfo,
+	    .waitSemaphoreCount = nativeSubmission.WaitCount,
+	    .pWaitSemaphores =
+	        nativeSubmission.WaitCount != 0 ? nativeSubmission.WaitSemaphores.data() : nullptr,
+	    .pWaitDstStageMask =
+	        nativeSubmission.WaitCount != 0 ? nativeSubmission.WaitStages.data() : nullptr,
+	    .commandBufferCount = 1,
+	    .pCommandBuffers = &submission.CommandBuffer,
+	    .signalSemaphoreCount = nativeSubmission.SignalCount,
+	    .pSignalSemaphores = nativeSubmission.SignalSemaphores.data()};
+}
+
+VkResult VulkanCommandQueue::SubmitNative(const VkSubmitInfo& submission) noexcept
+{
+	std::scoped_lock lock(m_nativeQueue->SubmissionMutex);
+	return vkQueueSubmit(m_nativeQueue->Queue, 1, &submission, VK_NULL_HANDLE);
+}
+
 VkResult VulkanCommandQueue::Present(const VkPresentInfoKHR& presentInfo) noexcept
 {
 	m_owner.AssertAccess();
@@ -159,7 +201,34 @@ VkResult VulkanCommandQueue::Present(const VkPresentInfoKHR& presentInfo) noexce
 		return VK_ERROR_INITIALIZATION_FAILED;
 	}
 
+	std::scoped_lock lock(m_nativeQueue->SubmissionMutex);
 	return vkQueuePresentKHR(m_nativeQueue->Queue, &presentInfo);
+}
+
+void VulkanCommandQueue::DrainForSwapChainRecreation() noexcept
+{
+	m_owner.AssertAccess();
+	if (m_nativeQueue == nullptr || m_nativeQueue->Queue == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	VkResult result = VK_ERROR_INITIALIZATION_FAILED;
+	{
+		std::scoped_lock lock(m_nativeQueue->SubmissionMutex);
+		result = vkQueueWaitIdle(m_nativeQueue->Queue);
+	}
+
+	if (!VulkanResult::Succeeded(result))
+	{
+		Diagnostics::Fail(
+		    GetLogger(),
+		    __FILE__,
+		    __LINE__,
+		    VulkanResult::FormatFailure(
+		        "vkQueueWaitIdle",
+		        result));
+	}
 }
 
 void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcept
@@ -171,7 +240,7 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 	}
 	if (!HasSubmitted(submissionValue))
 	{
-		Diagnostics::Fail(VulkanCommandQueuePolicy::Logger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
+		Diagnostics::Fail(GetLogger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
 		return;
 	}
 	if (IsSubmissionComplete(submissionValue))
@@ -189,11 +258,11 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 	const VkResult result = vkWaitSemaphores(
 	    m_rhi.GetDevice(),
 	    &waitInfo,
-	    VulkanCommandQueuePolicy::GpuWaitTimeoutNanoseconds);
+	    GetWaitTimeoutNanoseconds());
 	if (!VulkanResult::Succeeded(result))
 	{
 		Diagnostics::Fail(
-		    VulkanCommandQueuePolicy::Logger(),
+		    GetLogger(),
 		    __FILE__,
 		    __LINE__,
 		    std::format(
@@ -236,4 +305,16 @@ std::uint64_t VulkanCommandQueue::GetCompletedSubmissionValue() const noexcept
 	std::uint64_t completedValue = 0;
 	const VkResult result = vkGetSemaphoreCounterValue(m_rhi.GetDevice(), m_timelineSemaphore, &completedValue);
 	return VulkanResult::Succeeded(result) ? completedValue : 0;
+}
+
+VkQueue VulkanCommandQueue::GetNativeQueue() const noexcept
+{
+	m_owner.AssertAccess();
+	return m_nativeQueue != nullptr ? m_nativeQueue->Queue : VK_NULL_HANDLE;
+}
+
+VkSemaphore VulkanCommandQueue::GetTimelineSemaphore() const noexcept
+{
+	m_owner.AssertAccess();
+	return m_timelineSemaphore;
 }

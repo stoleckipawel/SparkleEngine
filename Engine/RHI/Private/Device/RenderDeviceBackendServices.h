@@ -20,6 +20,7 @@ class RenderDeviceBackendServices
 	virtual void WaitForIdle() noexcept = 0;
 	virtual void ResizeSwapChain() noexcept = 0;
 	virtual void BeginFrame() noexcept = 0;
+	virtual void PrepareCommandRecording() noexcept;
 	virtual RenderCommandList& GetCurrentGraphicsCommandList() noexcept = 0;
 	virtual RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept = 0;
 	virtual RenderCommandList& BeginCurrentGraphicsCommandList() noexcept = 0;

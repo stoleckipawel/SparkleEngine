@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-class VulkanCommandContext;
+class VulkanCommandRecordingContext;
 class VulkanUploadService;
 class VulkanCaptureService;
 class VulkanRenderCommandList;
@@ -31,7 +31,6 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	VulkanRenderHardwareInterface(
 	    VulkanRhi& rhi,
 	    VulkanSwapChain& swapChain,
-	    VulkanCommandContext& commandContext,
 	    VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 	~VulkanRenderHardwareInterface() noexcept;
 
@@ -104,12 +103,16 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	friend class VulkanRenderDeviceServices;
 
 	RhiCapabilities BuildCapabilities() const noexcept;
+	RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport() const noexcept;
+	RhiBackendMemorySupport BuildBackendMemorySupport() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 	RhiResourceViewHandle GetCurrentBackBufferViewHandle() const noexcept;
 	void BeginCurrentBackBufferRendering(const float* clearColor, bool clear) noexcept;
 	void EndCurrentBackBufferRendering() noexcept;
 	void PrepareCurrentBackBufferForPresentation(VulkanRenderCommandList& commandList) noexcept;
 	void TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, ResourceState newState) noexcept;
+	void SetCommandRecordingContext(
+	    VulkanCommandRecordingContext& commandRecordingContext) noexcept;
 
 	std::unique_ptr<VulkanInteropService> m_interopService;
 	std::unique_ptr<VulkanCaptureService> m_captureService;
@@ -119,7 +122,8 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	std::unique_ptr<VulkanRayTracingServices> m_rayTracingServices;
 	VulkanRhi* m_rhi = nullptr;
 	VulkanSwapChain* m_swapChain = nullptr;
-	VulkanCommandContext* m_commandContext = nullptr;
+	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
+	VulkanCommandRecordingContext* m_commandRecordingContext = nullptr;
 	std::unique_ptr<VulkanDescriptorManager> m_descriptorManager;
 	std::unique_ptr<VulkanUploadService> m_uploadService;
 	std::unique_ptr<VulkanSamplerLibrary> m_samplerLibrary;

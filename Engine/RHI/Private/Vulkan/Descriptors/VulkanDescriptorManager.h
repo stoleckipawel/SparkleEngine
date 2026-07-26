@@ -9,12 +9,16 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 class VulkanRhi;
 class VulkanSwapChain;
 class VulkanGpuMemoryAllocator;
 class VulkanInteropService;
+class VulkanCommandRecordingContext;
+class VulkanRenderCommandList;
+class VulkanRenderHardwareInterface;
 class VulkanSamplerLibrary;
 struct RhiCapabilities;
 
@@ -29,8 +33,6 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	VulkanDescriptorManager(VulkanDescriptorManager&&) = delete;
 	VulkanDescriptorManager& operator=(VulkanDescriptorManager&&) = delete;
 
-	VulkanDescriptorAllocator& GetAllocator() noexcept { return m_allocator; }
-	const VulkanDescriptorAllocator& GetAllocator() const noexcept { return m_allocator; }
 	void SetSamplerLibrary(VulkanSamplerLibrary& samplerLibrary) noexcept;
 
 	void BeginFrame(std::uint32_t frameIndex) noexcept override;
@@ -53,14 +55,18 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
 	VkImageView GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept;
-	VkImageAspectFlags ResolveImageViewAspectMask(VkImageView imageView) const noexcept;
 	void RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept;
 	RhiResourceViewHandle GetSwapChainBackBufferView(std::uint32_t backBufferIndex) const noexcept;
 	void ReleaseAllResourceViews() noexcept;
 
   private:
+	friend class VulkanCommandRecordingContext;
 	friend class VulkanInteropService;
+	friend class VulkanRenderCommandList;
+	friend class VulkanRenderDeviceServices;
+	friend class VulkanRenderHardwareInterface;
 
+	void PublishRecordingReadView() noexcept;
 	NativeTextureViewInfo ResolveNativeTextureViewInfo(
 	    RhiResourceViewHandle view,
 	    RhiResourceHandle resource,
@@ -80,17 +86,24 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 		bool OwnsImageView = false;
 		std::uint16_t Generation = 0;
 
-		bool IsAllocated() const noexcept
-		{
-			return Image != VK_NULL_HANDLE || Buffer != VK_NULL_HANDLE || AccelerationStructure != VK_NULL_HANDLE ||
-			       ImageView != VK_NULL_HANDLE || static_cast<bool>(DescriptorHandle);
-		}
+		bool IsAllocated() const noexcept;
 	};
 
 	struct RetiredResourceView final
 	{
 		ResourceViewRecord Record;
 		std::uint32_t RecordIndex = 0;
+	};
+
+	struct RecordingImageView final
+	{
+		std::uintptr_t ImageViewValue = 0;
+		VkImageAspectFlags AspectMask = 0;
+	};
+
+	struct RecordingReadView final
+	{
+		std::vector<RecordingImageView> ImageViews;
 	};
 
 	RhiResourceViewHandle AddResourceView(ResourceViewRecord record);
@@ -100,6 +113,7 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	VkImageView CreateImageView(const RhiResourceViewDesc& desc) const;
 	VkFormat ResolveViewFormat(const RhiResourceViewDesc& desc) const noexcept;
 	VkImageAspectFlags ResolveViewAspectMask(const RhiResourceViewDesc& desc) const noexcept;
+	VkImageAspectFlags ResolveImageViewAspectMask(VkImageView imageView) const noexcept;
 	void DestroyResourceView(ResourceViewRecord& record) noexcept;
 
 	VulkanRhi& m_rhi;
@@ -111,5 +125,6 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
 	std::array<std::vector<RetiredResourceView>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
 	std::vector<RhiResourceViewHandle> m_swapChainBackBufferViews;
+	std::shared_ptr<const RecordingReadView> m_recordingReadView;
 	std::uint32_t m_currentFrameIndex = 0;
 };

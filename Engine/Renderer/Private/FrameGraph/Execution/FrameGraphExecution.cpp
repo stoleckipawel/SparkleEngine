@@ -7,7 +7,6 @@
 #include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
 #include "FrameGraph/Execution/FrameGraphSubmissionExecutor.h"
 #include "RHI/Public/Commands/RhiCommandSubmissionService.h"
-
 #include <algorithm>
 
 void FrameGraph::Execute(
@@ -18,6 +17,8 @@ void FrameGraph::Execute(
     FrameExecutionDiagnostics& frameDiagnostics) const
 {
 	EnsureTransientResourcesMaterialized(plan);
+	submissionService.PrepareCommandRecording();
+
 	std::fill(m_submissionBatchTokens.begin(), m_submissionBatchTokens.end(), RhiSubmissionToken{});
 
 	RenderCommandList& initialGraphicsCommandList = submissionService.GetCurrentGraphicsCommandList();
