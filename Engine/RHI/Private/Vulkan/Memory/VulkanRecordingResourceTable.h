@@ -18,6 +18,9 @@ class VulkanRecordingResourceTable final
 	VulkanRecordingResourceTable(VulkanRecordingResourceTable&&) = delete;
 	VulkanRecordingResourceTable& operator=(VulkanRecordingResourceTable&&) = delete;
 
+  private:
+	friend class VulkanGpuMemoryAllocator;
+
 	void Publish(std::span<VulkanGpuAllocationRecord* const> records) noexcept;
 	bool Resolve(
 	    RhiResourceHandle resource,
@@ -25,19 +28,23 @@ class VulkanRecordingResourceTable final
 	bool Resolve(
 	    RhiGpuVirtualAddress address,
 	    VulkanRecordingResource& outResource) const noexcept;
+	void Resolve(
+	    const VulkanGpuAllocationRecord& record,
+	    VulkanRecordingResource& outResource) const noexcept;
 	VulkanRecordingResourceUseToken Retain(RhiResourceHandle resource) const noexcept;
 	VulkanRecordingResourceUseToken Retain(VulkanGpuAllocationRecord& record) const noexcept;
 	void Release(
 	    VulkanRecordingResourceUseToken use,
 	    RhiSubmissionToken submissionToken) const noexcept;
 
-  private:
 	struct ResourceEntry;
 	struct ReadView;
 
 	static const ResourceEntry* FindResource(
 	    const ReadView& readView,
 	    RhiResourceHandle resource) noexcept;
+	static VulkanRecordingResource BuildResource(
+	    const VulkanGpuAllocationRecord& record) noexcept;
 	static void RetainReference(VulkanGpuAllocationRecord& record) noexcept;
 	static void ReleaseReference(VulkanGpuAllocationRecord& record) noexcept;
 	static void ReleaseReference(

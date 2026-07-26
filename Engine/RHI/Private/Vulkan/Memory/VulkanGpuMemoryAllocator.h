@@ -89,6 +89,12 @@ class VulkanGpuMemoryAllocator final
 	bool ResolveRecordingAddress(
 	    RhiGpuVirtualAddress address,
 	    VulkanRecordingResource& outResource) const noexcept;
+	bool ResolveCoordinatorRecordingResource(
+	    RhiResourceHandle resource,
+	    VulkanRecordingResource& outResource) const noexcept;
+	bool ResolveCoordinatorRecordingAddress(
+	    RhiGpuVirtualAddress address,
+	    VulkanRecordingResource& outResource) const noexcept;
 	VulkanRecordingResourceUseToken RetainRecordingResource(RhiResourceHandle resource) const noexcept;
 	VulkanRecordingResourceUseToken RetainCoordinatorRecordingResource(RhiResourceHandle resource) const noexcept;
 	void ReleaseRecordingResource(

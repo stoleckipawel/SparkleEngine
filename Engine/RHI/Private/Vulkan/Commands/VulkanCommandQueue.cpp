@@ -39,7 +39,7 @@ std::uint64_t VulkanCommandQueue::GetWaitTimeoutNanoseconds() noexcept
 VulkanCommandQueue::VulkanCommandQueue(
 	VulkanRhi& rhi,
 	ERhiQueueType queueType,
-	std::shared_ptr<VulkanNativeQueueState> nativeQueue) noexcept :
+	std::shared_ptr<VulkanNativeQueue> nativeQueue) noexcept :
 	m_rhi(rhi), m_queueType(queueType), m_nativeQueue(std::move(nativeQueue))
 {
 	const VkSemaphoreTypeCreateInfo timelineCreateInfo{

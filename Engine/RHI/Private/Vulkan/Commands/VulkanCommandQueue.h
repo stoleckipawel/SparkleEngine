@@ -25,7 +25,7 @@ struct VulkanQueueSubmission final
 	VkSemaphore BinarySignalSemaphore = VK_NULL_HANDLE;
 };
 
-struct VulkanNativeQueueState final
+struct VulkanNativeQueue final
 {
 	VkQueue Queue = VK_NULL_HANDLE;
 	std::mutex SubmissionMutex;
@@ -37,7 +37,7 @@ class VulkanCommandQueue final
 	VulkanCommandQueue(
 	    VulkanRhi& rhi,
 	    ERhiQueueType queueType,
-	    std::shared_ptr<VulkanNativeQueueState> nativeQueue) noexcept;
+	    std::shared_ptr<VulkanNativeQueue> nativeQueue) noexcept;
 	~VulkanCommandQueue() noexcept;
 
 	VulkanCommandQueue(const VulkanCommandQueue&) = delete;
@@ -76,7 +76,7 @@ class VulkanCommandQueue final
 	Threading::OwnerThread m_owner{"Vulkan command queue"};
 	VulkanRhi& m_rhi;
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
-	std::shared_ptr<VulkanNativeQueueState> m_nativeQueue;
+	std::shared_ptr<VulkanNativeQueue> m_nativeQueue;
 	VkSemaphore m_timelineSemaphore = VK_NULL_HANDLE;
 	std::uint64_t m_nextSubmissionValue = 1;
 	std::uint64_t m_lastSubmittedValue = 0;

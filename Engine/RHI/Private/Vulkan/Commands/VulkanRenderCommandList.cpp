@@ -1305,20 +1305,28 @@ bool VulkanRenderCommandList::ResolveResource(
     RhiResourceHandle resource,
     VulkanRecordingResource& outResource) const noexcept
 {
-	return m_memoryAllocator != nullptr &&
-	       m_memoryAllocator->ResolveRecordingResource(
-	           resource,
-	           outResource);
+	if (m_memoryAllocator == nullptr)
+	{
+		return false;
+	}
+
+	return m_memoryAllocator->ResolveRecordingResource(resource, outResource) ||
+	       (IsCoordinatorRecording() &&
+	        m_memoryAllocator->ResolveCoordinatorRecordingResource(resource, outResource));
 }
 
 bool VulkanRenderCommandList::ResolveAddress(
     RhiGpuVirtualAddress address,
     VulkanRecordingResource& outResource) const noexcept
 {
-	return m_memoryAllocator != nullptr &&
-	       m_memoryAllocator->ResolveRecordingAddress(
-	           address,
-	           outResource);
+	if (m_memoryAllocator == nullptr)
+	{
+		return false;
+	}
+
+	return m_memoryAllocator->ResolveRecordingAddress(address, outResource) ||
+	       (IsCoordinatorRecording() &&
+	        m_memoryAllocator->ResolveCoordinatorRecordingAddress(address, outResource));
 }
 
 void VulkanRenderCommandList::WriteAccelerationStructureBinding(

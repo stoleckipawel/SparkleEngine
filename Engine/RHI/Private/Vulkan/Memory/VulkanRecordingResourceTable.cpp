@@ -54,25 +54,7 @@ void VulkanRecordingResourceTable::Publish(
 		}
 
 		const ResourceEntry entry{
-		    .Resource =
-		        VulkanRecordingResource{
-		            .Buffer = record->Buffer,
-		            .Image = record->Image,
-		            .AccelerationStructure = record->AccelerationStructure,
-		            .DeviceAddress = record->DeviceAddress,
-		            .BufferDeviceAddress = record->BufferDeviceAddress,
-		            .ResourceHandleValue =
-		                reinterpret_cast<std::uintptr_t>(
-		                    GetVulkanResourceHandle(*record).Value),
-		            .ResourceSizeInBytes = record->ResourceSizeInBytes,
-		            .Format = record->Format,
-		            .Extent = record->Extent,
-		            .AspectMask = record->AspectMask,
-		            .Usage = record->Usage,
-		            .AccelerationStructureType = record->AccelerationStructureType,
-		            .ResourceKind = record->ResourceKind,
-		            .IsPartitionedAccelerationStructure =
-		                record->IsPartitionedAccelerationStructure},
+		    .Resource = BuildResource(*record),
 		    .Record = record};
 
 		RetainReference(*record);
@@ -138,10 +120,7 @@ bool VulkanRecordingResourceTable::Resolve(
 	{
 		return false;
 	}
-	if (Resolve(
-	        RhiResourceHandle{
-	            .Value = reinterpret_cast<void*>(address)},
-	        outResource))
+	if (Resolve(RhiResourceHandle{.Value = reinterpret_cast<void*>(address)}, outResource))
 	{
 		return true;
 	}
@@ -165,8 +144,7 @@ bool VulkanRecordingResourceTable::Resolve(
 	const ResourceEntry& candidate = *std::prev(after);
 	const bool addressMatches =
 	    candidate.CoversAddressRange
-	        ? address - candidate.LookupAddress <
-	              candidate.Resource.ResourceSizeInBytes
+	        ? address - candidate.LookupAddress < candidate.Resource.ResourceSizeInBytes
 	        : address == candidate.LookupAddress;
 	if (!addressMatches)
 	{
@@ -175,6 +153,13 @@ bool VulkanRecordingResourceTable::Resolve(
 
 	outResource = candidate.Resource;
 	return true;
+}
+
+void VulkanRecordingResourceTable::Resolve(
+    const VulkanGpuAllocationRecord& record,
+    VulkanRecordingResource& outResource) const noexcept
+{
+	outResource = BuildResource(record);
 }
 
 VulkanRecordingResourceUseToken VulkanRecordingResourceTable::Retain(
@@ -240,6 +225,27 @@ VulkanRecordingResourceTable::FindResource(
 	               found->Resource.ResourceHandleValue == resourceValue
 	           ? &*found
 	           : nullptr;
+}
+
+VulkanRecordingResource VulkanRecordingResourceTable::BuildResource(
+    const VulkanGpuAllocationRecord& record) noexcept
+{
+	return VulkanRecordingResource{
+	    .Buffer = record.Buffer,
+	    .Image = record.Image,
+	    .AccelerationStructure = record.AccelerationStructure,
+	    .DeviceAddress = record.DeviceAddress,
+	    .BufferDeviceAddress = record.BufferDeviceAddress,
+	    .ResourceHandleValue = reinterpret_cast<std::uintptr_t>(GetVulkanResourceHandle(record).Value),
+	    .ResourceSizeInBytes = record.ResourceSizeInBytes,
+	    .Format = record.Format,
+	    .Extent = record.Extent,
+	    .AspectMask = record.AspectMask,
+	    .Usage = record.Usage,
+	    .AccelerationStructureType = record.AccelerationStructureType,
+	    .ResourceKind = record.ResourceKind,
+	    .IsPartitionedAccelerationStructure =
+	        record.IsPartitionedAccelerationStructure};
 }
 
 void VulkanRecordingResourceTable::RetainReference(

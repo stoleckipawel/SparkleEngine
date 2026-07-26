@@ -94,7 +94,7 @@ struct VulkanGpuMemoryBlockRecord final
 RhiOwnedResourceHandle MakeVulkanOwnedResourceHandle(std::unique_ptr<VulkanGpuAllocationRecord> record) noexcept;
 std::unique_ptr<VulkanGpuAllocationRecord> TakeVulkanOwnedResourceHandle(RhiOwnedResourceHandle handle) noexcept;
 VulkanGpuAllocationRecord* GetVulkanGpuAllocationRecord(RhiOwnedResourceHandle handle) noexcept;
-RhiResourceHandle GetVulkanResourceHandle(VulkanGpuAllocationRecord& record) noexcept;
+RhiResourceHandle GetVulkanResourceHandle(const VulkanGpuAllocationRecord& record) noexcept;
 void SetVulkanAllocationRecordDebugName(VulkanGpuAllocationRecord& record, std::wstring_view debugName) noexcept;
 
 RhiOwnedMemoryBlockHandle MakeVulkanOwnedMemoryBlockHandle(std::unique_ptr<VulkanGpuMemoryBlockRecord> record) noexcept;

@@ -668,7 +668,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		Diagnostics::Fail(g_vulkanRhiLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateDevice", result));
 	}
 
-	std::array<std::shared_ptr<VulkanNativeQueueState>, RhiQueueTypeCount> nativeQueues{};
+	std::array<std::shared_ptr<VulkanNativeQueue>, RhiQueueTypeCount> nativeQueues{};
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
 		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
@@ -685,7 +685,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		{
 			VkQueue nativeQueue = VK_NULL_HANDLE;
 			vkGetDeviceQueue(m_device, queueLocation.FamilyIndex, queueLocation.QueueIndex, &nativeQueue);
-			nativeQueues[queueIndex] = std::make_shared<VulkanNativeQueueState>();
+			nativeQueues[queueIndex] = std::make_shared<VulkanNativeQueue>();
 			nativeQueues[queueIndex]->Queue = nativeQueue;
 		}
 		m_queues[queueIndex] = std::make_unique<VulkanCommandQueue>(

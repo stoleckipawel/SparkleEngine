@@ -57,7 +57,7 @@ VulkanGpuAllocationRecord* GetVulkanGpuAllocationRecord(RhiOwnedResourceHandle h
 	return static_cast<VulkanGpuAllocationRecord*>(handle.Value);
 }
 
-RhiResourceHandle GetVulkanResourceHandle(VulkanGpuAllocationRecord& record) noexcept
+RhiResourceHandle GetVulkanResourceHandle(const VulkanGpuAllocationRecord& record) noexcept
 {
 	switch (record.ResourceKind)
 	{
