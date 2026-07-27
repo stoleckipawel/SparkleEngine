@@ -30,33 +30,10 @@ void LevelRegistry::DiscoverLevels()
 				continue;
 			}
 
-			std::string errorMessage;
-			auto loadedLevel = LevelParser::LoadFromFile(entry.sourcePath, errorMessage);
-			if (!loadedLevel)
-			{
-				SPDLOG_LOGGER_WARN(
-				    g_levelRegistryLogger,
-				    "LevelRegistry: Failed to load catalog level '{}'{}",
-				    entry.sourcePath.string(),
-				    errorMessage.empty() ? std::string() : std::string{" - "} + errorMessage);
-				continue;
-			}
-
-			if (entry.startupDefault)
-			{
-				startupDefaultLevelName = std::string(loadedLevel->GetName());
-			}
-			Register(std::move(loadedLevel));
+			LoadCatalogLevel(entry, startupDefaultLevelName);
 		}
 
-		if (!startupDefaultLevelName.empty())
-		{
-			SetDefaultLevelName(startupDefaultLevelName);
-		}
-		else if (!m_levels.empty())
-		{
-			SetDefaultLevelName(m_levels.begin()->first);
-		}
+		ResolveDefaultLevel(startupDefaultLevelName);
 		return;
 	}
 
@@ -64,6 +41,42 @@ void LevelRegistry::DiscoverLevels()
 	    g_levelRegistryLogger,
 	    "LevelRegistry: {}",
 	    catalogError);
+}
+
+void LevelRegistry::LoadCatalogLevel(
+    const ProjectLevelCatalogEntry& entry,
+    std::string& outStartupDefaultLevelName)
+{
+	std::string errorMessage;
+	auto loadedLevel = LevelParser::LoadFromFile(entry.sourcePath, errorMessage);
+	if (!loadedLevel)
+	{
+		SPDLOG_LOGGER_WARN(
+		    g_levelRegistryLogger,
+		    "LevelRegistry: Failed to load catalog level '{}'{}",
+		    entry.sourcePath.string(),
+		    errorMessage.empty() ? std::string() : std::string{" - "} + errorMessage);
+		return;
+	}
+
+	if (entry.startupDefault)
+	{
+		outStartupDefaultLevelName = std::string(loadedLevel->GetName());
+	}
+
+	Register(std::move(loadedLevel));
+}
+
+void LevelRegistry::ResolveDefaultLevel(std::string_view startupDefaultLevelName)
+{
+	if (!startupDefaultLevelName.empty())
+	{
+		SetDefaultLevelName(startupDefaultLevelName);
+	}
+	else if (!m_levels.empty())
+	{
+		SetDefaultLevelName(m_levels.begin()->first);
+	}
 }
 
 void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)

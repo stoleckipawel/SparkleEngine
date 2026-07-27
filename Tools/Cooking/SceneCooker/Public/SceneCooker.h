@@ -13,6 +13,7 @@ namespace Files
 struct CookedSceneBuild;
 struct CookedSceneIdentity;
 struct SourceImportResult;
+class CookedSceneGenerationWriter;
 
 class SceneCooker final
 {
@@ -25,6 +26,10 @@ class SceneCooker final
 	    const SourceImportResult& importResult,
 	    CookedSceneBuild& outBuild,
 	    std::string& outErrorMessage);
+
+  private:
+	friend class CookedSceneGenerationWriter;
+
 	static bool StageManifestsAndRegistry(
 	    std::span<const CookedSceneBuild* const> builds,
 	    std::vector<Files::FilePublication>& outPublication,

@@ -22,7 +22,6 @@ struct AssetCookerOutputRecord final
 
 struct AssetCookerServiceResult final
 {
-	bool succeeded = false;
 	int exitCode = 1;
 	std::vector<AssetCookerDiagnosticRecord> diagnostics;
 	std::vector<AssetCookerOutputRecord> outputs;
@@ -40,5 +39,5 @@ class AssetCookerDiagnostics final
   private:
 	void Add(AssetCookerCategory category, std::string message, std::string sourcePath);
 
-	std::vector<AssetCookerDiagnosticRecord> records;
+	std::vector<AssetCookerDiagnosticRecord> m_records;
 };

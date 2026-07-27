@@ -148,8 +148,7 @@ bool SceneCooker::StageManifestsAndRegistry(
 {
 	for (const CookedSceneBuild* build : builds)
 	{
-		if (build == nullptr ||
-		    !SceneCookerOperations::StageManifest(
+		if (!SceneCookerOperations::StageManifest(
 		        *build,
 		        outPublication,
 		        outErrorMessage))
@@ -265,8 +264,7 @@ bool SceneCookerOperations::StageRegistry(
 	for (const CookedSceneBuild* build : builds)
 	{
 		std::filesystem::path manifestRelativePath;
-		if (build == nullptr ||
-		    !ResolveManifestRelativePath(
+		if (!ResolveManifestRelativePath(
 		        *build,
 		        manifestRelativePath,
 		        outErrorMessage))

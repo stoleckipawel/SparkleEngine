@@ -6,48 +6,70 @@
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <fstream>
-
-class SceneAssetRegistryOperations final
-{
-  public:
-	static constexpr std::string_view kRegistryHeader = "[SceneAssetRegistry]";
-	static constexpr std::string_view kEntriesHeader = "[Entries]";
-
-	static bool TryParseRegistryEntry(std::string_view entryValue, std::string& outSceneAssetId, std::filesystem::path& outManifestRelativePath)
-	{
-		const std::size_t separatorIndex = entryValue.find('|');
-		if (separatorIndex == std::string_view::npos)
-		{
-			return false;
-		}
-
-		outSceneAssetId = Strings::TrimCopy(entryValue.substr(0, separatorIndex));
-		outManifestRelativePath = Strings::TrimCopy(entryValue.substr(separatorIndex + 1));
-		return !outSceneAssetId.empty() && !outManifestRelativePath.empty();
-	}
-};
+#include <utility>
 
 namespace Assets
 {
-	bool SceneAssetRegistry::Load(std::string& outErrorMessage)
-	{
-		m_entries.clear();
+	constexpr std::string_view kSceneAssetRegistryHeader = "[SceneAssetRegistry]";
+	constexpr std::string_view kSceneAssetEntriesHeader = "[Entries]";
 
-		const std::filesystem::path registryPath = Filesystem::GetSceneAssetRegistryPath();
+	class SceneAssetRegistryReader final
+	{
+	  public:
+		explicit SceneAssetRegistryReader(std::filesystem::path registryPath);
+
+		bool Read(
+		    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
+		    std::string& outErrorMessage) const;
+
+	  private:
+		bool ParseEntries(
+		    std::istream& input,
+		    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
+		    std::string& outErrorMessage) const;
+		bool ParseEntry(
+		    std::string_view value,
+		    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
+		    std::string& outErrorMessage) const;
+		static bool TryParseEntry(
+		    std::string_view entryValue,
+		    std::string& outSceneAssetId,
+		    std::filesystem::path& outManifestRelativePath);
+
+		std::filesystem::path m_registryPath;
+	};
+
+	SceneAssetRegistryReader::SceneAssetRegistryReader(std::filesystem::path registryPath) :
+	    m_registryPath(std::move(registryPath))
+	{
+	}
+
+	bool SceneAssetRegistryReader::Read(
+	    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
+	    std::string& outErrorMessage) const
+	{
 		std::error_code errorCode;
-		if (!std::filesystem::exists(registryPath, errorCode))
+		if (!std::filesystem::exists(m_registryPath, errorCode))
 		{
 			outErrorMessage.clear();
 			return true;
 		}
 
-		std::ifstream input(registryPath);
+		std::ifstream input(m_registryPath);
 		if (!input.is_open())
 		{
-			outErrorMessage = "Failed to open scene asset registry '" + registryPath.string() + "'";
+			outErrorMessage = "Failed to open scene asset registry '" + m_registryPath.string() + "'";
 			return false;
 		}
 
+		return ParseEntries(input, outEntries, outErrorMessage);
+	}
+
+	bool SceneAssetRegistryReader::ParseEntries(
+	    std::istream& input,
+	    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
+	    std::string& outErrorMessage) const
+	{
 		bool inEntriesSection = false;
 		for (std::string line; std::getline(input, line);)
 		{
@@ -57,13 +79,13 @@ namespace Assets
 				continue;
 			}
 
-			if (trimmedLine == SceneAssetRegistryOperations::kRegistryHeader)
+			if (trimmedLine == kSceneAssetRegistryHeader)
 			{
 				inEntriesSection = false;
 				continue;
 			}
 
-			if (trimmedLine == SceneAssetRegistryOperations::kEntriesHeader)
+			if (trimmedLine == kSceneAssetEntriesHeader)
 			{
 				inEntriesSection = true;
 				continue;
@@ -81,19 +103,58 @@ namespace Assets
 				continue;
 			}
 
-			std::string sceneAssetId;
-			std::filesystem::path manifestRelativePath;
-			if (!SceneAssetRegistryOperations::TryParseRegistryEntry(value, sceneAssetId, manifestRelativePath))
+			if (!ParseEntry(value, outEntries, outErrorMessage))
 			{
-				outErrorMessage = "Failed to parse scene asset registry entry in '" + registryPath.string() + "'";
-				m_entries.clear();
 				return false;
 			}
-
-			m_entries[sceneAssetId] = manifestRelativePath;
 		}
 
 		outErrorMessage.clear();
+		return true;
+	}
+
+	bool SceneAssetRegistryReader::ParseEntry(
+	    std::string_view value,
+	    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
+	    std::string& outErrorMessage) const
+	{
+		std::string sceneAssetId;
+		std::filesystem::path manifestRelativePath;
+		if (!TryParseEntry(value, sceneAssetId, manifestRelativePath))
+		{
+			outErrorMessage = "Failed to parse scene asset registry entry in '" + m_registryPath.string() + "'";
+			return false;
+		}
+
+		outEntries[std::move(sceneAssetId)] = std::move(manifestRelativePath);
+		return true;
+	}
+
+	bool SceneAssetRegistryReader::TryParseEntry(
+	    std::string_view entryValue,
+	    std::string& outSceneAssetId,
+	    std::filesystem::path& outManifestRelativePath)
+	{
+		const std::size_t separatorIndex = entryValue.find('|');
+		if (separatorIndex == std::string_view::npos)
+		{
+			return false;
+		}
+
+		outSceneAssetId = Strings::TrimCopy(entryValue.substr(0, separatorIndex));
+		outManifestRelativePath = Strings::TrimCopy(entryValue.substr(separatorIndex + 1));
+		return !outSceneAssetId.empty() && !outManifestRelativePath.empty();
+	}
+
+	bool SceneAssetRegistry::Load(std::string& outErrorMessage)
+	{
+		std::map<std::string, std::filesystem::path, std::less<>> entries;
+		if (!SceneAssetRegistryReader(Filesystem::GetSceneAssetRegistryPath()).Read(entries, outErrorMessage))
+		{
+			return false;
+		}
+
+		m_entries = std::move(entries);
 		return true;
 	}
 
@@ -120,9 +181,8 @@ namespace Assets
 			return false;
 		}
 
-		output << SceneAssetRegistryOperations::kRegistryHeader << "\n";
-		output << "Version = " << kSceneAssetRegistryVersion << "\n\n";
-		output << SceneAssetRegistryOperations::kEntriesHeader << "\n";
+		output << kSceneAssetRegistryHeader << "\n\n";
+		output << kSceneAssetEntriesHeader << "\n";
 		for (const auto& [sceneAssetId, manifestRelativePath] : m_entries)
 		{
 			output << "Entry = " << sceneAssetId << "|" << manifestRelativePath.generic_string() << "\n";

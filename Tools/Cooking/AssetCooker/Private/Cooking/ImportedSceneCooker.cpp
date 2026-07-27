@@ -72,9 +72,9 @@ bool ImportedSceneCooker::Import(
 bool ImportedSceneCooker::Build(
     const AssetCookerSceneEntry& sceneEntry,
     AssetCookerDiagnostics& diagnostics,
-    ImportedSceneCookProduct& outProduct)
+    CookedSceneBuild& outBuild)
 {
-	outProduct = {};
+	outBuild = {};
 	SourceImportResult importResult;
 	if (!Import(
 	        sceneEntry,
@@ -88,7 +88,7 @@ bool ImportedSceneCooker::Build(
 	return BuildCookedScene(
 	    sceneEntry,
 	    importResult,
-	    outProduct.Scene,
+	    outBuild,
 	    diagnostics);
 }
 
@@ -101,11 +101,11 @@ bool ImportedSceneCooker::BuildCookedScene(
 	if (!SceneCooker::ResolveSceneIdentity(
 	        sceneEntry.sourcePath,
 	        build.identity,
-	        build.status.errorMessage))
+	        build.errorMessage))
 	{
 		diagnostics.AddError(
 		    AssetCookerCategory_SceneAssets,
-		    build.status.errorMessage,
+		    build.errorMessage,
 		    sceneEntry.sourcePath);
 		return false;
 	}
@@ -120,11 +120,11 @@ bool ImportedSceneCooker::BuildCookedScene(
 	        importResult,
 	        build.identity.assetId,
 	        materialOutput,
-	        build.status.errorMessage))
+	        build.errorMessage))
 	{
 		diagnostics.AddError(
 		    AssetCookerCategory_Materials,
-		    build.status.errorMessage,
+		    build.errorMessage,
 		    sceneEntry.sourcePath);
 		return false;
 	}
@@ -133,11 +133,11 @@ bool ImportedSceneCooker::BuildCookedScene(
 	if (!SceneCooker::BuildManifest(
 	        importResult,
 	        build,
-	        build.status.errorMessage))
+	        build.errorMessage))
 	{
 		diagnostics.AddError(
 		    AssetCookerCategory_SceneAssets,
-		    build.status.errorMessage,
+		    build.errorMessage,
 		    sceneEntry.sourcePath);
 		return false;
 	}

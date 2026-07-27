@@ -61,21 +61,14 @@ struct CookedSceneAssetOutputs final
 	std::vector<CookedAnimationAssetBuild> animationAssets;
 };
 
-struct CookedSceneBuildStatus final
-{
-	std::string errorMessage;
-
-	bool Succeeded() const noexcept { return errorMessage.empty(); }
-};
-
 struct CookedSceneBuild final
 {
 	CookedSceneIdentity identity;
 	CookedSceneManifestBuildData manifest;
 	CookedSceneAssetOutputs outputs;
-	CookedSceneBuildStatus status;
+	std::string errorMessage;
 
-	bool Succeeded() const noexcept { return status.Succeeded(); }
+	bool Succeeded() const noexcept { return errorMessage.empty(); }
 	void ApplyMeshOutput(MeshCookOutput&& meshOutput);
 	void ApplyMaterialOutput(MaterialCookOutput&& materialOutput);
 };

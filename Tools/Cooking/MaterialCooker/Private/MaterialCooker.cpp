@@ -49,6 +49,18 @@ class MaterialCookerOperations final
 	    const CookedMaterialAssetBuild& materialAsset,
 	    const std::filesystem::path& stagedOutputPath,
 	    std::string& outErrorMessage);
+	static bool WriteMaterialName(
+	    std::ofstream& output,
+	    const CookedMaterialAssetBuild& materialAsset,
+	    std::string& outErrorMessage);
+	static bool BuildTextureReferenceRecords(
+	    const CookedMaterialAssetBuild& materialAsset,
+	    std::vector<Assets::CookedTextureReferenceRecord>& outRecords,
+	    std::string& outErrorMessage);
+	static bool WriteTextureReferencePaths(
+	    std::ofstream& output,
+	    const CookedMaterialAssetBuild& materialAsset,
+	    std::string& outErrorMessage);
 	static Assets::CookedAssetId BuildMaterialAssetId(
 	    std::string_view sceneAssetId,
 	    std::size_t materialIndex) noexcept;
@@ -213,45 +225,71 @@ bool MaterialCookerOperations::WriteMaterialAsset(
 		return false;
 	}
 
-	if (!materialAsset.name.empty())
-	{
-		output.write(
-		    materialAsset.name.data(),
-		    static_cast<std::streamsize>(materialAsset.name.size()));
-		if (!output.good())
-		{
-			outErrorMessage =
-			    "Failed to write cooked material asset name payload";
-			return false;
-		}
-	}
-
-	std::vector<Assets::CookedTextureReferenceRecord> records;
-	records.reserve(materialAsset.textureReferences.size());
-	for (const Assets::CookedTextureReference& reference : materialAsset.textureReferences)
-	{
-		if (reference.texturePath.size() >
-		    (std::numeric_limits<std::uint32_t>::max)())
-		{
-			outErrorMessage =
-			    "Cooked material texture reference path is too large to serialize";
-			return false;
-		}
-
-		records.push_back(
-		    {.texturePathByteCount =
-		         static_cast<std::uint32_t>(reference.texturePath.size()),
-		     .textureGroup = reference.textureGroup});
-	}
-
-	if (!Files::BinaryStreamWriter::WriteArray(
-	        output,
-	        records,
-	        outErrorMessage))
+	if (!WriteMaterialName(output, materialAsset, outErrorMessage))
 	{
 		return false;
 	}
 
+	std::vector<Assets::CookedTextureReferenceRecord> records;
+	if (!BuildTextureReferenceRecords(materialAsset, records, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, records, outErrorMessage) ||
+	    !WriteTextureReferencePaths(output, materialAsset, outErrorMessage))
+	{
+		return false;
+	}
+
+	return Files::TryCloseOutput(output, stagedOutputPath, outErrorMessage);
+}
+
+bool MaterialCookerOperations::WriteMaterialName(
+    std::ofstream& output,
+    const CookedMaterialAssetBuild& materialAsset,
+    std::string& outErrorMessage)
+{
+	if (materialAsset.name.empty())
+	{
+		return true;
+	}
+
+	output.write(
+	    materialAsset.name.data(),
+	    static_cast<std::streamsize>(materialAsset.name.size()));
+	if (!output.good())
+	{
+		outErrorMessage = "Failed to write cooked material asset name payload";
+		return false;
+	}
+
+	return true;
+}
+
+bool MaterialCookerOperations::BuildTextureReferenceRecords(
+    const CookedMaterialAssetBuild& materialAsset,
+    std::vector<Assets::CookedTextureReferenceRecord>& outRecords,
+    std::string& outErrorMessage)
+{
+	outRecords.reserve(materialAsset.textureReferences.size());
+	for (const Assets::CookedTextureReference& reference : materialAsset.textureReferences)
+	{
+		if (reference.texturePath.size() > (std::numeric_limits<std::uint32_t>::max)())
+		{
+			outErrorMessage = "Cooked material texture reference path is too large to serialize";
+			return false;
+		}
+
+		outRecords.push_back(
+		    {.texturePathByteCount = static_cast<std::uint32_t>(reference.texturePath.size()),
+		     .textureGroup = reference.textureGroup});
+	}
+
+	return true;
+}
+
+bool MaterialCookerOperations::WriteTextureReferencePaths(
+    std::ofstream& output,
+    const CookedMaterialAssetBuild& materialAsset,
+    std::string& outErrorMessage)
+{
 	for (const Assets::CookedTextureReference& reference : materialAsset.textureReferences)
 	{
 		if (!Files::BinaryStreamWriter::WriteBytes(
@@ -264,10 +302,7 @@ bool MaterialCookerOperations::WriteMaterialAsset(
 		}
 	}
 
-	return Files::TryCloseOutput(
-	    output,
-	    stagedOutputPath,
-	    outErrorMessage);
+	return true;
 }
 
 Assets::CookedAssetId MaterialCookerOperations::BuildMaterialAssetId(

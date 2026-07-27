@@ -261,6 +261,13 @@ namespace SparkleLauncher
 
 		combo.setEnabled(true);
 		combo.setToolTip("Startup level used by editor and runtime launches.");
+		ApplyStartupLevelSelection(combo, AppendStartupLevelOptions(combo, options));
+	}
+
+	int LauncherMainWindow::AppendStartupLevelOptions(
+	    QComboBox& combo,
+	    const QVector<LauncherStartupLevelUiEntry>& options)
+	{
 		const QIcon syncedIcon = m_icons.Icon(LauncherIcon::Done, QColor(LauncherUi::Color::StateSuccess));
 		const QIcon missingIcon = m_icons.Icon(LauncherIcon::Failed, QColor(LauncherUi::Color::StateWarning));
 		const QIcon unsyncedIcon = m_icons.Icon(LauncherIcon::Sync, QColor(LauncherUi::Color::StateQueued));
@@ -299,6 +306,14 @@ namespace SparkleLauncher
 		{
 			selectedIndex = startupDefaultIndex >= 0 ? startupDefaultIndex : firstSelectableIndex;
 		}
+
+		return selectedIndex;
+	}
+
+	void LauncherMainWindow::ApplyStartupLevelSelection(
+	    QComboBox& combo,
+	    int selectedIndex)
+	{
 		const bool hasSelectableLevel = selectedIndex >= 0;
 		combo.setEnabled(hasSelectableLevel);
 		if (!hasSelectableLevel)

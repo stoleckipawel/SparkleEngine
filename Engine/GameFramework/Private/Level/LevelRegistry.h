@@ -7,6 +7,7 @@
 #include <vector>
 
 class LevelAsset;
+struct ProjectLevelCatalogEntry;
 
 class LevelRegistry final
 {
@@ -30,6 +31,10 @@ class LevelRegistry final
 
   private:
 	void DiscoverLevels();
+	void LoadCatalogLevel(
+	    const ProjectLevelCatalogEntry& entry,
+	    std::string& outStartupDefaultLevelName);
+	void ResolveDefaultLevel(std::string_view startupDefaultLevelName);
 	void Register(std::unique_ptr<LevelAsset> level);
 
 	std::unordered_map<std::string, std::unique_ptr<LevelAsset>> m_levels;

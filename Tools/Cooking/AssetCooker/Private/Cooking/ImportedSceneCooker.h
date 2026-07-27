@@ -6,11 +6,6 @@
 #include "CookedSceneBuild.h"
 #include "SourceImportResult.h"
 
-struct ImportedSceneCookProduct final
-{
-	CookedSceneBuild Scene;
-};
-
 class ImportedSceneCooker final
 {
   public:
@@ -22,7 +17,7 @@ class ImportedSceneCooker final
 	static bool Build(
 	    const AssetCookerSceneEntry& sceneEntry,
 	    AssetCookerDiagnostics& diagnostics,
-	    ImportedSceneCookProduct& outProduct);
+	    CookedSceneBuild& outBuild);
 
   private:
 	static bool BuildCookedScene(

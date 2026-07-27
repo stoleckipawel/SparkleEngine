@@ -142,7 +142,9 @@ UI::UI(EditorHostServices hostServices) :
 	SetupDPIScaling();
 
 	if (!InitializeWin32Backend())
+	{
 		return;
+	}
 
 	InitializeDefaultPanels();
 	if (m_renderingSettings)
@@ -183,15 +185,18 @@ bool UI::InitializeWin32Backend()
 
 void UI::InitializeDefaultPanels()
 {
+	InitializeCorePanels();
+	InitializeViewportPanels();
+	InitializeAssetPanels();
+	InitializeScenePanels();
+}
+
+void UI::InitializeCorePanels()
+{
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
 	ConfigureMainMenuBarWindowActions();
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
 	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>();
-	m_viewportTopPanel =
-	    std::make_unique<ViewportTopPanel>(
-	        m_levelManager,
-	        m_renderingSettings.get());
-	m_viewportPanel = std::make_unique<ViewportPanel>(EditorUiState::SceneOutlinerWidth, EditorUiState::SceneInspectorWidth);
 	m_restartService = std::make_unique<EditorRestartService>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
 	m_settingsPanel->SetRenderingSettings(m_renderingSettings.get());
@@ -205,6 +210,18 @@ void UI::InitializeDefaultPanels()
 
 		    (void) m_restartService->Restart(*m_window);
 	    });
+}
+
+void UI::InitializeViewportPanels()
+{
+	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelManager, m_renderingSettings.get());
+	m_viewportPanel = std::make_unique<ViewportPanel>(
+	    EditorUiState::SceneOutlinerWidth,
+	    EditorUiState::SceneInspectorWidth);
+}
+
+void UI::InitializeAssetPanels()
+{
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
 	m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
 	m_usedMeshesPanel = std::make_unique<UsedMeshesPanel>();
@@ -219,9 +236,10 @@ void UI::InitializeDefaultPanels()
 	    });
 	m_usedShadersPanel->SetRecookAllHandler(
 	    [this]()
-	    {
-		    m_shaderRecookRequested = true;
-	    });
+		    {
+			    m_shaderRecookRequested = true;
+		    });
+
 	m_usedShadersPanel->SetRecookHandler(
 	    [this](std::string packageId)
 	    {
@@ -230,9 +248,16 @@ void UI::InitializeDefaultPanels()
 			    m_editorConsoleSystem->SubmitLine("RecompileShaders " + packageId);
 		    }
 	    });
+}
+
+void UI::InitializeScenePanels()
+{
 	m_sceneModel = m_sceneModelBuilder->Update();
 	if (m_sceneModel && !m_sceneModel->GetCameras().empty())
+	{
 		m_sceneSelection = SceneObjectSelection::Camera(m_sceneModel->GetCameras().front().Entity);
+	}
+
 	m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(m_sceneSelection, *m_transactions, EditorUiState::SceneOutlinerWidth);
 	m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactions, EditorUiState::SceneInspectorWidth);
 }

@@ -10,7 +10,7 @@
 
 struct AssetCookerSceneBatch::Item final
 {
-	ImportedSceneCookProduct Product;
+	CookedSceneBuild Build;
 	AssetCookerDiagnostics Diagnostics;
 	bool Built = false;
 };
@@ -40,21 +40,21 @@ std::uint32_t AssetCookerSceneBatch::ResolveWorkerCount() noexcept
 	return std::clamp(hardwareThreads > 1u ? hardwareThreads - 1u : 1u, 1u, 4u);
 }
 
-bool AssetCookerSceneBatch::BuildProducts(
-    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-    std::vector<Item>& items)
+TaskExecutorConfig AssetCookerSceneBatch::BuildExecutorConfig(std::uint32_t taskCapacity)
 {
-	const std::uint32_t taskCapacity =
-	    static_cast<std::uint32_t>(std::max<std::size_t>(sceneEntries.size(), 1u));
+	return TaskExecutorConfig{
+	    .FrameCriticalWorkerCount = 1u,
+	    .BackgroundWorkerCount = ResolveWorkerCount(),
+	    .MaximumTasksPerExecution = taskCapacity,
+	    .MaximumEdgesPerExecution = 1u,
+	    .MaximumActiveExecutions = 1u};
+}
 
-	TaskExecutor executor(
-	    TaskExecutorConfig{
-	        .FrameCriticalWorkerCount = 1u,
-	        .BackgroundWorkerCount = ResolveWorkerCount(),
-	        .MaximumTasksPerExecution = taskCapacity,
-	        .MaximumEdgesPerExecution = 1u,
-	        .MaximumActiveExecutions = 1u});
-
+CompiledTaskGraph AssetCookerSceneBatch::BuildTaskGraph(
+    const std::vector<AssetCookerSceneEntry>& sceneEntries,
+    std::vector<Item>& items,
+    std::uint32_t taskCapacity)
+{
 	TaskGraphBuilder builder(
 	    TaskGraphLimits{
 	        .MaximumTasks = taskCapacity,
@@ -68,25 +68,45 @@ bool AssetCookerSceneBatch::BuildProducts(
 		        .Lane = TaskLane::Background},
 		    [&sceneEntries, &items, index](TaskExecutionContext& context)
 		    {
-			    if (context.IsCancellationRequested())
-			    {
-				    return TaskResult::Cancelled("Scene asset generation was cancelled.");
-			    }
-
-			    Item& item = items[index];
-			    item.Built = ImportedSceneCooker::Build(
-			        sceneEntries[index],
-			        item.Diagnostics,
-			        item.Product);
-
-			    return item.Built
-			               ? TaskResult::Success()
-			               : TaskResult::Failure("Cataloged scene generation failed.");
+			    return BuildProduct(sceneEntries, items, index, context);
 		    });
 	}
 
+	return builder.Compile();
+}
+
+TaskResult AssetCookerSceneBatch::BuildProduct(
+    const std::vector<AssetCookerSceneEntry>& sceneEntries,
+    std::vector<Item>& items,
+    std::uint32_t index,
+    TaskExecutionContext& context)
+{
+	if (context.IsCancellationRequested())
+	{
+		return TaskResult::Cancelled("Scene asset generation was cancelled.");
+	}
+
+	Item& item = items[index];
+	item.Built = ImportedSceneCooker::Build(
+	    sceneEntries[index],
+	    item.Diagnostics,
+	    item.Build);
+	return item.Built
+	           ? TaskResult::Success()
+	           : TaskResult::Failure("Cataloged scene generation failed.");
+}
+
+bool AssetCookerSceneBatch::BuildProducts(
+    const std::vector<AssetCookerSceneEntry>& sceneEntries,
+    std::vector<Item>& items)
+{
+	const std::uint32_t taskCapacity =
+	    static_cast<std::uint32_t>(std::max<std::size_t>(sceneEntries.size(), 1u));
+
+	TaskExecutor executor(BuildExecutorConfig(taskCapacity));
 	TaskExecutionContext context;
-	const TaskExecution execution = executor.Submit(builder.Compile(), context);
+	const TaskExecution execution =
+	    executor.Submit(BuildTaskGraph(sceneEntries, items, taskCapacity), context);
 	return execution.GetStatus() == TaskExecutionStatus::Succeeded;
 }
 
@@ -108,7 +128,7 @@ bool AssetCookerSceneBatch::PublishProducts(
 	builds.reserve(items.size());
 	for (const Item& item : items)
 	{
-		builds.push_back(&item.Product.Scene);
+		builds.push_back(&item.Build);
 	}
 
 	std::string errorMessage;

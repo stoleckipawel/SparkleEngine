@@ -127,7 +127,6 @@ AssetCookerServiceResult AssetCookerService::Finish(
     std::vector<AssetCookerOutputRecord> outputs)
 {
 	AssetCookerServiceResult result;
-	result.succeeded = succeeded;
 	result.exitCode = succeeded ? 0 : 1;
 	result.diagnostics = diagnostics.ReleaseRecords();
 	result.outputs = std::move(outputs);

@@ -2,7 +2,6 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
-#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <map>
@@ -10,8 +9,6 @@
 
 namespace Assets
 {
-	inline constexpr std::uint32_t kSceneAssetRegistryVersion = 1;
-
 	class SPARKLE_ENGINE_API SceneAssetRegistry final
 	{
 	  public:

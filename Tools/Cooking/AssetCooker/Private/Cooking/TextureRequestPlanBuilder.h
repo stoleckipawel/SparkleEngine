@@ -5,7 +5,7 @@
 
 #include <filesystem>
 
-class TextureRequestSet;
+class TextureCookRequestSet;
 
 class TextureRequestPlanBuilder final
 {
@@ -23,5 +23,5 @@ class TextureRequestPlanBuilder final
 	static SceneCollectionResult CollectSceneRequests(
 	    const AssetCookerSceneEntry& sceneEntry,
 	    AssetCookerDiagnostics& diagnostics,
-	    TextureRequestSet& requestSet);
+	    TextureCookRequestSet& requestSet);
 };

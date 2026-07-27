@@ -38,6 +38,7 @@ namespace SparkleLauncher
 	struct LauncherLevelUiEntry;
 	struct LauncherLevelUiModel;
 	struct LauncherProjectSummary;
+	struct LauncherStartupLevelUiEntry;
 	enum class LauncherArtworkPreset;
 
 	class LauncherMainWindow final : public QMainWindow
@@ -132,6 +133,10 @@ namespace SparkleLauncher
 		LauncherLevelUiModel BuildLevelUiModel() const;
 		QComboBox* CreateStartupLevelCombo();
 		void PopulateStartupLevelCombo(QComboBox& combo);
+		int AppendStartupLevelOptions(
+		    QComboBox& combo,
+		    const QVector<LauncherStartupLevelUiEntry>& options);
+		void ApplyStartupLevelSelection(QComboBox& combo, int selectedIndex);
 		void PopulateStartupLevelSelectors();
 		QVector<QPair<QString, QString>> BuildStartupLevelOptions() const;
 		QString ResolveStartupLevelDisplayName() const;

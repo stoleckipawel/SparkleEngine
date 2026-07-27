@@ -109,6 +109,10 @@ class SPARKLE_EDITOR_API UI final
 	bool InitializeWin32Backend();
 
 	void InitializeDefaultPanels();
+	void InitializeCorePanels();
+	void InitializeViewportPanels();
+	void InitializeAssetPanels();
+	void InitializeScenePanels();
 	void UpdateSceneModel();
 	void HandleTransactionShortcuts();
 	void ConfigureMainMenuBarWindowActions();

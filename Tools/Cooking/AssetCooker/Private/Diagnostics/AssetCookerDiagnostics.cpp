@@ -18,15 +18,15 @@ void AssetCookerDiagnostics::AddError(
 
 void AssetCookerDiagnostics::Append(std::vector<AssetCookerDiagnosticRecord> additionalRecords)
 {
-	records.insert(
-	    records.end(),
+	m_records.insert(
+	    m_records.end(),
 	    std::make_move_iterator(additionalRecords.begin()),
 	    std::make_move_iterator(additionalRecords.end()));
 }
 
 std::vector<AssetCookerDiagnosticRecord> AssetCookerDiagnostics::ReleaseRecords()
 {
-	return std::move(records);
+	return std::move(m_records);
 }
 
 void AssetCookerDiagnostics::Add(
@@ -38,5 +38,5 @@ void AssetCookerDiagnostics::Add(
 	record.category = category;
 	record.message = std::move(message);
 	record.sourcePath = std::move(sourcePath);
-	records.push_back(std::move(record));
+	m_records.push_back(std::move(record));
 }

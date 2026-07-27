@@ -90,15 +90,7 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
     AssetCookerProjectCookPlan& outPlan,
     AssetCookerDiagnostics& diagnostics)
 {
-	outPlan = {};
-	outPlan.projectName = std::string(projectName);
-	outPlan.configuration = std::string(configuration);
-	outPlan.toolConfiguration = ResolveToolConfiguration(configuration);
-	outPlan.repositoryRoot = repositoryRoot;
-	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
-	outPlan.cookedRoot =
-	    repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
-	AddPlanSteps(category, outPlan.steps);
+	InitializePlan(repositoryRoot, projectName, configuration, category, outPlan);
 
 	if (!PathExists(outPlan.projectRoot / std::string(Filesystem::kProjectMarker)))
 	{
@@ -114,31 +106,7 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 		return true;
 	}
 
-	std::vector<std::string> sceneIds;
-	if (!CollectSceneIds(
-	        outPlan.projectRoot,
-	        sceneIds,
-	        diagnostics))
-	{
-		return false;
-	}
-
-	for (const std::string& sceneId : sceneIds)
-	{
-		AssetCookerSceneEntry entry;
-		if (!ResolveSceneEntry(outPlan.projectRoot, sceneId, entry, diagnostics))
-		{
-			return false;
-		}
-		outPlan.sceneEntries.push_back(std::move(entry));
-	}
-
-	if (outPlan.sceneEntries.empty())
-	{
-		diagnostics.AddError(category, "The default level catalog contains no source scene assets.");
-		return false;
-	}
-	return true;
+	return CollectSceneEntries(outPlan.projectRoot, category, outPlan.sceneEntries, diagnostics);
 }
 
 bool AssetCookerDiscovery::PathExists(const std::filesystem::path& path)
@@ -152,6 +120,56 @@ bool AssetCookerDiscovery::CategoryNeedsScenes(AssetCookerCategory category) noe
 	return category == AssetCookerCategory_All ||
 	       category == AssetCookerCategory_Textures ||
 	       category == AssetCookerCategory_SceneAssets;
+}
+
+void AssetCookerDiscovery::InitializePlan(
+    const std::filesystem::path& repositoryRoot,
+    std::string_view projectName,
+    std::string_view configuration,
+    AssetCookerCategory category,
+    AssetCookerProjectCookPlan& outPlan)
+{
+	outPlan = {};
+	outPlan.projectName = std::string(projectName);
+	outPlan.configuration = std::string(configuration);
+	outPlan.toolConfiguration = ResolveToolConfiguration(configuration);
+	outPlan.repositoryRoot = repositoryRoot;
+	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
+	outPlan.cookedRoot =
+	    repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
+	AddPlanSteps(category, outPlan.steps);
+}
+
+bool AssetCookerDiscovery::CollectSceneEntries(
+    const std::filesystem::path& projectRoot,
+    AssetCookerCategory category,
+    std::vector<AssetCookerSceneEntry>& outEntries,
+    AssetCookerDiagnostics& diagnostics)
+{
+	std::vector<std::string> sceneIds;
+	if (!CollectSceneIds(projectRoot, sceneIds, diagnostics))
+	{
+		return false;
+	}
+
+	for (const std::string& sceneId : sceneIds)
+	{
+		AssetCookerSceneEntry entry;
+		if (!ResolveSceneEntry(projectRoot, sceneId, entry, diagnostics))
+		{
+			return false;
+		}
+
+		outEntries.push_back(std::move(entry));
+	}
+
+	if (outEntries.empty())
+	{
+		diagnostics.AddError(category, "The default level catalog contains no source scene assets.");
+		return false;
+	}
+
+	return true;
 }
 
 void AssetCookerDiscovery::AddPlanSteps(
@@ -215,33 +233,14 @@ bool AssetCookerDiscovery::CollectSceneIds(
 	outSceneIds.clear();
 	for (const ProjectLevelCatalogEntry& level : catalog.levels)
 	{
-		if (!level.defaultIncluded && !level.required)
-		{
-			continue;
-		}
-
-		if (!catalog.IsLevelReady(projectRoot, level))
-		{
-			if (level.required)
-			{
-				diagnostics.AddError(
-				    AssetCookerCategory_SceneAssets,
-				    "Required catalog level is unavailable: " + level.id,
-				    level.sourcePath);
-				return false;
-			}
-			continue;
-		}
-
-		if (!CatalogedLevelSceneReader::AppendSceneIds(
-		        level.sourcePath,
+		if (!AppendLevelSceneIds(
+		        projectRoot,
+		        catalog,
+		        level,
 		        outSceneIds,
+		        diagnostics,
 		        errorMessage))
 		{
-			diagnostics.AddError(
-			    AssetCookerCategory_SceneAssets,
-			    std::move(errorMessage),
-			    level.sourcePath);
 			return false;
 		}
 	}
@@ -251,6 +250,45 @@ bool AssetCookerDiscovery::CollectSceneIds(
 	    std::unique(outSceneIds.begin(), outSceneIds.end()),
 	    outSceneIds.end());
 	return true;
+}
+
+bool AssetCookerDiscovery::AppendLevelSceneIds(
+    const std::filesystem::path& projectRoot,
+    const ProjectLevelCatalog& catalog,
+    const ProjectLevelCatalogEntry& level,
+    std::vector<std::string>& outSceneIds,
+    AssetCookerDiagnostics& diagnostics,
+    std::string& outErrorMessage)
+{
+	if (!level.defaultIncluded && !level.required)
+	{
+		return true;
+	}
+
+	if (!catalog.IsLevelReady(projectRoot, level))
+	{
+		if (level.required)
+		{
+			diagnostics.AddError(
+			    AssetCookerCategory_SceneAssets,
+			    "Required catalog level is unavailable: " + level.id,
+			    level.sourcePath);
+			return false;
+		}
+
+		return true;
+	}
+
+	if (CatalogedLevelSceneReader::AppendSceneIds(level.sourcePath, outSceneIds, outErrorMessage))
+	{
+		return true;
+	}
+
+	diagnostics.AddError(
+	    AssetCookerCategory_SceneAssets,
+	    std::move(outErrorMessage),
+	    level.sourcePath);
+	return false;
 }
 
 bool AssetCookerDiscovery::ResolveSceneEntry(
