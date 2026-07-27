@@ -134,6 +134,11 @@ class RayTracingBlasCacheOperations final
 	}
 };
 
+bool RayTracingBlasCache::BlasHandle::IsValid() const noexcept
+{
+	return resource && gpuAddress != 0;
+}
+
 bool RayTracingBlasCache::SkinnedEntryKey::operator==(
     const SkinnedEntryKey& other) const noexcept
 {

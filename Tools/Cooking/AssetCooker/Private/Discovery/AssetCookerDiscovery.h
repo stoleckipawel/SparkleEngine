@@ -40,4 +40,12 @@ class AssetCookerDiscovery final
 	    std::string_view sceneId,
 	    AssetCookerSceneEntry& outEntry,
 	    AssetCookerDiagnostics& diagnostics);
+	static bool IsSceneIdSafe(
+	    const std::filesystem::path& relativeScenePath) noexcept;
+	static bool ResolveSceneSource(
+	    const std::filesystem::path& meshRoot,
+	    const std::filesystem::path& relativeScenePath,
+	    std::string_view sceneId,
+	    std::filesystem::path& outSourcePath,
+	    AssetCookerDiagnostics& diagnostics);
 };

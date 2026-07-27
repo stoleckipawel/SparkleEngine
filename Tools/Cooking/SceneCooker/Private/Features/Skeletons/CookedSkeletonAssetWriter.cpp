@@ -2,11 +2,21 @@
 
 #include "CookedSkeletonAssetWriter.h"
 
+#include "CookedSceneBuild.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <fstream>
+
+class CookedSkeletonAssetWriterOperations final
+{
+  public:
+	static bool StageSkeletonAsset(
+	    const CookedSkeletonAssetBuild& skeletonAsset,
+	    std::vector<Files::FilePublication>& outPublication,
+	    std::string& outErrorMessage);
+};
 
 bool CookedSkeletonAssetWriter::StageSkeletonAssets(
     const std::vector<CookedSkeletonAssetBuild>& skeletonAssets,
@@ -15,39 +25,48 @@ bool CookedSkeletonAssetWriter::StageSkeletonAssets(
 {
 	for (const CookedSkeletonAssetBuild& skeletonAsset : skeletonAssets)
 	{
-		const std::filesystem::path outputPath = Paths::CookedSkeletonAsset(skeletonAsset.assetId);
-		const std::filesystem::path stagedOutputPath =
-		    Files::BuildTemporaryPath(outputPath, ".cook-generation");
-
-		Files::CleanupTemporaryFile(stagedOutputPath);
-
-		outPublication.push_back({stagedOutputPath, outputPath});
-
-		const Assets::CookedSkeletonAssetHeader header{
-		    .fileHeader = {Assets::kCookedSkeletonAssetMagic, Assets::kCookedSkeletonAssetVersion},
-		    .jointCount = static_cast<std::uint32_t>(skeletonAsset.joints.size()),
-		    .jointStride = sizeof(Assets::CookedSkeletonJointRecord),
-		    .flags = 0};
-
-		std::ofstream output;
-		if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, outErrorMessage))
+		if (!CookedSkeletonAssetWriterOperations::StageSkeletonAsset(
+		        skeletonAsset,
+		        outPublication,
+		        outErrorMessage))
 		{
 			return false;
 		}
-
-		if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
-		    !Files::BinaryStreamWriter::WriteArray(output, skeletonAsset.joints, outErrorMessage))
-		{
-			return false;
-		}
-
-		if (!Files::TryCloseOutput(output, stagedOutputPath, outErrorMessage))
-		{
-			return false;
-		}
-
 	}
 
 	outErrorMessage.clear();
 	return true;
+}
+
+bool CookedSkeletonAssetWriterOperations::StageSkeletonAsset(
+    const CookedSkeletonAssetBuild& skeletonAsset,
+    std::vector<Files::FilePublication>& outPublication,
+    std::string& outErrorMessage)
+{
+	const std::filesystem::path outputPath =
+	    Paths::CookedSkeletonAsset(skeletonAsset.assetId);
+	const std::filesystem::path stagedOutputPath =
+	    Files::BuildTemporaryPath(outputPath, ".cook-generation");
+
+	Files::CleanupTemporaryFile(stagedOutputPath);
+	outPublication.push_back({stagedOutputPath, outputPath});
+
+	const Assets::CookedSkeletonAssetHeader header{
+	    .fileHeader = {Assets::kCookedSkeletonAssetMagic, Assets::kCookedSkeletonAssetVersion},
+	    .jointCount = static_cast<std::uint32_t>(skeletonAsset.joints.size()),
+	    .jointStride = sizeof(Assets::CookedSkeletonJointRecord),
+	    .flags = 0};
+
+	std::ofstream output;
+	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, skeletonAsset.joints, outErrorMessage))
+	{
+		return false;
+	}
+
+	return Files::TryCloseOutput(
+	    output,
+	    stagedOutputPath,
+	    outErrorMessage);
 }

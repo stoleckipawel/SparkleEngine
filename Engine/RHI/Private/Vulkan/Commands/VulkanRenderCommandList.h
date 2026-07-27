@@ -35,10 +35,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	ERhiQueueType GetQueueType() const noexcept override { return m_queueType; }
 	VkCommandBuffer GetVulkanCommandBuffer() const noexcept { return m_commandBuffer; }
 	bool IsRecording() const noexcept { return m_isRecording; }
-	bool IsCoordinatorRecording() const noexcept
-	{
-		return m_recordingOwner.IsCoordinator();
-	}
+	bool IsCoordinatorRecording() const noexcept;
 	NativeGraphicsCommandListHandle GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept override;
 	bool SupportsDiagnosticScopes() const noexcept override;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept override;

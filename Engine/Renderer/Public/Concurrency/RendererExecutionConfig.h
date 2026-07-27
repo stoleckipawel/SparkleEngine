@@ -21,10 +21,7 @@ struct SPARKLE_RENDERER_API RendererExecutionConfig final
 	TaskExecutor* AssetTaskExecutor = nullptr;
 	TaskScope* ApplicationTaskScope = nullptr;
 
-	constexpr bool IsThreaded() const noexcept { return Mode != RendererExecutionMode::Serial; }
-	constexpr bool HasAssetTaskRuntime() const noexcept
-	{
-		return AssetTaskExecutor != nullptr && ApplicationTaskScope != nullptr;
-	}
+	bool IsThreaded() const noexcept;
+	bool HasAssetTaskRuntime() const noexcept;
 	std::uint32_t ResolveFrameSlotCount() const noexcept;
 };

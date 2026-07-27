@@ -21,7 +21,5 @@ struct ShaderPackageCookSettings final
 	bool enableOptimizations = true;
 	bool treatWarningsAsErrors = true;
 	bool stripDebugInfo = true;
-	bool forceParameterStructMismatchForValidation = false;
-	bool forceMissingIncludeForValidation = false;
 	std::uint32_t maximumParallelCompiles = 4;
 };

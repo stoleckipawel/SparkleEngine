@@ -4,9 +4,13 @@
 
 namespace RayTracingShaderFeatureFlags
 {
-	inline constexpr CookedShaderPackageFeatureFlags DescriptorRayQuery = CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	                                                                      CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	                                                                      CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
+	inline constexpr CookedShaderPackageFeatureFlags DescriptorRayQuery =
+	    static_cast<CookedShaderPackageFeatureFlags>(
+	        static_cast<std::uint32_t>(CookedShaderPackageFeatureFlags::UsesInlineRayQuery) |
+	        static_cast<std::uint32_t>(CookedShaderPackageFeatureFlags::UsesAccelerationStructure) |
+	        static_cast<std::uint32_t>(CookedShaderPackageFeatureFlags::UsesDescriptorIndexing));
 	inline constexpr CookedShaderPackageFeatureFlags DeviceAddressRayQuery =
-	    DescriptorRayQuery | CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress;
+	    static_cast<CookedShaderPackageFeatureFlags>(
+	        static_cast<std::uint32_t>(DescriptorRayQuery) |
+	        static_cast<std::uint32_t>(CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress));
 }

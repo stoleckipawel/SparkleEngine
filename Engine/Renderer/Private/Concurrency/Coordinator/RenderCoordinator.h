@@ -60,6 +60,9 @@ class RenderCoordinator final
 	void Initialize();
 	void InitializeSerial();
 	void InitializeThreaded();
+	RenderFramePacket TakePendingFrame();
+	void ExecuteSerialFrame();
+	void SubmitThreadedFrame();
 	void RenderThreadMain();
 	void ProcessThreadedCommand(RenderControlCommand command);
 	void ExecuteThreadedFrame(RenderFrameQueueTicket ticket);

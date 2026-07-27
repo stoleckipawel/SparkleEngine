@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../RHIAPI.h"
+
 #include "ShaderReflection.h"
 #include "ShaderStage.h"
 
@@ -8,14 +10,7 @@
 #include <cstdint>
 #include <type_traits>
 
-constexpr std::uint32_t MakeCookedShaderPackageMagic(char a, char b, char c, char d) noexcept
-{
-	return static_cast<std::uint32_t>(static_cast<std::uint8_t>(a)) | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(b)) << 8u) |
-	       (static_cast<std::uint32_t>(static_cast<std::uint8_t>(c)) << 16u) |
-	       (static_cast<std::uint32_t>(static_cast<std::uint8_t>(d)) << 24u);
-}
-
-constexpr std::uint32_t kCookedShaderPackageMagic = MakeCookedShaderPackageMagic('S', 'S', 'H', 'D');
+constexpr std::uint32_t kCookedShaderPackageMagic = 0x44485353u;
 constexpr std::uint32_t kCookedShaderPackageVersion = 2;
 
 enum class CookedShaderPackageKind : std::uint8_t
@@ -34,21 +29,15 @@ enum class CookedShaderPackageFeatureFlags : std::uint32_t
 	UsesDescriptorIndexing = 1u << 3u,
 };
 
-constexpr CookedShaderPackageFeatureFlags operator|(CookedShaderPackageFeatureFlags lhs, CookedShaderPackageFeatureFlags rhs) noexcept
-{
-	return static_cast<CookedShaderPackageFeatureFlags>(static_cast<std::uint32_t>(lhs) | static_cast<std::uint32_t>(rhs));
-}
-
-constexpr CookedShaderPackageFeatureFlags& operator|=(CookedShaderPackageFeatureFlags& lhs, CookedShaderPackageFeatureFlags rhs) noexcept
-{
-	lhs = lhs | rhs;
-	return lhs;
-}
-
-constexpr bool HasCookedShaderPackageFeature(CookedShaderPackageFeatureFlags value, CookedShaderPackageFeatureFlags flag) noexcept
-{
-	return (static_cast<std::uint32_t>(value) & static_cast<std::uint32_t>(flag)) != 0;
-}
+SPARKLE_RHI_API CookedShaderPackageFeatureFlags operator|(
+    CookedShaderPackageFeatureFlags lhs,
+    CookedShaderPackageFeatureFlags rhs) noexcept;
+SPARKLE_RHI_API CookedShaderPackageFeatureFlags& operator|=(
+    CookedShaderPackageFeatureFlags& lhs,
+    CookedShaderPackageFeatureFlags rhs) noexcept;
+SPARKLE_RHI_API bool HasCookedShaderPackageFeature(
+    CookedShaderPackageFeatureFlags value,
+    CookedShaderPackageFeatureFlags flag) noexcept;
 
 enum class CookedShaderRayTracingExportKind : std::uint8_t
 {

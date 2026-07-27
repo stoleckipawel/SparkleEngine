@@ -7,17 +7,16 @@
 #include <iostream>
 #include <string>
 
-bool AssetCookerDispatcher::ValidateCapabilities(
-    const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics)
-{
-	return AssetCookerStageExecutor::ValidateCapabilities(plan, diagnostics);
-}
-
 bool AssetCookerDispatcher::DispatchPlan(
     const AssetCookerProjectCookPlan& plan,
     AssetCookerDiagnostics& diagnostics,
-	std::vector<AssetCookerOutputRecord>& outOutputs)
+    std::vector<AssetCookerOutputRecord>& outOutputs)
 {
+	if (!AssetCookerStageExecutor::ValidateCapabilities(plan, diagnostics))
+	{
+		return false;
+	}
+
 	Filesystem::ConfigureProjectRoot(plan.projectRoot);
 
 	for (std::size_t stepIndex = 0; stepIndex < plan.steps.size(); ++stepIndex)

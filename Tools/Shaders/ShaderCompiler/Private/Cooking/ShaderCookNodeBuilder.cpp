@@ -12,6 +12,7 @@
 #include "Compiler/ShaderCompileProfile.h"
 
 #include <format>
+#include <utility>
 
 bool ShaderCookNodeBuilder::BuildAndAdd(
     const ShaderPackageCookSettings& settings,
@@ -25,13 +26,61 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	const ShaderCookPackageDesc& package = plan.packages[packageIndex];
 	const ShaderCookStageDesc& stage = package.stages[stageIndex];
 	const ShaderTarget target = settings.targets[targetIndex];
-	ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(stage);
+	ShaderCompileOptions compileOptions =
+	    BuildCompileOptions(settings, package, stage, target);
+
+	IShaderBackend* backend = nullptr;
+	std::string backendName;
+	if (!ResolveBackend(
+	        settings,
+	        package,
+	        stage,
+	        target,
+	        compileOptions,
+	        backendPool,
+	        backend,
+	        backendName,
+	        outErrorMessage))
+	{
+		return false;
+	}
+
+	return AppendNode(
+	    packageIndex,
+	    package,
+	    stage,
+	    target,
+	    std::move(compileOptions),
+	    backendName,
+	    *backend,
+	    plan,
+	    outErrorMessage);
+}
+
+ShaderCompileOptions ShaderCookNodeBuilder::BuildCompileOptions(
+    const ShaderPackageCookSettings& settings,
+    const ShaderCookPackageDesc& package,
+    const ShaderCookStageDesc& stage,
+    ShaderTarget target)
+{
+	ShaderCompileOptions compileOptions =
+	    ShaderCookPlanner::BuildCompileOptions(stage);
 	compileOptions.Target = target;
-	compileOptions.CaptureDebugArtifacts = !settings.debugArtifactDirectory.empty();
+	compileOptions.CaptureDebugArtifacts =
+	    !settings.debugArtifactDirectory.empty();
 	compileOptions.EnableDebugInfo = settings.enableDebugInfo;
 	compileOptions.EnableOptimizations = settings.enableOptimizations;
 	compileOptions.TreatWarningsAsErrors = settings.treatWarningsAsErrors;
 	compileOptions.StripDebugInfo = settings.stripDebugInfo;
+
+	AppendDescriptorBindingRemaps(package, compileOptions);
+	return compileOptions;
+}
+
+void ShaderCookNodeBuilder::AppendDescriptorBindingRemaps(
+    const ShaderCookPackageDesc& package,
+    ShaderCompileOptions& compileOptions)
+{
 	const std::vector<PassParameterDesc>& parameters = package.bindingLayout.GetParameters();
 	compileOptions.DescriptorBindingRemaps.reserve(parameters.size());
 	for (std::uint32_t parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex)
@@ -48,34 +97,27 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 		        .Set = 0,
 		        .Binding = parameterIndex});
 	}
+}
 
-	if (settings.forceMissingIncludeForValidation && packageIndex == 0 && stageIndex == 0 && targetIndex == 0)
-	{
-		std::string validationError;
-		if (!IncludeClosureHasher::ResolveValidationInclude(
-		        compileOptions.SourcePath,
-		        "__SparkleMissingIncludeSelfTest__.hlsli",
-		        compileOptions,
-		        validationError))
-		{
-			outErrorMessage = std::format(
-			    "Missing-include verification self-test confirmed unresolved include handling for shader package '{}' stage '{}': {}",
-			    package.packageId,
-			    GetShaderStagePrefix(stage.stage),
-			    validationError);
-			return false;
-		}
-	}
-
+bool ShaderCookNodeBuilder::ResolveBackend(
+    const ShaderPackageCookSettings& settings,
+    const ShaderCookPackageDesc& package,
+    const ShaderCookStageDesc& stage,
+    ShaderTarget target,
+    const ShaderCompileOptions& compileOptions,
+    ShaderBackendPool& backendPool,
+    IShaderBackend*& outBackend,
+    std::string& outBackendName,
+    std::string& outErrorMessage)
+{
 	std::string backendError;
-	std::string backendName;
-	IShaderBackend* backend = backendPool.ResolveAndAcquire(
+	outBackend = backendPool.ResolveAndAcquire(
 	    compileOptions.SourcePath,
 	    compileOptions.Target,
 	    settings.backendName,
-	    backendName,
+	    outBackendName,
 	    backendError);
-	if (backendName.empty())
+	if (outBackendName.empty())
 	{
 		outErrorMessage = std::format(
 		    "Failed to select shader backend for shader package '{}' stage '{}' target '{}' - {}",
@@ -85,11 +127,12 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 		    backendError);
 		return false;
 	}
-	if (backend == nullptr)
+
+	if (outBackend == nullptr)
 	{
 		outErrorMessage = std::format(
 		    "Failed to construct shader backend '{}' for shader package '{}' stage '{}' target '{}' - {}",
-		    backendName,
+		    outBackendName,
 		    package.packageId,
 		    GetShaderStagePrefix(stage.stage),
 		    GetShaderTargetName(target),
@@ -97,6 +140,20 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 		return false;
 	}
 
+	return true;
+}
+
+bool ShaderCookNodeBuilder::AppendNode(
+    std::size_t packageIndex,
+    const ShaderCookPackageDesc& package,
+    const ShaderCookStageDesc& stage,
+    ShaderTarget target,
+    ShaderCompileOptions compileOptions,
+    const std::string& backendName,
+    const IShaderBackend& backend,
+    ShaderCookPipelinePlan& plan,
+    std::string& outErrorMessage)
+{
 	const IncludeClosureHashResult includeHashResult = IncludeClosureHasher::Compute(compileOptions);
 	if (!includeHashResult.Succeeded())
 	{
@@ -116,13 +173,16 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	    includeHashResult.includeClosureHash,
 	    optionsHash,
 	    backendName,
-	    backend->GetBackendVersion());
+	    backend.GetBackendVersion());
+	const std::string profileName =
+	    ShaderCompileProfile::BuildTargetProfile(compileOptions);
+
 	plan.nodes.push_back(CookNode{
 	    .packageIndex = packageIndex,
 	    .package = &package,
 	    .stage = &stage,
 	    .backendName = backendName,
-	    .compileOptions = compileOptions,
+	    .compileOptions = std::move(compileOptions),
 	    .parameterStructDescriptor = stage.parameterStructDescriptor,
 	    .sourceHash = includeHashResult.sourceHash,
 	    .includeClosureHash = includeHashResult.includeClosureHash,
@@ -135,7 +195,7 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	        .stage = stage.stage,
 	        .backendName = backendName,
 	        .targetName = GetShaderTargetName(target),
-	        .profileName = ShaderCompileProfile::BuildTargetProfile(compileOptions),
+	        .profileName = profileName,
 	        .sourceHash = includeHashResult.sourceHash,
 	        .includeClosureHash = includeHashResult.includeClosureHash,
 	        .optionsHash = optionsHash,

@@ -38,6 +38,19 @@ namespace SparkleLauncher
 		return m_activeProjectId;
 	}
 
+	const LauncherProjectSummary* LauncherProjectModel::ActiveProject() const
+	{
+		for (const LauncherProjectSummary& project : m_projects)
+		{
+			if (project.Id == m_activeProjectId)
+			{
+				return &project;
+			}
+		}
+
+		return nullptr;
+	}
+
 	void LauncherProjectModel::Refresh(const std::filesystem::path& repositoryRoot)
 	{
 		std::string errorMessage;

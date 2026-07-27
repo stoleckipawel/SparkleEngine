@@ -56,7 +56,11 @@ bool ShaderCookNodeExecutor::TryLoadFromCache(
 		return false;
 	}
 	ApplyNodeMetadata(node, "hit", outResult.CompiledStage);
-	if (!ShaderParameterStructCookVerifier::Verify(settings, node, outResult.CompiledStage, nullptr, outResult.Diagnostic))
+	if (!ShaderParameterStructCookVerifier::Verify(
+	        node,
+	        outResult.CompiledStage,
+	        nullptr,
+	        outResult.Diagnostic))
 		return false;
 	return true;
 }
@@ -84,7 +88,11 @@ bool ShaderCookNodeExecutor::Compile(
 		    outResult.Diagnostic);
 		return false;
 	}
-	if (!ShaderParameterStructCookVerifier::Verify(settings, node, outResult.CompiledStage, &debugArtifacts, outResult.Diagnostic))
+	if (!ShaderParameterStructCookVerifier::Verify(
+	        node,
+	        outResult.CompiledStage,
+	        &debugArtifacts,
+	        outResult.Diagnostic))
 		return false;
 	ApplyNodeMetadata(
 	    node,

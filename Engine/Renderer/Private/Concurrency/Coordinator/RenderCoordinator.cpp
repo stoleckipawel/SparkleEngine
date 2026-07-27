@@ -54,7 +54,10 @@ RenderCoordinator::~RenderCoordinator() noexcept
 	(void) SubmitControl(RenderShutdownCommand{});
 	m_frameQueue->Close();
 	m_controlQueue->Close();
-	if (m_renderThread.joinable()) m_renderThread.join();
+	if (m_renderThread.joinable())
+	{
+		m_renderThread.join();
+	}
 }
 
 void RenderCoordinator::StageRenderInput(RenderInputFrame input)
@@ -88,54 +91,85 @@ void RenderCoordinator::SubmitViewportRequest(const ViewportRenderRequest& reque
 {
 	m_producerOwner.AssertAccess();
 	if (m_config.IsThreaded())
+	{
 		(void) SubmitControl(RenderViewportCommand{request});
+	}
 	else
+	{
 		GetSerialContext().GetPipeline().SubmitViewportRenderRequest(request);
+	}
 }
 
 void RenderCoordinator::RenderFrame()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_pendingInput) return;
-	if (!m_config.IsThreaded())
+	if (!m_pendingInput)
 	{
-		RenderFramePacket packet{
-		    .Input = std::move(*m_pendingInput),
-		    .Timing = m_timer->GetTimeInfo(),
-		    .Ui = m_pendingUi ? std::move(*m_pendingUi) : UiRenderPacket{}};
-		m_pendingInput.reset();
-		m_pendingUi.reset();
-		GetSerialContext().ExecuteFrame(std::move(packet));
-		PublishReadState();
 		return;
 	}
 
-	const std::optional<RenderFrameQueueTicket> ticket = m_frameQueue->Acquire();
-	if (!ticket) return;
+	if (m_config.IsThreaded())
+	{
+		SubmitThreadedFrame();
+	}
+	else
+	{
+		ExecuteSerialFrame();
+	}
+}
+
+RenderFramePacket RenderCoordinator::TakePendingFrame()
+{
 	RenderFramePacket packet{
 	    .Input = std::move(*m_pendingInput),
 	    .Timing = m_timer->GetTimeInfo(),
 	    .Ui = m_pendingUi ? std::move(*m_pendingUi) : UiRenderPacket{}};
+
 	m_pendingInput.reset();
 	m_pendingUi.reset();
-	if (!m_frameQueue->Publish(*ticket, std::move(packet)))
+	return packet;
+}
+
+void RenderCoordinator::ExecuteSerialFrame()
+{
+	GetSerialContext().ExecuteFrame(TakePendingFrame());
+	PublishReadState();
+}
+
+void RenderCoordinator::SubmitThreadedFrame()
+{
+	const std::optional<RenderFrameQueueTicket> ticket = m_frameQueue->Acquire();
+	if (!ticket)
+	{
+		return;
+	}
+
+	if (!m_frameQueue->Publish(*ticket, TakePendingFrame()))
 	{
 		(void) m_frameQueue->Cancel(*ticket);
 		return;
 	}
+
 	if (!SubmitControl(RenderFrameReadyCommand{*ticket}))
 	{
 		(void) m_frameQueue->Cancel(*ticket);
 		return;
 	}
+
 	if (m_config.Mode == RendererExecutionMode::ThreadedZeroAhead)
+	{
 		(void) m_frameQueue->WaitUntilReusable(*ticket);
+	}
 }
 
 ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded()) return GetSerialContext().GetPipeline().GetViewportRenderProducts();
+	if (!m_config.IsThreaded())
+	{
+		return GetSerialContext().GetPipeline().GetViewportRenderProducts();
+	}
+
 	std::lock_guard lock(m_readStateMutex);
 	return m_publishedViewportProducts;
 }
@@ -143,7 +177,11 @@ ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 CookedShaderReloadResult RenderCoordinator::ReloadCookedShaders()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded()) return GetSerialContext().GetSystems().ReloadCookedShaders();
+	if (!m_config.IsThreaded())
+	{
+		return GetSerialContext().GetSystems().ReloadCookedShaders();
+	}
+
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<CookedShaderReloadResult>(
 	    SubmitSynchronousControl(RenderReloadShadersCommand{completion}, completion));
@@ -159,7 +197,11 @@ std::uint64_t RenderCoordinator::GetShaderPackageGeneration() const noexcept
 MeshDiagnosticsSnapshot RenderCoordinator::CaptureMeshDiagnostics()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded()) return GetSerialContext().GetSystems().CaptureMeshDiagnostics();
+	if (!m_config.IsThreaded())
+	{
+		return GetSerialContext().GetSystems().CaptureMeshDiagnostics();
+	}
+
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<MeshDiagnosticsSnapshot>(SubmitSynchronousControl(
 	    RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Meshes, 0, completion}, completion));
@@ -168,7 +210,11 @@ MeshDiagnosticsSnapshot RenderCoordinator::CaptureMeshDiagnostics()
 MeshPreviewGeometry RenderCoordinator::CaptureMeshPreview(std::uintptr_t meshRuntimeId)
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded()) return GetSerialContext().GetSystems().CaptureMeshPreview(meshRuntimeId);
+	if (!m_config.IsThreaded())
+	{
+		return GetSerialContext().GetSystems().CaptureMeshPreview(meshRuntimeId);
+	}
+
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<MeshPreviewGeometry>(SubmitSynchronousControl(
 	    RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::MeshPreview, meshRuntimeId, completion}, completion));
@@ -177,7 +223,11 @@ MeshPreviewGeometry RenderCoordinator::CaptureMeshPreview(std::uintptr_t meshRun
 TextureDiagnosticsSnapshot RenderCoordinator::CaptureTextureDiagnostics()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded()) return GetSerialContext().GetPipeline().CaptureTextureDiagnostics();
+	if (!m_config.IsThreaded())
+	{
+		return GetSerialContext().GetPipeline().CaptureTextureDiagnostics();
+	}
+
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<TextureDiagnosticsSnapshot>(SubmitSynchronousControl(
 	    RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Textures, 0, completion}, completion));
@@ -186,7 +236,11 @@ TextureDiagnosticsSnapshot RenderCoordinator::CaptureTextureDiagnostics()
 RendererMemoryDiagnosticsSnapshot RenderCoordinator::CaptureMemoryDiagnostics()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded()) return GetSerialContext().GetSystems().CaptureMemoryDiagnostics();
+	if (!m_config.IsThreaded())
+	{
+		return GetSerialContext().GetSystems().CaptureMemoryDiagnostics();
+	}
+
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<RendererMemoryDiagnosticsSnapshot>(SubmitSynchronousControl(
 	    RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Memory, 0, completion}, completion));
@@ -249,13 +303,28 @@ void RenderCoordinator::InitializeThreaded()
 {
 	m_frameQueue = std::make_unique<RenderFrameQueue>(m_config.ResolveFrameSlotCount());
 	m_controlQueue = std::make_unique<RenderControlCommandQueue>(RenderControlCapacity);
-	m_renderThread = std::thread([this] { RenderThreadMain(); });
+	m_renderThread = std::thread(
+	    [this]
+	    {
+		    RenderThreadMain();
+	    });
+
 	std::unique_lock lock(m_startMutex);
-	m_startedCondition.wait(lock, [this] { return m_started; });
+	m_startedCondition.wait(
+	    lock,
+	    [this]
+	    {
+		    return m_started;
+	    });
+
 	if (!m_startSucceeded)
 	{
 		lock.unlock();
-		if (m_renderThread.joinable()) m_renderThread.join();
+		if (m_renderThread.joinable())
+		{
+			m_renderThread.join();
+		}
+
 		Diagnostics::Fail(
 		    Logging::GetOrCreateLogger("Renderer.Coordinator"),
 		    __FILE__,
@@ -263,6 +332,7 @@ void RenderCoordinator::InitializeThreaded()
 		    "RenderThread failed to create its renderer execution context.");
 		return;
 	}
+
 	SubmitResize();
 }
 
@@ -287,7 +357,10 @@ void RenderCoordinator::RenderThreadMain()
 		{
 			const bool shutdown = std::holds_alternative<RenderShutdownCommand>(command->Payload);
 			ProcessThreadedCommand(std::move(*command));
-			if (shutdown) break;
+			if (shutdown)
+			{
+				break;
+			}
 		}
 	}
 	catch (const std::exception& exception)
@@ -316,7 +389,9 @@ void RenderCoordinator::ProcessThreadedCommand(RenderControlCommand command)
 	}
 	m_lastConsumedControlSequence = command.SequenceNumber;
 	if (const auto* frame = std::get_if<RenderFrameReadyCommand>(&command.Payload))
+	{
 		ExecuteThreadedFrame(frame->Ticket);
+	}
 	else
 	{
 		m_context->ExecuteControl(command.Payload);
@@ -346,7 +421,10 @@ void RenderCoordinator::SettleAbandonedWork() noexcept
 		    {
 			    if constexpr (requires { payload.Completion; })
 			    {
-				    if (payload.Completion) payload.Completion->Cancel();
+				    if (payload.Completion)
+				    {
+					    payload.Completion->Cancel();
+				    }
 			    }
 		    },
 		    command.Payload);
@@ -356,7 +434,11 @@ void RenderCoordinator::SettleAbandonedWork() noexcept
 
 void RenderCoordinator::PublishReadState()
 {
-	if (m_context == nullptr) return;
+	if (m_context == nullptr)
+	{
+		return;
+	}
+
 	{
 		std::lock_guard lock(m_readStateMutex);
 		m_publishedViewportProducts = m_context->GetPipeline().GetViewportRenderProducts();
@@ -381,18 +463,21 @@ bool RenderCoordinator::SubmitControl(RenderControlPayload payload)
 {
 	m_producerOwner.AssertAccess();
 	const std::uint64_t sequenceNumber = m_nextControlSequence++;
-	if (m_controlQueue->Push(RenderControlCommand{sequenceNumber, std::move(payload)}))
-	{
-		return true;
-	}
-	return false;
+	return m_controlQueue->Push(
+	    RenderControlCommand{
+	        sequenceNumber,
+	        std::move(payload)});
 }
 
 RenderControlResult RenderCoordinator::SubmitSynchronousControl(
     RenderControlPayload payload,
     const std::shared_ptr<RenderControlCompletion>& completion)
 {
-	if (!SubmitControl(std::move(payload))) return {};
+	if (!SubmitControl(std::move(payload)))
+	{
+		return {};
+	}
+
 	return completion->Wait();
 }
 
@@ -402,9 +487,13 @@ void RenderCoordinator::SubmitResize()
 	    {m_window->GetWidth(), m_window->GetHeight()},
 	    m_window->IsMinimized()};
 	if (m_config.IsThreaded())
+	{
 		(void) SubmitControl(command);
+	}
 	else if (m_context)
+	{
 		m_context->GetPipeline().RequestResize(command.Extent, command.Minimized);
+	}
 }
 
 RendererExecutionContext& RenderCoordinator::GetSerialContext()

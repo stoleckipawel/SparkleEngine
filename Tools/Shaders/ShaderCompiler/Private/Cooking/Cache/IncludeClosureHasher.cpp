@@ -12,29 +12,6 @@
 #include <regex>
 #include <sstream>
 
-bool IncludeClosureHasher::ResolveValidationInclude(
-	const std::filesystem::path& includerPath,
-	std::string_view includePath,
-	const ShaderCompileOptions& options,
-	std::string& outErrorMessage)
-{
-	if (includePath.empty())
-	{
-		return true;
-	}
-
-	if (ShaderIncludeResolver::ResolveIncludePath(includerPath, includePath, options))
-	{
-		return true;
-	}
-
-	outErrorMessage = std::format(
-		"Failed to resolve include '{}' referenced from '{}'",
-		includePath,
-		Paths::Normalize(includerPath).string());
-	return false;
-}
-
 bool IncludeClosureHasher::VisitFile(
 	const std::filesystem::path& filePath,
 	const ShaderCompileOptions& options,

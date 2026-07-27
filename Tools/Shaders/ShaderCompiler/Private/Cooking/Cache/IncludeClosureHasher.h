@@ -22,11 +22,6 @@ class IncludeClosureHasher final
 {
   public:
 	static IncludeClosureHashResult Compute(const ShaderCompileOptions& options);
-	static bool ResolveValidationInclude(
-		const std::filesystem::path& includerPath,
-		std::string_view includePath,
-		const ShaderCompileOptions& options,
-		std::string& outErrorMessage);
 
   private:
 	typedef std::pair<std::wstring, std::uint64_t> HashPair;

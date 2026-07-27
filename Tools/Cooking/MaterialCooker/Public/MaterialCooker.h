@@ -1,18 +1,22 @@
 ﻿#pragma once
 
-#include "CookedMaterialAssetBuild.h"
-#include "Core/Public/Files/FileUtils.h"
-#include "SourceImportResult.h"
-#include "TextureCookRequestList.h"
-
-#include <cstddef>
 #include <string>
 #include <string_view>
 #include <vector>
 
+namespace Files
+{
+	struct FilePublication;
+}
+
+struct CookedMaterialAssetBuild;
+struct MaterialCookOutput;
+struct SourceImportResult;
+struct TextureCookRequest;
+
 class MaterialCooker final
 {
-public:
+  public:
 	static bool BuildMaterialAssets(
 	    const SourceImportResult& importResult,
 	    std::string_view sceneAssetId,
@@ -26,8 +30,4 @@ public:
 	    const std::vector<CookedMaterialAssetBuild>& materialAssets,
 	    std::vector<Files::FilePublication>& outPublication,
 	    std::string& outErrorMessage);
-
-private:
-	static Assets::CookedAssetId BuildMaterialAssetId(std::string_view sceneAssetId, std::size_t materialIndex) noexcept;
-	static Assets::CookedAlphaMode TranslateAlphaMode(ImportedAlphaMode alphaMode) noexcept;
 };

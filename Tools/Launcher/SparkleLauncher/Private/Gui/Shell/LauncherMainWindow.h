@@ -34,6 +34,10 @@ namespace SparkleLauncher
 	class LauncherProjectModel;
 	class LauncherSettings;
 	struct DependencyGroupUiEntry;
+	struct LauncherContentPackUiEntry;
+	struct LauncherLevelUiEntry;
+	struct LauncherLevelUiModel;
+	struct LauncherProjectSummary;
 	enum class LauncherArtworkPreset;
 
 	class LauncherMainWindow final : public QMainWindow
@@ -109,6 +113,23 @@ namespace SparkleLauncher
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
 		void AddSyncDependencyBundles(QVBoxLayout& layout);
 		void AddSyncLevelContentGroups(QVBoxLayout& layout);
+		void AddSyncLevelRows(
+		    QVBoxLayout& layout,
+		    const LauncherProjectSummary& project,
+		    const LauncherLevelUiModel& model);
+		void AddSyncLevelRow(
+		    QVBoxLayout& layout,
+		    const LauncherProjectSummary& project,
+		    const LauncherLevelUiEntry& level);
+		void AddSyncContentPackRows(
+		    QVBoxLayout& layout,
+		    const LauncherProjectSummary& project,
+		    const LauncherLevelUiModel& model);
+		void AddSyncContentPackRow(
+		    QVBoxLayout& layout,
+		    const LauncherProjectSummary& project,
+		    const LauncherContentPackUiEntry& pack);
+		LauncherLevelUiModel BuildLevelUiModel() const;
 		QComboBox* CreateStartupLevelCombo();
 		void PopulateStartupLevelCombo(QComboBox& combo);
 		void PopulateStartupLevelSelectors();

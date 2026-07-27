@@ -263,11 +263,8 @@ bool AssetCookerDiscovery::ResolveSceneEntry(
 	    Paths::Normalize(projectRoot / "Assets" / "Meshes");
 	const std::filesystem::path relativeBase =
 	    std::filesystem::path(sceneId).lexically_normal();
-	const std::array<std::wstring_view, 3> extensions = {L".gltf", L".glb", L".fbx"};
 
-	if (relativeBase.empty() ||
-	    relativeBase.is_absolute() ||
-	    relativeBase.generic_string().starts_with(".."))
+	if (!IsSceneIdSafe(relativeBase))
 	{
 		diagnostics.AddError(
 		    AssetCookerCategory_SceneAssets,
@@ -277,34 +274,14 @@ bool AssetCookerDiscovery::ResolveSceneEntry(
 	}
 
 	std::filesystem::path sourcePath;
-	const std::filesystem::path exactCandidate =
-	    Paths::Normalize(meshRoot / relativeBase);
-	if (SourceSceneImporter::SupportsSourceScenePath(relativeBase) &&
-	    Paths::IsUnderRoot(exactCandidate, meshRoot) &&
-	    PathExists(exactCandidate))
+	if (!ResolveSceneSource(
+	        meshRoot,
+	        relativeBase,
+	        sceneId,
+	        sourcePath,
+	        diagnostics))
 	{
-		sourcePath = exactCandidate;
-	}
-	else
-	{
-		for (std::wstring_view extension : extensions)
-		{
-			std::filesystem::path candidate = exactCandidate;
-			candidate.replace_extension(extension);
-			if (!Paths::IsUnderRoot(candidate, meshRoot) ||
-			    !PathExists(candidate))
-			{
-				continue;
-			}
-			if (!sourcePath.empty())
-			{
-				diagnostics.AddError(
-				    AssetCookerCategory_SceneAssets,
-				    "Catalog scene id resolves to more than one source file: " + std::string(sceneId));
-				return false;
-			}
-			sourcePath = std::move(candidate);
-		}
+		return false;
 	}
 
 	if (sourcePath.empty())
@@ -329,5 +306,59 @@ bool AssetCookerDiscovery::ResolveSceneEntry(
 
 	outEntry.relativePath = relativePath->generic_string();
 	outEntry.sourcePath = sourcePath;
+	return true;
+}
+
+bool AssetCookerDiscovery::IsSceneIdSafe(
+    const std::filesystem::path& relativeScenePath) noexcept
+{
+	return !relativeScenePath.empty() &&
+	       !relativeScenePath.is_absolute() &&
+	       !relativeScenePath.generic_string().starts_with("..");
+}
+
+bool AssetCookerDiscovery::ResolveSceneSource(
+    const std::filesystem::path& meshRoot,
+    const std::filesystem::path& relativeScenePath,
+    std::string_view sceneId,
+    std::filesystem::path& outSourcePath,
+    AssetCookerDiagnostics& diagnostics)
+{
+	outSourcePath.clear();
+
+	const std::filesystem::path exactCandidate =
+	    Paths::Normalize(meshRoot / relativeScenePath);
+	if (SourceSceneImporter::SupportsSourceScenePath(relativeScenePath) &&
+	    Paths::IsUnderRoot(exactCandidate, meshRoot) &&
+	    PathExists(exactCandidate))
+	{
+		outSourcePath = exactCandidate;
+		return true;
+	}
+
+	const std::array<std::wstring_view, 3> extensions = {
+	    L".gltf",
+	    L".glb",
+	    L".fbx"};
+	for (std::wstring_view extension : extensions)
+	{
+		std::filesystem::path candidate = exactCandidate;
+		candidate.replace_extension(extension);
+		if (!Paths::IsUnderRoot(candidate, meshRoot) ||
+		    !PathExists(candidate))
+		{
+			continue;
+		}
+		if (!outSourcePath.empty())
+		{
+			diagnostics.AddError(
+			    AssetCookerCategory_SceneAssets,
+			    "Catalog scene id resolves to more than one source file: " +
+			        std::string(sceneId));
+			return false;
+		}
+		outSourcePath = std::move(candidate);
+	}
+
 	return true;
 }

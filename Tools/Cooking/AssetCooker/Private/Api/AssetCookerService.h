@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 class AssetCookerService final
@@ -23,10 +24,29 @@ class AssetCookerService final
 	    std::vector<AssetCookerOutputRecord> outputs = {});
 
 	bool ResolveRepositoryRoot(AssetCookerDiagnostics& diagnostics, std::filesystem::path& outRepositoryRoot) const;
+	bool ResolveProjects(
+	    const std::filesystem::path& repositoryRoot,
+	    std::string_view projectName,
+	    AssetCookerDiagnostics& diagnostics,
+	    std::vector<std::string>& outProjects) const;
+	bool CookProjects(
+	    const std::filesystem::path& repositoryRoot,
+	    std::string_view configuration,
+	    AssetCookerCategory category,
+	    const std::vector<std::string>& projects,
+	    AssetCookerDiagnostics& diagnostics,
+	    std::vector<AssetCookerOutputRecord>& outOutputs) const;
+	bool CookProject(
+	    const std::filesystem::path& repositoryRoot,
+	    std::string_view projectName,
+	    std::string_view configuration,
+	    AssetCookerCategory category,
+	    AssetCookerDiagnostics& diagnostics,
+	    std::vector<AssetCookerOutputRecord>& outOutputs) const;
 	std::string ResolveProjectName(const char* requestProjectName) const;
 	std::string ResolveConfiguration(const char* requestConfiguration) const;
 
-	std::filesystem::path configuredRepositoryRoot;
-	std::string configuredProjectName;
-	std::string configuredConfiguration;
+	std::filesystem::path m_configuredRepositoryRoot;
+	std::string m_configuredProjectName;
+	std::string m_configuredConfiguration;
 };

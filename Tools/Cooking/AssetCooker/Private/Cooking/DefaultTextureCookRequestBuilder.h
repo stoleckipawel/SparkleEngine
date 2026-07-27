@@ -4,7 +4,10 @@
 
 #include <string>
 
-namespace DefaultTextureCookRequestBuilder
+class DefaultTextureCookRequestBuilder final
 {
-	bool AppendTo(TextureCookRequestSet& requestSet, std::string& outErrorMessage);
-}
+  public:
+	DefaultTextureCookRequestBuilder() = delete;
+
+	static bool AppendTo(TextureCookRequestSet& requestSet, std::string& outErrorMessage);
+};

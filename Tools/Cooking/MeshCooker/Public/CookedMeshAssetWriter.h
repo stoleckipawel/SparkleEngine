@@ -1,10 +1,14 @@
 #pragma once
 
-#include "CookedMeshAssetBuild.h"
-#include "Core/Public/Files/FileUtils.h"
-
 #include <string>
 #include <vector>
+
+namespace Files
+{
+	struct FilePublication;
+}
+
+struct CookedMeshAssetBuild;
 
 class CookedMeshAssetWriter final
 {

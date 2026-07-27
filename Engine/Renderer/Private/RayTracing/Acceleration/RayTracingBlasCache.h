@@ -25,7 +25,7 @@ class RayTracingBlasCache final
 		RhiGpuVirtualAddress gpuAddress = 0;
 		bool builtThisFrame = false;
 
-		bool IsValid() const noexcept { return resource && gpuAddress != 0; }
+		bool IsValid() const noexcept;
 	};
 
 	struct BuildStats final

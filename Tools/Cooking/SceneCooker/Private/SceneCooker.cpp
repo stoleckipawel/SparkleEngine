@@ -2,6 +2,7 @@
 
 #include "SceneCooker.h"
 
+#include "CookedSceneBuild.h"
 #include "Features/Animations/CookedAnimationAssetBuilder.h"
 #include "Features/Cameras/CookedSceneCameraBuilder.h"
 #include "Features/Instances/CookedSceneInstanceBuilder.h"
@@ -16,6 +17,7 @@
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Assets/SceneAssetRegistry.h"
+#include "SourceImportResult.h"
 
 #include <fstream>
 #include <optional>
@@ -23,70 +25,85 @@
 class SceneCookerOperations final
 {
   public:
-	static bool ValidateSceneMetadataCounts(
-	    const SourceImportResult& importResult,
+	static void ResetManifest(CookedSceneBuild& build);
+	static void FinalizeManifestHeader(CookedSceneBuild& build) noexcept;
+	static bool ResolveSourceScenePath(
+	    const std::filesystem::path& sourceScenePath,
+	    std::filesystem::path& outResolvedPath,
+	    std::string& outErrorMessage);
+	static bool BuildSceneAssetId(
+	    const std::filesystem::path& resolvedSourceScenePath,
+	    std::string& outSceneAssetId,
+	    std::string& outErrorMessage);
+	static bool StageManifest(
 	    const CookedSceneBuild& build,
-	    std::string& outErrorMessage)
-	{
-		if (build.manifest.cameras.size() != importResult.scene.cameras.size())
-		{
-			outErrorMessage = "Cooked scene camera metadata count does not match imported camera count";
-			return false;
-		}
-
-		if (build.manifest.lights.size() != importResult.scene.lights.size())
-		{
-			outErrorMessage = "Cooked scene light metadata count does not match imported light count";
-			return false;
-		}
-
-		if (build.manifest.skeletonRefs.size() != importResult.scene.skeletons.size())
-		{
-			outErrorMessage = "Cooked scene skeleton metadata count does not match imported skeleton count";
-			return false;
-		}
-
-		if (build.manifest.animationReferences.size() != importResult.scene.animations.size())
-		{
-			outErrorMessage = "Cooked scene animation metadata count does not match imported animation count";
-			return false;
-		}
-
-		if (build.outputs.animationAssets.size() != build.manifest.animationReferences.size())
-		{
-			outErrorMessage = "Cooked scene animation asset count does not match animation ref count";
-			return false;
-		}
-
-		if (build.manifest.materialVariants.size() != importResult.scene.materialVariants.size())
-		{
-			outErrorMessage = "Cooked scene material variant count does not match imported material variant count";
-			return false;
-		}
-
-		if (build.manifest.materialVariantMappings.size() != importResult.scene.materialVariantMappings.size())
-		{
-			outErrorMessage = "Cooked scene material variant mapping count does not match imported mapping count";
-			return false;
-		}
-
-		outErrorMessage.clear();
-		return true;
-	}
+	    std::vector<Files::FilePublication>& outPublication,
+	    std::string& outErrorMessage);
+	static bool StageRegistry(
+	    std::span<const CookedSceneBuild* const> builds,
+	    std::vector<Files::FilePublication>& outPublication,
+	    std::string& outErrorMessage);
+	static bool ResolveManifestRelativePath(
+	    const CookedSceneBuild& build,
+	    std::filesystem::path& outRelativePath,
+	    std::string& outErrorMessage);
 };
+
+void SceneCookerOperations::ResetManifest(CookedSceneBuild& build)
+{
+	build.manifest.instances.clear();
+	build.manifest.instanceGroups.clear();
+	build.manifest.morphWeights.clear();
+	build.manifest.materialVariants.clear();
+	build.manifest.materialVariantMappings.clear();
+}
+
+void SceneCookerOperations::FinalizeManifestHeader(
+    CookedSceneBuild& build) noexcept
+{
+	Assets::CookedSceneManifestHeader& header = build.manifest.header;
+	header.meshAssetReferenceCount =
+	    static_cast<std::uint32_t>(build.manifest.meshAssetReferences.size());
+	header.materialAssetReferenceCount =
+	    static_cast<std::uint32_t>(build.manifest.materialAssetReferences.size());
+	header.instanceCount =
+	    static_cast<std::uint32_t>(build.manifest.instances.size());
+	header.instanceGroupCount =
+	    static_cast<std::uint32_t>(build.manifest.instanceGroups.size());
+	header.cameraCount =
+	    static_cast<std::uint32_t>(build.manifest.cameras.size());
+	header.lightCount =
+	    static_cast<std::uint32_t>(build.manifest.lights.size());
+	header.skeletonRefCount =
+	    static_cast<std::uint32_t>(build.manifest.skeletonRefs.size());
+	header.animationRefCount =
+	    static_cast<std::uint32_t>(build.manifest.animationReferences.size());
+	header.morphWeightCount =
+	    static_cast<std::uint32_t>(build.manifest.morphWeights.size());
+	header.materialVariantCount =
+	    static_cast<std::uint32_t>(build.manifest.materialVariants.size());
+	header.materialVariantMappingCount =
+	    static_cast<std::uint32_t>(build.manifest.materialVariantMappings.size());
+}
 
 bool SceneCooker::ResolveSceneIdentity(
     const std::filesystem::path& sourceScenePath,
-	CookedSceneIdentity& outIdentity,
+    CookedSceneIdentity& outIdentity,
     std::string& outErrorMessage)
 {
 	std::filesystem::path resolvedSourceScenePath;
-	if (!ResolveSourceScenePath(sourceScenePath, resolvedSourceScenePath, outErrorMessage))
+	if (!SceneCookerOperations::ResolveSourceScenePath(
+	        sourceScenePath,
+	        resolvedSourceScenePath,
+	        outErrorMessage))
 	{
 		return false;
 	}
 
-	if (!BuildSceneAssetId(resolvedSourceScenePath, outIdentity.assetId, outErrorMessage))
+	if (!SceneCookerOperations::BuildSceneAssetId(
+	        resolvedSourceScenePath,
+	        outIdentity.assetId,
+	        outErrorMessage))
 	{
 		return false;
 	}
@@ -95,16 +112,14 @@ bool SceneCooker::ResolveSceneIdentity(
 	outErrorMessage.clear();
 	return true;
 }
+
 bool SceneCooker::BuildManifest(
     const SourceImportResult& importResult,
     CookedSceneBuild& outBuild,
     std::string& outErrorMessage)
 {
-	outBuild.manifest.instances.clear();
-	outBuild.manifest.instanceGroups.clear();
-	outBuild.manifest.morphWeights.clear();
-	outBuild.manifest.materialVariants.clear();
-	outBuild.manifest.materialVariantMappings.clear();
+	SceneCookerOperations::ResetManifest(outBuild);
+
 	CookedSceneSkeletonBuilder::BuildSkeletons(importResult, outBuild.identity.assetId, outBuild);
 	CookedAnimationAssetBuilder::Build(importResult, outBuild.identity.assetId, outBuild);
 	if (!CookedSceneInstanceBuilder::BuildInstances(importResult, outBuild, outErrorMessage))
@@ -120,26 +135,12 @@ bool SceneCooker::BuildManifest(
 	CookedSceneCameraBuilder::BuildCameras(importResult, outBuild);
 	CookedSceneLightBuilder::BuildLights(importResult, outBuild);
 	CookedSceneMetadataBuilder::BuildMetadata(importResult, outBuild);
-	if (!SceneCookerOperations::ValidateSceneMetadataCounts(importResult, outBuild, outErrorMessage))
-	{
-		return false;
-	}
 
-	outBuild.manifest.header.meshAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.meshAssetReferences.size());
-	outBuild.manifest.header.materialAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.materialAssetReferences.size());
-	outBuild.manifest.header.instanceCount = static_cast<std::uint32_t>(outBuild.manifest.instances.size());
-	outBuild.manifest.header.instanceGroupCount = static_cast<std::uint32_t>(outBuild.manifest.instanceGroups.size());
-	outBuild.manifest.header.cameraCount = static_cast<std::uint32_t>(outBuild.manifest.cameras.size());
-	outBuild.manifest.header.lightCount = static_cast<std::uint32_t>(outBuild.manifest.lights.size());
-	outBuild.manifest.header.skeletonRefCount = static_cast<std::uint32_t>(outBuild.manifest.skeletonRefs.size());
-	outBuild.manifest.header.animationRefCount = static_cast<std::uint32_t>(outBuild.manifest.animationReferences.size());
-	outBuild.manifest.header.morphWeightCount = static_cast<std::uint32_t>(outBuild.manifest.morphWeights.size());
-	outBuild.manifest.header.materialVariantCount = static_cast<std::uint32_t>(outBuild.manifest.materialVariants.size());
-	outBuild.manifest.header.materialVariantMappingCount =
-	    static_cast<std::uint32_t>(outBuild.manifest.materialVariantMappings.size());
+	SceneCookerOperations::FinalizeManifestHeader(outBuild);
 	outErrorMessage.clear();
 	return true;
 }
+
 bool SceneCooker::StageManifestsAndRegistry(
     std::span<const CookedSceneBuild* const> builds,
     std::vector<Files::FilePublication>& outPublication,
@@ -147,16 +148,23 @@ bool SceneCooker::StageManifestsAndRegistry(
 {
 	for (const CookedSceneBuild* build : builds)
 	{
-		if (build == nullptr || !StageManifest(*build, outPublication, outErrorMessage))
+		if (build == nullptr ||
+		    !SceneCookerOperations::StageManifest(
+		        *build,
+		        outPublication,
+		        outErrorMessage))
 		{
 			return false;
 		}
 	}
 
-	return StageRegistry(builds, outPublication, outErrorMessage);
+	return SceneCookerOperations::StageRegistry(
+	    builds,
+	    outPublication,
+	    outErrorMessage);
 }
 
-bool SceneCooker::StageManifest(
+bool SceneCookerOperations::StageManifest(
     const CookedSceneBuild& build,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
@@ -198,7 +206,7 @@ bool SceneCooker::StageManifest(
 	return true;
 }
 
-bool SceneCooker::ResolveSourceScenePath(
+bool SceneCookerOperations::ResolveSourceScenePath(
     const std::filesystem::path& sourceScenePath,
     std::filesystem::path& outResolvedPath,
     std::string& outErrorMessage)
@@ -214,7 +222,7 @@ bool SceneCooker::ResolveSourceScenePath(
 	return false;
 }
 
-bool SceneCooker::BuildSceneAssetId(
+bool SceneCookerOperations::BuildSceneAssetId(
     const std::filesystem::path& resolvedSourceScenePath,
     std::string& outSceneAssetId,
     std::string& outErrorMessage)
@@ -243,7 +251,7 @@ bool SceneCooker::BuildSceneAssetId(
 	return true;
 }
 
-bool SceneCooker::StageRegistry(
+bool SceneCookerOperations::StageRegistry(
     std::span<const CookedSceneBuild* const> builds,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
@@ -286,7 +294,7 @@ bool SceneCooker::StageRegistry(
 	return true;
 }
 
-bool SceneCooker::ResolveManifestRelativePath(
+bool SceneCookerOperations::ResolveManifestRelativePath(
     const CookedSceneBuild& build,
     std::filesystem::path& outRelativePath,
     std::string& outErrorMessage)

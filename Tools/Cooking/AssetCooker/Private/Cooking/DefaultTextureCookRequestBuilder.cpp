@@ -7,7 +7,7 @@
 #include <string_view>
 #include <system_error>
 
-class DefaultTextureCookRequestBuilderImplementation final
+class DefaultTextureCookCatalog final
 {
   public:
 	struct DefaultTextureCookDesc final
@@ -128,9 +128,9 @@ class DefaultTextureCookRequestBuilderImplementation final
 bool DefaultTextureCookRequestBuilder::AppendTo(
     TextureCookRequestSet& requestSet, std::string& outErrorMessage)
 {
-	for (const DefaultTextureCookRequestBuilderImplementation::DefaultTextureCookDesc& texture : DefaultTextureCookRequestBuilderImplementation::DefaultTextures)
+	for (const DefaultTextureCookCatalog::DefaultTextureCookDesc& texture : DefaultTextureCookCatalog::DefaultTextures)
 	{
-		if (!DefaultTextureCookRequestBuilderImplementation::AppendRequest(texture, requestSet, outErrorMessage))
+		if (!DefaultTextureCookCatalog::AppendRequest(texture, requestSet, outErrorMessage))
 		{
 			return false;
 		}

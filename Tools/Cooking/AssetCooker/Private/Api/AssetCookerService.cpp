@@ -9,15 +9,15 @@ AssetCookerService::AssetCookerService(const char* repositoryRoot, const char* p
 {
 	if (HasText(repositoryRoot))
 	{
-		configuredRepositoryRoot = std::filesystem::path(repositoryRoot);
+		m_configuredRepositoryRoot = std::filesystem::path(repositoryRoot);
 	}
 	if (HasText(projectName))
 	{
-		configuredProjectName = projectName;
+		m_configuredProjectName = projectName;
 	}
 	if (HasText(configuration))
 	{
-		configuredConfiguration = configuration;
+		m_configuredConfiguration = configuration;
 	}
 }
 
@@ -40,48 +40,75 @@ AssetCookerServiceResult AssetCookerService::Cook(
 		return Finish(false, diagnostics);
 	}
 
-	std::vector<std::string> projects;
 	const std::string resolvedProjectName = ResolveProjectName(projectName);
-	if (IsAllProjects(resolvedProjectName))
+	std::vector<std::string> projects;
+	if (!ResolveProjects(repositoryRoot, resolvedProjectName, diagnostics, projects))
 	{
-		projects = AssetCookerDiscovery::DiscoverProjects(repositoryRoot, diagnostics);
-		if (projects.empty())
-		{
-			return Finish(false, diagnostics);
-		}
-	}
-	else
-	{
-		projects.push_back(resolvedProjectName);
+		return Finish(false, diagnostics);
 	}
 
 	std::vector<AssetCookerOutputRecord> outputs;
-	for (const std::string& currentProjectName : projects)
+	const bool succeeded =
+	    CookProjects(repositoryRoot, resolvedConfiguration, category, projects, diagnostics, outputs);
+	return Finish(succeeded, diagnostics, std::move(outputs));
+}
+
+bool AssetCookerService::ResolveProjects(
+    const std::filesystem::path& repositoryRoot,
+    std::string_view projectName,
+    AssetCookerDiagnostics& diagnostics,
+    std::vector<std::string>& outProjects) const
+{
+	if (!IsAllProjects(projectName))
 	{
-		AssetCookerProjectCookPlan plan;
-		if (!AssetCookerDiscovery::BuildProjectCookPlan(
-		        repositoryRoot,
-		        currentProjectName,
-		        resolvedConfiguration,
-		        category,
-		        plan,
-		        diagnostics))
-		{
-			return Finish(false, diagnostics, std::move(outputs));
-		}
+		outProjects.emplace_back(projectName);
+		return true;
+	}
 
-		if (!AssetCookerDispatcher::ValidateCapabilities(plan, diagnostics))
-		{
-			return Finish(false, diagnostics, std::move(outputs));
-		}
+	outProjects = AssetCookerDiscovery::DiscoverProjects(repositoryRoot, diagnostics);
+	return !outProjects.empty();
+}
 
-		if (!AssetCookerDispatcher::DispatchPlan(plan, diagnostics, outputs))
+bool AssetCookerService::CookProjects(
+    const std::filesystem::path& repositoryRoot,
+    std::string_view configuration,
+    AssetCookerCategory category,
+    const std::vector<std::string>& projects,
+    AssetCookerDiagnostics& diagnostics,
+    std::vector<AssetCookerOutputRecord>& outOutputs) const
+{
+	for (const std::string& projectName : projects)
+	{
+		if (!CookProject(repositoryRoot, projectName, configuration, category, diagnostics, outOutputs))
 		{
-			return Finish(false, diagnostics, std::move(outputs));
+			return false;
 		}
 	}
 
-	return Finish(true, diagnostics, std::move(outputs));
+	return true;
+}
+
+bool AssetCookerService::CookProject(
+    const std::filesystem::path& repositoryRoot,
+    std::string_view projectName,
+    std::string_view configuration,
+    AssetCookerCategory category,
+    AssetCookerDiagnostics& diagnostics,
+    std::vector<AssetCookerOutputRecord>& outOutputs) const
+{
+	AssetCookerProjectCookPlan plan;
+	if (!AssetCookerDiscovery::BuildProjectCookPlan(
+	        repositoryRoot,
+	        projectName,
+	        configuration,
+	        category,
+	        plan,
+	        diagnostics))
+	{
+		return false;
+	}
+
+	return AssetCookerDispatcher::DispatchPlan(plan, diagnostics, outOutputs);
 }
 
 bool AssetCookerService::HasText(const char* text) noexcept
@@ -111,9 +138,9 @@ bool AssetCookerService::ResolveRepositoryRoot(
     AssetCookerDiagnostics& diagnostics,
     std::filesystem::path& outRepositoryRoot) const
 {
-	if (!configuredRepositoryRoot.empty())
+	if (!m_configuredRepositoryRoot.empty())
 	{
-		outRepositoryRoot = std::filesystem::absolute(configuredRepositoryRoot).lexically_normal();
+		outRepositoryRoot = std::filesystem::absolute(m_configuredRepositoryRoot).lexically_normal();
 		return true;
 	}
 
@@ -134,7 +161,7 @@ std::string AssetCookerService::ResolveProjectName(const char* requestProjectNam
 	{
 		return requestProjectName;
 	}
-	return configuredProjectName;
+	return m_configuredProjectName;
 }
 
 std::string AssetCookerService::ResolveConfiguration(const char* requestConfiguration) const
@@ -143,9 +170,9 @@ std::string AssetCookerService::ResolveConfiguration(const char* requestConfigur
 	{
 		return requestConfiguration;
 	}
-	if (!configuredConfiguration.empty())
+	if (!m_configuredConfiguration.empty())
 	{
-		return configuredConfiguration;
+		return m_configuredConfiguration;
 	}
 	return "DevelopmentGame";
 }

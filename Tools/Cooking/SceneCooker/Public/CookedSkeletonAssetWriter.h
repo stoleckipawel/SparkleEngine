@@ -1,10 +1,14 @@
 #pragma once
 
-#include "CookedSceneBuild.h"
-#include "Core/Public/Files/FileUtils.h"
-
 #include <string>
 #include <vector>
+
+namespace Files
+{
+	struct FilePublication;
+}
+
+struct CookedSkeletonAssetBuild;
 
 class CookedSkeletonAssetWriter final
 {

@@ -7,10 +7,7 @@
 
 class AssetCookerDispatcher final
 {
-public:
-	static bool ValidateCapabilities(
-	    const AssetCookerProjectCookPlan& plan,
-	    AssetCookerDiagnostics& diagnostics);
+  public:
 	static bool DispatchPlan(
 	    const AssetCookerProjectCookPlan& plan,
 	    AssetCookerDiagnostics& diagnostics,

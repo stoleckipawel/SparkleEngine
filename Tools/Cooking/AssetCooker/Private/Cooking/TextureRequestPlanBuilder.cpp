@@ -9,57 +9,43 @@
 #include <string>
 #include <vector>
 
-class TextureRequestPlanBuilderImplementation final
+enum class TextureRequestPlanBuilder::SceneCollectionResult
 {
-  public:
-	enum class SceneRequestCollectionResult
-	{
-		Succeeded,
-		RecoverableFailure,
-		FatalFailure,
-	};
-
-	static SceneRequestCollectionResult CollectSceneRequests(
-	    const AssetCookerSceneEntry& sceneEntry,
-	    AssetCookerDiagnostics& diagnostics,
-	    TextureCookRequestSet& requestSet)
-	{
-		std::vector<TextureCookRequest> sceneRequests;
-		std::string errorMessage;
-		SourceImportResult importResult;
-		if (!ImportedSceneCooker::Import(
-				    sceneEntry,
-				    AssetCookerCategory_Textures,
-				    diagnostics,
-		    importResult))
-		{
-			return SceneRequestCollectionResult::RecoverableFailure;
-		}
-
-		if (!MaterialCooker::CollectTextureCookRequests(
-		        importResult,
-		        sceneRequests,
-		        errorMessage))
-		{
-			diagnostics.AddError(
-			    AssetCookerCategory_Textures,
-			    errorMessage,
-			    sceneEntry.sourcePath);
-			return SceneRequestCollectionResult::RecoverableFailure;
-		}
-
-		for (const TextureCookRequest& request : sceneRequests)
-		{
-			if (!requestSet.Add(request, errorMessage))
-			{
-				diagnostics.AddError(AssetCookerCategory_Textures, errorMessage, sceneEntry.sourcePath);
-				return SceneRequestCollectionResult::FatalFailure;
-			}
-		}
-
-		return SceneRequestCollectionResult::Succeeded;
-	}
+	Succeeded,
+	RecoverableFailure,
+	FatalFailure,
 };
+
+TextureRequestPlanBuilder::SceneCollectionResult TextureRequestPlanBuilder::CollectSceneRequests(
+    const AssetCookerSceneEntry& sceneEntry,
+    AssetCookerDiagnostics& diagnostics,
+    TextureCookRequestSet& requestSet)
+{
+	std::vector<TextureCookRequest> sceneRequests;
+	std::string errorMessage;
+	SourceImportResult importResult;
+	if (!ImportedSceneCooker::Import(sceneEntry, AssetCookerCategory_Textures, diagnostics, importResult))
+	{
+		return SceneCollectionResult::RecoverableFailure;
+	}
+
+	if (!MaterialCooker::CollectTextureCookRequests(importResult, sceneRequests, errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_Textures, errorMessage, sceneEntry.sourcePath);
+		return SceneCollectionResult::RecoverableFailure;
+	}
+
+	for (const TextureCookRequest& request : sceneRequests)
+	{
+		if (!requestSet.Add(request, errorMessage))
+		{
+			diagnostics.AddError(AssetCookerCategory_Textures, errorMessage, sceneEntry.sourcePath);
+			return SceneCollectionResult::FatalFailure;
+		}
+	}
+
+	return SceneCollectionResult::Succeeded;
+}
 
 bool TextureRequestPlanBuilder::Build(
     const AssetCookerProjectCookPlan& plan,
@@ -71,12 +57,13 @@ bool TextureRequestPlanBuilder::Build(
 	for (std::size_t sceneIndex = 0; sceneIndex < plan.sceneEntries.size(); ++sceneIndex)
 	{
 		const AssetCookerSceneEntry& sceneEntry = plan.sceneEntries[sceneIndex];
-		const TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult collectionResult = TextureRequestPlanBuilderImplementation::CollectSceneRequests(sceneEntry, diagnostics, requestSet);
-		if (collectionResult == TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult::FatalFailure)
+		const SceneCollectionResult collectionResult = CollectSceneRequests(sceneEntry, diagnostics, requestSet);
+		if (collectionResult == SceneCollectionResult::FatalFailure)
 		{
 			return false;
 		}
-		failedSceneCount += collectionResult == TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult::RecoverableFailure ? 1u : 0u;
+
+		failedSceneCount += collectionResult == SceneCollectionResult::RecoverableFailure ? 1u : 0u;
 	}
 
 	if (failedSceneCount != 0)

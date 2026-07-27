@@ -5,10 +5,23 @@
 
 #include <filesystem>
 
-namespace TextureRequestPlanBuilder
+class TextureRequestSet;
+
+class TextureRequestPlanBuilder final
 {
-	bool Build(
+  public:
+	TextureRequestPlanBuilder() = delete;
+
+	static bool Build(
 	    const AssetCookerProjectCookPlan& plan,
 	    AssetCookerDiagnostics& diagnostics,
 	    const std::filesystem::path& outputPath);
-}
+
+  private:
+	enum class SceneCollectionResult;
+
+	static SceneCollectionResult CollectSceneRequests(
+	    const AssetCookerSceneEntry& sceneEntry,
+	    AssetCookerDiagnostics& diagnostics,
+	    TextureRequestSet& requestSet);
+};

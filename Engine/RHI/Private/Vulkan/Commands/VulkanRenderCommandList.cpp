@@ -108,6 +108,11 @@ ERhiBackendApi VulkanRenderCommandList::GetBackendApi() const noexcept
 	return ERhiBackendApi::Vulkan;
 }
 
+bool VulkanRenderCommandList::IsCoordinatorRecording() const noexcept
+{
+	return m_recordingOwner.IsCoordinator();
+}
+
 void VulkanRenderCommandList::TrackTransientAllocation(
     VulkanGpuAllocationRecord& allocation) noexcept
 {

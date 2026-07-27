@@ -7,7 +7,6 @@
 #include <string_view>
 
 struct ShaderDebugArtifactSet;
-struct ShaderPackageCookSettings;
 
 class ShaderParameterStructCookVerifier final
 {
@@ -15,7 +14,6 @@ class ShaderParameterStructCookVerifier final
 	ShaderParameterStructCookVerifier() = delete;
 
 	static bool Verify(
-	    const ShaderPackageCookSettings& settings,
 	    const CookNode& node,
 	    const CookedStageBuild& compiledStage,
 	    ShaderDebugArtifactSet* debugArtifacts,

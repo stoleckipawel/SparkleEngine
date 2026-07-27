@@ -348,21 +348,33 @@ void UI::Build()
 
 void UI::BeginInputRouting(bool disableInteraction)
 {
-	if (m_inputSystem == nullptr) return;
+	if (m_inputSystem == nullptr)
+	{
+		return;
+	}
+
 	const ImGuiIO& io = ImGui::GetIO();
 	m_inputSystem->BeginInputRoutingFrame(disableInteraction, io.WantTextInput || io.WantCaptureKeyboard);
 }
 
 float UI::BuildMainMenuBar()
 {
-	if (!m_mainMenuBar) return 0.0f;
+	if (!m_mainMenuBar)
+	{
+		return 0.0f;
+	}
+
 	m_mainMenuBar->BuildUI();
 	return m_mainMenuBar->GetHeight();
 }
 
 void UI::BuildSceneOutliner(bool disableInteraction, float mainMenuBarHeight)
 {
-	if (!m_sceneOutlinerPanel) return;
+	if (!m_sceneOutlinerPanel)
+	{
+		return;
+	}
+
 	m_sceneOutlinerPanel->SetTopInset(mainMenuBarHeight);
 	m_sceneOutlinerPanel->BuildUI(disableInteraction);
 }
@@ -415,7 +427,11 @@ void UI::BuildViewport(
     float outlinerWidth,
     float inspectorWidth)
 {
-	if (!m_viewportPanel) return;
+	if (!m_viewportPanel)
+	{
+		return;
+	}
+
 	m_viewportPanel->SetTopInset(topInset);
 	m_viewportPanel->SetBottomInset(bottomInset);
 	m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
@@ -425,12 +441,20 @@ void UI::BuildViewport(
 
 void UI::RegisterViewportInputRegion()
 {
-	if (!m_viewportPanel || !m_inputSystem) return;
+	if (!m_viewportPanel || !m_inputSystem)
+	{
+		return;
+	}
+
 	float viewportLeft = 0.0f;
 	float viewportTop = 0.0f;
 	float viewportRight = 0.0f;
 	float viewportBottom = 0.0f;
-	if (!m_viewportPanel->GetInputBounds(viewportLeft, viewportTop, viewportRight, viewportBottom)) return;
+	if (!m_viewportPanel->GetInputBounds(viewportLeft, viewportTop, viewportRight, viewportBottom))
+	{
+		return;
+	}
+
 	m_inputSystem->RegisterInputTargetRegion(
 	    viewportLeft,
 	    viewportTop,
@@ -441,41 +465,93 @@ void UI::RegisterViewportInputRegion()
 
 void UI::BuildSceneInspector(bool disableInteraction, float mainMenuBarHeight)
 {
-	if (!m_sceneInspectorPanel) return;
+	if (!m_sceneInspectorPanel)
+	{
+		return;
+	}
+
 	m_sceneInspectorPanel->SetTopInset(mainMenuBarHeight);
 	m_sceneInspectorPanel->BuildUI(disableInteraction);
 }
 
 void UI::BuildUtilityPanels(bool disableInteraction)
 {
-	if (m_usedShadersPanel) m_usedShadersPanel->BuildUI(disableInteraction);
-	if (m_usedMeshesPanel) m_usedMeshesPanel->BuildUI(disableInteraction);
-	if (m_usedTexturesPanel) m_usedTexturesPanel->BuildUI(disableInteraction);
-	if (m_settingsPanel) m_settingsPanel->BuildUI(disableInteraction);
+	if (m_usedShadersPanel)
+	{
+		m_usedShadersPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_usedMeshesPanel)
+	{
+		m_usedMeshesPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_usedTexturesPanel)
+	{
+		m_usedTexturesPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_settingsPanel)
+	{
+		m_settingsPanel->BuildUI(disableInteraction);
+	}
 }
 
 void UI::UpdateSceneModel()
 {
-	if (!m_sceneModelBuilder) return;
+	if (!m_sceneModelBuilder)
+	{
+		return;
+	}
+
 	const std::uint64_t previousWorldGeneration = m_sceneModel ? m_sceneModel->GetWorldGeneration() : 0;
 	m_sceneModel = m_sceneModelBuilder->Update();
-	if (!m_sceneModel) return;
-	if (m_transactions) m_transactions->InvalidateForWorldGeneration(m_sceneModel->GetWorldGeneration());
+	if (!m_sceneModel)
+	{
+		return;
+	}
+
+	if (m_transactions)
+	{
+		m_transactions->InvalidateForWorldGeneration(m_sceneModel->GetWorldGeneration());
+	}
+
 	if (previousWorldGeneration != 0 && previousWorldGeneration != m_sceneModel->GetWorldGeneration())
+	{
 		m_sceneSelection = SceneObjectSelection::None();
+	}
+
 	if (!m_sceneSelection.IsNone() && !m_sceneModel->Contains(m_sceneSelection))
+	{
 		m_sceneSelection = SceneObjectSelection::None();
-	if (m_sceneOutlinerPanel) m_sceneOutlinerPanel->SetModel(m_sceneModel);
-	if (m_sceneInspectorPanel) m_sceneInspectorPanel->SetModel(m_sceneModel);
+	}
+
+	if (m_sceneOutlinerPanel)
+	{
+		m_sceneOutlinerPanel->SetModel(m_sceneModel);
+	}
+
+	if (m_sceneInspectorPanel)
+	{
+		m_sceneInspectorPanel->SetModel(m_sceneModel);
+	}
 }
 
 void UI::HandleTransactionShortcuts()
 {
-	if (!m_sceneModel || !m_transactions || ImGui::GetIO().WantTextInput) return;
+	if (!m_sceneModel || !m_transactions || ImGui::GetIO().WantTextInput)
+	{
+		return;
+	}
+
 	if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Z))
+	{
 		(void) m_transactions->Undo(m_sceneModel->GetWorldGeneration());
+	}
 	else if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Y))
+	{
 		(void) m_transactions->Redo(m_sceneModel->GetWorldGeneration());
+	}
 }
 void UI::Update()
 {
