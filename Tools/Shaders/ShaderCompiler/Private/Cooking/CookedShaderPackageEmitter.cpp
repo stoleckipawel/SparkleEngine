@@ -62,6 +62,7 @@ bool CookedShaderPublication::Publish()
 
 	if (!StagePackages() || !StageRegistry() || !StageRecookSignal() || !PublishFiles())
 	{
+		CleanupStagedFiles();
 		m_result.packages.clear();
 		return false;
 	}
@@ -103,6 +104,7 @@ bool CookedShaderPublication::StagePackage(std::size_t packageIndex)
 	        m_errorMessage))
 	{
 		m_errorMessage = "Failed to emit cooked shader package '" + package.packageId + "' - " + m_errorMessage;
+		Files::CleanupTemporaryFile(stagedPath);
 		return false;
 	}
 
@@ -119,6 +121,7 @@ bool CookedShaderPublication::StageRegistry()
 
 	if (!CookedRegistryWriter::Write(m_result.packages, m_stagedRegistryPath, m_errorMessage))
 	{
+		Files::CleanupTemporaryFile(m_stagedRegistryPath);
 		return false;
 	}
 
@@ -142,6 +145,7 @@ bool CookedShaderPublication::StageRecookSignal()
 	        signalResult,
 	        m_errorMessage))
 	{
+		Files::CleanupTemporaryFile(stagedSignalPath);
 		return false;
 	}
 
@@ -153,7 +157,6 @@ bool CookedShaderPublication::PublishFiles()
 {
 	if (!Files::TryPublishFileSet(m_files, m_errorMessage))
 	{
-		CleanupStagedFiles();
 		return false;
 	}
 
