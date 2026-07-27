@@ -54,28 +54,43 @@ FramePipeline::FramePipeline(
 	m_windowExtent = {
 	    static_cast<std::uint32_t>(systems.GetWindow().GetWidth()),
 	    static_cast<std::uint32_t>(systems.GetWindow().GetHeight())};
+
+	InitializeSceneData();
+	InitializeUiRendering();
+	InitializeFrameStorage();
+	InitializeFrameGraph();
+}
+
+void FramePipeline::InitializeSceneData()
+{
 	m_renderInputConsumer =
-	    std::make_unique<RenderInputConsumer>(systems.GetRenderWorld());
+	    std::make_unique<RenderInputConsumer>(m_systems->GetRenderWorld());
 
 	m_gpuScene = std::make_unique<PersistentRenderGpuScene>(
-	    systems.GetRenderHardwareInterface().GetResourceService(),
-	    systems.GetGpuMeshCache());
-		
+	    m_systems->GetRenderHardwareInterface().GetResourceService(),
+	    m_systems->GetGpuMeshCache());
+}
+
+void FramePipeline::InitializeUiRendering()
+{
 	m_uiRenderPacketPlayer = std::make_unique<UiRenderPacketPlayer>();
 	m_editorTextureRegistry = std::make_unique<EditorTextureRegistry>();
 	if (m_ownsUiBackend)
 	{
 		(void) m_systems->GetImGuiRenderer().Initialize();
 	}
+}
+
+void FramePipeline::InitializeFrameStorage()
+{
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
+
 	RenderDiagnostics& backendDiagnostics = m_systems->GetRenderHardwareInterface().GetDiagnostics();
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
 	{
 		frameDiagnostics = std::make_unique<FrameExecutionDiagnostics>(backendDiagnostics);
 	}
-
-	InitializeFrameGraph();
 }
 
 void FramePipeline::SubmitRenderInput(RenderInputFrame input) noexcept

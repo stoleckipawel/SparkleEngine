@@ -284,9 +284,13 @@ bool RenderCoordinator::TryTakeViewportCapture(
 void RenderCoordinator::Initialize()
 {
 	if (m_config.IsThreaded())
+	{
 		InitializeThreaded();
+	}
 	else
+	{
 		InitializeSerial();
+	}
 }
 
 void RenderCoordinator::InitializeSerial()
@@ -303,12 +307,27 @@ void RenderCoordinator::InitializeThreaded()
 {
 	m_frameQueue = std::make_unique<RenderFrameQueue>(m_config.ResolveFrameSlotCount());
 	m_controlQueue = std::make_unique<RenderControlCommandQueue>(RenderControlCapacity);
+	StartRenderThread();
+	if (!WaitForRenderThreadStart())
+	{
+		HandleRenderThreadStartFailure();
+		return;
+	}
+
+	SubmitResize();
+}
+
+void RenderCoordinator::StartRenderThread()
+{
 	m_renderThread = std::thread(
 	    [this]
 	    {
 		    RenderThreadMain();
 	    });
+}
 
+bool RenderCoordinator::WaitForRenderThreadStart()
+{
 	std::unique_lock lock(m_startMutex);
 	m_startedCondition.wait(
 	    lock,
@@ -317,23 +336,21 @@ void RenderCoordinator::InitializeThreaded()
 		    return m_started;
 	    });
 
-	if (!m_startSucceeded)
-	{
-		lock.unlock();
-		if (m_renderThread.joinable())
-		{
-			m_renderThread.join();
-		}
+	return m_startSucceeded;
+}
 
-		Diagnostics::Fail(
-		    Logging::GetOrCreateLogger("Renderer.Coordinator"),
-		    __FILE__,
-		    __LINE__,
-		    "RenderThread failed to create its renderer execution context.");
-		return;
+void RenderCoordinator::HandleRenderThreadStartFailure()
+{
+	if (m_renderThread.joinable())
+	{
+		m_renderThread.join();
 	}
 
-	SubmitResize();
+	Diagnostics::Fail(
+	    Logging::GetOrCreateLogger("Renderer.Coordinator"),
+	    __FILE__,
+	    __LINE__,
+	    "RenderThread failed to create its renderer execution context.");
 }
 
 void RenderCoordinator::RenderThreadMain()

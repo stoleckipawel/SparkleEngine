@@ -60,6 +60,9 @@ class RenderCoordinator final
 	void Initialize();
 	void InitializeSerial();
 	void InitializeThreaded();
+	void StartRenderThread();
+	bool WaitForRenderThreadStart();
+	void HandleRenderThreadStartFailure();
 	RenderFramePacket TakePendingFrame();
 	void ExecuteSerialFrame();
 	void SubmitThreadedFrame();

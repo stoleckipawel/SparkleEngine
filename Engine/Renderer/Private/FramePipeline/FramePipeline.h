@@ -65,6 +65,9 @@ class FramePipeline final
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 
   private:
+	void InitializeSceneData();
+	void InitializeUiRendering();
+	void InitializeFrameStorage();
 	void InitializeFrameGraph() noexcept;
 	void InitializeFrameGraph(FrameResolutionExtents resolution) noexcept;
 	void RefreshFrameExecution() noexcept;

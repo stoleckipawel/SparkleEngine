@@ -9,6 +9,8 @@ class RuntimeApplication;
 class ShaderRecookCoordinator;
 class EditorViewportCaptureCoordinator;
 class EditorOperationService;
+class GameWorld;
+class Renderer;
 class UI;
 
 class SPARKLE_APPLICATION_API EditorApplication final : public Application
@@ -28,6 +30,13 @@ class SPARKLE_APPLICATION_API EditorApplication final : public Application
 	void Shutdown() override;
 
   private:
+	void InitializeRuntimeApplication();
+	void InitializeEditorOperations();
+	void InitializeUi();
+	void ConfigureUiDiagnostics(Renderer& renderer);
+	void UpdateEditorOperations(Renderer& renderer);
+	void RenderEditorFrame(Renderer& renderer);
+
 	std::unique_ptr<RuntimeApplication> m_runtimeApplication;
 	std::unique_ptr<UI> m_ui;
 	std::unique_ptr<ShaderRecookCoordinator> m_shaderRecookCoordinator;

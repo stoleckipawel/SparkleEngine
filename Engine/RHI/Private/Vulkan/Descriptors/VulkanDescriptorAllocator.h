@@ -51,7 +51,11 @@ class VulkanDescriptorAllocator final
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
 	bool WriteRegisteredDescriptor(RhiCpuDescriptorHandle destination, RhiGpuDescriptorHandle source) noexcept;
 
-	void WriteFallbackDescriptors(VkDescriptorSet descriptorSet, const CompiledBinding* bindings, std::size_t bindingCount, std::uint32_t setIndex) noexcept;
+	void WriteFallbackDescriptors(
+	    VkDescriptorSet descriptorSet,
+	    const CompiledBinding* bindings,
+	    std::size_t bindingCount,
+	    std::uint32_t setIndex) noexcept;
 	void WriteDescriptorTable(
 	    VkDescriptorSet descriptorSet,
 	    const CompiledBinding& binding,

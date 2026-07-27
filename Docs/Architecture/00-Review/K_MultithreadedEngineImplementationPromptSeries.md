@@ -2613,6 +2613,27 @@ Positive patterns: audit-to-zero, transactional products, owned workflows, publi
 Forbidden: keep old path “for safety,” new diagnostic subsystem, unowned package variant, test-only production API.
 ~~~
 
+### Prompt 22 integration record
+
+1. **Outcome** — Prompt 22 is source- and build-complete: the retained cook path is catalog-driven, task-backed, transactional, and deterministic; the replaced wrapper/status/version paths are deleted rather than adapted.
+2. **Repository audit** — owned task runtimes, waits, launch/process operations, project catalogs, scene/material/texture/shader cooks, generation publication, diagnostics, packages, and current deletion-ledger aliases were searched across `Engine`, `Tools`, and `Projects`.
+3. **Ownership** — project catalogs own the requested source set, cook plans own deterministic ordering, SparkleTasks owns fan-out, typed cook builds own results, and file publication owns generation commit/rollback.
+4. **Files changed by responsibility** — catalog/scene registries, cook discovery and planning, typed scene outputs, material serialization, bounded cook execution, narrow diagnostics, and launcher synchronization remain in their existing owning modules.
+5. **Orchestration/capability refinement** — discovery now reads as catalog resolution, scene collection, plan construction, task execution, and publication; detailed parsing, cooking, serialization, and UI option population are named subordinate operations.
+6. **SOLID/DRY reconciliation** — `CookedSceneBuild` is the single scene result, registry entries have one parser, cook failures have one error channel, and launcher startup options have one population path.
+7. **Preservation ledger** — curated in-repository levels, optional content, scene/material/texture/animation products, launcher workflows, and current product diagnostics retain their consumers and behavior.
+8. **Deletion ledger** — the redundant imported-scene product/status/version wrappers, duplicated success state, nullable post-plan scene entries, and superseded discovery/control branches are removed; no compatibility route remains.
+9. **Structure reconciliation** — public declarations contain only product contracts; discovery, batch execution, parsing, serialization, and launcher synchronization remain private; filenames continue to match their primary owner and no bounded move was warranted.
+10. **Implementation-shape reconciliation** — substantive behavior is in `.cpp`, function-local types and anonymous namespaces are absent in the touched path, orchestration is decomposed by named stage, and no new report or validator product was added.
+11. **DOD reconciliation** — catalog entries are authoritative identities, sorted plans are deterministic derived data, task slots are exclusive, staged files are generation-local, and publication is the only externally visible commit.
+12. **Concurrency reconciliation** — one SparkleTasks executor performs bounded cook fan-out; workers write exclusive result slots and perform no UI access; the coordinator validates results and publishes in stable plan order.
+13. **Validation** — DevelopmentEditor `AssetCooker`, `SparkleLauncher`, and `architecture_boundary_check` build successfully; a DevelopmentGame full cook completed twice with identical hashes for all 526 published product files and no staging residue.
+14. **Performance** — the closure removes duplicated scene-result copying and repeated discovery work, retains bounded worker counts, and adds no default timing/log stream; full performance characterization is intentionally owned by Prompt 23.
+15. **Naming audit** — `TaskRun`, cook plan, cook build, generation publication, scene asset registry, and project level catalog remain canonical; rejected future/pool/job/report and legacy product spellings have no owned consumers.
+16. **Limitations and unavailable evidence** — Windows Smart App Control blocked a freshly built unsigned DevelopmentEditor cooker, so deterministic full-cook evidence used the DevelopmentGame tool binary; D3D12/Vulkan lifecycle stress and Linux execution remain manual/unavailable and are not claimed.
+17. **Acceptance status** — **PASS** for source, build, deterministic tool output, ownership, and deletion closure. Runtime/backend stress rows retain their documented manual disposition under the user-authorized runtime-validation policy.
+18. **PGE reconciliation** — `PGE-01/02/03/05/06/07/09/10/13/14/15` advance or are preserved by a smaller deterministic product path; `PGE-08/11` are preserved; `PGE-04/12` are not applicable to this closure; no role-only scaffold or unsupported parity claim was introduced.
+
 ## Prompt 23 — Initial Full-System Performance Characterization and Tuning
 
 Target CL Title: `SparkleEngine: Characterize and Tune Full-System Multithreading Performance`

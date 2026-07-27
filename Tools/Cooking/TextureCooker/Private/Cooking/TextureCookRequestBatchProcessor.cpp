@@ -38,7 +38,9 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 		return TextureCookerConstants::ExitLoadRequestFileFailed;
 	}
 
-	TextureCookBatchExecutionResult execution = TextureCookBatchExecutor::Execute(requests, TextureCookRequestBatchProcessorOperations::TextureCookMemoryBudget);
+	TextureCookBatchExecutionResult execution = TextureCookBatchExecutor::Execute(
+	    requests,
+	    TextureCookRequestBatchProcessorOperations::TextureCookMemoryBudget);
 	bool succeeded = execution.Succeeded;
 	for (std::size_t index = 0; index < requests.size(); ++index)
 	{

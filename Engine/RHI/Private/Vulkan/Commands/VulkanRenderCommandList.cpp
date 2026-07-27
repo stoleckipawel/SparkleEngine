@@ -1615,7 +1615,10 @@ void VulkanRenderCommandList::MarkDescriptorSetDirty(std::uint32_t setIndex, std
 
 void VulkanRenderCommandList::FlushGraphicsDescriptorSets() noexcept
 {
-	for (std::uint32_t setIndex = 0; setIndex < m_graphicsDescriptorSets.size() && setIndex < m_graphicsDirtyDescriptorSets.size(); ++setIndex)
+	for (std::uint32_t setIndex = 0;
+	     setIndex < m_graphicsDescriptorSets.size() &&
+	     setIndex < m_graphicsDirtyDescriptorSets.size();
+	     ++setIndex)
 	{
 		if (!m_graphicsDirtyDescriptorSets[setIndex])
 		{

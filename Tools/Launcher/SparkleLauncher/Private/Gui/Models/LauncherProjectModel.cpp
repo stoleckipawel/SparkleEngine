@@ -14,7 +14,9 @@ namespace SparkleLauncher
 
 		for (int index = 0; index < left.size(); ++index)
 		{
-			if (left[index].Id != right[index].Id || left[index].DisplayName != right[index].DisplayName || left[index].RootPath != right[index].RootPath)
+			if (left[index].Id != right[index].Id ||
+			    left[index].DisplayName != right[index].DisplayName ||
+			    left[index].RootPath != right[index].RootPath)
 			{
 				return false;
 			}

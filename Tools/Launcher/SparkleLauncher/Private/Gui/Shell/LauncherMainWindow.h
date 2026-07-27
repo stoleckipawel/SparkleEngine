@@ -67,7 +67,12 @@ namespace SparkleLauncher
 		void CleanSelectedOperation();
 		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void AppendOperationOutput(const QString& runId, const QString& operationId, const QString& outputText);
-		void DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode);
+		void DisplayOperationFinished(
+		    const QString& runId,
+		    const QString& operationId,
+		    const QString& title,
+		    const QString& statusText,
+		    int exitCode);
 
 	private:
 		struct PendingFollowUpOperation
@@ -102,16 +107,36 @@ namespace SparkleLauncher
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool));
-		QLineEdit* CreateBoundLineEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
-		QTextEdit* CreateBoundTextEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
-		QComboBox* CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&));
-		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
+		QLineEdit* CreateBoundLineEdit(
+		    const QString& text,
+		    const QString& placeholder,
+		    const QString& tooltip,
+		    void (LauncherSettings::*setter)(const QString&));
+		QTextEdit* CreateBoundTextEdit(
+		    const QString& text,
+		    const QString& placeholder,
+		    const QString& tooltip,
+		    void (LauncherSettings::*setter)(const QString&));
+		QComboBox* CreateProfileCombo(
+		    const QStringList& profiles,
+		    const QString& currentProfile,
+		    void (LauncherSettings::*setter)(const QString&));
+		QComboBox* CreateValueCombo(
+		    const QVector<QPair<QString, QString>>& options,
+		    const QString& currentValue,
+		    void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
 		QVBoxLayout* AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded = false);
-		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
+		void AddStatusRow(
+		    QVBoxLayout& layout,
+		    const QString& label,
+		    const QString& status,
+		    const QString& detail,
+		    const QString& state,
+		    QWidget* accessory = nullptr);
 		void AddSyncDependencyBundles(QVBoxLayout& layout);
 		void AddSyncLevelContentGroups(QVBoxLayout& layout);
 		void AddSyncLevelRows(

@@ -70,50 +70,68 @@ void RuntimeApplication::Initialize()
 		return;
 	}
 
+	InitializeHost();
+	InitializeInput();
+	InitializeGameRuntime();
+	InitializeRenderer();
+	InitializeRuntimeConsole();
+	m_isInitialized = true;
+}
+
+void RuntimeApplication::InitializeHost()
+{
+	m_timer = std::make_unique<Timer>();
+	m_window = std::make_unique<Window>("Sparkle Engine");
+}
+
+void RuntimeApplication::InitializeInput()
+{
+	m_inputSystem = InputSystem::Create();
+	m_inputSystem->SetInputCaptureQuery(WantsImGuiInputCapture);
+	m_inputSystem->SubscribeToWindow(*m_window);
+}
+
+void RuntimeApplication::InitializeGameRuntime()
+{
+	m_taskRuntime = std::make_unique<ApplicationTaskRuntime>();
+	m_gameWorld = std::make_unique<GameWorld>(m_taskRuntime->GetExecutor());
+	m_cameraInputIntentCollector = std::make_unique<CameraInputIntentCollector>(*m_inputSystem, *m_window);
+	if (m_options.EnableOscillatingMeshMotion)
 	{
-		m_timer = std::make_unique<Timer>();
-		m_window = std::make_unique<Window>("Sparkle Engine");
+		m_gameWorld->EnableOscillatingMeshMotion();
 	}
 
+	m_levelManager = std::make_unique<LevelManager>(
+	    *m_gameWorld,
+	    m_taskRuntime->GetExecutor(),
+	    m_taskRuntime->GetApplicationScope());
+}
+
+void RuntimeApplication::InitializeRenderer()
+{
+	RendererExecutionConfig rendererConfig;
+	if (m_options.AllowThreadedRenderer &&
+	    !m_options.EnableRuntimeConsole &&
+	    ConcurrencyLaunchCVars::UseThreadedRenderer())
 	{
-		m_inputSystem = InputSystem::Create();
-		m_inputSystem->SetInputCaptureQuery(WantsImGuiInputCapture);
-		m_inputSystem->SubscribeToWindow(*m_window);
+		rendererConfig.Mode = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth() == 0
+		                          ? RendererExecutionMode::ThreadedZeroAhead
+		                          : RendererExecutionMode::ThreadedOneAhead;
 	}
 
-	{
-		m_taskRuntime = std::make_unique<ApplicationTaskRuntime>();
-		m_gameWorld = std::make_unique<GameWorld>(m_taskRuntime->GetExecutor());
-		m_cameraInputIntentCollector = std::make_unique<CameraInputIntentCollector>(*m_inputSystem, *m_window);
-		if (m_options.EnableOscillatingMeshMotion)
-		{
-			m_gameWorld->EnableOscillatingMeshMotion();
-		}
-		m_levelManager = std::make_unique<LevelManager>(
-		    *m_gameWorld,
-		    m_taskRuntime->GetExecutor(),
-		    m_taskRuntime->GetApplicationScope());
-	}
+	rendererConfig.EnableUiRenderPackets =
+	    m_options.EnableUiRenderPackets || m_options.EnableRuntimeConsole;
+	rendererConfig.AssetTaskExecutor = &m_taskRuntime->GetExecutor();
+	rendererConfig.ApplicationTaskScope = &m_taskRuntime->GetApplicationScope();
+	m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
+}
 
-	{
-		RendererExecutionConfig rendererConfig;
-		if (m_options.AllowThreadedRenderer && !m_options.EnableRuntimeConsole &&
-		    ConcurrencyLaunchCVars::UseThreadedRenderer())
-			rendererConfig.Mode = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth() == 0
-			                          ? RendererExecutionMode::ThreadedZeroAhead
-			                          : RendererExecutionMode::ThreadedOneAhead;
-		rendererConfig.EnableUiRenderPackets =
-		    m_options.EnableUiRenderPackets || m_options.EnableRuntimeConsole;
-		rendererConfig.AssetTaskExecutor = &m_taskRuntime->GetExecutor();
-		rendererConfig.ApplicationTaskScope = &m_taskRuntime->GetApplicationScope();
-		m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
-	}
-
+void RuntimeApplication::InitializeRuntimeConsole()
+{
 	if (m_options.EnableRuntimeConsole)
 	{
 		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(*m_timer, *m_window);
 	}
-	m_isInitialized = true;
 }
 
 RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
@@ -154,16 +172,18 @@ void RuntimeApplication::UpdateRuntime() noexcept
 		m_cameraInputIntentCollector->Publish(*m_gameWorld);
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 		m_gameWorld->Update(deltaSeconds);
-		if (m_renderer && m_window)
-		{
-			RenderFrameMetadata metadata;
-			metadata.FrameId = m_timer->GetFrameCount();
-			metadata.ProviderGeneration = m_renderer->GetShaderPackageGeneration();
-			metadata.RenderWidth = metadata.OutputWidth = m_window->GetWidth();
-			metadata.RenderHeight = metadata.OutputHeight = m_window->GetHeight();
-			m_renderer->SubmitRenderInput(m_gameWorld->ExtractRenderInput(metadata));
-		}
+		SubmitWorldRenderInput();
 	}
+}
+
+void RuntimeApplication::SubmitWorldRenderInput()
+{
+	RenderFrameMetadata metadata;
+	metadata.FrameId = m_timer->GetFrameCount();
+	metadata.ProviderGeneration = m_renderer->GetShaderPackageGeneration();
+	metadata.RenderWidth = metadata.OutputWidth = m_window->GetWidth();
+	metadata.RenderHeight = metadata.OutputHeight = m_window->GetHeight();
+	m_renderer->SubmitRenderInput(m_gameWorld->ExtractRenderInput(metadata));
 }
 
 void RuntimeApplication::SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept

@@ -466,7 +466,8 @@ VulkanDescriptorManager::ResourceViewRecord* VulkanDescriptorManager::FindResour
 	return record.IsAllocated() && record.Generation == generation ? &record : nullptr;
 }
 
-const VulkanDescriptorManager::ResourceViewRecord* VulkanDescriptorManager::FindResourceViewRecord(RhiResourceViewHandle view) const noexcept
+const VulkanDescriptorManager::ResourceViewRecord*
+VulkanDescriptorManager::FindResourceViewRecord(RhiResourceViewHandle view) const noexcept
 {
 	std::uint32_t recordIndex = 0;
 	std::uint16_t generation = 0;

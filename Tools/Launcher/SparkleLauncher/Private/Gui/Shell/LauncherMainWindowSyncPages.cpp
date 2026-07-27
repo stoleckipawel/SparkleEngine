@@ -72,8 +72,13 @@ namespace SparkleLauncher
 			        dependencyCachePath,
 			        readyCount),
 			    DependencyGroupStatusState(group, readyCount),
-			    group.Enabled ? CreateActionDependencyActions("workspace.sync-source-tiers", "Prepare Workspace", "deps", "Clean Source Dependency Cache") :
-			                    CreateDisabledSourceTierActions(group));
+			    group.Enabled
+			        ? CreateActionDependencyActions(
+			              "workspace.sync-source-tiers",
+			              "Prepare Workspace",
+			              "deps",
+			              "Clean Source Dependency Cache")
+			        : CreateDisabledSourceTierActions(group));
 		}
 	}
 
