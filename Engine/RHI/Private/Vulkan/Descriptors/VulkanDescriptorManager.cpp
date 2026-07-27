@@ -92,9 +92,9 @@ void VulkanDescriptorManager::PublishRecordingReadView() noexcept
 	    readView->ImageViews,
 	    {},
 	    &RecordingImageView::ImageViewValue);
-	std::atomic_store(
-	    &m_recordingReadView,
-	    std::shared_ptr<const RecordingReadView>(std::move(readView)));
+	m_recordingReadView.store(
+	    std::shared_ptr<const RecordingReadView>(std::move(readView)),
+	    std::memory_order_release);
 
 	m_allocator.PublishRecordingReadView();
 }
@@ -358,7 +358,7 @@ VkImageAspectFlags VulkanDescriptorManager::ResolveImageViewAspectMask(VkImageVi
 	}
 
 	const std::shared_ptr<const RecordingReadView> readView =
-	    std::atomic_load(&m_recordingReadView);
+	    m_recordingReadView.load(std::memory_order_acquire);
 	if (readView == nullptr)
 	{
 		return VK_IMAGE_ASPECT_COLOR_BIT;

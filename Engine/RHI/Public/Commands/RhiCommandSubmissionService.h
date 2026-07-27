@@ -13,7 +13,6 @@ class SPARKLE_RHI_API RhiCommandSubmissionService
   public:
 	virtual ~RhiCommandSubmissionService() noexcept;
 
-	virtual void WaitForIdle() noexcept = 0;
 	virtual void PrepareCommandRecording() noexcept = 0;
 	virtual RenderCommandList& GetCurrentGraphicsCommandList() noexcept = 0;
 	virtual RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept = 0;

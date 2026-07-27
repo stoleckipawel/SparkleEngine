@@ -39,13 +39,16 @@ void D3D12RecordingResourceTable::Publish(
     std::span<D3D12GpuAllocationRecord* const> records) noexcept
 {
 	std::shared_ptr<ReadView> readView = BuildReadView(records);
-	std::atomic_store(&m_readView, std::shared_ptr<const ReadView>(std::move(readView)));
+	m_readView.store(
+	    std::shared_ptr<const ReadView>(std::move(readView)),
+	    std::memory_order_release);
 }
 
 D3D12RecordingResourceUseToken D3D12RecordingResourceTable::Retain(
     RhiResourceHandle resource) const noexcept
 {
-	const std::shared_ptr<const ReadView> readView = std::atomic_load(&m_readView);
+	const std::shared_ptr<const ReadView> readView =
+	    m_readView.load(std::memory_order_acquire);
 	if (readView == nullptr)
 	{
 		return {};

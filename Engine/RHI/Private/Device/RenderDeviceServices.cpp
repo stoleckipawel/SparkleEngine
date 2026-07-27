@@ -116,9 +116,9 @@ RhiImGuiRenderer& RenderDeviceServices::GetImGuiRenderer() noexcept
 	return m_state->GetBackend().GetImGuiRenderer();
 }
 
-void RenderDeviceServices::WaitForIdle() noexcept
+void RenderDeviceServices::SettleForShutdown() noexcept
 {
-	m_state->GetBackend().WaitForIdle();
+	m_state->GetBackend().SettleForShutdown();
 }
 
 void RenderDeviceServices::ResizeSwapChain() noexcept

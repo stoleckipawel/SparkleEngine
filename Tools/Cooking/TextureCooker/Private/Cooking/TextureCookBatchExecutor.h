@@ -17,7 +17,6 @@ struct TextureCookBatchItemResult final
 struct TextureCookBatchExecutionResult final
 {
 	bool Succeeded = false;
-	std::size_t PeakAdmittedBytes = 0;
 	std::vector<TextureCookBatchItemResult> Items;
 };
 

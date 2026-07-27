@@ -3,6 +3,9 @@
 #include "Diagnostics/AssetCookerDiagnostics.h"
 #include "Planning/ProjectCookPlan.h"
 
+#include <cstdint>
+#include <vector>
+
 class AssetCookerSceneBatch final
 {
   public:
@@ -21,7 +24,6 @@ class AssetCookerSceneBatch final
 	    std::vector<Item>& items,
 	    AssetCookerDiagnostics& diagnostics);
 	static bool PublishProducts(
-	    const std::vector<AssetCookerSceneEntry>& sceneEntries,
 	    std::vector<Item>& items,
 	    AssetCookerDiagnostics& diagnostics);
 };

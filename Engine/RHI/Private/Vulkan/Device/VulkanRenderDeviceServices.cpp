@@ -33,7 +33,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept override;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
-	void WaitForIdle() noexcept override;
+	void SettleForShutdown() noexcept override;
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
 	void PrepareCommandRecording() noexcept override;
@@ -178,7 +178,7 @@ RhiImGuiRenderer& VulkanRenderDeviceServices::GetImGuiRenderer() noexcept
 	return m_renderHardwareInterface->GetImGuiRenderer();
 }
 
-void VulkanRenderDeviceServices::WaitForIdle() noexcept
+void VulkanRenderDeviceServices::SettleForShutdown() noexcept
 {
 	m_hasAcquiredBackBuffer = false;
 	m_hasConsumedAcquireSemaphore = false;

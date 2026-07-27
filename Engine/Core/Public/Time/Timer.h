@@ -2,7 +2,6 @@
 
 #include "Core/Public/CoreAPI.h"
 
-#include <atomic>
 #include <chrono>
 #include <cstdint>
 
@@ -58,9 +57,9 @@ class SPARKLE_CORE_API Timer final
 	void SetTimeScale(double scale) noexcept { m_timeScale = scale; }
 	double GetTimeScale() const noexcept { return m_timeScale; }
 
-	void Pause() noexcept { m_bPaused.store(true, std::memory_order_relaxed); }
-	void Resume() noexcept { m_bPaused.store(false, std::memory_order_relaxed); }
-	bool IsPaused() const noexcept { return m_bPaused.load(std::memory_order_relaxed); }
+	void Pause() noexcept { m_bPaused = true; }
+	void Resume() noexcept { m_bPaused = false; }
+	bool IsPaused() const noexcept { return m_bPaused; }
 
   private:
 	static double ToUnit(Duration d, TimeUnit u) noexcept;
@@ -71,7 +70,7 @@ class SPARKLE_CORE_API Timer final
 	Duration m_unscaledTotal{Duration::zero()};
 	Duration m_scaledTotal{Duration::zero()};
 	double m_timeScale{1.0};
-	std::atomic<bool> m_bPaused{false};
+	bool m_bPaused{false};
 	uint64_t m_frameCount{0};
 	TimeInfo m_timeInfo{};
 };

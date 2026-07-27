@@ -2,10 +2,8 @@
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
-#include "ToolConsole.h"
 
 #include <array>
-#include <iostream>
 #include <string_view>
 #include <system_error>
 
@@ -122,12 +120,6 @@ class DefaultTextureCookRequestBuilderImplementation final
 			return false;
 		}
 
-		ToolConsole::Message(
-		    std::cout,
-		    ToolConsoleSeverity::Info,
-		    "Queued default texture",
-		    {ToolConsole::QuotedField("name", ToolConsole::PathDisplayName(request.sourcePath)),
-		     ToolConsole::PathField("output", request.outputPath)});
 		outErrorMessage.clear();
 		return true;
 	}

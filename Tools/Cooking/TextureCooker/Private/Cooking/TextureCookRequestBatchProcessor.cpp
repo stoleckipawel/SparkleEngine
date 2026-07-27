@@ -16,11 +16,6 @@ class TextureCookRequestBatchProcessorOperations final
   public:
 	static constexpr std::size_t TextureCookMemoryBudget = 1024ull * 1024ull * 1024ull;
 
-	static std::string RequestDisplayName(const TextureCookRequest& request)
-	{
-		return ToolConsole::PathDisplayName(request.sourcePath);
-	}
-
 	static void CleanupStagedOutputs(const std::vector<TextureCookBatchItemResult>& results)
 	{
 		for (const TextureCookBatchItemResult& result : results)
@@ -77,22 +72,11 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 		return TextureCookerConstants::ExitCookFailed;
 	}
 
-	for (std::size_t index = 0; index < requests.size(); ++index)
-	{
-		ToolConsole::Progress(
-		    std::cout,
-		    "Cooked",
-		    "texture",
-		    index + 1,
-		    requests.size(),
-		    TextureCookRequestBatchProcessorOperations::RequestDisplayName(requests[index]),
-		    {ToolConsole::Field("assetId", Formatting::FormatHexUInt64(requests[index].assetId)),
-		     ToolConsole::PathField("output", requests[index].outputPath)});
-	}
-
-	ToolConsole::Info(
-	    "Texture cook peak admitted decompressed bytes: " + std::to_string(execution.PeakAdmittedBytes) +
-	    " (budget=" + std::to_string(TextureCookRequestBatchProcessorOperations::TextureCookMemoryBudget) + ").");
+	ToolConsole::Message(
+	    std::cout,
+	    ToolConsoleSeverity::Info,
+	    "Cooked texture generation",
+	    {ToolConsole::Field("textures", std::to_string(requests.size()))});
 	return TextureCookerConstants::ExitSuccess;
 }
 

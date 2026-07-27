@@ -2,6 +2,7 @@
 
 #include "Vulkan/Memory/VulkanRecordingResource.h"
 
+#include <atomic>
 #include <memory>
 #include <span>
 
@@ -64,5 +65,5 @@ class VulkanRecordingResourceTable final
 	    VulkanGpuAllocationRecord& record,
 	    RhiSubmissionToken submissionToken) noexcept;
 
-	std::shared_ptr<const ReadView> m_readView;
+	std::atomic<std::shared_ptr<const ReadView>> m_readView;
 };

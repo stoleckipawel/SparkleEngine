@@ -21,7 +21,7 @@ class TextureCookMemoryLimiter final
 
 	  private:
 		friend class TextureCookMemoryLimiter;
-		Lease(TextureCookMemoryLimiter& owner, std::size_t bytes) noexcept : m_owner(&owner), m_bytes(bytes) {}
+		Lease(TextureCookMemoryLimiter& owner, std::size_t bytes) noexcept;
 		void Release() noexcept;
 		TextureCookMemoryLimiter* m_owner = nullptr;
 		std::size_t m_bytes = 0;
@@ -29,7 +29,6 @@ class TextureCookMemoryLimiter final
 
 	explicit TextureCookMemoryLimiter(std::size_t capacityBytes);
 	Lease Acquire(std::size_t bytes, std::stop_token cancellation);
-	std::size_t GetPeakBytes() const noexcept;
 
   private:
 	void Release(std::size_t bytes) noexcept;
@@ -38,5 +37,4 @@ class TextureCookMemoryLimiter final
 	mutable std::mutex m_mutex;
 	std::condition_variable m_condition;
 	std::size_t m_usedBytes = 0;
-	std::size_t m_peakBytes = 0;
 };

@@ -7,6 +7,7 @@
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/VulkanIncludes.h"
 
+#include <atomic>
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -129,6 +130,6 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
 	std::array<std::vector<RetiredResourceView>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
 	std::vector<RhiResourceViewHandle> m_swapChainBackBufferViews;
-	std::shared_ptr<const RecordingReadView> m_recordingReadView;
+	std::atomic<std::shared_ptr<const RecordingReadView>> m_recordingReadView;
 	std::uint32_t m_currentFrameIndex = 0;
 };

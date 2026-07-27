@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <string>
+#include <vector>
 
 class AssetCookerService final
 {
@@ -16,6 +17,10 @@ class AssetCookerService final
   private:
 	static bool HasText(const char* text) noexcept;
 	static bool IsAllProjects(std::string_view projectName) noexcept;
+	static AssetCookerServiceResult Finish(
+	    bool succeeded,
+	    AssetCookerDiagnostics& diagnostics,
+	    std::vector<AssetCookerOutputRecord> outputs = {});
 
 	bool ResolveRepositoryRoot(AssetCookerDiagnostics& diagnostics, std::filesystem::path& outRepositoryRoot) const;
 	std::string ResolveProjectName(const char* requestProjectName) const;

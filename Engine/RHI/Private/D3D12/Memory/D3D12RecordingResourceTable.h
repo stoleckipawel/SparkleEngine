@@ -4,6 +4,7 @@
 #include "D3D12/Memory/D3D12RecordingResourceUseToken.h"
 #include "Resources/RhiResourceHandles.h"
 
+#include <atomic>
 #include <memory>
 #include <span>
 
@@ -44,5 +45,5 @@ class D3D12RecordingResourceTable final
 	    D3D12GpuAllocationRecord& record,
 	    RhiSubmissionToken submissionToken) noexcept;
 
-	std::shared_ptr<const ReadView> m_readView;
+	std::atomic<std::shared_ptr<const ReadView>> m_readView;
 };

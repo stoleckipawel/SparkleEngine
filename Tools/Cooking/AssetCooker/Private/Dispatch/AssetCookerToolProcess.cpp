@@ -13,13 +13,6 @@ int AssetCookerToolProcess::Run(
     std::stop_token cancellation)
 {
 	static const auto toolProcessLogger = Logging::GetOrCreateLogger("Tools.AssetCooker.Process");
-	ToolConsole::Message(
-	    std::cout,
-	    ToolConsoleSeverity::Info,
-	    "Running tool",
-	    {ToolConsole::QuotedField("tool", executablePath.filename().string()),
-	     ToolConsole::PathField("path", executablePath),
-	     ToolConsole::PathField("workingDir", workingDirectory)});
 
 	Process::ChildProcessResult result = Process::ChildProcess::Run(Process::ChildProcessRequest{
 	    .ExecutablePath = executablePath,

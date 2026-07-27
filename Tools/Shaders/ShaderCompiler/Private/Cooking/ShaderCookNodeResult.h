@@ -9,6 +9,4 @@ struct ShaderCookNodeResult final
 	CookedStageBuild CompiledStage;
 	std::string Diagnostic;
 	bool Succeeded = false;
-	bool CacheHit = false;
-	bool BackendInvoked = false;
 };

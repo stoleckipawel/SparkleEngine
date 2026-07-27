@@ -8,7 +8,6 @@
 
 struct ImportedSceneCookProduct final
 {
-	SourceImportResult Import;
 	CookedSceneBuild Scene;
 };
 
@@ -24,9 +23,6 @@ class ImportedSceneCooker final
 	    const AssetCookerSceneEntry& sceneEntry,
 	    AssetCookerDiagnostics& diagnostics,
 	    ImportedSceneCookProduct& outProduct);
-	static void Report(
-	    const AssetCookerSceneEntry& sceneEntry,
-	    const ImportedSceneCookProduct& product);
 
   private:
 	static bool BuildCookedScene(

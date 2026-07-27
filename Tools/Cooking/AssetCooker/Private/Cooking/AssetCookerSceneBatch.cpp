@@ -3,11 +3,10 @@
 #include "CookedSceneGenerationWriter.h"
 #include "ImportedSceneCooker.h"
 #include "TaskExecutor.h"
-#include "ToolConsole.h"
 
 #include <algorithm>
-#include <iostream>
 #include <thread>
+#include <utility>
 
 struct AssetCookerSceneBatch::Item final
 {
@@ -32,7 +31,7 @@ bool AssetCookerSceneBatch::Execute(
 		return false;
 	}
 
-	return PublishProducts(sceneEntries, items, diagnostics);
+	return PublishProducts(items, diagnostics);
 }
 
 std::uint32_t AssetCookerSceneBatch::ResolveWorkerCount() noexcept
@@ -50,6 +49,7 @@ bool AssetCookerSceneBatch::BuildProducts(
 
 	TaskExecutor executor(
 	    TaskExecutorConfig{
+	        .FrameCriticalWorkerCount = 1u,
 	        .BackgroundWorkerCount = ResolveWorkerCount(),
 	        .MaximumTasksPerExecution = taskCapacity,
 	        .MaximumEdgesPerExecution = 1u,
@@ -101,7 +101,6 @@ void AssetCookerSceneBatch::MergeDiagnostics(
 }
 
 bool AssetCookerSceneBatch::PublishProducts(
-    const std::vector<AssetCookerSceneEntry>& sceneEntries,
     std::vector<Item>& items,
     AssetCookerDiagnostics& diagnostics)
 {
@@ -119,21 +118,6 @@ bool AssetCookerSceneBatch::PublishProducts(
 		    AssetCookerCategory_SceneAssets,
 		    std::move(errorMessage));
 		return false;
-	}
-
-	for (std::size_t index = 0; index < sceneEntries.size(); ++index)
-	{
-		ToolConsole::Progress(
-		    std::cout,
-		    "Publishing",
-		    "scene",
-		    index + 1u,
-		    sceneEntries.size(),
-		    sceneEntries[index].relativePath);
-
-		ImportedSceneCooker::Report(
-		    sceneEntries[index],
-		    items[index].Product);
 	}
 
 	return true;

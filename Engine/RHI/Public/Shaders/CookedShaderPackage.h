@@ -132,6 +132,7 @@ struct CookedShaderPackageHeader
 	std::uint32_t RayTracingPayloadSizeInBytes = 0;
 	std::uint32_t RayTracingAttributeSizeInBytes = 0;
 	std::uint32_t RayTracingMaxRecursionDepth = 0;
+	std::uint32_t Reserved2 = 0;
 	std::uint64_t ShaderPackageKey = 0;
 	std::uint64_t SourceIdentityHash = 0;
 	std::uint64_t BindingLayoutHash = 0;

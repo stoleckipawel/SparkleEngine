@@ -58,7 +58,6 @@ bool ShaderCookNodeExecutor::TryLoadFromCache(
 	ApplyNodeMetadata(node, "hit", outResult.CompiledStage);
 	if (!ShaderParameterStructCookVerifier::Verify(settings, node, outResult.CompiledStage, nullptr, outResult.Diagnostic))
 		return false;
-	outResult.CacheHit = true;
 	return true;
 }
 
@@ -71,7 +70,6 @@ bool ShaderCookNodeExecutor::Compile(
 {
 	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	ShaderDebugArtifactSet debugArtifacts;
-	outResult.BackendInvoked = true;
 	if (!StageCompiler::Compile(
 	        backend,
 	        *node.stage,

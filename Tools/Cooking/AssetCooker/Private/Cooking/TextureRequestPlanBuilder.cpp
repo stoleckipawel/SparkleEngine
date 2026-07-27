@@ -5,9 +5,7 @@
 #include "MaterialCooker.h"
 #include "SourceSceneImporter.h"
 #include "TextureCookRequestList.h"
-#include "ToolConsole.h"
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -59,12 +57,6 @@ class TextureRequestPlanBuilderImplementation final
 			}
 		}
 
-		ToolConsole::Message(
-		    std::cout,
-		    ToolConsoleSeverity::Info,
-		    "Queued texture references",
-		    {ToolConsole::Field("textures", std::to_string(sceneRequests.size())),
-		     ToolConsole::QuotedField("scene", sceneEntry.relativePath)});
 		return SceneRequestCollectionResult::Succeeded;
 	}
 };
@@ -79,13 +71,6 @@ bool TextureRequestPlanBuilder::Build(
 	for (std::size_t sceneIndex = 0; sceneIndex < plan.sceneEntries.size(); ++sceneIndex)
 	{
 		const AssetCookerSceneEntry& sceneEntry = plan.sceneEntries[sceneIndex];
-		ToolConsole::Progress(
-		    std::cout,
-		    "Collecting",
-		    "texture-references",
-		    sceneIndex + 1u,
-		    plan.sceneEntries.size(),
-		    sceneEntry.relativePath);
 		const TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult collectionResult = TextureRequestPlanBuilderImplementation::CollectSceneRequests(sceneEntry, diagnostics, requestSet);
 		if (collectionResult == TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult::FatalFailure)
 		{
@@ -117,10 +102,5 @@ bool TextureRequestPlanBuilder::Build(
 		return false;
 	}
 
-	ToolConsole::Message(
-	    std::cout,
-	    ToolConsoleSeverity::Info,
-	    "Texture request plan",
-	    {ToolConsole::Field("textures", std::to_string(requests.size())), ToolConsole::PathField("requestFile", outputPath)});
 	return true;
 }

@@ -43,8 +43,10 @@ bool CookedShaderPackageEmitter::Emit(
 		result.packages.push_back(std::move(packageOutput));
 	}
 
-	result.registryPath = Filesystem::GetCookedShaderRegistryPath();
-	const std::filesystem::path stagedRegistryPath = Files::BuildTemporaryPath(result.registryPath, ".cook-generation");
+	const std::filesystem::path registryPath =
+	    Filesystem::GetCookedShaderRegistryPath();
+	const std::filesystem::path stagedRegistryPath =
+	    Files::BuildTemporaryPath(registryPath, ".cook-generation");
 	Files::CleanupTemporaryFile(stagedRegistryPath);
 	if (!CookedRegistryWriter::Write(result.packages, stagedRegistryPath, outErrorMessage))
 	{
@@ -57,7 +59,7 @@ bool CookedShaderPackageEmitter::Emit(
 	Files::CleanupTemporaryFile(stagedSignalPath);
 	if (!ShaderRecookSignal::Write(
 	        stagedRegistryPath,
-	        result.registryPath,
+	        registryPath,
 	        stagedSignalPath,
 	        publishedSignalPath,
 	        signalResult,
@@ -66,7 +68,7 @@ bool CookedShaderPackageEmitter::Emit(
 		result.packages.clear();
 		return false;
 	}
-	publication.push_back({stagedRegistryPath, result.registryPath});
+	publication.push_back({stagedRegistryPath, registryPath});
 	publication.push_back({stagedSignalPath, publishedSignalPath});
 	if (!Files::TryPublishFileSet(publication, outErrorMessage))
 	{
@@ -75,9 +77,6 @@ bool CookedShaderPackageEmitter::Emit(
 		result.packages.clear();
 		return false;
 	}
-	result.recookSignalPath = signalResult.signalPath;
-	result.recookSignalRegistryHash = signalResult.registryHash;
-
 	outErrorMessage.clear();
 	return true;
 }

@@ -19,7 +19,6 @@ class AssetCookerCli final
 	static bool IsConfiguration(std::string_view argument) noexcept;
 	static bool ParseCommonArguments(int argc, char** argv, int startIndex, Arguments& arguments);
 	static bool Parse(int argc, char** argv, Arguments& arguments);
-	static const char* GetCategoryName(AssetCookerCategory category) noexcept;
 	static void PrintUsage(std::ostream& output);
 	static void PrintResult(const AssetCookerServiceResult& result);
 };

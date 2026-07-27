@@ -40,7 +40,7 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
-	void WaitForIdle() noexcept override;
+	void SettleForShutdown() noexcept;
 	void ResizeSwapChain() noexcept;
 	void BeginFrame() noexcept;
 	void PrepareCommandRecording() noexcept override;

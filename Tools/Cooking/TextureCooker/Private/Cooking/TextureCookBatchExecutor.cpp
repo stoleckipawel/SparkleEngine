@@ -85,6 +85,5 @@ TextureCookBatchExecutionResult TextureCookBatchExecutor::Execute(
 	TaskExecutionContext context;
 	const TaskExecution execution = executor.Submit(graph.Compile(), context);
 	batchResult.Succeeded = execution.GetStatus() == TaskExecutionStatus::Succeeded;
-	batchResult.PeakAdmittedBytes = memoryLimiter.GetPeakBytes();
 	return batchResult;
 }

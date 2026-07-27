@@ -34,6 +34,7 @@ namespace Assets
 	{
 		CookedAssetId meshAssetId = InvalidCookedAssetId;
 		CookedMeshAssetKind meshAssetKind = CookedMeshAssetKind::Static;
+		std::uint32_t reserved = 0;
 	};
 
 	struct SPARKLE_ENGINE_API CookedSceneMaterialAssetRef

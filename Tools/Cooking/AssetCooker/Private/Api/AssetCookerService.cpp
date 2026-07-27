@@ -3,6 +3,8 @@
 #include "../Discovery/AssetCookerDiscovery.h"
 #include "../Dispatch/AssetCookerDispatcher.h"
 
+#include <utility>
+
 AssetCookerService::AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration)
 {
 	if (HasText(repositoryRoot))
@@ -28,22 +30,14 @@ AssetCookerServiceResult AssetCookerService::Cook(
 	std::filesystem::path repositoryRoot;
 	if (!ResolveRepositoryRoot(diagnostics, repositoryRoot))
 	{
-		AssetCookerServiceResult result;
-		result.succeeded = false;
-		result.exitCode = 1;
-		result.diagnostics = diagnostics.ReleaseRecords();
-		return result;
+		return Finish(false, diagnostics);
 	}
 
 	const std::string resolvedConfiguration = ResolveConfiguration(configuration);
 	if (!AssetCookerDiscovery::ValidateConfiguration(resolvedConfiguration))
 	{
 		diagnostics.AddError(AssetCookerCategory_All, "Unsupported configuration '" + resolvedConfiguration + "'.");
-		AssetCookerServiceResult result;
-		result.succeeded = false;
-		result.exitCode = 1;
-		result.diagnostics = diagnostics.ReleaseRecords();
-		return result;
+		return Finish(false, diagnostics);
 	}
 
 	std::vector<std::string> projects;
@@ -53,11 +47,7 @@ AssetCookerServiceResult AssetCookerService::Cook(
 		projects = AssetCookerDiscovery::DiscoverProjects(repositoryRoot, diagnostics);
 		if (projects.empty())
 		{
-			AssetCookerServiceResult result;
-			result.succeeded = false;
-			result.exitCode = 1;
-			result.diagnostics = diagnostics.ReleaseRecords();
-			return result;
+			return Finish(false, diagnostics);
 		}
 	}
 	else
@@ -65,9 +55,7 @@ AssetCookerServiceResult AssetCookerService::Cook(
 		projects.push_back(resolvedProjectName);
 	}
 
-	AssetCookerServiceResult result;
-	result.succeeded = true;
-	result.exitCode = 0;
+	std::vector<AssetCookerOutputRecord> outputs;
 	for (const std::string& currentProjectName : projects)
 	{
 		AssetCookerProjectCookPlan plan;
@@ -79,28 +67,21 @@ AssetCookerServiceResult AssetCookerService::Cook(
 		        plan,
 		        diagnostics))
 		{
-			result.succeeded = false;
-			result.exitCode = 1;
-			break;
+			return Finish(false, diagnostics, std::move(outputs));
 		}
 
 		if (!AssetCookerDispatcher::ValidateCapabilities(plan, diagnostics))
 		{
-			result.succeeded = false;
-			result.exitCode = 1;
-			break;
+			return Finish(false, diagnostics, std::move(outputs));
 		}
 
-		if (!AssetCookerDispatcher::DispatchPlan(plan, diagnostics, result.outputs))
+		if (!AssetCookerDispatcher::DispatchPlan(plan, diagnostics, outputs))
 		{
-			result.succeeded = false;
-			result.exitCode = 1;
-			break;
+			return Finish(false, diagnostics, std::move(outputs));
 		}
 	}
 
-	result.diagnostics = diagnostics.ReleaseRecords();
-	return result;
+	return Finish(true, diagnostics, std::move(outputs));
 }
 
 bool AssetCookerService::HasText(const char* text) noexcept
@@ -111,6 +92,19 @@ bool AssetCookerService::HasText(const char* text) noexcept
 bool AssetCookerService::IsAllProjects(std::string_view projectName) noexcept
 {
 	return projectName.empty() || projectName == "ALL" || projectName == "All" || projectName == "all";
+}
+
+AssetCookerServiceResult AssetCookerService::Finish(
+    bool succeeded,
+    AssetCookerDiagnostics& diagnostics,
+    std::vector<AssetCookerOutputRecord> outputs)
+{
+	AssetCookerServiceResult result;
+	result.succeeded = succeeded;
+	result.exitCode = succeeded ? 0 : 1;
+	result.diagnostics = diagnostics.ReleaseRecords();
+	result.outputs = std::move(outputs);
+	return result;
 }
 
 bool AssetCookerService::ResolveRepositoryRoot(

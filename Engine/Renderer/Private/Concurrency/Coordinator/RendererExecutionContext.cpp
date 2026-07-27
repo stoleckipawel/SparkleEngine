@@ -119,6 +119,6 @@ void RendererExecutionContext::SettleRendererBeforeDestruction() noexcept
 		return;
 	}
 
-	m_systems->GetBackend().WaitForIdle();
+	m_systems->GetBackend().SettleForShutdown();
 	m_shutdownSettled = true;
 }

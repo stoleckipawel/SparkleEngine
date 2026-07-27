@@ -11,7 +11,7 @@ void Timer::Tick() noexcept
 
 	m_unscaledTotal += m_unscaledDelta;
 
-	const bool bPaused = m_bPaused.load(std::memory_order_relaxed);
+	const bool bPaused = m_bPaused;
 	if (!bPaused)
 	{
 		const Duration scaled{m_unscaledDelta.count() * m_timeScale};

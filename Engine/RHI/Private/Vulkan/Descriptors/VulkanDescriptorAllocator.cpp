@@ -75,9 +75,9 @@ void VulkanDescriptorAllocator::PublishRecordingReadView() noexcept
 		readView->RegisteredDescriptors = m_registeredDescriptors;
 	}
 
-	std::atomic_store(
-	    &m_recordingReadView,
-	    std::shared_ptr<const RecordingReadView>(std::move(readView)));
+	m_recordingReadView.store(
+	    std::shared_ptr<const RecordingReadView>(std::move(readView)),
+	    std::memory_order_release);
 }
 
 void VulkanDescriptorAllocator::ReleaseDescriptor(ERhiDescriptorAllocatorType, const RhiDescriptorAllocation& allocation) noexcept
@@ -669,7 +669,7 @@ const VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::Fin
 std::shared_ptr<const VulkanDescriptorAllocator::RecordingReadView>
 VulkanDescriptorAllocator::GetRecordingReadView() const noexcept
 {
-	return std::atomic_load(&m_recordingReadView);
+	return m_recordingReadView.load(std::memory_order_acquire);
 }
 
 void VulkanDescriptorAllocator::CreateFallbackBuffer() noexcept

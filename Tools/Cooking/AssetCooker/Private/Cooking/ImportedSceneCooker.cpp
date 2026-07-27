@@ -4,9 +4,7 @@
 #include "MaterialCooker.h"
 #include "SceneCooker.h"
 #include "SourceSceneImporter.h"
-#include "ToolConsole.h"
 
-#include <iostream>
 #include <string>
 #include <utility>
 
@@ -77,16 +75,21 @@ bool ImportedSceneCooker::Build(
     ImportedSceneCookProduct& outProduct)
 {
 	outProduct = {};
+	SourceImportResult importResult;
 	if (!Import(
 	        sceneEntry,
 	        AssetCookerCategory_SceneAssets,
 	        diagnostics,
-	        outProduct.Import))
+	        importResult))
 	{
 		return false;
 	}
 
-	return BuildCookedScene(sceneEntry, outProduct.Import, outProduct.Scene, diagnostics);
+	return BuildCookedScene(
+	    sceneEntry,
+	    importResult,
+	    outProduct.Scene,
+	    diagnostics);
 }
 
 bool ImportedSceneCooker::BuildCookedScene(
@@ -140,44 +143,4 @@ bool ImportedSceneCooker::BuildCookedScene(
 	}
 
 	return true;
-}
-
-void ImportedSceneCooker::Report(
-    const AssetCookerSceneEntry& sceneEntry,
-    const ImportedSceneCookProduct& product)
-{
-	const SourceImportResult& importResult = product.Import;
-	const CookedSceneBuild& build = product.Scene;
-
-	ToolConsole::Message(
-	    std::cout,
-	    ToolConsoleSeverity::Info,
-	    "Cooked scene",
-	    {ToolConsole::QuotedField("name", sceneEntry.relativePath),
-	     ToolConsole::Field("importer", std::string(importResult.GetImporterId())),
-	     ToolConsole::Field("meshPrimitives", std::to_string(importResult.GetMeshPrimitiveCount())),
-	     ToolConsole::Field("meshInstances", std::to_string(importResult.GetMeshInstanceCount())),
-	     ToolConsole::Field("cameras", std::to_string(importResult.GetCameraCount())),
-	     ToolConsole::Field("lights", std::to_string(importResult.GetLightCount())),
-	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
-	     ToolConsole::Field("materialVariants", std::to_string(importResult.GetMaterialVariantCount())),
-	     ToolConsole::Field(
-	         "materialVariantMappings",
-	         std::to_string(importResult.GetMaterialVariantMappingCount())),
-	     ToolConsole::Field(
-	         "cookedMeshAssetRefs",
-	         std::to_string(build.manifest.meshAssetReferences.size())),
-	     ToolConsole::Field("cookedInstances", std::to_string(build.manifest.instances.size())),
-	     ToolConsole::Field(
-	         "cookedInstanceGroups",
-	         std::to_string(build.manifest.instanceGroups.size())),
-	     ToolConsole::Field(
-	         "cookedMaterialVariants",
-	         std::to_string(build.manifest.materialVariants.size())),
-	     ToolConsole::Field(
-	         "cookedVariantMappings",
-	         std::to_string(build.manifest.materialVariantMappings.size())),
-	     ToolConsole::Field("cookedCameras", std::to_string(build.manifest.cameras.size())),
-	     ToolConsole::Field("cookedLights", std::to_string(build.manifest.lights.size())),
-	     ToolConsole::PathField("manifest", build.identity.manifestPath)});
 }

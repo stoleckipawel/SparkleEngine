@@ -4,6 +4,7 @@
 
 #include "ToolConsole.h"
 
+#include <algorithm>
 #include <array>
 #include <iostream>
 #include <string>
@@ -110,27 +111,6 @@ bool AssetCookerCli::Parse(int argc, char** argv, Arguments& arguments)
 	return ParseCommonArguments(argc, argv, 2, arguments) && !arguments.ProjectName.empty();
 }
 
-const char* AssetCookerCli::GetCategoryName(AssetCookerCategory category) noexcept
-{
-	switch (category)
-	{
-	case AssetCookerCategory_All:
-		return "all";
-	case AssetCookerCategory_Shaders:
-		return "shaders";
-	case AssetCookerCategory_Textures:
-		return "textures";
-	case AssetCookerCategory_SceneAssets:
-		return "scene-assets";
-	case AssetCookerCategory_Meshes:
-		return "meshes";
-	case AssetCookerCategory_Materials:
-		return "materials";
-	default:
-		return "unknown";
-	}
-}
-
 void AssetCookerCli::PrintUsage(std::ostream& output)
 {
 	constexpr std::string_view profile =
@@ -160,15 +140,13 @@ void AssetCookerCli::PrintResult(const AssetCookerServiceResult& result)
 		    {ToolConsole::QuotedField("source", diagnostic.sourcePath)});
 	}
 
-	for (const AssetCookerOutputRecord& output : result.outputs)
+	if (result.exitCode == 0)
 	{
 		ToolConsole::Message(
 		    std::cout,
 		    ToolConsoleSeverity::Info,
-		    "Cooked output",
-		    {ToolConsole::Field("type", GetCategoryName(output.category)),
-		     ToolConsole::QuotedField("name", output.assetId),
-		     ToolConsole::QuotedField("path", output.path)});
+		    "Cook completed",
+		    {ToolConsole::Field("products", std::to_string(result.outputs.size()))});
 	}
 }
 

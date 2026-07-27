@@ -168,12 +168,18 @@ void AssetCookerDiscovery::AddPlanSteps(
 		return;
 	}
 
-	outSteps.push_back(
-	    category == AssetCookerCategory_Shaders
-	        ? AssetCookerPlanStep::Shaders
-	        : category == AssetCookerCategory_Textures
-	              ? AssetCookerPlanStep::Textures
-	              : AssetCookerPlanStep::SceneAssets);
+	switch (category)
+	{
+	case AssetCookerCategory_Shaders:
+		outSteps.push_back(AssetCookerPlanStep::Shaders);
+		break;
+	case AssetCookerCategory_Textures:
+		outSteps.push_back(AssetCookerPlanStep::Textures);
+		break;
+	default:
+		outSteps.push_back(AssetCookerPlanStep::SceneAssets);
+		break;
+	}
 }
 
 std::string AssetCookerDiscovery::ResolveToolConfiguration(std::string_view configuration)

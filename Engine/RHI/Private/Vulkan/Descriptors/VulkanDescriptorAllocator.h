@@ -6,6 +6,7 @@
 #include "Samplers/RhiSamplerDesc.h"
 #include "Vulkan/VulkanIncludes.h"
 
+#include <atomic>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -164,7 +165,7 @@ class VulkanDescriptorAllocator final
 	std::vector<std::uint32_t> m_freeTableIndices;
 	std::array<std::vector<std::uint32_t>, RhiFrameConstants::FramesInFlight> m_retiredTableIndices;
 	std::shared_ptr<std::vector<DescriptorEntry>> m_registeredDescriptors;
-	std::shared_ptr<const RecordingReadView> m_recordingReadView;
+	std::atomic<std::shared_ptr<const RecordingReadView>> m_recordingReadView;
 	std::vector<std::uint32_t> m_freeRegisteredDescriptorIndices;
 	VkBuffer m_fallbackBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_fallbackBufferMemory = VK_NULL_HANDLE;

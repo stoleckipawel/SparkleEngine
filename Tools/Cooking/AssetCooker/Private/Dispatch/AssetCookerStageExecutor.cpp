@@ -3,11 +3,9 @@
 #include "AssetCookerToolProcess.h"
 #include "Cooking/AssetCookerSceneBatch.h"
 #include "Cooking/TextureRequestPlanBuilder.h"
-#include "ToolConsole.h"
 
 #include <algorithm>
 #include <chrono>
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -77,7 +75,6 @@ class AssetCookerStageExecutorImplementation final
 	    AssetCookerDiagnostics& diagnostics,
 	    std::vector<AssetCookerOutputRecord>& outputs)
 	{
-		ToolConsole::Info("Cooking shaders: writing package payloads...");
 		if (AssetCookerToolProcess::Run(ResolveToolPath(plan, "ShaderCompiler"), {"cook"}, plan.projectRoot) != 0)
 		{
 			diagnostics.AddError(AssetCookerCategory_Shaders, "Shader package cooking failed.");
@@ -103,7 +100,6 @@ class AssetCookerStageExecutorImplementation final
 	    std::vector<AssetCookerOutputRecord>& outputs)
 	{
 		const ScopedTemporaryFile requestFile(MakeTemporaryPath(plan, "assetcooker-texture-requests", ".txt"));
-		ToolConsole::Info("Cooking textures: building request plan from scene materials...");
 
 		std::error_code errorCode;
 		std::filesystem::create_directories(requestFile.GetPath().parent_path(), errorCode);

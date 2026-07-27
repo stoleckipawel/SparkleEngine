@@ -7,7 +7,6 @@
 #include "Cooking/CookedShaderPackageEmitter.h"
 #include "Cooking/ShaderCookPlanExecutor.h"
 #include "Cooking/ShaderCookPlanBuilder.h"
-#include "Cooking/ShaderCookProgressReporter.h"
 #include "Cooking/ShaderCookNodeResult.h"
 #include <vector>
 
@@ -22,8 +21,6 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 		return result;
 	}
 
-	ShaderCookExecutionCounters counters;
-	ShaderCookProgressReporter::PrintPlanSummary(plan, settings);
 	std::vector<ShaderCookNodeResult> nodeResults;
 	if (!ShaderCookPlanExecutor::Execute(settings, plan, result.cacheDirectory, nodeResults, result.errorMessage))
 	{
@@ -34,14 +31,7 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 	{
 		ShaderCookNodeResult& nodeResult = nodeResults[index];
 		plan.packageContexts[plan.nodes[index].packageIndex].compiledStages.push_back(std::move(nodeResult.CompiledStage));
-		++counters.processedNodeCount;
-		counters.cacheHitCount += nodeResult.CacheHit ? 1 : 0;
-		counters.cacheMissCount += nodeResult.CacheHit ? 0 : 1;
-		counters.backendInvocationCount += nodeResult.BackendInvoked ? 1 : 0;
 	}
-	result.backendInvocationCount = counters.backendInvocationCount;
-	result.cacheHitCount = counters.cacheHitCount;
-	result.cacheMissCount = counters.cacheMissCount;
 
 	if (!CookedShaderPackageEmitter::Emit(plan, result.cacheDirectory, result, result.errorMessage))
 	{

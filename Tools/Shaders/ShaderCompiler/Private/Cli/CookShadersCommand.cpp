@@ -1,5 +1,4 @@
 #include "PCH.h"
-#include "Core/Public/FileSystemUtils.h"
 
 #include "Cli/CookShadersCommand.h"
 
@@ -7,12 +6,11 @@
 #include "Backend/ShaderTarget.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/ShaderPackageCooker.h"
-#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "ToolConsole.h"
 
-#include <iostream>
 #include <charconv>
+#include <iostream>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -370,29 +368,9 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 
 	ToolConsole::Summary(
 	    std::cout,
-	    "Shader cook summary",
+	    "Cooked shader generation",
 	    {ToolConsole::Field("packages", std::to_string(cookResult.packages.size())),
-	     ToolConsole::PathField("packageRoot", Filesystem::GetCookedShaderPackageRootPath()),
-	     ToolConsole::PathField("registry", cookResult.registryPath),
-	     ToolConsole::QuotedField("targets", CookShadersCommandOperations::FormatTargets(settings.targets)),
-	     ToolConsole::PathField("recookSignal", cookResult.recookSignalPath),
-	     ToolConsole::Field("backendInvocations", std::to_string(cookResult.backendInvocationCount)),
-	     ToolConsole::Field("cacheHits", std::to_string(cookResult.cacheHitCount)),
-	     ToolConsole::Field("cacheMisses", std::to_string(cookResult.cacheMissCount)),
-	     ToolConsole::PathField("cacheDir", cookResult.cacheDirectory)});
-
-	ToolConsole::ListHeader(std::cout, "Cooked shader packages");
-	for (std::size_t packageIndex = 0; packageIndex < cookResult.packages.size(); ++packageIndex)
-	{
-		const CookedShaderPackageOutput& package = cookResult.packages[packageIndex];
-		ToolConsole::ListItem(
-		    std::cout,
-		    packageIndex + 1u,
-		    {ToolConsole::QuotedField("name", package.packageId),
-		     ToolConsole::QuotedField("bindingLayout", package.bindingLayoutId),
-		     ToolConsole::Field("key", Formatting::FormatHexUInt64(package.packageKey)),
-		     ToolConsole::PathField("output", package.outputPath)});
-	}
+	     ToolConsole::QuotedField("targets", CookShadersCommandOperations::FormatTargets(settings.targets))});
 
 	for (const std::string& analysisPass : settings.analysisPasses)
 	{

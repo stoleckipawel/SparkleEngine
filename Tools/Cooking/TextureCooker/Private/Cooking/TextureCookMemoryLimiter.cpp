@@ -4,6 +4,11 @@
 #include <stop_token>
 #include <utility>
 
+TextureCookMemoryLimiter::Lease::Lease(TextureCookMemoryLimiter& owner, std::size_t bytes) noexcept :
+    m_owner(&owner), m_bytes(bytes)
+{
+}
+
 TextureCookMemoryLimiter::Lease::~Lease()
 {
 	Release();
@@ -56,14 +61,7 @@ TextureCookMemoryLimiter::Lease TextureCookMemoryLimiter::Acquire(std::size_t by
 	if (cancellation.stop_requested())
 		return {};
 	m_usedBytes += weight;
-	m_peakBytes = std::max(m_peakBytes, m_usedBytes);
 	return Lease(*this, weight);
-}
-
-std::size_t TextureCookMemoryLimiter::GetPeakBytes() const noexcept
-{
-	std::lock_guard lock(m_mutex);
-	return m_peakBytes;
 }
 
 void TextureCookMemoryLimiter::Release(std::size_t bytes) noexcept

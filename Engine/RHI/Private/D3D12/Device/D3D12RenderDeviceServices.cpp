@@ -33,7 +33,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept override;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
-	void WaitForIdle() noexcept override;
+	void SettleForShutdown() noexcept override;
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
 	void PrepareCommandRecording() noexcept override;
@@ -72,6 +72,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	void InitializeHardwareInterface();
 	void InitializeCommandRecording();
 	void InitializeSamplers();
+	void DrainPresentationQueue() noexcept;
 
 	std::unique_ptr<D3D12Rhi> m_rhi;
 	std::unique_ptr<D3D12DescriptorHeapManager> m_descriptorHeapManager;
@@ -188,15 +189,25 @@ RhiImGuiRenderer& D3D12RenderDeviceServices::GetImGuiRenderer() noexcept
 	return m_renderHardwareInterface->GetImGuiRenderer();
 }
 
-void D3D12RenderDeviceServices::WaitForIdle() noexcept
+void D3D12RenderDeviceServices::SettleForShutdown() noexcept
 {
 	m_renderHardwareInterface->WaitForIdle();
 }
 
 void D3D12RenderDeviceServices::ResizeSwapChain() noexcept
 {
-	m_renderHardwareInterface->WaitForIdle();
+	DrainPresentationQueue();
 	m_swapChain->Resize();
+}
+
+void D3D12RenderDeviceServices::DrainPresentationQueue() noexcept
+{
+	const RhiSubmissionToken presentationToken =
+	    m_rhi->GetLastSubmittedToken(ERhiQueueType::Graphics);
+	if (presentationToken.IsValid())
+	{
+		m_rhi->WaitForSubmission(presentationToken);
+	}
 }
 
 void D3D12RenderDeviceServices::BeginFrame() noexcept
