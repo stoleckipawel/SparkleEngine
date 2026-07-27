@@ -6,7 +6,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <span>
 
 class VulkanRhi;
@@ -28,7 +27,6 @@ struct VulkanQueueSubmission final
 struct VulkanNativeQueue final
 {
 	VkQueue Queue = VK_NULL_HANDLE;
-	std::mutex SubmissionMutex;
 };
 
 class VulkanCommandQueue final

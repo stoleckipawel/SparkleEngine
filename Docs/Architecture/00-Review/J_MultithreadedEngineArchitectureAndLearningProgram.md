@@ -464,9 +464,13 @@ Main/editor thread
 
 This ordering is simple and currently correct, but it leaves the game, editor, renderer preparation, and command recording on one CPU critical path.
 
-### Concurrency Inventory
+### Historical Pre-Integration Concurrency Inventory
 
-| Area | Current evidence | Architectural consequence |
+This table records the repository before the staged integration. It is retained as source trace, not as a description of the
+current product. The binding legacy-concurrency audit below carries later closure annotations; present completion must still be
+proved from the current tree.
+
+| Area | Prompt 00 evidence | Architectural consequence |
 |---|---|---|
 | Application | Runtime and editor ticks call game update and renderer phases sequentially | There is no CPU frame pipeline |
 | GameFramework | Controllers, animation, morph updates, and snapshot capture run serially | Good future task candidates, but ownership must be clarified first |
@@ -506,45 +510,67 @@ Use these dispositions consistently:
 
 | ID | Current source and mechanism | Adversarial finding | Required target and owning K prompt | Closure proof |
 |---|---|---|---|---|
-| LC-01 | [ShaderRecookCoordinator.cpp](../../../Engine/Application/Private/ShaderRecook/ShaderRecookCoordinator.cpp) uses scoped Background/BlockingIo tasks and owner-thread generation acceptance; the old future/async/polling path is deleted | **PROCESS-LIFETIME PART CLOSED in Prompt 04.** Request/result values cross the task boundary; stale/failing generations cannot publish. Reload still calls `Renderer::WaitForIdle` and remains LC-16 data-path debt | **DELETE WAIT** through generation swap and token retirement in Prompt 16 | no future/async/polling remains; failure preserves active packages; stale completion is rejected; Prompt 16 proves accepted reload does not idle the device |
+| LC-01 | [ShaderRecookCoordinator.cpp](../../../Engine/Application/Private/ShaderRecook/ShaderRecookCoordinator.cpp) uses scoped Background/BlockingIo tasks and owner-thread generation acceptance; the old future/async/polling path is deleted | **CLOSED in Prompts 04 and 16.** Request/result values cross the task boundary; stale/failing generations cannot publish. Accepted reload is a render-owner control command that swaps a validated shader runtime generation and token-retires the previous generation without device idle | retain the owned generation path; no compatibility reload or private executor | no future/async/polling remains; failure preserves active packages; stale completion is rejected; accepted reload emits no device-idle call |
 | LC-02 | [LauncherBackend.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/App/LauncherBackend.cpp) launches bounded BlockingIo tasks; mapping/execution are separate private operation files and immutable Qt messages return through the owner queue | **CLOSED in Prompt 04:** no operation QThread exists and QObject/window access stays on the GUI owner | re-audit app-close/cancel/restart in Prompt 22 | bounded worker count and Qt-affinity capture falsify the closure |
 | LC-03 | [ProcessRunner.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Core/ProcessRunner.cpp) is a thin adapter to Core `Process::ChildProcess`; overlapped pipe/process/cancel events and Windows job ownership replace reader thread, polling, and atomic cancellation | **CLOSED in Prompt 04:** one BlockingIo call owns the child tree, output pipe, cancellation, diagnostics, and terminal result | harden staged process variants in Prompt 27 | disposable descendant-pipe cancellation settled sub-second; launch/read/exit fault injection remains the falsifier |
 | LC-04 | [AssetCookerToolProcess.cpp](../../../Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerToolProcess.cpp) uses the same cancellable Core child-process contract | **CLOSED in Prompt 04:** outer CLI may synchronously call the adapter, while scheduled callers must select BlockingIo; there is no native infinite wait in the adapter | call graph and Prompt 27 staged-process stress retain the policy | no FrameCritical/Background stack may contain the event-driven child wait |
 | LC-05 | [InputSystem.h](../../../Engine/Platform/Public/Input/InputSystem.h) and [InputSystem.cpp](../../../Engine/Platform/Private/Input/InputSystem.cpp) previously invoked callbacks while holding `m_CallbackMutex` | **CLOSED in Prompt 03:** the registry and dispatch path are explicitly owner-thread-only, the unnecessary mutex is deleted, and each dispatch invokes a copied eligible-callback snapshot | **OWNER-ONLY:** workers publish commands/results rather than input callbacks. Registry changes affect the next snapshot; nested dispatch takes a fresh snapshot; nested deferred-phase processing does not recursively drain | transient self-unsubscribe, unsubscribe-other, subscribe-during-dispatch, nested immediate dispatch, and deferred tests passed; no callback executes under a registry lock |
 | LC-06 | [Logger.cpp](../../../Engine/Core/Private/Diagnostics/Logger.cpp) uses a registry mutex, a mutex-backed sink, a relaxed level atomic, and release/acquire initialization publication | Logging is legitimate cross-thread infrastructure, not a job-system workload. Replacing it with tasks would be incorrect, but lock scope and initialization edges must be explainable | **KEEP + HARDEN** in Prompts 00 and 24; keep registry/sink internals private, avoid calling unknown code under the registry lock, and document each atomic invariant | concurrent initialize/get/set/shutdown policy is tested; every atomic order has a stated edge; no scheduler dependency or public mutable registry is introduced |
-| LC-07 | [Timer.h](../../../Engine/Core/Public/Time/Timer.h) uses a relaxed atomic pause flag | Relaxed is sufficient only for an independent flag; the atomic must not be mistaken for publication of timer state, and no necessary cross-thread caller is established by its presence | **PROVE OR REMOVE** in Prompts 00 and 24: document a real cross-thread pause contract or restore owner-thread non-atomic state; never use the flag to publish adjacent fields | call-site audit names the writer/readers and invariant; test proves only the flag is communicated, or the unnecessary atomic is gone |
+| LC-07 | [Timer.h](../../../Engine/Core/Public/Time/Timer.h) stores pause state as owner-local `bool` state | **CLOSED in Prompt 22.** No cross-thread pause caller exists and the speculative relaxed atomic was deleted; `Timer` publishes no adjacent state | retain owner-only state; a future cross-owner requirement must introduce an explicit command/publication contract rather than restoring a flag | repository call-site and atomic scans remain clear |
 | LC-08 | [StreamlineRuntimeSupport.cpp](../../../Engine/Renderer/Private/Streamline/StreamlineRuntimeSupport.cpp) now uses an application-lifetime runtime plus active-call leases; renderer/device hooks run on the coordinator owner | Holding an engine mutex across an SDK call would permit re-entry deadlock and obscure affinity | **APPLICATION/COORDINATOR SPLIT CLOSED in Prompt 13.** The lock protects only state and active-call accounting; shutdown closes admission and waits without holding the lock across `slShutdown`. Prompt 28 retains provider fault/re-entry stress | enabled/disabled/failure/shutdown stress, no lock-held SDK call, no uncontrolled shared queue use |
 | LC-09 | [D3D12CommandQueue.cpp](../../../Engine/RHI/Private/D3D12/Commands/D3D12CommandQueue.cpp) is creator-thread owned; submission and CPU-wait mutexes are deleted | A mutex-protected submission path was permission for the wrong architecture and did not protect an SDK using a raw native queue | **OWNER-ONLY CLOSED in Prompt 13; TOKEN/RECORDING WORK remains Prompt 18.** Submit/query/wait/destruction assert the queue owner; development waits name the queue/submission and time out | deliberate wrong-owner fail-fast, delayed/hung GPU timeout, no SparkleTasks worker wait |
-| LC-10 | [VulkanCommandQueue.cpp](../../../Engine/RHI/Private/Vulkan/Commands/VulkanCommandQueue.cpp) is creator-thread owned; submit/present/value reads no longer use a native-queue mutex | Vulkan external synchronization is satisfied by the one RenderThread owner because no Vulkan provider shares the native queue | **OWNER-ONLY CLOSED in Prompt 13; RECORDING CONTEXT WORK remains Prompt 19.** A future provider may add only a documented shared-entry boundary, never a second engine submission owner | one submission authority, Vulkan validation, deliberate worker submit/present failure |
-| LC-11 | [D3D12DescriptorAllocator.cpp](../../../Engine/RHI/Private/D3D12/Descriptors/D3D12DescriptorAllocator.cpp) uses one mutex for persistent allocation/free | The lock is acceptable for infrequent persistent descriptors but becomes a frame-hot contention point if parallel recording allocates through it | **KEEP PERSISTENT / REPLACE TRANSIENT** in Prompt 18: preplan or lease worker-local transient descriptor pages; render owner retains persistent allocation and fence-delayed reclamation | parallel recording performs no contended per-draw allocation; pages cannot reset before their GPU token; persistent handle reuse is validated |
-| LC-12 | [VulkanDescriptorAllocator.cpp](../../../Engine/RHI/Private/Vulkan/Descriptors/VulkanDescriptorAllocator.cpp) places table, registration, write, lookup, retirement, and recycling under one mutex | One broad allocator lock hides distinct persistent, per-frame, and recording-time ownership and could serialize every worker | **SPLIT BY LIFETIME** in Prompt 19: worker/frame-local pool leases for transient recording, render-owned persistent registry, token/generation retirement; retain only measured shared-state locks | command-pool/descriptor-pool external synchronization passes validation; no lock-held native/update work on the recording hot path; stale handles are rejected |
-| LC-13 | [D3D12LinearAllocator.cpp](../../../Engine/RHI/Private/D3D12/Resources/D3D12LinearAllocator.cpp) uses atomic compare/exchange for a shared bump offset and relaxed high-water tracking | A lock-free bump pointer can still be a contended cache line; reset safety is external and not encoded by the atomics; acquire/release does not by itself make reuse safe | **REPLACE HOT-PATH SHARING** with worker-local pages/leases and GPU-token reset in Prompt 18; formally audit remaining atomics in Prompt 24 | allocation ranges never overlap, reset-before-retire fails, workers do not contend on one offset, and memory orders state the actual publication invariant |
+| LC-10 | [VulkanCommandQueue.cpp](../../../Engine/RHI/Private/Vulkan/Commands/VulkanCommandQueue.cpp) is creator-thread owned; submit, present, and value reads use no native-queue mutex | Vulkan external synchronization is satisfied by the one RenderThread owner. A mutex covering only engine submissions would not protect direct native-queue consumers and would obscure the real affinity contract | **OWNER-ONLY CLOSED in Prompt 13; RECORDING CONTEXT WORK remains Prompt 19.** A future provider may add only a documented shared-entry boundary, never a second engine submission owner | one submission authority, Vulkan validation, deliberate worker submit/present failure |
+| LC-11 | [D3D12DescriptorAllocator.cpp](../../../Engine/RHI/Private/D3D12/Descriptors/D3D12DescriptorAllocator.cpp) retains synchronization only for persistent descriptor allocation/free | **RECORDING PATH CLOSED in Prompt 18.** Worker recording leases own transient descriptor/upload pages; no per-draw worker allocation enters the persistent allocator | keep the private persistent boundary and token-gated transient-page reuse | parallel recording performs no contended per-draw persistent allocation; pages cannot reset before their GPU token |
+| LC-12 | [VulkanDescriptorAllocator.cpp](../../../Engine/RHI/Private/Vulkan/Descriptors/VulkanDescriptorAllocator.cpp), recording descriptor pools, and published recording read views separate persistent registry state from worker recording state | **RECORDING PATH CLOSED in Prompt 19.** Each recording lease owns command/descriptor pools; workers consume immutable resource/descriptor read views and do not mutate the persistent registry | keep lifetime-separated ownership and token retirement; no shared recording-hot allocator path | command-pool/descriptor-pool external synchronization and stale-handle validation remain the falsifiers |
+| LC-13 | D3D12 worker recording uses leased upload pages rather than the historical shared atomic bump allocator | **HOT-PATH SHARING CLOSED in Prompt 18.** Exclusive page ranges remove the contended atomic and GPU-token retirement governs reuse | retain lease ownership; audit only actual publication atomics in Prompt 24 | ranges never overlap, reset-before-retire is rejected, and workers do not contend on one offset |
 | LC-14 | [D3D12GpuMemoryAllocator.cpp](../../../Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator.cpp) and [VulkanGpuMemoryAllocator.cpp](../../../Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator.cpp) lock allocation-record, diagnostic, and pending-release state | These locks protect real bookkeeping/lifetime state, but snapshots and destruction must not widen a frame-hot critical section or return unstable pointers | **KEEP + HARDEN** in Prompts 16, 18/19, and 24: render-owner mutation where possible, copy diagnostic aggregates under lock then format/use after unlock, token-gated release, no worker-visible mutable record pointer | delayed-GPU and concurrent diagnostic stress; no external/provider callback while locked; returned handles/records have an explicit lifetime |
 | LC-15 | [VulkanRhi.cpp](../../../Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp) protects validation callback messages with `m_diagnosticMessagesMutex` | Driver callbacks may be concurrent, so synchronization is required; consuming or logging while holding the callback lock can create re-entry and stalls | **KEEP + HARDEN** in Prompts 00 and 24: callback only appends bounded owned data; owner swaps/drains then processes outside the lock | concurrent callback/drain stress has bounded memory, no re-entry deadlock, and preserves validation messages |
-| LC-16 | Renderer/RHI lifecycle retains classified owner-level drains for initialization, resize/graph replacement, scene reset, explicit flush, and final shutdown | The sites are not equivalent; nested child teardown/resize drains hide the actual boundary | **NESTED RESIZE/SHUTDOWN DRAINS CLOSED in Prompt 13; DATA-PATH TOKENIZATION remains Prompts 14-16.** `RendererExecutionContext` performs one final drain; backend resize performs one drain; child destructors do not drain again | site ledger and native-idle counter; no duplicate call chain; ordinary frame path has no device idle |
+| LC-16 | Renderer/RHI lifecycle retains one explicit initial-upload flush, exact graphics/presentation-token waits for swap-chain recreation, frame-slot token waits, and one coordinator-owned final shutdown drain | **CLOSED through Prompt 22.** Shader/provider/frame-graph/scene changes retire by submission state; nested child teardown and routine data-path device-idle calls are deleted | retain only the named boundaries; wrapper methods are mechanisms and may not acquire new routine callers | call-site census stays classified; ordinary frames, reload, scene reset, settings, and provider replacement emit no device idle |
 | LC-17 | [LauncherGuiApp.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/App/LauncherGuiApp.cpp) launches a generation-specific shadow copy; [LauncherMainWindowOperations.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindowOperations.cpp) launches the selected editor/runtime product | **TIMING DEBT CLOSED in Prompt 04:** the 150 ms deletion/copy retry is gone. Both remaining `startDetached` calls intentionally transfer lifetime to a replacement launcher or independent selected product; neither escapes owned operation work | Prompt 22 restart/application-close stress remains the falsifier; stale generation cleanup is storage maintenance, not synchronization |
 | LC-18 | D3D12 fence and Vulkan timeline waits are queue-owner operations with development deadlines and submission diagnostics | GPU completion may block only a declared owner boundary; a worker or silent infinite development wait is invalid | **OWNER AFFINITY/TIMEOUT CLOSED in Prompt 13; FRAME-RESOURCE TOKEN POLICY remains Prompts 18/19/28.** Shipping preserves native unbounded semantics; development fails with the exact queue/submission after 30 seconds | repository audit finds no GPU wait on a SparkleTasks worker; delayed/hung GPU test identifies the token |
+| LC-19 | Dear ImGui's upstream D3D12/Vulkan renderer backends own texture creation/update staging. Their current implementations synchronously settle the upload queue (`WaitForSingleObject` on D3D12 and `vkQueueWaitIdle` on Vulkan) when a transferred UI texture is created or updated | The Prompt 14 packet boundary prevents live producer pointers and performs no steady-state pixel transfer after texture status becomes `OK`, but the wrapped backend still has a rare initialization/update drain. It is not a SparkleTasks wait and must not expand into routine frame work | **KEEP BOUNDED / MEASURE in Prompt 23.** RenderThread is the sole caller; texture bytes are packet-owned; release is render-owned. Replace the upstream upload path only if representative font/texture update evidence shows material pacing cost | first-frame and DPI/font-rebuild capture identifies exact calls and frequency; steady-state frames contain no texture upload packet or queue drain |
+
+#### Current Owned-Source Primitive Census
+
+The 2026-07-27 current-state query in the required audit section produced 139 owned-source hits across 61 files. Declarations,
+forwarders, and `hardware_concurrency` queries are included in that count. The concrete families below classify every hit; LC-01
+through LC-19 retain the detailed migration history and falsifiers.
+
+| Current owner | Exact source family | Retained invariant and current disposition |
+|---|---|---|
+| SparkleTasks graph, execution, scheduler, event, and scope owners | `Engine/Tasks/Private/{Graph,Execution,Scheduling,Lifetime}` | graph/event identities are monotonic; task state settles exactly once; worker queues, parking, shutdown, scope settlement, and result publication stay private to the one runtime |
+| Core logging | `Core/Private/Diagnostics/Logger.cpp` | registry/sink mutation is bounded by its private mutex; level and initialization atomics publish only their named scalar state; no scheduler or callback executes under the registry lock |
+| Core child process | `Core/Private/Process/ChildProcessWindows.cpp` | one BlockingIo caller owns process, pipe, and cancellation handles; the multi-object wait is event-driven; forced-termination waits are finite; pipe identity is monotonic |
+| Core owner affinity | `Core/Public/Threading/ThreadOwnership.h`, `Core/Private/Threading/ThreadOwnership.cpp` | a captured `thread::id` proves access to one named owner; it is not a scheduling or synchronization primitive |
+| GameFramework loading and publication | `GameFramework/Private/Assets/{Loaders,Loading}`, `Level/Loading`, `World/{GameWorldState.h,Resources,Publication}` | isolated load tasks publish bounded retained-byte/stage state; immutable world read views publish atomically; the journal lock protects cross-owner journal transfer only; resource generations remain stable identities |
+| Platform window state | `Platform/Public/Window/Window.h` | OS-window callbacks publish width and height scalars that the application owner reads; no mutable window object is exposed to workers |
+| Renderer transport and coordinator | `Renderer/Private/Concurrency/{FrameQueue,Control,Coordinator}` | one RenderThread owns renderer/RHI mutation; bounded frame/control queues publish immutable packets; condition variables implement owner admission, settlement, and backpressure, never worker-side graph dependencies |
+| Streamline runtime | `Renderer/Private/Streamline/StreamlineRuntimeSupport.cpp` | the application-lifetime runtime lock protects admission and active-call settlement only; SDK calls execute outside the lock |
+| D3D12 queue, recording, descriptor, and memory owners | `RHI/Private/D3D12/{Commands,Descriptors,Memory,Device}` | queue mutation is RenderThread-owned; fence waits name exact submissions or final settlement; recording threads hold exclusive leases/pages; persistent descriptor/allocation bookkeeping remains private and bounded |
+| Vulkan queue, recording, descriptor, memory, and validation owners | `RHI/Private/Vulkan/{Commands,Descriptors,Memory,Device}` | logical queues sharing one native queue still have one RenderThread owner and no submission mutex; recording pools/slots are lease-exclusive; immutable recording views publish atomically; validation callbacks and persistent bookkeeping retain bounded private locks |
+| Tool batch policy and memory admission | `Tools/Cooking/{AssetCooker,TextureCooker}`, `Tools/Shaders/ShaderCompiler` | hardware thread count only sizes the one SparkleTasks runtime; the texture-cook memory limiter bounds admitted bytes with one private condition variable |
+| Independent product launch | `LauncherGuiApp.cpp`, `LauncherMainWindowOperations.cpp` | the two Qt detached launches intentionally transfer lifetime to a replacement launcher or selected standalone product; no task or child operation is detached |
+| Wrapped Dear ImGui texture upload | fetched upstream D3D12/Vulkan renderer backends, entered only through `RHI/Private/{D3D12,Vulkan}/UI` | render-owned, packet-fed create/update work may synchronously settle only on texture creation/update; LC-19 measures frequency and forbids steady-state expansion |
 
 #### Current `WaitForIdle` Call-Site Census
 
-This census distinguishes calls from wrapper declarations/forwarders. Prompt 00 must regenerate it from the current call graph; these initial classifications are not implementation claims.
+This closure census distinguishes reasons from wrapper declarations/forwarders. Prompt 22 drove current production call sites to zero unclassified waits; later prompts must regenerate the call graph when they change ownership or lifetime.
 
-| Call-site group | Current purpose | Initial classification | Required convergence |
-|---|---|---|---|
-| `ShaderRecookCoordinator::ApplyCompletedResult` | accepted shader reload | data-path debt | generation-safe swap plus last-use token retirement; zero idle in Prompt 16 |
-| `SceneRenderStateCoordinator::InvalidateSceneScopedRendererState` | level/scene renderer-cache clear | data-path debt | sequenced scene-generation invalidation and deferred retirement in Prompts 13/15/16 |
-| `RendererSystemRoot::RefreshImageProviders` | recreate provider-facing image state | rare transition currently implemented as global drain | coordinator command, generation ownership, and narrow last-use waits in Prompts 13/16; retain a drain only if the provider contract proves it unavoidable |
-| `FramePipeline::RefreshFrameExecution` | destroy/rebuild frame contexts and graph | resize/settings data-path debt | retire the old frame-execution generation by its queue tokens; no unconditional drain in Prompt 16 |
-| `FramePipeline` pending-resize branch | pre-resize drain, then calls `RefreshFrameExecution`, which drains again | duplicate data-path debt on both backends | one resize owner; eliminate the duplicate before tokenization is considered complete |
-| `VulkanRenderDeviceServices::ResizeSwapChain` and `VulkanSwapChain::Resize` | each drains again beneath the FramePipeline resize | nested Vulkan duplicate; one resize can currently reach four idle calls when the outer refresh path is counted | collapse immediately to one coordinator-owned boundary, then use per-generation/per-image completion where supported in Prompts 13/16/19 |
-| `CloseExecuteAndFlushCurrentFrame` in D3D12/Vulkan services | explicit submit-and-flush API | declared host/debug boundary, subject to call-site audit | never reachable from a frame worker or routine update; name the reason and waited tokens; delete consumers using it as lifecycle convenience |
-| D3D12/Vulkan ImGui backend `Shutdown` | destroy UI backend resources | teardown | preserve safety but make it part of one top-level coordinator drain; nested child shutdown must not drain independently |
-| `RendererSystemRoot`, D3D12/Vulkan device services, `VulkanRhi`, `VulkanSwapChain`, and `VulkanCommandContext` destructors | layered teardown safety | final shutdown, but duplicated across ownership layers | one owner performs the final GPU drain before child destruction; lower layers assert safe teardown or use already-complete tokens |
-| D3D12/Vulkan RHI and render-device `WaitForIdle` methods | wrapper/native implementation | mechanism, not a classification | keep a narrow private final-drain operation; prohibit using the public-looking wrapper as routine lifetime management |
+| Call-site group | Current purpose and owner | Classification and retained rule |
+|---|---|---|
+| `PipelineStateManager::ReloadCookedShaders` | render owner validates a replacement shader generation, swaps it atomically at the owner boundary, and records last-use submission state for the previous generation | token-retired data update; no device idle |
+| accepted scene reset in `FramePipeline`/`GpuScene` | sequenced render input clears logical scene state and lets render-owned resources retire through their normal lifetime owners | owner command; no direct level callback or device idle |
+| `RendererSystemRoot::RefreshImageProviders` | render owner moves the active provider stack into a last-use submission-state generation before constructing its replacement | token-retired rare update; no device idle |
+| `FramePipeline::RefreshFrameExecution` | render owner moves the old graph/frame contexts into `RetiredFrameExecution` and polls exact submission completion | token-retired graph update; no unconditional drain |
+| D3D12/Vulkan `ResizeSwapChain` | backend owner waits the latest graphics/presentation submission and performs the one WSI recreation boundary | exact queue-token wait; no nested device-wide drain |
+| `RendererSystemRoot::PostLoad -> CloseExecuteAndFlushCurrentFrame` | one initial resource-upload settlement after renderer construction | explicit initialization boundary; never a routine frame/data update |
+| D3D12/Vulkan frame-resource reuse | recording context waits only the exact token protecting the reused frame slot/page/pool | bounded reuse wait; never a SparkleTasks worker wait |
+| `RendererExecutionContext` shutdown through backend `SettleForShutdown` | top-level render owner settles before child resource destruction | one final shutdown drain; child destructors do not independently drain |
+| launcher/editor/cooker process completion | owning synchronous host or `BlockingIo` task waits through the cancellable Core child-process contract | scoped operation completion; no frame-worker blocking |
 
-The current resize path is a useful lesson: every individual wait can look locally defensive while their composition is globally poor. High-quality concurrency review follows the full call chain and counts native drains per user operation; it does not stop after classifying method names.
+The retained resize wait demonstrates the review rule: a global drain was replaced by the narrow completion condition actually required by swap-chain recreation. Wrapper names alone do not establish legitimacy; the call chain, owner, waited token, and frequency do.
 
-This ledger is a verified starting snapshot, not permission to ignore later discoveries. Prompt 00 must regenerate the search from the then-current repository and append any new item before implementation begins. Prompt 22 must drive the ledger to zero **unclassified** primitives; it must not drive the repository to zero mutexes or atomics. The quality target is zero accidental ownership, zero duplicate scheduling systems, zero unexplained blocking, and zero lock-held arbitrary callbacks.
+This ledger is a verified closure snapshot, not permission to ignore later discoveries. Later work must keep zero **unclassified** primitives; it must not force the repository to zero justified mutexes or atomics. The quality target is zero accidental ownership, zero duplicate scheduling systems, zero unexplained blocking, and zero lock-held arbitrary callbacks.
 
 ### Lock and Wait Review Standard
 
@@ -557,7 +583,7 @@ For every retained or introduced critical section, the implementing prompt must 
 5. Is the data better expressed as single-owner state, immutable publication, per-worker storage, deterministic merge, or a completion token?
 6. What contention, re-entry, cancellation, shutdown, and failure test would falsify the design?
 
-A mutex is not automatically legacy debt, and lock-free code is not automatically higher quality. `VulkanCommandQueue` external synchronization and validation-callback ingestion are examples of legitimate boundaries. The InputSystem callback-under-lock and a shared atomic upload bump pointer on a future recording hot path are examples that require architectural correction. The deciding questions are ownership, lifetime, blocking, and measured contention.
+A mutex is not automatically legacy debt, and lock-free code is not automatically higher quality. Validation-callback ingestion and persistent allocator bookkeeping are legitimate boundaries when their critical sections remain private and bounded. The deleted Input callback-under-lock path and deleted shared recording-hot upload bump pointer remain examples of synchronization that hid the wrong ownership. The deciding questions are ownership, lifetime, blocking, and measured contention.
 
 ### Required Repository Audit Query
 
@@ -573,15 +599,15 @@ TaskExecutor|TaskScope|TaskEvent|ParallelFor|BlockingIo
 
 Every hit is assigned a ledger ID, owner, disposition, target prompt, and evidence. Generated, build, external, and third-party trees may be excluded from the ownership ledger, but wrapped third-party behavior and internal worker counts remain part of oversubscription and shutdown analysis.
 
-### The Most Important Correctness Finding
+### The Most Important Correctness Finding and Closure
 
-The current GameSceneSnapshot looks detached because it owns vectors, but MeshInstanceSnapshot carries a raw const Mesh pointer. The renderer also reaches GameScene through RendererSystemRoot for diagnostics and coordinates scene invalidation through direct event callbacks.
+At the program baseline, `GameSceneSnapshot` looked detached because it owned vectors, but `MeshInstanceSnapshot` carried a raw `const Mesh*`. The renderer also reached `GameScene` through `RendererSystemRoot` for diagnostics and coordinated scene invalidation through direct event callbacks.
 
-That means a dedicated render thread cannot safely be introduced by simply moving Renderer::OnRender to another thread. The game could unload or mutate the pointed-to mesh while the renderer is consuming it. A mutex around GameScene would serialize the two systems and make frame latency unpredictable. The boundary must use stable asset handles, immutable asset ownership, and render-owned proxies.
+That baseline could not safely move `Renderer::OnRender` to another thread: the game could unload or mutate a pointed-to mesh while the renderer consumed it, while a world mutex would serialize the pipeline and make frame latency unpredictable. Prompts 12-16 closed the finding with owned `RenderInputFrame` packets, stable immutable handles, separate `RenderObjectId`, render-owned proxies, sequenced scene reset, and submission-token retirement. The snapshot/raw-pointer/direct-callback path is deleted.
 
-### The Most Important Performance Finding
+### The Most Important Performance Finding and Closure
 
-The current renderer repeatedly transforms a full scene snapshot into full render arrays and creates/uploads structured GPU data every frame. This makes CPU work and upload traffic proportional to the whole scene even when only camera and transforms changed.
+At the program baseline, the renderer repeatedly transformed a full scene snapshot into full render arrays and created/uploaded structured GPU data every frame. This made CPU work and upload traffic proportional to the whole scene even when only camera and transforms changed. Prompt 15 replaced the product path with persistent render/GPU-scene slots, dirty range plans, bounded uploads, and token retirement; Prompt 17 decomposed retained preparation work into the explicit SparkleTasks DAG.
 
 The primary optimization is therefore not “parallelize the rebuild.” It is:
 
@@ -898,7 +924,7 @@ Do not confuse a migration boundary with a destination abstraction. After Prompt
 
 ### What “scene” means in the final engine
 
-Production engines do not eliminate scene/world classes; they give each one an unambiguous ownership domain. Unreal's `UWorld` is the top-level gameplay sandbox and its Mass entity subsystem hosts the entity manager for that world. AMD Cauldron's `Scene` is explicitly the graphics framework's scene representation and includes current-camera/render information. NVIDIA Donut similarly distinguishes engine scene data from application camera behavior. Before Prompt 08, Sparkle used `GameScene`, private `SceneWorld`, numerous `Scene*` containers, `GameSceneSnapshot`, and Renderer `RenderScene*` simultaneously. Prompt 08 removed the two competing owner names; remaining `Scene*` facades and `GameWorldSnapshot` are explicitly time-bounded bridges.
+Production engines do not eliminate scene/world classes; they give each one an unambiguous ownership domain. Unreal's `UWorld` is the top-level gameplay sandbox and its Mass entity subsystem hosts the entity manager for that world. AMD Cauldron's `Scene` is explicitly the graphics framework's scene representation and includes current-camera/render information. NVIDIA Donut similarly distinguishes engine scene data from application camera behavior. Before Prompt 08, Sparkle used `GameScene`, private `SceneWorld`, numerous `Scene*` containers, `GameSceneSnapshot`, and Renderer `RenderScene*` simultaneously. Prompt 08 removed the two competing owner names and time-bounded the remaining facades; Prompts 10-12 subsequently deleted the controller, snapshot, raw-pointer, and renderer-world bridges after their narrow replacements landed.
 
 The final Sparkle vocabulary is therefore:
 
@@ -2413,7 +2439,7 @@ struct RenderFramePacket
     RenderWorldDelta worldDelta;
     RenderFrameDynamicData dynamic;
     ViewFamilyPacket views;
-    EditorRenderPacket editor;
+    UiRenderPacket ui;
 };
 ~~~
 
@@ -4198,7 +4224,7 @@ Work:
 6. Save reference images and deterministic scene/camera scripts.
 7. Record the preservation baseline for classic TLAS, PTLAS, native reservoir lighting, reference path mode, temporal/providers, screenshot capture, shader packages, the existing multi-level/content workflow, and both backends; record the curated-level/optional-pack target as a gap rather than implying it already exists.
 8. Audit current public observation APIs and default reports/artifacts so later stages have explicit deletion targets.
-9. Regenerate LC-01 through LC-18 from all owned Engine/Tools/Projects concurrency hits. Record owner, invariant, affinity/blocking/lifetime policy, disposition, closing stage/prompt, and falsifying test; count nested native GPU drains per top-level operation.
+9. Regenerate the complete current LC ledger from all owned Engine/Tools/Projects concurrency hits. Record owner, invariant, affinity/blocking/lifetime policy, disposition, closing stage/prompt, and falsifying test; count nested native GPU drains per top-level operation.
 10. Produce the canonical naming ledger from the vocabulary section. Search symbols, filenames, CMake, tests, comments, profiler labels, and thread labels for both canonical terms and semantic aliases; assign every conflict **keep**, **rename in exact owning prompt**, or **delete as alias**. Do not rename unrelated established code in this baseline stage.
 
 Exit criteria:
@@ -4453,7 +4479,7 @@ Work:
 1. Move RendererSystemRoot, FramePipeline, RHI creation/destruction, submission, and present to RenderThread.
 2. Add bounded `RenderFrameQueue` slots with clear publication/reuse transitions.
 3. Add sequenced render commands for resize, settings, capture, shader generation, and shutdown.
-4. Copy/convert ImGui draw output into EditorRenderPacket.
+4. Copy/convert ImGui draw output into `UiRenderPacket`.
 5. Migrate only required editor consumers to narrow immutable product results and delete broader observation routes made redundant by the thread boundary.
 6. Implement threaded one-ahead, threaded zero-ahead, and serial-consumer modes.
 7. Move screenshot/readback requests, presentation, and external provider calls through sequenced render-thread ownership.
@@ -4628,7 +4654,7 @@ Work:
 2. Consolidate task, frame-graph, GPU-scene, upload, and retirement evidence into existing profiler/allocator hooks and delete superseded diagnostic snapshots or reports.
 3. Finish deterministic transactional cook publication.
 4. Route cancellation and progress through the existing owned tool workflow; do not add a renderer/task diagnostic panel.
-5. Audit every remaining standard/Qt/native thread, mutex, atomic, future, wait/detach, callback registry, queue/allocator lock, and `WaitForIdle` call site; reconcile LC-01 through LC-18 and all later discoveries to zero unclassified mechanisms.
+5. Audit every remaining standard/Qt/native thread, mutex, atomic, future, wait/detach, callback registry, queue/allocator lock, and `WaitForIdle` call site; reconcile the complete current LC ledger and all later discoveries to zero unclassified mechanisms.
 6. Remove legacy host-render and snapshot paths.
 7. Make asset cooking/package fan-out start from project catalogs, preserve the curated in-repo level set, and support optional heavyweight content packs.
 8. Keep only owned build/cook/run/clean/package/inspection launcher paths; delete diagnostic or package variants without consumers.
@@ -5593,11 +5619,14 @@ Approve the architecture as one program with three non-negotiable ordering rules
 
 Sparkle already has the rendering abstractions and explicit GPU scheduling needed to make this credible. The pivotal step is to turn implicit serial ordering into explicit ownership, generations, dependencies, and retirement—and then show, with serial equivalence and measurements, that the resulting concurrency is both correct and useful.
 
-## Prompt 00 Verified Before-State and Invariants (2026-07-18)
+## Historical Prompt 00 Verified Before-State and Invariants (2026-07-18)
 
-This is the evidence gate for every later prompt. It records the tree as inspected for Prompt 00; it is not a claim that the target architecture exists. Owned search roots were `Engine`, `Tools`, and `Projects`; generated, build, `External`, and `ThirdParty` trees were excluded from ownership while wrapped SDK behavior remains listed. Governing requirements A, E, G, H, this document, and Prompt 00 in K were re-read before changing code.
+This records the tree as inspected for Prompt 00 and is retained as historical source trace. It is not present-state completion
+evidence and does not override the current-state acceptance rule in K and L. Owned search roots were `Engine`, `Tools`, and
+`Projects`; generated, build, `External`, and `ThirdParty` trees were excluded from ownership while wrapped SDK behavior remains
+listed. Governing requirements A, E, G, H, this document, and Prompt 00 in K were re-read before changing code.
 
-### Current serial ownership and frame order
+### Serial ownership and frame order captured at Prompt 00
 
 There is no render thread or engine task executor. `RunRuntimeApplication` labels and uses `Sparkle.GameThread`; `RunEditorApplication` labels and uses `Sparkle.EditorThread`. On that same host thread:
 
@@ -5647,83 +5676,6 @@ Task controls live in the dedicated private `Concurrency/TaskRuntimeCVars.cpp` s
 | `r.RenderPipelineDepth` | `0` | Prompt 13; initially only synchronous 0 and bounded-ahead 1 |
 
 Accepted spellings are `--cvar=name=value`, `--cvar name=value`, and `--set-cvar name=value`. Switch spelling is case-insensitive; registry names are canonical and case-sensitive. Invalid/unknown assignments leave values unchanged. There is no shipping UI or persisted setting.
-
-### Regenerated owned-concurrency ledger
-
-The current exhaustive search reconfirmed LC-01 through LC-18 and found no second task runtime. New `std::thread::id` fields and `SetThreadDescription` calls are affinity evidence, not schedulers. Qt string/list `.join()` hits are semantic false positives.
-
-| IDs / current paths and users | Owner, invariant, blocking/affinity/lifetime policy | Disposition, closing prompt, falsifier |
-|---|---|---|
-| LC-01 `ShaderRecookCoordinator.{h,cpp}`: scoped task execution plus editor update/reload | shared `ApplicationTaskRuntime` owns Background/BlockingIo work; an AssetGeneration child scope owns recook lifetime; editor owner accepts request/publication generations | Prompt 09 deleted the private recook executor; tokenized reload/idle removal Prompt 16; destroy/cancel/stale publication and zero idle audit |
-| LC-02 launcher `LauncherBackend` plus private operation mapping/execution | bounded host executor owns operations; Qt UI stays GUI-owner; queued immutable messages close cross-thread delivery | Prompt 04 closed operation QThreads; Prompt 22 repeats cancel/close/restart and Qt affinity checks |
-| LC-03 Core `ChildProcessWindows.cpp` through launcher `ProcessRunner` | BlockingIo caller owns child job, descendants, overlapped pipe, cancellation event, and result; no reader thread/polling/atomic cancel family | Prompt 04 closed; Prompt 27 hardens launch/read/exit faults and worker-stack policy |
-| LC-04 `AssetCookerToolProcess.cpp` through Core child process | CLI host may call synchronously; scheduled caller must use BlockingIo; event/cancel wait is not an uninterruptible native wait | Prompt 04 closed mechanism; Prompt 27 call graph and cancellation equivalence remain falsifiers |
-| LC-05 `InputSystem.{h,cpp}` callback mutex | protects callback vectors, but callback executes while held; self-unsubscribe reacquires same mutex | known failure; Prompt 03 chooses owner/snapshot policy, Prompt 22 closes; watchdog re-entry test |
-| LC-06 `Logger.cpp`: registry/sink mutexes and level/initialized atomics | Core logging owns cross-thread state; release/acquire publishes initialization, relaxed level is independent | keep/harden Prompt 24; concurrent init/get/set/shutdown and lock-scope audit |
-| LC-07 `Timer.{h,cpp}` relaxed pause atomic | communicates only pause value; publishes no adjacent timer state | prove/remove Prompt 24; writer/reader call graph and independent-flag test |
-| LC-08 `StreamlineRuntimeSupport.cpp` global mutex | lifecycle/render owner should own state; external Streamline calls currently occur under lock | narrow/owner Prompts 13/16/28; SDK re-entry, failure/shutdown and lock-held-call audit |
-| LC-09 D3D12 `CommandQueue.{h,cpp}` submission/CPU-wait mutexes and events | serializes native submit/fence state and host waits; infinite waits only at reuse/flush/shutdown | owner-only Prompts 13/18, tokens Prompt 16; wrong-thread submit and delayed/hung GPU tests |
-| LC-10 Vulkan `CommandQueue.{h,cpp}` native queue mutex/timeline wait | Vulkan external synchronization is legitimate; coordinator remains sole engine submit/present authority | keep/narrow Prompts 13/19/28; validation and provider-sharing tests |
-| LC-11 D3D12 `DescriptorAllocator.{h,cpp}` mutex | protects persistent allocation/free; cannot become recording-hot shared allocation | keep persistent/split transient Prompt 18; contention and reset-before-token tests |
-| LC-12 Vulkan `DescriptorAllocator.{h,cpp}` mutex | registry/write/retire/recycle share one lock; serial owner masks lifetime partitions | split Prompt 19; pool validation, stale handle, no hot lock-held native update |
-| LC-13 D3D12 `LinearAllocator.{h,cpp}` offset/high-water atomics | CAS owns unique ranges; relaxed high-water is diagnostic; GPU-safe reset is external | local leases/token reset Prompt 18, memory-order audit Prompt 24; overlap/contention/delayed-GPU tests |
-| LC-14 D3D12/Vulkan `GpuMemoryAllocator.cpp` record mutexes | allocator owns records/pending release/diagnostics; no callback/destruction under record lock | keep/harden Prompts 16/18/19/24; delayed GPU and diagnostic re-entry stress |
-| LC-15 `VulkanRhi.{h,cpp}` diagnostics mutex | concurrent driver callback appends owned messages; owner drains | keep/harden Prompt 24; bounded callback/drain and no re-entry under lock |
-| LC-16 every renderer/RHI `WaitForIdle` | classified individually below; wrappers are mechanisms, never reasons | remove data-path waits Prompts 13-16, teardown Prompt 22; native idle-call counter/call-chain test |
-| LC-17 launcher shadow/product `startDetached` | generation-specific replacement launcher and selected runtime/editor intentionally outlive the current launcher; no timed handoff remains | Prompt 04 timing path closed; Prompt 22 restart/close stress and explicit independent-lifetime audit |
-| LC-18 D3D12 fence and Vulkan timeline/device waits | host/frame-slot owner may block only for reuse/flush/shutdown; never future task worker | Prompts 13/18/19/28; delayed/hung GPU and worker-stack audit |
-
-Wrapped third-party concurrency is capacity, not Sparkle ownership: DXC/Slang, Compressonator/texture codecs, Assimp/importers, Streamline/NGX/provider callbacks, drivers, and Qt may create workers. Prompts 24/25/27 capture total runnable threads, bound outer concurrency, and prevent N outer tasks spawning uncontrolled inner pools.
-
-### Lock-order and callback-under-lock record
-
-| Boundary | Current order/finding | Closing rule/evidence |
-|---|---|---|
-| Input | `m_CallbackMutex -> arbitrary callback`; self-unsubscribe attempts the same non-recursive mutex | Prompt 03 snapshot/invoke or owner-only; watchdog is falsifier |
-| Logger | registry mutex protects logger state; each sink has its own mutex | Prompt 24 keeps them non-nested and stresses initialization/sinks; logging is not a scheduled task |
-| Streamline | `g_streamlineMutex -> sl::*` external calls | treat external call as re-entry capable; Prompts 13/28 use two-phase transition or prove boundary |
-| D3D12 queue | separate submission and CPU-wait mutexes; native wait must not hold unrelated locks | coordinator submit Prompt 13; wait/lock/hang proof Prompt 18/28 |
-| Vulkan queue | `SubmissionMutex -> vkQueueSubmit/vkQueuePresent` for external synchronization | retain only native/provider sharing; Prompt 19 native validation |
-| Descriptor allocators | allocator mutex protects persistent maps/pools; Vulkan native update may extend scope | Prompts 18/19 split recording-hot transient ownership and audit native calls |
-| GPU allocation records | record mutex protects diagnostic/release collections | copy/swap under lock, process/destroy after unlock; Prompt 24 re-entry test |
-| Vulkan diagnostics | driver callback logs separately then locks message append; owner drains under same mutex | Prompt 24 bounds ingestion and proves no driver callback/re-entry while locked |
-| D3D12 linear allocator | CAS allocates disjoint offsets; relaxed high-water is diagnostic; reset lacks GPU token | Prompt 18 lease/token, Prompt 24 memory-order proof |
-
-Until Prompt 24 publishes a formal total order: do not nest unrelated locks; do not wait, invoke callbacks, log, destroy owners, or call providers/drivers while an engine lock is held unless the ledger proves that native boundary.
-
-Direct lifecycle callback inventory is also explicit: `SceneRenderStateCoordinator` subscribes raw-`this` callbacks to level-will-unload/changed and immediately mutates renderer state, including an idle wait; Prompts 12/13/15 replace this with owner-sequenced `SceneGeneration` commands and a destruction-before-dispatch test. `FramePipeline` subscribes raw `this` to window resize and sets a pending flag; Prompt 13 makes resize an owner command and tests callback-versus-destruction. `RuntimeConsoleOverlay`, `InputSystem`, and `GameCameraController` subscribe raw `this` to window/input events and retain `ScopedEventHandle` cleanup; Prompts 03/22 prove owner affinity, unsubscribe-before-destruction, and re-entry. No callback lifetime is considered safe merely because current serial shutdown order happens to remove its handle first.
-
-### Complete current idle/wait call-site ledger
-
-| Concrete call site | Classification/nested path | Single owner and exact replacement |
-|---|---|---|
-| shader recook `ReloadCookedShaders -> Renderer::WaitForIdle` | ordinary reload **data-path debt** | generation swap, Prompt 16 |
-| `SceneRenderStateCoordinator::InvalidateSceneScopedRendererState` | level-change **data-path debt** | scene-generation command/retirement, Prompts 13/15/16 |
-| `RendererSystemRoot::~RendererSystemRoot` | shutdown, duplicated by children | one coordinator final drain, Prompt 22 |
-| `RendererSystemRoot::PostLoad -> CloseExecuteAndFlushCurrentFrame` | initialization/upload boundary | coordinator settles exact initial tokens, Prompt 13/16 |
-| `RendererSystemRoot::RefreshImageProviders` | provider refresh rare boundary/data debt | provider-generation transition, Prompt 16/28 |
-| `FramePipeline::RefreshFrameExecution` | resize/settings data debt | frame-execution generation retirement, Prompt 16 |
-| FramePipeline pending-resize pre-drain | duplicate; calls refresh which drains again | delete duplicate; coordinator resize, Prompt 13/16 |
-| D3D12 services destructor -> RHI -> each queue | layered shutdown; native event wait per queue | top-level final drain, Prompt 22; queue wait remains private |
-| D3D12 services/RHI/HRI `WaitForIdle` | wrapper mechanism | private coordinator operation, Prompt 13/16 |
-| D3D12 `CloseExecuteAndFlushCurrentFrame` | explicit host/debug boundary | coordinator/token reason, Prompt 13/16 |
-| D3D12 ImGui shutdown wait | child teardown duplicate | parent proves completion, Prompt 22 |
-| D3D12 frame-resource begin-frame fence wait | legitimate frame-slot reuse | wait exact slot token, Prompt 18/28 |
-| D3D12 queue fence/idle wait | native host mechanism | reuse/flush/shutdown only with timeout, Prompt 28 |
-| Vulkan RHI destructor -> `vkDeviceWaitIdle` | shutdown duplicated by services/context/UI | one top-level final drain, Prompt 22 |
-| Vulkan services destructor | layered shutdown duplicate | remove after parent proof, Prompt 22 |
-| Vulkan services/RHI/HRI idle forwarders | wrapper mechanism | private coordinator operation, Prompt 13/16 |
-| Vulkan services resize wait | nested resize drain | delete; coordinator transition, Prompt 13/16/19 |
-| Vulkan swap-chain destructor wait | child shutdown drain | parent completion proof, Prompt 22 |
-| Vulkan swap-chain resize wait | second nested resize drain | delete, then image/token completion, Prompt 16/19 |
-| Vulkan command-context destructor wait | child shutdown drain | context retirement proof, Prompt 19/22 |
-| Vulkan ImGui shutdown wait | child teardown drain | parent completion proof, Prompt 22 |
-| Vulkan close/execute/flush wait | explicit host/debug boundary | coordinator/token reason, Prompt 13/16 |
-| Vulkan timeline wait | queue completion/frame-slot mechanism, not device idle | reuse boundary plus timeout, Prompt 19/28 |
-| AssetCooker child process | synchronous outer tool adapter or scheduled BlockingIo call | shared event-driven Core process contract; Prompt 04 closed, Prompt 27 fault stress |
-| launcher/editor process execution | scoped BlockingIo completion and stop-token cancellation | reader thread/polling path deleted in Prompt 04; Prompt 27 fault stress |
-
-One Vulkan resize can traverse several defensive drains. The replacement gate counts native idle calls per operation; deleting a wrapper without deleting nested native drains fails.
 
 ### Reproducible baseline workload matrix
 

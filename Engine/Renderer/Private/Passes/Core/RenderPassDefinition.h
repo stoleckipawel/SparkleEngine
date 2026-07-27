@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHI/Public/Pipeline/RhiPipelineStateDesc.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 enum class RenderPassDefinitionPipelineKind
 {

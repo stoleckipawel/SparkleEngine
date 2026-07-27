@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Assets/Cooked/LoadedSceneManifest.h"
-#include "Assets/SceneAssetPayload.h"
+#include "Assets/Payload/SceneAssetPayloadMeshBindings.h"
 
+#include <span>
 #include <string>
 
 namespace Assets
@@ -12,6 +12,7 @@ namespace Assets
 	  public:
 		static bool AppendMaterialVariants(
 		    const LoadedSceneManifest& sceneManifest,
+		    std::span<const SceneAssetPayloadMeshBinding> meshAssetBindings,
 		    SceneAssetPayload& sceneAssetPayload,
 		    std::uint32_t materialBaseIndex,
 		    std::string& errorMessage);

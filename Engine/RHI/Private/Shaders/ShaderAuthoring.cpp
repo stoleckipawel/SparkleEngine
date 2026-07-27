@@ -6,6 +6,35 @@
 #include <sstream>
 #include <vector>
 
+std::string BuildShaderPackageIdFromSourcePath(std::string_view sourcePath)
+{
+	const std::size_t slash = sourcePath.find_last_of("/\\");
+	const std::string_view fileName = sourcePath.substr(slash == std::string_view::npos ? 0 : slash + 1);
+	const std::size_t dot = fileName.find_last_of('.');
+	return std::string(dot != std::string_view::npos && dot > 0 ? fileName.substr(0, dot) : fileName);
+}
+
+std::string GetShaderRegistrationPackageId(const ShaderRegistrationDesc& shader)
+{
+	if (!shader.PackageName.empty())
+	{
+		return std::string(shader.PackageName);
+	}
+
+	std::string packageId = BuildShaderPackageIdFromSourcePath(shader.SourcePath);
+	return packageId.empty() ? std::string(shader.ShaderName) : packageId;
+}
+
+std::string GetShaderRegistrationBindingLayoutId(const ShaderRegistrationDesc& shader)
+{
+	return shader.BindingLayoutId.empty() ? GetShaderRegistrationPackageId(shader) : std::string(shader.BindingLayoutId);
+}
+
+CookedShaderPackageKind GetDefaultCookedShaderPackageKind(ShaderStage stage) noexcept
+{
+	return stage == ShaderStage::Compute ? CookedShaderPackageKind::Compute : CookedShaderPackageKind::Graphics;
+}
+
 static std::vector<ShaderRegistrationDesc>& MutableGlobalShaderRegistrations()
 {
 	static std::vector<ShaderRegistrationDesc> registrations;

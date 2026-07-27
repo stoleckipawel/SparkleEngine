@@ -2,7 +2,7 @@
 #include "Frame/Lighting/ReferenceLightingSample.h"
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
 FrameGraphTextureHandle CreateReferenceLightingSample(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent)

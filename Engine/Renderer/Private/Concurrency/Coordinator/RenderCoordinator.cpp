@@ -65,8 +65,9 @@ void RenderCoordinator::StageRenderInput(RenderInputFrame input)
 	m_producerOwner.AssertAccess();
 	if (m_pendingInput)
 	{
-		return;
+		RenderFrame();
 	}
+
 	m_pendingInput = std::move(input);
 }
 

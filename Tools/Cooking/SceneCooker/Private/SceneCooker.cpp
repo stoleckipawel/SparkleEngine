@@ -22,7 +22,7 @@
 #include <fstream>
 #include <optional>
 
-class SceneCookerOperations final
+class SceneCookPipeline final
 {
   public:
 	static void ResetManifest(CookedSceneBuild& build);
@@ -49,7 +49,7 @@ class SceneCookerOperations final
 	    std::string& outErrorMessage);
 };
 
-void SceneCookerOperations::ResetManifest(CookedSceneBuild& build)
+void SceneCookPipeline::ResetManifest(CookedSceneBuild& build)
 {
 	build.manifest.instances.clear();
 	build.manifest.instanceGroups.clear();
@@ -58,7 +58,7 @@ void SceneCookerOperations::ResetManifest(CookedSceneBuild& build)
 	build.manifest.materialVariantMappings.clear();
 }
 
-void SceneCookerOperations::FinalizeManifestHeader(
+void SceneCookPipeline::FinalizeManifestHeader(
     CookedSceneBuild& build) noexcept
 {
 	Assets::CookedSceneManifestHeader& header = build.manifest.header;
@@ -92,7 +92,7 @@ bool SceneCooker::ResolveSceneIdentity(
     std::string& outErrorMessage)
 {
 	std::filesystem::path resolvedSourceScenePath;
-	if (!SceneCookerOperations::ResolveSourceScenePath(
+	if (!SceneCookPipeline::ResolveSourceScenePath(
 	        sourceScenePath,
 	        resolvedSourceScenePath,
 	        outErrorMessage))
@@ -100,7 +100,7 @@ bool SceneCooker::ResolveSceneIdentity(
 		return false;
 	}
 
-	if (!SceneCookerOperations::BuildSceneAssetId(
+	if (!SceneCookPipeline::BuildSceneAssetId(
 	        resolvedSourceScenePath,
 	        outIdentity.assetId,
 	        outErrorMessage))
@@ -118,7 +118,7 @@ bool SceneCooker::BuildManifest(
     CookedSceneBuild& outBuild,
     std::string& outErrorMessage)
 {
-	SceneCookerOperations::ResetManifest(outBuild);
+	SceneCookPipeline::ResetManifest(outBuild);
 
 	CookedSceneSkeletonBuilder::BuildSkeletons(importResult, outBuild.identity.assetId, outBuild);
 	CookedAnimationAssetBuilder::Build(importResult, outBuild.identity.assetId, outBuild);
@@ -136,7 +136,7 @@ bool SceneCooker::BuildManifest(
 	CookedSceneLightBuilder::BuildLights(importResult, outBuild);
 	CookedSceneMetadataBuilder::BuildMetadata(importResult, outBuild);
 
-	SceneCookerOperations::FinalizeManifestHeader(outBuild);
+	SceneCookPipeline::FinalizeManifestHeader(outBuild);
 	outErrorMessage.clear();
 	return true;
 }
@@ -148,7 +148,7 @@ bool SceneCooker::StageManifestsAndRegistry(
 {
 	for (const CookedSceneBuild* build : builds)
 	{
-		if (!SceneCookerOperations::StageManifest(
+		if (!SceneCookPipeline::StageManifest(
 		        *build,
 		        outPublication,
 		        outErrorMessage))
@@ -157,13 +157,13 @@ bool SceneCooker::StageManifestsAndRegistry(
 		}
 	}
 
-	return SceneCookerOperations::StageRegistry(
+	return SceneCookPipeline::StageRegistry(
 	    builds,
 	    outPublication,
 	    outErrorMessage);
 }
 
-bool SceneCookerOperations::StageManifest(
+bool SceneCookPipeline::StageManifest(
     const CookedSceneBuild& build,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
@@ -205,7 +205,7 @@ bool SceneCookerOperations::StageManifest(
 	return true;
 }
 
-bool SceneCookerOperations::ResolveSourceScenePath(
+bool SceneCookPipeline::ResolveSourceScenePath(
     const std::filesystem::path& sourceScenePath,
     std::filesystem::path& outResolvedPath,
     std::string& outErrorMessage)
@@ -221,7 +221,7 @@ bool SceneCookerOperations::ResolveSourceScenePath(
 	return false;
 }
 
-bool SceneCookerOperations::BuildSceneAssetId(
+bool SceneCookPipeline::BuildSceneAssetId(
     const std::filesystem::path& resolvedSourceScenePath,
     std::string& outSceneAssetId,
     std::string& outErrorMessage)
@@ -250,7 +250,7 @@ bool SceneCookerOperations::BuildSceneAssetId(
 	return true;
 }
 
-bool SceneCookerOperations::StageRegistry(
+bool SceneCookPipeline::StageRegistry(
     std::span<const CookedSceneBuild* const> builds,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
@@ -292,7 +292,7 @@ bool SceneCookerOperations::StageRegistry(
 	return true;
 }
 
-bool SceneCookerOperations::ResolveManifestRelativePath(
+bool SceneCookPipeline::ResolveManifestRelativePath(
     const CookedSceneBuild& build,
     std::filesystem::path& outRelativePath,
     std::string& outErrorMessage)

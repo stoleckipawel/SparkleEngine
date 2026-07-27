@@ -174,6 +174,11 @@ void Window::SetFullScreen(bool bFullScreen)
 	}
 }
 
+bool Window::HasValidSize() const noexcept
+{
+	return GetWidth() > 0 && GetHeight() > 0;
+}
+
 void Window::ToggleFullScreen()
 {
 	SetFullScreen(!IsFullScreen());

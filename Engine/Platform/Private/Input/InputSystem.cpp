@@ -12,38 +12,34 @@
 #include <cstdio>
 #include <utility>
 
-class InputSystemImplementation final
+class InputDeferredEventProcessingGuard final
 {
   public:
-	class DeferredEventProcessingGuard final
+	explicit InputDeferredEventProcessingGuard(bool& isProcessing) noexcept : m_isProcessing(isProcessing)
 	{
-	  public:
-		explicit DeferredEventProcessingGuard(bool& isProcessing) noexcept : m_isProcessing(isProcessing)
+		if (!m_isProcessing)
 		{
-			if (!m_isProcessing)
-			{
-				m_isProcessing = true;
-				m_didBegin = true;
-			}
+			m_isProcessing = true;
+			m_didBegin = true;
 		}
+	}
 
-		~DeferredEventProcessingGuard()
+	~InputDeferredEventProcessingGuard()
+	{
+		if (m_didBegin)
 		{
-			if (m_didBegin)
-			{
-				m_isProcessing = false;
-			}
+			m_isProcessing = false;
 		}
+	}
 
-		DeferredEventProcessingGuard(const DeferredEventProcessingGuard&) = delete;
-		DeferredEventProcessingGuard& operator=(const DeferredEventProcessingGuard&) = delete;
+	InputDeferredEventProcessingGuard(const InputDeferredEventProcessingGuard&) = delete;
+	InputDeferredEventProcessingGuard& operator=(const InputDeferredEventProcessingGuard&) = delete;
 
-		explicit operator bool() const noexcept { return m_didBegin; }
+	explicit operator bool() const noexcept { return m_didBegin; }
 
-	  private:
-		bool& m_isProcessing;
-		bool m_didBegin = false;
-	};
+  private:
+	bool& m_isProcessing;
+	bool m_didBegin = false;
 };
 
 std::unique_ptr<InputSystem> InputSystem::Create()
@@ -85,7 +81,7 @@ void InputSystem::BeginFrame()
 void InputSystem::ProcessDeferredEvents()
 {
 	m_OwnerThread.AssertAccess();
-	const InputSystemImplementation::DeferredEventProcessingGuard processing(m_bIsProcessingDeferredEvents);
+	const InputDeferredEventProcessingGuard processing(m_bIsProcessingDeferredEvents);
 	if (!processing)
 	{
 		return;

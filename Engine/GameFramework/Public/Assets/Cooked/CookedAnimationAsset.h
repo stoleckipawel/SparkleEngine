@@ -10,7 +10,7 @@
 
 namespace Assets
 {
-	inline constexpr std::uint32_t kCookedAnimationAssetMagic = MakeCookedAssetMagic('S', 'A', 'N', 'M');
+	inline constexpr std::uint32_t kCookedAnimationAssetMagic = 0x4D4E4153u;
 	inline constexpr std::uint32_t kCookedAnimationAssetVersion = 1;
 	inline constexpr std::uint32_t kInvalidCookedAnimationJointIndex = (std::numeric_limits<std::uint32_t>::max)();
 
@@ -64,5 +64,9 @@ namespace Assets
 }
 
 static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationAssetHeader>, "CookedAnimationAssetHeader must stay trivially copyable.");
-static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationChannelRecord>, "CookedAnimationChannelRecord must stay trivially copyable.");
-static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationKeyframeRecord>, "CookedAnimationKeyframeRecord must stay trivially copyable.");
+static_assert(
+    std::is_trivially_copyable_v<Assets::CookedAnimationChannelRecord>,
+    "CookedAnimationChannelRecord must stay trivially copyable.");
+static_assert(
+    std::is_trivially_copyable_v<Assets::CookedAnimationKeyframeRecord>,
+    "CookedAnimationKeyframeRecord must stay trivially copyable.");

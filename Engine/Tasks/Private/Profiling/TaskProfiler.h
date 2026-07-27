@@ -5,21 +5,25 @@
 #include <chrono>
 #include <cstdint>
 
-namespace TaskDetail
+class TaskProfiler final
 {
-	using TaskProfileTimePoint = std::chrono::steady_clock::time_point;
+  public:
+	using TimePoint = std::chrono::steady_clock::time_point;
 
-	void RecordTaskDependency(std::uint64_t generation, std::uint32_t prerequisite, std::uint32_t dependent) noexcept;
-	TaskProfileTimePoint BeginTaskProfile(
+	static void RecordDependency(
+	    std::uint64_t generation,
+	    std::uint32_t prerequisite,
+	    std::uint32_t dependent) noexcept;
+	static TimePoint Begin(
 	    const TaskDesc& desc,
 	    std::uint64_t generation,
 	    std::uint32_t taskIndex,
 	    std::uint32_t laneWorkerIndex) noexcept;
-	void EndTaskProfile(
+	static void End(
 	    const TaskDesc& desc,
 	    std::uint64_t generation,
 	    std::uint32_t taskIndex,
 	    std::uint32_t laneWorkerIndex,
 	    const TaskResult& result,
-	    TaskProfileTimePoint start) noexcept;
-}
+	    TimePoint start) noexcept;
+};

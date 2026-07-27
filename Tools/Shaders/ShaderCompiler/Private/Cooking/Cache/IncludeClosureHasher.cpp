@@ -13,11 +13,11 @@
 #include <sstream>
 
 bool IncludeClosureHasher::VisitFile(
-	const std::filesystem::path& filePath,
-	const ShaderCompileOptions& options,
-	std::unordered_set<std::wstring>& visitedPathKeys,
-	std::vector<HashPair>& outFileHashes,
-	std::string& outErrorMessage)
+    const std::filesystem::path& filePath,
+    const ShaderCompileOptions& options,
+    std::unordered_set<std::wstring>& visitedPathKeys,
+    std::vector<HashPair>& outFileHashes,
+    std::string& outErrorMessage)
 {
 	const std::filesystem::path normalizedPath = Paths::Normalize(filePath);
 	const std::wstring pathKey = ShaderIncludeResolver::MakeResolvedPathKey(normalizedPath);
@@ -30,9 +30,9 @@ bool IncludeClosureHasher::VisitFile(
 	if (!Files::TryReadAllBytes(normalizedPath, bytes, outErrorMessage))
 	{
 		outErrorMessage = std::format(
-			"Failed to read shader source '{}' while computing include closure - {}",
-			normalizedPath.string(),
-			outErrorMessage);
+		    "Failed to read shader source '{}' while computing include closure - {}",
+		    normalizedPath.string(),
+		    outErrorMessage);
 		return false;
 	}
 
@@ -56,9 +56,9 @@ bool IncludeClosureHasher::VisitFile(
 		if (!resolvedIncludePath)
 		{
 			outErrorMessage = std::format(
-				"Failed to resolve include '{}' referenced from '{}'",
-				includeSpec,
-				normalizedPath.string());
+			    "Failed to resolve include '{}' referenced from '{}'",
+			    includeSpec,
+			    normalizedPath.string());
 			return false;
 		}
 
@@ -88,41 +88,51 @@ IncludeClosureHashResult IncludeClosureHasher::Compute(const ShaderCompileOption
 		return result;
 	}
 
+	result.includeClosureHash = ComputeClosureHash(fileHashes);
+	result.sourceHash = FindSourceHash(options.SourcePath, fileHashes);
+	return result;
+}
+
+std::uint64_t IncludeClosureHasher::ComputeClosureHash(
+    std::vector<HashPair>& fileHashes)
+{
 	std::sort(
-		fileHashes.begin(),
-		fileHashes.end(),
-		[](const HashPair& lhs, const HashPair& rhs)
-		{
-			return lhs.first < rhs.first;
-		});
+	    fileHashes.begin(),
+	    fileHashes.end(),
+	    [](const HashPair& lhs, const HashPair& rhs)
+	    {
+		    return lhs.first < rhs.first;
+	    });
 
 	std::string canonical;
 	canonical.reserve(fileHashes.size() * 64);
 	for (const auto& [path, hash] : fileHashes)
 	{
 		canonical.append(
-			reinterpret_cast<const char*>(path.data()),
-			path.size() * sizeof(std::wstring::value_type));
+		    reinterpret_cast<const char*>(path.data()),
+		    path.size() * sizeof(std::wstring::value_type));
 		canonical += '|';
 		canonical += std::to_string(hash);
 		canonical += ';';
 	}
 
-	result.includeClosureHash = Hash::Fnv1a64(canonical);
-	if (result.includeClosureHash == 0)
-	{
-		result.includeClosureHash = Hash::kFnv64OffsetBasis;
-	}
+	const std::uint64_t closureHash = Hash::Fnv1a64(canonical);
+	return closureHash == 0 ? Hash::kFnv64OffsetBasis : closureHash;
+}
 
-	const std::wstring sourcePathKey = ShaderIncludeResolver::MakeResolvedPathKey(options.SourcePath);
+std::uint64_t IncludeClosureHasher::FindSourceHash(
+    const std::filesystem::path& sourcePath,
+    const std::vector<HashPair>& fileHashes)
+{
+	const std::wstring sourcePathKey =
+	    ShaderIncludeResolver::MakeResolvedPathKey(sourcePath);
 	for (const auto& [path, hash] : fileHashes)
 	{
 		if (path == sourcePathKey)
 		{
-			result.sourceHash = hash;
-			break;
+			return hash;
 		}
 	}
 
-	return result;
+	return 0;
 }

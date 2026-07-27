@@ -2,39 +2,14 @@
 #include "Meshes/GPUMesh.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "Meshes/GPUMeshPreparation.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshData.h"
 
-#include <algorithm>
+#include <utility>
 
 static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GPUMesh");
-
-class GPUMeshOperations final
-{
-  public:
-	static GPUMeshBounds ComputeLocalBounds(const MeshData& meshData) noexcept
-	{
-		GPUMeshBounds bounds{};
-		for (const VertexData& vertex : meshData.vertices)
-		{
-			if (!bounds.Valid)
-			{
-				bounds.Min = vertex.position;
-				bounds.Max = vertex.position;
-				bounds.Valid = true;
-				continue;
-			}
-
-			bounds.Min.x = (std::min)(bounds.Min.x, vertex.position.x);
-			bounds.Min.y = (std::min)(bounds.Min.y, vertex.position.y);
-			bounds.Min.z = (std::min)(bounds.Min.z, vertex.position.z);
-			bounds.Max.x = (std::max)(bounds.Max.x, vertex.position.x);
-			bounds.Max.y = (std::max)(bounds.Max.y, vertex.position.y);
-			bounds.Max.z = (std::max)(bounds.Max.z, vertex.position.z);
-		}
-		return bounds;
-	}
-};
 
 GPUMesh::GPUMesh(GpuMeshHandle handle) noexcept :
 	m_handle(handle)
@@ -59,20 +34,17 @@ GPUMesh::~GPUMesh() noexcept
 	}
 }
 
-bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const MeshData& meshData)
+bool GPUMesh::Upload(
+    RenderHardwareInterface& renderHardwareInterface,
+    GPUMeshPreparedData preparedData)
 {
-	return Upload(renderHardwareInterface, GPUMeshUploadDesc{.meshData = meshData});
-}
-
-bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPUMeshUploadDesc& uploadDesc)
-{
-	const MeshData& meshData = uploadDesc.meshData;
-	if (!meshData.IsValid())
+	if (!preparedData.IsValid())
 	{
-		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Cannot upload invalid MeshData (empty vertices or indices)");
 		return false;
 	}
 
+	const MeshData& meshData =
+	    preparedData.Source.GetResource()->GetMeshData();
 	m_renderHardwareInterface = &renderHardwareInterface;
 	if (!m_renderHardwareInterface->GetResourceService().CreateVertexBuffer(
 	        meshData.GetVertexData(),
@@ -101,34 +73,28 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
-	m_localBounds = GPUMeshOperations::ComputeLocalBounds(meshData);
-	m_rayTracingHitVertices.clear();
-	m_rayTracingHitVertices.reserve(meshData.vertices.size());
-	for (const VertexData& vertex : meshData.vertices)
-	{
-		m_rayTracingHitVertices.push_back(
-		    RayTracingHitVertex{
-		        .Position = vertex.position,
-		        .Normal = vertex.normal,
-		        .Tangent = vertex.tangent,
-		        .TexCoord0 = vertex.uv});
-	}
-	m_rayTracingHitIndices.assign(meshData.indices.begin(), meshData.indices.end());
-	m_cpuSkinInfluences.clear();
-	if (uploadDesc.skinInfluences.size() == m_vertexCount)
-	{
-		m_cpuSkinInfluences.assign(uploadDesc.skinInfluences.begin(), uploadDesc.skinInfluences.end());
-	}
+	m_localBounds = GPUMeshBounds{
+	    .Min = preparedData.LocalBoundsMin,
+	    .Max = preparedData.LocalBoundsMax,
+	    .Valid = preparedData.HasLocalBounds};
+	m_rayTracingHitVertices =
+	    std::move(preparedData.RayTracingVertices);
+	m_rayTracingHitIndices =
+	    std::move(preparedData.RayTracingIndices);
+	m_cpuSkinInfluences =
+	    std::move(preparedData.SkinInfluences);
 
-	if (!m_skinInfluences.Upload(renderHardwareInterface, m_vertexCount, uploadDesc.skinInfluences))
+	if (!m_skinInfluences.Upload(
+	        renderHardwareInterface,
+	        preparedData.GpuSkinInfluences))
 	{
 		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create skin influence resources");
 		return false;
 	}
 	if (!m_morphTargets.Upload(
 	        renderHardwareInterface,
-	        m_vertexCount,
-	        uploadDesc.morphTargets))
+	        std::move(preparedData.MorphTargetDeltas),
+	        preparedData.MorphTargetCount))
 	{
 		return false;
 	}

@@ -12,6 +12,7 @@ class EditorOperationService;
 class GameWorld;
 class Renderer;
 class UI;
+struct EditorHostServices;
 
 class SPARKLE_APPLICATION_API EditorApplication final : public Application
 {
@@ -33,6 +34,9 @@ class SPARKLE_APPLICATION_API EditorApplication final : public Application
 	void InitializeRuntimeApplication();
 	void InitializeEditorOperations();
 	void InitializeUi();
+	EditorHostServices BuildUiHostServices(
+	    Renderer& renderer,
+	    GameWorld& world);
 	void ConfigureUiDiagnostics(Renderer& renderer);
 	void UpdateEditorOperations(Renderer& renderer);
 	void RenderEditorFrame(Renderer& renderer);

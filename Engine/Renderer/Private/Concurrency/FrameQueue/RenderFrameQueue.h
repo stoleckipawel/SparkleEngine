@@ -2,7 +2,6 @@
 
 #include "Concurrency/FrameQueue/RenderFramePacket.h"
 
-#include <atomic>
 #include <cstddef>
 #include <condition_variable>
 #include <cstdint>
@@ -52,13 +51,13 @@ class RenderFrameQueue final
   private:
 	struct Slot final
 	{
-		std::atomic<RenderFrameSlotState> State{RenderFrameSlotState::Free};
-		std::atomic<std::uint64_t> SequenceNumber{0};
+		RenderFrameSlotState State = RenderFrameSlotState::Free;
+		std::uint64_t SequenceNumber = 0;
 		std::optional<RenderFramePacket> Packet;
 	};
 
-	bool IsTicketCurrent(RenderFrameQueueTicket ticket) const noexcept;
-	std::optional<std::uint32_t> FindFreeSlot() const noexcept;
+	bool IsTicketCurrentLocked(RenderFrameQueueTicket ticket) const noexcept;
+	std::optional<std::uint32_t> FindFreeSlotLocked() const noexcept;
 
 	std::unique_ptr<Slot[]> m_slots;
 	std::uint32_t m_capacity = 0;

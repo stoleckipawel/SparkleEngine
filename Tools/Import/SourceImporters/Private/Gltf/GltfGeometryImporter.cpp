@@ -6,7 +6,7 @@
 #include "Gltf/GltfMeshInstanceAppender.h"
 #include "Gltf/GltfMeshInstancingImporter.h"
 #include "Gltf/GltfMorphTargetImporter.h"
-#include "Gltf/GltfNodeTransformUtils.h"
+#include "Gltf/GltfNodeTransformConverter.h"
 #include "Gltf/GltfPrimitiveMaterialResolver.h"
 #include "Gltf/GltfSkinImporter.h"
 
@@ -55,7 +55,7 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 			continue;
 		}
 
-		const DirectX::XMMATRIX worldTransform = GltfNodeTransformUtils::ComputeNodeWorldTransform(&node);
+		const DirectX::XMMATRIX worldTransform = GltfNodeTransformConverter::ComputeNodeWorldTransform(&node);
 		GltfMeshGpuInstancingTransforms meshGpuInstancingTransforms;
 		const std::string nodeLabel = node.name ? node.name : std::format("node {}", nodeIndex);
 		const bool hasMeshGpuInstancing = node.has_mesh_gpu_instancing && node.mesh_gpu_instancing.attributes_count > 0;

@@ -13,31 +13,29 @@ TaskResult RenderPreparationMerger::Merge(TaskExecutionContext& context)
 {
 	RenderPreparationRun& run = *context.TryGet<RenderPreparationRun>();
 
-	PublishDeformation(run);
 	RenderLightPreparation::Commit(run.PreparedLights, run.SceneData);
+	PublishObjects(run);
+	PublishBatches(run, run.RenderItems);
 
-	const std::vector<MeshRenderItem> renderItems = PublishObjects(run);
-	PublishBatches(run, renderItems);
-
-	PublishWorkload(run.SceneData);
 	return TaskResult::Success();
 }
 
-void RenderPreparationMerger::PublishDeformation(RenderPreparationRun& run)
+void RenderPreparationMerger::PublishFrameOutputs(RenderPreparationRun& run)
 {
-	run.SceneData.jointMatrices = run.Deformation.JointMatrices;
-	run.SceneData.previousJointMatrices = run.Deformation.PreviousJointMatrices;
-	run.SceneData.morphWeights = run.Deformation.MorphWeights;
-	run.SceneData.previousMorphWeights = run.Deformation.PreviousMorphWeights;
+	run.SceneData.jointMatrices = std::move(run.Deformation.JointMatrices);
+	run.SceneData.previousJointMatrices = std::move(run.Deformation.PreviousJointMatrices);
+	run.SceneData.morphWeights = std::move(run.Deformation.MorphWeights);
+	run.SceneData.previousMorphWeights = std::move(run.Deformation.PreviousMorphWeights);
+	PublishWorkload(run.SceneData);
 }
 
-std::vector<MeshRenderItem> RenderPreparationMerger::PublishObjects(RenderPreparationRun& run)
+void RenderPreparationMerger::PublishObjects(RenderPreparationRun& run)
 {
 	run.SceneData.meshInstances.reserve(run.PreparedObjects.size());
 	run.SceneData.meshWorldBounds.reserve(run.PreparedObjects.size());
 
-	std::vector<MeshRenderItem> renderItems;
-	renderItems.reserve(run.PreparedObjects.size());
+	run.RenderItems.clear();
+	run.RenderItems.reserve(run.PreparedObjects.size());
 
 	for (const PreparedRenderObject& object : run.PreparedObjects)
 	{
@@ -50,7 +48,7 @@ std::vector<MeshRenderItem> RenderPreparationMerger::PublishObjects(RenderPrepar
 			continue;
 		}
 
-		renderItems.push_back(
+		run.RenderItems.push_back(
 		    MeshRenderItem{
 		        .Object = object.Object,
 		        .DrawIndex = drawIndex,
@@ -59,25 +57,27 @@ std::vector<MeshRenderItem> RenderPreparationMerger::PublishObjects(RenderPrepar
 		        .Classification = object.MaterialClassification,
 		        .CameraDistanceSquared = object.CameraDistanceSquared});
 	}
-
-	return renderItems;
 }
 
 void RenderPreparationMerger::PublishBatches(
     RenderPreparationRun& run,
     std::span<const MeshRenderItem> renderItems)
 {
-	MeshInstanceBatchBuildResult batches = MeshInstanceBatchBuilder{}.Build(
+	run.BatchResult.RasterInstanceIndices = std::move(run.SceneData.rasterMeshInstanceIndices);
+	run.BatchResult.Batches = std::move(run.SceneData.meshInstanceBatches);
+
+	run.BatchBuilder.Build(
 	    renderItems,
 	    run.SceneData.meshInstances,
 	    run.InstanceGroups,
 	    MeshInstanceBatchBuildOptions{
 	        .EnableAutoBatching = run.EnableAutoBatching,
 	        .RequireMaterialBindingSet = true,
-	        .CollectDiagnostics = false});
+	        .CollectDiagnostics = false},
+	    run.BatchResult);
 
-	run.SceneData.rasterMeshInstanceIndices = std::move(batches.RasterInstanceIndices);
-	run.SceneData.meshInstanceBatches = std::move(batches.Batches);
+	run.SceneData.rasterMeshInstanceIndices = std::move(run.BatchResult.RasterInstanceIndices);
+	run.SceneData.meshInstanceBatches = std::move(run.BatchResult.Batches);
 }
 
 TaskResult RenderPreparationMerger::BuildRayTracingPlan(TaskExecutionContext& context)

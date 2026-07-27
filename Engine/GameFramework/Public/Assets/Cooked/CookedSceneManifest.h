@@ -15,7 +15,7 @@
 
 namespace Assets
 {
-	inline constexpr std::uint32_t kCookedSceneManifestMagic = MakeCookedAssetMagic('S', 'S', 'C', 'N');
+	inline constexpr std::uint32_t kCookedSceneManifestMagic = 0x4E435353u;
 	inline constexpr std::uint32_t kCookedSceneManifestVersion = 9;
 	inline constexpr std::uint32_t kInvalidCookedMaterialAssetIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneInstanceGroupIndex = (std::numeric_limits<std::uint32_t>::max)();

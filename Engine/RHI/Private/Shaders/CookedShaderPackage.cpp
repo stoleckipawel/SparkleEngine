@@ -27,3 +27,11 @@ bool HasCookedShaderPackageFeature(
 	           static_cast<std::uint32_t>(value) &
 	           static_cast<std::uint32_t>(flag)) != 0;
 }
+
+bool CookedShaderPackageHeader::Matches(
+    std::uint32_t expectedMagic,
+    std::uint32_t expectedVersion) const noexcept
+{
+	return Magic == expectedMagic &&
+	       Version == expectedVersion;
+}

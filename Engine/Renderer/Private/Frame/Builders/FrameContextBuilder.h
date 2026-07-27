@@ -19,7 +19,8 @@ struct RhiViewport;
 class FrameContextBuilder final
 {
   public:
-	static FrameContext Build(
+	static void Build(
+	    FrameContext& output,
 	    const RenderWorld& world,
 	    const RenderFrameDynamicData& dynamic,
 	    PersistentRenderGpuScene& gpuScene,

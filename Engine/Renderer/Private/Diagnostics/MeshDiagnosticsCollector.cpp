@@ -35,7 +35,7 @@ void MeshDiagnosticsCollector::CollectRows(
 	std::unordered_map<const Mesh*, std::size_t> rowIndices;
 	rowIndices.reserve(world.GetProxies().size());
 
-	for (const auto& [object, proxy] : world.GetProxies())
+	for (const RenderProxy& proxy : world.GetProxies())
 	{
 		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
 		if (mesh == nullptr)
@@ -128,7 +128,7 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 		}
 	}
 
-	for (const auto& [object, proxy] : world.GetProxies())
+	for (const RenderProxy& proxy : world.GetProxies())
 	{
 		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
 		if (mesh == nullptr)
@@ -171,7 +171,7 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 		                        : GpuMeshHandle{}}});
 		renderItems.push_back(
 		    MeshRenderItem{
-		        .Object = object,
+		        .Object = proxy.Object,
 		        .DrawIndex = drawIndex,
 		        .InstanceGroupIndex =
 		            RenderMeshClassificationConversion::
@@ -182,15 +182,18 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 	}
 
 	MeshInstanceBatchBuilder batchBuilder;
-	MeshGeometryInstancingDiagnostics diagnostics = batchBuilder.Build(
+	MeshInstanceBatchBuildResult batchResult;
+	batchBuilder.Build(
 	    renderItems,
 	    draws,
 	    renderInstanceGroups,
 	    MeshInstanceBatchBuildOptions{
 	        .EnableAutoBatching = CVarRendererMeshAutoBatching.Get(),
 	        .RequireMaterialBindingSet = false,
-	        .CollectDiagnostics = true})
-	                                  .Diagnostics;
+	        .CollectDiagnostics = true},
+	    batchResult);
+
+	MeshGeometryInstancingDiagnostics diagnostics = batchResult.Diagnostics;
 	diagnostics.RuntimeInstanceGroupCount = instancingDiagnostics.RuntimeInstanceGroupCount;
 	diagnostics.RuntimeAuthoredGroupCount = instancingDiagnostics.RuntimeAuthoredGroupCount;
 	diagnostics.RuntimeSharedMeshReferenceGroupCount = instancingDiagnostics.RuntimeSharedMeshReferenceGroupCount;
@@ -205,7 +208,7 @@ MeshPreviewGeometry MeshDiagnosticsCollector::CapturePreview(const RenderWorld& 
 		return geometry;
 	}
 
-	for (const auto& [object, proxy] : world.GetProxies())
+	for (const RenderProxy& proxy : world.GetProxies())
 	{
 		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
 		if (mesh == nullptr || reinterpret_cast<std::uintptr_t>(mesh) != meshRuntimeId)

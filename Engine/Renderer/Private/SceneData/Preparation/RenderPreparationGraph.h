@@ -30,10 +30,11 @@ class RenderPreparationGraph final
 	RenderPreparationGraph& operator=(
 	    RenderPreparationGraph&&) = delete;
 
-	RenderSceneData Execute(
+	void Execute(
 	    const RenderWorld& world,
 	    const RenderFrameDynamicData& dynamic,
-	    const Frustum& frustum);
+	    const Frustum& frustum,
+	    RenderSceneData& output);
 	void ResetHistory() noexcept;
 
   private:

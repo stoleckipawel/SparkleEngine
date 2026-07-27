@@ -82,7 +82,17 @@ void EditorApplication::InitializeUi()
 
 	Renderer& renderer = m_runtimeApplication->GetRenderer();
 	GameWorld& world = m_runtimeApplication->GetWorldForEditor();
-	m_ui = std::make_unique<UI>(EditorHostServices{
+	m_ui = std::make_unique<UI>(BuildUiHostServices(renderer, world));
+
+	ConfigureUiDiagnostics(renderer);
+	ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
+}
+
+EditorHostServices EditorApplication::BuildUiHostServices(
+    Renderer& renderer,
+    GameWorld& world)
+{
+	return EditorHostServices{
 	    .RuntimeTimer = m_runtimeApplication->GetTimer(),
 	    .Levels = m_runtimeApplication->GetLevelManager(),
 	    .AcquireWorldReadView = [&world]()
@@ -114,10 +124,7 @@ void EditorApplication::InitializeUi()
 		    renderer.SubmitRenderingSettings(std::move(settings));
 	    },
 	    .HostWindow = m_runtimeApplication->GetWindow(),
-	    .Input = m_runtimeApplication->GetInputSystem()});
-
-	ConfigureUiDiagnostics(renderer);
-	ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
+	    .Input = m_runtimeApplication->GetInputSystem()};
 }
 
 void EditorApplication::ConfigureUiDiagnostics(Renderer& renderer)

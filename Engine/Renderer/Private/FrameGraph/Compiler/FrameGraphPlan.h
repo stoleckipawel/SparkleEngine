@@ -7,7 +7,7 @@
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Commands/RhiQueue.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"

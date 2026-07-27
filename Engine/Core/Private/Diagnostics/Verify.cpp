@@ -17,153 +17,150 @@
 
 namespace Diagnostics
 {
-	namespace Detail
+	void WriteFallback(std::string_view record) noexcept;
+
+	std::string TrimTrailingWhitespace(std::string_view text)
 	{
-		void WriteFallback(std::string_view record) noexcept;
-
-		std::string TrimTrailingWhitespace(std::string_view text)
+		while (!text.empty())
 		{
-			while (!text.empty())
+			const char character = text.back();
+			if (character != '\r' && character != '\n' && character != ' ' && character != '\t')
 			{
-				const char character = text.back();
-				if (character != '\r' && character != '\n' && character != ' ' && character != '\t')
-				{
-					break;
-				}
-				text.remove_suffix(1);
+				break;
 			}
-
-			return std::string(text);
+			text.remove_suffix(1);
 		}
 
-		std::string GetPlatformErrorSuffix(long hr) noexcept
-		{
+		return std::string(text);
+	}
+
+	std::string GetPlatformErrorSuffix(long hr) noexcept
+	{
 #if defined(_WIN32)
-			char* systemMessage = nullptr;
-			const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-			const DWORD length = ::FormatMessageA(
-			    flags,
-			    nullptr,
-			    static_cast<DWORD>(hr),
-			    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			    reinterpret_cast<LPSTR>(&systemMessage),
-			    0,
-			    nullptr);
+		char* systemMessage = nullptr;
+		const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
+		const DWORD length = ::FormatMessageA(
+		    flags,
+		    nullptr,
+		    static_cast<DWORD>(hr),
+		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		    reinterpret_cast<LPSTR>(&systemMessage),
+		    0,
+		    nullptr);
 
-			std::string suffix;
-			if (length != 0 && systemMessage)
-			{
-				suffix = ": ";
-				suffix += TrimTrailingWhitespace(std::string_view(systemMessage, length));
-			}
+		std::string suffix;
+		if (length != 0 && systemMessage)
+		{
+			suffix = ": ";
+			suffix += TrimTrailingWhitespace(std::string_view(systemMessage, length));
+		}
 
-			if (systemMessage)
-			{
-				::LocalFree(systemMessage);
-			}
+		if (systemMessage)
+		{
+			::LocalFree(systemMessage);
+		}
 
-			return suffix;
+		return suffix;
 #else
-			(void) hr;
-			return {};
+		(void) hr;
+		return {};
 #endif
+	}
+
+	std::string BuildMessagePrefix(const char* file, std::uint32_t line)
+	{
+		const std::string_view fileName = Paths::GetFileName(file ? file : "");
+		std::string prefix;
+		if (!fileName.empty())
+		{
+			prefix.append(fileName.data(), fileName.size());
+			prefix.push_back(':');
+			prefix.append(std::to_string(line));
+			prefix.append(": ");
 		}
 
-		std::string BuildMessagePrefix(const char* file, std::uint32_t line)
+		return prefix;
+	}
+
+	void WriteRecord(
+	    const std::shared_ptr<spdlog::logger>& logger,
+	    const char* file,
+	    std::uint32_t line,
+	    std::string_view message,
+	    spdlog::level::level_enum level) noexcept
+	{
+		const auto writeFallback = [&]()
 		{
-			const std::string_view fileName = Paths::GetFileName(file ? file : "");
-			std::string prefix;
-			if (!fileName.empty())
-			{
-				prefix.append(fileName.data(), fileName.size());
-				prefix.push_back(':');
-				prefix.append(std::to_string(line));
-				prefix.append(": ");
-			}
+			std::string fallbackRecord = BuildMessagePrefix(file, line);
+			fallbackRecord.append(message.data(), message.size());
+			WriteFallback(fallbackRecord);
+		};
 
-			return prefix;
-		}
-
-		void WriteRecord(
-		    const std::shared_ptr<spdlog::logger>& logger,
-		    const char* file,
-		    std::uint32_t line,
-		    std::string_view message,
-		    spdlog::level::level_enum level) noexcept
+		if (logger)
 		{
-			const auto writeFallback = [&]()
+			try
 			{
-				std::string fallbackRecord = BuildMessagePrefix(file, line);
-				fallbackRecord.append(message.data(), message.size());
-				WriteFallback(fallbackRecord);
-			};
-
-			if (logger)
-			{
-				try
+				const spdlog::source_loc location{file ? file : "", static_cast<int>(line), ""};
+				logger->log(location, level, message);
+				if (level >= spdlog::level::err)
 				{
-					const spdlog::source_loc location{file ? file : "", static_cast<int>(line), ""};
-					logger->log(location, level, message);
-					if (level >= spdlog::level::err)
-					{
-						logger->flush();
-					}
-					return;
+					logger->flush();
 				}
-				catch (...)
-				{
-					writeFallback();
-					return;
-				}
+				return;
 			}
-
-			writeFallback();
+			catch (...)
+			{
+				writeFallback();
+				return;
+			}
 		}
 
-		void BreakInDebuggerIfAttached() noexcept
-		{
+		writeFallback();
+	}
+
+	void BreakAttachedDebugger() noexcept
+	{
 #if defined(_WIN32) && !defined(NDEBUG)
-			if (::IsDebuggerPresent())
-			{
-				::DebugBreak();
-			}
-#endif
-		}
-
-		void WriteFallback(std::string_view record) noexcept
+		if (::IsDebuggerPresent())
 		{
-			std::fwrite(record.data(), 1, record.size(), stderr);
-			std::fputc('\n', stderr);
-			std::fflush(stderr);
+			::DebugBreak();
+		}
+#endif
+	}
+
+	void WriteFallback(std::string_view record) noexcept
+	{
+		std::fwrite(record.data(), 1, record.size(), stderr);
+		std::fputc('\n', stderr);
+		std::fflush(stderr);
 
 #if defined(_WIN32)
-			std::string debuggerRecord(record);
-			debuggerRecord.push_back('\n');
-			::OutputDebugStringA(debuggerRecord.c_str());
+		std::string debuggerRecord(record);
+		debuggerRecord.push_back('\n');
+		::OutputDebugStringA(debuggerRecord.c_str());
 #endif
-		}
+	}
 
-		std::string BuildHResultRecord(long hr, const char* expression)
+	std::string BuildHResultRecord(long hr, const char* expression)
+	{
+		std::string record;
+		record.reserve(96 + (expression ? std::char_traits<char>::length(expression) : 0));
+
+		record.append("HRESULT 0x");
+
+		char codeBuffer[9]{};
+		std::snprintf(codeBuffer, sizeof(codeBuffer), "%08lX", static_cast<unsigned long>(hr));
+		record.append(codeBuffer);
+
+		if (expression && expression[0] != '\0')
 		{
-			std::string record;
-			record.reserve(96 + (expression ? std::char_traits<char>::length(expression) : 0));
-
-			record.append("HRESULT 0x");
-
-			char codeBuffer[9]{};
-			std::snprintf(codeBuffer, sizeof(codeBuffer), "%08lX", static_cast<unsigned long>(hr));
-			record.append(codeBuffer);
-
-			if (expression && expression[0] != '\0')
-			{
-				record.append(" from ");
-				record.append(expression);
-			}
-
-			record.append(GetPlatformErrorSuffix(hr));
-			return record;
+			record.append(" from ");
+			record.append(expression);
 		}
-	}  // namespace Detail
+
+		record.append(GetPlatformErrorSuffix(hr));
+		return record;
+	}
 
 	[[noreturn]] void Fail(
 	    const std::shared_ptr<spdlog::logger>& logger,
@@ -171,22 +168,22 @@ namespace Diagnostics
 	    std::uint32_t line,
 	    std::string_view message) noexcept
 	{
-		Detail::WriteRecord(logger, file, line, message, spdlog::level::critical);
-		Detail::BreakInDebuggerIfAttached();
+		WriteRecord(logger, file, line, message, spdlog::level::critical);
+		BreakAttachedDebugger();
 		std::abort();
 	}
 
 	void BreakInDebuggerIfAttached() noexcept
 	{
-		Detail::BreakInDebuggerIfAttached();
+		BreakAttachedDebugger();
 	}
 
 	[[noreturn]] void CheckHResult(long hr, const char* expression, const char* file, std::uint32_t line) noexcept
 	{
-		const std::string record = Detail::BuildHResultRecord(hr, expression);
+		const std::string record = BuildHResultRecord(hr, expression);
 		auto logger = Logging::GetOrCreateLogger("Verify");
-		Detail::WriteRecord(logger, file, line, record, spdlog::level::critical);
-		Detail::BreakInDebuggerIfAttached();
+		WriteRecord(logger, file, line, record, spdlog::level::critical);
+		BreakAttachedDebugger();
 		std::abort();
 	}
 }

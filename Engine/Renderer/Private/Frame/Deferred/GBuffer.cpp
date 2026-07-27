@@ -8,7 +8,7 @@
 #include "Frame/GBuffer/SkyMotionVectors.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 
 #include <array>
 

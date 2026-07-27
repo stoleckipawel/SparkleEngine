@@ -18,21 +18,13 @@
 
 class RenderCommandContext;
 class RenderHardwareInterface;
-struct MeshData;
-struct MeshMorphData;
+struct GPUMeshPreparedData;
 
 struct GPUMeshBounds final
 {
 	DirectX::XMFLOAT3 Min = {};
 	DirectX::XMFLOAT3 Max = {};
 	bool Valid = false;
-};
-
-struct GPUMeshUploadDesc
-{
-	const MeshData& meshData;
-	std::span<const VertexSkinInfluence> skinInfluences = {};
-	const MeshMorphData* morphTargets = nullptr;
 };
 
 class GPUMesh final
@@ -46,8 +38,9 @@ class GPUMesh final
 	GPUMesh(GPUMesh&&) = delete;
 	GPUMesh& operator=(GPUMesh&&) = delete;
 
-	bool Upload(RenderHardwareInterface& renderHardwareInterface, const MeshData& meshData);
-	bool Upload(RenderHardwareInterface& renderHardwareInterface, const GPUMeshUploadDesc& uploadDesc);
+	bool Upload(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    GPUMeshPreparedData preparedData);
 
 	void Bind(RenderCommandContext& cmd) const noexcept;
 

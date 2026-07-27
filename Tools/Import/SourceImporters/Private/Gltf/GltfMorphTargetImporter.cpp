@@ -3,7 +3,7 @@
 #include "Gltf/GltfMorphTargetImporter.h"
 
 #include "Gltf/GltfAccessorReader.h"
-#include "Gltf/GltfNodeTransformUtils.h"
+#include "Gltf/GltfNodeTransformConverter.h"
 
 #include <cgltf.h>
 
@@ -71,15 +71,15 @@ std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
 			ImportedMorphTargetDelta& delta = importedTarget.deltas[vertexIndex];
 			if (positions != nullptr)
 			{
-				delta.position = GltfNodeTransformUtils::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(positions, vertexIndex));
+				delta.position = GltfNodeTransformConverter::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(positions, vertexIndex));
 			}
 			if (normals != nullptr)
 			{
-				delta.normal = GltfNodeTransformUtils::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(normals, vertexIndex));
+				delta.normal = GltfNodeTransformConverter::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(normals, vertexIndex));
 			}
 			if (tangents != nullptr)
 			{
-				delta.tangent = GltfNodeTransformUtils::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(tangents, vertexIndex));
+				delta.tangent = GltfNodeTransformConverter::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(tangents, vertexIndex));
 			}
 		}
 

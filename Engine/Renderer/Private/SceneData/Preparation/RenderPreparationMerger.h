@@ -3,7 +3,6 @@
 #include "Tasks/Public/TaskTypes.h"
 
 #include <span>
-#include <vector>
 
 class TaskExecutionContext;
 struct MeshRenderItem;
@@ -15,10 +14,10 @@ class RenderPreparationMerger final
   public:
 	static TaskResult Merge(TaskExecutionContext& context);
 	static TaskResult BuildRayTracingPlan(TaskExecutionContext& context);
+	static void PublishFrameOutputs(RenderPreparationRun& run);
 
   private:
-	static void PublishDeformation(RenderPreparationRun& run);
-	static std::vector<MeshRenderItem> PublishObjects(RenderPreparationRun& run);
+	static void PublishObjects(RenderPreparationRun& run);
 	static void PublishBatches(RenderPreparationRun& run, std::span<const MeshRenderItem> renderItems);
 	static void PublishWorkload(RenderSceneData& sceneData) noexcept;
 };

@@ -9,6 +9,8 @@
 
 #include <backends/imgui_impl_dx12.h>
 
+#include <limits>
+
 D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardware) noexcept : m_renderHardware(&renderHardware) {}
 
 bool D3D12ImGuiBackend::Initialize()
@@ -65,38 +67,6 @@ void D3D12ImGuiBackend::BeginFrame() noexcept
 	RestoreContext(previousContext);
 }
 
-void D3D12ImGuiBackend::PrepareResources() noexcept
-{
-	if (m_resourcesPrepared || m_imguiContext == nullptr)
-	{
-		return;
-	}
-
-	ImGuiContext* previousContext = ActivateContext();
-	ImGui_ImplDX12_NewFrame();
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2(1.0f, 1.0f);
-	io.DeltaTime = 1.0f / 60.0f;
-	ImGui::NewFrame();
-	ImGui::Render();
-	RenderDrawData(ImGui::GetDrawData());
-	m_resourcesPrepared = GetFontTextureId() != 0;
-	RestoreContext(previousContext);
-}
-
-std::uint64_t D3D12ImGuiBackend::GetFontTextureId() const noexcept
-{
-	if (m_imguiContext == nullptr)
-	{
-		return 0;
-	}
-	ImGuiContext* previousContext = ActivateContext();
-	const std::uint64_t textureId =
-	    static_cast<std::uint64_t>(ImGui::GetIO().Fonts->TexRef.GetTexID());
-	RestoreContext(previousContext);
-	return textureId;
-}
-
 std::uint64_t D3D12ImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
 {
 	return shaderResourceView.Value;
@@ -117,6 +87,17 @@ void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	            .Consumer = ERhiNativeInteropConsumer::PresentationBridge,
 	            .Reason = "Render ImGui draw data through D3D12 backend"}),
 	    drawData);
+	RestoreContext(previousContext);
+}
+
+void D3D12ImGuiBackend::ReleaseTexture(
+    ImTextureData& texture) noexcept
+{
+	ImGuiContext* previousContext = ActivateContext();
+	texture.UnusedFrames = (std::numeric_limits<int>::max)();
+	texture.WantDestroyNextFrame = true;
+	texture.SetStatus(ImTextureStatus_WantDestroy);
+	ImGui_ImplDX12_UpdateTexture(&texture);
 	RestoreContext(previousContext);
 }
 
@@ -147,7 +128,6 @@ void D3D12ImGuiBackend::Shutdown() noexcept
 	}
 	m_imguiContext = nullptr;
 	m_ownsContext = false;
-	m_resourcesPrepared = false;
 }
 
 ImGuiContext* D3D12ImGuiBackend::ActivateContext() const noexcept

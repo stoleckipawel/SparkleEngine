@@ -3,77 +3,8 @@
 #include "Meshes/GpuMorphTargetBuffer.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Scene/Meshes/MeshMorphData.h"
-#include "ShaderData/MorphTargetShaderData.h"
 
 #include <algorithm>
-#include <vector>
-
-class GpuMorphTargetBufferOperations final
-{
-  public:
-	static bool BuildCpuPayload(
-	    std::uint32_t vertexCount,
-	    const MeshMorphData* morphTargets,
-	    std::vector<MorphTargetDeltaData>& outDeltas,
-	    std::uint32_t& outTargetCount);
-	static MorphTargetDeltaData Convert(
-	    const MeshMorphTargetDelta& delta) noexcept;
-};
-
-bool GpuMorphTargetBufferOperations::BuildCpuPayload(
-    std::uint32_t vertexCount,
-    const MeshMorphData* morphTargets,
-    std::vector<MorphTargetDeltaData>& outDeltas,
-    std::uint32_t& outTargetCount)
-{
-	outDeltas.clear();
-	outTargetCount = 0u;
-	if (morphTargets == nullptr || !morphTargets->HasTargets())
-	{
-		return true;
-	}
-
-	outDeltas.reserve(
-	    static_cast<std::size_t>(vertexCount) *
-	    morphTargets->targets.size());
-	for (const MeshMorphTarget& target : morphTargets->targets)
-	{
-		if (!target.IsValidForVertexCount(vertexCount))
-		{
-			outDeltas.clear();
-			return false;
-		}
-		for (const MeshMorphTargetDelta& delta : target.deltas)
-		{
-			outDeltas.push_back(Convert(delta));
-		}
-	}
-	outTargetCount =
-	    static_cast<std::uint32_t>(morphTargets->targets.size());
-	return true;
-}
-
-MorphTargetDeltaData GpuMorphTargetBufferOperations::Convert(
-    const MeshMorphTargetDelta& delta) noexcept
-{
-	return MorphTargetDeltaData{
-	    .Position =
-	        {delta.position.x,
-	         delta.position.y,
-	         delta.position.z,
-	         0.0f},
-	    .Normal =
-	        {delta.normal.x,
-	         delta.normal.y,
-	         delta.normal.z,
-	         0.0f},
-	    .Tangent =
-	        {delta.tangent.x,
-	         delta.tangent.y,
-	         delta.tangent.z,
-	         0.0f}};
-}
 
 GpuMorphTargetBuffer::GpuMorphTargetBuffer() noexcept = default;
 
@@ -84,20 +15,13 @@ GpuMorphTargetBuffer::~GpuMorphTargetBuffer() noexcept
 
 bool GpuMorphTargetBuffer::Upload(
     RenderHardwareInterface& renderHardwareInterface,
-    std::uint32_t vertexCount,
-    const MeshMorphData* morphTargets)
+    std::vector<MorphTargetDeltaData> deltas,
+    std::uint32_t targetCount)
 {
 	Release();
 	m_renderHardwareInterface = &renderHardwareInterface;
-	if (!GpuMorphTargetBufferOperations::BuildCpuPayload(
-	        vertexCount,
-	        morphTargets,
-	        m_deltas,
-	        m_targetCount))
-	{
-		Release();
-		return false;
-	}
+	m_deltas = std::move(deltas);
+	m_targetCount = targetCount;
 
 	const MorphTargetDeltaData emptyDelta = {};
 	const MorphTargetDeltaData* gpuPayload =

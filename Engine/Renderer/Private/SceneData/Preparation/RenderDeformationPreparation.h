@@ -63,10 +63,12 @@ class RenderDeformationPreparation final
 	static void ResetObjectOutputs(std::span<ResolvedRenderObject> objects) noexcept;
 	void PrepareSkinning(
 	    std::span<const RenderSkinningData> skinning,
+	    std::span<const DirectX::XMFLOAT4X4> matrices,
 	    std::span<ResolvedRenderObject> objects,
 	    RenderDeformationWork& work);
 	void PrepareMorph(
 	    std::span<const RenderMorphData> morphWeights,
+	    std::span<const float> weights,
 	    std::span<ResolvedRenderObject> objects,
 	    RenderDeformationWork& work);
 	static bool AreAllZero(

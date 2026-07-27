@@ -13,7 +13,7 @@ TRACELOGGING_DEFINE_PROVIDER(
     (0x109d07d6, 0xb67d, 0x4e26, 0x9f, 0xa2, 0x47, 0x96, 0xea, 0xe8, 0x14, 0x83));
 #endif
 
-class TaskProfilerImplementation final
+class TaskTraceProvider final
 {
   public:
 	static const char* LaneName(TaskLane lane) noexcept
@@ -55,7 +55,7 @@ class TaskProfilerImplementation final
 #endif
 };
 
-void TaskDetail::RecordTaskDependency(
+void TaskProfiler::RecordDependency(
     std::uint64_t generation,
     std::uint32_t prerequisite,
     std::uint32_t dependent) noexcept
@@ -78,7 +78,7 @@ void TaskDetail::RecordTaskDependency(
 #endif
 }
 
-TaskDetail::TaskProfileTimePoint TaskDetail::BeginTaskProfile(
+TaskProfiler::TimePoint TaskProfiler::Begin(
     const TaskDesc& desc,
     std::uint64_t generation,
     std::uint32_t taskIndex,
@@ -89,12 +89,12 @@ TaskDetail::TaskProfileTimePoint TaskDetail::BeginTaskProfile(
 	{
 		return {};
 	}
-	const TaskProfileTimePoint start = std::chrono::steady_clock::now();
+	const TimePoint start = std::chrono::steady_clock::now();
 	TraceLoggingWrite(
 	    g_sparkleTasksProvider,
 	    "TaskBegin",
 	    TraceLoggingString(desc.Name.Get().data(), "Name"),
-	    TraceLoggingString(TaskProfilerImplementation::LaneName(desc.Lane), "Lane"),
+	    TraceLoggingString(TaskTraceProvider::LaneName(desc.Lane), "Lane"),
 	    TraceLoggingUInt64(generation, "Run"),
 	    TraceLoggingUInt32(taskIndex, "Task"),
 	    TraceLoggingUInt32(laneWorkerIndex, "Worker"));
@@ -103,20 +103,20 @@ TaskDetail::TaskProfileTimePoint TaskDetail::BeginTaskProfile(
 	(void)generation;
 	(void)taskIndex;
 	(void)laneWorkerIndex;
-	const TaskProfileTimePoint start{};
+	const TimePoint start{};
 #endif
 	return start;
 }
 
-void TaskDetail::EndTaskProfile(
+void TaskProfiler::End(
     const TaskDesc& desc,
     std::uint64_t generation,
     std::uint32_t taskIndex,
     std::uint32_t laneWorkerIndex,
     const TaskResult& result,
-    TaskProfileTimePoint start) noexcept
+    TimePoint start) noexcept
 {
-	if (start == TaskProfileTimePoint{})
+	if (start == TimePoint{})
 	{
 		return;
 	}
@@ -128,12 +128,12 @@ void TaskDetail::EndTaskProfile(
 	    g_sparkleTasksProvider,
 	    "TaskEnd",
 	    TraceLoggingString(desc.Name.Get().data(), "Name"),
-	    TraceLoggingString(TaskProfilerImplementation::LaneName(desc.Lane), "Lane"),
+	    TraceLoggingString(TaskTraceProvider::LaneName(desc.Lane), "Lane"),
 	    TraceLoggingUInt64(generation, "Run"),
 	    TraceLoggingUInt32(taskIndex, "Task"),
 	    TraceLoggingUInt32(laneWorkerIndex, "Worker"),
 	    TraceLoggingInt64(duration, "DurationNs"),
-	    TraceLoggingString(TaskProfilerImplementation::OutcomeName(result.GetOutcome()), "Status"));
+	    TraceLoggingString(TaskTraceProvider::OutcomeName(result.GetOutcome()), "Status"));
 #else
 	(void)desc;
 	(void)generation;

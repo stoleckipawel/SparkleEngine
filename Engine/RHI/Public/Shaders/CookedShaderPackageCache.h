@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../RHIAPI.h"
-#include "CookedShaderPackageUtils.h"
+#include "CookedShaderPackageIdentity.h"
 #include "LoadedShaderPackage.h"
 
 #include <cstdint>

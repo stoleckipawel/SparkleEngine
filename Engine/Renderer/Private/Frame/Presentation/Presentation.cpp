@@ -6,7 +6,7 @@
 #include "Passes/Core/PassUtilities.h"
 #include "Passes/Presentation/OutputEncodingPass.h"
 #include "Passes/Presentation/ToneMappingPass.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 
 class PresentationOperations final
 {

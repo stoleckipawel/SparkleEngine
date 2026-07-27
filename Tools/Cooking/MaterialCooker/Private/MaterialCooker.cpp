@@ -20,7 +20,7 @@
 #include <optional>
 #include <utility>
 
-class MaterialCookerOperations final
+class MaterialCookPipeline final
 {
   public:
 	static bool BuildCookedTextureReferencePath(
@@ -68,7 +68,7 @@ class MaterialCookerOperations final
 	    ImportedAlphaMode alphaMode) noexcept;
 };
 
-bool MaterialCookerOperations::BuildCookedTextureReferencePath(
+bool MaterialCookPipeline::BuildCookedTextureReferencePath(
     const TextureCookRequest& request,
     std::string& outTextureReferencePath,
     std::string& outErrorMessage)
@@ -89,7 +89,7 @@ bool MaterialCookerOperations::BuildCookedTextureReferencePath(
 	return true;
 }
 
-bool MaterialCookerOperations::BuildMaterialAsset(
+bool MaterialCookPipeline::BuildMaterialAsset(
     const ImportedMaterial& importedMaterial,
     std::string_view sceneAssetId,
     std::size_t materialIndex,
@@ -132,7 +132,7 @@ bool MaterialCookerOperations::BuildMaterialAsset(
 	return true;
 }
 
-bool MaterialCookerOperations::AppendTextureReference(
+bool MaterialCookPipeline::AppendTextureReference(
     const ImportedTextureSource& textureSource,
     CookedMaterialAssetBuild& materialAsset,
     std::string& outErrorMessage)
@@ -167,7 +167,7 @@ bool MaterialCookerOperations::AppendTextureReference(
 	return true;
 }
 
-bool MaterialCookerOperations::AppendTextureRequest(
+bool MaterialCookPipeline::AppendTextureRequest(
     const ImportedTextureSource& textureSource,
     TextureCookRequestSet& requestSet,
     std::string& outErrorMessage)
@@ -191,7 +191,7 @@ bool MaterialCookerOperations::AppendTextureRequest(
 	return requestSet.Add(request, outErrorMessage);
 }
 
-bool MaterialCookerOperations::StageMaterialAsset(
+bool MaterialCookPipeline::StageMaterialAsset(
     const CookedMaterialAssetBuild& materialAsset,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
@@ -210,7 +210,7 @@ bool MaterialCookerOperations::StageMaterialAsset(
 	    outErrorMessage);
 }
 
-bool MaterialCookerOperations::WriteMaterialAsset(
+bool MaterialCookPipeline::WriteMaterialAsset(
     const CookedMaterialAssetBuild& materialAsset,
     const std::filesystem::path& stagedOutputPath,
     std::string& outErrorMessage)
@@ -241,7 +241,7 @@ bool MaterialCookerOperations::WriteMaterialAsset(
 	return Files::TryCloseOutput(output, stagedOutputPath, outErrorMessage);
 }
 
-bool MaterialCookerOperations::WriteMaterialName(
+bool MaterialCookPipeline::WriteMaterialName(
     std::ofstream& output,
     const CookedMaterialAssetBuild& materialAsset,
     std::string& outErrorMessage)
@@ -263,7 +263,7 @@ bool MaterialCookerOperations::WriteMaterialName(
 	return true;
 }
 
-bool MaterialCookerOperations::BuildTextureReferenceRecords(
+bool MaterialCookPipeline::BuildTextureReferenceRecords(
     const CookedMaterialAssetBuild& materialAsset,
     std::vector<Assets::CookedTextureReferenceRecord>& outRecords,
     std::string& outErrorMessage)
@@ -285,7 +285,7 @@ bool MaterialCookerOperations::BuildTextureReferenceRecords(
 	return true;
 }
 
-bool MaterialCookerOperations::WriteTextureReferencePaths(
+bool MaterialCookPipeline::WriteTextureReferencePaths(
     std::ofstream& output,
     const CookedMaterialAssetBuild& materialAsset,
     std::string& outErrorMessage)
@@ -305,7 +305,7 @@ bool MaterialCookerOperations::WriteTextureReferencePaths(
 	return true;
 }
 
-Assets::CookedAssetId MaterialCookerOperations::BuildMaterialAssetId(
+Assets::CookedAssetId MaterialCookPipeline::BuildMaterialAssetId(
     std::string_view sceneAssetId,
     std::size_t materialIndex) noexcept
 {
@@ -315,7 +315,7 @@ Assets::CookedAssetId MaterialCookerOperations::BuildMaterialAssetId(
 	    std::to_string(materialIndex));
 }
 
-Assets::CookedAlphaMode MaterialCookerOperations::TranslateAlphaMode(
+Assets::CookedAlphaMode MaterialCookPipeline::TranslateAlphaMode(
     ImportedAlphaMode alphaMode) noexcept
 {
 	switch (alphaMode)
@@ -344,7 +344,7 @@ bool MaterialCooker::BuildMaterialAssets(
 
 	for (std::size_t materialIndex = 0; materialIndex < importResult.scene.materials.size(); ++materialIndex)
 	{
-		if (!MaterialCookerOperations::BuildMaterialAsset(
+		if (!MaterialCookPipeline::BuildMaterialAsset(
 		        importResult.scene.materials[materialIndex],
 		        sceneAssetId,
 		        materialIndex,
@@ -358,7 +358,6 @@ bool MaterialCooker::BuildMaterialAssets(
 	outErrorMessage.clear();
 	return true;
 }
-
 bool MaterialCooker::CollectTextureCookRequests(
     const SourceImportResult& importResult,
     std::vector<TextureCookRequest>& outRequests,
@@ -371,7 +370,7 @@ bool MaterialCooker::CollectTextureCookRequests(
 	{
 		for (const ImportedTextureSource& textureSource : importedMaterial.textureSources)
 		{
-			if (!MaterialCookerOperations::AppendTextureRequest(
+			if (!MaterialCookPipeline::AppendTextureRequest(
 			        textureSource,
 			        requestSet,
 			        outErrorMessage))
@@ -393,7 +392,7 @@ bool MaterialCooker::StageMaterialAssets(
 {
 	for (const CookedMaterialAssetBuild& materialAsset : materialAssets)
 	{
-		if (!MaterialCookerOperations::StageMaterialAsset(
+		if (!MaterialCookPipeline::StageMaterialAsset(
 		        materialAsset,
 		        outPublication,
 		        outErrorMessage))
@@ -405,4 +404,3 @@ bool MaterialCooker::StageMaterialAssets(
 	outErrorMessage.clear();
 	return true;
 }
-

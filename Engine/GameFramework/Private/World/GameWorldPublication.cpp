@@ -4,7 +4,7 @@
 #include "World/ECS/Components/EditorComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
-#include "World/Publication/WorldReadViewInternal.h"
+#include "World/Publication/WorldReadViewStorage.h"
 
 #include <algorithm>
 

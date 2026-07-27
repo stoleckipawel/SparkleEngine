@@ -2,7 +2,7 @@
 
 #include "Compiler/ShaderIncludeResolver.h"
 
-#include "Compiler/ShaderCompilerPathUtils.h"
+#include "Compiler/ShaderCompilerPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 
 namespace ShaderIncludeResolver

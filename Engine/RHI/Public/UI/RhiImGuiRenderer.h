@@ -6,6 +6,7 @@
 #include <cstdint>
 
 struct ImDrawData;
+struct ImTextureData;
 
 class SPARKLE_RHI_API RhiImGuiRenderer
 {
@@ -14,9 +15,8 @@ class SPARKLE_RHI_API RhiImGuiRenderer
 
 	virtual bool Initialize() = 0;
 	virtual void BeginFrame() noexcept = 0;
-	virtual void PrepareResources() noexcept = 0;
-	virtual std::uint64_t GetFontTextureId() const noexcept = 0;
 	virtual std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept = 0;
 	virtual void RenderDrawData(ImDrawData* drawData) noexcept = 0;
+	virtual void ReleaseTexture(ImTextureData& texture) noexcept = 0;
 	virtual void Shutdown() noexcept = 0;
 };

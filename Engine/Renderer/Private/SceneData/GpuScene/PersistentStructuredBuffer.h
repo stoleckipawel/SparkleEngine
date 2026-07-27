@@ -10,6 +10,12 @@
 
 class RhiResourceService;
 
+struct StructuredBufferElementRange final
+{
+	std::uint32_t FirstElement = 0u;
+	std::uint32_t ElementCount = 0u;
+};
+
 class PersistentStructuredBuffer final
 {
   public:
@@ -18,10 +24,40 @@ class PersistentStructuredBuffer final
 	    std::span<const std::byte> payload,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName);
+	template <typename TValue, std::size_t Extent>
+	bool Update(
+	    RhiResourceService& resourceService,
+	    std::span<TValue, Extent> values,
+	    std::wstring_view debugName)
+	{
+		return Update(
+		    resourceService,
+		    std::as_bytes(values),
+		    static_cast<std::uint32_t>(sizeof(TValue)),
+		    debugName);
+	}
 	bool Replace(
 	    RhiResourceService& resourceService,
 	    std::span<const std::byte> payload,
 	    std::uint32_t strideInBytes,
+	    std::wstring_view debugName);
+	template <typename TValue, std::size_t Extent>
+	bool Replace(
+	    RhiResourceService& resourceService,
+	    std::span<TValue, Extent> values,
+	    std::wstring_view debugName)
+	{
+		return Replace(
+		    resourceService,
+		    std::as_bytes(values),
+		    static_cast<std::uint32_t>(sizeof(TValue)),
+		    debugName);
+	}
+	bool UpdateRanges(
+	    RhiResourceService& resourceService,
+	    std::span<const std::byte> payload,
+	    std::uint32_t strideInBytes,
+	    std::span<const StructuredBufferElementRange> ranges,
 	    std::wstring_view debugName);
 	RenderSceneGpuBuffer GetBinding() const noexcept;
 	void Reset() noexcept;
@@ -33,6 +69,9 @@ class PersistentStructuredBuffer final
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName);
 	bool WriteDirtyRanges(std::span<const std::byte> payload);
+	bool WriteRanges(
+	    std::span<const std::byte> payload,
+	    std::span<const StructuredBufferElementRange> ranges);
 	static std::size_t ResolveCapacity(
 	    std::size_t requiredSizeInBytes,
 	    std::uint32_t strideInBytes) noexcept;

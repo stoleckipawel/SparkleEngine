@@ -9,7 +9,7 @@
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 #include <utility>
 #include <vector>

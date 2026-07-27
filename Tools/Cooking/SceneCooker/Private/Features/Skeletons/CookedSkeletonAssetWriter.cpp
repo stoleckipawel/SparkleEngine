@@ -9,7 +9,7 @@
 
 #include <fstream>
 
-class CookedSkeletonAssetWriterOperations final
+class CookedSkeletonAssetStager final
 {
   public:
 	static bool StageSkeletonAsset(
@@ -25,7 +25,7 @@ bool CookedSkeletonAssetWriter::StageSkeletonAssets(
 {
 	for (const CookedSkeletonAssetBuild& skeletonAsset : skeletonAssets)
 	{
-		if (!CookedSkeletonAssetWriterOperations::StageSkeletonAsset(
+		if (!CookedSkeletonAssetStager::StageSkeletonAsset(
 		        skeletonAsset,
 		        outPublication,
 		        outErrorMessage))
@@ -38,7 +38,7 @@ bool CookedSkeletonAssetWriter::StageSkeletonAssets(
 	return true;
 }
 
-bool CookedSkeletonAssetWriterOperations::StageSkeletonAsset(
+bool CookedSkeletonAssetStager::StageSkeletonAsset(
     const CookedSkeletonAssetBuild& skeletonAsset,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)

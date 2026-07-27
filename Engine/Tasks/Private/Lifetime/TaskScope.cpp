@@ -1,6 +1,6 @@
 #include "TaskScope.h"
 
-#include "TaskScopeInternal.h"
+#include "TaskScopeState.h"
 
 #include <cassert>
 #include <stdexcept>

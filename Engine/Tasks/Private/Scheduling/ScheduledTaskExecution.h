@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Graph/TaskGraphInternal.h"
+#include "Graph/TaskGraphStorage.h"
 #include "TaskExecutorRuntime.h"
 
 #include <atomic>
@@ -15,7 +15,7 @@ class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final :
   public:
 	ScheduledTaskExecution(
 	    Runtime& owner,
-	    std::shared_ptr<const TaskDetail::CompiledTaskGraphData> graph,
+	    std::shared_ptr<const TaskGraphStorage> graph,
 	    TaskExecutionContext context,
 	    std::shared_ptr<TaskExecution::State> execution);
 
@@ -34,13 +34,19 @@ class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final :
 		std::atomic_bool Terminal{false};
 	};
 
+	void InitializeTaskStates();
+	void RecordDependencies() const;
+	void ScheduleInitialTasks();
+	void RecordTaskResult(std::uint32_t index, const TaskGraphNode& node, const TaskResult& result);
+	void ReleaseNestedTasks(const TaskGraphNode& node, const TaskResult& result, TaskWorker& worker);
 	void TrySchedule(std::uint32_t index, TaskWorker* preferredWorker);
 	void ReleaseUnfinished(std::uint32_t index, TaskWorker* worker);
 	void CompleteLogical(std::uint32_t index, TaskWorker* worker);
+	TaskExecutionCompletion BuildCompletion();
 	void Finish();
 
 	Runtime& m_owner;
-	std::shared_ptr<const TaskDetail::CompiledTaskGraphData> m_graph;
+	std::shared_ptr<const TaskGraphStorage> m_graph;
 	TaskExecutionContext m_context;
 	std::shared_ptr<TaskExecution::State> m_execution;
 	std::uint64_t m_generation = 0;

@@ -72,7 +72,7 @@ namespace SparkleLauncher
 			return nullptr;
 		}
 
-		const QSize artworkSize = minimumSize.isEmpty() ? LauncherUi::WorkflowVisual::FallbackArtworkSize() : minimumSize;
+		const QSize artworkSize = minimumSize.isEmpty() ? LauncherUi::WorkflowVisual::FallbackArtworkSize : minimumSize;
 		LauncherArtworkWidget* artwork = new LauncherArtworkWidget(pixmap, LauncherArtworkSpec::ForPreset(preset), artworkSize, parent);
 		artwork->setObjectName(objectName);
 		artwork->setMinimumSize(QSize(artworkSize.width(), artwork->heightForWidth(artworkSize.width())));
@@ -163,11 +163,11 @@ namespace SparkleLauncher
 
 		QVBoxLayout* layout = new QVBoxLayout(card);
 		layout->setContentsMargins(
-		    flushArtwork ? LauncherUi::Card::FlushArtworkMargins() :
+		    flushArtwork ? LauncherUi::Card::FlushArtworkMargins :
 		                   (isLibraryCard ? LauncherUi::Card::ProductMargins(hasArtwork) : LauncherUi::Card::DiscoverMargins(hasArtwork)));
 		layout->setSpacing(flushArtwork ? 0 : (isLibraryCard ? LauncherUi::Card::ProductSpacing : LauncherUi::Card::DiscoverSpacing));
 
-		const QSize artworkDesignSize = isLibraryCard ? LauncherUi::Card::ProductArtworkSize() : LauncherUi::Card::DiscoverArtworkSize();
+		const QSize artworkDesignSize = isLibraryCard ? LauncherUi::Card::ProductArtworkSize : LauncherUi::Card::DiscoverArtworkSize;
 		const LauncherArtworkPreset artworkPreset =
 		    isLibraryCard ? LauncherArtworkPreset::ProductCard : LauncherArtworkPreset::DiscoverTile;
 		if (QWidget* artwork = CreateLauncherVisualArtworkWidget(repositoryRoot, artworkFileName, "CommandCardArtwork", artworkDesignSize, artworkPreset, card))
@@ -185,7 +185,7 @@ namespace SparkleLauncher
 			QWidget* body = new QWidget(card);
 			body->setObjectName("CommandCardBody");
 			QVBoxLayout* bodyLayout = new QVBoxLayout(body);
-			bodyLayout->setContentsMargins(isDiscoverCard ? LauncherUi::Card::DiscoverBodyMargins() : LauncherUi::Card::ProductBodyMargins());
+			bodyLayout->setContentsMargins(isDiscoverCard ? LauncherUi::Card::DiscoverBodyMargins : LauncherUi::Card::ProductBodyMargins);
 			bodyLayout->setSpacing(isDiscoverCard ? LauncherUi::Card::DiscoverSpacing : LauncherUi::Card::ProductSpacing);
 			layout->addWidget(body, 1);
 			contentLayout = bodyLayout;

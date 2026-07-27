@@ -4,6 +4,7 @@
 
 class TaskExecutor;
 class TaskScope;
+struct TaskExecutorConfig;
 
 class ApplicationTaskRuntime final
 {
@@ -18,6 +19,8 @@ class ApplicationTaskRuntime final
 	TaskScope& GetApplicationScope() noexcept;
 
   private:
+	static TaskExecutorConfig BuildExecutorConfig() noexcept;
+
 	std::unique_ptr<TaskExecutor> m_executor;
 	std::unique_ptr<TaskScope> m_applicationScope;
 };

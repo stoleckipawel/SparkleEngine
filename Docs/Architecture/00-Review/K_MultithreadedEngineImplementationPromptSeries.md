@@ -20,6 +20,26 @@ Every new or resumed prompt that touches content, materials, rendering, RHI, ray
 
 Completed prompt narratives remain historical evidence. This rule governs future execution and does not retroactively claim that unavailable scenes were tested.
 
+## Current-State Acceptance Rule
+
+Before implementing, resuming, or auditing a prompt, compare every prerequisite, required implementation item, validation, and
+acceptance criterion with the repository's current architecture.
+
+Classify each item as:
+
+- **enduring target invariant** - the current product must still satisfy it;
+- **still-relevant transition requirement** - incomplete migration work still leads directly to the current target;
+- **superseded intermediate requirement** - a later owner or contract made the described intermediate state obsolete.
+
+Prove the first two categories against current code and current evidence. Preserve the third only as historical rationale. Never
+restore a deleted compatibility path, temporary diagnostic, known defect, or superseded owner to make an old prompt read as
+complete. Instead, prove the underlying invariant through the current path or report a current gap.
+
+Historical completion records and changelist titles are audit inputs, not present-state proof. When an old validation command,
+workload, or artifact is unavailable, use the current equivalent that falsifies the same enduring invariant. A criterion may be
+retired only when its underlying ownership, correctness, lifetime, determinism, preservation, parity, performance, or evidence
+requirement is either satisfied by the current architecture or recorded as a current gap.
+
 ## Purpose
 
 This document converts every required target in J into an ordered series of implementation prompts. Use one prompt at a time. Each prompt defines what to inspect, what to implement, what nearby code to improve, what old path to delete, how to validate the result, and when work must stop.
@@ -133,7 +153,7 @@ Stop and report rather than guessing when:
 
 ### 8. Existing Concurrency Has No Grandfather Clause
 
-J's LC-01 through LC-18 ledger is binding, and Prompt 00 must extend it when the repository changes. For every existing or newly encountered thread, future, mutex, atomic, native/Qt wait, device-idle call, detached process, callback registry, queue lock, or allocator lock:
+J's complete current LC ledger is binding, and Prompt 00 must extend it when the repository changes. For every existing or newly encountered thread, future, mutex, atomic, native/Qt wait, device-idle call, detached process, callback registry, queue lock, or allocator lock:
 
 1. assign an owner and protected invariant;
 2. classify it as **keep + harden**, **owner-only**, **replace**, **delete wait**, or **prove or remove**;
@@ -497,7 +517,7 @@ Inspect first:
 - RHI frame resources, queue timelines, WaitForIdle sites, allocator/profiler hooks.
 - current benchmark/test launch mechanisms and environment/config controls.
 - current names, filenames, profiler labels, and thread labels for task/job/work, execution/run, graph/node, context/handle/token/lease, main/game/editor/render/RHI threads, queues, commands, frame publication, and GPU submission; classify semantic collisions rather than matching text alone.
-- J's binding LC-01 through LC-18 legacy-concurrency ledger, then every owned-source hit for standard/Qt/native threading, locks, atomics, waits, detach, task-runtime, and device-idle mechanisms. Exclude generated/external trees from ownership, but record wrapped third-party worker behavior.
+- J's complete binding legacy-concurrency ledger, then every owned-source hit for standard/Qt/native threading, locks, atomics, waits, detach, task-runtime, and device-idle mechanisms. Exclude generated/external trees from ownership, but record wrapped third-party behavior.
 - A, E, G, H, and J governing documents.
 
 Required implementation:
@@ -534,6 +554,37 @@ Acceptance gate:
 Positive patterns: evidence before design, owner assertions, narrow vocabulary, current tool reuse.
 Forbidden: implementing the job system, moving renderer threads, speculative metrics infrastructure, broad cleanup.
 ~~~
+
+### Prompt 00 current-state revalidation — 2026-07-27
+
+Status: **passed** under the repository owner's policy that runtime-only visual and interaction checks are performed manually.
+
+The enduring target invariants are canonical CPU/task/render/RHI vocabulary, truthful thread roles, narrow owner assertions,
+deterministic launch controls, feature preservation, no public observation product, and a zero-unclassified synchronization,
+wait, detach, and callback-under-lock census. The before-state rename plan, dormant-owner wording, intentionally unfixed input
+callback risk, raw snapshot baseline, and old capture commands are superseded intermediate evidence; none authorizes restoring
+those paths. Current Prompt 23 workload and capture gates replace the historical baseline measurements.
+
+The exact owned-source query in J found 139 declarations/call sites across 61 files and classifies every result by current owner
+and invariant. No owned `std::future`, `std::async`, `QThread`, Qt pool, or detached task remains. The only detached launches are
+the replacement launcher and selected standalone product. D3D12/Vulkan idle call chains are limited to final shutdown, one
+initial upload settlement, exact frame-slot reuse, and swap-chain recreation. Wrapped Dear ImGui texture creation/update has an
+explicit rare-boundary measurement disposition in LC-19.
+
+Current review removed an incomplete Vulkan native-queue mutex: every logical queue is RenderThread-owned, while direct native
+consumers could not participate in that mutex. Logger creation and level propagation now copy or construct outside the registry
+critical section. Input dispatch remains owner-thread-only and invokes a copied callback set. Vulkan callback ingestion is
+bounded, allocator retirement destroys outside its record lock, and recording workers own exclusive contexts/pages.
+
+`DebugEditor` `ShowcaseEditor` and `architecture_boundary_check` built successfully with `/m:1`; the architecture check reported
+no violation, `git diff --check` reported no whitespace error, the owned anonymous-namespace scan was empty, and rejected
+concurrency aliases had no semantic production hit. Smart App Control blocks the freshly relinked unsigned editor executable,
+so D3D12/Vulkan launch and interaction evidence remains in the owner's manual runtime gate rather than being misreported.
+
+Applicable principal requirements are `PGE-07`, `PGE-09`, `PGE-10`, `PGE-14`, and `PGE-15`: ownership and backend contracts were
+preserved, the one incorrect synchronization claim was corrected from current source evidence, Windows execution limits are
+stated exactly, and no role-only scaffold was added. `PGE-01` through `PGE-06`, `PGE-08`, and `PGE-11` through `PGE-13` do not
+describe a capability advanced by this baseline/current-state reconciliation.
 
 ## Prompt 01 — Build the Serial Task Graph Contract
 
@@ -2615,24 +2666,35 @@ Forbidden: keep old path “for safety,” new diagnostic subsystem, unowned pac
 
 ### Prompt 22 integration record
 
-1. **Outcome** — Prompt 22 is source- and build-complete: the retained cook path is catalog-driven, task-backed, transactional, and deterministic; the replaced wrapper/status/version paths are deleted rather than adapted.
+1. **Outcome** — Prompt 22 is source- and build-complete: the retained cook path is catalog-driven, task-backed, transactional, and deterministic; the replaced wrapper/status/version paths are deleted rather than adapted, and the full changelist has passed the L implementation-shape cleanup.
 2. **Repository audit** — owned task runtimes, waits, launch/process operations, project catalogs, scene/material/texture/shader cooks, generation publication, diagnostics, packages, and current deletion-ledger aliases were searched across `Engine`, `Tools`, and `Projects`.
 3. **Ownership** — project catalogs own the requested source set, cook plans own deterministic ordering, SparkleTasks owns fan-out, typed cook builds own results, and file publication owns generation commit/rollback.
-4. **Files changed by responsibility** — catalog/scene registries, cook discovery and planning, typed scene outputs, material serialization, bounded cook execution, narrow diagnostics, and launcher synchronization remain in their existing owning modules.
-5. **Orchestration/capability refinement** — discovery now reads as catalog resolution, scene collection, plan construction, task execution, and publication; detailed parsing, cooking, serialization, and UI option population are named subordinate operations.
-6. **SOLID/DRY reconciliation** — `CookedSceneBuild` is the single scene result, registry entries have one parser, cook failures have one error channel, and launcher startup options have one population path.
+4. **Files changed by responsibility** — catalog reading/editing, cook argument parsing, shader publication, scene/mesh/material/animation/skeleton staging, bounded texture batches, launcher UI models, application composition, render coordination, frame-pipeline ownership, BLAS geometry derivation, and backend recording remain in their owning modules and private/public layers.
+5. **Orchestration/capability refinement** — discovery reads as catalog resolution, scene collection, plan construction, task execution, and publication; application initialization reads as subsystem composition; render preparation reads as topology, execution, merge, and publication; detailed parsing, cooking, serialization, UI model construction, and backend encoding are named subordinate operations.
+6. **SOLID/DRY reconciliation** — `CookedSceneBuild` is the single scene result, registry entries have one parser, cook failures have one error channel, launcher startup options have one model population path, UI host service construction has one owner, and generic source-local `*Operations` buckets were replaced by responsibility-bearing pipelines/stagers or owner members.
 7. **Preservation ledger** — curated in-repository levels, optional content, scene/material/texture/animation products, launcher workflows, and current product diagnostics retain their consumers and behavior.
-8. **Deletion ledger** — the redundant imported-scene product/status/version wrappers, duplicated success state, nullable post-plan scene entries, and superseded discovery/control branches are removed; no compatibility route remains.
-9. **Structure reconciliation** — public declarations contain only product contracts; discovery, batch execution, parsing, serialization, and launcher synchronization remain private; filenames continue to match their primary owner and no bounded move was warranted.
-10. **Implementation-shape reconciliation** — substantive behavior is in `.cpp`, function-local types and anonymous namespaces are absent in the touched path, orchestration is decomposed by named stage, and no new report or validator product was added.
-11. **DOD reconciliation** — catalog entries are authoritative identities, sorted plans are deterministic derived data, task slots are exclusive, staged files are generation-local, and publication is the only externally visible commit.
-12. **Concurrency reconciliation** — one SparkleTasks executor performs bounded cook fan-out; workers write exclusive result slots and perform no UI access; the coordinator validates results and publishes in stable plan order.
-13. **Validation** — DevelopmentEditor `AssetCooker`, `SparkleLauncher`, and `architecture_boundary_check` build successfully; a DevelopmentGame full cook completed twice with identical hashes for all 526 published product files and no staging residue.
-14. **Performance** — the closure removes duplicated scene-result copying and repeated discovery work, retains bounded worker counts, and adds no default timing/log stream; full performance characterization is intentionally owned by Prompt 23.
-15. **Naming audit** — `TaskRun`, cook plan, cook build, generation publication, scene asset registry, and project level catalog remain canonical; rejected future/pool/job/report and legacy product spellings have no owned consumers.
+8. **Deletion ledger** — the redundant imported-scene product/status/content-version wrappers, duplicated success state, nullable post-plan scene entries, generic `*Operations` ownership spellings, duplicate concurrency ledger, temporary validation hooks/counters, and superseded discovery/control branches are removed; no compatibility route remains.
+9. **Structure reconciliation** — public declarations contain only product contracts; catalog parsing/editing, discovery, batch execution, generation staging, serialization, launcher model construction, render coordination, BLAS geometry derivation, and backend mechanisms remain private; filenames match their primary owner and recursive module source discovery includes each added implementation.
+10. **Implementation-shape reconciliation** — substantive behavior is in `.cpp`; changed headers contain only declarations, templates, or trivial accessors; function-local types and anonymous namespaces are absent; all changed control statements use explicit blocks; orchestration is decomposed by named stage; source lines stay within 140 columns; and no new report or validator product was added.
+11. **DOD reconciliation** — catalog entries are authoritative identities, sorted plans are deterministic derived data, task slots are exclusive, staged files are generation-local, RT geometry carries one resource-plus-offset binding rather than duplicate handle/address truth, and publication is the only externally visible commit.
+12. **Concurrency reconciliation** — each cook operation creates one bounded SparkleTasks executor and no second runtime/pool; workers write exclusive result slots and perform no UI access; immutable recording read views cross worker boundaries; the coordinator validates results and publishes in stable plan order.
+13. **Validation** — DevelopmentEditor `ShaderCompiler`, `TextureCooker`, `AssetCooker`, `SparkleLauncher`, `ShowcaseEditor`, `ShowcaseRuntime`, and `architecture_boundary_check` build successfully; DevelopmentGame `ShaderCompiler`, `TextureCooker`, and `AssetCooker` also build; repeated DevelopmentGame full cooks produced identical hashes for all 526 published product files and no staging residue.
+14. **Performance** — the closure removes duplicated scene-result copying, repeated discovery work, and per-call skinned-position scratch allocation; it retains bounded worker counts and adds no default timing/log stream; full performance characterization is intentionally owned by Prompt 23.
+15. **Naming audit** — `TaskRun`, cook plan, cook build, generation publication, scene asset registry, project level catalog, `UiRenderPacket`, recording lease/read view, and `RhiRayTracingBufferBinding` remain canonical; rejected future/pool/job/report, generic implementation buckets, and legacy product spellings have no owned consumers.
 16. **Limitations and unavailable evidence** — Windows Smart App Control blocked a freshly built unsigned DevelopmentEditor cooker, so deterministic full-cook evidence used the DevelopmentGame tool binary; D3D12/Vulkan lifecycle stress and Linux execution remain manual/unavailable and are not claimed.
 17. **Acceptance status** — **PASS** for source, build, deterministic tool output, ownership, and deletion closure. Runtime/backend stress rows retain their documented manual disposition under the user-authorized runtime-validation policy.
-18. **PGE reconciliation** — `PGE-01/02/03/05/06/07/09/10/13/14/15` advance or are preserved by a smaller deterministic product path; `PGE-08/11` are preserved; `PGE-04/12` are not applicable to this closure; no role-only scaffold or unsupported parity claim was introduced.
+18. **PGE reconciliation** — **advance:** `PGE-05/07/09/10/13/15` through C++ ownership cleanup, bounded deterministic tools, explicit low-level contracts, independent build/static verification, and concise evidence; **preserve:** `PGE-01/02/03/06/08/11/14` with no rendering, GPU-architecture, math, partner, or advanced-feature path weakened; **not applicable:** `PGE-04/12` because this closure does not tune a neural model or training/inference workload. Native D3D12/Vulkan runtime evidence for `PGE-06/14` remains manual and is not inflated into a pass.
+
+#### Prompt 22 Rule 13 data/access closure
+
+| Path | Authority and consumers | Layout, identity, ordering, and lifetime | Exact precedent and measured falsifier |
+|---|---|---|---|
+| `Levels.catalog` → project/launcher/cook selection | project catalog is authoritative; launcher models and cooker discovery are derived consumers | ordered entries keyed by level ID; reader and editor are separate capabilities; atomic file replacement is the only mutation publication | J catalog/package discipline and Unreal manifest-driven tool precedent; two complete cooks selected the same source set |
+| discovered scenes/texture/shader nodes → cook plan | catalog and source metadata are authoritative; one immutable sorted plan feeds task execution | contiguous plan records keyed by stable asset/package/stage/target identity; no completion-order insertion | J deterministic task-local merge rule and NVIDIA `nvpro_core` range precedent; 526 published files matched byte-for-byte across two full cooks |
+| plan → SparkleTasks result slots | plan index owns one result slot; workers own only their assigned slot/request memory lease | fixed vectors and bounded memory admission; merge and publication follow plan index, never completion order | J task DAG/exclusive-output rule and AMD Cauldron2 loading fan-in precedent; architecture/build gates plus repeated cook hashes falsify races or ordering drift |
+| cooked outputs → staged generation → published files | typed cook builds own candidate bytes; file publication owns commit/rollback | one staged path per final path, stable asset ID/path key, all-or-nothing deterministic file-set publication, cleanup on failure | J transactional generation-publication rule; successful cooks left zero `.cook-generation`, `.stage`, or `.tmp` residue |
+| render/RHI registries → recording workers | render/RHI owner is authoritative; workers acquire immutable resource/descriptor read views and exclusive recording leases | handle-indexed read tables, per-lease command/descriptor/upload state, token-gated reclamation | J NVRHI/nvpro recording precedents; repository scan finds no worker registry mutation or shared recording-hot allocator path |
+| mesh/deformation inputs → `RayTracingBlasGeometryBuilder` → BLAS geometry binding | mesh and deformation arrays are authoritative; the dedicated builder derives equality, skeletal classification, deformed positions, buffer sizing, and `RhiRayTracingBufferBinding`; the BLAS cache owns resources and reuse | stable mesh/resource identity, deterministic vertex-index traversal, reusable cache-owned position scratch, one resource-plus-offset binding, backend-derived address, command-list resource retention through submission | J NVRHI explicit-resource and D3D12/Vulkan lifetime precedent; zero/retired resources fail the RHI contract, no duplicate resource/address fields remain, and repeated warm calls require no position-vector allocation |
 
 ## Prompt 23 — Initial Full-System Performance Characterization and Tuning
 

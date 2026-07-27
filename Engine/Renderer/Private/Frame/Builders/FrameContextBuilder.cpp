@@ -37,7 +37,8 @@ RhiRect FrameContextBuilder::BuildSceneScissorRect(
 	        static_cast<std::int32_t>(sceneExtent.Height)};
 }
 
-FrameContext FrameContextBuilder::Build(
+void FrameContextBuilder::Build(
+    FrameContext& frame,
     const RenderWorld& world,
     const RenderFrameDynamicData& dynamic,
     PersistentRenderGpuScene& gpuScene,
@@ -49,20 +50,21 @@ FrameContext FrameContextBuilder::Build(
     PerViewDataBuilder& perViewDataBuilder,
     TemporalDataBuilder& temporalDataBuilder)
 {
-	FrameContext frame{};
 	const PerViewCameraConstantBufferData cameraData = renderCamera.GetCameraConstantBufferData();
-	frame.sceneData = renderPreparationGraph.Execute(
+	renderPreparationGraph.Execute(
 	    world,
 	    dynamic,
-	    renderCamera.GetFrustum());
+	    renderCamera.GetFrustum(),
+	    frame.sceneData);
+
 	if (renderRayTracingScene != nullptr)
 	{
 		renderRayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
 	}
-	frame.sceneGpuData =
-	    &gpuScene.Update(frame.sceneData, frameIndex);
-	const RhiViewport sceneViewport =
-	    BuildSceneViewport(sceneExtent);
+
+	frame.sceneGpuData = &gpuScene.Update(frame.sceneData, frameIndex);
+
+	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);
 	frame.mainView = perViewDataBuilder.BuildView(
 	    cameraData,
 	    sceneViewport,
@@ -73,6 +75,4 @@ FrameContext FrameContextBuilder::Build(
 	    sceneViewport,
 	    dynamic.Metadata.FrameId);
 	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
-
-	return frame;
 }

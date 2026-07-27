@@ -2,7 +2,7 @@
 
 #include "SourceLoading/HdrTextureSourceLoader.h"
 
-#include "SourceLoading/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoadStages.h"
 
 #include <stb_image.h>
 
@@ -15,7 +15,7 @@ TextureLoadResult HdrTextureSourceLoader::Load(const std::filesystem::path& sour
 {
 	std::filesystem::path resolvedPath;
 	std::vector<std::uint8_t> fileBytes;
-	if (!TextureSourceLoaderUtils::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
+	if (!TextureSourceLoadStages::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
 	{
 		return {};
 	}
@@ -39,7 +39,7 @@ TextureLoadResult HdrTextureSourceLoader::Load(const std::filesystem::path& sour
 		return {};
 	}
 
-	TextureLoadResult loadResult = TextureSourceLoaderUtils::BuildFloatTextureLoadResult(
+	TextureLoadResult loadResult = TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	    width,
 	    height,
 	    pixels,

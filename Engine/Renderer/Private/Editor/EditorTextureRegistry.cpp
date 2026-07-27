@@ -3,11 +3,6 @@
 
 #include <limits>
 
-void EditorTextureRegistry::PublishFontTexture(std::uint64_t nativeTextureId) noexcept
-{
-	m_fontNativeTextureId = nativeTextureId;
-}
-
 EditorTextureHandle EditorTextureRegistry::PublishViewportTexture(
     std::uint64_t nativeTextureId,
     std::uint64_t viewportGeneration) noexcept
@@ -57,10 +52,6 @@ EditorTextureHandle EditorTextureRegistry::Register(std::uint64_t nativeTextureI
 
 std::uint64_t EditorTextureRegistry::Resolve(EditorTextureHandle handle) const noexcept
 {
-	if (handle == EditorTextureHandle::FontAtlas())
-	{
-		return m_fontNativeTextureId;
-	}
 	if (handle == m_viewportHandle)
 	{
 		return m_viewportNativeTextureId;

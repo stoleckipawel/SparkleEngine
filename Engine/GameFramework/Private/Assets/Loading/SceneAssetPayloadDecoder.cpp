@@ -9,6 +9,7 @@
 #include "Assets/Payload/SceneAssetPayloadMaterialAppender.h"
 #include "Assets/Payload/SceneAssetPayloadMaterialVariantAppender.h"
 #include "Assets/Payload/SceneAssetPayloadMeshAppender.h"
+#include "Assets/Payload/SceneAssetPayloadMeshBindings.h"
 #include "Assets/Payload/SceneAssetPayloadSkeletonAppender.h"
 
 namespace Assets
@@ -24,14 +25,33 @@ namespace Assets
 		SceneMeshAssetIndex meshAssetBaseIndex = kInvalidSceneMeshAssetIndex;
 		const auto instanceBaseIndex = static_cast<SceneMeshInstanceIndex>(payload.staticMeshInstances.size());
 		const auto groupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(payload.meshInstanceGroups.size());
-		if (!SceneAssetPayloadMeshAppender::AppendMeshAssets(
-		        sceneAssetId, manifest, files, payload, meshAssetBaseIndex, errorMessage) ||
+		const std::vector<SceneAssetPayloadMeshBinding> meshAssetBindings = BuildSceneAssetPayloadMeshBindings(manifest);
+		if (!SceneAssetPayloadMeshAppender::AppendMeshAssets(sceneAssetId, manifest, files, payload, meshAssetBaseIndex, errorMessage) ||
 		    !SceneAssetPayloadMaterialAppender::AppendMaterials(manifest, files, payload, errorMessage) ||
 		    !SceneAssetPayloadMeshAppender::AppendMeshInstances(
-		        sceneAssetId, manifest, payload, meshAssetBaseIndex, groupBaseIndex, materialBaseIndex, errorMessage) ||
+		        sceneAssetId,
+		        manifest,
+		        meshAssetBindings,
+		        payload,
+		        meshAssetBaseIndex,
+		        groupBaseIndex,
+		        materialBaseIndex,
+		        errorMessage) ||
 		    !SceneAssetPayloadMeshAppender::AppendMeshInstanceGroups(
-		        sceneAssetId, manifest, payload, meshAssetBaseIndex, instanceBaseIndex, materialBaseIndex, errorMessage) ||
-		    !SceneAssetPayloadMaterialVariantAppender::AppendMaterialVariants(manifest, payload, materialBaseIndex, errorMessage) ||
+		        sceneAssetId,
+		        manifest,
+		        meshAssetBindings,
+		        payload,
+		        meshAssetBaseIndex,
+		        instanceBaseIndex,
+		        materialBaseIndex,
+		        errorMessage) ||
+		    !SceneAssetPayloadMaterialVariantAppender::AppendMaterialVariants(
+		        manifest,
+		        meshAssetBindings,
+		        payload,
+		        materialBaseIndex,
+		        errorMessage) ||
 		    !SceneAssetPayloadSkeletonAppender::AppendSkeletons(manifest, files, payload, errorMessage) ||
 		    !SceneAssetPayloadAnimationAppender::AppendAnimations(manifest, files, payload, errorMessage))
 			return false;

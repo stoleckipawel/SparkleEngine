@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "SourceLoading/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoadStages.h"
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Files/FileUtils.h"
@@ -8,7 +8,7 @@
 #include <cstring>
 #include <format>
 
-bool TextureSourceLoaderUtils::TryReadSourceBytes(
+bool TextureSourceLoadStages::TryReadSourceBytes(
 	const std::filesystem::path& sourcePath,
 	std::filesystem::path& outResolvedPath,
 	std::vector<std::uint8_t>& outFileBytes,
@@ -31,7 +31,7 @@ bool TextureSourceLoaderUtils::TryReadSourceBytes(
 	return true;
 }
 
-TextureLoadResult TextureSourceLoaderUtils::BuildByteTextureLoadResult(
+TextureLoadResult TextureSourceLoadStages::BuildByteTextureLoadResult(
 	int width,
 	int height,
 	const std::uint8_t* pixelBytes,
@@ -72,7 +72,7 @@ TextureLoadResult TextureSourceLoaderUtils::BuildByteTextureLoadResult(
 	return loadResult;
 }
 
-TextureLoadResult TextureSourceLoaderUtils::BuildFloatTextureLoadResult(
+TextureLoadResult TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	int width,
 	int height,
 	const float* pixelBytes,

@@ -8,30 +8,24 @@
 
 #include <chrono>
 
-class ApplicationTaskRuntimeOperations final
+TaskExecutorConfig ApplicationTaskRuntime::BuildExecutorConfig() noexcept
 {
-  public:
-	static TaskExecutorConfig BuildTaskExecutorConfig() noexcept
+	if (TaskRuntimeCVars::UseSerialExecution())
 	{
-		if (TaskRuntimeCVars::UseSerialExecution())
-		{
-			return {};
-		}
-
-		const std::uint32_t configuredWorkers = TaskRuntimeCVars::ResolveWorkerCount();
-		const std::uint32_t cpuWorkers = configuredWorkers == 0 ? 1u : configuredWorkers;
-		return TaskExecutorConfig{
-		    .FrameCriticalWorkerCount = cpuWorkers,
-		    .BackgroundWorkerCount = cpuWorkers,
-		    .BlockingIoWorkerCount = 1,
-		    .MaximumTasksPerExecution = 1'024,
-		    .MaximumEdgesPerExecution = 4'096,
-		    .MaximumActiveExecutions = 64};
+		return {};
 	}
-};
+
+	return TaskExecutorConfig{
+	    .FrameCriticalWorkerCount = TaskRuntimeCVars::ResolveFrameCriticalWorkerCount(),
+	    .BackgroundWorkerCount = TaskRuntimeCVars::ResolveBackgroundWorkerCount(),
+	    .BlockingIoWorkerCount = TaskRuntimeCVars::ResolveBlockingIoWorkerCount(),
+	    .MaximumTasksPerExecution = 1'024,
+	    .MaximumEdgesPerExecution = 4'096,
+	    .MaximumActiveExecutions = 64};
+}
 
 ApplicationTaskRuntime::ApplicationTaskRuntime() :
-    m_executor(std::make_unique<TaskExecutor>(ApplicationTaskRuntimeOperations::BuildTaskExecutorConfig())),
+    m_executor(std::make_unique<TaskExecutor>(BuildExecutorConfig())),
     m_applicationScope(std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::Application, "Application"}))
 {
 }

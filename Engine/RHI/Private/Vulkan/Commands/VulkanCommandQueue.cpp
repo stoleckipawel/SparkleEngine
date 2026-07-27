@@ -193,7 +193,6 @@ void VulkanCommandQueue::BuildNativeSubmission(
 
 VkResult VulkanCommandQueue::SubmitNative(const VkSubmitInfo& submission) noexcept
 {
-	std::scoped_lock lock(m_nativeQueue->SubmissionMutex);
 	return vkQueueSubmit(m_nativeQueue->Queue, 1, &submission, VK_NULL_HANDLE);
 }
 
@@ -205,7 +204,6 @@ VkResult VulkanCommandQueue::Present(const VkPresentInfoKHR& presentInfo) noexce
 		return VK_ERROR_INITIALIZATION_FAILED;
 	}
 
-	std::scoped_lock lock(m_nativeQueue->SubmissionMutex);
 	return vkQueuePresentKHR(m_nativeQueue->Queue, &presentInfo);
 }
 
@@ -217,11 +215,7 @@ void VulkanCommandQueue::DrainForSwapChainRecreation() noexcept
 		return;
 	}
 
-	VkResult result = VK_ERROR_INITIALIZATION_FAILED;
-	{
-		std::scoped_lock lock(m_nativeQueue->SubmissionMutex);
-		result = vkQueueWaitIdle(m_nativeQueue->Queue);
-	}
+	const VkResult result = vkQueueWaitIdle(m_nativeQueue->Queue);
 
 	if (!VulkanResult::Succeeded(result))
 	{

@@ -84,12 +84,22 @@ void FramePipeline::InitializeUiRendering()
 void FramePipeline::InitializeFrameStorage()
 {
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
-	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
+	InitializeFrameContexts();
 
 	RenderDiagnostics& backendDiagnostics = m_systems->GetRenderHardwareInterface().GetDiagnostics();
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
 	{
 		frameDiagnostics = std::make_unique<FrameExecutionDiagnostics>(backendDiagnostics);
+	}
+}
+
+void FramePipeline::InitializeFrameContexts()
+{
+	m_frameContexts.clear();
+	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
+	for (std::unique_ptr<FrameContext>& frameContext : m_frameContexts)
+	{
+		frameContext = std::make_unique<FrameContext>();
 	}
 }
 
@@ -112,6 +122,8 @@ FramePipeline::~FramePipeline() noexcept
 {
 	if (m_ownsUiBackend)
 	{
+		m_uiRenderPacketPlayer->Shutdown(
+		    m_systems->GetImGuiRenderer());
 		m_systems->GetImGuiRenderer().Shutdown();
 	}
 }
@@ -210,11 +222,7 @@ void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noe
 
 void FramePipeline::RebuildFrameExecutionAfterSwapChainDrain(FrameResolutionExtents resolution) noexcept
 {
-	for (std::unique_ptr<FrameContext>& frameContext : m_frameContexts)
-	{
-		frameContext.reset();
-	}
-
+	InitializeFrameContexts();
 	m_frameGraph.reset();
 	InitializeFrameGraph(resolution);
 }
@@ -231,7 +239,7 @@ void FramePipeline::RetireFrameExecution() noexcept
 	        .LastUse = CaptureLastSubmittedState(),
 	        .Graph = std::move(m_frameGraph),
 	        .FrameContexts = std::move(m_frameContexts)});
-	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
+	InitializeFrameContexts();
 }
 
 void FramePipeline::PollRetiredFrameExecutions() noexcept
@@ -303,6 +311,8 @@ void FramePipeline::PollFrameServices() noexcept
 	m_systems->PollRetiredImageProviders();
 	m_systems->GetPipelineStateManager().PollRetiredGenerations();
 	m_systems->GetTextureManager().PollResidency();
+	m_systems->GetGpuMeshCache().PollResidency();
+	m_systems->GetRenderWorld().PromoteResidentGpuMeshes();
 }
 
 void FramePipeline::ConsumeRenderInput() noexcept
@@ -379,7 +389,11 @@ void FramePipeline::BeginBackendFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	backend.BeginFrame();
-	m_frameContexts[m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex()].reset();
+	if (m_ownsUiBackend)
+	{
+		m_systems->GetImGuiRenderer().BeginFrame();
+	}
+
 	m_systems->TickDiagnostics(m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex());
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 	frameDiagnostics.ResolveTimings();
@@ -391,6 +405,7 @@ void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	RenderCommandList& graphicsCommandList = backend.GetCurrentGraphicsCommandList();
+	m_systems->GetGpuMeshCache().UploadReadyMeshes();
 	UploadPendingSceneTextures(backend, graphicsCommandList);
 
 	m_systems->GetRenderCamera().Update(m_renderInputConsumer->GetDynamicData().Camera);
@@ -530,8 +545,6 @@ void FramePipeline::RenderHostOverlayUi(const UiRenderPacket& packet) noexcept
 void FramePipeline::PlayUiPacket(const UiRenderPacket& packet) noexcept
 {
 	RhiImGuiRenderer& imguiRenderer = m_systems->GetImGuiRenderer();
-	imguiRenderer.PrepareResources();
-	m_editorTextureRegistry->PublishFontTexture(imguiRenderer.GetFontTextureId());
 	m_uiRenderPacketPlayer->Render(
 	    packet,
 	    *m_editorTextureRegistry,
@@ -567,18 +580,18 @@ FrameContext& FramePipeline::PrepareFrameContext(
 {
 	const std::uint32_t frameIndex = m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex();
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[frameIndex];
-	frameSlot = std::make_unique<FrameContext>(
-	    FrameContextBuilder::Build(
-	        m_systems->GetRenderWorld(),
-	        dynamic,
-	        *m_gpuScene,
-	        frameIndex,
-	        m_systems->GetRenderCamera(),
-	        m_frameGraphRenderExtent,
-	        m_systems->GetRenderPreparationGraph(),
-	        activeRayTracingScene,
-	        m_systems->GetPerViewDataBuilder(),
-	        m_systems->GetTemporalDataBuilder()));
+	FrameContextBuilder::Build(
+	    *frameSlot,
+	    m_systems->GetRenderWorld(),
+	    dynamic,
+	    *m_gpuScene,
+	    frameIndex,
+	    m_systems->GetRenderCamera(),
+	    m_frameGraphRenderExtent,
+	    m_systems->GetRenderPreparationGraph(),
+	    activeRayTracingScene,
+	    m_systems->GetPerViewDataBuilder(),
+	    m_systems->GetTemporalDataBuilder());
 	return *frameSlot;
 }
 
@@ -724,8 +737,13 @@ void FramePipeline::SubmitFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	backend.SubmitFrame();
-	m_systems->GetTextureManager().RecordUploadSubmission(
-	    backend.GetLastSubmittedToken(ERhiQueueType::Graphics));
+	const RhiSubmissionToken graphicsToken =
+	    backend.GetLastSubmittedToken(
+	        ERhiQueueType::Graphics);
+	m_systems->GetTextureManager()
+	    .RecordUploadSubmission(graphicsToken);
+	m_systems->GetGpuMeshCache()
+	    .RecordUploadSubmission(graphicsToken);
 }
 
 void FramePipeline::EndFrame() noexcept

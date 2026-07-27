@@ -426,7 +426,7 @@ void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
 {
 	const D3D12_GPU_VIRTUAL_ADDRESS vertexBufferAddress =
 	    ResolveRayTracingBufferAddress(geometry.VertexBuffer);
-		
+
 	const D3D12_GPU_VIRTUAL_ADDRESS indexBufferAddress =
 	    ResolveRayTracingBufferAddress(geometry.IndexBuffer);
 	if (m_commandList == nullptr ||

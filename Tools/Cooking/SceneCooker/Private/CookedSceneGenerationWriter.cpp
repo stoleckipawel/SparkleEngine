@@ -12,7 +12,7 @@
 
 #include <vector>
 
-class CookedSceneGenerationWriterOperations final
+class CookedSceneGenerationStager final
 {
   public:
 	static bool StageAssets(
@@ -28,7 +28,7 @@ bool CookedSceneGenerationWriter::Publish(
     std::string& outErrorMessage)
 {
 	std::vector<Files::FilePublication> publication;
-	if (!CookedSceneGenerationWriterOperations::StageAssets(
+	if (!CookedSceneGenerationStager::StageAssets(
 	        builds,
 	        publication,
 	        outErrorMessage) ||
@@ -37,13 +37,13 @@ bool CookedSceneGenerationWriter::Publish(
 	        publication,
 	        outErrorMessage))
 	{
-		CookedSceneGenerationWriterOperations::Cleanup(publication);
+		CookedSceneGenerationStager::Cleanup(publication);
 		return false;
 	}
 
 	if (!Files::TryPublishFileSet(publication, outErrorMessage))
 	{
-		CookedSceneGenerationWriterOperations::Cleanup(publication);
+		CookedSceneGenerationStager::Cleanup(publication);
 		return false;
 	}
 
@@ -51,7 +51,7 @@ bool CookedSceneGenerationWriter::Publish(
 	return true;
 }
 
-bool CookedSceneGenerationWriterOperations::StageAssets(
+bool CookedSceneGenerationStager::StageAssets(
     std::span<const CookedSceneBuild* const> builds,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
@@ -88,7 +88,7 @@ bool CookedSceneGenerationWriterOperations::StageAssets(
 	return true;
 }
 
-void CookedSceneGenerationWriterOperations::Cleanup(
+void CookedSceneGenerationStager::Cleanup(
     std::span<const Files::FilePublication> publication) noexcept
 {
 	for (const Files::FilePublication& file : publication)

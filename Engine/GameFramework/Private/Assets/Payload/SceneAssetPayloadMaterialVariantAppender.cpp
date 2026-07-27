@@ -5,49 +5,22 @@
 #include <cstddef>
 #include <format>
 #include <utility>
-#include <vector>
-
 namespace Assets
 {
-
-		struct PayloadMeshAssetBinding
+	std::string ReadVariantName(const CookedSceneMaterialVariantRecord& record)
+	{
+		std::size_t length = 0;
+		while (length < kCookedSceneMaterialVariantNameCapacity && record.name[length] != '\0')
 		{
-			CookedMeshAssetKind kind = CookedMeshAssetKind::Static;
-			SceneMeshAssetIndex payloadMeshAssetIndex = kInvalidSceneMeshAssetIndex;
-		};
-
-		std::string ReadVariantName(const CookedSceneMaterialVariantRecord& record)
-		{
-			std::size_t length = 0;
-			while (length < kCookedSceneMaterialVariantNameCapacity && record.name[length] != '\0')
-			{
-				++length;
-			}
-
-			return std::string(record.name, length);
+			++length;
 		}
 
-		std::vector<PayloadMeshAssetBinding> BuildMeshAssetBindings(const LoadedSceneManifest& sceneManifest)
-		{
-			std::vector<PayloadMeshAssetBinding> bindings;
-			bindings.reserve(sceneManifest.meshAssetReferences.size());
-			SceneMeshAssetIndex staticMeshIndex = 0;
-			SceneMeshAssetIndex skeletalMeshIndex = 0;
-			for (const CookedSceneMeshAssetRef& meshReference : sceneManifest.meshAssetReferences)
-			{
-				PayloadMeshAssetBinding binding;
-				binding.kind = meshReference.meshAssetKind;
-				binding.payloadMeshAssetIndex =
-				    meshReference.meshAssetKind == CookedMeshAssetKind::Skeletal ? skeletalMeshIndex++ : staticMeshIndex++;
-				bindings.push_back(binding);
-			}
-
-			return bindings;
-		}
-	  // namespace
+		return std::string(record.name, length);
+	}
 
 	bool SceneAssetPayloadMaterialVariantAppender::AppendMaterialVariants(
 	    const LoadedSceneManifest& sceneManifest,
+	    std::span<const SceneAssetPayloadMeshBinding> meshAssetBindings,
 	    SceneAssetPayload& sceneAssetPayload,
 	    std::uint32_t materialBaseIndex,
 	    std::string& errorMessage)
@@ -64,7 +37,6 @@ namespace Assets
 
 		sceneAssetPayload.materialVariantMappings.reserve(
 		    sceneAssetPayload.materialVariantMappings.size() + sceneManifest.materialVariantMappings.size());
-		const std::vector<PayloadMeshAssetBinding> meshAssetBindings = BuildMeshAssetBindings(sceneManifest);
 		for (const CookedSceneMaterialVariantMappingRecord& mappingRecord : sceneManifest.materialVariantMappings)
 		{
 			if (mappingRecord.variantIndex >= sceneManifest.materialVariants.size() ||
@@ -76,7 +48,7 @@ namespace Assets
 			}
 
 			SceneAssetPayload::MaterialVariantMapping mapping;
-			const PayloadMeshAssetBinding& meshBinding = meshAssetBindings[mappingRecord.meshAssetIndex];
+			const SceneAssetPayloadMeshBinding& meshBinding = meshAssetBindings[mappingRecord.meshAssetIndex];
 			mapping.meshAssetIndex = meshBinding.payloadMeshAssetIndex;
 			mapping.meshAssetKind = meshBinding.kind;
 			mapping.variantIndex = variantBaseIndex + mappingRecord.variantIndex;

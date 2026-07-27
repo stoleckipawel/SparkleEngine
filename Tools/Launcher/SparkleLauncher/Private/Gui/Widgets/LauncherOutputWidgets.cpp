@@ -28,7 +28,7 @@ namespace SparkleLauncher
 		QFrame* header = new QFrame(panel);
 		header->setObjectName("ActivityHeader");
 		QHBoxLayout* headerLayout = new QHBoxLayout(header);
-		headerLayout->setContentsMargins(LauncherUi::Activity::HeaderMargins());
+		headerLayout->setContentsMargins(LauncherUi::Activity::HeaderMargins);
 		headerLayout->setSpacing(LauncherUi::Space::Small);
 
 		QLabel* activityTitle = new QLabel("Activity", header);
@@ -39,7 +39,7 @@ namespace SparkleLauncher
 
 		QPushButton* toggleOutputButton = new QPushButton(QString::fromLatin1(LauncherUi::Activity::ExpandGlyph), header);
 		toggleOutputButton->setObjectName("ActivityToggleButton");
-		toggleOutputButton->setFixedSize(LauncherUi::Activity::ToggleButtonSize());
+		toggleOutputButton->setFixedSize(LauncherUi::Activity::ToggleButtonSize);
 		toggleOutputButton->setToolTip("Show or minimize recent runs and raw process output.");
 		toggleOutputButton->setAccessibleName("Toggle Activity panel");
 		toggleOutputButton->setAccessibleDescription("Shows or minimizes recent runs and raw process output.");
@@ -60,7 +60,7 @@ namespace SparkleLauncher
 		activityRail->setObjectName("ActivityRail");
 		activityRail->setMinimumWidth(LauncherUi::Activity::ListWidth);
 		QVBoxLayout* activityRailLayout = new QVBoxLayout(activityRail);
-		activityRailLayout->setContentsMargins(LauncherUi::Activity::RailMargins());
+		activityRailLayout->setContentsMargins(LauncherUi::Activity::RailMargins);
 		activityRailLayout->setSpacing(LauncherUi::Space::XSmall - 1);
 
 		QLabel* activityHeader = new QLabel("Runs", activityRail);
@@ -81,7 +81,7 @@ namespace SparkleLauncher
 		QFrame* outputPane = new QFrame(detailsPanel);
 		outputPane->setObjectName("OutputPane");
 		QVBoxLayout* outputLayout = new QVBoxLayout(outputPane);
-		outputLayout->setContentsMargins(LauncherUi::Activity::OutputMargins());
+		outputLayout->setContentsMargins(LauncherUi::Activity::OutputMargins);
 		outputLayout->setSpacing(LauncherUi::Space::XSmall - 1);
 
 		QHBoxLayout* outputHeaderLayout = new QHBoxLayout();

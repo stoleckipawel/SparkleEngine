@@ -55,6 +55,11 @@ void FrameGraphBuilder::ExportTexture(FrameGraphTextureHandle handle, std::strin
 	m_frameGraph.ExportTexture(handle, name);
 }
 
+ShaderAccelerationStructure FrameGraphBuilder::Read(FrameGraphAccelerationStructureHandle handle) const noexcept
+{
+	return m_frameGraph.Read(handle);
+}
+
 ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
 {
 	return m_frameGraph.CreateRenderTarget(handle);

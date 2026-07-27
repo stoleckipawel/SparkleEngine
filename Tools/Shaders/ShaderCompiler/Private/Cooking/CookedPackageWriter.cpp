@@ -12,7 +12,7 @@
 #include "Core/Public/Strings/StringTableBuilder.h"
 
 #include "RHI/Public/Shaders/CookedShaderPackageContract.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 #include <fstream>
 

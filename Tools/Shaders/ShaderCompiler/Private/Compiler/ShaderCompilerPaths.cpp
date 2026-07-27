@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Compiler/ShaderCompilerPathUtils.h"
+#include "Compiler/ShaderCompilerPaths.h"
 
 #include "Core/Public/Strings/StringUtils.h"
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ShaderParameters/PassParameterLayout.h"
-#include "Shaders/CookedShaderPackageUtils.h"
+#include "Shaders/CookedShaderPackageIdentity.h"
 #include "Shaders/LoadedShaderPackage.h"
 
 #include <string>

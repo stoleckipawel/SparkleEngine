@@ -3,7 +3,7 @@
 #include "Gltf/GltfMeshInstancingImporter.h"
 
 #include "Gltf/GltfAccessorReader.h"
-#include "Gltf/GltfNodeTransformUtils.h"
+#include "Gltf/GltfNodeTransformConverter.h"
 #include "SourceImportResult.h"
 
 #include <cgltf.h>
@@ -125,7 +125,7 @@ DirectX::XMMATRIX GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(
 {
 	if (transforms.matrices != nullptr)
 	{
-		return GltfNodeTransformUtils::ConvertGltfMatrixToEngine(GltfAccessorReader::ReadFloat4x4(transforms.matrices, instanceIndex));
+		return GltfNodeTransformConverter::ConvertGltfMatrixToEngine(GltfAccessorReader::ReadFloat4x4(transforms.matrices, instanceIndex));
 	}
 
 	DirectX::XMFLOAT3 translation = {0.0f, 0.0f, 0.0f};
@@ -148,5 +148,5 @@ DirectX::XMMATRIX GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(
 	    DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) *
 	    DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation)) *
 	    DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
-	return GltfNodeTransformUtils::ConvertGltfMatrixToEngine(authoredTransform);
+	return GltfNodeTransformConverter::ConvertGltfMatrixToEngine(authoredTransform);
 }

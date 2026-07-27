@@ -4,7 +4,7 @@
 
 #include "Gltf/GltfAccessorReader.h"
 #include "Gltf/GltfMorphTargetImporter.h"
-#include "Gltf/GltfNodeTransformUtils.h"
+#include "Gltf/GltfNodeTransformConverter.h"
 #include "Gltf/GltfSkinImporter.h"
 
 #include <cgltf.h>
@@ -38,12 +38,12 @@ ImportedMeshGeometry GltfMeshGeometryExtractor::ExtractMeshGeometry(const cgltf_
 	for (std::uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 	{
 		ImportedVertex& vertex = meshGeometry.vertices[vertexIndex];
-		vertex.position = GltfNodeTransformUtils::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(positions, vertexIndex));
+		vertex.position = GltfNodeTransformConverter::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(positions, vertexIndex));
 		vertex.color = {1.0f, 1.0f, 1.0f, 1.0f};
 
 		if (normals)
 		{
-			vertex.normal = GltfNodeTransformUtils::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(normals, vertexIndex));
+			vertex.normal = GltfNodeTransformConverter::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(normals, vertexIndex));
 		}
 
 		if (texcoords)
@@ -53,7 +53,7 @@ ImportedMeshGeometry GltfMeshGeometryExtractor::ExtractMeshGeometry(const cgltf_
 
 		if (tangents)
 		{
-			vertex.tangent = GltfNodeTransformUtils::ConvertGltfTangentToEngine(GltfAccessorReader::ReadFloat4(tangents, vertexIndex));
+			vertex.tangent = GltfNodeTransformConverter::ConvertGltfTangentToEngine(GltfAccessorReader::ReadFloat4(tangents, vertexIndex));
 		}
 
 		if (hasSkinInfluences)
@@ -63,7 +63,7 @@ ImportedMeshGeometry GltfMeshGeometryExtractor::ExtractMeshGeometry(const cgltf_
 	}
 
 	GltfAccessorReader::ReadIndices(primitive.indices, meshGeometry.indices);
-	GltfNodeTransformUtils::ConvertGltfTriangleWindingToEngine(meshGeometry.indices);
+	GltfNodeTransformConverter::ConvertGltfTriangleWindingToEngine(meshGeometry.indices);
 	meshGeometry.deformation.morphTargets = GltfMorphTargetImporter::ImportMorphTargets(mesh, primitive, vertexCount);
 	return meshGeometry;
 }

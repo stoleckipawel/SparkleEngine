@@ -26,8 +26,8 @@ class GpuMorphTargetBuffer final
 
 	bool Upload(
 	    RenderHardwareInterface& renderHardwareInterface,
-	    std::uint32_t vertexCount,
-	    const MeshMorphData* morphTargets);
+	    std::vector<MorphTargetDeltaData> deltas,
+	    std::uint32_t targetCount);
 	void Release() noexcept;
 
 	RhiGpuDescriptorHandle GetShaderResourceView() const noexcept { return m_shaderResourceView; }

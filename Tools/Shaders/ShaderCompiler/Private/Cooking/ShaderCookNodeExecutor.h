@@ -35,5 +35,17 @@ class ShaderCookNodeExecutor final
 	    IShaderBackend& backend,
 	    IShaderArtifactStore& artifactStore,
 	    ShaderCookNodeResult& outResult);
+	static bool CompileStage(
+	    const CookNode& node,
+	    IShaderBackend& backend,
+	    bool writeDebugArtifacts,
+	    ShaderDebugArtifactSet& debugArtifacts,
+	    ShaderCookNodeResult& outResult);
+	static bool PublishArtifacts(
+	    const ShaderPackageCookSettings& settings,
+	    const CookNode& node,
+	    IShaderArtifactStore& artifactStore,
+	    const ShaderDebugArtifactSet& debugArtifacts,
+	    ShaderCookNodeResult& outResult);
 	static void ApplyNodeMetadata(const CookNode& node, std::string_view cacheStatus, CookedStageBuild& compiledStage);
 };

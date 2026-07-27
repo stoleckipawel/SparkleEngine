@@ -3,7 +3,7 @@
 #include "../RHIAPI.h"
 
 #include "CookedShaderPackage.h"
-#include "CookedShaderPackageUtils.h"
+#include "CookedShaderPackageIdentity.h"
 #include "ShaderBytecode.h"
 
 #include "../RayTracing/RhiRayTracingDesc.h"
@@ -24,7 +24,6 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	LoadedShaderPackage() = default;
 
 	bool IsValid() const noexcept { return m_isValid; }
-	explicit operator bool() const noexcept { return IsValid(); }
 
 	const CookedShaderPackageHeader& GetHeader() const noexcept { return m_header; }
 	std::uint64_t GetPackageKey() const noexcept { return m_header.ShaderPackageKey; }
@@ -40,9 +39,6 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 		return m_rayTracingLocalParameters;
 	}
 
-	// v2 reflection accessors. ReflectionRecords is parallel to BinaryRecords;
-	// the typed arrays are package-wide, indexed by the offsets in each
-	// CookedShaderReflectionRecord.
 	const std::vector<CookedShaderReflectionRecord>& GetReflectionRecords() const noexcept { return m_reflectionRecords; }
 	const std::vector<CookedShaderResourceBindingRecord>& GetResourceBindings() const noexcept { return m_resourceBindings; }
 	const std::vector<CookedShaderConstantBufferRecord>& GetConstantBuffers() const noexcept { return m_constantBuffers; }
@@ -88,4 +84,3 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	std::vector<std::uint8_t> m_binaryBlob;
 	bool m_isValid = false;
 };
-

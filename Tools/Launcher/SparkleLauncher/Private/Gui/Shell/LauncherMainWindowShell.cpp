@@ -141,7 +141,7 @@ namespace SparkleLauncher
 		QFrame* titleBand = new QFrame(panel);
 		titleBand->setObjectName("TitleBand");
 		QHBoxLayout* titleBandLayout = new QHBoxLayout(titleBand);
-		titleBandLayout->setContentsMargins(LauncherUi::TitleBand::Margins());
+		titleBandLayout->setContentsMargins(LauncherUi::TitleBand::Margins);
 		titleBandLayout->setSpacing(LauncherUi::TitleBand::Spacing);
 
 		QVBoxLayout* titleStack = new QVBoxLayout();
@@ -175,7 +175,7 @@ namespace SparkleLauncher
 		m_actionMetaPanel = new QFrame(panel);
 		m_actionMetaPanel->setObjectName("ActionMetaPanel");
 		QHBoxLayout* actionMetaRowLayout = new QHBoxLayout(m_actionMetaPanel);
-		actionMetaRowLayout->setContentsMargins(LauncherUi::ActionMeta::Margins());
+		actionMetaRowLayout->setContentsMargins(LauncherUi::ActionMeta::Margins);
 		actionMetaRowLayout->setSpacing(LauncherUi::ActionMeta::Spacing);
 		actionMetaRowLayout->addStretch(1);
 
@@ -275,7 +275,7 @@ namespace SparkleLauncher
 			content->setMaximumWidth(LauncherUi::Page::MaxContentWidth);
 		}
 		QVBoxLayout* layout = new QVBoxLayout(content);
-		layout->setContentsMargins(isQuickStart ? LauncherUi::Page::QuickStartMargins() : LauncherUi::Page::ContentMargins());
+		layout->setContentsMargins(isQuickStart ? LauncherUi::Page::QuickStartMargins : LauncherUi::Page::ContentMargins);
 		layout->setSpacing(isQuickStart ? 0 : LauncherUi::Page::Spacing);
 		AddOptionsForOperation(*layout, operationId);
 		layout->addStretch(1);

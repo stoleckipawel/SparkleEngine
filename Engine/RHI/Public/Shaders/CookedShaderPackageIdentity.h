@@ -9,15 +9,13 @@
 
 class PassParameterLayout;
 
-struct ShaderPackageDefinition final
+struct SPARKLE_RHI_API ShaderPackageDefinition final
 {
 	const char* PackageId = nullptr;
 	ShaderStageMask ExpectedStages = ShaderStageMask::None;
 	CookedShaderPackageFeatureFlags RequiredFeatures = CookedShaderPackageFeatureFlags::None;
 
-	bool IsValid() const noexcept { return PackageId != nullptr && PackageId[0] != '\0' && ExpectedStages != ShaderStageMask::None; }
-
-	explicit operator bool() const noexcept { return IsValid(); }
+	bool IsValid() const noexcept;
 };
 
 SPARKLE_RHI_API std::uint64_t BuildShaderPackageKey(std::string_view packageId);

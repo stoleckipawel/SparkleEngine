@@ -29,14 +29,19 @@ void ShaderCookNodeExecutor::Execute(
 		outResult.Diagnostic = "Selected shader backend '" + node.backendName + "' is unavailable: " + outResult.Diagnostic;
 		return;
 	}
+
 	LocalDiskShaderArtifactStore artifactStore(cacheDirectory);
 	if (TryLoadFromCache(settings, node, *backend, artifactStore, outResult))
 	{
 		outResult.Succeeded = true;
 		return;
 	}
+
 	if (!outResult.Diagnostic.empty())
+	{
 		return;
+	}
+
 	outResult.Succeeded = Compile(settings, node, *backend, artifactStore, outResult);
 }
 
@@ -48,20 +53,27 @@ bool ShaderCookNodeExecutor::TryLoadFromCache(
     ShaderCookNodeResult& outResult)
 {
 	if (!settings.useCache || !settings.debugArtifactDirectory.empty())
+	{
 		return false;
+	}
+
 	std::string cacheError;
 	if (!artifactStore.TryGet(node.cacheKey, outResult.CompiledStage, cacheError))
 	{
 		outResult.Diagnostic = std::move(cacheError);
 		return false;
 	}
+
 	ApplyNodeMetadata(node, "hit", outResult.CompiledStage);
 	if (!ShaderParameterStructCookVerifier::Verify(
 	        node,
 	        outResult.CompiledStage,
 	        nullptr,
 	        outResult.Diagnostic))
+	{
 		return false;
+	}
+
 	return true;
 }
 
@@ -74,7 +86,47 @@ bool ShaderCookNodeExecutor::Compile(
 {
 	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	ShaderDebugArtifactSet debugArtifacts;
-	if (!StageCompiler::Compile(
+
+	if (!CompileStage(
+	        node,
+	        backend,
+	        writeDebugArtifacts,
+	        debugArtifacts,
+	        outResult))
+	{
+		return false;
+	}
+
+	if (!ShaderParameterStructCookVerifier::Verify(
+	        node,
+	        outResult.CompiledStage,
+	        &debugArtifacts,
+	        outResult.Diagnostic))
+	{
+		return false;
+	}
+
+	ApplyNodeMetadata(
+	    node,
+	    settings.useCache ? (writeDebugArtifacts ? "disabled-debug-artifacts" : "miss") : "disabled",
+	    outResult.CompiledStage);
+
+	return PublishArtifacts(
+	    settings,
+	    node,
+	    artifactStore,
+	    debugArtifacts,
+	    outResult);
+}
+
+bool ShaderCookNodeExecutor::CompileStage(
+    const CookNode& node,
+    IShaderBackend& backend,
+    bool writeDebugArtifacts,
+    ShaderDebugArtifactSet& debugArtifacts,
+    ShaderCookNodeResult& outResult)
+{
+	if (StageCompiler::Compile(
 	        backend,
 	        *node.stage,
 	        node.compileOptions,
@@ -82,31 +134,38 @@ bool ShaderCookNodeExecutor::Compile(
 	        writeDebugArtifacts ? &debugArtifacts : nullptr,
 	        outResult.Diagnostic))
 	{
-		outResult.Diagnostic = std::format(
-		    "Failed to compile {} - {}",
-		    ShaderCookDiagnostics::FormatNodeContext(node, backend.GetBackendName(), node.compileOptions.Target),
-		    outResult.Diagnostic);
+		return true;
+	}
+
+	outResult.Diagnostic = std::format(
+	    "Failed to compile {} - {}",
+	    ShaderCookDiagnostics::FormatNodeContext(node, backend.GetBackendName(), node.compileOptions.Target),
+	    outResult.Diagnostic);
+	return false;
+}
+
+bool ShaderCookNodeExecutor::PublishArtifacts(
+    const ShaderPackageCookSettings& settings,
+    const CookNode& node,
+    IShaderArtifactStore& artifactStore,
+    const ShaderDebugArtifactSet& debugArtifacts,
+    ShaderCookNodeResult& outResult)
+{
+	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
+
+	if (writeDebugArtifacts &&
+	    !ShaderDebugArtifactWriter::Write(
+	        settings.debugArtifactDirectory,
+	        *node.package,
+	        *node.stage,
+	        node.compileOptions,
+	        outResult.CompiledStage,
+	        debugArtifacts,
+	        outResult.Diagnostic))
+	{
 		return false;
 	}
-	if (!ShaderParameterStructCookVerifier::Verify(
-	        node,
-	        outResult.CompiledStage,
-	        &debugArtifacts,
-	        outResult.Diagnostic))
-		return false;
-	ApplyNodeMetadata(
-	    node,
-	    settings.useCache ? (writeDebugArtifacts ? "disabled-debug-artifacts" : "miss") : "disabled",
-	    outResult.CompiledStage);
-	if (writeDebugArtifacts && !ShaderDebugArtifactWriter::Write(
-	                               settings.debugArtifactDirectory,
-	                               *node.package,
-	                               *node.stage,
-	                               node.compileOptions,
-	                               outResult.CompiledStage,
-	                               debugArtifacts,
-	                               outResult.Diagnostic))
-		return false;
+
 	if (settings.useCache)
 	{
 		std::string cacheError;
@@ -116,13 +175,17 @@ bool ShaderCookNodeExecutor::Compile(
 			return false;
 		}
 	}
+
 	return true;
 }
 
 void ShaderCookNodeExecutor::ApplyNodeMetadata(const CookNode& node, std::string_view cacheStatus, CookedStageBuild& compiledStage)
 {
 	if (compiledStage.codegenTarget.empty())
+	{
 		compiledStage.codegenTarget.assign(GetShaderTargetName(node.compileOptions.Target));
+	}
+
 	if (compiledStage.shaderBlobId == 0)
 	{
 		compiledStage.shaderBlobId = BuildShaderBlobId(
@@ -133,6 +196,7 @@ void ShaderCookNodeExecutor::ApplyNodeMetadata(const CookNode& node, std::string
 		    compiledStage.codegenTarget,
 		    compiledStage.format);
 	}
+
 	compiledStage.sourceHash = node.sourceHash;
 	compiledStage.includeClosureHash = node.includeClosureHash;
 	compiledStage.optionsHash = node.optionsHash;

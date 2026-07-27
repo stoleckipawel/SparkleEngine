@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <string>
 
-class TextureSourceLoaderUtils final
+class TextureSourceLoadStages final
 {
   public:
 	static bool TryReadSourceBytes(

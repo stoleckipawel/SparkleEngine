@@ -5,7 +5,7 @@
 #include "Device/RenderDeviceBackendServices.h"
 #include "Device/RenderDeviceServicesState.h"
 #include "Presentation/RhiPresentationDefaults.h"
-#include "Shaders/CookedShaderPackageUtils.h"
+#include "Shaders/CookedShaderPackageIdentity.h"
 
 #include "Window/Window.h"
 

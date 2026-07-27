@@ -10,12 +10,10 @@
 #include "Textures/RendererTexture.h"
 
 #include <cstdint>
-#include <vector>
-
 class LightingSceneStateHasher final
 {
   public:
-	template <typename TValue> static std::uint64_t AppendCount(std::uint64_t hash, const std::vector<TValue>& values) noexcept
+	template <typename TRange> static std::uint64_t AppendCount(std::uint64_t hash, const TRange& values) noexcept
 	{
 		return Hash::ContinueFnv1a64Value(hash, static_cast<std::uint64_t>(values.size()));
 	}

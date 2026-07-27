@@ -9,7 +9,7 @@
 
 namespace Assets
 {
-	inline constexpr std::uint32_t kCookedMeshAssetMagic = MakeCookedAssetMagic('S', 'M', 'S', 'H');
+	inline constexpr std::uint32_t kCookedMeshAssetMagic = 0x48534D53u;
 	inline constexpr std::uint32_t kCookedMeshAssetVersion = 5;
 
 	enum class CookedMeshAssetKind : std::uint32_t
@@ -76,6 +76,8 @@ namespace Assets
 
 static_assert(std::is_trivially_copyable_v<Assets::CookedMeshSkinInfluence>, "CookedMeshSkinInfluence must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedMeshVertex>, "CookedMeshVertex must stay trivially copyable.");
-static_assert(std::is_trivially_copyable_v<Assets::CookedMeshMorphTargetRecord>, "CookedMeshMorphTargetRecord must stay trivially copyable.");
+static_assert(
+    std::is_trivially_copyable_v<Assets::CookedMeshMorphTargetRecord>,
+    "CookedMeshMorphTargetRecord must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedMeshMorphTargetDelta>, "CookedMeshMorphTargetDelta must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedMeshAssetHeader>, "CookedMeshAssetHeader must stay trivially copyable.");

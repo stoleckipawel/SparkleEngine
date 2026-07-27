@@ -9,11 +9,8 @@
 #include <string>
 #include <string_view>
 
-namespace TaskDetail
-{
-	struct CompiledTaskGraphData;
-	struct TaskGraphAccess;
-}
+struct TaskGraphStorage;
+struct TaskGraphAccess;
 
 class TaskExecution;
 class TaskExecutor;
@@ -31,7 +28,7 @@ class SPARKLE_TASKS_API TaskNodeHandle final
 	friend class TaskGraphBuilder;
 	friend class TaskExecution;
 	friend class TaskExecutor;
-	friend struct TaskDetail::TaskGraphAccess;
+	friend struct TaskGraphAccess;
 
 	TaskNodeHandle(std::uint64_t builderIdentity, std::uint32_t builderGeneration, std::uint32_t index) noexcept;
 
@@ -93,9 +90,9 @@ class SPARKLE_TASKS_API CompiledTaskGraph final
 	friend class TaskGraphBuilder;
 	friend class TaskExecutor;
 
-	explicit CompiledTaskGraph(std::shared_ptr<const TaskDetail::CompiledTaskGraphData> data) noexcept;
+	explicit CompiledTaskGraph(std::shared_ptr<const TaskGraphStorage> data) noexcept;
 
-	std::shared_ptr<const TaskDetail::CompiledTaskGraphData> m_data;
+	std::shared_ptr<const TaskGraphStorage> m_data;
 };
 
 class SPARKLE_TASKS_API TaskGraphBuilder final
@@ -122,7 +119,7 @@ class SPARKLE_TASKS_API TaskGraphBuilder final
 	const TaskGraphError& GetError() const noexcept;
 
   private:
-	friend struct TaskDetail::TaskGraphAccess;
+	friend struct TaskGraphAccess;
 	struct State;
 	std::unique_ptr<State> m_state;
 };

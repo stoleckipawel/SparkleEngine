@@ -11,7 +11,7 @@
 #include <cstring>
 #include <fstream>
 
-class CookedAnimationAssetWriterOperations final
+class CookedAnimationAssetStager final
 {
   public:
 	static bool StageAnimationAsset(
@@ -32,7 +32,7 @@ bool CookedAnimationAssetWriter::StageAnimationAssets(
 {
 	for (const CookedAnimationAssetBuild& animationAsset : animationAssets)
 	{
-		if (!CookedAnimationAssetWriterOperations::StageAnimationAsset(
+		if (!CookedAnimationAssetStager::StageAnimationAsset(
 		        animationAsset,
 		        outPublication,
 		        outErrorMessage))
@@ -45,7 +45,7 @@ bool CookedAnimationAssetWriter::StageAnimationAssets(
 	return true;
 }
 
-bool CookedAnimationAssetWriterOperations::StageAnimationAsset(
+bool CookedAnimationAssetStager::StageAnimationAsset(
     const CookedAnimationAssetBuild& animationAsset,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
@@ -75,7 +75,7 @@ bool CookedAnimationAssetWriterOperations::StageAnimationAsset(
 	    outErrorMessage);
 }
 
-Assets::CookedAnimationAssetHeader CookedAnimationAssetWriterOperations::BuildHeader(
+Assets::CookedAnimationAssetHeader CookedAnimationAssetStager::BuildHeader(
     const CookedAnimationAssetBuild& animationAsset) noexcept
 {
 	Assets::CookedAnimationAssetHeader header{
@@ -93,7 +93,7 @@ Assets::CookedAnimationAssetHeader CookedAnimationAssetWriterOperations::BuildHe
 	return header;
 }
 
-void CookedAnimationAssetWriterOperations::CopyName(
+void CookedAnimationAssetStager::CopyName(
     std::string_view sourceName,
     char (&destination)[64]) noexcept
 {

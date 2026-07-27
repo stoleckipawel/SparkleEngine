@@ -37,38 +37,10 @@ struct RayTracingHitGroupRegistrationDesc final
 	std::string_view IntersectionExportName;
 };
 
-inline std::string BuildShaderPackageIdFromSourcePath(std::string_view sourcePath)
-{
-	const std::size_t slash = sourcePath.find_last_of("/\\");
-	const std::size_t nameStart = slash == std::string_view::npos ? 0 : slash + 1;
-	const std::size_t dot = sourcePath.find_last_of('.');
-	if (dot != std::string_view::npos && dot > nameStart)
-	{
-		return std::string(sourcePath.substr(nameStart, dot - nameStart));
-	}
-	return nameStart < sourcePath.size() ? std::string(sourcePath.substr(nameStart)) : std::string{};
-}
-
-inline std::string GetShaderRegistrationPackageId(const ShaderRegistrationDesc& shader)
-{
-	if (!shader.PackageName.empty())
-	{
-		return std::string(shader.PackageName);
-	}
-
-	std::string packageId = BuildShaderPackageIdFromSourcePath(shader.SourcePath);
-	return packageId.empty() ? std::string(shader.ShaderName) : packageId;
-}
-
-inline std::string GetShaderRegistrationBindingLayoutId(const ShaderRegistrationDesc& shader)
-{
-	return shader.BindingLayoutId.empty() ? GetShaderRegistrationPackageId(shader) : std::string(shader.BindingLayoutId);
-}
-
-constexpr CookedShaderPackageKind GetDefaultCookedShaderPackageKind(ShaderStage stage) noexcept
-{
-	return stage == ShaderStage::Compute ? CookedShaderPackageKind::Compute : CookedShaderPackageKind::Graphics;
-}
+SPARKLE_RHI_API std::string BuildShaderPackageIdFromSourcePath(std::string_view sourcePath);
+SPARKLE_RHI_API std::string GetShaderRegistrationPackageId(const ShaderRegistrationDesc& shader);
+SPARKLE_RHI_API std::string GetShaderRegistrationBindingLayoutId(const ShaderRegistrationDesc& shader);
+SPARKLE_RHI_API CookedShaderPackageKind GetDefaultCookedShaderPackageKind(ShaderStage stage) noexcept;
 
 class SPARKLE_RHI_API GlobalShaderRegistry final
 {
@@ -343,8 +315,8 @@ template <typename TShader> class TShaderRef final
 #define IMPLEMENT_GLOBAL_SHADER(Class, Path, Entry, StageName)                              \
 	template <> struct TShaderSourceMetadata<Class>                                         \
 	{                                                                                       \
-		static constexpr std::string_view kPackageName = "";                               \
-		static constexpr std::string_view kBindingLayoutId = "";                           \
+		static constexpr std::string_view kPackageName = "";                                \
+		static constexpr std::string_view kBindingLayoutId = "";                            \
 		static constexpr std::string_view kSourcePath = Path;                               \
 		static constexpr std::string_view kEntryPoint = Entry;                              \
 		static constexpr ::ShaderStage kStage = ::ShaderStage::StageName;                   \
@@ -371,8 +343,8 @@ template <typename TShader> class TShaderRef final
 #define IMPLEMENT_RAY_TRACING_SHADER(Class, Path, Entry)                                            \
 	template <> struct TShaderSourceMetadata<Class>                                                 \
 	{                                                                                               \
-		static constexpr std::string_view kPackageName = "";                                       \
-		static constexpr std::string_view kBindingLayoutId = "";                                   \
+		static constexpr std::string_view kPackageName = "";                                        \
+		static constexpr std::string_view kBindingLayoutId = "";                                    \
 		static constexpr std::string_view kSourcePath = Path;                                       \
 		static constexpr std::string_view kEntryPoint = Entry;                                      \
 		static constexpr ::ShaderStage kStage = ::ShaderStage::Count;                               \

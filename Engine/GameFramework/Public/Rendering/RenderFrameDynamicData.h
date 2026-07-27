@@ -35,7 +35,8 @@ struct RenderSkinningData final
 	RenderObjectId Object;
 	RenderSkeletonAssetHandle Skeleton;
 	RenderAnimationAssetHandle Animation;
-	std::vector<DirectX::XMFLOAT4X4> Matrices;
+	std::uint32_t MatrixOffset = 0;
+	std::uint32_t MatrixCount = 0;
 };
 
 struct RenderMorphData final
@@ -43,7 +44,8 @@ struct RenderMorphData final
 	RenderObjectId Object;
 	RenderAnimationAssetHandle Animation;
 	std::uint32_t TargetNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
-	std::vector<float> Weights;
+	std::uint32_t WeightOffset = 0;
+	std::uint32_t WeightCount = 0;
 };
 
 struct RenderLightData final
@@ -59,5 +61,7 @@ struct RenderFrameDynamicData final
 	std::vector<RenderObjectDynamicData> Objects;
 	std::vector<RenderLightData> Lights;
 	std::vector<RenderSkinningData> Skinning;
-	std::vector<RenderMorphData> MorphWeights;
+	std::vector<DirectX::XMFLOAT4X4> SkinningMatrices;
+	std::vector<RenderMorphData> MorphRanges;
+	std::vector<float> MorphWeights;
 };

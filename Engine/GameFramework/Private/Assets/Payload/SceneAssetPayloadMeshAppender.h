@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Assets/Cooked/LoadedSceneManifest.h"
-#include "Assets/SceneAssetPayload.h"
+#include "Assets/Payload/SceneAssetPayloadMeshBindings.h"
 #include "Level/LevelDesc.h"
 
 #include <cstdint>
+#include <span>
 #include <string>
 
 namespace Assets
@@ -24,6 +24,7 @@ namespace Assets
 		static bool AppendMeshInstances(
 		    const SceneAssetId& sceneAssetId,
 		    const LoadedSceneManifest& sceneManifest,
+		    std::span<const SceneAssetPayloadMeshBinding> meshAssetBindings,
 		    SceneAssetPayload& sceneAssetPayload,
 		    SceneMeshAssetIndex meshAssetBaseIndex,
 		    SceneMeshInstanceGroupIndex groupBaseIndex,
@@ -33,6 +34,7 @@ namespace Assets
 		static bool AppendMeshInstanceGroups(
 		    const SceneAssetId& sceneAssetId,
 		    const LoadedSceneManifest& sceneManifest,
+		    std::span<const SceneAssetPayloadMeshBinding> meshAssetBindings,
 		    SceneAssetPayload& sceneAssetPayload,
 		    SceneMeshAssetIndex meshAssetBaseIndex,
 		    SceneMeshInstanceIndex instanceBaseIndex,

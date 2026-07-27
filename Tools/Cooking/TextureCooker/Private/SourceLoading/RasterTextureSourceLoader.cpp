@@ -2,7 +2,7 @@
 
 #include "SourceLoading/RasterTextureSourceLoader.h"
 
-#include "SourceLoading/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoadStages.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -16,7 +16,7 @@ TextureLoadResult RasterTextureSourceLoader::Load(const std::filesystem::path& s
 {
 	std::filesystem::path resolvedPath;
 	std::vector<std::uint8_t> fileBytes;
-	if (!TextureSourceLoaderUtils::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
+	if (!TextureSourceLoadStages::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
 	{
 		return {};
 	}
@@ -40,7 +40,7 @@ TextureLoadResult RasterTextureSourceLoader::Load(const std::filesystem::path& s
 		return {};
 	}
 
-	TextureLoadResult loadResult = TextureSourceLoaderUtils::BuildByteTextureLoadResult(
+	TextureLoadResult loadResult = TextureSourceLoadStages::BuildByteTextureLoadResult(
 	    width,
 	    height,
 	    pixels,

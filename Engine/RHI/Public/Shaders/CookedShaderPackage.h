@@ -126,10 +126,9 @@ struct CookedShaderPackageHeader
 	std::uint64_t SourceIdentityHash = 0;
 	std::uint64_t BindingLayoutHash = 0;
 
-	constexpr bool Matches(std::uint32_t expectedMagic, std::uint32_t expectedVersion) const noexcept
-	{
-		return Magic == expectedMagic && Version == expectedVersion;
-	}
+	SPARKLE_RHI_API bool Matches(
+	    std::uint32_t expectedMagic,
+	    std::uint32_t expectedVersion) const noexcept;
 };
 
 struct CookedShaderBinaryRecord

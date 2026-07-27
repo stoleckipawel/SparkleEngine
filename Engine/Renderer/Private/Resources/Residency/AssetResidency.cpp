@@ -24,10 +24,24 @@ std::optional<AssetGenerationHandle> AssetResidency::BeginGeneration(
 	}
 
 	const AssetGenerationHandle handle{.AssetKey = assetKey, .Generation = generation};
-	if (Find(handle) != nullptr)
+	const auto existing = std::find_if(
+	    m_generations.begin(),
+	    m_generations.end(),
+	    [handle](const AssetGenerationStatus& candidate) noexcept
+	    {
+		    return candidate.Handle == handle;
+	    });
+	if (existing != m_generations.end() &&
+	    existing->State != AssetResidencyState::Retired &&
+	    existing->State != AssetResidencyState::Failed)
 	{
 		return handle;
 	}
+	if (existing != m_generations.end())
+	{
+		m_generations.erase(existing);
+	}
+
 	const auto newerGeneration = std::find_if(
 	    m_generations.begin(),
 	    m_generations.end(),

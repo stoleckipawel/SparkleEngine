@@ -162,7 +162,7 @@ void UI::InitializeImGuiContext()
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	io.Fonts->SetTexID(static_cast<ImTextureID>(EditorTextureHandle::FontAtlas().Pack()));
+	ImGuiRenderPacketBuilder::ConfigureProducerContext();
 
 	ImGui::StyleColorsDark();
 	SparkleUiTheme::ApplyEditorialDarkTheme();

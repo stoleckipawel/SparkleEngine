@@ -18,10 +18,9 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
 
 	bool Initialize() override;
 	void BeginFrame() noexcept override;
-	void PrepareResources() noexcept override;
-	std::uint64_t GetFontTextureId() const noexcept override;
 	std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	void RenderDrawData(ImDrawData* drawData) noexcept override;
+	void ReleaseTexture(ImTextureData& texture) noexcept override;
 	void Render(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept;
 	void Shutdown() noexcept override;
 
@@ -46,5 +45,4 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
 	D3D12RenderHardwareInterface* m_renderHardware = nullptr;
 	ImGuiContext* m_imguiContext = nullptr;
 	bool m_ownsContext = false;
-	bool m_resourcesPrepared = false;
 };

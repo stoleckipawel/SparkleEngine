@@ -3,10 +3,14 @@
 #include "Renderer/Public/Meshes/GpuMeshHandle.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
+#include <DirectXMath.h>
+
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <span>
 #include <unordered_map>
+#include <vector>
 
 class GPUMesh;
 class GPUMeshCache;
@@ -104,6 +108,13 @@ class RayTracingBlasCache final
 	    const MeshDraw& draw,
 	    Entry& entry,
 	    RhiRayTracingGeometryDesc& outGeometry) noexcept;
+	bool ReplaceDynamicVertexBuffer(
+	    std::span<const DirectX::XMFLOAT3> positions,
+	    Entry& entry) noexcept;
+	RhiRayTracingGeometryDesc BuildSkinnedGeometryDesc(
+	    const GPUMesh& gpuMesh,
+	    const Entry& entry,
+	    std::uint32_t vertexCount) const noexcept;
 	bool EnsureEntryResources(
 	    const RhiRayTracingGeometryDesc& geometry,
 	    const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
@@ -118,5 +129,6 @@ class RayTracingBlasCache final
 	const GPUMeshCache* m_meshes = nullptr;
 	std::map<GpuMeshHandle, Entry> m_entries;
 	std::unordered_map<SkinnedEntryKey, Entry, SkinnedEntryKeyHash> m_skinnedEntries;
+	std::vector<DirectX::XMFLOAT3> m_skinnedPositionScratch;
 	BuildStats m_currentFrameStats = {};
 };

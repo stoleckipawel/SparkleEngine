@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+struct TextureCookBatchItemResult;
+
 class TextureCookRequestBatchProcessor final
 {
   public:
@@ -16,4 +18,14 @@ class TextureCookRequestBatchProcessor final
 	    const std::filesystem::path& requestFilePath,
 	    std::vector<TextureCookRequest>& outRequests,
 	    std::string& outErrorMessage);
+	static bool ReportFailures(
+	    const std::vector<TextureCookRequest>& requests,
+	    const std::vector<TextureCookBatchItemResult>& results,
+	    bool batchSucceeded);
+	static bool PublishGeneration(
+	    const std::vector<TextureCookRequest>& requests,
+	    const std::vector<TextureCookBatchItemResult>& results,
+	    std::string& outErrorMessage);
+	static void CleanupStagedOutputs(
+	    const std::vector<TextureCookBatchItemResult>& results);
 };

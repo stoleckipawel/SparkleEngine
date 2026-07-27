@@ -1,7 +1,7 @@
 #include "TaskGraph.h"
 
 #include "TaskExecutionContext.h"
-#include "TaskGraphInternal.h"
+#include "TaskGraphStorage.h"
 
 #include <algorithm>
 #include <atomic>
@@ -23,93 +23,37 @@ TaskNodeHandle::TaskNodeHandle(
 
 bool TaskNodeHandle::operator==(const TaskNodeHandle&) const noexcept = default;
 
-class TaskGraphOperations final
-{
-  public:
-	static std::uint64_t AcquireBuilderIdentity() noexcept
-	{
-		static std::atomic_uint64_t nextIdentity{1};
-		return nextIdentity.fetch_add(1, std::memory_order_relaxed);
-	}
-
-	static bool IsValidCompletionPolicy(TaskCompletionPolicy policy) noexcept
-	{
-		return policy == TaskCompletionPolicy::Normal || policy == TaskCompletionPolicy::Cleanup;
-	}
-
-	static bool IsValidTaskLane(TaskLane lane) noexcept
-	{
-		return lane == TaskLane::FrameCritical || lane == TaskLane::Background || lane == TaskLane::BlockingIo;
-	}
-
-	static TaskGraphError MakeError(TaskGraphErrorCode code, std::string message)
-	{
-		return TaskGraphError{.Code = code, .Message = std::move(message)};
-	}
-
-	static bool AreValidLimits(TaskGraphLimits limits) noexcept
-	{
-		return limits.MaximumTasks > 0 && limits.MaximumTasks <= TaskGraphLimits::HardMaximumTasks &&
-		       limits.MaximumEdges <= TaskGraphLimits::HardMaximumEdges;
-	}
-
-	static bool HasCycle(const std::vector<std::vector<std::uint32_t>>& adjacency)
-	{
-		std::vector<std::uint32_t> incoming(adjacency.size(), 0);
-		for (const auto& successors : adjacency)
-		{
-			for (const std::uint32_t successor : successors)
-			{
-				++incoming[successor];
-			}
-		}
-
-		std::priority_queue<std::uint32_t, std::vector<std::uint32_t>, std::greater<>> ready;
-		for (std::uint32_t index = 0; index < incoming.size(); ++index)
-		{
-			if (incoming[index] == 0)
-			{
-				ready.push(index);
-			}
-		}
-
-		std::uint32_t visited = 0;
-		while (!ready.empty())
-		{
-			const std::uint32_t index = ready.top();
-			ready.pop();
-			++visited;
-			for (const std::uint32_t successor : adjacency[index])
-			{
-				if (--incoming[successor] == 0)
-				{
-					ready.push(successor);
-				}
-			}
-		}
-
-		return visited != adjacency.size();
-	}
-};
-
 struct TaskGraphBuilder::State final
 {
-	explicit State(TaskGraphLimits requestedLimits) : Limits(requestedLimits), BuilderIdentity(TaskGraphOperations::AcquireBuilderIdentity())
+	class Compilation;
+
+	explicit State(TaskGraphLimits requestedLimits) :
+		Limits(requestedLimits),
+		BuilderIdentity(AcquireBuilderIdentity())
 	{
-		if (!TaskGraphOperations::AreValidLimits(Limits))
+		if (!AreValidLimits(Limits))
 		{
-			Error = TaskGraphOperations::MakeError(TaskGraphErrorCode::InvalidLimits, "Task capacity is zero or a task/edge limit exceeds the hard maximum.");
+			Error = CreateError(
+			    TaskGraphErrorCode::InvalidLimits,
+			    "Task capacity is zero or a task/edge limit exceeds the hard maximum.");
 			return;
 		}
 
 		Nodes.reserve(Limits.MaximumTasks);
 	}
 
+	static std::uint64_t AcquireBuilderIdentity() noexcept;
+	static bool AreValidLimits(TaskGraphLimits limits) noexcept;
+	static bool IsValidCompletionPolicy(TaskCompletionPolicy policy) noexcept;
+	static bool IsValidTaskLane(TaskLane lane) noexcept;
+	static TaskGraphError CreateError(TaskGraphErrorCode code, std::string message);
+	static bool HasCycle(const std::vector<std::vector<std::uint32_t>>& adjacency);
+
 	void RecordError(TaskGraphErrorCode code, std::string message)
 	{
 		if (!Error)
 		{
-			Error = TaskGraphOperations::MakeError(code, std::move(message));
+			Error = CreateError(code, std::move(message));
 		}
 	}
 
@@ -120,18 +64,18 @@ struct TaskGraphBuilder::State final
 			RecordError(TaskGraphErrorCode::InvalidHandle, "Task graph operation received an invalid task handle.");
 			return false;
 		}
-		if (TaskDetail::TaskGraphAccess::GetBuilderIdentity(handle) != BuilderIdentity)
+		if (TaskGraphAccess::GetBuilderIdentity(handle) != BuilderIdentity)
 		{
 			RecordError(TaskGraphErrorCode::ForeignHandle, "Task graph operation received a handle from another builder.");
 			return false;
 		}
-		if (TaskDetail::TaskGraphAccess::GetBuilderGeneration(handle) != BuilderGeneration)
+		if (TaskGraphAccess::GetBuilderGeneration(handle) != BuilderGeneration)
 		{
 			RecordError(TaskGraphErrorCode::StaleHandle, "Task graph operation received a stale builder-generation handle.");
 			return false;
 		}
 
-		outIndex = TaskDetail::TaskGraphAccess::GetIndex(handle);
+		outIndex = TaskGraphAccess::GetIndex(handle);
 		if (outIndex >= Nodes.size())
 		{
 			RecordError(TaskGraphErrorCode::InvalidHandle, "Task graph handle index is outside the builder task range.");
@@ -145,27 +89,241 @@ struct TaskGraphBuilder::State final
 	std::uint32_t BuilderGeneration = 1;
 	std::uint32_t EdgeCount = 0;
 	TaskGraphError Error;
-	std::vector<TaskDetail::CompiledTaskNode> Nodes;
+	std::vector<TaskGraphNode> Nodes;
 };
+
+class TaskGraphBuilder::State::Compilation final
+{
+  public:
+	explicit Compilation(const State& builder) noexcept;
+
+	std::shared_ptr<TaskGraphStorage> Build() const;
+
+  private:
+	void CopyBuilderState(TaskGraphStorage& graph) const;
+	bool BuildDependencyRelations(
+	    TaskGraphStorage& graph,
+	    std::vector<std::vector<std::uint32_t>>& startAdjacency,
+	    std::vector<std::vector<std::uint32_t>>& completionAdjacency) const;
+	bool ValidatePrerequisiteLane(
+	    TaskGraphStorage& graph,
+	    std::uint32_t taskIndex,
+	    std::uint32_t prerequisiteIndex) const;
+	bool ValidateNestedLane(TaskGraphStorage& graph, std::uint32_t taskIndex) const;
+	void RejectCycles(
+	    TaskGraphStorage& graph,
+	    const std::vector<std::vector<std::uint32_t>>& startAdjacency,
+	    const std::vector<std::vector<std::uint32_t>>& completionAdjacency) const;
+
+	const State& m_builder;
+};
+
+std::uint64_t TaskGraphBuilder::State::AcquireBuilderIdentity() noexcept
+{
+	static std::atomic_uint64_t nextIdentity{1};
+	return nextIdentity.fetch_add(1, std::memory_order_relaxed);
+}
+
+bool TaskGraphBuilder::State::AreValidLimits(TaskGraphLimits limits) noexcept
+{
+	return limits.MaximumTasks > 0 && limits.MaximumTasks <= TaskGraphLimits::HardMaximumTasks &&
+	       limits.MaximumEdges <= TaskGraphLimits::HardMaximumEdges;
+}
+
+bool TaskGraphBuilder::State::IsValidCompletionPolicy(TaskCompletionPolicy policy) noexcept
+{
+	return policy == TaskCompletionPolicy::Normal || policy == TaskCompletionPolicy::Cleanup;
+}
+
+bool TaskGraphBuilder::State::IsValidTaskLane(TaskLane lane) noexcept
+{
+	return lane == TaskLane::FrameCritical || lane == TaskLane::Background || lane == TaskLane::BlockingIo;
+}
+
+TaskGraphError TaskGraphBuilder::State::CreateError(TaskGraphErrorCode code, std::string message)
+{
+	return TaskGraphError{.Code = code, .Message = std::move(message)};
+}
+
+bool TaskGraphBuilder::State::HasCycle(const std::vector<std::vector<std::uint32_t>>& adjacency)
+{
+	std::vector<std::uint32_t> incoming(adjacency.size(), 0);
+	for (const auto& successors : adjacency)
+	{
+		for (const std::uint32_t successor : successors)
+		{
+			++incoming[successor];
+		}
+	}
+
+	std::priority_queue<std::uint32_t, std::vector<std::uint32_t>, std::greater<>> ready;
+	for (std::uint32_t index = 0; index < incoming.size(); ++index)
+	{
+		if (incoming[index] == 0)
+		{
+			ready.push(index);
+		}
+	}
+
+	std::uint32_t visited = 0;
+	while (!ready.empty())
+	{
+		const std::uint32_t index = ready.top();
+		ready.pop();
+		++visited;
+
+		for (const std::uint32_t successor : adjacency[index])
+		{
+			if (--incoming[successor] == 0)
+			{
+				ready.push(successor);
+			}
+		}
+	}
+
+	return visited != adjacency.size();
+}
+
+TaskGraphBuilder::State::Compilation::Compilation(const State& builder) noexcept : m_builder(builder) {}
+
+std::shared_ptr<TaskGraphStorage> TaskGraphBuilder::State::Compilation::Build() const
+{
+	auto graph = std::make_shared<TaskGraphStorage>();
+	CopyBuilderState(*graph);
+	if (graph->Error)
+	{
+		return graph;
+	}
+
+	const std::size_t taskCount = graph->Nodes.size();
+	std::vector<std::vector<std::uint32_t>> startAdjacency(taskCount);
+	std::vector<std::vector<std::uint32_t>> completionAdjacency(taskCount);
+	if (!BuildDependencyRelations(*graph, startAdjacency, completionAdjacency))
+	{
+		return graph;
+	}
+
+	RejectCycles(*graph, startAdjacency, completionAdjacency);
+	return graph;
+}
+
+void TaskGraphBuilder::State::Compilation::CopyBuilderState(TaskGraphStorage& graph) const
+{
+	graph.Error = m_builder.Error;
+	graph.Limits = m_builder.Limits;
+	graph.BuilderIdentity = m_builder.BuilderIdentity;
+	graph.BuilderGeneration = m_builder.BuilderGeneration;
+	graph.EdgeCount = m_builder.EdgeCount;
+	graph.Nodes = m_builder.Nodes;
+}
+
+bool TaskGraphBuilder::State::Compilation::BuildDependencyRelations(
+    TaskGraphStorage& graph,
+    std::vector<std::vector<std::uint32_t>>& startAdjacency,
+    std::vector<std::vector<std::uint32_t>>& completionAdjacency) const
+{
+	for (std::uint32_t taskIndex = 0; taskIndex < graph.Nodes.size(); ++taskIndex)
+	{
+		const TaskGraphNode& node = graph.Nodes[taskIndex];
+		for (const std::uint32_t prerequisiteIndex : node.Prerequisites)
+		{
+			if (!ValidatePrerequisiteLane(graph, taskIndex, prerequisiteIndex))
+			{
+				return false;
+			}
+
+			startAdjacency[prerequisiteIndex].push_back(taskIndex);
+			completionAdjacency[prerequisiteIndex].push_back(taskIndex);
+		}
+
+		if (!ValidateNestedLane(graph, taskIndex))
+		{
+			return false;
+		}
+		if (node.Parent.has_value())
+		{
+			startAdjacency[*node.Parent].push_back(taskIndex);
+			completionAdjacency[taskIndex].push_back(*node.Parent);
+		}
+	}
+
+	return true;
+}
+
+bool TaskGraphBuilder::State::Compilation::ValidatePrerequisiteLane(
+    TaskGraphStorage& graph,
+    std::uint32_t taskIndex,
+    std::uint32_t prerequisiteIndex) const
+{
+	const TaskGraphNode& node = graph.Nodes[taskIndex];
+	const TaskGraphNode& prerequisite = graph.Nodes[prerequisiteIndex];
+	if (node.Desc.Lane != TaskLane::FrameCritical || prerequisite.Desc.Lane == TaskLane::FrameCritical)
+	{
+		return true;
+	}
+
+	graph.Error = CreateError(
+	    TaskGraphErrorCode::InvalidLaneDependency,
+	    "A FrameCritical task cannot depend on Background or BlockingIo work.");
+	return false;
+}
+
+bool TaskGraphBuilder::State::Compilation::ValidateNestedLane(
+    TaskGraphStorage& graph,
+    std::uint32_t taskIndex) const
+{
+	const TaskGraphNode& node = graph.Nodes[taskIndex];
+	if (!node.Parent.has_value())
+	{
+		return true;
+	}
+
+	const TaskGraphNode& parent = graph.Nodes[*node.Parent];
+	if (node.Desc.Lane == parent.Desc.Lane ||
+	    (node.Desc.Lane != TaskLane::FrameCritical && parent.Desc.Lane != TaskLane::FrameCritical))
+	{
+		return true;
+	}
+
+	graph.Error = CreateError(
+	    TaskGraphErrorCode::InvalidLaneDependency,
+	    "FrameCritical parent and nested task completion must remain in the FrameCritical lane.");
+	return false;
+}
+
+void TaskGraphBuilder::State::Compilation::RejectCycles(
+    TaskGraphStorage& graph,
+    const std::vector<std::vector<std::uint32_t>>& startAdjacency,
+    const std::vector<std::vector<std::uint32_t>>& completionAdjacency) const
+{
+	if (!HasCycle(startAdjacency) && !HasCycle(completionAdjacency))
+	{
+		return;
+	}
+
+	graph.Error = CreateError(
+	    TaskGraphErrorCode::Cycle,
+	    "Task graph contains a dependency or nested-completion cycle.");
+}
 
 CompiledTaskGraph::CompiledTaskGraph() noexcept = default;
 
-std::uint64_t TaskDetail::TaskGraphAccess::GetBuilderIdentity(TaskNodeHandle handle) noexcept
+std::uint64_t TaskGraphAccess::GetBuilderIdentity(TaskNodeHandle handle) noexcept
 {
 	return handle.m_builderIdentity;
 }
 
-std::uint32_t TaskDetail::TaskGraphAccess::GetBuilderGeneration(TaskNodeHandle handle) noexcept
+std::uint32_t TaskGraphAccess::GetBuilderGeneration(TaskNodeHandle handle) noexcept
 {
 	return handle.m_builderGeneration;
 }
 
-std::uint32_t TaskDetail::TaskGraphAccess::GetIndex(TaskNodeHandle handle) noexcept
+std::uint32_t TaskGraphAccess::GetIndex(TaskNodeHandle handle) noexcept
 {
 	return handle.m_indexPlusOne - 1u;
 }
 
-bool TaskDetail::TaskGraphAccess::Decode(
+bool TaskGraphAccess::Decode(
     TaskNodeHandle handle,
     std::uint64_t builderIdentity,
     std::uint32_t builderGeneration,
@@ -180,12 +338,12 @@ bool TaskDetail::TaskGraphAccess::Decode(
 	return outIndex < taskCount;
 }
 
-void TaskDetail::TaskGraphAccess::RecordError(TaskGraphBuilder& builder, TaskGraphErrorCode code, std::string message)
+void TaskGraphAccess::RecordError(TaskGraphBuilder& builder, TaskGraphErrorCode code, std::string message)
 {
 	builder.m_state->RecordError(code, std::move(message));
 }
 
-CompiledTaskGraph::CompiledTaskGraph(std::shared_ptr<const TaskDetail::CompiledTaskGraphData> data) noexcept : m_data(std::move(data)) {}
+CompiledTaskGraph::CompiledTaskGraph(std::shared_ptr<const TaskGraphStorage> data) noexcept : m_data(std::move(data)) {}
 
 bool CompiledTaskGraph::IsValid() const noexcept
 {
@@ -194,7 +352,9 @@ bool CompiledTaskGraph::IsValid() const noexcept
 
 const TaskGraphError& CompiledTaskGraph::GetError() const noexcept
 {
-	static const TaskGraphError invalidGraphError = TaskGraphOperations::MakeError(TaskGraphErrorCode::InvalidHandle, "No compiled task graph is present.");
+	static const TaskGraphError invalidGraphError{
+	    .Code = TaskGraphErrorCode::InvalidHandle,
+	    .Message = "No compiled task graph is present."};
 	return m_data != nullptr ? m_data->Error : invalidGraphError;
 }
 
@@ -223,12 +383,12 @@ TaskNodeHandle TaskGraphBuilder::Add(TaskDesc desc, TaskFunction function)
 		m_state->RecordError(TaskGraphErrorCode::InvalidTaskName, "Task names must be non-empty and at most 96 bytes.");
 		return {};
 	}
-	if (!TaskGraphOperations::IsValidTaskLane(desc.Lane))
+	if (!State::IsValidTaskLane(desc.Lane))
 	{
 		m_state->RecordError(TaskGraphErrorCode::InvalidTaskLane, "Task lane is not recognized.");
 		return {};
 	}
-	if (!TaskGraphOperations::IsValidCompletionPolicy(desc.CompletionPolicy))
+	if (!State::IsValidCompletionPolicy(desc.CompletionPolicy))
 	{
 		m_state->RecordError(TaskGraphErrorCode::InvalidCompletionPolicy, "Task completion policy is not recognized.");
 		return {};
@@ -240,7 +400,7 @@ TaskNodeHandle TaskGraphBuilder::Add(TaskDesc desc, TaskFunction function)
 	}
 
 	const std::uint32_t index = static_cast<std::uint32_t>(m_state->Nodes.size());
-	m_state->Nodes.push_back(TaskDetail::CompiledTaskNode{.Desc = std::move(desc), .Function = std::move(function)});
+	m_state->Nodes.push_back(TaskGraphNode{.Desc = std::move(desc), .Function = std::move(function)});
 	return TaskNodeHandle(m_state->BuilderIdentity, m_state->BuilderGeneration, index);
 }
 
@@ -333,64 +493,7 @@ TaskNodeHandle TaskGraphBuilder::ContinueWith(TaskNodeHandle prerequisite, TaskD
 
 CompiledTaskGraph TaskGraphBuilder::Compile() const
 {
-	auto data = std::make_shared<TaskDetail::CompiledTaskGraphData>();
-	data->Limits = m_state->Limits;
-	data->BuilderIdentity = m_state->BuilderIdentity;
-	data->BuilderGeneration = m_state->BuilderGeneration;
-	data->EdgeCount = m_state->EdgeCount;
-
-	if (m_state->Error)
-	{
-		data->Error = m_state->Error;
-		return CompiledTaskGraph(std::move(data));
-	}
-
-	data->Nodes = m_state->Nodes;
-	const std::size_t taskCount = data->Nodes.size();
-	std::vector<std::vector<std::uint32_t>> startAdjacency(taskCount);
-	std::vector<std::vector<std::uint32_t>> completionAdjacency(taskCount);
-
-	// Nested work starts after its parent body but completes before its parent group.
-	// Checking both directions rejects graphs that can build but can never settle.
-	for (std::uint32_t taskIndex = 0; taskIndex < taskCount; ++taskIndex)
-	{
-		const auto& node = data->Nodes[taskIndex];
-		for (const std::uint32_t prerequisite : node.Prerequisites)
-		{
-			if (node.Desc.Lane == TaskLane::FrameCritical && data->Nodes[prerequisite].Desc.Lane != TaskLane::FrameCritical)
-			{
-				data->Error = TaskGraphOperations::MakeError(
-				    TaskGraphErrorCode::InvalidLaneDependency,
-				    "A FrameCritical task cannot depend on Background or BlockingIo work.");
-				return CompiledTaskGraph(std::move(data));
-			}
-			startAdjacency[prerequisite].push_back(taskIndex);
-			completionAdjacency[prerequisite].push_back(taskIndex);
-		}
-		if (node.Parent.has_value())
-		{
-			const auto& parent = data->Nodes[*node.Parent];
-			if (node.Desc.Lane != parent.Desc.Lane &&
-			    (node.Desc.Lane == TaskLane::FrameCritical || parent.Desc.Lane == TaskLane::FrameCritical))
-			{
-				data->Error = TaskGraphOperations::MakeError(
-				    TaskGraphErrorCode::InvalidLaneDependency,
-				    "FrameCritical parent and nested task completion must remain in the FrameCritical lane.");
-				return CompiledTaskGraph(std::move(data));
-			}
-			startAdjacency[*node.Parent].push_back(taskIndex);
-			completionAdjacency[taskIndex].push_back(*node.Parent);
-		}
-	}
-
-	if (TaskGraphOperations::HasCycle(startAdjacency) || TaskGraphOperations::HasCycle(completionAdjacency))
-	{
-		data->Error = TaskGraphOperations::MakeError(
-		    TaskGraphErrorCode::Cycle,
-		    "Task graph contains a dependency or nested-completion cycle.");
-	}
-
-	return CompiledTaskGraph(std::move(data));
+	return CompiledTaskGraph(State::Compilation(*m_state).Build());
 }
 
 void TaskGraphBuilder::Reset() noexcept
@@ -398,7 +501,7 @@ void TaskGraphBuilder::Reset() noexcept
 	m_state->Nodes.clear();
 	m_state->EdgeCount = 0;
 	m_state->Error = {};
-	if (!TaskGraphOperations::AreValidLimits(m_state->Limits))
+	if (!State::AreValidLimits(m_state->Limits))
 	{
 		m_state->RecordError(TaskGraphErrorCode::InvalidLimits, "Task capacity is zero or a task/edge limit exceeds the hard maximum.");
 		return;

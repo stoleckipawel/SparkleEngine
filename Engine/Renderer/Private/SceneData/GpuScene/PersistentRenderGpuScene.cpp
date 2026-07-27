@@ -3,6 +3,7 @@
 
 #include "RHI/Public/Frame/RhiFrameConstants.h"
 #include "SceneData/GpuScene/PersistentStructuredBuffer.h"
+#include "SceneData/GpuScene/RenderGpuGeometryState.h"
 #include "SceneData/GpuScene/RenderGpuScenePayloadBuilder.h"
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/RenderSceneGpuData.h"
@@ -13,6 +14,8 @@
 
 struct RenderGpuDynamicFrameStorage final
 {
+	void Reset() noexcept;
+
 	PersistentStructuredBuffer DirectionalLights;
 	PersistentStructuredBuffer PointLights;
 	PersistentStructuredBuffer SpotLights;
@@ -26,72 +29,48 @@ struct RenderGpuDynamicFrameStorage final
 	PersistentStructuredBuffer RayTracingInstances;
 	PersistentStructuredBuffer RayTracingMaterials;
 	RenderSceneGpuData Data;
+	std::uint64_t MeshInstanceRevision = 0u;
+	std::uint64_t MeshInstanceSlotRevision = 0u;
+	std::uint64_t RayTracingPayloadRevision = 0u;
 };
 
 struct RenderGpuRayTracingStorage final
 {
+	void Reset() noexcept;
+
 	PersistentStructuredBuffer Vertices;
 	PersistentStructuredBuffer SkinInfluences;
 	PersistentStructuredBuffer MorphTargetDeltas;
 	PersistentStructuredBuffer Indices;
 };
 
-class PersistentRenderGpuSceneOperations final
+void RenderGpuDynamicFrameStorage::Reset() noexcept
 {
-  public:
-	template <typename TValue>
-	static bool Update(
-	    PersistentStructuredBuffer& buffer,
-	    RhiResourceService& resourceService,
-	    const std::vector<TValue>& values,
-	    std::wstring_view debugName)
-	{
-		return buffer.Update(
-		    resourceService,
-		    std::as_bytes(std::span<const TValue>{values}),
-		    static_cast<std::uint32_t>(sizeof(TValue)),
-		    debugName);
-	}
+	DirectionalLights.Reset();
+	PointLights.Reset();
+	SpotLights.Reset();
+	RectLights.Reset();
+	MeshInstances.Reset();
+	MeshInstanceSlots.Reset();
+	JointMatrices.Reset();
+	PreviousJointMatrices.Reset();
+	MorphWeights.Reset();
+	PreviousMorphWeights.Reset();
+	RayTracingInstances.Reset();
+	RayTracingMaterials.Reset();
+	Data = {};
+	MeshInstanceRevision = 0u;
+	MeshInstanceSlotRevision = 0u;
+	RayTracingPayloadRevision = 0u;
+}
 
-	template <typename TValue>
-	static bool Replace(
-	    PersistentStructuredBuffer& buffer,
-	    RhiResourceService& resourceService,
-	    const std::vector<TValue>& values,
-	    std::wstring_view debugName)
-	{
-		return buffer.Replace(
-		    resourceService,
-		    std::as_bytes(std::span<const TValue>{values}),
-		    static_cast<std::uint32_t>(sizeof(TValue)),
-		    debugName);
-	}
-
-	static void Reset(RenderGpuDynamicFrameStorage& storage) noexcept
-	{
-		storage.DirectionalLights.Reset();
-		storage.PointLights.Reset();
-		storage.SpotLights.Reset();
-		storage.RectLights.Reset();
-		storage.MeshInstances.Reset();
-		storage.MeshInstanceSlots.Reset();
-		storage.JointMatrices.Reset();
-		storage.PreviousJointMatrices.Reset();
-		storage.MorphWeights.Reset();
-		storage.PreviousMorphWeights.Reset();
-		storage.RayTracingInstances.Reset();
-		storage.RayTracingMaterials.Reset();
-		storage.Data = {};
-	}
-
-	static void Reset(RenderGpuRayTracingStorage& storage) noexcept
-	{
-		storage.Vertices.Reset();
-		storage.SkinInfluences.Reset();
-		storage.MorphTargetDeltas.Reset();
-		storage.Indices.Reset();
-	}
-};
+void RenderGpuRayTracingStorage::Reset() noexcept
+{
+	Vertices.Reset();
+	SkinInfluences.Reset();
+	MorphTargetDeltas.Reset();
+	Indices.Reset();
+}
 
 struct PersistentRenderGpuScene::Impl final
 {
@@ -110,8 +89,10 @@ struct PersistentRenderGpuScene::Impl final
 		RenderGpuDynamicFrameStorage& dynamicStorage =
 		    DynamicFrames[
 		        frameIndex % RhiFrameConstants::FramesInFlight];
+		Geometry.Update(sceneData);
+
 		UpdateLighting(sceneData, dynamicStorage);
-		UpdateGeometry(sceneData, dynamicStorage);
+		UpdateGeometry(dynamicStorage);
 		UpdateRayTracing(sceneData, dynamicStorage);
 		return dynamicStorage.Data;
 	}
@@ -120,31 +101,29 @@ struct PersistentRenderGpuScene::Impl final
 	    const RenderSceneData& sceneData,
 	    RenderGpuDynamicFrameStorage& storage)
 	{
-		const RenderGpuLightingPayloads payloads =
-		    RenderGpuScenePayloadBuilder::BuildLighting(sceneData);
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.DirectionalLights,
+		RenderGpuScenePayloadBuilder::BuildLighting(
+		    sceneData,
+		    LightingPayloads);
+
+		storage.DirectionalLights.Update(
 		    *ResourceService,
-		    payloads.DirectionalLights,
+		    std::span{LightingPayloads.DirectionalLights},
 		    L"DirectionalLights");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.PointLights,
+		storage.PointLights.Update(
 		    *ResourceService,
-		    payloads.PointLights,
+		    std::span{LightingPayloads.PointLights},
 		    L"PointLights");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.SpotLights,
+		storage.SpotLights.Update(
 		    *ResourceService,
-		    payloads.SpotLights,
+		    std::span{LightingPayloads.SpotLights},
 		    L"SpotLights");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.RectLights,
+		storage.RectLights.Update(
 		    *ResourceService,
-		    payloads.RectLights,
+		    std::span{LightingPayloads.RectLights},
 		    L"RectLights");
 
 		storage.Data.Lighting = RenderSceneGpuLightingData{
-		    .Constants = payloads.Constants,
+		    .Constants = LightingPayloads.Constants,
 		    .DirectionalLights =
 		        storage.DirectionalLights.GetBinding(),
 		    .PointLights = storage.PointLights.GetBinding(),
@@ -152,41 +131,59 @@ struct PersistentRenderGpuScene::Impl final
 		    .RectLights = storage.RectLights.GetBinding()};
 	}
 
-	void UpdateGeometry(
-	    const RenderSceneData& sceneData,
-	    RenderGpuDynamicFrameStorage& storage)
+	void UpdateGeometry(RenderGpuDynamicFrameStorage& storage)
 	{
-		const RenderGpuGeometryPayloads payloads =
-		    RenderGpuScenePayloadBuilder::BuildGeometry(sceneData);
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.MeshInstances,
+		const RenderGpuGeometryPayloads& payloads =
+		    Geometry.GetPayloads();
+		Geometry.CollectMeshInstanceWriteRanges(
+		    storage.MeshInstanceRevision,
+		    MeshInstanceWriteRanges);
+		const bool instancesUpdated =
+		    storage.MeshInstances.UpdateRanges(
+		        *ResourceService,
+		        std::as_bytes(
+		            std::span<const MeshInstanceData>{
+		                payloads.MeshInstances}),
+		        static_cast<std::uint32_t>(
+		            sizeof(MeshInstanceData)),
+		        MeshInstanceWriteRanges,
+		        L"MeshInstances");
+		if (instancesUpdated)
+		{
+			storage.MeshInstanceRevision =
+			    Geometry.GetMeshInstanceRevision();
+		}
+
+		if (storage.MeshInstanceSlotRevision !=
+		    Geometry.GetMeshInstanceSlotRevision())
+		{
+			const bool slotsUpdated =
+			    storage.MeshInstanceSlots.Update(
+			        *ResourceService,
+			        std::span{payloads.MeshInstanceSlots},
+			        L"MeshInstanceSlots");
+			if (slotsUpdated)
+			{
+				storage.MeshInstanceSlotRevision =
+				    Geometry.GetMeshInstanceSlotRevision();
+			}
+		}
+
+		storage.JointMatrices.Update(
 		    *ResourceService,
-		    payloads.MeshInstances,
-		    L"MeshInstances");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.MeshInstanceSlots,
-		    *ResourceService,
-		    payloads.MeshInstanceSlots,
-		    L"MeshInstanceSlots");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.JointMatrices,
-		    *ResourceService,
-		    payloads.JointMatrices,
+		    std::span{payloads.JointMatrices},
 		    L"SkinningJointMatrices");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.PreviousJointMatrices,
+		storage.PreviousJointMatrices.Update(
 		    *ResourceService,
-		    payloads.PreviousJointMatrices,
+		    std::span{payloads.PreviousJointMatrices},
 		    L"PreviousSkinningJointMatrices");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.MorphWeights,
+		storage.MorphWeights.Update(
 		    *ResourceService,
-		    payloads.MorphWeights,
+		    std::span{payloads.MorphWeights},
 		    L"MorphWeights");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.PreviousMorphWeights,
+		storage.PreviousMorphWeights.Update(
 		    *ResourceService,
-		    payloads.PreviousMorphWeights,
+		    std::span{payloads.PreviousMorphWeights},
 		    L"PreviousMorphWeights");
 
 		storage.Data.Geometry = RenderSceneGpuGeometryData{
@@ -220,10 +217,10 @@ struct PersistentRenderGpuScene::Impl final
 		    textureGeneration != RayTracingTextureGeneration;
 		if (payloadChanged)
 		{
-			RayTracingPayloads =
-			    RenderGpuScenePayloadBuilder::BuildRayTracing(
-		        sceneData,
-		        *Meshes);
+			RenderGpuScenePayloadBuilder::BuildRayTracing(
+			    sceneData,
+			    *Meshes,
+			    RayTracingPayloads);
 			if (topologyChanged ||
 			    RayTracingPayloads.InstanceCount == 0u ||
 			    !RayTracing.Vertices.GetBinding() ||
@@ -237,18 +234,25 @@ struct PersistentRenderGpuScene::Impl final
 			RayTracingMaterialRevision =
 			    sceneData.materialRevision;
 			RayTracingTextureGeneration = textureGeneration;
+			++RayTracingPayloadRevision;
 		}
 
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.RayTracingInstances,
-		    *ResourceService,
-		    RayTracingPayloads.Instances,
-		    L"RayTracingHitInstances");
-		PersistentRenderGpuSceneOperations::Update(
-		    storage.RayTracingMaterials,
-		    *ResourceService,
-		    RayTracingPayloads.Materials,
-		    L"RayTracingHitMaterials");
+		if (storage.RayTracingPayloadRevision != RayTracingPayloadRevision)
+		{
+			const bool instancesUpdated = storage.RayTracingInstances.Update(
+			    *ResourceService,
+			    std::span{RayTracingPayloads.Instances},
+			    L"RayTracingHitInstances");
+			const bool materialsUpdated = storage.RayTracingMaterials.Update(
+			    *ResourceService,
+			    std::span{RayTracingPayloads.Materials},
+			    L"RayTracingHitMaterials");
+			if (instancesUpdated && materialsUpdated)
+			{
+				storage.RayTracingPayloadRevision = RayTracingPayloadRevision;
+			}
+		}
+
 		storage.Data.RayTracing =
 		    RayTracingPayloads.InstanceCount == 0u ||
 		            RayTracingPayloads.MaterialCount == 0u
@@ -277,29 +281,25 @@ struct PersistentRenderGpuScene::Impl final
 		if (RayTracingPayloads.InstanceCount == 0u ||
 		    RayTracingPayloads.MaterialCount == 0u)
 		{
-			PersistentRenderGpuSceneOperations::Reset(RayTracing);
+			RayTracing.Reset();
 			return;
 		}
 
-		PersistentRenderGpuSceneOperations::Replace(
-		    RayTracing.Vertices,
+		RayTracing.Vertices.Replace(
 		    *ResourceService,
-		    RayTracingPayloads.Vertices,
+		    std::span{RayTracingPayloads.Vertices},
 		    L"RayTracingHitVertices");
-		PersistentRenderGpuSceneOperations::Replace(
-		    RayTracing.SkinInfluences,
+		RayTracing.SkinInfluences.Replace(
 		    *ResourceService,
-		    RayTracingPayloads.SkinInfluences,
+		    std::span{RayTracingPayloads.SkinInfluences},
 		    L"RayTracingHitSkinInfluences");
-		PersistentRenderGpuSceneOperations::Replace(
-		    RayTracing.MorphTargetDeltas,
+		RayTracing.MorphTargetDeltas.Replace(
 		    *ResourceService,
-		    RayTracingPayloads.MorphTargetDeltas,
+		    std::span{RayTracingPayloads.MorphTargetDeltas},
 		    L"RayTracingHitMorphTargetDeltas");
-		PersistentRenderGpuSceneOperations::Replace(
-		    RayTracing.Indices,
+		RayTracing.Indices.Replace(
 		    *ResourceService,
-		    RayTracingPayloads.Indices,
+		    std::span{RayTracingPayloads.Indices},
 		    L"RayTracingHitIndices");
 	}
 
@@ -308,10 +308,13 @@ struct PersistentRenderGpuScene::Impl final
 		for (RenderGpuDynamicFrameStorage& storage :
 		     DynamicFrames)
 		{
-			PersistentRenderGpuSceneOperations::Reset(storage);
+			storage.Reset();
 		}
-		PersistentRenderGpuSceneOperations::Reset(RayTracing);
+		RayTracing.Reset();
+		Geometry.Reset();
+		LightingPayloads = {};
 		RayTracingPayloads = {};
+		RayTracingPayloadRevision = 0u;
 		RayTracingStructuralRevision =
 		    (std::numeric_limits<std::uint64_t>::max)();
 		RayTracingMaterialRevision =
@@ -327,7 +330,12 @@ struct PersistentRenderGpuScene::Impl final
 	    RhiFrameConstants::FramesInFlight>
 	    DynamicFrames;
 	RenderGpuRayTracingStorage RayTracing;
+	RenderGpuGeometryState Geometry;
+	RenderGpuLightingPayloads LightingPayloads;
+	std::vector<StructuredBufferElementRange>
+	    MeshInstanceWriteRanges;
 	RenderGpuRayTracingPayloads RayTracingPayloads;
+	std::uint64_t RayTracingPayloadRevision = 0u;
 	std::uint64_t RayTracingStructuralRevision =
 	    (std::numeric_limits<std::uint64_t>::max)();
 	std::uint64_t RayTracingMaterialRevision =

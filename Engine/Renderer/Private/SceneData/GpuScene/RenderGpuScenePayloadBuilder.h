@@ -11,13 +11,13 @@ struct VertexSkinInfluence;
 class RenderGpuScenePayloadBuilder final
 {
   public:
-	static RenderGpuLightingPayloads BuildLighting(
-	    const RenderSceneData& sceneData);
-	static RenderGpuGeometryPayloads BuildGeometry(
-	    const RenderSceneData& sceneData);
-	static RenderGpuRayTracingPayloads BuildRayTracing(
+	static void BuildLighting(
 	    const RenderSceneData& sceneData,
-	    const GPUMeshCache& meshes);
+	    RenderGpuLightingPayloads& payloads);
+	static void BuildRayTracing(
+	    const RenderSceneData& sceneData,
+	    const GPUMeshCache& meshes,
+	    RenderGpuRayTracingPayloads& payloads);
 
   private:
 	static VertexSkinInfluenceData ConvertSkinInfluence(
@@ -31,4 +31,6 @@ class RenderGpuScenePayloadBuilder final
 	    const MeshDraw& draw,
 	    const MaterialData* material,
 	    std::uint32_t rejectionReason) noexcept;
+	static void ClearRayTracingPayloads(
+	    RenderGpuRayTracingPayloads& payloads) noexcept;
 };

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Execution/TaskExecutionInternal.h"
-#include "Lifetime/TaskScopeInternal.h"
+#include "Execution/TaskExecutionState.h"
+#include "Lifetime/TaskScopeState.h"
 #include "TaskExecutorImplementation.h"
 
 #include <array>
@@ -11,6 +11,8 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <span>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -41,8 +43,8 @@ struct TaskExecutor::Implementation::Runtime final
 		std::deque<ReadyTask> InjectionQueue;
 		std::mutex WorkMutex;
 		std::condition_variable WorkCondition;
-		std::uint64_t WorkEpoch = 0;
-		bool StopWorkers = false;
+		std::atomic_uint64_t WorkEpoch{0};
+		std::atomic_bool StopWorkers{false};
 		std::vector<TaskWorker*> Workers;
 	};
 
@@ -73,12 +75,51 @@ struct TaskExecutor::Implementation::Runtime final
 		Stopped
 	};
 
+	static void ValidateConfiguration(const TaskExecutorConfig& config);
+	static bool RejectExecution(
+	    const std::shared_ptr<TaskExecution::State>& execution,
+	    std::uint64_t generation,
+	    std::string_view reason);
+	static std::size_t LaneIndex(TaskLane lane) noexcept;
+	static const char* LaneName(TaskLane lane) noexcept;
+	std::shared_ptr<TaskExecution::State> CreateExecution(
+	    std::uint64_t generation,
+	    const std::shared_ptr<TaskScope::State>& scope) const;
+	bool ValidateLaunchRequest(
+	    const CompiledTaskGraph& graph,
+	    const TaskExecutionContext& context,
+	    const std::shared_ptr<TaskScope::State>& scope,
+	    const std::shared_ptr<TaskExecution::State>& execution,
+	    std::uint64_t generation) const;
+	bool ValidateWorkerLanes(
+	    const CompiledTaskGraph& graph,
+	    const std::shared_ptr<TaskExecution::State>& execution,
+	    std::uint64_t generation) const;
+	bool RegisterScopedExecution(
+	    const std::shared_ptr<TaskScope::State>& scope,
+	    const std::shared_ptr<TaskExecution::State>& execution,
+	    std::uint64_t generation) const;
+	bool AdmitExecution(const std::shared_ptr<TaskExecution::State>& execution, std::uint64_t generation);
+	void StartExecution(
+	    const CompiledTaskGraph& graph,
+	    TaskExecutionContext context,
+	    const std::shared_ptr<TaskExecution::State>& execution);
+	void ExecuteSerial(
+	    const CompiledTaskGraph& graph,
+	    TaskExecutionContext& context,
+	    const std::shared_ptr<TaskExecution::State>& execution);
 	void AddWorkers(TaskLane lane, std::uint32_t count);
+	void StartWorkers();
 	bool TryPopLocal(TaskWorker& worker, ReadyTask& task);
 	bool TryPopInjection(TaskLane lane, ReadyTask& task);
 	bool TrySteal(TaskWorker& worker, ReadyTask& task);
 	bool TryTakeWork(TaskWorker& worker, ReadyTask& task);
+	bool WaitForWork(TaskWorker& worker, ReadyTask& task);
 	void WorkerMain(TaskWorker& worker);
+	std::vector<std::shared_ptr<TaskExecution::State>> BeginShutdown(TaskExecutorShutdownMode mode);
+	void RequestCancellation(std::span<const std::shared_ptr<TaskExecution::State>> executions) noexcept;
+	void WaitForActiveExecutions();
+	void FinishShutdown();
 	void RequestWorkerStop() noexcept;
 	void JoinWorkers() noexcept;
 

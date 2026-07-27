@@ -55,6 +55,39 @@ bool PersistentStructuredBuffer::Replace(
 	    debugName);
 }
 
+bool PersistentStructuredBuffer::UpdateRanges(
+    RhiResourceService& resourceService,
+    std::span<const std::byte> payload,
+    std::uint32_t strideInBytes,
+    std::span<const StructuredBufferElementRange> ranges,
+    std::wstring_view debugName)
+{
+	if (payload.empty())
+	{
+		Reset();
+		return true;
+	}
+	if (strideInBytes == 0u ||
+	    payload.size_bytes() % strideInBytes != 0u)
+	{
+		return false;
+	}
+
+	if (!m_buffer || m_strideInBytes != strideInBytes ||
+	    payload.size_bytes() > m_shadow.size())
+	{
+		return Grow(resourceService, payload, strideInBytes, debugName);
+	}
+
+	if (!WriteRanges(payload, ranges))
+	{
+		return false;
+	}
+
+	m_logicalSizeInBytes = payload.size_bytes();
+	return true;
+}
+
 RenderSceneGpuBuffer PersistentStructuredBuffer::GetBinding() const noexcept
 {
 	return RenderSceneGpuBuffer{
@@ -149,6 +182,43 @@ bool PersistentStructuredBuffer::WriteDirtyRanges(
 		{
 			return false;
 		}
+		std::memcpy(
+		    m_shadow.data() + dirtyOffset,
+		    payload.data() + dirtyOffset,
+		    dirtySize);
+	}
+	return true;
+}
+
+bool PersistentStructuredBuffer::WriteRanges(
+    std::span<const std::byte> payload,
+    std::span<const StructuredBufferElementRange> ranges)
+{
+	const std::size_t elementCount =
+	    payload.size_bytes() / m_strideInBytes;
+	for (const StructuredBufferElementRange& range : ranges)
+	{
+		if (range.ElementCount == 0u ||
+		    range.FirstElement > elementCount ||
+		    range.ElementCount > elementCount - range.FirstElement)
+		{
+			return false;
+		}
+
+		const std::size_t dirtyOffset =
+		    static_cast<std::size_t>(range.FirstElement) *
+		    m_strideInBytes;
+		const std::size_t dirtySize =
+		    static_cast<std::size_t>(range.ElementCount) *
+		    m_strideInBytes;
+		if (!m_buffer.Write(
+		        dirtyOffset,
+		        payload.data() + dirtyOffset,
+		        dirtySize))
+		{
+			return false;
+		}
+
 		std::memcpy(
 		    m_shadow.data() + dirtyOffset,
 		    payload.data() + dirtyOffset,

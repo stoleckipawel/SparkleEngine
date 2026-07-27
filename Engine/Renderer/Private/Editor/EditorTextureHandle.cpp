@@ -18,9 +18,14 @@ EditorTextureHandle EditorTextureHandle::Unpack(std::uint64_t value) noexcept
 	    .Generation = static_cast<std::uint32_t>(value >> 32u)};
 }
 
-EditorTextureHandle EditorTextureHandle::FontAtlas() noexcept
+EditorTextureHandle EditorTextureHandle::ImGuiTexture(std::uint32_t uniqueId) noexcept
 {
-	return EditorTextureHandle{.Slot = 1, .Generation = 1};
+	if (uniqueId == 0)
+	{
+		return {};
+	}
+
+	return EditorTextureHandle{.Slot = 1, .Generation = uniqueId};
 }
 
 EditorTextureHandle EditorTextureHandle::Viewport(std::uint64_t generation) noexcept
@@ -32,6 +37,11 @@ EditorTextureHandle EditorTextureHandle::Viewport(std::uint64_t generation) noex
 	return EditorTextureHandle{
 	    .Slot = 2,
 	    .Generation = static_cast<std::uint32_t>(generation)};
+}
+
+bool EditorTextureHandle::IsImGuiTexture() const noexcept
+{
+	return Slot == 1 && Generation != 0;
 }
 
 bool EditorTextureHandle::operator==(const EditorTextureHandle& other) const noexcept

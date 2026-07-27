@@ -111,7 +111,6 @@ void RuntimeApplication::InitializeRenderer()
 {
 	RendererExecutionConfig rendererConfig;
 	if (m_options.AllowThreadedRenderer &&
-	    !m_options.EnableRuntimeConsole &&
 	    ConcurrencyLaunchCVars::UseThreadedRenderer())
 	{
 		rendererConfig.Mode = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth() == 0

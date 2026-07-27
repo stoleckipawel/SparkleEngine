@@ -59,7 +59,10 @@ TextureCookMemoryLimiter::Lease TextureCookMemoryLimiter::Acquire(std::size_t by
 		    return cancellation.stop_requested() || weight <= m_capacityBytes - m_usedBytes;
 	    });
 	if (cancellation.stop_requested())
+	{
 		return {};
+	}
+
 	m_usedBytes += weight;
 	return Lease(*this, weight);
 }
@@ -70,5 +73,6 @@ void TextureCookMemoryLimiter::Release(std::size_t bytes) noexcept
 		std::lock_guard lock(m_mutex);
 		m_usedBytes -= std::min(bytes, m_usedBytes);
 	}
+
 	m_condition.notify_all();
 }

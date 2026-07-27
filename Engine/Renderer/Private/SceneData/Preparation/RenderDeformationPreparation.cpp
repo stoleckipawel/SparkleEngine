@@ -14,8 +14,8 @@ void RenderDeformationPreparation::Prepare(
 {
 	ResetWork(work);
 	ResetObjectOutputs(objects);
-	PrepareSkinning(dynamic.Skinning, objects, work);
-	PrepareMorph(dynamic.MorphWeights, objects, work);
+	PrepareSkinning(dynamic.Skinning, dynamic.SkinningMatrices, objects, work);
+	PrepareMorph(dynamic.MorphRanges, dynamic.MorphWeights, objects, work);
 }
 
 void RenderDeformationPreparation::ResetWork(RenderDeformationWork& work) noexcept
@@ -39,6 +39,7 @@ void RenderDeformationPreparation::ResetObjectOutputs(std::span<ResolvedRenderOb
 
 void RenderDeformationPreparation::PrepareSkinning(
     std::span<const RenderSkinningData> skinningRows,
+    std::span<const DirectX::XMFLOAT4X4> matrices,
     std::span<ResolvedRenderObject> objects,
     RenderDeformationWork& work)
 {
@@ -55,27 +56,31 @@ void RenderDeformationPreparation::PrepareSkinning(
 		    objects[objectIndex].Object != skinning.Object ||
 		    !skinning.Skeleton.IsValid() ||
 		    !skinning.Animation.IsValid() ||
-		    skinning.Matrices.empty())
+		    skinning.MatrixCount == 0 ||
+		    skinning.MatrixOffset > matrices.size() ||
+		    skinning.MatrixCount > matrices.size() - skinning.MatrixOffset)
 		{
 			continue;
 		}
 
 		ResolvedRenderObject& target =
 		    objects[objectIndex];
+		const std::span<const DirectX::XMFLOAT4X4> currentMatrices =
+		    matrices.subspan(skinning.MatrixOffset, skinning.MatrixCount);
 		const auto previous = m_skinningHistory.find(skinning.Object);
 		const std::span<const DirectX::XMFLOAT4X4> previousMatrices =
-		    previous != m_skinningHistory.end() && previous->second.size() == skinning.Matrices.size()
+		    previous != m_skinningHistory.end() && previous->second.size() == currentMatrices.size()
 		        ? std::span<const DirectX::XMFLOAT4X4>{previous->second}
-		        : std::span<const DirectX::XMFLOAT4X4>{skinning.Matrices};
+		        : currentMatrices;
 
 		target.Draw.Skinning.JointMatrixOffset = static_cast<std::uint32_t>(jointMatrixCount);
 		work.SkinningRanges.push_back(
 		    RenderSkinningCopyRange{
 		        .Object = skinning.Object,
 		        .OutputOffset = static_cast<std::uint32_t>(jointMatrixCount),
-		        .Current = skinning.Matrices,
+		        .Current = currentMatrices,
 		        .Previous = previousMatrices});
-		jointMatrixCount += skinning.Matrices.size();
+		jointMatrixCount += currentMatrices.size();
 	}
 
 	work.JointMatrices.resize(jointMatrixCount);
@@ -83,7 +88,8 @@ void RenderDeformationPreparation::PrepareSkinning(
 }
 
 void RenderDeformationPreparation::PrepareMorph(
-    std::span<const RenderMorphData> morphWeights,
+    std::span<const RenderMorphData> morphRanges,
+    std::span<const float> weights,
     std::span<ResolvedRenderObject> objects,
     RenderDeformationWork& work)
 {
@@ -96,15 +102,15 @@ void RenderDeformationPreparation::PrepareMorph(
 			continue;
 		}
 
-		while (morphIndex < morphWeights.size() &&
-		       morphWeights[morphIndex].Object < object.Object)
+		while (morphIndex < morphRanges.size() &&
+		       morphRanges[morphIndex].Object < object.Object)
 		{
 			++morphIndex;
 		}
 
 		const RenderMorphData* sample =
-		    morphIndex < morphWeights.size() && morphWeights[morphIndex].Object == object.Object
-		        ? &morphWeights[morphIndex]
+		    morphIndex < morphRanges.size() && morphRanges[morphIndex].Object == object.Object
+		        ? &morphRanges[morphIndex]
 		        : nullptr;
 		const auto history = m_morphHistory.find(object.Object);
 		if (sample == nullptr &&
@@ -114,8 +120,14 @@ void RenderDeformationPreparation::PrepareMorph(
 			continue;
 		}
 
+		const bool validSample =
+		    sample != nullptr &&
+		    sample->WeightOffset <= weights.size() &&
+		    sample->WeightCount <= weights.size() - sample->WeightOffset;
 		const std::span<const float> current =
-		    sample != nullptr ? std::span<const float>{sample->Weights} : std::span<const float>{};
+		    validSample
+		        ? weights.subspan(sample->WeightOffset, sample->WeightCount)
+		        : std::span<const float>{};
 		const std::span<const float> previous =
 		    history != m_morphHistory.end() && history->second.size() == object.MorphTargetCount
 		        ? std::span<const float>{history->second}

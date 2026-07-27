@@ -10,7 +10,7 @@
 #include "FrameGraph/FrameGraphResourceRegistry.h"
 #include "FrameGraph/FrameGraphResourceResolver.h"
 #include "FrameGraph/FrameGraphResourceStateTracker.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"

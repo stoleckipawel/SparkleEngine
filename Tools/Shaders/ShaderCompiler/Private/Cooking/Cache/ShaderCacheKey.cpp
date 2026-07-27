@@ -6,7 +6,7 @@
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "RHI/Public/Shaders/CookedShaderPackage.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 std::string ShaderCacheKey::ToHex() const
 {

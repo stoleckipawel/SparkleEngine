@@ -1,138 +1,19 @@
 #include "PCH.h"
 
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
+#include "RayTracing/Acceleration/RayTracingBlasGeometryBuilder.h"
 
 #include "Meshes/GPUMeshCache.h"
 #include "Commands/RenderCommandContext.h"
-#include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GPUMesh.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/RenderSceneData.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 
-#include <DirectXMath.h>
 #include <utility>
-#include <vector>
 
 static const auto g_rayTracingBlasCacheLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
-
-class RayTracingBlasCacheOperations final
-{
-  public:
-	static bool GeometryEquals(const RhiRayTracingGeometryDesc& left, const RhiRayTracingGeometryDesc& right) noexcept
-	{
-		return left.VertexBuffer.Resource.Value == right.VertexBuffer.Resource.Value &&
-		       left.VertexBuffer.OffsetInBytes == right.VertexBuffer.OffsetInBytes &&
-		       left.VertexStrideInBytes == right.VertexStrideInBytes &&
-		       left.VertexCount == right.VertexCount &&
-		       left.IndexBuffer.Resource.Value == right.IndexBuffer.Resource.Value &&
-		       left.IndexBuffer.OffsetInBytes == right.IndexBuffer.OffsetInBytes &&
-		       left.IndexCount == right.IndexCount &&
-		       left.IndexFormat == right.IndexFormat &&
-		       left.Opaque == right.Opaque;
-	}
-
-	static std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
-	{
-		return alignment > 0 ? MathUtils::AlignUp(sizeInBytes, alignment) : sizeInBytes;
-	}
-
-	static bool IsSkinnedDraw(const MeshDraw& draw) noexcept
-	{
-		return draw.Geometry.MeshKind == RenderMeshKind::Skeletal;
-	}
-
-	static DirectX::XMFLOAT3 TransformSkinnedPosition(
-	    const DirectX::XMFLOAT3& position,
-	    const VertexSkinInfluence& influence,
-	    std::uint32_t jointMatrixOffset,
-	    const std::vector<DirectX::XMFLOAT4X4>& jointMatrices) noexcept
-	{
-		const DirectX::XMVECTOR sourcePosition = DirectX::XMLoadFloat3(&position);
-		DirectX::XMVECTOR skinnedPosition = DirectX::XMVectorZero();
-		float totalWeight = 0.0f;
-		for (std::uint32_t influenceIndex = 0u; influenceIndex < 4u; ++influenceIndex)
-		{
-			const float weight = influence.jointWeights[influenceIndex];
-			if (weight <= 0.0f)
-			{
-				continue;
-			}
-
-			const std::uint32_t jointMatrixIndex = jointMatrixOffset + influence.jointIndices[influenceIndex];
-			if (jointMatrixIndex >= jointMatrices.size())
-			{
-				continue;
-			}
-
-			const DirectX::XMMATRIX skinningMatrix = DirectX::XMLoadFloat4x4(&jointMatrices[jointMatrixIndex]);
-			skinnedPosition = DirectX::XMVectorAdd(
-			    skinnedPosition,
-			    DirectX::XMVectorScale(DirectX::XMVector3Transform(sourcePosition, skinningMatrix), weight));
-			totalWeight += weight;
-		}
-
-		DirectX::XMFLOAT3 result = position;
-		DirectX::XMStoreFloat3(&result, totalWeight > 0.0f ? skinnedPosition : sourcePosition);
-		return result;
-	}
-
-	static bool HasValidMorphRange(
-	    const RenderSceneData& sceneData,
-	    const MeshDraw& draw,
-	    const GPUMesh& mesh) noexcept
-	{
-		return draw.Morph.TargetCount > 0u &&
-		       draw.Morph.VertexCount == mesh.GetVertexCount() &&
-		       mesh.GetMorphTargetCount() ==
-		           draw.Morph.TargetCount &&
-		       draw.Morph.WeightOffset <=
-		           sceneData.morphWeights.size() &&
-		       draw.Morph.TargetCount <=
-		           sceneData.morphWeights.size() -
-		               draw.Morph.WeightOffset &&
-		       mesh.GetMorphTargetDeltas().size() ==
-		           static_cast<std::size_t>(
-		               draw.Morph.TargetCount) *
-		               draw.Morph.VertexCount;
-	}
-
-	static DirectX::XMFLOAT3 ApplyMorphPosition(
-	    const DirectX::XMFLOAT3& position,
-	    std::size_t vertexIndex,
-	    const RenderSceneData& sceneData,
-	    const MeshDraw& draw,
-	    const GPUMesh& mesh,
-	    bool hasValidMorphRange) noexcept
-	{
-		DirectX::XMFLOAT3 morphed = position;
-		if (!hasValidMorphRange)
-		{
-			return morphed;
-		}
-
-		const std::span<const MorphTargetDeltaData> deltas =
-		    mesh.GetMorphTargetDeltas();
-		for (std::uint32_t targetIndex = 0u;
-		     targetIndex < draw.Morph.TargetCount;
-		     ++targetIndex)
-		{
-			const float weight =
-			    sceneData.morphWeights[
-			        draw.Morph.WeightOffset + targetIndex];
-			const MorphTargetDeltaData& delta =
-			    deltas[
-			        static_cast<std::size_t>(targetIndex) *
-			            draw.Morph.VertexCount +
-			        vertexIndex];
-			morphed.x += delta.Position.x * weight;
-			morphed.y += delta.Position.y * weight;
-			morphed.z += delta.Position.z * weight;
-		}
-		return morphed;
-	}
-};
 
 bool RayTracingBlasCache::BlasHandle::IsValid() const noexcept
 {
@@ -220,7 +101,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
     std::uint32_t gpuSceneSlot,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	if (RayTracingBlasCacheOperations::IsSkinnedDraw(draw))
+	if (RayTracingBlasGeometryBuilder::IsSkinnedDraw(draw))
 	{
 		return EnsureSkinnedBlas(
 		    cmd,
@@ -395,56 +276,31 @@ bool RayTracingBlasCache::BuildSkinnedGeometry(
 	}
 
 	const GPUMesh& gpuMesh = *resolvedMesh;
-	if (!gpuMesh.HasRayTracingHitData() || !gpuMesh.HasSkinInfluences() ||
-	    gpuMesh.GetRayTracingHitVertices().size() != gpuMesh.GetSkinInfluences().size() ||
-	    sceneData.jointMatrices.empty())
-	{
-		return false;
-	}
-
-	std::vector<DirectX::XMFLOAT3> skinnedPositions;
-	skinnedPositions.reserve(gpuMesh.GetRayTracingHitVertices().size());
-	const std::span<const RayTracingHitVertex> vertices = gpuMesh.GetRayTracingHitVertices();
-	const std::span<const VertexSkinInfluence> skinInfluences = gpuMesh.GetSkinInfluences();
-	const bool hasValidMorphRange =
-	    RayTracingBlasCacheOperations::HasValidMorphRange(
+	if (!RayTracingBlasGeometryBuilder::BuildSkinnedPositions(
 	        sceneData,
 	        draw,
-	        gpuMesh);
-	for (std::size_t vertexIndex = 0; vertexIndex < vertices.size(); ++vertexIndex)
-	{
-		for (std::uint32_t influenceIndex = 0u; influenceIndex < 4u; ++influenceIndex)
-		{
-			if (skinInfluences[vertexIndex].jointWeights[influenceIndex] <= 0.0f)
-			{
-				continue;
-			}
-			const std::uint32_t jointMatrixIndex =
-			    draw.Skinning.JointMatrixOffset + skinInfluences[vertexIndex].jointIndices[influenceIndex];
-			if (jointMatrixIndex >= sceneData.jointMatrices.size())
-			{
-				return false;
-			}
-		}
-		skinnedPositions.push_back(
-		    RayTracingBlasCacheOperations::TransformSkinnedPosition(
-		        RayTracingBlasCacheOperations::ApplyMorphPosition(
-		            vertices[vertexIndex].Position,
-		            vertexIndex,
-		            sceneData,
-		            draw,
-		            gpuMesh,
-		            hasValidMorphRange),
-		        skinInfluences[vertexIndex],
-		        draw.Skinning.JointMatrixOffset,
-		        sceneData.jointMatrices));
-	}
-
-	if (skinnedPositions.empty())
+	        gpuMesh,
+	        m_skinnedPositionScratch))
 	{
 		return false;
 	}
 
+	if (!ReplaceDynamicVertexBuffer(m_skinnedPositionScratch, entry))
+	{
+		return false;
+	}
+
+	outGeometry = BuildSkinnedGeometryDesc(
+	    gpuMesh,
+	    entry,
+	    static_cast<std::uint32_t>(m_skinnedPositionScratch.size()));
+	return true;
+}
+
+bool RayTracingBlasCache::ReplaceDynamicVertexBuffer(
+    std::span<const DirectX::XMFLOAT3> positions,
+    Entry& entry) noexcept
+{
 	if (entry.dynamicVertexBuffer)
 	{
 		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.dynamicVertexBuffer);
@@ -452,32 +308,34 @@ bool RayTracingBlasCache::BuildSkinnedGeometry(
 		entry.dynamicVertexBufferView = {};
 	}
 
-	if (!m_renderHardwareInterface->GetResourceService().CreateVertexBuffer(
-	        skinnedPositions.data(),
-	        skinnedPositions.size() * sizeof(DirectX::XMFLOAT3),
+	return m_renderHardwareInterface->GetResourceService().CreateVertexBuffer(
+	        positions.data(),
+	        positions.size() * sizeof(DirectX::XMFLOAT3),
 	        static_cast<std::uint32_t>(sizeof(DirectX::XMFLOAT3)),
 	        L"RayTracingSkinnedBlasVertices",
 	        entry.dynamicVertexBuffer,
-	        entry.dynamicVertexBufferView) ||
-	    !entry.dynamicVertexBuffer)
-	{
-		return false;
-	}
+	        entry.dynamicVertexBufferView) &&
+	       entry.dynamicVertexBuffer;
+}
 
+RhiRayTracingGeometryDesc RayTracingBlasCache::BuildSkinnedGeometryDesc(
+    const GPUMesh& gpuMesh,
+    const Entry& entry,
+    std::uint32_t vertexCount) const noexcept
+{
 	const RhiIndexBufferView indexBufferView = gpuMesh.GetIndexBufferView();
 	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
 
-	outGeometry = RhiRayTracingGeometryDesc{
+	return RhiRayTracingGeometryDesc{
 	    .VertexBuffer = RhiRayTracingBufferBinding{
 	        .Resource = resources.GetResourceHandle(entry.dynamicVertexBuffer)},
 	    .VertexStrideInBytes = entry.dynamicVertexBufferView.StrideInBytes,
-	    .VertexCount = static_cast<std::uint32_t>(skinnedPositions.size()),
+	    .VertexCount = vertexCount,
 	    .IndexBuffer = RhiRayTracingBufferBinding{
 	        .Resource = resources.GetResourceHandle(gpuMesh.GetIndexBufferResource())},
 	    .IndexCount = gpuMesh.GetIndexCount(),
 	    .IndexFormat = indexBufferView.Format,
 	    .Opaque = true};
-	return true;
 }
 
 bool RayTracingBlasCache::EnsureEntryResources(
@@ -505,7 +363,7 @@ bool RayTracingBlasCache::EnsureEntryResources(
 
 	if (!entry.scratchBuffer)
 	{
-		const std::uint64_t alignedScratchSize = RayTracingBlasCacheOperations::AlignRayTracingBufferSize(
+		const std::uint64_t alignedScratchSize = RayTracingBlasGeometryBuilder::AlignRayTracingBufferSize(
 		    prebuildInfo.ScratchDataSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.ScratchBufferByteAlignment);
 		entry.scratchBuffer =
@@ -514,7 +372,7 @@ bool RayTracingBlasCache::EnsureEntryResources(
 	}
 	if (!entry.accelerationStructureBuffer)
 	{
-		const std::uint64_t alignedAccelerationStructureSize = RayTracingBlasCacheOperations::AlignRayTracingBufferSize(
+		const std::uint64_t alignedAccelerationStructureSize = RayTracingBlasGeometryBuilder::AlignRayTracingBufferSize(
 		    prebuildInfo.ResultDataMaxSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.AccelerationStructureByteAlignment);
 		entry.accelerationStructureBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingAccelerationStructureBuffer(
@@ -554,7 +412,7 @@ void RayTracingBlasCache::TrackBuildResources(
 
 bool RayTracingBlasCache::GeometryMatches(const Entry& entry, const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
-	return RayTracingBlasCacheOperations::GeometryEquals(entry.geometry, geometry);
+	return RayTracingBlasGeometryBuilder::GeometryEquals(entry.geometry, geometry);
 }
 
 RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildHandle(const Entry& entry) const noexcept

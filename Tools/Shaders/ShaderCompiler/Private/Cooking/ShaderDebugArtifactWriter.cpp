@@ -6,7 +6,7 @@
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 #include <format>
 #include <sstream>

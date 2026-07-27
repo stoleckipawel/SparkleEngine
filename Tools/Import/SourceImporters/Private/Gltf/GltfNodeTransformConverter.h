@@ -7,7 +7,7 @@
 
 struct cgltf_node;
 
-class GltfNodeTransformUtils final
+class GltfNodeTransformConverter final
 {
   public:
 	static DirectX::XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);

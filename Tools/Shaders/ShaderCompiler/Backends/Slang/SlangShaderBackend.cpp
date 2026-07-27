@@ -3,7 +3,7 @@
 #include "Slang/SlangShaderBackend.h"
 
 #include "Compiler/ShaderCompileProfile.h"
-#include "Compiler/ShaderCompilerPathUtils.h"
+#include "Compiler/ShaderCompilerPaths.h"
 #include "Compiler/ShaderSourcePreprocessor.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Slang/SlangReflectionExtractor.h"

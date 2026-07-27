@@ -9,10 +9,7 @@
 
 class TaskExecutor;
 class TaskEvent;
-namespace TaskDetail
-{
-	struct TaskExecutionContextAccess;
-}
+struct TaskExecutionContextBinding;
 
 class SPARKLE_TASKS_API TaskExecutionContext final
 {
@@ -45,7 +42,7 @@ class SPARKLE_TASKS_API TaskExecutionContext final
   private:
 	friend class TaskExecutor;
 	friend class TaskEvent;
-	friend struct TaskDetail::TaskExecutionContextAccess;
+	friend struct TaskExecutionContextBinding;
 
 	void* m_userData = nullptr;
 	const std::type_info* m_userType = nullptr;
@@ -55,14 +52,11 @@ class SPARKLE_TASKS_API TaskExecutionContext final
 	TaskLane m_lane = TaskLane::FrameCritical;
 };
 
-namespace TaskDetail
+struct TaskExecutionContextBinding final
 {
-	struct TaskExecutionContextAccess final
-	{
-		static void Bind(
-		    TaskExecutionContext& context,
-		    std::uint64_t generation,
-		    TaskLane lane,
-		    std::stop_token cancellation) noexcept;
-	};
-}
+	static void Bind(
+	    TaskExecutionContext& context,
+	    std::uint64_t generation,
+	    TaskLane lane,
+	    std::stop_token cancellation) noexcept;
+};

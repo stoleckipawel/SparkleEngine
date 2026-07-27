@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 #include "Shaders/Authoring/ShaderParameterStruct.h"
 
 #include <filesystem>

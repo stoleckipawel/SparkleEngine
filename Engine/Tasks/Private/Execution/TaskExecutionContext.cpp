@@ -2,7 +2,7 @@
 
 TaskExecutionContext::TaskExecutionContext() noexcept = default;
 
-void TaskDetail::TaskExecutionContextAccess::Bind(
+void TaskExecutionContextBinding::Bind(
     TaskExecutionContext& context,
     std::uint64_t generation,
     TaskLane lane,

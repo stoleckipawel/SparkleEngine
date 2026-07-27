@@ -3,6 +3,14 @@
 
 #include <imgui.h>
 
+void ImGuiRenderPacketBuilder::ConfigureProducerContext() noexcept
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+	io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+	io.BackendRendererName = "Sparkle.UiRenderPacket";
+}
+
 UiRenderPacket ImGuiRenderPacketBuilder::Build(
     const ImDrawData& drawData,
     UiPresentationMode presentationMode,
@@ -18,6 +26,7 @@ UiRenderPacket ImGuiRenderPacketBuilder::Build(
 	m_packet.DisplaySize[1] = drawData.DisplaySize.y;
 	m_packet.FramebufferScale[0] = drawData.FramebufferScale.x;
 	m_packet.FramebufferScale[1] = drawData.FramebufferScale.y;
+	AppendTextureUpdates(drawData);
 	Reserve(drawData);
 
 	for (const ImDrawList* drawList : drawData.CmdLists)
@@ -28,6 +37,92 @@ UiRenderPacket ImGuiRenderPacketBuilder::Build(
 		}
 	}
 	return std::move(m_packet);
+}
+
+void ImGuiRenderPacketBuilder::AppendTextureUpdates(const ImDrawData& drawData)
+{
+	if (drawData.Textures == nullptr)
+	{
+		return;
+	}
+
+	for (ImTextureData* texture : *drawData.Textures)
+	{
+		if (texture == nullptr || texture->UniqueID <= 0)
+		{
+			continue;
+		}
+
+		const EditorTextureHandle handle =
+		    EditorTextureHandle::ImGuiTexture(static_cast<std::uint32_t>(texture->UniqueID));
+		switch (texture->Status)
+		{
+			case ImTextureStatus_WantCreate:
+			case ImTextureStatus_WantUpdates:
+				if (AppendTextureUpload(*texture, handle))
+				{
+					texture->SetTexID(
+					    static_cast<ImTextureID>(handle.Pack()));
+					texture->SetStatus(ImTextureStatus_OK);
+				}
+				break;
+			case ImTextureStatus_WantDestroy:
+				m_packet.TextureReleases.push_back(handle);
+				texture->SetTexID(ImTextureID_Invalid);
+				texture->SetStatus(ImTextureStatus_Destroyed);
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+bool ImGuiRenderPacketBuilder::AppendTextureUpload(
+    ImTextureData& texture,
+    EditorTextureHandle handle)
+{
+	if (texture.Pixels == nullptr || texture.Width <= 0 ||
+	    texture.Height <= 0 || texture.BytesPerPixel <= 0)
+	{
+		return false;
+	}
+
+	const std::size_t pixelCount =
+	    static_cast<std::size_t>(texture.Width) *
+	    static_cast<std::size_t>(texture.Height);
+	const std::size_t pixelOffset = m_packet.TexturePixels.size();
+	if (texture.Format == ImTextureFormat_Alpha8)
+	{
+		m_packet.TexturePixels.reserve(pixelOffset + (pixelCount * 4));
+		for (std::size_t pixelIndex = 0; pixelIndex < pixelCount; ++pixelIndex)
+		{
+			m_packet.TexturePixels.push_back(std::byte{0xff});
+			m_packet.TexturePixels.push_back(std::byte{0xff});
+			m_packet.TexturePixels.push_back(std::byte{0xff});
+			m_packet.TexturePixels.push_back(
+			    static_cast<std::byte>(texture.Pixels[pixelIndex]));
+		}
+	}
+	else
+	{
+		const std::byte* pixels =
+		    reinterpret_cast<const std::byte*>(texture.Pixels);
+		m_packet.TexturePixels.insert(
+		    m_packet.TexturePixels.end(),
+		    pixels,
+		    pixels + (pixelCount * 4));
+	}
+
+	const std::size_t uploadPixelCount =
+	    m_packet.TexturePixels.size() - pixelOffset;
+
+	m_packet.TextureUploads.push_back(UiTextureUpload{
+	    .Texture = handle,
+	    .Width = static_cast<std::uint32_t>(texture.Width),
+	    .Height = static_cast<std::uint32_t>(texture.Height),
+	    .PixelOffset = static_cast<std::uint32_t>(pixelOffset),
+	    .PixelCount = static_cast<std::uint32_t>(uploadPixelCount)});
+	return true;
 }
 
 void ImGuiRenderPacketBuilder::Reserve(const ImDrawData& drawData)

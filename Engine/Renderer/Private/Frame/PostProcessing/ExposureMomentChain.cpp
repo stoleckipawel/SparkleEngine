@@ -7,7 +7,7 @@
 #include "Passes/PostProcessing/ExposureDownsampleTexturePass.h"
 #include "Passes/PostProcessing/ExposureReduceScenePass.h"
 #include "Passes/PostProcessing/ExposureReduceTexturePass.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
 #include <algorithm>

@@ -216,7 +216,7 @@ namespace SparkleLauncher
 				QFrame* scopeRow = new QFrame(this);
 				scopeRow->setObjectName("CleanScopeCard");
 				QVBoxLayout* scopeRowLayout = new QVBoxLayout(scopeRow);
-				scopeRowLayout->setContentsMargins(LauncherUi::Clean::ScopeCardMargins());
+				scopeRowLayout->setContentsMargins(LauncherUi::Clean::ScopeCardMargins);
 				scopeRowLayout->setSpacing(LauncherUi::Clean::ScopeCardSpacing);
 				scopeRowLayout->addWidget(scopeBox);
 				const std::filesystem::path previewPath = ResolveCleanScopePreviewPath(m_repositoryRoot, activeProjectId, scope.Value);
@@ -234,7 +234,7 @@ namespace SparkleLauncher
 			{
 				cleanScopesLayout->addWidget(CreateSectionLabel(cleanGroup.first));
 				QGridLayout* cleanGrid = new QGridLayout();
-				cleanGrid->setContentsMargins(LauncherUi::Clean::GridMargins());
+				cleanGrid->setContentsMargins(LauncherUi::Clean::GridMargins);
 				cleanGrid->setHorizontalSpacing(LauncherUi::Clean::GridSpacing);
 				cleanGrid->setVerticalSpacing(LauncherUi::Clean::GridSpacing);
 				int groupScopeIndex = 0;
@@ -293,7 +293,7 @@ namespace SparkleLauncher
 		QFrame* labelCell = new QFrame(row);
 		labelCell->setObjectName("OptionLabelCell");
 		QHBoxLayout* labelLayout = new QHBoxLayout(labelCell);
-		labelLayout->setContentsMargins(LauncherUi::Option::LabelMargins());
+		labelLayout->setContentsMargins(LauncherUi::Option::LabelMargins);
 		labelLayout->setSpacing(0);
 
 		QLabel* fieldLabel = CreateFieldLabel(labelCell ? label : label);
@@ -337,7 +337,7 @@ namespace SparkleLauncher
 		QFrame* valueCell = new QFrame(row);
 		valueCell->setObjectName("OptionValueCell");
 		QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
-		valueLayout->setContentsMargins(LauncherUi::Option::ValueMargins());
+		valueLayout->setContentsMargins(LauncherUi::Option::ValueMargins);
 		valueLayout->setSpacing(0);
 		valueLayout->addWidget(checkBox, 1);
 
@@ -352,7 +352,7 @@ namespace SparkleLauncher
 		QFrame* group = new QFrame(this);
 		group->setObjectName("OptionGroup");
 		QVBoxLayout* groupLayout = new QVBoxLayout(group);
-		groupLayout->setContentsMargins(LauncherUi::Option::GroupMargins());
+		groupLayout->setContentsMargins(LauncherUi::Option::GroupMargins);
 		groupLayout->setSpacing(LauncherUi::Option::GroupSpacing);
 
 		QLabel* titleLabel = new QLabel(title, group);
@@ -376,7 +376,7 @@ namespace SparkleLauncher
 		QFrame* group = new QFrame(this);
 		group->setObjectName("OptionGroup");
 		QVBoxLayout* groupLayout = new QVBoxLayout(group);
-		groupLayout->setContentsMargins(LauncherUi::Option::GroupMargins());
+		groupLayout->setContentsMargins(LauncherUi::Option::GroupMargins);
 		groupLayout->setSpacing(LauncherUi::Option::GroupSpacing);
 
 		QToolButton* toggle = new QToolButton(group);
@@ -400,7 +400,7 @@ namespace SparkleLauncher
 		QFrame* detailsPanel = new QFrame(group);
 		detailsPanel->setObjectName("DetailsPanel");
 		QVBoxLayout* detailsLayout = new QVBoxLayout(detailsPanel);
-		detailsLayout->setContentsMargins(LauncherUi::Option::DetailsMargins());
+		detailsLayout->setContentsMargins(LauncherUi::Option::DetailsMargins);
 		detailsLayout->setSpacing(LauncherUi::Option::GroupSpacing);
 		detailsPanel->setVisible(expanded);
 		groupLayout->addWidget(detailsPanel);

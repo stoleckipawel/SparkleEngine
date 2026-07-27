@@ -108,6 +108,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowStatusPages.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowSyncPages.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style/LauncherIconLibrary.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style/LauncherUiDesign.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style/LauncherVisualStyle.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherActionWidgets.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherArtworkWidgets.cpp

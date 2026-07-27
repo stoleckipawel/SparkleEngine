@@ -47,7 +47,7 @@ class SPARKLE_PLATFORM_API Window final
 
 	uint32_t GetWidth() const noexcept { return m_clientWidth.load(std::memory_order_acquire); }
 	uint32_t GetHeight() const noexcept { return m_clientHeight.load(std::memory_order_acquire); }
-	bool HasValidSize() const noexcept { return GetWidth() > 0 && GetHeight() > 0; }
+	bool HasValidSize() const noexcept;
 
 	State GetState() const noexcept { return m_state; }
 	bool ShouldClose() const noexcept { return m_bShouldClose; }

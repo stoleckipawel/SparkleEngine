@@ -7,6 +7,7 @@
 
 class RhiImGuiRenderer;
 class EditorTextureRegistry;
+struct ImTextureData;
 
 class UiRenderPacketPlayer final
 {
@@ -21,10 +22,18 @@ class UiRenderPacketPlayer final
 	    const UiRenderPacket& packet,
 	    const EditorTextureRegistry& textures,
 	    RhiImGuiRenderer& renderer);
+	void Shutdown(RhiImGuiRenderer& renderer) noexcept;
 
   private:
 	struct PlaybackStorage;
 
+	void ApplyTextureUpdates(const UiRenderPacket& packet);
+	void ApplyTextureUpload(
+	    const UiRenderPacket& packet,
+	    const UiTextureUpload& upload);
+	void QueueTextureRelease(EditorTextureHandle handle) noexcept;
+	ImTextureData* FindTexture(EditorTextureHandle handle) const noexcept;
+	void RetireReleasedTextures() noexcept;
 	void PrepareDrawLists(std::size_t drawListCount);
 	void CopyDrawList(
 	    const UiRenderPacket& packet,

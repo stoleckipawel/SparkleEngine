@@ -3,12 +3,11 @@
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
+#include "ShaderData/RenderConstantBufferData.h"
 
-#include <cstdint>
 #include <span>
 
 class RenderHardwareInterface;
-struct VertexSkinInfluence;
 
 class GPUSkinInfluenceBuffer final
 {
@@ -23,8 +22,7 @@ class GPUSkinInfluenceBuffer final
 
 	bool Upload(
 	    RenderHardwareInterface& renderHardwareInterface,
-	    std::uint32_t vertexCount,
-	    std::span<const VertexSkinInfluence> skinInfluences);
+	    std::span<const VertexSkinInfluenceData> skinInfluences);
 	void Release() noexcept;
 
 	RhiGpuDescriptorHandle GetShaderResourceView() const noexcept { return m_shaderResourceView; }

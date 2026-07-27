@@ -24,12 +24,17 @@ class IncludeClosureHasher final
 	static IncludeClosureHashResult Compute(const ShaderCompileOptions& options);
 
   private:
-	typedef std::pair<std::wstring, std::uint64_t> HashPair;
+	using HashPair = std::pair<std::wstring, std::uint64_t>;
 
 	static bool VisitFile(
-		const std::filesystem::path& filePath,
-		const ShaderCompileOptions& options,
-		std::unordered_set<std::wstring>& visitedPathKeys,
-		std::vector<HashPair>& outFileHashes,
-		std::string& outErrorMessage);
+	    const std::filesystem::path& filePath,
+	    const ShaderCompileOptions& options,
+	    std::unordered_set<std::wstring>& visitedPathKeys,
+	    std::vector<HashPair>& outFileHashes,
+	    std::string& outErrorMessage);
+	static std::uint64_t ComputeClosureHash(
+	    std::vector<HashPair>& fileHashes);
+	static std::uint64_t FindSourceHash(
+	    const std::filesystem::path& sourcePath,
+	    const std::vector<HashPair>& fileHashes);
 };

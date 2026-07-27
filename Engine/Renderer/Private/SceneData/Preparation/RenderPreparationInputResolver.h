@@ -12,8 +12,8 @@ class RenderDeformationPreparation;
 class RenderWorld;
 class TextureManager;
 struct Frustum;
-struct RenderObjectDynamicData;
 struct RenderFrameDynamicData;
+struct RenderProxy;
 struct RenderPreparationRun;
 struct RenderSceneData;
 struct ResolvedRenderObject;
@@ -43,17 +43,13 @@ class RenderPreparationInputResolver final
   private:
 	void ResolveObjects(
 	    const RenderWorld& world,
-	    const RenderFrameDynamicData& dynamic,
 	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
 	    RenderPreparationRun& run);
 	bool TryResolveObject(
-	    const RenderWorld& world,
-	    const RenderObjectDynamicData& dynamicObject,
+	    const RenderProxy& proxy,
+	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
 	    RenderSceneData& sceneData,
 	    ResolvedRenderObject& output);
-	static void ApplyPreviousWorldTransforms(
-	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
-	    std::span<ResolvedRenderObject> objects) noexcept;
 	void ResolveInstanceGroups(
 	    const RenderWorld& world,
 	    RenderPreparationRun& run) const;

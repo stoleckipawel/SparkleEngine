@@ -88,7 +88,10 @@ class RendererSystemRoot final
 	void PollRetiredImageProviders() noexcept;
 
   private:
-	void InitializeCoreSystems(const RendererBackendConfiguration& backendConfiguration) noexcept;
+	void InitializeCoreSystems(
+	    const RendererBackendConfiguration& backendConfiguration,
+	    TaskExecutor& taskExecutor,
+	    TaskScope& applicationTaskScope) noexcept;
 	void InitializeSceneSystems(
 	    TaskExecutor& taskExecutor,
 	    TaskScope& applicationTaskScope) noexcept;

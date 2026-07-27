@@ -43,6 +43,7 @@ namespace ECS
 		m_identities.BeginScene();
 		m_objectExtractor.BeginScene();
 		m_resourcePublisher.BeginScene();
+		m_dynamicExtractor.BeginScene();
 		m_sceneGeneration = sceneGeneration;
 	}
 }

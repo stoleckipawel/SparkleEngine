@@ -2,7 +2,6 @@
 
 #include <QtCore/QMargins>
 #include <QtCore/QSize>
-#include <QtCore/QString>
 #include <QtCore/QtGlobal>
 #include <QtGui/QColor>
 
@@ -33,12 +32,7 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr const char* StateDestructive = "#ff7b72";
 		inline constexpr const char* StateWarning = "#ffb454";
 
-		inline QColor Hex(const char* value, int alpha = 255)
-		{
-			QColor color(QString::fromLatin1(value));
-			color.setAlpha(alpha);
-			return color;
-		}
+		QColor Hex(const char* value, int alpha = 255);
 	}
 
 	namespace Space
@@ -81,11 +75,7 @@ namespace SparkleLauncher::LauncherUi
 	namespace TitleBand
 	{
 		inline constexpr int Spacing = 14;
-
-		inline QMargins Margins()
-		{
-			return QMargins(20, 0, 12, 0);
-		}
+		inline const QMargins Margins{20, 0, 12, 0};
 	}
 
 	namespace HeaderContext
@@ -118,26 +108,14 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int MaxContentWidth = 1340;
 		inline constexpr int Spacing = 10;
 		inline constexpr int BottomMargin = 32;
-
-		inline QMargins ContentMargins()
-		{
-			return QMargins(28, 22, 28, BottomMargin);
-		}
-
-		inline QMargins QuickStartMargins()
-		{
-			return QMargins(0, 0, 0, BottomMargin);
-		}
+		inline const QMargins ContentMargins{28, 22, 28, BottomMargin};
+		inline const QMargins QuickStartMargins{0, 0, 0, BottomMargin};
 	}
 
 	namespace ActionMeta
 	{
 		inline constexpr int Spacing = 8;
-
-		inline QMargins Margins()
-		{
-			return QMargins(0, 8, 0, 0);
-		}
+		inline const QMargins Margins{0, 8, 0, 0};
 	}
 
 	namespace TextEdit
@@ -171,11 +149,7 @@ namespace SparkleLauncher::LauncherUi
 	{
 		inline constexpr int MinHeight = 138;
 		inline constexpr int Spacing = 8;
-
-		inline QMargins Margins()
-		{
-			return QMargins(16, 14, 16, 14);
-		}
+		inline const QMargins Margins{16, 14, 16, 14};
 	}
 
 	namespace Clean
@@ -183,16 +157,8 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int ScopeCardSpacing = 6;
 		inline constexpr int GridTopMargin = 4;
 		inline constexpr int GridSpacing = 12;
-
-		inline QMargins ScopeCardMargins()
-		{
-			return QMargins(12, 10, 12, 10);
-		}
-
-		inline QMargins GridMargins()
-		{
-			return QMargins(0, GridTopMargin, 0, 0);
-		}
+		inline const QMargins ScopeCardMargins{12, 10, 12, 10};
+		inline const QMargins GridMargins{0, GridTopMargin, 0, 0};
 	}
 
 	namespace Option
@@ -203,25 +169,10 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int DetailsTopMargin = 4;
 		inline constexpr int StatusDetailSpacing = 3;
 
-		inline QMargins LabelMargins()
-		{
-			return QMargins(LabelHorizontalPadding, 0, LabelHorizontalPadding, 0);
-		}
-
-		inline QMargins ValueMargins()
-		{
-			return QMargins(ValueLeftPadding, 0, 0, 0);
-		}
-
-		inline QMargins GroupMargins()
-		{
-			return QMargins(0, 8, 0, 8);
-		}
-
-		inline QMargins DetailsMargins()
-		{
-			return QMargins(0, DetailsTopMargin, 0, 0);
-		}
+		inline const QMargins LabelMargins{LabelHorizontalPadding, 0, LabelHorizontalPadding, 0};
+		inline const QMargins ValueMargins{ValueLeftPadding, 0, 0, 0};
+		inline const QMargins GroupMargins{0, 8, 0, 8};
+		inline const QMargins DetailsMargins{0, DetailsTopMargin, 0, 0};
 	}
 
 	namespace WorkflowVisual
@@ -233,20 +184,9 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int CopySpacing = 8;
 		inline constexpr int ActionTopMargin = 2;
 
-		inline QSize ArtworkSize()
-		{
-			return QSize(360, MinHeight);
-		}
-
-		inline QSize FallbackArtworkSize()
-		{
-			return QSize(FallbackWidth, FallbackHeight);
-		}
-
-		inline QMargins CopyMargins()
-		{
-			return QMargins(18, 14, 18, 14);
-		}
+		inline const QSize ArtworkSize{360, MinHeight};
+		inline const QSize FallbackArtworkSize{FallbackWidth, FallbackHeight};
+		inline const QMargins CopyMargins{18, 14, 18, 14};
 	}
 
 	namespace Activity
@@ -260,25 +200,10 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr const char* ExpandGlyph = "+";
 		inline constexpr const char* CollapseGlyph = "-";
 
-		inline QSize ToggleButtonSize()
-		{
-			return QSize(28, 24);
-		}
-
-		inline QMargins HeaderMargins()
-		{
-			return QMargins(10, 5, 10, 5);
-		}
-
-		inline QMargins RailMargins()
-		{
-			return QMargins(4, 4, 4, 4);
-		}
-
-		inline QMargins OutputMargins()
-		{
-			return QMargins(6, 4, 6, 6);
-		}
+		inline const QSize ToggleButtonSize{28, 24};
+		inline const QMargins HeaderMargins{10, 5, 10, 5};
+		inline const QMargins RailMargins{4, 4, 4, 4};
+		inline const QMargins OutputMargins{6, 4, 6, 6};
 	}
 
 	namespace Section
@@ -329,39 +254,12 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int ProductSpacing = 12;
 		inline constexpr int DiscoverSpacing = 6;
 
-		inline QSize ProductArtworkSize()
-		{
-			return QSize(720, 240);
-		}
-
-		inline QSize DiscoverArtworkSize()
-		{
-			return QSize(351, 105);
-		}
-
-		inline QMargins FlushArtworkMargins()
-		{
-			return QMargins(0, 0, 0, Space::Large);
-		}
-
-		inline QMargins ProductMargins(bool hasArtwork)
-		{
-			return QMargins(18, hasArtwork ? 12 : 16, 18, 16);
-		}
-
-		inline QMargins DiscoverMargins(bool hasArtwork)
-		{
-			return QMargins(16, hasArtwork ? 12 : 14, 16, 14);
-		}
-
-		inline QMargins ProductBodyMargins()
-		{
-			return QMargins(Space::XLarge, ProductBodyTop, Space::XLarge, ProductBodyBottom);
-		}
-
-		inline QMargins DiscoverBodyMargins()
-		{
-			return QMargins(Space::XLarge, DiscoverBodyTop, Space::XLarge, DiscoverBodyBottom);
-		}
+		inline const QSize ProductArtworkSize{720, 240};
+		inline const QSize DiscoverArtworkSize{351, 105};
+		inline const QMargins FlushArtworkMargins{0, 0, 0, Space::Large};
+		QMargins ProductMargins(bool hasArtwork);
+		QMargins DiscoverMargins(bool hasArtwork);
+		inline const QMargins ProductBodyMargins{Space::XLarge, ProductBodyTop, Space::XLarge, ProductBodyBottom};
+		inline const QMargins DiscoverBodyMargins{Space::XLarge, DiscoverBodyTop, Space::XLarge, DiscoverBodyBottom};
 	}
 }

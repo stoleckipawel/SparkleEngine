@@ -3,7 +3,7 @@
 
 #include "Frame/Core/FrameAssembly.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
 DirectShadowSignalResources CreateDirectShadowSignalResources(

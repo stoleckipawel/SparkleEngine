@@ -1,6 +1,6 @@
 ﻿#include "PCH.h"
 
-#include "Shaders/CookedShaderPackageUtils.h"
+#include "Shaders/CookedShaderPackageIdentity.h"
 
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
@@ -10,7 +10,7 @@
 #include <format>
 #include <string>
 
-class CookedShaderPackageUtilsOperations final
+class CookedShaderPackageCanonicalization final
 {
   public:
 	static std::string NormalizeShaderPackageToken(std::string_view value, std::string_view fallback = {})
@@ -21,7 +21,7 @@ class CookedShaderPackageUtilsOperations final
 			return normalized;
 		}
 
-		return fallback.empty() ? std::string{} : std::string(fallback);
+		return std::string(fallback);
 	}
 
 	static std::uint32_t ToLayoutVisibilityBits(ShaderStageVisibility visibility) noexcept
@@ -45,10 +45,14 @@ class CookedShaderPackageUtilsOperations final
 	}
 };
 
+bool ShaderPackageDefinition::IsValid() const noexcept
+{
+	return PackageId != nullptr && PackageId[0] != '\0' && ExpectedStages != ShaderStageMask::None;
+}
+
 std::uint64_t BuildShaderPackageKey(std::string_view packageId)
 {
-	const std::string normalizedPackageId = CookedShaderPackageUtilsOperations::NormalizeShaderPackageToken(packageId);
-	return Hash::Fnv1a64(normalizedPackageId);
+	return Hash::Fnv1a64(CookedShaderPackageCanonicalization::NormalizeShaderPackageToken(packageId));
 }
 
 std::uint64_t BuildShaderBlobId(
@@ -62,13 +66,13 @@ std::uint64_t BuildShaderBlobId(
 	std::string canonical;
 	canonical.reserve(192);
 	canonical += "ShaderBlobId.v1|PackageId=";
-	canonical += CookedShaderPackageUtilsOperations::NormalizeShaderPackageToken(packageId);
+	canonical += CookedShaderPackageCanonicalization::NormalizeShaderPackageToken(packageId);
 	canonical += "|EntryPoint=";
 	canonical += Strings::TrimAsciiWhitespace(entryPoint);
 	canonical += "|ExportName=";
 	canonical += Strings::TrimAsciiWhitespace(exportName);
 	canonical += "|CompilerBackend=";
-	canonical += CookedShaderPackageUtilsOperations::NormalizeShaderPackageToken(compilerBackendName);
+	canonical += CookedShaderPackageCanonicalization::NormalizeShaderPackageToken(compilerBackendName);
 	canonical += "|CodegenTarget=";
 	canonical += Strings::TrimAsciiWhitespace(codegenTarget);
 	canonical += "|BinaryFormat=";
@@ -96,7 +100,7 @@ std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout)
 		canonicalLayout += '|';
 		canonicalLayout += std::to_string(static_cast<std::uint32_t>(parameter.Access));
 		canonicalLayout += '|';
-		canonicalLayout += std::to_string(CookedShaderPackageUtilsOperations::ToLayoutVisibilityBits(parameter.Visibility));
+		canonicalLayout += std::to_string(CookedShaderPackageCanonicalization::ToLayoutVisibilityBits(parameter.Visibility));
 		canonicalLayout += '|';
 		canonicalLayout += std::to_string(parameter.ArrayCount);
 		canonicalLayout += '|';

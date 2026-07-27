@@ -12,7 +12,7 @@
 #include <filesystem>
 #include <fstream>
 
-class CookedMeshAssetWriterOperations final
+class CookedMeshAssetStager final
 {
   public:
 	static bool StageMeshAsset(
@@ -33,7 +33,7 @@ class CookedMeshAssetWriterOperations final
 	    Assets::CookedAssetId assetId);
 };
 
-bool CookedMeshAssetWriterOperations::StageMeshAsset(
+bool CookedMeshAssetStager::StageMeshAsset(
     const CookedMeshAssetBuild& meshAsset,
     std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
@@ -63,7 +63,7 @@ bool CookedMeshAssetWriterOperations::StageMeshAsset(
 	           outErrorMessage);
 }
 
-bool CookedMeshAssetWriterOperations::WriteMeshAsset(
+bool CookedMeshAssetStager::WriteMeshAsset(
     const CookedMeshAssetBuild& meshAsset,
     const std::filesystem::path& outputPath,
     std::string& outErrorMessage)
@@ -88,7 +88,7 @@ bool CookedMeshAssetWriterOperations::WriteMeshAsset(
 	    outErrorMessage);
 }
 
-bool CookedMeshAssetWriterOperations::WriteMeshMetadata(
+bool CookedMeshAssetStager::WriteMeshMetadata(
     const CookedMeshAssetBuild& meshAsset,
     const std::filesystem::path& outputPath,
     std::string& outErrorMessage)
@@ -104,7 +104,7 @@ bool CookedMeshAssetWriterOperations::WriteMeshMetadata(
 	    outErrorMessage);
 }
 
-Assets::CookedMeshAssetHeader CookedMeshAssetWriterOperations::BuildHeader(
+Assets::CookedMeshAssetHeader CookedMeshAssetStager::BuildHeader(
     const CookedMeshAssetBuild& meshAsset) noexcept
 {
 	return Assets::CookedMeshAssetHeader{
@@ -124,7 +124,7 @@ Assets::CookedMeshAssetHeader CookedMeshAssetWriterOperations::BuildHeader(
 	    .assetKind = meshAsset.assetKind};
 }
 
-std::filesystem::path CookedMeshAssetWriterOperations::BuildMetadataPath(
+std::filesystem::path CookedMeshAssetStager::BuildMetadataPath(
     Assets::CookedAssetId assetId)
 {
 	std::filesystem::path metadataPath = Paths::CookedMeshAsset(assetId);
@@ -139,7 +139,7 @@ bool CookedMeshAssetWriter::StageMeshAssets(
 {
 	for (const CookedMeshAssetBuild& meshAsset : meshAssets)
 	{
-		if (!CookedMeshAssetWriterOperations::StageMeshAsset(
+		if (!CookedMeshAssetStager::StageMeshAsset(
 		        meshAsset,
 		        outPublication,
 		        outErrorMessage))

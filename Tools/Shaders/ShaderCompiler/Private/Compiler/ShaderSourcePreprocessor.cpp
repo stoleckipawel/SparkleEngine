@@ -2,7 +2,7 @@
 
 #include "Compiler/ShaderSourcePreprocessor.h"
 
-#include "Compiler/ShaderCompilerPathUtils.h"
+#include "Compiler/ShaderCompilerPaths.h"
 #include "Compiler/ShaderIncludeResolver.h"
 #include "Core/Public/Files/FileUtils.h"
 

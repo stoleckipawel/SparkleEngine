@@ -1,18 +1,17 @@
 #pragma once
 
-#include "../../../RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "../../../RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "../../../RHI/Public/Resources/RhiResourceDesc.h"
 #include "../../../RHI/Public/Samplers/RhiSamplerDesc.h"
+#include "../../../RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "../FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "../FrameGraph/FrameGraphBufferHandle.h"
 #include "../FrameGraph/FrameGraphTextureHandle.h"
+#include "../RendererAPI.h"
 
-#include <cassert>
 #include <cstdint>
 #include <string>
 #include <type_traits>
-#include <utility>
 #include <variant>
 #include <vector>
 
@@ -73,81 +72,22 @@ struct PassParameterSamplerBindingData
 };
 
 using PassParameterBindingValue = std::variant<
-	std::monostate,
-	PassParameterTextureBindingData,
-	PassParameterBufferBindingData,
-	PassParameterDescriptorTableBindingData,
-	PassParameterAccelerationStructureBindingData,
-	PassParameterUniformBindingData,
-	PassParameterSamplerBindingData>;
+    std::monostate,
+    PassParameterTextureBindingData,
+    PassParameterBufferBindingData,
+    PassParameterDescriptorTableBindingData,
+    PassParameterAccelerationStructureBindingData,
+    PassParameterUniformBindingData,
+    PassParameterSamplerBindingData>;
 
-struct PassParameterBinding
+struct SPARKLE_RENDERER_API PassParameterBinding
 {
-	PassParameterValueKind GetKind() const noexcept
-	{
-		return std::visit(
-		    [](const auto& value) noexcept -> PassParameterValueKind
-		    {
-			    using ValueType = std::decay_t<decltype(value)>;
-			    if constexpr (std::is_same_v<ValueType, PassParameterTextureBindingData>)
-			    {
-				    return PassParameterValueKind::Texture;
-			    }
-			    else if constexpr (std::is_same_v<ValueType, PassParameterBufferBindingData>)
-			    {
-				    return PassParameterValueKind::Buffer;
-			    }
-			    else if constexpr (std::is_same_v<ValueType, PassParameterDescriptorTableBindingData>)
-			    {
-				    return PassParameterValueKind::DescriptorTable;
-			    }
-			    else if constexpr (std::is_same_v<ValueType, PassParameterAccelerationStructureBindingData>)
-			    {
-				    return PassParameterValueKind::AccelerationStructure;
-			    }
-			    else if constexpr (std::is_same_v<ValueType, PassParameterUniformBindingData>)
-			    {
-				    return PassParameterValueKind::UniformData;
-			    }
-			    else if constexpr (std::is_same_v<ValueType, PassParameterSamplerBindingData>)
-			    {
-				    return PassParameterValueKind::Sampler;
-			    }
-			    else
-			    {
-				    return PassParameterValueKind::None;
-			    }
-		    },
-		    m_value);
-	}
+	PassParameterValueKind GetKind() const noexcept;
+	bool IsBound() const noexcept;
 
-	bool IsBound() const noexcept
-	{
-		return std::visit(
-		    [](const auto& value) noexcept -> bool
-		    {
-			    using ValueType = std::decay_t<decltype(value)>;
-			    if constexpr (std::is_same_v<ValueType, std::monostate>)
-			    {
-				    return false;
-			    }
-			    else
-			    {
-				    return value.IsBound();
-			    }
-		    },
-		    m_value);
-	}
+	const PassParameterTextureBindingData* AsTextureData() const noexcept { return std::get_if<PassParameterTextureBindingData>(&m_value); }
 
-	const PassParameterTextureBindingData* AsTextureData() const noexcept
-	{
-		return std::get_if<PassParameterTextureBindingData>(&m_value);
-	}
-
-	const PassParameterBufferBindingData* AsBufferData() const noexcept
-	{
-		return std::get_if<PassParameterBufferBindingData>(&m_value);
-	}
+	const PassParameterBufferBindingData* AsBufferData() const noexcept { return std::get_if<PassParameterBufferBindingData>(&m_value); }
 
 	const PassParameterDescriptorTableBindingData* AsDescriptorTableData() const noexcept
 	{
@@ -159,244 +99,45 @@ struct PassParameterBinding
 		return std::get_if<PassParameterAccelerationStructureBindingData>(&m_value);
 	}
 
-	const PassParameterUniformBindingData* AsUniformData() const noexcept
-	{
-		return std::get_if<PassParameterUniformBindingData>(&m_value);
-	}
+	const PassParameterUniformBindingData* AsUniformData() const noexcept { return std::get_if<PassParameterUniformBindingData>(&m_value); }
 
-	const PassParameterSamplerBindingData* AsSamplerData() const noexcept
-	{
-		return std::get_if<PassParameterSamplerBindingData>(&m_value);
-	}
+	const PassParameterSamplerBindingData* AsSamplerData() const noexcept { return std::get_if<PassParameterSamplerBindingData>(&m_value); }
 
   private:
 	friend class PassParameterSet;
 
-	void Reset() noexcept { m_value.emplace<std::monostate>(); }
-
-	void SetValue(PassParameterBindingValue value) { m_value = std::move(value); }
+	void Reset() noexcept;
+	void SetValue(PassParameterBindingValue value);
 
 	PassParameterBindingValue m_value;
 };
 
-class PassParameterSet final
+class SPARKLE_RENDERER_API PassParameterSet final
 {
   public:
-	PassParameterSet(const PassParameterLayout& layout, std::vector<bool> graphResourceParameters) :
-	    m_layout(&layout),
-	    m_bindings(layout.GetParameterCount()),
-	    m_graphResourceParameters(std::move(graphResourceParameters))
-	{
-		assert(m_graphResourceParameters.size() == layout.GetParameterCount());
-	}
+	PassParameterSet(const PassParameterLayout& layout, std::vector<bool> graphResourceParameters);
 
-	void ClearBindings() noexcept
-	{
-		for (PassParameterBinding& binding : m_bindings)
-		{
-			binding.Reset();
-		}
-	}
+	void ClearBindings() noexcept;
 
 	const PassParameterLayout* GetLayout() const noexcept { return m_layout; }
-
 	bool HasLayout() const noexcept { return m_layout != nullptr; }
-
 	std::size_t GetBindingCount() const noexcept { return m_bindings.size(); }
 
-	const PassParameterBinding* FindBinding(const char* name) const noexcept
-	{
-		std::uint32_t index = 0;
-		return FindBinding(name, index);
-	}
+	const PassParameterBinding* FindBinding(const char* name) const noexcept;
+	const PassParameterBinding* GetBinding(std::uint32_t index) const noexcept;
+	bool IsBound(const char* name) const noexcept;
 
-	const PassParameterBinding* GetBinding(std::uint32_t index) const noexcept
-	{
-		return index < m_bindings.size() ? &m_bindings[index] : nullptr;
-	}
-
-	bool IsBound(const char* name) const noexcept
-	{
-		const PassParameterBinding* binding = FindBinding(name);
-		return binding != nullptr && binding->IsBound();
-	}
-
-	bool SetTexture(const char* name, FrameGraphTextureHandle handle)
-	{
-		std::vector<FrameGraphTextureHandle> handles;
-		handles.push_back(handle);
-		return SetTextureArray(name, handles);
-	}
-
-	bool SetTextureArray(const char* name, const std::vector<FrameGraphTextureHandle>& handles)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr || parameter->ResourceDomain != ShaderParameterResourceDomain::Texture)
-		{
-			return false;
-		}
-
-		if (!ValidateArrayCount(*parameter, handles.size()))
-		{
-			return false;
-		}
-
-		if (!ValidateTextureBinding(handles, *parameter))
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterTextureBindingData{.Handles = handles});
-		return true;
-	}
-
-	bool SetBuffer(const char* name, FrameGraphBufferHandle handle)
-	{
-		std::vector<FrameGraphBufferHandle> handles;
-		handles.push_back(handle);
-		return SetBufferArray(name, handles);
-	}
-
-	bool SetBufferArray(const char* name, const std::vector<FrameGraphBufferHandle>& handles)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr || parameter->ResourceDomain != ShaderParameterResourceDomain::Buffer)
-		{
-			return false;
-		}
-
-		if (!ValidateArrayCount(*parameter, handles.size()))
-		{
-			return false;
-		}
-
-		if (!ValidateBufferBinding(handles, *parameter))
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterBufferBindingData{.Handles = handles});
-		return true;
-	}
-
-	bool SetShaderResourceView(const char* name, RhiDescriptorTableBinding descriptorTable)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr ||
-		    (parameter->Kind != ShaderParameterSemanticKind::ReadTexture && parameter->Kind != ShaderParameterSemanticKind::ReadBuffer))
-		{
-			return false;
-		}
-
-		if (!descriptorTable)
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.Table = descriptorTable});
-		return true;
-	}
-
-	bool UsesGraphResource(std::uint32_t index) const noexcept
-	{
-		return index < m_graphResourceParameters.size() && m_graphResourceParameters[index];
-	}
-
-	bool SetShaderResourceView(const char* name, RhiGpuDescriptorHandle descriptorTable)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr ||
-		    (parameter->Kind != ShaderParameterSemanticKind::ReadTexture && parameter->Kind != ShaderParameterSemanticKind::ReadBuffer))
-		{
-			return false;
-		}
-
-		if (!descriptorTable)
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.GpuHandle = descriptorTable});
-		return true;
-	}
-
-	bool SetUnorderedAccessView(const char* name, RhiDescriptorTableBinding descriptorTable)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr ||
-		    (parameter->Kind != ShaderParameterSemanticKind::RWTexture && parameter->Kind != ShaderParameterSemanticKind::RWBuffer))
-		{
-			return false;
-		}
-
-		if (!descriptorTable)
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.Table = descriptorTable});
-		return true;
-	}
-
-	bool SetUnorderedAccessView(const char* name, RhiGpuDescriptorHandle descriptorTable)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr ||
-		    (parameter->Kind != ShaderParameterSemanticKind::RWTexture && parameter->Kind != ShaderParameterSemanticKind::RWBuffer))
-		{
-			return false;
-		}
-
-		if (!descriptorTable)
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.GpuHandle = descriptorTable});
-		return true;
-	}
-
-	bool SetAccelerationStructure(const char* name, RhiGpuVirtualAddress gpuAddress)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr || parameter->Kind != ShaderParameterSemanticKind::AccelerationStructure)
-		{
-			return false;
-		}
-
-		if (parameter->ArrayCount != 1u)
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterAccelerationStructureBindingData{.GpuAddress = gpuAddress});
-		return true;
-	}
-
-	bool SetAccelerationStructure(const char* name, FrameGraphAccelerationStructureHandle handle)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr || parameter->Kind != ShaderParameterSemanticKind::AccelerationStructure)
-		{
-			return false;
-		}
-
-		if (parameter->ArrayCount != 1u || !handle.IsValid())
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterAccelerationStructureBindingData{.Handle = handle});
-		return true;
-	}
+	bool SetTexture(const char* name, FrameGraphTextureHandle handle);
+	bool SetTextureArray(const char* name, const std::vector<FrameGraphTextureHandle>& handles);
+	bool SetBuffer(const char* name, FrameGraphBufferHandle handle);
+	bool SetBufferArray(const char* name, const std::vector<FrameGraphBufferHandle>& handles);
+	bool SetShaderResourceView(const char* name, RhiDescriptorTableBinding descriptorTable);
+	bool SetShaderResourceView(const char* name, RhiGpuDescriptorHandle descriptorTable);
+	bool UsesGraphResource(std::uint32_t index) const noexcept;
+	bool SetUnorderedAccessView(const char* name, RhiDescriptorTableBinding descriptorTable);
+	bool SetUnorderedAccessView(const char* name, RhiGpuDescriptorHandle descriptorTable);
+	bool SetAccelerationStructure(const char* name, RhiGpuVirtualAddress gpuAddress);
+	bool SetAccelerationStructure(const char* name, FrameGraphAccelerationStructureHandle handle);
 
 	template <typename T> bool SetUniformDataReference(const char* name, const T& value)
 	{
@@ -406,148 +147,22 @@ class PassParameterSet final
 		return SetUniformDataBytes(name, &value, static_cast<std::uint32_t>(sizeof(T)));
 	}
 
-	bool SetUniformDataBytes(const char* name, const void* data, std::uint32_t sizeInBytes)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr || parameter->ResourceDomain != ShaderParameterResourceDomain::Uniform)
-		{
-			return false;
-		}
-
-		if (data == nullptr || sizeInBytes == 0 || parameter->ValueSizeInBytes != sizeInBytes)
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterUniformBindingData{.Data = data, .SizeInBytes = sizeInBytes});
-		return true;
-	}
-
-	bool SetSampler(const char* name, RhiSamplerDesc sampler)
-	{
-		std::uint32_t index = 0;
-		const PassParameterDesc* parameter = FindParameter(name, index);
-		if (parameter == nullptr || parameter->ResourceDomain != ShaderParameterResourceDomain::Sampler)
-		{
-			return false;
-		}
-
-		m_bindings[index].SetValue(PassParameterSamplerBindingData{.Desc = sampler});
-		return true;
-	}
-
-	bool HasAllRequiredBindings() const noexcept
-	{
-		if (m_layout == nullptr || m_bindings.size() != m_layout->GetParameterCount())
-		{
-			return false;
-		}
-
-		for (std::size_t i = 0; i < m_bindings.size(); ++i)
-		{
-			if (!m_bindings[i].IsBound())
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	std::vector<std::string> GetMissingBindings() const
-	{
-		std::vector<std::string> missing;
-		if (m_layout == nullptr)
-		{
-			return missing;
-		}
-
-		const std::vector<PassParameterDesc>& parameters = m_layout->GetParameters();
-		for (std::size_t i = 0; i < parameters.size() && i < m_bindings.size(); ++i)
-		{
-			if (!m_bindings[i].IsBound())
-			{
-				missing.push_back(parameters[i].Name);
-			}
-		}
-
-		return missing;
-	}
+	bool SetUniformDataBytes(const char* name, const void* data, std::uint32_t sizeInBytes);
+	bool SetSampler(const char* name, RhiSamplerDesc sampler);
+	bool HasAllRequiredBindings() const noexcept;
+	std::vector<std::string> GetMissingBindings() const;
 
   private:
-	const PassParameterDesc* FindParameter(const char* name, std::uint32_t& outIndex) const noexcept
-	{
-		outIndex = 0;
-		if (m_layout == nullptr || name == nullptr)
-		{
-			return nullptr;
-		}
-
-		const std::vector<PassParameterDesc>& parameters = m_layout->GetParameters();
-		for (std::size_t i = 0; i < parameters.size(); ++i)
-		{
-			if (parameters[i].Name == name)
-			{
-				outIndex = static_cast<std::uint32_t>(i);
-				return &parameters[i];
-			}
-		}
-
-		return nullptr;
-	}
-
-	const PassParameterBinding* FindBinding(const char* name, std::uint32_t& outIndex) const noexcept
-	{
-		const PassParameterDesc* parameter = FindParameter(name, outIndex);
-		if (parameter == nullptr || outIndex >= m_bindings.size())
-		{
-			return nullptr;
-		}
-
-		return &m_bindings[outIndex];
-	}
-
-	static bool ValidateArrayCount(const PassParameterDesc& parameter, std::size_t actualCount) noexcept
-	{
-		return parameter.ArrayCount == static_cast<std::uint32_t>(actualCount);
-	}
-
-	static bool ValidateTextureBinding(const std::vector<FrameGraphTextureHandle>& handles, const PassParameterDesc& parameter) noexcept
-	{
-		if (!ValidateArrayCount(parameter, handles.size()))
-		{
-			return false;
-		}
-
-		for (const FrameGraphTextureHandle& handle : handles)
-		{
-			if (!handle.IsValid())
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	static bool ValidateBufferBinding(const std::vector<FrameGraphBufferHandle>& handles, const PassParameterDesc& parameter) noexcept
-	{
-		if (!ValidateArrayCount(parameter, handles.size()))
-		{
-			return false;
-		}
-
-		for (const FrameGraphBufferHandle& handle : handles)
-		{
-			if (!handle.IsValid())
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
+	const PassParameterDesc* FindParameter(const char* name, std::uint32_t& outIndex) const noexcept;
+	const PassParameterBinding* FindBinding(const char* name, std::uint32_t& outIndex) const noexcept;
+	bool SetDescriptorTable(
+	    const char* name,
+	    PassParameterDescriptorTableBindingData binding,
+	    ShaderParameterSemanticKind textureKind,
+	    ShaderParameterSemanticKind bufferKind);
+	static bool ValidateArrayCount(const PassParameterDesc& parameter, std::size_t actualCount) noexcept;
+	static bool ValidateTextureBinding(const std::vector<FrameGraphTextureHandle>& handles, const PassParameterDesc& parameter) noexcept;
+	static bool ValidateBufferBinding(const std::vector<FrameGraphBufferHandle>& handles, const PassParameterDesc& parameter) noexcept;
 
 	const PassParameterLayout* m_layout = nullptr;
 	std::vector<PassParameterBinding> m_bindings;

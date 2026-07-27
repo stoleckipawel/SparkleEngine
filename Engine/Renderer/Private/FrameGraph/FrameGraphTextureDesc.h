@@ -26,20 +26,7 @@ struct FrameGraphTextureDesc
 	    std::string_view name,
 	    std::uint32_t width,
 	    std::uint32_t height,
-	    PixelFormat format) noexcept
-	{
-		return FrameGraphTextureDesc{
-		    std::string(name),
-		    width,
-		    height,
-		    format,
-		    FrameGraphTextureKind::DepthStencil,
-		    {0.0f, 0.0f, 0.0f, 1.0f}};
-	}
+	    PixelFormat format) noexcept;
 
-	static FrameGraphTextureDesc CreateColor(std::string_view name, std::uint32_t width, std::uint32_t height, PixelFormat format) noexcept
-	{
-		return FrameGraphTextureDesc{std::string(name), width, height, format, FrameGraphTextureKind::Color, {0.0f, 0.0f, 0.0f, 1.0f}};
-	}
-
+	static FrameGraphTextureDesc CreateColor(std::string_view name, std::uint32_t width, std::uint32_t height, PixelFormat format) noexcept;
 };

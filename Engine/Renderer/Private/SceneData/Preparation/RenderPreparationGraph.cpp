@@ -39,19 +39,21 @@ struct RenderPreparationGraph::Impl final
 	    GPUMeshCache& gpuMeshCache,
 	    TextureManager& textureManager) noexcept;
 
-	RenderSceneData Execute(
+	void Execute(
 	    const RenderWorld& world,
 	    const RenderFrameDynamicData& dynamic,
-	    const Frustum& frustum);
+	    const Frustum& frustum,
+	    RenderSceneData& output);
 	void ResetHistory() noexcept;
 
   private:
+	void BeginRun(RenderSceneData& output);
 	void ResolveInputs(
 	    const RenderWorld& world,
 	    const RenderFrameDynamicData& dynamic,
 	    const Frustum& frustum);
 	bool ExecuteCompiledGraph();
-	RenderSceneData FinishRun() noexcept;
+	void FinishRun(RenderSceneData& output) noexcept;
 	void EnsureGraph(
 	    std::size_t objectCount,
 	    std::size_t lightCount,
@@ -102,11 +104,13 @@ RenderPreparationGraph::Impl::Impl(
 {
 }
 
-RenderSceneData RenderPreparationGraph::Impl::Execute(
+void RenderPreparationGraph::Impl::Execute(
     const RenderWorld& world,
     const RenderFrameDynamicData& dynamic,
-    const Frustum& frustum)
+    const Frustum& frustum,
+    RenderSceneData& output)
 {
+	BeginRun(output);
 	ResolveInputs(world, dynamic, frustum);
 	EnsureGraph(
 	    m_run.ResolvedObjects.size(),
@@ -117,11 +121,24 @@ RenderSceneData RenderPreparationGraph::Impl::Execute(
 	if (!ExecuteCompiledGraph())
 	{
 		ResetHistory();
-		return FinishRun();
+		m_run.SceneData.ResetForReuse();
+		FinishRun(output);
+		return;
 	}
 
 	CommitHistory();
-	return FinishRun();
+	RenderPreparationMerger::PublishFrameOutputs(m_run);
+	FinishRun(output);
+}
+
+void RenderPreparationGraph::Impl::BeginRun(RenderSceneData& output)
+{
+	m_run.SceneData = std::move(output);
+	m_run.Deformation.JointMatrices = std::move(m_run.SceneData.jointMatrices);
+	m_run.Deformation.PreviousJointMatrices = std::move(m_run.SceneData.previousJointMatrices);
+	m_run.Deformation.MorphWeights = std::move(m_run.SceneData.morphWeights);
+	m_run.Deformation.PreviousMorphWeights = std::move(m_run.SceneData.previousMorphWeights);
+	m_run.SceneData.ResetForReuse();
 }
 
 void RenderPreparationGraph::Impl::ResolveInputs(
@@ -129,7 +146,6 @@ void RenderPreparationGraph::Impl::ResolveInputs(
     const RenderFrameDynamicData& dynamic,
     const Frustum& frustum)
 {
-	m_run.SceneData = {};
 	m_inputResolver.Resolve(
 	    world,
 	    dynamic,
@@ -151,10 +167,10 @@ bool RenderPreparationGraph::Impl::ExecuteCompiledGraph()
 	return execution.GetStatus() == TaskExecutionStatus::Succeeded;
 }
 
-RenderSceneData RenderPreparationGraph::Impl::FinishRun() noexcept
+void RenderPreparationGraph::Impl::FinishRun(RenderSceneData& output) noexcept
 {
 	ReleaseInputViews(m_run);
-	return std::move(m_run.SceneData);
+	output = std::move(m_run.SceneData);
 }
 
 void RenderPreparationGraph::Impl::ResetHistory() noexcept
@@ -311,7 +327,16 @@ TaskDesc RenderPreparationGraph::Impl::MakeTaskDesc(std::string_view name)
 void RenderPreparationGraph::Impl::CommitHistory()
 {
 	m_previousWorldTransforms.clear();
-	m_previousWorldTransforms.reserve(m_run.PreparedObjects.size());
+
+	std::uint32_t requiredSlotCount = 0u;
+	for (const PreparedRenderObject& object : m_run.PreparedObjects)
+	{
+		requiredSlotCount =
+		    (std::max)(
+		        requiredSlotCount,
+		        object.Draw.Source.GpuSceneSlot + 1u);
+	}
+	m_previousWorldTransforms.resize(requiredSlotCount);
 
 	for (const PreparedRenderObject& object : m_run.PreparedObjects)
 	{
@@ -320,10 +345,10 @@ void RenderPreparationGraph::Impl::CommitHistory()
 			continue;
 		}
 
-		m_previousWorldTransforms.push_back(
+		m_previousWorldTransforms[object.Draw.Source.GpuSceneSlot] =
 		    RenderPreviousWorldTransform{
 		        .Object = object.Object,
-		        .WorldMatrix = object.Draw.Transform.WorldMatrix});
+		        .WorldMatrix = object.Draw.Transform.WorldMatrix};
 	}
 
 	m_deformationPreparation.Commit(m_run.Deformation);
@@ -359,12 +384,13 @@ RenderPreparationGraph::RenderPreparationGraph(
 
 RenderPreparationGraph::~RenderPreparationGraph() noexcept = default;
 
-RenderSceneData RenderPreparationGraph::Execute(
+void RenderPreparationGraph::Execute(
     const RenderWorld& world,
     const RenderFrameDynamicData& dynamic,
-    const Frustum& frustum)
+    const Frustum& frustum,
+    RenderSceneData& output)
 {
-	return m_impl->Execute(world, dynamic, frustum);
+	m_impl->Execute(world, dynamic, frustum, output);
 }
 
 void RenderPreparationGraph::ResetHistory() noexcept

@@ -68,6 +68,7 @@ class FramePipeline final
 	void InitializeSceneData();
 	void InitializeUiRendering();
 	void InitializeFrameStorage();
+	void InitializeFrameContexts();
 	void InitializeFrameGraph() noexcept;
 	void InitializeFrameGraph(FrameResolutionExtents resolution) noexcept;
 	void RefreshFrameExecution() noexcept;

@@ -13,7 +13,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 
 class PipelineStateManager;
 
@@ -135,11 +135,24 @@ class FrameGraphBuilder final
 	    typename TPass::ParameterInstance& parameters,
 	    ConditionFn&& condition)
 	{
-		m_pipelineStateManager.MaterializePassRuntime<TPass>();
+		const PipelineStateManager* const pipelineStateManager =
+		    &m_pipelineStateManager;
+
 		m_frameGraph.AddConditionalComputePass<TPass>(
 		    TPass::PassName,
 		    parameters,
-		    std::forward<ConditionFn>(condition),
+		    [pipelineStateManager,
+		     condition = std::forward<ConditionFn>(condition)](
+		        const FrameContext& frame) mutable
+		    {
+			    if (!condition(frame))
+			    {
+				    return false;
+			    }
+
+			    pipelineStateManager->MaterializePassRuntime<TPass>();
+			    return true;
+		    },
 		    &ExecutePass<TPass>);
 	}
 
@@ -193,11 +206,7 @@ class FrameGraphBuilder final
 		return m_frameGraph.CreateUAV<TValue>(handle);
 	}
 
-	ShaderAccelerationStructure Read(FrameGraphAccelerationStructureHandle handle) const noexcept
-	{
-		return m_frameGraph.Read(handle);
-	}
-
+	ShaderAccelerationStructure Read(FrameGraphAccelerationStructureHandle handle) const noexcept;
 	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept;
 	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept;
 

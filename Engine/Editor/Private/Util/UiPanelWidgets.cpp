@@ -14,11 +14,10 @@
 
 #include <imgui.h>
 
-#include "Util/UiUtilInternal.h"
+#include "Util/UiWidgetPrimitives.h"
 
 namespace UiUtil
 {
-	using namespace Internal;
 	void DrawPanelHeader(const char* title, const char* subtitle)
 	{
 		ImFont* headingFont = SparkleUiTheme::GetHeadingFont();

@@ -34,7 +34,10 @@ RendererSystemRoot::RendererSystemRoot(
     m_window(&window),
     m_taskExecutor(&taskExecutor)
 {
-	InitializeCoreSystems(backendConfiguration);
+	InitializeCoreSystems(
+	    backendConfiguration,
+	    taskExecutor,
+	    applicationTaskScope);
 	InitializeSceneSystems(taskExecutor, applicationTaskScope);
 }
 
@@ -157,7 +160,10 @@ void RendererSystemRoot::PollRetiredImageProviders() noexcept
 	    m_retiredImageProviders.end());
 }
 
-void RendererSystemRoot::InitializeCoreSystems(const RendererBackendConfiguration& backendConfiguration) noexcept
+void RendererSystemRoot::InitializeCoreSystems(
+    const RendererBackendConfiguration& backendConfiguration,
+    TaskExecutor& taskExecutor,
+    TaskScope& applicationTaskScope) noexcept
 {
 	m_backend = std::make_unique<RendererBackendSystem>(*m_window, CVarBackBufferFormat.Get(), backendConfiguration);
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
@@ -165,7 +171,11 @@ void RendererSystemRoot::InitializeCoreSystems(const RendererBackendConfiguratio
 		m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetBackend());
 	}
 	{
-		m_gpuMeshCache = std::make_unique<GPUMeshCache>(renderHardware);
+		m_gpuMeshCache = std::make_unique<GPUMeshCache>(
+		    renderHardware,
+		    GetBackend(),
+		    taskExecutor,
+		    applicationTaskScope);
 	}
 
 	RenderDiagnostics& backendDiagnostics = renderHardware.GetDiagnostics();
@@ -203,8 +213,7 @@ void RendererSystemRoot::InitializeSceneSystems(
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 
 	m_renderCamera = std::make_unique<RenderCamera>();
-	m_renderWorld =
-	    std::make_unique<RenderWorld>(&GetBackend());
+	m_renderWorld = std::make_unique<RenderWorld>(&GetBackend(), *m_gpuMeshCache);
 }
 
 MeshPreviewGeometry RendererSystemRoot::CaptureMeshPreview(std::uintptr_t meshRuntimeId) const

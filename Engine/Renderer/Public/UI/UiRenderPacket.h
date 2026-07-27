@@ -3,6 +3,7 @@
 #include "../Editor/EditorTextureHandle.h"
 #include "../RendererAPI.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -39,6 +40,15 @@ struct UiDrawList final
 	std::uint32_t CommandCount = 0;
 };
 
+struct UiTextureUpload final
+{
+	EditorTextureHandle Texture;
+	std::uint32_t Width = 0;
+	std::uint32_t Height = 0;
+	std::uint32_t PixelOffset = 0;
+	std::uint32_t PixelCount = 0;
+};
+
 enum class UiPresentationMode : std::uint8_t
 {
 	None,
@@ -58,6 +68,9 @@ struct SPARKLE_RENDERER_API UiRenderPacket final
 	std::vector<std::uint32_t> Indices;
 	std::vector<UiDrawCommand> Commands;
 	std::vector<UiDrawList> DrawLists;
+	std::vector<std::byte> TexturePixels;
+	std::vector<UiTextureUpload> TextureUploads;
+	std::vector<EditorTextureHandle> TextureReleases;
 
 	bool HasDrawData() const noexcept;
 };

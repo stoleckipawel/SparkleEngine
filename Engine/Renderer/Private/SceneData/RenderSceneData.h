@@ -16,6 +16,7 @@
 
 #include <DirectXMath.h>
 
+#include <span>
 #include <vector>
 
 struct ResolvedMaterialTextureTable final
@@ -46,6 +47,8 @@ struct RenderSceneData
 	std::vector<float> previousMorphWeights;
 	RenderMeshWorkloadSummary meshWorkload;
 	RenderRayTracingWorkPlan rayTracingWork;
-	std::vector<MaterialData> materials;
+	std::span<const MaterialData> materials;
 	ResolvedMaterialTextureTable materialTextureTable = {};
+
+	void ResetForReuse() noexcept;
 };

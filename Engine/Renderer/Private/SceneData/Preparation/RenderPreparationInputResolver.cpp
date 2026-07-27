@@ -44,10 +44,13 @@ void RenderPreparationInputResolver::Resolve(
 	run.EnableAutoBatching = CVarRendererMeshAutoBatching.Get();
 	run.SceneData.structuralRevision = world.GetStructuralRevision();
 	run.SceneData.materialRevision = world.GetMaterialRevision();
-	m_materialCache->BuildMaterials(world.GetMaterials(), run.SceneData);
+	m_materialCache->BuildMaterials(
+	    world.GetMaterials(),
+	    run.SceneData.materialRevision,
+	    run.SceneData);
 
 	ResolveSky(world, run.SceneData);
-	ResolveObjects(world, dynamic, previousWorldTransforms, run);
+	ResolveObjects(world, previousWorldTransforms, run);
 	ResolveInstanceGroups(world, run);
 
 	run.PreparedObjects.resize(run.ResolvedObjects.size());
@@ -60,108 +63,81 @@ void RenderPreparationInputResolver::Resolve(
 
 void RenderPreparationInputResolver::ResolveObjects(
     const RenderWorld& world,
-    const RenderFrameDynamicData& dynamic,
     std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
     RenderPreparationRun& run)
 {
 	run.ResolvedObjects.clear();
-	run.ResolvedObjects.reserve(dynamic.Objects.size());
-	for (const RenderObjectDynamicData& dynamicObject : dynamic.Objects)
+	run.ResolvedObjects.reserve(world.GetProxies().size());
+	for (const RenderProxy& proxy : world.GetProxies())
 	{
 		ResolvedRenderObject object;
-		if (TryResolveObject(world, dynamicObject, run.SceneData, object))
+		if (TryResolveObject(proxy, previousWorldTransforms, run.SceneData, object))
 		{
 			run.ResolvedObjects.push_back(std::move(object));
 		}
 	}
-
-	std::sort(
-	    run.ResolvedObjects.begin(),
-	    run.ResolvedObjects.end(),
-	    [](const ResolvedRenderObject& lhs,
-	       const ResolvedRenderObject& rhs)
-	    {
-		    return lhs.Object < rhs.Object;
-	    });
-
-	ApplyPreviousWorldTransforms(previousWorldTransforms, run.ResolvedObjects);
 }
 
 bool RenderPreparationInputResolver::TryResolveObject(
-    const RenderWorld& world,
-    const RenderObjectDynamicData& dynamicObject,
+    const RenderProxy& proxy,
+    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
     RenderSceneData& sceneData,
     ResolvedRenderObject& output)
 {
-	if (!dynamicObject.Visible)
+	if (!proxy.Dynamic.Object.IsValid() || !proxy.Dynamic.Visible)
 	{
 		return false;
 	}
 
-	const RenderProxy* proxy = world.Find(dynamicObject.Object);
-	if (proxy == nullptr || !proxy->Static.Mesh.IsValid())
+	if (!proxy.Static.Mesh.IsValid())
 	{
 		return false;
 	}
 
-	const GPUMesh* gpuMesh = m_gpuMeshCache->GetOrUpload(proxy->Static.Mesh);
+	const GPUMesh* gpuMesh = m_gpuMeshCache->Resolve(proxy.GpuMesh);
 	if (gpuMesh == nullptr || !gpuMesh->IsValid())
 	{
 		return false;
 	}
 
 	const std::uint32_t materialSlot =
-	    MaterialCacheUtils::ResolveMaterialSlot(proxy->Static.Material, sceneData.materials.size());
+	    MaterialCacheUtils::ResolveMaterialSlot(proxy.Static.Material, sceneData.materials.size());
 	const MaterialData* material =
 	    materialSlot < sceneData.materials.size() ? &sceneData.materials[materialSlot] : nullptr;
 
 	MeshDraw draw;
 	draw.Material.Slot = materialSlot;
-	draw.Source.GpuSceneSlot = proxy->GpuSceneSlot;
-	draw.Source.MeshAssetId = proxy->Static.Mesh.GetAssetId();
-	draw.Source.MeshGeneration = proxy->Static.Mesh.GetGeneration();
-	draw.Skinning.SkeletonAssetId = proxy->Static.Skeleton.GetAssetId();
+	draw.Source.GpuSceneSlot = proxy.GpuSceneSlot;
+	draw.Source.MeshAssetId = proxy.Static.Mesh.GetAssetId();
+	draw.Source.MeshGeneration = proxy.Static.Mesh.GetGeneration();
+	draw.Skinning.SkeletonAssetId = proxy.Static.Skeleton.GetAssetId();
 	draw.Skinning.JointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
-	draw.Geometry.MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy->Static.MeshKind);
+	draw.Geometry.MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy.Static.MeshKind);
 	draw.Geometry.Mesh = gpuMesh->GetHandle();
 	draw.Geometry.LocalBoundsMin = gpuMesh->GetLocalBounds().Min;
 	draw.Geometry.LocalBoundsMax = gpuMesh->GetLocalBounds().Max;
 	draw.Geometry.HasLocalBounds = gpuMesh->GetLocalBounds().Valid;
 
+	DirectX::XMFLOAT4X4 previousWorldMatrix = proxy.Dynamic.WorldMatrix;
+	if (proxy.GpuSceneSlot < previousWorldTransforms.size() &&
+	    previousWorldTransforms[proxy.GpuSceneSlot].Object == proxy.Object)
+	{
+		previousWorldMatrix = previousWorldTransforms[proxy.GpuSceneSlot].WorldMatrix;
+	}
+
 	output = ResolvedRenderObject{
-	    .Object = dynamicObject.Object,
+	    .Object = proxy.Object,
 	    .Draw = draw,
-	    .WorldMatrix = dynamicObject.WorldMatrix,
-	    .PreviousWorldMatrix = dynamicObject.WorldMatrix,
-	    .WorldInverseTranspose = dynamicObject.WorldInverseTranspose,
+	    .WorldMatrix = proxy.Dynamic.WorldMatrix,
+	    .PreviousWorldMatrix = previousWorldMatrix,
+	    .WorldInverseTranspose = proxy.Dynamic.WorldInverseTranspose,
 	    .Material = material != nullptr ? material->gpuHandle : MaterialGpuHandle{},
 	    .InstanceGroupIndex =
-	        RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy->Static.InstanceGroupIndex),
+	        RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy.Static.InstanceGroupIndex),
 	    .MaterialAlphaMode = material != nullptr ? material->alphaMode : 0u,
 	    .MorphTargetCount = gpuMesh->GetMorphTargetCount(),
 	    .MorphTargetVertexCount = gpuMesh->GetVertexCount()};
 	return true;
-}
-
-void RenderPreparationInputResolver::ApplyPreviousWorldTransforms(
-    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
-    std::span<ResolvedRenderObject> objects) noexcept
-{
-	std::size_t previousIndex = 0u;
-	for (ResolvedRenderObject& object : objects)
-	{
-		while (previousIndex < previousWorldTransforms.size() &&
-		       previousWorldTransforms[previousIndex].Object < object.Object)
-		{
-			++previousIndex;
-		}
-
-		if (previousIndex < previousWorldTransforms.size() &&
-		    previousWorldTransforms[previousIndex].Object == object.Object)
-		{
-			object.PreviousWorldMatrix = previousWorldTransforms[previousIndex].WorldMatrix;
-		}
-	}
 }
 
 void RenderPreparationInputResolver::ResolveInstanceGroups(

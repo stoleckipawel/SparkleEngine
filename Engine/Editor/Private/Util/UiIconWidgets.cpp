@@ -14,11 +14,10 @@
 
 #include <imgui.h>
 
-#include "Util/UiUtilInternal.h"
+#include "Util/UiWidgetPrimitives.h"
 
 namespace UiUtil
 {
-	using namespace Internal;
 	const char* GetEditorIconGlyph(EditorIcon icon) noexcept
 	{
 		switch (icon)

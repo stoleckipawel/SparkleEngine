@@ -2,7 +2,7 @@
 
 #include "RHI/Public/Pipeline/RhiPipelineStateDesc.h"
 #include "RHI/Public/Shaders/CookedShaderPackageCache.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 #include <memory>
 #include <string>

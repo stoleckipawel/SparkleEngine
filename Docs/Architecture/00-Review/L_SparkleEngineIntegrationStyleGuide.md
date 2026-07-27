@@ -65,6 +65,32 @@ When sources appear to conflict:
 
 Age and prevalence do not make a weak pattern canonical. A touched legacy path must be classified and narrowed, migrated, or given an exact bounded disposition.
 
+### Current-State Acceptance Reconciliation
+
+Acceptance is evaluated against the repository's current target architecture, not against an obsolete intermediate implementation.
+
+Before using an earlier prompt, completion record, test, or acceptance criterion as authority:
+
+1. inspect the current owner, data path, consumers, lifetime, and replacement history;
+2. classify the criterion as an **enduring target invariant**, a **still-relevant transition requirement**, or a
+   **superseded intermediate requirement**;
+3. prove enduring and still-relevant requirements against current code and current evidence;
+4. retain historical records only as source trace, rationale, or regression context;
+5. replace obsolete commands, paths, workloads, and evidence expectations with the current equivalent that falsifies the same
+   enduring invariant.
+
+A superseded intermediate requirement MUST NOT:
+
+- restore a deleted adapter, snapshot, controller, queue, cache, facade, pointer path, or duplicate architecture;
+- preserve an intentionally temporary validation, diagnostic, logging, compatibility, or migration surface;
+- require reproducing a known defect that a later stage removed;
+- block a cleaner current owner merely because an earlier prompt described a different transition sequence.
+
+Removing an obsolete criterion does not weaken the intended result. Its underlying correctness, ownership, lifetime,
+determinism, feature-preservation, backend-parity, performance, or evidence invariant must either be proven through the current
+architecture or explicitly reported as a current gap. Historical completion text and changelist titles are inputs to the audit,
+never proof of present completion.
+
 ### Repository Characteristics Used to Calibrate This Guide
 
 The current repository was inspected across Core, Platform, Tasks, GameFramework, Renderer, RHI, Editor, Application, shader/compiler tools, cookers, launcher code, CMake, and the architecture documents. The strongest existing patterns are:
@@ -1520,23 +1546,26 @@ A change is ready only when the answer to each applicable question is yes.
 Every future prompt applying this guide ends with:
 
 1. **Outcome** - what product capability now works.
-2. **Repository audit** - existing counterparts searched and the use/extend/refactor/replace/add decision.
-3. **Ownership** - mutable owners, lifetime owners, publication and reclamation.
-4. **Files changed by responsibility** - grouped by module/subsystem, not one flat list.
-5. **Orchestration/capability refinement** - god units audited and responsibilities separated.
-6. **SOLID/DRY reconciliation** - authorities consolidated, abstractions justified, duplicate paths removed.
-7. **Preservation ledger** - current workflows/features/backends retained.
-8. **Deletion ledger** - old APIs, files, adapters, scans, allocations, waits, flags, and aliases removed.
-9. **Structure reconciliation** - folder/public-private/file/type/CMake/include alignment.
-10. **Implementation-shape reconciliation** - headers, local types, namespaces, diagnostics, and logging.
-11. **DOD reconciliation** - data/access/layout/identity/transform/memory/measurements.
-12. **Concurrency reconciliation** - tasks, dependencies, exclusive outputs, primitives, hazards, cancellation, shutdown.
-13. **Validation** - exact commands, configurations, worker counts, backends, tests, and results.
-14. **Performance** - before/after and critical-path/memory/GPU evidence where relevant.
-15. **Naming audit** - canonical and rejected-alias searches.
-16. **Limitations and unavailable evidence** - precise and honest.
-17. **Acceptance status** - `PASS` or `BLOCKED`, with no partial-pass wording.
-18. **PGE reconciliation** - applicable IDs, advance/preserve/not-applicable/blocked status, exact evidence, AI-assisted verification where used, honest credential/platform/hardware boundaries, and role-only scaffolding audit.
+2. **Current-state acceptance reconciliation** - enduring, still-relevant transition, and superseded intermediate criteria,
+   including the current proof or gap for every enduring invariant.
+3. **Repository audit** - existing counterparts searched and the use/extend/refactor/replace/add decision.
+4. **Ownership** - mutable owners, lifetime owners, publication and reclamation.
+5. **Files changed by responsibility** - grouped by module/subsystem, not one flat list.
+6. **Orchestration/capability refinement** - god units audited and responsibilities separated.
+7. **SOLID/DRY reconciliation** - authorities consolidated, abstractions justified, duplicate paths removed.
+8. **Preservation ledger** - current workflows/features/backends retained.
+9. **Deletion ledger** - old APIs, files, adapters, scans, allocations, waits, flags, and aliases removed.
+10. **Structure reconciliation** - folder/public-private/file/type/CMake/include alignment.
+11. **Implementation-shape reconciliation** - headers, local types, namespaces, diagnostics, and logging.
+12. **DOD reconciliation** - data/access/layout/identity/transform/memory/measurements.
+13. **Concurrency reconciliation** - tasks, dependencies, exclusive outputs, primitives, hazards, cancellation, shutdown.
+14. **Validation** - exact commands, configurations, worker counts, backends, tests, and results.
+15. **Performance** - before/after and critical-path/memory/GPU evidence where relevant.
+16. **Naming audit** - canonical and rejected-alias searches.
+17. **Limitations and unavailable evidence** - precise and honest.
+18. **Acceptance status** - `PASS` or `BLOCKED`, with no partial-pass wording.
+19. **PGE reconciliation** - applicable IDs, advance/preserve/not-applicable/blocked status, exact evidence, AI-assisted
+    verification where used, honest credential/platform/hardware boundaries, and role-only scaffolding audit.
 
 ## 22. Immediate Stop Conditions
 

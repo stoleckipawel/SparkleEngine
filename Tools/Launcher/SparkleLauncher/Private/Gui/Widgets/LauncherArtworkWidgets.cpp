@@ -145,8 +145,8 @@ namespace SparkleLauncher
 			break;
 
 		case LauncherArtworkPreset::ProductCard:
-			spec.AspectRatio = static_cast<double>(LauncherUi::Card::ProductArtworkSize().width()) /
-			                   static_cast<double>(LauncherUi::Card::ProductArtworkSize().height());
+			spec.AspectRatio = static_cast<double>(LauncherUi::Card::ProductArtworkSize.width()) /
+			                   static_cast<double>(LauncherUi::Card::ProductArtworkSize.height());
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
 			    {0.00, NeutralShade(72)},
 			    {0.30, NeutralShade(34)},
@@ -162,8 +162,8 @@ namespace SparkleLauncher
 			break;
 
 		case LauncherArtworkPreset::DiscoverTile:
-			spec.AspectRatio = static_cast<double>(LauncherUi::Card::DiscoverArtworkSize().width()) /
-			                   static_cast<double>(LauncherUi::Card::DiscoverArtworkSize().height());
+			spec.AspectRatio = static_cast<double>(LauncherUi::Card::DiscoverArtworkSize.width()) /
+			                   static_cast<double>(LauncherUi::Card::DiscoverArtworkSize.height());
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
 			    {0.00, NeutralShade(96)},
 			    {0.38, NeutralShade(46)},

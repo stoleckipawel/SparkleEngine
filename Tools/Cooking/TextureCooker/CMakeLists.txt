@@ -38,7 +38,7 @@ set(TEXTURE_COOKER_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/HdrTextureSourceLoader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/RasterTextureSourceLoader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoaderUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoadStages.cpp
 )
 
 set(TEXTURE_COOKER_PRIVATE_HEADERS
@@ -69,7 +69,7 @@ set(TEXTURE_COOKER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/RasterTextureSourceLoader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoaderBackend.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoaderUtils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoadStages.h
 )
 
 add_library(TextureCookShared STATIC

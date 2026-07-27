@@ -7,7 +7,7 @@
 
 #include "Backend/ShaderBackendFactory.h"
 #include "Compiler/ShaderCompileProfile.h"
-#include "Compiler/ShaderCompilerPathUtils.h"
+#include "Compiler/ShaderCompilerPaths.h"
 #include "Compiler/ShaderSourcePreprocessor.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Files/FileUtils.h"

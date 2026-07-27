@@ -22,7 +22,6 @@ RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 	if (!m_pending) return result;
 	RenderInputFrame input = std::move(*m_pending);
 	m_pending.reset();
-	if (m_world->Validate(input.WorldDelta, result.Diagnostic) != RenderWorldApplyStatus::Applied) return result;
 
 	const RenderFrameMetadata& metadata = input.Dynamic.Metadata;
 	if (metadata.FrameGeneration != input.WorldDelta.SceneGeneration ||
@@ -31,7 +30,11 @@ RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 		result.Diagnostic = "Render input metadata is stale or mismatched.";
 		return result;
 	}
-	if (m_world->Apply(input.WorldDelta, result.Diagnostic) != RenderWorldApplyStatus::Applied) return result;
+	if (m_world->ApplyFrame(input.WorldDelta, input.Dynamic, result.Diagnostic) !=
+	    RenderWorldApplyStatus::Applied)
+	{
+		return result;
+	}
 
 	input.Dynamic.Metadata.ResetHistory |=
 	    m_lastFrameId != 0 &&

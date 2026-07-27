@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Execution/TaskExecutionInternal.h"
+#include "Execution/TaskExecutionState.h"
 #include "TaskScope.h"
 
 #include <condition_variable>

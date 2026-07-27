@@ -2,7 +2,7 @@
 
 #include "SourceLoading/ExrTextureSourceLoader.h"
 
-#include "SourceLoading/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoadStages.h"
 
 #define TINYEXR_IMPLEMENTATION
 #include <tinyexr.h>
@@ -16,7 +16,7 @@ TextureLoadResult ExrTextureSourceLoader::Load(const std::filesystem::path& sour
 {
 	std::filesystem::path resolvedPath;
 	std::vector<std::uint8_t> fileBytes;
-	if (!TextureSourceLoaderUtils::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
+	if (!TextureSourceLoadStages::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
 	{
 		return {};
 	}
@@ -38,7 +38,7 @@ TextureLoadResult ExrTextureSourceLoader::Load(const std::filesystem::path& sour
 		return {};
 	}
 
-	TextureLoadResult loadResult = TextureSourceLoaderUtils::BuildFloatTextureLoadResult(
+	TextureLoadResult loadResult = TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	    width,
 	    height,
 	    pixels,

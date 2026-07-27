@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -41,11 +42,18 @@ struct MeshInstanceBatchBuildResult final
 class MeshInstanceBatchBuilder final
 {
   public:
-	MeshInstanceBatchBuildResult Build(
+	MeshInstanceBatchBuilder();
+	~MeshInstanceBatchBuilder() noexcept;
+
+	MeshInstanceBatchBuilder(const MeshInstanceBatchBuilder&) = delete;
+	MeshInstanceBatchBuilder& operator=(const MeshInstanceBatchBuilder&) = delete;
+
+	void Build(
 	    std::span<const MeshRenderItem> renderItems,
 	    std::span<const MeshDraw> draws,
 	    std::span<const RenderMeshInstanceGroup> instanceGroups,
-	    const MeshInstanceBatchBuildOptions& options) const;
+	    const MeshInstanceBatchBuildOptions& options,
+	    MeshInstanceBatchBuildResult& result);
 
   private:
 	struct BuildScratch;
@@ -130,4 +138,6 @@ class MeshInstanceBatchBuilder final
 	    MeshInstanceBatchSource source,
 	    bool collectDiagnostics,
 	    MeshInstanceBatchBuildResult& result);
+
+	std::unique_ptr<BuildScratch> m_scratch;
 };

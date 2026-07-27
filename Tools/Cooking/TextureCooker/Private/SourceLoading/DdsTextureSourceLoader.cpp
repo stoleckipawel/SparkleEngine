@@ -2,7 +2,7 @@
 
 #include "SourceLoading/DdsTextureSourceLoader.h"
 
-#include "SourceLoading/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoadStages.h"
 
 #include <algorithm>
 #include <cstring>
@@ -17,7 +17,7 @@ TextureLoadResult DdsTextureSourceLoader::Load(const std::filesystem::path& sour
 {
 	std::filesystem::path resolvedPath;
 	std::vector<std::uint8_t> fileBytes;
-	if (!TextureSourceLoaderUtils::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
+	if (!TextureSourceLoadStages::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
 	{
 		return {};
 	}

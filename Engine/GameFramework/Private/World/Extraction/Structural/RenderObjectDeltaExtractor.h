@@ -4,8 +4,8 @@
 #include "GameFramework/Public/World/EntityId.h"
 #include "World/Extraction/WorldExtractionStorage.h"
 
-#include <map>
 #include <span>
+#include <vector>
 
 namespace ECS
 {
@@ -13,7 +13,7 @@ namespace ECS
 	class RenderObjectDeltaExtractor final
 	{
 	  public:
-		void BeginScene() noexcept { m_published.clear(); }
+		void BeginScene() noexcept;
 		void Extract(
 		    std::span<const WorldExtractionStorage::MeshSlot> meshes,
 		    RenderObjectIdentityMap& identities,
@@ -23,14 +23,29 @@ namespace ECS
 	  private:
 		struct PublishedObject final
 		{
+			EntityId Entity;
 			RenderObjectId Object;
 			RenderObjectStaticData Static;
 		};
 
+		void RetirePublishedBefore(
+		    EntityId entity,
+		    std::size_t& publishedIndex,
+		    RenderWorldDelta& delta) const;
+		PublishedObject ResolveObject(
+		    const WorldExtractionStorage::MeshSlot& mesh,
+		    RenderObjectIdentityMap& identities,
+		    std::size_t& publishedIndex,
+		    RenderWorldDelta& delta) const;
+		void RetireRemaining(
+		    std::size_t publishedIndex,
+		    RenderWorldDelta& delta) const;
+		static void SortDeltaObjects(RenderWorldDelta& delta);
 		static bool HasSameStaticData(
 		    const RenderObjectStaticData& left,
 		    const RenderObjectStaticData& right) noexcept;
 
-		std::map<EntityId, PublishedObject> m_published;
+		std::vector<PublishedObject> m_published;
+		std::vector<PublishedObject> m_current;
 	};
 }

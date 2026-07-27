@@ -18,10 +18,9 @@ class VulkanImGuiBackend final : public RhiImGuiRenderer
 
 	bool Initialize() override;
 	void BeginFrame() noexcept override;
-	void PrepareResources() noexcept override;
-	std::uint64_t GetFontTextureId() const noexcept override;
 	std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	void RenderDrawData(ImDrawData* drawData) noexcept override;
+	void ReleaseTexture(ImTextureData& texture) noexcept override;
 	void Shutdown() noexcept override;
 
   private:
@@ -41,5 +40,4 @@ class VulkanImGuiBackend final : public RhiImGuiRenderer
 	std::vector<TextureBinding> m_textureBindings;
 	ImGuiContext* m_imguiContext = nullptr;
 	bool m_ownsContext = false;
-	bool m_resourcesPrepared = false;
 };

@@ -10,7 +10,7 @@
 
 namespace Assets
 {
-	inline constexpr std::uint32_t kCookedSkeletonAssetMagic = MakeCookedAssetMagic('S', 'S', 'K', 'L');
+	inline constexpr std::uint32_t kCookedSkeletonAssetMagic = 0x4C4B5353u;
 	inline constexpr std::uint32_t kCookedSkeletonAssetVersion = 1;
 	inline constexpr std::uint32_t kInvalidCookedSkeletonJointIndex = (std::numeric_limits<std::uint32_t>::max)();
 

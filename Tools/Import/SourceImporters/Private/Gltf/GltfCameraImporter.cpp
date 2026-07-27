@@ -2,7 +2,7 @@
 
 #include "Gltf/GltfCameraImporter.h"
 
-#include "Gltf/GltfNodeTransformUtils.h"
+#include "Gltf/GltfNodeTransformConverter.h"
 
 #include <cgltf.h>
 
@@ -46,7 +46,7 @@ void GltfCameraImporter::ImportCameras(const cgltf_data* data, SourceImportResul
 		ImportedCamera camera;
 		camera.name = GltfCameraImporterOperations::ResolveCameraName(node, static_cast<std::uint32_t>(nodeIndex));
 		camera.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
-		DirectX::XMStoreFloat4x4(&camera.worldTransform, GltfNodeTransformUtils::ComputeNodeWorldTransform(&node));
+		DirectX::XMStoreFloat4x4(&camera.worldTransform, GltfNodeTransformConverter::ComputeNodeWorldTransform(&node));
 
 		const cgltf_camera& sourceCamera = *node.camera;
 		if (sourceCamera.type == cgltf_camera_type_perspective)

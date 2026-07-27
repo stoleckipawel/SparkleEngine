@@ -3,7 +3,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
 #include <cstdint>

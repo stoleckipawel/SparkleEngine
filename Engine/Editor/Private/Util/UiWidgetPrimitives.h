@@ -5,7 +5,7 @@
 struct ImDrawList;
 struct ImFont;
 
-namespace UiUtil::Internal
+namespace UiUtil
 {
 	extern const float PropertyLabelWidth;
 	extern const float ScalarInputWidth;

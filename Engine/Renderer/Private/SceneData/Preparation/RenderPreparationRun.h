@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Public/Math/Frustum.h"
+#include "SceneData/Preparation/MeshInstanceBatchBuilder.h"
 #include "SceneData/Preparation/RenderDeformationPreparation.h"
 #include "SceneData/Preparation/RenderLightPreparation.h"
 #include "SceneData/Preparation/RenderObjectPreparation.h"
@@ -19,6 +20,9 @@ struct RenderPreparationRun final
 	std::vector<PreparedRenderObject> PreparedObjects;
 	std::vector<PreparedRenderLight> PreparedLights;
 	std::vector<RenderMeshInstanceGroup> InstanceGroups;
+	std::vector<MeshRenderItem> RenderItems;
+	MeshInstanceBatchBuilder BatchBuilder;
+	MeshInstanceBatchBuildResult BatchResult;
 	RenderDeformationWork Deformation;
 	bool EnableAutoBatching = false;
 };

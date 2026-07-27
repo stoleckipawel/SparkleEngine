@@ -6,7 +6,7 @@
 #include "Contracts/ShaderContractCatalogBuilder.h"
 #include "Contracts/ShaderContractValidator.h"
 #include "Core/Public/Formatting/HexFormat.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 #include <iostream>
 #include <string>

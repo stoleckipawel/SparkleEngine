@@ -3,7 +3,7 @@
 #include "Gltf/GltfSkinImporter.h"
 
 #include "Gltf/GltfAccessorReader.h"
-#include "Gltf/GltfNodeTransformUtils.h"
+#include "Gltf/GltfNodeTransformConverter.h"
 
 #include <cgltf.h>
 
@@ -105,12 +105,12 @@ ImportedSkeletonIndex GltfSkinImporter::ImportSkeleton(const cgltf_data* data, c
 
 		const DirectX::XMMATRIX inverseBindMatrix =
 		    skin->inverse_bind_matrices != nullptr
-		        ? GltfNodeTransformUtils::ConvertGltfMatrixToEngine(GltfAccessorReader::ReadFloat4x4(skin->inverse_bind_matrices, jointIndex))
+		        ? GltfNodeTransformConverter::ConvertGltfMatrixToEngine(GltfAccessorReader::ReadFloat4x4(skin->inverse_bind_matrices, jointIndex))
 		        : DirectX::XMMatrixIdentity();
 		DirectX::XMStoreFloat4x4(&joint.inverseBindMatrix, inverseBindMatrix);
 
 		const DirectX::XMMATRIX bindPoseWorldTransform =
-		    jointNode != nullptr ? GltfNodeTransformUtils::ComputeNodeWorldTransform(jointNode) : DirectX::XMMatrixIdentity();
+		    jointNode != nullptr ? GltfNodeTransformConverter::ComputeNodeWorldTransform(jointNode) : DirectX::XMMatrixIdentity();
 		DirectX::XMStoreFloat4x4(&joint.bindPoseWorldTransform, bindPoseWorldTransform);
 		skeleton.joints.push_back(std::move(joint));
 	}

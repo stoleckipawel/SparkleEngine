@@ -3,7 +3,7 @@
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
 #include <string>

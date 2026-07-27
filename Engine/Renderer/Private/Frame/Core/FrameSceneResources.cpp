@@ -4,7 +4,7 @@
 #include "Frame/Core/FrameRenderFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Resources/History/FrameHistory.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "SceneData/RenderSceneGpuData.h"
 

@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "SceneData/GpuScene/RenderGpuScenePayloadBuilder.h"
 
-#include "Core/Public/Math/MathUtils.h"
 #include "Lighting/LightingCVars.h"
 #include "Meshes/GPUMesh.h"
 #include "Meshes/GPUMeshCache.h"
@@ -19,8 +18,9 @@ struct RenderGpuMeshHitDataOffsets final
 	std::uint32_t IndexCount = 0;
 };
 
-RenderGpuLightingPayloads RenderGpuScenePayloadBuilder::BuildLighting(
-    const RenderSceneData& sceneData)
+void RenderGpuScenePayloadBuilder::BuildLighting(
+    const RenderSceneData& sceneData,
+    RenderGpuLightingPayloads& payloads)
 {
 	const std::size_t directionalLightCount =
 	    std::min(
@@ -39,7 +39,11 @@ RenderGpuLightingPayloads RenderGpuScenePayloadBuilder::BuildLighting(
 	        sceneData.rectLights.size(),
 	        static_cast<std::size_t>(CVarMaxRectLights.Get()));
 
-	RenderGpuLightingPayloads payloads;
+	payloads.DirectionalLights.clear();
+	payloads.PointLights.clear();
+	payloads.SpotLights.clear();
+	payloads.RectLights.clear();
+
 	payloads.Constants = ViewLightingData{
 	    .DirectionalLightCount =
 	        static_cast<std::uint32_t>(directionalLightCount),
@@ -167,134 +171,21 @@ RenderGpuLightingPayloads RenderGpuScenePayloadBuilder::BuildLighting(
 	{
 		payloads.RectLights.emplace_back();
 	}
-	return payloads;
 }
 
-RenderGpuGeometryPayloads RenderGpuScenePayloadBuilder::BuildGeometry(
-    const RenderSceneData& sceneData)
-{
-	RenderGpuGeometryPayloads payloads;
-	std::uint32_t meshInstanceCapacity = 1;
-	for (const MeshDraw& draw : sceneData.meshInstances)
-	{
-		meshInstanceCapacity =
-		    std::max(
-		        meshInstanceCapacity,
-		        draw.Source.GpuSceneSlot + 1u);
-	}
-	payloads.MeshInstances.resize(meshInstanceCapacity);
-	payloads.MeshInstanceSlots.reserve(
-	    std::max<std::size_t>(
-	        sceneData.rasterMeshInstanceIndices.size(),
-	        1));
-	for (const MeshDraw& draw : sceneData.meshInstances)
-	{
-		payloads.MeshInstances[draw.Source.GpuSceneSlot] =
-		    MeshInstanceData{
-		        .WorldMTX = draw.Transform.WorldMatrix,
-		        .PreviousWorldMTX =
-		            draw.Transform.PreviousWorldMatrix,
-		        .WorldInvTransposeMTX =
-		            draw.Transform.WorldInvTranspose,
-		        .MaterialSlot = draw.Material.Slot,
-		        .Flags =
-		            (draw.Geometry.MeshKind ==
-		                        RenderMeshKind::Skeletal &&
-		                    draw.Skinning.JointMatrixOffset !=
-		                        kInvalidMeshInstanceJointMatrixOffset
-		                ? MeshInstanceFlag_Skinned
-		                : 0u) |
-		            (draw.Morph.TargetCount > 0u &&
-		                     draw.Morph.WeightOffset !=
-		                         kInvalidMeshInstanceMorphWeightOffset
-		                 ? MeshInstanceFlag_Morphed
-		                 : 0u),
-		        .JointMatrixOffset =
-		            draw.Skinning.JointMatrixOffset,
-		        .MorphWeightOffset =
-		            draw.Morph.WeightOffset,
-		        .MorphTargetCount =
-		            draw.Morph.TargetCount,
-		        .MorphTargetVertexCount =
-		            draw.Morph.VertexCount,
-		        .DebugData = draw.Source.GpuSceneSlot};
-	}
-	for (const std::uint32_t drawIndex :
-	     sceneData.rasterMeshInstanceIndices)
-	{
-		if (drawIndex < sceneData.meshInstances.size())
-		{
-			payloads.MeshInstanceSlots.push_back(
-			    sceneData.meshInstances[drawIndex]
-			        .Source.GpuSceneSlot);
-		}
-	}
-	if (payloads.MeshInstanceSlots.empty())
-	{
-		payloads.MeshInstanceSlots.push_back(0);
-	}
-
-	payloads.JointMatrices.reserve(
-	    std::max<std::size_t>(sceneData.jointMatrices.size(), 1));
-	payloads.PreviousJointMatrices.reserve(
-	    std::max<std::size_t>(
-	        sceneData.previousJointMatrices.size(),
-	        1));
-	if (sceneData.jointMatrices.empty())
-	{
-		const JointMatrixData identity{
-		    .SkinningMTX = MathUtils::IdentityFloat4x4()};
-		payloads.JointMatrices.push_back(identity);
-		payloads.PreviousJointMatrices.push_back(identity);
-	}
-	else
-	{
-		for (const DirectX::XMFLOAT4X4& matrix :
-		     sceneData.jointMatrices)
-		{
-			payloads.JointMatrices.push_back(
-			    JointMatrixData{.SkinningMTX = matrix});
-		}
-		const std::vector<DirectX::XMFLOAT4X4>&
-		    previousMatrices =
-		        sceneData.previousJointMatrices.size() ==
-		                sceneData.jointMatrices.size()
-		            ? sceneData.previousJointMatrices
-		            : sceneData.jointMatrices;
-		for (const DirectX::XMFLOAT4X4& matrix :
-		     previousMatrices)
-		{
-			payloads.PreviousJointMatrices.push_back(
-			    JointMatrixData{.SkinningMTX = matrix});
-		}
-	}
-
-	payloads.MorphWeights = sceneData.morphWeights;
-	payloads.PreviousMorphWeights =
-	    sceneData.previousMorphWeights.size() ==
-	            sceneData.morphWeights.size()
-	        ? sceneData.previousMorphWeights
-	        : sceneData.morphWeights;
-	if (payloads.MorphWeights.empty())
-	{
-		payloads.MorphWeights.push_back(0.0f);
-		payloads.PreviousMorphWeights.push_back(0.0f);
-	}
-	return payloads;
-}
-
-RenderGpuRayTracingPayloads
-RenderGpuScenePayloadBuilder::BuildRayTracing(
+void RenderGpuScenePayloadBuilder::BuildRayTracing(
     const RenderSceneData& sceneData,
-	const GPUMeshCache& meshes)
+    const GPUMeshCache& meshes,
+    RenderGpuRayTracingPayloads& payloads)
 {
-	RenderGpuRayTracingPayloads payloads;
+	ClearRayTracingPayloads(payloads);
+
 	const RenderRayTracingWorkPlan& work =
 	    sceneData.rayTracingWork;
 	if (work.BlasInputs.empty() ||
 	    sceneData.materials.empty())
 	{
-		return payloads;
+		return;
 	}
 
 	payloads.Materials.reserve(sceneData.materials.size());
@@ -499,7 +390,8 @@ RenderGpuScenePayloadBuilder::BuildRayTracing(
 	if (validInstanceCount == 0 || payloads.Vertices.empty() ||
 	    payloads.Indices.empty() || payloads.Materials.empty())
 	{
-		return {};
+		ClearRayTracingPayloads(payloads);
+		return;
 	}
 	payloads.InstanceCount =
 	    static_cast<std::uint32_t>(payloads.Instances.size());
@@ -509,7 +401,6 @@ RenderGpuScenePayloadBuilder::BuildRayTracing(
 	{
 		payloads.MorphTargetDeltas.emplace_back();
 	}
-	return payloads;
 }
 
 VertexSkinInfluenceData
@@ -600,4 +491,17 @@ RenderGpuScenePayloadBuilder::BuildRejectedInstance(
 	        material != nullptr ? material->alphaMode : 0u,
 	    .MaterialTextureFlags =
 	        material != nullptr ? material->textureFlags : 0u};
+}
+
+void RenderGpuScenePayloadBuilder::ClearRayTracingPayloads(
+    RenderGpuRayTracingPayloads& payloads) noexcept
+{
+	payloads.Vertices.clear();
+	payloads.SkinInfluences.clear();
+	payloads.MorphTargetDeltas.clear();
+	payloads.Indices.clear();
+	payloads.Instances.clear();
+	payloads.Materials.clear();
+	payloads.InstanceCount = 0u;
+	payloads.MaterialCount = 0u;
 }

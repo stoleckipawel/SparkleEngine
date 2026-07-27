@@ -9,6 +9,8 @@
 
 #include <backends/imgui_impl_vulkan.h>
 
+#include <limits>
+
 static const auto g_vulkanImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.Vulkan.ImGui");
 
 VulkanImGuiBackend::VulkanImGuiBackend(
@@ -124,38 +126,6 @@ void VulkanImGuiBackend::BeginFrame() noexcept
 	RestoreContext(previousContext);
 }
 
-void VulkanImGuiBackend::PrepareResources() noexcept
-{
-	if (m_resourcesPrepared || m_imguiContext == nullptr)
-	{
-		return;
-	}
-
-	ImGuiContext* previousContext = ActivateContext();
-	ImGui_ImplVulkan_NewFrame();
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2(1.0f, 1.0f);
-	io.DeltaTime = 1.0f / 60.0f;
-	ImGui::NewFrame();
-	ImGui::Render();
-	RenderDrawData(ImGui::GetDrawData());
-	m_resourcesPrepared = GetFontTextureId() != 0;
-	RestoreContext(previousContext);
-}
-
-std::uint64_t VulkanImGuiBackend::GetFontTextureId() const noexcept
-{
-	if (m_imguiContext == nullptr)
-	{
-		return 0;
-	}
-	ImGuiContext* previousContext = ActivateContext();
-	const std::uint64_t textureId =
-	    static_cast<std::uint64_t>(ImGui::GetIO().Fonts->TexRef.GetTexID());
-	RestoreContext(previousContext);
-	return textureId;
-}
-
 std::uint64_t VulkanImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
 {
 	return m_descriptorManager != nullptr ? GetTextureId(m_descriptorManager->GetRegisteredImageView(shaderResourceView)) : 0;
@@ -183,6 +153,17 @@ void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	}
 
 	ImGui_ImplVulkan_RenderDrawData(drawData, commandBuffer);
+	RestoreContext(previousContext);
+}
+
+void VulkanImGuiBackend::ReleaseTexture(
+    ImTextureData& texture) noexcept
+{
+	ImGuiContext* previousContext = ActivateContext();
+	texture.UnusedFrames = (std::numeric_limits<int>::max)();
+	texture.WantDestroyNextFrame = true;
+	texture.SetStatus(ImTextureStatus_WantDestroy);
+	ImGui_ImplVulkan_UpdateTexture(&texture);
 	RestoreContext(previousContext);
 }
 
@@ -242,7 +223,6 @@ void VulkanImGuiBackend::Shutdown() noexcept
 	}
 	m_imguiContext = nullptr;
 	m_ownsContext = false;
-	m_resourcesPrepared = false;
 }
 
 ImGuiContext* VulkanImGuiBackend::ActivateContext() const noexcept

@@ -1,7 +1,7 @@
 #include "ParallelFor.h"
 
 #include "TaskExecutionContext.h"
-#include "TaskGraphInternal.h"
+#include "TaskGraphStorage.h"
 
 #include <algorithm>
 #include <utility>
@@ -30,7 +30,7 @@ TaskNodeHandle ParallelFor(
 {
 	if (policy.GrainSize == 0 || policy.MaximumPartitions == 0)
 	{
-		TaskDetail::TaskGraphAccess::RecordError(
+		TaskGraphAccess::RecordError(
 		    graph,
 		    TaskGraphErrorCode::InvalidParallelForPolicy,
 		    "ParallelFor grain size and maximum partitions must be non-zero.");

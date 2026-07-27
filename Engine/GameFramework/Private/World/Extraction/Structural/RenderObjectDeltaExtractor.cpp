@@ -4,52 +4,125 @@
 #include "World/Extraction/Identity/RenderObjectIdentityMap.h"
 #include "World/Extraction/WorldExtractionStorage.h"
 
+#include <algorithm>
+
 namespace ECS
 {
+	void RenderObjectDeltaExtractor::BeginScene() noexcept
+	{
+		m_published.clear();
+		m_current.clear();
+	}
+
 	void RenderObjectDeltaExtractor::Extract(
 	    std::span<const WorldExtractionStorage::MeshSlot> meshes,
 	    RenderObjectIdentityMap& identities,
 	    RenderWorldDelta& delta)
 	{
-		std::map<EntityId, PublishedObject> current;
+		m_current.clear();
+		m_current.reserve(meshes.size());
+
+		std::size_t publishedIndex = 0u;
 		for (const WorldExtractionStorage::MeshSlot& mesh : meshes)
 		{
-			const RenderObjectStaticData staticData{
-			    .Mesh = mesh.Mesh,
-			    .Material = mesh.Material,
-			    .Skeleton = mesh.Skeleton,
-			    .MeshKind = mesh.Kind,
-			    .MeshAssetIndex = mesh.MeshAssetIndex,
-			    .InstanceGroupIndex = mesh.InstanceGroupIndex};
-
-			const auto previous = m_published.find(mesh.Entity);
-			PublishedObject published;
-			if (previous == m_published.end())
-			{
-				published = {identities.Resolve(mesh.Entity), staticData};
-				delta.Creates.push_back({published.Object, published.Static});
-			}
-			else
-			{
-				published = previous->second;
-				if (!HasSameStaticData(published.Static, staticData))
-				{
-					published.Static = staticData;
-					delta.Updates.push_back({published.Object, published.Static});
-				}
-			}
-			current.emplace(mesh.Entity, published);
+			RetirePublishedBefore(mesh.Entity, publishedIndex, delta);
+			m_current.push_back(ResolveObject(mesh, identities, publishedIndex, delta));
 		}
 
-		for (const auto& [entity, published] : m_published)
-			if (!current.contains(entity)) delta.Destroys.push_back(published.Object);
-		m_published = std::move(current);
+		RetireRemaining(publishedIndex, delta);
+		SortDeltaObjects(delta);
+		m_published.swap(m_current);
+	}
+
+	void RenderObjectDeltaExtractor::RetirePublishedBefore(
+	    EntityId entity,
+	    std::size_t& publishedIndex,
+	    RenderWorldDelta& delta) const
+	{
+		while (publishedIndex < m_published.size() &&
+		       m_published[publishedIndex].Entity < entity)
+		{
+			delta.Destroys.push_back(m_published[publishedIndex].Object);
+			++publishedIndex;
+		}
+	}
+
+	RenderObjectDeltaExtractor::PublishedObject RenderObjectDeltaExtractor::ResolveObject(
+	    const WorldExtractionStorage::MeshSlot& mesh,
+	    RenderObjectIdentityMap& identities,
+	    std::size_t& publishedIndex,
+	    RenderWorldDelta& delta) const
+	{
+		const RenderObjectStaticData staticData{
+		    .Mesh = mesh.Mesh,
+		    .Material = mesh.Material,
+		    .Skeleton = mesh.Skeleton,
+		    .MeshKind = mesh.Kind,
+		    .MeshAssetIndex = mesh.MeshAssetIndex,
+		    .InstanceGroupIndex = mesh.InstanceGroupIndex};
+
+		if (publishedIndex >= m_published.size() ||
+		    m_published[publishedIndex].Entity != mesh.Entity)
+		{
+			PublishedObject published{
+			    .Entity = mesh.Entity,
+			    .Object = identities.Resolve(mesh.Entity),
+			    .Static = staticData};
+			delta.Creates.push_back({published.Object, published.Static});
+			return published;
+		}
+
+		PublishedObject published = m_published[publishedIndex++];
+		if (!HasSameStaticData(published.Static, staticData))
+		{
+			published.Static = staticData;
+			delta.Updates.push_back({published.Object, published.Static});
+		}
+		return published;
+	}
+
+	void RenderObjectDeltaExtractor::RetireRemaining(
+	    std::size_t publishedIndex,
+	    RenderWorldDelta& delta) const
+	{
+		for (; publishedIndex < m_published.size(); ++publishedIndex)
+		{
+			delta.Destroys.push_back(m_published[publishedIndex].Object);
+		}
+	}
+
+	void RenderObjectDeltaExtractor::SortDeltaObjects(RenderWorldDelta& delta)
+	{
+		std::sort(
+		    delta.Creates.begin(),
+		    delta.Creates.end(),
+		    [](const RenderObjectCreate& left, const RenderObjectCreate& right)
+		    {
+			    return left.Object < right.Object;
+		    });
+		std::sort(
+		    delta.Updates.begin(),
+		    delta.Updates.end(),
+		    [](const RenderObjectUpdate& left, const RenderObjectUpdate& right)
+		    {
+			    return left.Object < right.Object;
+		    });
+		std::sort(delta.Destroys.begin(), delta.Destroys.end());
 	}
 
 	RenderObjectId RenderObjectDeltaExtractor::FindObject(EntityId entity) const noexcept
 	{
-		const auto object = m_published.find(entity);
-		return object == m_published.end() ? RenderObjectId{} : object->second.Object;
+		const auto object = std::lower_bound(
+		    m_published.begin(),
+		    m_published.end(),
+		    entity,
+		    [](const PublishedObject& candidate, EntityId identity)
+		    {
+			    return candidate.Entity < identity;
+		    });
+		return object == m_published.end() || object->Entity != entity
+		           ? RenderObjectId{}
+		           : object->Object;
 	}
 
 	bool RenderObjectDeltaExtractor::HasSameStaticData(

@@ -1,6 +1,7 @@
 #include "TaskExecution.h"
 
-#include "TaskExecutionInternal.h"
+#include "TaskExecutionState.h"
+#include "Scheduling/TaskWorkerContext.h"
 
 #include <utility>
 
@@ -15,7 +16,7 @@ void TaskExecution::State::RequestCancellation() noexcept
 	Cancellation.request_stop();
 }
 
-void TaskExecution::State::Publish(TaskDetail::CompletedTaskExecution completed)
+void TaskExecution::State::Publish(TaskExecutionCompletion completed)
 {
 	std::function<void()> onSettled;
 	{
@@ -63,7 +64,7 @@ bool TaskExecution::IsSettled() const noexcept
 bool TaskExecution::WaitFor(std::chrono::milliseconds timeout) const
 {
 	if (m_state == nullptr || timeout < std::chrono::milliseconds::zero() ||
-	    TaskDetail::IsExecutorWorker(m_state->ExecutorIdentity) || std::this_thread::get_id() != m_state->JoinThread)
+	    TaskWorkerContext::IsWorkerFor(m_state->ExecutorIdentity) || std::this_thread::get_id() != m_state->JoinThread)
 	{
 		return false;
 	}
@@ -122,7 +123,7 @@ std::optional<TaskResult> TaskExecution::GetTaskResult(TaskNodeHandle handle) co
 	std::lock_guard lock(m_state->Mutex);
 	const auto& data = m_state->Data;
 	std::uint32_t index = 0;
-	if (!TaskDetail::TaskGraphAccess::Decode(
+	if (!TaskGraphAccess::Decode(
 	        handle,
 	        data.BuilderIdentity,
 	        data.BuilderGeneration,

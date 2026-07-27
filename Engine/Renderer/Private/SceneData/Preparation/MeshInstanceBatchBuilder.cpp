@@ -14,14 +14,34 @@ struct MeshInstanceBatchBuilder::BuildScratch final
 	std::vector<std::size_t> TransparentItems;
 };
 
-MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
+MeshInstanceBatchBuilder::MeshInstanceBatchBuilder() :
+	m_scratch(std::make_unique<BuildScratch>())
+{
+}
+
+MeshInstanceBatchBuilder::~MeshInstanceBatchBuilder() noexcept = default;
+
+void MeshInstanceBatchBuilder::Build(
     std::span<const MeshRenderItem> renderItems,
     std::span<const MeshDraw> draws,
     std::span<const RenderMeshInstanceGroup> instanceGroups,
-    const MeshInstanceBatchBuildOptions& options) const
+    const MeshInstanceBatchBuildOptions& options,
+    MeshInstanceBatchBuildResult& result)
 {
-	MeshInstanceBatchBuildResult result;
-	BuildScratch scratch;
+	BuildScratch& scratch = *m_scratch;
+
+	result.RasterInstanceIndices.clear();
+	result.Batches.clear();
+	result.Diagnostics = {};
+
+	scratch.ValidItemIndices.clear();
+	scratch.ConsumedItems.clear();
+	for (std::vector<std::size_t>& groupItems : scratch.GroupItems)
+	{
+		groupItems.clear();
+	}
+	scratch.OpaqueItems.clear();
+	scratch.TransparentItems.clear();
 
 	CollectValidItems(renderItems, draws, instanceGroups.size(), options, scratch, result);
 	CollectPreservedGroupItems(renderItems, instanceGroups.size(), scratch);
@@ -30,8 +50,6 @@ MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
 	AppendOpaqueBatches(renderItems, draws, options, scratch, result);
 	AppendTransparentBatches(renderItems, draws, options, scratch, result);
 	FinalizeDiagnostics(options, scratch, result);
-
-	return result;
 }
 
 void MeshInstanceBatchBuilder::CollectValidItems(
