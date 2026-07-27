@@ -10,7 +10,7 @@
 #include <ranges>
 #include <sstream>
 
-class TextureCookRequestListOperations final
+class TextureCookRequestOrdering final
 {
   public:
 	static void SortForSerialization(std::vector<TextureCookRequest>& requests)
@@ -48,7 +48,7 @@ bool WriteTextureCookRequestList(
 	}
 
 	std::vector<TextureCookRequest> sortedRequests = requests;
-	TextureCookRequestListOperations::SortForSerialization(sortedRequests);
+	TextureCookRequestOrdering::SortForSerialization(sortedRequests);
 	std::ostringstream output;
 	output << TextureCookRequestCodec::GetHeader() << '\n';
 	for (const TextureCookRequest& request : sortedRequests)
@@ -124,7 +124,7 @@ bool LoadTextureCookRequestList(
 		return false;
 	}
 	requestSet.MoveRequestsTo(outRequests);
-	TextureCookRequestListOperations::SortForConsumption(outRequests);
+	TextureCookRequestOrdering::SortForConsumption(outRequests);
 	outErrorMessage.clear();
 	return true;
 }

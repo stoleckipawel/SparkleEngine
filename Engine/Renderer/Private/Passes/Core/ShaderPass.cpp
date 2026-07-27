@@ -14,7 +14,7 @@
 #include <cassert>
 #include <string>
 
-class ShaderPassOperations final
+class ShaderPassValidation final
 {
   public:
 	inline static std::shared_ptr<spdlog::logger> g_rendererLogger = Logging::GetOrCreateLogger("Renderer");
@@ -55,26 +55,26 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 	{
 		if (parameter.Name.empty())
 		{
-			return ShaderPassOperations::ReportShaderPassLayoutError(passName, "encountered a parameter with no name.");
+			return ShaderPassValidation::ReportShaderPassLayoutError(passName, "encountered a parameter with no name.");
 		}
 
 		if (parameter.Visibility == ShaderStageVisibility::None)
 		{
-			return ShaderPassOperations::ReportShaderPassLayoutError(passName, "parameter '" + parameter.Name + "' has no shader stage visibility.");
+			return ShaderPassValidation::ReportShaderPassLayoutError(passName, "parameter '" + parameter.Name + "' has no shader stage visibility.");
 		}
 
 		if (passKind == ShaderPassKind::Compute)
 		{
 			if (HasAnyShaderStageVisibility(parameter.Visibility, ShaderStageVisibility::Vertex | ShaderStageVisibility::Pixel))
 			{
-				return ShaderPassOperations::ReportShaderPassLayoutError(
+				return ShaderPassValidation::ReportShaderPassLayoutError(
 				    passName,
 				    "parameter '" + parameter.Name + "' exposes graphics-only stage visibility on a compute pass.");
 			}
 
 			if (parameter.Kind == ShaderParameterSemanticKind::RenderTarget || parameter.Kind == ShaderParameterSemanticKind::DepthTarget)
 			{
-				return ShaderPassOperations::ReportShaderPassLayoutError(
+				return ShaderPassValidation::ReportShaderPassLayoutError(
 				    passName,
 				    "parameter '" + parameter.Name + "' uses a raster-only resource kind on a compute pass.");
 			}
@@ -83,7 +83,7 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 		{
 			if (HasAnyShaderStageVisibility(parameter.Visibility, ShaderStageVisibility::Compute))
 			{
-				return ShaderPassOperations::ReportShaderPassLayoutError(
+				return ShaderPassValidation::ReportShaderPassLayoutError(
 				    passName,
 				    "parameter '" + parameter.Name + "' exposes compute stage visibility on a raster pass.");
 			}
@@ -164,7 +164,7 @@ void ReportInvalidShaderPassParameterSet(const char* passName, const PassParamet
 	if (!parameterSet.HasLayout())
 	{
 		message += ": missing parameter layout.";
-		SPDLOG_LOGGER_ERROR(ShaderPassOperations::g_rendererLogger, "{}", message);
+		SPDLOG_LOGGER_ERROR(ShaderPassValidation::g_rendererLogger, "{}", message);
 		assert(false);
 		return;
 	}
@@ -173,7 +173,7 @@ void ReportInvalidShaderPassParameterSet(const char* passName, const PassParamet
 	if (missingBindings.empty())
 	{
 		message += ": parameter bindings are incomplete.";
-		SPDLOG_LOGGER_ERROR(ShaderPassOperations::g_rendererLogger, "{}", message);
+		SPDLOG_LOGGER_ERROR(ShaderPassValidation::g_rendererLogger, "{}", message);
 		assert(false);
 		return;
 	}
@@ -189,6 +189,6 @@ void ReportInvalidShaderPassParameterSet(const char* passName, const PassParamet
 		message += missingBindings[index];
 	}
 	message += ".";
-	SPDLOG_LOGGER_ERROR(ShaderPassOperations::g_rendererLogger, "{}", message);
+	SPDLOG_LOGGER_ERROR(ShaderPassValidation::g_rendererLogger, "{}", message);
 	assert(false);
 }

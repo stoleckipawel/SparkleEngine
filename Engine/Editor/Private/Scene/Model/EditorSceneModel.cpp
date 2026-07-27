@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-class EditorSceneModelOperations final
+class EditorSceneModelLookup final
 {
   public:
 	template <typename T>
@@ -19,9 +19,20 @@ class EditorSceneModelOperations final
 
 };
 
-const WorldCameraReadData* EditorSceneModel::FindCamera(EntityId entity) const noexcept { return EditorSceneModelOperations::FindByEntity(m_cameras, entity); }
-const WorldLightReadData* EditorSceneModel::FindLight(EntityId entity) const noexcept { return EditorSceneModelOperations::FindByEntity(m_lights, entity); }
-const WorldMeshReadData* EditorSceneModel::FindMesh(EntityId entity) const noexcept { return EditorSceneModelOperations::FindByEntity(m_meshes, entity); }
+const WorldCameraReadData* EditorSceneModel::FindCamera(EntityId entity) const noexcept
+{
+	return EditorSceneModelLookup::FindByEntity(m_cameras, entity);
+}
+
+const WorldLightReadData* EditorSceneModel::FindLight(EntityId entity) const noexcept
+{
+	return EditorSceneModelLookup::FindByEntity(m_lights, entity);
+}
+
+const WorldMeshReadData* EditorSceneModel::FindMesh(EntityId entity) const noexcept
+{
+	return EditorSceneModelLookup::FindByEntity(m_meshes, entity);
+}
 
 bool EditorSceneModel::Contains(const SceneObjectSelection& selection) const noexcept
 {

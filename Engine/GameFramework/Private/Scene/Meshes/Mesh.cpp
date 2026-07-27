@@ -1,18 +1,23 @@
 #include "PCH.h"
 #include "Scene/Meshes/Mesh.h"
 
-void Mesh::MarkGeometryDirty() noexcept
+Mesh::Mesh(MeshData&& meshData) noexcept :
+	m_meshData(std::move(meshData))
 {
-	m_bGeometryDirty = true;
 }
 
-const MeshData& Mesh::GetMeshData() const
+Mesh::Mesh(const MeshData& meshData) :
+	m_meshData(meshData)
 {
-	if (m_bGeometryDirty)
-	{
-		m_meshData.Clear();
-		GenerateGeometry(m_meshData);
-		m_bGeometryDirty = false;
-	}
+}
+
+Mesh::~Mesh() = default;
+
+Mesh::Mesh(Mesh&&) noexcept = default;
+
+Mesh& Mesh::operator=(Mesh&&) noexcept = default;
+
+const MeshData& Mesh::GetMeshData() const noexcept
+{
 	return m_meshData;
 }

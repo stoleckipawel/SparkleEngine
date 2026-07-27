@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <limits>
 
-class CookedSceneInstanceBuilderOperations final
+class CookedSceneInstanceTranslation final
 {
   public:
 	static Assets::CookedSceneInstanceGroupKind ToCookedInstanceGroupKind(ImportedMeshInstanceGroupKind groupKind) noexcept
@@ -97,7 +97,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		}
 
 		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (!CookedSceneInstanceBuilderOperations::ResolveMaterialAssetIndex(importedInstance, build, materialAssetIndex, outErrorMessage))
+		if (!CookedSceneInstanceTranslation::ResolveMaterialAssetIndex(importedInstance, build, materialAssetIndex, outErrorMessage))
 		{
 			return false;
 		}
@@ -128,7 +128,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 
 		std::uint32_t firstMorphWeight = Assets::kInvalidCookedSceneMorphWeightIndex;
 		std::uint32_t morphWeightCount = 0;
-		if (!importedInstance.morphWeights.empty() && CookedSceneInstanceBuilderOperations::SupportsMorphWeights(importedInstance, build))
+		if (!importedInstance.morphWeights.empty() && CookedSceneInstanceTranslation::SupportsMorphWeights(importedInstance, build))
 		{
 			firstMorphWeight = static_cast<std::uint32_t>(build.manifest.morphWeights.size());
 			morphWeightCount = static_cast<std::uint32_t>(importedInstance.morphWeights.size());
@@ -160,7 +160,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		}
 
 		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (!CookedSceneInstanceBuilderOperations::ResolveMaterialAssetIndex(importedGroup, build, materialAssetIndex, outErrorMessage))
+		if (!CookedSceneInstanceTranslation::ResolveMaterialAssetIndex(importedGroup, build, materialAssetIndex, outErrorMessage))
 		{
 			return false;
 		}
@@ -184,7 +184,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		        .materialAssetIndex = materialAssetIndex,
 		        .firstInstance = importedGroup.firstInstanceIndex,
 		        .instanceCount = importedGroup.instanceCount,
-		        .groupKind = CookedSceneInstanceBuilderOperations::ToCookedInstanceGroupKind(importedGroup.groupKind),
+		        .groupKind = CookedSceneInstanceTranslation::ToCookedInstanceGroupKind(importedGroup.groupKind),
 		        .flags = importedGroup.flags});
 	}
 

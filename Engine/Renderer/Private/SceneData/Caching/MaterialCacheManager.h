@@ -36,7 +36,8 @@ class MaterialCacheManager final
 
 	bool Rebuild(
 	    const RenderMaterialTable& materials,
-	    std::uint64_t sourceRevision);
+	    std::uint64_t sourceRevision,
+	    std::uint64_t textureRevision);
 	bool BuildMaterial(
 	    const MaterialDesc& desc,
 	    std::uint32_t materialIndex,
@@ -51,6 +52,7 @@ class MaterialCacheManager final
 	std::vector<std::unique_ptr<RenderBindingSet>> m_materialTextureBindingSets;
 	MaterialTextureTable m_materialTextureTable;
 	std::uint64_t m_sourceRevision = 0u;
+	std::uint64_t m_textureRevision = 0u;
 	std::uint64_t m_generation = 0u;
 	bool m_materialCacheBuilt = false;
 };

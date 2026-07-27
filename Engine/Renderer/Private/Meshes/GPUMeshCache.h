@@ -14,6 +14,7 @@
 #include <vector>
 
 class Mesh;
+class RenderCommandList;
 class RenderHardwareInterface;
 class RhiCommandSubmissionService;
 class TaskExecutor;
@@ -36,7 +37,8 @@ class GPUMeshCache final
 	GPUMeshCache& operator=(GPUMeshCache&&) = delete;
 
 	GpuMeshHandle Request(const ImmutableRenderMeshHandle& mesh);
-	void UploadReadyMeshes();
+	void UploadReadyMeshes(
+	    RenderCommandList& commandList);
 	void RecordUploadSubmission(RhiSubmissionToken token) noexcept;
 	void PollResidency() noexcept;
 	void RetainOnly(std::span<const GpuMeshHandle> handles) noexcept;

@@ -4,7 +4,7 @@
 
 #include "Vulkan/Device/VulkanRhi.h"
 
-class VulkanExternalFeatureInteropCapabilitiesOperations final
+class VulkanExternalFeatureAdapterIdentity final
 {
   public:
 	static RhiAdapterIdentity BuildVulkanAdapterIdentity(const VulkanRhi* rhi)
@@ -29,7 +29,7 @@ RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilit
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
 	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::VulkanManualFunctionPointers;
-	capabilities.Adapter = VulkanExternalFeatureInteropCapabilitiesOperations::BuildVulkanAdapterIdentity(rhi);
+	capabilities.Adapter = VulkanExternalFeatureAdapterIdentity::BuildVulkanAdapterIdentity(rhi);
 	if (rhi != nullptr)
 	{
 		capabilities.VulkanHasInstanceHandle = rhi->GetInstance() != VK_NULL_HANDLE;

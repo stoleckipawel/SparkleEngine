@@ -238,17 +238,25 @@ namespace SparkleLauncher
 		configurationCombo->setObjectName("HeaderContextCombo");
 		configurationCombo->setAccessibleName("Build Configuration");
 		configurationCombo->setToolTip("Global build configuration used for editor, runtime, and tool workflows.");
-		applyComboMetrics(*configurationCombo, LauncherUi::HeaderContext::ConfigurationComboMinWidth, LauncherUi::HeaderContext::ConfigurationComboMaxWidth);
+		applyComboMetrics(
+		    *configurationCombo,
+		    LauncherUi::HeaderContext::ConfigurationComboMinWidth,
+		    LauncherUi::HeaderContext::ConfigurationComboMaxWidth);
 		configurationLabel->setBuddy(configurationCombo);
 		rowLayout->addWidget(configurationCombo, 0);
 
 		QLabel* ideLabel = CreateFieldLabel("IDE");
 		ideLabel->setObjectName("HeaderFieldLabel");
 		rowLayout->addWidget(ideLabel, 0);
-		QComboBox* ideCombo = CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde);
+		QComboBox* ideCombo = CreateValueCombo(
+		    {{"Visual Studio", "visual-studio"}, {"Rider", "rider"}},
+		    m_settings.WorkspaceIde(),
+		    &LauncherSettings::SetWorkspaceIde);
 		ideCombo->setObjectName("HeaderContextCombo");
 		ideCombo->setAccessibleName("IDE");
-		ideCombo->setToolTip("Visual Studio with an MSVC-compatible Qt kit is the supported Windows workflow. ClangCL remains supported as an optional toolset, and Rider remains optional IDE integration.");
+		ideCombo->setToolTip(
+		    "Visual Studio with an MSVC-compatible Qt kit is the supported Windows workflow. "
+		    "ClangCL remains supported as an optional toolset, and Rider remains optional IDE integration.");
 		applyComboMetrics(*ideCombo, LauncherUi::HeaderContext::IdeComboMinWidth, LauncherUi::HeaderContext::IdeComboMaxWidth);
 		ideLabel->setBuddy(ideCombo);
 		rowLayout->addWidget(ideCombo, 0);
@@ -334,7 +342,11 @@ namespace SparkleLauncher
 		return label;
 	}
 
-	QCheckBox* LauncherMainWindow::CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool))
+	QCheckBox* LauncherMainWindow::CreateBoundCheckBox(
+	    const QString& label,
+	    const QString& tooltip,
+	    bool checked,
+	    void (LauncherSettings::*setter)(bool))
 	{
 		QCheckBox* box = new QCheckBox(label, this);
 		box->setToolTip(tooltip);
@@ -346,7 +358,11 @@ namespace SparkleLauncher
 		return box;
 	}
 
-	QLineEdit* LauncherMainWindow::CreateBoundLineEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&))
+	QLineEdit* LauncherMainWindow::CreateBoundLineEdit(
+	    const QString& text,
+	    const QString& placeholder,
+	    const QString& tooltip,
+	    void (LauncherSettings::*setter)(const QString&))
 	{
 		QLineEdit* edit = new QLineEdit(this);
 		edit->setText(text);
@@ -358,7 +374,11 @@ namespace SparkleLauncher
 		return edit;
 	}
 
-	QTextEdit* LauncherMainWindow::CreateBoundTextEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&))
+	QTextEdit* LauncherMainWindow::CreateBoundTextEdit(
+	    const QString& text,
+	    const QString& placeholder,
+	    const QString& tooltip,
+	    void (LauncherSettings::*setter)(const QString&))
 	{
 		QTextEdit* edit = new QTextEdit(this);
 		edit->setPlainText(text);
@@ -374,7 +394,10 @@ namespace SparkleLauncher
 		return edit;
 	}
 
-	QComboBox* LauncherMainWindow::CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&))
+	QComboBox* LauncherMainWindow::CreateProfileCombo(
+	    const QStringList& profiles,
+	    const QString& currentProfile,
+	    void (LauncherSettings::*setter)(const QString&))
 	{
 		QComboBox* combo = new QComboBox(this);
 		combo->addItems(profiles);
@@ -386,7 +409,10 @@ namespace SparkleLauncher
 		return combo;
 	}
 
-	QComboBox* LauncherMainWindow::CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&))
+	QComboBox* LauncherMainWindow::CreateValueCombo(
+	    const QVector<QPair<QString, QString>>& options,
+	    const QString& currentValue,
+	    void (LauncherSettings::*setter)(const QString&))
 	{
 		QComboBox* combo = new QComboBox(this);
 		combo->setAccessibleName("Option value");

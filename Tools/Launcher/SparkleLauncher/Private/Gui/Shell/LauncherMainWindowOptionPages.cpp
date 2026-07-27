@@ -25,6 +25,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
+#include <QtCore/QSignalBlocker>
 #include <QtCore/QStringList>
 #include <QtGui/QGuiApplication>
 #include <QtWidgets/QCheckBox>
@@ -42,6 +43,7 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <system_error>
@@ -55,7 +57,24 @@ namespace SparkleLauncher
 	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
 	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
 	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
-	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
+	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
+
+	bool LauncherMainWindow::UsesBuildEnvironmentStatus(
+	    const QString& operationId)
+	{
+		return operationId == "workspace.generate-build-files" ||
+		       operationId == "workspace.open-ide" ||
+		       operationId == "workspace.sync-source-tiers" ||
+		       operationId == "workspace.build-all" ||
+		       operationId == "project.build.editor" ||
+		       operationId == "launcher.build.self" ||
+		       operationId == "project.build.runtime" ||
+		       operationId.startsWith("cook.");
+	}
+
+	void LauncherMainWindow::AddOptionsForOperation(
+	    QVBoxLayout& layout,
+	    const QString& operationId)
 	{
 		if (operationId == LauncherHomeOperationId())
 		{
@@ -65,101 +84,17 @@ namespace SparkleLauncher
 
 		if (operationId == "package.release")
 		{
-			QVBoxLayout* packageLayout = AddOptionGroup(
-			    layout,
-			    "Package Assembly",
-			    "Assemble a release package layout while keeping final validation and publishing sign-off separate.");
-			AddStatusRow(
-			    *packageLayout,
-			    "Release package",
-			    "Assembly target",
-			    "Build the sparkle_release_assembly CMake target to assemble the launcher, editor/runtime app components, cooked shader packages, package-root marker, license, and separate symbols package under dist/releases/<version>.",
-			    "neutral");
-			return;
-		}
-
-		if (operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide" || operationId == "workspace.sync-source-tiers")
-		{
-			AddBuildEnvironmentStatus(layout, operationId);
-			return;
-		}
-
-		if (operationId == "workspace.build-all")
-		{
-			AddBuildEnvironmentStatus(layout, operationId);
-			return;
-		}
-
-		if (operationId == "project.build.editor")
-		{
-			AddBuildEnvironmentStatus(layout, operationId);
-			return;
-		}
-
-		if (operationId == "launcher.build.self")
-		{
-			AddBuildEnvironmentStatus(layout, operationId);
-			return;
-		}
-
-		if (operationId == "project.build.runtime")
-		{
-			AddBuildEnvironmentStatus(layout, operationId);
-			return;
-		}
-
-		if (operationId == "cook.tools.prepare")
-		{
-			AddBuildEnvironmentStatus(layout, operationId);
+			AddPackageOptions(layout);
 			return;
 		}
 
 		if (operationId == "cook.shaders")
 		{
-			QVBoxLayout* selectionLayout = AddOptionGroup(layout, "Options", "Shader cook target selection. Advanced cache, debug, and compiler controls are available below.");
-			AddOptionField(*selectionLayout, "Shader package", CreateValueCombo(
-			    {{"All shader packages", ""},
-			     {"ComputeClear", "ComputeClear"},
-			     {"DirectLighting", "DirectLighting"},
-			     {"GBuffer", "GBuffer"},
-			     {"IndirectLighting", "IndirectLighting"},
-			     {"LightingComposite", "LightingComposite"},
-			     {"Sky", "Sky"},
-			     {"VisualizeBuffers", "VisualizeBuffers"}},
-			    m_settings.ShaderPackages(),
-			    &LauncherSettings::SetShaderPackages));
-			AddOptionField(*selectionLayout, "Compiler backend", CreateValueCombo(
-			    {{"Auto select", "auto"}, {"DXC", "dxc"}, {"Slang", "slang"}},
-			    m_settings.ShaderBackend(),
-			    &LauncherSettings::SetShaderBackend));
-			QComboBox* targetPresetCombo = CreateValueCombo(
-			    {{"Default runtime set (DxilSm66 + SpirV16)", "default"},
-			     {"DirectX 12 only (DxilSm66)", "d3d12"},
-			     {"Vulkan only (SpirV16)", "vulkan"},
-			     {"DXIL compatibility sweep (Sm60-Sm67)", "dxil-all"},
-			     {"SPIR-V compatibility sweep (1.4-1.6)", "spirv-all"},
-			     {"Custom target list", "custom"}},
-			    m_settings.ShaderTargetPreset(),
-			    &LauncherSettings::SetShaderTargetPreset);
-			AddOptionField(*selectionLayout, "Binary targets", targetPresetCombo);
-			QWidget* customTargetsRow = AddOptionField(
-			    *selectionLayout,
-			    "Custom targets",
-			    CreateBoundLineEdit(
-			        m_settings.ShaderCustomTargets(),
-			        "DxilSm66, SpirV16",
-			        "Comma-separated ShaderCompiler target names such as DxilSm66 or SpirV16.",
-			        &LauncherSettings::SetShaderCustomTargets));
-			customTargetsRow->setVisible(m_settings.ShaderTargetPreset() == "custom");
-			connect(targetPresetCombo, &QComboBox::currentTextChanged, customTargetsRow, [this, customTargetsRow](const QString&) {
-				customTargetsRow->setVisible(m_settings.ShaderTargetPreset() == "custom");
-			});
-
-			AddBuildEnvironmentStatus(layout, operationId);
+			AddShaderCookOptions(layout);
 			return;
 		}
 
-		if (operationId.startsWith("cook."))
+		if (UsesBuildEnvironmentStatus(operationId))
 		{
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
@@ -182,104 +117,286 @@ namespace SparkleLauncher
 
 		if (operationId == "workspace.clean")
 		{
-			const std::array<CleanScopeUiOption, 9> cleanScopes = {{
-			    {"Active project cooked content", "selected-cooked", "Cooked asset outputs for the active project under artifacts/dev/projects/<Project>/cooked.", QString(), "Cooked content"},
-			    {"All cooked content", "all-cooked", "Cooked asset domains for every project plus the shared cooked domain. Keeps editor/runtime artifacts and source dependency caches.", "artifacts/dev/projects/*/cooked", "Cooked content"},
-			    {"Build outputs and generated build files", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and project build trees. Keeps the source dependency cache.", "build content except build/_deps, root generated project files, project generated files", "Build and packages"},
-			    {"Generated artifacts", "artifacts", "Runnable artifacts, libraries, symbols, diagnostics, and generated project outputs under artifacts/.", QString(), "Build and packages"},
-			    {"Packaged outputs", "packages", "Release layouts and assembled package outputs under dist/.", "dist", "Build and packages"},
-			    {"IDE and workspace state", "workspace-state", "Local IDE state and ImGui workspace state generated on this machine.", ".vs, .vscode, imgui.ini, Projects/*/imgui.ini", "Workspace state"},
-			    {"Shader cache", "shader-cache", "Transient shader cache, recook signal, and shader outputs.", QString(), "Caches"},
-			    {"Source dependency cache", "deps", "Downloaded source dependency cache. Configure will re-download source dependency groups.", QString(), "Caches"},
-			    {"Logs", "logs", "Repository, launcher, and project logs.", "logs, user-local launcher logs, Projects/*/logs", "Logs"},
-			}};
-
-			QVector<QCheckBox*> scopeBoxes;
-			const QString activeProjectId = m_projectModel.ActiveProjectId();
-			const QStringList selectedScopes = m_settings.CleanScope().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
-			const std::array<QPair<QString, QString>, 5> cleanGroups = {{
-			    {"Cooked content", "Cooked assets"},
-			    {"Build and packages", "Build products, artifacts, and packaged outputs"},
-			    {"Workspace state", "IDE and local workspace state"},
-			    {"Caches", "Regeneratable caches"},
-			    {"Logs", "Launcher and project logs"},
-			}};
-
-			const auto addCleanScopeRow = [this, &scopeBoxes, &activeProjectId, &selectedScopes](QGridLayout& groupGrid, const CleanScopeUiOption& scope, int row, int column) {
-				QCheckBox* scopeBox = new QCheckBox(scope.Label, this);
-				scopeBox->setToolTip(scope.Detail);
-				scopeBox->setProperty("CleanScope", scope.Value);
-				scopeBox->setProperty("CleanLabel", scope.Label);
-				scopeBox->setChecked(selectedScopes.contains(scope.Value) || (selectedScopes.empty() && scope.Value == "build-tree"));
-				RegisterFocusable(scopeBox);
-
-				QFrame* scopeRow = new QFrame(this);
-				scopeRow->setObjectName("CleanScopeCard");
-				QVBoxLayout* scopeRowLayout = new QVBoxLayout(scopeRow);
-				scopeRowLayout->setContentsMargins(LauncherUi::Clean::ScopeCardMargins);
-				scopeRowLayout->setSpacing(LauncherUi::Clean::ScopeCardSpacing);
-				scopeRowLayout->addWidget(scopeBox);
-				const std::filesystem::path previewPath = ResolveCleanScopePreviewPath(m_repositoryRoot, activeProjectId, scope.Value);
-				const QString previewText = scope.Preview.isEmpty() ? ToDisplayPath(m_repositoryRoot, previewPath) + " - " + FormatDirectoryInventory(previewPath) : scope.Preview;
-				QLabel* scopeDetail = new QLabel(previewText, scopeRow);
-				scopeDetail->setObjectName("OptionHelpText");
-				scopeDetail->setWordWrap(true);
-				scopeRowLayout->addWidget(scopeDetail);
-				groupGrid.addWidget(scopeRow, row, column);
-				scopeBoxes.push_back(scopeBox);
-			};
-
-			QVBoxLayout* cleanScopesLayout = AddInlineOptionsSection(layout);
-			for (const QPair<QString, QString>& cleanGroup : cleanGroups)
-			{
-				cleanScopesLayout->addWidget(CreateSectionLabel(cleanGroup.first));
-				QGridLayout* cleanGrid = new QGridLayout();
-				cleanGrid->setContentsMargins(LauncherUi::Clean::GridMargins);
-				cleanGrid->setHorizontalSpacing(LauncherUi::Clean::GridSpacing);
-				cleanGrid->setVerticalSpacing(LauncherUi::Clean::GridSpacing);
-				int groupScopeIndex = 0;
-				for (const CleanScopeUiOption& scope : cleanScopes)
-				{
-					if (scope.Group == cleanGroup.first)
-					{
-						addCleanScopeRow(*cleanGrid, scope, groupScopeIndex / 2, groupScopeIndex % 2);
-						++groupScopeIndex;
-					}
-				}
-				cleanScopesLayout->addLayout(cleanGrid);
-			}
-
-			const auto updateCleanScopeSetting = [scopeBoxes, this]() {
-				QStringList selectedValues;
-				for (QCheckBox* scopeBox : scopeBoxes)
-				{
-					if (scopeBox != nullptr && scopeBox->isChecked())
-					{
-						selectedValues.push_back(scopeBox->property("CleanScope").toString());
-					}
-				}
-				if (selectedValues.empty())
-				{
-					if (!scopeBoxes.empty() && scopeBoxes.front() != nullptr)
-					{
-						const QSignalBlocker blocker(scopeBoxes.front());
-						scopeBoxes.front()->setChecked(true);
-					}
-					selectedValues.push_back("build-tree");
-				}
-				m_settings.SetCleanScope(selectedValues.join(';'));
-				UpdateRunAvailability();
-			};
-			for (QCheckBox* scopeBox : scopeBoxes)
-			{
-				connect(scopeBox, &QCheckBox::toggled, this, updateCleanScopeSetting);
-			}
-			updateCleanScopeSetting();
-			AddMaintenanceEnvironmentStatus(layout, operationId);
+			AddCleanOptions(layout, operationId);
 			return;
 		}
 
 		AddNoOptionsMessage(layout, "No settings");
+	}
+
+	void LauncherMainWindow::AddPackageOptions(QVBoxLayout& layout)
+	{
+		QVBoxLayout* packageLayout = AddOptionGroup(
+		    layout,
+		    "Package Assembly",
+		    "Assemble a release package layout while keeping final validation and publishing sign-off separate.");
+
+		AddStatusRow(
+		    *packageLayout,
+		    "Release package",
+		    "Assembly target",
+		    "Build the sparkle_release_assembly CMake target to assemble the launcher, editor/runtime app components, "
+		    "cooked shader packages, package-root marker, license, and separate symbols package under "
+		    "dist/releases/<version>.",
+		    "neutral");
+	}
+
+	void LauncherMainWindow::AddShaderCookOptions(
+	    QVBoxLayout& layout)
+	{
+		QVBoxLayout* selectionLayout = AddOptionGroup(
+		    layout,
+		    "Options",
+		    "Shader cook target selection. Advanced cache, debug, and compiler controls are available below.");
+
+		AddOptionField(
+		    *selectionLayout,
+		    "Shader package",
+		    CreateValueCombo(
+		        {{"All shader packages", ""},
+		         {"ComputeClear", "ComputeClear"},
+		         {"DirectLighting", "DirectLighting"},
+		         {"GBuffer", "GBuffer"},
+		         {"IndirectLighting", "IndirectLighting"},
+		         {"LightingComposite", "LightingComposite"},
+		         {"Sky", "Sky"},
+		         {"VisualizeBuffers", "VisualizeBuffers"}},
+		        m_settings.ShaderPackages(),
+		        &LauncherSettings::SetShaderPackages));
+		AddOptionField(
+		    *selectionLayout,
+		    "Compiler backend",
+		    CreateValueCombo(
+		        {{"Auto select", "auto"}, {"DXC", "dxc"}, {"Slang", "slang"}},
+		        m_settings.ShaderBackend(),
+		        &LauncherSettings::SetShaderBackend));
+
+		QComboBox* targetPresetCombo = CreateValueCombo(
+		    {{"Default runtime set (DxilSm66 + SpirV16)", "default"},
+		     {"DirectX 12 only (DxilSm66)", "d3d12"},
+		     {"Vulkan only (SpirV16)", "vulkan"},
+		     {"DXIL compatibility sweep (Sm60-Sm67)", "dxil-all"},
+		     {"SPIR-V compatibility sweep (1.4-1.6)", "spirv-all"},
+		     {"Custom target list", "custom"}},
+		    m_settings.ShaderTargetPreset(),
+		    &LauncherSettings::SetShaderTargetPreset);
+		AddOptionField(
+		    *selectionLayout,
+		    "Binary targets",
+		    targetPresetCombo);
+
+		QWidget* customTargetsRow = AddOptionField(
+		    *selectionLayout,
+		    "Custom targets",
+		    CreateBoundLineEdit(
+		        m_settings.ShaderCustomTargets(),
+		        "DxilSm66, SpirV16",
+		        "Comma-separated ShaderCompiler target names such as DxilSm66 or SpirV16.",
+		        &LauncherSettings::SetShaderCustomTargets));
+		customTargetsRow->setVisible(
+		    m_settings.ShaderTargetPreset() == "custom");
+		connect(
+		    targetPresetCombo,
+		    &QComboBox::currentTextChanged,
+		    customTargetsRow,
+		    [this, customTargetsRow](const QString&)
+		    {
+			    customTargetsRow->setVisible(
+			        m_settings.ShaderTargetPreset() == "custom");
+		    });
+
+		AddBuildEnvironmentStatus(layout, "cook.shaders");
+	}
+
+	void LauncherMainWindow::AddCleanOptions(
+	    QVBoxLayout& layout,
+	    const QString& operationId)
+	{
+		const std::array<CleanScopeUiOption, 9> cleanScopes{{
+		    {"Active project cooked content",
+		     "selected-cooked",
+		     "Cooked asset outputs for the active project under artifacts/dev/projects/<Project>/cooked.",
+		     QString(),
+		     "Cooked content"},
+		    {"All cooked content",
+		     "all-cooked",
+		     "Cooked asset domains for every project plus the shared cooked domain. "
+		     "Keeps editor/runtime artifacts and source dependency caches.",
+		     "artifacts/dev/projects/*/cooked",
+		     "Cooked content"},
+		    {"Build outputs and generated build files",
+		     "build-tree",
+		     "Build outputs, intermediates, generated CMake/Visual Studio files, and project build trees. "
+		     "Keeps the source dependency cache.",
+		     "build content except build/_deps, root generated project files, project generated files",
+		     "Build and packages"},
+		    {"Generated artifacts",
+		     "artifacts",
+		     "Runnable artifacts, libraries, symbols, diagnostics, and generated project outputs under artifacts/.",
+		     QString(),
+		     "Build and packages"},
+		    {"Packaged outputs",
+		     "packages",
+		     "Release layouts and assembled package outputs under dist/.",
+		     "dist",
+		     "Build and packages"},
+		    {"IDE and workspace state",
+		     "workspace-state",
+		     "Local IDE state and ImGui workspace state generated on this machine.",
+		     ".vs, .vscode, imgui.ini, Projects/*/imgui.ini",
+		     "Workspace state"},
+		    {"Shader cache",
+		     "shader-cache",
+		     "Transient shader cache, recook signal, and shader outputs.",
+		     QString(),
+		     "Caches"},
+		    {"Source dependency cache",
+		     "deps",
+		     "Downloaded source dependency cache. Configure will re-download source dependency groups.",
+		     QString(),
+		     "Caches"},
+		    {"Logs",
+		     "logs",
+		     "Repository, launcher, and project logs.",
+		     "logs, user-local launcher logs, Projects/*/logs",
+		     "Logs"},
+		}};
+		const std::array<QPair<QString, QString>, 5> cleanGroups{{
+		    {"Cooked content", "Cooked assets"},
+		    {"Build and packages", "Build products, artifacts, and packaged outputs"},
+		    {"Workspace state", "IDE and local workspace state"},
+		    {"Caches", "Regeneratable caches"},
+		    {"Logs", "Launcher and project logs"},
+		}};
+
+		QVector<QCheckBox*> scopeBoxes;
+		const QString activeProjectId = m_projectModel.ActiveProjectId();
+		const QStringList selectedScopes =
+		    m_settings.CleanScope().split(
+		        QRegularExpression("[,;\\n]"),
+		        Qt::SkipEmptyParts);
+		QVBoxLayout* cleanScopesLayout = AddInlineOptionsSection(layout);
+
+		for (const QPair<QString, QString>& cleanGroup : cleanGroups)
+		{
+			cleanScopesLayout->addWidget(
+			    CreateSectionLabel(cleanGroup.first));
+
+			QGridLayout* cleanGrid = new QGridLayout();
+			cleanGrid->setContentsMargins(LauncherUi::Clean::GridMargins);
+			cleanGrid->setHorizontalSpacing(LauncherUi::Clean::GridSpacing);
+			cleanGrid->setVerticalSpacing(LauncherUi::Clean::GridSpacing);
+
+			int groupScopeIndex = 0;
+			for (const CleanScopeUiOption& scope : cleanScopes)
+			{
+				if (scope.Group != cleanGroup.first)
+				{
+					continue;
+				}
+
+				AddCleanScopeRow(
+				    *cleanGrid,
+				    scope,
+				    activeProjectId,
+				    selectedScopes,
+				    groupScopeIndex / 2,
+				    groupScopeIndex % 2,
+				    scopeBoxes);
+				++groupScopeIndex;
+			}
+
+			cleanScopesLayout->addLayout(cleanGrid);
+		}
+
+		for (QCheckBox* scopeBox : scopeBoxes)
+		{
+			connect(
+			    scopeBox,
+			    &QCheckBox::toggled,
+			    this,
+			    [this, scopeBoxes]()
+			    {
+				    UpdateCleanScopeSetting(scopeBoxes);
+			    });
+		}
+
+		UpdateCleanScopeSetting(scopeBoxes);
+		AddMaintenanceEnvironmentStatus(layout, operationId);
+	}
+
+	void LauncherMainWindow::AddCleanScopeRow(
+	    QGridLayout& grid,
+	    const CleanScopeUiOption& scope,
+	    const QString& activeProjectId,
+	    const QStringList& selectedScopes,
+	    int row,
+	    int column,
+	    QVector<QCheckBox*>& scopeBoxes)
+	{
+		QCheckBox* scopeBox = new QCheckBox(scope.Label, this);
+		scopeBox->setToolTip(scope.Detail);
+		scopeBox->setProperty("CleanScope", scope.Value);
+		scopeBox->setProperty("CleanLabel", scope.Label);
+		scopeBox->setChecked(
+		    selectedScopes.contains(scope.Value) ||
+		    (selectedScopes.empty() && scope.Value == "build-tree"));
+		RegisterFocusable(scopeBox);
+
+		QFrame* scopeRow = new QFrame(this);
+		scopeRow->setObjectName("CleanScopeCard");
+		QVBoxLayout* scopeRowLayout = new QVBoxLayout(scopeRow);
+		scopeRowLayout->setContentsMargins(
+		    LauncherUi::Clean::ScopeCardMargins);
+		scopeRowLayout->setSpacing(
+		    LauncherUi::Clean::ScopeCardSpacing);
+		scopeRowLayout->addWidget(scopeBox);
+
+		const std::filesystem::path previewPath =
+		    ResolveCleanScopePreviewPath(
+		        m_repositoryRoot,
+		        activeProjectId,
+		        scope.Value);
+		const QString previewText =
+		    scope.Preview.isEmpty()
+		        ? ToDisplayPath(m_repositoryRoot, previewPath) +
+		              " - " +
+		              FormatDirectoryInventory(previewPath)
+		        : scope.Preview;
+		QLabel* scopeDetail = new QLabel(previewText, scopeRow);
+		scopeDetail->setObjectName("OptionHelpText");
+		scopeDetail->setWordWrap(true);
+		scopeRowLayout->addWidget(scopeDetail);
+
+		grid.addWidget(scopeRow, row, column);
+		scopeBoxes.push_back(scopeBox);
+	}
+
+	void LauncherMainWindow::UpdateCleanScopeSetting(
+	    const QVector<QCheckBox*>& scopeBoxes)
+	{
+		QStringList selectedValues;
+		for (QCheckBox* scopeBox : scopeBoxes)
+		{
+			if (scopeBox != nullptr && scopeBox->isChecked())
+			{
+				selectedValues.push_back(
+				    scopeBox->property("CleanScope").toString());
+			}
+		}
+
+		if (selectedValues.empty())
+		{
+			if (!scopeBoxes.empty() && scopeBoxes.front() != nullptr)
+			{
+				const QSignalBlocker blocker(scopeBoxes.front());
+				scopeBoxes.front()->setChecked(true);
+			}
+			selectedValues.push_back("build-tree");
+		}
+
+		m_settings.SetCleanScope(selectedValues.join(';'));
+		UpdateRunAvailability();
 	}
 
 	QWidget* LauncherMainWindow::AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control)

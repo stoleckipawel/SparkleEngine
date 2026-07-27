@@ -109,11 +109,6 @@ void RendererSystemRoot::TickDiagnostics(std::uint64_t frameIndex) noexcept
 	}
 }
 
-void RendererSystemRoot::PostLoad() noexcept
-{
-	GetBackend().CloseExecuteAndFlushCurrentFrame();
-}
-
 void RendererSystemRoot::RefreshImageProviders() noexcept
 {
 	if (m_backend == nullptr)

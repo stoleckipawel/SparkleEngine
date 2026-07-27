@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
-class ToneMappingSettingsOperations final
+class ToneMappingValueTranslation final
 {
   public:
 	static constexpr float kMinimumExposure = 0.000001f;
@@ -81,35 +81,51 @@ EngineExposureMeteringMethod SanitizeExposureMeteringMethod(EngineExposureMeteri
 
 float SanitizeManualExposure(float exposure) noexcept
 {
-	return std::clamp(ToneMappingSettingsOperations::SanitizeFinite(exposure, 1.0f), ToneMappingSettingsOperations::kMinimumManualExposure, ToneMappingSettingsOperations::kMaximumExposure);
+	const float finiteExposure = ToneMappingValueTranslation::SanitizeFinite(exposure, 1.0f);
+	return std::clamp(
+	    finiteExposure,
+	    ToneMappingValueTranslation::kMinimumManualExposure,
+	    ToneMappingValueTranslation::kMaximumExposure);
 }
 
 float SanitizeExposureCompensation(float compensation) noexcept
 {
 	return std::clamp(
-	    ToneMappingSettingsOperations::SanitizeFinite(compensation, 0.0f),
-	    -ToneMappingSettingsOperations::kMaximumExposureCompensation,
-	    ToneMappingSettingsOperations::kMaximumExposureCompensation);
+	    ToneMappingValueTranslation::SanitizeFinite(compensation, 0.0f),
+	    -ToneMappingValueTranslation::kMaximumExposureCompensation,
+	    ToneMappingValueTranslation::kMaximumExposureCompensation);
 }
 
 float SanitizeExposureTargetLuminance(float luminance) noexcept
 {
-	return std::clamp(ToneMappingSettingsOperations::SanitizeFinite(luminance, 0.18f), ToneMappingSettingsOperations::kMinimumTargetLuminance, 1.0f);
+	const float finiteLuminance = ToneMappingValueTranslation::SanitizeFinite(luminance, 0.18f);
+	return std::clamp(finiteLuminance, ToneMappingValueTranslation::kMinimumTargetLuminance, 1.0f);
 }
 
 float SanitizeExposureMin(float exposure) noexcept
 {
-	return std::clamp(ToneMappingSettingsOperations::SanitizeFinite(exposure, ToneMappingSettingsOperations::kMinimumExposure), ToneMappingSettingsOperations::kMinimumExposure, ToneMappingSettingsOperations::kMaximumExposure);
+	const float finiteExposure =
+	    ToneMappingValueTranslation::SanitizeFinite(exposure, ToneMappingValueTranslation::kMinimumExposure);
+	return std::clamp(
+	    finiteExposure,
+	    ToneMappingValueTranslation::kMinimumExposure,
+	    ToneMappingValueTranslation::kMaximumExposure);
 }
 
 float SanitizeExposureMax(float exposure) noexcept
 {
-	return std::clamp(ToneMappingSettingsOperations::SanitizeFinite(exposure, ToneMappingSettingsOperations::kMaximumExposure), ToneMappingSettingsOperations::kMinimumExposure, ToneMappingSettingsOperations::kMaximumExposure);
+	const float finiteExposure =
+	    ToneMappingValueTranslation::SanitizeFinite(exposure, ToneMappingValueTranslation::kMaximumExposure);
+	return std::clamp(
+	    finiteExposure,
+	    ToneMappingValueTranslation::kMinimumExposure,
+	    ToneMappingValueTranslation::kMaximumExposure);
 }
 
 float SanitizeExposureAdaptationSpeed(float speed) noexcept
 {
-	return std::clamp(ToneMappingSettingsOperations::SanitizeFinite(speed, 0.0f), 0.0f, ToneMappingSettingsOperations::kMaximumExposureAdaptationSpeed);
+	const float finiteSpeed = ToneMappingValueTranslation::SanitizeFinite(speed, 0.0f);
+	return std::clamp(finiteSpeed, 0.0f, ToneMappingValueTranslation::kMaximumExposureAdaptationSpeed);
 }
 
 void SanitizeExposureRange(float& minExposure, float& maxExposure) noexcept
@@ -129,9 +145,9 @@ ExposureUniformData BuildExposureUniformData(float frameDeltaSeconds, bool expos
 	SanitizeExposureRange(minExposure, maxExposure);
 
 	return ExposureUniformData{
-	    .ExposureMode = ToneMappingSettingsOperations::ToShaderExposureMode(CVarExposureMode.Get()),
+	    .ExposureMode = ToneMappingValueTranslation::ToShaderExposureMode(CVarExposureMode.Get()),
 	    .ExposureHistoryValid = exposureHistoryValid ? 1u : 0u,
-	    .FrameDeltaSeconds = std::clamp(ToneMappingSettingsOperations::SanitizeFinite(frameDeltaSeconds, 1.0f / 60.0f), 0.0f, 1.0f),
+	    .FrameDeltaSeconds = std::clamp(ToneMappingValueTranslation::SanitizeFinite(frameDeltaSeconds, 1.0f / 60.0f), 0.0f, 1.0f),
 	    .ManualExposure = SanitizeManualExposure(CVarManualExposure.Get()),
 	    .ExposureCompensation = SanitizeExposureCompensation(CVarExposureCompensation.Get()),
 	    .ExposureTargetLuminance = SanitizeExposureTargetLuminance(CVarExposureTargetLuminance.Get()),
@@ -144,5 +160,5 @@ ExposureUniformData BuildExposureUniformData(float frameDeltaSeconds, bool expos
 ToneMappingUniformData BuildToneMappingUniformData() noexcept
 {
 	return ToneMappingUniformData{
-	    .ToneMapper = ToneMappingSettingsOperations::ToShaderToneMapper(CVarToneMapper.Get())};
+	    .ToneMapper = ToneMappingValueTranslation::ToShaderToneMapper(CVarToneMapper.Get())};
 }

@@ -4,7 +4,7 @@
 
 #include <atomic>
 
-class GameWorldResourceStoresOperations final
+class ResourceGenerationSource final
 {
   public:
 	inline static std::atomic<std::uint32_t> g_nextResourceGeneration = 1;
@@ -19,6 +19,6 @@ class GameWorldResourceStoresOperations final
 };
 
 GameWorldResourceStores::GameWorldResourceStores() noexcept :
-    Generation(GameWorldResourceStoresOperations::AcquireResourceGeneration()), Materials(Generation), Textures(Generation)
+    Generation(ResourceGenerationSource::AcquireResourceGeneration()), Materials(Generation), Textures(Generation)
 {
 }

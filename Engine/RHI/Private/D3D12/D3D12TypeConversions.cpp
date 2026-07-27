@@ -2,7 +2,7 @@
 
 #include "D3D12/D3D12TypeConversions.h"
 
-class D3D12TypeConversionsOperations final
+class D3D12ResourceFormatTranslation final
 {
   public:
 	static DXGI_FORMAT ResolveTextureResourceFormat(const RhiTextureResourceDesc& desc) noexcept
@@ -201,7 +201,7 @@ D3D12_RESOURCE_DESC D3D12TypeConversions::BuildTextureResourceDesc(const RhiText
 	resourceDesc.Height = desc.Height;
 	resourceDesc.DepthOrArraySize = desc.ArraySize;
 	resourceDesc.MipLevels = desc.MipLevels;
-	resourceDesc.Format = D3D12TypeConversionsOperations::ResolveTextureResourceFormat(desc);
+	resourceDesc.Format = D3D12ResourceFormatTranslation::ResolveTextureResourceFormat(desc);
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;

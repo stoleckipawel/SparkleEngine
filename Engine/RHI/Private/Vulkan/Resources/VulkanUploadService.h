@@ -25,6 +25,12 @@ class VulkanUploadService final : public RhiUploadService
 	    RenderCommandList& commandList,
 	    const void* data,
 	    std::uint32_t sizeInBytes) override;
+	bool UploadBuffer(
+	    RenderCommandList& commandList,
+	    RhiOwnedResourceHandle destination,
+	    std::span<const std::byte> data,
+	    ResourceState finalState,
+	    std::wstring_view debugName) override;
 	bool UploadTexture(
 	    RenderCommandList& commandList,
 	    RhiOwnedResourceHandle destination,
@@ -41,6 +47,19 @@ class VulkanUploadService final : public RhiUploadService
 	    const RhiTextureUploadDesc& textureUpload,
 	    std::span<std::uint8_t> destination,
 	    std::vector<VkBufferImageCopy>& regions) noexcept;
+	bool ValidateBufferUploadRequest(
+	    const RenderCommandList& commandList,
+	    const VulkanGpuAllocationRecord* destination,
+	    std::span<const std::byte> data) const noexcept;
+	std::unique_ptr<VulkanGpuAllocationRecord> CreateBufferStagingResource(
+	    std::span<const std::byte> data,
+	    std::wstring_view debugName);
+	static void RecordBufferUpload(
+	    VulkanRenderCommandList& commandList,
+	    const VulkanGpuAllocationRecord& destination,
+	    const VulkanGpuAllocationRecord& stagingResource,
+	    std::uint64_t sizeInBytes,
+	    ResourceState finalState) noexcept;
 	bool ValidateTextureUploadRequest(
 	    const RenderCommandList& commandList,
 	    const VulkanGpuAllocationRecord* destination,

@@ -29,6 +29,12 @@ class D3D12UploadService final : public RhiUploadService
 	    RenderCommandList& commandList,
 	    const void* data,
 	    std::uint32_t sizeInBytes) override;
+	bool UploadBuffer(
+	    RenderCommandList& commandList,
+	    RhiOwnedResourceHandle destination,
+	    std::span<const std::byte> data,
+	    ResourceState finalState,
+	    std::wstring_view debugName) override;
 	bool UploadTexture(
 	    RenderCommandList& commandList,
 	    RhiOwnedResourceHandle destination,
@@ -37,11 +43,24 @@ class D3D12UploadService final : public RhiUploadService
 	    std::wstring_view debugName) override;
 
   private:
-	struct PendingTextureUpload final
+	struct PendingUpload final
 	{
 		std::unique_ptr<D3D12GpuAllocationRecord> StagingResource;
 	};
 
+	bool ValidateBufferUploadRequest(
+	    const RenderCommandList& commandList,
+	    const D3D12GpuAllocationRecord* destination,
+	    std::span<const std::byte> data) const noexcept;
+	std::unique_ptr<D3D12GpuAllocationRecord> CreateBufferStagingResource(
+	    std::span<const std::byte> data,
+	    std::wstring_view debugName);
+	static void RecordBufferUpload(
+	    D3D12RenderCommandList& commandList,
+	    D3D12GpuAllocationRecord& destination,
+	    D3D12GpuAllocationRecord& stagingResource,
+	    std::uint64_t sizeInBytes,
+	    ResourceState finalState) noexcept;
 	bool ValidateTextureUploadRequest(
 	    const RenderCommandList& commandList,
 	    const D3D12GpuAllocationRecord* destination,
@@ -56,9 +75,9 @@ class D3D12UploadService final : public RhiUploadService
 	    D3D12GpuAllocationRecord& stagingResource,
 	    const RhiTextureUploadDesc& textureUpload,
 	    ResourceState finalState);
-	void DrainCompletedTextureUploads() noexcept;
+	void DrainCompletedUploads() noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
-	std::vector<PendingTextureUpload> m_pendingTextureUploads;
+	std::vector<PendingUpload> m_pendingUploads;
 };

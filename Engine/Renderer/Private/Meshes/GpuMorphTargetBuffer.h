@@ -10,6 +10,7 @@
 #include <vector>
 
 class RenderHardwareInterface;
+class RenderCommandList;
 struct MeshMorphData;
 
 // Owns one immutable mesh generation's morph deltas in CPU and GPU forms.
@@ -26,6 +27,7 @@ class GpuMorphTargetBuffer final
 
 	bool Upload(
 	    RenderHardwareInterface& renderHardwareInterface,
+	    RenderCommandList& commandList,
 	    std::vector<MorphTargetDeltaData> deltas,
 	    std::uint32_t targetCount);
 	void Release() noexcept;

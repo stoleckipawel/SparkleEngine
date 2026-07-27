@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstddef>
 
-class StreamlineViewConstantsOperations final
+class StreamlineViewConstantTranslation final
 {
   public:
 	static void FillIdentity(sl::float4x4& matrix) noexcept
@@ -115,20 +115,23 @@ void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewC
 
 	constants.cameraViewToClip = ToStreamlineMatrix(input.Camera.ProjectionMTX);
 	constants.clipToCameraView = ToStreamlineMatrix(input.Camera.InvProjectionMTX);
-	StreamlineViewConstantsOperations::FillIdentity(constants.clipToLensClip);
-	constants.clipToPrevClip = StreamlineViewConstantsOperations::ToStreamlineMatrixFromMatrix(clipToPrevClip);
-	constants.prevClipToClip = StreamlineViewConstantsOperations::ToStreamlineMatrixFromMatrix(prevClipToClip);
-	constants.jitterOffset = StreamlineViewConstantsOperations::ConvertNdcJitterToPixelJitter(input.TemporalState.JitterCurrent, input.RenderExtent);
-	constants.mvecScale = StreamlineViewConstantsOperations::BuildMotionVectorScale(input);
+	StreamlineViewConstantTranslation::FillIdentity(constants.clipToLensClip);
+	constants.clipToPrevClip = StreamlineViewConstantTranslation::ToStreamlineMatrixFromMatrix(clipToPrevClip);
+	constants.prevClipToClip = StreamlineViewConstantTranslation::ToStreamlineMatrixFromMatrix(prevClipToClip);
+	constants.jitterOffset =
+	    StreamlineViewConstantTranslation::ConvertNdcJitterToPixelJitter(input.TemporalState.JitterCurrent, input.RenderExtent);
+	constants.mvecScale = StreamlineViewConstantTranslation::BuildMotionVectorScale(input);
 	constants.cameraPinholeOffset = sl::float2{0.0f, 0.0f};
-	constants.cameraPos = StreamlineViewConstantsOperations::ToStreamlineFloat3(input.Camera.Position);
-	constants.cameraUp = StreamlineViewConstantsOperations::MatrixBasisRowToStreamlineFloat3(input.Camera.InvViewMTX, 1u);
-	constants.cameraRight = StreamlineViewConstantsOperations::MatrixBasisRowToStreamlineFloat3(input.Camera.InvViewMTX, 0u);
-	constants.cameraFwd = StreamlineViewConstantsOperations::NormalizeToStreamlineFloat3(input.Camera.Direction, DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f));
+	constants.cameraPos = StreamlineViewConstantTranslation::ToStreamlineFloat3(input.Camera.Position);
+	constants.cameraUp = StreamlineViewConstantTranslation::MatrixBasisRowToStreamlineFloat3(input.Camera.InvViewMTX, 1u);
+	constants.cameraRight = StreamlineViewConstantTranslation::MatrixBasisRowToStreamlineFloat3(input.Camera.InvViewMTX, 0u);
+	constants.cameraFwd = StreamlineViewConstantTranslation::NormalizeToStreamlineFloat3(
+	    input.Camera.Direction,
+	    DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f));
 	constants.cameraNear = input.Camera.NearZ;
 	constants.cameraFar = input.Camera.FarZ;
-	constants.cameraFOV = StreamlineViewConstantsOperations::CalculateVerticalFovRadians(input.Camera.ProjectionMTX);
-	constants.cameraAspectRatio = StreamlineViewConstantsOperations::CalculateAspectRatio(input.Camera.ProjectionMTX, input.RenderExtent);
+	constants.cameraFOV = StreamlineViewConstantTranslation::CalculateVerticalFovRadians(input.Camera.ProjectionMTX);
+	constants.cameraAspectRatio = StreamlineViewConstantTranslation::CalculateAspectRatio(input.Camera.ProjectionMTX, input.RenderExtent);
 	constants.depthInverted = input.ReversedDeviceDepth ? sl::Boolean::eTrue : sl::Boolean::eFalse;
 	constants.cameraMotionIncluded = sl::Boolean::eTrue;
 	constants.motionVectors3D = sl::Boolean::eFalse;

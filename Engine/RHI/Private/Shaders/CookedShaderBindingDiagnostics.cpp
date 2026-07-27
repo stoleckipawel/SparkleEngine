@@ -6,7 +6,7 @@
 
 #include <format>
 
-class CookedShaderBindingDiagnosticsOperations final
+class CookedShaderBindingFormatting final
 {
   public:
 	static const char* FormatResourceKindName(CookedShaderResourceKind kind) noexcept
@@ -165,7 +165,7 @@ class CookedShaderBindingDiagnosticsOperations final
 
 const char* CookedShaderBindingDiagnostics::FormatResourceKind(CookedShaderResourceKind kind) noexcept
 {
-	return CookedShaderBindingDiagnosticsOperations::FormatResourceKindName(kind);
+	return CookedShaderBindingFormatting::FormatResourceKindName(kind);
 }
 
 std::string CookedShaderBindingDiagnostics::Append(
@@ -177,9 +177,9 @@ std::string CookedShaderBindingDiagnostics::Append(
 {
 	message += std::format(
 	    " Expected runtime bindings=[{}]. Reflected {}/{} bindings=[{}].",
-	    CookedShaderBindingDiagnosticsOperations::FormatExpectedParameters(expectedParameters),
+	    CookedShaderBindingFormatting::FormatExpectedParameters(expectedParameters),
 	    CookedShaderBinaryFormatToString(requiredBinaryFormat),
 	    GetRuntimeShaderCodegenTarget(requiredBinaryFormat),
-	    CookedShaderBindingDiagnosticsOperations::FormatReflectedBindings(package, definition, requiredBinaryFormat));
+	    CookedShaderBindingFormatting::FormatReflectedBindings(package, definition, requiredBinaryFormat));
 	return message;
 }

@@ -7,7 +7,7 @@
 #include <sstream>
 #include <vector>
 
-class TextureCookRequestCodecOperations final
+class TextureCookRequestParsing final
 {
   public:
 	static constexpr std::string_view Header = "TextureCookRequests|1";
@@ -32,19 +32,19 @@ class TextureCookRequestCodecOperations final
 
 std::string_view TextureCookRequestCodec::GetHeader() noexcept
 {
-	return TextureCookRequestCodecOperations::Header;
+	return TextureCookRequestParsing::Header;
 }
 
 bool TextureCookRequestCodec::IsHeader(std::string_view line) noexcept
 {
-	return line == TextureCookRequestCodecOperations::Header;
+	return line == TextureCookRequestParsing::Header;
 }
 
 bool TextureCookRequestCodec::ParseLine(
     std::string_view line, TextureCookRequest& outRequest, std::string& outErrorMessage)
 {
 	const std::vector<std::string_view> fields = Strings::Split(line, '|');
-	if (fields.size() != TextureCookRequestCodecOperations::FieldCount)
+	if (fields.size() != TextureCookRequestParsing::FieldCount)
 	{
 		outErrorMessage = "Texture cook request entry is malformed.";
 		return false;
@@ -59,7 +59,7 @@ bool TextureCookRequestCodec::ParseLine(
 		outErrorMessage = "Texture cook request entry is missing a source path.";
 		return false;
 	}
-	if (!TextureCookRequestCodecOperations::ParseAssetId(fields[0], outRequest.assetId))
+	if (!TextureCookRequestParsing::ParseAssetId(fields[0], outRequest.assetId))
 	{
 		outErrorMessage = "Texture cook request entry has an invalid asset id '" + std::string(fields[0]) + "'.";
 		return false;
@@ -101,8 +101,8 @@ bool TextureCookRequestCodec::ParseLine(
 		return false;
 	}
 
-	outRequest.outputPath = TextureCookRequestCodecOperations::NormalizePath(fields[8]);
-	outRequest.sourcePath = TextureCookRequestCodecOperations::NormalizePath(fields[9]);
+	outRequest.outputPath = TextureCookRequestParsing::NormalizePath(fields[8]);
+	outRequest.sourcePath = TextureCookRequestParsing::NormalizePath(fields[9]);
 	if (!outRequest.IsValid())
 	{
 		outErrorMessage = "Texture cook request entry is invalid after parsing.";

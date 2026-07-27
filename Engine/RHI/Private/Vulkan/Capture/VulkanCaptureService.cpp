@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cstring>
 
-class VulkanCaptureServiceOperations final
+class VulkanCaptureCommands final
 {
   public:
 	static bool ResolveCaptureFormat(
@@ -162,7 +162,7 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	RhiBmpSourceFormat format = RhiBmpSourceFormat::Rgba8Unorm;
 	if (device == VK_NULL_HANDLE || physicalDevice == VK_NULL_HANDLE ||
 	    sourceImage == VK_NULL_HANDLE ||
-	    !VulkanCaptureServiceOperations::ResolveCaptureFormat(
+	    !VulkanCaptureCommands::ResolveCaptureFormat(
 	        request.SourceFormat,
 	        format,
 	        bytesPerPixel))
@@ -192,7 +192,7 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	VkMemoryRequirements requirements{};
 	vkGetBufferMemoryRequirements(device, pending->Buffer, &requirements);
 	const std::uint32_t memoryType =
-	    VulkanCaptureServiceOperations::FindMemoryType(
+	    VulkanCaptureCommands::FindMemoryType(
 	        physicalDevice,
 	        requirements.memoryTypeBits,
 	        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -266,7 +266,7 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 		return {};
 	}
 
-	VulkanCaptureServiceOperations::RecordTransition(
+	VulkanCaptureCommands::RecordTransition(
 	    pending->CommandBuffer,
 	    sourceImage,
 	    request.SourceState,
@@ -290,7 +290,7 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	    pending->Buffer,
 	    1,
 	    &copyRegion);
-	VulkanCaptureServiceOperations::RecordTransition(
+	VulkanCaptureCommands::RecordTransition(
 	    pending->CommandBuffer,
 	    sourceImage,
 	    ResourceState::CopySource,

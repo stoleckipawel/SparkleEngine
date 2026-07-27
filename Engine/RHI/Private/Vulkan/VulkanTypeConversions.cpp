@@ -310,13 +310,35 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 VkBufferCreateInfo VulkanTypeConversions::BuildBufferCreateInfo(const RhiBufferResourceDesc& desc, VkBufferUsageFlags extraUsage) noexcept
 {
 	VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | extraUsage;
+	switch (desc.Kind)
+	{
+		case RhiBufferKind::Vertex:
+			usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+			break;
+		case RhiBufferKind::Index:
+			usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+			break;
+		case RhiBufferKind::Structured:
+			usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			break;
+		case RhiBufferKind::Generic:
+		default:
+			if (desc.StrideInBytes > 0)
+			{
+				usage |=
+				    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			}
+			break;
+	}
 	if (desc.AllowUnorderedAccess)
 	{
 		usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 	}
-	if (desc.StrideInBytes > 0)
+	if (desc.AllowRayTracingBuildInput)
 	{
-		usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		usage |=
+		    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+		    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 	}
 
 	return VkBufferCreateInfo{

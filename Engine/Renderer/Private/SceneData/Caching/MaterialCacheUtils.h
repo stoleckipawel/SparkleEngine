@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Scene/Materials/MaterialDesc.h"
 #include "Scene/Materials/MaterialHandle.h"
 
 #include <cstddef>

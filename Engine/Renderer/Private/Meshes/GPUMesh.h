@@ -17,8 +17,10 @@
 #include <vector>
 
 class RenderCommandContext;
+class RenderCommandList;
 class RenderHardwareInterface;
 struct GPUMeshPreparedData;
+struct MeshData;
 
 struct GPUMeshBounds final
 {
@@ -40,6 +42,7 @@ class GPUMesh final
 
 	bool Upload(
 	    RenderHardwareInterface& renderHardwareInterface,
+	    RenderCommandList& commandList,
 	    GPUMeshPreparedData preparedData);
 
 	void Bind(RenderCommandContext& cmd) const noexcept;
@@ -68,6 +71,21 @@ class GPUMesh final
 	std::span<const MorphTargetDeltaData> GetMorphTargetDeltas() const noexcept { return m_morphTargets.GetDeltas(); }
 
   private:
+	bool CreateGeometryBuffers(
+	    RenderCommandList& commandList,
+	    const MeshData& meshData);
+	bool CreateVertexBuffer(
+	    RenderCommandList& commandList,
+	    const MeshData& meshData);
+	bool CreateIndexBuffer(
+	    RenderCommandList& commandList,
+	    const MeshData& meshData);
+	bool CreateDeformationBuffers(
+	    RenderCommandList& commandList,
+	    GPUMeshPreparedData& preparedData);
+	void CommitPreparedData(
+	    GPUMeshPreparedData&& preparedData);
+
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	GpuMeshHandle m_handle = {};
 	RhiOwnedResourceHandle m_vertexBuffer = {};

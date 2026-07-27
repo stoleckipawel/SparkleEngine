@@ -22,29 +22,86 @@ bool ShaderDebugArtifactWriter::Write(
 {
 	const std::filesystem::path bundleDirectory = rootDirectory / BuildBundleDirectoryName(package, stage, options, compiledStage);
 
-	if (!Files::TryWriteAllText(bundleDirectory / "compile-request.json", BuildCompileRequestJson(package, stage, options, compiledStage), outErrorMessage) ||
-		!Files::TryWriteAllText(bundleDirectory / "cache-info.json", BuildCacheInfoJson(options, compiledStage), outErrorMessage) ||
-		!Files::TryWriteAllText(bundleDirectory / "defines.json", Json::WriteStringArray(options.Defines), outErrorMessage) ||
-		!Files::TryWriteAllText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource, outErrorMessage) ||
-		!Files::TryWriteAllText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection), outErrorMessage) ||
-		!Files::TryWriteAllText(
-			bundleDirectory / "parameter-struct-match.json",
-			debugArtifacts.ParameterMatchReportJson,
-			outErrorMessage) ||
-		!Files::TryWriteAllText(
-			bundleDirectory / "disassembly.txt",
-			debugArtifacts.Disassembly.empty()
-				? std::string_view{"Disassembly capture unavailable for this backend/target in the current environment.\n"}
-				: std::string_view{debugArtifacts.Disassembly},
-			outErrorMessage) ||
-		!Files::TryWriteAllText(bundleDirectory / "compiler-stderr.txt", debugArtifacts.CompilerOutput, outErrorMessage) ||
-		!Files::TryWriteAllText(bundleDirectory / "compile-args.json", Json::WriteStringArray(debugArtifacts.CompileArguments), outErrorMessage))
+	if (!WriteCompileInputs(bundleDirectory, package, stage, options, compiledStage, outErrorMessage))
+	{
+		return false;
+	}
+
+	if (!WriteCompilerOutputs(bundleDirectory, debugArtifacts, compiledStage, outErrorMessage))
 	{
 		return false;
 	}
 
 	outErrorMessage.clear();
 	return true;
+}
+
+bool ShaderDebugArtifactWriter::WriteCompileInputs(
+	const std::filesystem::path& bundleDirectory,
+	const ShaderCookPackageDesc& package,
+	const ShaderCookStageDesc& stage,
+	const ShaderCompileOptions& options,
+	const CookedStageBuild& compiledStage,
+	std::string& outErrorMessage)
+{
+	if (!Files::TryWriteAllText(
+	        bundleDirectory / "compile-request.json",
+	        BuildCompileRequestJson(package, stage, options, compiledStage),
+	        outErrorMessage))
+	{
+		return false;
+	}
+
+	if (!Files::TryWriteAllText(bundleDirectory / "cache-info.json", BuildCacheInfoJson(options, compiledStage), outErrorMessage))
+	{
+		return false;
+	}
+
+	return Files::TryWriteAllText(bundleDirectory / "defines.json", Json::WriteStringArray(options.Defines), outErrorMessage);
+}
+
+bool ShaderDebugArtifactWriter::WriteCompilerOutputs(
+	const std::filesystem::path& bundleDirectory,
+	const ShaderDebugArtifactSet& debugArtifacts,
+	const CookedStageBuild& compiledStage,
+	std::string& outErrorMessage)
+{
+	if (!Files::TryWriteAllText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource, outErrorMessage))
+	{
+		return false;
+	}
+
+	if (!Files::TryWriteAllText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection), outErrorMessage))
+	{
+		return false;
+	}
+
+	if (!Files::TryWriteAllText(
+	        bundleDirectory / "parameter-struct-match.json",
+	        debugArtifacts.ParameterMatchReportJson,
+	        outErrorMessage))
+	{
+		return false;
+	}
+
+	const std::string_view disassembly =
+	    debugArtifacts.Disassembly.empty()
+	        ? std::string_view{"Disassembly capture unavailable for this backend/target in the current environment.\n"}
+	        : std::string_view{debugArtifacts.Disassembly};
+	if (!Files::TryWriteAllText(bundleDirectory / "disassembly.txt", disassembly, outErrorMessage))
+	{
+		return false;
+	}
+
+	if (!Files::TryWriteAllText(bundleDirectory / "compiler-stderr.txt", debugArtifacts.CompilerOutput, outErrorMessage))
+	{
+		return false;
+	}
+
+	return Files::TryWriteAllText(
+	    bundleDirectory / "compile-args.json",
+	    Json::WriteStringArray(debugArtifacts.CompileArguments),
+	    outErrorMessage);
 }
 
 std::string ShaderDebugArtifactWriter::BuildBundleDirectoryName(
@@ -115,7 +172,8 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 	{
 		const ShaderReflectionResourceBinding& binding = reflection.Bindings[index];
 		stream << std::format(
-		    "    {{ \"name\": {}, \"set\": {}, \"slot\": {}, \"arrayCount\": {}, \"sizeInBytes\": {}, \"readOnly\": {}, \"constantBufferIndex\": {} }}",
+		    "    {{ \"name\": {}, \"set\": {}, \"slot\": {}, \"arrayCount\": {}, \"sizeInBytes\": {}, "
+		    "\"readOnly\": {}, \"constantBufferIndex\": {} }}",
 		    Json::QuoteString(binding.Name),
 		    binding.Set,
 		    binding.Slot,

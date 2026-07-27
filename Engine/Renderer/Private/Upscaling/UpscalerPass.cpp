@@ -7,7 +7,7 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Upscaling/UpscalerProvider.h"
 
-class UpscalerPassOperations final
+class UpscalerPassRequirements final
 {
   public:
 	static bool HasRequiredInputs(const UpscalerPassResources& inputs) noexcept
@@ -23,7 +23,7 @@ void AddUpscalerPass(
     RenderViewportExtent outputExtent,
     const UpscalerPassResources& inputs)
 {
-	if (!UpscalerPassOperations::HasRequiredInputs(inputs))
+	if (!UpscalerPassRequirements::HasRequiredInputs(inputs))
 	{
 		return;
 	}

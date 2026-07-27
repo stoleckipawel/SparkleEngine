@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <cstring>
 
-class D3D12CaptureServiceOperations final
+class D3D12CaptureCommands final
 {
   public:
 	static bool TryMapCaptureFormat(
@@ -113,7 +113,7 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
 	RhiBmpSourceFormat captureFormat = RhiBmpSourceFormat::Rgba8Unorm;
 	if (sourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D ||
 	    sourceDesc.Width == 0 || sourceDesc.Height == 0 ||
-	    !D3D12CaptureServiceOperations::TryMapCaptureFormat(
+	    !D3D12CaptureCommands::TryMapCaptureFormat(
 	        sourceDesc.Format,
 	        captureFormat))
 	{
@@ -172,7 +172,7 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
 		return {};
 	}
 
-	D3D12CaptureServiceOperations::RecordTransition(
+	D3D12CaptureCommands::RecordTransition(
 	    pending->CommandList.Get(),
 	    sourceResource,
 	    request.SourceState,
@@ -191,7 +191,7 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
 	    0,
 	    &sourceLocation,
 	    nullptr);
-	D3D12CaptureServiceOperations::RecordTransition(
+	D3D12CaptureCommands::RecordTransition(
 	    pending->CommandList.Get(),
 	    sourceResource,
 	    ResourceState::CopySource,

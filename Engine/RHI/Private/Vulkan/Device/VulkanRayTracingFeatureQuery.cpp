@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-class VulkanRayTracingFeatureQueryOperations final
+class VulkanExtensionQuery final
 {
   public:
 	static bool IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept
@@ -39,16 +39,16 @@ VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevi
 	}
 
 	status.SupportsAccelerationStructureExtension =
-	    VulkanRayTracingFeatureQueryOperations::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+	    VulkanExtensionQuery::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 	status.SupportsRayTracingPipelineExtension =
-	    VulkanRayTracingFeatureQueryOperations::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-	status.SupportsRayQueryExtension = VulkanRayTracingFeatureQueryOperations::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_RAY_QUERY_EXTENSION_NAME);
+	    VulkanExtensionQuery::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+	status.SupportsRayQueryExtension = VulkanExtensionQuery::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_RAY_QUERY_EXTENSION_NAME);
 	status.SupportsDeferredHostOperationsExtension =
-	    VulkanRayTracingFeatureQueryOperations::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+	    VulkanExtensionQuery::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 	status.SupportsBufferDeviceAddressExtension =
-	    VulkanRayTracingFeatureQueryOperations::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+	    VulkanExtensionQuery::IsDeviceExtensionAvailable(physicalDevice, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 	status.SupportsPartitionedAccelerationStructureExtension =
-	    VulkanRayTracingFeatureQueryOperations::IsDeviceExtensionAvailable(physicalDevice, VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+	    VulkanExtensionQuery::IsDeviceExtensionAvailable(physicalDevice, VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 
 	VkPhysicalDeviceFeatures2 features{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
 	VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{

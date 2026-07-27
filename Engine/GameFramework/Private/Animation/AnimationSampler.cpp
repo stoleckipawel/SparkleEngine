@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <limits>
 
-class AnimationSamplerOperations final
+class AnimationKeyframeSampling final
 {
   public:
 	static DirectX::XMVECTOR LoadValue(const DirectX::XMFLOAT4& value) noexcept { return DirectX::XMLoadFloat4(&value); }
@@ -16,14 +16,20 @@ class AnimationSamplerOperations final
 	    float timeSeconds) noexcept
 	{
 		if (channel.keyframeCount <= 1u)
+		{
 			return 0;
+		}
+
 		const std::uint32_t first = channel.firstKeyframe;
 		const std::uint32_t lastSegment = channel.keyframeCount - 2u;
 		for (std::uint32_t segment = 0; segment <= lastSegment; ++segment)
 		{
 			if (timeSeconds <= clip.keyframes[first + segment + 1u].timeSeconds)
+			{
 				return segment;
+			}
 		}
+
 		return lastSegment;
 	}
 
@@ -45,13 +51,24 @@ namespace AnimationSampler
 	{
 		const std::uint32_t first = channel.firstKeyframe;
 		if (channel.keyframeCount == 0u || first >= clip.keyframes.size())
+		{
 			return DirectX::XMVectorZero();
+		}
+
 		if (channel.keyframeCount == 1u || channel.interpolation == Assets::CookedAnimationInterpolation::Step)
-			return AnimationSamplerOperations::LoadValue(clip.keyframes[first + AnimationSamplerOperations::FindKeyframeSegment(clip, channel, timeSeconds)].value);
-		const std::uint32_t segment = AnimationSamplerOperations::FindKeyframeSegment(clip, channel, timeSeconds);
+		{
+			const std::uint32_t keyframe = first + AnimationKeyframeSampling::FindKeyframeSegment(clip, channel, timeSeconds);
+			return AnimationKeyframeSampling::LoadValue(clip.keyframes[keyframe].value);
+		}
+
+		const std::uint32_t segment = AnimationKeyframeSampling::FindKeyframeSegment(clip, channel, timeSeconds);
 		const AnimationKeyframe& lhs = clip.keyframes[first + segment];
 		const AnimationKeyframe& rhs = clip.keyframes[first + segment + 1u];
-		return DirectX::XMVectorLerp(AnimationSamplerOperations::LoadValue(lhs.value), AnimationSamplerOperations::LoadValue(rhs.value), AnimationSamplerOperations::ComputeSegmentAlpha(lhs, rhs, timeSeconds));
+		const float alpha = AnimationKeyframeSampling::ComputeSegmentAlpha(lhs, rhs, timeSeconds);
+		return DirectX::XMVectorLerp(
+		    AnimationKeyframeSampling::LoadValue(lhs.value),
+		    AnimationKeyframeSampling::LoadValue(rhs.value),
+		    alpha);
 	}
 
 	DirectX::XMVECTOR SampleRotationChannel(
@@ -61,14 +78,24 @@ namespace AnimationSampler
 	{
 		const std::uint32_t first = channel.firstKeyframe;
 		if (channel.keyframeCount == 0u || first >= clip.keyframes.size())
+		{
 			return DirectX::XMQuaternionIdentity();
+		}
+
 		if (channel.keyframeCount == 1u || channel.interpolation == Assets::CookedAnimationInterpolation::Step)
+		{
+			const std::uint32_t keyframe = first + AnimationKeyframeSampling::FindKeyframeSegment(clip, channel, timeSeconds);
 			return DirectX::XMQuaternionNormalize(
-			    AnimationSamplerOperations::LoadValue(clip.keyframes[first + AnimationSamplerOperations::FindKeyframeSegment(clip, channel, timeSeconds)].value));
-		const std::uint32_t segment = AnimationSamplerOperations::FindKeyframeSegment(clip, channel, timeSeconds);
+			    AnimationKeyframeSampling::LoadValue(clip.keyframes[keyframe].value));
+		}
+
+		const std::uint32_t segment = AnimationKeyframeSampling::FindKeyframeSegment(clip, channel, timeSeconds);
 		const AnimationKeyframe& lhs = clip.keyframes[first + segment];
 		const AnimationKeyframe& rhs = clip.keyframes[first + segment + 1u];
+		const float alpha = AnimationKeyframeSampling::ComputeSegmentAlpha(lhs, rhs, timeSeconds);
 		return DirectX::XMQuaternionNormalize(DirectX::XMQuaternionSlerp(
-		    AnimationSamplerOperations::LoadValue(lhs.value), AnimationSamplerOperations::LoadValue(rhs.value), AnimationSamplerOperations::ComputeSegmentAlpha(lhs, rhs, timeSeconds)));
+		    AnimationKeyframeSampling::LoadValue(lhs.value),
+		    AnimationKeyframeSampling::LoadValue(rhs.value),
+		    alpha));
 	}
 }

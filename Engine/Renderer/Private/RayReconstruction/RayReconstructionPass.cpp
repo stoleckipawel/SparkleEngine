@@ -7,7 +7,7 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
 
-class RayReconstructionPassOperations final
+class RayReconstructionPassRequirements final
 {
   public:
 	static bool HasRequiredInputs(const RayReconstructionPassResources& inputs) noexcept
@@ -26,7 +26,7 @@ void AddRayReconstructionPass(
     RenderViewportExtent outputExtent,
     const RayReconstructionPassResources& providerInputs)
 {
-	if (!RayReconstructionPassOperations::HasRequiredInputs(providerInputs))
+	if (!RayReconstructionPassRequirements::HasRequiredInputs(providerInputs))
 	{
 		return;
 	}

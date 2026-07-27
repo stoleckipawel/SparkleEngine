@@ -8,6 +8,7 @@
 #include <span>
 
 class RenderHardwareInterface;
+class RenderCommandList;
 
 class GPUSkinInfluenceBuffer final
 {
@@ -22,6 +23,7 @@ class GPUSkinInfluenceBuffer final
 
 	bool Upload(
 	    RenderHardwareInterface& renderHardwareInterface,
+	    RenderCommandList& commandList,
 	    std::span<const VertexSkinInfluenceData> skinInfluences);
 	void Release() noexcept;
 

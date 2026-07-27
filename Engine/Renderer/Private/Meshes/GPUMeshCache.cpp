@@ -114,7 +114,8 @@ GpuMeshHandle GPUMeshCache::Request(
 	return handle;
 }
 
-void GPUMeshCache::UploadReadyMeshes()
+void GPUMeshCache::UploadReadyMeshes(
+    RenderCommandList& commandList)
 {
 	ConsumeCompletedPreparations();
 
@@ -136,6 +137,7 @@ void GPUMeshCache::UploadReadyMeshes()
 		    std::make_unique<GPUMesh>(request.Handle);
 		if (!gpuMesh->Upload(
 		        *m_renderHardwareInterface,
+		        commandList,
 		        std::move(*request.Prepared)))
 		{
 			(void)m_residency.MarkFailed(

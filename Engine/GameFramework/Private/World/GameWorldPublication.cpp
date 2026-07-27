@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-class GameWorldPublicationOperations final
+class WorldReadViewEntityIndex final
 {
   public:
 	template <typename T> static void EraseEntity(std::vector<T>& values, EntityId entity)
@@ -149,20 +149,20 @@ namespace ECS
 			changedEntities.erase(std::unique(changedEntities.begin(), changedEntities.end()), changedEntities.end());
 			for (EntityId entity : changedEntities)
 			{
-				GameWorldPublicationOperations::EraseEntity(next->Cameras, entity);
-				GameWorldPublicationOperations::EraseEntity(next->Lights, entity);
-				GameWorldPublicationOperations::EraseEntity(next->Meshes, entity);
+				WorldReadViewEntityIndex::EraseEntity(next->Cameras, entity);
+				WorldReadViewEntityIndex::EraseEntity(next->Lights, entity);
+				WorldReadViewEntityIndex::EraseEntity(next->Meshes, entity);
 				if (m_registry.Get<Camera>(entity) != nullptr)
 				{
-					GameWorldPublicationOperations::UpsertEntity(next->Cameras, BuildCameraReadData(entity));
+					WorldReadViewEntityIndex::UpsertEntity(next->Cameras, BuildCameraReadData(entity));
 				}
 				if (m_registry.Get<Light>(entity) != nullptr)
 				{
-					GameWorldPublicationOperations::UpsertEntity(next->Lights, BuildLightReadData(entity));
+					WorldReadViewEntityIndex::UpsertEntity(next->Lights, BuildLightReadData(entity));
 				}
 				if (m_registry.Get<MeshInstance>(entity) != nullptr)
 				{
-					GameWorldPublicationOperations::UpsertEntity(next->Meshes, BuildMeshReadData(entity));
+					WorldReadViewEntityIndex::UpsertEntity(next->Meshes, BuildMeshReadData(entity));
 				}
 			}
 		}

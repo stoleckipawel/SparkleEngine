@@ -16,7 +16,7 @@
 #include <set>
 #include <utility>
 
-class ShaderConsoleCommandsOperations final
+class ShaderRecookStatusPresentation final
 {
   public:
 	static ConsoleCommandSeverity ResolveRecookStatusSeverity(const std::string& status) noexcept
@@ -101,7 +101,7 @@ void ShaderConsoleCommands::ConnectEditor(UI& ui, ShaderRecookCoordinator& coord
 	    {
 		    if (EditorConsoleSystem* consoleSystem = ui.GetEditorConsoleSystem())
 		    {
-			    const ConsoleCommandSeverity severity = ShaderConsoleCommandsOperations::ResolveRecookStatusSeverity(status);
+			    const ConsoleCommandSeverity severity = ShaderRecookStatusPresentation::ResolveRecookStatusSeverity(status);
 			    consoleSystem->AppendOutput(ConsoleOutputRecord{.Severity = severity, .Text = std::move(status)});
 			    consoleSystem->OpenConsole();
 		    }

@@ -50,7 +50,9 @@ TextureLoadResult DdsTextureSourceLoader::Load(const std::filesystem::path& sour
 	return BuildLoadResult(fileBytes, header, dx10HeaderPtr, dxgiFormat, resolvedPath, outErrorMessage);
 }
 
-DdsTextureSourceLoader::DdsHeader DdsTextureSourceLoader::ReadHeader(const std::vector<std::uint8_t>& fileBytes, std::string& outErrorMessage)
+DdsTextureSourceLoader::DdsHeader DdsTextureSourceLoader::ReadHeader(
+    const std::vector<std::uint8_t>& fileBytes,
+    std::string& outErrorMessage)
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader))
 	{

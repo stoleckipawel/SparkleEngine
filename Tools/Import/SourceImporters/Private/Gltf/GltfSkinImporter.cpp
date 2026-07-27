@@ -12,7 +12,7 @@
 #include <limits>
 #include <utility>
 
-class GltfSkinImporterOperations final
+class GltfSkeletonHierarchy final
 {
   public:
 	static std::uint32_t FindJointParentIndex(const cgltf_skin* skin, const cgltf_node* jointNode) noexcept
@@ -101,7 +101,10 @@ ImportedSkeletonIndex GltfSkinImporter::ImportSkeleton(const cgltf_data* data, c
 		joint.name = jointNode != nullptr && jointNode->name != nullptr ? jointNode->name : std::format("Joint {}", jointIndex);
 		joint.sourceNodeIndex = jointNode != nullptr ? static_cast<std::uint32_t>(cgltf_node_index(data, jointNode))
 		                                             : (std::numeric_limits<std::uint32_t>::max)();
-		joint.parentJointIndex = GltfSkinImporterOperations::FindJointParentIndex(skin, jointNode);
+		joint.parentJointIndex =
+		    GltfSkeletonHierarchy::FindJointParentIndex(
+		        skin,
+		        jointNode);
 
 		const DirectX::XMMATRIX inverseBindMatrix =
 		    skin->inverse_bind_matrices != nullptr

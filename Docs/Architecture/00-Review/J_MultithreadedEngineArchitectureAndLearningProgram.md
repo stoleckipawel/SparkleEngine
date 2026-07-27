@@ -525,7 +525,7 @@ Use these dispositions consistently:
 | LC-13 | D3D12 worker recording uses leased upload pages rather than the historical shared atomic bump allocator | **HOT-PATH SHARING CLOSED in Prompt 18.** Exclusive page ranges remove the contended atomic and GPU-token retirement governs reuse | retain lease ownership; audit only actual publication atomics in Prompt 24 | ranges never overlap, reset-before-retire is rejected, and workers do not contend on one offset |
 | LC-14 | [D3D12GpuMemoryAllocator.cpp](../../../Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator.cpp) and [VulkanGpuMemoryAllocator.cpp](../../../Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator.cpp) lock allocation-record, diagnostic, and pending-release state | These locks protect real bookkeeping/lifetime state, but snapshots and destruction must not widen a frame-hot critical section or return unstable pointers | **KEEP + HARDEN** in Prompts 16, 18/19, and 24: render-owner mutation where possible, copy diagnostic aggregates under lock then format/use after unlock, token-gated release, no worker-visible mutable record pointer | delayed-GPU and concurrent diagnostic stress; no external/provider callback while locked; returned handles/records have an explicit lifetime |
 | LC-15 | [VulkanRhi.cpp](../../../Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp) protects validation callback messages with `m_diagnosticMessagesMutex` | Driver callbacks may be concurrent, so synchronization is required; consuming or logging while holding the callback lock can create re-entry and stalls | **KEEP + HARDEN** in Prompts 00 and 24: callback only appends bounded owned data; owner swaps/drains then processes outside the lock | concurrent callback/drain stress has bounded memory, no re-entry deadlock, and preserves validation messages |
-| LC-16 | Renderer/RHI lifecycle retains one explicit initial-upload flush, exact graphics/presentation-token waits for swap-chain recreation, frame-slot token waits, and one coordinator-owned final shutdown drain | **CLOSED through Prompt 22.** Shader/provider/frame-graph/scene changes retire by submission state; nested child teardown and routine data-path device-idle calls are deleted | retain only the named boundaries; wrapper methods are mechanisms and may not acquire new routine callers | call-site census stays classified; ordinary frames, reload, scene reset, settings, and provider replacement emit no device idle |
+| LC-16 | Renderer/RHI lifecycle retains exact graphics/presentation-token waits for swap-chain recreation, frame-slot token waits, and one coordinator-owned final shutdown drain | **CLOSED before Prompt 23.** Shader/provider/frame-graph/scene changes retire by submission state; nested child teardown, routine data-path drains, and the obsolete empty startup-command-list flush are deleted | retain only the named boundaries; wrapper methods are mechanisms and may not acquire new routine callers | call-site census stays classified; construction, ordinary frames, reload, scene reset, settings, and provider replacement emit no device idle |
 | LC-17 | [LauncherGuiApp.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/App/LauncherGuiApp.cpp) launches a generation-specific shadow copy; [LauncherMainWindowOperations.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindowOperations.cpp) launches the selected editor/runtime product | **TIMING DEBT CLOSED in Prompt 04:** the 150 ms deletion/copy retry is gone. Both remaining `startDetached` calls intentionally transfer lifetime to a replacement launcher or independent selected product; neither escapes owned operation work | Prompt 22 restart/application-close stress remains the falsifier; stale generation cleanup is storage maintenance, not synchronization |
 | LC-18 | D3D12 fence and Vulkan timeline waits are queue-owner operations with development deadlines and submission diagnostics | GPU completion may block only a declared owner boundary; a worker or silent infinite development wait is invalid | **OWNER AFFINITY/TIMEOUT CLOSED in Prompt 13; FRAME-RESOURCE TOKEN POLICY remains Prompts 18/19/28.** Shipping preserves native unbounded semantics; development fails with the exact queue/submission after 30 seconds | repository audit finds no GPU wait on a SparkleTasks worker; delayed/hung GPU test identifies the token |
 | LC-19 | Dear ImGui's upstream D3D12/Vulkan renderer backends own texture creation/update staging. Their current implementations synchronously settle the upload queue (`WaitForSingleObject` on D3D12 and `vkQueueWaitIdle` on Vulkan) when a transferred UI texture is created or updated | The Prompt 14 packet boundary prevents live producer pointers and performs no steady-state pixel transfer after texture status becomes `OK`, but the wrapped backend still has a rare initialization/update drain. It is not a SparkleTasks wait and must not expand into routine frame work | **KEEP BOUNDED / MEASURE in Prompt 23.** RenderThread is the sole caller; texture bytes are packet-owned; release is render-owned. Replace the upstream upload path only if representative font/texture update evidence shows material pacing cost | first-frame and DPI/font-rebuild capture identifies exact calls and frequency; steady-state frames contain no texture upload packet or queue drain |
@@ -563,12 +563,14 @@ This closure census distinguishes reasons from wrapper declarations/forwarders. 
 | `RendererSystemRoot::RefreshImageProviders` | render owner moves the active provider stack into a last-use submission-state generation before constructing its replacement | token-retired rare update; no device idle |
 | `FramePipeline::RefreshFrameExecution` | render owner moves the old graph/frame contexts into `RetiredFrameExecution` and polls exact submission completion | token-retired graph update; no unconditional drain |
 | D3D12/Vulkan `ResizeSwapChain` | backend owner waits the latest graphics/presentation submission and performs the one WSI recreation boundary | exact queue-token wait; no nested device-wide drain |
-| `RendererSystemRoot::PostLoad -> CloseExecuteAndFlushCurrentFrame` | one initial resource-upload settlement after renderer construction | explicit initialization boundary; never a routine frame/data update |
 | D3D12/Vulkan frame-resource reuse | recording context waits only the exact token protecting the reused frame slot/page/pool | bounded reuse wait; never a SparkleTasks worker wait |
 | `RendererExecutionContext` shutdown through backend `SettleForShutdown` | top-level render owner settles before child resource destruction | one final shutdown drain; child destructors do not independently drain |
 | launcher/editor/cooker process completion | owning synchronous host or `BlockingIo` task waits through the cancellable Core child-process contract | scoped operation completion; no frame-worker blocking |
 
-The retained resize wait demonstrates the review rule: a global drain was replaced by the narrow completion condition actually required by swap-chain recreation. Wrapper names alone do not establish legitimacy; the call chain, owner, waited token, and frequency do.
+The removed startup flush and retained resize wait demonstrate the review rule. Renderer construction records no upload work:
+default textures enter the staged residency path during a real frame, while samplers and frame-graph resources require no
+command-list upload settlement. Swap-chain recreation still waits for the narrow presentation completion condition it actually
+requires. Wrapper names alone do not establish legitimacy; the call chain, owner, waited token, and frequency do.
 
 This ledger is a verified closure snapshot, not permission to ignore later discoveries. Later work must keep zero **unclassified** primitives; it must not force the repository to zero justified mutexes or atomics. The quality target is zero accidental ownership, zero duplicate scheduling systems, zero unexplained blocking, and zero lock-held arbitrary callbacks.
 
@@ -4938,7 +4940,14 @@ The execution dimension is:
 | `M4` | threaded one-ahead | `false` | bounded one-frame CPU lead, same-plan serial recording |
 | `M5` | threaded one-ahead | `true` | bounded one-frame CPU lead plus eligible parallel chunk recording |
 
-Each mode runs with `task.SerialExecution=true`, then `task.WorkerCount=1`, `2`, and representative `N`. Zero/one-worker rows are truthful serial fallbacks because parallel chunk recording requires at least two FrameCritical workers. GPU timestamp collection is a separately gated serial-recording row: `r.Diagnostics.GpuTiming=true` intentionally selects the single-command-object path until timestamp-query allocation is safe across recording contexts. GPU event markers remain command-list local in all modes.
+Each mode first runs with `task.SerialExecution=true`, then with explicit lane tuples through
+`task.FrameCriticalWorkerCount`, `task.BackgroundWorkerCount`, and `task.BlockingIoWorkerCount`. Sweep the
+FrameCritical lane at 1, 2, and representative `N` while holding Background and BlockingIo constant, then sweep those
+lanes independently for their owning workloads. The serial flag is the truthful zero-worker reference; one
+FrameCritical worker is the scheduled serial fallback because parallel chunk recording requires at least two
+FrameCritical workers. GPU timestamp collection is a separately gated serial-recording row:
+`r.Diagnostics.GpuTiming=true` intentionally selects the single-command-object path until timestamp-query allocation is
+safe across recording contexts. GPU event markers remain command-list local in all modes.
 
 The backend/feature dimension is:
 
@@ -5669,8 +5678,10 @@ Task controls live in the dedicated private `Concurrency/TaskRuntimeCVars.cpp` s
 
 | Control | Default | First semantic owner |
 |---|---:|---|
-| `task.WorkerCount` | `0` | `ApplicationTaskRuntime`; 0 selects one Background worker until Prompt 25 establishes measured host/rendering capacity, explicit 1/2/N remain experiments |
-| `task.SerialExecution` | `false` | `ApplicationTaskRuntime`; true selects the zero-worker deterministic serial oracle |
+| `task.FrameCriticalWorkerCount` | `1` | `ApplicationTaskRuntime`; explicit 1/2/N frame-critical and recording experiments |
+| `task.BackgroundWorkerCount` | `1` | `ApplicationTaskRuntime`; independent level/cook/recook CPU-work experiments |
+| `task.BlockingIoWorkerCount` | `1` | `ApplicationTaskRuntime`; independent bounded blocking-I/O experiments |
+| `task.SerialExecution` | `false` | `ApplicationTaskRuntime`; true overrides all lane counts and selects the zero-worker deterministic serial oracle |
 | `r.ThreadedRenderer` | `false` | Prompt 13 owner transition |
 | `r.FrameGraph.ParallelRecording` | `true` | Prompt 20 recording-mode comparison; set false for the same-plan serial oracle |
 | `r.RenderPipelineDepth` | `0` | Prompt 13; initially only synchronous 0 and bounded-ahead 1 |

@@ -8,7 +8,7 @@
 
 #include <string>
 
-class FrameHistoryOperations final
+class ReservoirFrameHistory final
 {
   public:
 	static FrameGraphReservoirHistoryHandles DeclareReservoirHistory(
@@ -51,8 +51,16 @@ FrameHistoryResourceLayout DeclareFrameHistoryResources(
 	    .ReferenceLighting = builder.CreateTextureHistory(
 	        FrameGraphTextureDesc::CreateColor(
 	            "ReferenceLighting", renderExtent.Width, renderExtent.Height, PixelFormat::R32G32B32A32_Float)),
-	    .DirectLightReservoir = FrameHistoryOperations::DeclareReservoirHistory(builder, renderExtent, "DirectLightReservoir"),
-	    .RestirIndirectReservoir = FrameHistoryOperations::DeclareReservoirHistory(builder, renderExtent, "RestirIndirectReservoir")};
+	    .DirectLightReservoir =
+	        ReservoirFrameHistory::DeclareReservoirHistory(
+	            builder,
+	            renderExtent,
+	            "DirectLightReservoir"),
+	    .RestirIndirectReservoir =
+	        ReservoirFrameHistory::DeclareReservoirHistory(
+	            builder,
+	            renderExtent,
+	            "RestirIndirectReservoir")};
 }
 
 void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept
@@ -64,8 +72,12 @@ void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLa
 
 void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept
 {
-	FrameHistoryOperations::InvalidateReservoir(frameGraph, history.DirectLightReservoir);
-	FrameHistoryOperations::InvalidateReservoir(frameGraph, history.RestirIndirectReservoir);
+	ReservoirFrameHistory::InvalidateReservoir(
+	    frameGraph,
+	    history.DirectLightReservoir);
+	ReservoirFrameHistory::InvalidateReservoir(
+	    frameGraph,
+	    history.RestirIndirectReservoir);
 }
 
 FrameHistoryValidity ResolveFrameHistoryValidity(
@@ -75,6 +87,12 @@ FrameHistoryValidity ResolveFrameHistoryValidity(
 	return FrameHistoryValidity{
 	    .Exposure = frameGraph.IsTextureHistoryValid(history.Exposure),
 	    .ReferenceLighting = frameGraph.IsTextureHistoryValid(history.ReferenceLighting),
-	    .DirectLightReservoir = FrameHistoryOperations::IsReservoirValid(frameGraph, history.DirectLightReservoir),
-	    .RestirIndirectReservoir = FrameHistoryOperations::IsReservoirValid(frameGraph, history.RestirIndirectReservoir)};
+	    .DirectLightReservoir =
+	        ReservoirFrameHistory::IsReservoirValid(
+	            frameGraph,
+	            history.DirectLightReservoir),
+	    .RestirIndirectReservoir =
+	        ReservoirFrameHistory::IsReservoirValid(
+	            frameGraph,
+	            history.RestirIndirectReservoir)};
 }

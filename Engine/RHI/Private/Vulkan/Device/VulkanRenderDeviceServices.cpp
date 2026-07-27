@@ -58,7 +58,6 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
-	void CloseExecuteAndFlushCurrentFrame() noexcept override;
 
   private:
 	VulkanRenderDeviceServices() noexcept = default;
@@ -474,13 +473,4 @@ void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
 	m_currentFrameIndex = (m_currentFrameIndex + 1u) % RhiFrameConstants::FramesInFlight;
 	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
-}
-
-void VulkanRenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
-{
-	if (m_hasAcquiredBackBuffer)
-	{
-		SubmitFrame();
-	}
-	m_renderHardwareInterface->WaitForIdle();
 }

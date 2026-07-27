@@ -405,7 +405,8 @@ void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	RenderCommandList& graphicsCommandList = backend.GetCurrentGraphicsCommandList();
-	m_systems->GetGpuMeshCache().UploadReadyMeshes();
+	m_systems->GetGpuMeshCache()
+	    .UploadReadyMeshes(graphicsCommandList);
 	UploadPendingSceneTextures(backend, graphicsCommandList);
 
 	m_systems->GetRenderCamera().Update(m_renderInputConsumer->GetDynamicData().Camera);

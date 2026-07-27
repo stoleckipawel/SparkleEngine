@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <string>
 
-class GltfMorphTargetImporterOperations final
+class GltfMorphTargetMetadata final
 {
   public:
 	static const cgltf_accessor* FindMorphAttribute(const cgltf_morph_target& target, cgltf_attribute_type type) noexcept
@@ -54,17 +54,32 @@ std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
 	for (cgltf_size targetIndex = 0; targetIndex < primitive.targets_count; ++targetIndex)
 	{
 		const cgltf_morph_target& sourceTarget = primitive.targets[targetIndex];
-		const cgltf_accessor* positions = GltfMorphTargetImporterOperations::FindMorphAttribute(sourceTarget, cgltf_attribute_type_position);
-		const cgltf_accessor* normals = GltfMorphTargetImporterOperations::FindMorphAttribute(sourceTarget, cgltf_attribute_type_normal);
-		const cgltf_accessor* tangents = GltfMorphTargetImporterOperations::FindMorphAttribute(sourceTarget, cgltf_attribute_type_tangent);
+		const cgltf_accessor* positions =
+		    GltfMorphTargetMetadata::FindMorphAttribute(
+		        sourceTarget,
+		        cgltf_attribute_type_position);
+		const cgltf_accessor* normals =
+		    GltfMorphTargetMetadata::FindMorphAttribute(
+		        sourceTarget,
+		        cgltf_attribute_type_normal);
+		const cgltf_accessor* tangents =
+		    GltfMorphTargetMetadata::FindMorphAttribute(
+		        sourceTarget,
+		        cgltf_attribute_type_tangent);
 		if (positions == nullptr && normals == nullptr && tangents == nullptr)
 		{
 			continue;
 		}
 
 		ImportedMorphTarget importedTarget;
-		importedTarget.name = GltfMorphTargetImporterOperations::BuildMorphTargetName(mesh, targetIndex);
-		importedTarget.defaultWeight = GltfMorphTargetImporterOperations::ReadMeshDefaultWeight(mesh, targetIndex);
+		importedTarget.name =
+		    GltfMorphTargetMetadata::BuildMorphTargetName(
+		        mesh,
+		        targetIndex);
+		importedTarget.defaultWeight =
+		    GltfMorphTargetMetadata::ReadMeshDefaultWeight(
+		        mesh,
+		        targetIndex);
 		importedTarget.deltas.resize(vertexCount);
 		for (std::uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 		{

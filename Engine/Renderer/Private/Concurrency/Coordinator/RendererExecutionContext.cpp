@@ -20,7 +20,6 @@ RendererExecutionContext::RendererExecutionContext(
 	m_pipeline = std::make_unique<FramePipeline>(
 	    *m_systems,
 	    executionConfig.EnableUiRenderPackets);
-	m_systems->PostLoad();
 }
 
 RendererExecutionContext::~RendererExecutionContext() noexcept

@@ -62,7 +62,6 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept override;
 	void SubmitFrame() noexcept;
 	void AdvanceFrameInFlight() noexcept;
-	void CloseExecuteAndFlushCurrentFrame() noexcept;
 
   private:
 	RenderDeviceServices() noexcept;

@@ -9,7 +9,7 @@
 #include <cstring>
 #include <utility>
 
-class CookedMeshAssetBuilderOperations final
+class CookedMeshAssetTranslation final
 {
   public:
 	static Assets::CookedAssetId BuildMeshAssetId(std::string_view sceneAssetId, std::size_t meshIndex) noexcept
@@ -59,7 +59,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 		const ImportedMeshPrimitive& importedPrimitive = importResult.scene.meshPrimitives[primitiveIndex];
 		const ImportedMeshGeometry& meshGeometry = importedPrimitive.geometry;
 		CookedMeshAssetBuild meshAsset;
-		meshAsset.assetId = CookedMeshAssetBuilderOperations::BuildMeshAssetId(sceneAssetId, primitiveIndex);
+		meshAsset.assetId = CookedMeshAssetTranslation::BuildMeshAssetId(sceneAssetId, primitiveIndex);
 		meshAsset.displayName = importedPrimitive.displayName;
 		meshAsset.sourcePath = importResult.scene.sourcePath;
 		meshAsset.assetKind = meshGeometry.HasSkinInfluences() ? Assets::CookedMeshAssetKind::Skeletal : Assets::CookedMeshAssetKind::Static;
@@ -82,7 +82,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 
 		for (const ImportedSkinInfluence& skinInfluence : meshGeometry.deformation.skinInfluences)
 		{
-			meshAsset.skinInfluences.push_back(CookedMeshAssetBuilderOperations::BuildCookedSkinInfluence(skinInfluence));
+			meshAsset.skinInfluences.push_back(CookedMeshAssetTranslation::BuildCookedSkinInfluence(skinInfluence));
 		}
 		meshAsset.indices = meshGeometry.indices;
 		if (meshAsset.IsSkeletal())
@@ -96,7 +96,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 				}
 
 				Assets::CookedMeshMorphTargetRecord record;
-				CookedMeshAssetBuilderOperations::CopyMorphTargetName(morphTarget.name, record.name);
+				CookedMeshAssetTranslation::CopyMorphTargetName(morphTarget.name, record.name);
 				record.defaultWeight = morphTarget.defaultWeight;
 				record.firstDelta = static_cast<std::uint32_t>(meshAsset.morphTargetDeltas.size());
 				record.deltaCount = static_cast<std::uint32_t>(morphTarget.deltas.size());
@@ -104,7 +104,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 				meshAsset.morphTargetDeltas.reserve(meshAsset.morphTargetDeltas.size() + morphTarget.deltas.size());
 				for (const ImportedMorphTargetDelta& delta : morphTarget.deltas)
 				{
-					meshAsset.morphTargetDeltas.push_back(CookedMeshAssetBuilderOperations::BuildCookedMorphTargetDelta(delta));
+					meshAsset.morphTargetDeltas.push_back(CookedMeshAssetTranslation::BuildCookedMorphTargetDelta(delta));
 				}
 			}
 		}

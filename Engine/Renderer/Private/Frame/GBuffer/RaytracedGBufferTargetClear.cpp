@@ -7,7 +7,7 @@
 
 #include <array>
 
-class RaytracedGBufferTargetClearOperations final
+class RaytracedGBufferTargetSet final
 {
   public:
 	static auto GetRaytracedGBufferTargets(const GBufferRenderTargets& targets) noexcept
@@ -30,14 +30,14 @@ void AddRaytracedGBufferTargetClearPass(FrameGraphBuilder& builder, const GBuffe
 	    EFrameGraphPassKind::Raster,
 	    [targets](PassResourceBuilder& resourceBuilder)
 	    {
-		    for (const FrameGraphTextureHandle target : RaytracedGBufferTargetClearOperations::GetRaytracedGBufferTargets(targets))
+		    for (const FrameGraphTextureHandle target : RaytracedGBufferTargetSet::GetRaytracedGBufferTargets(targets))
 		    {
 			    resourceBuilder.Write(target, ResourceUsage::RenderTarget, "RaytracedGBufferTarget");
 		    }
 	    },
 	    [targets](PassExecutionContext& context)
 	    {
-		    for (const FrameGraphTextureHandle target : RaytracedGBufferTargetClearOperations::GetRaytracedGBufferTargets(targets))
+		    for (const FrameGraphTextureHandle target : RaytracedGBufferTargetSet::GetRaytracedGBufferTargets(targets))
 		    {
 			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }

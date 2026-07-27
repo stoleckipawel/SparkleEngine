@@ -3,10 +3,13 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "Meshes/GPUMeshPreparation.h"
+#include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Resources/RhiUploadService.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshData.h"
 
+#include <span>
 #include <utility>
 
 static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GPUMesh");
@@ -36,6 +39,7 @@ GPUMesh::~GPUMesh() noexcept
 
 bool GPUMesh::Upload(
     RenderHardwareInterface& renderHardwareInterface,
+    RenderCommandList& commandList,
     GPUMeshPreparedData preparedData)
 {
 	if (!preparedData.IsValid())
@@ -43,36 +47,180 @@ bool GPUMesh::Upload(
 		return false;
 	}
 
+	m_renderHardwareInterface = &renderHardwareInterface;
 	const MeshData& meshData =
 	    preparedData.Source.GetResource()->GetMeshData();
-	m_renderHardwareInterface = &renderHardwareInterface;
-	if (!m_renderHardwareInterface->GetResourceService().CreateVertexBuffer(
-	        meshData.GetVertexData(),
-	        meshData.GetVertexBufferSize(),
-	        static_cast<std::uint32_t>(sizeof(VertexData)),
-	        L"GPUMesh_VertexBuffer",
-	        m_vertexBuffer,
-	        m_vertexBufferView))
+	if (!CreateGeometryBuffers(
+	        commandList,
+	        meshData))
 	{
-		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create vertex buffer");
 		return false;
 	}
-	if (!m_renderHardwareInterface->GetResourceService().CreateIndexBuffer(
-	        meshData.GetIndexData(),
-	        meshData.GetIndexBufferSize(),
-	        RhiIndexFormat::UInt32,
-	        L"GPUMesh_IndexBuffer",
-	        m_indexBuffer,
-	        m_indexBufferView))
+
+	if (!CreateDeformationBuffers(
+	        commandList,
+	        preparedData))
 	{
-		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create index buffer");
-		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_vertexBuffer);
-		m_vertexBuffer = {};
+		return false;
+	}
+
+	CommitPreparedData(
+	    std::move(preparedData));
+	return true;
+}
+
+bool GPUMesh::CreateGeometryBuffers(
+    RenderCommandList& commandList,
+    const MeshData& meshData)
+{
+	if (!CreateVertexBuffer(
+	        commandList,
+	        meshData))
+	{
+		SPDLOG_LOGGER_ERROR(
+		    g_gpuMeshLogger,
+		    "[GPUMesh] Failed to create vertex buffer");
+		return false;
+	}
+
+	if (!CreateIndexBuffer(
+	        commandList,
+	        meshData))
+	{
+		SPDLOG_LOGGER_ERROR(
+		    g_gpuMeshLogger,
+		    "[GPUMesh] Failed to create index buffer");
 		return false;
 	}
 
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
+	return true;
+}
+
+bool GPUMesh::CreateVertexBuffer(
+    RenderCommandList& commandList,
+    const MeshData& meshData)
+{
+	RhiResourceService& resources =
+	    m_renderHardwareInterface->GetResourceService();
+	m_vertexBuffer = resources.CreateBufferResource(
+	    RhiBufferResourceDesc{
+	        .SizeInBytes =
+	            meshData.GetVertexBufferSize(),
+	        .StrideInBytes =
+	            sizeof(VertexData),
+	        .Kind = RhiBufferKind::Vertex,
+	        .AllowRayTracingBuildInput = true},
+	    ResourceState::CopyDest,
+	    RhiMemoryCategory::Mesh,
+	    RhiMemoryResidencyClass::DeviceLocal,
+	    L"GPUMesh_VertexBuffer");
+	if (!m_vertexBuffer)
+	{
+		return false;
+	}
+
+	const std::span<const VertexData> vertices{
+	    meshData.vertices};
+	if (!m_renderHardwareInterface->GetUploadService()
+	         .UploadBuffer(
+	             commandList,
+	             m_vertexBuffer,
+	             std::as_bytes(vertices),
+	             ResourceState::Common,
+	             L"GPUMesh_VertexUpload"))
+	{
+		resources.ReleaseOwnedResource(
+		    m_vertexBuffer);
+		m_vertexBuffer = {};
+		return false;
+	}
+
+	m_vertexBufferView = RhiVertexBufferView{
+	    .BufferLocation =
+	        resources.GetResourceGpuVirtualAddress(
+	            m_vertexBuffer),
+	    .SizeInBytes = static_cast<std::uint32_t>(
+	        meshData.GetVertexBufferSize()),
+	    .StrideInBytes =
+	        sizeof(VertexData)};
+	return m_vertexBufferView.BufferLocation != 0;
+}
+
+bool GPUMesh::CreateIndexBuffer(
+    RenderCommandList& commandList,
+    const MeshData& meshData)
+{
+	RhiResourceService& resources =
+	    m_renderHardwareInterface->GetResourceService();
+	m_indexBuffer = resources.CreateBufferResource(
+	    RhiBufferResourceDesc{
+	        .SizeInBytes =
+	            meshData.GetIndexBufferSize(),
+	        .Kind = RhiBufferKind::Index,
+	        .AllowRayTracingBuildInput = true},
+	    ResourceState::CopyDest,
+	    RhiMemoryCategory::Mesh,
+	    RhiMemoryResidencyClass::DeviceLocal,
+	    L"GPUMesh_IndexBuffer");
+	if (!m_indexBuffer)
+	{
+		return false;
+	}
+
+	const std::span<const std::uint32_t> indices{
+	    meshData.indices};
+	if (!m_renderHardwareInterface->GetUploadService()
+	         .UploadBuffer(
+	             commandList,
+	             m_indexBuffer,
+	             std::as_bytes(indices),
+	             ResourceState::Common,
+	             L"GPUMesh_IndexUpload"))
+	{
+		resources.ReleaseOwnedResource(
+		    m_indexBuffer);
+		m_indexBuffer = {};
+		return false;
+	}
+
+	m_indexBufferView = RhiIndexBufferView{
+	    .BufferLocation =
+	        resources.GetResourceGpuVirtualAddress(
+	            m_indexBuffer),
+	    .SizeInBytes = static_cast<std::uint32_t>(
+	        meshData.GetIndexBufferSize()),
+	    .Format = RhiIndexFormat::UInt32};
+	return m_indexBufferView.BufferLocation != 0;
+}
+
+bool GPUMesh::CreateDeformationBuffers(
+    RenderCommandList& commandList,
+    GPUMeshPreparedData& preparedData)
+{
+	if (!m_skinInfluences.Upload(
+	        *m_renderHardwareInterface,
+	        commandList,
+	        preparedData.GpuSkinInfluences))
+	{
+		SPDLOG_LOGGER_ERROR(
+		    g_gpuMeshLogger,
+		    "[GPUMesh] Failed to create skin influence resources");
+		return false;
+	}
+
+	return m_morphTargets.Upload(
+	    *m_renderHardwareInterface,
+	    commandList,
+	    std::move(
+	        preparedData.MorphTargetDeltas),
+	    preparedData.MorphTargetCount);
+}
+
+void GPUMesh::CommitPreparedData(
+    GPUMeshPreparedData&& preparedData)
+{
 	m_localBounds = GPUMeshBounds{
 	    .Min = preparedData.LocalBoundsMin,
 	    .Max = preparedData.LocalBoundsMax,
@@ -83,23 +231,6 @@ bool GPUMesh::Upload(
 	    std::move(preparedData.RayTracingIndices);
 	m_cpuSkinInfluences =
 	    std::move(preparedData.SkinInfluences);
-
-	if (!m_skinInfluences.Upload(
-	        renderHardwareInterface,
-	        preparedData.GpuSkinInfluences))
-	{
-		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create skin influence resources");
-		return false;
-	}
-	if (!m_morphTargets.Upload(
-	        renderHardwareInterface,
-	        std::move(preparedData.MorphTargetDeltas),
-	        preparedData.MorphTargetCount))
-	{
-		return false;
-	}
-
-	return true;
 }
 
 void GPUMesh::Bind(RenderCommandContext& cmd) const noexcept

@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-class D3D12ExternalFeatureInteropCapabilitiesOperations final
+class D3D12ExternalFeatureAdapterIdentity final
 {
   public:
 	static std::string NarrowAdapterDescription(std::wstring_view value)
@@ -58,7 +58,7 @@ RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabiliti
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
 	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::D3D12NativeDevice;
-	capabilities.Adapter = D3D12ExternalFeatureInteropCapabilitiesOperations::BuildD3D12AdapterIdentity(rhi);
+	capabilities.Adapter = D3D12ExternalFeatureAdapterIdentity::BuildD3D12AdapterIdentity(rhi);
 	capabilities.ExposesNativeDevice = rhi != nullptr && rhi->GetDevice() != nullptr;
 	capabilities.ExposesNativeGraphicsQueue = rhi != nullptr && rhi->GetCommandQueue() != nullptr;
 	capabilities.ExposesNativeGraphicsCommandList = hasGraphicsCommandList;

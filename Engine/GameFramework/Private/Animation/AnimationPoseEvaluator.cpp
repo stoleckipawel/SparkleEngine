@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-class AnimationPoseEvaluatorOperations final
+class AnimationPoseComposition final
 {
   public:
 	static DirectX::XMMATRIX Compose(const ECS::AnimationJointTransform& transform) noexcept
@@ -54,7 +54,7 @@ namespace AnimationPoseEvaluator
 		}
 		for (std::size_t jointIndex = 0; jointIndex < localTransforms.size(); ++jointIndex)
 		{
-			DirectX::XMMATRIX model = AnimationPoseEvaluatorOperations::Compose(localTransforms[jointIndex]);
+			DirectX::XMMATRIX model = AnimationPoseComposition::Compose(localTransforms[jointIndex]);
 			const std::uint32_t parent = skeleton.Resource->joints[jointIndex].parentJointIndex;
 			if (parent < modelSpaceTransforms.size())
 				model *= DirectX::XMLoadFloat4x4(&modelSpaceTransforms[parent]);

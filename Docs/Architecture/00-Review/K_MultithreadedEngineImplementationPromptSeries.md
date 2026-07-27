@@ -567,9 +567,9 @@ those paths. Current Prompt 23 workload and capture gates replace the historical
 
 The exact owned-source query in J found 139 declarations/call sites across 61 files and classifies every result by current owner
 and invariant. No owned `std::future`, `std::async`, `QThread`, Qt pool, or detached task remains. The only detached launches are
-the replacement launcher and selected standalone product. D3D12/Vulkan idle call chains are limited to final shutdown, one
-initial upload settlement, exact frame-slot reuse, and swap-chain recreation. Wrapped Dear ImGui texture creation/update has an
-explicit rare-boundary measurement disposition in LC-19.
+the replacement launcher and selected standalone product. D3D12/Vulkan waits are limited to final shutdown, exact frame-slot
+reuse, and swap-chain recreation; the obsolete empty startup-command-list flush was deleted before Prompt 23. Wrapped Dear
+ImGui texture creation/update has an explicit rare-boundary measurement disposition in LC-19.
 
 Current review removed an incomplete Vulkan native-queue mutex: every logical queue is RenderThread-owned, while direct native
 consumers could not participate in that mutex. Logger creation and level propagation now copy or construct outside the registry
@@ -1342,7 +1342,13 @@ Prompt 09 implementation record (2026-07-19):
 
 The destructive transition has been removed. `LevelManager` now captures request, world, document, and catalog generations on the owner; `SceneLoadExecutionService` owns one Document `TaskScope`; `SceneLoadTaskGraph` assigns manifest/referenced-file reads to `BlockingIo` and cooked mesh/material/skeleton/animation decode plus blueprint construction to `Background`; and `SceneLoadPackageBuilder` validates references and assembles request-indexed partial packages in stable order. A superseding request cancels the unpublished scope and cannot clear or replace the active world. The owner consumes the settled package, rejects stale generations, constructs a complete staged `GameWorldState` plus resource generation, and swaps only after construction succeeds. Lifecycle events remain owner-thread calls and failed/cancelled work emits no unload transition.
 
-`RuntimeApplication` now owns the one `ApplicationTaskRuntime`. Level loading and editor shader recooking receive that executor and parent scope; the shader recook service's private executor was deleted. `task.SerialExecution` remains the deterministic oracle. Until Prompt 25 supplies machine/workload measurements, the application uses one FrameCritical, one BlockingIo, and one Background worker; `task.WorkerCount` provides explicit 1/2/N Background experiments without baking in a `hardware_concurrency()-N` policy. No loader pool, feature thread, callback bus, task panel, or diagnostic stream was added.
+`RuntimeApplication` now owns the one `ApplicationTaskRuntime`. Level loading and editor shader recooking receive that
+executor and parent scope; the shader recook service's private executor was deleted. `task.SerialExecution` remains the
+deterministic zero-worker oracle. Until Prompt 25 supplies machine/workload measurements, the application uses one
+FrameCritical, one Background, and one BlockingIo worker. `task.FrameCriticalWorkerCount`,
+`task.BackgroundWorkerCount`, and `task.BlockingIoWorkerCount` provide independent explicit experiments without baking
+in a `hardware_concurrency()-N` policy. No loader pool, feature thread, callback bus, task panel, or diagnostic stream
+was added.
 
 The old public `SceneMaterials`, `SceneTextures`, `SceneSkeletons`, and `SceneMaterialVariants` owners were deleted. `GameWorldResourceStores` privately groups focused material, texture, skeleton, and material-variant stores. Materials now carry a store generation in both `MaterialHandle` and `MaterialSnapshot`; payload-local generation-zero indices are translated to generation-validated runtime handles during staged construction. Editor material-variant UI uses narrow `GameWorld` name/count/apply operations and cannot retain or mutate a resource vector. Renderer access remains immutable `GameWorldSnapshot` publication.
 
@@ -1981,6 +1987,47 @@ Positive patterns: staged state machine, immutable generation, later-frame readi
 Forbidden: synchronous load in frame path, mixed shader generations, raw resource pointer in packet, immediate unload after cancellation.
 ~~~
 
+### Prompt 16 current-state completion record — 2026-07-27
+
+Status: **source- and focused-build complete; native runtime evidence remains user-owned**. The prerequisite audit found that textures already used `AssetResidency` and SparkleTasks, while meshes still performed lazy CPU derivation and host-upload buffer creation from `RenderWorld` delta application. That path is deleted. `GPUMeshCache` now owns one bounded asynchronous generation pipeline: `ImmutableRenderMeshHandle` publication assigns a stable `GpuMeshHandle`, a Background task builds bounds/ray-tracing/skinning/morph payloads without RHI access, the render coordinator records device-local vertex/index/structured-buffer uploads through the existing `RhiUploadService`, and the handle becomes resolvable only after its graphics submission token completes. A create is omitted until resident; a replacement keeps its previous static data and GPU mesh until the pending generation is resident. Destroyed, superseded, cancelled, and failed requests leave the world reference set and retire through last-use tokens.
+
+The audit also removed the mutable `Mesh::GetMeshData` lazy cache and unused dirty API. Cooked mesh geometry is immutable at construction, so background preparation cannot race a first reader or mutate an asset through a `const Mesh`. Texture residency now synchronizes to the current texture-table generation, cancels/removes unreferenced generations, and advances one binding revision only when the active binding set changes. Superseded textures remain alive until `MaterialCacheManager` successfully publishes descriptors for that revision; a failed material rebuild continues publishing the previous valid material/texture generation. The former renderer-construction `PostLoad -> CloseExecuteAndFlushCurrentFrame -> WaitForIdle` route and its unconsumed public/backend API were deleted. Device idle remains only at final backend shutdown; resize uses the single backend-owned presentation-token/swap-chain drain.
+
+PGE reconciliation:
+
+| Requirement | Disposition and evidence |
+|---|---|
+| `PGE-01` | advance: asset, render-owner upload, residency, material binding, and retirement responsibilities form one explicit pipeline |
+| `PGE-02` | preserve: raster, classic TLAS, PTLAS, morph, skinning, and ray-hit data resolve the same resident `GpuMeshHandle` |
+| `PGE-03` | preserve: later neural/provider integrations keep the same immutable generation and token boundary |
+| `PGE-04` | not applicable: no model training or inference workload is changed |
+| `PGE-05` | advance: static mesh buffers are device-local and uploaded once per accepted generation rather than permanently read from host-upload memory |
+| `PGE-06` | advance: D3D12 and Vulkan implement the same coordinator-only buffer staging contract with backend-correct copy/barrier/resource-use tracking |
+| `PGE-07` | advance: lazy const mutation, synchronous `GetOrUpload`, broad cache clear, and startup idle APIs are deleted |
+| `PGE-08` | advance: immutable CPU derivation, device-local static geometry, bounded pending bytes, and token retirement match CPU/GPU ownership |
+| `PGE-09` | preserve: bounds, morph-before-skinning, vertex/index interpretation, and RT geometry math are unchanged |
+| `PGE-10` | advance: cold preparation/upload is separated from steady resident frames, making Prompt 23 warm/cold captures meaningful |
+| `PGE-11` | preserve: AI-assisted edits were independently traced through cache, world, preparation, raster, BLAS, both upload backends, and destruction order |
+| `PGE-12` | not applicable: no driver implementation or kernel-mode interface is added |
+| `PGE-13` | advance: this record names authority, layout, failure policy, deleted paths, and remaining runtime falsifiers |
+| `PGE-14` | advance: the profile-contaminating host-upload/static-load path was closed before performance tuning |
+| `PGE-15` | advance: old-generation survival and coordinator-only upload are enforced without a second scheduler, asset subsystem, or device-idle workaround |
+
+Rule 13 access inventory:
+
+| Data path | Authority, layout, identity, and deterministic transform | Exact precedent and falsifier |
+|---|---|---|
+| immutable mesh generation -> prepared payload | `GPUMeshCache` owns request state; SparkleTasks owns execution; `GPUMeshPreparedData` owns contiguous ray vertices/indices, CPU/GPU skin records, morph deltas, and bounds | J staged-generation contract plus NVIDIA NVRHI/Donut immutable-resource ownership; falsified by worker RHI access, asset mutation, completion-order publication, or a `GetOrUpload` call |
+| prepared payload -> device-local buffers | render coordinator records `RhiUploadService::UploadBuffer`; RHI owns destination and staging resources; vertex/index/structured kind and RT-build-input intent are explicit | existing texture staging contract and D3D12/Vulkan copy/barrier guidance catalogued in J; falsified by `HostUpload` mesh destinations, a worker recording upload, or resident publication before the submission token |
+| pending/active mesh -> render proxy | `{asset ID, content generation}` selects one request and stable `GpuMeshHandle`; current and pending handles are retained from persistent proxies and sorted/deduplicated before retirement | Prompt 12 immutable handles and Prompt 15 stable slots; falsified by vector-position identity, an update dropping the previous resident mesh on failure, or an unreferenced generation remaining active |
+| texture table -> decoded/uploaded/active texture | texture-table generation drives one synchronization pass; BlockingIo and Background lanes publish immutable decoded data; active bindings use path identity plus generation | existing `AssetResidency` state machine and Prompt 09 latest-generation-wins policy; falsified by frame-worker wait, stale activation, unbounded removed textures, or immediate unload after cancellation |
+| texture activation -> material descriptor generation | binding revision changes only on active-set mutation; old textures are queued until a successful local material build acknowledges that revision | NVRHI descriptor/resource lifetime and Prompt 15 token retirement; falsified by a failed rebuild clearing scene materials, releasing a texture still referenced by the old material generation, or mixed descriptor generations in one frame |
+| logical removal -> physical release | cache/world removal is immediate; `AssetResidency`, resource services, and descriptor services defer physical reclamation from queue-specific last-use tokens | J LC-08 and Prompt 15 slot/resource retirement; falsified by early reuse under delayed completion or failure to reclaim after every token completes |
+
+Rule 12/16 reconciliation: `GPUMeshPreparation.*` owns CPU-only immutable derivation, `GPUMeshCache.*` owns mesh request/residency/active lookup, `GPUMesh.*` owns one GPU mesh, `TextureManager.*` owns texture generations and binding retirement, `MaterialCacheManager.*` owns atomic material descriptor publication, and `RhiUploadService` plus backend implementations own staging/copy/barrier behavior. Frame orchestration only polls, records ready uploads, and publishes submission tokens. No anonymous namespace, function-local type, generic `*Operations` helper, public residency diagnostic product, or compatibility adapter was added.
+
+Deletion ledger: synchronous `GPUMeshCache::GetOrUpload`, `GPUMeshCache::Clear`, lazy mutable mesh geometry/dirty state, `GPUMeshUploadDescBuilder`, host-upload mesh vertex/index/skinning/morph destinations, failed-rebuild material clearing, unbounded removed scene textures, renderer `PostLoad`, and `CloseExecuteAndFlushCurrentFrame` are deleted. Focused DebugEditor builds of `SparkleGameFramework`, `SparkleRHI` (D3D12 and Vulkan), and `SparkleRenderer` pass. Reordered completion, budget pressure, failed material allocation, delayed GPU completion, and native validation/visual parity remain runtime-only falsifiers under the user's manual-validation policy; no source-stage Prompt 16 gap is known.
+
 ## Prompt 17 — Decompose Renderer Preparation into a Task DAG
 
 Target CL Title: `SparkleRenderer: Decompose Renderer Preparation into a Task DAG`
@@ -2040,7 +2087,7 @@ Forbidden: tiny task per object, shared vector push/mutex, parallel lazy cache f
 
 ### Prompt 17 implementation record — 2026-07-26
 
-Status: **source-complete; runtime acceptance is user-owned**. Prompt 10 is complete and Prompt 15 is source-complete under the explicit prerequisite policy above. `RenderPreparationGraph` replaces the deleted `RenderSceneDataBuilder` entry point and compiles one bounded-capacity SparkleTasks topology for transform/bounds, visibility/material classification, skinning copies, morph copies, light classification, deterministic merge/batching, and distinct RT work-plan publication. Cache, texture, material, mesh upload, and CVar resolution happen once on the render owner in `RenderPreparationInputResolver` before submission. Every range task reads the immutable run input and writes an exclusive preallocated span; no task waits, fills a lazy cache, mutates an asset, broadcasts an event, pushes into a shared vector, records RHI commands, or mutates `FrameGraphBuilder`. `RenderPreparationMerger` publishes stable raster order and the BLAS/classic-TLAS/PTLAS work records after the explicit join. The existing Tasks-private profiler records the named nodes' queue delay and execution interval, so no renderer DAG-report or diagnostics product was added.
+Status: **source-complete; runtime acceptance is user-owned**. Prompt 10 is complete and Prompt 15 is source-complete under the explicit prerequisite policy above. `RenderPreparationGraph` replaces the deleted `RenderSceneDataBuilder` entry point and compiles one bounded-capacity SparkleTasks topology for transform/bounds, visibility/material classification, skinning copies, morph copies, light classification, deterministic merge/batching, and distinct RT work-plan publication. Asynchronous mesh CPU preparation settles outside the frame DAG; the render owner records ready device-local uploads before preparation, and `RenderPreparationInputResolver` only resolves already-resident mesh/material/texture handles and CVar policy before submission. Every range task reads the immutable run input and writes an exclusive preallocated span; no task waits, fills a lazy cache, mutates an asset, broadcasts an event, pushes into a shared vector, records RHI commands, or mutates `FrameGraphBuilder`. `RenderPreparationMerger` publishes stable raster order and the BLAS/classic-TLAS/PTLAS work records after the explicit join. The existing Tasks-private profiler records the named nodes' queue delay and execution interval, so no renderer DAG-report or diagnostics product was added.
 
 PGE and workload reconciliation:
 
@@ -2068,7 +2115,7 @@ Rule 13 access inventory:
 
 | Data path | Authority, ownership, and layout | Stable identity and deterministic transform | Exact precedent and measured falsifier |
 |---|---|---|---|
-| `RenderWorld` + `RenderFrameDynamicData` -> resolved objects | render owner resolves immutable proxy/asset handles, material slots, GPU mesh handles, and previous transforms before tasks; `RenderPreparationRun` retains reusable vector capacity | inputs and retained previous transforms are sorted by `RenderObjectId` and joined by a linear merge, never vector-position identity | J renderer-preparation fan-out and MT-02/MT-19/MT-28/MT-31; falsified by a task reaching `GetOrUpload`, a completion-order append, or a different serial/worker object order |
+| `RenderWorld` + `RenderFrameDynamicData` -> resolved objects | render owner resolves immutable proxy/asset handles, material slots, resident GPU mesh handles, and previous transforms before tasks; `RenderPreparationRun` retains reusable vector capacity | persistent `GpuSceneSlot` indexes previous transforms and each slot verifies `RenderObjectId`; compact draw order is never temporal identity | J renderer-preparation fan-out and MT-02/MT-19/MT-28/MT-31; falsified by a task requesting/uploading an asset, a completion-order append, or a different serial/worker object order |
 | local bounds + transforms -> world bounds | `RenderObjectPreparation` reads one input range and writes the matching `PreparedRenderObject` range | eight-corner affine transform followed by min/max reduction in input index order | DirectXMath transform contract already used by PTLAS; falsified by transformed-bounds mismatch or PTLAS recomputing a different bound |
 | world bounds + view -> raster relevance | visibility tasks read transformed bounds only after the transform group completes; output is one boolean/classification/distance per object | six frustum planes; opaque/alpha/transparent classification; `RenderObjectId` resolves equal sort keys | existing `Frustum::ExtractFromViewProjection`; falsified by an off-frustum raster slot, missing on-frustum object, or completion-order-dependent visible set |
 | dynamic skinning/morph -> flat deformation arrays | extraction publishes object-sorted rows; serial preparation preassigns offsets; range tasks copy exclusive matrix/weight spans; history commits only after successful graph settlement | `RenderObjectId` merge walk, ascending offsets, current/previous arrays with identical layout | Prompt 10 animation output storage and Prompt 15 GPU-scene ring; falsified by joint/morph overlap, per-task allocation/push, asset mutation, or temporal mismatch |
@@ -2695,6 +2742,65 @@ Forbidden: keep old path “for safety,” new diagnostic subsystem, unowned pac
 | cooked outputs → staged generation → published files | typed cook builds own candidate bytes; file publication owns commit/rollback | one staged path per final path, stable asset ID/path key, all-or-nothing deterministic file-set publication, cleanup on failure | J transactional generation-publication rule; successful cooks left zero `.cook-generation`, `.stage`, or `.tmp` residue |
 | render/RHI registries → recording workers | render/RHI owner is authoritative; workers acquire immutable resource/descriptor read views and exclusive recording leases | handle-indexed read tables, per-lease command/descriptor/upload state, token-gated reclamation | J NVRHI/nvpro recording precedents; repository scan finds no worker registry mutation or shared recording-hot allocator path |
 | mesh/deformation inputs → `RayTracingBlasGeometryBuilder` → BLAS geometry binding | mesh and deformation arrays are authoritative; the dedicated builder derives equality, skeletal classification, deformed positions, buffer sizing, and `RhiRayTracingBufferBinding`; the BLAS cache owns resources and reuse | stable mesh/resource identity, deterministic vertex-index traversal, reusable cache-owned position scratch, one resource-plus-offset binding, backend-derived address, command-list resource retention through submission | J NVRHI explicit-resource and D3D12/Vulkan lifetime precedent; zero/retired resources fail the RHI contract, no duplicate resource/address fields remain, and repeated warm calls require no position-vector allocation |
+
+### Prompt 00-22 target-state profiling prerequisite audit — 2026-07-27
+
+Decision: **source-ready for Prompt 23 profiling; native runtime evidence remains user-owned**. This audit compares the
+current repository with the enduring Prompt 00-22 target state. It does not require obsolete intermediate states to be
+recreated. In particular, Prompt 01's temporary no-worker state is superseded by Prompts 02-04, the serial render-preparation
+state is superseded by Prompts 17-20, and the former controller, scene-facade, snapshot, full-rebuild, single-recording-context,
+and direct editor/render routes are deletion targets rather than compatibility requirements.
+
+| Prompt range | Enduring target-state acceptance criteria | Current evidence and disposition |
+|---|---|---|
+| 00 | current ownership/thread-role inventory, canonical vocabulary, deterministic launch controls, no unclassified synchronization or wait path | **Pass for source/build.** The current-state census is recorded above. Owned source contains no future/async subsystem, detached engine work, rejected render-thread alias, or anonymous namespace. Retained native waits are shutdown, exact frame-slot reuse, or the named swap-chain recreation boundary. Interactive backend evidence is manual. |
+| 01-04 | one deterministic SparkleTasks contract, serial oracle, fixed 0/1/2/N executor, structured scopes/events/cancellation, real tool consumers, no feature-local pool | **Pass for source/build.** One public task contract and one application-owned executor remain. Graph topology, run state, scheduling, scopes, algorithms, and profiling mechanisms have private owners. Serial/worker semantics and tool fan-out have the completion evidence recorded above; the current SparkleTasks and dependent renderer build passes. |
+| 05-10 | generational `EntityId`, narrow typed queries, frozen structural epochs and commands, deterministic transform/journal publication, transactional scene loading, ECS-aware system hazards, exclusive animation outputs, deterministic merge | **Pass for source/build.** ECS storage, query, command, journal, loading-generation, game-system graph, camera/motion, pose, morph, skinning, transform, and extraction paths are the sole product route. Legacy controllers, mutable scene facades, shared task-side pushes, asset mutation, and the `SceneAnimation*` implementation family are absent. Runtime navigation and visual inspection remain manual. |
+| 11 | generation-pinned immutable editor model, `EntityId` selection, semantic commands and bounded transactions, one scoped operation service, no panel-held world/ECS pointer | **Pass for source/build.** Panels consume immutable models and publish commands; the world applies them at its boundary. Selection, undo/redo, operation lifetime, and late-result rejection have named private owners. Interactive widget and close-during-operation behavior remains manual. |
+| 12 | immutable game-to-render contract, separate `RenderObjectId`, owned structural/dynamic packets, sequenced deltas, stable immutable asset handles, replay without `GameWorld` lifetime | **Pass for source/build.** Renderer-owned source has no `GameWorld` or ECS dependency and no raw snapshot path. Structural identity, dynamic arrays, temporal conventions, level generation data, and serial proxy application have one packet route. Native visual parity remains manual. |
+| 13-14 | bounded render ownership/queue, copied UI data, stable viewport/capture products, sequenced commands, no live ImGui/editor pointer or direct renderer mutation across the boundary | **Pass for source/build.** `RenderCoordinator` is the render owner, the bounded queue applies producer backpressure, and a pending input is submitted before replacement. UI vertices/indices/commands are packet-owned; viewport and capture products have explicit IDs/lifetime. Dock/resize/minimize and delayed-render validation remain manual. |
+| 15 | persistent proxy/GPU-scene slots, structural deltas, coalesced dirty ranges, token retirement, separate raster/classic-TLAS/PTLAS identity, no full-scene rebuild/reupload product path | **Pass for source/build.** Stable `GpuSceneSlot` identity, geometric persistent storage, frame-indexed dynamic rings, deterministic changed ranges, and last-use retirement are authoritative. Static warm scenes no longer rebuild the full GPU scene. Upload-byte, fragmentation, and GPU-time measurements are Prompt 23 evidence. |
+| 16 | bounded asynchronous residency, immutable prepared generations, render-owner upload, token-gated publication/retirement, previous-valid-generation preservation, no routine idle | **Pass for source/focused build.** The final material gap found by this audit is closed: mesh bounds/deformation/RT preparation runs on SparkleTasks, device-local mesh buffers upload through the existing RHI upload service, and handles resolve only after the graphics token completes. Mesh assets no longer mutate lazy caches through const reads. Texture/material replacement publishes atomically and preserves the previous binding set on failure. The empty startup flush/idle route is deleted. Reload/eviction stress remains manual. |
+| 17 | explicit render-preparation DAG, immutable run context, disjoint range outputs, deterministic merge, small-work serial policy, no hidden nested waits | **Pass for source/build.** Transform/bounds, visibility, deformation, lighting, merge, and RT planning have named capabilities and explicit graph edges. Range tasks use exclusive preallocated output; stable slots, not packed vector positions or completion order, carry identity. Prompt 23 owns crossover tuning. |
+| 18-20 | backend-owned D3D12/Vulkan recording contexts, coordinator acquisition/submission, compiler-derived recording groups, worker recording through SparkleTasks, serial fallback, no authored per-pass scheduling policy | **Pass for source/build.** Frame-graph hazards and native constraints derive legal recording groups. The coordinator leases exclusive backend contexts/pages, workers only record immutable groups, and the coordinator submits in deterministic order. Both backend libraries compile. Driver validation and serial/parallel capture comparison remain manual. |
+| 21 | advanced raster/RT/temporal/provider/capture behavior preserved through the parallel recording boundary; unsupported cases fall back explicitly | **Pass for source/build.** Feature resource declarations, provider generations, queue ownership, RT bindings, temporal history/reset data, and capture paths are retained without a second executor or pass-authored recording policy. The D3D12/Vulkan feature matrix is manual evidence and is not misreported as measured. |
+| 22 | one coherent product path, deterministic transactional tools/packages, closure of legacy paths and aliases, smaller public surface, no default diagnostic/report subsystem | **Pass for source/build/tool evidence.** The integration record above documents the catalog-driven cook, two identical 526-file publications, deletion ledger, boundary build, and current owned-source census. Native lifecycle stress remains manual under the established policy. |
+
+#### Largest profiling-invalidating gaps found and closed
+
+1. **Synchronous and mutable mesh preparation:** `RenderWorld` could trigger lazy CPU geometry derivation and immediate GPU
+   construction while applying a delta. Mesh geometry is now immutable at construction; CPU preparation is bounded background
+   work; render upload and residency publication are separate token-ordered stages.
+2. **Host-visible static geometry:** mesh vertex, index, skin-influence, and morph-target destinations used upload memory, which
+   would contaminate CPU/GPU characterization and misrepresent the intended product path. They now use device-local buffers with
+   explicit staging copy and final-state barriers on D3D12 and Vulkan.
+3. **Non-atomic material/texture replacement:** a changed texture set could be retired before the corresponding material
+   descriptor generation published. Binding revisions now commit only after successful material publication; failure retains
+   the previous coherent set.
+4. **Routine device idle:** renderer construction flushed and waited for an empty initialization command list. That path and its
+   public/backend wrappers are deleted. Remaining idles are final shutdown; swap-chain recreation has one named queue-drain
+   boundary.
+5. **Frame publication ambiguity:** staging a second game/render input now submits the previous pending input first. The bounded
+   queue blocks the producer at capacity rather than silently dropping or completion-order merging frames.
+6. **Profiling the wrong amount of work:** the old full-scene GPU build/upload, packed-vector temporal identity, controller/world
+   traversal, mutable animation assets, and synchronous mesh-cache miss route are absent. Persistent slots, dirty ranges,
+   immutable packets, system/query ranges, and device-local resident assets are the measured product path.
+
+#### Prompt 23 entry gate
+
+The repository is ready to collect performance evidence when the owner's manual smoke gate confirms D3D12 and Vulkan startup,
+viewport resize/minimize/recreate, representative level load and reload, camera/Showcase movement, raster and supported
+classic-TLAS/PTLAS modes, temporal/provider reset, UI, and capture. These are behavior and driver observations, not missing
+production implementation. Captures taken before asset residency reaches its warm state must be labelled cold; steady-state
+captures must verify zero structural delta/static upload for an unchanged scene. Prompt 23 must measure this current target path
+and must not restore a superseded serial, snapshot, full-rebuild, controller, or synchronous-residency state merely to satisfy a
+historical intermediate criterion.
+
+Current automated evidence: DebugEditor `SparkleRenderer` builds after the residency/device-local upload closure, including
+`SparkleTasks`, `SparkleGameFramework`, RHI common, D3D12, Vulkan, Streamline providers, and renderer shader registrations.
+DebugEditor `ShowcaseEditor` and `ShowcaseRuntime` also build, and `architecture_boundary_check` passes with no new violation.
+No production validator, benchmark-only API, timing stream, compatibility adapter, or fallback full-build path was added to
+obtain this result.
 
 ## Prompt 23 — Initial Full-System Performance Characterization and Tuning
 

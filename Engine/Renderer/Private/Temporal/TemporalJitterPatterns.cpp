@@ -4,7 +4,7 @@
 
 #include <random>
 
-class TemporalJitterPatternsOperations final
+class TemporalJitterGeneration final
 {
   public:
 static constexpr float kNormalizedOffsetRange = 0.5f;
@@ -73,16 +73,16 @@ DirectX::XMFLOAT2 TemporalJitterPatterns::GeneratePatternSample(Pattern pattern,
 	switch (pattern)
 	{
 	case Pattern::MSAA:
-		return TemporalJitterPatternsOperations::CalculateMSAAJitter(frameIndex);
+		return TemporalJitterGeneration::CalculateMSAAJitter(frameIndex);
 	case Pattern::Halton:
 	{
 		const uint32_t haltonFrameIndex = (frameIndex % kHaltonFrameWindow) + 1u;
-		return TemporalJitterPatternsOperations::CalculateHaltonJitter(haltonFrameIndex);
+		return TemporalJitterGeneration::CalculateHaltonJitter(haltonFrameIndex);
 	}
 	case Pattern::R2:
-		return TemporalJitterPatternsOperations::CalculateR2Jitter(frameIndex);
+		return TemporalJitterGeneration::CalculateR2Jitter(frameIndex);
 	case Pattern::WhiteNoise:
-		return TemporalJitterPatternsOperations::CalculateWhiteNoiseJitter(frameIndex);
+		return TemporalJitterGeneration::CalculateWhiteNoiseJitter(frameIndex);
 	case Pattern::None:
 		return {};
 	default:

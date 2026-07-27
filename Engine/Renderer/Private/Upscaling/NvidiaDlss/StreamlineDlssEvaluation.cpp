@@ -9,7 +9,7 @@
 
 #include <sl_dlss.h>
 
-class StreamlineDlssEvaluationOperations final
+class StreamlineDlssRequirements final
 {
   public:
 	static bool HasRequiredNativeResources(const UpscalerEvaluationDesc& evaluation) noexcept
@@ -43,7 +43,7 @@ bool EvaluateStreamlineDlssFrame(
     sl::ViewportHandle viewport,
     const UpscalerEvaluationDesc& evaluation)
 {
-	if (!StreamlineDlssEvaluationOperations::HasRequiredNativeResources(evaluation))
+	if (!StreamlineDlssRequirements::HasRequiredNativeResources(evaluation))
 	{
 		return false;
 	}

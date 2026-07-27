@@ -6,21 +6,18 @@
 class SPARKLE_ENGINE_API Mesh
 {
   public:
-	virtual ~Mesh() = default;
+	virtual ~Mesh();
 	Mesh(const Mesh&) = delete;
 	Mesh& operator=(const Mesh&) = delete;
-	Mesh(Mesh&&) noexcept = default;
-	Mesh& operator=(Mesh&&) noexcept = default;
+	Mesh(Mesh&&) noexcept;
+	Mesh& operator=(Mesh&&) noexcept;
 
-	void MarkGeometryDirty() noexcept;
-	bool IsGeometryDirty() const noexcept { return m_bGeometryDirty; }
-	const MeshData& GetMeshData() const;
+	const MeshData& GetMeshData() const noexcept;
 
   protected:
-	Mesh() noexcept = default;
-	virtual void GenerateGeometry(MeshData& outMeshData) const = 0;
+	explicit Mesh(MeshData&& meshData) noexcept;
+	explicit Mesh(const MeshData& meshData);
 
   private:
-	mutable MeshData m_meshData;
-	mutable bool m_bGeometryDirty = true;
+	MeshData m_meshData;
 };

@@ -20,6 +20,14 @@ enum class RhiIndexFormat : std::uint8_t
 	UInt32 = 1,
 };
 
+enum class RhiBufferKind : std::uint8_t
+{
+	Generic,
+	Vertex,
+	Index,
+	Structured,
+};
+
 struct RhiVertexBufferView
 {
 	RhiGpuVirtualAddress BufferLocation = 0;
@@ -78,7 +86,9 @@ struct RhiBufferResourceDesc
 {
 	std::uint64_t SizeInBytes = 0;
 	std::uint32_t StrideInBytes = 0;
+	RhiBufferKind Kind = RhiBufferKind::Generic;
 	bool AllowUnorderedAccess = false;
+	bool AllowRayTracingBuildInput = false;
 	bool operator==(const RhiBufferResourceDesc&) const = default;
 };
 

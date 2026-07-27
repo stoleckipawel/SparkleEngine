@@ -28,6 +28,8 @@
 
 #include <filesystem>
 
+class QGridLayout;
+
 namespace SparkleLauncher
 {
 	struct LauncherOperationDescriptor;
@@ -125,7 +127,20 @@ namespace SparkleLauncher
 		    const QVector<QPair<QString, QString>>& options,
 		    const QString& currentValue,
 		    void (LauncherSettings::*setter)(const QString&));
+		static bool UsesBuildEnvironmentStatus(const QString& operationId);
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
+		void AddPackageOptions(QVBoxLayout& layout);
+		void AddShaderCookOptions(QVBoxLayout& layout);
+		void AddCleanOptions(QVBoxLayout& layout, const QString& operationId);
+		void AddCleanScopeRow(
+		    QGridLayout& grid,
+		    const CleanScopeUiOption& scope,
+		    const QString& activeProjectId,
+		    const QStringList& selectedScopes,
+		    int row,
+		    int column,
+		    QVector<QCheckBox*>& scopeBoxes);
+		void UpdateCleanScopeSetting(const QVector<QCheckBox*>& scopeBoxes);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);

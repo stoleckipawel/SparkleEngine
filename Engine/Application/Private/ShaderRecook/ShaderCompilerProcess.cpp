@@ -11,7 +11,7 @@
 #include <sstream>
 #include <system_error>
 
-class ShaderCompilerProcessOperations final
+class ShaderCompilerCommandPresentation final
 {
   public:
 	static std::string BuildDisplayCommand(
@@ -85,7 +85,7 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(
 	}
 
 	result.ExecutablePath = executablePath;
-	result.CommandLine = ShaderCompilerProcessOperations::BuildDisplayCommand(executablePath, arguments);
+	result.CommandLine = ShaderCompilerCommandPresentation::BuildDisplayCommand(executablePath, arguments);
 	Process::ChildProcessResult process = Process::ChildProcess::Run(Process::ChildProcessRequest{
 	    .ExecutablePath = executablePath,
 	    .Arguments = std::move(arguments),

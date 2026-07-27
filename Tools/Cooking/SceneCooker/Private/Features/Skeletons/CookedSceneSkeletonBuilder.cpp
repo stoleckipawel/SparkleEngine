@@ -9,7 +9,7 @@
 #include <string>
 #include <utility>
 
-class CookedSceneSkeletonBuilderOperations final
+class CookedSkeletonTranslation final
 {
   public:
 	static Assets::CookedAssetId BuildSkeletonAssetId(std::string_view sceneAssetId, std::uint32_t sourceSkinIndex)
@@ -25,7 +25,10 @@ class CookedSceneSkeletonBuilderOperations final
 	}
 };
 
-void CookedSceneSkeletonBuilder::BuildSkeletons(const SourceImportResult& importResult, std::string_view sceneAssetId, CookedSceneBuild& outBuild)
+void CookedSceneSkeletonBuilder::BuildSkeletons(
+	const SourceImportResult& importResult,
+	std::string_view sceneAssetId,
+	CookedSceneBuild& outBuild)
 {
 	outBuild.outputs.skeletonAssets.clear();
 	outBuild.manifest.skeletonRefs.clear();
@@ -40,7 +43,7 @@ void CookedSceneSkeletonBuilder::BuildSkeletons(const SourceImportResult& import
 		}
 
 		CookedSkeletonAssetBuild skeletonAsset;
-		skeletonAsset.assetId = CookedSceneSkeletonBuilderOperations::BuildSkeletonAssetId(sceneAssetId, importedSkeleton.sourceSkinIndex);
+		skeletonAsset.assetId = CookedSkeletonTranslation::BuildSkeletonAssetId(sceneAssetId, importedSkeleton.sourceSkinIndex);
 		skeletonAsset.sourceSkinIndex = importedSkeleton.sourceSkinIndex;
 		skeletonAsset.sourcePath = importResult.scene.sourcePath;
 		skeletonAsset.joints.reserve(importedSkeleton.joints.size());
@@ -48,7 +51,7 @@ void CookedSceneSkeletonBuilder::BuildSkeletons(const SourceImportResult& import
 		for (const ImportedJoint& importedJoint : importedSkeleton.joints)
 		{
 			Assets::CookedSkeletonJointRecord jointRecord;
-			CookedSceneSkeletonBuilderOperations::CopyName(importedJoint.name, jointRecord.name);
+			CookedSkeletonTranslation::CopyName(importedJoint.name, jointRecord.name);
 			jointRecord.sourceNodeIndex = importedJoint.sourceNodeIndex;
 			jointRecord.parentJointIndex = importedJoint.parentJointIndex;
 			jointRecord.inverseBindMatrix = importedJoint.inverseBindMatrix;

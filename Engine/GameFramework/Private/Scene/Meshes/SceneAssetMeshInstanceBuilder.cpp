@@ -5,7 +5,7 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
 
-class SceneAssetMeshInstanceBuilderOperations final
+class SceneAssetMaterialResolution final
 {
   public:
 	static MaterialHandle ResolveMaterial(
@@ -65,7 +65,7 @@ namespace SceneAssetMeshInstanceBuilder
 			    ECS::SceneMeshInstanceData{
 			        .Resource = std::make_unique<CookedMesh>(MeshData(asset.mesh.geometry), asset.assetId),
 			        .LocalTransform = instance.transform,
-			        .Material = SceneAssetMeshInstanceBuilderOperations::ResolveMaterial(instance.material, materialBaseHandle, materials),
+			        .Material = SceneAssetMaterialResolution::ResolveMaterial(instance.material, materialBaseHandle, materials),
 			        .MeshAssetId = asset.assetId,
 			        .SourceInstanceId = payload.authoredInstanceId,
 			        .MeshAssetIndex = instance.meshAssetIndex,
@@ -88,7 +88,7 @@ namespace SceneAssetMeshInstanceBuilder
 			            SkeletalMeshData(std::move(asset.mesh)),
 			            asset.assetId),
 			        .LocalTransform = instance.transform,
-			        .Material = SceneAssetMeshInstanceBuilderOperations::ResolveMaterial(instance.material, materialBaseHandle, materials),
+			        .Material = SceneAssetMaterialResolution::ResolveMaterial(instance.material, materialBaseHandle, materials),
 			        .MeshAssetId = asset.assetId,
 			        .SkeletonAssetId = instance.skeletonAssetId,
 			        .SourceInstanceId = payload.authoredInstanceId,
@@ -111,9 +111,9 @@ namespace SceneAssetMeshInstanceBuilder
 		{
 			groups.push_back(
 			    SceneMeshInstanceGroupData{
-			        .meshAssetId = SceneAssetMeshInstanceBuilderOperations::ResolveGroupAsset(payload, source),
+			        .meshAssetId = SceneAssetMaterialResolution::ResolveGroupAsset(payload, source),
 			        .meshAssetIndex = source.meshAssetIndex,
-			        .materialHandle = SceneAssetMeshInstanceBuilderOperations::ResolveOptionalMaterial(source.material, materialBaseHandle),
+			        .materialHandle = SceneAssetMaterialResolution::ResolveOptionalMaterial(source.material, materialBaseHandle),
 			        .firstInstance = source.firstInstance == kInvalidSceneMeshInstanceIndex
 			                             ? kInvalidSceneMeshInstanceIndex
 			                             : meshBaseIndex + source.firstInstance,

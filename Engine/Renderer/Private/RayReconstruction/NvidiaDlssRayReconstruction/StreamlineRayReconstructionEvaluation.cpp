@@ -12,7 +12,7 @@
 #include <sl_dlss.h>
 #include <sl_dlss_d.h>
 
-class StreamlineRayReconstructionEvaluationOperations final
+class StreamlineRayReconstructionRequirements final
 {
   public:
 	static bool HasRequiredNativeResources(const RayReconstructionEvaluationDesc& evaluation) noexcept
@@ -58,7 +58,7 @@ RenderViewportExtent QueryStreamlineRayReconstructionOptimalRenderExtent(
     EUpscalerQualityMode qualityMode) noexcept
 {
 	sl::DLSSDOptimalSettings settings{};
-	const sl::DLSSDOptions options = StreamlineRayReconstructionEvaluationOperations::BuildRayReconstructionOptions(qualityMode, outputExtent);
+	const sl::DLSSDOptions options = StreamlineRayReconstructionRequirements::BuildRayReconstructionOptions(qualityMode, outputExtent);
 	if (slDLSSDGetOptimalSettings(options, settings) != sl::Result::eOk)
 	{
 		return {};
@@ -72,7 +72,7 @@ bool EvaluateStreamlineRayReconstructionFrame(
     sl::ViewportHandle viewport,
     const RayReconstructionEvaluationDesc& evaluation)
 {
-	if (!StreamlineRayReconstructionEvaluationOperations::HasRequiredNativeResources(evaluation))
+	if (!StreamlineRayReconstructionRequirements::HasRequiredNativeResources(evaluation))
 	{
 		return false;
 	}
@@ -89,7 +89,7 @@ bool EvaluateStreamlineRayReconstructionFrame(
 		return false;
 	}
 
-	sl::DLSSDOptions options = StreamlineRayReconstructionEvaluationOperations::BuildRayReconstructionOptions(qualityMode, evaluation.OutputExtent);
+	sl::DLSSDOptions options = StreamlineRayReconstructionRequirements::BuildRayReconstructionOptions(qualityMode, evaluation.OutputExtent);
 	options.worldToCameraView = ToStreamlineMatrix(frameContext.Camera.ViewMTX);
 	options.cameraViewToWorld = ToStreamlineMatrix(frameContext.Camera.InvViewMTX);
 	if (slDLSSDSetOptions(viewport, options) != sl::Result::eOk || !frameEvaluation.SetViewConstants(frameContext))

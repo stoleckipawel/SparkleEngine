@@ -9,7 +9,7 @@
 #include <format>
 #include <utility>
 
-class GltfLightImporterOperations final
+class GltfLightTranslation final
 {
   public:
 	static ImportedLightKind ToImportedLightKind(cgltf_light_type lightType) noexcept
@@ -64,8 +64,13 @@ void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportResult&
 		const DirectX::XMMATRIX worldTransform = GltfNodeTransformConverter::ComputeNodeWorldTransform(&node);
 
 		ImportedLight light;
-		light.name = GltfLightImporterOperations::ResolveLightName(node, sourceLight, static_cast<std::uint32_t>(nodeIndex));
-		light.kind = GltfLightImporterOperations::ToImportedLightKind(sourceLight.type);
+		light.name = GltfLightTranslation::ResolveLightName(
+		    node,
+		    sourceLight,
+		    static_cast<std::uint32_t>(nodeIndex));
+		light.kind =
+		    GltfLightTranslation::ToImportedLightKind(
+		        sourceLight.type);
 		light.color = {sourceLight.color[0], sourceLight.color[1], sourceLight.color[2]};
 		light.intensity = sourceLight.intensity;
 		light.range = sourceLight.range;

@@ -72,9 +72,13 @@ namespace SparkleLauncher
 		activityList->setAccessibleName("Activity runs");
 		activityList->setAccessibleDescription("Recent runs. Select one to review its summary and output.");
 		registerFocusable(activityList);
-		QObject::connect(activityList, &QListWidget::currentItemChanged, panel, [onCurrentRunChanged](QListWidgetItem* current, QListWidgetItem* previous) {
-			onCurrentRunChanged(current, previous);
-		});
+		QObject::connect(
+		    activityList,
+		    &QListWidget::currentItemChanged,
+		    panel,
+		    [onCurrentRunChanged](QListWidgetItem* current, QListWidgetItem* previous) {
+			    onCurrentRunChanged(current, previous);
+		    });
 		activityRailLayout->addWidget(activityList, 1);
 		activityLayout->addWidget(activityRail, 0);
 
@@ -95,7 +99,9 @@ namespace SparkleLauncher
 		QPushButton* copyOutputButton = new QPushButton("Copy output", panel);
 		copyOutputButton->setObjectName("SecondaryButton");
 		copyOutputButton->setIcon(copyIcon);
-		copyOutputButton->setIconSize(copyIconSize.isValid() ? copyIconSize : QSize(LauncherUi::Icon::DefaultSize, LauncherUi::Icon::DefaultSize));
+		const QSize resolvedCopyIconSize =
+		    copyIconSize.isValid() ? copyIconSize : QSize(LauncherUi::Icon::DefaultSize, LauncherUi::Icon::DefaultSize);
+		copyOutputButton->setIconSize(resolvedCopyIconSize);
 		copyOutputButton->setEnabled(false);
 		copyOutputButton->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
 		copyOutputButton->setToolTip("Select a run to copy its output. Shortcut: Ctrl+Shift+C.");

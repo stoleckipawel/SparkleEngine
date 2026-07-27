@@ -21,11 +21,7 @@ class SPARKLE_ENGINE_API SkeletalCookedMesh final : public Mesh
 	Assets::CookedAssetId GetAssetId() const noexcept { return m_assetId; }
 	const SkeletalMeshData& GetSkeletalMeshData() const noexcept { return m_skeletalData; }
 
-  protected:
-	void GenerateGeometry(MeshData& outMeshData) const override;
-
   private:
 	SkeletalMeshData m_skeletalData;
-	MeshData m_baseGeometry;
 	Assets::CookedAssetId m_assetId = Assets::InvalidCookedAssetId;
 };

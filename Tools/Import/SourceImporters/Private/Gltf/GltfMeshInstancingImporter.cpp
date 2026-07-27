@@ -74,7 +74,8 @@ bool GltfMeshInstancingImporter::TryReadMeshGpuInstancingTransforms(
 			    g_gltfMeshInstancingImporterLogger,
 			    "{}",
 			    std::format(
-			        "GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data ({} accessor has unsupported component/type) and will import as a regular mesh node",
+			        "GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data "
+			        "({} accessor has unsupported component/type) and will import as a regular mesh node",
 			        nodeLabel,
 			        attributeName));
 			return false;
@@ -86,7 +87,8 @@ bool GltfMeshInstancingImporter::TryReadMeshGpuInstancingTransforms(
 			    g_gltfMeshInstancingImporterLogger,
 			    "{}",
 			    std::format(
-			        "GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data ({} accessor count does not match the group) and will import as a regular mesh node",
+			        "GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data "
+			        "({} accessor count does not match the group) and will import as a regular mesh node",
 			        nodeLabel,
 			        attributeName));
 			return false;

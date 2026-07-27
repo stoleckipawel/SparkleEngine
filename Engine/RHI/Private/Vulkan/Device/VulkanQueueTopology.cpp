@@ -5,7 +5,7 @@
 #include <bit>
 #include <limits>
 
-class VulkanQueueTopologyOperations final
+class VulkanQueueSelection final
 {
   public:
 	static bool SupportsQueueWork(VkQueueFlags flags, ERhiQueueType queueType) noexcept
@@ -113,14 +113,14 @@ VulkanQueueTopology VulkanQueueTopology::Select(VkPhysicalDevice physicalDevice)
 	std::vector<std::uint32_t> usedQueueCounts(familyCount, 0);
 
 	topology.m_locations[RhiQueueTypeToIndex(ERhiQueueType::Graphics)] =
-	    VulkanQueueTopologyOperations::SelectUnusedQueue(families, usedQueueCounts, ERhiQueueType::Graphics);
+	    VulkanQueueSelection::SelectUnusedQueue(families, usedQueueCounts, ERhiQueueType::Graphics);
 	for (const ERhiQueueType queueType : {ERhiQueueType::Compute, ERhiQueueType::Copy})
 	{
 		VulkanQueueLocation& location = topology.m_locations[RhiQueueTypeToIndex(queueType)];
-		location = VulkanQueueTopologyOperations::SelectUnusedQueue(families, usedQueueCounts, queueType);
+		location = VulkanQueueSelection::SelectUnusedQueue(families, usedQueueCounts, queueType);
 		if (!location.IsValid())
 		{
-			location = VulkanQueueTopologyOperations::SelectFallbackQueue(families, queueType, topology.m_locations);
+			location = VulkanQueueSelection::SelectFallbackQueue(families, queueType, topology.m_locations);
 		}
 	}
 

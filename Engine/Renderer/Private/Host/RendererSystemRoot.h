@@ -83,7 +83,6 @@ class RendererSystemRoot final
 	    const TexturePreviewHandleResolver& resolvePreviewTexture) const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	void TickDiagnostics(std::uint64_t frameIndex) noexcept;
-	void PostLoad() noexcept;
 	void RefreshImageProviders() noexcept;
 	void PollRetiredImageProviders() noexcept;
 

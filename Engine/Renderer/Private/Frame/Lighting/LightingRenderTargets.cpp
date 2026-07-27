@@ -35,12 +35,24 @@ LightingRenderTargets CreateLightingRenderTargets(
 	lighting.IndirectSpecular = LightingRenderTargetFactory::CreateLightingTexture(builder, "IndirectSpecular", sceneExtent, radianceFormat);
 	const RenderViewportExtent guideExtent = createRayReconstructionGuides ? sceneExtent : RenderViewportExtent{1u, 1u};
 	lighting.ReconstructionGuides.DiffuseAlbedo =
-	    LightingRenderTargetFactory::CreateLightingTexture(builder, "RayReconstructionDiffuseAlbedo", guideExtent, PixelFormat::R16G16B16A16_Float);
+	    LightingRenderTargetFactory::CreateLightingTexture(
+	        builder,
+	        "RayReconstructionDiffuseAlbedo",
+	        guideExtent,
+	        PixelFormat::R16G16B16A16_Float);
 	lighting.ReconstructionGuides.SpecularAlbedo =
-	    LightingRenderTargetFactory::CreateLightingTexture(builder, "RayReconstructionSpecularAlbedo", guideExtent, PixelFormat::R16G16B16A16_Float);
+	    LightingRenderTargetFactory::CreateLightingTexture(
+	        builder,
+	        "RayReconstructionSpecularAlbedo",
+	        guideExtent,
+	        PixelFormat::R16G16B16A16_Float);
 	lighting.ReconstructionGuides.Roughness =
 	    LightingRenderTargetFactory::CreateLightingTexture(builder, "RayReconstructionRoughness", guideExtent, PixelFormat::R32_Float);
 	lighting.ReconstructionGuides.SpecularHitDistance =
-	    LightingRenderTargetFactory::CreateLightingTexture(builder, "RayReconstructionSpecularHitDistance", guideExtent, PixelFormat::R32_Float);
+	    LightingRenderTargetFactory::CreateLightingTexture(
+	        builder,
+	        "RayReconstructionSpecularHitDistance",
+	        guideExtent,
+	        PixelFormat::R32_Float);
 	return lighting;
 }

@@ -9,7 +9,7 @@
 
 static const auto g_levelManagerLogger = Logging::GetOrCreateLogger("GameFramework.LevelManager");
 
-class LevelManagerOperations final
+class StartupLevelSelection final
 {
   public:
 	static std::string ResolveRequestedStartupLevelName() noexcept
@@ -37,7 +37,7 @@ LevelManager::~LevelManager() noexcept = default;
 
 void LevelManager::InitializeStartupLevel() noexcept
 {
-	const std::string requestedName = LevelManagerOperations::ResolveRequestedStartupLevelName();
+	const std::string requestedName = StartupLevelSelection::ResolveRequestedStartupLevelName();
 	const std::string_view startupName = requestedName.empty() ? m_levelRegistry->GetDefaultLevelName() : std::string_view(requestedName);
 	LevelAsset* startupLevel = m_levelRegistry->FindLevel(startupName);
 	if (!startupLevel)

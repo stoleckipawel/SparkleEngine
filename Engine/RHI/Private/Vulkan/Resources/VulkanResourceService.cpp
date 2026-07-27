@@ -78,7 +78,11 @@ bool VulkanResourceService::CreateVertexBuffer(
 		return false;
 	}
 
-	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes};
+	const RhiBufferResourceDesc desc{
+	    .SizeInBytes = sizeInBytes,
+	    .StrideInBytes = strideInBytes,
+	    .Kind = RhiBufferKind::Vertex,
+	    .AllowRayTracingBuildInput = true};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
 	    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
@@ -141,7 +145,10 @@ bool VulkanResourceService::CreateStructuredBufferResource(
 		return false;
 	}
 
-	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes};
+	const RhiBufferResourceDesc desc{
+	    .SizeInBytes = sizeInBytes,
+	    .StrideInBytes = strideInBytes,
+	    .Kind = RhiBufferKind::Structured};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
@@ -188,7 +195,10 @@ bool VulkanResourceService::CreateIndexBuffer(
 		return false;
 	}
 
-	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes};
+	const RhiBufferResourceDesc desc{
+	    .SizeInBytes = sizeInBytes,
+	    .Kind = RhiBufferKind::Index,
+	    .AllowRayTracingBuildInput = true};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
 	    VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |

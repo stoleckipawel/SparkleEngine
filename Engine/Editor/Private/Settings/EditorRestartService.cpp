@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-class EditorRestartServiceOperations final
+class EditorRelaunchCommandBuilder final
 {
   public:
 	static std::wstring QuoteCommandLineArgument(const std::wstring& argument)
@@ -60,7 +60,7 @@ class EditorRestartServiceOperations final
 bool EditorRestartService::Restart(Window& hostWindow) const
 {
 	const std::filesystem::path executablePath = Filesystem::GetExecutablePath();
-	const std::wstring commandLine = EditorRestartServiceOperations::BuildRelaunchCommandLine(executablePath);
+	const std::wstring commandLine = EditorRelaunchCommandBuilder::BuildRelaunchCommandLine(executablePath);
 	std::vector<wchar_t> mutableCommandLine(commandLine.begin(), commandLine.end());
 	mutableCommandLine.push_back(L'\0');
 

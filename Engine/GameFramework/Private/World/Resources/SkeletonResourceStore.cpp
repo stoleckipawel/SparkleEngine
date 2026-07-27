@@ -2,7 +2,7 @@
 
 #include "World/Resources/SkeletonResourceStore.h"
 
-class SkeletonResourceStoreOperations final
+class SkeletonTransformTranslation final
 {
   public:
 	static ECS::AnimationJointTransform DecomposeLocalTransform(
@@ -40,7 +40,7 @@ void SkeletonResourceStore::Append(std::vector<SkeletonResource>&& skeletons)
 		Entry entry;
 		entry.BindLocalTransforms.reserve(skeleton.joints.size());
 		for (std::size_t jointIndex = 0; jointIndex < skeleton.joints.size(); ++jointIndex)
-			entry.BindLocalTransforms.push_back(SkeletonResourceStoreOperations::DecomposeLocalTransform(skeleton, jointIndex));
+			entry.BindLocalTransforms.push_back(SkeletonTransformTranslation::DecomposeLocalTransform(skeleton, jointIndex));
 		entry.Resource = std::move(skeleton);
 		const auto slot = static_cast<std::uint32_t>(m_entries.size());
 		m_entries.push_back(std::move(entry));

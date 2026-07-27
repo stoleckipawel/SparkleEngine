@@ -42,8 +42,16 @@ void MaterialCacheManager::BuildMaterials(
     std::uint64_t sourceRevision,
     RenderSceneData& sceneData)
 {
-	if ((!m_materialCacheBuilt || m_sourceRevision != sourceRevision) &&
-	    !Rebuild(materials, sourceRevision))
+	const std::uint64_t textureRevision =
+	    m_textureManager.GetBindingRevision();
+	if ((!m_materialCacheBuilt ||
+	     m_sourceRevision != sourceRevision ||
+	     m_textureRevision != textureRevision) &&
+	    !Rebuild(
+	        materials,
+	        sourceRevision,
+	        textureRevision) &&
+	    !m_materialCacheBuilt)
 	{
 		sceneData.materials = {};
 		sceneData.materialTextureTable = {};
@@ -56,7 +64,8 @@ void MaterialCacheManager::BuildMaterials(
 
 bool MaterialCacheManager::Rebuild(
     const RenderMaterialTable& materials,
-    std::uint64_t sourceRevision)
+    std::uint64_t sourceRevision,
+    std::uint64_t textureRevision)
 {
 	const std::uint64_t nextGeneration = GetNextGeneration();
 	Build build;
@@ -107,8 +116,11 @@ bool MaterialCacheManager::Rebuild(
 	m_materialTextureBindingSets = std::move(build.RasterTextureTables);
 	m_materialTextureTable = std::move(build.SceneTextureTable);
 	m_sourceRevision = sourceRevision;
+	m_textureRevision = textureRevision;
 	m_generation = nextGeneration;
 	m_materialCacheBuilt = true;
+	m_textureManager.CommitBindingRevision(
+	    textureRevision);
 	return true;
 }
 
@@ -194,6 +206,7 @@ void MaterialCacheManager::Reset() noexcept
 	m_materialTextureTable.Reset();
 	m_cachedMaterialData.clear();
 	m_sourceRevision = 0u;
+	m_textureRevision = 0u;
 	m_materialCacheBuilt = false;
 }
 

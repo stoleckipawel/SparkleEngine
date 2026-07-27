@@ -58,7 +58,6 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
-	void CloseExecuteAndFlushCurrentFrame() noexcept override;
 
   private:
 	D3D12RenderDeviceServices() noexcept = default;
@@ -310,16 +309,4 @@ void D3D12RenderDeviceServices::SubmitFrame() noexcept
 void D3D12RenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
 	m_swapChain->UpdateFrameInFlightIndex();
-}
-
-void D3D12RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
-{
-	RenderCommandList* const graphicsCommandList = m_commandRecordingContext->TryGetCurrentCommandList(
-	    ERhiQueueType::Graphics,
-	    m_rhi->GetCurrentFrameIndex());
-	if (graphicsCommandList != nullptr)
-	{
-		(void)SubmitCurrentGraphicsCommandList({});
-	}
-	m_renderHardwareInterface->WaitForIdle();
 }

@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-class TemporalFrameStateOperations final
+class TemporalFrameStateValidation final
 {
   public:
 	static bool HasNonZeroJitter(const DirectX::XMFLOAT2& jitter) noexcept
@@ -16,8 +16,8 @@ class TemporalFrameStateOperations final
 RenderTemporalFrameState BuildRenderTemporalFrameState(const PerTemporalConstantBufferData& temporalData) noexcept
 {
 	return RenderTemporalFrameState{
-	    .HasJitter = TemporalFrameStateOperations::HasNonZeroJitter(temporalData.JitterCurrent),
-	    .HasPreviousJitter = TemporalFrameStateOperations::HasNonZeroJitter(temporalData.JitterPrevious),
+	    .HasJitter = TemporalFrameStateValidation::HasNonZeroJitter(temporalData.JitterCurrent),
+	    .HasPreviousJitter = TemporalFrameStateValidation::HasNonZeroJitter(temporalData.JitterPrevious),
 	    .HistoryValid = temporalData.HistoryValid != 0u,
 	    .JitterCurrent = temporalData.JitterCurrent,
 	    .JitterPrevious = temporalData.JitterPrevious};

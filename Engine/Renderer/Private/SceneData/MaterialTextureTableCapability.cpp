@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-class MaterialTextureTableCapabilityOperations final
+class MaterialTextureTableCapacity final
 {
   public:
 	static std::uint32_t ResolveShaderResourceDescriptorCapacity(const RhiBindingLimits& limits) noexcept
@@ -31,7 +31,8 @@ MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(
 		    .StatusReason = "sampled-image-array-non-uniform-indexing-unavailable"};
 	}
 
-	const std::uint32_t shaderResourceCapacity = MaterialTextureTableCapabilityOperations::ResolveShaderResourceDescriptorCapacity(capabilities.BindingLimits);
+	const std::uint32_t shaderResourceCapacity =
+	    MaterialTextureTableCapacity::ResolveShaderResourceDescriptorCapacity(capabilities.BindingLimits);
 	if (shaderResourceCapacity == 0)
 	{
 		return MaterialTextureTableCapabilityReport{

@@ -6,7 +6,7 @@
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 
-class RayTracingPassCapabilityQueryOperations final
+class RayTracingPassCapabilityResolution final
 {
   public:
 	static const RayTracingCapabilityReport* ResolveCapabilityReport(const RenderRayTracingPassServices* rayTracingServices) noexcept
@@ -30,7 +30,7 @@ namespace RayTracingPassCapabilityQuery
 	    const FrameContext& frame,
 	    const RenderRayTracingPassServices* rayTracingServices) noexcept
 	{
-		const RayTracingCapabilityReport* capabilityReport = RayTracingPassCapabilityQueryOperations::ResolveCapabilityReport(rayTracingServices);
+		const RayTracingCapabilityReport* capabilityReport = RayTracingPassCapabilityResolution::ResolveCapabilityReport(rayTracingServices);
 		RayTracingPassCapabilities result{
 		    .BoundSceneTlasAvailable = frame.rayTracingScene.HasBoundTlas(),
 		    .SceneTlasShaderAccessMode = frame.rayTracingScene.TlasShaderAccessMode,

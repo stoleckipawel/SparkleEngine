@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Inspection/CookedPackageInspection.h"
 
@@ -7,7 +7,7 @@
 
 #include <span>
 
-class CookedPackageInspectionOperations final
+class CookedPackageStringResolver final
 {
   public:
 	static std::string_view ResolveString(CookedShaderStringRef ref, std::span<const std::uint8_t> stringTable) noexcept
@@ -106,10 +106,10 @@ bool CookedPackageInspection::Inspect(
 		inspectedBinary.shaderBlobId = binary.ShaderBlobId;
 		inspectedBinary.stage = binary.Stage;
 		inspectedBinary.format = binary.Format;
-		inspectedBinary.entryPoint = std::string(CookedPackageInspectionOperations::ResolveString(binary.EntryPoint, stringTable));
-		inspectedBinary.exportName = std::string(CookedPackageInspectionOperations::ResolveString(binary.ExportName, stringTable));
-		inspectedBinary.backendName = std::string(CookedPackageInspectionOperations::ResolveString(binary.BackendName, stringTable));
-		inspectedBinary.codegenTarget = std::string(CookedPackageInspectionOperations::ResolveString(binary.CodegenTarget, stringTable));
+		inspectedBinary.entryPoint = std::string(CookedPackageStringResolver::ResolveString(binary.EntryPoint, stringTable));
+		inspectedBinary.exportName = std::string(CookedPackageStringResolver::ResolveString(binary.ExportName, stringTable));
+		inspectedBinary.backendName = std::string(CookedPackageStringResolver::ResolveString(binary.BackendName, stringTable));
+		inspectedBinary.codegenTarget = std::string(CookedPackageStringResolver::ResolveString(binary.CodegenTarget, stringTable));
 		inspectedBinary.bytecodeHash = binary.BytecodeHash;
 		inspectedBinary.backendVersion = binary.BackendVersion;
 		inspectedBinary.bytecodeSizeInBytes = binary.Bytecode.SizeInBytes;
@@ -129,7 +129,7 @@ bool CookedPackageInspection::Inspect(
 	for (const CookedShaderPipelineLayoutRecord& layout : pipelineLayouts)
 	{
 		outPackage.pipelineLayouts.push_back(InspectedCookedPipelineLayout{
-		    .codegenTarget = std::string(CookedPackageInspectionOperations::ResolveString(layout.CodegenTarget, stringTable)),
+		    .codegenTarget = std::string(CookedPackageStringResolver::ResolveString(layout.CodegenTarget, stringTable)),
 		    .bindingLayoutHash = layout.BindingLayoutHash,
 		    .bindingRecordCount = layout.BindingRecordCount,
 		    .descriptorBindingCount = layout.DescriptorBindingCount,
@@ -148,8 +148,8 @@ bool CookedPackageInspection::Inspect(
 	{
 		outPackage.rayTracingExports.push_back(InspectedCookedRayTracingExport{
 		    .kind = rtExport.Kind,
-		    .exportName = std::string(CookedPackageInspectionOperations::ResolveString(rtExport.ExportName, stringTable)),
-		    .entryPoint = std::string(CookedPackageInspectionOperations::ResolveString(rtExport.EntryPoint, stringTable)),
+		    .exportName = std::string(CookedPackageStringResolver::ResolveString(rtExport.ExportName, stringTable)),
+		    .entryPoint = std::string(CookedPackageStringResolver::ResolveString(rtExport.EntryPoint, stringTable)),
 		    .binaryRecordIndex = rtExport.BinaryRecordIndex,
 		    .exportHash = rtExport.ExportHash});
 	}
@@ -159,7 +159,7 @@ bool CookedPackageInspection::Inspect(
 	{
 		outPackage.rayTracingHitGroups.push_back(InspectedCookedRayTracingHitGroup{
 		    .type = hitGroup.Type,
-		    .name = std::string(CookedPackageInspectionOperations::ResolveString(hitGroup.HitGroupName, stringTable)),
+		    .name = std::string(CookedPackageStringResolver::ResolveString(hitGroup.HitGroupName, stringTable)),
 		    .closestHitExportIndex = hitGroup.ClosestHitExportIndex,
 		    .anyHitExportIndex = hitGroup.AnyHitExportIndex,
 		    .intersectionExportIndex = hitGroup.IntersectionExportIndex,
@@ -173,8 +173,9 @@ bool CookedPackageInspection::Inspect(
 		{
 			continue;
 		}
+		const CookedShaderStringRef nameRef{binding.NameOffsetInBytes, binding.NameSizeInBytes};
 		outPackage.accelerationStructureBindings.push_back(InspectedCookedAccelerationStructureBinding{
-		    .name = std::string(CookedPackageInspectionOperations::ResolveString(CookedShaderStringRef{binding.NameOffsetInBytes, binding.NameSizeInBytes}, stringTable)),
+		    .name = std::string(CookedPackageStringResolver::ResolveString(nameRef, stringTable)),
 		    .set = binding.Set,
 		    .slot = binding.Slot,
 		    .arrayCount = binding.ArrayCount});

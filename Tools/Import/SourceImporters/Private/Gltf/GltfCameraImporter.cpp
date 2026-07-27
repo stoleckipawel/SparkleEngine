@@ -8,7 +8,7 @@
 
 #include <format>
 
-class GltfCameraImporterOperations final
+class GltfCameraNaming final
 {
   public:
 	static std::string ResolveCameraName(const cgltf_node& node, std::uint32_t nodeIndex)
@@ -44,7 +44,9 @@ void GltfCameraImporter::ImportCameras(const cgltf_data* data, SourceImportResul
 		}
 
 		ImportedCamera camera;
-		camera.name = GltfCameraImporterOperations::ResolveCameraName(node, static_cast<std::uint32_t>(nodeIndex));
+		camera.name = GltfCameraNaming::ResolveCameraName(
+		    node,
+		    static_cast<std::uint32_t>(nodeIndex));
 		camera.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
 		DirectX::XMStoreFloat4x4(&camera.worldTransform, GltfNodeTransformConverter::ComputeNodeWorldTransform(&node));
 

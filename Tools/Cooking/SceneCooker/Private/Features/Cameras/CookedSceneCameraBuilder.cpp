@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstring>
 
-class CookedSceneCameraBuilderOperations final
+class CookedCameraTranslation final
 {
   public:
 	static Assets::CookedSceneCameraProjectionKind ToCookedCameraProjectionKind(ImportedCameraProjectionKind projectionKind) noexcept
@@ -48,6 +48,6 @@ void CookedSceneCameraBuilder::BuildCameras(const SourceImportResult& importResu
 
 	for (const ImportedCamera& importedCamera : importResult.scene.cameras)
 	{
-		outBuild.manifest.cameras.push_back(CookedSceneCameraBuilderOperations::BuildCameraRecord(importedCamera));
+		outBuild.manifest.cameras.push_back(CookedCameraTranslation::BuildCameraRecord(importedCamera));
 	}
 }

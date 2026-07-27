@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-class SceneLoadPackageBuilderOperations final
+class SceneLoadPackageAssembly final
 {
   public:
 	static std::uint64_t MakeAuthoredInstanceId(std::string_view identity) noexcept
@@ -164,11 +164,11 @@ namespace Assets
 	    std::size_t& decodedBytes,
 	    std::string& errorMessage)
 	{
-		if (!SceneLoadPackageBuilderOperations::ValidateReferences(work.Payload, errorMessage))
+		if (!SceneLoadPackageAssembly::ValidateReferences(work.Payload, errorMessage))
 			return false;
-		work.Payload.authoredInstanceId = SceneLoadPackageBuilderOperations::MakeAuthoredInstanceId(work.Id.value);
-		SceneLoadPackageBuilderOperations::BuildBlueprints(work);
-		decodedBytes = SceneLoadPackageBuilderOperations::EstimatePayloadBytes(work.Payload);
+		work.Payload.authoredInstanceId = SceneLoadPackageAssembly::MakeAuthoredInstanceId(work.Id.value);
+		SceneLoadPackageAssembly::BuildBlueprints(work);
+		decodedBytes = SceneLoadPackageAssembly::EstimatePayloadBytes(work.Payload);
 		errorMessage.clear();
 		return true;
 	}
@@ -199,12 +199,18 @@ namespace Assets
 
 		state.Package->Entities.push_back(EntityBlueprint{
 		    std::format("level:{}:camera:0", state.Package->Level.name),
-		    SceneLoadPackageBuilderOperations::Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility,
+		    SceneLoadPackageAssembly::Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility,
 		            ECS::CameraMovement, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>()});
 		for (std::size_t index = 0; index < state.Package->Level.lights.size(); ++index)
 			state.Package->Entities.push_back(EntityBlueprint{
 			    std::format("level:{}:light:{}", state.Package->Level.name, index),
-			    SceneLoadPackageBuilderOperations::Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Light, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity,
+			    SceneLoadPackageAssembly::Schemas<
+			        ECS::LocalTransform,
+			        ECS::WorldTransform,
+			        ECS::Light,
+			        ECS::Visibility,
+			        ECS::Name,
+			        ECS::AuthoredIdentity,
 			            ECS::EditorMetadata>()});
 		for (SceneAssetLoadWork& work : state.Assets)
 		{
@@ -212,6 +218,6 @@ namespace Assets
 				state.Package->Entities.push_back(std::move(entity));
 			state.Package->AssetPayloads.push_back(std::move(work.Payload));
 		}
-		return SceneLoadPackageBuilderOperations::HasUniqueBlueprintContract(state.Package->Entities, errorMessage);
+		return SceneLoadPackageAssembly::HasUniqueBlueprintContract(state.Package->Entities, errorMessage);
 	}
 }

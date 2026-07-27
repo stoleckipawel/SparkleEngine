@@ -2,7 +2,7 @@
 #include "Streamline/StreamlineResourceInterop.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-class StreamlineResourceInteropOperations final
+class StreamlineResourceTranslation final
 {
   public:
 	static sl::Resource BuildStreamlineTextureResource(
@@ -45,8 +45,8 @@ class StreamlineResourceInteropOperations final
 StreamlineTaggedTextureResource::StreamlineTaggedTextureResource(
     ERhiBackendApi backendApi,
     const NativeTextureViewInfo& view) noexcept :
-	m_resource(StreamlineResourceInteropOperations::BuildStreamlineTextureResource(backendApi, view)),
-    m_subresourceRange(StreamlineResourceInteropOperations::BuildStreamlineSubresourceRange(view))
+	m_resource(StreamlineResourceTranslation::BuildStreamlineTextureResource(backendApi, view)),
+    m_subresourceRange(StreamlineResourceTranslation::BuildStreamlineSubresourceRange(view))
 {
 	if (backendApi == ERhiBackendApi::Vulkan)
 	{

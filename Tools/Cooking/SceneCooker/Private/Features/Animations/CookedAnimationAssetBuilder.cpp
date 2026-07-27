@@ -7,7 +7,7 @@
 #include <string>
 #include <utility>
 
-class CookedAnimationAssetBuilderOperations final
+class CookedAnimationTranslation final
 {
   public:
 	static Assets::CookedAssetId BuildAnimationAssetId(std::string_view sceneAssetId, std::uint32_t sourceAnimationIndex)
@@ -59,8 +59,8 @@ void CookedAnimationAssetBuilder::Build(
 	{
 		if (!importedClip.IsValid()) continue;
 		CookedAnimationAssetBuild animationAsset;
-		animationAsset.assetId = CookedAnimationAssetBuilderOperations::BuildAnimationAssetId(sceneAssetId, importedClip.sourceAnimationIndex);
-		animationAsset.targetSkeletonAssetId = CookedAnimationAssetBuilderOperations::ResolveTargetSkeletonAssetId(outBuild, importedClip);
+		animationAsset.assetId = CookedAnimationTranslation::BuildAnimationAssetId(sceneAssetId, importedClip.sourceAnimationIndex);
+		animationAsset.targetSkeletonAssetId = CookedAnimationTranslation::ResolveTargetSkeletonAssetId(outBuild, importedClip);
 		animationAsset.sourceAnimationIndex = importedClip.sourceAnimationIndex;
 		animationAsset.durationSeconds = importedClip.durationSeconds;
 		animationAsset.name = importedClip.name;
@@ -78,8 +78,8 @@ void CookedAnimationAssetBuilder::Build(
 				                                    .value = importedKeyframe.value,
 				                                    .inTangent = importedKeyframe.inTangent,
 				                                    .outTangent = importedKeyframe.outTangent});
-			animationAsset.channels.push_back({.targetPath = CookedAnimationAssetBuilderOperations::ToCookedTargetPath(importedChannel.targetPath),
-			                                   .interpolation = CookedAnimationAssetBuilderOperations::ToCookedInterpolation(sampler.interpolation),
+			animationAsset.channels.push_back({.targetPath = CookedAnimationTranslation::ToCookedTargetPath(importedChannel.targetPath),
+			                                   .interpolation = CookedAnimationTranslation::ToCookedInterpolation(sampler.interpolation),
 			                                   .targetNodeIndex = importedChannel.targetNodeIndex,
 			                                   .targetJointIndex = importedChannel.targetJointIndex,
 			                                   .firstKeyframe = firstKeyframe,

@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-class EditorSceneModelBuilderOperations final
+class EditorSceneModelPatching final
 {
   public:
 	template <typename T>
@@ -54,9 +54,9 @@ std::shared_ptr<EditorSceneModel> EditorSceneModelBuilder::BuildIncremental(
 		if (change.Kind == WorldChangeKind::WorldReset) return BuildFull(view, worldGeneration);
 		if (change.Entity.IsValid())
 		{
-			EditorSceneModelBuilderOperations::PatchEntity(model->m_cameras, view.GetCameras(), change.Entity);
-			EditorSceneModelBuilderOperations::PatchEntity(model->m_lights, view.GetLights(), change.Entity);
-			EditorSceneModelBuilderOperations::PatchEntity(model->m_meshes, view.GetMeshes(), change.Entity);
+			EditorSceneModelPatching::PatchEntity(model->m_cameras, view.GetCameras(), change.Entity);
+			EditorSceneModelPatching::PatchEntity(model->m_lights, view.GetLights(), change.Entity);
+			EditorSceneModelPatching::PatchEntity(model->m_meshes, view.GetMeshes(), change.Entity);
 		}
 		refreshSky |= change.Data == WorldDataKind::SkyEnvironment;
 		refreshVariants |= change.Data == WorldDataKind::Material;

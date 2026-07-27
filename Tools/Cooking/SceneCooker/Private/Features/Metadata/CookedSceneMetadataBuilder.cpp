@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-class CookedSceneMetadataBuilderOperations final
+class CookedSceneFeatureMetadata final
 {
   public:
 	static void AddFeatureFlag(std::uint32_t& flags, Assets::CookedSceneFeatureFlags flag) noexcept
@@ -81,5 +81,5 @@ class CookedSceneMetadataBuilderOperations final
 
 void CookedSceneMetadataBuilder::BuildMetadata(const SourceImportResult& importResult, CookedSceneBuild& outBuild)
 {
-	outBuild.manifest.header.featureFlags = CookedSceneMetadataBuilderOperations::BuildFeatureFlags(importResult);
+	outBuild.manifest.header.featureFlags = CookedSceneFeatureMetadata::BuildFeatureFlags(importResult);
 }

@@ -36,7 +36,11 @@ std::uint64_t GPUMeshPreparedData::GetResidentByteSize() const noexcept
 	const MeshData& meshData = Source.GetResource()->GetMeshData();
 	return GetDecodedByteSize() +
 	       meshData.GetVertexBufferSize() +
-	       meshData.GetIndexBufferSize();
+	       meshData.GetIndexBufferSize() +
+	       (std::max<std::size_t>(
+	            MorphTargetDeltas.size(),
+	            1u) *
+	        sizeof(MorphTargetDeltaData));
 }
 
 bool GPUMeshPreparation::Build(

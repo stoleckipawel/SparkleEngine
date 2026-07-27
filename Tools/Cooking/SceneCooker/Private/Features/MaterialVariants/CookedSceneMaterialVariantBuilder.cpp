@@ -8,7 +8,7 @@
 #include <format>
 #include <string_view>
 
-class CookedSceneMaterialVariantBuilderOperations final
+class CookedMaterialVariantTranslation final
 {
   public:
 	static void CopyVariantName(std::string_view sourceName, char (&outName)[Assets::kCookedSceneMaterialVariantNameCapacity]) noexcept
@@ -103,13 +103,13 @@ bool CookedSceneMaterialVariantBuilder::BuildMaterialVariants(
 
 	for (const ImportedMaterialVariant& importedVariant : importResult.scene.materialVariants)
 	{
-		outBuild.manifest.materialVariants.push_back(CookedSceneMaterialVariantBuilderOperations::BuildVariantRecord(importedVariant));
+		outBuild.manifest.materialVariants.push_back(CookedMaterialVariantTranslation::BuildVariantRecord(importedVariant));
 	}
 
 	for (const ImportedMaterialVariantMapping& importedMapping : importResult.scene.materialVariantMappings)
 	{
 		Assets::CookedSceneMaterialVariantMappingRecord record;
-		if (!CookedSceneMaterialVariantBuilderOperations::BuildMappingRecord(importResult, outBuild, importedMapping, record, outErrorMessage))
+		if (!CookedMaterialVariantTranslation::BuildMappingRecord(importResult, outBuild, importedMapping, record, outErrorMessage))
 		{
 			return false;
 		}

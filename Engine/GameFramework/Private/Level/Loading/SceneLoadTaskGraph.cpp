@@ -10,7 +10,7 @@
 
 #include <format>
 
-class SceneLoadTaskGraphOperations final
+class SceneLoadBudget final
 {
   public:
 	static constexpr std::size_t kMaximumRetainedLoadBytes = 512ull * 1024ull * 1024ull;
@@ -54,7 +54,7 @@ namespace Assets
 				            work.Manifest,
 				            work.Files,
 				            state->RetainedBytes,
-				            SceneLoadTaskGraphOperations::kMaximumRetainedLoadBytes,
+				            SceneLoadBudget::kMaximumRetainedLoadBytes,
 				            work.Error))
 					    return TaskResult::Failure(work.Error);
 				    state->Stage.store(LevelLoadOperationStage::Decoding, std::memory_order_release);
@@ -68,17 +68,17 @@ namespace Assets
 					    return TaskResult::Cancelled("Scene load cancelled before asset decode.");
 				    std::size_t decodedBytes = 0;
 				    SceneAssetLoadWork& work = state->Assets[index];
-				    if (work.Files.GetByteCount() > SceneLoadTaskGraphOperations::kMaximumRetainedLoadBytes / SceneLoadTaskGraphOperations::kDecodedByteWeight ||
-				        !SceneLoadTaskGraphOperations::TryReserveBytes(state->RetainedBytes, work.Files.GetByteCount() * SceneLoadTaskGraphOperations::kDecodedByteWeight))
+				    if (work.Files.GetByteCount() > SceneLoadBudget::kMaximumRetainedLoadBytes / SceneLoadBudget::kDecodedByteWeight ||
+				        !SceneLoadBudget::TryReserveBytes(state->RetainedBytes, work.Files.GetByteCount() * SceneLoadBudget::kDecodedByteWeight))
 					    return TaskResult::Failure("Scene load exceeded the weighted decode byte budget.");
 				    if (!SceneAssetPayloadDecoder::Decode(
 				            work.Id, work.Manifest, work.Files, work.Payload, work.Error))
 					    return TaskResult::Failure(work.Error);
 				    if (!SceneLoadPackageBuilder::BuildAssetBlueprints(work, decodedBytes, work.Error))
 					    return TaskResult::Failure(work.Error);
-				    const std::size_t reservedDecodedBytes = work.Files.GetByteCount() * SceneLoadTaskGraphOperations::kDecodedByteWeight;
+				    const std::size_t reservedDecodedBytes = work.Files.GetByteCount() * SceneLoadBudget::kDecodedByteWeight;
 				    if (decodedBytes > reservedDecodedBytes &&
-				        !SceneLoadTaskGraphOperations::TryReserveBytes(state->RetainedBytes, decodedBytes - reservedDecodedBytes))
+				        !SceneLoadBudget::TryReserveBytes(state->RetainedBytes, decodedBytes - reservedDecodedBytes))
 					    return TaskResult::Failure("Scene load exceeded the retained decoded-data budget.");
 				    state->RetainedBytes.fetch_sub(work.Files.Reset(), std::memory_order_acq_rel);
 				    work.Manifest = {};

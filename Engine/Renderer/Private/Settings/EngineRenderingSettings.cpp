@@ -23,7 +23,7 @@
 #include <utility>
 #include <vector>
 
-class EngineRenderingSettingsOperations final
+class RenderingSettingsPersistence final
 {
   public:
 	static constexpr std::string_view kRenderingSettingsSection = "/Script/SparkleRenderer.EngineRenderingSettings";
@@ -289,10 +289,10 @@ void EngineRenderingSettingsSection::RefreshFromRuntimeState() noexcept
 
 void EngineRenderingSettingsSection::ApplyPersistedValuesToRuntimeState() noexcept
 {
-	EngineRenderingSettingsOperations::LoadRenderingSettingsConfigValues(
+	RenderingSettingsPersistence::LoadRenderingSettingsConfigValues(
 	    [](std::string_view key, std::string_view value)
 	    {
-		    EngineRenderingSettingsOperations::ApplyRenderingSettingsConfigValue(key, value);
+		    RenderingSettingsPersistence::ApplyRenderingSettingsConfigValue(key, value);
 	    });
 	RefreshFromRuntimeState();
 }
@@ -314,8 +314,8 @@ void EngineRenderingSettingsSection::SetCommitHandler(CommitHandler handler)
 
 void EngineRenderingSettingsSection::CommitState()
 {
-	EngineRenderingSettingsOperations::WriteRenderingSettingsConfigValues(
-	    EngineRenderingSettingsOperations::BuildRenderingSettingsConfigValues(m_state));
+	RenderingSettingsPersistence::WriteRenderingSettingsConfigValues(
+	    RenderingSettingsPersistence::BuildRenderingSettingsConfigValues(m_state));
 	if (m_commitHandler)
 	{
 		m_commitHandler(m_state);
@@ -577,68 +577,68 @@ std::string EngineRenderingSettingsSection::DescribePendingRestart(
 void ApplyEngineRenderingSettingsStateToCVars(
     const EngineRenderingSettingsState& state) noexcept
 {
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarVSync, state.VSync);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarBackBufferFormat, state.BackBufferFormat);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarVSync, state.VSync);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarBackBufferFormat, state.BackBufferFormat);
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarPreferHighPerformanceAdapter,
 	    state.PreferHighPerformanceAdapter);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarToneMapper, SanitizeToneMapper(state.ToneMapper));
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMode, SanitizeExposureMode(state.ExposureMode));
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarToneMapper, SanitizeToneMapper(state.ToneMapper));
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMode, SanitizeExposureMode(state.ExposureMode));
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarExposureMeteringMethod,
 	    SanitizeExposureMeteringMethod(state.ExposureMeteringMethod));
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarOutputColorEncoding,
 	    SanitizeOutputColorEncoding(state.OutputColorEncoding));
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarManualExposure,
 	    SanitizeManualExposure(state.ManualExposure));
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarExposureCompensation,
 	    SanitizeExposureCompensation(state.ExposureCompensation));
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarExposureTargetLuminance,
 	    SanitizeExposureTargetLuminance(state.ExposureTargetLuminance));
 	float minimumExposure = SanitizeExposureMin(state.ExposureMin);
 	float maximumExposure = SanitizeExposureMax(state.ExposureMax);
 	SanitizeExposureRange(minimumExposure, maximumExposure);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMin, minimumExposure);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMax, maximumExposure);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMin, minimumExposure);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMax, maximumExposure);
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarExposureAdaptationSpeedUp,
 	    SanitizeExposureAdaptationSpeed(state.ExposureAdaptationSpeedUp));
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarExposureAdaptationSpeedDown,
 	    SanitizeExposureAdaptationSpeed(state.ExposureAdaptationSpeedDown));
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxDirectionalLights, state.MaxDirectionalLights);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxPointLights, state.MaxPointLights);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxSpotLights, state.MaxSpotLights);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxRectLights, state.MaxRectLights);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarUpscalerProvider, state.UpscalerProvider);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarUpscalerQualityMode, state.UpscalerQualityMode);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxDirectionalLights, state.MaxDirectionalLights);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxPointLights, state.MaxPointLights);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxSpotLights, state.MaxSpotLights);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxRectLights, state.MaxRectLights);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarUpscalerProvider, state.UpscalerProvider);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarUpscalerQualityMode, state.UpscalerQualityMode);
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarRayReconstructionMode,
 	    state.RayReconstructionMode);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarGBufferMode, state.GBuffer);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarLightingMode, state.Lighting);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRendererMeshAutoBatching, state.MeshAutoBatching);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayTracingClassicTlasRefit, state.RefitTlas);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarGBufferMode, state.GBuffer);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarLightingMode, state.Lighting);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarRendererMeshAutoBatching, state.MeshAutoBatching);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarRayTracingClassicTlasRefit, state.RefitTlas);
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarRayTracingPreferPartitionedTlas,
 	    state.PtlasActive);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarRayTracingPartitionsPerAxis,
 	    state.PtlasPartitionsPerAxis);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarRayTracingPtlasPartitionUpdateMode,
 	    state.PtlasPartitionUpdateMode);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarRayTracingPtlasMarkAllDynamicInPartition,
 	    state.PtlasMarkAllDynamicInPartition);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarRayTracingPtlasModeChangeDistance,
 	    state.PtlasModeChangeDistance);
-	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarRenderViewMode,
 	    state.ViewMode);
 }

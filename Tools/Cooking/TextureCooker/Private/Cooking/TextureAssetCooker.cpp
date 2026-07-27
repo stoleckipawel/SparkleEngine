@@ -14,7 +14,7 @@
 #include <fstream>
 #include <limits>
 
-class TextureAssetCookerOperations final
+class TextureMemoryEstimator final
 {
   public:
 	static std::size_t CalculateTextureBytes(const TextureLoadResult& texture)
@@ -44,7 +44,7 @@ bool TextureAssetCooker::Cook(
 	{
 		return false;
 	}
-	auto memoryLease = memoryLimiter.Acquire(TextureAssetCookerOperations::CalculateTextureBytes(loadResult), cancellation);
+	auto memoryLease = memoryLimiter.Acquire(TextureMemoryEstimator::CalculateTextureBytes(loadResult), cancellation);
 	if (!memoryLease.IsValid())
 	{
 		outErrorMessage = "Texture cook was cancelled while waiting for its decompressed-memory budget.";

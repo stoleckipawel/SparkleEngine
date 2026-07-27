@@ -11,7 +11,7 @@
 #include <string>
 #include <unordered_map>
 
-class MeshDiagnosticMetadataCatalogOperations final
+class CookedMeshMetadataReader final
 {
   public:
 
@@ -49,6 +49,6 @@ std::optional<MeshDiagnosticMetadata> FindMeshDiagnosticMetadata(const MeshDiagn
 	if (row.MeshAssetId == 0) return std::nullopt;
 	static std::unordered_map<std::uint64_t, std::optional<MeshDiagnosticMetadata>> metadataCache;
 	auto [metadataIt, inserted] = metadataCache.try_emplace(row.MeshAssetId);
-	if (inserted) metadataIt->second = MeshDiagnosticMetadataCatalogOperations::LoadCookedMeshMetadata(row.MeshAssetId);
+	if (inserted) metadataIt->second = CookedMeshMetadataReader::LoadCookedMeshMetadata(row.MeshAssetId);
 	return metadataIt->second;
 }

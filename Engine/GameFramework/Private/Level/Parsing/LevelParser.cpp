@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Level/Parsing/LevelParser.h"
 
 #include "Level/Parsing/CameraSectionParser.h"
@@ -10,7 +10,7 @@
 
 #include <fstream>
 
-class LevelParserOperations final
+class LevelDocumentCodec final
 {
   public:
 	static bool ParseLevelSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
@@ -130,7 +130,7 @@ std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::pat
 		parsedLine.key = std::string(key);
 		parsedLine.value = std::string(value);
 
-		if (!LevelParserOperations::ParseField(currentSection, parsedLine, levelDesc, errorMessage))
+		if (!LevelDocumentCodec::ParseField(currentSection, parsedLine, levelDesc, errorMessage))
 		{
 			return nullptr;
 		}
@@ -178,11 +178,11 @@ bool LevelParser::SaveToFile(const LevelAsset& level, std::string* errorMessage)
 	}
 
 	const LevelDesc levelDesc = level.BuildDescription();
-	LevelParserOperations::WriteLevelSection(output, level);
+	LevelDocumentCodec::WriteLevelSection(output, level);
 	LevelParsing::WriteCameraSection(output, levelDesc);
 	LevelParsing::WriteSkySection(output, levelDesc);
 	LevelParsing::WriteLightingSection(output, levelDesc);
-	LevelParserOperations::WriteSceneAssetsSection(output, levelDesc);
+	LevelDocumentCodec::WriteSceneAssetsSection(output, levelDesc);
 
 	if (!output.good())
 	{

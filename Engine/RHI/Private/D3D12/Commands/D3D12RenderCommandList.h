@@ -22,6 +22,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	ERhiBackendApi GetBackendApi() const noexcept override;
 	ERhiQueueType GetQueueType() const noexcept override { return m_queueType; }
 	ID3D12GraphicsCommandList7* GetD3D12CommandList() const noexcept { return m_commandList; }
+	bool IsCoordinatorRecording() const noexcept { return m_recordingOwner.IsCoordinator(); }
 	D3D12RecordingUploadPage* GetRecordingUploadPage() const noexcept { return m_recordingUploadPage; }
 	void SetRecordingUploadPage(D3D12RecordingUploadPage& uploadPage) noexcept { m_recordingUploadPage = &uploadPage; }
 	NativeGraphicsCommandListHandle GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept override;

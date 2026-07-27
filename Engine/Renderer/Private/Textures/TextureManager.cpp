@@ -23,29 +23,6 @@
 
 static const auto g_textureManagerLogger = Logging::GetOrCreateLogger("Renderer.TextureManager");
 
-class TextureManagerOperations final
-{
-  public:
-	static std::uint64_t CalculateTexturePayloadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
-	{
-		std::uint64_t byteCount = 0;
-		for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
-		{
-			for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
-			{
-				byteCount += mipLevel.Data.size();
-			}
-		}
-		return byteCount;
-	}
-
-	static std::uint64_t MakeAssetKey(const std::wstring& cacheKey) noexcept
-	{
-		const std::uint64_t value = static_cast<std::uint64_t>(std::hash<std::wstring>{}(cacheKey));
-		return value != 0 ? value : 1;
-	}
-};
-
 TextureManager::TextureManager(
     RhiResourceService& resourceService,
     RhiDescriptorService& descriptorService,
@@ -79,14 +56,7 @@ std::vector<RhiResourceHandle> TextureManager::LoadSceneTextures(
     RenderCommandList& commandList)
 {
 	RequestDefaults();
-	for (const RenderTextureAsset& texture : textures.Assets)
-	{
-		const std::optional<ResolvedTexturePath> source = ResolveTexturePath(texture.Path);
-		if (source)
-		{
-			RequestTexture(*source, textures.Generation != 0 ? textures.Generation : 1);
-		}
-	}
+	SynchronizeSceneTextures(textures);
 
 	ConsumeCompletedRequests();
 	std::vector<RhiResourceHandle> uploadedResources;
@@ -135,8 +105,36 @@ void TextureManager::PollResidency() noexcept
 	ActivateResidentRequests();
 }
 
+void TextureManager::CommitBindingRevision(
+    std::uint64_t bindingRevision) noexcept
+{
+	for (RetiredTexture& texture :
+	     m_retiredTextures)
+	{
+		if (texture.BindingRevision <= bindingRevision)
+		{
+			ReleaseActiveTexture(texture.Active);
+		}
+	}
+
+	m_retiredTextures.erase(
+	    std::remove_if(
+	        m_retiredTextures.begin(),
+	        m_retiredTextures.end(),
+	        [bindingRevision](
+	            const RetiredTexture& texture) noexcept
+	        {
+		        return texture.BindingRevision <=
+		               bindingRevision;
+	        }),
+	    m_retiredTextures.end());
+}
+
 void TextureManager::UnloadSceneTextures() noexcept
 {
+	bool removedTexture = false;
+	const std::uint64_t nextBindingRevision =
+	    m_bindingRevision + 1u;
 	for (TextureRequest& request : m_requests)
 	{
 		if (!m_defaultPathTextureKeys.contains(request.Source.CacheKey))
@@ -153,13 +151,27 @@ void TextureManager::UnloadSceneTextures() noexcept
 			++texture;
 			continue;
 		}
-		RetireActiveTexture(texture->second);
+		QueueTextureRetirement(
+		    std::move(texture->second),
+		    nextBindingRevision);
 		texture = m_pathTextures.erase(texture);
+		removedTexture = true;
 	}
+
+	if (removedTexture)
+	{
+		m_bindingRevision =
+		    nextBindingRevision;
+	}
+	m_wantedPathTextureKeys =
+	    m_defaultPathTextureKeys;
+	m_sceneTextureGeneration = 0;
 }
 
 void TextureManager::UnloadAll() noexcept
 {
+	const bool hadActiveTextures =
+	    !m_pathTextures.empty();
 	for (TextureRequest& request : m_requests)
 	{
 		request.Wanted = false;
@@ -175,12 +187,24 @@ void TextureManager::UnloadAll() noexcept
 	for (auto& [cacheKey, texture] : m_pathTextures)
 	{
 		(void)cacheKey;
-		RetireActiveTexture(texture);
+		ReleaseActiveTexture(texture);
 	}
 	m_pathTextures.clear();
+	for (RetiredTexture& texture :
+	     m_retiredTextures)
+	{
+		ReleaseActiveTexture(texture.Active);
+	}
+	m_retiredTextures.clear();
 	m_defaultPathTextureKeys.clear();
+	m_wantedPathTextureKeys.clear();
 	m_textureSlotKeys = {};
+	m_sceneTextureGeneration = 0;
 	m_defaultsRequested = false;
+	if (hadActiveTextures)
+	{
+		++m_bindingRevision;
+	}
 }
 
 const RendererTexture* TextureManager::GetTexture(TextureId id) const noexcept
@@ -319,7 +343,7 @@ void TextureManager::RequestTexture(
 
 	const std::optional<AssetGenerationHandle> handle =
 	    m_residency.BeginGeneration(
-	        TextureManagerOperations::MakeAssetKey(source.CacheKey),
+	        MakeAssetKey(source.CacheKey),
 	        generation);
 	if (!handle || m_taskScope == nullptr)
 	{
@@ -374,6 +398,75 @@ void TextureManager::RequestTexture(
 	m_requests.push_back(std::move(request));
 }
 
+void TextureManager::SynchronizeSceneTextures(
+    const RenderTextureTable& textures)
+{
+	const std::uint32_t generation =
+	    textures.Generation != 0
+	        ? textures.Generation
+	        : 1;
+	if (m_sceneTextureGeneration == generation)
+	{
+		return;
+	}
+
+	m_wantedPathTextureKeys =
+	    m_defaultPathTextureKeys;
+	for (const RenderTextureAsset& texture :
+	     textures.Assets)
+	{
+		const std::optional<ResolvedTexturePath> source =
+		    ResolveTexturePath(texture.Path);
+		if (!source)
+		{
+			continue;
+		}
+
+		m_wantedPathTextureKeys.insert(
+		    source->CacheKey);
+		RequestTexture(*source, generation);
+	}
+
+	for (TextureRequest& request : m_requests)
+	{
+		request.Wanted =
+		    m_wantedPathTextureKeys.contains(
+		        request.Source.CacheKey);
+		if (!request.Wanted)
+		{
+			(void)m_residency.Cancel(
+			    request.Generation);
+		}
+	}
+
+	bool retiredTexture = false;
+	const std::uint64_t nextBindingRevision =
+	    m_bindingRevision + 1u;
+	for (auto texture = m_pathTextures.begin();
+	     texture != m_pathTextures.end();)
+	{
+		if (m_wantedPathTextureKeys.contains(
+		        texture->first))
+		{
+			++texture;
+			continue;
+		}
+
+		QueueTextureRetirement(
+		    std::move(texture->second),
+		    nextBindingRevision);
+		texture = m_pathTextures.erase(texture);
+		retiredTexture = true;
+	}
+
+	if (retiredTexture)
+	{
+		m_bindingRevision =
+		    nextBindingRevision;
+	}
+	m_sceneTextureGeneration = generation;
+}
+
 void TextureManager::ConsumeCompletedRequests() noexcept
 {
 	for (TextureRequest& request : m_requests)
@@ -411,7 +504,7 @@ void TextureManager::ConsumeCompletedRequests() noexcept
 
 		(void)m_residency.BeginDecoding(request.Generation);
 		const std::uint64_t decodedBytes =
-		    TextureManagerOperations::CalculateTexturePayloadBytes(
+		    CalculateTexturePayloadBytes(
 		        request.Result->Texture.Upload);
 		if (!m_residency.PublishReadyForUpload(
 		        request.Generation,
@@ -547,7 +640,7 @@ std::optional<RendererTexture> TextureManager::CreateTexture(
 	    .FormatIntent = loadedTexture.FormatIntent,
 	    .MipCount = textureUpload.GetMipCount(),
 	    .EstimatedByteSize =
-	        TextureManagerOperations::CalculateTexturePayloadBytes(textureUpload)};
+	        CalculateTexturePayloadBytes(textureUpload)};
 }
 
 TextureManager::TextureRequest* TextureManager::FindRequest(
@@ -606,16 +699,22 @@ void TextureManager::ActivateResidentRequests() noexcept
 			ActiveTexture staleTexture{
 			    .Generation = request.Generation,
 			    .Texture = std::move(*request.Uploaded)};
-			RetireActiveTexture(staleTexture);
+			ReleaseActiveTexture(staleTexture);
 			request.Uploaded.reset();
 			continue;
 		}
 		if (active != m_pathTextures.end())
 		{
-			RetireActiveTexture(active->second);
+			const std::uint64_t nextBindingRevision =
+			    m_bindingRevision + 1u;
+			QueueTextureRetirement(
+			    std::move(active->second),
+			    nextBindingRevision);
 			active->second = ActiveTexture{
 			    .Generation = request.Generation,
 			    .Texture = std::move(*request.Uploaded)};
+			m_bindingRevision =
+			    nextBindingRevision;
 		}
 		else
 		{
@@ -624,6 +723,7 @@ void TextureManager::ActivateResidentRequests() noexcept
 			    ActiveTexture{
 			        .Generation = request.Generation,
 			        .Texture = std::move(*request.Uploaded)});
+			++m_bindingRevision;
 		}
 		request.Uploaded.reset();
 	}
@@ -641,7 +741,18 @@ void TextureManager::ActivateResidentRequests() noexcept
 	    m_requests.end());
 }
 
-void TextureManager::RetireActiveTexture(ActiveTexture& texture) noexcept
+void TextureManager::QueueTextureRetirement(
+    ActiveTexture&& texture,
+    std::uint64_t bindingRevision)
+{
+	m_retiredTextures.push_back(
+	    RetiredTexture{
+	        .BindingRevision = bindingRevision,
+	        .Active = std::move(texture)});
+}
+
+void TextureManager::ReleaseActiveTexture(
+    ActiveTexture& texture) noexcept
 {
 	const RhiSubmissionState lastUse = CaptureLastSubmittedState();
 	(void)m_residency.BeginEviction(texture.Generation, lastUse);
@@ -750,4 +861,32 @@ TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(
 	row.Loaded = static_cast<bool>(texture);
 	row.StreamManaged = true;
 	return row;
+}
+
+std::uint64_t TextureManager::CalculateTexturePayloadBytes(
+    const RhiTextureUploadDesc& textureUpload) noexcept
+{
+	std::uint64_t byteCount = 0;
+	for (const RhiTextureArraySliceUploadData& arraySlice :
+	     textureUpload.ArraySlices)
+	{
+		for (const RhiTextureMipUploadData& mipLevel :
+		     arraySlice.MipLevels)
+		{
+			byteCount += mipLevel.Data.size();
+		}
+	}
+
+	return byteCount;
+}
+
+std::uint64_t TextureManager::MakeAssetKey(
+    const TextureCacheKey& cacheKey) noexcept
+{
+	const std::uint64_t value =
+	    static_cast<std::uint64_t>(
+	        std::hash<TextureCacheKey>{}(cacheKey));
+	return value != 0
+	           ? value
+	           : 1;
 }

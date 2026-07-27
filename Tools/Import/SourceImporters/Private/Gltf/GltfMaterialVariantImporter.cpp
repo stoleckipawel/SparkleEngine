@@ -9,7 +9,7 @@
 #include <format>
 #include <utility>
 
-class GltfMaterialVariantImporterOperations final
+class GltfMaterialVariantTranslation final
 {
   public:
 	static ImportedMaterialIndex ResolveImportedMaterialIndex(const cgltf_data* data, const cgltf_material* material) noexcept
@@ -94,13 +94,13 @@ void GltfMaterialVariantImporter::ImportMaterialVariants(const cgltf_data* data,
 		return;
 	}
 
-	GltfMaterialVariantImporterOperations::ImportVariantSet(data, result);
+	GltfMaterialVariantTranslation::ImportVariantSet(data, result);
 	for (cgltf_size meshIndex = 0; meshIndex < data->meshes_count; ++meshIndex)
 	{
 		const cgltf_mesh& mesh = data->meshes[meshIndex];
 		for (cgltf_size primitiveIndex = 0; primitiveIndex < mesh.primitives_count; ++primitiveIndex)
 		{
-			GltfMaterialVariantImporterOperations::ImportPrimitiveMappings(
+			GltfMaterialVariantTranslation::ImportPrimitiveMappings(
 			    data,
 			    mesh.primitives[primitiveIndex],
 			    static_cast<std::uint32_t>(meshIndex),

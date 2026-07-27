@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 
-class VulkanClassicTlasServicesOperations final
+class VulkanTlasInstanceTranslation final
 {
   public:
 	static VkGeometryInstanceFlagsKHR ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
@@ -115,7 +115,7 @@ RhiOwnedResourceHandle VulkanClassicTlasServices::CreateClassicTopLevelAccelerat
 		nativeInstance.instanceCustomIndex = source.InstanceID & 0x00FFFFFFu;
 		nativeInstance.mask = source.InstanceMask & 0xFFu;
 		nativeInstance.instanceShaderBindingTableRecordOffset = source.InstanceContributionToHitGroupIndex & 0x00FFFFFFu;
-		nativeInstance.flags = VulkanClassicTlasServicesOperations::ToNativeInstanceFlags(source.Flags);
+		nativeInstance.flags = VulkanTlasInstanceTranslation::ToNativeInstanceFlags(source.Flags);
 		nativeInstance.accelerationStructureReference = source.AccelerationStructure;
 	}
 

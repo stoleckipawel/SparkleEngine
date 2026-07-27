@@ -215,8 +215,3 @@ void RenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
 	m_state->GetBackend().AdvanceFrameInFlight();
 }
-
-void RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
-{
-	m_state->GetBackend().CloseExecuteAndFlushCurrentFrame();
-}

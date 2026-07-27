@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Gltf/GltfMaterialImporter.h"
 
@@ -11,7 +11,7 @@
 
 static const auto g_gltfMaterialImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
-class GltfMaterialImporterOperations final
+class GltfMaterialFeatureReporting final
 {
   public:
 	static void AppendFeatureName(std::string& unsupportedFeatures, std::string_view featureName)
@@ -78,7 +78,8 @@ class GltfMaterialImporterOperations final
 			    g_gltfMaterialImporterLogger,
 			    "{}",
 			    std::format(
-			        "GltfImporter: Material handle {} uses unsupported glTF material features [{}] and will be approximated with Sparkle PBR defaults",
+			        "GltfImporter: Material handle {} uses unsupported glTF material features [{}] "
+			        "and will be approximated with Sparkle PBR defaults",
 			        materialIndex,
 			        unsupportedFeatures));
 		}
@@ -104,7 +105,7 @@ ImportedMaterial GltfMaterialImporter::ExtractMaterial(
     SourceImportResult& result)
 {
 	ImportedMaterial importedMaterial;
-	GltfMaterialImporterOperations::WarnUnsupportedFeatures(material, materialIndex);
+	GltfMaterialFeatureReporting::WarnUnsupportedFeatures(material, materialIndex);
 	GltfMaterialPropertyMapper::Apply(material, importedMaterial);
 	GltfMaterialTextureMapper::Apply(material, materialIndex, sourceDirectory, importedMaterial, result);
 	return importedMaterial;

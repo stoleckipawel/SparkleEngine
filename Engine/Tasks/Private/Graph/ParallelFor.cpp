@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <utility>
 
-class ParallelForOperations final
+class ParallelForTaskNaming final
 {
   public:
 	static TaskName DerivedTaskName(const TaskName& base, std::string suffix)
@@ -48,7 +48,7 @@ TaskNodeHandle ParallelFor(
 	}
 
 	TaskDesc groupDesc = desc;
-	groupDesc.Name = ParallelForOperations::DerivedTaskName(desc.Name, ".Group");
+	groupDesc.Name = ParallelForTaskNaming::DerivedTaskName(desc.Name, ".Group");
 	const TaskNodeHandle group = graph.Add(std::move(groupDesc), [](TaskExecutionContext&) { return TaskResult::Success(); });
 	if (!group)
 	{
@@ -71,7 +71,10 @@ TaskNodeHandle ParallelFor(
 		}
 
 		TaskDesc partitionDesc = desc;
-		partitionDesc.Name = ParallelForOperations::DerivedTaskName(desc.Name, ".Range" + std::to_string(partition));
+		partitionDesc.Name =
+		    ParallelForTaskNaming::DerivedTaskName(
+		        desc.Name,
+		        ".Range" + std::to_string(partition));
 		graph.AddNested(
 		    group,
 		    std::move(partitionDesc),

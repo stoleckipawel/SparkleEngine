@@ -20,9 +20,7 @@
 
 namespace SparkleLauncher
 {
-
-		constexpr int kSpaceSmall = LauncherUi::Space::Small;
-
+	constexpr int kSpaceSmall = LauncherUi::Space::Small;
 
 	std::filesystem::path FindLauncherVisualAsset(const std::filesystem::path& repositoryRoot, const QString& fileName)
 	{
@@ -39,7 +37,8 @@ namespace SparkleLauncher
 		    applicationVisualPath,
 		    GetArtifactDirectory(repositoryRoot) / "dev" / "launcher" / "Visuals" / assetName,
 		    GetArtifactDirectory(repositoryRoot) / "diagnostics" / "launcher-visual-assets" / assetName,
-		    GetArtifactDirectory(repositoryRoot) / "diagnostics" / "launcher-visual-assets" / (std::filesystem::path(assetName).stem().string() + ".png")};
+		    GetArtifactDirectory(repositoryRoot) / "diagnostics" / "launcher-visual-assets" /
+		        (std::filesystem::path(assetName).stem().string() + ".png")};
 		for (const std::filesystem::path& candidate : candidates)
 		{
 			std::error_code errorCode;
@@ -170,7 +169,8 @@ namespace SparkleLauncher
 		const QSize artworkDesignSize = isLibraryCard ? LauncherUi::Card::ProductArtworkSize : LauncherUi::Card::DiscoverArtworkSize;
 		const LauncherArtworkPreset artworkPreset =
 		    isLibraryCard ? LauncherArtworkPreset::ProductCard : LauncherArtworkPreset::DiscoverTile;
-		if (QWidget* artwork = CreateLauncherVisualArtworkWidget(repositoryRoot, artworkFileName, "CommandCardArtwork", artworkDesignSize, artworkPreset, card))
+		if (QWidget* artwork =
+		        CreateLauncherVisualArtworkWidget(repositoryRoot, artworkFileName, "CommandCardArtwork", artworkDesignSize, artworkPreset, card))
 		{
 			artwork->setProperty("TileRole", tileRole);
 			QSizePolicy artworkPolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);

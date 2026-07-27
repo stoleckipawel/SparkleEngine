@@ -10,7 +10,7 @@
 
 #include <d3d12.h>
 
-class D3D12DescriptorServiceOperations final
+class D3D12DescriptorFormatSelection final
 {
   public:
 	static DXGI_FORMAT ResolveTextureShaderResourceViewFormat(PixelFormat format) noexcept
@@ -570,7 +570,7 @@ bool D3D12DescriptorService::WriteResourceViewDescriptor(
 			}
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-			viewDesc.Format = D3D12DescriptorServiceOperations::ResolveTextureShaderResourceViewFormat(desc.Format);
+			viewDesc.Format = D3D12DescriptorFormatSelection::ResolveTextureShaderResourceViewFormat(desc.Format);
 			viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			if (desc.TextureDimension == TextureResourceDimension::TextureCube)
 			{

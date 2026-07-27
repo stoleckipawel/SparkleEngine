@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstring>
 
-class CookedSceneLightBuilderOperations final
+class CookedLightTranslation final
 {
   public:
 	static Assets::CookedSceneLightKind ToCookedLightKind(ImportedLightKind lightKind) noexcept
@@ -60,6 +60,6 @@ void CookedSceneLightBuilder::BuildLights(const SourceImportResult& importResult
 
 	for (const ImportedLight& importedLight : importResult.scene.lights)
 	{
-		outBuild.manifest.lights.push_back(CookedSceneLightBuilderOperations::BuildLightRecord(importedLight));
+		outBuild.manifest.lights.push_back(CookedLightTranslation::BuildLightRecord(importedLight));
 	}
 }
