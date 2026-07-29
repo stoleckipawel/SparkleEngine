@@ -3,7 +3,7 @@
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
@@ -13,7 +13,7 @@ ComputeClearPass::ComputeClearPass(const ComputePassPipelineRuntime& runtime) no
 
 const ComputeClearPass::ParameterMetadata& ComputeClearPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<ComputeClearPass>();
+	return ComputePassOperations::BuildParameterMetadata<ComputeClearPass>();
 }
 
 const PassParameterLayout& ComputeClearPass::GetParameterLayout() noexcept
@@ -23,11 +23,11 @@ const PassParameterLayout& ComputeClearPass::GetParameterLayout() noexcept
 
 const RenderPassDefinition& ComputeClearPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::ComputeClear,
 	    L"ComputeClear_BindingLayout",
-	    L"ComputeClear_PipelineState");
+	    L"ComputeClear_Pipeline");
 	return definition;
 }
 
@@ -37,7 +37,7 @@ void ComputeClearPass::Execute(
     std::uint32_t width,
     std::uint32_t height) const noexcept
 {
-	ComputePassUtilities::DispatchSized<ComputeClearPass>(context, m_runtime, parameters, width, height);
+	ComputePassOperations::DispatchSized<ComputeClearPass>(context, m_runtime, parameters, width, height);
 }
 
 void AddComputeClearPass(

@@ -2,6 +2,10 @@
 
 #include "Vulkan/VulkanTypeConversions.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
+static const auto g_vulkanTypeConversionsLogger = Logging::GetOrCreateLogger("RHI.Vulkan.TypeConversions");
+
 VkFormat VulkanTypeConversions::ToVkFormat(PixelFormat format) noexcept
 {
 	switch (format)
@@ -120,8 +124,9 @@ VkIndexType VulkanTypeConversions::ToVkIndexType(RhiIndexFormat format) noexcept
 		case RhiIndexFormat::UInt16:
 			return VK_INDEX_TYPE_UINT16;
 		case RhiIndexFormat::UInt32:
-		default:
 			return VK_INDEX_TYPE_UINT32;
+		default:
+			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Unsupported Vulkan index format.");
 	}
 }
 
@@ -144,8 +149,9 @@ VkCompareOp VulkanTypeConversions::ToVkCompareOp(CompareOp op) noexcept
 		case CompareOp::GreaterOrEqual:
 			return VK_COMPARE_OP_GREATER_OR_EQUAL;
 		case CompareOp::Always:
-		default:
 			return VK_COMPARE_OP_ALWAYS;
+		default:
+			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Unsupported Vulkan comparison operation.");
 	}
 }
 
@@ -168,8 +174,9 @@ VkStencilOp VulkanTypeConversions::ToVkStencilOp(RhiStencilOp op) noexcept
 		case RhiStencilOp::IncrementWrap:
 			return VK_STENCIL_OP_INCREMENT_AND_WRAP;
 		case RhiStencilOp::DecrementWrap:
-		default:
 			return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+		default:
+			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Unsupported Vulkan stencil operation.");
 	}
 }
 
@@ -182,8 +189,9 @@ VkCullModeFlags VulkanTypeConversions::ToVkCullModeFlags(ERhiCullMode cullMode) 
 		case ERhiCullMode::Front:
 			return VK_CULL_MODE_FRONT_BIT;
 		case ERhiCullMode::Back:
-		default:
 			return VK_CULL_MODE_BACK_BIT;
+		default:
+			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Unsupported Vulkan cull mode.");
 	}
 }
 
@@ -192,8 +200,9 @@ VkPrimitiveTopology VulkanTypeConversions::ToVkPrimitiveTopology(RhiPrimitiveTop
 	switch (topology)
 	{
 		case RhiPrimitiveTopology::TriangleList:
-		default:
 			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		default:
+			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Unsupported Vulkan primitive topology.");
 	}
 }
 
@@ -303,7 +312,7 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 			    .AccessMask = VK_ACCESS_2_MEMORY_READ_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR};
 		default:
-			return ToResourceStateMapping(ResourceState::Common);
+			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Unsupported Vulkan resource state.");
 	}
 }
 
@@ -322,13 +331,14 @@ VkBufferCreateInfo VulkanTypeConversions::BuildBufferCreateInfo(const RhiBufferR
 			usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 			break;
 		case RhiBufferKind::Generic:
-		default:
 			if (desc.StrideInBytes > 0)
 			{
 				usage |=
 				    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 			}
 			break;
+		default:
+			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Unsupported Vulkan buffer kind.");
 	}
 	if (desc.AllowUnorderedAccess)
 	{
@@ -394,7 +404,30 @@ VkImageAspectFlags VulkanTypeConversions::ResolveAspectMask(PixelFormat format) 
 			return VK_IMAGE_ASPECT_DEPTH_BIT;
 		case PixelFormat::D24_UNorm_S8_UInt:
 			return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-		default:
+		case PixelFormat::R32G32B32A32_Float:
+		case PixelFormat::R16G16B16A16_Float:
+		case PixelFormat::R16G16_Float:
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_Srgb:
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm_Srgb:
+		case PixelFormat::R32_Float:
+		case PixelFormat::BC1_UNorm:
+		case PixelFormat::BC1_UNorm_Srgb:
+		case PixelFormat::BC2_UNorm:
+		case PixelFormat::BC2_UNorm_Srgb:
+		case PixelFormat::BC3_UNorm:
+		case PixelFormat::BC3_UNorm_Srgb:
+		case PixelFormat::BC4_UNorm:
+		case PixelFormat::BC4_SNorm:
+		case PixelFormat::BC5_UNorm:
+		case PixelFormat::BC5_SNorm:
+		case PixelFormat::BC6H_UF16:
+		case PixelFormat::BC7_UNorm:
+		case PixelFormat::BC7_UNorm_Srgb:
 			return VK_IMAGE_ASPECT_COLOR_BIT;
+		case PixelFormat::Unknown:
+		default:
+			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Cannot resolve an aspect mask for an unknown Vulkan format.");
 	}
 }

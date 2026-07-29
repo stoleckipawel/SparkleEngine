@@ -2,6 +2,8 @@
 
 #include "Features/Instances/CookedSceneInstanceBuilder.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <cstdint>
 #include <limits>
 
@@ -22,48 +24,39 @@ class CookedSceneInstanceTranslation final
 		}
 	}
 
-	static bool ResolveMaterialAssetIndex(
+	static std::uint32_t ResolveMaterialAssetIndex(
 	    const ImportedMeshInstance& importedInstance,
-	    const CookedSceneBuild& build,
-	    std::uint32_t& outMaterialAssetIndex,
-	    std::string& outErrorMessage)
+	    const CookedSceneBuild& build)
 	{
-		outMaterialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
 		if (!importedInstance.HasMaterialBinding())
 		{
-			return true;
+			return Assets::kInvalidCookedMaterialAssetIndex;
 		}
 
-		outMaterialAssetIndex = importedInstance.materialIndex;
-		if (outMaterialAssetIndex >= build.outputs.materialAssets.size())
+		if (importedInstance.materialIndex >= build.outputs.materialAssets.size())
 		{
-			outErrorMessage = "Imported mesh instance references a material index outside the imported material set";
-			return false;
+			throw Diagnostics::Error("Imported mesh instance references a material index outside the imported material set.");
 		}
 
-		return true;
+		return importedInstance.materialIndex;
 	}
 
-	static bool ResolveMaterialAssetIndex(
+	static std::uint32_t ResolveMaterialAssetIndex(
 	    const ImportedMeshInstanceGroup& importedGroup,
-	    const CookedSceneBuild& build,
-	    std::uint32_t& outMaterialAssetIndex,
-	    std::string& outErrorMessage)
+	    const CookedSceneBuild& build)
 	{
-		outMaterialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
 		if (!importedGroup.HasMaterialBinding())
 		{
-			return true;
+			return Assets::kInvalidCookedMaterialAssetIndex;
 		}
 
-		outMaterialAssetIndex = importedGroup.materialIndex;
-		if (outMaterialAssetIndex >= build.outputs.materialAssets.size())
+		if (importedGroup.materialIndex >= build.outputs.materialAssets.size())
 		{
-			outErrorMessage = "Imported mesh instance group references a material index outside the imported material set";
-			return false;
+			throw Diagnostics::Error(
+			    "Imported mesh instance group references a material index outside the imported material set.");
 		}
 
-		return true;
+		return importedGroup.materialIndex;
 	}
 
 	static bool SupportsMorphWeights(const ImportedMeshInstance& importedInstance, const CookedSceneBuild& build) noexcept
@@ -77,38 +70,32 @@ class CookedSceneInstanceTranslation final
 	}
 };
 
-bool CookedSceneInstanceBuilder::BuildInstances(
-    const SourceImportResult& importResult,
-    CookedSceneBuild& build,
-    std::string& outErrorMessage)
+void CookedSceneInstanceBuilder::BuildInstances(const SourceImportOutput& importOutput, CookedSceneBuild& build)
 {
 	build.manifest.instances.clear();
-	build.manifest.instances.reserve(importResult.scene.meshInstances.size());
+	build.manifest.instances.reserve(importOutput.scene.meshInstances.size());
 	build.manifest.instanceGroups.clear();
-	build.manifest.instanceGroups.reserve(importResult.scene.meshInstanceGroups.size());
+	build.manifest.instanceGroups.reserve(importOutput.scene.meshInstanceGroups.size());
 
-	for (std::size_t instanceIndex = 0; instanceIndex < importResult.scene.meshInstances.size(); ++instanceIndex)
+	for (std::size_t instanceIndex = 0; instanceIndex < importOutput.scene.meshInstances.size(); ++instanceIndex)
 	{
-		const ImportedMeshInstance& importedInstance = importResult.scene.meshInstances[instanceIndex];
+		const ImportedMeshInstance& importedInstance = importOutput.scene.meshInstances[instanceIndex];
 		if (!importedInstance.HasPrimitiveBinding() || importedInstance.primitiveIndex >= build.manifest.meshAssetReferences.size())
 		{
-			outErrorMessage = "Imported mesh instance references a primitive index outside the cooked mesh asset set";
-			return false;
+			throw Diagnostics::Error(
+			    "Imported mesh instance references a primitive index outside the cooked mesh asset set.");
 		}
 
-		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (!CookedSceneInstanceTranslation::ResolveMaterialAssetIndex(importedInstance, build, materialAssetIndex, outErrorMessage))
-		{
-			return false;
-		}
+		const std::uint32_t materialAssetIndex =
+		    CookedSceneInstanceTranslation::ResolveMaterialAssetIndex(importedInstance, build);
 
 		std::uint32_t groupIndex = Assets::kInvalidCookedSceneInstanceGroupIndex;
 		if (importedInstance.groupIndex != kInvalidImportedMeshInstanceGroupIndex)
 		{
-			if (importedInstance.groupIndex >= importResult.scene.meshInstanceGroups.size())
+			if (importedInstance.groupIndex >= importOutput.scene.meshInstanceGroups.size())
 			{
-				outErrorMessage = "Imported mesh instance references an instance group outside the imported group set";
-				return false;
+				throw Diagnostics::Error(
+				    "Imported mesh instance references an instance group outside the imported group set.");
 			}
 
 			groupIndex = importedInstance.groupIndex;
@@ -119,8 +106,8 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		{
 			if (importedInstance.skeletonIndex >= build.manifest.skeletonRefs.size())
 			{
-				outErrorMessage = "Imported mesh instance references a skeleton outside the cooked skeleton set";
-				return false;
+				throw Diagnostics::Error(
+				    "Imported mesh instance references a skeleton outside the cooked skeleton set.");
 			}
 
 			skeletonRefIndex = importedInstance.skeletonIndex;
@@ -150,32 +137,28 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		        .worldTransform = importedInstance.worldTransform});
 	}
 
-	for (std::size_t groupIndex = 0; groupIndex < importResult.scene.meshInstanceGroups.size(); ++groupIndex)
+	for (std::size_t groupIndex = 0; groupIndex < importOutput.scene.meshInstanceGroups.size(); ++groupIndex)
 	{
-		const ImportedMeshInstanceGroup& importedGroup = importResult.scene.meshInstanceGroups[groupIndex];
+		const ImportedMeshInstanceGroup& importedGroup = importOutput.scene.meshInstanceGroups[groupIndex];
 		if (!importedGroup.HasPrimitiveBinding() || importedGroup.primitiveIndex >= build.manifest.meshAssetReferences.size())
 		{
-			outErrorMessage = "Imported mesh instance group references a primitive index outside the cooked mesh asset set";
-			return false;
+			throw Diagnostics::Error(
+			    "Imported mesh instance group references a primitive index outside the cooked mesh asset set.");
 		}
 
-		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (!CookedSceneInstanceTranslation::ResolveMaterialAssetIndex(importedGroup, build, materialAssetIndex, outErrorMessage))
-		{
-			return false;
-		}
+		const std::uint32_t materialAssetIndex =
+		    CookedSceneInstanceTranslation::ResolveMaterialAssetIndex(importedGroup, build);
 
 		if (!importedGroup.HasInstanceRange() || importedGroup.firstInstanceIndex >= build.manifest.instances.size() ||
 		    importedGroup.instanceCount > build.manifest.instances.size() - importedGroup.firstInstanceIndex)
 		{
-			outErrorMessage = "Imported mesh instance group references an instance range outside the cooked instance set";
-			return false;
+			throw Diagnostics::Error(
+			    "Imported mesh instance group references an instance range outside the cooked instance set.");
 		}
 
 		if (groupIndex > (std::numeric_limits<std::uint32_t>::max)())
 		{
-			outErrorMessage = "Imported mesh instance group count exceeds the cooked scene manifest range";
-			return false;
+			throw Diagnostics::Error("Imported mesh instance group count exceeds the cooked scene manifest range.");
 		}
 
 		build.manifest.instanceGroups.push_back(
@@ -187,7 +170,4 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		        .groupKind = CookedSceneInstanceTranslation::ToCookedInstanceGroupKind(importedGroup.groupKind),
 		        .flags = importedGroup.flags});
 	}
-
-	outErrorMessage.clear();
-	return true;
 }

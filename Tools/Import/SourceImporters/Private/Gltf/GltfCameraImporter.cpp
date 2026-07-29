@@ -3,15 +3,18 @@
 #include "Gltf/GltfCameraImporter.h"
 
 #include "Gltf/GltfNodeTransformConverter.h"
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <cgltf.h>
+
+#include <DirectXMath.h>
 
 #include <format>
 
 class GltfCameraNaming final
 {
   public:
-	static std::string ResolveCameraName(const cgltf_node& node, std::uint32_t nodeIndex)
+	static std::string ResolveCameraName(const cgltf_node& node)
 	{
 		if (node.name != nullptr && node.name[0] != '\0')
 		{
@@ -23,18 +26,18 @@ class GltfCameraNaming final
 			return node.camera->name;
 		}
 
-		return std::format("glTF Camera {}", nodeIndex);
+		return {};
 	}
 };
 
-void GltfCameraImporter::ImportCameras(const cgltf_data* data, SourceImportResult& result)
+void GltfCameraImporter::ImportCameras(const cgltf_data* data, SourceImportOutput& output)
 {
 	if (data == nullptr)
 	{
-		return;
+		throw Diagnostics::Error("glTF camera import has no parsed scene.");
 	}
 
-	result.scene.cameras.reserve(data->cameras_count);
+	output.scene.cameras.reserve(data->cameras_count);
 	for (cgltf_size nodeIndex = 0; nodeIndex < data->nodes_count; ++nodeIndex)
 	{
 		const cgltf_node& node = data->nodes[nodeIndex];
@@ -44,29 +47,26 @@ void GltfCameraImporter::ImportCameras(const cgltf_data* data, SourceImportResul
 		}
 
 		ImportedCamera camera;
-		camera.name = GltfCameraNaming::ResolveCameraName(
-		    node,
-		    static_cast<std::uint32_t>(nodeIndex));
+		camera.name = GltfCameraNaming::ResolveCameraName(node);
 		camera.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
 		DirectX::XMStoreFloat4x4(&camera.worldTransform, GltfNodeTransformConverter::ComputeNodeWorldTransform(&node));
 
 		const cgltf_camera& sourceCamera = *node.camera;
-		if (sourceCamera.type == cgltf_camera_type_perspective)
+		if (sourceCamera.type != cgltf_camera_type_perspective)
 		{
-			camera.projectionKind = ImportedCameraProjectionKind::Perspective;
-			camera.verticalFovRadians = sourceCamera.data.perspective.yfov;
-			camera.nearPlane = sourceCamera.data.perspective.znear > 0.0f ? sourceCamera.data.perspective.znear : camera.nearPlane;
-			camera.farPlane =
-			    sourceCamera.data.perspective.zfar > camera.nearPlane ? sourceCamera.data.perspective.zfar : camera.farPlane;
-		}
-		else if (sourceCamera.type == cgltf_camera_type_orthographic)
-		{
-			camera.projectionKind = ImportedCameraProjectionKind::Orthographic;
-			camera.nearPlane = sourceCamera.data.orthographic.znear > 0.0f ? sourceCamera.data.orthographic.znear : camera.nearPlane;
-			camera.farPlane =
-			    sourceCamera.data.orthographic.zfar > camera.nearPlane ? sourceCamera.data.orthographic.zfar : camera.farPlane;
+			throw Diagnostics::Error(std::format("glTF camera {} uses an unsupported projection.", nodeIndex));
 		}
 
-		result.scene.cameras.push_back(std::move(camera));
+		const cgltf_camera_perspective& perspective = sourceCamera.data.perspective;
+		if (perspective.has_aspect_ratio || !perspective.has_zfar)
+		{
+			throw Diagnostics::Error(std::format("glTF camera {} uses unsupported perspective parameters.", nodeIndex));
+		}
+
+		camera.projectionKind = ImportedCameraProjectionKind::Perspective;
+		camera.fovYRadians = perspective.yfov;
+		camera.nearZ = perspective.znear;
+		camera.farZ = perspective.zfar;
+		output.scene.cameras.push_back(std::move(camera));
 	}
 }

@@ -15,7 +15,6 @@ struct SPARKLE_CORE_API ProjectLevelCatalogEntry final
 	std::filesystem::path sourcePath;
 	std::string optionalContentPackId;
 	bool defaultIncluded = false;
-	bool required = false;
 	bool startupDefault = false;
 };
 
@@ -44,10 +43,7 @@ struct SPARKLE_CORE_API ProjectLevelCatalog final
 class SPARKLE_CORE_API ProjectLevelCatalogFile final
 {
   public:
-	static bool Load(
-	    const std::filesystem::path& projectRoot,
-	    ProjectLevelCatalog& outCatalog,
-	    std::string& outErrorMessage);
+	static ProjectLevelCatalog Load(const std::filesystem::path& projectRoot);
 	static bool SetLevelDefaultIncluded(
 	    const std::filesystem::path& projectRoot,
 	    std::string_view levelId,

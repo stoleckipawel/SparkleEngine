@@ -2,7 +2,7 @@
 
 Status: binding integration and review contract
 Applies to: owned code in `Engine`, `Tools`, `Projects`, build files, shaders, tests, and directly related documentation
-Last consolidated: 2026-07-26
+Last consolidated: 2026-07-29
 
 ## Purpose
 
@@ -630,6 +630,31 @@ Use distinct verbs:
 - `Retire` delays reuse/destruction until its completion condition.
 
 Avoid vague owners such as `Manager`, `System`, or `Services` unless the name states the owned domain and the type truly coordinates that domain. Prefer names that reveal the capability: evaluator, sampler, builder, compiler, planner, allocator, registry, publisher, committer, coordinator, encoder, decoder, or store.
+
+Shared graphics contracts use the same vocabulary on every side of a boundary:
+
+- Use official NVIDIA NVRHI and Donut vocabulary as the first external naming reference when a Sparkle responsibility is semantically equivalent. Do not copy an overloaded or backend-specific term when Sparkle has a more precise lifetime, unit, or cross-backend contract.
+- A backend implementation of an `Rhi*Service` is a `D3D12*Service` or `Vulkan*Service`. A contained object that allocates handles or storage remains an `*Allocator`; do not call the service and allocator variants of the same owner.
+- `RendererHost` owns renderer composition lifetime. `RendererBackendOwner` owns `RenderDeviceServices`. Callers name that contract `deviceServices`, while a `RenderHardwareInterface` reference is `renderHardwareInterface`.
+- `TextureCache`, `MaterialCache`, and `RenderPassRuntimeCache` name persistent revision/generation-keyed caches. Do not reintroduce `TextureManager`, `MaterialCacheManager`, or `PipelineStateManager`.
+- `PassRuntimeContext`, `RayTracingPassContext`, and `ImageProviderPassContext` name transient borrowed pass state. A context does not own the caches, providers, or scene objects it references.
+- `SourceImportOutput` is successful imported content with `SourceImportProvenance`; import failure is a thrown `Diagnostics::Error`. Name a `SourceImportOutput` local or parameter `output` or `importOutput`, not `result`, and do not duplicate source/importer identity inside `ImportedScene`.
+- `GpuMesh`, `GpuMeshCache`, and related filenames use `Gpu` acronym casing consistently. `RenderCommandContext` parameters are `commandContext`; do not use `cmd`.
+- Backend-neutral render-target APIs use `renderTarget`, `renderTargets`, `renderTargetCount`, and `depthStencil`. `rtv` and `dsv` are allowed only for native D3D objects at the backend translation boundary.
+- Backend-neutral compiled pipelines are `RenderPipeline` objects described by `GraphicsPipelineDesc` or `ComputePipelineDesc`, created with `Create*Pipeline`, and bound with `SetPipeline`. `PipelineState`, `PSO`, `ID3D12PipelineState`, and `SetPipelineState` are native D3D12 terms and must not leak into renderer or backend-neutral RHI contracts.
+- `LevelSession` owns the registered, active, pending, and loading level lifecycle. `SceneLoadExecutor` owns the background task execution that produces a `SceneLoadPackage`; its shared task payload is `SceneLoadWorkState`. Do not collapse these lifetimes back into `LevelManager` or `SceneLoadExecutionService`.
+- `EditorTransactionHistory` owns editor undo/redo transaction stacks and coalescing. Panels borrow it as `transactionHistory`; do not describe this focused history as an `EditorTransactionManager`.
+- Physical light quantities retain their units and meanings end to end: directional `illuminance`, point/spot `luminousIntensity`, area `luminance`, angular values suffixed `Radians`, and sky/environment radiance scaling named `brightness`.
+- `JointMatrix` names stored per-joint transforms, packed streams, offsets, counts, and copy ranges. `Skinning` names the operation that blends joint matrices by vertex influences. `SkinInfluence` names the joint-index and joint-weight input.
+- `MorphTarget` names a target shape; `MorphWeight` names its scalar contribution. Packed offsets/counts are `MorphWeightRange`, preparation copies are `MorphWeightCopyRange`, and history is `MorphWeightHistory`; do not collapse these responsibilities into generic `MorphData` or `MorphRange`.
+- `GpuSceneSlot` names the transient slot used to address a GPU-scene instance. Preserve that name through CPU shader mirrors, raster varyings, and ray-tracing hit reconstruction; do not disguise it as `DebugData` or promote it to an identity. A view that hashes these slots is `GpuSceneInstances`, not `InstanceGroups`.
+- `WorldMatrix`, `PreviousWorldMatrix`, and `WorldInverseTranspose` retain those spellings across render packets, CPU shader-layout mirrors, and HLSL. Do not introduce shortened aliases such as `WorldMTX` or `WorldInvTransposeMTX`.
+- Temporal-history transforms follow Donut's coordinate-space direction vocabulary: `PreviousWorldToViewMatrix`, `PreviousViewToClipMatrix`, and `PreviousWorldToClipMatrix`. Do not encode these contracts as ambiguous `PrevViewMTX`, `PrevProjectionMTX`, or `PrevViewProjMTX` abbreviations.
+- Camera projection contracts use `FovY`, `NearZ`, and `FarZ` end to end. Append `Degrees` or `Radians` to FOV values at boundaries where the unit is not carried by the type; do not introduce `VerticalFieldOfView`, `NearPlane`, or `FarPlane` aliases for the same values.
+- Scalar time values crossing a CPU/GPU or serialization boundary name their unit, such as `DeltaTimeSeconds`. Preserve Donut's established `ViewportSizeInv` spelling for the reciprocal viewport extent; use directional space names instead of `Inv` for matrices.
+- Temporal sample offsets name their coordinate space. Sparkle's offsets are `CurrentJitterNdc` and `PreviousJitterNdc`; do not call them pixel offsets or leave the space implicit.
+- `Index` addresses an element in a contiguous table or buffer; `Id` is identity. Do not use them interchangeably merely because both are integers.
+- CPU/shader ABI mirrors MUST use the same field names as HLSL unless a toolchain restriction forces an explicitly documented mapping. Layout-preserving renames still require paired C++/HLSL edits, static layout checks, and shader compilation for every supported target.
 
 ### 9.2 Identity Vocabulary
 

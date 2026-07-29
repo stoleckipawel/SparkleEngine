@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 #include "Gltf/GltfMeshInstancingImporter.h"
 
 #include <DirectXMath.h>
@@ -13,7 +13,7 @@ class GltfMeshInstanceAppender final
 {
   public:
 	static void AppendMeshInstance(
-	    SourceImportResult& result,
+	    SourceImportOutput& output,
 	    ImportedMeshPrimitiveIndex importedPrimitiveIndex,
 	    ImportedMaterialIndex materialIndex,
 	    DirectX::FXMMATRIX worldTransform,
@@ -24,7 +24,7 @@ class GltfMeshInstanceAppender final
 	    std::span<const float> morphWeights = {});
 
 	static void AppendMeshGpuInstancingGroup(
-	    SourceImportResult& result,
+	    SourceImportOutput& output,
 	    const GltfMeshGpuInstancingTransforms& transforms,
 	    ImportedMeshPrimitiveIndex importedPrimitiveIndex,
 	    ImportedMaterialIndex materialIndex,

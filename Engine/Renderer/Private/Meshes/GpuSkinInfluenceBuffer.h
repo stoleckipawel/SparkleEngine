@@ -10,18 +10,18 @@
 class RenderHardwareInterface;
 class RenderCommandList;
 
-class GPUSkinInfluenceBuffer final
+class GpuSkinInfluenceBuffer final
 {
   public:
-	GPUSkinInfluenceBuffer() noexcept = default;
-	~GPUSkinInfluenceBuffer() noexcept;
+	GpuSkinInfluenceBuffer() noexcept = default;
+	~GpuSkinInfluenceBuffer() noexcept;
 
-	GPUSkinInfluenceBuffer(const GPUSkinInfluenceBuffer&) = delete;
-	GPUSkinInfluenceBuffer& operator=(const GPUSkinInfluenceBuffer&) = delete;
-	GPUSkinInfluenceBuffer(GPUSkinInfluenceBuffer&&) = delete;
-	GPUSkinInfluenceBuffer& operator=(GPUSkinInfluenceBuffer&&) = delete;
+	GpuSkinInfluenceBuffer(const GpuSkinInfluenceBuffer&) = delete;
+	GpuSkinInfluenceBuffer& operator=(const GpuSkinInfluenceBuffer&) = delete;
+	GpuSkinInfluenceBuffer(GpuSkinInfluenceBuffer&&) = delete;
+	GpuSkinInfluenceBuffer& operator=(GpuSkinInfluenceBuffer&&) = delete;
 
-	bool Upload(
+	void Upload(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    RenderCommandList& commandList,
 	    std::span<const VertexSkinInfluenceData> skinInfluences);

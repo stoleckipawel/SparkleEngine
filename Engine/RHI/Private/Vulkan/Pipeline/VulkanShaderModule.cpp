@@ -19,7 +19,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 	{
 		if (required)
 		{
-			Diagnostics::Fail(
+			Diagnostics::Fatal(
 			    g_vulkanShaderModuleLogger,
 			    __FILE__,
 			    __LINE__,
@@ -33,7 +33,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 	    shaderPackage.FindRuntimeBinaryRecord(desc.Stage, CookedShaderBinaryFormat::SpirV);
 	if (shaderBinary == nullptr)
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanShaderModuleLogger,
 		    __FILE__,
 		    __LINE__,
@@ -47,7 +47,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 	const ShaderBytecode bytecode = shaderPackage.GetBytecode(*shaderBinary);
 	if (!bytecode.IsValid() || (bytecode.Size % sizeof(std::uint32_t)) != 0)
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanShaderModuleLogger,
 		    __FILE__,
 		    __LINE__,
@@ -77,7 +77,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 		{
 			SPDLOG_LOGGER_ERROR(g_vulkanShaderModuleLogger, "Vulkan shader module debug artifact: {}", debugArtifact);
 		}
-		Diagnostics::Fail(g_vulkanShaderModuleLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateShaderModule", result));
+		Diagnostics::Fatal(g_vulkanShaderModuleLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateShaderModule", result));
 	}
 
 	m_stage = desc.Stage;

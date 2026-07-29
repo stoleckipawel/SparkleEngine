@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../Pipeline/RhiPipelineStateDesc.h"
+#include "../Pipeline/RhiPipelineDesc.h"
 #include "../RHIAPI.h"
 
 #include <memory>
 
 class RenderBindingLayout;
-class RenderPipelineState;
+class RenderPipeline;
 
 class SPARKLE_RHI_API RhiPipelineService
 {
@@ -14,6 +14,6 @@ class SPARKLE_RHI_API RhiPipelineService
 	virtual ~RhiPipelineService() noexcept = default;
 
 	virtual std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) = 0;
-	virtual std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) = 0;
-	virtual std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) = 0;
+	virtual std::unique_ptr<RenderPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
+	virtual std::unique_ptr<RenderPipeline> CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
 };

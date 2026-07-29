@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <string_view>
 
-struct SourceImportResult;
 struct cgltf_accessor;
 struct cgltf_node;
 
@@ -20,12 +19,10 @@ struct GltfMeshGpuInstancingTransforms
 
 class GltfMeshInstancingImporter final
 {
-  public:
-	static bool TryReadMeshGpuInstancingTransforms(
+	public:
+	static GltfMeshGpuInstancingTransforms ReadMeshGpuInstancingTransforms(
 	    const cgltf_node& node,
-	    std::string_view nodeLabel,
-	    SourceImportResult& result,
-	    GltfMeshGpuInstancingTransforms& outTransforms);
+	    std::string_view nodeLabel);
 	static DirectX::XMMATRIX BuildMeshGpuInstancingTransform(
 	    const GltfMeshGpuInstancingTransforms& transforms,
 	    std::size_t instanceIndex);

@@ -1,18 +1,18 @@
 #pragma once
 
 class RenderBindingLayout;
-class RenderPipelineState;
+class RenderPipeline;
 
 struct RasterPassPipelineRuntime
 {
 	RenderBindingLayout& BindingLayout;
-	RenderPipelineState& PipelineState;
-	RenderPipelineState* WireframePipelineState = nullptr;
-	RenderPipelineState* TwoSidedPipelineState = nullptr;
+	RenderPipeline& Pipeline;
+	RenderPipeline* WireframePipeline = nullptr;
+	RenderPipeline* TwoSidedPipeline = nullptr;
 };
 
 struct ComputePassPipelineRuntime
 {
 	RenderBindingLayout& BindingLayout;
-	RenderPipelineState& PipelineState;
+	RenderPipeline& Pipeline;
 };

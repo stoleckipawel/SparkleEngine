@@ -7,7 +7,7 @@
 #include "Input/InputSystem.h"
 #include "World/GameWorld.h"
 #include "Input/CameraInputIntentCollector.h"
-#include "Level/LevelManager.h"
+#include "Level/LevelSession.h"
 #include "Time/Timer.h"
 #include "Concurrency/ApplicationTaskRuntime.h"
 #include "Concurrency/ConcurrencyLaunchCVars.h"
@@ -49,9 +49,9 @@ GameWorld& RuntimeApplication::GetWorldForEditor() noexcept
 	return *m_gameWorld;
 }
 
-LevelManager* RuntimeApplication::GetLevelManager() const noexcept
+LevelSession* RuntimeApplication::GetLevelSession() const noexcept
 {
-	return m_levelManager.get();
+	return m_levelSession.get();
 }
 
 Renderer& RuntimeApplication::GetRenderer() noexcept
@@ -101,7 +101,7 @@ void RuntimeApplication::InitializeGameRuntime()
 		m_gameWorld->EnableOscillatingMeshMotion();
 	}
 
-	m_levelManager = std::make_unique<LevelManager>(
+	m_levelSession = std::make_unique<LevelSession>(
 	    *m_gameWorld,
 	    m_taskRuntime->GetExecutor(),
 	    m_taskRuntime->GetApplicationScope());
@@ -156,9 +156,9 @@ RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 		return RuntimeApplicationFrameResult::SkipRender;
 	}
 
-	if (m_levelManager)
+	if (m_levelSession)
 	{
-		m_levelManager->ProcessPendingLevelChange();
+		m_levelSession->ProcessPendingLevelChange();
 	}
 
 	return RuntimeApplicationFrameResult::Ready;
@@ -242,7 +242,7 @@ void RuntimeApplication::Shutdown()
 
 	m_runtimeConsoleHost.reset();
 	m_renderer.reset();
-	m_levelManager.reset();
+	m_levelSession.reset();
 	m_cameraInputIntentCollector.reset();
 	m_gameWorld.reset();
 	m_taskRuntime.reset();

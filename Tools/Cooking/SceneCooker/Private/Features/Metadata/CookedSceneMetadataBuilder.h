@@ -1,10 +1,10 @@
 #pragma once
 
 #include "CookedSceneBuild.h"
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 
 class CookedSceneMetadataBuilder final
 {
   public:
-	static void BuildMetadata(const SourceImportResult& importResult, CookedSceneBuild& outBuild);
+	static void BuildMetadata(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 };

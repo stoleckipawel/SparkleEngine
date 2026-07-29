@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorAllocator.h"
 
 #include <algorithm>
@@ -51,7 +51,7 @@ D3D12DescriptorHandle D3D12DescriptorAllocator::AllocateContiguousFromLinearRang
 {
 	if (m_currentOffset + count > m_heap->GetNumDescriptors())
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    Logger(),
 		    __FILE__,
 		    __LINE__,
@@ -80,7 +80,7 @@ D3D12DescriptorHandle D3D12DescriptorAllocator::Allocate()
 	}
 	else
 	{
-		Diagnostics::Fail(Logger(), __FILE__, __LINE__, "Descriptor heap is full.");
+		Diagnostics::Fatal(Logger(), __FILE__, __LINE__, "Descriptor heap is full.");
 	}
 
 	return m_heap->GetHandleAt(index);

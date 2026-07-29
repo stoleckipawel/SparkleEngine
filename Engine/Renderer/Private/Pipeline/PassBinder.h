@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Pipeline/PassBindingOverrides.h"
-#include "RHI/Public/Pipeline/RhiPipelineStateDesc.h"
+#include "RHI/Public/Pipeline/RhiPipelineDesc.h"
 
 #include <cstdint>
 #include <span>
+#include <string_view>
 
 class RenderCommandContext;
 class FrameGraphResourceCommands;
@@ -16,7 +17,7 @@ class PassBinder final
 {
   public:
 	static void BindGraphics(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const FrameGraphResourceCommands& resources,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
@@ -26,7 +27,7 @@ class PassBinder final
 	    bool bindLayout = true);
 
 	static void BindCompute(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const FrameGraphResourceCommands& resources,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
@@ -36,8 +37,10 @@ class PassBinder final
 	    bool bindLayout = true);
 
   private:
+	struct BindingRequest;
+
 	static void BindImpl(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const FrameGraphResourceCommands& resources,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
@@ -47,37 +50,44 @@ class PassBinder final
 	    bool bindLayout,
 	    bool isCompute);
 	static void BindCompiledBinding(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const FrameGraphResourceCommands& resources,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const CompiledBinding& compiledBinding,
 	    const PassParameterBinding* parameterBinding,
 	    const PassBindingOverrides* overrides,
 	    bool isCompute);
+	static void BindConstantBuffer(const BindingRequest& request);
+	static void BindReadOnlyAddress(const BindingRequest& request);
+	static void BindReadWriteAddress(const BindingRequest& request);
+	static void BindResourceTable(const BindingRequest& request, bool readWrite);
+	static void BindSamplerTable(const BindingRequest& request);
+	static void BindPushConstantData(const BindingRequest& request);
 	static void BindGpuAddress(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const CompiledBinding& compiledBinding,
 	    RhiGpuVirtualAddress gpuAddress,
 	    bool isCompute);
-	static bool TryBindDescriptorTableOverride(
-	    RenderCommandContext& cmd,
+	static void BindDescriptorTableOverride(
+	    RenderCommandContext& commandContext,
 	    const CompiledBinding& compiledBinding,
-	    const PassBindingOverrides* overrides,
+	    const PassBindingOverride& bindingOverride,
 	    bool isCompute);
 	static void BindDescriptorTable(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const CompiledBinding& compiledBinding,
 	    RhiGpuDescriptorHandle descriptorTable,
 	    bool isCompute);
 	static void BindDescriptorTable(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const CompiledBinding& compiledBinding,
 	    RhiDescriptorTableBinding descriptorTable,
 	    bool isCompute);
 	static void BindPushConstants(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const CompiledBinding& compiledBinding,
 	    const void* data,
 	    std::uint32_t constantCount,
 	    bool isCompute);
+	static void Require(bool condition, std::string_view message);
 };

@@ -4,7 +4,7 @@
 #include "Commands/RenderCommandContext.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
+#include "FrameGraph/PassRuntimeContext.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
 
 class RayReconstructionPassRequirements final
@@ -49,13 +49,13 @@ void AddRayReconstructionPass(
 	    },
 	    [providerInputs, renderExtent, outputExtent, passName](PassExecutionContext& context)
 	    {
-		    if (context.RuntimeServices.ImageProviders != nullptr && context.RuntimeServices.ImageProviders->RayReconstruction != nullptr)
+		    if (context.Runtime.ImageProviders != nullptr && context.Runtime.ImageProviders->RayReconstruction != nullptr)
 		    {
 			    RenderCommandList& commandList = context.Commands.GetRenderCommandList();
 			    const RhiNativeInteropRequest interopRequest{
 			        .Consumer = ERhiNativeInteropConsumer::RayReconstructionProvider,
 			        .Reason = passName};
-			    (void) context.RuntimeServices.ImageProviders->RayReconstruction->Evaluate(
+			    (void) context.Runtime.ImageProviders->RayReconstruction->Evaluate(
 			        RayReconstructionEvaluationDesc{
 			            .BackendApi = commandList.GetBackendApi(),
 			            .NativeCommandList = commandList.GetNativeHandle(interopRequest),

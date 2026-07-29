@@ -32,7 +32,7 @@ class RayTracingTopLevelScenePlanner final
 	    const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	const RayTracingPtlasPartitionPlan* GetCurrentPartitionPlan() const noexcept;
 	RayTracingClassicTlasBuilder::BuildStats BuildClassicTlas(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const RenderSceneData& sceneData,
 	    RayTracingClassicTlasBuilder& classicTlasBuilder,
 	    RayTracingBlasCache& blasCache,

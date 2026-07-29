@@ -12,16 +12,11 @@ struct RayTracingTopLevelScenePlanner::Impl final
 	RayTracingPtlasPartitionPlan CurrentPartitionPlan;
 };
 
-RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept :
-    m_impl(std::make_unique<Impl>())
-{
-}
+RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept : m_impl(std::make_unique<Impl>()) {}
 
 RayTracingTopLevelScenePlanner::~RayTracingTopLevelScenePlanner() noexcept = default;
 
-void RayTracingTopLevelScenePlanner::PlanFrame(
-    const RenderSceneData& sceneData,
-    const DirectX::XMFLOAT3& cameraPosition) noexcept
+void RayTracingTopLevelScenePlanner::PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
 	if (m_impl == nullptr)
 	{
@@ -44,18 +39,13 @@ const RayTracingPtlasPartitionPlan* RayTracingTopLevelScenePlanner::GetCurrentPa
 }
 
 RayTracingClassicTlasBuilder::BuildStats RayTracingTopLevelScenePlanner::BuildClassicTlas(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const RenderSceneData& sceneData,
     RayTracingClassicTlasBuilder& classicTlasBuilder,
     RayTracingBlasCache& blasCache,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	return classicTlasBuilder.Build(
-	    cmd,
-	    sceneData,
-	    m_impl != nullptr ? &m_impl->CurrentPartitionPlan : nullptr,
-	    blasCache,
-	    diagnostics);
+	return classicTlasBuilder.Build(commandContext, sceneData, blasCache, diagnostics);
 }
 
 void RayTracingTopLevelScenePlanner::Clear() noexcept

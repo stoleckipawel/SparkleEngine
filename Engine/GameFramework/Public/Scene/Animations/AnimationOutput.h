@@ -19,7 +19,7 @@ struct SPARKLE_ENGINE_API AnimationPoseOutput final
 	std::string clipName;
 	float playbackTimeSeconds = 0.0f;
 	std::uint32_t jointCount = 0;
-	std::vector<DirectX::XMFLOAT4X4> skinningMatrices;
+	std::vector<DirectX::XMFLOAT4X4> jointMatrices;
 };
 
 struct SPARKLE_ENGINE_API MorphWeightOutput final

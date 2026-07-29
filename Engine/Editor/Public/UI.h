@@ -33,13 +33,13 @@ class UsedTexturesPanel;
 class EngineRenderingSettingsSection;
 class EditorRestartService;
 class InputSystem;
-class LevelManager;
+class LevelSession;
 class Window;
 
 struct EditorHostServices final
 {
 	Timer& RuntimeTimer;
-	LevelManager* Levels = nullptr;
+	LevelSession* Levels = nullptr;
 	std::function<WorldReadView()> AcquireWorldReadView;
 	std::function<WorldChangeBatch(const WorldChangeCursor&)> ReadWorldChanges;
 	std::function<bool(WorldChangeCursor&, WorldSequence)> AcknowledgeWorldChanges;
@@ -134,7 +134,7 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<EngineRenderingSettingsSection> m_renderingSettings;
 	std::unique_ptr<EditorRestartService> m_restartService;
 	Timer* m_timer = nullptr;
-	LevelManager* m_levelManager = nullptr;
+	LevelSession* m_levelSession = nullptr;
 	Window* m_window = nullptr;
 	InputSystem* m_inputSystem = nullptr;
 	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
@@ -144,7 +144,7 @@ class SPARKLE_EDITOR_API UI final
 	std::function<RendererMemoryDiagnosticsSnapshot()> m_memoryDiagnosticsProvider;
 	std::function<MeshPreviewGeometry(std::uintptr_t)> m_meshPreviewProvider;
 	std::unique_ptr<class EditorSceneModelBuilder> m_sceneModelBuilder;
-	std::unique_ptr<class EditorTransactionManager> m_transactions;
+	std::unique_ptr<class EditorTransactionHistory> m_transactionHistory;
 	std::shared_ptr<const class EditorSceneModel> m_sceneModel;
 	std::unique_ptr<class ImGuiRenderPacketBuilder> m_renderPacketBuilder;
 	UiRenderPacket m_renderPacket;

@@ -5,7 +5,7 @@
 #include <utility>
 
 void GltfMeshInstanceAppender::AppendMeshInstance(
-    SourceImportResult& result,
+    SourceImportOutput& output,
     ImportedMeshPrimitiveIndex importedPrimitiveIndex,
     ImportedMaterialIndex materialIndex,
     DirectX::FXMMATRIX worldTransform,
@@ -24,11 +24,11 @@ void GltfMeshInstanceAppender::AppendMeshInstance(
 	instanceEntry.sourceNodeIndex = sourceNodeIndex;
 	instanceEntry.sourceNodeName = sourceNodeName;
 	instanceEntry.morphWeights.assign(morphWeights.begin(), morphWeights.end());
-	result.scene.meshInstances.push_back(std::move(instanceEntry));
+	output.scene.meshInstances.push_back(std::move(instanceEntry));
 }
 
 void GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
-    SourceImportResult& result,
+    SourceImportOutput& output,
     const GltfMeshGpuInstancingTransforms& transforms,
     ImportedMeshPrimitiveIndex importedPrimitiveIndex,
     ImportedMaterialIndex materialIndex,
@@ -38,8 +38,8 @@ void GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
     std::string_view sourceNodeName,
     std::span<const float> morphWeights)
 {
-	const ImportedMeshInstanceGroupIndex groupIndex = static_cast<ImportedMeshInstanceGroupIndex>(result.scene.meshInstanceGroups.size());
-	const ImportedMeshInstanceIndex firstInstanceIndex = static_cast<ImportedMeshInstanceIndex>(result.scene.meshInstances.size());
+	const ImportedMeshInstanceGroupIndex groupIndex = static_cast<ImportedMeshInstanceGroupIndex>(output.scene.meshInstanceGroups.size());
+	const ImportedMeshInstanceIndex firstInstanceIndex = static_cast<ImportedMeshInstanceIndex>(output.scene.meshInstances.size());
 
 	for (std::size_t instanceIndex = 0; instanceIndex < transforms.instanceCount; ++instanceIndex)
 	{
@@ -47,7 +47,7 @@ void GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
 		    GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(transforms, instanceIndex);
 		const DirectX::XMMATRIX worldTransform = DirectX::XMMatrixMultiply(nodeWorldTransform, authoredInstanceTransform);
 		AppendMeshInstance(
-		    result,
+		    output,
 		    importedPrimitiveIndex,
 		    materialIndex,
 		    worldTransform,
@@ -64,5 +64,5 @@ void GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
 	groupEntry.firstInstanceIndex = firstInstanceIndex;
 	groupEntry.instanceCount = static_cast<std::uint32_t>(transforms.instanceCount);
 	groupEntry.groupKind = ImportedMeshInstanceGroupKind::AuthoredInstanceGroup;
-	result.scene.meshInstanceGroups.push_back(groupEntry);
+	output.scene.meshInstanceGroups.push_back(groupEntry);
 }

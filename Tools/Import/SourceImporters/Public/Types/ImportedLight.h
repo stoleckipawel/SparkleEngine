@@ -24,11 +24,15 @@ struct ImportedLight
 	DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 	DirectX::XMFLOAT3 direction = {0.0f, -1.0f, 0.0f};
 	DirectX::XMFLOAT3 color = {1.0f, 1.0f, 1.0f};
-	// Directional lights use lux, point/spot lights use candela, rect lights use luminance in cd/m^2.
-	float intensity = 1.0f;
+	float illuminance = 1.0f;
+	float luminousIntensity = 1.0f;
+	float luminance = 1.0f;
 	float range = 0.0f;
-	float innerConeAngleRadians = 0.0f;
-	float outerConeAngleRadians = DirectX::XM_PIDIV4;
+	DirectX::XMFLOAT3 distanceAttenuationCoefficients = {0.0f, 0.0f, 1.0f};
+	float radius = 0.05f;
+	float innerAngleRadians = 0.0f;
+	float outerAngleRadians = DirectX::XM_PIDIV4;
+	float angularSizeRadians = 0.009308f;
 	DirectX::XMFLOAT3 tangent = {1.0f, 0.0f, 0.0f};
 	float width = 1.0f;
 	float height = 1.0f;

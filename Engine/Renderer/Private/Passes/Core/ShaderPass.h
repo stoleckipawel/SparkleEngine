@@ -13,10 +13,10 @@ class PassResourceBuilder;
 class PassParameterLayout;
 class RenderHardwareInterface;
 class RenderBindingLayout;
-class RenderPipelineState;
+class RenderPipeline;
 struct PassExecutionContext;
 struct FrameContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 
 enum class ShaderPassKind : std::uint8_t
 {
@@ -35,17 +35,17 @@ bool DeclareShaderPassParameterUsages(
     PassResourceBuilder& builder,
     const PassParameterSet& parameterSet,
     const char* passName = nullptr) noexcept;
-void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
+void DispatchComputeShaderPass(RenderCommandContext& commandContext, const ComputeDispatchDesc& dispatch) noexcept;
 bool ValidateShaderPassLayout(
     const PassParameterLayout& layout,
     ShaderPassKind passKind,
     const char* passName) noexcept;
 void BindComputeShaderPass(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
 	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
-    const RenderPipelineState& pipelineState,
+    const RenderPipeline& pipeline,
     const PassParameterSet& parameterSet,
     const char* const* bindingNames = nullptr,
     std::uint32_t bindingNameCount = 0,
@@ -53,11 +53,11 @@ void BindComputeShaderPass(
     bool bindLayout = true) noexcept;
 
 void BindRasterShaderPass(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
 	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
-    const RenderPipelineState& pipelineState,
+    const RenderPipeline& pipeline,
     const PassParameterSet& parameterSet,
     const char* const* bindingNames = nullptr,
     std::uint32_t bindingNameCount = 0,
@@ -261,10 +261,10 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 	template <typename TParameterBindings>
 	static bool Dispatch(
 	    const FrameGraphResourceCommands& resources,
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const RenderBindingLayout& bindingLayout,
-	    const RenderPipelineState& pipelineState,
+	    const RenderPipeline& pipeline,
 	    const TParameterBindings& parameters,
 	    const ComputeDispatchDesc& dispatch,
 	    const char* const* bindingNames = nullptr,
@@ -279,21 +279,21 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 		}
 
 		BindComputeShaderPass(
-		    cmd,
+		    commandContext,
 		    resources,
 		    &renderHardwareInterface,
 		    bindingLayout,
-		    pipelineState,
+		    pipeline,
 		    GetPassParameterSet(parameters),
 		    bindingNames,
 		    bindingNameCount,
 		    overrides,
 		    bindLayout);
-		DispatchComputeShaderPass(cmd, dispatch);
+		DispatchComputeShaderPass(commandContext, dispatch);
 		return true;
 	}
 
-	void Dispatch(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) const noexcept { DispatchComputeShaderPass(cmd, dispatch); }
+	void Dispatch(RenderCommandContext& commandContext, const ComputeDispatchDesc& dispatch) const noexcept { DispatchComputeShaderPass(commandContext, dispatch); }
 };
 
 template <typename TParameters> class RasterShaderPass : public ShaderPass
@@ -312,10 +312,10 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 	template <typename TParameterBindings>
 	static bool Bind(
 	    const FrameGraphResourceCommands& resources,
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& bindingLayout,
-	    const RenderPipelineState& pipelineState,
+	    const RenderPipeline& pipeline,
 	    const TParameterBindings& parameters,
 	    const char* const* bindingNames = nullptr,
 	    std::uint32_t bindingNameCount = 0,
@@ -329,11 +329,11 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 		}
 
 		BindRasterShaderPass(
-		    cmd,
+		    commandContext,
 		    resources,
 		    renderHardwareInterface,
 		    bindingLayout,
-		    pipelineState,
+		    pipeline,
 		    GetPassParameterSet(parameters),
 		    bindingNames,
 		    bindingNameCount,

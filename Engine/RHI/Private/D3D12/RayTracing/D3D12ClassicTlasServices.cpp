@@ -8,19 +8,21 @@
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "Validation/RhiContract.h"
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace D3D12ClassicTlasText
+class D3D12ClassicTlasTranslation final
 {
-	std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName)
+  public:
+	static std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName)
 	{
-		return debugName.empty() ? std::wstring(fallbackName) : std::wstring(debugName);
+		return debugName.empty() ? std::wstring(defaultDebugName) : std::wstring(debugName);
 	}
 
-	D3D12_RAYTRACING_INSTANCE_FLAGS ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
+	static D3D12_RAYTRACING_INSTANCE_FLAGS ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
 	{
 		D3D12_RAYTRACING_INSTANCE_FLAGS nativeFlags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 		if (HasFlag(flags, RhiRayTracingInstanceFlags::TriangleFacingCullDisable))
@@ -37,7 +39,7 @@ namespace D3D12ClassicTlasText
 		}
 		return nativeFlags;
 	}
-}
+};
 
 D3D12ClassicTlasServices::D3D12ClassicTlasServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator) noexcept :
     m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
@@ -52,10 +54,6 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12ClassicTlasServices::GetClas
 	{
 		return {};
 	}
-	if (instanceCount == 0)
-	{
-		return {};
-	}
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
@@ -65,7 +63,7 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12ClassicTlasServices::GetClas
 	{
 		inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
 	}
-	inputs.NumDescs = instanceCount;
+	inputs.NumDescs = (std::max) (instanceCount, 1u);
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};
 	m_rhi->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &nativeInfo);
@@ -81,13 +79,12 @@ RhiOwnedResourceHandle D3D12ClassicTlasServices::CreateClassicTopLevelAccelerati
     std::uint32_t instanceCount,
     std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    !RhiContract::IsRayTracingInstanceListUsable(instances, instanceCount))
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !RhiContract::IsRayTracingInstanceListUsable(instances, instanceCount))
 	{
 		return {};
 	}
 
-	std::vector<D3D12_RAYTRACING_INSTANCE_DESC> nativeInstances(instanceCount);
+	std::vector<D3D12_RAYTRACING_INSTANCE_DESC> nativeInstances((std::max) (instanceCount, 1u));
 	for (std::uint32_t instanceIndex = 0; instanceIndex < instanceCount; ++instanceIndex)
 	{
 		D3D12_RAYTRACING_INSTANCE_DESC& nativeInstance = nativeInstances[instanceIndex];
@@ -99,18 +96,19 @@ RhiOwnedResourceHandle D3D12ClassicTlasServices::CreateClassicTopLevelAccelerati
 		nativeInstance.InstanceID = source.InstanceID;
 		nativeInstance.InstanceMask = source.InstanceMask;
 		nativeInstance.InstanceContributionToHitGroupIndex = source.InstanceContributionToHitGroupIndex;
-		nativeInstance.Flags = D3D12ClassicTlasText::ToNativeInstanceFlags(source.Flags);
+		nativeInstance.Flags = D3D12ClassicTlasTranslation::ToNativeInstanceFlags(source.Flags);
 		nativeInstance.AccelerationStructure = source.AccelerationStructure;
 	}
 
 	const std::uint64_t sizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * static_cast<std::uint64_t>(nativeInstances.size());
-	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
+	const D3D12_RESOURCE_DESC resourceDesc =
+	    D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
 	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
 	    resourceDesc,
 	    D3D12_RESOURCE_STATE_GENERIC_READ,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::HostUpload,
-	    D3D12ClassicTlasText::CopyDebugName(debugName, L"RayTracingClassicTlasInstanceBuffer"));
+	    D3D12ClassicTlasTranslation::MakeDebugName(debugName, L"RayTracingClassicTlasInstanceBuffer"));
 	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
 		return {};

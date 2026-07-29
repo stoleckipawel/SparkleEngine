@@ -10,7 +10,7 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedMeshAssetMagic = 0x48534D53u;
-	inline constexpr std::uint32_t kCookedMeshAssetVersion = 5;
+	inline constexpr std::uint32_t kCookedMeshAssetVersion = 6;
 
 	enum class CookedMeshAssetKind : std::uint32_t
 	{
@@ -20,8 +20,8 @@ namespace Assets
 
 	struct SPARKLE_ENGINE_API CookedMeshSkinInfluence
 	{
-		std::uint16_t jointIndices[4] = {0, 0, 0, 0};
-		float jointWeights[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+		std::uint16_t jointIndices[8] = {};
+		float jointWeights[8] = {};
 	};
 
 	struct SPARKLE_ENGINE_API CookedMeshVertex

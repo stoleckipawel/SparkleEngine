@@ -21,7 +21,6 @@ enum class AssetResidencyState : std::uint8_t
 	Resident,
 	Evicting,
 	Retired,
-	Failed,
 };
 
 struct AssetGenerationHandle final
@@ -80,7 +79,6 @@ class AssetResidency final
 	    AssetGenerationHandle handle,
 	    RhiSubmissionToken completionToken,
 	    std::uint64_t residentBytes) noexcept;
-	bool MarkFailed(AssetGenerationHandle handle) noexcept;
 	bool Cancel(AssetGenerationHandle handle) noexcept;
 	bool BeginEviction(
 	    AssetGenerationHandle handle,

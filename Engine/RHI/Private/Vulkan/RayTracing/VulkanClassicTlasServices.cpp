@@ -10,6 +10,7 @@
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -45,10 +46,11 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanClassicTlasServices::GetCla
     ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
 	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    m_rhi->GetAccelerationStructureBuildSizes() == nullptr || instanceCount == 0)
+	    m_rhi->GetAccelerationStructureBuildSizes() == nullptr)
 	{
 		return {};
 	}
+	const std::uint32_t instanceCapacity = (std::max) (instanceCount, 1u);
 
 	const VkAccelerationStructureGeometryInstancesDataKHR instances{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR,
@@ -63,9 +65,8 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanClassicTlasServices::GetCla
 	    .flags = VK_GEOMETRY_OPAQUE_BIT_KHR};
 	const VkBuildAccelerationStructureFlagsKHR nativeBuildFlags =
 	    VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
-	    (HasFlag(buildFlags, ERhiClassicTlasBuildFlags::AllowUpdate)
-	         ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-	         : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
+	    (HasFlag(buildFlags, ERhiClassicTlasBuildFlags::AllowUpdate) ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+	                                                                 : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
 	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
 	    .pNext = nullptr,
@@ -78,13 +79,12 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanClassicTlasServices::GetCla
 	    .pGeometries = &geometry,
 	    .ppGeometries = nullptr,
 	    .scratchData = VkDeviceOrHostAddressKHR{.deviceAddress = 0}};
-	VkAccelerationStructureBuildSizesInfoKHR nativeInfo{
-	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR};
+	VkAccelerationStructureBuildSizesInfoKHR nativeInfo{.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR};
 	m_rhi->GetAccelerationStructureBuildSizes()(
 	    m_rhi->GetDevice(),
 	    VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
 	    &buildInfo,
-	    &instanceCount,
+	    &instanceCapacity,
 	    &nativeInfo);
 	return RhiRayTracingAccelerationStructurePrebuildInfo{
 	    .ResultDataMaxSizeInBytes = nativeInfo.accelerationStructureSize,
@@ -103,7 +103,7 @@ RhiOwnedResourceHandle VulkanClassicTlasServices::CreateClassicTopLevelAccelerat
 		return {};
 	}
 
-	std::vector<VkAccelerationStructureInstanceKHR> nativeInstances(instanceCount);
+	std::vector<VkAccelerationStructureInstanceKHR> nativeInstances((std::max) (instanceCount, 1u));
 	for (std::uint32_t instanceIndex = 0; instanceIndex < instanceCount; ++instanceIndex)
 	{
 		const RhiRayTracingInstanceDesc& source = instances[instanceIndex];

@@ -5,52 +5,45 @@
 #include "Assets/Cooked/LoadedSkeletonAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
+#include "Core/Public/Strings/StringUtils.h"
 #include <cstdint>
 
 namespace Assets
 {
-	bool SkeletonAssetLoader::Decode(
+	LoadedSkeletonAsset SkeletonAssetLoader::Decode(
 	    const std::filesystem::path& path,
-	    std::span<const std::uint8_t> bytes,
-	    LoadedSkeletonAsset& outSkeletonAsset,
-	    std::string& outErrorMessage) const
+	    std::span<const std::uint8_t> bytes) const
 	{
-		const CookedAssetLoaderContext diagnosticsContext =
-		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedSkeletonAsset", kCookedSkeletonAssetVersion);
-		auto fail = [&](std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) -> bool
-		{
-			CookedAssetLoaderDiagnostics::SetFailure(diagnosticsContext, recordKind, expectedFeature, reason, outErrorMessage);
-			return false;
-		};
+		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedSkeletonAsset", kCookedSkeletonAssetVersion);
 
 		CookedAssetByteReader reader(bytes);
-		if (!reader.Read(outSkeletonAsset.header, outErrorMessage))
+		LoadedSkeletonAsset skeletonAsset;
+		skeletonAsset.header = reader.Read<CookedSkeletonAssetHeader>();
+
+		if (!skeletonAsset.header.fileHeader.Matches(kCookedSkeletonAssetMagic, kCookedSkeletonAssetVersion) ||
+		    skeletonAsset.header.jointStride != sizeof(CookedSkeletonJointRecord))
 		{
-			return fail("header", "CookedSkeletonAssetHeader", outErrorMessage);
+			throw diagnostics.MakeError("header", "skeleton magic/version and joint stride", "Invalid cooked skeleton asset header");
 		}
 
-		if (!outSkeletonAsset.header.fileHeader.Matches(kCookedSkeletonAssetMagic, kCookedSkeletonAssetVersion) ||
-		    !HasValidHeader(outSkeletonAsset.header.jointStride))
-		{
-			return fail("header", "skeleton magic/version and joint stride", "Invalid cooked skeleton asset header");
-		}
+		skeletonAsset.joints = reader.ReadArray<CookedSkeletonJointRecord>(skeletonAsset.header.jointCount);
 
-		if (!reader.ReadArray(outSkeletonAsset.header.jointCount, outSkeletonAsset.joints, outErrorMessage))
+		for (const CookedSkeletonJointRecord& joint : skeletonAsset.joints)
 		{
-			return fail("joints", "joint array matching header count", outErrorMessage);
+			if (!Strings::IsNullTerminated(std::span(joint.name)))
+			{
+				throw diagnostics.MakeError("joints", "null-terminated joint names", "Cooked skeleton contains an invalid joint name");
+			}
 		}
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			return fail("payload", "no trailing bytes after declared skeleton records", "Cooked skeleton asset contains unexpected trailing bytes");
+			throw diagnostics.MakeError(
+			    "payload",
+			    "no trailing bytes after declared skeleton records",
+			    "Cooked skeleton asset contains unexpected trailing bytes");
 		}
 
-		outErrorMessage.clear();
-		return true;
-	}
-
-	bool SkeletonAssetLoader::HasValidHeader(std::uint32_t jointStride) noexcept
-	{
-		return jointStride == sizeof(CookedSkeletonJointRecord);
+		return skeletonAsset;
 	}
 }

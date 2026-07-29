@@ -10,7 +10,6 @@
 #include "ShaderRecook/ShaderSourceChangeTracker.h"
 
 class Renderer;
-struct CookedShaderReloadResult;
 struct ShaderRecookExecutionResult;
 class EditorOperationService;
 class TaskExecutor;
@@ -33,7 +32,7 @@ class ShaderRecookCoordinator final
   private:
 	void StartRecook(ShaderRecookRequest request) noexcept;
 	void CompleteRecook(Renderer& renderer, ShaderRecookExecutionResult result) noexcept;
-	CookedShaderReloadResult ReloadCookedShaders(Renderer& renderer) noexcept;
+	void ReloadCookedShaders(Renderer& renderer);
 	void HandleManualReload(Renderer& renderer) noexcept;
 	void HandleExternalRecookPublication(Renderer& renderer) noexcept;
 	void PublishStatus(std::string status) noexcept;

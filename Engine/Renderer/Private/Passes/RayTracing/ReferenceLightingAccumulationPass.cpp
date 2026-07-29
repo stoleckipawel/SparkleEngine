@@ -4,8 +4,8 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "FrameGraph/PassRuntimeContext.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/Effects/PathTracedLighting/PathTracedLightingSettings.h"
@@ -48,16 +48,16 @@ ReferenceLightingAccumulationPass::ReferenceLightingAccumulationPass(const Compu
 
 const ReferenceLightingAccumulationPass::ParameterMetadata& ReferenceLightingAccumulationPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<ReferenceLightingAccumulationPass>();
+	return ComputePassOperations::BuildParameterMetadata<ReferenceLightingAccumulationPass>();
 }
 
 const RenderPassDefinition& ReferenceLightingAccumulationPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::ReferenceLightingAccumulation,
 	    L"ReferenceLightingAccumulation_BindingLayout",
-	    L"ReferenceLightingAccumulation_PipelineState");
+	    L"ReferenceLightingAccumulation_Pipeline");
 	return definition;
 }
 
@@ -65,8 +65,8 @@ void ReferenceLightingAccumulationPass::Execute(PassExecutionContext& context, P
 {
 	parameters->ReferenceLightingAccumulationConstants = ReferenceLightingAccumulationUniformData{
 	    .SamplesPerFrame = BuildPathTracedLightingSettings().SamplesPerPixel,
-	    .HistoryValid = context.RuntimeServices.History.ReferenceLighting ? 1u : 0u};
-	ComputePassUtilities::DispatchSized<ReferenceLightingAccumulationPass>(
+	    .HistoryValid = context.Runtime.History.ReferenceLighting ? 1u : 0u};
+	ComputePassOperations::DispatchSized<ReferenceLightingAccumulationPass>(
 	    context,
 	    m_runtime,
 	    parameters,

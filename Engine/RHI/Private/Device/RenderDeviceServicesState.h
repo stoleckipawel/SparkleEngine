@@ -18,13 +18,13 @@ class RenderDeviceServicesState final
 	RenderDeviceServicesState(RenderDeviceServicesState&&) = delete;
 	RenderDeviceServicesState& operator=(RenderDeviceServicesState&&) = delete;
 
-	void SetBackend(std::unique_ptr<RenderDeviceBackendServices> backend) noexcept;
-	RenderDeviceBackendServices& GetBackend(
+	void SetBackendServices(std::unique_ptr<RenderDeviceBackendServices> backendServices) noexcept;
+	RenderDeviceBackendServices& GetBackendServices(
 	    std::source_location location = std::source_location::current()) noexcept;
-	const RenderDeviceBackendServices& GetBackend(
+	const RenderDeviceBackendServices& GetBackendServices(
 	    std::source_location location = std::source_location::current()) const noexcept;
 
   private:
 	Threading::OwnerThread m_owner{"RenderDeviceServices"};
-	std::unique_ptr<RenderDeviceBackendServices> m_backend;
+	std::unique_ptr<RenderDeviceBackendServices> m_backendServices;
 };

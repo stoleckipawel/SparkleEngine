@@ -27,9 +27,9 @@ class RendererImageProviderInitialization final
 	}
 };
 
-RendererImageProviderStack::RendererImageProviderStack(RenderHardwareInterface& renderHardware)
+RendererImageProviderStack::RendererImageProviderStack(RenderHardwareInterface& renderHardwareInterface)
 {
-	Initialize(renderHardware);
+	Initialize(renderHardwareInterface);
 }
 
 RendererImageProviderStack::~RendererImageProviderStack() noexcept
@@ -37,10 +37,10 @@ RendererImageProviderStack::~RendererImageProviderStack() noexcept
 	Shutdown();
 }
 
-void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardware)
+void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardwareInterface)
 {
-	const RhiCapabilities& capabilities = renderHardware.GetCapabilities();
-	RhiInteropService& interop = renderHardware.GetInteropService();
+	const RhiCapabilities& capabilities = renderHardwareInterface.GetCapabilities();
+	RhiInteropService& interop = renderHardwareInterface.GetInteropService();
 
 	m_upscaler = CreateConfiguredUpscalerProvider();
 	if (m_upscaler != nullptr && !RendererImageProviderInitialization::InitializeImageProvider(
@@ -127,9 +127,9 @@ ImageProviderGraphKey RendererImageProviderStack::GetFrameGraphKey() const noexc
 	    .RayReconstructionMode = GetRayReconstructionModeKey()};
 }
 
-RendererImageProviderPassServices RendererImageProviderStack::BuildPassServices() noexcept
+ImageProviderPassContext RendererImageProviderStack::BuildPassContext() noexcept
 {
-	return RendererImageProviderPassServices{
+	return ImageProviderPassContext{
 	    .Upscaling = m_upscaler.get(),
 	    .RayReconstruction = m_rayReconstruction.get()};
 }

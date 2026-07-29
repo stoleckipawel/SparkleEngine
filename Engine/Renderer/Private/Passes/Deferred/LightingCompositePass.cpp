@@ -1,7 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/LightingCompositePass.h"
 
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
@@ -11,22 +11,22 @@ LightingCompositePass::LightingCompositePass(const ComputePassPipelineRuntime& r
 
 const LightingCompositePass::ParameterMetadata& LightingCompositePass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<LightingCompositePass>();
+	return ComputePassOperations::BuildParameterMetadata<LightingCompositePass>();
 }
 
 const RenderPassDefinition& LightingCompositePass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::LightingComposite,
 	    L"LightingComposite_BindingLayout",
-	    L"LightingComposite_PipelineState");
+	    L"LightingComposite_Pipeline");
 	return definition;
 }
 
 void LightingCompositePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	ComputePassUtilities::DispatchSized<LightingCompositePass>(
+	ComputePassOperations::DispatchSized<LightingCompositePass>(
 	    context,
 	    m_runtime,
 	    parameters,

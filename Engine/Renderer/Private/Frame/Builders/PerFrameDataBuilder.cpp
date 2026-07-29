@@ -17,10 +17,10 @@ PerFrameConstantBufferData PerFrameDataBuilder::Build(
 
 	PerFrameConstantBufferData data{};
 	data.FrameIndex = timing.frameIndex;
-	data.TotalTime = static_cast<float>(timing.unscaledTime.count());
-	data.DeltaTime = static_cast<float>(timing.unscaledDelta.count());
-	data.ScaledTotalTime = static_cast<float>(timing.scaledTime.count());
-	data.ScaledDeltaTime = static_cast<float>(timing.scaledDelta.count());
+	data.TotalTimeSeconds = static_cast<float>(timing.unscaledTime.count());
+	data.DeltaTimeSeconds = static_cast<float>(timing.unscaledDelta.count());
+	data.ScaledTotalTimeSeconds = static_cast<float>(timing.scaledTime.count());
+	data.ScaledDeltaTimeSeconds = static_cast<float>(timing.scaledDelta.count());
 	data.ViewModeIndex = static_cast<std::uint32_t>(viewMode);
 	data.ViewportSize = DirectX::XMFLOAT2(width, height);
 	data.ViewportSizeInv = DirectX::XMFLOAT2(1.0f / width, 1.0f / height);

@@ -1,9 +1,10 @@
 #include "PCH.h"
 #include "Concurrency/Coordinator/RenderCoordinator.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 #include "FramePipeline/FramePipeline.h"
-#include "Host/RendererSystemRoot.h"
+#include "Host/RendererHost.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
@@ -14,7 +15,11 @@ TResult RenderCoordinator::ExtractControlResult(RenderControlResult result)
 	{
 		return std::move(*value);
 	}
-	return {};
+	Diagnostics::Fatal(
+	    Logging::GetOrCreateLogger("Renderer.Concurrency"),
+	    __FILE__,
+	    __LINE__,
+	    "Render control returned an incompatible payload.");
 }
 
 RenderCoordinator::RenderCoordinator(
@@ -29,7 +34,7 @@ RenderCoordinator::RenderCoordinator(
 {
 	if (!m_config.HasAssetTaskRuntime())
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    Logging::GetOrCreateLogger("Renderer.Concurrency"),
 		    __FILE__,
 		    __LINE__,
@@ -175,24 +180,36 @@ ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 	return m_publishedViewportProducts;
 }
 
-CookedShaderReloadResult RenderCoordinator::ReloadCookedShaders()
+void RenderCoordinator::ReloadCookedShaders()
 {
 	m_producerOwner.AssertAccess();
 	if (!m_config.IsThreaded())
 	{
-		return GetSerialContext().GetSystems().ReloadCookedShaders();
+		GetSerialContext().GetRendererHost().ReloadCookedShaders();
+		return;
 	}
 
 	auto completion = std::make_shared<RenderControlCompletion>();
-	return ExtractControlResult<CookedShaderReloadResult>(
-	    SubmitSynchronousControl(RenderReloadShadersCommand{completion}, completion));
+	RenderControlResult result = SubmitSynchronousControl(RenderReloadShadersCommand{completion}, completion);
+	if (RenderControlError* error = std::get_if<RenderControlError>(&result))
+	{
+		throw Diagnostics::Error(std::move(error->Message));
+	}
+	if (!std::holds_alternative<std::monostate>(result))
+	{
+		Diagnostics::Fatal(
+		    Logging::GetOrCreateLogger("Renderer.Concurrency"),
+		    __FILE__,
+		    __LINE__,
+		    "Shader reload returned an incompatible render-control payload.");
+	}
 }
 
 std::uint64_t RenderCoordinator::GetShaderPackageGeneration() const noexcept
 {
 	m_producerOwner.AssertAccess();
 	return m_config.IsThreaded() ? m_shaderPackageGeneration.load(std::memory_order_acquire)
-	                             : GetSerialContext().GetSystems().GetShaderPackageGeneration();
+	                             : GetSerialContext().GetRendererHost().GetShaderPackageGeneration();
 }
 
 MeshDiagnosticsSnapshot RenderCoordinator::CaptureMeshDiagnostics()
@@ -200,7 +217,7 @@ MeshDiagnosticsSnapshot RenderCoordinator::CaptureMeshDiagnostics()
 	m_producerOwner.AssertAccess();
 	if (!m_config.IsThreaded())
 	{
-		return GetSerialContext().GetSystems().CaptureMeshDiagnostics();
+		return GetSerialContext().GetRendererHost().CaptureMeshDiagnostics();
 	}
 
 	auto completion = std::make_shared<RenderControlCompletion>();
@@ -213,7 +230,7 @@ MeshPreviewGeometry RenderCoordinator::CaptureMeshPreview(std::uintptr_t meshRun
 	m_producerOwner.AssertAccess();
 	if (!m_config.IsThreaded())
 	{
-		return GetSerialContext().GetSystems().CaptureMeshPreview(meshRuntimeId);
+		return GetSerialContext().GetRendererHost().CaptureMeshPreview(meshRuntimeId);
 	}
 
 	auto completion = std::make_shared<RenderControlCompletion>();
@@ -239,7 +256,7 @@ RendererMemoryDiagnosticsSnapshot RenderCoordinator::CaptureMemoryDiagnostics()
 	m_producerOwner.AssertAccess();
 	if (!m_config.IsThreaded())
 	{
-		return GetSerialContext().GetSystems().CaptureMemoryDiagnostics();
+		return GetSerialContext().GetRendererHost().CaptureMemoryDiagnostics();
 	}
 
 	auto completion = std::make_shared<RenderControlCompletion>();
@@ -347,7 +364,7 @@ void RenderCoordinator::HandleRenderThreadStartFailure()
 		m_renderThread.join();
 	}
 
-	Diagnostics::Fail(
+	Diagnostics::Fatal(
 	    Logging::GetOrCreateLogger("Renderer.Coordinator"),
 	    __FILE__,
 	    __LINE__,
@@ -473,7 +490,7 @@ void RenderCoordinator::PublishReadState()
 		}
 	}
 	m_shaderPackageGeneration.store(
-	    m_context->GetSystems().GetShaderPackageGeneration(),
+	    m_context->GetRendererHost().GetShaderPackageGeneration(),
 	    std::memory_order_release);
 }
 
@@ -519,7 +536,7 @@ RendererExecutionContext& RenderCoordinator::GetSerialContext()
 	m_producerOwner.AssertAccess();
 	if (m_config.IsThreaded())
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    Logging::GetOrCreateLogger("Renderer.Coordinator"),
 		    __FILE__,
 		    __LINE__,

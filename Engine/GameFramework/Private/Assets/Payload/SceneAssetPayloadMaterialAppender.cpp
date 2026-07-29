@@ -15,11 +15,10 @@
 
 namespace Assets
 {
-	bool SceneAssetPayloadMaterialAppender::AppendMaterials(
+	void SceneAssetPayloadMaterialAppender::AppendMaterials(
 	    const LoadedSceneManifest& sceneManifest,
 	    const CookedAssetFileSet& files,
-	    SceneAssetPayload& sceneAssetPayload,
-	    std::string& errorMessage)
+	    SceneAssetPayload& sceneAssetPayload)
 	{
 		MaterialAssetLoader materialAssetLoader;
 		CookedMaterialTranslator materialTranslator;
@@ -27,32 +26,9 @@ namespace Assets
 
 		for (const CookedSceneMaterialAssetRef& materialReference : sceneManifest.materialAssetReferences)
 		{
-			LoadedMaterialAsset materialAsset;
 			const std::filesystem::path materialAssetPath = Paths::CookedMaterialAsset(materialReference.materialAssetId);
-			if (!materialAssetLoader.Decode(materialAssetPath, files.Find(materialAssetPath), materialAsset, errorMessage))
-			{
-				errorMessage = std::format(
-				    "Failed to load cooked material asset {} from '{}' - {}",
-				    Formatting::FormatHexUInt64(materialReference.materialAssetId),
-				    materialAssetPath.string(),
-				    errorMessage);
-				return false;
-			}
-
-			MaterialDesc runtimeMaterial;
-			if (!materialTranslator.Translate(materialAsset, runtimeMaterial, errorMessage))
-			{
-				errorMessage = std::format(
-				    "Failed to translate cooked material asset {} from '{}' - {}",
-				    Formatting::FormatHexUInt64(materialReference.materialAssetId),
-				    materialAssetPath.string(),
-				    errorMessage);
-				return false;
-			}
-
-			sceneAssetPayload.materials.push_back(std::move(runtimeMaterial));
+			const LoadedMaterialAsset materialAsset = materialAssetLoader.Decode(materialAssetPath, files.Get(materialAssetPath));
+			sceneAssetPayload.materials.push_back(materialTranslator.Translate(materialAsset));
 		}
-
-		return true;
 	}
 }

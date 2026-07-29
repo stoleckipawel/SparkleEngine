@@ -5,13 +5,13 @@ struct ImVec4;
 
 #include <functional>
 
-class LevelManager;
+class LevelSession;
 class Window;
 
 class MainMenuBarPanel final
 {
   public:
-	MainMenuBarPanel(LevelManager* levelManager = nullptr, Window* window = nullptr) noexcept;
+	MainMenuBarPanel(LevelSession* levelSession = nullptr, Window* window = nullptr) noexcept;
 	~MainMenuBarPanel() = default;
 
 	MainMenuBarPanel(const MainMenuBarPanel&) = delete;
@@ -19,7 +19,7 @@ class MainMenuBarPanel final
 	MainMenuBarPanel& operator=(const MainMenuBarPanel&) = delete;
 	MainMenuBarPanel& operator=(MainMenuBarPanel&&) = delete;
 
-	void SetLevelManager(LevelManager* levelManager) noexcept;
+	void SetLevelSession(LevelSession* levelSession) noexcept;
 	void SetWindow(Window* window) noexcept;
 	void SetShaderToolsOpenHandler(std::function<void()> handler);
 	void SetMeshToolsOpenHandler(std::function<void()> handler);
@@ -44,7 +44,7 @@ class MainMenuBarPanel final
 	void DrawMaximizeIcon() const noexcept;
 	void DrawCloseIcon() const noexcept;
 
-	LevelManager* m_levelManager = nullptr;
+	LevelSession* m_levelSession = nullptr;
 	Window* m_window = nullptr;
 	std::function<void()> m_shaderToolsOpenHandler;
 	std::function<void()> m_meshToolsOpenHandler;

@@ -127,7 +127,7 @@ template <typename TShader> class TGlobalShader
   public:
 	using ShaderType = TShader;
 
-	static constexpr std::string_view GetShaderName(std::string_view fallbackName) noexcept
+	static constexpr std::string_view GetShaderName(std::string_view defaultShaderName) noexcept
 	{
 		if constexpr (requires { TShader::kShaderName; })
 		{
@@ -135,7 +135,7 @@ template <typename TShader> class TGlobalShader
 		}
 		else
 		{
-			return fallbackName;
+			return defaultShaderName;
 		}
 	}
 	static constexpr std::string_view GetShaderPackageName() noexcept

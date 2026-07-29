@@ -10,7 +10,7 @@
 
 bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
     const LoadedShaderPackage& package,
-    CookedShaderBinaryFormat requiredBinaryFormat,
+    CookedShaderBinaryFormat runtimeBinaryFormat,
     std::string& outErrorMessage)
 {
 	if (!package.IsValid())
@@ -38,7 +38,7 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	}
 	const bool usesAccelerationStructureDeviceAddress =
 	    HasCookedShaderPackageFeature(features, CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress);
-	if (usesAccelerationStructureDeviceAddress && requiredBinaryFormat != CookedShaderBinaryFormat::SpirV)
+	if (usesAccelerationStructureDeviceAddress && runtimeBinaryFormat != CookedShaderBinaryFormat::SpirV)
 	{
 		outErrorMessage = "Acceleration-structure device-address inline ray query packages are currently supported only for SPIR-V.";
 		return false;
@@ -47,7 +47,7 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	bool hasRequiredBinary = false;
 	for (const CookedShaderBinaryRecord& binary : package.GetBinaryRecords())
 	{
-		if (package.IsRuntimeBinary(binary, requiredBinaryFormat))
+		if (package.IsRuntimeBinary(binary, runtimeBinaryFormat))
 		{
 			hasRequiredBinary = true;
 			break;
@@ -56,16 +56,16 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	if (!hasRequiredBinary)
 	{
 		outErrorMessage = std::format(
-		    "Inline ray query shader package has no binary for required target {}/{}.",
-		    CookedShaderBinaryFormatToString(requiredBinaryFormat),
-		    GetRuntimeShaderCodegenTarget(requiredBinaryFormat));
+		    "Inline ray query shader package has no binary for runtime target {}/{}.",
+		    CookedShaderBinaryFormatToString(runtimeBinaryFormat),
+		    GetRuntimeShaderCodegenTarget(runtimeBinaryFormat));
 		return false;
 	}
 
 	bool hasAccelerationStructureLayoutBinding = false;
 	for (const CookedShaderPipelineLayoutRecord& layout : package.GetPipelineLayoutRecords())
 	{
-		if (package.ResolveString(layout.CodegenTarget) == GetRuntimeShaderCodegenTarget(requiredBinaryFormat) &&
+		if (package.ResolveString(layout.CodegenTarget) == GetRuntimeShaderCodegenTarget(runtimeBinaryFormat) &&
 		    layout.AccelerationStructureCount > 0)
 		{
 			hasAccelerationStructureLayoutBinding = true;
@@ -89,7 +89,7 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	     reflectionIndex < reflections.size() && reflectionIndex < binaries.size() && !hasAccelerationStructureReflectionBinding;
 	     ++reflectionIndex)
 	{
-		if (!package.IsRuntimeBinary(binaries[reflectionIndex], requiredBinaryFormat))
+		if (!package.IsRuntimeBinary(binaries[reflectionIndex], runtimeBinaryFormat))
 		{
 			continue;
 		}

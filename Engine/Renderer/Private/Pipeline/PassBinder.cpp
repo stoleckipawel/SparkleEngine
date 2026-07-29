@@ -6,12 +6,25 @@
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
-#include <cassert>
+#include <string>
 #include <string_view>
 
+static const auto g_passBinderLogger = Logging::GetOrCreateLogger("Renderer.PassBinder");
+
+struct PassBinder::BindingRequest final
+{
+	RenderCommandContext& CommandContext;
+	const FrameGraphResourceCommands& Resources;
+	RenderHardwareInterface* HardwareInterface;
+	const CompiledBinding& Binding;
+	const PassParameterBinding* Parameters;
+	const PassBindingOverrides* Overrides;
+	bool IsCompute = false;
+};
+
 void PassBinder::BindGraphics(
-    RenderCommandContext& cmd,
-	const FrameGraphResourceCommands& resources,
+    RenderCommandContext& commandContext,
+    const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
@@ -19,12 +32,12 @@ void PassBinder::BindGraphics(
     const PassBindingOverrides* overrides,
     bool bindLayout)
 {
-	BindImpl(cmd, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, bindLayout, false);
+	BindImpl(commandContext, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, bindLayout, false);
 }
 
 void PassBinder::BindCompute(
-    RenderCommandContext& cmd,
-	const FrameGraphResourceCommands& resources,
+    RenderCommandContext& commandContext,
+    const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
@@ -32,12 +45,12 @@ void PassBinder::BindCompute(
     const PassBindingOverrides* overrides,
     bool bindLayout)
 {
-	BindImpl(cmd, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, bindLayout, true);
+	BindImpl(commandContext, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, bindLayout, true);
 }
 
 void PassBinder::BindImpl(
-    RenderCommandContext& cmd,
-	const FrameGraphResourceCommands& resources,
+    RenderCommandContext& commandContext,
+    const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
@@ -46,24 +59,24 @@ void PassBinder::BindImpl(
     bool bindLayout,
     bool isCompute)
 {
-	assert(parameterSet.HasLayout());
+	Require(parameterSet.HasLayout(), "Pass binding requires a parameter set with a compiled layout.");
 	if (bindingNames.empty())
 	{
 		const PassParameterLayout* parameterLayout = parameterSet.GetLayout();
 		const PassParameterLayout& compiledLayout = layout.GetParameterLayout();
-		assert(parameterLayout != nullptr);
+		Require(parameterLayout != nullptr, "Pass parameter layout is unavailable.");
 		const bool sameLayoutInstance = parameterLayout == &compiledLayout;
 		const bool matchingParameterShape = parameterLayout->GetParameterCount() == compiledLayout.GetParameterCount();
-		assert(sameLayoutInstance || matchingParameterShape);
+		Require(sameLayoutInstance || matchingParameterShape, "Pass parameter layout does not match the compiled binding layout.");
 	}
 
 	if (bindLayout && isCompute)
 	{
-		cmd.SetComputeBindingLayout(layout);
+		commandContext.SetComputeBindingLayout(layout);
 	}
 	else if (bindLayout)
 	{
-		cmd.SetGraphicsBindingLayout(layout);
+		commandContext.SetGraphicsBindingLayout(layout);
 	}
 
 	if (bindingNames.empty())
@@ -72,7 +85,7 @@ void PassBinder::BindImpl(
 		{
 			const CompiledBinding& compiledBinding = layout.GetBindings()[bindingIndex];
 			BindCompiledBinding(
-			    cmd,
+			    commandContext,
 			    resources,
 			    renderHardwareInterface,
 			    compiledBinding,
@@ -95,7 +108,7 @@ void PassBinder::BindImpl(
 			}
 
 			BindCompiledBinding(
-			    cmd,
+			    commandContext,
 			    resources,
 			    renderHardwareInterface,
 			    compiledBinding,
@@ -105,182 +118,202 @@ void PassBinder::BindImpl(
 			boundAny = true;
 		}
 
-		assert(boundAny);
+		Require(boundAny, "A requested pass binding name is absent from the compiled binding layout.");
 	}
 }
 
 void PassBinder::BindCompiledBinding(
-    RenderCommandContext& cmd,
-	const FrameGraphResourceCommands& resources,
+    RenderCommandContext& commandContext,
+    const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const CompiledBinding& compiledBinding,
     const PassParameterBinding* parameterBinding,
     const PassBindingOverrides* overrides,
     bool isCompute)
 {
+	const BindingRequest request{
+	    .CommandContext = commandContext,
+	    .Resources = resources,
+	    .HardwareInterface = renderHardwareInterface,
+	    .Binding = compiledBinding,
+	    .Parameters = parameterBinding,
+	    .Overrides = overrides,
+	    .IsCompute = isCompute};
 	switch (compiledBinding.Type)
 	{
 		case CompiledBindingType::ConstantBuffer:
-		{
-			const PassBindingOverride* bindingOverride =
-			    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::ConstantBufferView) : nullptr;
-			if (bindingOverride != nullptr)
-			{
-				BindGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
-				return;
-			}
-
-			assert(renderHardwareInterface != nullptr);
-			assert(parameterBinding != nullptr);
-			const PassParameterUniformBindingData* uniformData = parameterBinding->AsUniformData();
-			assert(uniformData != nullptr);
-
-			const RhiGpuVirtualAddress gpuAddress =
-			    renderHardwareInterface->GetUploadService().AllocateUniformConstantBuffer(
-			        cmd.GetRenderCommandList(),
-			        uniformData->Data,
-			        uniformData->SizeInBytes);
-			BindGpuAddress(cmd, compiledBinding, gpuAddress, isCompute);
+			BindConstantBuffer(request);
 			return;
-		}
 		case CompiledBindingType::ReadOnlyAddress:
-		{
-			const PassBindingOverride* bindingOverride =
-			    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::ShaderResourceView) : nullptr;
-			if (bindingOverride != nullptr)
-			{
-				BindGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
-				return;
-			}
-
-			assert(parameterBinding != nullptr);
-			const PassParameterAccelerationStructureBindingData* accelerationStructureData =
-			    parameterBinding->AsAccelerationStructureData();
-			assert(accelerationStructureData != nullptr);
-			const RhiGpuVirtualAddress gpuAddress = accelerationStructureData->Handle.IsValid()
-			                                            ? resources.ResolveAccelerationStructureGpuAddress(
-			                                                  accelerationStructureData->Handle)
-			                                            : accelerationStructureData->GpuAddress;
-			BindGpuAddress(cmd, compiledBinding, gpuAddress, isCompute);
+			BindReadOnlyAddress(request);
 			return;
-		}
 		case CompiledBindingType::ReadWriteAddress:
-		{
-			assert(overrides != nullptr);
-			const PassBindingOverride* bindingOverride =
-			    overrides->Find(compiledBinding.Name, PassBindingOverrideType::UnorderedAccessView);
-			assert(bindingOverride != nullptr);
-			BindGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
+			BindReadWriteAddress(request);
 			return;
-		}
 		case CompiledBindingType::ReadOnlyResourceTable:
-		{
-			if (TryBindDescriptorTableOverride(cmd, compiledBinding, overrides, isCompute))
-			{
-				return;
-			}
-
-			assert(parameterBinding != nullptr);
-			if (const PassParameterDescriptorTableBindingData* descriptorTableData = parameterBinding->AsDescriptorTableData())
-			{
-				if (descriptorTableData->Table)
-				{
-					BindDescriptorTable(cmd, compiledBinding, descriptorTableData->Table, isCompute);
-				}
-				else
-				{
-					BindDescriptorTable(cmd, compiledBinding, descriptorTableData->GpuHandle, isCompute);
-				}
-				return;
-			}
-
-			if (const PassParameterTextureBindingData* textureData = parameterBinding->AsTextureData())
-			{
-				assert(textureData->Handles.size() == 1);
-				BindDescriptorTable(cmd, compiledBinding, resources.ResolveShaderResourceView(textureData->Handles[0]), isCompute);
-				return;
-			}
-
-			const PassParameterBufferBindingData* bufferData = parameterBinding->AsBufferData();
-			assert(bufferData != nullptr);
-			assert(bufferData->Handles.size() == 1);
-			BindDescriptorTable(cmd, compiledBinding, resources.ResolveShaderResourceView(bufferData->Handles[0]), isCompute);
+			BindResourceTable(request, false);
 			return;
-		}
 		case CompiledBindingType::ReadWriteResourceTable:
-		{
-			if (TryBindDescriptorTableOverride(cmd, compiledBinding, overrides, isCompute))
-			{
-				return;
-			}
-
-			assert(parameterBinding != nullptr);
-			if (const PassParameterDescriptorTableBindingData* descriptorTableData = parameterBinding->AsDescriptorTableData())
-			{
-				if (descriptorTableData->Table)
-				{
-					BindDescriptorTable(cmd, compiledBinding, descriptorTableData->Table, isCompute);
-				}
-				else
-				{
-					BindDescriptorTable(cmd, compiledBinding, descriptorTableData->GpuHandle, isCompute);
-				}
-				return;
-			}
-
-			if (const PassParameterTextureBindingData* textureData = parameterBinding->AsTextureData())
-			{
-				assert(textureData->Handles.size() == 1);
-				BindDescriptorTable(cmd, compiledBinding, resources.ResolveUnorderedAccessView(textureData->Handles[0]), isCompute);
-				return;
-			}
-
-			const PassParameterBufferBindingData* bufferData = parameterBinding->AsBufferData();
-			assert(bufferData != nullptr);
-			assert(bufferData->Handles.size() == 1);
-			BindDescriptorTable(cmd, compiledBinding, resources.ResolveUnorderedAccessView(bufferData->Handles[0]), isCompute);
+			BindResourceTable(request, true);
 			return;
-		}
 		case CompiledBindingType::SamplerTable:
-		{
-			if (TryBindDescriptorTableOverride(cmd, compiledBinding, overrides, isCompute))
-			{
-				return;
-			}
-
-			assert(renderHardwareInterface != nullptr);
-			assert(parameterBinding != nullptr);
-			const PassParameterSamplerBindingData* samplerData = parameterBinding->AsSamplerData();
-			assert(samplerData != nullptr);
-			const RhiDescriptorTableBinding samplerBinding =
-			    renderHardwareInterface->GetDescriptorService().GetSharedSamplerBinding(samplerData->Desc);
-			assert(static_cast<bool>(samplerBinding));
-			BindDescriptorTable(cmd, compiledBinding, samplerBinding, isCompute);
+			BindSamplerTable(request);
 			return;
-		}
 		case CompiledBindingType::PushConstants:
-		{
-			const PassBindingOverride* bindingOverride =
-			    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::PushConstants) : nullptr;
-			if (bindingOverride != nullptr)
-			{
-				BindPushConstants(cmd, compiledBinding, bindingOverride->ConstantsData, bindingOverride->ConstantCount, isCompute);
-				return;
-			}
-
-			assert(parameterBinding != nullptr);
-			const PassParameterUniformBindingData* uniformData = parameterBinding->AsUniformData();
-			assert(uniformData != nullptr);
-			BindPushConstants(
-			    cmd,
-			    compiledBinding,
-			    uniformData->Data,
-			    uniformData->SizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t)),
-			    isCompute);
+			BindPushConstantData(request);
 			return;
-		}
 		default:
-			assert(false);
-			return;
+			Diagnostics::Fatal(g_passBinderLogger, __FILE__, __LINE__, "Compiled pass binding has an unsupported type.");
+	}
+}
+
+void PassBinder::BindConstantBuffer(const BindingRequest& request)
+{
+	const PassBindingOverride* bindingOverride =
+	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::ConstantBufferView) : nullptr;
+	if (bindingOverride != nullptr)
+	{
+		BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.IsCompute);
+		return;
+	}
+
+	Require(request.HardwareInterface != nullptr, "Constant-buffer binding requires an active render hardware interface.");
+	Require(request.Parameters != nullptr, "Constant-buffer binding is absent from the pass parameter set.");
+	const PassParameterUniformBindingData* uniformData = request.Parameters->AsUniformData();
+	Require(uniformData != nullptr, "Constant-buffer binding has incompatible parameter data.");
+	const RhiGpuVirtualAddress gpuAddress = request.HardwareInterface->GetUploadService().AllocateUniformConstantBuffer(
+	    request.CommandContext.GetRenderCommandList(),
+	    uniformData->Data,
+	    uniformData->SizeInBytes);
+	BindGpuAddress(request.CommandContext, request.Binding, gpuAddress, request.IsCompute);
+}
+
+void PassBinder::BindReadOnlyAddress(const BindingRequest& request)
+{
+	const PassBindingOverride* bindingOverride =
+	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::ShaderResourceView) : nullptr;
+	if (bindingOverride != nullptr)
+	{
+		BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.IsCompute);
+		return;
+	}
+
+	Require(request.Parameters != nullptr, "Read-only address binding is absent from the pass parameter set.");
+	const PassParameterAccelerationStructureBindingData* accelerationStructureData = request.Parameters->AsAccelerationStructureData();
+	Require(accelerationStructureData != nullptr, "Read-only address binding has incompatible parameter data.");
+	const RhiGpuVirtualAddress gpuAddress =
+	    accelerationStructureData->Handle.IsValid()
+	        ? request.Resources.ResolveAccelerationStructureGpuAddress(accelerationStructureData->Handle)
+	        : accelerationStructureData->GpuAddress;
+	BindGpuAddress(request.CommandContext, request.Binding, gpuAddress, request.IsCompute);
+}
+
+void PassBinder::BindReadWriteAddress(const BindingRequest& request)
+{
+	Require(request.Overrides != nullptr, "Read-write address binding requires an explicit pass override.");
+	const PassBindingOverride* bindingOverride =
+	    request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::UnorderedAccessView);
+	Require(bindingOverride != nullptr, "Read-write address binding has no unordered-access override.");
+	BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.IsCompute);
+}
+
+void PassBinder::BindResourceTable(const BindingRequest& request, bool readWrite)
+{
+	const PassBindingOverride* bindingOverride =
+	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::DescriptorTable) : nullptr;
+	if (bindingOverride != nullptr)
+	{
+		BindDescriptorTableOverride(request.CommandContext, request.Binding, *bindingOverride, request.IsCompute);
+		return;
+	}
+
+	Require(
+	    request.Parameters != nullptr,
+	    readWrite ? "Read-write resource binding is absent from the pass parameter set."
+	              : "Read-only resource binding is absent from the pass parameter set.");
+	if (const PassParameterDescriptorTableBindingData* descriptorTableData = request.Parameters->AsDescriptorTableData())
+	{
+		if (descriptorTableData->Table)
+		{
+			BindDescriptorTable(request.CommandContext, request.Binding, descriptorTableData->Table, request.IsCompute);
+		}
+		else
+		{
+			BindDescriptorTable(request.CommandContext, request.Binding, descriptorTableData->GpuHandle, request.IsCompute);
+		}
+		return;
+	}
+
+	if (const PassParameterTextureBindingData* textureData = request.Parameters->AsTextureData())
+	{
+		Require(textureData->Handles.size() == 1, "Texture binding must contain exactly one resource.");
+		const RhiGpuDescriptorHandle view = readWrite ? request.Resources.ResolveUnorderedAccessView(textureData->Handles[0])
+		                                              : request.Resources.ResolveShaderResourceView(textureData->Handles[0]);
+		BindDescriptorTable(request.CommandContext, request.Binding, view, request.IsCompute);
+		return;
+	}
+
+	const PassParameterBufferBindingData* bufferData = request.Parameters->AsBufferData();
+	Require(
+	    bufferData != nullptr,
+	    readWrite ? "Read-write resource binding has incompatible parameter data."
+	              : "Read-only resource binding has incompatible parameter data.");
+	Require(bufferData->Handles.size() == 1, "Buffer binding must contain exactly one resource.");
+	const RhiGpuDescriptorHandle view = readWrite ? request.Resources.ResolveUnorderedAccessView(bufferData->Handles[0])
+	                                              : request.Resources.ResolveShaderResourceView(bufferData->Handles[0]);
+	BindDescriptorTable(request.CommandContext, request.Binding, view, request.IsCompute);
+}
+
+void PassBinder::BindSamplerTable(const BindingRequest& request)
+{
+	const PassBindingOverride* bindingOverride =
+	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::DescriptorTable) : nullptr;
+	if (bindingOverride != nullptr)
+	{
+		BindDescriptorTableOverride(request.CommandContext, request.Binding, *bindingOverride, request.IsCompute);
+		return;
+	}
+
+	Require(request.HardwareInterface != nullptr, "Sampler binding requires an active render hardware interface.");
+	Require(request.Parameters != nullptr, "Sampler binding is absent from the pass parameter set.");
+	const PassParameterSamplerBindingData* samplerData = request.Parameters->AsSamplerData();
+	Require(samplerData != nullptr, "Sampler binding has incompatible parameter data.");
+	const RhiDescriptorTableBinding samplerBinding =
+	    request.HardwareInterface->GetDescriptorService().GetSharedSamplerBinding(samplerData->Desc);
+	Require(static_cast<bool>(samplerBinding), "Sampler binding did not resolve a descriptor table.");
+	BindDescriptorTable(request.CommandContext, request.Binding, samplerBinding, request.IsCompute);
+}
+
+void PassBinder::BindPushConstantData(const BindingRequest& request)
+{
+	const PassBindingOverride* bindingOverride =
+	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::PushConstants) : nullptr;
+	if (bindingOverride != nullptr)
+	{
+		BindPushConstants(
+		    request.CommandContext,
+		    request.Binding,
+		    bindingOverride->ConstantsData,
+		    bindingOverride->ConstantCount,
+		    request.IsCompute);
+		return;
+	}
+
+	Require(request.Parameters != nullptr, "Push-constant binding is absent from the pass parameter set.");
+	const PassParameterUniformBindingData* uniformData = request.Parameters->AsUniformData();
+	Require(uniformData != nullptr, "Push-constant binding has incompatible parameter data.");
+	BindPushConstants(
+	    request.CommandContext,
+	    request.Binding,
+	    uniformData->Data,
+	    uniformData->SizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t)),
+	    request.IsCompute);
+}
+
+void PassBinder::Require(bool condition, std::string_view message)
+{
+	if (!condition)
+	{
+		Diagnostics::Fatal(g_passBinderLogger, __FILE__, __LINE__, std::string(message));
 	}
 }

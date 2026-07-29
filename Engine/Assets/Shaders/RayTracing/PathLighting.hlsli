@@ -42,7 +42,7 @@ namespace RayTracingPathLighting
 		result.HitNormalWorld = 0.0f.xxx;
 		result.MaterialBaseColor = 0.0f.xxx;
 		result.MissRadiance = 0.0f.xxx;
-		result.SurfaceRejectionReason = trace.Hit ? RayTracingHitSurface::ReasonHitDataUnavailable : RayTracingHitSurface::ReasonNoHit;
+		result.SurfaceRejectionReason = trace.Hit ? RayTracingHitSurface::ReasonInvalidHitData : RayTracingHitSurface::ReasonNoHit;
 
 		if (sample.RejectionReason != RayTracingPathSample::RejectionReasonNone)
 		{

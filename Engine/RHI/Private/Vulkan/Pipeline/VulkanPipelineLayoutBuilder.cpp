@@ -75,7 +75,7 @@ std::unique_ptr<VulkanPipelineLayout> VulkanPipelineLayoutBuilder::Build(VulkanR
 	const VkResult result = vkCreatePipelineLayout(rhi.GetDevice(), &createInfo, nullptr, &layout);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanPipelineLayoutBuilderLogger,
 		    __FILE__,
 		    __LINE__,

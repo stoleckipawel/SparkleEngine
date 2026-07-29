@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameAssembly.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Frame/Lighting/LightingRayTracingPasses.h"
 #include "Passes/RayTracing/PathTracedIndirectLightingPass.h"
 
 void AddPathTracedIndirectLightingPass(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources)
@@ -30,8 +29,5 @@ void AddPathTracedIndirectLightingPass(FrameGraphBuilder& builder, const FrameAs
 	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
 	parameters->MorphWeights = builder.CreateSRV(resources.External.Scene.Geometry.MorphWeights);
-	LightingRayTracingPasses::DispatchSceneTlas<PathTracedIndirectLightingPass>(
-	    builder,
-	    parameters,
-	    RayTracingSceneTlasShaderAccessMode::Descriptor);
+	builder.Dispatch<PathTracedIndirectLightingPass>(parameters);
 }

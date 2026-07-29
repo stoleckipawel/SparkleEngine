@@ -4,40 +4,40 @@
 #include "Frame/Presentation/ToneMappingCVars.h"
 #include "RHI/Public/CVars/RHICVars.h"
 
-EngineOutputColorEncoding SanitizeOutputColorEncoding(EngineOutputColorEncoding encoding) noexcept
-{
-	switch (encoding)
-	{
-		case EngineOutputColorEncoding::Automatic:
-		case EngineOutputColorEncoding::Linear:
-		case EngineOutputColorEncoding::Srgb:
-			return encoding;
-		default:
-			return EngineOutputColorEncoding::Automatic;
-	}
-}
+static const auto g_outputEncodingSettingsLogger = Logging::GetOrCreateLogger("Renderer.OutputEncodingSettings");
 
 std::uint32_t ResolveShaderOutputEncoding(EngineOutputColorEncoding encoding, PixelFormat backBufferFormat) noexcept
 {
-	const EngineOutputColorEncoding sanitizedEncoding = SanitizeOutputColorEncoding(encoding);
-	if (sanitizedEncoding == EngineOutputColorEncoding::Srgb)
+	switch (encoding)
 	{
-		return 1u;
-	}
-	if (sanitizedEncoding == EngineOutputColorEncoding::Linear)
-	{
-		return 0u;
+		case EngineOutputColorEncoding::Srgb:
+			return 1u;
+		case EngineOutputColorEncoding::Linear:
+			return 0u;
+		case EngineOutputColorEncoding::Automatic:
+			break;
+		default:
+			Diagnostics::Fatal(
+			    g_outputEncodingSettingsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Output settings contain an unknown color encoding.");
 	}
 
 	switch (backBufferFormat)
 	{
 		case PixelFormat::R8G8B8A8_UNorm:
 		case PixelFormat::B8G8R8A8_UNorm:
+			return 1u;
 		case PixelFormat::R8G8B8A8_UNorm_Srgb:
 		case PixelFormat::B8G8R8A8_UNorm_Srgb:
-			return 1u;
+			return 0u;
 		default:
-			return 1u;
+			Diagnostics::Fatal(
+			    g_outputEncodingSettingsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Automatic output encoding received an unsupported back-buffer format.");
 	}
 }
 

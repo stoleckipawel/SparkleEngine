@@ -5,53 +5,43 @@
 #include "Assets/Cooked/LoadedAnimationAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
+#include "Core/Public/Strings/StringUtils.h"
 #include <cstdint>
 
 namespace Assets
 {
-	bool AnimationAssetLoader::Decode(
+	LoadedAnimationAsset AnimationAssetLoader::Decode(
 	    const std::filesystem::path& path,
-	    std::span<const std::uint8_t> bytes,
-	    LoadedAnimationAsset& outAnimationAsset,
-	    std::string& outErrorMessage) const
+	    std::span<const std::uint8_t> bytes) const
 	{
-		const CookedAssetLoaderContext diagnosticsContext =
-		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedAnimationAsset", kCookedAnimationAssetVersion);
-		auto fail = [&](std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) -> bool
-		{
-			CookedAssetLoaderDiagnostics::SetFailure(diagnosticsContext, recordKind, expectedFeature, reason, outErrorMessage);
-			return false;
-		};
+		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedAnimationAsset", kCookedAnimationAssetVersion);
 
 		CookedAssetByteReader reader(bytes);
-		if (!reader.Read(outAnimationAsset.header, outErrorMessage))
+		LoadedAnimationAsset animationAsset;
+		animationAsset.header = reader.Read<CookedAnimationAssetHeader>();
+
+		if (!animationAsset.header.fileHeader.Matches(kCookedAnimationAssetMagic, kCookedAnimationAssetVersion) ||
+		    animationAsset.header.channelStride != sizeof(CookedAnimationChannelRecord) ||
+		    animationAsset.header.keyframeStride != sizeof(CookedAnimationKeyframeRecord) ||
+		    !Strings::IsNullTerminated(std::span(animationAsset.header.name)))
 		{
-			return fail("header", "CookedAnimationAssetHeader", outErrorMessage);
+			throw diagnostics.MakeError(
+			    "header",
+			    "animation magic/version plus channel and keyframe strides",
+			    "Invalid cooked animation asset header");
 		}
 
-		if (!outAnimationAsset.header.fileHeader.Matches(kCookedAnimationAssetMagic, kCookedAnimationAssetVersion) ||
-		    !HasValidHeader(outAnimationAsset.header.channelStride, outAnimationAsset.header.keyframeStride))
-		{
-			return fail("header", "animation magic/version plus channel and keyframe strides", "Invalid cooked animation asset header");
-		}
-
-		if (!reader.ReadArray(outAnimationAsset.header.channelCount, outAnimationAsset.channels, outErrorMessage) ||
-		    !reader.ReadArray(outAnimationAsset.header.keyframeCount, outAnimationAsset.keyframes, outErrorMessage))
-		{
-			return fail("payload", "channel and keyframe arrays matching header counts", outErrorMessage);
-		}
+		animationAsset.channels = reader.ReadArray<CookedAnimationChannelRecord>(animationAsset.header.channelCount);
+		animationAsset.keyframes = reader.ReadArray<CookedAnimationKeyframeRecord>(animationAsset.header.keyframeCount);
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			return fail("payload", "no trailing bytes after declared animation records", "Cooked animation asset contains unexpected trailing bytes");
+			throw diagnostics.MakeError(
+			    "payload",
+			    "no trailing bytes after declared animation records",
+			    "Cooked animation asset contains unexpected trailing bytes");
 		}
 
-		outErrorMessage.clear();
-		return true;
-	}
-
-	bool AnimationAssetLoader::HasValidHeader(std::uint32_t channelStride, std::uint32_t keyframeStride) noexcept
-	{
-		return channelStride == sizeof(CookedAnimationChannelRecord) && keyframeStride == sizeof(CookedAnimationKeyframeRecord);
+		return animationAsset;
 	}
 }

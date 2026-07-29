@@ -56,7 +56,7 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	std::string_view ResolveString(CookedShaderStringRef ref) const noexcept;
 	bool ValidateRayTracingLibraryMetadata(
 	    const RhiRayTracingCapabilities& capabilities,
-	    CookedShaderBinaryFormat requiredBinaryFormat,
+	    CookedShaderBinaryFormat runtimeBinaryFormat,
 	    std::string& outErrorMessage) const;
 
   private:

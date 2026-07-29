@@ -6,6 +6,5 @@
 
 #include <cstdint>
 
-EngineOutputColorEncoding SanitizeOutputColorEncoding(EngineOutputColorEncoding encoding) noexcept;
 std::uint32_t ResolveShaderOutputEncoding(EngineOutputColorEncoding encoding, PixelFormat backBufferFormat) noexcept;
 OutputEncodingUniformData BuildOutputEncodingUniformData() noexcept;

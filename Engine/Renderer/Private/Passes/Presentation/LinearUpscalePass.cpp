@@ -2,7 +2,7 @@
 #include "Passes/Presentation/LinearUpscalePass.h"
 
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
@@ -12,16 +12,16 @@ LinearUpscalePass::LinearUpscalePass(const ComputePassPipelineRuntime& runtime) 
 
 const LinearUpscalePass::ParameterMetadata& LinearUpscalePass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<LinearUpscalePass>();
+	return ComputePassOperations::BuildParameterMetadata<LinearUpscalePass>();
 }
 
 const RenderPassDefinition& LinearUpscalePass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::LinearUpscale,
 	    L"LinearUpscale_BindingLayout",
-	    L"LinearUpscale_PipelineState");
+	    L"LinearUpscale_Pipeline");
 	return definition;
 }
 
@@ -35,5 +35,5 @@ void LinearUpscalePass::Execute(
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
-	ComputePassUtilities::DispatchSized<LinearUpscalePass>(context, m_runtime, parameters, outputWidth, outputHeight);
+	ComputePassOperations::DispatchSized<LinearUpscalePass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

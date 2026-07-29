@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Core/Public/Console/CVar.h"
 
@@ -22,7 +22,7 @@ void ConsoleVariableRegistry::Register(ConsoleVariableBase& variable) noexcept
 	const auto [iterator, inserted] = m_variablesByName.emplace(variable.GetName(), &variable);
 	if (!inserted)
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_cvarRegistryLogger,
 		    __FILE__,
 		    __LINE__,

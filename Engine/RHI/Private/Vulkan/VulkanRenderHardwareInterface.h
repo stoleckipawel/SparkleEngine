@@ -11,7 +11,7 @@ class VulkanCommandRecordingContext;
 class VulkanUploadService;
 class VulkanCaptureService;
 class VulkanRenderCommandList;
-class VulkanDescriptorManager;
+class VulkanDescriptorService;
 class VulkanGpuMemoryAllocator;
 class VulkanImGuiBackend;
 class VulkanInteropService;
@@ -124,7 +124,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	VulkanSwapChain* m_swapChain = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	VulkanCommandRecordingContext* m_commandRecordingContext = nullptr;
-	std::unique_ptr<VulkanDescriptorManager> m_descriptorManager;
+	std::unique_ptr<VulkanDescriptorService> m_descriptorService;
 	std::unique_ptr<VulkanUploadService> m_uploadService;
 	std::unique_ptr<VulkanSamplerLibrary> m_samplerLibrary;
 	std::unique_ptr<VulkanImGuiBackend> m_imguiBackend;

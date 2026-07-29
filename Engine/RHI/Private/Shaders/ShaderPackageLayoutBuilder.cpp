@@ -2,6 +2,7 @@
 
 #include "Shaders/ShaderPackageLayoutBuilder.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "ShaderParameters/PassParameterLayout.h"
 
 #include <algorithm>
@@ -18,16 +19,13 @@ struct ShaderPackageLayoutBuilder::MergeEntry final
 	ShaderStage SourceStage = ShaderStage::Count;
 };
 
-bool ShaderPackageLayoutBuilder::Build(
+PassParameterLayout ShaderPackageLayoutBuilder::Build(
     std::string_view packageId,
-    std::span<const ShaderRegistrationDesc> registrations,
-    PassParameterLayout& outLayout,
-    std::string& outErrorMessage)
+    std::span<const ShaderRegistrationDesc> registrations)
 {
 	if (packageId.empty())
 	{
-		outErrorMessage = "Shader package layout generation requires a non-empty package id.";
-		return false;
+		throw Diagnostics::Error("Shader package layout generation received an empty package identity.");
 	}
 
 	std::vector<MergeEntry> entries;
@@ -51,50 +49,42 @@ bool ShaderPackageLayoutBuilder::Build(
 			PassParameterDesc parameter = BuildParameterDesc(field, registration.Stage);
 			if (parameter.Name.empty())
 			{
-				outErrorMessage = std::format(
+				throw Diagnostics::Error(std::format(
 				    "Shader package '{}' contains an unnamed parameter in shader '{}' parameter struct '{}'.",
 				    packageId,
 				    registration.ShaderName,
-				    descriptor.Name);
-				return false;
+				    descriptor.Name));
 			}
 
 			if (parameter.ArrayCount == 0)
 			{
-				outErrorMessage = std::format(
+				throw Diagnostics::Error(std::format(
 				    "Shader package '{}' parameter '{}' in shader '{}' has invalid array count 0.",
 				    packageId,
 				    parameter.Name,
-				    registration.ShaderName);
-				return false;
+				    registration.ShaderName));
 			}
 
-			if (!MergeParameter(entries, std::move(parameter), field.ValueAlignmentInBytes, registration, descriptor.Name, outErrorMessage))
-			{
-				return false;
-			}
+			MergeParameter(entries, std::move(parameter), field.ValueAlignmentInBytes, registration, descriptor.Name);
 		}
 	}
 
 	if (!foundPackage)
 	{
-		outErrorMessage = std::format("No shader registrations were found for package '{}'.", packageId);
-		return false;
+		throw Diagnostics::Error(std::format("No shader registrations were found for package '{}'.", packageId));
 	}
 
 	const std::string debugName(packageId);
-	outLayout = PassParameterLayout(debugName.c_str());
-	AppendCategory(outLayout, entries, 0u);
-	AppendCategory(outLayout, entries, 1u);
-	AppendCategory(outLayout, entries, 2u);
-
-	outErrorMessage.clear();
-	return true;
+	PassParameterLayout layout(debugName.c_str());
+	AppendCategory(layout, entries, 0u);
+	AppendCategory(layout, entries, 1u);
+	AppendCategory(layout, entries, 2u);
+	return layout;
 }
 
-bool BuildRegisteredShaderPackageLayout(std::string_view packageId, PassParameterLayout& outLayout, std::string& outErrorMessage)
+PassParameterLayout BuildRegisteredShaderPackageLayout(std::string_view packageId)
 {
-	return ShaderPackageLayoutBuilder::Build(packageId, GlobalShaderRegistry::GetRegistrations(), outLayout, outErrorMessage);
+	return ShaderPackageLayoutBuilder::Build(packageId, GlobalShaderRegistry::GetRegistrations());
 }
 
 ShaderStageVisibility ShaderPackageLayoutBuilder::GetDefaultVisibility(ShaderStage stage) noexcept
@@ -153,13 +143,12 @@ std::uint32_t ShaderPackageLayoutBuilder::GetOrderingCategory(const PassParamete
 	return 1u;
 }
 
-bool ShaderPackageLayoutBuilder::MergeParameter(
+void ShaderPackageLayoutBuilder::MergeParameter(
     std::vector<MergeEntry>& entries,
     PassParameterDesc parameter,
     std::uint32_t valueAlignmentInBytes,
     const ShaderRegistrationDesc& registration,
-    std::string_view shaderStructName,
-    std::string& outErrorMessage)
+    std::string_view shaderStructName)
 {
 	const auto existing = std::ranges::find_if(
 	    entries,
@@ -178,12 +167,12 @@ bool ShaderPackageLayoutBuilder::MergeParameter(
 		        .SourceStructName = std::string(shaderStructName),
 		        .SourceStage = registration.Stage,
 		    });
-		return true;
+		return;
 	}
 
 	if (!MatchesExistingBinding(*existing, parameter, valueAlignmentInBytes))
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Shader package '{}' has conflicting binding '{}': first declared by shader '{}' struct '{}' as {}; shader '{}' struct '{}' "
 		    "declares {}.",
 		    GetShaderRegistrationPackageId(registration),
@@ -193,12 +182,10 @@ bool ShaderPackageLayoutBuilder::MergeParameter(
 		    FormatParameterDesc(existing->Parameter, existing->ValueAlignmentInBytes),
 		    registration.ShaderName,
 		    shaderStructName,
-		    FormatParameterDesc(parameter, valueAlignmentInBytes));
-		return false;
+		    FormatParameterDesc(parameter, valueAlignmentInBytes)));
 	}
 
 	existing->Parameter.Visibility |= parameter.Visibility;
-	return true;
 }
 
 bool ShaderPackageLayoutBuilder::MatchesExistingBinding(

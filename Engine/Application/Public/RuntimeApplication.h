@@ -11,7 +11,7 @@ class Window;
 class InputSystem;
 class GameWorld;
 class Renderer;
-class LevelManager;
+class LevelSession;
 class RuntimeConsoleHost;
 class TaskExecutor;
 class TaskScope;
@@ -54,7 +54,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	Timer& GetTimer() noexcept;
 	Window& GetWindow() noexcept;
 	InputSystem& GetInputSystem() noexcept;
-	LevelManager* GetLevelManager() const noexcept;
+	LevelSession* GetLevelSession() const noexcept;
 	Renderer& GetRenderer() noexcept;
 	TaskExecutor& GetTaskExecutor() noexcept;
 	TaskScope& GetApplicationTaskScope() noexcept;
@@ -77,7 +77,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<InputSystem> m_inputSystem;
 	std::unique_ptr<GameWorld> m_gameWorld;
-	std::unique_ptr<LevelManager> m_levelManager;
+	std::unique_ptr<LevelSession> m_levelSession;
 	std::unique_ptr<Renderer> m_renderer;
 	std::unique_ptr<RuntimeConsoleHost> m_runtimeConsoleHost;
 	std::unique_ptr<ApplicationTaskRuntime> m_taskRuntime;

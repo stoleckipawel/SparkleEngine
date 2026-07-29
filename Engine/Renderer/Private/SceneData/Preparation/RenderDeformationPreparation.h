@@ -12,7 +12,7 @@
 
 struct ResolvedRenderObject;
 
-struct RenderSkinningCopyRange final
+struct RenderJointMatrixCopyRange final
 {
 	RenderObjectId Object;
 	std::uint32_t OutputOffset = 0u;
@@ -20,7 +20,7 @@ struct RenderSkinningCopyRange final
 	std::span<const DirectX::XMFLOAT4X4> Previous;
 };
 
-struct RenderMorphCopyRange final
+struct RenderMorphWeightCopyRange final
 {
 	RenderObjectId Object;
 	std::uint32_t OutputOffset = 0u;
@@ -31,8 +31,8 @@ struct RenderMorphCopyRange final
 
 struct RenderDeformationWork final
 {
-	std::vector<RenderSkinningCopyRange> SkinningRanges;
-	std::vector<RenderMorphCopyRange> MorphRanges;
+	std::vector<RenderJointMatrixCopyRange> JointMatrixCopyRanges;
+	std::vector<RenderMorphWeightCopyRange> MorphWeightCopyRanges;
 	std::vector<DirectX::XMFLOAT4X4> JointMatrices;
 	std::vector<DirectX::XMFLOAT4X4> PreviousJointMatrices;
 	std::vector<float> MorphWeights;
@@ -49,45 +49,45 @@ class RenderDeformationPreparation final
 	void Commit(const RenderDeformationWork& work);
 	void Reset() noexcept;
 
-	static void CopySkinningRanges(
-	    std::span<const RenderSkinningCopyRange> ranges,
+	static void CopyJointMatrixRanges(
+	    std::span<const RenderJointMatrixCopyRange> ranges,
 	    std::span<DirectX::XMFLOAT4X4> current,
 	    std::span<DirectX::XMFLOAT4X4> previous) noexcept;
-	static void CopyMorphRanges(
-	    std::span<const RenderMorphCopyRange> ranges,
+	static void CopyMorphWeightRanges(
+	    std::span<const RenderMorphWeightCopyRange> ranges,
 	    std::span<float> current,
 	    std::span<float> previous) noexcept;
 
   private:
 	static void ResetWork(RenderDeformationWork& work) noexcept;
 	static void ResetObjectOutputs(std::span<ResolvedRenderObject> objects) noexcept;
-	void PrepareSkinning(
-	    std::span<const RenderSkinningData> skinning,
-	    std::span<const DirectX::XMFLOAT4X4> matrices,
+	void PrepareJointMatrices(
+	    std::span<const RenderJointMatrixRange> jointMatrixRanges,
+	    std::span<const DirectX::XMFLOAT4X4> jointMatrices,
 	    std::span<ResolvedRenderObject> objects,
 	    RenderDeformationWork& work);
-	void PrepareMorph(
-	    std::span<const RenderMorphData> morphWeights,
+	void PrepareMorphWeights(
+	    std::span<const RenderMorphWeightRange> morphWeightRanges,
 	    std::span<const float> weights,
 	    std::span<ResolvedRenderObject> objects,
 	    RenderDeformationWork& work);
 	static bool AreAllZero(
 	    std::span<const float> weights) noexcept;
-	static void CopyMorphWeights(
+	static void CopyMorphWeightSpan(
 	    std::span<const float> source,
 	    std::span<float> destination) noexcept;
-	void CommitSkinningHistory(
+	void CommitJointMatrixHistory(
 	    const RenderDeformationWork& work);
-	void CommitMorphHistory(
+	void CommitMorphWeightHistory(
 	    const RenderDeformationWork& work);
-	static bool RetainsMorphHistory(
+	static bool RetainsMorphWeightHistory(
 	    const RenderDeformationWork& work,
-	    const RenderMorphCopyRange& range) noexcept;
+	    const RenderMorphWeightCopyRange& range) noexcept;
 
 	std::map<
 	    RenderObjectId,
 	    std::vector<DirectX::XMFLOAT4X4>>
-	    m_skinningHistory;
+	    m_jointMatrixHistory;
 	std::map<RenderObjectId, std::vector<float>>
-	    m_morphHistory;
+	    m_morphWeightHistory;
 };

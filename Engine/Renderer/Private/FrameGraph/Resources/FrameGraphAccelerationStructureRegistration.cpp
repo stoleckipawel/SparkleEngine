@@ -14,12 +14,12 @@ class FrameGraphAccelerationStructureBindingValidator final
   public:
 	static FrameGraphAccelerationStructureDesc ResolveAccelerationStructureDesc(
 	    const FrameGraphAccelerationStructureDesc& desc,
-	    std::string_view fallbackName)
+	    std::string_view defaultName)
 	{
 		FrameGraphAccelerationStructureDesc resolvedDesc = desc;
 		if (resolvedDesc.name.empty())
 		{
-			resolvedDesc.name = std::string(fallbackName);
+			resolvedDesc.name = std::string(defaultName);
 		}
 
 		return resolvedDesc;
@@ -38,7 +38,7 @@ class FrameGraphAccelerationStructureBindingValidator final
 	    bool hasResource,
 	    RhiGpuVirtualAddress gpuAddress) noexcept
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_frameGraphAccelerationStructureLogger,
 		    __FILE__,
 		    __LINE__,

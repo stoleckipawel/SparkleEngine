@@ -4,7 +4,7 @@
 cbuffer SkyUniformData
 {
 	float3 SkyColor;
-	float SkyIntensity;
+	float SkyBrightness;
 	uint SkyEnabled;
 	uint3 SkyPadding;
 };

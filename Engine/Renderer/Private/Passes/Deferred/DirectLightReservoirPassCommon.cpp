@@ -3,7 +3,7 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/PassRuntimeServices.h"
+#include "FrameGraph/PassRuntimeContext.h"
 
 namespace DirectLightReservoirPassCommon
 {
@@ -11,9 +11,9 @@ namespace DirectLightReservoirPassCommon
 	    DirectLightReservoirCommonParameters& parameters,
 	    const FrameContext& frame,
 	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices)
+	    const PassRuntimeContext& passRuntimeContext)
 	{
-		parameters.PerFrame = passRuntimeServices.PerFrame;
+		parameters.PerFrame = passRuntimeContext.PerFrame;
 		parameters.PerView = viewData.perViewData;
 		parameters.ViewLighting = frame.sceneGpuData->Lighting.Constants;
 	}

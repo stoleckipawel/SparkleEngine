@@ -14,7 +14,7 @@
 #include <vector>
 
 class RenderCommandList;
-class VulkanDescriptorManager;
+class VulkanDescriptorService;
 class VulkanGpuMemoryAllocator;
 class VulkanRecordingDescriptorPool;
 class VulkanRecordingUploadPage;
@@ -30,7 +30,7 @@ class VulkanCommandRecordingContext final
 	VulkanCommandRecordingContext(
 	    VulkanRhi& rhi,
 	    VulkanGpuMemoryAllocator& memoryAllocator,
-	    VulkanDescriptorManager& descriptorManager) noexcept;
+	    VulkanDescriptorService& descriptorService) noexcept;
 	~VulkanCommandRecordingContext() noexcept;
 
 	VulkanCommandRecordingContext(const VulkanCommandRecordingContext&) = delete;
@@ -148,6 +148,6 @@ class VulkanCommandRecordingContext final
 	Threading::OwnerThread m_owner{"Vulkan command recording coordinator"};
 	VulkanRhi* m_rhi = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
-	VulkanDescriptorManager* m_descriptorManager = nullptr;
+	VulkanDescriptorService* m_descriptorService = nullptr;
 	std::array<std::array<QueueFrameState, RhiQueueTypeCount>, RhiFrameConstants::FramesInFlight> m_frames;
 };

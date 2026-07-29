@@ -14,7 +14,7 @@ class D3D12RenderHardwareInterface;
 class D3D12ImGuiBackend final : public RhiImGuiRenderer
 {
   public:
-	explicit D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardware) noexcept;
+	explicit D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept;
 
 	bool Initialize() override;
 	void BeginFrame() noexcept override;
@@ -42,7 +42,7 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
 	ImGuiContext* ActivateContext() const noexcept;
 	static void RestoreContext(ImGuiContext* context) noexcept;
 
-	D3D12RenderHardwareInterface* m_renderHardware = nullptr;
+	D3D12RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	ImGuiContext* m_imguiContext = nullptr;
 	bool m_ownsContext = false;
 };

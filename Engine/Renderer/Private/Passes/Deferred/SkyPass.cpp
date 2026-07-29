@@ -2,8 +2,8 @@
 #include "Passes/Deferred/SkyPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "FrameGraph/PassRuntimeContext.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
@@ -13,19 +13,19 @@ SkyPass::SkyPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime
 
 const SkyPass::ParameterMetadata& SkyPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<SkyPass>();
+	return ComputePassOperations::BuildParameterMetadata<SkyPass>();
 }
 
 const RenderPassDefinition& SkyPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition =
-	    ComputePassUtilities::BuildDefinition(PassName, RendererShaderPackages::Sky, L"Sky_BindingLayout", L"Sky_PipelineState");
+	    ComputePassOperations::BuildDefinition(PassName, RendererShaderPackages::Sky, L"Sky_BindingLayout", L"Sky_Pipeline");
 	return definition;
 }
 
-void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeServices& passRuntimeServices) const
+void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeContext& passRuntimeContext) const
 {
-	parameters->PerFrame = passRuntimeServices.PerFrame;
+	parameters->PerFrame = passRuntimeContext.PerFrame;
 	parameters->PerView = frame.mainView.perViewData;
 	parameters->PerTemporal = frame.mainView.perTemporalData;
 	parameters->Sky = MakeSkyUniformData(frame.sceneData.sky);
@@ -37,8 +37,8 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& f
 
 void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame, context.RuntimeServices);
-	ComputePassUtilities::DispatchSized<SkyPass>(
+	SetParameters(parameters, context.Frame, context.Runtime);
+	ComputePassOperations::DispatchSized<SkyPass>(
 	    context,
 	    m_runtime,
 	    parameters,

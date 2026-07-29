@@ -3,6 +3,8 @@
 
 #include <cstdio>
 
+static const auto g_renderCommandContextLogger = Logging::GetOrCreateLogger("Renderer.CommandContext");
+
 RenderCommandContext::RenderCommandContext(RenderCommandList& commandList) noexcept : m_commandList(&commandList) {}
 
 void RenderCommandContext::EnableDrawDispatchDiagnostics() noexcept
@@ -10,9 +12,9 @@ void RenderCommandContext::EnableDrawDispatchDiagnostics() noexcept
 	m_drawDispatchDiagnosticsEnabled = SupportsDiagnosticScopes();
 }
 
-void RenderCommandContext::SetPipelineState(const RenderPipelineState& pipelineState) noexcept
+void RenderCommandContext::SetPipeline(const RenderPipeline& pipeline) noexcept
 {
-	m_commandList->SetPipelineState(pipelineState);
+	m_commandList->SetPipeline(pipeline);
 }
 
 void RenderCommandContext::SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
@@ -108,24 +110,24 @@ void RenderCommandContext::BindComputeUnorderedAccessAddress(std::uint32_t bindi
 	m_commandList->BindComputeUnorderedAccess(bindingIndex, gpuAddress);
 }
 
-void RenderCommandContext::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept
+void RenderCommandContext::SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
-	m_commandList->SetRenderTarget(rtv, dsv);
+	m_commandList->SetRenderTarget(renderTarget, depthStencil);
 }
 
-void RenderCommandContext::SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv) noexcept
+void RenderCommandContext::SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
-	m_commandList->SetRenderTargets(numRTVs, rtvs, dsv);
+	m_commandList->SetRenderTargets(renderTargetCount, renderTargets, depthStencil);
 }
 
-void RenderCommandContext::ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept
+void RenderCommandContext::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept
 {
-	m_commandList->ClearRenderTarget(rtv, color);
+	m_commandList->ClearRenderTarget(renderTarget, color);
 }
 
-void RenderCommandContext::ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil) noexcept
+void RenderCommandContext::ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil) noexcept
 {
-	m_commandList->ClearDepthStencil(dsv, depth, stencil);
+	m_commandList->ClearDepthStencil(depthStencil, depth, stencil);
 }
 
 void RenderCommandContext::SetViewport(const RhiViewport& viewport) noexcept
@@ -207,7 +209,13 @@ void RenderCommandContext::BuildBottomLevelAccelerationStructure(
 	if (m_commandList != nullptr)
 	{
 		m_commandList->BuildBottomLevelAccelerationStructure(geometry, scratchGpuAddress, resultGpuAddress);
+		return;
 	}
+	Diagnostics::Fatal(
+	    g_renderCommandContextLogger,
+	    __FILE__,
+	    __LINE__,
+	    "BLAS build has no active render command list.");
 }
 
 void RenderCommandContext::BuildTopLevelAccelerationStructure(
@@ -225,7 +233,13 @@ void RenderCommandContext::BuildTopLevelAccelerationStructure(
 		    scratchGpuAddress,
 		    resultGpuAddress,
 		    buildMode);
+		return;
 	}
+	Diagnostics::Fatal(
+	    g_renderCommandContextLogger,
+	    __FILE__,
+	    __LINE__,
+	    "Classic TLAS build has no active render command list.");
 }
 
 void RenderCommandContext::BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept
@@ -233,7 +247,13 @@ void RenderCommandContext::BuildPartitionedTopLevelAccelerationStructure(const R
 	if (m_commandList != nullptr)
 	{
 		m_commandList->BuildPartitionedTopLevelAccelerationStructure(desc);
+		return;
 	}
+	Diagnostics::Fatal(
+	    g_renderCommandContextLogger,
+	    __FILE__,
+	    __LINE__,
+	    "Partitioned TLAS build has no active render command list.");
 }
 
 void RenderCommandContext::TrackResource(RhiResourceHandle resource) noexcept

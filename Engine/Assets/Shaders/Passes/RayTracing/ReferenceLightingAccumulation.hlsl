@@ -26,7 +26,6 @@ cbuffer ReferenceLightingAccumulationUniformData
 	const uint2 pixelCoord = dispatchThreadId.xy;
 	const float4 currentSample = ReferenceLightingSample.Load(int3(pixelCoord, 0));
 	const bool producerValid = ReferenceSampleValidity.Load(int3(pixelCoord, 0)).a > 0.5f;
-	const bool currentSampleFinite = all(isfinite(currentSample.rgb));
 	const float2 motionVector = GBufferMotionVector.Load(int3(pixelCoord, 0));
 	const bool canReuseHistory = ReferenceLightingHistoryValid != 0u && dot(motionVector, motionVector) <= 1.0e-6f;
 
@@ -35,19 +34,14 @@ cbuffer ReferenceLightingAccumulationUniformData
 	if (canReuseHistory)
 	{
 		const float4 previous = PreviousReferenceLighting.Load(int3(pixelCoord, 0));
-		if (all(isfinite(previous)) && previous.a >= 0.0f)
-		{
-			previousRadiance = previous.rgb;
-			previousSampleCount = previous.a;
-		}
+		previousRadiance = previous.rgb;
+		previousSampleCount = previous.a;
 	}
 
-	if (!producerValid || !currentSampleFinite)
+	if (!producerValid)
 	{
 		CurrentReferenceLighting[pixelCoord] = float4(previousRadiance, previousSampleCount);
-		const float3 fallbackRadiance =
-		    previousSampleCount > 0.0f ? previousRadiance : (currentSampleFinite ? max(currentSample.rgb, 0.0f.xxx) : 0.0f.xxx);
-		SceneColorTexture[pixelCoord] = float4(fallbackRadiance, currentSample.a);
+		SceneColorTexture[pixelCoord] = float4(previousRadiance, currentSample.a);
 		return;
 	}
 

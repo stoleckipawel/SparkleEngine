@@ -1,37 +1,28 @@
 #include "PCH.h"
 
 #include "Gltf/GltfPrimitiveMaterialResolver.h"
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <cgltf.h>
 
 #include <format>
 
-static const auto g_gltfPrimitiveMaterialResolverLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
-
 ImportedMaterialIndex GltfPrimitiveMaterialResolver::Resolve(
     const cgltf_primitive& primitive,
     const cgltf_data* data,
     std::string_view primitiveLabel,
-    SourceImportResult& result)
+    SourceImportOutput& output)
 {
-	if (!primitive.material || result.scene.materials.empty())
+	if (!primitive.material || output.scene.materials.empty())
 	{
 		return kInvalidImportedMaterialIndex;
 	}
 
 	const std::uint32_t materialIndex = static_cast<std::uint32_t>(primitive.material - data->materials);
-	if (materialIndex < result.scene.materials.size())
+	if (materialIndex < output.scene.materials.size())
 	{
 		return materialIndex;
 	}
 
-	(void)result;
-	SPDLOG_LOGGER_WARN(
-	    g_gltfPrimitiveMaterialResolverLogger,
-	    "{}",
-	    std::format(
-	        "GltfImporter: {} references invalid material index {} and will use the default material",
-	        primitiveLabel,
-	        materialIndex));
-	return kInvalidImportedMaterialIndex;
+	throw Diagnostics::Error(std::format("glTF {} references unknown material index {}.", primitiveLabel, materialIndex));
 }

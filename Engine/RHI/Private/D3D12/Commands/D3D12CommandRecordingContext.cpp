@@ -511,7 +511,7 @@ const wchar_t* D3D12CommandRecordingContext::QueueTypeName(ERhiQueueType queueTy
 		    diagnosticMessage.Text);
 	}
 
-	Diagnostics::Fail(
+	Diagnostics::Fatal(
 	    logger,
 	    __FILE__,
 	    __LINE__,
@@ -529,7 +529,7 @@ const wchar_t* D3D12CommandRecordingContext::QueueTypeName(ERhiQueueType queueTy
     std::uint32_t frameIndex) noexcept
 {
 	const auto logger = Logging::GetOrCreateLogger("RHI.D3D12.Commands");
-	Diagnostics::Fail(
+	Diagnostics::Fatal(
 	    logger,
 	    __FILE__,
 	    __LINE__,

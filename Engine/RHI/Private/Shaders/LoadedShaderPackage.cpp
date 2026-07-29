@@ -50,7 +50,7 @@ ShaderBytecode LoadedShaderPackage::GetBytecode(const CookedShaderBinaryRecord& 
 
 bool LoadedShaderPackage::ValidateRayTracingLibraryMetadata(
     const RhiRayTracingCapabilities& capabilities,
-    CookedShaderBinaryFormat requiredBinaryFormat,
+    CookedShaderBinaryFormat runtimeBinaryFormat,
     std::string& outErrorMessage) const
 {
 	if (m_header.PackageKind != CookedShaderPackageKind::RayTracingLibrary)
@@ -137,15 +137,15 @@ bool LoadedShaderPackage::ValidateRayTracingLibraryMetadata(
 			outErrorMessage = std::format("Cooked ray tracing export {} references a binary record with ShaderBlobId=0", exportIndex);
 			return false;
 		}
-		if (!IsRuntimeBinary(binaryRecord, requiredBinaryFormat))
+		if (!IsRuntimeBinary(binaryRecord, runtimeBinaryFormat))
 		{
 			outErrorMessage = std::format(
-			    "Cooked ray tracing export {} target '{}/{}' does not match RHI-required target '{}/{}'",
+			    "Cooked ray tracing export {} target '{}/{}' does not match RHI runtime target '{}/{}'",
 			    exportIndex,
 			    CookedShaderBinaryFormatToString(binaryRecord.Format),
 			    ResolveString(binaryRecord.CodegenTarget),
-			    CookedShaderBinaryFormatToString(requiredBinaryFormat),
-			    GetRuntimeShaderCodegenTarget(requiredBinaryFormat));
+			    CookedShaderBinaryFormatToString(runtimeBinaryFormat),
+			    GetRuntimeShaderCodegenTarget(runtimeBinaryFormat));
 			return false;
 		}
 		if (!GetBytecode(binaryRecord).IsValid())

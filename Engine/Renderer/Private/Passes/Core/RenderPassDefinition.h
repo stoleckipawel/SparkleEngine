@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/Pipeline/RhiPipelineStateDesc.h"
+#include "RHI/Public/Pipeline/RhiPipelineDesc.h"
 #include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 enum class RenderPassDefinitionPipelineKind
@@ -30,6 +30,6 @@ struct RenderPassDefinition final
 	RenderPassDefinitionPipelineKind PipelineKind = RenderPassDefinitionPipelineKind::Compute;
 	bool AllowInputAssemblerInputLayout = false;
 	const wchar_t* BindingLayoutDebugName = L"RenderPass_BindingLayout";
-	const wchar_t* PipelineStateDebugName = L"RenderPass_PipelineState";
+	const wchar_t* PipelineDebugName = L"RenderPass_Pipeline";
 	RenderPassGraphicsPipelineDefinition Graphics = {};
 };

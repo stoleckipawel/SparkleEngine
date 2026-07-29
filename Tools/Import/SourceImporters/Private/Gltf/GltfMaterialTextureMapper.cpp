@@ -2,34 +2,31 @@
 
 #include "Gltf/GltfMaterialTextureMapper.h"
 
-#include "Core/Public/Paths/PathUtils.h"
+#include "Core/Public/Diagnostics/Error.h"
+#include "SourceTexturePathResolver.h"
 
 #include <cgltf.h>
 
 #include <format>
 
-static const auto g_gltfMaterialTextureMapperLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
-
 void GltfMaterialTextureMapper::Apply(
     const cgltf_material& material,
     ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
-    ImportedMaterial& importedMaterial,
-    SourceImportResult& result)
+    ImportedMaterial& importedMaterial)
 {
-	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::Diffuse, importedMaterial, result);
-	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::NormalMap, importedMaterial, result);
-	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::AmbientOcclusion, importedMaterial, result);
-	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::Emissive, importedMaterial, result);
-	AssignPackedMetallicRoughness(material, materialIndex, sourceDirectory, importedMaterial, result);
+	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::Diffuse, importedMaterial);
+	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::NormalMap, importedMaterial);
+	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::AmbientOcclusion, importedMaterial);
+	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::Emissive, importedMaterial);
+	AssignPackedMetallicRoughness(material, materialIndex, sourceDirectory, importedMaterial);
 }
 
 void GltfMaterialTextureMapper::AssignPackedMetallicRoughness(
     const cgltf_material& material,
     ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
-    ImportedMaterial& importedMaterial,
-    SourceImportResult& result)
+    ImportedMaterial& importedMaterial)
 {
 	if (material.has_pbr_metallic_roughness && material.pbr_metallic_roughness.metallic_roughness_texture.texture)
 	{
@@ -37,8 +34,7 @@ void GltfMaterialTextureMapper::AssignPackedMetallicRoughness(
 		    material.pbr_metallic_roughness.metallic_roughness_texture,
 		    materialIndex,
 		    sourceDirectory,
-		    "metallic-roughness",
-		    result);
+		    "metallic-roughness");
 		SetTextureSource(importedMaterial, TextureGroup::Roughness, texturePath, TextureChannelMask::Green);
 		SetTextureSource(importedMaterial, TextureGroup::Metallic, texturePath, TextureChannelMask::Blue);
 	}
@@ -49,8 +45,7 @@ void GltfMaterialTextureMapper::AssignTextureByType(
     ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
     TextureGroup textureGroup,
-    ImportedMaterial& importedMaterial,
-    SourceImportResult& result)
+    ImportedMaterial& importedMaterial)
 {
 	switch (textureGroup)
 	{
@@ -64,20 +59,7 @@ void GltfMaterialTextureMapper::AssignTextureByType(
 				        material.pbr_metallic_roughness.base_color_texture,
 				        materialIndex,
 				        sourceDirectory,
-				        "base-color",
-				        result));
-			}
-			else if (material.has_pbr_specular_glossiness)
-			{
-				SetTextureSource(
-				    importedMaterial,
-				    textureGroup,
-				    ResolveTexturePath(
-				        material.pbr_specular_glossiness.diffuse_texture,
-				        materialIndex,
-				        sourceDirectory,
-				        "diffuse",
-				        result));
+				        "base-color"));
 			}
 			break;
 
@@ -93,14 +75,14 @@ void GltfMaterialTextureMapper::AssignTextureByType(
 			SetTextureSource(
 			    importedMaterial,
 			    textureGroup,
-			    ResolveTexturePath(material.normal_texture, materialIndex, sourceDirectory, "normal", result));
+			    ResolveTexturePath(material.normal_texture, materialIndex, sourceDirectory, "normal"));
 			break;
 
 		case TextureGroup::AmbientOcclusion:
 			SetTextureSource(
 			    importedMaterial,
 			    textureGroup,
-			    ResolveTexturePath(material.occlusion_texture, materialIndex, sourceDirectory, "occlusion", result),
+			    ResolveTexturePath(material.occlusion_texture, materialIndex, sourceDirectory, "occlusion"),
 			    TextureChannelMask::Red);
 			break;
 
@@ -108,7 +90,7 @@ void GltfMaterialTextureMapper::AssignTextureByType(
 			SetTextureSource(
 			    importedMaterial,
 			    textureGroup,
-			    ResolveTexturePath(material.emissive_texture, materialIndex, sourceDirectory, "emissive", result));
+			    ResolveTexturePath(material.emissive_texture, materialIndex, sourceDirectory, "emissive"));
 			break;
 	}
 }
@@ -117,87 +99,42 @@ std::optional<std::filesystem::path> GltfMaterialTextureMapper::ResolveTexturePa
     const cgltf_texture_view& textureView,
     ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
-    std::string_view slotName,
-    SourceImportResult& result)
+    std::string_view slotName)
 {
 	if (!textureView.texture)
 	{
 		return std::nullopt;
 	}
+	if (textureView.texcoord != 0 || textureView.has_transform || textureView.scale != 1.0f)
+	{
+		throw Diagnostics::Error(
+		    std::format("glTF material {} uses an unsupported {} texture coordinate mapping.", materialIndex, slotName));
+	}
 
 	const cgltf_texture& texture = *textureView.texture;
+	if (texture.has_basisu || texture.has_webp)
+	{
+		throw Diagnostics::Error(
+		    std::format("glTF material {} uses an unsupported {} texture encoding.", materialIndex, slotName));
+	}
+
 	if (texture.image && texture.image->uri)
 	{
 		const std::string texturePathString = texture.image->uri;
 		if (texturePathString.empty())
 		{
-			return std::nullopt;
+			throw Diagnostics::Error(std::format("glTF material {} has an empty {} texture URI.", materialIndex, slotName));
 		}
 
-		const std::optional<std::filesystem::path> resolvedTexturePath =
-		    Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
-		if (!resolvedTexturePath)
-		{
-			(void)result;
-			SPDLOG_LOGGER_WARN(
-			    g_gltfMaterialTextureMapperLogger,
-			    "{}",
-			    std::format(
-			        "GltfImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
-			        materialIndex,
-			        slotName,
-			        texturePathString));
-			return std::nullopt;
-		}
-
-		return NormalizeTexturePath(*resolvedTexturePath, materialIndex, slotName, result);
+		return SourceTexturePathResolver::ResolveExistingFile(sourceDirectory, texturePathString);
 	}
 
 	if (texture.image && texture.image->buffer_view)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfMaterialTextureMapperLogger,
-		    "{}",
-		    std::format("GltfImporter: Material handle {} uses an embedded {} texture which is not supported yet", materialIndex, slotName));
-		return std::nullopt;
+		throw Diagnostics::Error(std::format("glTF material {} uses an unsupported embedded {} texture.", materialIndex, slotName));
 	}
 
-	if (texture.has_basisu || texture.has_webp)
-	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfMaterialTextureMapperLogger,
-		    "{}",
-		    std::format(
-		        "GltfImporter: Material handle {} uses {} texture sources that are not supported by the runtime importer yet",
-		        materialIndex,
-		        slotName));
-	}
-
-	return std::nullopt;
-}
-
-std::optional<std::filesystem::path> GltfMaterialTextureMapper::NormalizeTexturePath(
-    std::filesystem::path texturePath,
-    ImportedMaterialIndex materialIndex,
-    std::string_view slotName,
-    SourceImportResult& result)
-{
-	const std::filesystem::path normalizedTexturePath = Paths::Normalize(texturePath);
-	if (normalizedTexturePath.empty())
-	{
-		(void)result;
-		SPDLOG_LOGGER_WARN(
-		    g_gltfMaterialTextureMapperLogger,
-		    "{}",
-		    std::format(
-		        "GltfImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
-		        materialIndex,
-		        slotName,
-		        texturePath.string()));
-		return std::nullopt;
-	}
-
-	return normalizedTexturePath;
+	throw Diagnostics::Error(std::format("glTF material {} has no supported {} texture source.", materialIndex, slotName));
 }
 
 void GltfMaterialTextureMapper::SetTextureSource(

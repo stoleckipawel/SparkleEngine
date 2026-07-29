@@ -89,7 +89,7 @@ struct RayTracingHitSurfaceData
 	float Alpha;
 	float SubsurfaceStrength;
 	uint AlphaMode;
-	uint DebugData;
+	uint GpuSceneSlot;
 };
 
 StructuredBuffer<RayTracingHitVertex> RayTracingHitVertices;
@@ -202,11 +202,6 @@ bool TryLoadRayTracingHitTriangle(
 	v2 = (RayTracingHitVertex) 0;
 	rejectionReason = RayTracingHitSurface::ReasonNone;
 
-	if (RayTracingHitDataAvailable == 0u)
-	{
-		rejectionReason = RayTracingHitSurface::ReasonHitDataUnavailable;
-		return false;
-	}
 	if (instanceId >= RayTracingHitInstanceCount)
 	{
 		rejectionReason = RayTracingHitSurface::ReasonInstanceOutOfRange;
@@ -310,7 +305,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.TexCoord0 = 0.0f.xx;
 	surface.MaterialSlot = 0u;
 	surface.GeometryFlags = 0u;
-	surface.RejectionReason = trace.Hit ? RayTracingHitSurface::ReasonHitDataUnavailable : RayTracingHitSurface::ReasonNoHit;
+	surface.RejectionReason = trace.Hit ? RayTracingHitSurface::ReasonInvalidHitData : RayTracingHitSurface::ReasonNoHit;
 	surface.BaseColor = 0.0f.xxx;
 	surface.EmissiveColor = 0.0f.xxx;
 	surface.SubsurfaceColor = 0.0f.xxx;
@@ -321,7 +316,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.Alpha = 1.0f;
 	surface.SubsurfaceStrength = 0.0f;
 	surface.AlphaMode = RayTracingHitSurface::AlphaModeOpaque;
-	surface.DebugData = 0u;
+	surface.GpuSceneSlot = 0u;
 
 	if (!trace.Hit)
 	{
@@ -460,9 +455,9 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	    skinned0.Tangent * barycentricWeights.x + skinned1.Tangent * barycentricWeights.y + skinned2.Tangent * barycentricWeights.z;
 	const float tangentSign =
 	    (v0.Tangent.w * barycentricWeights.x + v1.Tangent.w * barycentricWeights.y + v2.Tangent.w * barycentricWeights.z) >= 0.0f ? 1.0f : -1.0f;
-	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
-	const float3x3 worldMatrix = (float3x3) meshInstance.WorldMTX;
-	float3 normalWorld = SafeNormalize(mul(localNormal, worldInvTransposeMatrix), -rayDirectionWorld);
+	const float3x3 worldInverseTranspose = (float3x3) meshInstance.WorldInverseTranspose;
+	const float3x3 worldMatrix = (float3x3) meshInstance.WorldMatrix;
+	float3 normalWorld = SafeNormalize(mul(localNormal, worldInverseTranspose), -rayDirectionWorld);
 	float3 tangentWorld = SafeNormalize(mul(localTangent, worldMatrix), 0.0f.xxx);
 	const bool twoSided = (hitInstance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 	const bool frontFacing = dot(normalWorld, -rayDirectionWorld) >= 0.0f;
@@ -475,8 +470,8 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	const float3 bitangentWorld = ComputeBitangentFromSign(normalWorld, tangentWorld, tangentSign);
 
 	surface.Valid = true;
-	surface.PositionWorld = mul(float4(localPosition, 1.0f), meshInstance.WorldMTX).xyz;
-	surface.PreviousPositionWorld = mul(float4(previousLocalPosition, 1.0f), meshInstance.PreviousWorldMTX).xyz;
+	surface.PositionWorld = mul(float4(localPosition, 1.0f), meshInstance.WorldMatrix).xyz;
+	surface.PreviousPositionWorld = mul(float4(previousLocalPosition, 1.0f), meshInstance.PreviousWorldMatrix).xyz;
 	surface.NormalWorld = normalWorld;
 	surface.TangentWorld = tangentWorld;
 	surface.BitangentWorld = bitangentWorld;
@@ -486,7 +481,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.GeometryFlags = hitInstance.GeometryFlags;
 	surface.RejectionReason = RayTracingHitSurface::ReasonNone;
 	surface.AlphaMode = material.AlphaMode;
-	surface.DebugData = meshInstance.DebugData;
+	surface.GpuSceneSlot = meshInstance.GpuSceneSlot;
 
 	float4 resolvedBaseColor = material.BaseColor;
 	float resolvedRoughness = material.Roughness;

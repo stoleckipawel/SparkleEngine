@@ -2,24 +2,10 @@
 
 #include "Assets/Translators/SceneAssetSkeletonTranslator.h"
 
-#include <string>
 #include <utility>
 
 namespace Assets
 {
-
-		std::string JointNameToString(const CookedSkeletonJointRecord& jointRecord)
-		{
-			std::size_t length = 0;
-			while (length < sizeof(jointRecord.name) && jointRecord.name[length] != '\0')
-			{
-				++length;
-			}
-
-			return std::string(jointRecord.name, length);
-		}
-
-
 	SkeletonResource BuildSceneAssetSkeleton(
 	    const LoadedSkeletonAsset& skeletonAsset,
 	    CookedAssetId skeletonAssetId,
@@ -33,7 +19,7 @@ namespace Assets
 		for (const CookedSkeletonJointRecord& jointRecord : skeletonAsset.joints)
 		{
 			SkeletonJoint joint;
-			joint.name = JointNameToString(jointRecord);
+			joint.name = jointRecord.name;
 			joint.sourceNodeIndex = jointRecord.sourceNodeIndex;
 			joint.parentJointIndex = jointRecord.parentJointIndex;
 			joint.inverseBindMatrix = jointRecord.inverseBindMatrix;

@@ -4,7 +4,7 @@
 #include "Commands/RenderCommandContext.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
+#include "FrameGraph/PassRuntimeContext.h"
 #include "Upscaling/UpscalerProvider.h"
 
 class UpscalerPassRequirements final
@@ -41,8 +41,8 @@ void AddUpscalerPass(
 	    },
 	    [inputs, renderExtent, outputExtent](PassExecutionContext& context)
 	    {
-		    if (context.RuntimeServices.ImageProviders == nullptr ||
-		        context.RuntimeServices.ImageProviders->Upscaling == nullptr)
+		    if (context.Runtime.ImageProviders == nullptr ||
+		        context.Runtime.ImageProviders->Upscaling == nullptr)
 		    {
 			    return;
 		    }
@@ -51,7 +51,7 @@ void AddUpscalerPass(
 		    const RhiNativeInteropRequest interopRequest{
 		        .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
 		        .Reason = "Evaluate upscaler pass"};
-		    (void) context.RuntimeServices.ImageProviders->Upscaling->Evaluate(
+		    (void) context.Runtime.ImageProviders->Upscaling->Evaluate(
 		        UpscalerEvaluationDesc{
 		            .BackendApi = commandList.GetBackendApi(),
 		            .NativeCommandList = commandList.GetNativeHandle(interopRequest),

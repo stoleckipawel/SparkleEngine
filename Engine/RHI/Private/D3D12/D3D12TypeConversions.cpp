@@ -2,6 +2,10 @@
 
 #include "D3D12/D3D12TypeConversions.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
+static const auto g_d3d12TypeConversionsLogger = Logging::GetOrCreateLogger("RHI.D3D12.TypeConversions");
+
 class D3D12ResourceFormatTranslation final
 {
   public:
@@ -99,8 +103,9 @@ D3D12_COMPARISON_FUNC D3D12TypeConversions::ToComparisonFunc(CompareOp compareOp
 		case CompareOp::GreaterOrEqual:
 			return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
 		case CompareOp::Always:
-		default:
 			return D3D12_COMPARISON_FUNC_ALWAYS;
+		default:
+			Diagnostics::Fatal(g_d3d12TypeConversionsLogger, __FILE__, __LINE__, "Unsupported D3D12 comparison operation.");
 	}
 }
 
@@ -135,8 +140,9 @@ D3D12_DESCRIPTOR_HEAP_TYPE D3D12TypeConversions::ToDescriptorHeapType(ERhiDescri
 		case ERhiDescriptorAllocatorType::Sampler:
 			return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 		case ERhiDescriptorAllocatorType::ShaderResource:
-		default:
 			return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		default:
+			Diagnostics::Fatal(g_d3d12TypeConversionsLogger, __FILE__, __LINE__, "Unsupported D3D12 descriptor allocator type.");
 	}
 }
 
@@ -166,7 +172,7 @@ D3D12_RESOURCE_STATES D3D12TypeConversions::ToResourceStates(ResourceState state
 		case ResourceState::Present:
 			return D3D12_RESOURCE_STATE_PRESENT;
 		default:
-			return D3D12_RESOURCE_STATE_COMMON;
+			Diagnostics::Fatal(g_d3d12TypeConversionsLogger, __FILE__, __LINE__, "Unsupported D3D12 resource state.");
 	}
 }
 
@@ -175,8 +181,9 @@ D3D12_PRIMITIVE_TOPOLOGY D3D12TypeConversions::ToPrimitiveTopology(RhiPrimitiveT
 	switch (topology)
 	{
 		case RhiPrimitiveTopology::TriangleList:
-		default:
 			return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		default:
+			Diagnostics::Fatal(g_d3d12TypeConversionsLogger, __FILE__, __LINE__, "Unsupported D3D12 primitive topology.");
 	}
 }
 
@@ -187,8 +194,9 @@ DXGI_FORMAT D3D12TypeConversions::ToIndexFormat(RhiIndexFormat format) noexcept
 		case RhiIndexFormat::UInt16:
 			return DXGI_FORMAT_R16_UINT;
 		case RhiIndexFormat::UInt32:
-		default:
 			return DXGI_FORMAT_R32_UINT;
+		default:
+			Diagnostics::Fatal(g_d3d12TypeConversionsLogger, __FILE__, __LINE__, "Unsupported D3D12 index format.");
 	}
 }
 

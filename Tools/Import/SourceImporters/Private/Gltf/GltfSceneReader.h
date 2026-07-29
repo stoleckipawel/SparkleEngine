@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "SourceImportResult.h"
-
 #include <filesystem>
 #include <string>
 
@@ -20,14 +18,12 @@ struct GltfScene
 
 class GltfSceneReader final
 {
-  public:
-	static bool LoadScene(const std::filesystem::path& filePath, GltfScene& scene, SourceImportResult& result);
+	public:
+	static void LoadScene(const std::filesystem::path& filePath, GltfScene& scene);
 
   private:
-	static bool ValidateInputPath(const std::filesystem::path& filePath, SourceImportResult& result);
-	static bool ParseGltfFile(cgltf_options& options, const std::string& pathStr, cgltf_data*& outData, SourceImportResult& result);
-	static bool LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& pathStr, SourceImportResult& result);
-	static void ValidateGltf(cgltf_data* data, const std::string& pathStr, SourceImportResult& result);
+	static void ValidateInputPath(const std::filesystem::path& filePath);
+	static void ParseGltfFile(cgltf_options& options, const std::string& path, cgltf_data*& outData);
+	static void LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& path);
+	static void ValidateGltf(cgltf_data* data, const std::string& path);
 };
-
-

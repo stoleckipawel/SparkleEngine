@@ -1,6 +1,7 @@
 #include "PCH.h"
 
 #include "Gltf/GltfMaterialVariantImporter.h"
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <cgltf.h>
 
@@ -28,25 +29,19 @@ class GltfMaterialVariantTranslation final
 		return static_cast<ImportedMaterialIndex>(materialIndex);
 	}
 
-	static std::string BuildVariantName(const cgltf_material_variant& variant, cgltf_size variantIndex)
+	static void ImportVariantSet(const cgltf_data* data, SourceImportOutput& output)
 	{
-		if (variant.name != nullptr && variant.name[0] != '\0')
-		{
-			return variant.name;
-		}
-
-		return std::format("Variant{}", static_cast<std::uint32_t>(variantIndex));
-	}
-
-	static void ImportVariantSet(const cgltf_data* data, SourceImportResult& result)
-	{
-		result.scene.materialVariants.reserve(data->variants_count);
+		output.scene.materialVariants.reserve(data->variants_count);
 		for (cgltf_size variantIndex = 0; variantIndex < data->variants_count; ++variantIndex)
 		{
+			if (data->variants[variantIndex].name == nullptr || data->variants[variantIndex].name[0] == '\0')
+			{
+				throw Diagnostics::Error(std::format("glTF material variant {} has no name.", variantIndex));
+			}
 			ImportedMaterialVariant importedVariant;
-			importedVariant.name = BuildVariantName(data->variants[variantIndex], variantIndex);
+			importedVariant.name = data->variants[variantIndex].name;
 			importedVariant.sourceVariantIndex = static_cast<std::uint32_t>(variantIndex);
-			result.scene.materialVariants.push_back(std::move(importedVariant));
+			output.scene.materialVariants.push_back(std::move(importedVariant));
 		}
 	}
 
@@ -55,26 +50,38 @@ class GltfMaterialVariantTranslation final
 	    const cgltf_primitive& primitive,
 	    std::uint32_t sourceMeshIndex,
 	    std::uint32_t sourcePrimitiveIndex,
-	    SourceImportResult& result)
+	    SourceImportOutput& output)
 	{
 		for (cgltf_size mappingIndex = 0; mappingIndex < primitive.mappings_count; ++mappingIndex)
 		{
 			const cgltf_material_mapping& mapping = primitive.mappings[mappingIndex];
 			if (mapping.material == nullptr)
 			{
-				continue;
+				throw Diagnostics::Error(std::format(
+				    "glTF mesh {} primitive {} material-variant mapping {} has no material.",
+				    sourceMeshIndex,
+				    sourcePrimitiveIndex,
+				    mappingIndex));
 			}
 
 			const ImportedMaterialIndex materialIndex = ResolveImportedMaterialIndex(data, mapping.material);
-			if (materialIndex == kInvalidImportedMaterialIndex || materialIndex >= result.scene.materials.size())
+			if (materialIndex == kInvalidImportedMaterialIndex || materialIndex >= output.scene.materials.size())
 			{
-				continue;
+				throw Diagnostics::Error(std::format(
+				    "glTF mesh {} primitive {} material-variant mapping {} references an unknown material.",
+				    sourceMeshIndex,
+				    sourcePrimitiveIndex,
+				    mappingIndex));
 			}
 
 			const cgltf_size sourceVariantIndex = mapping.variant;
-			if (sourceVariantIndex >= result.scene.materialVariants.size())
+			if (sourceVariantIndex >= output.scene.materialVariants.size())
 			{
-				continue;
+				throw Diagnostics::Error(std::format(
+				    "glTF mesh {} primitive {} material-variant mapping {} references an unknown variant.",
+				    sourceMeshIndex,
+				    sourcePrimitiveIndex,
+				    mappingIndex));
 			}
 
 			ImportedMaterialVariantMapping importedMapping;
@@ -82,19 +89,19 @@ class GltfMaterialVariantTranslation final
 			importedMapping.sourcePrimitiveIndex = sourcePrimitiveIndex;
 			importedMapping.variantIndex = static_cast<ImportedMaterialVariantIndex>(sourceVariantIndex);
 			importedMapping.materialIndex = materialIndex;
-			result.scene.materialVariantMappings.push_back(importedMapping);
+			output.scene.materialVariantMappings.push_back(importedMapping);
 		}
 	}
 };
 
-void GltfMaterialVariantImporter::ImportMaterialVariants(const cgltf_data* data, SourceImportResult& result)
+void GltfMaterialVariantImporter::ImportMaterialVariants(const cgltf_data* data, SourceImportOutput& output)
 {
 	if (data == nullptr || data->variants_count == 0)
 	{
 		return;
 	}
 
-	GltfMaterialVariantTranslation::ImportVariantSet(data, result);
+	GltfMaterialVariantTranslation::ImportVariantSet(data, output);
 	for (cgltf_size meshIndex = 0; meshIndex < data->meshes_count; ++meshIndex)
 	{
 		const cgltf_mesh& mesh = data->meshes[meshIndex];
@@ -105,7 +112,7 @@ void GltfMaterialVariantImporter::ImportMaterialVariants(const cgltf_data* data,
 			    mesh.primitives[primitiveIndex],
 			    static_cast<std::uint32_t>(meshIndex),
 			    static_cast<std::uint32_t>(primitiveIndex),
-			    result);
+			    output);
 		}
 	}
 }

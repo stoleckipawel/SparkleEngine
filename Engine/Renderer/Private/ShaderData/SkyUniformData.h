@@ -10,7 +10,7 @@
 struct SkyUniformData
 {
 	DirectX::XMFLOAT3 Color{1.0f, 1.0f, 1.0f};
-	float Intensity = 1.0f;
+	float Brightness = 1.0f;
 	std::uint32_t Enabled = 1u;
 	DirectX::XMUINT3 Padding{};
 };

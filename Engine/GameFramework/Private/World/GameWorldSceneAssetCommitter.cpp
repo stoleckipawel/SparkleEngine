@@ -3,6 +3,7 @@
 #include "World/GameWorldSceneAssetCommitter.h"
 
 #include "Assets/SceneAssetPayload.h"
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Scene/Camera/SceneCameraEntry.h"
 #include "Scene/Materials/SceneMaterialVariantTranslator.h"
 #include "Scene/Meshes/SceneAssetMeshInstanceBuilder.h"
@@ -10,6 +11,8 @@
 #include "World/Resources/GameWorldResourceStores.h"
 
 #include <utility>
+
+static const auto g_sceneAssetCommitterLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssetCommitter");
 
 GameWorldSceneAssetCommitter::GameWorldSceneAssetCommitter(
     ECS::GameWorldState& world,
@@ -19,13 +22,17 @@ GameWorldSceneAssetCommitter::GameWorldSceneAssetCommitter(
 {
 }
 
-bool GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
+void GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 {
 	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty() &&
 	    sceneAssetPayload.skeletons.empty() && sceneAssetPayload.animations.empty() && sceneAssetPayload.materials.empty() &&
 	    sceneAssetPayload.materialVariants.empty())
 	{
-		return false;
+		Diagnostics::Fatal(
+		    g_sceneAssetCommitterLogger,
+		    __FILE__,
+		    __LINE__,
+		    "A validated scene asset payload contains no resources or entities.");
 	}
 	const bool hasSkeletons = !sceneAssetPayload.skeletons.empty();
 	const bool hasMaterials = !sceneAssetPayload.materials.empty();
@@ -46,23 +53,30 @@ bool GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 	const auto sceneMeshBaseIndex = static_cast<SceneMeshInstanceIndex>(m_state.GetMeshCount());
 	const auto sceneGroupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(m_state.GetMeshInstanceGroupCount());
 
-	std::vector<ECS::SceneMeshInstanceData> meshInstances;
-	if (!SceneAssetMeshInstanceBuilder::BuildInstances(
-	        sceneAssetPayload,
-	        m_resources.Materials,
-	        materialBaseHandle,
-	        sceneGroupBaseIndex,
-	        meshInstances))
-	{
-		return false;
-	}
+	std::vector<ECS::SceneMeshInstanceData> meshInstances = SceneAssetMeshInstanceBuilder::BuildInstances(
+	    sceneAssetPayload,
+	    m_resources.Materials,
+	    materialBaseHandle,
+	    sceneGroupBaseIndex);
 	for (const ECS::SceneMeshInstanceData& meshInstance : meshInstances)
+	{
 		if (!m_resources.Materials.Contains(meshInstance.Material))
-			return false;
+		{
+			Diagnostics::Fatal(
+			    g_sceneAssetCommitterLogger,
+			    __FILE__,
+			    __LINE__,
+			    "A validated mesh instance resolved an absent material.");
+		}
+	}
 
 	for (ECS::SceneMeshInstanceData& meshInstance : meshInstances)
+	{
 		if (!m_state.AddMesh(std::move(meshInstance)).IsValid())
-			return false;
+		{
+			Diagnostics::Fatal(g_sceneAssetCommitterLogger, __FILE__, __LINE__, "The staged world rejected a mesh instance.");
+		}
+	}
 
 	m_state.AppendMeshInstanceGroups(
 	    SceneAssetMeshInstanceBuilder::BuildGroups(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
@@ -76,10 +90,18 @@ bool GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 		SceneCameraEntry sceneCamera;
 		sceneCamera.name = std::move(camera.name);
 		sceneCamera.desc = camera.desc;
-		m_state.AddCamera(std::move(sceneCamera));
+		if (!m_state.AddCamera(std::move(sceneCamera)).IsValid())
+		{
+			Diagnostics::Fatal(g_sceneAssetCommitterLogger, __FILE__, __LINE__, "The staged world rejected a scene camera.");
+		}
 	}
 	for (SceneLightDesc& light : sceneAssetPayload.lights)
-		m_state.AddLight(std::move(light));
+	{
+		if (!m_state.AddLight(std::move(light)).IsValid())
+		{
+			Diagnostics::Fatal(g_sceneAssetCommitterLogger, __FILE__, __LINE__, "The staged world rejected a scene light.");
+		}
+	}
 
 	if (hasSkeletons)
 		m_state.NotifyResourceChanged(WorldDataKind::Skeleton);
@@ -88,5 +110,4 @@ bool GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 		m_state.NotifyResourceChanged(WorldDataKind::Material);
 		m_state.NotifyResourceChanged(WorldDataKind::Texture);
 	}
-	return true;
 }

@@ -6,6 +6,6 @@ SkyUniformData MakeSkyUniformData(const RenderSkyData& sky) noexcept
 {
 	return SkyUniformData{
 	    .Color = sky.color,
-	    .Intensity = sky.intensity,
+	    .Brightness = sky.brightness,
 	    .Enabled = sky.enabled ? 1u : 0u};
 }

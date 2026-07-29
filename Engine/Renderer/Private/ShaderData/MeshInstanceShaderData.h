@@ -8,16 +8,16 @@
 
 struct MeshInstanceData
 {
-	DirectX::XMFLOAT4X4 WorldMTX;
-	DirectX::XMFLOAT4X4 PreviousWorldMTX;
-	DirectX::XMFLOAT3X4 WorldInvTransposeMTX;
+	DirectX::XMFLOAT4X4 WorldMatrix;
+	DirectX::XMFLOAT4X4 PreviousWorldMatrix;
+	DirectX::XMFLOAT3X4 WorldInverseTranspose;
 	uint32_t MaterialSlot = 0;
 	uint32_t Flags = 0;
 	uint32_t JointMatrixOffset = 0;
 	uint32_t MorphWeightOffset = 0;
 	uint32_t MorphTargetCount = 0;
 	uint32_t MorphTargetVertexCount = 0;
-	uint32_t DebugData = 0;
+	uint32_t GpuSceneSlot = 0;
 	uint32_t Reserved = 0;
 };
 static_assert(std::is_standard_layout_v<MeshInstanceData>, "MeshInstanceData must be standard-layout");
@@ -31,16 +31,18 @@ inline constexpr std::uint32_t kInvalidMeshInstanceMorphWeightOffset = (std::num
 
 struct VertexSkinInfluenceData
 {
-	DirectX::XMUINT4 JointIndices = {0, 0, 0, 0};
-	DirectX::XMFLOAT4 JointWeights = {0.0f, 0.0f, 0.0f, 0.0f};
+	DirectX::XMUINT4 JointIndices0 = {0, 0, 0, 0};
+	DirectX::XMUINT4 JointIndices1 = {0, 0, 0, 0};
+	DirectX::XMFLOAT4 JointWeights0 = {0.0f, 0.0f, 0.0f, 0.0f};
+	DirectX::XMFLOAT4 JointWeights1 = {0.0f, 0.0f, 0.0f, 0.0f};
 };
 static_assert(std::is_standard_layout_v<VertexSkinInfluenceData>, "VertexSkinInfluenceData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<VertexSkinInfluenceData>, "VertexSkinInfluenceData must be trivially-copyable");
-static_assert(sizeof(VertexSkinInfluenceData) == 32, "VertexSkinInfluenceData must match the HLSL structured-buffer stride");
+static_assert(sizeof(VertexSkinInfluenceData) == 64, "VertexSkinInfluenceData must match the HLSL structured-buffer stride");
 
 struct JointMatrixData
 {
-	DirectX::XMFLOAT4X4 SkinningMTX;
+	DirectX::XMFLOAT4X4 Matrix;
 };
 static_assert(std::is_standard_layout_v<JointMatrixData>, "JointMatrixData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<JointMatrixData>, "JointMatrixData must be trivially-copyable");

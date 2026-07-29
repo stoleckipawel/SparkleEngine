@@ -6,14 +6,16 @@
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
-#include "D3D12/Pipeline/D3D12PipelineState.h"
+#include "D3D12/Pipeline/D3D12Pipeline.h"
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Interop/RhiInteropService.h"
 #include "Validation/RhiContract.h"
 
 #include <array>
-#include <cassert>
 #include <string>
 #include <vector>
+
+static const auto g_d3d12RenderCommandListLogger = Logging::GetOrCreateLogger("RHI.D3D12.CommandList");
 
 D3D12RenderCommandList::D3D12RenderCommandList(
     D3D12RenderHardwareInterface& owner,
@@ -33,22 +35,32 @@ void D3D12RenderCommandList::OnResourceTrackingStarted(RhiResourceHandle resourc
 {
 	if (m_owner != nullptr)
 	{
-		const D3D12RecordingResourceUseToken use =
-		    m_owner->BeginResourceTracking(resource, m_recordingOwner.IsCoordinator());
+		const D3D12RecordingResourceUseToken use = m_owner->BeginResourceTracking(resource, m_recordingOwner.IsCoordinator());
 		m_recordingResourceUses.push_back(RecordingResourceUse{.Resource = resource, .Token = use});
 	}
 }
 
-void D3D12RenderCommandList::OnResourceTrackingFinished(
-	RhiResourceHandle resource,
-	RhiSubmissionToken submissionToken) noexcept
+void D3D12RenderCommandList::OnResourceTrackingFinished(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept
 {
 	if (m_owner != nullptr)
 	{
-		assert(m_recordingResourceReleaseIndex < m_recordingResourceUses.size());
-		const RecordingResourceUse& use =
-		    m_recordingResourceUses[m_recordingResourceReleaseIndex++];
-		assert(use.Resource.Value == resource.Value);
+		if (m_recordingResourceReleaseIndex >= m_recordingResourceUses.size())
+		{
+			Diagnostics::Fatal(
+			    g_d3d12RenderCommandListLogger,
+			    __FILE__,
+			    __LINE__,
+			    "D3D12 command-list resource tracking finished without a matching retained resource.");
+		}
+		const RecordingResourceUse& use = m_recordingResourceUses[m_recordingResourceReleaseIndex++];
+		if (use.Resource.Value != resource.Value)
+		{
+			Diagnostics::Fatal(
+			    g_d3d12RenderCommandListLogger,
+			    __FILE__,
+			    __LINE__,
+			    "D3D12 command-list resource tracking release order does not match its recording order.");
+		}
 		m_owner->EndResourceTracking(use.Token, submissionToken);
 
 		if (m_recordingResourceReleaseIndex == m_recordingResourceUses.size())
@@ -116,15 +128,15 @@ void D3D12RenderCommandList::SetShaderVisibleDescriptorHeaps(std::uint32_t heapC
 	m_commandList->SetDescriptorHeaps(clampedHeapCount, nativeHeaps.data());
 }
 
-void D3D12RenderCommandList::SetPipelineState(const RenderPipelineState& pipelineState) noexcept
+void D3D12RenderCommandList::SetPipeline(const RenderPipeline& pipeline) noexcept
 {
 	if (m_commandList == nullptr)
 	{
 		return;
 	}
 
-	const auto& nativePipelineState = static_cast<const D3D12PipelineState&>(pipelineState);
-	m_commandList->SetPipelineState(nativePipelineState.Get().Get());
+	const auto& d3d12Pipeline = static_cast<const D3D12Pipeline&>(pipeline);
+	m_commandList->SetPipelineState(d3d12Pipeline.Get().Get());
 }
 
 void D3D12RenderCommandList::SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
@@ -149,9 +161,7 @@ void D3D12RenderCommandList::SetComputeBindingLayout(const RenderBindingLayout& 
 	m_commandList->SetComputeRootSignature(nativeBindingLayout.GetRootSignature().GetRaw());
 }
 
-void D3D12RenderCommandList::ResetBoundState() noexcept
-{
-}
+void D3D12RenderCommandList::ResetBoundState() noexcept {}
 
 void D3D12RenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
@@ -301,54 +311,62 @@ void D3D12RenderCommandList::BindIndexBuffer(const RhiIndexBufferView& view) noe
 	m_commandList->IASetIndexBuffer(&nativeView);
 }
 
-void D3D12RenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept
+void D3D12RenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
 	if (m_commandList == nullptr)
 	{
 		return;
 	}
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE nativeRtv = D3D12TypeConversions::ToCpuDescriptor(rtv);
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeRtv = D3D12TypeConversions::ToCpuDescriptor(renderTarget);
 	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv =
-	    dsv != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*dsv) : D3D12_CPU_DESCRIPTOR_HANDLE{};
-	m_commandList->OMSetRenderTargets(1, &nativeRtv, FALSE, dsv != nullptr ? &nativeDsv : nullptr);
+	    depthStencil != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*depthStencil) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+	m_commandList->OMSetRenderTargets(1, &nativeRtv, FALSE, depthStencil != nullptr ? &nativeDsv : nullptr);
 }
 
 void D3D12RenderCommandList::SetRenderTargets(
-    std::uint32_t numRTVs,
-    const RhiCpuDescriptorHandle* rtvs,
-    const RhiCpuDescriptorHandle* dsv) noexcept
+    std::uint32_t renderTargetCount,
+    const RhiCpuDescriptorHandle* renderTargets,
+    const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
 	if (m_commandList == nullptr)
 	{
 		return;
 	}
-
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> nativeRtvs(numRTVs);
-	for (std::uint32_t index = 0; index < numRTVs; ++index)
+	if (renderTargetCount > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT || (renderTargetCount != 0 && renderTargets == nullptr))
 	{
-		nativeRtvs[index] = D3D12TypeConversions::ToCpuDescriptor(rtvs[index]);
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 SetRenderTargets received an invalid render-target count or array.");
+	}
+
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> nativeRtvs(renderTargetCount);
+	for (std::uint32_t index = 0; index < renderTargetCount; ++index)
+	{
+		nativeRtvs[index] = D3D12TypeConversions::ToCpuDescriptor(renderTargets[index]);
 	}
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv =
-	    dsv != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*dsv) : D3D12_CPU_DESCRIPTOR_HANDLE{};
-	m_commandList->OMSetRenderTargets(numRTVs, nativeRtvs.data(), FALSE, dsv != nullptr ? &nativeDsv : nullptr);
+	    depthStencil != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*depthStencil) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+	m_commandList->OMSetRenderTargets(renderTargetCount, nativeRtvs.data(), FALSE, depthStencil != nullptr ? &nativeDsv : nullptr);
 }
 
-void D3D12RenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept
+void D3D12RenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList->ClearRenderTargetView(D3D12TypeConversions::ToCpuDescriptor(rtv), color, 0, nullptr);
+		m_commandList->ClearRenderTargetView(D3D12TypeConversions::ToCpuDescriptor(renderTarget), color, 0, nullptr);
 	}
 }
 
-void D3D12RenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil) noexcept
+void D3D12RenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil) noexcept
 {
 	if (m_commandList != nullptr)
 	{
 		m_commandList->ClearDepthStencilView(
-		    D3D12TypeConversions::ToCpuDescriptor(dsv),
+		    D3D12TypeConversions::ToCpuDescriptor(depthStencil),
 		    D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
 		    depth,
 		    stencil,
@@ -424,19 +442,18 @@ void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
     RhiGpuVirtualAddress scratchGpuAddress,
     RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
-	const D3D12_GPU_VIRTUAL_ADDRESS vertexBufferAddress =
-	    ResolveRayTracingBufferAddress(geometry.VertexBuffer);
+	const D3D12_GPU_VIRTUAL_ADDRESS vertexBufferAddress = ResolveRayTracingBufferAddress(geometry.VertexBuffer);
 
-	const D3D12_GPU_VIRTUAL_ADDRESS indexBufferAddress =
-	    ResolveRayTracingBufferAddress(geometry.IndexBuffer);
-	if (m_commandList == nullptr ||
-	    !RhiContract::IsRayTracingGeometryDescUsable(geometry) ||
-	    vertexBufferAddress == 0 ||
-	    indexBufferAddress == 0 ||
-	    !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress) ||
+	const D3D12_GPU_VIRTUAL_ADDRESS indexBufferAddress = ResolveRayTracingBufferAddress(geometry.IndexBuffer);
+	if (m_commandList == nullptr || !RhiContract::IsRayTracingGeometryDescUsable(geometry) || vertexBufferAddress == 0 ||
+	    indexBufferAddress == 0 || !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress) ||
 	    !RhiContract::IsRayTracingGpuAddressPresent(resultGpuAddress))
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 BLAS build received incomplete geometry, command-list, or GPU-address inputs.");
 	}
 
 	TrackResource(geometry.VertexBuffer.Resource);
@@ -468,8 +485,7 @@ void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
 	m_commandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS D3D12RenderCommandList::ResolveRayTracingBufferAddress(
-    const RhiRayTracingBufferBinding& binding) noexcept
+D3D12_GPU_VIRTUAL_ADDRESS D3D12RenderCommandList::ResolveRayTracingBufferAddress(const RhiRayTracingBufferBinding& binding) noexcept
 {
 	ID3D12Resource* const resource = static_cast<ID3D12Resource*>(binding.Resource.Value);
 	return resource != nullptr ? resource->GetGPUVirtualAddress() + binding.OffsetInBytes : 0;
@@ -482,13 +498,14 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress resultGpuAddress,
     ERhiClassicTlasBuildMode buildMode) noexcept
 {
-	if (m_commandList == nullptr ||
-	    !RhiContract::IsRayTracingGpuAddressPresent(instanceDescsGpuAddress) ||
-	    !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress) ||
-	    !RhiContract::IsRayTracingGpuAddressPresent(resultGpuAddress) ||
-	    instanceCount == 0)
+	if (m_commandList == nullptr || !RhiContract::IsRayTracingGpuAddressPresent(instanceDescsGpuAddress) ||
+	    !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress) || !RhiContract::IsRayTracingGpuAddressPresent(resultGpuAddress))
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 classic TLAS build received no command list or an empty GPU address.");
 	}
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
@@ -518,35 +535,51 @@ void D3D12RenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const
 {
 	if (m_commandList == nullptr || m_owner == nullptr)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 partitioned TLAS build has no command list or device owner.");
 	}
 
 	BeginDiagnosticScope("RayTracing.PTLAS.Build", RhiDiagnosticLabelColor{92, 148, 255, 255});
 	const bool submitted = m_owner->BuildPartitionedTopLevelAccelerationStructure(m_commandList, desc);
 	EndDiagnosticScope();
-	if (submitted)
+	if (!submitted)
 	{
-		UnorderedAccessBarrier(RhiResourceHandle{nullptr});
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 partitioned TLAS provider rejected the build command.");
 	}
+	UnorderedAccessBarrier(RhiResourceHandle{nullptr});
 }
 
 void D3D12RenderCommandList::CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept
 {
+	if (m_commandList == nullptr || !destinationResource || !sourceResource)
+	{
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 CopyResource requires an active command list and two valid resources.");
+	}
 	TrackResource(destinationResource);
 	TrackResource(sourceResource);
-	if (m_commandList != nullptr)
-	{
-		m_commandList->CopyResource(
-		    D3D12TypeConversions::ToResource(destinationResource),
-		    D3D12TypeConversions::ToResource(sourceResource));
-	}
+	m_commandList->CopyResource(D3D12TypeConversions::ToResource(destinationResource), D3D12TypeConversions::ToResource(sourceResource));
 }
 
 void D3D12RenderCommandList::AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept
 {
-	if (m_commandList == nullptr)
+	if (m_commandList == nullptr || !beforeResource || !afterResource)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 aliasing barriers require an active command list and two valid resources.");
 	}
 
 	TrackResource(beforeResource);
@@ -555,34 +588,34 @@ void D3D12RenderCommandList::AliasResource(RhiResourceHandle beforeResource, Rhi
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Aliasing.pResourceBefore = nullptr;
-	barrier.Aliasing.pResourceAfter = nullptr;
+	barrier.Aliasing.pResourceBefore = D3D12TypeConversions::ToResource(beforeResource);
+	barrier.Aliasing.pResourceAfter = D3D12TypeConversions::ToResource(afterResource);
 	m_commandList->ResourceBarrier(1, &barrier);
 }
 
 void D3D12RenderCommandList::TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
-	TrackResource(resource);
-	if (m_commandList == nullptr)
+	if (m_commandList == nullptr || !resource)
+	{
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 resource transitions require an active command list and a valid resource.");
+	}
+	if (before == after)
 	{
 		return;
 	}
+	TrackResource(resource);
 
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barrier.Transition.pResource = D3D12TypeConversions::ToResource(resource);
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	const auto resolveState = [this](ResourceState state)
-	{
-		if (m_queueType == ERhiQueueType::Compute && state == ResourceState::ShaderResource)
-		{
-			return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-		}
-		return D3D12TypeConversions::ToResourceStates(state);
-	};
-	barrier.Transition.StateBefore = resolveState(before);
-	barrier.Transition.StateAfter = resolveState(after);
+	barrier.Transition.StateBefore = ResolveResourceState(before);
+	barrier.Transition.StateAfter = ResolveResourceState(after);
 	if (barrier.Transition.StateBefore == barrier.Transition.StateAfter)
 	{
 		return;
@@ -592,15 +625,28 @@ void D3D12RenderCommandList::TransitionResource(RhiResourceHandle resource, Reso
 
 void D3D12RenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource) noexcept
 {
-	TrackResource(resource);
-	if (m_commandList == nullptr)
+	if (m_commandList == nullptr || !resource)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_d3d12RenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 unordered-access barriers require an active command list and a valid resource.");
 	}
+	TrackResource(resource);
 
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barrier.UAV.pResource = D3D12TypeConversions::ToResource(resource);
 	m_commandList->ResourceBarrier(1, &barrier);
+}
+
+D3D12_RESOURCE_STATES D3D12RenderCommandList::ResolveResourceState(ResourceState state) const noexcept
+{
+	if (m_queueType == ERhiQueueType::Compute && state == ResourceState::ShaderResource)
+	{
+		return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+	}
+	return D3D12TypeConversions::ToResourceStates(state);
 }

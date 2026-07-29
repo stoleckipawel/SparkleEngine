@@ -55,6 +55,6 @@ namespace Threading
 		    location.file_name(),
 		    location.line(),
 		    location.function_name());
-		Diagnostics::Fail(g_threadOwnershipLogger, location.file_name(), location.line(), message);
+		Diagnostics::Fatal(g_threadOwnershipLogger, location.file_name(), location.line(), message);
 	}
 }

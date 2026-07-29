@@ -15,12 +15,12 @@ struct RayTracedShadowUniformData
 	float Padding3 = 0.0f;
 	std::uint32_t SceneTlasGpuAddressLow = 0u;
 	std::uint32_t SceneTlasGpuAddressHigh = 0u;
-	std::uint32_t RayTracingHitDataAvailable = 0u;
 	std::uint32_t RayTracingHitInstanceCount = 0u;
 	std::uint32_t RayTracingHitMaterialCount = 0u;
 	std::uint32_t Padding4 = 0u;
 	std::uint32_t Padding5 = 0u;
 	std::uint32_t Padding6 = 0u;
+	std::uint32_t Padding7 = 0u;
 };
 
 static_assert(std::is_standard_layout_v<RayTracedShadowUniformData>, "RayTracedShadowUniformData must be standard-layout");

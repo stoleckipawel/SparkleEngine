@@ -2,23 +2,23 @@
 #include "Panels/SceneMeshInspector.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Scene/Transactions/EditorTransactionManager.h"
+#include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Util/UiUtil.h"
 #include "World/WorldReadView.h"
 
 #include <cstdio>
 
-void SceneMeshInspector::Build(const WorldMeshReadData& mesh, EditorTransactionManager& transactions,
+void SceneMeshInspector::Build(const WorldMeshReadData& mesh, EditorTransactionHistory& transactionHistory,
                                std::uint64_t generation, const std::string& filter) noexcept
 {
-	BuildTransformCategory(filter, mesh, transactions, generation);
+	BuildTransformCategory(filter, mesh, transactionHistory, generation);
 	BuildStaticMeshCategory(filter, mesh);
-	BuildAdvancedParametersCategory(filter, mesh, transactions, generation);
+	BuildAdvancedParametersCategory(filter, mesh, transactionHistory, generation);
 	BuildMaterialsCategory(filter, mesh);
 }
 
 void SceneMeshInspector::BuildTransformCategory(const std::string& filter, const WorldMeshReadData& mesh,
-                                                 EditorTransactionManager& transactions, std::uint64_t generation) noexcept
+                                                 EditorTransactionHistory& transactionHistory, std::uint64_t generation) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale transform") || !UiUtil::BeginDetailsCategory("Transform")) return;
 	Transform after = mesh.LocalTransform; bool changed = false;
@@ -38,7 +38,7 @@ void SceneMeshInspector::BuildTransformCategory(const std::string& filter, const
 		after.SetScale({s[0], s[1], s[2]}); changed = true;
 	}
 	if (changed)
-		(void) transactions.Execute({0, SetLocalTransformCommand{mesh.Entity, after}},
+		(void) transactionHistory.Execute({0, SetLocalTransformCommand{mesh.Entity, after}},
 		                           {0, SetLocalTransformCommand{mesh.Entity, mesh.LocalTransform}}, generation, "mesh-transform");
 	UiUtil::EndDetailsCategory();
 }
@@ -55,12 +55,12 @@ void SceneMeshInspector::BuildStaticMeshCategory(const std::string& filter, cons
 }
 
 void SceneMeshInspector::BuildAdvancedParametersCategory(const std::string& filter, const WorldMeshReadData& mesh,
-                                                          EditorTransactionManager& transactions, std::uint64_t generation) noexcept
+                                                          EditorTransactionHistory& transactionHistory, std::uint64_t generation) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Advanced", "visible visibility hidden") || !UiUtil::BeginDetailsCategory("Advanced", false)) return;
 	bool visible = mesh.Visible; const bool defaultVisible = true;
 	if (UiUtil::EditDetailsCheckbox("Visible", visible, &defaultVisible))
-		(void) transactions.Execute({0, SetEntityVisibilityCommand{mesh.Entity, visible}},
+		(void) transactionHistory.Execute({0, SetEntityVisibilityCommand{mesh.Entity, visible}},
 		                           {0, SetEntityVisibilityCommand{mesh.Entity, mesh.Visible}}, generation, "mesh-visibility");
 	UiUtil::EndDetailsCategory();
 }

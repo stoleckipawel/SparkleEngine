@@ -8,8 +8,8 @@
 
 struct alignas(256) PerObjectVSConstantBufferData
 {
-	DirectX::XMFLOAT4X4 WorldMTX;
-	DirectX::XMFLOAT3X4 WorldInvTransposeMTX;
+	DirectX::XMFLOAT4X4 WorldMatrix;
+	DirectX::XMFLOAT3X4 WorldInverseTranspose;
 };
 static_assert(std::is_standard_layout_v<PerObjectVSConstantBufferData>);
 static_assert(std::is_trivially_copyable_v<PerObjectVSConstantBufferData>);

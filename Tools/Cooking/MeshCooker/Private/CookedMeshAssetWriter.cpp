@@ -3,6 +3,7 @@
 #include "CookedMeshAssetWriter.h"
 
 #include "CookedMeshAssetBuild.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Json/JsonWriter.h"
@@ -15,28 +16,24 @@
 class CookedMeshAssetStager final
 {
   public:
-	static bool StageMeshAsset(
+	static void StageMeshAsset(
 	    const CookedMeshAssetBuild& meshAsset,
-	    std::vector<Files::FilePublication>& outPublication,
-	    std::string& outErrorMessage);
-	static bool WriteMeshAsset(
+	    std::vector<Files::FilePublication>& outPublication);
+	static void WriteMeshAsset(
 	    const CookedMeshAssetBuild& meshAsset,
-	    const std::filesystem::path& outputPath,
-	    std::string& outErrorMessage);
-	static bool WriteMeshMetadata(
+	    const std::filesystem::path& outputPath);
+	static void WriteMeshMetadata(
 	    const CookedMeshAssetBuild& meshAsset,
-	    const std::filesystem::path& outputPath,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& outputPath);
 	static Assets::CookedMeshAssetHeader BuildHeader(
 	    const CookedMeshAssetBuild& meshAsset) noexcept;
 	static std::filesystem::path BuildMetadataPath(
 	    Assets::CookedAssetId assetId);
 };
 
-bool CookedMeshAssetStager::StageMeshAsset(
+void CookedMeshAssetStager::StageMeshAsset(
     const CookedMeshAssetBuild& meshAsset,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
 	const std::filesystem::path outputPath =
 	    Paths::CookedMeshAsset(meshAsset.assetId);
@@ -53,55 +50,49 @@ bool CookedMeshAssetStager::StageMeshAsset(
 	outPublication.push_back({stagedOutputPath, outputPath});
 	outPublication.push_back({stagedMetadataPath, metadataPath});
 
-	return WriteMeshAsset(
-	           meshAsset,
-	           stagedOutputPath,
-	           outErrorMessage) &&
-	       WriteMeshMetadata(
-	           meshAsset,
-	           stagedMetadataPath,
-	           outErrorMessage);
+	WriteMeshAsset(meshAsset, stagedOutputPath);
+	WriteMeshMetadata(meshAsset, stagedMetadataPath);
 }
 
-bool CookedMeshAssetStager::WriteMeshAsset(
+void CookedMeshAssetStager::WriteMeshAsset(
     const CookedMeshAssetBuild& meshAsset,
-    const std::filesystem::path& outputPath,
-    std::string& outErrorMessage)
+    const std::filesystem::path& outputPath)
 {
 	const Assets::CookedMeshAssetHeader header = BuildHeader(meshAsset);
 
+	std::string errorMessage;
 	std::ofstream output;
-	if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.vertices, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.indices, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.skinInfluences, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargets, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargetDeltas, outErrorMessage))
+	if (!Files::TryOpenBinaryOutput(outputPath, output, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.vertices, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.indices, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.skinInfluences, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargets, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargetDeltas, errorMessage))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(errorMessage));
 	}
 
-	return Files::TryCloseOutput(
-	    output,
-	    outputPath,
-	    outErrorMessage);
+	if (!Files::TryCloseOutput(output, outputPath, errorMessage))
+	{
+		throw Diagnostics::Error(std::move(errorMessage));
+	}
 }
 
-bool CookedMeshAssetStager::WriteMeshMetadata(
+void CookedMeshAssetStager::WriteMeshMetadata(
     const CookedMeshAssetBuild& meshAsset,
-    const std::filesystem::path& outputPath,
-    std::string& outErrorMessage)
+    const std::filesystem::path& outputPath)
 {
 	Json::ObjectWriter writer;
 	writer.WriteString("schema", "cooked-mesh-metadata-v1");
 	writer.WriteHexUInt64("assetId", meshAsset.assetId);
 	writer.WriteString("displayName", meshAsset.displayName);
 	writer.WriteString("source", meshAsset.sourcePath.generic_string());
-	return Files::TryWriteAllText(
-	    outputPath,
-	    writer.Finish(),
-	    outErrorMessage);
+	std::string errorMessage;
+	if (!Files::TryWriteAllText(outputPath, writer.Finish(), errorMessage))
+	{
+		throw Diagnostics::Error(std::move(errorMessage));
+	}
 }
 
 Assets::CookedMeshAssetHeader CookedMeshAssetStager::BuildHeader(
@@ -132,22 +123,12 @@ std::filesystem::path CookedMeshAssetStager::BuildMetadataPath(
 	return metadataPath;
 }
 
-bool CookedMeshAssetWriter::StageMeshAssets(
+void CookedMeshAssetWriter::StageMeshAssets(
     const std::vector<CookedMeshAssetBuild>& meshAssets,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedMeshAssetBuild& meshAsset : meshAssets)
 	{
-		if (!CookedMeshAssetStager::StageMeshAsset(
-		        meshAsset,
-		        outPublication,
-		        outErrorMessage))
-		{
-			return false;
-		}
+		CookedMeshAssetStager::StageMeshAsset(meshAsset, outPublication);
 	}
-
-	outErrorMessage.clear();
-	return true;
 }

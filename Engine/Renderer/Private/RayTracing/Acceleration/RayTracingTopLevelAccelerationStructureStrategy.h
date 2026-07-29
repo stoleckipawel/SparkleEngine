@@ -39,7 +39,7 @@ class RayTracingTopLevelAccelerationStructureStrategy
 	    const RenderSceneData& sceneData,
 	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept = 0;
 	virtual RayTracingTopLevelAccelerationStructureBuildResult Build(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const RenderSceneData& sceneData,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,

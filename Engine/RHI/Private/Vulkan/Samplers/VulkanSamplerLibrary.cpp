@@ -3,15 +3,15 @@
 #include "Vulkan/Samplers/VulkanSamplerLibrary.h"
 
 #include "Vulkan/Core/VulkanResult.h"
-#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
+#include "Vulkan/Descriptors/VulkanDescriptorService.h"
 #include "Vulkan/Device/VulkanRhi.h"
 
 #include <algorithm>
 
 static const auto g_vulkanSamplerLibraryLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Samplers");
 
-VulkanSamplerLibrary::VulkanSamplerLibrary(VulkanRhi& rhi, VulkanDescriptorManager& descriptorManager) noexcept :
-    m_rhi(rhi), m_descriptorManager(descriptorManager)
+VulkanSamplerLibrary::VulkanSamplerLibrary(VulkanRhi& rhi, VulkanDescriptorService& descriptorService) noexcept :
+    m_rhi(rhi), m_descriptorService(descriptorService)
 {
 }
 
@@ -21,7 +21,7 @@ VulkanSamplerLibrary::~VulkanSamplerLibrary() noexcept
 	{
 		if (samplerRecord.Table)
 		{
-			m_descriptorManager.ReleaseDescriptorTable(samplerRecord.Table);
+			m_descriptorService.ReleaseDescriptorTable(samplerRecord.Table);
 		}
 		if (samplerRecord.Sampler != VK_NULL_HANDLE)
 		{
@@ -47,8 +47,8 @@ RhiDescriptorTableBinding VulkanSamplerLibrary::GetSharedSamplerBinding(const Rh
 		return {};
 	}
 
-	const RhiDescriptorTableHandle table = m_descriptorManager.AllocateDescriptorTable(ERhiDescriptorAllocatorType::Sampler, 1);
-	m_descriptorManager.WriteSamplerDescriptor(table, sampler);
+	const RhiDescriptorTableHandle table = m_descriptorService.AllocateDescriptorTable(ERhiDescriptorAllocatorType::Sampler, 1);
+	m_descriptorService.WriteSamplerDescriptor(table, sampler);
 	m_samplerRecords.push_back(SamplerRecord{.Desc = samplerDesc, .Sampler = sampler, .Table = table});
 	return RhiDescriptorTableBinding{.Table = table, .DescriptorIndex = 0};
 }
@@ -126,7 +126,7 @@ VkSampler VulkanSamplerLibrary::CreateSampler(const RhiSamplerDesc& desc) const
 	const VkResult result = vkCreateSampler(m_rhi.GetDevice(), &createInfo, nullptr, &sampler);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanSamplerLibraryLogger,
 		    __FILE__,
 		    __LINE__,

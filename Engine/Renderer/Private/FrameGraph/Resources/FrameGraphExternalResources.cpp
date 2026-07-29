@@ -20,7 +20,7 @@ class FrameGraphExternalResourceContract final
 
 	static void FailMissingUnorderedAccessSupport(const FrameGraphResourceMetadata& metadata) noexcept
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_frameGraphExternalLogger,
 		    __FILE__,
 		    __LINE__,

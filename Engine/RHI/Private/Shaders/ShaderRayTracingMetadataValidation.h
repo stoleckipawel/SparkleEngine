@@ -10,6 +10,6 @@ namespace ShaderRayTracingMetadataValidation
 {
 	bool ValidateInlineRayQueryMetadata(
 	    const LoadedShaderPackage& package,
-	    CookedShaderBinaryFormat requiredBinaryFormat,
+	    CookedShaderBinaryFormat runtimeBinaryFormat,
 	    std::string& outErrorMessage);
 }

@@ -127,7 +127,7 @@ class CookedShaderBindingFormatting final
 	static std::string FormatReflectedBindings(
 	    const LoadedShaderPackage& package,
 	    const ShaderPackageDefinition& definition,
-	    CookedShaderBinaryFormat requiredBinaryFormat)
+	    CookedShaderBinaryFormat runtimeBinaryFormat)
 	{
 		const auto& binaryRecords = package.GetBinaryRecords();
 		const auto& reflectionRecords = package.GetReflectionRecords();
@@ -139,7 +139,7 @@ class CookedShaderBindingFormatting final
 		     ++reflectionIndex)
 		{
 			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-			if (!package.IsRuntimeBinary(binaryRecord, requiredBinaryFormat) ||
+			if (!package.IsRuntimeBinary(binaryRecord, runtimeBinaryFormat) ||
 			    !CookedShaderBindingRules::HasAllStages(definition.ExpectedStages, ToShaderStageMask(binaryRecord.Stage)))
 			{
 				continue;
@@ -173,13 +173,13 @@ std::string CookedShaderBindingDiagnostics::Append(
     const LoadedShaderPackage& package,
     const ShaderPackageDefinition& definition,
     const std::vector<PassParameterDesc>& expectedParameters,
-    CookedShaderBinaryFormat requiredBinaryFormat)
+    CookedShaderBinaryFormat runtimeBinaryFormat)
 {
 	message += std::format(
 	    " Expected runtime bindings=[{}]. Reflected {}/{} bindings=[{}].",
 	    CookedShaderBindingFormatting::FormatExpectedParameters(expectedParameters),
-	    CookedShaderBinaryFormatToString(requiredBinaryFormat),
-	    GetRuntimeShaderCodegenTarget(requiredBinaryFormat),
-	    CookedShaderBindingFormatting::FormatReflectedBindings(package, definition, requiredBinaryFormat));
+	    CookedShaderBinaryFormatToString(runtimeBinaryFormat),
+	    GetRuntimeShaderCodegenTarget(runtimeBinaryFormat),
+	    CookedShaderBindingFormatting::FormatReflectedBindings(package, definition, runtimeBinaryFormat));
 	return message;
 }

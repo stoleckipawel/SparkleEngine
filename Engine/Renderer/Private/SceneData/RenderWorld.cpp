@@ -1,13 +1,13 @@
 #include "PCH.h"
 #include "SceneData/RenderWorld.h"
 
-#include "Meshes/GPUMeshCache.h"
+#include "Meshes/GpuMeshCache.h"
 #include "SceneData/GpuScene/GpuSceneSlotAllocator.h"
 
 #include <algorithm>
 #include <utility>
 
-RenderWorld::RenderWorld(RhiCommandSubmissionService* submissionService, GPUMeshCache& gpuMeshCache) :
+RenderWorld::RenderWorld(RhiCommandSubmissionService* submissionService, GpuMeshCache& gpuMeshCache) :
 	m_gpuSceneSlots(std::make_unique<GpuSceneSlotAllocator>(submissionService)),
 	m_gpuMeshCache(&gpuMeshCache)
 {
@@ -52,15 +52,8 @@ void RenderWorld::PromoteResidentGpuMeshes() noexcept
 				        proxy.PendingStatic.Mesh);
 			}
 
-			if (m_gpuMeshCache->HasFailed(
-			        proxy.PendingGpuMesh))
-			{
-				proxy.PendingStatic = {};
-				proxy.PendingGpuMesh = {};
-				proxy.HasPendingStatic = false;
-			}
-			else if (m_gpuMeshCache->Resolve(
-			             proxy.PendingGpuMesh) != nullptr)
+			if (m_gpuMeshCache->Resolve(
+			        proxy.PendingGpuMesh) != nullptr)
 			{
 				proxy.Static =
 				    std::move(proxy.PendingStatic);
@@ -74,22 +67,16 @@ void RenderWorld::PromoteResidentGpuMeshes() noexcept
 			continue;
 		}
 
-		if (!proxy.GpuMesh &&
-		    !proxy.GpuMeshFailed)
+		if (!proxy.GpuMesh)
 		{
 			proxy.GpuMesh =
 			    m_gpuMeshCache->Request(
 			        proxy.Static.Mesh);
 		}
 
-		if (m_gpuMeshCache->HasFailed(proxy.GpuMesh))
-		{
-			proxy.GpuMesh = {};
-			proxy.GpuMeshFailed = true;
-		}
-		else if (!proxy.GpuMeshResident &&
-		         m_gpuMeshCache->Resolve(
-		             proxy.GpuMesh) != nullptr)
+		if (!proxy.GpuMeshResident &&
+		    m_gpuMeshCache->Resolve(
+		        proxy.GpuMesh) != nullptr)
 		{
 			proxy.GpuMeshResident = true;
 			changed = true;
@@ -149,8 +136,8 @@ bool RenderWorld::ValidateDynamic(
     std::string& diagnostic) const
 {
 	if (!HasStrictlyOrderedDynamicObjects(dynamic.Objects) ||
-	    !HasStrictlyOrderedSkinningObjects(dynamic.Skinning) ||
-	    !HasStrictlyOrderedMorphObjects(dynamic.MorphRanges))
+	    !HasStrictlyOrderedJointMatrixRanges(dynamic.JointMatrixRanges) ||
+	    !HasStrictlyOrderedMorphWeightRanges(dynamic.MorphWeightRanges))
 	{
 		diagnostic = "Render-frame object updates are unordered or duplicated.";
 		return false;
@@ -187,26 +174,26 @@ bool RenderWorld::ValidateDynamic(
 		}
 	}
 
-	for (const RenderSkinningData& skinning : dynamic.Skinning)
+	for (const RenderJointMatrixRange& range : dynamic.JointMatrixRanges)
 	{
-		if (!skinning.Object.IsValid() ||
-		    !IsObjectAvailable(skinning.Object, delta) ||
-		    skinning.MatrixOffset > dynamic.SkinningMatrices.size() ||
-		    skinning.MatrixCount > dynamic.SkinningMatrices.size() - skinning.MatrixOffset)
+		if (!range.Object.IsValid() ||
+		    !IsObjectAvailable(range.Object, delta) ||
+		    range.JointMatrixOffset > dynamic.JointMatrices.size() ||
+		    range.JointMatrixCount > dynamic.JointMatrices.size() - range.JointMatrixOffset)
 		{
-			diagnostic = "Render-frame skinning range is invalid.";
+			diagnostic = "Render-frame joint-matrix range is invalid.";
 			return false;
 		}
 	}
 
-	for (const RenderMorphData& morph : dynamic.MorphRanges)
+	for (const RenderMorphWeightRange& morphWeightRange : dynamic.MorphWeightRanges)
 	{
-		if (!morph.Object.IsValid() ||
-		    !IsObjectAvailable(morph.Object, delta) ||
-		    morph.WeightOffset > dynamic.MorphWeights.size() ||
-		    morph.WeightCount > dynamic.MorphWeights.size() - morph.WeightOffset)
+		if (!morphWeightRange.Object.IsValid() ||
+		    !IsObjectAvailable(morphWeightRange.Object, delta) ||
+		    morphWeightRange.WeightOffset > dynamic.MorphWeights.size() ||
+		    morphWeightRange.WeightCount > dynamic.MorphWeights.size() - morphWeightRange.WeightOffset)
 		{
-			diagnostic = "Render-frame morph range is invalid.";
+			diagnostic = "Render-frame morph-weight range is invalid.";
 			return false;
 		}
 	}
@@ -390,14 +377,12 @@ void RenderWorld::ApplyUpdates(const RenderWorldDelta& delta, std::span<const Gp
 			proxy->PendingStatic = {};
 			proxy->PendingGpuMesh = {};
 			proxy->GpuMeshResident = true;
-			proxy->GpuMeshFailed = false;
 			proxy->HasPendingStatic = false;
 		}
 		else
 		{
 			proxy->PendingStatic = update.Static;
 			proxy->PendingGpuMesh = meshes[index];
-			proxy->GpuMeshFailed = false;
 			proxy->HasPendingStatic = true;
 		}
 	}
@@ -547,12 +532,12 @@ bool RenderWorld::HasStrictlyOrderedDynamicObjects(
 	return true;
 }
 
-bool RenderWorld::HasStrictlyOrderedSkinningObjects(
-    std::span<const RenderSkinningData> objects) noexcept
+bool RenderWorld::HasStrictlyOrderedJointMatrixRanges(
+    std::span<const RenderJointMatrixRange> ranges) noexcept
 {
-	for (std::size_t index = 1u; index < objects.size(); ++index)
+	for (std::size_t index = 1u; index < ranges.size(); ++index)
 	{
-		if (!(objects[index - 1u].Object < objects[index].Object))
+		if (!(ranges[index - 1u].Object < ranges[index].Object))
 		{
 			return false;
 		}
@@ -560,12 +545,12 @@ bool RenderWorld::HasStrictlyOrderedSkinningObjects(
 	return true;
 }
 
-bool RenderWorld::HasStrictlyOrderedMorphObjects(
-    std::span<const RenderMorphData> objects) noexcept
+bool RenderWorld::HasStrictlyOrderedMorphWeightRanges(
+    std::span<const RenderMorphWeightRange> ranges) noexcept
 {
-	for (std::size_t index = 1u; index < objects.size(); ++index)
+	for (std::size_t index = 1u; index < ranges.size(); ++index)
 	{
-		if (!(objects[index - 1u].Object < objects[index].Object))
+		if (!(ranges[index - 1u].Object < ranges[index].Object))
 		{
 			return false;
 		}

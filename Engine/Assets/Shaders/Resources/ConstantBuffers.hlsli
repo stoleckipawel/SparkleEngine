@@ -6,10 +6,10 @@
 cbuffer PerFrameConstantBufferData
 {
 	uint FrameIndex;
-	float TotalTime;
-	float DeltaTime;
-	float ScaledTotalTime;
-	float ScaledDeltaTime;
+	float TotalTimeSeconds;
+	float DeltaTimeSeconds;
+	float ScaledTotalTimeSeconds;
+	float ScaledDeltaTimeSeconds;
 	uint ViewModeIndex;
 
 	float2 ViewportSize;
@@ -23,22 +23,22 @@ cbuffer PerViewConstantBufferData
 
 cbuffer PerObjectVSConstantBufferData
 {
-	row_major float4x4 WorldMTX;
-	row_major float3x3 WorldInvTransposeMTX;
+	row_major float4x4 WorldMatrix;
+	row_major float3x3 WorldInverseTranspose;
 };
 
 struct MeshInstanceData
 {
-	row_major float4x4 WorldMTX;
-	row_major float4x4 PreviousWorldMTX;
-	row_major float3x4 WorldInvTransposeMTX;
+	row_major float4x4 WorldMatrix;
+	row_major float4x4 PreviousWorldMatrix;
+	row_major float3x4 WorldInverseTranspose;
 	uint MaterialSlot;
 	uint Flags;
 	uint JointMatrixOffset;
 	uint MorphWeightOffset;
 	uint MorphTargetCount;
 	uint MorphTargetVertexCount;
-	uint DebugData;
+	uint GpuSceneSlot;
 	uint Reserved;
 };
 
@@ -55,13 +55,15 @@ struct MorphTargetDeltaData
 
 struct VertexSkinInfluenceData
 {
-	uint4 JointIndices;
-	float4 JointWeights;
+	uint4 JointIndices0;
+	uint4 JointIndices1;
+	float4 JointWeights0;
+	float4 JointWeights1;
 };
 
 struct JointMatrixData
 {
-	row_major float4x4 SkinningMTX;
+	row_major float4x4 Matrix;
 };
 
 cbuffer MeshInstanceDrawConstantBufferData

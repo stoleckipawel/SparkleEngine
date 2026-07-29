@@ -13,7 +13,7 @@ class GameWorldSceneAssetCommitter final
   public:
 	GameWorldSceneAssetCommitter(ECS::GameWorldState& world, GameWorldResourceStores& resources) noexcept;
 
-	bool Commit(SceneAssetPayload&& sceneAssetPayload);
+	void Commit(SceneAssetPayload&& sceneAssetPayload);
 
   private:
 	ECS::GameWorldState& m_state;

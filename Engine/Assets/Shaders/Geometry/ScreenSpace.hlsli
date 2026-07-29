@@ -12,7 +12,7 @@ float2 PixelCenterToNdc(uint2 pixelCoord)
 
 float2 PixelCenterToUnjitteredNdc(uint2 pixelCoord)
 {
-	return PixelCenterToNdc(pixelCoord) - JitterCurrent;
+	return PixelCenterToNdc(pixelCoord) - CurrentJitterNdc;
 }
 
 float3 ComputeSkyViewDirectionWorld(uint2 pixelCoord)

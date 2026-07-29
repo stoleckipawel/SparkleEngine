@@ -1,6 +1,7 @@
 #include "AssetCookerSceneBatch.h"
 
 #include "CookedSceneGenerationWriter.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "ImportedSceneCooker.h"
 #include "TaskExecutor.h"
 
@@ -12,7 +13,6 @@ struct AssetCookerSceneBatch::Item final
 {
 	CookedSceneBuild Build;
 	AssetCookerDiagnostics Diagnostics;
-	bool Built = false;
 };
 
 bool AssetCookerSceneBatch::Execute(
@@ -87,13 +87,15 @@ TaskResult AssetCookerSceneBatch::BuildProduct(
 	}
 
 	Item& item = items[index];
-	item.Built = ImportedSceneCooker::Build(
-	    sceneEntries[index],
-	    item.Diagnostics,
-	    item.Build);
-	return item.Built
-	           ? TaskResult::Success()
-	           : TaskResult::Failure("Cataloged scene generation failed.");
+	try
+	{
+		item.Build = ImportedSceneCooker::Build(sceneEntries[index], item.Diagnostics);
+		return TaskResult::Success();
+	}
+	catch (const Diagnostics::Error&)
+	{
+		return TaskResult::Failure("Cataloged scene generation failed.");
+	}
 }
 
 bool AssetCookerSceneBatch::BuildProducts(
@@ -131,14 +133,16 @@ bool AssetCookerSceneBatch::PublishProducts(
 		builds.push_back(&item.Build);
 	}
 
-	std::string errorMessage;
-	if (!CookedSceneGenerationWriter::Publish(builds, errorMessage))
+	try
+	{
+		CookedSceneGenerationWriter::Publish(builds);
+		return true;
+	}
+	catch (const Diagnostics::Error& error)
 	{
 		diagnostics.AddError(
 		    AssetCookerCategory_SceneAssets,
-		    std::move(errorMessage));
+		    error.what());
 		return false;
 	}
-
-	return true;
 }

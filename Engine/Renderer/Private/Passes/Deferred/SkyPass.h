@@ -13,7 +13,7 @@
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 struct FrameContext;
 
 struct SkyPassParameters
@@ -58,7 +58,7 @@ class SkyPass final
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:
-	void SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeServices& passRuntimeServices) const;
+	void SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeContext& passRuntimeContext) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

@@ -4,16 +4,21 @@
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Resources/Textures/TextureDiagnostics.h"
-#include "Shaders/CookedShaderReloadResult.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <condition_variable>
 #include <mutex>
+#include <string>
 #include <variant>
+
+struct RenderControlError final
+{
+	std::string Message;
+};
 
 using RenderControlResult = std::variant<
     std::monostate,
-    CookedShaderReloadResult,
+    RenderControlError,
     MeshDiagnosticsSnapshot,
     MeshPreviewGeometry,
     TextureDiagnosticsSnapshot,

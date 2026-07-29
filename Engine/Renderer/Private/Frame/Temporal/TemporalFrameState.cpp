@@ -16,9 +16,9 @@ class TemporalFrameStateValidation final
 RenderTemporalFrameState BuildRenderTemporalFrameState(const PerTemporalConstantBufferData& temporalData) noexcept
 {
 	return RenderTemporalFrameState{
-	    .HasJitter = TemporalFrameStateValidation::HasNonZeroJitter(temporalData.JitterCurrent),
-	    .HasPreviousJitter = TemporalFrameStateValidation::HasNonZeroJitter(temporalData.JitterPrevious),
+	    .HasJitter = TemporalFrameStateValidation::HasNonZeroJitter(temporalData.CurrentJitterNdc),
+	    .HasPreviousJitter = TemporalFrameStateValidation::HasNonZeroJitter(temporalData.PreviousJitterNdc),
 	    .HistoryValid = temporalData.HistoryValid != 0u,
-	    .JitterCurrent = temporalData.JitterCurrent,
-	    .JitterPrevious = temporalData.JitterPrevious};
+	    .CurrentJitterNdc = temporalData.CurrentJitterNdc,
+	    .PreviousJitterNdc = temporalData.PreviousJitterNdc};
 }

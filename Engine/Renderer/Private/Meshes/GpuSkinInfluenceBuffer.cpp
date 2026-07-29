@@ -1,19 +1,20 @@
 #include "PCH.h"
 
-#include "Meshes/GPUSkinInfluenceBuffer.h"
+#include "Meshes/GpuSkinInfluenceBuffer.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
 #include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Resources/RhiUploadService.h"
 
-static const auto g_gpuSkinInfluenceBufferLogger = Logging::GetOrCreateLogger("Renderer.GPUSkinInfluenceBuffer");
+static const auto g_gpuSkinInfluenceBufferLogger = Logging::GetOrCreateLogger("Renderer.GpuSkinInfluenceBuffer");
 
-GPUSkinInfluenceBuffer::~GPUSkinInfluenceBuffer() noexcept
+GpuSkinInfluenceBuffer::~GpuSkinInfluenceBuffer() noexcept
 {
 	Release();
 }
 
-bool GPUSkinInfluenceBuffer::Upload(
+void GpuSkinInfluenceBuffer::Upload(
     RenderHardwareInterface& renderHardwareInterface,
     RenderCommandList& commandList,
     std::span<const VertexSkinInfluenceData> skinInfluences)
@@ -22,10 +23,7 @@ bool GPUSkinInfluenceBuffer::Upload(
 	m_renderHardwareInterface = &renderHardwareInterface;
 
 	if (skinInfluences.empty())
-	{
-		Release();
-		return false;
-	}
+		Diagnostics::Fatal(g_gpuSkinInfluenceBufferLogger, __FILE__, __LINE__, "GPU mesh has no skin influence payload.");
 
 	RhiResourceService& resources =
 	    m_renderHardwareInterface->GetResourceService();
@@ -39,7 +37,7 @@ bool GPUSkinInfluenceBuffer::Upload(
 	    ResourceState::CopyDest,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    L"GPUMesh_SkinInfluences");
+	    L"GpuMesh_SkinInfluences");
 	if (!m_buffer ||
 	    !m_renderHardwareInterface->GetUploadService()
 	         .UploadBuffer(
@@ -47,13 +45,10 @@ bool GPUSkinInfluenceBuffer::Upload(
 	             m_buffer,
 	             std::as_bytes(skinInfluences),
 	             ResourceState::ShaderResource,
-	             L"GPUMesh_SkinInfluencesUpload"))
+	             L"GpuMesh_SkinInfluencesUpload"))
 	{
-		SPDLOG_LOGGER_ERROR(
-		    g_gpuSkinInfluenceBufferLogger,
-		    "GPUSkinInfluenceBuffer: failed to create skin influence buffer");
 		Release();
-		return false;
+		Diagnostics::Fatal(g_gpuSkinInfluenceBufferLogger, __FILE__, __LINE__, "GPU skin influence upload failed.");
 	}
 
 	m_view =
@@ -70,15 +65,16 @@ bool GPUSkinInfluenceBuffer::Upload(
 	        .GetResourceViewGpuHandle(m_view);
 	if (!m_shaderResourceView)
 	{
-		SPDLOG_LOGGER_ERROR(g_gpuSkinInfluenceBufferLogger, "GPUSkinInfluenceBuffer: uploaded buffer has no shader-resource descriptor");
 		Release();
-		return false;
+		Diagnostics::Fatal(
+		    g_gpuSkinInfluenceBufferLogger,
+		    __FILE__,
+		    __LINE__,
+		    "GPU skin influence buffer has no shader-resource descriptor.");
 	}
-
-	return true;
 }
 
-void GPUSkinInfluenceBuffer::Release() noexcept
+void GpuSkinInfluenceBuffer::Release() noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{

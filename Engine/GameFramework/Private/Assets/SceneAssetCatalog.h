@@ -26,5 +26,5 @@ namespace Assets
 		std::map<std::string, std::filesystem::path, std::less<>> m_entries;
 	};
 
-	std::shared_ptr<const SceneAssetCatalog> LoadSceneAssetCatalog(std::uint64_t generation, std::string& errorMessage);
+	std::shared_ptr<const SceneAssetCatalog> LoadSceneAssetCatalog(std::uint64_t generation);
 }

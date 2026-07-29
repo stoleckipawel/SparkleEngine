@@ -23,7 +23,7 @@ DxcShaderBackend::DxcShaderBackend()
 	HRESULT hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(m_compiler.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 			g_dxcShaderBackendLogger,
 			__FILE__,
 			__LINE__,
@@ -34,7 +34,7 @@ DxcShaderBackend::DxcShaderBackend()
 	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(m_utils.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 			g_dxcShaderBackendLogger,
 			__FILE__,
 			__LINE__,

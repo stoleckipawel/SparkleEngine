@@ -3,8 +3,11 @@
 #include "Gltf/GltfLightImporter.h"
 
 #include "Gltf/GltfNodeTransformConverter.h"
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <cgltf.h>
+
+#include <DirectXMath.h>
 
 #include <format>
 #include <utility>
@@ -28,7 +31,7 @@ class GltfLightTranslation final
 		}
 	}
 
-	static std::string ResolveLightName(const cgltf_node& node, const cgltf_light& light, std::uint32_t nodeIndex)
+	static std::string ResolveLightName(const cgltf_node& node, const cgltf_light& light)
 	{
 		if (node.name != nullptr && node.name[0] != '\0')
 		{
@@ -40,18 +43,18 @@ class GltfLightTranslation final
 			return light.name;
 		}
 
-		return std::format("glTF Light {}", nodeIndex);
+		return {};
 	}
 };
 
-void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportResult& result)
+void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportOutput& output)
 {
 	if (data == nullptr)
 	{
-		return;
+		throw Diagnostics::Error("glTF light import has no parsed scene.");
 	}
 
-	result.scene.lights.reserve(data->lights_count);
+	output.scene.lights.reserve(data->lights_count);
 	for (cgltf_size nodeIndex = 0; nodeIndex < data->nodes_count; ++nodeIndex)
 	{
 		const cgltf_node& node = data->nodes[nodeIndex];
@@ -64,21 +67,27 @@ void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportResult&
 		const DirectX::XMMATRIX worldTransform = GltfNodeTransformConverter::ComputeNodeWorldTransform(&node);
 
 		ImportedLight light;
-		light.name = GltfLightTranslation::ResolveLightName(
-		    node,
-		    sourceLight,
-		    static_cast<std::uint32_t>(nodeIndex));
-		light.kind =
-		    GltfLightTranslation::ToImportedLightKind(
-		        sourceLight.type);
+		light.name = GltfLightTranslation::ResolveLightName(node, sourceLight);
+		light.kind = GltfLightTranslation::ToImportedLightKind(sourceLight.type);
+		if (light.kind == ImportedLightKind::Unknown)
+		{
+			throw Diagnostics::Error(std::format("glTF light {} uses an unsupported light kind.", nodeIndex));
+		}
 		light.color = {sourceLight.color[0], sourceLight.color[1], sourceLight.color[2]};
-		light.intensity = sourceLight.intensity;
+		if (light.IsDirectional())
+		{
+			light.illuminance = sourceLight.intensity;
+		}
+		else
+		{
+			light.luminousIntensity = sourceLight.intensity;
+		}
 		light.range = sourceLight.range;
-		light.innerConeAngleRadians = sourceLight.spot_inner_cone_angle;
-		light.outerConeAngleRadians = sourceLight.spot_outer_cone_angle;
+		light.innerAngleRadians = sourceLight.spot_inner_cone_angle;
+		light.outerAngleRadians = sourceLight.spot_outer_cone_angle;
 		light.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
 		light.direction = GltfNodeTransformConverter::TransformDirection(worldTransform, {0.0f, 0.0f, -1.0f});
 		DirectX::XMStoreFloat4x4(&light.worldTransform, worldTransform);
-		result.scene.lights.push_back(std::move(light));
+		output.scene.lights.push_back(std::move(light));
 	}
 }

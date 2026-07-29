@@ -12,7 +12,7 @@
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 struct RenderViewData;
 
 struct VisualizeBuffersPassParameters
@@ -65,7 +65,7 @@ class VisualizeBuffersPass final
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:
-	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const;
+	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeContext& passRuntimeContext) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

@@ -160,7 +160,7 @@ inline constexpr std::array<PixelFormat, 23> kRhiCapabilityPixelFormats = {
 struct RhiCapabilities
 {
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
-	CookedShaderBinaryFormat RequiredShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
+	CookedShaderBinaryFormat RuntimeShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
 	RhiBackendVersionInfo BackendVersion;
 	ERhiDescriptorModel DescriptorModel = ERhiDescriptorModel::Unknown;
 	RhiBindingLimits BindingLimits;

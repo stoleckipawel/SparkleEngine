@@ -4,6 +4,7 @@
 
 #include "Constants/TextureCookerConstants.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
 
 #include <iostream>
@@ -17,10 +18,13 @@
 	int InspectTextureCookRequestFileCommand::Execute(const std::filesystem::path& requestFilePath) const
 	{
 		std::vector<TextureCookRequest> requests;
-		std::string errorMessage;
-		if (!LoadTextureCookRequestList(requestFilePath, requests, errorMessage))
+		try
 		{
-			std::cerr << TextureCookerConstants::ToolName << ": failed to inspect request file - " << errorMessage << "\n";
+			requests = LoadTextureCookRequestList(requestFilePath);
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			std::cerr << TextureCookerConstants::ToolName << ": failed to inspect request file - " << error.what() << "\n";
 			return TextureCookerConstants::ExitInspectRequestFileFailed;
 		}
 

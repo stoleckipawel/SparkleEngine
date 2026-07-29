@@ -24,9 +24,9 @@ namespace Assets
 		char name[kCookedSceneCameraNameCapacity] = {};
 		DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 		CookedSceneCameraProjectionKind projectionKind = CookedSceneCameraProjectionKind::Unknown;
-		float verticalFovRadians = 0.0f;
-		float nearPlane = 0.1f;
-		float farPlane = 1000.0f;
+		float fovYRadians = 0.0f;
+		float nearZ = 0.1f;
+		float farZ = 1000.0f;
 		std::uint32_t sourceNodeIndex = 0;
 		std::uint32_t flags = 0;
 	};

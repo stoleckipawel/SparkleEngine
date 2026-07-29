@@ -2,7 +2,8 @@
 
 #include "Features/MaterialVariants/CookedSceneMaterialVariantBuilder.h"
 
-#include <algorithm>
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <cstddef>
 #include <cstring>
 #include <format>
@@ -13,12 +14,7 @@ class CookedMaterialVariantTranslation final
   public:
 	static void CopyVariantName(std::string_view sourceName, char (&outName)[Assets::kCookedSceneMaterialVariantNameCapacity]) noexcept
 	{
-		const std::size_t copyLength =
-		    (std::min)(sourceName.size(), static_cast<std::size_t>(Assets::kCookedSceneMaterialVariantNameCapacity - 1u));
-		if (copyLength > 0)
-		{
-			std::memcpy(outName, sourceName.data(), copyLength);
-		}
+		std::memcpy(outName, sourceName.data(), sourceName.size());
 	}
 
 	static Assets::CookedSceneMaterialVariantRecord BuildVariantRecord(const ImportedMaterialVariant& importedVariant)
@@ -29,94 +25,79 @@ class CookedMaterialVariantTranslation final
 		return record;
 	}
 
-	static bool ResolveCookedMeshAssetIndex(
-	    const SourceImportResult& importResult,
-	    const ImportedMaterialVariantMapping& importedMapping,
-	    std::uint32_t& outMeshAssetIndex,
-	    std::string& outErrorMessage)
+	static std::uint32_t ResolveCookedMeshAssetIndex(
+	    const SourceImportOutput& importOutput,
+	    const ImportedMaterialVariantMapping& importedMapping)
 	{
-		for (std::size_t primitiveIndex = 0; primitiveIndex < importResult.scene.meshPrimitives.size(); ++primitiveIndex)
+		for (std::size_t primitiveIndex = 0; primitiveIndex < importOutput.scene.meshPrimitives.size(); ++primitiveIndex)
 		{
-			const ImportedMeshPrimitive& primitive = importResult.scene.meshPrimitives[primitiveIndex];
+			const ImportedMeshPrimitive& primitive = importOutput.scene.meshPrimitives[primitiveIndex];
 			if (primitive.sourceMeshIndex == importedMapping.sourceMeshIndex &&
 			    primitive.sourcePrimitiveIndex == importedMapping.sourcePrimitiveIndex)
 			{
-				outMeshAssetIndex = static_cast<std::uint32_t>(primitiveIndex);
-				return true;
+				return static_cast<std::uint32_t>(primitiveIndex);
 			}
 		}
 
-		outErrorMessage = std::format(
-		    "Imported material variant mapping references source mesh {} primitive {}, but no cooked mesh asset was produced",
+		throw Diagnostics::Error(std::format(
+		    "Imported material variant mapping references source mesh {} primitive {}, but no cooked mesh asset was produced.",
 		    importedMapping.sourceMeshIndex,
-		    importedMapping.sourcePrimitiveIndex);
-		return false;
+		    importedMapping.sourcePrimitiveIndex));
 	}
 
-	static bool BuildMappingRecord(
-	    const SourceImportResult& importResult,
+	static Assets::CookedSceneMaterialVariantMappingRecord BuildMappingRecord(
+	    const SourceImportOutput& importOutput,
 	    const CookedSceneBuild& build,
-	    const ImportedMaterialVariantMapping& importedMapping,
-	    Assets::CookedSceneMaterialVariantMappingRecord& outRecord,
-	    std::string& outErrorMessage)
+	    const ImportedMaterialVariantMapping& importedMapping)
 	{
 		if (importedMapping.variantIndex >= build.manifest.materialVariants.size())
 		{
-			outErrorMessage = "Imported material variant mapping references a variant outside the cooked variant set";
-			return false;
+			throw Diagnostics::Error(
+			    "Imported material variant mapping references a variant outside the cooked variant set.");
 		}
 
 		if (importedMapping.materialIndex >= build.outputs.materialAssets.size())
 		{
-			outErrorMessage = "Imported material variant mapping references a material outside the cooked material set";
-			return false;
+			throw Diagnostics::Error(
+			    "Imported material variant mapping references a material outside the cooked material set.");
 		}
 
-		std::uint32_t meshAssetIndex = 0;
-		if (!ResolveCookedMeshAssetIndex(importResult, importedMapping, meshAssetIndex, outErrorMessage))
-		{
-			return false;
-		}
+		const std::uint32_t meshAssetIndex = ResolveCookedMeshAssetIndex(importOutput, importedMapping);
 
 		if (meshAssetIndex >= build.manifest.meshAssetReferences.size())
 		{
-			outErrorMessage = "Imported material variant mapping resolved to a mesh asset outside the cooked mesh asset set";
-			return false;
+			throw Diagnostics::Error(
+			    "Imported material variant mapping resolved to a mesh asset outside the cooked mesh asset set.");
 		}
 
-		outRecord.meshAssetIndex = meshAssetIndex;
-		outRecord.variantIndex = importedMapping.variantIndex;
-		outRecord.materialAssetIndex = importedMapping.materialIndex;
-		return true;
+		return Assets::CookedSceneMaterialVariantMappingRecord{
+		    .meshAssetIndex = meshAssetIndex,
+		    .variantIndex = importedMapping.variantIndex,
+		    .materialAssetIndex = importedMapping.materialIndex};
 	}
 };
 
-bool CookedSceneMaterialVariantBuilder::BuildMaterialVariants(
-    const SourceImportResult& importResult,
-    CookedSceneBuild& outBuild,
-    std::string& outErrorMessage)
+void CookedSceneMaterialVariantBuilder::BuildMaterialVariants(
+    const SourceImportOutput& importOutput,
+    CookedSceneBuild& outBuild)
 {
 	outBuild.manifest.materialVariants.clear();
 	outBuild.manifest.materialVariantMappings.clear();
-	outBuild.manifest.materialVariants.reserve(importResult.scene.materialVariants.size());
-	outBuild.manifest.materialVariantMappings.reserve(importResult.scene.materialVariantMappings.size());
+	outBuild.manifest.materialVariants.reserve(importOutput.scene.materialVariants.size());
+	outBuild.manifest.materialVariantMappings.reserve(importOutput.scene.materialVariantMappings.size());
 
-	for (const ImportedMaterialVariant& importedVariant : importResult.scene.materialVariants)
+	for (const ImportedMaterialVariant& importedVariant : importOutput.scene.materialVariants)
 	{
+		if (importedVariant.name.empty() || importedVariant.name.size() >= Assets::kCookedSceneMaterialVariantNameCapacity)
+		{
+			throw Diagnostics::Error("Imported material variant has an invalid name.");
+		}
 		outBuild.manifest.materialVariants.push_back(CookedMaterialVariantTranslation::BuildVariantRecord(importedVariant));
 	}
 
-	for (const ImportedMaterialVariantMapping& importedMapping : importResult.scene.materialVariantMappings)
+	for (const ImportedMaterialVariantMapping& importedMapping : importOutput.scene.materialVariantMappings)
 	{
-		Assets::CookedSceneMaterialVariantMappingRecord record;
-		if (!CookedMaterialVariantTranslation::BuildMappingRecord(importResult, outBuild, importedMapping, record, outErrorMessage))
-		{
-			return false;
-		}
-
-		outBuild.manifest.materialVariantMappings.push_back(record);
+		outBuild.manifest.materialVariantMappings.push_back(
+		    CookedMaterialVariantTranslation::BuildMappingRecord(importOutput, outBuild, importedMapping));
 	}
-
-	outErrorMessage.clear();
-	return true;
 }

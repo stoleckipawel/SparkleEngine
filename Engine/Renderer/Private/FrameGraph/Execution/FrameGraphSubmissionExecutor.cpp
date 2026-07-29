@@ -12,7 +12,7 @@ FrameGraphSubmissionExecutor::FrameGraphSubmissionExecutor(
 	const FrameGraphPlan& plan,
 	RhiCommandSubmissionService& submissionService,
 	const FrameContext& frame,
-	const PassRuntimeServices& passRuntimeServices,
+	const PassRuntimeContext& passRuntimeContext,
 	FrameExecutionDiagnostics& frameDiagnostics,
 	TaskExecutor& taskExecutor,
 	std::span<RhiSubmissionToken> batchTokens) noexcept :
@@ -24,7 +24,7 @@ FrameGraphSubmissionExecutor::FrameGraphSubmissionExecutor(
 	    submissionService,
 	    taskExecutor,
 	    frame,
-	    passRuntimeServices,
+	    passRuntimeContext,
 	    frameDiagnostics),
 	m_batchTokens(batchTokens)
 {

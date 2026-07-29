@@ -14,7 +14,7 @@ namespace DirectX
 
 class RenderCommandContext;
 class RenderHardwareInterface;
-class GPUMeshCache;
+class GpuMeshCache;
 class PassExecutionDiagnostics;
 class RayTracingBlasCache;
 class RayTracingTopLevelAccelerationStructureStrategy;
@@ -26,7 +26,7 @@ class RenderRayTracingScene final
   public:
 	RenderRayTracingScene(
 	    RenderHardwareInterface& renderHardwareInterface,
-	    const GPUMeshCache& meshes,
+	    const GpuMeshCache& meshes,
 	    const RayTracingCapabilityReport& capabilityReport) noexcept;
 	~RenderRayTracingScene() noexcept;
 
@@ -38,7 +38,7 @@ class RenderRayTracingScene final
 	void PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData) noexcept;
 	void Build(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const RenderSceneData& sceneData,
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;

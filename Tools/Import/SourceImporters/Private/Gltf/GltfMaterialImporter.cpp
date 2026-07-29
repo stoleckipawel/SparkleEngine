@@ -4,12 +4,11 @@
 
 #include "Gltf/GltfMaterialPropertyMapper.h"
 #include "Gltf/GltfMaterialTextureMapper.h"
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <cgltf.h>
 
 #include <format>
-
-static const auto g_gltfMaterialImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
 class GltfMaterialFeatureReporting final
 {
@@ -24,7 +23,7 @@ class GltfMaterialFeatureReporting final
 		unsupportedFeatures += featureName;
 	}
 
-	static void WarnUnsupportedFeatures(const cgltf_material& material, ImportedMaterialIndex materialIndex)
+	static void ValidateFeatureSupport(const cgltf_material& material, ImportedMaterialIndex materialIndex)
 	{
 		std::string unsupportedFeatures;
 		if (material.has_pbr_specular_glossiness)
@@ -74,41 +73,29 @@ class GltfMaterialFeatureReporting final
 
 		if (!unsupportedFeatures.empty())
 		{
-			SPDLOG_LOGGER_WARN(
-			    g_gltfMaterialImporterLogger,
-			    "{}",
-			    std::format(
-			        "GltfImporter: Material handle {} uses unsupported glTF material features [{}] "
-			        "and will be approximated with Sparkle PBR defaults",
-			        materialIndex,
-			        unsupportedFeatures));
+			throw Diagnostics::Error(
+			    std::format("glTF material {} uses unsupported features [{}].", materialIndex, unsupportedFeatures));
 		}
 	}
 };
 
-void GltfMaterialImporter::ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportResult& result)
+void GltfMaterialImporter::ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportOutput& output)
 {
 	for (cgltf_size materialIndex = 0; materialIndex < data->materials_count; ++materialIndex)
 	{
-		result.scene.materials.push_back(ExtractMaterial(
-		    data->materials[materialIndex],
-		    static_cast<ImportedMaterialIndex>(materialIndex),
-		    sourceDirectory,
-		    result));
+		output.scene.materials.push_back(
+		    ExtractMaterial(data->materials[materialIndex], static_cast<ImportedMaterialIndex>(materialIndex), sourceDirectory));
 	}
 }
 
 ImportedMaterial GltfMaterialImporter::ExtractMaterial(
     const cgltf_material& material,
     ImportedMaterialIndex materialIndex,
-    const std::filesystem::path& sourceDirectory,
-    SourceImportResult& result)
+    const std::filesystem::path& sourceDirectory)
 {
 	ImportedMaterial importedMaterial;
-	GltfMaterialFeatureReporting::WarnUnsupportedFeatures(material, materialIndex);
+	GltfMaterialFeatureReporting::ValidateFeatureSupport(material, materialIndex);
 	GltfMaterialPropertyMapper::Apply(material, importedMaterial);
-	GltfMaterialTextureMapper::Apply(material, materialIndex, sourceDirectory, importedMaterial, result);
+	GltfMaterialTextureMapper::Apply(material, materialIndex, sourceDirectory, importedMaterial);
 	return importedMaterial;
 }
-
-

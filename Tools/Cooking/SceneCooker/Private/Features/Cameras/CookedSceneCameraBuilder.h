@@ -1,10 +1,10 @@
 #pragma once
 
 #include "CookedSceneBuild.h"
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 
 class CookedSceneCameraBuilder final
 {
   public:
-	static void BuildCameras(const SourceImportResult& importResult, CookedSceneBuild& outBuild);
+	static void BuildCameras(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 };

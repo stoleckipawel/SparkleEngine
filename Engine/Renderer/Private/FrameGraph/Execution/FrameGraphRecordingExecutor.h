@@ -13,7 +13,7 @@ class FrameGraph;
 class RhiCommandSubmissionService;
 class TaskExecutor;
 struct FrameContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 
 struct RecordingChunkResult final
 {
@@ -30,7 +30,7 @@ class FrameGraphRecordingExecutor final
 	    RhiCommandSubmissionService& submissionService,
 	    TaskExecutor& taskExecutor,
 	    const FrameContext& frame,
-	    const PassRuntimeServices& passRuntimeServices,
+	    const PassRuntimeContext& passRuntimeContext,
 	    FrameExecutionDiagnostics& frameDiagnostics) noexcept;
 
 	bool RecordBatch(

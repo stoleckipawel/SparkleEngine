@@ -2,11 +2,14 @@
 
 #include "Meshes/GpuMorphTargetBuffer.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
 #include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Resources/RhiUploadService.h"
 
 #include <algorithm>
+
+static const auto g_gpuMorphTargetBufferLogger = Logging::GetOrCreateLogger("Renderer.GpuMorphTargetBuffer");
 
 GpuMorphTargetBuffer::GpuMorphTargetBuffer() noexcept = default;
 
@@ -15,7 +18,7 @@ GpuMorphTargetBuffer::~GpuMorphTargetBuffer() noexcept
 	Release();
 }
 
-bool GpuMorphTargetBuffer::Upload(
+void GpuMorphTargetBuffer::Upload(
     RenderHardwareInterface& renderHardwareInterface,
     RenderCommandList& commandList,
     std::vector<MorphTargetDeltaData> deltas,
@@ -45,7 +48,7 @@ bool GpuMorphTargetBuffer::Upload(
 	    ResourceState::CopyDest,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    L"GPUMesh_MorphTargetDeltas");
+	    L"GpuMesh_MorphTargetDeltas");
 	if (!m_buffer ||
 	    !m_renderHardwareInterface->GetUploadService()
 	         .UploadBuffer(
@@ -53,10 +56,10 @@ bool GpuMorphTargetBuffer::Upload(
 	             m_buffer,
 	             std::as_bytes(payload),
 	             ResourceState::ShaderResource,
-	             L"GPUMesh_MorphTargetUpload"))
+	             L"GpuMesh_MorphTargetUpload"))
 	{
 		Release();
-		return false;
+		Diagnostics::Fatal(g_gpuMorphTargetBufferLogger, __FILE__, __LINE__, "GPU morph target upload failed.");
 	}
 
 	m_view =
@@ -74,9 +77,12 @@ bool GpuMorphTargetBuffer::Upload(
 	if (!m_shaderResourceView)
 	{
 		Release();
-		return false;
+		Diagnostics::Fatal(
+		    g_gpuMorphTargetBufferLogger,
+		    __FILE__,
+		    __LINE__,
+		    "GPU morph target buffer has no shader-resource descriptor.");
 	}
-	return true;
 }
 
 void GpuMorphTargetBuffer::Release() noexcept

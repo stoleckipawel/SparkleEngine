@@ -2,10 +2,10 @@
 
 #include <cstdint>
 
-class EditorTransactionManager;
+class EditorTransactionHistory;
 struct WorldMaterialVariantView;
 
 namespace SceneMaterialVariantInspector
 {
-	void Build(const WorldMaterialVariantView&, EditorTransactionManager&, std::uint64_t) noexcept;
+	void Build(const WorldMaterialVariantView&, EditorTransactionHistory&, std::uint64_t) noexcept;
 }

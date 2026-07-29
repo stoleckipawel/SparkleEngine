@@ -13,7 +13,7 @@ void FrameGraph::Execute(
     const FrameGraphPlan& plan,
     RhiCommandSubmissionService& submissionService,
     const FrameContext& frame,
-    const PassRuntimeServices& passRuntimeServices,
+    const PassRuntimeContext& passRuntimeContext,
     FrameExecutionDiagnostics& frameDiagnostics,
     TaskExecutor& taskExecutor) const
 {
@@ -30,7 +30,7 @@ void FrameGraph::Execute(
 	    plan,
 	    submissionService,
 	    frame,
-	    passRuntimeServices,
+	    passRuntimeContext,
 	    frameDiagnostics,
 	    taskExecutor,
 	    m_submissionBatchTokens);

@@ -35,12 +35,12 @@ void RenderCamera::RebuildMatrices(const RenderCameraData& camera) noexcept
 	const XMMATRIX view = XMMatrixLookAtLH(positionVec, targetVec, worldUp);
 	XMStoreFloat4x4(&m_viewMatrix, view);
 
-	const float fovRadians = XMConvertToRadians(m_camera.FovYDegrees);
+	const float fovYRadians = XMConvertToRadians(m_camera.FovYDegrees);
 	const float aspect = m_camera.AspectRatio;
 	const float nearZ = m_camera.NearZ;
 	const float farZ = m_camera.FarZ;
 
-	const XMMATRIX proj = DepthConvention::CreatePerspectiveFovLH(fovRadians, aspect, nearZ, farZ);
+	const XMMATRIX proj = DepthConvention::CreatePerspectiveFovLH(fovYRadians, aspect, nearZ, farZ);
 	XMStoreFloat4x4(&m_projectionMatrix, proj);
 
 	const XMMATRIX viewProj = XMMatrixMultiply(view, proj);

@@ -29,15 +29,15 @@ struct RenderPreparationGraph::Impl final
 	{
 		std::uint32_t Objects = 0u;
 		std::uint32_t Lights = 0u;
-		std::uint32_t Skinning = 0u;
-		std::uint32_t Morph = 0u;
+		std::uint32_t JointMatrixCopyRanges = 0u;
+		std::uint32_t MorphWeightCopyRanges = 0u;
 	};
 
 	Impl(
 	    TaskExecutor& taskExecutor,
-	    MaterialCacheManager& materialCache,
-	    GPUMeshCache& gpuMeshCache,
-	    TextureManager& textureManager) noexcept;
+	    MaterialCache& materialCache,
+	    GpuMeshCache& gpuMeshCache,
+	    TextureCache& textureCache) noexcept;
 
 	void Execute(
 	    const RenderWorld& world,
@@ -57,28 +57,28 @@ struct RenderPreparationGraph::Impl final
 	void EnsureGraph(
 	    std::size_t objectCount,
 	    std::size_t lightCount,
-	    std::size_t skinningCount,
-	    std::size_t morphCount);
+	    std::size_t jointMatrixCopyRangeCount,
+	    std::size_t morphWeightCopyRangeCount);
 	bool CanReuseGraph(const Capacity& capacity) const noexcept;
 	static Capacity ResolveCapacities(
 	    std::size_t objectCount,
 	    std::size_t lightCount,
-	    std::size_t skinningCount,
-	    std::size_t morphCount) noexcept;
+	    std::size_t jointMatrixCopyRangeCount,
+	    std::size_t morphWeightCopyRangeCount) noexcept;
 	static CompiledTaskGraph CompileGraph(const Capacity& capacity);
 	static TaskNodeHandle AddTransformBoundsTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
 	static TaskNodeHandle AddVisibilityTasks(
 	    TaskGraphBuilder& builder,
 	    std::uint32_t capacity,
 	    TaskNodeHandle transform);
-	static TaskNodeHandle AddSkinningTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
-	static TaskNodeHandle AddMorphTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
+	static TaskNodeHandle AddJointMatrixTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
+	static TaskNodeHandle AddMorphWeightTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
 	static TaskNodeHandle AddLightingTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
 	static void AddMergeTasks(
 	    TaskGraphBuilder& builder,
 	    TaskNodeHandle visibility,
-	    TaskNodeHandle skinning,
-	    TaskNodeHandle morph,
+	    TaskNodeHandle jointMatrices,
+	    TaskNodeHandle morphWeights,
 	    TaskNodeHandle lighting);
 	static TaskDesc MakeTaskDesc(std::string_view name);
 	void CommitHistory();
@@ -96,11 +96,11 @@ struct RenderPreparationGraph::Impl final
 
 RenderPreparationGraph::Impl::Impl(
     TaskExecutor& taskExecutor,
-    MaterialCacheManager& materialCache,
-    GPUMeshCache& gpuMeshCache,
-    TextureManager& textureManager) noexcept :
+    MaterialCache& materialCache,
+    GpuMeshCache& gpuMeshCache,
+    TextureCache& textureCache) noexcept :
 	m_taskExecutor(&taskExecutor),
-	m_inputResolver(materialCache, gpuMeshCache, textureManager)
+	m_inputResolver(materialCache, gpuMeshCache, textureCache)
 {
 }
 
@@ -115,8 +115,8 @@ void RenderPreparationGraph::Impl::Execute(
 	EnsureGraph(
 	    m_run.ResolvedObjects.size(),
 	    m_run.PreparedLights.size(),
-	    m_run.Deformation.SkinningRanges.size(),
-	    m_run.Deformation.MorphRanges.size());
+	    m_run.Deformation.JointMatrixCopyRanges.size(),
+	    m_run.Deformation.MorphWeightCopyRanges.size());
 
 	if (!ExecuteCompiledGraph())
 	{
@@ -182,10 +182,11 @@ void RenderPreparationGraph::Impl::ResetHistory() noexcept
 void RenderPreparationGraph::Impl::EnsureGraph(
     std::size_t objectCount,
     std::size_t lightCount,
-    std::size_t skinningCount,
-    std::size_t morphCount)
+    std::size_t jointMatrixCopyRangeCount,
+    std::size_t morphWeightCopyRangeCount)
 {
-	const Capacity capacity = ResolveCapacities(objectCount, lightCount, skinningCount, morphCount);
+	const Capacity capacity =
+	    ResolveCapacities(objectCount, lightCount, jointMatrixCopyRangeCount, morphWeightCopyRangeCount);
 	if (CanReuseGraph(capacity))
 	{
 		return;
@@ -200,21 +201,21 @@ bool RenderPreparationGraph::Impl::CanReuseGraph(const Capacity& capacity) const
 	return m_graph &&
 	       capacity.Objects == m_capacity.Objects &&
 	       capacity.Lights == m_capacity.Lights &&
-	       capacity.Skinning == m_capacity.Skinning &&
-	       capacity.Morph == m_capacity.Morph;
+	       capacity.JointMatrixCopyRanges == m_capacity.JointMatrixCopyRanges &&
+	       capacity.MorphWeightCopyRanges == m_capacity.MorphWeightCopyRanges;
 }
 
 RenderPreparationGraph::Impl::Capacity RenderPreparationGraph::Impl::ResolveCapacities(
     std::size_t objectCount,
     std::size_t lightCount,
-    std::size_t skinningCount,
-    std::size_t morphCount) noexcept
+    std::size_t jointMatrixCopyRangeCount,
+    std::size_t morphWeightCopyRangeCount) noexcept
 {
 	return Capacity{
 	    .Objects = ResolveCapacity(objectCount, 128u),
 	    .Lights = ResolveCapacity(lightCount, 32u),
-	    .Skinning = ResolveCapacity(skinningCount, 64u),
-	    .Morph = ResolveCapacity(morphCount, 64u)};
+	    .JointMatrixCopyRanges = ResolveCapacity(jointMatrixCopyRangeCount, 64u),
+	    .MorphWeightCopyRanges = ResolveCapacity(morphWeightCopyRangeCount, 64u)};
 }
 
 CompiledTaskGraph RenderPreparationGraph::Impl::CompileGraph(const Capacity& capacity)
@@ -223,11 +224,11 @@ CompiledTaskGraph RenderPreparationGraph::Impl::CompileGraph(const Capacity& cap
 
 	const TaskNodeHandle transform = AddTransformBoundsTasks(builder, capacity.Objects);
 	const TaskNodeHandle visibility = AddVisibilityTasks(builder, capacity.Objects, transform);
-	const TaskNodeHandle skinning = AddSkinningTasks(builder, capacity.Skinning);
-	const TaskNodeHandle morph = AddMorphTasks(builder, capacity.Morph);
+	const TaskNodeHandle jointMatrices = AddJointMatrixTasks(builder, capacity.JointMatrixCopyRanges);
+	const TaskNodeHandle morphWeights = AddMorphWeightTasks(builder, capacity.MorphWeightCopyRanges);
 	const TaskNodeHandle lighting = AddLightingTasks(builder, capacity.Lights);
 
-	AddMergeTasks(builder, visibility, skinning, morph, lighting);
+	AddMergeTasks(builder, visibility, jointMatrices, morphWeights, lighting);
 	return builder.Compile();
 }
 
@@ -259,28 +260,28 @@ TaskNodeHandle RenderPreparationGraph::Impl::AddVisibilityTasks(
 	return visibility;
 }
 
-TaskNodeHandle RenderPreparationGraph::Impl::AddSkinningTasks(
+TaskNodeHandle RenderPreparationGraph::Impl::AddJointMatrixTasks(
     TaskGraphBuilder& builder,
     std::uint32_t capacity)
 {
 	return ParallelFor(
 	    builder,
-	    MakeTaskDesc("Renderer.Preparation.Skinning"),
+	    MakeTaskDesc("Renderer.Preparation.JointMatrices"),
 	    capacity,
 	    ParallelForPolicy{.GrainSize = 16u, .SerialThreshold = 64u, .MaximumPartitions = 8u},
-	    &RenderPreparationTasks::CopySkinning);
+	    &RenderPreparationTasks::CopyJointMatrices);
 }
 
-TaskNodeHandle RenderPreparationGraph::Impl::AddMorphTasks(
+TaskNodeHandle RenderPreparationGraph::Impl::AddMorphWeightTasks(
     TaskGraphBuilder& builder,
     std::uint32_t capacity)
 {
 	return ParallelFor(
 	    builder,
-	    MakeTaskDesc("Renderer.Preparation.Morph"),
+	    MakeTaskDesc("Renderer.Preparation.MorphWeights"),
 	    capacity,
 	    ParallelForPolicy{.GrainSize = 16u, .SerialThreshold = 64u, .MaximumPartitions = 8u},
-	    &RenderPreparationTasks::CopyMorph);
+	    &RenderPreparationTasks::CopyMorphWeights);
 }
 
 TaskNodeHandle RenderPreparationGraph::Impl::AddLightingTasks(
@@ -298,11 +299,11 @@ TaskNodeHandle RenderPreparationGraph::Impl::AddLightingTasks(
 void RenderPreparationGraph::Impl::AddMergeTasks(
     TaskGraphBuilder& builder,
     TaskNodeHandle visibility,
-    TaskNodeHandle skinning,
-    TaskNodeHandle morph,
+    TaskNodeHandle jointMatrices,
+    TaskNodeHandle morphWeights,
     TaskNodeHandle lighting)
 {
-	const std::array<TaskNodeHandle, 4> mergeInputs{visibility, skinning, morph, lighting};
+	const std::array<TaskNodeHandle, 4> mergeInputs{visibility, jointMatrices, morphWeights, lighting};
 	const TaskNodeHandle mergeJoin = builder.WhenAll(
 	    MakeTaskDesc("Renderer.Preparation.MergeJoin"),
 	    mergeInputs);
@@ -357,8 +358,8 @@ void RenderPreparationGraph::Impl::CommitHistory()
 void RenderPreparationGraph::Impl::ReleaseInputViews(RenderPreparationRun& run) noexcept
 {
 	run.Lights = {};
-	run.Deformation.SkinningRanges.clear();
-	run.Deformation.MorphRanges.clear();
+	run.Deformation.JointMatrixCopyRanges.clear();
+	run.Deformation.MorphWeightCopyRanges.clear();
 }
 
 std::uint32_t RenderPreparationGraph::Impl::ResolveCapacity(
@@ -375,10 +376,10 @@ std::uint32_t RenderPreparationGraph::Impl::ResolveCapacity(
 
 RenderPreparationGraph::RenderPreparationGraph(
     TaskExecutor& taskExecutor,
-    MaterialCacheManager& materialCache,
-    GPUMeshCache& gpuMeshCache,
-    TextureManager& textureManager) :
-	m_impl(std::make_unique<Impl>(taskExecutor, materialCache, gpuMeshCache, textureManager))
+    MaterialCache& materialCache,
+    GpuMeshCache& gpuMeshCache,
+    TextureCache& textureCache) :
+	m_impl(std::make_unique<Impl>(taskExecutor, materialCache, gpuMeshCache, textureCache))
 {
 }
 

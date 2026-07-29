@@ -13,14 +13,18 @@ class DefaultTexturesConstants final
 	    {"Blue", "Defaults/default_blue.stex"},
 	    {"Normal", "Defaults/default_normal.stex"},
 	    {"Sky", "Defaults/default_cubemap.stex"}};
-
-	static constexpr DefaultTextureDesc kUnknownDefaultTextureDesc{};
 };
+
+static const auto g_defaultTexturesLogger = Logging::GetOrCreateLogger("Renderer.DefaultTextures");
 
 const DefaultTextureDesc& DefaultTextures::GetDesc(DefaultTexture type)
 {
 	const auto index = static_cast<std::size_t>(type);
-	return index < static_cast<std::size_t>(DefaultTexture::Count) ? DefaultTexturesConstants::kDefaultTextureDescs[index] : DefaultTexturesConstants::kUnknownDefaultTextureDesc;
+	if (index >= static_cast<std::size_t>(DefaultTexture::Count))
+	{
+		Diagnostics::Fatal(g_defaultTexturesLogger, __FILE__, __LINE__, "Invalid default texture type.");
+	}
+	return DefaultTexturesConstants::kDefaultTextureDescs[index];
 }
 
 const char* DefaultTextures::GetName(DefaultTexture type)

@@ -94,6 +94,7 @@ class RayTracingPtlasPartitionPlanner final
 	struct SceneBounds;
 	struct InstanceBounds;
 	struct ObservedInstance;
+	struct BuildState;
 
 	struct PreviousInstanceState final
 	{
@@ -109,23 +110,13 @@ class RayTracingPtlasPartitionPlanner final
 		bool FarFromCamera = false;
 	};
 
-	static RayTracingPtlasPartitionPlannerConfig SanitizeConfig(RayTracingPtlasPartitionPlannerConfig config) noexcept;
+	static void ValidateConfig(const RayTracingPtlasPartitionPlannerConfig& config) noexcept;
 	static void ExpandSceneBounds(SceneBounds& bounds, const DirectX::XMFLOAT3& point) noexcept;
-	static DirectX::XMFLOAT3 TransformPoint(
-	    const DirectX::XMFLOAT3& point,
-	    const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
-	static InstanceBounds ComputeInstanceWorldBounds(
-	    const RenderSceneData& sceneData,
-	    std::uint32_t renderInstanceIndex) noexcept;
-	static DirectX::XMFLOAT3 ComputeInstancePartitionPosition(
-	    const RenderSceneData& sceneData,
-	    std::uint32_t renderInstanceIndex) noexcept;
+	static DirectX::XMFLOAT3 TransformPoint(const DirectX::XMFLOAT3& point, const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
+	static InstanceBounds ComputeInstanceWorldBounds(const RenderSceneData& sceneData, std::uint32_t renderInstanceIndex) noexcept;
+	static DirectX::XMFLOAT3 ComputeInstancePartitionPosition(const RenderSceneData& sceneData, std::uint32_t renderInstanceIndex) noexcept;
 	static SceneBounds ComputeSceneBounds(const RenderSceneData& sceneData) noexcept;
-	static std::uint32_t QuantizeAxis(
-	    float value,
-	    float minValue,
-	    float maxValue,
-	    std::uint32_t partitionsPerAxis) noexcept;
+	static std::uint32_t QuantizeAxis(float value, float minValue, float maxValue, std::uint32_t partitionsPerAxis) noexcept;
 	static std::uint32_t ComputeGridPartitionId(
 	    const DirectX::XMFLOAT3& position,
 	    const SceneBounds& bounds,
@@ -136,13 +127,22 @@ class RayTracingPtlasPartitionPlanner final
 	    std::uint32_t partitionsPerAxis) noexcept;
 	static std::uint64_t ComputeGridPartitionCount(std::uint32_t partitionsPerAxis) noexcept;
 	static bool RequiresGlobalPartition(RayTracingPtlasPartitionUpdateMode updateMode) noexcept;
-	static float DistanceSquared(
-	    const DirectX::XMFLOAT3& lhs,
-	    const DirectX::XMFLOAT3& rhs) noexcept;
-	static bool IsTransformDirty(
-	    const DirectX::XMFLOAT4X4& current,
-	    const DirectX::XMFLOAT4X4& previous,
-	    float epsilon) noexcept;
+	static RayTracingPtlasPartitionPlan InitializePlan(
+	    const RenderSceneData& sceneData,
+	    const RayTracingPtlasPartitionPlannerConfig& config) noexcept;
+	void PreparePartitionStates(
+	    const SceneBounds& bounds,
+	    const RayTracingPtlasPartitionPlannerConfig& config,
+	    const RayTracingPtlasPartitionPlan& plan);
+	void CollectObservedInstances(
+	    const RenderSceneData& sceneData,
+	    const SceneBounds& bounds,
+	    const RayTracingPtlasPartitionPlannerConfig& config,
+	    RayTracingPtlasPartitionPlan& plan,
+	    BuildState& state);
+	void AppendPlanEntries(const RayTracingPtlasPartitionPlannerConfig& config, RayTracingPtlasPartitionPlan& plan, BuildState& state);
+	static float DistanceSquared(const DirectX::XMFLOAT3& lhs, const DirectX::XMFLOAT3& rhs) noexcept;
+	static bool IsTransformDirty(const DirectX::XMFLOAT4X4& current, const DirectX::XMFLOAT4X4& previous, float epsilon) noexcept;
 	static bool IsGlobalPartitionEligible(const MeshDraw& draw) noexcept;
 
 	std::vector<PreviousInstanceState> m_previousInstances;

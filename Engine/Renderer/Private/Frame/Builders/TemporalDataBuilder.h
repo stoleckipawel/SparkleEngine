@@ -22,9 +22,9 @@ class TemporalDataBuilder final
   private:
 	struct CameraPose
 	{
-		DirectX::XMFLOAT4X4 ViewMTX = {};
-		DirectX::XMFLOAT4X4 ProjectionMTX = {};
-		DirectX::XMFLOAT4X4 ViewProjMTX = {};
+		DirectX::XMFLOAT4X4 WorldToViewMatrix = {};
+		DirectX::XMFLOAT4X4 ViewToClipMatrix = {};
+		DirectX::XMFLOAT4X4 WorldToClipMatrix = {};
 		DirectX::XMFLOAT3 Position = {};
 		DirectX::XMFLOAT3 Direction = {0.0f, 0.0f, 1.0f};
 		float FovYDegrees = 60.0f;

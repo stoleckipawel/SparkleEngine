@@ -87,10 +87,11 @@ class D3D12Rhi final
 	    REFIID requestedInterface,
 	    void** nativeInterface) noexcept;
 	void NotifyExternalPresentationReady(bool ready) noexcept;
-
+	void ShutdownExternalRuntime() noexcept;
 
   private:
 	void SelectAdapter() noexcept;
+	bool IsNvidiaAdapter() const noexcept;
 	void CreateFactory();
 	void CreateDevice();
 	void CreateMemoryAllocator();

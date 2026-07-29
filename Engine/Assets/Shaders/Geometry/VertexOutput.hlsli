@@ -10,6 +10,6 @@
 		float4 TangentWorld : TEXCOORD3;
 		float3 BitangentWorld : TEXCOORD4;
 		float4 PrevClipPosition : TEXCOORD7;
-		nointerpolation uint DebugData : TEXCOORD8;
+		nointerpolation uint GpuSceneSlot : TEXCOORD8;
 	};
 }  // namespace VS

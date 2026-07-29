@@ -27,11 +27,11 @@ class FrameGraphTransientAllocationPolicy final
 		           ResourceState::UnorderedAccess) != transientPlan.lifetime.requiredStates.end();
 	}
 
-	static std::wstring BuildWideDebugName(const std::string& name, const wchar_t* fallbackName)
+	static std::wstring BuildWideDebugName(const std::string& name, const wchar_t* defaultDebugName)
 	{
 		if (name.empty())
 		{
-			return fallbackName;
+			return defaultDebugName;
 		}
 
 		return std::wstring(name.begin(), name.end());
@@ -278,7 +278,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 		}
 
 		default:
-			Diagnostics::Fail(
+			Diagnostics::Fatal(
 			    Logging::GetOrCreateLogger("Renderer.FrameGraph"),
 			    __FILE__,
 			    __LINE__,

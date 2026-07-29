@@ -11,11 +11,11 @@
 
 #include <limits>
 
-D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardware) noexcept : m_renderHardware(&renderHardware) {}
+D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(&renderHardwareInterface) {}
 
 bool D3D12ImGuiBackend::Initialize()
 {
-	if (m_renderHardware == nullptr || m_imguiContext != nullptr)
+	if (m_renderHardwareInterface == nullptr || m_imguiContext != nullptr)
 	{
 		return m_imguiContext != nullptr;
 	}
@@ -30,15 +30,15 @@ bool D3D12ImGuiBackend::Initialize()
 	ImGui::SetCurrentContext(m_imguiContext);
 
 	ImGui_ImplDX12_InitInfo initInfo = {};
-	initInfo.Device = ToD3D12Device(m_renderHardware->GetDeviceHandle());
-	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardware->GetGraphicsQueueHandle());
+	initInfo.Device = ToD3D12Device(m_renderHardwareInterface->GetDeviceHandle());
+	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardwareInterface->GetGraphicsQueueHandle());
 	initInfo.NumFramesInFlight = static_cast<int>(RhiFrameConstants::FramesInFlight);
-	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentColorFormat());
-	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentDepthStencilFormat());
-	initInfo.SrvDescriptorHeap = m_renderHardware->GetD3D12ShaderResourceDescriptorHeap();
+	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface->GetPresentColorFormat());
+	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface->GetPresentDepthStencilFormat());
+	initInfo.SrvDescriptorHeap = m_renderHardwareInterface->GetD3D12ShaderResourceDescriptorHeap();
 	initInfo.SrvDescriptorAllocFn = &D3D12ImGuiBackend::AllocateDescriptor;
 	initInfo.SrvDescriptorFreeFn = &D3D12ImGuiBackend::ReleaseDescriptor;
-	initInfo.UserData = m_renderHardware;
+	initInfo.UserData = m_renderHardwareInterface;
 
 	if (initInfo.Device == nullptr || initInfo.CommandQueue == nullptr || initInfo.SrvDescriptorHeap == nullptr)
 	{
@@ -74,13 +74,13 @@ std::uint64_t D3D12ImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderR
 
 void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 {
-	if (m_renderHardware == nullptr)
+	if (m_renderHardwareInterface == nullptr)
 	{
 		return;
 	}
 
 	ImGuiContext* previousContext = ActivateContext();
-	RenderCommandList& commandList = m_renderHardware->GetGraphicsCommandList(m_renderHardware->GetCurrentFrameIndex());
+	RenderCommandList& commandList = m_renderHardwareInterface->GetGraphicsCommandList(m_renderHardwareInterface->GetCurrentFrameIndex());
 	Render(
 	    commandList.GetNativeHandle(
 	        RhiNativeInteropRequest{
@@ -147,9 +147,9 @@ void D3D12ImGuiBackend::AllocateDescriptor(
     D3D12_CPU_DESCRIPTOR_HANDLE* outCpuHandle,
     D3D12_GPU_DESCRIPTOR_HANDLE* outGpuHandle)
 {
-	auto* renderHardware = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
+	auto* renderHardwareInterface = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
 	const RhiDescriptorAllocation allocation =
-	    renderHardware->GetDescriptorService().AllocateDescriptor(ERhiDescriptorAllocatorType::ShaderResource);
+	    renderHardwareInterface->GetDescriptorService().AllocateDescriptor(ERhiDescriptorAllocatorType::ShaderResource);
 	*outCpuHandle = ToD3D12CpuDescriptor(allocation.CpuHandle);
 	*outGpuHandle = ToD3D12GpuDescriptor(allocation.GpuHandle);
 }
@@ -159,8 +159,8 @@ void D3D12ImGuiBackend::ReleaseDescriptor(
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
-	auto* renderHardware = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
-	renderHardware->GetDescriptorService().ReleaseDescriptor(
+	auto* renderHardwareInterface = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
+	renderHardwareInterface->GetDescriptorService().ReleaseDescriptor(
 	    ERhiDescriptorAllocatorType::ShaderResource,
 	    RhiDescriptorAllocation{
 	        .CpuHandle = RhiCpuDescriptorHandle{cpuHandle.ptr},

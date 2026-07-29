@@ -162,7 +162,7 @@ namespace Diagnostics
 		return record;
 	}
 
-	[[noreturn]] void Fail(
+	[[noreturn]] void Fatal(
 	    const std::shared_ptr<spdlog::logger>& logger,
 	    const char* file,
 	    std::uint32_t line,

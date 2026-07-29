@@ -1,8 +1,9 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "SourceSceneImporter.h"
 
 #include "SourceImporter.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Fbx/FbxImporter.h"
 #include "Gltf/GltfImporter.h"
 #include "Core/Public/Paths/PathUtils.h"
@@ -10,8 +11,6 @@
 
 #include <array>
 #include <format>
-
-static const auto g_sourceSceneImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters");
 
 bool SourceSceneImporter::SupportsSourceScenePath(const std::filesystem::path& filePath)
 {
@@ -31,11 +30,8 @@ bool SourceSceneImporter::SupportsSourceScenePath(const std::filesystem::path& f
 	return false;
 }
 
-SourceImportResult SourceSceneImporter::Import(const std::filesystem::path& filePath)
+SourceImportOutput SourceSceneImporter::Import(const std::filesystem::path& filePath)
 {
-	SourceImportResult result;
-	bool handledByImporter = false;
-
 	const std::wstring extension = Paths::GetLowercaseExtension(filePath);
 	static const GltfImporter gltfImporter;
 	static const FbxImporter fbxImporter;
@@ -48,25 +44,13 @@ SourceImportResult SourceSceneImporter::Import(const std::filesystem::path& file
 			continue;
 		}
 
-		result = importer->Import(filePath);
-		handledByImporter = true;
-		break;
+		return importer->Import(filePath);
 	}
 
-	if (!handledByImporter)
-	{
-		result.report.sourcePath = filePath;
-		result.report.importerId = "UnsupportedSourceImporter";
-		SPDLOG_LOGGER_ERROR(
-		    g_sourceSceneImporterLogger,
-		    "{}",
-		    std::format(
-		        "SourceSceneImporter: Unsupported asset extension '{}' for '{}'",
-		        extension.empty() ? std::string("<none>") : Strings::ToNarrow(extension),
-		        filePath.string()));
-	}
-
-	return result;
+	throw Diagnostics::Error(std::format(
+	    "No source scene importer supports extension '{}' for '{}'.",
+	    extension.empty() ? std::string("<none>") : Strings::ToNarrow(extension),
+	    filePath.string()));
 }
 
 

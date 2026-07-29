@@ -2,8 +2,10 @@
 
 #include "CookedSceneCameraBuilder.h"
 
-#include <algorithm>
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <cstring>
+#include <format>
 
 class CookedCameraTranslation final
 {
@@ -25,29 +27,33 @@ class CookedCameraTranslation final
 	static Assets::CookedSceneCameraRecord BuildCameraRecord(const ImportedCamera& importedCamera)
 	{
 		Assets::CookedSceneCameraRecord cameraRecord;
-		const std::size_t copyLength =
-		    (std::min)(importedCamera.name.size(), static_cast<std::size_t>(Assets::kCookedSceneCameraNameCapacity - 1u));
-		if (copyLength > 0)
+		if (!importedCamera.name.empty())
 		{
-			std::memcpy(cameraRecord.name, importedCamera.name.data(), copyLength);
+			std::memcpy(cameraRecord.name, importedCamera.name.data(), importedCamera.name.size());
 		}
 		cameraRecord.worldTransform = importedCamera.worldTransform;
 		cameraRecord.projectionKind = ToCookedCameraProjectionKind(importedCamera.projectionKind);
-		cameraRecord.verticalFovRadians = importedCamera.verticalFovRadians;
-		cameraRecord.nearPlane = importedCamera.nearPlane;
-		cameraRecord.farPlane = importedCamera.farPlane;
+		cameraRecord.fovYRadians = importedCamera.fovYRadians;
+		cameraRecord.nearZ = importedCamera.nearZ;
+		cameraRecord.farZ = importedCamera.farZ;
 		cameraRecord.sourceNodeIndex = importedCamera.sourceNodeIndex;
 		return cameraRecord;
 	}
 };
 
-void CookedSceneCameraBuilder::BuildCameras(const SourceImportResult& importResult, CookedSceneBuild& outBuild)
+void CookedSceneCameraBuilder::BuildCameras(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild)
 {
 	outBuild.manifest.cameras.clear();
-	outBuild.manifest.cameras.reserve(importResult.scene.cameras.size());
+	outBuild.manifest.cameras.reserve(importOutput.scene.cameras.size());
 
-	for (const ImportedCamera& importedCamera : importResult.scene.cameras)
+	for (std::size_t cameraIndex = 0; cameraIndex < importOutput.scene.cameras.size(); ++cameraIndex)
 	{
+		const ImportedCamera& importedCamera = importOutput.scene.cameras[cameraIndex];
+		if (importedCamera.name.size() >= Assets::kCookedSceneCameraNameCapacity ||
+		    importedCamera.projectionKind != ImportedCameraProjectionKind::Perspective)
+		{
+			throw Diagnostics::Error(std::format("Imported camera {} exceeds the cooked camera contract.", cameraIndex));
+		}
 		outBuild.manifest.cameras.push_back(CookedCameraTranslation::BuildCameraRecord(importedCamera));
 	}
 }

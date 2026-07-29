@@ -66,7 +66,7 @@ TaskResult RenderPreparationTasks::EvaluateVisibility(
 	return TaskResult::Success();
 }
 
-TaskResult RenderPreparationTasks::CopySkinning(
+TaskResult RenderPreparationTasks::CopyJointMatrices(
     std::uint32_t begin,
     std::uint32_t end,
     TaskExecutionContext& context)
@@ -76,14 +76,14 @@ TaskResult RenderPreparationTasks::CopySkinning(
 	const std::size_t rangeBegin =
 	    (std::min<std::size_t>)(
 	        begin,
-	        run.Deformation.SkinningRanges.size());
+	        run.Deformation.JointMatrixCopyRanges.size());
 	const std::size_t rangeEnd =
 	    (std::min<std::size_t>)(
 	        end,
-	        run.Deformation.SkinningRanges.size());
-	RenderDeformationPreparation::CopySkinningRanges(
-	    std::span<const RenderSkinningCopyRange>{
-	        run.Deformation.SkinningRanges}
+	        run.Deformation.JointMatrixCopyRanges.size());
+	RenderDeformationPreparation::CopyJointMatrixRanges(
+	    std::span<const RenderJointMatrixCopyRange>{
+	        run.Deformation.JointMatrixCopyRanges}
 	        .subspan(
 	            rangeBegin,
 	            rangeEnd - rangeBegin),
@@ -92,7 +92,7 @@ TaskResult RenderPreparationTasks::CopySkinning(
 	return TaskResult::Success();
 }
 
-TaskResult RenderPreparationTasks::CopyMorph(
+TaskResult RenderPreparationTasks::CopyMorphWeights(
     std::uint32_t begin,
     std::uint32_t end,
     TaskExecutionContext& context)
@@ -102,14 +102,14 @@ TaskResult RenderPreparationTasks::CopyMorph(
 	const std::size_t rangeBegin =
 	    (std::min<std::size_t>)(
 	        begin,
-	        run.Deformation.MorphRanges.size());
+	        run.Deformation.MorphWeightCopyRanges.size());
 	const std::size_t rangeEnd =
 	    (std::min<std::size_t>)(
 	        end,
-	        run.Deformation.MorphRanges.size());
-	RenderDeformationPreparation::CopyMorphRanges(
-	    std::span<const RenderMorphCopyRange>{
-	        run.Deformation.MorphRanges}
+	        run.Deformation.MorphWeightCopyRanges.size());
+	RenderDeformationPreparation::CopyMorphWeightRanges(
+	    std::span<const RenderMorphWeightCopyRange>{
+	        run.Deformation.MorphWeightCopyRanges}
 	        .subspan(
 	            rangeBegin,
 	            rangeEnd - rangeBegin),

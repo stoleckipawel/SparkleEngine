@@ -18,7 +18,7 @@ namespace RayTracingHitSurface
 
 	static const uint ReasonNone = 0u;
 	static const uint ReasonNoHit = 1u;
-	static const uint ReasonHitDataUnavailable = 2u;
+	static const uint ReasonInvalidHitData = 2u;
 	static const uint ReasonInstanceOutOfRange = 3u;
 	static const uint ReasonInvalidInstance = 4u;
 	static const uint ReasonInvalidMaterial = 5u;

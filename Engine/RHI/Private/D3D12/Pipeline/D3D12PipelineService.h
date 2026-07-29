@@ -4,12 +4,12 @@
 
 #include <memory>
 
-struct ComputePipelineStateDesc;
-struct GraphicsPipelineStateDesc;
+struct ComputePipelineDesc;
+struct GraphicsPipelineDesc;
 struct RenderBindingLayoutCompileDesc;
 class D3D12Rhi;
 class RenderBindingLayout;
-class RenderPipelineState;
+class RenderPipeline;
 
 class D3D12PipelineService final : public RhiPipelineService
 {
@@ -17,8 +17,8 @@ class D3D12PipelineService final : public RhiPipelineService
 	explicit D3D12PipelineService(D3D12Rhi& rhi) noexcept;
 
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
-	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;
-	std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) override;
+	std::unique_ptr<RenderPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
+	std::unique_ptr<RenderPipeline> CreateComputePipeline(const ComputePipelineDesc& desc) override;
 
   private:
 	D3D12Rhi* m_rhi = nullptr;

@@ -142,7 +142,7 @@ class VulkanBindingLayoutCompilerImpl final
 			const VkResult result = vkCreateDescriptorSetLayout(rhi.GetDevice(), &createInfo, nullptr, &descriptorSetLayout);
 			if (!VulkanResult::Succeeded(result))
 			{
-				Diagnostics::Fail(
+				Diagnostics::Fatal(
 				    g_vulkanBindingLayoutLogger,
 				    __FILE__,
 				    __LINE__,
@@ -171,7 +171,7 @@ class VulkanBindingLayoutCompilerImpl final
 			const VkResult result = vkCreateDescriptorSetLayout(rhi.GetDevice(), &createInfo, nullptr, &descriptorSetLayout);
 			if (!VulkanResult::Succeeded(result))
 			{
-				Diagnostics::Fail(
+				Diagnostics::Fatal(
 				    g_vulkanBindingLayoutLogger,
 				    __FILE__,
 				    __LINE__,
@@ -357,7 +357,7 @@ class VulkanBindingLayoutCompilerImpl final
 		const VkResult result = vkCreateSampler(rhi.GetDevice(), &createInfo, nullptr, &sampler);
 		if (!VulkanResult::Succeeded(result))
 		{
-			Diagnostics::Fail(
+			Diagnostics::Fatal(
 			    g_vulkanBindingLayoutLogger,
 			    __FILE__,
 			    __LINE__,

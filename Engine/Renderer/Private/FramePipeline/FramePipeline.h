@@ -27,7 +27,7 @@ struct FrameContext;
 class FrameGraph;
 class RenderCommandList;
 class RenderDeviceServices;
-class RendererSystemRoot;
+class RendererHost;
 class RenderInputConsumer;
 class PersistentRenderGpuScene;
 class RenderRayTracingScene;
@@ -43,7 +43,7 @@ struct FrameResolutionExtents final
 class FramePipeline final
 {
   public:
-	FramePipeline(RendererSystemRoot& systems, bool enableUiRenderPackets) noexcept;
+	FramePipeline(RendererHost& rendererHost, bool enableUiRenderPackets) noexcept;
 	~FramePipeline() noexcept;
 
 	FramePipeline(const FramePipeline&) = delete;
@@ -93,7 +93,7 @@ class FramePipeline final
 	void PollViewportCaptures() noexcept;
 	void SetupFrame(const TimeInfo& timing) noexcept;
 	void UploadPendingSceneTextures(
-	    RenderDeviceServices& backend,
+	    RenderDeviceServices& deviceServices,
 	    RenderCommandList& graphicsCommandList);
 	void RefreshViewportRenderProducts() noexcept;
 	bool BeginViewportEditorTexturePresentation(
@@ -128,7 +128,7 @@ class FramePipeline final
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
 	const FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() const noexcept;
 
-	RendererSystemRoot* m_systems = nullptr;
+	RendererHost* m_rendererHost = nullptr;
 	std::unique_ptr<FrameGraph> m_frameGraph;
 	PerFrameDataBuilder m_perFrameDataBuilder;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;

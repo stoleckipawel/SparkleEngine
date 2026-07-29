@@ -17,7 +17,7 @@
 struct ComputePassPipelineRuntime;
 struct FrameContext;
 struct PassExecutionContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 struct RenderPassDefinition;
 struct RenderViewData;
 

@@ -125,13 +125,8 @@ namespace SparkleLauncher
 	    const LauncherLevelUiEntry& level)
 	{
 		QCheckBox* syncBox =
-		    new QCheckBox(
-		        level.Required
-		            ? QStringLiteral("Required")
-		            : QStringLiteral("Sync"),
-		        this);
+		    new QCheckBox(QStringLiteral("Sync"), this);
 		syncBox->setChecked(level.Synced);
-		syncBox->setEnabled(!level.Required);
 		RegisterFocusable(syncBox);
 
 		connect(

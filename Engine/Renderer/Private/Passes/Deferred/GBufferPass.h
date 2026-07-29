@@ -16,7 +16,7 @@ struct RenderPassDefinition;
 struct PassExecutionContext;
 struct RenderSceneData;
 struct MeshInstanceBatch;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 struct RenderViewData;
 struct FrameContext;
 class FrameGraphResourceCommands;
@@ -92,20 +92,20 @@ class GBufferPass final
 
 
   private:
-	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const;
+	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeContext& passRuntimeContext) const;
 	void PrepareTargets(PassExecutionContext& context, const Parameters& parameters) const;
-	void ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData) const;
+	void ConfigurePipeline(RenderCommandContext& commandContext, const RenderViewData& viewData) const;
 	void BindPassResources(
 	    const FrameGraphResourceCommands& resources,
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const ParameterInstance& parameters,
-	    const PassRuntimeServices& passRuntimeServices) const;
+	    const PassRuntimeContext& passRuntimeContext) const;
 	void DrawOpaqueMeshes(
 	    const FrameGraphResourceCommands& resources,
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const FrameContext& frame,
 	    const Parameters& parameters,
-	    const PassRuntimeServices& passRuntimeServices) const;
+	    const PassRuntimeContext& passRuntimeContext) const;
 
 	const RasterPassPipelineRuntime& m_runtime;
 };

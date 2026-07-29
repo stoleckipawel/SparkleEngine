@@ -8,6 +8,7 @@
 #include <cgltf.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <string>
 
@@ -34,7 +35,7 @@ class GltfMorphTargetMetadata final
 			return mesh.target_names[targetIndex];
 		}
 
-		return "MorphTarget" + std::to_string(targetIndex);
+		return {};
 	}
 
 	static float ReadMeshDefaultWeight(const cgltf_mesh& mesh, std::size_t targetIndex) noexcept
@@ -54,47 +55,41 @@ std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
 	for (cgltf_size targetIndex = 0; targetIndex < primitive.targets_count; ++targetIndex)
 	{
 		const cgltf_morph_target& sourceTarget = primitive.targets[targetIndex];
-		const cgltf_accessor* positions =
-		    GltfMorphTargetMetadata::FindMorphAttribute(
-		        sourceTarget,
-		        cgltf_attribute_type_position);
-		const cgltf_accessor* normals =
-		    GltfMorphTargetMetadata::FindMorphAttribute(
-		        sourceTarget,
-		        cgltf_attribute_type_normal);
-		const cgltf_accessor* tangents =
-		    GltfMorphTargetMetadata::FindMorphAttribute(
-		        sourceTarget,
-		        cgltf_attribute_type_tangent);
+		const cgltf_accessor* positions = GltfMorphTargetMetadata::FindMorphAttribute(sourceTarget, cgltf_attribute_type_position);
+		const cgltf_accessor* normals = GltfMorphTargetMetadata::FindMorphAttribute(sourceTarget, cgltf_attribute_type_normal);
+		const cgltf_accessor* tangents = GltfMorphTargetMetadata::FindMorphAttribute(sourceTarget, cgltf_attribute_type_tangent);
 		if (positions == nullptr && normals == nullptr && tangents == nullptr)
 		{
 			continue;
 		}
+		if ((positions != nullptr && (positions->count != vertexCount || positions->type != cgltf_type_vec3)) ||
+		    (normals != nullptr && (normals->count != vertexCount || normals->type != cgltf_type_vec3)) ||
+		    (tangents != nullptr && (tangents->count != vertexCount || tangents->type != cgltf_type_vec3)))
+		{
+			return {};
+		}
 
 		ImportedMorphTarget importedTarget;
-		importedTarget.name =
-		    GltfMorphTargetMetadata::BuildMorphTargetName(
-		        mesh,
-		        targetIndex);
-		importedTarget.defaultWeight =
-		    GltfMorphTargetMetadata::ReadMeshDefaultWeight(
-		        mesh,
-		        targetIndex);
+		importedTarget.name = GltfMorphTargetMetadata::BuildMorphTargetName(mesh, targetIndex);
+		importedTarget.defaultWeight = GltfMorphTargetMetadata::ReadMeshDefaultWeight(mesh, targetIndex);
 		importedTarget.deltas.resize(vertexCount);
 		for (std::uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 		{
 			ImportedMorphTargetDelta& delta = importedTarget.deltas[vertexIndex];
 			if (positions != nullptr)
 			{
-				delta.position = GltfNodeTransformConverter::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(positions, vertexIndex));
+				const DirectX::XMFLOAT3 value = GltfAccessorReader::ReadFloat3(positions, vertexIndex);
+				delta.position = GltfNodeTransformConverter::ConvertGltfVectorToEngine(value);
 			}
 			if (normals != nullptr)
 			{
-				delta.normal = GltfNodeTransformConverter::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(normals, vertexIndex));
+				const DirectX::XMFLOAT3 value = GltfAccessorReader::ReadFloat3(normals, vertexIndex);
+				delta.normal = GltfNodeTransformConverter::ConvertGltfVectorToEngine(value);
 			}
 			if (tangents != nullptr)
 			{
-				delta.tangent = GltfNodeTransformConverter::ConvertGltfVectorToEngine(GltfAccessorReader::ReadFloat3(tangents, vertexIndex));
+				const DirectX::XMFLOAT3 value = GltfAccessorReader::ReadFloat3(tangents, vertexIndex);
+				delta.tangent = GltfNodeTransformConverter::ConvertGltfVectorToEngine(value);
 			}
 		}
 
@@ -107,11 +102,17 @@ std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
 std::vector<float> GltfMorphTargetImporter::BuildNodeMorphWeights(
     const cgltf_mesh& mesh,
     const float* nodeWeights,
-    std::size_t nodeWeightCount)
+    std::size_t nodeWeightCount,
+    std::size_t targetCount)
 {
-	const std::size_t weightCount = nodeWeightCount > 0 ? nodeWeightCount : mesh.weights_count;
-	std::vector<float> weights(weightCount, 0.0f);
-	for (std::size_t weightIndex = 0; weightIndex < weightCount; ++weightIndex)
+	if ((nodeWeightCount > 0 && nodeWeights == nullptr) || (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights == nullptr) ||
+	    (nodeWeightCount > 0 && nodeWeightCount != targetCount) ||
+	    (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights_count != targetCount))
+	{
+		return {};
+	}
+	std::vector<float> weights(targetCount, 0.0f);
+	for (std::size_t weightIndex = 0; weightIndex < targetCount; ++weightIndex)
 	{
 		if (nodeWeightCount > 0 && nodeWeights != nullptr && weightIndex < nodeWeightCount)
 		{

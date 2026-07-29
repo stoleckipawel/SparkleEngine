@@ -62,7 +62,7 @@ bool VulkanSwapChain::AcquireNextImage(std::uint32_t frameIndex) noexcept
 		return true;
 	}
 
-	Diagnostics::Fail(
+	Diagnostics::Fatal(
 	    g_vulkanSwapChainLogger,
 	    __FILE__,
 	    __LINE__,
@@ -96,7 +96,7 @@ bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
 	}
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkQueuePresentKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkQueuePresentKHR", result));
 	}
 	return false;
 }
@@ -186,14 +186,14 @@ void VulkanSwapChain::CreateSurface()
 	const VkResult result = vkCreateWin32SurfaceKHR(m_rhi.GetInstance(), &createInfo, nullptr, &m_surface);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateWin32SurfaceKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateWin32SurfaceKHR", result));
 	}
 
 	VkBool32 supportsPresent = VK_FALSE;
 	(void)vkGetPhysicalDeviceSurfaceSupportKHR(m_rhi.GetPhysicalDevice(), m_rhi.GetGraphicsQueueFamilyIndex(), m_surface, &supportsPresent);
 	if (supportsPresent != VK_TRUE)
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, "Selected Vulkan graphics queue family does not support the Win32 surface.");
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, "Selected Vulkan graphics queue family does not support the Win32 surface.");
 	}
 }
 
@@ -203,7 +203,7 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_rhi.GetPhysicalDevice(), m_surface, &capabilities);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", result));
 	}
 
 	m_surfaceFormat = SelectSurfaceFormat();
@@ -234,7 +234,7 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 	result = vkCreateSwapchainKHR(m_rhi.GetDevice(), &createInfo, nullptr, &m_swapChain);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSwapchainKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSwapchainKHR", result));
 	}
 
 }
@@ -245,14 +245,14 @@ void VulkanSwapChain::CreateBackBufferImageViews()
 	VkResult result = vkGetSwapchainImagesKHR(m_rhi.GetDevice(), m_swapChain, &imageCount, nullptr);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetSwapchainImagesKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetSwapchainImagesKHR", result));
 	}
 
 	std::vector<VkImage> images(imageCount);
 	result = vkGetSwapchainImagesKHR(m_rhi.GetDevice(), m_swapChain, &imageCount, images.data());
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetSwapchainImagesKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetSwapchainImagesKHR", result));
 	}
 
 	m_backBuffers.clear();
@@ -264,7 +264,7 @@ void VulkanSwapChain::CreateBackBufferImageViews()
 		const VkResult semaphoreResult = vkCreateSemaphore(m_rhi.GetDevice(), &semaphoreInfo, nullptr, &record.RenderFinishedSemaphore);
 		if (!VulkanResult::Succeeded(semaphoreResult))
 		{
-			Diagnostics::Fail(
+			Diagnostics::Fatal(
 			    g_vulkanSwapChainLogger,
 			    __FILE__,
 			    __LINE__,
@@ -286,7 +286,7 @@ void VulkanSwapChain::CreatePresentationSemaphores()
 		const VkResult result = vkCreateSemaphore(m_rhi.GetDevice(), &createInfo, nullptr, &semaphore);
 		if (!VulkanResult::Succeeded(result))
 		{
-			Diagnostics::Fail(
+			Diagnostics::Fatal(
 			    g_vulkanSwapChainLogger,
 			    __FILE__,
 			    __LINE__,
@@ -347,14 +347,14 @@ VkSurfaceFormatKHR VulkanSwapChain::SelectSurfaceFormat() const
 	VkResult result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_rhi.GetPhysicalDevice(), m_surface, &formatCount, nullptr);
 	if (!VulkanResult::Succeeded(result) || formatCount == 0)
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, "No Vulkan surface formats are available.");
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, "No Vulkan surface formats are available.");
 	}
 
 	std::vector<VkSurfaceFormatKHR> formats(formatCount);
 	result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_rhi.GetPhysicalDevice(), m_surface, &formatCount, formats.data());
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceFormatsKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceFormatsKHR", result));
 	}
 
 	const VkFormat requestedFormat = VulkanTypeConversions::ToVkFormat(m_backBufferFormat);
@@ -366,7 +366,7 @@ VkSurfaceFormatKHR VulkanSwapChain::SelectSurfaceFormat() const
 		return *requestedIt;
 	}
 
-	Diagnostics::Fail(
+	Diagnostics::Fatal(
 	    g_vulkanSwapChainLogger,
 	    __FILE__,
 	    __LINE__,
@@ -455,7 +455,7 @@ VkImageView VulkanSwapChain::CreateImageView(VkImage image, VkFormat format) con
 	const VkResult result = vkCreateImageView(m_rhi.GetDevice(), &createInfo, nullptr, &imageView);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateImageView", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateImageView", result));
 	}
 	return imageView;
 }

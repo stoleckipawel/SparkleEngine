@@ -4,8 +4,8 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Lighting/ShadowVisibility.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "FrameGraph/PassRuntimeContext.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
@@ -15,16 +15,16 @@ DirectLightingPass::DirectLightingPass(const ComputePassPipelineRuntime& runtime
 
 const DirectLightingPass::ParameterMetadata& DirectLightingPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<DirectLightingPass>();
+	return ComputePassOperations::BuildParameterMetadata<DirectLightingPass>();
 }
 
 const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::DirectLighting,
 	    L"DirectLighting_BindingLayout",
-	    L"DirectLighting_PipelineState");
+	    L"DirectLighting_Pipeline");
 	return definition;
 }
 
@@ -32,9 +32,9 @@ void DirectLightingPass::SetParameters(
     ParameterInstance& parameters,
     const FrameContext& frame,
     const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeContext& passRuntimeContext) const
 {
-	parameters->PerFrame = passRuntimeServices.PerFrame;
+	parameters->PerFrame = passRuntimeContext.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
 	parameters->ViewLighting = frame.sceneGpuData->Lighting.Constants;
@@ -42,9 +42,9 @@ void DirectLightingPass::SetParameters(
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
+	SetParameters(parameters, context.Frame, context.Frame.mainView, context.Runtime);
 	{
-		ComputePassUtilities::DispatchSized<DirectLightingPass>(
+		ComputePassOperations::DispatchSized<DirectLightingPass>(
 		    context,
 		    m_runtime,
 		    parameters,

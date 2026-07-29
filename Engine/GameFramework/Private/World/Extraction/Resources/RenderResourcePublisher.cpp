@@ -86,7 +86,7 @@ namespace ECS
 		if (left.has_value() != right.has_value()) return false;
 		if (!left) return true;
 		return left->enabled == right->enabled && left->color.x == right->color.x && left->color.y == right->color.y &&
-		       left->color.z == right->color.z && left->intensity == right->intensity &&
+		       left->color.z == right->color.z && left->brightness == right->brightness &&
 		       left->skyTexture.texturePath == right->skyTexture.texturePath &&
 		       left->skyTexture.textureGroup == right->skyTexture.textureGroup;
 	}

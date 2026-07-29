@@ -12,21 +12,21 @@ class CookedSceneFeatureMetadata final
 		flags |= Assets::ToCookedSceneFeatureFlagMask(flag);
 	}
 
-	static std::uint32_t BuildFeatureFlags(const SourceImportResult& importResult) noexcept
+	static std::uint32_t BuildFeatureFlags(const SourceImportOutput& importOutput) noexcept
 	{
 		std::uint32_t flags = 0;
-		if (!importResult.scene.cameras.empty())
+		if (!importOutput.scene.cameras.empty())
 		{
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::Cameras);
 		}
 
-		if (!importResult.scene.lights.empty())
+		if (!importOutput.scene.lights.empty())
 		{
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::Lights);
 		}
 
-		bool hasSkinnedMeshes = !importResult.scene.skeletons.empty();
-		for (const ImportedMeshPrimitive& primitive : importResult.scene.meshPrimitives)
+		bool hasSkinnedMeshes = !importOutput.scene.skeletons.empty();
+		for (const ImportedMeshPrimitive& primitive : importOutput.scene.meshPrimitives)
 		{
 			if (primitive.geometry.HasSkinInfluences())
 			{
@@ -41,13 +41,13 @@ class CookedSceneFeatureMetadata final
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::Skeletons);
 		}
 
-		if (!importResult.scene.animations.empty())
+		if (!importOutput.scene.animations.empty())
 		{
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::Animations);
 		}
 
 		bool hasSkeletalMorphTargets = false;
-		for (const ImportedMeshPrimitive& primitive : importResult.scene.meshPrimitives)
+		for (const ImportedMeshPrimitive& primitive : importOutput.scene.meshPrimitives)
 		{
 			if (primitive.geometry.HasSkinInfluences() && primitive.geometry.HasMorphTargets())
 			{
@@ -61,12 +61,12 @@ class CookedSceneFeatureMetadata final
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::MorphTargets);
 		}
 
-		if (!importResult.scene.materialVariants.empty() || !importResult.scene.materialVariantMappings.empty())
+		if (!importOutput.scene.materialVariants.empty() || !importOutput.scene.materialVariantMappings.empty())
 		{
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::MaterialVariants);
 		}
 
-		for (const ImportedMeshInstanceGroup& group : importResult.scene.meshInstanceGroups)
+		for (const ImportedMeshInstanceGroup& group : importOutput.scene.meshInstanceGroups)
 		{
 			if (group.groupKind == ImportedMeshInstanceGroupKind::AuthoredInstanceGroup)
 			{
@@ -79,7 +79,7 @@ class CookedSceneFeatureMetadata final
 	}
 };
 
-void CookedSceneMetadataBuilder::BuildMetadata(const SourceImportResult& importResult, CookedSceneBuild& outBuild)
+void CookedSceneMetadataBuilder::BuildMetadata(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild)
 {
-	outBuild.manifest.header.featureFlags = CookedSceneFeatureMetadata::BuildFeatureFlags(importResult);
+	outBuild.manifest.header.featureFlags = CookedSceneFeatureMetadata::BuildFeatureFlags(importOutput);
 }

@@ -17,12 +17,12 @@ FrameGraphRecordingChunkRecorder::FrameGraphRecordingChunkRecorder(
     const FrameGraph& frameGraph,
     const FrameGraphPlan& plan,
     const FrameContext& frame,
-    const PassRuntimeServices& passRuntimeServices,
+    const PassRuntimeContext& passRuntimeContext,
     FrameExecutionDiagnostics& frameDiagnostics) noexcept :
 	m_frameGraph(frameGraph),
 	m_plan(plan),
 	m_frame(frame),
-	m_passRuntimeServices(passRuntimeServices),
+	m_passRuntimeContext(passRuntimeContext),
 	m_frameDiagnostics(frameDiagnostics)
 {
 }
@@ -116,7 +116,7 @@ void FrameGraphRecordingChunkRecorder::RecordPass(
 	PassExecutionContext passContext{
 	    commands,
 	    m_frame,
-	    m_passRuntimeServices,
+	    m_passRuntimeContext,
 	    passDiagnostics,
 	    FrameGraphResourceCommands{m_frameGraph}};
 	const FrameGraph::RegisteredPass& registeredPass = m_frameGraph.m_passes[passIndex];

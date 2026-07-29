@@ -94,7 +94,7 @@ EditorHostServices EditorApplication::BuildUiHostServices(
 {
 	return EditorHostServices{
 	    .RuntimeTimer = m_runtimeApplication->GetTimer(),
-	    .Levels = m_runtimeApplication->GetLevelManager(),
+	    .Levels = m_runtimeApplication->GetLevelSession(),
 	    .AcquireWorldReadView = [&world]()
 	    {
 		    return world.AcquireReadView();

@@ -3,7 +3,7 @@
 
 #include "Core/Public/Strings/StringUtils.h"
 #include "Scene/Model/EditorSceneModel.h"
-#include "Scene/Transactions/EditorTransactionManager.h"
+#include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Scene/Commands/SceneObjectCommandFactory.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/SceneObjectPresentation.h"
@@ -16,8 +16,8 @@
 #include <imgui.h>
 
 SceneOutlinerPanel::SceneOutlinerPanel(
-    SceneObjectSelection& selection, EditorTransactionManager& transactions, float widthPixels) noexcept :
-    m_transactions(&transactions), m_selection(&selection), m_widthPixels(widthPixels)
+    SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels) noexcept :
+    m_transactionHistory(&transactionHistory), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -229,10 +229,10 @@ bool SceneOutlinerPanel::IsEntryVisible(const SceneObjectSelection& selection) c
 
 void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selection) noexcept
 {
-	if (!m_model || !m_transactions) return;
+	if (!m_model || !m_transactionHistory) return;
 	auto commands = SceneObjectCommandFactory::SetVisibility(*m_model, selection, !IsEntryVisible(selection));
 	if (!commands) return;
-	(void) m_transactions->Execute(
+	(void) m_transactionHistory->Execute(
 	    std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration(),
 	    std::move(commands->CoalescingKey));
 }
@@ -245,11 +245,11 @@ void SceneOutlinerPanel::SelectEntry(const SceneObjectSelection& selection) noex
 	}
 
 	*m_selection = selection;
-	if (selection.type == SceneObjectType::Camera && m_transactions)
+	if (selection.type == SceneObjectType::Camera && m_transactionHistory)
 	{
 		auto commands = SceneObjectCommandFactory::SetActiveCamera(*m_model, selection.entity);
 		if (commands)
-			(void) m_transactions->Execute(
+			(void) m_transactionHistory->Execute(
 			    std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration());
 	}
 }

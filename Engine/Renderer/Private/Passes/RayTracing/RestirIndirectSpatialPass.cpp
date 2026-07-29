@@ -4,14 +4,13 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "FrameGraph/PassRuntimeServices.h"
+#include "FrameGraph/PassRuntimeContext.h"
 #include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
-#include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
 void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<RestirIndirectSpatialPassParameters>& builder)
@@ -90,30 +89,23 @@ RestirIndirectSpatialPass::RestirIndirectSpatialPass(
 
 const RestirIndirectSpatialPass::ParameterMetadata& RestirIndirectSpatialPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<RestirIndirectSpatialPass>();
+	return ComputePassOperations::BuildParameterMetadata<RestirIndirectSpatialPass>();
 }
 
 const RenderPassDefinition& RestirIndirectSpatialPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::RestirIndirectSpatial,
 	    L"RestirIndirectSpatial_BindingLayout",
-	    L"RestirIndirectSpatial_PipelineState",
+	    L"RestirIndirectSpatial_Pipeline",
 	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
 }
 
 void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	const RayTracingPassCapabilities capabilities = RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
-	if (!capabilities.InlineRayQueryAvailable || !capabilities.HitDataAvailable || !capabilities.MaterialTextureTableAvailable ||
-	    !RayTracingPassCapabilityQuery::CanUseSceneTlas(capabilities, RayTracingSceneTlasShaderAccessMode::Descriptor))
-	{
-		return;
-	}
-
-	parameters->PerFrame = context.RuntimeServices.PerFrame;
+	parameters->PerFrame = context.Runtime.PerFrame;
 	parameters->PerView = context.Frame.mainView.perViewData;
 	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
 	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
@@ -129,9 +121,8 @@ void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, Parameter
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
 	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(
-	    context.RuntimeServices.RayTracing,
+	    context.Runtime.RayTracing,
 	    context.Frame.rayTracingScene.HasTraceableInstances(),
-	    capabilities.TriangleMaterialDataAvailable,
 	    context.Frame.sceneGpuData->RayTracing.InstanceCount,
 	    context.Frame.sceneGpuData->RayTracing.MaterialCount);
 
@@ -140,7 +131,7 @@ void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, Parameter
 	    .BounceCount = settings.BounceCount,
 	    .NormalBias = settings.NormalBias,
 	    .MaxDistance = settings.MaxDistance};
-	ComputePassUtilities::DispatchSized<RestirIndirectSpatialPass>(
+	ComputePassOperations::DispatchSized<RestirIndirectSpatialPass>(
 	    context,
 	    m_runtime,
 	    parameters,

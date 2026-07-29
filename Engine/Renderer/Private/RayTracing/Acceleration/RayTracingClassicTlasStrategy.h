@@ -20,7 +20,7 @@ class RayTracingClassicTlasStrategy final : public RayTracingTopLevelAcceleratio
 	    const RenderSceneData& sceneData,
 	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept override;
 	RayTracingTopLevelAccelerationStructureBuildResult Build(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    const RenderSceneData& sceneData,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,

@@ -13,7 +13,7 @@
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 struct FrameContext;
 struct RenderViewData;
 struct DirectShadowSignalResources;
@@ -95,7 +95,7 @@ class DirectLightingPass final
 	    ParameterInstance& parameters,
 	    const FrameContext& frame,
 	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices) const;
+	    const PassRuntimeContext& passRuntimeContext) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

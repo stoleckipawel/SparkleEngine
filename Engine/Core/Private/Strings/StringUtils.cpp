@@ -3,6 +3,7 @@
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <cctype>
+#include <cmath>
 #include <sstream>
 
 namespace Strings
@@ -17,6 +18,18 @@ namespace Strings
 		for (const char character : str)
 		{
 			if (IsAsciiWhitespace(character))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool IsNullTerminated(std::span<const char> buffer) noexcept
+	{
+		for (const char character : buffer)
+		{
+			if (character == '\0')
 			{
 				return true;
 			}
@@ -247,8 +260,13 @@ namespace Strings
 		try
 		{
 			std::size_t parsedLength = 0;
-			outValue = std::stof(trimmed, &parsedLength);
-			return parsedLength == trimmed.size();
+			const float parsedValue = std::stof(trimmed, &parsedLength);
+			if (parsedLength != trimmed.size())
+			{
+				return false;
+			}
+			outValue = parsedValue;
+			return true;
 		}
 		catch (...)
 		{
@@ -258,7 +276,7 @@ namespace Strings
 
 	bool TryParseFloat3(std::string_view str, DirectX::XMFLOAT3& outValue)
 	{
-		std::stringstream stream {std::string(str)};
+		std::stringstream stream{std::string(str)};
 		std::string segment;
 		float values[3] = {};
 		for (int index = 0; index < 3; ++index)
@@ -267,6 +285,10 @@ namespace Strings
 			{
 				return false;
 			}
+		}
+		if (std::getline(stream, segment, ','))
+		{
+			return false;
 		}
 
 		outValue = {values[0], values[1], values[2]};

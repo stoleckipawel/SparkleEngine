@@ -4,12 +4,15 @@
 
 #include "Gltf/GltfAccessorReader.h"
 #include "Gltf/GltfNodeTransformConverter.h"
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <cgltf.h>
 
 #include <cstdint>
+#include <cmath>
 #include <format>
 #include <limits>
+#include <unordered_set>
 #include <utility>
 
 class GltfSkeletonHierarchy final
@@ -35,90 +38,116 @@ class GltfSkeletonHierarchy final
 };
 
 ImportedSkinInfluence GltfSkinImporter::ReadSkinInfluence(
-    const cgltf_accessor* joints,
-    const cgltf_accessor* weights,
-    std::size_t vertexIndex) noexcept
+    const cgltf_accessor* joints0,
+    const cgltf_accessor* weights0,
+    const cgltf_accessor* joints1,
+    const cgltf_accessor* weights1,
+    std::size_t vertexIndex)
 {
+	if (joints0 == nullptr || weights0 == nullptr || vertexIndex >= joints0->count || vertexIndex >= weights0->count ||
+	    ((joints1 == nullptr) != (weights1 == nullptr)) ||
+	    (joints1 != nullptr && (vertexIndex >= joints1->count || vertexIndex >= weights1->count)))
+	{
+		throw Diagnostics::Error("glTF skin influence accessors are incomplete or have inconsistent counts.");
+	}
+
+	cgltf_uint jointValues[8] = {};
+	cgltf_float weightValues[8] = {};
+	if (!cgltf_accessor_read_uint(joints0, vertexIndex, jointValues, 4) ||
+	    !cgltf_accessor_read_float(weights0, vertexIndex, weightValues, 4) ||
+	    (joints1 != nullptr && (!cgltf_accessor_read_uint(joints1, vertexIndex, jointValues + 4, 4) ||
+	                            !cgltf_accessor_read_float(weights1, vertexIndex, weightValues + 4, 4))))
+	{
+		throw Diagnostics::Error(std::format("Cannot decode glTF skin influence at vertex {}.", vertexIndex));
+	}
+
 	ImportedSkinInfluence influence;
-	if (joints == nullptr || weights == nullptr || vertexIndex >= joints->count || vertexIndex >= weights->count)
-	{
-		return influence;
-	}
-
-	cgltf_uint jointValues[4] = {0, 0, 0, 0};
-	cgltf_accessor_read_uint(joints, vertexIndex, jointValues, 4);
-	cgltf_float weightValues[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-	cgltf_accessor_read_float(weights, vertexIndex, weightValues, 4);
-
 	float weightSum = 0.0f;
-	for (std::size_t influenceIndex = 0; influenceIndex < 4; ++influenceIndex)
+	for (std::size_t influenceIndex = 0; influenceIndex < 8; ++influenceIndex)
 	{
-		influence.jointIndices[influenceIndex] = static_cast<std::uint16_t>(
-		    (std::min)(jointValues[influenceIndex], static_cast<cgltf_uint>((std::numeric_limits<std::uint16_t>::max)())));
-		influence.jointWeights[influenceIndex] = (std::max)(0.0f, weightValues[influenceIndex]);
-		weightSum += influence.jointWeights[influenceIndex];
-	}
-
-	if (weightSum > 0.0f)
-	{
-		for (float& weight : influence.jointWeights)
+		if (jointValues[influenceIndex] > static_cast<cgltf_uint>((std::numeric_limits<std::uint16_t>::max)()) ||
+		    weightValues[influenceIndex] < 0.0f)
 		{
-			weight /= weightSum;
+			throw Diagnostics::Error(std::format("glTF skin influence {} at vertex {} is invalid.", influenceIndex, vertexIndex));
 		}
+		influence.jointIndices[influenceIndex] = static_cast<std::uint16_t>(jointValues[influenceIndex]);
+		influence.jointWeights[influenceIndex] = weightValues[influenceIndex];
+		weightSum += weightValues[influenceIndex];
 	}
 
+	if (weightSum <= 0.0f)
+	{
+		throw Diagnostics::Error(std::format("glTF skin weights at vertex {} have zero total weight.", vertexIndex));
+	}
+
+	for (float& weight : influence.jointWeights)
+	{
+		weight /= weightSum;
+	}
 	return influence;
 }
 
-ImportedSkeletonIndex GltfSkinImporter::ImportSkeleton(const cgltf_data* data, const cgltf_skin* skin, SourceImportResult& result)
+ImportedSkeletonIndex GltfSkinImporter::ImportSkeleton(const cgltf_data* data, const cgltf_skin* skin, SourceImportOutput& output)
 {
-	if (data == nullptr || skin == nullptr || skin->joints_count == 0)
+	if (data == nullptr || skin == nullptr || skin->joints_count == 0 || skin->joints == nullptr ||
+	    skin->joints_count > static_cast<cgltf_size>((std::numeric_limits<std::uint16_t>::max)()) + 1u ||
+	    (skin->inverse_bind_matrices != nullptr &&
+	     (skin->inverse_bind_matrices->count != skin->joints_count || skin->inverse_bind_matrices->type != cgltf_type_mat4)))
 	{
-		return kInvalidImportedSkeletonIndex;
+		throw Diagnostics::Error("glTF skin has incomplete joints or incompatible inverse-bind matrices.");
 	}
 
-	const std::uint32_t sourceSkinIndex = static_cast<std::uint32_t>(cgltf_skin_index(data, skin));
-	for (std::size_t skeletonIndex = 0; skeletonIndex < result.scene.skeletons.size(); ++skeletonIndex)
+	const cgltf_size sourceSkinIndexValue = cgltf_skin_index(data, skin);
+	if (sourceSkinIndexValue >= data->skins_count || sourceSkinIndexValue > (std::numeric_limits<std::uint32_t>::max)())
 	{
-		if (result.scene.skeletons[skeletonIndex].sourceSkinIndex == sourceSkinIndex)
+		throw Diagnostics::Error("glTF skin index is outside the parsed scene.");
+	}
+	const std::uint32_t sourceSkinIndex = static_cast<std::uint32_t>(sourceSkinIndexValue);
+	for (std::size_t skeletonIndex = 0; skeletonIndex < output.scene.skeletons.size(); ++skeletonIndex)
+	{
+		if (output.scene.skeletons[skeletonIndex].sourceSkinIndex == sourceSkinIndex)
 		{
 			return static_cast<ImportedSkeletonIndex>(skeletonIndex);
 		}
 	}
 
 	ImportedSkeleton skeleton;
-	skeleton.name = skin->name != nullptr ? skin->name : std::format("Skin {}", sourceSkinIndex);
+	skeleton.name = skin->name != nullptr ? skin->name : "";
 	skeleton.sourceSkinIndex = sourceSkinIndex;
-	skeleton.sourceSkeletonRootNodeIndex = skin->skeleton != nullptr
-	                                           ? static_cast<std::uint32_t>(cgltf_node_index(data, skin->skeleton))
-	                                           : (std::numeric_limits<std::uint32_t>::max)();
+	skeleton.sourceSkeletonRootNodeIndex = skin->skeleton != nullptr ? static_cast<std::uint32_t>(cgltf_node_index(data, skin->skeleton))
+	                                                                 : (std::numeric_limits<std::uint32_t>::max)();
 	skeleton.joints.reserve(skin->joints_count);
 
+	std::unordered_set<const cgltf_node*> uniqueJointNodes;
+	uniqueJointNodes.reserve(skin->joints_count);
 	for (cgltf_size jointIndex = 0; jointIndex < skin->joints_count; ++jointIndex)
 	{
 		const cgltf_node* jointNode = skin->joints[jointIndex];
-		ImportedJoint joint;
-		joint.name = jointNode != nullptr && jointNode->name != nullptr ? jointNode->name : std::format("Joint {}", jointIndex);
-		joint.sourceNodeIndex = jointNode != nullptr ? static_cast<std::uint32_t>(cgltf_node_index(data, jointNode))
-		                                             : (std::numeric_limits<std::uint32_t>::max)();
-		joint.parentJointIndex =
-		    GltfSkeletonHierarchy::FindJointParentIndex(
-		        skin,
-		        jointNode);
+		const cgltf_size sourceNodeIndex = jointNode != nullptr ? cgltf_node_index(data, jointNode) : data->nodes_count;
+		if (jointNode == nullptr || sourceNodeIndex >= data->nodes_count || !uniqueJointNodes.emplace(jointNode).second)
+		{
+			throw Diagnostics::Error(std::format("glTF skin {} has an invalid or duplicate joint {}.", sourceSkinIndex, jointIndex));
+		}
 
-		const DirectX::XMMATRIX inverseBindMatrix =
-		    skin->inverse_bind_matrices != nullptr
-		        ? GltfNodeTransformConverter::ConvertGltfMatrixToEngine(GltfAccessorReader::ReadFloat4x4(skin->inverse_bind_matrices, jointIndex))
-		        : DirectX::XMMatrixIdentity();
+		ImportedJoint joint;
+		joint.name = jointNode->name != nullptr ? jointNode->name : "";
+		joint.sourceNodeIndex = static_cast<std::uint32_t>(sourceNodeIndex);
+		joint.parentJointIndex = GltfSkeletonHierarchy::FindJointParentIndex(skin, jointNode);
+
+		DirectX::XMMATRIX inverseBindMatrix = DirectX::XMMatrixIdentity();
+		if (skin->inverse_bind_matrices != nullptr)
+		{
+			inverseBindMatrix = GltfAccessorReader::ReadFloat4x4(skin->inverse_bind_matrices, jointIndex);
+		}
+		inverseBindMatrix = GltfNodeTransformConverter::ConvertGltfMatrixToEngine(inverseBindMatrix);
 		DirectX::XMStoreFloat4x4(&joint.inverseBindMatrix, inverseBindMatrix);
 
-		const DirectX::XMMATRIX bindPoseWorldTransform =
-		    jointNode != nullptr ? GltfNodeTransformConverter::ComputeNodeWorldTransform(jointNode) : DirectX::XMMatrixIdentity();
+		const DirectX::XMMATRIX bindPoseWorldTransform = GltfNodeTransformConverter::ComputeNodeWorldTransform(jointNode);
 		DirectX::XMStoreFloat4x4(&joint.bindPoseWorldTransform, bindPoseWorldTransform);
 		skeleton.joints.push_back(std::move(joint));
 	}
 
-	const ImportedSkeletonIndex skeletonIndex = static_cast<ImportedSkeletonIndex>(result.scene.skeletons.size());
-	result.scene.skeletons.push_back(std::move(skeleton));
+	const ImportedSkeletonIndex skeletonIndex = static_cast<ImportedSkeletonIndex>(output.scene.skeletons.size());
+	output.scene.skeletons.push_back(std::move(skeleton));
 	return skeletonIndex;
 }

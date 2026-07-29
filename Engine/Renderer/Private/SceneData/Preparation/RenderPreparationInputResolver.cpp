@@ -2,30 +2,31 @@
 
 #include "SceneData/Preparation/RenderPreparationInputResolver.h"
 
-#include "Meshes/GPUMesh.h"
-#include "Meshes/GPUMeshCache.h"
+#include "Core/Public/Diagnostics/Verify.h"
+#include "Meshes/GpuMesh.h"
+#include "Meshes/GpuMeshCache.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
-#include "SceneData/Caching/MaterialCacheManager.h"
-#include "SceneData/Caching/MaterialCacheUtils.h"
+#include "SceneData/Caching/MaterialCache.h"
+#include "SceneData/Caching/MaterialHandleResolver.h"
 #include "SceneData/Preparation/RenderDeformationPreparation.h"
 #include "SceneData/Preparation/RenderPreparationRun.h"
 #include "SceneData/RenderMeshClassificationConversion.h"
 #include "SceneData/RenderWorld.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "Textures/RendererTexture.h"
-#include "Textures/TextureManager.h"
+#include "Textures/TextureCache.h"
 
 #include <algorithm>
 #include <span>
 #include <utility>
 
+static const auto g_renderPreparationInputResolverLogger = Logging::GetOrCreateLogger("Renderer.RenderPreparationInputResolver");
+
 RenderPreparationInputResolver::RenderPreparationInputResolver(
-    MaterialCacheManager& materialCache,
-    GPUMeshCache& gpuMeshCache,
-    TextureManager& textureManager) noexcept :
-	m_materialCache(&materialCache),
-	m_gpuMeshCache(&gpuMeshCache),
-	m_textureManager(&textureManager)
+    MaterialCache& materialCache,
+    GpuMeshCache& gpuMeshCache,
+    TextureCache& textureCache) noexcept :
+    m_materialCache(&materialCache), m_gpuMeshCache(&gpuMeshCache), m_textureCache(&textureCache)
 {
 }
 
@@ -39,15 +40,11 @@ void RenderPreparationInputResolver::Resolve(
 {
 	run.ViewFrustum = frustum;
 	run.CameraPosition = dynamic.Camera.Position;
-	run.Lights =
-	    std::span<const RenderLightData>{dynamic.Lights};
+	run.Lights = std::span<const RenderLightData>{dynamic.Lights};
 	run.EnableAutoBatching = CVarRendererMeshAutoBatching.Get();
 	run.SceneData.structuralRevision = world.GetStructuralRevision();
 	run.SceneData.materialRevision = world.GetMaterialRevision();
-	m_materialCache->BuildMaterials(
-	    world.GetMaterials(),
-	    run.SceneData.materialRevision,
-	    run.SceneData);
+	m_materialCache->BuildMaterials(world.GetMaterials(), run.SceneData.materialRevision, run.SceneData);
 
 	ResolveSky(world, run.SceneData);
 	ResolveObjects(world, previousWorldTransforms, run);
@@ -55,10 +52,7 @@ void RenderPreparationInputResolver::Resolve(
 
 	run.PreparedObjects.resize(run.ResolvedObjects.size());
 	run.PreparedLights.resize(dynamic.Lights.size());
-	deformationPreparation.Prepare(
-	    dynamic,
-	    run.ResolvedObjects,
-	    run.Deformation);
+	deformationPreparation.Prepare(dynamic, run.ResolvedObjects, run.Deformation);
 }
 
 void RenderPreparationInputResolver::ResolveObjects(
@@ -70,40 +64,37 @@ void RenderPreparationInputResolver::ResolveObjects(
 	run.ResolvedObjects.reserve(world.GetProxies().size());
 	for (const RenderProxy& proxy : world.GetProxies())
 	{
-		ResolvedRenderObject object;
-		if (TryResolveObject(proxy, previousWorldTransforms, run.SceneData, object))
-		{
-			run.ResolvedObjects.push_back(std::move(object));
-		}
+		if (!proxy.Dynamic.Visible || !proxy.GpuMeshResident)
+			continue;
+		run.ResolvedObjects.push_back(
+		    ResolveObject(proxy, world.GetMaterials().Generation, previousWorldTransforms, run.SceneData));
 	}
 }
 
-bool RenderPreparationInputResolver::TryResolveObject(
+ResolvedRenderObject RenderPreparationInputResolver::ResolveObject(
     const RenderProxy& proxy,
+    std::uint32_t materialGeneration,
     std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
-    RenderSceneData& sceneData,
-    ResolvedRenderObject& output)
+    RenderSceneData& sceneData)
 {
-	if (!proxy.Dynamic.Object.IsValid() || !proxy.Dynamic.Visible)
-	{
-		return false;
-	}
+	if (!proxy.Dynamic.Object.IsValid() || !proxy.Static.Mesh.IsValid())
+		Diagnostics::Fatal(
+		    g_renderPreparationInputResolverLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Render-world proxy contains an invalid object or mesh identity.");
 
-	if (!proxy.Static.Mesh.IsValid())
-	{
-		return false;
-	}
-
-	const GPUMesh* gpuMesh = m_gpuMeshCache->Resolve(proxy.GpuMesh);
+	const GpuMesh* gpuMesh = m_gpuMeshCache->Resolve(proxy.GpuMesh);
 	if (gpuMesh == nullptr || !gpuMesh->IsValid())
-	{
-		return false;
-	}
+		Diagnostics::Fatal(
+		    g_renderPreparationInputResolverLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Resident render-world proxy has no GPU mesh.");
 
 	const std::uint32_t materialSlot =
-	    MaterialCacheUtils::ResolveMaterialSlot(proxy.Static.Material, sceneData.materials.size());
-	const MaterialData* material =
-	    materialSlot < sceneData.materials.size() ? &sceneData.materials[materialSlot] : nullptr;
+	    MaterialHandleResolver::ResolveSlot(proxy.Static.Material, materialGeneration, sceneData.materials.size());
+	const MaterialData& material = sceneData.materials[materialSlot];
 
 	MeshDraw draw;
 	draw.Material.Slot = materialSlot;
@@ -119,80 +110,64 @@ bool RenderPreparationInputResolver::TryResolveObject(
 	draw.Geometry.HasLocalBounds = gpuMesh->GetLocalBounds().Valid;
 
 	DirectX::XMFLOAT4X4 previousWorldMatrix = proxy.Dynamic.WorldMatrix;
-	if (proxy.GpuSceneSlot < previousWorldTransforms.size() &&
-	    previousWorldTransforms[proxy.GpuSceneSlot].Object == proxy.Object)
+	if (proxy.GpuSceneSlot < previousWorldTransforms.size() && previousWorldTransforms[proxy.GpuSceneSlot].Object == proxy.Object)
 	{
 		previousWorldMatrix = previousWorldTransforms[proxy.GpuSceneSlot].WorldMatrix;
 	}
 
-	output = ResolvedRenderObject{
+	return ResolvedRenderObject{
 	    .Object = proxy.Object,
 	    .Draw = draw,
 	    .WorldMatrix = proxy.Dynamic.WorldMatrix,
 	    .PreviousWorldMatrix = previousWorldMatrix,
 	    .WorldInverseTranspose = proxy.Dynamic.WorldInverseTranspose,
-	    .Material = material != nullptr ? material->gpuHandle : MaterialGpuHandle{},
-	    .InstanceGroupIndex =
-	        RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy.Static.InstanceGroupIndex),
-	    .MaterialAlphaMode = material != nullptr ? material->alphaMode : 0u,
+	    .Material = material.gpuHandle,
+	    .InstanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy.Static.InstanceGroupIndex),
+	    .MaterialAlphaMode = material.alphaMode,
 	    .MorphTargetCount = gpuMesh->GetMorphTargetCount(),
 	    .MorphTargetVertexCount = gpuMesh->GetVertexCount()};
-	return true;
 }
 
-void RenderPreparationInputResolver::ResolveInstanceGroups(
-    const RenderWorld& world,
-    RenderPreparationRun& run) const
+void RenderPreparationInputResolver::ResolveInstanceGroups(const RenderWorld& world, RenderPreparationRun& run) const
 {
 	run.InstanceGroups.clear();
 	run.InstanceGroups.reserve(world.GetInstanceGroups().size());
-	for (const RenderMeshInstanceGroupData& group :
-	     world.GetInstanceGroups())
+	for (const RenderMeshInstanceGroupData& group : world.GetInstanceGroups())
 	{
 		run.InstanceGroups.push_back(
 		    RenderMeshInstanceGroup{
-		        .groupKind =
-		            RenderMeshClassificationConversion::
-		                ToRenderMeshInstanceGroupKind(group.Kind),
+		        .groupKind = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind),
 		        .instanceCount = group.InstanceCount});
 	}
 }
 
-void RenderPreparationInputResolver::ResolveSky(
-    const RenderWorld& world,
-    RenderSceneData& sceneData) const
+void RenderPreparationInputResolver::ResolveSky(const RenderWorld& world, RenderSceneData& sceneData) const
 {
 	const RendererTexture* skyTexture = nullptr;
-	const SceneSkyDesc* sky =
-	    world.GetSky() ? &*world.GetSky() : nullptr;
+	const SceneSkyDesc* sky = world.GetSky() ? &*world.GetSky() : nullptr;
 	if (sky == nullptr)
 	{
-		skyTexture = m_textureManager->ResolveDefaultSkyTexture();
+		skyTexture = m_textureCache->ResolveDefaultSkyTexture();
 	}
 	else
 	{
 		sceneData.sky.enabled = sky->enabled;
 		sceneData.sky.color = sky->color;
-		sceneData.sky.intensity = sky->intensity;
+		sceneData.sky.brightness = sky->brightness;
 		if (!sky->skyTexture.IsValid())
 		{
-			skyTexture =
-			    m_textureManager->ResolveDefaultSkyTexture();
+			skyTexture = m_textureCache->ResolveDefaultSkyTexture();
 		}
 		else
 		{
-			skyTexture = m_textureManager->GetSceneTexture(
-			    sky->skyTexture.texturePath);
-			if (skyTexture == nullptr)
-			{
-				skyTexture =
-				    m_textureManager->GetTexture(
-				        TextureId::Checker);
-			}
+			skyTexture = m_textureCache->GetSceneTexture(sky->skyTexture.texturePath);
 		}
 	}
-	sceneData.sky.texture =
-	    skyTexture != nullptr && *skyTexture
-	        ? skyTexture
-	        : nullptr;
+	if (skyTexture == nullptr || !*skyTexture)
+		Diagnostics::Fatal(
+		    g_renderPreparationInputResolverLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Scene sky texture is unavailable.");
+	sceneData.sky.texture = skyTexture;
 }

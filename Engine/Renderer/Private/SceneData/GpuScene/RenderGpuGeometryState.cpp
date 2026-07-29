@@ -162,7 +162,7 @@ void RenderGpuGeometryState::UpdateDeformation(
 	if (sceneData.jointMatrices.empty())
 	{
 		const JointMatrixData identity{
-		    .SkinningMTX =
+		    .Matrix =
 		        MathUtils::IdentityFloat4x4()};
 		m_payloads.JointMatrices.push_back(identity);
 		m_payloads.PreviousJointMatrices.push_back(identity);
@@ -174,7 +174,7 @@ void RenderGpuGeometryState::UpdateDeformation(
 		{
 			m_payloads.JointMatrices.push_back(
 			    JointMatrixData{
-			        .SkinningMTX = matrix});
+			        .Matrix = matrix});
 		}
 
 		const std::vector<DirectX::XMFLOAT4X4>& previousMatrices =
@@ -187,7 +187,7 @@ void RenderGpuGeometryState::UpdateDeformation(
 		{
 			m_payloads.PreviousJointMatrices.push_back(
 			    JointMatrixData{
-			        .SkinningMTX = matrix});
+			        .Matrix = matrix});
 		}
 	}
 
@@ -210,10 +210,10 @@ MeshInstanceData RenderGpuGeometryState::BuildMeshInstance(
     const MeshDraw& draw) noexcept
 {
 	return MeshInstanceData{
-	    .WorldMTX = draw.Transform.WorldMatrix,
-	    .PreviousWorldMTX =
+	    .WorldMatrix = draw.Transform.WorldMatrix,
+	    .PreviousWorldMatrix =
 	        draw.Transform.PreviousWorldMatrix,
-	    .WorldInvTransposeMTX =
+	    .WorldInverseTranspose =
 	        draw.Transform.WorldInvTranspose,
 	    .MaterialSlot = draw.Material.Slot,
 	    .Flags =
@@ -236,7 +236,7 @@ MeshInstanceData RenderGpuGeometryState::BuildMeshInstance(
 	        draw.Morph.TargetCount,
 	    .MorphTargetVertexCount =
 	        draw.Morph.VertexCount,
-	    .DebugData = draw.Source.GpuSceneSlot};
+	    .GpuSceneSlot = draw.Source.GpuSceneSlot};
 }
 
 bool RenderGpuGeometryState::HasSameMeshInstance(
@@ -244,17 +244,17 @@ bool RenderGpuGeometryState::HasSameMeshInstance(
     const MeshInstanceData& right) noexcept
 {
 	return std::memcmp(
-	           &left.WorldMTX,
-	           &right.WorldMTX,
-	           sizeof(left.WorldMTX)) == 0 &&
+	           &left.WorldMatrix,
+	           &right.WorldMatrix,
+	           sizeof(left.WorldMatrix)) == 0 &&
 	       std::memcmp(
-	           &left.PreviousWorldMTX,
-	           &right.PreviousWorldMTX,
-	           sizeof(left.PreviousWorldMTX)) == 0 &&
+	           &left.PreviousWorldMatrix,
+	           &right.PreviousWorldMatrix,
+	           sizeof(left.PreviousWorldMatrix)) == 0 &&
 	       std::memcmp(
-	           &left.WorldInvTransposeMTX,
-	           &right.WorldInvTransposeMTX,
-	           sizeof(left.WorldInvTransposeMTX)) == 0 &&
+	           &left.WorldInverseTranspose,
+	           &right.WorldInverseTranspose,
+	           sizeof(left.WorldInverseTranspose)) == 0 &&
 	       left.MaterialSlot == right.MaterialSlot &&
 	       left.Flags == right.Flags &&
 	       left.JointMatrixOffset == right.JointMatrixOffset &&
@@ -262,5 +262,5 @@ bool RenderGpuGeometryState::HasSameMeshInstance(
 	       left.MorphTargetCount == right.MorphTargetCount &&
 	       left.MorphTargetVertexCount ==
 	           right.MorphTargetVertexCount &&
-	       left.DebugData == right.DebugData;
+	       left.GpuSceneSlot == right.GpuSceneSlot;
 }

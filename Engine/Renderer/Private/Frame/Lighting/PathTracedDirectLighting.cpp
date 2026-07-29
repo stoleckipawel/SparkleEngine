@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameAssembly.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Frame/Lighting/LightingRayTracingPasses.h"
 #include "Passes/RayTracing/PathTracedDirectLightingPass.h"
 
 void AddPathTracedDirectLightingPass(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources)
@@ -26,8 +25,5 @@ void AddPathTracedDirectLightingPass(FrameGraphBuilder& builder, const FrameAsse
 	parameters->RayTracingHitIndices = builder.CreateSRV(resources.External.Scene.RayTracing.Indices);
 	parameters->RayTracingHitInstances = builder.CreateSRV(resources.External.Scene.RayTracing.Instances);
 	parameters->RayTracingHitMaterials = builder.CreateSRV(resources.External.Scene.RayTracing.Materials);
-	LightingRayTracingPasses::DispatchSceneTlas<PathTracedDirectLightingPass>(
-	    builder,
-	    parameters,
-	    RayTracingSceneTlasShaderAccessMode::Descriptor);
+	builder.Dispatch<PathTracedDirectLightingPass>(parameters);
 }

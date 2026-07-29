@@ -1,6 +1,7 @@
 #include "../PCH.h"
 #include "PipelineRuntimeLibrary.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
@@ -17,84 +18,73 @@ class ShaderPackageIdentification final
 	}
 };
 
-bool PipelineRuntimeLibrary::LoadShaderPackage(
-    RenderHardwareInterface& rhi,
+const LoadedShaderPackage& PipelineRuntimeLibrary::LoadShaderPackage(
+    RenderHardwareInterface& renderHardwareInterface,
     CookedShaderPackageCache& shaderPackageCache,
-    const PipelineRuntimePackageRequest& request,
-    const LoadedShaderPackage*& outLoadedPackage,
-    std::string& outErrorMessage)
+    const PipelineRuntimePackageRequest& request)
 {
-	outLoadedPackage = nullptr;
 	if (request.BindingLayout == nullptr)
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Render pass '{}' requested shader package '{}' with no binding layout",
 		    request.PassName,
-		    ShaderPackageIdentification::FormatPackageId(request.Package));
-		return false;
+		    ShaderPackageIdentification::FormatPackageId(request.Package)));
 	}
 
-	const RhiCapabilities& capabilities = rhi.GetCapabilities();
-	const CookedShaderBinaryFormat requiredBinaryFormat = capabilities.RequiredShaderBinaryFormat;
-	if (!shaderPackageCache.LoadPackage(request.Package, *request.BindingLayout, requiredBinaryFormat, outErrorMessage, outLoadedPackage))
+	const RhiCapabilities& capabilities = renderHardwareInterface.GetCapabilities();
+	const CookedShaderBinaryFormat backendBinaryFormat = capabilities.RuntimeShaderBinaryFormat;
+	try
+	{
+		return shaderPackageCache.LoadPackage(request.Package, *request.BindingLayout, backendBinaryFormat);
+	}
+	catch (const Diagnostics::Error& error)
 	{
 		const CookedShaderPackageLoadReport& loadReport = shaderPackageCache.GetLastLoadReport();
-		outErrorMessage = std::format(
-		    "Runtime validation rejected cooked shader package '{}' for pass '{}' with backend='{}' requiredFormat='{}' "
+		throw Diagnostics::Error(std::format(
+		    "Runtime validation rejected cooked shader package '{}' for pass '{}' with backend='{}' backendFormat='{}' "
 		    "bindingLayout='{}' expectedStages='{}' loadTimeUs={} packagePath='{}' - {}",
 		    ShaderPackageIdentification::FormatPackageId(request.Package),
 		    request.PassName,
 		    RhiBackendApiToString(capabilities.BackendApi),
-		    CookedShaderBinaryFormatToString(requiredBinaryFormat),
-		    request.BindingLayout != nullptr ? request.BindingLayout->GetDebugName() : "<null>",
+		    CookedShaderBinaryFormatToString(backendBinaryFormat),
+		    request.BindingLayout->GetDebugName(),
 		    FormatShaderStageMask(request.Package.ExpectedStages),
 		    loadReport.ElapsedMicroseconds,
 		    loadReport.PackagePath.string(),
-		    outErrorMessage);
-		return false;
+		    error.what()));
 	}
-
-	assert(outLoadedPackage != nullptr);
-	outErrorMessage.clear();
-	return true;
 }
 
-bool PipelineRuntimeLibrary::ValidatePackageCapabilities(
-    RenderHardwareInterface& rhi,
+void PipelineRuntimeLibrary::ValidatePackageCapabilities(
+    RenderHardwareInterface& renderHardwareInterface,
     const PipelineRuntimePackageRequest& request,
-    const LoadedShaderPackage& shaderPackage,
-    std::string& outErrorMessage)
+    const LoadedShaderPackage& shaderPackage)
 {
-	const RhiCapabilities& capabilities = rhi.GetCapabilities();
+	const RhiCapabilities& capabilities = renderHardwareInterface.GetCapabilities();
 	const CookedShaderPackageFeatureFlags packageFeatures = shaderPackage.GetHeader().PackageFeatures | request.Package.RequiredFeatures;
 	if (HasCookedShaderPackageFeature(packageFeatures, CookedShaderPackageFeatureFlags::UsesAccelerationStructure) &&
 	    !capabilities.RayTracing.SupportsRayTracing)
 	{
-		outErrorMessage = std::format(
-		    "Render pass '{}' package '{}' requires acceleration-structure bindings, but backend '{}' reports ray tracing unsupported",
+		throw Diagnostics::Error(std::format(
+		    "Render pass '{}' package '{}' uses acceleration-structure bindings, but backend '{}' reports ray tracing unsupported",
 		    request.PassName,
 		    ShaderPackageIdentification::FormatPackageId(request.Package),
-		    RhiBackendApiToString(capabilities.BackendApi));
-		return false;
+		    RhiBackendApiToString(capabilities.BackendApi)));
 	}
 
 	if (HasCookedShaderPackageFeature(packageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
 	    !capabilities.RayTracing.SupportsInlineRayQuery)
 	{
-		outErrorMessage = std::format(
-		    "Render pass '{}' package '{}' requires inline ray query, but backend '{}' reports inline ray query unsupported",
+		throw Diagnostics::Error(std::format(
+		    "Render pass '{}' package '{}' uses inline ray query, but backend '{}' reports inline ray query unsupported",
 		    request.PassName,
 		    ShaderPackageIdentification::FormatPackageId(request.Package),
-		    RhiBackendApiToString(capabilities.BackendApi));
-		return false;
+		    RhiBackendApiToString(capabilities.BackendApi)));
 	}
-
-	outErrorMessage.clear();
-	return true;
 }
 
 std::unique_ptr<RenderBindingLayout> PipelineRuntimeLibrary::CreateBindingLayout(
-    RenderHardwareInterface& rhi,
+    RenderHardwareInterface& renderHardwareInterface,
     const PipelineRuntimePackageRequest& request,
     const LoadedShaderPackage& shaderPackage)
 {
@@ -103,19 +93,32 @@ std::unique_ptr<RenderBindingLayout> PipelineRuntimeLibrary::CreateBindingLayout
 	bindingDesc.ShaderPackage = &shaderPackage;
 	bindingDesc.AllowInputAssemblerInputLayout = request.AllowInputAssemblerInputLayout;
 	bindingDesc.DebugName = request.BindingLayoutDebugName;
-	return rhi.GetPipelineService().CreateBindingLayout(bindingDesc);
+	std::unique_ptr<RenderBindingLayout> bindingLayout =
+	    renderHardwareInterface.GetPipelineService().CreateBindingLayout(bindingDesc);
+	if (!bindingLayout)
+	{
+		throw Diagnostics::Error(
+		    std::format("Render pass '{}' failed to create its binding layout.", request.PassName));
+	}
+	return bindingLayout;
 }
 
-std::unique_ptr<RenderPipelineState> PipelineRuntimeLibrary::CreateGraphicsPipelineState(
-    RenderHardwareInterface& rhi,
-    const GraphicsPipelineStateDesc& pipelineDesc)
+std::unique_ptr<RenderPipeline> PipelineRuntimeLibrary::CreateGraphicsPipeline(
+    RenderHardwareInterface& renderHardwareInterface,
+    const GraphicsPipelineDesc& pipelineDesc)
 {
-	return rhi.GetPipelineService().CreateGraphicsPipelineState(pipelineDesc);
+	std::unique_ptr<RenderPipeline> pipeline = renderHardwareInterface.GetPipelineService().CreateGraphicsPipeline(pipelineDesc);
+	if (!pipeline)
+		throw Diagnostics::Error("Graphics pipeline creation failed.");
+	return pipeline;
 }
 
-std::unique_ptr<RenderPipelineState> PipelineRuntimeLibrary::CreateComputePipelineState(
-    RenderHardwareInterface& rhi,
-    const ComputePipelineStateDesc& pipelineDesc)
+std::unique_ptr<RenderPipeline> PipelineRuntimeLibrary::CreateComputePipeline(
+    RenderHardwareInterface& renderHardwareInterface,
+    const ComputePipelineDesc& pipelineDesc)
 {
-	return rhi.GetPipelineService().CreateComputePipelineState(pipelineDesc);
+	std::unique_ptr<RenderPipeline> pipeline = renderHardwareInterface.GetPipelineService().CreateComputePipeline(pipelineDesc);
+	if (!pipeline)
+		throw Diagnostics::Error("Compute pipeline creation failed.");
+	return pipeline;
 }

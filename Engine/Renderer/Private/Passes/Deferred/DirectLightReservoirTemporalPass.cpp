@@ -5,8 +5,8 @@
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "FrameGraph/PassRuntimeContext.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
@@ -17,16 +17,16 @@ DirectLightReservoirTemporalPass::DirectLightReservoirTemporalPass(const Compute
 
 const DirectLightReservoirTemporalPass::ParameterMetadata& DirectLightReservoirTemporalPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<DirectLightReservoirTemporalPass>();
+	return ComputePassOperations::BuildParameterMetadata<DirectLightReservoirTemporalPass>();
 }
 
 const RenderPassDefinition& DirectLightReservoirTemporalPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::DirectLightReservoirTemporal,
 	    L"DirectLightReservoirTemporal_BindingLayout",
-	    L"DirectLightReservoirTemporal_PipelineState");
+	    L"DirectLightReservoirTemporal_Pipeline");
 	return definition;
 }
 
@@ -34,11 +34,11 @@ void DirectLightReservoirTemporalPass::SetParameters(
     ParameterInstance& parameters,
     const FrameContext& frame,
     const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeContext& passRuntimeContext) const
 {
-	DirectLightReservoirPassCommon::SetParameters(*parameters, frame, viewData, passRuntimeServices);
+	DirectLightReservoirPassCommon::SetParameters(*parameters, frame, viewData, passRuntimeContext);
 	PerTemporalConstantBufferData reservoirTemporalData = viewData.perTemporalData;
-	if (!passRuntimeServices.History.DirectLightReservoir)
+	if (!passRuntimeContext.History.DirectLightReservoir)
 	{
 		reservoirTemporalData.HistoryValid = 0u;
 	}
@@ -47,8 +47,8 @@ void DirectLightReservoirTemporalPass::SetParameters(
 
 void DirectLightReservoirTemporalPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
-	ComputePassUtilities::DispatchSized<DirectLightReservoirTemporalPass>(
+	SetParameters(parameters, context.Frame, context.Frame.mainView, context.Runtime);
+	ComputePassOperations::DispatchSized<DirectLightReservoirTemporalPass>(
 	    context,
 	    m_runtime,
 	    parameters,

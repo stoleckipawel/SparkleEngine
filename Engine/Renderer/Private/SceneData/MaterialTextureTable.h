@@ -10,14 +10,6 @@
 class RenderBindingSet;
 class RenderHardwareInterface;
 
-inline constexpr std::uint32_t MaterialTextureInvalidIndex = UINT32_MAX;
-
-struct MaterialTextureTableBuildResult final
-{
-	bool Valid = false;
-	const char* FailureReason = "not-built";
-};
-
 class MaterialTextureTable final
 {
   public:
@@ -31,7 +23,7 @@ class MaterialTextureTable final
 
 	void Reset() noexcept;
 	std::uint32_t GetOrAddTextureIndex(RhiResourceViewHandle textureView);
-	MaterialTextureTableBuildResult BuildBindingSet(RenderHardwareInterface& renderHardwareInterface);
+	void BuildBindingSet(RenderHardwareInterface& renderHardwareInterface);
 
 	bool IsValid() const noexcept { return m_bindingSet != nullptr && !m_textureViews.empty(); }
 	RhiDescriptorTableBinding GetTableBinding() const noexcept;

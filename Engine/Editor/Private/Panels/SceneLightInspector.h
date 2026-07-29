@@ -4,7 +4,7 @@
 #include <string>
 #include "World/EntityId.h"
 
-class EditorTransactionManager;
+class EditorTransactionHistory;
 struct PointLightDesc;
 struct RectLightDesc;
 struct SceneDirectionalLightDesc;
@@ -14,11 +14,11 @@ struct SpotLightDesc;
 class SceneLightInspector final
 {
   public:
-	static void Build(const SceneLightDesc&, EntityId, EditorTransactionManager&, std::uint64_t, const std::string&) noexcept;
+	static void Build(const SceneLightDesc&, EntityId, EditorTransactionHistory&, std::uint64_t, const std::string&) noexcept;
 
   private:
 	static void BuildGenericLight(
-	    EditorTransactionManager& transactions,
+	    EditorTransactionHistory& transactionHistory,
 	    std::uint64_t worldGeneration,
 	    EntityId lightEntity,
 	    const SceneLightDesc& sceneLight,

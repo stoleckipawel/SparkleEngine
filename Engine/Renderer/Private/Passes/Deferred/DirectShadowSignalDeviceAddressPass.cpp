@@ -4,7 +4,7 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -17,16 +17,16 @@ DirectShadowSignalDeviceAddressPass::DirectShadowSignalDeviceAddressPass(const C
 
 const DirectShadowSignalDeviceAddressPass::ParameterMetadata& DirectShadowSignalDeviceAddressPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<DirectShadowSignalDeviceAddressPass>();
+	return ComputePassOperations::BuildParameterMetadata<DirectShadowSignalDeviceAddressPass>();
 }
 
 const RenderPassDefinition& DirectShadowSignalDeviceAddressPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::DirectShadowSignalDeviceAddress,
 	    L"DirectShadowSignalDeviceAddress_BindingLayout",
-	    L"DirectShadowSignalDeviceAddress_PipelineState",
+	    L"DirectShadowSignalDeviceAddress_Pipeline",
 	    RayTracingShaderFeatureFlags::DeviceAddressRayQuery);
 	return definition;
 }
@@ -37,9 +37,9 @@ void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context,
 	    *parameters,
 	    context.Frame,
 	    context.Frame.mainView,
-	    context.RuntimeServices,
+	    context.Runtime,
 	    context.Frame.rayTracingScene.HasTraceableInstances());
-	ComputePassUtilities::DispatchSized<DirectShadowSignalDeviceAddressPass>(
+	ComputePassOperations::DispatchSized<DirectShadowSignalDeviceAddressPass>(
 	    context,
 	    m_runtime,
 	    parameters,

@@ -4,12 +4,11 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "FrameGraph/PassRuntimeContext.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Pipeline/PassPipelineRuntime.h"
-#include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
@@ -131,16 +130,16 @@ RaytracedGBufferPass::RaytracedGBufferPass(const ComputePassPipelineRuntime& run
 
 const RaytracedGBufferPass::ParameterMetadata& RaytracedGBufferPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<RaytracedGBufferPass>();
+	return ComputePassOperations::BuildParameterMetadata<RaytracedGBufferPass>();
 }
 
 const RenderPassDefinition& RaytracedGBufferPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::RaytracedGBuffer,
 	    L"RaytracedGBuffer_BindingLayout",
-	    L"RaytracedGBuffer_PipelineState",
+	    L"RaytracedGBuffer_Pipeline",
 	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
 }
@@ -149,9 +148,9 @@ void RaytracedGBufferPass::SetParameters(
     ParameterInstance& parameters,
     const FrameContext& frame,
     const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeContext& passRuntimeContext) const
 {
-	parameters->PerFrame = passRuntimeServices.PerFrame;
+	parameters->PerFrame = passRuntimeContext.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
 	parameters->MaterialTextureSampler = RhiSamplerDesc{
@@ -163,26 +162,13 @@ void RaytracedGBufferPass::SetParameters(
 
 void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	const RayTracingPassCapabilities rayTracingCapabilities =
-	    RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
-	if (!rayTracingCapabilities.InlineRayQueryAvailable ||
-	    !RayTracingPassCapabilityQuery::CanUseSceneTlas(rayTracingCapabilities, RayTracingSceneTlasShaderAccessMode::Descriptor))
-	{
-		return;
-	}
-	if (!rayTracingCapabilities.HitDataAvailable || !rayTracingCapabilities.MaterialTextureTableAvailable)
-	{
-		return;
-	}
-
 	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
 
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
+	SetParameters(parameters, context.Frame, context.Frame.mainView, context.Runtime);
 	parameters->RaytracedGBufferConstants = RaytracedGBufferUniformData{
-	    .RayTracingHitDataAvailable = rayTracingCapabilities.HitDataAvailable ? 1u : 0u,
 	    .RayTracingHitInstanceCount = context.Frame.sceneGpuData->RayTracing.InstanceCount,
 	    .RayTracingHitMaterialCount = context.Frame.sceneGpuData->RayTracing.MaterialCount};
-	ComputePassUtilities::DispatchSized<RaytracedGBufferPass>(
+	ComputePassOperations::DispatchSized<RaytracedGBufferPass>(
 	    context,
 	    m_runtime,
 	    parameters,

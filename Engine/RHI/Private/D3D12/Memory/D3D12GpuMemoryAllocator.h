@@ -60,6 +60,7 @@ class D3D12GpuMemoryAllocator final
 	    const D3D12_RESOURCE_DESC& resourceDesc,
 	    D3D12_RESOURCE_STATES initialState,
 	    std::wstring_view debugName) noexcept;
+
   private:
 	friend class D3D12RenderDeviceServices;
 	friend class D3D12ResourceService;
@@ -85,16 +86,12 @@ class D3D12GpuMemoryAllocator final
 	void UnregisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept;
 	void RegisterHeapRecord(D3D12GpuHeapRecord& record) noexcept;
 	void UnregisterHeapRecord(D3D12GpuHeapRecord& record) noexcept;
-	D3D12GpuAllocationRecord* FindAllocationRecord(
-	    ID3D12Resource* resource) const noexcept;
+	D3D12GpuAllocationRecord* FindAllocationRecord(ID3D12Resource* resource) const noexcept;
 	void PublishRecordingReadView() noexcept;
-	D3D12RecordingResourceUseToken RetainRecordingResource(
-	    RhiResourceHandle resource) const noexcept;
-	D3D12RecordingResourceUseToken RetainCoordinatorRecordingResource(
-	    RhiResourceHandle resource) const noexcept;
-	void ReleaseRecordingResource(
-	    D3D12RecordingResourceUseToken use,
-	    RhiSubmissionToken submissionToken) const noexcept;
+	void ClearRecordingReadView() noexcept;
+	D3D12RecordingResourceUseToken RetainRecordingResource(RhiResourceHandle resource) const noexcept;
+	D3D12RecordingResourceUseToken RetainCoordinatorRecordingResource(RhiResourceHandle resource) const noexcept;
+	void ReleaseRecordingResource(D3D12RecordingResourceUseToken use, RhiSubmissionToken submissionToken) const noexcept;
 
 	friend struct D3D12GpuAllocationRecord;
 	friend struct D3D12GpuHeapRecord;

@@ -37,9 +37,9 @@ struct RenderSceneGpuGeometryData final
 	RenderSceneGpuBuffer MorphWeights;
 	RenderSceneGpuBuffer PreviousMorphWeights;
 
-	bool HasMeshInstances() const noexcept;
-	bool HasSkinning() const noexcept;
-	bool HasMorphing() const noexcept;
+	bool HasMeshInstanceBuffers() const noexcept;
+	bool HasSkinningBuffers() const noexcept;
+	bool HasMorphingBuffers() const noexcept;
 };
 
 struct RenderSceneGpuRayTracingData final
@@ -53,7 +53,7 @@ struct RenderSceneGpuRayTracingData final
 	std::uint32_t InstanceCount = 0u;
 	std::uint32_t MaterialCount = 0u;
 
-	bool IsValid() const noexcept;
+	bool HasCompleteBuffers() const noexcept;
 };
 
 struct RenderSceneGpuData final

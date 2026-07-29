@@ -53,7 +53,7 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	auto frameGraph =
 	    std::make_unique<FrameGraph>(&m_dependencies.renderHardwareInterface, &m_dependencies.window);
 
-	FrameGraphBuilder builder(*frameGraph, m_dependencies.pipelineStateManager);
+	FrameGraphBuilder builder(*frameGraph, m_dependencies.renderPassRuntimeCache);
 	const FrameBuildResult frameLoop = BuildFrame(
 	    builder,
 	    m_dependencies.renderExtent,

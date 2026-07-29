@@ -1,9 +1,13 @@
 #include "PCH.h"
 #include "Scene/Meshes/SceneAssetMeshInstanceBuilder.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
 #include "World/Resources/MaterialResourceStore.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
+
+static const auto g_sceneAssetMeshInstanceBuilderLogger =
+    Logging::GetOrCreateLogger("GameFramework.SceneAssetMeshInstanceBuilder");
 
 class SceneAssetMaterialResolution final
 {
@@ -11,57 +15,101 @@ class SceneAssetMaterialResolution final
 	static MaterialHandle ResolveMaterial(
 	    MaterialHandle payloadMaterial,
 	    MaterialHandle materialBaseHandle,
-	    MaterialResourceStore& materials) noexcept
+	    MaterialResourceStore& materials)
 	{
-		return payloadMaterial.IsValid() && materialBaseHandle.IsValid()
-		           ? MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex(), materialBaseHandle.GetGeneration())
-		           : materials.GetOrCreateDefault();
+		if (!payloadMaterial.IsValid())
+		{
+			return materials.GetOrCreateDefault();
+		}
+		if (!materialBaseHandle.IsValid())
+		{
+			Diagnostics::Fatal(
+			    g_sceneAssetMeshInstanceBuilderLogger,
+			    __FILE__,
+			    __LINE__,
+			    "A mesh instance references a material in a payload with no material block.");
+		}
+		return MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex(), materialBaseHandle.GetGeneration());
 	}
 
-	static MaterialHandle ResolveOptionalMaterial(MaterialHandle payloadMaterial, MaterialHandle materialBaseHandle) noexcept
+	static MaterialHandle ResolveOptionalMaterial(MaterialHandle payloadMaterial, MaterialHandle materialBaseHandle)
 	{
-		return payloadMaterial.IsValid() && materialBaseHandle.IsValid()
-		           ? MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex(), materialBaseHandle.GetGeneration())
-		           : MaterialHandle::Invalid();
+		if (!payloadMaterial.IsValid())
+		{
+			return MaterialHandle::Invalid();
+		}
+		if (!materialBaseHandle.IsValid())
+		{
+			Diagnostics::Fatal(
+			    g_sceneAssetMeshInstanceBuilderLogger,
+			    __FILE__,
+			    __LINE__,
+			    "A mesh instance group references a material in a payload with no material block.");
+		}
+		return MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex(), materialBaseHandle.GetGeneration());
 	}
 
 	static Assets::CookedAssetId ResolveGroupAsset(
 	    const SceneAssetPayload& payload,
-	    const SceneAssetPayload::MeshInstanceGroup& group) noexcept
+	    const SceneAssetPayload::MeshInstanceGroup& group)
 	{
 		if (group.meshAssetKind == Assets::CookedMeshAssetKind::Skeletal)
 		{
-			return group.meshAssetIndex < payload.skeletalMeshAssets.size()
-			           ? payload.skeletalMeshAssets[group.meshAssetIndex].assetId
-			           : Assets::InvalidCookedAssetId;
+			if (group.meshAssetIndex >= payload.skeletalMeshAssets.size())
+			{
+				Diagnostics::Fatal(
+				    g_sceneAssetMeshInstanceBuilderLogger,
+				    __FILE__,
+				    __LINE__,
+				    "A skeletal mesh instance group references an absent mesh asset.");
+			}
+			return payload.skeletalMeshAssets[group.meshAssetIndex].assetId;
 		}
-		return group.meshAssetIndex < payload.staticMeshAssets.size()
-		           ? payload.staticMeshAssets[group.meshAssetIndex].assetId
-		           : Assets::InvalidCookedAssetId;
+		if (group.meshAssetKind != Assets::CookedMeshAssetKind::Static)
+		{
+			Diagnostics::Fatal(
+			    g_sceneAssetMeshInstanceBuilderLogger,
+			    __FILE__,
+			    __LINE__,
+			    "A mesh instance group has an unsupported mesh kind.");
+		}
+		if (group.meshAssetIndex >= payload.staticMeshAssets.size())
+		{
+			Diagnostics::Fatal(
+			    g_sceneAssetMeshInstanceBuilderLogger,
+			    __FILE__,
+			    __LINE__,
+			    "A static mesh instance group references an absent mesh asset.");
+		}
+		return payload.staticMeshAssets[group.meshAssetIndex].assetId;
 	}
 };
 
 namespace SceneAssetMeshInstanceBuilder
 {
-	bool BuildInstances(
+	std::vector<ECS::SceneMeshInstanceData> BuildInstances(
 	    SceneAssetPayload& payload,
 	    MaterialResourceStore& materials,
 	    MaterialHandle materialBaseHandle,
-	    SceneMeshInstanceGroupIndex groupBaseIndex,
-	    std::vector<ECS::SceneMeshInstanceData>& outInstances)
+	    SceneMeshInstanceGroupIndex groupBaseIndex)
 	{
-		outInstances.reserve(payload.staticMeshInstances.size() + payload.skeletalMeshInstances.size());
+		std::vector<ECS::SceneMeshInstanceData> instances;
+		instances.reserve(payload.staticMeshInstances.size() + payload.skeletalMeshInstances.size());
 		for (SceneAssetPayload::StaticMeshInstance& instance : payload.staticMeshInstances)
 		{
 			if (instance.meshAssetIndex >= payload.staticMeshAssets.size())
 			{
-				return false;
+				Diagnostics::Fatal(
+				    g_sceneAssetMeshInstanceBuilderLogger,
+				    __FILE__,
+				    __LINE__,
+				    "A static mesh instance references an absent mesh asset.");
 			}
 			const SceneAssetPayload::StaticMeshAsset& asset = payload.staticMeshAssets[instance.meshAssetIndex];
 			const SceneMeshInstanceGroupIndex groupIndex = instance.groupIndex == kInvalidSceneMeshInstanceGroupIndex
 			                                                   ? kInvalidSceneMeshInstanceGroupIndex
 			                                                   : groupBaseIndex + instance.groupIndex;
-			outInstances.push_back(
+			instances.push_back(
 			    ECS::SceneMeshInstanceData{
 			        .Resource = std::make_unique<CookedMesh>(MeshData(asset.mesh.geometry), asset.assetId),
 			        .LocalTransform = instance.transform,
@@ -76,17 +124,18 @@ namespace SceneAssetMeshInstanceBuilder
 
 		for (SceneAssetPayload::SkeletalMeshInstance& instance : payload.skeletalMeshInstances)
 		{
-			if (instance.meshAssetIndex >= payload.skeletalMeshAssets.size() ||
-			    instance.skeletonAssetId == Assets::InvalidCookedAssetId)
+			if (instance.meshAssetIndex >= payload.skeletalMeshAssets.size() || instance.skeletonAssetId == Assets::InvalidCookedAssetId)
 			{
-				return false;
+				Diagnostics::Fatal(
+				    g_sceneAssetMeshInstanceBuilderLogger,
+				    __FILE__,
+				    __LINE__,
+				    "A skeletal mesh instance has an invalid mesh or skeleton asset identity.");
 			}
 			SceneAssetPayload::SkeletalMeshAsset& asset = payload.skeletalMeshAssets[instance.meshAssetIndex];
-			outInstances.push_back(
+			instances.push_back(
 			    ECS::SceneMeshInstanceData{
-			        .Resource = std::make_unique<SkeletalCookedMesh>(
-			            SkeletalMeshData(std::move(asset.mesh)),
-			            asset.assetId),
+			        .Resource = std::make_unique<SkeletalCookedMesh>(SkeletalMeshData(std::move(asset.mesh)), asset.assetId),
 			        .LocalTransform = instance.transform,
 			        .Material = SceneAssetMaterialResolution::ResolveMaterial(instance.material, materialBaseHandle, materials),
 			        .MeshAssetId = asset.assetId,
@@ -97,7 +146,7 @@ namespace SceneAssetMeshInstanceBuilder
 			        .Kind = SceneMeshKind::Skeletal,
 			        .InitialMorphWeights = instance.morphWeights});
 		}
-		return true;
+		return instances;
 	}
 
 	std::vector<SceneMeshInstanceGroupData> BuildGroups(
@@ -114,9 +163,8 @@ namespace SceneAssetMeshInstanceBuilder
 			        .meshAssetId = SceneAssetMaterialResolution::ResolveGroupAsset(payload, source),
 			        .meshAssetIndex = source.meshAssetIndex,
 			        .materialHandle = SceneAssetMaterialResolution::ResolveOptionalMaterial(source.material, materialBaseHandle),
-			        .firstInstance = source.firstInstance == kInvalidSceneMeshInstanceIndex
-			                             ? kInvalidSceneMeshInstanceIndex
-			                             : meshBaseIndex + source.firstInstance,
+			        .firstInstance = source.firstInstance == kInvalidSceneMeshInstanceIndex ? kInvalidSceneMeshInstanceIndex
+			                                                                                : meshBaseIndex + source.firstInstance,
 			        .instanceCount = source.instanceCount,
 			        .groupKind = source.groupKind,
 			        .flags = source.flags});

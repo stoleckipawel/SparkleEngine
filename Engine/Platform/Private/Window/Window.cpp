@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Window/Window.h"
 
 #include <dwmapi.h>
@@ -53,7 +53,7 @@ void Window::RegisterWindowClass()
 	m_windowClassAtom = RegisterClassExW(&wc);
 	if (!m_windowClassAtom)
 	{
-		Diagnostics::Fail(g_platformLogger, __FILE__, __LINE__, "Window: Failed to register window class");
+		Diagnostics::Fatal(g_platformLogger, __FILE__, __LINE__, "Window: Failed to register window class");
 	}
 }
 
@@ -77,7 +77,7 @@ void Window::CreateWindowHandle(std::string_view title)
 
 	if (!m_hWnd)
 	{
-		Diagnostics::Fail(g_platformLogger, __FILE__, __LINE__, "Window: Failed to create window");
+		Diagnostics::Fatal(g_platformLogger, __FILE__, __LINE__, "Window: Failed to create window");
 	}
 
 	const MARGINS margins{-1, -1, -1, -1};

@@ -5,6 +5,7 @@
 #include "Constants/TextureCookerConstants.h"
 #include "Cooking/TextureCookBatchExecutor.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "ToolConsole.h"
@@ -13,15 +14,18 @@
 
 int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::path& requestFilePath) const
 {
-	std::string errorMessage;
 	std::vector<TextureCookRequest> requests;
-	if (!TryLoadRequests(requestFilePath, requests, errorMessage))
+	try
+	{
+		requests = LoadTextureCookRequestList(requestFilePath);
+	}
+	catch (const Diagnostics::Error& error)
 	{
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
 		    "Failed to load texture request file",
-		    {ToolConsole::PathField("requestFile", requestFilePath), ToolConsole::QuotedField("reason", errorMessage)});
+		    {ToolConsole::PathField("requestFile", requestFilePath), ToolConsole::QuotedField("reason", error.what())});
 		return TextureCookerConstants::ExitLoadRequestFileFailed;
 	}
 
@@ -35,10 +39,11 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 		return TextureCookerConstants::ExitCookFailed;
 	}
 
-	if (!PublishGeneration(requests, execution.Items, errorMessage))
+	std::string publishError;
+	if (!PublishGeneration(requests, execution.Items, publishError))
 	{
 		CleanupStagedOutputs(execution.Items);
-		ToolConsole::Error("Failed to publish texture cook generation: " + errorMessage);
+		ToolConsole::Error("Failed to publish texture cook generation: " + publishError);
 		return TextureCookerConstants::ExitCookFailed;
 	}
 
@@ -48,14 +53,6 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 	    "Cooked texture generation",
 	    {ToolConsole::Field("textures", std::to_string(requests.size()))});
 	return TextureCookerConstants::ExitSuccess;
-}
-
-bool TextureCookRequestBatchProcessor::TryLoadRequests(
-    const std::filesystem::path& requestFilePath,
-    std::vector<TextureCookRequest>& outRequests,
-	    std::string& outErrorMessage)
-{
-	return LoadTextureCookRequestList(requestFilePath, outRequests, outErrorMessage);
 }
 
 bool TextureCookRequestBatchProcessor::ReportFailures(

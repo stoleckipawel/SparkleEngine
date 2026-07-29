@@ -20,9 +20,9 @@ struct ImportedCamera
 	std::string name;
 	DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 	ImportedCameraProjectionKind projectionKind = ImportedCameraProjectionKind::Unknown;
-	float verticalFovRadians = 0.0f;
-	float nearPlane = 0.1f;
-	float farPlane = 1000.0f;
+	float fovYRadians = 0.0f;
+	float nearZ = 0.1f;
+	float farZ = 1000.0f;
 	std::uint32_t sourceNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 	bool IsPerspective() const noexcept { return projectionKind == ImportedCameraProjectionKind::Perspective; }

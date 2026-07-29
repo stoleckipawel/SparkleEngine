@@ -3,6 +3,7 @@
 #include "CookedMeshAssetBuilder.h"
 #include "MaterialCooker.h"
 #include "SceneCooker.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "SourceSceneImporter.h"
 
 #include <string>
@@ -13,21 +14,22 @@
 class ImportedSceneComApartment final
 {
   public:
-	ImportedSceneComApartment() noexcept;
+	ImportedSceneComApartment();
 	~ImportedSceneComApartment();
 
 	ImportedSceneComApartment(const ImportedSceneComApartment&) = delete;
 	ImportedSceneComApartment& operator=(const ImportedSceneComApartment&) = delete;
 
-	bool CanImport() const noexcept;
-
   private:
 	HRESULT m_result;
 };
 
-ImportedSceneComApartment::ImportedSceneComApartment() noexcept :
-    m_result(CoInitializeEx(nullptr, COINIT_MULTITHREADED))
+ImportedSceneComApartment::ImportedSceneComApartment() : m_result(CoInitializeEx(nullptr, COINIT_MULTITHREADED))
 {
+	if (!SUCCEEDED(m_result) && m_result != RPC_E_CHANGED_MODE)
+	{
+		throw Diagnostics::Error("Failed to initialize COM for source import.");
+	}
 }
 
 ImportedSceneComApartment::~ImportedSceneComApartment()
@@ -38,109 +40,72 @@ ImportedSceneComApartment::~ImportedSceneComApartment()
 	}
 }
 
-bool ImportedSceneComApartment::CanImport() const noexcept
-{
-	return SUCCEEDED(m_result) || m_result == RPC_E_CHANGED_MODE;
-}
-
-bool ImportedSceneCooker::Import(
-    const AssetCookerSceneEntry& sceneEntry,
-    AssetCookerCategory category,
-    AssetCookerDiagnostics& diagnostics,
-    SourceImportResult& outImport)
+SourceImportOutput ImportedSceneCooker::Import(const AssetCookerSceneEntry& sceneEntry)
 {
 	const ImportedSceneComApartment comApartment;
-	if (!comApartment.CanImport())
-	{
-		diagnostics.AddError(category, "Failed to initialize COM for source import.", sceneEntry.sourcePath);
-		return false;
-	}
-
-	outImport = SourceSceneImporter::Import(sceneEntry.sourcePath);
-	if (outImport.IsValid())
-	{
-		return true;
-	}
-
-	diagnostics.AddError(
-	    category,
-	    "Failed to import source scene with importer '" + std::string(outImport.GetImporterId()) + "'.",
-	    outImport.GetSourcePath().empty() ? sceneEntry.sourcePath : outImport.GetSourcePath());
-	return false;
+	return SourceSceneImporter::Import(sceneEntry.sourcePath);
 }
 
-bool ImportedSceneCooker::Build(
+CookedSceneBuild ImportedSceneCooker::Build(
     const AssetCookerSceneEntry& sceneEntry,
-    AssetCookerDiagnostics& diagnostics,
-    CookedSceneBuild& outBuild)
-{
-	outBuild = {};
-	SourceImportResult importResult;
-	if (!Import(
-	        sceneEntry,
-	        AssetCookerCategory_SceneAssets,
-	        diagnostics,
-	        importResult))
-	{
-		return false;
-	}
-
-	return BuildCookedScene(
-	    sceneEntry,
-	    importResult,
-	    outBuild,
-	    diagnostics);
-}
-
-bool ImportedSceneCooker::BuildCookedScene(
-    const AssetCookerSceneEntry& sceneEntry,
-    const SourceImportResult& importResult,
-    CookedSceneBuild& build,
     AssetCookerDiagnostics& diagnostics)
 {
-	if (!SceneCooker::ResolveSceneIdentity(
-	        sceneEntry.sourcePath,
-	        build.identity,
-	        build.errorMessage))
+	SourceImportOutput importOutput;
+	try
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory_SceneAssets,
-		    build.errorMessage,
-		    sceneEntry.sourcePath);
-		return false;
+		importOutput = Import(sceneEntry);
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what(), sceneEntry.sourcePath);
+		throw;
+	}
+	return BuildCookedScene(sceneEntry, importOutput, diagnostics);
+}
+
+CookedSceneBuild ImportedSceneCooker::BuildCookedScene(
+    const AssetCookerSceneEntry& sceneEntry,
+    const SourceImportOutput& importOutput,
+    AssetCookerDiagnostics& diagnostics)
+{
+	CookedSceneBuild build;
+	try
+	{
+		build.identity = SceneCooker::ResolveSceneIdentity(sceneEntry.sourcePath);
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what(), sceneEntry.sourcePath);
+		throw;
+	}
+	try
+	{
+		build.ApplyMeshOutput(CookedMeshAssetBuilder::BuildMeshAssets(importOutput, build.identity.assetId));
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		diagnostics.AddError(AssetCookerCategory_Meshes, error.what(), sceneEntry.sourcePath);
+		throw;
 	}
 
-	build.ApplyMeshOutput(
-	    CookedMeshAssetBuilder::BuildMeshAssets(
-	        importResult,
-	        build.identity.assetId));
-
-	MaterialCookOutput materialOutput;
-	if (!MaterialCooker::BuildMaterialAssets(
-	        importResult,
-	        build.identity.assetId,
-	        materialOutput,
-	        build.errorMessage))
+	try
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory_Materials,
-		    build.errorMessage,
-		    sceneEntry.sourcePath);
-		return false;
+		build.ApplyMaterialOutput(MaterialCooker::BuildMaterialAssets(importOutput, build.identity.assetId));
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		diagnostics.AddError(AssetCookerCategory_Materials, error.what(), sceneEntry.sourcePath);
+		throw;
 	}
 
-	build.ApplyMaterialOutput(std::move(materialOutput));
-	if (!SceneCooker::BuildManifest(
-	        importResult,
-	        build,
-	        build.errorMessage))
+	try
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory_SceneAssets,
-		    build.errorMessage,
-		    sceneEntry.sourcePath);
-		return false;
+		SceneCooker::BuildManifest(importOutput, build);
 	}
-
-	return true;
+	catch (const Diagnostics::Error& error)
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what(), sceneEntry.sourcePath);
+		throw;
+	}
+	return build;
 }

@@ -131,7 +131,7 @@ namespace Filesystem
 			return *resolvedPath;
 		}
 
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    Logging::GetOrCreateLogger("Core.FileSystem"),
 		    __FILE__,
 		    __LINE__,

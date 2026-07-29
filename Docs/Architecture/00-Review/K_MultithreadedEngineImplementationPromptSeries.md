@@ -565,7 +565,7 @@ wait, detach, and callback-under-lock census. The before-state rename plan, dorm
 callback risk, raw snapshot baseline, and old capture commands are superseded intermediate evidence; none authorizes restoring
 those paths. Current Prompt 23 workload and capture gates replace the historical baseline measurements.
 
-The exact owned-source query in J found 139 declarations/call sites across 61 files and classifies every result by current owner
+The exact owned-source query in J classifies every returned declaration/call site by current owner
 and invariant. No owned `std::future`, `std::async`, `QThread`, Qt pool, or detached task remains. The only detached launches are
 the replacement launcher and selected standalone product. D3D12/Vulkan waits are limited to final shutdown, exact frame-slot
 reuse, and swap-chain recreation; the obsolete empty startup-command-list flush was deleted before Prompt 23. Wrapped Dear
@@ -2237,7 +2237,7 @@ Hazard and lock reconciliation: `D3D12CommandRecordingContext::BeginFrame` is th
 
 Rule 12 and implementation-shape reconciliation: `Public/Commands/RhiCommandRecordingLease.h` owns the backend-neutral value vocabulary; `Private/Commands/RhiCommandRecordingLease.*` owns move/close/release mechanics; `Private/D3D12/Commands/D3D12CommandRecordingContext.*` owns slot lifecycle and retirement; `D3D12RecordingUploadPage.*` owns one exclusive mapped page; device services orchestrate creation/submission only; PassBinder supplies data to the active command list; `FrameGraphBuilder` owns typed registration/prewarm; `FrameGraphBatchRecorder.*` owns pass command recording; and `FrameGraphSubmissionExecutor.*` owns compiled waits and submission. Primary types match filenames, substantive behavior is in `.cpp` files, touched non-template headers contain only declarations/trivial accessors, and no function-local type, anonymous namespace, or invented `Details`/`Operations` owner remains. The descriptor manager's former nontrivial inline allocation bodies were moved to its `.cpp`, and its legacy member names were clarified.
 
-Reference-backed frame-graph cleanup: the temporary general `ExecuteShaderPass`/`AddPassWithRuntime` surface was rejected. AMD RPS exposes graph-compiled command ranges and records those ranges into exclusive command buffers before ordered submission; NVRHI keeps command-list recording, resource lifetime, and device submission explicit; NVIDIA's command-buffer guidance calls for precreated pipelines, meaningful command-list granularity, and limited submits. Sparkle therefore retains its existing typed `Draw`/`Dispatch` vocabulary, adds only the constrained `DispatchIf` needed for frame-conditioned lighting variants, materializes their runtimes at graph construction, and uses the same compiled plan for serial recording. `LightingRayTracingPasses.h` now states only the ray-query/TLAS predicates instead of duplicating parameter setup, runtime lookup, and execution. `FrameGraphBuilder.h` is smaller than its pre-change form, and `FrameGraph.h` receives no generic runtime execution escape hatch.
+Reference-backed frame-graph cleanup: the temporary general `ExecuteShaderPass`/`AddPassWithRuntime` surface was rejected. AMD RPS exposes graph-compiled command ranges and records those ranges into exclusive command buffers before ordered submission; NVRHI keeps command-list recording, resource lifetime, and device submission explicit; NVIDIA's command-buffer guidance calls for precreated pipelines, meaningful command-list granularity, and limited submits. Sparkle retains its typed `Draw`/`Dispatch` vocabulary, materializes runtimes at graph construction, and uses the same compiled plan for serial recording. The later Prompt 23 entry audit deleted conditional lighting dispatch: sky, descriptor-access TLAS, material tables, hit data, and typed GPU buffers are producer contracts, and a missing binding is an immediate bug rather than permission to omit shader work. The obsolete lighting helper was deleted with its call sites.
 
 Preservation ledger: D3D12 object names include queue/frame/context; native close still drains debug-layer messages and treats failed HRESULT as fatal; existing PIX/diagnostic scopes remain command-list behavior; resource tracking resolves on the returned submission token; graphics initialization, cross-queue waits, final graphics continuation, present, explicit flush, and capture paths retain coordinator authority. Vulkan implements the common acquire/consume surface serially without claiming command-pool worker safety; Prompt 19 remains responsible for its backend-private pool/page retirement.
 
@@ -2335,7 +2335,7 @@ Rule 13 access inventory:
 | lease -> command pool/buffer | each slot owns one queue-family-specific transient command pool, one primary command buffer, and one `VulkanRenderCommandList`; first use on the exclusive worker resets the completed pool, begins the primary buffer with `ONE_TIME_SUBMIT`, and binds the actual thread | slot state is `Available -> Recording -> Closed -> Submitted` or `Discarded`; the coordinator alone waits exact retirement and authorizes reuse, while native reset/begin/end stay on the exclusive recording worker | NVIDIA Vulkan dos/don'ts and AMD RPS per-thread command-buffer recording; falsified by CPU-frame-end reset, second-thread begin/close, or reset before the retirement token completes |
 | lease -> transient descriptors | each slot owns one `VulkanRecordingDescriptorPool`; descriptor sets are allocated only by that exclusive command list and the pool is reset with its slot | fixed 256-set bound; supported descriptor kinds are capability-gated, including classic and partitioned AS descriptors; the common lease reports capacity while Vulkan keeps layout-dependent `VkDescriptorSet` allocation behind its command list rather than fabricating a D3D12-style descriptor range | Vulkan descriptor-pool external-synchronization rules; falsified by a worker entering `m_registryMutex`, two slots sharing one pool, unbounded growth, or exhaustion returning a usable set |
 | persistent descriptors -> recording read view | `VulkanDescriptorAllocator` remains authoritative for registered descriptors/tables; copy-on-write entry arrays and generation records are published through an atomic immutable view | table generational handles and registered descriptor indices remain stable; recording reads perform bounds/generation/type checks before stack-chunked `vkUpdateDescriptorSets` | NVRHI explicit descriptor-table ownership and J LC-12; falsified by a persistent lock held across `vkUpdateDescriptorSets`, a worker mutation, or a stale table generation resolving |
-| resource views -> image-aspect lookup | `VulkanDescriptorManager` owns live/retired image views; a sorted immutable `(VkImageView, aspect mask)` table is derived immediately before recording | native image-view value is the key; lower-bound lookup is deterministic and never traverses the mutable owner vector on a recording worker | Vulkan dynamic-rendering attachment metadata requirements; falsified by worker access to `m_resourceViewRecords`, mismatched depth/stencil aspects, or retirement before the frame-slot token completes |
+| resource views -> image-aspect lookup | `VulkanDescriptorService` owns live/retired image views; a sorted immutable `(VkImageView, aspect mask)` table is derived immediately before recording | native image-view value is the key; lower-bound lookup is deterministic and never traverses the mutable owner vector on a recording worker | Vulkan dynamic-rendering attachment metadata requirements; falsified by worker access to `m_resourceViewRecords`, mismatched depth/stencil aspects, or retirement before the frame-slot token completes |
 | lease -> uniform upload | each slot owns one persistently mapped `VulkanRecordingUploadPage`; the active Vulkan command list routes constant allocation directly to its page | 256 KiB capacity, device minimum uniform alignment, monotonic offset, and at most 4096 stable allocation records; returned opaque address resolves only inside the owning page | NVRHI command-list-local volatile upload ownership and J LC-13/LC-14; falsified by overlapping ranges, shared cursor/lock contention, heap allocation per constant, or overflow escaping the bounded empty result |
 | live GPU allocations -> recording metadata | `VulkanGpuMemoryAllocator` remains authoritative; `VulkanRecordingResourceTable` owns only immutable copied native metadata and opaque retained-use tokens | resource handle is the primary key and owns one full metadata copy; exact device addresses and buffer-base ranges use compact `(address, read-view index, publication order)` projections, exact lookup precedes range lookup, and pending releases are excluded from future publications | J LC-14/LC-18 and explicit NVRHI resource lifetime; falsified by a worker receiving a mutable allocation record, an AS address resolving through the wrong buffer range, a pending resource being republished, or destruction while a read view/use token exists |
 | closed lease -> native queue submit | `VulkanCommandQueue` alone builds timeline waits/signals and submits; `VulkanNativeQueue::SubmissionMutex` covers only the Vulkan native call when logical queues share one `VkQueue` | compiled batch order and explicit wait tokens determine submission; each logical queue has a monotonic timeline value | Vulkan queue external-synchronization rules, AMD RPS ordered submission, and J LC-10/LC-18; falsified by worker submit/present, completion-order submission, a wait on an unsubmitted token, or the mutex spreading into engine scheduling |
@@ -2362,7 +2362,7 @@ Rule 12 and implementation-shape reconciliation:
 - `Private/Vulkan/Descriptors/VulkanRecordingDescriptorPool.*` owns only one lease-local native descriptor pool.
 - `Private/Vulkan/Resources/VulkanRecordingUploadPage.*` owns only one lease-local mapped page and its bounded allocation table.
 - `Private/Vulkan/Memory/VulkanRecordingResource.*` defines copied recording metadata and the opaque use token; `VulkanRecordingResourceTable.*` owns publication, deterministic lookup, and temporary recording references.
-- `VulkanDescriptorAllocator` owns persistent descriptor entries/read publication; `VulkanDescriptorManager` owns resource-view lifetime/aspect publication; `VulkanGpuMemoryAllocator` owns allocation and delayed destruction.
+- `VulkanDescriptorAllocator` owns persistent descriptor entries/read publication; `VulkanDescriptorService` owns resource-view lifetime/aspect publication; `VulkanGpuMemoryAllocator` owns allocation and delayed destruction.
 - `VulkanCommandQueue` owns logical timeline sequencing; `VulkanNativeQueue` owns only the Vulkan-required shared native-queue mutex; device services orchestrate initialization, publication, submission, presentation, and teardown.
 - Primary types match filenames and folders. New substantive methods are defined in `.cpp` files. The touched source contains no function-local type, anonymous namespace, role-only `Implementation`/`Operations`/`Details`/`Helpers` owner, or nontrivial header body outside trivial accessors/setters/templates. CMake uses the existing `CONFIGURE_DEPENDS` recursive source ownership, so no explicit list duplication was added.
 
@@ -2458,7 +2458,7 @@ Forbidden: pass-level recording-policy parameter, parallelize-all flag, infer ba
 
 ### Prompt 20 source-completion record — 2026-07-26
 
-Status: **source-complete; runtime acceptance is user-owned**. Parallel recording is an internal frame-graph execution decision, not a pass-authoring feature. `FrameGraphBuilder` retains its established `AddPass`, `Draw`, `Dispatch`, `DispatchAsync`, and `DispatchIf` vocabulary with no recording-policy parameter. Arbitrary callback, external-provider, and presentation work compiles to coordinator serial islands. The audited typed shader execution family compiles to exclusive recording groups, adjacent small groups are combined into bounded chunks, and SparkleTasks records eligible chunks into preassigned lease slots. Serial mode, GPU-timing mode, tiny batches, and zero/one-worker configurations record the same plan into one native command object per submission batch.
+Status: **source-complete; runtime acceptance is user-owned**. Parallel recording is an internal frame-graph execution decision, not a pass-authoring feature. `FrameGraphBuilder` retains `AddPass`, `Draw`, `Dispatch`, and `DispatchAsync` with no recording-policy parameter. Arbitrary callback, external-provider, and presentation work compiles to coordinator serial islands. The audited typed shader execution family compiles to exclusive recording groups, adjacent small groups are combined into bounded chunks, and SparkleTasks records eligible chunks into preassigned lease slots. Serial mode, GPU-timing mode, tiny batches, and zero/one-worker configurations record the same plan into one native command object per submission batch.
 
 Primary-source alignment:
 
@@ -2743,7 +2743,7 @@ Forbidden: keep old path “for safety,” new diagnostic subsystem, unowned pac
 | render/RHI registries → recording workers | render/RHI owner is authoritative; workers acquire immutable resource/descriptor read views and exclusive recording leases | handle-indexed read tables, per-lease command/descriptor/upload state, token-gated reclamation | J NVRHI/nvpro recording precedents; repository scan finds no worker registry mutation or shared recording-hot allocator path |
 | mesh/deformation inputs → `RayTracingBlasGeometryBuilder` → BLAS geometry binding | mesh and deformation arrays are authoritative; the dedicated builder derives equality, skeletal classification, deformed positions, buffer sizing, and `RhiRayTracingBufferBinding`; the BLAS cache owns resources and reuse | stable mesh/resource identity, deterministic vertex-index traversal, reusable cache-owned position scratch, one resource-plus-offset binding, backend-derived address, command-list resource retention through submission | J NVRHI explicit-resource and D3D12/Vulkan lifetime precedent; zero/retired resources fail the RHI contract, no duplicate resource/address fields remain, and repeated warm calls require no position-vector allocation |
 
-### Prompt 00-22 target-state profiling prerequisite audit — 2026-07-27
+### Prompt 00-22 target-state profiling prerequisite audit — 2026-07-28
 
 Decision: **source-ready for Prompt 23 profiling; native runtime evidence remains user-owned**. This audit compares the
 current repository with the enduring Prompt 00-22 target state. It does not require obsolete intermediate states to be
@@ -2786,6 +2786,21 @@ and direct editor/render routes are deletion targets rather than compatibility r
    traversal, mutable animation assets, and synchronous mesh-cache miss route are absent. Persistent slots, dirty ranges,
    immutable packets, system/query ranges, and device-local resident assets are the measured product path.
 
+#### Profiling contract and Rule 13 access inventory
+
+The following table is the binding data/access contract for Prompt 23. It identifies what may be measured, which owner is
+authoritative, and what observation would invalidate the design before tuning begins.
+
+| Data path | Authority and derived ownership | Layout, identity, deterministic transform, and lifetime | Exact precedent and profiling falsifier |
+|---|---|---|---|
+| ECS components and world journal → render extraction | `GameWorld` ECS columns and the structural journal are authoritative; extraction owns one immutable structural delta plus dynamic arrays | stable `EntityId` maps explicitly to `RenderObjectId`; source ranges and the final merge are ordered by stable identity, never task completion; packet storage owns all published values | J ECS publication contract and NVIDIA nvpro_core range/batch precedent; serial and 1/2/N workers must publish equivalent ordered bytes/values |
+| application frame input → `RenderFrameQueue` | the application producer owns an unpublished frame; the render coordinator exclusively owns an acquired slot | fixed bounded slots, monotonically sequenced tickets, one lock-protected state/payload transition, explicit acquire/retire/cancel; no overwrite or unbounded queue | J bounded-frame transport contract; delayed consumer must produce bounded backpressure with no dropped, duplicated, or stale ticket |
+| render delta/dynamic data → `RenderWorld` | the accepted sequenced packet is authoritative; `RenderWorld` owns persistent proxies, material/texture tables, and sparse dynamic state | sorted proxy storage keyed by `RenderObjectId`; checked scene/sequence order; structural and material revisions change only for accepted relevant input | NVIDIA Donut persistent scene dirty-state precedent; an unchanged warm frame must perform no structural/material rebuild and one changed object must not scan or republish the scene |
+| render world → preparation DAG | `RenderWorld` and current frame data are immutable inputs; the execution arena owns preallocated object/light/deformation outputs | leading component/query ranges write exclusive slots; transform precedes visibility, independent deformation/light ranges fan in, and merge follows stable object order; small work remains serial | NVIDIA nvpro_core ranges and AMD Cauldron2 fan-in precedent as scoped in J; randomized completion must match the serial oracle and tiny scenes must stay below the task-overhead budget |
+| mesh/texture/material requests → resident render assets | immutable prepared CPU data and the last successfully published binding set are authoritative; render-owned caches own upload and residency | stable asset/handle identity, device-local destinations, bounded staging, graphics-token publication, previous-valid binding preservation on failure | NVRHI explicit resource/lifetime contract and J residency rules; cold captures label upload work, warm captures show no repeated static upload, and failed replacement cannot invalidate the previous set |
+| accepted render state → persistent GPU scene | render proxies own logical identity; GPU-scene slots and payload arrays are derived persistent state | stable `GpuSceneSlot`, deterministic coalesced dirty ranges, reusable payload/ring storage, separate raster/classic-TLAS/PTLAS identity, last-use-token retirement | NVIDIA Donut persistent geometry/material/instance buffers and nvpro_core ring-resource precedent; a single transform/light/material edit updates only its expected ranges and delayed completion cannot reuse a live slot |
+| compiled frame graph → backend recording contexts | frame-graph hazards and queue assignment are authoritative; each task leases one exclusive backend context and closes one planned recording chunk | compiler-derived recording groups, immutable resource views, per-context allocator/pool/descriptor/upload state, deterministic coordinator submission | NVRHI concurrent command-list state contract plus D3D12 allocator/list and Vulkan command-pool rules in J; serial/parallel command streams must preserve output while workers never submit or share native mutable recording state |
+
 #### Prompt 23 entry gate
 
 The repository is ready to collect performance evidence when the owner's manual smoke gate confirms D3D12 and Vulkan startup,
@@ -2796,11 +2811,43 @@ captures must verify zero structural delta/static upload for an unchanged scene.
 and must not restore a superseded serial, snapshot, full-rebuild, controller, or synchronous-residency state merely to satisfy a
 historical intermediate criterion.
 
-Current automated evidence: DebugEditor `SparkleRenderer` builds after the residency/device-local upload closure, including
-`SparkleTasks`, `SparkleGameFramework`, RHI common, D3D12, Vulkan, Streamline providers, and renderer shader registrations.
-DebugEditor `ShowcaseEditor` and `ShowcaseRuntime` also build, and `architecture_boundary_check` passes with no new violation.
+Use these independent controls; do not substitute one aggregate worker count or infer one mode from another:
+
+| Axis | Control | Reference and experimental values |
+|---|---|---|
+| task execution | `task.SerialExecution` | `true` is the zero-worker deterministic oracle; `false` enables the configured lanes |
+| frame-critical workers | `task.FrameCriticalWorkerCount` | explicit `1`, `2`, and representative `N`; do not derive other lane counts from it |
+| background workers | `task.BackgroundWorkerCount` | explicit bounded count, swept independently from frame-critical work |
+| blocking-I/O workers | `task.BlockingIoWorkerCount` | explicit bounded count; never use it for frame-critical CPU work |
+| renderer ownership | `r.ThreadedRenderer` | `false` caller-owned reference versus `true` dedicated `Sparkle.RenderThread` owner |
+| renderer lead | `r.RenderPipelineDepth` | `0` zero-ahead versus `1` one-ahead; deeper values are not part of the contract |
+| command recording | `r.FrameGraph.ParallelRecording` | `false` same-plan serial recording versus `true` compiler-derived worker recording |
+
+First capture the all-serial oracle. Then change one axis at a time: task lanes with caller-owned renderer and serial recording;
+parallel recording with zero-ahead caller ownership; threaded ownership with zero-ahead serial recording; one-ahead threaded
+ownership with serial recording; and finally the full bounded worker-recording path. This prevents task execution, frame
+pipelining, and native recording effects from being misattributed to each other.
+
+Current automated evidence: the DevelopmentEditor build passes for `SparkleCore`, `SparkleTasks`, `SparkleGameFramework`,
+`SparkleRHI` including D3D12 and Vulkan, `SparkleRenderer`, `SparkleApplication`, `SparkleEditor`, `SourceImporters`,
+`SceneCooker`, `MeshCooker`, `TextureCooker`, `ShaderCompiler`, `SparkleLauncher`, `ShowcaseRuntime`, `ShowcaseEditor`, and
+`architecture_boundary_check`. DevelopmentGame `SourceImporters`, `SceneCooker`, `MeshCooker`, `TextureCooker`,
+`ShaderCompiler`, and `AssetCooker` also build. The architecture check reports no new violations. Touched owned C++ source
+contains zero over-140 lines, anonymous namespaces, function-local class/struct declarations, generic `*Operations` owners, or
+rejected worker-count/mesh-upload aliases. The only build warning is the launcher deployment environment reporting
+`VCINSTALLDIR` unset; the launcher target succeeds.
+
 No production validator, benchmark-only API, timing stream, compatibility adapter, or fallback full-build path was added to
-obtain this result.
+obtain this result. The retained profiler, allocator, frame-graph, and backend markers are existing product-owned evidence
+points. Runtime D3D12/Vulkan smoke, visual parity, native validation, cold/warm captures, crossover, critical path, upload bytes,
+resource creation, dirty-range count, GPU time, memory/fragmentation, and p95/p99 latency remain Prompt 23 measurements owned by
+the user; they are not claimed by this source/build gate.
+
+PGE reconciliation for the entry gate: **advance** `PGE-05/07/09/10/13/15` through explicit C++ ownership, deterministic
+controls, persistent-data and GPU-lifetime closure, independent build/static verification, and evidence-oriented handoff;
+**preserve** `PGE-01/02/03/06/08/11/14` because rendering, RT/neural-provider, math, backend, collaboration, and advanced-feature
+paths remain intact; **not applicable** `PGE-04/12` because this closure neither designs nor tunes a neural model or an
+inference/training workload. Native backend/hardware evidence for `PGE-06/14` remains manual and is not promoted to a pass.
 
 ## Prompt 23 — Initial Full-System Performance Characterization and Tuning
 
@@ -2851,6 +2898,96 @@ Acceptance gate:
 Positive patterns: causal measurement, reproducibility, honest limits, negative-result retention, configuration metadata.
 Forbidden: premature portfolio-complete claim, cherry-picked FPS, one-backend claim, generated report product, tuning by thread count alone, unsupported “production parity” language.
 ~~~
+
+### Prompt 23 characterization record — 2026-07-28
+
+Status: **the lighting/resource correctness gate is closed; the available Sponza/Empty characterization is recorded; the full
+acceptance matrix remains open**. No numeric worker, grain, recording-chunk, page-size, residency-budget, or frame-lead default
+changed. The measurements did not justify such a change, and several late worker samples were rejected because power drift and
+incomplete mesh residency changed the amount of work.
+
+The reference host was Windows 11 build 26200 on a Ryzen 9 8940HX (16 cores/32 logical processors), 64 GiB memory, RTX 5070 Ti
+Laptop plus Radeon 610M, Balanced power profile, Visual Studio 18/2026, and Vulkan SDK 1.4.350. Runtime samples used VSync off,
+the Showcase Sponza or Empty catalog level, explicit backend/provider/TLAS/renderer/recording CVars, at least three seconds and
+120 warm-up frames, then at least 180 samples and eight seconds. CPU tables below are milliseconds; values are
+`render p50/p95/p99`.
+
+| Configuration | Scene | FPS | Render p50/p95/p99 | Scene evidence |
+|---|---:|---:|---:|---|
+| DevelopmentGame D3D12, caller-owned, PTLAS, reconstruction | Sponza | 5.552 | 179.682 / 184.738 / 187.335 | 76 submitted instances; clean shutdown |
+| DevelopmentGame D3D12, caller-owned, classic TLAS, reconstruction off | Sponza | 6.869 | 144.474 / 151.314 / 155.622 | 76 submitted instances; clean shutdown |
+| DevelopmentGame Vulkan, caller-owned, classic TLAS, reconstruction off | Sponza | 40.907 | 23.582 / 31.018 / 33.103 | 72 submitted instances; clean shutdown |
+| DebugGame Vulkan, caller-owned, classic TLAS, reconstruction off | Sponza | 25.346 | 38.300 / 42.296 / 44.022 | 103 submitted instances; clean shutdown |
+| DevelopmentEditor Vulkan, caller-owned, classic TLAS, reconstruction off | Sponza | 48.314 | 20.161 / 22.719 / 24.226 | 72 submitted instances; clean shutdown |
+| DevelopmentGame D3D12, caller-owned, PTLAS, reconstruction | Empty | 33.087 | 29.980 / 32.426 / 34.192 | zero instances; valid empty RT scene |
+| DevelopmentGame Vulkan, caller-owned, classic TLAS, reconstruction off | Empty | 287.967 | 3.204 / 5.179 / 5.422 | zero instances; valid empty RT scene |
+| DevelopmentGame Vulkan, threaded zero-ahead, serial recording | Empty | 287.972 | 2.634 / 5.254 / 5.443 | 2,304 sampled frames; clean scope settlement |
+
+The Vulkan Sponza recording comparison held all other controls fixed. Serial recording measured 48.634 FPS and
+20.112/22.579/24.718 ms; parallel recording with one frame-critical worker measured 48.217 FPS and
+20.690/23.228/26.362 ms. The parallel branch loses at this worker count, so serial recording remains the product default and
+the existing cost threshold remains intact.
+
+The DebugGame 1/2/8-worker sweeps were not accepted as default-selection evidence. In the first order, update p50 was
+0.907/0.741/1.187 ms and render p50 was 43.561/36.396/37.453 ms. The reverse-order rerun drifted to
+52.752/50.809/47.859 ms render p50, and the last sample published 100 rather than 103 instances. This demonstrates both the
+oversubscription cost of eight workers on the CPU update and a flaw in treating a fixed warm-up frame count as resident-scene
+readiness. One, one, and one lane workers remain the bounded default; explicit 0/1/2/N controls remain for a later stable
+profile-build sweep.
+
+#### Correctness and ownership findings
+
+- Conditional shader dispatch was deleted. `TextureManager` synchronously loads the cooked default set before scene
+  synchronization; the real sky texture is pinned and published. Material construction resolves every texture slot through
+  that set and publishes a concrete descriptor table.
+- Classic TLAS and PTLAS now build a valid zero-instance scene. Physical capacity is at least one where the native API needs
+  storage, while semantic instance count stays zero. Frame binding is unconditional and descriptor-access mode is checked.
+- Empty structured GPU-scene inputs retain one zeroed physical element at the typed stride while semantic counts remain zero.
+  Shader-visible bindings therefore exist for empty scenes without inventing logical objects.
+- Renderer asset scopes remain children of the application lifetime scope even when their owner is the render thread.
+  Registration is mutex-protected across owner threads; task launch and join remain child-owner operations; cancellation still
+  propagates down and settlement up.
+- D3D12 retires the allocator recording read view during GPU settlement, before frame-pipeline allocations can be released.
+  Streamline feature resources are freed after the GPU drain, and the external runtime shuts down while the D3D device and
+  services still exist. Three consecutive threaded D3D12 reconstruction teardown runs then completed cleanly.
+
+The source was built as DevelopmentGame, DevelopmentEditor, DebugGame, and DebugEditor; shaders cooked to both DXIL and
+SPIR-V. Runtime
+coverage includes D3D12/Vulkan, Empty/Sponza, classic TLAS/PTLAS where exposed, reconstruction on/off, caller-owned and
+threaded-zero ownership, and serial/parallel recording. The final DevelopmentGame relink passed, after which Windows Code
+Integrity denied launching that new unsigned hash under policy
+`{0283ac0f-fff1-49ae-ada1-8a933130cad6}`. The policy event names the enterprise signing level; no engine code ran in those
+attempts. Machine trust policy was not changed.
+
+Still open: Bistro/San Miguel media and deterministic cameras are absent; PIX/RenderDoc/Nsight/RGP captures, elevated WPR/WPA
+traces, correctness images, input-to-present correlation, GPU timestamp percentiles, stable cold/warm asset residency,
+tool-throughput/peak-memory sweeps, DebugEditor runtime, and an independent final-binary rerun. These gaps block Prompt 23
+acceptance and any later claim based on the full matrix. The Sponza results are regression evidence only and do not close the
+Tier 1 workload gate.
+
+Rule 13 reconciliation: authored default texture paths and scene tables are authoritative; decoded/uploaded textures,
+material tables, zero-element physical buffer storage, RT acceleration structures, and recording read views are derived
+render/RHI state with stable asset, slot, resource, and submission identities. Transform order is deterministic
+load/decode/upload/publish, scene prepare/build/bind, record/submit/settle/retire. The falsifiers were a missing shader binding,
+an invalid empty TLAS, mismatched submitted-instance counts, a dangling allocation record, or teardown failure; each observed
+falsifier stopped measurement.
+
+Rule 12 reconciliation: default-texture ownership stays in `Renderer/Private/Textures`; scene preparation stays in
+`SceneData/Preparation`; TLAS policy stays in renderer acceleration owners with native mechanics in backend ray-tracing
+services; external-runtime lifecycle stays in the RHI interop hook plus renderer integration owner. The role-only
+conditional lighting-dispatch helper files were deleted. No replacement helper, compatibility spelling, measurement API,
+runtime log, or report product remains.
+
+Teach-back: publication is a payload-plus-lifetime edge, so the recording snapshot must retire before allocation records;
+structured scope hierarchy can cross owner threads while task admission and joins remain owner-bound; ECS/GPU-scene semantic
+counts must stay distinct from physical descriptor storage; a frame graph may schedule a shader only after all producer
+contracts are concrete; GPU completion retires native allocations, not CPU task completion; and parallel native recording
+needs exclusive contexts plus measured enough work. Weak areas for later capture are OS scheduler behavior, stable
+resident-scene gating, input/present correlation, and backend GPU-counter attribution.
+
+PGE reconciliation: **advance** PGE-05/06/07/10/13/14/15 through shader-binding, paired-backend, RT/provider lifecycle,
+measurement, and causal debugging evidence; **preserve** PGE-01/02/03/08/09/11/12; **not applicable** PGE-04 because no neural
+model/operator was tuned. Tier 1 scene evidence and external hardware/profiler evidence remain blocked as stated above.
 
 ## Prompt 24 — Close Atomic Publication and Wait-Protocol Correctness
 

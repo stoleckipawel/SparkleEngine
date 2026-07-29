@@ -2,7 +2,7 @@
 
 #include "Formats/PixelFormat.h"
 #include "Interop/ResourceState.h"
-#include "Pipeline/RhiPipelineStateDesc.h"
+#include "Pipeline/RhiPipelineDesc.h"
 #include "Resources/RhiResourceDesc.h"
 #include "Vulkan/VulkanIncludes.h"
 

@@ -4,20 +4,20 @@
 
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/Descriptors/VulkanDescriptorHandles.h"
-#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
+#include "Vulkan/Descriptors/VulkanDescriptorService.h"
 #include "Vulkan/Descriptors/VulkanRecordingDescriptorPool.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
-#include "Vulkan/Pipeline/VulkanPipelineState.h"
+#include "Vulkan/Pipeline/VulkanPipeline.h"
 #include "Vulkan/Resources/VulkanRecordingUploadPage.h"
 #include "Vulkan/VulkanTypeConversions.h"
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Interop/RhiInteropService.h"
 #include "Validation/RhiContract.h"
 
 #include <algorithm>
-#include <cassert>
 #include <format>
 #include <string_view>
 
@@ -69,13 +69,10 @@ void VulkanRenderCommandList::CloseOpenRendering() noexcept
 	EndDynamicRenderingIfNeeded();
 }
 
-RhiGpuVirtualAddress VulkanRenderCommandList::AllocateUniformConstantBuffer(
-    const void* data,
-    std::uint32_t sizeInBytes) noexcept
+RhiGpuVirtualAddress VulkanRenderCommandList::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) noexcept
 {
-	return m_isRecording && m_recordingUploadPage != nullptr
-	           ? m_recordingUploadPage->AllocateAndCopy(data, sizeInBytes)
-	           : RhiGpuVirtualAddress{};
+	return m_isRecording && m_recordingUploadPage != nullptr ? m_recordingUploadPage->AllocateAndCopy(data, sizeInBytes)
+	                                                         : RhiGpuVirtualAddress{};
 }
 
 void VulkanRenderCommandList::SetNativeCommandBuffer(
@@ -113,24 +110,18 @@ bool VulkanRenderCommandList::IsCoordinatorRecording() const noexcept
 	return m_recordingOwner.IsCoordinator();
 }
 
-void VulkanRenderCommandList::TrackTransientAllocation(
-    VulkanGpuAllocationRecord& allocation) noexcept
+void VulkanRenderCommandList::TrackTransientAllocation(VulkanGpuAllocationRecord& allocation) noexcept
 {
-	allocation.RecordingReferenceCount.fetch_add(
-	    1,
-	    std::memory_order_relaxed);
+	allocation.RecordingReferenceCount.fetch_add(1, std::memory_order_relaxed);
 	if (allocation.ParentMemoryBlock != nullptr)
 	{
-		allocation.ParentMemoryBlock->RecordingReferenceCount.fetch_add(
-		    1,
-		    std::memory_order_relaxed);
+		allocation.ParentMemoryBlock->RecordingReferenceCount.fetch_add(1, std::memory_order_relaxed);
 	}
 
 	m_transientAllocationUses.push_back(&allocation);
 }
 
-void VulkanRenderCommandList::ResolveTransientAllocationUses(
-    RhiSubmissionToken submissionToken) noexcept
+void VulkanRenderCommandList::ResolveTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept
 {
 	ReleaseTransientAllocationUses(submissionToken);
 }
@@ -140,11 +131,9 @@ void VulkanRenderCommandList::AbandonTransientAllocationUses() noexcept
 	ReleaseTransientAllocationUses({});
 }
 
-void VulkanRenderCommandList::ReleaseTransientAllocationUses(
-    RhiSubmissionToken submissionToken) noexcept
+void VulkanRenderCommandList::ReleaseTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept
 {
-	for (VulkanGpuAllocationRecord* allocation :
-	     m_transientAllocationUses)
+	for (VulkanGpuAllocationRecord* allocation : m_transientAllocationUses)
 	{
 		if (allocation == nullptr)
 		{
@@ -157,21 +146,28 @@ void VulkanRenderCommandList::ReleaseTransientAllocationUses(
 			allocation->ParentMemoryBlock->LastUse.MarkUsed(submissionToken);
 		}
 
-		const std::uint32_t previousReferences =
-		    allocation->RecordingReferenceCount.fetch_sub(
-		        1,
-		        std::memory_order_relaxed);
-		assert(previousReferences != 0);
+		const std::uint32_t previousReferences = allocation->RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
+		if (previousReferences == 0)
+		{
+			Diagnostics::Fatal(
+			    g_vulkanRenderCommandListLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Vulkan transient allocation recording reference underflowed.");
+		}
 
 		if (allocation->ParentMemoryBlock != nullptr)
 		{
-			VulkanGpuMemoryBlockRecord& memoryBlock =
-			    *allocation->ParentMemoryBlock;
-			const std::uint32_t previousBlockReferences =
-			    memoryBlock.RecordingReferenceCount.fetch_sub(
-			        1,
-			        std::memory_order_relaxed);
-			assert(previousBlockReferences != 0);
+			VulkanGpuMemoryBlockRecord& memoryBlock = *allocation->ParentMemoryBlock;
+			const std::uint32_t previousBlockReferences = memoryBlock.RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
+			if (previousBlockReferences == 0)
+			{
+				Diagnostics::Fatal(
+				    g_vulkanRenderCommandListLogger,
+				    __FILE__,
+				    __LINE__,
+				    "Vulkan transient memory-block recording reference underflowed.");
+			}
 		}
 	}
 	m_transientAllocationUses.clear();
@@ -184,29 +180,39 @@ void VulkanRenderCommandList::OnResourceTrackingStarted(RhiResourceHandle resour
 		return;
 	}
 
-	VulkanRecordingResourceUseToken use =
-	    m_memoryAllocator->RetainRecordingResource(resource);
+	VulkanRecordingResourceUseToken use = m_memoryAllocator->RetainRecordingResource(resource);
 	if (!use && IsCoordinatorRecording())
 	{
-		use =
-		    m_memoryAllocator->RetainCoordinatorRecordingResource(resource);
+		use = m_memoryAllocator->RetainCoordinatorRecordingResource(resource);
 	}
 
 	m_recordingResourceUses.push_back(RecordingResourceUse{.Resource = resource, .Token = use});
 }
 
-void VulkanRenderCommandList::OnResourceTrackingFinished(
-	RhiResourceHandle resource,
-	RhiSubmissionToken submissionToken) noexcept
+void VulkanRenderCommandList::OnResourceTrackingFinished(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept
 {
 	if (m_memoryAllocator == nullptr)
 	{
 		return;
 	}
 
-	assert(m_recordingResourceReleaseIndex < m_recordingResourceUses.size());
+	if (m_recordingResourceReleaseIndex >= m_recordingResourceUses.size())
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan command-list resource tracking finished without a matching retained resource.");
+	}
 	const RecordingResourceUse& use = m_recordingResourceUses[m_recordingResourceReleaseIndex++];
-	assert(use.Resource.Value == resource.Value);
+	if (use.Resource.Value != resource.Value)
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan command-list resource tracking release order does not match its recording order.");
+	}
 	m_memoryAllocator->ReleaseRecordingResource(use.Token, submissionToken);
 
 	if (m_recordingResourceReleaseIndex == m_recordingResourceUses.size())
@@ -241,29 +247,29 @@ void VulkanRenderCommandList::InsertDiagnosticMarker(std::string_view label, Rhi
 	VulkanDebugEvents::InsertMarker(m_commandBuffer, m_debugEvents, label, color);
 }
 
-void VulkanRenderCommandList::SetPipelineState(const RenderPipelineState& pipelineState) noexcept
+void VulkanRenderCommandList::SetPipeline(const RenderPipeline& pipeline) noexcept
 {
 	if (m_commandBuffer == VK_NULL_HANDLE)
 	{
 		return;
 	}
 
-	const auto& vulkanPipelineState = static_cast<const VulkanPipelineState&>(pipelineState);
-	if (vulkanPipelineState.GetPipeline() == VK_NULL_HANDLE || vulkanPipelineState.GetPipelineLayout() == VK_NULL_HANDLE)
+	const auto& vulkanPipeline = static_cast<const VulkanPipeline&>(pipeline);
+	if (vulkanPipeline.GetPipeline() == VK_NULL_HANDLE || vulkanPipeline.GetPipelineLayout() == VK_NULL_HANDLE)
 	{
-		SPDLOG_LOGGER_ERROR(g_vulkanRenderCommandListLogger, "VulkanRenderCommandList: refused to bind an incomplete pipeline state.");
+		SPDLOG_LOGGER_ERROR(g_vulkanRenderCommandListLogger, "VulkanRenderCommandList: refused to bind an incomplete pipeline.");
 		return;
 	}
-	if (vulkanPipelineState.GetBindPoint() == VK_PIPELINE_BIND_POINT_COMPUTE)
+	if (vulkanPipeline.GetBindPoint() == VK_PIPELINE_BIND_POINT_COMPUTE)
 	{
 		EndDynamicRenderingIfNeeded();
-		m_computePipelineLayout = vulkanPipelineState.GetPipelineLayout();
+		m_computePipelineLayout = vulkanPipeline.GetPipelineLayout();
 	}
 	else
 	{
-		m_graphicsPipelineLayout = vulkanPipelineState.GetPipelineLayout();
+		m_graphicsPipelineLayout = vulkanPipeline.GetPipelineLayout();
 	}
-	vkCmdBindPipeline(m_commandBuffer, vulkanPipelineState.GetBindPoint(), vulkanPipelineState.GetPipeline());
+	vkCmdBindPipeline(m_commandBuffer, vulkanPipeline.GetBindPoint(), vulkanPipeline.GetPipeline());
 }
 
 void VulkanRenderCommandList::SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
@@ -309,17 +315,20 @@ void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIn
 	}
 	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
 	{
-		VkDescriptorSet descriptorSet =
-		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
-		WriteAccelerationStructureBinding(
-		    descriptorSet,
-		    *binding,
-		    gpuAddress);
+		VkDescriptorSet descriptorSet = EnsureDescriptorSet(
+		    m_graphicsBindingLayout,
+		    binding->BindingPoint.Set,
+		    m_graphicsDescriptorSets,
+		    m_graphicsBoundDescriptorSets);
+		WriteAccelerationStructureBinding(descriptorSet, *binding, gpuAddress);
 	}
 	else
 	{
-		VkDescriptorSet descriptorSet =
-		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
+		VkDescriptorSet descriptorSet = EnsureDescriptorSet(
+		    m_graphicsBindingLayout,
+		    binding->BindingPoint.Set,
+		    m_graphicsDescriptorSets,
+		    m_graphicsBoundDescriptorSets);
 		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
 		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
 		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
@@ -336,17 +345,20 @@ void VulkanRenderCommandList::BindGraphicsShaderResource(std::uint32_t bindingIn
 	}
 	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
 	{
-		VkDescriptorSet descriptorSet =
-		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
-		WriteAccelerationStructureBinding(
-		    descriptorSet,
-		    *binding,
-		    gpuAddress);
+		VkDescriptorSet descriptorSet = EnsureDescriptorSet(
+		    m_graphicsBindingLayout,
+		    binding->BindingPoint.Set,
+		    m_graphicsDescriptorSets,
+		    m_graphicsBoundDescriptorSets);
+		WriteAccelerationStructureBinding(descriptorSet, *binding, gpuAddress);
 	}
 	else
 	{
-		VkDescriptorSet descriptorSet =
-		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
+		VkDescriptorSet descriptorSet = EnsureDescriptorSet(
+		    m_graphicsBindingLayout,
+		    binding->BindingPoint.Set,
+		    m_graphicsDescriptorSets,
+		    m_graphicsBoundDescriptorSets);
 		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
 		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
 		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
@@ -422,10 +434,7 @@ void VulkanRenderCommandList::BindComputeConstantBuffer(std::uint32_t bindingInd
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		WriteAccelerationStructureBinding(
-		    descriptorSet,
-		    *binding,
-		    gpuAddress);
+		WriteAccelerationStructureBinding(descriptorSet, *binding, gpuAddress);
 	}
 	else
 	{
@@ -449,10 +458,7 @@ void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingInd
 	{
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		WriteAccelerationStructureBinding(
-		    descriptorSet,
-		    *binding,
-		    gpuAddress);
+		WriteAccelerationStructureBinding(descriptorSet, *binding, gpuAddress);
 	}
 	else
 	{
@@ -555,35 +561,38 @@ void VulkanRenderCommandList::BindIndexBuffer(const RhiIndexBufferView& view) no
 	vkCmdBindIndexBuffer(m_commandBuffer, buffer, 0, VulkanTypeConversions::ToVkIndexType(view.Format));
 }
 
-void VulkanRenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept
+void VulkanRenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
 	EndDynamicRenderingIfNeeded();
 	m_renderTargets = {};
-	m_renderTargets[0] = VulkanDescriptorHandles::DecodeImageViewCpuHandle(rtv);
+	m_renderTargets[0] = VulkanDescriptorHandles::DecodeImageViewCpuHandle(renderTarget);
 	m_renderTargetCount = m_renderTargets[0] != VK_NULL_HANDLE ? 1u : 0u;
-	m_depthStencil = dsv != nullptr ? VulkanDescriptorHandles::DecodeImageViewCpuHandle(*dsv) : VK_NULL_HANDLE;
+	m_depthStencil = depthStencil != nullptr ? VulkanDescriptorHandles::DecodeImageViewCpuHandle(*depthStencil) : VK_NULL_HANDLE;
 	m_depthStencilAspectMask = ResolveDepthStencilAspectMask(m_depthStencil);
 }
 
 void VulkanRenderCommandList::SetRenderTargets(
-    std::uint32_t numRTVs,
-    const RhiCpuDescriptorHandle* rtvs,
-    const RhiCpuDescriptorHandle* dsv) noexcept
+    std::uint32_t renderTargetCount,
+    const RhiCpuDescriptorHandle* renderTargets,
+    const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
 	EndDynamicRenderingIfNeeded();
 	m_renderTargets = {};
 	m_renderTargetCount = 0;
-	m_depthStencil = dsv != nullptr ? VulkanDescriptorHandles::DecodeImageViewCpuHandle(*dsv) : VK_NULL_HANDLE;
+	m_depthStencil = depthStencil != nullptr ? VulkanDescriptorHandles::DecodeImageViewCpuHandle(*depthStencil) : VK_NULL_HANDLE;
 	m_depthStencilAspectMask = ResolveDepthStencilAspectMask(m_depthStencil);
-	if (rtvs == nullptr)
+	if (renderTargetCount > MaxRenderTargets || (renderTargetCount != 0 && renderTargets == nullptr))
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan SetRenderTargets received an invalid render-target count or array.");
 	}
 
-	const std::uint32_t count = std::min(numRTVs, MaxRenderTargets);
-	for (std::uint32_t index = 0; index < count; ++index)
+	for (std::uint32_t index = 0; index < renderTargetCount; ++index)
 	{
-		m_renderTargets[index] = VulkanDescriptorHandles::DecodeImageViewCpuHandle(rtvs[index]);
+		m_renderTargets[index] = VulkanDescriptorHandles::DecodeImageViewCpuHandle(renderTargets[index]);
 		if (m_renderTargets[index] != VK_NULL_HANDLE)
 		{
 			m_renderTargetCount = index + 1u;
@@ -591,14 +600,14 @@ void VulkanRenderCommandList::SetRenderTargets(
 	}
 }
 
-void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept
+void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept
 {
 	if (m_commandBuffer == VK_NULL_HANDLE || color == nullptr || !m_hasScissorRect)
 	{
 		return;
 	}
 
-	const VkImageView imageView = VulkanDescriptorHandles::DecodeImageViewCpuHandle(rtv);
+	const VkImageView imageView = VulkanDescriptorHandles::DecodeImageViewCpuHandle(renderTarget);
 	std::uint32_t colorAttachment = MaxRenderTargets;
 	for (std::uint32_t index = 0; index < m_renderTargetCount; ++index)
 	{
@@ -631,9 +640,9 @@ void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle rtv, cons
 	vkCmdClearAttachments(m_commandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
-void VulkanRenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil) noexcept
+void VulkanRenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil) noexcept
 {
-	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect || VulkanDescriptorHandles::DecodeImageViewCpuHandle(dsv) != m_depthStencil)
+	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect || VulkanDescriptorHandles::DecodeImageViewCpuHandle(depthStencil) != m_depthStencil)
 	{
 		return;
 	}
@@ -746,17 +755,17 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
     RhiGpuVirtualAddress scratchGpuAddress,
     RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
-	const VkDeviceAddress vertexBufferAddress =
-	    ResolveRayTracingBufferAddress(geometry.VertexBuffer);
-	const VkDeviceAddress indexBufferAddress =
-	    ResolveRayTracingBufferAddress(geometry.IndexBuffer);
+	const VkDeviceAddress vertexBufferAddress = ResolveRayTracingBufferAddress(geometry.VertexBuffer);
+	const VkDeviceAddress indexBufferAddress = ResolveRayTracingBufferAddress(geometry.IndexBuffer);
 	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr ||
-	    !RhiContract::IsRayTracingGeometryDescUsable(geometry) ||
-	    vertexBufferAddress == 0 || indexBufferAddress == 0 ||
-	    scratchGpuAddress == 0 || resultGpuAddress == 0)
+	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr || !RhiContract::IsRayTracingGeometryDescUsable(geometry) ||
+	    vertexBufferAddress == 0 || indexBufferAddress == 0 || scratchGpuAddress == 0 || resultGpuAddress == 0)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan BLAS build received incomplete geometry, device, command-buffer, or GPU-address inputs.");
 	}
 	EndDynamicRenderingIfNeeded();
 
@@ -764,12 +773,14 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	TrackResource(geometry.IndexBuffer.Resource);
 
 	VulkanRecordingResource resultResource;
-	if (!ResolveAddress(resultGpuAddress, resultResource) ||
-	    resultResource.AccelerationStructure == VK_NULL_HANDLE ||
-	    resultResource.AccelerationStructureType !=
-	        VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR)
+	if (!ResolveAddress(resultGpuAddress, resultResource) || resultResource.AccelerationStructure == VK_NULL_HANDLE ||
+	    resultResource.AccelerationStructureType != VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan BLAS destination does not resolve to a bottom-level acceleration structure.");
 	}
 
 	const VkAccelerationStructureGeometryTrianglesDataKHR triangles{
@@ -838,20 +849,26 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
     ERhiClassicTlasBuildMode buildMode) noexcept
 {
 	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr || instanceDescsGpuAddress == 0 || instanceCount == 0 ||
-	    scratchGpuAddress == 0 || resultGpuAddress == 0)
+	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr || instanceDescsGpuAddress == 0 || scratchGpuAddress == 0 ||
+	    resultGpuAddress == 0)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan classic TLAS build received no device, command buffer, build entry point, or GPU address.");
 	}
 	EndDynamicRenderingIfNeeded();
 
 	VulkanRecordingResource resultResource;
-	if (!ResolveAddress(resultGpuAddress, resultResource) ||
-	    resultResource.AccelerationStructure == VK_NULL_HANDLE ||
-	    resultResource.AccelerationStructureType !=
-	        VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
+	if (!ResolveAddress(resultGpuAddress, resultResource) || resultResource.AccelerationStructure == VK_NULL_HANDLE ||
+	    resultResource.AccelerationStructureType != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan classic TLAS destination does not resolve to a top-level acceleration structure.");
 	}
 
 	const VkAccelerationStructureGeometryInstancesDataKHR instances{
@@ -876,10 +893,7 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .flags = nativeBuildFlags,
 	    .mode = buildMode == ERhiClassicTlasBuildMode::Update ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
 	                                                          : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
-	    .srcAccelerationStructure =
-	        buildMode == ERhiClassicTlasBuildMode::Update
-	            ? resultResource.AccelerationStructure
-	            : VK_NULL_HANDLE,
+	    .srcAccelerationStructure = buildMode == ERhiClassicTlasBuildMode::Update ? resultResource.AccelerationStructure : VK_NULL_HANDLE,
 	    .dstAccelerationStructure = resultResource.AccelerationStructure,
 	    .geometryCount = 1,
 	    .pGeometries = &geometry,
@@ -919,17 +933,19 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	    desc.DestinationAccelerationStructure == 0 || desc.Scratch == 0 || desc.OperationHeaders == 0 || desc.OperationCount == 0 ||
 	    desc.Layout.InstanceCapacity == 0 || desc.Layout.PartitionCount == 0)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan partitioned TLAS build received incomplete device, command-buffer, layout, or GPU-address inputs.");
 	}
 	EndDynamicRenderingIfNeeded();
 
 	const VkMemoryBarrier2 operationDataBarrier{
 	    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
 	    .pNext = nullptr,
-	    .srcStageMask =
-	        VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-	    .srcAccessMask =
-	        VK_ACCESS_2_HOST_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+	    .srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+	    .srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
 	    .dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
 	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR};
 	const VkDependencyInfo operationDataDependency{
@@ -965,8 +981,8 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	    .srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
 	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
 	                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
-	                     VK_ACCESS_2_SHADER_STORAGE_READ_BIT};
+	    .dstAccessMask =
+	        VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT};
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -982,65 +998,61 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 
 void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept
 {
-	TrackResource(destinationResource);
-	TrackResource(sourceResource);
 	if (m_commandBuffer == VK_NULL_HANDLE || m_memoryAllocator == nullptr || !destinationResource || !sourceResource)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan CopyResource requires an active command buffer and two valid resources.");
 	}
+	TrackResource(destinationResource);
+	TrackResource(sourceResource);
 	EndDynamicRenderingIfNeeded();
 
 	VulkanRecordingResource destination;
 	VulkanRecordingResource source;
-	if (!ResolveResource(destinationResource, destination) ||
-	    !ResolveResource(sourceResource, source) ||
+	if (!ResolveResource(destinationResource, destination) || !ResolveResource(sourceResource, source) ||
 	    destination.ResourceKind != source.ResourceKind)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan CopyResource requires two resolved resources of the same kind.");
 	}
 
-	if (destination.ResourceKind ==
-	        VulkanGpuAllocationResourceKind::Buffer &&
-	    destination.Buffer != VK_NULL_HANDLE &&
+	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Buffer && destination.Buffer != VK_NULL_HANDLE &&
 	    source.Buffer != VK_NULL_HANDLE)
 	{
-		const VkBufferCopy copyRegion{
-		    .srcOffset = 0,
-		    .dstOffset = 0,
-		    .size = std::min(
-		        destination.ResourceSizeInBytes,
-		        source.ResourceSizeInBytes)};
-		if (copyRegion.size > 0)
+		if (destination.ResourceSizeInBytes == 0 || destination.ResourceSizeInBytes != source.ResourceSizeInBytes)
 		{
-			vkCmdCopyBuffer(
-			    m_commandBuffer,
-			    source.Buffer,
-			    destination.Buffer,
-			    1,
-			    &copyRegion);
+			Diagnostics::Fatal(
+			    g_vulkanRenderCommandListLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Vulkan CopyResource requires equal non-empty buffer sizes.");
 		}
+		const VkBufferCopy copyRegion{.srcOffset = 0, .dstOffset = 0, .size = destination.ResourceSizeInBytes};
+		vkCmdCopyBuffer(m_commandBuffer, source.Buffer, destination.Buffer, 1, &copyRegion);
 		return;
 	}
 
-	if (destination.ResourceKind ==
-	        VulkanGpuAllocationResourceKind::Image &&
-	    destination.Image != VK_NULL_HANDLE &&
+	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Image && destination.Image != VK_NULL_HANDLE &&
 	    source.Image != VK_NULL_HANDLE)
 	{
-		const VkExtent3D copyExtent{
-		    .width = std::min(destination.Extent.width, source.Extent.width),
-		    .height = std::min(destination.Extent.height, source.Extent.height),
-		    .depth = std::min(destination.Extent.depth, source.Extent.depth)};
-		if (copyExtent.width == 0 || copyExtent.height == 0 || copyExtent.depth == 0)
+		if (destination.Extent.width == 0 || destination.Extent.height == 0 || destination.Extent.depth == 0 ||
+		    destination.Extent.width != source.Extent.width || destination.Extent.height != source.Extent.height ||
+		    destination.Extent.depth != source.Extent.depth || destination.AspectMask != source.AspectMask)
 		{
-			return;
+			Diagnostics::Fatal(
+			    g_vulkanRenderCommandListLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Vulkan CopyResource requires equal non-empty image extents and aspect masks.");
 		}
 
-		const VkImageSubresourceLayers sourceLayers{
-		    .aspectMask = source.AspectMask,
-		    .mipLevel = 0,
-		    .baseArrayLayer = 0,
-		    .layerCount = 1};
+		const VkImageSubresourceLayers sourceLayers{.aspectMask = source.AspectMask, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1};
 		const VkImageSubresourceLayers destinationLayers{
 		    .aspectMask = destination.AspectMask,
 		    .mipLevel = 0,
@@ -1051,7 +1063,7 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 		    .srcOffset = VkOffset3D{},
 		    .dstSubresource = destinationLayers,
 		    .dstOffset = VkOffset3D{},
-		    .extent = copyExtent};
+		    .extent = destination.Extent};
 		vkCmdCopyImage(
 		    m_commandBuffer,
 		    source.Image,
@@ -1060,17 +1072,24 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		    1,
 		    &copyRegion);
+		return;
 	}
+
+	Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan CopyResource received an incomplete native resource.");
 }
 
 void VulkanRenderCommandList::AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept
 {
+	if (m_commandBuffer == VK_NULL_HANDLE || !beforeResource || !afterResource)
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan aliasing barriers require an active command buffer and two valid resources.");
+	}
 	TrackResource(beforeResource);
 	TrackResource(afterResource);
-	if (m_commandBuffer == VK_NULL_HANDLE || (!beforeResource && !afterResource))
-	{
-		return;
-	}
 	EndDynamicRenderingIfNeeded();
 
 	const VkMemoryBarrier2 memoryBarrier{
@@ -1095,84 +1114,124 @@ void VulkanRenderCommandList::AliasResource(RhiResourceHandle beforeResource, Rh
 
 void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
-	TrackResource(resource);
-	if (m_commandBuffer == VK_NULL_HANDLE || !resource || before == after)
+	if (m_commandBuffer == VK_NULL_HANDLE || !resource)
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan resource transitions require an active command buffer and a valid resource.");
+	}
+	if (before == after)
 	{
 		return;
 	}
+	TrackResource(resource);
 	EndDynamicRenderingIfNeeded();
 
 	VulkanResourceStateMapping sourceState = ResolveResourceState(before);
-	const VulkanResourceStateMapping destinationState =
-	    ResolveResourceState(after);
+	const VulkanResourceStateMapping destinationState = ResolveResourceState(after);
 
 	VulkanRecordingResource recordingResource;
-	const bool hasRecordingResource =
-	    ResolveResource(resource, recordingResource);
-
-	if (hasRecordingResource &&
-	    recordingResource.ResourceKind ==
-	        VulkanGpuAllocationResourceKind::Buffer &&
-	    recordingResource.Buffer != VK_NULL_HANDLE)
+	if (!ResolveResource(resource, recordingResource))
 	{
-		if (!VulkanTypeConversions::IsBufferResourceStateSupported(before) || !VulkanTypeConversions::IsBufferResourceStateSupported(after))
-		{
-			return;
-		}
-
-		const VkBufferMemoryBarrier2 bufferBarrier{
-		    .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-		    .pNext = nullptr,
-		    .srcStageMask = sourceState.StageMask,
-		    .srcAccessMask = sourceState.AccessMask,
-		    .dstStageMask = destinationState.StageMask,
-		    .dstAccessMask = destinationState.AccessMask,
-		    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		    .buffer = recordingResource.Buffer,
-		    .offset = 0,
-		    .size =
-		        recordingResource.ResourceSizeInBytes > 0
-		            ? recordingResource.ResourceSizeInBytes
-		            : VK_WHOLE_SIZE};
-		const VkDependencyInfo dependencyInfo{
-		    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-		    .pNext = nullptr,
-		    .dependencyFlags = 0,
-		    .memoryBarrierCount = 0,
-		    .pMemoryBarriers = nullptr,
-		    .bufferMemoryBarrierCount = 1,
-		    .pBufferMemoryBarriers = &bufferBarrier,
-		    .imageMemoryBarrierCount = 0,
-		    .pImageMemoryBarriers = nullptr};
-		vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan resource transition references a resource that is not registered for command recording.");
 	}
 
-	const VkImage image =
-	    hasRecordingResource &&
-	            recordingResource.Image != VK_NULL_HANDLE
-	        ? recordingResource.Image
-	        : static_cast<VkImage>(resource.Value);
-	if (image == VK_NULL_HANDLE)
+	switch (recordingResource.ResourceKind)
 	{
-		return;
+		case VulkanGpuAllocationResourceKind::Buffer:
+			RecordBufferTransition(recordingResource, before, after, sourceState, destinationState);
+			return;
+		case VulkanGpuAllocationResourceKind::Image:
+			RecordImageTransition(recordingResource, before, after, sourceState, destinationState);
+			return;
+	}
+
+	Diagnostics::Fatal(
+	    g_vulkanRenderCommandListLogger,
+	    __FILE__,
+	    __LINE__,
+	    "Vulkan resource transition references recording metadata with an unknown resource kind.");
+}
+
+void VulkanRenderCommandList::RecordBufferTransition(
+    const VulkanRecordingResource& resource,
+    ResourceState before,
+    ResourceState after,
+    const VulkanResourceStateMapping& sourceState,
+    const VulkanResourceStateMapping& destinationState) noexcept
+{
+	if (resource.Buffer == VK_NULL_HANDLE || resource.ResourceSizeInBytes == 0)
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan buffer transition references incomplete recording metadata.");
+	}
+	if (!VulkanTypeConversions::IsBufferResourceStateSupported(before) || !VulkanTypeConversions::IsBufferResourceStateSupported(after))
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan buffer transition uses an image-only resource state.");
+	}
+
+	const VkBufferMemoryBarrier2 bufferBarrier{
+	    .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+	    .pNext = nullptr,
+	    .srcStageMask = sourceState.StageMask,
+	    .srcAccessMask = sourceState.AccessMask,
+	    .dstStageMask = destinationState.StageMask,
+	    .dstAccessMask = destinationState.AccessMask,
+	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	    .buffer = resource.Buffer,
+	    .offset = 0,
+	    .size = resource.ResourceSizeInBytes};
+	const VkDependencyInfo dependencyInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 0,
+	    .pMemoryBarriers = nullptr,
+	    .bufferMemoryBarrierCount = 1,
+	    .pBufferMemoryBarriers = &bufferBarrier,
+	    .imageMemoryBarrierCount = 0,
+	    .pImageMemoryBarriers = nullptr};
+	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
+}
+
+void VulkanRenderCommandList::RecordImageTransition(
+    const VulkanRecordingResource& resource,
+    ResourceState before,
+    ResourceState after,
+    const VulkanResourceStateMapping& sourceState,
+    const VulkanResourceStateMapping& destinationState) noexcept
+{
+	if (resource.Image == VK_NULL_HANDLE || resource.AspectMask == 0)
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan image transition references incomplete recording metadata.");
 	}
 	if (!VulkanTypeConversions::IsImageResourceStateSupported(before) || !VulkanTypeConversions::IsImageResourceStateSupported(after))
 	{
-		return;
-	}
-	if (!hasRecordingResource &&
-	    before == ResourceState::Present &&
-	    destinationState.ImageLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-	{
-		sourceState = VulkanResourceStateMapping{};
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan image transition uses a buffer-only resource state.");
 	}
 
-	const VkImageAspectFlags aspectMask =
-	    hasRecordingResource && recordingResource.AspectMask != 0
-	        ? recordingResource.AspectMask
-	        : VK_IMAGE_ASPECT_COLOR_BIT;
 	const VkImageMemoryBarrier2 imageBarrier{
 	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 	    .pNext = nullptr,
@@ -1184,9 +1243,9 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 	    .newLayout = destinationState.ImageLayout,
 	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-	    .image = image,
+	    .image = resource.Image,
 	    .subresourceRange = VkImageSubresourceRange{
-	        .aspectMask = aspectMask,
+	        .aspectMask = resource.AspectMask,
 	        .baseMipLevel = 0,
 	        .levelCount = VK_REMAINING_MIP_LEVELS,
 	        .baseArrayLayer = 0,
@@ -1206,11 +1265,15 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 
 void VulkanRenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource) noexcept
 {
-	TrackResource(resource);
-	if (m_commandBuffer == VK_NULL_HANDLE)
+	if (m_commandBuffer == VK_NULL_HANDLE || !resource)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan unordered-access barriers require an active command buffer and a valid resource.");
 	}
+	TrackResource(resource);
 	EndDynamicRenderingIfNeeded();
 
 	VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
@@ -1222,8 +1285,15 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource)
 	VkPipelineStageFlags2 dstStageMask = srcStageMask;
 	VkAccessFlags2 dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
 	VulkanRecordingResource recordingResource;
-	if (ResolveResource(resource, recordingResource) &&
-	    recordingResource.AccelerationStructure != VK_NULL_HANDLE)
+	if (!ResolveResource(resource, recordingResource))
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan unordered-access barrier references a resource that is not registered for command recording.");
+	}
+	if (recordingResource.AccelerationStructure != VK_NULL_HANDLE)
 	{
 		srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
 		srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
@@ -1291,26 +1361,21 @@ VkShaderStageFlags VulkanRenderCommandList::ToVkShaderStages(ShaderStageMask vis
 	return result != 0 ? result : VK_SHADER_STAGE_ALL;
 }
 
-VulkanResourceStateMapping VulkanRenderCommandList::ResolveResourceState(
-    ResourceState state) const noexcept
+VulkanResourceStateMapping VulkanRenderCommandList::ResolveResourceState(ResourceState state) const noexcept
 {
-	VulkanResourceStateMapping mapping =
-	    VulkanTypeConversions::ToResourceStateMapping(state);
+	VulkanResourceStateMapping mapping = VulkanTypeConversions::ToResourceStateMapping(state);
 	if (m_queueType != ERhiQueueType::Compute)
 	{
 		return mapping;
 	}
 
-	if (state == ResourceState::ShaderResource ||
-	    state == ResourceState::UnorderedAccess)
+	if (state == ResourceState::ShaderResource || state == ResourceState::UnorderedAccess)
 	{
 		mapping.StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
 	}
 	else if (state == ResourceState::RayTracingAccelerationStructure)
 	{
-		mapping.StageMask =
-		    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
-		    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+		mapping.StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
 	}
 	return mapping;
 }
@@ -1320,27 +1385,21 @@ VkBuffer VulkanRenderCommandList::ResolveBuffer(RhiGpuVirtualAddress gpuAddress)
 	return ResolveBufferBinding(gpuAddress).Buffer;
 }
 
-bool VulkanRenderCommandList::ResolveResource(
-    RhiResourceHandle resource,
-    VulkanRecordingResource& outResource) const noexcept
+bool VulkanRenderCommandList::ResolveResource(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept
 {
-	if (m_memoryAllocator == nullptr)
+	if (m_memoryAllocator != nullptr &&
+	    (m_memoryAllocator->ResolveRecordingResource(resource, outResource) ||
+	     (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingResource(resource, outResource))))
 	{
-		return false;
+		return true;
 	}
-
-	return m_memoryAllocator->ResolveRecordingResource(resource, outResource) ||
-	       (IsCoordinatorRecording() &&
-	        m_memoryAllocator->ResolveCoordinatorRecordingResource(resource, outResource));
+	return m_descriptorService != nullptr && m_descriptorService->ResolveRegisteredImageResource(resource, outResource);
 }
 
-VkDeviceAddress VulkanRenderCommandList::ResolveRayTracingBufferAddress(
-    const RhiRayTracingBufferBinding& binding) const noexcept
+VkDeviceAddress VulkanRenderCommandList::ResolveRayTracingBufferAddress(const RhiRayTracingBufferBinding& binding) const noexcept
 {
 	VulkanRecordingResource resource;
-	if (!ResolveResource(binding.Resource, resource) ||
-	    resource.Buffer == VK_NULL_HANDLE ||
-	    resource.BufferDeviceAddress == 0)
+	if (!ResolveResource(binding.Resource, resource) || resource.Buffer == VK_NULL_HANDLE || resource.BufferDeviceAddress == 0)
 	{
 		return 0;
 	}
@@ -1348,9 +1407,7 @@ VkDeviceAddress VulkanRenderCommandList::ResolveRayTracingBufferAddress(
 	return resource.BufferDeviceAddress + binding.OffsetInBytes;
 }
 
-bool VulkanRenderCommandList::ResolveAddress(
-    RhiGpuVirtualAddress address,
-    VulkanRecordingResource& outResource) const noexcept
+bool VulkanRenderCommandList::ResolveAddress(RhiGpuVirtualAddress address, VulkanRecordingResource& outResource) const noexcept
 {
 	if (m_memoryAllocator == nullptr)
 	{
@@ -1358,8 +1415,7 @@ bool VulkanRenderCommandList::ResolveAddress(
 	}
 
 	return m_memoryAllocator->ResolveRecordingAddress(address, outResource) ||
-	       (IsCoordinatorRecording() &&
-	        m_memoryAllocator->ResolveCoordinatorRecordingAddress(address, outResource));
+	       (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingAddress(address, outResource));
 }
 
 void VulkanRenderCommandList::WriteAccelerationStructureBinding(
@@ -1369,61 +1425,68 @@ void VulkanRenderCommandList::WriteAccelerationStructureBinding(
 {
 	VulkanRecordingResource resource;
 	if (!ResolveAddress(address, resource) ||
-	    (resource.AccelerationStructure == VK_NULL_HANDLE &&
-	     !resource.IsPartitionedAccelerationStructure))
+	    (resource.AccelerationStructure == VK_NULL_HANDLE && !resource.IsPartitionedAccelerationStructure))
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan acceleration-structure binding references an unresolved GPU address.");
 	}
 
 	if (resource.IsPartitionedAccelerationStructure)
 	{
-		m_descriptorAllocator
-		    ->WritePartitionedAccelerationStructureDescriptor(
-		        descriptorSet,
-		        binding,
-		        resource.DeviceAddress);
+		m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, binding, resource.DeviceAddress);
 		return;
 	}
 
-	m_descriptorAllocator->WriteAccelerationStructureDescriptor(
-	    descriptorSet,
-	    binding,
-	    resource.AccelerationStructure);
+	m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, binding, resource.AccelerationStructure);
 }
 
-VulkanRenderCommandList::BufferBinding VulkanRenderCommandList::ResolveBufferBinding(
-    RhiGpuVirtualAddress gpuAddress) const noexcept
+VulkanRenderCommandList::BufferBinding VulkanRenderCommandList::ResolveBufferBinding(RhiGpuVirtualAddress gpuAddress) const noexcept
 {
 	if (gpuAddress == 0)
 	{
-		return {};
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan buffer binding requires a non-zero GPU address.");
 	}
 
 	BufferBinding binding;
-	if (m_recordingUploadPage != nullptr &&
-	    m_recordingUploadPage->Resolve(gpuAddress, binding.Buffer, binding.Offset, binding.Range))
+	if (m_recordingUploadPage != nullptr && m_recordingUploadPage->Resolve(gpuAddress, binding.Buffer, binding.Offset, binding.Range))
 	{
 		return binding;
 	}
 
 	VulkanRecordingResource resource;
-	if (ResolveAddress(gpuAddress, resource) &&
-	    resource.Buffer != VK_NULL_HANDLE)
+	if (ResolveAddress(gpuAddress, resource) && resource.Buffer != VK_NULL_HANDLE)
 	{
+		if (resource.BufferDeviceAddress == 0 || gpuAddress < resource.BufferDeviceAddress)
+		{
+			Diagnostics::Fatal(
+			    g_vulkanRenderCommandListLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Vulkan buffer binding resolved incomplete address metadata.");
+		}
+		const VkDeviceSize offset = gpuAddress - resource.BufferDeviceAddress;
+		if (offset >= resource.ResourceSizeInBytes)
+		{
+			Diagnostics::Fatal(
+			    g_vulkanRenderCommandListLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Vulkan buffer binding address lies outside the resolved resource.");
+		}
 		binding.Buffer = resource.Buffer;
-		binding.Offset =
-		    resource.BufferDeviceAddress != 0
-		        ? gpuAddress - resource.BufferDeviceAddress
-		        : 0;
-		binding.Range =
-		    binding.Offset < resource.ResourceSizeInBytes
-		        ? resource.ResourceSizeInBytes - binding.Offset
-		        : VK_WHOLE_SIZE;
+		binding.Offset = offset;
+		binding.Range = resource.ResourceSizeInBytes - offset;
 		return binding;
 	}
 
-	binding.Buffer = reinterpret_cast<VkBuffer>(gpuAddress);
-	return binding;
+	Diagnostics::Fatal(
+	    g_vulkanRenderCommandListLogger,
+	    __FILE__,
+	    __LINE__,
+	    "Vulkan buffer binding references a GPU address that is not registered for command recording.");
 }
 
 void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
@@ -1486,9 +1549,20 @@ VkImageAspectFlags VulkanRenderCommandList::ResolveDepthStencilAspectMask(VkImag
 		return 0;
 	}
 
-	const VkImageAspectFlags aspectMask =
-	    m_descriptorManager != nullptr ? m_descriptorManager->ResolveImageViewAspectMask(imageView) : 0;
-	return aspectMask != 0 ? aspectMask : VK_IMAGE_ASPECT_DEPTH_BIT;
+	if (m_descriptorService == nullptr)
+	{
+		Diagnostics::Fatal(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan depth-stencil aspect resolution requires an active descriptor manager.");
+	}
+	const VkImageAspectFlags aspectMask = m_descriptorService->ResolveImageViewAspectMask(imageView);
+	if (aspectMask == 0)
+	{
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan depth-stencil view has no registered image aspect.");
+	}
+	return aspectMask;
 }
 
 VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
@@ -1515,14 +1589,6 @@ VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
 	{
 		const VkDescriptorSet previousSet = descriptorSets[setIndex];
 		descriptorSets[setIndex] = m_recordingDescriptorPool->AllocateSet(layout->GetDescriptorSetLayouts()[setIndex]);
-		if (descriptorSets[setIndex] != VK_NULL_HANDLE)
-		{
-			m_descriptorAllocator->WriteFallbackDescriptors(
-			    descriptorSets[setIndex],
-			    layout->GetBindings(),
-			    layout->GetBindingCount(),
-			    setIndex);
-		}
 		if (previousSet != VK_NULL_HANDLE && boundSets[setIndex] && descriptorSets[setIndex] != VK_NULL_HANDLE)
 		{
 			CopyDescriptorSet(layout, setIndex, previousSet, descriptorSets[setIndex]);
@@ -1569,38 +1635,27 @@ void VulkanRenderCommandList::CopyDescriptorSet(
 			continue;
 		}
 
-		copies[copyCount++] =
-		    VkCopyDescriptorSet{
-		        .sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
-		        .pNext = nullptr,
-		        .srcSet = sourceSet,
-		        .srcBinding = binding.BindingPoint.Binding,
-		        .srcArrayElement = 0,
-		        .dstSet = destinationSet,
-		        .dstBinding = binding.BindingPoint.Binding,
-		        .dstArrayElement = 0,
-		        .descriptorCount = binding.DescriptorCount};
+		copies[copyCount++] = VkCopyDescriptorSet{
+		    .sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
+		    .pNext = nullptr,
+		    .srcSet = sourceSet,
+		    .srcBinding = binding.BindingPoint.Binding,
+		    .srcArrayElement = 0,
+		    .dstSet = destinationSet,
+		    .dstBinding = binding.BindingPoint.Binding,
+		    .dstArrayElement = 0,
+		    .descriptorCount = binding.DescriptorCount};
 
 		if (copyCount == copies.size())
 		{
-			vkUpdateDescriptorSets(
-			    m_rhi->GetDevice(),
-			    0,
-			    nullptr,
-			    copyCount,
-			    copies.data());
+			vkUpdateDescriptorSets(m_rhi->GetDevice(), 0, nullptr, copyCount, copies.data());
 			copyCount = 0;
 		}
 	}
 
 	if (copyCount != 0)
 	{
-		vkUpdateDescriptorSets(
-		    m_rhi->GetDevice(),
-		    0,
-		    nullptr,
-		    copyCount,
-		    copies.data());
+		vkUpdateDescriptorSets(m_rhi->GetDevice(), 0, nullptr, copyCount, copies.data());
 	}
 }
 
@@ -1615,9 +1670,7 @@ void VulkanRenderCommandList::MarkDescriptorSetDirty(std::uint32_t setIndex, std
 
 void VulkanRenderCommandList::FlushGraphicsDescriptorSets() noexcept
 {
-	for (std::uint32_t setIndex = 0;
-	     setIndex < m_graphicsDescriptorSets.size() &&
-	     setIndex < m_graphicsDirtyDescriptorSets.size();
+	for (std::uint32_t setIndex = 0; setIndex < m_graphicsDescriptorSets.size() && setIndex < m_graphicsDirtyDescriptorSets.size();
 	     ++setIndex)
 	{
 		if (!m_graphicsDirtyDescriptorSets[setIndex])
@@ -1636,7 +1689,8 @@ void VulkanRenderCommandList::FlushGraphicsDescriptorSets() noexcept
 
 void VulkanRenderCommandList::FlushComputeDescriptorSets() noexcept
 {
-	for (std::uint32_t setIndex = 0; setIndex < m_computeDescriptorSets.size() && setIndex < m_computeDirtyDescriptorSets.size(); ++setIndex)
+	for (std::uint32_t setIndex = 0; setIndex < m_computeDescriptorSets.size() && setIndex < m_computeDirtyDescriptorSets.size();
+	     ++setIndex)
 	{
 		if (!m_computeDirtyDescriptorSets[setIndex])
 		{

@@ -1,5 +1,6 @@
 #include "TextureCookRequestList.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
 
 #include <utility>
@@ -23,29 +24,25 @@ void TextureCookRequestSet::Clear() noexcept
 	requests.clear();
 }
 
-bool TextureCookRequestSet::Add(const TextureCookRequest& request, std::string& outErrorMessage)
+void TextureCookRequestSet::Add(const TextureCookRequest& request)
 {
 	const auto existingRequest = requestsById.find(request.assetId);
 	if (existingRequest == requestsById.end())
 	{
 		requestsById.emplace(request.assetId, request);
 		requests.push_back(request);
-		outErrorMessage.clear();
-		return true;
+		return;
 	}
 	if (!TextureCookRequestsMatch(existingRequest->second, request))
 	{
-		outErrorMessage =
-		    "Texture cook request conflict for asset id '" + Formatting::FormatHexUInt64(request.assetId) + "'.";
-		return false;
+		throw Diagnostics::Error(
+		    "Texture cook request conflict for asset id '" + Formatting::FormatHexUInt64(request.assetId) + "'.");
 	}
-	outErrorMessage.clear();
-	return true;
 }
 
-void TextureCookRequestSet::MoveRequestsTo(std::vector<TextureCookRequest>& outRequests)
+std::vector<TextureCookRequest> TextureCookRequestSet::ReleaseRequests() noexcept
 {
-	outRequests = std::move(requests);
+	std::vector<TextureCookRequest> releasedRequests = std::move(requests);
 	requestsById.clear();
-	requests.clear();
+	return releasedRequests;
 }

@@ -63,10 +63,10 @@ class SPARKLE_ENGINE_API GameWorld final
 	bool DestroyEntity(EntityId entity) noexcept;
 
   private:
-	friend class LevelManager;
+	friend class LevelSession;
 	void CommitWorldChanges();
 	void InitializeStagedLevel(const LevelDesc& desc);
-	bool CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::string& errorMessage);
+	void CommitSceneLoadPackage(Assets::SceneLoadPackage&& package);
 	void FinalizeSceneLoadCommit();
 
 	std::unique_ptr<ECS::GameWorldState> m_state;

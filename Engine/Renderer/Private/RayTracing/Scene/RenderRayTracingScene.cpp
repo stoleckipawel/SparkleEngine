@@ -3,7 +3,7 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 
 #include "Commands/RenderCommandContext.h"
-#include "Meshes/GPUMeshCache.h"
+#include "Meshes/GpuMeshCache.h"
 #include "RHI/Public/CVars/RHICVars.h"
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
@@ -11,12 +11,13 @@
 #include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
 #include "SceneData/RenderSceneData.h"
 
+static const auto g_renderRayTracingSceneLogger = Logging::GetOrCreateLogger("Renderer.RenderRayTracingScene");
+
 RenderRayTracingScene::RenderRayTracingScene(
     RenderHardwareInterface& renderHardwareInterface,
-    const GPUMeshCache& meshes,
+    const GpuMeshCache& meshes,
     const RayTracingCapabilityReport& capabilityReport) noexcept :
-    m_renderHardwareInterface(&renderHardwareInterface),
-    m_capabilityReport(capabilityReport)
+    m_renderHardwareInterface(&renderHardwareInterface), m_capabilityReport(capabilityReport)
 {
 	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
 	m_performanceMetrics.Providers.TopLevelProviderReason = m_capabilityReport.TopLevelProvider.SelectionReason;
@@ -30,10 +31,7 @@ RenderRayTracingScene::RenderRayTracingScene(
 		return;
 	}
 
-	m_blasCache =
-	    std::make_unique<RayTracingBlasCache>(
-	        renderHardwareInterface,
-	        meshes);
+	m_blasCache = std::make_unique<RayTracingBlasCache>(renderHardwareInterface, meshes);
 	m_topLevelStrategyPrefersPartitionedTlas = CVarRayTracingPreferPartitionedTlas.Get();
 	m_topLevelAccelerationStructureStrategy =
 	    CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);
@@ -41,9 +39,7 @@ RenderRayTracingScene::RenderRayTracingScene(
 
 RenderRayTracingScene::~RenderRayTracingScene() noexcept = default;
 
-void RenderRayTracingScene::PlanFrame(
-    const RenderSceneData& sceneData,
-    const DirectX::XMFLOAT3& cameraPosition) noexcept
+void RenderRayTracingScene::PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
 	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
 	if (m_topLevelScenePlanner != nullptr)
@@ -54,29 +50,21 @@ void RenderRayTracingScene::PlanFrame(
 
 RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData) noexcept
 {
-
 	if (m_topLevelAccelerationStructureStrategy == nullptr)
 	{
-		return {};
+		Diagnostics::Fatal(
+		    g_renderRayTracingSceneLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Ray-tracing scene has no top-level acceleration-structure strategy.");
 	}
 	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
-
-	const std::uint32_t estimatedInstanceCount =
-	    static_cast<std::uint32_t>(
-	        sceneData.rayTracingWork.BlasInputs.size());
-	if (estimatedInstanceCount == 0)
-	{
-		m_topLevelAccelerationStructureStrategy->Clear();
-		m_performanceMetrics.Blas = {};
-		m_performanceMetrics.ClassicTlas = {};
-		return {};
-	}
 
 	return m_topLevelAccelerationStructureStrategy->Prepare(sceneData, m_topLevelScenePlanner.get());
 }
 
 void RenderRayTracingScene::Build(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const RenderSceneData& sceneData,
     PassExecutionDiagnostics* diagnostics) noexcept
 {
@@ -84,22 +72,16 @@ void RenderRayTracingScene::Build(
 
 	if (m_blasCache == nullptr || m_topLevelAccelerationStructureStrategy == nullptr)
 	{
-		return;
-	}
-
-	if (sceneData.rayTracingWork.BlasInputs.empty())
-	{
-		return;
+		Diagnostics::Fatal(
+		    g_renderRayTracingSceneLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Ray-tracing scene build has no BLAS cache or top-level strategy.");
 	}
 
 	m_blasCache->BeginFrame();
 	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild =
-	    m_topLevelAccelerationStructureStrategy->Build(
-	        cmd,
-	        sceneData,
-	        *m_blasCache,
-	        m_topLevelScenePlanner.get(),
-	        &performanceDiagnostics);
+	    m_topLevelAccelerationStructureStrategy->Build(commandContext, sceneData, *m_blasCache, m_topLevelScenePlanner.get(), &performanceDiagnostics);
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
 	const RayTracingTopLevelAccelerationStructureBuildStats& topLevelStats = topLevelBuild.Stats;
 
@@ -111,11 +93,7 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.Blas.ReferencedMeshCount = blasStats.referencedMeshCount;
 	m_performanceMetrics.Blas.BuiltCount = blasStats.builtBlasCount;
 	m_performanceMetrics.Blas.ReusedCount = blasStats.reusedBlasCount;
-	m_performanceMetrics.ClassicTlas.CandidateInstanceCount = topLevelStats.Candidates.InstanceCount;
-	m_performanceMetrics.ClassicTlas.InstanceCount = topLevelStats.Build.InstanceCount;
-	m_performanceMetrics.ClassicTlas.MissingGpuMeshCount = topLevelStats.Candidates.MissingGpuMeshCount;
-	m_performanceMetrics.ClassicTlas.RejectedBlasCount = topLevelStats.Candidates.RejectedBlasCount;
-	m_performanceMetrics.ClassicTlas.Built = topLevelStats.Build.Built;
+	m_performanceMetrics.ClassicTlas.InstanceCount = topLevelStats.InstanceCount;
 }
 
 void RenderRayTracingScene::Clear() noexcept
@@ -137,36 +115,43 @@ void RenderRayTracingScene::Clear() noexcept
 
 bool RenderRayTracingScene::HasValidTlas() const noexcept
 {
-	return m_topLevelAccelerationStructureStrategy != nullptr &&
-	       m_topLevelAccelerationStructureStrategy->HasValidSceneTlas();
+	return m_topLevelAccelerationStructureStrategy != nullptr && m_topLevelAccelerationStructureStrategy->HasValidSceneTlas();
 }
 
 RhiOwnedResourceHandle RenderRayTracingScene::GetTlasResource() const noexcept
 {
-	return m_topLevelAccelerationStructureStrategy != nullptr
-	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasResource()
-	           : RhiOwnedResourceHandle{};
+	if (m_topLevelAccelerationStructureStrategy == nullptr)
+	{
+		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS resource owner.");
+	}
+	return m_topLevelAccelerationStructureStrategy->GetSceneTlasResource();
 }
 
 RhiGpuVirtualAddress RenderRayTracingScene::GetTlasGpuAddress() const noexcept
 {
-	return m_topLevelAccelerationStructureStrategy != nullptr
-	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasGpuAddress()
-	           : 0;
+	if (m_topLevelAccelerationStructureStrategy == nullptr)
+	{
+		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS address owner.");
+	}
+	return m_topLevelAccelerationStructureStrategy->GetSceneTlasGpuAddress();
 }
 
 RayTracingSceneTlasShaderAccessMode RenderRayTracingScene::GetTlasShaderAccessMode() const noexcept
 {
-	return m_topLevelAccelerationStructureStrategy != nullptr
-	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasShaderAccessMode()
-	           : RayTracingSceneTlasShaderAccessMode::Descriptor;
+	if (m_topLevelAccelerationStructureStrategy == nullptr)
+	{
+		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS shader-access owner.");
+	}
+	return m_topLevelAccelerationStructureStrategy->GetSceneTlasShaderAccessMode();
 }
 
 std::uint32_t RenderRayTracingScene::GetTlasInstanceCount() const noexcept
 {
-	return m_topLevelAccelerationStructureStrategy != nullptr
-	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasInstanceCount()
-	           : 0;
+	if (m_topLevelAccelerationStructureStrategy == nullptr)
+	{
+		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS instance-count owner.");
+	}
+	return m_topLevelAccelerationStructureStrategy->GetSceneTlasInstanceCount();
 }
 
 const RayTracingPerformanceMetrics& RenderRayTracingScene::GetPerformanceMetrics() const noexcept
@@ -199,6 +184,3 @@ void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRu
 	    CreateRayTracingTopLevelAccelerationStructureStrategy(*m_renderHardwareInterface, m_capabilityReport);
 	m_topLevelStrategyPrefersPartitionedTlas = wantsPartitionedTlas;
 }
-
-
-

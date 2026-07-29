@@ -16,5 +16,5 @@ namespace CookedShaderBindingDiagnostics
 	    const LoadedShaderPackage& package,
 	    const ShaderPackageDefinition& definition,
 	    const std::vector<PassParameterDesc>& expectedParameters,
-	    CookedShaderBinaryFormat requiredBinaryFormat);
+	    CookedShaderBinaryFormat runtimeBinaryFormat);
 }

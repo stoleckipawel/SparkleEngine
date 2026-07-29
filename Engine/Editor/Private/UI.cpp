@@ -2,7 +2,7 @@
 #include "UI.h"
 #include "Window/Window.h"
 #include "Input/InputSystem.h"
-#include "Level/LevelManager.h"
+#include "Level/LevelSession.h"
 #include "Timer.h"
 
 #include "Console/EditorConsoleSystem.h"
@@ -20,7 +20,7 @@
 #include "Style/SparkleUiTheme.h"
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"
-#include "Scene/Transactions/EditorTransactionManager.h"
+#include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 
 #include <imgui.h>
@@ -125,7 +125,7 @@ bool UI::ConsumeViewportCaptureRequest() noexcept
 
 UI::UI(EditorHostServices hostServices) :
 	m_timer(&hostServices.RuntimeTimer),
-	m_levelManager(hostServices.Levels),
+	m_levelSession(hostServices.Levels),
 	m_window(&hostServices.HostWindow),
 	m_inputSystem(&hostServices.Input),
 	m_sceneSelection(SceneObjectSelection::None())
@@ -136,7 +136,7 @@ UI::UI(EditorHostServices hostServices) :
 	    .AcknowledgeChanges = std::move(hostServices.AcknowledgeWorldChanges),
 	    .WorldGeneration = std::move(hostServices.WorldGeneration),
 	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
-	m_transactions = std::make_unique<EditorTransactionManager>(std::move(hostServices.SubmitWorldEdit));
+	m_transactionHistory = std::make_unique<EditorTransactionHistory>(std::move(hostServices.SubmitWorldEdit));
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
 	InitializeImGuiContext();
 	SetupDPIScaling();
@@ -174,7 +174,7 @@ bool UI::InitializeWin32Backend()
 {
 	if (!m_window->GetHWND())
 	{
-		Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeWin32Backend: invalid window handle");
+		Diagnostics::Fatal(g_editorLogger, __FILE__, __LINE__, "UI::InitializeWin32Backend: invalid window handle");
 		return false;
 	}
 
@@ -193,7 +193,7 @@ void UI::InitializeDefaultPanels()
 
 void UI::InitializeCorePanels()
 {
-	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
+	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelSession, m_window);
 	ConfigureMainMenuBarWindowActions();
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
 	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>();
@@ -214,7 +214,7 @@ void UI::InitializeCorePanels()
 
 void UI::InitializeViewportPanels()
 {
-	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelManager, m_renderingSettings.get());
+	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelSession, m_renderingSettings.get());
 	m_viewportPanel = std::make_unique<ViewportPanel>(
 	    EditorUiState::SceneOutlinerWidth,
 	    EditorUiState::SceneInspectorWidth);
@@ -258,8 +258,8 @@ void UI::InitializeScenePanels()
 		m_sceneSelection = SceneObjectSelection::Camera(m_sceneModel->GetCameras().front().Entity);
 	}
 
-	m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(m_sceneSelection, *m_transactions, EditorUiState::SceneOutlinerWidth);
-	m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactions, EditorUiState::SceneInspectorWidth);
+	m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(m_sceneSelection, *m_transactionHistory, EditorUiState::SceneOutlinerWidth);
+	m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactionHistory, EditorUiState::SceneInspectorWidth);
 }
 
 void UI::ConfigureMainMenuBarWindowActions()
@@ -355,7 +355,7 @@ void UI::Build()
 {
 	UpdateSceneModel();
 	HandleTransactionShortcuts();
-	const bool disableInteraction = m_levelManager != nullptr && m_levelManager->IsLevelChangeInProgress();
+	const bool disableInteraction = m_levelSession != nullptr && m_levelSession->IsLevelChangeInProgress();
 	BeginInputRouting(disableInteraction);
 	const float mainMenuBarHeight = BuildMainMenuBar();
 	BuildSceneOutliner(disableInteraction, mainMenuBarHeight);
@@ -536,9 +536,9 @@ void UI::UpdateSceneModel()
 		return;
 	}
 
-	if (m_transactions)
+	if (m_transactionHistory)
 	{
-		m_transactions->InvalidateForWorldGeneration(m_sceneModel->GetWorldGeneration());
+		m_transactionHistory->InvalidateForWorldGeneration(m_sceneModel->GetWorldGeneration());
 	}
 
 	if (previousWorldGeneration != 0 && previousWorldGeneration != m_sceneModel->GetWorldGeneration())
@@ -564,18 +564,18 @@ void UI::UpdateSceneModel()
 
 void UI::HandleTransactionShortcuts()
 {
-	if (!m_sceneModel || !m_transactions || ImGui::GetIO().WantTextInput)
+	if (!m_sceneModel || !m_transactionHistory || ImGui::GetIO().WantTextInput)
 	{
 		return;
 	}
 
 	if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Z))
 	{
-		(void) m_transactions->Undo(m_sceneModel->GetWorldGeneration());
+		(void) m_transactionHistory->Undo(m_sceneModel->GetWorldGeneration());
 	}
 	else if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Y))
 	{
-		(void) m_transactions->Redo(m_sceneModel->GetWorldGeneration());
+		(void) m_transactionHistory->Redo(m_sceneModel->GetWorldGeneration());
 	}
 }
 void UI::Update()

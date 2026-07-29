@@ -14,16 +14,16 @@
 struct ComputePassPipelineRuntime;
 struct FrameContext;
 struct PassExecutionContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 struct RenderPassDefinition;
 struct RenderViewData;
 
 struct RaytracedGBufferUniformData
 {
-	std::uint32_t RayTracingHitDataAvailable = 0u;
 	std::uint32_t RayTracingHitInstanceCount = 0u;
 	std::uint32_t RayTracingHitMaterialCount = 0u;
 	std::uint32_t Padding0 = 0u;
+	std::uint32_t Padding1 = 0u;
 };
 
 static_assert(std::is_standard_layout_v<RaytracedGBufferUniformData>, "RaytracedGBufferUniformData must be standard-layout");
@@ -85,7 +85,7 @@ class RaytracedGBufferPass final
 	    ParameterInstance& parameters,
 	    const FrameContext& frame,
 	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices) const;
+	    const PassRuntimeContext& passRuntimeContext) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

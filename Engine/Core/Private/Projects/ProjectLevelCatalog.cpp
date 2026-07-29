@@ -43,15 +43,9 @@ bool ProjectLevelCatalog::IsLevelReady(
 	       IsOptionalContentPackReady(projectRoot, level.optionalContentPackId);
 }
 
-bool ProjectLevelCatalogFile::Load(
-    const std::filesystem::path& projectRoot,
-    ProjectLevelCatalog& outCatalog,
-    std::string& outErrorMessage)
+ProjectLevelCatalog ProjectLevelCatalogFile::Load(const std::filesystem::path& projectRoot)
 {
-	return ProjectLevelCatalogReader::Read(
-	    projectRoot,
-	    outCatalog,
-	    outErrorMessage);
+	return ProjectLevelCatalogReader::Read(projectRoot);
 }
 
 bool ProjectLevelCatalogFile::SetLevelDefaultIncluded(

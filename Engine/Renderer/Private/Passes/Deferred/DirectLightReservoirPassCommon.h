@@ -10,7 +10,7 @@
 #include <type_traits>
 
 struct FrameContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 struct RenderViewData;
 
 struct DirectLightReservoirCommonParameters
@@ -97,5 +97,5 @@ namespace DirectLightReservoirPassCommon
 	    DirectLightReservoirCommonParameters& parameters,
 	    const FrameContext& frame,
 	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices);
+	    const PassRuntimeContext& passRuntimeContext);
 }

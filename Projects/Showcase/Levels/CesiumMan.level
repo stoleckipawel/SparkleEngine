@@ -10,10 +10,10 @@ MoveSpeed = 0.15
 
 [Lighting]
 DirectionalLight0Direction = 0.42, -0.82, 0.39
-DirectionalLight0IntensityLux = 2.35
+DirectionalLight0IlluminanceLux = 2.35
 DirectionalLight0Color = 1.0, 0.93, 0.82
 DirectionalLight1Direction = -0.24, -0.66, -0.71
-DirectionalLight1IntensityLux = 0.2
+DirectionalLight1IlluminanceLux = 0.2
 DirectionalLight1Color = 0.42, 0.5, 0.72
 DirectionalLight1CastShadow = false
 

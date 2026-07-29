@@ -1,11 +1,11 @@
 #pragma once
 
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 
 struct cgltf_data;
 
 class GltfMaterialVariantImporter final
 {
   public:
-	static void ImportMaterialVariants(const cgltf_data* data, SourceImportResult& result);
+	static void ImportMaterialVariants(const cgltf_data* data, SourceImportOutput& output);
 };

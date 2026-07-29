@@ -3,9 +3,9 @@
 
 FrameGraphBuilder::FrameGraphBuilder(
     FrameGraph& frameGraph,
-    const PipelineStateManager& pipelineStateManager) noexcept :
+    const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept :
 	m_frameGraph(frameGraph),
-	m_pipelineStateManager(pipelineStateManager)
+	m_renderPassRuntimeCache(renderPassRuntimeCache)
 {
 }
 

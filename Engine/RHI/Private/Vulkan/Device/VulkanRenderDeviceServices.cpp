@@ -6,7 +6,7 @@
 #include "Vulkan/Commands/VulkanCommandRecordingContext.h"
 #include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
-#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
+#include "Vulkan/Descriptors/VulkanDescriptorService.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
@@ -148,7 +148,7 @@ void VulkanRenderDeviceServices::InitializeHardwareInterface()
 	    std::make_unique<VulkanCommandRecordingContext>(
 	        *m_rhi,
 	        *m_memoryAllocator,
-	        *m_renderHardwareInterface->m_descriptorManager);
+	        *m_renderHardwareInterface->m_descriptorService);
 	m_renderHardwareInterface->SetCommandRecordingContext(
 	    *m_commandRecordingContext);
 }
@@ -200,7 +200,7 @@ void VulkanRenderDeviceServices::BeginFrame() noexcept
 
 void VulkanRenderDeviceServices::PrepareCommandRecording() noexcept
 {
-	m_renderHardwareInterface->m_descriptorManager->PublishRecordingReadView();
+	m_renderHardwareInterface->m_descriptorService->PublishRecordingReadView();
 	m_memoryAllocator->PublishRecordingReadView();
 }
 

@@ -54,7 +54,7 @@ VulkanCommandQueue::VulkanCommandQueue(
 	const VkResult result = vkCreateSemaphore(rhi.GetDevice(), &semaphoreInfo, nullptr, &m_timelineSemaphore);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    GetLogger(),
 		    __FILE__,
 		    __LINE__,
@@ -79,7 +79,7 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	    m_nativeQueue->Queue == VK_NULL_HANDLE ||
 	    submission.CommandBuffers.empty())
 	{
-		Diagnostics::Fail(GetLogger(), __FILE__, __LINE__, "Submit called without a queue or command buffer");
+		Diagnostics::Fatal(GetLogger(), __FILE__, __LINE__, "Submit called without a queue or command buffer");
 		return {};
 	}
 
@@ -96,7 +96,7 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	const VkResult submitResult = SubmitNative(nativeSubmission.SubmitInfo);
 	if (!VulkanResult::Succeeded(submitResult))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    GetLogger(),
 		    __FILE__,
 		    __LINE__,
@@ -120,7 +120,7 @@ bool VulkanCommandQueue::ResolveWaitState(
 		}
 		if (!m_rhi.GetCommandQueue(token.Queue).HasSubmitted(token.Value))
 		{
-			Diagnostics::Fail(
+			Diagnostics::Fatal(
 			    GetLogger(),
 			    __FILE__,
 			    __LINE__,
@@ -219,7 +219,7 @@ void VulkanCommandQueue::DrainForSwapChainRecreation() noexcept
 
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    GetLogger(),
 		    __FILE__,
 		    __LINE__,
@@ -238,7 +238,7 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 	}
 	if (!HasSubmitted(submissionValue))
 	{
-		Diagnostics::Fail(GetLogger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
+		Diagnostics::Fatal(GetLogger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
 		return;
 	}
 	if (IsSubmissionComplete(submissionValue))
@@ -259,7 +259,7 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 	    GetWaitTimeoutNanoseconds());
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    GetLogger(),
 		    __FILE__,
 		    __LINE__,

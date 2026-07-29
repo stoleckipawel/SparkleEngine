@@ -14,9 +14,9 @@ class CameraComponentTranslation final
 	static ECS::Camera ToCameraData(const CameraDesc& desc, float aspectRatio, bool active) noexcept
 	{
 		return ECS::Camera{
-		    .VerticalFieldOfViewDegrees = std::clamp(desc.fovYDegrees, 1.0f, 179.0f),
-		    .NearPlane = desc.nearZ,
-		    .FarPlane = desc.farZ,
+		    .FovYDegrees = std::clamp(desc.fovYDegrees, 1.0f, 179.0f),
+		    .NearZ = desc.nearZ,
+		    .FarZ = desc.farZ,
 		    .AspectRatio = aspectRatio,
 		    .ProjectionKind = desc.projectionKind,
 		    .Active = active};
@@ -100,9 +100,9 @@ namespace ECS
 		entry.desc.position = transform.GetTranslation();
 		entry.desc.pitchRadians = rotation.x;
 		entry.desc.yawRadians = rotation.y;
-		entry.desc.fovYDegrees = camera->VerticalFieldOfViewDegrees;
-		entry.desc.nearZ = camera->NearPlane;
-		entry.desc.farZ = camera->FarPlane;
+		entry.desc.fovYDegrees = camera->FovYDegrees;
+		entry.desc.nearZ = camera->NearZ;
+		entry.desc.farZ = camera->FarZ;
 		entry.desc.projectionKind = camera->ProjectionKind;
 		entry.desc.moveSpeed = ReadCameraMovement(entity).moveSpeed;
 		return entry;

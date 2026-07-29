@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Pipeline/RhiPipelineStateDesc.h"
+#include "Pipeline/RhiPipelineDesc.h"
 #include "Vulkan/VulkanIncludes.h"
 
 #include <string>

@@ -16,7 +16,6 @@ namespace SparkleLauncher
 		QString State;
 		bool Synced = false;
 		bool Ready = false;
-		bool Required = false;
 		bool StartupDefault = false;
 	};
 

@@ -4,14 +4,13 @@
 
 #include <cstdint>
 
-struct RenderRayTracingPassServices;
+struct RayTracingPassContext;
 
 namespace RayTracedShadowPassData
 {
 	RayTracedShadowUniformData Build(
-	    const RenderRayTracingPassServices* services,
-	    bool hasSceneTlas,
-	    bool hasAlphaTestResources,
+	    const RayTracingPassContext* context,
+	    bool hasTraceableInstances,
 	    std::uint32_t hitInstanceCount,
 	    std::uint32_t hitMaterialCount) noexcept;
 }

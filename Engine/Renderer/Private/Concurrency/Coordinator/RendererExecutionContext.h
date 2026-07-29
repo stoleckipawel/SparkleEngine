@@ -7,7 +7,7 @@
 #include <memory>
 
 class FramePipeline;
-class RendererSystemRoot;
+class RendererHost;
 class RhiImGuiRenderer;
 class Window;
 struct RendererBackendConfiguration;
@@ -25,8 +25,8 @@ class RendererExecutionContext final
 	void ExecuteFrame(RenderFramePacket packet) noexcept;
 	void ExecuteControl(const RenderControlPayload& payload) noexcept;
 
-	RendererSystemRoot& GetSystems() noexcept;
-	const RendererSystemRoot& GetSystems() const noexcept;
+	RendererHost& GetRendererHost() noexcept;
+	const RendererHost& GetRendererHost() const noexcept;
 	FramePipeline& GetPipeline() noexcept;
 	const FramePipeline& GetPipeline() const noexcept;
 
@@ -35,7 +35,7 @@ class RendererExecutionContext final
 	void SettleRendererBeforeDestruction() noexcept;
 
 	Threading::OwnerThread m_owner{"RenderCoordinator renderer state"};
-	std::unique_ptr<RendererSystemRoot> m_systems;
+	std::unique_ptr<RendererHost> m_rendererHost;
 	std::unique_ptr<FramePipeline> m_pipeline;
 	bool m_shutdownSettled = false;
 };

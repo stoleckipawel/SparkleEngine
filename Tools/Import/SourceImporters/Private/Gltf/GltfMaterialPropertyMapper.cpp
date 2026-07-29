@@ -42,18 +42,6 @@ void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedM
 		importedMaterial.metallic = pbr.metallic_factor;
 		importedMaterial.roughness = pbr.roughness_factor;
 	}
-	else if (material.has_pbr_specular_glossiness)
-	{
-		const cgltf_pbr_specular_glossiness& specGloss = material.pbr_specular_glossiness;
-		importedMaterial.baseColor =
-		    DirectX::XMFLOAT4(
-		        specGloss.diffuse_factor[0],
-		        specGloss.diffuse_factor[1],
-		        specGloss.diffuse_factor[2],
-		        specGloss.diffuse_factor[3]);
-		importedMaterial.metallic = 0.0f;
-		importedMaterial.roughness = 1.0f - specGloss.glossiness_factor;
-	}
 
 	if (material.has_ior)
 	{

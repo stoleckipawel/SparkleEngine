@@ -37,7 +37,7 @@ bool TaskScope::State::RegisterExecution(const std::shared_ptr<TaskExecution::St
 bool TaskScope::State::RegisterChild(const std::shared_ptr<State>& child)
 {
 	std::lock_guard lock(Mutex);
-	if (Closed || Settled || std::this_thread::get_id() != OwnerThread || child->OwnerThread != OwnerThread)
+	if (Closed || Settled)
 	{
 		return false;
 	}
@@ -128,7 +128,13 @@ bool TaskScope::State::JoinFor(std::chrono::milliseconds timeout)
 	std::unique_lock lock(Mutex);
 	Closed = true;
 	NotifyParentIfSettled(lock);
-	return Condition.wait_for(lock, timeout, [this] { return Settled; });
+	return Condition.wait_for(
+	    lock,
+	    timeout,
+	    [this]
+	    {
+		    return Settled;
+	    });
 }
 
 void TaskScope::State::CancelAndJoin() noexcept
@@ -139,7 +145,12 @@ void TaskScope::State::CancelAndJoin() noexcept
 		return;
 	}
 	std::unique_lock lock(Mutex);
-	Condition.wait(lock, [this] { return Settled; });
+	Condition.wait(
+	    lock,
+	    [this]
+	    {
+		    return Settled;
+	    });
 }
 
 bool TaskScope::State::IsCancellationRequested() const noexcept
@@ -158,7 +169,7 @@ TaskScope::TaskScope(TaskScopeDesc desc, TaskScope* parent) : m_state(std::make_
 {
 	if (parent != nullptr && !parent->m_state->RegisterChild(m_state))
 	{
-		throw std::logic_error("TaskScope parent is closed, settled, or owned by another thread.");
+		throw std::logic_error("TaskScope parent is closed or settled.");
 	}
 }
 

@@ -218,6 +218,17 @@ Rule:
 - Add performance evidence only by consolidating existing scattered diagnostics or using profiler-visible scopes.
 - Do not add new profiling frameworks, report formats, logs, validation layers, scaffolding, wrappers, or abstractions.
 
+Current evidence boundary (2026-07-28):
+
+- Shader-consumed lighting resources now have concrete producers; conditional dispatch and its helper are deleted.
+- Sponza and Empty have paired D3D12/Vulkan CPU percentile baselines, including classic TLAS, PTLAS, reconstruction, and empty
+  ray-tracing-scene coverage. These are regression captures, not flagship closure.
+- One-worker parallel command recording lost to the same serial plan on Vulkan Sponza, so serial recording remains the default.
+- Worker samples affected by power drift or changing resident instance counts were rejected; no machine-shaped numeric policy
+  entered product defaults.
+- Bistro/San Miguel routes, deterministic images, native GPU captures, GPU percentiles, and input-to-present evidence remain
+  open before this evidence package can advance beyond Sponza regression status.
+
 ### P1. Existing Decision Text
 
 Existing decision text should stay lean and senior:

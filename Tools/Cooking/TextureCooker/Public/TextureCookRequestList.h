@@ -65,8 +65,8 @@ class TextureCookRequestSet final
 {
 public:
 	void Clear() noexcept;
-	bool Add(const TextureCookRequest& request, std::string& outErrorMessage);
-	void MoveRequestsTo(std::vector<TextureCookRequest>& outRequests);
+	void Add(const TextureCookRequest& request);
+	std::vector<TextureCookRequest> ReleaseRequests() noexcept;
 	const std::vector<TextureCookRequest>& Requests() const noexcept { return requests; }
 
 private:
@@ -85,12 +85,8 @@ const char* GetTextureGroupName(TextureGroup textureGroup) noexcept;
 const char* GetTextureDimensionName(TextureDimension dimension) noexcept;
 const char* GetTextureChannelMaskName(TextureChannelMask channelMask) noexcept;
 
-bool WriteTextureCookRequestList(
+void WriteTextureCookRequestList(
     const std::filesystem::path& outputPath,
-    const std::vector<TextureCookRequest>& requests,
-    std::string& outErrorMessage);
+    const std::vector<TextureCookRequest>& requests);
 
-bool LoadTextureCookRequestList(
-    const std::filesystem::path& inputPath,
-    std::vector<TextureCookRequest>& outRequests,
-    std::string& outErrorMessage);
+std::vector<TextureCookRequest> LoadTextureCookRequestList(const std::filesystem::path& inputPath);

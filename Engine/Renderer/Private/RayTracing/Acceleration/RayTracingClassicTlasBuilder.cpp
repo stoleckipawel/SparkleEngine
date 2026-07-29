@@ -4,90 +4,82 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "Core/Public/Math/MathUtils.h"
-#include "Meshes/GPUMesh.h"
-#include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
-#include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
+#include "Meshes/GpuMesh.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
+#include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <algorithm>
 #include <unordered_set>
 
+static const auto g_rayTracingClassicTlasBuilderLogger = Logging::GetOrCreateLogger("Renderer.RayTracing.ClassicTlasBuilder");
+
+struct RayTracingClassicTlasBuilder::BuildState final
+{
+	std::vector<RhiRayTracingInstanceDesc> Instances;
+	std::unordered_set<void*> BuiltBlasResources;
+	RhiRayTracingAccelerationStructurePrebuildInfo PrebuildInfo = {};
+	ERhiClassicTlasBuildFlags RequestedFlags = ERhiClassicTlasBuildFlags::None;
+	ERhiClassicTlasBuildMode Mode = ERhiClassicTlasBuildMode::Build;
+	const char* EventName = "Classic TLAS Build";
+};
+
 bool RayTracingClassicTlasBuilder::TlasHandle::IsValid() const noexcept
 {
-	return resource && gpuAddress != 0 && instanceCount > 0;
+	return resource && gpuAddress != 0;
 }
 
-std::uint64_t RayTracingClassicTlasBuilder::AlignRayTracingBufferSize(
-    std::uint64_t sizeInBytes,
-    std::uint64_t alignment) noexcept
+std::uint64_t RayTracingClassicTlasBuilder::AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
 {
-	return alignment > 0
-	           ? MathUtils::AlignUp(sizeInBytes, alignment)
-	           : sizeInBytes;
+	return alignment > 0 ? MathUtils::AlignUp(sizeInBytes, alignment) : sizeInBytes;
 }
 
-bool RayTracingClassicTlasBuilder::SupportsClassicTlasRefit(
+bool RayTracingClassicTlasBuilder::SupportsClassicTlasRefit(RenderHardwareInterface& renderHardwareInterface) noexcept
+{
+	return renderHardwareInterface.GetCapabilities().RayTracing.Groups.ClassicTlas.SupportsClassicTlasUpdate;
+}
+
+ERhiClassicTlasBuildFlags RayTracingClassicTlasBuilder::ResolveClassicTlasBuildFlags(
     RenderHardwareInterface& renderHardwareInterface) noexcept
 {
-	return renderHardwareInterface.GetCapabilities()
-	    .RayTracing.Groups.ClassicTlas
-	    .SupportsClassicTlasUpdate;
-}
-
-ERhiClassicTlasBuildFlags
-RayTracingClassicTlasBuilder::ResolveClassicTlasBuildFlags(
-    RenderHardwareInterface& renderHardwareInterface) noexcept
-{
-	return CVarRayTracingClassicTlasRefit.Get() &&
-	               SupportsClassicTlasRefit(
-	                   renderHardwareInterface)
+	return CVarRayTracingClassicTlasRefit.Get() && SupportsClassicTlasRefit(renderHardwareInterface)
 	           ? ERhiClassicTlasBuildFlags::AllowUpdate
 	           : ERhiClassicTlasBuildFlags::None;
 }
 
-std::uint64_t
-RayTracingClassicTlasBuilder::ResolveRequiredScratchSize(
+std::uint64_t RayTracingClassicTlasBuilder::ResolveScratchSize(
     const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
     ERhiClassicTlasBuildFlags buildFlags) noexcept
 {
-	if (!HasFlag(
-	        buildFlags,
-	        ERhiClassicTlasBuildFlags::AllowUpdate))
+	if (!HasFlag(buildFlags, ERhiClassicTlasBuildFlags::AllowUpdate))
 	{
 		return prebuildInfo.ScratchDataSizeInBytes;
 	}
-	return (std::max)(
-	    prebuildInfo.ScratchDataSizeInBytes,
-	    prebuildInfo.UpdateScratchDataSizeInBytes);
+	return (std::max) (prebuildInfo.ScratchDataSizeInBytes, prebuildInfo.UpdateScratchDataSizeInBytes);
 }
 
-RhiRayTracingInstanceFlags
-RayTracingClassicTlasBuilder::ResolveInstanceFlags(
+RhiRayTracingInstanceFlags RayTracingClassicTlasBuilder::ResolveInstanceFlags(
     const RenderSceneData& sceneData,
     const MeshDraw& draw) noexcept
 {
-	RhiRayTracingInstanceFlags flags =
-	    RhiRayTracingInstanceFlags::None;
+	RhiRayTracingInstanceFlags flags = RhiRayTracingInstanceFlags::None;
 	if (draw.Material.Slot >= sceneData.materials.size())
 	{
-		return flags;
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS input references a material outside the render scene.");
 	}
-	const MaterialData& material =
-	    sceneData.materials[draw.Material.Slot];
+	const MaterialData& material = sceneData.materials[draw.Material.Slot];
 	if (material.doubleSided)
 	{
-		flags =
-		    flags |
-		    RhiRayTracingInstanceFlags::
-		        TriangleFacingCullDisable;
+		flags = flags | RhiRayTracingInstanceFlags::TriangleFacingCullDisable;
 	}
 	if (material.alphaMode == 1u)
 	{
-		flags =
-		    flags |
-		    RhiRayTracingInstanceFlags::ForceNonOpaque;
+		flags = flags | RhiRayTracingInstanceFlags::ForceNonOpaque;
 	}
 	return flags;
 }
@@ -102,207 +94,210 @@ RayTracingClassicTlasBuilder::~RayTracingClassicTlasBuilder() noexcept
 	Clear();
 }
 
-bool RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexcept
+void RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexcept
 {
-	if (m_renderHardwareInterface == nullptr || instanceCapacity == 0)
+	if (m_renderHardwareInterface == nullptr)
 	{
-		m_tlas = {};
-		return false;
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS builder has no render hardware interface.");
 	}
 
+	const ERhiClassicTlasBuildFlags buildFlags = ResolveClassicTlasBuildFlags(*m_renderHardwareInterface);
 	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
 	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(
 	        instanceCapacity,
-	        ResolveClassicTlasBuildFlags(*m_renderHardwareInterface));
+	        buildFlags);
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 ||
-	    ResolveRequiredScratchSize(
-	        prebuildInfo,
-	        ResolveClassicTlasBuildFlags(
-	            *m_renderHardwareInterface)) == 0)
+	    ResolveScratchSize(prebuildInfo, buildFlags) == 0)
 	{
-		m_tlas = {};
-		return false;
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS prebuild sizing produced an unusable resource layout.");
 	}
 
-	if (!EnsureResources(prebuildInfo))
-	{
-		m_tlas = {};
-		return false;
-	}
-
+	EnsureResources(prebuildInfo);
 	m_tlas = TlasHandle{
 	    .resource = m_accelerationStructureBuffer,
 	    .gpuAddress = m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
 	    .instanceCount = 0};
-	return m_tlas.resource && m_tlas.gpuAddress != 0;
+	if (!m_tlas.IsValid())
+	{
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS storage has no GPU address.");
+	}
 }
 
 RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const RenderSceneData& sceneData,
-    const RayTracingPtlasPartitionPlan* partitionPlan,
     RayTracingBlasCache& blasCache,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	BuildStats stats{};
 	if (m_renderHardwareInterface == nullptr)
 	{
-		return stats;
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS build has no render hardware interface.");
 	}
 
-	std::unordered_set<void*> builtBlasResources;
-	std::vector<RhiRayTracingInstanceDesc> instances;
-	const RenderRayTracingWorkPlan& work =
-	    sceneData.rayTracingWork;
-	stats.Candidates.InstanceCount =
-	    static_cast<std::uint32_t>(
-	        work.ClassicTlasBlasInputIndices.size());
-	(void) partitionPlan;
-	instances.reserve(
-	    work.ClassicTlasBlasInputIndices.size());
-	{
-		for (const std::uint32_t blasInputIndex :
-		     work.ClassicTlasBlasInputIndices)
-		{
-			if (blasInputIndex >= work.BlasInputs.size())
-			{
-				continue;
-			}
-			const RenderRayTracingBlasInput& input =
-			    work.BlasInputs[blasInputIndex];
-			if (input.MeshInstanceIndex >=
-			    sceneData.meshInstances.size())
-			{
-				continue;
-			}
-			const MeshDraw& draw =
-			    sceneData.meshInstances[
-			        input.MeshInstanceIndex];
-			if (!draw.Geometry.Mesh)
-			{
-				++stats.Candidates.MissingGpuMeshCount;
-				continue;
-			}
+	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	BuildState state;
+	state.Instances.reserve(work.ClassicTlasBlasInputIndices.size());
+	CollectInstances(commandContext, sceneData, blasCache, diagnostics, state);
+	stats.InstanceCount = static_cast<std::uint32_t>(state.Instances.size());
+	PrepareBuild(state);
 
-			const RayTracingBlasCache::BlasHandle blas =
-			    blasCache.EnsureBlas(
-			        cmd,
-			        sceneData,
-			        draw,
-			        input.GpuSceneSlot,
-			        diagnostics);
-			if (!blas.IsValid())
-			{
-				++stats.Candidates.RejectedBlasCount;
-				continue;
-			}
-
-			cmd.TrackResource(blas.resource);
-			if (blas.builtThisFrame)
-			{
-				builtBlasResources.insert(blas.resource.Value);
-			}
-
-			instances.push_back(
-			    RhiRayTracingInstanceDesc{
-			        .Transform = BuildInstanceTransform(draw.Transform.WorldMatrix),
-			        .InstanceID = input.GpuSceneSlot,
-			        .InstanceMask = 0xFFu,
-			        .InstanceContributionToHitGroupIndex = 0u,
-			        .Flags = ResolveInstanceFlags(
-			            sceneData,
-			            draw),
-			        .AccelerationStructure = blas.gpuAddress});
-		}
-	}
-
-	stats.Build.InstanceCount = static_cast<std::uint32_t>(instances.size());
-	if (instances.empty())
-	{
-		m_tlas = {};
-		if (m_instanceBuffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_instanceBuffer);
-			m_instanceBuffer = {};
-		}
-		return stats;
-	}
-
-	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
-	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(
-	        stats.Build.InstanceCount,
-	        ResolveClassicTlasBuildFlags(*m_renderHardwareInterface));
-	const ERhiClassicTlasBuildFlags requestedBuildFlags =
-	    ResolveClassicTlasBuildFlags(
-	        *m_renderHardwareInterface);
-	const std::uint64_t requiredScratchSize =
-	    ResolveRequiredScratchSize(
-	        prebuildInfo,
-	        requestedBuildFlags);
-	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || requiredScratchSize == 0)
-	{
-		m_tlas = {};
-		return stats;
-	}
-
-	if (!EnsureResources(prebuildInfo))
-	{
-		m_tlas = {};
-		return stats;
-	}
-
-	if (m_instanceBuffer)
-	{
-		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_instanceBuffer);
-		m_instanceBuffer = {};
-	}
-
-	m_instanceBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingInstanceBuffer(
-	    instances.data(),
-	    stats.Build.InstanceCount,
-	    L"RayTracingTlasInstances");
-	if (!m_instanceBuffer)
-	{
-		m_tlas = {};
-		return stats;
-	}
-
-	for (void* resourceValue : builtBlasResources)
-	{
-		cmd.UnorderedAccessBarrier(RhiResourceHandle{resourceValue});
-	}
-
-	const bool canRefit = HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate) && m_resourcesAllowUpdate &&
-	                      m_tlas.IsValid() && m_tlas.instanceCount == stats.Build.InstanceCount &&
-	                      prebuildInfo.UpdateScratchDataSizeInBytes > 0;
-	const ERhiClassicTlasBuildMode buildMode =
-	    canRefit ? ERhiClassicTlasBuildMode::Update
-	             : (HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate)
-	                    ? ERhiClassicTlasBuildMode::BuildAllowUpdate
-	                    : ERhiClassicTlasBuildMode::Build);
-	const char* const tlasEventName = canRefit ? "Classic TLAS Refit" : "Classic TLAS Build";
-	TrackBuildResources(cmd);
-
-	{
-		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope(tlasEventName) : ScopedGpuScope{};
-		cmd.BuildTopLevelAccelerationStructure(
-		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_instanceBuffer),
-		    stats.Build.InstanceCount,
-		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_scratchBuffer),
-		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
-		    buildMode);
-	}
+	RecordBuild(commandContext, state, diagnostics);
 
 	m_tlas = TlasHandle{
 	    .resource = m_accelerationStructureBuffer,
 	    .gpuAddress = m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
-	    .instanceCount = stats.Build.InstanceCount};
-	stats.Build.Built = m_tlas.IsValid();
+	    .instanceCount = static_cast<std::uint32_t>(state.Instances.size())};
+	if (!m_tlas.IsValid())
+	{
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS build did not publish a GPU resource.");
+	}
 	return stats;
 }
 
-void RayTracingClassicTlasBuilder::TrackBuildResources(
-    RenderCommandContext& cmd) const noexcept
+void RayTracingClassicTlasBuilder::CollectInstances(
+    RenderCommandContext& commandContext,
+    const RenderSceneData& sceneData,
+    RayTracingBlasCache& blasCache,
+    RayTracingPerformanceDiagnostics* diagnostics,
+    BuildState& state) noexcept
+{
+	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	for (const std::uint32_t blasInputIndex : work.ClassicTlasBlasInputIndices)
+	{
+		if (blasInputIndex >= work.BlasInputs.size())
+		{
+			Diagnostics::Fatal(
+			    g_rayTracingClassicTlasBuilderLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Classic TLAS work references a BLAS input outside the prepared work plan.");
+		}
+		const RenderRayTracingBlasInput& input = work.BlasInputs[blasInputIndex];
+		if (input.MeshInstanceIndex >= sceneData.meshInstances.size())
+		{
+			Diagnostics::Fatal(
+			    g_rayTracingClassicTlasBuilderLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Classic TLAS work references a mesh instance outside the render scene.");
+		}
+		const MeshDraw& draw = sceneData.meshInstances[input.MeshInstanceIndex];
+		if (!draw.Geometry.Mesh)
+		{
+			Diagnostics::Fatal(
+			    g_rayTracingClassicTlasBuilderLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Classic TLAS work references a mesh instance with no GPU mesh handle.");
+		}
+
+		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(commandContext, sceneData, draw, input.GpuSceneSlot, diagnostics);
+
+		commandContext.TrackResource(blas.resource);
+		if (blas.builtThisFrame)
+		{
+			state.BuiltBlasResources.insert(blas.resource.Value);
+		}
+		state.Instances.push_back(
+		    RhiRayTracingInstanceDesc{
+		        .Transform = BuildInstanceTransform(draw.Transform.WorldMatrix),
+		        .InstanceID = input.GpuSceneSlot,
+		        .InstanceMask = 0xFFu,
+		        .InstanceContributionToHitGroupIndex = 0u,
+		        .Flags = ResolveInstanceFlags(sceneData, draw),
+		        .AccelerationStructure = blas.gpuAddress});
+	}
+}
+
+void RayTracingClassicTlasBuilder::PrepareBuild(BuildState& state) noexcept
+{
+	state.RequestedFlags = ResolveClassicTlasBuildFlags(*m_renderHardwareInterface);
+	state.PrebuildInfo = m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(
+	    static_cast<std::uint32_t>(state.Instances.size()),
+	    state.RequestedFlags);
+	const std::uint64_t scratchSizeInBytes = ResolveScratchSize(state.PrebuildInfo, state.RequestedFlags);
+	if (state.PrebuildInfo.ResultDataMaxSizeInBytes == 0 || scratchSizeInBytes == 0)
+	{
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS build sizing produced an unusable resource layout.");
+	}
+	EnsureResources(state.PrebuildInfo);
+
+	RhiResourceService& resourceService = m_renderHardwareInterface->GetResourceService();
+	if (m_instanceBuffer)
+	{
+		resourceService.ReleaseOwnedResource(m_instanceBuffer);
+		m_instanceBuffer = {};
+	}
+	m_instanceBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingInstanceBuffer(
+	    state.Instances.empty() ? nullptr : state.Instances.data(),
+	    static_cast<std::uint32_t>(state.Instances.size()),
+	    L"RayTracingTlasInstances");
+	if (!m_instanceBuffer)
+	{
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS instance-buffer allocation failed.");
+	}
+
+	const bool canRefit = !state.Instances.empty() && HasFlag(state.RequestedFlags, ERhiClassicTlasBuildFlags::AllowUpdate) &&
+	                      m_resourcesAllowUpdate && m_tlas.IsValid() && m_tlas.instanceCount == state.Instances.size() &&
+	                      state.PrebuildInfo.UpdateScratchDataSizeInBytes > 0;
+	state.Mode = canRefit
+	                 ? ERhiClassicTlasBuildMode::Update
+	                 : (HasFlag(state.RequestedFlags, ERhiClassicTlasBuildFlags::AllowUpdate) ? ERhiClassicTlasBuildMode::BuildAllowUpdate
+	                                                                                          : ERhiClassicTlasBuildMode::Build);
+	state.EventName = canRefit ? "Classic TLAS Refit" : "Classic TLAS Build";
+}
+
+void RayTracingClassicTlasBuilder::RecordBuild(
+    RenderCommandContext& commandContext,
+    const BuildState& state,
+    RayTracingPerformanceDiagnostics* diagnostics) const noexcept
+{
+	for (void* resourceValue : state.BuiltBlasResources)
+	{
+		commandContext.UnorderedAccessBarrier(RhiResourceHandle{resourceValue});
+	}
+	TrackBuildResources(commandContext);
+
+	auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope(state.EventName) : ScopedGpuScope{};
+	RhiResourceService& resourceService = m_renderHardwareInterface->GetResourceService();
+	commandContext.BuildTopLevelAccelerationStructure(
+	    resourceService.GetResourceGpuVirtualAddress(m_instanceBuffer),
+	    static_cast<std::uint32_t>(state.Instances.size()),
+	    resourceService.GetResourceGpuVirtualAddress(m_scratchBuffer),
+	    resourceService.GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
+	    state.Mode);
+}
+
+void RayTracingClassicTlasBuilder::TrackBuildResources(RenderCommandContext& commandContext) const noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -311,9 +306,9 @@ void RayTracingClassicTlasBuilder::TrackBuildResources(
 
 	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
 
-	cmd.TrackResource(resources.GetResourceHandle(m_instanceBuffer));
-	cmd.TrackResource(resources.GetResourceHandle(m_scratchBuffer));
-	cmd.TrackResource(resources.GetResourceHandle(m_accelerationStructureBuffer));
+	commandContext.TrackResource(resources.GetResourceHandle(m_instanceBuffer));
+	commandContext.TrackResource(resources.GetResourceHandle(m_scratchBuffer));
+	commandContext.TrackResource(resources.GetResourceHandle(m_accelerationStructureBuffer));
 }
 
 void RayTracingClassicTlasBuilder::Clear() noexcept
@@ -373,21 +368,20 @@ void RayTracingClassicTlasBuilder::ReleaseResources() noexcept
 	m_resourcesAllowUpdate = false;
 }
 
-bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo) noexcept
+void RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo) noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
-		return false;
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS resource allocation has no render hardware interface.");
 	}
 
-	const ERhiClassicTlasBuildFlags requestedBuildFlags =
-	    ResolveClassicTlasBuildFlags(
-	        *m_renderHardwareInterface);
+	const ERhiClassicTlasBuildFlags requestedBuildFlags = ResolveClassicTlasBuildFlags(*m_renderHardwareInterface);
 	const bool requestedAllowUpdate = HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate);
-	const std::uint64_t requiredScratchSize =
-	    ResolveRequiredScratchSize(
-	        prebuildInfo,
-	        requestedBuildFlags);
+	const std::uint64_t scratchSizeInBytes = ResolveScratchSize(prebuildInfo, requestedBuildFlags);
 	if (m_resourcesAllowUpdate != requestedAllowUpdate)
 	{
 		if (m_scratchBuffer)
@@ -406,7 +400,7 @@ bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerati
 		m_resourcesAllowUpdate = requestedAllowUpdate;
 	}
 
-	if (m_scratchBuffer && m_scratchBufferSizeInBytes < requiredScratchSize)
+	if (m_scratchBuffer && m_scratchBufferSizeInBytes < scratchSizeInBytes)
 	{
 		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_scratchBuffer);
 		m_scratchBuffer = {};
@@ -422,7 +416,7 @@ bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerati
 	if (!m_scratchBuffer)
 	{
 		const std::uint64_t alignedScratchSize = AlignRayTracingBufferSize(
-		    requiredScratchSize,
+		    scratchSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.ScratchBufferByteAlignment);
 		m_scratchBuffer =
 		    m_renderHardwareInterface->GetRayTracingService().CreateRayTracingScratchBuffer(alignedScratchSize, L"RayTracingTlasScratch");
@@ -442,8 +436,10 @@ bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerati
 
 	if (!m_scratchBuffer || !m_accelerationStructureBuffer)
 	{
-		return false;
+		Diagnostics::Fatal(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Classic TLAS scratch or acceleration-structure allocation failed.");
 	}
-
-	return true;
 }

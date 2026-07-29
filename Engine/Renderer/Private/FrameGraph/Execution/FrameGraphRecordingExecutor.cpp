@@ -16,7 +16,7 @@ FrameGraphRecordingExecutor::FrameGraphRecordingExecutor(
     RhiCommandSubmissionService& submissionService,
     TaskExecutor& taskExecutor,
     const FrameContext& frame,
-    const PassRuntimeServices& passRuntimeServices,
+    const PassRuntimeContext& passRuntimeContext,
     FrameExecutionDiagnostics& frameDiagnostics) noexcept :
 	m_plan(plan),
 	m_submissionService(submissionService),
@@ -25,7 +25,7 @@ FrameGraphRecordingExecutor::FrameGraphRecordingExecutor(
 	    frameGraph,
 	    plan,
 	    frame,
-	    passRuntimeServices,
+	    passRuntimeContext,
 	    frameDiagnostics)
 {
 }

@@ -1,6 +1,7 @@
 #include "AssetCookerDiscovery.h"
 
 #include "CatalogedLevelSceneReader.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
@@ -217,16 +218,17 @@ bool AssetCookerDiscovery::CollectSceneIds(
     std::vector<std::string>& outSceneIds,
     AssetCookerDiagnostics& diagnostics)
 {
-	ProjectLevelCatalog catalog;
 	std::string errorMessage;
-	if (!ProjectLevelCatalogFile::Load(
-	        projectRoot,
-	        catalog,
-	        errorMessage))
+	ProjectLevelCatalog catalog;
+	try
+	{
+		catalog = ProjectLevelCatalogFile::Load(projectRoot);
+	}
+	catch (const Diagnostics::Error& error)
 	{
 		diagnostics.AddError(
 		    AssetCookerCategory_SceneAssets,
-		    std::move(errorMessage));
+		    error.what());
 		return false;
 	}
 
@@ -260,23 +262,18 @@ bool AssetCookerDiscovery::AppendLevelSceneIds(
     AssetCookerDiagnostics& diagnostics,
     std::string& outErrorMessage)
 {
-	if (!level.defaultIncluded && !level.required)
+	if (!level.defaultIncluded)
 	{
 		return true;
 	}
 
 	if (!catalog.IsLevelReady(projectRoot, level))
 	{
-		if (level.required)
-		{
-			diagnostics.AddError(
-			    AssetCookerCategory_SceneAssets,
-			    "Required catalog level is unavailable: " + level.id,
-			    level.sourcePath);
-			return false;
-		}
-
-		return true;
+		diagnostics.AddError(
+		    AssetCookerCategory_SceneAssets,
+		    "Catalog level is unavailable: " + level.id,
+		    level.sourcePath);
+		return false;
 	}
 
 	if (CatalogedLevelSceneReader::AppendSceneIds(level.sourcePath, outSceneIds, outErrorMessage))

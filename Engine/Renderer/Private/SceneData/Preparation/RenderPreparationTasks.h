@@ -17,11 +17,11 @@ class RenderPreparationTasks final
 	    std::uint32_t begin,
 	    std::uint32_t end,
 	    TaskExecutionContext& context);
-	static TaskResult CopySkinning(
+	static TaskResult CopyJointMatrices(
 	    std::uint32_t begin,
 	    std::uint32_t end,
 	    TaskExecutionContext& context);
-	static TaskResult CopyMorph(
+	static TaskResult CopyMorphWeights(
 	    std::uint32_t begin,
 	    std::uint32_t end,
 	    TaskExecutionContext& context);

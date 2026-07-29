@@ -18,7 +18,7 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	PS::PrepareInput(Input);
 
 	Material::Properties MatProps = Material::Sample(Input);
-	MatProps.BaseColor = InstanceView::ApplyDebugVisualization(MatProps.BaseColor, Input.DebugData);
+	MatProps.BaseColor = InstanceView::ApplyInstanceVisualization(MatProps.BaseColor, Input.GpuSceneSlot);
 
 	Output.BaseColor = GBufferPacking::PackBaseColor(MatProps.BaseColor, MatProps.Alpha, MatProps.AlphaMode, Material::AlphaModeBlend);
 	Output.Normal = GBufferPacking::PackNormal(MatProps.NormalWorld);

@@ -2,7 +2,7 @@
 #include "Panels/MainMenuBarPanel.h"
 
 #include "Level/Level.h"
-#include "Level/LevelManager.h"
+#include "Level/LevelSession.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 #include "Window/Window.h"
@@ -10,9 +10,9 @@
 #include <imgui.h>
 #include <utility>
 
-MainMenuBarPanel::MainMenuBarPanel(LevelManager* levelManager, Window* window) noexcept
+MainMenuBarPanel::MainMenuBarPanel(LevelSession* levelSession, Window* window) noexcept
 {
-	SetLevelManager(levelManager);
+	SetLevelSession(levelSession);
 	SetWindow(window);
 }
 
@@ -75,9 +75,9 @@ void MainMenuBarPanel::DrawCloseIcon() const noexcept
 	drawList->AddLine(ImVec2(max.x - padding, min.y + padding), ImVec2(min.x + padding, max.y - padding), iconColor, 1.6f);
 }
 
-void MainMenuBarPanel::SetLevelManager(LevelManager* levelManager) noexcept
+void MainMenuBarPanel::SetLevelSession(LevelSession* levelSession) noexcept
 {
-	m_levelManager = levelManager;
+	m_levelSession = levelSession;
 }
 
 void MainMenuBarPanel::SetWindow(Window* window) noexcept
@@ -112,20 +112,20 @@ void MainMenuBarPanel::SetViewportCaptureHandler(std::function<void()> handler)
 
 void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
 {
-	if (m_levelManager == nullptr)
+	if (m_levelSession == nullptr)
 	{
 		ImGui::MenuItem("No level manager", nullptr, false, false);
 		return;
 	}
 
-	std::vector<std::string> levelNames = m_levelManager->GetRegisteredLevelNames();
+	std::vector<std::string> levelNames = m_levelSession->GetRegisteredLevelNames();
 	if (levelNames.empty())
 	{
 		ImGui::MenuItem("No levels found", nullptr, false, false);
 		return;
 	}
 
-	const LevelAsset* activeLevel = m_levelManager->GetActiveLevel();
+	const LevelAsset* activeLevel = m_levelSession->GetActiveLevel();
 	const std::string activeLevelName = activeLevel != nullptr ? std::string(activeLevel->GetName()) : std::string();
 
 	for (const std::string& levelName : levelNames)
@@ -134,19 +134,19 @@ void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
 		const std::string levelLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Level, levelName.c_str());
 		if (ImGui::MenuItem(levelLabel.c_str(), nullptr, isActive, !isActive))
 		{
-			m_levelManager->RequestLevelChange(levelName);
+			m_levelSession->RequestLevelChange(levelName);
 		}
 	}
 }
 
 void MainMenuBarPanel::BuildFileMenu() noexcept
 {
-	const bool hasLevelManager = m_levelManager != nullptr;
-	const bool hasActiveLevel = hasLevelManager && m_levelManager->HasActiveLevel();
-	const bool levelChangeInProgress = hasLevelManager && m_levelManager->IsLevelChangeInProgress();
+	const bool hasLevelSession = m_levelSession != nullptr;
+	const bool hasActiveLevel = hasLevelSession && m_levelSession->HasActiveLevel();
+	const bool levelChangeInProgress = hasLevelSession && m_levelSession->IsLevelChangeInProgress();
 
 	const std::string openLevelLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::FolderOpen, "Open Level");
-	if (ImGui::BeginMenu(openLevelLabel.c_str(), hasLevelManager && !levelChangeInProgress))
+	if (ImGui::BeginMenu(openLevelLabel.c_str(), hasLevelSession && !levelChangeInProgress))
 	{
 		BuildOpenLevelMenu();
 		ImGui::EndMenu();
@@ -155,7 +155,7 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 	const std::string saveAllLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Save, "Save All");
 	if (ImGui::MenuItem(saveAllLabel.c_str(), nullptr, false, hasActiveLevel && !levelChangeInProgress))
 	{
-		m_levelManager->SaveActiveLevel();
+		m_levelSession->SaveActiveLevel();
 	}
 
 	const std::string captureLabel =

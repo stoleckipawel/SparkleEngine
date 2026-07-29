@@ -2,14 +2,14 @@
 
 #include "../../../Renderer/Public/Debug/RenderViewMode.h"
 
-class LevelManager;
+class LevelSession;
 class EngineRenderingSettingsSection;
 
 class ViewportTopPanel final
 {
   public:
 	ViewportTopPanel(
-	    LevelManager* levelManager = nullptr,
+	    LevelSession* levelSession = nullptr,
 	    EngineRenderingSettingsSection* renderingSettings = nullptr) noexcept;
 	~ViewportTopPanel() noexcept;
 
@@ -18,7 +18,7 @@ class ViewportTopPanel final
 	ViewportTopPanel& operator=(const ViewportTopPanel&) = delete;
 	ViewportTopPanel& operator=(ViewportTopPanel&&) = delete;
 
-	void SetLevelManager(LevelManager* levelManager) noexcept;
+	void SetLevelSession(LevelSession* levelSession) noexcept;
 	void SetGeometry(float leftPixels, float topPixels, float widthPixels) noexcept;
 	void BuildUI(bool disableInteraction = false) noexcept;
 	float GetHeight() const noexcept { return m_heightPixels; }
@@ -34,7 +34,7 @@ class ViewportTopPanel final
 	void BuildViewModeCombo(bool disableInteraction) noexcept;
 	void BuildPerformanceStats() const noexcept;
 
-	LevelManager* m_levelManager = nullptr;
+	LevelSession* m_levelSession = nullptr;
 	EngineRenderingSettingsSection* m_renderingSettings = nullptr;
 	float m_leftPixels = 0.0f;
 	float m_topPixels = 0.0f;

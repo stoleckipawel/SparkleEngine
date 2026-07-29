@@ -8,7 +8,7 @@
 
 namespace Diagnostics
 {
-	[[noreturn]] SPARKLE_CORE_API void Fail(
+	[[noreturn]] SPARKLE_CORE_API void Fatal(
 	    const std::shared_ptr<spdlog::logger>& logger,
 	    const char* file,
 	    std::uint32_t line,

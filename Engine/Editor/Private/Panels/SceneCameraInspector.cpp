@@ -2,7 +2,7 @@
 #include "Panels/SceneCameraInspector.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Scene/Transactions/EditorTransactionManager.h"
+#include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Util/UiUtil.h"
 #include "World/WorldReadView.h"
 
@@ -12,32 +12,32 @@ class SceneCameraEditSubmission final
 {
   public:
 	static void Submit(
-	    EditorTransactionManager& transactions,
+	    EditorTransactionHistory& transactionHistory,
 	    std::uint64_t generation,
 	    WorldEditPayload after,
 	    WorldEditPayload before,
 	    const char* key)
 	{
-		(void) transactions.Execute({0, std::move(after)}, {0, std::move(before)}, generation, key);
+		(void) transactionHistory.Execute({0, std::move(after)}, {0, std::move(before)}, generation, key);
 	}
 };
 
 void SceneCameraInspector::Build(
 	const WorldCameraReadData& camera,
-	EditorTransactionManager& transactions,
+	EditorTransactionHistory& transactionHistory,
 	std::uint64_t generation,
 	const std::string& filter) noexcept
 {
-	BuildTransformCategory(filter, camera, transactions, generation);
-	BuildCameraCategory(filter, camera, transactions, generation);
-	BuildMovementCategory(filter, camera, transactions, generation);
-	BuildAdvancedParametersCategory(filter, camera, transactions, generation);
+	BuildTransformCategory(filter, camera, transactionHistory, generation);
+	BuildCameraCategory(filter, camera, transactionHistory, generation);
+	BuildMovementCategory(filter, camera, transactionHistory, generation);
+	BuildAdvancedParametersCategory(filter, camera, transactionHistory, generation);
 }
 
 void SceneCameraInspector::BuildTransformCategory(
 	const std::string& filter,
 	const WorldCameraReadData& camera,
-	EditorTransactionManager& transactions,
+	EditorTransactionHistory& transactionHistory,
 	std::uint64_t generation) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale position") ||
@@ -79,7 +79,7 @@ void SceneCameraInspector::BuildTransformCategory(
 	if (changed)
 	{
 		SceneCameraEditSubmission::Submit(
-		    transactions,
+		    transactionHistory,
 		    generation,
 		    SetLocalTransformCommand{camera.Entity, after},
 		    SetLocalTransformCommand{camera.Entity, camera.LocalTransform},
@@ -92,7 +92,7 @@ void SceneCameraInspector::BuildTransformCategory(
 void SceneCameraInspector::BuildCameraCategory(
 	const std::string& filter,
 	const WorldCameraReadData& camera,
-	EditorTransactionManager& transactions,
+	EditorTransactionHistory& transactionHistory,
 	std::uint64_t generation) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Camera", "field of view near clip far clip aspect ratio") ||
@@ -116,7 +116,7 @@ void SceneCameraInspector::BuildCameraCategory(
 	if (changed)
 	{
 		SceneCameraEditSubmission::Submit(
-		    transactions,
+		    transactionHistory,
 		    generation,
 		    SetCameraDescriptionCommand{camera.Entity, after},
 		    SetCameraDescriptionCommand{camera.Entity, camera.Description},
@@ -129,7 +129,7 @@ void SceneCameraInspector::BuildCameraCategory(
 void SceneCameraInspector::BuildMovementCategory(
 	const std::string& filter,
 	const WorldCameraReadData& camera,
-	EditorTransactionManager& transactions,
+	EditorTransactionHistory& transactionHistory,
 	std::uint64_t generation) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Movement", "move speed navigation") ||
@@ -143,7 +143,7 @@ void SceneCameraInspector::BuildMovementCategory(
 	if (UiUtil::EditDetailsFloat("Move Speed", after.moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f", &defaultSpeed))
 	{
 		SceneCameraEditSubmission::Submit(
-		    transactions,
+		    transactionHistory,
 		    generation,
 		    SetCameraMovementCommand{camera.Entity, after},
 		    SetCameraMovementCommand{camera.Entity, camera.Movement},
@@ -156,7 +156,7 @@ void SceneCameraInspector::BuildMovementCategory(
 void SceneCameraInspector::BuildAdvancedParametersCategory(
 	const std::string& filter,
 	const WorldCameraReadData& camera,
-	EditorTransactionManager& transactions,
+	EditorTransactionHistory& transactionHistory,
 	std::uint64_t generation) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Advanced", "visible visibility hidden") ||
@@ -170,7 +170,7 @@ void SceneCameraInspector::BuildAdvancedParametersCategory(
 	if (UiUtil::EditDetailsCheckbox("Visible", visible, &defaultVisible))
 	{
 		SceneCameraEditSubmission::Submit(
-		    transactions,
+		    transactionHistory,
 		    generation,
 		    SetEntityVisibilityCommand{camera.Entity, visible},
 		    SetEntityVisibilityCommand{camera.Entity, camera.Visible},

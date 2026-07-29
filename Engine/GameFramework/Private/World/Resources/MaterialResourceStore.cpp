@@ -12,7 +12,7 @@ MaterialDesc MaterialResourceStore::CreateDefault()
 MaterialHandle MaterialResourceStore::Append(std::vector<MaterialDesc>&& descriptions)
 {
 	if (descriptions.empty())
-		return GetOrCreateDefault();
+		return MaterialHandle::Invalid();
 	const MaterialHandle base(static_cast<std::uint32_t>(m_descriptions.size()), m_generation);
 	m_descriptions.reserve(m_descriptions.size() + descriptions.size());
 	for (MaterialDesc& description : descriptions)

@@ -9,7 +9,7 @@
 #include "ShaderData/RenderViewLightingData.h"
 
 struct FrameContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 struct RenderViewData;
 
 struct DirectShadowSignalCommonPassParameters
@@ -137,12 +137,12 @@ namespace DirectShadowSignalPassCommon
 	    DirectShadowSignalCommonPassParameters& parameters,
 	    const FrameContext& frame,
 	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices);
+	    const PassRuntimeContext& passRuntimeContext);
 
 	void SetRayQueryParameters(
 	    DirectShadowSignalRayQueryPassParameters& parameters,
 	    const FrameContext& frame,
 	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices,
-	    bool hasSceneTlas);
+	    const PassRuntimeContext& passRuntimeContext,
+	    bool hasTraceableInstances);
 }

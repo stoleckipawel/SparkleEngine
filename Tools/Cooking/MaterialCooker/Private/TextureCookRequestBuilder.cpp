@@ -3,46 +3,58 @@
 #include "TextureCookRequestBuilder.h"
 
 #include "Core/Public/Assets/AssetTypes.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
-#include "Core/Public/Paths/PathUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 
-bool TextureCookRequestBuilder::Build(
+std::string TextureCookRequestBuilder::BuildTextureSourceKeyForRoot(
+    std::string_view rootName,
+    const TextureCookRequest& request,
+    const std::filesystem::path& relativePath)
+{
+	return std::string(rootName) + ":" + GetTextureColorSpaceName(request.policy.colorSpace) + ":" +
+	       GetTextureMipPolicyName(request.policy.mipPolicy) + ":" + GetTextureMipFilterName(request.policy.mipFilter) + ":" +
+	       GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" +
+	       GetTextureGroupName(request.policy.textureGroup) + ":" + GetTextureDimensionName(request.policy.dimension) + ":" +
+	       GetTextureChannelMaskName(request.policy.channelMask) + ":" + relativePath.generic_string();
+}
+
+std::optional<std::filesystem::path> TextureCookRequestBuilder::BuildTextureOutputPathForRoot(
+    const std::filesystem::path& sourceTexturePath,
+    const std::filesystem::path& sourceRoot,
+    std::string_view cookedDirectory,
+    std::string_view variantSuffix)
+{
+	const auto relativePath = Paths::TryMakeRelativeUnderRoot(sourceTexturePath, sourceRoot);
+	if (!relativePath)
+	{
+		return std::nullopt;
+	}
+
+	std::filesystem::path cookedRelativePath = std::filesystem::path(cookedDirectory) / *relativePath;
+	cookedRelativePath.replace_extension(std::string(variantSuffix) + ".stex");
+	return Filesystem::GetCookedTextureRootPath() / cookedRelativePath;
+}
+
+TextureCookRequest TextureCookRequestBuilder::Build(
     const std::filesystem::path& sourceTexturePath,
     TextureGroup textureGroup,
-    TextureCookRequest& outRequest,
-    std::string& outErrorMessage,
     TextureChannelMask channelMask)
 {
-	std::filesystem::path normalizedSourceTexturePath;
-	if (!NormalizeSourceTexturePath(sourceTexturePath, normalizedSourceTexturePath, outErrorMessage))
-	{
-		return false;
-	}
-
-	outRequest.sourcePath = normalizedSourceTexturePath;
-	outRequest.policy.colorSpace = ResolveColorSpace(textureGroup);
-	outRequest.policy.mipPolicy = ResolveMipPolicy(textureGroup);
-	outRequest.policy.mipFilter = ResolveMipFilter(textureGroup);
-	outRequest.policy.colorProcessingPolicy = ResolveColorProcessingPolicy(textureGroup);
-	outRequest.policy.textureGroup = textureGroup;
-	outRequest.policy.dimension = ResolveTextureDimension(textureGroup);
-	outRequest.policy.channelMask = channelMask;
-
-	std::string textureSourceKey;
-	if (!BuildTextureSourceKey(outRequest, textureSourceKey, outErrorMessage))
-	{
-		return false;
-	}
-
-	outRequest.assetId = Hash::Fnv1a64(textureSourceKey);
-	if (!BuildTextureOutputPath(outRequest, outRequest.outputPath, outErrorMessage))
-	{
-		return false;
-	}
-	outErrorMessage.clear();
-	return true;
+	TextureCookRequest request;
+	request.sourcePath = NormalizeSourceTexturePath(sourceTexturePath);
+	request.policy.colorSpace = ResolveColorSpace(textureGroup);
+	request.policy.mipPolicy = ResolveMipPolicy(textureGroup);
+	request.policy.mipFilter = ResolveMipFilter(textureGroup);
+	request.policy.colorProcessingPolicy = ResolveColorProcessingPolicy(textureGroup);
+	request.policy.textureGroup = textureGroup;
+	request.policy.dimension = ResolveTextureDimension(textureGroup);
+	request.policy.channelMask = channelMask;
+	request.assetId = Hash::Fnv1a64(BuildTextureSourceKey(request));
+	request.outputPath = BuildTextureOutputPath(request);
+	return request;
 }
 
 TextureColorSpace TextureCookRequestBuilder::ResolveColorSpace(TextureGroup textureGroup) noexcept
@@ -107,84 +119,67 @@ TextureDimension TextureCookRequestBuilder::ResolveTextureDimension(TextureGroup
 	return TextureDimension::Texture2D;
 }
 
-bool TextureCookRequestBuilder::NormalizeSourceTexturePath(
-    const std::filesystem::path& sourceTexturePath,
-    std::filesystem::path& outNormalizedSourceTexturePath,
-    std::string& outErrorMessage)
+std::filesystem::path TextureCookRequestBuilder::NormalizeSourceTexturePath(const std::filesystem::path& sourceTexturePath)
 {
 	if (const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(sourceTexturePath, AssetType::Texture))
 	{
-		outNormalizedSourceTexturePath = *resolvedPath;
-		outErrorMessage.clear();
-		return true;
+		return *resolvedPath;
 	}
 
-	outErrorMessage = "Unable to resolve source texture path '" + sourceTexturePath.string() + "'";
-	return false;
+	throw Diagnostics::Error("Unable to resolve source texture path '" + sourceTexturePath.string() + "'.");
 }
 
-bool TextureCookRequestBuilder::BuildTextureSourceKey(
-    const TextureCookRequest& request,
-    std::string& outTextureSourceKey,
-    std::string& outErrorMessage)
+std::string TextureCookRequestBuilder::BuildTextureSourceKey(const TextureCookRequest& request)
 {
 	const std::filesystem::path& projectRoot = Filesystem::GetProjectPath();
 	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, projectRoot))
 	{
-		outTextureSourceKey = std::string("project:") + GetTextureColorSpaceName(request.policy.colorSpace) + ":" +
-		                      GetTextureMipPolicyName(request.policy.mipPolicy) + ":" + GetTextureMipFilterName(request.policy.mipFilter) +
-		                      ":" + GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" +
-		                      GetTextureGroupName(request.policy.textureGroup) + ":" + GetTextureDimensionName(request.policy.dimension) +
-		                      ":" + GetTextureChannelMaskName(request.policy.channelMask) + ":" + relativePath->generic_string();
-		outErrorMessage.clear();
-		return true;
+		return BuildTextureSourceKeyForRoot("project", request, *relativePath);
 	}
 
 	const std::filesystem::path& engineRoot = Filesystem::GetEnginePath();
 	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, engineRoot))
 	{
-		outTextureSourceKey = std::string("engine:") + GetTextureColorSpaceName(request.policy.colorSpace) + ":" +
-		                      GetTextureMipPolicyName(request.policy.mipPolicy) + ":" + GetTextureMipFilterName(request.policy.mipFilter) +
-		                      ":" + GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" +
-		                      GetTextureGroupName(request.policy.textureGroup) + ":" + GetTextureDimensionName(request.policy.dimension) +
-		                      ":" + GetTextureChannelMaskName(request.policy.channelMask) + ":" + relativePath->generic_string();
-		outErrorMessage.clear();
-		return true;
+		return BuildTextureSourceKeyForRoot("engine", request, *relativePath);
 	}
 
-	outErrorMessage = "Source texture path must be under the project or engine root to derive a stable cooked texture id: '" +
-	                  request.sourcePath.string() + "'";
-	return false;
+	const std::filesystem::path importedTextureRoot = Paths::ImportedTextureCacheRoot();
+	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, importedTextureRoot))
+	{
+		return BuildTextureSourceKeyForRoot("imported", request, *relativePath);
+	}
+
+	throw Diagnostics::Error(
+	    "Source texture path must be under the project, engine, or imported-texture cache root "
+	    "to derive a stable cooked texture id: '" +
+	    request.sourcePath.string() + "'.");
 }
 
-bool TextureCookRequestBuilder::BuildTextureOutputPath(
-    const TextureCookRequest& request,
-    std::filesystem::path& outTextureOutputPath,
-    std::string& outErrorMessage)
+std::filesystem::path TextureCookRequestBuilder::BuildTextureOutputPath(const TextureCookRequest& request)
 {
+	const std::string variantSuffix = BuildTextureVariantSuffix(request);
 	const std::filesystem::path& projectRoot = Filesystem::GetProjectPath();
-	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, projectRoot))
+	if (const auto outputPath = BuildTextureOutputPathForRoot(request.sourcePath, projectRoot, "Project", variantSuffix))
 	{
-		std::filesystem::path cookedRelativePath = std::filesystem::path("Project") / *relativePath;
-		cookedRelativePath.replace_extension(BuildTextureVariantSuffix(request) + ".stex");
-		outTextureOutputPath = Filesystem::GetCookedTextureRootPath() / cookedRelativePath;
-		outErrorMessage.clear();
-		return true;
+		return *outputPath;
 	}
 
 	const std::filesystem::path& engineRoot = Filesystem::GetEnginePath();
-	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, engineRoot))
+	if (const auto outputPath = BuildTextureOutputPathForRoot(request.sourcePath, engineRoot, "Engine", variantSuffix))
 	{
-		std::filesystem::path cookedRelativePath = std::filesystem::path("Engine") / *relativePath;
-		cookedRelativePath.replace_extension(BuildTextureVariantSuffix(request) + ".stex");
-		outTextureOutputPath = Filesystem::GetCookedTextureRootPath() / cookedRelativePath;
-		outErrorMessage.clear();
-		return true;
+		return *outputPath;
 	}
 
-	outErrorMessage = "Source texture path must be under the project or engine root to derive a cooked texture output path: '" +
-	                  request.sourcePath.string() + "'";
-	return false;
+	if (const auto outputPath =
+	        BuildTextureOutputPathForRoot(request.sourcePath, Paths::ImportedTextureCacheRoot(), "Imported", variantSuffix))
+	{
+		return *outputPath;
+	}
+
+	throw Diagnostics::Error(
+	    "Source texture path must be under the project, engine, or imported-texture cache root "
+	    "to derive a cooked texture output path: '" +
+	    request.sourcePath.string() + "'.");
 }
 
 std::string TextureCookRequestBuilder::BuildTextureVariantSuffix(const TextureCookRequest& request)
@@ -194,6 +189,3 @@ std::string TextureCookRequestBuilder::BuildTextureVariantSuffix(const TextureCo
 	       GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + "." +
 	       GetTextureDimensionName(request.policy.dimension) + "." + GetTextureChannelMaskName(request.policy.channelMask);
 }
-
-
-

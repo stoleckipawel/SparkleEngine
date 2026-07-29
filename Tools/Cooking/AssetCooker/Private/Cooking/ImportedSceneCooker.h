@@ -4,25 +4,17 @@
 #include "Planning/ProjectCookPlan.h"
 
 #include "CookedSceneBuild.h"
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 
 class ImportedSceneCooker final
 {
   public:
-	static bool Import(
-	    const AssetCookerSceneEntry& sceneEntry,
-	    AssetCookerCategory category,
-	    AssetCookerDiagnostics& diagnostics,
-	    SourceImportResult& outImport);
-	static bool Build(
-	    const AssetCookerSceneEntry& sceneEntry,
-	    AssetCookerDiagnostics& diagnostics,
-	    CookedSceneBuild& outBuild);
+	static SourceImportOutput Import(const AssetCookerSceneEntry& sceneEntry);
+	static CookedSceneBuild Build(const AssetCookerSceneEntry& sceneEntry, AssetCookerDiagnostics& diagnostics);
 
   private:
-	static bool BuildCookedScene(
+	static CookedSceneBuild BuildCookedScene(
 	    const AssetCookerSceneEntry& sceneEntry,
-	    const SourceImportResult& importResult,
-	    CookedSceneBuild& build,
+	    const SourceImportOutput& importOutput,
 	    AssetCookerDiagnostics& diagnostics);
 };

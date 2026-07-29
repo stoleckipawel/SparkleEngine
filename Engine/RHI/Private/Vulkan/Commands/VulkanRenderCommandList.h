@@ -16,7 +16,7 @@
 class VulkanGpuMemoryAllocator;
 class VulkanCommandRecordingContext;
 class VulkanDescriptorAllocator;
-class VulkanDescriptorManager;
+class VulkanDescriptorService;
 class VulkanRecordingDescriptorPool;
 class VulkanRecordingUploadPage;
 class VulkanBindingLayout;
@@ -41,7 +41,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept override;
 	void EndDiagnosticScope() noexcept override;
 	void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept override;
-	void SetPipelineState(const RenderPipelineState& pipelineState) noexcept override;
+	void SetPipeline(const RenderPipeline& pipeline) noexcept override;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void ResetBoundState() noexcept override;
@@ -68,11 +68,11 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept override;
 	void BindVertexBuffer(const RhiVertexBufferView& view) noexcept override;
 	void BindIndexBuffer(const RhiIndexBufferView& view) noexcept override;
-	void SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept override;
-	void SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept
+	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept override;
+	void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept
 	    override;
-	void ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept override;
-	void ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil = 0) noexcept override;
+	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept override;
+	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept override;
 	void SetViewport(const RhiViewport& viewport) noexcept override;
 	void SetScissorRect(const RhiRect& rect) noexcept override;
 	void DrawIndexedInstanced(
@@ -122,7 +122,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 
 	void SetRhi(const VulkanRhi* rhi) noexcept { m_rhi = rhi; }
 	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
-	void SetDescriptorManager(const VulkanDescriptorManager* descriptorManager) noexcept { m_descriptorManager = descriptorManager; }
+	void SetDescriptorService(const VulkanDescriptorService* descriptorService) noexcept { m_descriptorService = descriptorService; }
 	void SetDescriptorAllocator(VulkanDescriptorAllocator* descriptorAllocator) noexcept { m_descriptorAllocator = descriptorAllocator; }
 	void SetRecordingDescriptorPool(VulkanRecordingDescriptorPool* descriptorPool) noexcept { m_recordingDescriptorPool = descriptorPool; }
 	void SetRecordingUploadPage(VulkanRecordingUploadPage* uploadPage) noexcept { m_recordingUploadPage = uploadPage; }
@@ -140,28 +140,32 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void AbandonTransientAllocationUses() noexcept;
 	void ReleaseTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept;
 	void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept override;
-	void OnResourceTrackingFinished(
-	    RhiResourceHandle resource,
-	    RhiSubmissionToken submissionToken) noexcept override;
+	void OnResourceTrackingFinished(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept override;
 
 	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
 	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
-	VulkanResourceStateMapping ResolveResourceState(
-	    ResourceState state) const noexcept;
+	VulkanResourceStateMapping ResolveResourceState(ResourceState state) const noexcept;
 	static void ConfigurePartitionedTlasInput(
 	    const RhiPartitionedTlasDesc& desc,
 	    VkPartitionedAccelerationStructureInstancesInputNV& input,
 	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
 	VkBuffer ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept;
 	BufferBinding ResolveBufferBinding(RhiGpuVirtualAddress gpuAddress) const noexcept;
-	bool ResolveResource(
-	    RhiResourceHandle resource,
-	    VulkanRecordingResource& outResource) const noexcept;
-	VkDeviceAddress ResolveRayTracingBufferAddress(
-	    const RhiRayTracingBufferBinding& binding) const noexcept;
-	bool ResolveAddress(
-	    RhiGpuVirtualAddress address,
-	    VulkanRecordingResource& outResource) const noexcept;
+	bool ResolveResource(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept;
+	void RecordBufferTransition(
+	    const VulkanRecordingResource& resource,
+	    ResourceState before,
+	    ResourceState after,
+	    const VulkanResourceStateMapping& sourceState,
+	    const VulkanResourceStateMapping& destinationState) noexcept;
+	void RecordImageTransition(
+	    const VulkanRecordingResource& resource,
+	    ResourceState before,
+	    ResourceState after,
+	    const VulkanResourceStateMapping& sourceState,
+	    const VulkanResourceStateMapping& destinationState) noexcept;
+	VkDeviceAddress ResolveRayTracingBufferAddress(const RhiRayTracingBufferBinding& binding) const noexcept;
+	bool ResolveAddress(RhiGpuVirtualAddress address, VulkanRecordingResource& outResource) const noexcept;
 	void WriteAccelerationStructureBinding(
 	    VkDescriptorSet descriptorSet,
 	    const CompiledBinding& binding,
@@ -192,7 +196,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 
 	const VulkanRhi* m_rhi = nullptr;
 	const VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
-	const VulkanDescriptorManager* m_descriptorManager = nullptr;
+	const VulkanDescriptorService* m_descriptorService = nullptr;
 	VulkanDescriptorAllocator* m_descriptorAllocator = nullptr;
 	VulkanRecordingDescriptorPool* m_recordingDescriptorPool = nullptr;
 	VulkanRecordingUploadPage* m_recordingUploadPage = nullptr;

@@ -4,7 +4,7 @@
 #include "Frame/Core/FrameRenderFormats.h"
 #include "Frame/Presentation/ToneMappingSettings.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
@@ -13,16 +13,16 @@ ToneMappingPass::ToneMappingPass(const ComputePassPipelineRuntime& runtime) noex
 
 const ToneMappingPass::ParameterMetadata& ToneMappingPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<ToneMappingPass>();
+	return ComputePassOperations::BuildParameterMetadata<ToneMappingPass>();
 }
 
 const RenderPassDefinition& ToneMappingPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::ToneMapping,
 	    L"ToneMapping_BindingLayout",
-	    L"ToneMapping_PipelineState");
+	    L"ToneMapping_Pipeline");
 	return definition;
 }
 
@@ -33,5 +33,5 @@ void ToneMappingPass::Execute(
     std::uint32_t outputHeight) const
 {
 	parameters->ToneMappingConstants = BuildToneMappingUniformData();
-	ComputePassUtilities::DispatchSized<ToneMappingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
+	ComputePassOperations::DispatchSized<ToneMappingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

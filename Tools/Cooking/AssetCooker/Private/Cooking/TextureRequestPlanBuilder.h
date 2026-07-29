@@ -18,10 +18,7 @@ class TextureRequestPlanBuilder final
 	    const std::filesystem::path& outputPath);
 
   private:
-	enum class SceneCollectionResult;
-
-	static SceneCollectionResult CollectSceneRequests(
+	static void CollectSceneRequests(
 	    const AssetCookerSceneEntry& sceneEntry,
-	    AssetCookerDiagnostics& diagnostics,
 	    TextureCookRequestSet& requestSet);
 };

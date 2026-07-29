@@ -12,8 +12,8 @@ namespace Assets
 	class SPARKLE_ENGINE_API SceneAssetRegistry final
 	{
 	  public:
-		bool Load(std::string& outErrorMessage);
-		bool Save(const std::filesystem::path& outputPath, std::string& outErrorMessage) const;
+		void Load();
+		void Save(const std::filesystem::path& outputPath) const;
 		void Upsert(std::string sceneAssetId, std::filesystem::path sceneManifestRelativePath);
 		std::map<std::string, std::filesystem::path, std::less<>> ReleaseEntries() noexcept;
 

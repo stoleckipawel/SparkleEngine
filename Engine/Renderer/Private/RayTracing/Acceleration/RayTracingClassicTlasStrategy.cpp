@@ -8,8 +8,7 @@
 RayTracingClassicTlasStrategy::RayTracingClassicTlasStrategy(
     RenderHardwareInterface& renderHardwareInterface,
     RayTracingSceneTlasShaderAccessMode shaderAccessMode) noexcept :
-    m_classicTlasBuilder(renderHardwareInterface),
-    m_shaderAccessMode(shaderAccessMode)
+    m_classicTlasBuilder(renderHardwareInterface), m_shaderAccessMode(shaderAccessMode)
 {
 }
 
@@ -34,24 +33,11 @@ RayTracingSceneFrameData RayTracingClassicTlasStrategy::Prepare(
     const RenderSceneData& sceneData,
     RayTracingTopLevelScenePlanner* scenePlanner) noexcept
 {
-	(void)scenePlanner;
+	(void) scenePlanner;
 	RayTracingSceneFrameData frameData{};
-	const std::uint32_t estimatedInstanceCount =
-	    static_cast<std::uint32_t>(
-	        sceneData.rayTracingWork
-	            .ClassicTlasBlasInputIndices.size());
-	if (estimatedInstanceCount == 0)
-	{
-		m_classicTlasBuilder.Clear();
-		return frameData;
-	}
+	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(sceneData.rayTracingWork.ClassicTlasBlasInputIndices.size());
+	m_classicTlasBuilder.Prepare(estimatedInstanceCount);
 
-	if (!m_classicTlasBuilder.Prepare(estimatedInstanceCount))
-	{
-		return frameData;
-	}
-
-	frameData.IsAvailable = true;
 	frameData.TlasResource = m_classicTlasBuilder.GetTlas().resource;
 	frameData.TlasGpuAddress = m_classicTlasBuilder.GetTlas().gpuAddress;
 	frameData.TlasShaderAccessMode = m_shaderAccessMode;
@@ -60,7 +46,7 @@ RayTracingSceneFrameData RayTracingClassicTlasStrategy::Prepare(
 }
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingClassicTlasStrategy::Build(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const RenderSceneData& sceneData,
     RayTracingBlasCache& blasCache,
     RayTracingTopLevelScenePlanner* scenePlanner,
@@ -69,9 +55,8 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingClassicTlasStrategy
 	RayTracingTopLevelAccelerationStructureBuildResult result{};
 	result.ActiveProvider = GetActiveProvider();
 	result.ActiveProviderReason = GetActiveProviderReason();
-	result.Stats = scenePlanner != nullptr
-	                   ? scenePlanner->BuildClassicTlas(cmd, sceneData, m_classicTlasBuilder, blasCache, diagnostics)
-	                   : m_classicTlasBuilder.Build(cmd, sceneData, nullptr, blasCache, diagnostics);
+	result.Stats = scenePlanner != nullptr ? scenePlanner->BuildClassicTlas(commandContext, sceneData, m_classicTlasBuilder, blasCache, diagnostics)
+	                                       : m_classicTlasBuilder.Build(commandContext, sceneData, blasCache, diagnostics);
 	return result;
 }
 

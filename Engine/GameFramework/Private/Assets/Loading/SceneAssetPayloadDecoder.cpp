@@ -12,52 +12,22 @@
 #include "Assets/Payload/SceneAssetPayloadMeshBindings.h"
 #include "Assets/Payload/SceneAssetPayloadSkeletonAppender.h"
 
-namespace Assets
+	namespace Assets
 {
-	bool SceneAssetPayloadDecoder::Decode(
-	    const SceneAssetId& sceneAssetId,
-	    LoadedSceneManifest& manifest,
-	    const CookedAssetFileSet& files,
-	    SceneAssetPayload& payload,
-	    std::string& errorMessage)
+	SceneAssetPayload SceneAssetPayloadDecoder::Decode(
+	    const LoadedSceneManifest& manifest,
+	    const CookedAssetFileSet& files)
 	{
-		constexpr std::uint32_t materialBaseIndex = 0;
-		SceneMeshAssetIndex meshAssetBaseIndex = kInvalidSceneMeshAssetIndex;
-		const auto instanceBaseIndex = static_cast<SceneMeshInstanceIndex>(payload.staticMeshInstances.size());
-		const auto groupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(payload.meshInstanceGroups.size());
+		SceneAssetPayload payload;
 		const std::vector<SceneAssetPayloadMeshBinding> meshAssetBindings = BuildSceneAssetPayloadMeshBindings(manifest);
-		if (!SceneAssetPayloadMeshAppender::AppendMeshAssets(sceneAssetId, manifest, files, payload, meshAssetBaseIndex, errorMessage) ||
-		    !SceneAssetPayloadMaterialAppender::AppendMaterials(manifest, files, payload, errorMessage) ||
-		    !SceneAssetPayloadMeshAppender::AppendMeshInstances(
-		        sceneAssetId,
-		        manifest,
-		        meshAssetBindings,
-		        payload,
-		        meshAssetBaseIndex,
-		        groupBaseIndex,
-		        materialBaseIndex,
-		        errorMessage) ||
-		    !SceneAssetPayloadMeshAppender::AppendMeshInstanceGroups(
-		        sceneAssetId,
-		        manifest,
-		        meshAssetBindings,
-		        payload,
-		        meshAssetBaseIndex,
-		        instanceBaseIndex,
-		        materialBaseIndex,
-		        errorMessage) ||
-		    !SceneAssetPayloadMaterialVariantAppender::AppendMaterialVariants(
-		        manifest,
-		        meshAssetBindings,
-		        payload,
-		        materialBaseIndex,
-		        errorMessage) ||
-		    !SceneAssetPayloadSkeletonAppender::AppendSkeletons(manifest, files, payload, errorMessage) ||
-		    !SceneAssetPayloadAnimationAppender::AppendAnimations(manifest, files, payload, errorMessage))
-			return false;
-
+		SceneAssetPayloadMeshAppender::AppendMeshAssets(manifest, files, payload);
+		SceneAssetPayloadMaterialAppender::AppendMaterials(manifest, files, payload);
+		SceneAssetPayloadMeshAppender::AppendMeshInstances(manifest, meshAssetBindings, payload);
+		SceneAssetPayloadMeshAppender::AppendMeshInstanceGroups(manifest, meshAssetBindings, payload);
+		SceneAssetPayloadMaterialVariantAppender::AppendMaterialVariants(manifest, meshAssetBindings, payload);
+		SceneAssetPayloadSkeletonAppender::AppendSkeletons(manifest, files, payload);
+		SceneAssetPayloadAnimationAppender::AppendAnimations(manifest, files, payload);
 		SceneAssetPayloadCameraLightAppender::Append(manifest, payload);
-		errorMessage.clear();
-		return true;
+		return payload;
 	}
 }

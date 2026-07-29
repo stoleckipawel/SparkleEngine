@@ -3,80 +3,62 @@
 #include "CookedAnimationAssetWriter.h"
 
 #include "CookedSceneBuild.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
-#include <algorithm>
 #include <cstring>
 #include <fstream>
 
 class CookedAnimationAssetStager final
 {
   public:
-	static bool StageAnimationAsset(
+	static void StageAnimationAsset(
 	    const CookedAnimationAssetBuild& animationAsset,
-	    std::vector<Files::FilePublication>& outPublication,
-	    std::string& outErrorMessage);
-	static Assets::CookedAnimationAssetHeader BuildHeader(
-	    const CookedAnimationAssetBuild& animationAsset) noexcept;
-	static void CopyName(
-	    std::string_view sourceName,
-	    char (&destination)[64]) noexcept;
+	    std::vector<Files::FilePublication>& outPublication);
+	static Assets::CookedAnimationAssetHeader BuildHeader(const CookedAnimationAssetBuild& animationAsset) noexcept;
+	static void CopyName(std::string_view sourceName, char (&destination)[64]) noexcept;
 };
 
-bool CookedAnimationAssetWriter::StageAnimationAssets(
+void CookedAnimationAssetWriter::StageAnimationAssets(
     const std::vector<CookedAnimationAssetBuild>& animationAssets,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedAnimationAssetBuild& animationAsset : animationAssets)
 	{
-		if (!CookedAnimationAssetStager::StageAnimationAsset(
-		        animationAsset,
-		        outPublication,
-		        outErrorMessage))
-		{
-			return false;
-		}
+		CookedAnimationAssetStager::StageAnimationAsset(animationAsset, outPublication);
 	}
-
-	outErrorMessage.clear();
-	return true;
 }
 
-bool CookedAnimationAssetStager::StageAnimationAsset(
+void CookedAnimationAssetStager::StageAnimationAsset(
     const CookedAnimationAssetBuild& animationAsset,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
-	const std::filesystem::path outputPath =
-	    Paths::CookedAnimationAsset(animationAsset.assetId);
-	const std::filesystem::path stagedOutputPath =
-	    Files::BuildTemporaryPath(outputPath, ".cook-generation");
+	const std::filesystem::path outputPath = Paths::CookedAnimationAsset(animationAsset.assetId);
+	const std::filesystem::path stagedOutputPath = Files::BuildTemporaryPath(outputPath, ".cook-generation");
 
 	Files::CleanupTemporaryFile(stagedOutputPath);
 	outPublication.push_back({stagedOutputPath, outputPath});
 
-	const Assets::CookedAnimationAssetHeader header =
-	    BuildHeader(animationAsset);
+	const Assets::CookedAnimationAssetHeader header = BuildHeader(animationAsset);
+	std::string errorMessage;
 	std::ofstream output;
-	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, animationAsset.channels, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, animationAsset.keyframes, outErrorMessage))
+	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, animationAsset.channels, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, animationAsset.keyframes, errorMessage))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(errorMessage));
 	}
 
-	return Files::TryCloseOutput(
-	    output,
-	    stagedOutputPath,
-	    outErrorMessage);
+	if (!Files::TryCloseOutput(output, stagedOutputPath, errorMessage))
+	{
+		throw Diagnostics::Error(std::move(errorMessage));
+	}
 }
 
-Assets::CookedAnimationAssetHeader CookedAnimationAssetStager::BuildHeader(
-    const CookedAnimationAssetBuild& animationAsset) noexcept
+Assets::CookedAnimationAssetHeader CookedAnimationAssetStager::BuildHeader(const CookedAnimationAssetBuild& animationAsset) noexcept
 {
 	Assets::CookedAnimationAssetHeader header{
 	    .fileHeader = {Assets::kCookedAnimationAssetMagic, Assets::kCookedAnimationAssetVersion},
@@ -93,12 +75,8 @@ Assets::CookedAnimationAssetHeader CookedAnimationAssetStager::BuildHeader(
 	return header;
 }
 
-void CookedAnimationAssetStager::CopyName(
-    std::string_view sourceName,
-    char (&destination)[64]) noexcept
+void CookedAnimationAssetStager::CopyName(std::string_view sourceName, char (&destination)[64]) noexcept
 {
 	std::memset(destination, 0, sizeof(destination));
-	const std::size_t copyLength =
-	    (std::min)(sourceName.size(), sizeof(destination) - 1u);
-	std::memcpy(destination, sourceName.data(), copyLength);
+	std::memcpy(destination, sourceName.data(), sourceName.size());
 }

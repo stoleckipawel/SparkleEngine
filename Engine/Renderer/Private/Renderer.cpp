@@ -33,9 +33,9 @@ ViewportRenderProducts Renderer::GetViewportRenderProducts() const
 	return m_state->Coordinator.GetViewportRenderProducts();
 }
 
-CookedShaderReloadResult Renderer::ReloadCookedShaders() noexcept
+void Renderer::ReloadCookedShaders()
 {
-	return m_state->Coordinator.ReloadCookedShaders();
+	m_state->Coordinator.ReloadCookedShaders();
 }
 
 std::uint64_t Renderer::GetShaderPackageGeneration() const noexcept

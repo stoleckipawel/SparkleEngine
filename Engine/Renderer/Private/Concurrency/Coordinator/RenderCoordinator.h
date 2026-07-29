@@ -40,7 +40,7 @@ class RenderCoordinator final
 	void RenderFrame();
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
-	CookedShaderReloadResult ReloadCookedShaders();
+	void ReloadCookedShaders();
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics();
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId);

@@ -13,19 +13,19 @@ MoveSpeed = 0.00999999978
 [Lighting]
 DirectionalLight0Name = Directional Light 1
 DirectionalLight0Position = 0, 0, 0
-DirectionalLight0IntensityLux = 11.220294
+DirectionalLight0IlluminanceLux = 11.220294
 DirectionalLight0Color = 1, 0.930000007, 0.819999993
 DirectionalLight0Visible = true
 DirectionalLight0Direction = -0.44096005, -0.885823965, 0.144465685
-DirectionalLight0AngularDiameterRadians = 0.00872664619
+DirectionalLight0AngularSizeRadians = 0.00872664619
 DirectionalLight0CastShadow = true
 DirectionalLight1Name = Directional Light 2
 DirectionalLight1Position = 0, 0, 0
-DirectionalLight1IntensityLux = 3.29999995
+DirectionalLight1IlluminanceLux = 3.29999995
 DirectionalLight1Color = 0.419999987, 0.5, 0.720000029
 DirectionalLight1Visible = true
 DirectionalLight1Direction = -0.022054093, -0.862778544, -0.505100787
-DirectionalLight1AngularDiameterRadians = 0.145438284
+DirectionalLight1AngularSizeRadians = 0.145438284
 DirectionalLight1CastShadow = true
 
 [SceneAssets]

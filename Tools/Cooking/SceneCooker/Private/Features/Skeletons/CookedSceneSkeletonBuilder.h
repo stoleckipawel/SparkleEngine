@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CookedSceneBuild.h"
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 
 #include <string_view>
 
@@ -11,5 +11,8 @@ class CookedSceneSkeletonBuilder final
 	CookedSceneSkeletonBuilder() = delete;
 	~CookedSceneSkeletonBuilder() = delete;
 
-	static void BuildSkeletons(const SourceImportResult& importResult, std::string_view sceneAssetId, CookedSceneBuild& outBuild);
+	static void BuildSkeletons(
+	    const SourceImportOutput& importOutput,
+	    std::string_view sceneAssetId,
+	    CookedSceneBuild& outBuild);
 };

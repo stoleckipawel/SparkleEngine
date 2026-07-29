@@ -2,31 +2,14 @@
 
 #include "Assets/Translators/SceneAssetAnimationTranslator.h"
 
-#include <string_view>
-
 namespace Assets
 {
-
-		std::string AnimationNameToString(const CookedAnimationAssetHeader& header)
-		{
-			std::size_t length = 0;
-			while (length < sizeof(header.name) && header.name[length] != '\0')
-			{
-				++length;
-			}
-			const std::string_view nameView(header.name, length);
-			return std::string(nameView);
-		}
-
-
-	AnimationClipResource BuildSceneAssetAnimation(
-	    const LoadedAnimationAsset& animationAsset,
-	    CookedAssetId animationAssetId)
+	AnimationClipResource BuildSceneAssetAnimation(const LoadedAnimationAsset& animationAsset, CookedAssetId animationAssetId)
 	{
 		AnimationClipResource clip{
 		    .animationAssetId = animationAssetId,
 		    .targetSkeletonAssetId = animationAsset.header.targetSkeletonAssetId,
-		    .name = AnimationNameToString(animationAsset.header),
+		    .name = animationAsset.header.name,
 		    .sourceAnimationIndex = animationAsset.header.sourceAnimationIndex,
 		    .durationSeconds = animationAsset.header.durationSeconds,
 		    .channelCount = animationAsset.header.channelCount,

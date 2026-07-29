@@ -16,11 +16,9 @@ class SPARKLE_RHI_API ShaderPackageLayoutBuilder final
   public:
 	ShaderPackageLayoutBuilder() = delete;
 
-	static bool Build(
+	static PassParameterLayout Build(
 	    std::string_view packageId,
-	    std::span<const ShaderRegistrationDesc> registrations,
-	    PassParameterLayout& outLayout,
-	    std::string& outErrorMessage);
+	    std::span<const ShaderRegistrationDesc> registrations);
 
   private:
 	struct MergeEntry;
@@ -29,19 +27,15 @@ class SPARKLE_RHI_API ShaderPackageLayoutBuilder final
 	static ShaderStageVisibility ResolveVisibility(const ShaderParameterStructFieldDescriptor& field, ShaderStage stage) noexcept;
 	static PassParameterDesc BuildParameterDesc(const ShaderParameterStructFieldDescriptor& field, ShaderStage stage);
 	static std::uint32_t GetOrderingCategory(const PassParameterDesc& parameter) noexcept;
-	static bool MergeParameter(
+	static void MergeParameter(
 	    std::vector<MergeEntry>& entries,
 	    PassParameterDesc parameter,
 	    std::uint32_t valueAlignmentInBytes,
 	    const ShaderRegistrationDesc& registration,
-	    std::string_view shaderStructName,
-	    std::string& outErrorMessage);
+	    std::string_view shaderStructName);
 	static bool MatchesExistingBinding(const MergeEntry& existing, const PassParameterDesc& incoming, std::uint32_t incomingAlignment) noexcept;
 	static std::string FormatParameterDesc(const PassParameterDesc& parameter, std::uint32_t alignmentInBytes);
 	static void AppendCategory(PassParameterLayout& layout, const std::vector<MergeEntry>& entries, std::uint32_t category);
 };
 
-SPARKLE_RHI_API bool BuildRegisteredShaderPackageLayout(
-    std::string_view packageId,
-    PassParameterLayout& outLayout,
-    std::string& outErrorMessage);
+SPARKLE_RHI_API PassParameterLayout BuildRegisteredShaderPackageLayout(std::string_view packageId);

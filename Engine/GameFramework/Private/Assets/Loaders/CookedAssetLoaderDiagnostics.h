@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -7,29 +9,20 @@
 
 namespace Assets
 {
-	struct CookedAssetLoaderContext
-	{
-		std::filesystem::path path;
-		std::string assetId;
-		std::string_view schemaName = {};
-		std::uint32_t schemaVersion = 0;
-	};
-
 	class CookedAssetLoaderDiagnostics final
 	{
 	  public:
-		CookedAssetLoaderDiagnostics() = delete;
-
-		static CookedAssetLoaderContext BuildContext(
+		CookedAssetLoaderDiagnostics(
 		    const std::filesystem::path& path,
 		    std::string_view schemaName,
 		    std::uint32_t schemaVersion);
 
-		static void SetFailure(
-		    const CookedAssetLoaderContext& context,
-		    std::string_view recordKind,
-		    std::string_view expectedFeature,
-		    std::string_view reason,
-		    std::string& outErrorMessage);
+		Diagnostics::Error MakeError(std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) const;
+
+	  private:
+		std::filesystem::path m_path;
+		std::string m_assetId;
+		std::string m_schemaName;
+		std::uint32_t m_schemaVersion = 0;
 	};
 }

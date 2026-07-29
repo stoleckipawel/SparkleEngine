@@ -28,7 +28,7 @@ class FrameGraphBarrierFailureReporter final
 	    std::string_view beforeResourceName,
 	    std::string_view afterResourceName) noexcept
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    Logger(),
 		    __FILE__,
 		    __LINE__,
@@ -47,7 +47,7 @@ class FrameGraphBarrierFailureReporter final
 	    const FrameGraphBarrier& barrier,
 	    std::string_view resourceName) noexcept
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    Logger(),
 		    __FILE__,
 		    __LINE__,
@@ -69,19 +69,19 @@ class FrameGraphBarrierFailureReporter final
 	}
 };
 
-void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept
+void FrameGraph::EmitCompiledBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphBarrier>& barriers) const noexcept
 {
-	EmitCompiledBarriers(cmd, "Unknown", barriers);
+	EmitCompiledBarriers(commandContext, "Unknown", barriers);
 }
 
-void FrameGraph::EmitTransientAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers)
+void FrameGraph::EmitTransientAliasingBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphAliasingBarrier>& barriers)
     const noexcept
 {
-	EmitTransientAliasingBarriers(cmd, "Unknown", barriers);
+	EmitTransientAliasingBarriers(commandContext, "Unknown", barriers);
 }
 
 void FrameGraph::EmitTransientAliasingBarriers(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     std::string_view passName,
     const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept
 {
@@ -110,11 +110,11 @@ void FrameGraph::EmitTransientAliasingBarriers(
 			FrameGraphBarrierFailureReporter::FailUnresolvedAliasingBarrier(passName, barrier, beforeName, afterName);
 		}
 
-		cmd.AliasResource(beforeResource, afterResource);
+		commandContext.AliasResource(beforeResource, afterResource);
 	}
 }
 
-void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
+void FrameGraph::EmitCompiledBarriers(RenderCommandContext& commandContext, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
     const noexcept
 {
 	for (const FrameGraphBarrier& barrier : barriers)
@@ -134,11 +134,11 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 		switch (barrier.type)
 		{
 			case FrameGraphBarrier::Type::Transition:
-				cmd.TransitionResource(resource, barrier.before, barrier.after);
+				commandContext.TransitionResource(resource, barrier.before, barrier.after);
 				break;
 			case FrameGraphBarrier::Type::UnorderedAccess:
 			case FrameGraphBarrier::Type::AccelerationStructure:
-				cmd.UnorderedAccessBarrier(resource);
+				commandContext.UnorderedAccessBarrier(resource);
 				break;
 			default:
 				assert(false);

@@ -13,27 +13,35 @@ bool IsSkinnedMeshInstance(const MeshInstanceData meshInstance)
 	       meshInstance.JointMatrixOffset != InvalidMeshInstanceJointMatrixOffset;
 }
 
-float4x4 LoadSkinningMatrix(const MeshInstanceData meshInstance, const uint vertexId)
+float4x4 LoadSkinningMatrix(const MeshInstanceData meshInstance, const uint vertexIndex)
 {
-	const VertexSkinInfluenceData skin = SkinInfluences[vertexId];
-	return JointMatrices[meshInstance.JointMatrixOffset + skin.JointIndices.x].SkinningMTX * skin.JointWeights.x +
-	       JointMatrices[meshInstance.JointMatrixOffset + skin.JointIndices.y].SkinningMTX * skin.JointWeights.y +
-	       JointMatrices[meshInstance.JointMatrixOffset + skin.JointIndices.z].SkinningMTX * skin.JointWeights.z +
-	       JointMatrices[meshInstance.JointMatrixOffset + skin.JointIndices.w].SkinningMTX * skin.JointWeights.w;
+	const VertexSkinInfluenceData skinInfluence = SkinInfluences[vertexIndex];
+	return JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.x].Matrix * skinInfluence.JointWeights0.x +
+	       JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.y].Matrix * skinInfluence.JointWeights0.y +
+	       JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.z].Matrix * skinInfluence.JointWeights0.z +
+	       JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.w].Matrix * skinInfluence.JointWeights0.w +
+	       JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.x].Matrix * skinInfluence.JointWeights1.x +
+	       JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.y].Matrix * skinInfluence.JointWeights1.y +
+	       JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.z].Matrix * skinInfluence.JointWeights1.z +
+	       JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.w].Matrix * skinInfluence.JointWeights1.w;
 }
 
-float4x4 LoadPreviousSkinningMatrix(const MeshInstanceData meshInstance, const uint vertexId)
+float4x4 LoadPreviousSkinningMatrix(const MeshInstanceData meshInstance, const uint vertexIndex)
 {
-	const VertexSkinInfluenceData skin = SkinInfluences[vertexId];
-	return PreviousJointMatrices[meshInstance.JointMatrixOffset + skin.JointIndices.x].SkinningMTX * skin.JointWeights.x +
-	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skin.JointIndices.y].SkinningMTX * skin.JointWeights.y +
-	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skin.JointIndices.z].SkinningMTX * skin.JointWeights.z +
-	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skin.JointIndices.w].SkinningMTX * skin.JointWeights.w;
+	const VertexSkinInfluenceData skinInfluence = SkinInfluences[vertexIndex];
+	return PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.x].Matrix * skinInfluence.JointWeights0.x +
+	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.y].Matrix * skinInfluence.JointWeights0.y +
+	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.z].Matrix * skinInfluence.JointWeights0.z +
+	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.w].Matrix * skinInfluence.JointWeights0.w +
+	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.x].Matrix * skinInfluence.JointWeights1.x +
+	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.y].Matrix * skinInfluence.JointWeights1.y +
+	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.z].Matrix * skinInfluence.JointWeights1.z +
+	       PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.w].Matrix * skinInfluence.JointWeights1.w;
 }
 
 SkinnedVertexAttributes ApplySkinning(
     const MeshInstanceData meshInstance,
-    const uint vertexId,
+    const uint vertexIndex,
     const float3 position,
     const float3 normal,
     const float3 tangent)
@@ -48,7 +56,7 @@ SkinnedVertexAttributes ApplySkinning(
 		return attributes;
 	}
 
-	const float4x4 skinningMatrix = LoadSkinningMatrix(meshInstance, vertexId);
+	const float4x4 skinningMatrix = LoadSkinningMatrix(meshInstance, vertexIndex);
 	attributes.Position = mul(float4(position, 1.0f), skinningMatrix).xyz;
 	attributes.Normal = normalize(mul(normal, (float3x3) skinningMatrix));
 	attributes.Tangent = normalize(mul(tangent, (float3x3) skinningMatrix));
@@ -57,7 +65,7 @@ SkinnedVertexAttributes ApplySkinning(
 
 SkinnedVertexAttributes ApplyPreviousSkinning(
     const MeshInstanceData meshInstance,
-    const uint vertexId,
+    const uint vertexIndex,
     const float3 position,
     const float3 normal,
     const float3 tangent)
@@ -72,7 +80,7 @@ SkinnedVertexAttributes ApplyPreviousSkinning(
 		return attributes;
 	}
 
-	const float4x4 skinningMatrix = LoadPreviousSkinningMatrix(meshInstance, vertexId);
+	const float4x4 skinningMatrix = LoadPreviousSkinningMatrix(meshInstance, vertexIndex);
 	attributes.Position = mul(float4(position, 1.0f), skinningMatrix).xyz;
 	attributes.Normal = normalize(mul(normal, (float3x3) skinningMatrix));
 	attributes.Tangent = normalize(mul(tangent, (float3x3) skinningMatrix));

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <vector>
 
 namespace Files
@@ -13,8 +12,7 @@ struct CookedAnimationAssetBuild;
 class CookedAnimationAssetWriter final
 {
   public:
-	static bool StageAnimationAssets(
+	static void StageAnimationAssets(
 	    const std::vector<CookedAnimationAssetBuild>& animationAssets,
-	    std::vector<Files::FilePublication>& outPublication,
-	    std::string& outErrorMessage);
+	    std::vector<Files::FilePublication>& outPublication);
 };

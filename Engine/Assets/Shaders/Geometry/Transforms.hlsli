@@ -4,7 +4,7 @@
 
 float4 PositionLocalToWorld(float4 localPosition)
 {
-	return mul(localPosition, WorldMTX);
+	return mul(localPosition, WorldMatrix);
 }
 
 float4 PositionWorldToView(float4 worldPosition)
@@ -38,13 +38,13 @@ float4 ApplyTemporalJitterClipOffset(float4 clipPosition, float2 jitterNdc)
 
 float3 NormalLocalToWorld(float3 normalLocal)
 {
-	return normalize(mul(normalLocal, WorldInvTransposeMTX));
+	return normalize(mul(normalLocal, WorldInverseTranspose));
 }
 
 
 float4 TangentLocalToWorld(float4 tangentLocal)
 {
-	const float3 worldTangent = mul(tangentLocal.xyz, (float3x3) WorldMTX);
+	const float3 worldTangent = mul(tangentLocal.xyz, (float3x3) WorldMatrix);
 	return float4(worldTangent, tangentLocal.w);
 }
 

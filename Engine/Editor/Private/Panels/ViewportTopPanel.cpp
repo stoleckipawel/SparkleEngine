@@ -2,7 +2,7 @@
 #include "Panels/ViewportTopPanel.h"
 
 #include "Level/Level.h"
-#include "Level/LevelManager.h"
+#include "Level/LevelSession.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
@@ -50,7 +50,7 @@ class ViewModePresentation final
 				return UiUtil::EditorIcon::ViewDirectDiffuse;
 			case RenderViewMode::IndirectSpecular:
 				return UiUtil::EditorIcon::ViewDirectSpecular;
-			case RenderViewMode::InstanceGroups:
+			case RenderViewMode::GpuSceneInstances:
 				return UiUtil::EditorIcon::ViewMode;
 			case RenderViewMode::Count:
 				break;
@@ -61,18 +61,18 @@ class ViewModePresentation final
 };
 
 ViewportTopPanel::ViewportTopPanel(
-    LevelManager* levelManager,
+    LevelSession* levelSession,
     EngineRenderingSettingsSection* renderingSettings) noexcept :
 	m_renderingSettings(renderingSettings)
 {
-	SetLevelManager(levelManager);
+	SetLevelSession(levelSession);
 }
 
 ViewportTopPanel::~ViewportTopPanel() noexcept = default;
 
-void ViewportTopPanel::SetLevelManager(LevelManager* levelManager) noexcept
+void ViewportTopPanel::SetLevelSession(LevelSession* levelSession) noexcept
 {
-	m_levelManager = levelManager;
+	m_levelSession = levelSession;
 }
 
 void ViewportTopPanel::SetGeometry(float leftPixels, float topPixels, float widthPixels) noexcept
@@ -116,8 +116,8 @@ const char* ViewportTopPanel::GetViewModeLabel(RenderViewMode viewMode) noexcept
 			return "Indirect Diffuse";
 		case RenderViewMode::IndirectSpecular:
 			return "Indirect Specular";
-		case RenderViewMode::InstanceGroups:
-			return "Instance Groups";
+		case RenderViewMode::GpuSceneInstances:
+			return "GPU Scene Instances";
 		case RenderViewMode::Count:
 			break;
 	}
@@ -158,7 +158,7 @@ void ViewportTopPanel::DrawViewModeOption(RenderViewMode option, RenderViewMode 
 
 void ViewportTopPanel::BuildLevelName() const noexcept
 {
-	const LevelAsset* activeLevel = m_levelManager != nullptr ? m_levelManager->GetActiveLevel() : nullptr;
+	const LevelAsset* activeLevel = m_levelSession != nullptr ? m_levelSession->GetActiveLevel() : nullptr;
 	const std::string activeLevelName = activeLevel != nullptr ? std::string(activeLevel->GetName()) : std::string("<None>");
 
 	ImGui::AlignTextToFramePadding();
@@ -192,7 +192,7 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 	{
 		DrawViewModeOption(RenderViewMode::Lit, currentViewMode);
 		DrawViewModeOption(RenderViewMode::Wireframe, currentViewMode);
-		DrawViewModeOption(RenderViewMode::InstanceGroups, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GpuSceneInstances, currentViewMode);
 
 		DrawViewModeCategory("GBuffer");
 		ImGui::Indent(8.0f);

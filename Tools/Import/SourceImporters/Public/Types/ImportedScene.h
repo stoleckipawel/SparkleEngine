@@ -9,8 +9,6 @@
 #include "ImportedSkin.h"
 
 #include <cstddef>
-#include <filesystem>
-#include <string>
 #include <vector>
 
 struct ImportedScene
@@ -25,10 +23,7 @@ struct ImportedScene
 	std::vector<ImportedMaterialVariant> materialVariants;
 	std::vector<ImportedMaterialVariantMapping> materialVariantMappings;
 	std::vector<ImportedSkeleton> skeletons;
-	std::filesystem::path sourcePath;
-	std::string importerName = "SourceSceneImporter";
 
-	std::size_t GetMeshCount() const noexcept { return meshInstances.size(); }
 	std::size_t GetMeshPrimitiveCount() const noexcept { return meshPrimitives.size(); }
 	std::size_t GetMeshInstanceCount() const noexcept { return meshInstances.size(); }
 	std::size_t GetMeshInstanceGroupCount() const noexcept { return meshInstanceGroups.size(); }

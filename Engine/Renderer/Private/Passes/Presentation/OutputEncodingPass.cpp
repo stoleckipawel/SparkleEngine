@@ -3,7 +3,7 @@
 
 #include "Frame/Presentation/OutputEncodingSettings.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
@@ -12,16 +12,16 @@ OutputEncodingPass::OutputEncodingPass(const ComputePassPipelineRuntime& runtime
 
 const OutputEncodingPass::ParameterMetadata& OutputEncodingPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<OutputEncodingPass>();
+	return ComputePassOperations::BuildParameterMetadata<OutputEncodingPass>();
 }
 
 const RenderPassDefinition& OutputEncodingPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::OutputEncoding,
 	    L"OutputEncoding_BindingLayout",
-	    L"OutputEncoding_PipelineState");
+	    L"OutputEncoding_Pipeline");
 	return definition;
 }
 
@@ -32,5 +32,5 @@ void OutputEncodingPass::Execute(
     std::uint32_t outputHeight) const
 {
 	parameters->OutputEncodingConstants = BuildOutputEncodingUniformData();
-	ComputePassUtilities::DispatchSized<OutputEncodingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
+	ComputePassOperations::DispatchSized<OutputEncodingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

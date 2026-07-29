@@ -3,7 +3,7 @@
 
 #include "Frame/Core/FrameRenderFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Core/PassUtilities.h"
+#include "FrameGraph/Builder/FrameGraphCopyPasses.h"
 #include "Passes/Presentation/OutputEncodingPass.h"
 #include "Passes/Presentation/ToneMappingPass.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
@@ -55,5 +55,5 @@ void AddPresentationPass(
 	outputEncodingParameters->DisplayLinearColor = builder.CreateSRV(toneMappedColor);
 	outputEncodingParameters->EncodedColor = builder.CreateUAV(encodedColor);
 	builder.Dispatch<OutputEncodingPass>(outputEncodingParameters, sceneExtent.Width, sceneExtent.Height);
-	PassUtilities::AddCopyTexturePass(builder, "CopyEncodedColorToBackBuffer", sceneTargets.BackBuffer, encodedColor);
+	FrameGraphCopyPasses::AddTextureCopy(builder, "CopyEncodedColorToBackBuffer", sceneTargets.BackBuffer, encodedColor);
 }

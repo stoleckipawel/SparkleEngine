@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CookedMeshAssetBuild.h"
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 
 #include <string_view>
 
 class CookedMeshAssetBuilder final
 {
   public:
-	static MeshCookOutput BuildMeshAssets(const SourceImportResult& importResult, std::string_view sceneAssetId);
+	static MeshCookOutput BuildMeshAssets(const SourceImportOutput& importOutput, std::string_view sceneAssetId);
 };

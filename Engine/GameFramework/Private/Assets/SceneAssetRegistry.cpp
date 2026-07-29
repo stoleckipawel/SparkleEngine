@@ -3,9 +3,11 @@
 
 #include "Assets/SceneAssetRegistry.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <fstream>
+#include <format>
 #include <utility>
 
 namespace Assets
@@ -13,28 +15,18 @@ namespace Assets
 	constexpr std::string_view kSceneAssetRegistryHeader = "[SceneAssetRegistry]";
 	constexpr std::string_view kSceneAssetEntriesHeader = "[Entries]";
 
+	using SceneAssetRegistryEntries = std::map<std::string, std::filesystem::path, std::less<>>;
+
 	class SceneAssetRegistryReader final
 	{
 	  public:
 		explicit SceneAssetRegistryReader(std::filesystem::path registryPath);
 
-		bool Read(
-		    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
-		    std::string& outErrorMessage) const;
+		SceneAssetRegistryEntries Read() const;
 
 	  private:
-		bool ParseEntries(
-		    std::istream& input,
-		    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
-		    std::string& outErrorMessage) const;
-		bool ParseEntry(
-		    std::string_view value,
-		    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
-		    std::string& outErrorMessage) const;
-		static bool TryParseEntry(
-		    std::string_view entryValue,
-		    std::string& outSceneAssetId,
-		    std::filesystem::path& outManifestRelativePath);
+		SceneAssetRegistryEntries ParseEntries(std::istream& input) const;
+		std::pair<std::string, std::filesystem::path> ParseEntry(std::string_view value, std::size_t lineNumber) const;
 
 		std::filesystem::path m_registryPath;
 	};
@@ -44,35 +36,39 @@ namespace Assets
 	{
 	}
 
-	bool SceneAssetRegistryReader::Read(
-	    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
-	    std::string& outErrorMessage) const
+	SceneAssetRegistryEntries SceneAssetRegistryReader::Read() const
 	{
 		std::error_code errorCode;
-		if (!std::filesystem::exists(m_registryPath, errorCode))
+		const bool exists = std::filesystem::exists(m_registryPath, errorCode);
+		if (errorCode)
 		{
-			outErrorMessage.clear();
-			return true;
+			throw Diagnostics::Error(
+			    std::format("Could not inspect scene asset registry '{}': {}.", m_registryPath.string(), errorCode.message()));
+		}
+		if (!exists)
+		{
+			return {};
 		}
 
 		std::ifstream input(m_registryPath);
 		if (!input.is_open())
 		{
-			outErrorMessage = "Failed to open scene asset registry '" + m_registryPath.string() + "'";
-			return false;
+			throw Diagnostics::Error("Could not open scene asset registry '" + m_registryPath.string() + "'.");
 		}
 
-		return ParseEntries(input, outEntries, outErrorMessage);
+		return ParseEntries(input);
 	}
 
-	bool SceneAssetRegistryReader::ParseEntries(
-	    std::istream& input,
-	    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
-	    std::string& outErrorMessage) const
+	SceneAssetRegistryEntries SceneAssetRegistryReader::ParseEntries(std::istream& input) const
 	{
+		SceneAssetRegistryEntries entries;
+		bool foundRegistryHeader = false;
+		bool foundEntriesHeader = false;
 		bool inEntriesSection = false;
+		std::size_t lineNumber = 0;
 		for (std::string line; std::getline(input, line);)
 		{
+			++lineNumber;
 			const std::string trimmedLine = Strings::TrimCopy(line);
 			if (trimmedLine.empty() || trimmedLine[0] == '#' || trimmedLine[0] == ';')
 			{
@@ -81,104 +77,108 @@ namespace Assets
 
 			if (trimmedLine == kSceneAssetRegistryHeader)
 			{
+				if (foundRegistryHeader)
+				{
+					throw Diagnostics::Error(
+					    std::format("Scene asset registry '{}' repeats its header at line {}.", m_registryPath.string(), lineNumber));
+				}
+				foundRegistryHeader = true;
 				inEntriesSection = false;
 				continue;
 			}
 
 			if (trimmedLine == kSceneAssetEntriesHeader)
 			{
+				if (!foundRegistryHeader || foundEntriesHeader)
+				{
+					throw Diagnostics::Error(
+					    std::format("Scene asset registry '{}' has an invalid entries section at line {}.", m_registryPath.string(), lineNumber));
+				}
+				foundEntriesHeader = true;
 				inEntriesSection = true;
 				continue;
 			}
 
 			std::string_view key;
 			std::string_view value;
-			if (!Strings::TrySplitKeyValue(trimmedLine, '=', key, value))
+			if (!inEntriesSection || !Strings::TrySplitKeyValue(trimmedLine, '=', key, value) ||
+			    !Strings::EqualsIgnoreCase(key, "Entry"))
 			{
-				continue;
+				throw Diagnostics::Error(
+				    std::format("Scene asset registry '{}' has an invalid field at line {}.", m_registryPath.string(), lineNumber));
 			}
 
-			if (!inEntriesSection || !Strings::EqualsIgnoreCase(key, "Entry"))
+			auto [sceneAssetId, manifestRelativePath] = ParseEntry(value, lineNumber);
+			if (!entries.emplace(std::move(sceneAssetId), std::move(manifestRelativePath)).second)
 			{
-				continue;
-			}
-
-			if (!ParseEntry(value, outEntries, outErrorMessage))
-			{
-				return false;
+				throw Diagnostics::Error(
+				    std::format("Scene asset registry '{}' repeats an asset identity at line {}.", m_registryPath.string(), lineNumber));
 			}
 		}
 
-		outErrorMessage.clear();
-		return true;
-	}
-
-	bool SceneAssetRegistryReader::ParseEntry(
-	    std::string_view value,
-	    std::map<std::string, std::filesystem::path, std::less<>>& outEntries,
-	    std::string& outErrorMessage) const
-	{
-		std::string sceneAssetId;
-		std::filesystem::path manifestRelativePath;
-		if (!TryParseEntry(value, sceneAssetId, manifestRelativePath))
+		if (!foundRegistryHeader || !foundEntriesHeader)
 		{
-			outErrorMessage = "Failed to parse scene asset registry entry in '" + m_registryPath.string() + "'";
-			return false;
+			throw Diagnostics::Error("Scene asset registry '" + m_registryPath.string() + "' has an incomplete structure.");
 		}
-
-		outEntries[std::move(sceneAssetId)] = std::move(manifestRelativePath);
-		return true;
+		return entries;
 	}
 
-	bool SceneAssetRegistryReader::TryParseEntry(
+	std::pair<std::string, std::filesystem::path> SceneAssetRegistryReader::ParseEntry(
 	    std::string_view entryValue,
-	    std::string& outSceneAssetId,
-	    std::filesystem::path& outManifestRelativePath)
+	    std::size_t lineNumber) const
 	{
 		const std::size_t separatorIndex = entryValue.find('|');
-		if (separatorIndex == std::string_view::npos)
+		if (separatorIndex == std::string_view::npos || entryValue.find('|', separatorIndex + 1) != std::string_view::npos)
 		{
-			return false;
+			throw Diagnostics::Error(
+			    std::format("Scene asset registry '{}' has an invalid entry at line {}.", m_registryPath.string(), lineNumber));
 		}
 
-		outSceneAssetId = Strings::TrimCopy(entryValue.substr(0, separatorIndex));
-		outManifestRelativePath = Strings::TrimCopy(entryValue.substr(separatorIndex + 1));
-		return !outSceneAssetId.empty() && !outManifestRelativePath.empty();
+		std::string sceneAssetId = Strings::TrimCopy(entryValue.substr(0, separatorIndex));
+		std::filesystem::path manifestRelativePath = Strings::TrimCopy(entryValue.substr(separatorIndex + 1));
+		if (sceneAssetId.empty() || manifestRelativePath.empty() || manifestRelativePath.is_absolute())
+		{
+			throw Diagnostics::Error(
+			    std::format("Scene asset registry '{}' has an invalid entry at line {}.", m_registryPath.string(), lineNumber));
+		}
+		for (const std::filesystem::path& component : manifestRelativePath)
+		{
+			if (component == "..")
+			{
+				throw Diagnostics::Error(
+				    std::format("Scene asset registry '{}' escapes its asset root at line {}.", m_registryPath.string(), lineNumber));
+			}
+		}
+		return {std::move(sceneAssetId), std::move(manifestRelativePath)};
 	}
 
-	bool SceneAssetRegistry::Load(std::string& outErrorMessage)
+	void SceneAssetRegistry::Load()
 	{
-		std::map<std::string, std::filesystem::path, std::less<>> entries;
-		if (!SceneAssetRegistryReader(Filesystem::GetSceneAssetRegistryPath()).Read(entries, outErrorMessage))
+		m_entries = SceneAssetRegistryReader(Filesystem::GetSceneAssetRegistryPath()).Read();
+	}
+
+	void SceneAssetRegistry::Save(const std::filesystem::path& outputPath) const
+	{
+		if (outputPath.empty())
 		{
-			return false;
+			throw Diagnostics::Error("Scene asset registry output path is empty.");
 		}
 
-		m_entries = std::move(entries);
-		return true;
-	}
-
-	bool SceneAssetRegistry::Save(
-	    const std::filesystem::path& outputPath,
-	    std::string& outErrorMessage) const
-	{
 		std::error_code errorCode;
-		std::filesystem::create_directories(outputPath.parent_path(), errorCode);
+		if (!outputPath.parent_path().empty())
+		{
+			std::filesystem::create_directories(outputPath.parent_path(), errorCode);
+		}
 		if (errorCode)
 		{
-			outErrorMessage =
-			    "Failed to create scene asset registry directory '" +
-			    outputPath.parent_path().string() + "'";
-			return false;
+			throw Diagnostics::Error(
+			    std::format("Could not create scene asset registry directory '{}': {}.", outputPath.parent_path().string(), errorCode.message()));
 		}
 
 		std::ofstream output(outputPath, std::ios::trunc);
 		if (!output.is_open())
 		{
-			outErrorMessage =
-			    "Failed to open scene asset registry for writing '" +
-			    outputPath.string() + "'";
-			return false;
+			throw Diagnostics::Error("Could not open scene asset registry for writing '" + outputPath.string() + "'.");
 		}
 
 		output << kSceneAssetRegistryHeader << "\n\n";
@@ -190,14 +190,8 @@ namespace Assets
 
 		if (!output.good())
 		{
-			outErrorMessage =
-			    "Failed while writing scene asset registry '" +
-			    outputPath.string() + "'";
-			return false;
+			throw Diagnostics::Error("Could not write scene asset registry '" + outputPath.string() + "'.");
 		}
-
-		outErrorMessage.clear();
-		return true;
 	}
 
 	void SceneAssetRegistry::Upsert(std::string sceneAssetId, std::filesystem::path sceneManifestRelativePath)

@@ -14,32 +14,19 @@
 
 namespace Assets
 {
-	bool SceneAssetPayloadAnimationAppender::AppendAnimations(
+	void SceneAssetPayloadAnimationAppender::AppendAnimations(
 	    const LoadedSceneManifest& sceneManifest,
 	    const CookedAssetFileSet& files,
-	    SceneAssetPayload& sceneAssetPayload,
-	    std::string& errorMessage)
+	    SceneAssetPayload& sceneAssetPayload)
 	{
 		AnimationAssetLoader animationAssetLoader;
 		sceneAssetPayload.animations.reserve(sceneAssetPayload.animations.size() + sceneManifest.animationReferences.size());
 
 		for (const CookedAnimationReference& animationRef : sceneManifest.animationReferences)
 		{
-			LoadedAnimationAsset animationAsset;
 			const std::filesystem::path animationAssetPath = Paths::CookedAnimationAsset(animationRef.animationAssetId);
-			if (!animationAssetLoader.Decode(animationAssetPath, files.Find(animationAssetPath), animationAsset, errorMessage))
-			{
-				errorMessage = std::format(
-				    "Failed to load cooked animation asset {} from '{}' - {}",
-				    Formatting::FormatHexUInt64(animationRef.animationAssetId),
-				    animationAssetPath.string(),
-				    errorMessage);
-				return false;
-			}
-
+			const LoadedAnimationAsset animationAsset = animationAssetLoader.Decode(animationAssetPath, files.Get(animationAssetPath));
 			sceneAssetPayload.animations.push_back(BuildSceneAssetAnimation(animationAsset, animationRef.animationAssetId));
 		}
-
-		return true;
 	}
 }

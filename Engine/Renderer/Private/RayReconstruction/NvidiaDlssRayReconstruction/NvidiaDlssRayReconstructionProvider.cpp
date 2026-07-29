@@ -19,9 +19,7 @@ class NvidiaDlssRayReconstructionProviderConstants final
 #endif
 };
 
-bool NvidiaDlssRayReconstructionProvider::Initialize(
-    const RhiCapabilities& capabilities,
-    RhiNativeDeviceQueueInterop nativeInterop)
+bool NvidiaDlssRayReconstructionProvider::Initialize(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop)
 {
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	m_initialized = IsStreamlineFeatureSupported(sl::kFeatureDLSS_RR, capabilities, nativeInterop);
@@ -39,9 +37,7 @@ RenderViewportExtent NvidiaDlssRayReconstructionProvider::ResolveRenderExtent(Re
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	if (m_initialized)
 	{
-		providerRenderExtent = QueryStreamlineRayReconstructionOptimalRenderExtent(
-		    outputExtent,
-		    m_frameState.GetRequestedQualityMode());
+		providerRenderExtent = QueryStreamlineRayReconstructionOptimalRenderExtent(outputExtent, m_frameState.GetRequestedQualityMode());
 	}
 #endif
 	return m_frameState.StoreResolution(outputExtent, providerRenderExtent);
@@ -76,8 +72,9 @@ void NvidiaDlssRayReconstructionProvider::Shutdown() noexcept
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	if (m_initialized)
 	{
-		(void) slFreeResources(sl::kFeatureDLSS_RR, sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId});
-		(void) slFreeResources(sl::kFeatureDLSS, sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId});
+		(void) slFreeResources(
+		    sl::kFeatureDLSS_RR,
+		    sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId});
 	}
 #endif
 	m_initialized = false;

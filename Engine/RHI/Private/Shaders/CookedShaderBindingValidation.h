@@ -9,10 +9,9 @@
 
 namespace CookedShaderBindingValidation
 {
-	bool Validate(
+	void Validate(
 	    const LoadedShaderPackage& package,
 	    const ShaderPackageDefinition& definition,
 	    const std::vector<PassParameterDesc>& expectedParameters,
-	    CookedShaderBinaryFormat requiredBinaryFormat,
-	    std::string& outErrorMessage);
+	    CookedShaderBinaryFormat runtimeBinaryFormat);
 }

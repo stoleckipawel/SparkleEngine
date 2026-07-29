@@ -10,12 +10,11 @@ class MaterialResourceStore;
 
 namespace SceneAssetMeshInstanceBuilder
 {
-	bool BuildInstances(
+	std::vector<ECS::SceneMeshInstanceData> BuildInstances(
 	    SceneAssetPayload& payload,
 	    MaterialResourceStore& materials,
 	    MaterialHandle materialBaseHandle,
-	    SceneMeshInstanceGroupIndex groupBaseIndex,
-	    std::vector<ECS::SceneMeshInstanceData>& outInstances);
+	    SceneMeshInstanceGroupIndex groupBaseIndex);
 
 	std::vector<SceneMeshInstanceGroupData> BuildGroups(
 	    const SceneAssetPayload& payload,

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <memory>
 
-class GPUMeshCache;
+class GpuMeshCache;
 class RhiResourceService;
 struct RenderSceneData;
 struct RenderSceneGpuData;
@@ -13,7 +13,7 @@ class PersistentRenderGpuScene final
   public:
 	PersistentRenderGpuScene(
 	    RhiResourceService& resourceService,
-	    const GPUMeshCache& meshes);
+	    const GpuMeshCache& meshes);
 	~PersistentRenderGpuScene() noexcept;
 
 	PersistentRenderGpuScene(const PersistentRenderGpuScene&) = delete;

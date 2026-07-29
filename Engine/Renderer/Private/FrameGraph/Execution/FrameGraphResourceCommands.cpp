@@ -9,45 +9,45 @@ FrameGraphResourceCommands::FrameGraphResourceCommands(const FrameGraph& frameGr
 }
 
 void FrameGraphResourceCommands::BindRenderTarget(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     FrameGraphTextureHandle renderTargetHandle,
     FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
-	m_frameGraph->BindRenderTarget(cmd, renderTargetHandle, depthStencilHandle);
+	m_frameGraph->BindRenderTarget(commandContext, renderTargetHandle, depthStencilHandle);
 }
 
 void FrameGraphResourceCommands::BindRenderTargets(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     std::span<const FrameGraphTextureHandle> renderTargetHandles,
     FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
-	m_frameGraph->BindRenderTargets(cmd, renderTargetHandles, depthStencilHandle);
+	m_frameGraph->BindRenderTargets(commandContext, renderTargetHandles, depthStencilHandle);
 }
 
 void FrameGraphResourceCommands::CopyTexture(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     FrameGraphTextureHandle destinationHandle,
     FrameGraphTextureHandle sourceHandle) const noexcept
 {
-	m_frameGraph->CopyTexture(cmd, destinationHandle, sourceHandle);
+	m_frameGraph->CopyTexture(commandContext, destinationHandle, sourceHandle);
 }
 
 void FrameGraphResourceCommands::CopyBuffer(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     FrameGraphBufferHandle destinationHandle,
     FrameGraphBufferHandle sourceHandle) const noexcept
 {
-	m_frameGraph->CopyBuffer(cmd, destinationHandle, sourceHandle);
+	m_frameGraph->CopyBuffer(commandContext, destinationHandle, sourceHandle);
 }
 
-void FrameGraphResourceCommands::ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept
+void FrameGraphResourceCommands::ClearRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept
 {
-	m_frameGraph->ClearRenderTarget(cmd, handle);
+	m_frameGraph->ClearRenderTarget(commandContext, handle);
 }
 
-void FrameGraphResourceCommands::ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept
+void FrameGraphResourceCommands::ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept
 {
-	m_frameGraph->ClearDepthStencil(cmd, handle);
+	m_frameGraph->ClearDepthStencil(commandContext, handle);
 }
 
 RhiResourceHandle FrameGraphResourceCommands::ResolveResource(FrameGraphTextureHandle handle) const noexcept

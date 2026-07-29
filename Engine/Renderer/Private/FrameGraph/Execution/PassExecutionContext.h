@@ -5,13 +5,13 @@
 class RenderCommandContext;
 class PassExecutionDiagnostics;
 struct FrameContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 
 struct PassExecutionContext
 {
 	RenderCommandContext& Commands;
 	const FrameContext& Frame;
-	const PassRuntimeServices& RuntimeServices;
+	const PassRuntimeContext& Runtime;
 	PassExecutionDiagnostics& Diagnostics;
 	FrameGraphResourceCommands Resources;
 };

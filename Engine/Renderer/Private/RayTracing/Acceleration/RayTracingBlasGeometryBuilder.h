@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <vector>
 
-class GPUMesh;
+class GpuMesh;
 struct MeshDraw;
 struct RenderSceneData;
 struct VertexSkinInfluence;
@@ -23,10 +23,10 @@ class RayTracingBlasGeometryBuilder final
 	    std::uint64_t sizeInBytes,
 	    std::uint64_t alignment) noexcept;
 	static bool IsSkinnedDraw(const MeshDraw& draw) noexcept;
-	static bool BuildSkinnedPositions(
+	static void ComputeSkinnedPositions(
 	    const RenderSceneData& sceneData,
 	    const MeshDraw& draw,
-	    const GPUMesh& mesh,
+	    const GpuMesh& mesh,
 	    std::vector<DirectX::XMFLOAT3>& outPositions) noexcept;
 
   private:
@@ -35,15 +35,14 @@ class RayTracingBlasGeometryBuilder final
 	    const VertexSkinInfluence& influence,
 	    std::uint32_t jointMatrixOffset,
 	    const std::vector<DirectX::XMFLOAT4X4>& jointMatrices) noexcept;
-	static bool HasValidMorphRange(
+	static void ValidateMorphInputs(
 	    const RenderSceneData& sceneData,
 	    const MeshDraw& draw,
-	    const GPUMesh& mesh) noexcept;
+	    const GpuMesh& mesh) noexcept;
 	static DirectX::XMFLOAT3 ApplyMorphPosition(
 	    const DirectX::XMFLOAT3& position,
 	    std::size_t vertexIndex,
 	    const RenderSceneData& sceneData,
 	    const MeshDraw& draw,
-	    const GPUMesh& mesh,
-	    bool hasValidMorphRange) noexcept;
+	    const GpuMesh& mesh) noexcept;
 };

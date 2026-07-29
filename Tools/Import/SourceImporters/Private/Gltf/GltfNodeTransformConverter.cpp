@@ -4,6 +4,7 @@
 
 #include <cgltf.h>
 
+#include <cstring>
 #include <utility>
 
 DirectX::XMMATRIX GltfNodeTransformConverter::ConvertGltfMatrixToEngine(DirectX::FXMMATRIX matrix) noexcept
@@ -34,18 +35,20 @@ DirectX::XMMATRIX GltfNodeTransformConverter::ComputeNodeWorldTransform(const cg
 {
 	DirectX::XMMATRIX worldTransform = DirectX::XMMatrixIdentity();
 
-	const cgltf_node* nodeChain[64];
-	int depth = 0;
-	for (const cgltf_node* currentNode = node; currentNode != nullptr && depth < 64; currentNode = currentNode->parent)
+	std::vector<const cgltf_node*> nodeChain;
+	for (const cgltf_node* currentNode = node; currentNode != nullptr; currentNode = currentNode->parent)
 	{
-		nodeChain[depth++] = currentNode;
+		nodeChain.push_back(currentNode);
 	}
 
-	for (int chainIndex = depth - 1; chainIndex >= 0; --chainIndex)
+	for (auto currentNode = nodeChain.rbegin(); currentNode != nodeChain.rend(); ++currentNode)
 	{
 		float localMatrix[16];
-		cgltf_node_transform_local(nodeChain[chainIndex], localMatrix);
-		const DirectX::XMMATRIX localTransform = DirectX::XMLoadFloat4x4(reinterpret_cast<const DirectX::XMFLOAT4X4*>(localMatrix));
+		cgltf_node_transform_local(*currentNode, localMatrix);
+		DirectX::XMFLOAT4X4 localTransformData;
+		static_assert(sizeof(localTransformData) == sizeof(localMatrix));
+		std::memcpy(&localTransformData, localMatrix, sizeof(localMatrix));
+		const DirectX::XMMATRIX localTransform = DirectX::XMLoadFloat4x4(&localTransformData);
 		worldTransform = DirectX::XMMatrixMultiply(worldTransform, localTransform);
 	}
 

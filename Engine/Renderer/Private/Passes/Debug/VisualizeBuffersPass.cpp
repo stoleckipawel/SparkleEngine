@@ -2,8 +2,8 @@
 #include "Passes/Debug/VisualizeBuffersPass.h"
 
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "FrameGraph/PassRuntimeContext.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
@@ -13,32 +13,32 @@ VisualizeBuffersPass::VisualizeBuffersPass(const ComputePassPipelineRuntime& run
 
 const VisualizeBuffersPass::ParameterMetadata& VisualizeBuffersPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<VisualizeBuffersPass>();
+	return ComputePassOperations::BuildParameterMetadata<VisualizeBuffersPass>();
 }
 
 const RenderPassDefinition& VisualizeBuffersPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::VisualizeBuffers,
 	    L"VisualizeBuffers_BindingLayout",
-	    L"VisualizeBuffers_PipelineState");
+	    L"VisualizeBuffers_Pipeline");
 	return definition;
 }
 
 void VisualizeBuffersPass::SetParameters(
     ParameterInstance& parameters,
     const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeContext& passRuntimeContext) const
 {
 	(void) viewData;
-	parameters->PerFrame = passRuntimeServices.PerFrame;
+	parameters->PerFrame = passRuntimeContext.PerFrame;
 }
 
 void VisualizeBuffersPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
-	ComputePassUtilities::DispatchSized<VisualizeBuffersPass>(
+	SetParameters(parameters, context.Frame.mainView, context.Runtime);
+	ComputePassOperations::DispatchSized<VisualizeBuffersPass>(
 	    context,
 	    m_runtime,
 	    parameters,

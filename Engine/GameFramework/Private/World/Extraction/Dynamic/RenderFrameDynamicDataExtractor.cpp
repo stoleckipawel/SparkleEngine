@@ -114,14 +114,14 @@ namespace ECS
 			const AnimationPoseOutput& pose = output.poses[skinning->Pose.Slot];
 			const SkeletonResourceHandle skeleton = resources.Skeletons.Find(pose.skeletonAssetId);
 			const AnimationState* animation = state.m_registry.Get<AnimationState>(pose.animationEntity);
-			const std::uint32_t matrixOffset =
-			    static_cast<std::uint32_t>(dynamic.SkinningMatrices.size());
-			dynamic.SkinningMatrices.insert(
-			    dynamic.SkinningMatrices.end(),
-			    pose.skinningMatrices.begin(),
-			    pose.skinningMatrices.end());
-			dynamic.Skinning.push_back(
-			    RenderSkinningData{
+			const std::uint32_t jointMatrixOffset =
+			    static_cast<std::uint32_t>(dynamic.JointMatrices.size());
+			dynamic.JointMatrices.insert(
+			    dynamic.JointMatrices.end(),
+			    pose.jointMatrices.begin(),
+			    pose.jointMatrices.end());
+			dynamic.JointMatrixRanges.push_back(
+			    RenderJointMatrixRange{
 			        .Object = objects.FindObject(mesh.Entity),
 			        .Skeleton =
 			            skeleton.IsValid()
@@ -131,15 +131,15 @@ namespace ECS
 			            animation != nullptr
 			                ? RenderAnimationAssetHandle(pose.animationAssetId)
 			                : RenderAnimationAssetHandle{},
-			        .MatrixOffset = matrixOffset,
-			        .MatrixCount =
-			            static_cast<std::uint32_t>(pose.skinningMatrices.size())});
+			        .JointMatrixOffset = jointMatrixOffset,
+			        .JointMatrixCount =
+			            static_cast<std::uint32_t>(pose.jointMatrices.size())});
 		}
 		std::sort(
-		    dynamic.Skinning.begin(),
-		    dynamic.Skinning.end(),
-		    [](const RenderSkinningData& lhs,
-		       const RenderSkinningData& rhs)
+		    dynamic.JointMatrixRanges.begin(),
+		    dynamic.JointMatrixRanges.end(),
+		    [](const RenderJointMatrixRange& lhs,
+		       const RenderJointMatrixRange& rhs)
 		    {
 			    return lhs.Object < rhs.Object;
 		    });
@@ -192,7 +192,7 @@ namespace ECS
 		    morphStates->GetEntities();
 		const std::span<const MorphState> components =
 		    morphStates->GetComponents();
-		dynamic.MorphRanges.reserve(entities.size());
+		dynamic.MorphWeightRanges.reserve(entities.size());
 		for (std::size_t index = 0;
 		     index < entities.size();
 		     ++index)
@@ -226,8 +226,8 @@ namespace ECS
 			    dynamic.MorphWeights.end(),
 			    weights.begin(),
 			    weights.end());
-			dynamic.MorphRanges.push_back(
-			    RenderMorphData{
+			dynamic.MorphWeightRanges.push_back(
+			    RenderMorphWeightRange{
 			        .Object = object,
 			        .Animation =
 			            metadata != nullptr
@@ -243,9 +243,9 @@ namespace ECS
 			            static_cast<std::uint32_t>(weights.size())});
 		}
 		std::sort(
-		    dynamic.MorphRanges.begin(),
-		    dynamic.MorphRanges.end(),
-		    [](const RenderMorphData& left, const RenderMorphData& right)
+		    dynamic.MorphWeightRanges.begin(),
+		    dynamic.MorphWeightRanges.end(),
+		    [](const RenderMorphWeightRange& left, const RenderMorphWeightRange& right)
 		    {
 			    return left.Object < right.Object;
 		    });

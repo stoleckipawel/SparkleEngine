@@ -20,7 +20,7 @@ class FrameGraphResourceContractFailureReporter final
 		logMessage.append(passName.begin(), passName.end());
 		logMessage += "': ";
 		logMessage.append(message.begin(), message.end());
-		Diagnostics::Fail(g_frameGraphContractLogger, __FILE__, __LINE__, logMessage);
+		Diagnostics::Fatal(g_frameGraphContractLogger, __FILE__, __LINE__, logMessage);
 	}
 };
 

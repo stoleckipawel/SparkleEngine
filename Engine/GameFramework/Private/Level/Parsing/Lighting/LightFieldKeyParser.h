@@ -14,6 +14,5 @@ namespace LevelParsing
 		std::string_view Field;
 	};
 
-	bool TryParseLightFieldKey(std::string_view key, ParsedLightFieldKey& outKey) noexcept;
-	std::string_view GetLightKindName(SceneLightKind kind) noexcept;
+	ParsedLightFieldKey ParseLightFieldKey(std::string_view key);
 }

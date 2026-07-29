@@ -10,7 +10,7 @@ class RenderHardwareInterface;
 class IUpscalerProvider;
 struct ImageProviderFrameContext;
 
-struct RendererImageProviderPassServices final
+struct ImageProviderPassContext final
 {
 	IUpscalerProvider* Upscaling = nullptr;
 	IRayReconstructionProvider* RayReconstruction = nullptr;
@@ -33,7 +33,7 @@ enum class ImageProviderPipeline : std::uint8_t
 class RendererImageProviderStack final
 {
   public:
-	explicit RendererImageProviderStack(RenderHardwareInterface& renderHardware);
+	explicit RendererImageProviderStack(RenderHardwareInterface& renderHardwareInterface);
 	~RendererImageProviderStack() noexcept;
 
 	RendererImageProviderStack(const RendererImageProviderStack&) = delete;
@@ -48,10 +48,10 @@ class RendererImageProviderStack final
 	    ImageProviderPipeline pipeline) noexcept;
 
 	ImageProviderGraphKey GetFrameGraphKey() const noexcept;
-	RendererImageProviderPassServices BuildPassServices() noexcept;
+	ImageProviderPassContext BuildPassContext() noexcept;
 
   private:
-	void Initialize(RenderHardwareInterface& renderHardware);
+	void Initialize(RenderHardwareInterface& renderHardwareInterface);
 	void Shutdown() noexcept;
 
 	std::unique_ptr<IUpscalerProvider> m_upscaler;

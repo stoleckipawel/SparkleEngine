@@ -5,5 +5,5 @@
 
 namespace Assets
 {
-	SceneLightDesc BuildSceneAssetLight(const CookedSceneLightRecord& lightRecord, std::size_t lightIndex);
+	SceneLightDesc BuildSceneAssetLight(const CookedSceneLightRecord& lightRecord);
 }

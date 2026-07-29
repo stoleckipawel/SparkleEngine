@@ -14,10 +14,6 @@ class TextureCookRequestBatchProcessor final
 	int CookRequestFile(const std::filesystem::path& requestFilePath) const;
 
   private:
-	static bool TryLoadRequests(
-	    const std::filesystem::path& requestFilePath,
-	    std::vector<TextureCookRequest>& outRequests,
-	    std::string& outErrorMessage);
 	static bool ReportFailures(
 	    const std::vector<TextureCookRequest>& requests,
 	    const std::vector<TextureCookBatchItemResult>& results,

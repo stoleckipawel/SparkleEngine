@@ -6,7 +6,7 @@
 #include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/Core/VulkanResult.h"
-#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
+#include "Vulkan/Descriptors/VulkanDescriptorService.h"
 #include "Vulkan/Descriptors/VulkanRecordingDescriptorPool.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
@@ -23,10 +23,10 @@ static const auto g_vulkanCommandRecordingLogger = Logging::GetOrCreateLogger("R
 VulkanCommandRecordingContext::VulkanCommandRecordingContext(
     VulkanRhi& rhi,
     VulkanGpuMemoryAllocator& memoryAllocator,
-    VulkanDescriptorManager& descriptorManager) noexcept :
+    VulkanDescriptorService& descriptorService) noexcept :
 	m_rhi(&rhi),
 	m_memoryAllocator(&memoryAllocator),
-	m_descriptorManager(&descriptorManager)
+	m_descriptorService(&descriptorService)
 {
 	InitializeSlots();
 }
@@ -328,7 +328,7 @@ void VulkanCommandRecordingContext::CreateCommandPool(CommandSlot& slot)
 	        &slot.CommandPool);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanCommandRecordingLogger,
 		    __FILE__,
 		    __LINE__,
@@ -351,7 +351,7 @@ void VulkanCommandRecordingContext::AllocateCommandBuffer(CommandSlot& slot)
 	        &slot.CommandBuffer);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanCommandRecordingLogger,
 		    __FILE__,
 		    __LINE__,
@@ -375,8 +375,8 @@ void VulkanCommandRecordingContext::InitializeRecordingResources(
 	slot.CommandList = std::make_unique<VulkanRenderCommandList>();
 	slot.CommandList->SetRhi(m_rhi);
 	slot.CommandList->SetMemoryAllocator(m_memoryAllocator);
-	slot.CommandList->SetDescriptorManager(m_descriptorManager);
-	slot.CommandList->SetDescriptorAllocator(&m_descriptorManager->m_allocator);
+	slot.CommandList->SetDescriptorService(m_descriptorService);
+	slot.CommandList->SetDescriptorAllocator(&m_descriptorService->m_allocator);
 	slot.CommandList->SetRecordingDescriptorPool(slot.DescriptorPool.get());
 	slot.CommandList->SetRecordingUploadPage(slot.UploadPage.get());
 	slot.CommandList->SetQueueType(slot.QueueType);
@@ -488,7 +488,7 @@ void VulkanCommandRecordingContext::ResetCommandPool(
 	    vkResetCommandPool(m_rhi->GetDevice(), slot.CommandPool, 0);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanCommandRecordingLogger,
 		    __FILE__,
 		    __LINE__,
@@ -526,7 +526,7 @@ void VulkanCommandRecordingContext::BeginSlot(CommandSlot& slot) noexcept
 	    vkBeginCommandBuffer(slot.CommandBuffer, &beginInfo);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanCommandRecordingLogger,
 		    __FILE__,
 		    __LINE__,
@@ -554,7 +554,7 @@ void VulkanCommandRecordingContext::CloseSlot(CommandSlot& slot) noexcept
 	const VkResult result = vkEndCommandBuffer(slot.CommandBuffer);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanCommandRecordingLogger,
 		    __FILE__,
 		    __LINE__,

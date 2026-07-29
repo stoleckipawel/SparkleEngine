@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 
 #include <filesystem>
 
@@ -10,14 +10,13 @@ struct cgltf_material;
 class GltfMaterialImporter final
 {
   public:
-	static void ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportResult& result);
+	static void ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportOutput& output);
 
   private:
 	static ImportedMaterial ExtractMaterial(
 	    const cgltf_material& material,
 	    ImportedMaterialIndex materialIndex,
-	    const std::filesystem::path& sourceDirectory,
-	    SourceImportResult& result);
+	    const std::filesystem::path& sourceDirectory);
 };
 
 

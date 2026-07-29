@@ -2,71 +2,67 @@
 
 #include "LightFieldKeyParser.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <array>
 #include <cctype>
+#include <format>
+#include <limits>
 
 namespace LevelParsing
 {
-
+	class LightFieldKeyParsing final
+	{
+	  private:
 		struct LightFieldPrefix final
 		{
 			std::string_view Text;
 			SceneLightKind Kind = SceneLightKind::Unknown;
 		};
 
-		constexpr std::array<LightFieldPrefix, 4> kLightFieldPrefixes = {{
+		static constexpr std::array<LightFieldPrefix, 4> kPrefixes = {{
 		    {"DirectionalLight", SceneLightKind::Directional},
 		    {"PointLight", SceneLightKind::Point},
 		    {"SpotLight", SceneLightKind::Spot},
 		    {"RectLight", SceneLightKind::Rect},
 		}};
 
-		bool TryParseIndexedField(
+		static ParsedLightFieldKey ParseIndexedField(
 		    std::string_view key,
-		    std::string_view prefix,
-		    std::size_t& outIndex,
-		    std::string_view& outField) noexcept
+		    const LightFieldPrefix& prefix)
 		{
-			if (!key.starts_with(prefix)) return false;
-			std::size_t cursor = prefix.size();
-			if (cursor >= key.size() || !std::isdigit(static_cast<unsigned char>(key[cursor]))) return false;
+			std::size_t cursor = prefix.Text.size();
+			if (cursor >= key.size() || !std::isdigit(static_cast<unsigned char>(key[cursor])))
+				throw Diagnostics::Error(std::format("Lighting field '{}' has no light index.", key));
 
 			std::size_t index = 0;
 			while (cursor < key.size() && std::isdigit(static_cast<unsigned char>(key[cursor])))
 			{
-				index = (index * 10) + static_cast<std::size_t>(key[cursor] - '0');
+				const std::size_t digit = static_cast<std::size_t>(key[cursor] - '0');
+				if (index > ((std::numeric_limits<std::size_t>::max)() - digit) / 10u)
+					throw Diagnostics::Error(std::format("Lighting field '{}' has an overflowing light index.", key));
+				index = index * 10u + digit;
 				++cursor;
 			}
-			if (cursor >= key.size()) return false;
-			outIndex = index;
-			outField = key.substr(cursor);
-			return true;
+			if (cursor >= key.size())
+				throw Diagnostics::Error(std::format("Lighting field '{}' has no property name.", key));
+			return ParsedLightFieldKey{.Kind = prefix.Kind, .Index = index, .Field = key.substr(cursor)};
 		}
 
-
-	bool TryParseLightFieldKey(std::string_view key, ParsedLightFieldKey& outKey) noexcept
-	{
-		for (const LightFieldPrefix& prefix : kLightFieldPrefixes)
+	  public:
+		static ParsedLightFieldKey Parse(std::string_view key)
 		{
-			std::size_t index = 0;
-			std::string_view field;
-			if (!TryParseIndexedField(key, prefix.Text, index, field)) continue;
-			outKey = {.Kind = prefix.Kind, .Index = index, .Field = field};
-			return true;
+			for (const LightFieldPrefix& prefix : kPrefixes)
+			{
+				if (key.starts_with(prefix.Text))
+					return ParseIndexedField(key, prefix);
+			}
+			throw Diagnostics::Error(std::format("Unsupported lighting field '{}'.", key));
 		}
-		return false;
-	}
+	};
 
-	std::string_view GetLightKindName(SceneLightKind kind) noexcept
+	ParsedLightFieldKey ParseLightFieldKey(std::string_view key)
 	{
-		switch (kind)
-		{
-			case SceneLightKind::Directional: return "directional";
-			case SceneLightKind::Point: return "point";
-			case SceneLightKind::Spot: return "spot";
-			case SceneLightKind::Rect: return "rect";
-			case SceneLightKind::Unknown:
-			default: return "unknown";
-		}
+		return LightFieldKeyParsing::Parse(key);
 	}
 }

@@ -8,10 +8,10 @@
 struct alignas(256) PerFrameConstantBufferData
 {
 	uint32_t FrameIndex;
-	float TotalTime;
-	float DeltaTime;
-	float ScaledTotalTime;
-	float ScaledDeltaTime;
+	float TotalTimeSeconds;
+	float DeltaTimeSeconds;
+	float ScaledTotalTimeSeconds;
+	float ScaledDeltaTimeSeconds;
 	uint32_t ViewModeIndex;
 
 	DirectX::XMFLOAT2 ViewportSize;

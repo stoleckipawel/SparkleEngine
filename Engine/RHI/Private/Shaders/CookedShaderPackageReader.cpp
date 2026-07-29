@@ -2,6 +2,7 @@
 
 #include "Shaders/CookedShaderPackageCache.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinarySpanReader.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
@@ -17,74 +18,68 @@
 #include <string>
 #include <vector>
 
-bool CookedShaderPackageCache::LoadPackageFromFile(
-    const std::filesystem::path& path,
-    LoadedShaderPackage& outPackage,
-    std::string& outErrorMessage)
+LoadedShaderPackage CookedShaderPackageCache::LoadPackageFromFile(const std::filesystem::path& path)
 {
 	std::vector<std::uint8_t> fileBytes;
-	if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
+	std::string readError;
+	if (!Files::TryReadAllBytes(path, fileBytes, readError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(readError));
 	}
 
+	LoadedShaderPackage package;
 	Files::BinarySpanReader reader(fileBytes);
-	if (!reader.ReadValue(outPackage.m_header, outErrorMessage))
+	if (!reader.ReadValue(package.m_header, readError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(readError));
 	}
 
-	if (!outPackage.m_header.Matches(kCookedShaderPackageMagic, kCookedShaderPackageVersion))
+	if (!package.m_header.Matches(kCookedShaderPackageMagic, kCookedShaderPackageVersion))
 	{
-		if (outPackage.m_header.Magic == kCookedShaderPackageMagic)
+		if (package.m_header.Magic == kCookedShaderPackageMagic)
 		{
-			outErrorMessage = std::format(
+			throw Diagnostics::Error(std::format(
 			    "Cooked shader package '{}' is version {}. Recook to current version {}.",
 			    path.string(),
-			    outPackage.m_header.Version,
-			    kCookedShaderPackageVersion);
-			return false;
+			    package.m_header.Version,
+			    kCookedShaderPackageVersion));
 		}
 
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Invalid cooked shader package header in '{}': expected magic {} version {}, got magic {} version {}",
 		    path.string(),
 		    Formatting::FormatHexUInt32(kCookedShaderPackageMagic),
 		    kCookedShaderPackageVersion,
-		    Formatting::FormatHexUInt32(outPackage.m_header.Magic),
-		    outPackage.m_header.Version);
-		return false;
+		    Formatting::FormatHexUInt32(package.m_header.Magic),
+		    package.m_header.Version));
 	}
 
-	if (!reader.ReadArray(outPackage.m_header.BinaryRecordCount, outPackage.m_binaryRecords, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.BindingRecordCount, outPackage.m_bindingRecords, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.PipelineLayoutRecordCount, outPackage.m_pipelineLayoutRecords, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.SpecializationInputCount, outPackage.m_specializationInputs, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.ReflectionRecordCount, outPackage.m_reflectionRecords, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.ResourceBindingRecordCount, outPackage.m_resourceBindings, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.ConstantBufferRecordCount, outPackage.m_constantBuffers, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.ConstantBufferMemberRecordCount, outPackage.m_constantBufferMembers, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.InputElementRecordCount, outPackage.m_inputElements, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.PushConstantRangeRecordCount, outPackage.m_pushConstantRanges, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.SpecializationConstantRecordCount, outPackage.m_specializationConstants, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.RayTracingExportRecordCount, outPackage.m_rayTracingExports, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.RayTracingHitGroupRecordCount, outPackage.m_rayTracingHitGroups, outErrorMessage) ||
+	if (!reader.ReadArray(package.m_header.BinaryRecordCount, package.m_binaryRecords, readError) ||
+	    !reader.ReadArray(package.m_header.BindingRecordCount, package.m_bindingRecords, readError) ||
+	    !reader.ReadArray(package.m_header.PipelineLayoutRecordCount, package.m_pipelineLayoutRecords, readError) ||
+	    !reader.ReadArray(package.m_header.SpecializationInputCount, package.m_specializationInputs, readError) ||
+	    !reader.ReadArray(package.m_header.ReflectionRecordCount, package.m_reflectionRecords, readError) ||
+	    !reader.ReadArray(package.m_header.ResourceBindingRecordCount, package.m_resourceBindings, readError) ||
+	    !reader.ReadArray(package.m_header.ConstantBufferRecordCount, package.m_constantBuffers, readError) ||
+	    !reader.ReadArray(package.m_header.ConstantBufferMemberRecordCount, package.m_constantBufferMembers, readError) ||
+	    !reader.ReadArray(package.m_header.InputElementRecordCount, package.m_inputElements, readError) ||
+	    !reader.ReadArray(package.m_header.PushConstantRangeRecordCount, package.m_pushConstantRanges, readError) ||
+	    !reader.ReadArray(package.m_header.SpecializationConstantRecordCount, package.m_specializationConstants, readError) ||
+	    !reader.ReadArray(package.m_header.RayTracingExportRecordCount, package.m_rayTracingExports, readError) ||
+	    !reader.ReadArray(package.m_header.RayTracingHitGroupRecordCount, package.m_rayTracingHitGroups, readError) ||
 	    !reader
-	         .ReadArray(outPackage.m_header.RayTracingLocalParameterRecordCount, outPackage.m_rayTracingLocalParameters, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.StringTableSizeInBytes, outPackage.m_stringTable, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.BinaryBlobSizeInBytes, outPackage.m_binaryBlob, outErrorMessage))
+	         .ReadArray(package.m_header.RayTracingLocalParameterRecordCount, package.m_rayTracingLocalParameters, readError) ||
+	    !reader.ReadArray(package.m_header.StringTableSizeInBytes, package.m_stringTable, readError) ||
+	    !reader.ReadArray(package.m_header.BinaryBlobSizeInBytes, package.m_binaryBlob, readError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(readError));
 	}
 
 	if (reader.GetRemainingByteCount() != 0)
 	{
-		outErrorMessage = std::format("Cooked shader package '{}' contains unexpected trailing bytes", path.string());
-		return false;
+		throw Diagnostics::Error(std::format("Cooked shader package '{}' contains unexpected trailing bytes", path.string()));
 	}
 
-	outPackage.m_isValid = true;
-	outErrorMessage.clear();
-	return true;
+	package.m_isValid = true;
+	return package;
 }
-

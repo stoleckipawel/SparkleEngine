@@ -16,14 +16,14 @@
 #include <vector>
 
 class VulkanRhi;
-class VulkanDescriptorManager;
+class VulkanDescriptorService;
 struct CompiledBinding;
 
 class VulkanDescriptorAllocator final
 {
   public:
 	explicit VulkanDescriptorAllocator(VulkanRhi& rhi) noexcept;
-	~VulkanDescriptorAllocator() noexcept;
+	~VulkanDescriptorAllocator() noexcept = default;
 
 	VulkanDescriptorAllocator(const VulkanDescriptorAllocator&) = delete;
 	VulkanDescriptorAllocator& operator=(const VulkanDescriptorAllocator&) = delete;
@@ -47,15 +47,9 @@ class VulkanDescriptorAllocator final
 	RhiGpuDescriptorHandle RegisterAccelerationStructureDescriptor(VkAccelerationStructureKHR accelerationStructure);
 	RhiGpuDescriptorHandle RegisterPartitionedAccelerationStructureDescriptor(VkDeviceAddress accelerationStructureAddress);
 	void ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept;
-	void WriteImageDescriptor(RhiCpuDescriptorHandle destination, ERhiResourceViewKind viewKind, VkImageView imageView) noexcept;
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
 	bool WriteRegisteredDescriptor(RhiCpuDescriptorHandle destination, RhiGpuDescriptorHandle source) noexcept;
 
-	void WriteFallbackDescriptors(
-	    VkDescriptorSet descriptorSet,
-	    const CompiledBinding* bindings,
-	    std::size_t bindingCount,
-	    std::uint32_t setIndex) noexcept;
 	void WriteDescriptorTable(
 	    VkDescriptorSet descriptorSet,
 	    const CompiledBinding& binding,
@@ -77,7 +71,7 @@ class VulkanDescriptorAllocator final
 	    VkDeviceAddress accelerationStructureAddress) noexcept;
 
   private:
-	friend class VulkanDescriptorManager;
+	friend class VulkanDescriptorService;
 
 	enum class EntryKind : std::uint8_t
 	{
@@ -145,14 +139,8 @@ class VulkanDescriptorAllocator final
 	DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) noexcept;
 	const DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) const noexcept;
 	std::shared_ptr<const RecordingReadView> GetRecordingReadView() const noexcept;
-	void CreateFallbackBuffer() noexcept;
-	static bool EntryKindMatchesBinding(
-	    const CompiledBinding& binding,
-	    EntryKind entryKind) noexcept;
-	static bool BuildWriteChunk(
-	    std::span<const DescriptorEntry> entries,
-	    EntryKind entryKind,
-	    DescriptorWriteChunk& outChunk) noexcept;
+	static bool EntryKindMatchesBinding(const CompiledBinding& binding, EntryKind entryKind) noexcept;
+	static bool BuildWriteChunk(std::span<const DescriptorEntry> entries, EntryKind entryKind, DescriptorWriteChunk& outChunk) noexcept;
 	void CommitWriteChunk(
 	    VkDescriptorSet descriptorSet,
 	    const CompiledBinding& binding,
@@ -171,6 +159,4 @@ class VulkanDescriptorAllocator final
 	std::shared_ptr<std::vector<DescriptorEntry>> m_registeredDescriptors;
 	std::atomic<std::shared_ptr<const RecordingReadView>> m_recordingReadView;
 	std::vector<std::uint32_t> m_freeRegisteredDescriptorIndices;
-	VkBuffer m_fallbackBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory m_fallbackBufferMemory = VK_NULL_HANDLE;
 };

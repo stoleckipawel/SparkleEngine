@@ -2,19 +2,21 @@
 
 #include "SceneData/Preparation/RenderLightPreparation.h"
 
-#include "Core/Public/Math/MathUtils.h"
+#include "Core/Public/Diagnostics/Verify.h"
 #include "SceneData/RenderSceneData.h"
 
-#include <algorithm>
 #include <cmath>
 
-void RenderLightPreparation::PrepareRange(
-    std::span<const RenderLightData> inputs,
-    std::span<PreparedRenderLight> outputs) noexcept
+static const auto g_renderLightPreparationLogger = Logging::GetOrCreateLogger("Renderer.RenderLightPreparation");
+
+void RenderLightPreparation::PrepareRange(std::span<const RenderLightData> inputs, std::span<PreparedRenderLight> outputs) noexcept
 {
-	const std::size_t count =
-	    (std::min)(inputs.size(), outputs.size());
-	for (std::size_t index = 0u; index < count; ++index)
+	if (inputs.size() != outputs.size())
+	{
+		Diagnostics::Fatal(g_renderLightPreparationLogger, __FILE__, __LINE__, "Render-light preparation input and output counts differ.");
+	}
+
+	for (std::size_t index = 0u; index < inputs.size(); ++index)
 	{
 		const RenderLightData& row = inputs[index];
 		PreparedRenderLight& output = outputs[index];
@@ -26,10 +28,7 @@ void RenderLightPreparation::PrepareRange(
 			continue;
 		}
 
-		const DirectX::XMFLOAT3 position{
-		    light.common.worldTransform._41,
-		    light.common.worldTransform._42,
-		    light.common.worldTransform._43};
+		const DirectX::XMFLOAT3 position{light.common.worldTransform._41, light.common.worldTransform._42, light.common.worldTransform._43};
 
 		if (const SceneDirectionalLightDesc* directional = light.GetDirectional())
 		{
@@ -57,11 +56,7 @@ void RenderLightPreparation::PrepareDirectional(
 {
 	output.Classification = RenderLightClassification::Directional;
 	output.Directional = DirectionalLight{
-	    MathUtils::Normalize3(directional.direction, {0.0f, -1.0f, 0.0f}),
-	    (std::max)(0.0f, light.common.intensity),
-	    light.common.color,
-	    (std::max)(0.0f, directional.angularDiameterRadians),
-	    directional.castShadow};
+	    directional.direction, directional.illuminance, light.common.color, directional.angularSizeRadians, directional.castShadow};
 }
 
 void RenderLightPreparation::PreparePoint(
@@ -72,12 +67,13 @@ void RenderLightPreparation::PreparePoint(
 {
 	output.Classification = RenderLightClassification::Point;
 	output.Point = PointLight{
-	    position,
-	    (std::max)(0.0f, point.range),
-	    light.common.color,
-	    (std::max)(0.0f, light.common.intensity),
-	    (std::max)(0.0f, point.sourceRadius),
-	    point.castShadow};
+	    .position = position,
+	    .range = point.range,
+	    .color = light.common.color,
+	    .luminousIntensity = point.luminousIntensity,
+	    .radius = point.radius,
+	    .distanceAttenuationCoefficients = point.distanceAttenuationCoefficients,
+	    .castShadow = point.castShadow};
 }
 
 void RenderLightPreparation::PrepareSpot(
@@ -86,20 +82,18 @@ void RenderLightPreparation::PrepareSpot(
     const DirectX::XMFLOAT3& position,
     PreparedRenderLight& output) noexcept
 {
-	const float inner = (std::max)(0.0f, spot.innerConeAngleRadians);
-	const float outer = (std::max)(inner, spot.outerConeAngleRadians);
-
 	output.Classification = RenderLightClassification::Spot;
 	output.Spot = SpotLight{
-	    position,
-	    (std::max)(0.0f, spot.range),
-	    (std::max)(0.0f, spot.sourceRadius),
-	    MathUtils::Normalize3(spot.direction, {0.0f, -1.0f, 0.0f}),
-	    std::cos(inner),
-	    light.common.color,
-	    (std::max)(0.0f, light.common.intensity),
-	    std::cos(outer),
-	    spot.castShadow};
+	    .position = position,
+	    .range = spot.range,
+	    .radius = spot.radius,
+	    .direction = spot.direction,
+	    .innerAngleCosine = std::cos(spot.innerAngleRadians),
+	    .color = light.common.color,
+	    .luminousIntensity = spot.luminousIntensity,
+	    .outerAngleCosine = std::cos(spot.outerAngleRadians),
+	    .distanceAttenuationCoefficients = spot.distanceAttenuationCoefficients,
+	    .castShadow = spot.castShadow};
 }
 
 void RenderLightPreparation::PrepareRect(
@@ -110,43 +104,33 @@ void RenderLightPreparation::PrepareRect(
 {
 	output.Classification = RenderLightClassification::Rect;
 	output.Rect = RectLight{
-	    position,
-	    (std::max)(0.0f, rect.width),
-	    MathUtils::Normalize3(rect.direction, {0.0f, -1.0f, 0.0f}),
-	    (std::max)(0.0f, rect.height),
-	    MathUtils::Normalize3(rect.tangent, {1.0f, 0.0f, 0.0f}),
-	    (std::max)(0.0f, light.common.intensity),
-	    light.common.color,
-	    rect.castShadow};
+	    .position = position,
+	    .width = rect.width,
+	    .direction = rect.direction,
+	    .height = rect.height,
+	    .tangent = rect.tangent,
+	    .luminance = rect.luminance,
+	    .color = light.common.color,
+	    .castShadow = rect.castShadow};
 }
 
-void RenderLightPreparation::Commit(
-    std::span<const PreparedRenderLight> lights,
-    RenderSceneData& sceneData)
+void RenderLightPreparation::Commit(std::span<const PreparedRenderLight> lights, RenderSceneData& sceneData)
 {
 	for (const PreparedRenderLight& light : lights)
 	{
 		switch (light.Classification)
 		{
 			case RenderLightClassification::Directional:
-				sceneData.directionalLights.Add(
-				    light.Object,
-				    light.Directional);
+				sceneData.directionalLights.Add(light.Object, light.Directional);
 				break;
 			case RenderLightClassification::Point:
-				sceneData.pointLights.Add(
-				    light.Object,
-				    light.Point);
+				sceneData.pointLights.Add(light.Object, light.Point);
 				break;
 			case RenderLightClassification::Spot:
-				sceneData.spotLights.Add(
-				    light.Object,
-				    light.Spot);
+				sceneData.spotLights.Add(light.Object, light.Spot);
 				break;
 			case RenderLightClassification::Rect:
-				sceneData.rectLights.Add(
-				    light.Object,
-				    light.Rect);
+				sceneData.rectLights.Add(light.Object, light.Rect);
 				break;
 			case RenderLightClassification::None:
 				break;

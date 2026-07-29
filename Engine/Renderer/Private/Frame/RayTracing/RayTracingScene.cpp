@@ -4,7 +4,7 @@
 #include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
+#include "FrameGraph/PassRuntimeContext.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 
@@ -12,6 +12,8 @@ namespace RayTracingSceneFrameGraphContract
 {
 	constexpr std::string_view kSceneBuildPassName = "RayTracingSceneBuild";
 }  // namespace RayTracingSceneFrameGraphContract
+
+static const auto g_rayTracingSceneFrameGraphLogger = Logging::GetOrCreateLogger("Renderer.RayTracingSceneFrameGraph");
 
 FrameGraphAccelerationStructureHandle CreateRayTracingSceneFrameGraphResource(FrameGraphBuilder& builder)
 {
@@ -23,27 +25,32 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 	builder.AddPass(
 	    RayTracingSceneFrameGraphContract::kSceneBuildPassName,
 	    EFrameGraphPassKind::Compute,
-	    [sceneTlas](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
+	    [sceneTlas](PassResourceBuilder& resourceBuilder, const FrameContext&)
 	    {
-		    if (!sceneTlas.IsValid() || !frame.rayTracingScene.HasBoundTlas())
+		    if (!sceneTlas.IsValid())
 		    {
-			    return;
+			    Diagnostics::Fatal(
+			        g_rayTracingSceneFrameGraphLogger,
+			        __FILE__,
+			        __LINE__,
+			        "Ray-tracing scene build received an invalid persistent SceneTlas handle.");
 		    }
 
-		    resourceBuilder.Use(
-		        sceneTlas,
-		        ResourceUsage::AccelerationStructureBuild,
-		        "SceneTopLevelAccelerationStructure");
+		    resourceBuilder.Use(sceneTlas, ResourceUsage::AccelerationStructureBuild, "SceneTopLevelAccelerationStructure");
 	    },
 	    [](PassExecutionContext& context)
 	    {
-		    if (!context.Frame.rayTracingScene.HasBoundTlas() || context.RuntimeServices.RayTracing == nullptr ||
-		        context.RuntimeServices.RayTracing->Scene == nullptr)
+		    if (!context.Frame.rayTracingScene.HasBoundTlas() || context.Runtime.RayTracing == nullptr ||
+		        context.Runtime.RayTracing->Scene == nullptr)
 		    {
-			    return;
+			    Diagnostics::Fatal(
+			        g_rayTracingSceneFrameGraphLogger,
+			        __FILE__,
+			        __LINE__,
+			        "Ray-tracing scene build did not receive a bound SceneTlas and active scene producer.");
 		    }
 
-		    context.RuntimeServices.RayTracing->Scene->Build(context.Commands, context.Frame.sceneData, &context.Diagnostics);
+		    context.Runtime.RayTracing->Scene->Build(context.Commands, context.Frame.sceneData, &context.Diagnostics);
 	    });
 }
 

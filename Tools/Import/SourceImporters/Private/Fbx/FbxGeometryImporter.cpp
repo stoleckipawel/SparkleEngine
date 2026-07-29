@@ -1,12 +1,11 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Fbx/FbxGeometryImporter.h"
-
-#include <DirectXMath.h>
+#include "Fbx/FbxNodeTransformConverter.h"
+#include "Fbx/FbxSkinImporter.h"
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <format>
-
-static const auto g_fbxGeometryImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Fbx");
 
 std::size_t FbxGeometryImporter::CountImportedMeshInstances(const aiNode& node) noexcept
 {
@@ -19,17 +18,20 @@ std::size_t FbxGeometryImporter::CountImportedMeshInstances(const aiNode& node) 
 	return meshInstanceCount;
 }
 
-void FbxGeometryImporter::ImportGeometry(const aiScene& scene, SourceImportResult& result)
+void FbxGeometryImporter::ImportGeometry(const aiScene& scene, SourceImportOutput& output)
 {
-	ExtractNodeMeshes(scene, *scene.mRootNode, aiMatrix4x4(), result);
+	std::uint32_t nextNodeIndex = 0;
+	ExtractNodeMeshes(scene, *scene.mRootNode, aiMatrix4x4(), nextNodeIndex, output);
 }
 
 void FbxGeometryImporter::ExtractNodeMeshes(
-	const aiScene& scene,
-	const aiNode& node,
-	const aiMatrix4x4& parentTransform,
-	SourceImportResult& result)
+    const aiScene& scene,
+    const aiNode& node,
+    const aiMatrix4x4& parentTransform,
+    std::uint32_t& nextNodeIndex,
+    SourceImportOutput& output)
 {
+	const std::uint32_t sourceNodeIndex = nextNodeIndex++;
 	const aiMatrix4x4 worldTransform = parentTransform * node.mTransformation;
 
 	for (unsigned int meshReferenceIndex = 0; meshReferenceIndex < node.mNumMeshes; ++meshReferenceIndex)
@@ -37,57 +39,61 @@ void FbxGeometryImporter::ExtractNodeMeshes(
 		const unsigned int sceneMeshIndex = node.mMeshes[meshReferenceIndex];
 		if (sceneMeshIndex >= scene.mNumMeshes)
 		{
-			(void)result;
-			SPDLOG_LOGGER_WARN(
-			    g_fbxGeometryImporterLogger,
-			    "{}",
-			    std::format("FbxImporter: Node '{}' references invalid mesh index {}", GetNodeName(node), sceneMeshIndex));
-			continue;
+			throw Diagnostics::Error(std::format("FBX node '{}' references unknown mesh index {}.", GetNodeName(node), sceneMeshIndex));
 		}
 
-		AppendMeshInstance(node, *scene.mMeshes[sceneMeshIndex], sceneMeshIndex, worldTransform, result);
+		AppendMeshInstance(scene, node, *scene.mMeshes[sceneMeshIndex], sceneMeshIndex, sourceNodeIndex, worldTransform, output);
 	}
 
 	for (unsigned int childIndex = 0; childIndex < node.mNumChildren; ++childIndex)
 	{
-		ExtractNodeMeshes(scene, *node.mChildren[childIndex], worldTransform, result);
+		ExtractNodeMeshes(scene, *node.mChildren[childIndex], worldTransform, nextNodeIndex, output);
 	}
 }
 
 void FbxGeometryImporter::AppendMeshInstance(
-	const aiNode& node,
-	const aiMesh& mesh,
-	std::uint32_t sourceMeshIndex,
-	const aiMatrix4x4& worldTransform,
-	SourceImportResult& result)
+    const aiScene& scene,
+    const aiNode& node,
+    const aiMesh& mesh,
+    std::uint32_t sourceMeshIndex,
+    std::uint32_t sourceNodeIndex,
+    const aiMatrix4x4& worldTransform,
+    SourceImportOutput& output)
 {
-	ImportedMeshPrimitiveIndex importedPrimitiveIndex = FindImportedPrimitiveIndex(result.scene, sourceMeshIndex);
+	const ImportedSkeletonIndex skeletonIndex = FbxSkinImporter::ImportSkeleton(scene, node, mesh, sourceMeshIndex, output);
+	if (mesh.HasBones() && skeletonIndex == kInvalidImportedSkeletonIndex)
+	{
+		throw Diagnostics::Error(std::format("FBX mesh '{}' has bones but no imported skeleton.", GetMeshName(mesh)));
+	}
+	const ImportedSkeleton* skeleton = skeletonIndex < output.scene.skeletons.size() ? &output.scene.skeletons[skeletonIndex] : nullptr;
+
+	ImportedMeshPrimitiveIndex importedPrimitiveIndex = FindImportedPrimitiveIndex(output.scene, sourceMeshIndex);
 	if (importedPrimitiveIndex == kInvalidImportedMeshPrimitiveIndex)
 	{
-		ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(mesh, node, result);
-		if (!meshGeometry.IsValid())
-		{
-			return;
-		}
+		ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(mesh, node, skeleton, output);
 
 		ImportedMeshPrimitive primitiveEntry;
 		primitiveEntry.geometry = std::move(meshGeometry);
 		primitiveEntry.displayName = BuildMeshDisplayName(node, mesh);
 		primitiveEntry.sourceMeshIndex = sourceMeshIndex;
 		primitiveEntry.sourcePrimitiveIndex = 0;
-		importedPrimitiveIndex = static_cast<ImportedMeshPrimitiveIndex>(result.scene.meshPrimitives.size());
-		result.scene.meshPrimitives.push_back(std::move(primitiveEntry));
+		importedPrimitiveIndex = static_cast<ImportedMeshPrimitiveIndex>(output.scene.meshPrimitives.size());
+		output.scene.meshPrimitives.push_back(std::move(primitiveEntry));
 	}
 
 	ImportedMeshInstance instanceEntry;
 	instanceEntry.primitiveIndex = importedPrimitiveIndex;
-	instanceEntry.worldTransform = ConvertTransform(worldTransform);
-	instanceEntry.materialIndex = ResolveMaterialIndex(mesh, result);
+	instanceEntry.worldTransform = FbxNodeTransformConverter::ConvertAssimpTransformToEngine(worldTransform);
+	instanceEntry.materialIndex = ResolveMaterialIndex(mesh, output);
+	instanceEntry.skeletonIndex = skeletonIndex;
+	instanceEntry.sourceNodeIndex = sourceNodeIndex;
 	instanceEntry.sourceNodeName = GetNodeName(node);
-	result.scene.meshInstances.push_back(std::move(instanceEntry));
+	output.scene.meshInstances.push_back(std::move(instanceEntry));
 }
 
-ImportedMeshPrimitiveIndex FbxGeometryImporter::FindImportedPrimitiveIndex(const ImportedScene& scene, std::uint32_t sourceMeshIndex) noexcept
+ImportedMeshPrimitiveIndex FbxGeometryImporter::FindImportedPrimitiveIndex(
+    const ImportedScene& scene,
+    std::uint32_t sourceMeshIndex) noexcept
 {
 	for (std::size_t primitiveIndex = 0; primitiveIndex < scene.meshPrimitives.size(); ++primitiveIndex)
 	{
@@ -101,49 +107,40 @@ ImportedMeshPrimitiveIndex FbxGeometryImporter::FindImportedPrimitiveIndex(const
 	return kInvalidImportedMeshPrimitiveIndex;
 }
 
-ImportedMeshGeometry FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, SourceImportResult& result)
+ImportedMeshGeometry FbxGeometryImporter::ExtractMeshGeometry(
+    const aiMesh& mesh,
+    const aiNode& node,
+    const ImportedSkeleton* skeleton,
+    SourceImportOutput& output)
 {
 	if (!mesh.HasPositions())
 	{
-		(void)result;
-		SPDLOG_LOGGER_WARN(
-		    g_fbxGeometryImporterLogger,
-		    "{}",
-		    std::format(
-		        "FbxImporter: Skipping mesh '{}' on node '{}' because it has no vertex positions",
-		        GetMeshName(mesh),
-		        GetNodeName(node)));
-		return {};
-	}
-
-	if (mesh.HasBones())
-	{
-		SPDLOG_LOGGER_WARN(
-		    g_fbxGeometryImporterLogger,
-		    "{}",
-		    std::format("FbxImporter: Mesh '{}' contains bones and will be imported as static geometry only", GetMeshName(mesh)));
+		throw Diagnostics::Error(
+		    std::format("FBX mesh '{}' on node '{}' has no vertex positions.", GetMeshName(mesh), GetNodeName(node)));
 	}
 
 	if (mesh.mNumAnimMeshes > 0)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_fbxGeometryImporterLogger,
-		    "{}",
-		    std::format("FbxImporter: Mesh '{}' contains morph targets which will be ignored", GetMeshName(mesh)));
+		throw Diagnostics::Error(std::format("FBX mesh '{}' contains unsupported morph targets.", GetMeshName(mesh)));
 	}
 
 	ImportedMeshGeometry meshGeometry;
 	meshGeometry.Reserve(mesh.mNumVertices, mesh.mNumFaces * 3);
 	meshGeometry.vertices.resize(mesh.mNumVertices);
 	PopulateVertices(mesh, meshGeometry);
-	AppendTriangleIndices(mesh, meshGeometry, result);
+	AppendTriangleIndices(mesh, meshGeometry);
+	if (mesh.HasBones() && skeleton == nullptr)
+	{
+		throw Diagnostics::Error(std::format("FBX mesh '{}' has incomplete skin influences.", GetMeshName(mesh)));
+	}
+	if (mesh.HasBones())
+	{
+		FbxSkinImporter::ImportSkinInfluences(mesh, *skeleton, meshGeometry);
+	}
 
 	if (!meshGeometry.IsValid())
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_fbxGeometryImporterLogger,
-		    "{}",
-		    std::format("FbxImporter: Mesh '{}' did not produce valid triangle geometry", GetMeshName(mesh)));
+		throw Diagnostics::Error(std::format("FBX mesh '{}' did not produce complete triangle geometry.", GetMeshName(mesh)));
 	}
 
 	return meshGeometry;
@@ -168,7 +165,11 @@ void FbxGeometryImporter::PopulateVertices(const aiMesh& mesh, ImportedMeshGeome
 
 		if (mesh.HasTangentsAndBitangents())
 		{
-			vertex.tangent = DirectX::XMFLOAT4(mesh.mTangents[vertexIndex].x, mesh.mTangents[vertexIndex].y, mesh.mTangents[vertexIndex].z, 1.0f);
+			const aiVector3D& normal = mesh.mNormals[vertexIndex];
+			const aiVector3D& tangent = mesh.mTangents[vertexIndex];
+			const aiVector3D& bitangent = mesh.mBitangents[vertexIndex];
+			const float handedness = (normal ^ tangent) * bitangent < 0.0f ? -1.0f : 1.0f;
+			vertex.tangent = DirectX::XMFLOAT4(tangent.x, tangent.y, tangent.z, handedness);
 		}
 
 		if (mesh.HasVertexColors(0))
@@ -182,19 +183,25 @@ void FbxGeometryImporter::PopulateVertices(const aiMesh& mesh, ImportedMeshGeome
 	}
 }
 
-void FbxGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, ImportedMeshGeometry& meshGeometry, SourceImportResult& result)
+void FbxGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, ImportedMeshGeometry& meshGeometry)
 {
 	for (unsigned int faceIndex = 0; faceIndex < mesh.mNumFaces; ++faceIndex)
 	{
 		const aiFace& face = mesh.mFaces[faceIndex];
 		if (face.mNumIndices != 3)
 		{
-			(void)result;
-			SPDLOG_LOGGER_WARN(
-			    g_fbxGeometryImporterLogger,
-			    "{}",
-			    std::format("FbxImporter: Skipping non-triangle face {} in mesh '{}'", faceIndex, GetMeshName(mesh)));
-			continue;
+			throw Diagnostics::Error(std::format("FBX face {} in mesh '{}' is not a triangle.", faceIndex, GetMeshName(mesh)));
+		}
+		for (unsigned int faceIndexOffset = 0; faceIndexOffset < face.mNumIndices; ++faceIndexOffset)
+		{
+			if (face.mIndices[faceIndexOffset] >= mesh.mNumVertices)
+			{
+				throw Diagnostics::Error(std::format(
+				    "FBX face {} in mesh '{}' references unknown vertex {}.",
+				    faceIndex,
+				    GetMeshName(mesh),
+				    face.mIndices[faceIndexOffset]));
+			}
 		}
 
 		meshGeometry.indices.push_back(face.mIndices[0]);
@@ -203,27 +210,19 @@ void FbxGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, ImportedMesh
 	}
 }
 
-ImportedMaterialIndex FbxGeometryImporter::ResolveMaterialIndex(const aiMesh& mesh, SourceImportResult& result) noexcept
+ImportedMaterialIndex FbxGeometryImporter::ResolveMaterialIndex(const aiMesh& mesh, const SourceImportOutput& output)
 {
-	if (result.scene.materials.empty())
+	if (output.scene.materials.empty())
 	{
 		return kInvalidImportedMaterialIndex;
 	}
 
-	if (mesh.mMaterialIndex < result.scene.materials.size())
+	if (mesh.mMaterialIndex < output.scene.materials.size())
 	{
 		return static_cast<ImportedMaterialIndex>(mesh.mMaterialIndex);
 	}
 
-	(void)result;
-	SPDLOG_LOGGER_WARN(
-	    g_fbxGeometryImporterLogger,
-	    "{}",
-	    std::format(
-	        "FbxImporter: '{}' references invalid material index {} and will use the default material",
-	        GetMeshName(mesh),
-	        mesh.mMaterialIndex));
-	return kInvalidImportedMaterialIndex;
+	throw Diagnostics::Error(std::format("FBX mesh '{}' references unknown material index {}.", GetMeshName(mesh), mesh.mMaterialIndex));
 }
 
 std::string FbxGeometryImporter::BuildMeshDisplayName(const aiNode& node, const aiMesh& mesh)
@@ -260,30 +259,3 @@ std::string FbxGeometryImporter::GetMeshName(const aiMesh& mesh)
 
 	return std::string("<unnamed-mesh>");
 }
-
-DirectX::XMFLOAT4X4 FbxGeometryImporter::ConvertTransform(const aiMatrix4x4& matrix) noexcept
-{
-	DirectX::XMFLOAT4X4 transform{};
-	DirectX::XMStoreFloat4x4(
-	    &transform,
-	    DirectX::XMMATRIX(
-	        matrix.a1,
-	        matrix.a2,
-	        matrix.a3,
-	        matrix.a4,
-	        matrix.b1,
-	        matrix.b2,
-	        matrix.b3,
-	        matrix.b4,
-	        matrix.c1,
-	        matrix.c2,
-	        matrix.c3,
-	        matrix.c4,
-	        matrix.d1,
-	        matrix.d2,
-	        matrix.d3,
-	        matrix.d4));
-	return transform;
-}
-
-

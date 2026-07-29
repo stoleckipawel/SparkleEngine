@@ -5,7 +5,7 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Lighting/LightingStateHash.h"
 #include "Lighting/LightingCVars.h"
-#include "Meshes/GPUMesh.h"
+#include "Meshes/GpuMesh.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "Textures/RendererTexture.h"
 
@@ -21,9 +21,9 @@ class LightingSceneStateHasher final
 	static std::uint64_t AppendLightState(std::uint64_t hash, const DirectionalLight& light) noexcept
 	{
 		hash = LightingStateHash::AppendFloat3(hash, light.direction);
-		hash = Hash::ContinueFnv1a64Value(hash, light.intensity);
+		hash = Hash::ContinueFnv1a64Value(hash, light.illuminance);
 		hash = LightingStateHash::AppendFloat3(hash, light.color);
-		hash = Hash::ContinueFnv1a64Value(hash, light.angularDiameterRadians);
+		hash = Hash::ContinueFnv1a64Value(hash, light.angularSizeRadians);
 		return LightingStateHash::AppendBool(hash, light.castShadow);
 	}
 
@@ -32,8 +32,9 @@ class LightingSceneStateHasher final
 		hash = LightingStateHash::AppendFloat3(hash, light.position);
 		hash = Hash::ContinueFnv1a64Value(hash, light.range);
 		hash = LightingStateHash::AppendFloat3(hash, light.color);
-		hash = Hash::ContinueFnv1a64Value(hash, light.intensity);
-		hash = Hash::ContinueFnv1a64Value(hash, light.sourceRadius);
+		hash = Hash::ContinueFnv1a64Value(hash, light.luminousIntensity);
+		hash = Hash::ContinueFnv1a64Value(hash, light.radius);
+		hash = LightingStateHash::AppendFloat3(hash, light.distanceAttenuationCoefficients);
 		return LightingStateHash::AppendBool(hash, light.castShadow);
 	}
 
@@ -41,12 +42,13 @@ class LightingSceneStateHasher final
 	{
 		hash = LightingStateHash::AppendFloat3(hash, light.position);
 		hash = Hash::ContinueFnv1a64Value(hash, light.range);
-		hash = Hash::ContinueFnv1a64Value(hash, light.sourceRadius);
+		hash = Hash::ContinueFnv1a64Value(hash, light.radius);
 		hash = LightingStateHash::AppendFloat3(hash, light.direction);
-		hash = Hash::ContinueFnv1a64Value(hash, light.innerConeCosine);
+		hash = Hash::ContinueFnv1a64Value(hash, light.innerAngleCosine);
 		hash = LightingStateHash::AppendFloat3(hash, light.color);
-		hash = Hash::ContinueFnv1a64Value(hash, light.intensity);
-		hash = Hash::ContinueFnv1a64Value(hash, light.outerConeCosine);
+		hash = Hash::ContinueFnv1a64Value(hash, light.luminousIntensity);
+		hash = Hash::ContinueFnv1a64Value(hash, light.outerAngleCosine);
+		hash = LightingStateHash::AppendFloat3(hash, light.distanceAttenuationCoefficients);
 		return LightingStateHash::AppendBool(hash, light.castShadow);
 	}
 
@@ -118,7 +120,7 @@ class LightingSceneStateHasher final
 	{
 		hash = LightingStateHash::AppendBool(hash, sky.enabled);
 		hash = LightingStateHash::AppendFloat3(hash, sky.color);
-		hash = Hash::ContinueFnv1a64Value(hash, sky.intensity);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.brightness);
 		hash = LightingStateHash::AppendBool(hash, sky.HasTexture());
 		if (!sky.HasTexture())
 		{

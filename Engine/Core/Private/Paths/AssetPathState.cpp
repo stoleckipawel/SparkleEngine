@@ -96,7 +96,7 @@ namespace Filesystem::Private
 			{
 				if (required)
 				{
-					Diagnostics::Fail(logger, __FILE__, __LINE__, "[MISSING]  " + paddedLabel + ": (not configured)");
+					Diagnostics::Fatal(logger, __FILE__, __LINE__, "[MISSING]  " + paddedLabel + ": (not configured)");
 				}
 				return;
 			}
@@ -108,7 +108,7 @@ namespace Filesystem::Private
 			}
 			if (required)
 			{
-				Diagnostics::Fail(logger, __FILE__, __LINE__, "[MISSING]  " + paddedLabel + ": " + path.string());
+				Diagnostics::Fatal(logger, __FILE__, __LINE__, "[MISSING]  " + paddedLabel + ": " + path.string());
 			}
 			else
 			{

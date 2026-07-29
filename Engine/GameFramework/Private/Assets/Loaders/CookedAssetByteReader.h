@@ -1,8 +1,11 @@
 ﻿#pragma once
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -15,60 +18,60 @@ namespace Assets
 	  public:
 		explicit CookedAssetByteReader(std::span<const std::uint8_t> bytes) noexcept : m_bytes(bytes) {}
 
-		template <typename T> bool Read(T& outValue, std::string& outErrorMessage)
+		template <typename T> T Read()
 		{
-			static_assert(std::is_trivially_copyable_v<T>, "CookedAssetByteReader::Read requires trivially copyable types.");
+			static_assert(std::is_trivially_copyable_v<T>, "CookedAssetByteReader::Read accepts only trivially copyable types.");
 
-			if (!CanRead(sizeof(T)))
+			if (sizeof(T) > m_bytes.size() - m_offset)
 			{
-				outErrorMessage = "Unexpected end of cooked asset data";
-				return false;
+				throw Diagnostics::Error("Unexpected end of cooked asset data.");
 			}
 
-			std::memcpy(&outValue, m_bytes.data() + m_offset, sizeof(T));
+			T value;
+			std::memcpy(&value, m_bytes.data() + m_offset, sizeof(T));
 			m_offset += sizeof(T);
-			return true;
+			return value;
 		}
 
-		template <typename T> bool ReadArray(std::size_t elementCount, std::vector<T>& outValues, std::string& outErrorMessage)
+		template <typename T> std::vector<T> ReadArray(std::size_t elementCount)
 		{
-			static_assert(std::is_trivially_copyable_v<T>, "CookedAssetByteReader::ReadArray requires trivially copyable element types.");
+			static_assert(std::is_trivially_copyable_v<T>, "CookedAssetByteReader::ReadArray accepts only trivially copyable element types.");
 
-			const std::size_t byteCount = sizeof(T) * elementCount;
-			if (!CanRead(byteCount))
+			if (elementCount > (std::numeric_limits<std::size_t>::max)() / sizeof(T))
 			{
-				outErrorMessage = "Unexpected end of cooked asset array data";
-				return false;
+				throw Diagnostics::Error("Cooked asset array byte count exceeds the host address range.");
+			}
+			const std::size_t byteCount = sizeof(T) * elementCount;
+			if (byteCount > m_bytes.size() - m_offset)
+			{
+				throw Diagnostics::Error("Unexpected end of cooked asset array data.");
 			}
 
-			outValues.resize(elementCount);
+			std::vector<T> values(elementCount);
 			if (byteCount > 0)
 			{
-				std::memcpy(outValues.data(), m_bytes.data() + m_offset, byteCount);
+				std::memcpy(values.data(), m_bytes.data() + m_offset, byteCount);
 				m_offset += byteCount;
 			}
 
-			return true;
+			return values;
 		}
 
-		bool ReadString(std::size_t byteCount, std::string& outValue, std::string& outErrorMessage)
+		std::string ReadString(std::size_t byteCount)
 		{
-			if (!CanRead(byteCount))
+			if (byteCount > m_bytes.size() - m_offset)
 			{
-				outErrorMessage = "Unexpected end of cooked asset string data";
-				return false;
+				throw Diagnostics::Error("Unexpected end of cooked asset string data.");
 			}
 
-			outValue.assign(reinterpret_cast<const char*>(m_bytes.data() + m_offset), byteCount);
+			std::string value(reinterpret_cast<const char*>(m_bytes.data() + m_offset), byteCount);
 			m_offset += byteCount;
-			return true;
+			return value;
 		}
 
 		std::size_t GetRemainingByteCount() const noexcept { return m_bytes.size() - m_offset; }
 
 	  private:
-		bool CanRead(std::size_t byteCount) const noexcept { return m_offset + byteCount <= m_bytes.size(); }
-
 		std::span<const std::uint8_t> m_bytes;
 		std::size_t m_offset = 0;
 	};

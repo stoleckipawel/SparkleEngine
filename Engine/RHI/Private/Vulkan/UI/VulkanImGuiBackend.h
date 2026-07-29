@@ -8,13 +8,13 @@
 
 struct ImDrawData;
 struct ImGuiContext;
-class VulkanDescriptorManager;
+class VulkanDescriptorService;
 class VulkanRenderHardwareInterface;
 
 class VulkanImGuiBackend final : public RhiImGuiRenderer
 {
   public:
-	VulkanImGuiBackend(VulkanRenderHardwareInterface& renderHardware, VulkanDescriptorManager& descriptorManager) noexcept;
+	VulkanImGuiBackend(VulkanRenderHardwareInterface& renderHardwareInterface, VulkanDescriptorService& descriptorService) noexcept;
 
 	bool Initialize() override;
 	void BeginFrame() noexcept override;
@@ -34,8 +34,8 @@ class VulkanImGuiBackend final : public RhiImGuiRenderer
 	ImGuiContext* ActivateContext() const noexcept;
 	static void RestoreContext(ImGuiContext* context) noexcept;
 
-	VulkanRenderHardwareInterface* m_renderHardware = nullptr;
-	VulkanDescriptorManager* m_descriptorManager = nullptr;
+	VulkanRenderHardwareInterface* m_renderHardwareInterface = nullptr;
+	VulkanDescriptorService* m_descriptorService = nullptr;
 	VkSampler m_imguiSampler = VK_NULL_HANDLE;
 	std::vector<TextureBinding> m_textureBindings;
 	ImGuiContext* m_imguiContext = nullptr;

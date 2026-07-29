@@ -8,7 +8,6 @@
 
 struct RayTracingSceneFrameData final
 {
-	bool IsAvailable = false;
 	RhiOwnedResourceHandle TlasResource = {};
 	RhiGpuVirtualAddress TlasGpuAddress = 0;
 	RayTracingSceneTlasShaderAccessMode TlasShaderAccessMode = RayTracingSceneTlasShaderAccessMode::Descriptor;
@@ -16,7 +15,7 @@ struct RayTracingSceneFrameData final
 
 	bool HasBoundTlas() const noexcept
 	{
-		return IsAvailable && TlasResource && TlasGpuAddress != 0;
+		return TlasResource && TlasGpuAddress != 0;
 	}
 
 	bool HasTraceableInstances() const noexcept

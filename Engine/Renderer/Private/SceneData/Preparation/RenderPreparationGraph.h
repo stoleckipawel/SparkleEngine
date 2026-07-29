@@ -3,11 +3,11 @@
 #include <memory>
 
 struct Frustum;
-class GPUMeshCache;
-class MaterialCacheManager;
+class GpuMeshCache;
+class MaterialCache;
 class RenderWorld;
 class TaskExecutor;
-class TextureManager;
+class TextureCache;
 struct RenderFrameDynamicData;
 struct RenderSceneData;
 
@@ -16,9 +16,9 @@ class RenderPreparationGraph final
   public:
 	RenderPreparationGraph(
 	    TaskExecutor& taskExecutor,
-	    MaterialCacheManager& materialCache,
-	    GPUMeshCache& gpuMeshCache,
-	    TextureManager& textureManager);
+	    MaterialCache& materialCache,
+	    GpuMeshCache& gpuMeshCache,
+	    TextureCache& textureCache);
 	~RenderPreparationGraph() noexcept;
 
 	RenderPreparationGraph(

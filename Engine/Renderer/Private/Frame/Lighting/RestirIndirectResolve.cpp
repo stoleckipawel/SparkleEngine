@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/RestirIndirectResolve.h"
 
-#include "Frame/Lighting/LightingRayTracingPasses.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/RayTracing/RestirIndirectResolvePass.h"
 
@@ -36,8 +35,5 @@ void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, const FrameAssembl
 	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
 	parameters->MorphWeights = builder.CreateSRV(resources.External.Scene.Geometry.MorphWeights);
-	LightingRayTracingPasses::DispatchSceneTlas<RestirIndirectResolvePass>(
-	    builder,
-	    parameters,
-	    RayTracingSceneTlasShaderAccessMode::Descriptor);
+	builder.Dispatch<RestirIndirectResolvePass>(parameters);
 }

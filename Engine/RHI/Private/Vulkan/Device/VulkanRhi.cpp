@@ -338,7 +338,7 @@ void VulkanRhi::CreateInstance() noexcept
 	}
 	if (loaderApiVersion < VK_API_VERSION_1_3)
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanRhiLogger,
 		    __FILE__,
 		    __LINE__,
@@ -410,7 +410,7 @@ void VulkanRhi::CreateInstance() noexcept
 	const VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanRhiLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateInstance", result));
+		Diagnostics::Fatal(g_vulkanRhiLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateInstance", result));
 	}
 }
 
@@ -425,14 +425,14 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	VkResult result = vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
 	if (!VulkanResult::Succeeded(result) || deviceCount == 0)
 	{
-		Diagnostics::Fail(g_vulkanRhiLogger, __FILE__, __LINE__, "No Vulkan physical devices were found.");
+		Diagnostics::Fatal(g_vulkanRhiLogger, __FILE__, __LINE__, "No Vulkan physical devices were found.");
 	}
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	result = vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanRhiLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkEnumeratePhysicalDevices", result));
+		Diagnostics::Fatal(g_vulkanRhiLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkEnumeratePhysicalDevices", result));
 	}
 
 	std::vector<PhysicalDeviceCandidate> candidates;
@@ -473,7 +473,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 
 	if (candidates.empty())
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_vulkanRhiLogger,
 		    __FILE__,
 		    __LINE__,
@@ -665,7 +665,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	const VkResult result = vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fail(g_vulkanRhiLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateDevice", result));
+		Diagnostics::Fatal(g_vulkanRhiLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateDevice", result));
 	}
 
 	std::array<std::shared_ptr<VulkanNativeQueue>, RhiQueueTypeCount> nativeQueues{};
@@ -695,7 +695,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	}
 	if (GetGraphicsQueue() == VK_NULL_HANDLE)
 	{
-		Diagnostics::Fail(g_vulkanRhiLogger, __FILE__, __LINE__, "vkGetDeviceQueue returned a null graphics queue.");
+		Diagnostics::Fatal(g_vulkanRhiLogger, __FILE__, __LINE__, "vkGetDeviceQueue returned a null graphics queue.");
 	}
 }
 

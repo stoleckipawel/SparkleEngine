@@ -115,7 +115,7 @@ class D3D12ResourceService final : public RhiResourceService
 		std::unique_ptr<D3D12GpuHeapRecord> Record;
 	};
 
-	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
+	static std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName);
 	static RhiOwnedResourceHandle WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;
 	static RhiOwnedMemoryBlockHandle WrapOwnedMemoryBlock(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;

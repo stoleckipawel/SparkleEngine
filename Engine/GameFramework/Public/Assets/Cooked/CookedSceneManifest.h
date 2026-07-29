@@ -16,7 +16,7 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedSceneManifestMagic = 0x4E435353u;
-	inline constexpr std::uint32_t kCookedSceneManifestVersion = 9;
+	inline constexpr std::uint32_t kCookedSceneManifestVersion = 11;
 	inline constexpr std::uint32_t kInvalidCookedMaterialAssetIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneInstanceGroupIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneSkeletonRefIndex = (std::numeric_limits<std::uint32_t>::max)();
@@ -88,6 +88,6 @@ static_assert(
     "CookedSceneMaterialAssetRef must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedSceneInstanceRecord>, "CookedSceneInstanceRecord must stay trivially copyable.");
 static_assert(
-	std::is_trivially_copyable_v<Assets::CookedSceneInstanceGroupRecord>,
-	"CookedSceneInstanceGroupRecord must stay trivially copyable.");
+    std::is_trivially_copyable_v<Assets::CookedSceneInstanceGroupRecord>,
+    "CookedSceneInstanceGroupRecord must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedSceneManifestHeader>, "CookedSceneManifestHeader must stay trivially copyable.");

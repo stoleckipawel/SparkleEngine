@@ -13,7 +13,7 @@
 
 struct MeshMorphTargetDelta;
 
-struct GPUMeshPreparedData final
+struct GpuMeshPreparedData final
 {
 	ImmutableRenderMeshHandle Source;
 	DirectX::XMFLOAT3 LocalBoundsMin = {};
@@ -26,27 +26,19 @@ struct GPUMeshPreparedData final
 	std::uint32_t MorphTargetCount = 0u;
 	bool HasLocalBounds = false;
 
-	bool IsValid() const noexcept;
 	std::uint64_t GetDecodedByteSize() const noexcept;
 	std::uint64_t GetResidentByteSize() const noexcept;
 };
 
-class GPUMeshPreparation final
+class GpuMeshPreparation final
 {
   public:
-	static bool Build(
-	    const ImmutableRenderMeshHandle& source,
-	    GPUMeshPreparedData& output);
+	static GpuMeshPreparedData Build(const ImmutableRenderMeshHandle& source);
+	static VertexSkinInfluenceData ConvertSkinInfluence(const VertexSkinInfluence& influence) noexcept;
 
   private:
-	static void BuildBoundsAndRayTracing(
-	    GPUMeshPreparedData& output);
-	static void BuildSkinInfluences(
-	    GPUMeshPreparedData& output);
-	static bool BuildMorphTargets(
-	    GPUMeshPreparedData& output);
-	static VertexSkinInfluenceData ConvertSkinInfluence(
-	    const VertexSkinInfluence& influence) noexcept;
-	static MorphTargetDeltaData ConvertMorphTargetDelta(
-	    const MeshMorphTargetDelta& delta) noexcept;
+	static void BuildBoundsAndRayTracing(GpuMeshPreparedData& output);
+	static void BuildSkinInfluences(GpuMeshPreparedData& output);
+	static void BuildMorphTargets(GpuMeshPreparedData& output);
+	static MorphTargetDeltaData ConvertMorphTargetDelta(const MeshMorphTargetDelta& delta) noexcept;
 };

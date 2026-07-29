@@ -64,7 +64,7 @@ namespace ECS
 					pose.animationAssetId = clip.Resource->animationAssetId;
 					pose.clipName = clip.Resource->name;
 					pose.jointCount = static_cast<std::uint32_t>(skeleton.Resource->joints.size());
-					pose.skinningMatrices.resize(skeleton.Resource->joints.size());
+					pose.jointMatrices.resize(skeleton.Resource->joints.size());
 					m_output.poses.push_back(std::move(pose));
 				}
 				m_poseWork.push_back(std::move(work));

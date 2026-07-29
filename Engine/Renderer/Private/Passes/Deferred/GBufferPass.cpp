@@ -9,15 +9,15 @@
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Deferred/GBufferFormats.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
+#include "FrameGraph/PassRuntimeContext.h"
 #include "Passes/Deferred/GBufferMeshBatchDrawer.h"
-#include "Passes/Core/PassUtilities.h"
-#include "Passes/Core/RasterPassUtilities.h"
+#include "Passes/Core/ShaderPassOperations.h"
+#include "Passes/Core/RasterPassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
-#include "Meshes/GPUMesh.h"
+#include "Meshes/GpuMesh.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
@@ -188,7 +188,7 @@ GBufferPass::GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept : m_
 
 const GBufferPass::ParameterMetadata& GBufferPass::GetParameterMetadata() noexcept
 {
-	return RasterPassUtilities::BuildParameterMetadata<GBufferPass>();
+	return RasterPassOperations::BuildParameterMetadata<GBufferPass>();
 }
 
 const GBufferPass::DrawParameterMetadata& GBufferPass::GetDrawParameterMetadata() noexcept
@@ -212,7 +212,7 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 	    .PipelineKind = RenderPassDefinitionPipelineKind::Graphics,
 	    .AllowInputAssemblerInputLayout = true,
 	    .BindingLayoutDebugName = L"GBuffer_BindingLayout",
-	    .PipelineStateDebugName = L"GBuffer_PipelineState",
+	    .PipelineDebugName = L"GBuffer_Pipeline",
 	    .Graphics = RenderPassGraphicsPipelineDefinition{
 	        .VertexLayout = RhiVertexLayoutKind::StaticMesh,
 	        .DepthTest =
@@ -234,19 +234,19 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 
 void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
+	SetParameters(parameters, context.Frame.mainView, context.Runtime);
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
 	PrepareTargets(context, parameters.GetFields());
-	BindPassResources(context.Resources, context.Commands, parameters, context.RuntimeServices);
-	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, parameters.GetFields(), context.RuntimeServices);
+	BindPassResources(context.Resources, context.Commands, parameters, context.Runtime);
+	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, parameters.GetFields(), context.Runtime);
 }
 
 void GBufferPass::SetParameters(
     ParameterInstance& parameters,
     const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeContext& passRuntimeContext) const
 {
-	parameters->PerFrame = passRuntimeServices.PerFrame;
+	parameters->PerFrame = passRuntimeContext.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
 	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
@@ -271,39 +271,39 @@ void GBufferPass::PrepareTargets(PassExecutionContext& context, const GBufferPas
 	context.Resources.ClearDepthStencil(context.Commands, parameters.DeviceZ[0]);
 }
 
-void GBufferPass::ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData) const
+void GBufferPass::ConfigurePipeline(RenderCommandContext& commandContext, const RenderViewData& viewData) const
 {
-	cmd.SetViewport(viewData.viewport);
-	cmd.SetScissorRect(viewData.scissorRect);
-	cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
+	commandContext.SetViewport(viewData.viewport);
+	commandContext.SetScissorRect(viewData.scissorRect);
+	commandContext.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 }
 
 void GBufferPass::BindPassResources(
     const FrameGraphResourceCommands& resources,
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const ParameterInstance& parameters,
-    const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeContext& passRuntimeContext) const
 {
-	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
-	const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
+	RenderHardwareInterface& renderHardwareInterface = passRuntimeContext.HardwareInterface;
+	const bool bound = ShaderPassOperations::BindAvailableRasterPassWithRuntime(
 	    resources,
-	    cmd,
+	    commandContext,
 	    &renderHardwareInterface,
 	    m_runtime,
 	    parameters.GetPassParameterSet(),
 	    nullptr,
 	    PassName,
 	    true,
-	    passRuntimeServices.PerFrame.ViewModeIndex);
+	    passRuntimeContext.PerFrame.ViewModeIndex);
 	assert(bound);
 }
 
 void GBufferPass::DrawOpaqueMeshes(
     const FrameGraphResourceCommands& resources,
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const FrameContext& frame,
     const Parameters& parameters,
-    const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeContext& passRuntimeContext) const
 {
-	GBufferMeshBatchDrawer::DrawOpaqueMeshes(resources, cmd, frame, parameters, passRuntimeServices, m_runtime, GetDrawParameterMetadata());
+	GBufferMeshBatchDrawer::DrawOpaqueMeshes(resources, commandContext, frame, parameters, passRuntimeContext, m_runtime, GetDrawParameterMetadata());
 }

@@ -2,6 +2,8 @@
 
 #include "TaskExecutionContext.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <exception>
 #include <format>
 
@@ -15,6 +17,10 @@ TaskResult TaskFunctionInvoker::Invoke(const TaskGraphNode& node, TaskExecutionC
 	try
 	{
 		return node.Function(context);
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		return TaskResult::Failure(error.what());
 	}
 	catch (const std::exception& exception)
 	{

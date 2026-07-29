@@ -3,7 +3,7 @@
 #include "Diagnostics/MeshDiagnosticsCollector.h"
 #include "Core/Public/Math/MathUtils.h"
 
-#include "Meshes/GPUMeshCache.h"
+#include "Meshes/GpuMeshCache.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/Mesh.h"
@@ -16,7 +16,7 @@
 #include <limits>
 #include <unordered_map>
 
-MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& world, const GPUMeshCache* gpuMeshCache)
+MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& world, const GpuMeshCache* gpuMeshCache)
 {
 	MeshDiagnosticsSnapshot snapshot;
 	CollectRows(world, gpuMeshCache, snapshot);
@@ -27,7 +27,7 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 
 void MeshDiagnosticsCollector::CollectRows(
     const RenderWorld& world,
-    const GPUMeshCache* gpuMeshCache,
+    const GpuMeshCache* gpuMeshCache,
     MeshDiagnosticsSnapshot& snapshot)
 {
 	snapshot.Rows.reserve(world.GetProxies().size());
@@ -100,7 +100,7 @@ void MeshDiagnosticsCollector::SortRows(MeshDiagnosticsSnapshot& snapshot)
 
 MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInstancing(
     const RenderWorld& world,
-    const GPUMeshCache* gpuMeshCache)
+    const GpuMeshCache* gpuMeshCache)
 {
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(world.GetProxies().size());
@@ -136,7 +136,7 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 			continue;
 		}
 
-		const GPUMesh* gpuMesh = gpuMeshCache != nullptr ? gpuMeshCache->Find(*mesh) : nullptr;
+		const GpuMesh* gpuMesh = gpuMeshCache != nullptr ? gpuMeshCache->Find(*mesh) : nullptr;
 
 		const std::uint32_t drawIndex = static_cast<std::uint32_t>(draws.size());
 		draws.push_back(
@@ -228,7 +228,7 @@ MeshPreviewGeometry MeshDiagnosticsCollector::CapturePreview(const RenderWorld& 
 	return geometry;
 }
 
-void MeshDiagnosticsCollector::PopulateMeshRow(MeshDiagnosticsRow& row, const Mesh& mesh, const GPUMeshCache* gpuMeshCache)
+void MeshDiagnosticsCollector::PopulateMeshRow(MeshDiagnosticsRow& row, const Mesh& mesh, const GpuMeshCache* gpuMeshCache)
 {
 	const MeshData& meshData = mesh.GetMeshData();
 	if (const CookedMesh* cookedMesh = dynamic_cast<const CookedMesh*>(&mesh))
@@ -272,7 +272,7 @@ void MeshDiagnosticsCollector::PopulateMeshRow(MeshDiagnosticsRow& row, const Me
 		return;
 	}
 
-	if (const GPUMesh* gpuMesh = gpuMeshCache->Find(mesh))
+	if (const GpuMesh* gpuMesh = gpuMeshCache->Find(mesh))
 	{
 		row.GpuMeshRuntimeId = reinterpret_cast<std::uintptr_t>(gpuMesh);
 		row.GpuResident = gpuMesh->IsValid();

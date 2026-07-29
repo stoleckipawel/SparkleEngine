@@ -3,53 +3,44 @@
 
 #include "Commands/RenderCommandContext.h"
 
-#include <cassert>
-
-bool PassBinder::TryBindDescriptorTableOverride(
-    RenderCommandContext& cmd,
+void PassBinder::BindDescriptorTableOverride(
+    RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
-    const PassBindingOverrides* overrides,
+    const PassBindingOverride& bindingOverride,
     bool isCompute)
 {
-	const PassBindingOverride* bindingOverride =
-	    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::DescriptorTable) : nullptr;
-	if (bindingOverride == nullptr)
+	if (bindingOverride.DescriptorTableKind == DescriptorTableOverrideKind::LogicalTable)
 	{
-		return false;
-	}
-
-	if (bindingOverride->DescriptorTableKind == DescriptorTableOverrideKind::LogicalTable)
-	{
-		BindDescriptorTable(cmd, compiledBinding, bindingOverride->LogicalDescriptorTable, isCompute);
+		BindDescriptorTable(commandContext, compiledBinding, bindingOverride.LogicalDescriptorTable, isCompute);
 	}
 	else
 	{
-		BindDescriptorTable(cmd, compiledBinding, bindingOverride->DescriptorTable, isCompute);
+		BindDescriptorTable(commandContext, compiledBinding, bindingOverride.DescriptorTable, isCompute);
 	}
-	return true;
 }
 
 void PassBinder::BindGpuAddress(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
     RhiGpuVirtualAddress gpuAddress,
     bool isCompute)
 {
+	Require(gpuAddress != 0, "Pass address binding resolved to a null GPU address.");
 	if (isCompute)
 	{
 		switch (compiledBinding.Type)
 		{
 			case CompiledBindingType::ConstantBuffer:
-				cmd.BindComputeConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
+				commandContext.BindComputeConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
 				return;
 			case CompiledBindingType::ReadOnlyAddress:
-				cmd.BindComputeShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
+				commandContext.BindComputeShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
 				return;
 			case CompiledBindingType::ReadWriteAddress:
-				cmd.BindComputeUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
+				commandContext.BindComputeUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
 				return;
 			default:
-				assert(false);
+				Require(false, "Compute pass address binding has an unsupported type.");
 				return;
 		}
 	}
@@ -57,65 +48,67 @@ void PassBinder::BindGpuAddress(
 	switch (compiledBinding.Type)
 	{
 		case CompiledBindingType::ConstantBuffer:
-			cmd.BindConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
+			commandContext.BindConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
 			return;
 		case CompiledBindingType::ReadOnlyAddress:
-			cmd.BindShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
+			commandContext.BindShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
 			return;
 		case CompiledBindingType::ReadWriteAddress:
-			cmd.BindUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
+			commandContext.BindUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
 			return;
 		default:
-			assert(false);
+			Require(false, "Graphics pass address binding has an unsupported type.");
 			return;
 	}
 }
 
 void PassBinder::BindDescriptorTable(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
     RhiGpuDescriptorHandle descriptorTable,
     bool isCompute)
 {
+	Require(static_cast<bool>(descriptorTable), "Pass resource binding resolved to a null GPU descriptor handle.");
 	if (isCompute)
 	{
-		cmd.BindComputeDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
+		commandContext.BindComputeDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 		return;
 	}
 
-	cmd.BindDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
+	commandContext.BindDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 }
 
 void PassBinder::BindDescriptorTable(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
     RhiDescriptorTableBinding descriptorTable,
     bool isCompute)
 {
+	Require(static_cast<bool>(descriptorTable), "Pass resource binding resolved to an invalid logical descriptor table.");
 	if (isCompute)
 	{
-		cmd.BindComputeDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
+		commandContext.BindComputeDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 		return;
 	}
 
-	cmd.BindDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
+	commandContext.BindDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 }
 
 void PassBinder::BindPushConstants(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
     const void* data,
     std::uint32_t constantCount,
     bool isCompute)
 {
-	assert(data != nullptr);
-	assert(constantCount > 0);
+	Require(data != nullptr, "Push-constant binding has no data.");
+	Require(constantCount > 0, "Push-constant binding has no values.");
 
 	if (isCompute)
 	{
-		cmd.SetComputePushConstants(compiledBinding.BindingIndex, constantCount, data, 0);
+		commandContext.SetComputePushConstants(compiledBinding.BindingIndex, constantCount, data, 0);
 		return;
 	}
 
-	cmd.SetPushConstants(compiledBinding.BindingIndex, constantCount, data, 0);
+	commandContext.SetPushConstants(compiledBinding.BindingIndex, constantCount, data, 0);
 }

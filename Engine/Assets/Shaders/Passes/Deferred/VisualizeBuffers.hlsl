@@ -91,7 +91,7 @@ float3 PreviewHdr(float3 color)
 		case ViewMode::IndirectSpecular:
 			outputColor = PreviewHdr(indirectSpecular);
 			break;
-		case ViewMode::InstanceGroups:
+		case ViewMode::GpuSceneInstances:
 			outputColor = saturate(gBuffer.BaseColor);
 			break;
 		default:

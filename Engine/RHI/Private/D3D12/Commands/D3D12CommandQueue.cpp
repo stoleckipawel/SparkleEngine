@@ -57,7 +57,7 @@ D3D12CommandQueue::D3D12CommandQueue(
 	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (m_fenceEvent == nullptr)
 	{
-		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Failed to create command queue fence event");
+		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Failed to create command queue fence event");
 	}
 
 	const std::wstring queueName = std::format(L"Sparkle {} Command Queue", D3D12CommandQueuePolicy::QueueTypeName(queueType));
@@ -88,7 +88,7 @@ D3D12_COMMAND_LIST_TYPE D3D12CommandQueue::GetNativeCommandListType(ERhiQueueTyp
 			return D3D12_COMMAND_LIST_TYPE_COPY;
 		case ERhiQueueType::Count:
 		default:
-			Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Invalid RHI queue type");
+			Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Invalid RHI queue type");
 			return D3D12_COMMAND_LIST_TYPE_DIRECT;
 	}
 }
@@ -100,7 +100,7 @@ RhiSubmissionToken D3D12CommandQueue::Submit(
 	m_owner.AssertAccess();
 	if (m_queue == nullptr || m_fence == nullptr || commandLists.empty())
 	{
-		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Submit called without queue submission state");
+		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Submit called without queue submission state");
 		return {};
 	}
 
@@ -112,7 +112,7 @@ RhiSubmissionToken D3D12CommandQueue::Submit(
 		}
 		if (wait.ProducerQueue == nullptr || !wait.ProducerQueue->HasSubmitted(wait.SubmissionValue))
 		{
-			Diagnostics::Fail(
+			Diagnostics::Fatal(
 			    D3D12CommandQueuePolicy::Logger(),
 			    __FILE__,
 			    __LINE__,
@@ -146,12 +146,12 @@ void D3D12CommandQueue::WaitFor(
 	}
 	if (m_queue == nullptr || executionQueue.m_fence == nullptr)
 	{
-		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Queue wait requested without synchronization state");
+		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Queue wait requested without synchronization state");
 		return;
 	}
 	if (!executionQueue.HasSubmitted(submissionValue))
 	{
-		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Queue wait rejected an unsubmitted value");
+		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Queue wait rejected an unsubmitted value");
 		return;
 	}
 
@@ -167,7 +167,7 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 	}
 	if (!HasSubmitted(submissionValue))
 	{
-		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
+		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
 		return;
 	}
 	if (IsSubmissionComplete(submissionValue))
@@ -176,7 +176,7 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 	}
 	if (m_fence == nullptr || m_fenceEvent == nullptr)
 	{
-		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "CPU wait requested without synchronization state");
+		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "CPU wait requested without synchronization state");
 		return;
 	}
 
@@ -187,7 +187,7 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 	{
 		const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
 		    std::chrono::steady_clock::now() - waitStart);
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    D3D12CommandQueuePolicy::Logger(),
 		    __FILE__,
 		    __LINE__,
@@ -205,7 +205,7 @@ void D3D12CommandQueue::WaitForIdle() noexcept
 	m_owner.AssertAccess();
 	if (m_queue == nullptr || m_fence == nullptr)
 	{
-		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Idle wait requested without synchronization state");
+		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Idle wait requested without synchronization state");
 		return;
 	}
 

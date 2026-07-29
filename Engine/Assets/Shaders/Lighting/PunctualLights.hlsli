@@ -24,7 +24,7 @@ namespace PunctualLights
 		return surfaceToLight / max(distanceToLight, 0.0001f);
 	}
 
-	float ComputeRangeCutoff(float distanceToLight, float range)
+	float ComputeRangeAttenuation(float distanceToLight, float range)
 	{
 		if (range <= 0.0f)
 		{
@@ -36,18 +36,49 @@ namespace PunctualLights
 		return smoothRange * smoothRange;
 	}
 
-	float ComputeDistanceAttenuation(float distanceToLight, float range)
+	float ComputeDistanceAttenuationDenominator(
+	    float distanceToLight,
+	    float3 distanceAttenuationCoefficients)
 	{
-		const float inverseSquare = rcp(max(distanceToLight * distanceToLight, 1.0e-4f));
-		return inverseSquare * ComputeRangeCutoff(distanceToLight, range);
+		return distanceAttenuationCoefficients.x +
+		       distanceAttenuationCoefficients.y * distanceToLight +
+		       distanceAttenuationCoefficients.z *
+		           distanceToLight *
+		           distanceToLight;
 	}
 
-	float ComputeSpotConeAttenuation(float3 lightToSurfaceDirection, float3 spotDirection, float innerConeCosine, float outerConeCosine)
+	float ComputePunctualDistanceAttenuation(
+	    float distanceToLight,
+	    float range,
+	    float3 distanceAttenuationCoefficients)
+	{
+		const float denominator =
+		    ComputeDistanceAttenuationDenominator(
+		        distanceToLight,
+		        distanceAttenuationCoefficients);
+		return rcp(max(denominator, 1.0e-4f)) *
+		       ComputeRangeAttenuation(distanceToLight, range);
+	}
+
+	float ComputeAreaDistanceAttenuationCorrection(
+	    float distanceToLight,
+	    float3 distanceAttenuationCoefficients)
+	{
+		const float distanceSquared =
+		    max(distanceToLight * distanceToLight, 1.0e-4f);
+		const float denominator =
+		    ComputeDistanceAttenuationDenominator(
+		        distanceToLight,
+		        distanceAttenuationCoefficients);
+		return distanceSquared / max(denominator, 1.0e-4f);
+	}
+
+	float ComputeSpotAngularAttenuation(float3 lightToSurfaceDirection, float3 spotDirection, float innerAngleCosine, float outerAngleCosine)
 	{
 		const float coneCosine = dot(normalize(lightToSurfaceDirection), normalize(spotDirection));
-		const float coneRange = max(innerConeCosine - outerConeCosine, 0.0001f);
-		const float coneAttenuation = saturate((coneCosine - outerConeCosine) / coneRange);
-		return coneAttenuation * coneAttenuation;
+		const float angularTransition = max(innerAngleCosine - outerAngleCosine, 0.0001f);
+		const float angularAttenuation = saturate((coneCosine - outerAngleCosine) / angularTransition);
+		return angularAttenuation * angularAttenuation;
 	}
 }
 

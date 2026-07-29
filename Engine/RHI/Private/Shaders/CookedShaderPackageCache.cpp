@@ -2,6 +2,7 @@
 
 #include "Shaders/CookedShaderPackageCache.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinarySpanReader.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
@@ -32,9 +33,7 @@ class CookedShaderPackageCacheImplementation final
 	    std::uint64_t packageKey,
 	    std::filesystem::path packagePath,
 	    std::uint64_t generation,
-	    bool wasCacheHit,
-	    bool wasReload,
-	    bool succeeded,
+	    CookedShaderPackageLoadKind kind,
 	    std::uint64_t elapsedMicroseconds,
 	    const LoadedShaderPackage* package)
 	{
@@ -43,9 +42,7 @@ class CookedShaderPackageCacheImplementation final
 		report.PackagePath = std::move(packagePath);
 		report.CacheGeneration = generation;
 		report.ElapsedMicroseconds = elapsedMicroseconds;
-		report.WasCacheHit = wasCacheHit;
-		report.WasReload = wasReload;
-		report.Succeeded = succeeded;
+		report.Kind = kind;
 		if (package != nullptr)
 		{
 			const CookedShaderPackageHeader& header = package->GetHeader();
@@ -70,100 +67,81 @@ void CookedShaderPackageCache::ReplaceWith(CookedShaderPackageCache&& replacemen
 	++m_generation;
 }
 
-bool CookedShaderPackageCache::LoadPackage(
+const LoadedShaderPackage& CookedShaderPackageCache::LoadPackage(
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
-    CookedShaderBinaryFormat requiredBinaryFormat,
-    std::string& outErrorMessage,
-    const LoadedShaderPackage*& outPackage)
+    CookedShaderBinaryFormat runtimeBinaryFormat)
 {
-	outPackage = nullptr;
 	const CookedShaderPackageCacheImplementation::PackageLoadClock::time_point loadStart = CookedShaderPackageCacheImplementation::PackageLoadClock::now();
 	if (!definition.IsValid())
 	{
-		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(0, {}, m_generation, false, false, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), nullptr);
-		outErrorMessage = "Shader package definition is invalid.";
-		return false;
+		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(
+		    0,
+		    {},
+		    m_generation,
+		    CookedShaderPackageLoadKind::Disk,
+		    CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart),
+		    nullptr);
+		throw Diagnostics::Error("Shader package definition is invalid.");
 	}
 
 	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId);
 	const std::filesystem::path packagePath = Paths::CookedShaderPackage(packageKey);
 	if (auto it = m_packages.find(packageKey); it != m_packages.end())
 	{
-		if (!ValidatePackage(*it->second, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
+		try
 		{
-			m_lastLoadReport =
-			    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, true, false, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), it->second.get());
-			return false;
+			ValidatePackage(*it->second, definition, expectedBindingLayout, runtimeBinaryFormat);
 		}
-
-		outPackage = it->second.get();
+		catch (const Diagnostics::Error&)
+		{
+			m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(
+			    packageKey,
+			    packagePath,
+			    m_generation,
+			    CookedShaderPackageLoadKind::CacheHit,
+			    CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart),
+			    it->second.get());
+			throw;
+		}
 		m_lastLoadReport =
-		    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, true, false, true, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), outPackage);
-		outErrorMessage.clear();
-		return true;
+		    CookedShaderPackageCacheImplementation::MakeLoadReport(
+		        packageKey,
+		        packagePath,
+		        m_generation,
+		        CookedShaderPackageLoadKind::CacheHit,
+		        CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart),
+		        it->second.get());
+		return *it->second;
 	}
 
-	auto loadedPackage = std::make_unique<LoadedShaderPackage>();
-	if (!LoadPackageFromFile(packagePath, *loadedPackage, outErrorMessage))
+	std::unique_ptr<LoadedShaderPackage> loadedPackage;
+	try
 	{
-		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, false, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), nullptr);
-		return false;
+		loadedPackage = std::make_unique<LoadedShaderPackage>(LoadPackageFromFile(packagePath));
+		ValidatePackage(*loadedPackage, definition, expectedBindingLayout, runtimeBinaryFormat);
 	}
-
-	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
+	catch (const Diagnostics::Error&)
 	{
-		m_lastLoadReport =
-		    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, false, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), loadedPackage.get());
-		return false;
+		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(
+		    packageKey,
+		    packagePath,
+		    m_generation,
+		    CookedShaderPackageLoadKind::Disk,
+		    CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart),
+		    loadedPackage.get());
+		throw;
 	}
 
 	LoadedShaderPackage* cachedPackage = loadedPackage.get();
 	m_packages.emplace(packageKey, std::move(loadedPackage));
-	outPackage = cachedPackage;
 	m_lastLoadReport =
-	    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, false, true, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), outPackage);
-	outErrorMessage.clear();
-	return true;
-}
-bool CookedShaderPackageCache::ReloadPackage(
-    const ShaderPackageDefinition& definition,
-    const PassParameterLayout& expectedBindingLayout,
-    CookedShaderBinaryFormat requiredBinaryFormat,
-    std::string& outErrorMessage,
-    const LoadedShaderPackage*& outPackage)
-{
-	outPackage = nullptr;
-	const CookedShaderPackageCacheImplementation::PackageLoadClock::time_point loadStart = CookedShaderPackageCacheImplementation::PackageLoadClock::now();
-	if (!definition.IsValid())
-	{
-		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(0, {}, m_generation, false, true, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), nullptr);
-		outErrorMessage = "Shader package definition is invalid.";
-		return false;
-	}
-
-	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId);
-	auto loadedPackage = std::make_unique<LoadedShaderPackage>();
-	const std::filesystem::path packagePath = Paths::CookedShaderPackage(packageKey);
-	if (!LoadPackageFromFile(packagePath, *loadedPackage, outErrorMessage))
-	{
-		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, true, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), nullptr);
-		return false;
-	}
-
-	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
-	{
-		m_lastLoadReport =
-		    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, true, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), loadedPackage.get());
-		return false;
-	}
-
-	LoadedShaderPackage* cachedPackage = loadedPackage.get();
-	m_packages[packageKey] = std::move(loadedPackage);
-	++m_generation;
-	outPackage = cachedPackage;
-	m_lastLoadReport =
-	    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, true, true, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), outPackage);
-	outErrorMessage.clear();
-	return true;
+	    CookedShaderPackageCacheImplementation::MakeLoadReport(
+	        packageKey,
+	        packagePath,
+	        m_generation,
+	        CookedShaderPackageLoadKind::Disk,
+	        CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart),
+	        cachedPackage);
+	return *cachedPackage;
 }

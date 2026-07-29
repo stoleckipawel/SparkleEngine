@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <cmath>
 
+static const auto g_rayTracingPtlasPartitionPlannerStateLogger =
+    Logging::GetOrCreateLogger("Renderer.RayTracing.PtlasPartitionPlannerState");
+
 class RayTracingPtlasPartitionPlannerStateConstants final
 {
   public:
@@ -19,12 +22,18 @@ void RayTracingPtlasPartitionPlanner::Clear() noexcept
 	m_partitionStates.clear();
 }
 
-RayTracingPtlasPartitionPlannerConfig RayTracingPtlasPartitionPlanner::SanitizeConfig(RayTracingPtlasPartitionPlannerConfig config) noexcept
+void RayTracingPtlasPartitionPlanner::ValidateConfig(const RayTracingPtlasPartitionPlannerConfig& config) noexcept
 {
-	config.PartitionsPerAxis = std::clamp(config.PartitionsPerAxis, 1u, RayTracingPtlasPartitionPlannerStateConstants::kMaxPlannerPartitionsPerAxis);
-	config.ModeChangeDistance = (std::max)(config.ModeChangeDistance, 0.0f);
-	config.TransformDirtyEpsilon = (std::max)(config.TransformDirtyEpsilon, 0.0f);
-	return config;
+	if (config.PartitionsPerAxis == 0u ||
+	    config.PartitionsPerAxis > RayTracingPtlasPartitionPlannerStateConstants::kMaxPlannerPartitionsPerAxis ||
+	    config.ModeChangeDistance < 0.0f || config.TransformDirtyEpsilon < 0.0f)
+	{
+		Diagnostics::Fatal(
+		    g_rayTracingPtlasPartitionPlannerStateLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Partitioned TLAS planner configuration is outside its structural bounds.");
+	}
 }
 
 bool RayTracingPtlasPartitionPlanner::IsTransformDirty(

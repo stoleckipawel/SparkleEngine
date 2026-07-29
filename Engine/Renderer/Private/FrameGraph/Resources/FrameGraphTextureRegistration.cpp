@@ -11,11 +11,11 @@ static const auto g_frameGraphTextureLogger = Logging::GetOrCreateLogger("Render
 
 namespace FrameGraphTextureRegistration
 {
-	FrameGraphTextureDesc ResolveTextureDesc(const FrameGraphTextureDesc& desc, const Window& window, std::string_view fallbackName)
+	FrameGraphTextureDesc ResolveTextureDesc(const FrameGraphTextureDesc& desc, const Window& window, std::string_view defaultName)
 	{
 		const std::uint32_t width = desc.width > 0 ? desc.width : static_cast<std::uint32_t>(window.GetWidth());
 		const std::uint32_t height = desc.height > 0 ? desc.height : static_cast<std::uint32_t>(window.GetHeight());
-		const std::string debugName = desc.name.empty() ? std::string{fallbackName} : desc.name;
+		const std::string debugName = desc.name.empty() ? std::string{defaultName} : desc.name;
 		return FrameGraphTextureDesc{debugName, width, height, desc.format, desc.kind, desc.clearColor};
 	}
 
@@ -25,12 +25,12 @@ namespace FrameGraphTextureRegistration
 		                                                   : FrameGraphResourceKind::ColorRenderTarget;
 	}
 
-	FrameGraphBufferDesc ResolveBufferDesc(const FrameGraphBufferDesc& desc, std::string_view fallbackName)
+	FrameGraphBufferDesc ResolveBufferDesc(const FrameGraphBufferDesc& desc, std::string_view defaultName)
 	{
 		FrameGraphBufferDesc resolvedDesc = desc;
 		if (resolvedDesc.name.empty())
 		{
-			resolvedDesc.name = std::string(fallbackName);
+			resolvedDesc.name = std::string(defaultName);
 		}
 
 		return resolvedDesc;
@@ -48,7 +48,7 @@ namespace FrameGraphTextureRegistration
 	    ResourceState state,
 	    bool hasResource) noexcept
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_frameGraphTextureLogger,
 		    __FILE__,
 		    __LINE__,
@@ -70,7 +70,7 @@ namespace FrameGraphTextureRegistration
 	    ResourceState state,
 	    bool hasResource) noexcept
 	{
-		Diagnostics::Fail(
+		Diagnostics::Fatal(
 		    g_frameGraphTextureLogger,
 		    __FILE__,
 		    __LINE__,

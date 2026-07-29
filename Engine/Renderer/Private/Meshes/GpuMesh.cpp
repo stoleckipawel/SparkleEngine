@@ -1,8 +1,9 @@
 #include "PCH.h"
-#include "Meshes/GPUMesh.h"
+#include "Meshes/GpuMesh.h"
 
 #include "Commands/RenderCommandContext.h"
-#include "Meshes/GPUMeshPreparation.h"
+#include "Core/Public/Diagnostics/Verify.h"
+#include "Meshes/GpuMeshPreparation.h"
 #include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Resources/RhiUploadService.h"
@@ -12,14 +13,14 @@
 #include <span>
 #include <utility>
 
-static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GPUMesh");
+static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GpuMesh");
 
-GPUMesh::GPUMesh(GpuMeshHandle handle) noexcept :
+GpuMesh::GpuMesh(GpuMeshHandle handle) noexcept :
 	m_handle(handle)
 {
 }
 
-GPUMesh::~GPUMesh() noexcept
+GpuMesh::~GpuMesh() noexcept
 {
 	if (m_renderHardwareInterface != nullptr)
 	{
@@ -37,68 +38,33 @@ GPUMesh::~GPUMesh() noexcept
 	}
 }
 
-bool GPUMesh::Upload(
+void GpuMesh::Upload(
     RenderHardwareInterface& renderHardwareInterface,
     RenderCommandList& commandList,
-    GPUMeshPreparedData preparedData)
+    GpuMeshPreparedData preparedData)
 {
-	if (!preparedData.IsValid())
-	{
-		return false;
-	}
-
 	m_renderHardwareInterface = &renderHardwareInterface;
 	const MeshData& meshData =
 	    preparedData.Source.GetResource()->GetMeshData();
-	if (!CreateGeometryBuffers(
-	        commandList,
-	        meshData))
-	{
-		return false;
-	}
-
-	if (!CreateDeformationBuffers(
-	        commandList,
-	        preparedData))
-	{
-		return false;
-	}
+	CreateGeometryBuffers(commandList, meshData);
+	CreateDeformationBuffers(commandList, preparedData);
 
 	CommitPreparedData(
 	    std::move(preparedData));
-	return true;
 }
 
-bool GPUMesh::CreateGeometryBuffers(
+void GpuMesh::CreateGeometryBuffers(
     RenderCommandList& commandList,
     const MeshData& meshData)
 {
-	if (!CreateVertexBuffer(
-	        commandList,
-	        meshData))
-	{
-		SPDLOG_LOGGER_ERROR(
-		    g_gpuMeshLogger,
-		    "[GPUMesh] Failed to create vertex buffer");
-		return false;
-	}
-
-	if (!CreateIndexBuffer(
-	        commandList,
-	        meshData))
-	{
-		SPDLOG_LOGGER_ERROR(
-		    g_gpuMeshLogger,
-		    "[GPUMesh] Failed to create index buffer");
-		return false;
-	}
+	CreateVertexBuffer(commandList, meshData);
+	CreateIndexBuffer(commandList, meshData);
 
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
-	return true;
 }
 
-bool GPUMesh::CreateVertexBuffer(
+void GpuMesh::CreateVertexBuffer(
     RenderCommandList& commandList,
     const MeshData& meshData)
 {
@@ -115,11 +81,9 @@ bool GPUMesh::CreateVertexBuffer(
 	    ResourceState::CopyDest,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    L"GPUMesh_VertexBuffer");
+	    L"GpuMesh_VertexBuffer");
 	if (!m_vertexBuffer)
-	{
-		return false;
-	}
+		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh vertex buffer creation failed.");
 
 	const std::span<const VertexData> vertices{
 	    meshData.vertices};
@@ -129,12 +93,12 @@ bool GPUMesh::CreateVertexBuffer(
 	             m_vertexBuffer,
 	             std::as_bytes(vertices),
 	             ResourceState::Common,
-	             L"GPUMesh_VertexUpload"))
+	             L"GpuMesh_VertexUpload"))
 	{
 		resources.ReleaseOwnedResource(
 		    m_vertexBuffer);
 		m_vertexBuffer = {};
-		return false;
+		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh vertex upload failed.");
 	}
 
 	m_vertexBufferView = RhiVertexBufferView{
@@ -145,10 +109,11 @@ bool GPUMesh::CreateVertexBuffer(
 	        meshData.GetVertexBufferSize()),
 	    .StrideInBytes =
 	        sizeof(VertexData)};
-	return m_vertexBufferView.BufferLocation != 0;
+	if (m_vertexBufferView.BufferLocation == 0)
+		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh vertex buffer has no device address.");
 }
 
-bool GPUMesh::CreateIndexBuffer(
+void GpuMesh::CreateIndexBuffer(
     RenderCommandList& commandList,
     const MeshData& meshData)
 {
@@ -163,11 +128,9 @@ bool GPUMesh::CreateIndexBuffer(
 	    ResourceState::CopyDest,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    L"GPUMesh_IndexBuffer");
+	    L"GpuMesh_IndexBuffer");
 	if (!m_indexBuffer)
-	{
-		return false;
-	}
+		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh index buffer creation failed.");
 
 	const std::span<const std::uint32_t> indices{
 	    meshData.indices};
@@ -177,12 +140,12 @@ bool GPUMesh::CreateIndexBuffer(
 	             m_indexBuffer,
 	             std::as_bytes(indices),
 	             ResourceState::Common,
-	             L"GPUMesh_IndexUpload"))
+	             L"GpuMesh_IndexUpload"))
 	{
 		resources.ReleaseOwnedResource(
 		    m_indexBuffer);
 		m_indexBuffer = {};
-		return false;
+		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh index upload failed.");
 	}
 
 	m_indexBufferView = RhiIndexBufferView{
@@ -192,25 +155,19 @@ bool GPUMesh::CreateIndexBuffer(
 	    .SizeInBytes = static_cast<std::uint32_t>(
 	        meshData.GetIndexBufferSize()),
 	    .Format = RhiIndexFormat::UInt32};
-	return m_indexBufferView.BufferLocation != 0;
+	if (m_indexBufferView.BufferLocation == 0)
+		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh index buffer has no device address.");
 }
 
-bool GPUMesh::CreateDeformationBuffers(
+void GpuMesh::CreateDeformationBuffers(
     RenderCommandList& commandList,
-    GPUMeshPreparedData& preparedData)
+    GpuMeshPreparedData& preparedData)
 {
-	if (!m_skinInfluences.Upload(
-	        *m_renderHardwareInterface,
-	        commandList,
-	        preparedData.GpuSkinInfluences))
-	{
-		SPDLOG_LOGGER_ERROR(
-		    g_gpuMeshLogger,
-		    "[GPUMesh] Failed to create skin influence resources");
-		return false;
-	}
-
-	return m_morphTargets.Upload(
+	m_skinInfluences.Upload(
+	    *m_renderHardwareInterface,
+	    commandList,
+	    preparedData.GpuSkinInfluences);
+	m_morphTargets.Upload(
 	    *m_renderHardwareInterface,
 	    commandList,
 	    std::move(
@@ -218,10 +175,10 @@ bool GPUMesh::CreateDeformationBuffers(
 	    preparedData.MorphTargetCount);
 }
 
-void GPUMesh::CommitPreparedData(
-    GPUMeshPreparedData&& preparedData)
+void GpuMesh::CommitPreparedData(
+    GpuMeshPreparedData&& preparedData)
 {
-	m_localBounds = GPUMeshBounds{
+	m_localBounds = GpuMeshBounds{
 	    .Min = preparedData.LocalBoundsMin,
 	    .Max = preparedData.LocalBoundsMax,
 	    .Valid = preparedData.HasLocalBounds};
@@ -233,32 +190,32 @@ void GPUMesh::CommitPreparedData(
 	    std::move(preparedData.SkinInfluences);
 }
 
-void GPUMesh::Bind(RenderCommandContext& cmd) const noexcept
+void GpuMesh::Bind(RenderCommandContext& commandContext) const noexcept
 {
 	if (m_renderHardwareInterface != nullptr)
 	{
 		RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
 
-		cmd.TrackResource(resources.GetResourceHandle(m_vertexBuffer));
-		cmd.TrackResource(resources.GetResourceHandle(m_indexBuffer));
+		commandContext.TrackResource(resources.GetResourceHandle(m_vertexBuffer));
+		commandContext.TrackResource(resources.GetResourceHandle(m_indexBuffer));
 	}
 
-	cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
-	cmd.BindVertexBuffer(GetVertexBufferView());
-	cmd.BindIndexBuffer(GetIndexBufferView());
+	commandContext.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
+	commandContext.BindVertexBuffer(GetVertexBufferView());
+	commandContext.BindIndexBuffer(GetIndexBufferView());
 }
 
-RhiVertexBufferView GPUMesh::GetVertexBufferView() const noexcept
+RhiVertexBufferView GpuMesh::GetVertexBufferView() const noexcept
 {
 	return m_vertexBufferView;
 }
 
-RhiIndexBufferView GPUMesh::GetIndexBufferView() const noexcept
+RhiIndexBufferView GpuMesh::GetIndexBufferView() const noexcept
 {
 	return m_indexBufferView;
 }
 
-RhiRayTracingGeometryDesc GPUMesh::GetRayTracingGeometry() const noexcept
+RhiRayTracingGeometryDesc GpuMesh::GetRayTracingGeometry() const noexcept
 {
 	RhiResourceService* const resources =
 	    m_renderHardwareInterface != nullptr ? &m_renderHardwareInterface->GetResourceService() : nullptr;

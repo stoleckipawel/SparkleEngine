@@ -14,13 +14,13 @@ class SPARKLE_RHI_API RhiPartitionedTlasService
 	virtual ~RhiPartitionedTlasService() noexcept = default;
 
 	virtual RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(
-	    const RhiPartitionedTlasDesc&) const noexcept;
+	    const RhiPartitionedTlasDesc&) const noexcept = 0;
 	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureBuffer(
 	    const RhiPartitionedTlasBuildSizes&,
-	    std::wstring_view);
+	    std::wstring_view) = 0;
 	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
 	    const RhiPartitionedTlasOperationPackDesc&,
-	    std::wstring_view);
+	    std::wstring_view) = 0;
 	virtual RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
-	    const RhiPartitionedTlasDesc&) const noexcept;
+	    const RhiPartitionedTlasDesc&) const noexcept = 0;
 };

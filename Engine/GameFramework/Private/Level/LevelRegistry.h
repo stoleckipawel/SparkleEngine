@@ -25,15 +25,13 @@ class LevelRegistry final
 	std::vector<std::string> GetLevelNames() const;
 
 	void SetDefaultLevelName(std::string_view name);
-	bool SaveLevel(const LevelAsset& level, std::string* errorMessage = nullptr) const;
+	void SaveLevel(const LevelAsset& level) const;
 
 	std::string_view GetDefaultLevelName() const noexcept;
 
   private:
 	void DiscoverLevels();
-	void LoadCatalogLevel(
-	    const ProjectLevelCatalogEntry& entry,
-	    std::string& outStartupDefaultLevelName);
+	void LoadCatalogLevel(const ProjectLevelCatalogEntry& entry, std::string& outStartupDefaultLevelName);
 	void ResolveDefaultLevel(std::string_view startupDefaultLevelName);
 	void Register(std::unique_ptr<LevelAsset> level);
 

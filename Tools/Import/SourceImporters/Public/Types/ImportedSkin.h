@@ -17,8 +17,8 @@ inline constexpr ImportedSkeletonIndex kInvalidImportedSkeletonIndex = (std::num
 
 struct ImportedSkinInfluence
 {
-	std::uint16_t jointIndices[4] = {0, 0, 0, 0};
-	float jointWeights[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+	std::uint16_t jointIndices[8] = {};
+	float jointWeights[8] = {};
 };
 
 static_assert(std::is_trivially_copyable_v<ImportedSkinInfluence>, "ImportedSkinInfluence must be trivially copyable for mesh cooking");

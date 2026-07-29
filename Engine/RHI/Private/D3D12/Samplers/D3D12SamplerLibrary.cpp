@@ -42,7 +42,7 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RhiDescriptorService& de
 	m_tableHandle = m_descriptorService->AllocateDescriptorTable(ERhiDescriptorAllocatorType::Sampler, samplerCount);
 	if (!m_tableHandle)
 	{
-		Diagnostics::Fail(g_samplerLibraryLogger, __FILE__, __LINE__, "Failed to allocate sampler descriptor table.");
+		Diagnostics::Fatal(g_samplerLibraryLogger, __FILE__, __LINE__, "Failed to allocate sampler descriptor table.");
 		return;
 	}
 

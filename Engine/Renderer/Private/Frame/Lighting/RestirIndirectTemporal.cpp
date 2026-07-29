@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/RestirIndirectTemporal.h"
 
-#include "Frame/Lighting/LightingRayTracingPasses.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/RayTracing/RestirIndirectTemporalPass.h"
 
@@ -36,8 +35,5 @@ void AddRestirIndirectTemporalPass(
 	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
 	parameters->MorphWeights = builder.CreateSRV(resources.External.Scene.Geometry.MorphWeights);
-	LightingRayTracingPasses::DispatchSceneTlas<RestirIndirectTemporalPass>(
-	    builder,
-	    parameters,
-	    RayTracingSceneTlasShaderAccessMode::Descriptor);
+	builder.Dispatch<RestirIndirectTemporalPass>(parameters);
 }

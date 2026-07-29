@@ -1,5 +1,6 @@
 #include "TextureCookRequestList.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Strings/StringUtils.h"
@@ -36,15 +37,13 @@ class TextureCookRequestOrdering final
 	}
 };
 
-bool WriteTextureCookRequestList(
+void WriteTextureCookRequestList(
     const std::filesystem::path& outputPath,
-    const std::vector<TextureCookRequest>& requests,
-    std::string& outErrorMessage)
+    const std::vector<TextureCookRequest>& requests)
 {
 	if (outputPath.empty())
 	{
-		outErrorMessage = "Texture cook request output path is empty.";
-		return false;
+		throw Diagnostics::Error("Texture cook request output path is empty.");
 	}
 
 	std::vector<TextureCookRequest> sortedRequests = requests;
@@ -55,33 +54,26 @@ bool WriteTextureCookRequestList(
 	{
 		if (!request.IsValid())
 		{
-			outErrorMessage = "Texture cook request list contains an invalid request entry.";
-			return false;
+			throw Diagnostics::Error("Texture cook request list contains an invalid request entry.");
 		}
 		output << TextureCookRequestCodec::FormatLine(request) << '\n';
 	}
 
-	if (!Files::TryWriteAllText(outputPath, output.str(), outErrorMessage))
+	std::string fileError;
+	if (!Files::TryWriteAllText(outputPath, output.str(), fileError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(fileError));
 	}
-	outErrorMessage.clear();
-	return true;
 }
 
-bool LoadTextureCookRequestList(
-    const std::filesystem::path& inputPath,
-    std::vector<TextureCookRequest>& outRequests,
-    std::string& outErrorMessage)
+std::vector<TextureCookRequest> LoadTextureCookRequestList(const std::filesystem::path& inputPath)
 {
 	std::ifstream input(inputPath);
 	if (!input.is_open())
 	{
-		outErrorMessage = "Failed to open texture cook request file '" + inputPath.string() + "'.";
-		return false;
+		throw Diagnostics::Error("Failed to open texture cook request file '" + inputPath.string() + "'.");
 	}
 
-	outRequests.clear();
 	TextureCookRequestSet requestSet;
 	bool foundHeader = false;
 	std::size_t lineNumber = 0;
@@ -97,34 +89,35 @@ bool LoadTextureCookRequestList(
 		{
 			if (!TextureCookRequestCodec::IsHeader(trimmedLine))
 			{
-				outErrorMessage = "Texture cook request file '" + inputPath.string() + "' has an invalid header.";
-				return false;
+				throw Diagnostics::Error("Texture cook request file '" + inputPath.string() + "' has an invalid header.");
 			}
 			foundHeader = true;
 			continue;
 		}
 
 		TextureCookRequest request;
-		if (!TextureCookRequestCodec::ParseLine(trimmedLine, request, outErrorMessage))
+		std::string parseError;
+		if (!TextureCookRequestCodec::ParseLine(trimmedLine, request, parseError))
 		{
-			outErrorMessage += " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber);
-			return false;
+			throw Diagnostics::Error(
+			    std::move(parseError) + " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber) + ".");
 		}
-		if (!requestSet.Add(request, outErrorMessage))
+		try
 		{
-			outErrorMessage = "Texture cook request file contains conflicting requests for asset id '" +
-			                  Formatting::FormatHexUInt64(request.assetId) + "'.";
-			return false;
+			requestSet.Add(request);
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			throw Diagnostics::Error(
+			    std::string(error.what()) + " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber) + ".");
 		}
 	}
 
 	if (!foundHeader)
 	{
-		outErrorMessage = "Texture cook request file '" + inputPath.string() + "' is empty.";
-		return false;
+		throw Diagnostics::Error("Texture cook request file '" + inputPath.string() + "' is empty.");
 	}
-	requestSet.MoveRequestsTo(outRequests);
-	TextureCookRequestOrdering::SortForConsumption(outRequests);
-	outErrorMessage.clear();
-	return true;
+	std::vector<TextureCookRequest> requests = requestSet.ReleaseRequests();
+	TextureCookRequestOrdering::SortForConsumption(requests);
+	return requests;
 }

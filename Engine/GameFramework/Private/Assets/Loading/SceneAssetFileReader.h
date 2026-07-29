@@ -5,8 +5,6 @@
 #include <atomic>
 #include <cstddef>
 #include <filesystem>
-#include <string>
-
 namespace Assets
 {
 	struct LoadedSceneManifest;
@@ -15,13 +13,12 @@ namespace Assets
 	class SceneAssetFileReader final
 	{
 	  public:
-		static bool Read(
+		static void Read(
 		    const SceneAssetId& sceneAssetId,
 		    const std::filesystem::path& manifestRelativePath,
 		    LoadedSceneManifest& manifest,
 		    CookedAssetFileSet& files,
 		    std::atomic<std::size_t>& retainedBytes,
-		    std::size_t maximumBytes,
-		    std::string& errorMessage);
+		    std::size_t maximumBytes);
 	};
 }

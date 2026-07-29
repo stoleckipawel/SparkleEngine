@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "SceneData/RenderSceneGpuData.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "RayTracing/RayTracingHitData.h"
@@ -34,8 +35,8 @@ class RenderSceneGpuResourceBindings final
 	{
 		if (!buffer)
 		{
-			graph.ClearPersistentBufferBinding(handle);
-			return;
+			static const auto logger = Logging::GetOrCreateLogger("Renderer.RenderSceneGpuResourceBindings");
+			Diagnostics::Fatal(logger, __FILE__, __LINE__, "Render-scene GPU buffer publication is incomplete.");
 		}
 		graph.BindPersistentBuffer(
 		    handle,
@@ -58,29 +59,28 @@ RenderSceneGpuBuffer::operator bool() const noexcept
 	return IsValid();
 }
 
-bool RenderSceneGpuGeometryData::HasMeshInstances() const noexcept
+bool RenderSceneGpuGeometryData::HasMeshInstanceBuffers() const noexcept
 {
 	return MeshInstances.IsValid() &&
 	       MeshInstanceSlots.IsValid();
 }
 
-bool RenderSceneGpuGeometryData::HasSkinning() const noexcept
+bool RenderSceneGpuGeometryData::HasSkinningBuffers() const noexcept
 {
 	return JointMatrices.IsValid() &&
 	       PreviousJointMatrices.IsValid();
 }
 
-bool RenderSceneGpuGeometryData::HasMorphing() const noexcept
+bool RenderSceneGpuGeometryData::HasMorphingBuffers() const noexcept
 {
 	return MorphWeights.IsValid() &&
 	       PreviousMorphWeights.IsValid();
 }
 
-bool RenderSceneGpuRayTracingData::IsValid() const noexcept
+bool RenderSceneGpuRayTracingData::HasCompleteBuffers() const noexcept
 {
 	return Vertices && SkinInfluences && MorphTargetDeltas &&
-	       Indices && Instances && Materials && InstanceCount > 0 &&
-	       MaterialCount > 0;
+	       Indices && Instances && Materials;
 }
 
 RenderSceneGpuResources DeclareRenderSceneGpuResources(

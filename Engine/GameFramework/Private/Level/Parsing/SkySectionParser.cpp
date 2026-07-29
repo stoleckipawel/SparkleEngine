@@ -2,18 +2,15 @@
 
 #include "Level/Parsing/SkySectionParser.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
 
-#include <cmath>
 #include <fstream>
 #include <iomanip>
 
 namespace LevelParsing
 {
-	bool ParseSkySectionField(
-	    const ParsedLevelLine& parsedLine,
-	    LevelDesc& levelDesc,
-	    std::string& errorMessage)
+	void ParseSkySectionField(const ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
 	{
 		if (!levelDesc.sky)
 		{
@@ -23,42 +20,25 @@ namespace LevelParsing
 		SceneSkyDesc& sky = *levelDesc.sky;
 		if (parsedLine.key == "Enabled")
 		{
-			if (!Strings::TryParseBool(parsedLine.value, sky.enabled))
-			{
-				errorMessage = "Invalid sky enabled value";
-				return false;
-			}
+			sky.enabled = ParseBool(parsedLine.value, "sky enabled value");
 		}
 		else if (parsedLine.key == "Color")
 		{
-			if (!Strings::TryParseFloat3(parsedLine.value, sky.color) ||
-			    !std::isfinite(sky.color.x) ||
-			    !std::isfinite(sky.color.y) ||
-			    !std::isfinite(sky.color.z) ||
-			    sky.color.x < 0.0f ||
-			    sky.color.y < 0.0f ||
-			    sky.color.z < 0.0f)
-			{
-				errorMessage = "Invalid sky color";
-				return false;
-			}
+			sky.color = ParseFloat3(parsedLine.value, "sky color");
 		}
-		else if (parsedLine.key == "Intensity")
+		else if (parsedLine.key == "Brightness")
 		{
-			if (!Strings::TryParseFloat(parsedLine.value, sky.intensity) ||
-			    !std::isfinite(sky.intensity) ||
-			    sky.intensity < 0.0f)
-			{
-				errorMessage = "Invalid sky intensity";
-				return false;
-			}
+			sky.brightness = ParseFloat(parsedLine.value, "sky brightness");
 		}
 		else if (parsedLine.key == "Texture")
 		{
 			sky.skyTexture.texturePath = Strings::UnquoteCopy(parsedLine.value);
 			sky.skyTexture.textureGroup = TextureGroup::HdrColor;
 		}
-		return true;
+		else
+		{
+			throw Diagnostics::Error("Unsupported sky field: " + parsedLine.key);
+		}
 	}
 
 	void WriteSkySection(std::ofstream& output, const LevelDesc& levelDesc)
@@ -73,7 +53,7 @@ namespace LevelParsing
 		output << "[Sky]\n";
 		output << "Enabled = " << (sky.enabled ? "true" : "false") << "\n";
 		output << "Color = " << sky.color.x << ", " << sky.color.y << ", " << sky.color.z << "\n";
-		output << "Intensity = " << sky.intensity << "\n";
+		output << "Brightness = " << sky.brightness << "\n";
 		output << "Texture = " << sky.skyTexture.texturePath << "\n\n";
 	}
 }  // namespace LevelParsing

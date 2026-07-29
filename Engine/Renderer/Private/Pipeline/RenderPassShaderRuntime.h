@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Core/Public/Diagnostics/Logger.h"
-#include "Core/Public/Diagnostics/Verify.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "PipelineRuntime/PipelineRuntimeLibrary.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
@@ -30,160 +29,98 @@ struct RenderPassShaderRuntimeDesc final
 	RenderPassShaderPipelineKind PipelineKind = RenderPassShaderPipelineKind::Graphics;
 	bool AllowInputAssemblerInputLayout = false;
 	const wchar_t* BindingLayoutDebugName = L"RenderPass_BindingLayout";
-	const wchar_t* PipelineStateDebugName = L"RenderPass_PipelineState";
+	const wchar_t* PipelineDebugName = L"RenderPass_Pipeline";
 };
 
 struct RenderPassShaderRuntimeStorage
 {
 	PassParameterLayout BindingLayoutDefinition;
 	std::unique_ptr<RenderBindingLayout> BindingLayout;
-	std::unique_ptr<RenderPipelineState> PipelineState;
-	std::unique_ptr<RenderPipelineState> WireframePipelineState;
-	std::unique_ptr<RenderPipelineState> TwoSidedPipelineState;
+	std::unique_ptr<RenderPipeline> Pipeline;
+	std::unique_ptr<RenderPipeline> WireframePipeline;
+	std::unique_ptr<RenderPipeline> TwoSidedPipeline;
 	const LoadedShaderPackage* ShaderPackage = nullptr;
 };
 
 class RenderPassShaderRuntime final
 {
   public:
-	template <typename ConfigurePipelineState>
+	template <typename ConfigurePipeline>
 	static void CreateGraphicsRuntime(
-	    RenderHardwareInterface& rhi,
+	    RenderHardwareInterface& renderHardwareInterface,
 	    CookedShaderPackageCache& shaderPackageCache,
 	    const RenderPassShaderRuntimeDesc& desc,
 	    RenderPassShaderRuntimeStorage& storage,
-	    ConfigurePipelineState configurePipelineState)
+	    ConfigurePipeline configurePipeline)
 	{
-		std::string errorMessage;
-		if (!TryCreateGraphicsRuntime(rhi, shaderPackageCache, desc, storage, configurePipelineState, errorMessage))
-		{
-			Diagnostics::Fail(GetLogger(), __FILE__, __LINE__, errorMessage);
-		}
-	}
-
-	template <typename ConfigurePipelineState>
-	static bool TryCreateGraphicsRuntime(
-	    RenderHardwareInterface& rhi,
-	    CookedShaderPackageCache& shaderPackageCache,
-	    const RenderPassShaderRuntimeDesc& desc,
-	    RenderPassShaderRuntimeStorage& storage,
-	    ConfigurePipelineState configurePipelineState,
-	    std::string& outErrorMessage)
-	{
-		if (!ValidatePipelineKind(desc, RenderPassShaderPipelineKind::Graphics, outErrorMessage) ||
-		    !ValidateExpectedStages(desc, outErrorMessage) || !BuildBindingLayout(desc, storage.BindingLayoutDefinition, outErrorMessage) ||
-		    !LoadShaderPackage(rhi, shaderPackageCache, desc, storage.BindingLayoutDefinition, storage.ShaderPackage, outErrorMessage) ||
-		    !ValidatePackageCapabilities(rhi, desc, storage.BindingLayoutDefinition, *storage.ShaderPackage, outErrorMessage))
-		{
-			return false;
-		}
+		ValidatePipelineKind(desc, RenderPassShaderPipelineKind::Graphics);
+		ValidateExpectedStages(desc);
+		storage.BindingLayoutDefinition = BuildBindingLayout(desc);
+		storage.ShaderPackage =
+		    &LoadShaderPackage(renderHardwareInterface, shaderPackageCache, desc, storage.BindingLayoutDefinition);
+		ValidatePackageCapabilities(renderHardwareInterface, desc, storage.BindingLayoutDefinition, *storage.ShaderPackage);
 
 		const PipelineRuntimePackageRequest packageRequest = BuildPackageRequest(desc, storage.BindingLayoutDefinition);
-		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(rhi, packageRequest, *storage.ShaderPackage);
+		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(renderHardwareInterface, packageRequest, *storage.ShaderPackage);
 
-		GraphicsPipelineStateDesc pipelineDesc{};
+		GraphicsPipelineDesc pipelineDesc{};
 		pipelineDesc.BindingLayout = storage.BindingLayout.get();
 		pipelineDesc.VertexShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Vertex};
 		if (HasAnyShaderStageMask(desc.Package.ExpectedStages, ShaderStageMask::Pixel))
 		{
 			pipelineDesc.PixelShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Pixel};
 		}
-		pipelineDesc.DebugName = desc.PipelineStateDebugName;
-		configurePipelineState(pipelineDesc);
-		storage.PipelineState =
-		    PipelineRuntimeLibrary::CreateGraphicsPipelineState(rhi, pipelineDesc);
-		storage.WireframePipelineState.reset();
-		storage.TwoSidedPipelineState.reset();
+		pipelineDesc.DebugName = desc.PipelineDebugName;
+		configurePipeline(pipelineDesc);
+		storage.Pipeline =
+		    PipelineRuntimeLibrary::CreateGraphicsPipeline(renderHardwareInterface, pipelineDesc);
+		storage.WireframePipeline.reset();
+		storage.TwoSidedPipeline.reset();
 		if (desc.AllowInputAssemblerInputLayout && !pipelineDesc.RenderWireframe)
 		{
-			GraphicsPipelineStateDesc twoSidedPipelineDesc = pipelineDesc;
+			GraphicsPipelineDesc twoSidedPipelineDesc = pipelineDesc;
 			twoSidedPipelineDesc.CullMode = ERhiCullMode::None;
-			storage.TwoSidedPipelineState = PipelineRuntimeLibrary::CreateGraphicsPipelineState(
-			    rhi,
+			storage.TwoSidedPipeline = PipelineRuntimeLibrary::CreateGraphicsPipeline(
+			    renderHardwareInterface,
 			    twoSidedPipelineDesc);
-			if (!storage.TwoSidedPipelineState)
-			{
-				outErrorMessage = std::format(
-				    "Render pass '{}' failed to create its two-sided graphics pipeline state for package '{}'",
-				    desc.PassName,
-				    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>");
-				return false;
-			}
 
-			GraphicsPipelineStateDesc wireframePipelineDesc = pipelineDesc;
+			GraphicsPipelineDesc wireframePipelineDesc = pipelineDesc;
 			wireframePipelineDesc.RenderWireframe = true;
 			wireframePipelineDesc.CullMode = ERhiCullMode::None;
-			storage.WireframePipelineState = PipelineRuntimeLibrary::CreateGraphicsPipelineState(
-			    rhi,
+			storage.WireframePipeline = PipelineRuntimeLibrary::CreateGraphicsPipeline(
+			    renderHardwareInterface,
 			    wireframePipelineDesc);
-			if (!storage.WireframePipelineState)
-			{
-				outErrorMessage = std::format(
-				    "Render pass '{}' failed to create its wireframe graphics pipeline state for package '{}'",
-				    desc.PassName,
-				    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>");
-				return false;
-			}
 		}
-
-		outErrorMessage.clear();
-		return true;
 	}
 
-	template <typename ConfigurePipelineState>
+	template <typename ConfigurePipeline>
 	static void CreateComputeRuntime(
-	    RenderHardwareInterface& rhi,
+	    RenderHardwareInterface& renderHardwareInterface,
 	    CookedShaderPackageCache& shaderPackageCache,
 	    const RenderPassShaderRuntimeDesc& desc,
 	    RenderPassShaderRuntimeStorage& storage,
-	    ConfigurePipelineState configurePipelineState)
+	    ConfigurePipeline configurePipeline)
 	{
-		std::string errorMessage;
-		if (!TryCreateComputeRuntime(rhi, shaderPackageCache, desc, storage, configurePipelineState, errorMessage))
-		{
-			Diagnostics::Fail(GetLogger(), __FILE__, __LINE__, errorMessage);
-		}
-	}
-
-	template <typename ConfigurePipelineState>
-	static bool TryCreateComputeRuntime(
-	    RenderHardwareInterface& rhi,
-	    CookedShaderPackageCache& shaderPackageCache,
-	    const RenderPassShaderRuntimeDesc& desc,
-	    RenderPassShaderRuntimeStorage& storage,
-	    ConfigurePipelineState configurePipelineState,
-	    std::string& outErrorMessage)
-	{
-		if (!ValidatePipelineKind(desc, RenderPassShaderPipelineKind::Compute, outErrorMessage) ||
-		    !ValidateExpectedStages(desc, outErrorMessage) || !BuildBindingLayout(desc, storage.BindingLayoutDefinition, outErrorMessage) ||
-		    !LoadShaderPackage(rhi, shaderPackageCache, desc, storage.BindingLayoutDefinition, storage.ShaderPackage, outErrorMessage) ||
-		    !ValidatePackageCapabilities(rhi, desc, storage.BindingLayoutDefinition, *storage.ShaderPackage, outErrorMessage))
-		{
-			return false;
-		}
+		ValidatePipelineKind(desc, RenderPassShaderPipelineKind::Compute);
+		ValidateExpectedStages(desc);
+		storage.BindingLayoutDefinition = BuildBindingLayout(desc);
+		storage.ShaderPackage =
+		    &LoadShaderPackage(renderHardwareInterface, shaderPackageCache, desc, storage.BindingLayoutDefinition);
+		ValidatePackageCapabilities(renderHardwareInterface, desc, storage.BindingLayoutDefinition, *storage.ShaderPackage);
 
 		const PipelineRuntimePackageRequest packageRequest = BuildPackageRequest(desc, storage.BindingLayoutDefinition);
-		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(rhi, packageRequest, *storage.ShaderPackage);
+		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(renderHardwareInterface, packageRequest, *storage.ShaderPackage);
 
-		ComputePipelineStateDesc pipelineDesc{};
+		ComputePipelineDesc pipelineDesc{};
 		pipelineDesc.BindingLayout = storage.BindingLayout.get();
 		pipelineDesc.ComputeShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Compute};
-		pipelineDesc.DebugName = desc.PipelineStateDebugName;
-		configurePipelineState(pipelineDesc);
-		storage.PipelineState =
-		    PipelineRuntimeLibrary::CreateComputePipelineState(rhi, pipelineDesc);
-
-		outErrorMessage.clear();
-		return true;
+		pipelineDesc.DebugName = desc.PipelineDebugName;
+		configurePipeline(pipelineDesc);
+		storage.Pipeline =
+		    PipelineRuntimeLibrary::CreateComputePipeline(renderHardwareInterface, pipelineDesc);
 	}
 
   private:
-	static const std::shared_ptr<spdlog::logger>& GetLogger() noexcept
-	{
-		static std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer");
-		return logger;
-	}
-
 	static const char* FormatPipelineKind(RenderPassShaderPipelineKind kind) noexcept
 	{
 		switch (kind)
@@ -197,72 +134,49 @@ class RenderPassShaderRuntime final
 		return "unknown";
 	}
 
-	static bool ValidatePipelineKind(
+	static void ValidatePipelineKind(
 	    const RenderPassShaderRuntimeDesc& desc,
-	    RenderPassShaderPipelineKind expectedKind,
-	    std::string& outErrorMessage)
+	    RenderPassShaderPipelineKind expectedKind)
 	{
 		if (desc.PipelineKind == expectedKind)
-		{
-			return true;
-		}
+			return;
 
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Render pass '{}' requested a {} shader runtime through the {} facade path for package '{}'",
 		    desc.PassName,
 		    FormatPipelineKind(desc.PipelineKind),
 		    FormatPipelineKind(expectedKind),
-		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>");
-		return false;
+		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>"));
 	}
 
-	static bool ValidateExpectedStages(const RenderPassShaderRuntimeDesc& desc, std::string& outErrorMessage)
+	static void ValidateExpectedStages(const RenderPassShaderRuntimeDesc& desc)
 	{
 		const bool hasVertex = HasAnyShaderStageMask(desc.Package.ExpectedStages, ShaderStageMask::Vertex);
 		const bool hasCompute = HasAnyShaderStageMask(desc.Package.ExpectedStages, ShaderStageMask::Compute);
 		const bool isGraphics = desc.PipelineKind == RenderPassShaderPipelineKind::Graphics;
 		const bool valid = isGraphics ? (hasVertex && !hasCompute) : (hasCompute && !hasVertex);
 		if (valid)
-		{
-			return true;
-		}
+			return;
 
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Render pass '{}' declares conflicting expected stages '{}' for {} shader package '{}'",
 		    desc.PassName,
 		    FormatShaderStageMask(desc.Package.ExpectedStages),
 		    FormatPipelineKind(desc.PipelineKind),
-		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>");
-		return false;
+		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>"));
 	}
 
-	static bool BuildBindingLayout(
-	    const RenderPassShaderRuntimeDesc& desc,
-	    PassParameterLayout& outBindingLayout,
-	    std::string& outErrorMessage)
+	static PassParameterLayout BuildBindingLayout(const RenderPassShaderRuntimeDesc& desc)
 	{
 		if (!desc.Package.IsValid())
 		{
-			outErrorMessage = std::format(
-			    "Render pass '{}' declares an invalid cooked shader package",
-			    desc.PassName);
-			return false;
+			throw Diagnostics::Error(
+			    std::format("Render pass '{}' declares an invalid cooked shader package", desc.PassName));
 		}
 
-		PassParameterLayout bindingLayout;
-		if (!BuildRegisteredShaderPackageLayout(desc.Package.PackageId, bindingLayout, outErrorMessage))
-		{
-			outErrorMessage = std::format(
-			    "Failed to build generated shader package layout '{}' for pass '{}' - {}",
-			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
-			    desc.PassName,
-			    outErrorMessage);
-			return false;
-		}
+		PassParameterLayout bindingLayout = BuildRegisteredShaderPackageLayout(desc.Package.PackageId);
 
-		outBindingLayout = std::move(bindingLayout);
-		outErrorMessage.clear();
-		return true;
+		return bindingLayout;
 	}
 
 	static PipelineRuntimePackageRequest BuildPackageRequest(const RenderPassShaderRuntimeDesc& desc, const PassParameterLayout& bindingLayout)
@@ -276,34 +190,28 @@ class RenderPassShaderRuntime final
 		return request;
 	}
 
-	static bool LoadShaderPackage(
-	    RenderHardwareInterface& rhi,
+	static const LoadedShaderPackage& LoadShaderPackage(
+	    RenderHardwareInterface& renderHardwareInterface,
 	    CookedShaderPackageCache& shaderPackageCache,
 	    const RenderPassShaderRuntimeDesc& desc,
-	    const PassParameterLayout& bindingLayout,
-	    const LoadedShaderPackage*& outLoadedPackage,
-	    std::string& outErrorMessage)
+	    const PassParameterLayout& bindingLayout)
 	{
 		return PipelineRuntimeLibrary::LoadShaderPackage(
-		    rhi,
+		    renderHardwareInterface,
 		    shaderPackageCache,
-		    BuildPackageRequest(desc, bindingLayout),
-		    outLoadedPackage,
-		    outErrorMessage);
+		    BuildPackageRequest(desc, bindingLayout));
 	}
 
-	static bool ValidatePackageCapabilities(
-	    RenderHardwareInterface& rhi,
+	static void ValidatePackageCapabilities(
+	    RenderHardwareInterface& renderHardwareInterface,
 	    const RenderPassShaderRuntimeDesc& desc,
 	    const PassParameterLayout& bindingLayout,
-	    const LoadedShaderPackage& shaderPackage,
-	    std::string& outErrorMessage)
+	    const LoadedShaderPackage& shaderPackage)
 	{
-		return PipelineRuntimeLibrary::ValidatePackageCapabilities(
-		    rhi,
+		PipelineRuntimeLibrary::ValidatePackageCapabilities(
+		    renderHardwareInterface,
 		    BuildPackageRequest(desc, bindingLayout),
-		    shaderPackage,
-		    outErrorMessage);
+		    shaderPackage);
 	}
 
 };

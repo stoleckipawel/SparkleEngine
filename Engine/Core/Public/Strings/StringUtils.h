@@ -17,14 +17,12 @@ namespace Strings
 {
 	SPARKLE_CORE_API bool IsAsciiWhitespace(char character) noexcept;
 	SPARKLE_CORE_API bool ContainsAsciiWhitespace(std::string_view str) noexcept;
+	SPARKLE_CORE_API bool IsNullTerminated(std::span<const char> buffer) noexcept;
 	SPARKLE_CORE_API std::string_view TrimAsciiWhitespace(std::string_view str) noexcept;
 	SPARKLE_CORE_API std::string_view Unquote(std::string_view str) noexcept;
 	SPARKLE_CORE_API std::string TrimCopy(std::string_view str);
 	SPARKLE_CORE_API std::string UnquoteCopy(std::string_view str);
-	SPARKLE_CORE_API std::vector<std::string_view> Split(
-	    std::string_view str,
-	    char separator,
-	    bool keepEmptyFields = true);
+	SPARKLE_CORE_API std::vector<std::string_view> Split(std::string_view str, char separator, bool keepEmptyFields = true);
 	SPARKLE_CORE_API std::string ToLowerCopy(std::string_view str);
 	SPARKLE_CORE_API std::string EscapeCsvField(std::string_view str);
 	SPARKLE_CORE_API std::string EscapeJsonString(std::string_view str);
@@ -55,7 +53,7 @@ namespace Strings
 		const char* begin = trimmed.data();
 		const char* end = trimmed.data() + trimmed.size();
 		const std::from_chars_result result = std::from_chars(begin, end, outValue);
-		return result.ec == std::errc {} && result.ptr == end;
+		return result.ec == std::errc{} && result.ptr == end;
 	}
 
 	SPARKLE_CORE_API bool TryParseFloat(std::string_view str, float& outValue);

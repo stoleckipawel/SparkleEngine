@@ -21,8 +21,10 @@ class StreamlineRuntime final
 
 		{
 			std::lock_guard lock(s_mutex);
-			if (s_initialized) return true;
-			if (s_initializing || s_shuttingDown) return false;
+			if (s_initialized)
+				return true;
+			if (s_initializing || s_shuttingDown)
+				return false;
 			s_initializing = true;
 		}
 
@@ -50,7 +52,8 @@ class StreamlineRuntime final
 		    .DeviceCreated = &SetNativeDevice,
 		    .UpgradeInterface = &UpgradeInterface,
 		    .ResolveNativeInterface = &ResolveNativeInterface,
-		    .PresentationReady = &SetPresentationReady};
+		    .PresentationReady = &SetPresentationReady,
+		    .RuntimeShutdown = &ShutdownForBackend};
 	}
 
 	static void Shutdown() noexcept
@@ -59,10 +62,16 @@ class StreamlineRuntime final
 		{
 			std::unique_lock lock(s_mutex);
 			s_shuttingDown = true;
-			s_idle.wait(lock, [] { return s_activeCalls == 0 && !s_initializing; });
+			s_idle.wait(
+			    lock,
+			    []
+			    {
+				    return s_activeCalls == 0 && !s_initializing;
+			    });
 			initialized = s_initialized;
 		}
-		if (initialized) (void) slShutdown();
+		if (initialized)
+			(void) slShutdown();
 		{
 			std::lock_guard lock(s_mutex);
 			s_initialized = false;
@@ -83,7 +92,8 @@ class StreamlineRuntime final
 		}
 
 		CallLease call(CallRequirement::RuntimeReady);
-		if (!call) return false;
+		if (!call)
+			return false;
 
 		const RhiAdapterIdentity& adapter = capabilities.ExternalFeatureInterop.Adapter;
 		auto luid = adapter.NativeLuid;
@@ -116,7 +126,8 @@ class StreamlineRuntime final
 
 		~CallLease() noexcept
 		{
-			if (!m_acquired) return;
+			if (!m_acquired)
+				return;
 			{
 				std::lock_guard lock(s_mutex);
 				--s_activeCalls;
@@ -124,10 +135,7 @@ class StreamlineRuntime final
 			s_idle.notify_all();
 		}
 
-		explicit operator bool() const noexcept
-		{
-			return m_acquired;
-		}
+		explicit operator bool() const noexcept { return m_acquired; }
 
 	  private:
 		bool m_acquired = false;
@@ -135,16 +143,16 @@ class StreamlineRuntime final
 
 	static bool MeetsRequirement(CallRequirement requirement) noexcept
 	{
-		if (!s_initialized) return false;
-		if (requirement == CallRequirement::Initialized) return true;
-		if (!s_deviceBound) return false;
+		if (!s_initialized)
+			return false;
+		if (requirement == CallRequirement::Initialized)
+			return true;
+		if (!s_deviceBound)
+			return false;
 		return requirement == CallRequirement::DeviceBound || s_presentationReady;
 	}
 
-	static bool SetNativeDevice(
-	    ERhiBackendApi backendApi,
-	    NativeGraphicsDeviceHandle nativeDevice,
-	    void*) noexcept
+	static bool SetNativeDevice(ERhiBackendApi backendApi, NativeGraphicsDeviceHandle nativeDevice, void*) noexcept
 	{
 		CallLease call(CallRequirement::Initialized);
 		if (!call || backendApi != ERhiBackendApi::D3D12 || !nativeDevice)
@@ -160,15 +168,11 @@ class StreamlineRuntime final
 		return deviceBound;
 	}
 
-	static bool UpgradeInterface(
-	    ERhiBackendApi backendApi,
-	    ERhiExternalInterfaceKind,
-	    void** nativeInterface,
-	    void*) noexcept
+	static bool UpgradeInterface(ERhiBackendApi backendApi, ERhiExternalInterfaceKind, void** nativeInterface, void*) noexcept
 	{
 		CallLease call(CallRequirement::DeviceBound);
-		return call && backendApi == ERhiBackendApi::D3D12 &&
-		       nativeInterface != nullptr && slUpgradeInterface(nativeInterface) == sl::Result::eOk;
+		return call && backendApi == ERhiBackendApi::D3D12 && nativeInterface != nullptr &&
+		       slUpgradeInterface(nativeInterface) == sl::Result::eOk;
 	}
 
 	static bool ResolveNativeInterface(
@@ -179,17 +183,22 @@ class StreamlineRuntime final
 	    void*) noexcept
 	{
 		CallLease call(CallRequirement::Initialized);
-		return call && backendApi == ERhiBackendApi::D3D12 &&
-		       externalInterface != nullptr && nativeInterface != nullptr &&
+		return call && backendApi == ERhiBackendApi::D3D12 && externalInterface != nullptr && nativeInterface != nullptr &&
 		       slGetNativeInterface(externalInterface, nativeInterface) == sl::Result::eOk;
 	}
 
 	static void SetPresentationReady(ERhiBackendApi backendApi, bool ready, void*) noexcept
 	{
 		std::lock_guard lock(s_mutex);
-		s_presentationReady =
-		    !s_shuttingDown && backendApi == ERhiBackendApi::D3D12 &&
-		    s_initialized && s_deviceBound && ready;
+		s_presentationReady = !s_shuttingDown && backendApi == ERhiBackendApi::D3D12 && s_initialized && s_deviceBound && ready;
+	}
+
+	static void ShutdownForBackend(ERhiBackendApi backendApi, void*) noexcept
+	{
+		if (backendApi == ERhiBackendApi::D3D12)
+		{
+			Shutdown();
+		}
 	}
 
 	static void FillPreferences(sl::Preferences& preferences)
@@ -212,16 +221,13 @@ class StreamlineRuntime final
 		return adapter.NativeLuidSizeInBytes > 0u && adapter.NativeLuidSizeInBytes <= adapter.NativeLuid.size();
 	}
 
-	static bool ValidateBackend(
-	    const RhiCapabilities& capabilities,
-	    RhiNativeDeviceQueueInterop nativeInterop) noexcept
+	static bool ValidateBackend(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) noexcept
 	{
 		const RhiExternalFeatureInteropCapabilities& interop = capabilities.ExternalFeatureInterop;
 		const bool commonInterop = interop.ExposesNativeDevice && interop.ExposesNativeGraphicsQueue &&
 		                           interop.ExposesNativeGraphicsCommandList && interop.ExposesNativeResources &&
 		                           interop.SupportsExternalProviderEvaluation;
-		return capabilities.BackendApi == ERhiBackendApi::D3D12 &&
-		       commonInterop && nativeInterop && HasAdapterLuid(interop.Adapter);
+		return capabilities.BackendApi == ERhiBackendApi::D3D12 && commonInterop && nativeInterop && HasAdapterLuid(interop.Adapter);
 	}
 
 	static std::mutex s_mutex;

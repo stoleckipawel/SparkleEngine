@@ -31,7 +31,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void EndDiagnosticScope() noexcept override;
 	void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color) noexcept override;
 	void SetShaderVisibleDescriptorHeaps(std::uint32_t heapCount, ID3D12DescriptorHeap* const* heaps) noexcept;
-	void SetPipelineState(const RenderPipelineState& pipelineState) noexcept override;
+	void SetPipeline(const RenderPipeline& pipeline) noexcept override;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void ResetBoundState() noexcept override;
@@ -58,10 +58,10 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept override;
 	void BindVertexBuffer(const RhiVertexBufferView& view) noexcept override;
 	void BindIndexBuffer(const RhiIndexBufferView& view) noexcept override;
-	void SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept override;
-	void SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv) noexcept override;
-	void ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept override;
-	void ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil) noexcept override;
+	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil) noexcept override;
+	void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil) noexcept override;
+	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept override;
+	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil) noexcept override;
 	void SetViewport(const RhiViewport& viewport) noexcept override;
 	void SetScissorRect(const RhiRect& rect) noexcept override;
 	void DrawIndexedInstanced(
@@ -102,12 +102,10 @@ class D3D12RenderCommandList final : public RenderCommandList
 	};
 
 	void SetRecordingOwner(RhiCommandRecordingOwner owner) noexcept { m_recordingOwner = owner; }
-	static D3D12_GPU_VIRTUAL_ADDRESS ResolveRayTracingBufferAddress(
-	    const RhiRayTracingBufferBinding& binding) noexcept;
+	static D3D12_GPU_VIRTUAL_ADDRESS ResolveRayTracingBufferAddress(const RhiRayTracingBufferBinding& binding) noexcept;
+	D3D12_RESOURCE_STATES ResolveResourceState(ResourceState state) const noexcept;
 	void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept override;
-	void OnResourceTrackingFinished(
-	    RhiResourceHandle resource,
-	    RhiSubmissionToken submissionToken) noexcept override;
+	void OnResourceTrackingFinished(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept override;
 
 	D3D12RenderHardwareInterface* m_owner = nullptr;
 	ID3D12GraphicsCommandList7* m_commandList = nullptr;

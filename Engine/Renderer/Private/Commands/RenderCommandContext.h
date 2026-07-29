@@ -19,7 +19,7 @@ class RenderCommandContext final
 	void EnableDrawDispatchDiagnostics() noexcept;
 	bool IsDrawDispatchDiagnosticsEnabled() const noexcept { return m_drawDispatchDiagnosticsEnabled; }
 
-	void SetPipelineState(const RenderPipelineState& pipelineState) noexcept;
+	void SetPipeline(const RenderPipeline& pipeline) noexcept;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept;
 
@@ -51,13 +51,13 @@ class RenderCommandContext final
 	void BindComputeShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindComputeUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 
-	void SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept;
+	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 
-	void SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept;
+	void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 
-	void ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept;
+	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept;
 
-	void ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil = 0) noexcept;
+	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept;
 	void SetViewport(const RhiViewport& viewport) noexcept;
 
 	void SetViewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f) noexcept;

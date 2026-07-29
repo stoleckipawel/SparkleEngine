@@ -15,10 +15,10 @@ RWTexture2D<float2> GBufferMotionVector;
 
 cbuffer RaytracedGBufferUniformData
 {
-	uint RayTracingHitDataAvailable;
 	uint RayTracingHitInstanceCount;
 	uint RayTracingHitMaterialCount;
 	uint RaytracedGBufferPadding0;
+	uint RaytracedGBufferPadding1;
 };
 
 #include "RayTracing/PathTrace.hlsli"
@@ -36,7 +36,7 @@ float ComputeRaytracedGBufferDeviceZ(float3 positionWorld)
 float2 ComputeRaytracedGBufferMotionVector(RayTracingHitSurfaceData surface)
 {
 	const float4 currentClipPosition = PositionWorldToClip(float4(surface.PositionWorld, 1.0f));
-	const float4 previousClipPosition = mul(float4(surface.PreviousPositionWorld, 1.0f), PrevViewProjMTX);
+	const float4 previousClipPosition = mul(float4(surface.PreviousPositionWorld, 1.0f), PreviousWorldToClipMatrix);
 	return MotionVectors::Compute(currentClipPosition, previousClipPosition, ViewportSize);
 }
 
@@ -52,7 +52,7 @@ void StoreRaytracedGBufferMiss(uint2 pixelCoord)
 
 void StoreRaytracedGBufferHit(uint2 pixelCoord, RayTracingHitSurfaceData surface)
 {
-	const float3 baseColor = InstanceView::ApplyDebugVisualization(surface.BaseColor, surface.DebugData);
+	const float3 baseColor = InstanceView::ApplyInstanceVisualization(surface.BaseColor, surface.GpuSceneSlot);
 
 	GBufferBaseColor[pixelCoord] = GBufferPacking::PackBaseColor(baseColor, surface.Alpha, surface.AlphaMode, RayTracingHitSurface::AlphaModeBlended);
 	GBufferNormal[pixelCoord] = GBufferPacking::PackNormal(surface.NormalWorld);

@@ -34,15 +34,14 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12SwapChain& swapChain,
     D3D12UploadService& uploadService) noexcept :
-	m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_uploadService(&uploadService)
+    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_uploadService(&uploadService)
 {
 	m_interopService = std::make_unique<D3D12InteropService>(*this);
 	m_captureService = std::make_unique<D3D12CaptureService>(rhi);
 	m_presentationService = std::make_unique<D3D12PresentationService>(*this);
 	m_pipelineService = std::make_unique<D3D12PipelineService>(rhi);
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
-	m_resourceService =
-	    std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, *m_descriptorService, m_capabilities);
+	m_resourceService = std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, *m_descriptorService, m_capabilities);
 	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, rhi.GetNvapiRayTracingProvider());
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi);
 	m_capabilities = BuildCapabilities();
@@ -51,42 +50,33 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 
 D3D12RenderHardwareInterface::~D3D12RenderHardwareInterface() noexcept = default;
 
-D3D12RecordingResourceUseToken
-D3D12RenderHardwareInterface::BeginResourceTracking(
+D3D12RecordingResourceUseToken D3D12RenderHardwareInterface::BeginResourceTracking(
     RhiResourceHandle resource,
     bool coordinatorRecording) noexcept
 {
-	if (m_resourceService == nullptr)
-	{
-		return {};
-	}
-
 	return m_resourceService->BeginResourceTracking(resource, coordinatorRecording);
 }
 
-void D3D12RenderHardwareInterface::EndResourceTracking(
-    D3D12RecordingResourceUseToken use,
-    RhiSubmissionToken submissionToken) noexcept
+void D3D12RenderHardwareInterface::EndResourceTracking(D3D12RecordingResourceUseToken use, RhiSubmissionToken submissionToken) noexcept
 {
-	if (m_resourceService != nullptr)
-	{
-		m_resourceService->EndResourceTracking(use, submissionToken);
-	}
+	m_resourceService->EndResourceTracking(use, submissionToken);
 }
 
 RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 {
 	RhiCapabilities capabilities{};
-	const D3D_FEATURE_LEVEL featureLevel = m_rhi != nullptr ? m_rhi->GetDeviceFeatureLevel() : D3D_FEATURE_LEVEL_1_0_CORE;
-	const std::uint32_t featureLevelMajor = featureLevel >= D3D_FEATURE_LEVEL_12_0 ? 12u : featureLevel >= D3D_FEATURE_LEVEL_11_0 ? 11u : 0u;
-	const std::uint32_t featureLevelMinor = featureLevel == D3D_FEATURE_LEVEL_12_2 ? 2u
-	                                     : featureLevel == D3D_FEATURE_LEVEL_12_1 ? 1u
-	                                     : featureLevel == D3D_FEATURE_LEVEL_12_0 ? 0u
-	                                     : featureLevel == D3D_FEATURE_LEVEL_11_1 ? 1u
-	                                     : featureLevel == D3D_FEATURE_LEVEL_11_0 ? 0u
-	                                                                               : 0u;
+	const D3D_FEATURE_LEVEL featureLevel = m_rhi->GetDeviceFeatureLevel();
+	const std::uint32_t featureLevelMajor = featureLevel >= D3D_FEATURE_LEVEL_12_0   ? 12u
+	                                        : featureLevel >= D3D_FEATURE_LEVEL_11_0 ? 11u
+	                                                                                 : 0u;
+	const std::uint32_t featureLevelMinor = featureLevel == D3D_FEATURE_LEVEL_12_2   ? 2u
+	                                        : featureLevel == D3D_FEATURE_LEVEL_12_1 ? 1u
+	                                        : featureLevel == D3D_FEATURE_LEVEL_12_0 ? 0u
+	                                        : featureLevel == D3D_FEATURE_LEVEL_11_1 ? 1u
+	                                        : featureLevel == D3D_FEATURE_LEVEL_11_0 ? 0u
+	                                                                                 : 0u;
 	capabilities.BackendApi = ERhiBackendApi::D3D12;
-	capabilities.RequiredShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
+	capabilities.RuntimeShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
 	capabilities.BackendVersion = RhiBackendVersionInfo{
 	    .Semantic = ERhiBackendVersionSemantic::FeatureLevel,
 	    .Major = featureLevelMajor,
@@ -100,42 +90,30 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	    .MaxSamplerDescriptors = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE,
 	    .MaxDescriptorTableEntries = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
 	    .MaxPushConstantBytes = 256};
-	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{
-	    .SupportsSampledImageArrayNonUniformIndexing = true};
-	capabilities.UploadReadback = RhiUploadReadbackCapabilities{
-	    .SupportsBufferUpload = true,
-	    .SupportsTextureUpload = true,
-	    .SupportsReadback = true};
+	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{.SupportsSampledImageArrayNonUniformIndexing = true};
+	capabilities.UploadReadback =
+	    RhiUploadReadbackCapabilities{.SupportsBufferUpload = true, .SupportsTextureUpload = true, .SupportsReadback = true};
 	for (std::size_t index = 0; index < capabilities.FormatSupport.size(); ++index)
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
 	capabilities.Diagnostics = BuildBackendDiagnosticsSupport();
-	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+	capabilities.RayTracing = m_rhi->GetRayTracingCapabilities();
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues.Set(ERhiQueueType::Graphics, true, true);
 	capabilities.Queues.Set(ERhiQueueType::Compute, true, true);
 	capabilities.Queues.Set(ERhiQueueType::Copy, true, true);
-	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
+	capabilities.SupportsPresent = m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
 	capabilities.MemorySupport = BuildBackendMemorySupport();
-	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(
-	    m_rhi,
-	    m_rhi != nullptr && m_rhi->GetDevice() != nullptr);
+	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(m_rhi, m_rhi->GetDevice() != nullptr);
 	return capabilities;
 }
 
 RhiBackendDiagnosticsSupport D3D12RenderHardwareInterface::BuildBackendDiagnosticsSupport() const noexcept
 {
-	const bool validationEnabled = m_rhi != nullptr && m_rhi->IsValidationEnabled();
-	if (m_diagnostics == nullptr)
-	{
-		return RhiBackendDiagnosticsSupport{
-		    .ValidationEnabled = validationEnabled,
-		    .SupportsDebugLayer = validationEnabled};
-	}
-
+	const bool validationEnabled = m_rhi->IsValidationEnabled();
 	const RhiDiagnosticsCapabilities diagnosticsCapabilities = m_diagnostics->GetCapabilities();
 	return RhiBackendDiagnosticsSupport{
 	    .ValidationEnabled = validationEnabled,
@@ -150,32 +128,25 @@ RhiBackendDiagnosticsSupport D3D12RenderHardwareInterface::BuildBackendDiagnosti
 
 RhiBackendMemorySupport D3D12RenderHardwareInterface::BuildBackendMemorySupport() const noexcept
 {
-	if (m_diagnostics == nullptr)
-	{
-		return {};
-	}
-
 	const RenderMemoryDiagnostics* const memoryDiagnostics = m_diagnostics->GetMemoryDiagnostics();
 	return RhiBackendMemorySupport{
 	    .SupportsMemoryDiagnostics = memoryDiagnostics != nullptr,
 	    .SupportsBudgetQueries = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries(),
-	    .SupportsDelayedDestructionTracking =
-	        memoryDiagnostics != nullptr && memoryDiagnostics->SupportsDelayedDestructionTracking(),
+	    .SupportsDelayedDestructionTracking = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsDelayedDestructionTracking(),
 	    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
 }
 
 RhiFormatSupport D3D12RenderHardwareInterface::QueryFormatSupport(PixelFormat format) const noexcept
 {
 	RhiFormatSupport support{.Format = format};
-	if (m_rhi == nullptr || m_rhi->GetDevice() == nullptr || format == PixelFormat::Unknown)
+	if (format == PixelFormat::Unknown)
 	{
 		return support;
 	}
 
 	D3D12_FEATURE_DATA_FORMAT_SUPPORT data{};
 	data.Format = D3D12TypeConversions::ToDxgiFormat(format);
-	const HRESULT supportResult =
-	    m_rhi->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &data, sizeof(data));
+	const HRESULT supportResult = m_rhi->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &data, sizeof(data));
 	if (data.Format == DXGI_FORMAT_UNKNOWN || FAILED(supportResult))
 	{
 		return support;
@@ -191,7 +162,7 @@ RhiFormatSupport D3D12RenderHardwareInterface::QueryFormatSupport(PixelFormat fo
 
 std::uint32_t D3D12RenderHardwareInterface::GetCurrentFrameIndex() const noexcept
 {
-	return m_rhi != nullptr ? m_rhi->GetCurrentFrameIndex() : 0u;
+	return m_rhi->GetCurrentFrameIndex();
 }
 
 RhiResourceService& D3D12RenderHardwareInterface::GetResourceService() noexcept
@@ -241,14 +212,8 @@ const RhiRayTracingService& D3D12RenderHardwareInterface::GetRayTracingService()
 
 void D3D12RenderHardwareInterface::WaitForIdle() noexcept
 {
-	if (m_rhi != nullptr)
-	{
-		m_rhi->WaitForIdle();
-		if (m_resourceService != nullptr)
-		{
-			m_resourceService->FlushDeferredResourceReleases();
-		}
-	}
+	m_rhi->WaitForIdle();
+	m_resourceService->FlushDeferredResourceReleases();
 }
 
 RhiInteropService& D3D12RenderHardwareInterface::GetInteropService() noexcept
@@ -278,12 +243,12 @@ const RhiPresentationService& D3D12RenderHardwareInterface::GetPresentationServi
 
 NativeGraphicsDeviceHandle D3D12RenderHardwareInterface::GetDeviceHandle() const noexcept
 {
-	return NativeGraphicsDeviceHandle{m_rhi != nullptr ? m_rhi->GetDevice().Get() : nullptr};
+	return NativeGraphicsDeviceHandle{m_rhi->GetDevice().Get()};
 }
 
 NativeGraphicsQueueHandle D3D12RenderHardwareInterface::GetGraphicsQueueHandle() const noexcept
 {
-	return NativeGraphicsQueueHandle{m_rhi != nullptr ? m_rhi->GetCommandQueue().Get() : nullptr};
+	return NativeGraphicsQueueHandle{m_rhi->GetCommandQueue().Get()};
 }
 
 RenderCommandList& D3D12RenderHardwareInterface::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
@@ -293,22 +258,18 @@ RenderCommandList& D3D12RenderHardwareInterface::GetGraphicsCommandList(std::uin
 
 RenderCommandList& D3D12RenderHardwareInterface::GetCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
 {
-	if (m_resourceService != nullptr)
-	{
-		m_resourceService->DrainCompletedResourceReleases();
-	}
+	m_resourceService->DrainCompletedResourceReleases();
 	return m_commandRecordingContext->GetCurrentCommandList(queueType, frameIndex);
 }
 
-void D3D12RenderHardwareInterface::SetCommandRecordingContext(
-    D3D12CommandRecordingContext& commandContext) noexcept
+void D3D12RenderHardwareInterface::SetCommandRecordingContext(D3D12CommandRecordingContext& commandContext) noexcept
 {
 	m_commandRecordingContext = &commandContext;
 }
 
 RhiRayTracingCapabilities D3D12RenderHardwareInterface::GetRayTracingCapabilities() const noexcept
 {
-	return m_rayTracingServices != nullptr ? m_rayTracingServices->GetCapabilities() : RhiRayTracingCapabilities{};
+	return m_rayTracingServices->GetCapabilities();
 }
 
 RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() noexcept
@@ -328,47 +289,45 @@ RhiImGuiRenderer& D3D12RenderHardwareInterface::GetImGuiRenderer() noexcept
 
 ID3D12DescriptorHeap* D3D12RenderHardwareInterface::GetD3D12ShaderResourceDescriptorHeap() const noexcept
 {
-	return m_descriptorService != nullptr ? m_descriptorService->GetShaderResourceDescriptorHeap() : nullptr;
+	return m_descriptorService->GetShaderResourceDescriptorHeap();
 }
 
 RhiViewport D3D12RenderHardwareInterface::GetBackBufferViewport() const noexcept
 {
-	return m_swapChain != nullptr ? m_swapChain->GetDefaultViewport() : RhiViewport{};
+	return m_swapChain->GetDefaultViewport();
 }
 
 RhiRect D3D12RenderHardwareInterface::GetBackBufferScissorRect() const noexcept
 {
-	return m_swapChain != nullptr ? m_swapChain->GetDefaultScissorRect() : RhiRect{};
+	return m_swapChain->GetDefaultScissorRect();
 }
 
 RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetBackBufferRenderTargetView() const noexcept
 {
-	return m_swapChain != nullptr ? RhiCpuDescriptorHandle{m_swapChain->GetCPUHandle().ptr} : RhiCpuDescriptorHandle{};
+	return RhiCpuDescriptorHandle{m_swapChain->GetCPUHandle().ptr};
 }
 
 RhiResourceHandle D3D12RenderHardwareInterface::GetBackBufferResource() const noexcept
 {
-	return RhiResourceHandle{m_swapChain != nullptr ? m_swapChain->GetCurrentResource() : nullptr};
+	return RhiResourceHandle{m_swapChain->GetCurrentResource()};
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
     const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
-	return m_rayTracingServices != nullptr ? m_rayTracingServices->GetBottomLevelAccelerationStructurePrebuildInfo(geometry) :
-	                                        RhiRayTracingAccelerationStructurePrebuildInfo{};
+	return m_rayTracingServices->GetBottomLevelAccelerationStructurePrebuildInfo(geometry);
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetTopLevelAccelerationStructurePrebuildInfo(
     std::uint32_t instanceCount,
     ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
-	return m_rayTracingServices != nullptr ? m_rayTracingServices->GetTopLevelAccelerationStructurePrebuildInfo(instanceCount, buildFlags) :
-	                                        RhiRayTracingAccelerationStructurePrebuildInfo{};
+	return m_rayTracingServices->GetTopLevelAccelerationStructurePrebuildInfo(instanceCount, buildFlags);
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName)
 {
-	return m_rayTracingServices != nullptr ? m_rayTracingServices->CreateScratchBuffer(sizeInBytes, debugName) : RhiOwnedResourceHandle{};
+	return m_rayTracingServices->CreateScratchBuffer(sizeInBytes, debugName);
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureBuffer(
@@ -376,8 +335,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAcceleratio
     ERhiRayTracingAccelerationStructureType type,
     std::wstring_view debugName)
 {
-	return m_rayTracingServices != nullptr ? m_rayTracingServices->CreateAccelerationStructureBuffer(sizeInBytes, type, debugName) :
-	                                        RhiOwnedResourceHandle{};
+	return m_rayTracingServices->CreateAccelerationStructureBuffer(sizeInBytes, type, debugName);
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuffer(
@@ -385,29 +343,15 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
     std::uint32_t instanceCount,
     std::wstring_view debugName)
 {
-	return m_rayTracingServices != nullptr ? m_rayTracingServices->CreateInstanceBuffer(instances, instanceCount, debugName) :
-	                                        RhiOwnedResourceHandle{};
+	return m_rayTracingServices->CreateInstanceBuffer(instances, instanceCount, debugName);
 }
 
 void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept
 {
-	if (m_swapChain == nullptr)
-	{
-		return;
-	}
-
 	RhiResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
-	if (!presentTexture)
-	{
-		return;
-	}
-
 	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
 	commandList.TransitionResource(presentTexture, ResourceState::Present, ResourceState::RenderTarget);
-	if (m_descriptorService != nullptr)
-	{
-		m_descriptorService->BindGlobalDescriptorState(commandList);
-	}
+	m_descriptorService->BindGlobalDescriptorState(commandList);
 
 	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
 	commandList.SetRenderTarget(renderTargetView);
@@ -418,23 +362,10 @@ void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor
 
 void D3D12RenderHardwareInterface::BeginPresentOverlayPass() noexcept
 {
-	if (m_swapChain == nullptr)
-	{
-		return;
-	}
-
 	RhiResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
-	if (!presentTexture)
-	{
-		return;
-	}
-
 	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
 	commandList.TransitionResource(presentTexture, ResourceState::Present, ResourceState::RenderTarget);
-	if (m_descriptorService != nullptr)
-	{
-		m_descriptorService->BindGlobalDescriptorState(commandList);
-	}
+	m_descriptorService->BindGlobalDescriptorState(commandList);
 
 	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
 	commandList.SetRenderTarget(renderTargetView);
@@ -442,24 +373,14 @@ void D3D12RenderHardwareInterface::BeginPresentOverlayPass() noexcept
 
 void D3D12RenderHardwareInterface::EndPresentRenderPass() noexcept
 {
-	if (m_swapChain == nullptr)
-	{
-		return;
-	}
-
 	RhiResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
-	if (!presentTexture)
-	{
-		return;
-	}
-
 	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
 	commandList.TransitionResource(presentTexture, ResourceState::RenderTarget, ResourceState::Present);
 }
 
 PixelFormat D3D12RenderHardwareInterface::GetPresentColorFormat() const noexcept
 {
-	return m_swapChain != nullptr ? m_swapChain->GetBackBufferFormat() : PixelFormat::Unknown;
+	return m_swapChain->GetBackBufferFormat();
 }
 
 PixelFormat D3D12RenderHardwareInterface::GetPresentDepthStencilFormat() const noexcept
@@ -469,19 +390,14 @@ PixelFormat D3D12RenderHardwareInterface::GetPresentDepthStencilFormat() const n
 
 void D3D12RenderHardwareInterface::SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept
 {
-	if (m_descriptorService != nullptr)
-	{
-		m_descriptorService->SetSamplerTableHandle(samplerTableHandle);
-	}
+	m_descriptorService->SetSamplerTableHandle(samplerTableHandle);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTableCpuHandle(
     RhiDescriptorTableHandle tableHandle,
     std::uint32_t descriptorIndex) const noexcept
 {
-	const RhiCpuDescriptorHandle handle =
-	    m_descriptorService != nullptr ? m_descriptorService->GetDescriptorTableCpuHandle(tableHandle, descriptorIndex)
-	                                   : RhiCpuDescriptorHandle{};
+	const RhiCpuDescriptorHandle handle = m_descriptorService->GetDescriptorTableCpuHandle(tableHandle, descriptorIndex);
 	return D3D12_CPU_DESCRIPTOR_HANDLE{handle.Value};
 }
 
@@ -489,9 +405,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTable
     RhiDescriptorTableHandle tableHandle,
     std::uint32_t descriptorIndex) const noexcept
 {
-	const RhiGpuDescriptorHandle handle =
-	    m_descriptorService != nullptr ? m_descriptorService->GetDescriptorTableGpuHandle(tableHandle, descriptorIndex)
-	                                   : RhiGpuDescriptorHandle{};
+	const RhiGpuDescriptorHandle handle = m_descriptorService->GetDescriptorTableGpuHandle(tableHandle, descriptorIndex);
 	return D3D12_GPU_DESCRIPTOR_HANDLE{handle.Value};
 }
 
@@ -499,5 +413,5 @@ bool D3D12RenderHardwareInterface::BuildPartitionedTopLevelAccelerationStructure
     ID3D12GraphicsCommandList7* commandList,
     const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept
 {
-	return m_rayTracingServices != nullptr && m_rayTracingServices->BuildPartitionedTopLevelAccelerationStructure(commandList, desc);
+	return m_rayTracingServices->BuildPartitionedTopLevelAccelerationStructure(commandList, desc);
 }

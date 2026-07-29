@@ -1,15 +1,10 @@
 #pragma once
 
 #include "CookedSceneBuild.h"
-#include "SourceImportResult.h"
-
-#include <string>
+#include "SourceImportOutput.h"
 
 class CookedSceneMaterialVariantBuilder final
 {
   public:
-	static bool BuildMaterialVariants(
-	    const SourceImportResult& importResult,
-	    CookedSceneBuild& outBuild,
-	    std::string& outErrorMessage);
+	static void BuildMaterialVariants(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 };

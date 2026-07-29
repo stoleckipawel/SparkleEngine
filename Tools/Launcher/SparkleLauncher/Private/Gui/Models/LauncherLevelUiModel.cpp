@@ -2,6 +2,7 @@
 
 #include "LauncherProjectModel.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
 
 #include <QtCore/QStringList>
@@ -71,12 +72,12 @@ namespace SparkleLauncher
 
 	LauncherLevelUiModel LauncherLevelUiModelBuilder::Build()
 	{
-		std::string errorMessage;
-		m_model.Loaded = ProjectLevelCatalogFile::Load(
-		    m_project.RootPath,
-		    m_catalog,
-		    errorMessage);
-		if (!m_model.Loaded)
+		try
+		{
+			m_catalog = ProjectLevelCatalogFile::Load(m_project.RootPath);
+			m_model.Loaded = true;
+		}
+		catch (const Diagnostics::Error&)
 		{
 			return std::move(m_model);
 		}
@@ -129,9 +130,8 @@ namespace SparkleLauncher
 		    .Id = QString::fromStdString(level.id),
 		    .DisplayName = DisplayNameOrId(level.displayName, level.id),
 		    .Detail = BuildLevelDetail(level),
-		    .Synced = level.required || level.defaultIncluded,
+		    .Synced = level.defaultIncluded,
 		    .Ready = m_catalog.IsLevelReady(m_project.RootPath, level),
-		    .Required = level.required,
 		    .StartupDefault = level.startupDefault};
 
 		entry.Status = ResolveLevelStatus(entry);
@@ -165,7 +165,7 @@ namespace SparkleLauncher
 		LauncherStartupLevelUiEntry entry{
 		    .Id = QString::fromStdString(level.id),
 		    .DisplayName = DisplayNameOrId(level.displayName, level.id),
-		    .Synced = level.required || level.defaultIncluded,
+		    .Synced = level.defaultIncluded,
 		    .Ready = m_catalog.IsLevelReady(m_project.RootPath, level),
 		    .StartupDefault = level.startupDefault};
 
@@ -178,11 +178,7 @@ namespace SparkleLauncher
 	    const ProjectLevelCatalogEntry& level) const
 	{
 		QStringList traits;
-		if (level.required)
-		{
-			traits.push_back("required");
-		}
-		if (level.required || level.defaultIncluded)
+		if (level.defaultIncluded)
 		{
 			traits.push_back("synced");
 		}
@@ -232,7 +228,7 @@ namespace SparkleLauncher
 			return "Missing";
 		}
 
-		return level.Required ? "Required" : "Synced";
+		return "Synced";
 	}
 
 	QString LauncherLevelUiModelBuilder::ResolveLevelState(
@@ -247,7 +243,7 @@ namespace SparkleLauncher
 			return "ok";
 		}
 
-		return level.Required ? "bad" : "warning";
+		return "bad";
 	}
 
 	QString LauncherLevelUiModelBuilder::ResolveContentPackStatus(

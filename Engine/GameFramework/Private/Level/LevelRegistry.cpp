@@ -2,9 +2,13 @@
 #include "Core/Public/FileSystemUtils.h"
 #include "Level/LevelRegistry.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
 #include "Level/Level.h"
 #include "Level/Parsing/LevelParser.h"
+
+#include <format>
 
 static const auto g_levelRegistryLogger = Logging::GetOrCreateLogger("GameFramework.LevelRegistry");
 
@@ -18,15 +22,25 @@ LevelRegistry::~LevelRegistry() noexcept = default;
 void LevelRegistry::DiscoverLevels()
 {
 	const std::filesystem::path projectRoot = Filesystem::GetProjectPath();
-	ProjectLevelCatalog catalog;
-	std::string catalogError;
-	if (ProjectLevelCatalogFile::Load(projectRoot, catalog, catalogError))
+	try
 	{
+		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(projectRoot);
 		std::string startupDefaultLevelName;
 		for (const ProjectLevelCatalogEntry& entry : catalog.levels)
 		{
 			if (!catalog.IsLevelReady(projectRoot, entry))
 			{
+				if (entry.defaultIncluded || entry.startupDefault)
+				{
+					Diagnostics::Fatal(
+					    g_levelRegistryLogger,
+					    __FILE__,
+					    __LINE__,
+					    std::format(
+					        "LevelRegistry: active level '{}' is not ready: '{}'.",
+					        entry.id,
+					        entry.sourcePath.string()));
+				}
 				continue;
 			}
 
@@ -34,37 +48,32 @@ void LevelRegistry::DiscoverLevels()
 		}
 
 		ResolveDefaultLevel(startupDefaultLevelName);
-		return;
 	}
-
-	SPDLOG_LOGGER_WARN(
-	    g_levelRegistryLogger,
-	    "LevelRegistry: {}",
-	    catalogError);
+	catch (const Diagnostics::Error& error)
+	{
+		Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, std::string("LevelRegistry: ") + error.what());
+	}
 }
 
-void LevelRegistry::LoadCatalogLevel(
-    const ProjectLevelCatalogEntry& entry,
-    std::string& outStartupDefaultLevelName)
+void LevelRegistry::LoadCatalogLevel(const ProjectLevelCatalogEntry& entry, std::string& outStartupDefaultLevelName)
 {
-	std::string errorMessage;
-	auto loadedLevel = LevelParser::LoadFromFile(entry.sourcePath, errorMessage);
-	if (!loadedLevel)
+	try
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_levelRegistryLogger,
-		    "LevelRegistry: Failed to load catalog level '{}'{}",
-		    entry.sourcePath.string(),
-		    errorMessage.empty() ? std::string() : std::string{" - "} + errorMessage);
-		return;
-	}
+		auto loadedLevel = LevelParser::LoadFromFile(entry.sourcePath);
+		const std::string loadedLevelName(loadedLevel->GetName());
+		Register(std::move(loadedLevel));
 
-	if (entry.startupDefault)
+		if (entry.startupDefault)
+			outStartupDefaultLevelName = loadedLevelName;
+	}
+	catch (const Diagnostics::Error& error)
 	{
-		outStartupDefaultLevelName = std::string(loadedLevel->GetName());
+		const std::string failure =
+		    std::format("LevelRegistry: Failed to load catalog level '{}': {}", entry.sourcePath.string(), error.what());
+		if (entry.defaultIncluded || entry.startupDefault)
+			Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, failure);
+		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "{}", failure);
 	}
-
-	Register(std::move(loadedLevel));
 }
 
 void LevelRegistry::ResolveDefaultLevel(std::string_view startupDefaultLevelName)
@@ -73,28 +82,26 @@ void LevelRegistry::ResolveDefaultLevel(std::string_view startupDefaultLevelName
 	{
 		SetDefaultLevelName(startupDefaultLevelName);
 	}
-	else if (!m_levels.empty())
+	else
 	{
-		SetDefaultLevelName(m_levels.begin()->first);
+		Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, "LevelRegistry: No ready level is explicitly marked StartupDefault.");
 	}
 }
 
 void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)
 {
 	if (!level)
-	{
-		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Attempted to register a null level");
-		return;
-	}
+		Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, "LevelRegistry: Attempted to register a null level.");
 
 	auto name = level->GetName();
 	std::string nameKey(name);
 
 	if (m_levels.contains(nameKey))
-	{
-		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Duplicate level name '{}' - skipping", nameKey);
-		return;
-	}
+		Diagnostics::Fatal(
+		    g_levelRegistryLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("LevelRegistry: Duplicate level name '{}'.", nameKey));
 
 	m_levels.emplace(std::move(nameKey), std::move(level));
 }
@@ -127,18 +134,12 @@ void LevelRegistry::SetDefaultLevelName(std::string_view name)
 	m_defaultLevelName = std::string(name);
 }
 
-bool LevelRegistry::SaveLevel(const LevelAsset& level, std::string* errorMessage) const
+void LevelRegistry::SaveLevel(const LevelAsset& level) const
 {
 	if (FindLevel(level.GetName()) == nullptr)
-	{
-		if (errorMessage != nullptr)
-		{
-			*errorMessage = "Level not found";
-		}
-		return false;
-	}
+		throw Diagnostics::Error("Level not found.");
 
-	return LevelParser::SaveToFile(level, errorMessage);
+	LevelParser::SaveToFile(level);
 }
 
 std::string_view LevelRegistry::GetDefaultLevelName() const noexcept

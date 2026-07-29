@@ -5,7 +5,7 @@
 #include "Editor/EditorTextureRegistry.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "FrameGraph/FrameGraph.h"
-#include "Host/RendererSystemRoot.h"
+#include "Host/RendererHost.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -140,7 +140,7 @@ bool FramePipeline::BeginViewportEditorTexturePresentation(
 	TransitionRenderProduct(product->Handle, ResourceState::ShaderResource);
 
 	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(product->Handle);
-	const std::uint64_t textureId = m_systems->GetBackend().GetImGuiRenderer().ResolveTextureId(
+	const std::uint64_t textureId = m_rendererHost->GetDeviceServices().GetImGuiRenderer().ResolveTextureId(
 	    m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}));
 	if (textureId == 0)
 	{
@@ -202,7 +202,7 @@ bool FramePipeline::BeginViewportCapture(
 	}
 
 	RhiCaptureService& captureService =
-	    m_systems->GetRenderHardwareInterface().GetCaptureService();
+	    m_rendererHost->GetRenderHardwareInterface().GetCaptureService();
 	const RhiCaptureTicket ticket = captureService.BeginTextureReadback(
 	    RhiTextureCaptureRequest{
 	        .Resource = source.Resource,
@@ -218,7 +218,7 @@ bool FramePipeline::BeginViewportCapture(
 	if (!ticket)
 	{
 		result.Status = ViewportCaptureStatus::Failed;
-		result.FailureReason = "The render backend could not begin viewport readback";
+		result.FailureReason = "The render device services could not begin viewport readback";
 		m_completedViewportCaptures.push_back(
 		    ViewportCaptureReadback{.Id = id, .Result = std::move(result)});
 		return false;
@@ -235,7 +235,7 @@ bool FramePipeline::BeginViewportCapture(
 void FramePipeline::PollViewportCaptures() noexcept
 {
 	RhiCaptureService& captureService =
-	    m_systems->GetRenderHardwareInterface().GetCaptureService();
+	    m_rendererHost->GetRenderHardwareInterface().GetCaptureService();
 	for (std::size_t index = 0; index < m_pendingViewportCaptures.size();)
 	{
 		const std::unique_ptr<PendingViewportCapture>& pending =
@@ -325,8 +325,8 @@ void FramePipeline::TransitionRenderProduct(RenderProductHandle handle, Resource
 		return;
 	}
 
-	RenderHardwareInterface& renderHardware = m_systems->GetRenderHardwareInterface();
-	RenderCommandList& commandList = m_systems->GetBackend().GetGraphicsCommandList(renderHardware.GetCurrentFrameIndex());
+	RenderHardwareInterface& renderHardwareInterface = m_rendererHost->GetRenderHardwareInterface();
+	RenderCommandList& commandList = m_rendererHost->GetDeviceServices().GetGraphicsCommandList(renderHardwareInterface.GetCurrentFrameIndex());
 	commandList.TransitionResource(resource, trackedBefore, after);
 	m_frameGraph->UpdateTrackedResourceState(resourceHandle, after);
 }

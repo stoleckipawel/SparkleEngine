@@ -6,7 +6,7 @@
 #include <vector>
 
 class EditorSceneModel;
-class EditorTransactionManager;
+class EditorTransactionHistory;
 struct EditorSceneEntry;
 struct SceneObjectSelection;
 
@@ -15,7 +15,7 @@ enum class SceneOutlinerFilter { All, Cameras, Lights, Meshes };
 class SceneOutlinerPanel final
 {
   public:
-	SceneOutlinerPanel(SceneObjectSelection& selection, EditorTransactionManager& transactions, float widthPixels = 320.0f) noexcept;
+	SceneOutlinerPanel(SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels = 320.0f) noexcept;
 	void SetWidth(float widthPixels) noexcept;
 	float GetWidth() const noexcept { return m_widthPixels; }
 	void SetTopInset(float topInsetPixels) noexcept;
@@ -43,7 +43,7 @@ class SceneOutlinerPanel final
 	void DrawSelectionEntry(const char* label, const char* typeLabel, const SceneObjectSelection& selection) noexcept;
 
 	std::shared_ptr<const EditorSceneModel> m_model;
-	EditorTransactionManager* m_transactions = nullptr;
+	EditorTransactionHistory* m_transactionHistory = nullptr;
 	SceneObjectSelection* m_selection = nullptr;
 	float m_widthPixels = 320.0f;
 	float m_topInsetPixels = 0.0f;

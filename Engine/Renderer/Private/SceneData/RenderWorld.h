@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Meshes/GPUMesh.h"
+#include "Meshes/GpuMesh.h"
 #include "Rendering/RenderFrameDynamicData.h"
 #include "Rendering/RenderWorldDelta.h"
 
@@ -10,7 +10,7 @@
 #include <vector>
 
 class GpuSceneSlotAllocator;
-class GPUMeshCache;
+class GpuMeshCache;
 class RhiCommandSubmissionService;
 
 struct RenderProxy final
@@ -23,7 +23,6 @@ struct RenderProxy final
 	GpuMeshHandle PendingGpuMesh;
 	std::uint32_t GpuSceneSlot = 0;
 	bool GpuMeshResident = false;
-	bool GpuMeshFailed = false;
 	bool HasPendingStatic = false;
 };
 
@@ -39,7 +38,7 @@ enum class RenderWorldApplyStatus : std::uint8_t
 class RenderWorld final
 {
   public:
-	RenderWorld(RhiCommandSubmissionService* submissionService, GPUMeshCache& gpuMeshCache);
+	RenderWorld(RhiCommandSubmissionService* submissionService, GpuMeshCache& gpuMeshCache);
 	~RenderWorld() noexcept;
 
 	RenderWorldApplyStatus ApplyFrame(
@@ -87,14 +86,14 @@ class RenderWorld final
 	static bool HasConflictingDeltaObjects(const RenderWorldDelta& delta) noexcept;
 	static bool HasStrictlyOrderedDynamicObjects(
 	    std::span<const RenderObjectDynamicData> objects) noexcept;
-	static bool HasStrictlyOrderedSkinningObjects(
-	    std::span<const RenderSkinningData> objects) noexcept;
-	static bool HasStrictlyOrderedMorphObjects(
-	    std::span<const RenderMorphData> objects) noexcept;
+	static bool HasStrictlyOrderedJointMatrixRanges(
+	    std::span<const RenderJointMatrixRange> ranges) noexcept;
+	static bool HasStrictlyOrderedMorphWeightRanges(
+	    std::span<const RenderMorphWeightRange> ranges) noexcept;
 	RenderProxy* FindMutable(RenderObjectId object) noexcept;
 	std::vector<RenderProxy> m_proxies;
 	std::unique_ptr<GpuSceneSlotAllocator> m_gpuSceneSlots;
-	GPUMeshCache* m_gpuMeshCache = nullptr;
+	GpuMeshCache* m_gpuMeshCache = nullptr;
 	RenderMaterialTable m_materials;
 	RenderTextureTable m_textures;
 	std::optional<SceneSkyDesc> m_sky;

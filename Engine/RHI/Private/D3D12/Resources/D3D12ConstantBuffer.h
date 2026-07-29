@@ -81,7 +81,7 @@ template <typename T> class D3D12ConstantBuffer
 		    L"RHI_ConstantBuffer");
 		if (m_resourceAllocation == nullptr || m_resourceAllocation->Resource == nullptr)
 		{
-			Diagnostics::Fail(
+			Diagnostics::Fatal(
 			    Logging::GetOrCreateLogger("RHI.D3D12.ConstantBuffer"),
 			    __FILE__,
 			    __LINE__,

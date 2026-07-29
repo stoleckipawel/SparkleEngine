@@ -1,15 +1,10 @@
 #pragma once
 
 #include "CookedSceneBuild.h"
-#include "SourceImportResult.h"
-
-#include <string>
+#include "SourceImportOutput.h"
 
 class CookedSceneInstanceBuilder final
 {
   public:
-	static bool BuildInstances(
-	    const SourceImportResult& importResult,
-	    CookedSceneBuild& build,
-	    std::string& outErrorMessage);
+	static void BuildInstances(const SourceImportOutput& importOutput, CookedSceneBuild& build);
 };

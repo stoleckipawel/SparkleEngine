@@ -3,6 +3,7 @@
 #include "CookedSkeletonAssetWriter.h"
 
 #include "CookedSceneBuild.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
@@ -12,36 +13,24 @@
 class CookedSkeletonAssetStager final
 {
   public:
-	static bool StageSkeletonAsset(
+	static void StageSkeletonAsset(
 	    const CookedSkeletonAssetBuild& skeletonAsset,
-	    std::vector<Files::FilePublication>& outPublication,
-	    std::string& outErrorMessage);
+	    std::vector<Files::FilePublication>& outPublication);
 };
 
-bool CookedSkeletonAssetWriter::StageSkeletonAssets(
+void CookedSkeletonAssetWriter::StageSkeletonAssets(
     const std::vector<CookedSkeletonAssetBuild>& skeletonAssets,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedSkeletonAssetBuild& skeletonAsset : skeletonAssets)
 	{
-		if (!CookedSkeletonAssetStager::StageSkeletonAsset(
-		        skeletonAsset,
-		        outPublication,
-		        outErrorMessage))
-		{
-			return false;
-		}
+		CookedSkeletonAssetStager::StageSkeletonAsset(skeletonAsset, outPublication);
 	}
-
-	outErrorMessage.clear();
-	return true;
 }
 
-bool CookedSkeletonAssetStager::StageSkeletonAsset(
+void CookedSkeletonAssetStager::StageSkeletonAsset(
     const CookedSkeletonAssetBuild& skeletonAsset,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
 	const std::filesystem::path outputPath =
 	    Paths::CookedSkeletonAsset(skeletonAsset.assetId);
@@ -57,16 +46,17 @@ bool CookedSkeletonAssetStager::StageSkeletonAsset(
 	    .jointStride = sizeof(Assets::CookedSkeletonJointRecord),
 	    .flags = 0};
 
+	std::string errorMessage;
 	std::ofstream output;
-	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, skeletonAsset.joints, outErrorMessage))
+	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, skeletonAsset.joints, errorMessage))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(errorMessage));
 	}
 
-	return Files::TryCloseOutput(
-	    output,
-	    stagedOutputPath,
-	    outErrorMessage);
+	if (!Files::TryCloseOutput(output, stagedOutputPath, errorMessage))
+	{
+		throw Diagnostics::Error(std::move(errorMessage));
+	}
 }

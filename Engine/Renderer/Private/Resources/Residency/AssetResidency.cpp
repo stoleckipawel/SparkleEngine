@@ -32,8 +32,7 @@ std::optional<AssetGenerationHandle> AssetResidency::BeginGeneration(
 		    return candidate.Handle == handle;
 	    });
 	if (existing != m_generations.end() &&
-	    existing->State != AssetResidencyState::Retired &&
-	    existing->State != AssetResidencyState::Failed)
+	    existing->State != AssetResidencyState::Retired)
 	{
 		return handle;
 	}
@@ -134,29 +133,6 @@ bool AssetResidency::RecordUploadSubmission(
 	return true;
 }
 
-bool AssetResidency::MarkFailed(AssetGenerationHandle handle) noexcept
-{
-	AssetGenerationStatus* generation = FindMutable(handle);
-	if (generation == nullptr ||
-	    generation->State == AssetResidencyState::Resident ||
-	    generation->State == AssetResidencyState::Evicting ||
-	    generation->State == AssetResidencyState::Retired)
-	{
-		return false;
-	}
-
-	if (generation->PendingUploadAccounted &&
-	    generation->UploadBytes <= m_counters.PendingUploadBytes)
-	{
-		m_counters.PendingUploadBytes -= generation->UploadBytes;
-		generation->PendingUploadAccounted = false;
-	}
-	ReleaseCpuBudget(*generation);
-	generation->State = AssetResidencyState::Failed;
-	ReleaseBacklog(*generation);
-	return true;
-}
-
 bool AssetResidency::Cancel(AssetGenerationHandle handle) noexcept
 {
 	AssetGenerationStatus* generation = FindMutable(handle);
@@ -175,8 +151,7 @@ bool AssetResidency::Cancel(AssetGenerationHandle handle) noexcept
 		return BeginEviction(handle, generation->Completion);
 	}
 	if (generation->State == AssetResidencyState::Evicting ||
-	    generation->State == AssetResidencyState::Retired ||
-	    generation->State == AssetResidencyState::Failed)
+	    generation->State == AssetResidencyState::Retired)
 	{
 		return false;
 	}
@@ -326,8 +301,7 @@ void AssetResidency::PruneTerminalGenerations() noexcept
 	        m_generations.end(),
 	        [](const AssetGenerationStatus& generation) noexcept
 	        {
-		        return generation.State == AssetResidencyState::Retired ||
-		               generation.State == AssetResidencyState::Failed;
+		        return generation.State == AssetResidencyState::Retired;
 	        }),
 	    m_generations.end());
 }

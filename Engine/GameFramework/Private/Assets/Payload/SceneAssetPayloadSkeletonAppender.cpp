@@ -14,32 +14,19 @@
 
 namespace Assets
 {
-	bool SceneAssetPayloadSkeletonAppender::AppendSkeletons(
+	void SceneAssetPayloadSkeletonAppender::AppendSkeletons(
 	    const LoadedSceneManifest& sceneManifest,
 	    const CookedAssetFileSet& files,
-	    SceneAssetPayload& sceneAssetPayload,
-	    std::string& errorMessage)
+	    SceneAssetPayload& sceneAssetPayload)
 	{
 		SkeletonAssetLoader skeletonAssetLoader;
 		sceneAssetPayload.skeletons.reserve(sceneAssetPayload.skeletons.size() + sceneManifest.skeletonRefs.size());
 
 		for (const CookedSceneSkeletonRef& skeletonRef : sceneManifest.skeletonRefs)
 		{
-			LoadedSkeletonAsset skeletonAsset;
 			const std::filesystem::path skeletonAssetPath = Paths::CookedSkeletonAsset(skeletonRef.skeletonAssetId);
-			if (!skeletonAssetLoader.Decode(skeletonAssetPath, files.Find(skeletonAssetPath), skeletonAsset, errorMessage))
-			{
-				errorMessage = std::format(
-				    "Failed to load cooked skeleton asset {} from '{}' - {}",
-				    Formatting::FormatHexUInt64(skeletonRef.skeletonAssetId),
-				    skeletonAssetPath.string(),
-				    errorMessage);
-				return false;
-			}
-
+			const LoadedSkeletonAsset skeletonAsset = skeletonAssetLoader.Decode(skeletonAssetPath, files.Get(skeletonAssetPath));
 			sceneAssetPayload.skeletons.push_back(BuildSceneAssetSkeleton(skeletonAsset, skeletonRef.skeletonAssetId, skeletonRef.sourceSkinIndex));
 		}
-
-		return true;
 	}
 }

@@ -2,11 +2,11 @@
 
 cbuffer PerTemporalConstantBufferData
 {
-	row_major float4x4 PrevViewMTX;
-	row_major float4x4 PrevProjectionMTX;
-	row_major float4x4 PrevViewProjMTX;
-	float2 JitterCurrent;
-	float2 JitterPrevious;
+	row_major float4x4 PreviousWorldToViewMatrix;
+	row_major float4x4 PreviousViewToClipMatrix;
+	row_major float4x4 PreviousWorldToClipMatrix;
+	float2 CurrentJitterNdc;
+	float2 PreviousJitterNdc;
 	uint HistoryValid;
 	float4 _pad0;
 	float4 _pad1;

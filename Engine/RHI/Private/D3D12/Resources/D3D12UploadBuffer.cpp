@@ -28,7 +28,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadBuffer::Upload(D3D12Rhi& rh
 	    L"RHI_UploadBuffer");
 	if (uploadBuffer == nullptr || uploadBuffer->Resource == nullptr)
 	{
-		Diagnostics::Fail(g_d3d12UploadBufferLogger, __FILE__, __LINE__, "D3D12UploadBuffer: failed to allocate upload buffer.");
+		Diagnostics::Fatal(g_d3d12UploadBufferLogger, __FILE__, __LINE__, "D3D12UploadBuffer: failed to allocate upload buffer.");
 	}
 
 	void* mappedData = nullptr;

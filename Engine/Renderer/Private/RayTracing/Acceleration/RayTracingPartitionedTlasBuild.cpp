@@ -3,7 +3,7 @@
 #include "RayTracing/Acceleration/RayTracingPartitionedTlasStrategy.h"
 
 #include "Commands/RenderCommandContext.h"
-#include "Meshes/GPUMesh.h"
+#include "Meshes/GpuMesh.h"
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
@@ -15,9 +15,16 @@
 #include <unordered_set>
 #include <vector>
 
-std::array<float, 12>
-RayTracingPartitionedTlasStrategy::BuildInstanceTransform(
-    const DirectX::XMFLOAT4X4& worldMatrix) noexcept
+static const auto g_rayTracingPartitionedTlasBuildLogger = Logging::GetOrCreateLogger("Renderer.RayTracing.PartitionedTlasBuild");
+
+struct RayTracingPartitionedTlasStrategy::PartitionedBuildState final
+{
+	std::vector<RhiPartitionedTlasInstanceWriteDesc> InstanceWrites;
+	std::unordered_set<void*> BuiltBlasResources;
+	RhiPartitionedTlasOperationBufferLayout NativeOperationLayout = {};
+};
+
+std::array<float, 12> RayTracingPartitionedTlasStrategy::BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept
 {
 	return {
 	    worldMatrix._11,
@@ -34,38 +41,33 @@ RayTracingPartitionedTlasStrategy::BuildInstanceTransform(
 	    worldMatrix._34};
 }
 
-RhiPartitionedTlasInstanceFlags
-RayTracingPartitionedTlasStrategy::ResolveInstanceFlags(
+RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstanceFlags(
     const RenderSceneData& sceneData,
     const MeshDraw& draw) noexcept
 {
-	RhiPartitionedTlasInstanceFlags flags =
-	    RhiPartitionedTlasInstanceFlags::None;
+	RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::None;
 	if (draw.Material.Slot >= sceneData.materials.size())
 	{
-		return flags;
+		Diagnostics::Fatal(
+		    g_rayTracingPartitionedTlasBuildLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Partitioned TLAS input references a material outside the render scene.");
 	}
-	const MaterialData& material =
-	    sceneData.materials[draw.Material.Slot];
+	const MaterialData& material = sceneData.materials[draw.Material.Slot];
 	if (material.doubleSided)
 	{
-		flags =
-		    flags |
-		    RhiPartitionedTlasInstanceFlags::
-		        TriangleFacingCullDisable;
+		flags = flags | RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
 	}
 	if (material.alphaMode == 1u)
 	{
-		flags =
-		    flags |
-		    RhiPartitionedTlasInstanceFlags::
-		        ForceNoOpaque;
+		flags = flags | RhiPartitionedTlasInstanceFlags::ForceNoOpaque;
 	}
 	return flags;
 }
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStrategy::BuildPartitionedTlas(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const RenderSceneData& sceneData,
     RayTracingBlasCache& blasCache,
     RayTracingTopLevelScenePlanner* scenePlanner,
@@ -75,104 +77,106 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	result.ActiveProvider = ERhiRayTracingTopLevelProvider::PartitionedTlas;
 	result.ActiveProviderReason = GetActiveProviderReason();
 	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
-	result.Stats.Candidates.InstanceCount = static_cast<std::uint32_t>(work.PartitionedTlasBlasInputIndices.size());
 
 	if (!CanUseActivePartitionedTlasProvider())
 	{
-		ReleasePartitionedTlasResources();
-		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
-		result.ActiveProviderReason = GetActiveProviderReason();
-		return result;
+		Diagnostics::Fatal(
+		    g_rayTracingPartitionedTlasBuildLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Partitioned TLAS build has no usable device provider.");
 	}
 
 	const RayTracingPtlasPartitionPlan* partitionPlan = scenePlanner != nullptr ? scenePlanner->GetCurrentPartitionPlan() : nullptr;
-	if (!EnsurePartitionedTlasResources(sceneData, partitionPlan))
-	{
-		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
-		result.ActiveProviderReason = "partitioned-tlas-resource-setup-failed-after-frame-prepare";
-		return result;
-	}
-	std::vector<RhiPartitionedTlasInstanceWriteDesc> instanceWrites;
-	std::unordered_set<void*> builtBlasResources;
-	instanceWrites.reserve(
-	    work.PartitionedTlasBlasInputIndices.size());
-	for (const std::uint32_t blasInputIndex :
-	     work.PartitionedTlasBlasInputIndices)
+	EnsurePartitionedTlasResources(sceneData, partitionPlan);
+
+	PartitionedBuildState state;
+	state.InstanceWrites.reserve(work.PartitionedTlasBlasInputIndices.size());
+	CollectPartitionedInstances(commandContext, sceneData, partitionPlan, blasCache, diagnostics, state);
+	const std::uint32_t nativeWriteCount = static_cast<std::uint32_t>(state.InstanceWrites.size());
+	result.Stats.InstanceCount = nativeWriteCount;
+	PreparePartitionedOperationBuffer(state);
+
+	RecordPartitionedBuild(commandContext, state, diagnostics);
+	m_partitionedResources.InstanceCount = nativeWriteCount;
+	m_partitionedResources.Built = true;
+	return result;
+}
+
+void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
+    RenderCommandContext& commandContext,
+    const RenderSceneData& sceneData,
+    const RayTracingPtlasPartitionPlan* partitionPlan,
+    RayTracingBlasCache& blasCache,
+    RayTracingPerformanceDiagnostics* diagnostics,
+    PartitionedBuildState& state) noexcept
+{
+	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	for (const std::uint32_t blasInputIndex : work.PartitionedTlasBlasInputIndices)
 	{
 		if (blasInputIndex >= work.BlasInputs.size())
 		{
-			continue;
+			Diagnostics::Fatal(
+			    g_rayTracingPartitionedTlasBuildLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Partitioned TLAS work references a BLAS input outside the prepared work plan.");
 		}
-		const RenderRayTracingBlasInput& input =
-		    work.BlasInputs[blasInputIndex];
-		if (input.MeshInstanceIndex >=
-		    sceneData.meshInstances.size())
+		const RenderRayTracingBlasInput& input = work.BlasInputs[blasInputIndex];
+		if (input.MeshInstanceIndex >= sceneData.meshInstances.size())
 		{
-			continue;
+			Diagnostics::Fatal(
+			    g_rayTracingPartitionedTlasBuildLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Partitioned TLAS work references a mesh instance outside the render scene.");
 		}
-		const MeshDraw& draw =
-		    sceneData.meshInstances[input.MeshInstanceIndex];
+		const MeshDraw& draw = sceneData.meshInstances[input.MeshInstanceIndex];
 		if (!draw.Geometry.Mesh)
 		{
-			++result.Stats.Candidates.MissingGpuMeshCount;
-			continue;
+			Diagnostics::Fatal(
+			    g_rayTracingPartitionedTlasBuildLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Partitioned TLAS work references a mesh instance with no GPU mesh handle.");
 		}
 
-		const RayTracingBlasCache::BlasHandle blas =
-		    blasCache.EnsureBlas(
-		        cmd,
-		        sceneData,
-		        draw,
-		        input.GpuSceneSlot,
-		        diagnostics);
-		if (!blas.IsValid())
-		{
-			++result.Stats.Candidates.RejectedBlasCount;
-			continue;
-		}
+		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(commandContext, sceneData, draw, input.GpuSceneSlot, diagnostics);
 
-		cmd.TrackResource(blas.resource);
+		commandContext.TrackResource(blas.resource);
 		if (blas.builtThisFrame)
 		{
-			builtBlasResources.insert(blas.resource.Value);
+			state.BuiltBlasResources.insert(blas.resource.Value);
 		}
 
 		const RayTracingPtlasPartitionEntry* entry =
-		    partitionPlan != nullptr
-		        ? partitionPlan->FindByRenderInstance(
-		              input.MeshInstanceIndex)
-		        : nullptr;
-		if (entry != nullptr && !entry->Valid)
+		    partitionPlan != nullptr ? partitionPlan->FindByRenderInstance(input.MeshInstanceIndex) : nullptr;
+		if (entry == nullptr || !entry->Valid)
 		{
-			continue;
+			Diagnostics::Fatal(
+			    g_rayTracingPartitionedTlasBuildLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Partitioned TLAS work has no valid partition-plan entry.");
 		}
 
-		instanceWrites.push_back(
+		state.InstanceWrites.push_back(
 		    RhiPartitionedTlasInstanceWriteDesc{
-		        .Transform =
-		            BuildInstanceTransform(
-		                draw.Transform.WorldMatrix),
+		        .Transform = BuildInstanceTransform(draw.Transform.WorldMatrix),
 		        .ExplicitBoundingBox = {},
 		        .InstanceID = input.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
-		        .Flags =
-		            ResolveInstanceFlags(
-		                sceneData,
-		                draw),
+		        .Flags = ResolveInstanceFlags(sceneData, draw),
 		        .InstanceIndex = input.GpuSceneSlot,
-		        .PartitionIndex = entry != nullptr ? entry->Assignment.PartitionId : 0u,
+		        .PartitionIndex = entry->Assignment.PartitionId,
 		        .AccelerationStructure = blas.gpuAddress});
 	}
+}
 
-	const std::uint32_t nativeWriteCount = static_cast<std::uint32_t>(instanceWrites.size());
-	result.Stats.Build.InstanceCount = nativeWriteCount;
-	if (instanceWrites.empty())
-	{
-		InvalidatePartitionedTlasSceneState();
-		return result;
-	}
-
+void RayTracingPartitionedTlasStrategy::PreparePartitionedOperationBuffer(PartitionedBuildState& state) noexcept
+{
+	const std::uint32_t nativeWriteCount = static_cast<std::uint32_t>(state.InstanceWrites.size());
 	const RhiPartitionedTlasOperationHeader operation{
 	    .Type = ERhiPartitionedTlasOperationType::WriteInstance,
 	    .ArgumentCount = nativeWriteCount,
@@ -181,7 +185,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	const RhiPartitionedTlasOperationPackDesc operationPack{
 	    .Operations = &operation,
 	    .OperationCount = 1,
-	    .InstanceWrites = instanceWrites.data(),
+	    .InstanceWrites = state.InstanceWrites.data(),
 	    .InstanceWriteCount = nativeWriteCount};
 
 	RhiRayTracingService& rayTracingService = m_renderHardwareInterface->GetRayTracingService();
@@ -198,51 +202,52 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	}
 	if (!m_partitionedResources.NativeOperationData)
 	{
-		InvalidatePartitionedTlasSceneState();
-		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
-		result.ActiveProviderReason = "partitioned-tlas-operation-pack-failed";
-		return result;
+		Diagnostics::Fatal(
+		    g_rayTracingPartitionedTlasBuildLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Partitioned TLAS operation-buffer allocation failed.");
 	}
 
-	const RhiPartitionedTlasOperationBufferLayout nativeOperationLayout =
+	state.NativeOperationLayout =
 	    rayTracingService.GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(m_partitionedResources.Layout);
 	m_partitionedResources.NativeOperationDataAddress =
 	    resourceService.GetResourceGpuVirtualAddress(m_partitionedResources.NativeOperationData);
 	if (m_partitionedResources.NativeOperationDataAddress == 0)
 	{
-		InvalidatePartitionedTlasSceneState();
-		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
-		result.ActiveProviderReason = "partitioned-tlas-operation-buffer-address-missing";
-		return result;
+		Diagnostics::Fatal(
+		    g_rayTracingPartitionedTlasBuildLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Partitioned TLAS operation buffer has no GPU address.");
 	}
-
-	for (void* resourceValue : builtBlasResources)
-	{
-		cmd.UnorderedAccessBarrier(RhiResourceHandle{resourceValue});
-	}
-
-	TrackBuildResources(cmd);
-
-	{
-		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope("Partitioned TLAS Build") : ScopedGpuScope{};
-		cmd.BuildPartitionedTopLevelAccelerationStructure(
-		    RhiPartitionedTlasBuildCommandDesc{
-		        .Layout = m_partitionedResources.Layout,
-		        .SourceAccelerationStructure = 0,
-		        .DestinationAccelerationStructure = m_partitionedResources.StorageAddress,
-		        .Scratch = m_partitionedResources.ScratchAddress,
-		        .OperationHeaders = m_partitionedResources.NativeOperationDataAddress + nativeOperationLayout.OperationHeadersOffsetInBytes,
-		        .OperationCount = m_partitionedResources.NativeOperationDataAddress + nativeOperationLayout.OperationCountOffsetInBytes});
-	}
-
-	result.Stats.Build.Built = true;
-	m_partitionedResources.InstanceCount = nativeWriteCount;
-	m_partitionedResources.Built = true;
-	return result;
 }
 
-void RayTracingPartitionedTlasStrategy::TrackBuildResources(
-    RenderCommandContext& cmd) const noexcept
+void RayTracingPartitionedTlasStrategy::RecordPartitionedBuild(
+    RenderCommandContext& commandContext,
+    const PartitionedBuildState& state,
+    RayTracingPerformanceDiagnostics* diagnostics) const noexcept
+{
+	for (void* resourceValue : state.BuiltBlasResources)
+	{
+		commandContext.UnorderedAccessBarrier(RhiResourceHandle{resourceValue});
+	}
+
+	TrackBuildResources(commandContext);
+
+	auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope("Partitioned TLAS Build") : ScopedGpuScope{};
+	commandContext.BuildPartitionedTopLevelAccelerationStructure(
+	    RhiPartitionedTlasBuildCommandDesc{
+	        .Layout = m_partitionedResources.Layout,
+	        .SourceAccelerationStructure = 0,
+	        .DestinationAccelerationStructure = m_partitionedResources.StorageAddress,
+	        .Scratch = m_partitionedResources.ScratchAddress,
+	        .OperationHeaders =
+	            m_partitionedResources.NativeOperationDataAddress + state.NativeOperationLayout.OperationHeadersOffsetInBytes,
+	        .OperationCount = m_partitionedResources.NativeOperationDataAddress + state.NativeOperationLayout.OperationCountOffsetInBytes});
+}
+
+void RayTracingPartitionedTlasStrategy::TrackBuildResources(RenderCommandContext& commandContext) const noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -251,7 +256,7 @@ void RayTracingPartitionedTlasStrategy::TrackBuildResources(
 
 	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
 
-	cmd.TrackResource(resources.GetResourceHandle(m_partitionedResources.Storage));
-	cmd.TrackResource(resources.GetResourceHandle(m_partitionedResources.Scratch));
-	cmd.TrackResource(resources.GetResourceHandle(m_partitionedResources.NativeOperationData));
+	commandContext.TrackResource(resources.GetResourceHandle(m_partitionedResources.Storage));
+	commandContext.TrackResource(resources.GetResourceHandle(m_partitionedResources.Scratch));
+	commandContext.TrackResource(resources.GetResourceHandle(m_partitionedResources.NativeOperationData));
 }

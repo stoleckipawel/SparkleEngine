@@ -4,14 +4,13 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "FrameGraph/PassRuntimeContext.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/Effects/PathTracedLighting/PathTracedLightingSettings.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
-#include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
@@ -69,28 +68,22 @@ PathTracedDirectLightingPass::PathTracedDirectLightingPass(const ComputePassPipe
 
 const PathTracedDirectLightingPass::ParameterMetadata& PathTracedDirectLightingPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<PathTracedDirectLightingPass>();
+	return ComputePassOperations::BuildParameterMetadata<PathTracedDirectLightingPass>();
 }
 const RenderPassDefinition& PathTracedDirectLightingPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::PathTracedDirectLighting,
 	    L"PathTracedDirectLighting_BindingLayout",
-	    L"PathTracedDirectLighting_PipelineState",
+	    L"PathTracedDirectLighting_Pipeline",
 	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
 }
 
 void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	const RayTracingPassCapabilities capabilities = RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
-	if (!capabilities.InlineRayQueryAvailable ||
-	    !RayTracingPassCapabilityQuery::CanUseSceneTlas(capabilities, RayTracingSceneTlasShaderAccessMode::Descriptor))
-	{
-		return;
-	}
-	parameters->PerFrame = context.RuntimeServices.PerFrame;
+	parameters->PerFrame = context.Runtime.PerFrame;
 	parameters->PerView = context.Frame.mainView.perViewData;
 	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
 	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
@@ -100,15 +93,10 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
 	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 
-	const bool materialTextureTableAvailable = static_cast<bool>(context.Frame.sceneData.materialTextureTable);
-	if (materialTextureTableAvailable)
-	{
-		parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
-	}
+	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(
-	    context.RuntimeServices.RayTracing,
+	    context.Runtime.RayTracing,
 	    context.Frame.rayTracingScene.HasTraceableInstances(),
-	    capabilities.TriangleMaterialDataAvailable && materialTextureTableAvailable,
 	    context.Frame.sceneGpuData->RayTracing.InstanceCount,
 	    context.Frame.sceneGpuData->RayTracing.MaterialCount);
 
@@ -118,7 +106,7 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 	    .BounceCount = settings.BounceCount,
 	    .NormalBias = settings.NormalBias,
 	    .MaxDistance = settings.MaxDistance};
-	ComputePassUtilities::DispatchSized<PathTracedDirectLightingPass>(
+	ComputePassOperations::DispatchSized<PathTracedDirectLightingPass>(
 	    context,
 	    m_runtime,
 	    parameters,

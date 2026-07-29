@@ -19,41 +19,27 @@ struct StructuredBufferElementRange final
 class PersistentStructuredBuffer final
 {
   public:
-	bool Update(
+	void Update(
 	    RhiResourceService& resourceService,
 	    std::span<const std::byte> payload,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName);
 	template <typename TValue, std::size_t Extent>
-	bool Update(
-	    RhiResourceService& resourceService,
-	    std::span<TValue, Extent> values,
-	    std::wstring_view debugName)
+	void Update(RhiResourceService& resourceService, std::span<TValue, Extent> values, std::wstring_view debugName)
 	{
-		return Update(
-		    resourceService,
-		    std::as_bytes(values),
-		    static_cast<std::uint32_t>(sizeof(TValue)),
-		    debugName);
+		Update(resourceService, std::as_bytes(values), static_cast<std::uint32_t>(sizeof(TValue)), debugName);
 	}
-	bool Replace(
+	void Replace(
 	    RhiResourceService& resourceService,
 	    std::span<const std::byte> payload,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName);
 	template <typename TValue, std::size_t Extent>
-	bool Replace(
-	    RhiResourceService& resourceService,
-	    std::span<TValue, Extent> values,
-	    std::wstring_view debugName)
+	void Replace(RhiResourceService& resourceService, std::span<TValue, Extent> values, std::wstring_view debugName)
 	{
-		return Replace(
-		    resourceService,
-		    std::as_bytes(values),
-		    static_cast<std::uint32_t>(sizeof(TValue)),
-		    debugName);
+		Replace(resourceService, std::as_bytes(values), static_cast<std::uint32_t>(sizeof(TValue)), debugName);
 	}
-	bool UpdateRanges(
+	void UpdateRanges(
 	    RhiResourceService& resourceService,
 	    std::span<const std::byte> payload,
 	    std::uint32_t strideInBytes,
@@ -63,21 +49,17 @@ class PersistentStructuredBuffer final
 	void Reset() noexcept;
 
   private:
-	bool Grow(
+	void Grow(
 	    RhiResourceService& resourceService,
 	    std::span<const std::byte> payload,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName);
-	bool WriteDirtyRanges(std::span<const std::byte> payload);
-	bool WriteRanges(
-	    std::span<const std::byte> payload,
-	    std::span<const StructuredBufferElementRange> ranges);
-	static std::size_t ResolveCapacity(
-	    std::size_t requiredSizeInBytes,
-	    std::uint32_t strideInBytes) noexcept;
+	void WriteDirtyRanges(std::span<const std::byte> payload);
+	void UpdateEmpty(RhiResourceService& resourceService, std::uint32_t strideInBytes, std::wstring_view debugName);
+	void WriteRanges(std::span<const std::byte> payload, std::span<const StructuredBufferElementRange> ranges);
+	static std::size_t ResolveCapacity(std::size_t requestedSizeInBytes, std::uint32_t strideInBytes) noexcept;
 
 	OwnedStructuredBuffer m_buffer;
 	std::vector<std::byte> m_shadow;
-	std::size_t m_logicalSizeInBytes = 0;
 	std::uint32_t m_strideInBytes = 0;
 };

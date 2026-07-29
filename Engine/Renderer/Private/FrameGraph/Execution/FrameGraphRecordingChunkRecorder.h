@@ -9,7 +9,7 @@ class RenderCommandContext;
 class RenderCommandList;
 class ScopedGpuScope;
 struct FrameContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 
 struct RecordingChunk;
 
@@ -20,7 +20,7 @@ class FrameGraphRecordingChunkRecorder final
 	    const FrameGraph& frameGraph,
 	    const FrameGraphPlan& plan,
 	    const FrameContext& frame,
-	    const PassRuntimeServices& passRuntimeServices,
+	    const PassRuntimeContext& passRuntimeContext,
 	    FrameExecutionDiagnostics& frameDiagnostics) noexcept;
 
 	void Record(
@@ -48,6 +48,6 @@ class FrameGraphRecordingChunkRecorder final
 	const FrameGraph& m_frameGraph;
 	const FrameGraphPlan& m_plan;
 	const FrameContext& m_frame;
-	const PassRuntimeServices& m_passRuntimeServices;
+	const PassRuntimeContext& m_passRuntimeContext;
 	FrameExecutionDiagnostics& m_frameDiagnostics;
 };

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RendererAPI.h"
-#include "Shaders/CookedShaderReloadResult.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Diagnostics/MeshPreviewGeometry.h"
@@ -37,7 +36,7 @@ class SPARKLE_RENDERER_API Renderer final
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
 
-	CookedShaderReloadResult ReloadCookedShaders() noexcept;
+	void ReloadCookedShaders();
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;

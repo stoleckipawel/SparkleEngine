@@ -20,17 +20,17 @@ class FrameGraphResourceCommands final
 	explicit FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept;
 
 	void BindRenderTarget(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    FrameGraphTextureHandle renderTargetHandle,
 	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
 	void BindRenderTargets(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    std::span<const FrameGraphTextureHandle> renderTargetHandles,
 	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
-	void CopyTexture(RenderCommandContext& cmd, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept;
-	void CopyBuffer(RenderCommandContext& cmd, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept;
-	void ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
-	void ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
+	void CopyTexture(RenderCommandContext& commandContext, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept;
+	void CopyBuffer(RenderCommandContext& commandContext, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept;
+	void ClearRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
+	void ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	RhiResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
 	NativeTextureViewInfo ResolveNativeTextureView(
 	    FrameGraphTextureHandle handle,

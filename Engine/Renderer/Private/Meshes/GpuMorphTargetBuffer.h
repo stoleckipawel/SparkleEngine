@@ -25,7 +25,7 @@ class GpuMorphTargetBuffer final
 	GpuMorphTargetBuffer(GpuMorphTargetBuffer&&) = delete;
 	GpuMorphTargetBuffer& operator=(GpuMorphTargetBuffer&&) = delete;
 
-	bool Upload(
+	void Upload(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    RenderCommandList& commandList,
 	    std::vector<MorphTargetDeltaData> deltas,

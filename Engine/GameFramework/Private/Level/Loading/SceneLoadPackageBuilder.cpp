@@ -2,7 +2,9 @@
 
 #include "Level/Loading/SceneLoadPackageBuilder.h"
 
-#include "Level/Loading/SceneLoadExecutionState.h"
+#include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Diagnostics/Verify.h"
+#include "Level/Loading/SceneLoadWorkState.h"
 #include "World/ECS/Components/AnimationComponents.h"
 #include "World/ECS/Components/EditorComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
@@ -15,10 +17,12 @@
 #include <unordered_map>
 #include <unordered_set>
 
+static const auto g_sceneLoadPackageBuilderLogger = Logging::GetOrCreateLogger("GameFramework.SceneLoadPackageBuilder");
+
 class SceneLoadPackageAssembly final
 {
   public:
-	static std::uint64_t MakeAuthoredInstanceId(std::string_view identity) noexcept
+	static std::uint64_t MakeAuthoredInstanceId(std::string_view identity)
 	{
 		constexpr std::uint64_t OffsetBasis = 14695981039346656037ull;
 		constexpr std::uint64_t Prime = 1099511628211ull;
@@ -28,7 +32,9 @@ class SceneLoadPackageAssembly final
 			hash ^= static_cast<std::uint8_t>(character);
 			hash *= Prime;
 		}
-		return hash == 0 ? 1 : hash;
+		if (hash == 0)
+			throw Diagnostics::Error(std::format("Scene asset identity '{}' hashes to the reserved null identity.", identity));
+		return hash;
 	}
 
 	template <typename... Components>
@@ -47,40 +53,6 @@ class SceneLoadPackageAssembly final
 		       payload.materials.size() * sizeof(MaterialDesc) + payload.cameras.size() * sizeof(SceneAssetPayload::Camera) +
 		       payload.lights.size() * sizeof(SceneLightDesc) + payload.skeletons.size() * sizeof(SkeletonResource) +
 		       payload.animations.size() * sizeof(AnimationClipResource);
-	}
-
-	static bool ValidateReferences(const SceneAssetPayload& payload, std::string& errorMessage)
-	{
-		auto materialIsValid = [&payload](MaterialHandle handle)
-		{
-			return !handle.IsValid() || handle.GetIndex() < payload.materials.size();
-		};
-		for (const SceneAssetPayload::StaticMeshInstance& instance : payload.staticMeshInstances)
-		{
-			if (instance.meshAssetIndex >= payload.staticMeshAssets.size() || !materialIsValid(instance.material))
-			{
-				errorMessage = "Static mesh instance references an invalid mesh or material.";
-				return false;
-			}
-		}
-		for (const SceneAssetPayload::SkeletalMeshInstance& instance : payload.skeletalMeshInstances)
-		{
-			if (instance.meshAssetIndex >= payload.skeletalMeshAssets.size() ||
-			    instance.skeletonAssetId == Assets::InvalidCookedAssetId || !materialIsValid(instance.material))
-			{
-				errorMessage = "Skeletal mesh instance has an invalid mesh, material, or skeleton reference.";
-				return false;
-			}
-		}
-		for (const SceneAssetPayload::MaterialVariantMapping& mapping : payload.materialVariantMappings)
-		{
-			if (!materialIsValid(mapping.material) || mapping.variantIndex >= payload.materialVariants.size())
-			{
-				errorMessage = "Material variant contains an invalid material or variant reference.";
-				return false;
-			}
-		}
-		return true;
 	}
 
 	static void BuildBlueprints(Assets::SceneAssetLoadWork& work)
@@ -121,59 +93,58 @@ class SceneLoadPackageAssembly final
 			            ECS::EditorMetadata>());
 	}
 
-	static bool HasUniqueBlueprintContract(
-	    const std::vector<Assets::EntityBlueprint>& entities,
-	    std::string& errorMessage)
+	static void ValidateBlueprintContract(const std::vector<Assets::EntityBlueprint>& entities)
 	{
 		std::unordered_set<std::string> identities;
 		for (const Assets::EntityBlueprint& entity : entities)
 		{
 			if (entity.AuthoredIdentity.empty())
 			{
-				errorMessage = "Scene load package contains an empty authored entity identity.";
-				return false;
+				Diagnostics::Fatal(
+				    g_sceneLoadPackageBuilderLogger,
+				    __FILE__,
+				    __LINE__,
+				    "Scene package assembly produced an empty authored entity identity.");
 			}
 			if (!identities.insert(entity.AuthoredIdentity).second)
 			{
-				errorMessage = std::format("Scene load package contains duplicate authored entity identity '{}'.", entity.AuthoredIdentity);
-				return false;
+				throw Diagnostics::Error(
+				    std::format("Scene load package contains duplicate authored entity identity '{}'.", entity.AuthoredIdentity));
 			}
 			if (entity.Components.empty())
 			{
-				errorMessage = std::format("Scene load package entity '{}' has no component contract.", entity.AuthoredIdentity);
-				return false;
+				Diagnostics::Fatal(
+				    g_sceneLoadPackageBuilderLogger,
+				    __FILE__,
+				    __LINE__,
+				    std::format("Scene package entity '{}' has no component contract.", entity.AuthoredIdentity));
 			}
 			std::unordered_set<std::uint64_t> componentIds;
 			for (const ECS::ComponentSchema component : entity.Components)
 			{
 				if (!component.Id.IsValid() || component.Version == 0 || !componentIds.insert(component.Id.Value).second)
 				{
-					errorMessage = "Scene load package contains an invalid or duplicate component schema record.";
-					return false;
+					Diagnostics::Fatal(
+					    g_sceneLoadPackageBuilderLogger,
+					    __FILE__,
+					    __LINE__,
+					    "Scene package assembly produced an invalid or duplicate component schema record.");
 				}
 			}
 		}
-		return true;
 	}
 };
 
 namespace Assets
 {
-	bool SceneLoadPackageBuilder::BuildAssetBlueprints(
-	    SceneAssetLoadWork& work,
-	    std::size_t& decodedBytes,
-	    std::string& errorMessage)
+	std::size_t SceneLoadPackageBuilder::BuildAssetBlueprints(SceneAssetLoadWork& work)
 	{
-		if (!SceneLoadPackageAssembly::ValidateReferences(work.Payload, errorMessage))
-			return false;
 		work.Payload.authoredInstanceId = SceneLoadPackageAssembly::MakeAuthoredInstanceId(work.Id.value);
 		SceneLoadPackageAssembly::BuildBlueprints(work);
-		decodedBytes = SceneLoadPackageAssembly::EstimatePayloadBytes(work.Payload);
-		errorMessage.clear();
-		return true;
+		return SceneLoadPackageAssembly::EstimatePayloadBytes(work.Payload);
 	}
 
-	bool SceneLoadPackageBuilder::Finalize(SceneLoadSharedState& state, std::string& errorMessage)
+	void SceneLoadPackageBuilder::Finalize(SceneLoadWorkState& state)
 	{
 		std::unordered_map<std::uint64_t, std::string_view> instanceIdentities;
 		for (const SceneAssetLoadWork& work : state.Assets)
@@ -181,8 +152,7 @@ namespace Assets
 			const auto [existing, inserted] = instanceIdentities.emplace(work.Payload.authoredInstanceId, work.Id.value);
 			if (work.Payload.authoredInstanceId == 0 || (!inserted && existing->second != work.Id.value))
 			{
-				errorMessage = "Scene load package contains an invalid or colliding authored instance identity.";
-				return false;
+				throw Diagnostics::Error("Scene load package contains an invalid or colliding authored instance identity.");
 			}
 		}
 		std::unordered_set<Assets::CookedAssetId> skeletonAssets;
@@ -193,8 +163,7 @@ namespace Assets
 			for (const SceneAssetPayload::SkeletalMeshInstance& mesh : work.Payload.skeletalMeshInstances)
 				if (!skeletonAssets.contains(mesh.skeletonAssetId))
 				{
-					errorMessage = "Scene load package contains an unresolved cross-asset skeleton reference.";
-					return false;
+					throw Diagnostics::Error("Scene load package contains an unresolved cross-asset skeleton reference.");
 				}
 
 		state.Package->Entities.push_back(EntityBlueprint{
@@ -218,6 +187,6 @@ namespace Assets
 				state.Package->Entities.push_back(std::move(entity));
 			state.Package->AssetPayloads.push_back(std::move(work.Payload));
 		}
-		return SceneLoadPackageAssembly::HasUniqueBlueprintContract(state.Package->Entities, errorMessage);
+		SceneLoadPackageAssembly::ValidateBlueprintContract(state.Package->Entities);
 	}
 }

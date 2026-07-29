@@ -3,7 +3,6 @@
 
 #include "Frame/PostProcessing/ExposureMomentChain.h"
 #include "Frame/Presentation/ToneMappingCVars.h"
-#include "Frame/Presentation/ToneMappingSettings.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/PostProcessing/ExposurePass.h"
 
@@ -14,11 +13,21 @@ void AddExposurePass(
 	const FrameGraphTextureHistory& history,
 	FrameGraphTextureHandle exposure)
 {
-	const EngineExposureMeteringMethod meteringMethod = SanitizeExposureMeteringMethod(CVarExposureMeteringMethod.Get());
-	const ExposureMomentChain::Texture moments =
-	    meteringMethod == EngineExposureMeteringMethod::DownsamplePyramid
-	        ? ExposureMomentChain::AddDownsample(builder, sceneExtent, finalSceneColor)
-	        : ExposureMomentChain::AddReduction(builder, sceneExtent, finalSceneColor);
+	ExposureMomentChain::Texture moments;
+	switch (CVarExposureMeteringMethod.Get())
+	{
+		case EngineExposureMeteringMethod::ParallelReduction:
+			moments = ExposureMomentChain::AddReduction(builder, sceneExtent, finalSceneColor);
+			break;
+		case EngineExposureMeteringMethod::DownsamplePyramid:
+			moments = ExposureMomentChain::AddDownsample(builder, sceneExtent, finalSceneColor);
+			break;
+		default:
+		{
+			static const auto logger = Logging::GetOrCreateLogger("Renderer.Exposure");
+			Diagnostics::Fatal(logger, __FILE__, __LINE__, "Exposure settings contain an unknown metering method.");
+		}
+	}
 
 	auto& parameters = builder.AllocParameters<ExposurePass::Parameters>();
 	parameters->LuminanceMoments = builder.CreateSRV(moments.TextureHandle);

@@ -3,14 +3,12 @@
 #include "LightFieldKeyParser.h"
 #include "Level/Parsing/LevelParserCommon.h"
 
-#include <string>
 #include <vector>
 
 namespace LevelParsing
 {
-	bool ParseLightField(
+	void ParseLightField(
 	    const ParsedLightFieldKey& key,
 	    const ParsedLevelLine& parsedLine,
-	    std::vector<SceneLightDesc>& lights,
-	    std::string& errorMessage);
+	    std::vector<SceneLightDesc>& lights);
 }

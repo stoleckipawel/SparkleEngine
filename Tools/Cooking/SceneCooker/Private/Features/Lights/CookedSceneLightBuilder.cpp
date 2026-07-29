@@ -2,8 +2,10 @@
 
 #include "CookedSceneLightBuilder.h"
 
-#include <algorithm>
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <cstring>
+#include <format>
 
 class CookedLightTranslation final
 {
@@ -29,21 +31,24 @@ class CookedLightTranslation final
 	static Assets::CookedSceneLightRecord BuildLightRecord(const ImportedLight& importedLight)
 	{
 		Assets::CookedSceneLightRecord lightRecord;
-		const std::size_t copyLength =
-		    (std::min)(importedLight.name.size(), static_cast<std::size_t>(Assets::kCookedSceneLightNameCapacity - 1u));
-		if (copyLength > 0)
+		if (!importedLight.name.empty())
 		{
-			std::memcpy(lightRecord.name, importedLight.name.data(), copyLength);
+			std::memcpy(lightRecord.name, importedLight.name.data(), importedLight.name.size());
 		}
 
 		lightRecord.kind = ToCookedLightKind(importedLight.kind);
 		lightRecord.worldTransform = importedLight.worldTransform;
 		lightRecord.direction = importedLight.direction;
 		lightRecord.color = importedLight.color;
-		lightRecord.intensity = importedLight.intensity;
+		lightRecord.illuminance = importedLight.illuminance;
+		lightRecord.luminousIntensity = importedLight.luminousIntensity;
+		lightRecord.luminance = importedLight.luminance;
 		lightRecord.range = importedLight.range;
-		lightRecord.innerConeAngleRadians = importedLight.innerConeAngleRadians;
-		lightRecord.outerConeAngleRadians = importedLight.outerConeAngleRadians;
+		lightRecord.distanceAttenuationCoefficients = importedLight.distanceAttenuationCoefficients;
+		lightRecord.radius = importedLight.radius;
+		lightRecord.innerAngleRadians = importedLight.innerAngleRadians;
+		lightRecord.outerAngleRadians = importedLight.outerAngleRadians;
+		lightRecord.angularSizeRadians = importedLight.angularSizeRadians;
 		lightRecord.tangent = importedLight.tangent;
 		lightRecord.width = importedLight.width;
 		lightRecord.height = importedLight.height;
@@ -53,13 +58,19 @@ class CookedLightTranslation final
 	}
 };
 
-void CookedSceneLightBuilder::BuildLights(const SourceImportResult& importResult, CookedSceneBuild& outBuild)
+void CookedSceneLightBuilder::BuildLights(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild)
 {
 	outBuild.manifest.lights.clear();
-	outBuild.manifest.lights.reserve(importResult.scene.lights.size());
+	outBuild.manifest.lights.reserve(importOutput.scene.lights.size());
 
-	for (const ImportedLight& importedLight : importResult.scene.lights)
+	for (std::size_t lightIndex = 0; lightIndex < importOutput.scene.lights.size(); ++lightIndex)
 	{
+		const ImportedLight& importedLight = importOutput.scene.lights[lightIndex];
+		if (importedLight.name.size() >= Assets::kCookedSceneLightNameCapacity ||
+		    CookedLightTranslation::ToCookedLightKind(importedLight.kind) == Assets::CookedSceneLightKind::Unknown)
+		{
+			throw Diagnostics::Error(std::format("Imported light {} exceeds the cooked light contract.", lightIndex));
+		}
 		outBuild.manifest.lights.push_back(CookedLightTranslation::BuildLightRecord(importedLight));
 	}
 }

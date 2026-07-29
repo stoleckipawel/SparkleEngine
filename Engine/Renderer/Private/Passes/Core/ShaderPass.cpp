@@ -41,12 +41,12 @@ bool DeclareShaderPassParameterUsages(PassResourceBuilder& builder, const PassPa
 	return builder.DeclareParameterUsages(parameterSet, passName != nullptr ? passName : "");
 }
 
-void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept
+void DispatchComputeShaderPass(RenderCommandContext& commandContext, const ComputeDispatchDesc& dispatch) noexcept
 {
 	assert(dispatch.GroupCountX > 0);
 	assert(dispatch.GroupCountY > 0);
 	assert(dispatch.GroupCountZ > 0);
-	cmd.Dispatch(dispatch.GroupCountX, dispatch.GroupCountY, dispatch.GroupCountZ);
+	commandContext.Dispatch(dispatch.GroupCountX, dispatch.GroupCountY, dispatch.GroupCountZ);
 }
 
 bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind passKind, const char* passName) noexcept
@@ -94,11 +94,11 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 }
 
 void BindComputeShaderPass(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
 	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
-    const RenderPipelineState& pipelineState,
+    const RenderPipeline& pipeline,
     const PassParameterSet& parameterSet,
     const char* const* bindingNames,
     std::uint32_t bindingNameCount,
@@ -107,12 +107,12 @@ void BindComputeShaderPass(
 {
 	if (bindLayout && renderHardwareInterface != nullptr)
 	{
-		renderHardwareInterface->GetDescriptorService().BindGlobalDescriptorState(cmd.GetRenderCommandList());
+		renderHardwareInterface->GetDescriptorService().BindGlobalDescriptorState(commandContext.GetRenderCommandList());
 	}
 
-	cmd.SetPipelineState(pipelineState);
+	commandContext.SetPipeline(pipeline);
 	PassBinder::BindCompute(
-	    cmd,
+	    commandContext,
 	    resources,
 	    renderHardwareInterface,
 	    bindingLayout,
@@ -123,11 +123,11 @@ void BindComputeShaderPass(
 }
 
 void BindRasterShaderPass(
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
 	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
-    const RenderPipelineState& pipelineState,
+    const RenderPipeline& pipeline,
     const PassParameterSet& parameterSet,
     const char* const* bindingNames,
     std::uint32_t bindingNameCount,
@@ -136,12 +136,12 @@ void BindRasterShaderPass(
 {
 	if (bindLayout && renderHardwareInterface != nullptr)
 	{
-		renderHardwareInterface->GetDescriptorService().BindGlobalDescriptorState(cmd.GetRenderCommandList());
+		renderHardwareInterface->GetDescriptorService().BindGlobalDescriptorState(commandContext.GetRenderCommandList());
 	}
 
-	cmd.SetPipelineState(pipelineState);
+	commandContext.SetPipeline(pipeline);
 	PassBinder::BindGraphics(
-	    cmd,
+	    commandContext,
 	    resources,
 	    renderHardwareInterface,
 	    bindingLayout,

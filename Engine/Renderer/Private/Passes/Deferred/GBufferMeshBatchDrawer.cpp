@@ -5,10 +5,10 @@
 #include "Commands/RenderCommandContext.h"
 #include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Meshes/GPUMesh.h"
-#include "Meshes/GPUMeshCache.h"
-#include "Passes/Core/PassUtilities.h"
+#include "FrameGraph/PassRuntimeContext.h"
+#include "Meshes/GpuMesh.h"
+#include "Meshes/GpuMeshCache.h"
+#include "Passes/Core/ShaderPassOperations.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/MaterialData.h"
@@ -62,10 +62,10 @@ bool GBufferMeshBatchDrawer::BindMaterial(
 	return true;
 }
 
-const GPUMesh* GBufferMeshBatchDrawer::ResolveBatch(
+const GpuMesh* GBufferMeshBatchDrawer::ResolveBatch(
     const RenderSceneData& sceneData,
     const MeshInstanceBatch& batch,
-    const GPUMeshCache& meshes) noexcept
+    const GpuMeshCache& meshes) noexcept
 {
 	if (batch.instanceCount == 0u ||
 	    batch.firstInstance >=
@@ -77,7 +77,7 @@ const GPUMesh* GBufferMeshBatchDrawer::ResolveBatch(
 		return nullptr;
 	}
 
-	const GPUMesh* gpuMesh = meshes.Resolve(batch.Mesh);
+	const GpuMesh* gpuMesh = meshes.Resolve(batch.Mesh);
 	return gpuMesh != nullptr && gpuMesh->IsValid()
 	           ? gpuMesh
 	           : nullptr;
@@ -131,30 +131,30 @@ RasterPassPipelineRuntime GBufferMeshBatchDrawer::ResolveBatchRuntime(
     const RasterPassPipelineRuntime& runtime)
 {
 	const bool useTwoSidedPipeline =
-	    sceneData.materials[batch.materialSlot].doubleSided && runtime.TwoSidedPipelineState != nullptr;
+	    sceneData.materials[batch.materialSlot].doubleSided && runtime.TwoSidedPipeline != nullptr;
 	return RasterPassPipelineRuntime{
 	    runtime.BindingLayout,
-	    useTwoSidedPipeline ? *runtime.TwoSidedPipelineState : runtime.PipelineState,
-	    runtime.WireframePipelineState,
-	    runtime.TwoSidedPipelineState};
+	    useTwoSidedPipeline ? *runtime.TwoSidedPipeline : runtime.Pipeline,
+	    runtime.WireframePipeline,
+	    runtime.TwoSidedPipeline};
 }
 
 bool GBufferMeshBatchDrawer::BindBatchPipeline(
     const FrameGraphResourceCommands& resources,
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     RenderHardwareInterface& renderHardwareInterface,
     const RasterPassPipelineRuntime& runtime,
     GBufferPass::DrawParameterInstance& drawParameters,
-    const GPUMesh& gpuMesh,
+    const GpuMesh& gpuMesh,
     std::uint32_t viewModeIndex)
 {
 	PassBindingOverrides overrides;
 	overrides.SetDescriptorTable("SkinInfluences", gpuMesh.GetSkinInfluencesShaderResourceView());
 	overrides.SetDescriptorTable("MorphTargetDeltas", gpuMesh.GetMorphTargetDeltasShaderResourceView());
 
-	return PassUtilities::BindAvailableRasterPassWithRuntime(
+	return ShaderPassOperations::BindAvailableRasterPassWithRuntime(
 	    resources,
-	    cmd,
+	    commandContext,
 	    &renderHardwareInterface,
 	    runtime,
 	    drawParameters.GetPassParameterSet(),
@@ -166,25 +166,25 @@ bool GBufferMeshBatchDrawer::BindBatchPipeline(
 
 void GBufferMeshBatchDrawer::DrawBatch(
     const FrameGraphResourceCommands& resources,
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const FrameContext& frame,
     const GBufferPass::Parameters& passParameters,
     RenderHardwareInterface& renderHardwareInterface,
     const RasterPassPipelineRuntime& runtime,
     const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
-    const GPUMesh& gpuMesh,
+    const GpuMesh& gpuMesh,
     const MeshInstanceBatch& batch,
     std::uint32_t viewModeIndex)
 {
 	const RenderSceneData& sceneData = frame.sceneData;
 	if (batch.meshKind == RenderMeshKind::Skeletal &&
-	    (!frame.sceneGpuData->Geometry.HasSkinning() ||
+	    (!frame.sceneGpuData->Geometry.HasSkinningBuffers() ||
 	     !HasValidSkinning(sceneData, batch)))
 	{
 		return;
 	}
 
-	gpuMesh.Bind(cmd);
+	gpuMesh.Bind(commandContext);
 
 	GBufferPass::DrawParameterInstance drawParameters(
 	    drawParameterMetadata);
@@ -197,7 +197,7 @@ void GBufferMeshBatchDrawer::DrawBatch(
 	const RasterPassPipelineRuntime batchRuntime = ResolveBatchRuntime(sceneData, batch, runtime);
 	if (!BindBatchPipeline(
 	        resources,
-	        cmd,
+	        commandContext,
 	        renderHardwareInterface,
 	        batchRuntime,
 	        drawParameters,
@@ -207,7 +207,7 @@ void GBufferMeshBatchDrawer::DrawBatch(
 		return;
 	}
 
-	cmd.DrawIndexedInstanced(
+	commandContext.DrawIndexedInstanced(
 	    gpuMesh.GetIndexCount(),
 	    batch.instanceCount,
 	    0,
@@ -217,30 +217,30 @@ void GBufferMeshBatchDrawer::DrawBatch(
 
 void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
     const FrameGraphResourceCommands& resources,
-    RenderCommandContext& cmd,
+    RenderCommandContext& commandContext,
     const FrameContext& frame,
     const GBufferPass::Parameters& parameters,
-    const PassRuntimeServices& passRuntimeServices,
+    const PassRuntimeContext& passRuntimeContext,
     const RasterPassPipelineRuntime& runtime,
     const GBufferPass::DrawParameterMetadata& drawParameterMetadata)
 {
-	if (passRuntimeServices.Meshes == nullptr ||
-	    !frame.sceneGpuData->Geometry.HasMeshInstances())
+	if (passRuntimeContext.Meshes == nullptr ||
+	    !frame.sceneGpuData->Geometry.HasMeshInstanceBuffers())
 	{
 		return;
 	}
 
 	const RenderSceneData& sceneData = frame.sceneData;
 	const std::uint32_t viewModeIndex =
-	    passRuntimeServices.PerFrame.ViewModeIndex;
+	    passRuntimeContext.PerFrame.ViewModeIndex;
 	for (const MeshInstanceBatch& batch :
 	     sceneData.meshInstanceBatches)
 	{
-		const GPUMesh* gpuMesh =
+		const GpuMesh* gpuMesh =
 		    ResolveBatch(
 		        sceneData,
 		        batch,
-		        *passRuntimeServices.Meshes);
+		        *passRuntimeContext.Meshes);
 		if (gpuMesh == nullptr)
 		{
 			continue;
@@ -248,10 +248,10 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 
 		DrawBatch(
 		    resources,
-		    cmd,
+		    commandContext,
 		    frame,
 		    parameters,
-		    passRuntimeServices.HardwareInterface,
+		    passRuntimeContext.HardwareInterface,
 		    runtime,
 		    drawParameterMetadata,
 		    *gpuMesh,

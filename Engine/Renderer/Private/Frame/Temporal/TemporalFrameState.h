@@ -9,8 +9,8 @@ struct RenderTemporalFrameState
 	bool HasJitter = false;
 	bool HasPreviousJitter = false;
 	bool HistoryValid = false;
-	DirectX::XMFLOAT2 JitterCurrent = {};
-	DirectX::XMFLOAT2 JitterPrevious = {};
+	DirectX::XMFLOAT2 CurrentJitterNdc = {};
+	DirectX::XMFLOAT2 PreviousJitterNdc = {};
 };
 
 RenderTemporalFrameState BuildRenderTemporalFrameState(const PerTemporalConstantBufferData& temporalData) noexcept;

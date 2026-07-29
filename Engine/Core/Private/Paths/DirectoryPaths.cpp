@@ -11,19 +11,16 @@
 
 namespace Paths
 {
-	std::array<std::filesystem::path, 3> ExecutableLookupCandidates(std::string_view executableFileName)
+	std::array<std::filesystem::path, 2> ExecutableLookupCandidates(std::string_view executableFileName)
 	{
 		const std::filesystem::path executableDirectory = Filesystem::GetExecutableDirectory();
-		const std::filesystem::path executableName {std::string(executableFileName)};
-		return {
-		    executableDirectory / executableName,
-		    executableDirectory.parent_path() / executableName,
-		    executableDirectory.parent_path() / "Debug" / executableName};
+		const std::filesystem::path executableName{std::string(executableFileName)};
+		return {executableDirectory / executableName, executableDirectory.parent_path() / executableName};
 	}
 
 	std::filesystem::path LogFile(std::string_view configuredFile, bool ensureParentExists)
 	{
-		std::filesystem::path configuredPath {std::string(configuredFile)};
+		std::filesystem::path configuredPath{std::string(configuredFile)};
 		if (!configuredFile.empty() && !configuredPath.empty())
 		{
 			if (!configuredPath.is_absolute())
@@ -38,21 +35,19 @@ namespace Paths
 			return configuredPath;
 		}
 
-		const std::string executableStem =
-		    PathFormatting::SanitizePathSegment(Filesystem::GetExecutablePath().stem().string());
+		const std::string executableStem = PathFormatting::SanitizePathSegment(Filesystem::GetExecutablePath().stem().string());
 		return Private::DefaultLogDirectory(ensureParentExists, executableStem) /
 		       PathFormatting::TimestampedFileName(executableStem, ".log");
 	}
 
 	std::filesystem::path CookedShaderPackage(std::uint64_t packageKey)
 	{
-		return Filesystem::GetCookedShaderPackageRootPath() /
-		       (Formatting::FormatHexUInt64(packageKey) + ".sparkshader");
+		return Filesystem::GetCookedShaderPackageRootPath() / (Formatting::FormatHexUInt64(packageKey) + ".sparkshader");
 	}
 
 	std::filesystem::path CookedSceneManifest(std::string_view sceneAssetId)
 	{
-		std::filesystem::path relativeScenePath {std::string(sceneAssetId)};
+		std::filesystem::path relativeScenePath{std::string(sceneAssetId)};
 		relativeScenePath.replace_extension(".sscn");
 		return Filesystem::GetCookedSceneManifestRootPath() / relativeScenePath;
 	}
@@ -64,26 +59,27 @@ namespace Paths
 
 	std::filesystem::path CookedMeshAsset(std::uint64_t meshAssetId)
 	{
-		return Filesystem::GetCookedMeshRootPath() /
-		       (Formatting::FormatHexUInt64(meshAssetId) + ".smsh");
+		return Filesystem::GetCookedMeshRootPath() / (Formatting::FormatHexUInt64(meshAssetId) + ".smsh");
 	}
 
 	std::filesystem::path CookedMaterialAsset(std::uint64_t materialAssetId)
 	{
-		return Filesystem::GetCookedMaterialRootPath() /
-		       (Formatting::FormatHexUInt64(materialAssetId) + ".smat");
+		return Filesystem::GetCookedMaterialRootPath() / (Formatting::FormatHexUInt64(materialAssetId) + ".smat");
 	}
 
 	std::filesystem::path CookedSkeletonAsset(std::uint64_t skeletonAssetId)
 	{
-		return Filesystem::GetCookedSkeletonRootPath() /
-		       (Formatting::FormatHexUInt64(skeletonAssetId) + ".sskel");
+		return Filesystem::GetCookedSkeletonRootPath() / (Formatting::FormatHexUInt64(skeletonAssetId) + ".sskel");
 	}
 
 	std::filesystem::path CookedAnimationAsset(std::uint64_t animationAssetId)
 	{
-		return Filesystem::GetCookedAnimationRootPath() /
-		       (Formatting::FormatHexUInt64(animationAssetId) + ".sanim");
+		return Filesystem::GetCookedAnimationRootPath() / (Formatting::FormatHexUInt64(animationAssetId) + ".sanim");
+	}
+
+	std::filesystem::path ImportedTextureCacheRoot()
+	{
+		return Filesystem::GetBuildOutputRootPath() / "Cache" / "ImportedTextures";
 	}
 
 	std::filesystem::path ShaderRecookSignal(const std::filesystem::path& shaderCacheRoot)

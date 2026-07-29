@@ -30,16 +30,16 @@ struct RenderObjectDynamicData final
 	bool Visible = true;
 };
 
-struct RenderSkinningData final
+struct RenderJointMatrixRange final
 {
 	RenderObjectId Object;
 	RenderSkeletonAssetHandle Skeleton;
 	RenderAnimationAssetHandle Animation;
-	std::uint32_t MatrixOffset = 0;
-	std::uint32_t MatrixCount = 0;
+	std::uint32_t JointMatrixOffset = 0;
+	std::uint32_t JointMatrixCount = 0;
 };
 
-struct RenderMorphData final
+struct RenderMorphWeightRange final
 {
 	RenderObjectId Object;
 	RenderAnimationAssetHandle Animation;
@@ -60,8 +60,8 @@ struct RenderFrameDynamicData final
 	RenderCameraData Camera;
 	std::vector<RenderObjectDynamicData> Objects;
 	std::vector<RenderLightData> Lights;
-	std::vector<RenderSkinningData> Skinning;
-	std::vector<DirectX::XMFLOAT4X4> SkinningMatrices;
-	std::vector<RenderMorphData> MorphRanges;
+	std::vector<RenderJointMatrixRange> JointMatrixRanges;
+	std::vector<DirectX::XMFLOAT4X4> JointMatrices;
+	std::vector<RenderMorphWeightRange> MorphWeightRanges;
 	std::vector<float> MorphWeights;
 };

@@ -4,13 +4,14 @@
 
 #include <DirectXMath.h>
 
+#include <cstdint>
 #include <span>
 
-class GPUMeshCache;
-class MaterialCacheManager;
+class GpuMeshCache;
+class MaterialCache;
 class RenderDeformationPreparation;
 class RenderWorld;
-class TextureManager;
+class TextureCache;
 struct Frustum;
 struct RenderFrameDynamicData;
 struct RenderProxy;
@@ -28,9 +29,9 @@ class RenderPreparationInputResolver final
 {
   public:
 	RenderPreparationInputResolver(
-	    MaterialCacheManager& materialCache,
-	    GPUMeshCache& gpuMeshCache,
-	    TextureManager& textureManager) noexcept;
+	    MaterialCache& materialCache,
+	    GpuMeshCache& gpuMeshCache,
+	    TextureCache& textureCache) noexcept;
 
 	void Resolve(
 	    const RenderWorld& world,
@@ -45,19 +46,15 @@ class RenderPreparationInputResolver final
 	    const RenderWorld& world,
 	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
 	    RenderPreparationRun& run);
-	bool TryResolveObject(
+	ResolvedRenderObject ResolveObject(
 	    const RenderProxy& proxy,
+	    std::uint32_t materialGeneration,
 	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
-	    RenderSceneData& sceneData,
-	    ResolvedRenderObject& output);
-	void ResolveInstanceGroups(
-	    const RenderWorld& world,
-	    RenderPreparationRun& run) const;
-	void ResolveSky(
-	    const RenderWorld& world,
-	    RenderSceneData& sceneData) const;
+	    RenderSceneData& sceneData);
+	void ResolveInstanceGroups(const RenderWorld& world, RenderPreparationRun& run) const;
+	void ResolveSky(const RenderWorld& world, RenderSceneData& sceneData) const;
 
-	MaterialCacheManager* m_materialCache = nullptr;
-	GPUMeshCache* m_gpuMeshCache = nullptr;
-	TextureManager* m_textureManager = nullptr;
+	MaterialCache* m_materialCache = nullptr;
+	GpuMeshCache* m_gpuMeshCache = nullptr;
+	TextureCache* m_textureCache = nullptr;
 };

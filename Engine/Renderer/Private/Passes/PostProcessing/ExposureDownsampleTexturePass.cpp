@@ -2,7 +2,7 @@
 #include "Passes/PostProcessing/ExposureDownsampleTexturePass.h"
 
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
@@ -11,16 +11,16 @@ ExposureDownsampleTexturePass::ExposureDownsampleTexturePass(const ComputePassPi
 
 const ExposureDownsampleTexturePass::ParameterMetadata& ExposureDownsampleTexturePass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<ExposureDownsampleTexturePass>();
+	return ComputePassOperations::BuildParameterMetadata<ExposureDownsampleTexturePass>();
 }
 
 const RenderPassDefinition& ExposureDownsampleTexturePass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::ExposureDownsampleTexture,
 	    L"ExposureDownsampleTexture_BindingLayout",
-	    L"ExposureDownsampleTexture_PipelineState");
+	    L"ExposureDownsampleTexture_Pipeline");
 	return definition;
 }
 
@@ -30,5 +30,5 @@ void ExposureDownsampleTexturePass::Execute(
     std::uint32_t outputWidth,
     std::uint32_t outputHeight) const
 {
-	ComputePassUtilities::DispatchSized<ExposureDownsampleTexturePass>(context, m_runtime, parameters, outputWidth, outputHeight);
+	ComputePassOperations::DispatchSized<ExposureDownsampleTexturePass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

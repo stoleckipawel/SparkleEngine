@@ -123,7 +123,7 @@ namespace ECS
 			if (!SkinningMatrixEvaluator::Evaluate(
 			        m_resources.Skeletons.Resolve(slot.Skeleton),
 			        slot.ModelSpaceTransforms,
-			        output.poses[slot.PoseOutputIndex].skinningMatrices))
+			        output.poses[slot.PoseOutputIndex].jointMatrices))
 				return false;
 		}
 		return true;

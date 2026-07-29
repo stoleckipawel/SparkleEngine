@@ -10,60 +10,39 @@
 
 namespace Assets
 {
-	bool SceneManifestLoader::Decode(
+	LoadedSceneManifest SceneManifestLoader::Decode(
 	    const std::filesystem::path& path,
-	    std::span<const std::uint8_t> bytes,
-	    LoadedSceneManifest& outManifest,
-	    std::string& outErrorMessage) const
+	    std::span<const std::uint8_t> bytes) const
 	{
-		const CookedAssetLoaderContext diagnosticsContext =
-		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedSceneManifest", kCookedSceneManifestVersion);
-		auto fail = [&](std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) -> bool
-		{
-			CookedAssetLoaderDiagnostics::SetFailure(diagnosticsContext, recordKind, expectedFeature, reason, outErrorMessage);
-			return false;
-		};
+		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedSceneManifest", kCookedSceneManifestVersion);
 
 		CookedAssetByteReader reader(bytes);
-		if (!reader.Read(outManifest.header, outErrorMessage))
-		{
-			return fail("header", "CookedSceneManifestHeader", outErrorMessage);
-		}
+		LoadedSceneManifest manifest;
+		manifest.header = reader.Read<CookedSceneManifestHeader>();
+		SceneManifestValidator::ValidateHeader(manifest);
 
-		if (!SceneManifestValidator::ValidateHeader(outManifest, outErrorMessage))
-		{
-			return fail("header", "scene manifest magic/version/record counts/features", outErrorMessage);
-		}
-
-		if (!reader.ReadArray(outManifest.header.meshAssetReferenceCount, outManifest.meshAssetReferences, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.materialAssetReferenceCount, outManifest.materialAssetReferences, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.instanceCount, outManifest.instances, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.instanceGroupCount, outManifest.instanceGroups, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.cameraCount, outManifest.cameras, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.lightCount, outManifest.lights, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.skeletonRefCount, outManifest.skeletonRefs, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.animationRefCount, outManifest.animationReferences, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.morphWeightCount, outManifest.morphWeights, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.materialVariantCount, outManifest.materialVariants, outErrorMessage) ||
-		    !reader.ReadArray(
-		        outManifest.header.materialVariantMappingCount,
-		        outManifest.materialVariantMappings,
-		        outErrorMessage))
-		{
-			return fail("records", "all scene manifest arrays matching header counts", outErrorMessage);
-		}
-
-		if (!SceneManifestValidator::ValidateRecords(outManifest, outErrorMessage))
-		{
-			return fail("records", "scene manifest references resolve within declared arrays", outErrorMessage);
-		}
+		manifest.meshAssetReferences = reader.ReadArray<CookedSceneMeshAssetRef>(manifest.header.meshAssetReferenceCount);
+		manifest.materialAssetReferences = reader.ReadArray<CookedSceneMaterialAssetRef>(manifest.header.materialAssetReferenceCount);
+		manifest.instances = reader.ReadArray<CookedSceneInstanceRecord>(manifest.header.instanceCount);
+		manifest.instanceGroups = reader.ReadArray<CookedSceneInstanceGroupRecord>(manifest.header.instanceGroupCount);
+		manifest.cameras = reader.ReadArray<CookedSceneCameraRecord>(manifest.header.cameraCount);
+		manifest.lights = reader.ReadArray<CookedSceneLightRecord>(manifest.header.lightCount);
+		manifest.skeletonRefs = reader.ReadArray<CookedSceneSkeletonRef>(manifest.header.skeletonRefCount);
+		manifest.animationReferences = reader.ReadArray<CookedAnimationReference>(manifest.header.animationRefCount);
+		manifest.morphWeights = reader.ReadArray<float>(manifest.header.morphWeightCount);
+		manifest.materialVariants = reader.ReadArray<CookedSceneMaterialVariantRecord>(manifest.header.materialVariantCount);
+		manifest.materialVariantMappings =
+		    reader.ReadArray<CookedSceneMaterialVariantMappingRecord>(manifest.header.materialVariantMappingCount);
+		SceneManifestValidator::ValidateRecords(manifest);
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			return fail("payload", "no trailing bytes after declared scene manifest records", "Cooked scene manifest contains unexpected trailing bytes");
+			throw diagnostics.MakeError(
+			    "payload",
+			    "no trailing bytes after declared scene manifest records",
+			    "Cooked scene manifest contains unexpected trailing bytes");
 		}
 
-		outErrorMessage.clear();
-		return true;
+		return manifest;
 	}
 }

@@ -5,13 +5,13 @@
 
 #include <vector>
 
-class VulkanDescriptorManager;
+class VulkanDescriptorService;
 class VulkanRhi;
 
 class VulkanSamplerLibrary final
 {
   public:
-	VulkanSamplerLibrary(VulkanRhi& rhi, VulkanDescriptorManager& descriptorManager) noexcept;
+	VulkanSamplerLibrary(VulkanRhi& rhi, VulkanDescriptorService& descriptorService) noexcept;
 	~VulkanSamplerLibrary() noexcept;
 
 	VulkanSamplerLibrary(const VulkanSamplerLibrary&) = delete;
@@ -37,6 +37,6 @@ class VulkanSamplerLibrary final
 	VkSampler CreateSampler(const RhiSamplerDesc& desc) const;
 
 	VulkanRhi& m_rhi;
-	VulkanDescriptorManager& m_descriptorManager;
+	VulkanDescriptorService& m_descriptorService;
 	std::vector<SamplerRecord> m_samplerRecords;
 };

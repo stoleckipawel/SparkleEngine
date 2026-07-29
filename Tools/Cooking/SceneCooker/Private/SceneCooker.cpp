@@ -17,7 +17,9 @@
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Assets/SceneAssetRegistry.h"
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
+
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <fstream>
 #include <optional>
@@ -27,26 +29,15 @@ class SceneCookPipeline final
   public:
 	static void ResetManifest(CookedSceneBuild& build);
 	static void FinalizeManifestHeader(CookedSceneBuild& build) noexcept;
-	static bool ResolveSourceScenePath(
-	    const std::filesystem::path& sourceScenePath,
-	    std::filesystem::path& outResolvedPath,
-	    std::string& outErrorMessage);
-	static bool BuildSceneAssetId(
-	    const std::filesystem::path& resolvedSourceScenePath,
-	    std::string& outSceneAssetId,
-	    std::string& outErrorMessage);
-	static bool StageManifest(
+	static std::filesystem::path ResolveSourceScenePath(const std::filesystem::path& sourceScenePath);
+	static std::string BuildSceneAssetId(const std::filesystem::path& resolvedSourceScenePath);
+	static void StageManifest(
 	    const CookedSceneBuild& build,
-	    std::vector<Files::FilePublication>& outPublication,
-	    std::string& outErrorMessage);
-	static bool StageRegistry(
+	    std::vector<Files::FilePublication>& outPublication);
+	static void StageRegistry(
 	    std::span<const CookedSceneBuild* const> builds,
-	    std::vector<Files::FilePublication>& outPublication,
-	    std::string& outErrorMessage);
-	static bool ResolveManifestRelativePath(
-	    const CookedSceneBuild& build,
-	    std::filesystem::path& outRelativePath,
-	    std::string& outErrorMessage);
+	    std::vector<Files::FilePublication>& outPublication);
+	static std::filesystem::path ResolveManifestRelativePath(const CookedSceneBuild& build);
 };
 
 void SceneCookPipeline::ResetManifest(CookedSceneBuild& build)
@@ -58,173 +49,107 @@ void SceneCookPipeline::ResetManifest(CookedSceneBuild& build)
 	build.manifest.materialVariantMappings.clear();
 }
 
-void SceneCookPipeline::FinalizeManifestHeader(
-    CookedSceneBuild& build) noexcept
+void SceneCookPipeline::FinalizeManifestHeader(CookedSceneBuild& build) noexcept
 {
 	Assets::CookedSceneManifestHeader& header = build.manifest.header;
-	header.meshAssetReferenceCount =
-	    static_cast<std::uint32_t>(build.manifest.meshAssetReferences.size());
-	header.materialAssetReferenceCount =
-	    static_cast<std::uint32_t>(build.manifest.materialAssetReferences.size());
-	header.instanceCount =
-	    static_cast<std::uint32_t>(build.manifest.instances.size());
-	header.instanceGroupCount =
-	    static_cast<std::uint32_t>(build.manifest.instanceGroups.size());
-	header.cameraCount =
-	    static_cast<std::uint32_t>(build.manifest.cameras.size());
-	header.lightCount =
-	    static_cast<std::uint32_t>(build.manifest.lights.size());
-	header.skeletonRefCount =
-	    static_cast<std::uint32_t>(build.manifest.skeletonRefs.size());
-	header.animationRefCount =
-	    static_cast<std::uint32_t>(build.manifest.animationReferences.size());
-	header.morphWeightCount =
-	    static_cast<std::uint32_t>(build.manifest.morphWeights.size());
-	header.materialVariantCount =
-	    static_cast<std::uint32_t>(build.manifest.materialVariants.size());
-	header.materialVariantMappingCount =
-	    static_cast<std::uint32_t>(build.manifest.materialVariantMappings.size());
+	header.meshAssetReferenceCount = static_cast<std::uint32_t>(build.manifest.meshAssetReferences.size());
+	header.materialAssetReferenceCount = static_cast<std::uint32_t>(build.manifest.materialAssetReferences.size());
+	header.instanceCount = static_cast<std::uint32_t>(build.manifest.instances.size());
+	header.instanceGroupCount = static_cast<std::uint32_t>(build.manifest.instanceGroups.size());
+	header.cameraCount = static_cast<std::uint32_t>(build.manifest.cameras.size());
+	header.lightCount = static_cast<std::uint32_t>(build.manifest.lights.size());
+	header.skeletonRefCount = static_cast<std::uint32_t>(build.manifest.skeletonRefs.size());
+	header.animationRefCount = static_cast<std::uint32_t>(build.manifest.animationReferences.size());
+	header.morphWeightCount = static_cast<std::uint32_t>(build.manifest.morphWeights.size());
+	header.materialVariantCount = static_cast<std::uint32_t>(build.manifest.materialVariants.size());
+	header.materialVariantMappingCount = static_cast<std::uint32_t>(build.manifest.materialVariantMappings.size());
 }
 
-bool SceneCooker::ResolveSceneIdentity(
-    const std::filesystem::path& sourceScenePath,
-    CookedSceneIdentity& outIdentity,
-    std::string& outErrorMessage)
+CookedSceneIdentity SceneCooker::ResolveSceneIdentity(const std::filesystem::path& sourceScenePath)
 {
-	std::filesystem::path resolvedSourceScenePath;
-	if (!SceneCookPipeline::ResolveSourceScenePath(
-	        sourceScenePath,
-	        resolvedSourceScenePath,
-	        outErrorMessage))
-	{
-		return false;
-	}
-
-	if (!SceneCookPipeline::BuildSceneAssetId(
-	        resolvedSourceScenePath,
-	        outIdentity.assetId,
-	        outErrorMessage))
-	{
-		return false;
-	}
-
-	outIdentity.manifestPath = Paths::CookedSceneManifest(outIdentity.assetId);
-	outErrorMessage.clear();
-	return true;
+	const std::filesystem::path resolvedSourceScenePath = SceneCookPipeline::ResolveSourceScenePath(sourceScenePath);
+	CookedSceneIdentity identity;
+	identity.assetId = SceneCookPipeline::BuildSceneAssetId(resolvedSourceScenePath);
+	identity.manifestPath = Paths::CookedSceneManifest(identity.assetId);
+	return identity;
 }
 
-bool SceneCooker::BuildManifest(
-    const SourceImportResult& importResult,
-    CookedSceneBuild& outBuild,
-    std::string& outErrorMessage)
+void SceneCooker::BuildManifest(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild)
 {
 	SceneCookPipeline::ResetManifest(outBuild);
 
-	CookedSceneSkeletonBuilder::BuildSkeletons(importResult, outBuild.identity.assetId, outBuild);
-	CookedAnimationAssetBuilder::Build(importResult, outBuild.identity.assetId, outBuild);
-	if (!CookedSceneInstanceBuilder::BuildInstances(importResult, outBuild, outErrorMessage))
-	{
-		return false;
-	}
-
-	if (!CookedSceneMaterialVariantBuilder::BuildMaterialVariants(importResult, outBuild, outErrorMessage))
-	{
-		return false;
-	}
-
-	CookedSceneCameraBuilder::BuildCameras(importResult, outBuild);
-	CookedSceneLightBuilder::BuildLights(importResult, outBuild);
-	CookedSceneMetadataBuilder::BuildMetadata(importResult, outBuild);
+	CookedSceneSkeletonBuilder::BuildSkeletons(importOutput, outBuild.identity.assetId, outBuild);
+	CookedAnimationAssetBuilder::Build(importOutput, outBuild.identity.assetId, outBuild);
+	CookedSceneInstanceBuilder::BuildInstances(importOutput, outBuild);
+	CookedSceneMaterialVariantBuilder::BuildMaterialVariants(importOutput, outBuild);
+	CookedSceneCameraBuilder::BuildCameras(importOutput, outBuild);
+	CookedSceneLightBuilder::BuildLights(importOutput, outBuild);
+	CookedSceneMetadataBuilder::BuildMetadata(importOutput, outBuild);
 
 	SceneCookPipeline::FinalizeManifestHeader(outBuild);
-	outErrorMessage.clear();
-	return true;
 }
 
-bool SceneCooker::StageManifestsAndRegistry(
+void SceneCooker::StageManifestsAndRegistry(
     std::span<const CookedSceneBuild* const> builds,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedSceneBuild* build : builds)
 	{
-		if (!SceneCookPipeline::StageManifest(
-		        *build,
-		        outPublication,
-		        outErrorMessage))
-		{
-			return false;
-		}
+		SceneCookPipeline::StageManifest(*build, outPublication);
 	}
 
-	return SceneCookPipeline::StageRegistry(
-	    builds,
-	    outPublication,
-	    outErrorMessage);
+	SceneCookPipeline::StageRegistry(builds, outPublication);
 }
 
-bool SceneCookPipeline::StageManifest(
+void SceneCookPipeline::StageManifest(
     const CookedSceneBuild& build,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
-	const std::filesystem::path stagedPath =
-	    Files::BuildTemporaryPath(build.identity.manifestPath, ".cook-generation");
+	const std::filesystem::path stagedPath = Files::BuildTemporaryPath(build.identity.manifestPath, ".cook-generation");
 
 	Files::CleanupTemporaryFile(stagedPath);
 	outPublication.push_back({stagedPath, build.identity.manifestPath});
 
 	std::ofstream manifestOutput;
-	if (!Files::TryOpenBinaryOutput(stagedPath, manifestOutput, outErrorMessage))
+	std::string errorMessage;
+	if (!Files::TryOpenBinaryOutput(stagedPath, manifestOutput, errorMessage))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(errorMessage));
 	}
 
-	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifest.header, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.meshAssetReferences, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialAssetReferences, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instanceGroups, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.lights, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.skeletonRefs, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationReferences, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.morphWeights, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariants, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariantMappings, outErrorMessage))
+	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifest.header, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.meshAssetReferences, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialAssetReferences, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instanceGroups, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.lights, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.skeletonRefs, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationReferences, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.morphWeights, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariants, errorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariantMappings, errorMessage))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(errorMessage));
 	}
 
-	if (!Files::TryCloseOutput(manifestOutput, stagedPath, outErrorMessage))
+	if (!Files::TryCloseOutput(manifestOutput, stagedPath, errorMessage))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(errorMessage));
 	}
-
-	outErrorMessage.clear();
-	return true;
 }
 
-bool SceneCookPipeline::ResolveSourceScenePath(
-    const std::filesystem::path& sourceScenePath,
-    std::filesystem::path& outResolvedPath,
-    std::string& outErrorMessage)
+std::filesystem::path SceneCookPipeline::ResolveSourceScenePath(const std::filesystem::path& sourceScenePath)
 {
 	if (const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(sourceScenePath, AssetType::Mesh))
 	{
-		outResolvedPath = *resolvedPath;
-		outErrorMessage.clear();
-		return true;
+		return *resolvedPath;
 	}
 
-	outErrorMessage = "Unable to resolve source scene path '" + sourceScenePath.string() + "'";
-	return false;
+	throw Diagnostics::Error("Unable to resolve source scene path '" + sourceScenePath.string() + "'.");
 }
 
-bool SceneCookPipeline::BuildSceneAssetId(
-    const std::filesystem::path& resolvedSourceScenePath,
-    std::string& outSceneAssetId,
-    std::string& outErrorMessage)
+std::string SceneCookPipeline::BuildSceneAssetId(const std::filesystem::path& resolvedSourceScenePath)
 {
 	const std::filesystem::path projectMeshRoot = Filesystem::GetTypedPath(AssetType::Mesh, PathRoot::Project);
 	const std::filesystem::path engineMeshRoot = Filesystem::GetTypedPath(AssetType::Mesh, PathRoot::Engine);
@@ -237,79 +162,46 @@ bool SceneCookPipeline::BuildSceneAssetId(
 
 	if (!relativePath)
 	{
-		outErrorMessage = "Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '" +
-		                  resolvedSourceScenePath.string() + "'";
-		return false;
+		throw Diagnostics::Error(
+		    "Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '" +
+		    resolvedSourceScenePath.string() + "'.");
 	}
 
-	outSceneAssetId = relativePath->generic_string();
-	std::filesystem::path sceneAssetPath(outSceneAssetId);
+	std::filesystem::path sceneAssetPath(relativePath->generic_string());
 	sceneAssetPath.replace_extension();
-	outSceneAssetId = sceneAssetPath.generic_string();
-	outErrorMessage.clear();
-	return true;
+	return sceneAssetPath.generic_string();
 }
 
-bool SceneCookPipeline::StageRegistry(
+void SceneCookPipeline::StageRegistry(
     std::span<const CookedSceneBuild* const> builds,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
 	Assets::SceneAssetRegistry registry;
-	if (!registry.Load(outErrorMessage))
-	{
-		return false;
-	}
+	registry.Load();
 
 	for (const CookedSceneBuild* build : builds)
 	{
-		std::filesystem::path manifestRelativePath;
-		if (!ResolveManifestRelativePath(
-		        *build,
-		        manifestRelativePath,
-		        outErrorMessage))
-		{
-			return false;
-		}
-
-		registry.Upsert(build->identity.assetId, std::move(manifestRelativePath));
+		registry.Upsert(build->identity.assetId, ResolveManifestRelativePath(*build));
 	}
 
-	const std::filesystem::path registryPath =
-	    Filesystem::GetSceneAssetRegistryPath();
-	const std::filesystem::path stagedPath =
-	    Files::BuildTemporaryPath(registryPath, ".cook-generation");
+	const std::filesystem::path registryPath = Filesystem::GetSceneAssetRegistryPath();
+	const std::filesystem::path stagedPath = Files::BuildTemporaryPath(registryPath, ".cook-generation");
 
 	Files::CleanupTemporaryFile(stagedPath);
 	outPublication.push_back({stagedPath, registryPath});
 
-	if (!registry.Save(stagedPath, outErrorMessage))
-	{
-		return false;
-	}
-
-	outErrorMessage.clear();
-	return true;
+	registry.Save(stagedPath);
 }
 
-bool SceneCookPipeline::ResolveManifestRelativePath(
-    const CookedSceneBuild& build,
-    std::filesystem::path& outRelativePath,
-    std::string& outErrorMessage)
+std::filesystem::path SceneCookPipeline::ResolveManifestRelativePath(const CookedSceneBuild& build)
 {
 	const std::optional<std::filesystem::path> relativePath =
-	    Paths::TryMakeRelativeUnderRoot(
-	        build.identity.manifestPath,
-	        Filesystem::GetCookedSceneManifestRootPath());
+	    Paths::TryMakeRelativeUnderRoot(build.identity.manifestPath, Filesystem::GetCookedSceneManifestRootPath());
 	if (!relativePath)
 	{
-		outErrorMessage =
-		    "Failed to derive a relative cooked scene manifest path for scene asset id '" +
-		    build.identity.assetId + "'";
-		return false;
+		throw Diagnostics::Error(
+		    "Failed to derive a relative cooked scene manifest path for scene asset id '" + build.identity.assetId + "'.");
 	}
 
-	outRelativePath = *relativePath;
-	outErrorMessage.clear();
-	return true;
+	return *relativePath;
 }

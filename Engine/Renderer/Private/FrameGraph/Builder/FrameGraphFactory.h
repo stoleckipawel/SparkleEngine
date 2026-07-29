@@ -9,14 +9,14 @@
 
 class FrameGraph;
 class FrameGraphBuilder;
-class PipelineStateManager;
+class RenderPassRuntimeCache;
 class RenderHardwareInterface;
 class Window;
 
 struct FrameGraphDependencies
 {
 	RenderHardwareInterface& renderHardwareInterface;
-	const PipelineStateManager& pipelineStateManager;
+	const RenderPassRuntimeCache& renderPassRuntimeCache;
 	Window& window;
 	RenderViewportExtent renderExtent;
 	RenderViewportExtent outputExtent;

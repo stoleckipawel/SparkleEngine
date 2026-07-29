@@ -4,9 +4,7 @@
 
 namespace RhiContract
 {
-	std::uint32_t ResolveDescriptorLimit(
-	    const RhiCapabilities& capabilities,
-	    ERhiDescriptorAllocatorType descriptorType) noexcept
+	std::uint32_t ResolveDescriptorLimit(const RhiCapabilities& capabilities, ERhiDescriptorAllocatorType descriptorType) noexcept
 	{
 		switch (descriptorType)
 		{
@@ -41,8 +39,7 @@ bool RhiContract::IsTextureResourceDescUsable(const RhiCapabilities& capabilitie
 	}
 
 	const RhiFormatSupport* const formatSupport = capabilities.FindFormatSupport(desc.Format);
-	return formatSupport != nullptr && formatSupport->SupportsTexture &&
-	       (!desc.AllowRenderTarget || formatSupport->SupportsRenderTarget) &&
+	return formatSupport != nullptr && formatSupport->SupportsTexture && (!desc.AllowRenderTarget || formatSupport->SupportsRenderTarget) &&
 	       (!desc.AllowDepthStencil || formatSupport->SupportsDepthStencil) &&
 	       (!desc.AllowUnorderedAccess || formatSupport->SupportsUnorderedAccess);
 }
@@ -64,11 +61,9 @@ bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noex
 			}
 			if (desc.Buffer.StrideInBytes == 0)
 			{
-				return desc.Buffer.OffsetInBytes % sizeof(std::uint32_t) == 0 &&
-			       desc.Buffer.SizeInBytes % sizeof(std::uint32_t) == 0;
+				return desc.Buffer.OffsetInBytes % sizeof(std::uint32_t) == 0 && desc.Buffer.SizeInBytes % sizeof(std::uint32_t) == 0;
 			}
-			return desc.Buffer.OffsetInBytes % desc.Buffer.StrideInBytes == 0 &&
-			       desc.Buffer.SizeInBytes % desc.Buffer.StrideInBytes == 0;
+			return desc.Buffer.OffsetInBytes % desc.Buffer.StrideInBytes == 0 && desc.Buffer.SizeInBytes % desc.Buffer.StrideInBytes == 0;
 		case ERhiResourceViewKind::AccelerationStructureShaderResource:
 			return desc.AccelerationStructureGpuAddress != 0;
 	}
@@ -78,14 +73,17 @@ bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noex
 
 bool RhiContract::IsRayTracingGeometryDescUsable(const RhiRayTracingGeometryDesc& geometry) noexcept
 {
-	return geometry.VertexBuffer.Resource && geometry.IndexBuffer.Resource &&
-	       geometry.VertexStrideInBytes >= sizeof(float) * 3u && geometry.VertexCount != 0 &&
-	       geometry.IndexCount != 0 && geometry.IndexCount % 3u == 0;
+	return geometry.VertexBuffer.Resource && geometry.IndexBuffer.Resource && geometry.VertexStrideInBytes >= sizeof(float) * 3u &&
+	       geometry.VertexCount != 0 && geometry.IndexCount != 0 && geometry.IndexCount % 3u == 0;
 }
 
 bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount) noexcept
 {
-	if (instances == nullptr || instanceCount == 0)
+	if (instanceCount == 0)
+	{
+		return instances == nullptr;
+	}
+	if (instances == nullptr)
 	{
 		return false;
 	}

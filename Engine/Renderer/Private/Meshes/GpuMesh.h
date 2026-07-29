@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Meshes/GpuMorphTargetBuffer.h"
-#include "Meshes/GPUSkinInfluenceBuffer.h"
+#include "Meshes/GpuSkinInfluenceBuffer.h"
 #include "Renderer/Public/Meshes/GpuMeshHandle.h"
 #include "RayTracing/RayTracingHitData.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
@@ -19,33 +19,33 @@
 class RenderCommandContext;
 class RenderCommandList;
 class RenderHardwareInterface;
-struct GPUMeshPreparedData;
+struct GpuMeshPreparedData;
 struct MeshData;
 
-struct GPUMeshBounds final
+struct GpuMeshBounds final
 {
 	DirectX::XMFLOAT3 Min = {};
 	DirectX::XMFLOAT3 Max = {};
 	bool Valid = false;
 };
 
-class GPUMesh final
+class GpuMesh final
 {
   public:
-	explicit GPUMesh(GpuMeshHandle handle = {}) noexcept;
-	~GPUMesh() noexcept;
+	explicit GpuMesh(GpuMeshHandle handle = {}) noexcept;
+	~GpuMesh() noexcept;
 
-	GPUMesh(const GPUMesh&) = delete;
-	GPUMesh& operator=(const GPUMesh&) = delete;
-	GPUMesh(GPUMesh&&) = delete;
-	GPUMesh& operator=(GPUMesh&&) = delete;
+	GpuMesh(const GpuMesh&) = delete;
+	GpuMesh& operator=(const GpuMesh&) = delete;
+	GpuMesh(GpuMesh&&) = delete;
+	GpuMesh& operator=(GpuMesh&&) = delete;
 
-	bool Upload(
+	void Upload(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    RenderCommandList& commandList,
-	    GPUMeshPreparedData preparedData);
+	    GpuMeshPreparedData preparedData);
 
-	void Bind(RenderCommandContext& cmd) const noexcept;
+	void Bind(RenderCommandContext& commandContext) const noexcept;
 
 	std::uint32_t GetIndexCount() const noexcept { return m_indexCount; }
 	std::uint32_t GetVertexCount() const noexcept { return m_vertexCount; }
@@ -60,7 +60,7 @@ class GPUMesh final
 	RhiGpuDescriptorHandle GetSkinInfluencesShaderResourceView() const noexcept { return m_skinInfluences.GetShaderResourceView(); }
 	RhiGpuDescriptorHandle GetMorphTargetDeltasShaderResourceView() const noexcept { return m_morphTargets.GetShaderResourceView(); }
 	RhiRayTracingGeometryDesc GetRayTracingGeometry() const noexcept;
-	const GPUMeshBounds& GetLocalBounds() const noexcept { return m_localBounds; }
+	const GpuMeshBounds& GetLocalBounds() const noexcept { return m_localBounds; }
 	bool HasRayTracingHitData() const noexcept { return !m_rayTracingHitVertices.empty() && !m_rayTracingHitIndices.empty(); }
 	std::span<const RayTracingHitVertex> GetRayTracingHitVertices() const noexcept { return m_rayTracingHitVertices; }
 	std::span<const std::uint32_t> GetRayTracingHitIndices() const noexcept { return m_rayTracingHitIndices; }
@@ -71,33 +71,33 @@ class GPUMesh final
 	std::span<const MorphTargetDeltaData> GetMorphTargetDeltas() const noexcept { return m_morphTargets.GetDeltas(); }
 
   private:
-	bool CreateGeometryBuffers(
+	void CreateGeometryBuffers(
 	    RenderCommandList& commandList,
 	    const MeshData& meshData);
-	bool CreateVertexBuffer(
+	void CreateVertexBuffer(
 	    RenderCommandList& commandList,
 	    const MeshData& meshData);
-	bool CreateIndexBuffer(
+	void CreateIndexBuffer(
 	    RenderCommandList& commandList,
 	    const MeshData& meshData);
-	bool CreateDeformationBuffers(
+	void CreateDeformationBuffers(
 	    RenderCommandList& commandList,
-	    GPUMeshPreparedData& preparedData);
+	    GpuMeshPreparedData& preparedData);
 	void CommitPreparedData(
-	    GPUMeshPreparedData&& preparedData);
+	    GpuMeshPreparedData&& preparedData);
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	GpuMeshHandle m_handle = {};
 	RhiOwnedResourceHandle m_vertexBuffer = {};
 	RhiOwnedResourceHandle m_indexBuffer = {};
-	GPUSkinInfluenceBuffer m_skinInfluences;
+	GpuSkinInfluenceBuffer m_skinInfluences;
 	GpuMorphTargetBuffer m_morphTargets;
 	RhiVertexBufferView m_vertexBufferView{};
 	RhiIndexBufferView m_indexBufferView{};
 
 	std::uint32_t m_vertexCount = 0;
 	std::uint32_t m_indexCount = 0;
-	GPUMeshBounds m_localBounds = {};
+	GpuMeshBounds m_localBounds = {};
 	std::vector<RayTracingHitVertex> m_rayTracingHitVertices;
 	std::vector<std::uint32_t> m_rayTracingHitIndices;
 	std::vector<VertexSkinInfluence> m_cpuSkinInfluences;

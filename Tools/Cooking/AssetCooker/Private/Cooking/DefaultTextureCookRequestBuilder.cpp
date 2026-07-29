@@ -1,5 +1,6 @@
 #include "DefaultTextureCookRequestBuilder.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 
@@ -88,18 +89,16 @@ class DefaultTextureCookCatalog final
 	        TextureDimension::Texture2D},
 	};
 
-	static bool AppendRequest(
+	static void AppendRequest(
 	    const DefaultTextureCookDesc& description,
-	    TextureCookRequestSet& requestSet,
-	    std::string& outErrorMessage)
+	    TextureCookRequestSet& requestSet)
 	{
 		const std::filesystem::path sourcePath =
 		    (Filesystem::GetEnginePath() / std::filesystem::path(description.SourceRelativePath)).lexically_normal();
 		std::error_code errorCode;
 		if (!std::filesystem::exists(sourcePath, errorCode))
 		{
-			outErrorMessage = "Default source texture was not found: " + sourcePath.string();
-			return false;
+			throw Diagnostics::Error("Default source texture was not found: " + sourcePath.string() + ".");
 		}
 
 		TextureCookRequest request;
@@ -115,26 +114,14 @@ class DefaultTextureCookCatalog final
 		request.policy.textureGroup = description.Group;
 		request.policy.dimension = description.Dimension;
 		request.policy.channelMask = TextureChannelMask::Rgba;
-		if (!requestSet.Add(request, outErrorMessage))
-		{
-			return false;
-		}
-
-		outErrorMessage.clear();
-		return true;
+		requestSet.Add(request);
 	}
 };
 
-bool DefaultTextureCookRequestBuilder::AppendTo(
-    TextureCookRequestSet& requestSet, std::string& outErrorMessage)
+void DefaultTextureCookRequestBuilder::AppendTo(TextureCookRequestSet& requestSet)
 {
 	for (const DefaultTextureCookCatalog::DefaultTextureCookDesc& texture : DefaultTextureCookCatalog::DefaultTextures)
 	{
-		if (!DefaultTextureCookCatalog::AppendRequest(texture, requestSet, outErrorMessage))
-		{
-			return false;
-		}
+		DefaultTextureCookCatalog::AppendRequest(texture, requestSet);
 	}
-	outErrorMessage.clear();
-	return true;
 }

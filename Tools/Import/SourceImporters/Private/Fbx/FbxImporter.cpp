@@ -1,16 +1,20 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Fbx/FbxImporter.h"
 
+#include "Fbx/FbxAnimationImporter.h"
+#include "Fbx/FbxCameraImporter.h"
+#include "Fbx/FbxEmbeddedTextureImporter.h"
 #include "Fbx/FbxGeometryImporter.h"
+#include "Fbx/FbxLightImporter.h"
 #include "Fbx/FbxMaterialImporter.h"
 #include "Fbx/FbxSceneReader.h"
+#include "Core/Public/Diagnostics/Error.h"
 
 #include <assimp/Importer.hpp>
 
 #include <format>
-
-static const auto g_fbxImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Fbx");
+#include <vector>
 
 std::string_view FbxImporter::GetImporterId() const noexcept
 {
@@ -22,41 +26,34 @@ bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
 	return extension == L".fbx";
 }
 
-SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) const
+SourceImportOutput FbxImporter::Import(const std::filesystem::path& filePath) const
 {
-	SourceImportResult result;
-	result.report.sourcePath = filePath;
-	result.report.importerId = std::string(GetImporterId());
-	result.scene.importerName = result.report.importerId;
-	result.scene.sourcePath = filePath;
+	SourceImportOutput output;
+	output.provenance.sourcePath = filePath;
+	output.provenance.importerId = std::string(GetImporterId());
 
 	Assimp::Importer importer;
-	const aiScene* scene = nullptr;
-	if (!FbxSceneReader::LoadScene(filePath, importer, scene, result))
+	const aiScene& scene = FbxSceneReader::LoadScene(filePath, importer);
+
+	output.scene.materials.reserve(scene.mNumMaterials);
+	const std::size_t importedMeshInstanceCount = FbxGeometryImporter::CountImportedMeshInstances(*scene.mRootNode);
+	output.ReserveMeshPrimitives(scene.mNumMeshes);
+	output.ReserveMeshInstances(importedMeshInstanceCount);
+
+	const std::vector<std::filesystem::path> embeddedTexturePaths = FbxEmbeddedTextureImporter::ExtractTextures(scene);
+	FbxMaterialImporter::ImportMaterials(scene, filePath.parent_path(), embeddedTexturePaths, output);
+
+	FbxGeometryImporter::ImportGeometry(scene, output);
+	FbxCameraImporter::ImportCameras(scene, output);
+	FbxLightImporter::ImportLights(scene, output);
+	FbxAnimationImporter::ImportAnimations(scene, output);
+
+	if (output.scene.meshPrimitives.empty() != output.scene.meshInstances.empty() ||
+	    (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty() &&
+	     output.scene.animations.empty()))
 	{
-		return result;
+		throw Diagnostics::Error("FBX import produced incomplete mesh content or no supported scene content.");
 	}
 
-	result.scene.materials.reserve(scene->mNumMaterials);
-	const std::size_t importedMeshInstanceCount = FbxGeometryImporter::CountImportedMeshInstances(*scene->mRootNode);
-	result.ReserveMeshPrimitives(scene->mNumMeshes);
-	result.ReserveMeshInstances(importedMeshInstanceCount);
-
-	FbxSceneReader::CollectSceneWarnings(*scene, result);
-	FbxMaterialImporter::ImportMaterials(*scene, filePath.parent_path(), result);
-	FbxGeometryImporter::ImportGeometry(*scene, result);
-
-	if (result.scene.meshPrimitives.empty() || result.scene.meshInstances.empty())
-	{
-		SPDLOG_LOGGER_ERROR(
-		    g_fbxImporterLogger,
-		    "{}",
-		    std::format("FbxImporter: No supported static meshes found in '{}'", filePath.string()));
-		return result;
-	}
-
-	result.succeeded = true;
-	return result;
+	return output;
 }
-
-

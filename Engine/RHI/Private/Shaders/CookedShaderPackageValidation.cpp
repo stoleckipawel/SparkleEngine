@@ -2,6 +2,7 @@
 
 #include "Shaders/CookedShaderPackageCache.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "ShaderParameters/PassParameterLayout.h"
@@ -30,52 +31,46 @@ class CookedShaderPackageValidationImplementation final
 		    const LoadedShaderPackage& package,
 		    const ShaderPackageDefinition& definition,
 		    const PassParameterLayout& expectedBindingLayout,
-		    CookedShaderBinaryFormat requiredBinaryFormat,
-		    std::string& errorMessage) noexcept
+		    CookedShaderBinaryFormat runtimeBinaryFormat) noexcept
 		    : m_package(package),
 		      m_definition(definition),
 		      m_expectedBindingLayout(expectedBindingLayout),
 		      m_expectedParameters(expectedBindingLayout.GetParameters()),
-		      m_requiredBinaryFormat(requiredBinaryFormat),
-		      m_requiredCodegenTarget(GetRuntimeShaderCodegenTarget(requiredBinaryFormat)),
-		      m_expectedBindingLayoutHash(BuildPassParameterLayoutHash(expectedBindingLayout)),
-		      m_errorMessage(errorMessage)
+		      m_runtimeBinaryFormat(runtimeBinaryFormat),
+		      m_runtimeCodegenTarget(GetRuntimeShaderCodegenTarget(runtimeBinaryFormat)),
+		      m_expectedBindingLayoutHash(BuildPassParameterLayoutHash(expectedBindingLayout))
 		{
 		}
 
-		bool Validate()
+		void Validate()
 		{
-			if (!ValidateHeader() || !ValidateRayTracingFeatures() || !ValidatePipelineLayouts() || !ValidateDeclaredStages() ||
-			    !ValidateLogicalBindingRecords() ||
-			    !CookedShaderBindingValidation::Validate(
-			        m_package, m_definition, m_expectedParameters, m_requiredBinaryFormat, m_errorMessage) ||
-			    !ValidateBinaries())
-			{
-				return false;
-			}
-
-			m_errorMessage.clear();
-			return true;
+			ValidateHeader();
+			ValidateRayTracingFeatures();
+			ValidatePipelineLayouts();
+			ValidateDeclaredStages();
+			ValidateLogicalBindingRecords();
+			CookedShaderBindingValidation::Validate(
+			    m_package, m_definition, m_expectedParameters, m_runtimeBinaryFormat);
+			ValidateBinaries();
 		}
 
 	  private:
-		bool Reject(std::string message)
+		[[noreturn]] static void Reject(std::string message)
 		{
-			m_errorMessage = std::move(message);
-			return false;
+			throw Diagnostics::Error(std::move(message));
 		}
 
-		bool ValidateHeader()
+		void ValidateHeader()
 		{
 			if (!m_package.IsValid())
 			{
-				return Reject("Cooked shader package payload is invalid.");
+				Reject("Cooked shader package payload is invalid.");
 			}
 
 			const std::uint64_t expectedPackageKey = BuildShaderPackageKey(m_definition.PackageId);
 			if (m_package.GetHeader().ShaderPackageKey != expectedPackageKey)
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed package contract check: field=ShaderPackageKey expected={} actual={}",
 				    m_definition.PackageId,
 				    Formatting::FormatHexUInt64(expectedPackageKey),
@@ -84,7 +79,7 @@ class CookedShaderPackageValidationImplementation final
 
 			if (m_package.GetHeader().SourceIdentityHash == 0)
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed package contract check: field=SourceIdentityHash actual=0",
 				    m_definition.PackageId));
 			}
@@ -92,7 +87,7 @@ class CookedShaderPackageValidationImplementation final
 			if (m_package.GetHeader().ShaderModelMajor != CookedShaderPackageContract::ShaderModelMajor ||
 			    m_package.GetHeader().ShaderModelMinor != CookedShaderPackageContract::ShaderModelMinor)
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed package contract check: field=ShaderModel expected={}.{} actual={}.{}",
 				    m_definition.PackageId,
 				    CookedShaderPackageContract::ShaderModelMajor,
@@ -100,22 +95,21 @@ class CookedShaderPackageValidationImplementation final
 				    m_package.GetHeader().ShaderModelMajor,
 				    m_package.GetHeader().ShaderModelMinor));
 			}
-
-			return true;
 		}
 
-		bool ValidateRayTracingFeatures()
+		void ValidateRayTracingFeatures()
 		{
+			std::string metadataError;
 			if (m_package.GetHeader().PackageKind == CookedShaderPackageKind::RayTracingLibrary)
 			{
 				RhiRayTracingCapabilities metadataOnlyCapabilities{};
 				metadataOnlyCapabilities.SupportsRayTracing = true;
-				if (!m_package.ValidateRayTracingLibraryMetadata(metadataOnlyCapabilities, m_requiredBinaryFormat, m_errorMessage))
+				if (!m_package.ValidateRayTracingLibraryMetadata(metadataOnlyCapabilities, m_runtimeBinaryFormat, metadataError))
 				{
-					return false;
+					Reject(std::move(metadataError));
 				}
 
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' is a ray tracing library package with valid metadata, but runtime RT state object execution is not enabled yet.",
 				    m_definition.PackageId));
 			}
@@ -123,23 +117,20 @@ class CookedShaderPackageValidationImplementation final
 			if (HasCookedShaderPackageFeature(
 			        m_package.GetHeader().PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
 			    !ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
-			        m_package, m_requiredBinaryFormat, m_errorMessage))
+			        m_package, m_runtimeBinaryFormat, metadataError))
 			{
-				const std::string inlineRayQueryError = m_errorMessage;
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed inline ray query metadata validation: {}",
 				    m_definition.PackageId,
-				    inlineRayQueryError));
+				    metadataError));
 			}
-
-			return true;
 		}
 
-		bool ValidatePipelineLayouts()
+		void ValidatePipelineLayouts()
 		{
 			if (m_package.GetHeader().BindingLayoutHash != m_expectedBindingLayoutHash)
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed package contract check: field=BindingLayoutHash bindingLayout='{}' expected={} actual={}",
 				    m_definition.PackageId,
 				    m_expectedBindingLayout.GetDebugName(),
@@ -149,7 +140,7 @@ class CookedShaderPackageValidationImplementation final
 
 			if (m_package.GetPipelineLayoutRecords().empty())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed package contract check: no cooked pipeline layout artifact records were found. Recook shaders.",
 				    m_definition.PackageId));
 			}
@@ -157,29 +148,24 @@ class CookedShaderPackageValidationImplementation final
 			std::uint32_t runtimeLayoutRecordCount = 0;
 			for (const CookedShaderPipelineLayoutRecord& layoutRecord : m_package.GetPipelineLayoutRecords())
 			{
-				if (!ValidatePipelineLayoutRecord(layoutRecord, runtimeLayoutRecordCount))
-				{
-					return false;
-				}
+				ValidatePipelineLayoutRecord(layoutRecord, runtimeLayoutRecordCount);
 			}
 
 			if (runtimeLayoutRecordCount != 1)
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' requires exactly one pipeline layout for runtime target '{}' but contains {}",
 				    m_definition.PackageId,
-				    m_requiredCodegenTarget,
+				    m_runtimeCodegenTarget,
 				    runtimeLayoutRecordCount));
 			}
-
-			return true;
 		}
 
-		bool ValidatePipelineLayoutRecord(const CookedShaderPipelineLayoutRecord& layoutRecord, std::uint32_t& runtimeRecordCount)
+		void ValidatePipelineLayoutRecord(const CookedShaderPipelineLayoutRecord& layoutRecord, std::uint32_t& runtimeRecordCount)
 		{
 			if (layoutRecord.BindingLayoutHash != m_expectedBindingLayoutHash)
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed package contract check: pipeline layout BindingLayoutHash expected={} actual={}",
 				    m_definition.PackageId,
 				    Formatting::FormatHexUInt64(m_expectedBindingLayoutHash),
@@ -188,7 +174,7 @@ class CookedShaderPackageValidationImplementation final
 
 			if (layoutRecord.BindingRecordOffset + layoutRecord.BindingRecordCount > m_package.GetBindingRecords().size())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed package contract check: pipeline layout binding range is out of bounds",
 				    m_definition.PackageId));
 			}
@@ -196,34 +182,33 @@ class CookedShaderPackageValidationImplementation final
 			const std::string_view codegenTarget = m_package.ResolveString(layoutRecord.CodegenTarget);
 			if (codegenTarget.empty())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed package contract check: pipeline layout CodegenTarget is empty",
 				    m_definition.PackageId));
 			}
 
-			runtimeRecordCount += codegenTarget == m_requiredCodegenTarget ? 1u : 0u;
-			return true;
+			runtimeRecordCount += codegenTarget == m_runtimeCodegenTarget ? 1u : 0u;
 		}
 
-		bool ValidateDeclaredStages()
+		void ValidateDeclaredStages()
 		{
 			if (CookedShaderBindingRules::HasAllStages(m_package.GetHeader().DeclaredStages, m_definition.ExpectedStages))
 			{
-				return true;
+				return;
 			}
 
-			return Reject(std::format(
+			Reject(std::format(
 			    "Cooked shader package '{}' failed package contract check: field=DeclaredStages expected='{}' actual='{}'",
 			    m_definition.PackageId,
 			    FormatShaderStageMask(m_definition.ExpectedStages),
 			    FormatShaderStageMask(m_package.GetHeader().DeclaredStages)));
 		}
 
-		bool ValidateLogicalBindingRecords()
+		void ValidateLogicalBindingRecords()
 		{
 			if (m_package.GetBindingRecords().size() != m_expectedParameters.size())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' declares {} binding records but runtime layout '{}' expects {}",
 				    m_definition.PackageId,
 				    m_package.GetBindingRecords().size(),
@@ -233,22 +218,18 @@ class CookedShaderPackageValidationImplementation final
 
 			for (std::size_t parameterIndex = 0; parameterIndex < m_expectedParameters.size(); ++parameterIndex)
 			{
-				if (!ValidateLogicalBindingRecord(parameterIndex))
-				{
-					return false;
-				}
+				ValidateLogicalBindingRecord(parameterIndex);
 			}
-			return true;
 		}
 
-		bool ValidateLogicalBindingRecord(std::size_t parameterIndex)
+		void ValidateLogicalBindingRecord(std::size_t parameterIndex)
 		{
 			const PassParameterDesc& expectedParameter = m_expectedParameters[parameterIndex];
 			const CookedShaderBindingRecord& bindingRecord = m_package.GetBindingRecords()[parameterIndex];
 			const std::string_view bindingName = m_package.ResolveString(bindingRecord.Name);
 			if (bindingName.empty())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' has an invalid binding name string for binding index {}",
 				    m_definition.PackageId,
 				    parameterIndex));
@@ -263,66 +244,63 @@ class CookedShaderPackageValidationImplementation final
 			                     bindingRecord.ValueSizeInBytes == expectedParameter.ValueSizeInBytes;
 			if (matches)
 			{
-				return true;
+				return;
 			}
 
-			return Reject(std::format(
+			Reject(std::format(
 			    "Cooked shader package '{}' binding record {} does not match runtime layout parameter '{}'",
 			    m_definition.PackageId,
 			    parameterIndex,
 			    expectedParameter.Name));
 		}
 
-		bool ValidateBinaries()
+		void ValidateBinaries()
 		{
-			std::array<bool, static_cast<std::size_t>(ShaderStage::Count)> hasRequiredBinaryForStage = {};
+			std::array<bool, static_cast<std::size_t>(ShaderStage::Count)> hasRuntimeBinaryForStage = {};
 			for (const CookedShaderBinaryRecord& binaryRecord : m_package.GetBinaryRecords())
 			{
-				if (!ValidateBinaryRecord(binaryRecord, hasRequiredBinaryForStage))
-				{
-					return false;
-				}
+				ValidateBinaryRecord(binaryRecord, hasRuntimeBinaryForStage);
 			}
 
-			return ValidateRequiredStages(hasRequiredBinaryForStage);
+			ValidateExpectedStages(hasRuntimeBinaryForStage);
 		}
 
-		bool ValidateBinaryRecord(
+		void ValidateBinaryRecord(
 		    const CookedShaderBinaryRecord& binaryRecord,
-		    std::array<bool, static_cast<std::size_t>(ShaderStage::Count)>& hasRequiredBinaryForStage)
+		    std::array<bool, static_cast<std::size_t>(ShaderStage::Count)>& hasRuntimeBinaryForStage)
 		{
 			if (binaryRecord.Stage == ShaderStage::Count)
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' contains an invalid shader stage record", m_definition.PackageId));
 			}
 			if (m_package.ResolveString(binaryRecord.EntryPoint).empty())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' contains an invalid entry point string", m_definition.PackageId));
 			}
 			if (binaryRecord.DebugArtifact && m_package.ResolveString(binaryRecord.DebugArtifact).empty())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' contains an invalid debug artifact string", m_definition.PackageId));
 			}
 			if (m_package.ResolveString(binaryRecord.CodegenTarget).empty())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' contains a binary with an invalid CodegenTarget string", m_definition.PackageId));
 			}
 
 			const ShaderBytecode bytecode = m_package.GetBytecode(binaryRecord);
 			if (!bytecode.IsValid())
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' contains an invalid bytecode blob for stage {}",
 				    m_definition.PackageId,
 				    static_cast<std::uint32_t>(binaryRecord.Stage)));
 			}
 			if (Hash::Fnv1a64(bytecode.Data, bytecode.Size) != binaryRecord.BytecodeHash)
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' failed bytecode hash validation for stage {}",
 				    m_definition.PackageId,
 				    static_cast<std::uint32_t>(binaryRecord.Stage)));
@@ -331,31 +309,30 @@ class CookedShaderPackageValidationImplementation final
 			        m_package.GetHeader().DeclaredStages,
 			        ToShaderStageMask(binaryRecord.Stage)))
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' contains a stage record outside its declared stage mask", m_definition.PackageId));
 			}
 
-			if (!m_package.IsRuntimeBinary(binaryRecord, m_requiredBinaryFormat))
+			if (!m_package.IsRuntimeBinary(binaryRecord, m_runtimeBinaryFormat))
 			{
-				return true;
+				return;
 			}
 
 			const std::size_t stageIndex = static_cast<std::size_t>(binaryRecord.Stage);
-			if (hasRequiredBinaryForStage[stageIndex])
+			if (hasRuntimeBinaryForStage[stageIndex])
 			{
-				return Reject(std::format(
+				Reject(std::format(
 				    "Cooked shader package '{}' contains more than one {}/{} binary for stage {}",
 				    m_definition.PackageId,
-				    CookedShaderBinaryFormatToString(m_requiredBinaryFormat),
-				    m_requiredCodegenTarget,
+				    CookedShaderBinaryFormatToString(m_runtimeBinaryFormat),
+				    m_runtimeCodegenTarget,
 				    stageIndex));
 			}
 
-			hasRequiredBinaryForStage[stageIndex] = true;
-			return true;
+			hasRuntimeBinaryForStage[stageIndex] = true;
 		}
 
-		bool ValidateRequiredStages(const std::array<bool, static_cast<std::size_t>(ShaderStage::Count)>& availableStages)
+		void ValidateExpectedStages(const std::array<bool, static_cast<std::size_t>(ShaderStage::Count)>& availableStages)
 		{
 			for (const ShaderStage stage : kKnownShaderStages)
 			{
@@ -365,35 +342,32 @@ class CookedShaderPackageValidationImplementation final
 					continue;
 				}
 
-				return Reject(std::format(
-				    "Cooked shader package '{}' is missing the required {}/{} binary for shader stage '{}'",
+				Reject(std::format(
+				    "Cooked shader package '{}' is missing the runtime {}/{} binary for shader stage '{}'",
 				    m_definition.PackageId,
-				    CookedShaderBinaryFormatToString(m_requiredBinaryFormat),
-				    m_requiredCodegenTarget,
+				    CookedShaderBinaryFormatToString(m_runtimeBinaryFormat),
+				    m_runtimeCodegenTarget,
 				    GetShaderStagePrefix(stage)));
 			}
-			return true;
 		}
 
 		const LoadedShaderPackage& m_package;
 		const ShaderPackageDefinition& m_definition;
 		const PassParameterLayout& m_expectedBindingLayout;
 		const std::vector<PassParameterDesc>& m_expectedParameters;
-		CookedShaderBinaryFormat m_requiredBinaryFormat;
-		std::string_view m_requiredCodegenTarget;
+		CookedShaderBinaryFormat m_runtimeBinaryFormat;
+		std::string_view m_runtimeCodegenTarget;
 		std::uint64_t m_expectedBindingLayoutHash;
-		std::string& m_errorMessage;
 	};
 };
 
-bool CookedShaderPackageCache::ValidatePackage(
+void CookedShaderPackageCache::ValidatePackage(
     const LoadedShaderPackage& package,
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
-    CookedShaderBinaryFormat requiredBinaryFormat,
-    std::string& outErrorMessage)
+    CookedShaderBinaryFormat runtimeBinaryFormat)
 {
-	return CookedShaderPackageValidationImplementation::CookedShaderPackageValidator(
-	           package, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage)
+	CookedShaderPackageValidationImplementation::CookedShaderPackageValidator(
+	    package, definition, expectedBindingLayout, runtimeBinaryFormat)
 	    .Validate();
 }

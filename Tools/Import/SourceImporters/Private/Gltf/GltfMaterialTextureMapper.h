@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SourceImportResult.h"
 #include "Types/ImportedMaterial.h"
+#include "Types/ImportedSceneIndices.h"
 
 #include <filesystem>
 #include <optional>
@@ -17,34 +17,25 @@ class GltfMaterialTextureMapper final
 	    const cgltf_material& material,
 	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
-	    ImportedMaterial& importedMaterial,
-	    SourceImportResult& result);
+	    ImportedMaterial& importedMaterial);
 
   private:
 	static void AssignPackedMetallicRoughness(
 	    const cgltf_material& material,
 	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
-	    ImportedMaterial& importedMaterial,
-	    SourceImportResult& result);
+	    ImportedMaterial& importedMaterial);
 	static void AssignTextureByType(
 	    const cgltf_material& material,
 	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
 	    TextureGroup textureGroup,
-	    ImportedMaterial& importedMaterial,
-	    SourceImportResult& result);
+	    ImportedMaterial& importedMaterial);
 	static std::optional<std::filesystem::path> ResolveTexturePath(
 	    const cgltf_texture_view& textureView,
 	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
-	    std::string_view slotName,
-	    SourceImportResult& result);
-	static std::optional<std::filesystem::path> NormalizeTexturePath(
-	    std::filesystem::path texturePath,
-	    ImportedMaterialIndex materialIndex,
-	    std::string_view slotName,
-	    SourceImportResult& result);
+	    std::string_view slotName);
 	static void SetTextureSource(
 	    ImportedMaterial& importedMaterial,
 	    TextureGroup textureGroup,

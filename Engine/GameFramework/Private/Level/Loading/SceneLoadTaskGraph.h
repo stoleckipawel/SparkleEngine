@@ -6,6 +6,6 @@
 
 namespace Assets
 {
-	struct SceneLoadSharedState;
-	CompiledTaskGraph BuildSceneLoadTaskGraph(const std::shared_ptr<SceneLoadSharedState>& state);
+	struct SceneLoadWorkState;
+	CompiledTaskGraph BuildSceneLoadTaskGraph(const std::shared_ptr<SceneLoadWorkState>& state);
 }

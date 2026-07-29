@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <filesystem>
-#include <string>
 #include <span>
 
 namespace Assets
@@ -12,13 +11,8 @@ namespace Assets
 	class MeshAssetLoader final
 	{
 	  public:
-		bool Decode(
+		LoadedMeshAsset Decode(
 		    const std::filesystem::path& path,
-		    std::span<const std::uint8_t> bytes,
-		    LoadedMeshAsset& outMeshAsset,
-		    std::string& outErrorMessage) const;
-
-	  private:
-		static bool HasValidHeader(std::uint32_t vertexStride, std::uint32_t indexStride) noexcept;
+		    std::span<const std::uint8_t> bytes) const;
 	};
 }

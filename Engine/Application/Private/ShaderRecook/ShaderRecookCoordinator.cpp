@@ -2,6 +2,7 @@
 #include "Core/Public/FileSystemUtils.h"
 
 #include "ShaderRecook/ShaderRecookCoordinator.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "EditorOperations/EditorOperationService.h"
 
 #include "Renderer.h"
@@ -135,8 +136,11 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 			return;
 		}
 
-		const CookedShaderReloadResult reloadResult = ReloadCookedShaders(renderer);
-		if (!reloadResult)
+		try
+		{
+			ReloadCookedShaders(renderer);
+		}
+		catch (const Diagnostics::Error& error)
 		{
 			m_lastAcceptedPublicationId = publication.PublicationId;
 			m_hasAcceptedPublication = true;
@@ -147,7 +151,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 			        result.RequestId,
 			        DescribeRequest(result.Request),
 			        publication.PublicationId,
-			        reloadResult.ErrorMessage,
+			        error.what(),
 			        result.Process.CommandLine,
 			        result.Process.Output));
 			return;
@@ -178,28 +182,29 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 	        result.Process.Output));
 }
 
-CookedShaderReloadResult ShaderRecookCoordinator::ReloadCookedShaders(Renderer& renderer) noexcept
+void ShaderRecookCoordinator::ReloadCookedShaders(Renderer& renderer)
 {
 	PublishStatus("Shader reload accepted; validating a replacement runtime generation at the render boundary.");
-	return renderer.ReloadCookedShaders();
+	renderer.ReloadCookedShaders();
 }
 
 void ShaderRecookCoordinator::HandleManualReload(Renderer& renderer) noexcept
 {
-	const CookedShaderReloadResult reloadResult = ReloadCookedShaders(renderer);
-	if (reloadResult)
+	try
 	{
+		ReloadCookedShaders(renderer);
 		PublishStatus(
 		    std::format(
 		        "Manual shader reload activated generation {} without a device-idle drain.",
 		        renderer.GetShaderPackageGeneration()));
-		return;
 	}
-
-	PublishStatus(
-	    std::format(
-	        "Manual shader reload was rejected by runtime validation; previous cooked shader packages remain active. {}",
-	        reloadResult.ErrorMessage));
+	catch (const Diagnostics::Error& error)
+	{
+		PublishStatus(
+		    std::format(
+		        "Manual shader reload was rejected by runtime validation; previous cooked shader packages remain active. {}",
+		        error.what()));
+	}
 }
 
 void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer) noexcept
@@ -251,8 +256,11 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 		return;
 	}
 
-	const CookedShaderReloadResult reloadResult = ReloadCookedShaders(renderer);
-	if (!reloadResult)
+	try
+	{
+		ReloadCookedShaders(renderer);
+	}
+	catch (const Diagnostics::Error& error)
 	{
 		m_lastAcceptedPublicationId = publication.PublicationId;
 		m_hasAcceptedPublication = true;
@@ -262,7 +270,7 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 		        "External shader recook publication {} was fresh, but runtime validation rejected the replacement set; previous cooked "
 		        "shader packages remain active. {}",
 		        publication.PublicationId,
-		        reloadResult.ErrorMessage));
+		        error.what()));
 		return;
 	}
 

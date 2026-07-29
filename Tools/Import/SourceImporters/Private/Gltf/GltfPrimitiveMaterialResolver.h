@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SourceImportResult.h"
+#include "SourceImportOutput.h"
 
 #include <string_view>
 
@@ -14,5 +14,5 @@ class GltfPrimitiveMaterialResolver final
 	    const cgltf_primitive& primitive,
 	    const cgltf_data* data,
 	    std::string_view primitiveLabel,
-	    SourceImportResult& result);
+	    SourceImportOutput& output);
 };

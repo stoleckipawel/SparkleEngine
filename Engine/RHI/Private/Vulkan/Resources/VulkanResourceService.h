@@ -7,7 +7,7 @@
 #include <memory>
 #include <string_view>
 
-class VulkanDescriptorManager;
+class VulkanDescriptorService;
 class VulkanGpuMemoryAllocator;
 class VulkanRenderHardwareInterface;
 class VulkanRhi;
@@ -18,7 +18,7 @@ class VulkanResourceService final : public RhiResourceService
 	VulkanResourceService(
 	    VulkanRhi& rhi,
 	    VulkanGpuMemoryAllocator& memoryAllocator,
-	    VulkanDescriptorManager& descriptorManager,
+	    VulkanDescriptorService& descriptorService,
 	    const RhiCapabilities& capabilities) noexcept;
 	~VulkanResourceService() noexcept;
 
@@ -101,6 +101,6 @@ class VulkanResourceService final : public RhiResourceService
 
 	VulkanRhi* m_rhi = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
-	VulkanDescriptorManager* m_descriptorManager = nullptr;
+	VulkanDescriptorService* m_descriptorService = nullptr;
 	const RhiCapabilities* m_capabilities = nullptr;
 };

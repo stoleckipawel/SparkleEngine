@@ -9,7 +9,7 @@
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/SceneObjectPresentation.h"
 #include "Scene/Model/EditorSceneModel.h"
-#include "Scene/Transactions/EditorTransactionManager.h"
+#include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 
@@ -20,8 +20,8 @@
 #include <imgui.h>
 
 SceneInspectorPanel::SceneInspectorPanel(
-    SceneObjectSelection& selection, EditorTransactionManager& transactions, float widthPixels) noexcept :
-    m_transactions(&transactions), m_selection(&selection), m_widthPixels(widthPixels)
+    SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels) noexcept :
+    m_transactionHistory(&transactionHistory), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -166,18 +166,18 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 	{
 		case SceneObjectType::Camera:
 			if (const WorldCameraReadData* camera = m_model->FindCamera(m_selection->entity))
-				SceneCameraInspector::Build(*camera, *m_transactions, m_model->GetWorldGeneration(), m_filterText);
+				SceneCameraInspector::Build(*camera, *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::Light:
 			if (const WorldLightReadData* light = m_model->FindLight(m_selection->entity))
-				SceneLightInspector::Build(light->Description, light->Entity, *m_transactions, m_model->GetWorldGeneration(), m_filterText);
+				SceneLightInspector::Build(light->Description, light->Entity, *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::Sky:
-			SceneSkyInspector::Build(m_model->GetSkyEnvironment(), *m_transactions, m_model->GetWorldGeneration(), m_filterText);
+			SceneSkyInspector::Build(m_model->GetSkyEnvironment(), *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::Mesh:
 			if (const WorldMeshReadData* mesh = m_model->FindMesh(m_selection->entity))
-				SceneMeshInspector::Build(*mesh, *m_transactions, m_model->GetWorldGeneration(), m_filterText);
+				SceneMeshInspector::Build(*mesh, *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::None:
 		default:
@@ -208,7 +208,7 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 
 	m_widthPixels = ImGui::GetWindowWidth();
 
-	if (!m_model || !m_transactions || m_selection == nullptr)
+	if (!m_model || !m_transactionHistory || m_selection == nullptr)
 	{
 		ImGui::TextDisabled("Scene inspector unavailable");
 		ImGui::End();
@@ -234,7 +234,7 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 		{
 			ImGui::Spacing();
 			SceneMaterialVariantInspector::Build(
-			    m_model->GetMaterialVariants(), *m_transactions, m_model->GetWorldGeneration());
+			    m_model->GetMaterialVariants(), *m_transactionHistory, m_model->GetWorldGeneration());
 			ImGui::EndTabItem();
 		}
 

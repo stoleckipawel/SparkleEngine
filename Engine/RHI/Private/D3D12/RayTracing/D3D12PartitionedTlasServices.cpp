@@ -32,9 +32,9 @@
 
 namespace D3D12PartitionedTlasText
 {
-	std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName)
+	std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName)
 	{
-		return debugName.empty() ? std::wstring(fallbackName) : std::wstring(debugName);
+		return debugName.empty() ? std::wstring(defaultDebugName) : std::wstring(debugName);
 	}
 }
 
@@ -177,7 +177,7 @@ RhiOwnedResourceHandle D3D12PartitionedTlasServices::CreatePartitionedTopLevelAc
 	    D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    D3D12PartitionedTlasText::CopyDebugName(debugName, L"RayTracingPartitionedTlasStorage"));
+	    D3D12PartitionedTlasText::MakeDebugName(debugName, L"RayTracingPartitionedTlasStorage"));
 	return ownedRecord != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
 }
 
@@ -241,7 +241,7 @@ RhiOwnedResourceHandle D3D12PartitionedTlasServices::CreatePartitionedTopLevelAc
 	    D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::HostUpload,
-	    D3D12PartitionedTlasText::CopyDebugName(debugName, L"RayTracingPartitionedTlasOperations"));
+	    D3D12PartitionedTlasText::MakeDebugName(debugName, L"RayTracingPartitionedTlasOperations"));
 	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
 		return {};

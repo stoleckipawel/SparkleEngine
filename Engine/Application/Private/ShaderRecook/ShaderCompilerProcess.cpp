@@ -14,9 +14,7 @@
 class ShaderCompilerCommandPresentation final
 {
   public:
-	static std::string BuildDisplayCommand(
-	    const std::filesystem::path& executablePath,
-	    const std::vector<std::string>& arguments)
+	static std::string BuildDisplayCommand(const std::filesystem::path& executablePath, const std::vector<std::string>& arguments)
 	{
 		std::ostringstream command;
 		command << CommandLine::QuotePath(executablePath);
@@ -26,9 +24,7 @@ class ShaderCompilerCommandPresentation final
 	}
 };
 
-ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(
-    const ShaderRecookRequest& request,
-    std::stop_token cancellation) noexcept
+ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookRequest& request, std::stop_token cancellation) noexcept
 {
 	std::vector<std::string> arguments{"cook"};
 	if (request.Type == ShaderRecookRequestType::PackageId || request.Type == ShaderRecookRequestType::ShaderId)
@@ -48,7 +44,7 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunToolCommand(std::string_vi
 
 std::filesystem::path ShaderCompilerProcess::ResolveExecutable() noexcept
 {
-	const std::array<std::filesystem::path, 3> candidates = Paths::ExecutableLookupCandidates("ShaderCompiler.exe");
+	const auto candidates = Paths::ExecutableLookupCandidates("ShaderCompiler.exe");
 	std::error_code error;
 	for (const std::filesystem::path& candidate : candidates)
 	{
@@ -86,11 +82,12 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(
 
 	result.ExecutablePath = executablePath;
 	result.CommandLine = ShaderCompilerCommandPresentation::BuildDisplayCommand(executablePath, arguments);
-	Process::ChildProcessResult process = Process::ChildProcess::Run(Process::ChildProcessRequest{
-	    .ExecutablePath = executablePath,
-	    .Arguments = std::move(arguments),
-	    .WorkingDirectory = workingDirectory,
-	    .Cancellation = cancellation});
+	Process::ChildProcessResult process = Process::ChildProcess::Run(
+	    Process::ChildProcessRequest{
+	        .ExecutablePath = executablePath,
+	        .Arguments = std::move(arguments),
+	        .WorkingDirectory = workingDirectory,
+	        .Cancellation = cancellation});
 	result.ExitCode = process.ExitCode;
 	result.Output = std::move(process.CapturedOutput);
 	if (!process.FailureReason.empty())

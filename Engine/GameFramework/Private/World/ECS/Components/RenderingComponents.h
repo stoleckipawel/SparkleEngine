@@ -20,10 +20,7 @@ namespace ECS
 		std::uint32_t Slot = (std::numeric_limits<std::uint32_t>::max)();
 		std::uint32_t Generation = 0;
 
-		constexpr bool IsValid() const noexcept
-		{
-			return Slot != (std::numeric_limits<std::uint32_t>::max)() && Generation != 0;
-		}
+		constexpr bool IsValid() const noexcept { return Slot != (std::numeric_limits<std::uint32_t>::max)() && Generation != 0; }
 		constexpr auto operator<=>(const MeshResourceHandle&) const noexcept = default;
 	};
 
@@ -47,9 +44,9 @@ namespace ECS
 
 	struct Camera final
 	{
-		float VerticalFieldOfViewDegrees = 60.0f;
-		float NearPlane = 0.1f;
-		float FarPlane = 1000.0f;
+		float FovYDegrees = 60.0f;
+		float NearZ = 0.1f;
+		float FarZ = 1000.0f;
 		float AspectRatio = 1.0f;
 		CameraProjectionKind ProjectionKind = CameraProjectionKind::Perspective;
 		bool Active = true;
@@ -70,15 +67,18 @@ namespace ECS
 	{
 		SceneLightKind Kind = SceneLightKind::Unknown;
 		DirectX::XMFLOAT3 Color{1.0f, 1.0f, 1.0f};
-		float Intensity = 1.0f;
+		float Illuminance = 1.0f;
+		float LuminousIntensity = 1.0f;
+		float Luminance = 1.0f;
 		float Range = 0.0f;
-		float InnerConeRadians = 0.0f;
-		float OuterConeRadians = 0.0f;
+		float InnerAngleRadians = 0.0f;
+		float OuterAngleRadians = 0.0f;
 		DirectX::XMFLOAT2 AreaSize{0.0f, 0.0f};
+		DirectX::XMFLOAT3 DistanceAttenuationCoefficients{0.0f, 0.0f, 1.0f};
 		DirectX::XMFLOAT3 Direction{0.0f, -1.0f, 0.0f};
 		DirectX::XMFLOAT3 Tangent{1.0f, 0.0f, 0.0f};
-		float SourceRadius = 0.05f;
-		float AngularDiameterRadians = 0.009308f;
+		float Radius = 0.05f;
+		float AngularSizeRadians = 0.009308f;
 		bool CastShadow = true;
 	};
 }

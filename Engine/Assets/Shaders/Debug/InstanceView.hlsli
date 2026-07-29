@@ -5,11 +5,11 @@
 
 namespace InstanceView
 {
-	float3 ApplyDebugVisualization(float3 baseColor, uint debugData)
+	float3 ApplyInstanceVisualization(float3 baseColor, uint gpuSceneSlot)
 	{
-		if (ViewModeIndex == ViewMode::InstanceGroups)
+		if (ViewModeIndex == ViewMode::GpuSceneInstances)
 		{
-			return HashIdColor(debugData, 0u);
+			return HashIdColor(gpuSceneSlot, 0u);
 		}
 		return baseColor;
 	}

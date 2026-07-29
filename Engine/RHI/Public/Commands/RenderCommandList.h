@@ -6,7 +6,7 @@
 #include "../Diagnostics/RhiDiagnostics.h"
 #include "../Interop/ResourceState.h"
 #include "../Interop/RhiNativeHandles.h"
-#include "../Pipeline/RhiPipelineStateDesc.h"
+#include "../Pipeline/RhiPipelineDesc.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Resources/RhiResourceDesc.h"
 #include "../Resources/RhiResourceHandles.h"
@@ -33,7 +33,7 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;
 	virtual void EndDiagnosticScope() noexcept = 0;
 	virtual void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;
-	virtual void SetPipelineState(const RenderPipelineState& pipelineState) noexcept = 0;
+	virtual void SetPipeline(const RenderPipeline& pipeline) noexcept = 0;
 	virtual void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
 	virtual void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
 	virtual void ResetBoundState() noexcept = 0;
@@ -60,13 +60,13 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept = 0;
 	virtual void BindVertexBuffer(const RhiVertexBufferView& view) noexcept = 0;
 	virtual void BindIndexBuffer(const RhiIndexBufferView& view) noexcept = 0;
-	virtual void SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept = 0;
+	virtual void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept = 0;
 	virtual void SetRenderTargets(
-	    std::uint32_t numRTVs,
-	    const RhiCpuDescriptorHandle* rtvs,
-	    const RhiCpuDescriptorHandle* dsv = nullptr) noexcept = 0;
-	virtual void ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept = 0;
-	virtual void ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil = 0) noexcept = 0;
+	    std::uint32_t renderTargetCount,
+	    const RhiCpuDescriptorHandle* renderTargets,
+	    const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept = 0;
+	virtual void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept = 0;
+	virtual void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept = 0;
 	virtual void SetViewport(const RhiViewport& viewport) noexcept = 0;
 	virtual void SetScissorRect(const RhiRect& rect) noexcept = 0;
 	virtual void DrawIndexedInstanced(

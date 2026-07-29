@@ -532,9 +532,10 @@ Use these dispositions consistently:
 
 #### Current Owned-Source Primitive Census
 
-The 2026-07-27 current-state query in the required audit section produced 139 owned-source hits across 61 files. Declarations,
-forwarders, and `hardware_concurrency` queries are included in that count. The concrete families below classify every hit; LC-01
-through LC-19 retain the detailed migration history and falsifiers.
+The current-state query in the audit section classifies every owned-source declaration and call site it returns,
+including forwarders and `hardware_concurrency` queries. The concrete families below remain the authoritative classification;
+LC-01 through LC-19 retain the detailed migration history and falsifiers. Do not preserve a stale numeric count after a
+primitive is added or deleted: rerun the query and require zero unclassified results.
 
 | Current owner | Exact source family | Retained invariant and current disposition |
 |---|---|---|
@@ -5057,6 +5058,25 @@ Native graphics validation cannot find a C++ data race. Thread sanitization cann
 This section defines the late success evidence, not an instruction to build its own telemetry product. Stage 0 captures only the minimum before-state needed to avoid blind architectural change using existing scopes and tools. The full matrix is collected after the feature/data paths are stable by consolidating existing frame-graph, allocator, timestamp, debugger, and profiler hooks. Missing data is not permission to add a public snapshot, default CSV/JSON output, runtime log, or new profiler framework.
 
 Results may be summarized manually in this existing program or the existing product overview. No engine-side benchmark/report generator is required.
+
+### Initial 2026-07-28 Characterization Note
+
+The first Prompt 23 pass closed a correctness precondition before accepting performance data. Lighting shaders now dispatch
+through the normal typed path; sky, material tables, descriptor-access TLAS, hit data, and typed GPU buffers are concrete
+producer contracts. Empty scenes publish valid zero-instance acceleration structures and zero-element semantic buffers backed
+by typed physical descriptor storage. A missing binding now fails at its owner instead of silently removing shader work.
+
+The same pass exposed two lifetime defects outside the timing knobs. Renderer asset scopes are application-scope children whose
+owner may be the render thread, so child registration crosses owner threads under the parent mutex while launch/join stays
+child-owner-bound. D3D12 recording-read publication is retired at GPU settlement before frame-pipeline allocation records are
+destroyed; external feature shutdown occurs while the D3D device still exists. These findings reinforce the program rule that
+measurement begins only after payload, ownership, and lifetime edges are valid.
+
+The manually maintained numeric record is in K's Prompt 23 section. Its accepted result is intentionally narrow: paired-backend
+Sponza/Empty baselines and a one-worker serial-versus-parallel recording loss. Worker samples with power drift or changing
+submitted-instance counts were rejected. Existing worker, grain, queue-depth, page-size, residency, and recording constants
+therefore remain unchanged until a stable profile-build, resident-scene sweep exists. Bistro/San Miguel, external captures,
+correctness images, GPU percentiles, and input-to-present correlation remain open.
 
 ### Required Metrics
 

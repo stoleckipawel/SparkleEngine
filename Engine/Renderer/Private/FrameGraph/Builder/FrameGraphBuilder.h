@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FrameGraph/FrameGraph.h"
-#include "FrameGraph/PassRuntimeServices.h"
+#include "FrameGraph/PassRuntimeContext.h"
 
 #include <cstdint>
 #include <string_view>
@@ -15,24 +15,17 @@
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 
-class PipelineStateManager;
+class RenderPassRuntimeCache;
 
 class FrameGraphBuilder final
 {
   public:
-	FrameGraphBuilder(
-	    FrameGraph& frameGraph,
-	    const PipelineStateManager& pipelineStateManager) noexcept;
+	FrameGraphBuilder(FrameGraph& frameGraph, const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept;
 
 	template <typename SetupFn, typename ExecuteFn>
 	void AddPass(std::string_view name, EFrameGraphPassKind kind, SetupFn&& setupFn, ExecuteFn&& executeFn)
 	{
-		AddPass(
-		    name,
-		    kind,
-		    EFrameGraphQueuePreference::Graphics,
-		    std::forward<SetupFn>(setupFn),
-		    std::forward<ExecuteFn>(executeFn));
+		AddPass(name, kind, EFrameGraphQueuePreference::Graphics, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
 	}
 
 	template <typename SetupFn, typename ExecuteFn>
@@ -43,48 +36,31 @@ class FrameGraphBuilder final
 	    SetupFn&& setupFn,
 	    ExecuteFn&& executeFn)
 	{
-		m_frameGraph.AddPass(
-		    name,
-		    kind,
-		    queuePreference,
-		    std::forward<SetupFn>(setupFn),
-		    std::forward<ExecuteFn>(executeFn));
+		m_frameGraph.AddPass(name, kind, queuePreference, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
 	}
 
 	template <typename TPass> void Draw(typename TPass::ParameterInstance& parameters)
 	{
-		m_pipelineStateManager.MaterializePassRuntime<TPass>();
-		m_frameGraph.AddRasterPass<TPass>(
-		    TPass::PassName,
-		    parameters,
-		    &ExecutePass<TPass>);
+		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
+		m_frameGraph.AddRasterPass<TPass>(TPass::PassName, parameters, &ExecutePass<TPass>);
 	}
 
 	template <typename TPass> void Dispatch(typename TPass::ParameterInstance& parameters)
 	{
-		m_pipelineStateManager.MaterializePassRuntime<TPass>();
-		m_frameGraph.AddComputePass<TPass>(
-		    TPass::PassName,
-		    parameters,
-		    &ExecutePass<TPass>);
+		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
+		m_frameGraph.AddComputePass<TPass>(TPass::PassName, parameters, &ExecutePass<TPass>);
 	}
 
 	template <typename TPass>
-	void Dispatch(
-	    typename TPass::ParameterInstance& parameters,
-	    std::uint32_t outputWidth,
-	    std::uint32_t outputHeight)
+	void Dispatch(typename TPass::ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight)
 	{
 		Dispatch<TPass>(TPass::PassName, parameters, outputWidth, outputHeight);
 	}
 
 	template <typename TPass> void DispatchAsync(typename TPass::ParameterInstance& parameters)
 	{
-		m_pipelineStateManager.MaterializePassRuntime<TPass>();
-		m_frameGraph.AddAsyncComputePass<TPass>(
-		    TPass::PassName,
-		    parameters,
-		    &ExecutePass<TPass>);
+		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
+		m_frameGraph.AddAsyncComputePass<TPass>(TPass::PassName, parameters, &ExecutePass<TPass>);
 	}
 
 	template <typename TPass>
@@ -94,7 +70,7 @@ class FrameGraphBuilder final
 	    std::uint32_t outputWidth,
 	    std::uint32_t outputHeight)
 	{
-		m_pipelineStateManager.MaterializePassRuntime<TPass>();
+		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
 		m_frameGraph.AddComputePass<TPass>(
 		    name,
 		    parameters,
@@ -105,10 +81,7 @@ class FrameGraphBuilder final
 	}
 
 	template <typename TPass>
-	void DispatchAsync(
-	    typename TPass::ParameterInstance& parameters,
-	    std::uint32_t outputWidth,
-	    std::uint32_t outputHeight)
+	void DispatchAsync(typename TPass::ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight)
 	{
 		DispatchAsync<TPass>(TPass::PassName, parameters, outputWidth, outputHeight);
 	}
@@ -120,7 +93,7 @@ class FrameGraphBuilder final
 	    std::uint32_t outputWidth,
 	    std::uint32_t outputHeight)
 	{
-		m_pipelineStateManager.MaterializePassRuntime<TPass>();
+		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
 		m_frameGraph.AddAsyncComputePass<TPass>(
 		    name,
 		    parameters,
@@ -128,32 +101,6 @@ class FrameGraphBuilder final
 		    {
 			    ExecuteSizedPass<TPass>(context, passParameters, outputWidth, outputHeight);
 		    });
-	}
-
-	template <typename TPass, typename ConditionFn>
-	void DispatchIf(
-	    typename TPass::ParameterInstance& parameters,
-	    ConditionFn&& condition)
-	{
-		const PipelineStateManager* const pipelineStateManager =
-		    &m_pipelineStateManager;
-
-		m_frameGraph.AddConditionalComputePass<TPass>(
-		    TPass::PassName,
-		    parameters,
-		    [pipelineStateManager,
-		     condition = std::forward<ConditionFn>(condition)](
-		        const FrameContext& frame) mutable
-		    {
-			    if (!condition(frame))
-			    {
-				    return false;
-			    }
-
-			    pipelineStateManager->MaterializePassRuntime<TPass>();
-			    return true;
-		    },
-		    &ExecutePass<TPass>);
 	}
 
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
@@ -211,12 +158,9 @@ class FrameGraphBuilder final
 	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept;
 
   private:
-	template <typename TPass>
-	static void ExecutePass(
-	    PassExecutionContext& context,
-	    typename TPass::ParameterInstance& parameters)
+	template <typename TPass> static void ExecutePass(PassExecutionContext& context, typename TPass::ParameterInstance& parameters)
 	{
-		const TPass pass(context.RuntimeServices.GetPassRuntime<TPass>());
+		const TPass pass(context.Runtime.GetPassRuntime<TPass>());
 		pass.Execute(context, parameters);
 	}
 
@@ -227,10 +171,10 @@ class FrameGraphBuilder final
 	    std::uint32_t outputWidth,
 	    std::uint32_t outputHeight)
 	{
-		const TPass pass(context.RuntimeServices.GetPassRuntime<TPass>());
+		const TPass pass(context.Runtime.GetPassRuntime<TPass>());
 		pass.Execute(context, parameters, outputWidth, outputHeight);
 	}
 
 	FrameGraph& m_frameGraph;
-	const PipelineStateManager& m_pipelineStateManager;
+	const RenderPassRuntimeCache& m_renderPassRuntimeCache;
 };

@@ -12,6 +12,12 @@
 
 class PassParameterLayout;
 
+enum class CookedShaderPackageLoadKind : std::uint8_t
+{
+	Disk,
+	CacheHit,
+};
+
 struct CookedShaderPackageLoadReport final
 {
 	std::uint64_t PackageKey = 0;
@@ -21,9 +27,7 @@ struct CookedShaderPackageLoadReport final
 	std::uint32_t BinaryRecordCount = 0;
 	std::uint32_t PipelineLayoutRecordCount = 0;
 	std::uint32_t ReflectionRecordCount = 0;
-	bool WasCacheHit = false;
-	bool WasReload = false;
-	bool Succeeded = false;
+	CookedShaderPackageLoadKind Kind = CookedShaderPackageLoadKind::Disk;
 };
 
 class SPARKLE_RHI_API CookedShaderPackageCache final
@@ -34,27 +38,18 @@ class SPARKLE_RHI_API CookedShaderPackageCache final
 	void Clear() noexcept;
 	void ReplaceWith(CookedShaderPackageCache&& replacement) noexcept;
 
-	bool LoadPackage(
+	const LoadedShaderPackage& LoadPackage(
 	    const ShaderPackageDefinition& definition,
 	    const PassParameterLayout& expectedBindingLayout,
-	    CookedShaderBinaryFormat requiredBinaryFormat,
-	    std::string& outErrorMessage,
-	    const LoadedShaderPackage*& outPackage);
-	bool ReloadPackage(
-	    const ShaderPackageDefinition& definition,
-	    const PassParameterLayout& expectedBindingLayout,
-	    CookedShaderBinaryFormat requiredBinaryFormat,
-	    std::string& outErrorMessage,
-	    const LoadedShaderPackage*& outPackage);
+	    CookedShaderBinaryFormat runtimeBinaryFormat);
 
   private:
-	static bool LoadPackageFromFile(const std::filesystem::path& path, LoadedShaderPackage& outPackage, std::string& outErrorMessage);
-	static bool ValidatePackage(
+	static LoadedShaderPackage LoadPackageFromFile(const std::filesystem::path& path);
+	static void ValidatePackage(
 	    const LoadedShaderPackage& package,
 	    const ShaderPackageDefinition& definition,
 	    const PassParameterLayout& expectedBindingLayout,
-	    CookedShaderBinaryFormat requiredBinaryFormat,
-	    std::string& outErrorMessage);
+	    CookedShaderBinaryFormat runtimeBinaryFormat);
 
 	std::unordered_map<std::uint64_t, std::unique_ptr<LoadedShaderPackage>> m_packages;
 	CookedShaderPackageLoadReport m_lastLoadReport;

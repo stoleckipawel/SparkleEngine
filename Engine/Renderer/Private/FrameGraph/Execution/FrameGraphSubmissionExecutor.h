@@ -12,7 +12,7 @@ class RenderCommandList;
 class RhiCommandSubmissionService;
 class TaskExecutor;
 struct FrameContext;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 
 class FrameGraphSubmissionExecutor final
 {
@@ -22,7 +22,7 @@ class FrameGraphSubmissionExecutor final
 	    const FrameGraphPlan& plan,
 	    RhiCommandSubmissionService& submissionService,
 	    const FrameContext& frame,
-	    const PassRuntimeServices& passRuntimeServices,
+	    const PassRuntimeContext& passRuntimeContext,
 	    FrameExecutionDiagnostics& frameDiagnostics,
 	    TaskExecutor& taskExecutor,
 	    std::span<RhiSubmissionToken> batchTokens) noexcept;

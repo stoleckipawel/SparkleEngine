@@ -66,9 +66,7 @@ struct CookedSceneBuild final
 	CookedSceneIdentity identity;
 	CookedSceneManifestBuildData manifest;
 	CookedSceneAssetOutputs outputs;
-	std::string errorMessage;
 
-	bool Succeeded() const noexcept { return errorMessage.empty(); }
 	void ApplyMeshOutput(MeshCookOutput&& meshOutput);
 	void ApplyMaterialOutput(MaterialCookOutput&& materialOutput);
 };

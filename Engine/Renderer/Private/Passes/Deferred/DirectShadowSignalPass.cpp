@@ -4,7 +4,7 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Core/ComputePassUtilities.h"
+#include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -14,16 +14,16 @@ DirectShadowSignalPass::DirectShadowSignalPass(const ComputePassPipelineRuntime&
 
 const DirectShadowSignalPass::ParameterMetadata& DirectShadowSignalPass::GetParameterMetadata() noexcept
 {
-	return ComputePassUtilities::BuildParameterMetadata<DirectShadowSignalPass>();
+	return ComputePassOperations::BuildParameterMetadata<DirectShadowSignalPass>();
 }
 
 const RenderPassDefinition& DirectShadowSignalPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
 	    PassName,
 	    RendererShaderPackages::DirectShadowSignal,
 	    L"DirectShadowSignal_BindingLayout",
-	    L"DirectShadowSignal_PipelineState",
+	    L"DirectShadowSignal_Pipeline",
 	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
 }
@@ -34,9 +34,9 @@ void DirectShadowSignalPass::Execute(PassExecutionContext& context, ParameterIns
 	    *parameters,
 	    context.Frame,
 	    context.Frame.mainView,
-	    context.RuntimeServices,
+	    context.Runtime,
 	    context.Frame.rayTracingScene.HasTraceableInstances());
-	ComputePassUtilities::DispatchSized<DirectShadowSignalPass>(
+	ComputePassOperations::DispatchSized<DirectShadowSignalPass>(
 	    context,
 	    m_runtime,
 	    parameters,

@@ -6,6 +6,7 @@
 #include "CookedAnimationAssetWriter.h"
 #include "CookedMeshAssetWriter.h"
 #include "CookedSkeletonAssetWriter.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "MaterialCooker.h"
 #include "SceneCooker.h"
@@ -15,77 +16,49 @@
 class CookedSceneGenerationStager final
 {
   public:
-	static bool StageAssets(
+	static void StageAssets(
 	    std::span<const CookedSceneBuild* const> builds,
-	    std::vector<Files::FilePublication>& outPublication,
-	    std::string& outErrorMessage);
+	    std::vector<Files::FilePublication>& outPublication);
 	static void Cleanup(
 	    std::span<const Files::FilePublication> publication) noexcept;
 };
 
-bool CookedSceneGenerationWriter::Publish(
-    std::span<const CookedSceneBuild* const> builds,
-    std::string& outErrorMessage)
+void CookedSceneGenerationWriter::Publish(std::span<const CookedSceneBuild* const> builds)
 {
 	std::vector<Files::FilePublication> publication;
-	if (!CookedSceneGenerationStager::StageAssets(
-	        builds,
-	        publication,
-	        outErrorMessage) ||
-	    !SceneCooker::StageManifestsAndRegistry(
-	        builds,
-	        publication,
-	        outErrorMessage))
+	try
+	{
+		CookedSceneGenerationStager::StageAssets(builds, publication);
+		SceneCooker::StageManifestsAndRegistry(builds, publication);
+		std::string errorMessage;
+		if (!Files::TryPublishFileSet(publication, errorMessage))
+		{
+			throw Diagnostics::Error(std::move(errorMessage));
+		}
+	}
+	catch (...)
 	{
 		CookedSceneGenerationStager::Cleanup(publication);
-		return false;
+		throw;
 	}
-
-	if (!Files::TryPublishFileSet(publication, outErrorMessage))
-	{
-		CookedSceneGenerationStager::Cleanup(publication);
-		return false;
-	}
-
-	outErrorMessage.clear();
-	return true;
 }
 
-bool CookedSceneGenerationStager::StageAssets(
+void CookedSceneGenerationStager::StageAssets(
     std::span<const CookedSceneBuild* const> builds,
-    std::vector<Files::FilePublication>& outPublication,
-    std::string& outErrorMessage)
+    std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedSceneBuild* build : builds)
 	{
 		if (build == nullptr)
 		{
-			outErrorMessage = "Scene generation contains a null build.";
-			return false;
+			throw Diagnostics::Error("Scene generation contains a null build.");
 		}
 
-		if (!CookedMeshAssetWriter::StageMeshAssets(
-		        build->outputs.meshAssets,
-		        outPublication,
-		        outErrorMessage) ||
-		    !MaterialCooker::StageMaterialAssets(
-		        build->outputs.materialAssets,
-		        outPublication,
-		        outErrorMessage) ||
-		    !CookedSkeletonAssetWriter::StageSkeletonAssets(
-		        build->outputs.skeletonAssets,
-		        outPublication,
-		        outErrorMessage) ||
-		    !CookedAnimationAssetWriter::StageAnimationAssets(
-		        build->outputs.animationAssets,
-		        outPublication,
-		        outErrorMessage))
-		{
-			return false;
-		}
+		CookedMeshAssetWriter::StageMeshAssets(build->outputs.meshAssets, outPublication);
+		MaterialCooker::StageMaterialAssets(build->outputs.materialAssets, outPublication);
+		CookedSkeletonAssetWriter::StageSkeletonAssets(build->outputs.skeletonAssets, outPublication);
+		CookedAnimationAssetWriter::StageAnimationAssets(build->outputs.animationAssets, outPublication);
 	}
-
-	return true;
 }
 
 void CookedSceneGenerationStager::Cleanup(

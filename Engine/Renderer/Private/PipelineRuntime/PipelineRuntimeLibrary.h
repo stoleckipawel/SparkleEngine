@@ -1,11 +1,10 @@
 #pragma once
 
-#include "RHI/Public/Pipeline/RhiPipelineStateDesc.h"
+#include "RHI/Public/Pipeline/RhiPipelineDesc.h"
 #include "RHI/Public/Shaders/CookedShaderPackageCache.h"
 #include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 #include <memory>
-#include <string>
 #include <string_view>
 
 class RenderHardwareInterface;
@@ -24,29 +23,26 @@ class PipelineRuntimeLibrary final
   public:
 	PipelineRuntimeLibrary() = delete;
 
-	static bool LoadShaderPackage(
-	    RenderHardwareInterface& rhi,
+	static const LoadedShaderPackage& LoadShaderPackage(
+	    RenderHardwareInterface& renderHardwareInterface,
 	    CookedShaderPackageCache& shaderPackageCache,
-	    const PipelineRuntimePackageRequest& request,
-	    const LoadedShaderPackage*& outLoadedPackage,
-	    std::string& outErrorMessage);
+	    const PipelineRuntimePackageRequest& request);
 
-	static bool ValidatePackageCapabilities(
-	    RenderHardwareInterface& rhi,
-	    const PipelineRuntimePackageRequest& request,
-	    const LoadedShaderPackage& shaderPackage,
-	    std::string& outErrorMessage);
-
-	static std::unique_ptr<RenderBindingLayout> CreateBindingLayout(
-	    RenderHardwareInterface& rhi,
+	static void ValidatePackageCapabilities(
+	    RenderHardwareInterface& renderHardwareInterface,
 	    const PipelineRuntimePackageRequest& request,
 	    const LoadedShaderPackage& shaderPackage);
 
-	static std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(
-	    RenderHardwareInterface& rhi,
-	    const GraphicsPipelineStateDesc& pipelineDesc);
+	static std::unique_ptr<RenderBindingLayout> CreateBindingLayout(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const PipelineRuntimePackageRequest& request,
+	    const LoadedShaderPackage& shaderPackage);
 
-	static std::unique_ptr<RenderPipelineState> CreateComputePipelineState(
-	    RenderHardwareInterface& rhi,
-	    const ComputePipelineStateDesc& pipelineDesc);
+	static std::unique_ptr<RenderPipeline> CreateGraphicsPipeline(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const GraphicsPipelineDesc& pipelineDesc);
+
+	static std::unique_ptr<RenderPipeline> CreateComputePipeline(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const ComputePipelineDesc& pipelineDesc);
 };

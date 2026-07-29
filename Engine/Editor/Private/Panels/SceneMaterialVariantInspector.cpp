@@ -2,7 +2,7 @@
 
 #include "Panels/SceneMaterialVariantInspector.h"
 
-#include "Scene/Transactions/EditorTransactionManager.h"
+#include "Scene/Transactions/EditorTransactionHistory.h"
 #include "World/WorldMaterialVariantView.h"
 #include "Util/UiUtil.h"
 
@@ -10,7 +10,7 @@
 
 namespace SceneMaterialVariantInspector
 {
-	void Build(const WorldMaterialVariantView& variants, EditorTransactionManager& transactions, std::uint64_t generation) noexcept
+	void Build(const WorldMaterialVariantView& variants, EditorTransactionHistory& transactionHistory, std::uint64_t generation) noexcept
 	{
 		const std::size_t variantCount = variants.Names.size();
 		if (variantCount == 0)
@@ -44,10 +44,10 @@ namespace SceneMaterialVariantInspector
 				{
 					const MaterialVariantIndex selected = static_cast<MaterialVariantIndex>(variantIndex);
 					if (activeVariantIndex != kInvalidMaterialVariantIndex)
-						(void) transactions.Execute({0, SetMaterialVariantCommand{selected}},
+						(void) transactionHistory.Execute({0, SetMaterialVariantCommand{selected}},
 						                           {0, SetMaterialVariantCommand{activeVariantIndex}}, generation);
 					else
-						(void) transactions.Execute({0, SetMaterialVariantCommand{selected}},
+						(void) transactionHistory.Execute({0, SetMaterialVariantCommand{selected}},
 						                           {0, SetMaterialVariantCommand{selected}}, generation);
 				}
 

@@ -1,8 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include <filesystem>
 #include <span>
-#include <string>
 #include <vector>
 
 namespace Files
@@ -12,26 +11,19 @@ namespace Files
 
 struct CookedSceneBuild;
 struct CookedSceneIdentity;
-struct SourceImportResult;
+struct SourceImportOutput;
 class CookedSceneGenerationWriter;
 
 class SceneCooker final
 {
   public:
-	static bool ResolveSceneIdentity(
-	    const std::filesystem::path& sourceScenePath,
-	    CookedSceneIdentity& outIdentity,
-	    std::string& outErrorMessage);
-	static bool BuildManifest(
-	    const SourceImportResult& importResult,
-	    CookedSceneBuild& outBuild,
-	    std::string& outErrorMessage);
+	static CookedSceneIdentity ResolveSceneIdentity(const std::filesystem::path& sourceScenePath);
+	static void BuildManifest(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 
   private:
 	friend class CookedSceneGenerationWriter;
 
-	static bool StageManifestsAndRegistry(
+	static void StageManifestsAndRegistry(
 	    std::span<const CookedSceneBuild* const> builds,
-	    std::vector<Files::FilePublication>& outPublication,
-	    std::string& outErrorMessage);
+	    std::vector<Files::FilePublication>& outPublication);
 };

@@ -6,9 +6,7 @@
 #include "Core/Public/Console/CVarRegistry.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
-#include "Frame/Presentation/OutputEncodingSettings.h"
 #include "Frame/Presentation/ToneMappingCVars.h"
-#include "Frame/Presentation/ToneMappingSettings.h"
 #include "Lighting/LightingCVars.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
@@ -341,73 +339,57 @@ void EngineRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enable
 
 void EngineRenderingSettingsSection::SetToneMapper(EngineToneMapper toneMapper)
 {
-	SetValue(m_state.ToneMapper, SanitizeToneMapper(toneMapper));
+	SetValue(m_state.ToneMapper, toneMapper);
 }
 
 void EngineRenderingSettingsSection::SetExposureMode(EngineExposureMode mode)
 {
-	SetValue(m_state.ExposureMode, SanitizeExposureMode(mode));
+	SetValue(m_state.ExposureMode, mode);
 }
 
 void EngineRenderingSettingsSection::SetExposureMeteringMethod(EngineExposureMeteringMethod method)
 {
-	SetValue(m_state.ExposureMeteringMethod, SanitizeExposureMeteringMethod(method));
+	SetValue(m_state.ExposureMeteringMethod, method);
 }
 
 void EngineRenderingSettingsSection::SetOutputColorEncoding(EngineOutputColorEncoding encoding)
 {
-	SetValue(m_state.OutputColorEncoding, SanitizeOutputColorEncoding(encoding));
+	SetValue(m_state.OutputColorEncoding, encoding);
 }
 
 void EngineRenderingSettingsSection::SetManualExposure(float exposure)
 {
-	SetValue(m_state.ManualExposure, SanitizeManualExposure(exposure));
+	SetValue(m_state.ManualExposure, exposure);
 }
 
 void EngineRenderingSettingsSection::SetExposureCompensation(float compensation)
 {
-	SetValue(m_state.ExposureCompensation, SanitizeExposureCompensation(compensation));
+	SetValue(m_state.ExposureCompensation, compensation);
 }
 
 void EngineRenderingSettingsSection::SetExposureTargetLuminance(float luminance)
 {
-	SetValue(m_state.ExposureTargetLuminance, SanitizeExposureTargetLuminance(luminance));
+	SetValue(m_state.ExposureTargetLuminance, luminance);
 }
 
 void EngineRenderingSettingsSection::SetExposureMin(float exposure)
 {
-	float minExposure = SanitizeExposureMin(exposure);
-	float maxExposure = SanitizeExposureMax(m_state.ExposureMax);
-	SanitizeExposureRange(minExposure, maxExposure);
-	if (m_state.ExposureMin != minExposure || m_state.ExposureMax != maxExposure)
-	{
-		m_state.ExposureMin = minExposure;
-		m_state.ExposureMax = maxExposure;
-		CommitState();
-	}
+	SetValue(m_state.ExposureMin, exposure);
 }
 
 void EngineRenderingSettingsSection::SetExposureMax(float exposure)
 {
-	float minExposure = SanitizeExposureMin(m_state.ExposureMin);
-	float maxExposure = SanitizeExposureMax(exposure);
-	SanitizeExposureRange(minExposure, maxExposure);
-	if (m_state.ExposureMin != minExposure || m_state.ExposureMax != maxExposure)
-	{
-		m_state.ExposureMin = minExposure;
-		m_state.ExposureMax = maxExposure;
-		CommitState();
-	}
+	SetValue(m_state.ExposureMax, exposure);
 }
 
 void EngineRenderingSettingsSection::SetExposureAdaptationSpeedUp(float speed)
 {
-	SetValue(m_state.ExposureAdaptationSpeedUp, SanitizeExposureAdaptationSpeed(speed));
+	SetValue(m_state.ExposureAdaptationSpeedUp, speed);
 }
 
 void EngineRenderingSettingsSection::SetExposureAdaptationSpeedDown(float speed)
 {
-	SetValue(m_state.ExposureAdaptationSpeedDown, SanitizeExposureAdaptationSpeed(speed));
+	SetValue(m_state.ExposureAdaptationSpeedDown, speed);
 }
 
 void EngineRenderingSettingsSection::SetMaxDirectionalLights(std::uint32_t count)
@@ -502,18 +484,17 @@ EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState
 	state.VSync = CVarVSync.Get();
 	state.BackBufferFormat = CVarBackBufferFormat.Get();
 	state.PreferHighPerformanceAdapter = CVarPreferHighPerformanceAdapter.Get();
-	state.ToneMapper = SanitizeToneMapper(CVarToneMapper.Get());
-	state.ExposureMode = SanitizeExposureMode(CVarExposureMode.Get());
-	state.ExposureMeteringMethod = SanitizeExposureMeteringMethod(CVarExposureMeteringMethod.Get());
-	state.OutputColorEncoding = SanitizeOutputColorEncoding(CVarOutputColorEncoding.Get());
-	state.ManualExposure = SanitizeManualExposure(CVarManualExposure.Get());
-	state.ExposureCompensation = SanitizeExposureCompensation(CVarExposureCompensation.Get());
-	state.ExposureTargetLuminance = SanitizeExposureTargetLuminance(CVarExposureTargetLuminance.Get());
-	state.ExposureMin = SanitizeExposureMin(CVarExposureMin.Get());
-	state.ExposureMax = SanitizeExposureMax(CVarExposureMax.Get());
-	SanitizeExposureRange(state.ExposureMin, state.ExposureMax);
-	state.ExposureAdaptationSpeedUp = SanitizeExposureAdaptationSpeed(CVarExposureAdaptationSpeedUp.Get());
-	state.ExposureAdaptationSpeedDown = SanitizeExposureAdaptationSpeed(CVarExposureAdaptationSpeedDown.Get());
+	state.ToneMapper = CVarToneMapper.Get();
+	state.ExposureMode = CVarExposureMode.Get();
+	state.ExposureMeteringMethod = CVarExposureMeteringMethod.Get();
+	state.OutputColorEncoding = CVarOutputColorEncoding.Get();
+	state.ManualExposure = CVarManualExposure.Get();
+	state.ExposureCompensation = CVarExposureCompensation.Get();
+	state.ExposureTargetLuminance = CVarExposureTargetLuminance.Get();
+	state.ExposureMin = CVarExposureMin.Get();
+	state.ExposureMax = CVarExposureMax.Get();
+	state.ExposureAdaptationSpeedUp = CVarExposureAdaptationSpeedUp.Get();
+	state.ExposureAdaptationSpeedDown = CVarExposureAdaptationSpeedDown.Get();
 	state.MaxDirectionalLights = CVarMaxDirectionalLights.Get();
 	state.MaxPointLights = CVarMaxPointLights.Get();
 	state.MaxSpotLights = CVarMaxSpotLights.Get();
@@ -582,34 +563,17 @@ void ApplyEngineRenderingSettingsStateToCVars(
 	RenderingSettingsPersistence::SetCVarIfChanged(
 	    CVarPreferHighPerformanceAdapter,
 	    state.PreferHighPerformanceAdapter);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarToneMapper, SanitizeToneMapper(state.ToneMapper));
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMode, SanitizeExposureMode(state.ExposureMode));
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarExposureMeteringMethod,
-	    SanitizeExposureMeteringMethod(state.ExposureMeteringMethod));
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarOutputColorEncoding,
-	    SanitizeOutputColorEncoding(state.OutputColorEncoding));
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarManualExposure,
-	    SanitizeManualExposure(state.ManualExposure));
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarExposureCompensation,
-	    SanitizeExposureCompensation(state.ExposureCompensation));
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarExposureTargetLuminance,
-	    SanitizeExposureTargetLuminance(state.ExposureTargetLuminance));
-	float minimumExposure = SanitizeExposureMin(state.ExposureMin);
-	float maximumExposure = SanitizeExposureMax(state.ExposureMax);
-	SanitizeExposureRange(minimumExposure, maximumExposure);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMin, minimumExposure);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMax, maximumExposure);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarExposureAdaptationSpeedUp,
-	    SanitizeExposureAdaptationSpeed(state.ExposureAdaptationSpeedUp));
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarExposureAdaptationSpeedDown,
-	    SanitizeExposureAdaptationSpeed(state.ExposureAdaptationSpeedDown));
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarToneMapper, state.ToneMapper);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMode, state.ExposureMode);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMeteringMethod, state.ExposureMeteringMethod);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarOutputColorEncoding, state.OutputColorEncoding);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarManualExposure, state.ManualExposure);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureCompensation, state.ExposureCompensation);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureTargetLuminance, state.ExposureTargetLuminance);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMin, state.ExposureMin);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMax, state.ExposureMax);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureAdaptationSpeedUp, state.ExposureAdaptationSpeedUp);
+	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureAdaptationSpeedDown, state.ExposureAdaptationSpeedDown);
 	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxDirectionalLights, state.MaxDirectionalLights);
 	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxPointLights, state.MaxPointLights);
 	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxSpotLights, state.MaxSpotLights);

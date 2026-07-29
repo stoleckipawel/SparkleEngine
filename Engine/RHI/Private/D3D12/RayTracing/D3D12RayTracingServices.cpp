@@ -15,9 +15,9 @@
 
 namespace D3D12RayTracingText
 {
-	std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName)
+	std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName)
 	{
-		return debugName.empty() ? std::wstring(fallbackName) : std::wstring(debugName);
+		return debugName.empty() ? std::wstring(defaultDebugName) : std::wstring(debugName);
 	}
 }
 
@@ -138,7 +138,7 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateScratchBuffer(std::uint64_
 	    D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    D3D12RayTracingText::CopyDebugName(debugName, L"RayTracingScratch"));
+	    D3D12RayTracingText::MakeDebugName(debugName, L"RayTracingScratch"));
 	return ownedRecord != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
 }
 
@@ -169,7 +169,7 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateAccelerationStructureBuffe
 	    D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    D3D12RayTracingText::CopyDebugName(debugName, L"RayTracingAccelerationStructure"));
+	    D3D12RayTracingText::MakeDebugName(debugName, L"RayTracingAccelerationStructure"));
 	return ownedRecord != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
 }
 

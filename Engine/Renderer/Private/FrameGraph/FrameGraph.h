@@ -41,7 +41,7 @@ class FrameGraphTransientAllocator;
 class FrameGraphSubmissionExecutor;
 class FrameGraphRecordingChunkRecorder;
 class TaskExecutor;
-struct PassRuntimeServices;
+struct PassRuntimeContext;
 class Window;
 class RenderHardwareInterface;
 struct NativeTextureViewInfo;
@@ -60,13 +60,9 @@ class FrameGraph
 		virtual ~AllocatedParameterInstanceBase() noexcept;
 	};
 
-	template <typename TParameters>
-	struct AllocatedParameterInstance final : AllocatedParameterInstanceBase
+	template <typename TParameters> struct AllocatedParameterInstance final : AllocatedParameterInstanceBase
 	{
-		explicit AllocatedParameterInstance(const ShaderParameterStructMetadata<TParameters>& metadata)
-		    : Instance(metadata)
-		{
-		}
+		explicit AllocatedParameterInstance(const ShaderParameterStructMetadata<TParameters>& metadata) : Instance(metadata) {}
 
 		TypedPassParameterInstance<TParameters> Instance;
 	};
@@ -108,7 +104,7 @@ class FrameGraph
 		        .kind = kind,
 		        .queuePreference = queuePreference,
 		        .setupCallback =
-		        [setup = std::move(normalizedSetup)](PassResourceBuilder& builder, const FrameContext& frame) mutable
+		            [setup = std::move(normalizedSetup)](PassResourceBuilder& builder, const FrameContext& frame) mutable
 		        {
 			        if constexpr (std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&>)
 			        {
@@ -122,7 +118,7 @@ class FrameGraph
 			        return true;
 		        },
 		        .executeCallback =
-		        [execute = std::move(normalizedExecute)](PassExecutionContext& context) mutable
+		            [execute = std::move(normalizedExecute)](PassExecutionContext& context) mutable
 		        {
 			        execute(context);
 		        }});
@@ -137,10 +133,7 @@ class FrameGraph
 		    EFrameGraphPassKind::Raster,
 		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
-		    [](PassResourceBuilder& builder,
-		       const TParameterBindings& typedParameters,
-		       const FrameContext&,
-		       const char* passName)
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const FrameContext&, const char* passName)
 		    {
 			    return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
@@ -156,10 +149,7 @@ class FrameGraph
 		    EFrameGraphPassKind::Compute,
 		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
-		    [](PassResourceBuilder& builder,
-		       const TParameterBindings& typedParameters,
-		       const FrameContext&,
-		       const char* passName)
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const FrameContext&, const char* passName)
 		    {
 			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
@@ -175,38 +165,9 @@ class FrameGraph
 		    EFrameGraphPassKind::Compute,
 		    EFrameGraphQueuePreference::AsyncCompute,
 		    parameters,
-		    [](PassResourceBuilder& builder,
-		       const TParameterBindings& typedParameters,
-		       const FrameContext&,
-		       const char* passName)
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const FrameContext&, const char* passName)
 		    {
 			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
-		    },
-		    std::forward<ExecuteFn>(executeFn));
-	}
-
-	template <typename TPass, typename TParameterBindings, typename ConditionFn, typename ExecuteFn>
-	    requires std::is_invocable_r_v<bool, std::decay_t<ConditionFn>&, const FrameContext&> &&
-	             std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
-	void AddConditionalComputePass(
-	    std::string_view name,
-	    TParameterBindings& parameters,
-	    ConditionFn&& condition,
-	    ExecuteFn&& executeFn)
-	{
-		AddTypedShaderPass(
-		    name,
-		    EFrameGraphPassKind::Compute,
-		    EFrameGraphQueuePreference::Graphics,
-		    parameters,
-		    [condition = std::forward<ConditionFn>(condition)](
-		        PassResourceBuilder& builder,
-		        const TParameterBindings& typedParameters,
-		        const FrameContext& frame,
-		        const char* passName) mutable
-		    {
-			    return condition(frame) &&
-			           ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
 		    std::forward<ExecuteFn>(executeFn));
 	}
@@ -219,7 +180,7 @@ class FrameGraph
 	    const FrameGraphPlan& plan,
 	    RhiCommandSubmissionService& submissionService,
 	    const FrameContext& frame,
-	    const PassRuntimeServices& passRuntimeServices,
+	    const PassRuntimeContext& passRuntimeContext,
 	    FrameExecutionDiagnostics& frameDiagnostics,
 	    TaskExecutor& taskExecutor) const;
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
@@ -293,19 +254,19 @@ class FrameGraph
 	ResourceState GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    FrameGraphTextureHandle renderTargetHandle,
 	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
 	void BindRenderTargets(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    std::span<const FrameGraphTextureHandle> renderTargetHandles,
 	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
-	void CopyTexture(RenderCommandContext& cmd, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle)
+	void CopyTexture(RenderCommandContext& commandContext, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle)
 	    const noexcept;
-	void CopyBuffer(RenderCommandContext& cmd, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle)
+	void CopyBuffer(RenderCommandContext& commandContext, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle)
 	    const noexcept;
-	void ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
-	void ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
+	void ClearRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
+	void ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	RhiResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
 	NativeTextureViewInfo ResolveNativeTextureView(
 	    FrameGraphTextureHandle handle,
@@ -404,18 +365,16 @@ class FrameGraph
 		        .queuePreference = queuePreference,
 		        .executionModel = FrameGraphPassExecutionModel::TypedShader,
 		        .setupCallback =
-		        [parameterBindings, passName, setupFn = std::forward<SetupFn>(setupFn)](
-		            PassResourceBuilder& builder,
-		            const FrameContext& frame) mutable
+		            [parameterBindings,
+		             passName,
+		             setupFn = std::forward<SetupFn>(setupFn)](PassResourceBuilder& builder, const FrameContext& frame) mutable
 		        {
 			        return setupFn(builder, *parameterBindings, frame, passName.c_str());
 		        },
-		        .executeCallback =
-		        MakeParameterizedExecuteCallback(
+		        .executeCallback = MakeParameterizedExecuteCallback(
 		            parameterBindings,
-		            [executeFn = std::forward<ExecuteFn>(executeFn)](
-		                PassExecutionContext& context,
-		                TParameterBindings& typedParameters) mutable
+		            [executeFn =
+		                 std::forward<ExecuteFn>(executeFn)](PassExecutionContext& context, TParameterBindings& typedParameters) mutable
 		            {
 			            executeFn(context, typedParameters);
 		            })});
@@ -433,7 +392,7 @@ class FrameGraph
 	    FrameGraphResourceHandle handle,
 	    ResourceState state,
 	    const RhiNativeInteropRequest& request) const noexcept;
-	void CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle)
+	void CopyResource(RenderCommandContext& commandContext, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle)
 	    const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
@@ -444,22 +403,18 @@ class FrameGraph
 	void EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept;
 	void ReleaseExternalResourceViews() noexcept;
 	void ReleaseExternalResourceViews(FrameGraphResourceHandle handle) noexcept;
-	void EmitTransientAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
+	void EmitTransientAliasingBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
 	void EmitTransientAliasingBarriers(
-	    RenderCommandContext& cmd,
+	    RenderCommandContext& commandContext,
 	    std::string_view passName,
 	    const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
-	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
-	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
+	void EmitCompiledBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
+	void EmitCompiledBarriers(RenderCommandContext& commandContext, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
 	    const noexcept;
-	void RecordFrameBeginBarriers(
-	    const FrameGraphPlan& plan,
-	    RenderCommandList& commandList,
-	    FrameExecutionDiagnostics& frameDiagnostics) const;
-	void RecordFrameEndBarriers(
-	    const FrameGraphPlan& plan,
-	    RenderCommandList& commandList,
-	    FrameExecutionDiagnostics& frameDiagnostics) const;
+	void RecordFrameBeginBarriers(const FrameGraphPlan& plan, RenderCommandList& commandList, FrameExecutionDiagnostics& frameDiagnostics)
+	    const;
+	void RecordFrameEndBarriers(const FrameGraphPlan& plan, RenderCommandList& commandList, FrameExecutionDiagnostics& frameDiagnostics)
+	    const;
 	void PrepareTextureHistories(const FrameGraphPlan& plan);
 	void CommitTextureHistories() const noexcept;
 	void ReleaseTextureHistories() noexcept;

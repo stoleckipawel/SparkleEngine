@@ -2,12 +2,24 @@
 #include "Streamline/StreamlineViewConstants.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-#include <cmath>
-#include <cstddef>
+	#include <cmath>
+	#include <cstddef>
+	#include <string>
+	#include <string_view>
+
+static const auto g_streamlineViewConstantsLogger = Logging::GetOrCreateLogger("Renderer.StreamlineViewConstants");
 
 class StreamlineViewConstantTranslation final
 {
   public:
+	static void Require(bool condition, std::string_view message)
+	{
+		if (!condition)
+		{
+			Diagnostics::Fatal(g_streamlineViewConstantsLogger, __FILE__, __LINE__, std::string(message));
+		}
+	}
+
 	static void FillIdentity(sl::float4x4& matrix) noexcept
 	{
 		matrix = {};
@@ -17,80 +29,72 @@ class StreamlineViewConstantTranslation final
 		matrix[3] = sl::float4{0.0f, 0.0f, 0.0f, 1.0f};
 	}
 
-	static sl::float4x4 ToStreamlineMatrixFromMatrix(DirectX::FXMMATRIX source) noexcept
+	static sl::float4x4 ToStreamlineMatrixFromMatrix(DirectX::FXMMATRIX source)
 	{
 		DirectX::XMFLOAT4X4 stored{};
 		DirectX::XMStoreFloat4x4(&stored, source);
 		return ToStreamlineMatrix(stored);
 	}
 
-	static sl::float3 ToStreamlineFloat3(const DirectX::XMFLOAT3& source) noexcept
+	static sl::float3 ToStreamlineFloat3(const DirectX::XMFLOAT3& source)
 	{
 		return sl::float3{source.x, source.y, source.z};
 	}
 
-	static sl::float3 NormalizeToStreamlineFloat3(const DirectX::XMFLOAT3& source, DirectX::FXMVECTOR fallback) noexcept
+	static sl::float3 NormalizeToStreamlineFloat3(const DirectX::XMFLOAT3& source)
 	{
 		const DirectX::XMVECTOR vector = DirectX::XMLoadFloat3(&source);
 		const float lengthSq = DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(vector));
-		if (lengthSq <= 1.0e-8f)
-		{
-			DirectX::XMFLOAT3 storedFallback{};
-			DirectX::XMStoreFloat3(&storedFallback, fallback);
-			return ToStreamlineFloat3(storedFallback);
-		}
+		Require(lengthSq > 1.0e-8f, "Streamline view constants contain a zero-length direction.");
 
 		DirectX::XMFLOAT3 normalized{};
 		DirectX::XMStoreFloat3(&normalized, DirectX::XMVector3Normalize(vector));
 		return ToStreamlineFloat3(normalized);
 	}
 
-	static sl::float3 MatrixBasisRowToStreamlineFloat3(const DirectX::XMFLOAT4X4& matrix, std::size_t row) noexcept
+	static sl::float3 MatrixBasisRowToStreamlineFloat3(const DirectX::XMFLOAT4X4& matrix, std::size_t row)
 	{
 		const DirectX::XMFLOAT3 basis{matrix.m[row][0], matrix.m[row][1], matrix.m[row][2]};
-		return NormalizeToStreamlineFloat3(basis, DirectX::XMVectorZero());
+		return NormalizeToStreamlineFloat3(basis);
 	}
 
-	static float CalculateVerticalFovRadians(const DirectX::XMFLOAT4X4& projection) noexcept
+	static float CalculateVerticalFovRadians(const DirectX::XMFLOAT4X4& projection)
 	{
 		const float projectionYScale = projection.m[1][1];
-		if (std::abs(projectionYScale) <= 1.0e-6f)
-		{
-			return 1.04719755f;
-		}
+		Require(projectionYScale > 1.0e-6f, "Streamline camera projection has a non-positive vertical scale.");
 		return 2.0f * std::atan(1.0f / projectionYScale);
 	}
 
-	static float CalculateAspectRatio(const DirectX::XMFLOAT4X4& projection, const RenderViewportExtent& renderExtent) noexcept
+	static float CalculateAspectRatio(const DirectX::XMFLOAT4X4& projection)
 	{
 		const float projectionXScale = projection.m[0][0];
 		const float projectionYScale = projection.m[1][1];
-		if (std::abs(projectionXScale) > 1.0e-6f && std::abs(projectionYScale) > 1.0e-6f)
-		{
-			return projectionYScale / projectionXScale;
-		}
-		return renderExtent.Height > 0 ? static_cast<float>(renderExtent.Width) / static_cast<float>(renderExtent.Height) : 1.0f;
+		Require(
+		    projectionXScale > 1.0e-6f && projectionYScale > 1.0e-6f,
+		    "Streamline camera projection has a non-positive aspect scale.");
+		return projectionYScale / projectionXScale;
 	}
 
-	static sl::float2 ConvertNdcJitterToPixelJitter(
-	    const DirectX::XMFLOAT2& jitterNdc,
-	    const RenderViewportExtent& renderExtent) noexcept
+	static sl::float2 ConvertNdcJitterToPixelJitter(const DirectX::XMFLOAT2& jitterNdc, const RenderViewportExtent& renderExtent)
 	{
 		return sl::float2{
 		    jitterNdc.x * static_cast<float>(renderExtent.Width) * 0.5f,
 		    -jitterNdc.y * static_cast<float>(renderExtent.Height) * 0.5f};
 	}
 
-	static sl::float2 BuildMotionVectorScale(const StreamlineViewConstantsInput& input) noexcept
+	static sl::float2 BuildMotionVectorScale(const StreamlineViewConstantsInput& input)
 	{
+		Require(
+		    input.RenderExtent.Width > 0 && input.RenderExtent.Height > 0,
+		    "Streamline motion-vector scale requires a non-empty render extent.");
 		const float directionScale = input.MotionVectorsCurrentMinusPrevious ? 1.0f : -1.0f;
 		return sl::float2{
-		    input.RenderExtent.Width > 0 ? directionScale / static_cast<float>(input.RenderExtent.Width) : directionScale,
-		    input.RenderExtent.Height > 0 ? directionScale / static_cast<float>(input.RenderExtent.Height) : directionScale};
+		    directionScale / static_cast<float>(input.RenderExtent.Width),
+		    directionScale / static_cast<float>(input.RenderExtent.Height)};
 	}
 };
 
-sl::float4x4 ToStreamlineMatrix(const DirectX::XMFLOAT4X4& source) noexcept
+sl::float4x4 ToStreamlineMatrix(const DirectX::XMFLOAT4X4& source)
 {
 	sl::float4x4 matrix{};
 	matrix[0] = sl::float4{source.m[0][0], source.m[0][1], source.m[0][2], source.m[0][3]};
@@ -100,16 +104,24 @@ sl::float4x4 ToStreamlineMatrix(const DirectX::XMFLOAT4X4& source) noexcept
 	return matrix;
 }
 
-void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewConstantsInput& input) noexcept
+void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewConstantsInput& input)
 {
+	StreamlineViewConstantTranslation::Require(
+	    input.RenderExtent.Width > 0 && input.RenderExtent.Height > 0,
+	    "Streamline view constants require a non-empty render extent.");
+	StreamlineViewConstantTranslation::Require(
+	    input.Camera.NearZ > 0.0f && input.Camera.FarZ > input.Camera.NearZ,
+	    "Streamline view constants contain an invalid camera clip range.");
+
 	DirectX::XMMATRIX clipToPrevClip = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX prevClipToClip = DirectX::XMMatrixIdentity();
 	if (input.TemporalState.HistoryValid)
 	{
 		const DirectX::XMMATRIX invProjection = DirectX::XMLoadFloat4x4(&input.Camera.InvProjectionMTX);
 		const DirectX::XMMATRIX invView = DirectX::XMLoadFloat4x4(&input.Camera.InvViewMTX);
-		const DirectX::XMMATRIX previousViewProjection = DirectX::XMLoadFloat4x4(&input.TemporalData.PrevViewProjMTX);
-		clipToPrevClip = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(invProjection, invView), previousViewProjection);
+		const DirectX::XMMATRIX previousWorldToClip =
+		    DirectX::XMLoadFloat4x4(&input.TemporalData.PreviousWorldToClipMatrix);
+		clipToPrevClip = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(invProjection, invView), previousWorldToClip);
 		prevClipToClip = DirectX::XMMatrixInverse(nullptr, clipToPrevClip);
 	}
 
@@ -119,19 +131,17 @@ void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewC
 	constants.clipToPrevClip = StreamlineViewConstantTranslation::ToStreamlineMatrixFromMatrix(clipToPrevClip);
 	constants.prevClipToClip = StreamlineViewConstantTranslation::ToStreamlineMatrixFromMatrix(prevClipToClip);
 	constants.jitterOffset =
-	    StreamlineViewConstantTranslation::ConvertNdcJitterToPixelJitter(input.TemporalState.JitterCurrent, input.RenderExtent);
+	    StreamlineViewConstantTranslation::ConvertNdcJitterToPixelJitter(input.TemporalState.CurrentJitterNdc, input.RenderExtent);
 	constants.mvecScale = StreamlineViewConstantTranslation::BuildMotionVectorScale(input);
 	constants.cameraPinholeOffset = sl::float2{0.0f, 0.0f};
 	constants.cameraPos = StreamlineViewConstantTranslation::ToStreamlineFloat3(input.Camera.Position);
 	constants.cameraUp = StreamlineViewConstantTranslation::MatrixBasisRowToStreamlineFloat3(input.Camera.InvViewMTX, 1u);
 	constants.cameraRight = StreamlineViewConstantTranslation::MatrixBasisRowToStreamlineFloat3(input.Camera.InvViewMTX, 0u);
-	constants.cameraFwd = StreamlineViewConstantTranslation::NormalizeToStreamlineFloat3(
-	    input.Camera.Direction,
-	    DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f));
+	constants.cameraFwd = StreamlineViewConstantTranslation::NormalizeToStreamlineFloat3(input.Camera.Direction);
 	constants.cameraNear = input.Camera.NearZ;
 	constants.cameraFar = input.Camera.FarZ;
 	constants.cameraFOV = StreamlineViewConstantTranslation::CalculateVerticalFovRadians(input.Camera.ProjectionMTX);
-	constants.cameraAspectRatio = StreamlineViewConstantTranslation::CalculateAspectRatio(input.Camera.ProjectionMTX, input.RenderExtent);
+	constants.cameraAspectRatio = StreamlineViewConstantTranslation::CalculateAspectRatio(input.Camera.ProjectionMTX);
 	constants.depthInverted = input.ReversedDeviceDepth ? sl::Boolean::eTrue : sl::Boolean::eFalse;
 	constants.cameraMotionIncluded = sl::Boolean::eTrue;
 	constants.motionVectors3D = sl::Boolean::eFalse;
