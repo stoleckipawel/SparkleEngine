@@ -2,6 +2,7 @@
 
 #include "Cooking/ShaderRecookSignal.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Json/JsonWriter.h"
@@ -9,25 +10,19 @@
 
 #include <chrono>
 
-bool ShaderRecookSignal::Write(
+void ShaderRecookSignal::Write(
     const std::filesystem::path& registryReadPath,
     const std::filesystem::path& publishedRegistryPath,
-    const std::filesystem::path& signalStoragePath,
-    const std::filesystem::path& publishedSignalPath,
-    ShaderRecookSignalResult& outResult,
-    std::string& outErrorMessage)
+    const std::filesystem::path& signalStoragePath)
 {
-	outResult = {};
-	outResult.signalPath = publishedSignalPath;
-
 	std::vector<std::uint8_t> registryBytes;
-	if (!Files::TryReadAllBytes(registryReadPath, registryBytes, outErrorMessage))
+	std::string fileError;
+	if (!Files::TryReadAllBytes(registryReadPath, registryBytes, fileError))
 	{
-		outErrorMessage = "Failed to read shader registry for recook publication - " + outErrorMessage;
-		return false;
+		throw Diagnostics::Error("Failed to read shader registry for recook publication - " + fileError);
 	}
 
-	outResult.registryHash = Hash::Fnv1a64(registryBytes.data(), registryBytes.size());
+	const std::uint64_t registryHash = Hash::Fnv1a64(registryBytes.data(), registryBytes.size());
 	const auto now = std::chrono::system_clock::now().time_since_epoch();
 	const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
 	const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
@@ -38,14 +33,11 @@ bool ShaderRecookSignal::Write(
 	writer.WriteUInt64("publicationId", static_cast<std::uint64_t>(nanoseconds));
 	writer.WriteUInt64("publishedAtUnixMs", static_cast<std::uint64_t>(milliseconds));
 	writer.WriteString("registry", publishedRegistryPath.generic_string());
-	writer.WriteHexUInt64("registryHash", outResult.registryHash);
+	writer.WriteHexUInt64("registryHash", registryHash);
 	const std::string contents = writer.Finish();
 
-	if (!Files::TryWriteAllTextAtomic(signalStoragePath, contents, outErrorMessage))
+	if (!Files::TryWriteAllTextAtomic(signalStoragePath, contents, fileError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(fileError));
 	}
-
-	outErrorMessage.clear();
-	return true;
 }

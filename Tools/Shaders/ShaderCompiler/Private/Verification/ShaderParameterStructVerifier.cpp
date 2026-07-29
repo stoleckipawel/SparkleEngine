@@ -2,10 +2,13 @@
 
 #include "Verification/ShaderParameterStructVerifier.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Core/Public/Json/JsonWriter.h"
 
 #include <format>
 #include <sstream>
+
+static const auto g_shaderParameterStructVerifierLogger = Logging::GetOrCreateLogger("ShaderCompiler.ParameterStructVerifier");
 
 static const char* GetResourceKindName(CookedShaderResourceKind kind) noexcept
 {
@@ -25,7 +28,7 @@ static const char* GetResourceKindName(CookedShaderResourceKind kind) noexcept
 		case CookedShaderResourceKind::AccelerationStructure: return "AccelerationStructure";
 		case CookedShaderResourceKind::PushConstantBlock: return "PushConstantBlock";
 	}
-	return "Unknown";
+	Diagnostics::Fatal(g_shaderParameterStructVerifierLogger, __FILE__, __LINE__, "Unknown cooked shader resource kind.");
 }
 
 static const char* GetResourceDimensionName(CookedShaderResourceDimension dimension) noexcept
@@ -44,7 +47,7 @@ static const char* GetResourceDimensionName(CookedShaderResourceDimension dimens
 		case CookedShaderResourceDimension::TextureCube: return "TextureCube";
 		case CookedShaderResourceDimension::TextureCubeArray: return "TextureCubeArray";
 	}
-	return "Unknown";
+	Diagnostics::Fatal(g_shaderParameterStructVerifierLogger, __FILE__, __LINE__, "Unknown cooked shader resource dimension.");
 }
 
 static const ShaderReflectionResourceBinding* FindReflectionBinding(
@@ -105,7 +108,7 @@ std::string ShaderParameterStructVerificationResult::BuildJsonReport() const
 {
 	std::ostringstream stream;
 	stream << "{\n";
-	stream << "  \"status\": \"" << (succeeded ? "matched" : "mismatch") << "\",\n";
+	stream << "  \"status\": \"" << (mismatches.empty() ? "matched" : "mismatch") << "\",\n";
 	stream << "  \"diagnostics\": [\n";
 	for (std::size_t index = 0; index < diagnostics.size(); ++index)
 	{
@@ -139,8 +142,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		const ShaderReflectionResourceBinding* binding = FindReflectionBinding(reflection, field);
 		if (binding == nullptr)
 		{
-			result.succeeded = false;
-			result.diagnostics.push_back(std::format(
+			result.mismatches.push_back(std::format(
 			    "SC2001 missing reflected binding: field='{}' layout='{}' shaderBinding='{}' declaredKind='{}' declaredDimension='{}'",
 			    field.Name,
 			    layoutName,
@@ -152,8 +154,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 
 		if (binding->Kind != field.Kind)
 		{
-			result.succeeded = false;
-			result.diagnostics.push_back(std::format(
+			result.mismatches.push_back(std::format(
 			    "SC2002 reflected kind mismatch: field='{}' layout='{}' shaderBinding='{}' reflectedBinding='{}' declaredKind='{}' reflectedKind='{}'",
 			    field.Name,
 			    layoutName,
@@ -166,8 +167,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		if (field.Dimension != CookedShaderResourceDimension::Unknown && binding->Dimension != CookedShaderResourceDimension::Unknown &&
 		    binding->Dimension != field.Dimension)
 		{
-			result.succeeded = false;
-			result.diagnostics.push_back(std::format(
+			result.mismatches.push_back(std::format(
 			    "SC2003 reflected dimension mismatch: field='{}' layout='{}' shaderBinding='{}' reflectedBinding='{}' declaredDimension='{}' reflectedDimension='{}'",
 			    field.Name,
 			    layoutName,
@@ -179,8 +179,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 
 		if (binding->ArrayCount != field.ArrayCount)
 		{
-			result.succeeded = false;
-			result.diagnostics.push_back(std::format(
+			result.mismatches.push_back(std::format(
 			    "SC2004 reflected array-count mismatch: field='{}' layout='{}' shaderBinding='{}' reflectedBinding='{}' declaredCount={} reflectedCount={}",
 			    field.Name,
 			    layoutName,
@@ -204,7 +203,8 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		}
 	}
 
-	if (result.succeeded)
+	result.diagnostics.insert(result.diagnostics.begin(), result.mismatches.begin(), result.mismatches.end());
+	if (result.mismatches.empty())
 	{
 		result.diagnostics.push_back(std::format("SC2000 parameter struct '{}' matches reflected resource bindings", descriptor.Name));
 	}

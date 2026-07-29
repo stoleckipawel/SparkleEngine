@@ -3,6 +3,7 @@
 #include "Cooking/ShaderCookPlanner.h"
 
 #include "Core/Public/Assets/AssetTypes.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Contracts/ShaderContractCatalogBuilder.h"
@@ -48,13 +49,11 @@ ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStag
 }
 
 std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildPackages(
-	const ShaderPackageCookSettings& settings,
-	std::string& outErrorMessage)
+	const ShaderPackageCookSettings& settings)
 {
 	if (!settings.packageId.empty() && !settings.shaderId.empty())
 	{
-		outErrorMessage = "Use either package id or shader id for a shader cook request, not both.";
-		return {};
+		throw Diagnostics::Error("Use either package id or shader id for a shader cook request, not both.");
 	}
 
 	CookSelectionKind selectionKind = CookSelectionKind::All;
@@ -70,26 +69,19 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildPackages(
 		requestedId = settings.shaderId;
 	}
 
-	std::vector<ShaderCookPackageDesc> packages = BuildTypedShaderPackages(selectionKind, requestedId, outErrorMessage);
-	if (!outErrorMessage.empty())
-	{
-		return {};
-	}
+	std::vector<ShaderCookPackageDesc> packages = BuildTypedShaderPackages(selectionKind, requestedId);
 
 	if (packages.empty())
 	{
-		outErrorMessage = "No typed shader registrations were found.";
-		return {};
+		throw Diagnostics::Error("No typed shader registrations were found.");
 	}
 
-	outErrorMessage.clear();
 	return packages;
 }
 
 std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 	CookSelectionKind selectionKind,
-	std::string_view requestedId,
-	std::string& outErrorMessage)
+	std::string_view requestedId)
 {
 	std::vector<ShaderCookPackageDesc> packages;
 	std::unordered_map<std::string, std::size_t> packageIndices;
@@ -99,11 +91,7 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 	    selectionKind == CookSelectionKind::ShaderId   ? ShaderContractSelectionKind::ShaderId :
 	                                                    ShaderContractSelectionKind::All;
 	const ShaderContractCatalog catalog =
-	    ShaderContractCatalogBuilder::Build(contractSelectionKind, requested, outErrorMessage);
-	if (!outErrorMessage.empty())
-	{
-		return {};
-	}
+	    ShaderContractCatalogBuilder::Build(contractSelectionKind, requested);
 
 	for (const ShaderContractPackage& contractPackage : catalog.packages)
 	{
@@ -127,21 +115,19 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 		ShaderCookPackageDesc& package = packages[packageIt->second];
 		if (package.bindingLayoutId != contractPackage.bindingLayoutId)
 		{
-			outErrorMessage = std::format(
+			throw Diagnostics::Error(std::format(
 			    "Typed shader package '{}' mixes binding layouts '{}' and '{}'",
 			    packageId,
 			    package.bindingLayoutId,
-			    contractPackage.bindingLayoutId);
-			return {};
+			    contractPackage.bindingLayoutId));
 		}
 		if (package.packageKind != contractPackage.packageKind)
 		{
-			outErrorMessage = std::format(
+			throw Diagnostics::Error(std::format(
 			    "Typed shader package '{}' mixes package kinds {} and {}",
 			    packageId,
 			    static_cast<std::uint32_t>(package.packageKind),
-			    static_cast<std::uint32_t>(contractPackage.packageKind));
-			return {};
+			    static_cast<std::uint32_t>(contractPackage.packageKind)));
 		}
 		for (const ShaderContractStage& stage : contractPackage.stages)
 		{
@@ -173,8 +159,8 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 		{
 			if (package.packageKind != CookedShaderPackageKind::RayTracingLibrary)
 			{
-				outErrorMessage = std::format("Ray tracing hit group '{}' targets non-RT shader package '{}'", hitGroup.name, packageId);
-				return {};
+				throw Diagnostics::Error(
+				    std::format("Ray tracing hit group '{}' targets non-RT shader package '{}'.", hitGroup.name, packageId));
 			}
 			package.rayTracingHitGroups.push_back(ShaderCookRayTracingHitGroupDesc{
 			    .name = hitGroup.name,
@@ -184,6 +170,5 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 		}
 	}
 
-	outErrorMessage.clear();
 	return packages;
 }

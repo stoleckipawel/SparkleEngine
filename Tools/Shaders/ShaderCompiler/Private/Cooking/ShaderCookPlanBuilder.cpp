@@ -8,41 +8,32 @@
 #include "Cooking/ShaderCookPlanner.h"
 #include "Cooking/ShaderCookSettings.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <format>
 
-bool ShaderCookPlanBuilder::Build(
+ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(
     const ShaderPackageCookSettings& settings,
-    ShaderBackendPool& backendPool,
-    ShaderCookPipelinePlan& outPlan,
-    std::string& outErrorMessage)
+    ShaderBackendPool& backendPool)
 {
-	outPlan = {};
-	outPlan.packages = ShaderCookPlanner::BuildPackages(settings, outErrorMessage);
-	if (!outErrorMessage.empty())
+	ShaderCookPipelinePlan plan;
+	plan.packages = ShaderCookPlanner::BuildPackages(settings);
+
+	plan.packageContexts.resize(plan.packages.size());
+	for (std::size_t packageIndex = 0; packageIndex < plan.packages.size(); ++packageIndex)
 	{
-		return false;
+		AddPackageNodes(settings, packageIndex, backendPool, plan);
 	}
 
-	outPlan.packageContexts.resize(outPlan.packages.size());
-	for (std::size_t packageIndex = 0; packageIndex < outPlan.packages.size(); ++packageIndex)
-	{
-		if (!AddPackageNodes(settings, packageIndex, backendPool, outPlan, outErrorMessage))
-		{
-			return false;
-		}
-	}
-
-	outErrorMessage.clear();
-	return true;
+	return plan;
 }
 
 
-bool ShaderCookPlanBuilder::AddPackageNodes(
+void ShaderCookPlanBuilder::AddPackageNodes(
     const ShaderPackageCookSettings& settings,
     std::size_t packageIndex,
     ShaderBackendPool& backendPool,
-    ShaderCookPipelinePlan& plan,
-    std::string& outErrorMessage)
+    ShaderCookPipelinePlan& plan)
 {
 	const ShaderCookPackageDesc& package = plan.packages[packageIndex];
 	ShaderCookPackageContext& packageContext = plan.packageContexts[packageIndex];
@@ -51,113 +42,62 @@ bool ShaderCookPlanBuilder::AddPackageNodes(
 
 	for (std::size_t targetIndex = 0; targetIndex < settings.targets.size(); ++targetIndex)
 	{
-		bool shouldCookTarget = false;
-		if (!ShouldCookPackageTarget(
-		        settings,
-		        package,
-		        settings.targets[targetIndex],
-		        backendPool,
-		        shouldCookTarget,
-		        outErrorMessage))
-		{
-			return false;
-		}
-
-		if (!shouldCookTarget)
+		if (!ShouldCookPackageTarget(settings, package, settings.targets[targetIndex], backendPool))
 		{
 			continue;
 		}
 
 		for (std::size_t stageIndex = 0; stageIndex < package.stages.size(); ++stageIndex)
 		{
-			if (!ShaderCookNodeBuilder::BuildAndAdd(
-			        settings,
-			        packageIndex,
-			        stageIndex,
-			        targetIndex,
-			        backendPool,
-			        plan,
-			        outErrorMessage))
-			{
-				return false;
-			}
+			ShaderCookNodeBuilder::BuildAndAdd(
+			    settings,
+			    packageIndex,
+			    stageIndex,
+			    targetIndex,
+			    backendPool,
+			    plan);
 		}
 	}
 
 	if (plan.nodes.size() == packageNodeStart)
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "No supported shader targets were available for shader package '{}' from the requested target set",
-		    package.packageId);
-		return false;
+		    package.packageId));
 	}
-
-	outErrorMessage.clear();
-	return true;
 }
 
 bool ShaderCookPlanBuilder::ShouldCookPackageTarget(
     const ShaderPackageCookSettings& settings,
     const ShaderCookPackageDesc& package,
     ShaderTarget target,
-    ShaderBackendPool& backendPool,
-    bool& outShouldCook,
-    std::string& outErrorMessage)
+    ShaderBackendPool& backendPool)
 {
-	outShouldCook = false;
 	if (package.stages.empty())
 	{
-		outErrorMessage = std::format("Shader package '{}' has no registered stages", package.packageId);
-		return false;
+		throw Diagnostics::Error(std::format("Shader package '{}' has no registered stages.", package.packageId));
 	}
 
 	ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(package.stages.front());
 	compileOptions.Target = target;
 
-	std::string backendError;
-	std::string backendName;
-	IShaderBackend* backend = backendPool.ResolveAndAcquire(
+	IShaderBackend& backend = backendPool.ResolveAndAcquire(
 	    compileOptions.SourcePath,
 	    compileOptions.Target,
-	    settings.backendName,
-	    backendName,
-	    backendError);
-	if (backendName.empty())
-	{
-		outErrorMessage = std::format(
-		    "Failed to select shader backend for shader package '{}' target '{}' - {}",
-		    package.packageId,
-		    GetShaderTargetName(target),
-		    backendError);
-		return false;
-	}
-	if (backend == nullptr)
-	{
-		outErrorMessage = std::format(
-		    "Failed to construct shader backend '{}' for shader package '{}' target '{}' - {}",
-		    backendName,
-		    package.packageId,
-		    GetShaderTargetName(target),
-		    backendError);
-		return false;
-	}
+	    settings.backendName);
 
-	const ShaderBackendCapabilities capabilities = backend->GetCapabilities();
+	const ShaderBackendCapabilities capabilities = backend.GetCapabilities();
 	if (package.packageKind == CookedShaderPackageKind::RayTracingLibrary &&
 	    !capabilities.SupportsRayTracingLibrary(target))
 	{
-		outErrorMessage.clear();
-		return true;
+		return false;
 	}
 
 	if (HasCookedShaderPackageFeature(package.packageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
 	    !capabilities.SupportsInlineRayQuery(target))
 	{
-		outErrorMessage.clear();
-		return true;
+		return false;
 	}
 
-	outShouldCook = true;
-	outErrorMessage.clear();
 	return true;
 }

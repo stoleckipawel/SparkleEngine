@@ -17,7 +17,6 @@ class TextureCookMemoryLimiter final
 		Lease& operator=(Lease&& other) noexcept;
 		Lease(const Lease&) = delete;
 		Lease& operator=(const Lease&) = delete;
-		bool IsValid() const noexcept { return m_owner != nullptr; }
 
 	  private:
 		friend class TextureCookMemoryLimiter;

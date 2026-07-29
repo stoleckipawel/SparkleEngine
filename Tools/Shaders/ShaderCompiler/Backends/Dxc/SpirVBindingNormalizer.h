@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <span>
-#include <string>
 #include <vector>
 
 class SpirVBindingNormalizer final
@@ -12,8 +11,7 @@ class SpirVBindingNormalizer final
   public:
 	SpirVBindingNormalizer() = delete;
 
-	static bool Normalize(
+	static void Normalize(
 	    std::vector<std::uint8_t>& bytecode,
-	    std::span<const ShaderDescriptorBindingRemap> remaps,
-	    std::string& outErrorMessage);
+	    std::span<const ShaderDescriptorBindingRemap> remaps);
 };

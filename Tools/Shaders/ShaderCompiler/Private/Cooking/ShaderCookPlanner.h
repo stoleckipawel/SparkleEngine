@@ -4,7 +4,6 @@
 #include "Cooking/ShaderCookSettings.h"
 #include "ShaderCompileOptions.h"
 
-#include <string>
 #include <string_view>
 #include <vector>
 
@@ -12,9 +11,7 @@ class ShaderCookPlanner final
 {
   public:
 	static ShaderCompileOptions BuildCompileOptions(const ShaderCookStageDesc& stage);
-	static std::vector<ShaderCookPackageDesc> BuildPackages(
-	    const ShaderPackageCookSettings& settings,
-	    std::string& outErrorMessage);
+	static std::vector<ShaderCookPackageDesc> BuildPackages(const ShaderPackageCookSettings& settings);
   private:
 	enum class CookSelectionKind
 	{
@@ -25,6 +22,5 @@ class ShaderCookPlanner final
 
 	static std::vector<ShaderCookPackageDesc> BuildTypedShaderPackages(
 	    CookSelectionKind selectionKind,
-	    std::string_view requestedId,
-	    std::string& outErrorMessage);
+	    std::string_view requestedId);
 };

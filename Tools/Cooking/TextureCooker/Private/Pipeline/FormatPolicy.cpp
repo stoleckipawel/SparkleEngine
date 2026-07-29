@@ -2,8 +2,12 @@
 
 #include "Pipeline/FormatPolicy.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
 #include <algorithm>
 #include <cmath>
+
+static const auto g_textureFormatPolicyLogger = Logging::GetOrCreateLogger("TextureCooker.FormatPolicy");
 
 namespace TextureCookPipeline
 {
@@ -28,9 +32,21 @@ namespace TextureCookPipeline
 			case DXGI_FORMAT_BC3_UNORM_SRGB:
 			case DXGI_FORMAT_BC7_UNORM_SRGB:
 				return TextureFormatIntent::ColorSrgb;
-			default:
+			case DXGI_FORMAT_R8G8B8A8_UNORM:
+			case DXGI_FORMAT_B8G8R8A8_UNORM:
+			case DXGI_FORMAT_R32G32B32A32_FLOAT:
+			case DXGI_FORMAT_BC1_UNORM:
+			case DXGI_FORMAT_BC2_UNORM:
+			case DXGI_FORMAT_BC3_UNORM:
+			case DXGI_FORMAT_BC4_UNORM:
+			case DXGI_FORMAT_BC4_SNORM:
+			case DXGI_FORMAT_BC5_UNORM:
+			case DXGI_FORMAT_BC5_SNORM:
+			case DXGI_FORMAT_BC6H_UF16:
+			case DXGI_FORMAT_BC7_UNORM:
 				return TextureFormatIntent::DataLinear;
 		}
+		Diagnostics::Fatal(g_textureFormatPolicyLogger, __FILE__, __LINE__, "Unknown texture format intent.");
 	}
 
 	DXGI_FORMAT ApplyRequestedColorSpace(DXGI_FORMAT format, TextureColorSpace colorSpace) noexcept
@@ -57,7 +73,11 @@ namespace TextureCookPipeline
 				case DXGI_FORMAT_BC7_UNORM:
 					return DXGI_FORMAT_BC7_UNORM_SRGB;
 				default:
-					return format;
+					Diagnostics::Fatal(
+					    g_textureFormatPolicyLogger,
+					    __FILE__,
+					    __LINE__,
+					    "sRGB-capable texture format has no sRGB conversion.");
 			}
 		}
 
@@ -76,7 +96,11 @@ namespace TextureCookPipeline
 			case DXGI_FORMAT_BC7_UNORM_SRGB:
 				return DXGI_FORMAT_BC7_UNORM;
 			default:
-				return format;
+				Diagnostics::Fatal(
+				    g_textureFormatPolicyLogger,
+				    __FILE__,
+				    __LINE__,
+				    "sRGB-capable texture format has no linear conversion.");
 		}
 	}
 

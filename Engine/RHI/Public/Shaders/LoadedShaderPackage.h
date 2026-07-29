@@ -54,10 +54,9 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	const CookedShaderBinaryRecord* FindRuntimeBinaryRecord(ShaderStage stage, CookedShaderBinaryFormat format) const noexcept;
 	ShaderBytecode GetBytecode(const CookedShaderBinaryRecord& record) const noexcept;
 	std::string_view ResolveString(CookedShaderStringRef ref) const noexcept;
-	bool ValidateRayTracingLibraryMetadata(
+	void ValidateRayTracingLibraryMetadata(
 	    const RhiRayTracingCapabilities& capabilities,
-	    CookedShaderBinaryFormat runtimeBinaryFormat,
-	    std::string& outErrorMessage) const;
+	    CookedShaderBinaryFormat runtimeBinaryFormat) const;
 
   private:
 	friend class CookedShaderPackageCache;

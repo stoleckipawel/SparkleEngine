@@ -5,6 +5,7 @@
 #include "Compiler/ShaderCompileProfile.h"
 #include "Compiler/ShaderCompilerPaths.h"
 #include "Compiler/ShaderSourcePreprocessor.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Slang/SlangReflectionExtractor.h"
 
@@ -60,19 +61,15 @@ std::uint64_t SlangShaderBackend::GetBackendVersion() const
 	return m_backendVersion;
 }
 
-ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& options)
+CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 {
 	if (!IsValid())
 	{
-		return ShaderCompileResult::Failure("Slang global session is unavailable");
+		throw Diagnostics::Error("Slang global session is unavailable");
 	}
 
 	const std::filesystem::path sourcePath = ShaderCompilerPaths::CanonicalizeForCompiler(options.SourcePath);
-	ShaderSourcePreprocessResult source = ShaderSourcePreprocessor::Load(sourcePath, options);
-	if (!source.Succeeded())
-	{
-		return ShaderCompileResult::Failure(std::move(source.ErrorMessage));
-	}
+	const std::string sourceText = ShaderSourcePreprocessor::Load(sourcePath, options);
 
 	const std::string includeDir = ShaderCompilerPaths::MakeIncludeDirectoryArgument(options.IncludeDir);
 	std::vector<std::string> includeStorage;
@@ -112,7 +109,7 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	targetDesc.profile = m_globalSession->findProfile(ShaderCompileProfile::GetSlangTargetProfileName(options.Target));
 	if (targetDesc.format == SLANG_TARGET_UNKNOWN || targetDesc.profile == SLANG_PROFILE_UNKNOWN)
 	{
-		return ShaderCompileResult::Failure("Slang backend does not support requested shader target");
+		throw Diagnostics::Error("Slang backend does not support requested shader target");
 	}
 
 	std::array<slang::CompilerOptionEntry, 1> spirvOptions = {{
@@ -135,7 +132,7 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	Slang::ComPtr<slang::ISession> session;
 	if (SLANG_FAILED(m_globalSession->createSession(sessionDesc, session.writeRef())) || !session)
 	{
-		return ShaderCompileResult::Failure("Slang failed to create compile session");
+		throw Diagnostics::Error("Slang failed to create compile session");
 	}
 
 	std::string diagnostics;
@@ -145,12 +142,12 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	slang::IModule* module = session->loadModuleFromSourceString(
 	    moduleName.c_str(),
 	    modulePath.c_str(),
-	    source.SourceText.c_str(),
+	    sourceText.c_str(),
 	    diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (module == nullptr)
 	{
-		return ShaderCompileResult::Failure("Slang failed to load module - " + diagnostics);
+		throw Diagnostics::Error("Slang failed to load module - " + diagnostics);
 	}
 
 	Slang::ComPtr<slang::IEntryPoint> entryPoint;
@@ -161,7 +158,7 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	diagnostics += BlobToString(diagnosticBlob);
 	if (SLANG_FAILED(entryResult) || !entryPoint)
 	{
-		return ShaderCompileResult::Failure("Slang failed to find entry point - " + diagnostics);
+		throw Diagnostics::Error("Slang failed to find entry point - " + diagnostics);
 	}
 
 	std::array<slang::IComponentType*, 2> components = {module, entryPoint.get()};
@@ -172,7 +169,7 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	diagnostics += BlobToString(diagnosticBlob);
 	if (SLANG_FAILED(composeResult) || !composedProgram)
 	{
-		return ShaderCompileResult::Failure("Slang failed to compose shader program - " + diagnostics);
+		throw Diagnostics::Error("Slang failed to compose shader program - " + diagnostics);
 	}
 
 	Slang::ComPtr<slang::IComponentType> linkedProgram;
@@ -181,7 +178,7 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	diagnostics += BlobToString(diagnosticBlob);
 	if (SLANG_FAILED(linkResult) || !linkedProgram)
 	{
-		return ShaderCompileResult::Failure("Slang failed to link shader program - " + diagnostics);
+		throw Diagnostics::Error("Slang failed to link shader program - " + diagnostics);
 	}
 
 	Slang::ComPtr<slang::IBlob> codeBlob;
@@ -190,39 +187,34 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	diagnostics += BlobToString(diagnosticBlob);
 	if (SLANG_FAILED(codeResult) || !codeBlob || codeBlob->getBufferSize() == 0)
 	{
-		return ShaderCompileResult::Failure("Slang failed to emit target bytecode - " + diagnostics);
+		throw Diagnostics::Error("Slang failed to emit target bytecode - " + diagnostics);
 	}
 
 	const auto* bytes = static_cast<const std::uint8_t*>(codeBlob->getBufferPointer());
 	std::vector<std::uint8_t> bytecode(bytes, bytes + codeBlob->getBufferSize());
-	ShaderCompileResult result = ShaderCompileResult::Success(std::move(bytecode));
 
 	diagnosticBlob.setNull();
 	slang::ProgramLayout* layout = linkedProgram->getLayout(0, diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (layout == nullptr)
 	{
-		return ShaderCompileResult::Failure(
+		throw Diagnostics::Error(
 		    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(options.Target)} +
 		    "' source '" + options.SourcePath.generic_string() + "' entry '" + options.EntryPoint + "' - " + diagnostics);
 	}
 
-	ShaderReflection reflection;
-	std::string reflectionError;
-	if (!SlangReflectionExtractor::Extract(*layout, options.Stage, reflection, reflectionError))
-	{
-		return ShaderCompileResult::Failure(
-		    "Slang reflection extraction failed for target '" + std::string{GetShaderTargetName(options.Target)} +
-		    "' source '" + options.SourcePath.generic_string() + "' entry '" + options.EntryPoint + "' - " + reflectionError);
-	}
-	result.SetReflection(std::move(reflection));
+	ShaderReflection reflection = SlangReflectionExtractor::Extract(*layout, options.Stage);
 
+	ShaderDebugArtifactSet debugArtifacts;
 	if (options.CaptureDebugArtifacts)
 	{
-		CaptureDebugArtifacts(options, source.SourceText, diagnostics, result);
+		debugArtifacts = CaptureDebugArtifacts(options, sourceText, diagnostics);
 	}
 
-	return result;
+	CompiledShader compiledShader(std::move(bytecode));
+	compiledShader.SetReflection(std::move(reflection));
+	compiledShader.SetDebugArtifacts(std::move(debugArtifacts));
+	return compiledShader;
 }
 
 SlangStage SlangShaderBackend::MapStage(ShaderStage stage)
@@ -270,16 +262,14 @@ std::vector<std::string> SlangShaderBackend::BuildDebugArgumentStrings(const Sha
 	return args;
 }
 
-void SlangShaderBackend::CaptureDebugArtifacts(
+ShaderDebugArtifactSet SlangShaderBackend::CaptureDebugArtifacts(
     const ShaderCompileOptions& options,
     std::string_view sourceText,
-    std::string_view diagnostics,
-    ShaderCompileResult& outCompileResult)
+    std::string_view diagnostics)
 {
 	ShaderDebugArtifactSet artifacts;
 	artifacts.CompileArguments = BuildDebugArgumentStrings(options);
 	artifacts.CompilerOutput.assign(diagnostics);
 	artifacts.PreprocessedSource.assign(sourceText);
-	artifacts.Disassembly = "Slang backend disassembly is not captured yet.";
-	outCompileResult.SetDebugArtifacts(std::move(artifacts));
+	return artifacts;
 }

@@ -2,27 +2,26 @@
 
 #include "SpirVBindingNormalizer.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <spirv_reflect.h>
 
 #include <algorithm>
 #include <cstring>
 
-bool SpirVBindingNormalizer::Normalize(
+void SpirVBindingNormalizer::Normalize(
     std::vector<std::uint8_t>& bytecode,
-    std::span<const ShaderDescriptorBindingRemap> remaps,
-    std::string& outErrorMessage)
+    std::span<const ShaderDescriptorBindingRemap> remaps)
 {
 	if (bytecode.empty() || remaps.empty())
 	{
-		outErrorMessage.clear();
-		return true;
+		return;
 	}
 
 	SpvReflectShaderModule module{};
 	if (spvReflectCreateShaderModule(bytecode.size(), bytecode.data(), &module) != SPV_REFLECT_RESULT_SUCCESS)
 	{
-		outErrorMessage = "spvReflectCreateShaderModule failed";
-		return false;
+		throw Diagnostics::Error("spvReflectCreateShaderModule failed");
 	}
 
 	std::uint32_t bindingCount = 0;
@@ -35,8 +34,7 @@ bool SpirVBindingNormalizer::Normalize(
 	if (result != SPV_REFLECT_RESULT_SUCCESS)
 	{
 		spvReflectDestroyShaderModule(&module);
-		outErrorMessage = "spvReflectEnumerateDescriptorBindings failed";
-		return false;
+		throw Diagnostics::Error("spvReflectEnumerateDescriptorBindings failed");
 	}
 
 	for (SpvReflectDescriptorBinding* binding : bindings)
@@ -56,8 +54,7 @@ bool SpirVBindingNormalizer::Normalize(
 		if (result != SPV_REFLECT_RESULT_SUCCESS)
 		{
 			spvReflectDestroyShaderModule(&module);
-			outErrorMessage = "spvReflectChangeDescriptorBindingNumbers failed for '" + remap->Name + "'";
-			return false;
+			throw Diagnostics::Error("spvReflectChangeDescriptorBindingNumbers failed for '" + remap->Name + "'");
 		}
 	}
 
@@ -66,12 +63,9 @@ bool SpirVBindingNormalizer::Normalize(
 	if (normalizedCode == nullptr || normalizedSize == 0)
 	{
 		spvReflectDestroyShaderModule(&module);
-		outErrorMessage = "spvReflectGetCode returned empty bytecode";
-		return false;
+		throw Diagnostics::Error("spvReflectGetCode returned empty bytecode");
 	}
 	bytecode.resize(normalizedSize);
 	std::memcpy(bytecode.data(), normalizedCode, normalizedSize);
 	spvReflectDestroyShaderModule(&module);
-	outErrorMessage.clear();
-	return true;
 }

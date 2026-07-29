@@ -6,7 +6,7 @@
 #include <span>
 #include <string>
 
-struct CookedShaderStatsPassResult final
+struct CookedShaderStatsReport final
 {
 	std::filesystem::path outputPath;
 	std::uint32_t rowCount = 0;
@@ -17,9 +17,7 @@ class CookedShaderStatsPass final
   public:
 	CookedShaderStatsPass() = delete;
 
-	static bool WriteCsv(
+	static CookedShaderStatsReport WriteCsv(
 	    std::span<const CookedShaderPackageOutput> packages,
-	    const std::filesystem::path& analysisDirectory,
-	    CookedShaderStatsPassResult& outResult,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& analysisDirectory);
 };

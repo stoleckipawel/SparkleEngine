@@ -5,6 +5,7 @@
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/ReflectionSerializer.h"
 #include "Cooking/SourceIdentityHasher.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
@@ -228,14 +229,12 @@ static std::uint32_t FindRayTracingExportIndex(
 	return UINT32_MAX;
 }
 
-static bool BuildRayTracingHitGroupRecords(
+static std::vector<CookedShaderRayTracingHitGroupRecord> BuildRayTracingHitGroupRecords(
     const ShaderCookPackageDesc& package,
-    Strings::StringTableBuilder& stringTable,
-    std::vector<CookedShaderRayTracingHitGroupRecord>& outRecords,
-    std::string& outErrorMessage)
+    Strings::StringTableBuilder& stringTable)
 {
-	outRecords.clear();
-	outRecords.reserve(package.rayTracingHitGroups.size());
+	std::vector<CookedShaderRayTracingHitGroupRecord> records;
+	records.reserve(package.rayTracingHitGroups.size());
 	for (const ShaderCookRayTracingHitGroupDesc& hitGroup : package.rayTracingHitGroups)
 	{
 		const std::uint32_t closestHitExportIndex = FindRayTracingExportIndex(
@@ -244,24 +243,22 @@ static bool BuildRayTracingHitGroupRecords(
 		    CookedShaderRayTracingExportKind::ClosestHit);
 		if (closestHitExportIndex == UINT32_MAX)
 		{
-			outErrorMessage = std::format(
+			throw Diagnostics::Error(std::format(
 			    "Ray tracing hit group '{}' references missing closest-hit export '{}' in package '{}'",
 			    hitGroup.name,
 			    hitGroup.closestHitExportName,
-			    package.packageId);
-			return false;
+			    package.packageId));
 		}
 
 		const std::uint32_t anyHitExportIndex =
 		    FindRayTracingExportIndex(package.rayTracingExports, hitGroup.anyHitExportName, CookedShaderRayTracingExportKind::AnyHit);
 		if (!hitGroup.anyHitExportName.empty() && anyHitExportIndex == UINT32_MAX)
 		{
-			outErrorMessage = std::format(
+			throw Diagnostics::Error(std::format(
 			    "Ray tracing hit group '{}' references missing any-hit export '{}' in package '{}'",
 			    hitGroup.name,
 			    hitGroup.anyHitExportName,
-			    package.packageId);
-			return false;
+			    package.packageId));
 		}
 
 		const std::uint32_t intersectionExportIndex = FindRayTracingExportIndex(
@@ -270,15 +267,14 @@ static bool BuildRayTracingHitGroupRecords(
 		    CookedShaderRayTracingExportKind::Intersection);
 		if (!hitGroup.intersectionExportName.empty() && intersectionExportIndex == UINT32_MAX)
 		{
-			outErrorMessage = std::format(
+			throw Diagnostics::Error(std::format(
 			    "Ray tracing hit group '{}' references missing intersection export '{}' in package '{}'",
 			    hitGroup.name,
 			    hitGroup.intersectionExportName,
-			    package.packageId);
-			return false;
+			    package.packageId));
 		}
 
-		outRecords.push_back(
+		records.push_back(
 		    CookedShaderRayTracingHitGroupRecord{
 		        .HitGroupName = ToCookedShaderStringRef(stringTable.Add(hitGroup.name)),
 		        .Type = intersectionExportIndex != UINT32_MAX ? CookedShaderRayTracingHitGroupType::ProceduralPrimitive
@@ -289,17 +285,14 @@ static bool BuildRayTracingHitGroupRecords(
 		        .HitGroupHash = Hash::Fnv1a64(hitGroup.name)});
 	}
 
-	outErrorMessage.clear();
-	return true;
+	return records;
 }
 
-bool CookedPackageWriter::Write(
+CookedShaderPackageOutput CookedPackageWriter::Write(
     const ShaderCookPackageDesc& package,
     std::span<const CookedStageBuild> compiledStages,
     const std::filesystem::path& storagePath,
-    const std::filesystem::path& publishedPath,
-    CookedShaderPackageOutput& outPackageOutput,
-    std::string& outErrorMessage)
+    const std::filesystem::path& publishedPath)
 {
 	Strings::StringTableBuilder stringTable;
 	std::vector<CookedShaderBinaryRecord> binaryRecords;
@@ -307,7 +300,6 @@ bool CookedPackageWriter::Write(
 	std::vector<CookedShaderPipelineLayoutRecord> pipelineLayoutRecords;
 	std::vector<CookedShaderSpecializationInputRecord> specializationInputs;
 	std::vector<CookedShaderRayTracingExportRecord> rayTracingExportRecords;
-	std::vector<CookedShaderRayTracingHitGroupRecord> rayTracingHitGroupRecords;
 	std::vector<CookedShaderRayTracingLocalParameterRecord> rayTracingLocalParameterRecords;
 	std::vector<std::uint8_t> binaryBlob;
 
@@ -349,10 +341,8 @@ bool CookedPackageWriter::Write(
 	ReflectionSerializer::Output reflectionOutput;
 	ReflectionSerializer::Build(reflectionsForSerialization, stringTable, reflectionOutput);
 	BuildRayTracingExportRecords(package, compiledStages, stringTable, rayTracingExportRecords);
-	if (!BuildRayTracingHitGroupRecords(package, stringTable, rayTracingHitGroupRecords, outErrorMessage))
-	{
-		return false;
-	}
+	const std::vector<CookedShaderRayTracingHitGroupRecord> rayTracingHitGroupRecords =
+	    BuildRayTracingHitGroupRecords(package, stringTable);
 
 	CookedShaderPackageHeader header{};
 	header.DeclaredStages = declaredStages;
@@ -389,49 +379,53 @@ bool CookedPackageWriter::Write(
 
 	const std::filesystem::path tempPackagePath = Files::BuildTemporaryPath(storagePath);
 	std::ofstream output;
-	if (!Files::TryOpenBinaryOutput(tempPackagePath, output, outErrorMessage))
+	std::string fileError;
+	if (!Files::TryOpenBinaryOutput(tempPackagePath, output, fileError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(fileError));
 	}
 
-	if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, binaryRecords, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, bindingRecords, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, pipelineLayoutRecords, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, specializationInputs, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.reflectionRecords, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.resourceBindings, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBuffers, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBufferMembers, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.inputElements, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.pushConstantRanges, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.specializationConstants, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingExportRecords, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingHitGroupRecords, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingLocalParameterRecords, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, stringTable.GetBytes(), outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, binaryBlob, outErrorMessage))
+	if (!Files::BinaryStreamWriter::WriteValue(output, header, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, binaryRecords, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, bindingRecords, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, pipelineLayoutRecords, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, specializationInputs, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.reflectionRecords, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.resourceBindings, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBuffers, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBufferMembers, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.inputElements, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.pushConstantRanges, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.specializationConstants, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingExportRecords, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingHitGroupRecords, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingLocalParameterRecords, fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, stringTable.GetBytes(), fileError) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, binaryBlob, fileError))
 	{
-		return false;
+		output.close();
+		Files::CleanupTemporaryFile(tempPackagePath);
+		throw Diagnostics::Error(std::move(fileError));
 	}
 
-	if (!Files::TryCloseOutput(output, tempPackagePath, outErrorMessage))
+	if (!Files::TryCloseOutput(output, tempPackagePath, fileError))
 	{
-		return false;
+		Files::CleanupTemporaryFile(tempPackagePath);
+		throw Diagnostics::Error(std::move(fileError));
 	}
 
-	if (!Files::TryFinalizeTemporaryFile(tempPackagePath, storagePath, outErrorMessage))
+	if (!Files::TryFinalizeTemporaryFile(tempPackagePath, storagePath, fileError))
 	{
-		return false;
+		Files::CleanupTemporaryFile(tempPackagePath);
+		throw Diagnostics::Error(std::move(fileError));
 	}
 
-	outPackageOutput.packageId = package.packageId;
-	outPackageOutput.bindingLayoutId = package.bindingLayoutId;
-	outPackageOutput.outputPath = publishedPath;
-	outPackageOutput.packageKey = header.ShaderPackageKey;
-	outPackageOutput.sourceIdentityHash = header.SourceIdentityHash;
-	outPackageOutput.bindingLayoutHash = header.BindingLayoutHash;
-	outPackageOutput.declaredStages = header.DeclaredStages;
-	outErrorMessage.clear();
-	return true;
+	return CookedShaderPackageOutput{
+	    .packageId = package.packageId,
+	    .bindingLayoutId = package.bindingLayoutId,
+	    .outputPath = publishedPath,
+	    .packageKey = header.ShaderPackageKey,
+	    .sourceIdentityHash = header.SourceIdentityHash,
+	    .bindingLayoutHash = header.BindingLayoutHash,
+	    .declaredStages = header.DeclaredStages};
 }

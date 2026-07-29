@@ -6,20 +6,13 @@
 
 namespace TextureCookPipeline
 {
-	bool ApplyChannelPolicy(const TextureCookRequest& request, WorkingTexture& workingTexture, std::string& outErrorMessage)
+	void ApplyChannelPolicy(const TextureCookRequest& request, WorkingTexture& workingTexture)
 	{
 		if (request.policy.channelMask == TextureChannelMask::Rgba)
 		{
-			outErrorMessage.clear();
-			return true;
+			return;
 		}
 
-		if (!ExtractChannel(workingTexture, request.policy.channelMask, outErrorMessage))
-		{
-			return false;
-		}
-
-		outErrorMessage.clear();
-		return true;
+		ExtractChannel(workingTexture, request.policy.channelMask);
 	}
 }

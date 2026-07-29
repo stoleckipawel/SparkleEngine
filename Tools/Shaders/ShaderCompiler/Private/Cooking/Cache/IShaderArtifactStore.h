@@ -3,12 +3,12 @@
 #include "Cooking/Cache/ShaderCacheKey.h"
 #include "Cooking/CookedStageBuild.h"
 
-#include <string>
+#include <optional>
 
 class IShaderArtifactStore
 {
   public:
 	virtual ~IShaderArtifactStore() = default;
-	virtual bool TryGet(const ShaderCacheKey& key, CookedStageBuild& outBuild, std::string& outErrorMessage) const = 0;
-	virtual bool Put(const ShaderCacheKey& key, const CookedStageBuild& build, std::string& outErrorMessage) = 0;
+	virtual std::optional<CookedStageBuild> Find(const ShaderCacheKey& key) const = 0;
+	virtual void Put(const ShaderCacheKey& key, const CookedStageBuild& build) = 0;
 };

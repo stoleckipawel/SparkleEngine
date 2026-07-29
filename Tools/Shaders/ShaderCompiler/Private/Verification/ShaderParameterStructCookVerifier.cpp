@@ -3,29 +3,27 @@
 #include "Verification/ShaderParameterStructCookVerifier.h"
 
 #include "Cooking/ShaderCookDiagnostics.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "ShaderDebugArtifactSet.h"
 #include "Verification/ShaderParameterStructVerifier.h"
 
 #include <format>
 
-bool ShaderParameterStructCookVerifier::Verify(
+void ShaderParameterStructCookVerifier::Verify(
     const CookNode& node,
     const CookedStageBuild& compiledStage,
-    ShaderDebugArtifactSet* debugArtifacts,
-    std::string& outErrorMessage)
+    ShaderDebugArtifactSet* debugArtifacts)
 {
 	if (!node.parameterStructDescriptor.has_value())
 	{
 		WriteSkippedReport(debugArtifacts, "no parameter-struct descriptor declared for this shader stage");
-		outErrorMessage.clear();
-		return true;
+		return;
 	}
 	if (node.package->packageKind == CookedShaderPackageKind::RayTracingLibrary)
 	{
 		WriteSkippedReport(debugArtifacts, "ray-tracing library packages do not use pass parameter-struct validation");
-		outErrorMessage.clear();
-		return true;
+		return;
 	}
 
 	const ShaderParameterStructVerificationResult verificationResult =
@@ -36,18 +34,14 @@ bool ShaderParameterStructCookVerifier::Verify(
 	{
 		debugArtifacts->ParameterMatchReportJson = verificationResult.BuildJsonReport();
 	}
-	if (!verificationResult.succeeded)
+	if (!verificationResult.mismatches.empty())
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "SC2001 {} parameter-struct '{}' verification failed: {}",
 		    ShaderCookDiagnostics::FormatNodeContext(node, compiledStage.backendName, node.compileOptions.Target),
 		    node.parameterStructDescriptor->Name,
-		    verificationResult.diagnostics.empty() ? "unknown mismatch" : verificationResult.diagnostics.front());
-		return false;
+		    verificationResult.mismatches.front()));
 	}
-
-	outErrorMessage.clear();
-	return true;
 }
 
 void ShaderParameterStructCookVerifier::WriteSkippedReport(ShaderDebugArtifactSet* debugArtifacts, std::string_view reason)

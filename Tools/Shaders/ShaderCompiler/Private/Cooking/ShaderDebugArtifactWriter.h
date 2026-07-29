@@ -11,28 +11,26 @@
 class ShaderDebugArtifactWriter final
 {
   public:
-	static bool Write(
+	static void Write(
 	    const std::filesystem::path& rootDirectory,
 	    const ShaderCookPackageDesc& package,
 	    const ShaderCookStageDesc& stage,
 	    const ShaderCompileOptions& options,
 	    const CookedStageBuild& compiledStage,
-	    const ShaderDebugArtifactSet& debugArtifacts,
-	    std::string& outErrorMessage);
+	    const ShaderDebugArtifactSet& debugArtifacts);
 
   private:
-	static bool WriteCompileInputs(
+	static void WriteText(const std::filesystem::path& path, std::string_view contents);
+	static void WriteCompileInputs(
 	    const std::filesystem::path& bundleDirectory,
 	    const ShaderCookPackageDesc& package,
 	    const ShaderCookStageDesc& stage,
 	    const ShaderCompileOptions& options,
-	    const CookedStageBuild& compiledStage,
-	    std::string& outErrorMessage);
-	static bool WriteCompilerOutputs(
+	    const CookedStageBuild& compiledStage);
+	static void WriteCompilerOutputs(
 	    const std::filesystem::path& bundleDirectory,
 	    const ShaderDebugArtifactSet& debugArtifacts,
-	    const CookedStageBuild& compiledStage,
-	    std::string& outErrorMessage);
+	    const CookedStageBuild& compiledStage);
 	static std::string BuildBundleDirectoryName(
 	    const ShaderCookPackageDesc& package,
 	    const ShaderCookStageDesc& stage,

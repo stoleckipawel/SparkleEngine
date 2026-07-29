@@ -3,19 +3,13 @@
 #include "Pipeline/WorkingTexture.h"
 #include "TextureCookRequestList.h"
 
-#include <string>
-
 namespace TextureCookPipeline
 {
-	bool ProcessCompressedSource(
+	TextureLoadResult ProcessCompressedSource(
 	    const TextureCookRequest& request,
-	    TextureLoadResult&& sourceTexture,
-	    TextureLoadResult& outProcessedTexture,
-	    std::string& outErrorMessage);
+	    TextureLoadResult sourceTexture);
 
-	bool BuildOutputTexture(
+	TextureLoadResult BuildOutputTexture(
 	    const TextureCookRequest& request,
-	    const WorkingTexture& workingTexture,
-	    TextureLoadResult& outProcessedTexture,
-	    std::string& outErrorMessage);
+	    const WorkingTexture& workingTexture);
 }

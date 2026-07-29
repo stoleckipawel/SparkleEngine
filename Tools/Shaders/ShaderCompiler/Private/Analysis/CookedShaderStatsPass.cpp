@@ -2,6 +2,7 @@
 
 #include "Analysis/CookedShaderStatsPass.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Strings/StringUtils.h"
@@ -9,26 +10,19 @@
 
 #include <sstream>
 
-bool CookedShaderStatsPass::WriteCsv(
+CookedShaderStatsReport CookedShaderStatsPass::WriteCsv(
     std::span<const CookedShaderPackageOutput> packages,
-    const std::filesystem::path& analysisDirectory,
-    CookedShaderStatsPassResult& outResult,
-    std::string& outErrorMessage)
+    const std::filesystem::path& analysisDirectory)
 {
-	outResult = {};
-	outResult.outputPath = analysisDirectory / "CookedShaderStats.csv";
+	CookedShaderStatsReport report;
+	report.outputPath = analysisDirectory / "CookedShaderStats.csv";
 
 	std::ostringstream csv;
 	csv << "PackageId,ShaderPackageKey,ShaderBlobId,Stage,BinaryFormat,CompilerBackend,CodegenTarget,EntryPoint,ExportName,BytecodeBytes,ResourceBindings,ConstantBuffers,InputElements,PushConstantRanges,SpecializationConstants,PipelineLayoutRecords\n";
 
 	for (const CookedShaderPackageOutput& package : packages)
 	{
-		InspectedCookedShaderPackage inspectedPackage;
-		if (!CookedPackageInspection::Inspect(package.outputPath, inspectedPackage, outErrorMessage))
-		{
-			outErrorMessage = "Failed to inspect cooked package for CookedShaderStats '" + package.outputPath.string() + "' - " + outErrorMessage;
-			return false;
-		}
+		InspectedCookedShaderPackage inspectedPackage = CookedPackageInspection::Inspect(package.outputPath);
 
 		for (const InspectedCookedShaderBinary& binary : inspectedPackage.binaries)
 		{
@@ -48,15 +42,15 @@ bool CookedShaderStatsPass::WriteCsv(
 			    << binary.pushConstantRangeCount << ','
 			    << binary.specializationConstantCount << ','
 			    << inspectedPackage.pipelineLayoutRecordCount << '\n';
-			++outResult.rowCount;
+			++report.rowCount;
 		}
 	}
 
-	if (!Files::TryWriteAllText(outResult.outputPath, csv.str(), outErrorMessage))
+	std::string writeError;
+	if (!Files::TryWriteAllText(report.outputPath, csv.str(), writeError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(writeError));
 	}
 
-	outErrorMessage.clear();
-	return true;
+	return report;
 }

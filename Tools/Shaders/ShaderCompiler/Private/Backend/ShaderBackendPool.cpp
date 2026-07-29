@@ -5,20 +5,15 @@
 #include "Backend/IShaderBackend.h"
 #include "Backend/ShaderBackendFactory.h"
 
-IShaderBackend* ShaderBackendPool::ResolveAndAcquire(
+#include "Core/Public/Diagnostics/Error.h"
+
+IShaderBackend& ShaderBackendPool::ResolveAndAcquire(
     const std::filesystem::path& sourcePath,
     ShaderTarget target,
-    std::string_view requestedName,
-    std::string& outResolvedBackendName,
-    std::string& outErrorMessage)
+    std::string_view requestedName)
 {
-	outResolvedBackendName = ResolveShaderBackendName(sourcePath, target, requestedName, outErrorMessage);
-	if (outResolvedBackendName.empty())
-	{
-		return nullptr;
-	}
-
-	return Acquire(outResolvedBackendName, target, outErrorMessage);
+	const std::string backendName = ResolveShaderBackendName(sourcePath, target, requestedName);
+	return Acquire(backendName, target);
 }
 
 IShaderBackend* ShaderBackendPool::Find(std::string_view backendName) const noexcept
@@ -27,30 +22,25 @@ IShaderBackend* ShaderBackendPool::Find(std::string_view backendName) const noex
 	return it != m_backends.end() ? it->second.get() : nullptr;
 }
 
-IShaderBackend* ShaderBackendPool::Acquire(std::string_view backendName, ShaderTarget target, std::string& outErrorMessage)
+IShaderBackend& ShaderBackendPool::Acquire(std::string_view backendName, ShaderTarget target)
 {
 	const auto existing = m_backends.find(std::string(backendName));
 	if (existing != m_backends.end())
 	{
-		return existing->second.get();
+		return *existing->second;
 	}
 
-	std::unique_ptr<IShaderBackend> backend = CreateShaderBackend(backendName, outErrorMessage);
-	if (!backend)
-	{
-		return nullptr;
-	}
+	std::unique_ptr<IShaderBackend> backend = CreateShaderBackend(backendName);
 
 	const std::string resolvedName(backend->GetBackendName());
 	if (!backend->GetCapabilities().SupportsTarget(target))
 	{
-		outErrorMessage = std::string{"Shader backend '"} + resolvedName + "' does not support target '" +
-			GetShaderTargetName(target) + "'";
-		return nullptr;
+		throw Diagnostics::Error(
+		    std::string{"Shader backend '"} + resolvedName + "' does not support target '" +
+		    GetShaderTargetName(target) + "'.");
 	}
 
-	IShaderBackend* backendPtr = backend.get();
+	IShaderBackend& backendReference = *backend;
 	m_backends.emplace(resolvedName, std::move(backend));
-	outErrorMessage.clear();
-	return backendPtr;
+	return backendReference;
 }

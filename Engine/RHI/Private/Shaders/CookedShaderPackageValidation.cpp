@@ -99,15 +99,11 @@ class CookedShaderPackageValidationImplementation final
 
 		void ValidateRayTracingFeatures()
 		{
-			std::string metadataError;
 			if (m_package.GetHeader().PackageKind == CookedShaderPackageKind::RayTracingLibrary)
 			{
 				RhiRayTracingCapabilities metadataOnlyCapabilities{};
 				metadataOnlyCapabilities.SupportsRayTracing = true;
-				if (!m_package.ValidateRayTracingLibraryMetadata(metadataOnlyCapabilities, m_runtimeBinaryFormat, metadataError))
-				{
-					Reject(std::move(metadataError));
-				}
+				m_package.ValidateRayTracingLibraryMetadata(metadataOnlyCapabilities, m_runtimeBinaryFormat);
 
 				Reject(std::format(
 				    "Cooked shader package '{}' is a ray tracing library package with valid metadata, but runtime RT state object execution is not enabled yet.",
@@ -115,14 +111,9 @@ class CookedShaderPackageValidationImplementation final
 			}
 
 			if (HasCookedShaderPackageFeature(
-			        m_package.GetHeader().PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
-			    !ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
-			        m_package, m_runtimeBinaryFormat, metadataError))
+			        m_package.GetHeader().PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery))
 			{
-				Reject(std::format(
-				    "Cooked shader package '{}' failed inline ray query metadata validation: {}",
-				    m_definition.PackageId,
-				    metadataError));
+				ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(m_package, m_runtimeBinaryFormat);
 			}
 		}
 

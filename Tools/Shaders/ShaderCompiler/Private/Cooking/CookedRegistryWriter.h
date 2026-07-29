@@ -4,13 +4,11 @@
 
 #include <filesystem>
 #include <span>
-#include <string>
 
 class CookedRegistryWriter final
 {
   public:
-	static bool Write(
+	static void Write(
 	    std::span<const CookedShaderPackageOutput> packages,
-	    const std::filesystem::path& storagePath,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& storagePath);
 };

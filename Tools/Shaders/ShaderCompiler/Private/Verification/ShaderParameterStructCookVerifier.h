@@ -13,11 +13,10 @@ class ShaderParameterStructCookVerifier final
   public:
 	ShaderParameterStructCookVerifier() = delete;
 
-	static bool Verify(
+	static void Verify(
 	    const CookNode& node,
 	    const CookedStageBuild& compiledStage,
-	    ShaderDebugArtifactSet* debugArtifacts,
-	    std::string& outErrorMessage);
+	    ShaderDebugArtifactSet* debugArtifacts);
 
   private:
 	static void WriteSkippedReport(ShaderDebugArtifactSet* debugArtifacts, std::string_view reason);

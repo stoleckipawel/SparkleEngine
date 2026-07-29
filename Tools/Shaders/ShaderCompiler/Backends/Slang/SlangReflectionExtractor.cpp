@@ -4,14 +4,11 @@
 
 #include <algorithm>
 
-bool SlangReflectionExtractor::Extract(
+ShaderReflection SlangReflectionExtractor::Extract(
     slang::ProgramLayout& programLayout,
-    ShaderStage stage,
-    ShaderReflection& outReflection,
-    std::string& outError)
+    ShaderStage stage)
 {
-	outReflection = ShaderReflection{};
-	outError.clear();
+	ShaderReflection outReflection;
 
 	if (slang::VariableLayoutReflection* globals = programLayout.getGlobalParamsVarLayout())
 	{
@@ -37,7 +34,7 @@ bool SlangReflectionExtractor::Extract(
 		}
 	}
 
-	return true;
+	return outReflection;
 }
 
 void SlangReflectionExtractor::VisitScope(

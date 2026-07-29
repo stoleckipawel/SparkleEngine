@@ -52,10 +52,7 @@ void WriteTextureCookRequestList(
 	output << TextureCookRequestCodec::GetHeader() << '\n';
 	for (const TextureCookRequest& request : sortedRequests)
 	{
-		if (!request.IsValid())
-		{
-			throw Diagnostics::Error("Texture cook request list contains an invalid request entry.");
-		}
+		ValidateTextureCookRequest(request);
 		output << TextureCookRequestCodec::FormatLine(request) << '\n';
 	}
 
@@ -95,16 +92,9 @@ std::vector<TextureCookRequest> LoadTextureCookRequestList(const std::filesystem
 			continue;
 		}
 
-		TextureCookRequest request;
-		std::string parseError;
-		if (!TextureCookRequestCodec::ParseLine(trimmedLine, request, parseError))
-		{
-			throw Diagnostics::Error(
-			    std::move(parseError) + " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber) + ".");
-		}
 		try
 		{
-			requestSet.Add(request);
+			requestSet.Add(TextureCookRequestCodec::ParseLine(trimmedLine));
 		}
 		catch (const Diagnostics::Error& error)
 		{

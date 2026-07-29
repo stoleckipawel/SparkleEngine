@@ -6,12 +6,13 @@
 #include "SourceLoading/ExrTextureSourceLoader.h"
 #include "SourceLoading/HdrTextureSourceLoader.h"
 #include "SourceLoading/RasterTextureSourceLoader.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Paths/PathUtils.h"
 
 #include <array>
 #include <format>
 
-TextureLoadResult TextureSourceLoader::Load(const std::filesystem::path& sourcePath, std::string& outErrorMessage)
+TextureLoadResult TextureSourceLoader::Load(const std::filesystem::path& sourcePath)
 {
 	static const DdsTextureSourceLoader ddsTextureSourceLoader;
 	static const ExrTextureSourceLoader exrTextureSourceLoader;
@@ -28,12 +29,11 @@ TextureLoadResult TextureSourceLoader::Load(const std::filesystem::path& sourceP
 	{
 		if (textureSourceLoaderBackend->SupportsFormat(format))
 		{
-			return textureSourceLoaderBackend->Load(sourcePath, outErrorMessage);
+			return textureSourceLoaderBackend->Load(sourcePath);
 		}
 	}
 
-	outErrorMessage = std::format("Unsupported source texture format for '{}'", sourcePath.string());
-	return {};
+	throw Diagnostics::Error(std::format("Unsupported source texture format for '{}'.", sourcePath.string()));
 }
 
 TextureSourceFormat TextureSourceLoader::ResolveFormat(const std::filesystem::path& sourcePath) noexcept

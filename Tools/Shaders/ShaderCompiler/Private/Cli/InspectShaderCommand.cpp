@@ -4,6 +4,7 @@
 
 #include "Constants/ShaderCompilerConstants.h"
 #include "Contracts/ShaderContractCatalogBuilder.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Inspection/CookedPackageInspection.h"
 #include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
@@ -19,14 +20,12 @@ int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 		return kExitCodeUsage;
 	}
 
-	std::string errorMessage;
-	ShaderContractCatalog catalog =
-	    ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::ShaderId, args[0], errorMessage);
-	if (!errorMessage.empty())
+	ShaderContractCatalog catalog;
+	try
 	{
-		catalog = ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::PackageId, args[0], errorMessage);
+		catalog = ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::RegisteredId, args[0]);
 	}
-	if (!errorMessage.empty())
+	catch (const Diagnostics::Error&)
 	{
 		std::cerr << "ShaderCompiler: unknown shader id '" << args[0] << "'\n";
 		return kExitCodeUsage;

@@ -1,5 +1,7 @@
 #include "Cooking/TextureCookMemoryLimiter.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <algorithm>
 #include <stop_token>
 #include <utility>
@@ -60,7 +62,7 @@ TextureCookMemoryLimiter::Lease TextureCookMemoryLimiter::Acquire(std::size_t by
 	    });
 	if (cancellation.stop_requested())
 	{
-		return {};
+		throw Diagnostics::Error("Texture cook was cancelled while waiting for its decompressed-memory budget.");
 	}
 
 	m_usedBytes += weight;

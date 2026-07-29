@@ -1,5 +1,6 @@
 #include "TextureCookRequestCodec.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "TextureCookPolicyCodec.h"
@@ -13,15 +14,14 @@ class TextureCookRequestParsing final
 	static constexpr std::string_view Header = "TextureCookRequests|1";
 	static constexpr std::size_t FieldCount = 10;
 
-	static bool ParseAssetId(std::string_view value, TextureAssetId& outAssetId) noexcept
+	static TextureAssetId ParseAssetId(std::string_view value)
 	{
 		std::uint64_t parsedAssetId = 0;
-		if (!Formatting::TryParseHexUInt64(value, parsedAssetId))
+		if (!Formatting::TryParseHexUInt64(value, parsedAssetId) || parsedAssetId == InvalidTextureAssetId)
 		{
-			return false;
+			throw Diagnostics::Error("Texture cook request entry has an invalid asset id '" + std::string(value) + "'.");
 		}
-		outAssetId = static_cast<TextureAssetId>(parsedAssetId);
-		return true;
+		return static_cast<TextureAssetId>(parsedAssetId);
 	}
 
 	static std::filesystem::path NormalizePath(std::string_view value)
@@ -40,76 +40,35 @@ bool TextureCookRequestCodec::IsHeader(std::string_view line) noexcept
 	return line == TextureCookRequestParsing::Header;
 }
 
-bool TextureCookRequestCodec::ParseLine(
-    std::string_view line, TextureCookRequest& outRequest, std::string& outErrorMessage)
+TextureCookRequest TextureCookRequestCodec::ParseLine(std::string_view line)
 {
 	const std::vector<std::string_view> fields = Strings::Split(line, '|');
 	if (fields.size() != TextureCookRequestParsing::FieldCount)
 	{
-		outErrorMessage = "Texture cook request entry is malformed.";
-		return false;
+		throw Diagnostics::Error("Texture cook request entry is malformed.");
 	}
 	if (fields[8].empty())
 	{
-		outErrorMessage = "Texture cook request entry is missing an output path.";
-		return false;
+		throw Diagnostics::Error("Texture cook request entry is missing an output path.");
 	}
 	if (fields[9].empty())
 	{
-		outErrorMessage = "Texture cook request entry is missing a source path.";
-		return false;
-	}
-	if (!TextureCookRequestParsing::ParseAssetId(fields[0], outRequest.assetId))
-	{
-		outErrorMessage = "Texture cook request entry has an invalid asset id '" + std::string(fields[0]) + "'.";
-		return false;
-	}
-	if (!TextureCookPolicyCodec::TryParseColorSpace(fields[1], outRequest.policy.colorSpace))
-	{
-		outErrorMessage = "Texture cook request entry has an unknown color space '" + std::string(fields[1]) + "'.";
-		return false;
-	}
-	if (!TextureCookPolicyCodec::TryParseMipPolicy(fields[2], outRequest.policy.mipPolicy))
-	{
-		outErrorMessage = "Texture cook request entry has an unknown mip policy '" + std::string(fields[2]) + "'.";
-		return false;
-	}
-	if (!TextureCookPolicyCodec::TryParseMipFilter(fields[3], outRequest.policy.mipFilter))
-	{
-		outErrorMessage = "Texture cook request entry has an unknown mip filter '" + std::string(fields[3]) + "'.";
-		return false;
-	}
-	if (!TextureCookPolicyCodec::TryParseColorProcessingPolicy(fields[4], outRequest.policy.colorProcessingPolicy))
-	{
-		outErrorMessage =
-		    "Texture cook request entry has an unknown color processing policy '" + std::string(fields[4]) + "'.";
-		return false;
-	}
-	if (!TextureCookPolicyCodec::TryParseTextureGroup(fields[5], outRequest.policy.textureGroup))
-	{
-		outErrorMessage = "Texture cook request entry has an unknown texture group '" + std::string(fields[5]) + "'.";
-		return false;
-	}
-	if (!TextureCookPolicyCodec::TryParseDimension(fields[6], outRequest.policy.dimension))
-	{
-		outErrorMessage = "Texture cook request entry has an unknown texture dimension '" + std::string(fields[6]) + "'.";
-		return false;
-	}
-	if (!TextureCookPolicyCodec::TryParseChannelMask(fields[7], outRequest.policy.channelMask))
-	{
-		outErrorMessage = "Texture cook request entry has an unknown channel mask '" + std::string(fields[7]) + "'.";
-		return false;
+		throw Diagnostics::Error("Texture cook request entry is missing a source path.");
 	}
 
-	outRequest.outputPath = TextureCookRequestParsing::NormalizePath(fields[8]);
-	outRequest.sourcePath = TextureCookRequestParsing::NormalizePath(fields[9]);
-	if (!outRequest.IsValid())
-	{
-		outErrorMessage = "Texture cook request entry is invalid after parsing.";
-		return false;
-	}
-	outErrorMessage.clear();
-	return true;
+	TextureCookRequest request;
+	request.assetId = TextureCookRequestParsing::ParseAssetId(fields[0]);
+	request.policy.colorSpace = TextureCookPolicyCodec::ParseColorSpace(fields[1]);
+	request.policy.mipPolicy = TextureCookPolicyCodec::ParseMipPolicy(fields[2]);
+	request.policy.mipFilter = TextureCookPolicyCodec::ParseMipFilter(fields[3]);
+	request.policy.colorProcessingPolicy = TextureCookPolicyCodec::ParseColorProcessingPolicy(fields[4]);
+	request.policy.textureGroup = TextureCookPolicyCodec::ParseTextureGroup(fields[5]);
+	request.policy.dimension = TextureCookPolicyCodec::ParseDimension(fields[6]);
+	request.policy.channelMask = TextureCookPolicyCodec::ParseChannelMask(fields[7]);
+	request.outputPath = TextureCookRequestParsing::NormalizePath(fields[8]);
+	request.sourcePath = TextureCookRequestParsing::NormalizePath(fields[9]);
+	ValidateTextureCookRequest(request);
+	return request;
 }
 
 std::string TextureCookRequestCodec::FormatLine(const TextureCookRequest& request)

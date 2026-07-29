@@ -94,7 +94,6 @@ int ListBackendsCommand::Run(std::span<const std::string_view> args) const
 	for (const ShaderBackendDescriptor& backend : backends)
 	{
 		std::cout << "  name='" << backend.Name << "'"
-		          << " required=" << (backend.IsRequired ? "true" : "false")
 		          << " available=" << (backend.IsAvailable ? "true" : "false")
 		          << " sourceExtensions='" << BuildStringList(backend.SourceExtensions) << "'"
 		          << " codegenTargets='" << BuildTargetList(backend.CodegenTargets) << "'"

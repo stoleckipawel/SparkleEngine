@@ -7,6 +7,7 @@
 
 #include "Textures/CookedTextureAsset.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 
@@ -27,41 +28,16 @@ class TextureMemoryEstimator final
 	}
 };
 
-bool TextureAssetCooker::Cook(
+void TextureAssetCooker::Cook(
     const TextureCookRequest& request,
     TextureCookMemoryLimiter& memoryLimiter,
-    std::stop_token cancellation,
-    std::string& outErrorMessage) const
+    std::stop_token cancellation) const
 {
-	if (!request.IsValid())
-	{
-		outErrorMessage = "Texture cook request is invalid.";
-		return false;
-	}
+	ValidateTextureCookRequest(request);
 
-	TextureLoadResult loadResult = TextureSourceLoader::Load(request.sourcePath, outErrorMessage);
-	if (!loadResult.IsValid())
-	{
-		return false;
-	}
+	TextureLoadResult loadResult = TextureSourceLoader::Load(request.sourcePath);
 	auto memoryLease = memoryLimiter.Acquire(TextureMemoryEstimator::CalculateTextureBytes(loadResult), cancellation);
-	if (!memoryLease.IsValid())
-	{
-		outErrorMessage = "Texture cook was cancelled while waiting for its decompressed-memory budget.";
-		return false;
-	}
-
-	TextureLoadResult cookedTexture;
-	if (!TexturePipeline::Process(request, std::move(loadResult), cookedTexture, outErrorMessage))
-	{
-		return false;
-	}
-
-	if (!cookedTexture.IsValid())
-	{
-		outErrorMessage = "Texture pipeline produced an invalid cooked texture.";
-		return false;
-	}
+	TextureLoadResult cookedTexture = TexturePipeline::Process(request, std::move(loadResult));
 
 	std::vector<CookedTextureMipHeader> mipHeaders;
 	mipHeaders.reserve(cookedTexture.GetSubresourceCount());
@@ -71,8 +47,7 @@ bool TextureAssetCooker::Cook(
 		{
 			if (mipLevel.data.size() > (std::numeric_limits<std::uint32_t>::max)())
 			{
-				outErrorMessage = "Texture mip payload is too large to serialize into a cooked texture asset.";
-				return false;
+				throw Diagnostics::Error("Texture mip payload is too large to serialize into a cooked texture asset.");
 			}
 
 			CookedTextureMipHeader mipHeader;
@@ -99,31 +74,31 @@ bool TextureAssetCooker::Cook(
 	Files::CleanupTemporaryFile(temporaryOutputPath);
 
 	std::ofstream output;
+	std::string fileError;
+	try
 	{
-		if (!Files::TryOpenBinaryOutput(temporaryOutputPath, output, outErrorMessage))
+		if (!Files::TryOpenBinaryOutput(temporaryOutputPath, output, fileError))
 		{
-			return false;
+			throw Diagnostics::Error(std::move(fileError));
 		}
 
-		if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
+		if (!Files::BinaryStreamWriter::WriteValue(output, header, fileError) ||
 		    !Files::BinaryStreamWriter::WriteBytes(
 		        output,
 		        mipHeaders.data(),
 		        sizeof(CookedTextureMipHeader) * mipHeaders.size(),
-		        outErrorMessage))
+		        fileError))
 		{
-			Files::CleanupTemporaryFile(temporaryOutputPath, &output);
-			return false;
+			throw Diagnostics::Error(std::move(fileError));
 		}
 
 		for (const TextureArraySliceData& arraySlice : cookedTexture.arraySlices)
 		{
 			for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
 			{
-				if (!Files::BinaryStreamWriter::WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), outErrorMessage))
+				if (!Files::BinaryStreamWriter::WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), fileError))
 				{
-					Files::CleanupTemporaryFile(temporaryOutputPath, &output);
-					return false;
+					throw Diagnostics::Error(std::move(fileError));
 				}
 			}
 		}
@@ -131,24 +106,22 @@ bool TextureAssetCooker::Cook(
 		output.flush();
 		if (!output.good())
 		{
-			Files::CleanupTemporaryFile(temporaryOutputPath, &output);
-			outErrorMessage = "Failed to flush cooked texture output '" + temporaryOutputPath.string() + "'";
-			return false;
+			throw Diagnostics::Error("Failed to flush cooked texture output '" + temporaryOutputPath.string() + "'.");
 		}
 
-		if (!Files::TryCloseOutput(output, temporaryOutputPath, outErrorMessage))
+		if (!Files::TryCloseOutput(output, temporaryOutputPath, fileError))
 		{
-			Files::CleanupTemporaryFile(temporaryOutputPath);
-			return false;
+			throw Diagnostics::Error(std::move(fileError));
+		}
+
+		if (!Files::TryFinalizeTemporaryFile(temporaryOutputPath, request.outputPath, fileError))
+		{
+			throw Diagnostics::Error(std::move(fileError));
 		}
 	}
-
-	if (!Files::TryFinalizeTemporaryFile(temporaryOutputPath, request.outputPath, outErrorMessage))
+	catch (...)
 	{
-		Files::CleanupTemporaryFile(temporaryOutputPath);
-		return false;
+		Files::CleanupTemporaryFile(temporaryOutputPath, &output);
+		throw;
 	}
-
-	outErrorMessage.clear();
-	return true;
 }

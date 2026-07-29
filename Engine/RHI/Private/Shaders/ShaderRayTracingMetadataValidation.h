@@ -2,14 +2,11 @@
 
 #include "Shaders/CookedShaderPackage.h"
 
-#include <string>
-
 class LoadedShaderPackage;
 
 namespace ShaderRayTracingMetadataValidation
 {
-	bool ValidateInlineRayQueryMetadata(
+	void ValidateInlineRayQueryMetadata(
 	    const LoadedShaderPackage& package,
-	    CookedShaderBinaryFormat runtimeBinaryFormat,
-	    std::string& outErrorMessage);
+	    CookedShaderBinaryFormat runtimeBinaryFormat);
 }

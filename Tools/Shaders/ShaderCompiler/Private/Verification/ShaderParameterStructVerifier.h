@@ -8,7 +8,7 @@
 
 struct ShaderParameterStructVerificationResult final
 {
-	bool succeeded = true;
+	std::vector<std::string> mismatches;
 	std::vector<std::string> diagnostics;
 
 	std::string BuildJsonReport() const;

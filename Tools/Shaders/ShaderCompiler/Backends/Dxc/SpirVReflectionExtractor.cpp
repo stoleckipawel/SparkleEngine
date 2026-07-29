@@ -2,6 +2,8 @@
 
 #include "SpirVReflectionExtractor.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -247,27 +249,23 @@ void SpirVReflectionExtractor::FlattenBlockMembers(
 	}
 }
 
-bool SpirVReflectionExtractor::Extract(
+ShaderReflection SpirVReflectionExtractor::Extract(
     std::span<const std::uint8_t> bytecode,
-    ShaderStage stage,
-    ShaderReflection& outReflection,
-    std::string& outError)
+    ShaderStage stage)
 {
-	outReflection = ShaderReflection{};
-	outError.clear();
+	ShaderReflection reflection;
+	ShaderReflection& outReflection = reflection;
 
 	if (bytecode.empty())
 	{
-		outError = "SPIR-V reflection: empty bytecode";
-		return false;
+		throw Diagnostics::Error("SPIR-V reflection: empty bytecode");
 	}
 
 	SpvReflectShaderModule module{};
 	SpvReflectResult res = spvReflectCreateShaderModule(bytecode.size(), bytecode.data(), &module);
 	if (res != SPV_REFLECT_RESULT_SUCCESS)
 	{
-		outError = "SPIR-V reflection: spvReflectCreateShaderModule failed";
-		return false;
+		throw Diagnostics::Error("SPIR-V reflection: spvReflectCreateShaderModule failed");
 	}
 
 	// Emit CB records for uniform buffers plus resource bindings for all descriptors.
@@ -435,5 +433,5 @@ bool SpirVReflectionExtractor::Extract(
 	}
 
 	spvReflectDestroyShaderModule(&module);
-	return true;
+	return reflection;
 }

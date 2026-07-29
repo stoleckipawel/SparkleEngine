@@ -2,7 +2,7 @@
 
 #include "Backend/ShaderBackendCapabilities.h"
 #include "ShaderCompileOptions.h"
-#include "ShaderCompileResult.h"
+#include "CompiledShader.h"
 
 #include <cstdint>
 #include <string_view>
@@ -21,5 +21,5 @@ class IShaderBackend
 	virtual std::string_view GetBackendName() const = 0;
 	virtual std::uint64_t GetBackendVersion() const = 0;
 
-	virtual ShaderCompileResult Compile(const ShaderCompileOptions& options) = 0;
+	virtual CompiledShader Compile(const ShaderCompileOptions& options) = 0;
 };

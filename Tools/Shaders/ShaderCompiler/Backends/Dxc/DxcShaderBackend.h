@@ -40,7 +40,7 @@ class DxcShaderBackend final : public IShaderBackend
 	std::string_view GetBackendName() const override;
 	std::uint64_t GetBackendVersion() const override;
 
-	ShaderCompileResult Compile(const ShaderCompileOptions& options) override;
+	CompiledShader Compile(const ShaderCompileOptions& options) override;
 
   private:
 	static void BuildCompileArguments(
@@ -65,16 +65,14 @@ class DxcShaderBackend final : public IShaderBackend
 	    IDxcUtils& utils,
 	    IDxcCompiler3& compiler,
 	    std::span<const std::uint8_t> bytecode);
-	static void CaptureDebugArtifacts(
+	static ShaderDebugArtifactSet CaptureDebugArtifacts(
 	    const ShaderCompileOptions& options,
 	    IDxcUtils& utils,
 	    IDxcCompiler3& compiler,
 	    const DxcBuffer& sourceBuffer,
 	    std::span<const std::uint8_t> bytecode,
 	    const std::vector<LPCWSTR>& compileArgs,
-	    IDxcResult* result,
-	    std::string_view compilerOutput,
-	    ShaderCompileResult& outCompileResult);
+	    std::string_view compilerOutput);
 	static std::vector<std::string> BuildDebugArgumentStrings(const std::vector<LPCWSTR>& compileArgs);
 	static std::uint64_t QueryBackendVersion(IDxcCompiler3& compiler);
 

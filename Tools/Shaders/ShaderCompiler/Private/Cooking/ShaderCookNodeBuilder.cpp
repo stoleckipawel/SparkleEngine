@@ -11,17 +11,18 @@
 #include "Cooking/ShaderCookSettings.h"
 #include "Compiler/ShaderCompileProfile.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <format>
 #include <utility>
 
-bool ShaderCookNodeBuilder::BuildAndAdd(
+void ShaderCookNodeBuilder::BuildAndAdd(
     const ShaderPackageCookSettings& settings,
     std::size_t packageIndex,
     std::size_t stageIndex,
     std::size_t targetIndex,
     ShaderBackendPool& backendPool,
-    ShaderCookPipelinePlan& plan,
-    std::string& outErrorMessage)
+    ShaderCookPipelinePlan& plan)
 {
 	const ShaderCookPackageDesc& package = plan.packages[packageIndex];
 	const ShaderCookStageDesc& stage = package.stages[stageIndex];
@@ -29,32 +30,18 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	ShaderCompileOptions compileOptions =
 	    BuildCompileOptions(settings, package, stage, target);
 
-	IShaderBackend* backend = nullptr;
-	std::string backendName;
-	if (!ResolveBackend(
-	        settings,
-	        package,
-	        stage,
-	        target,
-	        compileOptions,
-	        backendPool,
-	        backend,
-	        backendName,
-	        outErrorMessage))
-	{
-		return false;
-	}
+	IShaderBackend& backend = ResolveBackend(settings, package, stage, target, compileOptions, backendPool);
+	const std::string backendName(backend.GetBackendName());
 
-	return AppendNode(
+	AppendNode(
 	    packageIndex,
 	    package,
 	    stage,
 	    target,
 	    std::move(compileOptions),
 	    backendName,
-	    *backend,
-	    plan,
-	    outErrorMessage);
+	    backend,
+	    plan);
 }
 
 ShaderCompileOptions ShaderCookNodeBuilder::BuildCompileOptions(
@@ -99,51 +86,33 @@ void ShaderCookNodeBuilder::AppendDescriptorBindingRemaps(
 	}
 }
 
-bool ShaderCookNodeBuilder::ResolveBackend(
+IShaderBackend& ShaderCookNodeBuilder::ResolveBackend(
     const ShaderPackageCookSettings& settings,
     const ShaderCookPackageDesc& package,
     const ShaderCookStageDesc& stage,
     ShaderTarget target,
     const ShaderCompileOptions& compileOptions,
-    ShaderBackendPool& backendPool,
-    IShaderBackend*& outBackend,
-    std::string& outBackendName,
-    std::string& outErrorMessage)
+    ShaderBackendPool& backendPool)
 {
-	std::string backendError;
-	outBackend = backendPool.ResolveAndAcquire(
-	    compileOptions.SourcePath,
-	    compileOptions.Target,
-	    settings.backendName,
-	    outBackendName,
-	    backendError);
-	if (outBackendName.empty())
+	try
 	{
-		outErrorMessage = std::format(
-		    "Failed to select shader backend for shader package '{}' stage '{}' target '{}' - {}",
+		return backendPool.ResolveAndAcquire(
+		    compileOptions.SourcePath,
+		    compileOptions.Target,
+		    settings.backendName);
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		throw Diagnostics::Error(std::format(
+		    "Failed to resolve a shader backend for shader package '{}' stage '{}' target '{}' - {}",
 		    package.packageId,
 		    GetShaderStagePrefix(stage.stage),
 		    GetShaderTargetName(target),
-		    backendError);
-		return false;
+		    error.what()));
 	}
-
-	if (outBackend == nullptr)
-	{
-		outErrorMessage = std::format(
-		    "Failed to construct shader backend '{}' for shader package '{}' stage '{}' target '{}' - {}",
-		    outBackendName,
-		    package.packageId,
-		    GetShaderStagePrefix(stage.stage),
-		    GetShaderTargetName(target),
-		    backendError);
-		return false;
-	}
-
-	return true;
 }
 
-bool ShaderCookNodeBuilder::AppendNode(
+void ShaderCookNodeBuilder::AppendNode(
     std::size_t packageIndex,
     const ShaderCookPackageDesc& package,
     const ShaderCookStageDesc& stage,
@@ -151,26 +120,15 @@ bool ShaderCookNodeBuilder::AppendNode(
     ShaderCompileOptions compileOptions,
     const std::string& backendName,
     const IShaderBackend& backend,
-    ShaderCookPipelinePlan& plan,
-    std::string& outErrorMessage)
+    ShaderCookPipelinePlan& plan)
 {
-	const IncludeClosureHashResult includeHashResult = IncludeClosureHasher::Compute(compileOptions);
-	if (!includeHashResult.Succeeded())
-	{
-		outErrorMessage = std::format(
-		    "Failed to compute include closure for shader package '{}' stage '{}' target '{}' - {}",
-		    package.packageId,
-		    GetShaderStagePrefix(stage.stage),
-		    GetShaderTargetName(target),
-		    includeHashResult.errorMessage);
-		return false;
-	}
+	const IncludeClosureHash includeHash = IncludeClosureHasher::Compute(compileOptions);
 
 	const std::uint64_t optionsHash = ShaderCompileOptionsHasher::Compute(compileOptions);
 	const ShaderCacheKey cacheKey = ShaderCacheKey::Compute(
 	    package,
-	    includeHashResult.sourceHash,
-	    includeHashResult.includeClosureHash,
+	    includeHash.sourceHash,
+	    includeHash.includeClosureHash,
 	    optionsHash,
 	    backendName,
 	    backend.GetBackendVersion());
@@ -184,8 +142,8 @@ bool ShaderCookNodeBuilder::AppendNode(
 	    .backendName = backendName,
 	    .compileOptions = std::move(compileOptions),
 	    .parameterStructDescriptor = stage.parameterStructDescriptor,
-	    .sourceHash = includeHashResult.sourceHash,
-	    .includeClosureHash = includeHashResult.includeClosureHash,
+	    .sourceHash = includeHash.sourceHash,
+	    .includeClosureHash = includeHash.includeClosureHash,
 	    .optionsHash = optionsHash,
 	    .cacheKey = cacheKey,
 	    .jobIdentity = ShaderContractJobIdentity{
@@ -196,11 +154,8 @@ bool ShaderCookNodeBuilder::AppendNode(
 	        .backendName = backendName,
 	        .targetName = GetShaderTargetName(target),
 	        .profileName = profileName,
-	        .sourceHash = includeHashResult.sourceHash,
-	        .includeClosureHash = includeHashResult.includeClosureHash,
+	        .sourceHash = includeHash.sourceHash,
+	        .includeClosureHash = includeHash.includeClosureHash,
 	        .optionsHash = optionsHash,
 	        .jobKey = cacheKey.value}});
-
-	outErrorMessage.clear();
-	return true;
 }

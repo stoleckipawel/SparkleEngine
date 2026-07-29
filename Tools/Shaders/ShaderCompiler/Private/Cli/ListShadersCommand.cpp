@@ -5,6 +5,7 @@
 #include "Constants/ShaderCompilerConstants.h"
 #include "Contracts/ShaderContractCatalogBuilder.h"
 #include "Contracts/ShaderContractValidator.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
@@ -20,12 +21,14 @@ int ListShadersCommand::Run(std::span<const std::string_view> args) const
 		return kExitCodeUsage;
 	}
 
-	std::string errorMessage;
-	const ShaderContractCatalog catalog =
-	    ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::All, {}, errorMessage);
-	if (!errorMessage.empty())
+	ShaderContractCatalog catalog;
+	try
 	{
-		std::cerr << "ShaderCompiler: failed to build shader contract catalog - " << errorMessage << "\n";
+		catalog = ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::All, {});
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		std::cerr << "ShaderCompiler: failed to build shader contract catalog - " << error.what() << "\n";
 		return kExitCodeCookFailure;
 	}
 

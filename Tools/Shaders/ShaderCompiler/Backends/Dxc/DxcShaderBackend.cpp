@@ -10,7 +10,7 @@
 #include "Compiler/ShaderCompilerPaths.h"
 #include "Compiler/ShaderSourcePreprocessor.h"
 #include "Constants/ShaderCompilerConstants.h"
-#include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "DxilReflectionExtractor.h"
 #include "SpirVReflectionExtractor.h"
@@ -115,23 +115,19 @@ std::uint64_t DxcShaderBackend::GetBackendVersion() const
 	return m_backendVersion;
 }
 
-ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& options)
+CompiledShader DxcShaderBackend::Compile(const ShaderCompileOptions& options)
 {
 	if (!IsValid())
 	{
-		return ShaderCompileResult::Failure("DXC backend is not initialized");
+		throw Diagnostics::Error("DXC backend is not initialized");
 	}
 
 	const std::filesystem::path sourcePath = ShaderCompilerPaths::CanonicalizeForCompiler(options.SourcePath);
-	ShaderSourcePreprocessResult source = ShaderSourcePreprocessor::Load(sourcePath, options);
-	if (!source.Succeeded())
-	{
-		return ShaderCompileResult::Failure(std::move(source.ErrorMessage));
-	}
+	const std::string sourceText = ShaderSourcePreprocessor::Load(sourcePath, options);
 
 	DxcBuffer sourceBuffer{};
-	sourceBuffer.Ptr = source.SourceText.data();
-	sourceBuffer.Size = source.SourceText.size();
+	sourceBuffer.Ptr = sourceText.data();
+	sourceBuffer.Size = sourceText.size();
 	sourceBuffer.Encoding = DXC_CP_UTF8;
 
 	std::wstring wSourcePath = ShaderCompilerPaths::MakeWidePathArgument(sourcePath);
@@ -156,7 +152,7 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 
 	if (FAILED(hr) || !result)
 	{
-		return ShaderCompileResult::Failure("DXC Compile() call failed");
+		throw Diagnostics::Error("DXC Compile() call failed");
 	}
 
 	std::string errorMsg = ExtractErrorMessage(result.Get());
@@ -168,7 +164,7 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 		if (errorMsg.empty())
 			errorMsg = "Compilation failed with no error message";
 		SPDLOG_LOGGER_ERROR(g_dxcShaderBackendLogger, "Shader compilation failed: {}", errorMsg);
-		return ShaderCompileResult::Failure(std::move(errorMsg));
+		throw Diagnostics::Error(std::move(errorMsg));
 	}
 
 	if (!errorMsg.empty())
@@ -179,17 +175,11 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 	std::vector<std::uint8_t> bytecode = ExtractBytecode(result.Get());
 	if (bytecode.empty())
 	{
-		return ShaderCompileResult::Failure("Failed to extract shader bytecode");
+		throw Diagnostics::Error("Failed to extract shader bytecode");
 	}
 	if (IsSpirVTarget(options.Target))
 	{
-		std::string normalizationError;
-		if (!SpirVBindingNormalizer::Normalize(bytecode, options.DescriptorBindingRemaps, normalizationError))
-		{
-			return ShaderCompileResult::Failure(
-			    std::string{"SPIR-V descriptor binding normalization failed for source '"} +
-			    options.SourcePath.generic_string() + "' - " + normalizationError);
-		}
+		SpirVBindingNormalizer::Normalize(bytecode, options.DescriptorBindingRemaps);
 	}
 
 	// PDBs only meaningful for DXIL today; SPIR-V output does not produce a
@@ -199,34 +189,28 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 	ShaderReflection reflection;
 	if (options.PackageKind != CookedShaderPackageKind::RayTracingLibrary)
 	{
-		std::string reflectionError;
-		const bool reflectionOk = IsSpirVTarget(options.Target)
-		    ? SpirVReflectionExtractor::Extract(bytecode, options.Stage, reflection, reflectionError)
-		    : DxilReflectionExtractor::Extract(*m_utils.Get(), result.Get(), bytecode, options.Stage, reflection, reflectionError);
-		if (!reflectionOk)
-		{
-			return ShaderCompileResult::Failure(
-			    std::string{"DXC reflection extraction failed for target '"} + GetShaderTargetName(options.Target) +
-			    "' source '" + options.SourcePath.generic_string() + "' entry '" + options.EntryPoint + "' - " + reflectionError);
-		}
+		reflection = IsSpirVTarget(options.Target)
+		    ? SpirVReflectionExtractor::Extract(bytecode, options.Stage)
+		    : DxilReflectionExtractor::Extract(*m_utils.Get(), result.Get(), bytecode, options.Stage);
 	}
 
-	auto compileResult = ShaderCompileResult::Success(std::move(bytecode), debugArtifactPath);
-	compileResult.SetReflection(std::move(reflection));
+	ShaderDebugArtifactSet debugArtifacts;
 	if (options.CaptureDebugArtifacts)
 	{
-		CaptureDebugArtifacts(
+		debugArtifacts = CaptureDebugArtifacts(
 			options,
 			*m_utils.Get(),
 			*m_compiler.Get(),
 			sourceBuffer,
 			bytecode,
 			args,
-			result.Get(),
-			errorMsg,
-			compileResult);
+			errorMsg);
 	}
-	return compileResult;
+
+	CompiledShader compiledShader(std::move(bytecode), debugArtifactPath);
+	compiledShader.SetReflection(std::move(reflection));
+	compiledShader.SetDebugArtifacts(std::move(debugArtifacts));
+	return compiledShader;
 }
 
 void DxcShaderBackend::BuildCompileArguments(
@@ -473,32 +457,31 @@ std::string DxcShaderBackend::ExtractDisassembly(
 	    static_cast<std::size_t>(disassemblyBlob->GetBufferSize()));
 }
 
-void DxcShaderBackend::CaptureDebugArtifacts(
+ShaderDebugArtifactSet DxcShaderBackend::CaptureDebugArtifacts(
 	const ShaderCompileOptions& options,
 	IDxcUtils& utils,
 	IDxcCompiler3& compiler,
 	const DxcBuffer& sourceBuffer,
 	std::span<const std::uint8_t> bytecode,
 	const std::vector<LPCWSTR>& compileArgs,
-	IDxcResult* result,
-	std::string_view compilerOutput,
-	ShaderCompileResult& outCompileResult)
+	std::string_view compilerOutput)
 {
 	ShaderDebugArtifactSet debugArtifacts;
 	debugArtifacts.CompileArguments = BuildDebugArgumentStrings(compileArgs);
 	debugArtifacts.CompilerOutput.assign(compilerOutput);
 	debugArtifacts.Disassembly = ExtractDisassembly(utils, compiler, bytecode);
+	if (debugArtifacts.Disassembly.empty())
+	{
+		throw Diagnostics::Error(
+		    "DXC failed to capture disassembly for shader source '" + options.SourcePath.generic_string() + "'.");
+	}
 	debugArtifacts.PreprocessedSource = ExtractPreprocessedSource(utils, compiler, sourceBuffer, compileArgs);
 	if (debugArtifacts.PreprocessedSource.empty())
 	{
-		std::vector<std::uint8_t> sourceBytes;
-		std::string sourceError;
-		if (Files::TryReadAllBytes(options.SourcePath, sourceBytes, sourceError))
-		{
-			debugArtifacts.PreprocessedSource.assign(reinterpret_cast<const char*>(sourceBytes.data()), sourceBytes.size());
-		}
+		throw Diagnostics::Error(
+		    "DXC failed to capture preprocessed source for shader source '" + options.SourcePath.generic_string() + "'.");
 	}
-	outCompileResult.SetDebugArtifacts(std::move(debugArtifacts));
+	return debugArtifacts;
 }
 
 std::vector<std::string> DxcShaderBackend::BuildDebugArgumentStrings(const std::vector<LPCWSTR>& compileArgs)

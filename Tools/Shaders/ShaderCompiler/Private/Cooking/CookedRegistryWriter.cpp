@@ -4,24 +4,24 @@
 #include "Cooking/CookedRegistryWriter.h"
 
 #include "Constants/ShaderCompilerConstants.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
-#include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
 
 #include <fstream>
 
-bool CookedRegistryWriter::Write(
+void CookedRegistryWriter::Write(
     std::span<const CookedShaderPackageOutput> packages,
-    const std::filesystem::path& storagePath,
-    std::string& outErrorMessage)
+    const std::filesystem::path& storagePath)
 {
 	const std::filesystem::path tempRegistryPath = Files::BuildTemporaryPath(storagePath);
 	std::ofstream output;
-	if (!Files::TryOpenTextOutput(tempRegistryPath, output, outErrorMessage))
+	std::string fileError;
+	if (!Files::TryOpenTextOutput(tempRegistryPath, output, fileError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(fileError));
 	}
 
 	output << kRegistryHeaderSection << '\n';
@@ -41,20 +41,20 @@ bool CookedRegistryWriter::Write(
 
 	if (!output.good())
 	{
-		outErrorMessage = "Failed to write shader registry output '" + storagePath.string() + "'";
-		return false;
+		output.close();
+		Files::CleanupTemporaryFile(tempRegistryPath);
+		throw Diagnostics::Error("Failed to write shader registry output '" + storagePath.string() + "'");
 	}
 
-	if (!Files::TryCloseOutput(output, tempRegistryPath, outErrorMessage))
+	if (!Files::TryCloseOutput(output, tempRegistryPath, fileError))
 	{
-		return false;
+		Files::CleanupTemporaryFile(tempRegistryPath);
+		throw Diagnostics::Error(std::move(fileError));
 	}
 
-	if (!Files::TryFinalizeTemporaryFile(tempRegistryPath, storagePath, outErrorMessage))
+	if (!Files::TryFinalizeTemporaryFile(tempRegistryPath, storagePath, fileError))
 	{
-		return false;
+		Files::CleanupTemporaryFile(tempRegistryPath);
+		throw Diagnostics::Error(std::move(fileError));
 	}
-
-	outErrorMessage.clear();
-	return true;
 }

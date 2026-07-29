@@ -1,188 +1,164 @@
 #include "TextureCookPolicyCodec.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Core/Public/Strings/StringUtils.h"
 
-bool TextureCookPolicyCodec::TryParseColorSpace(std::string_view value, TextureColorSpace& outColorSpace) noexcept
+static const auto g_textureCookPolicyCodecLogger = Logging::GetOrCreateLogger("TextureCooker.PolicyCodec");
+
+TextureColorSpace TextureCookPolicyCodec::ParseColorSpace(std::string_view value)
 {
 	if (Strings::EqualsIgnoreCase(value, "linear"))
 	{
-		outColorSpace = TextureColorSpace::Linear;
-		return true;
+		return TextureColorSpace::Linear;
 	}
 	if (Strings::EqualsIgnoreCase(value, "srgb"))
 	{
-		outColorSpace = TextureColorSpace::Srgb;
-		return true;
+		return TextureColorSpace::Srgb;
 	}
-	return false;
+	throw Diagnostics::Error("Texture cook request entry has an unknown color space '" + std::string(value) + "'.");
 }
 
-bool TextureCookPolicyCodec::TryParseMipPolicy(std::string_view value, TextureMipPolicy& outMipPolicy) noexcept
+TextureMipPolicy TextureCookPolicyCodec::ParseMipPolicy(std::string_view value)
 {
 	if (Strings::EqualsIgnoreCase(value, "generate"))
 	{
-		outMipPolicy = TextureMipPolicy::Generate;
-		return true;
+		return TextureMipPolicy::Generate;
 	}
 	if (Strings::EqualsIgnoreCase(value, "preserve-existing") || Strings::EqualsIgnoreCase(value, "preserveexisting"))
 	{
-		outMipPolicy = TextureMipPolicy::PreserveExisting;
-		return true;
+		return TextureMipPolicy::PreserveExisting;
 	}
 	if (Strings::EqualsIgnoreCase(value, "no-mips") || Strings::EqualsIgnoreCase(value, "nomips"))
 	{
-		outMipPolicy = TextureMipPolicy::NoMips;
-		return true;
+		return TextureMipPolicy::NoMips;
 	}
-	return false;
+	throw Diagnostics::Error("Texture cook request entry has an unknown mip policy '" + std::string(value) + "'.");
 }
 
-bool TextureCookPolicyCodec::TryParseMipFilter(std::string_view value, TextureMipFilter& outMipFilter) noexcept
+TextureMipFilter TextureCookPolicyCodec::ParseMipFilter(std::string_view value)
 {
 	if (Strings::EqualsIgnoreCase(value, "regular"))
 	{
-		outMipFilter = TextureMipFilter::Regular;
-		return true;
+		return TextureMipFilter::Regular;
 	}
 	if (Strings::EqualsIgnoreCase(value, "kaiser"))
 	{
-		outMipFilter = TextureMipFilter::Kaiser;
-		return true;
+		return TextureMipFilter::Kaiser;
 	}
 	if (Strings::EqualsIgnoreCase(value, "normal-aware") || Strings::EqualsIgnoreCase(value, "normalaware"))
 	{
-		outMipFilter = TextureMipFilter::NormalAware;
-		return true;
+		return TextureMipFilter::NormalAware;
 	}
 	if (Strings::EqualsIgnoreCase(value, "angular"))
 	{
-		outMipFilter = TextureMipFilter::Angular;
-		return true;
+		return TextureMipFilter::Angular;
 	}
-	return false;
+	throw Diagnostics::Error("Texture cook request entry has an unknown mip filter '" + std::string(value) + "'.");
 }
 
-bool TextureCookPolicyCodec::TryParseColorProcessingPolicy(
-    std::string_view value, TextureColorProcessingPolicy& outColorProcessingPolicy) noexcept
+TextureColorProcessingPolicy TextureCookPolicyCodec::ParseColorProcessingPolicy(std::string_view value)
 {
 	if (Strings::EqualsIgnoreCase(value, "linear"))
 	{
-		outColorProcessingPolicy = TextureColorProcessingPolicy::Linear;
-		return true;
+		return TextureColorProcessingPolicy::Linear;
 	}
 	if (Strings::EqualsIgnoreCase(value, "srgb-linearize") || Strings::EqualsIgnoreCase(value, "srgblinearize"))
 	{
-		outColorProcessingPolicy = TextureColorProcessingPolicy::SrgbLinearize;
-		return true;
+		return TextureColorProcessingPolicy::SrgbLinearize;
 	}
-	return false;
+	throw Diagnostics::Error(
+	    "Texture cook request entry has an unknown color processing policy '" + std::string(value) + "'.");
 }
 
-bool TextureCookPolicyCodec::TryParseTextureGroup(std::string_view value, TextureGroup& outTextureGroup) noexcept
+TextureGroup TextureCookPolicyCodec::ParseTextureGroup(std::string_view value)
 {
 	if (Strings::EqualsIgnoreCase(value, "default") || Strings::EqualsIgnoreCase(value, "none"))
 	{
-		outTextureGroup = TextureGroup::Default;
-		return true;
+		return TextureGroup::Default;
 	}
 	if (Strings::EqualsIgnoreCase(value, "diffuse") || Strings::EqualsIgnoreCase(value, "albedo") ||
 	    Strings::EqualsIgnoreCase(value, "base-color") || Strings::EqualsIgnoreCase(value, "basecolor") ||
 	    Strings::EqualsIgnoreCase(value, "color"))
 	{
-		outTextureGroup = TextureGroup::Diffuse;
-		return true;
+		return TextureGroup::Diffuse;
 	}
 	if (Strings::EqualsIgnoreCase(value, "roughness"))
 	{
-		outTextureGroup = TextureGroup::Roughness;
-		return true;
+		return TextureGroup::Roughness;
 	}
 	if (Strings::EqualsIgnoreCase(value, "metallic") || Strings::EqualsIgnoreCase(value, "metalness"))
 	{
-		outTextureGroup = TextureGroup::Metallic;
-		return true;
+		return TextureGroup::Metallic;
 	}
 	if (Strings::EqualsIgnoreCase(value, "ambient-occlusion") ||
 	    Strings::EqualsIgnoreCase(value, "ambientocclusion") || Strings::EqualsIgnoreCase(value, "occlusion") ||
 	    Strings::EqualsIgnoreCase(value, "ao") || Strings::EqualsIgnoreCase(value, "masks"))
 	{
-		outTextureGroup = TextureGroup::AmbientOcclusion;
-		return true;
+		return TextureGroup::AmbientOcclusion;
 	}
 	if (Strings::EqualsIgnoreCase(value, "normal-map") || Strings::EqualsIgnoreCase(value, "normalmap"))
 	{
-		outTextureGroup = TextureGroup::NormalMap;
-		return true;
+		return TextureGroup::NormalMap;
 	}
 	if (Strings::EqualsIgnoreCase(value, "hdr-color") || Strings::EqualsIgnoreCase(value, "hdrcolor"))
 	{
-		outTextureGroup = TextureGroup::HdrColor;
-		return true;
+		return TextureGroup::HdrColor;
 	}
 	if (Strings::EqualsIgnoreCase(value, "emissive") || Strings::EqualsIgnoreCase(value, "emission"))
 	{
-		outTextureGroup = TextureGroup::Emissive;
-		return true;
+		return TextureGroup::Emissive;
 	}
 	if (Strings::EqualsIgnoreCase(value, "subsurface-color") ||
 	    Strings::EqualsIgnoreCase(value, "subsurfacecolor"))
 	{
-		outTextureGroup = TextureGroup::SubsurfaceColor;
-		return true;
+		return TextureGroup::SubsurfaceColor;
 	}
 	if (Strings::EqualsIgnoreCase(value, "subsurface-strength") ||
 	    Strings::EqualsIgnoreCase(value, "subsurfacestrength"))
 	{
-		outTextureGroup = TextureGroup::SubsurfaceStrength;
-		return true;
+		return TextureGroup::SubsurfaceStrength;
 	}
-	return false;
+	throw Diagnostics::Error("Texture cook request entry has an unknown texture group '" + std::string(value) + "'.");
 }
 
-bool TextureCookPolicyCodec::TryParseDimension(std::string_view value, TextureDimension& outDimension) noexcept
+TextureDimension TextureCookPolicyCodec::ParseDimension(std::string_view value)
 {
 	if (Strings::EqualsIgnoreCase(value, "2d") || Strings::EqualsIgnoreCase(value, "texture2d"))
 	{
-		outDimension = TextureDimension::Texture2D;
-		return true;
+		return TextureDimension::Texture2D;
 	}
 	if (Strings::EqualsIgnoreCase(value, "cube") || Strings::EqualsIgnoreCase(value, "texturecube"))
 	{
-		outDimension = TextureDimension::TextureCube;
-		return true;
+		return TextureDimension::TextureCube;
 	}
-	return false;
+	throw Diagnostics::Error("Texture cook request entry has an unknown texture dimension '" + std::string(value) + "'.");
 }
 
-bool TextureCookPolicyCodec::TryParseChannelMask(std::string_view value, TextureChannelMask& outChannelMask) noexcept
+TextureChannelMask TextureCookPolicyCodec::ParseChannelMask(std::string_view value)
 {
 	if (Strings::EqualsIgnoreCase(value, "rgba") || Strings::EqualsIgnoreCase(value, "all") ||
 	    Strings::EqualsIgnoreCase(value, "none"))
 	{
-		outChannelMask = TextureChannelMask::Rgba;
-		return true;
+		return TextureChannelMask::Rgba;
 	}
 	if (Strings::EqualsIgnoreCase(value, "r") || Strings::EqualsIgnoreCase(value, "red"))
 	{
-		outChannelMask = TextureChannelMask::Red;
-		return true;
+		return TextureChannelMask::Red;
 	}
 	if (Strings::EqualsIgnoreCase(value, "g") || Strings::EqualsIgnoreCase(value, "green"))
 	{
-		outChannelMask = TextureChannelMask::Green;
-		return true;
+		return TextureChannelMask::Green;
 	}
 	if (Strings::EqualsIgnoreCase(value, "b") || Strings::EqualsIgnoreCase(value, "blue"))
 	{
-		outChannelMask = TextureChannelMask::Blue;
-		return true;
+		return TextureChannelMask::Blue;
 	}
 	if (Strings::EqualsIgnoreCase(value, "a") || Strings::EqualsIgnoreCase(value, "alpha"))
 	{
-		outChannelMask = TextureChannelMask::Alpha;
-		return true;
+		return TextureChannelMask::Alpha;
 	}
-	return false;
+	throw Diagnostics::Error("Texture cook request entry has an unknown channel mask '" + std::string(value) + "'.");
 }
 
 const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept
@@ -192,7 +168,7 @@ const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept
 		case TextureColorSpace::Linear: return "linear";
 		case TextureColorSpace::Srgb: return "srgb";
 	}
-	return "linear";
+	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture color space.");
 }
 
 const char* GetTextureMipPolicyName(TextureMipPolicy mipPolicy) noexcept
@@ -203,7 +179,7 @@ const char* GetTextureMipPolicyName(TextureMipPolicy mipPolicy) noexcept
 		case TextureMipPolicy::PreserveExisting: return "preserve-existing";
 		case TextureMipPolicy::NoMips: return "no-mips";
 	}
-	return "generate";
+	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture mip policy.");
 }
 
 const char* GetTextureMipFilterName(TextureMipFilter mipFilter) noexcept
@@ -215,7 +191,7 @@ const char* GetTextureMipFilterName(TextureMipFilter mipFilter) noexcept
 		case TextureMipFilter::NormalAware: return "normal-aware";
 		case TextureMipFilter::Angular: return "angular";
 	}
-	return "regular";
+	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture mip filter.");
 }
 
 const char* GetTextureColorProcessingPolicyName(TextureColorProcessingPolicy policy) noexcept
@@ -225,7 +201,7 @@ const char* GetTextureColorProcessingPolicyName(TextureColorProcessingPolicy pol
 		case TextureColorProcessingPolicy::Linear: return "linear";
 		case TextureColorProcessingPolicy::SrgbLinearize: return "srgb-linearize";
 	}
-	return "linear";
+	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture color processing policy.");
 }
 
 const char* GetTextureGroupName(TextureGroup textureGroup) noexcept
@@ -243,7 +219,7 @@ const char* GetTextureGroupName(TextureGroup textureGroup) noexcept
 		case TextureGroup::SubsurfaceStrength: return "subsurface-strength";
 		case TextureGroup::HdrColor: return "hdr-color";
 	}
-	return "default";
+	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture group.");
 }
 
 const char* GetTextureDimensionName(TextureDimension dimension) noexcept
@@ -253,7 +229,7 @@ const char* GetTextureDimensionName(TextureDimension dimension) noexcept
 		case TextureDimension::Texture2D: return "2d";
 		case TextureDimension::TextureCube: return "cube";
 	}
-	return "2d";
+	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture dimension.");
 }
 
 const char* GetTextureChannelMaskName(TextureChannelMask channelMask) noexcept
@@ -266,5 +242,5 @@ const char* GetTextureChannelMaskName(TextureChannelMask channelMask) noexcept
 		case TextureChannelMask::Blue: return "blue";
 		case TextureChannelMask::Alpha: return "alpha";
 	}
-	return "rgba";
+	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture channel mask.");
 }

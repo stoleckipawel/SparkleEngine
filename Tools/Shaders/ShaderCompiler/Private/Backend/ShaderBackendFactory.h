@@ -13,7 +13,6 @@
 struct ShaderBackendDescriptor final
 {
 	std::string_view Name;
-	bool IsRequired = true;
 	std::span<const std::string_view> SourceExtensions;
 	std::span<const ShaderTarget> CodegenTargets;
 	std::span<const std::string_view> BinaryFormats;
@@ -40,9 +39,8 @@ struct ShaderCodegenTargetDescriptor final
 std::vector<ShaderBackendDescriptor> ListShaderBackends();
 std::span<const ShaderBinaryFormatDescriptor> ListShaderBinaryFormats() noexcept;
 std::span<const ShaderCodegenTargetDescriptor> ListShaderCodegenTargets() noexcept;
-std::unique_ptr<IShaderBackend> CreateShaderBackend(std::string_view name, std::string& outErrorMessage);
+std::unique_ptr<IShaderBackend> CreateShaderBackend(std::string_view name);
 std::string ResolveShaderBackendName(
 	const std::filesystem::path& sourcePath,
 	ShaderTarget target,
-	std::string_view requestedName,
-	std::string& outErrorMessage);
+	std::string_view requestedName);

@@ -3,45 +3,43 @@
 #include "SourceLoading/TextureSourceLoadStages.h"
 
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 
 #include <cstring>
 #include <format>
 
-bool TextureSourceLoadStages::TryReadSourceBytes(
-	const std::filesystem::path& sourcePath,
-	std::filesystem::path& outResolvedPath,
-	std::vector<std::uint8_t>& outFileBytes,
-	std::string& outErrorMessage)
+TextureSourceFile TextureSourceLoadStages::ReadSourceFile(const std::filesystem::path& sourcePath)
 {
 	const auto resolvedPathResult = Filesystem::ResolveAssetPathNormalized(sourcePath, AssetType::Texture);
 	if (!resolvedPathResult)
 	{
-		outErrorMessage = std::format("Failed to resolve source texture '{}'", sourcePath.string());
-		return false;
+		throw Diagnostics::Error(std::format("Failed to resolve source texture '{}'.", sourcePath.string()));
 	}
 
-	outResolvedPath = *resolvedPathResult;
-	if (!Files::TryReadAllBytes(outResolvedPath, outFileBytes, outErrorMessage))
+	TextureSourceFile sourceFile;
+	sourceFile.ResolvedPath = *resolvedPathResult;
+	std::string fileError;
+	if (!Files::TryReadAllBytes(sourceFile.ResolvedPath, sourceFile.Bytes, fileError))
 	{
-		outErrorMessage = std::format("Failed to read source texture '{}': {}", outResolvedPath.string(), outErrorMessage);
-		return false;
+		throw Diagnostics::Error(std::format(
+		    "Failed to read source texture '{}': {}",
+		    sourceFile.ResolvedPath.string(),
+		    fileError));
 	}
 
-	return true;
+	return sourceFile;
 }
 
 TextureLoadResult TextureSourceLoadStages::BuildByteTextureLoadResult(
 	int width,
 	int height,
 	const std::uint8_t* pixelBytes,
-	std::size_t pixelByteCount,
-	std::string& outErrorMessage)
+	std::size_t pixelByteCount)
 {
 	if (pixelBytes == nullptr || width <= 0 || height <= 0)
 	{
-		outErrorMessage = "Decoded raster texture is invalid.";
-		return {};
+		throw Diagnostics::Error("Decoded raster texture has invalid dimensions or no pixel data.");
 	}
 
 	TextureMipLevelData baseMip;
@@ -51,8 +49,7 @@ TextureLoadResult TextureSourceLoadStages::BuildByteTextureLoadResult(
 	baseMip.slicePitch = baseMip.rowPitch * baseMip.height;
 	if (pixelByteCount < baseMip.slicePitch)
 	{
-		outErrorMessage = "Decoded raster texture payload is smaller than the expected RGBA surface size.";
-		return {};
+		throw Diagnostics::Error("Decoded raster texture payload is smaller than its RGBA surface.");
 	}
 
 	baseMip.data.resize(baseMip.slicePitch);
@@ -68,7 +65,6 @@ TextureLoadResult TextureSourceLoadStages::BuildByteTextureLoadResult(
 	loadResult.arraySlices.resize(1);
 	loadResult.arraySlices.front().mipLevels.push_back(std::move(baseMip));
 
-	outErrorMessage.clear();
 	return loadResult;
 }
 
@@ -76,13 +72,11 @@ TextureLoadResult TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	int width,
 	int height,
 	const float* pixelBytes,
-	std::size_t pixelFloatCount,
-	std::string& outErrorMessage)
+	std::size_t pixelFloatCount)
 {
 	if (pixelBytes == nullptr || width <= 0 || height <= 0)
 	{
-		outErrorMessage = "Decoded HDR texture is invalid.";
-		return {};
+		throw Diagnostics::Error("Decoded HDR texture has invalid dimensions or no pixel data.");
 	}
 
 	TextureMipLevelData baseMip;
@@ -90,11 +84,10 @@ TextureLoadResult TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	baseMip.height = static_cast<std::uint32_t>(height);
 	baseMip.rowPitch = static_cast<std::uint32_t>(sizeof(float) * 4u * baseMip.width);
 	baseMip.slicePitch = baseMip.rowPitch * baseMip.height;
-	const std::size_t requiredFloatCount = static_cast<std::size_t>(baseMip.width) * static_cast<std::size_t>(baseMip.height) * 4u;
-	if (pixelFloatCount < requiredFloatCount)
+	const std::size_t surfaceFloatCount = static_cast<std::size_t>(baseMip.width) * static_cast<std::size_t>(baseMip.height) * 4u;
+	if (pixelFloatCount < surfaceFloatCount)
 	{
-		outErrorMessage = "Decoded HDR texture payload is smaller than the expected RGBA float surface size.";
-		return {};
+		throw Diagnostics::Error("Decoded HDR texture payload is smaller than its RGBA float surface.");
 	}
 
 	baseMip.data.resize(baseMip.slicePitch);
@@ -110,6 +103,5 @@ TextureLoadResult TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	loadResult.arraySlices.resize(1);
 	loadResult.arraySlices.front().mipLevels.push_back(std::move(baseMip));
 
-	outErrorMessage.clear();
 	return loadResult;
 }

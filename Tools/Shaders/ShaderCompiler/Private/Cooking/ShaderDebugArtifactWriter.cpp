@@ -2,6 +2,7 @@
 
 #include "Cooking/ShaderDebugArtifactWriter.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Json/JsonWriter.h"
@@ -11,97 +12,58 @@
 #include <format>
 #include <sstream>
 
-bool ShaderDebugArtifactWriter::Write(
+void ShaderDebugArtifactWriter::WriteText(
+    const std::filesystem::path& path,
+    std::string_view contents)
+{
+	std::string fileError;
+	if (!Files::TryWriteAllText(path, contents, fileError))
+	{
+		throw Diagnostics::Error(std::move(fileError));
+	}
+}
+
+void ShaderDebugArtifactWriter::Write(
 	const std::filesystem::path& rootDirectory,
 	const ShaderCookPackageDesc& package,
 	const ShaderCookStageDesc& stage,
 	const ShaderCompileOptions& options,
 	const CookedStageBuild& compiledStage,
-	const ShaderDebugArtifactSet& debugArtifacts,
-	std::string& outErrorMessage)
+	const ShaderDebugArtifactSet& debugArtifacts)
 {
 	const std::filesystem::path bundleDirectory = rootDirectory / BuildBundleDirectoryName(package, stage, options, compiledStage);
-
-	if (!WriteCompileInputs(bundleDirectory, package, stage, options, compiledStage, outErrorMessage))
-	{
-		return false;
-	}
-
-	if (!WriteCompilerOutputs(bundleDirectory, debugArtifacts, compiledStage, outErrorMessage))
-	{
-		return false;
-	}
-
-	outErrorMessage.clear();
-	return true;
+	WriteCompileInputs(bundleDirectory, package, stage, options, compiledStage);
+	WriteCompilerOutputs(bundleDirectory, debugArtifacts, compiledStage);
 }
 
-bool ShaderDebugArtifactWriter::WriteCompileInputs(
+void ShaderDebugArtifactWriter::WriteCompileInputs(
 	const std::filesystem::path& bundleDirectory,
 	const ShaderCookPackageDesc& package,
 	const ShaderCookStageDesc& stage,
 	const ShaderCompileOptions& options,
-	const CookedStageBuild& compiledStage,
-	std::string& outErrorMessage)
+	const CookedStageBuild& compiledStage)
 {
-	if (!Files::TryWriteAllText(
-	        bundleDirectory / "compile-request.json",
-	        BuildCompileRequestJson(package, stage, options, compiledStage),
-	        outErrorMessage))
-	{
-		return false;
-	}
-
-	if (!Files::TryWriteAllText(bundleDirectory / "cache-info.json", BuildCacheInfoJson(options, compiledStage), outErrorMessage))
-	{
-		return false;
-	}
-
-	return Files::TryWriteAllText(bundleDirectory / "defines.json", Json::WriteStringArray(options.Defines), outErrorMessage);
+	WriteText(
+	    bundleDirectory / "compile-request.json",
+	    BuildCompileRequestJson(package, stage, options, compiledStage));
+	WriteText(bundleDirectory / "cache-info.json", BuildCacheInfoJson(options, compiledStage));
+	WriteText(bundleDirectory / "defines.json", Json::WriteStringArray(options.Defines));
 }
 
-bool ShaderDebugArtifactWriter::WriteCompilerOutputs(
+void ShaderDebugArtifactWriter::WriteCompilerOutputs(
 	const std::filesystem::path& bundleDirectory,
 	const ShaderDebugArtifactSet& debugArtifacts,
-	const CookedStageBuild& compiledStage,
-	std::string& outErrorMessage)
+	const CookedStageBuild& compiledStage)
 {
-	if (!Files::TryWriteAllText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource, outErrorMessage))
+	WriteText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource);
+	WriteText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection));
+	WriteText(bundleDirectory / "parameter-struct-match.json", debugArtifacts.ParameterMatchReportJson);
+	if (!debugArtifacts.Disassembly.empty())
 	{
-		return false;
+		WriteText(bundleDirectory / "disassembly.txt", debugArtifacts.Disassembly);
 	}
-
-	if (!Files::TryWriteAllText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection), outErrorMessage))
-	{
-		return false;
-	}
-
-	if (!Files::TryWriteAllText(
-	        bundleDirectory / "parameter-struct-match.json",
-	        debugArtifacts.ParameterMatchReportJson,
-	        outErrorMessage))
-	{
-		return false;
-	}
-
-	const std::string_view disassembly =
-	    debugArtifacts.Disassembly.empty()
-	        ? std::string_view{"Disassembly capture unavailable for this backend/target in the current environment.\n"}
-	        : std::string_view{debugArtifacts.Disassembly};
-	if (!Files::TryWriteAllText(bundleDirectory / "disassembly.txt", disassembly, outErrorMessage))
-	{
-		return false;
-	}
-
-	if (!Files::TryWriteAllText(bundleDirectory / "compiler-stderr.txt", debugArtifacts.CompilerOutput, outErrorMessage))
-	{
-		return false;
-	}
-
-	return Files::TryWriteAllText(
-	    bundleDirectory / "compile-args.json",
-	    Json::WriteStringArray(debugArtifacts.CompileArguments),
-	    outErrorMessage);
+	WriteText(bundleDirectory / "compiler-stderr.txt", debugArtifacts.CompilerOutput);
+	WriteText(bundleDirectory / "compile-args.json", Json::WriteStringArray(debugArtifacts.CompileArguments));
 }
 
 std::string ShaderDebugArtifactWriter::BuildBundleDirectoryName(

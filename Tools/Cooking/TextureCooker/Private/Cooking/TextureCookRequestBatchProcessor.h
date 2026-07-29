@@ -3,7 +3,6 @@
 #include "TextureCookRequestList.h"
 
 #include <filesystem>
-#include <string>
 #include <vector>
 
 struct TextureCookBatchItemResult;
@@ -14,14 +13,12 @@ class TextureCookRequestBatchProcessor final
 	int CookRequestFile(const std::filesystem::path& requestFilePath) const;
 
   private:
-	static bool ReportFailures(
+	static std::size_t ReportFailures(
 	    const std::vector<TextureCookRequest>& requests,
-	    const std::vector<TextureCookBatchItemResult>& results,
-	    bool batchSucceeded);
-	static bool PublishGeneration(
+	    const std::vector<TextureCookBatchItemResult>& results);
+	static void PublishGeneration(
 	    const std::vector<TextureCookRequest>& requests,
-	    const std::vector<TextureCookBatchItemResult>& results,
-	    std::string& outErrorMessage);
+	    const std::vector<TextureCookBatchItemResult>& results);
 	static void CleanupStagedOutputs(
 	    const std::vector<TextureCookBatchItemResult>& results);
 };

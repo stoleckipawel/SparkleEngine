@@ -95,10 +95,7 @@ class CookedPackageInspection final
   public:
 	CookedPackageInspection() = delete;
 
-	static bool Inspect(
-	    const std::filesystem::path& packagePath,
-	    InspectedCookedShaderPackage& outPackage,
-	    std::string& outErrorMessage);
+	static InspectedCookedShaderPackage Inspect(const std::filesystem::path& packagePath);
 	static const char* GetBinaryFormatName(CookedShaderBinaryFormat format) noexcept;
 	static const char* GetPackageKindName(CookedShaderPackageKind kind) noexcept;
 	static const char* GetRayTracingExportKindName(CookedShaderRayTracingExportKind kind) noexcept;

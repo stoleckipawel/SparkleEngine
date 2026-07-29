@@ -4,6 +4,8 @@
 
 #include "Pipeline/ImageOps.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <stb_image_resize2.h>
 
@@ -53,11 +55,10 @@ namespace TextureCookPipeline
 		}
 	}
 
-	static bool ResizeFloatMipLevel(
+	static void ResizeFloatMipLevel(
 	    TextureMipFilter mipFilter,
 	    const WorkingMipLevel& sourceMip,
-	    WorkingMipLevel& outMip,
-	    std::string& outErrorMessage)
+	    WorkingMipLevel& outMip)
 	{
 		outMip.pixels.resize(static_cast<std::size_t>(outMip.width) * static_cast<std::size_t>(outMip.height) * 4u);
 
@@ -87,41 +88,35 @@ namespace TextureCookPipeline
 
 		if (!stbir_resize_extended(&resize))
 		{
-			outErrorMessage = "stb_image_resize2 failed to generate the next mip level.";
-			return false;
+			throw Diagnostics::Error("stb_image_resize2 failed to generate the next mip level.");
 		}
-
-		outErrorMessage.clear();
-		return true;
 	}
 
-	static bool GenerateNextMip(
+	static WorkingMipLevel GenerateNextMip(
 	    TextureMipFilter mipFilter,
-	    const WorkingMipLevel& sourceMip,
-	    WorkingMipLevel& outMip,
-	    std::string& outErrorMessage)
+	    const WorkingMipLevel& sourceMip)
 	{
-		outMip.width = (std::max)(1u, sourceMip.width >> 1u);
-		outMip.height = (std::max)(1u, sourceMip.height >> 1u);
+		WorkingMipLevel mip;
+		mip.width = (std::max)(1u, sourceMip.width >> 1u);
+		mip.height = (std::max)(1u, sourceMip.height >> 1u);
 
 		if (mipFilter == TextureMipFilter::NormalAware)
 		{
-			DownsampleNormalMipLevel(sourceMip, outMip);
-			outErrorMessage.clear();
-			return true;
+			DownsampleNormalMipLevel(sourceMip, mip);
+			return mip;
 		}
 
-		return ResizeFloatMipLevel(mipFilter, sourceMip, outMip, outErrorMessage);
+		ResizeFloatMipLevel(mipFilter, sourceMip, mip);
+		return mip;
 	}
 
-	static bool GenerateMipChain(const TextureCookRequest& request, WorkingTexture& workingTexture, std::string& outErrorMessage)
+	static void GenerateMipChain(const TextureCookRequest& request, WorkingTexture& workingTexture)
 	{
 		for (auto& arraySlice : workingTexture.arraySlices)
 		{
 			if (arraySlice.empty())
 			{
-				outErrorMessage = "Working texture slice is empty during mip generation.";
-				return false;
+				throw Diagnostics::Error("Working texture slice is empty during mip generation.");
 			}
 
 			WorkingMipLevel currentMip = arraySlice.front();
@@ -130,22 +125,14 @@ namespace TextureCookPipeline
 
 			while (currentMip.width > 1u || currentMip.height > 1u)
 			{
-				WorkingMipLevel nextMip;
-				if (!GenerateNextMip(request.policy.mipFilter, currentMip, nextMip, outErrorMessage))
-				{
-					return false;
-				}
-
+				WorkingMipLevel nextMip = GenerateNextMip(request.policy.mipFilter, currentMip);
 				arraySlice.push_back(nextMip);
 				currentMip = arraySlice.back();
 			}
 		}
-
-		outErrorMessage.clear();
-		return true;
 	}
 
-	bool ApplyMipPolicy(const TextureCookRequest& request, WorkingTexture& workingTexture, std::string& outErrorMessage)
+	void ApplyMipPolicy(const TextureCookRequest& request, WorkingTexture& workingTexture)
 	{
 		switch (request.policy.mipPolicy)
 		{
@@ -157,16 +144,14 @@ namespace TextureCookPipeline
 						arraySlice.resize(1);
 					}
 				}
-				outErrorMessage.clear();
-				return true;
+				return;
 			case TextureMipPolicy::PreserveExisting:
-				outErrorMessage.clear();
-				return true;
+				return;
 			case TextureMipPolicy::Generate:
-				return GenerateMipChain(request, workingTexture, outErrorMessage);
+				GenerateMipChain(request, workingTexture);
+				return;
 		}
 
-		outErrorMessage = "Unknown texture mip policy.";
-		return false;
+		throw Diagnostics::Error("Unknown texture mip policy.");
 	}
 }

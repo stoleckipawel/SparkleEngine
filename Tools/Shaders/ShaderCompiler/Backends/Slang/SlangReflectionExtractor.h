@@ -12,11 +12,9 @@ class SlangReflectionExtractor final
   public:
 	SlangReflectionExtractor() = delete;
 
-	static bool Extract(
+	static ShaderReflection Extract(
 	    slang::ProgramLayout& programLayout,
-	    ShaderStage stage,
-	    ShaderReflection& outReflection,
-	    std::string& outError);
+	    ShaderStage stage);
 
   private:
 	static void VisitScope(

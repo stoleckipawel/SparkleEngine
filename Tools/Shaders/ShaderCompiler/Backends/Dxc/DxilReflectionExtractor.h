@@ -24,15 +24,11 @@ class DxilReflectionExtractor final
   public:
 	DxilReflectionExtractor() = delete;
 
-	// Populates `outReflection` and returns false with `outError` on failure.
-	// Extraction errors are logged by the caller and do not fail compilation.
-	static bool Extract(
+	static ShaderReflection Extract(
 	    IDxcUtils& utils,
 	    IDxcResult* result,
 	    std::span<const std::uint8_t> bytecode,
-	    ShaderStage stage,
-	    ShaderReflection& outReflection,
-	    std::string& outError);
+	    ShaderStage stage);
 
   private:
 	static CookedShaderResourceKind MapResourceKind(D3D_SHADER_INPUT_TYPE type, D3D_SRV_DIMENSION dim);

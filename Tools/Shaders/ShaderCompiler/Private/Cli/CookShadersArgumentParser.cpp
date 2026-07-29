@@ -3,6 +3,7 @@
 #include "Cli/CookShadersArgumentParser.h"
 
 #include "Constants/ShaderCompilerConstants.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <charconv>
@@ -10,16 +11,9 @@
 #include <ostream>
 #include <system_error>
 
-bool CookShadersArgumentParser::Parse(
-    std::span<const std::string_view> arguments,
-    ShaderPackageCookSettings& outSettings,
-    std::string& outErrorMessage)
+ShaderPackageCookSettings CookShadersArgumentParser::Parse(std::span<const std::string_view> arguments)
 {
-	CookShadersArgumentParser parser(
-	    arguments,
-	    outSettings,
-	    outErrorMessage);
-	return parser.ParseAll();
+	return CookShadersArgumentParser(arguments).ParseAll();
 }
 
 void CookShadersArgumentParser::PrintHelp(std::ostream& output)
@@ -45,51 +39,38 @@ void CookShadersArgumentParser::PrintHelp(std::ostream& output)
 	       << "  --strip-debug <on|off>      Strip embedded debug info from final runtime binaries when supported.\n";
 }
 
-CookShadersArgumentParser::CookShadersArgumentParser(
-    std::span<const std::string_view> arguments,
-    ShaderPackageCookSettings& settings,
-    std::string& errorMessage) noexcept :
-    m_arguments(arguments),
-    m_settings(settings),
-    m_errorMessage(errorMessage)
+CookShadersArgumentParser::CookShadersArgumentParser(std::span<const std::string_view> arguments) noexcept :
+    m_arguments(arguments)
 {
 }
 
-bool CookShadersArgumentParser::ParseAll()
+ShaderPackageCookSettings CookShadersArgumentParser::ParseAll()
 {
 	for (m_index = 0; m_index < m_arguments.size(); ++m_index)
 	{
-		if (!ParseArgument(m_arguments[m_index]))
-		{
-			return false;
-		}
+		ParseArgument(m_arguments[m_index]);
 	}
 
-	return ValidateSelection();
+	ValidateSelection();
+	return std::move(m_settings);
 }
 
-bool CookShadersArgumentParser::ParseArgument(std::string_view argument)
+void CookShadersArgumentParser::ParseArgument(std::string_view argument)
 {
-	if (ParseFlag(argument))
+	if (ConsumeFlag(argument))
 	{
-		return true;
+		return;
 	}
 
-	if (ParseValueOption(argument))
+	if (ConsumeValueOption(argument))
 	{
-		return true;
+		return;
 	}
 
-	if (!m_errorMessage.empty())
-	{
-		return false;
-	}
-
-	SetUnknownArgumentError(argument);
-	return false;
+	throw Diagnostics::Error("Unknown cook argument '" + std::string(argument) + "'");
 }
 
-bool CookShadersArgumentParser::ParseFlag(std::string_view argument)
+bool CookShadersArgumentParser::ConsumeFlag(std::string_view argument)
 {
 	if (argument == "--no-cache")
 	{
@@ -112,7 +93,7 @@ bool CookShadersArgumentParser::ParseFlag(std::string_view argument)
 	return false;
 }
 
-bool CookShadersArgumentParser::ParseValueOption(std::string_view argument)
+bool CookShadersArgumentParser::ConsumeValueOption(std::string_view argument)
 {
 	if (argument != "--cache-dir" &&
 	    argument != "--package" &&
@@ -128,52 +109,48 @@ bool CookShadersArgumentParser::ParseValueOption(std::string_view argument)
 		return false;
 	}
 
-	std::string_view value;
-	if (!TakeValue(argument, value))
-	{
-		return false;
-	}
-
-	return ApplyValue(argument, value);
+	ApplyValue(argument, TakeValue(argument));
+	return true;
 }
 
-bool CookShadersArgumentParser::ApplyValue(
+void CookShadersArgumentParser::ApplyValue(
     std::string_view argument,
     std::string_view value)
 {
 	if (argument == "--cache-dir")
 	{
 		m_settings.cacheDirectory = std::filesystem::path(std::string(value));
-		return true;
+		return;
 	}
 
 	if (argument == "--package")
 	{
 		m_settings.packageId = value;
-		return true;
+		return;
 	}
 
 	if (argument == "--shader-id")
 	{
 		m_settings.shaderId = value;
-		return true;
+		return;
 	}
 
 	if (argument == "--target")
 	{
-		return AddTarget(value);
+		AddTarget(value);
+		return;
 	}
 
 	if (argument == "--backend")
 	{
 		m_settings.backendName = value;
-		return true;
+		return;
 	}
 
 	if (argument == "--debug-artifacts")
 	{
 		m_settings.debugArtifactDirectory = std::filesystem::path(std::string(value));
-		return true;
+		return;
 	}
 
 	if (argument == "--analysis")
@@ -182,24 +159,24 @@ bool CookShadersArgumentParser::ApplyValue(
 		{
 			m_settings.analysisPasses.emplace_back(token);
 		}
-		return true;
+		return;
 	}
 
 	if (argument == "--parallel-compiles")
 	{
-		return SetParallelCompileCount(value);
+		SetParallelCompileCount(value);
+		return;
 	}
 
-	return SetBooleanOption(argument, value);
+	SetBooleanOption(argument, value);
 }
 
-bool CookShadersArgumentParser::AddTarget(std::string_view value)
+void CookShadersArgumentParser::AddTarget(std::string_view value)
 {
-	ShaderTarget target = kDefaultShaderTarget;
-	if (!TryParseTarget(value, target))
+	const std::optional<ShaderTarget> target = ParseTarget(value);
+	if (!target)
 	{
-		m_errorMessage = "Unknown shader target '" + std::string(value) + "'";
-		return false;
+		throw Diagnostics::Error("Unknown shader target '" + std::string(value) + "'");
 	}
 
 	if (!m_targetWasSpecified)
@@ -208,15 +185,13 @@ bool CookShadersArgumentParser::AddTarget(std::string_view value)
 		m_targetWasSpecified = true;
 	}
 
-	if (!ContainsTarget(m_settings.targets, target))
+	if (!ContainsTarget(m_settings.targets, *target))
 	{
-		m_settings.targets.push_back(target);
+		m_settings.targets.push_back(*target);
 	}
-
-	return true;
 }
 
-bool CookShadersArgumentParser::SetParallelCompileCount(std::string_view value)
+void CookShadersArgumentParser::SetParallelCompileCount(std::string_view value)
 {
 	std::uint32_t count = 0;
 	const auto parsed =
@@ -226,69 +201,48 @@ bool CookShadersArgumentParser::SetParallelCompileCount(std::string_view value)
 	    count < 1 ||
 	    count > 8)
 	{
-		m_errorMessage =
-		    "Expected a value from 1 through 8 after --parallel-compiles";
-		return false;
+		throw Diagnostics::Error("Expected a value from 1 through 8 after --parallel-compiles");
 	}
 
 	m_settings.maximumParallelCompiles = count;
-	return true;
 }
 
-bool CookShadersArgumentParser::SetBooleanOption(
+void CookShadersArgumentParser::SetBooleanOption(
     std::string_view argument,
     std::string_view value)
 {
-	bool parsedValue = false;
-	if (!TryParseBoolean(value, parsedValue))
+	const std::optional<bool> parsedValue = ParseBoolean(value);
+	if (!parsedValue)
 	{
-		m_errorMessage =
-		    "Expected on|off after " + std::string(argument);
-		return false;
+		throw Diagnostics::Error("Expected on|off after " + std::string(argument));
 	}
 
 	if (argument == "--warnings-as-errors")
 	{
-		m_settings.treatWarningsAsErrors = parsedValue;
+		m_settings.treatWarningsAsErrors = *parsedValue;
 	}
 	else
 	{
-		m_settings.stripDebugInfo = parsedValue;
+		m_settings.stripDebugInfo = *parsedValue;
 	}
-
-	return true;
 }
 
-bool CookShadersArgumentParser::TakeValue(
-    std::string_view argument,
-    std::string_view& outValue)
+std::string_view CookShadersArgumentParser::TakeValue(std::string_view argument)
 {
 	if (m_index + 1 >= m_arguments.size())
 	{
-		m_errorMessage = "Missing value after " + std::string(argument);
-		return false;
+		throw Diagnostics::Error("Missing value after " + std::string(argument));
 	}
 
-	outValue = m_arguments[++m_index];
-	return true;
+	return m_arguments[++m_index];
 }
 
-bool CookShadersArgumentParser::ValidateSelection()
+void CookShadersArgumentParser::ValidateSelection() const
 {
 	if (!m_settings.packageId.empty() && !m_settings.shaderId.empty())
 	{
-		m_errorMessage = "Use either --package or --shader-id, not both";
-		return false;
+		throw Diagnostics::Error("Use either --package or --shader-id, not both");
 	}
-
-	m_errorMessage.clear();
-	return true;
-}
-
-void CookShadersArgumentParser::SetUnknownArgumentError(
-    std::string_view argument)
-{
-	m_errorMessage = "Unknown cook argument '" + std::string(argument) + "'";
 }
 
 bool CookShadersArgumentParser::ContainsTarget(
@@ -306,9 +260,7 @@ bool CookShadersArgumentParser::ContainsTarget(
 	return false;
 }
 
-bool CookShadersArgumentParser::TryParseTarget(
-    std::string_view value,
-    ShaderTarget& outTarget) noexcept
+std::optional<ShaderTarget> CookShadersArgumentParser::ParseTarget(std::string_view value) noexcept
 {
 	for (std::uint16_t candidate = static_cast<std::uint16_t>(ShaderTarget::DxilSm60);
 	     candidate <= static_cast<std::uint16_t>(ShaderTarget::SpirV16);
@@ -317,29 +269,24 @@ bool CookShadersArgumentParser::TryParseTarget(
 		const auto target = static_cast<ShaderTarget>(candidate);
 		if (value == GetShaderTargetName(target))
 		{
-			outTarget = target;
-			return true;
+			return target;
 		}
 	}
 
-	return false;
+	return std::nullopt;
 }
 
-bool CookShadersArgumentParser::TryParseBoolean(
-    std::string_view value,
-    bool& outValue) noexcept
+std::optional<bool> CookShadersArgumentParser::ParseBoolean(std::string_view value) noexcept
 {
 	if (value == "on" || value == "true")
 	{
-		outValue = true;
 		return true;
 	}
 
 	if (value == "off" || value == "false")
 	{
-		outValue = false;
-		return true;
+		return false;
 	}
 
-	return false;
+	return std::nullopt;
 }

@@ -15,13 +15,9 @@ class SpirVReflectionExtractor final
   public:
 	SpirVReflectionExtractor() = delete;
 
-	// Populates `outReflection` and returns false with `outError` on failure.
-	// Extraction errors are logged by the caller and do not fail compilation.
-	static bool Extract(
+	static ShaderReflection Extract(
 	    std::span<const std::uint8_t> bytecode,
-	    ShaderStage stage,
-	    ShaderReflection& outReflection,
-	    std::string& outError);
+	    ShaderStage stage);
 
   private:
 	static CookedShaderResourceKind MapDescriptorType(

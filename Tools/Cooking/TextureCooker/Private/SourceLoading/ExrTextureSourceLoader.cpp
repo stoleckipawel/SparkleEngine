@@ -4,46 +4,51 @@
 
 #include "SourceLoading/TextureSourceLoadStages.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #define TINYEXR_IMPLEMENTATION
 #include <tinyexr.h>
+
+#include <cstdlib>
+#include <format>
+#include <memory>
 
 bool ExrTextureSourceLoader::SupportsFormat(TextureSourceFormat format) const noexcept
 {
 	return format == TextureSourceFormat::Exr;
 }
 
-TextureLoadResult ExrTextureSourceLoader::Load(const std::filesystem::path& sourcePath, std::string& outErrorMessage) const
+TextureLoadResult ExrTextureSourceLoader::Load(const std::filesystem::path& sourcePath) const
 {
-	std::filesystem::path resolvedPath;
-	std::vector<std::uint8_t> fileBytes;
-	if (!TextureSourceLoadStages::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
-	{
-		return {};
-	}
+	const TextureSourceFile sourceFile = TextureSourceLoadStages::ReadSourceFile(sourcePath);
 
-	float* pixels = nullptr;
+	float* decodedPixels = nullptr;
 	int width = 0;
 	int height = 0;
 	const char* errorMessage = nullptr;
-	const int result = LoadEXRFromMemory(&pixels, &width, &height, fileBytes.data(), fileBytes.size(), &errorMessage);
-	if (result != TINYEXR_SUCCESS || pixels == nullptr)
+	const int result = LoadEXRFromMemory(
+	    &decodedPixels,
+	    &width,
+	    &height,
+	    sourceFile.Bytes.data(),
+	    sourceFile.Bytes.size(),
+	    &errorMessage);
+	if (result != TINYEXR_SUCCESS || decodedPixels == nullptr)
 	{
-		outErrorMessage = std::format("Failed to decode EXR texture '{}'", resolvedPath.string());
+		std::string diagnostic = std::format("Failed to decode EXR texture '{}'", sourceFile.ResolvedPath.string());
 		if (errorMessage != nullptr)
 		{
-			outErrorMessage += ": ";
-			outErrorMessage += errorMessage;
+			diagnostic += ": ";
+			diagnostic += errorMessage;
 			FreeEXRErrorMessage(errorMessage);
 		}
-		return {};
+		throw Diagnostics::Error(std::move(diagnostic));
 	}
 
-	TextureLoadResult loadResult = TextureSourceLoadStages::BuildFloatTextureLoadResult(
+	std::unique_ptr<float, decltype(&std::free)> pixels(decodedPixels, &std::free);
+	return TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	    width,
 	    height,
-	    pixels,
-	    static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4u,
-	    outErrorMessage);
-	free(pixels);
-	return loadResult;
+	    pixels.get(),
+	    static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4u);
 }

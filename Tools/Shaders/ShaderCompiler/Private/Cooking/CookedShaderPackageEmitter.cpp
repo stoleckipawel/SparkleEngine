@@ -4,8 +4,8 @@
 
 #include "Cooking/CookedPackageWriter.h"
 #include "Cooking/CookedRegistryWriter.h"
-#include "Cooking/ShaderCookResult.h"
 #include "Cooking/ShaderRecookSignal.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
@@ -19,24 +19,21 @@ class CookedShaderPublication final
   public:
 	CookedShaderPublication(
 	    const ShaderCookPipelinePlan& plan,
-	    const std::filesystem::path& cacheDirectory,
-	    ShaderPackageCookResult& result,
-	    std::string& errorMessage) noexcept;
+	    const std::filesystem::path& cacheDirectory) noexcept;
 
-	bool Publish();
+	std::vector<CookedShaderPackageOutput> Publish();
 
   private:
-	bool StagePackages();
-	bool StagePackage(std::size_t packageIndex);
-	bool StageRegistry();
-	bool StageRecookSignal();
-	bool PublishFiles();
+	void StagePackages();
+	void StagePackage(std::size_t packageIndex);
+	void StageRegistry();
+	void StageRecookSignal();
+	void PublishFiles();
 	void CleanupStagedFiles() const;
 
 	const ShaderCookPipelinePlan& m_plan;
 	const std::filesystem::path& m_cacheDirectory;
-	ShaderPackageCookResult& m_result;
-	std::string& m_errorMessage;
+	std::vector<CookedShaderPackageOutput> m_packages;
 	std::vector<Files::FilePublication> m_files;
 	std::filesystem::path m_registryPath;
 	std::filesystem::path m_stagedRegistryPath;
@@ -44,47 +41,42 @@ class CookedShaderPublication final
 
 CookedShaderPublication::CookedShaderPublication(
     const ShaderCookPipelinePlan& plan,
-    const std::filesystem::path& cacheDirectory,
-    ShaderPackageCookResult& result,
-    std::string& errorMessage) noexcept :
+    const std::filesystem::path& cacheDirectory) noexcept :
     m_plan(plan),
-    m_cacheDirectory(cacheDirectory),
-    m_result(result),
-    m_errorMessage(errorMessage)
+    m_cacheDirectory(cacheDirectory)
 {
 }
 
-bool CookedShaderPublication::Publish()
+std::vector<CookedShaderPackageOutput> CookedShaderPublication::Publish()
 {
-	m_result.packages.clear();
-	m_result.packages.reserve(m_plan.packages.size());
+	m_packages.reserve(m_plan.packages.size());
 	m_files.reserve(m_plan.packages.size() + 2);
 
-	if (!StagePackages() || !StageRegistry() || !StageRecookSignal() || !PublishFiles())
+	try
+	{
+		StagePackages();
+		StageRegistry();
+		StageRecookSignal();
+		PublishFiles();
+	}
+	catch (...)
 	{
 		CleanupStagedFiles();
-		m_result.packages.clear();
-		return false;
+		throw;
 	}
 
-	m_errorMessage.clear();
-	return true;
+	return std::move(m_packages);
 }
 
-bool CookedShaderPublication::StagePackages()
+void CookedShaderPublication::StagePackages()
 {
 	for (std::size_t packageIndex = 0; packageIndex < m_plan.packages.size(); ++packageIndex)
 	{
-		if (!StagePackage(packageIndex))
-		{
-			return false;
-		}
+		StagePackage(packageIndex);
 	}
-
-	return true;
 }
 
-bool CookedShaderPublication::StagePackage(std::size_t packageIndex)
+void CookedShaderPublication::StagePackage(std::size_t packageIndex)
 {
 	const ShaderCookPackageDesc& package = m_plan.packages[packageIndex];
 	const ShaderCookPackageContext& packageContext = m_plan.packageContexts[packageIndex];
@@ -94,73 +86,73 @@ bool CookedShaderPublication::StagePackage(std::size_t packageIndex)
 	    Files::BuildTemporaryPath(publishedPath, ".cook-generation");
 	Files::CleanupTemporaryFile(stagedPath);
 
-	CookedShaderPackageOutput packageOutput;
-	if (!CookedPackageWriter::Write(
-	        package,
-	        packageContext.compiledStages,
-	        stagedPath,
-	        publishedPath,
-	        packageOutput,
-	        m_errorMessage))
+	try
 	{
-		m_errorMessage = "Failed to emit cooked shader package '" + package.packageId + "' - " + m_errorMessage;
+		m_packages.push_back(CookedPackageWriter::Write(
+		    package,
+		    packageContext.compiledStages,
+		    stagedPath,
+		    publishedPath));
+	}
+	catch (const Diagnostics::Error& error)
+	{
 		Files::CleanupTemporaryFile(stagedPath);
-		return false;
+		throw Diagnostics::Error(
+		    "Failed to emit cooked shader package '" + package.packageId + "' - " + error.what());
 	}
 
 	m_files.push_back({stagedPath, publishedPath});
-	m_result.packages.push_back(std::move(packageOutput));
-	return true;
 }
 
-bool CookedShaderPublication::StageRegistry()
+void CookedShaderPublication::StageRegistry()
 {
 	m_registryPath = Filesystem::GetCookedShaderRegistryPath();
 	m_stagedRegistryPath = Files::BuildTemporaryPath(m_registryPath, ".cook-generation");
 	Files::CleanupTemporaryFile(m_stagedRegistryPath);
 
-	if (!CookedRegistryWriter::Write(m_result.packages, m_stagedRegistryPath, m_errorMessage))
+	try
+	{
+		CookedRegistryWriter::Write(m_packages, m_stagedRegistryPath);
+	}
+	catch (...)
 	{
 		Files::CleanupTemporaryFile(m_stagedRegistryPath);
-		return false;
+		throw;
 	}
 
 	m_files.push_back({m_stagedRegistryPath, m_registryPath});
-	return true;
 }
 
-bool CookedShaderPublication::StageRecookSignal()
+void CookedShaderPublication::StageRecookSignal()
 {
-	ShaderRecookSignalResult signalResult;
 	const std::filesystem::path publishedSignalPath = Paths::ShaderRecookSignal(m_cacheDirectory);
 	const std::filesystem::path stagedSignalPath =
 	    Files::BuildTemporaryPath(publishedSignalPath, ".cook-generation");
 	Files::CleanupTemporaryFile(stagedSignalPath);
 
-	if (!ShaderRecookSignal::Write(
-	        m_stagedRegistryPath,
-	        m_registryPath,
-	        stagedSignalPath,
-	        publishedSignalPath,
-	        signalResult,
-	        m_errorMessage))
+	try
+	{
+		ShaderRecookSignal::Write(
+		    m_stagedRegistryPath,
+		    m_registryPath,
+		    stagedSignalPath);
+	}
+	catch (...)
 	{
 		Files::CleanupTemporaryFile(stagedSignalPath);
-		return false;
+		throw;
 	}
 
 	m_files.push_back({stagedSignalPath, publishedSignalPath});
-	return true;
 }
 
-bool CookedShaderPublication::PublishFiles()
+void CookedShaderPublication::PublishFiles()
 {
-	if (!Files::TryPublishFileSet(m_files, m_errorMessage))
+	std::string publicationError;
+	if (!Files::TryPublishFileSet(m_files, publicationError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(publicationError));
 	}
-
-	return true;
 }
 
 void CookedShaderPublication::CleanupStagedFiles() const
@@ -171,11 +163,9 @@ void CookedShaderPublication::CleanupStagedFiles() const
 	}
 }
 
-bool CookedShaderPackageEmitter::Emit(
+std::vector<CookedShaderPackageOutput> CookedShaderPackageEmitter::Emit(
     const ShaderCookPipelinePlan& plan,
-    const std::filesystem::path& cacheDirectory,
-    ShaderPackageCookResult& result,
-    std::string& outErrorMessage)
+    const std::filesystem::path& cacheDirectory)
 {
-	return CookedShaderPublication(plan, cacheDirectory, result, outErrorMessage).Publish();
+	return CookedShaderPublication(plan, cacheDirectory).Publish();
 }

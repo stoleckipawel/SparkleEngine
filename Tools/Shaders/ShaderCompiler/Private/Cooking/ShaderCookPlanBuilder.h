@@ -3,7 +3,6 @@
 #include "Cooking/ShaderCookContext.h"
 
 #include <cstddef>
-#include <string>
 
 class ShaderBackendPool;
 struct ShaderPackageCookSettings;
@@ -13,25 +12,20 @@ class ShaderCookPlanBuilder final
   public:
 	ShaderCookPlanBuilder() = delete;
 
-	static bool Build(
+	static ShaderCookPipelinePlan Build(
 	    const ShaderPackageCookSettings& settings,
-	    ShaderBackendPool& backendPool,
-	    ShaderCookPipelinePlan& outPlan,
-	    std::string& outErrorMessage);
+	    ShaderBackendPool& backendPool);
 
   private:
-	static bool AddPackageNodes(
+	static void AddPackageNodes(
 	    const ShaderPackageCookSettings& settings,
 	    std::size_t packageIndex,
 	    ShaderBackendPool& backendPool,
-	    ShaderCookPipelinePlan& plan,
-	    std::string& outErrorMessage);
+	    ShaderCookPipelinePlan& plan);
 
 	static bool ShouldCookPackageTarget(
 	    const ShaderPackageCookSettings& settings,
 	    const ShaderCookPackageDesc& package,
 	    ShaderTarget target,
-	    ShaderBackendPool& backendPool,
-	    bool& outShouldCook,
-	    std::string& outErrorMessage);
+	    ShaderBackendPool& backendPool);
 };

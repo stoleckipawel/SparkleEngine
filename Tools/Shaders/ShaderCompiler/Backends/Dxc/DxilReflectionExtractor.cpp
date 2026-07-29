@@ -2,6 +2,8 @@
 
 #include "DxilReflectionExtractor.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <cstdint>
 #include <wrl/client.h>
 
@@ -136,22 +138,19 @@ std::uint8_t DxilReflectionExtractor::PopMaskBits(std::uint8_t mask)
 	return count;
 }
 
-bool DxilReflectionExtractor::Extract(
+ShaderReflection DxilReflectionExtractor::Extract(
     IDxcUtils& utils,
     IDxcResult* result,
     std::span<const std::uint8_t> bytecode,
-    ShaderStage stage,
-    ShaderReflection& outReflection,
-    std::string& outError)
+    ShaderStage stage)
 {
-	outReflection = ShaderReflection{};
-	outError.clear();
+	ShaderReflection reflection;
+	ShaderReflection& outReflection = reflection;
 	(void)bytecode;
 
 	if (result == nullptr)
 	{
-		outError = "DXIL reflection: null IDxcResult";
-		return false;
+		throw Diagnostics::Error("DXIL reflection: null IDxcResult");
 	}
 
 	// DXC exposes reflection as a separate output blob.
@@ -161,8 +160,7 @@ bool DxilReflectionExtractor::Extract(
 	    DXC_OUT_REFLECTION, IID_PPV_ARGS(reflectionBlob.ReleaseAndGetAddressOf()), nullptr);
 	if (FAILED(hr) || !reflectionBlob || reflectionBlob->GetBufferSize() == 0)
 	{
-		outError = "DXIL reflection: DXC produced no reflection part";
-		return false;
+		throw Diagnostics::Error("DXIL reflection: DXC produced no reflection part");
 	}
 
 	DxcBuffer reflectionBuffer{};
@@ -174,15 +172,13 @@ bool DxilReflectionExtractor::Extract(
 	hr = utils.CreateReflection(&reflectionBuffer, IID_PPV_ARGS(shaderReflection.ReleaseAndGetAddressOf()));
 	if (FAILED(hr) || !shaderReflection)
 	{
-		outError = "DXIL reflection: CreateReflection failed";
-		return false;
+		throw Diagnostics::Error("DXIL reflection: CreateReflection failed");
 	}
 
 	D3D12_SHADER_DESC desc{};
 	if (FAILED(shaderReflection->GetDesc(&desc)))
 	{
-		outError = "DXIL reflection: GetDesc failed";
-		return false;
+		throw Diagnostics::Error("DXIL reflection: GetDesc failed");
 	}
 
 	// Emit one record per reflected constant buffer.
@@ -310,5 +306,5 @@ bool DxilReflectionExtractor::Extract(
 	// DXIL does not expose push constants or specialization constants here.
 	// Both arrays stay empty.
 
-	return true;
+	return reflection;
 }

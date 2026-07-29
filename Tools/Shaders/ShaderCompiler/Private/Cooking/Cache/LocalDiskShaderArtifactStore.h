@@ -15,24 +15,22 @@ class LocalDiskShaderArtifactStore final : public IShaderArtifactStore
 	{
 	}
 
-	bool TryGet(const ShaderCacheKey& key, CookedStageBuild& outBuild, std::string& outErrorMessage) const override;
-	bool Put(const ShaderCacheKey& key, const CookedStageBuild& build, std::string& outErrorMessage) override;
+	std::optional<CookedStageBuild> Find(const ShaderCacheKey& key) const override;
+	void Put(const ShaderCacheKey& key, const CookedStageBuild& build) override;
 
   private:
 	static constexpr std::uint32_t kFormatMagic = 0x31414353;
 	static constexpr std::uint32_t kFormatVersion = 1;
 
 	std::filesystem::path BuildArtifactPath(const ShaderCacheKey& key) const;
-	static bool Serialize(const CookedStageBuild& build, std::vector<std::uint8_t>& outBytes, std::string& outErrorMessage);
-	static bool Deserialize(std::span<const std::uint8_t> bytes, CookedStageBuild& outBuild, std::string& outErrorMessage);
-	static bool SerializeReflection(
+	static std::vector<std::uint8_t> Serialize(const CookedStageBuild& build);
+	static CookedStageBuild Deserialize(std::span<const std::uint8_t> bytes);
+	static void SerializeReflection(
 	    const struct ShaderReflection& reflection,
-	    Files::BinaryBufferWriter& writer,
-	    std::string& outErrorMessage);
-	static bool DeserializeReflection(
+	    Files::BinaryBufferWriter& writer);
+	static void DeserializeReflection(
 	    Files::BinarySpanReader& reader,
-	    struct ShaderReflection& outReflection,
-	    std::string& outErrorMessage);
+	    struct ShaderReflection& outReflection);
 
 	std::filesystem::path m_rootDirectory;
 };

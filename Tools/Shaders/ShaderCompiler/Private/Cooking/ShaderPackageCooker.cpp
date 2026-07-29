@@ -7,7 +7,7 @@
 #include "Cooking/CookedShaderPackageEmitter.h"
 #include "Cooking/ShaderCookPlanExecutor.h"
 #include "Cooking/ShaderCookPlanBuilder.h"
-#include "Cooking/ShaderCookNodeResult.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include <vector>
 
 ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSettings& settings) const
@@ -15,28 +15,16 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 	ShaderPackageCookResult result;
 	result.cacheDirectory = settings.cacheDirectory.empty() ? Filesystem::GetShaderCacheRootPath() : settings.cacheDirectory;
 	ShaderBackendPool backendPool;
-	ShaderCookPipelinePlan plan;
-	if (!ShaderCookPlanBuilder::Build(settings, backendPool, plan, result.errorMessage))
+	ShaderCookPipelinePlan plan = ShaderCookPlanBuilder::Build(settings, backendPool);
+
+	std::vector<CookedStageBuild> compiledStages =
+	    ShaderCookPlanExecutor::Execute(settings, plan, result.cacheDirectory);
+	for (std::size_t index = 0; index < compiledStages.size(); ++index)
 	{
-		return result;
+		plan.packageContexts[plan.nodes[index].packageIndex].compiledStages.push_back(std::move(compiledStages[index]));
 	}
 
-	std::vector<ShaderCookNodeResult> nodeResults;
-	if (!ShaderCookPlanExecutor::Execute(settings, plan, result.cacheDirectory, nodeResults, result.errorMessage))
-	{
-		result.packages.clear();
-		return result;
-	}
-	for (std::size_t index = 0; index < nodeResults.size(); ++index)
-	{
-		ShaderCookNodeResult& nodeResult = nodeResults[index];
-		plan.packageContexts[plan.nodes[index].packageIndex].compiledStages.push_back(std::move(nodeResult.CompiledStage));
-	}
-
-	if (!CookedShaderPackageEmitter::Emit(plan, result.cacheDirectory, result, result.errorMessage))
-	{
-		return result;
-	}
+	result.packages = CookedShaderPackageEmitter::Emit(plan, result.cacheDirectory);
 
 	return result;
 }

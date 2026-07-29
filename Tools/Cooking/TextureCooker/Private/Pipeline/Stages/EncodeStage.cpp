@@ -6,161 +6,134 @@
 #include "Pipeline/Compression/CompressionPolicy.h"
 #include "Pipeline/FormatPolicy.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Pixel/PixelFormat.h"
 
 #include <cstring>
 
 namespace TextureCookPipeline
 {
-	static void InitializeOutputTexture(TextureLoadResult& outTexture, const WorkingTexture& workingTexture, DXGI_FORMAT outputFormat)
+	static TextureLoadResult BuildOutputLayout(const WorkingTexture& workingTexture, DXGI_FORMAT outputFormat)
 	{
-		outTexture = {};
-		outTexture.width = workingTexture.arraySlices.front().front().width;
-		outTexture.height = workingTexture.arraySlices.front().front().height;
-		outTexture.arraySize = workingTexture.arraySize;
-		outTexture.dimension = workingTexture.dimension;
-		outTexture.dxgiFormat = outputFormat;
-		outTexture.formatIntent = ResolveFormatIntent(outputFormat);
-		outTexture.arraySlices.resize(workingTexture.arraySlices.size());
+		TextureLoadResult texture;
+		texture.width = workingTexture.arraySlices.front().front().width;
+		texture.height = workingTexture.arraySlices.front().front().height;
+		texture.arraySize = workingTexture.arraySize;
+		texture.dimension = workingTexture.dimension;
+		texture.dxgiFormat = outputFormat;
+		texture.formatIntent = ResolveFormatIntent(outputFormat);
+		texture.arraySlices.resize(workingTexture.arraySlices.size());
+		return texture;
 	}
 
-	static bool EncodeUncompressedMip(
+	static TextureMipLevelData EncodeUncompressedMip(
 	    const WorkingMipLevel& sourceMip,
 	    bool sourceWasFloat,
-	    DXGI_FORMAT outputFormat,
-	    TextureMipLevelData& outMip,
-	    std::string& outErrorMessage)
+	    DXGI_FORMAT outputFormat)
 	{
-		outMip.width = sourceMip.width;
-		outMip.height = sourceMip.height;
+		TextureMipLevelData mip;
+		mip.width = sourceMip.width;
+		mip.height = sourceMip.height;
 
 		if (sourceWasFloat && outputFormat == DXGI_FORMAT_R32G32B32A32_FLOAT)
 		{
-			outMip.rowPitch = static_cast<std::uint32_t>(sourceMip.width * 4u * sizeof(float));
-			outMip.slicePitch = outMip.rowPitch * sourceMip.height;
-			outMip.data.resize(outMip.slicePitch);
-			std::memcpy(outMip.data.data(), sourceMip.pixels.data(), outMip.data.size());
-			outErrorMessage.clear();
-			return true;
+			mip.rowPitch = static_cast<std::uint32_t>(sourceMip.width * 4u * sizeof(float));
+			mip.slicePitch = mip.rowPitch * sourceMip.height;
+			mip.data.resize(mip.slicePitch);
+			std::memcpy(mip.data.data(), sourceMip.pixels.data(), mip.data.size());
+			return mip;
 		}
 
-		outMip.rowPitch = sourceMip.width * 4u;
-		outMip.slicePitch = outMip.rowPitch * sourceMip.height;
-		outMip.data.resize(outMip.slicePitch);
+		mip.rowPitch = sourceMip.width * 4u;
+		mip.slicePitch = mip.rowPitch * sourceMip.height;
+		mip.data.resize(mip.slicePitch);
 		const bool srgbOutput = ResolveFormatIntent(outputFormat) == TextureFormatIntent::ColorSrgb;
 
 		for (std::uint32_t texelIndex = 0; texelIndex < sourceMip.width * sourceMip.height; ++texelIndex)
 		{
 			const std::size_t pixelOffset = static_cast<std::size_t>(texelIndex) * 4u;
-			outMip.data[pixelOffset + 0u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 0u], srgbOutput);
-			outMip.data[pixelOffset + 1u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 1u], srgbOutput);
-			outMip.data[pixelOffset + 2u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 2u], srgbOutput);
-			outMip.data[pixelOffset + 3u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 3u], false);
+			mip.data[pixelOffset + 0u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 0u], srgbOutput);
+			mip.data[pixelOffset + 1u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 1u], srgbOutput);
+			mip.data[pixelOffset + 2u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 2u], srgbOutput);
+			mip.data[pixelOffset + 3u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 3u], false);
 		}
 
-		outErrorMessage.clear();
-		return true;
+		return mip;
 	}
 
-	static bool BuildUncompressedTexture(
+	static TextureLoadResult BuildUncompressedTexture(
 	    const TextureCookRequest& request,
-	    const WorkingTexture& workingTexture,
-	    TextureLoadResult& outProcessedTexture,
-	    std::string& outErrorMessage)
+	    const WorkingTexture& workingTexture)
 	{
 		const DXGI_FORMAT outputFormat = ResolveUncompressedOutputFormat(request, workingTexture.sourceWasFloat);
-		InitializeOutputTexture(outProcessedTexture, workingTexture, outputFormat);
+		TextureLoadResult processedTexture = BuildOutputLayout(workingTexture, outputFormat);
 
 		for (std::size_t arraySliceIndex = 0; arraySliceIndex < workingTexture.arraySlices.size(); ++arraySliceIndex)
 		{
 			const auto& workingSlice = workingTexture.arraySlices[arraySliceIndex];
-			auto& outputSlice = outProcessedTexture.arraySlices[arraySliceIndex];
+			auto& outputSlice = processedTexture.arraySlices[arraySliceIndex];
 			outputSlice.mipLevels.reserve(workingSlice.size());
 
 			for (const WorkingMipLevel& workingMip : workingSlice)
 			{
-				TextureMipLevelData outputMip;
-				if (!EncodeUncompressedMip(workingMip, workingTexture.sourceWasFloat, outputFormat, outputMip, outErrorMessage))
-				{
-					return false;
-				}
-
-				outputSlice.mipLevels.push_back(std::move(outputMip));
+				outputSlice.mipLevels.push_back(
+				    EncodeUncompressedMip(workingMip, workingTexture.sourceWasFloat, outputFormat));
 			}
 		}
 
-		outErrorMessage.clear();
-		return true;
+		return processedTexture;
 	}
 
-	static bool BuildCompressedTexture(
+	static TextureLoadResult BuildCompressedTexture(
 	    const TextureCookRequest& request,
 	    const WorkingTexture& workingTexture,
-	    CompressionTarget target,
-	    TextureLoadResult& outProcessedTexture,
-	    std::string& outErrorMessage)
+	    CompressionTarget target)
 	{
 		const DXGI_FORMAT outputFormat = ResolveCompressedOutputFormat(request, workingTexture, target);
 		const bool srgbOutput = ResolveFormatIntent(outputFormat) == TextureFormatIntent::ColorSrgb;
 
 		BCCompressor compressor(target);
-		if (!compressor.Initialize(srgbOutput, HasMeaningfulAlpha(workingTexture), outErrorMessage))
-		{
-			return false;
-		}
+		compressor.Initialize(srgbOutput, HasMeaningfulAlpha(workingTexture));
 
-		InitializeOutputTexture(outProcessedTexture, workingTexture, outputFormat);
+		TextureLoadResult processedTexture = BuildOutputLayout(workingTexture, outputFormat);
 
 		for (std::size_t arraySliceIndex = 0; arraySliceIndex < workingTexture.arraySlices.size(); ++arraySliceIndex)
 		{
 			const auto& workingSlice = workingTexture.arraySlices[arraySliceIndex];
-			auto& outputSlice = outProcessedTexture.arraySlices[arraySliceIndex];
+			auto& outputSlice = processedTexture.arraySlices[arraySliceIndex];
 			outputSlice.mipLevels.reserve(workingSlice.size());
 
 			for (const WorkingMipLevel& workingMip : workingSlice)
 			{
-				TextureMipLevelData outputMip;
-				if (!compressor.CompressMip(request, workingMip, outputMip, outErrorMessage))
-				{
-					return false;
-				}
-
-				outputSlice.mipLevels.push_back(std::move(outputMip));
+				outputSlice.mipLevels.push_back(compressor.CompressMip(request, workingMip));
 			}
 		}
 
-		outErrorMessage.clear();
-		return true;
+		return processedTexture;
 	}
 
-	bool ProcessCompressedSource(
+	TextureLoadResult ProcessCompressedSource(
 	    const TextureCookRequest& request,
-	    TextureLoadResult&& sourceTexture,
-	    TextureLoadResult& outProcessedTexture,
-	    std::string& outErrorMessage)
+	    TextureLoadResult sourceTexture)
 	{
 		if (request.policy.mipPolicy == TextureMipPolicy::Generate)
 		{
-			outErrorMessage = "Generating mips from compressed source DDS content is not supported yet.";
-			return false;
+			throw Diagnostics::Error("Generating mips from compressed source DDS content is not supported yet.");
 		}
 
 		if (request.policy.dimension == TextureDimension::TextureCube && !sourceTexture.IsCube())
 		{
-			outErrorMessage = "Compressed source texture does not contain cubemap data.";
-			return false;
+			throw Diagnostics::Error("Compressed source texture does not contain cubemap data.");
 		}
 
 		if (request.policy.dimension == TextureDimension::Texture2D && sourceTexture.IsCube())
 		{
-			outErrorMessage = "Cannot cook cubemap DDS content as a 2D texture.";
-			return false;
+			throw Diagnostics::Error("Cannot cook cubemap DDS content as a 2D texture.");
 		}
 
-		outProcessedTexture = std::move(sourceTexture);
 		if (request.policy.mipPolicy == TextureMipPolicy::NoMips)
 		{
-			for (TextureArraySliceData& arraySlice : outProcessedTexture.arraySlices)
+			for (TextureArraySliceData& arraySlice : sourceTexture.arraySlices)
 			{
 				if (arraySlice.mipLevels.size() > 1)
 				{
@@ -169,24 +142,21 @@ namespace TextureCookPipeline
 			}
 		}
 
-		outProcessedTexture.dxgiFormat = ApplyRequestedColorSpace(outProcessedTexture.dxgiFormat, request.policy.colorSpace);
-		outProcessedTexture.formatIntent = ResolveFormatIntent(outProcessedTexture.dxgiFormat);
-		outErrorMessage.clear();
-		return true;
+		sourceTexture.dxgiFormat = ApplyRequestedColorSpace(sourceTexture.dxgiFormat, request.policy.colorSpace);
+		sourceTexture.formatIntent = ResolveFormatIntent(sourceTexture.dxgiFormat);
+		return sourceTexture;
 	}
 
-	bool BuildOutputTexture(
+	TextureLoadResult BuildOutputTexture(
 	    const TextureCookRequest& request,
-	    const WorkingTexture& workingTexture,
-	    TextureLoadResult& outProcessedTexture,
-	    std::string& outErrorMessage)
+	    const WorkingTexture& workingTexture)
 	{
 		const CompressionTarget target = ResolveCompressionTarget(request, workingTexture);
 		if (target == CompressionTarget::None)
 		{
-			return BuildUncompressedTexture(request, workingTexture, outProcessedTexture, outErrorMessage);
+			return BuildUncompressedTexture(request, workingTexture);
 		}
 
-		return BuildCompressedTexture(request, workingTexture, target, outProcessedTexture, outErrorMessage);
+		return BuildCompressedTexture(request, workingTexture, target);
 	}
 }

@@ -1,20 +1,17 @@
 #pragma once
 
+#include "Cooking/CookedShaderPackageOutput.h"
 #include "Cooking/ShaderCookContext.h"
 
 #include <filesystem>
-#include <string>
-
-struct ShaderPackageCookResult;
+#include <vector>
 
 class CookedShaderPackageEmitter final
 {
   public:
 	CookedShaderPackageEmitter() = delete;
 
-	static bool Emit(
+	static std::vector<CookedShaderPackageOutput> Emit(
 	    const ShaderCookPipelinePlan& plan,
-	    const std::filesystem::path& cacheDirectory,
-	    ShaderPackageCookResult& result,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& cacheDirectory);
 };

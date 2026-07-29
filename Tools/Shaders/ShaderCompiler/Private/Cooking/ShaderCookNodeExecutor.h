@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Cooking/CookNode.h"
-#include "Cooking/ShaderCookNodeResult.h"
+#include "Cooking/CookedStageBuild.h"
 
 #include <filesystem>
-#include <string>
+#include <optional>
 #include <string_view>
 
 class IShaderArtifactStore;
@@ -16,36 +16,26 @@ class ShaderCookNodeExecutor final
 {
   public:
 	ShaderCookNodeExecutor() = delete;
-	static void Execute(
+	static CookedStageBuild Execute(
 	    const ShaderPackageCookSettings& settings,
 	    const CookNode& node,
-	    const std::filesystem::path& cacheDirectory,
-	    ShaderCookNodeResult& outResult);
+	    const std::filesystem::path& cacheDirectory);
 
   private:
-	static bool TryLoadFromCache(
+	static std::optional<CookedStageBuild> LoadFromCache(
+	    const ShaderPackageCookSettings& settings,
+	    const CookNode& node,
+	    IShaderArtifactStore& artifactStore);
+	static CookedStageBuild Compile(
 	    const ShaderPackageCookSettings& settings,
 	    const CookNode& node,
 	    IShaderBackend& backend,
-	    IShaderArtifactStore& artifactStore,
-	    ShaderCookNodeResult& outResult);
-	static bool Compile(
-	    const ShaderPackageCookSettings& settings,
-	    const CookNode& node,
-	    IShaderBackend& backend,
-	    IShaderArtifactStore& artifactStore,
-	    ShaderCookNodeResult& outResult);
-	static bool CompileStage(
-	    const CookNode& node,
-	    IShaderBackend& backend,
-	    bool writeDebugArtifacts,
-	    ShaderDebugArtifactSet& debugArtifacts,
-	    ShaderCookNodeResult& outResult);
-	static bool PublishArtifacts(
+	    IShaderArtifactStore& artifactStore);
+	static void PublishArtifacts(
 	    const ShaderPackageCookSettings& settings,
 	    const CookNode& node,
 	    IShaderArtifactStore& artifactStore,
 	    const ShaderDebugArtifactSet& debugArtifacts,
-	    ShaderCookNodeResult& outResult);
+	    const CookedStageBuild& compiledStage);
 	static void ApplyNodeMetadata(const CookNode& node, std::string_view cacheStatus, CookedStageBuild& compiledStage);
 };

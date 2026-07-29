@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Cooking/ShaderCookNodeResult.h"
+#include "Cooking/CookedStageBuild.h"
 
 #include <filesystem>
-#include <string>
 #include <vector>
 
 struct ShaderCookPipelinePlan;
@@ -14,10 +13,8 @@ class ShaderCookPlanExecutor final
   public:
 	ShaderCookPlanExecutor() = delete;
 
-	static bool Execute(
+	static std::vector<CookedStageBuild> Execute(
 	    const ShaderPackageCookSettings& settings,
 	    const ShaderCookPipelinePlan& plan,
-	    const std::filesystem::path& cacheDirectory,
-	    std::vector<ShaderCookNodeResult>& outNodeResults,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& cacheDirectory);
 };

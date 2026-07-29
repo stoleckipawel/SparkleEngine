@@ -1,6 +1,7 @@
 #pragma once
 
 #include "TextureCookRequestList.h"
+#include "TaskTypes.h"
 
 #include <cstddef>
 #include <filesystem>
@@ -9,20 +10,15 @@
 
 struct TextureCookBatchItemResult final
 {
-	bool Succeeded = false;
 	std::filesystem::path StagedOutputPath;
-	std::string Diagnostic;
-};
-
-struct TextureCookBatchExecutionResult final
-{
-	bool Succeeded = false;
-	std::vector<TextureCookBatchItemResult> Items;
+	TaskResult CookResult = TaskResult::Cancelled("Texture cook did not execute.");
 };
 
 class TextureCookBatchExecutor final
 {
   public:
 	TextureCookBatchExecutor() = delete;
-	static TextureCookBatchExecutionResult Execute(const std::vector<TextureCookRequest>& requests, std::size_t memoryBudgetBytes);
+	static std::vector<TextureCookBatchItemResult> Execute(
+	    const std::vector<TextureCookRequest>& requests,
+	    std::size_t memoryBudgetBytes);
 };

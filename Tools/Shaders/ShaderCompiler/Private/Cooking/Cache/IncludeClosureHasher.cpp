@@ -3,6 +3,8 @@
 #include "Cooking/Cache/IncludeClosureHasher.h"
 
 #include "Compiler/ShaderIncludeResolver.h"
+#include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
@@ -12,28 +14,29 @@
 #include <regex>
 #include <sstream>
 
-bool IncludeClosureHasher::VisitFile(
+static const auto g_includeClosureHasherLogger = Logging::GetOrCreateLogger("ShaderCompiler.IncludeClosureHasher");
+
+void IncludeClosureHasher::VisitFile(
     const std::filesystem::path& filePath,
     const ShaderCompileOptions& options,
     std::unordered_set<std::wstring>& visitedPathKeys,
-    std::vector<HashPair>& outFileHashes,
-    std::string& outErrorMessage)
+    std::vector<HashPair>& outFileHashes)
 {
 	const std::filesystem::path normalizedPath = Paths::Normalize(filePath);
 	const std::wstring pathKey = ShaderIncludeResolver::MakeResolvedPathKey(normalizedPath);
 	if (!visitedPathKeys.insert(pathKey).second)
 	{
-		return true;
+		return;
 	}
 
 	std::vector<std::uint8_t> bytes;
-	if (!Files::TryReadAllBytes(normalizedPath, bytes, outErrorMessage))
+	std::string fileError;
+	if (!Files::TryReadAllBytes(normalizedPath, bytes, fileError))
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Failed to read shader source '{}' while computing include closure - {}",
 		    normalizedPath.string(),
-		    outErrorMessage);
-		return false;
+		    fileError));
 	}
 
 	const std::uint64_t fileHash = Hash::Fnv1a64(bytes.data(), bytes.size());
@@ -55,42 +58,34 @@ bool IncludeClosureHasher::VisitFile(
 		const auto resolvedIncludePath = ShaderIncludeResolver::ResolveIncludePath(normalizedPath, includeSpec, options);
 		if (!resolvedIncludePath)
 		{
-			outErrorMessage = std::format(
+			throw Diagnostics::Error(std::format(
 			    "Failed to resolve include '{}' referenced from '{}'",
 			    includeSpec,
-			    normalizedPath.string());
-			return false;
+			    normalizedPath.string()));
 		}
 
-		if (!VisitFile(*resolvedIncludePath, options, visitedPathKeys, outFileHashes, outErrorMessage))
-		{
-			return false;
-		}
+		VisitFile(*resolvedIncludePath, options, visitedPathKeys, outFileHashes);
 	}
-
-	return true;
 }
 
-IncludeClosureHashResult IncludeClosureHasher::Compute(const ShaderCompileOptions& options)
+IncludeClosureHash IncludeClosureHasher::Compute(const ShaderCompileOptions& options)
 {
-	IncludeClosureHashResult result;
 	std::unordered_set<std::wstring> visited;
 	std::vector<HashPair> fileHashes;
-
-	if (!VisitFile(options.SourcePath, options, visited, fileHashes, result.errorMessage))
-	{
-		return result;
-	}
+	VisitFile(options.SourcePath, options, visited, fileHashes);
 
 	if (fileHashes.empty())
 	{
-		result.errorMessage = "Include closure hash computation produced no source inputs";
-		return result;
+		Diagnostics::Fatal(
+		    g_includeClosureHasherLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Include closure hash computation produced no source inputs.");
 	}
 
-	result.includeClosureHash = ComputeClosureHash(fileHashes);
-	result.sourceHash = FindSourceHash(options.SourcePath, fileHashes);
-	return result;
+	return IncludeClosureHash{
+	    .sourceHash = FindSourceHash(options.SourcePath, fileHashes),
+	    .includeClosureHash = ComputeClosureHash(fileHashes)};
 }
 
 std::uint64_t IncludeClosureHasher::ComputeClosureHash(
@@ -134,5 +129,9 @@ std::uint64_t IncludeClosureHasher::FindSourceHash(
 		}
 	}
 
-	return 0;
+	Diagnostics::Fatal(
+	    g_includeClosureHasherLogger,
+	    __FILE__,
+	    __LINE__,
+	    "Include closure omitted its root shader source.");
 }

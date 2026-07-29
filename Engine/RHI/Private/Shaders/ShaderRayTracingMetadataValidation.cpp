@@ -2,64 +2,59 @@
 
 #include "Shaders/ShaderRayTracingMetadataValidation.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Shaders/LoadedShaderPackage.h"
 
 #include <algorithm>
 #include <format>
 #include <vector>
 
-bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
+void ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
     const LoadedShaderPackage& package,
-    CookedShaderBinaryFormat runtimeBinaryFormat,
-    std::string& outErrorMessage)
+    CookedShaderBinaryFormat runtimeBinaryFormat)
 {
 	if (!package.IsValid())
 	{
-		outErrorMessage = "Cooked shader package payload is invalid.";
-		return false;
+		throw Diagnostics::Error("Cooked shader package payload is invalid.");
 	}
 
 	const CookedShaderPackageHeader& header = package.GetHeader();
 	const CookedShaderPackageFeatureFlags features = header.PackageFeatures;
 	if (!HasCookedShaderPackageFeature(features, CookedShaderPackageFeatureFlags::UsesInlineRayQuery))
 	{
-		outErrorMessage = "Cooked shader package does not declare UsesInlineRayQuery.";
-		return false;
+		throw Diagnostics::Error("Cooked shader package does not declare UsesInlineRayQuery.");
 	}
 	if (!HasCookedShaderPackageFeature(features, CookedShaderPackageFeatureFlags::UsesAccelerationStructure))
 	{
-		outErrorMessage = "Cooked shader package declares inline ray query but not UsesAccelerationStructure.";
-		return false;
+		throw Diagnostics::Error("Cooked shader package declares inline ray query but not UsesAccelerationStructure.");
 	}
 	if (header.PackageKind != CookedShaderPackageKind::Compute)
 	{
-		outErrorMessage = "Inline ray query validation currently expects a compute shader package.";
-		return false;
+		throw Diagnostics::Error("Inline ray query validation currently expects a compute shader package.");
 	}
 	const bool usesAccelerationStructureDeviceAddress =
 	    HasCookedShaderPackageFeature(features, CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress);
 	if (usesAccelerationStructureDeviceAddress && runtimeBinaryFormat != CookedShaderBinaryFormat::SpirV)
 	{
-		outErrorMessage = "Acceleration-structure device-address inline ray query packages are currently supported only for SPIR-V.";
-		return false;
+		throw Diagnostics::Error(
+		    "Acceleration-structure device-address inline ray query packages are currently supported only for SPIR-V.");
 	}
 
-	bool hasRequiredBinary = false;
+	bool hasRuntimeBinary = false;
 	for (const CookedShaderBinaryRecord& binary : package.GetBinaryRecords())
 	{
 		if (package.IsRuntimeBinary(binary, runtimeBinaryFormat))
 		{
-			hasRequiredBinary = true;
+			hasRuntimeBinary = true;
 			break;
 		}
 	}
-	if (!hasRequiredBinary)
+	if (!hasRuntimeBinary)
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Inline ray query shader package has no binary for runtime target {}/{}.",
 		    CookedShaderBinaryFormatToString(runtimeBinaryFormat),
-		    GetRuntimeShaderCodegenTarget(runtimeBinaryFormat));
-		return false;
+		    GetRuntimeShaderCodegenTarget(runtimeBinaryFormat)));
 	}
 
 	bool hasAccelerationStructureLayoutBinding = false;
@@ -76,8 +71,8 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	{
 		if (!usesAccelerationStructureDeviceAddress)
 		{
-			outErrorMessage = "Inline ray query shader package has no acceleration-structure binding in pipeline layout metadata.";
-			return false;
+			throw Diagnostics::Error(
+			    "Inline ray query shader package has no acceleration-structure binding in pipeline layout metadata.");
 		}
 	}
 
@@ -111,11 +106,8 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	{
 		if (!usesAccelerationStructureDeviceAddress)
 		{
-			outErrorMessage = "Inline ray query shader package has no reflected acceleration-structure resource binding.";
-			return false;
+			throw Diagnostics::Error(
+			    "Inline ray query shader package has no reflected acceleration-structure resource binding.");
 		}
 	}
-
-	outErrorMessage.clear();
-	return true;
 }

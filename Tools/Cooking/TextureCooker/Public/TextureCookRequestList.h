@@ -55,10 +55,8 @@ struct TextureCookRequest final
 	std::filesystem::path outputPath;
 	TextureCookPolicy policy;
 
-	bool IsValid() const noexcept { return assetId != InvalidTextureAssetId && !sourcePath.empty() && !outputPath.empty(); }
 	bool IsSrgb() const noexcept { return policy.IsSrgb(); }
 	bool IsCube() const noexcept { return policy.IsCube(); }
-	explicit operator bool() const noexcept { return IsValid(); }
 };
 
 class TextureCookRequestSet final
@@ -76,6 +74,7 @@ private:
 
 bool TextureCookPoliciesMatch(const TextureCookPolicy& lhs, const TextureCookPolicy& rhs) noexcept;
 bool TextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept;
+void ValidateTextureCookRequest(const TextureCookRequest& request);
 
 const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept;
 const char* GetTextureMipPolicyName(TextureMipPolicy mipPolicy) noexcept;

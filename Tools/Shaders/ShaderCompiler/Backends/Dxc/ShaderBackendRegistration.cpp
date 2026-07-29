@@ -53,7 +53,6 @@ ShaderBackendRegistration GetDxcBackendRegistration() noexcept
 	return ShaderBackendRegistration{
 	    .Descriptor = ShaderBackendStaticDescriptor{
 	        .Name = "dxc",
-	        .IsRequired = true,
 	        .SourceExtensions = std::span<const std::string_view>(kDxcSourceExtensions.data(), kDxcSourceExtensions.size()),
 	        .CodegenTargets = std::span<const ShaderTarget>(kDxcCodegenTargets.data(), kDxcCodegenTargets.size()),
 	        .BinaryFormats = std::span<const std::string_view>(kDxcBinaryFormats.data(), kDxcBinaryFormats.size()),

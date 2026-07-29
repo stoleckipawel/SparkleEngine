@@ -12,17 +12,15 @@
 class ShaderBackendPool final
 {
   public:
-	IShaderBackend* ResolveAndAcquire(
+	IShaderBackend& ResolveAndAcquire(
 	    const std::filesystem::path& sourcePath,
 	    ShaderTarget target,
-	    std::string_view requestedName,
-	    std::string& outResolvedBackendName,
-	    std::string& outErrorMessage);
+	    std::string_view requestedName);
 
 	IShaderBackend* Find(std::string_view backendName) const noexcept;
 
   private:
-	IShaderBackend* Acquire(std::string_view backendName, ShaderTarget target, std::string& outErrorMessage);
+	IShaderBackend& Acquire(std::string_view backendName, ShaderTarget target);
 
 	std::unordered_map<std::string, std::unique_ptr<IShaderBackend>> m_backends;
 };

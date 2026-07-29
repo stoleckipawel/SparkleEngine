@@ -2,6 +2,7 @@
 
 #include "Pipeline/ImageOps.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Math/SignalProcessing.h"
 
 #include <algorithm>
@@ -49,13 +50,12 @@ namespace TextureCookPipeline
 		return std::nullopt;
 	}
 
-	bool ExtractChannel(WorkingTexture& workingTexture, TextureChannelMask channelMask, std::string& outErrorMessage)
+	void ExtractChannel(WorkingTexture& workingTexture, TextureChannelMask channelMask)
 	{
 		const std::optional<std::size_t> channelIndex = ResolveChannelIndex(channelMask);
 		if (!channelIndex)
 		{
-			outErrorMessage.clear();
-			return true;
+			return;
 		}
 
 		for (auto& arraySlice : workingTexture.arraySlices)
@@ -64,8 +64,7 @@ namespace TextureCookPipeline
 			{
 				if (mipLevel.pixels.size() != static_cast<std::size_t>(mipLevel.width) * static_cast<std::size_t>(mipLevel.height) * 4u)
 				{
-					outErrorMessage = "Working texture mip payload size is invalid during channel extraction.";
-					return false;
+					throw Diagnostics::Error("Working texture mip payload size is invalid during channel extraction.");
 				}
 
 				for (std::size_t pixelOffset = 0; pixelOffset < mipLevel.pixels.size(); pixelOffset += 4u)
@@ -79,7 +78,5 @@ namespace TextureCookPipeline
 			}
 		}
 
-		outErrorMessage.clear();
-		return true;
 	}
 }

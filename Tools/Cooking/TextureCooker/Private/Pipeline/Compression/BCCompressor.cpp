@@ -2,6 +2,7 @@
 
 #include "Pipeline/Compression/BCCompressor.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Pixel/FloatConversion.h"
 #include "Core/Public/Pixel/PixelFormat.h"
 
@@ -21,7 +22,7 @@ namespace TextureCookPipeline
 		Destroy();
 	}
 
-	bool BCCompressor::Initialize(bool srgbOutput, bool imageNeedsAlpha, std::string& outErrorMessage)
+	void BCCompressor::Initialize(bool srgbOutput, bool imageNeedsAlpha)
 	{
 		Destroy();
 
@@ -67,14 +68,12 @@ namespace TextureCookPipeline
 				}
 				break;
 			case CompressionTarget::None:
-				outErrorMessage = "Cannot initialize a BC compressor without a compression target.";
-				return false;
+				throw Diagnostics::Error("Cannot initialize a BC compressor without a compression target.");
 		}
 
 		if (result != 0)
 		{
-			outErrorMessage = "Failed to initialize CMP_Core compression options.";
-			return false;
+			throw Diagnostics::Error("Failed to initialize CMP_Core compression options.");
 		}
 
 		if (srgbOutput && target_ == CompressionTarget::BC1)
@@ -82,16 +81,13 @@ namespace TextureCookPipeline
 			SetSrgbBC1(options_, false);
 		}
 
-		outErrorMessage.clear();
-		return true;
 	}
 
-	bool BCCompressor::CompressMip(
+	TextureMipLevelData BCCompressor::CompressMip(
 	    const TextureCookRequest& request,
-	    const WorkingMipLevel& sourceMip,
-	    TextureMipLevelData& outMip,
-	    std::string& outErrorMessage) const
+	    const WorkingMipLevel& sourceMip) const
 	{
+		TextureMipLevelData outMip;
 		outMip.width = sourceMip.width;
 		outMip.height = sourceMip.height;
 		outMip.rowPitch = ComputeBlockCompressedRowPitch(target_, sourceMip.width);
@@ -133,8 +129,7 @@ namespace TextureCookPipeline
 					                       : CompressBlockBC7(rgbaBlock.data(), 16u, destinationBlock, options_);
 					if (result != 0)
 					{
-						outErrorMessage = "CMP_Core failed to compress an RGBA block.";
-						return false;
+						throw Diagnostics::Error("CMP_Core failed to compress an RGBA block.");
 					}
 
 					continue;
@@ -156,8 +151,7 @@ namespace TextureCookPipeline
 
 					if (CompressBlockBC4(block.data(), 4u, destinationBlock, options_) != 0)
 					{
-						outErrorMessage = "CMP_Core failed to compress a BC4 block.";
-						return false;
+						throw Diagnostics::Error("CMP_Core failed to compress a BC4 block.");
 					}
 
 					continue;
@@ -181,8 +175,7 @@ namespace TextureCookPipeline
 
 					if (CompressBlockBC5(blockRed.data(), 4u, blockGreen.data(), 4u, destinationBlock, options_) != 0)
 					{
-						outErrorMessage = "CMP_Core failed to compress a BC5 block.";
-						return false;
+						throw Diagnostics::Error("CMP_Core failed to compress a BC5 block.");
 					}
 
 					continue;
@@ -205,14 +198,12 @@ namespace TextureCookPipeline
 
 				if (CompressBlockBC6(blockHalf.data(), 12u, destinationBlock, options_) != 0)
 				{
-					outErrorMessage = "CMP_Core failed to compress a BC6H block.";
-					return false;
+					throw Diagnostics::Error("CMP_Core failed to compress a BC6H block.");
 				}
 			}
 		}
 
-		outErrorMessage.clear();
-		return true;
+		return outMip;
 	}
 
 	void BCCompressor::Destroy() noexcept

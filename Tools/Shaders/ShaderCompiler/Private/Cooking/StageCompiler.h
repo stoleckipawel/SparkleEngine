@@ -5,18 +5,14 @@
 #include "ShaderDebugArtifactSet.h"
 #include "ShaderCompileOptions.h"
 
-#include <string>
-
 class IShaderBackend;
 
 class StageCompiler final
 {
   public:
-	static bool Compile(
+	static CookedStageBuild Compile(
 	    IShaderBackend& backend,
 	    const ShaderCookStageDesc& stage,
 	    const ShaderCompileOptions& options,
-	    CookedStageBuild& outCompiledStage,
-	    ShaderDebugArtifactSet* outDebugArtifacts,
-	    std::string& outErrorMessage);
+	    ShaderDebugArtifactSet* outDebugArtifacts);
 };

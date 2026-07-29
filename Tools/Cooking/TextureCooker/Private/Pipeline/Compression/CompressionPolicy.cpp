@@ -4,7 +4,11 @@
 
 #include "Pipeline/FormatPolicy.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
 #include <algorithm>
+
+static const auto g_textureCompressionPolicyLogger = Logging::GetOrCreateLogger("TextureCooker.CompressionPolicy");
 
 namespace TextureCookPipeline
 {
@@ -26,7 +30,6 @@ namespace TextureCookPipeline
 			case TextureGroup::Diffuse:
 			case TextureGroup::Emissive:
 			case TextureGroup::SubsurfaceColor:
-			default:
 				if (workingTexture.sourceWasFloat)
 				{
 					return CompressionTarget::BC6H;
@@ -34,6 +37,7 @@ namespace TextureCookPipeline
 
 				return HasMeaningfulAlpha(workingTexture) ? CompressionTarget::None : CompressionTarget::BC1;
 		}
+		Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Unknown texture group.");
 	}
 
 	DXGI_FORMAT ResolveCompressedOutputFormat(
@@ -60,14 +64,42 @@ namespace TextureCookPipeline
 
 				return request.policy.colorSpace == TextureColorSpace::Srgb ? DXGI_FORMAT_BC7_UNORM_SRGB : DXGI_FORMAT_BC7_UNORM;
 			case CompressionTarget::None:
-			default:
-				return ResolveUncompressedOutputFormat(request, workingTexture.sourceWasFloat);
+				Diagnostics::Fatal(
+				    g_textureCompressionPolicyLogger,
+				    __FILE__,
+				    __LINE__,
+				    "Compressed output format was requested without a compression target.");
 		}
+		Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Unknown texture compression target.");
 	}
 
 	std::uint32_t ComputeBlockCompressedRowPitch(CompressionTarget target, std::uint32_t width) noexcept
 	{
-		const std::uint32_t blockBytes = target == CompressionTarget::BC1 || target == CompressionTarget::BC4 ? 8u : 16u;
+		std::uint32_t blockBytes = 0;
+		switch (target)
+		{
+			case CompressionTarget::BC1:
+			case CompressionTarget::BC4:
+				blockBytes = 8;
+				break;
+			case CompressionTarget::BC5:
+			case CompressionTarget::BC6H:
+			case CompressionTarget::BC7:
+				blockBytes = 16;
+				break;
+			case CompressionTarget::None:
+				Diagnostics::Fatal(
+				    g_textureCompressionPolicyLogger,
+				    __FILE__,
+				    __LINE__,
+				    "Block-compressed row pitch was requested without a compression target.");
+			default:
+				Diagnostics::Fatal(
+				    g_textureCompressionPolicyLogger,
+				    __FILE__,
+				    __LINE__,
+				    "Unknown texture compression target.");
+		}
 		return (std::max) (1u, (width + 3u) / 4u) * blockBytes;
 	}
 

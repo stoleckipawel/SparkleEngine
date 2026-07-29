@@ -4,6 +4,7 @@
 
 #include "Compiler/ShaderCompilerPaths.h"
 #include "Compiler/ShaderIncludeResolver.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 
 #include <format>
@@ -17,31 +18,26 @@ struct ShaderSourcePreprocessor::PreprocessContext final
 	std::unordered_set<std::wstring> ActivePathKeys;
 };
 
-bool ShaderSourcePreprocessor::VisitFile(
+void ShaderSourcePreprocessor::VisitFile(
     const std::filesystem::path& filePath,
     const ShaderCompileOptions& options,
     PreprocessContext& context,
-    std::string& outSource,
-    std::string& outErrorMessage)
+    std::string& outSource)
 {
 	const std::filesystem::path resolvedFilePath = ShaderCompilerPaths::CanonicalizeForCompiler(filePath);
 	const std::wstring pathKey = ShaderIncludeResolver::MakeResolvedPathKey(resolvedFilePath);
 
-	std::string sourceText;
-	if (!TryReadSourceText(resolvedFilePath, sourceText, outErrorMessage))
-	{
-		return false;
-	}
+	const std::string sourceText = ReadSourceText(resolvedFilePath);
 
 	if (ContainsPragmaOnce(sourceText) && !context.OncePathKeys.insert(pathKey).second)
 	{
-		return true;
+		return;
 	}
 
 	if (!context.ActivePathKeys.insert(pathKey).second)
 	{
-		outErrorMessage = std::format("Detected recursive shader include while preprocessing '{}'", resolvedFilePath.string());
-		return false;
+		throw Diagnostics::Error(
+		    std::format("Detected recursive shader include while preprocessing '{}'", resolvedFilePath.string()));
 	}
 
 	const std::string linePath = MakeLinePath(resolvedFilePath);
@@ -65,11 +61,7 @@ bool ShaderSourcePreprocessor::VisitFile(
 		if (std::regex_search(line, match, includeRegex))
 		{
 			const std::string includeSpec = match[1].str();
-			if (!AppendExpandedInclude(resolvedFilePath, includeSpec, options, context, outSource, outErrorMessage))
-			{
-				context.ActivePathKeys.erase(pathKey);
-				return false;
-			}
+			AppendExpandedInclude(resolvedFilePath, includeSpec, options, context, outSource);
 			AppendLineDirective(outSource, lineNumber + 1u, linePath);
 		}
 		else
@@ -82,26 +74,21 @@ bool ShaderSourcePreprocessor::VisitFile(
 	}
 
 	context.ActivePathKeys.erase(pathKey);
-	return true;
 }
 
-bool ShaderSourcePreprocessor::TryReadSourceText(
-    const std::filesystem::path& filePath,
-    std::string& outSourceText,
-    std::string& outErrorMessage)
+std::string ShaderSourcePreprocessor::ReadSourceText(const std::filesystem::path& filePath)
 {
 	std::vector<std::uint8_t> bytes;
-	if (!Files::TryReadAllBytes(filePath, bytes, outErrorMessage))
+	std::string fileError;
+	if (!Files::TryReadAllBytes(filePath, bytes, fileError))
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Failed to read shader source '{}' while preprocessing includes - {}",
 		    filePath.string(),
-		    outErrorMessage);
-		return false;
+		    fileError));
 	}
 
-	outSourceText.assign(reinterpret_cast<const char*>(bytes.data()), bytes.size());
-	return true;
+	return std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
 }
 
 bool ShaderSourcePreprocessor::ContainsPragmaOnce(std::string_view sourceText)
@@ -145,36 +132,31 @@ void ShaderSourcePreprocessor::AppendLineDirective(
 	outSource += "\"\n";
 }
 
-bool ShaderSourcePreprocessor::AppendExpandedInclude(
+void ShaderSourcePreprocessor::AppendExpandedInclude(
     const std::filesystem::path& includerPath,
     std::string_view includeSpec,
     const ShaderCompileOptions& options,
     PreprocessContext& context,
-    std::string& outSource,
-    std::string& outErrorMessage)
+    std::string& outSource)
 {
 	const auto includePath = ShaderIncludeResolver::ResolveIncludePath(includerPath, includeSpec, options);
 	if (!includePath)
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Failed to resolve include '{}' referenced from '{}' while preprocessing shader source",
 		    includeSpec,
-		    includerPath.string());
-		return false;
+		    includerPath.string()));
 	}
 
-	return VisitFile(*includePath, options, context, outSource, outErrorMessage);
+	VisitFile(*includePath, options, context, outSource);
 }
 
-ShaderSourcePreprocessResult ShaderSourcePreprocessor::Load(
+std::string ShaderSourcePreprocessor::Load(
     const std::filesystem::path& sourcePath,
     const ShaderCompileOptions& options)
 {
-	ShaderSourcePreprocessResult result;
+	std::string sourceText;
 	PreprocessContext context;
-	if (!VisitFile(sourcePath, options, context, result.SourceText, result.ErrorMessage))
-	{
-		result.SourceText.clear();
-	}
-	return result;
+	VisitFile(sourcePath, options, context, sourceText);
+	return sourceText;
 }

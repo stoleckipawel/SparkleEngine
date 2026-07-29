@@ -10,6 +10,7 @@ enum class ShaderContractSelectionKind
 	All,
 	PackageId,
 	ShaderId,
+	RegisteredId,
 };
 
 class ShaderContractCatalogBuilder final
@@ -19,6 +20,5 @@ class ShaderContractCatalogBuilder final
 
 	static ShaderContractCatalog Build(
 	    ShaderContractSelectionKind selectionKind,
-	    std::string_view requestedId,
-	    std::string& outErrorMessage);
+	    std::string_view requestedId);
 };

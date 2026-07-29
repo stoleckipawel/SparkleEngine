@@ -2,8 +2,6 @@
 
 #include "Pipeline/Compression/CompressionPolicy.h"
 
-#include <string>
-
 namespace TextureCookPipeline
 {
 	class BCCompressor final
@@ -15,12 +13,10 @@ namespace TextureCookPipeline
 		BCCompressor(const BCCompressor&) = delete;
 		BCCompressor& operator=(const BCCompressor&) = delete;
 
-		bool Initialize(bool srgbOutput, bool imageNeedsAlpha, std::string& outErrorMessage);
-		bool CompressMip(
+		void Initialize(bool srgbOutput, bool imageNeedsAlpha);
+		TextureMipLevelData CompressMip(
 		    const TextureCookRequest& request,
-		    const WorkingMipLevel& sourceMip,
-		    TextureMipLevelData& outMip,
-		    std::string& outErrorMessage) const;
+		    const WorkingMipLevel& sourceMip) const;
 
 	  private:
 		void Destroy() noexcept;

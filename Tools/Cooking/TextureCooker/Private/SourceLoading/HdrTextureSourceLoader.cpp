@@ -4,47 +4,45 @@
 
 #include "SourceLoading/TextureSourceLoadStages.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+
 #include <stb_image.h>
+
+#include <format>
+#include <memory>
 
 bool HdrTextureSourceLoader::SupportsFormat(TextureSourceFormat format) const noexcept
 {
 	return format == TextureSourceFormat::RadianceHdr;
 }
 
-TextureLoadResult HdrTextureSourceLoader::Load(const std::filesystem::path& sourcePath, std::string& outErrorMessage) const
+TextureLoadResult HdrTextureSourceLoader::Load(const std::filesystem::path& sourcePath) const
 {
-	std::filesystem::path resolvedPath;
-	std::vector<std::uint8_t> fileBytes;
-	if (!TextureSourceLoadStages::TryReadSourceBytes(sourcePath, resolvedPath, fileBytes, outErrorMessage))
-	{
-		return {};
-	}
+	const TextureSourceFile sourceFile = TextureSourceLoadStages::ReadSourceFile(sourcePath);
 
 	int width = 0;
 	int height = 0;
 	int sourceChannels = 0;
-	float* pixels = stbi_loadf_from_memory(
-	    fileBytes.data(),
-	    static_cast<int>(fileBytes.size()),
-	    &width,
-	    &height,
-	    &sourceChannels,
-	    STBI_rgb_alpha);
-	if (pixels == nullptr)
+	std::unique_ptr<float, decltype(&stbi_image_free)> pixels(
+	    stbi_loadf_from_memory(
+	        sourceFile.Bytes.data(),
+	        static_cast<int>(sourceFile.Bytes.size()),
+	        &width,
+	        &height,
+	        &sourceChannels,
+	        STBI_rgb_alpha),
+	    &stbi_image_free);
+	if (!pixels)
 	{
-		outErrorMessage = std::format(
+		throw Diagnostics::Error(std::format(
 		    "Failed to decode HDR texture '{}': {}",
-		    resolvedPath.string(),
-		    stbi_failure_reason() != nullptr ? stbi_failure_reason() : "unknown stb_image error");
-		return {};
+		    sourceFile.ResolvedPath.string(),
+		    stbi_failure_reason() != nullptr ? stbi_failure_reason() : "unknown stb_image error"));
 	}
 
-	TextureLoadResult loadResult = TextureSourceLoadStages::BuildFloatTextureLoadResult(
+	return TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	    width,
 	    height,
-	    pixels,
-	    static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4u,
-	    outErrorMessage);
-	stbi_image_free(pixels);
-	return loadResult;
+	    pixels.get(),
+	    static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4u);
 }

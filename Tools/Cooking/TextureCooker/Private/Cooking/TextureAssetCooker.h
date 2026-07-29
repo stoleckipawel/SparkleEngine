@@ -5,7 +5,6 @@
 
 #include <dxgiformat.h>
 
-#include <string>
 #include <stop_token>
 
 class TextureCookMemoryLimiter;
@@ -13,9 +12,8 @@ class TextureCookMemoryLimiter;
 class TextureAssetCooker final
 {
   public:
-	bool Cook(
+	void Cook(
 	    const TextureCookRequest& request,
 	    TextureCookMemoryLimiter& memoryLimiter,
-	    std::stop_token cancellation,
-	    std::string& outErrorMessage) const;
+	    std::stop_token cancellation) const;
 };

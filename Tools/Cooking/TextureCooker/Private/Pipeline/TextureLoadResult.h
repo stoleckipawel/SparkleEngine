@@ -33,7 +33,7 @@ struct TextureLoadResult
 
 	std::uint16_t GetMipCount() const noexcept
 	{
-		return arraySlices.empty() ? 0 : static_cast<std::uint16_t>(arraySlices.front().mipLevels.size());
+		return static_cast<std::uint16_t>(arraySlices.front().mipLevels.size());
 	}
 
 	std::uint16_t GetArraySize() const noexcept { return static_cast<std::uint16_t>(arraySize); }
@@ -41,46 +41,4 @@ struct TextureLoadResult
 	std::uint32_t GetSubresourceCount() const noexcept { return static_cast<std::uint32_t>(GetMipCount()) * arraySize; }
 
 	bool IsCube() const noexcept { return dimension == TextureResourceDimension::TextureCube; }
-
-	bool IsValid() const noexcept
-	{
-		if (width == 0 || height == 0 || arraySize == 0 || dxgiFormat == DXGI_FORMAT_UNKNOWN || arraySlices.empty())
-		{
-			return false;
-		}
-
-		if (arraySlices.size() != arraySize)
-		{
-			return false;
-		}
-
-		const std::size_t expectedMipCount = arraySlices.front().mipLevels.size();
-		if (expectedMipCount == 0)
-		{
-			return false;
-		}
-
-		if (IsCube() && arraySize != 6)
-		{
-			return false;
-		}
-
-		for (const TextureArraySliceData& arraySlice : arraySlices)
-		{
-			if (arraySlice.mipLevels.size() != expectedMipCount)
-			{
-				return false;
-			}
-
-			for (const auto& mip : arraySlice.mipLevels)
-			{
-				if (mip.width == 0 || mip.height == 0 || mip.rowPitch == 0 || mip.slicePitch == 0 || mip.data.empty())
-				{
-					return false;
-				}
-			}
-		}
-
-		return true;
-	}
 };

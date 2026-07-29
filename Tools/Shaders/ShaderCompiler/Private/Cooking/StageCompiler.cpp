@@ -3,72 +3,63 @@
 #include "Cooking/StageCompiler.h"
 
 #include "Backend/IShaderBackend.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "ShaderCompileResult.h"
 
-bool StageCompiler::Compile(
+CookedStageBuild StageCompiler::Compile(
 	IShaderBackend& backend,
 	const ShaderCookStageDesc& stage,
 	const ShaderCompileOptions& options,
-	CookedStageBuild& outCompiledStage,
-	ShaderDebugArtifactSet* outDebugArtifacts,
-	std::string& outErrorMessage)
+	ShaderDebugArtifactSet* outDebugArtifacts)
 {
 	const ShaderBackendCapabilities capabilities = backend.GetCapabilities();
 	if (!capabilities.SupportsTarget(options.Target))
 	{
-		outErrorMessage = std::string{"Active shader backend does not support target '"} +
-			GetShaderTargetName(options.Target) + "'";
-		return false;
+		throw Diagnostics::Error(
+		    std::string{"Active shader backend does not support target '"} + GetShaderTargetName(options.Target) + "'.");
 	}
 	if (options.PackageKind == CookedShaderPackageKind::RayTracingLibrary &&
 	    !capabilities.SupportsRayTracingLibrary(options.Target))
 	{
-		outErrorMessage = std::string{"Active shader backend does not support ray tracing library packages for target '"} +
-			GetShaderTargetName(options.Target) + "'";
-		return false;
+		throw Diagnostics::Error(
+		    std::string{"Active shader backend does not support ray tracing library packages for target '"} +
+		    GetShaderTargetName(options.Target) + "'.");
 	}
 	if (HasCookedShaderPackageFeature(options.PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
 	    !capabilities.SupportsInlineRayQuery(options.Target))
 	{
-		outErrorMessage = std::string{"Active shader backend does not support inline ray queries for target '"} +
-			GetShaderTargetName(options.Target) + "'";
-		return false;
+		throw Diagnostics::Error(
+		    std::string{"Active shader backend does not support inline ray queries for target '"} +
+		    GetShaderTargetName(options.Target) + "'.");
 	}
 
-	ShaderCompileResult compileResult = backend.Compile(options);
-	if (!compileResult.IsSuccess())
-	{
-		outErrorMessage = compileResult.GetErrorMessage();
-		return false;
-	}
-
-	const ShaderBytecode bytecode = compileResult.GetBytecode();
+	CompiledShader compiledShader = backend.Compile(options);
+	const ShaderBytecode bytecode = compiledShader.GetBytecode();
 	if (!bytecode.IsValid())
 	{
-		outErrorMessage = "Backend returned empty bytecode for shader source '" + stage.sourcePath.generic_string() + "'";
-		return false;
+		throw Diagnostics::Error(
+		    "Backend returned empty bytecode for shader source '" + stage.sourcePath.generic_string() + "'.");
 	}
 
 	const auto* bytecodeBegin = static_cast<const std::uint8_t*>(bytecode.Data);
-	outCompiledStage.stage = stage.stage;
-	outCompiledStage.format = IsSpirVTarget(options.Target)
+	CookedStageBuild compiledStage;
+	compiledStage.stage = stage.stage;
+	compiledStage.format = IsSpirVTarget(options.Target)
 		? CookedShaderBinaryFormat::SpirV
 		: CookedShaderBinaryFormat::Dxil;
-	outCompiledStage.sourcePath = stage.sourcePath.generic_string();
-	outCompiledStage.entryPoint = stage.entryPoint;
-	outCompiledStage.debugArtifact = Paths::MakeProjectRelativeString(compileResult.GetDebugArtifactPath());
-	outCompiledStage.backendName.assign(backend.GetBackendName());
-	outCompiledStage.codegenTarget.assign(GetShaderTargetName(options.Target));
-	outCompiledStage.backendVersion = backend.GetBackendVersion();
-	outCompiledStage.bytecode.assign(bytecodeBegin, bytecodeBegin + bytecode.Size);
-	outCompiledStage.bytecodeHash = Hash::Fnv1a64(outCompiledStage.bytecode.data(), outCompiledStage.bytecode.size());
-	outCompiledStage.reflection = compileResult.TakeReflection();
+	compiledStage.sourcePath = stage.sourcePath.generic_string();
+	compiledStage.entryPoint = stage.entryPoint;
+	compiledStage.debugArtifact = Paths::MakeProjectRelativeString(compiledShader.GetDebugArtifactPath());
+	compiledStage.backendName.assign(backend.GetBackendName());
+	compiledStage.codegenTarget.assign(GetShaderTargetName(options.Target));
+	compiledStage.backendVersion = backend.GetBackendVersion();
+	compiledStage.bytecode.assign(bytecodeBegin, bytecodeBegin + bytecode.Size);
+	compiledStage.bytecodeHash = Hash::Fnv1a64(compiledStage.bytecode.data(), compiledStage.bytecode.size());
+	compiledStage.reflection = compiledShader.TakeReflection();
 	if (outDebugArtifacts != nullptr)
 	{
-		*outDebugArtifacts = compileResult.TakeDebugArtifacts();
+		*outDebugArtifacts = compiledShader.TakeDebugArtifacts();
 	}
-	outErrorMessage.clear();
-	return true;
+	return compiledStage;
 }

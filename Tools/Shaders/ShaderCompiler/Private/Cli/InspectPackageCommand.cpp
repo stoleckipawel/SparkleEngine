@@ -3,6 +3,7 @@
 #include "Cli/InspectPackageCommand.h"
 
 #include "Constants/ShaderCompilerConstants.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Inspection/CookedPackageInspection.h"
 
@@ -12,15 +13,18 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 {
 	if (args.size() != 1)
 	{
-		std::cerr << "ShaderCompiler: inspect-package requires <path>\n";
+		std::cerr << "ShaderCompiler: inspect-package expects <path>\n";
 		return kExitCodeUsage;
 	}
 
 	InspectedCookedShaderPackage package;
-	std::string errorMessage;
-	if (!CookedPackageInspection::Inspect(std::filesystem::path(std::string(args[0])), package, errorMessage))
+	try
 	{
-		std::cerr << "ShaderCompiler: failed to inspect package - " << errorMessage << "\n";
+		package = CookedPackageInspection::Inspect(std::filesystem::path(std::string(args[0])));
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		std::cerr << "ShaderCompiler: failed to inspect package - " << error.what() << "\n";
 		return kExitCodeUsage;
 	}
 

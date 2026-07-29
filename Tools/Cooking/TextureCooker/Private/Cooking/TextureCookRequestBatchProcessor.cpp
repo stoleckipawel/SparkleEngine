@@ -30,20 +30,23 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 	}
 
 	constexpr std::size_t textureCookMemoryBudget = 1024ull * 1024ull * 1024ull;
-	TextureCookBatchExecutionResult execution = TextureCookBatchExecutor::Execute(
+	std::vector<TextureCookBatchItemResult> results = TextureCookBatchExecutor::Execute(
 	    requests,
 	    textureCookMemoryBudget);
-	if (!ReportFailures(requests, execution.Items, execution.Succeeded))
+	if (ReportFailures(requests, results) != 0)
 	{
-		CleanupStagedOutputs(execution.Items);
+		CleanupStagedOutputs(results);
 		return TextureCookerConstants::ExitCookFailed;
 	}
 
-	std::string publishError;
-	if (!PublishGeneration(requests, execution.Items, publishError))
+	try
 	{
-		CleanupStagedOutputs(execution.Items);
-		ToolConsole::Error("Failed to publish texture cook generation: " + publishError);
+		PublishGeneration(requests, results);
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		CleanupStagedOutputs(results);
+		ToolConsole::Error("Failed to publish texture cook generation: " + std::string(error.what()));
 		return TextureCookerConstants::ExitCookFailed;
 	}
 
@@ -55,37 +58,35 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 	return TextureCookerConstants::ExitSuccess;
 }
 
-bool TextureCookRequestBatchProcessor::ReportFailures(
+std::size_t TextureCookRequestBatchProcessor::ReportFailures(
     const std::vector<TextureCookRequest>& requests,
-    const std::vector<TextureCookBatchItemResult>& results,
-    bool batchSucceeded)
+    const std::vector<TextureCookBatchItemResult>& results)
 {
-	bool succeeded = batchSucceeded;
+	std::size_t failureCount = 0;
 	for (std::size_t index = 0; index < requests.size(); ++index)
 	{
 		const TextureCookBatchItemResult& result = results[index];
-		if (result.Succeeded)
+		if (result.CookResult.GetOutcome() == TaskOutcome::Succeeded)
 		{
 			continue;
 		}
 
-		succeeded = false;
+		++failureCount;
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
 		    "Texture cook failed",
 		    {ToolConsole::Field("assetId", Formatting::FormatHexUInt64(requests[index].assetId)),
 		     ToolConsole::PathField("source", requests[index].sourcePath),
-		     ToolConsole::QuotedField("reason", result.Diagnostic)});
+		     ToolConsole::QuotedField("reason", result.CookResult.GetMessage())});
 	}
 
-	return succeeded;
+	return failureCount;
 }
 
-bool TextureCookRequestBatchProcessor::PublishGeneration(
+void TextureCookRequestBatchProcessor::PublishGeneration(
     const std::vector<TextureCookRequest>& requests,
-    const std::vector<TextureCookBatchItemResult>& results,
-    std::string& outErrorMessage)
+    const std::vector<TextureCookBatchItemResult>& results)
 {
 	std::vector<Files::FilePublication> publication;
 	publication.reserve(requests.size());
@@ -94,7 +95,11 @@ bool TextureCookRequestBatchProcessor::PublishGeneration(
 		publication.push_back({results[index].StagedOutputPath, requests[index].outputPath});
 	}
 
-	return Files::TryPublishFileSet(publication, outErrorMessage);
+	std::string fileError;
+	if (!Files::TryPublishFileSet(publication, fileError))
+	{
+		throw Diagnostics::Error(std::move(fileError));
+	}
 }
 
 void TextureCookRequestBatchProcessor::CleanupStagedOutputs(

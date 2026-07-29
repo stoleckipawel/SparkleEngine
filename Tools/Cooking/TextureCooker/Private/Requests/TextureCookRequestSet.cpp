@@ -18,6 +18,22 @@ bool TextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRe
 	       TextureCookPoliciesMatch(lhs.policy, rhs.policy);
 }
 
+void ValidateTextureCookRequest(const TextureCookRequest& request)
+{
+	if (request.assetId == InvalidTextureAssetId)
+	{
+		throw Diagnostics::Error("Texture cook request has an invalid asset id.");
+	}
+	if (request.sourcePath.empty())
+	{
+		throw Diagnostics::Error("Texture cook request has no source path.");
+	}
+	if (request.outputPath.empty())
+	{
+		throw Diagnostics::Error("Texture cook request has no output path.");
+	}
+}
+
 void TextureCookRequestSet::Clear() noexcept
 {
 	requestsById.clear();
@@ -26,6 +42,7 @@ void TextureCookRequestSet::Clear() noexcept
 
 void TextureCookRequestSet::Add(const TextureCookRequest& request)
 {
+	ValidateTextureCookRequest(request);
 	const auto existingRequest = requestsById.find(request.assetId);
 	if (existingRequest == requestsById.end())
 	{

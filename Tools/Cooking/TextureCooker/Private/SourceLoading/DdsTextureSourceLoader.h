@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <filesystem>
-#include <string>
 #include <vector>
 
 #include <dxgiformat.h>
@@ -13,7 +12,7 @@ class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 {
   public:
 	bool SupportsFormat(TextureSourceFormat format) const noexcept override;
-	TextureLoadResult Load(const std::filesystem::path& sourcePath, std::string& outErrorMessage) const override;
+	TextureLoadResult Load(const std::filesystem::path& sourcePath) const override;
 
   private:
 	struct DdsPixelFormat
@@ -75,21 +74,19 @@ class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 		       (static_cast<std::uint32_t>(static_cast<unsigned char>(d)) << 24u);
 	}
 
-	static DdsHeader ReadHeader(const std::vector<std::uint8_t>& fileBytes, std::string& outErrorMessage);
+	static DdsHeader ReadHeader(const std::vector<std::uint8_t>& fileBytes);
 	static bool HasDx10Header(const DdsHeader& header) noexcept;
-	static DdsHeaderDx10 ReadDx10Header(const std::vector<std::uint8_t>& fileBytes, std::string& outErrorMessage);
-	static bool ValidateHeader(
+	static DdsHeaderDx10 ReadDx10Header(const std::vector<std::uint8_t>& fileBytes);
+	static void ValidateHeader(
 	    const DdsHeader& header,
 	    const DdsHeaderDx10* dx10Header,
-	    const std::filesystem::path& resolvedPath,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& resolvedPath);
 	static DXGI_FORMAT ResolveDxgiFormat(
 	    const DdsHeader& header,
 	    const DdsHeaderDx10* dx10Header,
-	    const std::filesystem::path& resolvedPath,
-	    std::string& outErrorMessage);
-	static std::uint32_t ResolveBitsPerPixel(DXGI_FORMAT format, const std::filesystem::path& resolvedPath, std::string& outErrorMessage);
-	static std::uint32_t ResolveBlockSize(DXGI_FORMAT format, const std::filesystem::path& resolvedPath, std::string& outErrorMessage);
+	    const std::filesystem::path& resolvedPath);
+	static std::uint32_t ResolveBitsPerPixel(DXGI_FORMAT format, const std::filesystem::path& resolvedPath);
+	static std::uint32_t ResolveBlockSize(DXGI_FORMAT format, const std::filesystem::path& resolvedPath);
 	static std::uint32_t ResolveMipCount(const DdsHeader& header) noexcept;
 	static bool IsCubemap(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept;
 	static std::uint32_t ResolveArraySize(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept;
@@ -97,20 +94,17 @@ class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 	static std::uint32_t ComputeRowPitch(
 	    DXGI_FORMAT format,
 	    std::uint32_t width,
-	    const std::filesystem::path& resolvedPath,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& resolvedPath);
 	static std::uint32_t ComputeSlicePitch(
 	    DXGI_FORMAT format,
 	    std::uint32_t width,
 	    std::uint32_t height,
-	    const std::filesystem::path& resolvedPath,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& resolvedPath);
 	static std::size_t ResolvePixelDataOffset(const DdsHeader& header) noexcept;
 	static TextureLoadResult BuildLoadResult(
 	    const std::vector<std::uint8_t>& fileBytes,
 	    const DdsHeader& header,
 	    const DdsHeaderDx10* dx10Header,
 	    DXGI_FORMAT dxgiFormat,
-	    const std::filesystem::path& resolvedPath,
-	    std::string& outErrorMessage);
+	    const std::filesystem::path& resolvedPath);
 };

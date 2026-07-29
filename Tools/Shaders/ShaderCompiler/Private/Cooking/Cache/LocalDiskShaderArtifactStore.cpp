@@ -3,6 +3,7 @@
 #include "Cooking/Cache/LocalDiskShaderArtifactStore.h"
 
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "ShaderReflection.h"
 
 #include <chrono>
@@ -13,14 +14,12 @@ std::filesystem::path LocalDiskShaderArtifactStore::BuildArtifactPath(const Shad
 	return m_rootDirectory / hex.substr(0, 2) / (hex + ".bin");
 }
 
-bool LocalDiskShaderArtifactStore::Serialize(
-	const CookedStageBuild& build,
-	std::vector<std::uint8_t>& outBytes,
-	std::string& outErrorMessage)
+std::vector<std::uint8_t> LocalDiskShaderArtifactStore::Serialize(const CookedStageBuild& build)
 {
-	outBytes.clear();
-	outBytes.reserve(build.bytecode.size() + 256);
-	Files::BinaryBufferWriter writer(outBytes);
+	std::vector<std::uint8_t> bytes;
+	bytes.reserve(build.bytecode.size() + 256);
+	Files::BinaryBufferWriter writer(bytes);
+	std::string serializationError;
 
 	writer.WriteValue(kFormatMagic);
 	writer.WriteValue(kFormatVersion);
@@ -29,39 +28,31 @@ bool LocalDiskShaderArtifactStore::Serialize(
 	writer.WriteValue(build.bytecodeHash);
 	writer.WriteValue(build.backendVersion);
 
-	if (!writer.WriteStringWithUInt32Length(build.sourcePath, outErrorMessage) ||
-		!writer.WriteStringWithUInt32Length(build.entryPoint, outErrorMessage) ||
-		!writer.WriteStringWithUInt32Length(build.debugArtifact, outErrorMessage) ||
-		!writer.WriteStringWithUInt32Length(build.backendName, outErrorMessage))
+	if (!writer.WriteStringWithUInt32Length(build.sourcePath, serializationError) ||
+		!writer.WriteStringWithUInt32Length(build.entryPoint, serializationError) ||
+		!writer.WriteStringWithUInt32Length(build.debugArtifact, serializationError) ||
+		!writer.WriteStringWithUInt32Length(build.backendName, serializationError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(serializationError));
 	}
 
 	if (build.bytecode.size() > static_cast<std::size_t>((std::numeric_limits<std::uint32_t>::max)()))
 	{
-		outErrorMessage = "Cache serialization failed: bytecode too large";
-		return false;
+		throw Diagnostics::Error("Cache serialization failed: bytecode too large");
 	}
 
 	const std::uint32_t bytecodeSize = static_cast<std::uint32_t>(build.bytecode.size());
 	writer.WriteValue(bytecodeSize);
 	writer.WriteBytes(std::span<const std::uint8_t>(build.bytecode.data(), build.bytecode.size()));
 
-	if (!SerializeReflection(build.reflection, writer, outErrorMessage))
-	{
-		return false;
-	}
-
-	outErrorMessage.clear();
-	return true;
+	SerializeReflection(build.reflection, writer);
+	return bytes;
 }
 
-bool LocalDiskShaderArtifactStore::Deserialize(
-	std::span<const std::uint8_t> bytes,
-	CookedStageBuild& outBuild,
-	std::string& outErrorMessage)
+CookedStageBuild LocalDiskShaderArtifactStore::Deserialize(std::span<const std::uint8_t> bytes)
 {
 	Files::BinarySpanReader reader(bytes);
+	std::string deserializationError;
 	std::uint32_t magic = 0;
 	std::uint32_t version = 0;
 	std::uint16_t stage = 0;
@@ -69,18 +60,16 @@ bool LocalDiskShaderArtifactStore::Deserialize(
 	std::uint64_t bytecodeHash = 0;
 	std::uint64_t backendVersion = 0;
 
-	if (!reader.ReadValue(magic, outErrorMessage) || !reader.ReadValue(version, outErrorMessage) ||
-		!reader.ReadValue(stage, outErrorMessage) || !reader.ReadValue(format, outErrorMessage) ||
-		!reader.ReadValue(bytecodeHash, outErrorMessage) || !reader.ReadValue(backendVersion, outErrorMessage))
+	if (!reader.ReadValue(magic, deserializationError) || !reader.ReadValue(version, deserializationError) ||
+		!reader.ReadValue(stage, deserializationError) || !reader.ReadValue(format, deserializationError) ||
+		!reader.ReadValue(bytecodeHash, deserializationError) || !reader.ReadValue(backendVersion, deserializationError))
 	{
-		outErrorMessage = "Cache deserialize failed: truncated header";
-		return false;
+		throw Diagnostics::Error("Cache deserialize failed: truncated header");
 	}
 
 	if (magic != kFormatMagic || version != kFormatVersion)
 	{
-		outErrorMessage = "Cache deserialize failed: unsupported artifact format";
-		return false;
+		throw Diagnostics::Error("Cache deserialize failed: unsupported artifact format");
 	}
 
 	CookedStageBuild build;
@@ -89,87 +78,72 @@ bool LocalDiskShaderArtifactStore::Deserialize(
 	build.bytecodeHash = bytecodeHash;
 	build.backendVersion = backendVersion;
 
-	if (!reader.ReadStringWithUInt32Length(build.sourcePath, outErrorMessage) || !reader.ReadStringWithUInt32Length(build.entryPoint, outErrorMessage) ||
-		!reader.ReadStringWithUInt32Length(build.debugArtifact, outErrorMessage) || !reader.ReadStringWithUInt32Length(build.backendName, outErrorMessage))
+	if (!reader.ReadStringWithUInt32Length(build.sourcePath, deserializationError) ||
+	    !reader.ReadStringWithUInt32Length(build.entryPoint, deserializationError) ||
+		!reader.ReadStringWithUInt32Length(build.debugArtifact, deserializationError) ||
+	    !reader.ReadStringWithUInt32Length(build.backendName, deserializationError))
 	{
-		outErrorMessage = "Cache deserialize failed: truncated string payload";
-		return false;
+		throw Diagnostics::Error("Cache deserialize failed: truncated string payload");
 	}
 
 	std::uint32_t bytecodeSize = 0;
 	std::span<const std::uint8_t> bytecodeBytes;
-	if (!reader.ReadValue(bytecodeSize, outErrorMessage) || !reader.ReadBytes(bytecodeSize, bytecodeBytes, outErrorMessage))
+	if (!reader.ReadValue(bytecodeSize, deserializationError) ||
+	    !reader.ReadBytes(bytecodeSize, bytecodeBytes, deserializationError))
 	{
-		outErrorMessage = "Cache deserialize failed: truncated bytecode payload";
-		return false;
+		throw Diagnostics::Error("Cache deserialize failed: truncated bytecode payload");
 	}
 
 	build.bytecode.assign(bytecodeBytes.begin(), bytecodeBytes.end());
 
-	if (!DeserializeReflection(reader, build.reflection, outErrorMessage))
-	{
-		return false;
-	}
-
-	outBuild = std::move(build);
-	outErrorMessage.clear();
-	return true;
+	DeserializeReflection(reader, build.reflection);
+	return build;
 }
 
-bool LocalDiskShaderArtifactStore::TryGet(
-	const ShaderCacheKey& key,
-	CookedStageBuild& outBuild,
-	std::string& outErrorMessage) const
+std::optional<CookedStageBuild> LocalDiskShaderArtifactStore::Find(const ShaderCacheKey& key) const
 {
 	std::vector<std::uint8_t> bytes;
 	const std::filesystem::path artifactPath = BuildArtifactPath(key);
 	if (!std::filesystem::exists(artifactPath))
 	{
-		outErrorMessage.clear();
-		return false;
+		return std::nullopt;
 	}
 
-	if (!Files::TryReadAllBytes(artifactPath, bytes, outErrorMessage))
+	std::string fileError;
+	if (!Files::TryReadAllBytes(artifactPath, bytes, fileError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(fileError));
 	}
 
-	return Deserialize(bytes, outBuild, outErrorMessage);
+	return Deserialize(bytes);
 }
 
-bool LocalDiskShaderArtifactStore::Put(
+void LocalDiskShaderArtifactStore::Put(
 	const ShaderCacheKey& key,
-	const CookedStageBuild& build,
-	std::string& outErrorMessage)
+	const CookedStageBuild& build)
 {
-	std::vector<std::uint8_t> bytes;
-	if (!Serialize(build, bytes, outErrorMessage))
-	{
-		return false;
-	}
+	std::string fileError;
+	const std::vector<std::uint8_t> bytes = Serialize(build);
 
 	const std::filesystem::path artifactPath = BuildArtifactPath(key);
 	const auto nowTicks = std::chrono::steady_clock::now().time_since_epoch().count();
 	const std::filesystem::path tempPath = Files::BuildTemporaryPath(artifactPath, "." + std::to_string(nowTicks) + ".tmp");
-	if (!Files::TryWriteAllBytes(tempPath, bytes, outErrorMessage))
+	if (!Files::TryWriteAllBytes(tempPath, bytes, fileError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(fileError));
 	}
 
-	if (!Files::TryFinalizeTemporaryFileIfMissing(tempPath, artifactPath, outErrorMessage))
+	if (!Files::TryFinalizeTemporaryFileIfMissing(tempPath, artifactPath, fileError))
 	{
-		return false;
+		throw Diagnostics::Error(std::move(fileError));
 	}
-
-	outErrorMessage.clear();
-	return true;
 }
 
-bool LocalDiskShaderArtifactStore::SerializeReflection(
+void LocalDiskShaderArtifactStore::SerializeReflection(
     const ShaderReflection& reflection,
-    Files::BinaryBufferWriter& writer,
-    std::string& outErrorMessage)
+    Files::BinaryBufferWriter& writer)
 {
+	std::string serializationError;
 	writer.WriteValue(reflection.ThreadGroupSize[0]);
 	writer.WriteValue(reflection.ThreadGroupSize[1]);
 	writer.WriteValue(reflection.ThreadGroupSize[2]);
@@ -179,9 +153,9 @@ bool LocalDiskShaderArtifactStore::SerializeReflection(
 	writer.WriteValue(static_cast<std::uint32_t>(reflection.Bindings.size()));
 	for (const ShaderReflectionResourceBinding& b : reflection.Bindings)
 	{
-		if (!writer.WriteStringWithUInt32Length(b.Name, outErrorMessage))
+		if (!writer.WriteStringWithUInt32Length(b.Name, serializationError))
 		{
-			return false;
+			throw Diagnostics::Error(std::move(serializationError));
 		}
 		writer.WriteValue(b.Kind);
 		writer.WriteValue(b.Dimension);
@@ -196,17 +170,17 @@ bool LocalDiskShaderArtifactStore::SerializeReflection(
 	writer.WriteValue(static_cast<std::uint32_t>(reflection.ConstantBuffers.size()));
 	for (const ShaderReflectionConstantBuffer& cb : reflection.ConstantBuffers)
 	{
-		if (!writer.WriteStringWithUInt32Length(cb.Name, outErrorMessage))
+		if (!writer.WriteStringWithUInt32Length(cb.Name, serializationError))
 		{
-			return false;
+			throw Diagnostics::Error(std::move(serializationError));
 		}
 		writer.WriteValue(cb.SizeInBytes);
 		writer.WriteValue(static_cast<std::uint32_t>(cb.Members.size()));
 		for (const ShaderReflectionConstantBufferMember& m : cb.Members)
 		{
-			if (!writer.WriteStringWithUInt32Length(m.Name, outErrorMessage))
+			if (!writer.WriteStringWithUInt32Length(m.Name, serializationError))
 			{
-				return false;
+				throw Diagnostics::Error(std::move(serializationError));
 			}
 			writer.WriteValue(m.OffsetInBytes);
 			writer.WriteValue(m.SizeInBytes);
@@ -221,9 +195,9 @@ bool LocalDiskShaderArtifactStore::SerializeReflection(
 	writer.WriteValue(static_cast<std::uint32_t>(reflection.InputElements.size()));
 	for (const ShaderReflectionInputElement& e : reflection.InputElements)
 	{
-		if (!writer.WriteStringWithUInt32Length(e.Semantic, outErrorMessage))
+		if (!writer.WriteStringWithUInt32Length(e.Semantic, serializationError))
 		{
-			return false;
+			throw Diagnostics::Error(std::move(serializationError));
 		}
 		writer.WriteValue(e.SemanticIndex);
 		writer.WriteValue(e.Location);
@@ -242,131 +216,145 @@ bool LocalDiskShaderArtifactStore::SerializeReflection(
 	writer.WriteValue(static_cast<std::uint32_t>(reflection.SpecializationConstants.size()));
 	for (const ShaderReflectionSpecializationConstant& s : reflection.SpecializationConstants)
 	{
-		if (!writer.WriteStringWithUInt32Length(s.Name, outErrorMessage))
+		if (!writer.WriteStringWithUInt32Length(s.Name, serializationError))
 		{
-			return false;
+			throw Diagnostics::Error(std::move(serializationError));
 		}
 		writer.WriteValue(s.ConstantId);
 		writer.WriteValue(s.DefaultValueBits);
 		writer.WriteValue(s.ScalarType);
 	}
 
-	return true;
 }
 
-bool LocalDiskShaderArtifactStore::DeserializeReflection(
+void LocalDiskShaderArtifactStore::DeserializeReflection(
 	Files::BinarySpanReader& reader,
-    ShaderReflection& outReflection,
-    std::string& outErrorMessage)
+    ShaderReflection& outReflection)
 {
-	auto fail = [&](const char* msg) {
-		outErrorMessage = msg;
-		return false;
+	std::string deserializationError;
+	auto reject = [](const char* message) {
+		throw Diagnostics::Error(message);
 	};
 
-	if (!reader.ReadValue(outReflection.ThreadGroupSize[0], outErrorMessage) ||
-	    !reader.ReadValue(outReflection.ThreadGroupSize[1], outErrorMessage) ||
-	    !reader.ReadValue(outReflection.ThreadGroupSize[2], outErrorMessage) || !reader.ReadValue(outReflection.EntryFlags, outErrorMessage) ||
-	    !reader.ReadValue(outReflection.WaveSize, outErrorMessage))
+	if (!reader.ReadValue(outReflection.ThreadGroupSize[0], deserializationError) ||
+	    !reader.ReadValue(outReflection.ThreadGroupSize[1], deserializationError) ||
+	    !reader.ReadValue(outReflection.ThreadGroupSize[2], deserializationError) ||
+	    !reader.ReadValue(outReflection.EntryFlags, deserializationError) ||
+	    !reader.ReadValue(outReflection.WaveSize, deserializationError))
 	{
-		return fail("Cache deserialize failed: truncated reflection header");
+		reject("Cache deserialize failed: truncated reflection header");
 	}
 
 	std::uint32_t bindingCount = 0;
-	if (!reader.ReadValue(bindingCount, outErrorMessage))
+	if (!reader.ReadValue(bindingCount, deserializationError))
 	{
-		return fail("Cache deserialize failed: truncated bindings count");
+		reject("Cache deserialize failed: truncated bindings count");
 	}
 	outReflection.Bindings.resize(bindingCount);
 	for (std::uint32_t i = 0; i < bindingCount; ++i)
 	{
 		ShaderReflectionResourceBinding& b = outReflection.Bindings[i];
 		std::uint8_t isReadOnly = 0;
-		if (!reader.ReadStringWithUInt32Length(b.Name, outErrorMessage) || !reader.ReadValue(b.Kind, outErrorMessage) || !reader.ReadValue(b.Dimension, outErrorMessage) ||
-		    !reader.ReadValue(isReadOnly, outErrorMessage) || !reader.ReadValue(b.Set, outErrorMessage) || !reader.ReadValue(b.Slot, outErrorMessage) ||
-		    !reader.ReadValue(b.ArrayCount, outErrorMessage) || !reader.ReadValue(b.SizeInBytes, outErrorMessage) ||
-		    !reader.ReadValue(b.ConstantBufferIndex, outErrorMessage))
+		if (!reader.ReadStringWithUInt32Length(b.Name, deserializationError) ||
+		    !reader.ReadValue(b.Kind, deserializationError) ||
+		    !reader.ReadValue(b.Dimension, deserializationError) ||
+		    !reader.ReadValue(isReadOnly, deserializationError) ||
+		    !reader.ReadValue(b.Set, deserializationError) ||
+		    !reader.ReadValue(b.Slot, deserializationError) ||
+		    !reader.ReadValue(b.ArrayCount, deserializationError) ||
+		    !reader.ReadValue(b.SizeInBytes, deserializationError) ||
+		    !reader.ReadValue(b.ConstantBufferIndex, deserializationError))
 		{
-			return fail("Cache deserialize failed: truncated binding record");
+			reject("Cache deserialize failed: truncated binding record");
 		}
 		b.IsReadOnly = isReadOnly != 0;
 	}
 
 	std::uint32_t cbCount = 0;
-	if (!reader.ReadValue(cbCount, outErrorMessage))
+	if (!reader.ReadValue(cbCount, deserializationError))
 	{
-		return fail("Cache deserialize failed: truncated CB count");
+		reject("Cache deserialize failed: truncated CB count");
 	}
 	outReflection.ConstantBuffers.resize(cbCount);
 	for (std::uint32_t i = 0; i < cbCount; ++i)
 	{
 		ShaderReflectionConstantBuffer& cb = outReflection.ConstantBuffers[i];
 		std::uint32_t memberCount = 0;
-		if (!reader.ReadStringWithUInt32Length(cb.Name, outErrorMessage) || !reader.ReadValue(cb.SizeInBytes, outErrorMessage) || !reader.ReadValue(memberCount, outErrorMessage))
+		if (!reader.ReadStringWithUInt32Length(cb.Name, deserializationError) ||
+		    !reader.ReadValue(cb.SizeInBytes, deserializationError) ||
+		    !reader.ReadValue(memberCount, deserializationError))
 		{
-			return fail("Cache deserialize failed: truncated CB record");
+			reject("Cache deserialize failed: truncated CB record");
 		}
 		cb.Members.resize(memberCount);
 		for (std::uint32_t j = 0; j < memberCount; ++j)
 		{
 			ShaderReflectionConstantBufferMember& m = cb.Members[j];
-			if (!reader.ReadStringWithUInt32Length(m.Name, outErrorMessage) || !reader.ReadValue(m.OffsetInBytes, outErrorMessage) ||
-			    !reader.ReadValue(m.SizeInBytes, outErrorMessage) || !reader.ReadValue(m.ArrayCount, outErrorMessage) ||
-			    !reader.ReadValue(m.ArrayStrideInBytes, outErrorMessage) || !reader.ReadValue(m.ScalarType, outErrorMessage) ||
-			    !reader.ReadValue(m.RowCount, outErrorMessage) || !reader.ReadValue(m.ColumnCount, outErrorMessage))
+			if (!reader.ReadStringWithUInt32Length(m.Name, deserializationError) ||
+			    !reader.ReadValue(m.OffsetInBytes, deserializationError) ||
+			    !reader.ReadValue(m.SizeInBytes, deserializationError) ||
+			    !reader.ReadValue(m.ArrayCount, deserializationError) ||
+			    !reader.ReadValue(m.ArrayStrideInBytes, deserializationError) ||
+			    !reader.ReadValue(m.ScalarType, deserializationError) ||
+			    !reader.ReadValue(m.RowCount, deserializationError) ||
+			    !reader.ReadValue(m.ColumnCount, deserializationError))
 			{
-				return fail("Cache deserialize failed: truncated CB member");
+				reject("Cache deserialize failed: truncated CB member");
 			}
 		}
 	}
 
 	std::uint32_t inputCount = 0;
-	if (!reader.ReadValue(inputCount, outErrorMessage))
+	if (!reader.ReadValue(inputCount, deserializationError))
 	{
-		return fail("Cache deserialize failed: truncated input count");
+		reject("Cache deserialize failed: truncated input count");
 	}
 	outReflection.InputElements.resize(inputCount);
 	for (std::uint32_t i = 0; i < inputCount; ++i)
 	{
 		ShaderReflectionInputElement& e = outReflection.InputElements[i];
-		if (!reader.ReadStringWithUInt32Length(e.Semantic, outErrorMessage) || !reader.ReadValue(e.SemanticIndex, outErrorMessage) || !reader.ReadValue(e.Location, outErrorMessage) ||
-		    !reader.ReadValue(e.ScalarType, outErrorMessage) || !reader.ReadValue(e.ComponentCount, outErrorMessage))
+		if (!reader.ReadStringWithUInt32Length(e.Semantic, deserializationError) ||
+		    !reader.ReadValue(e.SemanticIndex, deserializationError) ||
+		    !reader.ReadValue(e.Location, deserializationError) ||
+		    !reader.ReadValue(e.ScalarType, deserializationError) ||
+		    !reader.ReadValue(e.ComponentCount, deserializationError))
 		{
-			return fail("Cache deserialize failed: truncated input element");
+			reject("Cache deserialize failed: truncated input element");
 		}
 	}
 
 	std::uint32_t pushCount = 0;
-	if (!reader.ReadValue(pushCount, outErrorMessage))
+	if (!reader.ReadValue(pushCount, deserializationError))
 	{
-		return fail("Cache deserialize failed: truncated push count");
+		reject("Cache deserialize failed: truncated push count");
 	}
 	outReflection.PushConstants.resize(pushCount);
 	for (std::uint32_t i = 0; i < pushCount; ++i)
 	{
 		ShaderReflectionPushConstantRange& r = outReflection.PushConstants[i];
-		if (!reader.ReadValue(r.OffsetInBytes, outErrorMessage) || !reader.ReadValue(r.SizeInBytes, outErrorMessage) ||
-		    !reader.ReadValue(r.VisibilityMask, outErrorMessage))
+		if (!reader.ReadValue(r.OffsetInBytes, deserializationError) ||
+		    !reader.ReadValue(r.SizeInBytes, deserializationError) ||
+		    !reader.ReadValue(r.VisibilityMask, deserializationError))
 		{
-			return fail("Cache deserialize failed: truncated push range");
+			reject("Cache deserialize failed: truncated push range");
 		}
 	}
 
 	std::uint32_t specCount = 0;
-	if (!reader.ReadValue(specCount, outErrorMessage))
+	if (!reader.ReadValue(specCount, deserializationError))
 	{
-		return fail("Cache deserialize failed: truncated spec count");
+		reject("Cache deserialize failed: truncated spec count");
 	}
 	outReflection.SpecializationConstants.resize(specCount);
 	for (std::uint32_t i = 0; i < specCount; ++i)
 	{
 		ShaderReflectionSpecializationConstant& s = outReflection.SpecializationConstants[i];
-		if (!reader.ReadStringWithUInt32Length(s.Name, outErrorMessage) || !reader.ReadValue(s.ConstantId, outErrorMessage) ||
-		    !reader.ReadValue(s.DefaultValueBits, outErrorMessage) || !reader.ReadValue(s.ScalarType, outErrorMessage))
+		if (!reader.ReadStringWithUInt32Length(s.Name, deserializationError) ||
+		    !reader.ReadValue(s.ConstantId, deserializationError) ||
+		    !reader.ReadValue(s.DefaultValueBits, deserializationError) ||
+		    !reader.ReadValue(s.ScalarType, deserializationError))
 		{
-			return fail("Cache deserialize failed: truncated spec constant");
+			reject("Cache deserialize failed: truncated spec constant");
 		}
 	}
-
-	return true;
 }

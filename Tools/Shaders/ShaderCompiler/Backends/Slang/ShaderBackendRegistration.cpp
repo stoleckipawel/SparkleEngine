@@ -53,7 +53,6 @@ ShaderBackendRegistration GetSlangBackendRegistration() noexcept
 	return ShaderBackendRegistration{
 	    .Descriptor = ShaderBackendStaticDescriptor{
 	        .Name = "slang",
-	        .IsRequired = true,
 	        .SourceExtensions = std::span<const std::string_view>(kSlangSourceExtensions.data(), kSlangSourceExtensions.size()),
 	        .CodegenTargets = std::span<const ShaderTarget>(kSlangCodegenTargets.data(), kSlangCodegenTargets.size()),
 	        .BinaryFormats = std::span<const std::string_view>(kSlangBinaryFormats.data(), kSlangBinaryFormats.size()),

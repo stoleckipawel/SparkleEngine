@@ -3,9 +3,7 @@
 #include "Pipeline/WorkingTexture.h"
 #include "TextureCookRequestList.h"
 
-#include <string>
-
 namespace TextureCookPipeline
 {
-	bool ApplyMipPolicy(const TextureCookRequest& request, WorkingTexture& workingTexture, std::string& outErrorMessage);
+	void ApplyMipPolicy(const TextureCookRequest& request, WorkingTexture& workingTexture);
 }

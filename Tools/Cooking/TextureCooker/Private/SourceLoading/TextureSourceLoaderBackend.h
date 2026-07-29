@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <filesystem>
-#include <string>
 
 enum class TextureSourceFormat : std::uint8_t
 {
@@ -21,5 +20,5 @@ class TextureSourceLoaderBackend
 	virtual ~TextureSourceLoaderBackend() = default;
 
 	virtual bool SupportsFormat(TextureSourceFormat format) const noexcept = 0;
-	virtual TextureLoadResult Load(const std::filesystem::path& sourcePath, std::string& outErrorMessage) const = 0;
+	virtual TextureLoadResult Load(const std::filesystem::path& sourcePath) const = 0;
 };

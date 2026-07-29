@@ -7,6 +7,7 @@
 #include "Cli/CookShadersArgumentParser.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/ShaderPackageCooker.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "ToolConsole.h"
 
 #include <iostream>
@@ -26,7 +27,7 @@ class CookShadersCommandExecution final
   private:
 	static std::string FormatTargets(
 	    std::span<const ShaderTarget> targets);
-	static bool RunCookedShaderStats(
+	static void RunCookedShaderStats(
 	    const ShaderPackageCookResult& result);
 };
 
@@ -39,29 +40,33 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	}
 
 	ShaderPackageCookSettings settings;
-	std::string parseErrorMessage;
-	if (!CookShadersArgumentParser::Parse(
-	        args,
-	        settings,
-	        parseErrorMessage))
+	try
+	{
+		settings = CookShadersArgumentParser::Parse(args);
+	}
+	catch (const Diagnostics::Error& error)
 	{
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
 		    "Invalid shader cook arguments",
-		    {ToolConsole::QuotedField("reason", parseErrorMessage)});
+		    {ToolConsole::QuotedField("reason", error.what())});
 		return kExitCodeUsage;
 	}
 
 	ShaderPackageCooker cooker;
-	const ShaderPackageCookResult cookResult = cooker.CookAll(settings);
-	if (!cookResult.Succeeded())
+	ShaderPackageCookResult cookResult;
+	try
+	{
+		cookResult = cooker.CookAll(settings);
+	}
+	catch (const Diagnostics::Error& error)
 	{
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
 		    "Failed to cook shader packages",
-		    {ToolConsole::QuotedField("reason", cookResult.errorMessage)});
+		    {ToolConsole::QuotedField("reason", error.what())});
 		return kExitCodeCookFailure;
 	}
 
@@ -90,8 +95,18 @@ int CookShadersCommandExecution::RunAnalysisPasses(
 	{
 		if (analysisPass == "cooked-shader-stats")
 		{
-			if (!RunCookedShaderStats(result))
+			try
 			{
+				RunCookedShaderStats(result);
+			}
+			catch (const Diagnostics::Error& error)
+			{
+				ToolConsole::Message(
+				    std::cerr,
+				    ToolConsoleSeverity::Error,
+				    "Failed to run analysis pass",
+				    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"),
+				     ToolConsole::QuotedField("reason", error.what())});
 				return kExitCodeCookFailure;
 			}
 			continue;
@@ -125,32 +140,17 @@ std::string CookShadersCommandExecution::FormatTargets(
 	return result;
 }
 
-bool CookShadersCommandExecution::RunCookedShaderStats(
+void CookShadersCommandExecution::RunCookedShaderStats(
     const ShaderPackageCookResult& result)
 {
-	CookedShaderStatsPassResult analysisResult;
-	std::string analysisErrorMessage;
-	if (!CookedShaderStatsPass::WriteCsv(
-	        result.packages,
-	        result.cacheDirectory / "Analysis",
-	        analysisResult,
-	        analysisErrorMessage))
-	{
-		ToolConsole::Message(
-		    std::cerr,
-		    ToolConsoleSeverity::Error,
-		    "Failed to run analysis pass",
-		    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"),
-		     ToolConsole::QuotedField("reason", analysisErrorMessage)});
-		return false;
-	}
+	const CookedShaderStatsReport report =
+	    CookedShaderStatsPass::WriteCsv(result.packages, result.cacheDirectory / "Analysis");
 
 	ToolConsole::Message(
 	    std::cout,
 	    ToolConsoleSeverity::Info,
 	    "Analysis pass wrote output",
 	    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"),
-	     ToolConsole::Field("rows", std::to_string(analysisResult.rowCount)),
-	     ToolConsole::PathField("output", analysisResult.outputPath)});
-	return true;
+	     ToolConsole::Field("rows", std::to_string(report.rowCount)),
+	     ToolConsole::PathField("output", report.outputPath)});
 }

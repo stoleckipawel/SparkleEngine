@@ -5,9 +5,14 @@
 #include "Shaders/Authoring/GlobalShader.h"
 #include "Shaders/ShaderPackageLayoutBuilder.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Diagnostics/Verify.h"
+
 #include <algorithm>
 #include <format>
 #include <unordered_map>
+
+static const auto g_shaderContractCatalogBuilderLogger = Logging::GetOrCreateLogger("ShaderCompiler.ContractCatalogBuilder");
 
 class ShaderContractCatalogAssembly final
 {
@@ -49,8 +54,10 @@ class ShaderContractCatalogAssembly final
 				return stage.packageId == requestedId;
 			case ShaderContractSelectionKind::ShaderId:
 				return stage.shaderName == requestedId;
+			case ShaderContractSelectionKind::RegisteredId:
+				return stage.shaderName == requestedId || stage.packageId == requestedId;
 		}
-		return false;
+		Diagnostics::Fatal(g_shaderContractCatalogBuilderLogger, __FILE__, __LINE__, "Unknown shader contract selection kind.");
 	}
 
 	static bool StageLess(const ShaderContractStage& lhs, const ShaderContractStage& rhs)
@@ -86,8 +93,7 @@ class ShaderContractCatalogAssembly final
 
 ShaderContractCatalog ShaderContractCatalogBuilder::Build(
     ShaderContractSelectionKind selectionKind,
-    std::string_view requestedId,
-    std::string& outErrorMessage)
+    std::string_view requestedId)
 {
 	ShaderContractCatalog catalog;
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
@@ -107,16 +113,11 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(
 		auto packageIt = packageIndices.find(stage.packageId);
 		if (packageIt == packageIndices.end())
 		{
-			PassParameterLayout bindingLayout;
-			if (!ShaderPackageLayoutBuilder::Build(stage.packageId, GlobalShaderRegistry::GetRegistrations(), bindingLayout, outErrorMessage))
-			{
-				return {};
-			}
-
 			ShaderContractPackage package;
 			package.packageId = stage.packageId;
 			package.bindingLayoutId = stage.bindingLayoutId;
-			package.bindingLayout = std::move(bindingLayout);
+			package.bindingLayout =
+			    ShaderPackageLayoutBuilder::Build(stage.packageId, GlobalShaderRegistry::GetRegistrations());
 			package.packageKind = stage.packageKind;
 			package.packageFeatures = stage.packageFeatures;
 			package.rayTracingPayloadSizeInBytes = stage.rayTracingPayloadSizeInBytes;
@@ -166,12 +167,11 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(
 
 	if (selectionKind != ShaderContractSelectionKind::All && catalog.packages.empty())
 	{
-		outErrorMessage = selectionKind == ShaderContractSelectionKind::PackageId
-		    ? std::format("Unknown typed shader package '{}'", requestedId)
-		    : std::format("Unknown registered shader id '{}'", requestedId);
-		return {};
+		const std::string subject = selectionKind == ShaderContractSelectionKind::PackageId
+		    ? "typed shader package"
+		    : selectionKind == ShaderContractSelectionKind::ShaderId ? "registered shader" : "registered shader or package";
+		throw Diagnostics::Error(std::format("Unknown {} '{}'.", subject, requestedId));
 	}
 
-	outErrorMessage.clear();
 	return catalog;
 }
