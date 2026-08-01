@@ -15,6 +15,8 @@ class RendererExternalRuntime final
 	RendererExternalRuntime& operator=(const RendererExternalRuntime&) = delete;
 
 	const RendererBackendConfiguration& GetBackendConfiguration() const noexcept;
+	void BeginSimulationFrame(std::uint64_t frameId) noexcept;
+	void EndSimulationFrame(std::uint64_t frameId) noexcept;
 
   private:
 	Threading::OwnerThread m_owner{"Renderer external runtime"};

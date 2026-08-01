@@ -45,3 +45,4 @@ struct RhiRayTracingCapabilities
 };
 
 SPARKLE_RHI_API const char* RhiRayTracingTopLevelProviderToString(ERhiRayTracingTopLevelProvider provider) noexcept;
+SPARKLE_RHI_API void PopulateStandardRayTracingCapabilityGroups(RhiRayTracingCapabilities& capabilities) noexcept;

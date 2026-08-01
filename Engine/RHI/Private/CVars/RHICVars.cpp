@@ -17,5 +17,15 @@ ConsoleVariable<bool> CVarRayTracingPreferPartitionedTlas(
 
 ConsoleVariable<PixelFormat> CVarBackBufferFormat(
     "r.BackBufferFormat",
-    RhiPresentationDefaults::BackBufferFormat,
+    RhiPresentationDefaults::DefaultBackBufferFormat,
     "Preferred swap chain color format. Device lifetime setting; recreate the renderer to apply.");
+
+ConsoleVariable<std::uint32_t> CVarBackBufferCount(
+    "r.BackBufferCount",
+    RhiPresentationDefaults::DefaultBackBufferCount,
+    "Swap chain image count. Supported values are 2 and 3; recreate the renderer to apply.");
+
+ConsoleVariable<std::uint32_t> CVarMaximumFramesInFlight(
+    "r.MaximumFramesInFlight",
+    RhiPresentationDefaults::DefaultMaximumFramesInFlight,
+    "Maximum submitted frames awaiting GPU retirement. Supported values are 1 through 3 and cannot exceed r.BackBufferCount; recreate the renderer to apply.");

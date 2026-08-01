@@ -76,6 +76,9 @@ bool FrameGraph::IsTextureHistoryValid(FrameGraphTextureHistory history) const n
 void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 {
 	RhiResourceService& resourceService = m_renderHardwareInterface->GetResourceService();
+	const std::uint32_t historyResourceCount = (std::max)(
+	    2u,
+	    m_renderHardwareInterface->GetCapabilities().Presentation.MaximumFramesInFlight);
 	for (TextureHistoryRecord& history : m_textureHistories)
 	{
 		history.usedThisFrame = false;
@@ -137,8 +140,9 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 
 		const FrameGraphTextureDesc& resolvedDesc =
 		    m_resourceRegistry.GetMetadata(history.handles.Current.GetResourceHandle()).textureDesc;
-		for (RhiOwnedResourceHandle& resource : history.resources)
+		for (std::uint32_t historyIndex = 0; historyIndex < historyResourceCount; ++historyIndex)
 		{
+			RhiOwnedResourceHandle& resource = history.resources[historyIndex];
 			if (!resource)
 			{
 				resource = resourceService.CreateTextureResource(
@@ -157,9 +161,9 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 			}
 		}
 
-		history.currentIndex = m_renderHardwareInterface->GetCurrentFrameIndex() % RhiFrameConstants::FramesInFlight;
+		history.currentIndex = static_cast<std::uint32_t>(m_historyFrameIndex % historyResourceCount);
 		history.previousIndex =
-		    (history.currentIndex + RhiFrameConstants::FramesInFlight - 1u) % RhiFrameConstants::FramesInFlight;
+		    (history.currentIndex + historyResourceCount - 1u) % historyResourceCount;
 		const ResourceState previousState = history.states[history.previousIndex];
 		const ResourceState currentState = history.states[history.currentIndex];
 		m_resourceRegistry.SetBoundaryStates(
@@ -187,6 +191,7 @@ void FrameGraph::CommitTextureHistories() const noexcept
 			history.generations[history.currentIndex] = history.generation;
 		}
 	}
+	++m_historyFrameIndex;
 }
 
 void FrameGraph::ReleaseTextureHistories() noexcept

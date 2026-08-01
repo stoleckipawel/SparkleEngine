@@ -24,6 +24,13 @@ enum class ERhiMemoryAllocatorBackend : std::uint8_t
 	VulkanManaged,
 };
 
+enum class ERhiPresentationThrottle : std::uint8_t
+{
+	None = 0,
+	FrameLatencyWaitableObject,
+	SwapChainImageAcquisition,
+};
+
 enum class ERhiBackendVersionSemantic : std::uint8_t
 {
 	Unknown = 0,
@@ -47,9 +54,17 @@ struct RhiUploadReadbackCapabilities
 	bool SupportsReadback = false;
 };
 
+struct RhiPresentationCapabilities
+{
+	std::uint32_t BackBufferCount = 0;
+	std::uint32_t MaximumFramesInFlight = 0;
+	ERhiPresentationThrottle Throttle = ERhiPresentationThrottle::None;
+};
+
 struct RhiDescriptorIndexingCapabilities
 {
 	bool SupportsSampledImageArrayNonUniformIndexing = false;
+	bool SupportsPartiallyBoundDescriptorArrays = false;
 };
 
 struct RhiBackendVersionInfo
@@ -166,6 +181,7 @@ struct RhiCapabilities
 	RhiBindingLimits BindingLimits;
 	RhiDescriptorIndexingCapabilities DescriptorIndexing;
 	RhiUploadReadbackCapabilities UploadReadback;
+	RhiPresentationCapabilities Presentation;
 	std::array<RhiFormatSupport, kRhiCapabilityPixelFormats.size()> FormatSupport = {};
 	RhiBackendDiagnosticsSupport Diagnostics;
 	RhiRayTracingCapabilities RayTracing;

@@ -23,10 +23,12 @@ static const auto g_vulkanCommandRecordingLogger = Logging::GetOrCreateLogger("R
 VulkanCommandRecordingContext::VulkanCommandRecordingContext(
     VulkanRhi& rhi,
     VulkanGpuMemoryAllocator& memoryAllocator,
-    VulkanDescriptorService& descriptorService) noexcept :
+    VulkanDescriptorService& descriptorService,
+    std::uint32_t maximumFramesInFlight) noexcept :
 	m_rhi(&rhi),
 	m_memoryAllocator(&memoryAllocator),
-	m_descriptorService(&descriptorService)
+	m_descriptorService(&descriptorService),
+	m_frames(maximumFramesInFlight)
 {
 	InitializeSlots();
 }
@@ -267,7 +269,7 @@ VulkanCommandRecordingContext::CommandSlot& VulkanCommandRecordingContext::Acqui
 void VulkanCommandRecordingContext::InitializeSlots()
 {
 	for (std::uint32_t frameIndex = 0;
-	     frameIndex < RhiFrameConstants::FramesInFlight;
+	     frameIndex < m_frames.size();
 	     ++frameIndex)
 	{
 		for (std::size_t queueIndex = 0;
@@ -299,7 +301,7 @@ VulkanCommandRecordingContext::CreateSlot(
 
 	slot->Owner = this;
 	slot->QueueType = queueType;
-	slot->FrameSlot = frameIndex % RhiFrameConstants::FramesInFlight;
+	slot->FrameSlot = frameIndex % static_cast<std::uint32_t>(m_frames.size());
 	slot->ContextIndex =
 	    static_cast<std::uint32_t>(frameState.Slots.size());
 
@@ -600,18 +602,17 @@ VulkanCommandRecordingContext::ConsumeClosedLease(
 	    RhiCommandRecordingLeaseAccess::Consume(std::move(lease));
 	auto* const slot =
 	    static_cast<CommandSlot*>(leaseState.State);
-	if (slot == nullptr ||
-	    slot->Owner != this ||
-	    slot->State != SlotState::Closed ||
-	    !leaseState.Closed ||
-	    leaseState.CommandList != slot->CommandList.get() ||
-	    leaseState.QueueType != slot->QueueType ||
-	    leaseState.FrameSlot != slot->FrameSlot ||
-	    leaseState.ContextId.Value != slot->ContextIndex ||
-	    leaseState.Owner.PartitionIndex !=
-	        slot->RecordingOwner.PartitionIndex ||
-	    leaseState.Owner.TaskIdentity !=
-	        slot->RecordingOwner.TaskIdentity)
+	if (slot == nullptr || slot->Owner != this || slot->State != SlotState::Closed ||
+	    !RhiCommandRecordingLeaseAccess::Matches(
+	        leaseState,
+	        RhiCommandRecordingLeaseBackendState{
+	            .State = slot,
+	            .CommandList = slot->CommandList.get(),
+	            .QueueType = slot->QueueType,
+	            .FrameSlot = slot->FrameSlot,
+	            .ContextId = RhiCommandRecordingContextId{.Value = slot->ContextIndex},
+	            .Owner = slot->RecordingOwner,
+	            .Closed = true}))
 	{
 		return nullptr;
 	}
@@ -692,7 +693,7 @@ void VulkanCommandRecordingContext::ReleaseLease(
 	    g_vulkanCommandRecordingLogger,
 	    "Vulkan {} recording contexts exhausted for frame slot {}.",
 	    RhiQueueTypeToString(queueType),
-	    frameIndex % RhiFrameConstants::FramesInFlight);
+	    frameIndex % static_cast<std::uint32_t>(m_frames.size()));
 	std::terminate();
 }
 

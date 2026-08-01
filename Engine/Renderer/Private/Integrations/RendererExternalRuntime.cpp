@@ -8,7 +8,7 @@ RendererExternalRuntime::RendererExternalRuntime() noexcept
 {
 	m_backendConfiguration.BackendApi = ResolveDefaultRhiBackendApi();
 	(void) InitializeSharedStreamlineRuntime(m_backendConfiguration.BackendApi);
-	m_backendConfiguration.ExternalFeatureHooks = GetSharedStreamlineRhiHooks();
+	m_backendConfiguration.D3D12InterposerHooks = GetSharedStreamlineD3D12InterposerHooks();
 }
 
 RendererExternalRuntime::~RendererExternalRuntime() noexcept
@@ -21,4 +21,16 @@ const RendererBackendConfiguration& RendererExternalRuntime::GetBackendConfigura
 {
 	m_owner.AssertAccess();
 	return m_backendConfiguration;
+}
+
+void RendererExternalRuntime::BeginSimulationFrame(std::uint64_t frameId) noexcept
+{
+	m_owner.AssertAccess();
+	SetSharedStreamlineFrameMarker(ERhiFrameLatencyMarker::SimulationStart, frameId);
+}
+
+void RendererExternalRuntime::EndSimulationFrame(std::uint64_t frameId) noexcept
+{
+	m_owner.AssertAccess();
+	SetSharedStreamlineFrameMarker(ERhiFrameLatencyMarker::SimulationEnd, frameId);
 }

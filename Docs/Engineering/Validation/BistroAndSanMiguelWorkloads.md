@@ -26,7 +26,7 @@ The intentional user-facing scene set is:
 
 This trio is recognizable in graphics practice and varied enough to make measurements informative. It is a supported gallery, not three competing flagship narratives.
 
-This workload is the shared proof surface for [the canonical requirements](A_PrincipalRenderingRequirements.md), [the gap assessment](C_CandidateAndRepositoryGapAssessment.md), [the execution roadmap](F_6_12_MonthPrincipalGraphicsRoadmap.md), [the executive direction](G_AdvancedGraphicsEngineExecutiveSummary.md), and [the engineering persona](H_AdvancedGraphicsEngineerPersona.md).
+This workload is the shared proof surface for [the canonical requirements](../../Strategy/PrincipalGraphics/Requirements.md), [the gap assessment](../../Strategy/PrincipalGraphics/GapAssessment.md), [the execution roadmap](../../Strategy/PrincipalGraphics/Roadmap.md), [the executive direction](../../Strategy/PrincipalGraphics/ExecutiveSummary.md), and [the engineering persona](../../Strategy/PrincipalGraphics/EngineerPersona.md).
 
 ## Why Bistro
 

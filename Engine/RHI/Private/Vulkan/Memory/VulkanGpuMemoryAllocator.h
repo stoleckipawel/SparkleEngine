@@ -77,7 +77,6 @@ class VulkanGpuMemoryAllocator final
 	friend class VulkanRenderCommandList;
 	friend class VulkanRenderDeviceServices;
 
-	struct CategoryAggregation;
 	struct Impl;
 	struct PendingAllocationRelease;
 	struct PendingMemoryBlockRelease;
@@ -116,11 +115,6 @@ class VulkanGpuMemoryAllocator final
 	void UnregisterMemoryBlockRecord(VulkanGpuMemoryBlockRecord& record) noexcept;
 	static std::uint32_t ResolveVmaMemoryUsage(RhiMemoryResidencyClass residencyClass) noexcept;
 	static std::uint32_t ResolveVmaAllocationFlags(RhiMemoryResidencyClass residencyClass) noexcept;
-	static CategoryAggregation& FindOrCreateCategoryAggregation(
-	    std::vector<CategoryAggregation>& aggregations,
-	    RhiMemoryCategory category,
-	    RhiMemoryResidencyClass residencyClass);
-	static void AddHeapReference(CategoryAggregation& aggregation, std::uint32_t heapIndex, std::uint64_t heapBudgetBytes) noexcept;
 	bool EnsureMemoryBlockAllocationForImage(VulkanGpuMemoryBlockRecord& memoryBlock, const VkImageCreateInfo& imageCreateInfo) noexcept;
 	bool EnsureMemoryBlockAllocationForBuffer(VulkanGpuMemoryBlockRecord& memoryBlock, const VkBufferCreateInfo& bufferCreateInfo) noexcept;
 

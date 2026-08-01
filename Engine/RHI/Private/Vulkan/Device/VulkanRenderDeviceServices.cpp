@@ -22,7 +22,8 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
  public:
 	static std::unique_ptr<VulkanRenderDeviceServices> Create(
 	    Window& window,
-	    PixelFormat backBufferFormat) noexcept;
+	    PixelFormat backBufferFormat,
+	    const RhiPresentationConfiguration& presentationConfiguration) noexcept;
 	~VulkanRenderDeviceServices() noexcept override;
 
 	VulkanRenderDeviceServices(const VulkanRenderDeviceServices&) = delete;
@@ -35,7 +36,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
 	void SettleForShutdown() noexcept override;
 	void ResizeSwapChain() noexcept override;
-	void BeginFrame() noexcept override;
+	void BeginFrame(std::uint64_t frameId) noexcept override;
 	void PrepareCommandRecording() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
@@ -56,15 +57,21 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	void WaitForSubmission(RhiSubmissionToken token) noexcept override;
 	bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept override;
 	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept override;
-	void SubmitFrame() noexcept override;
+	void SubmitFrame(std::uint64_t frameId) noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
 
   private:
 	VulkanRenderDeviceServices() noexcept = default;
 
-	void Initialize(Window& window, PixelFormat backBufferFormat);
+	void Initialize(
+	    Window& window,
+	    PixelFormat backBufferFormat,
+	    const RhiPresentationConfiguration& presentationConfiguration);
 	void InitializeDevice();
-	void InitializePresentation(Window& window, PixelFormat backBufferFormat);
+	void InitializePresentation(
+	    Window& window,
+	    PixelFormat backBufferFormat,
+	    const RhiPresentationConfiguration& presentationConfiguration);
 	void InitializeHardwareInterface();
 	void BeginFrameRecording();
 	void AcquireFrameBackBuffer();
@@ -100,27 +107,28 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(
     Window& window,
     PixelFormat backBufferFormat,
-    RhiExternalFeatureHooks externalFeatureHooks) noexcept
+    const RhiPresentationConfiguration& presentationConfiguration) noexcept
 {
-	(void) externalFeatureHooks;
-	return VulkanRenderDeviceServices::Create(window, backBufferFormat);
+	return VulkanRenderDeviceServices::Create(window, backBufferFormat, presentationConfiguration);
 }
 
 std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(
     Window& window,
-    PixelFormat backBufferFormat) noexcept
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration) noexcept
 {
 	auto services = std::unique_ptr<VulkanRenderDeviceServices>(new VulkanRenderDeviceServices());
-	services->Initialize(window, backBufferFormat);
+	services->Initialize(window, backBufferFormat, presentationConfiguration);
 	return services;
 }
 
 void VulkanRenderDeviceServices::Initialize(
     Window& window,
-    PixelFormat backBufferFormat)
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration)
 {
 	InitializeDevice();
-	InitializePresentation(window, backBufferFormat);
+	InitializePresentation(window, backBufferFormat, presentationConfiguration);
 	InitializeHardwareInterface();
 }
 
@@ -132,9 +140,10 @@ void VulkanRenderDeviceServices::InitializeDevice()
 
 void VulkanRenderDeviceServices::InitializePresentation(
     Window& window,
-    PixelFormat backBufferFormat)
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration)
 {
-	m_swapChain = std::make_unique<VulkanSwapChain>(*m_rhi, window, backBufferFormat);
+	m_swapChain = std::make_unique<VulkanSwapChain>(*m_rhi, window, backBufferFormat, presentationConfiguration);
 }
 
 void VulkanRenderDeviceServices::InitializeHardwareInterface()
@@ -148,7 +157,8 @@ void VulkanRenderDeviceServices::InitializeHardwareInterface()
 	    std::make_unique<VulkanCommandRecordingContext>(
 	        *m_rhi,
 	        *m_memoryAllocator,
-	        *m_renderHardwareInterface->m_descriptorService);
+	        *m_renderHardwareInterface->m_descriptorService,
+	        m_swapChain->GetMaximumFramesInFlight());
 	m_renderHardwareInterface->SetCommandRecordingContext(
 	    *m_commandRecordingContext);
 }
@@ -191,8 +201,9 @@ void VulkanRenderDeviceServices::ResizeSwapChain() noexcept
 	m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
 }
 
-void VulkanRenderDeviceServices::BeginFrame() noexcept
+void VulkanRenderDeviceServices::BeginFrame(std::uint64_t frameId) noexcept
 {
+	(void) frameId;
 	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
 	BeginFrameRecording();
 	AcquireFrameBackBuffer();
@@ -412,8 +423,9 @@ RhiSubmissionToken VulkanRenderDeviceServices::GetLastSubmittedToken(ERhiQueueTy
 	return IsRhiQueueTypeValid(queueType) ? m_rhi->GetCommandQueue(queueType).GetLastSubmittedToken() : RhiSubmissionToken{};
 }
 
-void VulkanRenderDeviceServices::SubmitFrame() noexcept
+void VulkanRenderDeviceServices::SubmitFrame(std::uint64_t frameId) noexcept
 {
+	(void) frameId;
 	if (!m_hasAcquiredBackBuffer)
 	{
 		return;
@@ -471,6 +483,6 @@ void VulkanRenderDeviceServices::CompletePresentation(
 
 void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
-	m_currentFrameIndex = (m_currentFrameIndex + 1u) % RhiFrameConstants::FramesInFlight;
+	m_currentFrameIndex = (m_currentFrameIndex + 1u) % m_swapChain->GetMaximumFramesInFlight();
 	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
 }

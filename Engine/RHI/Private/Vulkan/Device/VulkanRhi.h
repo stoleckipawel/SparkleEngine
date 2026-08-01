@@ -6,15 +6,14 @@
 #include "Diagnostics/RhiDiagnostics.h"
 #include "RayTracing/RhiRayTracingDesc.h"
 #include "Vulkan/Diagnostics/VulkanDebugLayer.h"
+#include "Vulkan/Diagnostics/VulkanDiagnosticMessageQueue.h"
 #include "Vulkan/Device/VulkanQueueTopology.h"
 #include "Vulkan/Device/VulkanRayTracingFeatureQuery.h"
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -41,6 +40,7 @@ struct VulkanFeatureStatus final
 	bool SupportsStorageImageReadWithoutFormat = false;
 	bool SupportsStorageImageWriteWithoutFormat = false;
 	bool SupportsSampledImageArrayNonUniformIndexing = false;
+	bool SupportsPartiallyBoundDescriptorArrays = false;
 	bool SupportsShaderDemoteToHelperInvocation = false;
 	bool SupportsMutableDescriptorType = false;
 	bool EnabledSynchronization2 = false;
@@ -52,6 +52,7 @@ struct VulkanFeatureStatus final
 	bool EnabledStorageImageReadWithoutFormat = false;
 	bool EnabledStorageImageWriteWithoutFormat = false;
 	bool EnabledSampledImageArrayNonUniformIndexing = false;
+	bool EnabledPartiallyBoundDescriptorArrays = false;
 	bool EnabledShaderDemoteToHelperInvocation = false;
 	bool EnabledMutableDescriptorType = false;
 	VulkanRayTracingFeatureStatus RayTracing;
@@ -151,7 +152,6 @@ class VulkanRhi final
 	    void* userData) noexcept;
 
 	static constexpr std::uint32_t NvidiaVendorId = 0x10DE;
-	static constexpr std::size_t DiagnosticMessageCapacity = 256;
 	static constexpr const char* NvidiaBinaryImportExtensionName = "VK_NVX_binary_import";
 	static constexpr const char* NvidiaImageViewHandleExtensionName = "VK_NVX_image_view_handle";
 
@@ -179,7 +179,6 @@ class VulkanRhi final
 	std::vector<std::string> m_enabledInstanceExtensions;
 	std::vector<std::string> m_enabledDeviceExtensions;
 	std::vector<std::string> m_enabledLayers;
-	std::deque<RhiDiagnosticMessage> m_diagnosticMessages;
-	std::mutex m_diagnosticMessagesMutex;
+	VulkanDiagnosticMessageQueue m_diagnosticMessageQueue;
 	bool m_validationEnabled = false;
 };

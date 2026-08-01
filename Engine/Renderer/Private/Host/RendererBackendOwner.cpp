@@ -12,7 +12,7 @@ RendererBackendOwner::RendererBackendOwner(
 	    window,
 	    configuration.BackendApi,
 	    backBufferFormat,
-	    configuration.ExternalFeatureHooks);
+	    configuration.D3D12InterposerHooks);
 }
 
 RendererBackendOwner::~RendererBackendOwner() noexcept

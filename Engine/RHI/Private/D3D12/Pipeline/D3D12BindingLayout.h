@@ -26,16 +26,9 @@ class D3D12BindingLayout final : public RenderBindingLayout
 	D3D12BindingLayout& operator=(D3D12BindingLayout&&) = delete;
 
 	D3D12RootSignature& GetRootSignature() const noexcept;
-	const PassParameterLayout& GetParameterLayout() const noexcept override;
-	const CompiledBinding* GetBindings() const noexcept override;
-	std::size_t GetBindingCount() const noexcept override;
-	const CompiledBinding* FindBinding(const char* name) const noexcept override;
 
   private:
-	const PassParameterLayout* m_parameterLayout = nullptr;
 	std::unique_ptr<D3D12RootSignature> m_rootSignature;
-	std::vector<CompiledBinding> m_bindings;
-	std::vector<std::string> m_bindingNames;
 };
 
 class D3D12BindingLayoutCompiler final

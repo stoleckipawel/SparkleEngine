@@ -42,9 +42,6 @@
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
-#include <algorithm>
-#include <array>
-
 static const auto g_framePipelineLogger = Logging::GetOrCreateLogger("Renderer.FramePipeline");
 
 FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPackets) noexcept :
@@ -81,7 +78,9 @@ void FramePipeline::InitializeUiRendering()
 
 void FramePipeline::InitializeFrameStorage()
 {
-	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
+	const std::uint32_t maximumFramesInFlight =
+	    m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Presentation.MaximumFramesInFlight;
+	m_frameExecutionDiagnostics.resize(maximumFramesInFlight);
 	InitializeFrameContexts();
 
 	RenderDiagnostics& backendDiagnostics = m_rendererHost->GetRenderHardwareInterface().GetDiagnostics();
@@ -94,7 +93,7 @@ void FramePipeline::InitializeFrameStorage()
 void FramePipeline::InitializeFrameContexts()
 {
 	m_frameContexts.clear();
-	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
+	m_frameContexts.resize(m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Presentation.MaximumFramesInFlight);
 	for (std::unique_ptr<FrameContext>& frameContext : m_frameContexts)
 	{
 		frameContext = std::make_unique<FrameContext>();
@@ -224,56 +223,11 @@ void FramePipeline::RebuildFrameExecutionAfterSwapChainDrain(FrameResolutionExte
 
 void FramePipeline::RetireFrameExecution() noexcept
 {
-	if (m_frameGraph == nullptr)
+	if (m_frameGraph != nullptr)
 	{
-		return;
+		m_frameExecutionRetirementQueue.Retire(m_rendererHost->GetDeviceServices(), std::move(m_frameGraph), std::move(m_frameContexts));
+		InitializeFrameContexts();
 	}
-
-	m_retiredFrameExecutions.push_back(
-	    RetiredFrameExecution{
-	        .LastUse = CaptureLastSubmittedState(),
-	        .Graph = std::move(m_frameGraph),
-	        .FrameContexts = std::move(m_frameContexts)});
-	InitializeFrameContexts();
-}
-
-void FramePipeline::PollRetiredFrameExecutions() noexcept
-{
-	m_retiredFrameExecutions.erase(
-	    std::remove_if(
-	        m_retiredFrameExecutions.begin(),
-	        m_retiredFrameExecutions.end(),
-	        [this](const RetiredFrameExecution& generation) noexcept
-	        {
-		        return IsSubmissionStateComplete(generation.LastUse);
-	        }),
-	    m_retiredFrameExecutions.end());
-}
-
-RhiSubmissionState FramePipeline::CaptureLastSubmittedState() const noexcept
-{
-	RhiSubmissionState state;
-	const RenderDeviceServices& deviceServices = m_rendererHost->GetDeviceServices();
-	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
-	{
-		state.MarkUsed(deviceServices.GetLastSubmittedToken(static_cast<ERhiQueueType>(queueIndex)));
-	}
-	return state;
-}
-
-bool FramePipeline::IsSubmissionStateComplete(const RhiSubmissionState& state) const noexcept
-{
-	std::array<RhiSubmissionToken, RhiQueueTypeCount> tokens{};
-	const std::size_t tokenCount = state.CopyTokens(tokens);
-	const RenderDeviceServices& deviceServices = m_rendererHost->GetDeviceServices();
-	for (std::size_t tokenIndex = 0; tokenIndex < tokenCount; ++tokenIndex)
-	{
-		if (!deviceServices.IsSubmissionComplete(tokens[tokenIndex]))
-		{
-			return false;
-		}
-	}
-	return true;
 }
 
 void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
@@ -299,7 +253,7 @@ void FramePipeline::BeginFrame() noexcept
 void FramePipeline::PollFrameServices() noexcept
 {
 	PollViewportCaptures();
-	PollRetiredFrameExecutions();
+	m_frameExecutionRetirementQueue.Poll(m_rendererHost->GetDeviceServices());
 	m_rendererHost->PollRetiredImageProviders();
 	m_rendererHost->GetRenderPassRuntimeCache().PollRetiredGenerations();
 	m_rendererHost->GetTextureCache().PollResidency();
@@ -380,7 +334,7 @@ void FramePipeline::RefreshGraphForImageProvider() noexcept
 void FramePipeline::BeginBackendFrame() noexcept
 {
 	RenderDeviceServices& deviceServices = m_rendererHost->GetDeviceServices();
-	deviceServices.BeginFrame();
+	deviceServices.BeginFrame(m_renderInputConsumer->GetDynamicData().Metadata.FrameId);
 	if (m_ownsUiBackend)
 	{
 		m_rendererHost->GetImGuiRenderer().BeginFrame();
@@ -410,8 +364,9 @@ void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 void FramePipeline::UploadPendingSceneTextures(RenderDeviceServices& deviceServices, RenderCommandList& graphicsCommandList)
 {
 	TextureCache& textureCache = m_rendererHost->GetTextureCache();
-	const bool useCopyQueue = textureCache.HasPendingSceneTextureUploads() &&
-	                          m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(ERhiQueueType::Copy);
+	const bool useCopyQueue =
+	    textureCache.HasPendingSceneTextureUploads() &&
+	    m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(ERhiQueueType::Copy);
 
 	RhiCommandRecordingLease uploadLease;
 	RenderCommandList* uploadCommandList = &graphicsCommandList;
@@ -644,11 +599,7 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 	if (!frame.sceneData.materialTextureTable || !frame.sceneGpuData->RayTracing.HasCompleteBuffers() ||
 	    !frame.sceneGpuData->Geometry.HasMeshInstanceBuffers())
 	{
-		Diagnostics::Fatal(
-		    g_framePipelineLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-tracing frame shader resources are incomplete.");
+		Diagnostics::Fatal(g_framePipelineLogger, __FILE__, __LINE__, "Ray-tracing frame shader resources are incomplete.");
 	}
 	if (frame.rayTracingScene.HasTraceableInstances() &&
 	    (frame.sceneGpuData->RayTracing.InstanceCount == 0u || frame.sceneGpuData->RayTracing.MaterialCount == 0u))
@@ -715,14 +666,19 @@ void FramePipeline::ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene
 	    .ImageProviders = &imageProviderPassContext};
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
-	m_frameGraph
-	    ->Execute(compiledPlan, m_rendererHost->GetDeviceServices(), frame, passRuntimeContext, frameDiagnostics, m_rendererHost->GetTaskExecutor());
+	m_frameGraph->Execute(
+	    compiledPlan,
+	    m_rendererHost->GetDeviceServices(),
+	    frame,
+	    passRuntimeContext,
+	    frameDiagnostics,
+	    m_rendererHost->GetTaskExecutor());
 }
 
 void FramePipeline::SubmitFrame() noexcept
 {
 	RenderDeviceServices& deviceServices = m_rendererHost->GetDeviceServices();
-	deviceServices.SubmitFrame();
+	deviceServices.SubmitFrame(m_renderInputConsumer->GetDynamicData().Metadata.FrameId);
 	const RhiSubmissionToken graphicsToken = deviceServices.GetLastSubmittedToken(ERhiQueueType::Graphics);
 	m_rendererHost->GetTextureCache().RecordUploadSubmission(graphicsToken);
 	m_rendererHost->GetGpuMeshCache().RecordUploadSubmission(graphicsToken);

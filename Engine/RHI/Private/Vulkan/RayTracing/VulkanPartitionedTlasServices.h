@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resources/RhiResourceHandles.h"
+#include "RayTracing/RhiPartitionedTlasOperationLayout.h"
 #include "RayTracing/RhiPartitionedTlasService.h"
 #include "Vulkan/VulkanIncludes.h"
 
@@ -27,7 +28,6 @@ class VulkanPartitionedTlasServices final : public RhiPartitionedTlasService
 	    const RhiPartitionedTlasDesc& desc) const noexcept override;
 
   private:
-	static std::uint64_t AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept;
 	static VkPartitionedAccelerationStructureInstanceFlagsNV ToVkPartitionedInstanceFlags(
 	    RhiPartitionedTlasInstanceFlags flags) noexcept;
 	static VkPartitionedAccelerationStructureOpTypeNV ToVkPartitionedOperationType(ERhiPartitionedTlasOperationType type) noexcept;
@@ -35,12 +35,7 @@ class VulkanPartitionedTlasServices final : public RhiPartitionedTlasService
 	    const RhiPartitionedTlasDesc& desc,
 	    VkPartitionedAccelerationStructureInstancesInputNV& input,
 	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
-	static std::uint64_t ResolveOperationArgumentGpuAddress(
-	    const RhiPartitionedTlasOperationHeader& operation,
-	    RhiGpuVirtualAddress instanceWriteAddress,
-	    RhiGpuVirtualAddress instanceUpdateAddress,
-	    RhiGpuVirtualAddress partitionTranslationAddress) noexcept;
-	static std::uint64_t ResolveOperationArgumentStride(const RhiPartitionedTlasOperationHeader& operation) noexcept;
+	static RhiPartitionedTlasNativeOperationLayout GetNativeOperationLayout() noexcept;
 	RhiGpuVirtualAddress ResolvePartitionedInstanceAccelerationStructureAddress(RhiGpuVirtualAddress accelerationStructure) const noexcept;
 
 	VulkanRhi* m_rhi = nullptr;

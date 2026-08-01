@@ -533,13 +533,13 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
 
 void D3D12RenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept
 {
-	if (m_commandList == nullptr || m_owner == nullptr)
+	if (m_commandList == nullptr || m_owner == nullptr || !desc.DestinationResource)
 	{
 		Diagnostics::Fatal(
 		    g_d3d12RenderCommandListLogger,
 		    __FILE__,
 		    __LINE__,
-		    "D3D12 partitioned TLAS build has no command list or device owner.");
+		    "D3D12 partitioned TLAS build has no command list, device owner, or destination resource.");
 	}
 
 	BeginDiagnosticScope("RayTracing.PTLAS.Build", RhiDiagnosticLabelColor{92, 148, 255, 255});
@@ -553,7 +553,7 @@ void D3D12RenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const
 		    __LINE__,
 		    "D3D12 partitioned TLAS provider rejected the build command.");
 	}
-	UnorderedAccessBarrier(RhiResourceHandle{nullptr});
+	UnorderedAccessBarrier(desc.DestinationResource);
 }
 
 void D3D12RenderCommandList::CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept

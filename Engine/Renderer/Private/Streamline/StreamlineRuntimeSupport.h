@@ -2,11 +2,12 @@
 
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Interop/RhiInteropService.h"
-#include "RHI/Public/Interop/RhiExternalFeatureHooks.h"
+#include "RHI/Public/Interop/RhiD3D12InterposerHooks.h"
 
 bool InitializeSharedStreamlineRuntime(ERhiBackendApi backendApi);
-RhiExternalFeatureHooks GetSharedStreamlineRhiHooks() noexcept;
+RhiD3D12InterposerHooks GetSharedStreamlineD3D12InterposerHooks() noexcept;
 void ShutdownSharedStreamlineRuntime() noexcept;
+void SetSharedStreamlineFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept;
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	#include <sl.h>

@@ -155,7 +155,7 @@ class VulkanDescriptorAllocator final
 	std::uint32_t m_currentFrameIndex = 0;
 	std::vector<DescriptorTableRecord> m_tables;
 	std::vector<std::uint32_t> m_freeTableIndices;
-	std::array<std::vector<std::uint32_t>, RhiFrameConstants::FramesInFlight> m_retiredTableIndices;
+	std::array<std::vector<std::uint32_t>, RhiFrameConstants::MaxFrameSlotCount> m_retiredTableIndices;
 	std::shared_ptr<std::vector<DescriptorEntry>> m_registeredDescriptors;
 	std::atomic<std::shared_ptr<const RecordingReadView>> m_recordingReadView;
 	std::vector<std::uint32_t> m_freeRegisteredDescriptorIndices;

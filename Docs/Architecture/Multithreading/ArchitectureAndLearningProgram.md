@@ -7,10 +7,10 @@ Last external architecture naming review: 2026-07-18 (repository revisions pinne
 Last persistent-identity source review: 2026-07-21 (NVIDIA/AMD revisions pinned in the source trail)
 Last principal graphics engineering requirements review: 2026-07-24 (requirements `PGE-01` through `PGE-15`)
 Scope: runtime, renderer, RHI, editor, asset and shader tools, principal graphics engineering evidence, learning evidence, and portfolio presentation
-Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md), and [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md)
-Repository context: [D. Whole Repository Architecture Map](D_WholeRepositoryArchitectureMap.md)
-Implementation companion: [K. Multithreaded Engine Implementation Prompt Series](K_MultithreadedEngineImplementationPromptSeries.md)
-Coding and integration contract: [L. SparkleEngine Integration Style Guide](L_SparkleEngineIntegrationStyleGuide.md)
+Governing requirements: [A. Principal Rendering Requirements](../../Strategy/PrincipalGraphics/Requirements.md), [E. External Renderer Repository Comparison](../Research/ExternalRendererComparison.md), [G. Advanced Graphics Engine Executive Summary](../../Strategy/PrincipalGraphics/ExecutiveSummary.md), [H. Advanced Graphics Engineer Persona](../../Strategy/PrincipalGraphics/EngineerPersona.md), and [I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md)
+Repository context: [D. Whole Repository Architecture Map](../Repository/WholeRepositoryMap.md)
+Implementation companion: [K. Multithreaded Engine Implementation Prompt Series](ImplementationPromptSeries.md)
+Coding and integration contract: [L. SparkleEngine Integration Style Guide](../../Engineering/Standards/IntegrationStyleGuide.md)
 
 ## Acceptance Workload Binding
 
@@ -141,7 +141,7 @@ Before advancing from a lesson, explain it without reading the document. A satis
 
 ### Division of Responsibility Between J and K
 
-Use this document while learning, reviewing a design, or deciding whether a stage is safe. Use [K](K_MultithreadedEngineImplementationPromptSeries.md) while changing code. K deliberately repeats the repository-coherence, inspect-before-add, daily-refactor, deletion, validation, and stop/go rules in every implementation prompt so they cannot be lost when one prompt is used independently.
+Use this document while learning, reviewing a design, or deciding whether a stage is safe. Use [K](ImplementationPromptSeries.md) while changing code. K deliberately repeats the repository-coherence, inspect-before-add, daily-refactor, deletion, validation, and stop/go rules in every implementation prompt so they cannot be lost when one prompt is used independently.
 
 ## Executive Decision
 

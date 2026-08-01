@@ -161,3 +161,17 @@ RhiCommandRecordingLeaseBackendState RhiCommandRecordingLeaseAccess::Consume(
 	lease.Reset();
 	return state;
 }
+
+bool RhiCommandRecordingLeaseAccess::Matches(
+    const RhiCommandRecordingLeaseBackendState& state,
+    const RhiCommandRecordingLeaseBackendState& expected) noexcept
+{
+	return state.State == expected.State &&
+	       state.CommandList == expected.CommandList &&
+	       state.QueueType == expected.QueueType &&
+	       state.FrameSlot == expected.FrameSlot &&
+	       state.ContextId.Value == expected.ContextId.Value &&
+	       state.Owner.PartitionIndex == expected.Owner.PartitionIndex &&
+	       state.Owner.TaskIdentity == expected.Owner.TaskIdentity &&
+	       state.Closed == expected.Closed;
+}

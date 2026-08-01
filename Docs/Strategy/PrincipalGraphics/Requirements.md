@@ -8,12 +8,12 @@ Scope: principal-level real-time graphics, developer technology, GPU systems, re
 
 This is the canonical requirements contract for SparkleEngine and the target engineering persona. The stable identifiers are `PGE-01` through `PGE-15`.
 
-- [B. Role Source Archive](B_RoleSourceArchive.md) preserves the supplied screenshots and CV in normalized text and maps every source bullet to these identifiers.
-- [C. Candidate and Repository Gap Assessment](C_CandidateAndRepositoryGapAssessment.md) grades current evidence.
-- [F. Six-to-Twelve-Month Execution Roadmap](F_6_12_MonthPrincipalGraphicsRoadmap.md) converts the gaps into sequenced work.
-- [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md) is the short engine decision document.
-- [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md) describes who the engineer must become.
-- [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.
+- [B. Role Source Archive](RoleSourceArchive.md) preserves the supplied screenshots and CV in normalized text and maps every source bullet to these identifiers.
+- [C. Candidate and Repository Gap Assessment](GapAssessment.md) grades current evidence.
+- [F. Six-to-Twelve-Month Execution Roadmap](Roadmap.md) converts the gaps into sequenced work.
+- [G. Advanced Graphics Engine Executive Summary](ExecutiveSummary.md) is the short engine decision document.
+- [H. Advanced Graphics Engineer Persona](EngineerPersona.md) describes who the engineer must become.
+- [I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.
 
 When another document conflicts with this matrix, this matrix controls the capability target and the evidence meaning. Architecture documents may impose stricter implementation rules.
 
@@ -42,7 +42,7 @@ The product workload decision is fixed for this planning horizon:
 2. Bistro exterior/interior is the Tier 1 primary flagship;
 3. San Miguel 2.0 is the Tier 1 secondary supported scene and cross-scene quality/generalization test.
 
-The engine is not permitted to substitute Sponza-only proof for a Tier 1 requirement. The detailed acquisition, material, quality, performance, neural, and presentation gates are binding in [I](I_BistroAcceptanceWorkload.md).
+The engine is not permitted to substitute Sponza-only proof for a Tier 1 requirement. The detailed acquisition, material, quality, performance, neural, and presentation gates are binding in [I](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md).
 
 ## Evidence Scale
 
@@ -122,7 +122,7 @@ The whole engine is not the portfolio. It is the evidence substrate. The public 
 The scene presentation contract is:
 
 - recruiter path: one Bistro exterior image, one Bistro interior image, one San Miguel image, a 60–90 second deterministic traversal, and three measured claims;
-- hiring-manager path: `CASE-01` through `CASE-05` from [I](I_BistroAcceptanceWorkload.md), with Bistro as the narrative spine and San Miguel as breadth/generalization evidence;
+- hiring-manager path: `CASE-01` through `CASE-05` from [I](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md), with Bistro as the narrative spine and San Miguel as breadth/generalization evidence;
 - specialist path: frozen routes, reference images, material inventories, captures, profiles, numerical checks, failure cases, and backend differences;
 - adopter path: external-pack acquisition, attribution, deterministic import/cook/run, support/fallback matrix, and expected output for both Tier 1 scenes.
 

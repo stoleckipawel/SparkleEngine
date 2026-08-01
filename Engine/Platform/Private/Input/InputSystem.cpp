@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Input/InputSystem.h"
 #include "Input/Backends/Win32InputBackend.h"
+#include "Input/Dispatch/InputEventDispatcher.h"
 #include "Window/Window.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -8,39 +9,8 @@
 #endif
 #include <Windows.h>
 
-#include <algorithm>
 #include <cstdio>
 #include <utility>
-
-class InputDeferredEventProcessingGuard final
-{
-  public:
-	explicit InputDeferredEventProcessingGuard(bool& isProcessing) noexcept : m_isProcessing(isProcessing)
-	{
-		if (!m_isProcessing)
-		{
-			m_isProcessing = true;
-			m_didBegin = true;
-		}
-	}
-
-	~InputDeferredEventProcessingGuard()
-	{
-		if (m_didBegin)
-		{
-			m_isProcessing = false;
-		}
-	}
-
-	InputDeferredEventProcessingGuard(const InputDeferredEventProcessingGuard&) = delete;
-	InputDeferredEventProcessingGuard& operator=(const InputDeferredEventProcessingGuard&) = delete;
-
-	explicit operator bool() const noexcept { return m_didBegin; }
-
-  private:
-	bool& m_isProcessing;
-	bool m_didBegin = false;
-};
 
 std::unique_ptr<InputSystem> InputSystem::Create()
 {
@@ -52,7 +22,10 @@ std::unique_ptr<InputSystem> InputSystem::Create()
 #endif
 }
 
-InputSystem::InputSystem(std::unique_ptr<IInputBackend> Backend) : m_Backend(std::move(Backend)) {}
+InputSystem::InputSystem(std::unique_ptr<IInputBackend> Backend) :
+    m_Backend(std::move(Backend)), m_eventDispatcher(std::make_unique<InputEventDispatcher>())
+{
+}
 
 InputSystem::~InputSystem() = default;
 
@@ -75,36 +48,22 @@ void InputSystem::BeginFrame()
 	{
 		layerState.BeginFrame();
 	}
-	ClearDeferredQueues();
+	m_eventDispatcher->ClearDeferredEvents();
 }
 
 void InputSystem::ProcessDeferredEvents()
 {
 	m_OwnerThread.AssertAccess();
-	const InputDeferredEventProcessingGuard processing(m_bIsProcessingDeferredEvents);
-	if (!processing)
-	{
-		return;
-	}
-
-	if (m_captureQuery)
-	{
-		const bool wantsCaptureInput = m_captureQuery();
-		SetActiveLayer(wantsCaptureInput ? InputLayer::UI : InputLayer::Gameplay);
-	}
-
-	ProcessDeferredEventsForType<KeyboardEvent>();
-	ProcessDeferredEventsForType<MouseButtonEvent>();
-	ProcessDeferredEventsForType<MouseMoveEvent>();
-	ProcessDeferredEventsForType<MouseWheelEvent>();
-}
-
-void InputSystem::ClearDeferredQueues()
-{
-	GetDeferredQueue<KeyboardEvent>().clear();
-	GetDeferredQueue<MouseButtonEvent>().clear();
-	GetDeferredQueue<MouseMoveEvent>().clear();
-	GetDeferredQueue<MouseWheelEvent>().clear();
+	m_eventDispatcher->ProcessDeferredEvents(
+	    m_LayerEnabled,
+	    [this]
+	    {
+		    if (m_captureQuery)
+		    {
+			    const bool wantsCaptureInput = m_captureQuery();
+			    SetActiveLayer(wantsCaptureInput ? InputLayer::UI : InputLayer::Gameplay);
+		    }
+	    });
 }
 
 void InputSystem::SubscribeToWindow(Window& window)
@@ -268,67 +227,31 @@ InputLayer InputSystem::ResolveTargetLayer(const InputBackendResult& Result)
 EventHandle InputSystem::SubscribeKeyboard(KeyboardCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
 	m_OwnerThread.AssertAccess();
-	EventHandle handle{GenerateCallbackId()};
-	GetCallbacks<KeyboardEvent>().push_back({std::move(Callback), handle, Layer, Mode});
-	return handle;
+	return m_eventDispatcher->Subscribe<KeyboardEvent>(std::move(Callback), Layer, Mode);
 }
 
 EventHandle InputSystem::SubscribeMouseButton(MouseButtonCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
 	m_OwnerThread.AssertAccess();
-	EventHandle handle{GenerateCallbackId()};
-	GetCallbacks<MouseButtonEvent>().push_back({std::move(Callback), handle, Layer, Mode});
-	return handle;
+	return m_eventDispatcher->Subscribe<MouseButtonEvent>(std::move(Callback), Layer, Mode);
 }
 
 EventHandle InputSystem::SubscribeMouseMove(MouseMoveCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
 	m_OwnerThread.AssertAccess();
-	EventHandle handle{GenerateCallbackId()};
-	GetCallbacks<MouseMoveEvent>().push_back({std::move(Callback), handle, Layer, Mode});
-	return handle;
+	return m_eventDispatcher->Subscribe<MouseMoveEvent>(std::move(Callback), Layer, Mode);
 }
 
 EventHandle InputSystem::SubscribeMouseWheel(MouseWheelCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
 	m_OwnerThread.AssertAccess();
-	EventHandle handle{GenerateCallbackId()};
-	GetCallbacks<MouseWheelEvent>().push_back({std::move(Callback), handle, Layer, Mode});
-	return handle;
+	return m_eventDispatcher->Subscribe<MouseWheelEvent>(std::move(Callback), Layer, Mode);
 }
 
 void InputSystem::Unsubscribe(EventHandle Handle)
 {
 	m_OwnerThread.AssertAccess();
-	if (!Handle.IsValid())
-	{
-		return;
-	}
-
-	UnsubscribeFromAll(Handle);
-}
-
-void InputSystem::UnsubscribeFromAll(EventHandle Handle)
-{
-	auto removeByHandle = [&Handle](auto& callbacks)
-	{
-		callbacks.erase(
-		    std::remove_if(
-		        callbacks.begin(),
-		        callbacks.end(),
-		        [&Handle](const auto& entry)
-		        {
-			        return entry.Handle == Handle;
-		        }),
-		    callbacks.end());
-	};
-
-	std::apply(
-	    [&removeByHandle](auto&... callbacks)
-	    {
-		    (removeByHandle(callbacks), ...);
-	    },
-	    m_Callbacks);
+	m_eventDispatcher->Unsubscribe(Handle);
 }
 
 void InputSystem::CaptureMouse()
@@ -422,26 +345,6 @@ void InputSystem::SetCursorVisibility(bool bVisible)
 	}
 }
 
-uint32_t InputSystem::GenerateCallbackId()
-{
-	return m_NextCallbackId++;
-}
-
-bool InputSystem::ShouldDispatchToLayer(InputLayer RegisteredLayer, InputLayer TargetLayer) const noexcept
-{
-	if (RegisteredLayer == InputLayer::System)
-	{
-		return true;
-	}
-
-	if (RegisteredLayer != TargetLayer)
-	{
-		return false;
-	}
-
-	return IsLayerEnabled(RegisteredLayer);
-}
-
 void InputSystem::CancelLayer(InputLayer Layer)
 {
 	if (Layer == InputLayer::System)
@@ -469,7 +372,7 @@ void InputSystem::CancelLayer(InputLayer Layer)
 		releaseEvent.Modifiers = state.GetModifiers();
 		releaseEvent.bPressed = false;
 		state.SetKeyState(releaseEvent.KeyCode, ButtonState::Released);
-		DispatchToCallbacks(releaseEvent, DispatchMode::Immediate, Layer);
+		m_eventDispatcher->DispatchImmediate(releaseEvent, Layer, m_LayerEnabled);
 	}
 
 	const MousePosition mousePosition = state.GetMousePosition();
@@ -487,10 +390,21 @@ void InputSystem::CancelLayer(InputLayer Layer)
 		releaseEvent.Modifiers = state.GetModifiers();
 		releaseEvent.bPressed = false;
 		state.SetMouseButtonState(releaseEvent.Button, ButtonState::Released);
-		DispatchToCallbacks(releaseEvent, DispatchMode::Immediate, Layer);
+		m_eventDispatcher->DispatchImmediate(releaseEvent, Layer, m_LayerEnabled);
 	}
 
 	state = InputState{};
+}
+
+template <typename TEvent> void InputSystem::ProcessEvent(const TEvent& Event, InputLayer TargetLayer)
+{
+	UpdateStateFromEvent(m_State, Event);
+	if (TargetLayer == InputLayer::System || IsLayerEnabled(TargetLayer))
+	{
+		UpdateStateFromEvent(m_LayerStates[static_cast<std::size_t>(TargetLayer)], Event);
+	}
+	m_eventDispatcher->DispatchImmediate(Event, TargetLayer, m_LayerEnabled);
+	m_eventDispatcher->QueueDeferred(Event, TargetLayer, m_LayerEnabled);
 }
 
 void InputSystem::UpdateStateFromEvent(InputState& State, const KeyboardEvent& Event)

@@ -31,6 +31,10 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildFilesFreshness.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildFreshnessSignature.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildToolchainDetection.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/QtToolchainDiscovery.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/ShaderCompilerSdkDiscovery.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/VisualStudioToolchainDiscovery.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/VulkanSdkDiscovery.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceOperations.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspacePlanner.cpp
@@ -46,6 +50,10 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeGeneratorModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/QtToolchainDiscovery.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/ShaderCompilerSdkDiscovery.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/VisualStudioToolchainDiscovery.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/VulkanSdkDiscovery.h
 )
 
 set(SPARKLE_LAUNCHER_CORE_COOK_SOURCES
@@ -148,12 +156,20 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
 
 set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
     ${SPARKLE_LAUNCHER_GUI_SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellArguments.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellOperations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellPresentation.cpp
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_HEADERS
     ${SPARKLE_LAUNCHER_GUI_HEADERS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellArguments.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellOperations.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellPresentation.h
 )
 
 add_library(SparkleLauncherCore STATIC

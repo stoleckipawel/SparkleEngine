@@ -11,6 +11,7 @@
 #include "Time/Timer.h"
 #include "Concurrency/ApplicationTaskRuntime.h"
 #include "Concurrency/ConcurrencyLaunchCVars.h"
+#include "CVars/RHICVars.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 
 
@@ -113,9 +114,16 @@ void RuntimeApplication::InitializeRenderer()
 	if (m_options.AllowThreadedRenderer &&
 	    ConcurrencyLaunchCVars::UseThreadedRenderer())
 	{
-		rendererConfig.Mode = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth() == 0
-		                          ? RendererExecutionMode::ThreadedZeroAhead
-		                          : RendererExecutionMode::ThreadedOneAhead;
+		rendererConfig.Mode = RendererExecutionMode::Threaded;
+		rendererConfig.RenderPipelineDepth = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth();
+		if (rendererConfig.RenderPipelineDepth >= CVarMaximumFramesInFlight.Get())
+		{
+			Diagnostics::Fatal(
+			    Logging::GetOrCreateLogger("Application.Concurrency"),
+			    __FILE__,
+			    __LINE__,
+			    "r.RenderPipelineDepth must be lower than r.MaximumFramesInFlight so queued simulation frames have distinct GPU frame slots.");
+		}
 	}
 
 	rendererConfig.EnableUiRenderPackets =
@@ -168,17 +176,20 @@ void RuntimeApplication::UpdateRuntime() noexcept
 {
 	if (m_gameWorld && m_timer)
 	{
+		const std::uint64_t frameId = m_timer->GetFrameCount();
+		m_renderer->BeginSimulationFrame(frameId);
 		m_cameraInputIntentCollector->Publish(*m_gameWorld);
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 		m_gameWorld->Update(deltaSeconds);
-		SubmitWorldRenderInput();
+		m_renderer->EndSimulationFrame(frameId);
+		SubmitWorldRenderInput(frameId);
 	}
 }
 
-void RuntimeApplication::SubmitWorldRenderInput()
+void RuntimeApplication::SubmitWorldRenderInput(std::uint64_t frameId)
 {
 	RenderFrameMetadata metadata;
-	metadata.FrameId = m_timer->GetFrameCount();
+	metadata.FrameId = frameId;
 	metadata.ProviderGeneration = m_renderer->GetShaderPackageGeneration();
 	metadata.RenderWidth = metadata.OutputWidth = m_window->GetWidth();
 	metadata.RenderHeight = metadata.OutputHeight = m_window->GetHeight();

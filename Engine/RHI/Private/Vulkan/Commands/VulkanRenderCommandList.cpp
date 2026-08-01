@@ -930,7 +930,8 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept
 {
 	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_rhi->GetCmdBuildPartitionedAccelerationStructures() == nullptr ||
-	    desc.DestinationAccelerationStructure == 0 || desc.Scratch == 0 || desc.OperationHeaders == 0 || desc.OperationCount == 0 ||
+	    !desc.DestinationResource || desc.DestinationAccelerationStructure == 0 || desc.Scratch == 0 || desc.OperationHeaders == 0 ||
+	    desc.OperationCount == 0 ||
 	    desc.Layout.InstanceCapacity == 0 || desc.Layout.PartitionCount == 0)
 	{
 		Diagnostics::Fatal(

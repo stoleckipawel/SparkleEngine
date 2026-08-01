@@ -4,6 +4,7 @@
 
 #include "CVars/RHICVars.h"
 #include "Frame/RhiFrameConstants.h"
+#include "Presentation/RhiPresentationDefaults.h"
 #include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
@@ -18,8 +19,17 @@
 
 static const auto g_vulkanSwapChainLogger = Logging::GetOrCreateLogger("RHI.Vulkan.SwapChain");
 
-VulkanSwapChain::VulkanSwapChain(VulkanRhi& rhi, Window& window, PixelFormat backBufferFormat) :
-    m_rhi(rhi), m_window(&window), m_backBufferFormat(backBufferFormat)
+VulkanSwapChain::VulkanSwapChain(
+    VulkanRhi& rhi,
+    Window& window,
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration) :
+    m_rhi(rhi),
+    m_window(&window),
+    m_backBufferFormat(backBufferFormat),
+    m_configuredBackBufferCount(presentationConfiguration.BackBufferCount),
+    m_maximumFramesInFlight(presentationConfiguration.MaximumFramesInFlight),
+    m_imageAvailableSemaphores(m_maximumFramesInFlight, VK_NULL_HANDLE)
 {
 	CreateSurface();
 	CreatePresentationSemaphores();
@@ -97,6 +107,11 @@ bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
 	if (!VulkanResult::Succeeded(result))
 	{
 		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkQueuePresentKHR", result));
+	}
+	if (m_vsyncEnabled != CVarVSync.Get())
+	{
+		m_resizeRequested = true;
+		return true;
 	}
 	return false;
 }
@@ -207,7 +222,8 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 	}
 
 	m_surfaceFormat = SelectSurfaceFormat();
-	m_presentMode = SelectPresentMode();
+	m_vsyncEnabled = CVarVSync.Get();
+	m_presentMode = SelectPresentMode(m_vsyncEnabled);
 	m_extent = SelectExtent(capabilities);
 
 	VkSwapchainCreateInfoKHR createInfo{
@@ -373,9 +389,9 @@ VkSurfaceFormatKHR VulkanSwapChain::SelectSurfaceFormat() const
 	    std::format("Requested Vulkan present format '{}' is not supported by the surface.", PixelFormatName(m_backBufferFormat)));
 }
 
-VkPresentModeKHR VulkanSwapChain::SelectPresentMode() const
+VkPresentModeKHR VulkanSwapChain::SelectPresentMode(bool vsyncEnabled) const
 {
-	if (CVarVSync.Get())
+	if (vsyncEnabled)
 	{
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
@@ -384,25 +400,33 @@ VkPresentModeKHR VulkanSwapChain::SelectPresentMode() const
 	VkResult result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_rhi.GetPhysicalDevice(), m_surface, &presentModeCount, nullptr);
 	if (!VulkanResult::Succeeded(result) || presentModeCount == 0)
 	{
-		return VK_PRESENT_MODE_FIFO_KHR;
+		Diagnostics::Fatal(
+		    g_vulkanSwapChainLogger,
+		    __FILE__,
+		    __LINE__,
+		    "VSync is disabled, but Vulkan present modes could not be queried.");
 	}
 
 	std::vector<VkPresentModeKHR> presentModes(presentModeCount);
 	result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_rhi.GetPhysicalDevice(), m_surface, &presentModeCount, presentModes.data());
 	if (!VulkanResult::Succeeded(result))
 	{
-		return VK_PRESENT_MODE_FIFO_KHR;
+		Diagnostics::Fatal(
+		    g_vulkanSwapChainLogger,
+		    __FILE__,
+		    __LINE__,
+		    VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfacePresentModesKHR", result));
 	}
 
-	if (std::find(presentModes.begin(), presentModes.end(), VK_PRESENT_MODE_MAILBOX_KHR) != presentModes.end())
-	{
-		return VK_PRESENT_MODE_MAILBOX_KHR;
-	}
 	if (std::find(presentModes.begin(), presentModes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR) != presentModes.end())
 	{
 		return VK_PRESENT_MODE_IMMEDIATE_KHR;
 	}
-	return VK_PRESENT_MODE_FIFO_KHR;
+	Diagnostics::Fatal(
+	    g_vulkanSwapChainLogger,
+	    __FILE__,
+	    __LINE__,
+	    "VSync is disabled, but the Vulkan surface does not expose immediate presentation.");
 }
 
 VkExtent2D VulkanSwapChain::SelectExtent(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept
@@ -422,10 +446,19 @@ VkExtent2D VulkanSwapChain::SelectExtent(const VkSurfaceCapabilitiesKHR& capabil
 
 std::uint32_t VulkanSwapChain::SelectImageCount(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept
 {
-	std::uint32_t imageCount = std::max(capabilities.minImageCount + 1u, static_cast<std::uint32_t>(RhiFrameConstants::FramesInFlight));
-	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+	const std::uint32_t imageCount = m_configuredBackBufferCount;
+	if (imageCount < capabilities.minImageCount ||
+	    (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount))
 	{
-		imageCount = capabilities.maxImageCount;
+		Diagnostics::Fatal(
+		    g_vulkanSwapChainLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "Vulkan surface image-count range [{}, {}] does not include the configured count {}.",
+		        capabilities.minImageCount,
+		        capabilities.maxImageCount == 0 ? std::numeric_limits<std::uint32_t>::max() : capabilities.maxImageCount,
+		        imageCount));
 	}
 	return imageCount;
 }

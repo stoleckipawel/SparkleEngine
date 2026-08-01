@@ -3,7 +3,7 @@
 Status: evidence-backed current-state audit
 Assessment date: 2026-07-26
 Repository snapshot: `master` at `f74c26e9` plus an uncommitted renderer/residency worktree
-Inputs: [canonical requirements](A_PrincipalRenderingRequirements.md), [source archive](B_RoleSourceArchive.md), supplied CV, [public professional profile](https://www.linkedin.com/in/stoleckipawel/), [public website](https://stoleckipawel.dev/), [public GitHub profile](https://github.com/stoleckipawel), local source inspection, build attempt, and public profiles of engineers already operating at principal/staff level
+Inputs: [canonical requirements](Requirements.md), [source archive](RoleSourceArchive.md), supplied CV, [public professional profile](https://www.linkedin.com/in/stoleckipawel/), [public website](https://stoleckipawel.dev/), [public GitHub profile](https://github.com/stoleckipawel), local source inspection, build attempt, and public profiles of engineers already operating at principal/staff level
 
 ## Executive Verdict
 
@@ -52,7 +52,7 @@ The working tree contained ongoing renderer/residency edits before this review. 
 
 ## Acceptance-Scene Readiness
 
-The scene decision is binding in [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md): Sponza is Tier 0, Bistro is the Tier 1 primary flagship, and San Miguel is the Tier 1 secondary supported scene.
+The scene decision is binding in [I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md): Sponza is Tier 0, Bistro is the Tier 1 primary flagship, and San Miguel is the Tier 1 secondary supported scene.
 
 | Capability | Current level | Repository fact | Next truthful gate |
 | --- | ---: | --- | --- |

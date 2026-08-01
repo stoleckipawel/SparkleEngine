@@ -112,7 +112,7 @@ struct SPARKLE_RENDERER_API ViewportCaptureResult
 {
 	ViewportCaptureStatus Status = ViewportCaptureStatus::Failed;
 	std::uint64_t FrameId = 0;
-	std::uint64_t FrameGeneration = 0;
+	std::uint64_t SceneGeneration = 0;
 	std::uint64_t ProviderGeneration = 0;
 	std::filesystem::path ArtifactPath;
 	std::string FailureReason;

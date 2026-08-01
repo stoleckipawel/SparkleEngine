@@ -1,8 +1,11 @@
 #pragma once
 
 #include <memory>
+#include <cstdint>
 
 class D3D12Rhi;
 class RenderDiagnostics;
 
-std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(D3D12Rhi& rhi);
+std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(
+    D3D12Rhi& rhi,
+    std::uint32_t maximumFramesInFlight);

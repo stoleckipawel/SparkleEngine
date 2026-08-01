@@ -10,7 +10,7 @@ This document compares SparkleEngine against top-tier rendering repositories and
 
 The main lesson is not "add more features." It is "make scope and ownership painfully clear."
 
-The supplied principal graphics engineering role set adds a second comparison lens. The repository must eventually demonstrate the canonical `PGE-01` through `PGE-15` requirements in [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
+The supplied principal graphics engineering role set adds a second comparison lens. The repository must eventually demonstrate the canonical `PGE-01` through `PGE-15` requirements in [A. Principal Graphics Engineering Requirements](../../Strategy/PrincipalGraphics/Requirements.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
 
 ## Sources Reviewed
 

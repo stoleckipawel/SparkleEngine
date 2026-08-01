@@ -16,8 +16,12 @@
 D3D12CommandRecordingContext::D3D12CommandRecordingContext(
     D3D12Rhi& rhi,
     D3D12RenderHardwareInterface& hardwareInterface,
-    D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-	m_rhi(&rhi), m_hardwareInterface(&hardwareInterface), m_descriptorHeapManager(&descriptorHeapManager)
+    D3D12DescriptorHeapManager& descriptorHeapManager,
+    std::uint32_t maximumFramesInFlight) noexcept :
+	m_rhi(&rhi),
+	m_hardwareInterface(&hardwareInterface),
+	m_descriptorHeapManager(&descriptorHeapManager),
+	m_frames(maximumFramesInFlight)
 {
 	InitializeSlots();
 }
@@ -215,7 +219,7 @@ D3D12CommandRecordingContext::CommandSlot& D3D12CommandRecordingContext::Acquire
 
 void D3D12CommandRecordingContext::InitializeSlots()
 {
-	for (std::uint32_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
+	for (std::uint32_t frameIndex = 0; frameIndex < m_frames.size(); ++frameIndex)
 	{
 		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 		{
@@ -238,7 +242,7 @@ D3D12CommandRecordingContext::CommandSlot& D3D12CommandRecordingContext::CreateS
 
 	slot->Owner = this;
 	slot->QueueType = queueType;
-	slot->FrameSlot = frameIndex % RhiFrameConstants::FramesInFlight;
+	slot->FrameSlot = frameIndex % static_cast<std::uint32_t>(m_frames.size());
 	slot->ContextIndex = contextIndex;
 
 	CreateNativeCommandObjects(*slot);
@@ -380,18 +384,17 @@ D3D12CommandRecordingContext::ConsumeClosedLease(
 	    RhiCommandRecordingLeaseAccess::Consume(std::move(lease));
 	auto* const slot =
 	    static_cast<CommandSlot*>(leaseState.State);
-	if (slot == nullptr ||
-	    slot->Owner != this ||
-	    slot->State != SlotState::Closed ||
-	    !leaseState.Closed ||
-	    leaseState.CommandList != slot->CommandList.get() ||
-	    leaseState.QueueType != slot->QueueType ||
-	    leaseState.FrameSlot != slot->FrameSlot ||
-	    leaseState.ContextId.Value != slot->ContextIndex ||
-	    leaseState.Owner.PartitionIndex !=
-	        slot->RecordingOwner.PartitionIndex ||
-	    leaseState.Owner.TaskIdentity !=
-	        slot->RecordingOwner.TaskIdentity)
+	if (slot == nullptr || slot->Owner != this || slot->State != SlotState::Closed ||
+	    !RhiCommandRecordingLeaseAccess::Matches(
+	        leaseState,
+	        RhiCommandRecordingLeaseBackendState{
+	            .State = slot,
+	            .CommandList = slot->CommandList.get(),
+	            .QueueType = slot->QueueType,
+	            .FrameSlot = slot->FrameSlot,
+	            .ContextId = RhiCommandRecordingContextId{.Value = slot->ContextIndex},
+	            .Owner = slot->RecordingOwner,
+	            .Closed = true}))
 	{
 		return nullptr;
 	}

@@ -78,7 +78,7 @@ struct PersistentRenderGpuScene::Impl final
 
 	const RenderSceneGpuData& Update(const RenderSceneData& sceneData, std::uint32_t frameIndex)
 	{
-		RenderGpuDynamicFrameStorage& dynamicStorage = DynamicFrames[frameIndex % RhiFrameConstants::FramesInFlight];
+		RenderGpuDynamicFrameStorage& dynamicStorage = DynamicFrames[frameIndex % DynamicFrames.size()];
 		Geometry.Update(sceneData);
 
 		UpdateLighting(sceneData, dynamicStorage);
@@ -204,7 +204,7 @@ struct PersistentRenderGpuScene::Impl final
 
 	RhiResourceService* ResourceService = nullptr;
 	const GpuMeshCache* Meshes = nullptr;
-	std::array<RenderGpuDynamicFrameStorage, RhiFrameConstants::FramesInFlight> DynamicFrames;
+	std::array<RenderGpuDynamicFrameStorage, RhiFrameConstants::MaxFrameSlotCount> DynamicFrames;
 	RenderGpuRayTracingStorage RayTracing;
 	RenderGpuGeometryState Geometry;
 	RenderGpuLightingPayloads LightingPayloads;

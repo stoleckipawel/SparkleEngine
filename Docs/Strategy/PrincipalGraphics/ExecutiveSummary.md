@@ -10,12 +10,12 @@ This document turns advanced graphics engineering expectations into engine requi
 
 Use this as the short entry point. For the durable sources and decisions:
 
-- [A](A_PrincipalRenderingRequirements.md) defines the vendor-neutral `PGE-01` through `PGE-15` requirements.
-- [B](B_RoleSourceArchive.md) preserves every supplied role and CV requirement.
-- [C](C_CandidateAndRepositoryGapAssessment.md) grades the current candidate, public profile, and repository.
-- [F](F_6_12_MonthPrincipalGraphicsRoadmap.md) defines the six-to-twelve-month execution order and gates.
-- [H](H_AdvancedGraphicsEngineerPersona.md) defines the target operating persona.
-- [I](I_BistroAcceptanceWorkload.md) defines the Sponza/Bistro/San Miguel workload ladder and the flagship acceptance evidence.
+- [A](Requirements.md) defines the vendor-neutral `PGE-01` through `PGE-15` requirements.
+- [B](RoleSourceArchive.md) preserves every supplied role and CV requirement.
+- [C](GapAssessment.md) grades the current candidate, public profile, and repository.
+- [F](Roadmap.md) defines the six-to-twelve-month execution order and gates.
+- [H](EngineerPersona.md) defines the target operating persona.
+- [I](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md) defines the Sponza/Bistro/San Miguel workload ladder and the flagship acceptance evidence.
 
 The engine should read as a compact, serious renderer-first engine that proves:
 
@@ -62,7 +62,7 @@ Near-term change gate:
 
 ## Principal Graphics Engineering Success Contract
 
-The canonical role matrix is `PGE-01` through `PGE-15` in [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md). The executive interpretation is:
+The canonical role matrix is `PGE-01` through `PGE-15` in [A. Principal Graphics Engineering Requirements](Requirements.md). The executive interpretation is:
 
 1. Keep the renderer/RHI/task/editor cleanup sequence intact.
 2. Turn neural readiness into one real replacement-based neural graphics feature after the required data, shader, resource, and profiling boundaries are stable.

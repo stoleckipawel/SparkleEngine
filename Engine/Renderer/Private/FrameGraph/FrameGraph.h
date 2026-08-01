@@ -424,9 +424,9 @@ class FrameGraph
 	{
 		FrameGraphTextureHistory handles = {};
 		FrameGraphTextureDesc desc = {};
-		std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> resources = {};
-		std::array<ResourceState, RhiFrameConstants::FramesInFlight> states = {};
-		std::array<std::uint64_t, RhiFrameConstants::FramesInFlight> generations = {};
+		std::array<RhiOwnedResourceHandle, RhiFrameConstants::MaxFrameSlotCount> resources = {};
+		std::array<ResourceState, RhiFrameConstants::MaxFrameSlotCount> states = {};
+		std::array<std::uint64_t, RhiFrameConstants::MaxFrameSlotCount> generations = {};
 		std::uint64_t generation = 1u;
 		std::uint32_t previousIndex = 0u;
 		std::uint32_t currentIndex = 0u;
@@ -436,6 +436,7 @@ class FrameGraph
 		bool allowDepthStencil = false;
 		bool allowUnorderedAccess = false;
 	};
+	mutable std::uint64_t m_historyFrameIndex = 0;
 
 	struct VirtualTransientResource
 	{

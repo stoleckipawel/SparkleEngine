@@ -22,7 +22,8 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	static std::unique_ptr<D3D12RenderDeviceServices> Create(
 	    Window& window,
 	    PixelFormat backBufferFormat,
-	    RhiExternalFeatureHooks externalFeatureHooks) noexcept;
+	    const RhiPresentationConfiguration& presentationConfiguration,
+	    RhiD3D12InterposerHooks interposerHooks) noexcept;
 	~D3D12RenderDeviceServices() noexcept override;
 
 	D3D12RenderDeviceServices(const D3D12RenderDeviceServices&) = delete;
@@ -35,7 +36,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
 	void SettleForShutdown() noexcept override;
 	void ResizeSwapChain() noexcept override;
-	void BeginFrame() noexcept override;
+	void BeginFrame(std::uint64_t frameId) noexcept override;
 	void PrepareCommandRecording() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
@@ -53,15 +54,22 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	void WaitForSubmission(RhiSubmissionToken token) noexcept override;
 	bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept override;
 	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept override;
-	void SubmitFrame() noexcept override;
+	void SubmitFrame(std::uint64_t frameId) noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
 
   private:
 	D3D12RenderDeviceServices() noexcept = default;
 
-	void Initialize(Window& window, PixelFormat backBufferFormat, RhiExternalFeatureHooks externalFeatureHooks);
-	void InitializeDevice(RhiExternalFeatureHooks externalFeatureHooks);
-	void InitializePresentation(Window& window, PixelFormat backBufferFormat);
+	void Initialize(
+	    Window& window,
+	    PixelFormat backBufferFormat,
+	    const RhiPresentationConfiguration& presentationConfiguration,
+	    RhiD3D12InterposerHooks interposerHooks);
+	void InitializeDevice(RhiD3D12InterposerHooks interposerHooks);
+	void InitializePresentation(
+	    Window& window,
+	    PixelFormat backBufferFormat,
+	    const RhiPresentationConfiguration& presentationConfiguration);
 	void InitializeHardwareInterface();
 	void InitializeCommandRecording();
 	void InitializeSamplers();
@@ -74,44 +82,59 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	std::unique_ptr<D3D12RenderHardwareInterface> m_renderHardwareInterface;
 	std::unique_ptr<D3D12CommandRecordingContext> m_commandRecordingContext;
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
+	std::uint32_t m_currentFrameIndex = 0;
 };
 
 std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
     Window& window,
     PixelFormat backBufferFormat,
-    RhiExternalFeatureHooks externalFeatureHooks) noexcept
+    const RhiPresentationConfiguration& presentationConfiguration,
+    RhiD3D12InterposerHooks interposerHooks) noexcept
 {
-	return D3D12RenderDeviceServices::Create(window, backBufferFormat, externalFeatureHooks);
+	return D3D12RenderDeviceServices::Create(window, backBufferFormat, presentationConfiguration, interposerHooks);
 }
 
 std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
     Window& window,
     PixelFormat backBufferFormat,
-    RhiExternalFeatureHooks externalFeatureHooks) noexcept
+    const RhiPresentationConfiguration& presentationConfiguration,
+    RhiD3D12InterposerHooks interposerHooks) noexcept
 {
 	auto services = std::unique_ptr<D3D12RenderDeviceServices>(new D3D12RenderDeviceServices());
-	services->Initialize(window, backBufferFormat, externalFeatureHooks);
+	services->Initialize(window, backBufferFormat, presentationConfiguration, interposerHooks);
 	return services;
 }
 
-void D3D12RenderDeviceServices::Initialize(Window& window, PixelFormat backBufferFormat, RhiExternalFeatureHooks externalFeatureHooks)
+void D3D12RenderDeviceServices::Initialize(
+    Window& window,
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration,
+    RhiD3D12InterposerHooks interposerHooks)
 {
-	InitializeDevice(externalFeatureHooks);
-	InitializePresentation(window, backBufferFormat);
+	InitializeDevice(interposerHooks);
+	InitializePresentation(window, backBufferFormat, presentationConfiguration);
 	InitializeHardwareInterface();
 	InitializeCommandRecording();
 	InitializeSamplers();
 }
 
-void D3D12RenderDeviceServices::InitializeDevice(RhiExternalFeatureHooks externalFeatureHooks)
+void D3D12RenderDeviceServices::InitializeDevice(RhiD3D12InterposerHooks interposerHooks)
 {
-	m_rhi = std::make_unique<D3D12Rhi>(externalFeatureHooks);
+	m_rhi = std::make_unique<D3D12Rhi>(interposerHooks);
 	m_descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*m_rhi);
 }
 
-void D3D12RenderDeviceServices::InitializePresentation(Window& window, PixelFormat backBufferFormat)
+void D3D12RenderDeviceServices::InitializePresentation(
+    Window& window,
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration)
 {
-	m_swapChain = std::make_unique<D3D12SwapChain>(*m_rhi, window, *m_descriptorHeapManager, backBufferFormat);
+	m_swapChain = std::make_unique<D3D12SwapChain>(
+	    *m_rhi,
+	    window,
+	    *m_descriptorHeapManager,
+	    backBufferFormat,
+	    presentationConfiguration);
 }
 
 void D3D12RenderDeviceServices::InitializeHardwareInterface()
@@ -128,7 +151,11 @@ void D3D12RenderDeviceServices::InitializeHardwareInterface()
 void D3D12RenderDeviceServices::InitializeCommandRecording()
 {
 	m_commandRecordingContext =
-	    std::make_unique<D3D12CommandRecordingContext>(*m_rhi, *m_renderHardwareInterface, *m_descriptorHeapManager);
+	    std::make_unique<D3D12CommandRecordingContext>(
+	        *m_rhi,
+	        *m_renderHardwareInterface,
+	        *m_descriptorHeapManager,
+	        m_swapChain->GetMaximumFramesInFlight());
 	m_renderHardwareInterface->SetCommandRecordingContext(*m_commandRecordingContext);
 }
 
@@ -140,7 +167,6 @@ void D3D12RenderDeviceServices::InitializeSamplers()
 
 D3D12RenderDeviceServices::~D3D12RenderDeviceServices() noexcept
 {
-	m_rhi->ShutdownExternalRuntime();
 	m_samplerLibrary.reset();
 	m_commandRecordingContext.reset();
 	m_renderHardwareInterface.reset();
@@ -187,11 +213,12 @@ void D3D12RenderDeviceServices::DrainPresentationQueue() noexcept
 	}
 }
 
-void D3D12RenderDeviceServices::BeginFrame() noexcept
+void D3D12RenderDeviceServices::BeginFrame(std::uint64_t frameId) noexcept
 {
-	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
-	m_rhi->SetCurrentFrameIndex(frameIndex);
-	m_commandRecordingContext->BeginFrame(frameIndex);
+	m_swapChain->WaitForPresentationSlot();
+	m_rhi->NotifyFrameLatencyMarker(ERhiFrameLatencyMarker::RenderSubmitStart, frameId);
+	m_rhi->SetCurrentFrameIndex(m_currentFrameIndex);
+	m_commandRecordingContext->BeginFrame(m_currentFrameIndex);
 	m_uploadService->BeginFrame();
 	(void) BeginCurrentGraphicsCommandList();
 }
@@ -267,7 +294,7 @@ RhiSubmissionToken D3D12RenderDeviceServices::GetLastSubmittedToken(ERhiQueueTyp
 	return m_rhi->GetLastSubmittedToken(queueType);
 }
 
-void D3D12RenderDeviceServices::SubmitFrame() noexcept
+void D3D12RenderDeviceServices::SubmitFrame(std::uint64_t frameId) noexcept
 {
 	for (const ERhiQueueType queueType : {ERhiQueueType::Compute, ERhiQueueType::Copy})
 	{
@@ -275,10 +302,14 @@ void D3D12RenderDeviceServices::SubmitFrame() noexcept
 	}
 
 	(void) SubmitCurrentGraphicsCommandList({});
+	m_rhi->NotifyFrameLatencyMarker(ERhiFrameLatencyMarker::RenderSubmitEnd, frameId);
+	m_rhi->NotifyFrameLatencyMarker(ERhiFrameLatencyMarker::PresentStart, frameId);
 	m_swapChain->Present();
+	m_rhi->NotifyFrameLatencyMarker(ERhiFrameLatencyMarker::PresentEnd, frameId);
 }
 
 void D3D12RenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
-	m_swapChain->UpdateFrameInFlightIndex();
+	m_swapChain->UpdateCurrentBackBufferIndex();
+	m_currentFrameIndex = (m_currentFrameIndex + 1u) % m_swapChain->GetMaximumFramesInFlight();
 }

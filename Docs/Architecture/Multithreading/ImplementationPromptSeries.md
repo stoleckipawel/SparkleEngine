@@ -3,9 +3,9 @@
 Status: required execution companion to J; no prompt implies implementation already exists
 Date: 2026-07-24
 Canonical naming authority: J's industry-grounded concurrency and rendering vocabulary; enforced by Rule 10
-Architecture and tutorial source: [J. Multithreaded Engine Architecture and Learning Program](J_MultithreadedEngineArchitectureAndLearningProgram.md)
-Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md), and [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md)
-Coding and integration contract: [L. SparkleEngine Integration Style Guide](L_SparkleEngineIntegrationStyleGuide.md)
+Architecture and tutorial source: [J. Multithreaded Engine Architecture and Learning Program](ArchitectureAndLearningProgram.md)
+Governing requirements: [A. Principal Rendering Requirements](../../Strategy/PrincipalGraphics/Requirements.md), [E. External Renderer Repository Comparison](../Research/ExternalRendererComparison.md), [G. Advanced Graphics Engine Executive Summary](../../Strategy/PrincipalGraphics/ExecutiveSummary.md), [H. Advanced Graphics Engineer Persona](../../Strategy/PrincipalGraphics/EngineerPersona.md), and [I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md)
+Coding and integration contract: [L. SparkleEngine Integration Style Guide](../../Engineering/Standards/IntegrationStyleGuide.md)
 
 ## Canonical Workload Rule
 
@@ -494,13 +494,13 @@ The range notation is inclusive. It does not mean every hazard needs a bespoke t
 Target CL Title: `Sparkle: Establish Concurrency Before-State and Invariants`
 
 ~~~text
-Implement Prompt 00 from K_MultithreadedEngineImplementationPromptSeries.md.
+Implement Prompt 00 from Docs/Architecture/Multithreading/ImplementationPromptSeries.md.
 
 Objective:
 Create the verified before-state and invariant vocabulary required for every later multithreading change. This prompt changes no ownership architecture and introduces no new task/ECS/render framework.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -591,13 +591,13 @@ describe a capability advanced by this baseline/current-state reconciliation.
 Target CL Title: `SparkleTasks: Build the Deterministic Serial Task Graph Contract`
 
 ~~~text
-Implement Prompt 01 from K_MultithreadedEngineImplementationPromptSeries.md only after Prompt 00 passes.
+Implement Prompt 01 from Docs/Architecture/Multithreading/ImplementationPromptSeries.md only after Prompt 00 passes.
 
 Objective:
 Create SparkleTasks' deterministic serial foundation: task identity, immutable compiled topology, execution generations, prerequisites, fan-in, nested completion semantics, explicit failure, and bounded graph storage. Do not create worker threads yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -651,7 +651,7 @@ Objective:
 Execute the same compiled task contract on a fixed worker set with local ready queues, external injection, work stealing, sleep/wake, and safe repeated startup/shutdown. Preserve exact serial semantics.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -710,7 +710,7 @@ Objective:
 Complete the production SparkleTasks contract: `TaskScope` hierarchy, cooperative cancellation, `TaskEvent`, `ParallelFor`, FrameCritical/Background/BlockingIo lanes, host joins, failure/finally semantics, private profiler events, and ordered shutdown. This is the engine job system, but `Job` is not a parallel API vocabulary.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -774,7 +774,7 @@ Objective:
 Adversarially reconcile the completed Prompt 00–03 work with K Rules 2, 10, 11, and 12. Make SparkleTasks and the Prompt 03 InputSystem changes read like one production architecture through module ownership, folder placement, filenames, primary type names, public/private boundaries, and short policy-focused orchestration. Preserve the proven task-runtime behavior. This is a remediation and structure gate, not a feature prompt.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit the complete `Engine/Tasks` subtree and the directly touched InputSystem registration/dispatch path, including files introduced or modified by Prompts 00–03. Completed work has no grandfather clause.
 - Enforce Rule 11: product function bodies contain no local class/struct definitions; lifecycle, synchronization, runtime-record, visitor, and policy types live at the narrowest file-private or owning-type scope. Short local lambdas remain only for genuinely inline algorithms/callbacks.
@@ -849,7 +849,7 @@ Objective:
 Replace ad-hoc/as-serial application and tool concurrency with SparkleTasks in coarse, useful pilots: shader recook process coordination, launcher operations/process I/O, texture request cooking, and safe shader cook nodes. Preserve deterministic transactional output and explicit external-process lifetime.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -924,7 +924,7 @@ Objective:
 Replace the unused owning Entity model with the private serial ECS foundation: generational EntityId, registry, per-type sparse-set component storage, stable schema IDs, and invariant tests. Do not parallelize systems yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -993,7 +993,7 @@ Objective:
 Make ECS iteration and structural mutation safe for future jobs: typed read/write queries, include/exclude filtering, frozen structural epochs, task-local EntityCommandBuffer, deterministic playback, and temporary entity remapping. Execute serially.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1068,7 +1068,7 @@ Objective:
 Move current camera, mesh-instance, visibility, light, transform, animation playback, and cold editor metadata instance state into ECS component pools while keeping GameScene as the coherent world facade. Compatibility facades may remain only as non-owning single-source views.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1206,7 +1206,7 @@ Objective:
 Remove write-on-read transform/camera caches, evaluate derived world state in explicit serial systems, and create the bounded sequenced world change journal/read publication that renderer/editor will consume.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1296,7 +1296,7 @@ Objective:
 Replace destructive synchronous level loading with a scoped read/decode/validate/assemble pipeline that produces immutable EntityBlueprint packages and commits atomically while preserving the old scene on failure/cancellation.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1380,7 +1380,7 @@ Objective:
 Replace the legacy `GameWorldController` arbitrary mutable-world access with an ECS-aware `GameSystemGraph` and prove the first real gameplay parallel workload through movement, animation pose, morph, skinning, transform, and extraction dependencies.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1472,7 +1472,7 @@ Objective:
 Remove live `GameWorld` pointer/index mutation from editor panels. Make editor main own ImGui/selection/transactions, consume immutable `WorldReadView`-derived `EditorSceneModel`, submit stable `EntityId` semantic commands, and manage background workflows through one `EditorOperationService`.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1542,7 +1542,7 @@ Objective:
 Replace GameWorldSnapshot/raw mesh pointer/direct lifecycle coupling with stable RenderObjectId, immutable asset handles, sequenced RenderWorldDelta, RenderFrameDynamicData, exact frame metadata, and a headless-replayable renderer input contract. Keep renderer execution serial.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1652,7 +1652,7 @@ Objective:
 Make `RenderWorldDelta` and `RenderFrameDynamicData` a measured data-oriented transform from GameFramework's frozen ECS/read publication into renderer-owned persistent tables. Remove any remaining object-shaped/full-scene extraction, generic cosmetic SoA, redundant authority, pointer chasing, or per-frame static duplication before renderer threading begins. Preserve serial rendering and every current raster, RT, temporal, provider, editor-viewport, and capture input.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every GameFramework source column, extraction transform, packet field, RenderWorld proxy/table, and planned GPU upload consumed by the two streams. No field exists only because the old object carried it.
 - Apply Rule 12: make GameFramework publication, extraction contracts, renderer input streams, and render-owned table files/folders reveal their ownership and data-flow direction.
 - Trace every material decision to Richard Fabian's data/access methodology, Epic MassEntity or game/render proxy documentation, NVIDIA Donut renderer scene buffers/dirty state, or AMD Cauldron/Detroit/RDNA renderer data guidance. State the scope of the precedent. Do not claim NVIDIA/AMD provides Sparkle's GameFramework ECS.
@@ -1728,7 +1728,7 @@ Objective:
 Move RendererSystemRoot, FramePipeline, mutable RHI ownership, submit/present, and renderer resource creation/destruction to one `RenderCoordinator` running on `RenderThread`. Connect GameThread/EditorThread producers through bounded frame slots and sequenced control commands. Keep renderer preparation/recording serial inside the coordinator initially.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1801,7 +1801,7 @@ Objective:
 Make all editor-to-render data owned/versioned: copied ImGui draw packets, viewport requests/products, rendering settings commands, preview/capture requests, and narrow completion results. Remove live editor/renderer pointer sharing.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1869,7 +1869,7 @@ Objective:
 Stop rebuilding/uploading unchanged scene-wide arrays. Make RenderWorld proxies and GPU-scene slots persistent, apply structural deltas, update dirty dynamic ranges, and prepare token-based removal/retirement while preserving raster and RT identity.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1944,7 +1944,7 @@ Objective:
 Connect asynchronous CPU asset generations, render uploads, shader package replacement, readiness, fallback, eviction, and deferred retirement without worker waits or routine device idle.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2039,7 +2039,7 @@ Objective:
 Replace monolithic mutable renderer preparation with pure/coarse task nodes over immutable packet/render-world inputs and task-private outputs: transforms/bounds, visibility, batching, lighting, skinning/morph, material classification, RT planning, deterministic merge.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2147,7 +2147,7 @@ Objective:
 Make D3D12 command recording ownership safe for future frame-graph fan-out: per-worker/per-frame/per-queue allocator/list contexts, explicit lease lifetime, worker-local or preassigned transient upload/descriptor allocation, and token-based reset/reuse. Do not enable general parallel pass recording yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2256,7 +2256,7 @@ Objective:
 Make Vulkan command recording ownership safe: per-worker/per-frame/per-queue-family command-pool/buffer contexts, external synchronization compliance, transient descriptor/upload ownership, reset/retirement, and preserved debug/validation behavior. Do not enable general parallel pass recording yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2409,7 +2409,7 @@ Objective:
 Use frame-graph dependencies to compile eligible pass recording groups, lease worker contexts, record concurrently, deterministically aggregate closed native command objects, and submit measured batches in unchanged compiled order with explicit entry/exit resource-state contracts on both backends. Keep preparation, native recording, software translation, aggregation, submission batching, and queue submission as distinct concepts.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2541,7 +2541,7 @@ Objective:
 Close the serial/threaded/parallel preservation matrix for raster, classic TLAS, PTLAS, reservoir lighting, reference path tracing, temporal/providers, shader ABI, capture, and both backends. This is a correctness and lifetime gate for the architecture already implemented in Prompts 14-20, not a new scaling feature.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2666,7 +2666,7 @@ Objective:
 Close cross-subsystem reliability, deterministic cook/package workflows, editor lifecycle stress, public-surface review, and every compatibility/deletion ledger so one coherent architecture remains.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2860,7 +2860,7 @@ Objective:
 Tune the completed base architecture with representative evidence and establish the full-system reference captures required by the expert-hardening prompts. Do not declare the multithreading program or portfolio complete in this prompt.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2989,22 +2989,331 @@ PGE reconciliation: **advance** PGE-05/06/07/10/13/14/15 through shader-binding,
 measurement, and causal debugging evidence; **preserve** PGE-01/02/03/08/09/11/12; **not applicable** PGE-04 because no neural
 model/operator was tuned. Tier 1 scene evidence and external hardware/profiler evidence remain blocked as stated above.
 
+## Prompt 23A — Audit Multithreading Value and Speed-of-Light Limits
+
+Target CL Title: `SparkleEngine: Audit Multithreading Value and Scaling Limits`
+
+~~~text
+Implement Prompt 23A only after Prompt 23 has produced a stable current-binary baseline. Complete this audit before Prompts
+24-28 use performance evidence to justify deeper concurrency work.
+
+Objective:
+Measure every production use case that currently consumes SparkleTasks, the render thread, bounded frame pipelining, or worker
+command recording. For each use case, state the CPU and GPU milliseconds, throughput, tail behavior, task work, critical path,
+measured speedup, estimated scaling floor, remaining practical headroom, and operational cost. End with an explicit decision:
+continue scaling, tune the current boundary, retain only for ownership/responsiveness, hold the current design, simplify in a
+separate change, or focus on a different CPU/GPU/algorithmic bottleneck. This is a value audit, not a mandate to find a win.
+
+Configuration boundary:
+- Use Development configurations only. Use `DevelopmentGame` for the standalone runtime and command-line tools, and
+  `DevelopmentEditor` only for editor and launcher workflows. Do not mix Debug, Profile, validation-enabled, or differently
+  optimized binaries into a performance comparison.
+- Build once from one commit, record executable hashes, and keep compiler flags, shader products, resolution, present mode,
+  backend, provider state, camera, content, power profile, driver, and third-party worker settings fixed within an A/B group.
+- Validation and correctness runs remain separate gates. They may prove behavior but never contribute timing rows.
+
+Non-negotiable repository rules:
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full, including its ownership, data/access,
+  reconciliation, measurement, and Principal Graphics Engineering gates. Classify PGE-01 through PGE-15 before editing.
+- Reconcile the current tree before capture. Every measured task name, CVar, command-line option, queue, cache, product, and
+  backend marker must resolve to one production owner. Do not measure deleted intermediate designs or historical binaries.
+- Use the existing SparkleTasks ETW provider, frame/GPU markers, backend timestamps, allocator diagnostics, and native/OS
+  profilers. A narrow owner-local trace scope may be retained only when it represents a durable product diagnostic boundary;
+  do not add a benchmark subsystem, generated report, shipping timing stream, UI panel, or duplicate graph view.
+- Preserve one product path and one deterministic serial oracle. Do not create alternate algorithms, duplicate assets, fake
+  work, fallback bindings, or benchmark-only scenes to manufacture scaling.
+- Do not change worker, grain, frame-depth, recording, page-size, or residency defaults during this audit. Capture first,
+  decide second. A later prompt owns any production tuning justified by this record.
+- If a command-line tool lacks a reproducible worker override, add at most one normal owner-local numeric option with the same
+  meaning across that tool's full and incremental modes. Value `1` selects one worker. Reject invalid values explicitly. Do
+  not patch constants between runs or add a global worker alias that hides lane ownership.
+- Record CPU and GPU time separately. CPU multithreading is not credited for a GPU-time change, and unchanged GPU time is a
+  valid result. Mark CPU/file/process-only workflows `GPU N/A` with the reason; never report a fabricated zero.
+- Reject a sample when content cardinality, resident generation, output hash/image, submitted instance count, shader/provider
+  mode, clock/power state, or amount of work differs. A faster incomplete result is a correctness failure, not a speedup.
+
+Production use-case inventory:
+
+| ID | Owner and production work | Serial/reference comparison | Evidence surface and outcome metric |
+|---|---|---|---|
+| `MV-01` | `SparkleTasks` scheduling, dependency release, queueing, parking, wake, and settlement | serial executor versus 1/2/4/8/N lane workers on the same real graphs; a tiny calibration graph measures overhead but cannot justify a product claim | `SparkleTasks` dependency/begin/end ETW events; submit-to-start, execution, fan-in, settle, idle wakes, and scheduling floor |
+| `MV-02` | `SceneLoadTaskGraph`: per-asset read, decode/build, validation, and stable publication | one BlockingIo plus one Background worker versus independent bounded lane sweeps on the same catalog level | level-request-to-ready wall time, stage CPU work/critical path, bytes, peak retained memory, cancellation-free publication hash |
+| `MV-03` | `GameSystemGraph`: camera, motion, animation playback, pose, morph, skinning, transform, derived camera, mesh extraction, and serial commits | `task.SerialExecution=true` versus FrameCritical 1/2/4/8/N; retain current per-system serial thresholds | update and per-system p50/p95/p99, query cardinality, partitions, task work/critical path, merge/commit time, published frame fingerprint |
+| `MV-04` | runtime mesh and texture generations: BlockingIo read, Background decode/CPU preparation, render-owner upload, token completion, publication, replacement, and retirement | independent BlockingIo/Background sweeps for fixed cold load/reload; steady resident frames are the zero-churn control | request-to-resident latency, read/decode/prepare/upload CPU ms, GPU copy/build ms where present, bytes, backlog, peak memory, prior-generation preservation |
+| `MV-05` | `RenderPreparationGraph`: transform/bounds, visibility, joint matrices, morph weights, lighting, ordered merge, batching, and RT-plan publication | serial executor versus FrameCritical 1/2/4/8/N on identical immutable frame input | preparation wall time, named-node work, ready delay, DAG critical path, merge/RT-plan serial tail, object/light/deformation counts, output fingerprint |
+| `MV-06` | `RenderCoordinator` and `RenderFrameQueue`: caller-owned rendering, dedicated render owner, zero-ahead, and one-ahead overlap | caller-owned reference; threaded zero-ahead; threaded one-ahead, with task/recording controls held fixed | game CPU, render CPU, producer/consumer wait, queue occupancy/backpressure, throughput frame ms, input-to-present latency, GPU frame ms |
+| `MV-07` | frame-graph group/chunk planning plus D3D12/Vulkan exclusive worker command recording | same compiled plan with `r.FrameGraph.ParallelRecording=false/true`, then FrameCritical 1/2/4/8/N | plan/record/aggregate/submit CPU ms, chunk count/cost balance, ready delay, lists, barriers, descriptors, upload-page high water, GPU pass/queue ms, image/hash |
+| `MV-08` | persistent GPU-scene dirty publication and classic-TLAS/PTLAS update consequences of parallel preparation | unchanged warm frame, one-object edit, animation-heavy frame, and structural change under the same serial/threaded preparation modes | dirty ranges, upload bytes, resource creation, BLAS/TLAS/PTLAS CPU/GPU ms, memory/fragmentation, stable slot/RT identity |
+| `MV-09` | `ShaderCookPlanExecutor`: independent stage compiles and deterministic package publication | `--parallel-compiles=1/2/4/8` on full cold, full warm-cache, and fixed incremental cooks for DXIL and SPIR-V | wall time, total CPU work, compiler child/internal threads, cache hits, peak working set, stages/s, package hash/publication identity; GPU N/A |
+| `MV-10` | `TextureCookBatchExecutor`: independent decode/transform/compress tasks under one byte limiter and transactional publication | one worker versus 2/4 and current automatic count on one fixed multi-texture request set | wall time, per-item CPU ms, queue delay, codec/internal threads, limiter wait, peak working set, source/output bytes, textures/s, hashes; GPU N/A |
+| `MV-11` | `AssetCookerSceneBatch`: independent imported-scene builds and ordered generation publication | one worker versus 2/4 and current automatic count on one fixed multi-scene catalog | wall time, per-scene CPU work, imbalance, peak working set, scenes/s, diagnostics/order, generation hash; GPU N/A |
+| `MV-12` | editor shader recook and viewport capture write on BlockingIo, plus launcher child-process operations | synchronous owner-thread counterfactual only when the existing serial oracle can execute the identical operation; otherwise compare UI/owner blocking with 1/2 bounded BlockingIo workers | operation latency, editor/launcher frame stall p95/p99, output-stream latency, cancellation/shutdown settlement, product/capture hash; GPU N/A except capture readback timing |
+
+The inventory is binding but not assumed exhaustive. Search all `TaskLane`, `TaskGraphBuilder`, `ParallelFor`, `TaskExecutor`,
+`RenderFrameQueue`, render-thread, and worker-recording consumers at implementation time. Add any newly found production consumer
+as the next `MV-*` row, or classify it as ownership-only with evidence. No discovered consumer may disappear into an aggregate
+"other tasks" row.
+
+Workloads and experiment order:
+1. Use the current Prompt 23 fixed routes: Empty as the tiny crossover, Sponza as the regression scene, the representative
+   Tier 1 route accepted by Prompt 23, CesiumMan for animation/deformation, and classic TLAS/PTLAS routes where each backend
+   reports support. Use existing project content only.
+2. For runtime frame work, capture an all-serial reference first: serial task execution, caller-owned renderer, serial command
+   recording. Then change exactly one axis in this order: task lanes, threaded zero-ahead ownership, threaded one-ahead
+   ownership, parallel recording, and the final combined mode.
+3. Sweep one lane at a time. FrameCritical, Background, and BlockingIo counts are independent; never multiply all three from
+   one aggregate worker value. Use explicit 1/2/4/8/N points only while the workload has enough items and the machine remains
+   stable. Record the exact meaning of N.
+4. Separate cold filesystem/product-cache, warm OS/product-cache, first-resident GPU preparation, and steady resident frames.
+   Warm runtime capture begins only after scene generations, submitted instance counts, dirty uploads, and residency counters
+   reach the declared stable condition.
+5. Interleave A/B order across at least five repeatable run pairs. For destructive cold-cache operations use at least three
+   independently restored runs with the exact reset procedure recorded. Collect at least 300 stable runtime frames per route
+   segment. Repeat the selected best/reference pair independently from freshly launched final binaries.
+6. Capture D3D12 and Vulkan for rendering rows. CPU-only tool rows run once per product configuration and are not duplicated
+   under a meaningless RHI label.
+
+Speed-of-light analysis:
+- For every fixed task DAG, compute total task work `W` as the sum of task execution intervals and dependency critical path
+  `L` from the recorded graph and task durations. For `P` workers, report the ideal DAG lower bound `B(P) = max(L, W / P)`.
+- Measure owner work outside the task DAG on the same causal path as `U`. Report the stage floor
+  `T_floor(P) = U + B(P)`, observed scheduling/imbalance loss `T_observed(P) - T_floor(P)`, and finite-worker ceiling
+  `S_max(P) = T_serial / T_floor(P)`. State that these are trace-derived bounds for this workload and host, not universal
+  hardware limits.
+- Report observed speedup `S(P) = T_serial / T_observed(P)` and worker efficiency `E(P) = S(P) / P`. Do not infer an Amdahl
+  fraction from one noisy pair; use the measured DAG work, critical path, serial owner work, and the complete worker curve.
+- For render pipelining, report throughput and latency separately. When stages genuinely overlap, compare observed steady
+  throughput with `max(T_game_cpu, T_render_cpu, T_gpu_critical)` and show queue wait/occupancy. Input-to-present remains a
+  causal sum with measured overlap; one-ahead throughput is not a latency win by definition.
+- For I/O/cook pipelines, distinguish wall time, total CPU work, blocked I/O time, third-party internal work, publication tail,
+  and items/second. More aggregate CPU time can still be a wall-time win, but its power/memory/thread cost must be visible.
+- Treat GPU critical-path time, serial owner sections, task critical path, memory bandwidth, file throughput, driver work, and
+  third-party inner pools as separate ceilings. Name the dominant measured ceiling; do not guess from utilization alone.
+
+Result record:
+Fill the following two manually maintained tables in this K document. Link each summary row to its detailed capture settings
+and raw profiler artifact location; do not commit generated summaries or large native captures.
+
+| Use case | Workload/cardinality | Reference CPU p50/p95/p99 ms | Best CPU p50/p95/p99 ms | GPU p50/p95/p99 ms or N/A | Workers/mode | Speedup/efficiency | `W` / `L` / `T_floor` ms | Tail, memory, thread cost | Confidence |
+|---|---|---:|---:|---:|---|---:|---:|---|---|
+| `MV-*` | fill from accepted capture | fill | fill | fill | fill | fill | fill | fill | accepted/rejected with reason |
+
+| Use case | Current bottleneck | Remaining practical gain | Value already delivered | Decision | Next owner and falsifier |
+|---|---|---:|---|---|---|
+| `MV-*` | task overhead / imbalance / serial owner / I/O / driver / GPU / memory / none | CPU or operation ms and end-to-end percent | throughput / tail / responsiveness / ownership only / none | continue / tune boundary / retain / hold / simplify separately / focus elsewhere | exact subsystem and measurement that could overturn the decision |
+
+Decision rules:
+- `continue` only when the use case is material on the end-to-end critical path, the 2-to-N curve still improves outside the
+  confidence/noise interval, and the trace-derived floor shows a meaningful attainable saving without unacceptable GPU,
+  latency, memory, power, or determinism cost.
+- `tune boundary` when useful parallel work exists but scheduling loss, grain size, load imbalance, lane interference, or a
+  serial fan-in consumes a material fraction of the stage. Name the exact owner and estimated recoverable milliseconds.
+- `retain` when threading delivers ownership isolation, UI responsiveness, bounded I/O progress, or tail control but little
+  throughput improvement. Do not deepen parallelism merely to increase worker utilization.
+- `hold` or `focus elsewhere` when the stage is already near its measured floor, its absolute cost is immaterial, additional
+  workers lose, or GPU/I/O/algorithmic work dominates end to end.
+- `simplify separately` is only a candidate when repeated data shows regression or no value and the boundary provides no
+  correctness, lifetime, responsiveness, or ownership benefit. This audit does not delete the path; a later scoped change must
+  prove parity and lower complexity.
+- Predeclare per-use-case absolute and relative materiality thresholds from frame/operation budgets before reading results.
+  Differences inside run-to-run variability are "no demonstrated change," not wins or losses.
+
+Validation:
+- Every production consumer in the inventory has an accepted measurement or an explicit blocked row naming the missing asset,
+  profiler, control, trust policy, or hardware capability. Blank rows and unexplained N/A values fail the audit.
+- Serial and threaded runs process identical inputs and produce equivalent deterministic bytes/state/images under the existing
+  tolerance contracts. Content cardinality and residency are recorded beside timing data.
+- Reference and selected modes are rerun independently; p50/p95/p99, throughput, task work/critical path, queue delay,
+  context-switch/thread cost, peak memory, and GPU time are reported where applicable.
+- The final decision table answers, in milliseconds and percent, which multithreading investments paid off, which only improve
+  responsiveness/ownership, which have reached practical scaling limits, and where engineering time should move next.
+- No benchmark/report product, duplicate execution path, synthetic-only claim, hidden default change, or unowned control remains.
+
+Acceptance gate:
+- L Sections 19-21 and 24 pass for the measured repository state, with PGE-05/06/07/09/10/13/14/15 explicitly reconciled.
+- The use-case inventory, capture matrix, formulas, raw-evidence locations, rejection log, two result tables, and independent
+  rerun are complete enough for another engineer to reproduce the conclusions.
+- CPU speedup is never inferred from FPS alone; GPU time, latency, work cardinality, memory, task overhead, and output parity
+  accompany every rendering claim.
+- Later Prompt 24-28 work is narrowed by measured Sparkle paths and falsifiers. When no material concurrency bottleneck remains,
+  the record explicitly recommends focusing elsewhere instead of manufacturing more multithreading work.
+
+Positive patterns: same-work serial oracle, per-stage milliseconds, task-work/critical-path bound, interleaved A/B runs,
+throughput-versus-latency separation, honest N/A, negative-result retention, explicit stop decision.
+Forbidden: FPS-only summary, worker-utilization target, Debug/Development comparison, one-backend claim, incomplete-residency
+speedup, synthetic-only justification, generated dashboard/report, changed defaults before capture, universal speed-of-light claim.
+~~~
+
+### Prompt 23A audit record - 2026-08-01
+
+Status: **the production inventory and fixed Development builds are complete; shader cooking has accepted data; Prompt 23A
+acceptance remains blocked**. The earlier Prompt 23 runtime numbers predate the executable hashes below and are context only.
+They are not merged into this audit. No worker, grain, frame-depth, recording, cache, or residency default changed.
+
+PGE reconciliation: **advance** PGE-05/06/07/09/10/13/14/15 through fixed-build provenance, complete consumer/control
+reconciliation, deterministic cook identity, paired CPU/wall/memory evidence, and explicit rejection of stale or incomparable
+samples; **preserve** PGE-01/02/03/08/11; **not applicable** PGE-04/12. Paired-backend runtime claims remain blocked, so this
+record does not inflate source inspection or process totals into PGE-06/14 timing evidence.
+
+#### Reconciled product paths and controls
+
+The current-tree search covered every `TaskLane`, `TaskGraphBuilder`, `ParallelFor`, `TaskExecutor`, `RenderFrameQueue`, render
+thread, and worker-recording consumer. The twelve binding rows remain exhaustive: application task runtime and the
+`SparkleTasks` scheduler (`MV-01`); scene-load graph (`MV-02`); game-system graph (`MV-03`); mesh/texture cache generation work
+(`MV-04`); render preparation (`MV-05`); render coordinator and frame queue (`MV-06`); frame-graph recording (`MV-07`);
+GPU-scene and RT consequences (`MV-08`); shader cooking (`MV-09`); texture cooking (`MV-10`); scene-asset cooking (`MV-11`);
+and editor/launcher operations (`MV-12`). Editor operation tasks, launcher child-process tasks, and cache-owned upload work map
+to those existing rows; no thirteenth production consumer was found.
+
+Runtime axes are owned by `task.FrameCriticalWorkerCount`, `task.BackgroundWorkerCount`,
+`task.BlockingIoWorkerCount`, `task.SerialExecution`, `r.ThreadedRenderer`, `r.RenderPipelineDepth`, and
+`r.FrameGraph.ParallelRecording`. `r.Diagnostics.GpuTiming` owns backend timestamps but the current tree has no capture consumer
+for its resolved values. Shader cooking already owns `--parallel-compiles <1-8>`. Texture and scene-asset cooking now share the
+existing hardware-aware policy of at most four background workers. The audit retained no measurement-only cooker option,
+alternate execution path, or diagnostic stream.
+
+#### Capture contract, host, and evidence
+
+The predeclared materiality gates were greater than 0.20 ms p95 and greater than 3% end to end for runtime work; greater than
+2% repeatable wall-time change for offline work; greater than 10% memory or thread growth was reported as an operational cost;
+and a next-worker gain below 2% was treated as saturated. Five-sample percentiles use nearest rank, so p95 and p99 are the
+maximum for these offline sets.
+
+The fixed source commit was `e777a28c5e8c0fe2d4ae5a110c35cb17788bc0eb`. The host was Windows 11 Home build 26200,
+Ryzen 9 8940HX (16 cores/32 logical processors), 64 GiB memory, Balanced power plan, RTX 5070 Ti Laptop GPU with driver
+610.47 and 12,227 MiB reported memory, plus Radeon 610M driver 32.0.21039.7002.
+
+| Product | Configuration | SHA-256 |
+|---|---|---|
+| `ShowcaseRuntime` | DevelopmentGame | `28F928C1E48DE670F76E9E96D18C6B3A8807B59565C8A8FC6071D05B991DFBC8` |
+| `ShowcaseEditor` | DevelopmentEditor | `5C09A54AC81EAA7C0CA2D0E30EDE025FF91F943F090C3B44E921ECC99155365B` |
+| `SparkleLauncher` | DevelopmentEditor | `61B9CA7BD318E2CFBC61010A60173B4C1B8008401B0C2DF3EF9FB80804D91C1C` |
+| `ShaderCompiler` | DevelopmentGame | `79173233D88093DBC859D266666DED94A83F8E5B74667742AC27F6618E78C6C7` |
+| `TextureCooker` | DevelopmentGame | `FCD9F382057A39DF22BA77F1D1CEE02769CB8E016F9BC1A399D29FCDB1454AB0` |
+| `AssetCooker` | DevelopmentGame | `17F7834258430788DABB594084B56F092B9F91482A724236392CCAC96A886ADF` |
+
+The accepted values are transcribed in the manually maintained tables below. Temporary local capture and probe files were
+deleted after reconciliation; no benchmark output, generated report, or diagnostic artifact remains in the repository.
+
+#### Rejection and blocker log
+
+- The current fixed Vulkan runtime launches successfully, but an eight-second process-total probe had no frame count, clean
+  close, per-stage CPU intervals, or GPU milliseconds. It was rejected rather than converted into per-frame data.
+- NVIDIA PresentMon returned exit code 1 without a CSV. The installed `FvSvc` capture service is stopped and this session cannot
+  start it. WPR failed with `0xc5585011` while enabling system-performance profiling policy, and a `logman` session for the
+  `SparkleTasks` TraceLogging provider failed with access denied. PIX, RenderDoc, Nsight, and RGP are absent.
+- `Projects/Showcase/logs/trace.json` is a 2026-06-25 historical Chrome trace. It predates these binaries and current source no
+  longer owns the former in-engine trace recorder, so none of its frame scopes or timings were accepted.
+- Without a current CPU/native trace, `W`, dependency `L`, owner `U`, queue wait, frame occupancy, native recording chunks, and
+  task-derived `T_floor` cannot be reconstructed for `MV-01` through `MV-08` or `MV-12`. Without PresentMon/native GPU capture
+  or an existing resolved-timestamp consumer, no D3D12/Vulkan GPU percentile is accepted.
+- The Showcase full texture/scene plan stopped before request publication: ABeautifulGame material 5 uses unsupported
+  `KHR_materials_transmission` and `KHR_materials_volume`; DamagedHelmet cannot generate a complete tangent basis from its
+  source UVs; DiffuseTransmissionPlant camera 9 uses unsupported perspective parameters. No partial request, copied asset,
+  fallback product, or reduced catalog replaced those failing inputs, so `MV-10` and `MV-11` have no same-work cardinality.
+- The first PowerShell automation attempt used an unavailable `ProcessStartInfo.ArgumentList` surface and printed tool help.
+  It produced no retained timing. All accepted shader rows came from the corrected fixed-binary harness and exited zero.
+
+#### Accepted shader-cook detail
+
+The full workload cooked 28 typed packages to both `DxilSm66` and `SpirV16`. Each cold run used `--no-cache`; all 20 runs
+published the same 39-file set, including the registry, with generation hash
+`91363EDFB36C8591490062F826BE72AE294EAD6A3E3792A3A43A82044E96126B`. Runs were interleaved for five cycles.
+
+| Workers | Wall p50/p95/p99 ms | Process CPU p50 ms | Median peak working set | Peak threads | Speedup | Efficiency |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 26,173.327 / 33,400.787 / 33,400.787 | 25,984.375 | 265.3 MiB | 6 | 1.000x | 1.000 |
+| 2 | 18,464.476 / 23,212.418 / 23,212.418 | 28,125.000 | 269.2 MiB | 7 | 1.417x | 0.709 |
+| 4 | 13,006.381 / 16,500.874 / 16,500.874 | 29,515.625 | 422.9 MiB | 9 | 2.012x | 0.503 |
+| 8 | 11,051.448 / 12,392.706 / 12,392.706 | 33,125.000 | 716.2 MiB | 13 | 2.368x | 0.296 |
+
+Eight workers save 1,954.933 ms p50 (15.0%) over four and 15,121.879 ms (57.8%) over one. That last step adds 3,609.375 ms
+median process CPU work and 293.3 MiB median peak memory over four; against one worker, process CPU work rises 27.5% and memory
+rises 2.70x. The curve still scales for a cold bulk cook, but its falling efficiency and memory cost select four as the
+balanced product default. The audit does not promote the eight-worker point.
+
+After one four-worker warm-up, the full cache-hit workload used five interleaved one/eight-worker pairs. One worker measured
+1,664.219/1,735.451/1,735.451 ms; eight measured 1,695.316/1,764.482/1,764.482 ms. Eight is 31.097 ms (1.9%) slower at p50,
+inside the offline stop gate, with roughly 15-16 MiB peak memory and 4 versus 6 peak threads. Cache lookup and deterministic
+publication, not compile fan-out, own this path.
+
+The fixed incremental workload selected `GBuffer`, four independent compile nodes, both targets, and no cache. Five interleaved
+one/four-worker pairs measured 347.642/376.468/376.468 ms versus 229.837/239.143/239.143 ms: 1.512x speedup, 0.378 worker
+efficiency, and a 117.805 ms (33.9%) p50 saving. Median process CPU rises from 312.500 to 406.250 ms, median peak memory from
+25.9 to 27.0 MiB, and peak threads from 6 to 9. Four workers match the graph cardinality and already own the practical boundary.
+
+Process CPU is not a substitute for the task-trace definition of `W`: it includes owner and compiler-internal work, while `L`
+and `U` are unavailable. As a deliberately weak floor only, dividing all eight-worker cold process CPU work gives
+`33,125 / 8 = 4,140.625 ms`, leaving 6,910.823 ms of combined critical-path, owner, imbalance, and scheduling distance below
+the observed p50. The analogous incremental value is `406.250 / 4 = 101.563 ms`, leaving 128.274 ms. These are not
+trace-derived `T_floor` values and do not support an Amdahl fraction or a universal host limit.
+
+#### Result table
+
+| Use case | Workload/cardinality | Reference CPU p50/p95/p99 ms | Best CPU p50/p95/p99 ms | GPU p50/p95/p99 ms or N/A | Workers/mode | Speedup/efficiency | `W` / `L` / `T_floor` ms | Tail, memory, thread cost | Confidence |
+|---|---|---:|---:|---:|---|---:|---:|---|---|
+| `MV-01` | Current production graphs; same-work scheduler events | - | - | N/A - CPU scheduler | serial and 1/2/4/8/N planned | - | - | - | **Blocked:** TraceLogging session access denied; no ETL |
+| `MV-02` | Sponza/CesiumMan catalog load | - | - | N/A - file/decode/publication path | BlockingIo and Background sweeps planned | - | - | - | **Blocked:** no current task/level-ready trace and no accepted Tier 1 route |
+| `MV-03` | Empty, Sponza, CesiumMan stable frames | - | - | - | serial versus FrameCritical sweep planned | - | - | - | **Blocked:** no current frame/task trace or present capture |
+| `MV-04` | Fixed cold generation, reload, warm zero-churn | - | - | - | independent BlockingIo/Background sweeps planned | - | - | - | **Blocked:** no residency-ready/task/GPU-copy capture |
+| `MV-05` | Immutable render input for Empty/Sponza/CesiumMan | - | - | N/A - preparation CPU graph | serial versus FrameCritical sweep planned | - | - | - | **Blocked:** no preparation DAG intervals/fingerprint capture |
+| `MV-06` | caller, threaded zero-ahead, threaded one-ahead | - | - | - | ownership/depth axis | - | - | - | **Blocked:** no game/render/wait/present correlation |
+| `MV-07` | fixed compiled plan on D3D12 and Vulkan | - | - | - | serial/parallel recording and lane sweep | - | - | - | **Blocked:** no CPU/native recording trace or GPU percentiles |
+| `MV-08` | warm, one edit, animation, structural change; classic TLAS/PTLAS | - | - | - | serial/threaded preparation | - | - | - | **Blocked:** no dirty/upload/AS timing correlation |
+| `MV-09 cold` | 28 packages, two targets, 39 identical products | 26,173.327 / 33,400.787 / 33,400.787 | 11,051.448 / 12,392.706 / 12,392.706 | N/A - compiler process | 1 versus 8 | 2.368x / 0.296 | process CPU 33,125 / unavailable / unavailable | 716.2 MiB median peak; 13 threads; p99 improves 62.9% | **Accepted** for wall/CPU/memory/hash; task-bound fields blocked |
+| `MV-09 warm` | same 28 packages, full cache hit | 1,664.219 / 1,735.451 / 1,735.451 | 1,664.219 / 1,735.451 / 1,735.451 | N/A - compiler process | 1 wins over 8 | 1.000x / 1.000 | unavailable | 8 is 1.9% slower; about 15-16 MiB | **Accepted** negative result and identical hash |
+| `MV-09 incremental` | GBuffer, four compile nodes, two targets | 347.642 / 376.468 / 376.468 | 229.837 / 239.143 / 239.143 | N/A - compiler process | 1 versus 4 | 1.512x / 0.378 | process CPU 406.250 / unavailable / unavailable | 27.0 MiB median peak; 9 threads | **Accepted** for wall/CPU/memory/hash; task-bound fields blocked |
+| `MV-10` | Showcase fixed multi-texture request set | - | - | N/A - cooker process | 1/2/4/automatic planned | - | - | - | **Blocked:** source errors stop request publication |
+| `MV-11` | Showcase fixed multi-scene catalog | - | - | N/A - cooker process | 1/2/4/automatic planned | - | - | - | **Blocked:** three source scenes stop plan construction |
+| `MV-12` | editor recook/capture and launcher child operations | - | - | N/A except uncaptured readback | owner versus bounded BlockingIo planned | - | - | - | **Blocked:** no current UI/frame-stall trace or automated identical-operation oracle |
+
+#### Decision table
+
+| Use case | Current bottleneck | Remaining practical gain | Value already delivered | Decision | Next owner and falsifier |
+|---|---|---:|---|---|---|
+| `MV-01` | Evidence access, not an attributed product bottleneck | Unknown | Not quantified | Defer | `SparkleTasks/TaskProfiler`; accepted ETL for the same real graph overturns the block |
+| `MV-02` | Evidence access plus absent accepted Tier 1 route | Unknown | Ownership and bounded I/O only, not timed | Defer | `SceneLoadTaskGraph`; clean Tier 1 content plus level-ready ETL |
+| `MV-03` | Evidence access | Unknown | Not quantified | Defer | `GameSystemGraph`; 300-frame cardinality-stable serial/worker trace |
+| `MV-04` | Evidence access and residency-ready gating | Unknown | Generation ownership only, not timed | Defer | mesh/texture cache owners; cold/reload/resident trace with equal generations and bytes |
+| `MV-05` | Evidence access | Unknown | Not quantified | Defer | `RenderPreparationGraph`; immutable-input DAG trace plus equal output fingerprint |
+| `MV-06` | Evidence access | Unknown | Render-owner isolation, not a measured throughput win | Retain ownership boundary; defer scaling | `RenderCoordinator`; game/render/GPU/present correlation with queue occupancy |
+| `MV-07` | Evidence access | Unknown | Exclusive native recording ownership, not a measured CPU win | Retain correctness boundary; defer scaling | `FrameGraphRecordingExecutor`; paired-backend record/chunk/submit trace and image parity |
+| `MV-08` | Evidence access | Unknown | Stable publication/RT identity, not timed | Retain correctness boundary; defer scaling | GPU-scene and RT owners; equal dirty ranges/uploads plus CPU/GPU AS trace |
+| `MV-09 cold` | compiler critical path, serial publication, and rising CPU/memory cost | 1,954.933 ms p50 (15.0%) from 4 to 8 costs another 293.3 MiB median peak memory | 13,166.946 ms p50 (50.3%) from 1 to 4 | Hold the balanced four-worker default | `ShaderCookPlanExecutor`; a larger clean catalog must show a material end-to-end gain within the same memory budget to overturn this choice |
+| `MV-09 warm` | cache lookup and deterministic publication | No demonstrated gain; 8 loses 31.097 ms p50 | Cache removes about 24.5 s versus cold one-worker p50 | Hold; do not deepen parallelism | shader cache/publication owner; a five-pair gain above 2% with identical products overturns it |
+| `MV-09 incremental` | four-node compile graph and compiler critical path | No worker point beyond cardinality is justified | 117.805 ms p50 (33.9%) from 1 to 4 | Hold current four-worker boundary | `ShaderCookPlanExecutor`; a larger representative incremental graph with material 4-to-8 gain overturns it |
+| `MV-10` | Source plan cannot publish | Unknown | Bounded design only, not timed | Fix source/import contracts before tuning | texture-plan/import owners; full fixed request with stable hashes unlocks comparison |
+| `MV-11` | Source plan cannot publish | Unknown | Bounded design only, not timed | Fix source/import contracts before tuning | scene import/cook owners; clean full catalog and stable generation hash unlocks comparison |
+| `MV-12` | Evidence and identical-operation control | Unknown | Responsiveness ownership only, not timed | Retain bounded I/O ownership; defer scaling | editor recook/capture and launcher operation owners; UI-stall trace plus identical product hash |
+
+#### Audit conclusion
+
+The only accepted value curve says multithreading is worthwhile for actual uncached shader compilation, not for cache-hit
+publication. Four workers are the selected general boundary; the additional 1.955-second saving at eight does not justify its
+memory and CPU cost as the product default. Four also pays for the four-node incremental cook. There is no accepted evidence here to
+justify deeper runtime, renderer, frame-graph, asset-load, texture-cook, scene-cook, editor, or launcher parallelism.
+
+Engineering attention should first restore trustworthy native capture access and repair the three source/import failures.
+Only then can the runtime DAG floors, CPU/GPU split, render-pipeline throughput-versus-latency, and full cooker curves select
+further work. Until those falsifiers run, Prompts 24-28 may use this record only for the accepted shader decisions and existing
+correctness/ownership boundaries; Prompt 23A as a whole does not pass.
+
 ## Prompt 24 — Close Atomic Publication and Wait-Protocol Correctness
 
 Target CL Title: `SparkleTasks: Close Production Publication and Wait Protocols`
 
 ~~~text
-Implement Prompt 24 only after Prompt 23 passes.
+Implement Prompt 24 only after Prompt 23A passes.
 
 Objective:
 Prove that Sparkle's existing task, frame-packet, generation-publication, and wait/reuse protocols are correct through cancellation, shutdown, delayed consumers, and object lifetime. Fix concrete defects in their current owners; do not create a lock-free research project or a second implementation of a working protocol.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
-- Start from Prompt 22's synchronization inventory and Prompt 23's measured risks. Re-audit only production protocols that publish payload, govern reuse/lifetime, park/wake workers or coordinators, or were touched by a required fix; identity-only counters and unrelated cold flags need a concise classification, not a new test framework.
+- Start from Prompt 22's synchronization inventory and Prompt 23A's measured risks. Re-audit only production protocols that publish payload, govern reuse/lifetime, park/wake workers or coordinators, or were touched by a fix; identity-only counters and unrelated cold flags need a concise classification, not a new test framework.
 - Prefer the simplest correct owner-local mechanism. A mutex and predicate condition variable are acceptable; atomics require a clear invariant and publication edge. Do not weaken or replace a correct locked protocol merely to demonstrate memory-order knowledge.
 - Apply daily refactoring only where the audit exposes duplicate flags, wake paths, speculative atomics, or ambiguous ownership.
 - Keep protocols private to their owner. No public queue internals, generic concurrent containers, hazard-pointer framework, formal model-checker integration, duplicate SC production path, or test-only shipping API.
@@ -3042,13 +3351,13 @@ Forbidden: “works on x64,” relaxed-by-default, lock-free rewrite for prestig
 Target CL Title: `SparkleTasks: Establish a Conservative Worker Budget`
 
 ~~~text
-Implement Prompt 25 only after Prompt 23 passes. Prompt 24 is an independent correctness closure, not a worker-policy prerequisite.
+Implement Prompt 25 only after Prompt 23A passes. Prompt 24 is an independent correctness closure, not a worker-policy prerequisite.
 
 Objective:
 Choose one simple, bounded SparkleTasks worker budget that behaves well on current representative rendering/tool workloads, retains explicit serial/1/2/N overrides, and avoids obvious nested-pool oversubscription. Do not build a CPU-topology, affinity, or scheduler-tuning subsystem.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -3064,7 +3373,7 @@ Required implementation:
 3. Sweep serial, 1, 2, automatic and one larger explicit N on the fast regression scene plus one representative Tier 1 rendering or tool workload when available. Record frame/operation p50/p95/p99, task critical path/ready time, background completion and idle wake behavior through existing surfaces.
 4. Inventory material third-party workers active during the selected compiler/decode/provider workload. Bound outer Sparkle concurrency only when simultaneous-work evidence shows oversubscription; do not wrap every library in a new control layer.
 5. Select one default that is conservative across the measured workloads and retain the explicit override for investigation. Record negative scaling without adding per-machine or per-workload policy tables.
-6. Investigate contention, false sharing, migrations or cache topology only when Prompt 23 or this sweep exposes a material unexplained regression. A captured issue may justify a focused fix; absence of such evidence closes those topics as not applicable.
+6. Investigate contention, false sharing, migrations or cache topology only when Prompt 23A or this sweep exposes a material unexplained regression. A captured issue may justify a focused fix; absence of such evidence closes those topics as not applicable.
 
 Validation:
 - Reproducible optimized-build sweep on the primary supported machine; a logically constrained or second machine is supporting evidence only, not a prerequisite for a local engine default.
@@ -3088,13 +3397,13 @@ Forbidden: logical-core worship, topology framework, pin-everything policy, prio
 Target CL Title: `SparkleEngine: Prove Deterministic Parallel Fan-In`
 
 ~~~text
-Implement Prompt 26 only after Prompts 22 and 23 pass. Prompt 25's worker-budget choice is not required to verify deterministic fan-in.
+Implement Prompt 26 only after Prompts 22 and 23A pass. Prompt 25's worker-budget choice does not have to precede deterministic fan-in verification.
 
 Objective:
-Prove that existing task-local results merge deterministically into ECS, renderer/GPU-scene and cooker outputs. Add or parallelize a reduction, scan/compaction or partition algorithm only when Prompt 23 identifies a material current bottleneck and the retained implementation wins representative measurements.
+Prove that existing task-local results merge deterministically into ECS, renderer/GPU-scene and cooker outputs. Add or parallelize a reduction, scan/compaction or partition algorithm only when Prompt 23A identifies a material current bottleneck and the retained implementation wins representative measurements.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -3107,7 +3416,7 @@ Required implementation:
 1. Inventory existing parallel producers and their fan-in points: ECS structural commands, renderer preparation, GPU-scene dirty publication and deterministic cooker/package outputs. Record the authoritative ordering key, tie-break, capacity/failure behavior and cancellation boundary for each applicable path.
 2. Re-run existing serial/parallel equivalence and deterministic-output tests with randomized task delays and 0/1/2/N workers. Completion order must not change entity commands, render IDs/draw order, dirty ranges, RT identities or cooked bytes.
 3. Fix any shared append, completion-order merge, unstable tie-break or duplicate ordering helper in its existing owner. Prefer task-local results plus one straightforward ordered merge.
-4. If Prompt 23 selected a measured reduction/scan/compaction/partition bottleneck, prototype the smallest owner-local alternative with a serial oracle, explicit empty/capacity/cancellation semantics and a measured small-work threshold. Retain it only if representative critical-path improvement justifies its allocation/code cost; otherwise delete it.
+4. If Prompt 23A selected a measured reduction/scan/compaction/partition bottleneck, prototype the smallest owner-local alternative with a serial oracle, explicit empty/capacity/cancellation semantics and a measured small-work threshold. Retain it only if representative critical-path improvement justifies its allocation/code cost; otherwise delete it.
 5. If no such bottleneck exists, record the algorithm optimization as not applicable and make no production-code addition. Knowing where scan/reduction would fit is sufficient; Sparkle does not need one of each pattern.
 
 Validation:
@@ -3132,13 +3441,13 @@ Forbidden: algorithm collection for prestige, atomic append everywhere, nondeter
 Target CL Title: `SparkleEngine: Add Staged I/O and Cold-Cache Hitch Control`
 
 ~~~text
-Implement Prompt 27 only after Prompts 16, 22, 23, and 25 pass. Prompt 26 is an independent deterministic-fan-in closure, not an I/O/PSO prerequisite.
+Implement Prompt 27 only after Prompts 16, 22, 23A, and 25 pass. Prompt 26 is an independent deterministic-fan-in closure, not an I/O/PSO prerequisite.
 
 Objective:
 Turn current loading, cooking, shader reload and render resource creation into one bounded staged pipeline that distinguishes I/O completion, decode/build, shader compilation, native pipeline/resource creation, upload, owner commit and readiness; control first-run PSO/resource hitches without introducing a second cache or blocking recording.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -3195,7 +3504,7 @@ Objective:
 Correlate CPU tasks, render submission, GPU graphics/compute/copy execution and presentation; retain only queue overlap and pipeline depth that improve a measured product objective without violating provider ownership or latency.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -3242,7 +3551,7 @@ Objective:
 Prove the completed architecture can be diagnosed, defended and reproduced at an AMD/NVIDIA graphics/systems interview bar, then release a concise honest portfolio without adding an interview-only product surface.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -3299,7 +3608,7 @@ Objective:
 Turn one representative Sparkle path-traced workload into a principal-level baseline that connects product requirements, rendering mathematics, shader/RHI execution, CPU/GPU system cost, exact hardware/driver configuration, and partner adoption constraints. Do not add a neural feature in this prompt.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17 and report the complete 19-item completion record.
 - Apply Rule 13 to path state, samples, bounces, material/light reads, random sequences, accumulation/history, guide buffers, RT structures, shader records, queues, packets, captures and readback.
 - Apply Rule 12/14/16 to every touched renderer, shader, RHI, project and documentation file; orchestration, estimator/math, scene setup, capture and comparison remain separate owners.
@@ -3348,7 +3657,7 @@ Objective:
 Select one current renderer/game path for a real neural replacement or material improvement, establish its classical baseline, model/data/math contract, isolated training or fine-tuning workflow, deterministic export/cook and immutable runtime artifact. Do not integrate GPU runtime inference yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17, Rule 13 DOD, Rule 12 structure, Rule 16 implementation ownership and the 19-item completion report.
 - Advance `PGE-03`, `04`, `08`, `11`, `12`, `13` and `15`; preserve the path-tracing/backend/system contracts.
 - Search existing denoising, reconstruction, upscaling, sampling, texture/material, animation, shader/provider and artifact/cook paths before selecting a feature.
@@ -3400,7 +3709,7 @@ Objective:
 Consume the accepted immutable artifact in one renderer-owned neural graphics path using existing shader, frame-graph, RenderWorld/GPU-scene, task and RHI contracts. Establish correctness and D3D12/Vulkan capability/fallback behavior before aggressive tuning.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17 and the 19-item completion report.
 - Apply Rule 13 to every tensor/image/buffer source, preprocessing transform, weight upload, intermediate, dispatch, history, output, fallback and hot traversal.
 - Apply Rule 12/14/15/16: separate feature orchestration, artifact decoding, resource state, preprocessing, inference kernels, postprocessing, quality comparison and backend capability policy by real owner.
@@ -3451,7 +3760,7 @@ Objective:
 Profile and optimize the accepted neural feature across model/algorithm, training/export, CPU preparation, GPU kernels, memory, scheduling, frame pacing and driver interaction. Keep only changes that improve the measured quality-performance-product frontier.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17 and the 19-item completion report.
 - Advance `PGE-04`, `05`, `06`, `08`, `09`, `10`, `11`, `12` and `15`; preserve partner/final communication for Prompt 34.
 - Use existing profiler/debugger/native validation/capture hooks plus appropriate external tools; do not add operator telemetry, CSV/JSON report generation, benchmark UI or permanent tuning switches.
@@ -3502,7 +3811,7 @@ Objective:
 Close `PGE-01` through `PGE-15` with reproducible implementation evidence, partner-quality handoff, live demonstration and concise technical communication. Remove all role-only scaffolding and leave the product smaller and maintainable.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17 and the 19-item completion report.
 - Use existing documentation and product/test/capture surfaces. Add one feature technical artifact only if no existing document can own the math/result without becoming incoherent; never add another policy, telemetry or report system.
 - Re-audit the entire neural/path-tracing ownership path for Rule 12/13/14/15/16, canonical vocabulary, SOLID/DRY, diagnostics, public surface, packages, licenses and deletion.

@@ -78,6 +78,16 @@ void Renderer::SubmitRenderingSettings(EngineRenderingSettingsState settings) no
 	m_state->Coordinator.SubmitRenderingSettings(std::move(settings));
 }
 
+void Renderer::BeginSimulationFrame(std::uint64_t frameId) noexcept
+{
+	m_state->ExternalRuntime.BeginSimulationFrame(frameId);
+}
+
+void Renderer::EndSimulationFrame(std::uint64_t frameId) noexcept
+{
+	m_state->ExternalRuntime.EndSimulationFrame(frameId);
+}
+
 ViewportCaptureId Renderer::RequestViewportCapture(
     ViewportCaptureRequest request) noexcept
 {

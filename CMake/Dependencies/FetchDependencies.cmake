@@ -885,6 +885,8 @@ if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
         "bin/x64/sl.common.dll"
         "bin/x64/sl.dlss.dll"
         "bin/x64/sl.dlss_d.dll"
+        "bin/x64/sl.pcl.dll"
+        "bin/x64/sl.reflex.dll"
         "bin/x64/nvngx_dlss.dll"
         "bin/x64/nvngx_dlssd.dll"
     )
@@ -916,6 +918,8 @@ if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.common.dll"
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.dlss.dll"
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.dlss_d.dll"
+        "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.pcl.dll"
+        "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.reflex.dll"
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/nvngx_dlss.dll"
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/nvngx_dlssd.dll"
         CACHE STRING "NVIDIA Streamline DLSS SR and Ray Reconstruction runtime DLLs staged beside Sparkle products."

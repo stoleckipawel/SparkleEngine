@@ -30,7 +30,8 @@ class VulkanCommandRecordingContext final
 	VulkanCommandRecordingContext(
 	    VulkanRhi& rhi,
 	    VulkanGpuMemoryAllocator& memoryAllocator,
-	    VulkanDescriptorService& descriptorService) noexcept;
+	    VulkanDescriptorService& descriptorService,
+	    std::uint32_t maximumFramesInFlight) noexcept;
 	~VulkanCommandRecordingContext() noexcept;
 
 	VulkanCommandRecordingContext(const VulkanCommandRecordingContext&) = delete;
@@ -138,7 +139,7 @@ class VulkanCommandRecordingContext final
 	static void BeginLease(void* state) noexcept;
 	static void CloseLease(void* state) noexcept;
 	static void ReleaseLease(void* state, bool closed) noexcept;
-	[[noreturn]] static void FailExhausted(
+	[[noreturn]] void FailExhausted(
 	    ERhiQueueType queueType,
 	    std::uint32_t frameIndex) noexcept;
 	[[noreturn]] static void FailOwnershipViolation(
@@ -149,5 +150,5 @@ class VulkanCommandRecordingContext final
 	VulkanRhi* m_rhi = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	VulkanDescriptorService* m_descriptorService = nullptr;
-	std::array<std::array<QueueFrameState, RhiQueueTypeCount>, RhiFrameConstants::FramesInFlight> m_frames;
+	std::vector<std::array<QueueFrameState, RhiQueueTypeCount>> m_frames;
 };

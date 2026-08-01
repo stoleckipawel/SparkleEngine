@@ -5,9 +5,13 @@
 	#include <sl_dlss.h>
 	#include <sl_dlss_d.h>
 	#include <sl_helpers.h>
+	#include <sl_pcl.h>
+	#include <sl_reflex.h>
 
 	#include <condition_variable>
 	#include <mutex>
+
+static const auto g_streamlineRuntimeLogger = Logging::GetOrCreateLogger("Renderer.Streamline.Runtime");
 
 class StreamlineRuntime final
 {
@@ -40,7 +44,7 @@ class StreamlineRuntime final
 		return initialized;
 	}
 
-	static RhiExternalFeatureHooks GetRhiHooks() noexcept
+	static RhiD3D12InterposerHooks GetD3D12InterposerHooks() noexcept
 	{
 		std::lock_guard lock(s_mutex);
 		if (!s_initialized || s_shuttingDown)
@@ -48,12 +52,13 @@ class StreamlineRuntime final
 			return {};
 		}
 
-		return RhiExternalFeatureHooks{
+		return RhiD3D12InterposerHooks{
 		    .DeviceCreated = &SetNativeDevice,
 		    .UpgradeInterface = &UpgradeInterface,
 		    .ResolveNativeInterface = &ResolveNativeInterface,
 		    .PresentationReady = &SetPresentationReady,
-		    .RuntimeShutdown = &ShutdownForBackend};
+		    .FrameMarker = &SetFrameMarker,
+		    .RuntimeShutdown = &ShutdownFromInterposer};
 	}
 
 	static void Shutdown() noexcept
@@ -77,6 +82,8 @@ class StreamlineRuntime final
 			s_initialized = false;
 			s_deviceBound = false;
 			s_presentationReady = false;
+			s_pclSupported = false;
+			s_reflexSupported = false;
 			s_shuttingDown = false;
 		}
 	}
@@ -101,6 +108,11 @@ class StreamlineRuntime final
 		adapterInfo.deviceLUID = luid.data();
 		adapterInfo.deviceLUIDSizeInBytes = adapter.NativeLuidSizeInBytes;
 		return slIsFeatureSupported(feature, adapterInfo) == sl::Result::eOk;
+	}
+
+	static void SetApplicationFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept
+	{
+		SetFrameMarker(marker, frameId, nullptr);
 	}
 
   private:
@@ -152,58 +164,125 @@ class StreamlineRuntime final
 		return requirement == CallRequirement::DeviceBound || s_presentationReady;
 	}
 
-	static bool SetNativeDevice(ERhiBackendApi backendApi, NativeGraphicsDeviceHandle nativeDevice, void*) noexcept
+	static bool SetNativeDevice(
+	    NativeGraphicsDeviceHandle nativeDevice,
+	    const RhiAdapterIdentity& adapter,
+	    void*) noexcept
 	{
 		CallLease call(CallRequirement::Initialized);
-		if (!call || backendApi != ERhiBackendApi::D3D12 || !nativeDevice)
+		if (!call || !nativeDevice)
 		{
 			return false;
 		}
 
 		const bool deviceBound = slSetD3DDevice(nativeDevice.Value) == sl::Result::eOk;
+		bool pclSupported = false;
+		bool reflexSupported = false;
+		if (deviceBound && HasAdapterLuid(adapter))
+		{
+			auto adapterLuid = adapter.NativeLuid;
+			sl::AdapterInfo adapterInfo{};
+			adapterInfo.deviceLUID = adapterLuid.data();
+			adapterInfo.deviceLUIDSizeInBytes = adapter.NativeLuidSizeInBytes;
+			pclSupported = slIsFeatureSupported(sl::kFeaturePCL, adapterInfo) == sl::Result::eOk;
+			reflexSupported = slIsFeatureSupported(sl::kFeatureReflex, adapterInfo) == sl::Result::eOk;
+			if (reflexSupported && slReflexSetOptions(sl::ReflexOptions{}) != sl::Result::eOk)
+			{
+				Diagnostics::Fatal(
+				    g_streamlineRuntimeLogger,
+				    __FILE__,
+				    __LINE__,
+				    "Streamline Reflex rejected its initial latency configuration.");
+			}
+		}
 		{
 			std::lock_guard lock(s_mutex);
 			s_deviceBound = deviceBound;
+			s_pclSupported = pclSupported;
+			s_reflexSupported = reflexSupported;
 		}
 		return deviceBound;
 	}
 
-	static bool UpgradeInterface(ERhiBackendApi backendApi, ERhiExternalInterfaceKind, void** nativeInterface, void*) noexcept
+	static bool UpgradeInterface(ERhiD3D12InterposerInterfaceKind, void** nativeInterface, void*) noexcept
 	{
 		CallLease call(CallRequirement::DeviceBound);
-		return call && backendApi == ERhiBackendApi::D3D12 && nativeInterface != nullptr &&
-		       slUpgradeInterface(nativeInterface) == sl::Result::eOk;
+		return call && nativeInterface != nullptr && slUpgradeInterface(nativeInterface) == sl::Result::eOk;
 	}
 
 	static bool ResolveNativeInterface(
-	    ERhiBackendApi backendApi,
-	    ERhiExternalInterfaceKind,
+	    ERhiD3D12InterposerInterfaceKind,
 	    void* externalInterface,
 	    void** nativeInterface,
 	    void*) noexcept
 	{
 		CallLease call(CallRequirement::Initialized);
-		return call && backendApi == ERhiBackendApi::D3D12 && externalInterface != nullptr && nativeInterface != nullptr &&
+		return call && externalInterface != nullptr && nativeInterface != nullptr &&
 		       slGetNativeInterface(externalInterface, nativeInterface) == sl::Result::eOk;
 	}
 
-	static void SetPresentationReady(ERhiBackendApi backendApi, bool ready, void*) noexcept
+	static void SetPresentationReady(bool ready, void*) noexcept
 	{
 		std::lock_guard lock(s_mutex);
-		s_presentationReady = !s_shuttingDown && backendApi == ERhiBackendApi::D3D12 && s_initialized && s_deviceBound && ready;
+		s_presentationReady = !s_shuttingDown && s_initialized && s_deviceBound && ready;
 	}
 
-	static void ShutdownForBackend(ERhiBackendApi backendApi, void*) noexcept
+	static sl::PCLMarker ToPclMarker(ERhiFrameLatencyMarker marker) noexcept
 	{
-		if (backendApi == ERhiBackendApi::D3D12)
+		switch (marker)
 		{
-			Shutdown();
+			case ERhiFrameLatencyMarker::SimulationStart:
+				return sl::PCLMarker::eSimulationStart;
+			case ERhiFrameLatencyMarker::SimulationEnd:
+				return sl::PCLMarker::eSimulationEnd;
+			case ERhiFrameLatencyMarker::RenderSubmitStart:
+				return sl::PCLMarker::eRenderSubmitStart;
+			case ERhiFrameLatencyMarker::RenderSubmitEnd:
+				return sl::PCLMarker::eRenderSubmitEnd;
+			case ERhiFrameLatencyMarker::PresentStart:
+				return sl::PCLMarker::ePresentStart;
+			case ERhiFrameLatencyMarker::PresentEnd:
+				return sl::PCLMarker::ePresentEnd;
 		}
+		Diagnostics::Fatal(g_streamlineRuntimeLogger, __FILE__, __LINE__, "Unknown external frame marker.");
+	}
+
+	static void SetFrameMarker(
+	    ERhiFrameLatencyMarker marker,
+	    std::uint64_t frameId,
+	    void*) noexcept
+	{
+		CallLease call(CallRequirement::RuntimeReady);
+		if (!call || !s_pclSupported)
+		{
+			return;
+		}
+
+		const std::uint32_t frameIndex = static_cast<std::uint32_t>(frameId);
+		sl::FrameToken* frameToken = nullptr;
+		if (slGetNewFrameToken(frameToken, &frameIndex) != sl::Result::eOk || frameToken == nullptr)
+		{
+			Diagnostics::Fatal(g_streamlineRuntimeLogger, __FILE__, __LINE__, "Streamline could not resolve the logical frame token.");
+		}
+		if (marker == ERhiFrameLatencyMarker::SimulationStart && s_reflexSupported &&
+		    slReflexSleep(*frameToken) != sl::Result::eOk)
+		{
+			Diagnostics::Fatal(g_streamlineRuntimeLogger, __FILE__, __LINE__, "Streamline Reflex sleep failed for the active frame.");
+		}
+		if (slPCLSetMarker(ToPclMarker(marker), *frameToken) != sl::Result::eOk)
+		{
+			Diagnostics::Fatal(g_streamlineRuntimeLogger, __FILE__, __LINE__, "Streamline PCL rejected a frame marker.");
+		}
+	}
+
+	static void ShutdownFromInterposer(void*) noexcept
+	{
+		Shutdown();
 	}
 
 	static void FillPreferences(sl::Preferences& preferences)
 	{
-		static constexpr sl::Feature features[] = {sl::kFeatureDLSS, sl::kFeatureDLSS_RR};
+		static constexpr sl::Feature features[] = {sl::kFeatureDLSS, sl::kFeatureDLSS_RR, sl::kFeaturePCL, sl::kFeatureReflex};
 		preferences = {};
 		preferences.featuresToLoad = features;
 		preferences.numFeaturesToLoad = static_cast<std::uint32_t>(std::size(features));
@@ -235,6 +314,8 @@ class StreamlineRuntime final
 	static bool s_initialized;
 	static bool s_deviceBound;
 	static bool s_presentationReady;
+	static bool s_pclSupported;
+	static bool s_reflexSupported;
 	static bool s_initializing;
 	static bool s_shuttingDown;
 	static std::uint32_t s_activeCalls;
@@ -245,6 +326,8 @@ std::condition_variable StreamlineRuntime::s_idle;
 bool StreamlineRuntime::s_initialized = false;
 bool StreamlineRuntime::s_deviceBound = false;
 bool StreamlineRuntime::s_presentationReady = false;
+bool StreamlineRuntime::s_pclSupported = false;
+bool StreamlineRuntime::s_reflexSupported = false;
 bool StreamlineRuntime::s_initializing = false;
 bool StreamlineRuntime::s_shuttingDown = false;
 std::uint32_t StreamlineRuntime::s_activeCalls = 0;
@@ -260,10 +343,10 @@ bool InitializeSharedStreamlineRuntime(ERhiBackendApi backendApi)
 #endif
 }
 
-RhiExternalFeatureHooks GetSharedStreamlineRhiHooks() noexcept
+RhiD3D12InterposerHooks GetSharedStreamlineD3D12InterposerHooks() noexcept
 {
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	return StreamlineRuntime::GetRhiHooks();
+	return StreamlineRuntime::GetD3D12InterposerHooks();
 #else
 	return {};
 #endif
@@ -273,6 +356,16 @@ void ShutdownSharedStreamlineRuntime() noexcept
 {
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	StreamlineRuntime::Shutdown();
+#endif
+}
+
+void SetSharedStreamlineFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept
+{
+#if SPARKLE_WITH_NVIDIA_STREAMLINE
+	StreamlineRuntime::SetApplicationFrameMarker(marker, frameId);
+#else
+	(void) marker;
+	(void) frameId;
 #endif
 }
 

@@ -239,6 +239,7 @@ void RayTracingPartitionedTlasStrategy::RecordPartitionedBuild(
 	commandContext.BuildPartitionedTopLevelAccelerationStructure(
 	    RhiPartitionedTlasBuildCommandDesc{
 	        .Layout = m_partitionedResources.Layout,
+	        .DestinationResource = m_renderHardwareInterface->GetResourceService().GetResourceHandle(m_partitionedResources.Storage),
 	        .SourceAccelerationStructure = 0,
 	        .DestinationAccelerationStructure = m_partitionedResources.StorageAddress,
 	        .Scratch = m_partitionedResources.ScratchAddress,

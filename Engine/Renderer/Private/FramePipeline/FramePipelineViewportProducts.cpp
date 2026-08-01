@@ -63,7 +63,7 @@ class FramePipelineViewportProductsImplementation final
 	{
 		return ViewportCaptureResult{
 		    .FrameId = metadata.FrameId,
-		    .FrameGeneration = metadata.FrameGeneration,
+		    .SceneGeneration = metadata.SceneGeneration,
 		    .ProviderGeneration = metadata.ProviderGeneration,
 		    .ArtifactPath = request.OutputPath};
 	}
@@ -266,8 +266,8 @@ void FramePipeline::PollViewportCaptures() noexcept
 		                        ? ViewportCaptureStatus::Succeeded
 		                        : ViewportCaptureStatus::Failed,
 		                .FrameId = rhiReadback.Result.FrameId,
-		                .FrameGeneration =
-		                    pending->Metadata.FrameGeneration,
+		                .SceneGeneration =
+		                    pending->Metadata.SceneGeneration,
 		                .ProviderGeneration =
 		                    pending->Metadata.ProviderGeneration,
 		                .ArtifactPath =

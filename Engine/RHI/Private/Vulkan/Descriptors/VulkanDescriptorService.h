@@ -84,6 +84,7 @@ class VulkanDescriptorService final : public RhiDescriptorService
 		VkAccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
 		VkImageView ImageView = VK_NULL_HANDLE;
 		PixelFormat Format = PixelFormat::Unknown;
+		VkExtent3D Extent = {};
 		RhiTextureViewRange Texture = {};
 		VkImageUsageFlags Usage = 0;
 		RhiGpuDescriptorHandle DescriptorHandle = {};
@@ -109,7 +110,10 @@ class VulkanDescriptorService final : public RhiDescriptorService
 	{
 		std::uintptr_t ResourceHandleValue = 0;
 		VkImage Image = VK_NULL_HANDLE;
+		VkFormat Format = VK_FORMAT_UNDEFINED;
+		VkExtent3D Extent = {};
 		VkImageAspectFlags AspectMask = 0;
+		VkImageUsageFlags Usage = 0;
 	};
 
 	struct RecordingReadView final
@@ -136,7 +140,7 @@ class VulkanDescriptorService final : public RhiDescriptorService
 	VulkanSamplerLibrary* m_samplerLibrary = nullptr;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
-	std::array<std::vector<RetiredResourceView>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
+	std::array<std::vector<RetiredResourceView>, RhiFrameConstants::MaxFrameSlotCount> m_retiredResourceViews;
 	std::vector<RhiResourceViewHandle> m_swapChainBackBufferViews;
 	std::atomic<std::shared_ptr<const RecordingReadView>> m_recordingReadView;
 	std::uint32_t m_currentFrameIndex = 0;

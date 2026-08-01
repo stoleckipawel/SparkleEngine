@@ -3,6 +3,7 @@
 #include "Vulkan/RayTracing/VulkanPartitionedTlasServices.h"
 
 #include "Memory/RhiMemoryTypes.h"
+#include "RayTracing/RhiPartitionedTlasOperationLayout.h"
 #include "RayTracing/RhiRayTracingDesc.h"
 #include "Resources/RhiResourceDesc.h"
 #include "Vulkan/Device/VulkanRhi.h"
@@ -13,11 +14,6 @@
 #include <cstring>
 #include <memory>
 #include <vector>
-
-std::uint64_t VulkanPartitionedTlasServices::AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept
-{
-	return alignment == 0 ? value : ((value + alignment - 1u) / alignment) * alignment;
-}
 
 VkPartitionedAccelerationStructureInstanceFlagsNV VulkanPartitionedTlasServices::ToVkPartitionedInstanceFlags(
     RhiPartitionedTlasInstanceFlags flags) noexcept
@@ -80,45 +76,19 @@ void VulkanPartitionedTlasServices::ConfigurePartitionedTlasInput(
 	    .maxInstanceInGlobalPartitionCount = desc.MaxInstancesInGlobalPartition};
 }
 
-std::uint64_t VulkanPartitionedTlasServices::ResolveOperationArgumentGpuAddress(
-    const RhiPartitionedTlasOperationHeader& operation,
-    RhiGpuVirtualAddress instanceWriteAddress,
-    RhiGpuVirtualAddress instanceUpdateAddress,
-    RhiGpuVirtualAddress partitionTranslationAddress) noexcept
+RhiPartitionedTlasNativeOperationLayout VulkanPartitionedTlasServices::GetNativeOperationLayout() noexcept
 {
-	if (operation.ArgumentData != 0)
-	{
-		return operation.ArgumentData;
-	}
-	switch (operation.Type)
-	{
-		case ERhiPartitionedTlasOperationType::UpdateInstance:
-			return instanceUpdateAddress;
-		case ERhiPartitionedTlasOperationType::WritePartitionTranslation:
-			return partitionTranslationAddress;
-		case ERhiPartitionedTlasOperationType::WriteInstance:
-		default:
-			return instanceWriteAddress;
-	}
-}
-
-std::uint64_t VulkanPartitionedTlasServices::ResolveOperationArgumentStride(
-    const RhiPartitionedTlasOperationHeader& operation) noexcept
-{
-	if (operation.ArgumentStrideInBytes != 0)
-	{
-		return operation.ArgumentStrideInBytes;
-	}
-	switch (operation.Type)
-	{
-		case ERhiPartitionedTlasOperationType::UpdateInstance:
-			return sizeof(VkPartitionedAccelerationStructureUpdateInstanceDataNV);
-		case ERhiPartitionedTlasOperationType::WritePartitionTranslation:
-			return sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV);
-		case ERhiPartitionedTlasOperationType::WriteInstance:
-		default:
-			return sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV);
-	}
+	return RhiPartitionedTlasNativeOperationLayout{
+	    .OperationCountSizeInBytes = sizeof(std::uint32_t),
+	    .OperationHeaderStrideInBytes = sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV),
+	    .OperationHeaderAlignmentInBytes = alignof(VkBuildPartitionedAccelerationStructureIndirectCommandNV),
+	    .InstanceWriteStrideInBytes = sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV),
+	    .InstanceWriteAlignmentInBytes = alignof(VkPartitionedAccelerationStructureWriteInstanceDataNV),
+	    .InstanceUpdateStrideInBytes = sizeof(VkPartitionedAccelerationStructureUpdateInstanceDataNV),
+	    .InstanceUpdateAlignmentInBytes = alignof(VkPartitionedAccelerationStructureUpdateInstanceDataNV),
+	    .PartitionTranslationStrideInBytes = sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV),
+	    .PartitionTranslationAlignmentInBytes = alignof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV),
+	    .BufferAlignmentInBytes = 16};
 }
 
 RhiGpuVirtualAddress VulkanPartitionedTlasServices::ResolvePartitionedInstanceAccelerationStructureAddress(
@@ -191,7 +161,9 @@ RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelA
 	}
 
 	const RhiBufferResourceDesc desc{
-	    .SizeInBytes = AlignUp(sizes.AccelerationStructureSizeInBytes, capabilities.AccelerationStructureByteAlignment),
+	    .SizeInBytes = RhiPartitionedTlasOperationLayout::AlignUp(
+	        sizes.AccelerationStructureSizeInBytes,
+	        capabilities.AccelerationStructureByteAlignment),
 	    .AllowUnorderedAccess = true};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
@@ -230,35 +202,19 @@ RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelA
 		return {};
 	}
 
-	const std::uint64_t countOffset = 0;
-	const std::uint64_t operationOffset = AlignUp(countOffset + sizeof(std::uint32_t), alignof(VkBuildPartitionedAccelerationStructureIndirectCommandNV));
-	const std::uint64_t operationBytes =
-	    sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV) * static_cast<std::uint64_t>(operationPack.OperationCount);
-	const std::uint64_t instanceWriteOffset =
-	    AlignUp(operationOffset + operationBytes, alignof(VkPartitionedAccelerationStructureWriteInstanceDataNV));
-	const std::uint64_t instanceWriteBytes =
-	    sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV) * static_cast<std::uint64_t>(operationPack.InstanceWriteCount);
-	const std::uint64_t instanceUpdateBytes =
-	    sizeof(VkPartitionedAccelerationStructureUpdateInstanceDataNV) * static_cast<std::uint64_t>(operationPack.InstanceUpdateCount);
-	std::uint64_t cursor = instanceWriteOffset + instanceWriteBytes;
-	const std::uint64_t instanceUpdateOffset = operationPack.InstanceUpdateCount > 0
-	                                               ? AlignUp(cursor, alignof(VkPartitionedAccelerationStructureUpdateInstanceDataNV))
-	                                               : cursor;
-	cursor = instanceUpdateOffset + instanceUpdateBytes;
-	const std::uint64_t partitionTranslationBytes = sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV) *
-	                                               static_cast<std::uint64_t>(operationPack.PartitionTranslationCount);
-	const std::uint64_t partitionTranslationOffset =
-	    operationPack.PartitionTranslationCount > 0
-	        ? AlignUp(cursor, alignof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV))
-	        : cursor;
-	cursor = partitionTranslationOffset + partitionTranslationBytes;
-	const std::uint64_t totalSize = AlignUp(cursor, 16);
-	if (totalSize == 0)
+	const RhiPartitionedTlasNativeOperationLayout nativeLayout = GetNativeOperationLayout();
+	const RhiPartitionedTlasOperationBufferLayout layout = RhiPartitionedTlasOperationLayout::Build(
+	    operationPack.OperationCount,
+	    operationPack.InstanceWriteCount,
+	    operationPack.InstanceUpdateCount,
+	    operationPack.PartitionTranslationCount,
+	    nativeLayout);
+	if (layout.TotalSizeInBytes == 0)
 	{
 		return {};
 	}
 
-	const RhiBufferResourceDesc desc{.SizeInBytes = totalSize};
+	const RhiBufferResourceDesc desc{.SizeInBytes = layout.TotalSizeInBytes};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
 	    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
@@ -273,22 +229,25 @@ RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelA
 		return {};
 	}
 
-	std::vector<std::uint8_t> packed(static_cast<std::size_t>(totalSize), 0);
-	std::memcpy(packed.data() + countOffset, &operationPack.OperationCount, sizeof(operationPack.OperationCount));
+	std::vector<std::uint8_t> packed(static_cast<std::size_t>(layout.TotalSizeInBytes), 0);
+	std::memcpy(
+	    packed.data() + layout.OperationCountOffsetInBytes,
+	    &operationPack.OperationCount,
+	    sizeof(operationPack.OperationCount));
 
 	auto* const nativeOperations = reinterpret_cast<VkBuildPartitionedAccelerationStructureIndirectCommandNV*>(
-	    packed.data() + static_cast<std::size_t>(operationOffset));
+	    packed.data() + static_cast<std::size_t>(layout.OperationHeadersOffsetInBytes));
 	auto* const nativeInstanceWrites = reinterpret_cast<VkPartitionedAccelerationStructureWriteInstanceDataNV*>(
-	    packed.data() + static_cast<std::size_t>(instanceWriteOffset));
+	    packed.data() + static_cast<std::size_t>(layout.InstanceWriteRecordsOffsetInBytes));
 	auto* const nativeInstanceUpdates = reinterpret_cast<VkPartitionedAccelerationStructureUpdateInstanceDataNV*>(
-	    packed.data() + static_cast<std::size_t>(instanceUpdateOffset));
+	    packed.data() + static_cast<std::size_t>(layout.InstanceUpdateRecordsOffsetInBytes));
 	auto* const nativePartitionTranslations =
 	    reinterpret_cast<VkPartitionedAccelerationStructureWritePartitionTranslationDataNV*>(
-	        packed.data() + static_cast<std::size_t>(partitionTranslationOffset));
+	        packed.data() + static_cast<std::size_t>(layout.PartitionTranslationRecordsOffsetInBytes));
 
-	const RhiGpuVirtualAddress instanceWriteAddress = record->DeviceAddress + instanceWriteOffset;
-	const RhiGpuVirtualAddress instanceUpdateAddress = record->DeviceAddress + instanceUpdateOffset;
-	const RhiGpuVirtualAddress partitionTranslationAddress = record->DeviceAddress + partitionTranslationOffset;
+	const RhiGpuVirtualAddress instanceWriteAddress = record->DeviceAddress + layout.InstanceWriteRecordsOffsetInBytes;
+	const RhiGpuVirtualAddress instanceUpdateAddress = record->DeviceAddress + layout.InstanceUpdateRecordsOffsetInBytes;
+	const RhiGpuVirtualAddress partitionTranslationAddress = record->DeviceAddress + layout.PartitionTranslationRecordsOffsetInBytes;
 	for (std::uint32_t operationIndex = 0; operationIndex < operationPack.OperationCount; ++operationIndex)
 	{
 		const RhiPartitionedTlasOperationHeader& operation = operationPack.Operations[operationIndex];
@@ -297,12 +256,12 @@ RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelA
 		    .argCount = operation.ArgumentCount,
 		    .argData =
 		        VkStridedDeviceAddressNV{
-		            .startAddress = ResolveOperationArgumentGpuAddress(
+		            .startAddress = RhiPartitionedTlasOperationLayout::ResolveArgumentAddress(
 		                operation,
 		                instanceWriteAddress,
 		                instanceUpdateAddress,
 		                partitionTranslationAddress),
-		            .strideInBytes = ResolveOperationArgumentStride(operation)}};
+		            .strideInBytes = RhiPartitionedTlasOperationLayout::ResolveArgumentStride(operation, nativeLayout)}};
 	}
 
 	for (std::uint32_t instanceIndex = 0; instanceIndex < operationPack.InstanceWriteCount; ++instanceIndex)
@@ -359,38 +318,10 @@ VulkanPartitionedTlasServices::GetPartitionedTopLevelAccelerationStructureOperat
 		return {};
 	}
 
-	RhiPartitionedTlasOperationBufferLayout layout{};
-	layout.OperationCountOffsetInBytes = 0;
-	layout.OperationHeaderStrideInBytes = sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV);
-	layout.InstanceWriteStrideInBytes = sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV);
-	layout.InstanceUpdateStrideInBytes = sizeof(VkPartitionedAccelerationStructureUpdateInstanceDataNV);
-	layout.PartitionTranslationStrideInBytes = sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV);
-	layout.OperationHeadersOffsetInBytes = AlignUp(sizeof(std::uint32_t), alignof(VkBuildPartitionedAccelerationStructureIndirectCommandNV));
-	layout.InstanceWriteRecordsOffsetInBytes =
-	    AlignUp(layout.OperationHeadersOffsetInBytes + layout.OperationHeaderStrideInBytes * desc.MaxOperations,
-	        alignof(VkPartitionedAccelerationStructureWriteInstanceDataNV));
-	std::uint64_t cursor = layout.InstanceWriteRecordsOffsetInBytes + layout.InstanceWriteStrideInBytes * desc.InstanceCapacity;
-	if (desc.AllowInstanceUpdates)
-	{
-		layout.InstanceUpdateRecordsOffsetInBytes =
-		    AlignUp(cursor, alignof(VkPartitionedAccelerationStructureUpdateInstanceDataNV));
-		cursor = layout.InstanceUpdateRecordsOffsetInBytes + layout.InstanceUpdateStrideInBytes * desc.InstanceCapacity;
-	}
-	else
-	{
-		layout.InstanceUpdateRecordsOffsetInBytes = cursor;
-	}
-	if (desc.AllowPartitionTranslation)
-	{
-		layout.PartitionTranslationRecordsOffsetInBytes =
-		    AlignUp(cursor, alignof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV));
-		cursor = layout.PartitionTranslationRecordsOffsetInBytes +
-		         layout.PartitionTranslationStrideInBytes * static_cast<std::uint64_t>(desc.PartitionCount + 1u);
-	}
-	else
-	{
-		layout.PartitionTranslationRecordsOffsetInBytes = cursor;
-	}
-	layout.TotalSizeInBytes = AlignUp(cursor, 16);
-	return layout;
+	return RhiPartitionedTlasOperationLayout::Build(
+	    desc.MaxOperations,
+	    desc.InstanceCapacity,
+	    desc.AllowInstanceUpdates ? desc.InstanceCapacity : 0u,
+	    desc.AllowPartitionTranslation ? desc.PartitionCount + 1u : 0u,
+	    GetNativeOperationLayout());
 }

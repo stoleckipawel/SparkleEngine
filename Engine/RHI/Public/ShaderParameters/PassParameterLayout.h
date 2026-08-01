@@ -76,9 +76,9 @@ class SPARKLE_RHI_API PassParameterLayout final
 
 	const std::vector<PassParameterDesc>& GetParameters() const noexcept { return m_parameters; }
 
-	const PassParameterDesc* FindParameter(const char* name) const noexcept;
+	const PassParameterDesc* FindParameter(std::string_view name) const noexcept;
 
-	bool HasParameter(const char* name) const noexcept { return FindParameter(name) != nullptr; }
+	bool HasParameter(std::string_view name) const noexcept { return FindParameter(name) != nullptr; }
 
 	std::uint32_t AddParameter(PassParameterDesc parameter);
 

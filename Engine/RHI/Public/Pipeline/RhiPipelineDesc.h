@@ -9,6 +9,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 class PassParameterLayout;
 class LoadedShaderPackage;
@@ -94,12 +96,23 @@ struct RenderBindingLayoutCompileDesc
 class SPARKLE_RHI_API RenderBindingLayout
 {
   public:
-	virtual ~RenderBindingLayout() noexcept = default;
+	virtual ~RenderBindingLayout() noexcept;
 
-	virtual const PassParameterLayout& GetParameterLayout() const noexcept = 0;
-	virtual const CompiledBinding* GetBindings() const noexcept = 0;
-	virtual std::size_t GetBindingCount() const noexcept = 0;
-	virtual const CompiledBinding* FindBinding(const char* name) const noexcept = 0;
+	const PassParameterLayout& GetParameterLayout() const noexcept;
+	const CompiledBinding* GetBindings() const noexcept;
+	std::size_t GetBindingCount() const noexcept;
+	const CompiledBinding* FindBinding(const char* name) const noexcept;
+
+  protected:
+	RenderBindingLayout(
+	    const PassParameterLayout& parameterLayout,
+	    std::vector<CompiledBinding> bindings,
+	    std::vector<std::string> bindingNames) noexcept;
+
+  private:
+	const PassParameterLayout* m_parameterLayout = nullptr;
+	std::vector<CompiledBinding> m_bindings;
+	std::vector<std::string> m_bindingNames;
 };
 
 struct RhiDepthTestDesc

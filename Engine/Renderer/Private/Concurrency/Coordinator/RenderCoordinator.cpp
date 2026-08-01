@@ -162,7 +162,7 @@ void RenderCoordinator::SubmitThreadedFrame()
 		return;
 	}
 
-	if (m_config.Mode == RendererExecutionMode::ThreadedZeroAhead)
+	if (m_config.RenderPipelineDepth == 0u)
 	{
 		(void) m_frameQueue->WaitUntilReusable(*ticket);
 	}
@@ -323,7 +323,7 @@ void RenderCoordinator::InitializeSerial()
 
 void RenderCoordinator::InitializeThreaded()
 {
-	m_frameQueue = std::make_unique<RenderFrameQueue>(m_config.ResolveFrameSlotCount());
+	m_frameQueue = std::make_unique<RenderFrameQueue>(m_config.GetFrameQueueCapacity());
 	m_controlQueue = std::make_unique<RenderControlCommandQueue>(RenderControlCapacity);
 	StartRenderThread();
 	if (!WaitForRenderThreadStart())

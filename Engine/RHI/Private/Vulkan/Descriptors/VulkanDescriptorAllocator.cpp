@@ -27,7 +27,7 @@ RhiDescriptorAllocation VulkanDescriptorAllocator::AllocateDescriptor(ERhiDescri
 
 void VulkanDescriptorAllocator::BeginFrame(std::uint32_t frameIndex) noexcept
 {
-	if (frameIndex >= RhiFrameConstants::FramesInFlight)
+	if (frameIndex >= m_retiredTableIndices.size())
 	{
 		return;
 	}
@@ -354,7 +354,8 @@ void VulkanDescriptorAllocator::WriteDescriptorTable(
 	}
 
 	const std::size_t availableDescriptorCount = table.Entries->size() - tableBinding.DescriptorIndex;
-	if (binding.DescriptorCount == 0 || availableDescriptorCount < binding.DescriptorCount)
+	if (binding.DescriptorCount == 0 || availableDescriptorCount == 0 ||
+	    (!binding.Bindless.BindlessEligible && availableDescriptorCount < binding.DescriptorCount))
 	{
 		Diagnostics::Fatal(
 		    g_vulkanDescriptorAllocatorLogger,
@@ -362,10 +363,11 @@ void VulkanDescriptorAllocator::WriteDescriptorTable(
 		    __LINE__,
 		    "Vulkan descriptor table does not contain the binding's complete descriptor range.");
 	}
+	const std::size_t descriptorCount = std::min<std::size_t>(availableDescriptorCount, binding.DescriptorCount);
 	WriteEntries(
 	    descriptorSet,
 	    binding,
-	    std::span<const DescriptorEntry>(table.Entries->data() + tableBinding.DescriptorIndex, binding.DescriptorCount));
+	    std::span<const DescriptorEntry>(table.Entries->data() + tableBinding.DescriptorIndex, descriptorCount));
 }
 
 void VulkanDescriptorAllocator::WriteDescriptorHandle(
@@ -750,7 +752,8 @@ void VulkanDescriptorAllocator::WriteEntries(
 		    __LINE__,
 		    "Vulkan descriptor write requires a descriptor set and at least one descriptor.");
 	}
-	if (entries.size() != binding.DescriptorCount)
+	if (entries.size() > binding.DescriptorCount ||
+	    (!binding.Bindless.BindlessEligible && entries.size() != binding.DescriptorCount))
 	{
 		Diagnostics::Fatal(
 		    g_vulkanDescriptorAllocatorLogger,

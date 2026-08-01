@@ -14,6 +14,9 @@
 #include "Frame/RhiFrameConstants.h"
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "Device/RenderHardwareInterface.h"
+#include "Presentation/RhiPresentationDefaults.h"
+
+#include <vector>
 
 using Microsoft::WRL::ComPtr;
 
@@ -28,7 +31,8 @@ class D3D12SwapChain final
 	    D3D12Rhi& rhi,
 	    Window& window,
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
-	    PixelFormat backBufferFormat);
+	    PixelFormat backBufferFormat,
+	    const RhiPresentationConfiguration& presentationConfiguration);
 
 	~D3D12SwapChain() noexcept;
 
@@ -38,18 +42,21 @@ class D3D12SwapChain final
 	D3D12SwapChain& operator=(D3D12SwapChain&&) = delete;
 
 	void Present();
+	void WaitForPresentationSlot() const noexcept;
 
 	void Resize();
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(UINT index) const { return m_rtvHandles[index].GetCPU(); }
 
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return m_rtvHandles[m_frameInFlightIndex].GetCPU(); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return m_rtvHandles[m_currentBackBufferIndex].GetCPU(); }
 
-	ID3D12Resource* GetCurrentResource() const noexcept { return m_buffers[m_frameInFlightIndex].Get(); }
+	ID3D12Resource* GetCurrentResource() const noexcept { return m_buffers[m_currentBackBufferIndex].Get(); }
 
-	UINT GetFrameInFlightIndex() const { return m_frameInFlightIndex; }
+	UINT GetCurrentBackBufferIndex() const noexcept { return m_currentBackBufferIndex; }
+	UINT GetBackBufferCount() const noexcept { return m_backBufferCount; }
+	UINT GetMaximumFramesInFlight() const noexcept { return m_maximumFramesInFlight; }
 
-	void UpdateFrameInFlightIndex() { m_frameInFlightIndex = GetPresentationInterface()->GetCurrentBackBufferIndex(); }
+	void UpdateCurrentBackBufferIndex() { m_currentBackBufferIndex = GetPresentationInterface()->GetCurrentBackBufferIndex(); }
 
 	RhiViewport GetDefaultViewport() const;
 
@@ -76,11 +83,13 @@ class D3D12SwapChain final
 	IDXGISwapChain3* GetPresentationInterface() const noexcept;
 
 	D3D12Rhi& m_rhi;
-	UINT m_frameInFlightIndex = 0;
+	UINT m_currentBackBufferIndex = 0;
+	UINT m_backBufferCount = 0;
+	UINT m_maximumFramesInFlight = 0;
 	ComPtr<IDXGISwapChain3> m_swapChain = nullptr;
 	ComPtr<IDXGISwapChain3> m_externalSwapChain = nullptr;
-	ComPtr<ID3D12Resource2> m_buffers[RhiFrameConstants::FramesInFlight];
-	D3D12DescriptorHandle m_rtvHandles[RhiFrameConstants::FramesInFlight];
+	std::vector<ComPtr<ID3D12Resource2>> m_buffers;
+	std::vector<D3D12DescriptorHandle> m_rtvHandles;
 	PixelFormat m_backBufferFormat = PixelFormat::Unknown;
 	HANDLE m_waitableObject = nullptr;
 	Window* m_window = nullptr;

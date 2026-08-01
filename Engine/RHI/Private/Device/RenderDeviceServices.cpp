@@ -4,6 +4,7 @@
 #include "Device/RenderDeviceBackendFactory.h"
 #include "Device/RenderDeviceBackendServices.h"
 #include "Device/RenderDeviceServicesState.h"
+#include "CVars/RHICVars.h"
 #include "Presentation/RhiPresentationDefaults.h"
 #include "Shaders/CookedShaderPackageIdentity.h"
 
@@ -11,6 +12,7 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include <format>
 #include <string>
 #include <utility>
 
@@ -38,18 +40,47 @@ void RenderDeviceServices::ValidateBackBufferFormat(PixelFormat backBufferFormat
 	}
 }
 
+RhiPresentationConfiguration RenderDeviceServices::ResolvePresentationConfiguration() noexcept
+{
+	const RhiPresentationConfiguration configuration{
+	    .BackBufferCount = CVarBackBufferCount.Get(),
+	    .MaximumFramesInFlight = CVarMaximumFramesInFlight.Get()};
+	if (configuration.BackBufferCount < RhiPresentationDefaults::MinBackBufferCount ||
+	    configuration.BackBufferCount > RhiPresentationDefaults::MaxBackBufferCount)
+	{
+		FailCreation(std::format(
+		    "r.BackBufferCount={} is outside the DXGI flip-model and Sparkle presentation range [2, 3]. Use r.MaximumFramesInFlight=1 for single-frame pacing.",
+		    configuration.BackBufferCount));
+	}
+	if (configuration.MaximumFramesInFlight < RhiPresentationDefaults::MinFramesInFlight ||
+	    configuration.MaximumFramesInFlight > RhiPresentationDefaults::MaxFramesInFlight)
+	{
+		FailCreation(std::format(
+		    "r.MaximumFramesInFlight={} is outside the supported range [1, 3].",
+		    configuration.MaximumFramesInFlight));
+	}
+	if (configuration.MaximumFramesInFlight > configuration.BackBufferCount)
+	{
+		FailCreation(std::format(
+		    "r.MaximumFramesInFlight={} exceeds r.BackBufferCount={}.",
+		    configuration.MaximumFramesInFlight,
+		    configuration.BackBufferCount));
+	}
+	return configuration;
+}
+
 RenderDeviceServices::RenderDeviceServices() noexcept : m_state(std::make_unique<RenderDeviceServicesState>()) {}
 
 RenderDeviceServices::~RenderDeviceServices() noexcept = default;
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window) noexcept
 {
-	return Create(window, ResolveDefaultRhiBackendApi(), RhiPresentationDefaults::BackBufferFormat);
+	return Create(window, ResolveDefaultRhiBackendApi(), RhiPresentationDefaults::DefaultBackBufferFormat);
 }
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window, ERhiBackendApi backendApi) noexcept
 {
-	return Create(window, backendApi, RhiPresentationDefaults::BackBufferFormat);
+	return Create(window, backendApi, RhiPresentationDefaults::DefaultBackBufferFormat);
 }
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
@@ -60,19 +91,21 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 }
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
-    Window& window,
-    ERhiBackendApi backendApi,
-    PixelFormat backBufferFormat,
-    RhiExternalFeatureHooks externalFeatureHooks) noexcept
+	Window& window,
+	ERhiBackendApi backendApi,
+	PixelFormat backBufferFormat,
+	RhiD3D12InterposerHooks d3d12InterposerHooks) noexcept
 {
 	ValidateBackBufferFormat(backBufferFormat);
+	const RhiPresentationConfiguration presentationConfiguration = ResolvePresentationConfiguration();
 
 	auto services = std::unique_ptr<RenderDeviceServices>(new RenderDeviceServices());
 	switch (backendApi)
 	{
 		case ERhiBackendApi::D3D12:
 		#if SPARKLE_RHI_WITH_D3D12
-			services->m_state->SetBackendServices(CreateD3D12RenderDeviceServices(window, backBufferFormat, externalFeatureHooks));
+			services->m_state->SetBackendServices(
+			    CreateD3D12RenderDeviceServices(window, backBufferFormat, presentationConfiguration, d3d12InterposerHooks));
 			break;
 		#else
 			FailUnsupportedBackend(backendApi);
@@ -80,7 +113,8 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 		#endif
 		case ERhiBackendApi::Vulkan:
 		#if SPARKLE_RHI_WITH_VULKAN
-			services->m_state->SetBackendServices(CreateVulkanRenderDeviceServices(window, backBufferFormat, externalFeatureHooks));
+			services->m_state->SetBackendServices(
+			    CreateVulkanRenderDeviceServices(window, backBufferFormat, presentationConfiguration));
 			break;
 		#else
 			FailUnsupportedBackend(backendApi);
@@ -126,10 +160,10 @@ void RenderDeviceServices::ResizeSwapChain() noexcept
 	m_state->GetBackendServices().ResizeSwapChain();
 }
 
-void RenderDeviceServices::BeginFrame() noexcept
+void RenderDeviceServices::BeginFrame(std::uint64_t frameId) noexcept
 {
 	RenderDeviceBackendServices& backendServices = m_state->GetBackendServices();
-	backendServices.BeginFrame();
+	backendServices.BeginFrame(frameId);
 	RenderHardwareInterface& renderHardwareInterface = backendServices.GetRenderHardwareInterface();
 	renderHardwareInterface.GetDescriptorService().BeginFrame(renderHardwareInterface.GetCurrentFrameIndex());
 }
@@ -206,9 +240,9 @@ RhiSubmissionToken RenderDeviceServices::GetLastSubmittedToken(ERhiQueueType que
 	return m_state->GetBackendServices().GetLastSubmittedToken(queueType);
 }
 
-void RenderDeviceServices::SubmitFrame() noexcept
+void RenderDeviceServices::SubmitFrame(std::uint64_t frameId) noexcept
 {
-	m_state->GetBackendServices().SubmitFrame();
+	m_state->GetBackendServices().SubmitFrame(frameId);
 }
 
 void RenderDeviceServices::AdvanceFrameInFlight() noexcept

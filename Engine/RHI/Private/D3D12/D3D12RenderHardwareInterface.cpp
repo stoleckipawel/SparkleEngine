@@ -43,7 +43,7 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
 	m_resourceService = std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, *m_descriptorService, m_capabilities);
 	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, rhi.GetNvapiRayTracingProvider());
-	m_diagnostics = CreateD3D12RenderDiagnostics(rhi);
+	m_diagnostics = CreateD3D12RenderDiagnostics(rhi, swapChain.GetMaximumFramesInFlight());
 	m_capabilities = BuildCapabilities();
 	m_imguiBackend = std::make_unique<D3D12ImGuiBackend>(*this);
 }
@@ -90,9 +90,15 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	    .MaxSamplerDescriptors = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE,
 	    .MaxDescriptorTableEntries = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
 	    .MaxPushConstantBytes = 256};
-	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{.SupportsSampledImageArrayNonUniformIndexing = true};
+	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{
+	    .SupportsSampledImageArrayNonUniformIndexing = true,
+	    .SupportsPartiallyBoundDescriptorArrays = true};
 	capabilities.UploadReadback =
 	    RhiUploadReadbackCapabilities{.SupportsBufferUpload = true, .SupportsTextureUpload = true, .SupportsReadback = true};
+	capabilities.Presentation = RhiPresentationCapabilities{
+	    .BackBufferCount = m_swapChain->GetBackBufferCount(),
+	    .MaximumFramesInFlight = m_swapChain->GetMaximumFramesInFlight(),
+	    .Throttle = ERhiPresentationThrottle::FrameLatencyWaitableObject};
 	for (std::size_t index = 0; index < capabilities.FormatSupport.size(); ++index)
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);

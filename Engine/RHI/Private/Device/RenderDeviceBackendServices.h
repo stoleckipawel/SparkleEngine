@@ -19,7 +19,7 @@ class RenderDeviceBackendServices
 	virtual RhiImGuiRenderer& GetImGuiRenderer() noexcept = 0;
 	virtual void SettleForShutdown() noexcept = 0;
 	virtual void ResizeSwapChain() noexcept = 0;
-	virtual void BeginFrame() noexcept = 0;
+	virtual void BeginFrame(std::uint64_t frameId) noexcept = 0;
 	virtual void PrepareCommandRecording() noexcept;
 	virtual RenderCommandList& GetCurrentGraphicsCommandList() noexcept = 0;
 	virtual RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept = 0;
@@ -40,6 +40,6 @@ class RenderDeviceBackendServices
 	virtual void WaitForSubmission(RhiSubmissionToken token) noexcept = 0;
 	virtual bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept = 0;
 	virtual RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept = 0;
-	virtual void SubmitFrame() noexcept = 0;
+	virtual void SubmitFrame(std::uint64_t frameId) noexcept = 0;
 	virtual void AdvanceFrameInFlight() noexcept = 0;
 };

@@ -21,15 +21,15 @@ The intended result is a compact renderer-first engine whose code is:
 - faster because work, data movement, allocation, synchronization, and GPU cost are designed deliberately;
 - honest about feature support, backend parity, measurements, and limitations.
 
-The target engineering persona is defined in [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md): technically deep, measurable when needed, clean enough for other engineers to extend, and capable of translating research ambiguity into lean product-quality implementation.
+The target engineering persona is defined in [H. Advanced Graphics Engineer Persona](../../Strategy/PrincipalGraphics/EngineerPersona.md): technically deep, measurable when needed, clean enough for other engineers to extend, and capable of translating research ambiguity into lean product-quality implementation.
 
-The canonical product workload is defined in [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md): Sponza is the rapid regression tier, Bistro is the primary Tier 1 workload, and San Miguel is the supported Tier 1 secondary workload. Relevant changes must advance or preserve those gates without scene-specific engine branches.
+The canonical product workload is defined in [I. Bistro and San Miguel Acceptance Workloads](../Validation/BistroAndSanMiguelWorkloads.md): Sponza is the rapid regression tier, Bistro is the primary Tier 1 workload, and San Miguel is the supported Tier 1 secondary workload. Relevant changes must advance or preserve those gates without scene-specific engine branches.
 
 ## How to Attach This Guide to Future Prompts
 
 Add this block to each implementation prompt:
 
-> Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and apply the Sponza/Bistro/San Miguel workload contract from I when the touched behavior affects it; classify each requirement and workload gate as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only or scene-specific scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+> Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and apply the Sponza/Bistro/San Miguel workload contract from I when the touched behavior affects it; classify each requirement and workload gate as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only or scene-specific scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 
 Referencing the guide is sufficient; do not copy its rules into another policy document. A prompt may impose stricter requirements. It may not silently weaken ownership, correctness, feature-preservation, deterministic behavior, backend parity, `PGE-*` preservation, or evidence requirements.
 
@@ -37,14 +37,14 @@ Referencing the guide is sufficient; do not copy its rules into another policy d
 
 This guide is grounded in:
 
-- [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md)
-- [D. Whole Repository Architecture Map](D_WholeRepositoryArchitectureMap.md)
-- [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md)
-- [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md)
-- [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
-- [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md)
-- [J. Multithreaded Engine Architecture and Learning Program](J_MultithreadedEngineArchitectureAndLearningProgram.md)
-- [K. Multithreaded Engine Implementation Prompt Series](K_MultithreadedEngineImplementationPromptSeries.md)
+- [A. Principal Rendering Requirements](../../Strategy/PrincipalGraphics/Requirements.md)
+- [D. Whole Repository Architecture Map](../../Architecture/Repository/WholeRepositoryMap.md)
+- [E. External Renderer Repository Comparison](../../Architecture/Research/ExternalRendererComparison.md)
+- [G. Advanced Graphics Engine Executive Summary](../../Strategy/PrincipalGraphics/ExecutiveSummary.md)
+- [H. Advanced Graphics Engineer Persona](../../Strategy/PrincipalGraphics/EngineerPersona.md)
+- [I. Bistro and San Miguel Acceptance Workloads](../Validation/BistroAndSanMiguelWorkloads.md)
+- [J. Multithreaded Engine Architecture and Learning Program](../../Architecture/Multithreading/ArchitectureAndLearningProgram.md)
+- [K. Multithreaded Engine Implementation Prompt Series](../../Architecture/Multithreading/ImplementationPromptSeries.md)
 - the enforced repository configuration in [.clang-format](../../../.clang-format), [.clang-tidy](../../../.clang-tidy), module `CMakeLists.txt` files, and [ArchitectureBoundaryCheck.cmake](../../../CMake/ArchitectureBoundaryCheck.cmake)
 - the current code's strongest ownership and decomposition patterns.
 

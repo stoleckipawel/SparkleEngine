@@ -2,6 +2,7 @@
 
 #include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
+#include "FramePipeline/FrameExecutionRetirementQueue.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Resources/History/FrameHistory.h"
 #include "RHI/Public/Interop/ResourceState.h"
@@ -58,9 +59,7 @@ class FramePipeline final
 
 	void OnRender(const TimeInfo& timing, const UiRenderPacket& ui) noexcept;
 
-	bool BeginViewportCapture(
-	    ViewportCaptureId id,
-	    const ViewportCaptureRequest& request) noexcept;
+	bool BeginViewportCapture(ViewportCaptureId id, const ViewportCaptureRequest& request) noexcept;
 	std::vector<ViewportCaptureReadback> TakeCompletedViewportCaptures();
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 
@@ -75,9 +74,6 @@ class FramePipeline final
 	void RefreshFrameExecution(FrameResolutionExtents resolution) noexcept;
 	void RebuildFrameExecutionAfterSwapChainDrain(FrameResolutionExtents resolution) noexcept;
 	void RetireFrameExecution() noexcept;
-	void PollRetiredFrameExecutions() noexcept;
-	RhiSubmissionState CaptureLastSubmittedState() const noexcept;
-	bool IsSubmissionStateComplete(const RhiSubmissionState& state) const noexcept;
 	bool ShouldOutputToBackBuffer() const noexcept;
 	RenderViewportExtent ResolveOutputExtent() const noexcept;
 	FrameResolutionExtents ResolveFrameResolution() const noexcept;
@@ -92,14 +88,10 @@ class FramePipeline final
 	void BeginBackendFrame() noexcept;
 	void PollViewportCaptures() noexcept;
 	void SetupFrame(const TimeInfo& timing) noexcept;
-	void UploadPendingSceneTextures(
-	    RenderDeviceServices& deviceServices,
-	    RenderCommandList& graphicsCommandList);
+	void UploadPendingSceneTextures(RenderDeviceServices& deviceServices, RenderCommandList& graphicsCommandList);
 	void RefreshViewportRenderProducts() noexcept;
-	bool BeginViewportEditorTexturePresentation(
-	    RenderOutputFlags output) noexcept;
-	void EndViewportEditorTexturePresentation(
-	    RenderOutputFlags output) noexcept;
+	bool BeginViewportEditorTexturePresentation(RenderOutputFlags output) noexcept;
+	void EndViewportEditorTexturePresentation(RenderOutputFlags output) noexcept;
 	void RenderUiPacket(const UiRenderPacket& packet) noexcept;
 	void RenderEditorViewportUi(const UiRenderPacket& packet) noexcept;
 	void RenderHostOverlayUi(const UiRenderPacket& packet) noexcept;
@@ -108,20 +100,12 @@ class FramePipeline final
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
 	void ApplyRenderInputHistoryReset(const RenderFrameDynamicData& dynamic) noexcept;
-	FrameContext& PrepareFrameContext(
-	    const RenderFrameDynamicData& dynamic,
-	    RenderRayTracingScene* activeRayTracingScene);
+	FrameContext& PrepareFrameContext(const RenderFrameDynamicData& dynamic, RenderRayTracingScene* activeRayTracingScene);
 	void UpdateLightingHistory(FrameContext& frame);
-	void SetupImageProviderFrame(
-	    const FrameContext& frame,
-	    const RenderFrameDynamicData& dynamic);
-	void BindRayTracingScene(
-	    FrameContext& frame,
-	    RenderRayTracingScene* activeRayTracingScene);
+	void SetupImageProviderFrame(const FrameContext& frame, const RenderFrameDynamicData& dynamic);
+	void BindRayTracingScene(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene);
 	void BindSkyTexture(const FrameContext& frame);
-	void ExecuteFrameGraph(
-	    FrameContext& frame,
-	    RenderRayTracingScene* activeRayTracingScene);
+	void ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene);
 	void ResetTemporalState(std::string_view reason) noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
@@ -133,13 +117,7 @@ class FramePipeline final
 	PerFrameDataBuilder m_perFrameDataBuilder;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
 	std::vector<std::unique_ptr<FrameContext>> m_frameContexts;
-	struct RetiredFrameExecution final
-	{
-		RhiSubmissionState LastUse;
-		std::unique_ptr<FrameGraph> Graph;
-		std::vector<std::unique_ptr<FrameContext>> FrameContexts;
-	};
-	std::vector<RetiredFrameExecution> m_retiredFrameExecutions;
+	FrameExecutionRetirementQueue m_frameExecutionRetirementQueue;
 	RenderViewportExtent m_frameGraphRenderExtent = {};
 	RenderViewportExtent m_frameGraphOutputExtent = {};
 	RenderViewportExtent m_windowExtent = {};

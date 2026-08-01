@@ -36,11 +36,13 @@ bool VulkanRhi::AppendAvailableDeviceExtension(
     std::vector<const char*>& extensions,
     const char* extensionName) noexcept
 {
-	if (extensionName == nullptr ||
-	    std::find_if(
-	        extensions.begin(),
-	        extensions.end(),
-	        [extensionName](const char* enabled) noexcept { return std::strcmp(enabled, extensionName) == 0; }) != extensions.end())
+	if (extensionName == nullptr || std::find_if(
+	                                    extensions.begin(),
+	                                    extensions.end(),
+	                                    [extensionName](const char* enabled) noexcept
+	                                    {
+		                                    return std::strcmp(enabled, extensionName) == 0;
+	                                    }) != extensions.end())
 	{
 		return false;
 	}
@@ -62,7 +64,8 @@ bool VulkanRhi::AppendAvailableDeviceExtension(
 	const bool availableOnDevice = std::any_of(
 	    available.begin(),
 	    available.end(),
-	    [extensionName](const VkExtensionProperties& properties) noexcept {
+	    [extensionName](const VkExtensionProperties& properties) noexcept
+	    {
 		    return std::strcmp(properties.extensionName, extensionName) == 0;
 	    });
 	if (!availableOnDevice)
@@ -130,21 +133,12 @@ void VulkanRhi::WaitForIdle() noexcept
 
 bool VulkanRhi::TryPopDiagnosticMessage(RhiDiagnosticMessage& outMessage) noexcept
 {
-	std::lock_guard lock(m_diagnosticMessagesMutex);
-	if (m_diagnosticMessages.empty())
-	{
-		return false;
-	}
-
-	outMessage = std::move(m_diagnosticMessages.front());
-	m_diagnosticMessages.pop_front();
-	return true;
+	return m_diagnosticMessageQueue.TryPop(outMessage);
 }
 
 void VulkanRhi::ClearDiagnosticMessages() noexcept
 {
-	std::lock_guard lock(m_diagnosticMessagesMutex);
-	m_diagnosticMessages.clear();
+	m_diagnosticMessageQueue.Clear();
 }
 
 VkInstance VulkanRhi::GetInstance() const noexcept
@@ -334,7 +328,7 @@ void VulkanRhi::CreateInstance() noexcept
 	std::uint32_t loaderApiVersion = VK_API_VERSION_1_0;
 	if (vkEnumerateInstanceVersion != nullptr)
 	{
-		(void)vkEnumerateInstanceVersion(&loaderApiVersion);
+		(void) vkEnumerateInstanceVersion(&loaderApiVersion);
 	}
 	if (loaderApiVersion < VK_API_VERSION_1_3)
 	{
@@ -461,8 +455,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 			continue;
 		}
 		candidate.QueueTopology = VulkanQueueTopology::Select(device);
-		if (!candidate.QueueTopology.Supports(ERhiQueueType::Graphics) ||
-		    !candidate.QueueTopology.Supports(ERhiQueueType::Compute) ||
+		if (!candidate.QueueTopology.Supports(ERhiQueueType::Graphics) || !candidate.QueueTopology.Supports(ERhiQueueType::Compute) ||
 		    !candidate.QueueTopology.Supports(ERhiQueueType::Copy))
 		{
 			continue;
@@ -483,7 +476,10 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	std::sort(
 	    candidates.begin(),
 	    candidates.end(),
-	    [](const PhysicalDeviceCandidate& lhs, const PhysicalDeviceCandidate& rhs) noexcept { return lhs.Score > rhs.Score; });
+	    [](const PhysicalDeviceCandidate& lhs, const PhysicalDeviceCandidate& rhs) noexcept
+	    {
+		    return lhs.Score > rhs.Score;
+	    });
 
 	const PhysicalDeviceCandidate& selected = candidates.front();
 	m_physicalDevice = selected.Device;
@@ -495,16 +491,13 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsSamplerAnisotropy = selected.Features.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.SupportsFillModeNonSolid = selected.Features.features.fillModeNonSolid == VK_TRUE;
 	m_featureStatus.SupportsShaderInt64 = selected.Features.features.shaderInt64 == VK_TRUE;
-	m_featureStatus.SupportsStorageImageReadWithoutFormat =
-	    selected.Features.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
-	m_featureStatus.SupportsStorageImageWriteWithoutFormat =
-	    selected.Features.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
-	m_featureStatus.SupportsSampledImageArrayNonUniformIndexing =
-	    selected.Features12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
+	m_featureStatus.SupportsStorageImageReadWithoutFormat = selected.Features.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
+	m_featureStatus.SupportsStorageImageWriteWithoutFormat = selected.Features.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
+	m_featureStatus.SupportsSampledImageArrayNonUniformIndexing = selected.Features12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
+	m_featureStatus.SupportsPartiallyBoundDescriptorArrays = selected.Features12.descriptorBindingPartiallyBound == VK_TRUE;
 	m_featureStatus.SupportsShaderDemoteToHelperInvocation = selected.Features13.shaderDemoteToHelperInvocation == VK_TRUE;
 	m_featureStatus.SupportsMutableDescriptorType = QueryMutableDescriptorTypeFeature(m_physicalDevice);
 	m_featureStatus.RayTracing = VulkanRayTracingFeatureQuery::Query(m_physicalDevice);
-
 }
 
 void VulkanRhi::CreateLogicalDevice() noexcept
@@ -546,8 +539,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 		deviceExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
 		deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
-		    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature)
+		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension && m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature)
 		{
 			deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 		}
@@ -555,8 +547,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		{
 			deviceExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 		}
-		if (m_adapterInfo.VendorId == NvidiaVendorId &&
-		    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension &&
+		if (m_adapterInfo.VendorId == NvidiaVendorId && m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension &&
 		    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature)
 		{
 			deviceExtensions.push_back(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -581,10 +572,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	m_featureStatus.EnabledSamplerAnisotropy = enabledFeatures.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.EnabledFillModeNonSolid = enabledFeatures.features.fillModeNonSolid == VK_TRUE;
 	m_featureStatus.EnabledShaderInt64 = enabledFeatures.features.shaderInt64 == VK_TRUE;
-	m_featureStatus.EnabledStorageImageReadWithoutFormat =
-	    enabledFeatures.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
-	m_featureStatus.EnabledStorageImageWriteWithoutFormat =
-	    enabledFeatures.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
+	m_featureStatus.EnabledStorageImageReadWithoutFormat = enabledFeatures.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
+	m_featureStatus.EnabledStorageImageWriteWithoutFormat = enabledFeatures.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
 	VkPhysicalDeviceVulkan13Features enabledFeatures13{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
 	VkPhysicalDeviceVulkan12Features enabledFeatures12{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
 	void** enabledNext = &enabledFeatures.pNext;
@@ -593,18 +582,18 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		enabledFeatures12.timelineSemaphore = m_featureStatus.SupportsTimelineSemaphore ? VK_TRUE : VK_FALSE;
 		enabledFeatures12.shaderSampledImageArrayNonUniformIndexing =
 		    m_featureStatus.SupportsSampledImageArrayNonUniformIndexing ? VK_TRUE : VK_FALSE;
+		enabledFeatures12.descriptorBindingPartiallyBound = m_featureStatus.SupportsPartiallyBoundDescriptorArrays ? VK_TRUE : VK_FALSE;
 		*enabledNext = &enabledFeatures12;
 		enabledNext = &enabledFeatures12.pNext;
-		m_featureStatus.EnabledSampledImageArrayNonUniformIndexing =
-		    enabledFeatures12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
+		m_featureStatus.EnabledSampledImageArrayNonUniformIndexing = enabledFeatures12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
+		m_featureStatus.EnabledPartiallyBoundDescriptorArrays = enabledFeatures12.descriptorBindingPartiallyBound == VK_TRUE;
 		m_featureStatus.EnabledTimelineSemaphore = enabledFeatures12.timelineSemaphore == VK_TRUE;
 	}
 	if (m_adapterInfo.ApiVersion >= VK_API_VERSION_1_3)
 	{
 		enabledFeatures13.synchronization2 = m_featureStatus.SupportsSynchronization2 ? VK_TRUE : VK_FALSE;
 		enabledFeatures13.dynamicRendering = m_featureStatus.SupportsDynamicRendering ? VK_TRUE : VK_FALSE;
-		enabledFeatures13.shaderDemoteToHelperInvocation =
-		    m_featureStatus.SupportsShaderDemoteToHelperInvocation ? VK_TRUE : VK_FALSE;
+		enabledFeatures13.shaderDemoteToHelperInvocation = m_featureStatus.SupportsShaderDemoteToHelperInvocation ? VK_TRUE : VK_FALSE;
 		*enabledNext = &enabledFeatures13;
 		enabledNext = &enabledFeatures13.pNext;
 		m_featureStatus.EnabledSynchronization2 = enabledFeatures13.synchronization2 == VK_TRUE;
@@ -627,8 +616,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		enabledRayQueryFeatures.rayQuery = VK_TRUE;
 		*enabledNext = &enabledAccelerationStructureFeatures;
 		enabledNext = &enabledAccelerationStructureFeatures.pNext;
-		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
-		    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature)
+		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension && m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature)
 		{
 			enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
 			*enabledNext = &enabledRayTracingPipelineFeatures;
@@ -688,10 +676,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 			nativeQueues[queueIndex] = std::make_shared<VulkanNativeQueue>();
 			nativeQueues[queueIndex]->Queue = nativeQueue;
 		}
-		m_queues[queueIndex] = std::make_unique<VulkanCommandQueue>(
-		    *this,
-		    queueType,
-		    nativeQueues[queueIndex]);
+		m_queues[queueIndex] = std::make_unique<VulkanCommandQueue>(*this, queueType, nativeQueues[queueIndex]);
 	}
 	if (GetGraphicsQueue() == VK_NULL_HANDLE)
 	{
@@ -706,14 +691,13 @@ void VulkanRhi::LoadDeviceDebugFunctions() noexcept
 		return;
 	}
 
-	m_setDebugUtilsObjectName = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
-	    vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT"));
-	m_cmdBeginDebugUtilsLabel = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(
-	    vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
-	m_cmdEndDebugUtilsLabel = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(
-	    vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
-	m_cmdInsertDebugUtilsLabel = reinterpret_cast<PFN_vkCmdInsertDebugUtilsLabelEXT>(
-	    vkGetDeviceProcAddr(m_device, "vkCmdInsertDebugUtilsLabelEXT"));
+	m_setDebugUtilsObjectName =
+	    reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT"));
+	m_cmdBeginDebugUtilsLabel =
+	    reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
+	m_cmdEndDebugUtilsLabel = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
+	m_cmdInsertDebugUtilsLabel =
+	    reinterpret_cast<PFN_vkCmdInsertDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdInsertDebugUtilsLabelEXT"));
 }
 
 void VulkanRhi::LoadRayTracingFunctions() noexcept
@@ -726,24 +710,23 @@ void VulkanRhi::LoadRayTracingFunctions() noexcept
 	m_getBufferDeviceAddress = reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vkGetDeviceProcAddr(m_device, "vkGetBufferDeviceAddress"));
 	if (m_getBufferDeviceAddress == nullptr)
 	{
-		m_getBufferDeviceAddress = reinterpret_cast<PFN_vkGetBufferDeviceAddress>(
-		    vkGetDeviceProcAddr(m_device, "vkGetBufferDeviceAddressKHR"));
+		m_getBufferDeviceAddress =
+		    reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vkGetDeviceProcAddr(m_device, "vkGetBufferDeviceAddressKHR"));
 	}
-	m_createAccelerationStructure = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
-	    vkGetDeviceProcAddr(m_device, "vkCreateAccelerationStructureKHR"));
-	m_destroyAccelerationStructure = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
-	    vkGetDeviceProcAddr(m_device, "vkDestroyAccelerationStructureKHR"));
+	m_createAccelerationStructure =
+	    reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(m_device, "vkCreateAccelerationStructureKHR"));
+	m_destroyAccelerationStructure =
+	    reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(m_device, "vkDestroyAccelerationStructureKHR"));
 	m_getAccelerationStructureBuildSizes = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
 	    vkGetDeviceProcAddr(m_device, "vkGetAccelerationStructureBuildSizesKHR"));
-	m_cmdBuildAccelerationStructures = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
-	    vkGetDeviceProcAddr(m_device, "vkCmdBuildAccelerationStructuresKHR"));
+	m_cmdBuildAccelerationStructures =
+	    reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(m_device, "vkCmdBuildAccelerationStructuresKHR"));
 	m_getAccelerationStructureDeviceAddress = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
 	    vkGetDeviceProcAddr(m_device, "vkGetAccelerationStructureDeviceAddressKHR"));
 	if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure)
 	{
-		m_getPartitionedAccelerationStructureBuildSizes =
-		    reinterpret_cast<PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV>(
-		        vkGetDeviceProcAddr(m_device, "vkGetPartitionedAccelerationStructuresBuildSizesNV"));
+		m_getPartitionedAccelerationStructureBuildSizes = reinterpret_cast<PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV>(
+		    vkGetDeviceProcAddr(m_device, "vkGetPartitionedAccelerationStructuresBuildSizesNV"));
 		m_cmdBuildPartitionedAccelerationStructures = reinterpret_cast<PFN_vkCmdBuildPartitionedAccelerationStructuresNV>(
 		    vkGetDeviceProcAddr(m_device, "vkCmdBuildPartitionedAccelerationStructuresNV"));
 	}
@@ -813,48 +796,29 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .AccelerationStructureByteAlignment = 256,
 	    .ScratchBufferByteAlignment = accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment,
 	    .InstanceDescSizeInBytes = static_cast<std::uint32_t>(sizeof(VkAccelerationStructureInstanceKHR))};
-	m_rayTracingCapabilities.Groups.AccelerationStructures = RhiAccelerationStructureCapabilities{
-	    .SupportsRayTracing = m_rayTracingCapabilities.SupportsRayTracing,
-	    .SupportsInlineRayQuery = m_rayTracingCapabilities.SupportsInlineRayQuery,
-	    .SupportsAccelerationStructureShaderBinding = m_rayTracingCapabilities.SupportsRayTracing,
-	    .MaxTraceRecursionDepth = m_rayTracingCapabilities.MaxTraceRecursionDepth,
-	    .MaxRayPayloadSizeInBytes = m_rayTracingCapabilities.MaxRayPayloadSizeInBytes,
-	    .MaxRayAttributeSizeInBytes = m_rayTracingCapabilities.MaxRayAttributeSizeInBytes,
-	    .ShaderGroupHandleSizeInBytes = m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes,
-	    .ShaderTableAlignmentInBytes = m_rayTracingCapabilities.ShaderTableAlignmentInBytes,
-	    .ShaderTableRecordAlignmentInBytes = m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes,
-	    .AccelerationStructureByteAlignment = m_rayTracingCapabilities.AccelerationStructureByteAlignment,
-	    .ScratchBufferByteAlignment = m_rayTracingCapabilities.ScratchBufferByteAlignment};
-	m_rayTracingCapabilities.Groups.ClassicTlas = RhiClassicTlasCapabilities{
-	    .SupportsClassicTlasBuild = true,
-	    .SupportsClassicTlasUpdate = true,
-	    .SupportsGpuReadableInstanceBuffer = true,
-	    .InstanceDescSizeInBytes = m_rayTracingCapabilities.InstanceDescSizeInBytes};
+	PopulateStandardRayTracingCapabilityGroups(m_rayTracingCapabilities);
 	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
 	    .Supported = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
-	                 m_getPartitionedAccelerationStructureBuildSizes != nullptr &&
-	                 m_cmdBuildPartitionedAccelerationStructures != nullptr,
+	                 m_getPartitionedAccelerationStructureBuildSizes != nullptr && m_cmdBuildPartitionedAccelerationStructures != nullptr,
 	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
 	    .RequiresNvidiaDevice = true,
 	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == NvidiaVendorId,
 	    .SupportsDescriptorAccess = false,
-	    .SupportsShaderDeviceAddressAccess = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
-	                                         m_featureStatus.EnabledShaderInt64 &&
-	                                         m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
-	                                         m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature &&
-	                                         m_rayTracingCapabilities.SupportsInlineRayQuery,
+	    .SupportsShaderDeviceAddressAccess =
+	        m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure && m_featureStatus.EnabledShaderInt64 &&
+	        m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
+	        m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature && m_rayTracingCapabilities.SupportsInlineRayQuery,
 	    .SupportsVulkanNativePartitionedAccelerationStructure =
 	        m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
 	    .SupportsVulkanExtension = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
 	    .SupportsVulkanFeatureQuery = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature,
-	    .SupportsVulkanFunctionLoading = m_getPartitionedAccelerationStructureBuildSizes != nullptr &&
-	                                     m_cmdBuildPartitionedAccelerationStructures != nullptr,
+	    .SupportsVulkanFunctionLoading =
+	        m_getPartitionedAccelerationStructureBuildSizes != nullptr && m_cmdBuildPartitionedAccelerationStructures != nullptr,
 	    .SupportsVulkanDescriptorPath = false,
-	    .SupportsVulkanShaderDeviceAddressPath = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
-	                                            m_featureStatus.EnabledShaderInt64 &&
-	                                            m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
-	                                            m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature &&
-	                                            m_rayTracingCapabilities.SupportsInlineRayQuery,
+	    .SupportsVulkanShaderDeviceAddressPath =
+	        m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure && m_featureStatus.EnabledShaderInt64 &&
+	        m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
+	        m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature && m_rayTracingCapabilities.SupportsInlineRayQuery,
 	    .SupportsCpuPackedOperations = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
 	    .SupportsGpuDrivenOperations = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
 	    .SupportsGpuOperationCount = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
@@ -870,44 +834,35 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	        static_cast<std::uint32_t>(sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV)),
 	    .OperationDataSizeInBytes = static_cast<std::uint32_t>(sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV)),
 	    .OperationCountDataSizeInBytes = static_cast<std::uint32_t>(sizeof(std::uint32_t)),
-	    .CapabilityStatusReason =
-	        m_adapterInfo.VendorId != NvidiaVendorId
-	            ? "vulkan-nv-ptlas-requires-nvidia-device"
-	            : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
-	                   ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
-	                   : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature
-	                          ? "vulkan-nv-partitioned-acceleration-structure-feature-not-present"
-	                          : (!m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure
-	                                 ? "vulkan-nv-partitioned-acceleration-structure-not-enabled"
-	                                 : (m_getPartitionedAccelerationStructureBuildSizes == nullptr ||
-	                                            m_cmdBuildPartitionedAccelerationStructures == nullptr
-	                                        ? "vulkan-nv-ptlas-functions-not-loaded"
-	                                        : "vulkan-nv-ptlas-provider-ready"))))};
+	    .CapabilityStatusReason = m_adapterInfo.VendorId != NvidiaVendorId
+	                                  ? "vulkan-nv-ptlas-requires-nvidia-device"
+	                                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
+	                                         ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
+	                                         : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature
+	                                                ? "vulkan-nv-partitioned-acceleration-structure-feature-not-present"
+	                                                : (!m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure
+	                                                       ? "vulkan-nv-partitioned-acceleration-structure-not-enabled"
+	                                                       : (m_getPartitionedAccelerationStructureBuildSizes == nullptr ||
+	                                                                  m_cmdBuildPartitionedAccelerationStructures == nullptr
+	                                                              ? "vulkan-nv-ptlas-functions-not-loaded"
+	                                                              : "vulkan-nv-ptlas-provider-ready"))))};
 	SelectRayTracingTopLevelProvider();
 }
 
 void VulkanRhi::SelectRayTracingTopLevelProvider() noexcept
 {
-	RhiRayTracingProviderCapabilities& provider =
-	    m_rayTracingCapabilities.Groups.Provider;
+	RhiRayTracingProviderCapabilities& provider = m_rayTracingCapabilities.Groups.Provider;
 	if (!m_rayTracingCapabilities.SupportsRayTracing)
 	{
 		provider = RhiRayTracingProviderCapabilities{
-		    .SelectedTopLevelProvider =
-		        ERhiRayTracingTopLevelProvider::None,
-		    .SelectedTopLevelProviderReason =
-		        "ray-tracing-unavailable"};
+		    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,
+		    .SelectedTopLevelProviderReason = "ray-tracing-unavailable"};
 		return;
 	}
 
-	const RhiPartitionedTlasCapabilities& partitionedTlas =
-	    m_rayTracingCapabilities.Groups.PartitionedTlas;
-	const bool partitionedTlasRequested =
-	    CVarRayTracingPreferPartitionedTlas.Get();
-	const bool partitionedTlasSelected =
-	    partitionedTlasRequested &&
-	    partitionedTlas.Supported &&
-	    partitionedTlas.SupportsDescriptorAccess;
+	const RhiPartitionedTlasCapabilities& partitionedTlas = m_rayTracingCapabilities.Groups.PartitionedTlas;
+	const bool partitionedTlasRequested = CVarRayTracingPreferPartitionedTlas.Get();
+	const bool partitionedTlasSelected = partitionedTlasRequested && partitionedTlas.Supported && partitionedTlas.SupportsDescriptorAccess;
 	const char* selectionReason = "classic-tlas-selected";
 	if (partitionedTlasSelected)
 	{
@@ -920,9 +875,7 @@ void VulkanRhi::SelectRayTracingTopLevelProvider() noexcept
 
 	provider = RhiRayTracingProviderCapabilities{
 	    .SelectedTopLevelProvider =
-	        partitionedTlasSelected
-	            ? ERhiRayTracingTopLevelProvider::PartitionedTlas
-	            : ERhiRayTracingTopLevelProvider::ClassicTlas,
+	        partitionedTlasSelected ? ERhiRayTracingTopLevelProvider::PartitionedTlas : ERhiRayTracingTopLevelProvider::ClassicTlas,
 	    .SelectedTopLevelProviderReason = selectionReason};
 }
 
@@ -933,7 +886,7 @@ void VulkanRhi::NameBootstrapObjects() noexcept
 		return;
 	}
 
-	(void)VulkanDebugNames::SetObjectName(
+	(void) VulkanDebugNames::SetObjectName(
 	    m_setDebugUtilsObjectName,
 	    m_device,
 	    VK_OBJECT_TYPE_DEVICE,
@@ -948,14 +901,14 @@ void VulkanRhi::NameBootstrapObjects() noexcept
 			continue;
 		}
 		const std::string queueName = std::format("Sparkle Vulkan {} Queue", RhiQueueTypeToString(queueType));
-		(void)VulkanDebugNames::SetObjectName(
+		(void) VulkanDebugNames::SetObjectName(
 		    m_setDebugUtilsObjectName,
 		    m_device,
 		    VK_OBJECT_TYPE_QUEUE,
 		    reinterpret_cast<std::uint64_t>(queue.GetNativeQueue()),
 		    queueName);
 		const std::string timelineName = std::format("Sparkle Vulkan {} Queue Timeline", RhiQueueTypeToString(queueType));
-		(void)VulkanDebugNames::SetObjectName(
+		(void) VulkanDebugNames::SetObjectName(
 		    m_setDebugUtilsObjectName,
 		    m_device,
 		    VK_OBJECT_TYPE_SEMAPHORE,
@@ -969,7 +922,8 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	const std::string instanceExtensions = std::format("Enabled Vulkan instance extensions: {}", m_enabledInstanceExtensions.size());
 	const std::string deviceExtensions = std::format("Enabled Vulkan device extensions: {}", m_enabledDeviceExtensions.size());
 	const std::string featureSummary = std::format(
-	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, timelineSemaphore supported/enabled={}/{}, dynamicRendering supported/enabled={}/{}, "
+	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, timelineSemaphore supported/enabled={}/{}, "
+	    "dynamicRendering supported/enabled={}/{}, "
 	    "mutableDescriptorType supported/enabled={}/{}, "
 	    "samplerAnisotropy supported/enabled={}/{}, fillModeNonSolid supported/enabled={}/{}, "
 	    "rtExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}, bda={}, partitionedTlasNv={}), "
@@ -1041,25 +995,20 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 		    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature,
 		    m_featureStatus.RayTracing.SupportsRayQueryFeature,
 		    m_featureStatus.RayTracing.SupportsBufferDeviceAddressFeature,
-		    m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr &&
-		        m_destroyAccelerationStructure != nullptr && m_getAccelerationStructureBuildSizes != nullptr &&
-		        m_cmdBuildAccelerationStructures != nullptr && m_getAccelerationStructureDeviceAddress != nullptr);
+		    m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr && m_destroyAccelerationStructure != nullptr &&
+		        m_getAccelerationStructureBuildSizes != nullptr && m_cmdBuildAccelerationStructures != nullptr &&
+		        m_getAccelerationStructureDeviceAddress != nullptr);
 		SPDLOG_LOGGER_WARN(g_vulkanRhiLogger, "{}", rayTracingSummary);
 		PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Warning, ERhiDiagnosticMessageCategory::Validation, rayTracingSummary);
 	}
 }
 
 void VulkanRhi::PushDiagnosticMessage(
-	ERhiDiagnosticMessageSeverity severity,
-	ERhiDiagnosticMessageCategory category,
-	std::string text) noexcept
+    ERhiDiagnosticMessageSeverity severity,
+    ERhiDiagnosticMessageCategory category,
+    std::string text) noexcept
 {
-	std::lock_guard lock(m_diagnosticMessagesMutex);
-	if (m_diagnosticMessages.size() >= DiagnosticMessageCapacity)
-	{
-		m_diagnosticMessages.pop_front();
-	}
-	m_diagnosticMessages.push_back(RhiDiagnosticMessage{.Severity = severity, .Category = category, .Text = std::move(text)});
+	m_diagnosticMessageQueue.Push(RhiDiagnosticMessage{.Severity = severity, .Category = category, .Text = std::move(text)});
 }
 
 bool VulkanRhi::IsLayerAvailable(const char* layerName) noexcept
@@ -1076,9 +1025,13 @@ bool VulkanRhi::IsLayerAvailable(const char* layerName) noexcept
 		return false;
 	}
 
-	return std::any_of(layers.begin(), layers.end(), [layerName](const VkLayerProperties& layer) noexcept {
-		return std::string_view(layer.layerName) == layerName;
-	});
+	return std::any_of(
+	    layers.begin(),
+	    layers.end(),
+	    [layerName](const VkLayerProperties& layer) noexcept
+	    {
+		    return std::string_view(layer.layerName) == layerName;
+	    });
 }
 
 bool VulkanRhi::IsInstanceExtensionAvailable(const char* extensionName) noexcept
@@ -1095,9 +1048,13 @@ bool VulkanRhi::IsInstanceExtensionAvailable(const char* extensionName) noexcept
 		return false;
 	}
 
-	return std::any_of(extensions.begin(), extensions.end(), [extensionName](const VkExtensionProperties& extension) noexcept {
-		return std::string_view(extension.extensionName) == extensionName;
-	});
+	return std::any_of(
+	    extensions.begin(),
+	    extensions.end(),
+	    [extensionName](const VkExtensionProperties& extension) noexcept
+	    {
+		    return std::string_view(extension.extensionName) == extensionName;
+	    });
 }
 
 bool VulkanRhi::IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept
@@ -1114,9 +1071,13 @@ bool VulkanRhi::IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* 
 		return false;
 	}
 
-	return std::any_of(extensions.begin(), extensions.end(), [extensionName](const VkExtensionProperties& extension) noexcept {
-		return std::string_view(extension.extensionName) == extensionName;
-	});
+	return std::any_of(
+	    extensions.begin(),
+	    extensions.end(),
+	    [extensionName](const VkExtensionProperties& extension) noexcept
+	    {
+		    return std::string_view(extension.extensionName) == extensionName;
+	    });
 }
 
 std::uint32_t VulkanRhi::ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept
@@ -1182,10 +1143,10 @@ std::string VulkanRhi::PhysicalDeviceTypeToString(VkPhysicalDeviceType type)
 }
 
 VkBool32 VKAPI_PTR VulkanRhi::DebugUtilsCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-	VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-	const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-	void* userData) noexcept
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+    const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+    void* userData) noexcept
 {
 	auto* rhi = static_cast<VulkanRhi*>(userData);
 	if (rhi == nullptr || callbackData == nullptr)

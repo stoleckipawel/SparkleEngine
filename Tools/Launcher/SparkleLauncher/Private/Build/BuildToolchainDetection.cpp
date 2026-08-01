@@ -1,17 +1,16 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include "CMakeGeneratorModel.h"
+#include "QtToolchainDiscovery.h"
+#include "ShaderCompilerSdkDiscovery.h"
+#include "VisualStudioToolchainDiscovery.h"
+#include "VulkanSdkDiscovery.h"
 #include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Core/Public/Strings/StringUtils.h"
-#include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/ToolResolver.h"
 
 #include <algorithm>
-#include <array>
-#include <cctype>
 #include <optional>
-#include <sstream>
-#include <system_error>
 #include <utility>
 
 namespace SparkleLauncher
@@ -20,616 +19,6 @@ namespace SparkleLauncher
 	static constexpr std::string_view kMinimumCMakeVersion = "3.20.0";
 	static constexpr std::string_view kMinimumGitVersion = "2.25.0";
 
-	static std::optional<std::filesystem::path> ResolveProgramFilesX86()
-	{
-		std::string value;
-		if (Environment::TryGetVariable("ProgramFiles(x86)", value))
-		{
-			return std::filesystem::path(value);
-		}
-		if (Environment::TryGetVariable("ProgramFiles", value))
-		{
-			return std::filesystem::path(value);
-		}
-		return std::nullopt;
-	}
-
-	static std::optional<std::filesystem::path> ResolveVswherePath()
-	{
-		std::string overridePath;
-		if (Environment::TryGetVariable("SPARKLE_VSWHERE_EXE", overridePath))
-		{
-			std::filesystem::path path(overridePath);
-			std::error_code errorCode;
-			if (std::filesystem::exists(path, errorCode))
-			{
-				return path;
-			}
-		}
-
-		const std::optional<std::filesystem::path> programFiles = ResolveProgramFilesX86();
-		if (!programFiles.has_value())
-		{
-			return std::nullopt;
-		}
-
-		const std::filesystem::path path = *programFiles / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
-		std::error_code errorCode;
-		return std::filesystem::exists(path, errorCode) ? std::optional<std::filesystem::path>(path) : std::nullopt;
-	}
-
-	static std::vector<std::filesystem::path> GetProgramFilesRoots()
-	{
-		std::vector<std::filesystem::path> roots;
-		std::string programFiles;
-		if (Environment::TryGetVariable("ProgramFiles", programFiles))
-		{
-			roots.emplace_back(programFiles);
-		}
-		std::string programFilesX86;
-		if (Environment::TryGetVariable("ProgramFiles(x86)", programFilesX86))
-		{
-			roots.emplace_back(programFilesX86);
-		}
-		return roots;
-	}
-
-	static std::optional<std::filesystem::path> FindVisualStudioInstallWithCppTools()
-	{
-		const std::vector<std::string> versions = {"18", "2026", "17", "2022"};
-		const std::vector<std::string> editions = {"Community", "Professional", "Enterprise", "BuildTools"};
-		for (const std::filesystem::path& root : GetProgramFilesRoots())
-		{
-			const std::filesystem::path visualStudioRoot = root / "Microsoft Visual Studio";
-			for (const std::string& version : versions)
-			{
-				for (const std::string& edition : editions)
-				{
-					const std::filesystem::path installRoot = visualStudioRoot / version / edition;
-					const std::filesystem::path vcToolsRoot = installRoot / "VC" / "Tools" / "MSVC";
-					const std::filesystem::path msbuild = installRoot / "MSBuild" / "Current" / "Bin" / "MSBuild.exe";
-					std::error_code errorCode;
-					if (std::filesystem::is_directory(vcToolsRoot, errorCode) && std::filesystem::is_regular_file(msbuild, errorCode))
-					{
-						return installRoot;
-					}
-				}
-			}
-		}
-		return std::nullopt;
-	}
-
-	static std::string ToLower(std::string value)
-	{
-		std::transform(value.begin(), value.end(), value.begin(), [](unsigned char character) {
-			return static_cast<char>(std::tolower(character));
-		});
-		return value;
-	}
-
-	static std::string BuildPathSortKey(const std::filesystem::path& path)
-	{
-		return ToLower(path.lexically_normal().generic_string());
-	}
-
-	static bool PathLooksLikeQtMsvcKitRoot(const std::filesystem::path& path)
-	{
-		const std::string directoryName = ToLower(path.filename().string());
-		return directoryName.find("msvc") != std::string::npos && directoryName.find("64") != std::string::npos && directoryName.find("arm64") == std::string::npos;
-	}
-
-	static bool PathLooksLikeQtMingwKitRoot(const std::filesystem::path& path)
-	{
-		const std::string directoryName = ToLower(path.filename().string());
-		return directoryName.find("mingw") != std::string::npos;
-	}
-
-	static std::optional<std::filesystem::path> TryGetEnvironmentPath(std::string_view variableName)
-	{
-		std::string value;
-		const std::string variableNameText(variableName);
-		if (!Environment::TryGetVariable(variableNameText.c_str(), value) || value.empty())
-		{
-			return std::nullopt;
-		}
-		return std::filesystem::path(value);
-	}
-
-	static std::optional<std::filesystem::path> FindLatestVersionedDirectory(const std::filesystem::path& root)
-	{
-		std::error_code errorCode;
-		if (!std::filesystem::is_directory(root, errorCode))
-		{
-			return std::nullopt;
-		}
-
-		std::optional<std::filesystem::path> latestDirectory;
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
-		{
-			if (!entry.is_directory(errorCode))
-			{
-				errorCode.clear();
-				continue;
-			}
-
-			if (!latestDirectory.has_value() || BuildPathSortKey(latestDirectory->filename()) < BuildPathSortKey(entry.path().filename()))
-			{
-				latestDirectory = entry.path();
-			}
-			errorCode.clear();
-		}
-
-		return latestDirectory;
-	}
-
-	static bool HasDirectChildDirectoryWithPrefix(const std::filesystem::path& root, std::string_view prefix)
-	{
-		std::error_code errorCode;
-		if (!std::filesystem::is_directory(root, errorCode))
-		{
-			return false;
-		}
-
-		const std::string prefixKey = ToLower(std::string(prefix));
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
-		{
-			if (errorCode)
-			{
-				errorCode.clear();
-				continue;
-			}
-
-			if (!entry.is_directory(errorCode))
-			{
-				errorCode.clear();
-				continue;
-			}
-
-			if (BuildPathSortKey(entry.path().filename()).rfind(prefixKey, 0) == 0)
-			{
-				return true;
-			}
-			errorCode.clear();
-		}
-
-		return false;
-	}
-
-	static std::optional<std::filesystem::path> DetectInstalledVulkanSdkRoot()
-	{
-		if (const std::optional<std::filesystem::path> envRoot = TryGetEnvironmentPath("VULKAN_SDK"))
-		{
-			return envRoot->lexically_normal();
-		}
-		if (const std::optional<std::filesystem::path> envRoot = TryGetEnvironmentPath("VK_SDK_PATH"))
-		{
-			return envRoot->lexically_normal();
-		}
-
-		const std::array<std::filesystem::path, 3> candidateRoots = {
-		    std::filesystem::path("C:\\VulkanSDK"),
-		    std::filesystem::path("C:\\Program Files\\VulkanSDK"),
-		    std::filesystem::path("C:\\Program Files (x86)\\VulkanSDK"),
-		};
-
-		for (const std::filesystem::path& candidateRoot : candidateRoots)
-		{
-			if (const std::optional<std::filesystem::path> versionRoot = FindLatestVersionedDirectory(candidateRoot))
-			{
-				return versionRoot->lexically_normal();
-			}
-		}
-
-		return std::nullopt;
-	}
-
-	static std::optional<std::filesystem::path> NormalizeQtKitRootCandidate(std::filesystem::path path)
-	{
-		std::error_code errorCode;
-		if (path.empty())
-		{
-			return std::nullopt;
-		}
-
-		path = path.lexically_normal();
-		if (std::filesystem::is_regular_file(path, errorCode))
-		{
-			if (ToLower(path.filename().string()) == "qmake.exe")
-			{
-				const std::filesystem::path root = path.parent_path().parent_path();
-				return std::filesystem::exists(root / "lib" / "cmake" / "Qt6" / "Qt6Config.cmake", errorCode) ? std::optional<std::filesystem::path>(root) : std::nullopt;
-			}
-			return std::nullopt;
-		}
-		errorCode.clear();
-
-		if (!std::filesystem::is_directory(path, errorCode))
-		{
-			return std::nullopt;
-		}
-		errorCode.clear();
-
-		if (std::filesystem::exists(path / "lib" / "cmake" / "Qt6" / "Qt6Config.cmake", errorCode))
-		{
-			return path;
-		}
-		errorCode.clear();
-
-		if (ToLower(path.filename().string()) == "qt6")
-		{
-			const std::filesystem::path cmakeRoot = path.parent_path().parent_path();
-			if (std::filesystem::exists(cmakeRoot / "bin" / "qmake.exe", errorCode) &&
-			    std::filesystem::exists(cmakeRoot / "lib" / "cmake" / "Qt6" / "Qt6Config.cmake", errorCode))
-			{
-				return cmakeRoot;
-			}
-		}
-
-		return std::nullopt;
-	}
-
-	static std::vector<std::filesystem::path> SplitPathList(std::string_view value)
-	{
-		std::vector<std::filesystem::path> paths;
-		std::stringstream stream{std::string(value)};
-		std::string segment;
-		while (std::getline(stream, segment, ';'))
-		{
-			if (!segment.empty())
-			{
-				paths.emplace_back(segment);
-			}
-		}
-		return paths;
-	}
-
-	struct QtKitDiscovery
-	{
-		bool FoundMsvcKit = false;
-		std::filesystem::path QtRootPath;
-		std::filesystem::path QtQmakePath;
-		std::vector<std::filesystem::path> MsvcCandidates;
-		std::vector<std::filesystem::path> MingwCandidates;
-	};
-
-	static void AddQtKitCandidate(
-	    QtKitDiscovery& discovery,
-	    const std::filesystem::path& candidate,
-	    std::vector<std::filesystem::path>& seenCandidates)
-	{
-		const std::optional<std::filesystem::path> normalizedRoot = NormalizeQtKitRootCandidate(candidate);
-		if (!normalizedRoot.has_value())
-		{
-			return;
-		}
-
-		const std::filesystem::path root = normalizedRoot->lexically_normal();
-		if (std::find(seenCandidates.begin(), seenCandidates.end(), root) != seenCandidates.end())
-		{
-			return;
-		}
-		seenCandidates.push_back(root);
-
-		if (PathLooksLikeQtMsvcKitRoot(root))
-		{
-			discovery.MsvcCandidates.push_back(root);
-			return;
-		}
-
-		if (PathLooksLikeQtMingwKitRoot(root))
-		{
-			discovery.MingwCandidates.push_back(root);
-		}
-	}
-
-	static void FinalizeQtKitDiscovery(QtKitDiscovery& discovery)
-	{
-		const auto byPath = [](const std::filesystem::path& left, const std::filesystem::path& right)
-		{
-			return BuildPathSortKey(left) < BuildPathSortKey(right);
-		};
-		std::ranges::sort(discovery.MsvcCandidates, byPath);
-		std::ranges::sort(discovery.MingwCandidates, byPath);
-
-		discovery.FoundMsvcKit = !discovery.MsvcCandidates.empty();
-		discovery.QtRootPath = discovery.FoundMsvcKit ? discovery.MsvcCandidates.front() : std::filesystem::path();
-		discovery.QtQmakePath = discovery.FoundMsvcKit ? discovery.QtRootPath / "bin" / "qmake.exe" : std::filesystem::path();
-	}
-
-	static QtKitDiscovery DiscoverQtKit()
-	{
-		QtKitDiscovery discovery;
-		std::vector<std::filesystem::path> seenCandidates;
-
-		std::string value;
-		if (Environment::TryGetVariable("SPARKLE_QT_ROOT", value))
-		{
-			AddQtKitCandidate(discovery, value, seenCandidates);
-		}
-		if (Environment::TryGetVariable("QTDIR", value))
-		{
-			AddQtKitCandidate(discovery, value, seenCandidates);
-		}
-		if (Environment::TryGetVariable("Qt6_DIR", value))
-		{
-			AddQtKitCandidate(discovery, value, seenCandidates);
-		}
-		if (Environment::TryGetVariable("CMAKE_PREFIX_PATH", value))
-		{
-			for (const std::filesystem::path& path : SplitPathList(value))
-			{
-				AddQtKitCandidate(discovery, path, seenCandidates);
-			}
-		}
-
-		const std::filesystem::path qtRoot("C:\\Qt");
-		std::error_code errorCode;
-		if (std::filesystem::is_directory(qtRoot, errorCode))
-		{
-			for (const std::filesystem::directory_entry& versionEntry : std::filesystem::directory_iterator(qtRoot, errorCode))
-			{
-				if (errorCode)
-				{
-					errorCode.clear();
-					continue;
-				}
-				if (!versionEntry.is_directory(errorCode))
-				{
-					errorCode.clear();
-					continue;
-				}
-
-				for (const std::filesystem::directory_entry& kitEntry : std::filesystem::directory_iterator(versionEntry.path(), errorCode))
-				{
-					if (errorCode)
-					{
-						errorCode.clear();
-						continue;
-					}
-					AddQtKitCandidate(discovery, kitEntry.path(), seenCandidates);
-				}
-			}
-		}
-
-		FinalizeQtKitDiscovery(discovery);
-		return discovery;
-	}
-
-	static std::string BuildQtStatusDetail(const QtKitDiscovery& discovery)
-	{
-		if (discovery.FoundMsvcKit)
-		{
-			return "Using Qt MSVC kit root: " + discovery.QtRootPath.string();
-		}
-
-		if (!discovery.MingwCandidates.empty())
-		{
-			return "Only MinGW Qt kits were found. Install a Qt 6 MSVC x64 kit and set SPARKLE_QT_ROOT if needed.";
-		}
-
-		return "No Qt 6 MSVC x64 kit was found. Install one under C:\\Qt or set SPARKLE_QT_ROOT to the kit root.";
-	}
-
-	static std::optional<std::string> FindWindowsSdkVersion()
-	{
-		const std::optional<std::filesystem::path> programFiles = ResolveProgramFilesX86();
-		if (!programFiles.has_value())
-		{
-			return std::nullopt;
-		}
-
-		const std::filesystem::path includeRoot = *programFiles / "Windows Kits" / "10" / "Include";
-		std::error_code errorCode;
-		if (!std::filesystem::is_directory(includeRoot, errorCode))
-		{
-			return std::nullopt;
-		}
-
-		std::optional<std::string> latestVersion;
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(includeRoot, errorCode))
-		{
-			if (!entry.is_directory(errorCode))
-			{
-				continue;
-			}
-
-			const std::string version = entry.path().filename().string();
-			if (!latestVersion.has_value() || version > *latestVersion)
-			{
-				latestVersion = version;
-			}
-		}
-
-		return latestVersion;
-	}
-
-	struct ShaderCompilerSdkStatus
-	{
-		bool Available = false;
-		std::filesystem::path Root;
-		std::string Detail;
-	};
-
-	struct VulkanSdkStatus
-	{
-		bool Available = false;
-		std::filesystem::path Root;
-		std::string Detail;
-	};
-
-	static ShaderCompilerSdkStatus DetectShaderCompilerSdk()
-	{
-		ShaderCompilerSdkStatus status;
-		const std::optional<std::filesystem::path> sdkRoot = DetectInstalledVulkanSdkRoot();
-		if (!sdkRoot.has_value())
-		{
-			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so the enabled ShaderCompiler workspace tier can find DXC and Slang.";
-			return status;
-		}
-
-		status.Root = sdkRoot->lexically_normal();
-		const std::filesystem::path dxcHeader = status.Root / "Include" / "dxc" / "dxcapi.h";
-		const std::filesystem::path dxcLibrary = status.Root / "Lib" / "dxcompiler.lib";
-		const std::filesystem::path dxcRuntime = status.Root / "Bin" / "dxcompiler.dll";
-		const std::filesystem::path slangHeader = status.Root / "Include" / "slang" / "slang.h";
-		const std::filesystem::path slangLibrary = status.Root / "Lib" / "slang.lib";
-		const std::filesystem::path slangRuntime = status.Root / "Bin" / "slang.dll";
-		const std::filesystem::path slangCompilerRuntime = status.Root / "Bin" / "slang-compiler.dll";
-		const std::filesystem::path slangGlslModuleRuntime = status.Root / "Bin" / "slang-glsl-module.dll";
-		const std::filesystem::path slangGlslangRuntime = status.Root / "Bin" / "slang-glslang.dll";
-		const std::filesystem::path slangRtRuntime = status.Root / "Bin" / "slang-rt.dll";
-		const std::filesystem::path slangStandardLibrary = status.Root / "Bin" / "slang.slang";
-		const std::filesystem::path shaderCompilerRuntimeRoot = status.Root / "Bin";
-
-		std::vector<std::string> missingEntries;
-		std::error_code errorCode;
-		if (!std::filesystem::exists(dxcHeader, errorCode))
-		{
-			missingEntries.push_back("Include/dxc/dxcapi.h");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(dxcLibrary, errorCode))
-		{
-			missingEntries.push_back("Lib/dxcompiler.lib");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(dxcRuntime, errorCode))
-		{
-			missingEntries.push_back("Bin/dxcompiler.dll");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(slangHeader, errorCode))
-		{
-			missingEntries.push_back("Include/slang/slang.h");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(slangLibrary, errorCode))
-		{
-			missingEntries.push_back("Lib/slang.lib");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(slangRuntime, errorCode))
-		{
-			missingEntries.push_back("Bin/slang.dll");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(slangCompilerRuntime, errorCode))
-		{
-			missingEntries.push_back("Bin/slang-compiler.dll");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(slangGlslModuleRuntime, errorCode))
-		{
-			missingEntries.push_back("Bin/slang-glsl-module.dll");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(slangGlslangRuntime, errorCode))
-		{
-			missingEntries.push_back("Bin/slang-glslang.dll");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(slangRtRuntime, errorCode))
-		{
-			missingEntries.push_back("Bin/slang-rt.dll");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(slangStandardLibrary, errorCode))
-		{
-			missingEntries.push_back("Bin/slang.slang");
-		}
-		if (!HasDirectChildDirectoryWithPrefix(shaderCompilerRuntimeRoot, "slang-standard-module-"))
-		{
-			missingEntries.push_back("Bin/slang-standard-module-*");
-		}
-
-		if (missingEntries.empty())
-		{
-			status.Available = true;
-			status.Detail = "Using VULKAN_SDK root: " + status.Root.string();
-			return status;
-		}
-
-		std::vector<std::string_view> missingEntryViews;
-		missingEntryViews.reserve(missingEntries.size());
-		for (const std::string& entry : missingEntries)
-		{
-			missingEntryViews.push_back(entry);
-		}
-
-		std::ostringstream detail;
-		detail << "Detected Vulkan SDK root " << status.Root.string()
-		       << ", but the shader compiler runtime bundle is missing: "
-		       << Strings::Join(missingEntryViews, ", ")
-		       << ".";
-		status.Detail = detail.str();
-		return status;
-	}
-
-	static VulkanSdkStatus DetectVulkanSdk()
-	{
-		VulkanSdkStatus status;
-		const std::optional<std::filesystem::path> sdkRoot = DetectInstalledVulkanSdkRoot();
-		if (!sdkRoot.has_value())
-		{
-			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so Vulkan and NVIDIA Streamline builds can resolve Vulkan headers and import libraries.";
-			return status;
-		}
-
-		status.Root = sdkRoot->lexically_normal();
-		const std::filesystem::path vulkanHeader = status.Root / "Include" / "vulkan" / "vulkan.h";
-		const std::filesystem::path vulkanLibrary = status.Root / "Lib" / "vulkan-1.lib";
-
-		std::vector<std::string> missingEntries;
-		std::error_code errorCode;
-		if (!std::filesystem::exists(vulkanHeader, errorCode))
-		{
-			missingEntries.push_back("Include/vulkan/vulkan.h");
-		}
-		errorCode.clear();
-		if (!std::filesystem::exists(vulkanLibrary, errorCode))
-		{
-			missingEntries.push_back("Lib/vulkan-1.lib");
-		}
-
-		if (missingEntries.empty())
-		{
-			status.Available = true;
-			status.Detail = "Using VULKAN_SDK root: " + status.Root.string();
-			return status;
-		}
-
-		std::vector<std::string_view> missingEntryViews;
-		missingEntryViews.reserve(missingEntries.size());
-		for (const std::string& entry : missingEntries)
-		{
-			missingEntryViews.push_back(entry);
-		}
-
-		std::ostringstream detail;
-		detail << "Detected Vulkan SDK root " << status.Root.string()
-		       << ", but required Vulkan SDK files are missing: "
-		       << Strings::Join(missingEntryViews, ", ")
-		       << ".";
-		status.Detail = detail.str();
-		return status;
-	}
-
-	static std::string ResolveVisualStudioGenerator()
-	{
-		for (const std::filesystem::path& root : GetProgramFilesRoots())
-		{
-			const std::filesystem::path visualStudioRoot = root / "Microsoft Visual Studio";
-			std::error_code errorCode;
-			if (std::filesystem::exists(visualStudioRoot / "18", errorCode) ||
-			    std::filesystem::exists(visualStudioRoot / "2026", errorCode))
-			{
-				return "Visual Studio 18 2026";
-			}
-		}
-
-		return "Visual Studio 17 2022";
-	}
-
 	static std::string ResolveGenerator()
 	{
 		std::string overrideGenerator;
@@ -637,7 +26,6 @@ namespace SparkleLauncher
 		{
 			return overrideGenerator;
 		}
-
 		return ResolveVisualStudioGenerator();
 	}
 
@@ -654,11 +42,7 @@ namespace SparkleLauncher
 		{
 			return toolset;
 		}
-		if (Environment::GetFlag("SPARKLE_USE_CLANGCL"))
-		{
-			return "ClangCL";
-		}
-		return {};
+		return Environment::GetFlag("SPARKLE_USE_CLANGCL") ? "ClangCL" : std::string();
 	}
 
 	static ToolchainItemStatus MakeToolStatus(
@@ -692,34 +76,38 @@ namespace SparkleLauncher
 
 		switch (tool)
 		{
-		case KnownTool::CMake:
-			status.CMakePath = resolvedTool.Path;
-			break;
-		case KnownTool::MSBuild:
-			status.MSBuildPath = resolvedTool.Path;
-			break;
-		case KnownTool::Ninja:
-			status.NinjaPath = resolvedTool.Path;
-			break;
-		case KnownTool::Rider:
-			status.RiderPath = resolvedTool.Path;
-			break;
-		case KnownTool::Git:
-			status.GitPath = resolvedTool.Path;
-			break;
+			case KnownTool::CMake:
+				status.CMakePath = resolvedTool.Path;
+				break;
+			case KnownTool::MSBuild:
+				status.MSBuildPath = resolvedTool.Path;
+				break;
+			case KnownTool::Ninja:
+				status.NinjaPath = resolvedTool.Path;
+				break;
+			case KnownTool::Rider:
+				status.RiderPath = resolvedTool.Path;
+				break;
+			case KnownTool::Git:
+				status.GitPath = resolvedTool.Path;
+				break;
 		}
 	}
 
 	static bool AreRequiredToolsAvailable(const std::vector<ToolchainItemStatus>& items)
 	{
-		return std::none_of(items.begin(), items.end(), [](const ToolchainItemStatus& item) {
-			return item.Required && item.State != ToolchainItemState::Found;
-		});
+		return std::none_of(
+		    items.begin(),
+		    items.end(),
+		    [](const ToolchainItemStatus& item)
+		    {
+			    return item.Required && item.State != ToolchainItemState::Found;
+		    });
 	}
 
 	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde)
 	{
-		(void)repositoryRoot;
+		(void) repositoryRoot;
 		BuildToolchainStatus status;
 		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
 		status.Generator = ResolveGenerator();
@@ -729,29 +117,43 @@ namespace SparkleLauncher
 		const bool ninjaGenerator = CMakeGeneratorUsesNinjaMakeProgram(status.Generator);
 
 		AppendKnownToolStatus(status, KnownTool::CMake, true, "Minimum required version: " + std::string(kMinimumCMakeVersion));
-		AppendKnownToolStatus(status, KnownTool::MSBuild, visualStudioGenerator, visualStudioGenerator ? "Required by the selected CMake generator." : "Optional for non-Visual Studio generators.");
-		AppendKnownToolStatus(status, KnownTool::Ninja, ninjaGenerator, ninjaGenerator ? "Required by the selected CMake generator." : "Optional for Ninja generators.");
-		AppendKnownToolStatus(status, KnownTool::Rider, preferredIde == WorkspaceIde::Rider, preferredIde == WorkspaceIde::Rider ? "Required for the selected IDE." : "Optional IDE integration.");
+		AppendKnownToolStatus(
+		    status,
+		    KnownTool::MSBuild,
+		    visualStudioGenerator,
+		    visualStudioGenerator ? "Required by the selected CMake generator." : "Optional for non-Visual Studio generators.");
+		AppendKnownToolStatus(
+		    status,
+		    KnownTool::Ninja,
+		    ninjaGenerator,
+		    ninjaGenerator ? "Required by the selected CMake generator." : "Optional for Ninja generators.");
+		AppendKnownToolStatus(
+		    status,
+		    KnownTool::Rider,
+		    preferredIde == WorkspaceIde::Rider,
+		    preferredIde == WorkspaceIde::Rider ? "Required for the selected IDE." : "Optional IDE integration.");
 		AppendKnownToolStatus(status, KnownTool::Git, true, "Minimum required version: " + std::string(kMinimumGitVersion));
 
-		status.VswherePath = ResolveVswherePath().value_or(FindVisualStudioInstallWithCppTools().value_or(std::filesystem::path()));
+		const VisualStudioToolchainDiscovery visualStudio = DiscoverVisualStudioToolchain();
+		status.VswherePath = visualStudio.DiscoveryPath;
+		status.WindowsSdkVersion = visualStudio.WindowsSdkVersion;
 		status.Items.push_back(MakeToolStatus(
 		    "visualstudio",
 		    "Visual Studio C++ tools",
 		    visualStudioGenerator,
 		    !status.VswherePath.empty(),
 		    status.VswherePath,
-		    !status.VswherePath.empty() ? "Visual Studio C++ tools are available for generator/workload discovery: " + std::string(kVisualStudioCppComponent) :
-		                                  "Visual Studio C++ tools were not found."));
-
-		status.WindowsSdkVersion = FindWindowsSdkVersion().value_or(std::string());
+		    !status.VswherePath.empty()
+		        ? "Visual Studio C++ tools are available for generator/workload discovery: " + std::string(kVisualStudioCppComponent)
+		        : "Visual Studio C++ tools were not found."));
 		status.Items.push_back(MakeToolStatus(
 		    "windowssdk",
 		    "Windows SDK",
 		    visualStudioGenerator,
 		    !status.WindowsSdkVersion.empty(),
 		    {},
-		    !status.WindowsSdkVersion.empty() ? "Latest SDK: " + status.WindowsSdkVersion : "Windows Kits 10 Include directory was not found."));
+		    !status.WindowsSdkVersion.empty() ? "Latest SDK: " + status.WindowsSdkVersion
+		                                      : "Windows Kits 10 Include directory was not found."));
 
 		const bool clangClRequired = status.Toolset == "ClangCL";
 		const std::optional<std::filesystem::path> clangClPath = FindExecutableOnPath("clang-cl.exe");
@@ -763,16 +165,16 @@ namespace SparkleLauncher
 		    clangClPath.value_or(std::filesystem::path()),
 		    clangClRequired ? "Required by selected CMake toolset ClangCL." : "Optional; set SPARKLE_USE_CLANGCL=1 to request ClangCL."));
 
-		const QtKitDiscovery qtKit = DiscoverQtKit();
-		status.QtRootPath = qtKit.QtRootPath;
-		status.QtQmakePath = qtKit.QtQmakePath;
+		const QtToolchainDiscovery qt = DiscoverQtToolchain();
+		status.QtRootPath = qt.QtRootPath;
+		status.QtQmakePath = qt.QtQmakePath;
 		status.Items.push_back(MakeToolStatus(
 		    "qt-msvc",
 		    "Qt 6 MSVC kit",
 		    true,
-		    qtKit.FoundMsvcKit,
-		    qtKit.FoundMsvcKit ? qtKit.QtRootPath : (!qtKit.MingwCandidates.empty() ? qtKit.MingwCandidates.front() : std::filesystem::path()),
-		    BuildQtStatusDetail(qtKit)));
+		    qt.FoundMsvcKit,
+		    qt.FoundMsvcKit ? qt.QtRootPath : (!qt.MingwCandidates.empty() ? qt.MingwCandidates.front() : std::filesystem::path()),
+		    BuildQtToolchainStatusDetail(qt)));
 
 #if SPARKLE_ENABLE_SHADER_COMPILER
 		const ShaderCompilerSdkStatus shaderCompilerSdk = DetectShaderCompilerSdk();
@@ -798,9 +200,11 @@ namespace SparkleLauncher
 		    vulkanSdkRequired,
 		    vulkanSdk.Available,
 		    vulkanSdk.Root,
-		    vulkanSdkRequired ?
-		        (vulkanSdk.Available ? "Required for enabled NVIDIA Streamline and Vulkan-backed renderer integrations. " + vulkanSdk.Detail : vulkanSdk.Detail) :
-		        (vulkanSdk.Available ? "Optional Vulkan SDK root: " + vulkanSdk.Root.string() : "Optional unless Vulkan-backed integrations are enabled.")));
+		    vulkanSdkRequired ? (vulkanSdk.Available
+		                             ? "Required for enabled NVIDIA Streamline and Vulkan-backed renderer integrations. " + vulkanSdk.Detail
+		                             : vulkanSdk.Detail)
+		                      : (vulkanSdk.Available ? "Optional Vulkan SDK root: " + vulkanSdk.Root.string()
+		                                             : "Optional unless Vulkan-backed integrations are enabled.")));
 		if (vulkanSdkRequired)
 		{
 			status.ConfigurePrerequisitesAvailable = status.ConfigurePrerequisitesAvailable && vulkanSdk.Available;

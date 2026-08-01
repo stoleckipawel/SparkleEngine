@@ -20,7 +20,7 @@ The center of gravity is:
 - neural rendering and GPU inference readiness without bloating the engine
 - practical productization: small APIs, clean ownership, useful tools, and code that other engineers can maintain
 
-The concrete proving ground is [the canonical workload ladder](I_BistroAcceptanceWorkload.md): Sponza for fast regression, Bistro as the primary flagship, and San Miguel as a supported secondary scene. The persona must be able to make both Tier 1 scenes correct, beautiful, performant, measurable, and easy to present without hardcoding the renderer around either asset.
+The concrete proving ground is [the canonical workload ladder](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md): Sponza for fast regression, Bistro as the primary flagship, and San Miguel as a supported secondary scene. The persona must be able to make both Tier 1 scenes correct, beautiful, performant, measurable, and easy to present without hardcoding the renderer around either asset.
 
 ## Principal Graphics Engineering Additive Target
 
@@ -34,7 +34,7 @@ A repository cannot prove a degree, a number of years in industry, willingness t
 
 ### Persona Interpretation Of The Canonical Matrix
 
-The identifiers are defined authoritatively in [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md). The table below is the concise persona interpretation; it does not narrow A.
+The identifiers are defined authoritatively in [A. Principal Graphics Engineering Requirements](Requirements.md). The table below is the concise persona interpretation; it does not narrow A.
 
 | ID | Capability expectation | Additive Sparkle interpretation | Required evidence |
 |---|---|---|---|
@@ -253,7 +253,7 @@ The repo should gradually show this persona through code, not through more docum
 
 ## Refactor Plan Contract
 
-Use this persona together with [K. Multithreaded Engine Implementation Prompt Series](K_MultithreadedEngineImplementationPromptSeries.md) and [L. SparkleEngine Integration Style Guide](L_SparkleEngineIntegrationStyleGuide.md) as the filter for every staged integration.
+Use this persona together with [K. Multithreaded Engine Implementation Prompt Series](../../Architecture/Multithreading/ImplementationPromptSeries.md) and [L. SparkleEngine Integration Style Guide](../../Engineering/Standards/IntegrationStyleGuide.md) as the filter for every staged integration.
 
 A staged refactor is aligned with the persona only when it does at least one of these:
 

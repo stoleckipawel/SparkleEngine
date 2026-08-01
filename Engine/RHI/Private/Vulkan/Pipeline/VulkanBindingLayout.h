@@ -29,19 +29,12 @@ class VulkanBindingLayout final : public RenderBindingLayout
 
 	const std::vector<VkDescriptorSetLayout>& GetDescriptorSetLayouts() const noexcept { return m_descriptorSetLayouts; }
 	const std::vector<VkPushConstantRange>& GetPushConstantRanges() const noexcept { return m_pushConstantRanges; }
-	const PassParameterLayout& GetParameterLayout() const noexcept override;
-	const CompiledBinding* GetBindings() const noexcept override;
-	std::size_t GetBindingCount() const noexcept override;
-	const CompiledBinding* FindBinding(const char* name) const noexcept override;
 
   private:
 	VkDevice m_device = VK_NULL_HANDLE;
-	const PassParameterLayout* m_parameterLayout = nullptr;
 	std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
 	std::vector<VkSampler> m_immutableSamplers;
 	std::vector<VkPushConstantRange> m_pushConstantRanges;
-	std::vector<CompiledBinding> m_bindings;
-	std::vector<std::string> m_bindingNames;
 };
 
 class VulkanBindingLayoutCompiler final

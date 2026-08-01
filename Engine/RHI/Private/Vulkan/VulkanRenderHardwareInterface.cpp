@@ -191,9 +191,14 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	    .MaxDescriptorTableEntries = properties.limits.maxDescriptorSetSampledImages + properties.limits.maxDescriptorSetStorageImages,
 	    .MaxPushConstantBytes = properties.limits.maxPushConstantsSize};
 	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{
-	    .SupportsSampledImageArrayNonUniformIndexing = m_rhi->GetFeatureStatus().EnabledSampledImageArrayNonUniformIndexing};
+	    .SupportsSampledImageArrayNonUniformIndexing = m_rhi->GetFeatureStatus().EnabledSampledImageArrayNonUniformIndexing,
+	    .SupportsPartiallyBoundDescriptorArrays = m_rhi->GetFeatureStatus().EnabledPartiallyBoundDescriptorArrays};
 	capabilities.UploadReadback =
 	    RhiUploadReadbackCapabilities{.SupportsBufferUpload = true, .SupportsTextureUpload = true, .SupportsReadback = true};
+	capabilities.Presentation = RhiPresentationCapabilities{
+	    .BackBufferCount = m_swapChain->GetBackBufferCount(),
+	    .MaximumFramesInFlight = m_swapChain->GetMaximumFramesInFlight(),
+	    .Throttle = ERhiPresentationThrottle::SwapChainImageAcquisition};
 	for (std::size_t index = 0; index < capabilities.FormatSupport.size(); ++index)
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);

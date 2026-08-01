@@ -11,7 +11,7 @@
 #include "Commands/RhiQueue.h"
 #include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 #include "Device/RenderHardwareInterface.h"
-#include "Interop/RhiExternalFeatureHooks.h"
+#include "Interop/RhiD3D12InterposerHooks.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -27,7 +27,7 @@ class D3D12CommandQueue;
 class D3D12Rhi final
 {
   public:
-	explicit D3D12Rhi(RhiExternalFeatureHooks externalFeatureHooks = {}) noexcept;
+	explicit D3D12Rhi(RhiD3D12InterposerHooks interposerHooks = {}) noexcept;
 
 	~D3D12Rhi() noexcept;
 
@@ -76,18 +76,18 @@ class D3D12Rhi final
 	const D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() const noexcept;
 	D3D12GpuMemoryAllocator& GetMemoryAllocator() noexcept;
 	const D3D12GpuMemoryAllocator& GetMemoryAllocator() const noexcept;
-	bool TryUpgradeExternalInterface(
-	    ERhiExternalInterfaceKind kind,
+	bool TryUpgradeInterposerInterface(
+	    ERhiD3D12InterposerInterfaceKind kind,
 	    IUnknown* nativeInterface,
 	    REFIID requestedInterface,
 	    void** upgradedInterface) noexcept;
-	bool TryResolveExternalNativeInterface(
-	    ERhiExternalInterfaceKind kind,
+	bool TryResolveNativeInterface(
+	    ERhiD3D12InterposerInterfaceKind kind,
 	    IUnknown* externalInterface,
 	    REFIID requestedInterface,
 	    void** nativeInterface) noexcept;
-	void NotifyExternalPresentationReady(bool ready) noexcept;
-	void ShutdownExternalRuntime() noexcept;
+	void NotifyInterposerPresentationReady(bool ready) noexcept;
+	void NotifyFrameLatencyMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept;
 
   private:
 	void SelectAdapter() noexcept;
@@ -99,7 +99,8 @@ class D3D12Rhi final
 	void RefreshPartitionedTlasCommandListCapability() noexcept;
 	void SelectRayTracingTopLevelProvider() noexcept;
 	void CreateCommandQueues();
-	void DisableExternalFeatureHooks() noexcept;
+	void DisableInterposer() noexcept;
+	void ShutdownInterposer() noexcept;
 
 #if ENGINE_GPU_VALIDATION
 	std::unique_ptr<D3D12DebugLayer> m_debugLayer;
@@ -116,6 +117,6 @@ class D3D12Rhi final
 	uint32_t m_currentFrameIndex = 0;
 	D3D_FEATURE_LEVEL m_desiredD3DFeatureLevel = D3D_FEATURE_LEVEL_12_1;
 	RhiRayTracingCapabilities m_rayTracingCapabilities = {};
-	RhiExternalFeatureHooks m_externalFeatureHooks = {};
-	bool m_externalFeatureHooksActive = false;
+	RhiD3D12InterposerHooks m_interposerHooks = {};
+	bool m_interposerActive = false;
 };

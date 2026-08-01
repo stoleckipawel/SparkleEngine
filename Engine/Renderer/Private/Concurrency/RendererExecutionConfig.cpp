@@ -4,7 +4,7 @@
 
 bool RendererExecutionConfig::IsThreaded() const noexcept
 {
-	return Mode != RendererExecutionMode::Serial;
+	return Mode == RendererExecutionMode::Threaded;
 }
 
 bool RendererExecutionConfig::HasAssetTaskRuntime() const noexcept
@@ -13,7 +13,7 @@ bool RendererExecutionConfig::HasAssetTaskRuntime() const noexcept
 	       ApplicationTaskScope != nullptr;
 }
 
-std::uint32_t RendererExecutionConfig::ResolveFrameSlotCount() const noexcept
+std::uint32_t RendererExecutionConfig::GetFrameQueueCapacity() const noexcept
 {
-	return Mode == RendererExecutionMode::ThreadedOneAhead ? 2u : 1u;
+	return IsThreaded() ? RenderPipelineDepth + 1u : 1u;
 }

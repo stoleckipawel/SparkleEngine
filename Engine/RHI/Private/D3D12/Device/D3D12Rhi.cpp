@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "D3D12/Device/D3D12Rhi.h"
+#include "D3D12/Device/D3D12ExternalFeatureInteropCapabilities.h"
 #include "D3D12/Commands/D3D12CommandQueue.h"
 #include "D3D12/Diagnostics/D3D12DebugLayer.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
@@ -12,7 +13,7 @@ static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
 static constexpr std::uint32_t kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes = 4096;
 static constexpr std::uint32_t kNvidiaVendorId = 0x10DE;
 
-D3D12Rhi::D3D12Rhi(RhiExternalFeatureHooks externalFeatureHooks) noexcept : m_externalFeatureHooks(externalFeatureHooks)
+D3D12Rhi::D3D12Rhi(RhiD3D12InterposerHooks interposerHooks) noexcept : m_interposerHooks(interposerHooks)
 {
 #if ENGINE_GPU_VALIDATION
 	m_debugLayer = std::make_unique<D3D12DebugLayer>();
@@ -127,11 +128,11 @@ void D3D12Rhi::CreateFactory()
 #endif
 	ComPtr<IDXGIFactory7> createdFactory;
 	CHECK(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(createdFactory.ReleaseAndGetAddressOf())));
-	if (m_externalFeatureHooks.ResolveNativeInterface != nullptr)
+	if (m_interposerHooks.ResolveNativeInterface != nullptr)
 	{
 		ComPtr<IDXGIFactory7> nativeFactory;
-		if (TryResolveExternalNativeInterface(
-		        ERhiExternalInterfaceKind::PresentationFactory,
+		if (TryResolveNativeInterface(
+		        ERhiD3D12InterposerInterfaceKind::PresentationFactory,
 		        createdFactory.Get(),
 		        IID_PPV_ARGS(nativeFactory.ReleaseAndGetAddressOf())))
 		{
@@ -152,11 +153,11 @@ void D3D12Rhi::CreateDevice()
 
 	ComPtr<ID3D12Device10> createdDevice;
 	CHECK(D3D12CreateDevice(m_adapter.Get(), m_desiredD3DFeatureLevel, IID_PPV_ARGS(createdDevice.ReleaseAndGetAddressOf())));
-	if (m_externalFeatureHooks.ResolveNativeInterface != nullptr)
+	if (m_interposerHooks.ResolveNativeInterface != nullptr)
 	{
 		ComPtr<ID3D12Device10> nativeDevice;
-		if (TryResolveExternalNativeInterface(
-		        ERhiExternalInterfaceKind::GraphicsDevice,
+		if (TryResolveNativeInterface(
+		        ERhiD3D12InterposerInterfaceKind::GraphicsDevice,
 		        createdDevice.Get(),
 		        IID_PPV_ARGS(nativeDevice.ReleaseAndGetAddressOf())))
 		{
@@ -167,12 +168,12 @@ void D3D12Rhi::CreateDevice()
 	{
 		m_device = std::move(createdDevice);
 	}
-	if (m_externalFeatureHooks.DeviceCreated != nullptr)
+	if (m_interposerHooks.DeviceCreated != nullptr)
 	{
-		m_externalFeatureHooksActive = m_externalFeatureHooks.DeviceCreated(
-		    ERhiBackendApi::D3D12,
+		m_interposerActive = m_interposerHooks.DeviceCreated(
 		    NativeGraphicsDeviceHandle{m_device.Get()},
-		    m_externalFeatureHooks.UserData);
+		    BuildD3D12AdapterIdentity(this),
+		    m_interposerHooks.UserData);
 	}
 	CheckRayTracingSupport();
 }
@@ -224,23 +225,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 			m_rayTracingCapabilities.InstanceDescSizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
 		}
 
-		m_rayTracingCapabilities.Groups.AccelerationStructures = RhiAccelerationStructureCapabilities{
-		    .SupportsRayTracing = m_rayTracingCapabilities.SupportsRayTracing,
-		    .SupportsInlineRayQuery = m_rayTracingCapabilities.SupportsInlineRayQuery,
-		    .SupportsAccelerationStructureShaderBinding = m_rayTracingCapabilities.SupportsRayTracing,
-		    .MaxTraceRecursionDepth = m_rayTracingCapabilities.MaxTraceRecursionDepth,
-		    .MaxRayPayloadSizeInBytes = m_rayTracingCapabilities.MaxRayPayloadSizeInBytes,
-		    .MaxRayAttributeSizeInBytes = m_rayTracingCapabilities.MaxRayAttributeSizeInBytes,
-		    .ShaderGroupHandleSizeInBytes = m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes,
-		    .ShaderTableAlignmentInBytes = m_rayTracingCapabilities.ShaderTableAlignmentInBytes,
-		    .ShaderTableRecordAlignmentInBytes = m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes,
-		    .AccelerationStructureByteAlignment = m_rayTracingCapabilities.AccelerationStructureByteAlignment,
-		    .ScratchBufferByteAlignment = m_rayTracingCapabilities.ScratchBufferByteAlignment};
-		m_rayTracingCapabilities.Groups.ClassicTlas = RhiClassicTlasCapabilities{
-		    .SupportsClassicTlasBuild = m_rayTracingCapabilities.SupportsRayTracing,
-		    .SupportsClassicTlasUpdate = m_rayTracingCapabilities.SupportsRayTracing,
-		    .SupportsGpuReadableInstanceBuffer = m_rayTracingCapabilities.SupportsRayTracing,
-		    .InstanceDescSizeInBytes = m_rayTracingCapabilities.InstanceDescSizeInBytes};
+		PopulateStandardRayTracingCapabilityGroups(m_rayTracingCapabilities);
 		m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
 		    .Supported = false,
 		    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
@@ -332,11 +317,11 @@ void D3D12Rhi::CreateCommandQueues()
 	graphicsQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 	graphicsQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	graphicsQueueDesc.NodeMask = 0;
-	if (m_externalFeatureHooksActive)
+	if (m_interposerActive)
 	{
 		ComPtr<ID3D12Device10> externalDevice;
-		if (TryUpgradeExternalInterface(
-		        ERhiExternalInterfaceKind::GraphicsDevice,
+		if (TryUpgradeInterposerInterface(
+		        ERhiD3D12InterposerInterfaceKind::GraphicsDevice,
 		        m_device.Get(),
 		        IID_PPV_ARGS(externalDevice.ReleaseAndGetAddressOf())))
 		{
@@ -346,8 +331,8 @@ void D3D12Rhi::CreateCommandQueues()
 			if (SUCCEEDED(createResult))
 			{
 				ComPtr<ID3D12CommandQueue> nativeQueue;
-				if (TryResolveExternalNativeInterface(
-				        ERhiExternalInterfaceKind::GraphicsQueue,
+				if (TryResolveNativeInterface(
+				        ERhiD3D12InterposerInterfaceKind::GraphicsQueue,
 				        externalQueue.Get(),
 				        IID_PPV_ARGS(nativeQueue.ReleaseAndGetAddressOf())))
 				{
@@ -360,7 +345,7 @@ void D3D12Rhi::CreateCommandQueues()
 
 		if (nativeGraphicsQueue == nullptr)
 		{
-			DisableExternalFeatureHooks();
+			DisableInterposer();
 		}
 	}
 
@@ -453,13 +438,13 @@ const D3D12GpuMemoryAllocator& D3D12Rhi::GetMemoryAllocator() const noexcept
 	return *m_memoryAllocator;
 }
 
-bool D3D12Rhi::TryUpgradeExternalInterface(
-    ERhiExternalInterfaceKind kind,
+bool D3D12Rhi::TryUpgradeInterposerInterface(
+    ERhiD3D12InterposerInterfaceKind kind,
     IUnknown* nativeInterface,
     REFIID requestedInterface,
     void** upgradedInterface) noexcept
 {
-	if (!m_externalFeatureHooksActive || m_externalFeatureHooks.UpgradeInterface == nullptr || nativeInterface == nullptr ||
+	if (!m_interposerActive || m_interposerHooks.UpgradeInterface == nullptr || nativeInterface == nullptr ||
 	    upgradedInterface == nullptr)
 	{
 		return false;
@@ -467,7 +452,7 @@ bool D3D12Rhi::TryUpgradeExternalInterface(
 
 	*upgradedInterface = nullptr;
 	void* candidate = nativeInterface;
-	if (!m_externalFeatureHooks.UpgradeInterface(ERhiBackendApi::D3D12, kind, &candidate, m_externalFeatureHooks.UserData) ||
+	if (!m_interposerHooks.UpgradeInterface(kind, &candidate, m_interposerHooks.UserData) ||
 	    candidate == nullptr)
 	{
 		return false;
@@ -484,21 +469,20 @@ bool D3D12Rhi::TryUpgradeExternalInterface(
 	return SUCCEEDED(result) && *upgradedInterface != nullptr;
 }
 
-bool D3D12Rhi::TryResolveExternalNativeInterface(
-    ERhiExternalInterfaceKind kind,
+bool D3D12Rhi::TryResolveNativeInterface(
+    ERhiD3D12InterposerInterfaceKind kind,
     IUnknown* externalInterface,
     REFIID requestedInterface,
     void** nativeInterface) noexcept
 {
-	if (m_externalFeatureHooks.ResolveNativeInterface == nullptr || externalInterface == nullptr || nativeInterface == nullptr)
+	if (m_interposerHooks.ResolveNativeInterface == nullptr || externalInterface == nullptr || nativeInterface == nullptr)
 	{
 		return false;
 	}
 
 	*nativeInterface = nullptr;
 	void* resolved = nullptr;
-	if (!m_externalFeatureHooks
-	         .ResolveNativeInterface(ERhiBackendApi::D3D12, kind, externalInterface, &resolved, m_externalFeatureHooks.UserData) ||
+	if (!m_interposerHooks.ResolveNativeInterface(kind, externalInterface, &resolved, m_interposerHooks.UserData) ||
 	    resolved == nullptr)
 	{
 		return false;
@@ -512,32 +496,37 @@ bool D3D12Rhi::TryResolveExternalNativeInterface(
 	return SUCCEEDED(result) && *nativeInterface != nullptr;
 }
 
-void D3D12Rhi::NotifyExternalPresentationReady(bool ready) noexcept
+void D3D12Rhi::NotifyInterposerPresentationReady(bool ready) noexcept
 {
-	if (m_externalFeatureHooks.PresentationReady != nullptr)
+	if (m_interposerHooks.PresentationReady != nullptr)
 	{
-		m_externalFeatureHooks.PresentationReady(
-		    ERhiBackendApi::D3D12,
-		    ready && m_externalFeatureHooksActive,
-		    m_externalFeatureHooks.UserData);
+		m_interposerHooks.PresentationReady(ready && m_interposerActive, m_interposerHooks.UserData);
 	}
 }
 
-void D3D12Rhi::DisableExternalFeatureHooks() noexcept
+void D3D12Rhi::NotifyFrameLatencyMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept
 {
-	m_externalFeatureHooksActive = false;
-	NotifyExternalPresentationReady(false);
+	if (m_interposerActive && m_interposerHooks.FrameMarker != nullptr)
+	{
+		m_interposerHooks.FrameMarker(marker, frameId, m_interposerHooks.UserData);
+	}
 }
 
-void D3D12Rhi::ShutdownExternalRuntime() noexcept
+void D3D12Rhi::DisableInterposer() noexcept
 {
-	DisableExternalFeatureHooks();
-	const RhiExternalRuntimeShutdownCallback shutdown = m_externalFeatureHooks.RuntimeShutdown;
-	void* const userData = m_externalFeatureHooks.UserData;
-	m_externalFeatureHooks = {};
+	m_interposerActive = false;
+	NotifyInterposerPresentationReady(false);
+}
+
+void D3D12Rhi::ShutdownInterposer() noexcept
+{
+	DisableInterposer();
+	const RhiD3D12RuntimeShutdownCallback shutdown = m_interposerHooks.RuntimeShutdown;
+	void* const userData = m_interposerHooks.UserData;
+	m_interposerHooks = {};
 	if (shutdown != nullptr)
 	{
-		shutdown(ERhiBackendApi::D3D12, userData);
+		shutdown(userData);
 	}
 }
 
@@ -709,7 +698,7 @@ void D3D12Rhi::CollectCrashDiagnostics() noexcept
 
 D3D12Rhi::~D3D12Rhi() noexcept
 {
-	ShutdownExternalRuntime();
+	ShutdownInterposer();
 
 	for (std::unique_ptr<D3D12CommandQueue>& queue : m_queues)
 	{

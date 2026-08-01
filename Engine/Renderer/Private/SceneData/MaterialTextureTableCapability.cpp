@@ -30,6 +30,11 @@ MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(
 		return MaterialTextureTableCapabilityReport{
 		    .StatusReason = "sampled-image-array-non-uniform-indexing-unavailable"};
 	}
+	if (!capabilities.DescriptorIndexing.SupportsPartiallyBoundDescriptorArrays)
+	{
+		return MaterialTextureTableCapabilityReport{
+		    .StatusReason = "partially-bound-descriptor-arrays-unavailable"};
+	}
 
 	const std::uint32_t shaderResourceCapacity =
 	    MaterialTextureTableCapacity::ResolveShaderResourceDescriptorCapacity(capabilities.BindingLimits);

@@ -32,7 +32,8 @@ bool D3D12ImGuiBackend::Initialize()
 	ImGui_ImplDX12_InitInfo initInfo = {};
 	initInfo.Device = ToD3D12Device(m_renderHardwareInterface->GetDeviceHandle());
 	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardwareInterface->GetGraphicsQueueHandle());
-	initInfo.NumFramesInFlight = static_cast<int>(RhiFrameConstants::FramesInFlight);
+	initInfo.NumFramesInFlight = static_cast<int>(
+	    m_renderHardwareInterface->GetCapabilities().Presentation.MaximumFramesInFlight);
 	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface->GetPresentColorFormat());
 	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface->GetPresentDepthStencilFormat());
 	initInfo.SrvDescriptorHeap = m_renderHardwareInterface->GetD3D12ShaderResourceDescriptorHeap();

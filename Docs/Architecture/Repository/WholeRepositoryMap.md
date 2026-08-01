@@ -64,7 +64,7 @@ Advanced-graphics implication:
 
 ## Principal Graphics Engineering Repository Contract
 
-The canonical `PGE-01` through `PGE-15` requirements live in [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md). This repository map applies them to physical ownership:
+The canonical `PGE-01` through `PGE-15` requirements live in [A. Principal Graphics Engineering Requirements](../../Strategy/PrincipalGraphics/Requirements.md). This repository map applies them to physical ownership:
 
 | Repository surface | Required principal-level evidence | Structural constraint |
 |---|---|---|
@@ -219,7 +219,7 @@ Stage 06 optional pack boundary:
 
 The inventory above describes current repository truth. It does not define the future evidence bar.
 
-[I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md) adds this product direction:
+[I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md) adds this product direction:
 
 | Tier | Scene | Current repository state | Required architecture consequence |
 | --- | --- | --- | --- |

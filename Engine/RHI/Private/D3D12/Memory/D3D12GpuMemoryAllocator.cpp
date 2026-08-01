@@ -4,6 +4,7 @@
 
 #include "Core/Public/Formatting/HexFormat.h"
 #include "D3D12/Memory/D3D12RecordingResourceTable.h"
+#include "Memory/RhiMemoryCategoryAggregation.h"
 
 #include <D3D12MemAlloc.h>
 
@@ -35,11 +36,7 @@ struct D3D12GpuMemoryAllocator::Impl
 class D3D12GpuMemoryAllocatorImplementation final
 {
   public:
-	struct CategoryAggregation
-	{
-		RhiMemoryCategoryStats Stats;
-		std::vector<ID3D12Heap*> UniqueHeaps;
-	};
+	using CategoryAggregation = RhiMemoryCategoryAggregation<ID3D12Heap*>;
 
 	static std::uint64_t GetBudgetBytesForResidency(
 	    RhiMemoryResidencyClass residencyClass,
@@ -65,24 +62,11 @@ class D3D12GpuMemoryAllocatorImplementation final
 	    const D3D12MA::Budget& localBudget,
 	    const D3D12MA::Budget& nonLocalBudget)
 	{
-		auto existing = std::find_if(
-		    aggregations.begin(),
-		    aggregations.end(),
-		    [category, residencyClass](const CategoryAggregation& aggregation)
-		    {
-			    return aggregation.Stats.Category == category && aggregation.Stats.ResidencyClass == residencyClass;
-		    });
-		if (existing != aggregations.end())
-		{
-			return *existing;
-		}
-
-		CategoryAggregation aggregation;
-		aggregation.Stats.Category = category;
-		aggregation.Stats.ResidencyClass = residencyClass;
-		aggregation.Stats.BudgetBytes = GetBudgetBytesForResidency(residencyClass, localBudget, nonLocalBudget);
-		aggregations.push_back(std::move(aggregation));
-		return aggregations.back();
+		return RhiMemoryCategoryAggregationPolicy::FindOrCreate(
+		    aggregations,
+		    category,
+		    residencyClass,
+		    GetBudgetBytesForResidency(residencyClass, localBudget, nonLocalBudget));
 	}
 
 	static void AddBlockReference(CategoryAggregation& aggregation, D3D12MA::Allocation* allocation) noexcept
@@ -99,11 +83,7 @@ class D3D12GpuMemoryAllocatorImplementation final
 			return;
 		}
 
-		if (std::find(aggregation.UniqueHeaps.begin(), aggregation.UniqueHeaps.end(), heap) == aggregation.UniqueHeaps.end())
-		{
-			aggregation.UniqueHeaps.push_back(heap);
-			++aggregation.Stats.BlockCount;
-		}
+		RhiMemoryCategoryAggregationPolicy::AddUniqueBlock(aggregation, heap);
 	}
 
 	static std::string WideStringToUtf8(const wchar_t* text)

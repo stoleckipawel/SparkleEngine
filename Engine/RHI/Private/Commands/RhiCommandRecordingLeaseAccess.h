@@ -35,4 +35,7 @@ class RhiCommandRecordingLeaseAccess final
   public:
 	static RhiCommandRecordingLease Create(const RhiCommandRecordingLeaseInitialization& initialization) noexcept;
 	static RhiCommandRecordingLeaseBackendState Consume(RhiCommandRecordingLease&& lease) noexcept;
+	static bool Matches(
+	    const RhiCommandRecordingLeaseBackendState& state,
+	    const RhiCommandRecordingLeaseBackendState& expected) noexcept;
 };

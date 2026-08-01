@@ -77,7 +77,11 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 {
   public:
-	explicit D3D12RenderTimingDiagnostics(D3D12Rhi& rhi) noexcept : m_rhi(&rhi) { Initialize(); }
+	D3D12RenderTimingDiagnostics(D3D12Rhi& rhi, std::uint32_t maximumFramesInFlight) noexcept :
+	    m_rhi(&rhi), m_frameStates(maximumFramesInFlight)
+	{
+		Initialize();
+	}
 
 	bool SupportsTimestampQueries() const noexcept override { return m_supportsTimestampQueries; }
 
@@ -302,7 +306,7 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 	}
 
 	D3D12Rhi* m_rhi = nullptr;
-	std::array<FrameTimingState, RhiFrameConstants::FramesInFlight> m_frameStates;
+	std::vector<FrameTimingState> m_frameStates;
 	std::unordered_map<std::uint32_t, QueryLocation> m_queryLocations;
 	std::uint32_t m_nextHandleValue = 1;
 	std::uint64_t m_timestampFrequencyHz = 0;
@@ -359,8 +363,8 @@ class D3D12RenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 class D3D12RenderDiagnostics final : public RenderDiagnostics
 {
   public:
-	explicit D3D12RenderDiagnostics(D3D12Rhi& rhi) noexcept :
-	    m_timingDiagnostics(rhi),
+	D3D12RenderDiagnostics(D3D12Rhi& rhi, std::uint32_t maximumFramesInFlight) noexcept :
+	    m_timingDiagnostics(rhi, maximumFramesInFlight),
 	    m_messageDiagnostics(rhi),
 	    m_failureDiagnostics(rhi),
 	    m_memoryDiagnostics(rhi.GetMemoryAllocator())
@@ -428,7 +432,9 @@ class D3D12RenderDiagnostics final : public RenderDiagnostics
 	D3D12RenderMemoryDiagnostics m_memoryDiagnostics;
 };
 
-std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(D3D12Rhi& rhi)
+std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(
+    D3D12Rhi& rhi,
+    std::uint32_t maximumFramesInFlight)
 {
-	return std::make_unique<D3D12RenderDiagnostics>(rhi);
+	return std::make_unique<D3D12RenderDiagnostics>(rhi, maximumFramesInFlight);
 }

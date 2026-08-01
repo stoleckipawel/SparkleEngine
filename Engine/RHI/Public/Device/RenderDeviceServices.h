@@ -3,7 +3,7 @@
 #include "../Core/RhiBackendSelection.h"
 #include "../Commands/RhiCommandSubmissionService.h"
 #include "../Formats/PixelFormat.h"
-#include "../Interop/RhiExternalFeatureHooks.h"
+#include "../Interop/RhiD3D12InterposerHooks.h"
 #include "../RHIAPI.h"
 #include "RenderHardwareInterface.h"
 
@@ -14,6 +14,7 @@
 class Window;
 class RhiImGuiRenderer;
 class RenderDeviceServicesState;
+struct RhiPresentationConfiguration;
 
 class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionService
 {
@@ -27,7 +28,7 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	    Window& window,
 	    ERhiBackendApi backendApi,
 	    PixelFormat backBufferFormat,
-	    RhiExternalFeatureHooks externalFeatureHooks = {}) noexcept;
+	    RhiD3D12InterposerHooks d3d12InterposerHooks = {}) noexcept;
 
 	~RenderDeviceServices() noexcept;
 
@@ -42,7 +43,7 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	void SettleForShutdown() noexcept;
 	void ResizeSwapChain() noexcept;
-	void BeginFrame() noexcept;
+	void BeginFrame(std::uint64_t frameId) noexcept;
 	void PrepareCommandRecording() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
@@ -60,7 +61,7 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	void WaitForSubmission(RhiSubmissionToken token) noexcept override;
 	bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept override;
 	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept override;
-	void SubmitFrame() noexcept;
+	void SubmitFrame(std::uint64_t frameId) noexcept;
 	void AdvanceFrameInFlight() noexcept;
 
   private:
@@ -68,6 +69,7 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	static void FailCreation(std::string_view message) noexcept;
 	static void FailUnsupportedBackend(ERhiBackendApi api) noexcept;
 	static void ValidateBackBufferFormat(PixelFormat backBufferFormat) noexcept;
+	static RhiPresentationConfiguration ResolvePresentationConfiguration() noexcept;
 
 	std::unique_ptr<RenderDeviceServicesState> m_state;
 };

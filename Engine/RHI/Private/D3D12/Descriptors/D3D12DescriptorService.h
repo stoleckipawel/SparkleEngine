@@ -122,8 +122,8 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	std::vector<std::uint32_t> m_freeDescriptorTableIndices;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
-	std::array<std::vector<RetiredDescriptorAllocation>, RhiFrameConstants::FramesInFlight> m_retiredDescriptorAllocations;
-	std::array<std::vector<RetiredDescriptorTable>, RhiFrameConstants::FramesInFlight> m_retiredDescriptorTables;
-	std::array<std::vector<RetiredResourceView>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
+	std::array<std::vector<RetiredDescriptorAllocation>, RhiFrameConstants::MaxFrameSlotCount> m_retiredDescriptorAllocations;
+	std::array<std::vector<RetiredDescriptorTable>, RhiFrameConstants::MaxFrameSlotCount> m_retiredDescriptorTables;
+	std::array<std::vector<RetiredResourceView>, RhiFrameConstants::MaxFrameSlotCount> m_retiredResourceViews;
 	std::uint32_t m_currentFrameIndex = 0;
 };

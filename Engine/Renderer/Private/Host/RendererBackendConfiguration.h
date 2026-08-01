@@ -1,10 +1,10 @@
 #pragma once
 
 #include "RHI/Public/Core/RhiBackendApi.h"
-#include "RHI/Public/Interop/RhiExternalFeatureHooks.h"
+#include "RHI/Public/Interop/RhiD3D12InterposerHooks.h"
 
 struct RendererBackendConfiguration final
 {
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
-	RhiExternalFeatureHooks ExternalFeatureHooks;
+	RhiD3D12InterposerHooks D3D12InterposerHooks;
 };

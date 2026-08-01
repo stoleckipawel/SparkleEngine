@@ -27,7 +27,7 @@ class D3D12ExternalFeatureAdapterIdentity final
 		return result;
 	}
 
-	static RhiAdapterIdentity BuildD3D12AdapterIdentity(const D3D12Rhi* rhi) noexcept
+	static RhiAdapterIdentity Build(const D3D12Rhi* rhi) noexcept
 	{
 		if (rhi == nullptr || rhi->GetAdapter() == nullptr)
 		{
@@ -52,13 +52,18 @@ class D3D12ExternalFeatureAdapterIdentity final
 	}
 };
 
+RhiAdapterIdentity BuildD3D12AdapterIdentity(const D3D12Rhi* rhi) noexcept
+{
+	return D3D12ExternalFeatureAdapterIdentity::Build(rhi);
+}
+
 RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabilities(
     const D3D12Rhi* rhi,
     bool hasGraphicsCommandList) noexcept
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
 	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::D3D12NativeDevice;
-	capabilities.Adapter = D3D12ExternalFeatureAdapterIdentity::BuildD3D12AdapterIdentity(rhi);
+	capabilities.Adapter = BuildD3D12AdapterIdentity(rhi);
 	capabilities.ExposesNativeDevice = rhi != nullptr && rhi->GetDevice() != nullptr;
 	capabilities.ExposesNativeGraphicsQueue = rhi != nullptr && rhi->GetCommandQueue() != nullptr;
 	capabilities.ExposesNativeGraphicsCommandList = hasGraphicsCommandList;

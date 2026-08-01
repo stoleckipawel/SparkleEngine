@@ -161,6 +161,7 @@ struct RhiPartitionedTlasOperationPackDesc
 struct RhiPartitionedTlasBuildCommandDesc
 {
 	RhiPartitionedTlasDesc Layout;
+	RhiResourceHandle DestinationResource;
 	RhiGpuVirtualAddress SourceAccelerationStructure = 0;
 	RhiGpuVirtualAddress DestinationAccelerationStructure = 0;
 	RhiGpuVirtualAddress Scratch = 0;

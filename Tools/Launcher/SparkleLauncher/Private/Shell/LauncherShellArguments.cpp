@@ -1,0 +1,318 @@
+#include "LauncherShellArguments.h"
+
+#include "SparkleLauncher/BuildProfileCatalog.h"
+#include "SparkleLauncher/LauncherProjectDefaults.h"
+
+#include <optional>
+#include <ostream>
+#include <string_view>
+
+namespace SparkleLauncher
+{
+	struct LauncherCleanScopeOption final
+	{
+		std::string_view Name;
+		CleanScope Scope;
+	};
+
+	class LauncherShellArgumentParser final
+	{
+	  public:
+		LauncherShellArgumentParser(int argc, char** argv, LauncherShellArguments& outArguments, std::ostream& error) noexcept;
+
+		bool Parse();
+
+	  private:
+		bool ParseCurrentArgument(std::string_view argument);
+		bool ParseProfile(BuildProfileTarget target, std::string& outProfile);
+		bool ParseWorkspaceIde();
+		bool ParseCleanScope();
+		bool ParseLaunchTarget();
+		std::optional<std::string_view> ReadRequiredValue(std::string_view missingValueMessage);
+
+		static bool IsProfileTarget(std::string_view profileName, BuildProfileTarget target);
+		static bool TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept;
+
+		int m_argumentCount = 0;
+		char** m_arguments = nullptr;
+		int m_index = 1;
+		LauncherShellArguments* m_outArguments = nullptr;
+		std::ostream* m_error = nullptr;
+	};
+
+	LauncherShellArgumentParser::LauncherShellArgumentParser(
+	    int argc,
+	    char** argv,
+	    LauncherShellArguments& outArguments,
+	    std::ostream& error) noexcept :
+	    m_argumentCount(argc), m_arguments(argv), m_outArguments(&outArguments), m_error(&error)
+	{
+	}
+
+	bool LauncherShellArgumentParser::Parse()
+	{
+		for (; m_index < m_argumentCount; ++m_index)
+		{
+			const std::string_view argument(m_arguments[m_index]);
+			if (!ParseCurrentArgument(argument))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool LauncherShellArgumentParser::ParseCurrentArgument(std::string_view argument)
+	{
+		if (argument == "--help" || argument == "-h" || argument == "/?")
+		{
+			m_outArguments->ShowHelp = true;
+			return true;
+		}
+
+		if (argument == "--root")
+		{
+			const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --root requires a path.\n");
+			if (value.has_value())
+			{
+				m_outArguments->StartPath = *value;
+			}
+			return value.has_value();
+		}
+
+		if (argument == "--project")
+		{
+			const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --project requires a project id.\n");
+			if (value.has_value())
+			{
+				m_outArguments->SelectedProject = *value;
+			}
+			return value.has_value();
+		}
+
+		if (argument == "--editor-profile")
+		{
+			return ParseProfile(BuildProfileTarget::Editor, m_outArguments->EditorProfile);
+		}
+
+		if (argument == "--runtime-profile")
+		{
+			return ParseProfile(BuildProfileTarget::Game, m_outArguments->RuntimeProfile);
+		}
+
+		if (argument == "--dry-run")
+		{
+			if (m_index + 1 < m_argumentCount && m_arguments[m_index + 1][0] != '-')
+			{
+				m_outArguments->DryRunOperationId = m_arguments[++m_index];
+			}
+			else
+			{
+				m_outArguments->DryRunOperationId = "workspace.sync-source-tiers";
+			}
+			return true;
+		}
+
+		if (argument == "--run")
+		{
+			if (m_index + 1 >= m_argumentCount || m_arguments[m_index + 1][0] == '-')
+			{
+				*m_error << "SparkleLauncher: --run requires an operation id.\n";
+				return false;
+			}
+			m_outArguments->RunOperationId = m_arguments[++m_index];
+			return true;
+		}
+
+		if (argument == "--ide")
+		{
+			return ParseWorkspaceIde();
+		}
+
+		if (argument == "--force-recook")
+		{
+			m_outArguments->RequestedCookMode = CookMode::Force;
+			return true;
+		}
+
+		if (argument == "--confirm-force-recook")
+		{
+			m_outArguments->ForceRecookConfirmed = true;
+			return true;
+		}
+
+		if (argument == "--clean-scope")
+		{
+			return ParseCleanScope();
+		}
+
+		if (argument == "--confirm-clean")
+		{
+			m_outArguments->CleanConfirmed = true;
+			return true;
+		}
+
+		if (argument == "--launch-target")
+		{
+			return ParseLaunchTarget();
+		}
+
+		if (argument == "--startup-level")
+		{
+			const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --startup-level requires a value.\n");
+			if (value.has_value())
+			{
+				m_outArguments->LaunchStartupLevel = *value;
+			}
+			return value.has_value();
+		}
+
+		*m_error << "SparkleLauncher: unexpected argument '" << argument << "'.\n";
+		return false;
+	}
+
+	bool LauncherShellArgumentParser::ParseProfile(BuildProfileTarget target, std::string& outProfile)
+	{
+		const std::string_view option = target == BuildProfileTarget::Editor ? "--editor-profile" : "--runtime-profile";
+		const std::string missingValueMessage = "SparkleLauncher: " + std::string(option) + " requires a profile.\n";
+		const std::optional<std::string_view> profile = ReadRequiredValue(missingValueMessage);
+		if (!profile.has_value())
+		{
+			return false;
+		}
+
+		if (!IsProfileTarget(*profile, target))
+		{
+			*m_error << "SparkleLauncher: unsupported " << (target == BuildProfileTarget::Editor ? "editor" : "runtime") << " profile '"
+			         << *profile << "'.\n";
+			return false;
+		}
+
+		outProfile = *profile;
+		return true;
+	}
+
+	bool LauncherShellArgumentParser::ParseWorkspaceIde()
+	{
+		const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --ide requires visual-studio or rider.\n");
+		if (!value.has_value())
+		{
+			return false;
+		}
+
+		WorkspaceIde ide = WorkspaceIde::VisualStudio;
+		if (!TryParseWorkspaceIde(*value, ide))
+		{
+			*m_error << "SparkleLauncher: unsupported IDE '" << *value << "'.\n";
+			return false;
+		}
+
+		m_outArguments->WorkspaceIdePreference = ide;
+		return true;
+	}
+
+	bool LauncherShellArgumentParser::ParseCleanScope()
+	{
+		const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --clean-scope requires a scope.\n");
+		if (!value.has_value())
+		{
+			return false;
+		}
+
+		CleanScope scope = CleanScope::SelectedProjectCookedOutputs;
+		if (!TryParseCleanScope(*value, scope))
+		{
+			*m_error << "SparkleLauncher: unsupported clean scope '" << *value << "'.\n";
+			return false;
+		}
+
+		m_outArguments->RequestedCleanScope = scope;
+		return true;
+	}
+
+	bool LauncherShellArgumentParser::ParseLaunchTarget()
+	{
+		const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --launch-target requires a value.\n");
+		if (!value.has_value())
+		{
+			return false;
+		}
+
+		if (*value != "editor" && *value != "runtime")
+		{
+			*m_error << "SparkleLauncher: --launch-target must be editor or runtime.\n";
+			return false;
+		}
+
+		m_outArguments->LaunchTarget = *value;
+		return true;
+	}
+
+	std::optional<std::string_view> LauncherShellArgumentParser::ReadRequiredValue(std::string_view missingValueMessage)
+	{
+		if (m_index + 1 >= m_argumentCount)
+		{
+			*m_error << missingValueMessage;
+			return std::nullopt;
+		}
+
+		return std::string_view(m_arguments[++m_index]);
+	}
+
+	bool LauncherShellArgumentParser::IsProfileTarget(std::string_view profileName, BuildProfileTarget target)
+	{
+		const std::optional<BuildProfile> profile = FindBuildProfile(profileName);
+		return profile.has_value() && profile->Target == target;
+	}
+
+	bool LauncherShellArgumentParser::TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept
+	{
+		static constexpr LauncherCleanScopeOption options[] = {
+		    {"selected-cooked", CleanScope::SelectedProjectCookedOutputs},
+		    {"all-cooked", CleanScope::AllCookedOutputs},
+		    {"build-tree", CleanScope::BuildTree},
+		    {"artifacts", CleanScope::ArtifactOutputs},
+		    {"packages", CleanScope::PackageOutputs},
+		    {"workspace-state", CleanScope::WorkspaceState},
+		    {"shader-cache", CleanScope::ShaderCache},
+		    {"deps", CleanScope::ThirdPartyDependencyCache},
+		    {"logs", CleanScope::Logs},
+		    {"clean-all", CleanScope::PristineGeneratedWorkspace}};
+
+		for (const LauncherCleanScopeOption& option : options)
+		{
+			if (option.Name == text)
+			{
+				outScope = option.Scope;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool ParseLauncherShellArguments(int argc, char** argv, LauncherShellArguments& outArguments, std::ostream& error)
+	{
+		LauncherShellArgumentParser parser(argc, argv, outArguments, error);
+		return parser.Parse();
+	}
+
+	void PrintLauncherShellUsage(std::ostream& output)
+	{
+		output
+		    << "Usage:\n"
+		    << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] "
+		       "[--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--clean-scope <scope>] "
+		       "[--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]] [--run <operation-id>]\n"
+		    << "\n"
+		    << "Examples:\n"
+		    << "  SparkleLauncher --dry-run\n"
+		    << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
+		    << "  SparkleLauncher --project " << kDefaultProjectId
+		    << " --launch-target runtime --startup-level <level-name> --dry-run project.run\n"
+		    << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
+		    << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n"
+		    << "  SparkleLauncher --clean-scope clean-all --dry-run workspace.clean\n";
+	}
+}

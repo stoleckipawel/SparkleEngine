@@ -2,6 +2,7 @@
 
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
 
+#include "Pipeline/RhiShaderBindingReflection.h"
 #include "ShaderParameters/PassParameterLayout.h"
 #include "Shaders/LoadedShaderPackage.h"
 #include "Vulkan/Core/VulkanResult.h"
@@ -43,8 +44,20 @@ class VulkanBindingLayoutCompilerImpl final
 			}
 
 			const std::string_view bindingName = shaderPackage.ResolveString(bindingRecord.Name);
-			const PassParameterDesc* parameterDesc = FindParameter(*desc.ParameterLayout, bindingName);
-			const ReflectedBindingLocation location = ResolveBindingLocation(shaderPackage, bindingRecord, bindingName, parameterDesc);
+			const std::vector<RhiReflectedBindingLocation> reflectedLocations = RhiShaderBindingReflection::ResolveLocations(
+			    shaderPackage,
+			    *desc.ParameterLayout,
+			    bindingRecord,
+			    CookedShaderBinaryFormat::SpirV);
+			if (reflectedLocations.size() != 1u)
+			{
+				Diagnostics::Fatal(
+				    g_vulkanBindingLayoutLogger,
+				    __FILE__,
+				    __LINE__,
+				    std::format("Vulkan shader parameter '{}' resolves to {} distinct descriptor locations.", bindingName, reflectedLocations.size()));
+			}
+			const RhiBindingPoint bindingPoint = reflectedLocations.front().BindingPoint;
 			bindingNames.emplace_back(bindingName);
 
 			CompiledBinding compiledBinding{};
@@ -52,10 +65,13 @@ class VulkanBindingLayoutCompilerImpl final
 			compiledBinding.Type = ToCompiledBindingType(bindingRecord.SemanticKind, desc.InlineUniformDataAsPushConstants);
 			compiledBinding.SemanticKind = bindingRecord.SemanticKind;
 			compiledBinding.BindingIndex = bindingRecord.LogicalBindingIndex;
-			compiledBinding.BindingPoint = RhiBindingPoint{.Set = location.Set, .Binding = location.Binding};
+			compiledBinding.BindingPoint = bindingPoint;
 			compiledBinding.VisibilityMask = bindingRecord.VisibilityMask;
 			compiledBinding.DescriptorCount = std::max(1u, bindingRecord.ArrayCount);
 			compiledBinding.PushConstantCount = bindingRecord.ValueSizeInBytes / sizeof(std::uint32_t);
+			compiledBinding.Bindless.BindlessEligible = bindingRecord.ArrayCount > 1u;
+			compiledBinding.Bindless.ReservedDescriptorCount =
+			    compiledBinding.Bindless.BindlessEligible ? compiledBinding.DescriptorCount : 0u;
 			bindings.push_back(compiledBinding);
 
 			if (compiledBinding.Type == CompiledBindingType::PushConstants)
@@ -72,16 +88,25 @@ class VulkanBindingLayoutCompilerImpl final
 			{
 				continue;
 			}
+			if (compiledBinding.Bindless.BindlessEligible && !rhi.GetFeatureStatus().EnabledPartiallyBoundDescriptorArrays)
+			{
+				Diagnostics::Fatal(
+				    g_vulkanBindingLayoutLogger,
+				    __FILE__,
+				    __LINE__,
+				    std::format("Vulkan shader descriptor array '{}' cannot be partially bound on this device.", bindingName));
+			}
 
 			UpsertDescriptorBinding(
 			    rhi,
-			    descriptorBindingsBySet[location.Set],
+			    descriptorBindingsBySet[bindingPoint.Set],
 			    VkDescriptorSetLayoutBinding{
-			        .binding = location.Binding,
+			        .binding = bindingPoint.Binding,
 			        .descriptorType = descriptorType,
 			        .descriptorCount = std::max(1u, bindingRecord.ArrayCount),
 			        .stageFlags = ToVkShaderStages(bindingRecord.VisibilityMask),
-			        .pImmutableSamplers = nullptr});
+			        .pImmutableSamplers = nullptr},
+			    compiledBinding.Bindless.BindlessEligible ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0u);
 		}
 
 		std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
@@ -99,13 +124,16 @@ class VulkanBindingLayoutCompilerImpl final
 			std::vector<VkSampler> nativeImmutableSamplers;
 			std::vector<MutableDescriptorTypeStorage> mutableDescriptorTypes;
 			std::vector<VkMutableDescriptorTypeListEXT> mutableDescriptorTypeLists;
+			std::vector<VkDescriptorBindingFlags> nativeBindingFlags;
 			nativeBindings.reserve(descriptorBindings.size());
 			nativeImmutableSamplers.reserve(descriptorBindings.size());
 			mutableDescriptorTypes.resize(descriptorBindings.size());
 			mutableDescriptorTypeLists.resize(descriptorBindings.size());
+			nativeBindingFlags.reserve(descriptorBindings.size());
 			for (const PendingDescriptorBinding& descriptorBinding : descriptorBindings)
 			{
 				nativeBindings.push_back(descriptorBinding.Binding);
+				nativeBindingFlags.push_back(descriptorBinding.BindingFlags);
 				if (descriptorBinding.ImmutableSampler != VK_NULL_HANDLE)
 				{
 					nativeImmutableSamplers.push_back(descriptorBinding.ImmutableSampler);
@@ -132,9 +160,19 @@ class VulkanBindingLayoutCompilerImpl final
 			    .pNext = nullptr,
 			    .mutableDescriptorTypeListCount = static_cast<std::uint32_t>(mutableDescriptorTypeLists.size()),
 			    .pMutableDescriptorTypeLists = mutableDescriptorTypeLists.empty() ? nullptr : mutableDescriptorTypeLists.data()};
+			const bool hasBindingFlags = std::any_of(
+			    nativeBindingFlags.begin(),
+			    nativeBindingFlags.end(),
+			    [](VkDescriptorBindingFlags flags) noexcept { return flags != 0; });
+			const VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCreateInfo{
+			    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+			    .pNext = hasMutableDescriptorTypes ? &mutableDescriptorCreateInfo : nullptr,
+			    .bindingCount = static_cast<std::uint32_t>(nativeBindingFlags.size()),
+			    .pBindingFlags = nativeBindingFlags.empty() ? nullptr : nativeBindingFlags.data()};
 			const VkDescriptorSetLayoutCreateInfo createInfo{
 			    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-			    .pNext = hasMutableDescriptorTypes ? &mutableDescriptorCreateInfo : nullptr,
+			    .pNext = hasBindingFlags ? static_cast<const void*>(&bindingFlagsCreateInfo)
+			                             : (hasMutableDescriptorTypes ? static_cast<const void*>(&mutableDescriptorCreateInfo) : nullptr),
 			    .flags = 0,
 			    .bindingCount = static_cast<std::uint32_t>(nativeBindings.size()),
 			    .pBindings = nativeBindings.data()};
@@ -190,102 +228,13 @@ class VulkanBindingLayoutCompilerImpl final
 	}
 
   private:
-	struct ReflectedBindingLocation final
-	{
-		std::uint32_t Set = 0;
-		std::uint32_t Binding = 0;
-	};
-
 	struct PendingDescriptorBinding final
 	{
 		VkDescriptorSetLayoutBinding Binding = {};
+		VkDescriptorBindingFlags BindingFlags = 0;
 		VkSampler ImmutableSampler = VK_NULL_HANDLE;
 	};
 	using MutableDescriptorTypeStorage = std::array<VkDescriptorType, 2>;
-
-	static const PassParameterDesc* FindParameter(const PassParameterLayout& layout, std::string_view name) noexcept
-	{
-		for (const PassParameterDesc& parameter : layout.GetParameters())
-		{
-			if (parameter.Name == name)
-			{
-				return &parameter;
-			}
-		}
-		return nullptr;
-	}
-
-	static bool ResourceKindMatches(CookedShaderResourceKind kind, ShaderParameterSemanticKind semanticKind) noexcept
-	{
-		switch (semanticKind)
-		{
-			case ShaderParameterSemanticKind::UniformData:
-				return kind == CookedShaderResourceKind::ConstantBuffer || kind == CookedShaderResourceKind::PushConstantBlock;
-			case ShaderParameterSemanticKind::ReadTexture:
-				return kind == CookedShaderResourceKind::Texture;
-			case ShaderParameterSemanticKind::ReadBuffer:
-				return kind == CookedShaderResourceKind::StructuredBuffer || kind == CookedShaderResourceKind::ByteAddressBuffer ||
-				       kind == CookedShaderResourceKind::TypedBuffer;
-			case ShaderParameterSemanticKind::RWTexture:
-				return kind == CookedShaderResourceKind::RWTexture;
-			case ShaderParameterSemanticKind::RWBuffer:
-				return kind == CookedShaderResourceKind::RWStructuredBuffer || kind == CookedShaderResourceKind::RWByteAddressBuffer ||
-				       kind == CookedShaderResourceKind::RWTypedBuffer;
-			case ShaderParameterSemanticKind::SamplerSet:
-				return kind == CookedShaderResourceKind::Sampler;
-			case ShaderParameterSemanticKind::AccelerationStructure:
-				return kind == CookedShaderResourceKind::AccelerationStructure;
-			default:
-				return false;
-		}
-	}
-
-	static ReflectedBindingLocation ResolveBindingLocation(
-	    const LoadedShaderPackage& shaderPackage,
-	    const CookedShaderBindingRecord& bindingRecord,
-	    std::string_view bindingName,
-	    const PassParameterDesc* parameterDesc) noexcept
-	{
-		const std::string_view shaderName = parameterDesc != nullptr ? parameterDesc->GetShaderName() : bindingName;
-		const std::vector<CookedShaderBinaryRecord>& binaryRecords = shaderPackage.GetBinaryRecords();
-		const std::vector<CookedShaderReflectionRecord>& reflectionRecords = shaderPackage.GetReflectionRecords();
-		const std::vector<CookedShaderResourceBindingRecord>& resourceBindings = shaderPackage.GetResourceBindings();
-
-		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size(); ++reflectionIndex)
-		{
-			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-			if (!shaderPackage.IsRuntimeBinary(binaryRecord, CookedShaderBinaryFormat::SpirV) ||
-			    !HasAnyShaderStageMask(bindingRecord.VisibilityMask, ToShaderStageMask(binaryRecord.Stage)))
-			{
-				continue;
-			}
-
-			const CookedShaderReflectionRecord& reflection = reflectionRecords[reflectionIndex];
-			for (std::uint32_t resourceIndex = 0; resourceIndex < reflection.ResourceBindingCount; ++resourceIndex)
-			{
-				const std::uint32_t bindingIndex = reflection.ResourceBindingOffset + resourceIndex;
-				if (bindingIndex >= resourceBindings.size())
-				{
-					break;
-				}
-
-				const CookedShaderResourceBindingRecord& resourceBinding = resourceBindings[bindingIndex];
-				if (!ResourceKindMatches(resourceBinding.Kind, bindingRecord.SemanticKind))
-				{
-					continue;
-				}
-
-				const std::string_view resourceName = shaderPackage.ResolveString(
-				    CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
-				if (resourceName == shaderName)
-				{
-					return ReflectedBindingLocation{.Set = resourceBinding.Set, .Binding = resourceBinding.Slot};
-				}
-			}
-		}
-
-		return ReflectedBindingLocation{.Set = 0, .Binding = bindingRecord.LogicalBindingIndex};
-	}
 
 	static CompiledBindingType ToCompiledBindingType(ShaderParameterSemanticKind semanticKind, bool inlineUniformDataAsPushConstants) noexcept
 	{
@@ -311,7 +260,8 @@ class VulkanBindingLayoutCompilerImpl final
 	static void UpsertDescriptorBinding(
 	    VulkanRhi& rhi,
 	    std::vector<PendingDescriptorBinding>& descriptorBindings,
-	    VkDescriptorSetLayoutBinding binding) noexcept
+	    VkDescriptorSetLayoutBinding binding,
+	    VkDescriptorBindingFlags bindingFlags) noexcept
 	{
 		for (PendingDescriptorBinding& existingBinding : descriptorBindings)
 		{
@@ -319,11 +269,12 @@ class VulkanBindingLayoutCompilerImpl final
 			{
 				existingBinding.Binding.descriptorCount = std::max(existingBinding.Binding.descriptorCount, binding.descriptorCount);
 				existingBinding.Binding.stageFlags |= binding.stageFlags;
+				existingBinding.BindingFlags |= bindingFlags;
 				return;
 			}
 		}
 
-		PendingDescriptorBinding pendingBinding{.Binding = binding};
+		PendingDescriptorBinding pendingBinding{.Binding = binding, .BindingFlags = bindingFlags};
 		if (binding.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER)
 		{
 			pendingBinding.ImmutableSampler = CreateImmutableSampler(rhi);
@@ -416,14 +367,10 @@ VulkanBindingLayout::VulkanBindingLayout(
     std::vector<VkPushConstantRange> pushConstantRanges,
     std::vector<CompiledBinding> bindings,
     std::vector<std::string> bindingNames) noexcept :
-	m_device(device), m_parameterLayout(&parameterLayout), m_descriptorSetLayouts(std::move(descriptorSetLayouts)),
-	m_immutableSamplers(std::move(immutableSamplers)), m_pushConstantRanges(std::move(pushConstantRanges)), m_bindings(std::move(bindings)),
-	m_bindingNames(std::move(bindingNames))
+	RenderBindingLayout(parameterLayout, std::move(bindings), std::move(bindingNames)), m_device(device),
+	m_descriptorSetLayouts(std::move(descriptorSetLayouts)), m_immutableSamplers(std::move(immutableSamplers)),
+	m_pushConstantRanges(std::move(pushConstantRanges))
 {
-	for (std::size_t bindingIndex = 0; bindingIndex < m_bindings.size() && bindingIndex < m_bindingNames.size(); ++bindingIndex)
-	{
-		m_bindings[bindingIndex].Name = m_bindingNames[bindingIndex].c_str();
-	}
 }
 
 VulkanBindingLayout::~VulkanBindingLayout() noexcept
@@ -447,39 +394,6 @@ VulkanBindingLayout::~VulkanBindingLayout() noexcept
 			vkDestroySampler(m_device, sampler, nullptr);
 		}
 	}
-}
-
-const PassParameterLayout& VulkanBindingLayout::GetParameterLayout() const noexcept
-{
-	return *m_parameterLayout;
-}
-
-const CompiledBinding* VulkanBindingLayout::GetBindings() const noexcept
-{
-	return m_bindings.data();
-}
-
-std::size_t VulkanBindingLayout::GetBindingCount() const noexcept
-{
-	return m_bindings.size();
-}
-
-const CompiledBinding* VulkanBindingLayout::FindBinding(const char* name) const noexcept
-{
-	if (name == nullptr)
-	{
-		return nullptr;
-	}
-
-	for (const CompiledBinding& binding : m_bindings)
-	{
-		if (binding.Name != nullptr && std::string_view(binding.Name) == name)
-		{
-			return &binding;
-		}
-	}
-
-	return nullptr;
 }
 
 std::unique_ptr<VulkanBindingLayout> VulkanBindingLayoutCompiler::Compile(VulkanRhi& rhi, const RenderBindingLayoutCompileDesc& desc)

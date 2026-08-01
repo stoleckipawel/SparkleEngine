@@ -6,6 +6,7 @@
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 
 #include "Core/Public/Strings/StringUtils.h"
+#include "Memory/RhiMemoryCategoryAggregation.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
@@ -20,6 +21,8 @@
 
 static const auto g_vulkanMemoryLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Memory");
 
+using VulkanMemoryCategoryAggregation = RhiMemoryCategoryAggregation<std::uint32_t>;
+
 struct VulkanGpuMemoryAllocator::PendingAllocationRelease final
 {
 	std::unique_ptr<VulkanGpuAllocationRecord> Record;
@@ -28,12 +31,6 @@ struct VulkanGpuMemoryAllocator::PendingAllocationRelease final
 struct VulkanGpuMemoryAllocator::PendingMemoryBlockRelease final
 {
 	std::unique_ptr<VulkanGpuMemoryBlockRecord> Record;
-};
-
-struct VulkanGpuMemoryAllocator::CategoryAggregation final
-{
-	RhiMemoryCategoryStats Stats;
-	std::vector<std::uint32_t> UniqueHeapIndices;
 };
 
 struct VulkanGpuMemoryAllocator::Impl final
@@ -85,51 +82,6 @@ std::uint32_t VulkanGpuMemoryAllocator::ResolveVmaAllocationFlags(RhiMemoryResid
 		default:
 			return 0;
 	}
-}
-
-VulkanGpuMemoryAllocator::CategoryAggregation& VulkanGpuMemoryAllocator::FindOrCreateCategoryAggregation(
-    std::vector<CategoryAggregation>& aggregations,
-    RhiMemoryCategory category,
-    RhiMemoryResidencyClass residencyClass)
-{
-	auto existing = std::find_if(
-	    aggregations.begin(),
-	    aggregations.end(),
-	    [category, residencyClass](const CategoryAggregation& aggregation)
-	    {
-		    return aggregation.Stats.Category == category && aggregation.Stats.ResidencyClass == residencyClass;
-	    });
-	if (existing != aggregations.end())
-	{
-		return *existing;
-	}
-
-	CategoryAggregation aggregation;
-	aggregation.Stats.Category = category;
-	aggregation.Stats.ResidencyClass = residencyClass;
-	aggregations.push_back(std::move(aggregation));
-	return aggregations.back();
-}
-
-void VulkanGpuMemoryAllocator::AddHeapReference(
-    CategoryAggregation& aggregation,
-    std::uint32_t heapIndex,
-    std::uint64_t heapBudgetBytes) noexcept
-{
-	if (heapIndex == UINT32_MAX)
-	{
-		return;
-	}
-
-	const auto existing = std::find(aggregation.UniqueHeapIndices.begin(), aggregation.UniqueHeapIndices.end(), heapIndex);
-	if (existing != aggregation.UniqueHeapIndices.end())
-	{
-		return;
-	}
-
-	aggregation.UniqueHeapIndices.push_back(heapIndex);
-	++aggregation.Stats.BlockCount;
-	aggregation.Stats.BudgetBytes += heapBudgetBytes;
 }
 
 VulkanGpuMemoryAllocator::VulkanGpuMemoryAllocator(VulkanRhi& rhi) noexcept :
@@ -211,7 +163,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 		snapshot.ApiUsageBytes += heapBudgets[heapIndex].usage;
 	}
 
-	std::vector<CategoryAggregation> aggregations;
+	std::vector<VulkanMemoryCategoryAggregation> aggregations;
 	{
 		std::scoped_lock lock(m_impl->RecordsMutex);
 		aggregations.reserve(m_impl->LiveRecords.size());
@@ -223,8 +175,10 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 				continue;
 			}
 
-			CategoryAggregation& aggregation =
-			    FindOrCreateCategoryAggregation(aggregations, record->Category, record->ResidencyClass);
+			VulkanMemoryCategoryAggregation& aggregation = RhiMemoryCategoryAggregationPolicy::FindOrCreate(
+			    aggregations,
+			    record->Category,
+			    record->ResidencyClass);
 			++aggregation.Stats.AllocationCount;
 			++aggregation.Stats.ResourceCount;
 			aggregation.Stats.UsedBytes += record->UsedBytes;
@@ -236,7 +190,10 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			}
 			if (record->MemoryHeapIndex < heapBudgets.size())
 			{
-				AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets[record->MemoryHeapIndex].budget);
+				RhiMemoryCategoryAggregationPolicy::AddUniqueBlock(
+				    aggregation,
+				    record->MemoryHeapIndex,
+				    heapBudgets[record->MemoryHeapIndex].budget);
 			}
 		}
 
@@ -247,8 +204,10 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 				continue;
 			}
 
-			CategoryAggregation& aggregation =
-			    FindOrCreateCategoryAggregation(aggregations, record->Category, record->ResidencyClass);
+			VulkanMemoryCategoryAggregation& aggregation = RhiMemoryCategoryAggregationPolicy::FindOrCreate(
+			    aggregations,
+			    record->Category,
+			    record->ResidencyClass);
 			++aggregation.Stats.AllocationCount;
 			aggregation.Stats.ResourceCount += record->AliasingResourceCount;
 			aggregation.Stats.UsedBytes += record->UsedBytes;
@@ -260,7 +219,10 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			}
 			if (record->MemoryHeapIndex < heapBudgets.size())
 			{
-				AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets[record->MemoryHeapIndex].budget);
+				RhiMemoryCategoryAggregationPolicy::AddUniqueBlock(
+				    aggregation,
+				    record->MemoryHeapIndex,
+				    heapBudgets[record->MemoryHeapIndex].budget);
 			}
 		}
 
@@ -284,7 +246,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 	}
 
 	snapshot.CategoryStats.reserve(aggregations.size());
-	for (const CategoryAggregation& aggregation : aggregations)
+	for (const VulkanMemoryCategoryAggregation& aggregation : aggregations)
 	{
 		snapshot.CategoryStats.push_back(aggregation.Stats);
 	}

@@ -15,7 +15,7 @@
 struct EngineRenderingSettingsState final
 {
 	bool VSync = true;
-	PixelFormat BackBufferFormat = RhiPresentationDefaults::BackBufferFormat;
+	PixelFormat BackBufferFormat = RhiPresentationDefaults::DefaultBackBufferFormat;
 	bool PreferHighPerformanceAdapter = true;
 	EngineToneMapper ToneMapper = EngineToneMapper::AcesApprox;
 	EngineExposureMode ExposureMode = EngineExposureMode::Automatic;

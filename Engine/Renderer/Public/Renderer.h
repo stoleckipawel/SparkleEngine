@@ -33,6 +33,8 @@ class SPARKLE_RENDERER_API Renderer final
 	void SubmitRenderInput(RenderInputFrame input) noexcept;
 	void SubmitUiRenderPacket(UiRenderPacket packet) noexcept;
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept;
+	void BeginSimulationFrame(std::uint64_t frameId) noexcept;
+	void EndSimulationFrame(std::uint64_t frameId) noexcept;
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
 

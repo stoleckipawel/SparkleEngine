@@ -31,7 +31,7 @@ namespace ECS
 	    RenderFrameMetadata metadata)
 	{
 		frame.Dynamic.Metadata = metadata;
-		frame.Dynamic.Metadata.FrameGeneration = sceneGeneration;
+		frame.Dynamic.Metadata.SceneGeneration = sceneGeneration;
 		frame.WorldDelta.SceneGeneration = sceneGeneration;
 		frame.WorldDelta.SequenceNumber = ++m_sequence;
 		frame.WorldDelta.ResetScene = m_sceneGeneration != sceneGeneration;

@@ -24,7 +24,7 @@ RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 	m_pending.reset();
 
 	const RenderFrameMetadata& metadata = input.Dynamic.Metadata;
-	if (metadata.FrameGeneration != input.WorldDelta.SceneGeneration ||
+	if (metadata.SceneGeneration != input.WorldDelta.SceneGeneration ||
 	    metadata.FrameId <= m_lastFrameId)
 	{
 		result.Diagnostic = "Render input metadata is stale or mismatched.";
@@ -38,10 +38,10 @@ RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 
 	input.Dynamic.Metadata.ResetHistory |=
 	    m_lastFrameId != 0 &&
-	    (metadata.FrameGeneration != m_frameGeneration ||
+	    (metadata.SceneGeneration != m_sceneGeneration ||
 	     metadata.ProviderGeneration != m_providerGeneration);
 	m_lastFrameId = metadata.FrameId;
-	m_frameGeneration = metadata.FrameGeneration;
+	m_sceneGeneration = metadata.SceneGeneration;
 	m_providerGeneration = metadata.ProviderGeneration;
 	result.Accepted = true;
 	result.SceneReset = input.WorldDelta.ResetScene;

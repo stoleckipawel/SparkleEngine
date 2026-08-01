@@ -2,9 +2,9 @@
 
 Status: execution plan
 Date: 2026-07-26
-Governing requirements: [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md)
-Current-state evidence: [C. Candidate and Repository Gap Assessment](C_CandidateAndRepositoryGapAssessment.md)
-Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](I_BistroAcceptanceWorkload.md)
+Governing requirements: [A. Principal Graphics Engineering Requirements](Requirements.md)
+Current-state evidence: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
+Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md)
 
 ## Outcome
 
@@ -58,7 +58,7 @@ Do not allocate more than 10% to editor, launcher, general engine usability, con
 - Freeze new engine features.
 - Create a one-page backlog containing only tasks that advance `PGE-02`–`PGE-13`.
 - Select the primary test GPU, OS build, driver, compiler, resolution, and two rendering configurations.
-- Adopt the scene decision and exact gates in [I](I_BistroAcceptanceWorkload.md):
+- Adopt the scene decision and exact gates in [I](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md):
   - Sponza for startup and short regression;
   - Bistro exterior/interior for the flagship;
   - San Miguel 2.0 for supported cross-scene breadth and neural held-out evaluation;

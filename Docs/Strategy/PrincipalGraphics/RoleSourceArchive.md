@@ -6,7 +6,7 @@ Inputs: one CV PDF, nine local image files including one byte-identical duplicat
 
 ## Purpose
 
-This file makes future planning independent of the original screenshots. It preserves every substantive responsibility, qualification, differentiator, and credential from the supplied material, then maps it to the canonical `PGE-*` requirements in [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md).
+This file makes future planning independent of the original screenshots. It preserves every substantive responsibility, qualification, differentiator, and credential from the supplied material, then maps it to the canonical `PGE-*` requirements in [A. Principal Graphics Engineering Requirements](Requirements.md).
 
 This is a normalized transcription, not a legal copy of a job advertisement:
 

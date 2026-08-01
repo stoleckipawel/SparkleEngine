@@ -34,13 +34,8 @@ PassParameterLayout::PassParameterLayout(const char* debugName)
 {
 }
 
-const PassParameterDesc* PassParameterLayout::FindParameter(const char* name) const noexcept
+const PassParameterDesc* PassParameterLayout::FindParameter(std::string_view name) const noexcept
 {
-	if (name == nullptr)
-	{
-		return nullptr;
-	}
-
 	const auto it = std::find_if(
 	    m_parameters.begin(),
 	    m_parameters.end(),
@@ -56,7 +51,7 @@ std::uint32_t PassParameterLayout::AddParameter(PassParameterDesc parameter)
 {
 	assert(!parameter.Name.empty());
 	assert(parameter.ArrayCount > 0);
-	assert(!HasParameter(parameter.Name.c_str()));
+	assert(!HasParameter(parameter.Name));
 
 	m_parameters.push_back(std::move(parameter));
 	return static_cast<std::uint32_t>(m_parameters.size() - 1);

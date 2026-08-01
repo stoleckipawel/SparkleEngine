@@ -89,11 +89,16 @@ void VulkanDescriptorService::PublishRecordingReadView() noexcept
 		        .AspectMask = ResolveViewAspectMask(viewDesc)});
 		if (record.Image != VK_NULL_HANDLE)
 		{
+			const VulkanGpuAllocationRecord* const allocation =
+			    m_memoryAllocator.FindAllocationRecord(RhiResourceHandle{record.Image});
 			readView->ImageResources.push_back(
 			    RecordingImageResource{
 			        .ResourceHandleValue = reinterpret_cast<std::uintptr_t>(record.Image),
 			        .Image = record.Image,
-			        .AspectMask = ResolveViewAspectMask(viewDesc)});
+			        .Format = allocation != nullptr ? allocation->Format : VulkanTypeConversions::ToVkFormat(record.Format),
+			        .Extent = allocation != nullptr ? allocation->Extent : record.Extent,
+			        .AspectMask = ResolveViewAspectMask(viewDesc),
+			        .Usage = allocation != nullptr ? allocation->Usage : record.Usage});
 		}
 	}
 	std::ranges::sort(readView->ImageViews, {}, &RecordingImageView::ImageViewValue);
@@ -324,7 +329,7 @@ NativeTextureViewInfo VulkanDescriptorService::ResolveNativeTextureViewInfo(
 	    .Format = record->Format,
 	    .Texture = record->Texture};
 	const VkImageAspectFlags aspectMask = ResolveViewAspectMask(viewDesc);
-	const VkExtent3D extent = allocation != nullptr ? allocation->Extent : VkExtent3D{};
+	const VkExtent3D extent = allocation != nullptr ? allocation->Extent : record->Extent;
 	const VkFormat format = allocation != nullptr && allocation->Format != VK_FORMAT_UNDEFINED
 	                            ? allocation->Format
 	                            : VulkanTypeConversions::ToVkFormat(record->Format);
@@ -407,6 +412,9 @@ bool VulkanDescriptorService::ResolveRegisteredImageResource(RhiResourceHandle r
 
 	VkImageAspectFlags aspectMask = 0;
 	const VkImage image = found->Image;
+	const VkFormat format = found->Format;
+	const VkExtent3D extent = found->Extent;
+	const VkImageUsageFlags usage = found->Usage;
 	for (; found != readView->ImageResources.end() && found->ResourceHandleValue == resourceHandleValue; ++found)
 	{
 		aspectMask |= found->AspectMask;
@@ -419,7 +427,10 @@ bool VulkanDescriptorService::ResolveRegisteredImageResource(RhiResourceHandle r
 	outResource = VulkanRecordingResource{
 	    .Image = image,
 	    .ResourceHandleValue = resourceHandleValue,
+	    .Format = format,
+	    .Extent = extent,
 	    .AspectMask = aspectMask,
+	    .Usage = usage,
 	    .ResourceKind = VulkanGpuAllocationResourceKind::Image};
 	return true;
 }
@@ -441,6 +452,9 @@ void VulkanDescriptorService::RebuildSwapChainBackBufferViews(const VulkanSwapCh
 		        .Kind = ERhiResourceViewKind::RenderTarget,
 		        .Image = swapChain.GetBackBufferImage(backBufferIndex),
 		        .ImageView = swapChain.GetBackBufferImageView(backBufferIndex),
+		        .Format = swapChain.GetBackBufferFormat(),
+		        .Extent = swapChain.GetBackBufferExtent(),
+		        .Usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 		        .OwnsImageView = false}));
 	}
 }

@@ -31,7 +31,8 @@ class D3D12CommandRecordingContext final
 	D3D12CommandRecordingContext(
 	    D3D12Rhi& rhi,
 	    D3D12RenderHardwareInterface& hardwareInterface,
-	    D3D12DescriptorHeapManager& descriptorHeapManager) noexcept;
+	    D3D12DescriptorHeapManager& descriptorHeapManager,
+	    std::uint32_t maximumFramesInFlight) noexcept;
 	~D3D12CommandRecordingContext() noexcept;
 
 	D3D12CommandRecordingContext(const D3D12CommandRecordingContext&) = delete;
@@ -124,5 +125,5 @@ class D3D12CommandRecordingContext final
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12RenderHardwareInterface* m_hardwareInterface = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
-	std::array<std::array<QueueFrameState, RhiQueueTypeCount>, RhiFrameConstants::FramesInFlight> m_frames;
+	std::vector<std::array<QueueFrameState, RhiQueueTypeCount>> m_frames;
 };

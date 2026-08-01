@@ -5,21 +5,38 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "Presentation/RhiPresentationDefaults.h"
+
+#include <format>
+
+static const auto g_d3d12SwapChainLogger = Logging::GetOrCreateLogger("RHI.D3D12.SwapChain");
 
 D3D12SwapChain::D3D12SwapChain(
     D3D12Rhi& rhi,
     Window& window,
     D3D12DescriptorHeapManager& descriptorHeapManager,
-    PixelFormat backBufferFormat) :
-    m_rhi(rhi), m_backBufferFormat(backBufferFormat), m_window(&window), m_descriptorHeapManager(&descriptorHeapManager)
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration) :
+    m_rhi(rhi),
+    m_backBufferCount(presentationConfiguration.BackBufferCount),
+    m_maximumFramesInFlight(presentationConfiguration.MaximumFramesInFlight),
+    m_backBufferFormat(backBufferFormat),
+    m_window(&window),
+    m_descriptorHeapManager(&descriptorHeapManager)
 {
+	m_buffers.resize(m_backBufferCount);
+	m_rtvHandles.resize(m_backBufferCount);
 	AllocateHandles();
 	Create();
 
-	m_swapChain->SetMaximumFrameLatency(RhiFrameConstants::FramesInFlight);
-	m_waitableObject = m_swapChain->GetFrameLatencyWaitableObject();
+	CHECK(GetPresentationInterface()->SetMaximumFrameLatency(m_maximumFramesInFlight));
+	m_waitableObject = GetPresentationInterface()->GetFrameLatencyWaitableObject();
+	if (m_waitableObject == nullptr)
+	{
+		Diagnostics::Fatal(g_d3d12SwapChainLogger, __FILE__, __LINE__, "D3D12 swap chain did not expose its frame-latency waitable object.");
+	}
 
-	UpdateFrameInFlightIndex();
+	UpdateCurrentBackBufferIndex();
 
 	CreateRenderTargetViews();
 }
@@ -28,6 +45,11 @@ D3D12SwapChain::~D3D12SwapChain() noexcept
 {
 	ReleaseBuffers();
 	ReleaseRenderTargetHandles();
+	if (m_waitableObject != nullptr)
+	{
+		CloseHandle(m_waitableObject);
+		m_waitableObject = nullptr;
+	}
 	m_externalSwapChain.Reset();
 	m_swapChain.Reset();
 }
@@ -57,7 +79,7 @@ void D3D12SwapChain::Create()
 	swapChainDesc.SampleDesc.Quality = 0;
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.BufferCount = RhiFrameConstants::FramesInFlight;
+	swapChainDesc.BufferCount = m_backBufferCount;
 	swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
@@ -67,8 +89,8 @@ void D3D12SwapChain::Create()
 	swapChainFullsceenDesc.Windowed = true;
 
 	ComPtr<IDXGIFactory7> externalFactory;
-	if (m_rhi.TryUpgradeExternalInterface(
-	        ERhiExternalInterfaceKind::PresentationFactory,
+	if (m_rhi.TryUpgradeInterposerInterface(
+	        ERhiD3D12InterposerInterfaceKind::PresentationFactory,
 	        m_rhi.GetDxgiFactory().Get(),
 	        IID_PPV_ARGS(externalFactory.ReleaseAndGetAddressOf())))
 	{
@@ -82,12 +104,12 @@ void D3D12SwapChain::Create()
 		    externalSwapChain.ReleaseAndGetAddressOf());
 		if (SUCCEEDED(createResult) &&
 		    SUCCEEDED(externalSwapChain.As(&m_externalSwapChain)) &&
-		    m_rhi.TryResolveExternalNativeInterface(
-		        ERhiExternalInterfaceKind::PresentationSurface,
+		    m_rhi.TryResolveNativeInterface(
+		        ERhiD3D12InterposerInterfaceKind::PresentationSurface,
 		        m_externalSwapChain.Get(),
 		        IID_PPV_ARGS(m_swapChain.ReleaseAndGetAddressOf())))
 		{
-			m_rhi.NotifyExternalPresentationReady(true);
+			m_rhi.NotifyInterposerPresentationReady(true);
 			return;
 		}
 
@@ -103,7 +125,7 @@ void D3D12SwapChain::Create()
 	    nullptr,
 	    swapChain.ReleaseAndGetAddressOf()));
 	CHECK(swapChain.As(&m_swapChain));
-	m_rhi.NotifyExternalPresentationReady(false);
+	m_rhi.NotifyInterposerPresentationReady(false);
 }
 
 void D3D12SwapChain::Resize()
@@ -117,13 +139,13 @@ void D3D12SwapChain::Resize()
 	ResizeBuffersToWindow();
 	CreateRenderTargetViews();
 
-	UpdateFrameInFlightIndex();
+	UpdateCurrentBackBufferIndex();
 }
 
 void D3D12SwapChain::ResizeBuffersToWindow()
 {
 	CHECK(GetPresentationInterface()->ResizeBuffers(
-	    RhiFrameConstants::FramesInFlight,
+	    m_backBufferCount,
 	    GetWindowWidth(),
 	    GetWindowHeight(),
 	    D3D12TypeConversions::ToDxgiFormat(m_backBufferFormat),
@@ -132,14 +154,14 @@ void D3D12SwapChain::ResizeBuffersToWindow()
 
 void D3D12SwapChain::AllocateHandles()
 {
-	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
+	for (UINT i = 0; i < m_backBufferCount; i++)
 	{
 		m_rtvHandles[i] = m_descriptorHeapManager->GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)->Allocate();
 	}
 }
 void D3D12SwapChain::CreateRenderTargetViews()
 {
-	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
+	for (UINT i = 0; i < m_backBufferCount; i++)
 	{
 		CHECK(GetPresentationInterface()->GetBuffer(i, IID_PPV_ARGS(m_buffers[i].ReleaseAndGetAddressOf())));
 		m_buffers[i]->SetName(L"RHI_BackBuffer");
@@ -165,7 +187,7 @@ UINT D3D12SwapChain::GetAllowTearingFlag() const
 
 UINT D3D12SwapChain::GetFrameLatencyWaitableFlag() const
 {
-	return (RhiFrameConstants::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
+	return DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 }
 
 UINT D3D12SwapChain::ComputeSwapChainFlags() const
@@ -210,6 +232,19 @@ void D3D12SwapChain::Present()
 	CHECK(GetPresentationInterface()->Present(presentInterval, presentFlags));
 }
 
+void D3D12SwapChain::WaitForPresentationSlot() const noexcept
+{
+	const DWORD waitResult = WaitForSingleObject(m_waitableObject, INFINITE);
+	if (waitResult != WAIT_OBJECT_0)
+	{
+		Diagnostics::Fatal(
+		    g_d3d12SwapChainLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("D3D12 frame-latency wait failed with result 0x{:08X}.", waitResult));
+	}
+}
+
 IDXGISwapChain3* D3D12SwapChain::GetPresentationInterface() const noexcept
 {
 	return m_externalSwapChain != nullptr ? m_externalSwapChain.Get() : m_swapChain.Get();
@@ -217,7 +252,7 @@ IDXGISwapChain3* D3D12SwapChain::GetPresentationInterface() const noexcept
 
 void D3D12SwapChain::ReleaseBuffers()
 {
-	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
+	for (UINT i = 0; i < m_backBufferCount; i++)
 	{
 		m_buffers[i].Reset();
 	}
@@ -225,7 +260,7 @@ void D3D12SwapChain::ReleaseBuffers()
 
 void D3D12SwapChain::ReleaseRenderTargetHandles() noexcept
 {
-	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
+	for (UINT i = 0; i < m_backBufferCount; i++)
 	{
 		if (m_rtvHandles[i].IsValid())
 		{

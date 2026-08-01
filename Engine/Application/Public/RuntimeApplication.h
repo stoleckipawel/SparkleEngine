@@ -70,7 +70,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	void InitializeGameRuntime();
 	void InitializeRenderer();
 	void InitializeRuntimeConsole();
-	void SubmitWorldRenderInput();
+	void SubmitWorldRenderInput(std::uint64_t frameId);
 	GameWorld& GetWorldForEditor() noexcept;
 
 	std::unique_ptr<Timer> m_timer;
