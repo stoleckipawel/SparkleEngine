@@ -3,6 +3,7 @@
 #include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 
 #include <cstdint>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -15,6 +16,7 @@ struct GpuTimingScope
 	std::string Label;
 	RhiTimestampQueryHandle BeginQuery = {};
 	RhiTimestampQueryHandle EndQuery = {};
+	ERhiQueueType QueueType = ERhiQueueType::Graphics;
 	std::uint16_t Depth = 0;
 };
 
@@ -25,6 +27,7 @@ struct ResolvedGpuTiming
 	std::uint64_t EndTicks = 0;
 	std::uint64_t DurationTicks = 0;
 	double DurationMilliseconds = 0.0;
+	ERhiQueueType QueueType = ERhiQueueType::Graphics;
 	std::uint16_t Depth = 0;
 };
 
@@ -73,7 +76,8 @@ class ScopedGpuTimer final
 	    RenderCommandContext& commands,
 	    std::string label,
 	    RhiTimestampQueryHandle beginQuery,
-	    RhiTimestampQueryHandle endQuery) noexcept;
+	    RhiTimestampQueryHandle endQuery,
+	    ERhiQueueType queueType) noexcept;
 	void Reset() noexcept;
 
 	FrameExecutionDiagnostics* m_owner = nullptr;
@@ -81,8 +85,8 @@ class ScopedGpuTimer final
 	std::string m_label;
 	RhiTimestampQueryHandle m_beginQuery = {};
 	RhiTimestampQueryHandle m_endQuery = {};
+	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 	std::uint16_t m_depth = 0;
-	bool m_depthAccounted = false;
 };
 
 class ScopedGpuScope final
@@ -119,7 +123,6 @@ class FrameExecutionDiagnostics final
 	ScopedGpuScope BeginGpuScope(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	void ResolveTimings() noexcept;
 
-	const std::vector<GpuTimingScope>& GetRecordedTimings() const noexcept;
 	const std::vector<ResolvedGpuTiming>& GetResolvedTimings() const noexcept;
 
   private:
@@ -131,21 +134,20 @@ class FrameExecutionDiagnostics final
 	ScopedGpuEvent BeginGpuEvent(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	ScopedGpuTimer BeginTimer(RenderCommandContext& commands, std::string_view label) noexcept;
 	void InsertGpuMarker(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) const noexcept;
-	RhiTimestampQueryHandle AllocateTimestampQuery() noexcept;
+	RhiTimestampQueryHandle AllocateTimestampQuery(ERhiQueueType queueType) noexcept;
 	void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept;
 	bool WriteTimestamp(RenderCommandContext& commands, RhiTimestampQueryHandle query) noexcept;
 	void RecordCompletedTimer(
 	    std::string label,
 	    RhiTimestampQueryHandle beginQuery,
 	    RhiTimestampQueryHandle endQuery,
+	    ERhiQueueType queueType,
 	    std::uint16_t depth) noexcept;
-	std::uint16_t AcquireTimerDepth() noexcept;
-	void ReleaseTimerDepth() noexcept;
 	void ResetRecordedTimers() noexcept;
 
 	RenderDiagnostics* m_backendDiagnostics = nullptr;
 	RenderTimingDiagnostics* m_timingDiagnostics = nullptr;
 	std::vector<GpuTimingScope> m_recordedTimers;
 	std::vector<ResolvedGpuTiming> m_resolvedTimers;
-	std::uint16_t m_openTimerCount = 0;
+	std::mutex m_recordedTimersMutex;
 };

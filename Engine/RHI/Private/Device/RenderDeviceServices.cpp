@@ -94,7 +94,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 	Window& window,
 	ERhiBackendApi backendApi,
 	PixelFormat backBufferFormat,
-	RhiD3D12InterposerHooks d3d12InterposerHooks) noexcept
+	RhiInterposerHooks interposerHooks) noexcept
 {
 	ValidateBackBufferFormat(backBufferFormat);
 	const RhiPresentationConfiguration presentationConfiguration = ResolvePresentationConfiguration();
@@ -105,7 +105,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 		case ERhiBackendApi::D3D12:
 		#if SPARKLE_RHI_WITH_D3D12
 			services->m_state->SetBackendServices(
-			    CreateD3D12RenderDeviceServices(window, backBufferFormat, presentationConfiguration, d3d12InterposerHooks));
+			    CreateD3D12RenderDeviceServices(window, backBufferFormat, presentationConfiguration, interposerHooks));
 			break;
 		#else
 			FailUnsupportedBackend(backendApi);
@@ -113,6 +113,10 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 		#endif
 		case ERhiBackendApi::Vulkan:
 		#if SPARKLE_RHI_WITH_VULKAN
+			if (static_cast<bool>(interposerHooks))
+			{
+				FailCreation("Vulkan device creation received interposer hooks that only the D3D12 bridge implements.");
+			}
 			services->m_state->SetBackendServices(
 			    CreateVulkanRenderDeviceServices(window, backBufferFormat, presentationConfiguration));
 			break;

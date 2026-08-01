@@ -10,7 +10,6 @@
 #include <string_view>
 #include <vector>
 
-class D3D12DescriptorService;
 class D3D12GpuMemoryAllocator;
 class D3D12RenderHardwareInterface;
 class D3D12Rhi;
@@ -24,7 +23,6 @@ class D3D12ResourceService final : public RhiResourceService
 	D3D12ResourceService(
 	    D3D12Rhi& rhi,
 	    D3D12GpuMemoryAllocator& memoryAllocator,
-	    D3D12DescriptorService& descriptorService,
 	    const RhiCapabilities& capabilities) noexcept;
 
 	RhiOwnedResourceHandle CreateTextureResource(
@@ -46,13 +44,6 @@ class D3D12ResourceService final : public RhiResourceService
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
 	    RhiVertexBufferView& outView) override;
-	bool CreateStructuredBuffer(
-	    const void* data,
-	    std::size_t sizeInBytes,
-	    std::uint32_t strideInBytes,
-	    std::wstring_view debugName,
-	    RhiOwnedResourceHandle& outResource,
-	    RhiResourceViewHandle& outView) override;
 	bool CreateStructuredBufferResource(
 	    const void* data,
 	    std::size_t sizeInBytes,
@@ -123,7 +114,6 @@ class D3D12ResourceService final : public RhiResourceService
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
-	D3D12DescriptorService* m_descriptorService = nullptr;
 	const RhiCapabilities* m_capabilities = nullptr;
 	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;
 	std::vector<PendingOwnedMemoryBlockRelease> m_pendingOwnedMemoryBlockReleases;

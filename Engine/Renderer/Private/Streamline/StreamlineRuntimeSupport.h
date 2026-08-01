@@ -2,10 +2,9 @@
 
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Interop/RhiInteropService.h"
-#include "RHI/Public/Interop/RhiD3D12InterposerHooks.h"
+#include "RHI/Public/Interop/RhiInterposerHooks.h"
 
-bool InitializeSharedStreamlineRuntime(ERhiBackendApi backendApi);
-RhiD3D12InterposerHooks GetSharedStreamlineD3D12InterposerHooks() noexcept;
+RhiInterposerHooks InitializeSharedStreamlineRuntime(ERhiBackendApi backendApi);
 void ShutdownSharedStreamlineRuntime() noexcept;
 void SetSharedStreamlineFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept;
 

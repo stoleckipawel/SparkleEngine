@@ -7,7 +7,6 @@
 #include <memory>
 #include <string_view>
 
-class VulkanDescriptorService;
 class VulkanGpuMemoryAllocator;
 class VulkanRenderHardwareInterface;
 class VulkanRhi;
@@ -18,7 +17,6 @@ class VulkanResourceService final : public RhiResourceService
 	VulkanResourceService(
 	    VulkanRhi& rhi,
 	    VulkanGpuMemoryAllocator& memoryAllocator,
-	    VulkanDescriptorService& descriptorService,
 	    const RhiCapabilities& capabilities) noexcept;
 	~VulkanResourceService() noexcept;
 
@@ -46,13 +44,6 @@ class VulkanResourceService final : public RhiResourceService
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
 	    RhiVertexBufferView& outView) override;
-	bool CreateStructuredBuffer(
-	    const void* data,
-	    std::size_t sizeInBytes,
-	    std::uint32_t strideInBytes,
-	    std::wstring_view debugName,
-	    RhiOwnedResourceHandle& outResource,
-	    RhiResourceViewHandle& outView) override;
 	bool CreateStructuredBufferResource(
 	    const void* data,
 	    std::size_t sizeInBytes,
@@ -101,6 +92,5 @@ class VulkanResourceService final : public RhiResourceService
 
 	VulkanRhi* m_rhi = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
-	VulkanDescriptorService* m_descriptorService = nullptr;
 	const RhiCapabilities* m_capabilities = nullptr;
 };

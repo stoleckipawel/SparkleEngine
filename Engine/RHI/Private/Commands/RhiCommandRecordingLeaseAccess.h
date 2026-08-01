@@ -2,6 +2,8 @@
 
 #include "Commands/RhiCommandRecordingLease.h"
 
+#include <utility>
+
 struct RhiCommandRecordingLeaseInitialization final
 {
 	void* BackendState = nullptr;
@@ -38,4 +40,30 @@ class RhiCommandRecordingLeaseAccess final
 	static bool Matches(
 	    const RhiCommandRecordingLeaseBackendState& state,
 	    const RhiCommandRecordingLeaseBackendState& expected) noexcept;
+
+	template <typename Slot, typename RecordingContext, typename SlotState>
+	static Slot* ConsumeClosed(
+	    RhiCommandRecordingLease&& lease,
+	    RecordingContext* recordingContext,
+	    SlotState closedState) noexcept
+	{
+		const RhiCommandRecordingLeaseBackendState leaseState = Consume(std::move(lease));
+		auto* const slot = static_cast<Slot*>(leaseState.State);
+		if (slot == nullptr || slot->Owner != recordingContext || slot->State != closedState ||
+		    !Matches(
+		        leaseState,
+		        RhiCommandRecordingLeaseBackendState{
+		            .State = slot,
+		            .CommandList = slot->CommandList.get(),
+		            .QueueType = slot->QueueType,
+		            .FrameSlot = slot->FrameSlot,
+		            .ContextId = RhiCommandRecordingContextId{.Value = slot->ContextIndex},
+		            .Owner = slot->RecordingOwner,
+		            .Closed = true}))
+		{
+			return nullptr;
+		}
+
+		return slot;
+	}
 };

@@ -3,7 +3,10 @@
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 
 #include "Commands/RenderCommandList.h"
+#include "Diagnostics/RhiDiagnosticsComposition.h"
+#include "Diagnostics/RhiTimestampQueryAllocator.h"
 #include "Interop/RhiInteropService.h"
+#include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
@@ -11,7 +14,12 @@
 
 #include "Core/Public/Strings/StringUtils.h"
 
+#include <memory>
+#include <mutex>
 #include <string>
+#include <vector>
+
+static const auto g_vulkanRenderDiagnosticsLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Diagnostics");
 
 class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 {
@@ -26,7 +34,7 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 		    VK_OBJECT_TYPE_COMMAND_BUFFER,
 		    reinterpret_cast<std::uint64_t>(commandList.GetNativeHandle(
 		                                        RhiNativeInteropRequest{
-		                                            .Consumer = ERhiNativeInteropConsumer::Validation,
+		                                            .Consumer = ERhiNativeInteropConsumer::Diagnostics,
 		                                            .Reason = "Assign Vulkan command buffer debug name"})
 		                                        .Value),
 		    debugName);
@@ -75,6 +83,211 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 	VulkanRhi& m_rhi;
 };
 
+class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
+{
+  public:
+	explicit VulkanRenderTimingDiagnostics(VulkanRhi& rhi) noexcept :
+	    m_rhi(rhi), m_queryAllocator(static_cast<std::uint32_t>(RhiQueueTypeCount), kQueriesPerQueue)
+	{
+		Initialize();
+	}
+
+	~VulkanRenderTimingDiagnostics() noexcept override
+	{
+		if (m_rhi.GetDevice() == VK_NULL_HANDLE)
+		{
+			return;
+		}
+		for (QueueTimingState& queueState : m_queueStates)
+		{
+			if (queueState.QueryPool != VK_NULL_HANDLE)
+			{
+				vkDestroyQueryPool(m_rhi.GetDevice(), queueState.QueryPool, nullptr);
+				queueState.QueryPool = VK_NULL_HANDLE;
+			}
+		}
+	}
+
+	bool SupportsTimestampQueries() const noexcept override
+	{
+		return m_queueStates[RhiQueueTypeToIndex(ERhiQueueType::Graphics)].QueryPool != VK_NULL_HANDLE;
+	}
+
+	RhiTimestampQueryHandle AllocateTimestampQuery(ERhiQueueType queueType) override
+	{
+		if (!IsRhiQueueTypeValid(queueType))
+		{
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Timestamp query requested for an invalid Vulkan queue.");
+		}
+
+		const std::uint32_t poolIndex = static_cast<std::uint32_t>(RhiQueueTypeToIndex(queueType));
+		QueueTimingState& queueState = m_queueStates[poolIndex];
+		if (queueState.QueryPool == VK_NULL_HANDLE)
+		{
+			Diagnostics::Fatal(
+			    g_vulkanRenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    std::string("Vulkan queue does not support timestamp queries: ") + RhiQueueTypeToString(queueType));
+		}
+
+		const RhiTimestampQueryHandle query = m_queryAllocator.Allocate(poolIndex);
+		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
+		std::lock_guard lock(m_queryPoolMutex);
+		vkResetQueryPool(m_rhi.GetDevice(), queueState.QueryPool, location.QueryIndex, 1);
+		return query;
+	}
+
+	void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept override
+	{
+		m_queryAllocator.Release(query);
+	}
+
+	bool WriteTimestamp(RenderCommandList& commandList, RhiTimestampQueryHandle query) noexcept override
+	{
+		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
+		const ERhiQueueType queueType = static_cast<ERhiQueueType>(location.PoolIndex);
+		if (commandList.GetQueueType() != queueType)
+		{
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan timestamp query was written on a different queue than it was allocated for.");
+		}
+
+		const VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(
+		    commandList.GetNativeHandle(
+		                   RhiNativeInteropRequest{
+		                       .Consumer = ERhiNativeInteropConsumer::Diagnostics,
+		                       .Reason = "Write Vulkan timestamp query"})
+		        .Value);
+		if (commandBuffer == VK_NULL_HANDLE)
+		{
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan timestamp query has no native command buffer.");
+		}
+
+		vkCmdWriteTimestamp2(
+		    commandBuffer,
+		    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+		    m_queueStates[location.PoolIndex].QueryPool,
+		    location.QueryIndex);
+		return true;
+	}
+
+	bool TryResolveTimestamp(RhiTimestampQueryHandle query, std::uint64_t& outTicks) const noexcept override
+	{
+		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
+		const QueueTimingState& queueState = m_queueStates[location.PoolIndex];
+		std::lock_guard lock(m_queryPoolMutex);
+		const VkResult result = vkGetQueryPoolResults(
+		    m_rhi.GetDevice(),
+		    queueState.QueryPool,
+		    location.QueryIndex,
+		    1,
+		    sizeof(outTicks),
+		    &outTicks,
+		    sizeof(outTicks),
+		    VK_QUERY_RESULT_64_BIT);
+		if (result == VK_NOT_READY)
+		{
+			return false;
+		}
+		if (!VulkanResult::Succeeded(result))
+		{
+			Diagnostics::Fatal(
+			    g_vulkanRenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    VulkanResult::FormatFailure("vkGetQueryPoolResults", result));
+		}
+		if (queueState.TimestampValidBits < 64)
+		{
+			outTicks &= (std::uint64_t{1} << queueState.TimestampValidBits) - 1;
+		}
+		return true;
+	}
+
+	double GetTimestampPeriodNanoseconds(RhiTimestampQueryHandle) const noexcept override { return m_timestampPeriodNanoseconds; }
+	std::uint32_t GetTimestampValidBits(RhiTimestampQueryHandle query) const noexcept override
+	{
+		return m_queueStates[m_queryAllocator.Resolve(query).PoolIndex].TimestampValidBits;
+	}
+
+  private:
+	static constexpr std::uint32_t kQueriesPerQueue = 8192;
+
+	struct QueueTimingState final
+	{
+		VkQueryPool QueryPool = VK_NULL_HANDLE;
+		std::uint32_t TimestampValidBits = 0;
+	};
+
+	void Initialize() noexcept
+	{
+		if (m_rhi.GetPhysicalDevice() == VK_NULL_HANDLE || m_rhi.GetDevice() == VK_NULL_HANDLE)
+		{
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Cannot initialize Vulkan timing without a physical device and logical device.");
+		}
+
+		VkPhysicalDeviceProperties physicalDeviceProperties = {};
+		vkGetPhysicalDeviceProperties(m_rhi.GetPhysicalDevice(), &physicalDeviceProperties);
+
+		std::uint32_t queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(m_rhi.GetPhysicalDevice(), &queueFamilyCount, nullptr);
+		std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(m_rhi.GetPhysicalDevice(), &queueFamilyCount, queueFamilyProperties.data());
+		if (physicalDeviceProperties.limits.timestampPeriod <= 0.0f)
+		{
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan physical device reported an invalid timestamp period.");
+		}
+
+		const VkQueryPoolCreateInfo queryPoolCreateInfo{
+		    .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+		    .pNext = nullptr,
+		    .flags = 0,
+		    .queryType = VK_QUERY_TYPE_TIMESTAMP,
+		    .queryCount = kQueriesPerQueue,
+		    .pipelineStatistics = 0};
+		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+		{
+			const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
+			const std::uint32_t familyIndex = m_rhi.GetQueueFamilyIndex(queueType);
+			if (familyIndex >= queueFamilyProperties.size())
+			{
+				Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan timing addressed an invalid queue family.");
+			}
+
+			QueueTimingState& queueState = m_queueStates[queueIndex];
+			queueState.TimestampValidBits = queueFamilyProperties[familyIndex].timestampValidBits;
+			if (queueState.TimestampValidBits == 0)
+			{
+				continue;
+			}
+			const VkResult result = vkCreateQueryPool(m_rhi.GetDevice(), &queryPoolCreateInfo, nullptr, &queueState.QueryPool);
+			if (!VulkanResult::Succeeded(result))
+			{
+				Diagnostics::Fatal(
+				    g_vulkanRenderDiagnosticsLogger,
+				    __FILE__,
+				    __LINE__,
+				    VulkanResult::FormatFailure("vkCreateQueryPool", result));
+			}
+			const std::string queryPoolName = std::string("VulkanTimestampQueryPool_") + RhiQueueTypeToString(queueType);
+			(void)VulkanDebugNames::SetObjectName(
+			    m_rhi.GetSetDebugUtilsObjectName(),
+			    m_rhi.GetDevice(),
+			    VK_OBJECT_TYPE_QUERY_POOL,
+			    reinterpret_cast<std::uint64_t>(queueState.QueryPool),
+			    queryPoolName);
+		}
+
+		m_timestampPeriodNanoseconds = static_cast<double>(physicalDeviceProperties.limits.timestampPeriod);
+	}
+
+	VulkanRhi& m_rhi;
+	RhiTimestampQueryAllocator m_queryAllocator;
+	std::array<QueueTimingState, RhiQueueTypeCount> m_queueStates;
+	mutable std::mutex m_queryPoolMutex;
+	double m_timestampPeriodNanoseconds = 0.0;
+};
+
 class VulkanRenderMessageDiagnostics final : public RenderMessageDiagnostics
 {
   public:
@@ -105,63 +318,17 @@ class VulkanRenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 	VulkanGpuMemoryAllocator& m_allocator;
 };
 
-class VulkanRenderDiagnostics final : public RenderDiagnostics
-{
-  public:
-	VulkanRenderDiagnostics(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-	    m_rhi(rhi), m_objectDiagnostics(rhi), m_messageDiagnostics(rhi), m_memoryDiagnostics(memoryAllocator)
-	{
-	}
-
-	RhiDiagnosticsCapabilities GetCapabilities() const noexcept override
-	{
-		const bool supportsGpuEvents = m_objectDiagnostics.SupportsObjectNames() && m_rhi.GetCmdBeginDebugUtilsLabel() != nullptr &&
-		                               m_rhi.GetCmdEndDebugUtilsLabel() != nullptr && m_rhi.GetCmdInsertDebugUtilsLabel() != nullptr;
-		return RhiDiagnosticsCapabilities{
-		    .SupportsObjectNames = m_objectDiagnostics.SupportsObjectNames(),
-		    .SupportsGpuEvents = supportsGpuEvents,
-		    .SupportsTimestampQueries = false,
-		    .SupportsDebugMessages = m_messageDiagnostics.SupportsDebugMessages(),
-		    .SupportsLiveObjectReports = false,
-		    .SupportsCrashDiagnostics = false,
-		    .SupportsMemoryDiagnostics = true,
-		    .SupportsMemoryBudgetQueries = m_memoryDiagnostics.SupportsBudgetQueries()};
-	}
-
-	RenderObjectDiagnostics& GetObjectDiagnostics() noexcept override { return m_objectDiagnostics; }
-
-	const RenderObjectDiagnostics& GetObjectDiagnostics() const noexcept override { return m_objectDiagnostics; }
-
-	RenderTimingDiagnostics* GetTimingDiagnostics() noexcept override { return nullptr; }
-
-	const RenderTimingDiagnostics* GetTimingDiagnostics() const noexcept override { return nullptr; }
-
-	RenderMessageDiagnostics* GetMessageDiagnostics() noexcept override
-	{
-		return m_messageDiagnostics.SupportsDebugMessages() ? &m_messageDiagnostics : nullptr;
-	}
-
-	const RenderMessageDiagnostics* GetMessageDiagnostics() const noexcept override
-	{
-		return m_messageDiagnostics.SupportsDebugMessages() ? &m_messageDiagnostics : nullptr;
-	}
-
-	RenderFailureDiagnostics* GetFailureDiagnostics() noexcept override { return nullptr; }
-
-	const RenderFailureDiagnostics* GetFailureDiagnostics() const noexcept override { return nullptr; }
-
-	RenderMemoryDiagnostics* GetMemoryDiagnostics() noexcept override { return &m_memoryDiagnostics; }
-
-	const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept override { return &m_memoryDiagnostics; }
-
-  private:
-	VulkanRhi& m_rhi;
-	VulkanRenderObjectDiagnostics m_objectDiagnostics;
-	VulkanRenderMessageDiagnostics m_messageDiagnostics;
-	VulkanRenderMemoryDiagnostics m_memoryDiagnostics;
-};
-
 std::unique_ptr<RenderDiagnostics> CreateVulkanRenderDiagnostics(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator)
 {
-	return std::make_unique<VulkanRenderDiagnostics>(rhi, memoryAllocator);
+	const bool supportsGpuEvents = rhi.GetSetDebugUtilsObjectName() != nullptr &&
+	                               rhi.GetCmdBeginDebugUtilsLabel() != nullptr &&
+	                               rhi.GetCmdEndDebugUtilsLabel() != nullptr &&
+	                               rhi.GetCmdInsertDebugUtilsLabel() != nullptr;
+	return CreateRhiDiagnosticsComposition(
+	    std::make_unique<VulkanRenderObjectDiagnostics>(rhi),
+	    std::make_unique<VulkanRenderTimingDiagnostics>(rhi),
+	    std::make_unique<VulkanRenderMessageDiagnostics>(rhi),
+	    nullptr,
+	    std::make_unique<VulkanRenderMemoryDiagnostics>(memoryAllocator),
+	    supportsGpuEvents);
 }

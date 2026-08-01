@@ -15,6 +15,7 @@
 #include <vector>
 
 class VulkanRhi;
+class VulkanRenderTimingDiagnostics;
 class VulkanRecordingUploadPage;
 class VulkanRecordingResourceTable;
 
@@ -76,6 +77,7 @@ class VulkanGpuMemoryAllocator final
   private:
 	friend class VulkanRenderCommandList;
 	friend class VulkanRenderDeviceServices;
+	friend class VulkanRenderTimingDiagnostics;
 
 	struct Impl;
 	struct PendingAllocationRelease;
@@ -106,6 +108,9 @@ class VulkanGpuMemoryAllocator final
 	    VulkanGpuAllocationRecord& record,
 	    std::size_t offsetInBytes,
 	    std::size_t sizeInBytes) noexcept;
+	void* MapHostAllocation(
+	    VulkanGpuAllocationRecord& record,
+	    RhiMemoryResidencyClass residencyClass) noexcept;
 	void UnmapAllocation(VulkanGpuAllocationRecord& record) noexcept;
 	void SetAllocationDebugName(VulkanGpuAllocationRecord& record, std::wstring_view debugName) noexcept;
 	void SetMemoryBlockDebugName(VulkanGpuMemoryBlockRecord& record, std::wstring_view debugName) noexcept;

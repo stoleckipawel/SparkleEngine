@@ -16,13 +16,15 @@
 #include "D3D12/Descriptors/D3D12DescriptorService.h"
 #include "D3D12/Interop/D3D12InteropService.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
-#include "D3D12/Pipeline/D3D12PipelineService.h"
-#include "D3D12/Presentation/D3D12PresentationService.h"
+#include "D3D12/Pipeline/D3D12BindingLayout.h"
+#include "D3D12/Pipeline/D3D12Pipeline.h"
 #include "D3D12/RayTracing/D3D12RayTracingServices.h"
 #include "D3D12/Resources/D3D12ResourceService.h"
 #include "D3D12/Resources/D3D12UploadService.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 #include "D3D12/UI/D3D12ImGuiBackend.h"
+#include "Presentation/RhiPresentationServiceAdapter.h"
+#include "Pipeline/RhiPipelineServiceAdapter.h"
 #include "Shaders/CookedShaderPackage.h"
 
 #include <d3d12.h>
@@ -38,10 +40,11 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 {
 	m_interopService = std::make_unique<D3D12InteropService>(*this);
 	m_captureService = std::make_unique<D3D12CaptureService>(rhi);
-	m_presentationService = std::make_unique<D3D12PresentationService>(*this);
-	m_pipelineService = std::make_unique<D3D12PipelineService>(rhi);
+	m_presentationService = std::make_unique<RhiPresentationServiceAdapter<D3D12RenderHardwareInterface>>(*this);
+	m_pipelineService = std::make_unique<
+	    RhiPipelineServiceAdapter<D3D12Rhi, D3D12Pipeline, D3D12BindingLayoutCompiler>>(rhi);
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
-	m_resourceService = std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, *m_descriptorService, m_capabilities);
+	m_resourceService = std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, m_capabilities);
 	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, rhi.GetNvapiRayTracingProvider());
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi, swapChain.GetMaximumFramesInFlight());
 	m_capabilities = BuildCapabilities();

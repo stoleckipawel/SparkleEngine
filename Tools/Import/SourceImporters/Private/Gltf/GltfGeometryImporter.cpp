@@ -148,7 +148,15 @@ ImportedMeshPrimitiveIndex GltfGeometryImporter::ResolveImportedPrimitive(
 		return existing;
 	}
 
-	ImportedMeshGeometry meshGeometry = GltfMeshGeometryExtractor::ExtractMeshGeometry(*context.Node.mesh, primitive);
+	ImportedMeshGeometry meshGeometry;
+	try
+	{
+		meshGeometry = GltfMeshGeometryExtractor::ExtractMeshGeometry(*context.Node.mesh, primitive);
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		throw Diagnostics::Error(std::format("glTF {} geometry import failed: {}", primitiveLabel, error.what()));
+	}
 
 	ImportedMeshPrimitive primitiveEntry;
 	primitiveEntry.geometry = std::move(meshGeometry);

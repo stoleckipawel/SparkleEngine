@@ -16,15 +16,15 @@ static const auto g_vulkanImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.V
 VulkanImGuiBackend::VulkanImGuiBackend(
     VulkanRenderHardwareInterface& renderHardwareInterface,
     VulkanDescriptorService& descriptorService) noexcept :
-    m_renderHardwareInterface(&renderHardwareInterface), m_descriptorService(&descriptorService)
+    m_renderHardwareInterface(renderHardwareInterface), m_descriptorService(descriptorService)
 {
 }
 
-bool VulkanImGuiBackend::Initialize()
+void VulkanImGuiBackend::Initialize()
 {
-	if (m_renderHardwareInterface == nullptr || m_imguiContext != nullptr)
+	if (m_imguiContext != nullptr)
 	{
-		return m_imguiContext != nullptr;
+		return;
 	}
 
 	ImGuiContext* previousContext = ImGui::GetCurrentContext();
@@ -36,12 +36,12 @@ bool VulkanImGuiBackend::Initialize()
 	}
 	ImGui::SetCurrentContext(m_imguiContext);
 
-	const std::uint32_t backBufferCount = m_renderHardwareInterface->GetSwapChainBackBufferCount();
-	const VkFormat colorFormat = m_renderHardwareInterface->GetNativeBackBufferFormat();
+	const std::uint32_t backBufferCount = m_renderHardwareInterface.GetSwapChainBackBufferCount();
+	const VkFormat colorFormat = m_renderHardwareInterface.GetNativeBackBufferFormat();
 	if (backBufferCount < 2 || colorFormat == VK_FORMAT_UNDEFINED)
 	{
 		RestoreContext(previousContext);
-		return false;
+		Diagnostics::Fatal(g_vulkanImGuiBackendLogger, __FILE__, __LINE__, "Cannot initialize ImGui without a valid Vulkan swap chain.");
 	}
 
 	VkPipelineRenderingCreateInfo pipelineRenderingInfo{
@@ -54,12 +54,12 @@ bool VulkanImGuiBackend::Initialize()
 	    .stencilAttachmentFormat = VK_FORMAT_UNDEFINED};
 
 	ImGui_ImplVulkan_InitInfo initInfo = {};
-	initInfo.ApiVersion = m_renderHardwareInterface->GetVulkanApiVersion();
-	initInfo.Instance = m_renderHardwareInterface->GetVulkanInstance();
-	initInfo.PhysicalDevice = m_renderHardwareInterface->GetVulkanPhysicalDevice();
-	initInfo.Device = m_renderHardwareInterface->GetVulkanDevice();
-	initInfo.QueueFamily = m_renderHardwareInterface->GetVulkanGraphicsQueueFamilyIndex();
-	initInfo.Queue = m_renderHardwareInterface->GetVulkanGraphicsQueue();
+	initInfo.ApiVersion = m_renderHardwareInterface.GetVulkanApiVersion();
+	initInfo.Instance = m_renderHardwareInterface.GetVulkanInstance();
+	initInfo.PhysicalDevice = m_renderHardwareInterface.GetVulkanPhysicalDevice();
+	initInfo.Device = m_renderHardwareInterface.GetVulkanDevice();
+	initInfo.QueueFamily = m_renderHardwareInterface.GetVulkanGraphicsQueueFamilyIndex();
+	initInfo.Queue = m_renderHardwareInterface.GetVulkanGraphicsQueue();
 	initInfo.DescriptorPoolSize = 1024;
 	initInfo.MinImageCount = backBufferCount;
 	initInfo.ImageCount = backBufferCount;
@@ -78,13 +78,13 @@ bool VulkanImGuiBackend::Initialize()
 	    initInfo.Queue == VK_NULL_HANDLE || initInfo.QueueFamily == UINT32_MAX)
 	{
 		RestoreContext(previousContext);
-		return false;
+		Diagnostics::Fatal(g_vulkanImGuiBackendLogger, __FILE__, __LINE__, "Cannot initialize ImGui with incomplete Vulkan device state.");
 	}
 
 	if (!ImGui_ImplVulkan_Init(&initInfo))
 	{
 		RestoreContext(previousContext);
-		return false;
+		Diagnostics::Fatal(g_vulkanImGuiBackendLogger, __FILE__, __LINE__, "ImGui Vulkan renderer initialization failed.");
 	}
 
 	const VkSamplerCreateInfo samplerInfo{
@@ -106,17 +106,16 @@ bool VulkanImGuiBackend::Initialize()
 	    .maxLod = VK_LOD_CLAMP_NONE,
 	    .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
 	    .unnormalizedCoordinates = VK_FALSE};
-	const VkResult samplerResult = vkCreateSampler(m_renderHardwareInterface->GetVulkanDevice(), &samplerInfo, nullptr, &m_imguiSampler);
+	const VkResult samplerResult = vkCreateSampler(m_renderHardwareInterface.GetVulkanDevice(), &samplerInfo, nullptr, &m_imguiSampler);
 	if (!VulkanResult::Succeeded(samplerResult) || m_imguiSampler == VK_NULL_HANDLE)
 	{
 		SPDLOG_LOGGER_ERROR(g_vulkanImGuiBackendLogger, "{}", VulkanResult::FormatFailure("vkCreateSampler", samplerResult));
 		ImGui_ImplVulkan_Shutdown();
 		RestoreContext(previousContext);
-		return false;
+		Diagnostics::Fatal(g_vulkanImGuiBackendLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSampler", samplerResult));
 	}
 
 	RestoreContext(previousContext);
-	return true;
 }
 
 void VulkanImGuiBackend::BeginFrame() noexcept
@@ -128,22 +127,25 @@ void VulkanImGuiBackend::BeginFrame() noexcept
 
 std::uint64_t VulkanImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
 {
-	return m_descriptorService != nullptr ? GetTextureId(m_descriptorService->GetRegisteredImageView(shaderResourceView)) : 0;
+	ImGuiContext* previousContext = ActivateContext();
+	const std::uint64_t textureId = GetTextureId(m_descriptorService.GetRegisteredImageView(shaderResourceView));
+	RestoreContext(previousContext);
+	return textureId;
 }
 
 void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 {
-	if (m_renderHardwareInterface == nullptr || drawData == nullptr)
+	if (drawData == nullptr)
 	{
 		return;
 	}
 
 	ImGuiContext* previousContext = ActivateContext();
-	RenderCommandList& commandList = m_renderHardwareInterface->GetGraphicsCommandList(m_renderHardwareInterface->GetCurrentFrameIndex());
+	RenderCommandList& commandList = m_renderHardwareInterface.GetGraphicsCommandList(m_renderHardwareInterface.GetCurrentFrameIndex());
 	VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(
 	    commandList.GetNativeHandle(
 	        RhiNativeInteropRequest{
-	            .Consumer = ERhiNativeInteropConsumer::PresentationBridge,
+	            .Consumer = ERhiNativeInteropConsumer::Presentation,
 	            .Reason = "Render ImGui draw data through Vulkan backend"})
 	        .Value);
 	if (commandBuffer == VK_NULL_HANDLE)
@@ -209,9 +211,9 @@ void VulkanImGuiBackend::Shutdown() noexcept
 	}
 	m_textureBindings.clear();
 
-	if (m_renderHardwareInterface != nullptr && m_imguiSampler != VK_NULL_HANDLE)
+	if (m_imguiSampler != VK_NULL_HANDLE)
 	{
-		vkDestroySampler(m_renderHardwareInterface->GetVulkanDevice(), m_imguiSampler, nullptr);
+		vkDestroySampler(m_renderHardwareInterface.GetVulkanDevice(), m_imguiSampler, nullptr);
 		m_imguiSampler = VK_NULL_HANDLE;
 	}
 

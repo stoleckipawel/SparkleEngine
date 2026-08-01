@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Commands/RhiQueue.h"
 #include "../Memory/RhiMemoryDiagnostics.h"
 #include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
@@ -82,11 +83,12 @@ class SPARKLE_RHI_API RenderTimingDiagnostics
 	virtual ~RenderTimingDiagnostics() noexcept = default;
 
 	virtual bool SupportsTimestampQueries() const noexcept = 0;
-	virtual RhiTimestampQueryHandle AllocateTimestampQuery() = 0;
+	virtual RhiTimestampQueryHandle AllocateTimestampQuery(ERhiQueueType queueType) = 0;
 	virtual void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept = 0;
 	virtual bool WriteTimestamp(RenderCommandList& commandList, RhiTimestampQueryHandle query) noexcept = 0;
 	virtual bool TryResolveTimestamp(RhiTimestampQueryHandle query, std::uint64_t& outTicks) const noexcept = 0;
-	virtual std::uint64_t GetTimestampFrequencyHz() const noexcept = 0;
+	virtual double GetTimestampPeriodNanoseconds(RhiTimestampQueryHandle query) const noexcept = 0;
+	virtual std::uint32_t GetTimestampValidBits(RhiTimestampQueryHandle query) const noexcept = 0;
 };
 
 class SPARKLE_RHI_API RenderMessageDiagnostics

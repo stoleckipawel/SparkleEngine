@@ -56,6 +56,5 @@ class RendererImageProviderStack final
 
 	std::unique_ptr<IUpscalerProvider> m_upscaler;
 	std::unique_ptr<IRayReconstructionProvider> m_rayReconstruction;
-	bool m_rayReconstructionRequested = false;
 	bool m_resetHistoryPending = true;
 };

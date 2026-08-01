@@ -19,23 +19,10 @@ struct RhiPartitionedTlasCapabilities
 {
 	bool Supported = false;
 	ERhiPartitionedTlasProvider Provider = ERhiPartitionedTlasProvider::None;
-	bool RequiresNvidiaDevice = false;
-	bool RunsOnNvidiaDevice = false;
+	bool NvidiaDeviceOnly = false;
+	bool CurrentDeviceIsNvidia = false;
 	bool SupportsDescriptorAccess = false;
 	bool SupportsShaderDeviceAddressAccess = false;
-	bool SupportsVulkanNativePartitionedAccelerationStructure = false;
-	bool SupportsVulkanExtension = false;
-	bool SupportsVulkanFeatureQuery = false;
-	bool SupportsVulkanFunctionLoading = false;
-	bool SupportsVulkanDescriptorPath = false;
-	bool SupportsVulkanShaderDeviceAddressPath = false;
-	bool SupportsD3D12NvapiPartitionedTlas = false;
-	bool SupportsD3D12NvapiHeaders = false;
-	bool SupportsD3D12NvapiRuntime = false;
-	bool SupportsD3D12DeviceInterface = false;
-	bool SupportsD3D12CommandListInterface = false;
-	bool SupportsD3D12PublicDxrPartitionedTlas = false;
-	bool SupportsD3D12PublicDxrHeaders = false;
 	bool SupportsCpuPackedOperations = false;
 	bool SupportsGpuDrivenOperations = false;
 	bool SupportsGpuOperationCount = false;

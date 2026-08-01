@@ -15,7 +15,7 @@ RenderViewportExtent StreamlineDlssFrameState::StoreResolution(
 	m_resolvedOutputExtent = outputExtent;
 	m_resolvedRenderExtent = providerRenderExtent;
 	m_frameValid = false;
-	return providerRenderExtent.IsValid() ? providerRenderExtent : outputExtent;
+	return providerRenderExtent;
 }
 
 void StreamlineDlssFrameState::SetupFrame(const ImageProviderFrameContext& frameContext) noexcept

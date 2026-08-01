@@ -380,26 +380,10 @@ D3D12CommandRecordingContext::CommandSlot*
 D3D12CommandRecordingContext::ConsumeClosedLease(
     RhiCommandRecordingLease&& lease) noexcept
 {
-	const RhiCommandRecordingLeaseBackendState leaseState =
-	    RhiCommandRecordingLeaseAccess::Consume(std::move(lease));
-	auto* const slot =
-	    static_cast<CommandSlot*>(leaseState.State);
-	if (slot == nullptr || slot->Owner != this || slot->State != SlotState::Closed ||
-	    !RhiCommandRecordingLeaseAccess::Matches(
-	        leaseState,
-	        RhiCommandRecordingLeaseBackendState{
-	            .State = slot,
-	            .CommandList = slot->CommandList.get(),
-	            .QueueType = slot->QueueType,
-	            .FrameSlot = slot->FrameSlot,
-	            .ContextId = RhiCommandRecordingContextId{.Value = slot->ContextIndex},
-	            .Owner = slot->RecordingOwner,
-	            .Closed = true}))
-	{
-		return nullptr;
-	}
-
-	return slot;
+	return RhiCommandRecordingLeaseAccess::ConsumeClosed<CommandSlot>(
+	    std::move(lease),
+	    this,
+	    SlotState::Closed);
 }
 
 void D3D12CommandRecordingContext::ResolveSubmittedSlot(

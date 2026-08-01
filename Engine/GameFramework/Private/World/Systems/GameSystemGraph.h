@@ -16,6 +16,8 @@ class TaskExecutor;
 
 namespace ECS
 {
+	struct CompiledGameSystemGraphData;
+
 	struct GameSystemId final
 	{
 		std::uint64_t Value = 0;
@@ -164,9 +166,8 @@ namespace ECS
 
 	  private:
 		friend class GameSystemGraph;
-		struct Data;
-		explicit CompiledGameSystemGraph(std::unique_ptr<Data> data) noexcept;
-		std::unique_ptr<Data> m_data;
+		explicit CompiledGameSystemGraph(std::unique_ptr<CompiledGameSystemGraphData> data) noexcept;
+		std::unique_ptr<CompiledGameSystemGraphData> m_data;
 	};
 
 	class GameSystemGraph final

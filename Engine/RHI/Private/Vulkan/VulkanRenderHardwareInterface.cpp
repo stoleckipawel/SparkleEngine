@@ -15,8 +15,10 @@
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 #include "Vulkan/Interop/VulkanInteropService.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
-#include "Vulkan/Pipeline/VulkanPipelineService.h"
-#include "Vulkan/Presentation/VulkanPresentationService.h"
+#include "Vulkan/Pipeline/VulkanBindingLayout.h"
+#include "Vulkan/Pipeline/VulkanPipeline.h"
+#include "Presentation/RhiPresentationServiceAdapter.h"
+#include "Pipeline/RhiPipelineServiceAdapter.h"
 #include "Vulkan/RayTracing/VulkanRayTracingServices.h"
 #include "Vulkan/Resources/VulkanResourceService.h"
 #include "Vulkan/Resources/VulkanUploadService.h"
@@ -38,11 +40,12 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 {
 	m_interopService = std::make_unique<VulkanInteropService>(*this);
 	m_captureService = std::make_unique<VulkanCaptureService>(rhi);
-	m_presentationService = std::make_unique<VulkanPresentationService>(*this);
-	m_pipelineService = std::make_unique<VulkanPipelineService>(rhi);
+	m_presentationService = std::make_unique<RhiPresentationServiceAdapter<VulkanRenderHardwareInterface>>(*this);
+	m_pipelineService = std::make_unique<
+	    RhiPipelineServiceAdapter<VulkanRhi, VulkanPipeline, VulkanBindingLayoutCompiler>>(rhi);
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
 	m_descriptorService = std::make_unique<VulkanDescriptorService>(rhi, memoryAllocator, m_capabilities);
-	m_resourceService = std::make_unique<VulkanResourceService>(rhi, memoryAllocator, *m_descriptorService, m_capabilities);
+	m_resourceService = std::make_unique<VulkanResourceService>(rhi, memoryAllocator, m_capabilities);
 	m_uploadService = std::make_unique<VulkanUploadService>(memoryAllocator);
 	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorService);
 	m_descriptorService->SetSamplerLibrary(*m_samplerLibrary);
@@ -420,7 +423,6 @@ void VulkanRenderHardwareInterface::ResetTransientFrameResources() noexcept
 void VulkanRenderHardwareInterface::RebuildSwapChainBackBufferViews() noexcept
 {
 	m_swapChainBackBufferLayouts.clear();
-	m_isPresentRendering = false;
 	const std::uint32_t backBufferCount = m_swapChain->GetBackBufferCount();
 	m_swapChainBackBufferLayouts.assign(backBufferCount, VK_IMAGE_LAYOUT_UNDEFINED);
 	m_descriptorService->RebuildSwapChainBackBufferViews(*m_swapChain);
@@ -434,16 +436,24 @@ RhiResourceViewHandle VulkanRenderHardwareInterface::GetCurrentBackBufferViewHan
 
 void VulkanRenderHardwareInterface::BeginCurrentBackBufferRendering(const float* clearColor, bool clear) noexcept
 {
-	if (m_commandRecordingContext == nullptr || m_isPresentRendering)
+	if (m_commandRecordingContext == nullptr)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderHardwareInterfaceLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan present rendering began before command recording was initialized.");
 	}
 
 	const VkImage backBuffer = m_swapChain->GetCurrentBackBufferImage();
 	const VkImageView backBufferView = m_swapChain->GetCurrentBackBufferImageView();
 	if (backBuffer == VK_NULL_HANDLE || backBufferView == VK_NULL_HANDLE)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderHardwareInterfaceLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan present rendering has no acquired swap-chain image and view.");
 	}
 
 	auto& commandList = static_cast<VulkanRenderCommandList&>(GetGraphicsCommandList(m_currentFrameIndex));
@@ -495,14 +505,17 @@ void VulkanRenderHardwareInterface::BeginCurrentBackBufferRendering(const float*
 	    .pStencilAttachment = nullptr};
 
 	vkCmdBeginRendering(commandBuffer, &renderingInfo);
-	m_isPresentRendering = true;
 }
 
 void VulkanRenderHardwareInterface::EndCurrentBackBufferRendering() noexcept
 {
-	if (m_commandRecordingContext == nullptr || !m_isPresentRendering)
+	if (m_commandRecordingContext == nullptr)
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderHardwareInterfaceLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan present rendering ended before command recording was initialized.");
 	}
 
 	const auto& commandList = static_cast<const VulkanRenderCommandList&>(
@@ -510,7 +523,6 @@ void VulkanRenderHardwareInterface::EndCurrentBackBufferRendering() noexcept
 	const VkCommandBuffer commandBuffer = commandList.GetVulkanCommandBuffer();
 	vkCmdEndRendering(commandBuffer);
 	TransitionCurrentBackBuffer(commandBuffer, ResourceState::Present);
-	m_isPresentRendering = false;
 }
 
 void VulkanRenderHardwareInterface::PrepareCurrentBackBufferForPresentation(VulkanRenderCommandList& commandList) noexcept
@@ -534,20 +546,30 @@ void VulkanRenderHardwareInterface::PrepareCurrentBackBufferForPresentation(Vulk
 	if (backBufferIndex < m_swapChainBackBufferLayouts.size())
 	{
 		m_swapChainBackBufferLayouts[backBufferIndex] = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		return;
 	}
+	Diagnostics::Fatal(
+	    g_vulkanRenderHardwareInterfaceLogger,
+	    __FILE__,
+	    __LINE__,
+	    "Vulkan present preparation addressed an invalid swap-chain image index.");
 }
 
 void VulkanRenderHardwareInterface::TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, ResourceState newState) noexcept
 {
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
-		return;
+		Diagnostics::Fatal(g_vulkanRenderHardwareInterfaceLogger, __FILE__, __LINE__, "Vulkan back-buffer transition has no command buffer.");
 	}
 
 	const std::uint32_t backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 	if (backBufferIndex >= m_swapChainBackBufferLayouts.size())
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_vulkanRenderHardwareInterfaceLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan back-buffer transition addressed an invalid swap-chain image index.");
 	}
 
 	const VulkanResourceStateMapping destinationState = VulkanTypeConversions::ToResourceStateMapping(newState);

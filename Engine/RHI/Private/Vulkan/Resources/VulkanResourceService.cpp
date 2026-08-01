@@ -2,7 +2,6 @@
 
 #include "Validation/RhiContract.h"
 #include "Vulkan/Commands/VulkanCommandQueue.h"
-#include "Vulkan/Descriptors/VulkanDescriptorService.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
@@ -11,11 +10,9 @@
 VulkanResourceService::VulkanResourceService(
     VulkanRhi& rhi,
     VulkanGpuMemoryAllocator& memoryAllocator,
-    VulkanDescriptorService& descriptorService,
     const RhiCapabilities& capabilities) noexcept :
     m_rhi(&rhi),
     m_memoryAllocator(&memoryAllocator),
-    m_descriptorService(&descriptorService),
 	m_capabilities(&capabilities)
 {
 }
@@ -102,33 +99,6 @@ bool VulkanResourceService::CreateVertexBuffer(
 	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
 	    .StrideInBytes = strideInBytes};
 	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
-	return true;
-}
-
-bool VulkanResourceService::CreateStructuredBuffer(
-    const void* data,
-    std::size_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource,
-    RhiResourceViewHandle& outView)
-{
-	outResource = {};
-	outView = {};
-	if (m_descriptorService == nullptr || !CreateStructuredBufferResource(data, sizeInBytes, strideInBytes, debugName, outResource))
-	{
-		return false;
-	}
-
-	outView = m_descriptorService->CreateResourceView(
-	    RhiResourceViewDesc::BufferShaderResource(GetResourceHandle(outResource), sizeInBytes, strideInBytes));
-	if (!outView)
-	{
-		ReleaseOwnedResource(outResource);
-		outResource = {};
-		return false;
-	}
-
 	return true;
 }
 

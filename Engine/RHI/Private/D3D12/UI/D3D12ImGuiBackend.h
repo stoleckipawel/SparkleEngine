@@ -16,7 +16,7 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
   public:
 	explicit D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept;
 
-	bool Initialize() override;
+	void Initialize() override;
 	void BeginFrame() noexcept override;
 	std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	void RenderDrawData(ImDrawData* drawData) noexcept override;
@@ -42,7 +42,7 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
 	ImGuiContext* ActivateContext() const noexcept;
 	static void RestoreContext(ImGuiContext* context) noexcept;
 
-	D3D12RenderHardwareInterface* m_renderHardwareInterface = nullptr;
+	D3D12RenderHardwareInterface& m_renderHardwareInterface;
 	ImGuiContext* m_imguiContext = nullptr;
 	bool m_ownsContext = false;
 };

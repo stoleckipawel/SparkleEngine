@@ -3,6 +3,8 @@
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 
 #include "Commands/RenderCommandList.h"
+#include "Diagnostics/RhiDiagnosticsComposition.h"
+#include "Diagnostics/RhiTimestampQueryAllocator.h"
 
 #include "Frame/RhiFrameConstants.h"
 #include "D3D12/Device/D3D12Rhi.h"
@@ -12,14 +14,16 @@
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "Interop/RhiInteropService.h"
 
+#include "Core/Public/Strings/StringUtils.h"
+
 #include <array>
 #include <cstring>
-#include <limits>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
+
+static const auto g_d3d12RenderDiagnosticsLogger = Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics");
 
 class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 {
@@ -31,7 +35,7 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 		SetD3D12ObjectDebugName(
 		    static_cast<ID3D12Object*>(commandList.GetNativeHandle(
 		                                       RhiNativeInteropRequest{
-		                                           .Consumer = ERhiNativeInteropConsumer::Validation,
+		                                           .Consumer = ERhiNativeInteropConsumer::Diagnostics,
 		                                           .Reason = "Assign D3D12 command list debug name"})
 		                                       .Value),
 		    debugName);
@@ -78,201 +82,147 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 {
   public:
 	D3D12RenderTimingDiagnostics(D3D12Rhi& rhi, std::uint32_t maximumFramesInFlight) noexcept :
-	    m_rhi(&rhi), m_frameStates(maximumFramesInFlight)
+	    m_rhi(rhi),
+	    m_maximumFramesInFlight(maximumFramesInFlight),
+	    m_poolStates(static_cast<std::size_t>(maximumFramesInFlight) * RhiQueueTypeCount),
+	    m_queryAllocator(maximumFramesInFlight * static_cast<std::uint32_t>(RhiQueueTypeCount), kQueriesPerQueuePerFrame)
 	{
 		Initialize();
 	}
 
-	bool SupportsTimestampQueries() const noexcept override { return m_supportsTimestampQueries; }
-
-	RhiTimestampQueryHandle AllocateTimestampQuery() override
+	bool SupportsTimestampQueries() const noexcept override
 	{
-		if (!m_supportsTimestampQueries || m_rhi == nullptr || m_queryLocations.size() >= std::numeric_limits<std::uint32_t>::max() - 1)
+		return !m_poolStates.empty() && m_poolStates.front().TimestampFrequencyHz != 0;
+	}
+
+	RhiTimestampQueryHandle AllocateTimestampQuery(ERhiQueueType queueType) override
+	{
+		if (!IsRhiQueueTypeValid(queueType))
 		{
-			return {};
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "Timestamp query requested for an invalid D3D12 queue.");
 		}
 
-		const std::uint32_t frameIndex = m_rhi->GetCurrentFrameIndex();
-		if (frameIndex >= m_frameStates.size())
+		const std::uint32_t frameIndex = m_rhi.GetCurrentFrameIndex();
+		if (frameIndex >= m_maximumFramesInFlight)
 		{
-			return {};
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query addressed an invalid frame slot.");
 		}
 
-		FrameTimingState& frameState = m_frameStates[frameIndex];
-		if (frameState.FreeQueryIndices.empty() || frameState.MappedReadback == nullptr)
-		{
-			return {};
-		}
-
-		const std::uint32_t queryIndex = frameState.FreeQueryIndices.back();
-		frameState.FreeQueryIndices.pop_back();
-		frameState.MappedReadback[queryIndex] = 0;
-
-		std::uint32_t handleValue = m_nextHandleValue++;
-		while (handleValue == 0 || m_queryLocations.find(handleValue) != m_queryLocations.end())
-		{
-			handleValue = m_nextHandleValue++;
-		}
-
-		m_queryLocations.emplace(handleValue, QueryLocation{.FrameIndex = frameIndex, .QueryIndex = queryIndex});
-		return RhiTimestampQueryHandle{.Value = handleValue};
+		const std::uint32_t poolIndex = GetPoolIndex(frameIndex, queueType);
+		const RhiTimestampQueryHandle query = m_queryAllocator.Allocate(poolIndex);
+		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
+		m_poolStates[location.PoolIndex].MappedReadback[location.QueryIndex] = 0;
+		return query;
 	}
 
 	void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept override
 	{
-		const auto locationIt = m_queryLocations.find(query.Value);
-		if (locationIt == m_queryLocations.end())
-		{
-			return;
-		}
-
-		const QueryLocation location = locationIt->second;
-		if (location.FrameIndex < m_frameStates.size())
-		{
-			FrameTimingState& frameState = m_frameStates[location.FrameIndex];
-			if (location.QueryIndex < frameState.QueryCount)
-			{
-				if (frameState.MappedReadback != nullptr)
-				{
-					frameState.MappedReadback[location.QueryIndex] = 0;
-				}
-				frameState.FreeQueryIndices.push_back(location.QueryIndex);
-			}
-		}
-
-		m_queryLocations.erase(locationIt);
+		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
+		m_poolStates[location.PoolIndex].MappedReadback[location.QueryIndex] = 0;
+		m_queryAllocator.Release(query);
 	}
 
 	bool WriteTimestamp(RenderCommandList& commandList, RhiTimestampQueryHandle query) noexcept override
 	{
-		if (!m_supportsTimestampQueries)
+		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
+		PoolTimingState& poolState = m_poolStates[location.PoolIndex];
+		if (commandList.GetQueueType() != poolState.QueueType)
 		{
-			return false;
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query was written on a different queue than it was allocated for.");
 		}
 
-		const auto locationIt = m_queryLocations.find(query.Value);
-		if (locationIt == m_queryLocations.end())
-		{
-			return false;
-		}
-
-		const QueryLocation location = locationIt->second;
-		if (location.FrameIndex >= m_frameStates.size())
-		{
-			return false;
-		}
-
-		FrameTimingState& frameState = m_frameStates[location.FrameIndex];
 		ID3D12GraphicsCommandList* const nativeCommandList =
 		    D3D12TypeConversions::ToGraphicsCommandList(commandList.GetNativeHandle(
 		        RhiNativeInteropRequest{
-		            .Consumer = ERhiNativeInteropConsumer::Validation,
+		            .Consumer = ERhiNativeInteropConsumer::Diagnostics,
 		            .Reason = "Write D3D12 timestamp query"}));
-		ID3D12Resource* const readbackBuffer = frameState.ReadbackAllocation != nullptr
-		                                           ? frameState.ReadbackAllocation->Resource.Get()
-		                                           : nullptr;
-		if (nativeCommandList == nullptr || frameState.QueryHeap == nullptr || readbackBuffer == nullptr)
+		if (nativeCommandList == nullptr)
 		{
-			return false;
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query has no native command list.");
 		}
 
-		nativeCommandList->EndQuery(frameState.QueryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, location.QueryIndex);
+		nativeCommandList->EndQuery(poolState.QueryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, location.QueryIndex);
 		nativeCommandList->ResolveQueryData(
-		    frameState.QueryHeap.Get(),
+		    poolState.QueryHeap.Get(),
 		    D3D12_QUERY_TYPE_TIMESTAMP,
 		    location.QueryIndex,
 		    1,
-		    readbackBuffer,
+		    poolState.ReadbackAllocation->Resource.Get(),
 		    static_cast<UINT64>(location.QueryIndex) * sizeof(std::uint64_t));
 		return true;
 	}
 
 	bool TryResolveTimestamp(RhiTimestampQueryHandle query, std::uint64_t& outTicks) const noexcept override
 	{
-		outTicks = 0;
-		const auto locationIt = m_queryLocations.find(query.Value);
-		if (!m_supportsTimestampQueries || locationIt == m_queryLocations.end())
-		{
-			return false;
-		}
-
-		const QueryLocation location = locationIt->second;
-		if (location.FrameIndex >= m_frameStates.size())
-		{
-			return false;
-		}
-
-		const FrameTimingState& frameState = m_frameStates[location.FrameIndex];
-		if (frameState.MappedReadback == nullptr || location.QueryIndex >= frameState.QueryCount)
-		{
-			return false;
-		}
-
-		outTicks = frameState.MappedReadback[location.QueryIndex];
+		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
+		outTicks = m_poolStates[location.PoolIndex].MappedReadback[location.QueryIndex];
 		return true;
 	}
 
-	std::uint64_t GetTimestampFrequencyHz() const noexcept override { return m_timestampFrequencyHz; }
+	double GetTimestampPeriodNanoseconds(RhiTimestampQueryHandle query) const noexcept override
+	{
+		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
+		return 1'000'000'000.0 / static_cast<double>(m_poolStates[location.PoolIndex].TimestampFrequencyHz);
+	}
+	std::uint32_t GetTimestampValidBits(RhiTimestampQueryHandle) const noexcept override { return 64; }
 
   private:
-	static constexpr std::uint32_t kQueriesPerFrame = 4096;
+	static constexpr std::uint32_t kQueriesPerQueuePerFrame = 4096;
 
-	struct QueryLocation
-	{
-		std::uint32_t FrameIndex = 0;
-		std::uint32_t QueryIndex = 0;
-	};
-
-	struct FrameTimingState
+	struct PoolTimingState
 	{
 		Microsoft::WRL::ComPtr<ID3D12QueryHeap> QueryHeap;
 		std::unique_ptr<D3D12GpuAllocationRecord> ReadbackAllocation;
 		std::uint64_t* MappedReadback = nullptr;
-		std::vector<std::uint32_t> FreeQueryIndices;
-		std::uint32_t QueryCount = 0;
+		std::uint64_t TimestampFrequencyHz = 0;
+		ERhiQueueType QueueType = ERhiQueueType::Graphics;
 	};
+
+	static std::uint32_t GetPoolIndex(std::uint32_t frameIndex, ERhiQueueType queueType) noexcept
+	{
+		return frameIndex * static_cast<std::uint32_t>(RhiQueueTypeCount) + static_cast<std::uint32_t>(RhiQueueTypeToIndex(queueType));
+	}
 
 	void Initialize() noexcept
 	{
-		if (m_rhi == nullptr || m_rhi->GetDevice() == nullptr || m_rhi->GetCommandQueue() == nullptr)
+		if (m_rhi.GetDevice() == nullptr)
 		{
-			return;
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "Cannot initialize D3D12 timing without a device.");
 		}
 
-		UINT64 timestampFrequency = 0;
-		if (FAILED(m_rhi->GetCommandQueue()->GetTimestampFrequency(&timestampFrequency)) || timestampFrequency == 0)
+		for (std::uint32_t frameIndex = 0; frameIndex < m_maximumFramesInFlight; ++frameIndex)
 		{
-			return;
-		}
-
-		for (std::uint32_t frameIndex = 0; frameIndex < m_frameStates.size(); ++frameIndex)
-		{
-			if (!InitializeFrameState(frameIndex))
+			for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 			{
-				return;
+				InitializePoolState(frameIndex, static_cast<ERhiQueueType>(queueIndex));
 			}
 		}
-
-		m_timestampFrequencyHz = timestampFrequency;
-		m_supportsTimestampQueries = true;
 	}
 
-	bool InitializeFrameState(std::uint32_t frameIndex) noexcept
+	void InitializePoolState(std::uint32_t frameIndex, ERhiQueueType queueType) noexcept
 	{
-		FrameTimingState& frameState = m_frameStates[frameIndex];
-		const D3D12_QUERY_HEAP_DESC queryHeapDesc{.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP, .Count = kQueriesPerFrame, .NodeMask = 0};
-		if (FAILED(m_rhi->GetDevice()->CreateQueryHeap(&queryHeapDesc, IID_PPV_ARGS(frameState.QueryHeap.ReleaseAndGetAddressOf()))))
+		PoolTimingState& poolState = m_poolStates[GetPoolIndex(frameIndex, queueType)];
+		poolState.QueueType = queueType;
+		if (FAILED(m_rhi.GetCommandQueue(queueType)->GetTimestampFrequency(&poolState.TimestampFrequencyHz)) ||
+		    poolState.TimestampFrequencyHz == 0)
 		{
-			return false;
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 command queue does not expose a timestamp frequency.");
 		}
 
+		const D3D12_QUERY_HEAP_DESC queryHeapDesc{
+		    .Type = queueType == ERhiQueueType::Copy ? D3D12_QUERY_HEAP_TYPE_COPY_QUEUE_TIMESTAMP : D3D12_QUERY_HEAP_TYPE_TIMESTAMP,
+		    .Count = kQueriesPerQueuePerFrame,
+		    .NodeMask = 0};
+		CHECK(m_rhi.GetDevice()->CreateQueryHeap(&queryHeapDesc, IID_PPV_ARGS(poolState.QueryHeap.ReleaseAndGetAddressOf())));
+
 		const RhiBufferResourceDesc readbackBufferDesc{
-		    .SizeInBytes = static_cast<std::uint64_t>(kQueriesPerFrame) * sizeof(std::uint64_t),
+		    .SizeInBytes = static_cast<std::uint64_t>(kQueriesPerQueuePerFrame) * sizeof(std::uint64_t),
 		    .StrideInBytes = sizeof(std::uint64_t),
 		    .AllowUnorderedAccess = false};
 		const D3D12_RESOURCE_DESC nativeReadbackDesc = D3D12TypeConversions::BuildBufferResourceDesc(readbackBufferDesc);
-		std::wstring readbackName = std::wstring(L"D3D12TimestampReadback_Frame") + std::to_wstring(frameIndex);
-		auto readbackAllocation = m_rhi->GetMemoryAllocator().CreateBuffer(
+		const std::wstring queueName = Strings::ToWide(std::string_view(RhiQueueTypeToString(queueType)));
+		const std::wstring readbackName = std::wstring(L"D3D12TimestampReadback_") + queueName + L"_Frame" + std::to_wstring(frameIndex);
+		auto readbackAllocation = m_rhi.GetMemoryAllocator().CreateBuffer(
 		    nativeReadbackDesc,
 		    D3D12_RESOURCE_STATE_COPY_DEST,
 		    RhiMemoryCategory::Readback,
@@ -280,37 +230,26 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 		    readbackName);
 		if (readbackAllocation == nullptr || readbackAllocation->Resource == nullptr)
 		{
-			return false;
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "Failed to allocate a D3D12 timestamp readback buffer.");
 		}
 
-		if (FAILED(readbackAllocation->Resource->Map(0, nullptr, reinterpret_cast<void**>(&frameState.MappedReadback))))
+		if (FAILED(readbackAllocation->Resource->Map(0, nullptr, reinterpret_cast<void**>(&poolState.MappedReadback))))
 		{
-			frameState.MappedReadback = nullptr;
-			return false;
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "Failed to map a D3D12 timestamp readback buffer.");
 		}
 		readbackAllocation->IsMapped = true;
-		readbackAllocation->CpuMappedAddress = frameState.MappedReadback;
+		readbackAllocation->CpuMappedAddress = poolState.MappedReadback;
 
-		std::memset(frameState.MappedReadback, 0, static_cast<std::size_t>(readbackBufferDesc.SizeInBytes));
-		frameState.ReadbackAllocation = std::move(readbackAllocation);
-		frameState.QueryCount = kQueriesPerFrame;
-		frameState.FreeQueryIndices.reserve(kQueriesPerFrame);
-		for (std::uint32_t queryIndex = kQueriesPerFrame; queryIndex > 0; --queryIndex)
-		{
-			frameState.FreeQueryIndices.push_back(queryIndex - 1);
-		}
-
-		std::wstring queryHeapName = std::wstring(L"D3D12TimestampQueryHeap_Frame") + std::to_wstring(frameIndex);
-		frameState.QueryHeap->SetName(queryHeapName.c_str());
-		return true;
+		std::memset(poolState.MappedReadback, 0, static_cast<std::size_t>(readbackBufferDesc.SizeInBytes));
+		poolState.ReadbackAllocation = std::move(readbackAllocation);
+		const std::wstring queryHeapName = std::wstring(L"D3D12TimestampQueryHeap_") + queueName + L"_Frame" + std::to_wstring(frameIndex);
+		poolState.QueryHeap->SetName(queryHeapName.c_str());
 	}
 
-	D3D12Rhi* m_rhi = nullptr;
-	std::vector<FrameTimingState> m_frameStates;
-	std::unordered_map<std::uint32_t, QueryLocation> m_queryLocations;
-	std::uint32_t m_nextHandleValue = 1;
-	std::uint64_t m_timestampFrequencyHz = 0;
-	bool m_supportsTimestampQueries = false;
+	D3D12Rhi& m_rhi;
+	std::uint32_t m_maximumFramesInFlight = 0;
+	std::vector<PoolTimingState> m_poolStates;
+	RhiTimestampQueryAllocator m_queryAllocator;
 };
 
 class D3D12RenderMessageDiagnostics final : public RenderMessageDiagnostics
@@ -360,81 +299,15 @@ class D3D12RenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 	D3D12GpuMemoryAllocator& m_allocator;
 };
 
-class D3D12RenderDiagnostics final : public RenderDiagnostics
-{
-  public:
-	D3D12RenderDiagnostics(D3D12Rhi& rhi, std::uint32_t maximumFramesInFlight) noexcept :
-	    m_timingDiagnostics(rhi, maximumFramesInFlight),
-	    m_messageDiagnostics(rhi),
-	    m_failureDiagnostics(rhi),
-	    m_memoryDiagnostics(rhi.GetMemoryAllocator())
-	{
-	}
-
-	RhiDiagnosticsCapabilities GetCapabilities() const noexcept override
-	{
-		return RhiDiagnosticsCapabilities{
-		    .SupportsObjectNames = m_objectDiagnostics.SupportsObjectNames(),
-		    .SupportsGpuEvents = D3D12PixEvents::IsAvailable(),
-		    .SupportsTimestampQueries = m_timingDiagnostics.SupportsTimestampQueries(),
-		    .SupportsDebugMessages = m_messageDiagnostics.SupportsDebugMessages(),
-		    .SupportsLiveObjectReports = m_failureDiagnostics.SupportsLiveObjectReports(),
-		    .SupportsCrashDiagnostics = m_failureDiagnostics.SupportsCrashDiagnostics(),
-		    .SupportsMemoryDiagnostics = true,
-		    .SupportsMemoryBudgetQueries = m_memoryDiagnostics.SupportsBudgetQueries()};
-	}
-
-	RenderObjectDiagnostics& GetObjectDiagnostics() noexcept override { return m_objectDiagnostics; }
-
-	const RenderObjectDiagnostics& GetObjectDiagnostics() const noexcept override { return m_objectDiagnostics; }
-
-	RenderTimingDiagnostics* GetTimingDiagnostics() noexcept override
-	{
-		return m_timingDiagnostics.SupportsTimestampQueries() ? &m_timingDiagnostics : nullptr;
-	}
-
-	const RenderTimingDiagnostics* GetTimingDiagnostics() const noexcept override
-	{
-		return m_timingDiagnostics.SupportsTimestampQueries() ? &m_timingDiagnostics : nullptr;
-	}
-
-	RenderMessageDiagnostics* GetMessageDiagnostics() noexcept override
-	{
-		return m_messageDiagnostics.SupportsDebugMessages() ? &m_messageDiagnostics : nullptr;
-	}
-
-	const RenderMessageDiagnostics* GetMessageDiagnostics() const noexcept override
-	{
-		return m_messageDiagnostics.SupportsDebugMessages() ? &m_messageDiagnostics : nullptr;
-	}
-
-	RenderFailureDiagnostics* GetFailureDiagnostics() noexcept override
-	{
-		return (m_failureDiagnostics.SupportsLiveObjectReports() || m_failureDiagnostics.SupportsCrashDiagnostics()) ? &m_failureDiagnostics
-		                                                                                                             : nullptr;
-	}
-
-	const RenderFailureDiagnostics* GetFailureDiagnostics() const noexcept override
-	{
-		return (m_failureDiagnostics.SupportsLiveObjectReports() || m_failureDiagnostics.SupportsCrashDiagnostics()) ? &m_failureDiagnostics
-		                                                                                                             : nullptr;
-	}
-
-	RenderMemoryDiagnostics* GetMemoryDiagnostics() noexcept override { return &m_memoryDiagnostics; }
-
-	const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept override { return &m_memoryDiagnostics; }
-
-  private:
-	D3D12RenderObjectDiagnostics m_objectDiagnostics;
-	D3D12RenderTimingDiagnostics m_timingDiagnostics;
-	D3D12RenderMessageDiagnostics m_messageDiagnostics;
-	D3D12RenderFailureDiagnostics m_failureDiagnostics;
-	D3D12RenderMemoryDiagnostics m_memoryDiagnostics;
-};
-
 std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(
     D3D12Rhi& rhi,
     std::uint32_t maximumFramesInFlight)
 {
-	return std::make_unique<D3D12RenderDiagnostics>(rhi, maximumFramesInFlight);
+	return CreateRhiDiagnosticsComposition(
+	    std::make_unique<D3D12RenderObjectDiagnostics>(),
+	    std::make_unique<D3D12RenderTimingDiagnostics>(rhi, maximumFramesInFlight),
+	    std::make_unique<D3D12RenderMessageDiagnostics>(rhi),
+	    std::make_unique<D3D12RenderFailureDiagnostics>(rhi),
+	    std::make_unique<D3D12RenderMemoryDiagnostics>(rhi.GetMemoryAllocator()),
+	    D3D12PixEvents::IsAvailable());
 }

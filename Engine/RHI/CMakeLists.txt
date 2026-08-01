@@ -64,6 +64,16 @@ list(FILTER SPARKLE_RHI_COMMON_PRIVATE_SOURCES EXCLUDE REGEX "/Private/D3D12/")
 list(FILTER SPARKLE_RHI_COMMON_PRIVATE_HEADERS EXCLUDE REGEX "/Private/D3D12/")
 list(FILTER SPARKLE_RHI_COMMON_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Vulkan/")
 list(FILTER SPARKLE_RHI_COMMON_PRIVATE_HEADERS EXCLUDE REGEX "/Private/Vulkan/")
+list(FILTER SPARKLE_RHI_COMMON_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Diagnostics/")
+list(FILTER SPARKLE_RHI_COMMON_PRIVATE_HEADERS EXCLUDE REGEX "/Private/Diagnostics/")
+
+file(GLOB_RECURSE SPARKLE_RHI_DIAGNOSTICS_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/*.cpp
+)
+
+file(GLOB_RECURSE SPARKLE_RHI_DIAGNOSTICS_HEADERS CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/*.h
+)
 
 add_library(SparkleRHICommon OBJECT
     ${SPARKLE_RHI_PUBLIC_HEADERS}
@@ -102,9 +112,21 @@ function(sparkle_configure_rhi_implementation_target target_name)
         target_compile_definitions(${target_name} PRIVATE SPARKLE_STATIC)
     endif()
 
-    if(MSVC)
-        target_compile_options(${target_name} PRIVATE /FS)
+endfunction()
+
+function(sparkle_assert_rhi_target_excludes_backend_sources target_name backend_directory)
+    get_target_property(_sparkle_target_sources ${target_name} SOURCES)
+    if(NOT _sparkle_target_sources)
+        return()
     endif()
+
+    foreach(_sparkle_source IN LISTS _sparkle_target_sources)
+        file(TO_CMAKE_PATH "${_sparkle_source}" _sparkle_normalized_source)
+        if(_sparkle_normalized_source MATCHES "/Private/${backend_directory}/")
+            message(FATAL_ERROR
+                "RHI target '${target_name}' must not compile ${backend_directory} backend source '${_sparkle_normalized_source}'.")
+        endif()
+    endforeach()
 endfunction()
 
 sparkle_configure_rhi_implementation_target(SparkleRHICommon)
@@ -117,6 +139,22 @@ target_link_libraries(SparkleRHICommon
 )
 
 sparkle_target_precompile_headers(SparkleRHICommon
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
+)
+
+add_library(SparkleRHIDiagnostics STATIC
+    ${SPARKLE_RHI_DIAGNOSTICS_SOURCES}
+    ${SPARKLE_RHI_DIAGNOSTICS_HEADERS}
+)
+
+sparkle_configure_rhi_implementation_target(SparkleRHIDiagnostics)
+
+target_link_libraries(SparkleRHIDiagnostics
+    PRIVATE
+        SparkleCore
+)
+
+sparkle_target_precompile_headers(SparkleRHIDiagnostics
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
@@ -210,7 +248,7 @@ if(SPARKLE_RHI_WITH_D3D12)
     )
 
     if(MSVC)
-        target_compile_options(SparkleD3D12MA PRIVATE /W0 /FS)
+        target_compile_options(SparkleD3D12MA PRIVATE /W0)
     endif()
 
     set_target_properties(SparkleD3D12MA PROPERTIES FOLDER "ThirdParty")
@@ -236,7 +274,7 @@ if(SPARKLE_RHI_WITH_D3D12)
     sparkle_configure_rhi_implementation_target(SparkleRHI_D3D12)
 
     target_link_libraries(SparkleRHI_D3D12
-        PUBLIC
+        PRIVATE
             SparkleCore
             imgui
             SparkleD3D12MA
@@ -246,6 +284,7 @@ if(SPARKLE_RHI_WITH_D3D12)
             dxguid
         PRIVATE
             SparklePlatform
+            SparkleRHIDiagnostics
     )
 
     target_compile_definitions(SparkleRHI_D3D12
@@ -316,11 +355,12 @@ if(SPARKLE_RHI_WITH_VULKAN)
     sparkle_configure_rhi_implementation_target(SparkleRHI_Vulkan)
 
     target_link_libraries(SparkleRHI_Vulkan
-        PUBLIC
+        PRIVATE
             SparkleCore
             imgui
         PRIVATE
             SparklePlatform
+            SparkleRHIDiagnostics
             Vulkan::Vulkan
             SparkleVMA
     )
@@ -363,10 +403,27 @@ target_link_libraries(SparkleRHI
         ${SPARKLE_RHI_BACKEND_TARGETS}
 )
 
+# Keep the same target shape as NVIDIA NVRHI: neutral/common code and each
+# native backend compile independently. These configure-time assertions make a
+# misplaced source fail even when a combined D3D12+Vulkan build would link.
+sparkle_assert_rhi_target_excludes_backend_sources(SparkleRHICommon D3D12)
+sparkle_assert_rhi_target_excludes_backend_sources(SparkleRHICommon Vulkan)
+sparkle_assert_rhi_target_excludes_backend_sources(SparkleRHIDiagnostics D3D12)
+sparkle_assert_rhi_target_excludes_backend_sources(SparkleRHIDiagnostics Vulkan)
+sparkle_assert_rhi_target_excludes_backend_sources(SparkleRHI D3D12)
+sparkle_assert_rhi_target_excludes_backend_sources(SparkleRHI Vulkan)
+if(TARGET SparkleRHI_D3D12)
+    sparkle_assert_rhi_target_excludes_backend_sources(SparkleRHI_D3D12 Vulkan)
+endif()
+if(TARGET SparkleRHI_Vulkan)
+    sparkle_assert_rhi_target_excludes_backend_sources(SparkleRHI_Vulkan D3D12)
+endif()
+
 sparkle_configure_runtime_support_artifacts(SparkleRHI)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_RHI_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private\\Common" FILES ${SPARKLE_RHI_COMMON_PRIVATE_SOURCES} ${SPARKLE_RHI_COMMON_PRIVATE_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics PREFIX "Private\\Diagnostics" FILES ${SPARKLE_RHI_DIAGNOSTICS_SOURCES} ${SPARKLE_RHI_DIAGNOSTICS_HEADERS})
 
 if(SPARKLE_RHI_WITH_D3D12)
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12 PREFIX "Private\\D3D12" FILES ${SPARKLE_RHI_D3D12_SOURCES} ${SPARKLE_RHI_D3D12_HEADERS})

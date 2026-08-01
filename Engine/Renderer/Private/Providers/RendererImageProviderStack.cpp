@@ -10,22 +10,7 @@
 #include "Upscaling/UpscalerProviderFactory.h"
 #include "Upscaling/UpscalerSettings.h"
 
-class RendererImageProviderInitialization final
-{
-  public:
-	template <typename TProvider>
-	static bool InitializeImageProvider(
-	    TProvider& provider,
-	    const RhiCapabilities& capabilities,
-	    RhiInteropService& interop,
-	    ERhiNativeInteropConsumer consumer,
-	    const char* reason)
-	{
-		return provider.Initialize(
-		    capabilities,
-		    interop.GetDeviceQueueInterop(RhiNativeInteropRequest{.Consumer = consumer, .Reason = reason}));
-	}
-};
+static const auto g_rendererImageProviderStackLogger = Logging::GetOrCreateLogger("Renderer.ImageProviders");
 
 RendererImageProviderStack::RendererImageProviderStack(RenderHardwareInterface& renderHardwareInterface)
 {
@@ -43,28 +28,35 @@ void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardw
 	RhiInteropService& interop = renderHardwareInterface.GetInteropService();
 
 	m_upscaler = CreateConfiguredUpscalerProvider();
-	if (m_upscaler != nullptr && !RendererImageProviderInitialization::InitializeImageProvider(
-	                               *m_upscaler,
-	                               capabilities,
-	                               interop,
-	                               ERhiNativeInteropConsumer::UpscalerProvider,
-	                               "Renderer upscaler provider initialization"))
+	if (m_upscaler != nullptr &&
+	    !m_upscaler->Initialize(
+	        capabilities,
+	        interop.GetDeviceQueueInterop(
+	            RhiNativeInteropRequest{
+	                .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
+	                .Reason = "Renderer upscaler provider initialization"})))
 	{
-		m_upscaler->Shutdown();
-		m_upscaler.reset();
+		Diagnostics::Fatal(
+		    g_rendererImageProviderStackLogger,
+		    __FILE__,
+		    __LINE__,
+		    "The configured renderer upscaler could not initialize on the selected RHI backend and adapter.");
 	}
 
 	m_rayReconstruction = CreateConfiguredRayReconstructionProvider();
-	m_rayReconstructionRequested = m_rayReconstruction != nullptr;
-	if (m_rayReconstruction != nullptr && !RendererImageProviderInitialization::InitializeImageProvider(
-	                                         *m_rayReconstruction,
-	                                         capabilities,
-	                                         interop,
-	                                         ERhiNativeInteropConsumer::RayReconstructionProvider,
-	                                         "Renderer ray-reconstruction provider initialization"))
+	if (m_rayReconstruction != nullptr &&
+	    !m_rayReconstruction->Initialize(
+	        capabilities,
+	        interop.GetDeviceQueueInterop(
+	            RhiNativeInteropRequest{
+	                .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
+	                .Reason = "Renderer ray-reconstruction provider initialization"})))
 	{
-		m_rayReconstruction->Shutdown();
-		m_rayReconstruction.reset();
+		Diagnostics::Fatal(
+		    g_rendererImageProviderStackLogger,
+		    __FILE__,
+		    __LINE__,
+		    "The configured ray-reconstruction provider could not initialize on the selected RHI backend and adapter.");
 	}
 
 	m_resetHistoryPending = true;
@@ -82,7 +74,6 @@ void RendererImageProviderStack::Shutdown() noexcept
 		m_rayReconstruction->Shutdown();
 		m_rayReconstruction.reset();
 	}
-	m_rayReconstructionRequested = false;
 }
 
 void RendererImageProviderStack::ResetHistory() noexcept
@@ -109,9 +100,9 @@ RenderViewportExtent RendererImageProviderStack::ResolveRenderExtent(
     RenderViewportExtent outputExtent,
     ImageProviderPipeline pipeline) noexcept
 {
-	if (pipeline == ImageProviderPipeline::RayReconstruction && m_rayReconstructionRequested)
+	if (pipeline == ImageProviderPipeline::RayReconstruction && m_rayReconstruction != nullptr)
 	{
-		return m_rayReconstruction != nullptr ? m_rayReconstruction->ResolveRenderExtent(outputExtent) : outputExtent;
+		return m_rayReconstruction->ResolveRenderExtent(outputExtent);
 	}
 	if (m_upscaler != nullptr)
 	{

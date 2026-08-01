@@ -9,20 +9,7 @@
 
 #include <sl_dlss.h>
 
-class StreamlineDlssRequirements final
-{
-  public:
-	static bool HasRequiredNativeResources(const UpscalerEvaluationDesc& evaluation) noexcept
-	{
-		return evaluation.NativeCommandList && AreStreamlineTextureViewsValid(
-		                                           evaluation.BackendApi,
-		                                           evaluation.NativeScalingInputColorView,
-		                                           evaluation.NativeDepthView,
-		                                           evaluation.NativeMotionVectorsView,
-		                                           evaluation.NativeExposureView,
-		                                           evaluation.NativeScalingOutputColorView);
-	}
-};
+static const auto g_streamlineDlssEvaluationLogger = Logging::GetOrCreateLogger("Renderer.Streamline.DLSS");
 
 RenderViewportExtent QueryStreamlineDlssOptimalRenderExtent(
     RenderViewportExtent outputExtent,
@@ -32,7 +19,11 @@ RenderViewportExtent QueryStreamlineDlssOptimalRenderExtent(
 	const sl::DLSSOptions options = BuildStreamlineDlssOptions(qualityMode, outputExtent);
 	if (slDLSSGetOptimalSettings(options, settings) != sl::Result::eOk)
 	{
-		return {};
+		Diagnostics::Fatal(
+		    g_streamlineDlssEvaluationLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Streamline DLSS could not resolve its render extent.");
 	}
 	return RenderViewportExtent{settings.optimalRenderWidth, settings.optimalRenderHeight};
 }
@@ -43,7 +34,13 @@ bool EvaluateStreamlineDlssFrame(
     sl::ViewportHandle viewport,
     const UpscalerEvaluationDesc& evaluation)
 {
-	if (!StreamlineDlssRequirements::HasRequiredNativeResources(evaluation))
+	if (!evaluation.NativeCommandList || !AreStreamlineTextureViewsValid(
+	                                         evaluation.BackendApi,
+	                                         evaluation.NativeScalingInputColorView,
+	                                         evaluation.NativeDepthView,
+	                                         evaluation.NativeMotionVectorsView,
+	                                         evaluation.NativeExposureView,
+	                                         evaluation.NativeScalingOutputColorView))
 	{
 		return false;
 	}

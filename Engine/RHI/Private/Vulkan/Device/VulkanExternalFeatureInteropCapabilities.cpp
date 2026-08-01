@@ -28,24 +28,13 @@ RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilit
     bool hasGraphicsCommandContext) noexcept
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
-	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::VulkanManualFunctionPointers;
+	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::None;
 	capabilities.Adapter = VulkanExternalFeatureAdapterIdentity::BuildVulkanAdapterIdentity(rhi);
-	if (rhi != nullptr)
-	{
-		capabilities.VulkanHasInstanceHandle = rhi->GetInstance() != VK_NULL_HANDLE;
-		capabilities.VulkanHasPhysicalDeviceHandle = rhi->GetPhysicalDevice() != VK_NULL_HANDLE;
-		capabilities.VulkanHasDeviceHandle = rhi->GetDevice() != VK_NULL_HANDLE;
-		capabilities.VulkanHasGraphicsQueueHandle = rhi->GetGraphicsQueue() != VK_NULL_HANDLE;
-		capabilities.VulkanHasGraphicsQueueFamilyIndex = rhi->GetGraphicsQueueFamilyIndex() != UINT32_MAX;
-	}
-
-	capabilities.ExposesNativeDevice = capabilities.VulkanHasDeviceHandle;
-	capabilities.ExposesNativeGraphicsQueue = capabilities.VulkanHasGraphicsQueueHandle;
+	capabilities.ExposesNativeDevice = rhi != nullptr && rhi->GetDevice() != VK_NULL_HANDLE;
+	capabilities.ExposesNativeGraphicsQueue = rhi != nullptr && rhi->GetGraphicsQueue() != VK_NULL_HANDLE;
 	capabilities.ExposesNativeGraphicsCommandList = hasGraphicsCommandContext;
 	capabilities.ExposesNativeResources = true;
 	capabilities.SupportsExplicitResourceStates = true;
-	capabilities.VulkanManualFunctionPointerHookingReady = false;
-	capabilities.VulkanInterposerRequired = true;
 	capabilities.SupportsExternalProviderEvaluation = false;
 	capabilities.SupportsRuntimeProviderChecks = false;
 	return capabilities;

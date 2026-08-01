@@ -13,7 +13,7 @@ static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
 static constexpr std::uint32_t kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes = 4096;
 static constexpr std::uint32_t kNvidiaVendorId = 0x10DE;
 
-D3D12Rhi::D3D12Rhi(RhiD3D12InterposerHooks interposerHooks) noexcept : m_interposerHooks(interposerHooks)
+D3D12Rhi::D3D12Rhi(RhiInterposerHooks interposerHooks) noexcept : m_interposerHooks(interposerHooks)
 {
 #if ENGINE_GPU_VALIDATION
 	m_debugLayer = std::make_unique<D3D12DebugLayer>();
@@ -38,9 +38,6 @@ D3D12Rhi::D3D12Rhi(RhiD3D12InterposerHooks interposerHooks) noexcept : m_interpo
 	}
 	{
 		CreateCommandQueues();
-	}
-	{
-		RefreshPartitionedTlasCommandListCapability();
 	}
 	constexpr uint32_t kInitialFrameIndex = 0;
 	SetCurrentFrameIndex(kInitialFrameIndex);
@@ -132,7 +129,7 @@ void D3D12Rhi::CreateFactory()
 	{
 		ComPtr<IDXGIFactory7> nativeFactory;
 		if (TryResolveNativeInterface(
-		        ERhiD3D12InterposerInterfaceKind::PresentationFactory,
+		        ERhiInterposerInterfaceKind::PresentationFactory,
 		        createdFactory.Get(),
 		        IID_PPV_ARGS(nativeFactory.ReleaseAndGetAddressOf())))
 		{
@@ -157,7 +154,7 @@ void D3D12Rhi::CreateDevice()
 	{
 		ComPtr<ID3D12Device10> nativeDevice;
 		if (TryResolveNativeInterface(
-		        ERhiD3D12InterposerInterfaceKind::GraphicsDevice,
+		        ERhiInterposerInterfaceKind::GraphicsDevice,
 		        createdDevice.Get(),
 		        IID_PPV_ARGS(nativeDevice.ReleaseAndGetAddressOf())))
 		{
@@ -194,8 +191,8 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
 	    .Supported = false,
 	    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
-	    .RequiresNvidiaDevice = true,
-	    .RunsOnNvidiaDevice = IsNvidiaAdapter(),
+	    .NvidiaDeviceOnly = true,
+	    .CurrentDeviceIsNvidia = IsNvidiaAdapter(),
 	    .CapabilityStatusReason = "d3d12-options5-not-queried"};
 	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
 	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,
@@ -229,19 +226,13 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
 		    .Supported = false,
 		    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
-		    .RequiresNvidiaDevice = true,
-		    .RunsOnNvidiaDevice = IsNvidiaAdapter(),
-		    .SupportsD3D12DeviceInterface = m_device != nullptr,
-		    .SupportsD3D12PublicDxrPartitionedTlas = false,
-		    .SupportsD3D12PublicDxrHeaders = false,
+		    .NvidiaDeviceOnly = true,
+		    .CurrentDeviceIsNvidia = IsNvidiaAdapter(),
 		    .CapabilityStatusReason = "d3d12-nvapi-ptlas-provider-not-queried"};
 		m_rayTracingCapabilities.Groups.PartitionedTlas = m_nvapiRayTracingProvider.QueryPartitionedTlasCapabilities(
 		    m_device.Get(),
 		    IsNvidiaAdapter(),
 		    m_rayTracingCapabilities.SupportsRayTracing);
-		m_rayTracingCapabilities.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas = false;
-		m_rayTracingCapabilities.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders = false;
-
 		SelectRayTracingTopLevelProvider();
 	}
 	else
@@ -254,38 +245,6 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		    "CheckFeatureSupport(OPTIONS5) failed hr={:#010x}; ray tracing assumed unsupported.",
 		    static_cast<uint32_t>(hr));
 	}
-}
-
-void D3D12Rhi::RefreshPartitionedTlasCommandListCapability() noexcept
-{
-	RhiPartitionedTlasCapabilities& partitionedTlas = m_rayTracingCapabilities.Groups.PartitionedTlas;
-	if (partitionedTlas.Provider != ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas)
-	{
-		return;
-	}
-
-	const bool supportsCommandListInterface = m_device != nullptr;
-	partitionedTlas.SupportsD3D12CommandListInterface = supportsCommandListInterface;
-	if (!supportsCommandListInterface)
-	{
-		if (partitionedTlas.SupportsD3D12NvapiPartitionedTlas)
-		{
-			partitionedTlas.Supported = false;
-			partitionedTlas.CapabilityStatusReason = "d3d12-command-list-interface-missing";
-		}
-		return;
-	}
-
-	const bool canUseNvapiPartitionedTlas = partitionedTlas.SupportsD3D12NvapiPartitionedTlas &&
-	                                        partitionedTlas.SupportsD3D12NvapiHeaders && partitionedTlas.SupportsD3D12NvapiRuntime &&
-	                                        partitionedTlas.SupportsD3D12DeviceInterface;
-	if (canUseNvapiPartitionedTlas)
-	{
-		partitionedTlas.Supported = true;
-		partitionedTlas.CapabilityStatusReason = "d3d12-nvapi-ptlas-standard-supported";
-	}
-
-	SelectRayTracingTopLevelProvider();
 }
 
 void D3D12Rhi::SelectRayTracingTopLevelProvider() noexcept
@@ -321,7 +280,7 @@ void D3D12Rhi::CreateCommandQueues()
 	{
 		ComPtr<ID3D12Device10> externalDevice;
 		if (TryUpgradeInterposerInterface(
-		        ERhiD3D12InterposerInterfaceKind::GraphicsDevice,
+		        ERhiInterposerInterfaceKind::GraphicsDevice,
 		        m_device.Get(),
 		        IID_PPV_ARGS(externalDevice.ReleaseAndGetAddressOf())))
 		{
@@ -332,7 +291,7 @@ void D3D12Rhi::CreateCommandQueues()
 			{
 				ComPtr<ID3D12CommandQueue> nativeQueue;
 				if (TryResolveNativeInterface(
-				        ERhiD3D12InterposerInterfaceKind::GraphicsQueue,
+				        ERhiInterposerInterfaceKind::GraphicsQueue,
 				        externalQueue.Get(),
 				        IID_PPV_ARGS(nativeQueue.ReleaseAndGetAddressOf())))
 				{
@@ -439,7 +398,7 @@ const D3D12GpuMemoryAllocator& D3D12Rhi::GetMemoryAllocator() const noexcept
 }
 
 bool D3D12Rhi::TryUpgradeInterposerInterface(
-    ERhiD3D12InterposerInterfaceKind kind,
+    ERhiInterposerInterfaceKind kind,
     IUnknown* nativeInterface,
     REFIID requestedInterface,
     void** upgradedInterface) noexcept
@@ -470,7 +429,7 @@ bool D3D12Rhi::TryUpgradeInterposerInterface(
 }
 
 bool D3D12Rhi::TryResolveNativeInterface(
-    ERhiD3D12InterposerInterfaceKind kind,
+    ERhiInterposerInterfaceKind kind,
     IUnknown* externalInterface,
     REFIID requestedInterface,
     void** nativeInterface) noexcept
@@ -521,7 +480,7 @@ void D3D12Rhi::DisableInterposer() noexcept
 void D3D12Rhi::ShutdownInterposer() noexcept
 {
 	DisableInterposer();
-	const RhiD3D12RuntimeShutdownCallback shutdown = m_interposerHooks.RuntimeShutdown;
+	const RhiRuntimeShutdownCallback shutdown = m_interposerHooks.RuntimeShutdown;
 	void* const userData = m_interposerHooks.UserData;
 	m_interposerHooks = {};
 	if (shutdown != nullptr)

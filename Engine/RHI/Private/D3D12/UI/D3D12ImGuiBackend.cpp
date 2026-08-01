@@ -11,13 +11,15 @@
 
 #include <limits>
 
-D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(&renderHardwareInterface) {}
+static const auto g_d3d12ImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.D3D12.ImGui");
 
-bool D3D12ImGuiBackend::Initialize()
+D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(renderHardwareInterface) {}
+
+void D3D12ImGuiBackend::Initialize()
 {
-	if (m_renderHardwareInterface == nullptr || m_imguiContext != nullptr)
+	if (m_imguiContext != nullptr)
 	{
-		return m_imguiContext != nullptr;
+		return;
 	}
 
 	ImGuiContext* previousContext = ImGui::GetCurrentContext();
@@ -30,35 +32,35 @@ bool D3D12ImGuiBackend::Initialize()
 	ImGui::SetCurrentContext(m_imguiContext);
 
 	ImGui_ImplDX12_InitInfo initInfo = {};
-	initInfo.Device = ToD3D12Device(m_renderHardwareInterface->GetDeviceHandle());
-	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardwareInterface->GetGraphicsQueueHandle());
+	initInfo.Device = ToD3D12Device(m_renderHardwareInterface.GetDeviceHandle());
+	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardwareInterface.GetGraphicsQueueHandle());
 	initInfo.NumFramesInFlight = static_cast<int>(
-	    m_renderHardwareInterface->GetCapabilities().Presentation.MaximumFramesInFlight);
-	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface->GetPresentColorFormat());
-	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface->GetPresentDepthStencilFormat());
-	initInfo.SrvDescriptorHeap = m_renderHardwareInterface->GetD3D12ShaderResourceDescriptorHeap();
+	    m_renderHardwareInterface.GetCapabilities().Presentation.MaximumFramesInFlight);
+	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface.GetPresentColorFormat());
+	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface.GetPresentDepthStencilFormat());
+	initInfo.SrvDescriptorHeap = m_renderHardwareInterface.GetD3D12ShaderResourceDescriptorHeap();
 	initInfo.SrvDescriptorAllocFn = &D3D12ImGuiBackend::AllocateDescriptor;
 	initInfo.SrvDescriptorFreeFn = &D3D12ImGuiBackend::ReleaseDescriptor;
-	initInfo.UserData = m_renderHardwareInterface;
+	initInfo.UserData = &m_renderHardwareInterface;
 
 	if (initInfo.Device == nullptr || initInfo.CommandQueue == nullptr || initInfo.SrvDescriptorHeap == nullptr)
 	{
 		RestoreContext(previousContext);
-		return false;
+		Diagnostics::Fatal(g_d3d12ImGuiBackendLogger, __FILE__, __LINE__, "Cannot initialize ImGui with incomplete D3D12 device state.");
 	}
 
-	const bool initialized = ImGui_ImplDX12_Init(&initInfo);
-	RestoreContext(previousContext);
-	if (!initialized)
+	if (!ImGui_ImplDX12_Init(&initInfo))
 	{
+		RestoreContext(previousContext);
 		if (m_ownsContext)
 		{
 			ImGui::DestroyContext(m_imguiContext);
 		}
 		m_imguiContext = nullptr;
 		m_ownsContext = false;
+		Diagnostics::Fatal(g_d3d12ImGuiBackendLogger, __FILE__, __LINE__, "ImGui D3D12 renderer initialization failed.");
 	}
-	return initialized;
+	RestoreContext(previousContext);
 }
 
 void D3D12ImGuiBackend::BeginFrame() noexcept
@@ -75,17 +77,12 @@ std::uint64_t D3D12ImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderR
 
 void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 {
-	if (m_renderHardwareInterface == nullptr)
-	{
-		return;
-	}
-
 	ImGuiContext* previousContext = ActivateContext();
-	RenderCommandList& commandList = m_renderHardwareInterface->GetGraphicsCommandList(m_renderHardwareInterface->GetCurrentFrameIndex());
+	RenderCommandList& commandList = m_renderHardwareInterface.GetGraphicsCommandList(m_renderHardwareInterface.GetCurrentFrameIndex());
 	Render(
 	    commandList.GetNativeHandle(
 	        RhiNativeInteropRequest{
-	            .Consumer = ERhiNativeInteropConsumer::PresentationBridge,
+	            .Consumer = ERhiNativeInteropConsumer::Presentation,
 	            .Reason = "Render ImGui draw data through D3D12 backend"}),
 	    drawData);
 	RestoreContext(previousContext);

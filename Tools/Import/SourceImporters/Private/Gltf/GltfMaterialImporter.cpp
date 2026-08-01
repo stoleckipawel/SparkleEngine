@@ -38,14 +38,9 @@ class GltfMaterialFeatureReporting final
 		{
 			AppendFeatureName(unsupportedFeatures, "KHR_materials_clearcoat");
 		}
-		if (material.has_transmission)
-		{
-			AppendFeatureName(unsupportedFeatures, "KHR_materials_transmission");
-		}
-		if (material.has_volume)
-		{
-			AppendFeatureName(unsupportedFeatures, "KHR_materials_volume");
-		}
+		// Product policy intentionally discards optional transmission (including diffuse transmission) and volume data.
+		// The imported metallic-roughness material remains authoritative; these extensions do not create a fallback renderer
+		// path or runtime fields.
 		if (material.has_specular)
 		{
 			AppendFeatureName(unsupportedFeatures, "KHR_materials_specular");
@@ -57,10 +52,6 @@ class GltfMaterialFeatureReporting final
 		if (material.has_iridescence)
 		{
 			AppendFeatureName(unsupportedFeatures, "KHR_materials_iridescence");
-		}
-		if (material.has_diffuse_transmission)
-		{
-			AppendFeatureName(unsupportedFeatures, "KHR_materials_diffuse_transmission");
 		}
 		if (material.has_anisotropy)
 		{

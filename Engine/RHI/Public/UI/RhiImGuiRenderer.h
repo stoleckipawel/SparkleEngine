@@ -13,7 +13,7 @@ class SPARKLE_RHI_API RhiImGuiRenderer
   public:
 	virtual ~RhiImGuiRenderer() noexcept = default;
 
-	virtual bool Initialize() = 0;
+	virtual void Initialize() = 0;
 	virtual void BeginFrame() noexcept = 0;
 	virtual std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept = 0;
 	virtual void RenderDrawData(ImDrawData* drawData) noexcept = 0;

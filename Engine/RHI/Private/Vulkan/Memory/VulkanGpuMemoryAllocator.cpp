@@ -470,29 +470,7 @@ bool VulkanGpuMemoryAllocator::WriteAllocation(
 void* VulkanGpuMemoryAllocator::MapUploadPage(
     VulkanGpuAllocationRecord& record) noexcept
 {
-	if (m_impl == nullptr ||
-	    m_impl->Allocator == nullptr ||
-	    record.Allocation == nullptr ||
-	    record.ResidencyClass != RhiMemoryResidencyClass::HostUpload)
-	{
-		return nullptr;
-	}
-	if (record.IsMapped)
-	{
-		return record.CpuMappedAddress;
-	}
-
-	void* mappedData = nullptr;
-	const VkResult result =
-	    vmaMapMemory(m_impl->Allocator, record.Allocation, &mappedData);
-	if (!VulkanResult::Succeeded(result) || mappedData == nullptr)
-	{
-		return nullptr;
-	}
-
-	record.IsMapped = true;
-	record.CpuMappedAddress = mappedData;
-	return mappedData;
+	return MapHostAllocation(record, RhiMemoryResidencyClass::HostUpload);
 }
 
 bool VulkanGpuMemoryAllocator::FlushUploadPage(
@@ -517,6 +495,33 @@ bool VulkanGpuMemoryAllocator::FlushUploadPage(
 	        offsetInBytes,
 	        sizeInBytes);
 	return VulkanResult::Succeeded(result);
+}
+
+void* VulkanGpuMemoryAllocator::MapHostAllocation(
+    VulkanGpuAllocationRecord& record,
+    RhiMemoryResidencyClass residencyClass) noexcept
+{
+	if (m_impl == nullptr ||
+	    m_impl->Allocator == nullptr ||
+	    record.Allocation == nullptr ||
+	    record.ResidencyClass != residencyClass)
+	{
+		return nullptr;
+	}
+	if (record.IsMapped)
+	{
+		return record.CpuMappedAddress;
+	}
+
+	void* mappedData = nullptr;
+	if (!VulkanResult::Succeeded(vmaMapMemory(m_impl->Allocator, record.Allocation, &mappedData)) || mappedData == nullptr)
+	{
+		return nullptr;
+	}
+
+	record.IsMapped = true;
+	record.CpuMappedAddress = mappedData;
+	return mappedData;
 }
 
 void VulkanGpuMemoryAllocator::PublishRecordingReadView() noexcept

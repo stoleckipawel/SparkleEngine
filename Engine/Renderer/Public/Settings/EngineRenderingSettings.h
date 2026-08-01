@@ -32,7 +32,7 @@ struct EngineRenderingSettingsState final
 	std::uint32_t MaxPointLights = 512;
 	std::uint32_t MaxSpotLights = 512;
 	std::uint32_t MaxRectLights = 128;
-	EUpscalerProviderKind UpscalerProvider = EUpscalerProviderKind::NvidiaDlss;
+	EUpscalerProviderKind UpscalerProvider = EUpscalerProviderKind::Linear;
 	EUpscalerQualityMode UpscalerQualityMode = EUpscalerQualityMode::NativeAA;
 	EngineRayReconstructionMode RayReconstructionMode = EngineRayReconstructionMode::Off;
 	GBufferMode GBuffer = GBufferMode::Rasterized;

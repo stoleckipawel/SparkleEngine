@@ -62,7 +62,9 @@ RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabiliti
     bool hasGraphicsCommandList) noexcept
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
-	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::D3D12NativeDevice;
+	capabilities.BridgeKind = rhi != nullptr && rhi->IsInterposerActive()
+	                              ? ERhiExternalFeatureBridgeKind::Interposer
+	                              : ERhiExternalFeatureBridgeKind::None;
 	capabilities.Adapter = BuildD3D12AdapterIdentity(rhi);
 	capabilities.ExposesNativeDevice = rhi != nullptr && rhi->GetDevice() != nullptr;
 	capabilities.ExposesNativeGraphicsQueue = rhi != nullptr && rhi->GetCommandQueue() != nullptr;

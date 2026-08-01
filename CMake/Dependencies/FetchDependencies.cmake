@@ -17,6 +17,7 @@
 #
 #   Optional content pipeline (SPARKLE_ENABLE_CONTENT_PIPELINE):
 #   - cgltf          (v1.15)    - Single-header glTF 2.0 parser
+#   - MikkTSpace     (pinned)   - Canonical glTF tangent-space generation
 #   - stb            (master)   - stb_image + stb_image_resize2 (header-only)
 #   - tinyexr        (v1.0.7)   - OpenEXR image loader (header-only)
 #   - zlib           (v1.3.1)   - Compression backend for Assimp
@@ -326,7 +327,7 @@ endfunction()
 # directory, which fails on Windows with "Error removing directory".
 # ---------------------------------------------------------------------------
 # Note: compressonator is handled separately below via sparse checkout.
-foreach(_dep imgui cgltf stb tinyexr spdlog zlib assimp ktx spirv_reflect)
+foreach(_dep imgui cgltf mikktspace stb tinyexr spdlog zlib assimp ktx spirv_reflect)
     sparkle_prepare_git_fetchcontent_source("${_dep}" DISPLAY_NAME "${_dep}")
 endforeach()
 
@@ -343,10 +344,12 @@ FetchContent_Declare(imgui
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   ${_sparkle_git_progress}
 )
-sparkle_log_dependency_step(1 11 "Dear ImGui" "v1.92.5" "~7 MB" "Immediate-mode UI core and Win32 platform backend" "https://github.com/ocornut/imgui.git")
+sparkle_log_dependency_step(1 12 "Dear ImGui" "v1.92.5" "~7 MB" "Immediate-mode UI core and Win32 platform backend" "https://github.com/ocornut/imgui.git")
 FetchContent_Populate(imgui)
 
 add_library(imgui STATIC
+    ${CMAKE_CURRENT_LIST_DIR}/ImGui/SparkleImGuiConfig.h
+    ${CMAKE_CURRENT_LIST_DIR}/ImGui/SparkleImGuiContext.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -357,6 +360,7 @@ add_library(imgui STATIC
 )
 
 target_include_directories(imgui PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/ImGui
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
 )
@@ -368,6 +372,10 @@ target_link_libraries(imgui PUBLIC
 )
 
 target_compile_features(imgui PUBLIC cxx_std_20)
+
+target_compile_definitions(imgui PUBLIC
+    IMGUI_USER_CONFIG="SparkleImGuiConfig.h"
+)
 
 if(MSVC)
     target_compile_options(imgui PRIVATE /W0)
@@ -393,7 +401,7 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
         GIT_SHALLOW    TRUE
         GIT_PROGRESS   ${_sparkle_git_progress}
     )
-    sparkle_log_dependency_step(2 11 "cgltf" "v1.15" "~1 MB" "Single-header glTF 2.0 parser for source scene imports" "https://github.com/jkuhlmann/cgltf.git")
+    sparkle_log_dependency_step(2 12 "cgltf" "v1.15" "~1 MB" "Single-header glTF 2.0 parser for source scene imports" "https://github.com/jkuhlmann/cgltf.git")
     FetchContent_Populate(cgltf)
 
     add_library(cgltf INTERFACE)
@@ -406,6 +414,34 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     endif()
 
     sparkle_log_dependency_ready("cgltf" "${cgltf_SOURCE_DIR}" "~1 MB")
+endif()
+
+if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+    # ============================================================================
+    # MikkTSpace - canonical tangent-space generation used by glTF authoring tools
+    # https://github.com/mmikk/MikkTSpace
+    #
+    # Target:  mikktspace (STATIC)
+    # Usage:   target_link_libraries(YourTarget PRIVATE mikktspace)
+    # ============================================================================
+    FetchContent_Declare(mikktspace
+        GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git
+        GIT_TAG        3e895b49d05ea07e4c2133156cfa94369e19e409
+        GIT_PROGRESS   ${_sparkle_git_progress}
+    )
+    sparkle_log_dependency_step(3 12 "MikkTSpace" "3e895b49" "<1 MB" "Canonical tangent generation for normal-mapped glTF imports" "https://github.com/mmikk/MikkTSpace.git")
+    FetchContent_Populate(mikktspace)
+
+    add_library(mikktspace STATIC
+        ${mikktspace_SOURCE_DIR}/mikktspace.c
+        ${mikktspace_SOURCE_DIR}/mikktspace.h
+    )
+    target_include_directories(mikktspace PUBLIC ${mikktspace_SOURCE_DIR})
+    if(MSVC)
+        target_compile_options(mikktspace PRIVATE /W0)
+    endif()
+    set_target_properties(mikktspace PROPERTIES FOLDER "ThirdParty")
+    sparkle_log_dependency_ready("MikkTSpace" "${mikktspace_SOURCE_DIR}" "<1 MB")
 endif()
 
 if(SPARKLE_ENABLE_CONTENT_PIPELINE)
@@ -425,7 +461,7 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
         GIT_SHALLOW    TRUE
         GIT_PROGRESS   ${_sparkle_git_progress}
     )
-    sparkle_log_dependency_step(3 11 "stb" "master" "~5 MB" "Header-only image loading and mip resize helpers" "https://github.com/nothings/stb.git")
+    sparkle_log_dependency_step(4 12 "stb" "master" "~5 MB" "Header-only image loading and mip resize helpers" "https://github.com/nothings/stb.git")
     FetchContent_Populate(stb)
 
     add_library(stb INTERFACE)
@@ -447,7 +483,7 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
         GIT_SHALLOW    TRUE
         GIT_PROGRESS   ${_sparkle_git_progress}
     )
-    sparkle_log_dependency_step(4 11 "tinyexr" "v1.0.7" "~1 MB" "Header-only OpenEXR image loading support" "https://github.com/syoyo/tinyexr.git")
+    sparkle_log_dependency_step(5 12 "tinyexr" "v1.0.7" "~1 MB" "Header-only OpenEXR image loading support" "https://github.com/syoyo/tinyexr.git")
     FetchContent_Populate(tinyexr)
 
     add_library(tinyexr INTERFACE)
@@ -477,7 +513,7 @@ FetchContent_Declare(spdlog
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   ${_sparkle_git_progress}
 )
-sparkle_log_dependency_step(5 11 "spdlog" "v1.14.1" "~3 MB" "Repo-wide logging backend" "https://github.com/gabime/spdlog.git")
+sparkle_log_dependency_step(6 12 "spdlog" "v1.14.1" "~3 MB" "Repo-wide logging backend" "https://github.com/gabime/spdlog.git")
 FetchContent_Populate(spdlog)
 
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
@@ -527,7 +563,7 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
         GIT_SHALLOW    TRUE
         GIT_PROGRESS   ${_sparkle_git_progress}
     )
-    sparkle_log_dependency_step(6 11 "zlib" "v1.3.1" "~1 MB" "Compression backend used by Assimp" "https://github.com/madler/zlib.git")
+    sparkle_log_dependency_step(7 12 "zlib" "v1.3.1" "~1 MB" "Compression backend used by Assimp" "https://github.com/madler/zlib.git")
     FetchContent_Populate(zlib)
 
     set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -568,7 +604,7 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
         GIT_SHALLOW    TRUE
         GIT_PROGRESS   ${_sparkle_git_progress}
     )
-    sparkle_log_dependency_step(7 11 "Assimp" "v5.4.3" "~15 MB" "FBX and DCC scene import support" "https://github.com/assimp/assimp.git")
+    sparkle_log_dependency_step(8 12 "Assimp" "v5.4.3" "~15 MB" "FBX and DCC scene import support" "https://github.com/assimp/assimp.git")
     FetchContent_Populate(assimp)
 
     set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -613,7 +649,7 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     #          #include "cmp_core.h"
     # API:     CompressBlockBC7(), DecompressBlockBC7(), etc.
     # ============================================================================
-    sparkle_log_dependency_step(8 11 "Compressonator" "master (sparse)" "~5 MB" "AMD BC1-BC7 texture block compression; sparse checkout of cmp_core only" "https://github.com/GPUOpen-Tools/compressonator.git")
+    sparkle_log_dependency_step(9 12 "Compressonator" "master (sparse)" "~5 MB" "AMD BC1-BC7 texture block compression; sparse checkout of cmp_core only" "https://github.com/GPUOpen-Tools/compressonator.git")
 
 set(_comp_src "${FETCHCONTENT_BASE_DIR}/compressonator-src")
 
@@ -763,7 +799,7 @@ if(SPARKLE_ENABLE_KTX_SUPPORT)
     GIT_PROGRESS   ${_sparkle_git_progress}
     GIT_SUBMODULES ""
 )
-sparkle_log_dependency_step(9 11 "KTX-Software" "v4.3.2" "~46 MB (largest dependency)" "KTX2 texture container read/write, with tests/tools/docs/JNI/Python disabled" "https://github.com/KhronosGroup/KTX-Software.git")
+sparkle_log_dependency_step(10 12 "KTX-Software" "v4.3.2" "~46 MB (largest dependency)" "KTX2 texture container read/write, with tests/tools/docs/JNI/Python disabled" "https://github.com/KhronosGroup/KTX-Software.git")
 FetchContent_Populate(ktx)
 
 # Disable features we don't need
@@ -816,7 +852,7 @@ if(SPARKLE_ENABLE_SHADER_COMPILER)
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   ${_sparkle_git_progress}
 )
-sparkle_log_dependency_step(10 11 "SPIRV-Reflect" "vulkan-sdk-1.3.290.0" "~2 MB" "SPIR-V reflection for offline shader compiler backends" "https://github.com/KhronosGroup/SPIRV-Reflect.git")
+sparkle_log_dependency_step(11 12 "SPIRV-Reflect" "vulkan-sdk-1.3.290.0" "~2 MB" "SPIR-V reflection for offline shader compiler backends" "https://github.com/KhronosGroup/SPIRV-Reflect.git")
 FetchContent_Populate(spirv_reflect)
 
 add_library(spirv_reflect STATIC
@@ -845,7 +881,7 @@ endif()
 # code dependency or cloning the full icon repository. Sparkle owns the small
 # semantic icon mapping in editor code.
 # ============================================================================
-sparkle_log_dependency_step(11 11 "Font Awesome Free Solid" "v6.7.1" "~0.5 MB" "Editor icon font asset and license only" "https://github.com/FortAwesome/Font-Awesome")
+sparkle_log_dependency_step(12 12 "Font Awesome Free Solid" "v6.7.1" "~0.5 MB" "Editor icon font asset and license only" "https://github.com/FortAwesome/Font-Awesome")
 
 set(_sparkle_editor_icons_dir "${FETCHCONTENT_BASE_DIR}/editor-icons/fontawesome-6.7.1")
 set(SPARKLE_FONT_AWESOME_SOLID_TTF "${_sparkle_editor_icons_dir}/fa-solid-900.ttf" CACHE FILEPATH "Font Awesome Free Solid TTF path" FORCE)
@@ -873,7 +909,7 @@ sparkle_log_dependency_ready("Font Awesome" "${SPARKLE_FONT_AWESOME_SOLID_TTF}" 
 # out of source and cache it under build/_deps so fresh syncs are reproducible.
 # ============================================================================
 if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
-    sparkle_log_dependency_step(12 12 "NVIDIA Streamline SDK" "v2.11.1" "~217 MB" "DLSS external provider SDK headers, import library, and runtime DLLs" "https://github.com/NVIDIA-RTX/Streamline/releases")
+    sparkle_log_dependency_step(13 13 "NVIDIA Streamline SDK" "v2.11.1" "~217 MB" "DLSS external provider SDK headers, import library, and runtime DLLs" "https://github.com/NVIDIA-RTX/Streamline/releases")
 
     set(_sparkle_streamline_url "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.11.1/streamline-sdk-v2.11.1.zip")
     set(_sparkle_streamline_zip "${FETCHCONTENT_BASE_DIR}/streamline-sdk-v2.11.1.zip")

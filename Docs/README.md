@@ -12,6 +12,7 @@ This directory is the navigation root for SparkleEngine's design, engineering, a
 
 - For a short project-level decision summary, start with [G. Advanced Graphics Engine Executive Summary](Strategy/PrincipalGraphics/ExecutiveSummary.md).
 - To understand the current repository, read [D. Whole Repository Architecture Map](Architecture/Repository/WholeRepositoryMap.md).
+- For Renderer/RHI ownership and backend parity, read [Renderer and RHI Boundary](Architecture/RHI/RendererRhiBoundary.md).
 - Before changing code, apply [L. SparkleEngine Integration Style Guide](Engineering/Standards/IntegrationStyleGuide.md).
 - For multithreading work, use the [multithreading reading guide](Architecture/Multithreading/README.md).
 - For acceptance evidence, use [I. Bistro and San Miguel Acceptance Workloads](Engineering/Validation/BistroAndSanMiguelWorkloads.md).

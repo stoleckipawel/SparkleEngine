@@ -9,6 +9,7 @@
 
 #include <DirectXMath.h>
 
+#include <cmath>
 #include <format>
 
 class GltfCameraNaming final
@@ -58,7 +59,12 @@ void GltfCameraImporter::ImportCameras(const cgltf_data* data, SourceImportOutpu
 		}
 
 		const cgltf_camera_perspective& perspective = sourceCamera.data.perspective;
-		if (perspective.has_aspect_ratio || !perspective.has_zfar)
+		// The renderer derives aspect ratio from the current viewport. A source aspect ratio is therefore intentionally
+		// discarded, while the vertical field of view and finite clip range remain authoritative camera data.
+		if (!perspective.has_zfar || !std::isfinite(perspective.yfov) || !std::isfinite(perspective.znear) ||
+		    !std::isfinite(perspective.zfar) || perspective.yfov <= 0.0f || perspective.znear <= 0.0f ||
+		    perspective.zfar <= perspective.znear ||
+		    (perspective.has_aspect_ratio && (!std::isfinite(perspective.aspect_ratio) || perspective.aspect_ratio <= 0.0f)))
 		{
 			throw Diagnostics::Error(std::format("glTF camera {} uses unsupported perspective parameters.", nodeIndex));
 		}

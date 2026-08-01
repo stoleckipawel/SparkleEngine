@@ -23,7 +23,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	    Window& window,
 	    PixelFormat backBufferFormat,
 	    const RhiPresentationConfiguration& presentationConfiguration,
-	    RhiD3D12InterposerHooks interposerHooks) noexcept;
+	    RhiInterposerHooks interposerHooks) noexcept;
 	~D3D12RenderDeviceServices() noexcept override;
 
 	D3D12RenderDeviceServices(const D3D12RenderDeviceServices&) = delete;
@@ -64,8 +64,8 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	    Window& window,
 	    PixelFormat backBufferFormat,
 	    const RhiPresentationConfiguration& presentationConfiguration,
-	    RhiD3D12InterposerHooks interposerHooks);
-	void InitializeDevice(RhiD3D12InterposerHooks interposerHooks);
+	    RhiInterposerHooks interposerHooks);
+	void InitializeDevice(RhiInterposerHooks interposerHooks);
 	void InitializePresentation(
 	    Window& window,
 	    PixelFormat backBufferFormat,
@@ -89,7 +89,7 @@ std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
     Window& window,
     PixelFormat backBufferFormat,
     const RhiPresentationConfiguration& presentationConfiguration,
-    RhiD3D12InterposerHooks interposerHooks) noexcept
+    RhiInterposerHooks interposerHooks) noexcept
 {
 	return D3D12RenderDeviceServices::Create(window, backBufferFormat, presentationConfiguration, interposerHooks);
 }
@@ -98,7 +98,7 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
     Window& window,
     PixelFormat backBufferFormat,
     const RhiPresentationConfiguration& presentationConfiguration,
-    RhiD3D12InterposerHooks interposerHooks) noexcept
+    RhiInterposerHooks interposerHooks) noexcept
 {
 	auto services = std::unique_ptr<D3D12RenderDeviceServices>(new D3D12RenderDeviceServices());
 	services->Initialize(window, backBufferFormat, presentationConfiguration, interposerHooks);
@@ -109,7 +109,7 @@ void D3D12RenderDeviceServices::Initialize(
     Window& window,
     PixelFormat backBufferFormat,
     const RhiPresentationConfiguration& presentationConfiguration,
-    RhiD3D12InterposerHooks interposerHooks)
+    RhiInterposerHooks interposerHooks)
 {
 	InitializeDevice(interposerHooks);
 	InitializePresentation(window, backBufferFormat, presentationConfiguration);
@@ -118,7 +118,7 @@ void D3D12RenderDeviceServices::Initialize(
 	InitializeSamplers();
 }
 
-void D3D12RenderDeviceServices::InitializeDevice(RhiD3D12InterposerHooks interposerHooks)
+void D3D12RenderDeviceServices::InitializeDevice(RhiInterposerHooks interposerHooks)
 {
 	m_rhi = std::make_unique<D3D12Rhi>(interposerHooks);
 	m_descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*m_rhi);

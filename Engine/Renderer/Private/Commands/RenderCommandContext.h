@@ -95,6 +95,8 @@ class RenderCommandContext final
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	void EndDiagnosticScope() noexcept;
 	void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
+	std::uint16_t AcquireGpuDiagnosticScopeDepth() noexcept;
+	void ReleaseGpuDiagnosticScopeDepth() noexcept;
 
 	void CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept;
 
@@ -112,4 +114,5 @@ class RenderCommandContext final
 	bool m_drawDispatchDiagnosticsEnabled = false;
 	std::uint32_t m_drawCount = 0;
 	std::uint32_t m_dispatchCount = 0;
+	std::uint16_t m_gpuDiagnosticScopeDepth = 0;
 };

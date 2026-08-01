@@ -58,6 +58,7 @@ set(SPARKLE_MSVC_DEBUG_COMPILE_OPTIONS
     /Od      # Disable optimization for straightforward source-level debugging.
     /Ob0     # Disable inline expansion so stepping follows source structure.
     /Zi      # Emit complete PDB debug information.
+    /FS      # Serialize compiler PDB writes when targets use multi-process compilation.
     /RTC1    # Enable runtime checks for stack frames and uninitialized locals.
 )
 
@@ -65,6 +66,7 @@ set(SPARKLE_MSVC_DEVELOPMENT_COMPILE_OPTIONS
     /O2      # Enable regular speed optimizations for realistic development performance.
     /Ob2     # Let the compiler expand suitable inline functions.
     /Zi      # Keep PDB debug information for profiling and practical debugging.
+    /FS      # Serialize compiler PDB writes when targets use multi-process compilation.
     /DNDEBUG # Disable standard assert paths while keeping Sparkle developer diagnostics.
 )
 
@@ -99,7 +101,15 @@ sparkle_join_profile_options(SPARKLE_CLANG_SHIPPING_COMPILE_OPTIONS SPARKLE_CLAN
 
 foreach(profile IN LISTS SPARKLE_DEBUG_CONFIGURATIONS)
     if(MSVC)
-        sparkle_set_profile_flags(${profile} "${SPARKLE_MSVC_DEBUG_COMPILE_FLAGS}" "${SPARKLE_MSVC_DEBUG_COMPILE_FLAGS}" "" "" "" "")
+        sparkle_set_profile_flags(
+            ${profile}
+            "${SPARKLE_MSVC_DEBUG_COMPILE_FLAGS}"
+            "${SPARKLE_MSVC_DEBUG_COMPILE_FLAGS}"
+            "/DEBUG:FULL"
+            "/DEBUG:FULL"
+            "/DEBUG:FULL"
+            ""
+        )
     else()
         sparkle_set_profile_flags(${profile} "${SPARKLE_CLANG_DEBUG_COMPILE_FLAGS}" "${SPARKLE_CLANG_DEBUG_COMPILE_FLAGS}" "" "" "" "")
     endif()
@@ -107,7 +117,15 @@ endforeach()
 
 foreach(profile IN LISTS SPARKLE_DEVELOPMENT_CONFIGURATIONS)
     if(MSVC)
-        sparkle_set_profile_flags(${profile} "${SPARKLE_MSVC_DEVELOPMENT_COMPILE_FLAGS}" "${SPARKLE_MSVC_DEVELOPMENT_COMPILE_FLAGS}" "" "" "" "")
+        sparkle_set_profile_flags(
+            ${profile}
+            "${SPARKLE_MSVC_DEVELOPMENT_COMPILE_FLAGS}"
+            "${SPARKLE_MSVC_DEVELOPMENT_COMPILE_FLAGS}"
+            "/DEBUG:FULL /INCREMENTAL:NO /OPT:REF /OPT:ICF"
+            "/DEBUG:FULL /INCREMENTAL:NO /OPT:REF /OPT:ICF"
+            "/DEBUG:FULL /INCREMENTAL:NO /OPT:REF /OPT:ICF"
+            ""
+        )
     else()
         sparkle_set_profile_flags(${profile} "${SPARKLE_CLANG_DEVELOPMENT_COMPILE_FLAGS}" "${SPARKLE_CLANG_DEVELOPMENT_COMPILE_FLAGS}" "" "" "" "")
     endif()

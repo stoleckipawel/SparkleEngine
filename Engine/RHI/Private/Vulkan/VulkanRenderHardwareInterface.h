@@ -15,8 +15,6 @@ class VulkanDescriptorService;
 class VulkanGpuMemoryAllocator;
 class VulkanImGuiBackend;
 class VulkanInteropService;
-class VulkanPipelineService;
-class VulkanPresentationService;
 class VulkanRayTracingServices;
 class VulkanRenderDeviceServices;
 class VulkanResourceService;
@@ -32,32 +30,32 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	    VulkanRhi& rhi,
 	    VulkanSwapChain& swapChain,
 	    VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
-	~VulkanRenderHardwareInterface() noexcept;
+	~VulkanRenderHardwareInterface() noexcept override;
 
 	VulkanRenderHardwareInterface(const VulkanRenderHardwareInterface&) = delete;
 	VulkanRenderHardwareInterface& operator=(const VulkanRenderHardwareInterface&) = delete;
 	VulkanRenderHardwareInterface(VulkanRenderHardwareInterface&&) = delete;
 	VulkanRenderHardwareInterface& operator=(VulkanRenderHardwareInterface&&) = delete;
 
-	const RhiCapabilities& GetCapabilities() const noexcept { return m_capabilities; }
-	std::uint32_t GetCurrentFrameIndex() const noexcept;
-	RhiResourceService& GetResourceService() noexcept;
-	const RhiResourceService& GetResourceService() const noexcept;
-	RhiDescriptorService& GetDescriptorService() noexcept;
-	const RhiDescriptorService& GetDescriptorService() const noexcept;
-	RhiPipelineService& GetPipelineService() noexcept;
-	RhiUploadService& GetUploadService() noexcept;
-	const RhiUploadService& GetUploadService() const noexcept;
-	RhiRayTracingService& GetRayTracingService() noexcept;
-	const RhiRayTracingService& GetRayTracingService() const noexcept;
+	const RhiCapabilities& GetCapabilities() const noexcept override { return m_capabilities; }
+	std::uint32_t GetCurrentFrameIndex() const noexcept override;
+	RhiResourceService& GetResourceService() noexcept override;
+	const RhiResourceService& GetResourceService() const noexcept override;
+	RhiDescriptorService& GetDescriptorService() noexcept override;
+	const RhiDescriptorService& GetDescriptorService() const noexcept override;
+	RhiPipelineService& GetPipelineService() noexcept override;
+	RhiUploadService& GetUploadService() noexcept override;
+	const RhiUploadService& GetUploadService() const noexcept override;
+	RhiRayTracingService& GetRayTracingService() noexcept override;
+	const RhiRayTracingService& GetRayTracingService() const noexcept override;
 	void WaitForIdle() noexcept;
-	RhiInteropService& GetInteropService() noexcept;
-	const RhiInteropService& GetInteropService() const noexcept;
-	RhiCaptureService& GetCaptureService() noexcept;
-	RenderDiagnostics& GetDiagnostics() noexcept;
-	const RenderDiagnostics& GetDiagnostics() const noexcept;
-	RhiPresentationService& GetPresentationService() noexcept;
-	const RhiPresentationService& GetPresentationService() const noexcept;
+	RhiInteropService& GetInteropService() noexcept override;
+	const RhiInteropService& GetInteropService() const noexcept override;
+	RhiCaptureService& GetCaptureService() noexcept override;
+	RenderDiagnostics& GetDiagnostics() noexcept override;
+	const RenderDiagnostics& GetDiagnostics() const noexcept override;
+	RhiPresentationService& GetPresentationService() noexcept override;
+	const RhiPresentationService& GetPresentationService() const noexcept override;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
@@ -116,8 +114,8 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 
 	std::unique_ptr<VulkanInteropService> m_interopService;
 	std::unique_ptr<VulkanCaptureService> m_captureService;
-	std::unique_ptr<VulkanPresentationService> m_presentationService;
-	std::unique_ptr<VulkanPipelineService> m_pipelineService;
+	std::unique_ptr<RhiPresentationService> m_presentationService;
+	std::unique_ptr<RhiPipelineService> m_pipelineService;
 	std::unique_ptr<VulkanResourceService> m_resourceService;
 	std::unique_ptr<VulkanRayTracingServices> m_rayTracingServices;
 	VulkanRhi* m_rhi = nullptr;
@@ -132,5 +130,4 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RhiCapabilities m_capabilities;
 	std::uint32_t m_currentFrameIndex = 0;
 	std::vector<VkImageLayout> m_swapChainBackBufferLayouts;
-	bool m_isPresentRendering = false;
 };

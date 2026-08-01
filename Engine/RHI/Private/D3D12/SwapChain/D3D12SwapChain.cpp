@@ -90,7 +90,7 @@ void D3D12SwapChain::Create()
 
 	ComPtr<IDXGIFactory7> externalFactory;
 	if (m_rhi.TryUpgradeInterposerInterface(
-	        ERhiD3D12InterposerInterfaceKind::PresentationFactory,
+	        ERhiInterposerInterfaceKind::PresentationFactory,
 	        m_rhi.GetDxgiFactory().Get(),
 	        IID_PPV_ARGS(externalFactory.ReleaseAndGetAddressOf())))
 	{
@@ -105,7 +105,7 @@ void D3D12SwapChain::Create()
 		if (SUCCEEDED(createResult) &&
 		    SUCCEEDED(externalSwapChain.As(&m_externalSwapChain)) &&
 		    m_rhi.TryResolveNativeInterface(
-		        ERhiD3D12InterposerInterfaceKind::PresentationSurface,
+		        ERhiInterposerInterfaceKind::PresentationSurface,
 		        m_externalSwapChain.Get(),
 		        IID_PPV_ARGS(m_swapChain.ReleaseAndGetAddressOf())))
 		{

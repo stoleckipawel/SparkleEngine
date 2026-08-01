@@ -1,7 +1,6 @@
 #include "D3D12/Resources/D3D12ResourceService.h"
 
 #include "D3D12/D3D12TypeConversions.h"
-#include "D3D12/Descriptors/D3D12DescriptorService.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
@@ -15,11 +14,9 @@
 D3D12ResourceService::D3D12ResourceService(
     D3D12Rhi& rhi,
     D3D12GpuMemoryAllocator& memoryAllocator,
-    D3D12DescriptorService& descriptorService,
     const RhiCapabilities& capabilities) noexcept :
     m_rhi(&rhi),
     m_memoryAllocator(&memoryAllocator),
-    m_descriptorService(&descriptorService),
     m_capabilities(&capabilities)
 {
 }
@@ -118,33 +115,6 @@ bool D3D12ResourceService::CreateVertexBuffer(
 	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
 	    .StrideInBytes = strideInBytes};
 	outResource = WrapOwnedResource(std::move(ownedRecord));
-	return true;
-}
-
-bool D3D12ResourceService::CreateStructuredBuffer(
-    const void* data,
-    std::size_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource,
-    RhiResourceViewHandle& outView)
-{
-	outResource = {};
-	outView = {};
-	if (m_descriptorService == nullptr || !CreateStructuredBufferResource(data, sizeInBytes, strideInBytes, debugName, outResource))
-	{
-		return false;
-	}
-
-	outView = m_descriptorService->CreateResourceView(
-	    RhiResourceViewDesc::BufferShaderResource(GetResourceHandle(outResource), sizeInBytes, strideInBytes));
-	if (!outView)
-	{
-		ReleaseOwnedResource(outResource);
-		outResource = {};
-		return false;
-	}
-
 	return true;
 }
 

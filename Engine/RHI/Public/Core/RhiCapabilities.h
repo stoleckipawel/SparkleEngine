@@ -101,9 +101,8 @@ struct RhiBackendMemorySupport
 enum class ERhiExternalFeatureBridgeKind : std::uint8_t
 {
 	None = 0,
-	D3D12NativeDevice,
-	VulkanManualFunctionPointers,
-	VulkanInterposer,
+	Interposer,
+	ManualIntegration,
 };
 
 struct RhiAdapterIdentity
@@ -127,13 +126,6 @@ struct RhiExternalFeatureInteropCapabilities
 	bool SupportsExplicitResourceStates = false;
 	bool SupportsExternalProviderEvaluation = false;
 	bool SupportsRuntimeProviderChecks = false;
-	bool VulkanHasInstanceHandle = false;
-	bool VulkanHasPhysicalDeviceHandle = false;
-	bool VulkanHasDeviceHandle = false;
-	bool VulkanHasGraphicsQueueHandle = false;
-	bool VulkanHasGraphicsQueueFamilyIndex = false;
-	bool VulkanManualFunctionPointerHookingReady = false;
-	bool VulkanInterposerRequired = false;
 };
 
 struct RhiFormatSupport
@@ -239,12 +231,10 @@ constexpr const char* RhiExternalFeatureBridgeKindToString(ERhiExternalFeatureBr
 {
 	switch (kind)
 	{
-		case ERhiExternalFeatureBridgeKind::D3D12NativeDevice:
-			return "D3D12NativeDevice";
-		case ERhiExternalFeatureBridgeKind::VulkanManualFunctionPointers:
-			return "VulkanManualFunctionPointers";
-		case ERhiExternalFeatureBridgeKind::VulkanInterposer:
-			return "VulkanInterposer";
+		case ERhiExternalFeatureBridgeKind::Interposer:
+			return "Interposer";
+		case ERhiExternalFeatureBridgeKind::ManualIntegration:
+			return "ManualIntegration";
 		case ERhiExternalFeatureBridgeKind::None:
 		default:
 			return "None";

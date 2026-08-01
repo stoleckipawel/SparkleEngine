@@ -72,7 +72,7 @@ void FramePipeline::InitializeUiRendering()
 	m_editorTextureRegistry = std::make_unique<EditorTextureRegistry>();
 	if (m_ownsUiBackend)
 	{
-		(void) m_rendererHost->GetImGuiRenderer().Initialize();
+		m_rendererHost->GetImGuiRenderer().Initialize();
 	}
 }
 

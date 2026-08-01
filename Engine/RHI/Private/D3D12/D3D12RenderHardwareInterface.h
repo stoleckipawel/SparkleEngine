@@ -15,8 +15,6 @@ class D3D12CommandRecordingContext;
 class D3D12ImGuiBackend;
 class D3D12InteropService;
 class D3D12GpuMemoryAllocator;
-class D3D12PipelineService;
-class D3D12PresentationService;
 class D3D12RenderCommandList;
 class D3D12ResourceService;
 class D3D12Rhi;
@@ -34,32 +32,32 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    D3D12SwapChain& swapChain,
 	    D3D12UploadService& uploadService) noexcept;
-	~D3D12RenderHardwareInterface() noexcept;
+	~D3D12RenderHardwareInterface() noexcept override;
 
 	D3D12RenderHardwareInterface(const D3D12RenderHardwareInterface&) = delete;
 	D3D12RenderHardwareInterface& operator=(const D3D12RenderHardwareInterface&) = delete;
 	D3D12RenderHardwareInterface(D3D12RenderHardwareInterface&&) = delete;
 	D3D12RenderHardwareInterface& operator=(D3D12RenderHardwareInterface&&) = delete;
 
-	const RhiCapabilities& GetCapabilities() const noexcept { return m_capabilities; }
-	std::uint32_t GetCurrentFrameIndex() const noexcept;
-	RhiResourceService& GetResourceService() noexcept;
-	const RhiResourceService& GetResourceService() const noexcept;
-	RhiDescriptorService& GetDescriptorService() noexcept;
-	const RhiDescriptorService& GetDescriptorService() const noexcept;
-	RhiPipelineService& GetPipelineService() noexcept;
-	RhiUploadService& GetUploadService() noexcept;
-	const RhiUploadService& GetUploadService() const noexcept;
-	RhiRayTracingService& GetRayTracingService() noexcept;
-	const RhiRayTracingService& GetRayTracingService() const noexcept;
+	const RhiCapabilities& GetCapabilities() const noexcept override { return m_capabilities; }
+	std::uint32_t GetCurrentFrameIndex() const noexcept override;
+	RhiResourceService& GetResourceService() noexcept override;
+	const RhiResourceService& GetResourceService() const noexcept override;
+	RhiDescriptorService& GetDescriptorService() noexcept override;
+	const RhiDescriptorService& GetDescriptorService() const noexcept override;
+	RhiPipelineService& GetPipelineService() noexcept override;
+	RhiUploadService& GetUploadService() noexcept override;
+	const RhiUploadService& GetUploadService() const noexcept override;
+	RhiRayTracingService& GetRayTracingService() noexcept override;
+	const RhiRayTracingService& GetRayTracingService() const noexcept override;
 	void WaitForIdle() noexcept;
-	RhiInteropService& GetInteropService() noexcept;
-	const RhiInteropService& GetInteropService() const noexcept;
-	RhiCaptureService& GetCaptureService() noexcept;
-	RenderDiagnostics& GetDiagnostics() noexcept;
-	const RenderDiagnostics& GetDiagnostics() const noexcept;
-	RhiPresentationService& GetPresentationService() noexcept;
-	const RhiPresentationService& GetPresentationService() const noexcept;
+	RhiInteropService& GetInteropService() noexcept override;
+	const RhiInteropService& GetInteropService() const noexcept override;
+	RhiCaptureService& GetCaptureService() noexcept override;
+	RenderDiagnostics& GetDiagnostics() noexcept override;
+	const RenderDiagnostics& GetDiagnostics() const noexcept override;
+	RhiPresentationService& GetPresentationService() noexcept override;
+	const RhiPresentationService& GetPresentationService() const noexcept override;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
@@ -117,8 +115,8 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 
 	std::unique_ptr<D3D12InteropService> m_interopService;
 	std::unique_ptr<D3D12CaptureService> m_captureService;
-	std::unique_ptr<D3D12PresentationService> m_presentationService;
-	std::unique_ptr<D3D12PipelineService> m_pipelineService;
+	std::unique_ptr<RhiPresentationService> m_presentationService;
+	std::unique_ptr<RhiPipelineService> m_pipelineService;
 	std::unique_ptr<D3D12ResourceService> m_resourceService;
 	std::unique_ptr<D3D12RayTracingServices> m_rayTracingServices;
 	D3D12Rhi* m_rhi = nullptr;

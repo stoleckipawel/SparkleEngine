@@ -100,12 +100,8 @@ RhiPartitionedTlasCapabilities D3D12NvapiRayTracingProvider::QueryPartitionedTla
 	RhiPartitionedTlasCapabilities capabilities{
 	    .Supported = false,
 	    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
-	    .RequiresNvidiaDevice = true,
-	    .RunsOnNvidiaDevice = runsOnNvidiaDevice,
-	    .SupportsD3D12NvapiHeaders = SPARKLE_RHI_D3D12_NVAPI_HAS_PARTITIONED_TLAS != 0,
-	    .SupportsD3D12NvapiRuntime = m_runtimeInitialized,
-	    .SupportsD3D12DeviceInterface = device != nullptr,
-	    .SupportsD3D12CommandListInterface = SPARKLE_RHI_D3D12_NVAPI_HAS_PARTITIONED_TLAS != 0,
+	    .NvidiaDeviceOnly = true,
+	    .CurrentDeviceIsNvidia = runsOnNvidiaDevice,
 	    .CapabilityStatusReason = "d3d12-nvapi-ptlas-not-queried"};
 
 	if (!supportsRayTracing)
@@ -148,7 +144,6 @@ RhiPartitionedTlasCapabilities D3D12NvapiRayTracingProvider::QueryPartitionedTla
 
 	const bool supportsStandard =
 	    (nativeCaps & NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_STANDARD) == NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_STANDARD;
-	capabilities.SupportsD3D12NvapiPartitionedTlas = supportsStandard;
 	capabilities.SupportsDescriptorAccess = supportsStandard;
 	capabilities.Supported = supportsStandard;
 	capabilities.SupportsCpuPackedOperations = supportsStandard;

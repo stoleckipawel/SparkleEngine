@@ -38,6 +38,7 @@ target_link_libraries(SourceImporters
         SparkleGameFramework
     PRIVATE
         cgltf
+        mikktspace
         assimp::assimp
 )
 

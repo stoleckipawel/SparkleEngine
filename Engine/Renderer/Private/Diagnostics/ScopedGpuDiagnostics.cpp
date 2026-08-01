@@ -58,8 +58,9 @@ ScopedGpuTimer::ScopedGpuTimer(
     RenderCommandContext& commands,
     std::string label,
     RhiTimestampQueryHandle beginQuery,
-    RhiTimestampQueryHandle endQuery) noexcept :
-    m_owner(&owner), m_commands(&commands), m_label(std::move(label)), m_beginQuery(beginQuery), m_endQuery(endQuery)
+    RhiTimestampQueryHandle endQuery,
+    ERhiQueueType queueType) noexcept :
+    m_owner(&owner), m_label(std::move(label)), m_beginQuery(beginQuery), m_endQuery(endQuery), m_queueType(queueType)
 {
 	if (m_label.empty() || !m_beginQuery || !m_endQuery || !m_owner->WriteTimestamp(commands, m_beginQuery))
 	{
@@ -67,8 +68,8 @@ ScopedGpuTimer::ScopedGpuTimer(
 		return;
 	}
 
-	m_depth = m_owner->AcquireTimerDepth();
-	m_depthAccounted = true;
+	m_commands = &commands;
+	m_depth = commands.AcquireGpuDiagnosticScopeDepth();
 }
 
 ScopedGpuTimer::~ScopedGpuTimer() noexcept
@@ -84,12 +85,8 @@ ScopedGpuTimer::~ScopedGpuTimer() noexcept
 		return;
 	}
 
-	m_owner->RecordCompletedTimer(std::move(m_label), m_beginQuery, m_endQuery, m_depth);
-	if (m_depthAccounted)
-	{
-		m_owner->ReleaseTimerDepth();
-		m_depthAccounted = false;
-	}
+	m_owner->RecordCompletedTimer(std::move(m_label), m_beginQuery, m_endQuery, m_queueType, m_depth);
+	m_commands->ReleaseGpuDiagnosticScopeDepth();
 	m_owner = nullptr;
 	m_commands = nullptr;
 	m_beginQuery = {};
@@ -107,15 +104,15 @@ ScopedGpuTimer::ScopedGpuTimer(ScopedGpuTimer&& other) noexcept :
     m_label(std::move(other.m_label)),
     m_beginQuery(other.m_beginQuery),
     m_endQuery(other.m_endQuery),
-    m_depth(other.m_depth),
-    m_depthAccounted(other.m_depthAccounted)
+	m_queueType(other.m_queueType),
+    m_depth(other.m_depth)
 {
 	other.m_owner = nullptr;
 	other.m_commands = nullptr;
 	other.m_beginQuery = {};
 	other.m_endQuery = {};
+	other.m_queueType = ERhiQueueType::Graphics;
 	other.m_depth = 0;
-	other.m_depthAccounted = false;
 }
 
 ScopedGpuTimer& ScopedGpuTimer::operator=(ScopedGpuTimer&& other) noexcept
@@ -128,14 +125,14 @@ ScopedGpuTimer& ScopedGpuTimer::operator=(ScopedGpuTimer&& other) noexcept
 		m_label = std::move(other.m_label);
 		m_beginQuery = other.m_beginQuery;
 		m_endQuery = other.m_endQuery;
+		m_queueType = other.m_queueType;
 		m_depth = other.m_depth;
-		m_depthAccounted = other.m_depthAccounted;
 		other.m_owner = nullptr;
 		other.m_commands = nullptr;
 		other.m_beginQuery = {};
 		other.m_endQuery = {};
+		other.m_queueType = ERhiQueueType::Graphics;
 		other.m_depth = 0;
-		other.m_depthAccounted = false;
 	}
 
 	return *this;
@@ -147,9 +144,9 @@ void ScopedGpuTimer::Reset() noexcept
 	{
 		m_owner->ReleaseTimestampQuery(m_beginQuery);
 		m_owner->ReleaseTimestampQuery(m_endQuery);
-		if (m_depthAccounted)
+		if (m_commands != nullptr)
 		{
-			m_owner->ReleaseTimerDepth();
+			m_commands->ReleaseGpuDiagnosticScopeDepth();
 		}
 	}
 
@@ -158,8 +155,8 @@ void ScopedGpuTimer::Reset() noexcept
 	m_label.clear();
 	m_beginQuery = {};
 	m_endQuery = {};
+	m_queueType = ERhiQueueType::Graphics;
 	m_depth = 0;
-	m_depthAccounted = false;
 }
 
 ScopedGpuScope::ScopedGpuScope(ScopedGpuEvent eventScope, ScopedGpuTimer timerScope) noexcept :

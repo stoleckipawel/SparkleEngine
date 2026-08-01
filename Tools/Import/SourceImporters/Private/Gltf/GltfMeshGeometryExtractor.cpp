@@ -7,11 +7,14 @@
 #include "Gltf/GltfMorphTargetImporter.h"
 #include "Gltf/GltfNodeTransformConverter.h"
 #include "Gltf/GltfSkinImporter.h"
+#include "Gltf/GltfTangentFrameValidator.h"
+#include "Gltf/GltfVertexFrameBuilder.h"
 #include "Core/Public/Diagnostics/Error.h"
 
 #include <cgltf.h>
 
 #include <cstdint>
+#include <format>
 #include <limits>
 
 class GltfGeometryRequirements final
@@ -30,11 +33,6 @@ class GltfGeometryRequirements final
 	static bool RequiresTangents(const cgltf_material* material) noexcept
 	{
 		return material != nullptr && material->normal_texture.texture != nullptr;
-	}
-
-	static bool IsNonZero(const DirectX::XMFLOAT3& value) noexcept
-	{
-		return value.x * value.x + value.y * value.y + value.z * value.z > 1.0e-8f;
 	}
 };
 
@@ -102,6 +100,18 @@ void GltfMeshGeometryExtractor::ValidateAttributes(const cgltf_primitive& primit
 	{
 		throw Diagnostics::Error("glTF primitive contains unsupported or malformed vertex attributes.");
 	}
+
+	for (cgltf_size targetIndex = 0; targetIndex < primitive.targets_count; ++targetIndex)
+	{
+		const cgltf_morph_target& target = primitive.targets[targetIndex];
+		for (cgltf_size attributeIndex = 0; attributeIndex < target.attributes_count; ++attributeIndex)
+		{
+			if (target.attributes[attributeIndex].type == cgltf_attribute_type_tangent && attributes.Tangents == nullptr)
+			{
+				throw Diagnostics::Error("A glTF morph target cannot provide tangent deltas when the base primitive omits tangents.");
+			}
+		}
+	}
 }
 
 void GltfMeshGeometryExtractor::PopulateVertices(
@@ -115,27 +125,27 @@ void GltfMeshGeometryExtractor::PopulateVertices(
 		const DirectX::XMFLOAT3 sourcePosition = GltfAccessorReader::ReadFloat3(attributes.Positions, vertexIndex);
 		vertex.position = GltfNodeTransformConverter::ConvertGltfVectorToEngine(sourcePosition);
 
-		const DirectX::XMFLOAT3 sourceNormal = GltfAccessorReader::ReadFloat3(attributes.Normals, vertexIndex);
-		if (!GltfGeometryRequirements::IsNonZero(sourceNormal))
+		try
 		{
-			throw Diagnostics::Error("glTF primitive contains a zero-length vertex normal.");
+			const DirectX::XMFLOAT3 sourceNormal = GltfAccessorReader::ReadFloat3(attributes.Normals, vertexIndex);
+			vertex.normal = GltfVertexFrameBuilder::BuildNormal(GltfNodeTransformConverter::ConvertGltfVectorToEngine(sourceNormal));
+
+			if (attributes.Tangents != nullptr)
+			{
+				const DirectX::XMFLOAT4 sourceTangent = GltfAccessorReader::ReadFloat4(attributes.Tangents, vertexIndex);
+				vertex.tangent = GltfVertexFrameBuilder::BuildAuthoredTangent(
+				    GltfNodeTransformConverter::ConvertGltfTangentToEngine(sourceTangent),
+				    vertex.normal);
+			}
 		}
-		vertex.normal = GltfNodeTransformConverter::ConvertGltfVectorToEngine(sourceNormal);
+		catch (const Diagnostics::Error& error)
+		{
+			throw Diagnostics::Error(std::format("glTF vertex {} frame validation failed: {}", vertexIndex, error.what()));
+		}
 
 		if (attributes.TextureCoordinates != nullptr)
 		{
 			vertex.uv = GltfAccessorReader::ReadFloat2(attributes.TextureCoordinates, vertexIndex);
-		}
-
-		if (attributes.Tangents != nullptr)
-		{
-			const DirectX::XMFLOAT4 sourceTangent = GltfAccessorReader::ReadFloat4(attributes.Tangents, vertexIndex);
-			if (!GltfGeometryRequirements::IsNonZero({sourceTangent.x, sourceTangent.y, sourceTangent.z}) ||
-			    (sourceTangent.w != -1.0f && sourceTangent.w != 1.0f))
-			{
-				throw Diagnostics::Error("glTF primitive contains an unusable vertex tangent.");
-			}
-			vertex.tangent = GltfNodeTransformConverter::ConvertGltfTangentToEngine(sourceTangent);
 		}
 
 		if (attributes.Colors != nullptr)
@@ -201,10 +211,14 @@ ImportedMeshGeometry GltfMeshGeometryExtractor::ExtractMeshGeometry(
 
 	PopulateVertices(attributes, vertexCount, geometry);
 	PopulateIndices(primitive, vertexCount, geometry);
-	if (GltfGeometryRequirements::RequiresTangents(primitive.material) && attributes.Tangents == nullptr)
-	{
-		GltfMeshTangentGenerator::GenerateTangents(geometry);
-	}
 	geometry.deformation.morphTargets = GltfMorphTargetImporter::ImportMorphTargets(mesh, primitive, vertexCount);
+	if (GltfGeometryRequirements::RequiresTangents(primitive.material))
+	{
+		if (attributes.Tangents == nullptr)
+		{
+			GltfMeshTangentGenerator::GenerateTangents(geometry);
+		}
+		GltfTangentFrameValidator::Validate(geometry);
+	}
 	return geometry;
 }

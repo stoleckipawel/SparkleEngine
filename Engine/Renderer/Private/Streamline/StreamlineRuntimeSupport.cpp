@@ -44,7 +44,7 @@ class StreamlineRuntime final
 		return initialized;
 	}
 
-	static RhiD3D12InterposerHooks GetD3D12InterposerHooks() noexcept
+	static RhiInterposerHooks GetInterposerHooks() noexcept
 	{
 		std::lock_guard lock(s_mutex);
 		if (!s_initialized || s_shuttingDown)
@@ -52,7 +52,7 @@ class StreamlineRuntime final
 			return {};
 		}
 
-		return RhiD3D12InterposerHooks{
+		return RhiInterposerHooks{
 		    .DeviceCreated = &SetNativeDevice,
 		    .UpgradeInterface = &UpgradeInterface,
 		    .ResolveNativeInterface = &ResolveNativeInterface,
@@ -204,14 +204,14 @@ class StreamlineRuntime final
 		return deviceBound;
 	}
 
-	static bool UpgradeInterface(ERhiD3D12InterposerInterfaceKind, void** nativeInterface, void*) noexcept
+	static bool UpgradeInterface(ERhiInterposerInterfaceKind, void** nativeInterface, void*) noexcept
 	{
 		CallLease call(CallRequirement::DeviceBound);
 		return call && nativeInterface != nullptr && slUpgradeInterface(nativeInterface) == sl::Result::eOk;
 	}
 
 	static bool ResolveNativeInterface(
-	    ERhiD3D12InterposerInterfaceKind,
+	    ERhiInterposerInterfaceKind,
 	    void* externalInterface,
 	    void** nativeInterface,
 	    void*) noexcept
@@ -333,21 +333,16 @@ bool StreamlineRuntime::s_shuttingDown = false;
 std::uint32_t StreamlineRuntime::s_activeCalls = 0;
 #endif
 
-bool InitializeSharedStreamlineRuntime(ERhiBackendApi backendApi)
+RhiInterposerHooks InitializeSharedStreamlineRuntime(ERhiBackendApi backendApi)
 {
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	return StreamlineRuntime::Initialize(backendApi);
+	if (!StreamlineRuntime::Initialize(backendApi))
+	{
+		return {};
+	}
+	return StreamlineRuntime::GetInterposerHooks();
 #else
 	(void) backendApi;
-	return false;
-#endif
-}
-
-RhiD3D12InterposerHooks GetSharedStreamlineD3D12InterposerHooks() noexcept
-{
-#if SPARKLE_WITH_NVIDIA_STREAMLINE
-	return StreamlineRuntime::GetD3D12InterposerHooks();
-#else
 	return {};
 #endif
 }

@@ -284,6 +284,20 @@ void RenderCommandContext::InsertDiagnosticMarker(std::string_view label, RhiDia
 	m_commandList->InsertDiagnosticMarker(label, color);
 }
 
+std::uint16_t RenderCommandContext::AcquireGpuDiagnosticScopeDepth() noexcept
+{
+	return m_gpuDiagnosticScopeDepth++;
+}
+
+void RenderCommandContext::ReleaseGpuDiagnosticScopeDepth() noexcept
+{
+	if (m_gpuDiagnosticScopeDepth == 0)
+	{
+		Diagnostics::Fatal(g_renderCommandContextLogger, __FILE__, __LINE__, "GPU diagnostic scope depth underflowed.");
+	}
+	--m_gpuDiagnosticScopeDepth;
+}
+
 void RenderCommandContext::CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept
 {
 	m_commandList->CopyResource(destinationResource, sourceResource);

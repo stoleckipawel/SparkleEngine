@@ -7,8 +7,7 @@
 RendererExternalRuntime::RendererExternalRuntime() noexcept
 {
 	m_backendConfiguration.BackendApi = ResolveDefaultRhiBackendApi();
-	(void) InitializeSharedStreamlineRuntime(m_backendConfiguration.BackendApi);
-	m_backendConfiguration.D3D12InterposerHooks = GetSharedStreamlineD3D12InterposerHooks();
+	m_backendConfiguration.InterposerHooks = InitializeSharedStreamlineRuntime(m_backendConfiguration.BackendApi);
 }
 
 RendererExternalRuntime::~RendererExternalRuntime() noexcept

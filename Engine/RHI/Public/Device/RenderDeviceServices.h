@@ -3,7 +3,7 @@
 #include "../Core/RhiBackendSelection.h"
 #include "../Commands/RhiCommandSubmissionService.h"
 #include "../Formats/PixelFormat.h"
-#include "../Interop/RhiD3D12InterposerHooks.h"
+#include "../Interop/RhiInterposerHooks.h"
 #include "../RHIAPI.h"
 #include "RenderHardwareInterface.h"
 
@@ -28,7 +28,7 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	    Window& window,
 	    ERhiBackendApi backendApi,
 	    PixelFormat backBufferFormat,
-	    RhiD3D12InterposerHooks d3d12InterposerHooks = {}) noexcept;
+	    RhiInterposerHooks interposerHooks = {}) noexcept;
 
 	~RenderDeviceServices() noexcept;
 

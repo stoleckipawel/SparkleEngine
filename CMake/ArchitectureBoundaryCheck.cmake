@@ -102,6 +102,26 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
+		if(_relative_path MATCHES "^Engine/RHI/Private/" AND
+		   NOT _relative_path MATCHES "^Engine/RHI/Private/(D3D12|Vulkan)/" AND
+		   _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_API_REGEX}")
+			sparkle_boundary_append_failure(
+				"RHI_COMMON_NO_BACKEND_NATIVE"
+				"${_relative_path}"
+				"${_line_number}"
+				"Common RHI implementation must depend on neutral contracts; native API identifiers belong in the selected backend target."
+				"${_line}")
+		endif()
+
+		if(_relative_path MATCHES "^Engine/RHI/" AND _line MATCHES "Upscaler|RayReconstruction|GBuffer|RenderWorld")
+			sparkle_boundary_append_failure(
+				"RHI_NO_RENDERER_FEATURE_POLICY"
+				"${_relative_path}"
+				"${_line_number}"
+				"Renderer feature policy must not appear in RHI contracts or implementation; use a neutral RHI capability or external-provider contract."
+				"${_line}")
+		endif()
+
         if(_relative_path MATCHES "^Engine/Renderer/" AND _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_API_REGEX}")
 			sparkle_boundary_append_failure(
 				"RENDERER_NO_BACKEND_NATIVE"

@@ -7,15 +7,7 @@
 #include "FrameGraph/PassRuntimeContext.h"
 #include "Upscaling/UpscalerProvider.h"
 
-class UpscalerPassRequirements final
-{
-  public:
-	static bool HasRequiredInputs(const UpscalerPassResources& inputs) noexcept
-	{
-		return inputs.InputColor.IsValid() && inputs.OutputColor.IsValid() && inputs.Depth.IsValid() &&
-		       inputs.MotionVectors.IsValid() && inputs.Exposure.IsValid();
-	}
-};
+static const auto g_upscalerPassLogger = Logging::GetOrCreateLogger("Renderer.UpscalerPass");
 
 void AddUpscalerPass(
     FrameGraphBuilder& builder,
@@ -23,9 +15,10 @@ void AddUpscalerPass(
     RenderViewportExtent outputExtent,
     const UpscalerPassResources& inputs)
 {
-	if (!UpscalerPassRequirements::HasRequiredInputs(inputs))
+	if (!inputs.InputColor.IsValid() || !inputs.OutputColor.IsValid() || !inputs.Depth.IsValid() ||
+	    !inputs.MotionVectors.IsValid() || !inputs.Exposure.IsValid())
 	{
-		return;
+		Diagnostics::Fatal(g_upscalerPassLogger, __FILE__, __LINE__, "Upscaler pass received an incomplete resource set.");
 	}
 
 	builder.AddPass(
@@ -44,14 +37,14 @@ void AddUpscalerPass(
 		    if (context.Runtime.ImageProviders == nullptr ||
 		        context.Runtime.ImageProviders->Upscaling == nullptr)
 		    {
-			    return;
+			    Diagnostics::Fatal(g_upscalerPassLogger, __FILE__, __LINE__, "Upscaler pass has no configured image provider.");
 		    }
 
 		    RenderCommandList& commandList = context.Commands.GetRenderCommandList();
 		    const RhiNativeInteropRequest interopRequest{
-		        .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
+		        .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
 		        .Reason = "Evaluate upscaler pass"};
-		    (void) context.Runtime.ImageProviders->Upscaling->Evaluate(
+		    if (!context.Runtime.ImageProviders->Upscaling->Evaluate(
 		        UpscalerEvaluationDesc{
 		            .BackendApi = commandList.GetBackendApi(),
 		            .NativeCommandList = commandList.GetNativeHandle(interopRequest),
@@ -66,6 +59,9 @@ void AddUpscalerPass(
 		            .NativeScalingOutputColorView =
 		                context.Resources.ResolveNativeTextureView(inputs.OutputColor, ResourceState::UnorderedAccess, interopRequest),
 		            .RenderExtent = renderExtent,
-		            .OutputExtent = outputExtent});
+		            .OutputExtent = outputExtent}))
+		    {
+			    Diagnostics::Fatal(g_upscalerPassLogger, __FILE__, __LINE__, "The configured upscaler failed to evaluate the active frame.");
+		    }
 	    });
 }

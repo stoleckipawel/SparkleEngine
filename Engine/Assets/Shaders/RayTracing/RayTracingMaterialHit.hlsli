@@ -457,8 +457,8 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	    (v0.Tangent.w * barycentricWeights.x + v1.Tangent.w * barycentricWeights.y + v2.Tangent.w * barycentricWeights.z) >= 0.0f ? 1.0f : -1.0f;
 	const float3x3 worldInverseTranspose = (float3x3) meshInstance.WorldInverseTranspose;
 	const float3x3 worldMatrix = (float3x3) meshInstance.WorldMatrix;
-	float3 normalWorld = SafeNormalize(mul(localNormal, worldInverseTranspose), -rayDirectionWorld);
-	float3 tangentWorld = SafeNormalize(mul(localTangent, worldMatrix), 0.0f.xxx);
+	float3 normalWorld = normalize(mul(localNormal, worldInverseTranspose));
+	float3 tangentWorld = normalize(mul(localTangent, worldMatrix));
 	const bool twoSided = (hitInstance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 	const bool frontFacing = dot(normalWorld, -rayDirectionWorld) >= 0.0f;
 	if (!frontFacing && !twoSided)

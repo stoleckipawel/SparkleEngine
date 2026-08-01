@@ -203,14 +203,7 @@ void AssetCookerDiscovery::AddPlanSteps(
 
 std::string AssetCookerDiscovery::ResolveToolConfiguration(std::string_view configuration)
 {
-	std::string toolConfiguration(configuration);
-	constexpr std::string_view gameSuffix = "Game";
-	if (toolConfiguration.ends_with(gameSuffix))
-	{
-		toolConfiguration.resize(toolConfiguration.size() - gameSuffix.size());
-		toolConfiguration += "Editor";
-	}
-	return toolConfiguration;
+	return std::string(configuration);
 }
 
 bool AssetCookerDiscovery::CollectSceneIds(

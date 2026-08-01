@@ -3286,6 +3286,58 @@ trace-derived `T_floor` values and do not support an Amdahl fraction or a univer
 | `MV-11` | Source plan cannot publish | Unknown | Bounded design only, not timed | Fix source/import contracts before tuning | scene import/cook owners; clean full catalog and stable generation hash unlocks comparison |
 | `MV-12` | Evidence and identical-operation control | Unknown | Responsiveness ownership only, not timed | Retain bounded I/O ownership; defer scaling | editor recook/capture and launcher operation owners; UI-stall trace plus identical product hash |
 
+#### Current-binary CPU/GPU capture supplement - 2026-08-02
+
+This supplement supersedes only the original record's statement that no current serial runtime trace was available. It does not
+replace the fixed `e777a28c` cooker evidence above, pass Prompt 23A, or open Prompt 24. The captured DevelopmentGame runtime was
+built once from commit `bebc1e4c42f2f2804a8c11896a3d45d3a4c2f8f3`; its SHA-256 was
+`E3A27767BC833C1EFF96CC89FE34781EB548C6A5C5B9086D795DCEFC4C4C3C2A`. Both backends used the same 526-file known-good cooked
+set with manifest hash `2AA1748F16FF720AA19DA4C5E633925D8FEF922A915C13A37A4DF52F151D05F9`. This is a pre-importer-rewrite
+runtime baseline, not a post-rewrite cook result.
+
+The host and driver remained Windows 11 Home build 26200, Ryzen 9 8940HX (16 cores/32 logical processors), 64 GiB memory,
+Balanced power plan, and RTX 5070 Ti Laptop GPU driver 610.47. Each accepted run launched Sponza afresh, warmed for 25 seconds,
+captured for 20 seconds, disabled VSync/providers/ray reconstruction/PTLAS preference/backend timing, selected one worker per
+lane, and used serial task execution, caller-owned rendering, zero pipeline depth, and serial command recording. The runtime
+closed through its window and exited zero without forced cleanup. The private raw root is
+`build/private/p23a-captures/20260802-bebc1e4`; native captures and decoded ETW text remain ignored and uncommitted.
+
+| Backend | Presents | Frame time p50/p95/p99 ms | CPU busy p50/p95/p99 ms | CPU wait p50/p95/p99 ms | GPU time p50/p95/p99 ms | GPU busy p50/p95/p99 ms | GPU wait p50/p95/p99 ms | Presentation evidence | Confidence |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| D3D12 | 1,895 | 10.3458 / 13.0836 / 15.9456 | 9.9541 / 12.5583 / 14.5999 | 0.3217 / 0.9633 / 1.7031 | 10.3298 / 12.4731 / 14.8558 | 8.5903 / 9.6375 / 10.1628 | 1.7051 / 3.3009 / 5.9470 | 1,877 independent flips; display latency 18.1275 / 21.7489 / 23.7730 ms over 1,883 resolved presents | **Accepted serial baseline**; one run, not A/B |
+| Vulkan | 2,161 | 6.0027 / 7.8563 / 8.9309 | 5.1654 / 6.8017 / 7.8849 | 0.8252 / 1.3365 / 1.6854 | 5.9432 / 7.2224 / 8.1817 | 4.6843 / 5.3526 / 5.7461 | 1.2463 / 2.1158 / 2.8097 | all composed flip; only three display-resolved rows, so display latency is unavailable | **Accepted serial baseline**; one run, not A/B |
+
+PresentMon's GPU-latency p50/p95/p99 was 7.5180/10.9379/13.1928 ms for D3D12 and
+0.8455/1.3241/1.5177 ms for Vulkan. Those values retain their PresentMon definition; they are not substituted for GPU
+execution time. The D3D12 and Vulkan presentation paths differ materially, and the runs were not interleaved repeats, so the
+apparent backend delta is a hypothesis for the paired matrix rather than a backend performance conclusion.
+
+The SparkleTasks traces recorded zero lost events and zero lost buffers. Analysis selected complete runtime-PID graph runs in
+the 25.0-45.5 second stable ETW interval. `W` is the sum of emitted task durations, `L` is the dependency-DAG critical path,
+graph wall is last event minus first event, and dispatch loss is graph wall minus `W`. The latter includes trace/scheduling gaps;
+it is not owner `U`. ETW does not bracket the owner work outside each DAG, so `U`, `T_floor`, `S_max`, speedup, and efficiency
+remain unavailable rather than inferred.
+
+| Backend and graph | Complete runs / tasks | `W` p50/p95/p99 ms | `L` p50/p95/p99 ms | Graph wall p50/p95/p99 ms | Dispatch loss p50/p95/p99 ms |
+|---|---:|---:|---:|---:|---:|
+| D3D12 `GameSystemGraph` | 1,937 / 139 | 0.1138 / 0.1633 / 0.3418 | 0.0088 / 0.0397 / 0.2001 | 0.267 / 0.364 / 0.700 | 0.1504 / 0.2130 / 0.3509 |
+| D3D12 `RenderPreparationGraph` | 1,937 / 8 | 0.0130 / 0.0174 / 0.0556 | 0.0094 / 0.0128 / 0.0515 | 0.026 / 0.037 / 0.140 | 0.0129 / 0.0164 / 0.0473 |
+| Vulkan `GameSystemGraph` | 3,149 / 139 | 0.1017 / 0.1427 / 0.1685 | 0.0078 / 0.0260 / 0.0354 | 0.250 / 0.336 / 0.365 | 0.1447 / 0.1923 / 0.2164 |
+| Vulkan `RenderPreparationGraph` | 3,149 / 8 | 0.0093 / 0.0163 / 0.0269 | 0.0066 / 0.0121 / 0.0240 | 0.022 / 0.033 / 0.047 | 0.0119 / 0.0164 / 0.0286 |
+
+Decision from the accepted scope: hold all worker, grain, frame-depth, and recording defaults. Per-invocation Sponza game-system
+task work is roughly 0.10-0.11 ms p50 and render-preparation work is roughly 0.01 ms p50, while the captured frame CPU/GPU
+costs are several milliseconds. This makes deeper task-DAG scaling a low-priority candidate for this route; reducing dispatch
+overhead or addressing the whole-frame CPU/GPU/driver path has greater plausible absolute value. That is a scoped prioritization,
+not a speedup claim: the task/threaded/recording modes and worker curve still require five interleaved A/B pairs.
+
+The matrix retry was blocked by host trace privilege. A single elevated runner was prepared, but Windows UAC consent did not
+return and it was cancelled before any run began. A direct non-elevated combined-mode probe exited PresentMon with code 6,
+`failed to start trace session: access denied`; the engine still closed with exit zero. The account must run the capture elevated
+or belong to the local Performance Log Users group before the remaining D3D12/Vulkan matrix can be acquired. The accepted Tier 1
+route is also still absent. These named prerequisites keep `MV-01` through `MV-08` and `MV-12` partial/blocked and keep Prompt 23A
+acceptance closed.
+
 #### Audit conclusion
 
 The only accepted value curve says multithreading is worthwhile for actual uncached shader compilation, not for cache-hit

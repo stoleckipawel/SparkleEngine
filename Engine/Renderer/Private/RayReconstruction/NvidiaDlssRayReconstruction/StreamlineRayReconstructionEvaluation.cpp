@@ -12,56 +12,42 @@
 #include <sl_dlss.h>
 #include <sl_dlss_d.h>
 
-class StreamlineRayReconstructionRequirements final
+static const auto g_streamlineRayReconstructionEvaluationLogger =
+	Logging::GetOrCreateLogger("Renderer.Streamline.RayReconstruction");
+
+static sl::DLSSDOptions BuildStreamlineRayReconstructionOptions(
+	EUpscalerQualityMode qualityMode,
+	RenderViewportExtent outputExtent) noexcept
 {
-  public:
-	static bool HasRequiredNativeResources(const RayReconstructionEvaluationDesc& evaluation) noexcept
-	{
-		return evaluation.NativeCommandList && AreStreamlineTextureViewsValid(
-		                                           evaluation.BackendApi,
-		                                           evaluation.NativeNoisyInputColorView,
-		                                           evaluation.NativeOutputColorView,
-		                                           evaluation.NativeDepthView,
-		                                           evaluation.NativeMotionVectorsView,
-		                                           evaluation.NativeNormalsView,
-		                                           evaluation.NativeRoughnessView,
-		                                           evaluation.NativeDiffuseAlbedoView,
-		                                           evaluation.NativeSpecularAlbedoView,
-		                                           evaluation.NativeSpecularHitDistanceView,
-		                                           evaluation.NativeExposureView);
-	}
-
-	static sl::DLSSDOptions BuildRayReconstructionOptions(
-	    EUpscalerQualityMode qualityMode,
-	    RenderViewportExtent outputExtent) noexcept
-	{
-		sl::DLSSDOptions options{};
-		options.mode = ToStreamlineDlssMode(qualityMode);
-		options.outputWidth = outputExtent.Width;
-		options.outputHeight = outputExtent.Height;
-		options.colorBuffersHDR = sl::Boolean::eTrue;
-		options.normalRoughnessMode = sl::DLSSDNormalRoughnessMode::eUnpacked;
-		options.alphaUpscalingEnabled = sl::Boolean::eFalse;
-		options.dlaaPreset = sl::DLSSDPreset::ePresetD;
-		options.qualityPreset = sl::DLSSDPreset::ePresetD;
-		options.balancedPreset = sl::DLSSDPreset::ePresetD;
-		options.performancePreset = sl::DLSSDPreset::ePresetD;
-		options.ultraPerformancePreset = sl::DLSSDPreset::ePresetD;
-		options.ultraQualityPreset = sl::DLSSDPreset::ePresetD;
-		return options;
-	}
-
-};
+	sl::DLSSDOptions options{};
+	options.mode = ToStreamlineDlssMode(qualityMode);
+	options.outputWidth = outputExtent.Width;
+	options.outputHeight = outputExtent.Height;
+	options.colorBuffersHDR = sl::Boolean::eTrue;
+	options.normalRoughnessMode = sl::DLSSDNormalRoughnessMode::eUnpacked;
+	options.alphaUpscalingEnabled = sl::Boolean::eFalse;
+	options.dlaaPreset = sl::DLSSDPreset::ePresetD;
+	options.qualityPreset = sl::DLSSDPreset::ePresetD;
+	options.balancedPreset = sl::DLSSDPreset::ePresetD;
+	options.performancePreset = sl::DLSSDPreset::ePresetD;
+	options.ultraPerformancePreset = sl::DLSSDPreset::ePresetD;
+	options.ultraQualityPreset = sl::DLSSDPreset::ePresetD;
+	return options;
+}
 
 RenderViewportExtent QueryStreamlineRayReconstructionOptimalRenderExtent(
     RenderViewportExtent outputExtent,
     EUpscalerQualityMode qualityMode) noexcept
 {
 	sl::DLSSDOptimalSettings settings{};
-	const sl::DLSSDOptions options = StreamlineRayReconstructionRequirements::BuildRayReconstructionOptions(qualityMode, outputExtent);
+	const sl::DLSSDOptions options = BuildStreamlineRayReconstructionOptions(qualityMode, outputExtent);
 	if (slDLSSDGetOptimalSettings(options, settings) != sl::Result::eOk)
 	{
-		return {};
+		Diagnostics::Fatal(
+		    g_streamlineRayReconstructionEvaluationLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Streamline DLSS Ray Reconstruction could not resolve its render extent.");
 	}
 	return RenderViewportExtent{settings.optimalRenderWidth, settings.optimalRenderHeight};
 }
@@ -72,7 +58,18 @@ bool EvaluateStreamlineRayReconstructionFrame(
     sl::ViewportHandle viewport,
     const RayReconstructionEvaluationDesc& evaluation)
 {
-	if (!StreamlineRayReconstructionRequirements::HasRequiredNativeResources(evaluation))
+	if (!evaluation.NativeCommandList || !AreStreamlineTextureViewsValid(
+	                                         evaluation.BackendApi,
+	                                         evaluation.NativeNoisyInputColorView,
+	                                         evaluation.NativeOutputColorView,
+	                                         evaluation.NativeDepthView,
+	                                         evaluation.NativeMotionVectorsView,
+	                                         evaluation.NativeNormalsView,
+	                                         evaluation.NativeRoughnessView,
+	                                         evaluation.NativeDiffuseAlbedoView,
+	                                         evaluation.NativeSpecularAlbedoView,
+	                                         evaluation.NativeSpecularHitDistanceView,
+	                                         evaluation.NativeExposureView))
 	{
 		return false;
 	}
@@ -89,7 +86,7 @@ bool EvaluateStreamlineRayReconstructionFrame(
 		return false;
 	}
 
-	sl::DLSSDOptions options = StreamlineRayReconstructionRequirements::BuildRayReconstructionOptions(qualityMode, evaluation.OutputExtent);
+	sl::DLSSDOptions options = BuildStreamlineRayReconstructionOptions(qualityMode, evaluation.OutputExtent);
 	options.worldToCameraView = ToStreamlineMatrix(frameContext.Camera.ViewMTX);
 	options.cameraViewToWorld = ToStreamlineMatrix(frameContext.Camera.InvViewMTX);
 	if (slDLSSDSetOptions(viewport, options) != sl::Result::eOk || !frameEvaluation.SetViewConstants(frameContext))

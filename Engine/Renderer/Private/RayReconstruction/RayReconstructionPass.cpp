@@ -7,17 +7,7 @@
 #include "FrameGraph/PassRuntimeContext.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
 
-class RayReconstructionPassRequirements final
-{
-  public:
-	static bool HasRequiredInputs(const RayReconstructionPassResources& inputs) noexcept
-	{
-		return inputs.NoisyInputColor.IsValid() && inputs.OutputColor.IsValid() && inputs.Depth.IsValid() &&
-		       inputs.MotionVectors.IsValid() && inputs.Exposure.IsValid() && inputs.Normals.IsValid() &&
-		       inputs.Roughness.IsValid() && inputs.DiffuseAlbedo.IsValid() && inputs.SpecularAlbedo.IsValid() &&
-		       inputs.SpecularHitDistance.IsValid();
-	}
-};
+static const auto g_rayReconstructionPassLogger = Logging::GetOrCreateLogger("Renderer.RayReconstructionPass");
 
 void AddRayReconstructionPass(
     FrameGraphBuilder& builder,
@@ -26,9 +16,16 @@ void AddRayReconstructionPass(
     RenderViewportExtent outputExtent,
     const RayReconstructionPassResources& providerInputs)
 {
-	if (!RayReconstructionPassRequirements::HasRequiredInputs(providerInputs))
+	if (!providerInputs.NoisyInputColor.IsValid() || !providerInputs.OutputColor.IsValid() || !providerInputs.Depth.IsValid() ||
+	    !providerInputs.MotionVectors.IsValid() || !providerInputs.Exposure.IsValid() || !providerInputs.Normals.IsValid() ||
+	    !providerInputs.Roughness.IsValid() || !providerInputs.DiffuseAlbedo.IsValid() || !providerInputs.SpecularAlbedo.IsValid() ||
+	    !providerInputs.SpecularHitDistance.IsValid())
 	{
-		return;
+		Diagnostics::Fatal(
+		    g_rayReconstructionPassLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Ray-reconstruction pass received an incomplete resource set.");
 	}
 
 	builder.AddPass(
@@ -49,14 +46,21 @@ void AddRayReconstructionPass(
 	    },
 	    [providerInputs, renderExtent, outputExtent, passName](PassExecutionContext& context)
 	    {
-		    if (context.Runtime.ImageProviders != nullptr && context.Runtime.ImageProviders->RayReconstruction != nullptr)
+		    if (context.Runtime.ImageProviders == nullptr || context.Runtime.ImageProviders->RayReconstruction == nullptr)
 		    {
-			    RenderCommandList& commandList = context.Commands.GetRenderCommandList();
-			    const RhiNativeInteropRequest interopRequest{
-			        .Consumer = ERhiNativeInteropConsumer::RayReconstructionProvider,
-			        .Reason = passName};
-			    (void) context.Runtime.ImageProviders->RayReconstruction->Evaluate(
-			        RayReconstructionEvaluationDesc{
+			    Diagnostics::Fatal(
+			        g_rayReconstructionPassLogger,
+			        __FILE__,
+			        __LINE__,
+			        "Ray-reconstruction pass has no configured image provider.");
+		    }
+
+		    RenderCommandList& commandList = context.Commands.GetRenderCommandList();
+		    const RhiNativeInteropRequest interopRequest{
+		        .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
+		        .Reason = passName};
+		    if (!context.Runtime.ImageProviders->RayReconstruction->Evaluate(
+		        RayReconstructionEvaluationDesc{
 			            .BackendApi = commandList.GetBackendApi(),
 			            .NativeCommandList = commandList.GetNativeHandle(interopRequest),
 			            .NativeNoisyInputColorView =
@@ -98,7 +102,13 @@ void AddRayReconstructionPass(
 			                    ResourceState::ShaderResource,
 			                    interopRequest),
 			            .RenderExtent = renderExtent,
-			            .OutputExtent = outputExtent});
+			            .OutputExtent = outputExtent}))
+		    {
+			    Diagnostics::Fatal(
+			        g_rayReconstructionPassLogger,
+			        __FILE__,
+			        __LINE__,
+			        "The configured ray-reconstruction provider failed to evaluate the active frame.");
 		    }
 	    });
 }

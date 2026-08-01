@@ -48,8 +48,7 @@ std::string FormatExternalFeatureInteropCapabilities(const RhiExternalFeatureInt
 {
 	return std::format(
 	    "externalFeatureInterop(bridge={}, adapter='{}', vendorId={:#06x}, deviceId={:#06x}, driver='{}', nativeDevice={}, "
-	    "nativeQueue={}, nativeCommandList={}, nativeResources={}, explicitStates={}, providerEval={}, runtimeChecks={}, "
-	    "vk(instance={}, physicalDevice={}, device={}, queue={}, queueFamily={}, manualHookReady={}, interposerRequired={}))",
+	    "nativeQueue={}, nativeCommandList={}, nativeResources={}, explicitStates={}, providerEval={}, runtimeChecks={})",
 	    RhiExternalFeatureBridgeKindToString(capabilities.BridgeKind),
 	    capabilities.Adapter.Name,
 	    capabilities.Adapter.VendorId,
@@ -61,12 +60,5 @@ std::string FormatExternalFeatureInteropCapabilities(const RhiExternalFeatureInt
 	    capabilities.ExposesNativeResources,
 	    capabilities.SupportsExplicitResourceStates,
 	    capabilities.SupportsExternalProviderEvaluation,
-	    capabilities.SupportsRuntimeProviderChecks,
-	    capabilities.VulkanHasInstanceHandle,
-	    capabilities.VulkanHasPhysicalDeviceHandle,
-	    capabilities.VulkanHasDeviceHandle,
-	    capabilities.VulkanHasGraphicsQueueHandle,
-	    capabilities.VulkanHasGraphicsQueueFamilyIndex,
-	    capabilities.VulkanManualFunctionPointerHookingReady,
-	    capabilities.VulkanInterposerRequired);
+	    capabilities.SupportsRuntimeProviderChecks);
 }

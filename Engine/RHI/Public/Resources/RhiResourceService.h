@@ -34,13 +34,6 @@ class SPARKLE_RHI_API RhiResourceService
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
 	    RhiVertexBufferView& outView) = 0;
-	virtual bool CreateStructuredBuffer(
-	    const void* data,
-	    std::size_t sizeInBytes,
-	    std::uint32_t strideInBytes,
-	    std::wstring_view debugName,
-	    RhiOwnedResourceHandle& outResource,
-	    RhiResourceViewHandle& outView) = 0;
 	virtual bool CreateStructuredBufferResource(
 	    const void* data,
 	    std::size_t sizeInBytes,
