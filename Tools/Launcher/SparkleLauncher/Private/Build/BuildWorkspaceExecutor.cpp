@@ -172,7 +172,7 @@ namespace SparkleLauncher
 		const std::string detail = ExtractFailureDetail(step, result);
 		if (step.Id == "configure")
 		{
-			return detail.empty() ? "Generate project files failed." + logSuffix : "Generate project files failed: " + detail + logSuffix;
+			return detail.empty() ? "Generate build files failed." + logSuffix : "Generate build files failed: " + detail + logSuffix;
 		}
 		if (step.Id.starts_with("sync-asset-pack-"))
 		{
@@ -353,7 +353,7 @@ namespace SparkleLauncher
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			operation.FailureSummary = std::string("Project asset-pack planning failed: ") + error.what();
+			operation.FailureSummary = std::string("Level asset-pack planning failed: ") + error.what();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}

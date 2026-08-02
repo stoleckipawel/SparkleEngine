@@ -87,11 +87,16 @@ namespace SparkleLauncher
 	    const QString& statusText,
 	    int exitCode)
 	{
-		const bool succeeded = exitCode == 0;
+		const bool stopAndCleanRequested = m_pendingLevelStopAndClean.contains(runId);
+		const bool succeeded = exitCode == 0 && !stopAndCleanRequested;
 		const QString effectiveTitle = m_runTitles.value(runId, title);
-		SetRunState(runId, succeeded ? RunState::Done : RunState::Failed, effectiveTitle);
+		SetRunState(runId, stopAndCleanRequested ? RunState::Canceled : (succeeded ? RunState::Done : RunState::Failed), effectiveTitle);
 
-		if (succeeded)
+		if (stopAndCleanRequested)
+		{
+			AppendRunOutput(runId, "\n" + effectiveTitle + " stopped. Cleaning acquired content now.\n");
+		}
+		else if (succeeded)
 		{
 			AppendRunOutput(runId, "\n" + effectiveTitle + " finished: " + statusText + "\n");
 		}
@@ -114,14 +119,25 @@ namespace SparkleLauncher
 		SetActivityLogExpanded(true);
 		UpdateProgress();
 
-		const bool refreshesLevelState =
-		    operationId == QStringLiteral("project.sync-levels") || m_pendingLevelSelectionUpdates.contains(runId);
+		for (auto levelSync = m_levelSyncRunIds.begin(); levelSync != m_levelSyncRunIds.end();)
+		{
+			if (levelSync.value() == runId)
+			{
+				levelSync = m_levelSyncRunIds.erase(levelSync);
+			}
+			else
+			{
+				++levelSync;
+			}
+		}
+		const bool refreshesLevelState = operationId == QStringLiteral("workspace.sync-levels")
+		    || m_pendingLevelSelectionUpdates.contains(runId) || stopAndCleanRequested;
 		if (m_pendingLevelSelectionUpdates.contains(runId))
 		{
 			const PendingLevelSelectionUpdate update = m_pendingLevelSelectionUpdates.take(runId);
 			if (succeeded)
 			{
-				SetLevelsSelected(update.ProjectRoot, update.LevelIds, update.Selected, effectiveTitle);
+				SetLevelsSelected(update.ContentRoot, update.LevelIds, update.Selected, effectiveTitle);
 			}
 		}
 		if (refreshesLevelState)
@@ -133,6 +149,12 @@ namespace SparkleLauncher
 		else
 		{
 			ScheduleUiRefresh(true);
+		}
+
+		if (stopAndCleanRequested)
+		{
+			const PendingLevelStopAndClean pendingClean = m_pendingLevelStopAndClean.take(runId);
+			CleanStoppedLevelSync(pendingClean);
 		}
 
 		if (succeeded && operationId == "launcher.build.self" && !m_pendingRestartRunIds.contains(runId))
@@ -161,6 +183,8 @@ namespace SparkleLauncher
 				return m_icons.Icon(LauncherIcon::Running, QColor(kColorStateRunning));
 			case RunState::Done:
 				return m_icons.Icon(LauncherIcon::Done, QColor(kColorStateSuccess));
+			case RunState::Canceled:
+				return m_icons.Icon(LauncherIcon::Queued, QColor(kColorStateQueued));
 			case RunState::Failed:
 				return m_icons.Icon(LauncherIcon::Failed, QColor(kColorStateDestructive));
 		}
@@ -213,6 +237,10 @@ namespace SparkleLauncher
 			case RunState::Done:
 				stateText = "Done";
 				stateColor = QColor(kColorStateSuccess);
+				break;
+			case RunState::Canceled:
+				stateText = "Canceled";
+				stateColor = QColor(kColorStateQueued);
 				break;
 			case RunState::Failed:
 				stateText = "Failed";
@@ -282,6 +310,9 @@ namespace SparkleLauncher
 				case RunState::Done:
 					m_selectedRunSummary->setText("Done: " + title + ". Output is available below.");
 					break;
+				case RunState::Canceled:
+					m_selectedRunSummary->setText("Canceled: " + title + ". Cleanup is continuing as a separate run.");
+					break;
 				case RunState::Failed:
 					m_selectedRunSummary->setText("Failed: " + title + ". Review the summary and raw output below.");
 					break;
@@ -289,7 +320,7 @@ namespace SparkleLauncher
 		}
 		if (m_operationOutput != nullptr)
 		{
-			const bool compactOutput = state == RunState::Done;
+			const bool compactOutput = state == RunState::Done || state == RunState::Canceled;
 			m_operationOutput->setMinimumHeight(compactOutput ? kOperationOutputMinHeight : kOperationOutputProminentMinHeight);
 			m_operationOutput->setMaximumHeight(compactOutput ? kOperationOutputCompactMaxHeight : kOperationOutputMaxHeight);
 			m_operationOutput->setPlainText(m_runOutputs.value(runId));

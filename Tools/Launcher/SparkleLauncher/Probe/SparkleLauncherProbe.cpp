@@ -1,7 +1,7 @@
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/ProcessRunner.h"
-#include "SparkleLauncher/ProjectDiscovery.h"
+#include "SparkleLauncher/ContentDiscovery.h"
 #include "SparkleLauncher/RepositoryLocator.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 #include "Core/Public/Diagnostics/Error.h"
@@ -27,27 +27,24 @@ int main(int argc, char** argv)
 	std::cout << "Repository: " << repositoryRoot->RootPath.string() << '\n';
 	std::cout << "Launcher state: " << SparkleLauncher::GetLauncherStateDirectory(repositoryRoot->RootPath).string() << '\n';
 
-	std::vector<SparkleLauncher::SparkleProject> projects = SparkleLauncher::DiscoverProjects(repositoryRoot->RootPath, errorMessage);
-	if (!errorMessage.empty())
+	const std::optional<SparkleLauncher::SparkleContent> content =
+	    SparkleLauncher::DiscoverContentRoot(repositoryRoot->RootPath, errorMessage);
+	if (!content.has_value())
 	{
 		std::cerr << errorMessage << '\n';
 		return 1;
 	}
 
-	std::cout << "Projects:" << '\n';
-	for (const SparkleLauncher::SparkleProject& project : projects)
+	std::cout << "Content: " << content->RootPath.string() << '\n';
+	try
 	{
-		std::cout << "  " << project.Id << " -> " << project.RootPath.string() << '\n';
-		try
-		{
-			const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(project.RootPath);
-			std::cout << "    " << catalog.levels.size() << " levels, " << catalog.assetPacks.size() << " asset packs" << '\n';
-		}
-		catch (const Diagnostics::Error& error)
-		{
-			std::cerr << error.what() << '\n';
-			return 1;
-		}
+		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(content->RootPath);
+		std::cout << "  " << catalog.levels.size() << " levels, " << catalog.assetPacks.size() << " asset packs" << '\n';
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		std::cerr << error.what() << '\n';
+		return 1;
 	}
 
 	std::cout << "Profiles:" << '\n';

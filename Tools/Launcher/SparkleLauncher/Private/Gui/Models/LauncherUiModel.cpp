@@ -49,12 +49,12 @@ namespace SparkleLauncher
 			    LauncherWorkflowPageKind::Home,
 			    LauncherActionImpactKind::None,
 			    {},
-			    "Explore Project",
+			    "Explore Sparkle",
 			    "Choose Editor or Runtime below. Products use the header startup level and launch from local source artifacts when "
 			    "available.",
 			    "workflow-home-quickstart.png");
 		}
-		if (operationId == "project.open.editor")
+		if (operationId == "launch.editor")
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -67,7 +67,7 @@ namespace SparkleLauncher
 			    "Uses the header startup level with the selected target and runtime options.",
 			    "workflow-editor-open.png");
 		}
-		if (operationId == "project.open.runtime")
+		if (operationId == "launch.runtime")
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -80,18 +80,18 @@ namespace SparkleLauncher
 			    "Uses the header startup level with the selected target and runtime options.",
 			    "workflow-runtime-open.png");
 		}
-		if (operationId == "project.run")
+		if (operationId == "launch.run")
 		{
 			return MakeOperationUiModel(
 			    operationId,
-			    "Launch Project",
+			    "Launch",
 			    "Run",
 			    LauncherWorkflowPageKind::Launch,
 			    LauncherActionImpactKind::LaunchProcess,
 			    "Launch workflow: runs the selected editor or runtime target with shared graphics and runtime options.",
 			    "Launch view",
 			    "Uses the header startup level with the selected target and runtime options.",
-			    "workflow-project-run-editor.png");
+			    "workflow-launch-editor.png");
 		}
 		if (operationId == "workspace.open-ide")
 		{
@@ -101,9 +101,9 @@ namespace SparkleLauncher
 			    "Open",
 			    LauncherWorkflowPageKind::Launch,
 			    LauncherActionImpactKind::LaunchProcess,
-			    "Navigation only: opens the selected IDE once generated project files are current.",
+			    "Navigation only: opens the selected IDE once generated workspace files are current.",
 			    "Workspace files",
-			    "Refreshes project files for the selected toolchain and opens the IDE when the workspace is current.",
+			    "Refreshes workspace files for the selected toolchain and opens the IDE when the workspace is current.",
 			    "workflow-open-ide.png");
 		}
 		if (operationId == "workspace.sync-source-tiers")
@@ -130,7 +130,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::WorkspaceFiles,
 			    "Build files: refreshes generated CMake and IDE build-system state without building products.",
 			    "Workspace files",
-			    "Refreshes project files for the selected toolchain and opens the IDE when the workspace is current.",
+			    "Refreshes workspace files for the selected toolchain and opens the IDE when the workspace is current.",
 			    "workflow-generate-build-files.png");
 		}
 		if (operationId == "workspace.build-all")
@@ -146,15 +146,15 @@ namespace SparkleLauncher
 			    "Refreshes workspace files, then creates local artifacts that can replace packaged binaries during daily development.",
 			    "workflow-build-all.png");
 		}
-		if (operationId == "project.sync-levels")
+		if (operationId == "workspace.sync-levels")
 		{
 			return MakeOperationUiModel(
 			    operationId,
 			    "Sync Levels",
 			    "Sync",
 			    LauncherWorkflowPageKind::Sync,
-			    LauncherActionImpactKind::ProjectAssets,
-			    "Project levels: syncs or cleans maps and their asset packs without changing code or SDK dependencies.",
+			    LauncherActionImpactKind::LevelAssets,
+			    "Levels: syncs or cleans maps and their asset packs without changing code or SDK dependencies.",
 			    "Levels and assets",
 			    "Sync individual levels or the full catalog from declared publisher sources.",
 			    "workflow-cook-assets.png");
@@ -166,8 +166,8 @@ namespace SparkleLauncher
 			    "Sync All",
 			    "Sync",
 			    LauncherWorkflowPageKind::Sync,
-			    LauncherActionImpactKind::RepositoryAndProjectInputs,
-			    "Full sync: repairs code and SDK dependencies, refreshes configure state, and acquires every downloadable project asset "
+			    LauncherActionImpactKind::RepositoryAndContentInputs,
+			    "Full sync: repairs code and SDK dependencies, refreshes configure state, and acquires every downloadable level asset "
 			    "pack.",
 			    "Full repository sync",
 			    "Prepares the base code workspace and all supported downloadable content through one shared sync plan.",
@@ -186,7 +186,7 @@ namespace SparkleLauncher
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
 			    "workflow-launcher-build.png");
 		}
-		if (operationId == "project.build.editor")
+		if (operationId == "workspace.build.editor")
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -199,7 +199,7 @@ namespace SparkleLauncher
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
 			    "workflow-editor-build.png");
 		}
-		if (operationId == "project.build.runtime")
+		if (operationId == "workspace.build.runtime")
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -225,7 +225,7 @@ namespace SparkleLauncher
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
 			    "workflow-cook-tools.png");
 		}
-		if (operationId == "cook.project")
+		if (operationId == "cook.all")
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -233,7 +233,7 @@ namespace SparkleLauncher
 			    "Cook",
 			    LauncherWorkflowPageKind::Cook,
 			    LauncherActionImpactKind::CookedOutputs,
-			    "Cooked outputs: optional local recook that refreshes all generated project content.",
+			    "Cooked outputs: optional local recook that refreshes all generated content.",
 			    "Content outputs",
 			    "Refreshes cooked content for selected catalog levels.",
 			    "workflow-cook-all.png");
@@ -306,7 +306,7 @@ namespace SparkleLauncher
 			    "workflow-clean-workspace.png");
 		}
 
-		if (operationId.startsWith("project.build."))
+		if (operationId.startsWith("workspace.build."))
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -327,7 +327,7 @@ namespace SparkleLauncher
 			    "Cook",
 			    LauncherWorkflowPageKind::Cook,
 			    LauncherActionImpactKind::CookedOutputs,
-			    "Cooked outputs: optional local recook that refreshes generated project content.",
+			    "Cooked outputs: optional local recook that refreshes generated content.",
 			    "Content outputs",
 			    "Refreshes cooked content for selected catalog levels.",
 			    "workflow-cook-generic.png");
@@ -368,10 +368,10 @@ namespace SparkleLauncher
 				return "None";
 			case LauncherActionImpactKind::SourceDependencies:
 				return "Source dependencies";
-			case LauncherActionImpactKind::ProjectAssets:
-				return "Project assets";
-			case LauncherActionImpactKind::RepositoryAndProjectInputs:
-				return "Repository and project inputs";
+			case LauncherActionImpactKind::LevelAssets:
+				return "Level assets";
+			case LauncherActionImpactKind::RepositoryAndContentInputs:
+				return "Repository and content inputs";
 			case LauncherActionImpactKind::WorkspaceFiles:
 				return "Workspace files";
 			case LauncherActionImpactKind::BuildOutputs:

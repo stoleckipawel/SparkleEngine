@@ -7,15 +7,14 @@
 
 namespace SparkleLauncher
 {
-	std::filesystem::path ResolveCleanScopePreviewPath(const std::filesystem::path& repositoryRoot, const QString& projectId, const QString& scope)
+	std::filesystem::path ResolveCleanScopePreviewPath(
+	    const std::filesystem::path& repositoryRoot,
+	    const QString& projectId,
+	    const QString& scope)
 	{
-		if (scope == "selected-cooked")
+		if (scope == "cooked")
 		{
 			return GetCookedProjectDirectory(repositoryRoot, projectId.toStdString());
-		}
-		if (scope == "all-cooked")
-		{
-			return GetCookedProjectsArtifactDirectory(repositoryRoot);
 		}
 		if (scope == "build-tree")
 		{
@@ -50,13 +49,9 @@ namespace SparkleLauncher
 
 	QString CleanScopeDisplayName(const QString& scopeValue)
 	{
-		if (scopeValue == "selected-cooked")
+		if (scopeValue == "cooked")
 		{
-			return "Project Cooked Outputs";
-		}
-		if (scopeValue == "all-cooked")
-		{
-			return "All Cooked Outputs";
+			return "Cooked Content";
 		}
 		if (scopeValue == "build-tree")
 		{
@@ -95,9 +90,9 @@ namespace SparkleLauncher
 
 	bool SupportsActionSpecificClean(const QString& operationId)
 	{
-		return operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build") ||
-		    operationId == "cook.tools.prepare" || operationId == "cook.project" || operationId == "cook.shaders" || operationId == "cook.textures" ||
-		    operationId == "cook.assets";
+		return operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("workspace.build")
+		    || operationId == "cook.tools.prepare" || operationId == "cook.all" || operationId == "cook.shaders"
+		    || operationId == "cook.textures" || operationId == "cook.assets";
 	}
 
 	void AddExplicitCleanTarget(
@@ -121,9 +116,12 @@ namespace SparkleLauncher
 	    const QString& detail,
 	    const std::filesystem::path& preservedPath)
 	{
-		std::filesystem::path binaryDirectory = GetDeveloperArtifactDirectory(repositoryRoot) / "runtime-support" / targetName.toStdString() / profileName.toStdString();
-		std::filesystem::path libraryDirectory = GetDeveloperLibraryDirectory(repositoryRoot, "runtime-support/" + targetName.toStdString(), profileName.toStdString());
-		std::filesystem::path symbolDirectory = GetSymbolDirectory(repositoryRoot) / "runtime-support" / targetName.toStdString() / profileName.toStdString();
+		std::filesystem::path binaryDirectory =
+		    GetDeveloperArtifactDirectory(repositoryRoot) / "runtime-support" / targetName.toStdString() / profileName.toStdString();
+		std::filesystem::path libraryDirectory =
+		    GetDeveloperLibraryDirectory(repositoryRoot, "runtime-support/" + targetName.toStdString(), profileName.toStdString());
+		std::filesystem::path symbolDirectory =
+		    GetSymbolDirectory(repositoryRoot) / "runtime-support" / targetName.toStdString() / profileName.toStdString();
 		if (targetName == "SparkleLauncher" || targetName == "SparkleLauncherProbe")
 		{
 			binaryDirectory = GetLauncherArtifactDirectory(repositoryRoot, profileName.toStdString());
@@ -143,7 +141,11 @@ namespace SparkleLauncher
 		}
 		AddExplicitCleanTarget(targets, targetName + " program database", symbolDirectory / (targetName.toStdString() + ".pdb"), detail);
 		AddExplicitCleanTarget(targets, targetName + " import library", libraryDirectory / (targetName.toStdString() + ".lib"), detail);
-		AddExplicitCleanTarget(targets, targetName + " compile database", symbolDirectory / "obj" / (targetName.toStdString() + ".pdb"), detail);
+		AddExplicitCleanTarget(
+		    targets,
+		    targetName + " compile database",
+		    symbolDirectory / "obj" / (targetName.toStdString() + ".pdb"),
+		    detail);
 	}
 
 	void AddProjectTargetArtifactOutputs(
@@ -155,27 +157,38 @@ namespace SparkleLauncher
 	    const QString& targetName,
 	    const QString& detail)
 	{
-		const std::filesystem::path binaryDirectory = GetProjectTargetArtifactDirectory(repositoryRoot, projectName.toStdString(), productRole.toStdString(), profileName.toStdString());
-		const std::filesystem::path libraryDirectory =
-		    GetDeveloperLibraryDirectory(repositoryRoot, "projects/" + projectName.toStdString() + "/" + productRole.toStdString(), profileName.toStdString());
-		const std::filesystem::path symbolDirectory =
-		    GetSymbolDirectory(repositoryRoot) / "projects" / projectName.toStdString() / productRole.toStdString() / profileName.toStdString();
+		const std::filesystem::path binaryDirectory = GetProjectTargetArtifactDirectory(
+		    repositoryRoot,
+		    projectName.toStdString(),
+		    productRole.toStdString(),
+		    profileName.toStdString());
+		const std::filesystem::path libraryDirectory = GetDeveloperLibraryDirectory(
+		    repositoryRoot,
+		    "projects/" + projectName.toStdString() + "/" + productRole.toStdString(),
+		    profileName.toStdString());
+		const std::filesystem::path symbolDirectory = GetSymbolDirectory(repositoryRoot) / "projects" / projectName.toStdString()
+		    / productRole.toStdString() / profileName.toStdString();
 		const std::filesystem::path executablePath = binaryDirectory / (targetName.toStdString() + ".exe");
 		AddExplicitCleanTarget(targets, targetName + " executable", executablePath, detail);
 		AddExplicitCleanTarget(targets, targetName + " program database", symbolDirectory / (targetName.toStdString() + ".pdb"), detail);
 		AddExplicitCleanTarget(targets, targetName + " import library", libraryDirectory / (targetName.toStdString() + ".lib"), detail);
-		AddExplicitCleanTarget(targets, targetName + " compile database", symbolDirectory / "obj" / (targetName.toStdString() + ".pdb"), detail);
+		AddExplicitCleanTarget(
+		    targets,
+		    targetName + " compile database",
+		    symbolDirectory / "obj" / (targetName.toStdString() + ".pdb"),
+		    detail);
 	}
 
 	QVector<LauncherCleanTarget> BuildActionSpecificCleanTargets(const ActionCleanTargetContext& context)
 	{
 		QVector<LauncherCleanTarget> targets;
-		if ((context.OperationId.startsWith("project.build") || context.OperationId.startsWith("cook.")) && context.ProjectId.isEmpty())
+		if ((context.OperationId.startsWith("workspace.build") || context.OperationId.startsWith("cook.")) && context.ContentId.isEmpty())
 		{
 			return targets;
 		}
 
-		const auto addNamedTargets = [&context, &targets](const QString& profileName, const QStringList& targetNames, const QString& detail) {
+		const auto addNamedTargets = [&context, &targets](const QString& profileName, const QStringList& targetNames, const QString& detail)
+		{
 			for (const QString& targetName : targetNames)
 			{
 				if (!targetName.isEmpty())
@@ -184,7 +197,9 @@ namespace SparkleLauncher
 				}
 			}
 		};
-		const auto addProjectArtifacts = [&context, &addNamedTargets, &targets](const QString& profileName, const QString& projectName, const QString& detail) {
+		const auto addProjectArtifacts =
+		    [&context, &addNamedTargets, &targets](const QString& profileName, const QString& projectName, const QString& detail)
+		{
 			const std::optional<BuildProfile> profile = FindBuildProfile(profileName.toStdString());
 			if (!profile.has_value())
 			{
@@ -210,61 +225,89 @@ namespace SparkleLauncher
 			    "SparkleLauncher",
 			    "Launcher direct build outputs. The currently running launcher executable is preserved until restart.",
 			    context.RunningLauncherPath);
-			AddTargetArtifactOutputs(targets, context.RepositoryRoot, context.EditorProfile, "SparkleLauncherProbe", "Launcher probe binary and matching direct build outputs.");
+			AddTargetArtifactOutputs(
+			    targets,
+			    context.RepositoryRoot,
+			    context.EditorProfile,
+			    "SparkleLauncherProbe",
+			    "Launcher probe binary and matching direct build outputs.");
 			AddExplicitCleanTarget(
 			    targets,
 			    "SparkleLauncherCore library",
-			    GetSymbolDirectory(context.RepositoryRoot) / "launcher" / context.EditorProfile.toStdString() / "lib" / "SparkleLauncherCore.lib",
+			    GetSymbolDirectory(context.RepositoryRoot) / "launcher" / context.EditorProfile.toStdString() / "lib"
+			        / "SparkleLauncherCore.lib",
 			    "Launcher support library built for the selected editor profile.");
 			AddExplicitCleanTarget(
 			    targets,
 			    "SparkleLauncherCore program database",
-			    GetSymbolDirectory(context.RepositoryRoot) / "launcher" / context.EditorProfile.toStdString() / "lib" / "SparkleLauncherCore.pdb",
+			    GetSymbolDirectory(context.RepositoryRoot) / "launcher" / context.EditorProfile.toStdString() / "lib"
+			        / "SparkleLauncherCore.pdb",
 			    "Launcher support library debug symbols built for the selected editor profile.");
 		}
 
-		if (context.OperationId == "project.build.editor" || context.OperationId == "workspace.build-all")
+		if (context.OperationId == "workspace.build.editor" || context.OperationId == "workspace.build-all")
 		{
-			if (context.OperationId == "project.build.editor" && !context.SelectedTargets.trimmed().isEmpty())
+			if (context.OperationId == "workspace.build.editor" && !context.SelectedTargets.trimmed().isEmpty())
 			{
-				addNamedTargets(context.EditorProfile, context.SelectedTargets.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts), "Selected editor build target outputs.");
+				addNamedTargets(
+				    context.EditorProfile,
+				    context.SelectedTargets.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts),
+				    "Selected editor build target outputs.");
 			}
 			else
 			{
-				addProjectArtifacts(context.EditorProfile, context.ProjectId, "Active project editor target outputs.");
+				addProjectArtifacts(context.EditorProfile, context.ContentId, "Editor target outputs.");
 			}
 		}
 
-		if (context.OperationId == "project.build.runtime" || context.OperationId == "workspace.build-all")
+		if (context.OperationId == "workspace.build.runtime" || context.OperationId == "workspace.build-all")
 		{
-			if (context.OperationId == "project.build.runtime" && !context.SelectedTargets.trimmed().isEmpty())
+			if (context.OperationId == "workspace.build.runtime" && !context.SelectedTargets.trimmed().isEmpty())
 			{
-				addNamedTargets(context.RuntimeProfile, context.SelectedTargets.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts), "Selected runtime build target outputs.");
+				addNamedTargets(
+				    context.RuntimeProfile,
+				    context.SelectedTargets.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts),
+				    "Selected runtime build target outputs.");
 			}
 			else
 			{
-				addProjectArtifacts(context.RuntimeProfile, context.ProjectId, "Active project runtime target outputs.");
+				addProjectArtifacts(context.RuntimeProfile, context.ContentId, "Runtime target outputs.");
 			}
 		}
 
 		if (context.OperationId == "cook.tools.prepare" || context.OperationId == "workspace.build-all")
 		{
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
-			AddTargetArtifactOutputs(targets, context.RepositoryRoot, context.EditorProfile, "AssetCooker", "AssetCooker executable outputs.");
-			AddTargetArtifactOutputs(targets, context.RepositoryRoot, context.EditorProfile, "TextureCooker", "TextureCooker executable outputs.");
+			AddTargetArtifactOutputs(
+			    targets,
+			    context.RepositoryRoot,
+			    context.EditorProfile,
+			    "AssetCooker",
+			    "AssetCooker executable outputs.");
+			AddTargetArtifactOutputs(
+			    targets,
+			    context.RepositoryRoot,
+			    context.EditorProfile,
+			    "TextureCooker",
+			    "TextureCooker executable outputs.");
 #endif
 #if SPARKLE_ENABLE_SHADER_COMPILER
-			AddTargetArtifactOutputs(targets, context.RepositoryRoot, context.EditorProfile, "ShaderCompiler", "ShaderCompiler executable outputs.");
+			AddTargetArtifactOutputs(
+			    targets,
+			    context.RepositoryRoot,
+			    context.EditorProfile,
+			    "ShaderCompiler",
+			    "ShaderCompiler executable outputs.");
 #endif
 		}
 
-		if (context.OperationId == "cook.project")
+		if (context.OperationId == "cook.all")
 		{
 			AddExplicitCleanTarget(
 			    targets,
-			    "Cooked project content",
-			    GetCookedProjectDirectory(context.RepositoryRoot, context.ProjectId.toStdString()),
-			    "All cooked content for the active project.");
+			    "Cooked content",
+			    GetCookedProjectDirectory(context.RepositoryRoot, context.ContentId.toStdString()),
+			    "All generated cooked content.");
 			AddExplicitCleanTarget(
 			    targets,
 			    "Shader cache",
@@ -283,9 +326,9 @@ namespace SparkleLauncher
 		{
 			AddExplicitCleanTarget(
 			    targets,
-			    "Cooked project content",
-			    GetCookedProjectDirectory(context.RepositoryRoot, context.ProjectId.toStdString()),
-			    context.OperationId == "cook.textures" ? "Active project cooked texture outputs." : "Active project cooked mesh and material outputs.");
+			    "Cooked content",
+			    GetCookedProjectDirectory(context.RepositoryRoot, context.ContentId.toStdString()),
+			    context.OperationId == "cook.textures" ? "Cooked texture outputs." : "Cooked mesh and material outputs.");
 		}
 
 		return targets;

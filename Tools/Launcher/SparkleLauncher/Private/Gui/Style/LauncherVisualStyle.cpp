@@ -179,10 +179,18 @@ namespace SparkleLauncher
 		addRule(
 		    "#CleanPlanText",
 		    "color: " + textSecondary + "; background: #1d201d; border-top: 1px solid " + divider + "; padding: 8px 10px; font-size: 8pt;");
+		addRule("#CleanSelectionSummary", "color: " + textBody + "; font-size: 8.25pt; font-weight: 750; padding: 1px 0 7px 0;");
+		addRule("#CleanSelectionPanel", "background: #171a18; border: 1px solid " + divider + "; border-radius: 3px;");
 		addRule(
-		    "#CleanScopeCard",
-		    "background: #1d201d; border: 1px solid " + divider + "; border-left: 3px solid #4a515a; border-radius: 3px;");
-		addRule("#CleanScopeCard:hover", "background: #222621; border-left-color: " + accent + ";");
+		    "#CleanScopeGroupTitle",
+		    "background: #1d211d; color: " + textSecondary + "; border: none; border-bottom: 1px solid " + divider
+		        + "; padding: 7px 13px 5px 13px; font-size: 7.5pt; font-weight: 850;");
+		addRule("#CleanScopeRow", "background: transparent; border: none; border-bottom: 1px solid " + divider + ";");
+		addRule("#CleanScopeRow:hover", "background: #1d211d;");
+		addRule("#CleanScopeRow[Selected=\"true\"]", "background: #20261d;");
+		addRule("#CleanScopeCheckBox", "color: " + textPrimary + "; font-size: 8.5pt; font-weight: 800;");
+		addRule("#CleanScopeDescription", "color: " + textSecondary + "; font-size: 7.7pt;");
+		addRule("#CleanScopePreview", "color: " + textMuted + "; font-size: 7.5pt; padding-left: 12px;");
 		addRule("#ActionMetaPanel", "background: transparent; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#ActionMetaTitle", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 700;");
 		addRule("#ActionMetaText", "color: " + textBody + "; font-size: 7.75pt;");

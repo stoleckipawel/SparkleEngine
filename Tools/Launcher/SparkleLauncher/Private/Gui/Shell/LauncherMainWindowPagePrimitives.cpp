@@ -9,7 +9,7 @@
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"

@@ -154,7 +154,7 @@ namespace SparkleLauncher
 				{
 					AddPlannedEffect(
 					    plan,
-					    "Acquire every downloadable project asset pack, including supported add-ons and their parent packs; explicitly "
+					    "Acquire every downloadable level asset pack, including supported add-ons and their parent packs; explicitly "
 					    "disabled future packs remain untouched.");
 				}
 				plan.CanRun = true;
@@ -162,7 +162,7 @@ namespace SparkleLauncher
 			case BuildWorkspaceOperationKind::SyncLevels:
 				if (plan.Toolchain.CMakePath.empty())
 				{
-					AddReadiness(plan, "CMake is required to acquire selected project asset packs.");
+					AddReadiness(plan, "CMake is required to acquire selected level asset packs.");
 					return;
 				}
 				AddPlannedEffect(
@@ -223,7 +223,7 @@ namespace SparkleLauncher
 				AddConfigureStep(plan);
 				AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
 				{
-					std::vector<std::string> editorTargets = ResolveProjectTargets(request.ProjectId, request.EditorProfile);
+					std::vector<std::string> editorTargets = ResolveProjectTargets(request.ContentId, request.EditorProfile);
 					if (editorTargets.empty())
 					{
 						AddReadiness(plan, "No editor build target could be resolved.");
@@ -232,7 +232,7 @@ namespace SparkleLauncher
 					AddBuildStep(plan, request.EditorProfile, editorTargets);
 				}
 				{
-					std::vector<std::string> runtimeTargets = ResolveProjectTargets(request.ProjectId, request.RuntimeProfile);
+					std::vector<std::string> runtimeTargets = ResolveProjectTargets(request.ContentId, request.RuntimeProfile);
 					if (runtimeTargets.empty())
 					{
 						AddReadiness(plan, "No runtime build target could be resolved.");
@@ -247,14 +247,14 @@ namespace SparkleLauncher
 						AddBuildStep(plan, request.EditorProfile, cookToolTargets);
 						AddPlannedEffect(
 						    plan,
-						    "Refresh generated workspace files, then build launcher, selected project editor/runtime, and enabled cook "
+						    "Refresh generated workspace files, then build launcher, editor/runtime, and enabled cook "
 						    "tools in one pass.");
 					}
 					else
 					{
 						AddPlannedEffect(
 						    plan,
-						    "Refresh generated workspace files, then build launcher plus selected project editor/runtime targets. Optional "
+						    "Refresh generated workspace files, then build launcher plus editor/runtime targets. Optional "
 						    "cook tools are disabled in this workspace.");
 					}
 				}
@@ -288,7 +288,7 @@ namespace SparkleLauncher
 					return;
 				}
 				std::vector<std::string> targets = request.SelectedTargets.empty()
-				    ? ResolveProjectTargets(request.ProjectId, request.EditorProfile)
+				    ? ResolveProjectTargets(request.ContentId, request.EditorProfile)
 				    : request.SelectedTargets;
 				if (targets.empty())
 				{
@@ -314,7 +314,7 @@ namespace SparkleLauncher
 					return;
 				}
 				std::vector<std::string> targets = request.SelectedTargets.empty()
-				    ? ResolveProjectTargets(request.ProjectId, request.RuntimeProfile)
+				    ? ResolveProjectTargets(request.ContentId, request.RuntimeProfile)
 				    : request.SelectedTargets;
 				if (targets.empty())
 				{
@@ -370,19 +370,19 @@ namespace SparkleLauncher
 		        std::string(ArtifactNaming::kActionSyncSourceDependencies),
 		        "Download enabled repository dependencies and refresh workspace configure state without installing host tools."},
 		    {BuildWorkspaceOperationKind::SyncLevels,
-		        "project.sync-levels",
+		        "workspace.sync-levels",
 		        "Sync",
 		        "Sync Levels",
-		        "Select project maps and acquire their asset packs without changing code or SDK dependencies."},
+		        "Select levels and acquire their asset packs without changing code or SDK dependencies."},
 		    {BuildWorkspaceOperationKind::SyncAll,
 		        "workspace.sync-all",
 		        "Sync",
 		        "Sync All",
-		        "Sync the base repository dependencies and every downloadable project asset pack in one workflow."},
+		        "Sync the base repository dependencies and every downloadable level asset pack in one workflow."},
 		    {BuildWorkspaceOperationKind::GenerateBuildFiles,
 		        "workspace.generate-build-files",
 		        "Build",
-		        std::string(ArtifactNaming::kActionGenerateProjectFiles),
+		        std::string(ArtifactNaming::kActionGenerateBuildFiles),
 		        "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
 		    {BuildWorkspaceOperationKind::OpenIde,
 		        "workspace.open-ide",
@@ -393,22 +393,22 @@ namespace SparkleLauncher
 		        "workspace.build-all",
 		        "Build",
 		        "Build All",
-		        "Refresh generated workspace files, then rebuild launcher, project editor/runtime targets, and enabled cook tools."},
+		        "Refresh generated workspace files, then rebuild launcher, editor/runtime targets, and enabled cook tools."},
 		    {BuildWorkspaceOperationKind::CompileLauncher,
 		        "launcher.build.self",
 		        "Build",
 		        "Build Launcher",
 		        "Optional local rebuild of Sparkle Launcher for development or customization."},
 		    {BuildWorkspaceOperationKind::CompileEditor,
-		        "project.build.editor",
+		        "workspace.build.editor",
 		        "Build",
 		        "Build Editor",
-		        "Optional local rebuild of the selected project's editor target."},
+		        "Optional local rebuild of the editor target."},
 		    {BuildWorkspaceOperationKind::CompileRuntime,
-		        "project.build.runtime",
+		        "workspace.build.runtime",
 		        "Build",
 		        "Build Runtime",
-		        "Optional local rebuild of the selected project's runtime target."},
+		        "Optional local rebuild of the runtime target."},
 		    {BuildWorkspaceOperationKind::BuildCookTools,
 		        "cook.tools.prepare",
 		        "Build",
@@ -449,7 +449,7 @@ namespace SparkleLauncher
 		plan.Kind = definition->Kind;
 		plan.RepositoryRoot = request.RepositoryRoot;
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
-		plan.Operation.Inputs.push_back({"project", request.ProjectId});
+		plan.Operation.Inputs.push_back({"content", request.ContentId});
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
 		plan.Operation.Inputs.push_back({"workspaceIde", WorkspaceIdeCommandLineValue(request.PreferredIde)});
@@ -491,7 +491,7 @@ namespace SparkleLauncher
 			{
 				plan.CanRun = false;
 				plan.Steps.clear();
-				AddReadiness(plan, std::string("Project asset-pack planning failed: ") + error.what());
+				AddReadiness(plan, std::string("Level asset-pack planning failed: ") + error.what());
 			}
 		}
 

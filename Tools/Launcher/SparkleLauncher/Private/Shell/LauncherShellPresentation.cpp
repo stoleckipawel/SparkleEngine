@@ -29,23 +29,6 @@ namespace SparkleLauncher
 		return text;
 	}
 
-	void RenderLauncherProjectTiles(const LauncherShellModel& model, std::ostream& output)
-	{
-		output << "Projects\n";
-		if (model.Projects.empty())
-		{
-			output << "  [Blocked] No .sparkle-project markers were discovered.\n";
-			return;
-		}
-
-		for (const SparkleProject& project : model.Projects)
-		{
-			const bool selected = project.Id == model.SelectedProjectId;
-			output << "  [" << (selected ? "Selected" : "Ready") << "] " << project.DisplayName << " | " << model.EditorProfile
-			       << " | marker: " << project.MarkerPath.string() << '\n';
-		}
-	}
-
 	void RenderLauncherOperationGroup(const LauncherShellModel& model, std::string_view groupName, std::ostream& output)
 	{
 		output << groupName << "\n";
@@ -62,8 +45,6 @@ namespace SparkleLauncher
 	{
 		output << "Sparkle Launcher\n";
 		output << "Repository: " << model.Repository.RootPath.string() << "\n\n";
-		RenderLauncherProjectTiles(model, output);
-		output << "\nSelected project: " << (model.SelectedProjectId.empty() ? "<none>" : model.SelectedProjectId) << '\n';
 		output << "Profile selectors\n";
 		output << "  Editor: " << model.EditorProfile << " | options: " << BuildProfileOptionText(BuildProfileTarget::Editor) << '\n';
 		output << "  Runtime/Cook: " << model.RuntimeProfile << " | options: " << BuildProfileOptionText(BuildProfileTarget::Game) << '\n';

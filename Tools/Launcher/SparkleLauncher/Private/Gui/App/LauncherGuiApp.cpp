@@ -2,7 +2,7 @@
 
 #include "LauncherBackend.h"
 #include "LauncherMainWindow.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/RepositoryLocator.h"
@@ -20,11 +20,11 @@
 #include <string>
 
 #if defined(_WIN32)
-	#define NOMINMAX
-	#ifndef WIN32_LEAN_AND_MEAN
-		#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <Windows.h>
+  #define NOMINMAX
+  #ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+  #endif
+  #include <Windows.h>
 #endif
 
 namespace SparkleLauncher
@@ -171,28 +171,16 @@ namespace SparkleLauncher
 		    [repositoryRoot, startupNotice]()
 		    {
 			    auto* settings = new LauncherSettings();
-			    auto* projectModel = new LauncherProjectModel();
+			    auto* contentModel = new LauncherContentModel();
 			    auto* backend = new LauncherBackend();
-			    auto* mainWindow = new LauncherMainWindow(repositoryRoot, *projectModel, *settings, *backend);
+			    auto* mainWindow = new LauncherMainWindow(repositoryRoot, *contentModel, *settings, *backend);
 			    mainWindow->SetStartupNotice(startupNotice);
 			    ForceShowWindow(*mainWindow);
-			    QTimer::singleShot(
-			        0,
-			        mainWindow,
-			        [mainWindow]()
-			        {
-				        ForceShowWindow(*mainWindow);
-			        });
-			    QTimer::singleShot(
-			        250,
-			        mainWindow,
-			        [mainWindow]()
-			        {
-				        ForceShowWindow(*mainWindow);
-			        });
+			    QTimer::singleShot(0, mainWindow, [mainWindow]() { ForceShowWindow(*mainWindow); });
+			    QTimer::singleShot(250, mainWindow, [mainWindow]() { ForceShowWindow(*mainWindow); });
 
 			    QObject::connect(mainWindow, &QObject::destroyed, settings, &QObject::deleteLater);
-			    QObject::connect(mainWindow, &QObject::destroyed, projectModel, &QObject::deleteLater);
+			    QObject::connect(mainWindow, &QObject::destroyed, contentModel, &QObject::deleteLater);
 			    QObject::connect(mainWindow, &QObject::destroyed, backend, &QObject::deleteLater);
 		    });
 

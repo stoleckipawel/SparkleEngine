@@ -2,7 +2,7 @@
 
 #include "LauncherLayoutWidgets.h"
 #include "LauncherOutputWidgets.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherUiDesign.h"
 #include "LauncherWorkflowCatalog.h"
@@ -277,7 +277,7 @@ namespace SparkleLauncher
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
 		const bool isQuickStart = operationId == LauncherHomeOperationId();
-		const bool isLevelCatalog = operationId == "project.sync-levels";
+		const bool isLevelCatalog = operationId == "workspace.sync-levels";
 		scrollArea->setAlignment(isQuickStart ? Qt::AlignTop : (Qt::AlignLeft | Qt::AlignTop));
 		content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 		if (!isQuickStart && !isLevelCatalog)

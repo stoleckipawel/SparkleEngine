@@ -1,6 +1,6 @@
 #include "LauncherLevelUiModel.h"
 
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
@@ -21,8 +21,8 @@ namespace SparkleLauncher
 	class LauncherLevelUiModelBuilder final
 	{
 	public:
-		explicit LauncherLevelUiModelBuilder(const LauncherProjectSummary& project) noexcept :
-		    m_project(project)
+		explicit LauncherLevelUiModelBuilder(const LauncherContentSummary& content) noexcept :
+		    m_content(content)
 		{
 		}
 
@@ -30,7 +30,7 @@ namespace SparkleLauncher
 		{
 			try
 			{
-				m_catalog = ProjectLevelCatalogFile::Load(m_project.RootPath);
+				m_catalog = ProjectLevelCatalogFile::Load(m_content.RootPath);
 				m_model.Loaded = true;
 			}
 			catch (const Diagnostics::Error& error)
@@ -233,13 +233,13 @@ namespace SparkleLauncher
 			return QString::fromStdString(stream.str());
 		}
 
-		const LauncherProjectSummary& m_project;
+		const LauncherContentSummary& m_content;
 		ProjectLevelCatalog m_catalog;
 		LauncherLevelUiModel m_model;
 	};
 
-	LauncherLevelUiModel LauncherLevelUiModel::Build(const LauncherProjectSummary& project)
+	LauncherLevelUiModel LauncherLevelUiModel::Build(const LauncherContentSummary& content)
 	{
-		return LauncherLevelUiModelBuilder(project).Build();
+		return LauncherLevelUiModelBuilder(content).Build();
 	}
 }

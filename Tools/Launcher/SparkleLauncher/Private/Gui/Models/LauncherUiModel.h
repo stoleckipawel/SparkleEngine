@@ -20,8 +20,8 @@ namespace SparkleLauncher
 	{
 		None,
 		SourceDependencies,
-		ProjectAssets,
-		RepositoryAndProjectInputs,
+		LevelAssets,
+		RepositoryAndContentInputs,
 		WorkspaceFiles,
 		BuildOutputs,
 		CookedOutputs,

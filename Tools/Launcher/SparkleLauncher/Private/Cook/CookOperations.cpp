@@ -16,108 +16,107 @@
 namespace SparkleLauncher
 {
 
-		struct CookToolRuntimeReadiness
-		{
-			bool Ready = true;
-			std::vector<std::string> MissingSupportEntries;
-		};
+	struct CookToolRuntimeReadiness
+	{
+		bool Ready = true;
+		std::vector<std::string> MissingSupportEntries;
+	};
 
-		std::vector<std::string> GetRequiredCookToolRuntimeFiles(const std::filesystem::path& toolPath)
+	std::vector<std::string> GetRequiredCookToolRuntimeFiles(const std::filesystem::path& toolPath)
+	{
+		const std::string toolName = toolPath.stem().string();
+		if (toolName == "ShaderCompiler")
 		{
-			const std::string toolName = toolPath.stem().string();
-			if (toolName == "ShaderCompiler")
-			{
-				return {
-				    "dxcompiler.dll",
-				    "slang.dll",
-				    "slang-compiler.dll",
-				    "slang-glsl-module.dll",
-				    "slang-glslang.dll",
-				    "slang-rt.dll",
-				    "slang.slang",
-				};
-			}
-
-			return {};
+			return {
+			    "dxcompiler.dll",
+			    "slang.dll",
+			    "slang-compiler.dll",
+			    "slang-glsl-module.dll",
+			    "slang-glslang.dll",
+			    "slang-rt.dll",
+			    "slang.slang",
+			};
 		}
 
-		std::vector<std::string> GetRequiredCookToolRuntimeDirectoryPrefixes(const std::filesystem::path& toolPath)
-		{
-			const std::string toolName = toolPath.stem().string();
-			if (toolName == "ShaderCompiler")
-			{
-				return {"slang-standard-module-"};
-			}
+		return {};
+	}
 
-			return {};
+	std::vector<std::string> GetRequiredCookToolRuntimeDirectoryPrefixes(const std::filesystem::path& toolPath)
+	{
+		const std::string toolName = toolPath.stem().string();
+		if (toolName == "ShaderCompiler")
+		{
+			return {"slang-standard-module-"};
 		}
 
-		bool HasDirectChildDirectoryWithPrefix(const std::filesystem::path& root, std::string_view prefix)
+		return {};
+	}
+
+	bool HasDirectChildDirectoryWithPrefix(const std::filesystem::path& root, std::string_view prefix)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(root, errorCode))
 		{
-			std::error_code errorCode;
-			if (!std::filesystem::is_directory(root, errorCode))
-			{
-				return false;
-			}
-
-			const std::string prefixText(prefix);
-			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
-			{
-				if (errorCode)
-				{
-					errorCode.clear();
-					continue;
-				}
-
-				if (!entry.is_directory(errorCode))
-				{
-					errorCode.clear();
-					continue;
-				}
-
-				const std::string name = entry.path().filename().string();
-				if (name.rfind(prefixText, 0) == 0)
-				{
-					return true;
-				}
-				errorCode.clear();
-			}
-
 			return false;
 		}
 
-		CookToolRuntimeReadiness InspectCookToolRuntimeReadiness(const std::filesystem::path& toolPath)
+		const std::string prefixText(prefix);
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
 		{
-			CookToolRuntimeReadiness readiness;
-			const std::filesystem::path toolDirectory = toolPath.parent_path();
-			std::error_code errorCode;
-			for (const std::string& runtimeFileName : GetRequiredCookToolRuntimeFiles(toolPath))
+			if (errorCode)
 			{
 				errorCode.clear();
-				if (std::filesystem::exists(toolDirectory / runtimeFileName, errorCode) && !errorCode)
-				{
-					continue;
-				}
-
-				readiness.Ready = false;
-				readiness.MissingSupportEntries.push_back(runtimeFileName);
+				continue;
 			}
 
-			for (const std::string& runtimeDirectoryPrefix : GetRequiredCookToolRuntimeDirectoryPrefixes(toolPath))
+			if (!entry.is_directory(errorCode))
 			{
 				errorCode.clear();
-				if (HasDirectChildDirectoryWithPrefix(toolDirectory, runtimeDirectoryPrefix))
-				{
-					continue;
-				}
-
-				readiness.Ready = false;
-				readiness.MissingSupportEntries.push_back(runtimeDirectoryPrefix + "*");
+				continue;
 			}
 
-			return readiness;
+			const std::string name = entry.path().filename().string();
+			if (name.rfind(prefixText, 0) == 0)
+			{
+				return true;
+			}
+			errorCode.clear();
 		}
 
+		return false;
+	}
+
+	CookToolRuntimeReadiness InspectCookToolRuntimeReadiness(const std::filesystem::path& toolPath)
+	{
+		CookToolRuntimeReadiness readiness;
+		const std::filesystem::path toolDirectory = toolPath.parent_path();
+		std::error_code errorCode;
+		for (const std::string& runtimeFileName : GetRequiredCookToolRuntimeFiles(toolPath))
+		{
+			errorCode.clear();
+			if (std::filesystem::exists(toolDirectory / runtimeFileName, errorCode) && !errorCode)
+			{
+				continue;
+			}
+
+			readiness.Ready = false;
+			readiness.MissingSupportEntries.push_back(runtimeFileName);
+		}
+
+		for (const std::string& runtimeDirectoryPrefix : GetRequiredCookToolRuntimeDirectoryPrefixes(toolPath))
+		{
+			errorCode.clear();
+			if (HasDirectChildDirectoryWithPrefix(toolDirectory, runtimeDirectoryPrefix))
+			{
+				continue;
+			}
+
+			readiness.Ready = false;
+			readiness.MissingSupportEntries.push_back(runtimeDirectoryPrefix + "*");
+		}
+
+		return readiness;
+	}
 
 	static void AddReadiness(CookOperationPlan& plan, std::string message)
 	{
@@ -152,36 +151,36 @@ namespace SparkleLauncher
 	{
 		switch (plan.Kind)
 		{
-		case CookOperationKind::CookShaders:
+			case CookOperationKind::CookShaders:
 #if SPARKLE_ENABLE_SHADER_COMPILER
-			return {"ShaderCompiler"};
+				return {"ShaderCompiler"};
 #else
-			return {};
+				return {};
 #endif
-		case CookOperationKind::BuildTextures:
+			case CookOperationKind::BuildTextures:
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
-			return {"TextureCooker"};
+				return {"TextureCooker"};
 #else
-			return {};
+				return {};
 #endif
-		case CookOperationKind::BuildSceneAssets:
+			case CookOperationKind::BuildSceneAssets:
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
-			return {"AssetCooker"};
+				return {"AssetCooker"};
 #else
-			return {};
+				return {};
 #endif
-		case CookOperationKind::CookAllAssets:
-		{
-			std::vector<std::string> tools;
+			case CookOperationKind::CookAllAssets:
+			{
+				std::vector<std::string> tools;
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
-			tools.push_back("AssetCooker");
-			tools.push_back("TextureCooker");
+				tools.push_back("AssetCooker");
+				tools.push_back("TextureCooker");
 #endif
 #if SPARKLE_ENABLE_SHADER_COMPILER
-			tools.push_back("ShaderCompiler");
+				tools.push_back("ShaderCompiler");
 #endif
-			return tools;
-		}
+				return tools;
+			}
 		}
 
 		return {};
@@ -196,61 +195,71 @@ namespace SparkleLauncher
 
 		switch (plan.Kind)
 		{
-		case CookOperationKind::CookShaders:
-			AddPlannedEffect(plan, "Shader backend: " + plan.Request.ShaderBackend + ".");
-			if (!plan.Request.ShaderTargets.empty())
-			{
-				std::vector<std::string_view> shaderTargets;
-				for (const std::string& target : plan.Request.ShaderTargets)
+			case CookOperationKind::CookShaders:
+				AddPlannedEffect(plan, "Shader backend: " + plan.Request.ShaderBackend + ".");
+				if (!plan.Request.ShaderTargets.empty())
 				{
-					shaderTargets.push_back(target);
+					std::vector<std::string_view> shaderTargets;
+					for (const std::string& target : plan.Request.ShaderTargets)
+					{
+						shaderTargets.push_back(target);
+					}
+					AddPlannedEffect(plan, "Shader targets: " + Strings::Join(shaderTargets, ", ") + ".");
 				}
-				AddPlannedEffect(plan, "Shader targets: " + Strings::Join(shaderTargets, ", ") + ".");
-			}
-			AddPlannedEffect(plan, std::string("Shader cache: ") + (plan.Request.ShaderUseCache ? "enabled." : "disabled."));
-			AddPlannedEffect(plan, std::string("Shader debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
-			AddPlannedEffect(plan, std::string("Shader optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
-			AddPlannedEffect(plan, std::string("Warnings as errors: ") + (plan.Request.ShaderWarningsAsErrors ? "enabled." : "disabled."));
-			AddPlannedEffect(plan, std::string("Strip debug info: ") + (plan.Request.ShaderStripDebugInfo ? "enabled." : "disabled."));
-			if (!plan.Request.ShaderCacheDirectory.empty())
-			{
-				AddPlannedEffect(plan, "Override shader cache directory: " + plan.Request.ShaderCacheDirectory.string() + ".");
-			}
-			if (plan.Request.ShaderPackages.empty())
-			{
-				AddPlannedEffect(plan, "Cook shader packages for " + plan.Request.ProjectId + ".");
-			}
-			else
-			{
-				std::vector<std::string_view> packages;
-				for (const std::string& packageId : plan.Request.ShaderPackages)
+				AddPlannedEffect(plan, std::string("Shader cache: ") + (plan.Request.ShaderUseCache ? "enabled." : "disabled."));
+				AddPlannedEffect(
+				    plan,
+				    std::string("Shader debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
+				AddPlannedEffect(
+				    plan,
+				    std::string("Shader optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
+				AddPlannedEffect(
+				    plan,
+				    std::string("Warnings as errors: ") + (plan.Request.ShaderWarningsAsErrors ? "enabled." : "disabled."));
+				AddPlannedEffect(plan, std::string("Strip debug info: ") + (plan.Request.ShaderStripDebugInfo ? "enabled." : "disabled."));
+				if (!plan.Request.ShaderCacheDirectory.empty())
 				{
-					packages.push_back(packageId);
+					AddPlannedEffect(plan, "Override shader cache directory: " + plan.Request.ShaderCacheDirectory.string() + ".");
 				}
-				AddPlannedEffect(plan, "Cook selected shader packages: " + Strings::Join(packages, ", ") + ".");
-			}
-			return;
-		case CookOperationKind::BuildTextures:
-			AddPlannedEffect(plan, "Cook texture assets for " + plan.Request.ProjectId + ".");
-			return;
-		case CookOperationKind::BuildSceneAssets:
-			AddPlannedEffect(plan, "Cook scene, mesh, and material assets for " + plan.Request.ProjectId + ".");
-			return;
-		case CookOperationKind::CookAllAssets:
-			AddPlannedEffect(plan, "Shader phase backend: " + plan.Request.ShaderBackend + ".");
-			if (!plan.Request.ShaderTargets.empty())
-			{
-				std::vector<std::string_view> shaderTargets;
-				for (const std::string& target : plan.Request.ShaderTargets)
+				if (plan.Request.ShaderPackages.empty())
 				{
-					shaderTargets.push_back(target);
+					AddPlannedEffect(plan, "Cook shader packages for " + plan.Request.ContentId + ".");
 				}
-				AddPlannedEffect(plan, "Shader phase targets: " + Strings::Join(shaderTargets, ", ") + ".");
-			}
-			AddPlannedEffect(plan, std::string("Shader phase debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
-			AddPlannedEffect(plan, std::string("Shader phase optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
-			AddPlannedEffect(plan, "Cook all project assets for " + plan.Request.ProjectId + ".");
-			return;
+				else
+				{
+					std::vector<std::string_view> packages;
+					for (const std::string& packageId : plan.Request.ShaderPackages)
+					{
+						packages.push_back(packageId);
+					}
+					AddPlannedEffect(plan, "Cook selected shader packages: " + Strings::Join(packages, ", ") + ".");
+				}
+				return;
+			case CookOperationKind::BuildTextures:
+				AddPlannedEffect(plan, "Cook texture assets for " + plan.Request.ContentId + ".");
+				return;
+			case CookOperationKind::BuildSceneAssets:
+				AddPlannedEffect(plan, "Cook scene, mesh, and material assets for " + plan.Request.ContentId + ".");
+				return;
+			case CookOperationKind::CookAllAssets:
+				AddPlannedEffect(plan, "Shader phase backend: " + plan.Request.ShaderBackend + ".");
+				if (!plan.Request.ShaderTargets.empty())
+				{
+					std::vector<std::string_view> shaderTargets;
+					for (const std::string& target : plan.Request.ShaderTargets)
+					{
+						shaderTargets.push_back(target);
+					}
+					AddPlannedEffect(plan, "Shader phase targets: " + Strings::Join(shaderTargets, ", ") + ".");
+				}
+				AddPlannedEffect(
+				    plan,
+				    std::string("Shader phase debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
+				AddPlannedEffect(
+				    plan,
+				    std::string("Shader phase optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
+				AddPlannedEffect(plan, "Cook all selected level assets.");
+				return;
 		}
 	}
 
@@ -281,14 +290,14 @@ namespace SparkleLauncher
 	{
 		switch (kind)
 		{
-		case CookOperationKind::CookShaders:
-			return "CookShaders";
-		case CookOperationKind::BuildTextures:
-			return "BuildTextures";
-		case CookOperationKind::BuildSceneAssets:
-			return "BuildSceneAssets";
-		case CookOperationKind::CookAllAssets:
-			return "CookAllAssets";
+			case CookOperationKind::CookShaders:
+				return "CookShaders";
+			case CookOperationKind::BuildTextures:
+				return "BuildTextures";
+			case CookOperationKind::BuildSceneAssets:
+				return "BuildSceneAssets";
+			case CookOperationKind::CookAllAssets:
+				return "CookAllAssets";
 		}
 
 		return "Unknown";
@@ -298,10 +307,10 @@ namespace SparkleLauncher
 	{
 		switch (mode)
 		{
-		case CookMode::Incremental:
-			return "incremental";
-		case CookMode::Force:
-			return "force";
+			case CookMode::Incremental:
+				return "incremental";
+			case CookMode::Force:
+				return "force";
 		}
 
 		return "unknown";
@@ -310,10 +319,14 @@ namespace SparkleLauncher
 	const std::vector<CookOperationDefinition>& GetCookOperationDefinitions()
 	{
 		static const std::vector<CookOperationDefinition> definitions = {
-		    {CookOperationKind::CookAllAssets, "cook.project", "Cook", "Cook All", "Prepare all assets for the selected project."},
+		    {CookOperationKind::CookAllAssets, "cook.all", "Cook", "Cook All", "Prepare all selected level assets."},
 		    {CookOperationKind::CookShaders, "cook.shaders", "Cook", "Cook Shaders", "Validate and prepare shader packages."},
 		    {CookOperationKind::BuildTextures, "cook.textures", "Cook", "Cook Textures", "Prepare texture assets for runtime use."},
-		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Scenes And Meshes", "Prepare scene, mesh, and material assets for runtime use."},
+		    {CookOperationKind::BuildSceneAssets,
+		        "cook.assets",
+		        "Cook",
+		        "Cook Scenes And Meshes",
+		        "Prepare scene, mesh, and material assets for runtime use."},
 		};
 		return definitions;
 	}
@@ -321,9 +334,10 @@ namespace SparkleLauncher
 	std::optional<CookOperationDefinition> FindCookOperationDefinition(std::string_view operationId)
 	{
 		const std::vector<CookOperationDefinition>& definitions = GetCookOperationDefinitions();
-		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const CookOperationDefinition& definition) {
-			return definition.Id == operationId;
-		});
+		const auto found = std::find_if(
+		    definitions.begin(),
+		    definitions.end(),
+		    [operationId](const CookOperationDefinition& definition) { return definition.Id == operationId; });
 		return found == definitions.end() ? std::nullopt : std::optional<CookOperationDefinition>(*found);
 	}
 
@@ -343,9 +357,9 @@ namespace SparkleLauncher
 		plan.RepositoryRoot = request.RepositoryRoot;
 		plan.Request = request;
 		plan.ToolProfile = ResolveCookToolProfile(request.RuntimeProfile);
-		plan.CookedOutputDirectory = GetCookedProjectDirectory(request.RepositoryRoot, request.ProjectId);
+		plan.CookedOutputDirectory = GetCookedProjectDirectory(request.RepositoryRoot, request.ContentId);
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
-		plan.Operation.Inputs.push_back({"project", request.ProjectId});
+		plan.Operation.Inputs.push_back({"content", request.ContentId});
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
 		plan.Operation.Inputs.push_back({"cookMode", ToString(request.Mode)});
 		plan.Operation.Inputs.push_back({"toolProfile", plan.ToolProfile});
@@ -362,7 +376,7 @@ namespace SparkleLauncher
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		if (request.Mode == CookMode::Force)
 		{
-			plan.Operation.DestructiveScope = OperationDestructiveScope::SelectedProjectCookedOutputs;
+			plan.Operation.DestructiveScope = OperationDestructiveScope::CookedOutputs;
 			plan.Operation.RequiresConfirmation = true;
 		}
 
@@ -372,11 +386,13 @@ namespace SparkleLauncher
 		{
 			plan.RequiredToolPaths.push_back(ResolveSparkleToolPath(request.RepositoryRoot, plan.ToolProfile, toolName));
 		}
-		AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
+		AddReadiness(
+		    plan,
+		    plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
 		AddReadiness(plan, plan.Freshness.Summary);
-		if (request.ProjectId.empty())
+		if (request.ContentId.empty())
 		{
-			AddReadiness(plan, "A project must be selected before cooking.");
+			AddReadiness(plan, "Repository content is unavailable for cooking.");
 		}
 		if (!plan.Freshness.Current)
 		{
@@ -384,22 +400,22 @@ namespace SparkleLauncher
 		}
 		switch (plan.Kind)
 		{
-		case CookOperationKind::CookShaders:
+			case CookOperationKind::CookShaders:
 #if !SPARKLE_ENABLE_SHADER_COMPILER
-			AddReadiness(plan, "ShaderCompiler is disabled in this workspace configuration.");
+				AddReadiness(plan, "ShaderCompiler is disabled in this workspace configuration.");
 #endif
-			break;
-		case CookOperationKind::BuildTextures:
-		case CookOperationKind::BuildSceneAssets:
+				break;
+			case CookOperationKind::BuildTextures:
+			case CookOperationKind::BuildSceneAssets:
 #if !SPARKLE_ENABLE_CONTENT_PIPELINE
-			AddReadiness(plan, "Content pipeline tools are disabled in this workspace configuration.");
+				AddReadiness(plan, "Content pipeline tools are disabled in this workspace configuration.");
 #endif
-			break;
-		case CookOperationKind::CookAllAssets:
+				break;
+			case CookOperationKind::CookAllAssets:
 #if !SPARKLE_ENABLE_CONTENT_PIPELINE && !SPARKLE_ENABLE_SHADER_COMPILER
-			AddReadiness(plan, "No cook tool groups are enabled in this workspace configuration.");
+				AddReadiness(plan, "No cook tool groups are enabled in this workspace configuration.");
 #endif
-			break;
+				break;
 		}
 		bool requiredCookToolsAvailable = true;
 		for (const std::filesystem::path& toolPath : plan.RequiredToolPaths)
@@ -430,8 +446,9 @@ namespace SparkleLauncher
 
 			AddReadiness(
 			    plan,
-			    "Cook tool runtime support bundle is incomplete beside " + toolPath.filename().string() +
-			        "; run Build Cooking Tools first after Sync shows the Vulkan SDK as ready: " + Strings::Join(missingSupportEntryViews, ", "));
+			    "Cook tool runtime support bundle is incomplete beside " + toolPath.filename().string()
+			        + "; run Build Cooking Tools first after Sync shows the Vulkan SDK as ready: "
+			        + Strings::Join(missingSupportEntryViews, ", "));
 		}
 		if (request.Mode == CookMode::Force && !request.ForceRecookConfirmed)
 		{
@@ -439,13 +456,13 @@ namespace SparkleLauncher
 		}
 
 		PopulateCookEffects(plan);
-		if (plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && requiredCookToolsAvailable && !request.ProjectId.empty())
+		if (plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && requiredCookToolsAvailable && !request.ContentId.empty())
 		{
 			PopulateCookSteps(plan);
 		}
 
-		plan.CanRun = plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && requiredCookToolsAvailable && !request.ProjectId.empty() &&
-		    (request.Mode != CookMode::Force || request.ForceRecookConfirmed);
+		plan.CanRun = plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && requiredCookToolsAvailable
+		    && !request.ContentId.empty() && (request.Mode != CookMode::Force || request.ForceRecookConfirmed);
 
 		std::ostringstream dryRun;
 		dryRun << "Dry-run plan for " << definition->DisplayName << ":";

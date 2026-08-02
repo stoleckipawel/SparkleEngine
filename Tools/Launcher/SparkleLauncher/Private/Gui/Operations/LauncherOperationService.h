@@ -15,7 +15,7 @@ namespace SparkleLauncher
 
 	class LauncherOperationService final
 	{
-	  public:
+	public:
 		using ProcessRunnerFactory = std::function<std::unique_ptr<IProcessRunner>()>;
 		using OutputCallback = std::function<void(std::string_view)>;
 		using CompletionCallback = std::function<void(OperationRecord)>;
@@ -32,8 +32,9 @@ namespace SparkleLauncher
 		    std::string title,
 		    OutputCallback outputCallback,
 		    CompletionCallback completionCallback);
+		bool Cancel(std::string_view runId) noexcept;
 
-	  private:
+	private:
 		struct Implementation;
 		std::unique_ptr<Implementation> m_implementation;
 	};

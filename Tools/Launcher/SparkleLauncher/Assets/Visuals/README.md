@@ -21,8 +21,8 @@ Workflow banner asset slots:
 - `workflow-home-quickstart.png`: Quick Start contextual banner.
 - `workflow-editor-open.png`: Open Editor workflow banner.
 - `workflow-runtime-open.png`: Open Runtime workflow banner.
-- `workflow-project-run-editor.png`: Launch Project workflow banner when the selected target is Editor.
-- `workflow-project-run-runtime.png`: Launch Project workflow banner when the selected target is Runtime.
+- `workflow-launch-editor.png`: Editor launch workflow banner.
+- `workflow-launch-runtime.png`: Runtime launch workflow banner.
 - `workflow-open-ide.png`: Open IDE workflow banner.
 - `workflow-toolchain-check.png`: Host readiness workflow banner.
 - `workflow-source-sync.png`: Source tier sync workflow banner.

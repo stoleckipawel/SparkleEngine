@@ -9,7 +9,7 @@ class QWidget;
 
 namespace SparkleLauncher
 {
-	class LauncherProjectModel;
+	class LauncherContentModel;
 	class LauncherSettings;
 
 	struct LauncherPrerequisiteDecision
@@ -30,21 +30,21 @@ namespace SparkleLauncher
 	LauncherPrerequisiteDecision ResolveWorkspacePrerequisitePrompt(
 	    QWidget* parent,
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId);
 
 	LauncherPrerequisiteDecision ResolveLaunchPrerequisitePrompt(
 	    QWidget* parent,
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId);
 
 	LauncherPrerequisiteDecision ResolveCookPrerequisitePrompt(
 	    QWidget* parent,
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId);
 }

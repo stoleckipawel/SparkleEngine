@@ -142,10 +142,10 @@ Stage 04 rule:
 
 Stage 05 catalog result:
 
-- `Projects/Showcase/Levels.catalog` is now the tiny project-owned level catalog.
+- `Projects/Showcase/Levels.catalog` is the launcher’s single content-owned level catalog.
 - Each map has `Id`, `DisplayName`, `Description`, `Source`, and `Selected` metadata, plus optional presentation and asset-pack references.
 - Runtime level discovery loads ready catalog maps in the active set; the launcher maps each card's Sync/Clean action to the catalog's internal `Selected` state, and a missing active map is non-fatal.
-- Asset cook discovery reads the same selected map set and filters project source scenes to those map-referenced assets. An empty set is valid.
+- Asset cook discovery reads the same selected map set and filters source scenes to those map-referenced assets. An empty set is valid.
 - Acquisition metadata is represented by `AssetPack` on maps and `[AssetPack]` records. Pack acquisition is derived from selected maps rather than a second selection authority.
 
 Stage 06 asset-pack boundary:
@@ -367,6 +367,7 @@ Tool areas:
 Launcher read:
 
 - The launcher is large enough to be judged as an application.
+- The launcher GUI owns one implicit repository content root. It does not expose project discovery or selection; the content model rejects ambiguous repositories instead of choosing among multiple roots.
 - It currently models dry-run plans, logs, dependency state, GUI status pages, operation catalogs, build/cook/launch/maintenance requests, and package assembly.
 - This is useful for productization, but it should not keep validation/report/debug scaffolding alive.
 - Preferred target: launcher as a small workflow shell for build, cook, run, clean, package if shipping, and source dependency sync if truly needed.

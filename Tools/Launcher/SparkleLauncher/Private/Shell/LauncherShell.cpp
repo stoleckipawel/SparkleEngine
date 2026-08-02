@@ -5,7 +5,7 @@
 #include "LauncherShellOperations.h"
 #include "LauncherShellPresentation.h"
 
-#include "SparkleLauncher/ProjectDiscovery.h"
+#include "SparkleLauncher/ContentDiscovery.h"
 #include "SparkleLauncher/RepositoryLocator.h"
 
 #include <filesystem>
@@ -41,14 +41,14 @@ namespace SparkleLauncher
 			return 1;
 		}
 
-		std::vector<SparkleProject> projects = DiscoverProjects(repository->RootPath, errorMessage);
-		if (!errorMessage.empty())
+		std::optional<SparkleContent> content = DiscoverContentRoot(repository->RootPath, errorMessage);
+		if (!content.has_value())
 		{
 			error << errorMessage << '\n';
 			return 1;
 		}
 
-		LauncherShellModel model = BuildLauncherShellModel(*repository, std::move(projects), arguments);
+		LauncherShellModel model = BuildLauncherShellModel(*repository, std::move(*content), arguments);
 		if (!arguments.RunOperationId.empty())
 		{
 			return RunLauncherShellOperation(model, arguments, output, error);

@@ -5,7 +5,7 @@
 
 namespace SparkleLauncher
 {
-	struct LauncherProjectSummary;
+	struct LauncherContentSummary;
 
 	struct LauncherLevelUiEntry final
 	{
@@ -40,6 +40,6 @@ namespace SparkleLauncher
 		QVector<LauncherLevelUiEntry> Levels;
 		QVector<LauncherStartupLevelUiEntry> StartupLevels;
 
-		static LauncherLevelUiModel Build(const LauncherProjectSummary& project);
+		static LauncherLevelUiModel Build(const LauncherContentSummary& content);
 	};
 }

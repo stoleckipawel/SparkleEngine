@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
-#include "SparkleLauncher/LauncherProjectDefaults.h"
+#include "SparkleLauncher/LauncherContentDefaults.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
@@ -21,8 +21,7 @@ namespace SparkleLauncher
 
 	enum class CleanScope
 	{
-		SelectedProjectCookedOutputs,
-		AllCookedOutputs,
+		CookedOutputs,
 		BuildTree,
 		ArtifactOutputs,
 		PackageOutputs,
@@ -63,9 +62,9 @@ namespace SparkleLauncher
 	struct MaintenanceOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
-		std::string ProjectId = kDefaultProjectId;
+		std::string ContentId = kDefaultContentId;
 		std::string EditorProfile = "DevelopmentEditor";
-		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
+		CleanScope RequestedCleanScope = CleanScope::CookedOutputs;
 		std::vector<CleanScope> RequestedCleanScopes;
 		std::vector<MaintenanceCleanPathSpec> RequestedCleanTargets;
 		std::vector<std::filesystem::path> PreservedPaths;
@@ -102,5 +101,8 @@ namespace SparkleLauncher
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions();
 	std::optional<MaintenanceOperationDefinition> FindMaintenanceOperationDefinition(std::string_view operationId);
 	MaintenanceOperationPlan PlanMaintenanceOperation(std::string_view operationId, const MaintenanceOperationRequest& request);
-	OperationRecord RunMaintenanceOperationPlan(MaintenanceOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback = {});
+	OperationRecord RunMaintenanceOperationPlan(
+	    MaintenanceOperationPlan plan,
+	    IProcessRunner& processRunner,
+	    ProcessOutputCallback outputCallback = {});
 }

@@ -11,8 +11,8 @@ namespace SparkleLauncher
 {
 	static ProcessRequest MakeSyncRequest(const BuildWorkspaceOperationPlan& plan, const ProjectAssetPack& pack)
 	{
-		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ProjectId;
-		const std::filesystem::path cacheRoot = GetLauncherStateDirectory(plan.RepositoryRoot) / "ContentArchives" / plan.Request.ProjectId;
+		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
+		const std::filesystem::path cacheRoot = GetLauncherStateDirectory(plan.RepositoryRoot) / "ContentArchives" / plan.Request.ContentId;
 		const std::filesystem::path rootRelativeToExtraction = pack.rootPath.lexically_relative(pack.extractionPath);
 
 		ProcessRequest process;
@@ -41,9 +41,9 @@ namespace SparkleLauncher
 
 	void AppendAssetPackSyncProcessSteps(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
 	{
-		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ProjectId;
+		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
 		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(projectRoot);
-		for (const std::string& packId : BuildAssetPackSyncPlan(catalog, plan.Kind))
+		for (const std::string& packId : BuildAssetPackSyncPlan(catalog, plan.Kind, plan.Request.RequestedLevelIds))
 		{
 			const ProjectAssetPack& pack = catalog.assetPacks.at(packId);
 			if (catalog.IsAssetPackPayloadPresent(pack))

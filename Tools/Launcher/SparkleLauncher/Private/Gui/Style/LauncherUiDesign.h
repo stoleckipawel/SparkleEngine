@@ -154,11 +154,8 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace Clean
 	{
-		inline constexpr int ScopeCardSpacing = 6;
-		inline constexpr int GridTopMargin = 4;
-		inline constexpr int GridSpacing = 12;
-		inline const QMargins ScopeCardMargins{12, 10, 12, 10};
-		inline const QMargins GridMargins{0, GridTopMargin, 0, 0};
+		inline constexpr int RowSpacing = 12;
+		inline const QMargins RowMargins{14, 10, 14, 10};
 	}
 
 	namespace Option

@@ -81,7 +81,7 @@ namespace SparkleLauncher
 		{
 			return plan.Request.SelectedTargets;
 		}
-		return ResolveProjectTargets(plan.Request.ProjectId, profileName);
+		return ResolveProjectTargets(plan.Request.ContentId, profileName);
 	}
 
 	static std::vector<std::string> GetEnabledCookToolTargets()
@@ -101,7 +101,7 @@ namespace SparkleLauncher
 	{
 		BuildWorkspaceProcessStep step;
 		step.Id = "configure";
-		step.DisplayName = "Generate project files";
+		step.DisplayName = "Generate build files";
 		step.Request = MakeConfigureRequest(plan);
 		step.UpdatesBuildFilesFreshness = true;
 		steps.push_back(std::move(step));
@@ -166,12 +166,12 @@ namespace SparkleLauncher
 				    steps,
 				    plan,
 				    plan.Request.EditorProfile,
-				    ResolveProjectTargets(plan.Request.ProjectId, plan.Request.EditorProfile));
+				    ResolveProjectTargets(plan.Request.ContentId, plan.Request.EditorProfile));
 				AddBuildStep(
 				    steps,
 				    plan,
 				    plan.Request.RuntimeProfile,
-				    ResolveProjectTargets(plan.Request.ProjectId, plan.Request.RuntimeProfile));
+				    ResolveProjectTargets(plan.Request.ContentId, plan.Request.RuntimeProfile));
 				{
 					const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
 					if (!cookToolTargets.empty())

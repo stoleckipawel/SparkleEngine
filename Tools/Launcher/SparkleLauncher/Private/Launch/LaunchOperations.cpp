@@ -147,7 +147,7 @@ namespace SparkleLauncher
 #endif
 		const std::string productRole = IsRuntimeLaunchTarget(request) ? "runtime" : "editor";
 		return FirstExistingOrPreferred({
-		    GetProjectTargetArtifactDirectory(request.RepositoryRoot, request.ProjectId, productRole, profileName) / fileName,
+		    GetProjectTargetArtifactDirectory(request.RepositoryRoot, request.ContentId, productRole, profileName) / fileName,
 		    ResolveSparkleToolPath(request.RepositoryRoot, profileName, targetName),
 		});
 	}
@@ -156,8 +156,8 @@ namespace SparkleLauncher
 	{
 		switch (kind)
 		{
-		case LaunchOperationKind::RunProject:
-			return "RunProject";
+			case LaunchOperationKind::RunContent:
+				return "RunContent";
 		}
 
 		return "Unknown";
@@ -166,9 +166,21 @@ namespace SparkleLauncher
 	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions()
 	{
 		static const std::vector<LaunchOperationDefinition> definitions = {
-		    {LaunchOperationKind::RunProject, "project.open.editor", "Launch", "Open Editor", "Launch the selected project in editor mode using available runtime components."},
-		    {LaunchOperationKind::RunProject, "project.open.runtime", "Launch", "Open Runtime", "Launch the selected project in runtime mode using available runtime components."},
-		    {LaunchOperationKind::RunProject, "project.run", "Launch", "Launch Project", "Launch the selected project in editor or runtime mode using shared launch options."},
+		    {LaunchOperationKind::RunContent,
+		        "launch.editor",
+		        "Launch",
+		        "Open Editor",
+		        "Launch the editor using available runtime components."},
+		    {LaunchOperationKind::RunContent,
+		        "launch.runtime",
+		        "Launch",
+		        "Open Runtime",
+		        "Launch the runtime using available runtime components."},
+		    {LaunchOperationKind::RunContent,
+		        "launch.run",
+		        "Launch",
+		        "Launch",
+		        "Launch the editor or runtime using shared launch options."},
 		};
 		return definitions;
 	}
@@ -176,9 +188,10 @@ namespace SparkleLauncher
 	std::optional<LaunchOperationDefinition> FindLaunchOperationDefinition(std::string_view operationId)
 	{
 		const std::vector<LaunchOperationDefinition>& definitions = GetLaunchOperationDefinitions();
-		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const LaunchOperationDefinition& definition) {
-			return definition.Id == operationId;
-		});
+		const auto found = std::find_if(
+		    definitions.begin(),
+		    definitions.end(),
+		    [operationId](const LaunchOperationDefinition& definition) { return definition.Id == operationId; });
 		return found == definitions.end() ? std::nullopt : std::optional<LaunchOperationDefinition>(*found);
 	}
 
@@ -199,7 +212,7 @@ namespace SparkleLauncher
 		plan.Request = request;
 		plan.Profile = ResolveLaunchProfile(plan.Kind, plan.Request);
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
-		plan.Operation.Inputs.push_back({"project", plan.Request.ProjectId});
+		plan.Operation.Inputs.push_back({"content", plan.Request.ContentId});
 		plan.Operation.Inputs.push_back({"target", IsRuntimeLaunchTarget(plan.Request) ? "runtime" : "editor"});
 		plan.Operation.Inputs.push_back({"profile", plan.Profile});
 		if (!plan.Request.StartupLevel.empty())
@@ -235,9 +248,9 @@ namespace SparkleLauncher
 			return plan;
 		}
 
-		plan.TargetName = BuildProjectTargetName(plan.Request.ProjectId, *profile);
+		plan.TargetName = BuildProjectTargetName(plan.Request.ContentId, *profile);
 		plan.ExecutablePath = ResolveLaunchExecutablePath(plan.Request, plan.Profile, plan.TargetName);
-		plan.WorkingDirectory = plan.Request.RepositoryRoot / "Projects" / plan.Request.ProjectId;
+		plan.WorkingDirectory = plan.Request.RepositoryRoot / "Projects" / plan.Request.ContentId;
 		if (!plan.Request.StartupLevel.empty())
 		{
 			AddEnvironment(plan, "SPARKLE_STARTUP_LEVEL", plan.Request.StartupLevel);
@@ -246,22 +259,38 @@ namespace SparkleLauncher
 		std::error_code errorCode;
 		const bool executableExists = std::filesystem::exists(plan.ExecutablePath, errorCode);
 		errorCode.clear();
-		const bool projectMarkerExists = std::filesystem::exists(plan.WorkingDirectory / std::string(Filesystem::kProjectMarker), errorCode);
+		const bool projectMarkerExists =
+		    std::filesystem::exists(plan.WorkingDirectory / std::string(Filesystem::kProjectMarker), errorCode);
 		errorCode.clear();
-		const bool cookedMeshesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Meshes");
-		const bool cookedTexturesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Textures");
-		const bool cookedShadersReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Shaders");
+		const bool cookedMeshesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ContentId, "Meshes");
+		const bool cookedTexturesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ContentId, "Textures");
+		const bool cookedShadersReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ContentId, "Shaders");
 		plan.Readiness.ExecutableReady = executableExists;
-		plan.Readiness.ProjectDirectoryReady = projectMarkerExists;
+		plan.Readiness.ContentDirectoryReady = projectMarkerExists;
 		plan.Readiness.CookedMeshesReady = cookedMeshesReady;
 		plan.Readiness.CookedTexturesReady = cookedTexturesReady;
 		plan.Readiness.CookedShadersReady = cookedShadersReady;
-		AddReadiness(plan, executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
-		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
-		AddReadiness(plan, cookedMeshesReady ? "Cooked scenes and meshes are ready." : "Cooked scenes and meshes are missing; run Cook Scenes And Meshes before launching.");
-		AddReadiness(plan, cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; run Cook Textures before launching.");
-		AddReadiness(plan, cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; run Cook Shaders before launching.");
-		AddPlannedEffect(plan, std::string("Launch ") + (IsRuntimeLaunchTarget(plan.Request) ? "runtime" : "editor") + " executable " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
+		AddReadiness(
+		    plan,
+		    executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
+		AddReadiness(
+		    plan,
+		    projectMarkerExists ? "Content working directory is valid."
+		                        : "Content working directory is missing or invalid: " + plan.WorkingDirectory.string());
+		AddReadiness(
+		    plan,
+		    cookedMeshesReady ? "Cooked scenes and meshes are ready."
+		                      : "Cooked scenes and meshes are missing; run Cook Scenes And Meshes before launching.");
+		AddReadiness(
+		    plan,
+		    cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; run Cook Textures before launching.");
+		AddReadiness(
+		    plan,
+		    cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; run Cook Shaders before launching.");
+		AddPlannedEffect(
+		    plan,
+		    std::string("Launch ") + (IsRuntimeLaunchTarget(plan.Request) ? "runtime" : "editor") + " executable "
+		        + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
 		if (!plan.Request.GraphicsBackend.empty())
 		{
 			AddPlannedEffect(plan, "Use graphics backend: " + plan.Request.GraphicsBackend + ".");

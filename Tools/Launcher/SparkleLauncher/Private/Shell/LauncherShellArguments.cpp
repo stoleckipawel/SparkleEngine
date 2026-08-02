@@ -1,7 +1,6 @@
 #include "LauncherShellArguments.h"
 
 #include "SparkleLauncher/BuildProfileCatalog.h"
-#include "SparkleLauncher/LauncherProjectDefaults.h"
 
 #include <optional>
 #include <ostream>
@@ -17,12 +16,12 @@ namespace SparkleLauncher
 
 	class LauncherShellArgumentParser final
 	{
-	  public:
+	public:
 		LauncherShellArgumentParser(int argc, char** argv, LauncherShellArguments& outArguments, std::ostream& error) noexcept;
 
 		bool Parse();
 
-	  private:
+	private:
 		bool ParseCurrentArgument(std::string_view argument);
 		bool ParseProfile(BuildProfileTarget target, std::string& outProfile);
 		bool ParseWorkspaceIde();
@@ -45,7 +44,10 @@ namespace SparkleLauncher
 	    char** argv,
 	    LauncherShellArguments& outArguments,
 	    std::ostream& error) noexcept :
-	    m_argumentCount(argc), m_arguments(argv), m_outArguments(&outArguments), m_error(&error)
+	    m_argumentCount(argc),
+	    m_arguments(argv),
+	    m_outArguments(&outArguments),
+	    m_error(&error)
 	{
 	}
 
@@ -77,16 +79,6 @@ namespace SparkleLauncher
 			if (value.has_value())
 			{
 				m_outArguments->StartPath = *value;
-			}
-			return value.has_value();
-		}
-
-		if (argument == "--project")
-		{
-			const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --project requires a project id.\n");
-			if (value.has_value())
-			{
-				m_outArguments->SelectedProject = *value;
 			}
 			return value.has_value();
 		}
@@ -220,7 +212,7 @@ namespace SparkleLauncher
 			return false;
 		}
 
-		CleanScope scope = CleanScope::SelectedProjectCookedOutputs;
+		CleanScope scope = CleanScope::CookedOutputs;
 		if (!TryParseCleanScope(*value, scope))
 		{
 			*m_error << "SparkleLauncher: unsupported clean scope '" << *value << "'.\n";
@@ -269,8 +261,7 @@ namespace SparkleLauncher
 	bool LauncherShellArgumentParser::TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept
 	{
 		static constexpr LauncherCleanScopeOption options[] = {
-		    {"selected-cooked", CleanScope::SelectedProjectCookedOutputs},
-		    {"all-cooked", CleanScope::AllCookedOutputs},
+		    {"cooked", CleanScope::CookedOutputs},
 		    {"build-tree", CleanScope::BuildTree},
 		    {"artifacts", CleanScope::ArtifactOutputs},
 		    {"packages", CleanScope::PackageOutputs},
@@ -300,19 +291,17 @@ namespace SparkleLauncher
 
 	void PrintLauncherShellUsage(std::ostream& output)
 	{
-		output
-		    << "Usage:\n"
-		    << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] "
-		       "[--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--clean-scope <scope>] "
-		       "[--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]] [--run <operation-id>]\n"
-		    << "\n"
-		    << "Examples:\n"
-		    << "  SparkleLauncher --dry-run\n"
-		    << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
-		    << "  SparkleLauncher --project " << kDefaultProjectId
-		    << " --launch-target runtime --startup-level <level-name> --dry-run project.run\n"
-		    << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
-		    << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n"
-		    << "  SparkleLauncher --clean-scope clean-all --dry-run workspace.clean\n";
+		output << "Usage:\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--editor-profile <profile>] [--runtime-profile <profile>] "
+		          "[--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--clean-scope <scope>] "
+		          "[--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]] [--run <operation-id>]\n"
+		       << "\n"
+		       << "Examples:\n"
+		       << "  SparkleLauncher --dry-run\n"
+		       << "  SparkleLauncher --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
+		       << "  SparkleLauncher --launch-target runtime --startup-level <level-name> --dry-run launch.run\n"
+		       << "  SparkleLauncher --force-recook --dry-run cook.all\n"
+		       << "  SparkleLauncher --clean-scope cooked --dry-run workspace.clean\n"
+		       << "  SparkleLauncher --clean-scope clean-all --dry-run workspace.clean\n";
 	}
 }

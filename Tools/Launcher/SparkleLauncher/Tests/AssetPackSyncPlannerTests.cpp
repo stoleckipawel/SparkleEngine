@@ -97,6 +97,42 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		Require(plan == std::vector<std::string>({"Base", "Child"}), "Selected pack plan was not parent-first and deduplicated.");
 	}
 
+	void RequestedLevelPlanIsIsolatedFromOtherSelections()
+	{
+		TemporaryDirectory temporaryDirectory;
+		ProjectLevelCatalog catalog;
+		catalog.assetPacks.emplace("First", MakePack(temporaryDirectory, "First", true, true, false));
+		catalog.assetPacks.emplace("Second", MakePack(temporaryDirectory, "Second", true, true, false));
+		catalog.levels.push_back(MakeSelectedLevel("FirstLevel", "First"));
+		catalog.levels.push_back(MakeSelectedLevel("SecondLevel", "Second"));
+
+		const std::vector<std::string> requestedLevelIds{"SecondLevel"};
+		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels, requestedLevelIds);
+		Require(plan == std::vector<std::string>({"Second"}), "Targeted level sync included another selected level's pack.");
+	}
+
+	void UnselectedRequestedLevelIsRejected()
+	{
+		TemporaryDirectory temporaryDirectory;
+		ProjectLevelCatalog catalog;
+		catalog.assetPacks.emplace("Example", MakePack(temporaryDirectory, "Example", true, true, false));
+		ProjectLevelCatalogEntry level = MakeSelectedLevel("ExampleLevel", "Example");
+		level.selected = false;
+		catalog.levels.push_back(std::move(level));
+		const std::vector<std::string> requestedLevelIds{"ExampleLevel"};
+
+		try
+		{
+			BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels, requestedLevelIds);
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			Require(std::string_view(error.what()).find("is not selected") != std::string_view::npos, error.what());
+			return;
+		}
+		throw std::runtime_error("An unselected requested level was accepted.");
+	}
+
 	void SelectedRuntimeUnsupportedPackIsRejected()
 	{
 		TemporaryDirectory temporaryDirectory;
@@ -222,6 +258,8 @@ int main()
 	using namespace SparkleLauncher::AssetPackSyncPlannerTests;
 	int failureCount = 0;
 	failureCount += Run("selected pack dependency order", SelectedPackPlanIsParentFirstAndDeduplicated);
+	failureCount += Run("targeted level isolation", RequestedLevelPlanIsIsolatedFromOtherSelections);
+	failureCount += Run("targeted unselected level rejection", UnselectedRequestedLevelIsRejected);
 	failureCount += Run("runtime-unsupported selection rejection", SelectedRuntimeUnsupportedPackIsRejected);
 	failureCount += Run("missing acquisition path rejection", SelectedPackWithoutAcquisitionPathIsRejected);
 	failureCount += Run("present local pack", PresentPackWithoutDownloadRemainsUsable);

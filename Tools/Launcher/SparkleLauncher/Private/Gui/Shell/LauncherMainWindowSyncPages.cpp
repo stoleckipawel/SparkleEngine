@@ -10,7 +10,7 @@
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"
@@ -101,8 +101,7 @@ namespace SparkleLauncher
 		{
 			combo.addItem(QStringLiteral("Level catalog unavailable"), QString());
 			combo.setEnabled(false);
-			combo.setToolTip(
-			    model.LoadError.isEmpty() ? QStringLiteral("The active project's level catalog could not be loaded.") : model.LoadError);
+			combo.setToolTip(model.LoadError.isEmpty() ? QStringLiteral("The level catalog could not be loaded.") : model.LoadError);
 			return;
 		}
 
@@ -111,7 +110,7 @@ namespace SparkleLauncher
 		{
 			combo.addItem(QStringLiteral("No catalog levels"), QString());
 			combo.setEnabled(false);
-			combo.setToolTip("No catalog levels are available for the active project.");
+			combo.setToolTip("No catalog levels are available.");
 			return;
 		}
 
@@ -209,13 +208,13 @@ namespace SparkleLauncher
 
 	LauncherLevelUiModel LauncherMainWindow::BuildLevelUiModel() const
 	{
-		const LauncherProjectSummary* activeProject = m_projectModel.ActiveProject();
-		if (activeProject == nullptr)
+		const LauncherContentSummary* content = m_contentModel.Content();
+		if (content == nullptr)
 		{
 			return {};
 		}
 
-		return LauncherLevelUiModel::Build(*activeProject);
+		return LauncherLevelUiModel::Build(*content);
 	}
 
 	QString LauncherMainWindow::ResolveStartupLevelDisplayName() const

@@ -11,7 +11,7 @@ namespace SparkleLauncher
 		std::filesystem::path RootPath;
 		std::filesystem::path EnginePath;
 		std::filesystem::path ToolsPath;
-		std::filesystem::path ProjectsPath;
+		std::filesystem::path ContentPath;
 	};
 
 	bool IsRepositoryRoot(const std::filesystem::path& path);

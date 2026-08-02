@@ -43,11 +43,12 @@ namespace SparkleLauncher
 		std::filesystem::path RepositoryRoot;
 		QString RunId;
 		QString OperationId;
-		QString ProjectId;
+		QString ContentId;
 		QString EditorProfile;
 		QString RuntimeProfile;
 		QString WorkspaceIde;
 		QString SelectedTargets;
+		QString RequestedLevelIds;
 		QString ShaderPackages;
 		QString ShaderTargets;
 		QString ShaderBackend;
@@ -59,7 +60,7 @@ namespace SparkleLauncher
 		QString LaunchHighPerformanceAdapter;
 		QString LaunchCommandLineArguments;
 		QString LaunchCVars;
-		QString CleanScope = "selected-cooked";
+		QString CleanScope = "cooked";
 		QVector<LauncherCleanTarget> CleanTargets;
 		QVector<QString> PreservedPaths;
 		bool ShaderUseCache = true;
@@ -77,7 +78,7 @@ namespace SparkleLauncher
 	{
 		Q_OBJECT
 
-	  public:
+	public:
 		using ProcessRunnerFactory = std::function<std::unique_ptr<IProcessRunner>()>;
 
 		explicit LauncherBackend(QObject* parent = nullptr);
@@ -88,8 +89,9 @@ namespace SparkleLauncher
 
 		void RequestOperationPreview(const LauncherOperationRequest& request);
 		void RunOperation(LauncherOperationRequest request);
+		bool CancelOperation(const QString& runId);
 
-	  signals:
+	signals:
 		void OperationPreviewReady(const QString& operationId, const QString& title, const QString& previewText, bool canRun);
 		void OperationPreviewFailed(const QString& operationId, const QString& message);
 		void OperationStarted(const QString& runId, const QString& operationId, const QString& title);
@@ -101,7 +103,7 @@ namespace SparkleLauncher
 		    const QString& statusText,
 		    int exitCode);
 
-	  private:
+	private:
 		void PopulateOperationCatalog();
 		void QueueOperationOutput(QString runId, QString operationId, QString outputText);
 		void QueueOperationFinished(QString runId, QString operationId, QString title, OperationRecord record);

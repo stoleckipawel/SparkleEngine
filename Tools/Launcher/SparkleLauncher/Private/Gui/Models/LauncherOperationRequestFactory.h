@@ -11,7 +11,7 @@
 namespace SparkleLauncher
 {
 	struct ActionCleanTargetContext;
-	class LauncherProjectModel;
+	class LauncherContentModel;
 	class LauncherSettings;
 
 	WorkspaceIde ResolveSelectedWorkspaceIde(const LauncherSettings& settings);
@@ -20,32 +20,32 @@ namespace SparkleLauncher
 
 	BuildWorkspaceOperationRequest BuildWorkspacePlanRequest(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings);
 
 	LauncherOperationRequest BuildLauncherOperationRequest(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId);
 
 	ActionCleanTargetContext BuildActionCleanTargetContext(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const std::filesystem::path& runningLauncherPath,
 	    const QString& operationId);
 
 	LauncherOperationRequest BuildActionCleanOperationRequest(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const std::filesystem::path& runningLauncherPath,
 	    const QString& operationId);
 
 	LauncherOperationRequest BuildScopedCleanOperationRequest(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& cleanScope,
 	    const std::filesystem::path& runningLauncherPath = {});

@@ -53,7 +53,7 @@ namespace SparkleLauncher
 			root.RootPath = *workspaceRoot;
 			root.EnginePath = root.RootPath / "Engine";
 			root.ToolsPath = root.RootPath / "Tools";
-			root.ProjectsPath = root.RootPath / "Projects";
+			root.ContentPath = root.RootPath / "Projects";
 			return root;
 		}
 

@@ -9,7 +9,7 @@
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"
@@ -60,14 +60,16 @@ namespace SparkleLauncher
 	void LauncherMainWindow::AddHomeQuickStart(QVBoxLayout& layout)
 	{
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
-		const bool packageRoot = PathExists(m_repositoryRoot / "SparkleLauncher.exe") && DirectoryHasEntries(m_repositoryRoot / "manifests");
+		const bool packageRoot =
+		    PathExists(m_repositoryRoot / "SparkleLauncher.exe") && DirectoryHasEntries(m_repositoryRoot / "manifests");
 
-		const auto planLaunch = [this](const QString& operationId) {
-			LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_projectModel, m_settings, operationId);
+		const auto planLaunch = [this](const QString& operationId)
+		{
+			LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, operationId);
 			LaunchOperationRequest launchRequest;
 			launchRequest.RepositoryRoot = request.RepositoryRoot;
 			launchRequest.OperationId = operationId.toStdString();
-			launchRequest.ProjectId = request.ProjectId.toStdString();
+			launchRequest.ContentId = request.ContentId.toStdString();
 			launchRequest.EditorProfile = request.EditorProfile.toStdString();
 			launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
 			launchRequest.Target = request.LaunchTarget.toStdString();
@@ -93,8 +95,8 @@ namespace SparkleLauncher
 			return PlanLaunchOperation(operationId.toStdString(), launchRequest);
 		};
 
-		const LaunchOperationPlan editorPlan = planLaunch("project.open.editor");
-		const LaunchOperationPlan runtimePlan = planLaunch("project.open.runtime");
+		const LaunchOperationPlan editorPlan = planLaunch("launch.editor");
+		const LaunchOperationPlan runtimePlan = planLaunch("launch.runtime");
 		const bool editorExecutableMissing = !editorPlan.Readiness.ExecutableReady;
 		const bool runtimeExecutableMissing = !runtimePlan.Readiness.ExecutableReady;
 		const bool editorCanBuild = !editorPlan.CanRun && editorExecutableMissing;
@@ -104,10 +106,15 @@ namespace SparkleLauncher
 		quickStartBody->setObjectName("QuickStartBody");
 		quickStartBody->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 		QVBoxLayout* bodyLayout = new QVBoxLayout(quickStartBody);
-		bodyLayout->setContentsMargins(LauncherUi::Home::BodyLeft, LauncherUi::Home::BodyTop, LauncherUi::Home::BodyRight, LauncherUi::Home::BodyBottom);
+		bodyLayout->setContentsMargins(
+		    LauncherUi::Home::BodyLeft,
+		    LauncherUi::Home::BodyTop,
+		    LauncherUi::Home::BodyRight,
+		    LauncherUi::Home::BodyBottom);
 		bodyLayout->setSpacing(LauncherUi::Home::SectionSpacing);
 
-		const auto addHomeSection = [bodyLayout](const QString& title) {
+		const auto addHomeSection = [bodyLayout](const QString& title)
+		{
 			QLabel* section = new QLabel(title);
 			section->setObjectName("CommandSectionTitle");
 			section->setAccessibleName(title);
@@ -115,18 +122,12 @@ namespace SparkleLauncher
 		};
 
 		const QString launchProvenance = packageRoot ? "bundled package components" : "local source artifacts";
-		const QString heroTitle = "Explore Project";
-		const QString heroDetail = QStringLiteral("Choose Editor or Runtime below. Products use the header startup level %1 and launch from %2 when available.")
-		                               .arg(ResolveStartupLevelDisplayName(), launchProvenance);
-		layout.addWidget(CreateHomeHeroCard(
-		    m_repositoryRoot,
-		    heroTitle,
-		    heroDetail,
-		    "neutral",
-		    nullptr,
-		    nullptr,
-		    "showcase-hero.png",
-		    this));
+		const QString heroTitle = "Explore Sparkle";
+		const QString heroDetail =
+		    QStringLiteral("Choose Editor or Runtime below. Products use the header startup level %1 and launch from %2 when available.")
+		        .arg(ResolveStartupLevelDisplayName(), launchProvenance);
+		layout.addWidget(
+		    CreateHomeHeroCard(m_repositoryRoot, heroTitle, heroDetail, "neutral", nullptr, nullptr, "showcase-hero.png", this));
 
 		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(
 		    LauncherUi::Home::ProductCardMinWidth,
@@ -137,34 +138,42 @@ namespace SparkleLauncher
 		    quickStartBody);
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
-		const QString editorDetail = editorPlan.CanRun ?
-		    QStringLiteral("Launch the project editor from %1.").arg(launchProvenance) :
-		    (editorExecutableMissing ? "Editor output is not ready yet. Build the editor target to unlock this launch path." :
-		                               "Editor output exists. Resolve the remaining cooked-content prerequisites to launch.");
-		const QString editorCardOperationId = editorCanBuild ? "project.build.editor" : "project.open.editor";
+		const QString editorDetail = editorPlan.CanRun
+		    ? QStringLiteral("Launch the editor from %1.").arg(launchProvenance)
+		    : (editorExecutableMissing ? "Editor output is not ready yet. Build the editor target to unlock this launch path."
+		                               : "Editor output exists. Resolve the remaining cooked-content prerequisites to launch.");
+		const QString editorCardOperationId = editorCanBuild ? "workspace.build.editor" : "launch.editor";
 		libraryGrid->AddCard(CreateHomeCapabilityCard(
 		    m_repositoryRoot,
 		    "Editor",
 		    editorStatus,
 		    editorDetail,
 		    editorPlan.CanRun ? "ok" : "warning",
-		    CreateCommandActionButton(editorCardOperationId, editorPlan.CanRun ? "Open Editor" : (editorCanBuild ? "Build Editor" : "Resolve"), false, editorPlan.CanRun || !editorCanBuild),
+		    CreateCommandActionButton(
+		        editorCardOperationId,
+		        editorPlan.CanRun ? "Open Editor" : (editorCanBuild ? "Build Editor" : "Resolve"),
+		        false,
+		        editorPlan.CanRun || !editorCanBuild),
 		    "library",
 		    "showcase-editor.png",
 		    this));
 		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
-		const QString runtimeDetail = runtimePlan.CanRun ?
-		    QStringLiteral("Run the project runtime from %1.").arg(launchProvenance) :
-		    (runtimeExecutableMissing ? "Runtime output is not ready yet. Build the runtime target to unlock the standalone path." :
-		                                "Runtime output exists. Resolve the remaining cooked-content prerequisites to launch.");
-		const QString runtimeCardOperationId = runtimeCanBuild ? "project.build.runtime" : "project.open.runtime";
+		const QString runtimeDetail = runtimePlan.CanRun
+		    ? QStringLiteral("Run the runtime from %1.").arg(launchProvenance)
+		    : (runtimeExecutableMissing ? "Runtime output is not ready yet. Build the runtime target to unlock the standalone path."
+		                                : "Runtime output exists. Resolve the remaining cooked-content prerequisites to launch.");
+		const QString runtimeCardOperationId = runtimeCanBuild ? "workspace.build.runtime" : "launch.runtime";
 		libraryGrid->AddCard(CreateHomeCapabilityCard(
 		    m_repositoryRoot,
 		    "Runtime",
 		    runtimeStatus,
 		    runtimeDetail,
 		    runtimePlan.CanRun ? "ok" : "warning",
-		    CreateCommandActionButton(runtimeCardOperationId, runtimePlan.CanRun ? "Open Runtime" : (runtimeCanBuild ? "Build Runtime" : "Resolve"), false, runtimePlan.CanRun || !runtimeCanBuild),
+		    CreateCommandActionButton(
+		        runtimeCardOperationId,
+		        runtimePlan.CanRun ? "Open Runtime" : (runtimeCanBuild ? "Build Runtime" : "Resolve"),
+		        false,
+		        runtimePlan.CanRun || !runtimeCanBuild),
 		    "library",
 		    "showcase-runtime.png",
 		    this));
@@ -181,4 +190,3 @@ namespace SparkleLauncher
 		layout.addWidget(quickStartBody);
 	}
 }
-

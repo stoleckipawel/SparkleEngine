@@ -33,18 +33,18 @@ namespace SparkleLauncher
 	{
 		switch (status)
 		{
-		case OperationStatus::Pending:
-			return "Pending";
-		case OperationStatus::Running:
-			return "Running";
-		case OperationStatus::Succeeded:
-			return "Succeeded";
-		case OperationStatus::Failed:
-			return "Failed";
-		case OperationStatus::Skipped:
-			return "Skipped";
-		case OperationStatus::Canceled:
-			return "Canceled";
+			case OperationStatus::Pending:
+				return "Pending";
+			case OperationStatus::Running:
+				return "Running";
+			case OperationStatus::Succeeded:
+				return "Succeeded";
+			case OperationStatus::Failed:
+				return "Failed";
+			case OperationStatus::Skipped:
+				return "Skipped";
+			case OperationStatus::Canceled:
+				return "Canceled";
 		}
 
 		return "Unknown";
@@ -54,28 +54,26 @@ namespace SparkleLauncher
 	{
 		switch (scope)
 		{
-		case OperationDestructiveScope::None:
-			return "None";
-		case OperationDestructiveScope::SelectedProjectCookedOutputs:
-			return "SelectedProjectCookedOutputs";
-		case OperationDestructiveScope::AllCookedOutputs:
-			return "AllCookedOutputs";
-		case OperationDestructiveScope::BuildTree:
-			return "BuildTree";
-		case OperationDestructiveScope::ArtifactOutputs:
-			return "ArtifactOutputs";
-		case OperationDestructiveScope::PackageOutputs:
-			return "PackageOutputs";
-		case OperationDestructiveScope::WorkspaceState:
-			return "WorkspaceState";
-		case OperationDestructiveScope::ShaderCache:
-			return "ShaderCache";
-		case OperationDestructiveScope::DependencyCache:
-			return "DependencyCache";
-		case OperationDestructiveScope::Logs:
-			return "Logs";
-		case OperationDestructiveScope::PristineGeneratedWorkspace:
-			return "PristineGeneratedWorkspace";
+			case OperationDestructiveScope::None:
+				return "None";
+			case OperationDestructiveScope::CookedOutputs:
+				return "CookedOutputs";
+			case OperationDestructiveScope::BuildTree:
+				return "BuildTree";
+			case OperationDestructiveScope::ArtifactOutputs:
+				return "ArtifactOutputs";
+			case OperationDestructiveScope::PackageOutputs:
+				return "PackageOutputs";
+			case OperationDestructiveScope::WorkspaceState:
+				return "WorkspaceState";
+			case OperationDestructiveScope::ShaderCache:
+				return "ShaderCache";
+			case OperationDestructiveScope::DependencyCache:
+				return "DependencyCache";
+			case OperationDestructiveScope::Logs:
+				return "Logs";
+			case OperationDestructiveScope::PristineGeneratedWorkspace:
+				return "PristineGeneratedWorkspace";
 		}
 
 		return "Unknown";

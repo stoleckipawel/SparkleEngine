@@ -21,8 +21,7 @@ namespace SparkleLauncher
 	enum class OperationDestructiveScope
 	{
 		None,
-		SelectedProjectCookedOutputs,
-		AllCookedOutputs,
+		CookedOutputs,
 		BuildTree,
 		ArtifactOutputs,
 		PackageOutputs,

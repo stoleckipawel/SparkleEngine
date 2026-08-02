@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SparkleLauncher/BuildProfileCatalog.h"
-#include "SparkleLauncher/LauncherProjectDefaults.h"
+#include "SparkleLauncher/LauncherContentDefaults.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
@@ -15,12 +15,12 @@ namespace SparkleLauncher
 {
 	enum class LaunchOperationKind
 	{
-		RunProject
+		RunContent
 	};
 
 	struct LaunchOperationDefinition
 	{
-		LaunchOperationKind Kind = LaunchOperationKind::RunProject;
+		LaunchOperationKind Kind = LaunchOperationKind::RunContent;
 		std::string Id;
 		std::string Group;
 		std::string DisplayName;
@@ -30,8 +30,8 @@ namespace SparkleLauncher
 	struct LaunchOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
-		std::string OperationId = "project.run";
-		std::string ProjectId = kDefaultProjectId;
+		std::string OperationId = "launch.run";
+		std::string ContentId = kDefaultContentId;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		std::string Target = "editor";
@@ -54,7 +54,7 @@ namespace SparkleLauncher
 	struct LaunchReadinessState
 	{
 		bool ExecutableReady = false;
-		bool ProjectDirectoryReady = false;
+		bool ContentDirectoryReady = false;
 		bool CookedMeshesReady = false;
 		bool CookedTexturesReady = false;
 		bool CookedShadersReady = false;
@@ -65,7 +65,7 @@ namespace SparkleLauncher
 		OperationRecord Operation;
 		std::filesystem::path RepositoryRoot;
 		LaunchOperationRequest Request;
-		LaunchOperationKind Kind = LaunchOperationKind::RunProject;
+		LaunchOperationKind Kind = LaunchOperationKind::RunContent;
 		std::string Profile;
 		std::string TargetName;
 		std::filesystem::path ExecutablePath;
@@ -82,5 +82,8 @@ namespace SparkleLauncher
 	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions();
 	std::optional<LaunchOperationDefinition> FindLaunchOperationDefinition(std::string_view operationId);
 	LaunchOperationPlan PlanLaunchOperation(std::string_view operationId, const LaunchOperationRequest& request);
-	OperationRecord RunLaunchOperationPlan(LaunchOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback = {});
+	OperationRecord RunLaunchOperationPlan(
+	    LaunchOperationPlan plan,
+	    IProcessRunner& processRunner,
+	    ProcessOutputCallback outputCallback = {});
 }

@@ -2,7 +2,7 @@
 
 #include "LauncherCleanUiModel.h"
 #include "LauncherDependencyUiModel.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 
 namespace SparkleLauncher
@@ -47,12 +47,12 @@ namespace SparkleLauncher
 
 	BuildWorkspaceOperationRequest BuildWorkspacePlanRequest(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings)
 	{
 		BuildWorkspaceOperationRequest request;
 		request.RepositoryRoot = repositoryRoot;
-		request.ProjectId = projectModel.ActiveProjectId().toStdString();
+		request.ContentId = contentModel.ContentId().toStdString();
 		request.EditorProfile = settings.EditorProfile().toStdString();
 		request.RuntimeProfile = settings.RuntimeProfile().toStdString();
 		request.PreferredIde = ResolveSelectedWorkspaceIde(settings);
@@ -62,14 +62,14 @@ namespace SparkleLauncher
 
 	LauncherOperationRequest BuildLauncherOperationRequest(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId)
 	{
 		LauncherOperationRequest request;
 		request.RepositoryRoot = repositoryRoot;
 		request.OperationId = operationId;
-		request.ProjectId = projectModel.ActiveProjectId();
+		request.ContentId = contentModel.ContentId();
 		request.EditorProfile = settings.EditorProfile();
 		request.RuntimeProfile = settings.RuntimeProfile();
 		request.WorkspaceIde = settings.WorkspaceIde();
@@ -96,11 +96,11 @@ namespace SparkleLauncher
 		request.ConfirmForceRecook = settings.ConfirmForceRecook();
 		request.ConfirmClean = settings.ConfirmClean();
 
-		if (operationId == "project.open.editor")
+		if (operationId == "launch.editor")
 		{
 			request.LaunchTarget = "editor";
 		}
-		else if (operationId == "project.open.runtime")
+		else if (operationId == "launch.runtime")
 		{
 			request.LaunchTarget = "runtime";
 		}
@@ -110,7 +110,7 @@ namespace SparkleLauncher
 
 	ActionCleanTargetContext BuildActionCleanTargetContext(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const std::filesystem::path& runningLauncherPath,
 	    const QString& operationId)
@@ -119,7 +119,7 @@ namespace SparkleLauncher
 		    repositoryRoot,
 		    runningLauncherPath,
 		    operationId,
-		    projectModel.ActiveProjectId(),
+		    contentModel.ContentId(),
 		    settings.EditorProfile(),
 		    settings.RuntimeProfile(),
 		    settings.SelectedTargets()};
@@ -127,25 +127,26 @@ namespace SparkleLauncher
 
 	LauncherOperationRequest BuildActionCleanOperationRequest(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const std::filesystem::path& runningLauncherPath,
 	    const QString& operationId)
 	{
-		LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, "workspace.clean");
-		request.CleanTargets = BuildActionSpecificCleanTargets(BuildActionCleanTargetContext(repositoryRoot, projectModel, settings, runningLauncherPath, operationId));
+		LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, contentModel, settings, "workspace.clean");
+		request.CleanTargets = BuildActionSpecificCleanTargets(
+		    BuildActionCleanTargetContext(repositoryRoot, contentModel, settings, runningLauncherPath, operationId));
 		request.ConfirmClean = false;
 		return request;
 	}
 
 	LauncherOperationRequest BuildScopedCleanOperationRequest(
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& cleanScope,
 	    const std::filesystem::path& runningLauncherPath)
 	{
-		LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, "workspace.clean");
+		LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, contentModel, settings, "workspace.clean");
 		request.CleanScope = cleanScope;
 		request.CleanTargets.clear();
 		request.PreservedPaths.clear();

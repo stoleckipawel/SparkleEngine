@@ -5,7 +5,7 @@
 #include "LauncherDependencyUiModel.h"
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherPrerequisitePrompts.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherUiDesign.h"
 #include "LauncherWorkflowCatalog.h"
@@ -47,10 +47,9 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.ActiveProjectId().isEmpty())
+		if (OperationNeedsContent(m_selectedOperationId) && m_contentModel.ContentId().isEmpty())
 		{
-			const QString message =
-			    "No project discovered. Confirm this is a Sparkle repository or package root with Projects/<Project> markers.";
+			const QString message = "Repository content is unavailable. Confirm this is a complete Sparkle workspace.";
 			if (m_operationOutput != nullptr)
 			{
 				m_operationOutput->setPlainText(message);
@@ -58,7 +57,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (m_selectedOperationId == "project.sync-levels")
+		if (m_selectedOperationId == "workspace.sync-levels")
 		{
 			SyncAllLevels();
 			return;
@@ -67,7 +66,7 @@ namespace SparkleLauncher
 		if ((m_selectedOperationId == "workspace.sync-source-tiers" || m_selectedOperationId == "workspace.sync-all"
 		        || m_selectedOperationId == "workspace.generate-build-files" || m_selectedOperationId == "workspace.open-ide"
 		        || m_selectedOperationId == "workspace.build-all" || m_selectedOperationId == "launcher.build.self"
-		        || m_selectedOperationId.startsWith("project.build") || m_selectedOperationId == "cook.tools.prepare")
+		        || m_selectedOperationId.startsWith("workspace.build") || m_selectedOperationId == "cook.tools.prepare")
 		    && !OfferWorkspacePrerequisiteOperation(m_selectedOperationId))
 		{
 			return;
@@ -86,7 +85,7 @@ namespace SparkleLauncher
 		}
 
 		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_projectModel, m_settings, m_selectedOperationId);
+		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, m_selectedOperationId);
 		if (!ConfirmRunRequest(request))
 		{
 			return;
@@ -107,7 +106,7 @@ namespace SparkleLauncher
 		{
 			LauncherOperationRequest request = BuildScopedCleanOperationRequest(
 			    m_repositoryRoot,
-			    m_projectModel,
+			    m_contentModel,
 			    m_settings,
 			    "clean-all",
 			    std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()));
@@ -120,7 +119,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (m_selectedOperationId == "project.sync-levels")
+		if (m_selectedOperationId == "workspace.sync-levels")
 		{
 			CleanAllLevels();
 			return;
@@ -133,14 +132,14 @@ namespace SparkleLauncher
 
 		LauncherOperationRequest request = BuildActionCleanOperationRequest(
 		    m_repositoryRoot,
-		    m_projectModel,
+		    m_contentModel,
 		    m_settings,
 		    std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()),
 		    m_selectedOperationId);
 		if (request.CleanTargets.isEmpty())
 		{
-			const QString message = OperationNeedsProject(m_selectedOperationId) && m_projectModel.ActiveProjectId().isEmpty()
-			    ? "No active project was discovered for this workflow's generated outputs."
+			const QString message = OperationNeedsContent(m_selectedOperationId) && m_contentModel.ContentId().isEmpty()
+			    ? "Repository content is unavailable for this workflow's generated outputs."
 			    : "No generated outputs were resolved for this workflow.";
 			if (m_operationOutput != nullptr)
 			{
@@ -221,7 +220,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle)
 	{
-		LauncherOperationRequest request = BuildScopedCleanOperationRequest(m_repositoryRoot, m_projectModel, m_settings, cleanScope);
+		LauncherOperationRequest request = BuildScopedCleanOperationRequest(m_repositoryRoot, m_contentModel, m_settings, cleanScope);
 		if (!ConfirmRunRequest(request))
 		{
 			return;
@@ -241,7 +240,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_projectModel, m_settings, actionId);
+		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, actionId);
 		if (!ConfirmRunRequest(request))
 		{
 			return;
@@ -273,14 +272,15 @@ namespace SparkleLauncher
 		return operation == nullptr ? operationId : operation->DisplayName;
 	}
 
-	bool LauncherMainWindow::OperationNeedsProject(const QString& operationId) const
+	bool LauncherMainWindow::OperationNeedsContent(const QString& operationId) const
 	{
 		if (operationId == "workspace.clean")
 		{
-			return m_settings.CleanScope().contains("selected-cooked");
+			return m_settings.CleanScope().contains("cooked");
 		}
 
-		return operationId == "workspace.sync-all" || operationId.startsWith("project.") || operationId.startsWith("cook.");
+		return operationId == "workspace.sync-all" || operationId == "workspace.sync-levels" || operationId.startsWith("workspace.build.")
+		    || operationId.startsWith("launch.") || operationId.startsWith("cook.");
 	}
 
 	bool LauncherMainWindow::OperationNeedsConfirmation(const QString& operationId) const
@@ -299,10 +299,10 @@ namespace SparkleLauncher
 
 	QString LauncherMainWindow::FailureRecoveryHint(const QString& operationId, const QString& statusText) const
 	{
-		if (OperationNeedsProject(operationId) && m_projectModel.ActiveProjectId().isEmpty())
+		if (OperationNeedsContent(operationId) && m_contentModel.ContentId().isEmpty())
 		{
-			return "No active project was discovered. Confirm the repository/package root contains Projects/<Project> markers, then "
-			       "regenerate project files if rebuilding from source.";
+			return "Repository content is unavailable. Confirm this is a complete Sparkle workspace, then regenerate build files if "
+			       "rebuilding from source.";
 		}
 		if (operationId.startsWith("cook.") && OperationNeedsConfirmation(operationId))
 		{
@@ -345,7 +345,7 @@ namespace SparkleLauncher
 			return "Run Clean Source Dependency Cache, then retry Sync Code. The launcher will repopulate stale dependency checkouts "
 			       "automatically.";
 		}
-		if (operationId.startsWith("project.build") || statusText.contains("cmake", Qt::CaseInsensitive)
+		if (operationId.startsWith("workspace.build") || statusText.contains("cmake", Qt::CaseInsensitive)
 		    || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("tool", Qt::CaseInsensitive))
 		{
 			return "Open Sync, review the missing machine prerequisites, then retry this workflow.";
@@ -375,8 +375,8 @@ namespace SparkleLauncher
 		if (statusText.contains("executable is missing", Qt::CaseInsensitive) || statusText.contains("missing", Qt::CaseInsensitive))
 		{
 			const bool runtimeLaunch =
-			    operationId == "project.open.runtime" || (operationId == "project.run" && m_settings.LaunchTarget() == "runtime");
-			if ((operationId == "project.open.runtime" || operationId == "project.run") && runtimeLaunch)
+			    operationId == "launch.runtime" || (operationId == "launch.run" && m_settings.LaunchTarget() == "runtime");
+			if ((operationId == "launch.runtime" || operationId == "launch.run") && runtimeLaunch)
 			{
 				return "Run Build > Build Runtime, then retry this workflow.";
 			}
@@ -437,10 +437,6 @@ namespace SparkleLauncher
 
 			QString message = customCleanRequested ? "Generated outputs to clean:\n\n" + scopeNames.join("\n\n")
 			                                       : "Clean scopes:\n" + scopeNames.join('\n');
-			if (!request.ProjectId.isEmpty())
-			{
-				message += "\nProject: " + request.ProjectId;
-			}
 			message += customCleanRequested ? "\n\nThis removes only the generated outputs mapped to the selected action. Continue?"
 			                                : "\n\nThis removes generated files for the selected scope. Continue?";
 			const QMessageBox::StandardButton result = QMessageBox::question(
@@ -497,7 +493,7 @@ namespace SparkleLauncher
 	bool LauncherMainWindow::OfferWorkspacePrerequisiteOperation(const QString& operationId)
 	{
 		LauncherPrerequisiteDecision decision =
-		    ResolveWorkspacePrerequisitePrompt(this, m_repositoryRoot, m_projectModel, m_settings, operationId);
+		    ResolveWorkspacePrerequisitePrompt(this, m_repositoryRoot, m_contentModel, m_settings, operationId);
 		if (decision.Result == LauncherPrerequisiteDecision::Kind::Ready)
 		{
 			return true;
@@ -521,7 +517,7 @@ namespace SparkleLauncher
 	bool LauncherMainWindow::OfferLaunchPrerequisiteOperation(const QString& operationId)
 	{
 		LauncherPrerequisiteDecision decision =
-		    ResolveLaunchPrerequisitePrompt(this, m_repositoryRoot, m_projectModel, m_settings, operationId);
+		    ResolveLaunchPrerequisitePrompt(this, m_repositoryRoot, m_contentModel, m_settings, operationId);
 		if (decision.Result == LauncherPrerequisiteDecision::Kind::Ready)
 		{
 			return true;
@@ -545,7 +541,7 @@ namespace SparkleLauncher
 	bool LauncherMainWindow::OfferCookPrerequisiteOperation(const QString& operationId)
 	{
 		LauncherPrerequisiteDecision decision =
-		    ResolveCookPrerequisitePrompt(this, m_repositoryRoot, m_projectModel, m_settings, operationId);
+		    ResolveCookPrerequisitePrompt(this, m_repositoryRoot, m_contentModel, m_settings, operationId);
 		if (decision.Result == LauncherPrerequisiteDecision::Kind::Ready)
 		{
 			return true;

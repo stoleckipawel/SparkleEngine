@@ -80,9 +80,13 @@ namespace SparkleLauncher
 		return text;
 	}
 
-	LauncherBackend::LauncherBackend(QObject* parent) : LauncherBackend({}, parent) {}
+	LauncherBackend::LauncherBackend(QObject* parent) :
+	    LauncherBackend({}, parent)
+	{
+	}
 
-	LauncherBackend::LauncherBackend(ProcessRunnerFactory processRunnerFactory, QObject* parent) : QObject(parent)
+	LauncherBackend::LauncherBackend(ProcessRunnerFactory processRunnerFactory, QObject* parent) :
+	    QObject(parent)
 	{
 		if (!processRunnerFactory)
 		{
@@ -171,13 +175,14 @@ namespace SparkleLauncher
 		    std::move(request),
 		    title.toStdString(),
 		    [this, runId, operationIdText](std::string_view output)
-		    {
-			    QueueOperationOutput(runId, operationIdText, QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size())));
-		    },
+		    { QueueOperationOutput(runId, operationIdText, QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size()))); },
 		    [this, runId, operationIdText, title](OperationRecord record)
-		    {
-			    QueueOperationFinished(runId, operationIdText, title, std::move(record));
-		    });
+		    { QueueOperationFinished(runId, operationIdText, title, std::move(record)); });
+	}
+
+	bool LauncherBackend::CancelOperation(const QString& runId)
+	{
+		return !runId.isEmpty() && m_operationService->Cancel(runId.toStdString());
 	}
 
 	void LauncherBackend::QueueOperationOutput(QString runId, QString operationId, QString outputText)
@@ -185,9 +190,7 @@ namespace SparkleLauncher
 		QMetaObject::invokeMethod(
 		    this,
 		    [this, runId = std::move(runId), operationId = std::move(operationId), outputText = std::move(outputText)]
-		    {
-			    emit OperationOutputReceived(runId, operationId, outputText);
-		    },
+		    { emit OperationOutputReceived(runId, operationId, outputText); },
 		    Qt::QueuedConnection);
 	}
 
@@ -198,9 +201,7 @@ namespace SparkleLauncher
 		QMetaObject::invokeMethod(
 		    this,
 		    [this, runId = std::move(runId), operationId = std::move(operationId), title = std::move(title), status, exitCode]
-		    {
-			    emit OperationFinished(runId, operationId, title, status, exitCode);
-		    },
+		    { emit OperationFinished(runId, operationId, title, status, exitCode); },
 		    Qt::QueuedConnection);
 	}
 
@@ -212,40 +213,40 @@ namespace SparkleLauncher
 		{
 			m_operations.push_back(
 			    {QString::fromStdString(definition.Id),
-			     QString::fromStdString(definition.Group),
-			     QString::fromStdString(definition.DisplayName),
-			     QString::fromStdString(definition.Description),
-			     LauncherOperationCategory::Workspace});
+			        QString::fromStdString(definition.Group),
+			        QString::fromStdString(definition.DisplayName),
+			        QString::fromStdString(definition.Description),
+			        LauncherOperationCategory::Workspace});
 		}
 
 		for (const CookOperationDefinition& definition : GetCookOperationDefinitions())
 		{
 			m_operations.push_back(
 			    {QString::fromStdString(definition.Id),
-			     QString::fromStdString(definition.Group),
-			     QString::fromStdString(definition.DisplayName),
-			     QString::fromStdString(definition.Description),
-			     LauncherOperationCategory::Cooking});
+			        QString::fromStdString(definition.Group),
+			        QString::fromStdString(definition.DisplayName),
+			        QString::fromStdString(definition.Description),
+			        LauncherOperationCategory::Cooking});
 		}
 
 		for (const MaintenanceOperationDefinition& definition : GetMaintenanceOperationDefinitions())
 		{
 			m_operations.push_back(
 			    {QString::fromStdString(definition.Id),
-			     QString::fromStdString(definition.Group),
-			     QString::fromStdString(definition.DisplayName),
-			     QString::fromStdString(definition.Description),
-			     LauncherOperationCategory::Maintenance});
+			        QString::fromStdString(definition.Group),
+			        QString::fromStdString(definition.DisplayName),
+			        QString::fromStdString(definition.Description),
+			        LauncherOperationCategory::Maintenance});
 		}
 
 		for (const LaunchOperationDefinition& definition : GetLaunchOperationDefinitions())
 		{
 			m_operations.push_back(
 			    {QString::fromStdString(definition.Id),
-			     QString::fromStdString(definition.Group),
-			     QString::fromStdString(definition.DisplayName),
-			     QString::fromStdString(definition.Description),
-			     LauncherOperationCategory::Launch});
+			        QString::fromStdString(definition.Group),
+			        QString::fromStdString(definition.DisplayName),
+			        QString::fromStdString(definition.Description),
+			        LauncherOperationCategory::Launch});
 		}
 	}
 

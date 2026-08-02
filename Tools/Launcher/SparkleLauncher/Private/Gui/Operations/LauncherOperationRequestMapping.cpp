@@ -6,41 +6,38 @@
 namespace SparkleLauncher::LauncherOperationRequestMapping
 {
 
-		std::vector<std::string> SplitList(const QString& text)
+	std::vector<std::string> SplitList(const QString& text)
+	{
+		std::vector<std::string> values;
+		for (const QString& part : text.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
 		{
-			std::vector<std::string> values;
-			for (const QString& part : text.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
-			{
-				const QString trimmed = part.trimmed();
-				if (!trimmed.isEmpty())
-					values.push_back(trimmed.toStdString());
-			}
-			return values;
+			const QString trimmed = part.trimmed();
+			if (!trimmed.isEmpty())
+				values.push_back(trimmed.toStdString());
 		}
+		return values;
+	}
 
-		CleanScope ParseCleanScope(const QString& text)
-		{
-			if (text == "all-cooked")
-				return CleanScope::AllCookedOutputs;
-			if (text == "build-tree")
-				return CleanScope::BuildTree;
-			if (text == "artifacts")
-				return CleanScope::ArtifactOutputs;
-			if (text == "packages")
-				return CleanScope::PackageOutputs;
-			if (text == "workspace-state")
-				return CleanScope::WorkspaceState;
-			if (text == "shader-cache")
-				return CleanScope::ShaderCache;
-			if (text == "deps")
-				return CleanScope::ThirdPartyDependencyCache;
-			if (text == "logs")
-				return CleanScope::Logs;
-			if (text == "clean-all")
-				return CleanScope::PristineGeneratedWorkspace;
-			return CleanScope::SelectedProjectCookedOutputs;
-		}
-
+	CleanScope ParseCleanScope(const QString& text)
+	{
+		if (text == "build-tree")
+			return CleanScope::BuildTree;
+		if (text == "artifacts")
+			return CleanScope::ArtifactOutputs;
+		if (text == "packages")
+			return CleanScope::PackageOutputs;
+		if (text == "workspace-state")
+			return CleanScope::WorkspaceState;
+		if (text == "shader-cache")
+			return CleanScope::ShaderCache;
+		if (text == "deps")
+			return CleanScope::ThirdPartyDependencyCache;
+		if (text == "logs")
+			return CleanScope::Logs;
+		if (text == "clean-all")
+			return CleanScope::PristineGeneratedWorkspace;
+		return CleanScope::CookedOutputs;
+	}
 
 	BuildWorkspaceOperationRequest BuildWorkspace(const LauncherOperationRequest& request)
 	{
@@ -48,11 +45,12 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		WorkspaceIde workspaceIde = WorkspaceIde::VisualStudio;
 		TryParseWorkspaceIde(request.WorkspaceIde.toStdString(), workspaceIde);
 		mapped.RepositoryRoot = request.RepositoryRoot;
-		mapped.ProjectId = request.ProjectId.toStdString();
+		mapped.ContentId = request.ContentId.toStdString();
 		mapped.EditorProfile = request.EditorProfile.toStdString();
 		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
 		mapped.PreferredIde = workspaceIde;
 		mapped.SelectedTargets = SplitList(request.SelectedTargets);
+		mapped.RequestedLevelIds = SplitList(request.RequestedLevelIds);
 		mapped.ForceConfigure = request.ForceConfigure;
 		return mapped;
 	}
@@ -61,7 +59,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 	{
 		CookOperationRequest mapped;
 		mapped.RepositoryRoot = request.RepositoryRoot;
-		mapped.ProjectId = request.ProjectId.toStdString();
+		mapped.ContentId = request.ContentId.toStdString();
 		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
 		mapped.Mode = request.ForceRecook ? CookMode::Force : CookMode::Incremental;
 		mapped.ForceRecookConfirmed = request.ConfirmForceRecook;
@@ -81,13 +79,13 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 	{
 		MaintenanceOperationRequest mapped;
 		mapped.RepositoryRoot = request.RepositoryRoot;
-		mapped.ProjectId = request.ProjectId.toStdString();
+		mapped.ContentId = request.ContentId.toStdString();
 		mapped.EditorProfile = request.EditorProfile.toStdString();
 		mapped.RequestedCleanScope = ParseCleanScope(request.CleanScope);
 		for (const QString& part : request.CleanScope.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
 			mapped.RequestedCleanScopes.push_back(ParseCleanScope(part.trimmed()));
 		if (mapped.RequestedCleanScopes.empty())
-			mapped.RequestedCleanScopes.push_back(CleanScope::SelectedProjectCookedOutputs);
+			mapped.RequestedCleanScopes.push_back(CleanScope::CookedOutputs);
 		for (const LauncherCleanTarget& target : request.CleanTargets)
 		{
 			mapped.RequestedCleanTargets.push_back(
@@ -108,7 +106,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		LaunchOperationRequest mapped;
 		mapped.RepositoryRoot = request.RepositoryRoot;
 		mapped.OperationId = request.OperationId.toStdString();
-		mapped.ProjectId = request.ProjectId.toStdString();
+		mapped.ContentId = request.ContentId.toStdString();
 		mapped.EditorProfile = request.EditorProfile.toStdString();
 		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
 		mapped.Target = request.LaunchTarget.toStdString();

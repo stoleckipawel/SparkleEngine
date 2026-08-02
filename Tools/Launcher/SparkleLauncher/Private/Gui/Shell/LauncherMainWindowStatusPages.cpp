@@ -9,7 +9,7 @@
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"
@@ -78,7 +78,7 @@ namespace SparkleLauncher
 	{
 		BuildWorkspaceOperationRequest request;
 		request.RepositoryRoot = m_repositoryRoot;
-		request.ProjectId = m_projectModel.ActiveProjectId().toStdString();
+		request.ContentId = m_contentModel.ContentId().toStdString();
 		request.EditorProfile = m_settings.EditorProfile().toStdString();
 		request.RuntimeProfile = m_settings.RuntimeProfile().toStdString();
 		request.PreferredIde = ResolveSelectedWorkspaceIde(m_settings);
@@ -91,7 +91,7 @@ namespace SparkleLauncher
 		const bool isSyncWorkflow = operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files"
 		    || operationId == "workspace.open-ide";
 		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId == "workspace.sync-all"
-		    || operationId.startsWith("project.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
+		    || operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		const bool isCookWorkflow = operationId.startsWith("cook.") && operationId != "cook.tools.prepare";
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		const SourceDependencyInventoryStatus dependencyStatus = plan.SourceDependencies;
@@ -307,10 +307,10 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
 	{
-		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_projectModel, m_settings, operationId);
+		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, operationId);
 		BuildWorkspaceOperationRequest workspaceRequest;
 		workspaceRequest.RepositoryRoot = m_repositoryRoot;
-		workspaceRequest.ProjectId = m_projectModel.ActiveProjectId().toStdString();
+		workspaceRequest.ContentId = m_contentModel.ContentId().toStdString();
 		workspaceRequest.EditorProfile = m_settings.EditorProfile().toStdString();
 		workspaceRequest.RuntimeProfile = m_settings.RuntimeProfile().toStdString();
 		workspaceRequest.PreferredIde = ResolveSelectedWorkspaceIde(m_settings);
@@ -318,7 +318,7 @@ namespace SparkleLauncher
 		LaunchOperationRequest launchRequest;
 		launchRequest.RepositoryRoot = request.RepositoryRoot;
 		launchRequest.OperationId = operationId.toStdString();
-		launchRequest.ProjectId = request.ProjectId.toStdString();
+		launchRequest.ContentId = request.ContentId.toStdString();
 		launchRequest.EditorProfile = request.EditorProfile.toStdString();
 		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
 		launchRequest.Target = request.LaunchTarget.toStdString();
@@ -359,13 +359,13 @@ namespace SparkleLauncher
 		};
 
 		const QString executableDetail = findReadiness("Executable ");
-		const QString projectDetail = findReadiness("Project working directory ");
+		const QString contentDetail = findReadiness("Content working directory ");
 		const QString cookedMeshesDetail = findReadiness("Cooked scenes and meshes ");
 		const QString cookedTexturesDetail = findReadiness("Cooked textures ");
 		const QString cookedShadersDetail = findReadiness("Cooked shaders ");
 
 		const bool launchNeedsAttention = executableDetail.contains("missing", Qt::CaseInsensitive)
-		    || projectDetail.contains("missing", Qt::CaseInsensitive) || cookedMeshesDetail.contains("missing", Qt::CaseInsensitive)
+		    || contentDetail.contains("missing", Qt::CaseInsensitive) || cookedMeshesDetail.contains("missing", Qt::CaseInsensitive)
 		    || cookedTexturesDetail.contains("missing", Qt::CaseInsensitive)
 		    || cookedShadersDetail.contains("missing", Qt::CaseInsensitive);
 		QVBoxLayout* launchLayout = AddDetailsGroup(
@@ -396,14 +396,14 @@ namespace SparkleLauncher
 		    executableDetail,
 		    executableDetail.contains("missing", Qt::CaseInsensitive) ? "warning" : "ok",
 		    CreateActionDependencyActions(
-		        runtimeTarget ? "project.build.runtime" : "project.build.editor",
+		        runtimeTarget ? "workspace.build.runtime" : "workspace.build.editor",
 		        runtimeTarget ? "Build Runtime" : "Build Editor"));
 		AddStatusRow(
 		    *launchLayout,
-		    "Project directory",
-		    projectDetail.contains("missing", Qt::CaseInsensitive) ? "Missing" : "Ready",
-		    projectDetail,
-		    projectDetail.contains("missing", Qt::CaseInsensitive) ? "warning" : "ok");
+		    "Content directory",
+		    contentDetail.contains("missing", Qt::CaseInsensitive) ? "Missing" : "Ready",
+		    contentDetail,
+		    contentDetail.contains("missing", Qt::CaseInsensitive) ? "warning" : "ok");
 		AddStatusRow(
 		    *launchLayout,
 		    "Cooked scene assets",
@@ -479,7 +479,7 @@ namespace SparkleLauncher
 	{
 		MaintenanceOperationRequest request;
 		request.RepositoryRoot = m_repositoryRoot;
-		request.ProjectId = m_projectModel.ActiveProjectId().toStdString();
+		request.ContentId = m_contentModel.ContentId().toStdString();
 		request.EditorProfile = m_settings.EditorProfile().toStdString();
 		request.DestructiveActionConfirmed = m_settings.ConfirmClean();
 

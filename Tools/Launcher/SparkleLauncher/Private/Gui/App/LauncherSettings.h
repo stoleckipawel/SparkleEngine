@@ -88,7 +88,7 @@ namespace SparkleLauncher
 		QString m_launchHighPerformanceAdapter;
 		QString m_launchCommandLineArguments;
 		QString m_launchCVars;
-		QString m_cleanScope = "selected-cooked";
+		QString m_cleanScope = "cooked";
 		bool m_shaderUseCache = true;
 		bool m_shaderEnableDebugInfo = false;
 		bool m_shaderEnableOptimizations = true;

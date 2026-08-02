@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
-#include "SparkleLauncher/LauncherProjectDefaults.h"
+#include "SparkleLauncher/LauncherContentDefaults.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
@@ -39,7 +39,7 @@ namespace SparkleLauncher
 	struct CookOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
-		std::string ProjectId = kDefaultProjectId;
+		std::string ContentId = kDefaultContentId;
 		std::string RuntimeProfile = "DevelopmentGame";
 		CookMode Mode = CookMode::Incremental;
 		bool ForceRecookConfirmed = false;

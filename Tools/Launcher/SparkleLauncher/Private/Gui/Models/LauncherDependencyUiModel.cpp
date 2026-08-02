@@ -183,27 +183,27 @@ namespace SparkleLauncher
 		if (group.Id == "core-workspace")
 		{
 			return operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide"
-			    || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build")
+			    || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("workspace.build")
 			    || operationId.startsWith("cook.");
 		}
 		if (group.Id == "content-pipeline")
 		{
 			return operationId == "workspace.build-all" || operationId == "cook.tools.prepare" || operationId == "cook.textures"
-			    || operationId == "cook.assets" || operationId == "cook.project";
+			    || operationId == "cook.assets" || operationId == "cook.all";
 		}
 		if (group.Id == "shader-compiler")
 		{
 			return operationId == "workspace.build-all" || operationId == "cook.tools.prepare" || operationId == "cook.shaders"
-			    || operationId == "cook.project";
+			    || operationId == "cook.all";
 		}
 		if (group.Id == "ktx-support")
 		{
-			return operationId == "workspace.sync-source-tiers" || operationId == "cook.textures" || operationId == "cook.project";
+			return operationId == "workspace.sync-source-tiers" || operationId == "cook.textures" || operationId == "cook.all";
 		}
 		if (group.Id == "nvidia-streamline")
 		{
 			return operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files"
-			    || operationId == "workspace.build-all" || operationId.startsWith("project.build");
+			    || operationId == "workspace.build-all" || operationId.startsWith("workspace.build");
 		}
 		return false;
 	}

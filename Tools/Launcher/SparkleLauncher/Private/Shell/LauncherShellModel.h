@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
-#include "SparkleLauncher/ProjectDiscovery.h"
+#include "SparkleLauncher/ContentDiscovery.h"
 #include "SparkleLauncher/RepositoryLocator.h"
 
 #include <string>
@@ -30,8 +30,7 @@ namespace SparkleLauncher
 	struct LauncherShellModel final
 	{
 		RepositoryRoot Repository;
-		std::vector<SparkleProject> Projects;
-		std::string SelectedProjectId;
+		std::string ContentId;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde WorkspaceIdePreference = WorkspaceIde::VisualStudio;
@@ -40,10 +39,7 @@ namespace SparkleLauncher
 		std::vector<std::string> JobOutput;
 	};
 
-	LauncherShellModel BuildLauncherShellModel(
-	    RepositoryRoot repository,
-	    std::vector<SparkleProject> projects,
-	    const LauncherShellArguments& arguments);
+	LauncherShellModel BuildLauncherShellModel(RepositoryRoot repository, SparkleContent content, const LauncherShellArguments& arguments);
 	const LauncherShellOperationRow* FindLauncherShellOperation(const LauncherShellModel& model, std::string_view operationId) noexcept;
 	void RecordLauncherShellActivity(LauncherShellModel& model, std::string summary);
 }

@@ -36,13 +36,13 @@ class QGridLayout;
 namespace SparkleLauncher
 {
 	struct LauncherOperationDescriptor;
-	class LauncherProjectModel;
+	class LauncherContentModel;
 	class LauncherSettings;
 	struct DependencyGroupUiEntry;
 	struct LauncherLevelUiEntry;
 	struct LauncherLevelUiModel;
 	class ResponsiveCardGridWidget;
-	struct LauncherProjectSummary;
+	struct LauncherContentSummary;
 	struct LauncherStartupLevelUiEntry;
 	enum class LauncherArtworkPreset;
 
@@ -53,7 +53,7 @@ namespace SparkleLauncher
 	public:
 		LauncherMainWindow(
 		    std::filesystem::path repositoryRoot,
-		    LauncherProjectModel& projectModel,
+		    LauncherContentModel& contentModel,
 		    LauncherSettings& settings,
 		    LauncherBackend& backend,
 		    QWidget* parent = nullptr);
@@ -61,7 +61,7 @@ namespace SparkleLauncher
 		void SetStartupNotice(const QString& message);
 
 	private slots:
-		void RefreshProjects();
+		void RefreshContent();
 		void SelectWorkflowGroupButton(QAbstractButton* button);
 		void SelectProcessButton(QAbstractButton* button);
 		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
@@ -88,9 +88,17 @@ namespace SparkleLauncher
 
 		struct PendingLevelSelectionUpdate
 		{
-			std::filesystem::path ProjectRoot;
+			std::filesystem::path ContentRoot;
 			std::vector<std::string> LevelIds;
 			bool Selected = false;
+		};
+
+		struct PendingLevelStopAndClean
+		{
+			std::filesystem::path ContentRoot;
+			QString ContentId;
+			QString LevelId;
+			QString LevelDisplayName;
 		};
 
 		struct ActivityRunWidgets
@@ -106,7 +114,14 @@ namespace SparkleLauncher
 			Queued,
 			Running,
 			Done,
+			Canceled,
 			Failed,
+		};
+
+		enum class LevelCleanMode
+		{
+			PreserveArchiveWithConfirmation,
+			PurgeWithoutConfirmation,
 		};
 
 		QWidget* CreateWorkflowSurface();
@@ -143,14 +158,12 @@ namespace SparkleLauncher
 		void AddShaderCookOptions(QVBoxLayout& layout);
 		void AddCleanOptions(QVBoxLayout& layout, const QString& operationId);
 		void AddCleanScopeRow(
-		    QGridLayout& grid,
+		    QVBoxLayout& layout,
 		    const CleanScopeUiOption& scope,
-		    const QString& activeProjectId,
+		    const QString& activeContentId,
 		    const QStringList& selectedScopes,
-		    int row,
-		    int column,
 		    QVector<QCheckBox*>& scopeBoxes);
-		void UpdateCleanScopeSetting(const QVector<QCheckBox*>& scopeBoxes);
+		void UpdateCleanScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary, QCheckBox* changedScope = nullptr);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
@@ -164,19 +177,25 @@ namespace SparkleLauncher
 		    QWidget* accessory = nullptr);
 		void AddSyncDependencyBundles(QVBoxLayout& layout);
 		void AddSyncLevelContentGroups(QVBoxLayout& layout);
-		void AddSyncLevelRows(QVBoxLayout& layout, const LauncherProjectSummary& project, const LauncherLevelUiModel& model);
-		void AddSyncLevelRow(ResponsiveCardGridWidget& grid, const LauncherProjectSummary& project, const LauncherLevelUiEntry& level);
+		void AddSyncLevelRows(QVBoxLayout& layout, const LauncherContentSummary& content, const LauncherLevelUiModel& model);
+		void AddSyncLevelRow(ResponsiveCardGridWidget& grid, const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
 		void ApplyLevelActionButtonState(QPushButton& button, const LauncherLevelUiEntry& level);
 		void RefreshLevelActionButtons();
-		void SyncLevel(const LauncherProjectSummary& project, const LauncherLevelUiEntry& level);
-		void CleanLevel(const LauncherProjectSummary& project, const LauncherLevelUiEntry& level);
+		void SyncLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
+		void StopAndCleanLevelSync(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
+		void CleanStoppedLevelSync(const PendingLevelStopAndClean& pendingClean);
+		void CleanLevel(
+		    const LauncherContentSummary& content,
+		    const LauncherLevelUiEntry& level,
+		    LevelCleanMode mode = LevelCleanMode::PreserveArchiveWithConfirmation);
 		void SyncAllLevels();
 		void CleanAllLevels();
 		QVector<LauncherCleanTarget> BuildLevelCleanTargets(
-		    const LauncherProjectSummary& project,
-		    const QString& levelId = QString()) const;
+		    const LauncherContentSummary& content,
+		    const QString& levelId = QString(),
+		    LevelCleanMode mode = LevelCleanMode::PreserveArchiveWithConfirmation) const;
 		bool SetLevelsSelected(
-		    const std::filesystem::path& projectRoot,
+		    const std::filesystem::path& contentRoot,
 		    const std::vector<std::string>& levelIds,
 		    bool selected,
 		    const QString& actionName);
@@ -200,7 +219,7 @@ namespace SparkleLauncher
 		void SetControlsEnabled(bool enabled);
 		void EnsureOptionsPage(const QString& operationId);
 		void RebuildOptionsPages();
-		void ScheduleUiRefresh(bool refreshProjects);
+		void ScheduleUiRefresh(bool refreshContent);
 		void ApplyScheduledUiRefresh();
 		QIcon WorkflowIconForKey(const QString& iconKey) const;
 		QIcon ActivityIconForState(RunState state) const;
@@ -220,7 +239,7 @@ namespace SparkleLauncher
 		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
-		bool OperationNeedsProject(const QString& operationId) const;
+		bool OperationNeedsContent(const QString& operationId) const;
 		bool OperationNeedsConfirmation(const QString& operationId) const;
 		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
 		bool ConfirmRunRequest(LauncherOperationRequest& request) const;
@@ -240,7 +259,7 @@ namespace SparkleLauncher
 		void ApplyVisualStyle();
 
 		std::filesystem::path m_repositoryRoot;
-		LauncherProjectModel& m_projectModel;
+		LauncherContentModel& m_contentModel;
 		LauncherSettings& m_settings;
 		LauncherBackend& m_backend;
 		LauncherIconLibrary m_icons;
@@ -275,13 +294,15 @@ namespace SparkleLauncher
 		LauncherActionHistoryModel m_actionHistory;
 		QHash<QString, PendingFollowUpOperation> m_pendingFollowUpOperations;
 		QHash<QString, PendingLevelSelectionUpdate> m_pendingLevelSelectionUpdates;
+		QHash<QString, PendingLevelStopAndClean> m_pendingLevelStopAndClean;
+		QHash<QString, QString> m_levelSyncRunIds;
 		QHash<QString, QPointer<QPushButton>> m_levelActionButtons;
 		QString m_activeRunId;
 		QString m_selectedOperationId;
 		bool m_isRebuildingOptions = false;
 		bool m_isApplyingUiRefresh = false;
 		bool m_uiRefreshQueued = false;
-		bool m_refreshProjectsRequested = false;
+		bool m_refreshContentRequested = false;
 		qint64 m_lastActivationRefreshMs = 0;
 		bool m_activityLogExpanded = false;
 		int m_nextRunIndex = 0;

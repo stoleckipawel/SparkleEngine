@@ -13,7 +13,6 @@ namespace SparkleLauncher
 	struct LauncherShellArguments final
 	{
 		std::filesystem::path StartPath;
-		std::string SelectedProject;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde WorkspaceIdePreference = WorkspaceIde::VisualStudio;
@@ -22,7 +21,7 @@ namespace SparkleLauncher
 		std::string LaunchTarget = "editor";
 		std::string LaunchStartupLevel;
 		CookMode RequestedCookMode = CookMode::Incremental;
-		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
+		CleanScope RequestedCleanScope = CleanScope::CookedOutputs;
 		bool ForceRecookConfirmed = false;
 		bool CleanConfirmed = false;
 		bool ShowHelp = false;

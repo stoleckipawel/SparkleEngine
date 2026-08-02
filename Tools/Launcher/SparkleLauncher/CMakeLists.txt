@@ -4,12 +4,12 @@ set(SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/BuildProfileCatalog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/CookOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LaunchOperations.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherProjectDefaults.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherContentDefaults.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/MaintenanceOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherPaths.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/OperationModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ProcessRunner.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ProjectDiscovery.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ContentDiscovery.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/RepositoryLocator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/SourceDependencyState.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ToolResolver.h
@@ -20,7 +20,7 @@ set(SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherPaths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/OperationModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/ProcessRunner.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/ProjectDiscovery.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/ContentDiscovery.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/RepositoryLocator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/SourceDependencyState.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/HostGraphicsCapabilities.cpp
@@ -105,7 +105,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherPrerequisitePrompts.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherProjectModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContentModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherToolchainUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkflowCatalog.cpp
@@ -143,7 +143,7 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherPrerequisitePrompts.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherProjectModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContentModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherToolchainUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkflowCatalog.h
@@ -297,7 +297,7 @@ target_link_libraries(SparkleLauncherProbe
 
 target_compile_features(SparkleLauncherProbe PRIVATE cxx_std_20)
 add_test(NAME sparkle_launcher_probe COMMAND SparkleLauncherProbe "${CMAKE_SOURCE_DIR}")
-set_tests_properties(sparkle_launcher_probe PROPERTIES LABELS "Launcher;Projects;Integration")
+set_tests_properties(sparkle_launcher_probe PROPERTIES LABELS "Launcher;Content;Integration")
 
 add_test(
     NAME asset_pack_sync
@@ -306,7 +306,7 @@ add_test(
         "-DSPARKLE_SYNC_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/Scripts/SyncAssetPack.cmake"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncTests.cmake"
 )
-set_tests_properties(asset_pack_sync PROPERTIES LABELS "Launcher;Projects")
+set_tests_properties(asset_pack_sync PROPERTIES LABELS "Launcher;Content")
 
 add_executable(AssetPackSyncPlannerTests
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp
@@ -316,10 +316,19 @@ target_include_directories(AssetPackSyncPlannerTests PRIVATE ${CMAKE_CURRENT_SOU
 target_link_libraries(AssetPackSyncPlannerTests PRIVATE SparkleLauncherCore SparkleCore)
 target_compile_features(AssetPackSyncPlannerTests PRIVATE cxx_std_20)
 add_test(NAME asset_pack_sync_planner COMMAND AssetPackSyncPlannerTests)
-set_tests_properties(asset_pack_sync_planner PROPERTIES LABELS "Launcher;Projects")
+set_tests_properties(asset_pack_sync_planner PROPERTIES LABELS "Launcher;Content")
+
+add_executable(ContentDiscoveryTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp
+)
+sparkle_configure_host_tool_target(ContentDiscoveryTests)
+target_link_libraries(ContentDiscoveryTests PRIVATE SparkleLauncherCore SparkleCore)
+target_compile_features(ContentDiscoveryTests PRIVATE cxx_std_20)
+add_test(NAME content_discovery COMMAND ContentDiscoveryTests)
+set_tests_properties(content_discovery PROPERTIES LABELS "Launcher;Content")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES} ${SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Probe PREFIX "Probe" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Probe/SparkleLauncherProbe.cpp)
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp)

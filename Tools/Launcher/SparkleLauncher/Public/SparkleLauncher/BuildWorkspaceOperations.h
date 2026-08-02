@@ -2,7 +2,7 @@
 
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
-#include "SparkleLauncher/LauncherProjectDefaults.h"
+#include "SparkleLauncher/LauncherContentDefaults.h"
 #include "SparkleLauncher/SourceDependencyState.h"
 
 #include <filesystem>
@@ -118,11 +118,12 @@ namespace SparkleLauncher
 	struct BuildWorkspaceOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
-		std::string ProjectId = kDefaultProjectId;
+		std::string ContentId = kDefaultContentId;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;
 		std::vector<std::string> SelectedTargets;
+		std::vector<std::string> RequestedLevelIds;
 		bool ForceConfigure = false;
 	};
 

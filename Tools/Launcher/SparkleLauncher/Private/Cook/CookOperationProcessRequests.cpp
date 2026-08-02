@@ -49,7 +49,8 @@ namespace SparkleLauncher
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "AssetCooker");
 		process.WorkingDirectory = plan.RepositoryRoot;
 		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, logFileName);
-		process.Arguments = {std::string(command), plan.Request.ProjectId, plan.Request.RuntimeProfile, "--root", plan.RepositoryRoot.string()};
+		process.Arguments =
+		    {std::string(command), plan.Request.ContentId, plan.Request.RuntimeProfile, "--root", plan.RepositoryRoot.string()};
 		return process;
 	}
 
@@ -57,7 +58,7 @@ namespace SparkleLauncher
 	{
 		ProcessRequest process;
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
-		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ProjectId;
+		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
 		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "CookShaders.txt");
 		process.Arguments = {"cook"};
 		AppendCommonShaderCompilerArguments(plan, process.Arguments);
@@ -68,8 +69,11 @@ namespace SparkleLauncher
 	{
 		ProcessRequest process;
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
-		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ProjectId;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, std::string("ShaderPackage-") + std::string(packageId) + ".txt");
+		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
+		process.LogPath = GetLauncherOperationLogPath(
+		    plan.RepositoryRoot,
+		    plan.Operation.Id,
+		    std::string("ShaderPackage-") + std::string(packageId) + ".txt");
 		process.Arguments = {"cook", "--package", std::string(packageId)};
 		AppendCommonShaderCompilerArguments(plan, process.Arguments);
 		return process;
@@ -110,40 +114,44 @@ namespace SparkleLauncher
 
 		switch (plan.Kind)
 		{
-		case CookOperationKind::CookShaders:
+			case CookOperationKind::CookShaders:
 #if SPARKLE_ENABLE_SHADER_COMPILER
-			if (plan.Request.ShaderPackages.empty())
-			{
-				AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
-			}
-			else
-			{
-				for (const std::string& packageId : plan.Request.ShaderPackages)
+				if (plan.Request.ShaderPackages.empty())
 				{
-					AddStep(steps, "cook-shader-package", "Cook shader package " + packageId, MakeShaderCompilerCookRequest(plan, packageId));
+					AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
 				}
-			}
+				else
+				{
+					for (const std::string& packageId : plan.Request.ShaderPackages)
+					{
+						AddStep(
+						    steps,
+						    "cook-shader-package",
+						    "Cook shader package " + packageId,
+						    MakeShaderCompilerCookRequest(plan, packageId));
+					}
+				}
 #endif
-			return steps;
-		case CookOperationKind::BuildTextures:
+				return steps;
+			case CookOperationKind::BuildTextures:
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
-			AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));
+				AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));
 #endif
-			return steps;
-		case CookOperationKind::BuildSceneAssets:
+				return steps;
+			case CookOperationKind::BuildSceneAssets:
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
-			AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
+				AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
 #endif
-			return steps;
-		case CookOperationKind::CookAllAssets:
+				return steps;
+			case CookOperationKind::CookAllAssets:
 #if SPARKLE_ENABLE_SHADER_COMPILER
-			AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
+				AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
 #endif
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
-			AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));
-			AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
+				AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));
+				AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
 #endif
-			return steps;
+				return steps;
 		}
 
 		return steps;

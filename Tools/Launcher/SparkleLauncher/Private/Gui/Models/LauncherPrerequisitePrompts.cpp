@@ -1,7 +1,7 @@
 #include "LauncherPrerequisitePrompts.h"
 
 #include "LauncherOperationRequestFactory.h"
-#include "LauncherProjectModel.h"
+#include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
@@ -15,109 +15,108 @@
 namespace SparkleLauncher
 {
 
-		LauncherPrerequisiteDecision ReadyDecision()
-		{
-			LauncherPrerequisiteDecision decision;
-			decision.Result = LauncherPrerequisiteDecision::Kind::Ready;
-			return decision;
-		}
+	LauncherPrerequisiteDecision ReadyDecision()
+	{
+		LauncherPrerequisiteDecision decision;
+		decision.Result = LauncherPrerequisiteDecision::Kind::Ready;
+		return decision;
+	}
 
-		LauncherPrerequisiteDecision BlockedDecision(QString statusMessage = {})
-		{
-			LauncherPrerequisiteDecision decision;
-			decision.Result = LauncherPrerequisiteDecision::Kind::Blocked;
-			decision.StatusMessage = std::move(statusMessage);
-			return decision;
-		}
+	LauncherPrerequisiteDecision BlockedDecision(QString statusMessage = {})
+	{
+		LauncherPrerequisiteDecision decision;
+		decision.Result = LauncherPrerequisiteDecision::Kind::Blocked;
+		decision.StatusMessage = std::move(statusMessage);
+		return decision;
+	}
 
-		LauncherPrerequisiteDecision PrerequisiteDecision(LauncherOperationRequest request, QString title)
-		{
-			LauncherPrerequisiteDecision decision;
-			decision.Result = LauncherPrerequisiteDecision::Kind::RunPrerequisite;
-			decision.Request = std::move(request);
-			decision.Title = std::move(title);
-			return decision;
-		}
+	LauncherPrerequisiteDecision PrerequisiteDecision(LauncherOperationRequest request, QString title)
+	{
+		LauncherPrerequisiteDecision decision;
+		decision.Result = LauncherPrerequisiteDecision::Kind::RunPrerequisite;
+		decision.Request = std::move(request);
+		decision.Title = std::move(title);
+		return decision;
+	}
 
-		QStringList ToQStringList(const std::vector<std::string>& messages)
+	QStringList ToQStringList(const std::vector<std::string>& messages)
+	{
+		QStringList result;
+		for (const std::string& message : messages)
 		{
-			QStringList result;
-			for (const std::string& message : messages)
+			result.push_back(QString::fromStdString(message));
+		}
+		return result;
+	}
+
+	LaunchOperationRequest ToLaunchPlanRequest(const LauncherOperationRequest& request)
+	{
+		LaunchOperationRequest launchRequest;
+		launchRequest.RepositoryRoot = request.RepositoryRoot;
+		launchRequest.ContentId = request.ContentId.toStdString();
+		launchRequest.EditorProfile = request.EditorProfile.toStdString();
+		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
+		launchRequest.Target = request.LaunchTarget.toStdString();
+		launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
+		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
+		launchRequest.VSync = request.LaunchVSync.toStdString();
+		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
+		for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
+		{
+			if (!argument.isEmpty())
 			{
-				result.push_back(QString::fromStdString(message));
+				launchRequest.CustomArguments.push_back(argument.toStdString());
 			}
-			return result;
 		}
-
-		LaunchOperationRequest ToLaunchPlanRequest(const LauncherOperationRequest& request)
+		for (const QString& part : request.LaunchCVars.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
 		{
-			LaunchOperationRequest launchRequest;
-			launchRequest.RepositoryRoot = request.RepositoryRoot;
-			launchRequest.ProjectId = request.ProjectId.toStdString();
-			launchRequest.EditorProfile = request.EditorProfile.toStdString();
-			launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
-			launchRequest.Target = request.LaunchTarget.toStdString();
-			launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
-			launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
-			launchRequest.VSync = request.LaunchVSync.toStdString();
-			launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
-			for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
+			const QString trimmed = part.trimmed();
+			if (!trimmed.isEmpty())
 			{
-				if (!argument.isEmpty())
-				{
-					launchRequest.CustomArguments.push_back(argument.toStdString());
-				}
+				launchRequest.CustomCVars.push_back(trimmed.toStdString());
 			}
-			for (const QString& part : request.LaunchCVars.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
-			{
-				const QString trimmed = part.trimmed();
-				if (!trimmed.isEmpty())
-				{
-					launchRequest.CustomCVars.push_back(trimmed.toStdString());
-				}
-			}
-			return launchRequest;
 		}
+		return launchRequest;
+	}
 
-		CookOperationRequest ToCookPlanRequest(const LauncherOperationRequest& request)
+	CookOperationRequest ToCookPlanRequest(const LauncherOperationRequest& request)
+	{
+		CookOperationRequest cookRequest;
+		cookRequest.RepositoryRoot = request.RepositoryRoot;
+		cookRequest.ContentId = request.ContentId.toStdString();
+		cookRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
+		cookRequest.Mode = request.ForceRecook ? CookMode::Force : CookMode::Incremental;
+		cookRequest.ForceRecookConfirmed = request.ConfirmForceRecook;
+		for (const QString& part : request.ShaderPackages.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
 		{
-			CookOperationRequest cookRequest;
-			cookRequest.RepositoryRoot = request.RepositoryRoot;
-			cookRequest.ProjectId = request.ProjectId.toStdString();
-			cookRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
-			cookRequest.Mode = request.ForceRecook ? CookMode::Force : CookMode::Incremental;
-			cookRequest.ForceRecookConfirmed = request.ConfirmForceRecook;
-			for (const QString& part : request.ShaderPackages.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
+			const QString trimmed = part.trimmed();
+			if (!trimmed.isEmpty())
 			{
-				const QString trimmed = part.trimmed();
-				if (!trimmed.isEmpty())
-				{
-					cookRequest.ShaderPackages.push_back(trimmed.toStdString());
-				}
+				cookRequest.ShaderPackages.push_back(trimmed.toStdString());
 			}
-			return cookRequest;
 		}
+		return cookRequest;
+	}
 
-		bool ConfirmPrerequisitePrompt(QWidget* parent, const QString& title, const QString& promptAction, const QStringList& readiness)
-		{
-			const QMessageBox::StandardButton result = QMessageBox::question(
-			    parent,
-			    title,
-			    promptAction + (readiness.isEmpty() ? QString() : "\n\n" + readiness.join('\n')),
-			    QMessageBox::Ok | QMessageBox::Cancel,
-			    QMessageBox::Ok);
-			return result == QMessageBox::Ok;
-		}
-
+	bool ConfirmPrerequisitePrompt(QWidget* parent, const QString& title, const QString& promptAction, const QStringList& readiness)
+	{
+		const QMessageBox::StandardButton result = QMessageBox::question(
+		    parent,
+		    title,
+		    promptAction + (readiness.isEmpty() ? QString() : "\n\n" + readiness.join('\n')),
+		    QMessageBox::Ok | QMessageBox::Cancel,
+		    QMessageBox::Ok);
+		return result == QMessageBox::Ok;
+	}
 
 	LauncherPrerequisiteDecision ResolveWorkspacePrerequisitePrompt(
 	    QWidget* parent,
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId)
 	{
-		const BuildWorkspaceOperationRequest request = BuildWorkspacePlanRequest(repositoryRoot, projectModel, settings);
+		const BuildWorkspaceOperationRequest request = BuildWorkspacePlanRequest(repositoryRoot, contentModel, settings);
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId.toStdString(), request);
 		if (plan.CanRun)
 		{
@@ -135,7 +134,9 @@ namespace SparkleLauncher
 			    "Required host prerequisites are missing.\n\n" + ToQStringList(plan.ReadinessMessages).join('\n'));
 			return BlockedDecision();
 		}
-		else if ((operationId == "workspace.open-ide" || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare") && !plan.Freshness.Current)
+		else if ((operationId == "workspace.open-ide" || operationId == "workspace.build-all" || operationId == "launcher.build.self"
+		             || operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare")
+		    && !plan.Freshness.Current)
 		{
 			prerequisiteOperationId = "workspace.generate-build-files";
 			promptTitle = "Generate Build Files";
@@ -146,7 +147,8 @@ namespace SparkleLauncher
 			QMessageBox::information(
 			    parent,
 			    "Workflow Blocked",
-			    QString("%1 is not currently available.\n\n%2").arg(ResolveSelectedWorkspaceIdeName(settings), ToQStringList(plan.ReadinessMessages).join('\n')));
+			    QString("%1 is not currently available.\n\n%2")
+			        .arg(ResolveSelectedWorkspaceIdeName(settings), ToQStringList(plan.ReadinessMessages).join('\n')));
 			return BlockedDecision();
 		}
 		else
@@ -164,18 +166,18 @@ namespace SparkleLauncher
 		}
 
 		return PrerequisiteDecision(
-		    BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, prerequisiteOperationId),
+		    BuildLauncherOperationRequest(repositoryRoot, contentModel, settings, prerequisiteOperationId),
 		    promptTitle);
 	}
 
 	LauncherPrerequisiteDecision ResolveLaunchPrerequisitePrompt(
 	    QWidget* parent,
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId)
 	{
-		const LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, operationId);
+		const LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, contentModel, settings, operationId);
 		const LaunchOperationPlan plan = PlanLaunchOperation(operationId.toStdString(), ToLaunchPlanRequest(request));
 		if (plan.CanRun)
 		{
@@ -199,13 +201,14 @@ namespace SparkleLauncher
 		if (executableMissing)
 		{
 			const bool runtimeTarget = request.LaunchTarget == "runtime";
-			prerequisiteOperationId = runtimeTarget ? "project.build.runtime" : "project.build.editor";
+			prerequisiteOperationId = runtimeTarget ? "workspace.build.runtime" : "workspace.build.editor";
 			promptTitle = runtimeTarget ? "Build Runtime" : "Build Editor";
 			promptAction = "The executable is missing. Start " + promptTitle + " now?";
 		}
 		else if (cookedMeshesMissing || cookedTexturesMissing || cookedShadersMissing)
 		{
-			const int missingCount = static_cast<int>(cookedMeshesMissing) + static_cast<int>(cookedTexturesMissing) + static_cast<int>(cookedShadersMissing);
+			const int missingCount =
+			    static_cast<int>(cookedMeshesMissing) + static_cast<int>(cookedTexturesMissing) + static_cast<int>(cookedShadersMissing);
 			if (missingCount == 1)
 			{
 				if (cookedMeshesMissing)
@@ -229,7 +232,7 @@ namespace SparkleLauncher
 			}
 			else
 			{
-				prerequisiteOperationId = "cook.project";
+				prerequisiteOperationId = "cook.all";
 				promptTitle = "Cook All";
 				promptAction = "Multiple cooked asset sets are missing. Start Cook All now?";
 			}
@@ -245,18 +248,18 @@ namespace SparkleLauncher
 		}
 
 		return PrerequisiteDecision(
-		    BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, prerequisiteOperationId),
+		    BuildLauncherOperationRequest(repositoryRoot, contentModel, settings, prerequisiteOperationId),
 		    promptTitle);
 	}
 
 	LauncherPrerequisiteDecision ResolveCookPrerequisitePrompt(
 	    QWidget* parent,
 	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
+	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId)
 	{
-		const LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, operationId);
+		const LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, contentModel, settings, operationId);
 		const CookOperationPlan plan = PlanCookOperation(operationId.toStdString(), ToCookPlanRequest(request));
 		if (plan.CanRun)
 		{
@@ -274,10 +277,12 @@ namespace SparkleLauncher
 			readiness.push_back(readinessMessage);
 			workspaceMissing = workspaceMissing || readinessMessage.contains("Run Generate Build Files first", Qt::CaseInsensitive);
 			cookToolsMissing = cookToolsMissing || readinessMessage.contains("run Build Cooking Tools first", Qt::CaseInsensitive);
-			cookToolRuntimeMissing = cookToolRuntimeMissing || readinessMessage.contains("runtime dependency is missing", Qt::CaseInsensitive) ||
-			    readinessMessage.contains("runtime support bundle is incomplete", Qt::CaseInsensitive);
-			dependencyGroupDisabled = dependencyGroupDisabled || readinessMessage.contains("disabled in this workspace configuration", Qt::CaseInsensitive) ||
-			    readinessMessage.contains("No cook tool groups are enabled", Qt::CaseInsensitive);
+			cookToolRuntimeMissing = cookToolRuntimeMissing
+			    || readinessMessage.contains("runtime dependency is missing", Qt::CaseInsensitive)
+			    || readinessMessage.contains("runtime support bundle is incomplete", Qt::CaseInsensitive);
+			dependencyGroupDisabled = dependencyGroupDisabled
+			    || readinessMessage.contains("disabled in this workspace configuration", Qt::CaseInsensitive)
+			    || readinessMessage.contains("No cook tool groups are enabled", Qt::CaseInsensitive);
 		}
 
 		if (dependencyGroupDisabled)
@@ -302,9 +307,8 @@ namespace SparkleLauncher
 		{
 			prerequisiteOperationId = "cook.tools.prepare";
 			promptTitle = "Build Cooking Tools";
-			promptAction = cookToolRuntimeMissing ?
-			                   "Required cooking tool runtime support files are missing. Run Build Cooking Tools now?" :
-			                   "Required cooking tools are missing. Run Build Cooking Tools now?";
+			promptAction = cookToolRuntimeMissing ? "Required cooking tool runtime support files are missing. Run Build Cooking Tools now?"
+			                                      : "Required cooking tools are missing. Run Build Cooking Tools now?";
 		}
 		else
 		{
@@ -317,7 +321,7 @@ namespace SparkleLauncher
 		}
 
 		return PrerequisiteDecision(
-		    BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, prerequisiteOperationId),
+		    BuildLauncherOperationRequest(repositoryRoot, contentModel, settings, prerequisiteOperationId),
 		    promptTitle);
 	}
 }

@@ -9,7 +9,6 @@ namespace SparkleLauncher::ArtifactNaming
 	inline constexpr std::string_view kRuntimeRedistributable = "Runtime redistributable";
 	inline constexpr std::string_view kBuildOutput = "Build output";
 	inline constexpr std::string_view kCookedOutput = "Cooked output";
-	inline constexpr std::string_view kProjectSelection = "Project selection";
 
 	inline constexpr std::string_view kVisibilityPublic = "public";
 	inline constexpr std::string_view kVisibilityInternal = "internal";
@@ -25,6 +24,6 @@ namespace SparkleLauncher::ArtifactNaming
 	inline constexpr std::string_view kBinaryTypeGeneratedAsset = "generated-asset";
 
 	inline constexpr std::string_view kActionSyncSourceDependencies = "Sync Code";
-	inline constexpr std::string_view kActionGenerateProjectFiles = "Generate Build Files";
+	inline constexpr std::string_view kActionGenerateBuildFiles = "Generate Build Files";
 	inline constexpr std::string_view kActionOpenIde = "Open IDE";
 }

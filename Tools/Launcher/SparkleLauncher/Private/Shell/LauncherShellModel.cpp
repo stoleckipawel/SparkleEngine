@@ -5,7 +5,6 @@
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
-#include "SparkleLauncher/LauncherProjectDefaults.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <algorithm>
@@ -56,38 +55,6 @@ namespace SparkleLauncher
 		std::ostringstream stream;
 		stream << std::put_time(&localTime, "%H:%M");
 		return stream.str();
-	}
-
-	std::string ChooseLauncherShellProjectId(const std::vector<SparkleProject>& projects, std::string_view requestedProjectId)
-	{
-		if (!requestedProjectId.empty())
-		{
-			const auto requestedProject = std::find_if(
-			    projects.begin(),
-			    projects.end(),
-			    [requestedProjectId](const SparkleProject& project)
-			    {
-				    return project.Id == requestedProjectId;
-			    });
-			if (requestedProject != projects.end())
-			{
-				return requestedProject->Id;
-			}
-		}
-
-		const auto defaultProject = std::find_if(
-		    projects.begin(),
-		    projects.end(),
-		    [](const SparkleProject& project)
-		    {
-			    return project.Id == kDefaultProjectId;
-		    });
-		if (defaultProject != projects.end())
-		{
-			return defaultProject->Id;
-		}
-
-		return projects.empty() ? std::string() : projects.front().Id;
 	}
 
 	std::optional<std::filesystem::path> FindLatestLauncherShellLog(const std::filesystem::path& logsDirectory)
@@ -149,15 +116,11 @@ namespace SparkleLauncher
 		    {"local", latestLogPath.has_value() ? "Latest launcher log: " + latestLogPath->string() : "No launcher logs discovered yet."});
 	}
 
-	LauncherShellModel BuildLauncherShellModel(
-	    RepositoryRoot repository,
-	    std::vector<SparkleProject> projects,
-	    const LauncherShellArguments& arguments)
+	LauncherShellModel BuildLauncherShellModel(RepositoryRoot repository, SparkleContent content, const LauncherShellArguments& arguments)
 	{
 		LauncherShellModel model;
 		model.Repository = std::move(repository);
-		model.Projects = std::move(projects);
-		model.SelectedProjectId = ChooseLauncherShellProjectId(model.Projects, arguments.SelectedProject);
+		model.ContentId = std::move(content.Id);
 		model.EditorProfile = arguments.EditorProfile;
 		model.RuntimeProfile = arguments.RuntimeProfile;
 		model.WorkspaceIdePreference = arguments.WorkspaceIdePreference;
@@ -171,10 +134,7 @@ namespace SparkleLauncher
 		const auto found = std::find_if(
 		    model.Operations.begin(),
 		    model.Operations.end(),
-		    [operationId](const LauncherShellOperationRow& operation)
-		    {
-			    return operation.Id == operationId;
-		    });
+		    [operationId](const LauncherShellOperationRow& operation) { return operation.Id == operationId; });
 		return found == model.Operations.end() ? nullptr : &*found;
 	}
 

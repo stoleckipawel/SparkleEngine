@@ -24,7 +24,7 @@ namespace SparkleLauncher
 		std::filesystem::path RepositoryRoot;
 		std::filesystem::path RunningLauncherPath;
 		QString OperationId;
-		QString ProjectId;
+		QString ContentId;
 		QString EditorProfile;
 		QString RuntimeProfile;
 		QString SelectedTargets;
