@@ -36,22 +36,6 @@ public:
 	}
 };
 
-namespace
-{
-bool HasValidTangentFrame(const ImportedMeshGeometry& geometry) noexcept
-{
-	try
-	{
-		GltfTangentFrameValidator::Validate(geometry);
-		return true;
-	}
-	catch (const Diagnostics::Error&)
-	{
-		return false;
-	}
-}
-}
-
 struct GltfMeshGeometryExtractor::Attributes
 {
 	const cgltf_accessor* Positions = nullptr;
@@ -79,6 +63,19 @@ GltfMeshGeometryExtractor::Attributes GltfMeshGeometryExtractor::CollectAttribut
 	    .Weights0 = GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_weights, 0),
 	    .Joints1 = GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_joints, 1),
 	    .Weights1 = GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_weights, 1)};
+}
+
+bool GltfMeshGeometryExtractor::HasValidTangentFrame(const ImportedMeshGeometry& geometry) noexcept
+{
+	try
+	{
+		GltfTangentFrameValidator::Validate(geometry);
+		return true;
+	}
+	catch (const Diagnostics::Error&)
+	{
+		return false;
+	}
 }
 
 void GltfMeshGeometryExtractor::ValidateAttributes(const cgltf_primitive& primitive, const Attributes& attributes)

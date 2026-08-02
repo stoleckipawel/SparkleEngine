@@ -220,6 +220,8 @@ This is an integration smoke record, not a quality, fidelity, or performance-gat
 
 The sync script was also rerun idempotently against acquired San Miguel content and rejected a root-traversal probe before download or extraction. Publishing now preserves the previous extraction in a pack-specific backup and restores it when the staged directory cannot be published.
 
+After the final rebuild, Windows Application Control on this workstation began rejecting the newly linked, unsigned `DevelopmentEditor` `TextureCooker.exe` and `ShowcaseEditor.exe` hashes. This is a host execution-policy/tool-signing gate rather than a content failure: the affected sources compiled, the supported-level launch evidence above was captured before the refreshed hashes were rejected, and the restored default request was revalidated through the permitted `DebugEditor` texture cooker (163 textures). Developer-artifact signing or an explicit local trust policy remains separate follow-up work.
+
 During runtime validation the configured NVIDIA upscaler and ray-reconstruction provider could not initialize in one launch configuration. Provider initialization now reports a warning and falls back to linear upscaling or disables ray reconstruction instead of terminating the scene. This fallback keeps the showcase usable; it is not evidence that NVIDIA reconstruction passed.
 
 ## Stage 1: Inventory Before Rendering

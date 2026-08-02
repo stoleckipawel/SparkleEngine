@@ -16,6 +16,7 @@ class GltfMeshGeometryExtractor final
 	struct Attributes;
 
 	static Attributes CollectAttributes(const cgltf_primitive& primitive) noexcept;
+	static bool HasValidTangentFrame(const ImportedMeshGeometry& geometry) noexcept;
 	static void ValidateAttributes(const cgltf_primitive& primitive, const Attributes& attributes);
 	static void PopulateVertices(const Attributes& attributes, std::uint32_t vertexCount, ImportedMeshGeometry& geometry);
 	static void PopulateIndices(const cgltf_primitive& primitive, std::uint32_t vertexCount, ImportedMeshGeometry& geometry);
