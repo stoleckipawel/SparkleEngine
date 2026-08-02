@@ -7,33 +7,30 @@
 
 class ProjectLevelCatalogEditor final
 {
-  public:
-	static bool SetEntryBool(
+public:
+	static bool SetLevelSelected(
 	    const std::filesystem::path& projectRoot,
-	    std::string_view sectionHeader,
-	    std::string_view entryId,
-	    std::string_view keyName,
-	    bool value,
+	    std::string_view levelId,
+	    bool selected,
+	    std::string& outErrorMessage);
+	static bool SetLevelsSelected(
+	    const std::filesystem::path& projectRoot,
+	    const std::vector<std::string>& levelIds,
+	    bool selected,
 	    std::string& outErrorMessage);
 
-  private:
-	ProjectLevelCatalogEditor(
-	    std::filesystem::path catalogPath,
-	    std::string sectionHeader,
-	    std::string entryId,
-	    std::string keyName,
-	    bool value);
+private:
+	ProjectLevelCatalogEditor(std::filesystem::path catalogPath, std::vector<std::string> levelIds, bool selected);
 
 	bool Apply(std::string& outErrorMessage);
 	bool Read(std::string& outErrorMessage);
-	bool UpdateEntry(std::string& outErrorMessage);
-	bool Publish(std::string& outErrorMessage) const;
+	bool UpdateEntries(std::string& outErrorMessage);
+	bool Validate(std::string_view text, std::string& outErrorMessage) const;
+	bool Publish(std::string_view text, std::string& outErrorMessage) const;
 	std::string BuildText() const;
 
 	std::filesystem::path m_catalogPath;
-	std::string m_sectionHeader;
-	std::string m_entryId;
-	std::string m_keyName;
+	std::vector<std::string> m_levelIds;
 	std::string m_valueLine;
 	std::vector<std::string> m_lines;
 };

@@ -9,6 +9,7 @@
 #include <QtCore/QString>
 #include <QtCore/QVector>
 #include <QtCore/QHash>
+#include <QtCore/QPointer>
 #include <QtGui/QColor>
 #include <QtGui/QIcon>
 #include <QtCore/QStringList>
@@ -27,6 +28,8 @@
 #include <QtWidgets/QVBoxLayout>
 
 #include <filesystem>
+#include <string>
+#include <vector>
 
 class QGridLayout;
 
@@ -36,9 +39,9 @@ namespace SparkleLauncher
 	class LauncherProjectModel;
 	class LauncherSettings;
 	struct DependencyGroupUiEntry;
-	struct LauncherContentPackUiEntry;
 	struct LauncherLevelUiEntry;
 	struct LauncherLevelUiModel;
+	class ResponsiveCardGridWidget;
 	struct LauncherProjectSummary;
 	struct LauncherStartupLevelUiEntry;
 	enum class LauncherArtworkPreset;
@@ -81,6 +84,13 @@ namespace SparkleLauncher
 		{
 			LauncherOperationRequest Request;
 			QString Title;
+		};
+
+		struct PendingLevelSelectionUpdate
+		{
+			std::filesystem::path ProjectRoot;
+			std::vector<std::string> LevelIds;
+			bool Selected = false;
 		};
 
 		struct ActivityRunWidgets
@@ -154,28 +164,26 @@ namespace SparkleLauncher
 		    QWidget* accessory = nullptr);
 		void AddSyncDependencyBundles(QVBoxLayout& layout);
 		void AddSyncLevelContentGroups(QVBoxLayout& layout);
-		void AddSyncLevelRows(
-		    QVBoxLayout& layout,
+		void AddSyncLevelRows(QVBoxLayout& layout, const LauncherProjectSummary& project, const LauncherLevelUiModel& model);
+		void AddSyncLevelRow(ResponsiveCardGridWidget& grid, const LauncherProjectSummary& project, const LauncherLevelUiEntry& level);
+		void ApplyLevelActionButtonState(QPushButton& button, const LauncherLevelUiEntry& level);
+		void RefreshLevelActionButtons();
+		void SyncLevel(const LauncherProjectSummary& project, const LauncherLevelUiEntry& level);
+		void CleanLevel(const LauncherProjectSummary& project, const LauncherLevelUiEntry& level);
+		void SyncAllLevels();
+		void CleanAllLevels();
+		QVector<LauncherCleanTarget> BuildLevelCleanTargets(
 		    const LauncherProjectSummary& project,
-		    const LauncherLevelUiModel& model);
-		void AddSyncLevelRow(
-		    QVBoxLayout& layout,
-		    const LauncherProjectSummary& project,
-		    const LauncherLevelUiEntry& level);
-		void AddSyncContentPackRows(
-		    QVBoxLayout& layout,
-		    const LauncherProjectSummary& project,
-		    const LauncherLevelUiModel& model);
-		void AddSyncContentPackRow(
-		    QVBoxLayout& layout,
-		    const LauncherProjectSummary& project,
-		    const LauncherContentPackUiEntry& pack);
+		    const QString& levelId = QString()) const;
+		bool SetLevelsSelected(
+		    const std::filesystem::path& projectRoot,
+		    const std::vector<std::string>& levelIds,
+		    bool selected,
+		    const QString& actionName);
 		LauncherLevelUiModel BuildLevelUiModel() const;
 		QComboBox* CreateStartupLevelCombo();
 		void PopulateStartupLevelCombo(QComboBox& combo);
-		int AppendStartupLevelOptions(
-		    QComboBox& combo,
-		    const QVector<LauncherStartupLevelUiEntry>& options);
+		int AppendStartupLevelOptions(QComboBox& combo, const QVector<LauncherStartupLevelUiEntry>& options);
 		void ApplyStartupLevelSelection(QComboBox& combo, int selectedIndex);
 		void PopulateStartupLevelSelectors();
 		QVector<QPair<QString, QString>> BuildStartupLevelOptions() const;
@@ -220,7 +228,7 @@ namespace SparkleLauncher
 		bool OfferWorkspacePrerequisiteOperation(const QString& operationId);
 		bool OfferCookPrerequisiteOperation(const QString& operationId);
 		bool OfferLaunchPrerequisiteOperation(const QString& operationId);
-		void StartOperation(LauncherOperationRequest request, const QString& title);
+		QString StartOperation(LauncherOperationRequest request, const QString& title);
 		void SetSelectedOperation(const QString& operationId);
 		void RegisterRun(const QString& runId, const QString& title);
 		void SetRunState(const QString& runId, RunState state, const QString& title);
@@ -266,6 +274,8 @@ namespace SparkleLauncher
 		QHash<QString, QString> m_runOutputs;
 		LauncherActionHistoryModel m_actionHistory;
 		QHash<QString, PendingFollowUpOperation> m_pendingFollowUpOperations;
+		QHash<QString, PendingLevelSelectionUpdate> m_pendingLevelSelectionUpdates;
+		QHash<QString, QPointer<QPushButton>> m_levelActionButtons;
 		QString m_activeRunId;
 		QString m_selectedOperationId;
 		bool m_isRebuildingOptions = false;

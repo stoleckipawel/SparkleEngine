@@ -11,7 +11,7 @@ struct ProjectLevelCatalogEntry;
 
 class LevelRegistry final
 {
-  public:
+public:
 	LevelRegistry();
 	~LevelRegistry() noexcept;
 
@@ -24,15 +24,14 @@ class LevelRegistry final
 
 	std::vector<std::string> GetLevelNames() const;
 
-	void SetDefaultLevelName(std::string_view name);
 	void SaveLevel(const LevelAsset& level) const;
 
 	std::string_view GetDefaultLevelName() const noexcept;
 
-  private:
+private:
 	void DiscoverLevels();
-	void LoadCatalogLevel(const ProjectLevelCatalogEntry& entry, std::string& outStartupDefaultLevelName);
-	void ResolveDefaultLevel(std::string_view startupDefaultLevelName);
+	void LoadCatalogLevel(const ProjectLevelCatalogEntry& entry);
+	void EnsureDefaultLevel();
 	void Register(std::unique_ptr<LevelAsset> level);
 
 	std::unordered_map<std::string, std::unique_ptr<LevelAsset>> m_levels;

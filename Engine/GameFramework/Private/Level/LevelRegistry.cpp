@@ -25,83 +25,80 @@ void LevelRegistry::DiscoverLevels()
 	try
 	{
 		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(projectRoot);
-		std::string startupDefaultLevelName;
 		for (const ProjectLevelCatalogEntry& entry : catalog.levels)
 		{
-			if (!catalog.IsLevelReady(projectRoot, entry))
+			if (!entry.selected)
 			{
-				if (entry.defaultIncluded || entry.startupDefault)
-				{
-					Diagnostics::Fatal(
-					    g_levelRegistryLogger,
-					    __FILE__,
-					    __LINE__,
-					    std::format(
-					        "LevelRegistry: active level '{}' is not ready: '{}'.",
-					        entry.id,
-					        entry.sourcePath.string()));
-				}
 				continue;
 			}
 
-			LoadCatalogLevel(entry, startupDefaultLevelName);
-		}
+			if (!catalog.IsLevelReady(entry))
+			{
+				SPDLOG_LOGGER_WARN(
+				    g_levelRegistryLogger,
+				    "LevelRegistry: selected level '{}' is not ready: '{}'.",
+				    entry.id,
+				    entry.sourcePath.string());
+				continue;
+			}
 
-		ResolveDefaultLevel(startupDefaultLevelName);
+			LoadCatalogLevel(entry);
+		}
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, std::string("LevelRegistry: ") + error.what());
+		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: {}; using the built-in Empty level.", error.what());
 	}
+
+	EnsureDefaultLevel();
 }
 
-void LevelRegistry::LoadCatalogLevel(const ProjectLevelCatalogEntry& entry, std::string& outStartupDefaultLevelName)
+void LevelRegistry::LoadCatalogLevel(const ProjectLevelCatalogEntry& entry)
 {
 	try
 	{
 		auto loadedLevel = LevelParser::LoadFromFile(entry.sourcePath);
 		const std::string loadedLevelName(loadedLevel->GetName());
+		if (loadedLevelName != entry.id)
+		{
+			throw Diagnostics::Error(
+			    std::format("Catalog identity '{}' does not match authored level name '{}'.", entry.id, loadedLevelName));
+		}
 		Register(std::move(loadedLevel));
-
-		if (entry.startupDefault)
-			outStartupDefaultLevelName = loadedLevelName;
 	}
 	catch (const Diagnostics::Error& error)
 	{
 		const std::string failure =
 		    std::format("LevelRegistry: Failed to load catalog level '{}': {}", entry.sourcePath.string(), error.what());
-		if (entry.defaultIncluded || entry.startupDefault)
-			Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, failure);
 		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "{}", failure);
 	}
 }
 
-void LevelRegistry::ResolveDefaultLevel(std::string_view startupDefaultLevelName)
+void LevelRegistry::EnsureDefaultLevel()
 {
-	if (!startupDefaultLevelName.empty())
+	if (FindLevel("Empty") == nullptr)
 	{
-		SetDefaultLevelName(startupDefaultLevelName);
+		LevelDesc fallbackLevel;
+		fallbackLevel.name = "Empty";
+		Register(std::make_unique<LevelAsset>(std::move(fallbackLevel)));
 	}
-	else
-	{
-		Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, "LevelRegistry: No ready level is explicitly marked StartupDefault.");
-	}
+	m_defaultLevelName = "Empty";
 }
 
 void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)
 {
 	if (!level)
+	{
 		Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, "LevelRegistry: Attempted to register a null level.");
+	}
 
 	auto name = level->GetName();
 	std::string nameKey(name);
 
 	if (m_levels.contains(nameKey))
-		Diagnostics::Fatal(
-		    g_levelRegistryLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("LevelRegistry: Duplicate level name '{}'.", nameKey));
+	{
+		Diagnostics::Fatal(g_levelRegistryLogger, __FILE__, __LINE__, std::format("LevelRegistry: Duplicate level name '{}'.", nameKey));
+	}
 
 	m_levels.emplace(std::move(nameKey), std::move(level));
 }
@@ -129,15 +126,12 @@ std::vector<std::string> LevelRegistry::GetLevelNames() const
 	return levelNames;
 }
 
-void LevelRegistry::SetDefaultLevelName(std::string_view name)
-{
-	m_defaultLevelName = std::string(name);
-}
-
 void LevelRegistry::SaveLevel(const LevelAsset& level) const
 {
 	if (FindLevel(level.GetName()) == nullptr)
+	{
 		throw Diagnostics::Error("Level not found.");
+	}
 
 	LevelParser::SaveToFile(level);
 }

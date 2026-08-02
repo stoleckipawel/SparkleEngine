@@ -1,0 +1,19 @@
+# Showcase Level Thumbnails
+
+Status: launcher artwork attribution inventory
+
+This file owns the source and attribution route for committed Showcase launcher thumbnails. Publisher and model/archive license files remain authoritative for reuse terms.
+
+These `16:9` launcher thumbnails are presentation copies or clearly identified generated derivatives of model screenshots. Publisher renders that already hold up at launcher scale remain `1280 x 720`; rebuilt derivatives are delivered at `1920 x 1080`. The catalog remains fully offline and never downloads artwork at runtime. The original model/archive license remains authoritative.
+
+| Thumbnail | Source | Attribution / license summary |
+| --- | --- | --- |
+| `DamagedHelmet.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet) preview | Preserves the sample's helmet identity while rebuilding the low-resolution preview as a detailed PBR studio render. ctxwing and theblueturtle_; see the model's CC BY 4.0 / CC BY-NC 4.0 notices. |
+| `CesiumMan.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan) preview | Preserves the character, palette, proportions, and walking pose while rebuilding the low-resolution preview. Cesium; CC BY 4.0 with the model's trademark limitations. |
+| `DiffuseTransmissionPlant.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DiffuseTransmissionPlant) preview | Preserves the potted plant and emphasizes the sample's diffuse-transmission purpose at high detail; follow the model directory's legal notice. |
+| `ABeautifulGame.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/ABeautifulGame) preview | Preserves the sample's stylized chess material set while replacing the padded, soft preview; follow the model directory's legal notice. |
+| `Sponza.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza) preview | Preserves the classic atrium composition, lion relief, and banner palette while removing letterboxing and rebuilding detail. Crytek Sponza contributors; follow the model directory's legal notice. |
+| `BistroExterior.jpg`, `BistroInteriorWine.jpg` | [NVIDIA ORCA](https://developer.nvidia.com/orca) | Amazon Lumberyard Bistro, CC BY 4.0. The Wine scene is the publisher's modified full interior and replaces the original-interior launcher entry. |
+| `SanMiguelHigh.jpg`, `SanMiguelLow.jpg` | Generated launcher derivatives using [3DWorld's San Miguel renders](https://3dworldgen.blogspot.com/2017/01/san-miguel-scene.html) as composition references; model source: [McGuire Computer Graphics Archive](https://casual-effects.com/g3d/data10/index.html) | High emphasizes dense ground-level material and geometry detail; Low uses a clean elevated real-time overview without a deliberately faceted art style. San Miguel 2.0 contributors, CC BY 3.0; reference renders by Frank Gennari. |
+| `ModernSponza.jpg`, `ModernSponzaCandles.jpg`, `ModernSponzaKnight.jpg` | Screenshots embedded in the corresponding Intel GPU Research Sample archives | Intel GPU Research Samples; Creative Commons Attribution summary in `Levels.catalog`; verify the embedded archive terms. `ModernSponza.jpg` represents the user-facing base-plus-curtains composition; the plain publisher base remains an internal acquisition dependency. |
+| `JungleRuins.jpg` | Screenshot embedded in the Intel Jungle Ruins archive | Intel GPU Research Samples; Creative Commons Attribution summary in `Levels.catalog`; verify the embedded archive terms. |

@@ -1,57 +1,58 @@
 #include "PCH.h"
 
 #include "Projects/ProjectLevelCatalogEditor.h"
+#include "Projects/ProjectLevelCatalogReader.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <cstddef>
 #include <sstream>
+#include <unordered_set>
 #include <utility>
 
-bool ProjectLevelCatalogEditor::SetEntryBool(
+bool ProjectLevelCatalogEditor::SetLevelSelected(
     const std::filesystem::path& projectRoot,
-    std::string_view sectionHeader,
-    std::string_view entryId,
-    std::string_view keyName,
-    bool value,
+    std::string_view levelId,
+    bool selected,
     std::string& outErrorMessage)
 {
-	ProjectLevelCatalogEditor editor(
-	    projectRoot / "Levels.catalog",
-	    std::string(sectionHeader),
-	    std::string(entryId),
-	    std::string(keyName),
-	    value);
+	return SetLevelsSelected(projectRoot, {std::string(levelId)}, selected, outErrorMessage);
+}
+
+bool ProjectLevelCatalogEditor::SetLevelsSelected(
+    const std::filesystem::path& projectRoot,
+    const std::vector<std::string>& levelIds,
+    bool selected,
+    std::string& outErrorMessage)
+{
+	ProjectLevelCatalogEditor editor(projectRoot / "Levels.catalog", levelIds, selected);
 	return editor.Apply(outErrorMessage);
 }
 
-ProjectLevelCatalogEditor::ProjectLevelCatalogEditor(
-    std::filesystem::path catalogPath,
-    std::string sectionHeader,
-    std::string entryId,
-    std::string keyName,
-    bool value) :
+ProjectLevelCatalogEditor::ProjectLevelCatalogEditor(std::filesystem::path catalogPath, std::vector<std::string> levelIds, bool selected) :
     m_catalogPath(std::move(catalogPath)),
-    m_sectionHeader(std::move(sectionHeader)),
-    m_entryId(std::move(entryId)),
-    m_keyName(std::move(keyName)),
-    m_valueLine(m_keyName + " = " + (value ? "true" : "false"))
+    m_levelIds(std::move(levelIds)),
+    m_valueLine(std::string("Selected = ") + (selected ? "true" : "false"))
 {
 }
 
 bool ProjectLevelCatalogEditor::Apply(std::string& outErrorMessage)
 {
-	if (!Read(outErrorMessage) || !UpdateEntry(outErrorMessage))
+	outErrorMessage.clear();
+	if (!Read(outErrorMessage) || !UpdateEntries(outErrorMessage))
 	{
 		return false;
 	}
 
-	return Publish(outErrorMessage);
+	const std::string updatedText = BuildText();
+	return Validate(updatedText, outErrorMessage) && Publish(updatedText, outErrorMessage);
 }
 
 bool ProjectLevelCatalogEditor::Read(std::string& outErrorMessage)
 {
+	m_lines.clear();
 	std::string catalogText;
 	if (!Files::TryReadAllText(m_catalogPath, catalogText, outErrorMessage))
 	{
@@ -72,10 +73,17 @@ bool ProjectLevelCatalogEditor::Read(std::string& outErrorMessage)
 	return true;
 }
 
-bool ProjectLevelCatalogEditor::UpdateEntry(std::string& outErrorMessage)
+bool ProjectLevelCatalogEditor::UpdateEntries(std::string& outErrorMessage)
 {
-	bool inRequestedSection = false;
+	std::unordered_set<std::string> remainingLevelIds(m_levelIds.begin(), m_levelIds.end());
+	if (remainingLevelIds.empty())
+	{
+		return true;
+	}
+
+	bool inLevelSection = false;
 	bool inTargetEntry = false;
+	std::string currentLevelId;
 
 	for (std::size_t index = 0; index < m_lines.size(); ++index)
 	{
@@ -87,20 +95,13 @@ bool ProjectLevelCatalogEditor::UpdateEntry(std::string& outErrorMessage)
 
 		if (trimmed.front() == '[' && trimmed.back() == ']')
 		{
-			if (inTargetEntry)
-			{
-				m_lines.insert(
-				    m_lines.begin() + static_cast<std::ptrdiff_t>(index),
-				    m_valueLine);
-				return true;
-			}
-
-			inRequestedSection = trimmed == m_sectionHeader;
+			inLevelSection = trimmed == "[Level]";
 			inTargetEntry = false;
+			currentLevelId.clear();
 			continue;
 		}
 
-		if (!inRequestedSection)
+		if (!inLevelSection)
 		{
 			continue;
 		}
@@ -114,31 +115,43 @@ bool ProjectLevelCatalogEditor::UpdateEntry(std::string& outErrorMessage)
 
 		if (key == "Id")
 		{
-			inTargetEntry = Strings::UnquoteCopy(value) == m_entryId;
+			currentLevelId = Strings::UnquoteCopy(value);
+			inTargetEntry = remainingLevelIds.contains(currentLevelId);
 		}
-		else if (inTargetEntry && key == m_keyName)
+		else if (inTargetEntry && key == "Selected")
 		{
 			m_lines[index] = m_valueLine;
-			return true;
+			remainingLevelIds.erase(currentLevelId);
+			inTargetEntry = false;
 		}
 	}
 
-	if (inTargetEntry)
+	if (remainingLevelIds.empty())
 	{
-		m_lines.push_back(m_valueLine);
 		return true;
 	}
 
-	outErrorMessage = "Project level catalog entry was not found: " + m_entryId;
+	outErrorMessage = "Project level catalog entry was not found: " + *remainingLevelIds.begin();
 	return false;
 }
 
-bool ProjectLevelCatalogEditor::Publish(std::string& outErrorMessage) const
+bool ProjectLevelCatalogEditor::Validate(std::string_view text, std::string& outErrorMessage) const
 {
-	return Files::TryWriteAllTextAtomic(
-	    m_catalogPath,
-	    BuildText(),
-	    outErrorMessage);
+	try
+	{
+		ProjectLevelCatalogReader::ValidateText(m_catalogPath.parent_path(), text);
+		return true;
+	}
+	catch (const Diagnostics::Error& error)
+	{
+		outErrorMessage = std::string("Project level catalog update was rejected: ") + error.what();
+		return false;
+	}
+}
+
+bool ProjectLevelCatalogEditor::Publish(std::string_view text, std::string& outErrorMessage) const
+{
+	return Files::TryWriteAllTextAtomic(m_catalogPath, text, outErrorMessage);
 }
 
 std::string ProjectLevelCatalogEditor::BuildText() const

@@ -99,7 +99,7 @@ Largest individual files:
 
 Stage 04 discovery found seven in-repo Showcase levels. Multi-level support is a preserved capability; cleanup must catalog or externalize content without reducing the engine to one sample level.
 
-Current curated default level set:
+Current repository-resident source-content map set:
 
 - `Empty`
 - `DamagedHelmet`
@@ -107,23 +107,20 @@ Current curated default level set:
 - `DiffuseTransmissionPlant`
 - `ABeautifulGame`
 - `Sponza`
-- `SponzaPtlas`
 
-Startup default:
-
-- `Sponza`, matching current launcher/runtime defaults.
+There is no required downloadable map or catalog startup default. `Empty` is the permanent repository core level and is not exposed as a sync choice; all showcase maps remain independent selections. If the core level cannot be read, runtime still creates an in-memory `Empty` scene so a code-only checkout remains launchable.
+The former `SponzaPtlas` level was removed because it duplicated Sponza/Cesium scene composition as a scene-specific validation path rather than owning an independent map or workload contract.
 
 Level inventory:
 
-| Level File | Level Name | Scene Asset Refs | Unique Scene Assets | Default Set |
+| Level File | Level Name | Scene Asset Refs | Unique Scene Assets | Repository Resident |
 | --- | --- | ---: | --- | --- |
 | `Projects/Showcase/Levels/Empty.level` | `Empty` | 0 | none | Yes; fallback/minimal scene. |
 | `Projects/Showcase/Levels/DamagedHelmet.level` | `DamagedHelmet` | 1 | `DamagedHelmet/DamagedHelmet` | Yes; small material/mesh check. |
 | `Projects/Showcase/Levels/CesiumMan.level` | `CesiumMan` | 1 | `CesiumMan/CesiumMan` | Yes; animation/skinned asset check. |
 | `Projects/Showcase/Levels/DiffuseTransmissionPlant.level` | `DiffuseTransmissionPlant` | 1 | `DiffuseTransmissionPlant/DiffuseTransmissionPlant` | Yes; material/transmission asset check. |
 | `Projects/Showcase/Levels/ABeautifulGame.level` | `ABeautifulGame` | 1 | `ABeautifulGame/ABeautifulGame` | Yes; medium mesh/material scene. |
-| `Projects/Showcase/Levels/Sponza.level` | `Sponza` | 1 | `Sponza/Sponza` | Yes; current renderer review scene and startup default; future Tier 0 regression workload. |
-| `Projects/Showcase/Levels/SponzaPtlas.level` | `SponzaPtlas` | 11 | `Sponza/Sponza`, `CesiumMan/CesiumMan` | Yes; PTLAS/multiple-instance coverage. |
+| `Projects/Showcase/Levels/Sponza.level` | `Sponza` | 1 | `Sponza/Sponza` | Yes; current renderer review scene and future Tier 0 regression workload. |
 
 Heavy optional/generated candidates:
 
@@ -140,34 +137,34 @@ Heavy optional/generated candidates:
 Stage 04 rule:
 
 - Do not remove content yet.
-- Preserve all seven levels as the current default level set.
+- Preserve the repository-resident catalog while allowing every map to be independently selected or removed from the active set.
 - Treat logs and cooked outputs as later cleanup/package-boundary candidates. Bistro was externalized from the core repo in Stage 07.
 
 Stage 05 catalog result:
 
 - `Projects/Showcase/Levels.catalog` is now the tiny project-owned level catalog.
-- Each default level has `Id`, `DisplayName`, `Source`, and `Default` metadata.
-- Runtime level discovery loads catalog levels whose source and optional pack are available.
-- Asset cook discovery reads catalog `Default` levels and filters project source scenes to the level-referenced scene assets.
-- Optional content pack state is represented by `OptionalPack` on levels and `Id`/`Root`/`Available` pack metadata; `Bistro` remains cataloged after removal from the core tree.
+- Each map has `Id`, `DisplayName`, `Description`, `Source`, and `Selected` metadata, plus optional presentation and asset-pack references.
+- Runtime level discovery loads ready catalog maps in the active set; the launcher maps each card's Sync/Clean action to the catalog's internal `Selected` state, and a missing active map is non-fatal.
+- Asset cook discovery reads the same selected map set and filters project source scenes to those map-referenced assets. An empty set is valid.
+- Acquisition metadata is represented by `AssetPack` on maps and `[AssetPack]` records. Pack acquisition is derived from selected maps rather than a second selection authority.
 
-Stage 06 optional pack boundary:
+Stage 06 asset-pack boundary:
 
-- Optional pack ownership is project-owned. `Projects/Showcase/Levels.catalog` is the single boundary for Showcase optional pack metadata.
-- Optional pack root is the catalog `Root` value relative to `Projects/Showcase`; current root is `Assets/Meshes/Bistro` for pack `Bistro`.
+- Asset-pack ownership is project-owned. `Projects/Showcase/Levels.catalog` is the single boundary for Showcase acquisition metadata.
+- An asset-pack root is the catalog `Root` value relative to `Projects/Showcase`; the Bistro root is `Assets/Meshes/Bistro`.
 
 ### Canonical Acceptance-Workload Overlay
 
 The inventory above describes current repository truth. Future tier assignment, required architecture consequences, and completion evidence belong only to [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) and are not repeated in this snapshot.
-- Default levels do not reference `Bistro`, so default build/cook/run does not require the heavy optional pack.
-- Missing optional pack state is non-fatal: catalog levels that name a missing or disabled optional pack are unavailable, while default catalog levels continue to load/cook.
+- No downloadable map is required for build, cook, or launch. The core Empty level needs no asset pack, so a base sync does not acquire Bistro or another map pack.
+- Missing asset packs are non-fatal: affected selected maps are skipped while other selected maps, or the built-in empty fallback, remain usable.
 - Core repo byte reduction target for Stage 07 is at least 1438.80 MB by removing or externalizing `Projects/Showcase/Assets/Meshes/Bistro`, reducing `Projects` source content from about 1527.06 MB to about 88.26 MB before generated-output cleanup.
 
 Stage 07 externalization result:
 
 - `Projects/Showcase/Assets/Meshes/Bistro` was removed from the core repo.
-- `Projects/Showcase/Levels.catalog` keeps pack `Bistro` discoverable as `Root = Assets/Meshes/Bistro`, `Available = false`, `External = true`.
-- Curated default level set remains intact: seven level files resolve and the five default source scene IDs still resolve.
+- `Projects/Showcase/Levels.catalog` keeps pack `Bistro` discoverable as `Root = Assets/Meshes/Bistro`, `External = true`.
+- The repository-resident map set remains intact, while its active sync state is independently configurable.
 - `Projects` source content, excluding generated logs/cooked output, is now about 88.26 MB.
 
 ## Module And Layer Shape

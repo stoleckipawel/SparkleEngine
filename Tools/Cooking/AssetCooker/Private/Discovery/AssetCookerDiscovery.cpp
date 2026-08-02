@@ -13,13 +13,10 @@
 #include <system_error>
 #include <utility>
 
-bool AssetCookerDiscovery::TryFindRepositoryRoot(
-    const std::filesystem::path& startPath,
-    std::filesystem::path& outRepositoryRoot)
+bool AssetCookerDiscovery::TryFindRepositoryRoot(const std::filesystem::path& startPath, std::filesystem::path& outRepositoryRoot)
 {
 	std::error_code error;
-	std::filesystem::path currentPath =
-	    Paths::Normalize(startPath.empty() ? std::filesystem::current_path(error) : startPath);
+	std::filesystem::path currentPath = Paths::Normalize(startPath.empty() ? std::filesystem::current_path(error) : startPath);
 	if (error)
 	{
 		return false;
@@ -31,10 +28,8 @@ bool AssetCookerDiscovery::TryFindRepositoryRoot(
 
 	const std::optional<std::filesystem::path> workspaceRoot =
 	    Filesystem::FindAncestorWithMarker(currentPath, Filesystem::kWorkspaceMarker);
-	if (!workspaceRoot ||
-	    !PathExists(*workspaceRoot / "Engine" / std::string(Filesystem::kEngineMarker)) ||
-	    !PathExists(*workspaceRoot / "Projects") ||
-	    !PathExists(*workspaceRoot / "Tools"))
+	if (!workspaceRoot || !PathExists(*workspaceRoot / "Engine" / std::string(Filesystem::kEngineMarker))
+	    || !PathExists(*workspaceRoot / "Projects") || !PathExists(*workspaceRoot / "Tools"))
 	{
 		return false;
 	}
@@ -45,9 +40,8 @@ bool AssetCookerDiscovery::TryFindRepositoryRoot(
 
 bool AssetCookerDiscovery::ValidateConfiguration(std::string_view configuration)
 {
-	return configuration == "DebugEditor" || configuration == "DebugGame" ||
-	       configuration == "DevelopmentEditor" || configuration == "DevelopmentGame" ||
-	       configuration == "ShippingEditor" || configuration == "ShippingGame";
+	return configuration == "DebugEditor" || configuration == "DebugGame" || configuration == "DevelopmentEditor"
+	    || configuration == "DevelopmentGame" || configuration == "ShippingEditor" || configuration == "ShippingGame";
 }
 
 std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
@@ -63,13 +57,12 @@ std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
 	}
 
 	std::error_code iteratorError;
-	for (const std::filesystem::directory_entry& entry :
-	     std::filesystem::directory_iterator(projectsRoot, iteratorError))
+	for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsRoot, iteratorError))
 	{
 		std::error_code statusError;
 		const std::string projectName = entry.path().filename().string();
-		if (entry.is_directory(statusError) && projectName != "TemplateProject" &&
-		    PathExists(entry.path() / std::string(Filesystem::kProjectMarker)))
+		if (entry.is_directory(statusError) && projectName != "TemplateProject"
+		    && PathExists(entry.path() / std::string(Filesystem::kProjectMarker)))
 		{
 			projects.push_back(projectName);
 		}
@@ -107,7 +100,7 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 		return true;
 	}
 
-	return CollectSceneEntries(outPlan.projectRoot, category, outPlan.sceneEntries, diagnostics);
+	return CollectSceneEntries(outPlan.projectRoot, outPlan.sceneEntries, diagnostics);
 }
 
 bool AssetCookerDiscovery::PathExists(const std::filesystem::path& path)
@@ -118,9 +111,7 @@ bool AssetCookerDiscovery::PathExists(const std::filesystem::path& path)
 
 bool AssetCookerDiscovery::CategoryNeedsScenes(AssetCookerCategory category) noexcept
 {
-	return category == AssetCookerCategory_All ||
-	       category == AssetCookerCategory_Textures ||
-	       category == AssetCookerCategory_SceneAssets;
+	return category == AssetCookerCategory_All || category == AssetCookerCategory_Textures || category == AssetCookerCategory_SceneAssets;
 }
 
 void AssetCookerDiscovery::InitializePlan(
@@ -136,14 +127,12 @@ void AssetCookerDiscovery::InitializePlan(
 	outPlan.toolConfiguration = ResolveToolConfiguration(configuration);
 	outPlan.repositoryRoot = repositoryRoot;
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
-	outPlan.cookedRoot =
-	    repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
+	outPlan.cookedRoot = repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
 	AddPlanSteps(category, outPlan.steps);
 }
 
 bool AssetCookerDiscovery::CollectSceneEntries(
     const std::filesystem::path& projectRoot,
-    AssetCookerCategory category,
     std::vector<AssetCookerSceneEntry>& outEntries,
     AssetCookerDiagnostics& diagnostics)
 {
@@ -164,40 +153,29 @@ bool AssetCookerDiscovery::CollectSceneEntries(
 		outEntries.push_back(std::move(entry));
 	}
 
-	if (outEntries.empty())
-	{
-		diagnostics.AddError(category, "The default level catalog contains no source scene assets.");
-		return false;
-	}
-
 	return true;
 }
 
-void AssetCookerDiscovery::AddPlanSteps(
-    AssetCookerCategory category,
-    std::vector<AssetCookerPlanStep>& outSteps)
+void AssetCookerDiscovery::AddPlanSteps(AssetCookerCategory category, std::vector<AssetCookerPlanStep>& outSteps)
 {
 	outSteps.clear();
 	if (category == AssetCookerCategory_All)
 	{
-		outSteps = {
-		    AssetCookerPlanStep::Shaders,
-		    AssetCookerPlanStep::Textures,
-		    AssetCookerPlanStep::SceneAssets};
+		outSteps = {AssetCookerPlanStep::Shaders, AssetCookerPlanStep::Textures, AssetCookerPlanStep::SceneAssets};
 		return;
 	}
 
 	switch (category)
 	{
-	case AssetCookerCategory_Shaders:
-		outSteps.push_back(AssetCookerPlanStep::Shaders);
-		break;
-	case AssetCookerCategory_Textures:
-		outSteps.push_back(AssetCookerPlanStep::Textures);
-		break;
-	default:
-		outSteps.push_back(AssetCookerPlanStep::SceneAssets);
-		break;
+		case AssetCookerCategory_Shaders:
+			outSteps.push_back(AssetCookerPlanStep::Shaders);
+			break;
+		case AssetCookerCategory_Textures:
+			outSteps.push_back(AssetCookerPlanStep::Textures);
+			break;
+		default:
+			outSteps.push_back(AssetCookerPlanStep::SceneAssets);
+			break;
 	}
 }
 
@@ -211,7 +189,6 @@ bool AssetCookerDiscovery::CollectSceneIds(
     std::vector<std::string>& outSceneIds,
     AssetCookerDiagnostics& diagnostics)
 {
-	std::string errorMessage;
 	ProjectLevelCatalog catalog;
 	try
 	{
@@ -219,65 +196,48 @@ bool AssetCookerDiscovery::CollectSceneIds(
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory_SceneAssets,
-		    error.what());
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what());
 		return false;
 	}
 
 	outSceneIds.clear();
 	for (const ProjectLevelCatalogEntry& level : catalog.levels)
 	{
-		if (!AppendLevelSceneIds(
-		        projectRoot,
-		        catalog,
-		        level,
-		        outSceneIds,
-		        diagnostics,
-		        errorMessage))
+		if (!AppendLevelSceneIds(catalog, level, outSceneIds, diagnostics))
 		{
 			return false;
 		}
 	}
 
 	std::sort(outSceneIds.begin(), outSceneIds.end());
-	outSceneIds.erase(
-	    std::unique(outSceneIds.begin(), outSceneIds.end()),
-	    outSceneIds.end());
+	outSceneIds.erase(std::unique(outSceneIds.begin(), outSceneIds.end()), outSceneIds.end());
 	return true;
 }
 
 bool AssetCookerDiscovery::AppendLevelSceneIds(
-    const std::filesystem::path& projectRoot,
     const ProjectLevelCatalog& catalog,
     const ProjectLevelCatalogEntry& level,
     std::vector<std::string>& outSceneIds,
-    AssetCookerDiagnostics& diagnostics,
-    std::string& outErrorMessage)
+    AssetCookerDiagnostics& diagnostics)
 {
-	if (!level.defaultIncluded)
+	if (!level.selected)
 	{
 		return true;
 	}
 
-	if (!catalog.IsLevelReady(projectRoot, level))
+	if (!catalog.IsLevelReady(level))
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory_SceneAssets,
-		    "Catalog level is unavailable: " + level.id,
-		    level.sourcePath);
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, "Catalog level is unavailable: " + level.id, level.sourcePath);
 		return false;
 	}
 
-	if (CatalogedLevelSceneReader::AppendSceneIds(level.sourcePath, outSceneIds, outErrorMessage))
+	std::string errorMessage;
+	if (CatalogedLevelSceneReader::AppendSceneIds(level.sourcePath, outSceneIds, errorMessage))
 	{
 		return true;
 	}
 
-	diagnostics.AddError(
-	    AssetCookerCategory_SceneAssets,
-	    std::move(outErrorMessage),
-	    level.sourcePath);
+	diagnostics.AddError(AssetCookerCategory_SceneAssets, std::move(errorMessage), level.sourcePath);
 	return false;
 }
 
@@ -287,27 +247,19 @@ bool AssetCookerDiscovery::ResolveSceneEntry(
     AssetCookerSceneEntry& outEntry,
     AssetCookerDiagnostics& diagnostics)
 {
-	const std::filesystem::path meshRoot =
-	    Paths::Normalize(projectRoot / "Assets" / "Meshes");
-	const std::filesystem::path relativeBase =
-	    std::filesystem::path(sceneId).lexically_normal();
+	const std::filesystem::path meshRoot = Paths::Normalize(projectRoot / "Assets" / "Meshes");
+	const std::filesystem::path relativeBase = std::filesystem::path(sceneId).lexically_normal();
 
 	if (!IsSceneIdSafe(relativeBase))
 	{
 		diagnostics.AddError(
 		    AssetCookerCategory_SceneAssets,
-		    "Catalog scene id must remain under the project mesh root: " +
-		        std::string(sceneId));
+		    "Catalog scene id must remain under the project mesh root: " + std::string(sceneId));
 		return false;
 	}
 
 	std::filesystem::path sourcePath;
-	if (!ResolveSceneSource(
-	        meshRoot,
-	        relativeBase,
-	        sceneId,
-	        sourcePath,
-	        diagnostics))
+	if (!ResolveSceneSource(meshRoot, relativeBase, sceneId, sourcePath, diagnostics))
 	{
 		return false;
 	}
@@ -321,14 +273,10 @@ bool AssetCookerDiscovery::ResolveSceneEntry(
 		return false;
 	}
 
-	const std::optional<std::filesystem::path> relativePath =
-	    Paths::TryMakeRelativeUnderRoot(sourcePath, meshRoot);
+	const std::optional<std::filesystem::path> relativePath = Paths::TryMakeRelativeUnderRoot(sourcePath, meshRoot);
 	if (!relativePath)
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory_SceneAssets,
-		    "Resolved scene source escaped the project mesh root.",
-		    sourcePath);
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, "Resolved scene source escaped the project mesh root.", sourcePath);
 		return false;
 	}
 
@@ -337,12 +285,9 @@ bool AssetCookerDiscovery::ResolveSceneEntry(
 	return true;
 }
 
-bool AssetCookerDiscovery::IsSceneIdSafe(
-    const std::filesystem::path& relativeScenePath) noexcept
+bool AssetCookerDiscovery::IsSceneIdSafe(const std::filesystem::path& relativeScenePath) noexcept
 {
-	return !relativeScenePath.empty() &&
-	       !relativeScenePath.is_absolute() &&
-	       !relativeScenePath.generic_string().starts_with("..");
+	return !relativeScenePath.empty() && !relativeScenePath.is_absolute() && !relativeScenePath.generic_string().starts_with("..");
 }
 
 bool AssetCookerDiscovery::ResolveSceneSource(
@@ -354,26 +299,20 @@ bool AssetCookerDiscovery::ResolveSceneSource(
 {
 	outSourcePath.clear();
 
-	const std::filesystem::path exactCandidate =
-	    Paths::Normalize(meshRoot / relativeScenePath);
-	if (SourceSceneImporter::SupportsSourceScenePath(relativeScenePath) &&
-	    Paths::IsUnderRoot(exactCandidate, meshRoot) &&
-	    PathExists(exactCandidate))
+	const std::filesystem::path exactCandidate = Paths::Normalize(meshRoot / relativeScenePath);
+	if (SourceSceneImporter::SupportsSourceScenePath(relativeScenePath) && Paths::IsUnderRoot(exactCandidate, meshRoot)
+	    && PathExists(exactCandidate))
 	{
 		outSourcePath = exactCandidate;
 		return true;
 	}
 
-	const std::array<std::wstring_view, 3> extensions = {
-	    L".gltf",
-	    L".glb",
-	    L".fbx"};
+	const std::array<std::wstring_view, 3> extensions = {L".gltf", L".glb", L".fbx"};
 	for (std::wstring_view extension : extensions)
 	{
 		std::filesystem::path candidate = exactCandidate;
 		candidate.replace_extension(extension);
-		if (!Paths::IsUnderRoot(candidate, meshRoot) ||
-		    !PathExists(candidate))
+		if (!Paths::IsUnderRoot(candidate, meshRoot) || !PathExists(candidate))
 		{
 			continue;
 		}
@@ -381,8 +320,7 @@ bool AssetCookerDiscovery::ResolveSceneSource(
 		{
 			diagnostics.AddError(
 			    AssetCookerCategory_SceneAssets,
-			    "Catalog scene id resolves to more than one source file: " +
-			        std::string(sceneId));
+			    "Catalog scene id resolves to more than one source file: " + std::string(sceneId));
 			return false;
 		}
 		outSourcePath = std::move(candidate);

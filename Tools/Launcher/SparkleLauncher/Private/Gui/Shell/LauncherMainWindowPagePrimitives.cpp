@@ -42,6 +42,7 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <system_error>
@@ -57,7 +58,13 @@ namespace SparkleLauncher
 	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
 	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
 
-	void LauncherMainWindow::AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory)
+	void LauncherMainWindow::AddStatusRow(
+	    QVBoxLayout& layout,
+	    const QString& label,
+	    const QString& status,
+	    const QString& detail,
+	    const QString& state,
+	    QWidget* accessory)
 	{
 		QFrame* row = new QFrame(this);
 		row->setObjectName("StatusRow");
@@ -92,7 +99,9 @@ namespace SparkleLauncher
 
 		QWidget* actionCell = new QWidget(row);
 		actionCell->setObjectName("StatusActionCell");
-		actionCell->setFixedWidth(kStatusActionColumnWidth);
+		const int actionWidth =
+		    accessory != nullptr ? std::max(kStatusActionColumnWidth, accessory->sizeHint().width()) : kStatusActionColumnWidth;
+		actionCell->setFixedWidth(actionWidth);
 		QHBoxLayout* actionCellLayout = new QHBoxLayout(actionCell);
 		actionCellLayout->setContentsMargins(0, 0, 0, 0);
 		actionCellLayout->setSpacing(0);
@@ -107,7 +116,11 @@ namespace SparkleLauncher
 		layout.addWidget(row);
 	}
 
-	QPushButton* LauncherMainWindow::CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately)
+	QPushButton* LauncherMainWindow::CreateCommandActionButton(
+	    const QString& operationId,
+	    const QString& label,
+	    bool primary,
+	    bool runImmediately)
 	{
 		QPushButton* button = new QPushButton(label, this);
 		button->setObjectName(primary ? "CommandPrimaryButton" : "CommandSecondaryButton");
@@ -115,14 +128,18 @@ namespace SparkleLauncher
 		button->setAccessibleName(label);
 		button->setToolTip(runImmediately ? "Run this workflow now." : "Open this workflow.");
 		RegisterFocusable(button);
-		connect(button, &QPushButton::clicked, this, [this, operationId, runImmediately]() {
-			SetSelectedOperation(operationId);
-			if (runImmediately)
-			{
-				RunSelectedOperation();
-			}
-		});
+		connect(
+		    button,
+		    &QPushButton::clicked,
+		    this,
+		    [this, operationId, runImmediately]()
+		    {
+			    SetSelectedOperation(operationId);
+			    if (runImmediately)
+			    {
+				    RunSelectedOperation();
+			    }
+		    });
 		return button;
 	}
 }
-

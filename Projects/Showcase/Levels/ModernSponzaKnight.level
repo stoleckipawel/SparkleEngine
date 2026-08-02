@@ -18,4 +18,5 @@ DirectionalLight0CastShadow = true
 
 [SceneAssets]
 Asset = ModernSponza/Base/main_sponza/NewSponza_Main_glTF_003
+Asset = ModernSponza/AddOns/Curtains/pkg_a_curtains/NewSponza_Curtains_glTF
 Asset = ModernSponza/AddOns/Knight/pkg_e_knight_anim/Exports/FBX/Knight_USD_002

@@ -1,6 +1,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include "BuildWorkspaceProcessRequests.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/SourceDependencyState.h"
 
@@ -51,7 +52,7 @@ namespace SparkleLauncher
 		return contents.str();
 	}
 
-	static std::string ExtractConfigureFailureDetail(std::string_view text)
+	static std::string ExtractCMakeFailureDetail(std::string_view text, bool prioritizeConfigureFailures)
 	{
 		if (text.empty())
 		{
@@ -93,15 +94,18 @@ namespace SparkleLauncher
 			lines.push_back(TrimCopy(line));
 		}
 
-		for (std::string_view needle : prioritizedNeedles)
+		if (prioritizeConfigureFailures)
 		{
-			const auto found = std::find_if(
-			    lines.begin(),
-			    lines.end(),
-			    [needle](const std::string& line) { return line.find(needle) != std::string::npos; });
-			if (found != lines.end())
+			for (std::string_view needle : prioritizedNeedles)
 			{
-				return *found;
+				const auto found = std::find_if(
+				    lines.begin(),
+				    lines.end(),
+				    [needle](const std::string& line) { return line.find(needle) != std::string::npos; });
+				if (found != lines.end())
+				{
+					return *found;
+				}
 			}
 		}
 
@@ -151,9 +155,9 @@ namespace SparkleLauncher
 			text = ReadLogText(step.Request.LogPath);
 		}
 
-		if (step.Id == "configure")
+		if (step.Id == "configure" || step.Id.starts_with("sync-asset-pack-"))
 		{
-			return ExtractConfigureFailureDetail(text);
+			return ExtractCMakeFailureDetail(text, step.Id == "configure");
 		}
 		return {};
 	}
@@ -170,10 +174,9 @@ namespace SparkleLauncher
 		{
 			return detail.empty() ? "Generate project files failed." + logSuffix : "Generate project files failed: " + detail + logSuffix;
 		}
-		if (step.Id.starts_with("sync-content-"))
+		if (step.Id.starts_with("sync-asset-pack-"))
 		{
-			return detail.empty() ? "Optional content acquisition failed." + logSuffix
-			                      : "Optional content acquisition failed: " + detail + logSuffix;
+			return detail.empty() ? "Asset pack acquisition failed." + logSuffix : "Asset pack acquisition failed: " + detail + logSuffix;
 		}
 		if (step.Id == "build")
 		{
@@ -188,7 +191,8 @@ namespace SparkleLauncher
 
 	static std::optional<std::string> ValidateEnabledSourceDependenciesAfterConfigure(const BuildWorkspaceOperationPlan& plan)
 	{
-		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
+		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers && plan.Kind != BuildWorkspaceOperationKind::SyncAll
+		    && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
 		{
 			return std::nullopt;
 		}
@@ -274,7 +278,8 @@ namespace SparkleLauncher
 			return false;
 		}
 
-		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
+		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers && plan.Kind != BuildWorkspaceOperationKind::SyncAll
+		    && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
 		{
 			return false;
 		}
@@ -306,6 +311,26 @@ namespace SparkleLauncher
 		    [&text](std::string_view needle) { return text.find(needle) != std::string::npos; });
 	}
 
+	static bool MatchesPlannedStep(const BuildWorkspaceOperationStep& planned, const BuildWorkspaceProcessStep& executable)
+	{
+		return planned.Id == executable.Id && planned.DisplayName == executable.DisplayName
+		    && planned.DisplayCommandLine == BuildDisplayCommandLine(executable.Request.ExecutablePath, executable.Request.Arguments)
+		    && planned.LogPath == executable.Request.LogPath && planned.UpdatesBuildFilesFreshness == executable.UpdatesBuildFilesFreshness;
+	}
+
+	bool BuildWorkspaceExecutionPlanMatches(
+	    const BuildWorkspaceOperationPlan& plan,
+	    const std::vector<BuildWorkspaceProcessStep>& processSteps)
+	{
+		return plan.Steps.size() == processSteps.size()
+		    && std::equal(
+		        plan.Steps.begin(),
+		        plan.Steps.end(),
+		        processSteps.begin(),
+		        [](const BuildWorkspaceOperationStep& planned, const BuildWorkspaceProcessStep& executable)
+		        { return MatchesPlannedStep(planned, executable); });
+	}
+
 	OperationRecord RunBuildWorkspaceOperationPlan(
 	    BuildWorkspaceOperationPlan plan,
 	    IProcessRunner& processRunner,
@@ -321,7 +346,25 @@ namespace SparkleLauncher
 			return operation;
 		}
 
-		for (BuildWorkspaceProcessStep& step : BuildProcessStepsForPlan(plan))
+		std::vector<BuildWorkspaceProcessStep> processSteps;
+		try
+		{
+			processSteps = BuildProcessStepsForPlan(plan);
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			operation.FailureSummary = std::string("Project asset-pack planning failed: ") + error.what();
+			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
+			return operation;
+		}
+		if (!BuildWorkspaceExecutionPlanMatches(plan, processSteps))
+		{
+			operation.FailureSummary = "Operation inputs changed after planning. Refresh the workflow and run it again.";
+			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
+			return operation;
+		}
+
+		for (BuildWorkspaceProcessStep& step : processSteps)
 		{
 			ProcessRequest request = step.Request;
 			if (step.Id == "configure")

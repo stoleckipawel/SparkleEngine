@@ -42,7 +42,8 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeGeneratorModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/OptionalContentSyncProcessRequests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncPlanner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncProcessRequests.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_BUILD_HEADERS
@@ -51,7 +52,8 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeGeneratorModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/OptionalContentSyncProcessRequests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncPlanner.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncProcessRequests.h
 	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/QtToolchainDiscovery.h
 	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/ShaderCompilerSdkDiscovery.h
 	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/VisualStudioToolchainDiscovery.h
@@ -294,8 +296,30 @@ target_link_libraries(SparkleLauncherProbe
 )
 
 target_compile_features(SparkleLauncherProbe PRIVATE cxx_std_20)
+add_test(NAME sparkle_launcher_probe COMMAND SparkleLauncherProbe "${CMAKE_SOURCE_DIR}")
+set_tests_properties(sparkle_launcher_probe PROPERTIES LABELS "Launcher;Projects;Integration")
+
+add_test(
+    NAME asset_pack_sync
+    COMMAND "${CMAKE_COMMAND}"
+        "-DSPARKLE_TEST_BINARY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/AssetPackSyncTests"
+        "-DSPARKLE_SYNC_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/Scripts/SyncAssetPack.cmake"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncTests.cmake"
+)
+set_tests_properties(asset_pack_sync PROPERTIES LABELS "Launcher;Projects")
+
+add_executable(AssetPackSyncPlannerTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp
+)
+sparkle_configure_host_tool_target(AssetPackSyncPlannerTests)
+target_include_directories(AssetPackSyncPlannerTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build)
+target_link_libraries(AssetPackSyncPlannerTests PRIVATE SparkleLauncherCore SparkleCore)
+target_compile_features(AssetPackSyncPlannerTests PRIVATE cxx_std_20)
+add_test(NAME asset_pack_sync_planner COMMAND AssetPackSyncPlannerTests)
+set_tests_properties(asset_pack_sync_planner PROPERTIES LABELS "Launcher;Projects")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES} ${SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Probe PREFIX "Probe" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Probe/SparkleLauncherProbe.cpp)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp)

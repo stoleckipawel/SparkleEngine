@@ -61,7 +61,6 @@ namespace SparkleLauncher
 		SetActivityLogExpanded(!m_activityLogExpanded);
 	}
 
-
 	void LauncherMainWindow::DisplayOperationStarted(const QString& runId, const QString&, const QString& title)
 	{
 		const QString effectiveTitle = m_runTitles.value(runId, title);
@@ -81,7 +80,12 @@ namespace SparkleLauncher
 		}
 	}
 
-	void LauncherMainWindow::DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode)
+	void LauncherMainWindow::DisplayOperationFinished(
+	    const QString& runId,
+	    const QString& operationId,
+	    const QString& title,
+	    const QString& statusText,
+	    int exitCode)
 	{
 		const bool succeeded = exitCode == 0;
 		const QString effectiveTitle = m_runTitles.value(runId, title);
@@ -98,7 +102,8 @@ namespace SparkleLauncher
 			const QString recoveryText = recoveryHint.isEmpty() ? QString() : QStringLiteral("Recovery: %1\n\n").arg(recoveryHint);
 			m_runOutputs.insert(
 			    runId,
-			    QStringLiteral("Failed: %1 (exit code %2)\n").arg(statusText).arg(exitCode) + recoveryText + "\n" + existingOutput + "\n" + effectiveTitle + " finished: " + statusText + "\n");
+			    QStringLiteral("Failed: %1 (exit code %2)\n").arg(statusText).arg(exitCode) + recoveryText + "\n" + existingOutput + "\n"
+			        + effectiveTitle + " finished: " + statusText + "\n");
 			++m_failedRunCount;
 		}
 
@@ -108,7 +113,27 @@ namespace SparkleLauncher
 		ShowRunOutput(runId);
 		SetActivityLogExpanded(true);
 		UpdateProgress();
-		ScheduleUiRefresh(true);
+
+		const bool refreshesLevelState =
+		    operationId == QStringLiteral("project.sync-levels") || m_pendingLevelSelectionUpdates.contains(runId);
+		if (m_pendingLevelSelectionUpdates.contains(runId))
+		{
+			const PendingLevelSelectionUpdate update = m_pendingLevelSelectionUpdates.take(runId);
+			if (succeeded)
+			{
+				SetLevelsSelected(update.ProjectRoot, update.LevelIds, update.Selected, effectiveTitle);
+			}
+		}
+		if (refreshesLevelState)
+		{
+			PopulateStartupLevelSelectors();
+			RefreshLevelActionButtons();
+			UpdateRunAvailability();
+		}
+		else
+		{
+			ScheduleUiRefresh(true);
+		}
 
 		if (succeeded && operationId == "launcher.build.self" && !m_pendingRestartRunIds.contains(runId))
 		{
@@ -126,24 +151,22 @@ namespace SparkleLauncher
 		}
 	}
 
-
 	QIcon LauncherMainWindow::ActivityIconForState(RunState state) const
 	{
 		switch (state)
 		{
-		case RunState::Queued:
-			return m_icons.Icon(LauncherIcon::Queued, QColor(kColorStateQueued));
-		case RunState::Running:
-			return m_icons.Icon(LauncherIcon::Running, QColor(kColorStateRunning));
-		case RunState::Done:
-			return m_icons.Icon(LauncherIcon::Done, QColor(kColorStateSuccess));
-		case RunState::Failed:
-			return m_icons.Icon(LauncherIcon::Failed, QColor(kColorStateDestructive));
+			case RunState::Queued:
+				return m_icons.Icon(LauncherIcon::Queued, QColor(kColorStateQueued));
+			case RunState::Running:
+				return m_icons.Icon(LauncherIcon::Running, QColor(kColorStateRunning));
+			case RunState::Done:
+				return m_icons.Icon(LauncherIcon::Done, QColor(kColorStateSuccess));
+			case RunState::Failed:
+				return m_icons.Icon(LauncherIcon::Failed, QColor(kColorStateDestructive));
 		}
 
 		return {};
 	}
-
 
 	void LauncherMainWindow::RegisterRun(const QString& runId, const QString& title)
 	{
@@ -179,22 +202,22 @@ namespace SparkleLauncher
 		QColor stateColor;
 		switch (state)
 		{
-		case RunState::Queued:
-			stateText = "Queued";
-			stateColor = QColor(kColorStateQueued);
-			break;
-		case RunState::Running:
-			stateText = "Running";
-			stateColor = QColor(kColorStateRunning);
-			break;
-		case RunState::Done:
-			stateText = "Done";
-			stateColor = QColor(kColorStateSuccess);
-			break;
-		case RunState::Failed:
-			stateText = "Failed";
-			stateColor = QColor(kColorStateDestructive);
-			break;
+			case RunState::Queued:
+				stateText = "Queued";
+				stateColor = QColor(kColorStateQueued);
+				break;
+			case RunState::Running:
+				stateText = "Running";
+				stateColor = QColor(kColorStateRunning);
+				break;
+			case RunState::Done:
+				stateText = "Done";
+				stateColor = QColor(kColorStateSuccess);
+				break;
+			case RunState::Failed:
+				stateText = "Failed";
+				stateColor = QColor(kColorStateDestructive);
+				break;
 		}
 
 		item->setText(QString());
@@ -250,18 +273,18 @@ namespace SparkleLauncher
 		{
 			switch (state)
 			{
-			case RunState::Queued:
-				m_selectedRunSummary->setText("Queued: " + title + ". Waiting to start.");
-				break;
-			case RunState::Running:
-				m_selectedRunSummary->setText("Running: " + title + ". Output is updating below.");
-				break;
-			case RunState::Done:
-				m_selectedRunSummary->setText("Done: " + title + ". Output is available below.");
-				break;
-			case RunState::Failed:
-				m_selectedRunSummary->setText("Failed: " + title + ". Review the summary and raw output below.");
-				break;
+				case RunState::Queued:
+					m_selectedRunSummary->setText("Queued: " + title + ". Waiting to start.");
+					break;
+				case RunState::Running:
+					m_selectedRunSummary->setText("Running: " + title + ". Output is updating below.");
+					break;
+				case RunState::Done:
+					m_selectedRunSummary->setText("Done: " + title + ". Output is available below.");
+					break;
+				case RunState::Failed:
+					m_selectedRunSummary->setText("Failed: " + title + ". Review the summary and raw output below.");
+					break;
 			}
 		}
 		if (m_operationOutput != nullptr)
@@ -276,7 +299,9 @@ namespace SparkleLauncher
 		{
 			const bool canCopyOutput = m_activityLogExpanded && m_operationOutput != nullptr && !m_operationOutput->toPlainText().isEmpty();
 			m_copyOutputButton->setEnabled(canCopyOutput);
-			m_copyOutputButton->setToolTip(canCopyOutput ? "Copy output for the selected run. Shortcut: Ctrl+Shift+C." : "Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
+			m_copyOutputButton->setToolTip(
+			    canCopyOutput ? "Copy output for the selected run. Shortcut: Ctrl+Shift+C."
+			                  : "Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
 		}
 	}
 
@@ -298,8 +323,10 @@ namespace SparkleLauncher
 		}
 		if (m_toggleOutputButton != nullptr)
 		{
-			m_toggleOutputButton->setText(QString::fromLatin1(expanded ? LauncherUi::Activity::CollapseGlyph : LauncherUi::Activity::ExpandGlyph));
-			m_toggleOutputButton->setToolTip(expanded ? "Minimize recent runs and raw process output." : "Show recent runs and raw process output.");
+			m_toggleOutputButton->setText(
+			    QString::fromLatin1(expanded ? LauncherUi::Activity::CollapseGlyph : LauncherUi::Activity::ExpandGlyph));
+			m_toggleOutputButton->setToolTip(
+			    expanded ? "Minimize recent runs and raw process output." : "Show recent runs and raw process output.");
 			m_toggleOutputButton->setAccessibleDescription(m_toggleOutputButton->toolTip());
 		}
 		if (m_copyOutputButton != nullptr)

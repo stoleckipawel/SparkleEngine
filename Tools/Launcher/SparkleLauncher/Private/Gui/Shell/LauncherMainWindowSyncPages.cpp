@@ -61,12 +61,9 @@ namespace SparkleLauncher
 			    DependencyGroupStatusText(group, readyCount),
 			    FormatDependencyGroupDetail(group, dependencyCachePath, readyCount),
 			    DependencyGroupStatusState(group, readyCount),
-			    group.Enabled ? CreateActionDependencyActions(
-			                        "workspace.sync-source-tiers",
-			                        "Prepare Workspace",
-			                        "deps",
-			                        "Clean Source Dependency Cache")
-			                  : CreateDisabledSourceTierActions(group));
+			    group.Enabled
+			        ? CreateActionDependencyActions("workspace.sync-source-tiers", "Sync Code", "deps", "Clean Source Dependency Cache")
+			        : CreateDisabledSourceTierActions(group));
 		}
 	}
 
@@ -100,6 +97,15 @@ namespace SparkleLauncher
 		combo.clear();
 
 		const LauncherLevelUiModel model = BuildLevelUiModel();
+		if (!model.Loaded)
+		{
+			combo.addItem(QStringLiteral("Level catalog unavailable"), QString());
+			combo.setEnabled(false);
+			combo.setToolTip(
+			    model.LoadError.isEmpty() ? QStringLiteral("The active project's level catalog could not be loaded.") : model.LoadError);
+			return;
+		}
+
 		const QVector<LauncherStartupLevelUiEntry>& options = model.StartupLevels;
 		if (options.empty())
 		{
@@ -116,16 +122,14 @@ namespace SparkleLauncher
 
 	int LauncherMainWindow::AppendStartupLevelOptions(QComboBox& combo, const QVector<LauncherStartupLevelUiEntry>& options)
 	{
-		const QIcon syncedIcon = m_icons.Icon(LauncherIcon::Done, QColor(LauncherUi::Color::StateSuccess));
+		const QIcon readyIcon = m_icons.Icon(LauncherIcon::Done, QColor(LauncherUi::Color::StateSuccess));
 		const QIcon missingIcon = m_icons.Icon(LauncherIcon::Failed, QColor(LauncherUi::Color::StateWarning));
-		const QIcon unsyncedIcon = m_icons.Icon(LauncherIcon::Sync, QColor(LauncherUi::Color::StateQueued));
 		int selectedIndex = -1;
-		int startupDefaultIndex = -1;
 		int firstSelectableIndex = -1;
 		for (const LauncherStartupLevelUiEntry& option : options)
 		{
-			const bool selectable = option.Synced && option.Ready;
-			const QIcon icon = selectable ? syncedIcon : option.Synced ? missingIcon : unsyncedIcon;
+			const bool selectable = option.Ready;
+			const QIcon icon = selectable ? readyIcon : missingIcon;
 			combo.addItem(icon, option.DisplayName, option.Id);
 			const int row = combo.count() - 1;
 			combo.setItemData(row, QStringLiteral("%1: %2").arg(option.DisplayName, option.Status), Qt::ToolTipRole);
@@ -140,10 +144,6 @@ namespace SparkleLauncher
 			{
 				firstSelectableIndex = row;
 			}
-			if (selectable && option.StartupDefault)
-			{
-				startupDefaultIndex = row;
-			}
 			if (selectable && option.Id == m_settings.LaunchStartupLevel())
 			{
 				selectedIndex = row;
@@ -152,7 +152,7 @@ namespace SparkleLauncher
 
 		if (selectedIndex < 0)
 		{
-			selectedIndex = startupDefaultIndex >= 0 ? startupDefaultIndex : firstSelectableIndex;
+			selectedIndex = firstSelectableIndex;
 		}
 
 		return selectedIndex;
@@ -160,15 +160,23 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::ApplyStartupLevelSelection(QComboBox& combo, int selectedIndex)
 	{
-		const bool hasSelectableLevel = selectedIndex >= 0;
-		combo.setEnabled(hasSelectableLevel);
-		if (!hasSelectableLevel)
+		if (selectedIndex < 0)
 		{
-			combo.setToolTip("No synced startup level is ready for editor or runtime launch.");
+			combo.insertItem(0, QStringLiteral("Built-in Empty"), QString());
+			combo.setCurrentIndex(0);
+			combo.setEnabled(true);
+			combo.setToolTip("No selected map is ready. Launches use the built-in empty scene.");
+			if (!m_settings.LaunchStartupLevel().isEmpty())
+			{
+				m_settings.SetLaunchStartupLevel(QString());
+			}
+			return;
 		}
-		combo.setCurrentIndex(hasSelectableLevel ? selectedIndex : 0);
+
+		combo.setEnabled(true);
+		combo.setCurrentIndex(selectedIndex);
 		const QString effectiveLevelId = combo.currentData().toString();
-		if (hasSelectableLevel && !effectiveLevelId.isEmpty() && m_settings.LaunchStartupLevel() != effectiveLevelId)
+		if (!effectiveLevelId.isEmpty() && m_settings.LaunchStartupLevel() != effectiveLevelId)
 		{
 			m_settings.SetLaunchStartupLevel(effectiveLevelId);
 		}
@@ -191,7 +199,7 @@ namespace SparkleLauncher
 		const LauncherLevelUiModel model = BuildLevelUiModel();
 		for (const LauncherStartupLevelUiEntry& option : model.StartupLevels)
 		{
-			if (option.Synced && option.Ready)
+			if (option.Ready)
 			{
 				options.push_back({option.DisplayName, option.Id});
 			}
@@ -225,6 +233,6 @@ namespace SparkleLauncher
 		{
 			return selectedLevel;
 		}
-		return options.empty() ? QStringLiteral("project default") : options.front().first;
+		return options.empty() ? QStringLiteral("Built-in Empty") : options.front().first;
 	}
 }

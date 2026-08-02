@@ -11,23 +11,7 @@
 
 static const auto g_levelSessionLogger = Logging::GetOrCreateLogger("GameFramework.LevelSession");
 
-class StartupLevelSelection final
-{
-  public:
-	static std::string ResolveRequestedStartupLevelName() noexcept
-	{
-		std::string requestedLevelName;
-		return Environment::TryGetVariable("SPARKLE_STARTUP_LEVEL", requestedLevelName) && !requestedLevelName.empty()
-		           ? requestedLevelName
-		           : std::string{};
-	}
-
-};
-
-LevelSession::LevelSession(
-    GameWorld& world,
-    TaskExecutor& taskExecutor,
-    TaskScope& applicationScope) :
+LevelSession::LevelSession(GameWorld& world, TaskExecutor& taskExecutor, TaskScope& applicationScope) :
     m_gameWorld(&world),
     m_levelRegistry(std::make_unique<LevelRegistry>()),
     m_loadExecutor(std::make_unique<Assets::SceneLoadExecutor>(taskExecutor, applicationScope))
@@ -39,23 +23,37 @@ LevelSession::~LevelSession() noexcept = default;
 
 void LevelSession::InitializeStartupLevel() noexcept
 {
-	const std::string requestedName = StartupLevelSelection::ResolveRequestedStartupLevelName();
+	std::string requestedName;
+	Environment::TryGetVariable("SPARKLE_STARTUP_LEVEL", requestedName);
 	const std::string_view startupName = requestedName.empty() ? m_levelRegistry->GetDefaultLevelName() : std::string_view(requestedName);
 	LevelAsset* startupLevel = m_levelRegistry->FindLevel(startupName);
+	if (!startupLevel && !requestedName.empty())
+	{
+		SPDLOG_LOGGER_WARN(
+		    g_levelSessionLogger,
+		    "Requested startup level '{}' is not registered; using '{}'.",
+		    requestedName,
+		    std::string(m_levelRegistry->GetDefaultLevelName()));
+		startupLevel = m_levelRegistry->FindLevel(m_levelRegistry->GetDefaultLevelName());
+	}
 	if (!startupLevel)
 	{
-		SPDLOG_LOGGER_WARN(g_levelSessionLogger, "No registered startup level could be resolved for '{}'.", std::string(startupName));
 		return;
 	}
 	m_pendingLevelChange = startupLevel;
 }
 
-std::vector<std::string> LevelSession::GetRegisteredLevelNames() const { return m_levelRegistry->GetLevelNames(); }
+std::vector<std::string> LevelSession::GetRegisteredLevelNames() const
+{
+	return m_levelRegistry->GetLevelNames();
+}
 
 void LevelSession::RequestLevelChange(std::string_view requestedLevelName) noexcept
 {
 	if (requestedLevelName.empty())
+	{
 		return;
+	}
 	LevelAsset* requestedLevel = m_levelRegistry->FindLevel(requestedLevelName);
 	if (!requestedLevel)
 	{
@@ -63,9 +61,13 @@ void LevelSession::RequestLevelChange(std::string_view requestedLevelName) noexc
 		return;
 	}
 	if (!m_levelChangeInProgress && m_activeLevel == requestedLevel)
+	{
 		return;
+	}
 	if (m_pendingLevelChange == requestedLevel || (m_levelChangeInProgress && m_loadingLevel == requestedLevel))
+	{
 		return;
+	}
 	m_pendingLevelChange = requestedLevel;
 }
 
@@ -76,7 +78,9 @@ void LevelSession::ProcessPendingLevelChange() noexcept
 		m_loadExecutor->Cancel();
 		CompleteLevelChange();
 		if (m_levelChangeInProgress)
+		{
 			return;
+		}
 	}
 	if (m_pendingLevelChange)
 	{
@@ -107,11 +111,7 @@ void LevelSession::StartLevelChange(LevelAsset& requestedLevel) noexcept
 
 	try
 	{
-		m_loadExecutor->Start(
-		    requestId,
-		    m_gameWorld->GetGeneration(),
-		    m_documentGeneration,
-		    requestedLevel.BuildDescription());
+		m_loadExecutor->Start(requestId, m_gameWorld->GetGeneration(), m_documentGeneration, requestedLevel.BuildDescription());
 	}
 	catch (const Diagnostics::Error& error)
 	{
@@ -126,7 +126,9 @@ void LevelSession::CompleteLevelChange() noexcept
 {
 	std::optional<Assets::SceneLoadCompletion> completion = m_loadExecutor->ConsumeSettled();
 	if (!completion)
+	{
 		return;
+	}
 
 	if (completion->RequestId != m_latestRequestId)
 	{
@@ -144,7 +146,9 @@ void LevelSession::CompleteLevelChange() noexcept
 		m_lastLoadDiagnostic = std::move(completion->Diagnostic);
 		m_levelChangeInProgress = false;
 		if (completion->Stage != LevelLoadOperationStage::Cancelled)
+		{
 			m_levelChangeEvents.OnLevelLoadFailed.Broadcast(loadedLevel->GetName());
+		}
 		return;
 	}
 
@@ -153,9 +157,8 @@ void LevelSession::CompleteLevelChange() noexcept
 		Diagnostics::Fatal(g_levelSessionLogger, __FILE__, __LINE__, "Ready scene-load completion has no package.");
 	}
 	Assets::SceneLoadPackage& package = *completion->Package;
-	const bool stale = package.WorldGeneration != m_gameWorld->GetGeneration() ||
-	                   package.DocumentGeneration != m_documentGeneration ||
-	                   package.CatalogGeneration != m_loadExecutor->GetCatalogGeneration();
+	const bool stale = package.WorldGeneration != m_gameWorld->GetGeneration() || package.DocumentGeneration != m_documentGeneration
+	    || package.CatalogGeneration != m_loadExecutor->GetCatalogGeneration();
 	if (stale)
 	{
 		m_lastLoadDiagnostic = "Scene load package was rejected because an owner generation changed.";
@@ -173,7 +176,9 @@ void LevelSession::CompleteLevelChange() noexcept
 	willUnloadArgs.requestedLevelName = loadedLevelName;
 	m_levelChangeEvents.OnLevelWillUnload.Broadcast(willUnloadArgs);
 	if (!previousLevelName.empty())
+	{
 		m_levelChangeEvents.OnLevelUnloaded.Broadcast(previousLevelName);
+	}
 	m_gameWorld->FinalizeSceneLoadCommit();
 	m_activeLevel = loadedLevel;
 	LevelChangedEventArgs changedArgs;
@@ -192,7 +197,9 @@ LevelLoadOperationProgress LevelSession::GetLoadProgress() const noexcept
 bool LevelSession::SaveActiveLevel() noexcept
 {
 	if (!m_activeLevel || m_levelChangeInProgress)
+	{
 		return false;
+	}
 	CaptureSceneToLevel();
 	try
 	{
@@ -209,12 +216,17 @@ bool LevelSession::SaveActiveLevel() noexcept
 void LevelSession::CaptureSceneToLevel() noexcept
 {
 	if (!m_activeLevel || !m_gameWorld)
+	{
 		return;
+	}
 	LevelDesc desc = m_activeLevel->BuildDescription();
 	const WorldReadView view = m_gameWorld->AcquireReadView();
 	desc.lights.clear();
 	desc.lights.reserve(view.GetLights().size());
-	for (const WorldLightReadData& light : view.GetLights()) desc.lights.push_back(light.Description);
+	for (const WorldLightReadData& light : view.GetLights())
+	{
+		desc.lights.push_back(light.Description);
+	}
 	desc.sky = view.GetSkyEnvironment() ? std::optional<SceneSkyDesc>(view.GetSkyEnvironment()->Description) : std::nullopt;
 	for (const WorldCameraReadData& camera : view.GetCameras())
 	{

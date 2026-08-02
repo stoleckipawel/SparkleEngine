@@ -13,4 +13,7 @@ namespace SparkleLauncher
 	};
 
 	std::vector<BuildWorkspaceProcessStep> BuildProcessStepsForPlan(const BuildWorkspaceOperationPlan& plan);
+	bool BuildWorkspaceExecutionPlanMatches(
+	    const BuildWorkspaceOperationPlan& plan,
+	    const std::vector<BuildWorkspaceProcessStep>& processSteps);
 }

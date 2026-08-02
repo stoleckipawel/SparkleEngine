@@ -3,41 +3,40 @@
 namespace SparkleLauncher
 {
 
-		LauncherOperationUiModel MakeOperationUiModel(
-		    const QString& operationId,
-		    const QString& displayName,
-		    const QString& primaryVerb,
-		    LauncherWorkflowPageKind pageKind,
-		    LauncherActionImpactKind impactKind,
-		    const QString& impactText,
-		    const QString& visualTitle,
-		    const QString& visualText,
-		    const QString& visualAssetName)
-		{
-			LauncherOperationUiModel model;
-			model.OperationId = operationId;
-			model.DisplayName = displayName;
-			model.PrimaryVerb = primaryVerb;
-			model.PageKind = pageKind;
-			model.ImpactKind = impactKind;
-			model.ImpactText = impactText;
-			model.VisualTitle = visualTitle;
-			model.VisualText = visualText;
-			model.VisualAssetName = visualAssetName;
-			return model;
-		}
+	LauncherOperationUiModel MakeOperationUiModel(
+	    const QString& operationId,
+	    const QString& displayName,
+	    const QString& primaryVerb,
+	    LauncherWorkflowPageKind pageKind,
+	    LauncherActionImpactKind impactKind,
+	    const QString& impactText,
+	    const QString& visualTitle,
+	    const QString& visualText,
+	    const QString& visualAssetName)
+	{
+		LauncherOperationUiModel model;
+		model.OperationId = operationId;
+		model.DisplayName = displayName;
+		model.PrimaryVerb = primaryVerb;
+		model.PageKind = pageKind;
+		model.ImpactKind = impactKind;
+		model.ImpactText = impactText;
+		model.VisualTitle = visualTitle;
+		model.VisualText = visualText;
+		model.VisualAssetName = visualAssetName;
+		return model;
+	}
 
-		LauncherOperationUiModel UnknownOperationUiModel(const QString& operationId)
-		{
-			LauncherOperationUiModel model;
-			model.OperationId = operationId;
-			model.PrimaryVerb = "Run";
-			model.VisualTitle = "Workflow";
-			model.VisualText = "Context artwork is informational; the primary action remains in the workflow controls below.";
-			model.VisualAssetName = "workflow-fallback-tools.png";
-			return model;
-		}
-
+	LauncherOperationUiModel UnknownOperationUiModel(const QString& operationId)
+	{
+		LauncherOperationUiModel model;
+		model.OperationId = operationId;
+		model.PrimaryVerb = "Run";
+		model.VisualTitle = "Workflow";
+		model.VisualText = "Context artwork is informational; the primary action remains in the workflow controls below.";
+		model.VisualAssetName = "workflow-fallback-tools.png";
+		return model;
+	}
 
 	LauncherOperationUiModel LauncherUiModelForOperation(const QString& operationId)
 	{
@@ -51,7 +50,8 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::None,
 			    {},
 			    "Explore Project",
-			    "Choose Editor or Runtime below. Products use the header startup level and launch from local source artifacts when available.",
+			    "Choose Editor or Runtime below. Products use the header startup level and launch from local source artifacts when "
+			    "available.",
 			    "workflow-home-quickstart.png");
 		}
 		if (operationId == "project.open.editor")
@@ -110,11 +110,12 @@ namespace SparkleLauncher
 		{
 			return MakeOperationUiModel(
 			    operationId,
-			    "Prepare Workspace",
+			    "Sync Code",
 			    "Sync",
 			    LauncherWorkflowPageKind::Sync,
 			    LauncherActionImpactKind::SourceDependencies,
-			    "Downloads and repairs enabled repository dependencies, then refreshes workspace configure state; it does not install host tools.",
+			    "Downloads and repairs enabled repository dependencies, then refreshes workspace configure state; it does not install host "
+			    "tools.",
 			    "Workspace setup",
 			    "Fetch the repository packages needed for local builds, content tools, and optional renderer integrations.",
 			    "workflow-source-sync.png");
@@ -144,6 +145,33 @@ namespace SparkleLauncher
 			    "Build outputs",
 			    "Refreshes workspace files, then creates local artifacts that can replace packaged binaries during daily development.",
 			    "workflow-build-all.png");
+		}
+		if (operationId == "project.sync-levels")
+		{
+			return MakeOperationUiModel(
+			    operationId,
+			    "Sync Levels",
+			    "Sync",
+			    LauncherWorkflowPageKind::Sync,
+			    LauncherActionImpactKind::ProjectAssets,
+			    "Project levels: syncs or cleans maps and their asset packs without changing code or SDK dependencies.",
+			    "Levels and assets",
+			    "Sync individual levels or the full catalog from declared publisher sources.",
+			    "workflow-cook-assets.png");
+		}
+		if (operationId == "workspace.sync-all")
+		{
+			return MakeOperationUiModel(
+			    operationId,
+			    "Sync All",
+			    "Sync",
+			    LauncherWorkflowPageKind::Sync,
+			    LauncherActionImpactKind::RepositoryAndProjectInputs,
+			    "Full sync: repairs code and SDK dependencies, refreshes configure state, and acquires every downloadable project asset "
+			    "pack.",
+			    "Full repository sync",
+			    "Prepares the base code workspace and all supported downloadable content through one shared sync plan.",
+			    "workflow-source-sync.png");
 		}
 		if (operationId == "launcher.build.self")
 		{
@@ -192,7 +220,7 @@ namespace SparkleLauncher
 			    "Build",
 			    LauncherWorkflowPageKind::Build,
 			    LauncherActionImpactKind::BuildOutputs,
-			    "Build outputs: prepares local cook tools for optional content refresh workflows.",
+			    "Build outputs: prepares local cook tools for asset refresh workflows.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
 			    "workflow-cook-tools.png");
@@ -207,7 +235,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes all generated project content.",
 			    "Content outputs",
-			    "Refreshes cooked content for synced catalog levels.",
+			    "Refreshes cooked content for selected catalog levels.",
 			    "workflow-cook-all.png");
 		}
 		if (operationId == "cook.shaders")
@@ -220,7 +248,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes generated shader content.",
 			    "Content outputs",
-			    "Refreshes cooked shader outputs for synced catalog levels.",
+			    "Refreshes cooked shader outputs for selected catalog levels.",
 			    "workflow-cook-shaders.png");
 		}
 		if (operationId == "cook.textures")
@@ -233,7 +261,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes generated texture content.",
 			    "Content outputs",
-			    "Refreshes cooked texture outputs for synced catalog levels.",
+			    "Refreshes cooked texture outputs for selected catalog levels.",
 			    "workflow-cook-textures.png");
 		}
 		if (operationId == "cook.assets")
@@ -246,7 +274,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes generated scene content.",
 			    "Content outputs",
-			    "Refreshes cooked scene outputs for synced catalog levels.",
+			    "Refreshes cooked scene outputs for selected catalog levels.",
 			    "workflow-cook-assets.png");
 		}
 		if (operationId == "package.release")
@@ -257,9 +285,11 @@ namespace SparkleLauncher
 			    "Assemble",
 			    LauncherWorkflowPageKind::Package,
 			    LauncherActionImpactKind::PackageOutputs,
-			    "Package outputs: assembles runtime and symbols packages from artifacts into dist/releases/<version>; publishing and release sign-off stay separate.",
+			    "Package outputs: assembles runtime and symbols packages from artifacts into dist/releases/<version>; publishing and "
+			    "release sign-off stay separate.",
 			    "Release assembly",
-			    "Stages runtime app components, cooked shader packages, and separate symbols output; publishing remains a separate sign-off.",
+			    "Stages runtime app components, cooked shader packages, and separate symbols output; publishing remains a separate "
+			    "sign-off.",
 			    "workflow-package-release.png");
 		}
 		if (operationId == "workspace.clean")
@@ -299,7 +329,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes generated project content.",
 			    "Content outputs",
-			    "Refreshes cooked content for synced catalog levels.",
+			    "Refreshes cooked content for selected catalog levels.",
 			    "workflow-cook-generic.png");
 		}
 
@@ -310,22 +340,22 @@ namespace SparkleLauncher
 	{
 		switch (pageKind)
 		{
-		case LauncherWorkflowPageKind::Home:
-			return "Quick Start";
-		case LauncherWorkflowPageKind::Launch:
-			return "Launch";
-		case LauncherWorkflowPageKind::Sync:
-			return "Sync";
-		case LauncherWorkflowPageKind::Build:
-			return "Build";
-		case LauncherWorkflowPageKind::Cook:
-			return "Cook";
-		case LauncherWorkflowPageKind::Package:
-			return "Package";
-		case LauncherWorkflowPageKind::Clean:
-			return "Clean";
-		case LauncherWorkflowPageKind::Unknown:
-			return "Unknown";
+			case LauncherWorkflowPageKind::Home:
+				return "Quick Start";
+			case LauncherWorkflowPageKind::Launch:
+				return "Launch";
+			case LauncherWorkflowPageKind::Sync:
+				return "Sync";
+			case LauncherWorkflowPageKind::Build:
+				return "Build";
+			case LauncherWorkflowPageKind::Cook:
+				return "Cook";
+			case LauncherWorkflowPageKind::Package:
+				return "Package";
+			case LauncherWorkflowPageKind::Clean:
+				return "Clean";
+			case LauncherWorkflowPageKind::Unknown:
+				return "Unknown";
 		}
 		return "Unknown";
 	}
@@ -334,22 +364,26 @@ namespace SparkleLauncher
 	{
 		switch (impactKind)
 		{
-		case LauncherActionImpactKind::None:
-			return "None";
-		case LauncherActionImpactKind::SourceDependencies:
-			return "Source dependencies";
-		case LauncherActionImpactKind::WorkspaceFiles:
-			return "Workspace files";
-		case LauncherActionImpactKind::BuildOutputs:
-			return "Build outputs";
-		case LauncherActionImpactKind::CookedOutputs:
-			return "Cooked outputs";
-		case LauncherActionImpactKind::LaunchProcess:
-			return "Launch process";
-		case LauncherActionImpactKind::PackageOutputs:
-			return "Package outputs";
-		case LauncherActionImpactKind::GeneratedState:
-			return "Generated state";
+			case LauncherActionImpactKind::None:
+				return "None";
+			case LauncherActionImpactKind::SourceDependencies:
+				return "Source dependencies";
+			case LauncherActionImpactKind::ProjectAssets:
+				return "Project assets";
+			case LauncherActionImpactKind::RepositoryAndProjectInputs:
+				return "Repository and project inputs";
+			case LauncherActionImpactKind::WorkspaceFiles:
+				return "Workspace files";
+			case LauncherActionImpactKind::BuildOutputs:
+				return "Build outputs";
+			case LauncherActionImpactKind::CookedOutputs:
+				return "Cooked outputs";
+			case LauncherActionImpactKind::LaunchProcess:
+				return "Launch process";
+			case LauncherActionImpactKind::PackageOutputs:
+				return "Package outputs";
+			case LauncherActionImpactKind::GeneratedState:
+				return "Generated state";
 		}
 		return "Unknown";
 	}

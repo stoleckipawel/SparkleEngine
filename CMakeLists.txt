@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(Sparkle LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+enable_testing()
 
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleBuildProfiles.cmake)
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleQtDiscovery.cmake)

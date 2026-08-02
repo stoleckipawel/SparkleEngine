@@ -210,7 +210,8 @@ namespace SparkleLauncher
 		rowLayout->setContentsMargins(0, 0, 0, 0);
 		rowLayout->setSpacing(LauncherUi::HeaderContext::Spacing);
 
-		const auto applyComboMetrics = [](QComboBox& combo, int minWidth, int maxWidth) {
+		const auto applyComboMetrics = [](QComboBox& combo, int minWidth, int maxWidth)
+		{
 			combo.setMinimumWidth(minWidth);
 			combo.setMaximumWidth(maxWidth);
 			combo.setMinimumHeight(LauncherUi::HeaderContext::ComboHeight);
@@ -276,9 +277,10 @@ namespace SparkleLauncher
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
 		const bool isQuickStart = operationId == LauncherHomeOperationId();
+		const bool isLevelCatalog = operationId == "project.sync-levels";
 		scrollArea->setAlignment(isQuickStart ? Qt::AlignTop : (Qt::AlignLeft | Qt::AlignTop));
 		content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-		if (!isQuickStart)
+		if (!isQuickStart && !isLevelCatalog)
 		{
 			content->setMaximumWidth(LauncherUi::Page::MaxContentWidth);
 		}
@@ -388,9 +390,7 @@ namespace SparkleLauncher
 		edit->setMinimumHeight(LauncherUi::TextEdit::MinHeight);
 		edit->setMaximumHeight(LauncherUi::TextEdit::MaxHeight);
 		RegisterFocusable(edit);
-		connect(edit, &QTextEdit::textChanged, this, [edit, setter, this]() {
-			(m_settings.*setter)(edit->toPlainText());
-		});
+		connect(edit, &QTextEdit::textChanged, this, [edit, setter, this]() { (m_settings.*setter)(edit->toPlainText()); });
 		return edit;
 	}
 
@@ -423,9 +423,10 @@ namespace SparkleLauncher
 		}
 		const int currentIndex = combo->findData(currentValue);
 		combo->setCurrentIndex(currentIndex >= 0 ? currentIndex : 0);
-		connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [combo, setter, this]() {
-			(m_settings.*setter)(combo->currentData().toString());
-		});
+		connect(
+		    combo,
+		    static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+		    [combo, setter, this]() { (m_settings.*setter)(combo->currentData().toString()); });
 		return combo;
 	}
 

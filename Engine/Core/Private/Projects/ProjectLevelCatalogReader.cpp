@@ -3,14 +3,15 @@
 #include "Projects/ProjectLevelCatalogReader.h"
 
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <algorithm>
 #include <charconv>
-#include <cctype>
 #include <format>
 #include <fstream>
 #include <istream>
+#include <sstream>
 #include <system_error>
 #include <utility>
 
@@ -40,6 +41,14 @@ ProjectLevelCatalog ProjectLevelCatalogReader::Read(const std::filesystem::path&
 	}
 }
 
+void ProjectLevelCatalogReader::ValidateText(const std::filesystem::path& projectRoot, std::string_view text)
+{
+	std::istringstream input{std::string(text)};
+	ProjectLevelCatalogReader reader(projectRoot);
+	reader.ReadCatalog(input);
+	reader.ValidateCatalog();
+}
+
 ProjectLevelCatalogReader::ProjectLevelCatalogReader(const std::filesystem::path& projectRoot) noexcept :
     m_projectRoot(projectRoot)
 {
@@ -49,8 +58,17 @@ void ProjectLevelCatalogReader::ReadCatalog(std::istream& input)
 {
 	for (std::string line; std::getline(input, line);)
 	{
-		ParseLine(std::move(line));
+		++m_lineNumber;
+		try
+		{
+			ParseLine(std::move(line));
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			throw Diagnostics::Error(std::format("Line {}: {}", m_lineNumber, error.what()));
+		}
 	}
+	ValidateCurrentSection();
 }
 
 void ProjectLevelCatalogReader::ParseLine(std::string line)
@@ -66,10 +84,14 @@ void ProjectLevelCatalogReader::ParseLine(std::string line)
 		BeginLevel();
 		return;
 	}
-	if (line == "[OptionalPack]")
+	if (line == "[AssetPack]")
 	{
-		BeginOptionalContentPack();
+		BeginAssetPack();
 		return;
+	}
+	if (line.front() == '[' && line.back() == ']')
+	{
+		throw Diagnostics::Error(std::format("Unsupported catalog section '{}'.", line));
 	}
 
 	std::string_view key;
@@ -92,9 +114,9 @@ void ProjectLevelCatalogReader::ParseLine(std::string line)
 		ParseLevelField(key, value);
 		return;
 	}
-	if (m_section == Section::OptionalContentPack)
+	if (m_section == Section::AssetPack)
 	{
-		ParseOptionalContentPackField(key, value);
+		ParseAssetPackField(key, value);
 		return;
 	}
 	throw Diagnostics::Error("Catalog field appears outside a section.");
@@ -102,15 +124,17 @@ void ProjectLevelCatalogReader::ParseLine(std::string line)
 
 void ProjectLevelCatalogReader::BeginLevel()
 {
+	ValidateCurrentSection();
 	m_section = Section::Level;
 	m_currentLevel = &m_catalog.levels.emplace_back();
 	m_currentPack = nullptr;
 	m_sectionFields.clear();
 }
 
-void ProjectLevelCatalogReader::BeginOptionalContentPack() noexcept
+void ProjectLevelCatalogReader::BeginAssetPack()
 {
-	m_section = Section::OptionalContentPack;
+	ValidateCurrentSection();
+	m_section = Section::AssetPack;
 	m_currentLevel = nullptr;
 	m_currentPack = nullptr;
 	m_sectionFields.clear();
@@ -126,13 +150,25 @@ void ProjectLevelCatalogReader::ParseLevelField(std::string_view key, std::strin
 	{
 		m_currentLevel->displayName = Strings::UnquoteCopy(value);
 	}
+	else if (key == "Description")
+	{
+		m_currentLevel->description = Strings::UnquoteCopy(value);
+	}
 	else if (key == "Source")
 	{
 		m_currentLevel->sourcePath = ResolveProjectPath(value);
 	}
-	else if (key == "OptionalPack")
+	else if (key == "Thumbnail")
 	{
-		m_currentLevel->optionalContentPackId = Strings::UnquoteCopy(value);
+		m_currentLevel->thumbnailPath = ResolveProjectPath(value);
+	}
+	else if (key == "SourcePage")
+	{
+		m_currentLevel->sourcePageUrl = Strings::UnquoteCopy(value);
+	}
+	else if (key == "AssetPack")
+	{
+		m_currentLevel->assetPackId = Strings::UnquoteCopy(value);
 	}
 	else if (key == "Family")
 	{
@@ -142,13 +178,9 @@ void ProjectLevelCatalogReader::ParseLevelField(std::string_view key, std::strin
 	{
 		m_currentLevel->variantKind = Strings::UnquoteCopy(value);
 	}
-	else if (key == "Default")
+	else if (key == "Selected")
 	{
-		m_currentLevel->defaultIncluded = ParseBool(value);
-	}
-	else if (key == "StartupDefault")
-	{
-		m_currentLevel->startupDefault = ParseBool(value);
+		m_currentLevel->selected = ParseBool(value);
 	}
 	else
 	{
@@ -156,26 +188,26 @@ void ProjectLevelCatalogReader::ParseLevelField(std::string_view key, std::strin
 	}
 }
 
-void ProjectLevelCatalogReader::ParseOptionalContentPackField(std::string_view key, std::string_view value)
+void ProjectLevelCatalogReader::ParseAssetPackField(std::string_view key, std::string_view value)
 {
 	if (key == "Id")
 	{
 		const std::string id = Strings::UnquoteCopy(value);
 		if (id.empty())
 		{
-			throw Diagnostics::Error("Optional content pack identity is empty.");
+			throw Diagnostics::Error("Asset pack identity is empty.");
 		}
-		if (m_catalog.optionalContentPacks.contains(id))
+		if (m_catalog.assetPacks.contains(id))
 		{
-			throw Diagnostics::Error(std::format("Optional content pack identity '{}' is duplicated.", id));
+			throw Diagnostics::Error(std::format("Asset pack identity '{}' is duplicated.", id));
 		}
-		m_currentPack = &m_catalog.optionalContentPacks.emplace(id, ProjectOptionalContentPack{}).first->second;
+		m_currentPack = &m_catalog.assetPacks.emplace(id, ProjectAssetPack{}).first->second;
 		m_currentPack->id = id;
 		return;
 	}
 	if (m_currentPack == nullptr)
 	{
-		throw Diagnostics::Error("Optional content pack field appears before its identity.");
+		throw Diagnostics::Error("Asset pack field appears before its identity.");
 	}
 	if (key == "DisplayName")
 	{
@@ -217,6 +249,10 @@ void ProjectLevelCatalogReader::ParseOptionalContentPackField(std::string_view k
 	{
 		m_currentPack->archiveBytes = ParseByteCount(value);
 	}
+	else if (key == "ArchiveSha256")
+	{
+		m_currentPack->archiveSha256 = Strings::UnquoteCopy(value);
+	}
 	else if (key == "Version")
 	{
 		m_currentPack->version = Strings::UnquoteCopy(value);
@@ -233,10 +269,6 @@ void ProjectLevelCatalogReader::ParseOptionalContentPackField(std::string_view k
 	{
 		m_currentPack->downloadBlocker = Strings::UnquoteCopy(value);
 	}
-	else if (key == "Available")
-	{
-		m_currentPack->available = ParseBool(value);
-	}
 	else if (key == "External")
 	{
 		m_currentPack->external = ParseBool(value);
@@ -251,7 +283,35 @@ void ProjectLevelCatalogReader::ParseOptionalContentPackField(std::string_view k
 	}
 	else
 	{
-		throw Diagnostics::Error(std::format("Unsupported optional content pack field '{}'.", key));
+		throw Diagnostics::Error(std::format("Unsupported asset pack field '{}'.", key));
+	}
+}
+
+void ProjectLevelCatalogReader::ValidateCurrentSection() const
+{
+	const auto requireField = [this](std::string_view field)
+	{
+		if (!m_sectionFields.contains(std::string(field)))
+		{
+			throw Diagnostics::Error(std::format("Catalog section is missing required field '{}'.", field));
+		}
+	};
+
+	if (m_section == Section::Level)
+	{
+		requireField("Id");
+		requireField("Source");
+		requireField("Selected");
+	}
+	else if (m_section == Section::AssetPack)
+	{
+		requireField("Id");
+		requireField("DisplayName");
+		requireField("Root");
+		requireField("Required");
+		requireField("External");
+		requireField("DownloadSupported");
+		requireField("RuntimeSupported");
 	}
 }
 
@@ -285,12 +345,11 @@ void ProjectLevelCatalogReader::ValidateCatalog() const
 	}
 
 	std::unordered_set<std::string_view> levelIds;
-	std::size_t startupDefaultCount = 0;
 	for (const ProjectLevelCatalogEntry& level : m_catalog.levels)
 	{
-		if (level.id.empty())
+		if (!IsSafeIdentifier(level.id))
 		{
-			throw Diagnostics::Error("Catalog contains a level with no identity.");
+			throw Diagnostics::Error(std::format("Catalog level '{}' has an unsafe identity.", level.id));
 		}
 		if (level.sourcePath.empty())
 		{
@@ -300,83 +359,178 @@ void ProjectLevelCatalogReader::ValidateCatalog() const
 		{
 			throw Diagnostics::Error(std::format("Catalog level identity '{}' is duplicated.", level.id));
 		}
-		if (!level.optionalContentPackId.empty() && !m_catalog.optionalContentPacks.contains(level.optionalContentPackId))
+		if (!level.assetPackId.empty() && !m_catalog.assetPacks.contains(level.assetPackId))
 		{
-			throw Diagnostics::Error(
-			    std::format("Catalog level '{}' references unknown content pack '{}'.", level.id, level.optionalContentPackId));
+			throw Diagnostics::Error(std::format("Catalog level '{}' references unknown asset pack '{}'.", level.id, level.assetPackId));
 		}
-		startupDefaultCount += level.startupDefault ? 1u : 0u;
 	}
 
-	for (const auto& [packId, pack] : m_catalog.optionalContentPacks)
+	std::unordered_set<std::string_view> archiveNames;
+	std::vector<const ProjectAssetPack*> downloadablePacks;
+	for (const auto& [packId, pack] : m_catalog.assetPacks)
 	{
 		if (packId.empty() || pack.id != packId)
 		{
-			throw Diagnostics::Error("Catalog contains an invalid optional content pack identity.");
+			throw Diagnostics::Error("Catalog contains an invalid asset pack identity.");
 		}
-		if (!std::all_of(
-		        pack.id.begin(),
-		        pack.id.end(),
-		        [](unsigned char character) { return std::isalnum(character) != 0 || character == '-' || character == '_'; }))
+		if (!IsSafeIdentifier(pack.id))
 		{
-			throw Diagnostics::Error(std::format("Optional content pack '{}' has an unsafe identity.", pack.id));
+			throw Diagnostics::Error(std::format("Asset pack '{}' has an unsafe identity.", pack.id));
 		}
-		if (!pack.parentPackId.empty() && !m_catalog.optionalContentPacks.contains(pack.parentPackId))
+		if (pack.displayName.empty())
 		{
-			throw Diagnostics::Error(std::format("Optional content pack '{}' references unknown parent '{}'.", pack.id, pack.parentPackId));
+			throw Diagnostics::Error(std::format("Asset pack '{}' has no display name.", pack.id));
+		}
+		if (!pack.parentPackId.empty() && !m_catalog.assetPacks.contains(pack.parentPackId))
+		{
+			throw Diagnostics::Error(std::format("Asset pack '{}' references unknown parent '{}'.", pack.id, pack.parentPackId));
 		}
 		if (pack.parentPackId == pack.id)
 		{
-			throw Diagnostics::Error(std::format("Optional content pack '{}' cannot be its own parent.", pack.id));
+			throw Diagnostics::Error(std::format("Asset pack '{}' cannot be its own parent.", pack.id));
 		}
-		if (!pack.requiredRelativePath.empty()
-		    && (pack.requiredRelativePath.is_absolute() || pack.requiredRelativePath.generic_string().starts_with("..")))
+		if (pack.rootPath.empty())
 		{
-			throw Diagnostics::Error(std::format("Optional content pack '{}' has an unsafe required path.", pack.id));
+			throw Diagnostics::Error(std::format("Asset pack '{}' has no content root.", pack.id));
+		}
+		if (pack.requiredRelativePath.empty() || pack.requiredRelativePath == "." || pack.requiredRelativePath.has_root_name()
+		    || pack.requiredRelativePath.has_root_directory() || pack.requiredRelativePath.is_absolute()
+		    || pack.requiredRelativePath.generic_string().starts_with(".."))
+		{
+			throw Diagnostics::Error(std::format("Asset pack '{}' has an unsafe required path.", pack.id));
+		}
+		if (pack.downloadSupported && !pack.external)
+		{
+			throw Diagnostics::Error(std::format("Downloadable asset pack '{}' must be declared external.", pack.id));
 		}
 		if (pack.downloadSupported
-		    && (pack.sourceUrl.empty() || pack.archiveName.empty() || pack.archiveBytes == 0 || pack.extractionPath.empty()
-		        || pack.rootPath.empty() || pack.requiredRelativePath.empty()))
+		    && (pack.sourceUrl.empty() || pack.archiveName.empty() || pack.archiveBytes == 0 || pack.archiveSha256.empty()
+		        || pack.extractionPath.empty()))
 		{
-			throw Diagnostics::Error(std::format("Downloadable optional content pack '{}' has incomplete acquisition metadata.", pack.id));
+			throw Diagnostics::Error(std::format("Downloadable asset pack '{}' has incomplete acquisition metadata.", pack.id));
 		}
-		const std::filesystem::path rootRelativeToExtraction = pack.rootPath.lexically_relative(pack.extractionPath);
-		if (pack.downloadSupported && (rootRelativeToExtraction.empty() || rootRelativeToExtraction.generic_string().starts_with("..")))
+		if (pack.downloadSupported && !pack.sourceUrl.starts_with("https://"))
 		{
-			throw Diagnostics::Error(std::format("Optional content pack '{}' root must remain below its extraction root.", pack.id));
+			throw Diagnostics::Error(std::format("Downloadable asset pack '{}' must use an HTTPS source URL.", pack.id));
 		}
-		if (pack.downloadSupported && std::filesystem::path(pack.archiveName).filename() != pack.archiveName)
+		if (pack.downloadSupported && !IsSha256(pack.archiveSha256))
 		{
-			throw Diagnostics::Error(std::format("Optional content pack '{}' archive name must not contain a path.", pack.id));
+			throw Diagnostics::Error(std::format("Downloadable asset pack '{}' has an invalid SHA-256 digest.", pack.id));
 		}
-		if (!pack.downloadSupported && pack.available && !pack.downloadBlocker.empty())
+		if (!pack.runtimeSupported && pack.runtimeBlocker.empty())
 		{
-			throw Diagnostics::Error(std::format("Unavailable optional content pack '{}' cannot be selected for download.", pack.id));
+			throw Diagnostics::Error(std::format("Runtime-unsupported asset pack '{}' must declare a runtime blocker.", pack.id));
 		}
-
+		if (pack.runtimeSupported && !pack.runtimeBlocker.empty())
+		{
+			throw Diagnostics::Error(std::format("Runtime-supported asset pack '{}' declares a contradictory blocker.", pack.id));
+		}
+		if (pack.external && !pack.downloadSupported && pack.downloadBlocker.empty())
+		{
+			throw Diagnostics::Error(
+			    std::format("External asset pack '{}' without acquisition support must declare its blocker.", pack.id));
+		}
+		if (pack.downloadSupported && !pack.downloadBlocker.empty())
+		{
+			throw Diagnostics::Error(std::format("Downloadable asset pack '{}' declares a contradictory blocker.", pack.id));
+		}
+		if (pack.external && (pack.sourcePageUrl.empty() || pack.version.empty() || pack.license.empty()))
+		{
+			throw Diagnostics::Error(std::format("External asset pack '{}' has incomplete provenance metadata.", pack.id));
+		}
+		if (pack.external && !pack.sourcePageUrl.starts_with("https://"))
+		{
+			throw Diagnostics::Error(std::format("External asset pack '{}' must use an HTTPS source page URL.", pack.id));
+		}
+		if (!pack.extractionPath.empty() && !Paths::IsUnderRoot(pack.rootPath, pack.extractionPath))
+		{
+			throw Diagnostics::Error(std::format("Asset pack '{}' root must remain within its extraction root.", pack.id));
+		}
+		const std::filesystem::path archiveNamePath(pack.archiveName);
+		if (pack.downloadSupported
+		    && (archiveNamePath == "." || archiveNamePath == ".." || archiveNamePath.has_root_name() || archiveNamePath.has_root_directory()
+		        || archiveNamePath.filename() != archiveNamePath))
+		{
+			throw Diagnostics::Error(std::format("Asset pack '{}' archive name must not contain a path.", pack.id));
+		}
+		if (pack.downloadSupported && !archiveNames.insert(pack.archiveName).second)
+		{
+			throw Diagnostics::Error(std::format("Downloadable asset pack archive name '{}' is duplicated.", pack.archiveName));
+		}
+		if (pack.downloadSupported)
+		{
+			downloadablePacks.push_back(&pack);
+		}
 		std::unordered_set<std::string_view> ancestors;
-		const ProjectOptionalContentPack* ancestor = &pack;
+		const ProjectAssetPack* ancestor = &pack;
 		while (!ancestor->parentPackId.empty())
 		{
 			if (!ancestors.insert(ancestor->id).second)
 			{
-				throw Diagnostics::Error(std::format("Optional content pack '{}' has a cyclic parent chain.", pack.id));
+				throw Diagnostics::Error(std::format("Asset pack '{}' has a cyclic parent chain.", pack.id));
 			}
-			ancestor = &m_catalog.optionalContentPacks.at(ancestor->parentPackId);
+			ancestor = &m_catalog.assetPacks.at(ancestor->parentPackId);
+			if (pack.runtimeSupported && !ancestor->runtimeSupported)
+			{
+				throw Diagnostics::Error(
+				    std::format("Runtime-supported asset pack '{}' depends on runtime-unsupported parent '{}'.", pack.id, ancestor->id));
+			}
 		}
 	}
-	if (startupDefaultCount != 1u)
+
+	for (std::size_t leftIndex = 0; leftIndex < downloadablePacks.size(); ++leftIndex)
 	{
-		throw Diagnostics::Error("Catalog must identify exactly one startup default level.");
+		for (std::size_t rightIndex = leftIndex + 1; rightIndex < downloadablePacks.size(); ++rightIndex)
+		{
+			const ProjectAssetPack& left = *downloadablePacks[leftIndex];
+			const ProjectAssetPack& right = *downloadablePacks[rightIndex];
+			if (Paths::IsUnderRoot(left.extractionPath, right.extractionPath)
+			    || Paths::IsUnderRoot(right.extractionPath, left.extractionPath))
+			{
+				throw Diagnostics::Error(
+				    std::format("Downloadable asset packs '{}' and '{}' have overlapping extraction roots.", left.id, right.id));
+			}
+		}
 	}
 }
 
 std::filesystem::path ProjectLevelCatalogReader::ResolveProjectPath(std::string_view value) const
 {
 	std::filesystem::path path(Strings::UnquoteCopy(value));
+	if (path.empty())
+	{
+		return {};
+	}
 	if (path.is_relative())
 	{
 		path = m_projectRoot / path;
 	}
-	return path.lexically_normal();
+	path = path.lexically_normal();
+	if (!Paths::IsUnderRoot(path, m_projectRoot))
+	{
+		throw Diagnostics::Error(std::format("Catalog path must remain below the project root: '{}'.", path.string()));
+	}
+	return path;
+}
+
+bool ProjectLevelCatalogReader::IsSafeIdentifier(std::string_view value) noexcept
+{
+	return !value.empty()
+	    && std::all_of(
+	        value.begin(),
+	        value.end(),
+	        [](unsigned char character)
+	        {
+		        return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z')
+		            || (character >= '0' && character <= '9') || character == '-' || character == '_';
+	        });
+}
+
+bool ProjectLevelCatalogReader::IsSha256(std::string_view value) noexcept
+{
+	return value.size() == 64
+	    && std::all_of(
+	        value.begin(),
+	        value.end(),
+	        [](unsigned char character) { return (character >= '0' && character <= '9') || (character >= 'a' && character <= 'f'); });
 }

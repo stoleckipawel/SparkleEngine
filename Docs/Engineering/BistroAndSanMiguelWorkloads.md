@@ -16,13 +16,13 @@ The desired outcome is:
 
 > Sparkle loads the complete Bistro exterior and interior through a documented content path, renders its declared material classes and lighting correctly, sustains a predeclared interactive budget on named hardware, diagnoses its limiting CPU/GPU/memory behavior, and exposes the result through a short demo plus reproducible specialist evidence.
 
-Current Sponza remains the fast startup, smoke, and regression workload. A Sponza-only result cannot close a Bistro gate or prove flagship readiness.
+Current Sponza remains the fast smoke and regression workload. A Sponza-only result cannot close a Bistro gate or prove flagship readiness.
 
 The intentional user-facing scene set is:
 
 | Tier | Scene | Product role |
 | --- | --- | --- |
-| Tier 0 | Sponza | Fast startup, smoke, CI, and short regression loop. |
+| Tier 0 | Sponza | Fast smoke, CI, and short regression loop. |
 | Tier 1 primary | Bistro exterior and interior | Flagship material, lighting, scale, streaming/residency, paired-API, ray-tracing, performance, and publication workload. |
 | Tier 1 secondary | San Miguel 2.0 | Supported beautiful interior/courtyard workload for difficult indirect light, visibility, texture pressure, path-tracing convergence, and cross-scene generalization. |
 
@@ -63,10 +63,10 @@ Bistro is one recognizable content family, but the official archive intentionall
 | Source scene | Meaning | Sparkle use |
 | --- | --- | --- |
 | `BistroExterior` | Complete street/building exterior. | Primary scale, outdoor-lighting, foliage, visibility, streaming, and exterior hero workload. |
-| `BistroInterior` | Original interior scene. | Baseline interior geometry/material/reference variant. |
-| `BistroInterior_Wine` | Modified version of the original interior with filled wine glasses and additional material parameters in the accompanying scene description. | Preferred difficult-material interior variant and interior hero candidate; it replaces rather than supplements `BistroInterior`. |
+| `BistroInterior` | Original interior scene retained in the publisher archive. | Source/reference baseline only; not exposed as a separate Sparkle level because the Wine revision supersedes it. |
+| `BistroInterior_Wine` | Modified version of the original interior with filled wine glasses and additional material parameters in the accompanying scene description. | Complete exposed interior workload and preferred difficult-material hero; it replaces rather than supplements `BistroInterior`. |
 
-These are not currently proven to be spatially aligned pieces of one seamless Sparkle world. Preserve them as variants in one `Bistro` family and benchmark them separately. Add a combined `BistroFull` level only after asset inspection proves compatible coordinates, scale, overlap, entrances, lighting, and acceptable duplicate content. Do not manually force them together merely to claim a continuous traversal.
+The exterior and interior are not currently proven to be spatially aligned pieces of one seamless Sparkle world. Expose `BistroExterior` and `BistroInteriorWine` as the two selectable workloads in one `Bistro` family. Keep the original interior only as publisher-source evidence for validating the Wine revision. Add a combined `BistroFull` level only after asset inspection proves compatible coordinates, scale, overlap, entrances, lighting, and acceptable duplicate content. Do not manually force them together merely to claim a continuous traversal.
 
 The source README also distinguishes emissive surfaces intended for ray-traced illumination from analytic lights intended for raster rendering. The lighting configuration must prevent accidental double lighting.
 
@@ -113,7 +113,7 @@ No document may upgrade these facts into an implemented or verified Tier 1 claim
 
 ### In scope
 
-- complete Bistro exterior/original-interior/wine-interior and San Miguel high/low ingestion;
+- complete Bistro exterior/wine-interior and San Miguel high/low ingestion;
 - deterministic asset conversion/cooking with an inventory report;
 - an explicit material support and fallback matrix;
 - raster and ray/path-traced reference views;
@@ -136,7 +136,7 @@ No document may upgrade these facts into an implemented or verified Tier 1 claim
 
 ## Asset Acquisition And Provenance Contract
 
-Bistro and San Miguel remain external optional content packs.
+Bistro and San Miguel remain external asset packs.
 
 Before the first import:
 
@@ -158,15 +158,13 @@ Commit the small level/catalog/configuration records; keep the media external. T
 
 | Logical family | Stable variant ID | Pack | Meaning and default behavior |
 | --- | --- | --- | --- |
-| `Sponza` | `Sponza` | core | Required startup fallback and CI/smoke route. |
+| `Sponza` | `Sponza` | core | Repository-resident CI/smoke route; independently selectable like every other map. |
 | `Bistro` | `BistroExterior` | `Bistro` | Selectable when present; primary exterior hero and scale route. |
-| `Bistro` | `BistroInterior` | `Bistro` | Original interior baseline. |
-| `Bistro` | `BistroInteriorWine` | `Bistro` | Modified wine/material interior; preferred difficult-material and interior hero variant after validation. |
+| `Bistro` | `BistroInteriorWine` | `Bistro` | Complete modified interior with filled wine glasses; preferred difficult-material and interior hero variant after validation. |
 | `Bistro` | `BistroFull` | `Bistro` | Conditional future combined level; unavailable until spatial composition is verified. |
 | `SanMiguel` | `SanMiguelHigh` | `SanMiguel` | Same hacienda composition at high detail; default user-facing and hero/reference variant. |
 | `SanMiguel` | `SanMiguelLow` | `SanMiguel` | Same composition at reduced geometry; controlled scaling and lower-end fallback experiment. |
-| `ModernSponza` | `ModernSponza` | `ModernSponza` | Optional modern base scene; never downloaded by the default repository, build, cook, or launch path. |
-| `ModernSponza` | `ModernSponzaCurtains` | `ModernSponzaCurtains` | Base plus the Colorful Curtains add-on; presented as an add-on variant, not a standalone world. |
+| `ModernSponza` | `ModernSponza` | `ModernSponzaCurtains` | User-facing Modern Sponza base: the publisher base plus Colorful Curtains. The plain base is an internal acquisition dependency and is not exposed as a level. |
 | `ModernSponza` | `ModernSponzaCandles` | `ModernSponzaCandles` | Base plus the Emissive Candles add-on; the parent base is acquired automatically when selected. |
 | `ModernSponza` | `ModernSponzaKnight` | `ModernSponzaKnight` | Base plus the Animated Knight add-on; animation support remains subject to the normal importer/cooker gates. |
 
@@ -179,27 +177,27 @@ Target pack roots remain project-owned and predictable:
 
 When a pack is absent, the launcher/level picker should show it as unavailable with provenance/acquisition instructions; default build, cook, CI, and Sponza launch must remain usable. When present, discovery must not require source edits or a scene-specific executable.
 
-### Optional Content Sync Contract
+### Asset Pack Sync Contract
 
-All external maps are opt-in and absent from the repository by default. `Prepare Workspace` acquires only selected packages, caches the publisher archive in the per-repository user-local launcher state, validates the published archive byte count, records a SHA-256 acquisition manifest, and extracts through a transactional staging directory into gitignored project content roots. A Modern Sponza add-on selection also acquires the Modern Sponza base first.
+All external maps are absent from the repository by default. `Sync Levels` presents direct Sync/Clean actions for each level plus Sync All/Clean All actions for the catalog. Sync acquires only the packages referenced by active levels, while the repository-wide `Sync All` workflow acquires every downloadable package and excludes disabled future packs. Both workflows cache the publisher archive in the per-repository user-local launcher state, validate its published byte count and catalog-pinned SHA-256 before extraction, and transactionally publish the extracted content together with its provenance manifest into gitignored project content roots. Every Modern Sponza sync acquires the publisher base and Colorful Curtains first; later add-ons layer on that user-facing baseline.
 
 The launcher must distinguish `ready`, `selected`, `source ready`, and `future` states. A source archive being present does not make a workload runtime-supported. Unsupported packages remain visible with their official source page and exact blocker, but their download control is disabled and they cannot enter the sync plan.
 
-| Optional package | Launcher state | Runtime/use contract |
+| Asset pack | Launcher state | Runtime/use contract |
 | --- | --- | --- |
-| Bistro | Opt-in download | Direct FBX source route; exterior, original interior, and wine interior level records are available after acquisition and cook. |
+| Bistro | Opt-in download | Direct FBX source route; exterior and the superseding wine-interior level records are available after acquisition and cook. |
 | San Miguel 2.0 | Opt-in source download | The high/low level records remain non-selectable until the deterministic OBJ/MTL/PNG-to-glTF route is implemented and verified. |
-| Modern Sponza base | Opt-in download | glTF base route and parent of every Sponza add-on. |
-| Colorful Curtains | Opt-in add-on download | Supported as a Modern Sponza add-on variant. |
-| Emissive Candles | Opt-in add-on download | Supported as a Modern Sponza add-on variant; light-import losses must remain explicit. |
-| Animated Knight | Opt-in add-on download | Supported as a Modern Sponza add-on variant through the FBX animation route. |
+| Modern Sponza publisher base | Internal dependency | Plain glTF source archive; acquired transitively and never exposed as its own level. |
+| Modern Sponza | Opt-in download | Publisher base plus Colorful Curtains; the single user-facing base map. |
+| Emissive Candles | Opt-in add-on download | Layered on the base-plus-curtains composition; light-import losses must remain explicit. |
+| Animated Knight | Opt-in add-on download | Layered on the base-plus-curtains composition through the FBX animation route. |
 | Ivy | Visible, disabled, never downloaded | Future geometric-foliage density, residency, and scaling work. |
 | Trees | Visible, disabled, never downloaded | Future alpha-card foliage and transparency work. |
 | Flood | Visible, disabled, never downloaded | Future Alembic animation, water shading, and sequence playback work. |
 | Volumetric Explosion | Visible, disabled, never downloaded | Future OpenVDB import, volume rendering, and volume-sequence streaming work. |
 | Jungle Ruins | Opt-in source download | Source acquisition is supported now. Runtime selection remains blocked until USD composition plus virtualized or out-of-core geometry is an explicit implemented program. |
 
-The catalog contains the official source/download URL, landing page, archive name, expected bytes, publisher version, license summary, extraction root, required payload path, parent relationship, and support blocker. The license embedded in each downloaded archive remains authoritative.
+The catalog contains the official source/download URL, landing page, archive name, expected bytes, publisher version, license summary, extraction root, required payload path, parent relationship, and support blocker. Every enabled download also pins the expected SHA-256; disabled future packs do not claim an unverified digest. The license embedded in each downloaded archive remains authoritative.
 
 ### Current integration evidence (2026-08-02)
 
@@ -207,13 +205,13 @@ This is an integration smoke record, not a quality, fidelity, or performance-gat
 
 | Workload | Acquisition/cook evidence | Launch evidence | Honest status and remaining gaps |
 | --- | --- | --- | --- |
-| Built-in seven-level set | The combined scene stage passed; all 163 referenced textures cooked. | Every built-in level remained responsive in a six-second per-level sweep; working set was 697–700 MiB and private memory was 4.07–4.28 GiB. | Startup/cook preservation passed. This is not a frame-time or image-quality result. |
-| Bistro exterior, interior, and wine interior | NVIDIA archive byte count matched `894377473`; SHA-256 `0d50e3c724c6c5da19f8eb99ad3f53e36fec37ffa2df9621f9ccf0603f3934e1`. The isolated scene stage and 408-texture stage passed. | All three variants remained responsive for 12 seconds in the combined registry; working set was 697–702 MiB and private memory was 4.03–4.05 GiB. | Usable as opt-in levels. Legacy FBX specular-color and separate opacity maps currently use declared scalar/material fallbacks; camera/light intent and transparent-material fidelity remain unproven. |
-| Modern Sponza base | Intel archive byte count matched `3987608266`; SHA-256 `b8bb853884ab1566b3beb35666bd09882a4e0dc16661e4684e103792cf0229b9`. The isolated scene stage and 104-texture stage passed. | Remained responsive for 12 seconds in the combined registry at about 697 MiB working set and 4.03 GiB private memory. | Usable as an opt-in level. Secondary UV sets and normal-strength scalars are accepted but not represented by the current material runtime; malformed authored tangents may be regenerated. |
-| Colorful Curtains | Intel archive byte count matched `786898766`; SHA-256 `3ba96e967c8f5ad0a133309cedb342e3563f9cccb42d04e188f55c0f2125bb65`. Base-plus-add-on scene cook and 114-texture stage passed. | Remained responsive for 12 seconds at about 699 MiB working set and 4.03 GiB private memory. | Usable as a Modern Sponza add-on variant, not a standalone world. Transparency and reference-image fidelity remain open gates. |
+| Historical built-in seven-level set | The pre-cleanup combined scene stage passed; all 163 referenced textures cooked. | Every then-present built-in level remained responsive in a six-second per-level sweep; working set was 697–700 MiB and private memory was 4.07–4.28 GiB. | This evidence predates removal of the duplicate `SponzaPtlas` level. The current six repository-resident maps build and cook, but this row is not a replacement launch sweep or a frame-time/image-quality result. |
+| Bistro source archive | NVIDIA archive byte count matched `894377473`; SHA-256 `0d50e3c724c6c5da19f8eb99ad3f53e36fec37ffa2df9621f9ccf0603f3934e1`. The isolated scene stage and 408-texture stage passed. | Exterior, original interior, and Wine interior all remained responsive for 12 seconds in the historical combined-registry validation; working set was 697–702 MiB and private memory was 4.03–4.05 GiB. | The product now exposes only Exterior and the superseding Wine interior. Legacy FBX specular-color and separate opacity maps currently use declared scalar/material fallbacks; camera/light intent and transparent-material fidelity remain unproven. |
+| Modern Sponza publisher base | Intel archive byte count matched `3987608266`; SHA-256 `b8bb853884ab1566b3beb35666bd09882a4e0dc16661e4684e103792cf0229b9`. The isolated scene stage and 104-texture stage passed. | Remained responsive for 12 seconds in the historical combined registry at about 697 MiB working set and 4.03 GiB private memory. | Retained as an internal source dependency, not a selectable level. Secondary UV sets and normal-strength scalars are accepted but not represented by the current material runtime; malformed authored tangents may be regenerated. |
+| Modern Sponza | Intel Curtains archive byte count matched `786898766`; SHA-256 `3ba96e967c8f5ad0a133309cedb342e3563f9cccb42d04e188f55c0f2125bb65`. Base-plus-curtains scene cook and 114-texture stage passed. | Remained responsive for 12 seconds at about 699 MiB working set and 4.03 GiB private memory. | This is now the single user-facing base composition. Transparency and reference-image fidelity remain open gates. |
 | Emissive Candles | Intel archive byte count matched `3190731713`; SHA-256 `f8a43d972f377e7eb25e52fdc92faed425ad001a4516e0ecef436ff2f8663396`. Base-plus-add-on scene cook and 104-texture stage passed. | Remained responsive for 12 seconds at about 697 MiB working set and 4.03 GiB private memory. | Usable as an add-on stress level. This proves loadability, not correct source-light import, emissive-GI contribution, or acceptable frame time for the intended candle count. |
 | Animated Knight | Intel archive byte count matched `1202508298`; SHA-256 `9112d9789ab2da50c77529907833bd008e5fa602f89438a5c1e82d7d4bcde2a5`. Helper curves/points were excluded after Assimp primitive separation; renderable triangles remained strict. Mesh, skeleton, and animation products were emitted. | Remained responsive for 12 seconds at about 702 MiB working set and 4.03 GiB private memory. | Usable as an add-on level. Skeleton/animation cook and runtime loading passed; visible animation playback still needs a capture or deterministic pose/motion assertion. |
-| All supported external levels together | One combined scene cook passed and 669 textures cooked, proving coexistence and deterministic output-path uniqueness. | Bistro's three variants and all four supported Modern Sponza variants launched independently from the same registry with clean stderr. | Large startup bursts are bounded to 16 concurrent mesh preparations and 16 concurrent texture loads; pending material textures use semantic defaults until residency publishes a new binding revision. |
+| All supported external levels together | One combined scene cook passed and 669 textures cooked, proving coexistence and deterministic output-path uniqueness. | All three Bistro source scenes (including the now-unexposed original interior) and the four historical Modern Sponza source compositions launched independently from the same registry with clean stderr. | The exposed Modern Sponza family now has three levels and always includes curtains. Large startup bursts are bounded to 16 concurrent mesh preparations and 16 concurrent texture loads; pending material textures use semantic defaults until residency publishes a new binding revision. |
 | San Miguel 2.0 | Archive byte count matched `535519642`; SHA-256 `85874077735808150e679b3c71d70a37a270cb8833f4911325aa1099da3f7d4a`; required `san-miguel.obj` is present after staged acquisition. | Not launchable. | Acquisition is verified, but the scene cooker accepts only glTF, GLB, and FBX. The two level records remain non-selectable until a deterministic OBJ/MTL/PNG conversion or importer is implemented. |
 | Jungle Ruins | Archive byte count matched `4254165506`; SHA-256 `f6b44e81af0515161eb9e2a5cf6f7c24bb82beda439fb8e82c4e5ad479881bee`; required `USD/JungleRuins_Karma.usda` is present after staged acquisition. | Not launchable. | The level is visible but non-selectable. USD composition and virtualized or out-of-core geometry are still absent. |
 | Ivy, Trees, Flood, Volumetric Explosion | Not downloaded by this validation. Their publisher metadata remains cataloged. | Not launchable. | Controls remain disabled with explicit foliage-density, alpha-card/transparency, Alembic/water, and OpenVDB/volume-sequence blockers. |
@@ -224,11 +222,81 @@ After the final rebuild, Windows Application Control on this workstation began r
 
 During runtime validation the configured NVIDIA upscaler and ray-reconstruction provider could not initialize in one launch configuration. Provider initialization now reports a warning and falls back to linear upscaling or disables ray reconstruction instead of terminating the scene. This fallback keeps the showcase usable; it is not evidence that NVIDIA reconstruction passed.
 
+### Incremental Per-Level Verification Program
+
+The combined smoke record above proves coexistence only. Visual quality and measured performance are accepted one level at a time. At most one level may be `In review`; the next level does not start until the current checkpoint is marked `Accepted`, `Accepted with follow-up`, `Deferred`, or `Rejected`. This prevents one broken camera, material, or performance result from being hidden inside a bulk pass.
+
+#### Verification-code readiness audit
+
+| Capability | Current state | Required action before measured map review |
+| --- | --- | --- |
+| Asset-pack acquisition and provenance | Ready for Bistro, Modern Sponza base/add-ons, San Miguel source, and Jungle Ruins source. Archive bytes and acquisition SHA-256 are recorded. | Reuse the existing transactional sync path; never download a disabled future add-on as part of verification. |
+| Level catalog and per-map sync | Ready. The launcher exposes Sync/Clean per map and Sync All/Clean All for the catalog; one internal `Selected` state remains the active-set authority. | Snapshot and restore catalog state around every external-level checkpoint. Only the active family may be enabled for the run. |
+| glTF/GLB/FBX import and cooking | Ready for the 11 runtime-supported catalog levels, including the built-in `Empty` fallback. The cooker command is project-scoped rather than level-scoped. | Record exactly which selected level assets were required and which products were reused. Do not call a project cook an isolated map cook until a level-filtered cook request exists. |
+| Startup-level selection | Ready through `SPARKLE_STARTUP_LEVEL`. | Put the requested and actually active level names in the evidence manifest; a responsive process alone is insufficient. |
+| Deterministic camera | Partial. Every supported level has a serialized initial camera, but named verification routes and reference-image alignment are not complete. | Freeze the initial camera for the first pass. Add further named cameras only as separate, reviewable evidence routes. |
+| Level/streaming readiness | Partial. Level loading, bounded mesh preparation, and bounded texture loading exist, but automation has no single published `settled` signal. | Publish an evidence-ready state only after the requested level is active, scene generation is current, and mesh/texture preparation queues are empty. Warm-up starts after this signal. |
+| Screenshot capture | Manual path ready through `Capture Viewport` and renderer readback. Output is BMP under `Saved/Captures` with no level/config sidecar. | Add a deterministic evidence request that writes a level-named PNG or BMP plus frame/config metadata. The capture must use the rendered viewport, not a desktop screenshot. |
+| CPU frame timing | Partial. The editor displays an instantaneous ImGui delta only. | Export a post-warm-up sample window with CPU frame median and P95. Define CPU frame cost as unscaled application begin-to-begin time and record whether presentation wait is included. |
+| GPU frame timing | Partial. D3D12/Vulkan timestamp scopes and `r.Diagnostics.GpuTiming` exist, but resolved values are private and not exported. | Aggregate top-level graphics-queue timestamp scopes into GPU-active milliseconds and export median and P95 for the same sample window. Do not infer GPU milliseconds from utilization. |
+| Fixed launch resolution | Missing. The application currently starts maximized; the validation workstation produced a `5120 x 1392` client extent. A live D3D12 resize probe failed in `ResizeBuffers` with `0x80004004`. | Add a deterministic startup window/client extent and validate swap-chain creation at that extent. Do not resize during a measured run. |
+| Evidence manifest | Missing. Existing logs, captures, hashes, and memory samples are separate. | Emit one machine-readable manifest containing level, commit, profile, API, adapter/driver, CPU, resolution, renderer CVars, provider/fallback state, warm-up/sample frames, timing summary, memory summary, logs, and capture path. |
+
+The first implementation checkpoint is therefore `MAP-00 Evidence Harness`. It is not a scene-quality pass. It closes the readiness, resolution, timing-export, capture-naming, and manifest gaps above, then proves the harness on current Sponza without accepting Sponza itself.
+
+#### Per-level checkpoint stages
+
+Every supported map uses the following sequence. A checkpoint folder owns its own logs and evidence; results from a different level cannot satisfy a stage.
+
+| Stage | Required work | Exit evidence |
+| --- | --- | --- |
+| `MAP-A Scope` | Select one level ID, expected source assets, API/profile, fixed initial camera, fixed renderer settings, and any asset pack/parent. Snapshot opt-in state. | Run manifest draft and catalog snapshot. |
+| `MAP-B Acquire` | Verify required files, publisher/version/license metadata, archive bytes, and recorded SHA-256. Built-in content records `repository content` instead of fabricating an archive step. | Provenance block with every required path present. |
+| `MAP-C Cook` | Run the required cook, capture warnings/errors, verify the selected scene/mesh/material/texture products, and state which project-wide products were reused. | Cook log, selected-product inventory, deterministic hashes where available, and zero uncategorized errors. |
+| `MAP-D Load and settle` | Launch with `SPARKLE_STARTUP_LEVEL`, prove the requested level became active, wait for the evidence-ready signal, and reject device removal, fatal diagnostics, or unresolved selected assets. | Active-level identity, settled frame ID, load duration, warning/fallback list, and clean fatal-error check. |
+| `MAP-E Stabilize and measure` | Hold the frozen camera for 300 warm-up frames after readiness, then sample at least 300 frames with VSync/presentation policy recorded. | CPU median/P95 ms, GPU-active median/P95 ms, derived FPS, RAM/private memory, VRAM when available, sample count, and raw timing artifact. |
+| `MAP-F Capture and inspect` | Capture the lit viewport after the measured window. Inspect exposure, framing, geometry, transforms, materials, textures, normals/tangents, alpha, lighting, animation where applicable, and obvious temporal instability. | Level-named image, capture frame/config sidecar, and a `Pass`/`Warning`/`Fail` observation for every applicable visual category. |
+| `MAP-G Review` | Present only this map's screenshot, numbers, logs, known fallbacks, and defects. Classify each defect as content, importer/cooker, renderer, camera/lighting, performance, or harness. | User decision: `Accepted`, `Accepted with follow-up`, `Deferred`, or `Rejected`. No next-map work begins here. |
+| `MAP-H Restore` | Restore external packs and level defaults to their prior opt-in state. Preserve accepted evidence and create explicit follow-ups for warnings/failures. | Catalog diff check, evidence links, and closed checkpoint status. |
+
+The first comparison profile is `DevelopmentGame`, D3D12, the discrete NVIDIA adapter, fixed startup resolution, VSync disabled, a frozen initial camera, and recorded image-provider fallbacks. Vulkan, editor overhead, alternate cameras, ray-traced/reference modes, and image-provider comparisons are later routes; they must not be silently mixed into the first per-map number.
+
+#### One-map review order
+
+The order grows from a known architectural baseline through small material/animation tests into the large optional families. `MAP-00` must pass before `MAP-01` begins.
+
+| Checkpoint | Level | Primary purpose | Initial state |
+| --- | --- | --- | --- |
+| `MAP-00` | Evidence harness using Sponza as calibration input | Deterministic resolution, readiness, screenshot, timing export, and manifest validation. Not a Sponza acceptance result. | Next |
+| `MAP-01` | Sponza | Tier-0 architecture, material, lighting, exposure, and performance baseline. | Waiting |
+| `MAP-02` | Empty | Clear/presentation/sky/default-resource control with no scene geometry. | Waiting |
+| `MAP-03` | Damaged Helmet | Compact metallic-roughness, normal, AO, and emissive material check. | Waiting |
+| `MAP-04` | Cesium Man | Skinned mesh and animation baseline. | Waiting |
+| `MAP-05` | Diffuse Transmission Plant | Alpha/transmission/two-sided foliage-like material stress. | Waiting |
+| `MAP-06` | A Beautiful Game | Repeated meshes, material variants, instancing, and broader texture residency. | Waiting |
+| `MAP-07` | Bistro Exterior | First flagship-scale FBX scene, exterior exposure, geometry scale, and streaming stress. | Waiting |
+| `MAP-08` | Bistro Interior Wine | Complete interior visibility, exposure, material loss, dense lighting, glass, and wine-material stress. | Waiting |
+| `MAP-09` | Modern Sponza | Base-plus-curtains composition, secondary attributes, tangent fallback, transparency, and high-resolution PBR load. | Waiting |
+| `MAP-10` | Modern Sponza Emissive Candles | Curtains baseline plus emissive density, source-light loss, and lighting cost. | Waiting |
+| `MAP-11` | Modern Sponza Animated Knight | Curtains baseline plus FBX skeleton, animation playback, and motion stability. | Waiting |
+
+San Miguel High/Low and Jungle Ruins receive separate source-readiness checkpoints only after the supported sequence. They do not enter screenshot/performance review until their declared OBJ or USD runtime blockers close. Ivy, Trees, Flood, and Volumetric Explosion remain future entries and are excluded from this run.
+
+#### Evidence layout and review ledger
+
+Raw generated evidence belongs under `artifacts/validation/showcase-levels/<run-id>/<level-id>/`. An accepted checkpoint contains `manifest.json`, `cook.log`, `launch.log`, `timings.csv`, `summary.md`, and one or more level-named viewport captures. Only reviewed, intentionally selected images should be promoted into documentation; multi-gigabyte source archives and disposable raw captures remain outside version control.
+
+For each checkpoint, add one ledger row before beginning the next:
+
+| Checkpoint | Commit/run ID | Result | CPU median/P95 | GPU median/P95 | Capture | Findings/follow-ups | User decision |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `MAP-00` | Pending | Not run | Pending | Pending | Pending | Close harness gaps first. | Pending |
+
 ## Stage 1: Inventory Before Rendering
 
 The first deliverable for each Tier 1 scene is an importer/cooker inspection report, not a beauty shot. Build the reusable inspection path on Bistro, then run the same path on San Miguel without adding a scene-specific importer branch.
 
-The inventory must report for Bistro exterior, Bistro original interior, Bistro wine interior, San Miguel high detail, and San Miguel low detail separately:
+The inventory must report for Bistro exterior, Bistro wine interior, San Miguel high detail, and San Miguel low detail separately. The original Bistro interior may be inspected only as a source comparison proving what the Wine revision inherits or changes:
 
 - source files, nodes, mesh primitives, instances, vertices, indices, and triangles;
 - materials and deduplicated material variants;
@@ -461,7 +529,7 @@ The engine should not accumulate flagship scenes.
 | Workload | Distinct value | Decision for the next year |
 | --- | --- | --- |
 | Current Sponza | Small, fast, already integrated; catches startup, basic material, raster, and RT regressions. | **Keep as Tier 0.** Run frequently. Never use alone for flagship claims. |
-| Modern Sponza base/add-ons | High-resolution PBR, 4K textures, curtains, animation, alpha-card trees, emissive-light, Alembic water, VDB volumes, and multiple interchange formats. | **Support as an opt-in compatibility family without flagship status.** Base, Colorful Curtains, Emissive Candles, and Animated Knight may be acquired and used as grouped variants. Ivy, Trees, Flood, and Volumetric Explosion remain visible disabled add-ons and are never downloaded until their named technology gates close. Official sample library: [GPU Research Samples](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html). |
+| Modern Sponza base/add-ons | High-resolution PBR, 4K textures, curtains, animation, alpha-card trees, emissive-light, Alembic water, VDB volumes, and multiple interchange formats. | **Support as an opt-in compatibility family without flagship status.** The exposed Modern Sponza base always combines the publisher base with Colorful Curtains; Emissive Candles and Animated Knight layer on that composition. Ivy, Trees, Flood, and Volumetric Explosion remain visible disabled add-ons and are never downloaded until their named technology gates close. Official sample library: [GPU Research Samples](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html). |
 | San Miguel 2.0 | Iconic PBRT scene; different interior/courtyard visibility, dense detail, and indirect-light transport in a 523 MB corrected high/low OBJ/PNG package. | **Support as Tier 1 secondary.** It receives import, material, reference-quality, benchmark, deterministic-route, high/low scaling, gallery, and neural held-out gates, but Bistro remains the flagship story. Source: [McGuire Computer Graphics Archive](https://casual-effects.com/g3d/data10/index.html). |
 | Sun Temple | Recognizable detailed PBR environment with about 1.64 million published vertices in FBX/Falcor form. | **Do not add now.** It overlaps the current material/architecture scene set and has non-commercial share-alike terms. Source: [ORCA scene page](https://developer.nvidia.com/ue4-sun-temple). |
 | Emerald Square | Approximately 10.0 million triangles and city-scale geometry; useful for AS memory, culling, and streaming beyond Bistro. | **External post-Bistro benchmark only.** Its CC BY-NC-SA 3.0 terms conflict with uncomplicated future commercial bundling. Do not ship it as product content. Source: [ORCA scene page](https://developer.nvidia.com/orca/nvidia-emerald-square). |
@@ -494,7 +562,7 @@ The roadmap owns dates. This contract owns the ordered acceptance states:
 
 Bistro is complete for the six-month portfolio only when:
 
-- Bistro exterior/original-interior/wine-interior and San Miguel high/low content are reproducibly acquired, converted or imported, cooked, and launched;
+- Bistro exterior/wine-interior and San Miguel high/low content are reproducibly acquired, converted or imported, cooked, and launched;
 - each Tier 1 inventory accounts for every material and texture and classifies every loss;
 - the flagship cameras have deterministic high-sample references;
 - raster/hybrid and ray/path modes meet their declared correctness and measured performance budgets or clearly report the remaining miss;

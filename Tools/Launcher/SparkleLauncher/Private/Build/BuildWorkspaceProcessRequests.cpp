@@ -1,7 +1,7 @@
 #include "BuildWorkspaceProcessRequests.h"
 
 #include "CMakeWorkflowProcessRequests.h"
-#include "OptionalContentSyncProcessRequests.h"
+#include "AssetPackSyncProcessRequests.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
@@ -132,7 +132,7 @@ namespace SparkleLauncher
 	std::vector<BuildWorkspaceProcessStep> BuildProcessStepsForPlan(const BuildWorkspaceOperationPlan& plan)
 	{
 		std::vector<BuildWorkspaceProcessStep> steps;
-		if (!plan.Toolchain.RequiredToolsAvailable)
+		if (plan.Kind != BuildWorkspaceOperationKind::SyncLevels && !plan.Toolchain.RequiredToolsAvailable)
 		{
 			return steps;
 		}
@@ -140,11 +140,18 @@ namespace SparkleLauncher
 		switch (plan.Kind)
 		{
 			case BuildWorkspaceOperationKind::SyncSourceTiers:
-				AppendOptionalContentSyncProcessSteps(steps, plan);
 				if (BuildWorkspaceOperationRequiresConfigureStep(plan))
 				{
 					AddConfigureStep(steps, plan);
 				}
+				return steps;
+			case BuildWorkspaceOperationKind::SyncLevels:
+			case BuildWorkspaceOperationKind::SyncAll:
+				if (plan.Kind == BuildWorkspaceOperationKind::SyncAll && BuildWorkspaceOperationRequiresConfigureStep(plan))
+				{
+					AddConfigureStep(steps, plan);
+				}
+				AppendAssetPackSyncProcessSteps(steps, plan);
 				return steps;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				AddConfigureStep(steps, plan);

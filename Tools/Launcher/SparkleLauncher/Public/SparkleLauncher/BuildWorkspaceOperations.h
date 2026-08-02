@@ -94,6 +94,8 @@ namespace SparkleLauncher
 	enum class BuildWorkspaceOperationKind
 	{
 		SyncSourceTiers,
+		SyncLevels,
+		SyncAll,
 		GenerateBuildFiles,
 		OpenIde,
 		BuildAll,
@@ -161,13 +163,12 @@ namespace SparkleLauncher
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions();
 	std::optional<BuildWorkspaceOperationDefinition> FindBuildWorkspaceOperationDefinition(std::string_view operationId);
 	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde);
-	BuildFilesFreshnessStatus CheckBuildFilesFreshness(
+	BuildFilesFreshnessStatus CheckBuildFilesFreshness(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain);
+	bool UpdateBuildFilesFreshnessStamp(
 	    const std::filesystem::path& repositoryRoot,
-	    const BuildToolchainStatus& toolchain);
-	bool UpdateBuildFilesFreshnessStamp(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain, std::string& errorMessage);
-	BuildWorkspaceOperationPlan PlanBuildWorkspaceOperation(
-	    std::string_view operationId,
-	    const BuildWorkspaceOperationRequest& request);
+	    const BuildToolchainStatus& toolchain,
+	    std::string& errorMessage);
+	BuildWorkspaceOperationPlan PlanBuildWorkspaceOperation(std::string_view operationId, const BuildWorkspaceOperationRequest& request);
 	OperationRecord RunBuildWorkspaceOperationPlan(
 	    BuildWorkspaceOperationPlan plan,
 	    IProcessRunner& processRunner,

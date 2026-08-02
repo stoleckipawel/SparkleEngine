@@ -1,6 +1,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include "BuildWorkspaceProcessRequests.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/ArtifactNaming.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
@@ -60,7 +61,7 @@ namespace SparkleLauncher
 			return true;
 		}
 
-		AddReadiness(plan, "Enabled repository dependencies are incomplete. Run Prepare Workspace before local build workflows.");
+		AddReadiness(plan, "Enabled repository dependencies are incomplete. Run Sync Code before local build workflows.");
 		return false;
 	}
 
@@ -119,7 +120,7 @@ namespace SparkleLauncher
 
 	static void PopulatePlanSteps(BuildWorkspaceOperationPlan& plan, const BuildWorkspaceOperationRequest& request)
 	{
-		if (!plan.Toolchain.RequiredToolsAvailable)
+		if (plan.Kind != BuildWorkspaceOperationKind::SyncLevels && !plan.Toolchain.RequiredToolsAvailable)
 		{
 			AddReadiness(plan, "Required host prerequisites are missing or unsupported.");
 			return;
@@ -130,14 +131,11 @@ namespace SparkleLauncher
 		switch (plan.Kind)
 		{
 			case BuildWorkspaceOperationKind::SyncSourceTiers:
+			case BuildWorkspaceOperationKind::SyncAll:
 				if (!RequireConfigurePrerequisites(plan))
 				{
 					return;
 				}
-				AddPlannedEffect(
-				    plan,
-				    "Acquire selected optional project content into gitignored project roots; unselected and disabled packs remain "
-				    "untouched.");
 				if (sourceDependenciesMissing)
 				{
 					AddPlannedEffect(
@@ -150,10 +148,27 @@ namespace SparkleLauncher
 				}
 				else
 				{
+					AddPlannedEffect(plan, "Repository dependency configure is current; no configure step is required.");
+				}
+				if (plan.Kind == BuildWorkspaceOperationKind::SyncAll)
+				{
 					AddPlannedEffect(
 					    plan,
-					    "Repository dependency configure is current; optional project content is processed independently.");
+					    "Acquire every downloadable project asset pack, including supported add-ons and their parent packs; explicitly "
+					    "disabled future packs remain untouched.");
 				}
+				plan.CanRun = true;
+				return;
+			case BuildWorkspaceOperationKind::SyncLevels:
+				if (plan.Toolchain.CMakePath.empty())
+				{
+					AddReadiness(plan, "CMake is required to acquire selected project asset packs.");
+					return;
+				}
+				AddPlannedEffect(
+				    plan,
+				    "Acquire asset packs referenced by selected maps into gitignored content roots; unselected and disabled packs remain "
+				    "untouched.");
 				plan.CanRun = true;
 				return;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
@@ -354,6 +369,16 @@ namespace SparkleLauncher
 		        "Sync",
 		        std::string(ArtifactNaming::kActionSyncSourceDependencies),
 		        "Download enabled repository dependencies and refresh workspace configure state without installing host tools."},
+		    {BuildWorkspaceOperationKind::SyncLevels,
+		        "project.sync-levels",
+		        "Sync",
+		        "Sync Levels",
+		        "Select project maps and acquire their asset packs without changing code or SDK dependencies."},
+		    {BuildWorkspaceOperationKind::SyncAll,
+		        "workspace.sync-all",
+		        "Sync",
+		        "Sync All",
+		        "Sync the base repository dependencies and every downloadable project asset pack in one workflow."},
 		    {BuildWorkspaceOperationKind::GenerateBuildFiles,
 		        "workspace.generate-build-files",
 		        "Build",
@@ -448,16 +473,25 @@ namespace SparkleLauncher
 		PopulatePlanSteps(plan, request);
 		if (plan.CanRun)
 		{
-			const std::vector<BuildWorkspaceProcessStep> processSteps = BuildProcessStepsForPlan(plan);
-			for (const BuildWorkspaceProcessStep& processStep : processSteps)
+			try
 			{
-				BuildWorkspaceOperationStep step;
-				step.Id = processStep.Id;
-				step.DisplayName = processStep.DisplayName;
-				step.DisplayCommandLine = BuildDisplayCommandLine(processStep.Request.ExecutablePath, processStep.Request.Arguments);
-				step.LogPath = processStep.Request.LogPath;
-				step.UpdatesBuildFilesFreshness = processStep.UpdatesBuildFilesFreshness;
-				plan.Steps.push_back(std::move(step));
+				const std::vector<BuildWorkspaceProcessStep> processSteps = BuildProcessStepsForPlan(plan);
+				for (const BuildWorkspaceProcessStep& processStep : processSteps)
+				{
+					BuildWorkspaceOperationStep step;
+					step.Id = processStep.Id;
+					step.DisplayName = processStep.DisplayName;
+					step.DisplayCommandLine = BuildDisplayCommandLine(processStep.Request.ExecutablePath, processStep.Request.Arguments);
+					step.LogPath = processStep.Request.LogPath;
+					step.UpdatesBuildFilesFreshness = processStep.UpdatesBuildFilesFreshness;
+					plan.Steps.push_back(std::move(step));
+				}
+			}
+			catch (const Diagnostics::Error& error)
+			{
+				plan.CanRun = false;
+				plan.Steps.clear();
+				AddReadiness(plan, std::string("Project asset-pack planning failed: ") + error.what());
 			}
 		}
 

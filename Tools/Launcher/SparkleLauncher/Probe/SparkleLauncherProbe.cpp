@@ -41,8 +41,7 @@ int main(int argc, char** argv)
 		try
 		{
 			const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(project.RootPath);
-			std::cout << "    " << catalog.levels.size() << " levels, " << catalog.optionalContentPacks.size() << " optional content packs"
-			          << '\n';
+			std::cout << "    " << catalog.levels.size() << " levels, " << catalog.assetPacks.size() << " asset packs" << '\n';
 		}
 		catch (const Diagnostics::Error& error)
 		{

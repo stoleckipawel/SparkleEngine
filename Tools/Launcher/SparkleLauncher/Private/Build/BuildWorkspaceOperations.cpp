@@ -8,12 +8,12 @@ namespace SparkleLauncher
 	{
 		switch (state)
 		{
-		case ToolchainItemState::Found:
-			return "Found";
-		case ToolchainItemState::Missing:
-			return "Missing";
-		case ToolchainItemState::Warning:
-			return "Warning";
+			case ToolchainItemState::Found:
+				return "Found";
+			case ToolchainItemState::Missing:
+				return "Missing";
+			case ToolchainItemState::Warning:
+				return "Warning";
 		}
 
 		return "Unknown";
@@ -23,28 +23,28 @@ namespace SparkleLauncher
 	{
 		switch (state)
 		{
-		case BuildFilesFreshnessState::Current:
-			return "Current";
-		case BuildFilesFreshnessState::BuildDirectoryMissing:
-			return "BuildDirectoryMissing";
-		case BuildFilesFreshnessState::CMakeCacheMissing:
-			return "CMakeCacheMissing";
-		case BuildFilesFreshnessState::SolutionMissing:
-			return "SolutionMissing";
-		case BuildFilesFreshnessState::GeneratorMismatch:
-			return "GeneratorMismatch";
-		case BuildFilesFreshnessState::FeatureSetMismatch:
-			return "FeatureSetMismatch";
-		case BuildFilesFreshnessState::FreshnessStampMissing:
-			return "FreshnessStampMissing";
-		case BuildFilesFreshnessState::FreshnessStampMismatch:
-			return "FreshnessStampMismatch";
-		case BuildFilesFreshnessState::SourceListChanged:
-			return "SourceListChanged";
-		case BuildFilesFreshnessState::BuildInputChanged:
-			return "BuildInputChanged";
-		case BuildFilesFreshnessState::Unsupported:
-			return "Unsupported";
+			case BuildFilesFreshnessState::Current:
+				return "Current";
+			case BuildFilesFreshnessState::BuildDirectoryMissing:
+				return "BuildDirectoryMissing";
+			case BuildFilesFreshnessState::CMakeCacheMissing:
+				return "CMakeCacheMissing";
+			case BuildFilesFreshnessState::SolutionMissing:
+				return "SolutionMissing";
+			case BuildFilesFreshnessState::GeneratorMismatch:
+				return "GeneratorMismatch";
+			case BuildFilesFreshnessState::FeatureSetMismatch:
+				return "FeatureSetMismatch";
+			case BuildFilesFreshnessState::FreshnessStampMissing:
+				return "FreshnessStampMissing";
+			case BuildFilesFreshnessState::FreshnessStampMismatch:
+				return "FreshnessStampMismatch";
+			case BuildFilesFreshnessState::SourceListChanged:
+				return "SourceListChanged";
+			case BuildFilesFreshnessState::BuildInputChanged:
+				return "BuildInputChanged";
+			case BuildFilesFreshnessState::Unsupported:
+				return "Unsupported";
 		}
 
 		return "Unknown";
@@ -73,24 +73,28 @@ namespace SparkleLauncher
 	{
 		switch (kind)
 		{
-		case BuildWorkspaceOperationKind::SyncSourceTiers:
-			return "SyncSourceTiers";
-		case BuildWorkspaceOperationKind::GenerateBuildFiles:
-			return "GenerateBuildFiles";
-		case BuildWorkspaceOperationKind::OpenIde:
-			return "OpenIde";
-		case BuildWorkspaceOperationKind::BuildAll:
-			return "BuildAll";
-		case BuildWorkspaceOperationKind::CompileLauncher:
-			return "CompileLauncher";
-		case BuildWorkspaceOperationKind::CompileEditor:
-			return "CompileEditor";
-		case BuildWorkspaceOperationKind::CompileRuntime:
-			return "CompileRuntime";
-		case BuildWorkspaceOperationKind::BuildCookTools:
-			return "BuildCookTools";
-		case BuildWorkspaceOperationKind::AssembleRelease:
-			return "AssembleRelease";
+			case BuildWorkspaceOperationKind::SyncSourceTiers:
+				return "SyncSourceTiers";
+			case BuildWorkspaceOperationKind::SyncLevels:
+				return "SyncLevels";
+			case BuildWorkspaceOperationKind::SyncAll:
+				return "SyncAll";
+			case BuildWorkspaceOperationKind::GenerateBuildFiles:
+				return "GenerateBuildFiles";
+			case BuildWorkspaceOperationKind::OpenIde:
+				return "OpenIde";
+			case BuildWorkspaceOperationKind::BuildAll:
+				return "BuildAll";
+			case BuildWorkspaceOperationKind::CompileLauncher:
+				return "CompileLauncher";
+			case BuildWorkspaceOperationKind::CompileEditor:
+				return "CompileEditor";
+			case BuildWorkspaceOperationKind::CompileRuntime:
+				return "CompileRuntime";
+			case BuildWorkspaceOperationKind::BuildCookTools:
+				return "BuildCookTools";
+			case BuildWorkspaceOperationKind::AssembleRelease:
+				return "AssembleRelease";
 		}
 
 		return "Unknown";
@@ -100,10 +104,10 @@ namespace SparkleLauncher
 	{
 		switch (ide)
 		{
-		case WorkspaceIde::VisualStudio:
-			return "VisualStudio";
-		case WorkspaceIde::Rider:
-			return "Rider";
+			case WorkspaceIde::VisualStudio:
+				return "VisualStudio";
+			case WorkspaceIde::Rider:
+				return "Rider";
 		}
 
 		return "Unknown";
@@ -113,10 +117,10 @@ namespace SparkleLauncher
 	{
 		switch (ide)
 		{
-		case WorkspaceIde::VisualStudio:
-			return "Visual Studio";
-		case WorkspaceIde::Rider:
-			return "Rider";
+			case WorkspaceIde::VisualStudio:
+				return "Visual Studio";
+			case WorkspaceIde::Rider:
+				return "Rider";
 		}
 
 		return "Unknown";
@@ -126,10 +130,10 @@ namespace SparkleLauncher
 	{
 		switch (ide)
 		{
-		case WorkspaceIde::VisualStudio:
-			return "visual-studio";
-		case WorkspaceIde::Rider:
-			return "rider";
+			case WorkspaceIde::VisualStudio:
+				return "visual-studio";
+			case WorkspaceIde::Rider:
+				return "rider";
 		}
 
 		return "unknown";
@@ -159,12 +163,15 @@ namespace SparkleLauncher
 	{
 		switch (plan.Kind)
 		{
-		case BuildWorkspaceOperationKind::SyncSourceTiers:
-			return plan.Request.ForceConfigure || !plan.Freshness.Current || HasIncompleteEnabledSourceDependencies(plan);
-		case BuildWorkspaceOperationKind::GenerateBuildFiles:
-			return true;
-		default:
-			return false;
+			case BuildWorkspaceOperationKind::SyncSourceTiers:
+			case BuildWorkspaceOperationKind::SyncAll:
+				return plan.Request.ForceConfigure || !plan.Freshness.Current || HasIncompleteEnabledSourceDependencies(plan);
+			case BuildWorkspaceOperationKind::SyncLevels:
+				return false;
+			case BuildWorkspaceOperationKind::GenerateBuildFiles:
+				return true;
+			default:
+				return false;
 		}
 	}
 }

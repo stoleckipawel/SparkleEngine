@@ -1,137 +1,150 @@
 [Level]
 Id = Empty
 DisplayName = Empty
+Description = Start with a clean scene for experiments, tools, and new content.
 Source = Levels/Empty.level
-Default = true
-
-[Level]
-Id = DamagedHelmet
-DisplayName = Damaged Helmet
-Source = Levels/DamagedHelmet.level
-Default = true
-
-[Level]
-Id = CesiumMan
-DisplayName = Cesium Man
-Source = Levels/CesiumMan.level
-Default = true
-
-[Level]
-Id = DiffuseTransmissionPlant
-DisplayName = Diffuse Transmission Plant
-Source = Levels/DiffuseTransmissionPlant.level
-Default = true
-
-[Level]
-Id = ABeautifulGame
-DisplayName = A Beautiful Game
-Source = Levels/ABeautifulGame.level
-Default = true
-
-[Level]
-Id = Sponza
-DisplayName = Sponza
-Source = Levels/Sponza.level
-Default = true
-StartupDefault = true
-
-[Level]
-Id = SponzaPtlas
-DisplayName = Sponza PTLAS
-Source = Levels/SponzaPtlas.level
-Default = true
-
-[Level]
-Id = BistroExterior
-DisplayName = Bistro Exterior
-Source = Levels/BistroExterior.level
-OptionalPack = Bistro
-Family = Bistro
-VariantKind = SceneVariant
-Default = false
-
-[Level]
-Id = BistroInterior
-DisplayName = Bistro Interior
-Source = Levels/BistroInterior.level
-OptionalPack = Bistro
-Family = Bistro
-VariantKind = SceneVariant
-Default = false
-
-[Level]
-Id = BistroInteriorWine
-DisplayName = Bistro Interior Wine
-Source = Levels/BistroInteriorWine.level
-OptionalPack = Bistro
-Family = Bistro
-VariantKind = SceneVariant
-Default = false
-
-[Level]
-Id = SanMiguelHigh
-DisplayName = San Miguel High
-Source = Levels/SanMiguelHigh.level
-OptionalPack = SanMiguel
-Family = San Miguel
-VariantKind = SceneVariant
-Default = false
-
-[Level]
-Id = SanMiguelLow
-DisplayName = San Miguel Low
-Source = Levels/SanMiguelLow.level
-OptionalPack = SanMiguel
-Family = San Miguel
-VariantKind = SceneVariant
-Default = false
-
-[Level]
-Id = JungleRuins
-DisplayName = Jungle Ruins
-Source = Levels/JungleRuins.level
-OptionalPack = JungleRuins
-Family = Jungle Ruins
-VariantKind = Base
-Default = false
+Selected = true
 
 [Level]
 Id = ModernSponza
 DisplayName = Modern Sponza
+Description = Explore Intel's modern reimagining of Sponza with its complete colorful curtain treatment.
 Source = Levels/ModernSponza.level
-OptionalPack = ModernSponza
+Thumbnail = Launcher/Thumbnails/ModernSponza.jpg
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+AssetPack = ModernSponzaCurtains
 Family = Modern Sponza
 VariantKind = Base
-Default = false
-
-[Level]
-Id = ModernSponzaCurtains
-DisplayName = Colorful Curtains
-Source = Levels/ModernSponzaCurtains.level
-OptionalPack = ModernSponzaCurtains
-Family = Modern Sponza
-VariantKind = AddOn
-Default = false
+Selected = false
 
 [Level]
 Id = ModernSponzaCandles
-DisplayName = Emissive Candles
+DisplayName = Modern Sponza: Emissive Candles
+Description = Fill Modern Sponza with thousands of emissive candles for demanding lighting tests.
 Source = Levels/ModernSponzaCandles.level
-OptionalPack = ModernSponzaCandles
+Thumbnail = Launcher/Thumbnails/ModernSponzaCandles.jpg
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+AssetPack = ModernSponzaCandles
 Family = Modern Sponza
 VariantKind = AddOn
-Default = false
+Selected = false
 
 [Level]
 Id = ModernSponzaKnight
-DisplayName = Animated Knight
+DisplayName = Modern Sponza: Animated Knight
+Description = Add an animated knight character to the Modern Sponza environment.
 Source = Levels/ModernSponzaKnight.level
-OptionalPack = ModernSponzaKnight
+Thumbnail = Launcher/Thumbnails/ModernSponzaKnight.jpg
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+AssetPack = ModernSponzaKnight
 Family = Modern Sponza
 VariantKind = AddOn
-Default = false
+Selected = false
 
-[OptionalPack]
+[Level]
+Id = JungleRuins
+DisplayName = Jungle Ruins
+Description = Discover a dense jungle temple environment authored as a large USD scene.
+Source = Levels/JungleRuins.level
+Thumbnail = Launcher/Thumbnails/JungleRuins.jpg
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+AssetPack = JungleRuins
+Selected = false
+
+[Level]
+Id = BistroExterior
+DisplayName = Bistro: Exterior
+Description = Explore NVIDIA's richly detailed outdoor Bistro environment.
+Source = Levels/BistroExterior.level
+Thumbnail = Launcher/Thumbnails/BistroExterior.jpg
+SourcePage = https://developer.nvidia.com/orca/amazon-lumberyard-bistro
+AssetPack = Bistro
+Family = Bistro
+VariantKind = Base
+Selected = false
+
+[Level]
+Id = BistroInteriorWine
+DisplayName = Bistro: Interior Wine
+Description = Explore the complete modified Bistro interior with filled wine glasses and its more demanding material set.
+Source = Levels/BistroInteriorWine.level
+Thumbnail = Launcher/Thumbnails/BistroInteriorWine.jpg
+SourcePage = https://developer.nvidia.com/orca/amazon-lumberyard-bistro
+AssetPack = Bistro
+Family = Bistro
+VariantKind = SceneVariant
+Selected = false
+
+[Level]
+Id = SanMiguelHigh
+DisplayName = San Miguel: High
+Description = Use the full-detail San Miguel environment for large-scene rendering work.
+Source = Levels/SanMiguelHigh.level
+Thumbnail = Launcher/Thumbnails/SanMiguelHigh.jpg
+SourcePage = https://casual-effects.com/g3d/data10/index.html
+AssetPack = SanMiguel
+Family = San Miguel
+VariantKind = Base
+Selected = false
+
+[Level]
+Id = SanMiguelLow
+DisplayName = San Miguel: Low
+Description = Use the lighter San Miguel scene variation for faster iteration.
+Source = Levels/SanMiguelLow.level
+Thumbnail = Launcher/Thumbnails/SanMiguelLow.jpg
+SourcePage = https://casual-effects.com/g3d/data10/index.html
+AssetPack = SanMiguel
+Family = San Miguel
+VariantKind = SceneVariant
+Selected = false
+
+[Level]
+Id = Sponza
+DisplayName = Sponza
+Description = Test lighting, materials, and rendering features in the classic Sponza atrium.
+Source = Levels/Sponza.level
+Thumbnail = Launcher/Thumbnails/Sponza.jpg
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza
+Selected = false
+
+[Level]
+Id = ABeautifulGame
+DisplayName = A Beautiful Game
+Description = Browse a stylized glTF showcase with varied materials and scene composition.
+Source = Levels/ABeautifulGame.level
+Thumbnail = Launcher/Thumbnails/ABeautifulGame.jpg
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/ABeautifulGame
+Selected = false
+
+[Level]
+Id = DamagedHelmet
+DisplayName = Damaged Helmet
+Description = Inspect a compact physically based material sample built around the glTF damaged helmet.
+Source = Levels/DamagedHelmet.level
+Thumbnail = Launcher/Thumbnails/DamagedHelmet.jpg
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet
+Selected = false
+
+[Level]
+Id = DiffuseTransmissionPlant
+DisplayName = Diffuse Transmission Plant
+Description = Study diffuse transmission and layered plant materials in a focused scene.
+Source = Levels/DiffuseTransmissionPlant.level
+Thumbnail = Launcher/Thumbnails/DiffuseTransmissionPlant.jpg
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DiffuseTransmissionPlant
+Selected = false
+
+[Level]
+Id = CesiumMan
+DisplayName = Cesium Man
+Description = Explore an animated glTF character sample with skinning and authored materials.
+Source = Levels/CesiumMan.level
+Thumbnail = Launcher/Thumbnails/CesiumMan.jpg
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan
+Selected = false
+
+[AssetPack]
 Id = Bistro
 DisplayName = Bistro
 Root = Assets/Meshes/Bistro/Bistro_v5_2
@@ -142,14 +155,14 @@ SourceUrl = https://developer.nvidia.com/bistro
 SourcePage = https://developer.nvidia.com/orca/amazon-lumberyard-bistro
 Archive = Bistro_v5_2.zip
 ArchiveBytes = 894377473
+ArchiveSha256 = 0d50e3c724c6c5da19f8eb99ad3f53e36fec37ffa2df9621f9ccf0603f3934e1
 Version = v5.2
 License = CC BY 4.0
-Available = false
 External = true
 DownloadSupported = true
 RuntimeSupported = true
 
-[OptionalPack]
+[AssetPack]
 Id = SanMiguel
 DisplayName = San Miguel 2.0
 Root = Assets/Meshes/SanMiguel
@@ -160,15 +173,15 @@ SourceUrl = https://casual-effects.com/g3d/data10/research/model/San_Miguel/San_
 SourcePage = https://casual-effects.com/g3d/data10/index.html
 Archive = San_Miguel.zip
 ArchiveBytes = 535519642
+ArchiveSha256 = 85874077735808150e679b3c71d70a37a270cb8833f4911325aa1099da3f7d4a
 Version = 2.0 (2017-07-02)
 License = CC BY 3.0
 RuntimeBlocker = Deterministic OBJ/MTL/PNG-to-glTF conversion is not implemented yet.
-Available = false
 External = true
 DownloadSupported = true
 RuntimeSupported = false
 
-[OptionalPack]
+[AssetPack]
 Id = ModernSponza
 DisplayName = Modern Sponza
 Root = Assets/Meshes/ModernSponza/Base/main_sponza
@@ -179,14 +192,14 @@ SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/830833
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
 Archive = main_sponza.zip
 ArchiveBytes = 3987608266
+ArchiveSha256 = b8bb853884ab1566b3beb35666bd09882a4e0dc16661e4684e103792cf0229b9
 Version = Intel GPU Research Samples 2025-06-16
 License = Creative Commons Attribution; verify embedded archive terms
-Available = false
 External = true
 DownloadSupported = true
 RuntimeSupported = true
 
-[OptionalPack]
+[AssetPack]
 Id = ModernSponzaCurtains
 DisplayName = Colorful Curtains
 Root = Assets/Meshes/ModernSponza/AddOns/Curtains/pkg_a_curtains
@@ -198,20 +211,20 @@ SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/726650
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
 Archive = pkg_a_curtains.zip
 ArchiveBytes = 786898766
+ArchiveSha256 = 3ba96e967c8f5ad0a133309cedb342e3563f9cccb42d04e188f55c0f2125bb65
 Version = Intel GPU Research Samples 2025-06-16
 License = Creative Commons Attribution; verify embedded archive terms
-Available = false
 External = true
 DownloadSupported = true
 RuntimeSupported = true
 
-[OptionalPack]
+[AssetPack]
 Id = ModernSponzaIvy
 DisplayName = Ivy
 Root = Assets/Meshes/ModernSponza/AddOns/Ivy/pkg_b_ivy
 ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Ivy
 Required = NewSponza_IvyGrowth_glTF.gltf
-Parent = ModernSponza
+Parent = ModernSponzaCurtains
 Kind = AddOn
 SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/726656
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
@@ -219,19 +232,19 @@ Archive = pkg_b_ivy1.zip
 ArchiveBytes = 1383921436
 Version = Intel GPU Research Samples 2025-06-16
 License = Creative Commons Attribution; verify embedded archive terms
+RuntimeBlocker = Foliage-density, residency, and geometry-scaling support are not implemented yet.
 DownloadBlocker = Future foliage-density, residency, and geometry-scaling support is required.
-Available = false
 External = true
 DownloadSupported = false
 RuntimeSupported = false
 
-[OptionalPack]
+[AssetPack]
 Id = ModernSponzaTrees
 DisplayName = Trees
 Root = Assets/Meshes/ModernSponza/AddOns/Trees/pkg_c_trees
 ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Trees
 Required = NewSponza_CypressTree_glTF.gltf
-Parent = ModernSponza
+Parent = ModernSponzaCurtains
 Kind = AddOn
 SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/726662
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
@@ -239,57 +252,57 @@ Archive = pkg_c_trees.zip
 ArchiveBytes = 951147802
 Version = Intel GPU Research Samples 2025-06-16
 License = Creative Commons Attribution; verify embedded archive terms
+RuntimeBlocker = Alpha-card foliage and transparent-material rendering are not implemented yet.
 DownloadBlocker = Future alpha-card foliage and transparency support is required.
-Available = false
 External = true
 DownloadSupported = false
 RuntimeSupported = false
 
-[OptionalPack]
+[AssetPack]
 Id = ModernSponzaCandles
 DisplayName = Emissive Candles
 Root = Assets/Meshes/ModernSponza/AddOns/Candles/pkg_d_10k_candles
 ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Candles
 Required = NewSponza_4_Combined_glTF.gltf
-Parent = ModernSponza
+Parent = ModernSponzaCurtains
 Kind = AddOn
 SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/726676
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
 Archive = pkg_d_10k_candles.zip
 ArchiveBytes = 3190731713
+ArchiveSha256 = f8a43d972f377e7eb25e52fdc92faed425ad001a4516e0ecef436ff2f8663396
 Version = Intel GPU Research Samples 2025-06-16
 License = Creative Commons Attribution; verify embedded archive terms
-Available = false
 External = true
 DownloadSupported = true
 RuntimeSupported = true
 
-[OptionalPack]
+[AssetPack]
 Id = ModernSponzaKnight
 DisplayName = Animated Knight
 Root = Assets/Meshes/ModernSponza/AddOns/Knight/pkg_e_knight_anim
 ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Knight
 Required = Exports/FBX/Knight_USD_002.fbx
-Parent = ModernSponza
+Parent = ModernSponzaCurtains
 Kind = AddOn
 SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/763175
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
 Archive = pkg_e_knight_anim.zip
 ArchiveBytes = 1202508298
+ArchiveSha256 = 9112d9789ab2da50c77529907833bd008e5fa602f89438a5c1e82d7d4bcde2a5
 Version = Intel GPU Research Samples 2025-06-16
 License = Creative Commons Attribution; verify embedded archive terms
-Available = false
 External = true
 DownloadSupported = true
 RuntimeSupported = true
 
-[OptionalPack]
+[AssetPack]
 Id = ModernSponzaFlood
 DisplayName = Flood
 Root = Assets/Meshes/ModernSponza/AddOns/Flood/pkg_f_flood
 ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Flood
 Required = abc/sponza_flood_left_final_slow_v0011.abc
-Parent = ModernSponza
+Parent = ModernSponzaCurtains
 Kind = AddOn
 SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/742225
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
@@ -297,19 +310,19 @@ Archive = pkg_f_flood1.zip
 ArchiveBytes = 2928478705
 Version = Intel GPU Research Samples 2025-06-16
 License = Creative Commons Attribution; verify embedded archive terms
+RuntimeBlocker = Alembic animation, water shading, and simulation playback are not implemented yet.
 DownloadBlocker = Future Alembic animation, water shading, and simulation playback support is required.
-Available = false
 External = true
 DownloadSupported = false
 RuntimeSupported = false
 
-[OptionalPack]
+[AssetPack]
 Id = ModernSponzaExplosion
 DisplayName = Volumetric Explosion
 Root = Assets/Meshes/ModernSponza/AddOns/Explosion/pkg_g_explosion
 ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Explosion
 Required = vdb/explosion_v0007/explosion_v0007.0001.vdb
-Parent = ModernSponza
+Parent = ModernSponzaCurtains
 Kind = AddOn
 SourceUrl = https://download.intel.com/developer-assets/PKG_G_Explosion.zip
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
@@ -317,13 +330,13 @@ Archive = PKG_G_Explosion.zip
 ArchiveBytes = 9805168555
 Version = Intel GPU Research Samples 2025-06-16
 License = Creative Commons Attribution; verify embedded archive terms
+RuntimeBlocker = OpenVDB import, volume rendering, and sequence streaming are not implemented yet.
 DownloadBlocker = Future OpenVDB import, volume rendering, and sequence streaming support is required.
-Available = false
 External = true
 DownloadSupported = false
 RuntimeSupported = false
 
-[OptionalPack]
+[AssetPack]
 Id = JungleRuins
 DisplayName = Jungle Ruins
 Root = Assets/Meshes/JungleRuins/JungleRuins
@@ -334,10 +347,10 @@ SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/844047
 SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
 Archive = JungleRuins_1_0_1b.zip
 ArchiveBytes = 4254165506
+ArchiveSha256 = f6b44e81af0515161eb9e2a5cf6f7c24bb82beda439fb8e82c4e5ad479881bee
 Version = 1.0.1b
 License = Creative Commons Attribution; verify embedded archive terms
 RuntimeBlocker = USD composition and virtualized or out-of-core geometry support are not implemented yet.
-Available = false
 External = true
 DownloadSupported = true
 RuntimeSupported = false
