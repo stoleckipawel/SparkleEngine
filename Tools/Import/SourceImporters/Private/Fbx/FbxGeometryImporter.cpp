@@ -60,6 +60,14 @@ void FbxGeometryImporter::AppendMeshInstance(
     const aiMatrix4x4& worldTransform,
     SourceImportOutput& output)
 {
+	// aiProcess_SortByPType separates publisher-authored helper curves and points
+	// from renderable geometry. They carry no triangles for Sparkle to rasterize,
+	// so omit those meshes without weakening triangle validation below.
+	if ((mesh.mPrimitiveTypes & aiPrimitiveType_TRIANGLE) == 0)
+	{
+		return;
+	}
+
 	const ImportedSkeletonIndex skeletonIndex = FbxSkinImporter::ImportSkeleton(scene, node, mesh, sourceMeshIndex, output);
 	if (mesh.HasBones() && skeletonIndex == kInvalidImportedSkeletonIndex)
 	{
@@ -115,8 +123,7 @@ ImportedMeshGeometry FbxGeometryImporter::ExtractMeshGeometry(
 {
 	if (!mesh.HasPositions())
 	{
-		throw Diagnostics::Error(
-		    std::format("FBX mesh '{}' on node '{}' has no vertex positions.", GetMeshName(mesh), GetNodeName(node)));
+		throw Diagnostics::Error(std::format("FBX mesh '{}' on node '{}' has no vertex positions.", GetMeshName(mesh), GetNodeName(node)));
 	}
 
 	if (mesh.mNumAnimMeshes > 0)
@@ -196,11 +203,12 @@ void FbxGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, ImportedMesh
 		{
 			if (face.mIndices[faceIndexOffset] >= mesh.mNumVertices)
 			{
-				throw Diagnostics::Error(std::format(
-				    "FBX face {} in mesh '{}' references unknown vertex {}.",
-				    faceIndex,
-				    GetMeshName(mesh),
-				    face.mIndices[faceIndexOffset]));
+				throw Diagnostics::Error(
+				    std::format(
+				        "FBX face {} in mesh '{}' references unknown vertex {}.",
+				        faceIndex,
+				        GetMeshName(mesh),
+				        face.mIndices[faceIndexOffset]));
 			}
 		}
 

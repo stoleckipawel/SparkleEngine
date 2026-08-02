@@ -14,7 +14,7 @@
 
 class GltfAnimationTranslation final
 {
-  public:
+public:
 	static ImportedAnimationInterpolation ToImportedInterpolation(cgltf_interpolation_type interpolation)
 	{
 		switch (interpolation)
@@ -63,10 +63,7 @@ class GltfAnimationTranslation final
 		}
 	}
 
-	static DirectX::XMFLOAT4 ReadOutputValue(
-	    const cgltf_accessor* accessor,
-	    std::size_t index,
-	    std::uint32_t componentCount)
+	static DirectX::XMFLOAT4 ReadOutputValue(const cgltf_accessor* accessor, std::size_t index, std::uint32_t componentCount)
 	{
 		if (accessor == nullptr || index >= accessor->count || componentCount == 0 || componentCount > 4)
 		{
@@ -197,8 +194,8 @@ class GltfAnimationTranslation final
 		importedSampler.interpolation = ToImportedInterpolation(sampler.interpolation);
 		const cgltf_accessor* input = sampler.input;
 		const cgltf_accessor* output = sampler.output;
-		if (input == nullptr || output == nullptr || input->count == 0 || input->type != cgltf_type_scalar ||
-		    input->component_type != cgltf_component_type_r_32f || output->component_type != cgltf_component_type_r_32f)
+		if (input == nullptr || output == nullptr || input->count == 0 || input->type != cgltf_type_scalar
+		    || input->component_type != cgltf_component_type_r_32f || output->component_type != cgltf_component_type_r_32f)
 		{
 			throw Diagnostics::Error("glTF animation sampler has incompatible input or output accessors.");
 		}
@@ -307,10 +304,10 @@ class GltfAnimationTranslation final
 		const std::uint32_t targetNodeIndex = static_cast<std::uint32_t>(cgltf_node_index(&data, channel.target_node));
 		const auto [jointSkeletonIndex, targetJointIndex] = FindSkeletonJointForNode(output, targetNodeIndex);
 		const ImportedSkeletonIndex targetSkeletonIndex = targetPath == ImportedAnimationTargetPath::Weights
-		                                                      ? FindSkeletonForSkin(output, data, channel.target_node->skin)
-		                                                      : jointSkeletonIndex;
-		if (targetSkeletonIndex == kInvalidImportedSkeletonIndex ||
-		    (targetPath != ImportedAnimationTargetPath::Weights && targetJointIndex == (std::numeric_limits<std::uint32_t>::max)()))
+		    ? FindSkeletonForSkin(output, data, channel.target_node->skin)
+		    : jointSkeletonIndex;
+		if (targetSkeletonIndex == kInvalidImportedSkeletonIndex
+		    || (targetPath != ImportedAnimationTargetPath::Weights && targetJointIndex == (std::numeric_limits<std::uint32_t>::max)()))
 		{
 			throw Diagnostics::Error(std::format("glTF animation channel {} is not owned by an imported skeleton.", channelIndex));
 		}
@@ -324,9 +321,7 @@ class GltfAnimationTranslation final
 		        clip.channels.begin(),
 		        clip.channels.end(),
 		        [targetPath, targetNodeIndex](const ImportedAnimationChannel& importedChannel)
-		        {
-			        return importedChannel.targetPath == targetPath && importedChannel.targetNodeIndex == targetNodeIndex;
-		        }))
+		        { return importedChannel.targetPath == targetPath && importedChannel.targetNodeIndex == targetNodeIndex; }))
 		{
 			throw Diagnostics::Error(std::format("glTF animation channel {} duplicates an existing target path.", channelIndex));
 		}
@@ -347,6 +342,13 @@ void GltfAnimationImporter::ImportAnimations(const cgltf_data* data, SourceImpor
 		throw Diagnostics::Error("glTF animation import has no parsed scene.");
 	}
 	if (data->animations_count == 0)
+	{
+		return;
+	}
+	// Sparkle animation clips are skeleton-owned. Preserve static scene import for
+	// glTF assets that contain only node or morph animation until a node-animation
+	// runtime exists; skeletal assets continue through strict channel validation.
+	if (output.scene.skeletons.empty())
 	{
 		return;
 	}

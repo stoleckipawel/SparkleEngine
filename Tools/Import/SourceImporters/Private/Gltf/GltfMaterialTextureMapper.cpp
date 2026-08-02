@@ -55,11 +55,7 @@ void GltfMaterialTextureMapper::AssignTextureByType(
 				SetTextureSource(
 				    importedMaterial,
 				    textureGroup,
-				    ResolveTexturePath(
-				        material.pbr_metallic_roughness.base_color_texture,
-				        materialIndex,
-				        sourceDirectory,
-				        "base-color"));
+				    ResolveTexturePath(material.pbr_metallic_roughness.base_color_texture, materialIndex, sourceDirectory, "base-color"));
 			}
 			break;
 
@@ -105,17 +101,19 @@ std::optional<std::filesystem::path> GltfMaterialTextureMapper::ResolveTexturePa
 	{
 		return std::nullopt;
 	}
-	if (textureView.texcoord != 0 || textureView.has_transform || textureView.scale != 1.0f)
+	if (textureView.texcoord != 0 || textureView.has_transform)
 	{
 		throw Diagnostics::Error(
 		    std::format("glTF material {} uses an unsupported {} texture coordinate mapping.", materialIndex, slotName));
 	}
+	// cgltf stores normal scale and occlusion strength on the shared texture-view
+	// representation. Sparkle does not persist either scalar yet; importing the
+	// referenced texture at unit strength is preferable to rejecting valid geometry.
 
 	const cgltf_texture& texture = *textureView.texture;
 	if (texture.has_basisu || texture.has_webp)
 	{
-		throw Diagnostics::Error(
-		    std::format("glTF material {} uses an unsupported {} texture encoding.", materialIndex, slotName));
+		throw Diagnostics::Error(std::format("glTF material {} uses an unsupported {} texture encoding.", materialIndex, slotName));
 	}
 
 	if (texture.image && texture.image->uri)

@@ -1,0 +1,20 @@
+[Level]
+Name = ModernSponza
+
+[Camera]
+Position = 5.39, 6.53, 0.26
+YawRadians = 4.77
+PitchRadians = -0.58
+FovYDegrees = 66.9
+NearZ = 0.1
+FarZ = 1000
+MoveSpeed = 0.01
+
+[Lighting]
+DirectionalLight0Direction = -0.44, -0.88, 0.14
+DirectionalLight0IlluminanceLux = 11.22
+DirectionalLight0Color = 1, 0.93, 0.82
+DirectionalLight0CastShadow = true
+
+[SceneAssets]
+Asset = ModernSponza/Base/main_sponza/NewSponza_Main_glTF_003

@@ -11,20 +11,19 @@
 
 class RenderControlCommandQueue final
 {
-  public:
+public:
 	explicit RenderControlCommandQueue(std::size_t capacity);
 
-	bool Push(RenderControlCommand command);
+	void WaitPush(RenderControlCommand command);
 	std::optional<RenderControlCommand> WaitPop();
 	std::vector<RenderControlCommand> Drain();
 	void Close() noexcept;
-	bool IsClosed() const noexcept;
-	std::size_t GetCapacity() const noexcept { return m_capacity; }
 
-  private:
+private:
 	const std::size_t m_capacity;
-	mutable std::mutex m_mutex;
+	std::mutex m_mutex;
 	std::condition_variable m_notEmpty;
+	std::condition_variable m_notFull;
 	std::deque<RenderControlCommand> m_commands;
 	bool m_closed = false;
 };

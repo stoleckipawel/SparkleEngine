@@ -1,13 +1,20 @@
 # Engineering
 
-Executable implementation rules and validation contracts live here.
+Status: engineering index
+
+Engineering owns binding implementation guardrails, focused technical decision records, and executable validation contracts.
 
 ## Standards
 
-- [L. SparkleEngine Integration Style Guide](Standards/IntegrationStyleGuide.md) — the coding, ownership, structure, validation, and integration contract for repository changes.
+- [Engineering Standards](Standards/README.md) — topic map and applicability.
+- [L. Integration Style Guide](Standards/IntegrationStyleGuide.md) — stable binding entry point for repository changes.
+
+## Decision Records
+
+- [Clang-Format Decision Record](ClangFormatDecisionRecord.md) — accepted formatter rationale and considered alternatives. Exact policy lives in executable configuration and [Coding Style](Standards/CodingStyle.md).
 
 ## Validation
 
-- [I. Bistro and San Miguel Acceptance Workloads](Validation/BistroAndSanMiguelWorkloads.md) — the Sponza, Bistro, and San Miguel workload ladder and its evidence gates.
+- [I. Bistro and San Miguel Acceptance Workloads](BistroAndSanMiguelWorkloads.md) — canonical scene, quality, performance, and evidence gates.
 
-Architecture rationale lives under [Architecture](../Architecture/README.md). Capability targets and roadmap decisions live under [Strategy](../Strategy/README.md).
+Architecture rationale belongs under [Architecture](../Architecture/README.md). Capability targets, assessments, and sequencing belong under [Strategy](../Strategy/README.md).

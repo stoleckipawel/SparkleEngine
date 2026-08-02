@@ -4,7 +4,7 @@ Status: execution plan
 Date: 2026-07-26
 Governing requirements: [A. Principal Graphics Engineering Requirements](Requirements.md)
 Current-state evidence: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
-Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md)
+Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md)
 
 ## Outcome
 
@@ -37,15 +37,13 @@ Do not allocate more than 10% to editor, launcher, general engine usability, con
 
 ## Non-Negotiable Constraints
 
-- One curated three-tier workload ladder: Sponza fast regression, Bistro primary, San Miguel secondary. Bistro and San Miguel remain external optional packs rather than source-depot weight.
+- Use the exact workload ladder and optional-content status owned by [I](../Engineering/BistroAndSanMiguelWorkloads.md); compatibility and source-acquisition packs do not become additional flagship stories.
 - One classical flagship and one neural flagship, not ten incomplete effects.
 - One Python evidence/analysis tool, not a tooling platform.
 - One fixed neural topology and artifact format, not a general inference framework.
 - One supported known-good hardware/driver configuration first; expand only after it is reproducible.
 - D3D12 and Vulkan are both evidence targets on Windows. Linux is a later native slice, not a current claim.
-- Every performance claim includes build, resolution, settings, hardware, driver, warm-up, sample count, statistic, and capture link.
-- Every “optimization” has a baseline, hypothesis, controlled change, result, and rejected alternative.
-- Every flagship has a fallback and a failure story.
+- Apply the [validation and performance standard](../Engineering/Standards/ValidationPerformanceAndEvidence.md) to every engineering claim and I's fallback/failure gates to every flagship result.
 - A weak experiment may be deleted and published as a negative result. Keeping it because it took time is not allowed.
 - No confidential employer code, screenshots, metrics, unreleased details, or implied ownership enter the public portfolio.
 
@@ -58,11 +56,7 @@ Do not allocate more than 10% to editor, launcher, general engine usability, con
 - Freeze new engine features.
 - Create a one-page backlog containing only tasks that advance `PGE-02`–`PGE-13`.
 - Select the primary test GPU, OS build, driver, compiler, resolution, and two rendering configurations.
-- Adopt the scene decision and exact gates in [I](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md):
-  - Sponza for startup and short regression;
-  - Bistro exterior/interior for the flagship;
-  - San Miguel 2.0 for supported cross-scene breadth and neural held-out evaluation;
-  - external-pack provenance, attribution, immutable source hashes, deterministic transformations, and no heavyweight asset commit by default.
+- Adopt the scene decision, optional-content states, and exact gates in [I](../Engineering/BistroAndSanMiguelWorkloads.md) by reference; do not restate its contract in the backlog.
 - Write the three case-study titles now:
   1. shipped performance and partner integration, public-safe;
   2. Bistro from source to path-traced, profiled output across D3D12/Vulkan, with San Miguel breadth;
@@ -72,7 +66,7 @@ Do not allocate more than 10% to editor, launcher, general engine usability, con
 
 - The backlog has at most 20 items.
 - Every item names a `PGE-*` gap and an expected evidence-level transition.
-- The backlog contains the week-2 through week-26 Bistro/San Miguel gates from I and does not add a fourth user-facing scene.
+- The backlog maps `WL-01` through `WL-08` from I to the roadmap phases without copying their definitions and does not add a fourth flagship story. Optional compatibility/source packs stay subordinate to those gates.
 - Anything unrelated is moved to “after application” or deleted.
 
 ## Phase 1 — Credibility Spine, Weeks 1–2
@@ -496,26 +490,6 @@ Subtract 0–3 for:
 - duplicates an existing engine mechanism.
 
 Do the highest positive score. Reject any task with zero evidence output.
-
-## Case-Study Template
-
-Every public case uses the same order:
-
-1. one-sentence result;
-2. problem and product constraint;
-3. personal ownership;
-4. system boundary and relevant code;
-5. baseline;
-6. hypothesis and alternatives;
-7. math/model/API design;
-8. capture and experiment method;
-9. result table with configuration;
-10. failure cases and limitations;
-11. adoption/fallback;
-12. what was simplified or deleted;
-13. source, data, video, capture, and reproduction links.
-
-The first screen contains the result, not the architecture history.
 
 ## Stop List
 

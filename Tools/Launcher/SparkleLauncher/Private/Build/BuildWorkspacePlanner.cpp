@@ -44,7 +44,8 @@ namespace SparkleLauncher
 		AddReadiness(plan, "Enabled workspace configure prerequisites are incomplete.");
 		for (const ToolchainItemStatus& item : plan.Toolchain.Items)
 		{
-			if ((item.Id == "shader-compiler-sdk" || item.Id == "vulkan-sdk") && item.State != ToolchainItemState::Found && !item.Detail.empty())
+			if ((item.Id == "shader-compiler-sdk" || item.Id == "vulkan-sdk") && item.State != ToolchainItemState::Found
+			    && !item.Detail.empty())
 			{
 				AddReadiness(plan, item.Detail);
 			}
@@ -67,10 +68,10 @@ namespace SparkleLauncher
 	{
 		switch (ide)
 		{
-		case WorkspaceIde::VisualStudio:
-			return !toolchain.VswherePath.empty();
-		case WorkspaceIde::Rider:
-			return !toolchain.RiderPath.empty();
+			case WorkspaceIde::VisualStudio:
+				return !toolchain.VswherePath.empty();
+			case WorkspaceIde::Rider:
+				return !toolchain.RiderPath.empty();
 		}
 
 		return false;
@@ -101,7 +102,9 @@ namespace SparkleLauncher
 
 	static void AddConfigureStep(BuildWorkspaceOperationPlan& plan)
 	{
-		AddPlannedEffect(plan, "Run CMake configure with generator '" + plan.Toolchain.Generator + "' for " + DisplayName(plan.Request.PreferredIde) + ".");
+		AddPlannedEffect(
+		    plan,
+		    "Run CMake configure with generator '" + plan.Toolchain.Generator + "' for " + DisplayName(plan.Request.PreferredIde) + ".");
 	}
 
 	static void AddBuildStep(BuildWorkspaceOperationPlan& plan, std::string_view profileName, const std::vector<std::string>& targets)
@@ -126,213 +129,272 @@ namespace SparkleLauncher
 		const bool needsConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
 		switch (plan.Kind)
 		{
-		case BuildWorkspaceOperationKind::SyncSourceTiers:
-			if (!RequireConfigurePrerequisites(plan))
-			{
+			case BuildWorkspaceOperationKind::SyncSourceTiers:
+				if (!RequireConfigurePrerequisites(plan))
+				{
+					return;
+				}
+				AddPlannedEffect(
+				    plan,
+				    "Acquire selected optional project content into gitignored project roots; unselected and disabled packs remain "
+				    "untouched.");
+				if (sourceDependenciesMissing)
+				{
+					AddPlannedEffect(
+					    plan,
+					    "Repair incomplete enabled source dependency caches before the next local rebuild or cook workflow.");
+				}
+				if (needsConfigure)
+				{
+					AddConfigureStep(plan);
+				}
+				else
+				{
+					AddPlannedEffect(
+					    plan,
+					    "Repository dependency configure is current; optional project content is processed independently.");
+				}
+				plan.CanRun = true;
 				return;
-			}
-			if (sourceDependenciesMissing)
-			{
-				AddPlannedEffect(plan, "Repair incomplete enabled source dependency caches before the next local rebuild or cook workflow.");
-			}
-			if (needsConfigure)
-			{
+			case BuildWorkspaceOperationKind::GenerateBuildFiles:
+				if (!RequireConfigurePrerequisites(plan))
+				{
+					return;
+				}
+				if (sourceDependenciesMissing)
+				{
+					AddPlannedEffect(
+					    plan,
+					    "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
+				}
 				AddConfigureStep(plan);
-			}
-			else
-			{
-				AddPlannedEffect(plan, "Workspace configure is current; no command step required.");
-			}
-			plan.CanRun = true;
-			return;
-		case BuildWorkspaceOperationKind::GenerateBuildFiles:
-			if (!RequireConfigurePrerequisites(plan))
-			{
+				plan.CanRun = true;
 				return;
-			}
-			if (sourceDependenciesMissing)
-			{
-				AddPlannedEffect(plan, "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
-			}
-			AddConfigureStep(plan);
-			plan.CanRun = true;
-			return;
-		case BuildWorkspaceOperationKind::OpenIde:
-			if (!IsPreferredIdeAvailable(plan.Toolchain, plan.Request.PreferredIde))
-			{
-				AddReadiness(plan, DisplayName(plan.Request.PreferredIde) + " is not available on this machine.");
+			case BuildWorkspaceOperationKind::OpenIde:
+				if (!IsPreferredIdeAvailable(plan.Toolchain, plan.Request.PreferredIde))
+				{
+					AddReadiness(plan, DisplayName(plan.Request.PreferredIde) + " is not available on this machine.");
+					return;
+				}
+				if (!RequireCurrentWorkspace(plan))
+				{
+					return;
+				}
+				if (plan.Request.PreferredIde == WorkspaceIde::Rider)
+				{
+					AddPlannedEffect(plan, "Open Rider at repository root: " + plan.RepositoryRoot.string());
+				}
+				else
+				{
+					AddPlannedEffect(plan, "Open Visual Studio solution: " + plan.Freshness.SolutionPath.string());
+				}
+				plan.CanRun = true;
 				return;
-			}
-			if (!RequireCurrentWorkspace(plan))
-			{
+			case BuildWorkspaceOperationKind::BuildAll:
+				if (!RequireSyncedSourceDependencies(plan))
+				{
+					return;
+				}
+				if (!RequireConfigurePrerequisites(plan))
+				{
+					return;
+				}
+				if (sourceDependenciesMissing)
+				{
+					AddPlannedEffect(
+					    plan,
+					    "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
+				}
+				AddConfigureStep(plan);
+				AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
+				{
+					std::vector<std::string> editorTargets = ResolveProjectTargets(request.ProjectId, request.EditorProfile);
+					if (editorTargets.empty())
+					{
+						AddReadiness(plan, "No editor build target could be resolved.");
+						return;
+					}
+					AddBuildStep(plan, request.EditorProfile, editorTargets);
+				}
+				{
+					std::vector<std::string> runtimeTargets = ResolveProjectTargets(request.ProjectId, request.RuntimeProfile);
+					if (runtimeTargets.empty())
+					{
+						AddReadiness(plan, "No runtime build target could be resolved.");
+						return;
+					}
+					AddBuildStep(plan, request.RuntimeProfile, runtimeTargets);
+				}
+				{
+					const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
+					if (!cookToolTargets.empty())
+					{
+						AddBuildStep(plan, request.EditorProfile, cookToolTargets);
+						AddPlannedEffect(
+						    plan,
+						    "Refresh generated workspace files, then build launcher, selected project editor/runtime, and enabled cook "
+						    "tools in one pass.");
+					}
+					else
+					{
+						AddPlannedEffect(
+						    plan,
+						    "Refresh generated workspace files, then build launcher plus selected project editor/runtime targets. Optional "
+						    "cook tools are disabled in this workspace.");
+					}
+				}
+				plan.CanRun = true;
 				return;
-			}
-			if (plan.Request.PreferredIde == WorkspaceIde::Rider)
-			{
-				AddPlannedEffect(plan, "Open Rider at repository root: " + plan.RepositoryRoot.string());
-			}
-			else
-			{
-				AddPlannedEffect(plan, "Open Visual Studio solution: " + plan.Freshness.SolutionPath.string());
-			}
-			plan.CanRun = true;
-			return;
-		case BuildWorkspaceOperationKind::BuildAll:
-			if (!RequireSyncedSourceDependencies(plan))
-			{
+			case BuildWorkspaceOperationKind::CompileLauncher:
+				if (!RequireSyncedSourceDependencies(plan))
+				{
+					return;
+				}
+				if (!RequireCurrentWorkspace(plan))
+				{
+					return;
+				}
+				AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
+				AddPlannedEffect(plan, "Rebuild the launcher executable and deployed runtime files.");
+				plan.CanRun = true;
 				return;
-			}
-			if (!RequireConfigurePrerequisites(plan))
+			case BuildWorkspaceOperationKind::CompileEditor:
 			{
-				return;
-			}
-			if (sourceDependenciesMissing)
-			{
-				AddPlannedEffect(plan, "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
-			}
-			AddConfigureStep(plan);
-			AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
-			{
-				std::vector<std::string> editorTargets = ResolveProjectTargets(request.ProjectId, request.EditorProfile);
-				if (editorTargets.empty())
+				if (!RequireSyncedSourceDependencies(plan))
+				{
+					return;
+				}
+				if (!RequireConfigurePrerequisites(plan))
+				{
+					return;
+				}
+				if (!RequireCurrentWorkspace(plan))
+				{
+					return;
+				}
+				std::vector<std::string> targets = request.SelectedTargets.empty()
+				    ? ResolveProjectTargets(request.ProjectId, request.EditorProfile)
+				    : request.SelectedTargets;
+				if (targets.empty())
 				{
 					AddReadiness(plan, "No editor build target could be resolved.");
 					return;
 				}
-				AddBuildStep(plan, request.EditorProfile, editorTargets);
+				AddBuildStep(plan, request.EditorProfile, targets);
+				plan.CanRun = true;
+				return;
 			}
+			case BuildWorkspaceOperationKind::CompileRuntime:
 			{
-				std::vector<std::string> runtimeTargets = ResolveProjectTargets(request.ProjectId, request.RuntimeProfile);
-				if (runtimeTargets.empty())
+				if (!RequireSyncedSourceDependencies(plan))
+				{
+					return;
+				}
+				if (!RequireConfigurePrerequisites(plan))
+				{
+					return;
+				}
+				if (!RequireCurrentWorkspace(plan))
+				{
+					return;
+				}
+				std::vector<std::string> targets = request.SelectedTargets.empty()
+				    ? ResolveProjectTargets(request.ProjectId, request.RuntimeProfile)
+				    : request.SelectedTargets;
+				if (targets.empty())
 				{
 					AddReadiness(plan, "No runtime build target could be resolved.");
 					return;
 				}
-				AddBuildStep(plan, request.RuntimeProfile, runtimeTargets);
+				AddBuildStep(plan, request.RuntimeProfile, targets);
+				plan.CanRun = true;
+				return;
 			}
-			{
-				const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
-				if (!cookToolTargets.empty())
+			case BuildWorkspaceOperationKind::BuildCookTools:
+				if (!RequireSyncedSourceDependencies(plan))
 				{
-					AddBuildStep(plan, request.EditorProfile, cookToolTargets);
-					AddPlannedEffect(plan, "Refresh generated workspace files, then build launcher, selected project editor/runtime, and enabled cook tools in one pass.");
-				}
-				else
-				{
-					AddPlannedEffect(plan, "Refresh generated workspace files, then build launcher plus selected project editor/runtime targets. Optional cook tools are disabled in this workspace.");
-				}
-			}
-			plan.CanRun = true;
-			return;
-		case BuildWorkspaceOperationKind::CompileLauncher:
-			if (!RequireSyncedSourceDependencies(plan))
-			{
-				return;
-			}
-			if (!RequireCurrentWorkspace(plan))
-			{
-				return;
-			}
-			AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
-			AddPlannedEffect(plan, "Rebuild the launcher executable and deployed runtime files.");
-			plan.CanRun = true;
-			return;
-		case BuildWorkspaceOperationKind::CompileEditor:
-		{
-			if (!RequireSyncedSourceDependencies(plan))
-			{
-				return;
-			}
-			if (!RequireConfigurePrerequisites(plan))
-			{
-				return;
-			}
-			if (!RequireCurrentWorkspace(plan))
-			{
-				return;
-			}
-			std::vector<std::string> targets = request.SelectedTargets.empty() ? ResolveProjectTargets(request.ProjectId, request.EditorProfile) : request.SelectedTargets;
-			if (targets.empty())
-			{
-				AddReadiness(plan, "No editor build target could be resolved.");
-				return;
-			}
-			AddBuildStep(plan, request.EditorProfile, targets);
-			plan.CanRun = true;
-			return;
-		}
-		case BuildWorkspaceOperationKind::CompileRuntime:
-		{
-			if (!RequireSyncedSourceDependencies(plan))
-			{
-				return;
-			}
-			if (!RequireConfigurePrerequisites(plan))
-			{
-				return;
-			}
-			if (!RequireCurrentWorkspace(plan))
-			{
-				return;
-			}
-			std::vector<std::string> targets = request.SelectedTargets.empty() ? ResolveProjectTargets(request.ProjectId, request.RuntimeProfile) : request.SelectedTargets;
-			if (targets.empty())
-			{
-				AddReadiness(plan, "No runtime build target could be resolved.");
-				return;
-			}
-			AddBuildStep(plan, request.RuntimeProfile, targets);
-			plan.CanRun = true;
-			return;
-		}
-		case BuildWorkspaceOperationKind::BuildCookTools:
-			if (!RequireSyncedSourceDependencies(plan))
-			{
-				return;
-			}
-			if (!RequireConfigurePrerequisites(plan))
-			{
-				return;
-			}
-			if (!RequireCurrentWorkspace(plan))
-			{
-				return;
-			}
-			{
-				const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
-				if (cookToolTargets.empty())
-				{
-					AddReadiness(plan, "No optional cook-tool targets are enabled in this workspace configuration.");
 					return;
 				}
-				AddBuildStep(plan, request.EditorProfile, cookToolTargets);
-			}
-			plan.CanRun = true;
-			return;
-		case BuildWorkspaceOperationKind::AssembleRelease:
-			if (!RequireCurrentWorkspace(plan))
-			{
+				if (!RequireConfigurePrerequisites(plan))
+				{
+					return;
+				}
+				if (!RequireCurrentWorkspace(plan))
+				{
+					return;
+				}
+				{
+					const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
+					if (cookToolTargets.empty())
+					{
+						AddReadiness(plan, "No optional cook-tool targets are enabled in this workspace configuration.");
+						return;
+					}
+					AddBuildStep(plan, request.EditorProfile, cookToolTargets);
+				}
+				plan.CanRun = true;
 				return;
-			}
-			AddPlannedEffect(plan, "Assemble reviewable runtime and symbols packages from artifacts into dist/releases/<version>.");
-			AddPlannedEffect(plan, "Keep final package validation separate from assembly; this action does not publish.");
-			plan.CanRun = true;
-			return;
+			case BuildWorkspaceOperationKind::AssembleRelease:
+				if (!RequireCurrentWorkspace(plan))
+				{
+					return;
+				}
+				AddPlannedEffect(plan, "Assemble reviewable runtime and symbols packages from artifacts into dist/releases/<version>.");
+				AddPlannedEffect(plan, "Keep final package validation separate from assembly; this action does not publish.");
+				plan.CanRun = true;
+				return;
 		}
 	}
 
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions()
 	{
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
-		    {BuildWorkspaceOperationKind::SyncSourceTiers, "workspace.sync-source-tiers", "Sync", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Download enabled repository dependencies and refresh workspace configure state without installing host tools."},
-		    {BuildWorkspaceOperationKind::GenerateBuildFiles, "workspace.generate-build-files", "Build", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
-		    {BuildWorkspaceOperationKind::OpenIde, "workspace.open-ide", "Launch", "Open IDE", "Open the selected IDE after generated build files are current."},
-		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Refresh generated workspace files, then rebuild launcher, project editor/runtime targets, and enabled cook tools."},
-		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Optional local rebuild of Sparkle Launcher for development or customization."},
-		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Build Editor", "Optional local rebuild of the selected project's editor target."},
-		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Build Runtime", "Optional local rebuild of the selected project's runtime target."},
-		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cooking Tools", "Optional local build of tools required by recook workflows."},
-		    {BuildWorkspaceOperationKind::AssembleRelease, "package.release", "Package", "Assemble Review Package", "Assemble reviewable runtime and symbols package layouts from product artifacts into dist/releases/<version> without publishing."},
+		    {BuildWorkspaceOperationKind::SyncSourceTiers,
+		        "workspace.sync-source-tiers",
+		        "Sync",
+		        std::string(ArtifactNaming::kActionSyncSourceDependencies),
+		        "Download enabled repository dependencies and refresh workspace configure state without installing host tools."},
+		    {BuildWorkspaceOperationKind::GenerateBuildFiles,
+		        "workspace.generate-build-files",
+		        "Build",
+		        std::string(ArtifactNaming::kActionGenerateProjectFiles),
+		        "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
+		    {BuildWorkspaceOperationKind::OpenIde,
+		        "workspace.open-ide",
+		        "Launch",
+		        "Open IDE",
+		        "Open the selected IDE after generated build files are current."},
+		    {BuildWorkspaceOperationKind::BuildAll,
+		        "workspace.build-all",
+		        "Build",
+		        "Build All",
+		        "Refresh generated workspace files, then rebuild launcher, project editor/runtime targets, and enabled cook tools."},
+		    {BuildWorkspaceOperationKind::CompileLauncher,
+		        "launcher.build.self",
+		        "Build",
+		        "Build Launcher",
+		        "Optional local rebuild of Sparkle Launcher for development or customization."},
+		    {BuildWorkspaceOperationKind::CompileEditor,
+		        "project.build.editor",
+		        "Build",
+		        "Build Editor",
+		        "Optional local rebuild of the selected project's editor target."},
+		    {BuildWorkspaceOperationKind::CompileRuntime,
+		        "project.build.runtime",
+		        "Build",
+		        "Build Runtime",
+		        "Optional local rebuild of the selected project's runtime target."},
+		    {BuildWorkspaceOperationKind::BuildCookTools,
+		        "cook.tools.prepare",
+		        "Build",
+		        "Build Cooking Tools",
+		        "Optional local build of tools required by recook workflows."},
+		    {BuildWorkspaceOperationKind::AssembleRelease,
+		        "package.release",
+		        "Package",
+		        "Assemble Review Package",
+		        "Assemble reviewable runtime and symbols package layouts from product artifacts into dist/releases/<version> without "
+		        "publishing."},
 		};
 		return definitions;
 	}
@@ -340,9 +402,10 @@ namespace SparkleLauncher
 	std::optional<BuildWorkspaceOperationDefinition> FindBuildWorkspaceOperationDefinition(std::string_view operationId)
 	{
 		const std::vector<BuildWorkspaceOperationDefinition>& definitions = GetBuildWorkspaceOperationDefinitions();
-		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const BuildWorkspaceOperationDefinition& definition) {
-			return definition.Id == operationId;
-		});
+		const auto found = std::find_if(
+		    definitions.begin(),
+		    definitions.end(),
+		    [operationId](const BuildWorkspaceOperationDefinition& definition) { return definition.Id == operationId; });
 		return found == definitions.end() ? std::nullopt : std::optional<BuildWorkspaceOperationDefinition>(*found);
 	}
 
@@ -371,7 +434,9 @@ namespace SparkleLauncher
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
 		plan.SourceDependencies = InspectSourceDependencyCache(GetBuildDirectory(request.RepositoryRoot) / "_deps");
 
-		AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
+		AddReadiness(
+		    plan,
+		    plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
 		AddReadiness(plan, plan.Freshness.Summary);
 		if (!plan.SourceDependencies.AllEnabledDependenciesReady)
 		{

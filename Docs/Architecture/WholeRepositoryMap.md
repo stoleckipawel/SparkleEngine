@@ -1,20 +1,14 @@
 # D. Whole Repository Architecture Map
 
-Status: source-backed repository map
+Status: dated source-backed repository snapshot; not a normative architecture or strategy contract
 Date: 2026-07-24
-Scope: full depot structure, module boundaries, runtime flow, tools, public/private API shape, memory, GPU/CPU performance surfaces, neural-graphics evidence, developer-technology transfer, extensibility, and productization risk
+Scope: implemented depot structure, module boundaries, runtime flow, tools, APIs, memory, and CPU/GPU surfaces observed at the stated date
 
 ## Intent
 
-This document maps SparkleEngine as a whole repository, not only as a renderer. It is written for high-level planning and deep review. The goal is to make architecture decisions easier by showing what exists, how systems link together, where code weight lives, what is public versus private, and which surfaces are worth slimming before adding features.
+This document records the repository shape observed on 2026-07-24 so reviewers can locate modules, runtime flows, APIs, tools, memory/performance surfaces, and source evidence. It is descriptive: revalidate facts against current code before using them in a change.
 
-The guiding preference is a thinner depot with stronger ownership:
-
-- Keep product behavior, fatal correctness checks, graphics debugger support, screenshot/BMP capture, explicit API control, shader ABI safety, and a small set of real workflows.
-- Delete or collapse report-only, smoke-only, validation-only, debug-artifact, wrapper-only, and future-scaffold code unless it is part of the product.
-- Do not add new documentation, diagnostics, logging, validation, wrappers, abstractions, or scaffolding before cleanup.
-- Prefer net code and depot size removal for every cleanup change.
-
+Target capability belongs to [Principal Graphics Requirements](../Strategy/Requirements.md), binding implementation rules belong to [Engineering Standards](../Engineering/Standards/README.md), and accepted subsystem decisions belong to focused architecture documents. This map does not override any of them.
 ## Executive Map
 
 SparkleEngine is already shaped like a modern rendering engine:
@@ -38,62 +32,9 @@ The main issue is not lack of feature ambition. The issue is that Sparkle curren
 
 Top-tier repositories usually declare a much sharper scope. Sparkle should do the same, then cut anything outside the chosen product line.
 
-## Industry Requirements Overlay
+## Authority Boundary
 
-Advanced graphics and neural rendering expectations add a sharper target for this repo. Sparkle should become evidence for:
-
-| Requirement cluster | What the repo should prove | Current evidence | Direction |
-| --- | --- | --- | --- |
-| D3D12/Vulkan workload analysis | Late ability to analyze how modern engines use explicit graphics APIs. | D3D12/Vulkan RHI, frame graph, boundary checks, descriptor/memory snapshots. | Defer until feature cleanup; do not add new diagnostics now. |
-| High-level shader engineering | Efficient HLSL SM6/Slang shader code, reflection, package ABI, and shader optimization. | Strong shader compiler, typed shader registrations, HLSL libraries. | Keep this as a centerpiece; trim debug artifacts and non-product shader demos. |
-| Real-time rendering fundamentals | Rasterization, physically based shading, sampling, light transport, GI, path tracing. | Deferred path, BRDF libraries, reservoir direct lighting, reference path tracing. | Make reference mode honest and tune direct lighting against representative scenes. |
-| Ray tracing architecture | BLAS/TLAS lifecycle, ray queries/tracing, GI/path tracing integration. | Classic TLAS plus PTLAS path. | Preserve both classic TLAS and PTLAS; minimize PTLAS toward the reference implementation and cut research scaffolding. |
-| GPU debugging/capture | PIX/RenderDoc/Nsight marker, timing, object naming, API debug layer fluency, screenshot/BMP capture. | RHI diagnostics, frame execution diagnostics, capture writer. | Preserve debugger/capture support while deleting bespoke reports/logs. |
-| GPU architecture and memory | Cache, bandwidth, memory budget, descriptors, pipeline pressure. | Allocator-backed memory and descriptor usage snapshots. | Keep compact pressure facts; remove broad public observation APIs. |
-| Neural rendering implementation | Translate model/operator ideas into efficient GPU shader/kernel paths and tune the model/runtime quality-performance frontier. | Slang path and shader ABI foundation; no completed product-owned neural feature yet. | Preserve readiness, then implement one real replacement feature with deterministic model artifacts, classical fallback, and quality/performance evidence. |
-| AI/ML workload depth | Understand datasets, loss/metrics, training/export, precision/layout, inference, batching, and deployment. | Shader/cook infrastructure can host immutable runtime artifacts; no owned training/inference evidence yet. | Keep training/offline work isolated, add only a feature-owned deterministic export/cook path, and profile training and inference separately. |
-| Math and performance modeling | Apply linear algebra, calculus, numerical analysis, sampling, reconstruction, and cost models to real features. | Math/shader foundations and profiler hooks exist, but derivations are not a repository-wide gate. | Require feature math notes plus executable reference tests and predicted-versus-measured cost for material algorithm changes. |
-| Architecture/driver collaboration | Diagnose current hardware/driver behavior and prepare capability-driven paths for future hardware. | Explicit D3D12/Vulkan backends, validation, capabilities, and provider bridges. | Record exact adapter/driver/configuration, keep reduced reproducers, distinguish application defects from driver behavior, and avoid untested universal claims. |
-| Partner technology adoption | Integrate advanced rendering/AI into another team's product constraints with a narrow handoff surface. | Module boundaries and provider contracts are a foundation; current evidence is internal. | Require one partner-shaped integration case study, adoption path, failure/fallback contract, and reproducible demo. |
-| Tooling and productization | Developer tools that streamline graphics workflows. | Launcher, shader compiler, cookers, package assembly. | Slim launcher/tools to current product workflows and workload inspection. |
-| Communication and standards | Clear docs, coding standards, reviewability, prioritization, whitepaper-quality analysis, and conference-ready explanation. | Architecture docs, style guide, and boundary check. | Keep docs precise and code-backed; produce polished communication artifacts only for completed strategic work. |
-
-Advanced-graphics implication:
-
-- The repo should show fewer systems, deeper ownership, and stronger evidence. A reviewer should see graphics API control, shader/compiler expertise, performance reasoning, a real neural-graphics result, driver/hardware diagnosis, and adoption-quality communication without needing to read thousands of lines of diagnostic scaffolding.
-
-## Principal Graphics Engineering Repository Contract
-
-The canonical `PGE-01` through `PGE-15` requirements live in [A. Principal Graphics Engineering Requirements](../../Strategy/PrincipalGraphics/Requirements.md). This repository map applies them to physical ownership:
-
-| Repository surface | Required principal-level evidence | Structural constraint |
-|---|---|---|
-| `Engine/Core` | Strong math/value/identity primitives required by real consumers; portable diagnostics bootstrap | No AI, renderer, model, or driver policy |
-| `Engine/Tasks` | Bounded CPU execution, cancellation, determinism, topology/latency evidence | No neural scheduler, tensor runtime, renderer policy, or third-party model framework |
-| `Engine/GameFramework` | Stable simulation/animation inputs and immutable extraction for rendering or AI-driven behaviors where a real feature needs them | No GPU inference ownership, renderer access, or heavyweight model assets in hot components |
-| `Engine/Renderer` | Path-traced and neural feature ownership, persistent GPU data, quality/performance policy, classical fallback, frame integration | No ECS query, generic ML framework, training loop, or backend-native leakage |
-| `Engine/RHI` | Explicit D3D12/Vulkan resources, synchronization, pipeline/shader capabilities, timestamps, native validation, future-feature capability discovery | No model semantics, neural feature policy, or renderer-specific tensor graph |
-| `Engine/Editor` | Narrow feature selection, immutable result/quality comparison, capture, and product-owned model metadata only where a current workflow needs it | No training UI, task debugger, model-graph browser, cache browser, or live renderer pointer |
-| `Engine/Application` | Host lifecycle, reproducible workload selection, immutable publication, and bounded operation composition | No algorithm/model implementation or driver workaround policy |
-| `Tools/Shaders` | HLSL/Slang, DXIL/SPIR-V, reflection, precision/layout contracts, deterministic shader/model-derived package inputs | No second runtime shader/model schema |
-| `Tools/Cooking` and `Tools/Import` | Deterministic feature-owned model/artifact validation and cooking when a neural feature exists | No general ML platform, opaque downloaded artifact, or nondeterministic publication |
-| `Projects/Showcase` | Curated path tracing/neural comparison workload, classical baseline, stress case, capture script, and live demo | No uncataloged heavyweight dataset or feature logic hidden in project callbacks |
-| `Docs` | Source-backed design decision, math/algorithm explanation, integration case study, incident report, reproducible results, whitepaper/talk artifact | No documentation used to imply implementation or create another competing policy |
-| `CMake` and packaging | Optional dependency/capability gates, deterministic artifacts, platform/backend matrix, runtime/editor/tools/content separation | No unconditional training runtime or vendor SDK dependency in the core product |
-
-Repository-wide requirements:
-
-- One actual neural graphics feature is a final target; empty tensor types, model registries, capability flags, or provider placeholders are forbidden.
-- Model/training artifacts have provenance, license, deterministic export/cook identity, validation, and package ownership. Runtime code consumes only validated immutable artifacts.
-- Quality is measured against a named classical baseline with feature-appropriate metrics and visual failure cases. Performance includes CPU, GPU, memory, latency, and frame-pacing cost.
-- Training/offline tuning and runtime inference remain separate workloads with separate owners, dependencies, measurements, and packaging.
-- Math-heavy changes carry a derivation/reference note and executable validation close to the owning feature. A copied equation or generated shader is not self-validating.
-- Hardware/driver investigations record adapter, architecture, driver, OS, backend, compiler, feature capabilities, and exact reproduction. Suspected driver defects require a minimal reproducer before escalation.
-- Windows is not evidence of Linux support. Linux/Vulkan support becomes a claim only after a native build, run, validation, capture, packaging, and ownership audit.
-- AI-assisted code or design follows the same review, source, security, determinism, ABI, correctness, and performance gates as human-authored work.
-- Partner readiness is judged by adoption cost: narrow contracts, explicit prerequisites/fallbacks, reproducible setup, issue diagnosis, and a handoff another engineer can follow.
-- Strategic completed work produces a concise demo, whitepaper-quality note, and talk outline; routine prompts do not manufacture presentation artifacts.
-
+The snapshot may identify risks or opportunities, but it does not own principal-capability requirements, repository grades, implementation rules, or roadmap priority. Follow the owning documents linked from the [documentation root](../README.md).
 ## Repository Measurements
 
 Scan excludes `.git`, `build`, `artifacts`, and `logs`.
@@ -217,19 +158,7 @@ Stage 06 optional pack boundary:
 
 ### Canonical Acceptance-Workload Overlay
 
-The inventory above describes current repository truth. It does not define the future evidence bar.
-
-[I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md) adds this product direction:
-
-| Tier | Scene | Current repository state | Required architecture consequence |
-| --- | --- | --- | --- |
-| Tier 0 | Sponza | Available, required, startup default. | Preserve as the low-cost smoke/regression loop. |
-| Tier 1 primary | Bistro exterior/interior | External/unavailable catalog pack; no runnable level. | Re-establish through deterministic provenance/import/cook manifests, material support records, frozen routes, and benchmark/reference artifacts; keep heavyweight media external. |
-| Tier 1 secondary | San Miguel 2.0 | Not cataloged or present. | Add as a second external optional pack through the same generic discovery/import/cook/level path; no scene-specific importer, shader, renderer, or scheduler branch. |
-
-Both Tier 1 scenes must exercise the same scene asset, material, texture, renderer, RHI, ray-tracing, benchmark, and capture ownership. Differences belong in authored data, conversion manifests, camera routes, and declared capability/fallback records.
-
-This makes the external-pack boundary a product requirement rather than a depot-cleanup convenience. Completion evidence is defined in I; this map continues to report only what currently exists.
+The inventory above describes current repository truth. Future tier assignment, required architecture consequences, and completion evidence belong only to [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) and are not repeated in this snapshot.
 - Default levels do not reference `Bistro`, so default build/cook/run does not require the heavy optional pack.
 - Missing optional pack state is non-fatal: catalog levels that name a missing or disabled optional pack are unavailable, while default catalog levels continue to load/cook.
 - Core repo byte reduction target for Stage 07 is at least 1438.80 MB by removing or externalizing `Projects/Showcase/Assets/Meshes/Bistro`, reducing `Projects` source content from about 1527.06 MB to about 88.26 MB before generated-output cleanup.
@@ -526,15 +455,7 @@ Style risks:
 - Debug/report concepts often become structs and public APIs rather than internal, transient views.
 - A few UI files and tool planners concentrate many unrelated branches in one file.
 
-Principal-role coding implications:
-
-- Algorithm names must describe the mathematical or rendering operation, not the research brand.
-- Tensor/model metadata must expose bounded shape, layout, precision, ownership, and lifetime; it must not become a generic `void*` graph or service locator.
-- CPU and GPU kernels require explicit input/output domains, coordinate/precision conventions, numerical limits, and a measurable fallback.
-- Capability and backend decisions occur at a narrow policy boundary; frame-hot code consumes pre-resolved policy and packed data.
-- Model inference, shader dispatch, readback, capture, and training/export must not share one god service.
-- Driver workarounds are backend-private, scoped to exact vendor/device/driver evidence, documented with a removal/retest condition, and never leak as renderer-wide policy.
-- Performance experiments use existing profiler/debugger hooks and disposable analysis, not permanent per-operator logging or a new telemetry product.
+Normative coding, graphics, neural, driver, and evidence implications belong in [Engineering Standards](../Engineering/Standards/README.md); this section records only observed repository patterns and risks.
 
 ## System Links
 
@@ -550,39 +471,9 @@ Principal-role coding implications:
 | Editor | Renderer public diagnostics | Mesh/texture/memory panels. |
 | Application | Renderer/Editor | Host frame orchestration and editor application integration. |
 
-## Architecture Grades
+## Snapshot Limitations
 
-Scale: 1 weak, 3 credible, 5 production-sharp.
-
-| Quality | Grade | Why |
-| --- | ---: | --- |
-| Module layering | 4.0 | Good bottom-up shape; Renderer consumes GameFramework privately; boundary check exists. |
-| RHI explicitness | 4.0 | Strong services, D3D12/Vulkan backends, memory allocators, ray tracing; public diagnostics/capture widen surface. |
-| Renderer frame architecture | 3.8 | Real frame graph/pass system/history/provider ownership; per-frame compile and broad assembly structs need review. |
-| Shader pipeline | 4.4 | One of the strongest product systems: compiler, reflection, contracts, cache, cook, inspection. |
-| Ray tracing architecture | 3.4 | Classic TLAS and PTLAS are both valuable; PTLAS needs minimization and clearer ownership. |
-| Provider integration | 3.6 | Upscaling and ray reconstruction are separated well; Streamline bridge should remain narrow. |
-| Memory model | 3.5 | Allocator-backed and visible; too much report shape may be public. |
-| CPU performance posture | 3.0 | Clear frame pipeline, but per-frame graph setup/compile and scene extraction need evidence. |
-| GPU performance posture | 3.5 | Strong explicit API foundation; needs representative benchmark discipline. |
-| Public API minimalism | 3.2 | Renderer is mostly private; RHI and Core public surfaces should be pruned. |
-| Tooling productization | 3.0 | Launcher is polished but large; cookers/report artifacts should be narrowed. |
-| Depot hygiene | 2.0 | Showcase content dominates depot size; levels need cataloging so capability stays broad while default footprint shrinks. |
-| Deletion readiness | 4.0 | Many cleanup targets are identifiable and isolated enough for staged removal. |
-
-## Principal Conclusions
-
-1. The core renderer/RHI architecture is worth preserving. Do not replace it with a new abstraction.
-2. The first big win is depot size: catalog Showcase levels, keep multi-level support, and move heavy media out of git or into optional content packs.
-3. The second big win is deleting validation/report/debug scaffolding, especially around launcher, cookers, shader debug artifacts, and public diagnostics, while preserving hardened screenshot/BMP capture.
-4. PTLAS should remain a named product feature alongside classic TLAS, be minimized toward the original reference implementation, and be stripped of future GPU-pack placeholders.
-5. The shader compiler is a strength. Slim defaults and debug artifacts, but keep the source-to-package ABI.
-6. The launcher should be treated as a product with a smaller mission, not as a home for every local workflow.
-7. Public API should shrink around behavior, not observation. Keep runtime contracts; move or delete report APIs.
-8. Neural readiness is now a prerequisite, not completion. The repository ultimately needs one real, replacement-based, quality-and-performance-validated neural graphics feature.
-9. Principal-level evidence must connect math, C++/shader implementation, CPU/GPU architecture, API/driver behavior, and product adoption rather than presenting them as separate demonstrations.
-10. A partner-shaped integration case, reduced driver/hardware investigation, and whitepaper/demo-quality explanation are required portfolio outputs of completed work, not new runtime systems.
-
+Counts, file paths, implemented capabilities, and identified risks describe the 2026-07-24 observation. They are not proof of current behavior and should not be copied into plans or standards. Use the source locations below to repeat the audit against the current worktree.
 ## Local Source Evidence
 
 Primary local files reviewed:

@@ -22,6 +22,13 @@ Projects/**/[Cc]ooked/
 Projects/**/logs/
 Projects/**/StreamlineLogs/
 
+# Showcase source media is acquired explicitly through the launcher. Catalog,
+# level, provenance, and conversion records remain tracked outside these roots.
+/Projects/Showcase/Assets/Meshes/Bistro/
+/Projects/Showcase/Assets/Meshes/SanMiguel/
+/Projects/Showcase/Assets/Meshes/ModernSponza/
+/Projects/Showcase/Assets/Meshes/JungleRuins/
+
 # Build results accidentally emitted at the repository root.
 # Nested source folders named Debug/Release are real code and must remain visible.
 /[Dd]ebug*/

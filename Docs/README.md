@@ -1,26 +1,63 @@
 # SparkleEngine Documentation
 
-This directory is the navigation root for SparkleEngine's design, engineering, and planning documents.
+Status: documentation root and authority map
 
-## Documentation Areas
+SparkleEngine documentation is organized by responsibility, not by chronology or author.
 
-- [Architecture](Architecture/README.md) — repository structure, external research, and subsystem architecture.
-- [Engineering](Engineering/README.md) — implementation standards and executable validation contracts.
-- [Strategy](Strategy/README.md) — requirements, assessments, roadmaps, and engineering direction.
+## Areas
 
-## Recommended Entry Points
+| Area | Owns | Does not own |
+| --- | --- | --- |
+| [Strategy](Strategy/README.md) | capability targets, priorities, dated assessments, roadmaps, persona | implementation rules or system design |
+| [Architecture](Architecture/README.md) | current-system maps, target designs, decisions, rationale, external architecture research | coding conventions or evidence grades |
+| [Engineering](Engineering/README.md) | binding implementation standards, decision briefs, validation contracts | product strategy or duplicate architecture descriptions |
 
-- For a short project-level decision summary, start with [G. Advanced Graphics Engine Executive Summary](Strategy/PrincipalGraphics/ExecutiveSummary.md).
-- To understand the current repository, read [D. Whole Repository Architecture Map](Architecture/Repository/WholeRepositoryMap.md).
-- For Renderer/RHI ownership and backend parity, read [Renderer and RHI Boundary](Architecture/RHI/RendererRhiBoundary.md).
-- Before changing code, apply [L. SparkleEngine Integration Style Guide](Engineering/Standards/IntegrationStyleGuide.md).
-- For multithreading work, use the [multithreading reading guide](Architecture/Multithreading/README.md).
-- For acceptance evidence, use [I. Bistro and San Miguel Acceptance Workloads](Engineering/Validation/BistroAndSanMiguelWorkloads.md).
+Code and build configuration remain the authority for implemented behavior. Documentation must identify whether it is a standard, canonical decision, target proposal, plan, snapshot, research reference, or archive.
 
-## Organization Rules
+## Reviewer Paths
 
-- Put a document under the area that owns its subject; do not create temporary catch-all folders such as `Review`, `Misc`, or `New`.
-- Give files descriptive names. Use ordering prefixes only when order is part of a durable contract.
-- Add new documents to the nearest area index so they remain discoverable.
-- Keep cross-document links relative and update them when a document moves.
-- The A–L labels in the current document set are stable document IDs, not folder-order prefixes.
+### External Technical Review
+
+1. [Advanced Graphics Engine Executive Summary](Strategy/ExecutiveSummary.md)
+2. [Whole Repository Architecture Map](Architecture/WholeRepositoryMap.md)
+3. [Renderer and RHI Architecture Boundary](Architecture/RendererRhiBoundary.md)
+4. [Engineering Standards](Engineering/Standards/README.md)
+5. [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md)
+
+An external reviewer should follow code, captures, tests, and measurements from these entry points rather than read every planning or research document.
+
+### Implementing a Change
+
+1. Start with [L. Integration Style Guide](Engineering/Standards/IntegrationStyleGuide.md).
+2. Select the applicable focused standards from the [standards map](Engineering/Standards/README.md#standards-map).
+3. Read the relevant canonical architecture decision.
+4. Use the acceptance workload only when the change affects its gates.
+
+### Principal Graphics Planning
+
+Start with the [Strategy index](Strategy/README.md). Requirements, assessment, roadmap, persona, and source archive are planning/audit material; they are not all part of the external reviewer path.
+
+### Multithreading Work
+
+Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the target design and [K. Implementation Plan](Architecture/Multithreading/ImplementationPlan.md) for internal sequencing.
+
+## Document Status Vocabulary
+
+- **Canonical** — current authoritative decision for its named subject.
+- **Standard** — binding repository implementation/review rule.
+- **Target proposal** — intended architecture not automatically proven implemented.
+- **Plan** — sequencing and work definition; not proof of completion.
+- **Snapshot** — dated observation that must be revalidated before use.
+- **Research** — source-backed precedent or comparison; never local authority by itself.
+- **Archive** — retained traceability/history; not a current entry point.
+- **Summary** — orientation only; owning documents control conflicts.
+
+## Maintenance Rules
+
+- Keep one owner for each decision or rule; link instead of paraphrasing it elsewhere.
+- Put current state in maps, intended system shape in architecture, implementation rules in standards, evidence gates in validation, and priorities/sequencing in strategy.
+- Give every document a status and one named responsibility; state an authority boundary wherever another document could be mistaken for the owner.
+- Add a file only when it has an independent audience and reason to change; otherwise add a navigable section to its owner.
+- Create a subfolder only when multiple documents share a durable local context; add a local index only when the parent index cannot route them clearly. Keep a single clearly named document at the area root.
+- Keep indices short and update them when files move, merge, or retire.
+- Preserve stable A–L document IDs where they remain useful cross-document references.

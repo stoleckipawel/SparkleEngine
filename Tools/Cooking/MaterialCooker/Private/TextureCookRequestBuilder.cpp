@@ -5,6 +5,7 @@
 #include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
@@ -14,11 +15,11 @@ std::string TextureCookRequestBuilder::BuildTextureSourceKeyForRoot(
     const TextureCookRequest& request,
     const std::filesystem::path& relativePath)
 {
-	return std::string(rootName) + ":" + GetTextureColorSpaceName(request.policy.colorSpace) + ":" +
-	       GetTextureMipPolicyName(request.policy.mipPolicy) + ":" + GetTextureMipFilterName(request.policy.mipFilter) + ":" +
-	       GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" +
-	       GetTextureGroupName(request.policy.textureGroup) + ":" + GetTextureDimensionName(request.policy.dimension) + ":" +
-	       GetTextureChannelMaskName(request.policy.channelMask) + ":" + relativePath.generic_string();
+	return std::string(rootName) + ":" + GetTextureColorSpaceName(request.policy.colorSpace) + ":"
+	    + GetTextureMipPolicyName(request.policy.mipPolicy) + ":" + GetTextureMipFilterName(request.policy.mipFilter) + ":"
+	    + GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" + GetTextureGroupName(request.policy.textureGroup)
+	    + ":" + GetTextureDimensionName(request.policy.dimension) + ":" + GetTextureChannelMaskName(request.policy.channelMask) + ":"
+	    + relativePath.generic_string();
 }
 
 std::optional<std::filesystem::path> TextureCookRequestBuilder::BuildTextureOutputPathForRoot(
@@ -46,7 +47,7 @@ TextureCookRequest TextureCookRequestBuilder::Build(
 	TextureCookRequest request;
 	request.sourcePath = NormalizeSourceTexturePath(sourceTexturePath);
 	request.policy.colorSpace = ResolveColorSpace(textureGroup);
-	request.policy.mipPolicy = ResolveMipPolicy(textureGroup);
+	request.policy.mipPolicy = ResolveMipPolicy(request.sourcePath, textureGroup);
 	request.policy.mipFilter = ResolveMipFilter(textureGroup);
 	request.policy.colorProcessingPolicy = ResolveColorProcessingPolicy(textureGroup);
 	request.policy.textureGroup = textureGroup;
@@ -78,9 +79,15 @@ TextureColorSpace TextureCookRequestBuilder::ResolveColorSpace(TextureGroup text
 	}
 }
 
-TextureMipPolicy TextureCookRequestBuilder::ResolveMipPolicy(TextureGroup textureGroup) noexcept
+TextureMipPolicy TextureCookRequestBuilder::ResolveMipPolicy(
+    const std::filesystem::path& sourceTexturePath,
+    TextureGroup textureGroup) noexcept
 {
 	(void) textureGroup;
+	if (Paths::GetLowercaseExtension(sourceTexturePath) == L".dds")
+	{
+		return TextureMipPolicy::PreserveExisting;
+	}
 	return TextureMipPolicy::Generate;
 }
 
@@ -151,8 +158,8 @@ std::string TextureCookRequestBuilder::BuildTextureSourceKey(const TextureCookRe
 
 	throw Diagnostics::Error(
 	    "Source texture path must be under the project, engine, or imported-texture cache root "
-	    "to derive a stable cooked texture id: '" +
-	    request.sourcePath.string() + "'.");
+	    "to derive a stable cooked texture id: '"
+	    + request.sourcePath.string() + "'.");
 }
 
 std::filesystem::path TextureCookRequestBuilder::BuildTextureOutputPath(const TextureCookRequest& request)
@@ -178,14 +185,11 @@ std::filesystem::path TextureCookRequestBuilder::BuildTextureOutputPath(const Te
 
 	throw Diagnostics::Error(
 	    "Source texture path must be under the project, engine, or imported-texture cache root "
-	    "to derive a cooked texture output path: '" +
-	    request.sourcePath.string() + "'.");
+	    "to derive a cooked texture output path: '"
+	    + request.sourcePath.string() + "'.");
 }
 
 std::string TextureCookRequestBuilder::BuildTextureVariantSuffix(const TextureCookRequest& request)
 {
-	return std::string(".") + GetTextureGroupName(request.policy.textureGroup) + "." + GetTextureColorSpaceName(request.policy.colorSpace) +
-	       "." + GetTextureMipPolicyName(request.policy.mipPolicy) + "." + GetTextureMipFilterName(request.policy.mipFilter) + "." +
-	       GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + "." +
-	       GetTextureDimensionName(request.policy.dimension) + "." + GetTextureChannelMaskName(request.policy.channelMask);
+	return "." + Formatting::FormatHexUInt64(request.assetId);
 }

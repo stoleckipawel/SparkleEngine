@@ -43,13 +43,13 @@ DirectX::XMFLOAT4 GltfVertexFrameBuilder::BuildAuthoredTangent(const DirectX::XM
 	{
 		throw Diagnostics::Error("glTF primitive contains a zero-length vertex tangent.");
 	}
-	const float normalDotTangent = DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, direction));
-	if (std::abs(lengthSquared - 1.0f) > kUnitFrameTolerance || std::abs(normalDotTangent) > kUnitFrameTolerance)
-	{
-		throw Diagnostics::Error("glTF primitive contains a non-orthonormal authored tangent frame; repair the source mesh.");
-	}
 	const DirectX::XMVECTOR projected =
 	    DirectX::XMVectorSubtract(direction, DirectX::XMVectorMultiply(normal, DirectX::XMVector3Dot(normal, direction)));
+	const float projectedLengthSquared = DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(projected));
+	if (projectedLengthSquared <= kMinimumDirectionLengthSquared)
+	{
+		throw Diagnostics::Error("glTF primitive contains parallel normal and tangent directions.");
+	}
 
 	DirectX::XMFLOAT3 normalizedTangent;
 	DirectX::XMStoreFloat3(&normalizedTangent, DirectX::XMVector3Normalize(projected));

@@ -3,7 +3,11 @@
 #include "TaskExecutionState.h"
 #include "Scheduling/TaskWorkerContext.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
 #include <utility>
+
+static const auto g_taskExecutionLogger = Logging::GetOrCreateLogger("Tasks.Execution");
 
 TaskExecution::State::State(std::uint64_t generation)
 {
@@ -16,16 +20,16 @@ void TaskExecution::State::RequestCancellation() noexcept
 	Cancellation.request_stop();
 }
 
-void TaskExecution::State::Publish(TaskExecutionCompletion completed)
+void TaskExecution::State::Publish(TaskExecutionCompletion completion)
 {
 	std::function<void()> onSettled;
 	{
 		std::lock_guard lock(Mutex);
 		if (Settled)
 		{
-			return;
+			Diagnostics::Fatal(g_taskExecutionLogger, __FILE__, __LINE__, "Task execution completion was published more than once.");
 		}
-		Data = std::move(completed);
+		Data = std::move(completion);
 		Settled = true;
 		onSettled = std::move(OnSettled);
 	}
@@ -36,7 +40,10 @@ void TaskExecution::State::Publish(TaskExecutionCompletion completed)
 	}
 }
 
-TaskExecution::TaskExecution(std::shared_ptr<State> state) noexcept : m_state(std::move(state)) {}
+TaskExecution::TaskExecution(std::shared_ptr<State> state) noexcept :
+    m_state(std::move(state))
+{
+}
 
 TaskExecution::TaskExecution() noexcept = default;
 
@@ -63,8 +70,8 @@ bool TaskExecution::IsSettled() const noexcept
 
 bool TaskExecution::WaitFor(std::chrono::milliseconds timeout) const
 {
-	if (m_state == nullptr || timeout < std::chrono::milliseconds::zero() ||
-	    TaskWorkerContext::IsWorkerFor(m_state->ExecutorIdentity) || std::this_thread::get_id() != m_state->JoinThread)
+	if (m_state == nullptr || timeout < std::chrono::milliseconds::zero() || TaskWorkerContext::IsWorkerFor(m_state->ExecutorIdentity)
+	    || std::this_thread::get_id() != m_state->JoinThread)
 	{
 		return false;
 	}
@@ -128,8 +135,8 @@ std::optional<TaskResult> TaskExecution::GetTaskResult(TaskNodeHandle handle) co
 	        data.BuilderIdentity,
 	        data.BuilderGeneration,
 	        static_cast<std::uint32_t>(data.TaskResults.size()),
-	        index) ||
-	    !data.Settled[index])
+	        index)
+	    || !data.Settled[index])
 	{
 		return std::nullopt;
 	}

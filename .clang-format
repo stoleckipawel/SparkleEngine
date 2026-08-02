@@ -1,146 +1,111 @@
-# ============================================================================
-# ClangFormat configuration for Sparkle Engine
-# Target:
-#   - Game engines & real-time rendering code (C++ & HLSL)
-#   - High readability, diff-friendly formatting
-#   - Conservative, explicit, reviewer-friendly style
-# ============================================================================
+# SparkleEngine formatting profile.
+# Requires clang-format 22.1.3. Run with --Werror so configuration warnings fail.
+# Applies to owned C++ and, through the shader-subtree override, owned HLSL/HLSLI.
 
-# ---------------------------------------------------------------------------
-# Base style for C++
-# ---------------------------------------------------------------------------
 BasedOnStyle: LLVM
 Language: Cpp
+Standard: c++20
 
-# ---------------------------------------------------------------------------
-# Indentation & whitespace
-# ---------------------------------------------------------------------------
+# Width and indentation.
+ColumnLimit: 140
 IndentWidth: 4
 TabWidth: 4
 UseTab: ForIndentation
-
-# Indent code within namespaces:
-# namespace Foo 
-#{
-#     int x;
-# }
-NamespaceIndentation: All
-
-# Indent preprocessor directives based on nesting level (moves # with indentation).
-IndentPPDirectives: BeforeHash
-
 ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: All
+IndentCaseLabels: true
+IndentCaseBlocks: false
+IndentPPDirectives: BeforeHash
+PPIndentWidth: 2
 
-# Prefer wrapping long calls/decls (prevents huge one-liners)
-ColumnLimit: 140
-
-# ---------------------------------------------------------------------------
-# Braces & control flow
-# ---------------------------------------------------------------------------
+# Braces and compact forms.
 BreakBeforeBraces: Allman
-
-AlwaysBreakAfterDefinitionReturnType: None
-AlwaysBreakAfterReturnType: None
-
-BraceWrapping:
-  AfterClass: true
-  AfterControlStatement: true
-  AfterEnum: true
-  AfterFunction: true
-  AfterNamespace: true
-  AfterStruct: true
-  AfterUnion: true
-  BeforeCatch: true
-  BeforeElse: true
-  IndentBraces: false
-
-# Enforce explicit blocks – no ambiguity
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortLoopsOnASingleLine: false
 AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+AllowShortNamespacesOnASingleLine: false
+InsertBraces: false
+RemoveBracesLLVM: false
 
-# Keep short inline getters/setters as one-liners when they fit
-AllowShortFunctionsOnASingleLine: Inline
+# Calls, declarations, initializers, and expressions.
+AlignAfterOpenBracket: false
+BreakAfterOpenBracketBracedList: true
+BreakAfterOpenBracketFunction: true
+BreakBeforeCloseBracketBracedList: false
+BreakBeforeCloseBracketFunction: false
+BinPackArguments: false
+BinPackParameters: OnePerLine
+BinPackLongBracedList: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+PackConstructorInitializers: Never
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerIndentWidth: 4
+BreakInheritanceList: BeforeColon
+BreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 1000
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+AlignOperands: DontAlign
+Cpp11BracedListStyle: AlignFirstComment
+LambdaBodyIndentation: Signature
+BreakAfterAttributes: Leave
 
-# ---------------------------------------------------------------------------
-# Includes & headers
-# ---------------------------------------------------------------------------
-SortIncludes: false
-IncludeBlocks: Preserve
+# C++20 templates, concepts, and requires clauses.
+BreakTemplateDeclarations: No
+BreakBeforeConceptDeclarations: Never
+RequiresClausePosition: WithPreceding
+IndentRequiresClause: true
 
-# ---------------------------------------------------------------------------
-# Pointers, references, and alignment
-# ---------------------------------------------------------------------------
+# Diff-stable alignment.
+AlignConsecutiveAssignments:
+  Enabled: false
+AlignConsecutiveDeclarations:
+  Enabled: false
+AlignConsecutiveMacros:
+  Enabled: false
+AlignEscapedNewlines: Left
+AlignTrailingComments:
+  Kind: Never
+SpacesBeforeTrailingComments: 1
+
+# Pointers, references, qualifiers, and delimiters.
 PointerAlignment: Left
 ReferenceAlignment: Left
 DerivePointerAlignment: false
-
-# Prefer breaking and aligning argument lists after '('
-AlignAfterOpenBracket: AlwaysBreak
-
-AlignOperands: true
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
-AlignEscapedNewlines: Left
-
-# ---------------------------------------------------------------------------
-# Function calls, parameters, and lists
-# ---------------------------------------------------------------------------
-# Once wrapped, keep one item per line (diff-friendly)
-BinPackParameters: false
-BinPackArguments: false
-
-AllowAllArgumentsOnNextLine: false
-AllowAllParametersOfDeclarationOnNextLine: false
-
-# Encourage breaking before the first argument when near limit
-PenaltyBreakBeforeFirstCallParameter: 0
-
-# C++ constructor initializer lists
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
-BreakConstructorInitializers: AfterColon
-ConstructorInitializerIndentWidth: 4
-
-Cpp11BracedListStyle: true
-
-# ---------------------------------------------------------------------------
-# Spacing rules
-# ---------------------------------------------------------------------------
+QualifierAlignment: Leave
+SpaceAfterCStyleCast: true
 SpaceBeforeParens: ControlStatements
 SpaceBeforeAssignmentOperators: true
-SpaceAfterCStyleCast: true
-
-SpacesInAngles: false
+SpacesInAngles: Never
 SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: false
+SpacesInParens: Never
+SpacesInSquareBrackets: false
 
-# ---------------------------------------------------------------------------
-# Switch / case formatting
-# ---------------------------------------------------------------------------
-IndentCaseLabels: true
-IndentCaseBlocks: false
-AllowShortCaseLabelsOnASingleLine: false
-
-# ---------------------------------------------------------------------------
-# Lambdas & modern C++
-# ---------------------------------------------------------------------------
-LambdaBodyIndentation: Signature
-AllowShortLambdasOnASingleLine: None
-
-# ---------------------------------------------------------------------------
-# Comments
-# ---------------------------------------------------------------------------
-ReflowComments: true
-AlignTrailingComments: true
-SpacesBeforeTrailingComments: 2
+# Includes, using declarations, comments, and vertical space.
+SortIncludes:
+  Enabled: false
+IncludeBlocks: Preserve
+SortUsingDeclarations: Never
+ReflowComments: IndentOnly
+# Prevent additions. Existing namespace-end comments require the migration check.
 FixNamespaceComments: false
-
-# ---------------------------------------------------------------------------
-# Misc engine-friendly behavior
-# ---------------------------------------------------------------------------
+MaxEmptyLinesToKeep: 1
 KeepEmptyLinesAtTheStartOfBlocks: false
-MaxEmptyLinesToKeep: 2
+SeparateDefinitionBlocks: Leave
 
+# Keep the formatter non-semantic and deterministic.
+SkipMacroDefinitionBody: false
+RemoveParentheses: Leave
+LineEnding: LF
+InsertNewlineAtEOF: true
+
+# Avoid wrapping authored prose and strings merely to satisfy the column limit.
 PenaltyBreakComment: 1000
 PenaltyBreakString: 1000
-PenaltyReturnTypeOnItsOwnLine: 1000

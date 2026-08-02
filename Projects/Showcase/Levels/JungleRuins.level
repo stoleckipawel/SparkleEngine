@@ -1,0 +1,20 @@
+[Level]
+Name = JungleRuins
+
+[Camera]
+Position = 0, 5, -15
+YawRadians = 0
+PitchRadians = 0
+FovYDegrees = 66.9
+NearZ = 0.1
+FarZ = 10000
+MoveSpeed = 0.05
+
+[Lighting]
+DirectionalLight0Direction = -0.44, -0.88, 0.14
+DirectionalLight0IlluminanceLux = 11.22
+DirectionalLight0Color = 1, 0.93, 0.82
+DirectionalLight0CastShadow = true
+
+[SceneAssets]
+Asset = JungleRuins/JungleRuins/USD/JungleRuins_Karma

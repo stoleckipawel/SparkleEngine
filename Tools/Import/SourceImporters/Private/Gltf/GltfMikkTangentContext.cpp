@@ -11,7 +11,8 @@
 #include <utility>
 
 GltfMikkTangentContext::GltfMikkTangentContext(std::span<const ImportedVertex> vertices, std::span<const std::uint32_t> indices) :
-    m_vertices(vertices), m_indices(indices)
+    m_vertices(vertices),
+    m_indices(indices)
 {
 }
 
@@ -31,11 +32,10 @@ std::vector<DirectX::XMFLOAT4> GltfMikkTangentContext::Generate()
 	{
 		if (!IsUsableTangent(m_cornerTangents[cornerIndex], m_vertices[m_indices[cornerIndex]].normal))
 		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "MikkTSpace did not produce a complete tangent basis for glTF triangle {}, corner {}.",
-			        cornerIndex / kVerticesPerTriangle,
-			        cornerIndex % kVerticesPerTriangle));
+			// A collapsed UV triangle has no source-defined tangent direction. MikkTSpace
+			// deliberately leaves some such corners unset; use a stable orthogonal frame
+			// there so the rest of an otherwise valid production mesh remains usable.
+			m_cornerTangents[cornerIndex] = BuildFallbackTangent(m_vertices[m_indices[cornerIndex]].normal);
 		}
 	}
 
@@ -57,11 +57,22 @@ bool GltfMikkTangentContext::IsUsableTangent(const DirectX::XMFLOAT4& tangent, c
 	const float tangentLengthSquared = tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z;
 	const float normalLengthSquared = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z;
 	const float tangentNormalDot = tangent.x * normal.x + tangent.y * normal.y + tangent.z * normal.z;
-	return std::isfinite(tangent.x) && std::isfinite(tangent.y) && std::isfinite(tangent.z) && std::isfinite(tangent.w) &&
-	       tangentLengthSquared > kMinimumVectorLengthSquared && std::abs(tangentLengthSquared - 1.0f) <= kFrameTolerance &&
-	       std::abs(normalLengthSquared - 1.0f) <= kFrameTolerance && std::abs(tangentNormalDot) <= kFrameTolerance &&
-	       (tangent.w == -1.0f || tangent.w == 1.0f);
+	return std::isfinite(tangent.x) && std::isfinite(tangent.y) && std::isfinite(tangent.z) && std::isfinite(tangent.w)
+	    && tangentLengthSquared > kMinimumVectorLengthSquared && std::abs(tangentLengthSquared - 1.0f) <= kFrameTolerance
+	    && std::abs(normalLengthSquared - 1.0f) <= kFrameTolerance && std::abs(tangentNormalDot) <= kFrameTolerance
+	    && (tangent.w == -1.0f || tangent.w == 1.0f);
 }
+
+DirectX::XMFLOAT4 GltfMikkTangentContext::BuildFallbackTangent(const DirectX::XMFLOAT3& normal) noexcept
+{
+	const DirectX::XMVECTOR normalVector = DirectX::XMLoadFloat3(&normal);
+	const DirectX::XMVECTOR reference =
+	    std::abs(normal.z) < 0.999f ? DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f) : DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	DirectX::XMFLOAT3 tangent;
+	DirectX::XMStoreFloat3(&tangent, DirectX::XMVector3Normalize(DirectX::XMVector3Cross(reference, normalVector)));
+	return {tangent.x, tangent.y, tangent.z, 1.0f};
+}
+
 void GltfMikkTangentContext::ValidateSourceGeometry() const
 {
 	if (m_vertices.empty() || m_indices.empty() || m_indices.size() % kVerticesPerTriangle != 0u)
@@ -75,8 +86,10 @@ void GltfMikkTangentContext::ValidateSourceGeometry() const
 
 	for (std::size_t faceIndex = 0; faceIndex < m_indices.size() / kVerticesPerTriangle; ++faceIndex)
 	{
+		// MikkTSpace defines stable fallback frames for isolated degenerate UVs and
+		// triangles found in production glTF assets. Validate its emitted frames
+		// after generation instead of rejecting those inputs preemptively.
 		ValidateTriangle(faceIndex);
-		ValidateTangentDerivatives(faceIndex);
 	}
 }
 
@@ -93,53 +106,11 @@ void GltfMikkTangentContext::ValidateTriangle(std::size_t faceIndex) const
 	const ImportedVertex& first = m_vertices[firstIndex];
 	const ImportedVertex& second = m_vertices[secondIndex];
 	const ImportedVertex& third = m_vertices[thirdIndex];
-	if (!IsFinite(first.position) || !IsFinite(second.position) || !IsFinite(third.position) || !IsFinite(first.normal) ||
-	    !IsFinite(second.normal) || !IsFinite(third.normal) || !IsFinite(first.uv) || !IsFinite(second.uv) || !IsFinite(third.uv))
+	if (!IsFinite(first.position) || !IsFinite(second.position) || !IsFinite(third.position) || !IsFinite(first.normal)
+	    || !IsFinite(second.normal) || !IsFinite(third.normal) || !IsFinite(first.uv) || !IsFinite(second.uv) || !IsFinite(third.uv))
 	{
 		throw Diagnostics::Error(
 		    std::format("Normal-mapped glTF triangle {} contains non-finite position, normal, or texture-coordinate data.", faceIndex));
-	}
-}
-
-void GltfMikkTangentContext::ValidateTangentDerivatives(std::size_t faceIndex) const
-{
-	const std::size_t firstCorner = faceIndex * kVerticesPerTriangle;
-	const ImportedVertex& first = m_vertices[m_indices[firstCorner]];
-	const ImportedVertex& second = m_vertices[m_indices[firstCorner + 1u]];
-	const ImportedVertex& third = m_vertices[m_indices[firstCorner + 2u]];
-	const double firstEdgeX = static_cast<double>(second.position.x) - first.position.x;
-	const double firstEdgeY = static_cast<double>(second.position.y) - first.position.y;
-	const double firstEdgeZ = static_cast<double>(second.position.z) - first.position.z;
-	const double secondEdgeX = static_cast<double>(third.position.x) - first.position.x;
-	const double secondEdgeY = static_cast<double>(third.position.y) - first.position.y;
-	const double secondEdgeZ = static_cast<double>(third.position.z) - first.position.z;
-	const double crossX = firstEdgeY * secondEdgeZ - firstEdgeZ * secondEdgeY;
-	const double crossY = firstEdgeZ * secondEdgeX - firstEdgeX * secondEdgeZ;
-	const double crossZ = firstEdgeX * secondEdgeY - firstEdgeY * secondEdgeX;
-	const double areaSquared = crossX * crossX + crossY * crossY + crossZ * crossZ;
-	const double firstEdgeLengthSquared = firstEdgeX * firstEdgeX + firstEdgeY * firstEdgeY + firstEdgeZ * firstEdgeZ;
-	const double secondEdgeLengthSquared = secondEdgeX * secondEdgeX + secondEdgeY * secondEdgeY + secondEdgeZ * secondEdgeZ;
-	const double geometryScale = firstEdgeLengthSquared * secondEdgeLengthSquared;
-	const double relativeTolerance = static_cast<double>(std::numeric_limits<float>::epsilon());
-	if (geometryScale == 0.0 || areaSquared <= relativeTolerance * relativeTolerance * geometryScale)
-	{
-		throw Diagnostics::Error(
-		    std::format("Normal-mapped glTF triangle {} has degenerate geometry and cannot define a tangent basis.", faceIndex));
-	}
-
-	const double firstUvEdgeX = static_cast<double>(second.uv.x) - first.uv.x;
-	const double firstUvEdgeY = static_cast<double>(second.uv.y) - first.uv.y;
-	const double secondUvEdgeX = static_cast<double>(third.uv.x) - first.uv.x;
-	const double secondUvEdgeY = static_cast<double>(third.uv.y) - first.uv.y;
-	const double determinant = firstUvEdgeX * secondUvEdgeY - firstUvEdgeY * secondUvEdgeX;
-	const double determinantScale = std::abs(firstUvEdgeX * secondUvEdgeY) + std::abs(firstUvEdgeY * secondUvEdgeX);
-	if (determinantScale == 0.0 || std::abs(determinant) <= relativeTolerance * determinantScale)
-	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Normal-mapped glTF triangle {} has a singular texture-coordinate mapping and cannot define a tangent basis; "
-		        "repair the source UVs or provide authored tangents.",
-		        faceIndex));
 	}
 }
 

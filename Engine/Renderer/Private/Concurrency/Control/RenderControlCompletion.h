@@ -26,12 +26,12 @@ using RenderControlResult = std::variant<
 
 class RenderControlCompletion final
 {
-  public:
+public:
 	void Complete(RenderControlResult result);
 	void Cancel();
 	RenderControlResult Wait();
 
-  private:
+private:
 	std::mutex m_mutex;
 	std::condition_variable m_completedCondition;
 	RenderControlResult m_result;

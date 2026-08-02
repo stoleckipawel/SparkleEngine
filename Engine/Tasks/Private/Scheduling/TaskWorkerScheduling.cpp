@@ -60,8 +60,11 @@ void TaskExecutor::Implementation::Runtime::Enqueue(ReadyTask task, TaskWorker* 
 		laneState.InjectionQueue.push_back(std::move(task));
 	}
 
-	laneState.WorkEpoch.fetch_add(1, std::memory_order_release);
-	laneState.WorkCondition.notify_one();
+	{
+		std::lock_guard lock(laneState.WakeMutex);
+		++laneState.WakeEpoch;
+	}
+	laneState.WakeCondition.notify_one();
 }
 
 bool TaskExecutor::Implementation::Runtime::TryPopLocal(TaskWorker& worker, ReadyTask& task)
@@ -118,21 +121,19 @@ bool TaskExecutor::Implementation::Runtime::WaitForWork(TaskWorker& worker, Read
 	TaskLaneState& laneState = m_lanes[LaneIndex(worker.Lane)];
 	for (;;)
 	{
-		const std::uint64_t observedEpoch = laneState.WorkEpoch.load(std::memory_order_acquire);
+		std::unique_lock lock(laneState.WakeMutex);
+		const std::uint64_t observedWakeEpoch = laneState.WakeEpoch;
+		lock.unlock();
 		if (TryTakeWork(worker, task))
 		{
 			return true;
 		}
 
-		std::unique_lock lock(laneState.WorkMutex);
-		laneState.WorkCondition.wait(
+		lock.lock();
+		laneState.WakeCondition.wait(
 		    lock,
-		    [&laneState, observedEpoch]
-		    {
-			    return laneState.StopWorkers.load(std::memory_order_acquire) ||
-			           laneState.WorkEpoch.load(std::memory_order_acquire) != observedEpoch;
-		    });
-		if (laneState.StopWorkers.load(std::memory_order_acquire))
+		    [&laneState, observedWakeEpoch] { return laneState.WorkersStopping || laneState.WakeEpoch != observedWakeEpoch; });
+		if (laneState.WorkersStopping)
 		{
 			return false;
 		}
@@ -142,9 +143,7 @@ bool TaskExecutor::Implementation::Runtime::WaitForWork(TaskWorker& worker, Read
 void TaskExecutor::Implementation::Runtime::WorkerMain(TaskWorker& worker)
 {
 	TaskWorkerContext::Enter(this);
-	Threading::SetCurrentThreadRole(
-	    "Sparkle.Task." + std::string(LaneName(worker.Lane)) + "." +
-	    std::to_string(worker.LaneWorkerIndex));
+	Threading::SetCurrentThreadRole("Sparkle.Task." + std::string(LaneName(worker.Lane)) + "." + std::to_string(worker.LaneWorkerIndex));
 
 	ReadyTask task;
 	while (TryTakeWork(worker, task) || WaitForWork(worker, task))
@@ -159,9 +158,12 @@ void TaskExecutor::Implementation::Runtime::RequestWorkerStop() noexcept
 {
 	for (TaskLaneState& lane : m_lanes)
 	{
-		lane.StopWorkers.store(true, std::memory_order_release);
-		lane.WorkEpoch.fetch_add(1, std::memory_order_release);
-		lane.WorkCondition.notify_all();
+		{
+			std::lock_guard lock(lane.WakeMutex);
+			lane.WorkersStopping = true;
+			++lane.WakeEpoch;
+		}
+		lane.WakeCondition.notify_all();
 	}
 }
 

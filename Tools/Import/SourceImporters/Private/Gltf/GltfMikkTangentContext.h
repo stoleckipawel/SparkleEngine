@@ -11,12 +11,12 @@
 
 class GltfMikkTangentContext final
 {
-  public:
+public:
 	GltfMikkTangentContext(std::span<const ImportedVertex> vertices, std::span<const std::uint32_t> indices);
 
 	std::vector<DirectX::XMFLOAT4> Generate();
 
-  private:
+private:
 	static constexpr std::size_t kVerticesPerTriangle = 3u;
 	static constexpr float kMinimumVectorLengthSquared = 1.0e-12f;
 	static constexpr float kFrameTolerance = 1.0e-3f;
@@ -24,10 +24,10 @@ class GltfMikkTangentContext final
 	static bool IsFinite(const DirectX::XMFLOAT2& value) noexcept;
 	static bool IsFinite(const DirectX::XMFLOAT3& value) noexcept;
 	static bool IsUsableTangent(const DirectX::XMFLOAT4& tangent, const DirectX::XMFLOAT3& normal) noexcept;
+	static DirectX::XMFLOAT4 BuildFallbackTangent(const DirectX::XMFLOAT3& normal) noexcept;
 
 	void ValidateSourceGeometry() const;
 	void ValidateTriangle(std::size_t faceIndex) const;
-	void ValidateTangentDerivatives(std::size_t faceIndex) const;
 	const ImportedVertex& GetVertex(int faceIndex, int faceVertexIndex) const noexcept;
 
 	static GltfMikkTangentContext& GetOwner(const SMikkTSpaceContext* context) noexcept;

@@ -2,12 +2,12 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 
-#include <algorithm>
-#include <stop_token>
+#include <cassert>
 #include <utility>
 
 TextureCookMemoryLimiter::Lease::Lease(TextureCookMemoryLimiter& owner, std::size_t bytes) noexcept :
-    m_owner(&owner), m_bytes(bytes)
+    m_owner(&owner),
+    m_bytes(bytes)
 {
 }
 
@@ -17,7 +17,8 @@ TextureCookMemoryLimiter::Lease::~Lease()
 }
 
 TextureCookMemoryLimiter::Lease::Lease(Lease&& other) noexcept :
-    m_owner(std::exchange(other.m_owner, nullptr)), m_bytes(std::exchange(other.m_bytes, 0))
+    m_owner(std::exchange(other.m_owner, nullptr)),
+    m_bytes(std::exchange(other.m_bytes, 0))
 {
 }
 
@@ -42,38 +43,39 @@ void TextureCookMemoryLimiter::Lease::Release() noexcept
 	}
 }
 
-TextureCookMemoryLimiter::TextureCookMemoryLimiter(std::size_t capacityBytes) : m_capacityBytes(std::max<std::size_t>(capacityBytes, 1)) {}
-
-TextureCookMemoryLimiter::Lease TextureCookMemoryLimiter::Acquire(std::size_t bytes, std::stop_token cancellation)
+TextureCookMemoryLimiter::TextureCookMemoryLimiter(std::size_t capacityBytes) :
+    m_capacityBytes(capacityBytes)
 {
-	const std::size_t weight = std::clamp<std::size_t>(bytes, 1, m_capacityBytes);
-	std::stop_callback cancellationWake(
-	    cancellation,
-	    [this]
-	    {
-		    m_condition.notify_all();
-	    });
-	std::unique_lock lock(m_mutex);
-	m_condition.wait(
-	    lock,
-	    [this, weight, cancellation]
-	    {
-		    return cancellation.stop_requested() || weight <= m_capacityBytes - m_usedBytes;
-	    });
-	if (cancellation.stop_requested())
+	if (m_capacityBytes == 0)
 	{
-		throw Diagnostics::Error("Texture cook was cancelled while waiting for its decompressed-memory budget.");
+		throw Diagnostics::Error("Texture cook memory capacity is zero.");
+	}
+}
+
+TextureCookMemoryLimiter::Lease TextureCookMemoryLimiter::Acquire(std::size_t bytes)
+{
+	if (bytes == 0)
+	{
+		throw Diagnostics::Error("Texture cook pixel-data reservation is zero.");
+	}
+	if (bytes > m_capacityBytes)
+	{
+		throw Diagnostics::Error("Texture cook pixel data exceeds the configured memory capacity.");
 	}
 
-	m_usedBytes += weight;
-	return Lease(*this, weight);
+	std::unique_lock lock(m_mutex);
+	m_condition.wait(lock, [this, bytes] { return bytes <= m_capacityBytes - m_usedBytes; });
+
+	m_usedBytes += bytes;
+	return Lease(*this, bytes);
 }
 
 void TextureCookMemoryLimiter::Release(std::size_t bytes) noexcept
 {
 	{
 		std::lock_guard lock(m_mutex);
-		m_usedBytes -= std::min(bytes, m_usedBytes);
+		assert(bytes <= m_usedBytes && "Texture cook memory lease released more bytes than it owns.");
+		m_usedBytes -= bytes;
 	}
 
 	m_condition.notify_all();

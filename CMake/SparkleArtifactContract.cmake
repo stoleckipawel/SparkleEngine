@@ -3,18 +3,30 @@
 # Generated build trees are private CMake/MSBuild state. Runnable development
 # products live under artifacts/, and assembled packages live under dist/.
 
-set(SPARKLE_REPOSITORY_ROOT "${CMAKE_SOURCE_DIR}" CACHE PATH "Sparkle source repository root.")
-set(SPARKLE_BUILD_ROOT "${CMAKE_BINARY_DIR}" CACHE PATH "Active generated CMake build tree root.")
+set(SPARKLE_REPOSITORY_ROOT "${CMAKE_SOURCE_DIR}")
+set(SPARKLE_BUILD_ROOT "${CMAKE_BINARY_DIR}")
 set(SPARKLE_ARTIFACT_ROOT "${CMAKE_SOURCE_DIR}/artifacts" CACHE PATH "Generated development artifact root.")
 set(SPARKLE_DIST_ROOT "${CMAKE_SOURCE_DIR}/dist" CACHE PATH "Assembled distributable package root.")
-set(SPARKLE_DEV_ARTIFACT_ROOT "${SPARKLE_ARTIFACT_ROOT}/dev" CACHE PATH "Product-aware development artifact root.")
-set(SPARKLE_DEV_LAUNCHER_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/launcher" CACHE PATH "Sparkle Launcher development artifact root.")
-set(SPARKLE_DEV_TOOLS_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/tools" CACHE PATH "Development tool artifact root.")
-set(SPARKLE_DEV_PROJECTS_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/projects" CACHE PATH "Project editor/runtime artifact root.")
-set(SPARKLE_DEV_RUNTIME_SUPPORT_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/runtime-support" CACHE PATH "Internal runtime support library artifact root.")
-set(SPARKLE_DEV_LIBRARY_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/libraries" CACHE PATH "Development import/static library artifact root.")
-set(SPARKLE_DIAGNOSTICS_ROOT "${SPARKLE_ARTIFACT_ROOT}/diagnostics" CACHE PATH "Generated diagnostics artifact root.")
-set(SPARKLE_SYMBOL_ROOT "${SPARKLE_ARTIFACT_ROOT}/symbols" CACHE PATH "Generated symbol artifact root.")
+set(SPARKLE_ARTIFACT_VARIANT "" CACHE STRING "Optional artifact namespace for an alternate build tree.")
+
+if(SPARKLE_ARTIFACT_VARIANT AND NOT SPARKLE_ARTIFACT_VARIANT MATCHES "^[A-Za-z0-9._-]+$")
+    message(FATAL_ERROR "SPARKLE_ARTIFACT_VARIANT contains unsupported path characters: '${SPARKLE_ARTIFACT_VARIANT}'")
+endif()
+
+if(SPARKLE_ARTIFACT_VARIANT)
+    set(SPARKLE_ACTIVE_ARTIFACT_ROOT "${SPARKLE_ARTIFACT_ROOT}/${SPARKLE_ARTIFACT_VARIANT}")
+else()
+    set(SPARKLE_ACTIVE_ARTIFACT_ROOT "${SPARKLE_ARTIFACT_ROOT}")
+endif()
+
+set(SPARKLE_DEV_ARTIFACT_ROOT "${SPARKLE_ACTIVE_ARTIFACT_ROOT}/dev")
+set(SPARKLE_DEV_LAUNCHER_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/launcher")
+set(SPARKLE_DEV_TOOLS_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/tools")
+set(SPARKLE_DEV_PROJECTS_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/projects")
+set(SPARKLE_DEV_RUNTIME_SUPPORT_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/runtime-support")
+set(SPARKLE_DEV_LIBRARY_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/libraries")
+set(SPARKLE_DIAGNOSTICS_ROOT "${SPARKLE_ACTIVE_ARTIFACT_ROOT}/diagnostics")
+set(SPARKLE_SYMBOL_ROOT "${SPARKLE_ACTIVE_ARTIFACT_ROOT}/symbols")
 
 set(SPARKLE_RELEASE_CHANNEL "dev" CACHE STRING "Release channel: dev, preview, rc, or release.")
 set_property(CACHE SPARKLE_RELEASE_CHANNEL PROPERTY STRINGS dev preview rc release)
@@ -67,11 +79,17 @@ function(sparkle_configure_development_tool_artifacts target_name)
 endfunction()
 
 function(sparkle_configure_project_artifacts target_name project_name product_role)
-    sparkle_set_product_artifact_directories(${target_name} "${SPARKLE_DEV_PROJECTS_ROOT}/${project_name}/${product_role}" "projects/${project_name}/${product_role}")
+    sparkle_set_product_artifact_directories(
+        ${target_name}
+        "${SPARKLE_DEV_PROJECTS_ROOT}/${project_name}/${product_role}"
+        "projects/${project_name}/${product_role}")
 endfunction()
 
 function(sparkle_configure_runtime_support_artifacts target_name)
-    sparkle_set_product_artifact_directories(${target_name} "${SPARKLE_DEV_RUNTIME_SUPPORT_ROOT}/${target_name}" "runtime-support/${target_name}")
+    sparkle_set_product_artifact_directories(
+        ${target_name}
+        "${SPARKLE_DEV_RUNTIME_SUPPORT_ROOT}/${target_name}"
+        "runtime-support/${target_name}")
 endfunction()
 
 function(sparkle_declare_runtime_dll_owner product_target)
@@ -106,7 +124,9 @@ function(sparkle_stage_nvidia_streamline_runtime product_target)
     endif()
 
     if(NOT DEFINED SPARKLE_NVIDIA_STREAMLINE_RUNTIME_DLLS)
-        message(FATAL_ERROR "NVIDIA Streamline runtime DLL list is not configured. FetchDependencies.cmake must run before staging Streamline.")
+        message(FATAL_ERROR
+            "NVIDIA Streamline runtime DLL list is not configured. "
+            "FetchDependencies.cmake must run before staging Streamline.")
     endif()
 
     foreach(runtime_dll IN LISTS SPARKLE_NVIDIA_STREAMLINE_RUNTIME_DLLS)
@@ -127,7 +147,7 @@ if(NOT TARGET sparkle_release_assembly)
     add_custom_target(sparkle_release_assembly
         COMMAND ${CMAKE_COMMAND}
             "-DSPARKLE_REPOSITORY_ROOT=${SPARKLE_REPOSITORY_ROOT}"
-            "-DSPARKLE_ARTIFACT_ROOT=${SPARKLE_ARTIFACT_ROOT}"
+            "-DSPARKLE_ARTIFACT_ROOT=${SPARKLE_ACTIVE_ARTIFACT_ROOT}"
             "-DSPARKLE_DIST_ROOT=${SPARKLE_DIST_ROOT}"
             "-DSPARKLE_PACKAGE_VERSION=${SPARKLE_PACKAGE_VERSION}"
             "-DSPARKLE_RELEASE_CHANNEL=${SPARKLE_RELEASE_CHANNEL}"
@@ -140,5 +160,10 @@ if(NOT TARGET sparkle_release_assembly)
     )
 endif()
 
-message(STATUS "Sparkle roots: build=${SPARKLE_BUILD_ROOT}; artifacts=${SPARKLE_ARTIFACT_ROOT}; dev=${SPARKLE_DEV_ARTIFACT_ROOT}; dist=${SPARKLE_DIST_ROOT}")
-message(STATUS "Sparkle package identity: project=${SPARKLE_PACKAGE_PROJECT_ID}; version=${SPARKLE_PACKAGE_VERSION}; channel=${SPARKLE_RELEASE_CHANNEL}; platform=${SPARKLE_PACKAGE_PLATFORM}")
+message(STATUS
+    "Sparkle roots: build=${SPARKLE_BUILD_ROOT}; artifacts=${SPARKLE_ACTIVE_ARTIFACT_ROOT}; "
+    "dev=${SPARKLE_DEV_ARTIFACT_ROOT}; dist=${SPARKLE_DIST_ROOT}")
+message(STATUS "Sparkle artifact variant: ${SPARKLE_ARTIFACT_VARIANT}")
+message(STATUS
+    "Sparkle package identity: project=${SPARKLE_PACKAGE_PROJECT_ID}; version=${SPARKLE_PACKAGE_VERSION}; "
+    "channel=${SPARKLE_RELEASE_CHANNEL}; platform=${SPARKLE_PACKAGE_PLATFORM}")

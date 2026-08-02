@@ -4,6 +4,8 @@
 #include "SparkleLauncher/ProjectDiscovery.h"
 #include "SparkleLauncher/RepositoryLocator.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
+#include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Projects/ProjectLevelCatalog.h"
 
 #include <filesystem>
 #include <iostream>
@@ -36,6 +38,17 @@ int main(int argc, char** argv)
 	for (const SparkleLauncher::SparkleProject& project : projects)
 	{
 		std::cout << "  " << project.Id << " -> " << project.RootPath.string() << '\n';
+		try
+		{
+			const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(project.RootPath);
+			std::cout << "    " << catalog.levels.size() << " levels, " << catalog.optionalContentPacks.size() << " optional content packs"
+			          << '\n';
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			std::cerr << error.what() << '\n';
+			return 1;
+		}
 	}
 
 	std::cout << "Profiles:" << '\n';

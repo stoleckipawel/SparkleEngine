@@ -10,10 +10,10 @@
 
 class ProjectLevelCatalogReader final
 {
-  public:
+public:
 	static ProjectLevelCatalog Read(const std::filesystem::path& projectRoot);
 
-  private:
+private:
 	enum class Section
 	{
 		None,
@@ -30,6 +30,7 @@ class ProjectLevelCatalogReader final
 	void ParseLevelField(std::string_view key, std::string_view value);
 	void ParseOptionalContentPackField(std::string_view key, std::string_view value);
 	bool ParseBool(std::string_view value) const;
+	std::uintmax_t ParseByteCount(std::string_view value) const;
 	void ValidateCatalog() const;
 	std::filesystem::path ResolveProjectPath(std::string_view value) const;
 

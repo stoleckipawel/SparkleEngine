@@ -1,9 +1,11 @@
 # C. Candidate And Repository Gap Assessment
 
-Status: evidence-backed current-state audit
+Status: dated evidence snapshot; not current architecture, requirements, or implementation authority
 Assessment date: 2026-07-26
 Repository snapshot: `master` at `f74c26e9` plus an uncommitted renderer/residency worktree
 Inputs: [canonical requirements](Requirements.md), [source archive](RoleSourceArchive.md), supplied CV, [public professional profile](https://www.linkedin.com/in/stoleckipawel/), [public website](https://stoleckipawel.dev/), [public GitHub profile](https://github.com/stoleckipawel), local source inspection, build attempt, and public profiles of engineers already operating at principal/staff level
+
+Use this document to understand the evidence and gaps observed at the stated revision. Revalidate every repository, build, workload, and public-profile claim before using it for current planning. [Requirements](Requirements.md) owns the target, [Roadmap](Roadmap.md) owns sequence, and architecture/standards own implementation decisions.
 
 ## Executive Verdict
 
@@ -52,7 +54,7 @@ The working tree contained ongoing renderer/residency edits before this review. 
 
 ## Acceptance-Scene Readiness
 
-The scene decision is binding in [I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md): Sponza is Tier 0, Bistro is the Tier 1 primary flagship, and San Miguel is the Tier 1 secondary supported scene.
+The scene decision is binding in [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md): Sponza is Tier 0, Bistro is the Tier 1 primary flagship, and San Miguel is the Tier 1 secondary supported scene.
 
 | Capability | Current level | Repository fact | Next truthful gate |
 | --- | ---: | --- | --- |
@@ -159,12 +161,12 @@ Required site structure:
 
 | Evidence surface | Current repository signal | Why it matters |
 | --- | --- | --- |
-| Explicit graphics backends | About 80 D3D12 files / 14.4k lines and 76 Vulkan files / 12.7k lines under [RHI](../../../Engine/RHI). | Direct match for paired explicit-API ownership. |
-| Renderer architecture | About 32.4k source lines under [Renderer](../../../Engine/Renderer), including frame graph, persistent scene data, resources, passes, temporal state, providers, and ray tracing. | Proves system breadth if the review path selects the right slices. |
-| Path tracing and ReSTIR | [ray-tracing effects](../../../Engine/Renderer/Private/RayTracing/Effects), [lighting assembly](../../../Engine/Renderer/Private/Frame/Lighting), and [ray-tracing shaders](../../../Engine/Assets/Shaders/Passes/RayTracing). | Best existing flagship candidate for `PGE-02`, `PGE-05`, `PGE-08`, and `PGE-09`. |
-| Shader toolchain | [ShaderCompiler](../../../Tools/Shaders/ShaderCompiler) has DXC and Slang backends, reflection, contracts, cache, cooking, inspection, and runtime package support. | Distinctive evidence; stronger than another visual effect. |
-| Frame graph | [FrameGraph](../../../Engine/Renderer/Private/FrameGraph) plus the public article series. | Code and communication reinforce one another. |
-| Concurrency | [Tasks](../../../Engine/Tasks), immutable extraction, render thread, bounded frame queue, and persistent render data. | Useful for `PGE-05`, `PGE-07`, and `PGE-10` once tested and measured. |
+| Explicit graphics backends | About 80 D3D12 files / 14.4k lines and 76 Vulkan files / 12.7k lines under [RHI](../../Engine/RHI). | Direct match for paired explicit-API ownership. |
+| Renderer architecture | About 32.4k source lines under [Renderer](../../Engine/Renderer), including frame graph, persistent scene data, resources, passes, temporal state, providers, and ray tracing. | Proves system breadth if the review path selects the right slices. |
+| Path tracing and ReSTIR | [ray-tracing effects](../../Engine/Renderer/Private/RayTracing/Effects), [lighting assembly](../../Engine/Renderer/Private/Frame/Lighting), and [ray-tracing shaders](../../Engine/Assets/Shaders/Passes/RayTracing). | Best existing flagship candidate for `PGE-02`, `PGE-05`, `PGE-08`, and `PGE-09`. |
+| Shader toolchain | [ShaderCompiler](../../Tools/Shaders/ShaderCompiler) has DXC and Slang backends, reflection, contracts, cache, cooking, inspection, and runtime package support. | Distinctive evidence; stronger than another visual effect. |
+| Frame graph | [FrameGraph](../../Engine/Renderer/Private/FrameGraph) plus the public article series. | Code and communication reinforce one another. |
+| Concurrency | [Tasks](../../Engine/Tasks), immutable extraction, render thread, bounded frame queue, and persistent render data. | Useful for `PGE-05`, `PGE-07`, and `PGE-10` once tested and measured. |
 | Asset/cook pipeline | Source import, scene/material/texture cooking, shader cooking, and launcher workflows; FBX and glTF importers already exist. | Bistro FBX and San Miguel OBJ conversion/import can turn this into productization evidence if inventory losses and deterministic outputs are exposed. |
 
 ### Trust and verification defects

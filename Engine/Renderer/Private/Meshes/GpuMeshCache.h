@@ -22,7 +22,7 @@ struct GpuMeshPreparedData;
 
 class GpuMeshCache final
 {
-  public:
+public:
 	GpuMeshCache(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    RhiCommandSubmissionService& submissions,
@@ -36,8 +36,7 @@ class GpuMeshCache final
 	GpuMeshCache& operator=(GpuMeshCache&&) = delete;
 
 	GpuMeshHandle Request(const ImmutableRenderMeshHandle& mesh);
-	void UploadReadyMeshes(
-	    RenderCommandList& commandList);
+	void UploadReadyMeshes(RenderCommandList& commandList);
 	void RecordUploadSubmission(RhiSubmissionToken token) noexcept;
 	void PollResidency() noexcept;
 	void RetainOnly(std::span<const GpuMeshHandle> handles) noexcept;
@@ -48,7 +47,7 @@ class GpuMeshCache final
 	bool Contains(const Mesh& cpuMesh) const noexcept;
 	const GpuMesh* Find(const Mesh& cpuMesh) const noexcept;
 
-  private:
+private:
 	using CacheKey = std::pair<std::uint64_t, std::uint32_t>;
 
 	struct ActiveMesh final
@@ -68,12 +67,17 @@ class GpuMeshCache final
 		std::shared_ptr<GpuMeshPreparedData> Prepared;
 		std::unique_ptr<GpuMesh> Uploaded;
 		std::uint64_t ResidentBytes = 0;
+		bool PreparationStarted = false;
 		bool UploadSubmitted = false;
 		bool Wanted = true;
 	};
 
+	static constexpr std::size_t kMaximumConcurrentPreparations = 16;
+
 	GpuMeshHandle AllocateHandle();
 	MeshRequest* FindRequest(const CacheKey& key) noexcept;
+	void LaunchPendingPreparations();
+	void LaunchPreparation(MeshRequest& request);
 	void ConsumeCompletedPreparations() noexcept;
 	void ActivateResidentMeshes() noexcept;
 	void RemoveTerminalRequests() noexcept;

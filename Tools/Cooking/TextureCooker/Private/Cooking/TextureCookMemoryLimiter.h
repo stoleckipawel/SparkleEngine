@@ -3,14 +3,13 @@
 #include <condition_variable>
 #include <cstddef>
 #include <mutex>
-#include <stop_token>
 
 class TextureCookMemoryLimiter final
 {
-  public:
+public:
 	class Lease final
 	{
-	  public:
+	public:
 		Lease() noexcept = default;
 		~Lease();
 		Lease(Lease&& other) noexcept;
@@ -18,7 +17,7 @@ class TextureCookMemoryLimiter final
 		Lease(const Lease&) = delete;
 		Lease& operator=(const Lease&) = delete;
 
-	  private:
+	private:
 		friend class TextureCookMemoryLimiter;
 		Lease(TextureCookMemoryLimiter& owner, std::size_t bytes) noexcept;
 		void Release() noexcept;
@@ -27,9 +26,9 @@ class TextureCookMemoryLimiter final
 	};
 
 	explicit TextureCookMemoryLimiter(std::size_t capacityBytes);
-	Lease Acquire(std::size_t bytes, std::stop_token cancellation);
+	Lease Acquire(std::size_t bytes);
 
-  private:
+private:
 	void Release(std::size_t bytes) noexcept;
 
 	const std::size_t m_capacityBytes;

@@ -29,7 +29,7 @@ struct TaskExecution::State final
 {
 	explicit State(std::uint64_t generation = 0);
 
-	void Publish(TaskExecutionCompletion completed);
+	void Publish(TaskExecutionCompletion completion);
 	void RequestCancellation() noexcept;
 
 	mutable std::mutex Mutex;

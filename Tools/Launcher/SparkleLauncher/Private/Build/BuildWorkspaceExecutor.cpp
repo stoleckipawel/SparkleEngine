@@ -95,9 +95,10 @@ namespace SparkleLauncher
 
 		for (std::string_view needle : prioritizedNeedles)
 		{
-			const auto found = std::find_if(lines.begin(), lines.end(), [needle](const std::string& line) {
-				return line.find(needle) != std::string::npos;
-			});
+			const auto found = std::find_if(
+			    lines.begin(),
+			    lines.end(),
+			    [needle](const std::string& line) { return line.find(needle) != std::string::npos; });
 			if (found != lines.end())
 			{
 				return *found;
@@ -169,6 +170,11 @@ namespace SparkleLauncher
 		{
 			return detail.empty() ? "Generate project files failed." + logSuffix : "Generate project files failed: " + detail + logSuffix;
 		}
+		if (step.Id.starts_with("sync-content-"))
+		{
+			return detail.empty() ? "Optional content acquisition failed." + logSuffix
+			                      : "Optional content acquisition failed: " + detail + logSuffix;
+		}
 		if (step.Id == "build")
 		{
 			return detail.empty() ? "Build targets failed." + logSuffix : "Build targets failed: " + detail + logSuffix;
@@ -182,8 +188,7 @@ namespace SparkleLauncher
 
 	static std::optional<std::string> ValidateEnabledSourceDependenciesAfterConfigure(const BuildWorkspaceOperationPlan& plan)
 	{
-		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers &&
-		    plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
+		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
 		{
 			return std::nullopt;
 		}
@@ -259,15 +264,17 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool ShouldRetryConfigureAfterDependencyRecovery(const BuildWorkspaceOperationPlan& plan, const BuildWorkspaceProcessStep& step, const ProcessResult& result)
+	static bool ShouldRetryConfigureAfterDependencyRecovery(
+	    const BuildWorkspaceOperationPlan& plan,
+	    const BuildWorkspaceProcessStep& step,
+	    const ProcessResult& result)
 	{
 		if (step.Id != "configure")
 		{
 			return false;
 		}
 
-		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers &&
-		    plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
+		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
 		{
 			return false;
 		}
@@ -293,12 +300,16 @@ namespace SparkleLauncher
 		    "Corrupt or incomplete NVIDIA NVAPI source cache detected",
 		};
 
-		return std::any_of(std::begin(retryNeedles), std::end(retryNeedles), [&text](std::string_view needle) {
-			return text.find(needle) != std::string::npos;
-		});
+		return std::any_of(
+		    std::begin(retryNeedles),
+		    std::end(retryNeedles),
+		    [&text](std::string_view needle) { return text.find(needle) != std::string::npos; });
 	}
 
-	OperationRecord RunBuildWorkspaceOperationPlan(BuildWorkspaceOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback)
+	OperationRecord RunBuildWorkspaceOperationPlan(
+	    BuildWorkspaceOperationPlan plan,
+	    IProcessRunner& processRunner,
+	    ProcessOutputCallback outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);
@@ -317,8 +328,8 @@ namespace SparkleLauncher
 			{
 				std::error_code errorCode;
 				std::filesystem::create_directories(request.WorkingDirectory, errorCode);
-				if (plan.Freshness.State == BuildFilesFreshnessState::GeneratorMismatch ||
-				    plan.Freshness.State == BuildFilesFreshnessState::FreshnessStampMismatch)
+				if (plan.Freshness.State == BuildFilesFreshnessState::GeneratorMismatch
+				    || plan.Freshness.State == BuildFilesFreshnessState::FreshnessStampMismatch)
 				{
 					std::string cleanupError;
 					if (!ClearStaleConfigureState(plan, cleanupError))
@@ -331,7 +342,8 @@ namespace SparkleLauncher
 			}
 
 			const ProcessOutputCallback existingCallback = request.OutputCallback;
-			request.OutputCallback = [existingCallback, outputCallback](std::string_view output) {
+			request.OutputCallback = [existingCallback, outputCallback](std::string_view output)
+			{
 				if (existingCallback)
 				{
 					existingCallback(output);
@@ -347,7 +359,8 @@ namespace SparkleLauncher
 			{
 				if (ShouldRetryConfigureAfterDependencyRecovery(plan, step, result))
 				{
-					const std::string retryMessage = "Detected a stale or corrupt source dependency cache. Cleaning build/_deps and retrying configure once.\n";
+					const std::string retryMessage =
+					    "Detected a stale or corrupt source dependency cache. Cleaning build/_deps and retrying configure once.\n";
 					if (request.OutputCallback)
 					{
 						request.OutputCallback(retryMessage);
@@ -374,7 +387,10 @@ namespace SparkleLauncher
 				if (!result.Launched || result.Canceled || result.ExitCode != 0)
 				{
 					operation.FailureSummary = MakeBuildWorkspaceFailureSummary(step, result);
-					MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
+					MarkOperationFinished(
+					    operation,
+					    result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed,
+					    result.ExitCode);
 					return operation;
 				}
 			}
@@ -383,8 +399,8 @@ namespace SparkleLauncher
 			{
 				if (const std::optional<std::string> dependencyValidationFailure = ValidateEnabledSourceDependenciesAfterConfigure(plan))
 				{
-					operation.FailureSummary = *dependencyValidationFailure +
-					                           (step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string());
+					operation.FailureSummary = *dependencyValidationFailure
+					    + (step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string());
 					MarkOperationFinished(operation, OperationStatus::Failed, 0);
 					return operation;
 				}

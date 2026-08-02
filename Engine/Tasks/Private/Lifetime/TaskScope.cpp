@@ -6,7 +6,8 @@
 #include <stdexcept>
 #include <utility>
 
-TaskScope::State::State(TaskScopeDesc desc) : Desc(std::move(desc))
+TaskScope::State::State(TaskScopeDesc desc) :
+    Desc(std::move(desc))
 {
 	if (Desc.Name.empty() || Desc.Name.size() > TaskName::MaximumLength)
 	{
@@ -68,20 +69,16 @@ void TaskScope::State::NotifyParentIfSettled(std::unique_lock<std::mutex>& lock)
 void TaskScope::State::ExecutionSettled()
 {
 	std::unique_lock lock(Mutex);
-	if (ActiveExecutions > 0)
-	{
-		--ActiveExecutions;
-	}
+	assert(ActiveExecutions != 0 && "TaskScope execution settled more than once.");
+	--ActiveExecutions;
 	NotifyParentIfSettled(lock);
 }
 
 void TaskScope::State::ChildSettled()
 {
 	std::unique_lock lock(Mutex);
-	if (OpenChildren > 0)
-	{
-		--OpenChildren;
-	}
+	assert(OpenChildren != 0 && "TaskScope child settled more than once.");
+	--OpenChildren;
 	NotifyParentIfSettled(lock);
 }
 
@@ -128,13 +125,7 @@ bool TaskScope::State::JoinFor(std::chrono::milliseconds timeout)
 	std::unique_lock lock(Mutex);
 	Closed = true;
 	NotifyParentIfSettled(lock);
-	return Condition.wait_for(
-	    lock,
-	    timeout,
-	    [this]
-	    {
-		    return Settled;
-	    });
+	return Condition.wait_for(lock, timeout, [this] { return Settled; });
 }
 
 void TaskScope::State::CancelAndJoin() noexcept
@@ -145,12 +136,7 @@ void TaskScope::State::CancelAndJoin() noexcept
 		return;
 	}
 	std::unique_lock lock(Mutex);
-	Condition.wait(
-	    lock,
-	    [this]
-	    {
-		    return Settled;
-	    });
+	Condition.wait(lock, [this] { return Settled; });
 }
 
 bool TaskScope::State::IsCancellationRequested() const noexcept
@@ -165,7 +151,8 @@ bool TaskScope::State::IsSettled() const noexcept
 	return Settled;
 }
 
-TaskScope::TaskScope(TaskScopeDesc desc, TaskScope* parent) : m_state(std::make_shared<State>(std::move(desc)))
+TaskScope::TaskScope(TaskScopeDesc desc, TaskScope* parent) :
+    m_state(std::make_shared<State>(std::move(desc)))
 {
 	if (parent != nullptr && !parent->m_state->RegisterChild(m_state))
 	{
@@ -175,12 +162,12 @@ TaskScope::TaskScope(TaskScopeDesc desc, TaskScope* parent) : m_state(std::make_
 
 TaskScope::~TaskScope()
 {
-	const bool wasSettled = m_state->IsSettled();
-	if (!wasSettled)
+	const bool settledBeforeDestruction = m_state->IsSettled();
+	if (!settledBeforeDestruction)
 	{
 		m_state->CancelAndJoin();
 	}
-	assert(wasSettled && "TaskScope owner must explicitly cancel/join or join before destruction.");
+	assert(settledBeforeDestruction && "TaskScope owner must explicitly cancel/join or join before destruction.");
 }
 
 void TaskScope::Cancel() noexcept

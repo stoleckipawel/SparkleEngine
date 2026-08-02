@@ -1,0 +1,13 @@
+# HLSL/HLSLI are formatted through clang-format's C++ parser. Keep this override
+# minimal and validate shader diffs through the normal DXIL/SPIR-V pipeline.
+BasedOnStyle: InheritParentConfig
+Language: Cpp
+
+ColumnLimit: 140
+ReflowComments: Never
+SpaceAfterCStyleCast: false
+
+# This expresses the authored shader convention, but clang-format 22.1.3 does
+# not recognize single-bracket HLSL attributes such as [numthreads] and
+# [unroll]. A separate source check must enforce their own-line placement.
+BreakAfterAttributes: Always

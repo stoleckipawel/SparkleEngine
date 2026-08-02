@@ -26,10 +26,7 @@ namespace TextureCookPipeline
 		return texture;
 	}
 
-	static TextureMipLevelData EncodeUncompressedMip(
-	    const WorkingMipLevel& sourceMip,
-	    bool sourceWasFloat,
-	    DXGI_FORMAT outputFormat)
+	static TextureMipLevelData EncodeUncompressedMip(const WorkingMipLevel& sourceMip, bool sourceWasFloat, DXGI_FORMAT outputFormat)
 	{
 		TextureMipLevelData mip;
 		mip.width = sourceMip.width;
@@ -61,9 +58,7 @@ namespace TextureCookPipeline
 		return mip;
 	}
 
-	static TextureLoadResult BuildUncompressedTexture(
-	    const TextureCookRequest& request,
-	    const WorkingTexture& workingTexture)
+	static TextureLoadResult BuildUncompressedTexture(const TextureCookRequest& request, const WorkingTexture& workingTexture)
 	{
 		const DXGI_FORMAT outputFormat = ResolveUncompressedOutputFormat(request, workingTexture.sourceWasFloat);
 		TextureLoadResult processedTexture = BuildOutputLayout(workingTexture, outputFormat);
@@ -76,8 +71,7 @@ namespace TextureCookPipeline
 
 			for (const WorkingMipLevel& workingMip : workingSlice)
 			{
-				outputSlice.mipLevels.push_back(
-				    EncodeUncompressedMip(workingMip, workingTexture.sourceWasFloat, outputFormat));
+				outputSlice.mipLevels.push_back(EncodeUncompressedMip(workingMip, workingTexture.sourceWasFloat, outputFormat));
 			}
 		}
 
@@ -112,13 +106,11 @@ namespace TextureCookPipeline
 		return processedTexture;
 	}
 
-	TextureLoadResult ProcessCompressedSource(
-	    const TextureCookRequest& request,
-	    TextureLoadResult sourceTexture)
+	TextureLoadResult ProcessCompressedSource(const TextureCookRequest& request, TextureLoadResult sourceTexture)
 	{
-		if (request.policy.mipPolicy == TextureMipPolicy::Generate)
+		if (request.policy.mipPolicy == TextureMipPolicy::Generate && sourceTexture.GetMipCount() == 1)
 		{
-			throw Diagnostics::Error("Generating mips from compressed source DDS content is not supported yet.");
+			throw Diagnostics::Error("Compressed source DDS content has no mip chain and cannot be decompressed for mip generation yet.");
 		}
 
 		if (request.policy.dimension == TextureDimension::TextureCube && !sourceTexture.IsCube())
@@ -147,9 +139,7 @@ namespace TextureCookPipeline
 		return sourceTexture;
 	}
 
-	TextureLoadResult BuildOutputTexture(
-	    const TextureCookRequest& request,
-	    const WorkingTexture& workingTexture)
+	TextureLoadResult BuildOutputTexture(const TextureCookRequest& request, const WorkingTexture& workingTexture)
 	{
 		const CompressionTarget target = ResolveCompressionTarget(request, workingTexture);
 		if (target == CompressionTarget::None)

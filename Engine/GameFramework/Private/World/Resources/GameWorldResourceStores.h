@@ -17,4 +17,7 @@ struct GameWorldResourceStores final
 	MaterialVariantResourceStore MaterialVariants;
 	SkeletonResourceStore Skeletons;
 	TextureResourceStore Textures;
+
+private:
+	static std::uint32_t IssueGeneration() noexcept;
 };

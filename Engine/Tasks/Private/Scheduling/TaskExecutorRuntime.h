@@ -41,10 +41,10 @@ struct TaskExecutor::Implementation::Runtime final
 	{
 		std::mutex InjectionMutex;
 		std::deque<ReadyTask> InjectionQueue;
-		std::mutex WorkMutex;
-		std::condition_variable WorkCondition;
-		std::atomic_uint64_t WorkEpoch{0};
-		std::atomic_bool StopWorkers{false};
+		std::mutex WakeMutex;
+		std::condition_variable WakeCondition;
+		std::uint64_t WakeEpoch = 0;
+		bool WorkersStopping = false;
 		std::vector<TaskWorker*> Workers;
 	};
 
@@ -65,7 +65,7 @@ struct TaskExecutor::Implementation::Runtime final
 	void Enqueue(ReadyTask task, TaskWorker* preferredWorker, TaskLane lane);
 	void OnExecutionSettled();
 
-  private:
+private:
 	enum class LifecycleState : std::uint8_t
 	{
 		Accepting,
@@ -76,15 +76,10 @@ struct TaskExecutor::Implementation::Runtime final
 	};
 
 	static void ValidateConfiguration(const TaskExecutorConfig& config);
-	static bool RejectExecution(
-	    const std::shared_ptr<TaskExecution::State>& execution,
-	    std::uint64_t generation,
-	    std::string_view reason);
+	static bool RejectExecution(const std::shared_ptr<TaskExecution::State>& execution, std::uint64_t generation, std::string_view reason);
 	static std::size_t LaneIndex(TaskLane lane) noexcept;
 	static const char* LaneName(TaskLane lane) noexcept;
-	std::shared_ptr<TaskExecution::State> CreateExecution(
-	    std::uint64_t generation,
-	    const std::shared_ptr<TaskScope::State>& scope) const;
+	std::shared_ptr<TaskExecution::State> CreateExecution(std::uint64_t generation, const std::shared_ptr<TaskScope::State>& scope) const;
 	bool ValidateLaunchRequest(
 	    const CompiledTaskGraph& graph,
 	    const TaskExecutionContext& context,

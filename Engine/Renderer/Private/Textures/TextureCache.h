@@ -41,7 +41,7 @@ enum class TextureId : std::uint8_t
 
 class TextureCache final
 {
-  public:
+public:
 	using PreviewTextureResolver = TexturePreviewHandleResolver;
 
 	TextureCache(
@@ -77,7 +77,7 @@ class TextureCache final
 
 	TextureDiagnosticsSnapshot CaptureDiagnosticsSnapshot(const PreviewTextureResolver& resolvePreviewTexture) const;
 
-  private:
+private:
 	using TextureKey = std::wstring;
 
 	struct ResolvedTexturePath final
@@ -101,6 +101,7 @@ class TextureCache final
 		std::optional<LoadedTextureData> Decoded;
 		std::optional<RendererTexture> Uploaded;
 		RhiResourceHandle UploadedResource;
+		bool LoadStarted = false;
 		bool UploadSubmitted = false;
 		bool Wanted = true;
 	};
@@ -118,10 +119,13 @@ class TextureCache final
 	};
 
 	static constexpr std::size_t kTextureCount = static_cast<std::size_t>(TextureId::Count);
+	static constexpr std::size_t kMaximumConcurrentLoads = 16;
 
 	void LoadDefaultTextures(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources);
 	void RequestTexture(const ResolvedTexturePath& source, std::uint32_t generation);
 	void SynchronizeSceneTextures(const RenderTextureTable& textures);
+	void LaunchPendingRequests();
+	void LaunchRequest(TextureRequest& request);
 	void ConsumeCompletedRequests() noexcept;
 	void UploadReadyTextures(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources);
 	RendererTexture CreateTexture(
@@ -135,6 +139,7 @@ class TextureCache final
 	void ReleaseActiveTexture(ActiveTexture& texture) noexcept;
 	RhiSubmissionState CaptureLastSubmittedState() const noexcept;
 	const RendererTexture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
+	bool HasPendingRequest(const std::filesystem::path& texturePath) const noexcept;
 	std::optional<ResolvedTexturePath> ResolveTexturePath(const std::filesystem::path& texturePath) const noexcept;
 	void ReleaseTexture(RendererTexture& texture) noexcept;
 	TextureDiagnosticsRow BuildDiagnosticsRow(

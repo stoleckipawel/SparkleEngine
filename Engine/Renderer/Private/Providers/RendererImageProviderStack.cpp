@@ -28,35 +28,37 @@ void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardw
 	RhiInteropService& interop = renderHardwareInterface.GetInteropService();
 
 	m_upscaler = CreateConfiguredUpscalerProvider();
-	if (m_upscaler != nullptr &&
-	    !m_upscaler->Initialize(
+	if (m_upscaler != nullptr
+	    && !m_upscaler->Initialize(
 	        capabilities,
 	        interop.GetDeviceQueueInterop(
 	            RhiNativeInteropRequest{
 	                .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
 	                .Reason = "Renderer upscaler provider initialization"})))
 	{
-		Diagnostics::Fatal(
-		    g_rendererImageProviderStackLogger,
-		    __FILE__,
-		    __LINE__,
-		    "The configured renderer upscaler could not initialize on the selected RHI backend and adapter.");
+		m_upscaler->Shutdown();
+		m_upscaler.reset();
+		CVarUpscalerProvider.Set(EUpscalerProviderKind::Linear);
+		g_rendererImageProviderStackLogger->warn(
+		    "The configured renderer upscaler could not initialize on the selected RHI backend and adapter; falling back to linear "
+		    "upscaling.");
 	}
 
 	m_rayReconstruction = CreateConfiguredRayReconstructionProvider();
-	if (m_rayReconstruction != nullptr &&
-	    !m_rayReconstruction->Initialize(
+	if (m_rayReconstruction != nullptr
+	    && !m_rayReconstruction->Initialize(
 	        capabilities,
 	        interop.GetDeviceQueueInterop(
 	            RhiNativeInteropRequest{
 	                .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
 	                .Reason = "Renderer ray-reconstruction provider initialization"})))
 	{
-		Diagnostics::Fatal(
-		    g_rendererImageProviderStackLogger,
-		    __FILE__,
-		    __LINE__,
-		    "The configured ray-reconstruction provider could not initialize on the selected RHI backend and adapter.");
+		m_rayReconstruction->Shutdown();
+		m_rayReconstruction.reset();
+		CVarRayReconstructionMode.Set(EngineRayReconstructionMode::Off);
+		g_rendererImageProviderStackLogger->warn(
+		    "The configured ray-reconstruction provider could not initialize on the selected RHI backend and adapter; disabling ray "
+		    "reconstruction.");
 	}
 
 	m_resetHistoryPending = true;
@@ -120,7 +122,5 @@ ImageProviderGraphKey RendererImageProviderStack::GetFrameGraphKey() const noexc
 
 ImageProviderPassContext RendererImageProviderStack::BuildPassContext() noexcept
 {
-	return ImageProviderPassContext{
-	    .Upscaling = m_upscaler.get(),
-	    .RayReconstruction = m_rayReconstruction.get()};
+	return ImageProviderPassContext{.Upscaling = m_upscaler.get(), .RayReconstruction = m_rayReconstruction.get()};
 }

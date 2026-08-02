@@ -1,6 +1,6 @@
-# Renderer and RHI Boundary
+# Renderer and RHI Architecture Boundary
 
-Status: canonical implementation policy  
+Status: canonical architecture decision
 Reference revisions: NVIDIA NVRHI `8e8c36e37558acec333204619b95d9d2fcdc4a79`; NVIDIA Donut `bfdebdd7dd5455c503b2737a1967a4ef651c145b`
 
 ## Dependency Direction
@@ -35,13 +35,29 @@ Application / Editor
 | DLSS/Streamline feature policy and resource tagging | Renderer external-provider target |
 | Narrow native handles required by an external provider | RHI interop service |
 
-Sparkle deliberately differs from NVRHI's optional automatic barrier tracking: the Renderer frame graph is the only high-level barrier and scheduling authority. RHI command lists remain explicit and do not infer a second dependency graph.
+- `RenderCoordinator` owns mutable renderer/RHI state, queue submission, presentation, and render lifecycle.
+- Renderer consumes immutable owned values or stable handles; it does not query ECS or dereference `GameWorld`.
+- Render-owned proxies and tables are derived state, never a second gameplay authority.
+- CPU packet lifetime and GPU resource lifetime are distinct.
+
+## Frame Graph Contract
+
+The frame graph is the only renderer scheduling, barrier, aliasing, history, and queue-dependency authority:
+
+- setup declares every resource read/write, history, queue preference, and imported or persistent resource;
+- compile resolves order, lifetime, aliasing, barriers, queue ownership, and recording eligibility;
+- execute records only compiled work and does not discover dependencies, create hidden resources/pipelines, or retain frame-packet memory;
+- setup and compile remain serial until measured evidence justifies a bounded change;
+- no ECS scheduler, renderer task graph, RHI state tracker, or backend queue policy may infer a competing dependency graph.
+
+Sparkle deliberately differs from NVRHI's optional automatic barrier tracking. RHI command lists remain explicit and execute the compiled plan.
 
 ## Lifetime and Recording Rules
 
 - Public resources use opaque generational handles; backend objects never escape through ordinary Renderer APIs.
 - Destruction/reuse is retired by `RhiSubmissionToken`. Routine frame execution, resize, capture, and scene changes do not wait for device idle.
 - A recording worker owns one move-only `RhiCommandRecordingLease`. It may record commands and use preassigned transient upload/descriptor storage; it does not submit, present, wait, or mutate global caches.
+- D3D12 allocator/list and Vulkan pool/buffer ownership are exclusive to the recording lease; upload and transient descriptor storage is worker-local or preassigned and retired by completion token.
 - Submission and presentation remain owned by the render coordinator.
 
 This follows the NVRHI principles of safe deferred destruction, explicit command-list ownership, parallel recording, multi-queue submission, and narrow native escape hatches while retaining Sparkle's existing handle model.

@@ -4,6 +4,8 @@ Status: canonical flagship workload contract
 Date: 2026-07-26
 Scope: content ingestion, material and lighting correctness, raster/ray/path-traced quality, whole-system performance, neural rendering evidence, and portfolio presentation
 
+This document owns scene selection and exact workload-specific proof gates. [Principal Graphics Requirements](../Strategy/Requirements.md) owns capability/evidence meaning, while [Engineering Standards](Standards/README.md) owns reusable implementation and measurement rules.
+
 ## Decision
 
 The ORCA Bistro scene is SparkleEngine's primary product acceptance workload for the next six to twelve months. San Miguel 2.0 is the supported secondary acceptance workload.
@@ -26,7 +28,7 @@ The intentional user-facing scene set is:
 
 This trio is recognizable in graphics practice and varied enough to make measurements informative. It is a supported gallery, not three competing flagship narratives.
 
-This workload is the shared proof surface for [the canonical requirements](../../Strategy/PrincipalGraphics/Requirements.md), [the gap assessment](../../Strategy/PrincipalGraphics/GapAssessment.md), [the execution roadmap](../../Strategy/PrincipalGraphics/Roadmap.md), [the executive direction](../../Strategy/PrincipalGraphics/ExecutiveSummary.md), and [the engineering persona](../../Strategy/PrincipalGraphics/EngineerPersona.md).
+This workload is the shared proof surface for [the canonical requirements](../Strategy/Requirements.md), [the gap assessment](../Strategy/GapAssessment.md), [the execution roadmap](../Strategy/Roadmap.md), [the executive direction](../Strategy/ExecutiveSummary.md), and [the engineering persona](../Strategy/EngineerPersona.md).
 
 ## Why Bistro
 
@@ -75,8 +77,7 @@ San Miguel is an iconic rendering-research scene: it appeared on the cover of th
 Authoritative context and sources:
 
 - [Physically Based Rendering, fourth-edition preface](https://www.pbr-book.org/4ed/Preface);
-- [San Miguel 2.0 in the McGuire Computer Graphics Archive](https://casual-effects.com/g3d/data10/index.html);
-- [pbrt scene collection](https://www.pbrt.org/scenes-v3).
+- [San Miguel 2.0 in the McGuire Computer Graphics Archive](https://casual-effects.com/g3d/data10/index.html).
 
 San Miguel earns a permanent place because it exposes a different failure profile:
 
@@ -164,13 +165,62 @@ Commit the small level/catalog/configuration records; keep the media external. T
 | `Bistro` | `BistroFull` | `Bistro` | Conditional future combined level; unavailable until spatial composition is verified. |
 | `SanMiguel` | `SanMiguelHigh` | `SanMiguel` | Same hacienda composition at high detail; default user-facing and hero/reference variant. |
 | `SanMiguel` | `SanMiguelLow` | `SanMiguel` | Same composition at reduced geometry; controlled scaling and lower-end fallback experiment. |
+| `ModernSponza` | `ModernSponza` | `ModernSponza` | Optional modern base scene; never downloaded by the default repository, build, cook, or launch path. |
+| `ModernSponza` | `ModernSponzaCurtains` | `ModernSponzaCurtains` | Base plus the Colorful Curtains add-on; presented as an add-on variant, not a standalone world. |
+| `ModernSponza` | `ModernSponzaCandles` | `ModernSponzaCandles` | Base plus the Emissive Candles add-on; the parent base is acquired automatically when selected. |
+| `ModernSponza` | `ModernSponzaKnight` | `ModernSponzaKnight` | Base plus the Animated Knight add-on; animation support remains subject to the normal importer/cooker gates. |
 
 Target pack roots remain project-owned and predictable:
 
 - `Bistro` -> `Projects/Showcase/Assets/Meshes/Bistro`;
-- `SanMiguel` -> `Projects/Showcase/Assets/Meshes/SanMiguel`.
+- `SanMiguel` -> `Projects/Showcase/Assets/Meshes/SanMiguel`;
+- `ModernSponza` and its add-ons -> `Projects/Showcase/Assets/Meshes/ModernSponza`;
+- `JungleRuins` -> `Projects/Showcase/Assets/Meshes/JungleRuins`.
 
 When a pack is absent, the launcher/level picker should show it as unavailable with provenance/acquisition instructions; default build, cook, CI, and Sponza launch must remain usable. When present, discovery must not require source edits or a scene-specific executable.
+
+### Optional Content Sync Contract
+
+All external maps are opt-in and absent from the repository by default. `Prepare Workspace` acquires only selected packages, caches the publisher archive in the per-repository user-local launcher state, validates the published archive byte count, records a SHA-256 acquisition manifest, and extracts through a transactional staging directory into gitignored project content roots. A Modern Sponza add-on selection also acquires the Modern Sponza base first.
+
+The launcher must distinguish `ready`, `selected`, `source ready`, and `future` states. A source archive being present does not make a workload runtime-supported. Unsupported packages remain visible with their official source page and exact blocker, but their download control is disabled and they cannot enter the sync plan.
+
+| Optional package | Launcher state | Runtime/use contract |
+| --- | --- | --- |
+| Bistro | Opt-in download | Direct FBX source route; exterior, original interior, and wine interior level records are available after acquisition and cook. |
+| San Miguel 2.0 | Opt-in source download | The high/low level records remain non-selectable until the deterministic OBJ/MTL/PNG-to-glTF route is implemented and verified. |
+| Modern Sponza base | Opt-in download | glTF base route and parent of every Sponza add-on. |
+| Colorful Curtains | Opt-in add-on download | Supported as a Modern Sponza add-on variant. |
+| Emissive Candles | Opt-in add-on download | Supported as a Modern Sponza add-on variant; light-import losses must remain explicit. |
+| Animated Knight | Opt-in add-on download | Supported as a Modern Sponza add-on variant through the FBX animation route. |
+| Ivy | Visible, disabled, never downloaded | Future geometric-foliage density, residency, and scaling work. |
+| Trees | Visible, disabled, never downloaded | Future alpha-card foliage and transparency work. |
+| Flood | Visible, disabled, never downloaded | Future Alembic animation, water shading, and sequence playback work. |
+| Volumetric Explosion | Visible, disabled, never downloaded | Future OpenVDB import, volume rendering, and volume-sequence streaming work. |
+| Jungle Ruins | Opt-in source download | Source acquisition is supported now. Runtime selection remains blocked until USD composition plus virtualized or out-of-core geometry is an explicit implemented program. |
+
+The catalog contains the official source/download URL, landing page, archive name, expected bytes, publisher version, license summary, extraction root, required payload path, parent relationship, and support blocker. The license embedded in each downloaded archive remains authoritative.
+
+### Current integration evidence (2026-08-02)
+
+This is an integration smoke record, not a quality, fidelity, or performance-gate closure. It used `DevelopmentEditor` on Windows 11 build 26200, an AMD Ryzen 9 8940HX, 64 GiB system memory, and an NVIDIA GeForce RTX 5070 Ti Laptop GPU with Windows driver `32.0.16.1047`. Process-memory samples were taken after the editor had remained responsive for the stated window. No FPS, frame-time percentile, peak-memory, D3D12/Vulkan comparison, reference-image, or visual-fidelity claim was produced.
+
+| Workload | Acquisition/cook evidence | Launch evidence | Honest status and remaining gaps |
+| --- | --- | --- | --- |
+| Built-in seven-level set | The combined scene stage passed; all 163 referenced textures cooked. | Every built-in level remained responsive in a six-second per-level sweep; working set was 697–700 MiB and private memory was 4.07–4.28 GiB. | Startup/cook preservation passed. This is not a frame-time or image-quality result. |
+| Bistro exterior, interior, and wine interior | NVIDIA archive byte count matched `894377473`; SHA-256 `0d50e3c724c6c5da19f8eb99ad3f53e36fec37ffa2df9621f9ccf0603f3934e1`. The isolated scene stage and 408-texture stage passed. | All three variants remained responsive for 12 seconds in the combined registry; working set was 697–702 MiB and private memory was 4.03–4.05 GiB. | Usable as opt-in levels. Legacy FBX specular-color and separate opacity maps currently use declared scalar/material fallbacks; camera/light intent and transparent-material fidelity remain unproven. |
+| Modern Sponza base | Intel archive byte count matched `3987608266`; SHA-256 `b8bb853884ab1566b3beb35666bd09882a4e0dc16661e4684e103792cf0229b9`. The isolated scene stage and 104-texture stage passed. | Remained responsive for 12 seconds in the combined registry at about 697 MiB working set and 4.03 GiB private memory. | Usable as an opt-in level. Secondary UV sets and normal-strength scalars are accepted but not represented by the current material runtime; malformed authored tangents may be regenerated. |
+| Colorful Curtains | Intel archive byte count matched `786898766`; SHA-256 `3ba96e967c8f5ad0a133309cedb342e3563f9cccb42d04e188f55c0f2125bb65`. Base-plus-add-on scene cook and 114-texture stage passed. | Remained responsive for 12 seconds at about 699 MiB working set and 4.03 GiB private memory. | Usable as a Modern Sponza add-on variant, not a standalone world. Transparency and reference-image fidelity remain open gates. |
+| Emissive Candles | Intel archive byte count matched `3190731713`; SHA-256 `f8a43d972f377e7eb25e52fdc92faed425ad001a4516e0ecef436ff2f8663396`. Base-plus-add-on scene cook and 104-texture stage passed. | Remained responsive for 12 seconds at about 697 MiB working set and 4.03 GiB private memory. | Usable as an add-on stress level. This proves loadability, not correct source-light import, emissive-GI contribution, or acceptable frame time for the intended candle count. |
+| Animated Knight | Intel archive byte count matched `1202508298`; SHA-256 `9112d9789ab2da50c77529907833bd008e5fa602f89438a5c1e82d7d4bcde2a5`. Helper curves/points were excluded after Assimp primitive separation; renderable triangles remained strict. Mesh, skeleton, and animation products were emitted. | Remained responsive for 12 seconds at about 702 MiB working set and 4.03 GiB private memory. | Usable as an add-on level. Skeleton/animation cook and runtime loading passed; visible animation playback still needs a capture or deterministic pose/motion assertion. |
+| All supported external levels together | One combined scene cook passed and 669 textures cooked, proving coexistence and deterministic output-path uniqueness. | Bistro's three variants and all four supported Modern Sponza variants launched independently from the same registry with clean stderr. | Large startup bursts are bounded to 16 concurrent mesh preparations and 16 concurrent texture loads; pending material textures use semantic defaults until residency publishes a new binding revision. |
+| San Miguel 2.0 | Archive byte count matched `535519642`; SHA-256 `85874077735808150e679b3c71d70a37a270cb8833f4911325aa1099da3f7d4a`; required `san-miguel.obj` is present after staged acquisition. | Not launchable. | Acquisition is verified, but the scene cooker accepts only glTF, GLB, and FBX. The two level records remain non-selectable until a deterministic OBJ/MTL/PNG conversion or importer is implemented. |
+| Jungle Ruins | Archive byte count matched `4254165506`; SHA-256 `f6b44e81af0515161eb9e2a5cf6f7c24bb82beda439fb8e82c4e5ad479881bee`; required `USD/JungleRuins_Karma.usda` is present after staged acquisition. | Not launchable. | The level is visible but non-selectable. USD composition and virtualized or out-of-core geometry are still absent. |
+| Ivy, Trees, Flood, Volumetric Explosion | Not downloaded by this validation. Their publisher metadata remains cataloged. | Not launchable. | Controls remain disabled with explicit foliage-density, alpha-card/transparency, Alembic/water, and OpenVDB/volume-sequence blockers. |
+
+The sync script was also rerun idempotently against acquired San Miguel content and rejected a root-traversal probe before download or extraction. Publishing now preserves the previous extraction in a pack-specific backup and restores it when the staged directory cannot be published.
+
+During runtime validation the configured NVIDIA upscaler and ray-reconstruction provider could not initialize in one launch configuration. Provider initialization now reports a warning and falls back to linear upscaling or disables ray reconstruction instead of terminating the scene. This fallback keeps the showcase usable; it is not evidence that NVIDIA reconstruction passed.
 
 ## Stage 1: Inventory Before Rendering
 
@@ -402,19 +452,6 @@ The public front page shows only:
 
 The specialist path contains the detail. Do not place a wall of subsystem names in the recruiter path.
 
-## Publication Sequence
-
-The articles are written from completed evidence:
-
-1. **Making Bistro Reproducible** — asset provenance, deterministic conversion, material losses, and first correct frame.
-2. **One Bistro Frame, Two Explicit APIs** — workload structure, backend differences, capture-led incident, and scoped conclusions.
-3. **Where Bistro Actually Spends a Frame** — exterior/interior-variant CPU/GPU/memory/RT-build distributions and the top causal optimizations.
-4. **Reference to Real Time** — path-traced ground truth, sampling, reconstruction, time-to-quality, and temporal failure.
-5. **From Model Graph to GPU Shader** — operator math, layout/precision/fusion, numerical validation, classical fallback, and held-out generalization.
-6. **What Was Deleted** — rejected optimizations, removed scaffolding, simplified boundaries, and product judgment.
-
-Every article includes exact reproduction metadata, before/after evidence, limitations, and a short ownership statement.
-
 ## Companion Scene Decision
 
 The engine should not accumulate flagship scenes.
@@ -422,12 +459,11 @@ The engine should not accumulate flagship scenes.
 | Workload | Distinct value | Decision for the next year |
 | --- | --- | --- |
 | Current Sponza | Small, fast, already integrated; catches startup, basic material, raster, and RT regressions. | **Keep as Tier 0.** Run frequently. Never use alone for flagship claims. |
-| Modern Sponza base/add-ons | High-resolution PBR, 4K textures, alpha-card trees, emissive-light package, and multiple interchange formats. | **Optional compatibility check.** Use only if it closes a measured Bistro material/import gap; do not replace the flagship. Official sample library: [GPU Research Samples](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html). |
+| Modern Sponza base/add-ons | High-resolution PBR, 4K textures, curtains, animation, alpha-card trees, emissive-light, Alembic water, VDB volumes, and multiple interchange formats. | **Support as an opt-in compatibility family without flagship status.** Base, Colorful Curtains, Emissive Candles, and Animated Knight may be acquired and used as grouped variants. Ivy, Trees, Flood, and Volumetric Explosion remain visible disabled add-ons and are never downloaded until their named technology gates close. Official sample library: [GPU Research Samples](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html). |
 | San Miguel 2.0 | Iconic PBRT scene; different interior/courtyard visibility, dense detail, and indirect-light transport in a 523 MB corrected high/low OBJ/PNG package. | **Support as Tier 1 secondary.** It receives import, material, reference-quality, benchmark, deterministic-route, high/low scaling, gallery, and neural held-out gates, but Bistro remains the flagship story. Source: [McGuire Computer Graphics Archive](https://casual-effects.com/g3d/data10/index.html). |
-| Barcelona Pavilion | Recognizable architectural scene with day/night setups; the daytime case is environment-lit and the night case sends substantial light through glass. | **Future targeted light-transport test, not current support.** Add only when transmission/specular-path correctness becomes a measured Tier 1 blocker. Source: [official pbrt scene collection](https://www.pbrt.org/scenes-v3). |
 | Sun Temple | Recognizable detailed PBR environment with about 1.64 million published vertices in FBX/Falcor form. | **Do not add now.** It overlaps the current material/architecture scene set and has non-commercial share-alike terms. Source: [ORCA scene page](https://developer.nvidia.com/ue4-sun-temple). |
 | Emerald Square | Approximately 10.0 million triangles and city-scale geometry; useful for AS memory, culling, and streaming beyond Bistro. | **External post-Bistro benchmark only.** Its CC BY-NC-SA 3.0 terms conflict with uncomplicated future commercial bundling. Do not ship it as product content. Source: [ORCA scene page](https://developer.nvidia.com/orca/nvidia-emerald-square). |
-| Jungle Ruins | More than one trillion total triangles in a PBR environment; targets instancing, virtual geometry, and out-of-core rendering. | **Defer.** Adopt only after Bistro if virtualized geometry becomes an explicit product/research target. USD/Blender support is a separate program, not a prerequisite for this roadmap. Source: [GPU Research Samples](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html). |
+| Jungle Ruins | More than one trillion total triangles in a PBR environment; targets instancing, virtual geometry, and out-of-core rendering. | **Support opt-in source acquisition; defer runtime support.** Keep its level unavailable until USD composition and virtualized/out-of-core geometry gates are implemented. Source: [GPU Research Samples](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html). |
 | Moana Island Scene | 93 GB unpacked base scene, extensive instancing, and complex volumetric light transport. | **Defer beyond the current real-time engine goal.** It is valuable for USD/offline/volumetric research, but its scale, formats, and research/software-development license create a different product. Source and terms: [official dataset](https://www.disneyanimation.com/resources/moana-island-scene/). |
 | ALab | Complete production USD scene with hundreds of assets, animation, fur, fabric, variants, and shot structure. | **Defer.** It is an asset-pipeline/USD adoption test, not the shortest path to the target rendering evidence. |
 
@@ -435,18 +471,22 @@ Scene-adoption rule:
 
 > Add another workload only when it exposes a measured failure mode that Bistro and the fast regression set cannot expose, and when fixing that failure advances a named `PGE-*` requirement more than it delays the flagship package.
 
-## Six-Month Workload Gates
+Cataloging an optional source package or disabled future add-on is not a claim that it is an adopted runtime workload. Modern Sponza compatibility work and Jungle Ruins source acquisition must not displace the Bistro/San Miguel acceptance gates.
 
-| Deadline | Scene gate |
+## Workload Gate Sequence
+
+The roadmap owns dates. This contract owns the ordered acceptance states:
+
+| Gate | Required state |
 | --- | --- |
-| End of week 2 | Provenance manifest, immutable source archive, automated inspection, import/cook baseline, and complete loss/warning inventory. |
-| End of week 4 | Bistro exterior/original-interior/wine-interior variants load deterministically; frozen cameras; no silent missing assets; first material support matrix. San Miguel provenance plus pre/post-conversion high/low inventories are complete. |
-| End of week 6 | Correct Bistro raster/hybrid baseline and high-sample references; San Miguel high/low content loads through the same pipeline with its first reference camera and controlled scaling record; material/debug contact sheet and honest unsupported lists exist. |
-| End of week 9 | Deterministic routes, benchmark harness, first D3D12/Vulkan captures, bottleneck ranking, and one difficult incident log. |
-| End of week 14 | Neural data/reference generation with disjoint splits, classical baseline, model card, and held-out-scene protocol. |
-| End of week 19 | Real shader inference, numerical checks, latency/memory profile, Bistro quality frontier, and classical fallback. |
-| End of week 24 | Three completed bottleneck studies, regression thresholds, clean acquisition/build/cook/run, and external reproduction attempt. |
-| End of week 26 | Hero stills, traversal video, three specialist case studies, model-to-shader result, limitations, and reviewer-ready routing. |
+| `WL-01 Provenance` | Provenance manifest, immutable source archive, automated inspection, import/cook baseline, and complete loss/warning inventory. |
+| `WL-02 Deterministic Content` | Bistro variants load deterministically with frozen cameras and a first material matrix; San Miguel high/low provenance and conversion inventories are complete. |
+| `WL-03 Correct Baseline` | Correct Bistro raster/hybrid and high-sample references; San Miguel loads through the same pipeline with a reference camera, controlled scaling record, material/debug contact sheet, and honest unsupported lists. |
+| `WL-04 Measured Frame` | Deterministic routes, benchmark harness, paired D3D12/Vulkan captures, bottleneck ranking, and one difficult incident log. |
+| `WL-05 Neural Baseline` | Neural data/reference generation with disjoint splits, classical baseline, model card, and held-out-scene protocol. |
+| `WL-06 Runtime Inference` | Real shader inference, numerical checks, latency/memory profile, Bistro quality frontier, and classical fallback. |
+| `WL-07 Reproduction` | Three completed bottleneck studies, regression thresholds, clean acquisition/build/cook/run, and an external reproduction attempt. |
+| `WL-08 Publication` | Hero stills, traversal video, three specialist case studies, model-to-shader result, limitations, and reviewer-ready routing. |
 
 ## Completion Gate
 

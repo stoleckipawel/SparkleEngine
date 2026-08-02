@@ -14,7 +14,7 @@
 
 class FbxAnimationTranslation final
 {
-  public:
+public:
 	static std::pair<std::uint32_t, std::uint32_t> FindSkeletonJointForNode(
 	    const SourceImportOutput& output,
 	    std::uint32_t sourceNodeIndex) noexcept
@@ -134,9 +134,9 @@ class FbxAnimationTranslation final
 	    ImportedAnimationClip& clip,
 	    const SourceImportOutput& output)
 	{
-		if ((sourceChannel.mNumPositionKeys == 0 && sourceChannel.mNumRotationKeys == 0 && sourceChannel.mNumScalingKeys == 0) ||
-		    (sourceChannel.mPreState != aiAnimBehaviour_DEFAULT && sourceChannel.mPreState != aiAnimBehaviour_CONSTANT) ||
-		    (sourceChannel.mPostState != aiAnimBehaviour_DEFAULT && sourceChannel.mPostState != aiAnimBehaviour_CONSTANT))
+		if ((sourceChannel.mNumPositionKeys == 0 && sourceChannel.mNumRotationKeys == 0 && sourceChannel.mNumScalingKeys == 0)
+		    || (sourceChannel.mPreState != aiAnimBehaviour_DEFAULT && sourceChannel.mPreState != aiAnimBehaviour_CONSTANT)
+		    || (sourceChannel.mPostState != aiAnimBehaviour_DEFAULT && sourceChannel.mPostState != aiAnimBehaviour_CONSTANT))
 		{
 			throw Diagnostics::Error("FBX animation channel has no keys or uses unsupported boundary behavior.");
 		}
@@ -154,8 +154,8 @@ class FbxAnimationTranslation final
 		}
 
 		const auto [targetSkeletonIndex, targetJointIndex] = FindSkeletonJointForNode(output, targetNodeIndex);
-		if (targetSkeletonIndex == (std::numeric_limits<std::uint32_t>::max)() ||
-		    targetJointIndex == (std::numeric_limits<std::uint32_t>::max)())
+		if (targetSkeletonIndex == (std::numeric_limits<std::uint32_t>::max)()
+		    || targetJointIndex == (std::numeric_limits<std::uint32_t>::max)())
 		{
 			throw Diagnostics::Error("FBX animation channel target is not owned by an imported skeleton.");
 		}
@@ -194,13 +194,21 @@ class FbxAnimationTranslation final
 
 void FbxAnimationImporter::ImportAnimations(const aiScene& scene, SourceImportOutput& output)
 {
+	// A static FBX may contain an exporter-created transform take even though it has
+	// no skeleton. Sparkle cannot play node-only animation, but rejecting that take
+	// would also reject otherwise complete static scene geometry.
+	if (output.scene.skeletons.empty())
+	{
+		return;
+	}
+
 	output.scene.animations.reserve(scene.mNumAnimations);
 	for (unsigned int animationIndex = 0; animationIndex < scene.mNumAnimations; ++animationIndex)
 	{
 		const aiAnimation* sourceAnimation = scene.mAnimations[animationIndex];
-		if (sourceAnimation == nullptr || sourceAnimation->mDuration < 0.0 || sourceAnimation->mTicksPerSecond <= 0.0 ||
-		    sourceAnimation->mNumChannels == 0 ||
-		    sourceAnimation->mChannels == nullptr || sourceAnimation->mNumMeshChannels != 0 || sourceAnimation->mNumMorphMeshChannels != 0)
+		if (sourceAnimation == nullptr || sourceAnimation->mDuration < 0.0 || sourceAnimation->mTicksPerSecond <= 0.0
+		    || sourceAnimation->mNumChannels == 0 || sourceAnimation->mChannels == nullptr || sourceAnimation->mNumMeshChannels != 0
+		    || sourceAnimation->mNumMorphMeshChannels != 0)
 		{
 			throw Diagnostics::Error(std::format("FBX animation {} has incomplete or unsupported channel data.", animationIndex));
 		}

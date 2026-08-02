@@ -19,15 +19,15 @@
 
 class GltfGeometryRequirements final
 {
-  public:
+public:
 	static bool RequiresTextureCoordinates(const cgltf_material* material) noexcept
 	{
-		return material != nullptr &&
-		       ((material->has_pbr_metallic_roughness &&
-		         (material->pbr_metallic_roughness.base_color_texture.texture != nullptr ||
-		          material->pbr_metallic_roughness.metallic_roughness_texture.texture != nullptr)) ||
-		        material->normal_texture.texture != nullptr || material->occlusion_texture.texture != nullptr ||
-		        material->emissive_texture.texture != nullptr);
+		return material != nullptr
+		    && ((material->has_pbr_metallic_roughness
+		            && (material->pbr_metallic_roughness.base_color_texture.texture != nullptr
+		                || material->pbr_metallic_roughness.metallic_roughness_texture.texture != nullptr))
+		        || material->normal_texture.texture != nullptr || material->occlusion_texture.texture != nullptr
+		        || material->emissive_texture.texture != nullptr);
 	}
 
 	static bool RequiresTangents(const cgltf_material* material) noexcept
@@ -35,6 +35,22 @@ class GltfGeometryRequirements final
 		return material != nullptr && material->normal_texture.texture != nullptr;
 	}
 };
+
+namespace
+{
+bool HasValidTangentFrame(const ImportedMeshGeometry& geometry) noexcept
+{
+	try
+	{
+		GltfTangentFrameValidator::Validate(geometry);
+		return true;
+	}
+	catch (const Diagnostics::Error&)
+	{
+		return false;
+	}
+}
+}
 
 struct GltfMeshGeometryExtractor::Attributes
 {
@@ -67,9 +83,9 @@ GltfMeshGeometryExtractor::Attributes GltfMeshGeometryExtractor::CollectAttribut
 
 void GltfMeshGeometryExtractor::ValidateAttributes(const cgltf_primitive& primitive, const Attributes& attributes)
 {
-	if (attributes.Positions == nullptr || attributes.Normals == nullptr ||
-	    (GltfGeometryRequirements::RequiresTextureCoordinates(primitive.material) && attributes.TextureCoordinates == nullptr) ||
-	    attributes.Positions->count == 0 || attributes.Positions->count > (std::numeric_limits<std::uint32_t>::max)())
+	if (attributes.Positions == nullptr || attributes.Normals == nullptr
+	    || (GltfGeometryRequirements::RequiresTextureCoordinates(primitive.material) && attributes.TextureCoordinates == nullptr)
+	    || attributes.Positions->count == 0 || attributes.Positions->count > (std::numeric_limits<std::uint32_t>::max)())
 	{
 		throw Diagnostics::Error("glTF primitive contains unsupported or malformed vertex attributes.");
 	}
@@ -77,26 +93,26 @@ void GltfMeshGeometryExtractor::ValidateAttributes(const cgltf_primitive& primit
 	for (cgltf_size attributeIndex = 0; attributeIndex < primitive.attributes_count; ++attributeIndex)
 	{
 		const cgltf_attribute& attribute = primitive.attributes[attributeIndex];
-		const bool supported = ((attribute.type == cgltf_attribute_type_position || attribute.type == cgltf_attribute_type_normal ||
-		                         attribute.type == cgltf_attribute_type_tangent || attribute.type == cgltf_attribute_type_texcoord ||
-		                         attribute.type == cgltf_attribute_type_color) &&
-		                        attribute.index == 0) ||
-		                       ((attribute.type == cgltf_attribute_type_joints || attribute.type == cgltf_attribute_type_weights) &&
-		                        (attribute.index == 0 || attribute.index == 1));
+		const bool supported = ((attribute.type == cgltf_attribute_type_position || attribute.type == cgltf_attribute_type_normal
+		                            || attribute.type == cgltf_attribute_type_tangent)
+		                           && attribute.index == 0)
+		    || attribute.type == cgltf_attribute_type_texcoord || attribute.type == cgltf_attribute_type_color
+		    || ((attribute.type == cgltf_attribute_type_joints || attribute.type == cgltf_attribute_type_weights)
+		        && (attribute.index == 0 || attribute.index == 1));
 		if (!supported || attribute.data == nullptr || attribute.data->count != attributes.Positions->count)
 		{
 			throw Diagnostics::Error("glTF primitive contains unsupported or malformed vertex attributes.");
 		}
 	}
 
-	if (attributes.Positions->type != cgltf_type_vec3 || attributes.Normals->type != cgltf_type_vec3 ||
-	    (attributes.TextureCoordinates != nullptr && attributes.TextureCoordinates->type != cgltf_type_vec2) ||
-	    (attributes.Tangents != nullptr && attributes.Tangents->type != cgltf_type_vec4) ||
-	    (attributes.Colors != nullptr && attributes.Colors->type != cgltf_type_vec3 && attributes.Colors->type != cgltf_type_vec4) ||
-	    (attributes.Joints0 == nullptr) != (attributes.Weights0 == nullptr) ||
-	    (attributes.Joints1 == nullptr) != (attributes.Weights1 == nullptr) ||
-	    GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_joints, 2) != nullptr ||
-	    GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_weights, 2) != nullptr)
+	if (attributes.Positions->type != cgltf_type_vec3 || attributes.Normals->type != cgltf_type_vec3
+	    || (attributes.TextureCoordinates != nullptr && attributes.TextureCoordinates->type != cgltf_type_vec2)
+	    || (attributes.Tangents != nullptr && attributes.Tangents->type != cgltf_type_vec4)
+	    || (attributes.Colors != nullptr && attributes.Colors->type != cgltf_type_vec3 && attributes.Colors->type != cgltf_type_vec4)
+	    || (attributes.Joints0 == nullptr) != (attributes.Weights0 == nullptr)
+	    || (attributes.Joints1 == nullptr) != (attributes.Weights1 == nullptr)
+	    || GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_joints, 2) != nullptr
+	    || GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_weights, 2) != nullptr)
 	{
 		throw Diagnostics::Error("glTF primitive contains unsupported or malformed vertex attributes.");
 	}
@@ -114,10 +130,7 @@ void GltfMeshGeometryExtractor::ValidateAttributes(const cgltf_primitive& primit
 	}
 }
 
-void GltfMeshGeometryExtractor::PopulateVertices(
-    const Attributes& attributes,
-    std::uint32_t vertexCount,
-    ImportedMeshGeometry& geometry)
+void GltfMeshGeometryExtractor::PopulateVertices(const Attributes& attributes, std::uint32_t vertexCount, ImportedMeshGeometry& geometry)
 {
 	for (std::uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 	{
@@ -173,10 +186,7 @@ void GltfMeshGeometryExtractor::PopulateVertices(
 	}
 }
 
-void GltfMeshGeometryExtractor::PopulateIndices(
-    const cgltf_primitive& primitive,
-    std::uint32_t vertexCount,
-    ImportedMeshGeometry& geometry)
+void GltfMeshGeometryExtractor::PopulateIndices(const cgltf_primitive& primitive, std::uint32_t vertexCount, ImportedMeshGeometry& geometry)
 {
 	geometry.indices = GltfAccessorReader::ReadIndices(primitive.indices);
 	if (geometry.indices.size() < 3u || geometry.indices.size() % 3u != 0u)
@@ -193,9 +203,7 @@ void GltfMeshGeometryExtractor::PopulateIndices(
 	GltfNodeTransformConverter::ConvertGltfTriangleWindingToEngine(geometry.indices);
 }
 
-ImportedMeshGeometry GltfMeshGeometryExtractor::ExtractMeshGeometry(
-    const cgltf_mesh& mesh,
-    const cgltf_primitive& primitive)
+ImportedMeshGeometry GltfMeshGeometryExtractor::ExtractMeshGeometry(const cgltf_mesh& mesh, const cgltf_primitive& primitive)
 {
 	const Attributes attributes = CollectAttributes(primitive);
 	ValidateAttributes(primitive, attributes);
@@ -209,15 +217,34 @@ ImportedMeshGeometry GltfMeshGeometryExtractor::ExtractMeshGeometry(
 		geometry.deformation.skinInfluences.resize(vertexCount);
 	}
 
-	PopulateVertices(attributes, vertexCount, geometry);
+	bool authoredTangentsImported = attributes.Tangents != nullptr;
+	try
+	{
+		PopulateVertices(attributes, vertexCount, geometry);
+	}
+	catch (const Diagnostics::Error&)
+	{
+		if (!authoredTangentsImported)
+		{
+			throw;
+		}
+
+		Attributes generatedTangentAttributes = attributes;
+		generatedTangentAttributes.Tangents = nullptr;
+		geometry.vertices.assign(vertexCount, ImportedVertex{});
+		PopulateVertices(generatedTangentAttributes, vertexCount, geometry);
+		authoredTangentsImported = false;
+	}
 	PopulateIndices(primitive, vertexCount, geometry);
 	geometry.deformation.morphTargets = GltfMorphTargetImporter::ImportMorphTargets(mesh, primitive, vertexCount);
 	if (GltfGeometryRequirements::RequiresTangents(primitive.material))
 	{
-		if (attributes.Tangents == nullptr)
+		if (authoredTangentsImported && HasValidTangentFrame(geometry))
 		{
-			GltfMeshTangentGenerator::GenerateTangents(geometry);
+			return geometry;
 		}
+
+		GltfMeshTangentGenerator::GenerateTangents(geometry);
 		GltfTangentFrameValidator::Validate(geometry);
 	}
 	return geometry;

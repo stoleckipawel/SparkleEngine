@@ -59,6 +59,7 @@ std::vector<RhiResourceHandle> TextureCache::LoadSceneTextures(const RenderTextu
 	SynchronizeSceneTextures(textures);
 
 	ConsumeCompletedRequests();
+	LaunchPendingRequests();
 	UploadReadyTextures(commandList, uploadedResources);
 	return uploadedResources;
 }
@@ -70,8 +71,8 @@ bool TextureCache::HasPendingSceneTextureUploads() const noexcept
 	    m_requests.end(),
 	    [this](const TextureRequest& request) noexcept
 	    {
-		    return request.Wanted && request.Decoded.has_value() &&
-		           m_residency.GetState(request.Generation) == AssetResidencyState::ReadyForUpload;
+		    return request.Wanted && request.Decoded.has_value()
+		        && m_residency.GetState(request.Generation) == AssetResidencyState::ReadyForUpload;
 	    });
 }
 
@@ -82,11 +83,9 @@ void TextureCache::RecordUploadSubmission(RhiSubmissionToken token) noexcept
 		for (const TextureRequest& request : m_requests)
 		{
 			if (request.Uploaded && !request.UploadSubmitted)
-				Diagnostics::Fatal(
-				    g_textureCacheLogger,
-				    __FILE__,
-				    __LINE__,
-				    "GPU texture upload completed without a submission token.");
+			{
+				Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "GPU texture upload completed without a submission token.");
+			}
 		}
 		return;
 	}
@@ -96,11 +95,9 @@ void TextureCache::RecordUploadSubmission(RhiSubmissionToken token) noexcept
 		if (request.Uploaded && !request.UploadSubmitted)
 		{
 			if (!m_residency.RecordUploadSubmission(request.Generation, token, request.Uploaded->EstimatedByteSize))
-				Diagnostics::Fatal(
-				    g_textureCacheLogger,
-				    __FILE__,
-				    __LINE__,
-				    "GPU texture upload submission could not enter residency.");
+			{
+				Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "GPU texture upload submission could not enter residency.");
+			}
 			request.UploadSubmitted = true;
 		}
 	}
@@ -126,10 +123,7 @@ void TextureCache::CommitBindingRevision(std::uint64_t bindingRevision) noexcept
 	    std::remove_if(
 	        m_retiredTextures.begin(),
 	        m_retiredTextures.end(),
-	        [bindingRevision](const RetiredTexture& texture) noexcept
-	        {
-		        return texture.BindingRevision <= bindingRevision;
-	        }),
+	        [bindingRevision](const RetiredTexture& texture) noexcept { return texture.BindingRevision <= bindingRevision; }),
 	    m_retiredTextures.end());
 }
 
@@ -232,7 +226,14 @@ const RendererTexture* TextureCache::ResolveTextureReferenceOrSemanticDefault(
 {
 	if (textureReference != nullptr && textureReference->IsValid())
 	{
-		return GetSceneTexture(textureReference->texturePath);
+		if (const RendererTexture* texture = GetSceneTexture(textureReference->texturePath))
+		{
+			return texture;
+		}
+		if (!HasPendingRequest(textureReference->texturePath))
+		{
+			return nullptr;
+		}
 	}
 
 	return FindPathTexture(DefaultTextures::GetPath(defaultType));
@@ -357,52 +358,28 @@ void TextureCache::RequestTexture(const ResolvedTexturePath& source, std::uint32
 
 	const std::optional<AssetGenerationHandle> handle = m_residency.BeginGeneration(MakeAssetKey(source.CacheKey), generation);
 	if (!handle)
+	{
 		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture generation could not enter residency.");
+	}
 	if (m_taskScope == nullptr)
+	{
 		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture cache has no task scope.");
-
-	auto payload = std::make_shared<TextureLoadPayload>();
-	TaskGraphBuilder graph;
-	const TaskNodeHandle read = graph.Add(
-	    TaskDesc{.Name = TaskName("Read cooked texture generation"), .Lane = TaskLane::BlockingIo},
-	    [path = source.Path, payload](TaskExecutionContext& context)
-	    {
-		    if (context.IsCancellationRequested())
-		    {
-			    return TaskResult::Cancelled("Texture read cancelled.");
-		    }
-		    payload->File = CookedTextureLoader::Read(path);
-		    return TaskResult::Success();
-	    });
-	graph.ContinueWith(
-	    read,
-	    TaskDesc{.Name = TaskName("Decode cooked texture generation"), .Lane = TaskLane::Background},
-	    [payload](TaskExecutionContext& context)
-	    {
-		    if (context.IsCancellationRequested())
-		    {
-			    payload->File = {};
-			    return TaskResult::Cancelled("Texture decode cancelled.");
-		    }
-		    payload->Texture = CookedTextureLoader::Decode(payload->File);
-		    payload->File = {};
-		    return TaskResult::Success();
-	    });
+	}
 
 	TextureRequest request;
 	request.Source = source;
 	request.Generation = *handle;
-	request.Payload = payload;
-	request.Execution = m_taskExecutor.Launch(*m_taskScope, graph.Compile());
-	if (!request.Execution.IsValid())
-		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture loading task graph launch failed.");
+	request.Payload = std::make_shared<TextureLoadPayload>();
 	m_requests.push_back(std::move(request));
+	LaunchPendingRequests();
 }
 
 void TextureCache::SynchronizeSceneTextures(const RenderTextureTable& textures)
 {
 	if (textures.Generation == 0)
+	{
 		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Scene texture table has no generation identity.");
+	}
 	const std::uint32_t generation = textures.Generation;
 	if (m_sceneTextureGeneration == generation)
 	{
@@ -457,6 +434,68 @@ void TextureCache::SynchronizeSceneTextures(const RenderTextureTable& textures)
 	m_sceneTextureGeneration = generation;
 }
 
+void TextureCache::LaunchPendingRequests()
+{
+	const std::size_t activeLoadCount = static_cast<std::size_t>(std::count_if(
+	    m_requests.begin(),
+	    m_requests.end(),
+	    [](const TextureRequest& request) noexcept { return request.LoadStarted && request.Execution.IsValid(); }));
+	std::size_t availableSlots = activeLoadCount < kMaximumConcurrentLoads ? kMaximumConcurrentLoads - activeLoadCount : 0;
+	for (TextureRequest& request : m_requests)
+	{
+		if (availableSlots == 0)
+		{
+			return;
+		}
+		if (request.LoadStarted || !request.Wanted || request.Payload == nullptr)
+		{
+			continue;
+		}
+
+		LaunchRequest(request);
+		--availableSlots;
+	}
+}
+
+void TextureCache::LaunchRequest(TextureRequest& request)
+{
+	const std::filesystem::path path = request.Source.Path;
+	const std::shared_ptr<TextureLoadPayload> payload = request.Payload;
+	TaskGraphBuilder graph;
+	const TaskNodeHandle read = graph.Add(
+	    TaskDesc{.Name = TaskName("Read cooked texture generation"), .Lane = TaskLane::BlockingIo},
+	    [path, payload](TaskExecutionContext& context)
+	    {
+		    if (context.IsCancellationRequested())
+		    {
+			    return TaskResult::Cancelled("Texture read cancelled.");
+		    }
+		    payload->File = CookedTextureLoader::Read(path);
+		    return TaskResult::Success();
+	    });
+	graph.ContinueWith(
+	    read,
+	    TaskDesc{.Name = TaskName("Decode cooked texture generation"), .Lane = TaskLane::Background},
+	    [payload](TaskExecutionContext& context)
+	    {
+		    if (context.IsCancellationRequested())
+		    {
+			    payload->File = {};
+			    return TaskResult::Cancelled("Texture decode cancelled.");
+		    }
+		    payload->Texture = CookedTextureLoader::Decode(payload->File);
+		    payload->File = {};
+		    return TaskResult::Success();
+	    });
+
+	request.Execution = m_taskExecutor.Launch(*m_taskScope, graph.Compile());
+	request.LoadStarted = true;
+	if (!request.Execution.IsValid())
+	{
+		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture loading task graph launch failed.");
+	}
+}
+
 void TextureCache::ConsumeCompletedRequests() noexcept
 {
 	for (TextureRequest& request : m_requests)
@@ -488,13 +527,19 @@ void TextureCache::ConsumeCompletedRequests() noexcept
 			        executionResult.GetMessage()));
 		}
 		if (request.Payload == nullptr)
+		{
 			Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture task graph produced no decoded payload.");
+		}
 
 		if (!m_residency.BeginDecoding(request.Generation))
+		{
 			Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture generation could not enter decoding.");
+		}
 		const std::uint64_t decodedBytes = CalculateTexturePayloadBytes(request.Payload->Texture.Upload);
 		if (!m_residency.PublishReadyForUpload(request.Generation, decodedBytes, decodedBytes))
+		{
 			Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture generation exceeded residency capacity.");
+		}
 
 		request.Decoded.emplace(std::move(request.Payload->Texture));
 		request.Payload.reset();
@@ -505,10 +550,9 @@ void TextureCache::ConsumeCompletedRequests() noexcept
 	        m_requests.begin(),
 	        m_requests.end(),
 	        [this](const TextureRequest& request) noexcept
-		        {
+	        {
 		        const AssetResidencyState state = m_residency.GetState(request.Generation);
-		        return !request.Execution.IsValid() && !request.Decoded && !request.Uploaded &&
-		               state == AssetResidencyState::Retired;
+		        return !request.Execution.IsValid() && !request.Decoded && !request.Uploaded && state == AssetResidencyState::Retired;
 	        }),
 	    m_requests.end());
 }
@@ -517,8 +561,9 @@ void TextureCache::UploadReadyTextures(RenderCommandList& commandList, std::vect
 {
 	for (TextureRequest& request : m_requests)
 	{
-		if (!request.Wanted || !request.Decoded || request.Uploaded ||
-		    m_residency.GetState(request.Generation) != AssetResidencyState::ReadyForUpload || !m_residency.BeginUpload(request.Generation))
+		if (!request.Wanted || !request.Decoded || request.Uploaded
+		    || m_residency.GetState(request.Generation) != AssetResidencyState::ReadyForUpload
+		    || !m_residency.BeginUpload(request.Generation))
 		{
 			continue;
 		}
@@ -552,20 +597,18 @@ RendererTexture TextureCache::CreateTexture(
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    debugName);
 	if (!resource)
+	{
 		Diagnostics::Fatal(
 		    g_textureCacheLogger,
 		    __FILE__,
 		    __LINE__,
 		    std::format("Texture resource creation failed for '{}'.", texturePath.string()));
+	}
 
 	if (!m_uploadService.UploadTexture(commandList, resource, textureUpload, ResourceState::ShaderResource, debugName))
 	{
 		m_resourceService.ReleaseOwnedResource(resource);
-		Diagnostics::Fatal(
-		    g_textureCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Texture upload failed for '{}'.", texturePath.string()));
+		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, std::format("Texture upload failed for '{}'.", texturePath.string()));
 	}
 
 	const RhiResourceHandle nativeResource = m_resourceService.GetResourceHandle(resource);
@@ -613,9 +656,7 @@ const TextureCache::TextureRequest* TextureCache::FindRequest(const TextureKey& 
 	    m_requests.begin(),
 	    m_requests.end(),
 	    [&cacheKey, generation](const TextureRequest& candidate) noexcept
-	    {
-		    return candidate.Source.CacheKey == cacheKey && candidate.Generation.Generation == generation;
-	    });
+	    { return candidate.Source.CacheKey == cacheKey && candidate.Generation.Generation == generation; });
 	return request != m_requests.end() ? &*request : nullptr;
 }
 
@@ -670,9 +711,7 @@ void TextureCache::ActivateResidentRequests() noexcept
 	        m_requests.begin(),
 	        m_requests.end(),
 	        [](const TextureRequest& request) noexcept
-	        {
-		        return !request.Execution.IsValid() && !request.Decoded && !request.Uploaded;
-	        }),
+	        { return request.LoadStarted && !request.Execution.IsValid() && !request.Decoded && !request.Uploaded; }),
 	    m_requests.end());
 }
 
@@ -685,7 +724,9 @@ void TextureCache::ReleaseActiveTexture(ActiveTexture& texture) noexcept
 {
 	const RhiSubmissionState lastUse = CaptureLastSubmittedState();
 	if (!m_residency.BeginEviction(texture.Generation, lastUse))
+	{
 		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Resident texture could not enter eviction.");
+	}
 	ReleaseTexture(texture.Texture);
 }
 
@@ -716,8 +757,21 @@ const RendererTexture* TextureCache::FindPathTexture(const std::filesystem::path
 	                                                                                                            : nullptr;
 }
 
-std::optional<TextureCache::ResolvedTexturePath> TextureCache::ResolveTexturePath(
-    const std::filesystem::path& texturePath) const noexcept
+bool TextureCache::HasPendingRequest(const std::filesystem::path& texturePath) const noexcept
+{
+	const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
+	return resolved.has_value()
+	    && std::any_of(
+	        m_requests.begin(),
+	        m_requests.end(),
+	        [this, &resolved](const TextureRequest& request) noexcept
+	        {
+		        return request.Wanted && request.Source.CacheKey == resolved->CacheKey
+		            && request.Generation.Generation == m_sceneTextureGeneration;
+	        });
+}
+
+std::optional<TextureCache::ResolvedTexturePath> TextureCache::ResolveTexturePath(const std::filesystem::path& texturePath) const noexcept
 {
 	const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
 	if (!resolvedPath)
@@ -788,6 +842,8 @@ std::uint64_t TextureCache::MakeAssetKey(const TextureKey& cacheKey)
 {
 	const std::uint64_t value = static_cast<std::uint64_t>(std::hash<TextureKey>{}(cacheKey));
 	if (value == 0)
+	{
 		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture path hashes to the null asset identity.");
+	}
 	return value;
 }

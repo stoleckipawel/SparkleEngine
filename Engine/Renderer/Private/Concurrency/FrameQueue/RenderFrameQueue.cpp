@@ -1,12 +1,18 @@
 #include "PCH.h"
 #include "Concurrency/FrameQueue/RenderFrameQueue.h"
 
-#include <algorithm>
+#include <limits>
+
+static const auto g_renderFrameQueueLogger = Logging::GetOrCreateLogger("Renderer.FrameQueue");
 
 RenderFrameQueue::RenderFrameQueue(std::uint32_t capacity) :
-    m_slots(std::make_unique<Slot[]>((std::max)(capacity, 1u))),
-    m_capacity((std::max)(capacity, 1u))
+    m_slots(std::make_unique<Slot[]>(capacity)),
+    m_capacity(capacity)
 {
+	if (m_capacity == 0)
+	{
+		Diagnostics::Fatal(g_renderFrameQueueLogger, __FILE__, __LINE__, "Render frame queue capacity is zero.");
+	}
 }
 
 std::optional<RenderFrameQueueTicket> RenderFrameQueue::Acquire()
@@ -20,8 +26,8 @@ std::optional<RenderFrameQueueTicket> RenderFrameQueue::Acquire()
 
 	const std::uint32_t slotIndex = *FindFreeSlotLocked();
 	Slot& slot = m_slots[slotIndex];
+	const std::uint64_t sequenceNumber = IssueSequenceNumberLocked();
 	slot.State = RenderFrameSlotState::Writing;
-	const std::uint64_t sequenceNumber = m_nextSequenceNumber++;
 	slot.SequenceNumber = sequenceNumber;
 	return RenderFrameQueueTicket{slotIndex, sequenceNumber};
 }
@@ -87,40 +93,19 @@ bool RenderFrameQueue::Retire(RenderFrameQueueTicket ticket)
 	return true;
 }
 
-bool RenderFrameQueue::Cancel(RenderFrameQueueTicket ticket)
-{
-	{
-		std::lock_guard lock(m_mutex);
-		if (!IsTicketCurrentLocked(ticket))
-		{
-			return false;
-		}
-
-		Slot& slot = m_slots[ticket.SlotIndex];
-		if (slot.State != RenderFrameSlotState::Writing &&
-		    slot.State != RenderFrameSlotState::Ready)
-		{
-			return false;
-		}
-
-		slot.Packet.reset();
-		slot.State = RenderFrameSlotState::Free;
-	}
-
-	m_reusable.notify_all();
-	return true;
-}
-
 bool RenderFrameQueue::WaitUntilReusable(RenderFrameQueueTicket ticket)
 {
 	std::unique_lock lock(m_mutex);
-	m_reusable.wait(lock, [this, ticket]
+	if (!IsTicketCurrentLocked(ticket))
 	{
-		return m_closed || !IsTicketCurrentLocked(ticket) ||
-		       m_slots[ticket.SlotIndex].State == RenderFrameSlotState::Free;
-	});
-	return !IsTicketCurrentLocked(ticket) ||
-	       m_slots[ticket.SlotIndex].State == RenderFrameSlotState::Free;
+		return false;
+	}
+
+	m_reusable.wait(
+	    lock,
+	    [this, ticket]
+	    { return m_closed || !IsTicketCurrentLocked(ticket) || m_slots[ticket.SlotIndex].State == RenderFrameSlotState::Free; });
+	return !m_closed && IsTicketCurrentLocked(ticket) && m_slots[ticket.SlotIndex].State == RenderFrameSlotState::Free;
 }
 
 void RenderFrameQueue::Close() noexcept
@@ -147,27 +132,9 @@ void RenderFrameQueue::SettleAll() noexcept
 	m_reusable.notify_all();
 }
 
-bool RenderFrameQueue::IsClosed() const noexcept
-{
-	std::lock_guard lock(m_mutex);
-	return m_closed;
-}
-
-std::size_t RenderFrameQueue::GetFixedStorageBytes() const noexcept
-{
-	return sizeof(Slot) * m_capacity;
-}
-
-RenderFrameSlotState RenderFrameQueue::GetState(std::uint32_t slotIndex) const noexcept
-{
-	std::lock_guard lock(m_mutex);
-	return slotIndex < m_capacity ? m_slots[slotIndex].State : RenderFrameSlotState::Retired;
-}
-
 bool RenderFrameQueue::IsTicketCurrentLocked(RenderFrameQueueTicket ticket) const noexcept
 {
-	return ticket.IsValid() && ticket.SlotIndex < m_capacity &&
-	       m_slots[ticket.SlotIndex].SequenceNumber == ticket.SequenceNumber;
+	return ticket.IsValid() && ticket.SlotIndex < m_capacity && m_slots[ticket.SlotIndex].SequenceNumber == ticket.SequenceNumber;
 }
 
 std::optional<std::uint32_t> RenderFrameQueue::FindFreeSlotLocked() const noexcept
@@ -181,4 +148,16 @@ std::optional<std::uint32_t> RenderFrameQueue::FindFreeSlotLocked() const noexce
 	}
 
 	return std::nullopt;
+}
+
+std::uint64_t RenderFrameQueue::IssueSequenceNumberLocked() noexcept
+{
+	if (m_nextSequenceNumber == 0)
+	{
+		Diagnostics::Fatal(g_renderFrameQueueLogger, __FILE__, __LINE__, "Render frame queue sequence identity exhausted.");
+	}
+
+	const std::uint64_t sequenceNumber = m_nextSequenceNumber;
+	m_nextSequenceNumber = sequenceNumber == (std::numeric_limits<std::uint64_t>::max)() ? 0 : sequenceNumber + 1;
+	return sequenceNumber;
 }

@@ -7,9 +7,20 @@
 
 #include <system_error>
 
-bool ProjectLevelCatalog::IsOptionalContentPackReady(
-    const std::filesystem::path& projectRoot,
-    std::string_view packId) const
+bool ProjectLevelCatalog::IsOptionalContentPackAcquired(const ProjectOptionalContentPack& pack) const
+{
+	if (pack.rootPath.empty())
+	{
+		return true;
+	}
+
+	const std::filesystem::path requiredPath =
+	    pack.requiredRelativePath.empty() ? pack.rootPath : pack.rootPath / pack.requiredRelativePath;
+	std::error_code error;
+	return std::filesystem::exists(requiredPath, error) && !error;
+}
+
+bool ProjectLevelCatalog::IsOptionalContentPackReady(const std::filesystem::path& projectRoot, std::string_view packId) const
 {
 	if (packId.empty())
 	{
@@ -22,25 +33,20 @@ bool ProjectLevelCatalog::IsOptionalContentPackReady(
 		return false;
 	}
 
-	const std::filesystem::path& configuredRoot = pack->second.rootPath;
-	const std::filesystem::path root =
-	    configuredRoot.is_relative() ? projectRoot / configuredRoot : configuredRoot;
+	const ProjectOptionalContentPack& contentPack = pack->second;
+	if (!contentPack.runtimeSupported || !IsOptionalContentPackAcquired(contentPack))
+	{
+		return false;
+	}
 
-	std::error_code error;
-	return configuredRoot.empty() ||
-	       (std::filesystem::exists(root.lexically_normal(), error) && !error);
+	return contentPack.parentPackId.empty() || IsOptionalContentPackReady(projectRoot, contentPack.parentPackId);
 }
 
-bool ProjectLevelCatalog::IsLevelReady(
-    const std::filesystem::path& projectRoot,
-    const ProjectLevelCatalogEntry& level) const
+bool ProjectLevelCatalog::IsLevelReady(const std::filesystem::path& projectRoot, const ProjectLevelCatalogEntry& level) const
 {
 	std::error_code error;
-	return !level.id.empty() &&
-	       !level.sourcePath.empty() &&
-	       std::filesystem::exists(level.sourcePath, error) &&
-	       !error &&
-	       IsOptionalContentPackReady(projectRoot, level.optionalContentPackId);
+	return !level.id.empty() && !level.sourcePath.empty() && std::filesystem::exists(level.sourcePath, error) && !error
+	    && IsOptionalContentPackReady(projectRoot, level.optionalContentPackId);
 }
 
 ProjectLevelCatalog ProjectLevelCatalogFile::Load(const std::filesystem::path& projectRoot)
@@ -54,13 +60,7 @@ bool ProjectLevelCatalogFile::SetLevelDefaultIncluded(
     bool included,
     std::string& outErrorMessage)
 {
-	return ProjectLevelCatalogEditor::SetEntryBool(
-	    projectRoot,
-	    "[Level]",
-	    levelId,
-	    "Default",
-	    included,
-	    outErrorMessage);
+	return ProjectLevelCatalogEditor::SetEntryBool(projectRoot, "[Level]", levelId, "Default", included, outErrorMessage);
 }
 
 bool ProjectLevelCatalogFile::SetOptionalContentPackAvailable(
@@ -69,11 +69,5 @@ bool ProjectLevelCatalogFile::SetOptionalContentPackAvailable(
     bool available,
     std::string& outErrorMessage)
 {
-	return ProjectLevelCatalogEditor::SetEntryBool(
-	    projectRoot,
-	    "[OptionalPack]",
-	    packId,
-	    "Available",
-	    available,
-	    outErrorMessage);
+	return ProjectLevelCatalogEditor::SetEntryBool(projectRoot, "[OptionalPack]", packId, "Available", available, outErrorMessage);
 }

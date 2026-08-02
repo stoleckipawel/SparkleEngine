@@ -21,14 +21,10 @@ GpuMeshCache::GpuMeshCache(
     RhiCommandSubmissionService& submissions,
     TaskExecutor& taskExecutor,
     TaskScope& applicationScope) :
-	m_renderHardwareInterface(&renderHardwareInterface),
-	m_submissions(&submissions),
-	m_taskExecutor(&taskExecutor),
-	m_taskScope(std::make_unique<TaskScope>(
-	    TaskScopeDesc{
-	        TaskScopeKind::AssetGeneration,
-	        "Renderer mesh generations"},
-	    &applicationScope))
+    m_renderHardwareInterface(&renderHardwareInterface),
+    m_submissions(&submissions),
+    m_taskExecutor(&taskExecutor),
+    m_taskScope(std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer mesh generations"}, &applicationScope))
 {
 }
 
@@ -37,8 +33,7 @@ GpuMeshCache::~GpuMeshCache() noexcept
 	if (m_taskScope != nullptr)
 	{
 		m_taskScope->Cancel();
-		(void)m_taskScope->JoinFor(
-		    std::chrono::milliseconds::max());
+		(void) m_taskScope->JoinFor(std::chrono::milliseconds::max());
 	}
 
 	m_requests.clear();
@@ -47,15 +42,14 @@ GpuMeshCache::~GpuMeshCache() noexcept
 	m_cache.clear();
 }
 
-GpuMeshHandle GpuMeshCache::Request(
-    const ImmutableRenderMeshHandle& mesh)
+GpuMeshHandle GpuMeshCache::Request(const ImmutableRenderMeshHandle& mesh)
 {
 	if (!mesh.IsValid())
+	{
 		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh cache received an invalid mesh handle.");
+	}
 
-	const CacheKey key{
-	    mesh.GetAssetId(),
-	    mesh.GetGeneration()};
+	const CacheKey key{mesh.GetAssetId(), mesh.GetGeneration()};
 	const auto active = m_cache.find(key);
 	if (active != m_cache.end())
 	{
@@ -69,12 +63,15 @@ GpuMeshHandle GpuMeshCache::Request(
 		return existingRequest->Handle;
 	}
 
-	const std::optional<AssetGenerationHandle> generation =
-	    m_residency.BeginGeneration(key.first, key.second);
+	const std::optional<AssetGenerationHandle> generation = m_residency.BeginGeneration(key.first, key.second);
 	if (!generation)
+	{
 		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh generation could not enter residency.");
+	}
 	if (m_taskScope == nullptr)
+	{
 		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh cache has no task scope.");
+	}
 
 	const GpuMeshHandle handle = AllocateHandle();
 	auto prepared = std::make_shared<GpuMeshPreparedData>();
@@ -85,63 +82,35 @@ GpuMeshHandle GpuMeshCache::Request(
 	request.Handle = handle;
 	request.Generation = *generation;
 	request.Prepared = prepared;
-	request.Execution = m_taskExecutor->Launch(
-	    *m_taskScope,
-	    TaskDesc{
-	        .Name = TaskName("Prepare immutable mesh generation"),
-	        .Lane = TaskLane::Background},
-	    [mesh, prepared](TaskExecutionContext& context)
-	    {
-		    if (context.IsCancellationRequested())
-		    {
-			    return TaskResult::Cancelled(
-			        "Mesh preparation cancelled.");
-		    }
-
-		    *prepared = GpuMeshPreparation::Build(mesh);
-		    return TaskResult::Success();
-	    });
-
-	if (!request.Execution.IsValid())
-		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh preparation task launch failed.");
-
 	m_requests.push_back(std::move(request));
+	LaunchPendingPreparations();
 	return handle;
 }
 
-void GpuMeshCache::UploadReadyMeshes(
-    RenderCommandList& commandList)
+void GpuMeshCache::UploadReadyMeshes(RenderCommandList& commandList)
 {
 	ConsumeCompletedPreparations();
+	LaunchPendingPreparations();
 
 	for (MeshRequest& request : m_requests)
 	{
-		if (!request.Wanted ||
-		    request.Prepared == nullptr ||
-		    request.Uploaded != nullptr ||
-		    m_residency.GetState(request.Generation) !=
-		        AssetResidencyState::ReadyForUpload ||
-		    !m_residency.BeginUpload(request.Generation))
+		if (!request.Wanted || request.Prepared == nullptr || request.Uploaded != nullptr
+		    || m_residency.GetState(request.Generation) != AssetResidencyState::ReadyForUpload
+		    || !m_residency.BeginUpload(request.Generation))
 		{
 			continue;
 		}
 
-		request.ResidentBytes =
-		    request.Prepared->GetResidentByteSize();
-		auto gpuMesh =
-		    std::make_unique<GpuMesh>(request.Handle);
-		gpuMesh->Upload(
-		    *m_renderHardwareInterface,
-		    commandList,
-		    std::move(*request.Prepared));
+		request.ResidentBytes = request.Prepared->GetResidentByteSize();
+		auto gpuMesh = std::make_unique<GpuMesh>(request.Handle);
+		gpuMesh->Upload(*m_renderHardwareInterface, commandList, std::move(*request.Prepared));
 
 		request.Prepared.reset();
 		request.Uploaded = std::move(gpuMesh);
 	}
 }
 
-void GpuMeshCache::RecordUploadSubmission(
-    RhiSubmissionToken token) noexcept
+void GpuMeshCache::RecordUploadSubmission(RhiSubmissionToken token) noexcept
 {
 	if (!token.IsValid())
 	{
@@ -149,11 +118,7 @@ void GpuMeshCache::RecordUploadSubmission(
 		{
 			if (request.Uploaded != nullptr && !request.UploadSubmitted)
 			{
-				Diagnostics::Fatal(
-				    g_gpuMeshCacheLogger,
-				    __FILE__,
-				    __LINE__,
-				    "GPU mesh upload completed without a submission token.");
+				Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh upload completed without a submission token.");
 			}
 		}
 		return;
@@ -161,19 +126,11 @@ void GpuMeshCache::RecordUploadSubmission(
 
 	for (MeshRequest& request : m_requests)
 	{
-		if (request.Uploaded != nullptr &&
-		    !request.UploadSubmitted)
+		if (request.Uploaded != nullptr && !request.UploadSubmitted)
 		{
-			if (!m_residency.RecordUploadSubmission(
-			        request.Generation,
-			        token,
-			        request.ResidentBytes))
+			if (!m_residency.RecordUploadSubmission(request.Generation, token, request.ResidentBytes))
 			{
-				Diagnostics::Fatal(
-				    g_gpuMeshCacheLogger,
-				    __FILE__,
-				    __LINE__,
-				    "GPU mesh upload submission could not enter residency.");
+				Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh upload submission could not enter residency.");
 			}
 			request.UploadSubmitted = true;
 		}
@@ -188,8 +145,7 @@ void GpuMeshCache::PollResidency() noexcept
 	RemoveTerminalRequests();
 }
 
-void GpuMeshCache::RetainOnly(
-    std::span<const GpuMeshHandle> handles) noexcept
+void GpuMeshCache::RetainOnly(std::span<const GpuMeshHandle> handles) noexcept
 {
 	std::vector<std::uint64_t> wantedHandles;
 	wantedHandles.reserve(handles.size());
@@ -201,54 +157,38 @@ void GpuMeshCache::RetainOnly(
 		}
 	}
 
-	std::sort(
-	    wantedHandles.begin(),
-	    wantedHandles.end());
-	wantedHandles.erase(
-	    std::unique(
-	        wantedHandles.begin(),
-	        wantedHandles.end()),
-	    wantedHandles.end());
+	std::sort(wantedHandles.begin(), wantedHandles.end());
+	wantedHandles.erase(std::unique(wantedHandles.begin(), wantedHandles.end()), wantedHandles.end());
 
-	const auto isWanted =
-	    [&wantedHandles](GpuMeshHandle handle) noexcept
-	    {
-		    return std::binary_search(
-		        wantedHandles.begin(),
-		        wantedHandles.end(),
-		        handle.Value);
-	    };
+	const auto isWanted = [&wantedHandles](GpuMeshHandle handle) noexcept
+	{
+		return std::binary_search(wantedHandles.begin(), wantedHandles.end(), handle.Value);
+	};
 
 	for (MeshRequest& request : m_requests)
 	{
 		request.Wanted = isWanted(request.Handle);
 		if (!request.Wanted)
 		{
-			(void)m_residency.Cancel(
-			    request.Generation);
-			if (!request.Execution.IsValid() &&
-			    request.Uploaded == nullptr)
+			(void) m_residency.Cancel(request.Generation);
+			if (!request.Execution.IsValid() && request.Uploaded == nullptr)
 			{
 				request.Prepared.reset();
 			}
 		}
 	}
 
-	for (auto mesh = m_cache.begin();
-	     mesh != m_cache.end();)
+	for (auto mesh = m_cache.begin(); mesh != m_cache.end();)
 	{
-		const GpuMeshHandle handle =
-		    mesh->second.Mesh->GetHandle();
+		const GpuMeshHandle handle = mesh->second.Mesh->GetHandle();
 		if (isWanted(handle))
 		{
 			++mesh;
 			continue;
 		}
 
-		const auto sourceHandle =
-		    m_sourceHandles.find(mesh->second.Source);
-		if (sourceHandle != m_sourceHandles.end() &&
-		    sourceHandle->second == handle)
+		const auto sourceHandle = m_sourceHandles.find(mesh->second.Source);
+		if (sourceHandle != m_sourceHandles.end() && sourceHandle->second == handle)
 		{
 			m_sourceHandles.erase(sourceHandle);
 		}
@@ -257,11 +197,9 @@ void GpuMeshCache::RetainOnly(
 		RetireActiveMesh(mesh->second);
 		mesh = m_cache.erase(mesh);
 	}
-
 }
 
-const GpuMesh* GpuMeshCache::Resolve(
-    GpuMeshHandle handle) const noexcept
+const GpuMesh* GpuMeshCache::Resolve(GpuMeshHandle handle) const noexcept
 {
 	if (!handle)
 	{
@@ -269,9 +207,7 @@ const GpuMesh* GpuMeshCache::Resolve(
 	}
 
 	const auto mesh = m_handles.find(handle.Value);
-	return mesh != m_handles.end()
-	           ? mesh->second
-	           : nullptr;
+	return mesh != m_handles.end() ? mesh->second : nullptr;
 }
 
 std::size_t GpuMeshCache::GetCachedCount() const noexcept
@@ -279,52 +215,88 @@ std::size_t GpuMeshCache::GetCachedCount() const noexcept
 	return m_cache.size();
 }
 
-bool GpuMeshCache::Contains(
-    const Mesh& cpuMesh) const noexcept
+bool GpuMeshCache::Contains(const Mesh& cpuMesh) const noexcept
 {
 	return m_sourceHandles.contains(&cpuMesh);
 }
 
-const GpuMesh* GpuMeshCache::Find(
-    const Mesh& cpuMesh) const noexcept
+const GpuMesh* GpuMeshCache::Find(const Mesh& cpuMesh) const noexcept
 {
 	const auto source = m_sourceHandles.find(&cpuMesh);
-	return source != m_sourceHandles.end()
-	           ? Resolve(source->second)
-	           : nullptr;
+	return source != m_sourceHandles.end() ? Resolve(source->second) : nullptr;
 }
 
 GpuMeshHandle GpuMeshCache::AllocateHandle()
 {
-	const GpuMeshHandle handle{
-	    m_nextGpuMeshHandle++};
+	const GpuMeshHandle handle{m_nextGpuMeshHandle++};
 	if (m_nextGpuMeshHandle == 0u)
+	{
 		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh handle space is exhausted.");
+	}
 
 	return handle;
 }
 
-GpuMeshCache::MeshRequest* GpuMeshCache::FindRequest(
-    const CacheKey& key) noexcept
+GpuMeshCache::MeshRequest* GpuMeshCache::FindRequest(const CacheKey& key) noexcept
 {
-	const auto request = std::find_if(
+	const auto request =
+	    std::find_if(m_requests.begin(), m_requests.end(), [&key](const MeshRequest& candidate) noexcept { return candidate.Key == key; });
+	return request != m_requests.end() ? &*request : nullptr;
+}
+
+void GpuMeshCache::LaunchPendingPreparations()
+{
+	const std::size_t activePreparationCount = static_cast<std::size_t>(std::count_if(
 	    m_requests.begin(),
 	    m_requests.end(),
-	    [&key](const MeshRequest& candidate) noexcept
+	    [](const MeshRequest& request) noexcept { return request.PreparationStarted && request.Execution.IsValid(); }));
+	std::size_t availableSlots =
+	    activePreparationCount < kMaximumConcurrentPreparations ? kMaximumConcurrentPreparations - activePreparationCount : 0;
+	for (MeshRequest& request : m_requests)
+	{
+		if (availableSlots == 0)
+		{
+			return;
+		}
+		if (request.PreparationStarted || !request.Wanted || request.Prepared == nullptr)
+		{
+			continue;
+		}
+
+		LaunchPreparation(request);
+		--availableSlots;
+	}
+}
+
+void GpuMeshCache::LaunchPreparation(MeshRequest& request)
+{
+	const ImmutableRenderMeshHandle mesh = request.Source;
+	const std::shared_ptr<GpuMeshPreparedData> prepared = request.Prepared;
+	request.Execution = m_taskExecutor->Launch(
+	    *m_taskScope,
+	    TaskDesc{.Name = TaskName("Prepare immutable mesh generation"), .Lane = TaskLane::Background},
+	    [mesh, prepared](TaskExecutionContext& context)
 	    {
-		    return candidate.Key == key;
+		    if (context.IsCancellationRequested())
+		    {
+			    return TaskResult::Cancelled("Mesh preparation cancelled.");
+		    }
+
+		    *prepared = GpuMeshPreparation::Build(mesh);
+		    return TaskResult::Success();
 	    });
-	return request != m_requests.end()
-	           ? &*request
-	           : nullptr;
+	request.PreparationStarted = true;
+	if (!request.Execution.IsValid())
+	{
+		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh preparation task launch failed.");
+	}
 }
 
 void GpuMeshCache::ConsumeCompletedPreparations() noexcept
 {
 	for (MeshRequest& request : m_requests)
 	{
-		if (!request.Execution.IsValid() ||
-		    !request.Execution.IsSettled())
+		if (!request.Execution.IsValid() || !request.Execution.IsSettled())
 		{
 			continue;
 		}
@@ -335,8 +307,7 @@ void GpuMeshCache::ConsumeCompletedPreparations() noexcept
 
 		if (!request.Wanted)
 		{
-			(void)m_residency.Cancel(
-			    request.Generation);
+			(void) m_residency.Cancel(request.Generation);
 			request.Prepared.reset();
 			continue;
 		}
@@ -350,17 +321,19 @@ void GpuMeshCache::ConsumeCompletedPreparations() noexcept
 			    result.GetMessage().empty() ? "GPU mesh preparation task failed." : result.GetMessage());
 		}
 		if (request.Prepared == nullptr)
+		{
 			Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh preparation produced no payload.");
+		}
 
 		if (!m_residency.BeginDecoding(request.Generation))
+		{
 			Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh generation could not enter decoding.");
-		const std::uint64_t decodedBytes =
-		    request.Prepared->GetDecodedByteSize();
-		if (!m_residency.PublishReadyForUpload(
-		        request.Generation,
-		        decodedBytes,
-		        request.Prepared->GetResidentByteSize()))
+		}
+		const std::uint64_t decodedBytes = request.Prepared->GetDecodedByteSize();
+		if (!m_residency.PublishReadyForUpload(request.Generation, decodedBytes, request.Prepared->GetResidentByteSize()))
+		{
 			Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh generation exceeded residency capacity.");
+		}
 	}
 }
 
@@ -373,34 +346,28 @@ void GpuMeshCache::ActivateResidentMeshes() noexcept
 			continue;
 		}
 
-		const AssetResidencyState state =
-		    m_residency.GetState(request.Generation);
-		if (!request.Wanted &&
-		    state == AssetResidencyState::Retired)
+		const AssetResidencyState state = m_residency.GetState(request.Generation);
+		if (!request.Wanted && state == AssetResidencyState::Retired)
 		{
 			request.Uploaded.reset();
 			continue;
 		}
 
-		if (!request.Wanted ||
-		    state != AssetResidencyState::Resident)
+		if (!request.Wanted || state != AssetResidencyState::Resident)
 		{
 			continue;
 		}
 
-		const Mesh* const source =
-		    request.Source.GetResource().get();
+		const Mesh* const source = request.Source.GetResource().get();
 		const auto [active, inserted] = m_cache.emplace(
 		    request.Key,
-		    ActiveMesh{
-		        .Generation = request.Generation,
-		        .Source = source,
-		        .Mesh = std::move(request.Uploaded)});
+		    ActiveMesh{.Generation = request.Generation, .Source = source, .Mesh = std::move(request.Uploaded)});
 		if (!inserted)
+		{
 			Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh generation was activated twice.");
+		}
 
-		m_handles[request.Handle.Value] =
-		    active->second.Mesh.get();
+		m_handles[request.Handle.Value] = active->second.Mesh.get();
 		m_sourceHandles[source] = request.Handle;
 	}
 }
@@ -413,40 +380,28 @@ void GpuMeshCache::RemoveTerminalRequests() noexcept
 	        m_requests.end(),
 	        [this](const MeshRequest& request) noexcept
 	        {
-		        const AssetResidencyState state =
-		            m_residency.GetState(
-		                request.Generation);
-		        return !request.Execution.IsValid() &&
-		               request.Prepared == nullptr &&
-		               request.Uploaded == nullptr &&
-		               (state == AssetResidencyState::Resident ||
-		                state == AssetResidencyState::Retired);
+		        const AssetResidencyState state = m_residency.GetState(request.Generation);
+		        return !request.Execution.IsValid() && request.Prepared == nullptr && request.Uploaded == nullptr
+		            && (state == AssetResidencyState::Resident || state == AssetResidencyState::Retired);
 	        }),
 	    m_requests.end());
 }
 
-void GpuMeshCache::RetireActiveMesh(
-    ActiveMesh& mesh) noexcept
+void GpuMeshCache::RetireActiveMesh(ActiveMesh& mesh) noexcept
 {
-	if (!m_residency.BeginEviction(
-	        mesh.Generation,
-	        CaptureLastSubmittedState()))
+	if (!m_residency.BeginEviction(mesh.Generation, CaptureLastSubmittedState()))
+	{
 		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "Resident GPU mesh could not enter eviction.");
+	}
 	mesh.Mesh.reset();
 }
 
-RhiSubmissionState
-GpuMeshCache::CaptureLastSubmittedState() const noexcept
+RhiSubmissionState GpuMeshCache::CaptureLastSubmittedState() const noexcept
 {
 	RhiSubmissionState state;
-	for (std::size_t queueIndex = 0;
-	     queueIndex < RhiQueueTypeCount;
-	     ++queueIndex)
+	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		state.MarkUsed(
-		    m_submissions->GetLastSubmittedToken(
-		        static_cast<ERhiQueueType>(
-		            queueIndex)));
+		state.MarkUsed(m_submissions->GetLastSubmittedToken(static_cast<ERhiQueueType>(queueIndex)));
 	}
 
 	return state;

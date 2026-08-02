@@ -22,12 +22,8 @@ class Window;
 
 class RenderCoordinator final
 {
-  public:
-	RenderCoordinator(
-	    Timer& timer,
-	    Window& window,
-	    RendererExecutionConfig config,
-	    RendererBackendConfiguration backendConfiguration);
+public:
+	RenderCoordinator(Timer& timer, Window& window, RendererExecutionConfig config, RendererBackendConfiguration backendConfiguration);
 	~RenderCoordinator() noexcept;
 
 	RenderCoordinator(const RenderCoordinator&) = delete;
@@ -51,11 +47,10 @@ class RenderCoordinator final
 
 	RendererExecutionMode GetMode() const noexcept { return m_config.Mode; }
 
-  private:
+private:
 	static constexpr std::size_t RenderControlCapacity = 64;
 
-	template <typename TResult>
-	static TResult ExtractControlResult(RenderControlResult result);
+	template <typename TResult> static TResult ExtractControlResult(RenderControlResult result);
 
 	void Initialize();
 	void InitializeSerial();
@@ -71,8 +66,9 @@ class RenderCoordinator final
 	void ExecuteThreadedFrame(RenderFrameQueueTicket ticket);
 	void SettleAbandonedWork() noexcept;
 	void PublishReadState();
-	bool SubmitControl(RenderControlPayload payload);
-	RenderControlResult SubmitSynchronousControl(RenderControlPayload payload, const std::shared_ptr<RenderControlCompletion>& completion);
+	void SubmitControl(RenderControlPayload payload);
+	template <typename TCommand> RenderControlResult SubmitSynchronousControl(TCommand command);
+	std::uint64_t IssueControlSequence() noexcept;
 	void SubmitResize();
 	RendererExecutionContext& GetSerialContext();
 	const RendererExecutionContext& GetSerialContext() const;

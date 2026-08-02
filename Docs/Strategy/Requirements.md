@@ -13,7 +13,7 @@ This is the canonical requirements contract for SparkleEngine and the target eng
 - [F. Six-to-Twelve-Month Execution Roadmap](Roadmap.md) converts the gaps into sequenced work.
 - [G. Advanced Graphics Engine Executive Summary](ExecutiveSummary.md) is the short engine decision document.
 - [H. Advanced Graphics Engineer Persona](EngineerPersona.md) describes who the engineer must become.
-- [I. Bistro and San Miguel Acceptance Workloads](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.
+- [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.
 
 When another document conflicts with this matrix, this matrix controls the capability target and the evidence meaning. Architecture documents may impose stricter implementation rules.
 
@@ -42,7 +42,7 @@ The product workload decision is fixed for this planning horizon:
 2. Bistro exterior/interior is the Tier 1 primary flagship;
 3. San Miguel 2.0 is the Tier 1 secondary supported scene and cross-scene quality/generalization test.
 
-The engine is not permitted to substitute Sponza-only proof for a Tier 1 requirement. The detailed acquisition, material, quality, performance, neural, and presentation gates are binding in [I](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md).
+The engine is not permitted to substitute Sponza-only proof for a Tier 1 requirement. The detailed acquisition, material, quality, performance, neural, and presentation gates are binding in [I](../Engineering/BistroAndSanMiguelWorkloads.md).
 
 ## Evidence Scale
 
@@ -119,12 +119,27 @@ The portfolio is ready only when all four review paths work:
 
 The whole engine is not the portfolio. It is the evidence substrate. The public surface must select and explain the small parts that prove the matrix.
 
-The scene presentation contract is:
+Scene-specific assets, routes, `CASE-01` through `CASE-05`, and presentation gates belong to [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md). This document owns only the reviewer/evidence meaning above.
 
-- recruiter path: one Bistro exterior image, one Bistro interior image, one San Miguel image, a 60–90 second deterministic traversal, and three measured claims;
-- hiring-manager path: `CASE-01` through `CASE-05` from [I](../../Engineering/Validation/BistroAndSanMiguelWorkloads.md), with Bistro as the narrative spine and San Miguel as breadth/generalization evidence;
-- specialist path: frozen routes, reference images, material inventories, captures, profiles, numerical checks, failure cases, and backend differences;
-- adopter path: external-pack acquisition, attribution, deterministic import/cook/run, support/fallback matrix, and expected output for both Tier 1 scenes.
+### Case-Study Structure
+
+Every public case uses the same order:
+
+1. one-sentence result;
+2. problem and product constraint;
+3. personal ownership;
+4. system boundary and relevant code;
+5. baseline;
+6. hypothesis and alternatives;
+7. math/model/API design;
+8. capture and experiment method;
+9. result table with configuration;
+10. failure cases and limitations;
+11. adoption/fallback;
+12. what was simplified or deleted;
+13. source, data, video, capture, and reproduction links.
+
+The first screen contains the result, not the architecture history.
 
 ## Completion Rule
 

@@ -13,8 +13,7 @@
 
 RenderPassRuntimeCache::IRuntimeStorageHolder::~IRuntimeStorageHolder() noexcept = default;
 
-RenderPassRuntimeCache::RenderPassRuntimeCache(
-    RenderDeviceServices& deviceServices) noexcept :
+RenderPassRuntimeCache::RenderPassRuntimeCache(RenderDeviceServices& deviceServices) noexcept :
     m_deviceServices(&deviceServices),
     m_renderHardwareInterface(&deviceServices.GetRenderHardwareInterface()),
     m_activeGeneration(std::make_unique<ShaderRuntimeGeneration>())
@@ -25,16 +24,13 @@ RenderPassRuntimeCache::~RenderPassRuntimeCache() noexcept = default;
 
 std::uint64_t RenderPassRuntimeCache::GetShaderPackageGeneration() const noexcept
 {
-	return m_activeGeneration != nullptr
-	           ? m_activeGeneration->Generation
-	           : 0;
+	return m_activeGeneration != nullptr ? m_activeGeneration->Generation : 0;
 }
 
 void RenderPassRuntimeCache::ReloadCookedShaders()
 {
 	PollRetiredGenerations();
-	if (m_activeGeneration == nullptr ||
-	    m_renderHardwareInterface == nullptr)
+	if (m_activeGeneration == nullptr || m_renderHardwareInterface == nullptr)
 	{
 		HandleRuntimeCreationFailure("Shader runtime generation has no active renderer owner.");
 	}
@@ -48,17 +44,16 @@ void RenderPassRuntimeCache::ReloadCookedShaders()
 
 	try
 	{
-		for (const auto& [passType, activeHolder] :
-		     m_activeGeneration->RuntimeStorageByPassType)
+		for (const auto& [passType, activeHolder] : m_activeGeneration->RuntimeStorageByPassType)
 		{
 			if (activeHolder == nullptr)
+			{
 				HandleRuntimeCreationFailure("Shader runtime cache contains an empty pass holder.");
+			}
 
 			replacement->RuntimeStorageByPassType.emplace(
 			    passType,
-			    activeHolder->CreateReplacement(
-			        *m_renderHardwareInterface,
-			        replacement->ShaderPackages));
+			    activeHolder->CreateReplacement(*m_renderHardwareInterface, replacement->ShaderPackages));
 		}
 	}
 	catch (const Diagnostics::Error& error)
@@ -68,9 +63,7 @@ void RenderPassRuntimeCache::ReloadCookedShaders()
 	}
 
 	m_retiredGenerations.push_back(
-	    RetiredShaderRuntimeGeneration{
-	        .LastUse = CaptureLastSubmittedState(),
-	        .Runtime = std::move(m_activeGeneration)});
+	    RetiredShaderRuntimeGeneration{.LastUse = CaptureLastSubmittedState(), .Runtime = std::move(m_activeGeneration)});
 	m_activeGeneration = std::move(replacement);
 }
 
@@ -80,11 +73,7 @@ void RenderPassRuntimeCache::PollRetiredGenerations() noexcept
 	    std::remove_if(
 	        m_retiredGenerations.begin(),
 	        m_retiredGenerations.end(),
-	        [this](
-	            const RetiredShaderRuntimeGeneration& generation) noexcept
-	        {
-		        return IsComplete(generation.LastUse);
-	        }),
+	        [this](const RetiredShaderRuntimeGeneration& generation) noexcept { return IsComplete(generation.LastUse); }),
 	    m_retiredGenerations.end());
 }
 
@@ -96,19 +85,14 @@ RhiSubmissionState RenderPassRuntimeCache::CaptureLastSubmittedState() const noe
 		return state;
 	}
 
-	for (std::size_t queueIndex = 0;
-	     queueIndex < RhiQueueTypeCount;
-	     ++queueIndex)
+	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		state.MarkUsed(
-		    m_deviceServices->GetLastSubmittedToken(
-		        static_cast<ERhiQueueType>(queueIndex)));
+		state.MarkUsed(m_deviceServices->GetLastSubmittedToken(static_cast<ERhiQueueType>(queueIndex)));
 	}
 	return state;
 }
 
-bool RenderPassRuntimeCache::IsComplete(
-    const RhiSubmissionState& state) const noexcept
+bool RenderPassRuntimeCache::IsComplete(const RhiSubmissionState& state) const noexcept
 {
 	if (m_deviceServices == nullptr)
 	{
@@ -117,9 +101,7 @@ bool RenderPassRuntimeCache::IsComplete(
 
 	std::array<RhiSubmissionToken, RhiQueueTypeCount> tokens{};
 	const std::size_t tokenCount = state.CopyTokens(tokens);
-	for (std::size_t tokenIndex = 0;
-	     tokenIndex < tokenCount;
-	     ++tokenIndex)
+	for (std::size_t tokenIndex = 0; tokenIndex < tokenCount; ++tokenIndex)
 	{
 		if (!m_deviceServices->IsSubmissionComplete(tokens[tokenIndex]))
 		{
@@ -129,12 +111,7 @@ bool RenderPassRuntimeCache::IsComplete(
 	return true;
 }
 
-[[noreturn]] void RenderPassRuntimeCache::HandleRuntimeCreationFailure(
-    std::string_view errorMessage) const
+[[noreturn]] void RenderPassRuntimeCache::HandleRuntimeCreationFailure(std::string_view errorMessage) const
 {
-	Diagnostics::Fatal(
-	    Logging::GetOrCreateLogger("Renderer"),
-	    __FILE__,
-	    __LINE__,
-	    errorMessage);
+	Diagnostics::Fatal(Logging::GetOrCreateLogger("Renderer"), __FILE__, __LINE__, errorMessage);
 }

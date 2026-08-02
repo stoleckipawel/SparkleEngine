@@ -14,8 +14,11 @@ namespace SparkleLauncher
 		QString Detail;
 		QString Status;
 		QString State;
+		QString Family;
+		QString UnsupportedReason;
 		bool Synced = false;
 		bool Ready = false;
+		bool Selectable = true;
 		bool StartupDefault = false;
 	};
 
@@ -26,9 +29,13 @@ namespace SparkleLauncher
 		QString Detail;
 		QString Status;
 		QString State;
-		bool Available = false;
-		bool Ready = false;
-		bool External = false;
+		QString ParentPackId;
+		QString SourcePageUrl;
+		QString DownloadBlocker;
+		bool Selected = false;
+		bool Acquired = false;
+		bool DownloadSupported = false;
+		bool RuntimeSupported = true;
 	};
 
 	struct LauncherStartupLevelUiEntry final
@@ -48,7 +55,6 @@ namespace SparkleLauncher
 		QVector<LauncherContentPackUiEntry> ContentPacks;
 		QVector<LauncherStartupLevelUiEntry> StartupLevels;
 
-		static LauncherLevelUiModel Build(
-		    const LauncherProjectSummary& project);
+		static LauncherLevelUiModel Build(const LauncherProjectSummary& project);
 	};
 }

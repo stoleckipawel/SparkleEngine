@@ -15,28 +15,25 @@
 #include <fstream>
 #include <limits>
 
-class TextureMemoryEstimator final
+std::size_t TextureAssetCooker::CalculatePixelDataBytes(const TextureLoadResult& texture)
 {
-  public:
-	static std::size_t CalculateTextureBytes(const TextureLoadResult& texture)
+	std::size_t bytes = 0;
+	for (const TextureArraySliceData& slice : texture.arraySlices)
 	{
-		std::size_t bytes = 0;
-		for (const TextureArraySliceData& slice : texture.arraySlices)
-			for (const TextureMipLevelData& mip : slice.mipLevels)
-				bytes += mip.data.size();
-		return bytes;
+		for (const TextureMipLevelData& mip : slice.mipLevels)
+		{
+			bytes += mip.data.size();
+		}
 	}
-};
+	return bytes;
+}
 
-void TextureAssetCooker::Cook(
-    const TextureCookRequest& request,
-    TextureCookMemoryLimiter& memoryLimiter,
-    std::stop_token cancellation) const
+void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemoryLimiter& memoryLimiter) const
 {
 	ValidateTextureCookRequest(request);
 
 	TextureLoadResult loadResult = TextureSourceLoader::Load(request.sourcePath);
-	auto memoryLease = memoryLimiter.Acquire(TextureMemoryEstimator::CalculateTextureBytes(loadResult), cancellation);
+	auto pixelDataMemoryLease = memoryLimiter.Acquire(CalculatePixelDataBytes(loadResult));
 	TextureLoadResult cookedTexture = TexturePipeline::Process(request, std::move(loadResult));
 
 	std::vector<CookedTextureMipHeader> mipHeaders;
@@ -82,8 +79,8 @@ void TextureAssetCooker::Cook(
 			throw Diagnostics::Error(std::move(fileError));
 		}
 
-		if (!Files::BinaryStreamWriter::WriteValue(output, header, fileError) ||
-		    !Files::BinaryStreamWriter::WriteBytes(
+		if (!Files::BinaryStreamWriter::WriteValue(output, header, fileError)
+		    || !Files::BinaryStreamWriter::WriteBytes(
 		        output,
 		        mipHeaders.data(),
 		        sizeof(CookedTextureMipHeader) * mipHeaders.size(),

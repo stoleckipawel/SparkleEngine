@@ -5,21 +5,22 @@
 #include "TaskExecutorRuntime.h"
 #include "TaskWorkerContext.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
 #include <algorithm>
+#include <cassert>
 #include <stdexcept>
 #include <utility>
 
+static const auto g_taskExecutorLogger = Logging::GetOrCreateLogger("Tasks.Executor");
+
 void TaskExecutor::Implementation::Runtime::ValidateConfiguration(const TaskExecutorConfig& config)
 {
-	const std::uint32_t totalWorkers =
-	    config.FrameCriticalWorkerCount + config.BackgroundWorkerCount + config.BlockingIoWorkerCount;
-	const bool invalidSerialMix = config.FrameCriticalWorkerCount == 0 &&
-	                              (config.BackgroundWorkerCount != 0 || config.BlockingIoWorkerCount != 0);
-	const bool invalidCapacity =
-	    config.MaximumTasksPerExecution == 0 ||
-	    config.MaximumTasksPerExecution > TaskGraphLimits::HardMaximumTasks ||
-	    config.MaximumEdgesPerExecution > TaskGraphLimits::HardMaximumEdges ||
-	    config.MaximumActiveExecutions == 0;
+	const std::uint32_t totalWorkers = config.FrameCriticalWorkerCount + config.BackgroundWorkerCount + config.BlockingIoWorkerCount;
+	const bool invalidSerialMix =
+	    config.FrameCriticalWorkerCount == 0 && (config.BackgroundWorkerCount != 0 || config.BlockingIoWorkerCount != 0);
+	const bool invalidCapacity = config.MaximumTasksPerExecution == 0 || config.MaximumTasksPerExecution > TaskGraphLimits::HardMaximumTasks
+	    || config.MaximumEdgesPerExecution > TaskGraphLimits::HardMaximumEdges || config.MaximumActiveExecutions == 0;
 	if (totalWorkers > MaximumWorkerCount || invalidSerialMix || invalidCapacity)
 	{
 		throw std::invalid_argument("TaskExecutorConfig contains an unsupported lane worker count or capacity.");
@@ -39,12 +40,12 @@ bool TaskExecutor::Implementation::Runtime::RejectExecution(
 	return false;
 }
 
-TaskExecutor::Implementation::Runtime::Runtime(TaskExecutorConfig config) : m_config(config)
+TaskExecutor::Implementation::Runtime::Runtime(TaskExecutorConfig config) :
+    m_config(config)
 {
 	ValidateConfiguration(config);
 
-	const std::uint32_t totalWorkers =
-	    config.FrameCriticalWorkerCount + config.BackgroundWorkerCount + config.BlockingIoWorkerCount;
+	const std::uint32_t totalWorkers = config.FrameCriticalWorkerCount + config.BackgroundWorkerCount + config.BlockingIoWorkerCount;
 	m_workers.reserve(totalWorkers);
 	m_executions.reserve(m_config.MaximumActiveExecutions);
 
@@ -100,10 +101,7 @@ bool TaskExecutor::Implementation::Runtime::ValidateWorkerLanes(
 	{
 		if (GetWorkerCount(node.Desc.Lane) == 0)
 		{
-			return RejectExecution(
-			    execution,
-			    generation,
-			    "Compiled task graph uses a lane with no configured workers.");
+			return RejectExecution(execution, generation, "Compiled task graph uses a lane with no configured workers.");
 		}
 	}
 
@@ -126,22 +124,15 @@ bool TaskExecutor::Implementation::Runtime::ValidateLaunchRequest(
 	}
 	if (scope && context.HasUserData() && !context.HasOwnedUserData())
 	{
-		return RejectExecution(
-		    execution,
-		    generation,
-		    "Scoped asynchronous launch requires owned or empty TaskExecutionContext data.");
+		return RejectExecution(execution, generation, "Scoped asynchronous launch received non-owned TaskExecutionContext data.");
 	}
 	if (!graph.IsValid())
 	{
 		return RejectExecution(execution, generation, graph.GetError().Message);
 	}
-	if (graph.GetTaskCount() > m_config.MaximumTasksPerExecution ||
-	    graph.GetEdgeCount() > m_config.MaximumEdgesPerExecution)
+	if (graph.GetTaskCount() > m_config.MaximumTasksPerExecution || graph.GetEdgeCount() > m_config.MaximumEdgesPerExecution)
 	{
-		return RejectExecution(
-		    execution,
-		    generation,
-		    "Compiled task graph exceeds this executor's bounded execution capacity.");
+		return RejectExecution(execution, generation, "Compiled task graph exceeds this executor's bounded execution capacity.");
 	}
 
 	return ValidateWorkerLanes(graph, execution, generation);
@@ -157,37 +148,21 @@ bool TaskExecutor::Implementation::Runtime::RegisterScopedExecution(
 		return true;
 	}
 
-	return RejectExecution(
-	    execution,
-	    generation,
-	    "TaskScope is closed, settled, or used from a non-owner thread.");
+	return RejectExecution(execution, generation, "TaskScope is closed, settled, or used from a non-owner thread.");
 }
 
-bool TaskExecutor::Implementation::Runtime::AdmitExecution(
-    const std::shared_ptr<TaskExecution::State>& execution,
-    std::uint64_t generation)
+bool TaskExecutor::Implementation::Runtime::AdmitExecution(const std::shared_ptr<TaskExecution::State>& execution, std::uint64_t generation)
 {
 	std::lock_guard lock(m_stateMutex);
-	std::erase_if(
-	    m_executions,
-	    [](const std::weak_ptr<TaskExecution::State>& item)
-	    {
-		    return item.expired();
-	    });
+	std::erase_if(m_executions, [](const std::weak_ptr<TaskExecution::State>& item) { return item.expired(); });
 
 	if (m_lifecycle != LifecycleState::Accepting)
 	{
-		return RejectExecution(
-		    execution,
-		    generation,
-		    "Task executor is no longer accepting submissions.");
+		return RejectExecution(execution, generation, "Task executor is no longer accepting submissions.");
 	}
 	if (m_activeExecutions >= m_config.MaximumActiveExecutions)
 	{
-		return RejectExecution(
-		    execution,
-		    generation,
-		    "Task executor reached its active-execution capacity.");
+		return RejectExecution(execution, generation, "Task executor reached its active-execution capacity.");
 	}
 
 	++m_activeExecutions;
@@ -202,18 +177,18 @@ void TaskExecutor::Implementation::Runtime::ExecuteSerial(
 {
 	try
 	{
-		TaskExecutionCompletion completion = SerialTaskExecution::Execute(
-		    *graph.m_data,
-		    context,
-		    execution->Data.Generation,
-		    execution->Cancellation.get_token());
+		TaskExecutionCompletion completion =
+		    SerialTaskExecution::Execute(*graph.m_data, context, execution->Data.Generation, execution->Cancellation.get_token());
 		execution->Publish(std::move(completion));
 		OnExecutionSettled();
 	}
 	catch (...)
 	{
-		OnExecutionSettled();
-		throw;
+		Diagnostics::Fatal(
+		    g_taskExecutorLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Serial task execution failed after admission and could not publish completion.");
 	}
 }
 
@@ -228,16 +203,18 @@ void TaskExecutor::Implementation::Runtime::StartExecution(
 		return;
 	}
 
-	auto scheduledExecution =
-	    std::make_shared<ScheduledTaskExecution>(*this, graph.m_data, std::move(context), execution);
 	try
 	{
+		auto scheduledExecution = std::make_shared<ScheduledTaskExecution>(*this, graph.m_data, std::move(context), execution);
 		scheduledExecution->Start();
 	}
 	catch (...)
 	{
-		OnExecutionSettled();
-		throw;
+		Diagnostics::Fatal(
+		    g_taskExecutorLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Threaded task execution failed after admission and could not safely roll back publication.");
 	}
 }
 
@@ -249,8 +226,7 @@ std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Lau
 	const std::uint64_t generation = m_nextExecutionGeneration.fetch_add(1, std::memory_order_relaxed);
 	auto execution = CreateExecution(generation, scope);
 
-	TaskExecutionContextBinding::Bind(
-	    context, generation, TaskLane::FrameCritical, execution->Cancellation.get_token());
+	TaskExecutionContextBinding::Bind(context, generation, TaskLane::FrameCritical, execution->Cancellation.get_token());
 
 	if (!ValidateLaunchRequest(graph, context, scope, execution, generation))
 	{
@@ -271,8 +247,11 @@ std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Lau
 
 void TaskExecutor::Implementation::Runtime::OnExecutionSettled()
 {
-	std::lock_guard lock(m_stateMutex);
-	--m_activeExecutions;
+	{
+		std::lock_guard lock(m_stateMutex);
+		assert(m_activeExecutions > 0 && "Task executor active execution count underflowed.");
+		--m_activeExecutions;
+	}
 	m_stateCondition.notify_all();
 }
 
@@ -291,8 +270,7 @@ bool TaskExecutor::Implementation::Runtime::Shutdown(TaskExecutorShutdownMode mo
 	return true;
 }
 
-std::vector<std::shared_ptr<TaskExecution::State>> TaskExecutor::Implementation::Runtime::BeginShutdown(
-    TaskExecutorShutdownMode mode)
+std::vector<std::shared_ptr<TaskExecution::State>> TaskExecutor::Implementation::Runtime::BeginShutdown(TaskExecutorShutdownMode mode)
 {
 	std::vector<std::shared_ptr<TaskExecution::State>> executionsToCancel;
 	std::unique_lock lock(m_stateMutex);
@@ -318,8 +296,7 @@ std::vector<std::shared_ptr<TaskExecution::State>> TaskExecutor::Implementation:
 	return executionsToCancel;
 }
 
-void TaskExecutor::Implementation::Runtime::RequestCancellation(
-    std::span<const std::shared_ptr<TaskExecution::State>> executions) noexcept
+void TaskExecutor::Implementation::Runtime::RequestCancellation(std::span<const std::shared_ptr<TaskExecution::State>> executions) noexcept
 {
 	for (const auto& execution : executions)
 	{
@@ -349,7 +326,7 @@ void TaskExecutor::Implementation::Runtime::FinishShutdown()
 }
 
 TaskExecutor::Implementation::Implementation(TaskExecutorConfig config) :
-	m_runtime(std::make_unique<Runtime>(config))
+    m_runtime(std::make_unique<Runtime>(config))
 {
 }
 

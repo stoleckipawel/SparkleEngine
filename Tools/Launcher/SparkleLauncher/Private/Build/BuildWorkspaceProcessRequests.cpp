@@ -1,6 +1,7 @@
 #include "BuildWorkspaceProcessRequests.h"
 
 #include "CMakeWorkflowProcessRequests.h"
+#include "OptionalContentSyncProcessRequests.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
@@ -16,7 +17,10 @@ namespace SparkleLauncher
 		return MakeCMakeConfigureRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, "Configure.txt");
 	}
 
-	static ProcessRequest MakeBuildRequest(const BuildWorkspaceOperationPlan& plan, std::string_view profileName, const std::vector<std::string>& targets)
+	static ProcessRequest MakeBuildRequest(
+	    const BuildWorkspaceOperationPlan& plan,
+	    std::string_view profileName,
+	    const std::vector<std::string>& targets)
 	{
 		return MakeCMakeBuildRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, profileName, targets, "Build.txt");
 	}
@@ -55,7 +59,8 @@ namespace SparkleLauncher
 		}
 #else
 		process.ExecutablePath = "xdg-open";
-		process.Arguments = {plan.Request.PreferredIde == WorkspaceIde::Rider ? plan.RepositoryRoot.string() : plan.Freshness.SolutionPath.string()};
+		process.Arguments = {
+		    plan.Request.PreferredIde == WorkspaceIde::Rider ? plan.RepositoryRoot.string() : plan.Freshness.SolutionPath.string()};
 #endif
 		return process;
 	}
@@ -102,7 +107,11 @@ namespace SparkleLauncher
 		steps.push_back(std::move(step));
 	}
 
-	static void AddBuildStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan, std::string_view profileName, const std::vector<std::string>& targets)
+	static void AddBuildStep(
+	    std::vector<BuildWorkspaceProcessStep>& steps,
+	    const BuildWorkspaceOperationPlan& plan,
+	    std::string_view profileName,
+	    const std::vector<std::string>& targets)
 	{
 		BuildWorkspaceProcessStep step;
 		step.Id = "build";
@@ -130,52 +139,61 @@ namespace SparkleLauncher
 
 		switch (plan.Kind)
 		{
-		case BuildWorkspaceOperationKind::SyncSourceTiers:
-			if (BuildWorkspaceOperationRequiresConfigureStep(plan))
-			{
+			case BuildWorkspaceOperationKind::SyncSourceTiers:
+				AppendOptionalContentSyncProcessSteps(steps, plan);
+				if (BuildWorkspaceOperationRequiresConfigureStep(plan))
+				{
+					AddConfigureStep(steps, plan);
+				}
+				return steps;
+			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				AddConfigureStep(steps, plan);
-			}
-			return steps;
-		case BuildWorkspaceOperationKind::GenerateBuildFiles:
-			AddConfigureStep(steps, plan);
-			return steps;
-		case BuildWorkspaceOperationKind::OpenIde:
-			AddOpenIdeStep(steps, plan);
-			return steps;
-		case BuildWorkspaceOperationKind::BuildAll:
-			AddConfigureStep(steps, plan);
-			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
-			AddBuildStep(steps, plan, plan.Request.EditorProfile, ResolveProjectTargets(plan.Request.ProjectId, plan.Request.EditorProfile));
-			AddBuildStep(steps, plan, plan.Request.RuntimeProfile, ResolveProjectTargets(plan.Request.ProjectId, plan.Request.RuntimeProfile));
+				return steps;
+			case BuildWorkspaceOperationKind::OpenIde:
+				AddOpenIdeStep(steps, plan);
+				return steps;
+			case BuildWorkspaceOperationKind::BuildAll:
+				AddConfigureStep(steps, plan);
+				AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
+				AddBuildStep(
+				    steps,
+				    plan,
+				    plan.Request.EditorProfile,
+				    ResolveProjectTargets(plan.Request.ProjectId, plan.Request.EditorProfile));
+				AddBuildStep(
+				    steps,
+				    plan,
+				    plan.Request.RuntimeProfile,
+				    ResolveProjectTargets(plan.Request.ProjectId, plan.Request.RuntimeProfile));
+				{
+					const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
+					if (!cookToolTargets.empty())
+					{
+						AddBuildStep(steps, plan, plan.Request.EditorProfile, cookToolTargets);
+					}
+				}
+				return steps;
+			case BuildWorkspaceOperationKind::CompileLauncher:
+				AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
+				return steps;
+			case BuildWorkspaceOperationKind::CompileEditor:
+				AddBuildStep(steps, plan, plan.Request.EditorProfile, ResolveBuildTargets(plan, plan.Request.EditorProfile));
+				return steps;
+			case BuildWorkspaceOperationKind::CompileRuntime:
+				AddBuildStep(steps, plan, plan.Request.RuntimeProfile, ResolveBuildTargets(plan, plan.Request.RuntimeProfile));
+				return steps;
+			case BuildWorkspaceOperationKind::BuildCookTools:
 			{
 				const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
 				if (!cookToolTargets.empty())
 				{
 					AddBuildStep(steps, plan, plan.Request.EditorProfile, cookToolTargets);
 				}
+				return steps;
 			}
-			return steps;
-		case BuildWorkspaceOperationKind::CompileLauncher:
-			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
-			return steps;
-		case BuildWorkspaceOperationKind::CompileEditor:
-			AddBuildStep(steps, plan, plan.Request.EditorProfile, ResolveBuildTargets(plan, plan.Request.EditorProfile));
-			return steps;
-		case BuildWorkspaceOperationKind::CompileRuntime:
-			AddBuildStep(steps, plan, plan.Request.RuntimeProfile, ResolveBuildTargets(plan, plan.Request.RuntimeProfile));
-			return steps;
-		case BuildWorkspaceOperationKind::BuildCookTools:
-		{
-			const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
-			if (!cookToolTargets.empty())
-			{
-				AddBuildStep(steps, plan, plan.Request.EditorProfile, cookToolTargets);
-			}
-			return steps;
-		}
-		case BuildWorkspaceOperationKind::AssembleRelease:
-			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"sparkle_release_assembly"});
-			return steps;
+			case BuildWorkspaceOperationKind::AssembleRelease:
+				AddBuildStep(steps, plan, plan.Request.EditorProfile, {"sparkle_release_assembly"});
+				return steps;
 		}
 
 		return steps;

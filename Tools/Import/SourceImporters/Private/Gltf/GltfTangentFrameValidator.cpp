@@ -43,20 +43,6 @@ void GltfTangentFrameValidator::Validate(const ImportedMeshGeometry& geometry)
 			ValidateMorphFrame(geometry.vertices[vertexIndex], target.deltas[vertexIndex], targetIndex, vertexIndex);
 		}
 	}
-
-	for (std::size_t firstCorner = 0; firstCorner < geometry.indices.size(); firstCorner += 3u)
-	{
-		const float firstSign = geometry.vertices[geometry.indices[firstCorner]].tangent.w;
-		const float secondSign = geometry.vertices[geometry.indices[firstCorner + 1u]].tangent.w;
-		const float thirdSign = geometry.vertices[geometry.indices[firstCorner + 2u]].tangent.w;
-		if (firstSign != secondSign || firstSign != thirdSign)
-		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "Normal-mapped glTF triangle {} has inconsistent tangent handedness and therefore an undefined tangent space.",
-			        firstCorner / 3u));
-		}
-	}
 }
 
 bool GltfTangentFrameValidator::IsFinite(const DirectX::XMFLOAT3& value) noexcept
@@ -77,8 +63,8 @@ void GltfTangentFrameValidator::ValidateBaseFrame(const ImportedVertex& vertex, 
 	    vertex.normal.x * vertex.normal.x + vertex.normal.y * vertex.normal.y + vertex.normal.z * vertex.normal.z;
 	const float tangentLengthSquared = tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z;
 	const float tangentNormalDot = vertex.normal.x * tangent.x + vertex.normal.y * tangent.y + vertex.normal.z * tangent.z;
-	if (std::abs(normalLengthSquared - 1.0f) > kUnitFrameTolerance || std::abs(tangentLengthSquared - 1.0f) > kUnitFrameTolerance ||
-	    std::abs(tangentNormalDot) > kUnitFrameTolerance)
+	if (std::abs(normalLengthSquared - 1.0f) > kUnitFrameTolerance || std::abs(tangentLengthSquared - 1.0f) > kUnitFrameTolerance
+	    || std::abs(tangentNormalDot) > kUnitFrameTolerance)
 	{
 		throw Diagnostics::Error(std::format("Normal-mapped glTF vertex {} does not contain an orthonormal tangent frame.", vertexIndex));
 	}

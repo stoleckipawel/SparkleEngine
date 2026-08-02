@@ -8,9 +8,11 @@ Scope: vendor reference repositories/frameworks compared against SparkleEngine a
 
 This document compares SparkleEngine against top-tier rendering repositories and SDKs. The purpose is not to copy their code. The purpose is to identify what makes those repositories production-grade or reviewable, then use that standard to slim and sharpen Sparkle.
 
+This document owns source-linked precedent analysis only. Local architecture decisions belong in the [Architecture index](README.md), implementation rules belong in [Engineering Standards](../Engineering/Standards/README.md), and capability grades belong in [Principal Graphics Requirements](../Strategy/Requirements.md).
+
 The main lesson is not "add more features." It is "make scope and ownership painfully clear."
 
-The supplied principal graphics engineering role set adds a second comparison lens. The repository must eventually demonstrate the canonical `PGE-01` through `PGE-15` requirements in [A. Principal Graphics Engineering Requirements](../../Strategy/PrincipalGraphics/Requirements.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
+The supplied principal graphics engineering role set adds a second comparison lens. The repository must eventually demonstrate the canonical `PGE-01` through `PGE-15` requirements in [A. Principal Graphics Engineering Requirements](../Strategy/Requirements.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
 
 ## Sources Reviewed
 
@@ -295,47 +297,18 @@ Sparkle should decide which one each subsystem is.
 
 ## Qualities Of A Good Game Engine Repository
 
-A strong game engine repo has:
+Across the reviewed sources, the reusable evaluation rubric is:
 
-| Quality | Production expectation | Sparkle grade |
-| --- | --- | ---: |
-| Declared product identity | The repo says exactly what it is and is not. | 2.5 |
-| Small public API | Public headers are stable contracts, not convenience/status/report code. | 3.2 |
-| Strong module boundaries | Ownership follows build modules and include direction. | 4.0 |
-| Renderer graph clarity | Pass/resource/history ownership is visible and predictable. | 3.8 |
-| RHI explicitness | D3D12/Vulkan concepts remain recognizable. | 4.0 |
-| Backend parity honesty | Feature/support matrix names what works per backend. | 3.0 |
-| Feature vertical slices | Each feature owns settings, resources, passes, shaders, fallback. | 3.4 |
-| Experimental isolation | Research code is gated/sample-only/shader-only. | 2.4 |
-| Shader ABI discipline | Source, reflection, package, runtime layout align. | 4.4 |
-| Content delivery discipline | Heavy media does not dominate the core repo. | 1.5 |
-| Tooling focus | Tools serve current product workflows only. | 2.8 |
-| Memory/perf evidence | Memory budgets and CPU/GPU timings guide decisions. | 3.2 |
-| Package/release contract | Runtime/editor/dev/content packages are intentional. | 3.0 |
-| Deletion culture | Stale scaffolding is removed aggressively. | 3.5 |
-| Partner adoption quality | Integration prerequisites, contracts, fallback, repro, and handoff are usable outside the authoring team. | 2.0 |
-| Neural graphics evidence | A real model/operator feature reports artifact provenance, quality, runtime cost, and fallback. | 1.0 |
-| Math and performance modeling | Algorithm derivation and predicted cost are checked against implementation and captures. | 2.0 |
-| Hardware/driver diagnosis | Exact configuration, native validation, reduced reproducers, and scoped conclusions distinguish app from driver behavior. | 2.8 |
-| Technical communication | Completed strategic work has a concise case study, live demo, and whitepaper/talk-quality explanation. | 2.5 |
+- declared product identity and non-goals;
+- small public surfaces and visible module/dependency ownership;
+- explicit renderer/RHI/backend contracts and honest capability parity;
+- cohesive feature vertical slices with isolated experimental work;
+- deterministic shader, content, model, package, and release boundaries;
+- workload-specific correctness, memory, performance, and hardware/driver evidence;
+- reproducible adoption material another engineer can use without private context;
+- deletion of superseded paths and tooling that no longer serves a product workflow.
 
-## Gaps To Close Before Sparkle Feels Top-Tier
-
-1. Declare product scope and non-goals.
-2. Catalog Showcase levels and externalize heavyweight assets.
-3. Remove default-path validation/report/debug artifact systems.
-4. Refactor PTLAS into a minimal product path while deleting research scaffolding.
-5. Shrink public diagnostics APIs while preserving hardened screenshot/BMP capture.
-6. Make RHI policy explicit: low-level service layer plus managed renderer frame graph.
-7. Choose one release runtime smoke/demo path rather than many validation paths.
-8. Collapse launcher to current workflows.
-9. Keep shader compiler strong but make debug artifacts opt-in or external.
-10. Keep profiler/debug-layer and screenshot/BMP capture support while deleting bespoke reports.
-11. Implement one real neural graphics feature only after its owning renderer/resource/artifact contracts are ready; readiness alone does not meet the final target.
-12. Add deterministic model provenance/export/cook and separate training versus inference performance evidence without adding a general ML runtime.
-13. Build one partner-shaped adoption case with explicit prerequisites, fallback, reduced repro, hardware/driver matrix, and handoff guidance.
-14. Tie material rendering/neural algorithms to math/reference tests and predicted-versus-measured CPU/GPU cost.
-15. Convert one completed strategic result into a concise live demo, whitepaper-quality note, and talk outline.
+This research does not grade Sparkle or own its backlog. Current readiness belongs to [C. Gap Assessment](../Strategy/GapAssessment.md), priority and sequence belong to [F. Roadmap](../Strategy/Roadmap.md), and accepted local design belongs to focused Architecture documents.
 
 ## What Not To Copy
 
@@ -349,19 +322,7 @@ A strong game engine repo has:
 - Do not mistake a polished demo for partner readiness; adoption also requires ownership, failure, packaging, and debugging contracts.
 - Do not add uncataloged levels/content to prove features. Use curated levels and optional content packs.
 
-## Bottom Line
+## Research Conclusion
 
-Sparkle is architecturally credible, especially in RHI, frame graph, and shader pipeline. It is not yet as sharp as the best reference repositories because its scope is too wide and its observation/test/report surfaces are too durable.
-
-To reach that level, Sparkle should remove more than it adds:
-
-- fewer public APIs
-- fewer launcher/debug options
-- fewer diagnostic artifacts
-- fewer default experimental paths
-- less content in the depot
-- clearer feature ownership
-- stronger release identity
-- one real path from neural model/operator math through deterministic artifacts to optimized renderer execution
-- partner-quality integration and driver/hardware diagnosis
+The references consistently reward explicit scope, one-way ownership, narrow public contracts, backend honesty, reproducible evidence, and focused deletion. Sparkle decisions should adopt those principles only through the owning Architecture, Standards, Requirements, and Roadmap documents rather than treating this comparison as local policy.
 - concise, reproducible communication of completed results

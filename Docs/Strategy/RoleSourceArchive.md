@@ -1,6 +1,6 @@
 # B. Role Source Archive
 
-Status: durable transcription and traceability record
+Status: source archive and durable traceability record
 Date: 2026-07-26
 Inputs: one CV PDF, nine local image files including one byte-identical duplicate, and one inline role screenshot supplied in the review request
 

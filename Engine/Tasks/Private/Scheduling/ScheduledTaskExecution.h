@@ -9,10 +9,9 @@
 #include <string>
 #include <vector>
 
-class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final :
-	public std::enable_shared_from_this<ScheduledTaskExecution>
+class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final : public std::enable_shared_from_this<ScheduledTaskExecution>
 {
-  public:
+public:
 	ScheduledTaskExecution(
 	    Runtime& owner,
 	    std::shared_ptr<const TaskGraphStorage> graph,
@@ -22,7 +21,7 @@ class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final :
 	void Start();
 	void Execute(std::uint32_t index, TaskWorker& worker);
 
-  private:
+private:
 	struct ScheduledTaskState final
 	{
 		std::atomic_uint32_t RemainingPrerequisites{0};
@@ -31,7 +30,6 @@ class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final :
 		std::atomic_bool BlockedByPrerequisite{false};
 		std::atomic_bool BlockedByParent{false};
 		std::atomic_bool Scheduled{false};
-		std::atomic_bool Terminal{false};
 	};
 
 	void InitializeTaskStates();
@@ -41,7 +39,7 @@ class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final :
 	void ReleaseNestedTasks(const TaskGraphNode& node, const TaskResult& result, TaskWorker& worker);
 	void TrySchedule(std::uint32_t index, TaskWorker* preferredWorker);
 	void ReleaseUnfinished(std::uint32_t index, TaskWorker* worker);
-	void CompleteLogical(std::uint32_t index, TaskWorker* worker);
+	void SettleLogicalTask(std::uint32_t index, TaskWorker* worker);
 	TaskExecutionCompletion BuildCompletion();
 	void Finish();
 
@@ -57,6 +55,5 @@ class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final :
 	std::string m_firstFailureTaskName;
 	TaskResult m_firstFailure = TaskResult::Success();
 	std::atomic_uint32_t m_settledTaskCount{0};
-	std::atomic_bool m_observedCancellation{false};
-	std::atomic_bool m_finished{false};
+	bool m_cancellationObserved = false;
 };

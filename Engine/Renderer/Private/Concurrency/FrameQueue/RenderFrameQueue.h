@@ -2,7 +2,6 @@
 
 #include "Concurrency/FrameQueue/RenderFramePacket.h"
 
-#include <cstddef>
 #include <condition_variable>
 #include <cstdint>
 #include <memory>
@@ -15,7 +14,6 @@ enum class RenderFrameSlotState : std::uint8_t
 	Writing,
 	Ready,
 	Rendering,
-	Retired,
 };
 
 struct RenderFrameQueueTicket final
@@ -28,7 +26,7 @@ struct RenderFrameQueueTicket final
 
 class RenderFrameQueue final
 {
-  public:
+public:
 	explicit RenderFrameQueue(std::uint32_t capacity);
 
 	RenderFrameQueue(const RenderFrameQueue&) = delete;
@@ -38,17 +36,11 @@ class RenderFrameQueue final
 	bool Publish(RenderFrameQueueTicket ticket, RenderFramePacket packet);
 	bool Consume(RenderFrameQueueTicket ticket, RenderFramePacket& packet);
 	bool Retire(RenderFrameQueueTicket ticket);
-	bool Cancel(RenderFrameQueueTicket ticket);
 	bool WaitUntilReusable(RenderFrameQueueTicket ticket);
 	void Close() noexcept;
 	void SettleAll() noexcept;
 
-	std::uint32_t GetCapacity() const noexcept { return m_capacity; }
-	std::size_t GetFixedStorageBytes() const noexcept;
-	bool IsClosed() const noexcept;
-	RenderFrameSlotState GetState(std::uint32_t slotIndex) const noexcept;
-
-  private:
+private:
 	struct Slot final
 	{
 		RenderFrameSlotState State = RenderFrameSlotState::Free;
@@ -58,10 +50,11 @@ class RenderFrameQueue final
 
 	bool IsTicketCurrentLocked(RenderFrameQueueTicket ticket) const noexcept;
 	std::optional<std::uint32_t> FindFreeSlotLocked() const noexcept;
+	std::uint64_t IssueSequenceNumberLocked() noexcept;
 
 	std::unique_ptr<Slot[]> m_slots;
 	std::uint32_t m_capacity = 0;
-	mutable std::mutex m_mutex;
+	std::mutex m_mutex;
 	std::condition_variable m_reusable;
 	std::uint64_t m_nextSequenceNumber = 1;
 	bool m_closed = false;

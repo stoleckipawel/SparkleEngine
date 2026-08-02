@@ -1,24 +1,32 @@
 #include "Concurrency/Control/RenderControlCompletion.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
+static const auto g_renderControlCompletionLogger = Logging::GetOrCreateLogger("Renderer.ControlCompletion");
+
 void RenderControlCompletion::Complete(RenderControlResult result)
 {
 	{
 		std::lock_guard lock(m_mutex);
 		if (m_completed)
 		{
-			return;
+			Diagnostics::Fatal(
+			    g_renderControlCompletionLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Render-control completion was published more than once.");
 		}
 
 		m_result = std::move(result);
 		m_completed = true;
 	}
 
-	m_completedCondition.notify_all();
+	m_completedCondition.notify_one();
 }
 
 void RenderControlCompletion::Cancel()
 {
-	Complete(std::monostate {});
+	Complete(RenderControlError{"RenderThread stopped before the render-control command completed."});
 }
 
 RenderControlResult RenderControlCompletion::Wait()

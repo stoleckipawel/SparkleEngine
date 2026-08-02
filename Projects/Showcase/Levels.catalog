@@ -41,9 +41,303 @@ DisplayName = Sponza PTLAS
 Source = Levels/SponzaPtlas.level
 Default = true
 
+[Level]
+Id = BistroExterior
+DisplayName = Bistro Exterior
+Source = Levels/BistroExterior.level
+OptionalPack = Bistro
+Family = Bistro
+VariantKind = SceneVariant
+Default = false
+
+[Level]
+Id = BistroInterior
+DisplayName = Bistro Interior
+Source = Levels/BistroInterior.level
+OptionalPack = Bistro
+Family = Bistro
+VariantKind = SceneVariant
+Default = false
+
+[Level]
+Id = BistroInteriorWine
+DisplayName = Bistro Interior Wine
+Source = Levels/BistroInteriorWine.level
+OptionalPack = Bistro
+Family = Bistro
+VariantKind = SceneVariant
+Default = false
+
+[Level]
+Id = SanMiguelHigh
+DisplayName = San Miguel High
+Source = Levels/SanMiguelHigh.level
+OptionalPack = SanMiguel
+Family = San Miguel
+VariantKind = SceneVariant
+Default = false
+
+[Level]
+Id = SanMiguelLow
+DisplayName = San Miguel Low
+Source = Levels/SanMiguelLow.level
+OptionalPack = SanMiguel
+Family = San Miguel
+VariantKind = SceneVariant
+Default = false
+
+[Level]
+Id = JungleRuins
+DisplayName = Jungle Ruins
+Source = Levels/JungleRuins.level
+OptionalPack = JungleRuins
+Family = Jungle Ruins
+VariantKind = Base
+Default = false
+
+[Level]
+Id = ModernSponza
+DisplayName = Modern Sponza
+Source = Levels/ModernSponza.level
+OptionalPack = ModernSponza
+Family = Modern Sponza
+VariantKind = Base
+Default = false
+
+[Level]
+Id = ModernSponzaCurtains
+DisplayName = Colorful Curtains
+Source = Levels/ModernSponzaCurtains.level
+OptionalPack = ModernSponzaCurtains
+Family = Modern Sponza
+VariantKind = AddOn
+Default = false
+
+[Level]
+Id = ModernSponzaCandles
+DisplayName = Emissive Candles
+Source = Levels/ModernSponzaCandles.level
+OptionalPack = ModernSponzaCandles
+Family = Modern Sponza
+VariantKind = AddOn
+Default = false
+
+[Level]
+Id = ModernSponzaKnight
+DisplayName = Animated Knight
+Source = Levels/ModernSponzaKnight.level
+OptionalPack = ModernSponzaKnight
+Family = Modern Sponza
+VariantKind = AddOn
+Default = false
+
 [OptionalPack]
 Id = Bistro
 DisplayName = Bistro
-Root = Assets/Meshes/Bistro
+Root = Assets/Meshes/Bistro/Bistro_v5_2
+ExtractRoot = Assets/Meshes/Bistro
+Required = BistroExterior.fbx
+Kind = Scene
+SourceUrl = https://developer.nvidia.com/bistro
+SourcePage = https://developer.nvidia.com/orca/amazon-lumberyard-bistro
+Archive = Bistro_v5_2.zip
+ArchiveBytes = 894377473
+Version = v5.2
+License = CC BY 4.0
 Available = false
 External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[OptionalPack]
+Id = SanMiguel
+DisplayName = San Miguel 2.0
+Root = Assets/Meshes/SanMiguel
+ExtractRoot = Assets/Meshes/SanMiguel
+Required = san-miguel.obj
+Kind = Scene
+SourceUrl = https://casual-effects.com/g3d/data10/research/model/San_Miguel/San_Miguel.zip
+SourcePage = https://casual-effects.com/g3d/data10/index.html
+Archive = San_Miguel.zip
+ArchiveBytes = 535519642
+Version = 2.0 (2017-07-02)
+License = CC BY 3.0
+RuntimeBlocker = Deterministic OBJ/MTL/PNG-to-glTF conversion is not implemented yet.
+Available = false
+External = true
+DownloadSupported = true
+RuntimeSupported = false
+
+[OptionalPack]
+Id = ModernSponza
+DisplayName = Modern Sponza
+Root = Assets/Meshes/ModernSponza/Base/main_sponza
+ExtractRoot = Assets/Meshes/ModernSponza/Base
+Required = NewSponza_Main_glTF_003.gltf
+Kind = Scene
+SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/830833
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = main_sponza.zip
+ArchiveBytes = 3987608266
+Version = Intel GPU Research Samples 2025-06-16
+License = Creative Commons Attribution; verify embedded archive terms
+Available = false
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[OptionalPack]
+Id = ModernSponzaCurtains
+DisplayName = Colorful Curtains
+Root = Assets/Meshes/ModernSponza/AddOns/Curtains/pkg_a_curtains
+ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Curtains
+Required = NewSponza_Curtains_glTF.gltf
+Parent = ModernSponza
+Kind = AddOn
+SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/726650
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = pkg_a_curtains.zip
+ArchiveBytes = 786898766
+Version = Intel GPU Research Samples 2025-06-16
+License = Creative Commons Attribution; verify embedded archive terms
+Available = false
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[OptionalPack]
+Id = ModernSponzaIvy
+DisplayName = Ivy
+Root = Assets/Meshes/ModernSponza/AddOns/Ivy/pkg_b_ivy
+ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Ivy
+Required = NewSponza_IvyGrowth_glTF.gltf
+Parent = ModernSponza
+Kind = AddOn
+SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/726656
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = pkg_b_ivy1.zip
+ArchiveBytes = 1383921436
+Version = Intel GPU Research Samples 2025-06-16
+License = Creative Commons Attribution; verify embedded archive terms
+DownloadBlocker = Future foliage-density, residency, and geometry-scaling support is required.
+Available = false
+External = true
+DownloadSupported = false
+RuntimeSupported = false
+
+[OptionalPack]
+Id = ModernSponzaTrees
+DisplayName = Trees
+Root = Assets/Meshes/ModernSponza/AddOns/Trees/pkg_c_trees
+ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Trees
+Required = NewSponza_CypressTree_glTF.gltf
+Parent = ModernSponza
+Kind = AddOn
+SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/726662
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = pkg_c_trees.zip
+ArchiveBytes = 951147802
+Version = Intel GPU Research Samples 2025-06-16
+License = Creative Commons Attribution; verify embedded archive terms
+DownloadBlocker = Future alpha-card foliage and transparency support is required.
+Available = false
+External = true
+DownloadSupported = false
+RuntimeSupported = false
+
+[OptionalPack]
+Id = ModernSponzaCandles
+DisplayName = Emissive Candles
+Root = Assets/Meshes/ModernSponza/AddOns/Candles/pkg_d_10k_candles
+ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Candles
+Required = NewSponza_4_Combined_glTF.gltf
+Parent = ModernSponza
+Kind = AddOn
+SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/726676
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = pkg_d_10k_candles.zip
+ArchiveBytes = 3190731713
+Version = Intel GPU Research Samples 2025-06-16
+License = Creative Commons Attribution; verify embedded archive terms
+Available = false
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[OptionalPack]
+Id = ModernSponzaKnight
+DisplayName = Animated Knight
+Root = Assets/Meshes/ModernSponza/AddOns/Knight/pkg_e_knight_anim
+ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Knight
+Required = Exports/FBX/Knight_USD_002.fbx
+Parent = ModernSponza
+Kind = AddOn
+SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/763175
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = pkg_e_knight_anim.zip
+ArchiveBytes = 1202508298
+Version = Intel GPU Research Samples 2025-06-16
+License = Creative Commons Attribution; verify embedded archive terms
+Available = false
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[OptionalPack]
+Id = ModernSponzaFlood
+DisplayName = Flood
+Root = Assets/Meshes/ModernSponza/AddOns/Flood/pkg_f_flood
+ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Flood
+Required = abc/sponza_flood_left_final_slow_v0011.abc
+Parent = ModernSponza
+Kind = AddOn
+SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/742225
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = pkg_f_flood1.zip
+ArchiveBytes = 2928478705
+Version = Intel GPU Research Samples 2025-06-16
+License = Creative Commons Attribution; verify embedded archive terms
+DownloadBlocker = Future Alembic animation, water shading, and simulation playback support is required.
+Available = false
+External = true
+DownloadSupported = false
+RuntimeSupported = false
+
+[OptionalPack]
+Id = ModernSponzaExplosion
+DisplayName = Volumetric Explosion
+Root = Assets/Meshes/ModernSponza/AddOns/Explosion/pkg_g_explosion
+ExtractRoot = Assets/Meshes/ModernSponza/AddOns/Explosion
+Required = vdb/explosion_v0007/explosion_v0007.0001.vdb
+Parent = ModernSponza
+Kind = AddOn
+SourceUrl = https://download.intel.com/developer-assets/PKG_G_Explosion.zip
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = PKG_G_Explosion.zip
+ArchiveBytes = 9805168555
+Version = Intel GPU Research Samples 2025-06-16
+License = Creative Commons Attribution; verify embedded archive terms
+DownloadBlocker = Future OpenVDB import, volume rendering, and sequence streaming support is required.
+Available = false
+External = true
+DownloadSupported = false
+RuntimeSupported = false
+
+[OptionalPack]
+Id = JungleRuins
+DisplayName = Jungle Ruins
+Root = Assets/Meshes/JungleRuins/JungleRuins
+ExtractRoot = Assets/Meshes/JungleRuins
+Required = USD/JungleRuins_Karma.usda
+Kind = Scene
+SourceUrl = https://cdrdv2.intel.com/v1/dl/getContent/844047
+SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html
+Archive = JungleRuins_1_0_1b.zip
+ArchiveBytes = 4254165506
+Version = 1.0.1b
+License = Creative Commons Attribution; verify embedded archive terms
+RuntimeBlocker = USD composition and virtualized or out-of-core geometry support are not implemented yet.
+Available = false
+External = true
+DownloadSupported = true
+RuntimeSupported = false

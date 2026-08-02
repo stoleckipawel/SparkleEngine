@@ -5,15 +5,15 @@
 
 #include <dxgiformat.h>
 
-#include <stop_token>
+#include <cstddef>
 
 class TextureCookMemoryLimiter;
 
 class TextureAssetCooker final
 {
-  public:
-	void Cook(
-	    const TextureCookRequest& request,
-	    TextureCookMemoryLimiter& memoryLimiter,
-	    std::stop_token cancellation) const;
+public:
+	void Cook(const TextureCookRequest& request, TextureCookMemoryLimiter& memoryLimiter) const;
+
+private:
+	static std::size_t CalculatePixelDataBytes(const TextureLoadResult& texture);
 };

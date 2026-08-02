@@ -1,5 +1,7 @@
 #include "TaskEvent.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
 #include <atomic>
 #include <condition_variable>
 #include <limits>
@@ -7,21 +9,14 @@
 #include <stop_token>
 #include <utility>
 
-class TaskEventIdentity final
-{
-  public:
-	static std::uint64_t AcquireTaskEventIdentity() noexcept
-	{
-		static std::atomic_uint64_t nextIdentity{1};
-		return nextIdentity.fetch_add(1, std::memory_order_relaxed);
-	}
-};
+static const auto g_taskEventLogger = Logging::GetOrCreateLogger("Tasks.Event");
 
 struct TaskEvent::State final
 {
 	class WaitRegistration;
+	static std::uint64_t IssueIdentity() noexcept;
 
-	std::uint64_t Identity = TaskEventIdentity::AcquireTaskEventIdentity();
+	std::uint64_t Identity = IssueIdentity();
 	std::uint64_t Generation = 1;
 	std::mutex Mutex;
 	std::condition_variable Condition;
@@ -30,29 +25,56 @@ struct TaskEvent::State final
 	TaskResult Result = TaskResult::Success();
 };
 
+std::uint64_t TaskEvent::State::IssueIdentity() noexcept
+{
+	static std::atomic_uint64_t nextIdentity{1};
+	std::uint64_t identity = nextIdentity.load(std::memory_order_relaxed);
+	for (;;)
+	{
+		if (identity == 0)
+		{
+			Diagnostics::Fatal(g_taskEventLogger, __FILE__, __LINE__, "TaskEvent identity exhausted.");
+		}
+
+		const std::uint64_t next = identity == (std::numeric_limits<std::uint64_t>::max)() ? 0 : identity + 1;
+		if (nextIdentity.compare_exchange_weak(identity, next, std::memory_order_relaxed, std::memory_order_relaxed))
+		{
+			return identity;
+		}
+	}
+}
+
 class TaskEvent::State::WaitRegistration final
 {
-  public:
-	explicit WaitRegistration(State& state) noexcept : m_state(state) { ++m_state.WaiterCount; }
+public:
+	explicit WaitRegistration(State& state) noexcept :
+	    m_state(state)
+	{
+		++m_state.WaiterCount;
+	}
 	~WaitRegistration() { --m_state.WaiterCount; }
 
 	WaitRegistration(const WaitRegistration&) = delete;
 	WaitRegistration& operator=(const WaitRegistration&) = delete;
 
-  private:
+private:
 	State& m_state;
 };
 
 TaskEventToken::TaskEventToken() noexcept = default;
 
 TaskEventToken::TaskEventToken(std::uint64_t identity, std::uint64_t generation) noexcept :
-	m_identity(identity), m_generation(generation)
+    m_identity(identity),
+    m_generation(generation)
 {
 }
 
 bool TaskEventToken::operator==(const TaskEventToken&) const noexcept = default;
 
-TaskEvent::TaskEvent() : m_state(std::make_shared<State>()) {}
+TaskEvent::TaskEvent() :
+    m_state(std::make_shared<State>())
+{
+}
 
 TaskEvent::~TaskEvent() = default;
 
@@ -80,8 +102,7 @@ bool TaskEvent::Signal(TaskEventToken token, TaskResult result) noexcept
 TaskEventToken TaskEvent::Reset() noexcept
 {
 	std::lock_guard lock(m_state->Mutex);
-	if (!m_state->Signalled || m_state->WaiterCount != 0 ||
-	    m_state->Generation == std::numeric_limits<std::uint64_t>::max())
+	if (!m_state->Signalled || m_state->WaiterCount != 0 || m_state->Generation == std::numeric_limits<std::uint64_t>::max())
 	{
 		return {};
 	}
@@ -99,29 +120,30 @@ TaskResult TaskEvent::Wait(TaskEventToken token, TaskExecutionContext& context)
 	}
 
 	const std::shared_ptr state = m_state;
-	std::stop_callback cancellationWake(context.GetCancellationToken(), [state] { state->Condition.notify_all(); });
+	std::stop_callback cancellationWake(
+	    context.GetCancellationToken(),
+	    [state]
+	    {
+		    std::lock_guard lock(state->Mutex);
+		    state->Condition.notify_all();
+	    });
 	std::unique_lock lock(state->Mutex);
 	State::WaitRegistration waiterRegistration(*state);
 	state->Condition.wait(
 	    lock,
 	    [&]
 	    {
-		return context.IsCancellationRequested() || token.m_identity != state->Identity ||
-		       token.m_generation != state->Generation || state->Signalled;
+		    return context.IsCancellationRequested() || token.m_identity != state->Identity || token.m_generation != state->Generation
+		        || state->Signalled;
 	    });
 
-	TaskResult result;
 	if (context.IsCancellationRequested())
 	{
-		result = TaskResult::Cancelled("TaskEvent wait was cancelled.");
+		return TaskResult::Cancelled("TaskEvent wait was cancelled.");
 	}
-	else if (!token || token.m_identity != state->Identity || token.m_generation != state->Generation)
+	if (!token || token.m_identity != state->Identity || token.m_generation != state->Generation)
 	{
-		result = TaskResult::Failure("TaskEvent token is stale or belongs to another event.");
+		return TaskResult::Failure("TaskEvent token is stale or belongs to another event.");
 	}
-	else
-	{
-		result = state->Result;
-	}
-	return result;
+	return state->Result;
 }
