@@ -229,7 +229,7 @@ namespace SparkleLauncher
 		        "Local state and caches"},
 		    {"Logs",
 		        "logs",
-		        "Remove repository, launcher, and content diagnostic logs.",
+		        "Remove repository, launcher, and content diagnostic logs; keep the current launcher log until exit.",
 		        "repository, launcher, and content logs",
 		        "Local state and caches"},
 		}};

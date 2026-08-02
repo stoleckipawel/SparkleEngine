@@ -141,7 +141,7 @@ if(SPARKLE_VERBOSE_DEPENDENCIES)
     message(STATUS "")
     message(STATUS "=== Third-Party Dependencies ===")
     message(STATUS "")
-    message(STATUS "  Total download on fresh cache: ~314 MB with Streamline enabled (shallow clones, LFS skipped)")
+    message(STATUS "  Total download on fresh cache: ~314 MB with Streamline enabled (mostly shallow clones, LFS skipped)")
     message(STATUS "  Output mode: detailed dependency context")
     message(STATUS "  Git progress: ${SPARKLE_GIT_PROGRESS}")
     message(STATUS "")
@@ -190,7 +190,7 @@ endfunction()
 
 function(sparkle_prepare_git_fetchcontent_source dependency_name)
     set(options)
-    set(oneValueArgs DISPLAY_NAME SOURCE_DIR BINARY_DIR SUBBUILD_DIR)
+    set(oneValueArgs DISPLAY_NAME SOURCE_DIR BINARY_DIR SUBBUILD_DIR EXPECTED_REVISION)
     set(multiValueArgs REQUIRED_PATHS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -247,6 +247,30 @@ function(sparkle_prepare_git_fetchcontent_source dependency_name)
                 set(needs_recovery TRUE)
                 set(recovery_reason "git reset failed")
             endif()
+        endif()
+    endif()
+
+    if(NOT needs_recovery AND NOT "${ARG_EXPECTED_REVISION}" STREQUAL "")
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" rev-parse --verify "${ARG_EXPECTED_REVISION}^{commit}"
+            WORKING_DIRECTORY "${ARG_SOURCE_DIR}"
+            RESULT_VARIABLE expected_revision_rc
+            OUTPUT_VARIABLE expected_revision
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+            WORKING_DIRECTORY "${ARG_SOURCE_DIR}"
+            RESULT_VARIABLE current_revision_rc
+            OUTPUT_VARIABLE current_revision
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+        if(NOT expected_revision_rc EQUAL 0 OR NOT current_revision_rc EQUAL 0 OR
+           NOT current_revision STREQUAL expected_revision)
+            set(needs_recovery TRUE)
+            set(recovery_reason "revision does not match ${ARG_EXPECTED_REVISION}")
         endif()
     endif()
 

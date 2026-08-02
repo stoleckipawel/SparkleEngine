@@ -87,14 +87,14 @@ namespace SparkleLauncher
 	    const QString& statusText,
 	    int exitCode)
 	{
-		const bool stopAndCleanRequested = m_pendingLevelStopAndClean.contains(runId);
-		const bool succeeded = exitCode == 0 && !stopAndCleanRequested;
+		const bool cancellationRequested = m_pendingLevelCancellations.contains(runId);
+		const bool succeeded = exitCode == 0 && !cancellationRequested;
 		const QString effectiveTitle = m_runTitles.value(runId, title);
-		SetRunState(runId, stopAndCleanRequested ? RunState::Canceled : (succeeded ? RunState::Done : RunState::Failed), effectiveTitle);
+		SetRunState(runId, cancellationRequested ? RunState::Canceled : (succeeded ? RunState::Done : RunState::Failed), effectiveTitle);
 
-		if (stopAndCleanRequested)
+		if (cancellationRequested)
 		{
-			AppendRunOutput(runId, "\n" + effectiveTitle + " stopped. Cleaning acquired content now.\n");
+			AppendRunOutput(runId, "\n" + effectiveTitle + " canceled. Removing partial content now.\n");
 		}
 		else if (succeeded)
 		{
@@ -131,7 +131,7 @@ namespace SparkleLauncher
 			}
 		}
 		const bool refreshesLevelState = operationId == QStringLiteral("workspace.sync-levels")
-		    || m_pendingLevelSelectionUpdates.contains(runId) || stopAndCleanRequested;
+		    || m_pendingLevelSelectionUpdates.contains(runId) || cancellationRequested;
 		if (m_pendingLevelSelectionUpdates.contains(runId))
 		{
 			const PendingLevelSelectionUpdate update = m_pendingLevelSelectionUpdates.take(runId);
@@ -151,10 +151,10 @@ namespace SparkleLauncher
 			ScheduleUiRefresh(true);
 		}
 
-		if (stopAndCleanRequested)
+		if (cancellationRequested)
 		{
-			const PendingLevelStopAndClean pendingClean = m_pendingLevelStopAndClean.take(runId);
-			CleanStoppedLevelSync(pendingClean);
+			const PendingLevelCancellation cancellation = m_pendingLevelCancellations.take(runId);
+			CleanCanceledLevelSync(cancellation);
 		}
 
 		if (succeeded && operationId == "launcher.build.self" && !m_pendingRestartRunIds.contains(runId))

@@ -66,11 +66,7 @@ namespace SparkleLauncher
 					{
 						throw Diagnostics::Error("Requested level '" + levelId + "' is not present in the level catalog.");
 					}
-					if (!level->selected)
-					{
-						throw Diagnostics::Error("Requested level '" + levelId + "' is not selected.");
-					}
-					AppendSelectedLevelPack(*level);
+					AppendRequestedLevelPack(*level);
 				}
 				return;
 			}
@@ -99,6 +95,16 @@ namespace SparkleLauncher
 				    "Selected level '" + level.id + "' requires runtime-unsupported asset pack '" + pack.id + "': " + pack.runtimeBlocker);
 			}
 			AppendPackAndParents(pack);
+		}
+
+		void AppendRequestedLevelPack(const ProjectLevelCatalogEntry& level)
+		{
+			if (level.assetPackId.empty())
+			{
+				return;
+			}
+
+			AppendPackAndParents(m_catalog.assetPacks.at(level.assetPackId));
 		}
 
 		void AppendPackAndParents(const ProjectAssetPack& pack)

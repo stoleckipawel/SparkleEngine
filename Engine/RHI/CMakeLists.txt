@@ -183,6 +183,7 @@ if(SPARKLE_RHI_WITH_D3D12)
                 SOURCE_DIR "${_sparkle_nvapi_fetch_source_dir}"
                 BINARY_DIR "${_sparkle_nvapi_fetch_binary_dir}"
                 SUBBUILD_DIR "${_sparkle_nvapi_fetch_subbuild_dir}"
+                EXPECTED_REVISION "${SPARKLE_RHI_D3D12_NVAPI_GIT_TAG}"
                 REQUIRED_PATHS
                     "nvapi.h"
                     "amd64/nvapi64.lib")
@@ -190,7 +191,8 @@ if(SPARKLE_RHI_WITH_D3D12)
             FetchContent_Declare(sparkle_nvapi
                 GIT_REPOSITORY https://github.com/NVIDIA/nvapi.git
                 GIT_TAG        ${SPARKLE_RHI_D3D12_NVAPI_GIT_TAG}
-                GIT_SHALLOW    TRUE
+                # The pinned SDK revision is not a branch or tag tip, so a depth-1 clone cannot check it out.
+                GIT_SHALLOW    FALSE
                 GIT_PROGRESS   ${SPARKLE_GIT_PROGRESS}
             )
 

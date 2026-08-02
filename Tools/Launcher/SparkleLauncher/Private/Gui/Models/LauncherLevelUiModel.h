@@ -23,6 +23,8 @@ namespace SparkleLauncher
 		bool RuntimeSupported = true;
 		bool Ready = false;
 		bool CanSelect = true;
+		bool CanSync = false;
+		bool CanClean = false;
 	};
 
 	struct LauncherStartupLevelUiEntry final

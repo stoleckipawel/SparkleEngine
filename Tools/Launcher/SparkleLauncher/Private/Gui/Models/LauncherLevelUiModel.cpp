@@ -65,6 +65,8 @@ namespace SparkleLauncher
 			const bool sourceReady = levelSourceReady && packSourceReady;
 			const bool canSelect =
 			    levelSourceReady && runtimeSupported && (assetPack == nullptr || packSourceReady || acquisitionSupported);
+			const bool canSync = levelSourceReady && assetPack != nullptr && acquisitionSupported && !packSourceReady;
+			const bool canClean = levelSourceReady && assetPack != nullptr && packSourceReady;
 			LauncherLevelUiEntry entry{
 			    .Id = QString::fromStdString(level.id),
 			    .DisplayName = DisplayNameOrId(level.displayName, level.id),
@@ -78,7 +80,9 @@ namespace SparkleLauncher
 			    .SourceReady = sourceReady,
 			    .RuntimeSupported = runtimeSupported,
 			    .Ready = m_catalog.IsLevelReady(level),
-			    .CanSelect = canSelect};
+			    .CanSelect = canSelect,
+			    .CanSync = canSync,
+			    .CanClean = canClean};
 
 			entry.Status = ResolveLevelStatus(entry);
 			entry.State = ResolveLevelState(entry);
@@ -177,7 +181,8 @@ namespace SparkleLauncher
 		{
 			if (!level.RuntimeSupported)
 			{
-				return "Future";
+				return level.SourceReady ? QStringLiteral("Source ready")
+				                         : (level.CanSync ? QStringLiteral("Available to sync") : QStringLiteral("Future"));
 			}
 			if (!level.CanSelect)
 			{

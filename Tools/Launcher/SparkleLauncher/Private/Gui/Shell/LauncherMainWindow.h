@@ -93,7 +93,7 @@ namespace SparkleLauncher
 			bool Selected = false;
 		};
 
-		struct PendingLevelStopAndClean
+		struct PendingLevelCancellation
 		{
 			std::filesystem::path ContentRoot;
 			QString ContentId;
@@ -182,8 +182,8 @@ namespace SparkleLauncher
 		void ApplyLevelActionButtonState(QPushButton& button, const LauncherLevelUiEntry& level);
 		void RefreshLevelActionButtons();
 		void SyncLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
-		void StopAndCleanLevelSync(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
-		void CleanStoppedLevelSync(const PendingLevelStopAndClean& pendingClean);
+		void CancelLevelSync(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
+		void CleanCanceledLevelSync(const PendingLevelCancellation& cancellation);
 		void CleanLevel(
 		    const LauncherContentSummary& content,
 		    const LauncherLevelUiEntry& level,
@@ -294,7 +294,7 @@ namespace SparkleLauncher
 		LauncherActionHistoryModel m_actionHistory;
 		QHash<QString, PendingFollowUpOperation> m_pendingFollowUpOperations;
 		QHash<QString, PendingLevelSelectionUpdate> m_pendingLevelSelectionUpdates;
-		QHash<QString, PendingLevelStopAndClean> m_pendingLevelStopAndClean;
+		QHash<QString, PendingLevelCancellation> m_pendingLevelCancellations;
 		QHash<QString, QString> m_levelSyncRunIds;
 		QHash<QString, QPointer<QPushButton>> m_levelActionButtons;
 		QString m_activeRunId;

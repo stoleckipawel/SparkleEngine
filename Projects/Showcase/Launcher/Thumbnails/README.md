@@ -4,11 +4,13 @@ Status: launcher artwork attribution inventory
 
 This file owns the source and attribution route for committed Showcase launcher thumbnails. Publisher and model/archive license files remain authoritative for reuse terms.
 
-These `16:9` launcher thumbnails are presentation copies or clearly identified generated derivatives of model screenshots. Publisher renders that already hold up at launcher scale remain `1280 x 720`; rebuilt derivatives are delivered at `1920 x 1080`. The catalog remains fully offline and never downloads artwork at runtime. The original model/archive license remains authoritative.
+These launcher thumbnails are presentation copies or clearly identified generated derivatives of model screenshots. Most are authored at `16:9`; publisher artwork is retained at its source aspect ratio and cropped by the launcher card. The catalog remains fully offline and never downloads artwork at runtime. The original model/archive license remains authoritative.
 
 | Thumbnail | Source | Attribution / license summary |
 | --- | --- | --- |
 | `DamagedHelmet.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet) preview | Preserves the sample's helmet identity while rebuilding the low-resolution preview as a detailed PBR studio render. ctxwing and theblueturtle_; see the model's CC BY 4.0 / CC BY-NC 4.0 notices. |
+| `LPSHead.jpg` | `rendered.jpg` from the [LPS Head archive](https://casual-effects.com/g3d/data10/index.html) | Infinite Realities 3D head scan by Lee Perry-Smith, CC BY 3.0; archive conversion by Morgan McGuire and Guedis Cardenas. |
+| `CornellBox.png` | Publisher icon from the [Cornell Box archive](https://casual-effects.com/g3d/data10/index.html) | Cornell Box dataset by Guedis Cardenas and Morgan McGuire, CC BY 3.0; icon attributed by the publisher to Henrik Jensen. |
 | `CesiumMan.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan) preview | Preserves the character, palette, proportions, and walking pose while rebuilding the low-resolution preview. Cesium; CC BY 4.0 with the model's trademark limitations. |
 | `DiffuseTransmissionPlant.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DiffuseTransmissionPlant) preview | Preserves the potted plant and emphasizes the sample's diffuse-transmission purpose at high detail; follow the model directory's legal notice. |
 | `ABeautifulGame.jpg` | Generated launcher derivative of the [Khronos glTF Sample Asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/ABeautifulGame) preview | Preserves the sample's stylized chess material set while replacing the padded, soft preview; follow the model directory's legal notice. |

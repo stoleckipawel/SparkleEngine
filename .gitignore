@@ -28,6 +28,8 @@ Projects/**/StreamlineLogs/
 /Projects/Showcase/Assets/Meshes/SanMiguel/
 /Projects/Showcase/Assets/Meshes/ModernSponza/
 /Projects/Showcase/Assets/Meshes/JungleRuins/
+/Projects/Showcase/Assets/Meshes/LPSHead/Publisher/
+/Projects/Showcase/Assets/Meshes/CornellBox/Publisher/
 
 # Build results accidentally emitted at the repository root.
 # Nested source folders named Debug/Release are real code and must remain visible.

@@ -7,6 +7,7 @@
 #include <atomic>
 #include <filesystem>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -58,6 +59,12 @@ namespace Logging
 		return initialized;
 	}
 
+	std::optional<std::filesystem::path>& GetActiveLogFilePathStorage() noexcept
+	{
+		static std::optional<std::filesystem::path> activeLogFilePath;
+		return activeLogFilePath;
+	}
+
 	spdlog::level::level_enum ReadConfiguredSpdlogLevel() noexcept
 	{
 		std::string configuredLevel;
@@ -97,6 +104,7 @@ namespace Logging
 	std::vector<spdlog::sink_ptr> CreateDefaultSinks()
 	{
 		std::vector<spdlog::sink_ptr> sinks;
+		GetActiveLogFilePathStorage().reset();
 
 		auto stderrSink = std::make_shared<spdlog::sinks::stderr_sink_mt>();
 		stderrSink->set_pattern("[%n] [%l] %s:%# %v");
@@ -117,6 +125,7 @@ namespace Logging
 			auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logPath.string(), true);
 			fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %s:%# %v");
 			sinks.push_back(fileSink);
+			GetActiveLogFilePathStorage() = logPath;
 		}
 		catch (...)
 		{
@@ -175,6 +184,21 @@ namespace Logging
 	bool IsInitialized() noexcept
 	{
 		return GetInitializedFlag().load(std::memory_order_acquire);
+	}
+
+	std::optional<std::filesystem::path> GetActiveLogFilePath() noexcept
+	{
+		Initialize();
+
+		try
+		{
+			std::lock_guard<std::mutex> lock(GetRegistryMutex());
+			return GetActiveLogFilePathStorage();
+		}
+		catch (...)
+		{
+			return std::nullopt;
+		}
 	}
 
 	std::shared_ptr<spdlog::logger> GetCoreLogger() noexcept

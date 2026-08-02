@@ -111,7 +111,7 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		Require(plan == std::vector<std::string>({"Second"}), "Targeted level sync included another selected level's pack.");
 	}
 
-	void UnselectedRequestedLevelIsRejected()
+	void UnselectedRequestedLevelCanBeAcquired()
 	{
 		TemporaryDirectory temporaryDirectory;
 		ProjectLevelCatalog catalog;
@@ -121,16 +121,22 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		catalog.levels.push_back(std::move(level));
 		const std::vector<std::string> requestedLevelIds{"ExampleLevel"};
 
-		try
-		{
-			BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels, requestedLevelIds);
-		}
-		catch (const Diagnostics::Error& error)
-		{
-			Require(std::string_view(error.what()).find("is not selected") != std::string_view::npos, error.what());
-			return;
-		}
-		throw std::runtime_error("An unselected requested level was accepted.");
+		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels, requestedLevelIds);
+		Require(plan == std::vector<std::string>({"Example"}), "An explicitly requested unselected level was not acquired.");
+	}
+
+	void RequestedRuntimeUnsupportedPackCanBeAcquired()
+	{
+		TemporaryDirectory temporaryDirectory;
+		ProjectLevelCatalog catalog;
+		catalog.assetPacks.emplace("Future", MakePack(temporaryDirectory, "Future", true, false, false));
+		ProjectLevelCatalogEntry level = MakeSelectedLevel("FutureLevel", "Future");
+		level.selected = false;
+		catalog.levels.push_back(std::move(level));
+		const std::vector<std::string> requestedLevelIds{"FutureLevel"};
+
+		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels, requestedLevelIds);
+		Require(plan == std::vector<std::string>({"Future"}), "A requested source-only pack was not acquired.");
 	}
 
 	void SelectedRuntimeUnsupportedPackIsRejected()
@@ -259,7 +265,8 @@ int main()
 	int failureCount = 0;
 	failureCount += Run("selected pack dependency order", SelectedPackPlanIsParentFirstAndDeduplicated);
 	failureCount += Run("targeted level isolation", RequestedLevelPlanIsIsolatedFromOtherSelections);
-	failureCount += Run("targeted unselected level rejection", UnselectedRequestedLevelIsRejected);
+	failureCount += Run("targeted unselected level acquisition", UnselectedRequestedLevelCanBeAcquired);
+	failureCount += Run("targeted source-only acquisition", RequestedRuntimeUnsupportedPackCanBeAcquired);
 	failureCount += Run("runtime-unsupported selection rejection", SelectedRuntimeUnsupportedPackIsRejected);
 	failureCount += Run("missing acquisition path rejection", SelectedPackWithoutAcquisitionPathIsRejected);
 	failureCount += Run("present local pack", PresentPackWithoutDownloadRemainsUsable);

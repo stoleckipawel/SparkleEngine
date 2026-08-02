@@ -192,8 +192,8 @@ namespace SparkleLauncher
 		    [this, content, level, actionButton]()
 		    {
 			    const QString actionState = actionButton->property("ActionState").toString();
-			    if (actionState == QStringLiteral("stop-clean"))
-				    StopAndCleanLevelSync(content, level);
+			    if (actionState == QStringLiteral("cancel"))
+				    CancelLevelSync(content, level);
 			    else if (actionState == QStringLiteral("clean"))
 				    CleanLevel(content, level);
 			    else if (actionState == QStringLiteral("sync"))
@@ -211,34 +211,44 @@ namespace SparkleLauncher
 		const QString syncRunId = m_levelSyncRunIds.value(LevelSyncKey(m_contentModel.ContentId(), level.Id));
 		if (!syncRunId.isEmpty())
 		{
-			const bool stopping = m_pendingLevelStopAndClean.contains(syncRunId);
-			button.setText(stopping ? QStringLiteral("Stopping...") : QStringLiteral("Stop & Clean"));
-			button.setProperty("ActionState", stopping ? "stopping" : "stop-clean");
-			button.setEnabled(!stopping);
+			const bool canceling = m_pendingLevelCancellations.contains(syncRunId);
+			button.setText(canceling ? QStringLiteral("Canceling...") : QStringLiteral("Cancel"));
+			button.setProperty("ActionState", canceling ? "canceling" : "cancel");
+			button.setEnabled(!canceling);
 			button.setAccessibleName(
-			    (stopping ? QStringLiteral("Stopping sync and cleaning ") : QStringLiteral("Stop sync and clean ")) + level.DisplayName);
+			    (canceling ? QStringLiteral("Canceling sync for ") : QStringLiteral("Cancel sync for ")) + level.DisplayName);
 			button.setToolTip(
-			    stopping ? QStringLiteral("Waiting for the acquisition process to stop before cleaning its content.")
-			             : QStringLiteral("Cancel this sync, remove its downloaded and partially staged content, and deselect the level."));
+			    canceling
+			        ? QStringLiteral("Waiting for the acquisition process to stop before removing partial content.")
+			        : QStringLiteral("Cancel this sync, remove its downloaded and partially staged content, and deselect the level."));
 			button.style()->unpolish(&button);
 			button.style()->polish(&button);
 			return;
 		}
 
-		const bool active = level.Selected && level.Ready;
-		button.setText(active ? QStringLiteral("Clean") : QStringLiteral("Sync"));
-		button.setProperty("ActionState", active ? "clean" : "sync");
-		button.setEnabled(active || level.CanSelect);
-		button.setAccessibleName((active ? QStringLiteral("Clean ") : QStringLiteral("Sync ")) + level.DisplayName);
-		if (!active && !level.CanSelect)
+		const bool clean = (level.Selected && level.Ready) || (!level.RuntimeSupported && level.CanClean);
+		button.setText(clean ? QStringLiteral("Clean") : QStringLiteral("Sync"));
+		button.setProperty("ActionState", clean ? "clean" : "sync");
+		button.setEnabled(clean || level.CanSelect || level.CanSync);
+		button.setAccessibleName((clean ? QStringLiteral("Clean ") : QStringLiteral("Sync ")) + level.DisplayName);
+		if (clean)
+		{
+			button.setToolTip(
+			    level.RuntimeSupported
+			        ? QStringLiteral("Disable this level and clean its downloaded content.")
+			        : QStringLiteral("Remove this source pack. Runtime use remains unavailable: ") + level.UnsupportedReason);
+		}
+		else if (level.CanSync && !level.RuntimeSupported)
+		{
+			button.setToolTip(QStringLiteral("Download this source pack. Runtime use remains unavailable: ") + level.UnsupportedReason);
+		}
+		else if (!level.CanSelect)
 		{
 			button.setToolTip(level.UnsupportedReason);
 		}
 		else
 		{
-			button.setToolTip(
-			    active ? QStringLiteral("Disable this level and clean its downloaded content.")
-			           : QStringLiteral("Enable this level and acquire any missing content."));
+			button.setToolTip(QStringLiteral("Enable this level and acquire any missing content."));
 		}
 		button.style()->unpolish(&button);
 		button.style()->polish(&button);
@@ -420,11 +430,12 @@ namespace SparkleLauncher
 		const QString syncKey = LevelSyncKey(content.Id, level.Id);
 		if (m_levelSyncRunIds.contains(syncKey))
 		{
-			StopAndCleanLevelSync(content, level);
+			CancelLevelSync(content, level);
 			return;
 		}
 
-		if (!SetLevelsSelected(content.RootPath, {level.Id.toStdString()}, true, QStringLiteral("Sync ") + level.DisplayName))
+		if (level.RuntimeSupported
+		    && !SetLevelsSelected(content.RootPath, {level.Id.toStdString()}, true, QStringLiteral("Sync ") + level.DisplayName))
 		{
 			return;
 		}
@@ -438,29 +449,29 @@ namespace SparkleLauncher
 		RefreshLevelActionButtons();
 	}
 
-	void LauncherMainWindow::StopAndCleanLevelSync(const LauncherContentSummary& content, const LauncherLevelUiEntry& level)
+	void LauncherMainWindow::CancelLevelSync(const LauncherContentSummary& content, const LauncherLevelUiEntry& level)
 	{
 		const QString runId = m_levelSyncRunIds.value(LevelSyncKey(content.Id, level.Id));
-		if (runId.isEmpty() || m_pendingLevelStopAndClean.contains(runId))
+		if (runId.isEmpty() || m_pendingLevelCancellations.contains(runId))
 		{
 			return;
 		}
 
-		m_pendingLevelStopAndClean.insert(runId, {content.RootPath, content.Id, level.Id, level.DisplayName});
-		AppendRunOutput(runId, QStringLiteral("\nStop & Clean requested. Canceling sync before removing acquired content.\n"));
+		m_pendingLevelCancellations.insert(runId, {content.RootPath, content.Id, level.Id, level.DisplayName});
+		AppendRunOutput(runId, QStringLiteral("\nCancel requested. Stopping sync before removing partial content.\n"));
 		m_backend.CancelOperation(runId);
 		RefreshLevelActionButtons();
 	}
 
-	void LauncherMainWindow::CleanStoppedLevelSync(const PendingLevelStopAndClean& pendingClean)
+	void LauncherMainWindow::CleanCanceledLevelSync(const PendingLevelCancellation& cancellation)
 	{
 		LauncherContentSummary content;
-		content.Id = pendingClean.ContentId;
-		content.DisplayName = pendingClean.ContentId;
-		content.RootPath = pendingClean.ContentRoot;
+		content.Id = cancellation.ContentId;
+		content.DisplayName = cancellation.ContentId;
+		content.RootPath = cancellation.ContentRoot;
 		LauncherLevelUiEntry level;
-		level.Id = pendingClean.LevelId;
-		level.DisplayName = pendingClean.LevelDisplayName;
+		level.Id = cancellation.LevelId;
+		level.DisplayName = cancellation.LevelDisplayName;
 		CleanLevel(content, level, LevelCleanMode::PurgeWithoutConfirmation);
 	}
 

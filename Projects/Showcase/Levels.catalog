@@ -15,7 +15,7 @@ SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/
 AssetPack = ModernSponzaCurtains
 Family = Modern Sponza
 VariantKind = Base
-Selected = false
+Selected = true
 
 [Level]
 Id = ModernSponzaCandles
@@ -27,7 +27,7 @@ SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/
 AssetPack = ModernSponzaCandles
 Family = Modern Sponza
 VariantKind = AddOn
-Selected = false
+Selected = true
 
 [Level]
 Id = ModernSponzaKnight
@@ -39,7 +39,7 @@ SourcePage = https://www.intel.com/content/www/us/en/developer/topic-technology/
 AssetPack = ModernSponzaKnight
 Family = Modern Sponza
 VariantKind = AddOn
-Selected = false
+Selected = true
 
 [Level]
 Id = JungleRuins
@@ -61,7 +61,7 @@ SourcePage = https://developer.nvidia.com/orca/amazon-lumberyard-bistro
 AssetPack = Bistro
 Family = Bistro
 VariantKind = Base
-Selected = false
+Selected = true
 
 [Level]
 Id = BistroInteriorWine
@@ -73,7 +73,7 @@ SourcePage = https://developer.nvidia.com/orca/amazon-lumberyard-bistro
 AssetPack = Bistro
 Family = Bistro
 VariantKind = SceneVariant
-Selected = false
+Selected = true
 
 [Level]
 Id = SanMiguelHigh
@@ -106,7 +106,7 @@ Description = Test lighting, materials, and rendering features in the classic Sp
 Source = Levels/Sponza.level
 Thumbnail = Launcher/Thumbnails/Sponza.jpg
 SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza
-Selected = false
+Selected = true
 
 [Level]
 Id = ABeautifulGame
@@ -115,7 +115,7 @@ Description = Browse a stylized glTF showcase with varied materials and scene co
 Source = Levels/ABeautifulGame.level
 Thumbnail = Launcher/Thumbnails/ABeautifulGame.jpg
 SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/ABeautifulGame
-Selected = false
+Selected = true
 
 [Level]
 Id = DamagedHelmet
@@ -124,6 +124,26 @@ Description = Inspect a compact physically based material sample built around th
 Source = Levels/DamagedHelmet.level
 Thumbnail = Launcher/Thumbnails/DamagedHelmet.jpg
 SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet
+Selected = true
+
+[Level]
+Id = LPSHead
+DisplayName = LPS Head
+Description = Iterate character skin and head shading on the Lee Perry-Smith photogrammetry scan.
+Source = Levels/LPSHead.level
+Thumbnail = Launcher/Thumbnails/LPSHead.jpg
+SourcePage = https://casual-effects.com/g3d/data10/index.html
+AssetPack = LPSHead
+Selected = true
+
+[Level]
+Id = CornellBox
+DisplayName = Cornell Box
+Description = Exercise indirect lighting, material response, and reference rendering in the classic Cornell Box.
+Source = Levels/CornellBox.level
+Thumbnail = Launcher/Thumbnails/CornellBox.png
+SourcePage = https://casual-effects.com/g3d/data10/index.html
+AssetPack = CornellBox
 Selected = false
 
 [Level]
@@ -133,7 +153,7 @@ Description = Study diffuse transmission and layered plant materials in a focuse
 Source = Levels/DiffuseTransmissionPlant.level
 Thumbnail = Launcher/Thumbnails/DiffuseTransmissionPlant.jpg
 SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DiffuseTransmissionPlant
-Selected = false
+Selected = true
 
 [Level]
 Id = CesiumMan
@@ -142,7 +162,7 @@ Description = Explore an animated glTF character sample with skinning and author
 Source = Levels/CesiumMan.level
 Thumbnail = Launcher/Thumbnails/CesiumMan.jpg
 SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan
-Selected = false
+Selected = true
 
 [AssetPack]
 Id = Bistro
@@ -180,6 +200,42 @@ RuntimeBlocker = Deterministic OBJ/MTL/PNG-to-glTF conversion is not implemented
 External = true
 DownloadSupported = true
 RuntimeSupported = false
+
+[AssetPack]
+Id = LPSHead
+DisplayName = LPS Head
+Root = Assets/Meshes/LPSHead/Publisher
+ExtractRoot = Assets/Meshes/LPSHead/Publisher
+Required = head.OBJ
+Kind = Scene
+SourceUrl = https://casual-effects.com/g3d/data10/research/model/lpshead/lpshead.zip
+SourcePage = https://casual-effects.com/g3d/data10/index.html
+Archive = lpshead.zip
+ArchiveBytes = 43603192
+ArchiveSha256 = cc683bb006de4c1770ffbf0ec6da64c02df0173398001013b3782814b6d619ca
+Version = Archive revision 2012-02-23
+License = CC BY 3.0; credit Infinite Realities / Lee Perry-Smith and the McGuire archive conversion
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[AssetPack]
+Id = CornellBox
+DisplayName = Cornell Box
+Root = Assets/Meshes/CornellBox/Publisher
+ExtractRoot = Assets/Meshes/CornellBox/Publisher
+Required = CornellBox-Original.obj
+Kind = Scene
+SourceUrl = https://casual-effects.com/g3d/data10/common/model/CornellBox/CornellBox.zip
+SourcePage = https://casual-effects.com/g3d/data10/index.html
+Archive = CornellBox.zip
+ArchiveBytes = 224880
+ArchiveSha256 = f27eaf47afec74b5236ce3095ac02d4256e8ac8610bfdb5a53560c67c2e0d8f1
+Version = Archive revision 2011-07-27
+License = CC BY 3.0 archive distribution; credit Guedis Cardenas and Morgan McGuire
+External = true
+DownloadSupported = true
+RuntimeSupported = true
 
 [AssetPack]
 Id = ModernSponza

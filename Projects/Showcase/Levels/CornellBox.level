@@ -1,0 +1,24 @@
+[Level]
+Name = Cornell Box
+
+[Camera]
+Position = 0.0, 1.0, 3.8
+YawRadians = 3.14159265
+PitchRadians = 0.0
+FovYDegrees = 45.0
+MoveSpeed = 0.05
+
+[Lighting]
+RectLight0Name = Ceiling Panel
+RectLight0Position = 0.0, 1.96, -0.03
+RectLight0Color = 1.0, 0.705882353, 0.235294118
+RectLight0Visible = true
+RectLight0LuminanceCdPerM2 = 250.0
+RectLight0Direction = 0.0, -1.0, 0.0
+RectLight0Tangent = 1.0, 0.0, 0.0
+RectLight0Width = 0.47
+RectLight0Height = 0.38
+RectLight0CastShadow = true
+
+[SceneAssets]
+Asset = CornellBox/CornellBox

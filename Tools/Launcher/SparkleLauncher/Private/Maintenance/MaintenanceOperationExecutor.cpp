@@ -1,5 +1,6 @@
 #include "SparkleLauncher/MaintenanceOperations.h"
 
+#include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "MaintenanceOperationProcessRequests.h"
 
@@ -322,7 +323,11 @@ namespace SparkleLauncher
 			return operation;
 		}
 
-		const std::vector<std::filesystem::path> preservedPaths = plan.Request.PreservedPaths;
+		std::vector<std::filesystem::path> preservedPaths = plan.Request.PreservedPaths;
+		if (const std::optional<std::filesystem::path> activeLogFilePath = Logging::GetActiveLogFilePath(); activeLogFilePath.has_value())
+		{
+			preservedPaths.push_back(*activeLogFilePath);
+		}
 		for (MaintenanceOperationProcessStep& step : BuildMaintenanceProcessStepsForPlan(plan))
 		{
 			std::string errorMessage;
