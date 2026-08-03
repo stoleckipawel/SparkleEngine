@@ -14,12 +14,16 @@ namespace SparkleLauncher
 {
 	static ProcessRequest MakeConfigureRequest(const BuildWorkspaceOperationPlan& plan)
 	{
-		return MakeCMakeConfigureRequest(
-		    plan.RepositoryRoot,
-		    plan.Toolchain,
-		    plan.Operation.Id,
-		    "Configure.txt",
-		    plan.Request.SourceDependencyConfigureOption);
+		if (!plan.Request.SourceDependencyId.empty())
+		{
+			return MakeCMakeDependencySyncRequest(
+			    plan.RepositoryRoot,
+			    plan.Toolchain,
+			    plan.Operation.Id,
+			    plan.Request.SourceDependencyId,
+			    "SyncSourceDependency.txt");
+		}
+		return MakeCMakeConfigureRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, "Configure.txt");
 	}
 
 	static ProcessRequest MakeBuildRequest(
@@ -108,7 +112,7 @@ namespace SparkleLauncher
 		step.Id = "configure";
 		step.DisplayName = "Generate build files";
 		step.Request = MakeConfigureRequest(plan);
-		step.UpdatesBuildFilesFreshness = plan.Request.SourceDependencyConfigureOption.empty();
+		step.UpdatesBuildFilesFreshness = plan.Request.SourceDependencyId.empty();
 		steps.push_back(std::move(step));
 	}
 
@@ -144,18 +148,13 @@ namespace SparkleLauncher
 
 		switch (plan.Kind)
 		{
-			case BuildWorkspaceOperationKind::SyncSourceTiers:
+			case BuildWorkspaceOperationKind::SyncCode:
 				if (BuildWorkspaceOperationRequiresConfigureStep(plan))
 				{
 					AddConfigureStep(steps, plan);
 				}
 				return steps;
 			case BuildWorkspaceOperationKind::SyncLevels:
-			case BuildWorkspaceOperationKind::SyncAll:
-				if (plan.Kind == BuildWorkspaceOperationKind::SyncAll && BuildWorkspaceOperationRequiresConfigureStep(plan))
-				{
-					AddConfigureStep(steps, plan);
-				}
 				AppendAssetPackSyncProcessSteps(steps, plan);
 				return steps;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:

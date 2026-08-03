@@ -226,11 +226,11 @@ namespace SparkleLauncher
 		addRule("#SyncActionButton", "padding: 2px 8px; font-size: 8pt; font-weight: 850;");
 		addRule("#SyncActionButton[ActionState=\"warning\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
 		addRule("#SyncActionButton[ActionState=\"warning\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");
-		addRule("#SyncActionButton[ActionState=\"ok\"]", "background: transparent; color: " + textSecondary + "; border: 1px solid #515950;");
-		addRule("#SyncActionButton[ActionState=\"ok\"]:hover", "background: #30362e; color: " + textBody + "; border-color: #71806c;");
 		addRule(
-		    "#SyncActionButton[ActionState=\"running\"]",
-		    "background: #3c351f; color: #d8c996; border: 1px solid #736438;");
+		    "#SyncActionButton[ActionState=\"ok\"]",
+		    "background: transparent; color: " + textSecondary + "; border: 1px solid #515950;");
+		addRule("#SyncActionButton[ActionState=\"ok\"]:hover", "background: #30362e; color: " + textBody + "; border-color: #71806c;");
+		addRule("#SyncActionButton[ActionState=\"running\"]", "background: #3c351f; color: #d8c996; border: 1px solid #736438;");
 		addRule("#SyncActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
 		addRule("#OptionsScrollArea #MapCatalogCard", "background: #2b2e32; border: 1px solid #3c4147;");
 		addRule("#OptionsScrollArea #MapCardBody", "background: #2b2e32; border: none;");
@@ -265,15 +265,6 @@ namespace SparkleLauncher
 		addRule("#WorkflowButton:hover", "background: #1b1e1b; color: " + textPrimary + ";");
 		addRule("#WorkflowButton:checked", "background: transparent; border-bottom: 3px solid " + accent + "; color: #ffffff;");
 		addRule("#WorkflowButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
-		addRule(
-		    "#SourceTierCard",
-		    "background: " + panel + "; border: 1px solid " + divider + "; border-radius: 4px; border-left: 4px solid #4a515a;");
-		addRule("#SourceTierCard[State=\"ok\"]", "border-left-color: " + accent + ";");
-		addRule("#SourceTierCard[State=\"warning\"]", "border-left-color: #b37726;");
-		addRule("#SourceTierTitle", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 900;");
-		addRule("#SourceTierText", "color: " + textSecondary + "; font-size: 8.25pt; line-height: 130%;");
-		addRule("#SourceTierMeta", "color: " + textMuted + "; font-size: 7.5pt; font-weight: 750;");
-		addStateChipRules("#SourceTierChip");
 		addRule(
 		    "QPushButton",
 		    "background: " + primary

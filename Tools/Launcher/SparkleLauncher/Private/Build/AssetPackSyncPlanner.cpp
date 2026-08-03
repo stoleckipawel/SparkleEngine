@@ -12,46 +12,19 @@ namespace SparkleLauncher
 	class AssetPackSyncPlanner final
 	{
 	public:
-		AssetPackSyncPlanner(
-		    const ProjectLevelCatalog& catalog,
-		    BuildWorkspaceOperationKind operationKind,
-		    std::span<const std::string> requestedLevelIds) noexcept :
+		AssetPackSyncPlanner(const ProjectLevelCatalog& catalog, std::span<const std::string> requestedLevelIds) noexcept :
 		    m_catalog(catalog),
-		    m_operationKind(operationKind),
 		    m_requestedLevelIds(requestedLevelIds)
 		{
 		}
 
 		std::vector<std::string> Build()
 		{
-			if (m_operationKind == BuildWorkspaceOperationKind::SyncAll)
-			{
-				AppendAllDownloadablePacks();
-			}
-			else if (m_operationKind == BuildWorkspaceOperationKind::SyncLevels)
-			{
-				AppendSelectedLevelPacks();
-			}
-			else
-			{
-				throw Diagnostics::Error("Asset-pack sync planning requires a sync operation.");
-			}
+			AppendSelectedLevelPacks();
 			return std::move(m_packIds);
 		}
 
 	private:
-		void AppendAllDownloadablePacks()
-		{
-			for (const auto& packEntry : m_catalog.assetPacks)
-			{
-				const ProjectAssetPack& pack = packEntry.second;
-				if (pack.downloadSupported)
-				{
-					AppendPackAndParents(pack);
-				}
-			}
-		}
-
 		void AppendSelectedLevelPacks()
 		{
 			if (!m_requestedLevelIds.empty())
@@ -127,17 +100,13 @@ namespace SparkleLauncher
 		}
 
 		const ProjectLevelCatalog& m_catalog;
-		BuildWorkspaceOperationKind m_operationKind;
 		std::span<const std::string> m_requestedLevelIds;
 		std::set<std::string, std::less<>> m_appendedIds;
 		std::vector<std::string> m_packIds;
 	};
 
-	std::vector<std::string> BuildAssetPackSyncPlan(
-	    const ProjectLevelCatalog& catalog,
-	    BuildWorkspaceOperationKind operationKind,
-	    std::span<const std::string> requestedLevelIds)
+	std::vector<std::string> BuildAssetPackSyncPlan(const ProjectLevelCatalog& catalog, std::span<const std::string> requestedLevelIds)
 	{
-		return AssetPackSyncPlanner(catalog, operationKind, requestedLevelIds).Build();
+		return AssetPackSyncPlanner(catalog, requestedLevelIds).Build();
 	}
 }

@@ -93,7 +93,7 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		catalog.levels.push_back(MakeSelectedLevel("ChildA", "Child"));
 		catalog.levels.push_back(MakeSelectedLevel("ChildB", "Child"));
 
-		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels);
+		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog);
 		Require(plan == std::vector<std::string>({"Base", "Child"}), "Selected pack plan was not parent-first and deduplicated.");
 	}
 
@@ -107,7 +107,7 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		catalog.levels.push_back(MakeSelectedLevel("SecondLevel", "Second"));
 
 		const std::vector<std::string> requestedLevelIds{"SecondLevel"};
-		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels, requestedLevelIds);
+		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, requestedLevelIds);
 		Require(plan == std::vector<std::string>({"Second"}), "Targeted level sync included another selected level's pack.");
 	}
 
@@ -121,7 +121,7 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		catalog.levels.push_back(std::move(level));
 		const std::vector<std::string> requestedLevelIds{"ExampleLevel"};
 
-		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels, requestedLevelIds);
+		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, requestedLevelIds);
 		Require(plan == std::vector<std::string>({"Example"}), "An explicitly requested unselected level was not acquired.");
 	}
 
@@ -135,7 +135,7 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		catalog.levels.push_back(std::move(level));
 		const std::vector<std::string> requestedLevelIds{"FutureLevel"};
 
-		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels, requestedLevelIds);
+		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, requestedLevelIds);
 		Require(plan == std::vector<std::string>({"Future"}), "A requested source-only pack was not acquired.");
 	}
 
@@ -150,7 +150,7 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 
 		try
 		{
-			BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels);
+			BuildAssetPackSyncPlan(catalog);
 		}
 		catch (const Diagnostics::Error& error)
 		{
@@ -169,7 +169,7 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 
 		try
 		{
-			BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels);
+			BuildAssetPackSyncPlan(catalog);
 		}
 		catch (const Diagnostics::Error& error)
 		{
@@ -186,7 +186,7 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		catalog.assetPacks.emplace("Local", MakePack(temporaryDirectory, "Local", false, true, true));
 		catalog.levels.push_back(MakeSelectedLevel("Local", "Local"));
 
-		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncLevels);
+		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog);
 		Require(plan == std::vector<std::string>({"Local"}), "Present local pack was not retained in the selected pack plan.");
 	}
 
@@ -201,21 +201,6 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 		temporaryDirectory.MakeRequiredPath("Base", true);
 		Require(catalog.IsAssetPackSourceReady("Child"), "Complete parent chain was not source ready.");
 		Require(catalog.IsAssetPackReady("Child"), "Runtime-supported source-ready chain was not ready.");
-	}
-
-	void SyncAllIncludesDownloadableSourcePacks()
-	{
-		TemporaryDirectory temporaryDirectory;
-		ProjectLevelCatalog catalog;
-		catalog.assetPacks.emplace("Base", MakePack(temporaryDirectory, "Base", true, true, false));
-		catalog.assetPacks.emplace("Child", MakePack(temporaryDirectory, "Child", true, true, false, "Base"));
-		catalog.assetPacks.emplace("Future", MakePack(temporaryDirectory, "Future", false, false, false));
-		catalog.assetPacks.emplace("SourceOnly", MakePack(temporaryDirectory, "SourceOnly", true, false, false));
-
-		const std::vector<std::string> plan = BuildAssetPackSyncPlan(catalog, BuildWorkspaceOperationKind::SyncAll);
-		Require(
-		    plan == std::vector<std::string>({"Base", "Child", "SourceOnly"}),
-		    "Sync All did not include exactly the downloadable packs.");
 	}
 
 	void ExecutionPlanDriftIsRejected()
@@ -271,7 +256,6 @@ int main()
 	failureCount += Run("missing acquisition path rejection", SelectedPackWithoutAcquisitionPathIsRejected);
 	failureCount += Run("present local pack", PresentPackWithoutDownloadRemainsUsable);
 	failureCount += Run("parent source readiness", SourceReadinessIncludesParentChain);
-	failureCount += Run("Sync All downloadable scope", SyncAllIncludesDownloadableSourcePacks);
 	failureCount += Run("execution plan drift", ExecutionPlanDriftIsRejected);
 	return failureCount == 0 ? 0 : 1;
 }

@@ -191,8 +191,11 @@ namespace SparkleLauncher
 
 	static std::optional<std::string> ValidateEnabledSourceDependenciesAfterConfigure(const BuildWorkspaceOperationPlan& plan)
 	{
-		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers && plan.Kind != BuildWorkspaceOperationKind::SyncAll
-		    && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
+		if (!plan.Request.SourceDependencyId.empty())
+		{
+			return std::nullopt;
+		}
+		if (plan.Kind != BuildWorkspaceOperationKind::SyncCode && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
 		{
 			return std::nullopt;
 		}
@@ -212,6 +215,35 @@ namespace SparkleLauncher
 			{
 				summary << " +" << (status.ReadinessMessages.size() - 1) << " more issue(s).";
 			}
+		}
+		return summary.str();
+	}
+
+	static std::optional<std::string> ValidateRequestedSourceDependencyAfterConfigure(const BuildWorkspaceOperationPlan& plan)
+	{
+		if (plan.Request.SourceDependencyId.empty())
+		{
+			return std::nullopt;
+		}
+
+		const SourceDependencyEntry* dependency = FindSourceDependency(plan.Request.SourceDependencyId);
+		if (dependency == nullptr)
+		{
+			return "Unknown source dependency: " + plan.Request.SourceDependencyId + ".";
+		}
+
+		const SourceDependencyValidation validation =
+		    ValidateSourceDependency(*dependency, GetBuildDirectory(plan.RepositoryRoot) / "_deps");
+		if (validation.Ready)
+		{
+			return std::nullopt;
+		}
+
+		std::ostringstream summary;
+		summary << dependency->Label << " source cache is incomplete after sync.";
+		if (!validation.MissingRelativePaths.empty())
+		{
+			summary << " Missing: " << validation.MissingRelativePaths.front() << ".";
 		}
 		return summary.str();
 	}
@@ -273,13 +305,16 @@ namespace SparkleLauncher
 	    const BuildWorkspaceProcessStep& step,
 	    const ProcessResult& result)
 	{
+		if (!plan.Request.SourceDependencyId.empty())
+		{
+			return false;
+		}
 		if (step.Id != "configure")
 		{
 			return false;
 		}
 
-		if (plan.Kind != BuildWorkspaceOperationKind::SyncSourceTiers && plan.Kind != BuildWorkspaceOperationKind::SyncAll
-		    && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
+		if (plan.Kind != BuildWorkspaceOperationKind::SyncCode && plan.Kind != BuildWorkspaceOperationKind::GenerateBuildFiles)
 		{
 			return false;
 		}
@@ -371,8 +406,9 @@ namespace SparkleLauncher
 			{
 				std::error_code errorCode;
 				std::filesystem::create_directories(request.WorkingDirectory, errorCode);
-				if (plan.Freshness.State == BuildFilesFreshnessState::GeneratorMismatch
-				    || plan.Freshness.State == BuildFilesFreshnessState::FreshnessStampMismatch)
+				if (plan.Request.SourceDependencyId.empty()
+				    && (plan.Freshness.State == BuildFilesFreshnessState::GeneratorMismatch
+				        || plan.Freshness.State == BuildFilesFreshnessState::FreshnessStampMismatch))
 				{
 					std::string cleanupError;
 					if (!ClearStaleConfigureState(plan, cleanupError))
@@ -436,6 +472,14 @@ namespace SparkleLauncher
 					    result.ExitCode);
 					return operation;
 				}
+			}
+
+			if (const std::optional<std::string> dependencyValidationFailure = ValidateRequestedSourceDependencyAfterConfigure(plan))
+			{
+				operation.FailureSummary = *dependencyValidationFailure
+				    + (step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string());
+				MarkOperationFinished(operation, OperationStatus::Failed, 0);
+				return operation;
 			}
 
 			if (step.UpdatesBuildFilesFreshness)

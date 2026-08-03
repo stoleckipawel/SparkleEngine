@@ -58,7 +58,7 @@ namespace SparkleLauncher
 	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
 	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
 
-	void LauncherMainWindow::AddStatusRow(
+	QLabel* LauncherMainWindow::AddStatusRow(
 	    QVBoxLayout& layout,
 	    const QString& label,
 	    const QString& status,
@@ -69,7 +69,6 @@ namespace SparkleLauncher
 	{
 		QFrame* row = new QFrame(this);
 		row->setObjectName("StatusRow");
-		const bool usesSyncAction = accessory != nullptr && accessory->objectName() == QStringLiteral("SyncActionButton");
 		const bool usesInlineStatus = presentation == StatusRowPresentation::Inline;
 		QHBoxLayout* rowLayout = new QHBoxLayout(row);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
@@ -83,6 +82,7 @@ namespace SparkleLauncher
 		nameLabel->setObjectName("StatusLabel");
 		textLayout->addWidget(nameLabel);
 
+		QLabel* presentedStatusLabel = nullptr;
 		if (usesInlineStatus)
 		{
 			QHBoxLayout* metadataLayout = new QHBoxLayout();
@@ -91,6 +91,7 @@ namespace SparkleLauncher
 
 			QLabel* inlineStatusLabel = new QLabel(row);
 			ApplyInlineStatusLabel(*inlineStatusLabel, status, state);
+			presentedStatusLabel = inlineStatusLabel;
 			inlineStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 			metadataLayout->addWidget(inlineStatusLabel, 0, Qt::AlignVCenter);
 
@@ -116,6 +117,7 @@ namespace SparkleLauncher
 		if (!usesInlineStatus)
 		{
 			QLabel* statusLabel = new QLabel(status, row);
+			presentedStatusLabel = statusLabel;
 			statusLabel->setObjectName("StatusValue");
 			statusLabel->setProperty("State", state);
 			statusLabel->setFixedWidth(accessory == nullptr ? LauncherUi::Row::SyncActionWidth : kStatusChipColumnWidth);
@@ -127,8 +129,7 @@ namespace SparkleLauncher
 		{
 			QWidget* actionCell = new QWidget(row);
 			actionCell->setObjectName("StatusActionCell");
-			const int actionWidth =
-			    usesSyncAction ? LauncherUi::Row::SyncActionWidth : std::max(kStatusActionColumnWidth, accessory->sizeHint().width());
+			const int actionWidth = std::max({LauncherUi::Row::SyncActionWidth, kStatusActionColumnWidth, accessory->sizeHint().width()});
 			actionCell->setFixedWidth(actionWidth);
 			QHBoxLayout* actionCellLayout = new QHBoxLayout(actionCell);
 			actionCellLayout->setContentsMargins(0, 0, 0, 0);
@@ -140,6 +141,7 @@ namespace SparkleLauncher
 		}
 
 		layout.addWidget(row);
+		return presentedStatusLabel;
 	}
 
 	QPushButton* LauncherMainWindow::CreateCommandActionButton(

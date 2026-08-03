@@ -73,12 +73,10 @@ namespace SparkleLauncher
 	{
 		switch (kind)
 		{
-			case BuildWorkspaceOperationKind::SyncSourceTiers:
-				return "SyncSourceTiers";
+			case BuildWorkspaceOperationKind::SyncCode:
+				return "SyncCode";
 			case BuildWorkspaceOperationKind::SyncLevels:
 				return "SyncLevels";
-			case BuildWorkspaceOperationKind::SyncAll:
-				return "SyncAll";
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				return "GenerateBuildFiles";
 			case BuildWorkspaceOperationKind::OpenIde:
@@ -161,9 +159,8 @@ namespace SparkleLauncher
 	{
 		switch (plan.Kind)
 		{
-			case BuildWorkspaceOperationKind::SyncSourceTiers:
-			case BuildWorkspaceOperationKind::SyncAll:
-				return plan.Request.ForceConfigure || !plan.Request.SourceDependencyConfigureOption.empty() || !plan.Freshness.Current
+			case BuildWorkspaceOperationKind::SyncCode:
+				return !plan.Request.SourceDependencyId.empty() || plan.Request.ForceConfigure || !plan.Freshness.Current
 				    || HasIncompleteEnabledSourceDependencies(plan);
 			case BuildWorkspaceOperationKind::SyncLevels:
 				return false;

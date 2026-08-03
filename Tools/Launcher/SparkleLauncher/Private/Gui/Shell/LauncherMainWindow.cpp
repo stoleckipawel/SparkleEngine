@@ -358,6 +358,8 @@ namespace SparkleLauncher
 		m_optionsPageByOperation.clear();
 		m_levelStatusLabels.clear();
 		m_levelActionButtons.clear();
+		m_sourceDependencyStatusLabels.clear();
+		m_sourceDependencyActionButtons.clear();
 
 		EnsureOptionsPage(m_selectedOperationId);
 		if (m_optionsPageByOperation.contains(m_selectedOperationId))

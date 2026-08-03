@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SparkleLauncher/BuildWorkspaceOperations.h"
-
 #include <string>
 #include <span>
 #include <vector>
@@ -12,6 +10,5 @@ namespace SparkleLauncher
 {
 	std::vector<std::string> BuildAssetPackSyncPlan(
 	    const ProjectLevelCatalog& catalog,
-	    BuildWorkspaceOperationKind operationKind,
 	    std::span<const std::string> requestedLevelIds = {});
 }

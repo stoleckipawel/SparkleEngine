@@ -101,7 +101,7 @@ namespace SparkleLauncher
 			}
 			else
 			{
-				m_outArguments->DryRunOperationId = "workspace.sync-source-tiers";
+				m_outArguments->DryRunOperationId = "workspace.sync-code";
 			}
 			return true;
 		}

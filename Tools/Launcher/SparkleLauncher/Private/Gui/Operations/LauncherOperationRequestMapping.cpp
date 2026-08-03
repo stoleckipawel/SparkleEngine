@@ -49,7 +49,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.PreferredIde = workspaceIde;
 		mapped.SelectedTargets = SplitList(request.SelectedTargets);
 		mapped.RequestedLevelIds = SplitList(request.RequestedLevelIds);
-		mapped.SourceDependencyConfigureOption = request.SourceDependencyConfigureOption.toStdString();
+		mapped.SourceDependencyId = request.SourceDependencyId.toStdString();
 		mapped.ForceConfigure = request.ForceConfigure;
 		return mapped;
 	}

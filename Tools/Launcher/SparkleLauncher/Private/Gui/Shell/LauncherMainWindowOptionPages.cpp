@@ -61,9 +61,8 @@ namespace SparkleLauncher
 	bool LauncherMainWindow::UsesBuildEnvironmentStatus(const QString& operationId)
 	{
 		return operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide"
-		    || operationId == "workspace.sync-source-tiers" || operationId == "workspace.sync-all" || operationId == "workspace.build-all"
-		    || operationId == "workspace.build.editor" || operationId == "launcher.build.self" || operationId == "workspace.build.runtime"
-		    || operationId.startsWith("cook.");
+		    || operationId == "workspace.sync-code" || operationId == "workspace.build-all" || operationId == "workspace.build.editor"
+		    || operationId == "launcher.build.self" || operationId == "workspace.build.runtime" || operationId.startsWith("cook.");
 	}
 
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)

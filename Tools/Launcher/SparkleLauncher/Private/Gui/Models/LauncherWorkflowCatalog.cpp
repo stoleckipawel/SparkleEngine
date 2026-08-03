@@ -13,7 +13,7 @@ namespace SparkleLauncher
 	{
 		return {
 		    {"Quick Start", "Launch first", {LauncherHomeOperationId()}, "home"},
-		    {"Sync", "Code and levels", {"workspace.sync-source-tiers", "workspace.sync-levels"}, "sync"},
+		    {"Sync", "Code and levels", {"workspace.sync-code", "workspace.sync-levels"}, "sync"},
 		    {"Build",
 		        "Generate and build",
 		        {"workspace.generate-build-files",

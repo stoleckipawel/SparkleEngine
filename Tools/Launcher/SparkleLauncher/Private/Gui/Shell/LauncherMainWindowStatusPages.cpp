@@ -88,40 +88,18 @@ namespace SparkleLauncher
 		    operationId.startsWith("cook.") && operationId != "cook.tools.prepare" ? "cook.tools.prepare" : operationId;
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(workspacePlanOperationId.toStdString(), request);
 		const QString workspaceIdeName = ResolveSelectedWorkspaceIdeName(m_settings);
-		const bool isSyncWorkflow = operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files"
-		    || operationId == "workspace.open-ide";
-		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId == "workspace.sync-all"
-		    || operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
+		const bool isSyncWorkflow =
+		    operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide";
+		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId.startsWith("workspace.build")
+		    || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		const bool isCookWorkflow = operationId.startsWith("cook.") && operationId != "cook.tools.prepare";
-		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		const SourceDependencyInventoryStatus dependencyStatus = plan.SourceDependencies;
 		const bool dependencyCacheReady = dependencyStatus.AllEnabledDependenciesReady;
-		const auto addRelevantDependencyGroups = [this, &dependencyCachePath, &operationId](QVBoxLayout& targetLayout)
-		{
-			for (const DependencyGroupUiEntry& group : GetDependencyGroups())
-			{
-				if (!OperationUsesDependencyGroup(operationId, group))
-				{
-					continue;
-				}
-
-				const int readyCount = CountReadyDependencies(group, dependencyCachePath);
-				AddStatusRow(
-				    targetLayout,
-				    group.Label,
-				    DependencyGroupStatusText(group, readyCount),
-				    FormatDependencyGroupDetail(group, dependencyCachePath, readyCount),
-				    DependencyGroupStatusState(group, readyCount),
-				    group.Enabled
-				        ? CreateActionDependencyActions("workspace.sync-source-tiers", "Sync Code", "deps", "Clean Source Dependency Cache")
-				        : CreateDisabledSourceDependencyActions(group));
-			}
-		};
 		if (isSyncWorkflow)
 		{
 			const bool syncWillRunConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
 			const bool isGenerateBuildFilesWorkflow = operationId == "workspace.generate-build-files";
-			const bool isSourceSyncWorkflow = operationId == "workspace.sync-source-tiers";
+			const bool isSourceSyncWorkflow = operationId == "workspace.sync-code";
 			const QString sourceDependencyRepairDetail =
 			    syncWillRunConfigure && plan.Freshness.Current && !dependencyStatus.AllEnabledDependenciesReady
 			    ? QString("Configure will rerun to repair missing or incomplete enabled source dependencies.")
@@ -140,20 +118,6 @@ namespace SparkleLauncher
 			                                                : QString("Repository dependency cache will be created when Sync Code runs.");
 			const QString configurePrerequisiteDetail =
 			    !plan.CanRun && !plan.ReadinessMessages.empty() ? QString::fromStdString(plan.ReadinessMessages.back()) : QString();
-			int enabledOptionalGroups = 0;
-			int readyOptionalGroups = 0;
-			for (const DependencyGroupUiEntry& group : GetDependencyGroups())
-			{
-				if (group.Required || !group.Enabled)
-				{
-					continue;
-				}
-				++enabledOptionalGroups;
-				if (CountReadyDependencies(group, dependencyCachePath) == static_cast<int>(group.Dependencies.size()))
-				{
-					++readyOptionalGroups;
-				}
-			}
 			const QString overallStatus = (!plan.Toolchain.RequiredToolsAvailable || !plan.CanRun || !dependencyCacheReady) ? "Needs action"
 			    : (syncWillRunConfigure || !plan.Freshness.Current)                                                         ? "Updating"
 			                                                                                                                : "Ready";
@@ -192,17 +156,8 @@ namespace SparkleLauncher
 				    *summaryLayout,
 				    "Required repository dependencies",
 				    cacheStatus,
-				    CombineStatusDetail(cacheDetail, FormatTrackedDependencySummary(dependencyCachePath)),
+				    cacheDetail,
 				    dependencyCacheReady ? "ok" : "warning");
-				AddStatusRow(
-				    *summaryLayout,
-				    "Optional feature dependency groups",
-				    enabledOptionalGroups == 0 ? "None enabled" : (readyOptionalGroups == enabledOptionalGroups ? "Ready" : "Partial"),
-				    enabledOptionalGroups == 0 ? QString("All optional package groups are off in this workspace.")
-				                               : QStringLiteral("%1 of %2 enabled optional package groups are cached.")
-				                                     .arg(readyOptionalGroups)
-				                                     .arg(enabledOptionalGroups),
-				    enabledOptionalGroups == 0 ? "neutral" : (readyOptionalGroups == enabledOptionalGroups ? "ok" : "warning"));
 			}
 
 			QVBoxLayout* machineLayout = AddOptionGroup(layout, isSourceSyncWorkflow ? "Dependencies" : "Detected host tools", QString());
@@ -262,7 +217,7 @@ namespace SparkleLauncher
 				    nullptr,
 				    isSourceSyncWorkflow ? StatusRowPresentation::Inline : StatusRowPresentation::Badge);
 			}
-			if (operationId == "workspace.sync-source-tiers")
+			if (operationId == "workspace.sync-code")
 			{
 				AddSyncDependencies(*machineLayout, false);
 				machineLayout->addSpacing(kSpaceSmall);
@@ -280,11 +235,9 @@ namespace SparkleLauncher
 		if (isBuildWorkflow)
 		{
 			const bool buildNeedsAttention = !plan.Toolchain.RequiredToolsAvailable || !plan.Freshness.Current;
-			const bool isSyncAllWorkflow = operationId == "workspace.sync-all";
 			QVBoxLayout* buildLayout = AddDetailsGroup(
 			    layout,
-			    isSyncAllWorkflow ? (buildNeedsAttention ? "Sync Dependencies - Needs action" : "Sync Dependencies - Ready")
-			                      : (buildNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready"),
+			    buildNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
 			    QString(),
 			    false);
 			AddStatusRow(
@@ -300,7 +253,6 @@ namespace SparkleLauncher
 			    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesRecoveryHint(plan.Freshness)),
 			    plan.Freshness.Current ? "ok" : "warning",
 			    CreateActionDependencyActions("workspace.generate-build-files", "Generate Build Files", "build-tree", "Clean Build Files"));
-			addRelevantDependencyGroups(*buildLayout);
 			return;
 		}
 
@@ -325,7 +277,6 @@ namespace SparkleLauncher
 			    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesRecoveryHint(plan.Freshness)),
 			    plan.Freshness.Current ? "ok" : "warning",
 			    CreateActionDependencyActions("workspace.generate-build-files", "Generate Build Files", "build-tree", "Clean Build Files"));
-			addRelevantDependencyGroups(*cookLayout);
 		}
 	}
 

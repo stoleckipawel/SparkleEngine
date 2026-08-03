@@ -15,19 +15,8 @@ namespace SparkleLauncher
 		std::string Purpose;
 		std::string CacheDirectoryName;
 		std::vector<std::string> RequiredRelativePaths;
-	};
-
-	struct SourceDependencyGroup
-	{
-		std::string Id;
-		std::string Label;
-		std::string Summary;
-		std::string UnlockSummary;
-		std::string ConfigureOption;
-		std::string EnablementDetail;
 		bool Required = false;
 		bool Enabled = false;
-		std::vector<SourceDependencyEntry> Dependencies;
 	};
 
 	struct SourceDependencyValidation
@@ -46,8 +35,7 @@ namespace SparkleLauncher
 		std::vector<std::string> ReadinessMessages;
 	};
 
-	const std::vector<SourceDependencyGroup>& GetSourceDependencyGroups();
-	const SourceDependencyGroup* FindSourceDependencyGroup(std::string_view id);
+	const std::vector<SourceDependencyEntry>& GetSourceDependencies();
 	const SourceDependencyEntry* FindSourceDependency(std::string_view id);
 	SourceDependencyValidation ValidateSourceDependency(
 	    const SourceDependencyEntry& dependency,
@@ -55,6 +43,5 @@ namespace SparkleLauncher
 	std::vector<std::filesystem::path> GetSourceDependencyCachePaths(
 	    const SourceDependencyEntry& dependency,
 	    const std::filesystem::path& dependencyCacheRoot);
-	int CountReadySourceDependencies(const SourceDependencyGroup& group, const std::filesystem::path& dependencyCacheRoot);
 	SourceDependencyInventoryStatus InspectSourceDependencyCache(const std::filesystem::path& dependencyCacheRoot);
 }

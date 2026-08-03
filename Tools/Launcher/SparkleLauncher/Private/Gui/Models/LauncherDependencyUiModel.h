@@ -14,19 +14,8 @@ namespace SparkleLauncher
 		QString Version;
 		QString Purpose;
 		QString CacheDirectoryName;
-	};
-
-	struct DependencyGroupUiEntry
-	{
-		QString Id;
-		QString Label;
-		QString Summary;
-		QString UnlockSummary;
-		QString ConfigureOption;
-		QString EnablementDetail;
 		bool Required = false;
 		bool Enabled = false;
-		std::vector<ThirdPartyDependencyUiEntry> Dependencies;
 	};
 
 	struct ThirdPartyDependencyUiStatus
@@ -37,20 +26,8 @@ namespace SparkleLauncher
 		bool Synced = false;
 	};
 
-	const std::vector<DependencyGroupUiEntry>& GetDependencyGroups();
 	const std::vector<ThirdPartyDependencyUiEntry>& GetTrackedThirdPartyDependencies();
 	ThirdPartyDependencyUiStatus BuildThirdPartyDependencyStatus(
 	    const ThirdPartyDependencyUiEntry& dependency,
-	    const DependencyGroupUiEntry& group,
 	    const std::filesystem::path& dependencyCachePath);
-
-	QString FormatTrackedDependencySummary(const std::filesystem::path& dependencyCachePath);
-	int CountReadyDependencies(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath);
-	QString DependencyGroupStatusText(const DependencyGroupUiEntry& group, int readyCount);
-	QString DependencyGroupStatusState(const DependencyGroupUiEntry& group, int readyCount);
-	QString FormatDependencyGroupDetail(
-	    const DependencyGroupUiEntry& group,
-	    const std::filesystem::path& dependencyCachePath,
-	    int readyCount);
-	bool OperationUsesDependencyGroup(const QString& operationId, const DependencyGroupUiEntry& group);
 }

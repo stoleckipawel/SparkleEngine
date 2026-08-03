@@ -19,8 +19,7 @@ namespace SparkleLauncher
 	    const std::filesystem::path& repositoryRoot,
 	    const BuildToolchainStatus& toolchain,
 	    std::string_view operationId,
-	    std::string_view logFileName,
-	    std::string_view sourceDependencyConfigureOption)
+	    std::string_view logFileName)
 	{
 		ProcessRequest process;
 		process.ExecutablePath = toolchain.CMakePath;
@@ -62,10 +61,6 @@ namespace SparkleLauncher
 		process.Arguments.push_back("-DSPARKLE_ENABLE_SHADER_COMPILER=" + ToCMakeBool(featureSettings.ShaderCompilerEnabled));
 		process.Arguments.push_back("-DSPARKLE_ENABLE_KTX_SUPPORT=" + ToCMakeBool(featureSettings.KtxSupportEnabled));
 		process.Arguments.push_back("-DSPARKLE_ENABLE_NVIDIA_STREAMLINE=" + ToCMakeBool(featureSettings.NvidiaStreamlineEnabled));
-		if (!sourceDependencyConfigureOption.empty())
-		{
-			process.Arguments.push_back("-D" + std::string(sourceDependencyConfigureOption) + "=ON");
-		}
 		process.Arguments.push_back("-Wno-dev");
 		process.Arguments.push_back(repositoryRoot.string());
 		return process;
@@ -91,6 +86,30 @@ namespace SparkleLauncher
 			const std::vector<std::string> buildToolArguments = GetDefaultBuildToolArguments();
 			process.Arguments.insert(process.Arguments.end(), buildToolArguments.begin(), buildToolArguments.end());
 		}
+		return process;
+	}
+
+	ProcessRequest MakeCMakeDependencySyncRequest(
+	    const std::filesystem::path& repositoryRoot,
+	    const BuildToolchainStatus& toolchain,
+	    std::string_view operationId,
+	    std::string_view sourceDependencyId,
+	    std::string_view logFileName)
+	{
+		ProcessRequest process = MakeCMakeConfigureRequest(repositoryRoot, toolchain, operationId, logFileName);
+		if (!process.Arguments.empty())
+		{
+			process.Arguments.pop_back();
+		}
+
+		const std::filesystem::path dependencySyncDirectory = GetBuildDirectory(repositoryRoot) / "_dependency-sync" / sourceDependencyId;
+		process.WorkingDirectory = repositoryRoot;
+		process.Arguments.push_back("-DSPARKLE_SYNC_SOURCE_DEPENDENCY=" + std::string(sourceDependencyId));
+		process.Arguments.push_back("-DFETCHCONTENT_BASE_DIR=" + (GetBuildDirectory(repositoryRoot) / "_deps").generic_string());
+		process.Arguments.push_back("-S");
+		process.Arguments.push_back(repositoryRoot.string());
+		process.Arguments.push_back("-B");
+		process.Arguments.push_back(dependencySyncDirectory.string());
 		return process;
 	}
 }

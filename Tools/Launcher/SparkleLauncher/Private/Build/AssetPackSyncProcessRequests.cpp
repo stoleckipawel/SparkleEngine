@@ -43,7 +43,7 @@ namespace SparkleLauncher
 	{
 		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
 		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(projectRoot);
-		for (const std::string& packId : BuildAssetPackSyncPlan(catalog, plan.Kind, plan.Request.RequestedLevelIds))
+		for (const std::string& packId : BuildAssetPackSyncPlan(catalog, plan.Request.RequestedLevelIds))
 		{
 			const ProjectAssetPack& pack = catalog.assetPacks.at(packId);
 			if (catalog.IsAssetPackPayloadPresent(pack))

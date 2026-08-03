@@ -114,10 +114,12 @@ namespace SparkleLauncher
 		SetActivityLogExpanded(true);
 		UpdateProgress();
 
+		bool refreshesSourceDependencyState = false;
 		for (auto dependencyRun = m_sourceDependencyRunIds.begin(); dependencyRun != m_sourceDependencyRunIds.end();)
 		{
 			if (dependencyRun.value() == runId)
 			{
+				refreshesSourceDependencyState = true;
 				dependencyRun = m_sourceDependencyRunIds.erase(dependencyRun);
 			}
 			else
@@ -152,6 +154,11 @@ namespace SparkleLauncher
 		{
 			PopulateStartupLevelSelectors();
 			RefreshLevelActionButtons();
+			UpdateRunAvailability();
+		}
+		else if (refreshesSourceDependencyState)
+		{
+			RefreshSourceDependencyRows();
 			UpdateRunAvailability();
 		}
 		else

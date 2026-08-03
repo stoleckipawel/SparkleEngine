@@ -43,7 +43,7 @@ namespace SparkleLauncher
 		const std::optional<std::filesystem::path> sdkRoot = DetectInstalledVulkanSdkRoot();
 		if (!sdkRoot.has_value())
 		{
-			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so the enabled ShaderCompiler workspace tier can "
+			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so the enabled ShaderCompiler feature can "
 			                "find DXC and Slang.";
 			return status;
 		}

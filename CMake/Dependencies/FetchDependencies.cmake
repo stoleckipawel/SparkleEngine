@@ -34,6 +34,16 @@
 
 include(FetchContent)
 
+set(SPARKLE_SYNC_SOURCE_DEPENDENCY "" CACHE STRING "Populate exactly one source dependency cache")
+
+function(sparkle_source_dependency_selected dependency_id output_variable)
+    if("${SPARKLE_SYNC_SOURCE_DEPENDENCY}" STREQUAL "" OR "${SPARKLE_SYNC_SOURCE_DEPENDENCY}" STREQUAL "${dependency_id}")
+        set(${output_variable} TRUE PARENT_SCOPE)
+    else()
+        set(${output_variable} FALSE PARENT_SCOPE)
+    endif()
+endfunction()
+
 # Suppress the CMP0169 warning in CMake 4.x - we need FetchContent_Populate()
 # because several deps have no usable top-level CMakeLists.txt.
 if(POLICY CMP0169)
@@ -57,6 +67,10 @@ endif()
 
 function(sparkle_log_dependency_step step total name ref size purpose repository)
     if(SPARKLE_VERBOSE_DEPENDENCIES)
+        if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+            set(step 1)
+            set(total 1)
+        endif()
         message(STATUS "")
         message(STATUS "  [${step}/${total}] ${name} ${ref}")
         message(STATUS "        Purpose: ${purpose}")
@@ -137,7 +151,16 @@ endif()
 set(GIT_EXECUTABLE "${_git_exe}" CACHE FILEPATH "Git executable used by CMake/FetchContent." FORCE)
 set(SPARKLE_GIT_EXE "${_git_exe}" CACHE FILEPATH "Path to Git executable used by Sparkle dependency fetches." FORCE)
 
-if(SPARKLE_VERBOSE_DEPENDENCIES)
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    if(SPARKLE_VERBOSE_DEPENDENCIES)
+        message(STATUS "")
+        message(STATUS "=== Source Dependency Sync: ${SPARKLE_SYNC_SOURCE_DEPENDENCY} ===")
+        message(STATUS "  Git progress: ${SPARKLE_GIT_PROGRESS}")
+        message(STATUS "")
+    else()
+        message(STATUS "Source dependency sync: checking ${SPARKLE_SYNC_SOURCE_DEPENDENCY}")
+    endif()
+elseif(SPARKLE_VERBOSE_DEPENDENCIES)
     message(STATUS "")
     message(STATUS "=== Third-Party Dependencies ===")
     message(STATUS "")
@@ -337,6 +360,33 @@ function(sparkle_ensure_archive_dependency)
     endif()
 endfunction()
 
+set(SPARKLE_NVIDIA_NVAPI_GIT_TAG "9b181ea572f680327fe01a14a0f1f41c78034104" CACHE STRING "Official NVIDIA NVAPI source revision")
+
+function(sparkle_populate_nvidia_nvapi)
+    set(_nvapi_source_dir "${FETCHCONTENT_BASE_DIR}/sparkle_nvapi-src")
+    set(_nvapi_binary_dir "${FETCHCONTENT_BASE_DIR}/sparkle_nvapi-build")
+    set(_nvapi_subbuild_dir "${FETCHCONTENT_BASE_DIR}/sparkle_nvapi-subbuild")
+    sparkle_prepare_git_fetchcontent_source(
+        "sparkle_nvapi"
+        DISPLAY_NAME "NVIDIA NVAPI"
+        SOURCE_DIR "${_nvapi_source_dir}"
+        BINARY_DIR "${_nvapi_binary_dir}"
+        SUBBUILD_DIR "${_nvapi_subbuild_dir}"
+        EXPECTED_REVISION "${SPARKLE_NVIDIA_NVAPI_GIT_TAG}"
+        REQUIRED_PATHS
+            "nvapi.h"
+            "amd64/nvapi64.lib")
+
+    FetchContent_Declare(sparkle_nvapi
+        GIT_REPOSITORY https://github.com/NVIDIA/nvapi.git
+        GIT_TAG        ${SPARKLE_NVIDIA_NVAPI_GIT_TAG}
+        GIT_SHALLOW    FALSE
+        GIT_PROGRESS   ${_sparkle_git_progress}
+    )
+    FetchContent_Populate(sparkle_nvapi)
+    set(sparkle_nvapi_SOURCE_DIR "${sparkle_nvapi_SOURCE_DIR}" PARENT_SCOPE)
+endfunction()
+
 # ---------------------------------------------------------------------------
 # Recovery: Remove partial/corrupt clones from interrupted downloads.
 # If someone kills the process mid-clone, the src dir may exist but not be a
@@ -352,8 +402,19 @@ endfunction()
 # ---------------------------------------------------------------------------
 # Note: compressonator is handled separately below via sparse checkout.
 foreach(_dep imgui cgltf mikktspace stb tinyexr spdlog zlib assimp ktx spirv_reflect)
-    sparkle_prepare_git_fetchcontent_source("${_dep}" DISPLAY_NAME "${_dep}")
+    if(SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""
+       OR SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "${_dep}"
+       OR (SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "spirv-reflect" AND _dep STREQUAL "spirv_reflect"))
+        sparkle_prepare_git_fetchcontent_source("${_dep}" DISPLAY_NAME "${_dep}")
+    endif()
 endforeach()
+
+if(SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "nvidia-nvapi")
+    sparkle_log_dependency_step(1 1 "NVIDIA NVAPI SDK" "git 9b181ea" "source SDK" "D3D12 NVAPI headers and import library" "https://github.com/NVIDIA/nvapi.git")
+    sparkle_populate_nvidia_nvapi()
+    sparkle_log_dependency_ready("NVIDIA NVAPI SDK" "${sparkle_nvapi_SOURCE_DIR}" "source SDK")
+    return()
+endif()
 
 # ============================================================================
 # Dear ImGui - Immediate-mode GUI library
@@ -362,6 +423,8 @@ endforeach()
 # Target:  imgui (STATIC)
 # Usage:   target_link_libraries(YourTarget PRIVATE imgui)
 # ============================================================================
+sparkle_source_dependency_selected("imgui" _sparkle_fetch_imgui)
+if(_sparkle_fetch_imgui)
 FetchContent_Declare(imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
     GIT_TAG        v1.92.5
@@ -370,6 +433,11 @@ FetchContent_Declare(imgui
 )
 sparkle_log_dependency_step(1 12 "Dear ImGui" "v1.92.5" "~7 MB" "Immediate-mode UI core and Win32 platform backend" "https://github.com/ocornut/imgui.git")
 FetchContent_Populate(imgui)
+
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    sparkle_log_dependency_ready("imgui" "${imgui_SOURCE_DIR}" "~7 MB")
+    return()
+endif()
 
 add_library(imgui STATIC
     ${CMAKE_CURRENT_LIST_DIR}/ImGui/SparkleImGuiConfig.h
@@ -407,8 +475,10 @@ endif()
 
 set_target_properties(imgui PROPERTIES FOLDER "ThirdParty")
 sparkle_log_dependency_ready("imgui" "${imgui_SOURCE_DIR}" "~7 MB")
+endif()
 
-if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+sparkle_source_dependency_selected("cgltf" _sparkle_fetch_cgltf)
+if(_sparkle_fetch_cgltf AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
     # ============================================================================
     # cgltf - Single-header glTF 2.0 parser
     # https://github.com/jkuhlmann/cgltf
@@ -428,6 +498,11 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     sparkle_log_dependency_step(2 12 "cgltf" "v1.15" "~1 MB" "Single-header glTF 2.0 parser for source scene imports" "https://github.com/jkuhlmann/cgltf.git")
     FetchContent_Populate(cgltf)
 
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+        sparkle_log_dependency_ready("cgltf" "${cgltf_SOURCE_DIR}" "~1 MB")
+        return()
+    endif()
+
     add_library(cgltf INTERFACE)
     target_include_directories(cgltf INTERFACE ${cgltf_SOURCE_DIR})
 
@@ -440,7 +515,8 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     sparkle_log_dependency_ready("cgltf" "${cgltf_SOURCE_DIR}" "~1 MB")
 endif()
 
-if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+sparkle_source_dependency_selected("mikktspace" _sparkle_fetch_mikktspace)
+if(_sparkle_fetch_mikktspace AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
     # ============================================================================
     # MikkTSpace - canonical tangent-space generation used by glTF authoring tools
     # https://github.com/mmikk/MikkTSpace
@@ -456,6 +532,11 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     sparkle_log_dependency_step(3 12 "MikkTSpace" "3e895b49" "<1 MB" "Canonical tangent generation for normal-mapped glTF imports" "https://github.com/mmikk/MikkTSpace.git")
     FetchContent_Populate(mikktspace)
 
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+        sparkle_log_dependency_ready("MikkTSpace" "${mikktspace_SOURCE_DIR}" "<1 MB")
+        return()
+    endif()
+
     add_library(mikktspace STATIC
         ${mikktspace_SOURCE_DIR}/mikktspace.c
         ${mikktspace_SOURCE_DIR}/mikktspace.h
@@ -468,7 +549,12 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     sparkle_log_dependency_ready("MikkTSpace" "${mikktspace_SOURCE_DIR}" "<1 MB")
 endif()
 
-if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+sparkle_source_dependency_selected("stb" _sparkle_fetch_stb)
+sparkle_source_dependency_selected("tinyexr" _sparkle_fetch_tinyexr)
+if((_sparkle_fetch_stb OR _sparkle_fetch_tinyexr)
+   AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
+
+if(_sparkle_fetch_stb)
     # ============================================================================
     # stb - Header-only image loading and resizing
     # https://github.com/nothings/stb
@@ -488,11 +574,18 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     sparkle_log_dependency_step(4 12 "stb" "master" "~5 MB" "Header-only image loading and mip resize helpers" "https://github.com/nothings/stb.git")
     FetchContent_Populate(stb)
 
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+        sparkle_log_dependency_ready("stb" "${stb_SOURCE_DIR}" "~5 MB")
+        return()
+    endif()
+
     add_library(stb INTERFACE)
     target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
     sparkle_log_dependency_ready("stb" "${stb_SOURCE_DIR}" "~5 MB")
+endif()
 
+if(_sparkle_fetch_tinyexr)
     # ============================================================================
     # tinyexr - Header-only OpenEXR image loader
     # https://github.com/syoyo/tinyexr
@@ -510,6 +603,11 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     sparkle_log_dependency_step(5 12 "tinyexr" "v1.0.7" "~1 MB" "Header-only OpenEXR image loading support" "https://github.com/syoyo/tinyexr.git")
     FetchContent_Populate(tinyexr)
 
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+        sparkle_log_dependency_ready("tinyexr" "${tinyexr_SOURCE_DIR}" "~1 MB")
+        return()
+    endif()
+
     add_library(tinyexr INTERFACE)
     target_include_directories(tinyexr INTERFACE
         ${tinyexr_SOURCE_DIR}
@@ -519,6 +617,7 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     )
 
     sparkle_log_dependency_ready("tinyexr" "${tinyexr_SOURCE_DIR}" "~1 MB")
+endif()
 endif()
 
 # ============================================================================
@@ -531,6 +630,8 @@ endif()
 # Target:  spdlog::spdlog_header_only
 # Usage:   target_link_libraries(YourTarget PRIVATE spdlog::spdlog_header_only)
 # ============================================================================
+sparkle_source_dependency_selected("spdlog" _sparkle_fetch_spdlog)
+if(_sparkle_fetch_spdlog)
 FetchContent_Declare(spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG        v1.14.1
@@ -539,6 +640,11 @@ FetchContent_Declare(spdlog
 )
 sparkle_log_dependency_step(6 12 "spdlog" "v1.14.1" "~3 MB" "Repo-wide logging backend" "https://github.com/gabime/spdlog.git")
 FetchContent_Populate(spdlog)
+
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    sparkle_log_dependency_ready("spdlog" "${spdlog_SOURCE_DIR}" "~3 MB")
+    return()
+endif()
 
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
@@ -567,8 +673,14 @@ if(TARGET spdlog_header_only)
 endif()
 
 sparkle_log_dependency_ready("spdlog" "${spdlog_SOURCE_DIR}" "~3 MB")
+endif()
 
-if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+sparkle_source_dependency_selected("zlib" _sparkle_fetch_zlib)
+sparkle_source_dependency_selected("assimp" _sparkle_fetch_assimp)
+if((_sparkle_fetch_zlib OR _sparkle_fetch_assimp)
+   AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
+
+if(_sparkle_fetch_zlib)
     # ============================================================================
     # zlib - Compression backend for Assimp
     # https://github.com/madler/zlib
@@ -589,6 +701,11 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     )
     sparkle_log_dependency_step(7 12 "zlib" "v1.3.1" "~1 MB" "Compression backend used by Assimp" "https://github.com/madler/zlib.git")
     FetchContent_Populate(zlib)
+
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+        sparkle_log_dependency_ready("zlib" "${zlib_SOURCE_DIR}" "~1 MB")
+        return()
+    endif()
 
     set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     sparkle_add_dependency_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
@@ -611,7 +728,9 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR})
 
     sparkle_log_dependency_ready("zlib" "${zlib_SOURCE_DIR}" "~1 MB")
+endif()
 
+if(_sparkle_fetch_assimp)
     # ============================================================================
     # Assimp - Open Asset Import Library
     # https://github.com/assimp/assimp
@@ -630,6 +749,11 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
     )
     sparkle_log_dependency_step(8 12 "Assimp" "v5.4.3" "~15 MB" "FBX and DCC scene import support" "https://github.com/assimp/assimp.git")
     FetchContent_Populate(assimp)
+
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+        sparkle_log_dependency_ready("Assimp" "${assimp_SOURCE_DIR}" "~15 MB")
+        return()
+    endif()
 
     set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
@@ -653,8 +777,10 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
 
     sparkle_log_dependency_ready("assimp" "${assimp_SOURCE_DIR}" "~15 MB")
 endif()
+endif()
 
-if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+sparkle_source_dependency_selected("compressonator" _sparkle_fetch_compressonator)
+if(_sparkle_fetch_compressonator AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
     # ============================================================================
     # AMD Compressonator - BC1-BC7 texture block compression
     # https://github.com/GPUOpen-Tools/compressonator
@@ -718,6 +844,11 @@ else()
 endif()
 
 set(compressonator_SOURCE_DIR "${_comp_src}")
+
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    sparkle_log_dependency_ready("Compressonator" "${compressonator_SOURCE_DIR}/cmp_core" "~5 MB, sparse")
+    return()
+endif()
 
 # --- CMP_Core: main block compression library ---
 add_library(CMP_Core STATIC
@@ -803,7 +934,8 @@ set_target_properties(CMP_Core CMP_Core_SSE CMP_Core_AVX CMP_Core_AVX512
     sparkle_log_dependency_ready("Compressonator" "${compressonator_SOURCE_DIR}/cmp_core" "~5 MB, sparse")
 endif()
 
-if(SPARKLE_ENABLE_KTX_SUPPORT)
+sparkle_source_dependency_selected("ktx" _sparkle_fetch_ktx)
+if(_sparkle_fetch_ktx AND (SPARKLE_ENABLE_KTX_SUPPORT OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
     # ============================================================================
     # KTX-Software - KTX2 texture container read/write
     # https://github.com/KhronosGroup/KTX-Software
@@ -825,6 +957,11 @@ if(SPARKLE_ENABLE_KTX_SUPPORT)
 )
 sparkle_log_dependency_step(10 12 "KTX-Software" "v4.3.2" "~46 MB (largest dependency)" "KTX2 texture container read/write, with tests/tools/docs/JNI/Python disabled" "https://github.com/KhronosGroup/KTX-Software.git")
 FetchContent_Populate(ktx)
+
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    sparkle_log_dependency_ready("KTX-Software" "${ktx_SOURCE_DIR}" "~46 MB")
+    return()
+endif()
 
 # Disable features we don't need
 set(KTX_FEATURE_STATIC_LIBRARY ON  CACHE BOOL "" FORCE)
@@ -856,7 +993,8 @@ endif()
     sparkle_log_dependency_ready("KTX-Software" "${ktx_SOURCE_DIR}" "~46 MB")
 endif()
 
-if(SPARKLE_ENABLE_SHADER_COMPILER)
+sparkle_source_dependency_selected("spirv-reflect" _sparkle_fetch_spirv_reflect)
+if(_sparkle_fetch_spirv_reflect AND (SPARKLE_ENABLE_SHADER_COMPILER OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
     # ============================================================================
     # SPIRV-Reflect - SPIR-V reflection (Khronos)
     # https://github.com/KhronosGroup/SPIRV-Reflect
@@ -878,6 +1016,11 @@ if(SPARKLE_ENABLE_SHADER_COMPILER)
 )
 sparkle_log_dependency_step(11 12 "SPIRV-Reflect" "vulkan-sdk-1.3.290.0" "~2 MB" "SPIR-V reflection for offline shader compiler backends" "https://github.com/KhronosGroup/SPIRV-Reflect.git")
 FetchContent_Populate(spirv_reflect)
+
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    sparkle_log_dependency_ready("SPIRV-Reflect" "${spirv_reflect_SOURCE_DIR}" "~2 MB")
+    return()
+endif()
 
 add_library(spirv_reflect STATIC
     ${spirv_reflect_SOURCE_DIR}/spirv_reflect.c
@@ -905,6 +1048,8 @@ endif()
 # code dependency or cloning the full icon repository. Sparkle owns the small
 # semantic icon mapping in editor code.
 # ============================================================================
+sparkle_source_dependency_selected("editor-icons" _sparkle_fetch_editor_icons)
+if(_sparkle_fetch_editor_icons)
 sparkle_log_dependency_step(12 12 "Font Awesome Free Solid" "v6.7.1" "~0.5 MB" "Editor icon font asset and license only" "https://github.com/FortAwesome/Font-Awesome")
 
 set(_sparkle_editor_icons_dir "${FETCHCONTENT_BASE_DIR}/editor-icons/fontawesome-6.7.1")
@@ -923,6 +1068,10 @@ download_sparkle_editor_asset(
 )
 
 sparkle_log_dependency_ready("Font Awesome" "${SPARKLE_FONT_AWESOME_SOLID_TTF}" "~0.5 MB asset-only")
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    return()
+endif()
+endif()
 
 # ============================================================================
 # NVIDIA Streamline SDK - DLSS provider runtime
@@ -932,7 +1081,8 @@ sparkle_log_dependency_ready("Font Awesome" "${SPARKLE_FONT_AWESOME_SOLID_TTF}" 
 # library, signed Streamline plugin DLLs, and NVIDIA DLSS runtime DLLs. Keep it
 # out of source and cache it under build/_deps so fresh syncs are reproducible.
 # ============================================================================
-if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
+sparkle_source_dependency_selected("nvidia-streamline" _sparkle_fetch_nvidia_streamline)
+if(_sparkle_fetch_nvidia_streamline AND (SPARKLE_ENABLE_NVIDIA_STREAMLINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
     sparkle_log_dependency_step(13 13 "NVIDIA Streamline SDK" "v2.11.1" "~217 MB" "DLSS external provider SDK headers, import library, and runtime DLLs" "https://github.com/NVIDIA-RTX/Streamline/releases")
 
     set(_sparkle_streamline_url "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.11.1/streamline-sdk-v2.11.1.zip")
@@ -959,6 +1109,11 @@ if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
         EXPECTED_HASH "SHA256=0C1D562E59557434CABFB8997157CB8C04FC7D23F077C8BDF5260975B73DFB89"
         REQUIRED_PATHS ${_sparkle_streamline_required_paths}
     )
+
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+        sparkle_log_dependency_ready("NVIDIA Streamline SDK" "${_sparkle_streamline_root}" "~217 MB release SDK")
+        return()
+    endif()
 
     set(SPARKLE_NVIDIA_STREAMLINE_ROOT "${_sparkle_streamline_root}" CACHE PATH "NVIDIA Streamline SDK root used by Sparkle DLSS integration." FORCE)
     set(SPARKLE_NVIDIA_STREAMLINE_BIN_DIR "${_sparkle_streamline_root}/bin/x64" CACHE PATH "NVIDIA Streamline runtime DLL directory." FORCE)
@@ -987,6 +1142,10 @@ if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
     )
 
     sparkle_log_dependency_ready("NVIDIA Streamline SDK" "${SPARKLE_NVIDIA_STREAMLINE_ROOT}" "~217 MB release SDK")
+endif()
+
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    message(FATAL_ERROR "Unknown source dependency '${SPARKLE_SYNC_SOURCE_DEPENDENCY}'.")
 endif()
 
 # ============================================================================

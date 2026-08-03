@@ -93,9 +93,8 @@ namespace SparkleLauncher
 
 	enum class BuildWorkspaceOperationKind
 	{
-		SyncSourceTiers,
+		SyncCode,
 		SyncLevels,
-		SyncAll,
 		GenerateBuildFiles,
 		OpenIde,
 		BuildAll,
@@ -107,7 +106,7 @@ namespace SparkleLauncher
 
 	struct BuildWorkspaceOperationDefinition
 	{
-		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::SyncSourceTiers;
+		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::SyncCode;
 		std::string Id;
 		std::string Group;
 		std::string DisplayName;
@@ -123,7 +122,7 @@ namespace SparkleLauncher
 		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;
 		std::vector<std::string> SelectedTargets;
 		std::vector<std::string> RequestedLevelIds;
-		std::string SourceDependencyConfigureOption;
+		std::string SourceDependencyId;
 		bool ForceConfigure = false;
 	};
 
@@ -141,7 +140,7 @@ namespace SparkleLauncher
 		OperationRecord Operation;
 		std::filesystem::path RepositoryRoot;
 		BuildWorkspaceOperationRequest Request;
-		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::SyncSourceTiers;
+		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::SyncCode;
 		BuildToolchainStatus Toolchain;
 		BuildFilesFreshnessStatus Freshness;
 		SourceDependencyInventoryStatus SourceDependencies;

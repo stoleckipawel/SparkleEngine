@@ -5,7 +5,6 @@
 namespace SparkleLauncher::ArtifactNaming
 {
 	inline constexpr std::string_view kHostPrerequisite = "Host prerequisite";
-	inline constexpr std::string_view kSourceDependencyGroup = "Source dependency group";
 	inline constexpr std::string_view kRuntimeRedistributable = "Runtime redistributable";
 	inline constexpr std::string_view kBuildOutput = "Build output";
 	inline constexpr std::string_view kCookedOutput = "Cooked output";

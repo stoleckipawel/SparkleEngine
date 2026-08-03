@@ -39,7 +39,6 @@ namespace SparkleLauncher
 	struct LauncherOperationDescriptor;
 	class LauncherContentModel;
 	class LauncherSettings;
-	struct DependencyGroupUiEntry;
 	struct ThirdPartyDependencyUiEntry;
 	struct ThirdPartyDependencyUiStatus;
 	struct LauncherLevelUiEntry;
@@ -161,7 +160,7 @@ namespace SparkleLauncher
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
 		QVBoxLayout* AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded = false);
-		void AddStatusRow(
+		QLabel* AddStatusRow(
 		    QVBoxLayout& layout,
 		    const QString& label,
 		    const QString& status,
@@ -170,11 +169,10 @@ namespace SparkleLauncher
 		    QWidget* accessory = nullptr,
 		    StatusRowPresentation presentation = StatusRowPresentation::Badge);
 		void AddSyncDependencies(QVBoxLayout& layout, bool optional);
-		QPushButton* CreateSourceDependencyActionButton(
-		    const ThirdPartyDependencyUiEntry& dependency,
-		    const DependencyGroupUiEntry& group,
-		    const ThirdPartyDependencyUiStatus& status);
-		void SyncSourceDependency(const DependencyGroupUiEntry& group);
+		QPushButton* CreateSourceDependencyActionButton(const ThirdPartyDependencyUiEntry& dependency);
+		void ApplySourceDependencyRowState(const ThirdPartyDependencyUiEntry& dependency, QLabel& statusLabel, QPushButton& button);
+		void RefreshSourceDependencyRows();
+		void SyncSourceDependency(const ThirdPartyDependencyUiEntry& dependency);
 		void CleanSourceDependency(const ThirdPartyDependencyUiEntry& dependency);
 		void TrackSourceDependencyRun(const LauncherOperationRequest& request, const QString& runId);
 		void AddSyncLevelContentGroups(QVBoxLayout& layout);
@@ -222,7 +220,6 @@ namespace SparkleLauncher
 		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
-		QWidget* CreateDisabledSourceDependencyActions(const DependencyGroupUiEntry& group);
 		QWidget* CreateActionDependencyActions(
 		    const QString& actionId,
 		    const QString& actionTitle,
@@ -292,6 +289,8 @@ namespace SparkleLauncher
 		QHash<QString, QPointer<QLabel>> m_levelStatusLabels;
 		QHash<QString, QPointer<QPushButton>> m_levelActionButtons;
 		QHash<QString, QString> m_sourceDependencyRunIds;
+		QHash<QString, QPointer<QLabel>> m_sourceDependencyStatusLabels;
+		QHash<QString, QPointer<QPushButton>> m_sourceDependencyActionButtons;
 		QSet<QString> m_cleaningSourceDependencyRunIds;
 		QString m_activeRunId;
 		QString m_selectedOperationId;

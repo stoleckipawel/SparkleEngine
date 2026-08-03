@@ -8,7 +8,6 @@ include(FetchContent)
 option(SPARKLE_RHI_WITH_D3D12 "Enable the D3D12 RHI backend" ON)
 option(SPARKLE_RHI_WITH_D3D12_NVAPI "Enable NVIDIA NVAPI integration inside the D3D12 RHI backend" ON)
 option(SPARKLE_RHI_D3D12_NVAPI_FETCH_FROM_GITHUB "Fetch the official NVIDIA NVAPI SDK when D3D12 NVAPI is enabled and no local SDK paths are provided" ON)
-set(SPARKLE_RHI_D3D12_NVAPI_GIT_TAG "9b181ea572f680327fe01a14a0f1f41c78034104" CACHE STRING "Official NVIDIA NVAPI repository revision used when fetching NVAPI")
 set(SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR "" CACHE PATH "Directory containing NVIDIA NVAPI headers, used only by SparkleRHI_D3D12")
 set(SPARKLE_RHI_D3D12_NVAPI_LIBRARY "" CACHE FILEPATH "NVIDIA NVAPI import library, used only by SparkleRHI_D3D12")
 find_package(Vulkan QUIET)
@@ -173,30 +172,7 @@ if(SPARKLE_RHI_WITH_D3D12)
             NOT SPARKLE_RHI_D3D12_NVAPI_LIBRARY OR
             NOT EXISTS "${_sparkle_nvapi_header_path}" OR
             NOT _sparkle_nvapi_library_exists))
-            set(_sparkle_nvapi_fetch_root "${FETCHCONTENT_BASE_DIR}")
-            set(_sparkle_nvapi_fetch_source_dir "${_sparkle_nvapi_fetch_root}/sparkle_nvapi-src")
-            set(_sparkle_nvapi_fetch_binary_dir "${_sparkle_nvapi_fetch_root}/sparkle_nvapi-build")
-            set(_sparkle_nvapi_fetch_subbuild_dir "${_sparkle_nvapi_fetch_root}/sparkle_nvapi-subbuild")
-            sparkle_prepare_git_fetchcontent_source(
-                "sparkle_nvapi"
-                DISPLAY_NAME "NVIDIA NVAPI"
-                SOURCE_DIR "${_sparkle_nvapi_fetch_source_dir}"
-                BINARY_DIR "${_sparkle_nvapi_fetch_binary_dir}"
-                SUBBUILD_DIR "${_sparkle_nvapi_fetch_subbuild_dir}"
-                EXPECTED_REVISION "${SPARKLE_RHI_D3D12_NVAPI_GIT_TAG}"
-                REQUIRED_PATHS
-                    "nvapi.h"
-                    "amd64/nvapi64.lib")
-
-            FetchContent_Declare(sparkle_nvapi
-                GIT_REPOSITORY https://github.com/NVIDIA/nvapi.git
-                GIT_TAG        ${SPARKLE_RHI_D3D12_NVAPI_GIT_TAG}
-                # The pinned SDK revision is not a branch or tag tip, so a depth-1 clone cannot check it out.
-                GIT_SHALLOW    FALSE
-                GIT_PROGRESS   ${SPARKLE_GIT_PROGRESS}
-            )
-
-            FetchContent_MakeAvailable(sparkle_nvapi)
+            sparkle_populate_nvidia_nvapi()
 
             set(SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR "${sparkle_nvapi_SOURCE_DIR}" CACHE PATH "Directory containing NVIDIA NVAPI headers, used only by SparkleRHI_D3D12" FORCE)
             set(SPARKLE_RHI_D3D12_NVAPI_LIBRARY "${sparkle_nvapi_SOURCE_DIR}/amd64/nvapi64.lib" CACHE FILEPATH "NVIDIA NVAPI import library, used only by SparkleRHI_D3D12" FORCE)

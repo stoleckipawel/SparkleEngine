@@ -20,7 +20,6 @@ namespace SparkleLauncher
 		None,
 		SourceDependencies,
 		LevelAssets,
-		RepositoryAndContentInputs,
 		WorkspaceFiles,
 		BuildOutputs,
 		CookedOutputs,

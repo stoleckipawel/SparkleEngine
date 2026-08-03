@@ -81,12 +81,18 @@ if(ENABLE_STRICT_WARNINGS)
 endif()
 
 # ---------------------------
-# Optional dependency groups
+# Optional workspace features
 # ---------------------------
 option(SPARKLE_ENABLE_CONTENT_PIPELINE "Build source import, conversion, and asset/texture cooking tools" ON)
 option(SPARKLE_ENABLE_SHADER_COMPILER "Build offline shader compiler tooling" ON)
 option(SPARKLE_ENABLE_KTX_SUPPORT "Fetch and build KTX tooling support for the content pipeline" OFF)
 option(SPARKLE_ENABLE_NVIDIA_STREAMLINE "Fetch and stage NVIDIA Streamline SDK runtime for DLSS providers" ON)
+
+set(SPARKLE_SYNC_SOURCE_DEPENDENCY "" CACHE STRING "Populate exactly one source dependency cache and skip workspace generation")
+if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    include(${CMAKE_SOURCE_DIR}/CMake/Dependencies/FetchDependencies.cmake)
+    return()
+endif()
 
 # ---------------------------
 # Output directories

@@ -19,8 +19,6 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
-#include <QtGui/QClipboard>
-#include <QtGui/QGuiApplication>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QToolButton>
 
@@ -61,10 +59,10 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if ((m_selectedOperationId == "workspace.sync-source-tiers" || m_selectedOperationId == "workspace.sync-all"
-		        || m_selectedOperationId == "workspace.generate-build-files" || m_selectedOperationId == "workspace.open-ide"
-		        || m_selectedOperationId == "workspace.build-all" || m_selectedOperationId == "launcher.build.self"
-		        || m_selectedOperationId.startsWith("workspace.build") || m_selectedOperationId == "cook.tools.prepare")
+		if ((m_selectedOperationId == "workspace.sync-code" || m_selectedOperationId == "workspace.generate-build-files"
+		        || m_selectedOperationId == "workspace.open-ide" || m_selectedOperationId == "workspace.build-all"
+		        || m_selectedOperationId == "launcher.build.self" || m_selectedOperationId.startsWith("workspace.build")
+		        || m_selectedOperationId == "cook.tools.prepare")
 		    && !OfferWorkspacePrerequisiteOperation(m_selectedOperationId))
 		{
 			return;
@@ -154,22 +152,6 @@ namespace SparkleLauncher
 		StartOperation(std::move(request), "Clean " + DisplayNameForOperation(m_selectedOperationId));
 	}
 
-	QWidget* LauncherMainWindow::CreateDisabledSourceDependencyActions(const DependencyGroupUiEntry& group)
-	{
-		QVector<LauncherActionMenuEntry> entries;
-		if (!group.ConfigureOption.isEmpty())
-		{
-			entries.push_back(
-			    LauncherActionMenuEntry{
-			        "Copy enable option",
-			        [this, option = group.ConfigureOption]() { QGuiApplication::clipboard()->setText("-D" + option + "=ON"); }});
-		}
-		QToolButton* button =
-		    CreateLauncherOverflowActionButton(this, group.Label + " configuration actions", "Dependency actions", entries);
-		RegisterFocusable(button);
-		return button;
-	}
-
 	QWidget* LauncherMainWindow::CreateActionDependencyActions(
 	    const QString& actionId,
 	    const QString& actionTitle,
@@ -256,8 +238,8 @@ namespace SparkleLauncher
 			return m_settings.CleanScope().contains("cooked");
 		}
 
-		return operationId == "workspace.sync-all" || operationId == "workspace.sync-levels" || operationId.startsWith("workspace.build.")
-		    || operationId.startsWith("launch.") || operationId.startsWith("cook.");
+		return operationId == "workspace.sync-levels" || operationId.startsWith("workspace.build.") || operationId.startsWith("launch.")
+		    || operationId.startsWith("cook.");
 	}
 
 	bool LauncherMainWindow::OperationNeedsConfirmation(const QString& operationId) const
@@ -285,18 +267,16 @@ namespace SparkleLauncher
 		{
 			return "Enable Confirm clean cook, then retry.";
 		}
-		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.sync-all"
-		        || operationId == "workspace.generate-build-files")
+		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
 		    && (statusText.contains("dxcapi.h", Qt::CaseInsensitive) || statusText.contains("slang", Qt::CaseInsensitive)
 		        || statusText.contains("dxcompiler.dll", Qt::CaseInsensitive)
 		        || statusText.contains("slang-compiler.dll", Qt::CaseInsensitive) || statusText.contains("VULKAN_SDK", Qt::CaseInsensitive)
 		        || statusText.contains("ShaderCompiler", Qt::CaseInsensitive)))
 		{
-			return "Install or expose the Vulkan SDK so Vulkan-backed editor/runtime builds and the enabled shader compiler tier can "
+			return "Install or expose the Vulkan SDK so Vulkan-backed editor/runtime builds and the enabled shader compiler feature can "
 			       "resolve DXC, Slang, Vulkan headers, and the required DXC/Slang runtime support bundle, then open Sync and retry.";
 		}
-		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.sync-all"
-		        || operationId == "workspace.generate-build-files")
+		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
 		    && (statusText.contains("NVIDIA Streamline SDK", Qt::CaseInsensitive)
 		        || statusText.contains("sl.interposer.lib", Qt::CaseInsensitive) || statusText.contains("sl.dlss.dll", Qt::CaseInsensitive)
 		        || statusText.contains("sl.dlss_d.dll", Qt::CaseInsensitive) || statusText.contains("nvngx_dlss.dll", Qt::CaseInsensitive)
@@ -305,16 +285,14 @@ namespace SparkleLauncher
 			return "Sync fetches the NVIDIA Streamline SDK automatically. If this still fails after retry, verify network access to GitHub "
 			       "releases, then clean the source dependency cache and run Sync Code again.";
 		}
-		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.sync-all"
-		        || operationId == "workspace.generate-build-files")
+		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
 		    && (statusText.contains("NVAPI", Qt::CaseInsensitive) || statusText.contains("nvapi.h", Qt::CaseInsensitive)
 		        || statusText.contains("nvapi64.lib", Qt::CaseInsensitive)))
 		{
 			return "Sync fetches NVAPI automatically. If this still fails after retry, clean the source dependency cache and rerun Sync "
 			       "Code so the launcher can re-download a clean NVIDIA SDK checkout.";
 		}
-		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.sync-all"
-		        || operationId == "workspace.generate-build-files")
+		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
 		    && (statusText.contains("FetchContent", Qt::CaseInsensitive) || statusText.contains("not a git repository", Qt::CaseInsensitive)
 		        || statusText.contains("source directory is missing", Qt::CaseInsensitive)
 		        || statusText.contains("nvapi.h", Qt::CaseInsensitive)))

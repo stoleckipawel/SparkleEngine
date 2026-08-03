@@ -148,13 +148,6 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int MaxHeight = 220;
 	}
 
-	namespace SourceTier
-	{
-		inline constexpr int MinHeight = 138;
-		inline constexpr int Spacing = 8;
-		inline const QMargins Margins{16, 14, 16, 14};
-	}
-
 	namespace Clean
 	{
 		inline constexpr int RowSpacing = 12;

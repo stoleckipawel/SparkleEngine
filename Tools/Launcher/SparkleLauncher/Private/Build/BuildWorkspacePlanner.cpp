@@ -130,8 +130,7 @@ namespace SparkleLauncher
 		const bool needsConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
 		switch (plan.Kind)
 		{
-			case BuildWorkspaceOperationKind::SyncSourceTiers:
-			case BuildWorkspaceOperationKind::SyncAll:
+			case BuildWorkspaceOperationKind::SyncCode:
 				if (!RequireConfigurePrerequisites(plan))
 				{
 					return;
@@ -149,13 +148,6 @@ namespace SparkleLauncher
 				else
 				{
 					AddPlannedEffect(plan, "Repository dependency configure is current; no configure step is required.");
-				}
-				if (plan.Kind == BuildWorkspaceOperationKind::SyncAll)
-				{
-					AddPlannedEffect(
-					    plan,
-					    "Acquire every downloadable level asset pack, including supported add-ons and their parent packs; explicitly "
-					    "disabled future packs remain untouched.");
 				}
 				plan.CanRun = true;
 				return;
@@ -355,8 +347,8 @@ namespace SparkleLauncher
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions()
 	{
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
-		    {BuildWorkspaceOperationKind::SyncSourceTiers,
-		        "workspace.sync-source-tiers",
+		    {BuildWorkspaceOperationKind::SyncCode,
+		        "workspace.sync-code",
 		        "Sync",
 		        std::string(ArtifactNaming::kActionSyncSourceDependencies),
 		        "Download enabled repository dependencies and refresh workspace configure state without installing host tools."},
@@ -365,11 +357,6 @@ namespace SparkleLauncher
 		        "Sync",
 		        "Sync Levels",
 		        "Select levels and acquire their asset packs without changing code or SDK dependencies."},
-		    {BuildWorkspaceOperationKind::SyncAll,
-		        "workspace.sync-all",
-		        "Sync",
-		        "Sync All",
-		        "Sync the base repository dependencies and every downloadable level asset pack in one workflow."},
 		    {BuildWorkspaceOperationKind::GenerateBuildFiles,
 		        "workspace.generate-build-files",
 		        "Build",
@@ -438,9 +425,9 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
 		plan.Operation.Inputs.push_back({"workspaceIde", WorkspaceIdeCommandLineValue(request.PreferredIde)});
-		if (!request.SourceDependencyConfigureOption.empty())
+		if (!request.SourceDependencyId.empty())
 		{
-			plan.Operation.Inputs.push_back({"sourceDependencyConfigureOption", request.SourceDependencyConfigureOption});
+			plan.Operation.Inputs.push_back({"sourceDependency", request.SourceDependencyId});
 		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		plan.Request = request;

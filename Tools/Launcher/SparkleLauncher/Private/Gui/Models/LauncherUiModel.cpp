@@ -106,7 +106,7 @@ namespace SparkleLauncher
 			    "Refreshes workspace files for the selected toolchain and opens the IDE when the workspace is current.",
 			    "workflow-open-ide.png");
 		}
-		if (operationId == "workspace.sync-source-tiers")
+		if (operationId == "workspace.sync-code")
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -158,20 +158,6 @@ namespace SparkleLauncher
 			    "Levels and assets",
 			    "Sync individual levels or the full catalog from declared publisher sources.",
 			    "workflow-cook-assets.png");
-		}
-		if (operationId == "workspace.sync-all")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Sync All",
-			    "Sync",
-			    LauncherWorkflowPageKind::Sync,
-			    LauncherActionImpactKind::RepositoryAndContentInputs,
-			    "Full sync: repairs code and SDK dependencies, refreshes configure state, and acquires every downloadable level asset "
-			    "pack.",
-			    "Full repository sync",
-			    "Prepares the base code workspace and all supported downloadable content through one shared sync plan.",
-			    "workflow-source-sync.png");
 		}
 		if (operationId == "launcher.build.self")
 		{
@@ -353,8 +339,6 @@ namespace SparkleLauncher
 				return "Source dependencies";
 			case LauncherActionImpactKind::LevelAssets:
 				return "Level assets";
-			case LauncherActionImpactKind::RepositoryAndContentInputs:
-				return "Repository and content inputs";
 			case LauncherActionImpactKind::WorkspaceFiles:
 				return "Workspace files";
 			case LauncherActionImpactKind::BuildOutputs:
