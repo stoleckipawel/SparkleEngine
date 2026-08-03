@@ -24,10 +24,6 @@ namespace SparkleLauncher
 		{
 			return GetArtifactDirectory(repositoryRoot);
 		}
-		if (scope == "packages")
-		{
-			return repositoryRoot / "dist";
-		}
 		if (scope == "workspace-state")
 		{
 			return repositoryRoot;
@@ -60,10 +56,6 @@ namespace SparkleLauncher
 		if (scopeValue == "artifacts")
 		{
 			return "Generated Artifacts";
-		}
-		if (scopeValue == "packages")
-		{
-			return "Packaged Outputs";
 		}
 		if (scopeValue == "workspace-state")
 		{

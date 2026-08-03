@@ -19,7 +19,8 @@ namespace SparkleLauncher
 	    const std::filesystem::path& repositoryRoot,
 	    const BuildToolchainStatus& toolchain,
 	    std::string_view operationId,
-	    std::string_view logFileName)
+	    std::string_view logFileName,
+	    std::string_view sourceDependencyConfigureOption)
 	{
 		ProcessRequest process;
 		process.ExecutablePath = toolchain.CMakePath;
@@ -61,6 +62,10 @@ namespace SparkleLauncher
 		process.Arguments.push_back("-DSPARKLE_ENABLE_SHADER_COMPILER=" + ToCMakeBool(featureSettings.ShaderCompilerEnabled));
 		process.Arguments.push_back("-DSPARKLE_ENABLE_KTX_SUPPORT=" + ToCMakeBool(featureSettings.KtxSupportEnabled));
 		process.Arguments.push_back("-DSPARKLE_ENABLE_NVIDIA_STREAMLINE=" + ToCMakeBool(featureSettings.NvidiaStreamlineEnabled));
+		if (!sourceDependencyConfigureOption.empty())
+		{
+			process.Arguments.push_back("-D" + std::string(sourceDependencyConfigureOption) + "=ON");
+		}
 		process.Arguments.push_back("-Wno-dev");
 		process.Arguments.push_back(repositoryRoot.string());
 		return process;

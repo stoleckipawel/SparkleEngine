@@ -52,6 +52,9 @@ namespace SparkleLauncher
 	SourceDependencyValidation ValidateSourceDependency(
 	    const SourceDependencyEntry& dependency,
 	    const std::filesystem::path& dependencyCacheRoot);
+	std::vector<std::filesystem::path> GetSourceDependencyCachePaths(
+	    const SourceDependencyEntry& dependency,
+	    const std::filesystem::path& dependencyCacheRoot);
 	int CountReadySourceDependencies(const SourceDependencyGroup& group, const std::filesystem::path& dependencyCacheRoot);
 	SourceDependencyInventoryStatus InspectSourceDependencyCache(const std::filesystem::path& dependencyCacheRoot);
 }

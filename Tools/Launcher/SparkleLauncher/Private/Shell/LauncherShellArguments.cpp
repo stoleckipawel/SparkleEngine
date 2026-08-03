@@ -264,7 +264,6 @@ namespace SparkleLauncher
 		    {"cooked", CleanScope::CookedOutputs},
 		    {"build-tree", CleanScope::BuildTree},
 		    {"artifacts", CleanScope::ArtifactOutputs},
-		    {"packages", CleanScope::PackageOutputs},
 		    {"workspace-state", CleanScope::WorkspaceState},
 		    {"shader-cache", CleanScope::ShaderCache},
 		    {"deps", CleanScope::ThirdPartyDependencyCache},

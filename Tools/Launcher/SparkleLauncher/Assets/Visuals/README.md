@@ -13,7 +13,6 @@ Home asset slots:
 - `sparkle-architecture.png`: Architecture evidence tile.
 - `sparkle-source-tiers.png`: Source tier evidence tile.
 - `sparkle-validation.png`: Validation evidence tile.
-- `sparkle-package.png`: Package evidence tile.
 - `sparkle-tools.png`: Tooling evidence tile.
 
 Workflow banner asset slots:
@@ -37,7 +36,6 @@ Workflow banner asset slots:
 - `workflow-cook-textures.png`: Texture cook workflow banner.
 - `workflow-cook-assets.png`: Scene asset cook workflow banner.
 - `workflow-format-check.png`: Format check workflow banner.
-- `workflow-package-release.png`: Release package workflow banner.
 - `workflow-clean-workspace.png`: Clean workspace workflow banner.
 - `workflow-build-generic.png`: Generic build fallback banner.
 - `workflow-cook-generic.png`: Generic cook fallback banner.

@@ -10,6 +10,7 @@
 #include <QtCore/QVector>
 #include <QtCore/QHash>
 #include <QtCore/QPointer>
+#include <QtCore/QSet>
 #include <QtGui/QColor>
 #include <QtGui/QIcon>
 #include <QtCore/QStringList>
@@ -39,6 +40,8 @@ namespace SparkleLauncher
 	class LauncherContentModel;
 	class LauncherSettings;
 	struct DependencyGroupUiEntry;
+	struct ThirdPartyDependencyUiEntry;
+	struct ThirdPartyDependencyUiStatus;
 	struct LauncherLevelUiEntry;
 	struct LauncherLevelUiModel;
 	class ResponsiveCardGridWidget;
@@ -93,14 +96,6 @@ namespace SparkleLauncher
 			bool Selected = false;
 		};
 
-		struct PendingLevelCancellation
-		{
-			std::filesystem::path ContentRoot;
-			QString ContentId;
-			QString LevelId;
-			QString LevelDisplayName;
-		};
-
 		struct ActivityRunWidgets
 		{
 			QWidget* Root = nullptr;
@@ -116,12 +111,6 @@ namespace SparkleLauncher
 			Done,
 			Canceled,
 			Failed,
-		};
-
-		enum class LevelCleanMode
-		{
-			PreserveArchiveWithConfirmation,
-			PurgeWithoutConfirmation,
 		};
 
 		QWidget* CreateWorkflowSurface();
@@ -154,7 +143,6 @@ namespace SparkleLauncher
 		    void (LauncherSettings::*setter)(const QString&));
 		static bool UsesBuildEnvironmentStatus(const QString& operationId);
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
-		void AddPackageOptions(QVBoxLayout& layout);
 		void AddShaderCookOptions(QVBoxLayout& layout);
 		void AddCleanOptions(QVBoxLayout& layout, const QString& operationId);
 		void AddCleanScopeRow(
@@ -176,24 +164,25 @@ namespace SparkleLauncher
 		    const QString& state,
 		    QWidget* accessory = nullptr);
 		void AddSyncDependencies(QVBoxLayout& layout, bool optional);
+		QPushButton* CreateSourceDependencyActionButton(
+		    const ThirdPartyDependencyUiEntry& dependency,
+		    const DependencyGroupUiEntry& group,
+		    const ThirdPartyDependencyUiStatus& status);
+		void SyncSourceDependency(const DependencyGroupUiEntry& group);
+		void CleanSourceDependency(const ThirdPartyDependencyUiEntry& dependency);
+		void TrackSourceDependencyRun(const LauncherOperationRequest& request, const QString& runId);
 		void AddSyncLevelContentGroups(QVBoxLayout& layout);
 		void AddSyncLevelRows(QVBoxLayout& layout, const LauncherContentSummary& content, const LauncherLevelUiModel& model);
 		void AddSyncLevelRow(ResponsiveCardGridWidget& grid, const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
-		void ApplyLevelActionButtonState(QPushButton& button, const LauncherLevelUiEntry& level);
+		void ApplyLevelActionButtonState(QLabel& statusLabel, QPushButton& button, const LauncherLevelUiEntry& level);
 		void RefreshLevelActionButtons();
 		void SyncLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
-		void CancelLevelSync(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
-		void CleanCanceledLevelSync(const PendingLevelCancellation& cancellation);
-		void CleanLevel(
-		    const LauncherContentSummary& content,
-		    const LauncherLevelUiEntry& level,
-		    LevelCleanMode mode = LevelCleanMode::PreserveArchiveWithConfirmation);
+		void CleanLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
 		void SyncAllLevels();
 		void CleanAllLevels();
 		QVector<LauncherCleanTarget> BuildLevelCleanTargets(
 		    const LauncherContentSummary& content,
-		    const QString& levelId = QString(),
-		    LevelCleanMode mode = LevelCleanMode::PreserveArchiveWithConfirmation) const;
+		    const QString& levelId = QString()) const;
 		bool SetLevelsSelected(
 		    const std::filesystem::path& contentRoot,
 		    const std::vector<std::string>& levelIds,
@@ -293,9 +282,11 @@ namespace SparkleLauncher
 		LauncherActionHistoryModel m_actionHistory;
 		QHash<QString, PendingFollowUpOperation> m_pendingFollowUpOperations;
 		QHash<QString, PendingLevelSelectionUpdate> m_pendingLevelSelectionUpdates;
-		QHash<QString, PendingLevelCancellation> m_pendingLevelCancellations;
 		QHash<QString, QString> m_levelSyncRunIds;
+		QHash<QString, QPointer<QLabel>> m_levelStatusLabels;
 		QHash<QString, QPointer<QPushButton>> m_levelActionButtons;
+		QHash<QString, QString> m_sourceDependencyRunIds;
+		QSet<QString> m_cleaningSourceDependencyRunIds;
 		QString m_activeRunId;
 		QString m_selectedOperationId;
 		bool m_isRebuildingOptions = false;

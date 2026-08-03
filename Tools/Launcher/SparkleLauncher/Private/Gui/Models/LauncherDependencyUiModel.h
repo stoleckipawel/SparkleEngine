@@ -34,6 +34,7 @@ namespace SparkleLauncher
 		QString Text;
 		QString Detail;
 		QString State;
+		bool Synced = false;
 	};
 
 	const std::vector<DependencyGroupUiEntry>& GetDependencyGroups();

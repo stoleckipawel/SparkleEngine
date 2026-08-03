@@ -14,7 +14,12 @@ namespace SparkleLauncher
 {
 	static ProcessRequest MakeConfigureRequest(const BuildWorkspaceOperationPlan& plan)
 	{
-		return MakeCMakeConfigureRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, "Configure.txt");
+		return MakeCMakeConfigureRequest(
+		    plan.RepositoryRoot,
+		    plan.Toolchain,
+		    plan.Operation.Id,
+		    "Configure.txt",
+		    plan.Request.SourceDependencyConfigureOption);
 	}
 
 	static ProcessRequest MakeBuildRequest(
@@ -103,7 +108,7 @@ namespace SparkleLauncher
 		step.Id = "configure";
 		step.DisplayName = "Generate build files";
 		step.Request = MakeConfigureRequest(plan);
-		step.UpdatesBuildFilesFreshness = true;
+		step.UpdatesBuildFilesFreshness = plan.Request.SourceDependencyConfigureOption.empty();
 		steps.push_back(std::move(step));
 	}
 
@@ -198,9 +203,6 @@ namespace SparkleLauncher
 				}
 				return steps;
 			}
-			case BuildWorkspaceOperationKind::AssembleRelease:
-				AddBuildStep(steps, plan, plan.Request.EditorProfile, {"sparkle_release_assembly"});
-				return steps;
 		}
 
 		return steps;

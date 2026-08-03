@@ -13,7 +13,6 @@ namespace SparkleLauncher
 		Build,
 		Cook,
 		Run,
-		Package,
 		Clean,
 		Queued,
 		Running,

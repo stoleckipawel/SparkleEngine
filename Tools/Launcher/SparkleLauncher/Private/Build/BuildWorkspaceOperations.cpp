@@ -93,8 +93,6 @@ namespace SparkleLauncher
 				return "CompileRuntime";
 			case BuildWorkspaceOperationKind::BuildCookTools:
 				return "BuildCookTools";
-			case BuildWorkspaceOperationKind::AssembleRelease:
-				return "AssembleRelease";
 		}
 
 		return "Unknown";
@@ -165,7 +163,8 @@ namespace SparkleLauncher
 		{
 			case BuildWorkspaceOperationKind::SyncSourceTiers:
 			case BuildWorkspaceOperationKind::SyncAll:
-				return plan.Request.ForceConfigure || !plan.Freshness.Current || HasIncompleteEnabledSourceDependencies(plan);
+				return plan.Request.ForceConfigure || !plan.Request.SourceDependencyConfigureOption.empty() || !plan.Freshness.Current
+				    || HasIncompleteEnabledSourceDependencies(plan);
 			case BuildWorkspaceOperationKind::SyncLevels:
 				return false;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:

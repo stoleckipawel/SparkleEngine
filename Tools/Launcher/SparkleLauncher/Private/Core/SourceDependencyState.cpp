@@ -233,6 +233,21 @@ namespace SparkleLauncher
 		return validation;
 	}
 
+	std::vector<std::filesystem::path> GetSourceDependencyCachePaths(
+	    const SourceDependencyEntry& dependency,
+	    const std::filesystem::path& dependencyCacheRoot)
+	{
+		std::vector<std::filesystem::path> paths{dependencyCacheRoot / dependency.CacheDirectoryName};
+		constexpr std::string_view sourceSuffix = "-src";
+		if (dependency.CacheDirectoryName.ends_with(sourceSuffix))
+		{
+			const std::string stem = dependency.CacheDirectoryName.substr(0, dependency.CacheDirectoryName.size() - sourceSuffix.size());
+			paths.push_back(dependencyCacheRoot / (stem + "-build"));
+			paths.push_back(dependencyCacheRoot / (stem + "-subbuild"));
+		}
+		return paths;
+	}
+
 	int CountReadySourceDependencies(const SourceDependencyGroup& group, const std::filesystem::path& dependencyCacheRoot)
 	{
 		int readyCount = 0;

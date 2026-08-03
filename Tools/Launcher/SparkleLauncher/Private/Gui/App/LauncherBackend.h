@@ -49,6 +49,8 @@ namespace SparkleLauncher
 		QString WorkspaceIde;
 		QString SelectedTargets;
 		QString RequestedLevelIds;
+		QString SourceDependencyGroupId;
+		QString SourceDependencyConfigureOption;
 		QString ShaderPackages;
 		QString ShaderTargets;
 		QString ShaderBackend;

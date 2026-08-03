@@ -349,15 +349,6 @@ namespace SparkleLauncher
 				}
 				plan.CanRun = true;
 				return;
-			case BuildWorkspaceOperationKind::AssembleRelease:
-				if (!RequireCurrentWorkspace(plan))
-				{
-					return;
-				}
-				AddPlannedEffect(plan, "Assemble reviewable runtime and symbols packages from artifacts into dist/releases/<version>.");
-				AddPlannedEffect(plan, "Keep final package validation separate from assembly; this action does not publish.");
-				plan.CanRun = true;
-				return;
 		}
 	}
 
@@ -414,12 +405,6 @@ namespace SparkleLauncher
 		        "Build",
 		        "Build Cooking Tools",
 		        "Optional local build of tools required by recook workflows."},
-		    {BuildWorkspaceOperationKind::AssembleRelease,
-		        "package.release",
-		        "Package",
-		        "Assemble Review Package",
-		        "Assemble reviewable runtime and symbols package layouts from product artifacts into dist/releases/<version> without "
-		        "publishing."},
 		};
 		return definitions;
 	}
@@ -453,6 +438,10 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
 		plan.Operation.Inputs.push_back({"workspaceIde", WorkspaceIdeCommandLineValue(request.PreferredIde)});
+		if (!request.SourceDependencyConfigureOption.empty())
+		{
+			plan.Operation.Inputs.push_back({"sourceDependencyConfigureOption", request.SourceDependencyConfigureOption});
+		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		plan.Request = request;
 		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot, request.PreferredIde);

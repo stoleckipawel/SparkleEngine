@@ -107,35 +107,15 @@ namespace SparkleLauncher
 
 	ThirdPartyDependencyUiStatus BuildThirdPartyDependencyStatus(
 	    const ThirdPartyDependencyUiEntry& dependency,
-	    const DependencyGroupUiEntry& group,
+	    const DependencyGroupUiEntry&,
 	    const std::filesystem::path& dependencyCachePath)
 	{
 		const SourceDependencyValidation validation = ValidateDependency(dependency, dependencyCachePath);
-		QString detail = dependency.Version;
-		if (!dependency.Purpose.isEmpty())
-		{
-			detail += QStringLiteral(" | %1").arg(dependency.Purpose);
-		}
-
-		if (!group.Enabled)
-		{
-			if (!group.ConfigureOption.isEmpty())
-			{
-				detail +=
-				    QStringLiteral(" Enable with -D%1=ON when regenerating the workspace, then run Sync Code.").arg(group.ConfigureOption);
-			}
-			return {"Not enabled", detail, "neutral"};
-		}
-
-		if (validation.Ready)
-		{
-			detail += QStringLiteral(" Cached at %1.").arg(QString::fromStdString(validation.CachePath.string()));
-			return {"Ready", detail, "ok"};
-		}
-
-		detail +=
-		    QStringLiteral(" Run Sync Code to download or repair it at %1.").arg(QString::fromStdString(validation.CachePath.string()));
-		return {"Sync needed", detail, "warning"};
+		const QString detail = dependency.Purpose.isEmpty()
+		    ? dependency.Version
+		    : QStringLiteral("%1 · %2").arg(dependency.Version, dependency.Purpose);
+		return validation.Ready ? ThirdPartyDependencyUiStatus{"Synced", detail, "ok", true}
+		                        : ThirdPartyDependencyUiStatus{"Missing", detail, "warning", false};
 	}
 
 	QString FormatTrackedDependencySummary(const std::filesystem::path& dependencyCachePath)

@@ -24,8 +24,6 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 			return CleanScope::BuildTree;
 		if (text == "artifacts")
 			return CleanScope::ArtifactOutputs;
-		if (text == "packages")
-			return CleanScope::PackageOutputs;
 		if (text == "workspace-state")
 			return CleanScope::WorkspaceState;
 		if (text == "shader-cache")
@@ -51,6 +49,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.PreferredIde = workspaceIde;
 		mapped.SelectedTargets = SplitList(request.SelectedTargets);
 		mapped.RequestedLevelIds = SplitList(request.RequestedLevelIds);
+		mapped.SourceDependencyConfigureOption = request.SourceDependencyConfigureOption.toStdString();
 		mapped.ForceConfigure = request.ForceConfigure;
 		return mapped;
 	}

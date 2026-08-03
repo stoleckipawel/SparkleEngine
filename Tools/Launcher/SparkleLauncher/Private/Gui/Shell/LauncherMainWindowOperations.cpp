@@ -544,6 +544,7 @@ namespace SparkleLauncher
 		request.RunId = QStringLiteral("run-%1").arg(++m_nextRunIndex, 4, 10, QChar('0'));
 		const QString runId = request.RunId;
 		RegisterRun(request.RunId, title);
+		TrackSourceDependencyRun(request, runId);
 		m_backend.RunOperation(std::move(request));
 		return runId;
 	}

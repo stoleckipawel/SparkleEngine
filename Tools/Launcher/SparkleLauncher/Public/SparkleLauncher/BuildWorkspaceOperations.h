@@ -102,8 +102,7 @@ namespace SparkleLauncher
 		CompileLauncher,
 		CompileEditor,
 		CompileRuntime,
-		BuildCookTools,
-		AssembleRelease
+		BuildCookTools
 	};
 
 	struct BuildWorkspaceOperationDefinition
@@ -124,6 +123,7 @@ namespace SparkleLauncher
 		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;
 		std::vector<std::string> SelectedTargets;
 		std::vector<std::string> RequestedLevelIds;
+		std::string SourceDependencyConfigureOption;
 		bool ForceConfigure = false;
 	};
 

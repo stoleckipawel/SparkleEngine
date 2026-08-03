@@ -1,12 +1,10 @@
-# Sparkle artifact and package naming contract.
+# Sparkle development artifact naming contract.
 #
 # Generated build trees are private CMake/MSBuild state. Runnable development
-# products live under artifacts/, and assembled packages live under dist/.
+# products live under artifacts/.
 
-set(SPARKLE_REPOSITORY_ROOT "${CMAKE_SOURCE_DIR}")
 set(SPARKLE_BUILD_ROOT "${CMAKE_BINARY_DIR}")
 set(SPARKLE_ARTIFACT_ROOT "${CMAKE_SOURCE_DIR}/artifacts" CACHE PATH "Generated development artifact root.")
-set(SPARKLE_DIST_ROOT "${CMAKE_SOURCE_DIR}/dist" CACHE PATH "Assembled distributable package root.")
 set(SPARKLE_ARTIFACT_VARIANT "" CACHE STRING "Optional artifact namespace for an alternate build tree.")
 
 if(SPARKLE_ARTIFACT_VARIANT AND NOT SPARKLE_ARTIFACT_VARIANT MATCHES "^[A-Za-z0-9._-]+$")
@@ -27,12 +25,6 @@ set(SPARKLE_DEV_RUNTIME_SUPPORT_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/runtime-suppo
 set(SPARKLE_DEV_LIBRARY_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/libraries")
 set(SPARKLE_DIAGNOSTICS_ROOT "${SPARKLE_ACTIVE_ARTIFACT_ROOT}/diagnostics")
 set(SPARKLE_SYMBOL_ROOT "${SPARKLE_ACTIVE_ARTIFACT_ROOT}/symbols")
-
-set(SPARKLE_RELEASE_CHANNEL "dev" CACHE STRING "Release channel: dev, preview, rc, or release.")
-set_property(CACHE SPARKLE_RELEASE_CHANNEL PROPERTY STRINGS dev preview rc release)
-set(SPARKLE_PACKAGE_VERSION "0.0.0-dev" CACHE STRING "Package version used by future artifact manifests.")
-set(SPARKLE_PACKAGE_PLATFORM "windows-x64" CACHE STRING "Package platform identifier.")
-set(SPARKLE_PACKAGE_PROJECT_ID "Showcase" CACHE STRING "Project id assembled by sparkle_release_assembly.")
 
 function(sparkle_set_product_artifact_directories target_name runtime_root symbol_owner)
     if(NOT TARGET ${target_name})
@@ -143,27 +135,7 @@ function(sparkle_stage_nvidia_streamline_runtime product_target)
     endforeach()
 endfunction()
 
-if(NOT TARGET sparkle_release_assembly)
-    add_custom_target(sparkle_release_assembly
-        COMMAND ${CMAKE_COMMAND}
-            "-DSPARKLE_REPOSITORY_ROOT=${SPARKLE_REPOSITORY_ROOT}"
-            "-DSPARKLE_ARTIFACT_ROOT=${SPARKLE_ACTIVE_ARTIFACT_ROOT}"
-            "-DSPARKLE_DIST_ROOT=${SPARKLE_DIST_ROOT}"
-            "-DSPARKLE_PACKAGE_VERSION=${SPARKLE_PACKAGE_VERSION}"
-            "-DSPARKLE_RELEASE_CHANNEL=${SPARKLE_RELEASE_CHANNEL}"
-            "-DSPARKLE_PACKAGE_PLATFORM=${SPARKLE_PACKAGE_PLATFORM}"
-            "-DSPARKLE_PACKAGE_PROJECT_ID=${SPARKLE_PACKAGE_PROJECT_ID}"
-            "-DSPARKLE_BUILD_CONFIG=$<CONFIG>"
-            -P "${CMAKE_SOURCE_DIR}/CMake/SparkleReleaseAssembly.cmake"
-        COMMENT "Assembling Sparkle release layout for review"
-        VERBATIM
-    )
-endif()
-
 message(STATUS
     "Sparkle roots: build=${SPARKLE_BUILD_ROOT}; artifacts=${SPARKLE_ACTIVE_ARTIFACT_ROOT}; "
-    "dev=${SPARKLE_DEV_ARTIFACT_ROOT}; dist=${SPARKLE_DIST_ROOT}")
+    "dev=${SPARKLE_DEV_ARTIFACT_ROOT}")
 message(STATUS "Sparkle artifact variant: ${SPARKLE_ARTIFACT_VARIANT}")
-message(STATUS
-    "Sparkle package identity: project=${SPARKLE_PACKAGE_PROJECT_ID}; version=${SPARKLE_PACKAGE_VERSION}; "
-    "channel=${SPARKLE_RELEASE_CHANNEL}; platform=${SPARKLE_PACKAGE_PLATFORM}")

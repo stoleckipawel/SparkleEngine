@@ -5,6 +5,8 @@
 
 #include <functional>
 
+class QLabel;
+class QPushButton;
 class QToolButton;
 class QWidget;
 
@@ -16,11 +18,22 @@ namespace SparkleLauncher
 		std::function<void()> Triggered;
 	};
 
+	enum class SyncItemState
+	{
+		Missing,
+		Syncing,
+		Synced,
+	};
+
 	QToolButton* CreateLauncherOverflowActionButton(
 	    QWidget* parent,
 	    const QString& accessibleName,
 	    const QString& toolTip,
 	    const QVector<LauncherActionMenuEntry>& entries);
+	QString SyncItemStateText(SyncItemState state);
+	QString SyncItemStateStyle(SyncItemState state);
+	void ApplySyncStateLabel(QLabel& label, SyncItemState state);
+	void ApplySyncActionButtonState(QPushButton& button, SyncItemState state, const QString& displayName);
 
 	QString PrimaryActionLabelForOperationId(const QString& operationId);
 }

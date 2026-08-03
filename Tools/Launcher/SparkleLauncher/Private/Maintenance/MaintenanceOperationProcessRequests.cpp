@@ -112,14 +112,6 @@ namespace SparkleLauncher
 				    GetArtifactDirectory(plan.RepositoryRoot),
 				    MaintenanceCleanBehavior::RemovePath);
 				return;
-			case CleanScope::PackageOutputs:
-				AddCleanStep(
-				    steps,
-				    "clean-packages",
-				    "Clean packaged outputs",
-				    plan.RepositoryRoot / "dist",
-				    MaintenanceCleanBehavior::RemovePath);
-				return;
 			case CleanScope::WorkspaceState:
 				AddCleanStep(
 				    steps,
@@ -190,12 +182,6 @@ namespace SparkleLauncher
 				    "clean-artifacts",
 				    "Clean development artifacts",
 				    GetArtifactDirectory(plan.RepositoryRoot),
-				    MaintenanceCleanBehavior::RemovePath);
-				AddCleanStep(
-				    steps,
-				    "clean-dist",
-				    "Clean package outputs",
-				    plan.RepositoryRoot / "dist",
 				    MaintenanceCleanBehavior::RemovePath);
 				AddCleanStep(
 				    steps,

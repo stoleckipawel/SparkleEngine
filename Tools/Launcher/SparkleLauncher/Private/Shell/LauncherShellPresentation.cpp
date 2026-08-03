@@ -54,7 +54,6 @@ namespace SparkleLauncher
 		RenderLauncherOperationGroup(model, "Sync", output);
 		RenderLauncherOperationGroup(model, "Build", output);
 		RenderLauncherOperationGroup(model, "Cook", output);
-		RenderLauncherOperationGroup(model, "Package", output);
 		RenderLauncherOperationGroup(model, "Clean", output);
 
 		output << "\nRecent Activity\n";

@@ -93,14 +93,16 @@ namespace SparkleLauncher
 		QLabel* statusLabel = new QLabel(status, row);
 		statusLabel->setObjectName("StatusValue");
 		statusLabel->setProperty("State", state);
-		statusLabel->setFixedWidth(kStatusChipColumnWidth);
+		const bool usesSyncAction = accessory != nullptr && accessory->objectName() == QStringLiteral("SyncActionButton");
+		statusLabel->setFixedWidth(usesSyncAction ? LauncherUi::Row::SyncStatusWidth : kStatusChipColumnWidth);
 		statusLabel->setAlignment(Qt::AlignCenter);
 		rowLayout->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignTop);
 
 		QWidget* actionCell = new QWidget(row);
 		actionCell->setObjectName("StatusActionCell");
-		const int actionWidth =
-		    accessory != nullptr ? std::max(kStatusActionColumnWidth, accessory->sizeHint().width()) : kStatusActionColumnWidth;
+		const int actionWidth = usesSyncAction ? LauncherUi::Row::SyncActionWidth
+		    : accessory != nullptr              ? std::max(kStatusActionColumnWidth, accessory->sizeHint().width())
+		                                        : kStatusActionColumnWidth;
 		actionCell->setFixedWidth(actionWidth);
 		QHBoxLayout* actionCellLayout = new QHBoxLayout(actionCell);
 		actionCellLayout->setContentsMargins(0, 0, 0, 0);

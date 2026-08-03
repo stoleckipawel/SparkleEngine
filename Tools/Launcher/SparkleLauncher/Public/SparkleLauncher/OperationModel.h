@@ -24,7 +24,6 @@ namespace SparkleLauncher
 		CookedOutputs,
 		BuildTree,
 		ArtifactOutputs,
-		PackageOutputs,
 		WorkspaceState,
 		ShaderCache,
 		DependencyCache,

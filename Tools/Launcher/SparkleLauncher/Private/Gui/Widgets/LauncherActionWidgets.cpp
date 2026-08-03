@@ -8,9 +8,12 @@
 #include <QtGui/QIcon>
 #include <QtGui/QPainter>
 #include <QtGui/QPixmap>
-#include <QtWidgets/QMenu>
-#include <QtWidgets/QToolButton>
 #include <QtGui/QAction>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QMenu>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QStyle>
+#include <QtWidgets/QToolButton>
 
 namespace SparkleLauncher
 {
@@ -65,6 +68,76 @@ namespace SparkleLauncher
 
 		button->setMenu(menu);
 		return button;
+	}
+
+	QString SyncItemStateText(SyncItemState state)
+	{
+		switch (state)
+		{
+			case SyncItemState::Missing:
+				return "Missing";
+			case SyncItemState::Syncing:
+				return "Syncing";
+			case SyncItemState::Synced:
+				return "Synced";
+		}
+		return "Missing";
+	}
+
+	QString SyncItemStateStyle(SyncItemState state)
+	{
+		switch (state)
+		{
+			case SyncItemState::Missing:
+				return "warning";
+			case SyncItemState::Syncing:
+				return "running";
+			case SyncItemState::Synced:
+				return "ok";
+		}
+		return "warning";
+	}
+
+	void ApplySyncStateLabel(QLabel& label, SyncItemState state)
+	{
+		label.setFixedWidth(LauncherUi::Row::SyncStatusWidth);
+		label.setText(SyncItemStateText(state));
+		label.setProperty("State", SyncItemStateStyle(state));
+		label.style()->unpolish(&label);
+		label.style()->polish(&label);
+	}
+
+	void ApplySyncActionButtonState(QPushButton& button, SyncItemState state, const QString& displayName)
+	{
+		button.setObjectName("SyncActionButton");
+		button.setFixedSize(LauncherUi::Row::SyncActionWidth, LauncherUi::Row::SyncActionHeight);
+		button.setProperty("ActionState", SyncItemStateStyle(state));
+		switch (state)
+		{
+			case SyncItemState::Missing:
+				button.setText("Sync");
+				button.setProperty("ActionIntent", "sync");
+				button.setEnabled(true);
+				button.setAccessibleName("Sync " + displayName);
+				button.setToolTip("Sync " + displayName + ".");
+				break;
+			case SyncItemState::Syncing:
+				button.setText("Syncing...");
+				button.setProperty("ActionIntent", "none");
+				button.setEnabled(false);
+				button.setAccessibleName("Syncing " + displayName);
+				button.setToolTip("Sync is in progress.");
+				break;
+			case SyncItemState::Synced:
+				button.setText("Clean");
+				button.setProperty("ActionIntent", "clean");
+				button.setEnabled(true);
+				button.setAccessibleName("Clean " + displayName);
+				button.setToolTip("Clean " + displayName + ".");
+				break;
+		}
+		button.style()->unpolish(&button);
+		button.style()->polish(&button);
 	}
 
 	QString PrimaryActionLabelForOperationId(const QString& operationId)

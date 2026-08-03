@@ -356,6 +356,7 @@ namespace SparkleLauncher
 			page->deleteLater();
 		}
 		m_optionsPageByOperation.clear();
+		m_levelStatusLabels.clear();
 		m_levelActionButtons.clear();
 
 		EnsureOptionsPage(m_selectedOperationId);
@@ -444,10 +445,6 @@ namespace SparkleLauncher
 		if (iconKey == "test")
 		{
 			return m_icons.Icon(LauncherIcon::Done, QColor(kColorStateQueued));
-		}
-		if (iconKey == "package")
-		{
-			return m_icons.Icon(LauncherIcon::Package, QColor(kColorStateQueued));
 		}
 		if (iconKey == "clean")
 		{

@@ -1,5 +1,6 @@
 #include "LauncherMainWindow.h"
 
+#include "LauncherActionWidgets.h"
 #include "LauncherArtworkWidgets.h"
 #include "LauncherLayoutWidgets.h"
 #include "LauncherLevelUiModel.h"
@@ -8,8 +9,6 @@
 #include "LauncherUiDesign.h"
 
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
-#include "SparkleLauncher/LauncherPaths.h"
-
 #include <QtCore/QFileInfo>
 #include <QtCore/QUrl>
 #include <QtGui/QDesktopServices>
@@ -179,10 +178,14 @@ namespace SparkleLauncher
 		}
 
 		actions->addStretch(1);
+		QLabel* statusLabel = new QLabel(body);
+		statusLabel->setObjectName("SyncStateValue");
+		statusLabel->setAlignment(Qt::AlignCenter);
+		actions->addWidget(statusLabel);
 
 		QPushButton* actionButton = new QPushButton(body);
-		actionButton->setObjectName("MapCardActionButton");
-		ApplyLevelActionButtonState(*actionButton, level);
+		ApplyLevelActionButtonState(*statusLabel, *actionButton, level);
+		m_levelStatusLabels.insert(level.Id, statusLabel);
 		m_levelActionButtons.insert(level.Id, actionButton);
 		RegisterFocusable(actionButton);
 		connect(
@@ -191,12 +194,10 @@ namespace SparkleLauncher
 		    this,
 		    [this, content, level, actionButton]()
 		    {
-			    const QString actionState = actionButton->property("ActionState").toString();
-			    if (actionState == QStringLiteral("cancel"))
-				    CancelLevelSync(content, level);
-			    else if (actionState == QStringLiteral("clean"))
+			    const QString actionIntent = actionButton->property("ActionIntent").toString();
+			    if (actionIntent == QStringLiteral("clean"))
 				    CleanLevel(content, level);
-			    else if (actionState == QStringLiteral("sync"))
+			    else if (actionIntent == QStringLiteral("sync"))
 				    SyncLevel(content, level);
 		    });
 		actions->addWidget(actionButton);
@@ -206,31 +207,24 @@ namespace SparkleLauncher
 		grid.AddCard(card);
 	}
 
-	void LauncherMainWindow::ApplyLevelActionButtonState(QPushButton& button, const LauncherLevelUiEntry& level)
+	void LauncherMainWindow::ApplyLevelActionButtonState(
+	    QLabel& statusLabel,
+	    QPushButton& button,
+	    const LauncherLevelUiEntry& level)
 	{
 		const QString syncRunId = m_levelSyncRunIds.value(LevelSyncKey(m_contentModel.ContentId(), level.Id));
 		if (!syncRunId.isEmpty())
 		{
-			const bool canceling = m_pendingLevelCancellations.contains(syncRunId);
-			button.setText(canceling ? QStringLiteral("Canceling...") : QStringLiteral("Cancel"));
-			button.setProperty("ActionState", canceling ? "canceling" : "cancel");
-			button.setEnabled(!canceling);
-			button.setAccessibleName(
-			    (canceling ? QStringLiteral("Canceling sync for ") : QStringLiteral("Cancel sync for ")) + level.DisplayName);
-			button.setToolTip(
-			    canceling
-			        ? QStringLiteral("Waiting for the acquisition process to stop before removing partial content.")
-			        : QStringLiteral("Cancel this sync, remove its downloaded and partially staged content, and deselect the level."));
-			button.style()->unpolish(&button);
-			button.style()->polish(&button);
+			ApplySyncStateLabel(statusLabel, SyncItemState::Syncing);
+			ApplySyncActionButtonState(button, SyncItemState::Syncing, level.DisplayName);
 			return;
 		}
 
 		const bool clean = (level.Selected && level.Ready) || (!level.RuntimeSupported && level.CanClean);
-		button.setText(clean ? QStringLiteral("Clean") : QStringLiteral("Sync"));
-		button.setProperty("ActionState", clean ? "clean" : "sync");
+		const SyncItemState state = clean ? SyncItemState::Synced : SyncItemState::Missing;
+		ApplySyncStateLabel(statusLabel, state);
+		ApplySyncActionButtonState(button, state, level.DisplayName);
 		button.setEnabled(clean || level.CanSelect || level.CanSync);
-		button.setAccessibleName((clean ? QStringLiteral("Clean ") : QStringLiteral("Sync ")) + level.DisplayName);
 		if (clean)
 		{
 			button.setToolTip(
@@ -250,8 +244,6 @@ namespace SparkleLauncher
 		{
 			button.setToolTip(QStringLiteral("Enable this level and acquire any missing content."));
 		}
-		button.style()->unpolish(&button);
-		button.style()->polish(&button);
 	}
 
 	void LauncherMainWindow::RefreshLevelActionButtons()
@@ -270,9 +262,11 @@ namespace SparkleLauncher
 
 		for (const LauncherLevelUiEntry& level : model.Levels)
 		{
-			if (QPushButton* button = m_levelActionButtons.value(level.Id, nullptr))
+			QLabel* statusLabel = m_levelStatusLabels.value(level.Id, nullptr);
+			QPushButton* button = m_levelActionButtons.value(level.Id, nullptr);
+			if (statusLabel != nullptr && button != nullptr)
 			{
-				ApplyLevelActionButtonState(*button, level);
+				ApplyLevelActionButtonState(*statusLabel, *button, level);
 			}
 		}
 	}
@@ -298,8 +292,7 @@ namespace SparkleLauncher
 
 	QVector<LauncherCleanTarget> LauncherMainWindow::BuildLevelCleanTargets(
 	    const LauncherContentSummary& content,
-	    const QString& levelId,
-	    LevelCleanMode mode) const
+	    const QString& levelId) const
 	{
 		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(content.RootPath);
 		QVector<LauncherCleanTarget> targets;
@@ -365,38 +358,7 @@ namespace SparkleLauncher
 				appendExistingTarget(
 				    pack.displayName + " level content",
 				    pack.extractionPath,
-				    mode == LevelCleanMode::PurgeWithoutConfirmation
-				        ? QStringLiteral("Extracted level content created by the canceled sync.")
-				        : QStringLiteral("Extracted level content. The cached source archive is preserved for fast re-sync."));
-
-				if (mode == LevelCleanMode::PurgeWithoutConfirmation)
-				{
-					const std::filesystem::path stagingRoot = pack.extractionPath.string() + ".sparkle-staging-" + pack.id;
-					const std::filesystem::path backupRoot = pack.extractionPath.string() + ".sparkle-backup-" + pack.id;
-					appendExistingTarget(
-					    pack.displayName + " partial staging",
-					    stagingRoot,
-					    QStringLiteral("Partial extraction from the canceled sync."));
-					appendExistingTarget(
-					    pack.displayName + " sync backup",
-					    backupRoot,
-					    QStringLiteral("Temporary publication backup from the canceled sync."));
-
-					if (pack.downloadSupported)
-					{
-						const std::filesystem::path cacheRoot =
-						    GetLauncherStateDirectory(m_repositoryRoot) / "ContentArchives" / content.Id.toStdString();
-						const std::filesystem::path archivePath = cacheRoot / pack.archiveName;
-						appendExistingTarget(
-						    pack.displayName + " cached archive",
-						    archivePath,
-						    QStringLiteral("Cached archive from the canceled sync."));
-						appendExistingTarget(
-						    pack.displayName + " partial archive",
-						    archivePath.string() + ".partial",
-						    QStringLiteral("Incomplete archive download from the canceled sync."));
-					}
-				}
+				    QStringLiteral("Extracted level content. The cached source archive is preserved for fast re-sync."));
 			}
 
 			self(self, pack.parentPackId);
@@ -430,7 +392,6 @@ namespace SparkleLauncher
 		const QString syncKey = LevelSyncKey(content.Id, level.Id);
 		if (m_levelSyncRunIds.contains(syncKey))
 		{
-			CancelLevelSync(content, level);
 			return;
 		}
 
@@ -449,39 +410,13 @@ namespace SparkleLauncher
 		RefreshLevelActionButtons();
 	}
 
-	void LauncherMainWindow::CancelLevelSync(const LauncherContentSummary& content, const LauncherLevelUiEntry& level)
-	{
-		const QString runId = m_levelSyncRunIds.value(LevelSyncKey(content.Id, level.Id));
-		if (runId.isEmpty() || m_pendingLevelCancellations.contains(runId))
-		{
-			return;
-		}
-
-		m_pendingLevelCancellations.insert(runId, {content.RootPath, content.Id, level.Id, level.DisplayName});
-		AppendRunOutput(runId, QStringLiteral("\nCancel requested. Stopping sync before removing partial content.\n"));
-		m_backend.CancelOperation(runId);
-		RefreshLevelActionButtons();
-	}
-
-	void LauncherMainWindow::CleanCanceledLevelSync(const PendingLevelCancellation& cancellation)
-	{
-		LauncherContentSummary content;
-		content.Id = cancellation.ContentId;
-		content.DisplayName = cancellation.ContentId;
-		content.RootPath = cancellation.ContentRoot;
-		LauncherLevelUiEntry level;
-		level.Id = cancellation.LevelId;
-		level.DisplayName = cancellation.LevelDisplayName;
-		CleanLevel(content, level, LevelCleanMode::PurgeWithoutConfirmation);
-	}
-
-	void LauncherMainWindow::CleanLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level, LevelCleanMode mode)
+	void LauncherMainWindow::CleanLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level)
 	{
 		const std::vector<std::string> levelIds{level.Id.toStdString()};
 		QVector<LauncherCleanTarget> targets;
 		try
 		{
-			targets = BuildLevelCleanTargets(content, level.Id, mode);
+			targets = BuildLevelCleanTargets(content, level.Id);
 		}
 		catch (const std::exception& error)
 		{
@@ -503,8 +438,7 @@ namespace SparkleLauncher
 		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("workspace.clean"));
 		request.ContentId = content.Id;
 		request.CleanTargets = targets;
-		request.ConfirmClean = mode == LevelCleanMode::PurgeWithoutConfirmation;
-		if (mode == LevelCleanMode::PreserveArchiveWithConfirmation && !ConfirmRunRequest(request))
+		if (!ConfirmRunRequest(request))
 		{
 			return;
 		}

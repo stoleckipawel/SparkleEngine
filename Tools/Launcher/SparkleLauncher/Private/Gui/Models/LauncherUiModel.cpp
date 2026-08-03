@@ -111,7 +111,7 @@ namespace SparkleLauncher
 			return MakeOperationUiModel(
 			    operationId,
 			    "Sync Code",
-			    "Sync",
+			    "Sync All",
 			    LauncherWorkflowPageKind::Sync,
 			    LauncherActionImpactKind::SourceDependencies,
 			    "Downloads and repairs enabled repository dependencies, then refreshes workspace configure state; it does not install host "
@@ -277,21 +277,6 @@ namespace SparkleLauncher
 			    "Refreshes cooked scene outputs for selected catalog levels.",
 			    "workflow-cook-assets.png");
 		}
-		if (operationId == "package.release")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Assemble Release Package",
-			    "Assemble",
-			    LauncherWorkflowPageKind::Package,
-			    LauncherActionImpactKind::PackageOutputs,
-			    "Package outputs: assembles runtime and symbols packages from artifacts into dist/releases/<version>; publishing and "
-			    "release sign-off stay separate.",
-			    "Release assembly",
-			    "Stages runtime app components, cooked shader packages, and separate symbols output; publishing remains a separate "
-			    "sign-off.",
-			    "workflow-package-release.png");
-		}
 		if (operationId == "workspace.clean")
 		{
 			return MakeOperationUiModel(
@@ -350,8 +335,6 @@ namespace SparkleLauncher
 				return "Build";
 			case LauncherWorkflowPageKind::Cook:
 				return "Cook";
-			case LauncherWorkflowPageKind::Package:
-				return "Package";
 			case LauncherWorkflowPageKind::Clean:
 				return "Clean";
 			case LauncherWorkflowPageKind::Unknown:
@@ -380,8 +363,6 @@ namespace SparkleLauncher
 				return "Cooked outputs";
 			case LauncherActionImpactKind::LaunchProcess:
 				return "Launch process";
-			case LauncherActionImpactKind::PackageOutputs:
-				return "Package outputs";
 			case LauncherActionImpactKind::GeneratedState:
 				return "Generated state";
 		}

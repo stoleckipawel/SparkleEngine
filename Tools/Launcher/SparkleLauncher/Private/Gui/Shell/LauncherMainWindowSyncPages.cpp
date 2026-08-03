@@ -36,6 +36,7 @@
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QTextEdit>
@@ -61,17 +62,118 @@ namespace SparkleLauncher
 			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
 			{
 				const ThirdPartyDependencyUiStatus status = BuildThirdPartyDependencyStatus(dependency, group, dependencyCachePath);
+				const QString runId = m_sourceDependencyRunIds.value(dependency.Id);
+				const bool syncing = !runId.isEmpty() && !m_cleaningSourceDependencyRunIds.contains(runId);
 				AddStatusRow(
 				    layout,
 				    dependency.Label,
-				    status.Text,
+				    syncing ? QStringLiteral("Syncing") : status.Text,
 				    status.Detail,
-				    status.State,
-				    group.Enabled
-				        ? CreateActionDependencyActions("workspace.sync-source-tiers", "Sync Code", "deps", "Clean Source Dependency Cache")
-				        : CreateDisabledSourceDependencyActions(group));
+				    syncing ? QStringLiteral("running") : status.State,
+				    CreateSourceDependencyActionButton(dependency, group, status));
 			}
 		}
+	}
+
+	QPushButton* LauncherMainWindow::CreateSourceDependencyActionButton(
+	    const ThirdPartyDependencyUiEntry& dependency,
+	    const DependencyGroupUiEntry& group,
+	    const ThirdPartyDependencyUiStatus& status)
+	{
+		QPushButton* button = new QPushButton(this);
+		const QString runId = m_sourceDependencyRunIds.value(dependency.Id);
+		const bool cleaning = !runId.isEmpty() && m_cleaningSourceDependencyRunIds.contains(runId);
+		const SyncItemState state = !runId.isEmpty() && !cleaning ? SyncItemState::Syncing
+		    : status.Synced                                          ? SyncItemState::Synced
+		                                                             : SyncItemState::Missing;
+		ApplySyncActionButtonState(*button, state, dependency.Label);
+		if (cleaning)
+		{
+			button->setText("Cleaning...");
+			button->setEnabled(false);
+			button->setAccessibleName("Cleaning " + dependency.Label);
+			button->setToolTip("Clean is in progress.");
+		}
+		RegisterFocusable(button);
+		connect(
+		    button,
+		    &QPushButton::clicked,
+		    this,
+		    [this, dependency, group, synced = status.Synced]()
+		    {
+			    if (synced)
+			    {
+				    CleanSourceDependency(dependency);
+			    }
+			    else
+			    {
+				    SyncSourceDependency(group);
+			    }
+		    });
+		return button;
+	}
+
+	void LauncherMainWindow::SyncSourceDependency(const DependencyGroupUiEntry& group)
+	{
+		LauncherOperationRequest request =
+		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, "workspace.sync-source-tiers");
+		request.SourceDependencyGroupId = group.Id;
+		request.SourceDependencyConfigureOption = group.ConfigureOption;
+		StartOperation(std::move(request), "Sync " + group.Label);
+	}
+
+	void LauncherMainWindow::CleanSourceDependency(const ThirdPartyDependencyUiEntry& dependency)
+	{
+		const SourceDependencyEntry* sourceDependency = FindSourceDependency(dependency.Id.toStdString());
+		if (sourceDependency == nullptr)
+		{
+			return;
+		}
+
+		LauncherOperationRequest request =
+		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, "workspace.clean");
+		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
+		for (const std::filesystem::path& path : GetSourceDependencyCachePaths(*sourceDependency, dependencyCachePath))
+		{
+			std::error_code errorCode;
+			if (!std::filesystem::exists(path, errorCode) || errorCode)
+			{
+				continue;
+			}
+			request.CleanTargets.push_back(
+			    {dependency.Label + " cache", QString::fromStdString(path.string()), "Generated source dependency cache."});
+		}
+		if (request.CleanTargets.empty() || !ConfirmRunRequest(request))
+		{
+			return;
+		}
+
+		const QString runId = StartOperation(std::move(request), "Clean " + dependency.Label);
+		m_sourceDependencyRunIds.insert(dependency.Id, runId);
+		m_cleaningSourceDependencyRunIds.insert(runId);
+		ScheduleUiRefresh(false);
+	}
+
+	void LauncherMainWindow::TrackSourceDependencyRun(const LauncherOperationRequest& request, const QString& runId)
+	{
+		if (request.OperationId != "workspace.sync-source-tiers")
+		{
+			return;
+		}
+
+		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
+		{
+			if ((!request.SourceDependencyGroupId.isEmpty() && group.Id != request.SourceDependencyGroupId)
+			    || (request.SourceDependencyGroupId.isEmpty() && !group.Enabled))
+			{
+				continue;
+			}
+			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
+			{
+				m_sourceDependencyRunIds.insert(dependency.Id, runId);
+			}
+		}
+		ScheduleUiRefresh(false);
 	}
 
 	QComboBox* LauncherMainWindow::CreateStartupLevelCombo()

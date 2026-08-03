@@ -64,6 +64,7 @@ namespace SparkleLauncher
 			        + extra);
 			addRule(selector + "[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
 			addRule(selector + "[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
+			addRule(selector + "[State=\"running\"]", "color: #d8c996; border-color: #736438; background: #3c351f;");
 			addRule(selector + "[State=\"bad\"]", "color: #ffd0cc; border-color: #79413d; background: #3a2928;");
 			addRule(selector + "[State=\"neutral\"]", "color: " + textSecondary + "; border-color: #4c5149; background: #2b2f2a;");
 		};
@@ -200,6 +201,7 @@ namespace SparkleLauncher
 		    "background: #1d201d; border: none; border-top: 1px solid " + divider + "; padding: 10px 10px 10px 10px; margin-top: 0;");
 		addRule("#StatusLabel", "color: " + textBody + "; font-size: 8.75pt; font-weight: 750;");
 		addStateChipRules("#StatusValue", " font-size: 7.75pt; font-weight: 850; min-width: 58px;");
+		addStateChipRules("#SyncStateValue", " font-size: 7.75pt; font-weight: 850; min-width: 64px;");
 		addRule("#StatusActionCell", "background: transparent; border: none;");
 		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8pt;");
 		addRule("#MapCatalogCard", "background: #2b2e32; border: 1px solid #3c4147; border-radius: 2px;");
@@ -216,15 +218,15 @@ namespace SparkleLauncher
 		    "background: transparent; color: " + textSecondary
 		        + "; border: 1px solid #555c64; min-height: 28px; padding: 4px 11px; font-size: 8pt; font-weight: 700;");
 		addRule("#MapCardSourceButton:hover", "background: #343a34; color: #ffffff; border-color: #697866;");
-		addRule("#MapCardActionButton", "min-width: 126px; min-height: 34px; padding: 6px 20px; font-size: 9pt; font-weight: 900;");
-		addRule("#MapCardActionButton[ActionState=\"sync\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
-		addRule("#MapCardActionButton[ActionState=\"sync\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");
-		addRule("#MapCardActionButton[ActionState=\"clean\"]", "background: #30362e; color: " + textBody + "; border: 1px solid #66715f;");
-		addRule("#MapCardActionButton[ActionState=\"clean\"]:hover", "background: #3a4237; border-color: #83917a;");
-		addRule("#MapCardActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
+		addRule("#SyncActionButton", "padding: 2px 8px; font-size: 8pt; font-weight: 850;");
+		addRule("#SyncActionButton[ActionState=\"warning\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
+		addRule("#SyncActionButton[ActionState=\"warning\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");
+		addRule("#SyncActionButton[ActionState=\"ok\"]", "background: #30362e; color: " + textBody + "; border: 1px solid #66715f;");
+		addRule("#SyncActionButton[ActionState=\"ok\"]:hover", "background: #3a4237; border-color: #83917a;");
 		addRule(
-		    "#MapCardActionButton[ActionState=\"sync\"]:disabled",
-		    "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
+		    "#SyncActionButton[ActionState=\"running\"]",
+		    "background: #3c351f; color: #d8c996; border: 1px solid #736438;");
+		addRule("#SyncActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
 		addRule("#OptionsScrollArea #MapCatalogCard", "background: #2b2e32; border: 1px solid #3c4147;");
 		addRule("#OptionsScrollArea #MapCardBody", "background: #2b2e32; border: none;");
 		addRule("#OptionsScrollArea #MapCardTitle", "background: " + selection + "; color: #f4f7f1; padding: 4px 7px;");

@@ -134,7 +134,7 @@ Source = Levels/LPSHead.level
 Thumbnail = Launcher/Thumbnails/LPSHead.jpg
 SourcePage = https://casual-effects.com/g3d/data10/index.html
 AssetPack = LPSHead
-Selected = false
+Selected = true
 
 [Level]
 Id = CornellBox

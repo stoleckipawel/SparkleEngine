@@ -128,9 +128,6 @@ namespace SparkleLauncher
 				    GetArtifactDirectory(plan.RepositoryRoot),
 				    "Generated runnable artifacts, diagnostics, libraries, symbols, and cooked outputs.");
 				return;
-			case CleanScope::PackageOutputs:
-				AddCleanTarget(plan, "Package outputs", plan.RepositoryRoot / "dist", "Assembled package layouts and release archives.");
-				return;
 			case CleanScope::WorkspaceState:
 				AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
 				AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
@@ -172,7 +169,6 @@ namespace SparkleLauncher
 				    "Development artifacts",
 				    GetArtifactDirectory(plan.RepositoryRoot),
 				    "Generated runnable artifacts, diagnostics, libraries, symbols, and cooked outputs.");
-				AddCleanTarget(plan, "Package outputs", plan.RepositoryRoot / "dist", "Assembled package layouts and release archives.");
 				AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
 				AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
 				AddCleanTarget(plan, "Rider workspace state", plan.RepositoryRoot / ".idea", ".idea directory.");
@@ -250,8 +246,6 @@ namespace SparkleLauncher
 				return OperationDestructiveScope::BuildTree;
 			case CleanScope::ArtifactOutputs:
 				return OperationDestructiveScope::ArtifactOutputs;
-			case CleanScope::PackageOutputs:
-				return OperationDestructiveScope::PackageOutputs;
 			case CleanScope::WorkspaceState:
 				return OperationDestructiveScope::WorkspaceState;
 			case CleanScope::ShaderCache:
@@ -308,8 +302,6 @@ namespace SparkleLauncher
 				return "build-tree";
 			case CleanScope::ArtifactOutputs:
 				return "artifact-outputs";
-			case CleanScope::PackageOutputs:
-				return "package-outputs";
 			case CleanScope::WorkspaceState:
 				return "workspace-state";
 			case CleanScope::ShaderCache:

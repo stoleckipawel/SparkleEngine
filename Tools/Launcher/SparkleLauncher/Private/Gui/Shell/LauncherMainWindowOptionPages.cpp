@@ -74,12 +74,6 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (operationId == "package.release")
-		{
-			AddPackageOptions(layout);
-			return;
-		}
-
 		if (operationId == "cook.shaders")
 		{
 			AddShaderCookOptions(layout);
@@ -120,23 +114,6 @@ namespace SparkleLauncher
 		}
 
 		AddNoOptionsMessage(layout, "No settings");
-	}
-
-	void LauncherMainWindow::AddPackageOptions(QVBoxLayout& layout)
-	{
-		QVBoxLayout* packageLayout = AddOptionGroup(
-		    layout,
-		    "Package Assembly",
-		    "Assemble a release package layout while keeping final validation and publishing sign-off separate.");
-
-		AddStatusRow(
-		    *packageLayout,
-		    "Release package",
-		    "Assembly target",
-		    "Build the sparkle_release_assembly CMake target to assemble the launcher, editor/runtime app components, "
-		    "cooked shader packages, package-root marker, license, and separate symbols package under "
-		    "dist/releases/<version>.",
-		    "neutral");
 	}
 
 	void LauncherMainWindow::AddShaderCookOptions(QVBoxLayout& layout)
@@ -199,7 +176,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddCleanOptions(QVBoxLayout& layout, const QString&)
 	{
-		const std::array<CleanScopeUiOption, 8> cleanScopes{{
+		const std::array<CleanScopeUiOption, 7> cleanScopes{{
 		    {"Cooked content", "cooked", "Remove generated cooked assets for this workspace.", QString(), "Content outputs"},
 		    {"Build workspace",
 		        "build-tree",
@@ -211,7 +188,6 @@ namespace SparkleLauncher
 		        "Remove executables, libraries, symbols, diagnostics, and all cooked content.",
 		        QString(),
 		        "Build outputs"},
-		    {"Packaged outputs", "packages", "Remove assembled releases and package archives.", "dist", "Build outputs"},
 		    {"IDE and workspace state",
 		        "workspace-state",
 		        "Reset local Visual Studio, Rider, VS Code, and ImGui workspace state.",

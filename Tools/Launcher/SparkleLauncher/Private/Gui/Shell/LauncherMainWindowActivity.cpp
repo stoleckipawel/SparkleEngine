@@ -87,16 +87,11 @@ namespace SparkleLauncher
 	    const QString& statusText,
 	    int exitCode)
 	{
-		const bool cancellationRequested = m_pendingLevelCancellations.contains(runId);
-		const bool succeeded = exitCode == 0 && !cancellationRequested;
+		const bool succeeded = exitCode == 0;
 		const QString effectiveTitle = m_runTitles.value(runId, title);
-		SetRunState(runId, cancellationRequested ? RunState::Canceled : (succeeded ? RunState::Done : RunState::Failed), effectiveTitle);
+		SetRunState(runId, succeeded ? RunState::Done : RunState::Failed, effectiveTitle);
 
-		if (cancellationRequested)
-		{
-			AppendRunOutput(runId, "\n" + effectiveTitle + " canceled. Removing partial content now.\n");
-		}
-		else if (succeeded)
+		if (succeeded)
 		{
 			AppendRunOutput(runId, "\n" + effectiveTitle + " finished: " + statusText + "\n");
 		}
@@ -119,6 +114,19 @@ namespace SparkleLauncher
 		SetActivityLogExpanded(true);
 		UpdateProgress();
 
+		for (auto dependencyRun = m_sourceDependencyRunIds.begin(); dependencyRun != m_sourceDependencyRunIds.end();)
+		{
+			if (dependencyRun.value() == runId)
+			{
+				dependencyRun = m_sourceDependencyRunIds.erase(dependencyRun);
+			}
+			else
+			{
+				++dependencyRun;
+			}
+		}
+		m_cleaningSourceDependencyRunIds.remove(runId);
+
 		for (auto levelSync = m_levelSyncRunIds.begin(); levelSync != m_levelSyncRunIds.end();)
 		{
 			if (levelSync.value() == runId)
@@ -130,8 +138,8 @@ namespace SparkleLauncher
 				++levelSync;
 			}
 		}
-		const bool refreshesLevelState = operationId == QStringLiteral("workspace.sync-levels")
-		    || m_pendingLevelSelectionUpdates.contains(runId) || cancellationRequested;
+		const bool refreshesLevelState =
+		    operationId == QStringLiteral("workspace.sync-levels") || m_pendingLevelSelectionUpdates.contains(runId);
 		if (m_pendingLevelSelectionUpdates.contains(runId))
 		{
 			const PendingLevelSelectionUpdate update = m_pendingLevelSelectionUpdates.take(runId);
@@ -149,12 +157,6 @@ namespace SparkleLauncher
 		else
 		{
 			ScheduleUiRefresh(true);
-		}
-
-		if (cancellationRequested)
-		{
-			const PendingLevelCancellation cancellation = m_pendingLevelCancellations.take(runId);
-			CleanCanceledLevelSync(cancellation);
 		}
 
 		if (succeeded && operationId == "launcher.build.self" && !m_pendingRestartRunIds.contains(runId))
