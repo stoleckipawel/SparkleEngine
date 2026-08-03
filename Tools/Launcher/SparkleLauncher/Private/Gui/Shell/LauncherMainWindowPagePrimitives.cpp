@@ -64,10 +64,13 @@ namespace SparkleLauncher
 	    const QString& status,
 	    const QString& detail,
 	    const QString& state,
-	    QWidget* accessory)
+	    QWidget* accessory,
+	    StatusRowPresentation presentation)
 	{
 		QFrame* row = new QFrame(this);
 		row->setObjectName("StatusRow");
+		const bool usesSyncAction = accessory != nullptr && accessory->objectName() == QStringLiteral("SyncActionButton");
+		const bool usesInlineStatus = presentation == StatusRowPresentation::Inline;
 		QHBoxLayout* rowLayout = new QHBoxLayout(row);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
 		rowLayout->setSpacing(kSpaceMedium);
@@ -80,7 +83,27 @@ namespace SparkleLauncher
 		nameLabel->setObjectName("StatusLabel");
 		textLayout->addWidget(nameLabel);
 
-		if (!detail.isEmpty())
+		if (usesInlineStatus)
+		{
+			QHBoxLayout* metadataLayout = new QHBoxLayout();
+			metadataLayout->setContentsMargins(0, 0, 0, 0);
+			metadataLayout->setSpacing(kSpaceSmall);
+
+			QLabel* inlineStatusLabel = new QLabel(row);
+			ApplyInlineStatusLabel(*inlineStatusLabel, status, state);
+			inlineStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+			metadataLayout->addWidget(inlineStatusLabel, 0, Qt::AlignVCenter);
+
+			if (!detail.isEmpty())
+			{
+				QLabel* detailLabel = new QLabel(detail, row);
+				detailLabel->setObjectName("StatusDetail");
+				detailLabel->setWordWrap(true);
+				metadataLayout->addWidget(detailLabel, 1, Qt::AlignVCenter);
+			}
+			textLayout->addLayout(metadataLayout);
+		}
+		else if (!detail.isEmpty())
 		{
 			QLabel* detailLabel = new QLabel(detail, row);
 			detailLabel->setObjectName("StatusDetail");
@@ -90,30 +113,31 @@ namespace SparkleLauncher
 
 		rowLayout->addLayout(textLayout, 1);
 
-		QLabel* statusLabel = new QLabel(status, row);
-		statusLabel->setObjectName("StatusValue");
-		statusLabel->setProperty("State", state);
-		const bool usesSyncAction = accessory != nullptr && accessory->objectName() == QStringLiteral("SyncActionButton");
-		statusLabel->setFixedWidth(usesSyncAction ? LauncherUi::Row::SyncStatusWidth : kStatusChipColumnWidth);
-		statusLabel->setAlignment(Qt::AlignCenter);
-		rowLayout->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignTop);
+		if (!usesInlineStatus)
+		{
+			QLabel* statusLabel = new QLabel(status, row);
+			statusLabel->setObjectName("StatusValue");
+			statusLabel->setProperty("State", state);
+			statusLabel->setFixedWidth(accessory == nullptr ? LauncherUi::Row::SyncActionWidth : kStatusChipColumnWidth);
+			statusLabel->setAlignment(Qt::AlignCenter);
+			rowLayout->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignVCenter);
+		}
 
-		QWidget* actionCell = new QWidget(row);
-		actionCell->setObjectName("StatusActionCell");
-		const int actionWidth = usesSyncAction ? LauncherUi::Row::SyncActionWidth
-		    : accessory != nullptr              ? std::max(kStatusActionColumnWidth, accessory->sizeHint().width())
-		                                        : kStatusActionColumnWidth;
-		actionCell->setFixedWidth(actionWidth);
-		QHBoxLayout* actionCellLayout = new QHBoxLayout(actionCell);
-		actionCellLayout->setContentsMargins(0, 0, 0, 0);
-		actionCellLayout->setSpacing(0);
-		actionCellLayout->setAlignment(Qt::AlignCenter | Qt::AlignTop);
 		if (accessory != nullptr)
 		{
+			QWidget* actionCell = new QWidget(row);
+			actionCell->setObjectName("StatusActionCell");
+			const int actionWidth =
+			    usesSyncAction ? LauncherUi::Row::SyncActionWidth : std::max(kStatusActionColumnWidth, accessory->sizeHint().width());
+			actionCell->setFixedWidth(actionWidth);
+			QHBoxLayout* actionCellLayout = new QHBoxLayout(actionCell);
+			actionCellLayout->setContentsMargins(0, 0, 0, 0);
+			actionCellLayout->setSpacing(0);
+			actionCellLayout->setAlignment(Qt::AlignCenter);
 			accessory->setParent(actionCell);
-			actionCellLayout->addWidget(accessory, 0, Qt::AlignCenter | Qt::AlignTop);
+			actionCellLayout->addWidget(accessory, 0, Qt::AlignCenter);
+			rowLayout->addWidget(actionCell, 0, Qt::AlignRight | Qt::AlignVCenter);
 		}
-		rowLayout->addWidget(actionCell, 0, Qt::AlignRight | Qt::AlignTop);
 
 		layout.addWidget(row);
 	}

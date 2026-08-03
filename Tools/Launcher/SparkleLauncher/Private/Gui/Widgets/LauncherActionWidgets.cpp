@@ -98,13 +98,19 @@ namespace SparkleLauncher
 		return "warning";
 	}
 
-	void ApplySyncStateLabel(QLabel& label, SyncItemState state)
+	void ApplyInlineStatusLabel(QLabel& label, const QString& text, const QString& state)
 	{
-		label.setFixedWidth(LauncherUi::Row::SyncStatusWidth);
-		label.setText(SyncItemStateText(state));
-		label.setProperty("State", SyncItemStateStyle(state));
+		label.setObjectName("InlineStatusValue");
+		label.setFixedWidth(LauncherUi::Row::InlineStatusWidth);
+		label.setText(QStringLiteral("● %1").arg(text));
+		label.setProperty("State", state);
 		label.style()->unpolish(&label);
 		label.style()->polish(&label);
+	}
+
+	void ApplySyncStateLabel(QLabel& label, SyncItemState state)
+	{
+		ApplyInlineStatusLabel(label, SyncItemStateText(state), SyncItemStateStyle(state));
 	}
 
 	void ApplySyncActionButtonState(QPushButton& button, SyncItemState state, const QString& displayName)

@@ -153,11 +153,19 @@ namespace SparkleLauncher
 		description->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 		bodyLayout->addWidget(description, 1);
 
+		QHBoxLayout* metadata = new QHBoxLayout();
+		metadata->setContentsMargins(2, 0, 2, 0);
+		metadata->setSpacing(8);
+		QLabel* statusLabel = new QLabel(body);
+		statusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+		metadata->addWidget(statusLabel, 0, Qt::AlignVCenter);
+
 		QLabel* detail = new QLabel(level.Detail, body);
 		detail->setObjectName("MapCardMeta");
 		detail->setTextInteractionFlags(Qt::TextSelectableByMouse);
 		detail->setToolTip(level.Detail);
-		bodyLayout->addWidget(detail);
+		metadata->addWidget(detail, 1, Qt::AlignVCenter);
+		bodyLayout->addLayout(metadata);
 
 		QHBoxLayout* actions = new QHBoxLayout();
 		actions->setContentsMargins(0, 0, 0, 0);
@@ -167,6 +175,7 @@ namespace SparkleLauncher
 		{
 			QPushButton* sourceButton = new QPushButton(QStringLiteral("Source"), body);
 			sourceButton->setObjectName("MapCardSourceButton");
+			sourceButton->setFixedSize(LauncherUi::Row::SyncActionWidth, LauncherUi::Row::SyncActionHeight);
 			sourceButton->setToolTip(QStringLiteral("Open the publisher's preview and download page."));
 			RegisterFocusable(sourceButton);
 			connect(
@@ -178,11 +187,6 @@ namespace SparkleLauncher
 		}
 
 		actions->addStretch(1);
-		QLabel* statusLabel = new QLabel(body);
-		statusLabel->setObjectName("SyncStateValue");
-		statusLabel->setAlignment(Qt::AlignCenter);
-		actions->addWidget(statusLabel);
-
 		QPushButton* actionButton = new QPushButton(body);
 		ApplyLevelActionButtonState(*statusLabel, *actionButton, level);
 		m_levelStatusLabels.insert(level.Id, statusLabel);

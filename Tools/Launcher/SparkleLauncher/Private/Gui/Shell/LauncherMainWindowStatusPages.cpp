@@ -220,7 +220,9 @@ namespace SparkleLauncher
 					        + (!isSourceSyncWorkflow && !item.Required ? QStringLiteral(" (optional)") : QString()),
 					    ToolchainStatusText(item.State, item.Required),
 					    CompactToolchainDetail(item),
-					    ToolchainStatusState(item.State, item.Required));
+					    ToolchainStatusState(item.State, item.Required),
+					    nullptr,
+					    isSourceSyncWorkflow ? StatusRowPresentation::Inline : StatusRowPresentation::Badge);
 				}
 			};
 			addToolchainItems(true);
@@ -234,11 +236,20 @@ namespace SparkleLauncher
 			        : (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready."
 			                                              : QString::fromStdString(plan.Freshness.SolutionPath.string())),
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok")
-			                                                : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
+			                                                : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"),
+			    nullptr,
+			    isSourceSyncWorkflow ? StatusRowPresentation::Inline : StatusRowPresentation::Badge);
 
 			if (!plan.Toolchain.RequiredToolsAvailable)
 			{
-				AddStatusRow(*machineLayout, "Action needed", "Blocked", RequiredToolProblemSummary(plan.Toolchain), "bad");
+				AddStatusRow(
+				    *machineLayout,
+				    "Action needed",
+				    "Blocked",
+				    RequiredToolProblemSummary(plan.Toolchain),
+				    "bad",
+				    nullptr,
+				    isSourceSyncWorkflow ? StatusRowPresentation::Inline : StatusRowPresentation::Badge);
 			}
 			else if (!plan.CanRun && !configurePrerequisiteDetail.isEmpty())
 			{
@@ -247,7 +258,9 @@ namespace SparkleLauncher
 				    isSourceSyncWorkflow ? "Missing host prerequisite" : "Renderer prerequisites",
 				    "Blocked",
 				    configurePrerequisiteDetail,
-				    "bad");
+				    "bad",
+				    nullptr,
+				    isSourceSyncWorkflow ? StatusRowPresentation::Inline : StatusRowPresentation::Badge);
 			}
 			if (operationId == "workspace.sync-source-tiers")
 			{

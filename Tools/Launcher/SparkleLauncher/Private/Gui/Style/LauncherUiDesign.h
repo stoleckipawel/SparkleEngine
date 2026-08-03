@@ -95,7 +95,7 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int FieldLabelWidth = 132;
 		inline constexpr int StatusChipColumnWidth = 118;
 		inline constexpr int StatusActionColumnWidth = 28;
-		inline constexpr int SyncStatusWidth = 76;
+		inline constexpr int InlineStatusWidth = 76;
 		inline constexpr int SyncActionWidth = 84;
 		inline constexpr int SyncActionHeight = 26;
 	}

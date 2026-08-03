@@ -201,7 +201,12 @@ namespace SparkleLauncher
 		    "background: #1d201d; border: none; border-top: 1px solid " + divider + "; padding: 10px 10px 10px 10px; margin-top: 0;");
 		addRule("#StatusLabel", "color: " + textBody + "; font-size: 8.75pt; font-weight: 750;");
 		addStateChipRules("#StatusValue", " font-size: 7.75pt; font-weight: 850; min-width: 58px;");
-		addStateChipRules("#SyncStateValue", " font-size: 7.75pt; font-weight: 850; min-width: 64px;");
+		addRule("#InlineStatusValue", "background: transparent; border: none; padding: 0; font-size: 7.75pt; font-weight: 800;");
+		addRule("#InlineStatusValue[State=\"ok\"]", "color: #9bcf68;");
+		addRule("#InlineStatusValue[State=\"warning\"]", "color: #e3b95f;");
+		addRule("#InlineStatusValue[State=\"running\"]", "color: #d8c996;");
+		addRule("#InlineStatusValue[State=\"neutral\"]", "color: " + textSecondary + ";");
+		addRule("#InlineStatusValue[State=\"bad\"]", "color: #ef8f86;");
 		addRule("#StatusActionCell", "background: transparent; border: none;");
 		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8pt;");
 		addRule("#MapCatalogCard", "background: #2b2e32; border: 1px solid #3c4147; border-radius: 2px;");
@@ -216,13 +221,13 @@ namespace SparkleLauncher
 		addRule(
 		    "#MapCardSourceButton",
 		    "background: transparent; color: " + textSecondary
-		        + "; border: 1px solid #555c64; min-height: 28px; padding: 4px 11px; font-size: 8pt; font-weight: 700;");
+		        + "; border: 1px solid #555c64; padding: 2px 8px; font-size: 8pt; font-weight: 700;");
 		addRule("#MapCardSourceButton:hover", "background: #343a34; color: #ffffff; border-color: #697866;");
 		addRule("#SyncActionButton", "padding: 2px 8px; font-size: 8pt; font-weight: 850;");
 		addRule("#SyncActionButton[ActionState=\"warning\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
 		addRule("#SyncActionButton[ActionState=\"warning\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");
-		addRule("#SyncActionButton[ActionState=\"ok\"]", "background: #30362e; color: " + textBody + "; border: 1px solid #66715f;");
-		addRule("#SyncActionButton[ActionState=\"ok\"]:hover", "background: #3a4237; border-color: #83917a;");
+		addRule("#SyncActionButton[ActionState=\"ok\"]", "background: transparent; color: " + textSecondary + "; border: 1px solid #515950;");
+		addRule("#SyncActionButton[ActionState=\"ok\"]:hover", "background: #30362e; color: " + textBody + "; border-color: #71806c;");
 		addRule(
 		    "#SyncActionButton[ActionState=\"running\"]",
 		    "background: #3c351f; color: #d8c996; border: 1px solid #736438;");

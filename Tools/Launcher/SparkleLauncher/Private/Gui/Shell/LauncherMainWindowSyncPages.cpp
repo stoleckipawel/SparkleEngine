@@ -70,7 +70,8 @@ namespace SparkleLauncher
 				    syncing ? QStringLiteral("Syncing") : status.Text,
 				    status.Detail,
 				    syncing ? QStringLiteral("running") : status.State,
-				    CreateSourceDependencyActionButton(dependency, group, status));
+				    CreateSourceDependencyActionButton(dependency, group, status),
+				    StatusRowPresentation::Inline);
 			}
 		}
 	}

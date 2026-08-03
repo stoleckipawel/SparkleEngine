@@ -48,6 +48,11 @@ namespace SparkleLauncher
 	struct LauncherContentSummary;
 	struct LauncherStartupLevelUiEntry;
 	enum class LauncherArtworkPreset;
+	enum class StatusRowPresentation
+	{
+		Badge,
+		Inline,
+	};
 
 	class LauncherMainWindow final : public QMainWindow
 	{
@@ -162,7 +167,8 @@ namespace SparkleLauncher
 		    const QString& status,
 		    const QString& detail,
 		    const QString& state,
-		    QWidget* accessory = nullptr);
+		    QWidget* accessory = nullptr,
+		    StatusRowPresentation presentation = StatusRowPresentation::Badge);
 		void AddSyncDependencies(QVBoxLayout& layout, bool optional);
 		QPushButton* CreateSourceDependencyActionButton(
 		    const ThirdPartyDependencyUiEntry& dependency,
