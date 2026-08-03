@@ -144,7 +144,7 @@ Source = Levels/CornellBox.level
 Thumbnail = Launcher/Thumbnails/CornellBox.png
 SourcePage = https://casual-effects.com/g3d/data10/index.html
 AssetPack = CornellBox
-Selected = false
+Selected = true
 
 [Level]
 Id = DiffuseTransmissionPlant

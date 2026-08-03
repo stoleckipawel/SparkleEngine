@@ -8,12 +8,12 @@ namespace SparkleLauncher
 	{
 		switch (state)
 		{
-		case ToolchainItemState::Found:
-			return "ok";
-		case ToolchainItemState::Warning:
-			return required ? "warning" : "neutral";
-		case ToolchainItemState::Missing:
-			return required ? "bad" : "neutral";
+			case ToolchainItemState::Found:
+				return "ok";
+			case ToolchainItemState::Warning:
+				return required ? "warning" : "neutral";
+			case ToolchainItemState::Missing:
+				return required ? "bad" : "neutral";
 		}
 		return "neutral";
 	}
@@ -22,23 +22,25 @@ namespace SparkleLauncher
 	{
 		switch (state)
 		{
-		case ToolchainItemState::Found:
-			return "Ready";
-		case ToolchainItemState::Warning:
-			return required ? "Warning" : "Optional";
-		case ToolchainItemState::Missing:
-			return required ? "Missing" : "Optional";
+			case ToolchainItemState::Found:
+				return "Ready";
+			case ToolchainItemState::Warning:
+				return required ? "Warning" : "Optional";
+			case ToolchainItemState::Missing:
+				return required ? "Missing" : "Optional";
 		}
 		return "Unknown";
 	}
 
 	QString BuildGeneratorSummary(const BuildToolchainStatus& toolchain)
 	{
-		return QStringLiteral("Generator: %1 | Platform: %2%3%4")
+		return QStringLiteral("%1 · %2%3%4")
 		    .arg(QString::fromStdString(toolchain.Generator))
 		    .arg(QString::fromStdString(toolchain.Platform))
-		    .arg(toolchain.Toolset.empty() ? QString() : QStringLiteral(" | Toolset: %1").arg(QString::fromStdString(toolchain.Toolset)))
-		    .arg(toolchain.QtRootPath.empty() ? QString() : QStringLiteral(" | Qt: %1").arg(QString::fromStdString(toolchain.QtRootPath.string())));
+		    .arg(toolchain.Toolset.empty() ? QString() : QStringLiteral(" · %1").arg(QString::fromStdString(toolchain.Toolset)))
+		    .arg(
+		        toolchain.QtRootPath.empty() ? QString()
+		                                     : QStringLiteral(" · Qt %1").arg(QString::fromStdString(toolchain.QtRootPath.string())));
 	}
 
 	QString RequiredToolProblemSummary(const BuildToolchainStatus& toolchain)

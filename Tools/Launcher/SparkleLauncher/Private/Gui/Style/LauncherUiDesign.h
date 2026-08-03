@@ -93,11 +93,10 @@ namespace SparkleLauncher::LauncherUi
 	namespace Row
 	{
 		inline constexpr int FieldLabelWidth = 132;
-		inline constexpr int StatusChipColumnWidth = 118;
-		inline constexpr int StatusActionColumnWidth = 28;
-		inline constexpr int InlineStatusWidth = 76;
-		inline constexpr int SyncActionWidth = 84;
-		inline constexpr int SyncActionHeight = 26;
+		inline constexpr int FieldValueWidth = 560;
+		inline constexpr int InlineStatusWidth = 88;
+		inline constexpr int StatusActionWidth = 84;
+		inline constexpr int StatusActionHeight = 26;
 	}
 
 	namespace Button
@@ -127,19 +126,6 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int MaxHeight = 118;
 	}
 
-	namespace Overflow
-	{
-		inline constexpr int IconExtent = 12;
-		inline constexpr int IconSize = 8;
-		inline constexpr int ButtonSize = 16;
-		inline constexpr qreal MenuFontPointSize = 8.0;
-		inline constexpr qreal DotRadius = 1.15;
-		inline constexpr qreal DotCenterX = IconExtent * 0.5;
-		inline constexpr qreal DotY1 = 2.5;
-		inline constexpr qreal DotY2 = 6.0;
-		inline constexpr qreal DotY3 = 9.5;
-	}
-
 	namespace OperationOutput
 	{
 		inline constexpr int MinHeight = 96;
@@ -159,13 +145,11 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int LabelHorizontalPadding = 10;
 		inline constexpr int ValueLeftPadding = 10;
 		inline constexpr int GroupSpacing = 4;
-		inline constexpr int DetailsTopMargin = 4;
-		inline constexpr int StatusDetailSpacing = 3;
+		inline constexpr int StatusDetailSpacing = 1;
 
 		inline const QMargins LabelMargins{LabelHorizontalPadding, 0, LabelHorizontalPadding, 0};
 		inline const QMargins ValueMargins{ValueLeftPadding, 0, 0, 0};
-		inline const QMargins GroupMargins{0, 8, 0, 8};
-		inline const QMargins DetailsMargins{0, DetailsTopMargin, 0, 0};
+		inline const QMargins GroupMargins{0, 6, 0, 6};
 	}
 
 	namespace WorkflowVisual

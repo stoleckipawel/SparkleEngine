@@ -175,7 +175,7 @@ namespace SparkleLauncher
 		{
 			QPushButton* sourceButton = new QPushButton(QStringLiteral("Source"), body);
 			sourceButton->setObjectName("MapCardSourceButton");
-			sourceButton->setFixedSize(LauncherUi::Row::SyncActionWidth, LauncherUi::Row::SyncActionHeight);
+			sourceButton->setFixedSize(LauncherUi::Row::StatusActionWidth, LauncherUi::Row::StatusActionHeight);
 			sourceButton->setToolTip(QStringLiteral("Open the publisher's preview and download page."));
 			RegisterFocusable(sourceButton);
 			connect(
@@ -211,10 +211,7 @@ namespace SparkleLauncher
 		grid.AddCard(card);
 	}
 
-	void LauncherMainWindow::ApplyLevelActionButtonState(
-	    QLabel& statusLabel,
-	    QPushButton& button,
-	    const LauncherLevelUiEntry& level)
+	void LauncherMainWindow::ApplyLevelActionButtonState(QLabel& statusLabel, QPushButton& button, const LauncherLevelUiEntry& level)
 	{
 		const QString syncRunId = m_levelSyncRunIds.value(LevelSyncKey(m_contentModel.ContentId(), level.Id));
 		if (!syncRunId.isEmpty())

@@ -38,7 +38,6 @@
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QTextEdit>
-#include <QtWidgets/QToolButton>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -49,14 +48,6 @@
 
 namespace SparkleLauncher
 {
-	static constexpr int kSpaceSmall = LauncherUi::Space::Small;
-	static constexpr int kSpaceMedium = LauncherUi::Space::Medium;
-	static constexpr int kFieldLabelWidth = LauncherUi::Row::FieldLabelWidth;
-	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
-	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
-	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
-	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
-
 	void LauncherMainWindow::AddHomeQuickStart(QVBoxLayout& layout)
 	{
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";

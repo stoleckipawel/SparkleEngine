@@ -47,11 +47,6 @@ namespace SparkleLauncher
 	struct LauncherContentSummary;
 	struct LauncherStartupLevelUiEntry;
 	enum class LauncherArtworkPreset;
-	enum class StatusRowPresentation
-	{
-		Badge,
-		Inline,
-	};
 
 	class LauncherMainWindow final : public QMainWindow
 	{
@@ -157,17 +152,14 @@ namespace SparkleLauncher
 		    QVector<QCheckBox*>& scopeBoxes);
 		void UpdateCleanScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary, QCheckBox* changedScope = nullptr);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
-		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
-		QVBoxLayout* AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded = false);
 		QLabel* AddStatusRow(
 		    QVBoxLayout& layout,
 		    const QString& label,
 		    const QString& status,
 		    const QString& detail,
 		    const QString& state,
-		    QWidget* accessory = nullptr,
-		    StatusRowPresentation presentation = StatusRowPresentation::Badge);
+		    QWidget* accessory = nullptr);
 		void AddSyncDependencies(QVBoxLayout& layout, bool optional);
 		QPushButton* CreateSourceDependencyActionButton(const ThirdPartyDependencyUiEntry& dependency);
 		void ApplySourceDependencyRowState(const ThirdPartyDependencyUiEntry& dependency, QLabel& statusLabel, QPushButton& button);
@@ -220,13 +212,11 @@ namespace SparkleLauncher
 		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
-		QWidget* CreateActionDependencyActions(
+		QPushButton* CreateStatusActionButton(
 		    const QString& actionId,
+		    const QString& actionLabel,
 		    const QString& actionTitle,
-		    const QString& cleanScope = QString(),
-		    const QString& cleanTitle = QString(),
 		    bool navigateInsteadOfRun = false);
-		void TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle);
 		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;

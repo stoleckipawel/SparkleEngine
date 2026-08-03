@@ -369,6 +369,7 @@ Launcher read:
 - The launcher is large enough to be judged as an application.
 - The launcher GUI owns one implicit repository content root. It does not expose project discovery or selection; the content model rejects ambiguous repositories instead of choosing among multiple roots.
 - `Sync Code` owns a flat dependency list: a row action populates only that dependency through an isolated CMake configure sharing `build/_deps`, while the page footer syncs the enabled code set. Neither path enables workspace features or acquires level content.
+- Operational `Build`, `Cook`, and `Launch` pages reuse the same flat readiness contract: inline status communicates current state, concise detail identifies the evidence, and a direct row action appears only when that prerequisite needs intervention. Their option forms use one bounded field grid rather than stretching controls across the workspace. Collapsed readiness panels, status badges, and overflow-only prerequisite actions are not part of the launcher interaction model.
 - It currently models dry-run plans, logs, dependency state, GUI status pages, operation catalogs, build/cook/launch/maintenance requests, and package assembly.
 - This is useful for productization, but it should not keep validation/report/debug scaffolding alive.
 - Preferred target: launcher as a small workflow shell for build, cook, run, clean, package if shipping, and source dependency sync if truly needed.

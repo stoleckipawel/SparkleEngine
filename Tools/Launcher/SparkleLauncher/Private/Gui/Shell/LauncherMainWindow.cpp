@@ -61,7 +61,6 @@
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QStyle>
-#include <QtWidgets/QToolButton>
 #include <QtWidgets/QWidget>
 #include <QtCore/QUrl>
 
@@ -96,8 +95,6 @@ namespace SparkleLauncher
 	static constexpr int kLauncherMinimumHeight = LauncherUi::Window::MinimumHeight;
 	static constexpr int kLauncherInitialWidth = LauncherUi::Window::InitialWidth;
 	static constexpr int kLauncherInitialHeight = LauncherUi::Window::InitialHeight;
-	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
-	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
 	static constexpr const char* kColorStateQueued = LauncherUi::Color::StateQueued;
 	static constexpr const char* kColorStateRunning = LauncherUi::Color::StateRunning;
 	static constexpr const char* kColorStateSuccess = LauncherUi::Color::StateSuccess;

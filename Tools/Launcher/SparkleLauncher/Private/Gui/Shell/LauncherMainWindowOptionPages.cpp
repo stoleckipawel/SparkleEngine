@@ -36,9 +36,7 @@
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QScrollArea>
-#include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QTextEdit>
-#include <QtWidgets/QToolButton>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -50,13 +48,7 @@
 
 namespace SparkleLauncher
 {
-	static constexpr int kSpaceSmall = LauncherUi::Space::Small;
-	static constexpr int kSpaceMedium = LauncherUi::Space::Medium;
 	static constexpr int kFieldLabelWidth = LauncherUi::Row::FieldLabelWidth;
-	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
-	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
-	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
-	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
 
 	bool LauncherMainWindow::UsesBuildEnvironmentStatus(const QString& operationId)
 	{
@@ -100,7 +92,7 @@ namespace SparkleLauncher
 
 		if (operationId == "launch.run")
 		{
-			AddLaunchTargetOptions(layout, "Launch", QString());
+			AddLaunchTargetOptions(layout, "Target", QString());
 			AddLaunchApplicationOptions(layout);
 			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
@@ -117,10 +109,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddShaderCookOptions(QVBoxLayout& layout)
 	{
-		QVBoxLayout* selectionLayout = AddOptionGroup(
-		    layout,
-		    "Options",
-		    "Shader cook target selection. Advanced cache, debug, and compiler controls are available below.");
+		QVBoxLayout* selectionLayout = AddOptionGroup(layout, "Options", "Choose the shader package, compiler, and runtime binaries.");
 
 		AddOptionField(
 		    *selectionLayout,
@@ -424,7 +413,7 @@ namespace SparkleLauncher
 		labelLayout->setContentsMargins(LauncherUi::Option::LabelMargins);
 		labelLayout->setSpacing(0);
 
-		QLabel* fieldLabel = CreateFieldLabel(labelCell ? label : label);
+		QLabel* fieldLabel = CreateFieldLabel(label);
 		fieldLabel->setAlignment(Qt::AlignLeft | (qobject_cast<QTextEdit*>(control) != nullptr ? Qt::AlignTop : Qt::AlignVCenter));
 		fieldLabel->setBuddy(control);
 		labelLayout->addWidget(fieldLabel);
@@ -432,6 +421,7 @@ namespace SparkleLauncher
 
 		QFrame* valueCell = new QFrame(row);
 		valueCell->setObjectName("OptionValueCell");
+		valueCell->setFixedWidth(LauncherUi::Row::FieldValueWidth);
 		QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
 		valueLayout->setContentsMargins(0, 0, 0, 0);
 		valueLayout->setSpacing(0);
@@ -445,32 +435,8 @@ namespace SparkleLauncher
 		}
 		valueLayout->addWidget(control, 1);
 		rowLayout->addWidget(labelCell, 0);
-		rowLayout->addWidget(valueCell, 1);
-		layout.addWidget(row);
-		return row;
-	}
-
-	QWidget* LauncherMainWindow::AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox)
-	{
-		QFrame* row = new QFrame(this);
-		row->setObjectName("OptionRow");
-		QHBoxLayout* rowLayout = new QHBoxLayout(row);
-		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(0);
-
-		QFrame* labelCell = new QFrame(row);
-		labelCell->setObjectName("OptionLabelCell");
-		labelCell->setFixedWidth(kFieldLabelWidth + 16);
-
-		QFrame* valueCell = new QFrame(row);
-		valueCell->setObjectName("OptionValueCell");
-		QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
-		valueLayout->setContentsMargins(LauncherUi::Option::ValueMargins);
-		valueLayout->setSpacing(0);
-		valueLayout->addWidget(checkBox, 1);
-
-		rowLayout->addWidget(labelCell, 0);
-		rowLayout->addWidget(valueCell, 1);
+		rowLayout->addWidget(valueCell, 0);
+		rowLayout->addStretch(1);
 		layout.addWidget(row);
 		return row;
 	}
@@ -497,54 +463,6 @@ namespace SparkleLauncher
 
 		layout.addWidget(group);
 		return groupLayout;
-	}
-
-	QVBoxLayout* LauncherMainWindow::AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded)
-	{
-		QFrame* group = new QFrame(this);
-		group->setObjectName("OptionGroup");
-		QVBoxLayout* groupLayout = new QVBoxLayout(group);
-		groupLayout->setContentsMargins(LauncherUi::Option::GroupMargins);
-		groupLayout->setSpacing(LauncherUi::Option::GroupSpacing);
-
-		QToolButton* toggle = new QToolButton(group);
-		toggle->setObjectName("DetailsToggleButton");
-		toggle->setText(title);
-		toggle->setCheckable(true);
-		toggle->setChecked(expanded);
-		toggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-		toggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
-		RegisterFocusable(toggle);
-		groupLayout->addWidget(toggle);
-
-		if (!detail.isEmpty())
-		{
-			QLabel* detailLabel = new QLabel(detail, group);
-			detailLabel->setObjectName("OptionHelpText");
-			detailLabel->setWordWrap(true);
-			groupLayout->addWidget(detailLabel);
-		}
-
-		QFrame* detailsPanel = new QFrame(group);
-		detailsPanel->setObjectName("DetailsPanel");
-		QVBoxLayout* detailsLayout = new QVBoxLayout(detailsPanel);
-		detailsLayout->setContentsMargins(LauncherUi::Option::DetailsMargins);
-		detailsLayout->setSpacing(LauncherUi::Option::GroupSpacing);
-		detailsPanel->setVisible(expanded);
-		groupLayout->addWidget(detailsPanel);
-
-		connect(
-		    toggle,
-		    &QToolButton::toggled,
-		    detailsPanel,
-		    [toggle, detailsPanel](bool checked)
-		    {
-			    toggle->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
-			    detailsPanel->setVisible(checked);
-		    });
-
-		layout.addWidget(group);
-		return detailsLayout;
 	}
 
 	QVBoxLayout* LauncherMainWindow::AddInlineOptionsSection(QVBoxLayout& layout)

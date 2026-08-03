@@ -413,7 +413,7 @@ namespace SparkleLauncher
 				break;
 			case CookOperationKind::CookAllAssets:
 #if !SPARKLE_ENABLE_CONTENT_PIPELINE && !SPARKLE_ENABLE_SHADER_COMPILER
-				AddReadiness(plan, "No cook tool groups are enabled in this workspace configuration.");
+				AddReadiness(plan, "No cook features are enabled in this workspace configuration.");
 #endif
 				break;
 		}

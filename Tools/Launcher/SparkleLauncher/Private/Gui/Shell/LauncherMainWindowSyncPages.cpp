@@ -40,7 +40,6 @@
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QTextEdit>
-#include <QtWidgets/QToolButton>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -72,8 +71,7 @@ namespace SparkleLauncher
 			                  : status.Text,
 			    status.Detail,
 			    cleaning || syncing ? QStringLiteral("running") : status.State,
-			    actionButton,
-			    StatusRowPresentation::Inline);
+			    actionButton);
 			ApplySourceDependencyRowState(dependency, *statusLabel, *actionButton);
 			m_sourceDependencyStatusLabels.insert(dependency.Id, statusLabel);
 			m_sourceDependencyActionButtons.insert(dependency.Id, actionButton);

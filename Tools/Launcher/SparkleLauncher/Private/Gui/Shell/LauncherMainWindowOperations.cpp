@@ -20,7 +20,6 @@
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 #include <QtWidgets/QMessageBox>
-#include <QtWidgets/QToolButton>
 
 #include <filesystem>
 #include <utility>
@@ -152,40 +151,24 @@ namespace SparkleLauncher
 		StartOperation(std::move(request), "Clean " + DisplayNameForOperation(m_selectedOperationId));
 	}
 
-	QWidget* LauncherMainWindow::CreateActionDependencyActions(
+	QPushButton* LauncherMainWindow::CreateStatusActionButton(
 	    const QString& actionId,
+	    const QString& actionLabel,
 	    const QString& actionTitle,
-	    const QString& cleanScope,
-	    const QString& cleanTitle,
 	    bool navigateInsteadOfRun)
 	{
-		QVector<LauncherActionMenuEntry> entries;
-		entries.push_back(
-		    LauncherActionMenuEntry{
-		        actionTitle,
-		        [this, actionId, actionTitle, navigateInsteadOfRun]()
-		        { TriggerActionDependencyRegenerate(actionId, actionTitle, navigateInsteadOfRun); }});
-		if (!cleanScope.isEmpty())
-		{
-			entries.push_back(
-			    LauncherActionMenuEntry{
-			        "Clean",
-			        [this, cleanScope, cleanTitle]() { TriggerActionDependencyClean(cleanScope, cleanTitle); }});
-		}
-		QToolButton* button = CreateLauncherOverflowActionButton(this, actionTitle + " actions", "Dependency actions", entries);
+		QPushButton* button = new QPushButton(this);
+		ApplyStatusActionButtonPresentation(*button, actionLabel, "warning");
+		button->setAccessibleName(actionTitle);
+		button->setToolTip(actionTitle + ".");
 		RegisterFocusable(button);
+		connect(
+		    button,
+		    &QPushButton::clicked,
+		    this,
+		    [this, actionId, actionTitle, navigateInsteadOfRun]()
+		    { TriggerActionDependencyRegenerate(actionId, actionTitle, navigateInsteadOfRun); });
 		return button;
-	}
-
-	void LauncherMainWindow::TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle)
-	{
-		LauncherOperationRequest request = BuildScopedCleanOperationRequest(m_repositoryRoot, m_contentModel, m_settings, cleanScope);
-		if (!ConfirmRunRequest(request))
-		{
-			return;
-		}
-
-		StartOperation(std::move(request), cleanTitle);
 	}
 
 	void LauncherMainWindow::TriggerActionDependencyRegenerate(
@@ -310,10 +293,9 @@ namespace SparkleLauncher
 			return "Install Rider or switch the IDE selector back to Visual Studio, then retry.";
 		}
 		if (statusText.contains("disabled in this workspace configuration", Qt::CaseInsensitive)
-		    || statusText.contains("No cook tool groups are enabled", Qt::CaseInsensitive))
+		    || statusText.contains("No cook features are enabled", Qt::CaseInsensitive))
 		{
-			return "This workflow is disabled by the current dependency-group configuration. Reconfigure the workspace with the matching "
-			       "group enabled, then sync and build again.";
+			return "This workflow is disabled by the current workspace features. Enable the required feature, then sync and build again.";
 		}
 		if (statusText.contains("dxcompiler.dll", Qt::CaseInsensitive) || statusText.contains("slang-compiler.dll", Qt::CaseInsensitive)
 		    || statusText.contains("runtime dll is missing", Qt::CaseInsensitive)

@@ -38,7 +38,6 @@
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QTextEdit>
-#include <QtWidgets/QToolButton>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -52,11 +51,6 @@ namespace SparkleLauncher
 {
 	static constexpr int kSpaceSmall = LauncherUi::Space::Small;
 	static constexpr int kSpaceMedium = LauncherUi::Space::Medium;
-	static constexpr int kFieldLabelWidth = LauncherUi::Row::FieldLabelWidth;
-	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
-	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
-	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
-	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
 
 	QLabel* LauncherMainWindow::AddStatusRow(
 	    QVBoxLayout& layout,
@@ -64,12 +58,10 @@ namespace SparkleLauncher
 	    const QString& status,
 	    const QString& detail,
 	    const QString& state,
-	    QWidget* accessory,
-	    StatusRowPresentation presentation)
+	    QWidget* accessory)
 	{
 		QFrame* row = new QFrame(this);
 		row->setObjectName("StatusRow");
-		const bool usesInlineStatus = presentation == StatusRowPresentation::Inline;
 		QHBoxLayout* rowLayout = new QHBoxLayout(row);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
 		rowLayout->setSpacing(kSpaceMedium);
@@ -82,54 +74,31 @@ namespace SparkleLauncher
 		nameLabel->setObjectName("StatusLabel");
 		textLayout->addWidget(nameLabel);
 
-		QLabel* presentedStatusLabel = nullptr;
-		if (usesInlineStatus)
-		{
-			QHBoxLayout* metadataLayout = new QHBoxLayout();
-			metadataLayout->setContentsMargins(0, 0, 0, 0);
-			metadataLayout->setSpacing(kSpaceSmall);
+		QHBoxLayout* metadataLayout = new QHBoxLayout();
+		metadataLayout->setContentsMargins(0, 0, 0, 0);
+		metadataLayout->setSpacing(kSpaceSmall);
 
-			QLabel* inlineStatusLabel = new QLabel(row);
-			ApplyInlineStatusLabel(*inlineStatusLabel, status, state);
-			presentedStatusLabel = inlineStatusLabel;
-			inlineStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-			metadataLayout->addWidget(inlineStatusLabel, 0, Qt::AlignVCenter);
+		QLabel* statusLabel = new QLabel(row);
+		ApplyInlineStatusLabel(*statusLabel, status, state);
+		statusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+		metadataLayout->addWidget(statusLabel, 0, Qt::AlignVCenter);
 
-			if (!detail.isEmpty())
-			{
-				QLabel* detailLabel = new QLabel(detail, row);
-				detailLabel->setObjectName("StatusDetail");
-				detailLabel->setWordWrap(true);
-				metadataLayout->addWidget(detailLabel, 1, Qt::AlignVCenter);
-			}
-			textLayout->addLayout(metadataLayout);
-		}
-		else if (!detail.isEmpty())
+		if (!detail.isEmpty())
 		{
 			QLabel* detailLabel = new QLabel(detail, row);
 			detailLabel->setObjectName("StatusDetail");
 			detailLabel->setWordWrap(true);
-			textLayout->addWidget(detailLabel);
+			metadataLayout->addWidget(detailLabel, 1, Qt::AlignVCenter);
 		}
+		textLayout->addLayout(metadataLayout);
 
 		rowLayout->addLayout(textLayout, 1);
-
-		if (!usesInlineStatus)
-		{
-			QLabel* statusLabel = new QLabel(status, row);
-			presentedStatusLabel = statusLabel;
-			statusLabel->setObjectName("StatusValue");
-			statusLabel->setProperty("State", state);
-			statusLabel->setFixedWidth(accessory == nullptr ? LauncherUi::Row::SyncActionWidth : kStatusChipColumnWidth);
-			statusLabel->setAlignment(Qt::AlignCenter);
-			rowLayout->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignVCenter);
-		}
 
 		if (accessory != nullptr)
 		{
 			QWidget* actionCell = new QWidget(row);
 			actionCell->setObjectName("StatusActionCell");
-			const int actionWidth = std::max({LauncherUi::Row::SyncActionWidth, kStatusActionColumnWidth, accessory->sizeHint().width()});
+			const int actionWidth = std::max(LauncherUi::Row::StatusActionWidth, accessory->sizeHint().width());
 			actionCell->setFixedWidth(actionWidth);
 			QHBoxLayout* actionCellLayout = new QHBoxLayout(actionCell);
 			actionCellLayout->setContentsMargins(0, 0, 0, 0);
@@ -141,7 +110,7 @@ namespace SparkleLauncher
 		}
 
 		layout.addWidget(row);
-		return presentedStatusLabel;
+		return statusLabel;
 	}
 
 	QPushButton* LauncherMainWindow::CreateCommandActionButton(

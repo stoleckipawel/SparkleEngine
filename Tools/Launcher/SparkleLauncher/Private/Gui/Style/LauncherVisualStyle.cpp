@@ -114,7 +114,7 @@ namespace SparkleLauncher
 		    "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
 		addRule("#OptionRow", "background: transparent; border-top: 1px solid " + divider + "; min-height: 38px;");
-		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 14px;");
+		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 8px;");
 		addRule("#OptionLabelCell", "background: transparent; border: none;");
 		addRule("#OptionValueCell", "background: transparent; border: none;");
 		addRule("#ActiveOperationLabel", "color: " + textPrimary + "; font-size: 15.5pt; font-weight: 850; letter-spacing: -0.18px;");
@@ -167,14 +167,8 @@ namespace SparkleLauncher
 		addRule("QPushButton#CommandSecondaryButton:disabled", "background: #252923; color: " + textMuted + "; border: 1px solid #343a33;");
 		addRule(
 		    "#SectionLabel",
-		    "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 800; padding: 6px 0 1px 0; letter-spacing: 0.35px;");
+		    "color: " + textSecondary + "; font-size: 8.1pt; font-weight: 800; padding: 6px 0 2px 0; letter-spacing: 0.25px;");
 		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 9.25pt; font-weight: 850; padding: 0 0 4px 0;");
-		addRule(
-		    "#DetailsToggleButton",
-		    "background: transparent; color: " + textPrimary
-		        + "; border: none; padding: 0 0 4px 0; text-align: left; font-size: 9pt; font-weight: 750;");
-		addRule("#DetailsToggleButton:hover", "color: #ffffff;");
-		addRule("#DetailsPanel", "background: transparent; border: none;");
 		addRule("#FieldLabel", "color: #c9ced4; font-size: 8.5pt; font-weight: 650; padding-top: 0;");
 		addRule("#OptionHelpText", "color: " + textMuted + "; font-size: 8pt; line-height: 125%; padding: 0 0 5px 0;");
 		addRule(
@@ -198,17 +192,16 @@ namespace SparkleLauncher
 		addRule("#ActionMetaDetail", "color: " + textMuted + "; font-size: 7.5pt;");
 		addRule(
 		    "#StatusRow",
-		    "background: #1d201d; border: none; border-top: 1px solid " + divider + "; padding: 10px 10px 10px 10px; margin-top: 0;");
-		addRule("#StatusLabel", "color: " + textBody + "; font-size: 8.75pt; font-weight: 750;");
-		addStateChipRules("#StatusValue", " font-size: 7.75pt; font-weight: 850; min-width: 58px;");
-		addRule("#InlineStatusValue", "background: transparent; border: none; padding: 0; font-size: 7.75pt; font-weight: 800;");
+		    "background: #1d201d; border: none; border-top: 1px solid " + divider + "; padding: 8px 10px; margin-top: 0;");
+		addRule("#StatusLabel", "color: " + textBody + "; font-size: 9pt; font-weight: 750;");
+		addRule("#InlineStatusValue", "background: transparent; border: none; padding: 0; font-size: 8.15pt; font-weight: 800;");
 		addRule("#InlineStatusValue[State=\"ok\"]", "color: #9bcf68;");
 		addRule("#InlineStatusValue[State=\"warning\"]", "color: #e3b95f;");
 		addRule("#InlineStatusValue[State=\"running\"]", "color: #d8c996;");
 		addRule("#InlineStatusValue[State=\"neutral\"]", "color: " + textSecondary + ";");
 		addRule("#InlineStatusValue[State=\"bad\"]", "color: #ef8f86;");
 		addRule("#StatusActionCell", "background: transparent; border: none;");
-		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8pt;");
+		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8.15pt;");
 		addRule("#MapCatalogCard", "background: #2b2e32; border: 1px solid #3c4147; border-radius: 2px;");
 		addRule("#MapCatalogCard:hover", "background: #30343a; border-color: #59616a;");
 		addRule("#MapCatalogCard[State=\"ok\"]", "border-color: #587d31;");
@@ -223,15 +216,15 @@ namespace SparkleLauncher
 		    "background: transparent; color: " + textSecondary
 		        + "; border: 1px solid #555c64; padding: 2px 8px; font-size: 8pt; font-weight: 700;");
 		addRule("#MapCardSourceButton:hover", "background: #343a34; color: #ffffff; border-color: #697866;");
-		addRule("#SyncActionButton", "padding: 2px 8px; font-size: 8pt; font-weight: 850;");
-		addRule("#SyncActionButton[ActionState=\"warning\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
-		addRule("#SyncActionButton[ActionState=\"warning\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");
+		addRule("#StatusActionButton", "padding: 2px 8px; font-size: 8pt; font-weight: 850;");
+		addRule("#StatusActionButton[ActionState=\"warning\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
+		addRule("#StatusActionButton[ActionState=\"warning\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");
 		addRule(
-		    "#SyncActionButton[ActionState=\"ok\"]",
+		    "#StatusActionButton[ActionState=\"ok\"]",
 		    "background: transparent; color: " + textSecondary + "; border: 1px solid #515950;");
-		addRule("#SyncActionButton[ActionState=\"ok\"]:hover", "background: #30362e; color: " + textBody + "; border-color: #71806c;");
-		addRule("#SyncActionButton[ActionState=\"running\"]", "background: #3c351f; color: #d8c996; border: 1px solid #736438;");
-		addRule("#SyncActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
+		addRule("#StatusActionButton[ActionState=\"ok\"]:hover", "background: #30362e; color: " + textBody + "; border-color: #71806c;");
+		addRule("#StatusActionButton[ActionState=\"running\"]", "background: #3c351f; color: #d8c996; border: 1px solid #736438;");
+		addRule("#StatusActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
 		addRule("#OptionsScrollArea #MapCatalogCard", "background: #2b2e32; border: 1px solid #3c4147;");
 		addRule("#OptionsScrollArea #MapCardBody", "background: #2b2e32; border: none;");
 		addRule("#OptionsScrollArea #MapCardTitle", "background: " + selection + "; color: #f4f7f1; padding: 4px 7px;");
@@ -256,7 +249,12 @@ namespace SparkleLauncher
 		addRule(
 		    "#WorkflowGroupButton[ActiveState=\"true\"]",
 		    "background: #20251d; color: " + textPrimary + "; border-left: 3px solid " + accent + ";");
-		addRule("#WorkflowGroupButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
+		addRule(
+		    "#WorkflowGroupButton:focus",
+		    "background: #20231f; color: " + textPrimary + "; border: none; border-left: 3px solid #56614c;");
+		addRule(
+		    "#WorkflowGroupButton[ActiveState=\"true\"]:focus",
+		    "background: #20251d; color: " + textPrimary + "; border: none; border-left: 3px solid " + accent + ";");
 		addRule(
 		    "#WorkflowButton",
 		    "background: transparent; color: " + textSecondary
@@ -264,7 +262,12 @@ namespace SparkleLauncher
 		          "9.25pt; font-weight: 800;");
 		addRule("#WorkflowButton:hover", "background: #1b1e1b; color: " + textPrimary + ";");
 		addRule("#WorkflowButton:checked", "background: transparent; border-bottom: 3px solid " + accent + "; color: #ffffff;");
-		addRule("#WorkflowButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
+		addRule(
+		    "#WorkflowButton:focus",
+		    "background: #1b1e1b; color: " + textPrimary + "; border: none; border-bottom: 3px solid #56614c;");
+		addRule(
+		    "#WorkflowButton:checked:focus",
+		    "background: transparent; color: #ffffff; border: none; border-bottom: 3px solid " + accent + ";");
 		addRule(
 		    "QPushButton",
 		    "background: " + primary
@@ -282,14 +285,6 @@ namespace SparkleLauncher
 		    "#SecondaryButton",
 		    "background: #2a2d2a; color: " + textBody + "; border: 1px solid " + borderSoft
 		        + "; padding: 4px 10px; font-size: 8pt; font-weight: 650;");
-		addRule(
-		    "#DependencyActionButton",
-		    "background: transparent; color: " + textMuted
-		        + "; border: none; padding: 0; min-width: 16px; max-width: 16px; min-height: 16px; max-height: 16px;");
-		addRule("#DependencyActionButton:hover", "background: #30362e; color: " + textPrimary + "; border-radius: 2px;");
-		addRule("#OverflowMenu", "background: #20231f; color: " + textBody + "; border: 1px solid " + borderStrong + "; padding: 1px 0;");
-		addRule("#OverflowMenu::item", "background: transparent; padding: 3px 10px 3px 8px; color: " + textBody + "; font-size: 7.75pt;");
-		addRule("#OverflowMenu::item:selected", "background: " + selection + "; color: #ffffff;");
 		addRule(
 		    "QComboBox, QLineEdit, QTextEdit",
 		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 5px 9px; color: " + textBody

@@ -269,7 +269,7 @@ namespace SparkleLauncher
 		bool workspaceMissing = false;
 		bool cookToolsMissing = false;
 		bool cookToolRuntimeMissing = false;
-		bool dependencyGroupDisabled = false;
+		bool workspaceFeatureDisabled = false;
 		QStringList readiness;
 		for (const std::string& message : plan.ReadinessMessages)
 		{
@@ -280,17 +280,17 @@ namespace SparkleLauncher
 			cookToolRuntimeMissing = cookToolRuntimeMissing
 			    || readinessMessage.contains("runtime dependency is missing", Qt::CaseInsensitive)
 			    || readinessMessage.contains("runtime support bundle is incomplete", Qt::CaseInsensitive);
-			dependencyGroupDisabled = dependencyGroupDisabled
+			workspaceFeatureDisabled = workspaceFeatureDisabled
 			    || readinessMessage.contains("disabled in this workspace configuration", Qt::CaseInsensitive)
-			    || readinessMessage.contains("No cook tool groups are enabled", Qt::CaseInsensitive);
+			    || readinessMessage.contains("No cook features are enabled", Qt::CaseInsensitive);
 		}
 
-		if (dependencyGroupDisabled)
+		if (workspaceFeatureDisabled)
 		{
 			QMessageBox::information(
 			    parent,
 			    "Cook Workflow Disabled",
-			    "This cook workflow is disabled by the current workspace dependency-group configuration.\n\n" + readiness.join('\n'));
+			    "This cook workflow is disabled by the current workspace features.\n\n" + readiness.join('\n'));
 			return BlockedDecision();
 		}
 
