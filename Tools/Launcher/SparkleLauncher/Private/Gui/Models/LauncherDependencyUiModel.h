@@ -29,13 +29,27 @@ namespace SparkleLauncher
 		std::vector<ThirdPartyDependencyUiEntry> Dependencies;
 	};
 
+	struct ThirdPartyDependencyUiStatus
+	{
+		QString Text;
+		QString Detail;
+		QString State;
+	};
+
 	const std::vector<DependencyGroupUiEntry>& GetDependencyGroups();
 	const std::vector<ThirdPartyDependencyUiEntry>& GetTrackedThirdPartyDependencies();
+	ThirdPartyDependencyUiStatus BuildThirdPartyDependencyStatus(
+	    const ThirdPartyDependencyUiEntry& dependency,
+	    const DependencyGroupUiEntry& group,
+	    const std::filesystem::path& dependencyCachePath);
 
 	QString FormatTrackedDependencySummary(const std::filesystem::path& dependencyCachePath);
 	int CountReadyDependencies(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath);
 	QString DependencyGroupStatusText(const DependencyGroupUiEntry& group, int readyCount);
 	QString DependencyGroupStatusState(const DependencyGroupUiEntry& group, int readyCount);
-	QString FormatDependencyGroupDetail(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath, int readyCount);
+	QString FormatDependencyGroupDetail(
+	    const DependencyGroupUiEntry& group,
+	    const std::filesystem::path& dependencyCachePath,
+	    int readyCount);
 	bool OperationUsesDependencyGroup(const QString& operationId, const DependencyGroupUiEntry& group);
 }

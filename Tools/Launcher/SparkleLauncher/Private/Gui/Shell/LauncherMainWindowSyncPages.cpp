@@ -48,22 +48,29 @@
 
 namespace SparkleLauncher
 {
-	void LauncherMainWindow::AddSyncDependencyBundles(QVBoxLayout& layout)
+	void LauncherMainWindow::AddSyncDependencies(QVBoxLayout& layout, bool optional)
 	{
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
-		QVBoxLayout* bundlesLayout = AddOptionGroup(layout, "Repository dependency groups", QString());
 		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 		{
-			const int readyCount = CountReadyDependencies(group, dependencyCachePath);
-			AddStatusRow(
-			    *bundlesLayout,
-			    group.Label,
-			    DependencyGroupStatusText(group, readyCount),
-			    FormatDependencyGroupDetail(group, dependencyCachePath, readyCount),
-			    DependencyGroupStatusState(group, readyCount),
-			    group.Enabled
-			        ? CreateActionDependencyActions("workspace.sync-source-tiers", "Sync Code", "deps", "Clean Source Dependency Cache")
-			        : CreateDisabledSourceTierActions(group));
+			if (group.Required == optional)
+			{
+				continue;
+			}
+
+			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
+			{
+				const ThirdPartyDependencyUiStatus status = BuildThirdPartyDependencyStatus(dependency, group, dependencyCachePath);
+				AddStatusRow(
+				    layout,
+				    dependency.Label,
+				    status.Text,
+				    status.Detail,
+				    status.State,
+				    group.Enabled
+				        ? CreateActionDependencyActions("workspace.sync-source-tiers", "Sync Code", "deps", "Clean Source Dependency Cache")
+				        : CreateDisabledSourceDependencyActions(group));
+			}
 		}
 	}
 

@@ -114,7 +114,7 @@ namespace SparkleLauncher
 				    DependencyGroupStatusState(group, readyCount),
 				    group.Enabled
 				        ? CreateActionDependencyActions("workspace.sync-source-tiers", "Sync Code", "deps", "Clean Source Dependency Cache")
-				        : CreateDisabledSourceTierActions(group));
+				        : CreateDisabledSourceDependencyActions(group));
 			}
 		};
 		if (isSyncWorkflow)
@@ -170,22 +170,17 @@ namespace SparkleLauncher
 			          .arg(plan.Freshness.Current && !syncWillRunConfigure ? "current" : "updating")
 			          .arg(dependencyStatus.ReadyDependencyCount)
 			          .arg(dependencyStatus.EnabledDependencyCount);
-			QVBoxLayout* summaryLayout =
-			    AddOptionGroup(layout, isSourceSyncWorkflow ? "Sync readiness overview" : "Workspace readiness overview", QString());
-			AddStatusRow(
-			    *summaryLayout,
-			    isSourceSyncWorkflow ? "Sync readiness" : "Workspace readiness",
-			    overallStatus,
-			    overallDetail,
-			    overallState);
-			AddStatusRow(
-			    *summaryLayout,
-			    isSourceSyncWorkflow ? "Host-installed prerequisites" : "Build toolchain and IDE",
-			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
-			    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain),
-			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 			if (!isSourceSyncWorkflow)
 			{
+				QVBoxLayout* summaryLayout = AddOptionGroup(layout, "Workspace readiness overview", QString());
+				AddStatusRow(*summaryLayout, "Workspace readiness", overallStatus, overallDetail, overallState);
+				AddStatusRow(
+				    *summaryLayout,
+				    "Build toolchain and IDE",
+				    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
+				    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain)
+				                                          : RequiredToolProblemSummary(plan.Toolchain),
+				    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 				AddStatusRow(
 				    *summaryLayout,
 				    "Generated workspace files",
@@ -193,34 +188,42 @@ namespace SparkleLauncher
 				                                 : (plan.Freshness.Current ? "Ready" : "Needs refresh"),
 				    buildFilesDetail,
 				    plan.Freshness.Current && !syncWillRunConfigure ? "ok" : "warning");
-			}
-			AddStatusRow(
-			    *summaryLayout,
-			    isSourceSyncWorkflow ? "Synced repository packages" : "Required repository dependencies",
-			    cacheStatus,
-			    CombineStatusDetail(cacheDetail, FormatTrackedDependencySummary(dependencyCachePath)),
-			    dependencyCacheReady ? "ok" : "warning");
-			AddStatusRow(
-			    *summaryLayout,
-			    isSourceSyncWorkflow ? "Optional repository feature packs" : "Optional feature dependency groups",
-			    enabledOptionalGroups == 0 ? "None enabled" : (readyOptionalGroups == enabledOptionalGroups ? "Ready" : "Partial"),
-			    enabledOptionalGroups == 0 ? QString("All optional package groups are off in this workspace.")
-			                               : QStringLiteral("%1 of %2 enabled optional package groups are cached.")
-			                                     .arg(readyOptionalGroups)
-			                                     .arg(enabledOptionalGroups),
-			    enabledOptionalGroups == 0 ? "neutral" : (readyOptionalGroups == enabledOptionalGroups ? "ok" : "warning"));
-
-			QVBoxLayout* machineLayout =
-			    AddOptionGroup(layout, isSourceSyncWorkflow ? "Installed host tools" : "Detected host tools", QString());
-			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
-			{
 				AddStatusRow(
-				    *machineLayout,
-				    QString::fromStdString(item.DisplayName) + (item.Required ? "" : " (optional)"),
-				    ToolchainStatusText(item.State, item.Required),
-				    CompactToolchainDetail(item),
-				    ToolchainStatusState(item.State, item.Required));
+				    *summaryLayout,
+				    "Required repository dependencies",
+				    cacheStatus,
+				    CombineStatusDetail(cacheDetail, FormatTrackedDependencySummary(dependencyCachePath)),
+				    dependencyCacheReady ? "ok" : "warning");
+				AddStatusRow(
+				    *summaryLayout,
+				    "Optional feature dependency groups",
+				    enabledOptionalGroups == 0 ? "None enabled" : (readyOptionalGroups == enabledOptionalGroups ? "Ready" : "Partial"),
+				    enabledOptionalGroups == 0 ? QString("All optional package groups are off in this workspace.")
+				                               : QStringLiteral("%1 of %2 enabled optional package groups are cached.")
+				                                     .arg(readyOptionalGroups)
+				                                     .arg(enabledOptionalGroups),
+				    enabledOptionalGroups == 0 ? "neutral" : (readyOptionalGroups == enabledOptionalGroups ? "ok" : "warning"));
 			}
+
+			QVBoxLayout* machineLayout = AddOptionGroup(layout, isSourceSyncWorkflow ? "Dependencies" : "Detected host tools", QString());
+			const auto addToolchainItems = [this, machineLayout, &plan, isSourceSyncWorkflow](bool requiredOnly)
+			{
+				for (const ToolchainItemStatus& item : plan.Toolchain.Items)
+				{
+					if (item.Required != requiredOnly)
+					{
+						continue;
+					}
+					AddStatusRow(
+					    *machineLayout,
+					    QString::fromStdString(item.DisplayName)
+					        + (!isSourceSyncWorkflow && !item.Required ? QStringLiteral(" (optional)") : QString()),
+					    ToolchainStatusText(item.State, item.Required),
+					    CompactToolchainDetail(item),
+					    ToolchainStatusState(item.State, item.Required));
+				}
+			};
+			addToolchainItems(true);
 			AddStatusRow(
 			    *machineLayout,
 			    "Selected IDE",
@@ -248,7 +251,15 @@ namespace SparkleLauncher
 			}
 			if (operationId == "workspace.sync-source-tiers")
 			{
-				AddSyncDependencyBundles(layout);
+				AddSyncDependencies(*machineLayout, false);
+				machineLayout->addSpacing(kSpaceSmall);
+				machineLayout->addWidget(CreateSectionLabel("Optional dependencies"));
+				addToolchainItems(false);
+				AddSyncDependencies(*machineLayout, true);
+			}
+			else
+			{
+				addToolchainItems(false);
 			}
 			return;
 		}

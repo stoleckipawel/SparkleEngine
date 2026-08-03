@@ -175,7 +175,7 @@ namespace SparkleLauncher
 		    const QString& detail,
 		    const QString& state,
 		    QWidget* accessory = nullptr);
-		void AddSyncDependencyBundles(QVBoxLayout& layout);
+		void AddSyncDependencies(QVBoxLayout& layout, bool optional);
 		void AddSyncLevelContentGroups(QVBoxLayout& layout);
 		void AddSyncLevelRows(QVBoxLayout& layout, const LauncherContentSummary& content, const LauncherLevelUiModel& model);
 		void AddSyncLevelRow(ResponsiveCardGridWidget& grid, const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
@@ -227,14 +227,13 @@ namespace SparkleLauncher
 		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
-		QWidget* CreateDisabledSourceTierActions(const DependencyGroupUiEntry& group);
+		QWidget* CreateDisabledSourceDependencyActions(const DependencyGroupUiEntry& group);
 		QWidget* CreateActionDependencyActions(
 		    const QString& actionId,
 		    const QString& actionTitle,
 		    const QString& cleanScope = QString(),
 		    const QString& cleanTitle = QString(),
 		    bool navigateInsteadOfRun = false);
-		void OpenLocalPath(const std::filesystem::path& path);
 		void TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle);
 		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;

@@ -19,9 +19,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
-#include <QtCore/QUrl>
 #include <QtGui/QClipboard>
-#include <QtGui/QDesktopServices>
 #include <QtGui/QGuiApplication>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QToolButton>
@@ -156,7 +154,7 @@ namespace SparkleLauncher
 		StartOperation(std::move(request), "Clean " + DisplayNameForOperation(m_selectedOperationId));
 	}
 
-	QWidget* LauncherMainWindow::CreateDisabledSourceTierActions(const DependencyGroupUiEntry& group)
+	QWidget* LauncherMainWindow::CreateDisabledSourceDependencyActions(const DependencyGroupUiEntry& group)
 	{
 		QVector<LauncherActionMenuEntry> entries;
 		if (!group.ConfigureOption.isEmpty())
@@ -166,16 +164,8 @@ namespace SparkleLauncher
 			        "Copy enable option",
 			        [this, option = group.ConfigureOption]() { QGuiApplication::clipboard()->setText("-D" + option + "=ON"); }});
 		}
-		entries.push_back(
-		    LauncherActionMenuEntry{
-		        "Open dependency guide",
-		        [this]() { OpenLocalPath(m_repositoryRoot / "docs" / "dependency-capability-tiers.md"); }});
-		entries.push_back(
-		    LauncherActionMenuEntry{
-		        "Open reconfigure workflow",
-		        [this]() { TriggerActionDependencyRegenerate("workspace.generate-build-files", "Open Reconfigure Workflow", true); }});
-
-		QToolButton* button = CreateLauncherOverflowActionButton(this, group.Label + " configuration actions", "Tier actions", entries);
+		QToolButton* button =
+		    CreateLauncherOverflowActionButton(this, group.Label + " configuration actions", "Dependency actions", entries);
 		RegisterFocusable(button);
 		return button;
 	}
@@ -203,19 +193,6 @@ namespace SparkleLauncher
 		QToolButton* button = CreateLauncherOverflowActionButton(this, actionTitle + " actions", "Dependency actions", entries);
 		RegisterFocusable(button);
 		return button;
-	}
-
-	void LauncherMainWindow::OpenLocalPath(const std::filesystem::path& path)
-	{
-		std::error_code errorCode;
-		const bool isAvailable = std::filesystem::exists(path, errorCode) || std::filesystem::is_directory(path, errorCode);
-		if (!isAvailable)
-		{
-			QMessageBox::information(this, "Target Not Available", "This file or folder is not available yet.");
-			return;
-		}
-
-		QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdString(path.string())));
 	}
 
 	void LauncherMainWindow::TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle)
