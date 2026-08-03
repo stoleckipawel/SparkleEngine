@@ -199,7 +199,7 @@ namespace SparkleLauncher
 		connect(&m_backend, &LauncherBackend::OperationFinished, this, &LauncherMainWindow::DisplayOperationFinished);
 		connect(qApp, &QGuiApplication::applicationStateChanged, this, &LauncherMainWindow::HandleApplicationStateChanged);
 
-		UpdateProgress();
+		RefreshActivityPanel();
 		QTimer::singleShot(0, this, &LauncherMainWindow::RefreshContent);
 	}
 

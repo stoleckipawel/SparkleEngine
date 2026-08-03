@@ -40,13 +40,13 @@ namespace SparkleLauncher
 		QPushButton* toggleOutputButton = new QPushButton(QString::fromLatin1(LauncherUi::Activity::ExpandGlyph), header);
 		toggleOutputButton->setObjectName("ActivityToggleButton");
 		toggleOutputButton->setFixedSize(LauncherUi::Activity::ToggleButtonSize);
-		toggleOutputButton->setToolTip("Show or minimize recent runs and raw process output.");
+		toggleOutputButton->setEnabled(false);
+		toggleOutputButton->setVisible(false);
+		toggleOutputButton->setToolTip("Run a workflow to view its activity.");
 		toggleOutputButton->setAccessibleName("Toggle Activity panel");
 		toggleOutputButton->setAccessibleDescription("Shows or minimizes recent runs and raw process output.");
 		registerFocusable(toggleOutputButton);
-		QObject::connect(toggleOutputButton, &QPushButton::clicked, panel, [onToggleOutput]() {
-			onToggleOutput();
-		});
+		QObject::connect(toggleOutputButton, &QPushButton::clicked, panel, [onToggleOutput]() { onToggleOutput(); });
 		headerLayout->addWidget(toggleOutputButton, 0);
 		layout->addWidget(header, 0);
 
@@ -76,9 +76,7 @@ namespace SparkleLauncher
 		    activityList,
 		    &QListWidget::currentItemChanged,
 		    panel,
-		    [onCurrentRunChanged](QListWidgetItem* current, QListWidgetItem* previous) {
-			    onCurrentRunChanged(current, previous);
-		    });
+		    [onCurrentRunChanged](QListWidgetItem* current, QListWidgetItem* previous) { onCurrentRunChanged(current, previous); });
 		activityRailLayout->addWidget(activityList, 1);
 		activityLayout->addWidget(activityRail, 0);
 
@@ -103,14 +101,13 @@ namespace SparkleLauncher
 		    copyIconSize.isValid() ? copyIconSize : QSize(LauncherUi::Icon::DefaultSize, LauncherUi::Icon::DefaultSize);
 		copyOutputButton->setIconSize(resolvedCopyIconSize);
 		copyOutputButton->setEnabled(false);
+		copyOutputButton->setVisible(false);
 		copyOutputButton->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
 		copyOutputButton->setToolTip("Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
 		copyOutputButton->setAccessibleName("Copy selected run output");
 		copyOutputButton->setAccessibleDescription("Copies output for the selected run.");
 		registerFocusable(copyOutputButton);
-		QObject::connect(copyOutputButton, &QPushButton::clicked, panel, [onCopyOutput]() {
-			onCopyOutput();
-		});
+		QObject::connect(copyOutputButton, &QPushButton::clicked, panel, [onCopyOutput]() { onCopyOutput(); });
 		outputHeaderLayout->addWidget(copyOutputButton, 0);
 		outputLayout->addLayout(outputHeaderLayout);
 

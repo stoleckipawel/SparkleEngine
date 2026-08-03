@@ -181,6 +181,7 @@ namespace SparkleLauncher
 
 		m_cleanButton = new QPushButton("Clean", panel);
 		m_cleanButton->setObjectName("SecondaryButton");
+		m_cleanButton->setFixedSize(LauncherUi::ActionMeta::SecondaryButtonWidth, LauncherUi::ActionMeta::ButtonHeight);
 		m_cleanButton->setToolTip("Clean only the generated outputs tied to this action.");
 		m_cleanButton->setEnabled(false);
 		m_cleanButton->setAccessibleName("Clean selected workflow outputs");
@@ -190,6 +191,7 @@ namespace SparkleLauncher
 
 		m_runButton = new QPushButton("Run", panel);
 		m_runButton->setObjectName("PrimaryActionButton");
+		m_runButton->setFixedSize(LauncherUi::ActionMeta::PrimaryButtonWidth, LauncherUi::ActionMeta::ButtonHeight);
 		m_runButton->setIcon(m_icons.Icon(LauncherIcon::Run, QColor("#ffffff")));
 		m_runButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
 		m_runButton->setToolTip("Run the selected workflow. Existing runs keep going.");
@@ -312,13 +314,11 @@ namespace SparkleLauncher
 		}
 		m_activityPanel = widgets.Root;
 		m_activityDetailsPanel = widgets.ActivityDetailsPanel;
-		m_activityHeaderSummary = widgets.ActivityHeaderSummary;
 		m_activityList = widgets.ActivityList;
 		m_selectedRunSummary = widgets.SelectedRunSummary;
 		m_operationOutput = widgets.OperationOutput;
 		m_toggleOutputButton = widgets.ToggleOutputButton;
 		m_copyOutputButton = widgets.CopyOutputButton;
-		m_progressLabel = widgets.ProgressLabel;
 		if (m_operationOutput != nullptr)
 		{
 			m_operationOutput->setMinimumHeight(kOperationOutputMinHeight);

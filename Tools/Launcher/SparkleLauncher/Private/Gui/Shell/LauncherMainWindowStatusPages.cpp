@@ -361,7 +361,17 @@ namespace SparkleLauncher
 		        {{"High performance", ""}, {"System default", "false"}},
 		        m_settings.LaunchHighPerformanceAdapter(),
 		        &LauncherSettings::SetLaunchHighPerformanceAdapter));
-		AddOptionField(
+
+		QCheckBox* advancedOptions = new QCheckBox("Command line and CVars", this);
+		advancedOptions->setToolTip("Show advanced launch arguments and console variable overrides.");
+		advancedOptions->setAccessibleName("Show advanced launch options");
+		advancedOptions->setChecked(
+		    !m_settings.LaunchCommandLineArguments().trimmed().isEmpty() || !m_settings.LaunchCVars().trimmed().isEmpty());
+		advancedOptions->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+		RegisterFocusable(advancedOptions);
+		AddOptionField(*appOptionsLayout, "Advanced", advancedOptions);
+
+		QWidget* argumentsRow = AddOptionField(
 		    *appOptionsLayout,
 		    "Arguments",
 		    CreateBoundLineEdit(
@@ -369,7 +379,7 @@ namespace SparkleLauncher
 		        "--flag value \"quoted value\"",
 		        "Extra command-line arguments appended after launcher-managed options.",
 		        &LauncherSettings::SetLaunchCommandLineArguments));
-		AddOptionField(
+		QWidget* cvarsRow = AddOptionField(
 		    *appOptionsLayout,
 		    "CVars",
 		    CreateBoundTextEdit(
@@ -377,6 +387,10 @@ namespace SparkleLauncher
 		        "r.SomeCVar=1\nr.OtherCVar=false",
 		        "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.",
 		        &LauncherSettings::SetLaunchCVars));
+		argumentsRow->setVisible(advancedOptions->isChecked());
+		cvarsRow->setVisible(advancedOptions->isChecked());
+		connect(advancedOptions, &QCheckBox::toggled, argumentsRow, &QWidget::setVisible);
+		connect(advancedOptions, &QCheckBox::toggled, cvarsRow, &QWidget::setVisible);
 	}
 
 	void LauncherMainWindow::AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)

@@ -236,7 +236,7 @@ namespace SparkleLauncher
 		void ShowRunOutput(const QString& runId);
 		void SetActivityLogExpanded(bool expanded);
 		void UpdateActivityRunSelectionVisuals();
-		void UpdateProgress();
+		void RefreshActivityPanel();
 		void ApplyVisualStyle();
 
 		std::filesystem::path m_repositoryRoot;
@@ -260,10 +260,8 @@ namespace SparkleLauncher
 		QPushButton* m_toggleOutputButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
 		QFrame* m_actionMetaPanel = nullptr;
-		QLabel* m_progressLabel = nullptr;
 		QWidget* m_activityPanel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
-		QLabel* m_activityHeaderSummary = nullptr;
 		QListWidget* m_activityList = nullptr;
 		QLabel* m_selectedRunSummary = nullptr;
 		QPushButton* m_copyOutputButton = nullptr;

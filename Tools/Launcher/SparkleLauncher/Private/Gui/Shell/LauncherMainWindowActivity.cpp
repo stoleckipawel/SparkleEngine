@@ -58,6 +58,10 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::ToggleActivityLogPanel()
 	{
+		if (m_startedRunCount == 0)
+		{
+			return;
+		}
 		SetActivityLogExpanded(!m_activityLogExpanded);
 	}
 
@@ -68,7 +72,7 @@ namespace SparkleLauncher
 		AppendRunOutput(runId, effectiveTitle + " started.\n");
 		ShowRunOutput(runId);
 		SetActivityLogExpanded(true);
-		UpdateProgress();
+		RefreshActivityPanel();
 	}
 
 	void LauncherMainWindow::AppendOperationOutput(const QString& runId, const QString&, const QString& outputText)
@@ -112,7 +116,7 @@ namespace SparkleLauncher
 		m_actionHistory.Save(m_repositoryRoot);
 		ShowRunOutput(runId);
 		SetActivityLogExpanded(true);
-		UpdateProgress();
+		RefreshActivityPanel();
 
 		bool refreshesSourceDependencyState = false;
 		for (auto dependencyRun = m_sourceDependencyRunIds.begin(); dependencyRun != m_sourceDependencyRunIds.end();)
@@ -217,7 +221,7 @@ namespace SparkleLauncher
 		m_runOutputs.insert(runId, title + " queued.\n");
 		m_activityList->setCurrentItem(item);
 		m_activeRunId = runId;
-		UpdateProgress();
+		RefreshActivityPanel();
 	}
 
 	void LauncherMainWindow::SetRunState(const QString& runId, RunState state, const QString& title)
@@ -338,6 +342,7 @@ namespace SparkleLauncher
 		if (m_copyOutputButton != nullptr)
 		{
 			const bool canCopyOutput = m_activityLogExpanded && m_operationOutput != nullptr && !m_operationOutput->toPlainText().isEmpty();
+			m_copyOutputButton->setVisible(!runId.isEmpty());
 			m_copyOutputButton->setEnabled(canCopyOutput);
 			m_copyOutputButton->setToolTip(
 			    canCopyOutput ? "Copy output for the selected run. Shortcut: Ctrl+Shift+C."
@@ -347,6 +352,8 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::SetActivityLogExpanded(bool expanded)
 	{
+		const bool hasRuns = m_startedRunCount > 0;
+		expanded = expanded && hasRuns;
 		m_activityLogExpanded = expanded;
 		if (m_activityPanel != nullptr)
 		{
@@ -363,15 +370,20 @@ namespace SparkleLauncher
 		}
 		if (m_toggleOutputButton != nullptr)
 		{
+			m_toggleOutputButton->setEnabled(hasRuns);
+			m_toggleOutputButton->setVisible(hasRuns);
 			m_toggleOutputButton->setText(
 			    QString::fromLatin1(expanded ? LauncherUi::Activity::CollapseGlyph : LauncherUi::Activity::ExpandGlyph));
 			m_toggleOutputButton->setToolTip(
-			    expanded ? "Minimize recent runs and raw process output." : "Show recent runs and raw process output.");
+			    !hasRuns       ? "Run a workflow to view its activity."
+			        : expanded ? "Minimize recent runs and raw process output."
+			                   : "Show recent runs and raw process output.");
 			m_toggleOutputButton->setAccessibleDescription(m_toggleOutputButton->toolTip());
 		}
 		if (m_copyOutputButton != nullptr)
 		{
 			const bool canCopyOutput = expanded && m_operationOutput != nullptr && !m_operationOutput->toPlainText().isEmpty();
+			m_copyOutputButton->setVisible(expanded && !m_activeRunId.isEmpty());
 			m_copyOutputButton->setEnabled(canCopyOutput);
 		}
 	}
@@ -390,22 +402,9 @@ namespace SparkleLauncher
 		}
 	}
 
-	void LauncherMainWindow::UpdateProgress()
+	void LauncherMainWindow::RefreshActivityPanel()
 	{
-		if (m_activityDetailsPanel == nullptr)
-		{
-			return;
-		}
-
-		const bool hasRuns = m_startedRunCount > 0;
-		if (m_activityDetailsPanel != nullptr)
-		{
-			m_activityDetailsPanel->setVisible(hasRuns && m_activityLogExpanded);
-		}
-		if (m_copyOutputButton != nullptr && !hasRuns)
-		{
-			m_copyOutputButton->setEnabled(false);
-		}
+		SetActivityLogExpanded(m_activityLogExpanded);
 	}
 
 }

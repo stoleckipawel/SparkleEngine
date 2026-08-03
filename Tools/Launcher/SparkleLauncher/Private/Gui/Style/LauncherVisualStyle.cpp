@@ -236,7 +236,6 @@ namespace SparkleLauncher
 		        + "; border-top-color: #42493f; padding: 4px 10px; min-width: 116px;");
 		addRule("#InlineActionButton:hover", "background: " + panelHover + ";");
 		addRule("#MutedLabel", "color: " + textMuted + "; padding: 4px 0;");
-		addRule("#ProgressLabel", "color: " + textPrimary + "; font-size: 9pt; font-weight: 700;");
 		addRule(
 		    "#ActivitySummary",
 		    "color: " + textSecondary + "; background: transparent; font-size: 7.75pt; font-weight: 600; padding: 0 0 2px 0;");
@@ -277,14 +276,12 @@ namespace SparkleLauncher
 		addRule(
 		    "QPushButton:disabled",
 		    "background: #2d312d; border: 1px solid " + border + "; border-top-color: #41483e; color: " + textMuted + ";");
-		addRule(
-		    "#PrimaryActionButton",
-		    "background: " + primary + "; color: #071006; min-width: 112px; padding-left: 18px; padding-right: 18px; font-weight: 900;");
+		addRule("#PrimaryActionButton", "background: " + primary + "; color: #071006; padding: 0; font-weight: 900;");
 		addRule("#PrimaryActionButton:hover", "background: " + primaryHover + ";");
 		addRule(
 		    "#SecondaryButton",
 		    "background: #2a2d2a; color: " + textBody + "; border: 1px solid " + borderSoft
-		        + "; padding: 4px 10px; font-size: 8pt; font-weight: 650;");
+		        + "; padding: 0 10px; font-size: 8pt; font-weight: 650;");
 		addRule(
 		    "QComboBox, QLineEdit, QTextEdit",
 		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 5px 9px; color: " + textBody
@@ -292,6 +289,11 @@ namespace SparkleLauncher
 		addRule("QComboBox:focus, QLineEdit:focus, QTextEdit:focus", "border: 1px solid " + focus + ";");
 		addRule("QComboBox:disabled", "background: " + shell + "; border: 1px solid " + border + "; color: " + textMuted + ";");
 		addRule("QCheckBox", "spacing: 8px; padding: 0; color: " + textBody + "; font-size: 8.5pt;");
+		addRule("QCheckBox::indicator", "width: 13px; height: 13px; border-radius: 2px;");
+		addRule("QCheckBox::indicator:unchecked", "background: #151715; border: 1px solid #596056;");
+		addRule("QCheckBox::indicator:unchecked:hover", "border: 1px solid " + accent + ";");
+		addRule("QCheckBox::indicator:checked", "background: " + accent + "; border: 1px solid #9bdd42;");
+		addRule("QCheckBox::indicator:disabled", "background: #242724; border: 1px solid #3a3f39;");
 		addRule("QCheckBox:focus", "border: 1px solid " + focus + "; border-radius: 2px; color: " + textPrimary + ";");
 		addRule("QCheckBox:disabled", "color: " + textMuted + ";");
 		addRule("#WarningCheckBox", "color: " + warning + ";");

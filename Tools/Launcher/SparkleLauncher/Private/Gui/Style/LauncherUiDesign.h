@@ -107,7 +107,7 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace Page
 	{
-		inline constexpr int MaxContentWidth = 1340;
+		inline constexpr int MaxContentWidth = 1560;
 		inline constexpr int Spacing = 10;
 		inline constexpr int BottomMargin = 32;
 		inline const QMargins ContentMargins{28, 22, 28, BottomMargin};
@@ -117,7 +117,10 @@ namespace SparkleLauncher::LauncherUi
 	namespace ActionMeta
 	{
 		inline constexpr int Spacing = 8;
-		inline const QMargins Margins{0, 8, 0, 0};
+		inline constexpr int PrimaryButtonWidth = 144;
+		inline constexpr int SecondaryButtonWidth = 76;
+		inline constexpr int ButtonHeight = 32;
+		inline const QMargins Margins{0, 8, Page::ContentMargins.right(), 8};
 	}
 
 	namespace TextEdit
@@ -169,7 +172,7 @@ namespace SparkleLauncher::LauncherUi
 	namespace Activity
 	{
 		inline constexpr int CollapsedHeight = 36;
-		inline constexpr int ExpandedHeight = 260;
+		inline constexpr int ExpandedHeight = 240;
 		inline constexpr int ListWidth = 280;
 		inline constexpr int RowHeight = 26;
 		inline constexpr int HistoryRowHeight = 34;
@@ -223,7 +226,7 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace Card
 	{
-		inline constexpr double HomeTileAspectRatio = 1.64;
+		inline constexpr double HomeTileAspectRatio = 1.9;
 		inline constexpr int ProductBodyTop = 14;
 		inline constexpr int DiscoverBodyTop = 0;
 		inline constexpr int ProductBodyBottom = 0;
