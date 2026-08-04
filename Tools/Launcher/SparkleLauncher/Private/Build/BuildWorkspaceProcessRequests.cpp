@@ -2,6 +2,8 @@
 
 #include "CMakeWorkflowProcessRequests.h"
 #include "AssetPackSyncProcessRequests.h"
+#include "HostToolInstaller.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
@@ -138,9 +140,31 @@ namespace SparkleLauncher
 		steps.push_back(std::move(step));
 	}
 
+	static void AddHostToolInstallStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
+	{
+		std::string errorMessage;
+		std::optional<ProcessRequest> request =
+		    BuildHostToolInstallRequest(plan.Request.HostToolId, plan.Toolchain, plan.RepositoryRoot, plan.Operation.Id, errorMessage);
+		if (!request.has_value())
+		{
+			throw Diagnostics::Error(errorMessage);
+		}
+
+		BuildWorkspaceProcessStep step;
+		step.Id = "install-host-tool";
+		step.DisplayName = "Install host tool";
+		step.Request = std::move(*request);
+		steps.push_back(std::move(step));
+	}
+
 	std::vector<BuildWorkspaceProcessStep> BuildProcessStepsForPlan(const BuildWorkspaceOperationPlan& plan)
 	{
 		std::vector<BuildWorkspaceProcessStep> steps;
+		if (plan.Kind == BuildWorkspaceOperationKind::InstallHostTool)
+		{
+			AddHostToolInstallStep(steps, plan);
+			return steps;
+		}
 		if (plan.Kind != BuildWorkspaceOperationKind::SyncLevels && !plan.Toolchain.RequiredToolsAvailable)
 		{
 			return steps;
@@ -202,6 +226,8 @@ namespace SparkleLauncher
 				}
 				return steps;
 			}
+			case BuildWorkspaceOperationKind::InstallHostTool:
+				return steps;
 		}
 
 		return steps;

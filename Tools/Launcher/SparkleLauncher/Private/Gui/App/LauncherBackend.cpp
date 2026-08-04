@@ -4,8 +4,9 @@
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
-#include "Operations/LauncherOperationRequestMapping.h"
+#include "Operations/LauncherOperationExecution.h"
 #include "Operations/LauncherOperationService.h"
+
 #include <QtCore/QMetaObject>
 
 #include <memory>
@@ -13,6 +14,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace SparkleLauncher
@@ -116,42 +118,15 @@ namespace SparkleLauncher
 		}
 
 		std::ostringstream output;
-		bool canRun = false;
 		const std::string operationId = request.OperationId.toStdString();
-		switch (operation->Category)
-		{
-			case LauncherOperationCategory::Workspace:
-			{
-				const BuildWorkspaceOperationPlan plan =
-				    PlanBuildWorkspaceOperation(operationId, LauncherOperationRequestMapping::BuildWorkspace(request));
-				AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
-				canRun = plan.CanRun;
-				break;
-			}
-			case LauncherOperationCategory::Cooking:
-			{
-				const CookOperationPlan plan = PlanCookOperation(operationId, LauncherOperationRequestMapping::Cook(request));
-				AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
-				canRun = plan.CanRun;
-				break;
-			}
-			case LauncherOperationCategory::Maintenance:
-			{
-				const MaintenanceOperationPlan plan =
-				    PlanMaintenanceOperation(operationId, LauncherOperationRequestMapping::Maintenance(request));
-				AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
-				canRun = plan.CanRun;
-				break;
-			}
-			case LauncherOperationCategory::Launch:
-			{
-				const LaunchOperationPlan plan =
-				    PlanLaunchOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::Launch(request));
-				AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
-				canRun = plan.CanRun;
-				break;
-			}
-		}
+		const LauncherOperationPlan plan = PlanLauncherOperation(operation->Category, operationId, request);
+		const bool canRun = std::visit(
+		    [&output](const auto& typedPlan)
+		    {
+			    AppendPlanDetails(output, typedPlan.Operation, typedPlan.CanRun, typedPlan.ReadinessMessages, typedPlan.PlannedEffects);
+			    return typedPlan.CanRun;
+		    },
+		    plan);
 
 		emit OperationPreviewReady(operation->Id, operation->DisplayName, ToQtString(output), canRun);
 	}

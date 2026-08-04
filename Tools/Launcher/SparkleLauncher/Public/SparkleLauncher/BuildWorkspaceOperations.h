@@ -20,6 +20,12 @@ namespace SparkleLauncher
 		Warning
 	};
 
+	enum class WorkspaceCompiler
+	{
+		Msvc,
+		ClangCl
+	};
+
 	struct ToolchainItemStatus
 	{
 		std::string Id;
@@ -28,6 +34,8 @@ namespace SparkleLauncher
 		ToolchainItemState State = ToolchainItemState::Missing;
 		std::filesystem::path Path;
 		std::string Detail;
+		std::optional<WorkspaceCompiler> Compiler;
+		bool CanInstall = false;
 	};
 
 	struct BuildToolchainStatus
@@ -41,12 +49,16 @@ namespace SparkleLauncher
 		std::filesystem::path RiderPath;
 		std::filesystem::path GitPath;
 		std::filesystem::path VswherePath;
+		std::filesystem::path VisualStudioPath;
+		std::filesystem::path VisualStudioInstallerPath;
+		std::filesystem::path ClangClPath;
 		std::filesystem::path QtRootPath;
 		std::filesystem::path QtQmakePath;
 		std::filesystem::path ShaderCompilerSdkRoot;
 		std::filesystem::path VulkanSdkRoot;
 		std::string WindowsSdkVersion;
 		std::vector<ToolchainItemStatus> Items;
+		WorkspaceCompiler Compiler = WorkspaceCompiler::Msvc;
 		bool RequiredToolsAvailable = false;
 		bool ConfigurePrerequisitesAvailable = true;
 	};
@@ -101,7 +113,8 @@ namespace SparkleLauncher
 		CompileLauncher,
 		CompileEditor,
 		CompileRuntime,
-		BuildCookTools
+		BuildCookTools,
+		InstallHostTool
 	};
 
 	struct BuildWorkspaceOperationDefinition
@@ -120,9 +133,11 @@ namespace SparkleLauncher
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;
+		WorkspaceCompiler Compiler = WorkspaceCompiler::Msvc;
 		std::vector<std::string> SelectedTargets;
 		std::vector<std::string> RequestedLevelIds;
 		std::string SourceDependencyId;
+		std::string HostToolId;
 		bool ForceConfigure = false;
 	};
 
@@ -157,12 +172,19 @@ namespace SparkleLauncher
 	std::string DisplayName(WorkspaceIde ide);
 	std::string WorkspaceIdeCommandLineValue(WorkspaceIde ide);
 	bool TryParseWorkspaceIde(std::string_view text, WorkspaceIde& outIde);
+	std::string ToString(WorkspaceCompiler compiler);
+	std::string DisplayName(WorkspaceCompiler compiler);
+	std::string WorkspaceCompilerCommandLineValue(WorkspaceCompiler compiler);
+	bool TryParseWorkspaceCompiler(std::string_view text, WorkspaceCompiler& outCompiler);
 	WorkspaceFeatureSettings GetLauncherWorkspaceFeatureSettings();
 	bool HasIncompleteEnabledSourceDependencies(const BuildWorkspaceOperationPlan& plan);
 	bool BuildWorkspaceOperationRequiresConfigureStep(const BuildWorkspaceOperationPlan& plan);
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions();
 	std::optional<BuildWorkspaceOperationDefinition> FindBuildWorkspaceOperationDefinition(std::string_view operationId);
-	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde);
+	BuildToolchainStatus DetectBuildToolchain(
+	    const std::filesystem::path& repositoryRoot,
+	    WorkspaceIde preferredIde,
+	    WorkspaceCompiler compiler = WorkspaceCompiler::Msvc);
 	BuildFilesFreshnessStatus CheckBuildFilesFreshness(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain);
 	bool UpdateBuildFilesFreshnessStamp(
 	    const std::filesystem::path& repositoryRoot,

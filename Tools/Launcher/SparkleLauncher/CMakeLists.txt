@@ -32,6 +32,7 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildFilesFreshness.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildFreshnessSignature.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildToolchainDetection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/HostToolInstaller.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/QtToolchainDiscovery.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/ShaderCompilerSdkDiscovery.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/VisualStudioToolchainDiscovery.cpp
@@ -53,6 +54,7 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeGeneratorModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/HostToolInstaller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncPlanner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncProcessRequests.h
 	${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/QtToolchainDiscovery.h
@@ -106,6 +108,8 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCapabilityProviders.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherHostToolCapabilityProvider.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherSourceDependencyCapabilityProvider.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkspaceCapabilityProvider.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelCapabilityProvider.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCookCapabilityProvider.cpp
@@ -142,6 +146,7 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherBackend.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherGuiApp.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherSettings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationRequest.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationRequestMapping.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationExecution.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationService.h
@@ -306,6 +311,7 @@ target_link_libraries(SparkleLauncherProbe
         SparkleLauncherCore
         SparkleCore
 )
+target_include_directories(SparkleLauncherProbe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build)
 
 target_compile_features(SparkleLauncherProbe PRIVATE cxx_std_20)
 add_test(NAME sparkle_launcher_probe COMMAND SparkleLauncherProbe "${CMAKE_SOURCE_DIR}")

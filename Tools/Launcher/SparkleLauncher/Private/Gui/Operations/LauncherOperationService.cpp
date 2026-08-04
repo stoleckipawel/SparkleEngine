@@ -1,6 +1,5 @@
 #include "LauncherOperationService.h"
 
-#include "LauncherBackend.h"
 #include "LauncherOperationExecution.h"
 #include "Tasks/Public/TaskExecutor.h"
 #include "Tasks/Public/TaskScope.h"
@@ -14,23 +13,23 @@ namespace SparkleLauncher
 	struct LauncherOperationService::Implementation final
 	{
 		explicit Implementation(ProcessRunnerFactory processRunnerFactory) :
-		    ProcessRunnerFactoryValue(std::move(processRunnerFactory))
+		    m_processRunnerFactory(std::move(processRunnerFactory))
 		{
 		}
 		~Implementation()
 		{
-			RootScope.Cancel();
-			Executor.Shutdown(TaskExecutorShutdownMode::Cancel);
-			for (const auto& operation : OperationScopes)
+			m_rootScope.Cancel();
+			m_executor.Shutdown(TaskExecutorShutdownMode::Cancel);
+			for (const auto& operation : m_operationScopes)
 			{
 				operation.second->JoinFor(std::chrono::milliseconds::zero());
 			}
-			RootScope.JoinFor(std::chrono::milliseconds::zero());
+			m_rootScope.JoinFor(std::chrono::milliseconds::zero());
 		}
 
 		void ReapSettledOperations()
 		{
-			for (auto operation = OperationScopes.begin(); operation != OperationScopes.end();)
+			for (auto operation = m_operationScopes.begin(); operation != m_operationScopes.end();)
 			{
 				// JoinFor closes the per-run scope. A scope does not become settled merely
 				// because its only execution finished; the owner must close it explicitly.
@@ -40,18 +39,18 @@ namespace SparkleLauncher
 					continue;
 				}
 
-				operation = OperationScopes.erase(operation);
+				operation = m_operationScopes.erase(operation);
 			}
 		}
 
-		ProcessRunnerFactory ProcessRunnerFactoryValue;
-		TaskExecutor Executor{TaskExecutorConfig{
+		ProcessRunnerFactory m_processRunnerFactory;
+		TaskExecutor m_executor{TaskExecutorConfig{
 		    .FrameCriticalWorkerCount = 1,
 		    .BackgroundWorkerCount = 1,
 		    .BlockingIoWorkerCount = 2,
 		    .MaximumActiveExecutions = 16}};
-		TaskScope RootScope{TaskScopeDesc{TaskScopeKind::Application, "Launcher operations"}};
-		std::map<std::string, std::unique_ptr<TaskScope>, std::less<>> OperationScopes;
+		TaskScope m_rootScope{TaskScopeDesc{TaskScopeKind::Application, "Launcher operations"}};
+		std::map<std::string, std::unique_ptr<TaskScope>, std::less<>> m_operationScopes;
 	};
 
 	LauncherOperationService::LauncherOperationService(ProcessRunnerFactory processRunnerFactory) :
@@ -70,20 +69,20 @@ namespace SparkleLauncher
 	{
 		m_implementation->ReapSettledOperations();
 		const std::string runId = request.RunId.isEmpty() ? request.OperationId.toStdString() : request.RunId.toStdString();
-		if (runId.empty() || m_implementation->OperationScopes.contains(runId))
+		if (runId.empty() || m_implementation->m_operationScopes.contains(runId))
 		{
 			throw std::logic_error("Launcher operation run identity is empty or already active.");
 		}
 
 		auto operationScope = std::make_unique<TaskScope>(
 		    TaskScopeDesc{TaskScopeKind::ToolInvocation, "Launcher operation " + runId},
-		    &m_implementation->RootScope);
+		    &m_implementation->m_rootScope);
 		TaskScope& scope = *operationScope;
-		m_implementation->OperationScopes.emplace(runId, std::move(operationScope));
-		ProcessRunnerFactory processRunnerFactory = m_implementation->ProcessRunnerFactoryValue;
+		m_implementation->m_operationScopes.emplace(runId, std::move(operationScope));
+		ProcessRunnerFactory processRunnerFactory = m_implementation->m_processRunnerFactory;
 		try
 		{
-			m_implementation->Executor.Launch(
+			m_implementation->m_executor.Launch(
 			    scope,
 			    TaskDesc{TaskName("Launcher operation"), TaskLane::BlockingIo},
 			    [category,
@@ -104,7 +103,7 @@ namespace SparkleLauncher
 					    return TaskResult::Failure("No process runner is available.");
 				    }
 				    OperationRecord record =
-				        ExecuteLauncherOperation(category, operationId, title, request, *processRunner, context, outputCallback);
+				        ExecuteLauncherOperation(category, operationId, request, *processRunner, context, outputCallback);
 				    completionCallback(std::move(record));
 				    return context.IsCancellationRequested() ? TaskResult::Cancelled("Launcher operation was cancelled.")
 				                                             : TaskResult::Success();
@@ -113,15 +112,15 @@ namespace SparkleLauncher
 		catch (...)
 		{
 			scope.JoinFor(std::chrono::milliseconds::zero());
-			m_implementation->OperationScopes.erase(runId);
+			m_implementation->m_operationScopes.erase(runId);
 			throw;
 		}
 	}
 
 	bool LauncherOperationService::Cancel(std::string_view runId) noexcept
 	{
-		const auto operation = m_implementation->OperationScopes.find(runId);
-		if (operation == m_implementation->OperationScopes.end() || operation->second->IsSettled())
+		const auto operation = m_implementation->m_operationScopes.find(runId);
+		if (operation == m_implementation->m_operationScopes.end() || operation->second->IsSettled())
 		{
 			return false;
 		}

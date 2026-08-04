@@ -34,6 +34,7 @@ namespace SparkleLauncher
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde WorkspaceIdePreference = WorkspaceIde::VisualStudio;
+		WorkspaceCompiler WorkspaceCompilerPreference = WorkspaceCompiler::Msvc;
 		std::vector<LauncherShellOperationRow> Operations;
 		std::vector<LauncherShellActivityEntry> Activity;
 		std::vector<std::string> JobOutput;

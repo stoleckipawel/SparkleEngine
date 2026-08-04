@@ -24,6 +24,7 @@ namespace SparkleLauncher
 		request.EditorProfile = model.EditorProfile;
 		request.RuntimeProfile = model.RuntimeProfile;
 		request.PreferredIde = model.WorkspaceIdePreference;
+		request.Compiler = model.WorkspaceCompilerPreference;
 		request.ForceConfigure = false;
 		return request;
 	}
@@ -57,8 +58,7 @@ namespace SparkleLauncher
 		request.ContentId = model.ContentId;
 		request.EditorProfile = model.EditorProfile;
 		request.RuntimeProfile = model.RuntimeProfile;
-		request.Target = arguments.LaunchTarget;
-		request.StartupLevel = arguments.LaunchStartupLevel;
+		request.StartupLevel = arguments.StartupLevel;
 		return request;
 	}
 
@@ -68,6 +68,7 @@ namespace SparkleLauncher
 		model.JobOutput.push_back("Editor profile: " + model.EditorProfile);
 		model.JobOutput.push_back("Runtime profile: " + model.RuntimeProfile);
 		model.JobOutput.push_back("Workspace IDE: " + DisplayName(model.WorkspaceIdePreference));
+		model.JobOutput.push_back("Workspace compiler: " + DisplayName(model.WorkspaceCompilerPreference));
 		model.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
 		for (const std::string& message : plan.ReadinessMessages)
 		{

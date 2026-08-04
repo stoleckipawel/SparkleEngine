@@ -1,13 +1,10 @@
 #include "LauncherMainWindow.h"
 
 #include "LauncherActionWidgets.h"
-#include "LauncherArtworkWidgets.h"
 #include "LauncherCleanUiModel.h"
 #include "LauncherDependencyUiModel.h"
-#include "LauncherHomeWidgets.h"
 #include "LauncherLayoutWidgets.h"
 #include "LauncherOperationRequestFactory.h"
-#include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"
@@ -19,25 +16,16 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
-#include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 
-#include <QtCore/QCoreApplication>
-#include <QtCore/QProcess>
-#include <QtCore/QRegularExpression>
+#include <QtCore/QSignalBlocker>
 #include <QtCore/QStringList>
-#include <QtGui/QGuiApplication>
-#include <QtWidgets/QCheckBox>
-#include <QtWidgets/QComboBox>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
-#include <QtWidgets/QScrollArea>
 #include <QtWidgets/QSizePolicy>
-#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -67,15 +55,79 @@ namespace SparkleLauncher
 		return QString();
 	}
 
+	void LauncherMainWindow::SelectWorkspaceCompiler(WorkspaceCompiler compiler)
+	{
+		const QString value = QString::fromStdString(WorkspaceCompilerCommandLineValue(compiler));
+		m_settings.SetWorkspaceCompiler(value);
+		if (m_workspaceCompilerCombo == nullptr)
+		{
+			return;
+		}
+
+		const int index = m_workspaceCompilerCombo->findData(value);
+		if (index >= 0 && index != m_workspaceCompilerCombo->currentIndex())
+		{
+			const QSignalBlocker blocker(m_workspaceCompilerCombo);
+			m_workspaceCompilerCombo->setCurrentIndex(index);
+		}
+	}
+
+	void LauncherMainWindow::InstallHostTool(const ToolchainItemStatus& item)
+	{
+		if (item.Compiler.has_value())
+		{
+			SelectWorkspaceCompiler(*item.Compiler);
+		}
+
+		LauncherOperationRequest request =
+		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, "workspace.install-host-tool");
+		request.HostToolId = QString::fromStdString(item.Id);
+		StartOperation(std::move(request), "Install " + QString::fromStdString(item.DisplayName));
+	}
+
+	QPushButton* LauncherMainWindow::CreateHostToolActionButton(const ToolchainItemStatus& item)
+	{
+		const std::optional<WorkspaceCompiler> compiler = item.Compiler;
+		const bool selected = compiler.has_value() && *compiler == ResolveSelectedWorkspaceCompiler(m_settings);
+		if (item.State == ToolchainItemState::Found && (!compiler.has_value() || selected))
+		{
+			return nullptr;
+		}
+		if (item.State != ToolchainItemState::Found && !item.CanInstall)
+		{
+			return nullptr;
+		}
+
+		const bool install = item.State != ToolchainItemState::Found;
+		const QString label = install ? QStringLiteral("Install") : QStringLiteral("Use");
+		const QString displayName = QString::fromStdString(item.DisplayName);
+		QPushButton* button = new QPushButton(this);
+		ApplyStatusActionButtonPresentation(*button, label, install ? QStringLiteral("warning") : QStringLiteral("neutral"));
+		button->setAccessibleName(label + " " + displayName);
+		button->setToolTip(
+		    install ? "Install " + displayName + " and select it for launcher builds." : "Select " + displayName + " for launcher builds.");
+		RegisterFocusable(button);
+		connect(
+		    button,
+		    &QPushButton::clicked,
+		    this,
+		    [this, item, compiler, install]()
+		    {
+			    if (install)
+			    {
+				    InstallHostTool(item);
+			    }
+			    else if (compiler.has_value())
+			    {
+				    SelectWorkspaceCompiler(*compiler);
+			    }
+		    });
+		return button;
+	}
+
 	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
 	{
-		BuildWorkspaceOperationRequest request;
-		request.RepositoryRoot = m_repositoryRoot;
-		request.ContentId = m_contentModel.ContentId().toStdString();
-		request.EditorProfile = m_settings.EditorProfile().toStdString();
-		request.RuntimeProfile = m_settings.RuntimeProfile().toStdString();
-		request.PreferredIde = ResolveSelectedWorkspaceIde(m_settings);
-		request.ForceConfigure = m_settings.ForceConfigure();
+		const BuildWorkspaceOperationRequest request = BuildWorkspacePlanRequest(m_repositoryRoot, m_contentModel, m_settings);
 
 		const QString workspacePlanOperationId =
 		    operationId.startsWith("cook.") && operationId != "cook.tools.prepare" ? "cook.tools.prepare" : operationId;
@@ -106,7 +158,8 @@ namespace SparkleLauncher
 					    QString::fromStdString(item.DisplayName),
 					    ToolchainStatusText(item.State, item.Required),
 					    CompactToolchainDetail(item),
-					    ToolchainStatusState(item.State, item.Required));
+					    ToolchainStatusState(item.State, item.Required),
+					    CreateHostToolActionButton(item));
 				}
 			};
 			addToolchainItems(true);
@@ -117,10 +170,10 @@ namespace SparkleLauncher
 			    request.PreferredIde == WorkspaceIde::Rider
 			        ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found."
 			                                            : QString::fromStdString(plan.Toolchain.RiderPath.string()))
-			        : (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready."
-			                                              : QString::fromStdString(plan.Freshness.SolutionPath.string())),
+			        : (plan.Toolchain.VisualStudioPath.empty() ? "Visual Studio C++ tools were not found."
+			                                                   : QString::fromStdString(plan.Toolchain.VisualStudioPath.string())),
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok")
-			                                                : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
+			                                                : (plan.Toolchain.VisualStudioPath.empty() ? "warning" : "ok"));
 
 			if (!isSourceSyncWorkflow)
 			{
@@ -213,184 +266,6 @@ namespace SparkleLauncher
 			    plan.Freshness.Current ? nullptr
 			                           : CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files"));
 		}
-	}
-
-	void LauncherMainWindow::AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
-	{
-		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, operationId);
-		BuildWorkspaceOperationRequest workspaceRequest;
-		workspaceRequest.RepositoryRoot = m_repositoryRoot;
-		workspaceRequest.ContentId = m_contentModel.ContentId().toStdString();
-		workspaceRequest.EditorProfile = m_settings.EditorProfile().toStdString();
-		workspaceRequest.RuntimeProfile = m_settings.RuntimeProfile().toStdString();
-		workspaceRequest.PreferredIde = ResolveSelectedWorkspaceIde(m_settings);
-		workspaceRequest.ForceConfigure = m_settings.ForceConfigure();
-		LaunchOperationRequest launchRequest;
-		launchRequest.RepositoryRoot = request.RepositoryRoot;
-		launchRequest.OperationId = operationId.toStdString();
-		launchRequest.ContentId = request.ContentId.toStdString();
-		launchRequest.EditorProfile = request.EditorProfile.toStdString();
-		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
-		launchRequest.Target = request.LaunchTarget.toStdString();
-		launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
-		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
-		launchRequest.VSync = request.LaunchVSync.toStdString();
-		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
-		for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
-		{
-			if (!argument.isEmpty())
-			{
-				launchRequest.CustomArguments.push_back(argument.toStdString());
-			}
-		}
-		for (const QString& part : request.LaunchCVars.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
-		{
-			const QString trimmed = part.trimmed();
-			if (!trimmed.isEmpty())
-			{
-				launchRequest.CustomCVars.push_back(trimmed.toStdString());
-			}
-		}
-
-		const LaunchOperationPlan plan = PlanLaunchOperation(operationId.toStdString(), launchRequest);
-		const BuildToolchainStatus toolchainStatus = DetectBuildToolchain(workspaceRequest.RepositoryRoot, workspaceRequest.PreferredIde);
-		const bool runtimeTarget = launchRequest.Target == "runtime";
-		const auto findReadiness = [&plan](const QString& prefix)
-		{
-			for (const std::string& message : plan.ReadinessMessages)
-			{
-				const QString text = QString::fromStdString(message);
-				if (text.startsWith(prefix, Qt::CaseInsensitive))
-				{
-					return text;
-				}
-			}
-			return QString();
-		};
-
-		const QString executableDetail = findReadiness("Executable ");
-		const QString contentDetail = findReadiness("Content working directory ");
-		const QString cookedMeshesDetail = findReadiness("Cooked scenes and meshes ");
-		const QString cookedTexturesDetail = findReadiness("Cooked textures ");
-		const QString cookedShadersDetail = findReadiness("Cooked shaders ");
-		const bool executableMissing = executableDetail.contains("missing", Qt::CaseInsensitive);
-		const bool contentMissing = contentDetail.contains("missing", Qt::CaseInsensitive);
-		const bool cookedMeshesMissing = cookedMeshesDetail.contains("missing", Qt::CaseInsensitive);
-		const bool cookedTexturesMissing = cookedTexturesDetail.contains("missing", Qt::CaseInsensitive);
-		const bool cookedShadersMissing = cookedShadersDetail.contains("missing", Qt::CaseInsensitive);
-
-		QVBoxLayout* launchLayout = AddOptionGroup(layout, "Readiness", QString());
-		if (launchRequest.GraphicsBackend == "vulkan" && toolchainStatus.VulkanSdkRoot.empty())
-		{
-			AddStatusRow(
-			    *launchLayout,
-			    "Graphics backend",
-			    "Needs SDK",
-			    "Vulkan was selected, but the Vulkan SDK is not available on this machine yet.",
-			    "warning",
-			    CreateStatusActionButton("workspace.sync-code", "Review", "Review Sync Code", true));
-		}
-		AddStatusRow(
-		    *launchLayout,
-		    runtimeTarget ? "Runtime executable" : "Editor executable",
-		    executableMissing ? "Missing" : "Ready",
-		    executableDetail,
-		    executableMissing ? "warning" : "ok",
-		    executableMissing ? CreateStatusActionButton(
-		                            runtimeTarget ? "workspace.build.runtime" : "workspace.build.editor",
-		                            "Build",
-		                            runtimeTarget ? "Build Runtime" : "Build Editor")
-		                      : nullptr);
-		AddStatusRow(
-		    *launchLayout,
-		    "Content directory",
-		    contentMissing ? "Missing" : "Ready",
-		    contentDetail,
-		    contentMissing ? "warning" : "ok",
-		    contentMissing ? CreateStatusActionButton("workspace.sync-levels", "Sync", "Review Sync Levels", true) : nullptr);
-		AddStatusRow(
-		    *launchLayout,
-		    "Cooked scene assets",
-		    cookedMeshesMissing ? "Missing" : "Ready",
-		    cookedMeshesDetail,
-		    cookedMeshesMissing ? "warning" : "ok",
-		    cookedMeshesMissing ? CreateStatusActionButton("cook.assets", "Cook", "Cook Scene Assets") : nullptr);
-		AddStatusRow(
-		    *launchLayout,
-		    "Cooked textures",
-		    cookedTexturesMissing ? "Missing" : "Ready",
-		    cookedTexturesDetail,
-		    cookedTexturesMissing ? "warning" : "ok",
-		    cookedTexturesMissing ? CreateStatusActionButton("cook.textures", "Cook", "Cook Textures") : nullptr);
-		AddStatusRow(
-		    *launchLayout,
-		    "Cooked shaders",
-		    cookedShadersMissing ? "Missing" : "Ready",
-		    cookedShadersDetail,
-		    cookedShadersMissing ? "warning" : "ok",
-		    cookedShadersMissing ? CreateStatusActionButton("cook.shaders", "Cook", "Cook Shaders") : nullptr);
-	}
-
-	void LauncherMainWindow::AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail)
-	{
-		QVBoxLayout* targetLayout = AddOptionGroup(layout, title, detail);
-		AddOptionField(
-		    *targetLayout,
-		    "Application",
-		    CreateValueCombo(
-		        {{"Editor", "editor"}, {"Runtime", "runtime"}},
-		        m_settings.LaunchTarget(),
-		        &LauncherSettings::SetLaunchTarget));
-	}
-
-	void LauncherMainWindow::AddLaunchApplicationOptions(QVBoxLayout& layout)
-	{
-		QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Options", QString());
-		AddOptionField(
-		    *appOptionsLayout,
-		    "Graphics backend",
-		    CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
-		AddOptionField(
-		    *appOptionsLayout,
-		    "VSync",
-		    CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
-		AddOptionField(
-		    *appOptionsLayout,
-		    "GPU preference",
-		    CreateValueCombo(
-		        {{"High performance", ""}, {"System default", "false"}},
-		        m_settings.LaunchHighPerformanceAdapter(),
-		        &LauncherSettings::SetLaunchHighPerformanceAdapter));
-
-		QCheckBox* advancedOptions = new QCheckBox("Command line and CVars", this);
-		advancedOptions->setToolTip("Show advanced launch arguments and console variable overrides.");
-		advancedOptions->setAccessibleName("Show advanced launch options");
-		advancedOptions->setChecked(
-		    !m_settings.LaunchCommandLineArguments().trimmed().isEmpty() || !m_settings.LaunchCVars().trimmed().isEmpty());
-		advancedOptions->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-		RegisterFocusable(advancedOptions);
-		AddOptionField(*appOptionsLayout, "Advanced", advancedOptions);
-
-		QWidget* argumentsRow = AddOptionField(
-		    *appOptionsLayout,
-		    "Arguments",
-		    CreateBoundLineEdit(
-		        m_settings.LaunchCommandLineArguments(),
-		        "--flag value \"quoted value\"",
-		        "Extra command-line arguments appended after launcher-managed options.",
-		        &LauncherSettings::SetLaunchCommandLineArguments));
-		QWidget* cvarsRow = AddOptionField(
-		    *appOptionsLayout,
-		    "CVars",
-		    CreateBoundTextEdit(
-		        m_settings.LaunchCVars(),
-		        "r.SomeCVar=1\nr.OtherCVar=false",
-		        "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.",
-		        &LauncherSettings::SetLaunchCVars));
-		argumentsRow->setVisible(advancedOptions->isChecked());
-		cvarsRow->setVisible(advancedOptions->isChecked());
-		connect(advancedOptions, &QCheckBox::toggled, argumentsRow, &QWidget::setVisible);
-		connect(advancedOptions, &QCheckBox::toggled, cvarsRow, &QWidget::setVisible);
 	}
 
 	void LauncherMainWindow::AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)

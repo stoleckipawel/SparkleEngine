@@ -16,8 +16,8 @@ namespace SparkleLauncher
 		return "development";
 	}
 
-	LauncherSettings::LauncherSettings(QObject* parent)
-	    : QObject(parent)
+	LauncherSettings::LauncherSettings(QObject* parent) :
+	    QObject(parent)
 	{
 	}
 
@@ -63,6 +63,11 @@ namespace SparkleLauncher
 		return m_workspaceIde;
 	}
 
+	const QString& LauncherSettings::WorkspaceCompiler() const
+	{
+		return m_workspaceCompiler;
+	}
+
 	const QString& LauncherSettings::SelectedTargets() const
 	{
 		return m_selectedTargets;
@@ -93,39 +98,14 @@ namespace SparkleLauncher
 		return m_shaderCacheDirectory;
 	}
 
-	const QString& LauncherSettings::LaunchBackend() const
+	const QString& LauncherSettings::GraphicsApi() const
 	{
-		return m_launchBackend;
+		return m_graphicsApi;
 	}
 
-	const QString& LauncherSettings::LaunchTarget() const
+	const QString& LauncherSettings::StartupLevel() const
 	{
-		return m_launchTarget;
-	}
-
-	const QString& LauncherSettings::LaunchStartupLevel() const
-	{
-		return m_launchStartupLevel;
-	}
-
-	const QString& LauncherSettings::LaunchVSync() const
-	{
-		return m_launchVSync;
-	}
-
-	const QString& LauncherSettings::LaunchHighPerformanceAdapter() const
-	{
-		return m_launchHighPerformanceAdapter;
-	}
-
-	const QString& LauncherSettings::LaunchCommandLineArguments() const
-	{
-		return m_launchCommandLineArguments;
-	}
-
-	const QString& LauncherSettings::LaunchCVars() const
-	{
-		return m_launchCVars;
+		return m_startupLevel;
 	}
 
 	const QString& LauncherSettings::CleanScope() const
@@ -211,6 +191,17 @@ namespace SparkleLauncher
 		emit SettingsChanged();
 	}
 
+	void LauncherSettings::SetWorkspaceCompiler(const QString& compiler)
+	{
+		if (m_workspaceCompiler == compiler)
+		{
+			return;
+		}
+
+		m_workspaceCompiler = compiler;
+		emit SettingsChanged();
+	}
+
 	void LauncherSettings::SetSelectedTargets(const QString& targets)
 	{
 		if (m_selectedTargets == targets)
@@ -271,74 +262,25 @@ namespace SparkleLauncher
 		emit SettingsChanged();
 	}
 
-	void LauncherSettings::SetLaunchBackend(const QString& backend)
+	void LauncherSettings::SetGraphicsApi(const QString& graphicsApi)
 	{
-		if (m_launchBackend == backend)
+		const QString normalized = graphicsApi.trimmed().toLower() == "vulkan" ? QStringLiteral("vulkan") : QStringLiteral("d3d12");
+		if (m_graphicsApi == normalized)
 		{
 			return;
 		}
-		m_launchBackend = backend;
+		m_graphicsApi = normalized;
 		emit SettingsChanged();
 	}
 
-	void LauncherSettings::SetLaunchTarget(const QString& target)
-	{
-		if (m_launchTarget == target)
-		{
-			return;
-		}
-		m_launchTarget = target;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchStartupLevel(const QString& levelName)
+	void LauncherSettings::SetStartupLevel(const QString& levelName)
 	{
 		const QString normalized = levelName.trimmed();
-		if (m_launchStartupLevel == normalized)
+		if (m_startupLevel == normalized)
 		{
 			return;
 		}
-		m_launchStartupLevel = normalized;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchVSync(const QString& value)
-	{
-		if (m_launchVSync == value)
-		{
-			return;
-		}
-		m_launchVSync = value;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchHighPerformanceAdapter(const QString& value)
-	{
-		if (m_launchHighPerformanceAdapter == value)
-		{
-			return;
-		}
-		m_launchHighPerformanceAdapter = value;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchCommandLineArguments(const QString& arguments)
-	{
-		if (m_launchCommandLineArguments == arguments)
-		{
-			return;
-		}
-		m_launchCommandLineArguments = arguments;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchCVars(const QString& cvars)
-	{
-		if (m_launchCVars == cvars)
-		{
-			return;
-		}
-		m_launchCVars = cvars;
+		m_startupLevel = normalized;
 		emit SettingsChanged();
 	}
 

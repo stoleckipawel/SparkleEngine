@@ -24,7 +24,6 @@ namespace SparkleLauncher
 		            "workspace.build-all"},
 		        "build"},
 		    {"Cook", "Asset refresh", {"cook.shaders", "cook.textures", "cook.assets", "cook.all"}, "cook"},
-		    {"Launch", "Open what is ready", {"launch.run", "workspace.open-ide"}, "launch"},
 		    {"Clean", "Clean generated state", {"workspace.clean"}, "clean"},
 		};
 	}

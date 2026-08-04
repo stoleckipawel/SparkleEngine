@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LauncherOperationRequest.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
@@ -10,9 +11,6 @@
 
 namespace SparkleLauncher
 {
-	enum class LauncherOperationCategory;
-	struct LauncherOperationRequest;
-
 	class LauncherOperationService final
 	{
 	public:

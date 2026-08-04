@@ -5,35 +5,44 @@
 #include "LauncherQuickStartPlanner.h"
 #include "LauncherUiDesign.h"
 
+#include "SparkleLauncher/LaunchOperations.h"
+
 #include <QtCore/QDateTime>
 #include <QtCore/QStringList>
 #include <QtWidgets/QPushButton>
 
+#include <optional>
 #include <string>
 #include <utility>
 
 namespace SparkleLauncher
 {
-	static QString QuickStartProductDisplayName(const LauncherOperationRequest& request)
+	static QString QuickStartGoalDisplayName(const LauncherOperationRequest& request)
 	{
-		return request.LaunchTarget == "runtime" ? QStringLiteral("Runtime") : QStringLiteral("Editor");
+		if (request.OperationId == "workspace.open-ide")
+		{
+			return request.WorkspaceIde == "rider" ? QStringLiteral("Rider") : QStringLiteral("Visual Studio");
+		}
+		const std::optional<LaunchOperationDefinition> definition = FindLaunchOperationDefinition(request.OperationId.toStdString());
+		return definition.has_value() && definition->Product == LaunchProduct::Runtime ? QStringLiteral("Runtime")
+		                                                                               : QStringLiteral("Editor");
 	}
 
-	QPushButton* LauncherMainWindow::CreateQuickStartButton(const QString& launchOperationId, const QString& label)
+	QPushButton* LauncherMainWindow::CreateQuickStartButton(const QString& operationId, const QString& label)
 	{
 		QPushButton* button = new QPushButton(label, this);
 		button->setObjectName("CommandPrimaryButton");
 		button->setMinimumHeight(LauncherUi::Button::PrimaryMinHeight);
 		button->setAccessibleName(label);
-		button->setToolTip("Automatically prepare every available prerequisite, then launch.");
+		button->setToolTip("Automatically prepare every available prerequisite, then run this action.");
 		button->setEnabled(!m_quickStartExecution.has_value());
 		RegisterFocusable(button);
 		m_quickStartButtons.push_back(button);
-		connect(button, &QPushButton::clicked, this, [this, launchOperationId]() { StartQuickStart(launchOperationId); });
+		connect(button, &QPushButton::clicked, this, [this, operationId]() { StartQuickStart(operationId); });
 		return button;
 	}
 
-	void LauncherMainWindow::StartQuickStart(const QString& launchOperationId)
+	void LauncherMainWindow::StartQuickStart(const QString& operationId)
 	{
 		if (m_quickStartExecution.has_value())
 		{
@@ -45,12 +54,12 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (launchOperationId != "launch.editor" && launchOperationId != "launch.runtime")
+		if (operationId != "launch.editor" && operationId != "launch.runtime" && operationId != "workspace.open-ide")
 		{
 			return;
 		}
 
-		m_quickStartExecution.emplace(BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, launchOperationId));
+		m_quickStartExecution.emplace(BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, operationId));
 		SetQuickStartButtonsEnabled(false);
 		ContinueQuickStart();
 	}
@@ -73,7 +82,7 @@ namespace SparkleLauncher
 		}
 		if (resolution.Result == LauncherCapabilityResolution::Kind::Ready)
 		{
-			ReportQuickStartBlocked("The Quick Start goal became ready without registering a launch operation.");
+			ReportQuickStartBlocked("The Quick Start goal became ready without registering its final operation.");
 			return;
 		}
 		if (!resolution.OperationRequest.has_value())
@@ -90,8 +99,8 @@ namespace SparkleLauncher
 			return;
 		}
 
-		const QString productName = QuickStartProductDisplayName(execution.GoalRequest());
-		const QString stepTitle = QStringLiteral("Quick Start %1 - %2").arg(productName, DisplayNameForOperation(operationId));
+		const QString goalName = QuickStartGoalDisplayName(execution.GoalRequest());
+		const QString stepTitle = QStringLiteral("Quick Start %1 - %2").arg(goalName, DisplayNameForOperation(operationId));
 		QStringList dependencyPath;
 		for (const std::string& capabilityId : resolution.DependencyPath)
 		{
@@ -116,7 +125,7 @@ namespace SparkleLauncher
 		AppendRunOutput(
 		    runId,
 		    QStringLiteral("Quick Start is preparing every registered capability needed to run %1.\nCapability path: %2\nOperation: %3\n")
-		        .arg(productName, dependencyPath.join(" -> "), operationId));
+		        .arg(goalName, dependencyPath.join(" -> "), operationId));
 		if (!invalidatedCapabilities.isEmpty())
 		{
 			AppendRunOutput(runId, QStringLiteral("Invalidates after success: %1\n").arg(invalidatedCapabilities.join(", ")));
@@ -148,7 +157,7 @@ namespace SparkleLauncher
 				ScheduleUiRefresh(true);
 				return;
 			case LauncherQuickStartCompletion::Completed:
-				AppendRunOutput(runId, "\nQuick Start completed. The requested product was launched.\n");
+				AppendRunOutput(runId, "\nQuick Start completed. The requested action was started.\n");
 				ShowRunOutput(runId);
 				m_quickStartExecution.reset();
 				SetQuickStartButtonsEnabled(true);
@@ -168,8 +177,8 @@ namespace SparkleLauncher
 		}
 
 		const LauncherOperationRequest goalRequest = m_quickStartExecution->GoalRequest();
-		const QString productName = QuickStartProductDisplayName(goalRequest);
-		const QString title = QStringLiteral("Quick Start %1").arg(productName);
+		const QString goalName = QuickStartGoalDisplayName(goalRequest);
+		const QString title = QStringLiteral("Quick Start %1").arg(goalName);
 		const QString message = statusMessage.trimmed().isEmpty() ? QStringLiteral("Quick Start could not resolve an automatic next step.")
 		                                                          : statusMessage.trimmed();
 		m_quickStartExecution.reset();

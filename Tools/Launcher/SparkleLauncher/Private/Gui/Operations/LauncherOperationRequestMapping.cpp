@@ -1,39 +1,53 @@
 #include "LauncherOperationRequestMapping.h"
 
-#include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 
 namespace SparkleLauncher::LauncherOperationRequestMapping
 {
-
-	std::vector<std::string> SplitList(const QString& text)
+	static std::vector<std::string> SplitList(const QString& text)
 	{
 		std::vector<std::string> values;
 		for (const QString& part : text.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
 		{
 			const QString trimmed = part.trimmed();
 			if (!trimmed.isEmpty())
+			{
 				values.push_back(trimmed.toStdString());
+			}
 		}
 		return values;
 	}
 
-	CleanScope ParseCleanScope(const QString& text)
+	static CleanScope ParseCleanScope(const QString& text)
 	{
 		if (text == "build-tree")
+		{
 			return CleanScope::BuildTree;
+		}
 		if (text == "artifacts")
+		{
 			return CleanScope::ArtifactOutputs;
+		}
 		if (text == "workspace-state")
+		{
 			return CleanScope::WorkspaceState;
+		}
 		if (text == "shader-cache")
+		{
 			return CleanScope::ShaderCache;
+		}
 		if (text == "deps")
+		{
 			return CleanScope::ThirdPartyDependencyCache;
+		}
 		if (text == "logs")
+		{
 			return CleanScope::Logs;
+		}
 		if (text == "clean-all")
+		{
 			return CleanScope::PristineGeneratedWorkspace;
+		}
 		return CleanScope::CookedOutputs;
 	}
 
@@ -42,14 +56,18 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		BuildWorkspaceOperationRequest mapped;
 		WorkspaceIde workspaceIde = WorkspaceIde::VisualStudio;
 		TryParseWorkspaceIde(request.WorkspaceIde.toStdString(), workspaceIde);
+		WorkspaceCompiler workspaceCompiler = WorkspaceCompiler::Msvc;
+		TryParseWorkspaceCompiler(request.WorkspaceCompiler.toStdString(), workspaceCompiler);
 		mapped.RepositoryRoot = request.RepositoryRoot;
 		mapped.ContentId = request.ContentId.toStdString();
 		mapped.EditorProfile = request.EditorProfile.toStdString();
 		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
 		mapped.PreferredIde = workspaceIde;
+		mapped.Compiler = workspaceCompiler;
 		mapped.SelectedTargets = SplitList(request.SelectedTargets);
 		mapped.RequestedLevelIds = SplitList(request.RequestedLevelIds);
 		mapped.SourceDependencyId = request.SourceDependencyId.toStdString();
+		mapped.HostToolId = request.HostToolId.toStdString();
 		mapped.ForceConfigure = request.ForceConfigure;
 		return mapped;
 	}
@@ -82,9 +100,13 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.EditorProfile = request.EditorProfile.toStdString();
 		mapped.RequestedCleanScope = ParseCleanScope(request.CleanScope);
 		for (const QString& part : request.CleanScope.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
+		{
 			mapped.RequestedCleanScopes.push_back(ParseCleanScope(part.trimmed()));
+		}
 		if (mapped.RequestedCleanScopes.empty())
+		{
 			mapped.RequestedCleanScopes.push_back(CleanScope::CookedOutputs);
+		}
 		for (const LauncherCleanTarget& target : request.CleanTargets)
 		{
 			mapped.RequestedCleanTargets.push_back(
@@ -94,8 +116,12 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 			        .Detail = target.Detail.toStdString()});
 		}
 		for (const QString& path : request.PreservedPaths)
+		{
 			if (!path.trimmed().isEmpty())
+			{
 				mapped.PreservedPaths.push_back(path.toStdString());
+			}
+		}
 		mapped.DestructiveActionConfirmed = request.ConfirmClean;
 		return mapped;
 	}
@@ -104,19 +130,11 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 	{
 		LaunchOperationRequest mapped;
 		mapped.RepositoryRoot = request.RepositoryRoot;
-		mapped.OperationId = request.OperationId.toStdString();
 		mapped.ContentId = request.ContentId.toStdString();
 		mapped.EditorProfile = request.EditorProfile.toStdString();
 		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
-		mapped.Target = request.LaunchTarget.toStdString();
-		mapped.StartupLevel = request.LaunchStartupLevel.toStdString();
-		mapped.GraphicsBackend = request.LaunchBackend.toStdString();
-		mapped.VSync = request.LaunchVSync.toStdString();
-		mapped.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
-		for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
-			if (!argument.isEmpty())
-				mapped.CustomArguments.push_back(argument.toStdString());
-		mapped.CustomCVars = SplitList(request.LaunchCVars);
+		mapped.StartupLevel = request.StartupLevel.toStdString();
+		mapped.GraphicsApi = request.GraphicsApi.toStdString();
 		return mapped;
 	}
 }

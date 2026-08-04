@@ -15,6 +15,7 @@
 #include <QtGui/QWindow>
 #include <QtWidgets/QApplication>
 
+#include <array>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -45,8 +46,26 @@ namespace SparkleLauncher
 #endif
 	}
 
-	static std::optional<RepositoryRoot> TryResolveRepositoryRoot(std::string& outErrorMessage)
+	static std::filesystem::path RequestedRepositoryStartPath(const QStringList& arguments)
 	{
+		const int rootArgumentIndex = arguments.indexOf(QStringLiteral("--root"));
+		if (rootArgumentIndex < 0 || rootArgumentIndex + 1 >= arguments.size())
+		{
+			return {};
+		}
+
+		return std::filesystem::path(arguments[rootArgumentIndex + 1].toStdString());
+	}
+
+	static std::optional<RepositoryRoot> TryResolveRepositoryRoot(
+	    const std::filesystem::path& requestedStartPath,
+	    std::string& outErrorMessage)
+	{
+		if (!requestedStartPath.empty())
+		{
+			return TryFindRepositoryRoot(requestedStartPath, outErrorMessage);
+		}
+
 		const std::array<std::filesystem::path, 3> candidatePaths = {
 		    std::filesystem::current_path(),
 		    std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()),
@@ -142,8 +161,9 @@ namespace SparkleLauncher
 		std::string repositoryError;
 		std::filesystem::path repositoryRoot = std::filesystem::current_path();
 		QString startupNotice;
+		const std::filesystem::path requestedStartPath = RequestedRepositoryStartPath(QCoreApplication::arguments());
 
-		if (const std::optional<RepositoryRoot> repository = TryResolveRepositoryRoot(repositoryError))
+		if (const std::optional<RepositoryRoot> repository = TryResolveRepositoryRoot(requestedStartPath, repositoryError))
 		{
 			repositoryRoot = repository->RootPath;
 			std::error_code errorCode;

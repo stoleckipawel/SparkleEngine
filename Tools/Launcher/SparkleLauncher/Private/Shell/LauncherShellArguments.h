@@ -16,10 +16,10 @@ namespace SparkleLauncher
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde WorkspaceIdePreference = WorkspaceIde::VisualStudio;
+		WorkspaceCompiler WorkspaceCompilerPreference = WorkspaceCompiler::Msvc;
 		std::string DryRunOperationId;
 		std::string RunOperationId;
-		std::string LaunchTarget = "editor";
-		std::string LaunchStartupLevel;
+		std::string StartupLevel;
 		CookMode RequestedCookMode = CookMode::Incremental;
 		CleanScope RequestedCleanScope = CleanScope::CookedOutputs;
 		bool ForceRecookConfirmed = false;

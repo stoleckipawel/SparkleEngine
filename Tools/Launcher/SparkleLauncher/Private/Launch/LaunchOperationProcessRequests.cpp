@@ -18,35 +18,10 @@ namespace SparkleLauncher
 		request.WorkingDirectory = plan.WorkingDirectory;
 		request.Environment = plan.Environment;
 		request.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "Launch.txt");
-		if (!plan.Request.GraphicsBackend.empty())
+		if (!plan.Request.GraphicsApi.empty())
 		{
 			request.Arguments.push_back("--graphics-api");
-			request.Arguments.push_back(plan.Request.GraphicsBackend);
-		}
-		if (!plan.Request.VSync.empty())
-		{
-			request.Arguments.push_back("--cvar");
-			request.Arguments.push_back("r.VSync=" + plan.Request.VSync);
-		}
-		if (!plan.Request.PreferHighPerformanceAdapter.empty())
-		{
-			request.Arguments.push_back("--cvar");
-			request.Arguments.push_back("r.PreferHighPerformanceAdapter=" + plan.Request.PreferHighPerformanceAdapter);
-		}
-		for (const std::string& customArgument : plan.Request.CustomArguments)
-		{
-			if (!customArgument.empty())
-			{
-				request.Arguments.push_back(customArgument);
-			}
-		}
-		for (const std::string& customCVar : plan.Request.CustomCVars)
-		{
-			if (!customCVar.empty())
-			{
-				request.Arguments.push_back("--cvar");
-				request.Arguments.push_back(customCVar);
-			}
+			request.Arguments.push_back(plan.Request.GraphicsApi);
 		}
 
 		LaunchOperationProcessStep step;

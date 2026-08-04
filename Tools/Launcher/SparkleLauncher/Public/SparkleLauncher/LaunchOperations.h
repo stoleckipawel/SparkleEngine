@@ -13,14 +13,15 @@
 
 namespace SparkleLauncher
 {
-	enum class LaunchOperationKind
+	enum class LaunchProduct
 	{
-		RunContent
+		Editor,
+		Runtime
 	};
 
 	struct LaunchOperationDefinition
 	{
-		LaunchOperationKind Kind = LaunchOperationKind::RunContent;
+		LaunchProduct Product = LaunchProduct::Editor;
 		std::string Id;
 		std::string Group;
 		std::string DisplayName;
@@ -30,17 +31,11 @@ namespace SparkleLauncher
 	struct LaunchOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
-		std::string OperationId = "launch.run";
 		std::string ContentId = kDefaultContentId;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
-		std::string Target = "editor";
 		std::string StartupLevel;
-		std::string GraphicsBackend;
-		std::string VSync;
-		std::string PreferHighPerformanceAdapter;
-		std::vector<std::string> CustomArguments;
-		std::vector<std::string> CustomCVars;
+		std::string GraphicsApi = "d3d12";
 	};
 
 	struct LaunchOperationStep
@@ -65,7 +60,7 @@ namespace SparkleLauncher
 		OperationRecord Operation;
 		std::filesystem::path RepositoryRoot;
 		LaunchOperationRequest Request;
-		LaunchOperationKind Kind = LaunchOperationKind::RunContent;
+		LaunchProduct Product = LaunchProduct::Editor;
 		std::string Profile;
 		std::string TargetName;
 		std::filesystem::path ExecutablePath;
@@ -78,7 +73,6 @@ namespace SparkleLauncher
 		bool CanRun = false;
 	};
 
-	std::string ToString(LaunchOperationKind kind);
 	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions();
 	std::optional<LaunchOperationDefinition> FindLaunchOperationDefinition(std::string_view operationId);
 	LaunchOperationPlan PlanLaunchOperation(std::string_view operationId, const LaunchOperationRequest& request);

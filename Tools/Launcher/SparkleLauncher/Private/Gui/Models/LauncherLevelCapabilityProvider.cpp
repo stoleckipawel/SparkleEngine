@@ -15,6 +15,11 @@ namespace SparkleLauncher
 {
 	std::string RegisterLevelCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context)
 	{
+		if (!context.IsLaunchGoal())
+		{
+			return {};
+		}
+
 		const LauncherOperationRequest request = context.Request;
 		const LauncherLevelUiModel& levelModel = context.LevelModel;
 		return registry.Register(

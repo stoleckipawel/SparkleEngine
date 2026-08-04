@@ -50,7 +50,8 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::None,
 			    {},
 			    "Explore Sparkle",
-			    "Choose Editor or Runtime below. Products use the header startup level and launch from local source artifacts when "
+			    "Choose Editor, Runtime, or the selected IDE below. Products use the top-bar level and graphics API and launch from local "
+			    "source artifacts when "
 			    "available.",
 			    "workflow-home-quickstart.png");
 		}
@@ -64,7 +65,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::LaunchProcess,
 			    "Product shortcut: opens the selected editor directly from Quick Start when ready.",
 			    "Launch view",
-			    "Uses the header startup level with the selected target and runtime options.",
+			    "Uses the level and graphics API selected in the top bar.",
 			    "workflow-editor-open.png");
 		}
 		if (operationId == "launch.runtime")
@@ -77,21 +78,8 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::LaunchProcess,
 			    "Product shortcut: opens the selected runtime directly from Quick Start when ready.",
 			    "Launch view",
-			    "Uses the header startup level with the selected target and runtime options.",
+			    "Uses the level and graphics API selected in the top bar.",
 			    "workflow-runtime-open.png");
-		}
-		if (operationId == "launch.run")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Launch",
-			    "Run",
-			    LauncherWorkflowPageKind::Launch,
-			    LauncherActionImpactKind::LaunchProcess,
-			    "Launch workflow: runs the selected editor or runtime target with shared graphics and runtime options.",
-			    "Launch view",
-			    "Uses the header startup level with the selected target and runtime options.",
-			    "workflow-launch-editor.png");
 		}
 		if (operationId == "workspace.open-ide")
 		{
@@ -114,8 +102,9 @@ namespace SparkleLauncher
 			    "Sync All",
 			    LauncherWorkflowPageKind::Sync,
 			    LauncherActionImpactKind::SourceDependencies,
-			    "Downloads and repairs enabled repository dependencies, then refreshes workspace configure state; it does not install host "
-			    "tools.",
+			    "Downloads and repairs enabled repository dependencies, refreshes workspace configure state, and exposes registered "
+			    "host-tool "
+			    "setup actions.",
 			    "Workspace setup",
 			    "Fetch the repository packages needed for local builds, content tools, and optional renderer integrations.",
 			    "workflow-source-sync.png");

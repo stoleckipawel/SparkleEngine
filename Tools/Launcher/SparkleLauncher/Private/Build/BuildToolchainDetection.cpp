@@ -1,6 +1,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include "CMakeGeneratorModel.h"
+#include "HostToolInstaller.h"
 #include "QtToolchainDiscovery.h"
 #include "ShaderCompilerSdkDiscovery.h"
 #include "VisualStudioToolchainDiscovery.h"
@@ -35,14 +36,9 @@ namespace SparkleLauncher
 		return Environment::TryGetVariable("SPARKLE_CMAKE_ARCH", architecture) ? architecture : "x64";
 	}
 
-	static std::string ResolveToolset()
+	static std::string ResolveToolset(WorkspaceCompiler compiler)
 	{
-		std::string toolset;
-		if (Environment::TryGetVariable("SPARKLE_CMAKE_TOOLSET", toolset))
-		{
-			return toolset;
-		}
-		return Environment::GetFlag("SPARKLE_USE_CLANGCL") ? "ClangCL" : std::string();
+		return compiler == WorkspaceCompiler::ClangCl ? "ClangCL" : std::string();
 	}
 
 	static ToolchainItemStatus MakeToolStatus(
@@ -99,20 +95,21 @@ namespace SparkleLauncher
 		return std::none_of(
 		    items.begin(),
 		    items.end(),
-		    [](const ToolchainItemStatus& item)
-		    {
-			    return item.Required && item.State != ToolchainItemState::Found;
-		    });
+		    [](const ToolchainItemStatus& item) { return item.Required && item.State != ToolchainItemState::Found; });
 	}
 
-	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde)
+	BuildToolchainStatus DetectBuildToolchain(
+	    const std::filesystem::path& repositoryRoot,
+	    WorkspaceIde preferredIde,
+	    WorkspaceCompiler compiler)
 	{
 		(void) repositoryRoot;
 		BuildToolchainStatus status;
 		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
 		status.Generator = ResolveGenerator();
 		status.Platform = ResolvePlatform();
-		status.Toolset = ResolveToolset();
+		status.Compiler = compiler;
+		status.Toolset = ResolveToolset(compiler);
 		const bool visualStudioGenerator = GetCMakeGeneratorFamily(status.Generator) == CMakeGeneratorFamily::VisualStudio;
 		const bool ninjaGenerator = CMakeGeneratorUsesNinjaMakeProgram(status.Generator);
 
@@ -130,20 +127,24 @@ namespace SparkleLauncher
 		AppendKnownToolStatus(
 		    status,
 		    KnownTool::Rider,
-		    preferredIde == WorkspaceIde::Rider,
-		    preferredIde == WorkspaceIde::Rider ? "Required for the selected IDE." : "Optional IDE integration.");
+		    false,
+		    preferredIde == WorkspaceIde::Rider ? "Selected IDE integration. Required only when opening the IDE."
+		                                        : "Optional IDE integration.");
 		AppendKnownToolStatus(status, KnownTool::Git, true, "Minimum required version: " + std::string(kMinimumGitVersion));
 
 		const VisualStudioToolchainDiscovery visualStudio = DiscoverVisualStudioToolchain();
 		status.VswherePath = visualStudio.DiscoveryPath;
+		status.VisualStudioPath = visualStudio.InstallationPath;
+		status.VisualStudioInstallerPath = visualStudio.InstallerPath;
+		status.ClangClPath = visualStudio.ClangClPath;
 		status.WindowsSdkVersion = visualStudio.WindowsSdkVersion;
 		status.Items.push_back(MakeToolStatus(
 		    "visualstudio",
 		    "Visual Studio C++ tools",
 		    visualStudioGenerator,
-		    !status.VswherePath.empty(),
-		    status.VswherePath,
-		    !status.VswherePath.empty()
+		    !status.VisualStudioPath.empty(),
+		    status.VisualStudioPath,
+		    !status.VisualStudioPath.empty()
 		        ? "Visual Studio C++ tools are available for generator/workload discovery: " + std::string(kVisualStudioCppComponent)
 		        : "Visual Studio C++ tools were not found."));
 		status.Items.push_back(MakeToolStatus(
@@ -155,15 +156,21 @@ namespace SparkleLauncher
 		    !status.WindowsSdkVersion.empty() ? "Latest SDK: " + status.WindowsSdkVersion
 		                                      : "Windows Kits 10 Include directory was not found."));
 
-		const bool clangClRequired = status.Toolset == "ClangCL";
-		const std::optional<std::filesystem::path> clangClPath = FindExecutableOnPath("clang-cl.exe");
-		status.Items.push_back(MakeToolStatus(
+		const bool clangClRequired = compiler == WorkspaceCompiler::ClangCl;
+		if (status.ClangClPath.empty())
+		{
+			status.ClangClPath = FindExecutableOnPath("clang-cl.exe").value_or(std::filesystem::path());
+		}
+		ToolchainItemStatus clangCl = MakeToolStatus(
 		    "clangcl",
 		    "clang-cl",
 		    clangClRequired,
-		    clangClPath.has_value(),
-		    clangClPath.value_or(std::filesystem::path()),
-		    clangClRequired ? "Required by selected CMake toolset ClangCL." : "Optional; set SPARKLE_USE_CLANGCL=1 to request ClangCL."));
+		    !status.ClangClPath.empty(),
+		    status.ClangClPath,
+		    clangClRequired ? "Selected compiler. The launcher configures CMake with the Visual Studio ClangCL toolset."
+		                    : (!status.ClangClPath.empty() ? "Available as a launcher compiler choice." : "Not installed."));
+		clangCl.Compiler = WorkspaceCompiler::ClangCl;
+		status.Items.push_back(std::move(clangCl));
 
 		const QtToolchainDiscovery qt = DiscoverQtToolchain();
 		status.QtRootPath = qt.QtRootPath;
@@ -194,20 +201,33 @@ namespace SparkleLauncher
 		const bool vulkanSdkRequired = featureSettings.NvidiaStreamlineEnabled;
 		const VulkanSdkStatus vulkanSdk = DetectVulkanSdk();
 		status.VulkanSdkRoot = vulkanSdk.Root;
-		status.Items.push_back(MakeToolStatus(
-		    "vulkan-sdk",
-		    "Vulkan SDK",
-		    vulkanSdkRequired,
-		    vulkanSdk.Available,
-		    vulkanSdk.Root,
-		    vulkanSdkRequired ? (vulkanSdk.Available
-		                             ? "Required for enabled NVIDIA Streamline and Vulkan-backed renderer integrations. " + vulkanSdk.Detail
-		                             : vulkanSdk.Detail)
-		                      : (vulkanSdk.Available ? "Optional Vulkan SDK root: " + vulkanSdk.Root.string()
-		                                             : "Optional unless Vulkan-backed integrations are enabled.")));
+		std::string vulkanDetail;
+		if (vulkanSdkRequired)
+		{
+			vulkanDetail = vulkanSdk.Available
+			    ? "Required for enabled NVIDIA Streamline and Vulkan-backed renderer integrations. " + vulkanSdk.Detail
+			    : vulkanSdk.Detail;
+		}
+		else
+		{
+			vulkanDetail = vulkanSdk.Available ? "Optional Vulkan SDK root: " + vulkanSdk.Root.string()
+			                                   : "Optional unless Vulkan-backed integrations are enabled.";
+		}
+		status.Items.push_back(
+		    MakeToolStatus("vulkan-sdk", "Vulkan SDK", vulkanSdkRequired, vulkanSdk.Available, vulkanSdk.Root, std::move(vulkanDetail)));
 		if (vulkanSdkRequired)
 		{
 			status.ConfigurePrerequisitesAvailable = status.ConfigurePrerequisitesAvailable && vulkanSdk.Available;
+		}
+
+		for (ToolchainItemStatus& item : status.Items)
+		{
+			item.CanInstall = CanInstallHostTool(item.Id, status);
+			if (item.Id == "clangcl" && item.State != ToolchainItemState::Found)
+			{
+				item.Detail = item.CanInstall ? "Not installed. The launcher can add the Visual Studio clang-cl component."
+				                              : "Not installed and no supported launcher installer is available on this machine.";
+			}
 		}
 
 		status.RequiredToolsAvailable = AreRequiredToolsAvailable(status.Items);

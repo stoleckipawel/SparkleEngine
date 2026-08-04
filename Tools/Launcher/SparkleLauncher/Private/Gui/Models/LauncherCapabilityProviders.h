@@ -26,6 +26,7 @@ namespace SparkleLauncher
 		LauncherOperationRequest Request;
 		const LauncherLevelUiModel& LevelModel;
 
+		bool IsLaunchGoal() const;
 		bool IsRuntimeProduct() const;
 		QString ProductBuildOperationId() const;
 		std::string ProductCapabilityId() const;
@@ -35,6 +36,8 @@ namespace SparkleLauncher
 	using LauncherCapabilityProvider = std::string (*)(LauncherCapabilityRegistry&, const LauncherCapabilityContext&);
 
 	std::string BuildCapabilityReadinessSummary(const std::vector<std::string>& messages);
+	std::string RegisterHostToolCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context);
+	std::string RegisterSourceDependencyCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context);
 	std::string RegisterWorkspaceCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context);
 	std::string RegisterLevelCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context);
 	std::string RegisterCookCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context);

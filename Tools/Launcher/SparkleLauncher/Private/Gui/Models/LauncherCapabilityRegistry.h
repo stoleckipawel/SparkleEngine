@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CapabilityGraph.h"
-#include "LauncherBackend.h"
+#include "LauncherOperationRequest.h"
 
 namespace SparkleLauncher
 {

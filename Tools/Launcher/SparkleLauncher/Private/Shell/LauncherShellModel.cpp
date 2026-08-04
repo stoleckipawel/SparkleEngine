@@ -124,6 +124,7 @@ namespace SparkleLauncher
 		model.EditorProfile = arguments.EditorProfile;
 		model.RuntimeProfile = arguments.RuntimeProfile;
 		model.WorkspaceIdePreference = arguments.WorkspaceIdePreference;
+		model.WorkspaceCompilerPreference = arguments.WorkspaceCompilerPreference;
 		model.Operations = BuildLauncherShellOperationRows();
 		AppendLocalLauncherShellActivity(model);
 		return model;

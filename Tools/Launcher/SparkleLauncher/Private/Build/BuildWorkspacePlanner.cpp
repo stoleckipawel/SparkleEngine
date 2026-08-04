@@ -1,6 +1,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include "BuildWorkspaceProcessRequests.h"
+#include "HostToolInstaller.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/ArtifactNaming.h"
@@ -70,7 +71,7 @@ namespace SparkleLauncher
 		switch (ide)
 		{
 			case WorkspaceIde::VisualStudio:
-				return !toolchain.VswherePath.empty();
+				return !toolchain.VisualStudioPath.empty();
 			case WorkspaceIde::Rider:
 				return !toolchain.RiderPath.empty();
 		}
@@ -120,6 +121,35 @@ namespace SparkleLauncher
 
 	static void PopulatePlanSteps(BuildWorkspaceOperationPlan& plan, const BuildWorkspaceOperationRequest& request)
 	{
+		if (plan.Kind == BuildWorkspaceOperationKind::InstallHostTool)
+		{
+			const HostToolInstallerDefinition* installer = FindHostToolInstaller(request.HostToolId);
+			if (installer == nullptr)
+			{
+				AddReadiness(plan, "No launcher installer is registered for host tool '" + request.HostToolId + "'.");
+				return;
+			}
+
+			const auto status = std::find_if(
+			    plan.Toolchain.Items.begin(),
+			    plan.Toolchain.Items.end(),
+			    [&request](const ToolchainItemStatus& item) { return item.Id == request.HostToolId; });
+			if (status != plan.Toolchain.Items.end() && status->State == ToolchainItemState::Found)
+			{
+				AddReadiness(plan, installer->DisplayName + " is already installed.");
+				return;
+			}
+			if (!CanInstallHostTool(request.HostToolId, plan.Toolchain))
+			{
+				AddReadiness(plan, "The registered launcher installer for " + installer->DisplayName + " is unavailable on this machine.");
+				return;
+			}
+
+			AddPlannedEffect(plan, installer->InstallEffect);
+			plan.CanRun = true;
+			return;
+		}
+
 		if (plan.Kind != BuildWorkspaceOperationKind::SyncLevels && !plan.Toolchain.RequiredToolsAvailable)
 		{
 			AddReadiness(plan, "Required host prerequisites are missing or unsupported.");
@@ -341,6 +371,8 @@ namespace SparkleLauncher
 				}
 				plan.CanRun = true;
 				return;
+			case BuildWorkspaceOperationKind::InstallHostTool:
+				return;
 		}
 	}
 
@@ -351,7 +383,9 @@ namespace SparkleLauncher
 		        "workspace.sync-code",
 		        "Sync",
 		        std::string(ArtifactNaming::kActionSyncSourceDependencies),
-		        "Download enabled repository dependencies and refresh workspace configure state without installing host tools."},
+		        "Download enabled repository dependencies and refresh workspace configure state; registered host-tool actions remain "
+		        "available "
+		        "on the same page."},
 		    {BuildWorkspaceOperationKind::SyncLevels,
 		        "workspace.sync-levels",
 		        "Sync",
@@ -392,6 +426,11 @@ namespace SparkleLauncher
 		        "Build",
 		        "Build Cooking Tools",
 		        "Optional local build of tools required by recook workflows."},
+		    {BuildWorkspaceOperationKind::InstallHostTool,
+		        "workspace.install-host-tool",
+		        "Setup",
+		        "Install Host Tool",
+		        "Install a registered host tool through its launcher-owned installation provider."},
 		};
 		return definitions;
 	}
@@ -425,13 +464,18 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
 		plan.Operation.Inputs.push_back({"workspaceIde", WorkspaceIdeCommandLineValue(request.PreferredIde)});
+		plan.Operation.Inputs.push_back({"workspaceCompiler", WorkspaceCompilerCommandLineValue(request.Compiler)});
 		if (!request.SourceDependencyId.empty())
 		{
 			plan.Operation.Inputs.push_back({"sourceDependency", request.SourceDependencyId});
 		}
+		if (!request.HostToolId.empty())
+		{
+			plan.Operation.Inputs.push_back({"hostTool", request.HostToolId});
+		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		plan.Request = request;
-		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot, request.PreferredIde);
+		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot, request.PreferredIde, request.Compiler);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
 		plan.SourceDependencies = InspectSourceDependencyCache(GetBuildDirectory(request.RepositoryRoot) / "_deps");
 
@@ -467,7 +511,7 @@ namespace SparkleLauncher
 			{
 				plan.CanRun = false;
 				plan.Steps.clear();
-				AddReadiness(plan, std::string("Level asset-pack planning failed: ") + error.what());
+				AddReadiness(plan, std::string("Operation planning failed: ") + error.what());
 			}
 		}
 

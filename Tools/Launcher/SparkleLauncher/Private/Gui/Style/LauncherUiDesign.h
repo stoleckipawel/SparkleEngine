@@ -84,10 +84,20 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int ComboHeight = 28;
 		inline constexpr int LevelComboMinWidth = 170;
 		inline constexpr int LevelComboMaxWidth = 240;
+		inline constexpr int GraphicsApiComboMinWidth = 100;
+		inline constexpr int GraphicsApiComboMaxWidth = 130;
 		inline constexpr int ConfigurationComboMinWidth = 140;
 		inline constexpr int ConfigurationComboMaxWidth = 180;
 		inline constexpr int IdeComboMinWidth = 120;
 		inline constexpr int IdeComboMaxWidth = 150;
+		inline constexpr int CompilerComboMinWidth = 100;
+		inline constexpr int CompilerComboMaxWidth = 130;
+	}
+
+	namespace FooterContext
+	{
+		inline constexpr int Spacing = 10;
+		inline const QMargins Margins{16, 5, 16, 5};
 	}
 
 	namespace Row
@@ -216,9 +226,9 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int BodyBottom = 0;
 		inline constexpr int SectionSpacing = 10;
 		inline constexpr int TileSpacing = 18;
-		inline constexpr int ProductCardMinWidth = 500;
+		inline constexpr int ProductCardMinWidth = 420;
 		inline constexpr int ProductCardMaxWidth = 720;
-		inline constexpr int ProductCardMaxColumns = 2;
+		inline constexpr int ProductCardMaxColumns = 3;
 		inline constexpr int DiscoverCardMinWidth = (ProductCardMinWidth - TileSpacing) / 2;
 		inline constexpr int DiscoverCardMaxWidth = (ProductCardMaxWidth - TileSpacing) / 2;
 		inline constexpr int DiscoverCardMaxColumns = 6;
@@ -234,7 +244,7 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int ProductSpacing = 12;
 		inline constexpr int DiscoverSpacing = 6;
 
-		inline const QSize ProductArtworkSize{720, 240};
+		inline const QSize ProductArtworkSize{720, 180};
 		inline const QSize DiscoverArtworkSize{351, 105};
 		inline const QMargins FlushArtworkMargins{0, 0, 0, Space::Large};
 		QMargins ProductMargins(bool hasArtwork);

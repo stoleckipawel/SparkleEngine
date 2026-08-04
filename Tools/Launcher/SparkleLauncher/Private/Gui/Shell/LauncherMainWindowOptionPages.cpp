@@ -1,13 +1,10 @@
 #include "LauncherMainWindow.h"
 
 #include "LauncherActionWidgets.h"
-#include "LauncherArtworkWidgets.h"
 #include "LauncherCleanUiModel.h"
 #include "LauncherDependencyUiModel.h"
-#include "LauncherHomeWidgets.h"
 #include "LauncherLayoutWidgets.h"
 #include "LauncherOperationRequestFactory.h"
-#include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"
@@ -19,15 +16,11 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
-#include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 
-#include <QtCore/QCoreApplication>
-#include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QSignalBlocker>
 #include <QtCore/QStringList>
-#include <QtGui/QGuiApplication>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFrame>
@@ -35,7 +28,6 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
-#include <QtWidgets/QScrollArea>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
@@ -80,21 +72,6 @@ namespace SparkleLauncher
 		if (UsesBuildEnvironmentStatus(operationId))
 		{
 			AddBuildEnvironmentStatus(layout, operationId);
-			return;
-		}
-
-		if (operationId == "launch.editor" || operationId == "launch.runtime")
-		{
-			AddLaunchApplicationOptions(layout);
-			AddLaunchEnvironmentStatus(layout, operationId);
-			return;
-		}
-
-		if (operationId == "launch.run")
-		{
-			AddLaunchTargetOptions(layout, "Target", QString());
-			AddLaunchApplicationOptions(layout);
-			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
 

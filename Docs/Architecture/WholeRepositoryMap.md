@@ -368,33 +368,37 @@ Launcher read:
 
 - The launcher is large enough to be judged as an application.
 - The launcher GUI owns one implicit repository content root. It does not expose project discovery or selection; the content model rejects ambiguous repositories instead of choosing among multiple roots.
-- `Quick Start` is the primary product path. Workspace, level, cook, and launch providers register capabilities and hierarchical dependencies with a generic resolver; it re-evaluates the graph after every completed operation and automatically drives only the missing work. Manual pages retain direct access to each operation for diagnosis.
+- `Quick Start` is the primary product path. Host-tool, source-dependency, workspace, level, cook, and launch providers independently register capabilities and hierarchical dependencies with a generic resolver; it re-evaluates the graph after every completed operation and automatically drives only the missing work. Editor, runtime, and IDE opening are graph goals, while manual pages retain direct access to sync, build, cook, and clean operations for diagnosis.
 - The generic capability graph is independent of Qt and launcher operation types. It supports any number of registered dependencies, validates its complete topology before every resolution, rejects missing or duplicate registrations and edges, detects cycles, short-circuits already-ready branches, propagates blockers, and derives direct-consumer invalidations from successful operations. Operation requests are explicit optional products of evaluation rather than default-constructed placeholders.
-- Domain provider files own workspace, level, cook, and launch readiness/action policy. The planner is the composition root for those providers, `LauncherQuickStartExecution` owns one run's active-step/invalidation/stall state, and the main window is limited to presenting progress and dispatching the selected operation.
+- Domain provider files own host-tool, source-dependency, workspace, level, cook, and launch readiness/action policy. The planner is the composition root for those providers, `LauncherQuickStartExecution` owns one run's active-step/invalidation/stall state, and the main window is limited to presenting progress and dispatching the selected operation.
 - `Sync Code` owns a flat dependency list: a row action populates only that dependency through an isolated CMake configure sharing `build/_deps`, while the page footer syncs the enabled code set. Neither path enables workspace features or acquires level content.
-- Operational `Build`, `Cook`, and `Launch` pages remain single-operation diagnostic surfaces: inline status communicates current state and running the page executes only that selected operation. Automatic dependency traversal belongs exclusively to the capability graph instead of hardcoded prerequisite prompts. Their option forms use one bounded field grid rather than stretching controls across the workspace.
+- Operational `Build` and `Cook` pages remain single-operation diagnostic surfaces: inline status communicates current state and running the page executes only that selected operation. Automatic dependency traversal belongs exclusively to the capability graph instead of hardcoded prerequisite prompts. The former Launch page and launcher-owned VSync, GPU-preference, argument, and CVar overrides were removed; applications own those defaults. The top context bar owns only startup level and graphics API, while build configuration, compiler, and IDE live in the persistent footer below activity output.
 - It currently models dry-run plans, logs, dependency state, GUI status pages, operation catalogs, and build/cook/launch/maintenance requests. Distribution packaging is intentionally manual and is not a launcher responsibility.
 - This is useful for productization, but it should not keep validation/report/debug scaffolding alive.
-- Preferred target: launcher as a small workflow shell with one automatic quick-start path plus direct build, cook, run, clean, and source dependency controls for diagnosis.
+- Preferred target: launcher as a small workflow shell with one automatic quick-start path plus direct sync, build, cook, clean, and source dependency controls for diagnosis.
 
 Quick Start capability ownership:
 
 ```text
-launch.<product>
-|-- content.project.<product>
-|-- product.<product>
-|   `-- workspace.build-files
-|       `-- workspace.source-dependencies
-|           `-- source-dependency.<enabled-id> (one node per enabled dependency)
-|               `-- workspace.host-tools
-|-- content.selected-levels
-`-- content.cooked
-    |-- content.selected-levels
-    `-- content.cooking-tools
-        `-- workspace.build-files
+Quick Start goals
+|-- launch.<product>
+|   |-- content.project.<product>
+|   |-- product.<product>
+|   |   `-- workspace.build-files
+|   |-- content.selected-levels
+|   `-- content.cooked
+|       |-- content.selected-levels
+|       `-- content.cooking-tools
+|           `-- workspace.build-files
+`-- workspace.open-ide
+    `-- workspace.build-files
+        `-- workspace.source-dependencies
+            `-- source-dependency.<enabled-id> (one node per enabled dependency)
+                `-- workspace.host-tools
+                    `-- host-tool.<required-id> (one node per selected-toolchain requirement)
 ```
 
-Workspace, level, cook, and launch providers own these registrations and their readiness evaluators. The workspace provider derives one capability node per enabled entry from the authoritative source-dependency inventory, so new dependencies join Quick Start without adding orchestration branches. Because `content.cooked` directly depends on `content.selected-levels`, a successful level sync invalidates cooked content through graph topology rather than cross-provider knowledge; the next resolution therefore schedules an incremental cook even when older cooked directories still contain files. Every automatic activity log records the resolved capability path and selected operation.
+Each provider owns only its registrations and readiness evaluators. Host-tool nodes come from the selected toolchain, and source-dependency nodes come from the authoritative dependency inventory, so new dependencies join Quick Start without adding orchestration branches or expanding workspace ownership. Host-tool installer definitions are registered separately from detection and orchestration; a selected missing compiler can therefore contribute its own launcher operation while unavailable tools without a safe installer remain explicit blockers. Compiler selection is a typed launcher request, not an environment-variable side channel, and build-file freshness includes the resulting CMake toolset. Because `content.cooked` directly depends on `content.selected-levels`, a successful level sync invalidates cooked content through graph topology rather than cross-provider knowledge; the next resolution therefore schedules an incremental cook even when older cooked directories still contain files. Every automatic activity log records the resolved capability path and selected operation.
 
 Cooker read:
 

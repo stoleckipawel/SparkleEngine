@@ -225,7 +225,7 @@ namespace SparkleLauncher
 			    const QString levelId = combo->currentData().toString();
 			    if (!levelId.isEmpty())
 			    {
-				    m_settings.SetLaunchStartupLevel(levelId);
+				    m_settings.SetStartupLevel(levelId);
 			    }
 		    });
 		return combo;
@@ -283,7 +283,7 @@ namespace SparkleLauncher
 			{
 				firstSelectableIndex = row;
 			}
-			if (selectable && option.Id == m_settings.LaunchStartupLevel())
+			if (selectable && option.Id == m_settings.StartupLevel())
 			{
 				selectedIndex = row;
 			}
@@ -305,9 +305,9 @@ namespace SparkleLauncher
 			combo.setCurrentIndex(0);
 			combo.setEnabled(true);
 			combo.setToolTip("No selected map is ready. Launches use the built-in empty scene.");
-			if (!m_settings.LaunchStartupLevel().isEmpty())
+			if (!m_settings.StartupLevel().isEmpty())
 			{
-				m_settings.SetLaunchStartupLevel(QString());
+				m_settings.SetStartupLevel(QString());
 			}
 			return;
 		}
@@ -315,9 +315,9 @@ namespace SparkleLauncher
 		combo.setEnabled(true);
 		combo.setCurrentIndex(selectedIndex);
 		const QString effectiveLevelId = combo.currentData().toString();
-		if (!effectiveLevelId.isEmpty() && m_settings.LaunchStartupLevel() != effectiveLevelId)
+		if (!effectiveLevelId.isEmpty() && m_settings.StartupLevel() != effectiveLevelId)
 		{
-			m_settings.SetLaunchStartupLevel(effectiveLevelId);
+			m_settings.SetStartupLevel(effectiveLevelId);
 		}
 	}
 
@@ -360,7 +360,7 @@ namespace SparkleLauncher
 	QString LauncherMainWindow::ResolveStartupLevelDisplayName() const
 	{
 		const QVector<QPair<QString, QString>> options = BuildStartupLevelOptions();
-		const QString selectedLevel = m_settings.LaunchStartupLevel();
+		const QString selectedLevel = m_settings.StartupLevel();
 		for (const QPair<QString, QString>& option : options)
 		{
 			if (!selectedLevel.isEmpty() && option.second == selectedLevel)

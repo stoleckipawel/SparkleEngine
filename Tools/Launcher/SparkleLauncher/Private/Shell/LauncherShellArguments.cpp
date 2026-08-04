@@ -25,8 +25,8 @@ namespace SparkleLauncher
 		bool ParseCurrentArgument(std::string_view argument);
 		bool ParseProfile(BuildProfileTarget target, std::string& outProfile);
 		bool ParseWorkspaceIde();
+		bool ParseWorkspaceCompiler();
 		bool ParseCleanScope();
-		bool ParseLaunchTarget();
 		std::optional<std::string_view> ReadRequiredValue(std::string_view missingValueMessage);
 
 		static bool IsProfileTarget(std::string_view profileName, BuildProfileTarget target);
@@ -122,6 +122,11 @@ namespace SparkleLauncher
 			return ParseWorkspaceIde();
 		}
 
+		if (argument == "--compiler")
+		{
+			return ParseWorkspaceCompiler();
+		}
+
 		if (argument == "--force-recook")
 		{
 			m_outArguments->RequestedCookMode = CookMode::Force;
@@ -145,17 +150,12 @@ namespace SparkleLauncher
 			return true;
 		}
 
-		if (argument == "--launch-target")
-		{
-			return ParseLaunchTarget();
-		}
-
 		if (argument == "--startup-level")
 		{
 			const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --startup-level requires a value.\n");
 			if (value.has_value())
 			{
-				m_outArguments->LaunchStartupLevel = *value;
+				m_outArguments->StartupLevel = *value;
 			}
 			return value.has_value();
 		}
@@ -204,6 +204,25 @@ namespace SparkleLauncher
 		return true;
 	}
 
+	bool LauncherShellArgumentParser::ParseWorkspaceCompiler()
+	{
+		const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --compiler requires msvc or clang-cl.\n");
+		if (!value.has_value())
+		{
+			return false;
+		}
+
+		WorkspaceCompiler compiler = WorkspaceCompiler::Msvc;
+		if (!TryParseWorkspaceCompiler(*value, compiler))
+		{
+			*m_error << "SparkleLauncher: unsupported compiler '" << *value << "'.\n";
+			return false;
+		}
+
+		m_outArguments->WorkspaceCompilerPreference = compiler;
+		return true;
+	}
+
 	bool LauncherShellArgumentParser::ParseCleanScope()
 	{
 		const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --clean-scope requires a scope.\n");
@@ -220,24 +239,6 @@ namespace SparkleLauncher
 		}
 
 		m_outArguments->RequestedCleanScope = scope;
-		return true;
-	}
-
-	bool LauncherShellArgumentParser::ParseLaunchTarget()
-	{
-		const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --launch-target requires a value.\n");
-		if (!value.has_value())
-		{
-			return false;
-		}
-
-		if (*value != "editor" && *value != "runtime")
-		{
-			*m_error << "SparkleLauncher: --launch-target must be editor or runtime.\n";
-			return false;
-		}
-
-		m_outArguments->LaunchTarget = *value;
 		return true;
 	}
 
@@ -292,13 +293,14 @@ namespace SparkleLauncher
 	{
 		output << "Usage:\n"
 		       << "  SparkleLauncher [--root <repo-root>] [--editor-profile <profile>] [--runtime-profile <profile>] "
-		          "[--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--clean-scope <scope>] "
+		          "[--ide <visual-studio|rider>] [--compiler <msvc|clang-cl>] "
+		          "[--startup-level <level-name>] [--clean-scope <scope>] "
 		          "[--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]] [--run <operation-id>]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
-		       << "  SparkleLauncher --launch-target runtime --startup-level <level-name> --dry-run launch.run\n"
+		       << "  SparkleLauncher --startup-level <level-name> --dry-run launch.runtime\n"
 		       << "  SparkleLauncher --force-recook --dry-run cook.all\n"
 		       << "  SparkleLauncher --clean-scope cooked --dry-run workspace.clean\n"
 		       << "  SparkleLauncher --clean-scope clean-all --dry-run workspace.clean\n";

@@ -19,6 +19,13 @@ namespace SparkleLauncher
 		return QString::fromStdString(DisplayName(ResolveSelectedWorkspaceIde(settings)));
 	}
 
+	WorkspaceCompiler ResolveSelectedWorkspaceCompiler(const LauncherSettings& settings)
+	{
+		WorkspaceCompiler compiler = WorkspaceCompiler::Msvc;
+		TryParseWorkspaceCompiler(settings.WorkspaceCompiler().toStdString(), compiler);
+		return compiler;
+	}
+
 	QString ResolveShaderTargetSelection(const LauncherSettings& settings)
 	{
 		const QString preset = settings.ShaderTargetPreset();
@@ -56,6 +63,7 @@ namespace SparkleLauncher
 		request.EditorProfile = settings.EditorProfile().toStdString();
 		request.RuntimeProfile = settings.RuntimeProfile().toStdString();
 		request.PreferredIde = ResolveSelectedWorkspaceIde(settings);
+		request.Compiler = ResolveSelectedWorkspaceCompiler(settings);
 		request.ForceConfigure = settings.ForceConfigure();
 		return request;
 	}
@@ -73,6 +81,7 @@ namespace SparkleLauncher
 		request.EditorProfile = settings.EditorProfile();
 		request.RuntimeProfile = settings.RuntimeProfile();
 		request.WorkspaceIde = settings.WorkspaceIde();
+		request.WorkspaceCompiler = settings.WorkspaceCompiler();
 		request.SelectedTargets = settings.SelectedTargets();
 		request.ShaderPackages = settings.ShaderPackages();
 		request.ShaderTargets = ResolveShaderTargetSelection(settings);
@@ -83,27 +92,13 @@ namespace SparkleLauncher
 		request.ShaderEnableOptimizations = settings.ShaderEnableOptimizations();
 		request.ShaderWarningsAsErrors = settings.ShaderWarningsAsErrors();
 		request.ShaderStripDebugInfo = settings.ShaderStripDebugInfo();
-		request.LaunchBackend = settings.LaunchBackend();
-		request.LaunchTarget = settings.LaunchTarget();
-		request.LaunchStartupLevel = settings.LaunchStartupLevel();
-		request.LaunchVSync = settings.LaunchVSync();
-		request.LaunchHighPerformanceAdapter = settings.LaunchHighPerformanceAdapter();
-		request.LaunchCommandLineArguments = settings.LaunchCommandLineArguments();
-		request.LaunchCVars = settings.LaunchCVars();
+		request.GraphicsApi = settings.GraphicsApi();
+		request.StartupLevel = settings.StartupLevel();
 		request.CleanScope = settings.CleanScope();
 		request.ForceConfigure = settings.ForceConfigure();
 		request.ForceRecook = settings.ForceRecook();
 		request.ConfirmForceRecook = settings.ConfirmForceRecook();
 		request.ConfirmClean = settings.ConfirmClean();
-
-		if (operationId == "launch.editor")
-		{
-			request.LaunchTarget = "editor";
-		}
-		else if (operationId == "launch.runtime")
-		{
-			request.LaunchTarget = "runtime";
-		}
 
 		return request;
 	}
@@ -119,6 +114,7 @@ namespace SparkleLauncher
 		request.SelectedTargets.clear();
 		request.RequestedLevelIds = requestedLevelIds.join(',');
 		request.SourceDependencyId.clear();
+		request.HostToolId.clear();
 		request.ForceConfigure = false;
 		request.ForceRecook = false;
 		request.ConfirmForceRecook = false;

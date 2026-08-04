@@ -80,6 +80,7 @@ namespace SparkleLauncher
 		    "#TitleBand",
 		    "background: #242622; border: none; border-bottom: 1px solid " + divider + "; min-height: 58px; max-height: 58px;");
 		addRule("#HeaderUtilityPanel", "background: transparent; border: none;");
+		addRule("#FooterContextPanel", "background: #242622; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#ActivityBottomPanel", "background: #181a19; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#OutputPanel", "background: #181a19; border: none;");
 		addRule("#ActivityHeader", "background: #181a19; border: none;");
@@ -98,11 +99,17 @@ namespace SparkleLauncher
 		    "background: #23262a; border: none; border-top: 1px solid " + divider + "; border-right: 1px solid " + border + ";");
 		addRule("#OutputPane", "background: #202327; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#HeaderFieldLabel", "color: " + textMuted + "; font-size: 8.25pt; font-weight: 650;");
+		addRule("#FooterFieldLabel", "color: " + textMuted + "; font-size: 8.25pt; font-weight: 650;");
 		addRule(
 		    "#HeaderContextCombo",
 		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 3px 9px; color: " + textBody
 		        + "; min-height: 26px; max-height: 30px; font-size: 8.5pt;");
 		addRule("#HeaderContextCombo:focus", "border: 1px solid " + focus + ";");
+		addRule(
+		    "#FooterContextCombo",
+		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 3px 9px; color: " + textBody
+		        + "; min-height: 26px; max-height: 30px; font-size: 8.5pt;");
+		addRule("#FooterContextCombo:focus", "border: 1px solid " + focus + ";");
 		addRule(
 		    "#HeaderUtilityButton",
 		    "background: transparent; color: " + textBody

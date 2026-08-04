@@ -1,7 +1,10 @@
 #include "VisualStudioToolchainDiscovery.h"
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
+#include "Core/Public/Process/ChildProcess.h"
 
+#include <algorithm>
+#include <cctype>
 #include <optional>
 #include <system_error>
 #include <vector>
@@ -86,6 +89,71 @@ namespace SparkleLauncher
 		return std::nullopt;
 	}
 
+	static std::string TrimCopy(std::string value)
+	{
+		while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back())))
+		{
+			value.pop_back();
+		}
+		const auto first = std::find_if(value.begin(), value.end(), [](unsigned char character) { return !std::isspace(character); });
+		value.erase(value.begin(), first);
+		return value;
+	}
+
+	static std::optional<std::filesystem::path> QueryVisualStudioInstallWithCppTools(const std::filesystem::path& vswherePath)
+	{
+		if (vswherePath.empty())
+		{
+			return std::nullopt;
+		}
+
+		const Process::ChildProcessResult result = Process::ChildProcess::Run(
+		    Process::ChildProcessRequest{
+		        .ExecutablePath = vswherePath,
+		        .Arguments =
+		            {"-latest",
+		                "-products",
+		                "*",
+		                "-requires",
+		                "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+		                "-property",
+		                "installationPath"},
+		    });
+		if (!result.Succeeded())
+		{
+			return std::nullopt;
+		}
+
+		const std::string path = TrimCopy(result.CapturedOutput);
+		std::error_code errorCode;
+		return !path.empty() && std::filesystem::is_directory(path, errorCode) ? std::optional<std::filesystem::path>(path) : std::nullopt;
+	}
+
+	static std::optional<std::filesystem::path> ResolveVisualStudioInstallerPath()
+	{
+		const std::optional<std::filesystem::path> programFiles = ResolveProgramFilesX86();
+		if (!programFiles.has_value())
+		{
+			return std::nullopt;
+		}
+
+		const std::filesystem::path path = *programFiles / "Microsoft Visual Studio" / "Installer" / "setup.exe";
+		std::error_code errorCode;
+		return std::filesystem::is_regular_file(path, errorCode) ? std::optional<std::filesystem::path>(path) : std::nullopt;
+	}
+
+	static std::optional<std::filesystem::path> FindVisualStudioClangCl(const std::filesystem::path& installationPath)
+	{
+		if (installationPath.empty())
+		{
+			return std::nullopt;
+		}
+
+		const std::filesystem::path path = installationPath / "VC" / "Tools" / "Llvm" / "x64" / "bin" / "clang-cl.exe";
+		std::error_code errorCode;
+		return std::filesystem::is_regular_file(path, errorCode) ? std::optional<std::filesystem::path>(path) : std::nullopt;
+	}
+
 	static std::optional<std::string> FindWindowsSdkVersion()
 	{
 		const std::optional<std::filesystem::path> programFiles = ResolveProgramFilesX86();
@@ -121,7 +189,11 @@ namespace SparkleLauncher
 	VisualStudioToolchainDiscovery DiscoverVisualStudioToolchain()
 	{
 		VisualStudioToolchainDiscovery discovery;
-		discovery.DiscoveryPath = ResolveVswherePath().value_or(FindVisualStudioInstallWithCppTools().value_or(std::filesystem::path()));
+		discovery.DiscoveryPath = ResolveVswherePath().value_or(std::filesystem::path());
+		discovery.InstallationPath = FindVisualStudioInstallWithCppTools().value_or(
+		    QueryVisualStudioInstallWithCppTools(discovery.DiscoveryPath).value_or(std::filesystem::path()));
+		discovery.InstallerPath = ResolveVisualStudioInstallerPath().value_or(std::filesystem::path());
+		discovery.ClangClPath = FindVisualStudioClangCl(discovery.InstallationPath).value_or(std::filesystem::path());
 		discovery.WindowsSdkVersion = FindWindowsSdkVersion().value_or(std::string());
 		return discovery;
 	}
@@ -132,8 +204,8 @@ namespace SparkleLauncher
 		{
 			const std::filesystem::path visualStudioRoot = root / "Microsoft Visual Studio";
 			std::error_code errorCode;
-			if (std::filesystem::exists(visualStudioRoot / "18", errorCode) ||
-			    std::filesystem::exists(visualStudioRoot / "2026", errorCode))
+			if (std::filesystem::exists(visualStudioRoot / "18", errorCode)
+			    || std::filesystem::exists(visualStudioRoot / "2026", errorCode))
 			{
 				return "Visual Studio 18 2026";
 			}

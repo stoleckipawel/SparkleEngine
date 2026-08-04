@@ -91,6 +91,8 @@ namespace SparkleLauncher
 				return "CompileRuntime";
 			case BuildWorkspaceOperationKind::BuildCookTools:
 				return "BuildCookTools";
+			case BuildWorkspaceOperationKind::InstallHostTool:
+				return "InstallHostTool";
 		}
 
 		return "Unknown";
@@ -150,6 +152,60 @@ namespace SparkleLauncher
 		return false;
 	}
 
+	std::string ToString(WorkspaceCompiler compiler)
+	{
+		switch (compiler)
+		{
+			case WorkspaceCompiler::Msvc:
+				return "MSVC";
+			case WorkspaceCompiler::ClangCl:
+				return "ClangCl";
+		}
+
+		return "Unknown";
+	}
+
+	std::string DisplayName(WorkspaceCompiler compiler)
+	{
+		switch (compiler)
+		{
+			case WorkspaceCompiler::Msvc:
+				return "MSVC";
+			case WorkspaceCompiler::ClangCl:
+				return "clang-cl";
+		}
+
+		return "Unknown";
+	}
+
+	std::string WorkspaceCompilerCommandLineValue(WorkspaceCompiler compiler)
+	{
+		switch (compiler)
+		{
+			case WorkspaceCompiler::Msvc:
+				return "msvc";
+			case WorkspaceCompiler::ClangCl:
+				return "clang-cl";
+		}
+
+		return "unknown";
+	}
+
+	bool TryParseWorkspaceCompiler(std::string_view text, WorkspaceCompiler& outCompiler)
+	{
+		if (text == "msvc")
+		{
+			outCompiler = WorkspaceCompiler::Msvc;
+			return true;
+		}
+		if (text == "clang-cl")
+		{
+			outCompiler = WorkspaceCompiler::ClangCl;
+			return true;
+		}
+		return false;
+	}
+
 	bool HasIncompleteEnabledSourceDependencies(const BuildWorkspaceOperationPlan& plan)
 	{
 		return plan.SourceDependencies.ReadyDependencyCount < plan.SourceDependencies.EnabledDependencyCount;
@@ -166,6 +222,8 @@ namespace SparkleLauncher
 				return false;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				return true;
+			case BuildWorkspaceOperationKind::InstallHostTool:
+				return false;
 			default:
 				return false;
 		}

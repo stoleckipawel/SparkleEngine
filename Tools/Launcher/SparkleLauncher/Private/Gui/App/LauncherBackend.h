@@ -1,26 +1,19 @@
 #pragma once
 
+#include "LauncherOperationRequest.h"
 #include "SparkleLauncher/ProcessRunner.h"
-#include "SparkleLauncher/OperationModel.h"
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QVector>
 
-#include <filesystem>
 #include <functional>
 #include <memory>
 
 namespace SparkleLauncher
 {
 	class LauncherOperationService;
-	enum class LauncherOperationCategory
-	{
-		Workspace,
-		Cooking,
-		Maintenance,
-		Launch
-	};
+	struct OperationRecord;
 
 	struct LauncherOperationDescriptor
 	{
@@ -29,50 +22,6 @@ namespace SparkleLauncher
 		QString DisplayName;
 		QString Description;
 		LauncherOperationCategory Category = LauncherOperationCategory::Workspace;
-	};
-
-	struct LauncherCleanTarget
-	{
-		QString DisplayName;
-		QString Path;
-		QString Detail;
-	};
-
-	struct LauncherOperationRequest
-	{
-		std::filesystem::path RepositoryRoot;
-		QString RunId;
-		QString OperationId;
-		QString ContentId;
-		QString EditorProfile;
-		QString RuntimeProfile;
-		QString WorkspaceIde;
-		QString SelectedTargets;
-		QString RequestedLevelIds;
-		QString SourceDependencyId;
-		QString ShaderPackages;
-		QString ShaderTargets;
-		QString ShaderBackend;
-		QString ShaderCacheDirectory;
-		QString LaunchBackend;
-		QString LaunchTarget;
-		QString LaunchStartupLevel;
-		QString LaunchVSync;
-		QString LaunchHighPerformanceAdapter;
-		QString LaunchCommandLineArguments;
-		QString LaunchCVars;
-		QString CleanScope = "cooked";
-		QVector<LauncherCleanTarget> CleanTargets;
-		QVector<QString> PreservedPaths;
-		bool ShaderUseCache = true;
-		bool ShaderEnableDebugInfo = false;
-		bool ShaderEnableOptimizations = true;
-		bool ShaderWarningsAsErrors = true;
-		bool ShaderStripDebugInfo = true;
-		bool ForceConfigure = false;
-		bool ForceRecook = false;
-		bool ConfirmForceRecook = false;
-		bool ConfirmClean = false;
 	};
 
 	class LauncherBackend final : public QObject

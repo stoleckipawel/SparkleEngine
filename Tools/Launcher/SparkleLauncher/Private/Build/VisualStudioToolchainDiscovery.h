@@ -8,6 +8,9 @@ namespace SparkleLauncher
 	struct VisualStudioToolchainDiscovery final
 	{
 		std::filesystem::path DiscoveryPath;
+		std::filesystem::path InstallationPath;
+		std::filesystem::path InstallerPath;
+		std::filesystem::path ClangClPath;
 		std::string WindowsSdkVersion;
 	};
 

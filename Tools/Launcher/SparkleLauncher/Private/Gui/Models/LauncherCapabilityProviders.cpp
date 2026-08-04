@@ -1,10 +1,20 @@
 #include "LauncherCapabilityProviders.h"
 
+#include "SparkleLauncher/LaunchOperations.h"
+
+#include <optional>
+
 namespace SparkleLauncher
 {
+	bool LauncherCapabilityContext::IsLaunchGoal() const
+	{
+		return FindLaunchOperationDefinition(Request.OperationId.toStdString()).has_value();
+	}
+
 	bool LauncherCapabilityContext::IsRuntimeProduct() const
 	{
-		return Request.LaunchTarget == "runtime";
+		const std::optional<LaunchOperationDefinition> definition = FindLaunchOperationDefinition(Request.OperationId.toStdString());
+		return definition.has_value() && definition->Product == LaunchProduct::Runtime;
 	}
 
 	QString LauncherCapabilityContext::ProductBuildOperationId() const

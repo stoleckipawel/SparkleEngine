@@ -42,6 +42,11 @@ namespace SparkleLauncher
 
 	std::string RegisterCookCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context)
 	{
+		if (!context.IsLaunchGoal())
+		{
+			return {};
+		}
+
 		const LauncherOperationRequest request = context.Request;
 		std::string error = registry.Register(
 		    {std::string(LauncherCapabilityId::CookingTools),

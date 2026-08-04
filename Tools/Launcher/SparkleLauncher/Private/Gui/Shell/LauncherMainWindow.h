@@ -39,6 +39,8 @@ class QGridLayout;
 namespace SparkleLauncher
 {
 	struct LauncherOperationDescriptor;
+	struct ToolchainItemStatus;
+	enum class WorkspaceCompiler;
 	class LauncherContentModel;
 	class LauncherSettings;
 	struct ThirdPartyDependencyUiEntry;
@@ -115,6 +117,7 @@ namespace SparkleLauncher
 		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
 		QWidget* CreateOutputPanel();
 		QWidget* CreateHeaderContextPanel(QWidget* parent);
+		QWidget* CreateFooterContextPanel(QWidget* parent);
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool));
@@ -189,17 +192,17 @@ namespace SparkleLauncher
 		QVector<QPair<QString, QString>> BuildStartupLevelOptions() const;
 		QString ResolveStartupLevelDisplayName() const;
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
-		QPushButton* CreateQuickStartButton(const QString& launchOperationId, const QString& label);
+		QPushButton* CreateQuickStartButton(const QString& operationId, const QString& label);
 		void AddHomeQuickStart(QVBoxLayout& layout);
-		void StartQuickStart(const QString& launchOperationId);
+		void StartQuickStart(const QString& operationId);
 		void ContinueQuickStart();
 		void HandleQuickStartOperationFinished(const QString& runId, const QString& operationId, bool succeeded, const QString& statusText);
 		void ReportQuickStartBlocked(const QString& statusMessage);
 		void SetQuickStartButtonsEnabled(bool enabled);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
-		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
-		void AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail);
-		void AddLaunchApplicationOptions(QVBoxLayout& layout);
+		QPushButton* CreateHostToolActionButton(const ToolchainItemStatus& item);
+		void SelectWorkspaceCompiler(WorkspaceCompiler compiler);
+		void InstallHostTool(const ToolchainItemStatus& item);
 		void AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
@@ -250,7 +253,7 @@ namespace SparkleLauncher
 		QHash<QString, int> m_workflowPageByOperation;
 		QHash<int, QString> m_lastOperationByWorkflowIndex;
 		QVector<QWidget*> m_tabOrderWidgets;
-		QWidget* m_headerContextPanel = nullptr;
+		QComboBox* m_workspaceCompilerCombo = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
 		QVector<QComboBox*> m_startupLevelSelectors;

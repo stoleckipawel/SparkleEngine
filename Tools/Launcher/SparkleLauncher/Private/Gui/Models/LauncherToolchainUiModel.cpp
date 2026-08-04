@@ -23,11 +23,11 @@ namespace SparkleLauncher
 		switch (state)
 		{
 			case ToolchainItemState::Found:
-				return "Ready";
+				return required ? "Ready" : "Available";
 			case ToolchainItemState::Warning:
-				return required ? "Warning" : "Optional";
+				return required ? "Warning" : "Not installed";
 			case ToolchainItemState::Missing:
-				return required ? "Missing" : "Optional";
+				return required ? "Missing" : "Not installed";
 		}
 		return "Unknown";
 	}

@@ -31,17 +31,17 @@ namespace SparkleLauncher
 		plan.Environment.push_back(std::move(overrideValue));
 	}
 
-	static bool IsRuntimeLaunchTarget(const LaunchOperationRequest& request)
+	static bool IsRuntimeProduct(LaunchProduct product)
 	{
-		return request.Target == "runtime";
+		return product == LaunchProduct::Runtime;
 	}
 
-	static std::string ResolveLaunchProfile(LaunchOperationKind, const LaunchOperationRequest& request)
+	static std::string ResolveLaunchProfile(LaunchProduct product, const LaunchOperationRequest& request)
 	{
-		return IsRuntimeLaunchTarget(request) ? request.RuntimeProfile : request.EditorProfile;
+		return IsRuntimeProduct(product) ? request.RuntimeProfile : request.EditorProfile;
 	}
 
-	static std::optional<BuildProfile> ResolveProfileForLaunch(const LaunchOperationRequest& request, std::string_view profileName)
+	static std::optional<BuildProfile> ResolveProfileForLaunch(LaunchProduct product, std::string_view profileName)
 	{
 		const std::optional<BuildProfile> profile = FindBuildProfile(profileName);
 		if (!profile.has_value())
@@ -49,7 +49,7 @@ namespace SparkleLauncher
 			return std::nullopt;
 		}
 
-		const BuildProfileTarget expectedTarget = IsRuntimeLaunchTarget(request) ? BuildProfileTarget::Game : BuildProfileTarget::Editor;
+		const BuildProfileTarget expectedTarget = IsRuntimeProduct(product) ? BuildProfileTarget::Game : BuildProfileTarget::Editor;
 		return profile->Target == expectedTarget ? profile : std::nullopt;
 	}
 
@@ -135,6 +135,7 @@ namespace SparkleLauncher
 
 	static std::filesystem::path ResolveLaunchExecutablePath(
 	    const LaunchOperationRequest& request,
+	    LaunchProduct product,
 	    std::string_view profileName,
 	    std::string_view targetName)
 	{
@@ -145,42 +146,18 @@ namespace SparkleLauncher
 			fileName += ".exe";
 		}
 #endif
-		const std::string productRole = IsRuntimeLaunchTarget(request) ? "runtime" : "editor";
+		const std::string productRole = IsRuntimeProduct(product) ? "runtime" : "editor";
 		return FirstExistingOrPreferred({
 		    GetProjectTargetArtifactDirectory(request.RepositoryRoot, request.ContentId, productRole, profileName) / fileName,
 		    ResolveSparkleToolPath(request.RepositoryRoot, profileName, targetName),
 		});
 	}
 
-	std::string ToString(LaunchOperationKind kind)
-	{
-		switch (kind)
-		{
-			case LaunchOperationKind::RunContent:
-				return "RunContent";
-		}
-
-		return "Unknown";
-	}
-
 	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions()
 	{
 		static const std::vector<LaunchOperationDefinition> definitions = {
-		    {LaunchOperationKind::RunContent,
-		        "launch.editor",
-		        "Launch",
-		        "Open Editor",
-		        "Launch the editor using available runtime components."},
-		    {LaunchOperationKind::RunContent,
-		        "launch.runtime",
-		        "Launch",
-		        "Open Runtime",
-		        "Launch the runtime using available runtime components."},
-		    {LaunchOperationKind::RunContent,
-		        "launch.run",
-		        "Launch",
-		        "Launch",
-		        "Launch the editor or runtime using shared launch options."},
+		    {LaunchProduct::Editor, "launch.editor", "Launch", "Open Editor", "Launch the editor using available runtime components."},
+		    {LaunchProduct::Runtime, "launch.runtime", "Launch", "Open Runtime", "Launch the runtime using available runtime components."},
 		};
 		return definitions;
 	}
@@ -207,41 +184,25 @@ namespace SparkleLauncher
 			return plan;
 		}
 
-		plan.Kind = definition->Kind;
+		plan.Product = definition->Product;
 		plan.RepositoryRoot = request.RepositoryRoot;
 		plan.Request = request;
-		plan.Profile = ResolveLaunchProfile(plan.Kind, plan.Request);
+		plan.Profile = ResolveLaunchProfile(plan.Product, plan.Request);
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs.push_back({"content", plan.Request.ContentId});
-		plan.Operation.Inputs.push_back({"target", IsRuntimeLaunchTarget(plan.Request) ? "runtime" : "editor"});
+		plan.Operation.Inputs.push_back({"target", IsRuntimeProduct(plan.Product) ? "runtime" : "editor"});
 		plan.Operation.Inputs.push_back({"profile", plan.Profile});
 		if (!plan.Request.StartupLevel.empty())
 		{
 			plan.Operation.Inputs.push_back({"startupLevel", plan.Request.StartupLevel});
 		}
-		if (!plan.Request.GraphicsBackend.empty())
+		if (!plan.Request.GraphicsApi.empty())
 		{
-			plan.Operation.Inputs.push_back({"graphicsBackend", plan.Request.GraphicsBackend});
-		}
-		if (!plan.Request.VSync.empty())
-		{
-			plan.Operation.Inputs.push_back({"r.VSync", plan.Request.VSync});
-		}
-		if (!plan.Request.PreferHighPerformanceAdapter.empty())
-		{
-			plan.Operation.Inputs.push_back({"r.PreferHighPerformanceAdapter", plan.Request.PreferHighPerformanceAdapter});
-		}
-		if (!plan.Request.CustomArguments.empty())
-		{
-			plan.Operation.Inputs.push_back({"customArguments", std::to_string(plan.Request.CustomArguments.size())});
-		}
-		if (!plan.Request.CustomCVars.empty())
-		{
-			plan.Operation.Inputs.push_back({"customCVars", std::to_string(plan.Request.CustomCVars.size())});
+			plan.Operation.Inputs.push_back({"graphicsApi", plan.Request.GraphicsApi});
 		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
 
-		const std::optional<BuildProfile> profile = ResolveProfileForLaunch(plan.Request, plan.Profile);
+		const std::optional<BuildProfile> profile = ResolveProfileForLaunch(plan.Product, plan.Profile);
 		if (!profile.has_value())
 		{
 			AddReadiness(plan, "Launch profile does not match the requested launch target: " + plan.Profile);
@@ -249,7 +210,7 @@ namespace SparkleLauncher
 		}
 
 		plan.TargetName = BuildProjectTargetName(plan.Request.ContentId, *profile);
-		plan.ExecutablePath = ResolveLaunchExecutablePath(plan.Request, plan.Profile, plan.TargetName);
+		plan.ExecutablePath = ResolveLaunchExecutablePath(plan.Request, plan.Product, plan.Profile, plan.TargetName);
 		plan.WorkingDirectory = plan.Request.RepositoryRoot / "Projects" / plan.Request.ContentId;
 		if (!plan.Request.StartupLevel.empty())
 		{
@@ -289,31 +250,15 @@ namespace SparkleLauncher
 		    cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; run Cook Shaders before launching.");
 		AddPlannedEffect(
 		    plan,
-		    std::string("Launch ") + (IsRuntimeLaunchTarget(plan.Request) ? "runtime" : "editor") + " executable "
-		        + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
-		if (!plan.Request.GraphicsBackend.empty())
+		    std::string("Launch ") + (IsRuntimeProduct(plan.Product) ? "runtime" : "editor") + " executable " + plan.ExecutablePath.string()
+		        + " with working directory " + plan.WorkingDirectory.string() + ".");
+		if (!plan.Request.GraphicsApi.empty())
 		{
-			AddPlannedEffect(plan, "Use graphics backend: " + plan.Request.GraphicsBackend + ".");
-		}
-		if (!plan.Request.VSync.empty())
-		{
-			AddPlannedEffect(plan, "Set r.VSync=" + plan.Request.VSync + ".");
-		}
-		if (!plan.Request.PreferHighPerformanceAdapter.empty())
-		{
-			AddPlannedEffect(plan, "Set r.PreferHighPerformanceAdapter=" + plan.Request.PreferHighPerformanceAdapter + ".");
+			AddPlannedEffect(plan, "Use graphics API: " + plan.Request.GraphicsApi + ".");
 		}
 		if (!plan.Request.StartupLevel.empty())
 		{
 			AddPlannedEffect(plan, "Use startup level: " + plan.Request.StartupLevel + ".");
-		}
-		if (!plan.Request.CustomArguments.empty())
-		{
-			AddPlannedEffect(plan, "Append " + std::to_string(plan.Request.CustomArguments.size()) + " custom command-line argument(s).");
-		}
-		for (const std::string& customCVar : plan.Request.CustomCVars)
-		{
-			AddPlannedEffect(plan, "Set " + customCVar + ".");
 		}
 		plan.CanRun = executableExists && projectMarkerExists && cookedMeshesReady && cookedTexturesReady && cookedShadersReady;
 		PopulateLaunchStep(plan);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LauncherBackend.h"
+#include "LauncherOperationRequest.h"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>

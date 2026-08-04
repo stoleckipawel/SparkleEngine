@@ -167,6 +167,7 @@ namespace SparkleLauncher
 
 		rootLayout->addWidget(CreateWorkflowSurface(), 1);
 		rootLayout->addWidget(CreateOutputPanel(), 0);
+		rootLayout->addWidget(CreateFooterContextPanel(centralWidget), 0);
 		setCentralWidget(centralWidget);
 		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 		if (!workflows.empty() && !workflows.front().OperationIds.empty())
@@ -411,10 +412,6 @@ namespace SparkleLauncher
 		if (iconKey == "home")
 		{
 			return m_icons.Icon(LauncherIcon::Start, QColor(kColorStateQueued));
-		}
-		if (iconKey == "launch")
-		{
-			return m_icons.Icon(LauncherIcon::Run, QColor(kColorStateQueued));
 		}
 		if (iconKey == "sync")
 		{

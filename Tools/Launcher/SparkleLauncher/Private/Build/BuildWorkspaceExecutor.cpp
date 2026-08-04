@@ -186,6 +186,10 @@ namespace SparkleLauncher
 		{
 			return detail.empty() ? "Open IDE failed." + logSuffix : "Open IDE failed: " + detail + logSuffix;
 		}
+		if (step.Id == "install-host-tool")
+		{
+			return detail.empty() ? "Host tool installation failed." + logSuffix : "Host tool installation failed: " + detail + logSuffix;
+		}
 		return detail.empty() ? step.DisplayName + " failed." + logSuffix : step.DisplayName + " failed: " + detail + logSuffix;
 	}
 
@@ -388,7 +392,7 @@ namespace SparkleLauncher
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			operation.FailureSummary = std::string("Level asset-pack planning failed: ") + error.what();
+			operation.FailureSummary = std::string("Operation planning failed: ") + error.what();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}

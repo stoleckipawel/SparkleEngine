@@ -35,6 +35,14 @@ namespace SparkleLauncher
 	static constexpr int kLauncherIconSize = LauncherUi::Icon::DefaultSize;
 	static constexpr const char* kColorStateQueued = LauncherUi::Color::StateQueued;
 
+	static void ApplyContextComboMetrics(QComboBox& combo, int minWidth, int maxWidth)
+	{
+		combo.setMinimumWidth(minWidth);
+		combo.setMaximumWidth(maxWidth);
+		combo.setMinimumHeight(LauncherUi::HeaderContext::ComboHeight);
+		combo.setMaximumHeight(LauncherUi::HeaderContext::ComboHeight);
+	}
+
 	QWidget* LauncherMainWindow::CreateWorkflowSurface()
 	{
 		QFrame* surface = new QFrame(this);
@@ -212,14 +220,6 @@ namespace SparkleLauncher
 		rowLayout->setContentsMargins(0, 0, 0, 0);
 		rowLayout->setSpacing(LauncherUi::HeaderContext::Spacing);
 
-		const auto applyComboMetrics = [](QComboBox& combo, int minWidth, int maxWidth)
-		{
-			combo.setMinimumWidth(minWidth);
-			combo.setMaximumWidth(maxWidth);
-			combo.setMinimumHeight(LauncherUi::HeaderContext::ComboHeight);
-			combo.setMaximumHeight(LauncherUi::HeaderContext::ComboHeight);
-		};
-
 		QLabel* levelLabel = CreateFieldLabel("Level");
 		levelLabel->setObjectName("HeaderFieldLabel");
 		rowLayout->addWidget(levelLabel, 0);
@@ -227,44 +227,87 @@ namespace SparkleLauncher
 		levelCombo->setObjectName("HeaderContextCombo");
 		levelCombo->setAccessibleName("Startup level");
 		levelCombo->setToolTip("Startup level used by editor and runtime launches.");
-		applyComboMetrics(*levelCombo, LauncherUi::HeaderContext::LevelComboMinWidth, LauncherUi::HeaderContext::LevelComboMaxWidth);
+		ApplyContextComboMetrics(*levelCombo, LauncherUi::HeaderContext::LevelComboMinWidth, LauncherUi::HeaderContext::LevelComboMaxWidth);
 		levelLabel->setBuddy(levelCombo);
 		rowLayout->addWidget(levelCombo, 0);
 
-		QLabel* configurationLabel = CreateFieldLabel("Config");
-		configurationLabel->setObjectName("HeaderFieldLabel");
-		rowLayout->addWidget(configurationLabel, 0);
+		QLabel* graphicsApiLabel = CreateFieldLabel("Graphics API");
+		graphicsApiLabel->setObjectName("HeaderFieldLabel");
+		rowLayout->addWidget(graphicsApiLabel, 0);
+		QComboBox* graphicsApiCombo =
+		    CreateValueCombo({{"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.GraphicsApi(), &LauncherSettings::SetGraphicsApi);
+		graphicsApiCombo->setObjectName("HeaderContextCombo");
+		graphicsApiCombo->setAccessibleName("Graphics API");
+		graphicsApiCombo->setToolTip("Graphics API used when Quick Start runs the editor or runtime.");
+		ApplyContextComboMetrics(
+		    *graphicsApiCombo,
+		    LauncherUi::HeaderContext::GraphicsApiComboMinWidth,
+		    LauncherUi::HeaderContext::GraphicsApiComboMaxWidth);
+		graphicsApiLabel->setBuddy(graphicsApiCombo);
+		rowLayout->addWidget(graphicsApiCombo, 0);
+
+		return panel;
+	}
+
+	QWidget* LauncherMainWindow::CreateFooterContextPanel(QWidget* parent)
+	{
+		QFrame* panel = new QFrame(parent);
+		panel->setObjectName("FooterContextPanel");
+		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
+		rowLayout->setContentsMargins(LauncherUi::FooterContext::Margins);
+		rowLayout->setSpacing(LauncherUi::FooterContext::Spacing);
+		rowLayout->addStretch(1);
+
+		const auto addLabel = [this, rowLayout](const QString& text)
+		{
+			QLabel* label = CreateFieldLabel(text);
+			label->setObjectName("FooterFieldLabel");
+			rowLayout->addWidget(label, 0);
+			return label;
+		};
+		const auto finishCombo = [rowLayout](QLabel& label, QComboBox& combo, int minWidth, int maxWidth)
+		{
+			combo.setObjectName("FooterContextCombo");
+			ApplyContextComboMetrics(combo, minWidth, maxWidth);
+			label.setBuddy(&combo);
+			rowLayout->addWidget(&combo, 0);
+		};
+
+		QLabel* configurationLabel = addLabel("Config");
 		QComboBox* configurationCombo = CreateValueCombo(
 		    {{"Development", "development"}, {"Debug", "debug"}, {"Shipping", "shipping"}},
 		    m_settings.BuildConfiguration(),
 		    &LauncherSettings::SetBuildConfiguration);
-		configurationCombo->setObjectName("HeaderContextCombo");
 		configurationCombo->setAccessibleName("Build Configuration");
 		configurationCombo->setToolTip("Global build configuration used for editor, runtime, and tool workflows.");
-		applyComboMetrics(
+		finishCombo(
+		    *configurationLabel,
 		    *configurationCombo,
 		    LauncherUi::HeaderContext::ConfigurationComboMinWidth,
 		    LauncherUi::HeaderContext::ConfigurationComboMaxWidth);
-		configurationLabel->setBuddy(configurationCombo);
-		rowLayout->addWidget(configurationCombo, 0);
 
-		QLabel* ideLabel = CreateFieldLabel("IDE");
-		ideLabel->setObjectName("HeaderFieldLabel");
-		rowLayout->addWidget(ideLabel, 0);
+		QLabel* compilerLabel = addLabel("Compiler");
+		m_workspaceCompilerCombo = CreateValueCombo(
+		    {{"MSVC", "msvc"}, {"clang-cl", "clang-cl"}},
+		    m_settings.WorkspaceCompiler(),
+		    &LauncherSettings::SetWorkspaceCompiler);
+		m_workspaceCompilerCombo->setAccessibleName("Compiler");
+		m_workspaceCompilerCombo->setToolTip(
+		    "Compiler selected and configured by the launcher. Quick Start installs a supported missing compiler component when possible.");
+		finishCombo(
+		    *compilerLabel,
+		    *m_workspaceCompilerCombo,
+		    LauncherUi::HeaderContext::CompilerComboMinWidth,
+		    LauncherUi::HeaderContext::CompilerComboMaxWidth);
+
+		QLabel* ideLabel = addLabel("IDE");
 		QComboBox* ideCombo = CreateValueCombo(
 		    {{"Visual Studio", "visual-studio"}, {"Rider", "rider"}},
 		    m_settings.WorkspaceIde(),
 		    &LauncherSettings::SetWorkspaceIde);
-		ideCombo->setObjectName("HeaderContextCombo");
 		ideCombo->setAccessibleName("IDE");
-		ideCombo->setToolTip(
-		    "Visual Studio with an MSVC-compatible Qt kit is the supported Windows workflow. "
-		    "ClangCL remains supported as an optional toolset, and Rider remains optional IDE integration.");
-		applyComboMetrics(*ideCombo, LauncherUi::HeaderContext::IdeComboMinWidth, LauncherUi::HeaderContext::IdeComboMaxWidth);
-		ideLabel->setBuddy(ideCombo);
-		rowLayout->addWidget(ideCombo, 0);
-
-		m_headerContextPanel = panel;
+		ideCombo->setToolTip("IDE opened by Quick Start. Compiler selection is controlled independently.");
+		finishCombo(*ideLabel, *ideCombo, LauncherUi::HeaderContext::IdeComboMinWidth, LauncherUi::HeaderContext::IdeComboMaxWidth);
 		return panel;
 	}
 
