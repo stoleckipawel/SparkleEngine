@@ -3,9 +3,14 @@
 #include "LauncherLayoutWidgets.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherContentModel.h"
+#include "LauncherContextUiModel.h"
+#include "LauncherOperationRequestFactory.h"
+#include "LauncherSelectionWidgets.h"
 #include "LauncherSettings.h"
 #include "LauncherUiDesign.h"
 #include "LauncherWorkflowCatalog.h"
+
+#include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include <QtGui/QColor>
 #include <QtWidgets/QButtonGroup>
@@ -41,6 +46,25 @@ namespace SparkleLauncher
 		combo.setMaximumWidth(maxWidth);
 		combo.setMinimumHeight(LauncherUi::HeaderContext::ComboHeight);
 		combo.setMaximumHeight(LauncherUi::HeaderContext::ComboHeight);
+	}
+
+	static void PopulateBoundContextCombo(
+	    QComboBox* combo,
+	    const QVector<LauncherSelectionOption>& options,
+	    const QString& currentValue,
+	    LauncherSettings& settings,
+	    void (LauncherSettings::*setter)(const QString&))
+	{
+		if (combo == nullptr)
+		{
+			return;
+		}
+
+		const QString effectiveValue = PopulateLauncherSelectionCombo(*combo, options, currentValue);
+		if (!effectiveValue.isEmpty() && effectiveValue != currentValue)
+		{
+			(settings.*setter)(effectiveValue);
+		}
 	}
 
 	QWidget* LauncherMainWindow::CreateWorkflowSurface()
@@ -234,17 +258,17 @@ namespace SparkleLauncher
 		QLabel* graphicsApiLabel = CreateFieldLabel("Graphics API");
 		graphicsApiLabel->setObjectName("HeaderFieldLabel");
 		rowLayout->addWidget(graphicsApiLabel, 0);
-		QComboBox* graphicsApiCombo =
-		    CreateValueCombo({{"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.GraphicsApi(), &LauncherSettings::SetGraphicsApi);
-		graphicsApiCombo->setObjectName("HeaderContextCombo");
-		graphicsApiCombo->setAccessibleName("Graphics API");
-		graphicsApiCombo->setToolTip("Graphics API used when Quick Start runs the editor or runtime.");
+		m_graphicsApiCombo = CreateContextCombo(&LauncherSettings::SetGraphicsApi);
+		m_graphicsApiCombo->setObjectName("HeaderContextCombo");
+		m_graphicsApiCombo->setAccessibleName("Graphics API");
+		m_graphicsApiCombo->setToolTip(
+		    "Graphics API used by Quick Start. Available backends are selectable; supported backends that need setup are shown disabled.");
 		ApplyContextComboMetrics(
-		    *graphicsApiCombo,
+		    *m_graphicsApiCombo,
 		    LauncherUi::HeaderContext::GraphicsApiComboMinWidth,
 		    LauncherUi::HeaderContext::GraphicsApiComboMaxWidth);
-		graphicsApiLabel->setBuddy(graphicsApiCombo);
-		rowLayout->addWidget(graphicsApiCombo, 0);
+		graphicsApiLabel->setBuddy(m_graphicsApiCombo);
+		rowLayout->addWidget(m_graphicsApiCombo, 0);
 
 		return panel;
 	}
@@ -274,26 +298,22 @@ namespace SparkleLauncher
 		};
 
 		QLabel* configurationLabel = addLabel("Config");
-		QComboBox* configurationCombo = CreateValueCombo(
-		    {{"Development", "development"}, {"Debug", "debug"}, {"Shipping", "shipping"}},
-		    m_settings.BuildConfiguration(),
-		    &LauncherSettings::SetBuildConfiguration);
-		configurationCombo->setAccessibleName("Build Configuration");
-		configurationCombo->setToolTip("Global build configuration used for editor, runtime, and tool workflows.");
+		m_buildConfigurationCombo = CreateContextCombo(&LauncherSettings::SetBuildConfiguration);
+		m_buildConfigurationCombo->setAccessibleName("Build Configuration");
+		m_buildConfigurationCombo->setToolTip(
+		    "Global editor and runtime configuration. Only configurations backed by both product profiles are selectable.");
 		finishCombo(
 		    *configurationLabel,
-		    *configurationCombo,
+		    *m_buildConfigurationCombo,
 		    LauncherUi::HeaderContext::ConfigurationComboMinWidth,
 		    LauncherUi::HeaderContext::ConfigurationComboMaxWidth);
 
 		QLabel* compilerLabel = addLabel("Compiler");
-		m_workspaceCompilerCombo = CreateValueCombo(
-		    {{"MSVC", "msvc"}, {"clang-cl", "clang-cl"}},
-		    m_settings.WorkspaceCompiler(),
-		    &LauncherSettings::SetWorkspaceCompiler);
+		m_workspaceCompilerCombo = CreateContextCombo(&LauncherSettings::SetWorkspaceCompiler);
 		m_workspaceCompilerCombo->setAccessibleName("Compiler");
 		m_workspaceCompilerCombo->setToolTip(
-		    "Compiler selected and configured by the launcher. Quick Start installs a supported missing compiler component when possible.");
+		    "Compiler configured by the launcher. Installed compilers are selectable; supported missing compilers remain visible for "
+		    "setup.");
 		finishCombo(
 		    *compilerLabel,
 		    *m_workspaceCompilerCombo,
@@ -301,14 +321,65 @@ namespace SparkleLauncher
 		    LauncherUi::HeaderContext::CompilerComboMaxWidth);
 
 		QLabel* ideLabel = addLabel("IDE");
-		QComboBox* ideCombo = CreateValueCombo(
-		    {{"Visual Studio", "visual-studio"}, {"Rider", "rider"}},
-		    m_settings.WorkspaceIde(),
-		    &LauncherSettings::SetWorkspaceIde);
-		ideCombo->setAccessibleName("IDE");
-		ideCombo->setToolTip("IDE opened by Quick Start. Compiler selection is controlled independently.");
-		finishCombo(*ideLabel, *ideCombo, LauncherUi::HeaderContext::IdeComboMinWidth, LauncherUi::HeaderContext::IdeComboMaxWidth);
+		m_workspaceIdeCombo = CreateContextCombo(&LauncherSettings::SetWorkspaceIde);
+		m_workspaceIdeCombo->setAccessibleName("IDE");
+		m_workspaceIdeCombo->setToolTip(
+		    "IDE opened by Quick Start. Detected IDEs are selectable; supported missing IDEs remain visible for setup.");
+		finishCombo(
+		    *ideLabel,
+		    *m_workspaceIdeCombo,
+		    LauncherUi::HeaderContext::IdeComboMinWidth,
+		    LauncherUi::HeaderContext::IdeComboMaxWidth);
 		return panel;
+	}
+
+	QComboBox* LauncherMainWindow::CreateContextCombo(void (LauncherSettings::*setter)(const QString&))
+	{
+		QComboBox* combo = new QComboBox(this);
+		RegisterFocusable(combo);
+		connect(
+		    combo,
+		    static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+		    [combo, setter, this]()
+		    {
+			    const QString value = combo->currentData().toString();
+			    if (!value.isEmpty())
+			    {
+				    (m_settings.*setter)(value);
+			    }
+		    });
+		return combo;
+	}
+
+	void LauncherMainWindow::RefreshContextSelectors()
+	{
+		const BuildToolchainStatus toolchain =
+		    DetectBuildToolchain(m_repositoryRoot, ResolveSelectedWorkspaceIde(m_settings), ResolveSelectedWorkspaceCompiler(m_settings));
+		const LauncherContextUiModel model = LauncherContextUiModel::Build(toolchain);
+		PopulateBoundContextCombo(
+		    m_graphicsApiCombo,
+		    model.GraphicsApis,
+		    m_settings.GraphicsApi(),
+		    m_settings,
+		    &LauncherSettings::SetGraphicsApi);
+		PopulateBoundContextCombo(
+		    m_buildConfigurationCombo,
+		    model.BuildConfigurations,
+		    m_settings.BuildConfiguration(),
+		    m_settings,
+		    &LauncherSettings::SetBuildConfiguration);
+		PopulateBoundContextCombo(
+		    m_workspaceCompilerCombo,
+		    model.Compilers,
+		    m_settings.WorkspaceCompiler(),
+		    m_settings,
+		    &LauncherSettings::SetWorkspaceCompiler);
+		PopulateBoundContextCombo(
+		    m_workspaceIdeCombo,
+		    model.Ides,
+		    m_settings.WorkspaceIde(),
+		    m_settings,
+		    &LauncherSettings::SetWorkspaceIde);
 	}
 
 	QWidget* LauncherMainWindow::CreateOptionsPage(const QString& operationId, QWidget* parent)

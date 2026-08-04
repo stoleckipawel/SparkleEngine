@@ -6,13 +6,12 @@
 
 namespace SparkleLauncher
 {
-
-	QString ToQString(std::string_view text)
+	static QString ToQString(std::string_view text)
 	{
 		return QString::fromStdString(std::string(text));
 	}
 
-	ThirdPartyDependencyUiEntry ToUiDependency(const SourceDependencyEntry& dependency)
+	static ThirdPartyDependencyUiEntry ToUiDependency(const SourceDependencyEntry& dependency)
 	{
 		return {
 		    ToQString(dependency.Id),
@@ -25,7 +24,7 @@ namespace SparkleLauncher
 		};
 	}
 
-	SourceDependencyValidation ValidateDependency(
+	static SourceDependencyValidation ValidateDependency(
 	    const ThirdPartyDependencyUiEntry& dependency,
 	    const std::filesystem::path& dependencyCachePath)
 	{

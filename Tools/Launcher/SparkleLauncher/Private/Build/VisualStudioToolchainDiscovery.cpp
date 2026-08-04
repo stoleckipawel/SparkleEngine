@@ -154,6 +154,18 @@ namespace SparkleLauncher
 		return std::filesystem::is_regular_file(path, errorCode) ? std::optional<std::filesystem::path>(path) : std::nullopt;
 	}
 
+	static std::optional<std::filesystem::path> FindVisualStudioIde(const std::filesystem::path& installationPath)
+	{
+		if (installationPath.empty())
+		{
+			return std::nullopt;
+		}
+
+		const std::filesystem::path path = installationPath / "Common7" / "IDE" / "devenv.exe";
+		std::error_code errorCode;
+		return std::filesystem::is_regular_file(path, errorCode) ? std::optional<std::filesystem::path>(path) : std::nullopt;
+	}
+
 	static std::optional<std::string> FindWindowsSdkVersion()
 	{
 		const std::optional<std::filesystem::path> programFiles = ResolveProgramFilesX86();
@@ -192,6 +204,7 @@ namespace SparkleLauncher
 		discovery.DiscoveryPath = ResolveVswherePath().value_or(std::filesystem::path());
 		discovery.InstallationPath = FindVisualStudioInstallWithCppTools().value_or(
 		    QueryVisualStudioInstallWithCppTools(discovery.DiscoveryPath).value_or(std::filesystem::path()));
+		discovery.IdePath = FindVisualStudioIde(discovery.InstallationPath).value_or(std::filesystem::path());
 		discovery.InstallerPath = ResolveVisualStudioInstallerPath().value_or(std::filesystem::path());
 		discovery.ClangClPath = FindVisualStudioClangCl(discovery.InstallationPath).value_or(std::filesystem::path());
 		discovery.WindowsSdkVersion = FindWindowsSdkVersion().value_or(std::string());

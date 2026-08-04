@@ -135,6 +135,7 @@ namespace SparkleLauncher
 		const VisualStudioToolchainDiscovery visualStudio = DiscoverVisualStudioToolchain();
 		status.VswherePath = visualStudio.DiscoveryPath;
 		status.VisualStudioPath = visualStudio.InstallationPath;
+		status.VisualStudioIdePath = visualStudio.IdePath;
 		status.VisualStudioInstallerPath = visualStudio.InstallerPath;
 		status.ClangClPath = visualStudio.ClangClPath;
 		status.WindowsSdkVersion = visualStudio.WindowsSdkVersion;
@@ -147,6 +148,14 @@ namespace SparkleLauncher
 		    !status.VisualStudioPath.empty()
 		        ? "Visual Studio C++ tools are available for generator/workload discovery: " + std::string(kVisualStudioCppComponent)
 		        : "Visual Studio C++ tools were not found."));
+		status.Items.push_back(MakeToolStatus(
+		    "visualstudio-ide",
+		    "Visual Studio IDE",
+		    false,
+		    !status.VisualStudioIdePath.empty(),
+		    status.VisualStudioIdePath,
+		    !status.VisualStudioIdePath.empty() ? "Visual Studio IDE is available."
+		                                        : "Visual Studio C++ build tools are installed without the Visual Studio IDE."));
 		status.Items.push_back(MakeToolStatus(
 		    "windowssdk",
 		    "Windows SDK",

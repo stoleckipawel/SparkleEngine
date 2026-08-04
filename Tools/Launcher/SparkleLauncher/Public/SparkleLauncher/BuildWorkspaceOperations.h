@@ -50,6 +50,7 @@ namespace SparkleLauncher
 		std::filesystem::path GitPath;
 		std::filesystem::path VswherePath;
 		std::filesystem::path VisualStudioPath;
+		std::filesystem::path VisualStudioIdePath;
 		std::filesystem::path VisualStudioInstallerPath;
 		std::filesystem::path ClangClPath;
 		std::filesystem::path QtRootPath;

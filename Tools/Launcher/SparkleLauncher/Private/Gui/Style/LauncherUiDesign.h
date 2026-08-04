@@ -100,6 +100,12 @@ namespace SparkleLauncher::LauncherUi
 		inline const QMargins Margins{16, 5, 16, 5};
 	}
 
+	namespace Selector
+	{
+		inline constexpr int PopupHorizontalPadding = 36;
+		inline constexpr int PopupMaxWidth = 440;
+	}
+
 	namespace Row
 	{
 		inline constexpr int FieldLabelWidth = 132;
@@ -229,27 +235,18 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int ProductCardMinWidth = 420;
 		inline constexpr int ProductCardMaxWidth = 720;
 		inline constexpr int ProductCardMaxColumns = 3;
-		inline constexpr int DiscoverCardMinWidth = (ProductCardMinWidth - TileSpacing) / 2;
-		inline constexpr int DiscoverCardMaxWidth = (ProductCardMaxWidth - TileSpacing) / 2;
-		inline constexpr int DiscoverCardMaxColumns = 6;
 	}
 
 	namespace Card
 	{
 		inline constexpr double HomeTileAspectRatio = 1.9;
 		inline constexpr int ProductBodyTop = 14;
-		inline constexpr int DiscoverBodyTop = 0;
 		inline constexpr int ProductBodyBottom = 0;
-		inline constexpr int DiscoverBodyBottom = 12;
 		inline constexpr int ProductSpacing = 12;
-		inline constexpr int DiscoverSpacing = 6;
 
 		inline const QSize ProductArtworkSize{720, 180};
-		inline const QSize DiscoverArtworkSize{351, 105};
 		inline const QMargins FlushArtworkMargins{0, 0, 0, Space::Large};
 		QMargins ProductMargins(bool hasArtwork);
-		QMargins DiscoverMargins(bool hasArtwork);
 		inline const QMargins ProductBodyMargins{Space::XLarge, ProductBodyTop, Space::XLarge, ProductBodyBottom};
-		inline const QMargins DiscoverBodyMargins{Space::XLarge, DiscoverBodyTop, Space::XLarge, DiscoverBodyBottom};
 	}
 }

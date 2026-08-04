@@ -13,7 +13,6 @@
 #include <QtGui/QPainterPath>
 #include <QtGui/QPen>
 #include <QtGui/QPixmap>
-#include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -249,39 +248,26 @@ namespace SparkleLauncher
 		return card;
 	}
 
-	static QFrame* CreateHomeCapabilityCardWithArtwork(
-	    const QString& title,
-	    const QString& status,
-	    const QString& detail,
-	    const QString& state,
-	    QWidget* action,
-	    const QString& tileRole,
-	    const QPixmap& artworkPixmap,
-	    QWidget* parent)
+	static QFrame* CreateQuickStartCardWithArtwork(const QString& title, QWidget* action, const QPixmap& artworkPixmap, QWidget* parent)
 	{
 		ProportionalCardFrame* card = new ProportionalCardFrame(LauncherUi::Card::HomeTileAspectRatio, parent);
 		card->setObjectName("CommandCapabilityCard");
-		card->setProperty("State", state);
-		card->setProperty("TileRole", tileRole);
+		card->setAccessibleName(title + " Quick Start");
 
 		const bool hasArtwork = !artworkPixmap.isNull();
-		const bool isLibraryCard = tileRole == "library";
-		const bool isDiscoverCard = tileRole == "discover";
 		const bool flushArtwork = hasArtwork;
 
 		QVBoxLayout* layout = new QVBoxLayout(card);
-		layout->setContentsMargins(
-		    flushArtwork ? LauncherUi::Card::FlushArtworkMargins
-		                 : (isLibraryCard ? LauncherUi::Card::ProductMargins(hasArtwork) : LauncherUi::Card::DiscoverMargins(hasArtwork)));
-		layout->setSpacing(flushArtwork ? 0 : (isLibraryCard ? LauncherUi::Card::ProductSpacing : LauncherUi::Card::DiscoverSpacing));
+		layout->setContentsMargins(flushArtwork ? LauncherUi::Card::FlushArtworkMargins : LauncherUi::Card::ProductMargins(hasArtwork));
+		layout->setSpacing(flushArtwork ? 0 : LauncherUi::Card::ProductSpacing);
 
-		const QSize artworkDesignSize = isLibraryCard ? LauncherUi::Card::ProductArtworkSize : LauncherUi::Card::DiscoverArtworkSize;
-		const LauncherArtworkPreset artworkPreset =
-		    isLibraryCard ? LauncherArtworkPreset::ProductCard : LauncherArtworkPreset::DiscoverTile;
-		if (QWidget* artwork =
-		        CreateLauncherVisualArtworkWidget(artworkPixmap, "CommandCardArtwork", artworkDesignSize, artworkPreset, card))
+		if (QWidget* artwork = CreateLauncherVisualArtworkWidget(
+		        artworkPixmap,
+		        "CommandCardArtwork",
+		        LauncherUi::Card::ProductArtworkSize,
+		        LauncherArtworkPreset::ProductCard,
+		        card))
 		{
-			artwork->setProperty("TileRole", tileRole);
 			QSizePolicy artworkPolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 			artworkPolicy.setHeightForWidth(true);
 			artwork->setSizePolicy(artworkPolicy);
@@ -294,54 +280,16 @@ namespace SparkleLauncher
 			QWidget* body = new QWidget(card);
 			body->setObjectName("CommandCardBody");
 			QVBoxLayout* bodyLayout = new QVBoxLayout(body);
-			bodyLayout->setContentsMargins(isDiscoverCard ? LauncherUi::Card::DiscoverBodyMargins : LauncherUi::Card::ProductBodyMargins);
-			bodyLayout->setSpacing(isDiscoverCard ? LauncherUi::Card::DiscoverSpacing : LauncherUi::Card::ProductSpacing);
+			bodyLayout->setContentsMargins(LauncherUi::Card::ProductBodyMargins);
+			bodyLayout->setSpacing(LauncherUi::Card::ProductSpacing);
 			layout->addWidget(body, 1);
 			contentLayout = bodyLayout;
 		}
 
-		if (isDiscoverCard)
-		{
-			contentLayout->addStretch(1);
-		}
-
-		QHBoxLayout* titleRow = new QHBoxLayout();
-		titleRow->setContentsMargins(0, 0, 0, 0);
-		titleRow->setSpacing(kSpaceSmall);
 		QLabel* titleLabel = new QLabel(title, card);
 		titleLabel->setObjectName("CommandCardTitle");
-		titleRow->addWidget(titleLabel, 1);
-		if (!isDiscoverCard)
-		{
-			QLabel* statusLabel = new QLabel(status, card);
-			statusLabel->setObjectName("CommandCardChip");
-			statusLabel->setProperty("State", state);
-			titleRow->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignTop);
-		}
-		contentLayout->addLayout(titleRow);
-
-		if (isDiscoverCard)
-		{
-			card->setToolTip(QString("%1 - %2").arg(status, detail));
-			card->setAccessibleName(title);
-			card->setAccessibleDescription(QString("%1. %2").arg(status, detail));
-			if (QAbstractButton* activationButton = qobject_cast<QAbstractButton*>(action))
-			{
-				activationButton->setParent(card);
-				activationButton->hide();
-				card->SetActivationButton(activationButton);
-			}
-			else if (action != nullptr)
-			{
-				action->deleteLater();
-			}
-			return card;
-		}
-
-		QLabel* detailLabel = new QLabel(detail, card);
-		detailLabel->setObjectName("CommandCardText");
-		detailLabel->setWordWrap(true);
-		contentLayout->addWidget(detailLabel, 1);
+		contentLayout->addWidget(titleLabel);
+		contentLayout->addStretch(1);
 
 		if (action != nullptr)
 		{
@@ -351,14 +299,10 @@ namespace SparkleLauncher
 		return card;
 	}
 
-	QFrame* CreateHomeCapabilityCard(
+	QFrame* CreateQuickStartCard(
 	    const std::filesystem::path& repositoryRoot,
 	    const QString& title,
-	    const QString& status,
-	    const QString& detail,
-	    const QString& state,
 	    QWidget* action,
-	    const QString& tileRole,
 	    const QString& artworkFileName,
 	    QWidget* parent)
 	{
@@ -368,19 +312,11 @@ namespace SparkleLauncher
 		{
 			artwork.load(QString::fromStdString(artworkPath.string()));
 		}
-		return CreateHomeCapabilityCardWithArtwork(title, status, detail, state, action, tileRole, artwork, parent);
+		return CreateQuickStartCardWithArtwork(title, action, artwork, parent);
 	}
 
-	QFrame* CreateHomeCapabilityCard(
-	    const QString& title,
-	    const QString& status,
-	    const QString& detail,
-	    const QString& state,
-	    QWidget* action,
-	    const QString& tileRole,
-	    const QPixmap& artwork,
-	    QWidget* parent)
+	QFrame* CreateQuickStartCard(const QString& title, QWidget* action, const QPixmap& artwork, QWidget* parent)
 	{
-		return CreateHomeCapabilityCardWithArtwork(title, status, detail, state, action, tileRole, artwork, parent);
+		return CreateQuickStartCardWithArtwork(title, action, artwork, parent);
 	}
 }

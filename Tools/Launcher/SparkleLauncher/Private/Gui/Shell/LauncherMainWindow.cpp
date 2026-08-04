@@ -10,7 +10,6 @@
 #include "LauncherIconLibrary.h"
 #include "LauncherLayoutWidgets.h"
 #include "LauncherLevelUiModel.h"
-#include "LauncherLevelUiModel.h"
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherContentModel.h"
 #include "LauncherOutputWidgets.h"
@@ -168,6 +167,7 @@ namespace SparkleLauncher
 		rootLayout->addWidget(CreateWorkflowSurface(), 1);
 		rootLayout->addWidget(CreateOutputPanel(), 0);
 		rootLayout->addWidget(CreateFooterContextPanel(centralWidget), 0);
+		RefreshContextSelectors();
 		setCentralWidget(centralWidget);
 		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 		if (!workflows.empty() && !workflows.front().OperationIds.empty())
@@ -248,6 +248,7 @@ namespace SparkleLauncher
 		if (refreshContent)
 		{
 			m_contentModel.Refresh(m_repositoryRoot);
+			RefreshContextSelectors();
 		}
 
 		PopulateStartupLevelSelectors();

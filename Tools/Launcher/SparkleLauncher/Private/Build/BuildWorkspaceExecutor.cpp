@@ -159,6 +159,12 @@ namespace SparkleLauncher
 		{
 			return ExtractCMakeFailureDetail(text, step.Id == "configure");
 		}
+		if (step.Id == "install-host-tool"
+		    && text.find("Visual Studio Installer could not continue because Visual Studio or an MSBuild process is running.")
+		        != std::string::npos)
+		{
+			return "Visual Studio or MSBuild is running. Close active IDEs and builds, then retry.";
+		}
 		return {};
 	}
 
@@ -250,6 +256,30 @@ namespace SparkleLauncher
 			summary << " Missing: " << validation.MissingRelativePaths.front() << ".";
 		}
 		return summary.str();
+	}
+
+	static std::optional<std::string> ValidateRequestedHostToolAfterInstall(const BuildWorkspaceOperationPlan& plan)
+	{
+		if (plan.Kind != BuildWorkspaceOperationKind::InstallHostTool)
+		{
+			return std::nullopt;
+		}
+
+		const BuildToolchainStatus refreshedToolchain =
+		    DetectBuildToolchain(plan.RepositoryRoot, plan.Request.PreferredIde, plan.Request.Compiler);
+		const auto installedTool = std::find_if(
+		    refreshedToolchain.Items.begin(),
+		    refreshedToolchain.Items.end(),
+		    [&plan](const ToolchainItemStatus& item) { return item.Id == plan.Request.HostToolId; });
+		if (installedTool != refreshedToolchain.Items.end() && installedTool->State == ToolchainItemState::Found)
+		{
+			return std::nullopt;
+		}
+
+		const std::string displayName =
+		    installedTool == refreshedToolchain.Items.end() ? plan.Request.HostToolId : installedTool->DisplayName;
+		return "The installer completed, but " + displayName
+		    + " is still unavailable. The required compiler or toolchain component was not installed.";
 	}
 
 	static bool ClearStaleConfigureState(const BuildWorkspaceOperationPlan& plan, std::string& errorMessage)
@@ -476,6 +506,14 @@ namespace SparkleLauncher
 					    result.ExitCode);
 					return operation;
 				}
+			}
+
+			if (const std::optional<std::string> hostToolValidationFailure = ValidateRequestedHostToolAfterInstall(plan))
+			{
+				operation.FailureSummary =
+				    *hostToolValidationFailure + (step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string());
+				MarkOperationFinished(operation, OperationStatus::Failed, 0);
+				return operation;
 			}
 
 			if (const std::optional<std::string> dependencyValidationFailure = ValidateRequestedSourceDependencyAfterConfigure(plan))

@@ -71,7 +71,7 @@ namespace SparkleLauncher
 		switch (ide)
 		{
 			case WorkspaceIde::VisualStudio:
-				return !toolchain.VisualStudioPath.empty();
+				return !toolchain.VisualStudioIdePath.empty();
 			case WorkspaceIde::Rider:
 				return !toolchain.RiderPath.empty();
 		}

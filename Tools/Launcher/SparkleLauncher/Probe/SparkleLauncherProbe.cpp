@@ -56,12 +56,18 @@ namespace SparkleLauncher
 		std::string installerError;
 		const std::optional<ProcessRequest> install =
 		    BuildHostToolInstallRequest("clangcl", clangToolchain, repositoryRoot, "workspace.install-host-tool", installerError);
+		const auto installerRequestsComponent = [&install](std::string_view componentId)
+		{
+			const std::string marker = "--add " + std::string(componentId) + " ";
+			return install.has_value()
+			    && std::any_of(
+			        install->Arguments.begin(),
+			        install->Arguments.end(),
+			        [&marker](const std::string& argument) { return argument.find(marker) != std::string::npos; });
+		};
 		if (!install.has_value() || !installerError.empty() || install->Arguments.empty()
-		    || std::none_of(
-		        install->Arguments.begin(),
-		        install->Arguments.end(),
-		        [](const std::string& argument)
-		        { return argument.find("Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset") != std::string::npos; }))
+		    || !installerRequestsComponent("Microsoft.VisualStudio.Component.VC.Llvm.Clang")
+		    || !installerRequestsComponent("Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset"))
 		{
 			errorMessage = "clang-cl installer registration did not produce the expected Visual Studio component request.";
 			return false;

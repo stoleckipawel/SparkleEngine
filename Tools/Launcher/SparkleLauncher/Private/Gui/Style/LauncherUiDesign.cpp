@@ -20,10 +20,5 @@ namespace SparkleLauncher::LauncherUi
 		{
 			return QMargins(18, hasArtwork ? 12 : 16, 18, 16);
 		}
-
-		QMargins DiscoverMargins(bool hasArtwork)
-		{
-			return QMargins(16, hasArtwork ? 12 : 14, 16, 14);
-		}
 	}
 }

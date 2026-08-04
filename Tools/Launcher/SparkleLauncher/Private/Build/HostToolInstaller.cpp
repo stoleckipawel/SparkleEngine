@@ -6,7 +6,8 @@
 namespace SparkleLauncher
 {
 	static constexpr std::string_view kClangClToolId = "clangcl";
-	static constexpr std::string_view kClangClVisualStudioComponent = "Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset";
+	static constexpr std::string_view kClangClVisualStudioCompilerComponent = "Microsoft.VisualStudio.Component.VC.Llvm.Clang";
+	static constexpr std::string_view kClangClVisualStudioToolsetComponent = "Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset";
 
 	static std::string QuotePowerShellLiteral(std::string value)
 	{
@@ -51,15 +52,18 @@ namespace SparkleLauncher
 		}
 
 		const std::string installerArguments = "modify --installPath \"" + toolchain.VisualStudioPath.string() + "\" --add "
-		    + std::string(kClangClVisualStudioComponent) + " --passive --norestart";
+		    + std::string(kClangClVisualStudioCompilerComponent) + " --add " + std::string(kClangClVisualStudioToolsetComponent)
+		    + " --passive --norestart --wait";
 		const std::string script = "$ErrorActionPreference='Stop'; "
 		                           "Write-Output 'Requesting administrator approval for the Visual Studio clang-cl component...'; "
 		                           "$process = Start-Process -FilePath "
 		    + QuotePowerShellLiteral(toolchain.VisualStudioInstallerPath.string()) + " -ArgumentList "
 		    + QuotePowerShellLiteral(installerArguments)
 		    + " -Verb RunAs -Wait -PassThru; "
+		      "if ($process.ExitCode -eq 8006) { throw 'Visual Studio Installer could not continue because Visual Studio or an MSBuild "
+		      "process is running. Close active IDEs and builds, then retry.' }; "
 		      "if ($process.ExitCode -ne 0) { throw ('Visual Studio Installer exited with code ' + $process.ExitCode) }; "
-		      "Write-Output 'Visual Studio clang-cl component installation completed.'";
+		      "Write-Output 'Visual Studio clang-cl components installation completed.'";
 
 		ProcessRequest request;
 		request.ExecutablePath = ResolvePowerShellPath();
@@ -75,7 +79,8 @@ namespace SparkleLauncher
 		static const std::vector<HostToolInstallerDefinition> definitions = {
 		    {std::string(kClangClToolId),
 		        "clang-cl",
-		        "Ask Windows for administrator approval, then add clang-cl through Visual Studio Installer.",
+		        "Ask Windows for administrator approval, then add the clang-cl compiler and its MSBuild integration through Visual Studio "
+		        "Installer.",
 		        CanInstallClangCl,
 		        BuildClangClInstallRequest},
 		};

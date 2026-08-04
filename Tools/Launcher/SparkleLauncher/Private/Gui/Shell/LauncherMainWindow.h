@@ -139,6 +139,8 @@ namespace SparkleLauncher
 		    const QVector<QPair<QString, QString>>& options,
 		    const QString& currentValue,
 		    void (LauncherSettings::*setter)(const QString&));
+		QComboBox* CreateContextCombo(void (LauncherSettings::*setter)(const QString&));
+		void RefreshContextSelectors();
 		static bool UsesBuildEnvironmentStatus(const QString& operationId);
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
 		void AddShaderCookOptions(QVBoxLayout& layout);
@@ -186,8 +188,6 @@ namespace SparkleLauncher
 		LauncherLevelUiModel BuildLevelUiModel() const;
 		QComboBox* CreateStartupLevelCombo();
 		void PopulateStartupLevelCombo(QComboBox& combo);
-		int AppendStartupLevelOptions(QComboBox& combo, const QVector<LauncherStartupLevelUiEntry>& options);
-		void ApplyStartupLevelSelection(QComboBox& combo, int selectedIndex);
 		void PopulateStartupLevelSelectors();
 		QVector<QPair<QString, QString>> BuildStartupLevelOptions() const;
 		QString ResolveStartupLevelDisplayName() const;
@@ -253,7 +253,10 @@ namespace SparkleLauncher
 		QHash<QString, int> m_workflowPageByOperation;
 		QHash<int, QString> m_lastOperationByWorkflowIndex;
 		QVector<QWidget*> m_tabOrderWidgets;
+		QComboBox* m_graphicsApiCombo = nullptr;
+		QComboBox* m_buildConfigurationCombo = nullptr;
 		QComboBox* m_workspaceCompilerCombo = nullptr;
+		QComboBox* m_workspaceIdeCombo = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
 		QVector<QComboBox*> m_startupLevelSelectors;

@@ -200,9 +200,13 @@ namespace SparkleLauncher
 		    {
 			    const QString actionIntent = actionButton->property("ActionIntent").toString();
 			    if (actionIntent == QStringLiteral("clean"))
+			    {
 				    CleanLevel(content, level);
+			    }
 			    else if (actionIntent == QStringLiteral("sync"))
+			    {
 				    SyncLevel(content, level);
+			    }
 		    });
 		actions->addWidget(actionButton);
 		bodyLayout->addLayout(actions);

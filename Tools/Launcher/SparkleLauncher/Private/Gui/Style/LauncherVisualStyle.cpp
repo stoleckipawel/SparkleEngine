@@ -135,30 +135,13 @@ namespace SparkleLauncher
 		addRule(
 		    "#CommandSectionTitle",
 		    "color: " + textPrimary + "; font-size: 12.5pt; font-weight: 900; padding: 18px 0 6px 0; letter-spacing: -0.1px;");
-		addRule("#CommandCapabilityCard", "background: " + panel + "; border: 1px solid " + divider + "; border-radius: 4px;");
 		addRule(
-		    "#CommandCapabilityCard[TileRole=\"library\"]",
+		    "#CommandCapabilityCard",
 		    "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #252925, stop:0.62 #1e211f, stop:1 #161816); border: 1px solid "
 		    "#384033; border-left: 3px solid "
-		        + accent + ";");
-		addRule(
-		    "#CommandCapabilityCard[TileRole=\"discover\"]",
-		    "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #20231f, stop:0.62 #191c19, stop:1 #121512); border: 1px solid "
-		    "#30372b; border-left: 3px solid #b37726;");
-		addRule(
-		    "#CommandCapabilityCard[TileRole=\"discover\"][Interactive=\"true\"]:hover",
-		    "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #252a22, stop:0.62 #1b2019, stop:1 #121512); border-color: #4b573f;");
-		addRule("#CommandCapabilityCard[State=\"ok\"]", "border-left: 4px solid " + accent + ";");
-		addRule("#CommandCapabilityCard[State=\"warning\"]", "border-left: 4px solid #b37726;");
-		addRule("#CommandCardArtwork", "background: #070807; border: 1px solid #30372b; border-radius: 3px;");
-		addRule("#CommandCardArtwork[TileRole=\"library\"]", "background: #070807; border: none; border-radius: 0;");
-		addRule("#CommandCardArtwork[TileRole=\"discover\"]", "background: #070807; border: none; border-radius: 2px;");
-		addRule("#CommandCardTitle", "color: " + textPrimary + "; font-size: 11.25pt; font-weight: 900; letter-spacing: -0.08px;");
-		addRule("#CommandCapabilityCard[TileRole=\"library\"] #CommandCardTitle", "font-size: 12.5pt; letter-spacing: -0.12px;");
-		addRule("#CommandCapabilityCard[TileRole=\"discover\"] #CommandCardTitle", "font-size: 10.5pt; letter-spacing: -0.06px;");
-		addRule("#CommandCardText", "color: " + textSecondary + "; font-size: 9pt; line-height: 135%;");
-		addRule("#CommandCapabilityCard[TileRole=\"discover\"] #CommandCardText", "font-size: 8.35pt; line-height: 128%;");
-		addStateChipRules("#CommandCardChip");
+		        + accent + "; border-radius: 4px;");
+		addRule("#CommandCardArtwork", "background: #070807; border: none; border-radius: 0;");
+		addRule("#CommandCardTitle", "color: " + textPrimary + "; font-size: 12.5pt; font-weight: 900; letter-spacing: -0.12px;");
 		addRule(
 		    "QPushButton#CommandPrimaryButton",
 		    "background: " + primary

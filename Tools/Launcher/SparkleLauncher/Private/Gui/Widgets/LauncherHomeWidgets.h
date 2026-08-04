@@ -36,24 +36,12 @@ namespace SparkleLauncher
 	    const QString& artworkFileName,
 	    QWidget* parent);
 
-	QFrame* CreateHomeCapabilityCard(
+	QFrame* CreateQuickStartCard(
 	    const std::filesystem::path& repositoryRoot,
 	    const QString& title,
-	    const QString& status,
-	    const QString& detail,
-	    const QString& state,
 	    QWidget* action,
-	    const QString& tileRole,
 	    const QString& artworkFileName,
 	    QWidget* parent);
 
-	QFrame* CreateHomeCapabilityCard(
-	    const QString& title,
-	    const QString& status,
-	    const QString& detail,
-	    const QString& state,
-	    QWidget* action,
-	    const QString& tileRole,
-	    const QPixmap& artwork,
-	    QWidget* parent);
+	QFrame* CreateQuickStartCard(const QString& title, QWidget* action, const QPixmap& artwork, QWidget* parent);
 }

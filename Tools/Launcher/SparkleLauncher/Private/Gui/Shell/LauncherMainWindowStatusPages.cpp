@@ -74,11 +74,6 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::InstallHostTool(const ToolchainItemStatus& item)
 	{
-		if (item.Compiler.has_value())
-		{
-			SelectWorkspaceCompiler(*item.Compiler);
-		}
-
 		LauncherOperationRequest request =
 		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, "workspace.install-host-tool");
 		request.HostToolId = QString::fromStdString(item.Id);
@@ -105,7 +100,8 @@ namespace SparkleLauncher
 		ApplyStatusActionButtonPresentation(*button, label, install ? QStringLiteral("warning") : QStringLiteral("neutral"));
 		button->setAccessibleName(label + " " + displayName);
 		button->setToolTip(
-		    install ? "Install " + displayName + " and select it for launcher builds." : "Select " + displayName + " for launcher builds.");
+		    install ? "Install " + displayName + ". It becomes selectable after detection confirms the installation."
+		            : "Select " + displayName + " for launcher builds.");
 		RegisterFocusable(button);
 		connect(
 		    button,
@@ -170,10 +166,10 @@ namespace SparkleLauncher
 			    request.PreferredIde == WorkspaceIde::Rider
 			        ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found."
 			                                            : QString::fromStdString(plan.Toolchain.RiderPath.string()))
-			        : (plan.Toolchain.VisualStudioPath.empty() ? "Visual Studio C++ tools were not found."
-			                                                   : QString::fromStdString(plan.Toolchain.VisualStudioPath.string())),
+			        : (plan.Toolchain.VisualStudioIdePath.empty() ? "Visual Studio IDE was not found."
+			                                                      : QString::fromStdString(plan.Toolchain.VisualStudioIdePath.string())),
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok")
-			                                                : (plan.Toolchain.VisualStudioPath.empty() ? "warning" : "ok"));
+			                                                : (plan.Toolchain.VisualStudioIdePath.empty() ? "warning" : "ok"));
 
 			if (!isSourceSyncWorkflow)
 			{
@@ -208,15 +204,16 @@ namespace SparkleLauncher
 				    "bad",
 				    CreateStatusActionButton("workspace.sync-code", "Review", "Review Sync Code", true));
 			}
-			if (isSourceSyncWorkflow)
-			{
-				AddSyncDependencies(*machineLayout, false);
-			}
 			machineLayout->addSpacing(kSpaceSmall);
-			machineLayout->addWidget(CreateSectionLabel("Optional dependencies"));
+			machineLayout->addWidget(CreateSectionLabel("Optional host tools"));
 			addToolchainItems(false);
 			if (isSourceSyncWorkflow)
 			{
+				machineLayout->addSpacing(kSpaceSmall);
+				machineLayout->addWidget(CreateSectionLabel("Source dependencies"));
+				AddSyncDependencies(*machineLayout, false);
+				machineLayout->addSpacing(kSpaceSmall);
+				machineLayout->addWidget(CreateSectionLabel("Optional source dependencies"));
 				AddSyncDependencies(*machineLayout, true);
 			}
 			return;

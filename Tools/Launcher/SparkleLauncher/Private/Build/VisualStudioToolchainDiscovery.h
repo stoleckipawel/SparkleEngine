@@ -9,6 +9,7 @@ namespace SparkleLauncher
 	{
 		std::filesystem::path DiscoveryPath;
 		std::filesystem::path InstallationPath;
+		std::filesystem::path IdePath;
 		std::filesystem::path InstallerPath;
 		std::filesystem::path ClangClPath;
 		std::string WindowsSdkVersion;

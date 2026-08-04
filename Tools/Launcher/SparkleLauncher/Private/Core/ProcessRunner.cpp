@@ -5,37 +5,43 @@
 namespace SparkleLauncher
 {
 
-		std::string QuoteDisplayArgument(std::string_view argument)
+	static std::string QuoteDisplayArgument(std::string_view argument)
+	{
+		if (argument.empty())
 		{
-			if (argument.empty())
-				return "\"\"";
-			const bool needsQuotes = argument.find_first_of(" \t\"") != std::string_view::npos;
-			if (!needsQuotes)
-				return std::string(argument);
-			std::string quoted(1, '"');
-			for (const char character : argument)
-			{
-				if (character == '"')
-					quoted.push_back('\\');
-				quoted.push_back(character);
-			}
-			quoted.push_back('"');
-			return quoted;
+			return "\"\"";
 		}
-
+		const bool needsQuotes = argument.find_first_of(" \t\"") != std::string_view::npos;
+		if (!needsQuotes)
+		{
+			return std::string(argument);
+		}
+		std::string quoted(1, '"');
+		for (const char character : argument)
+		{
+			if (character == '"')
+			{
+				quoted.push_back('\\');
+			}
+			quoted.push_back(character);
+		}
+		quoted.push_back('"');
+		return quoted;
+	}
 
 	ProcessResult NativeProcessRunner::Run(const ProcessRequest& request)
 	{
 		ProcessResult result;
 		result.StartTime = std::chrono::system_clock::now();
-		Process::ChildProcessResult childResult = Process::ChildProcess::Run(Process::ChildProcessRequest{
-		    .ExecutablePath = request.ExecutablePath,
-		    .Arguments = request.Arguments,
-		    .WorkingDirectory = request.WorkingDirectory,
-		    .Environment = request.Environment,
-		    .LogPath = request.LogPath,
-		    .OutputCallback = request.OutputCallback,
-		    .Cancellation = request.Cancellation});
+		Process::ChildProcessResult childResult = Process::ChildProcess::Run(
+		    Process::ChildProcessRequest{
+		        .ExecutablePath = request.ExecutablePath,
+		        .Arguments = request.Arguments,
+		        .WorkingDirectory = request.WorkingDirectory,
+		        .Environment = request.Environment,
+		        .LogPath = request.LogPath,
+		        .OutputCallback = request.OutputCallback,
+		        .Cancellation = request.Cancellation});
 		result.Launched = childResult.Launched;
 		result.Canceled = childResult.Cancelled;
 		result.ExitCode = childResult.ExitCode;
@@ -50,7 +56,9 @@ namespace SparkleLauncher
 		std::ostringstream commandLine;
 		commandLine << QuoteDisplayArgument(executablePath.string());
 		for (const std::string& argument : arguments)
+		{
 			commandLine << ' ' << QuoteDisplayArgument(argument);
+		}
 		return commandLine.str();
 	}
 }
