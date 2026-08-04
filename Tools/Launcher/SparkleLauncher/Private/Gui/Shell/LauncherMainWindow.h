@@ -4,6 +4,7 @@
 #include "LauncherBackend.h"
 #include "LauncherCleanUiModel.h"
 #include "LauncherIconLibrary.h"
+#include "LauncherQuickStartExecution.h"
 #include "LauncherWorkflowCatalog.h"
 
 #include <QtCore/QString>
@@ -29,6 +30,7 @@
 #include <QtWidgets/QVBoxLayout>
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -82,12 +84,6 @@ namespace SparkleLauncher
 		    int exitCode);
 
 	private:
-		struct PendingFollowUpOperation
-		{
-			LauncherOperationRequest Request;
-			QString Title;
-		};
-
 		struct PendingLevelSelectionUpdate
 		{
 			std::filesystem::path ContentRoot;
@@ -193,7 +189,13 @@ namespace SparkleLauncher
 		QVector<QPair<QString, QString>> BuildStartupLevelOptions() const;
 		QString ResolveStartupLevelDisplayName() const;
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
+		QPushButton* CreateQuickStartButton(const QString& launchOperationId, const QString& label);
 		void AddHomeQuickStart(QVBoxLayout& layout);
+		void StartQuickStart(const QString& launchOperationId);
+		void ContinueQuickStart();
+		void HandleQuickStartOperationFinished(const QString& runId, const QString& operationId, bool succeeded, const QString& statusText);
+		void ReportQuickStartBlocked(const QString& statusMessage);
+		void SetQuickStartButtonsEnabled(bool enabled);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail);
@@ -225,9 +227,7 @@ namespace SparkleLauncher
 		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
 		bool ConfirmRunRequest(LauncherOperationRequest& request) const;
 		void PromptForLauncherRestart();
-		bool OfferWorkspacePrerequisiteOperation(const QString& operationId);
-		bool OfferCookPrerequisiteOperation(const QString& operationId);
-		bool OfferLaunchPrerequisiteOperation(const QString& operationId);
+		QString CreateRunId();
 		QString StartOperation(LauncherOperationRequest request, const QString& title);
 		void SetSelectedOperation(const QString& operationId);
 		void RegisterRun(const QString& runId, const QString& title);
@@ -271,7 +271,8 @@ namespace SparkleLauncher
 		QHash<QString, QString> m_runTitles;
 		QHash<QString, QString> m_runOutputs;
 		LauncherActionHistoryModel m_actionHistory;
-		QHash<QString, PendingFollowUpOperation> m_pendingFollowUpOperations;
+		std::optional<LauncherQuickStartExecution> m_quickStartExecution;
+		QVector<QPointer<QPushButton>> m_quickStartButtons;
 		QHash<QString, PendingLevelSelectionUpdate> m_pendingLevelSelectionUpdates;
 		QHash<QString, QString> m_levelSyncRunIds;
 		QHash<QString, QPointer<QLabel>> m_levelStatusLabels;

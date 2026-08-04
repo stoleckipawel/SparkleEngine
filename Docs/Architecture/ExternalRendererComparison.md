@@ -169,18 +169,12 @@ Streamline's README separates GitHub source from release binary artifacts. It st
 
 Sparkle comparison:
 
-- Sparkle's release assembly CMake exists, but packaging/product policy is not yet as crisp as the code.
-- The launcher has package workflows, but the repo also carries large content and diagnostics artifacts.
+- Sparkle intentionally keeps release assembly outside the launcher; distribution packaging is performed manually.
+- The launcher owns local development setup, build, cook, launch, and cleanup workflows only.
 
 Action:
 
-- Define release package ownership:
-  - runtime package
-  - editor package
-  - symbols package
-  - development tools package
-  - optional content package
-- Delete packaging code that is not going to be owned.
+- Keep distribution packaging policy and execution outside the launcher unless a separate, explicitly owned release system is introduced.
 
 ### 8. Developer Technology Requires Transferable Evidence
 
@@ -287,7 +281,7 @@ This is acceptable for an engine, but it raises the bar:
 
 ### Sparkle Is More Productized Than It Is Scoped
 
-The launcher and package assembly make Sparkle feel like a product. The renderer still feels like a research platform in places. Production repositories usually align these:
+The launcher makes Sparkle feel like a product. The renderer still feels like a research platform in places. Production repositories usually align these:
 
 - product repo: stable release story, strict scope
 - sample repo: clear tutorial/demo goals

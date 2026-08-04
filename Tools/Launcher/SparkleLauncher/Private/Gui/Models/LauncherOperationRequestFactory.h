@@ -5,6 +5,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include <QtCore/QString>
+#include <QtCore/QStringList>
 
 #include <filesystem>
 
@@ -28,6 +29,10 @@ namespace SparkleLauncher
 	    const LauncherContentModel& contentModel,
 	    const LauncherSettings& settings,
 	    const QString& operationId);
+	LauncherOperationRequest BuildQuickStartOperationRequest(
+	    const LauncherOperationRequest& goalRequest,
+	    const QString& operationId,
+	    const QStringList& requestedLevelIds = {});
 
 	ActionCleanTargetContext BuildActionCleanTargetContext(
 	    const std::filesystem::path& repositoryRoot,

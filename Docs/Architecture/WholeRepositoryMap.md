@@ -17,7 +17,7 @@ SparkleEngine is already shaped like a modern rendering engine:
 - `Engine/GameFramework` owns world-to-render extraction into immutable structural/dynamic input, while `Engine/Renderer` owns render-world consumption, frame graph, passes, ray tracing scene ownership, upscaling/ray reconstruction provider contracts, shader registrations, and render-owned diagnostics.
 - `Tools/Shaders/ShaderCompiler` is a serious offline shader pipeline with DXC/Slang backends, reflection, contracts, cache, package cooking, and inspection commands.
 - `Tools/Cooking` and `Tools/Import` form a source-to-cooked content pipeline.
-- `Tools/Launcher/SparkleLauncher` is a workflow shell for build, cook, launch, package, clean, dependency, quality, and GUI flows.
+- `Tools/Launcher/SparkleLauncher` is a workflow shell for build, cook, launch, clean, dependency, quality, and GUI flows.
 - `Projects/Showcase` is the main sample project and dominates depot size.
 
 The main issue is not lack of feature ambition. The issue is that Sparkle currently tries to be all of these at once:
@@ -353,7 +353,7 @@ Tool areas:
 
 | Tool area | Lines | Read |
 | --- | ---: | --- |
-| `Launcher/SparkleLauncher` | 18986 | Full workflow product: GUI, shell, build/cook/launch/package/clean/dependency/status/quality. |
+| `Launcher/SparkleLauncher` | 18986 | Full workflow product: GUI, shell, quick start, build/cook/launch/clean/dependency/status/quality. |
 | `Shaders/ShaderCompiler` | 9452 | Strong CLI/private shader pipeline. |
 | `Cooking/TextureCooker` | 4039 | Texture source loading and processing. |
 | `Import/SourceImporters` | 3885 | Source asset import, likely Assimp/scene-related. |
@@ -368,11 +368,33 @@ Launcher read:
 
 - The launcher is large enough to be judged as an application.
 - The launcher GUI owns one implicit repository content root. It does not expose project discovery or selection; the content model rejects ambiguous repositories instead of choosing among multiple roots.
+- `Quick Start` is the primary product path. Workspace, level, cook, and launch providers register capabilities and hierarchical dependencies with a generic resolver; it re-evaluates the graph after every completed operation and automatically drives only the missing work. Manual pages retain direct access to each operation for diagnosis.
+- The generic capability graph is independent of Qt and launcher operation types. It supports any number of registered dependencies, validates its complete topology before every resolution, rejects missing or duplicate registrations and edges, detects cycles, short-circuits already-ready branches, propagates blockers, and derives direct-consumer invalidations from successful operations. Operation requests are explicit optional products of evaluation rather than default-constructed placeholders.
+- Domain provider files own workspace, level, cook, and launch readiness/action policy. The planner is the composition root for those providers, `LauncherQuickStartExecution` owns one run's active-step/invalidation/stall state, and the main window is limited to presenting progress and dispatching the selected operation.
 - `Sync Code` owns a flat dependency list: a row action populates only that dependency through an isolated CMake configure sharing `build/_deps`, while the page footer syncs the enabled code set. Neither path enables workspace features or acquires level content.
-- Operational `Build`, `Cook`, and `Launch` pages reuse the same flat readiness contract: inline status communicates current state, concise detail identifies the evidence, and a direct row action appears only when that prerequisite needs intervention. Their option forms use one bounded field grid rather than stretching controls across the workspace. Collapsed readiness panels, status badges, and overflow-only prerequisite actions are not part of the launcher interaction model.
-- It currently models dry-run plans, logs, dependency state, GUI status pages, operation catalogs, build/cook/launch/maintenance requests, and package assembly.
+- Operational `Build`, `Cook`, and `Launch` pages remain single-operation diagnostic surfaces: inline status communicates current state and running the page executes only that selected operation. Automatic dependency traversal belongs exclusively to the capability graph instead of hardcoded prerequisite prompts. Their option forms use one bounded field grid rather than stretching controls across the workspace.
+- It currently models dry-run plans, logs, dependency state, GUI status pages, operation catalogs, and build/cook/launch/maintenance requests. Distribution packaging is intentionally manual and is not a launcher responsibility.
 - This is useful for productization, but it should not keep validation/report/debug scaffolding alive.
-- Preferred target: launcher as a small workflow shell for build, cook, run, clean, package if shipping, and source dependency sync if truly needed.
+- Preferred target: launcher as a small workflow shell with one automatic quick-start path plus direct build, cook, run, clean, and source dependency controls for diagnosis.
+
+Quick Start capability ownership:
+
+```text
+launch.<product>
+|-- content.project.<product>
+|-- product.<product>
+|   `-- workspace.build-files
+|       `-- workspace.source-dependencies
+|           `-- source-dependency.<enabled-id> (one node per enabled dependency)
+|               `-- workspace.host-tools
+|-- content.selected-levels
+`-- content.cooked
+    |-- content.selected-levels
+    `-- content.cooking-tools
+        `-- workspace.build-files
+```
+
+Workspace, level, cook, and launch providers own these registrations and their readiness evaluators. The workspace provider derives one capability node per enabled entry from the authoritative source-dependency inventory, so new dependencies join Quick Start without adding orchestration branches. Because `content.cooked` directly depends on `content.selected-levels`, a successful level sync invalidates cooked content through graph topology rather than cross-provider knowledge; the next resolution therefore schedules an incremental cook even when older cooked directories still contain files. Every automatic activity log records the resolved capability path and selected operation.
 
 Cooker read:
 
@@ -466,7 +488,7 @@ Normative coding, graphics, neural, driver, and evidence implications belong in 
 | Shader registrations | ShaderCompiler | Package names, source paths, entries, stages, parameters. |
 | ShaderCompiler | RHI runtime shader cache | Cooked shader package binary, reflection, layout metadata. |
 | Asset cookers | GameFramework loaders | Cooked scene/mesh/material/texture package contracts. |
-| Launcher | CMake/tools/projects | Build/cook/launch/package/clean process requests. |
+| Launcher | CMake/tools/projects | Build/cook/launch/clean process requests. Distribution assembly remains manual and outside launcher ownership. |
 | Renderer providers | Streamline/DLSS | Tagged resources and native interop. |
 | Editor | Renderer public diagnostics | Mesh/texture/memory panels. |
 | Application | Renderer/Editor | Host frame orchestration and editor application integration. |

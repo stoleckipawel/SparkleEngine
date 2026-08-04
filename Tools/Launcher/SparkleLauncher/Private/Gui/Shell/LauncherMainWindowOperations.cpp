@@ -4,7 +4,6 @@
 #include "LauncherBackend.h"
 #include "LauncherDependencyUiModel.h"
 #include "LauncherOperationRequestFactory.h"
-#include "LauncherPrerequisitePrompts.h"
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherUiDesign.h"
@@ -55,27 +54,6 @@ namespace SparkleLauncher
 		if (m_selectedOperationId == "workspace.sync-levels")
 		{
 			SyncAllLevels();
-			return;
-		}
-
-		if ((m_selectedOperationId == "workspace.sync-code" || m_selectedOperationId == "workspace.generate-build-files"
-		        || m_selectedOperationId == "workspace.open-ide" || m_selectedOperationId == "workspace.build-all"
-		        || m_selectedOperationId == "launcher.build.self" || m_selectedOperationId.startsWith("workspace.build")
-		        || m_selectedOperationId == "cook.tools.prepare")
-		    && !OfferWorkspacePrerequisiteOperation(m_selectedOperationId))
-		{
-			return;
-		}
-
-		if (m_selectedOperationId.startsWith("cook.") && m_selectedOperationId != "cook.tools.prepare"
-		    && !OfferCookPrerequisiteOperation(m_selectedOperationId))
-		{
-			return;
-		}
-
-		if (FindLaunchOperationDefinition(m_selectedOperationId.toStdString()).has_value()
-		    && !OfferLaunchPrerequisiteOperation(m_selectedOperationId))
-		{
 			return;
 		}
 
@@ -330,8 +308,7 @@ namespace SparkleLauncher
 
 		if (FindLaunchOperationDefinition(operationId.toStdString()).has_value())
 		{
-			return "Review the output below. If package binaries are missing, use a complete runtime package; if source artifacts are "
-			       "missing, build the matching target before retrying.";
+			return "Review the output below. If local artifacts are missing, build the matching target before retrying.";
 		}
 
 		return "Review the output below, adjust the selected options, then retry.";
@@ -427,86 +404,21 @@ namespace SparkleLauncher
 		QCoreApplication::quit();
 	}
 
-	bool LauncherMainWindow::OfferWorkspacePrerequisiteOperation(const QString& operationId)
+	QString LauncherMainWindow::CreateRunId()
 	{
-		LauncherPrerequisiteDecision decision =
-		    ResolveWorkspacePrerequisitePrompt(this, m_repositoryRoot, m_contentModel, m_settings, operationId);
-		if (decision.Result == LauncherPrerequisiteDecision::Kind::Ready)
-		{
-			return true;
-		}
-		if (decision.Result == LauncherPrerequisiteDecision::Kind::Blocked)
-		{
-			if (!decision.StatusMessage.isEmpty())
-			{
-				QMessageBox::information(this, "Workflow Not Ready", decision.StatusMessage);
-			}
-			return false;
-		}
-		if (!ConfirmRunRequest(decision.Request))
-		{
-			return false;
-		}
-		StartOperation(std::move(decision.Request), decision.Title);
-		return false;
-	}
-
-	bool LauncherMainWindow::OfferLaunchPrerequisiteOperation(const QString& operationId)
-	{
-		LauncherPrerequisiteDecision decision =
-		    ResolveLaunchPrerequisitePrompt(this, m_repositoryRoot, m_contentModel, m_settings, operationId);
-		if (decision.Result == LauncherPrerequisiteDecision::Kind::Ready)
-		{
-			return true;
-		}
-		if (decision.Result == LauncherPrerequisiteDecision::Kind::Blocked)
-		{
-			if (!decision.StatusMessage.isEmpty())
-			{
-				QMessageBox::information(this, "Workflow Not Ready", decision.StatusMessage);
-			}
-			return false;
-		}
-		if (!ConfirmRunRequest(decision.Request))
-		{
-			return false;
-		}
-		StartOperation(std::move(decision.Request), decision.Title);
-		return false;
-	}
-
-	bool LauncherMainWindow::OfferCookPrerequisiteOperation(const QString& operationId)
-	{
-		LauncherPrerequisiteDecision decision =
-		    ResolveCookPrerequisitePrompt(this, m_repositoryRoot, m_contentModel, m_settings, operationId);
-		if (decision.Result == LauncherPrerequisiteDecision::Kind::Ready)
-		{
-			return true;
-		}
-		if (decision.Result == LauncherPrerequisiteDecision::Kind::Blocked)
-		{
-			if (!decision.StatusMessage.isEmpty())
-			{
-				QMessageBox::information(this, "Workflow Not Ready", decision.StatusMessage);
-			}
-			return false;
-		}
-		if (!ConfirmRunRequest(decision.Request))
-		{
-			return false;
-		}
-		StartOperation(std::move(decision.Request), decision.Title);
-		return false;
+		return QStringLiteral("run-%1").arg(++m_nextRunIndex, 4, 10, QChar('0'));
 	}
 
 	QString LauncherMainWindow::StartOperation(LauncherOperationRequest request, const QString& title)
 	{
-		request.RunId = QStringLiteral("run-%1").arg(++m_nextRunIndex, 4, 10, QChar('0'));
+		if (request.RunId.isEmpty())
+		{
+			request.RunId = CreateRunId();
+		}
 		const QString runId = request.RunId;
 		RegisterRun(request.RunId, title);
 		TrackSourceDependencyRun(request, runId);
 		m_backend.RunOperation(std::move(request));
 		return runId;
 	}
-
 }

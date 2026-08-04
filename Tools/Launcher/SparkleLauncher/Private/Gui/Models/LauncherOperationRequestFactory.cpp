@@ -108,6 +108,24 @@ namespace SparkleLauncher
 		return request;
 	}
 
+	LauncherOperationRequest BuildQuickStartOperationRequest(
+	    const LauncherOperationRequest& goalRequest,
+	    const QString& operationId,
+	    const QStringList& requestedLevelIds)
+	{
+		LauncherOperationRequest request = goalRequest;
+		request.RunId.clear();
+		request.OperationId = operationId;
+		request.SelectedTargets.clear();
+		request.RequestedLevelIds = requestedLevelIds.join(',');
+		request.SourceDependencyId.clear();
+		request.ForceConfigure = false;
+		request.ForceRecook = false;
+		request.ConfirmForceRecook = false;
+		request.ConfirmClean = false;
+		return request;
+	}
+
 	ActionCleanTargetContext BuildActionCleanTargetContext(
 	    const std::filesystem::path& repositoryRoot,
 	    const LauncherContentModel& contentModel,

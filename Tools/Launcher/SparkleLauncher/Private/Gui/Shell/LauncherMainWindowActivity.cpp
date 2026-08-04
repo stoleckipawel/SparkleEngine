@@ -176,14 +176,7 @@ namespace SparkleLauncher
 			PromptForLauncherRestart();
 		}
 
-		if (m_pendingFollowUpOperations.contains(runId))
-		{
-			const PendingFollowUpOperation followUp = m_pendingFollowUpOperations.take(runId);
-			if (succeeded)
-			{
-				StartOperation(followUp.Request, followUp.Title);
-			}
-		}
+		HandleQuickStartOperationFinished(runId, operationId, succeeded, statusText);
 	}
 
 	QIcon LauncherMainWindow::ActivityIconForState(RunState state) const

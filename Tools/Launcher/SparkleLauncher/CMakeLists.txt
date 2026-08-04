@@ -16,6 +16,7 @@ set(SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS
 )
 
 set(SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/CapabilityGraph.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/BuildProfileCatalog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherPaths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/OperationModel.cpp
@@ -104,7 +105,13 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherPrerequisitePrompts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCapabilityProviders.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkspaceCapabilityProvider.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelCapabilityProvider.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCookCapabilityProvider.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLaunchCapabilityProvider.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherQuickStartExecution.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherQuickStartPlanner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContentModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherToolchainUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherUiModel.cpp
@@ -117,6 +124,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowOptionPages.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowOperations.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowPagePrimitives.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowQuickStart.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowShell.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowStatusPages.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowSyncPages.cpp
@@ -142,7 +150,10 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherPrerequisitePrompts.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCapabilityRegistry.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCapabilityProviders.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherQuickStartExecution.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherQuickStartPlanner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContentModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherToolchainUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherUiModel.h
@@ -224,6 +235,7 @@ sparkle_configure_host_tool_target(SparkleLauncher)
 
 target_include_directories(SparkleLauncher
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models
@@ -327,8 +339,42 @@ target_compile_features(ContentDiscoveryTests PRIVATE cxx_std_20)
 add_test(NAME content_discovery COMMAND ContentDiscoveryTests)
 set_tests_properties(content_discovery PROPERTIES LABELS "Launcher;Content")
 
+add_executable(CapabilityGraphTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CapabilityGraphTests.cpp
+)
+sparkle_configure_host_tool_target(CapabilityGraphTests)
+target_include_directories(CapabilityGraphTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core)
+target_compile_features(CapabilityGraphTests PRIVATE cxx_std_20)
+add_test(NAME capability_graph COMMAND CapabilityGraphTests)
+set_tests_properties(capability_graph PROPERTIES LABELS "Launcher;Workflow")
+
+add_executable(LauncherQuickStartExecutionTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherQuickStartExecutionTests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherQuickStartExecution.cpp
+)
+sparkle_configure_host_tool_target(LauncherQuickStartExecutionTests)
+target_include_directories(LauncherQuickStartExecutionTests
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Public
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models
+)
+target_link_libraries(LauncherQuickStartExecutionTests PRIVATE SparkleCore Qt6::Core)
+target_compile_features(LauncherQuickStartExecutionTests PRIVATE cxx_std_20)
+if(WIN32)
+    add_custom_command(TARGET LauncherQuickStartExecutionTests POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "$<TARGET_FILE:Qt6::Core>"
+            "$<TARGET_FILE_DIR:LauncherQuickStartExecutionTests>"
+        COMMENT "Deploying Qt Core for LauncherQuickStartExecutionTests"
+    )
+endif()
+add_test(NAME launcher_quick_start_execution COMMAND LauncherQuickStartExecutionTests)
+set_tests_properties(launcher_quick_start_execution PROPERTIES LABELS "Launcher;Workflow")
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES} ${SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Probe PREFIX "Probe" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Probe/SparkleLauncherProbe.cpp)
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CapabilityGraphTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherQuickStartExecutionTests.cpp)

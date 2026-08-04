@@ -143,7 +143,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::BuildOutputs,
 			    "Build outputs: refreshes generated workspace files, then runs the full local build set for development work.",
 			    "Build outputs",
-			    "Refreshes workspace files, then creates local artifacts that can replace packaged binaries during daily development.",
+			    "Refreshes workspace files, then creates the complete local development artifact set.",
 			    "workflow-build-all.png");
 		}
 		if (operationId == "workspace.sync-levels")
@@ -169,7 +169,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::BuildOutputs,
 			    "Build outputs: optional local rebuild that refreshes the launcher artifact for development work.",
 			    "Build outputs",
-			    "Creates local artifacts that can replace packaged binaries during daily development.",
+			    "Creates the local launcher artifact used for development.",
 			    "workflow-launcher-build.png");
 		}
 		if (operationId == "workspace.build.editor")
@@ -180,9 +180,9 @@ namespace SparkleLauncher
 			    "Build",
 			    LauncherWorkflowPageKind::Build,
 			    LauncherActionImpactKind::BuildOutputs,
-			    "Build outputs: optional local rebuild that can replace ready-to-use bundled editor binaries for development work.",
+			    "Build outputs: optional local rebuild of the editor for development work.",
 			    "Build outputs",
-			    "Creates local artifacts that can replace packaged binaries during daily development.",
+			    "Creates the local editor artifact used by Quick Start and manual launch workflows.",
 			    "workflow-editor-build.png");
 		}
 		if (operationId == "workspace.build.runtime")
@@ -193,9 +193,9 @@ namespace SparkleLauncher
 			    "Build",
 			    LauncherWorkflowPageKind::Build,
 			    LauncherActionImpactKind::BuildOutputs,
-			    "Build outputs: optional local rebuild that can replace ready-to-use bundled runtime binaries for development work.",
+			    "Build outputs: optional local rebuild of the runtime for development work.",
 			    "Build outputs",
-			    "Creates local artifacts that can replace packaged binaries during daily development.",
+			    "Creates the local runtime artifact used by Quick Start and manual launch workflows.",
 			    "workflow-runtime-build.png");
 		}
 		if (operationId == "cook.tools.prepare")
@@ -208,7 +208,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::BuildOutputs,
 			    "Build outputs: prepares local cook tools for asset refresh workflows.",
 			    "Build outputs",
-			    "Creates local artifacts that can replace packaged binaries during daily development.",
+			    "Creates the local cooking tools used by Quick Start and manual cook workflows.",
 			    "workflow-cook-tools.png");
 		}
 		if (operationId == "cook.all")
@@ -285,9 +285,9 @@ namespace SparkleLauncher
 			    "Build",
 			    LauncherWorkflowPageKind::Build,
 			    LauncherActionImpactKind::BuildOutputs,
-			    "Build outputs: optional local rebuild that can replace ready-to-use bundled binaries for development work.",
+			    "Build outputs: optional local rebuild of the selected development target.",
 			    "Build outputs",
-			    "Creates local artifacts that can replace packaged binaries during daily development.",
+			    "Creates the selected local development artifacts.",
 			    "workflow-build-generic.png");
 		}
 		if (operationId.startsWith("cook."))
