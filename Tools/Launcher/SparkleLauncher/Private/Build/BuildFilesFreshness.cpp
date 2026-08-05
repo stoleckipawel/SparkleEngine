@@ -65,7 +65,8 @@ namespace SparkleLauncher
 		const std::string selectedToolset = GetCMakeCacheToolsetValue(toolchain);
 		const std::string selectedQtPrefixPath = toolchain.QtRootPath.generic_string();
 		const std::string selectedVulkanSdkRoot = toolchain.VulkanSdkRoot.generic_string();
-		if (cacheGenerator != toolchain.Generator || cachePlatform != selectedPlatform || cacheToolset != selectedToolset || cacheQtPrefixPath != selectedQtPrefixPath)
+		if (cacheGenerator != toolchain.Generator || cachePlatform != selectedPlatform || cacheToolset != selectedToolset
+		    || cacheQtPrefixPath != selectedQtPrefixPath)
 		{
 			status.State = BuildFilesFreshnessState::GeneratorMismatch;
 			status.Summary = "CMake cache generator/platform/toolset/Qt prefix differs from selected launcher toolchain.";
@@ -77,14 +78,15 @@ namespace SparkleLauncher
 		const std::string selectedShaderCompiler = ToCMakeBool(featureSettings.ShaderCompilerEnabled);
 		const std::string selectedKtxSupport = ToCMakeBool(featureSettings.KtxSupportEnabled);
 		const std::string selectedNvidiaStreamline = ToCMakeBool(featureSettings.NvidiaStreamlineEnabled);
-		const std::string cacheContentPipeline = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_CONTENT_PIPELINE").value_or(std::string());
-		const std::string cacheShaderCompiler = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_SHADER_COMPILER").value_or(std::string());
+		const std::string cacheContentPipeline =
+		    ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_CONTENT_PIPELINE").value_or(std::string());
+		const std::string cacheShaderCompiler =
+		    ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_SHADER_COMPILER").value_or(std::string());
 		const std::string cacheKtxSupport = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_KTX_SUPPORT").value_or(std::string());
-		const std::string cacheNvidiaStreamline = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_NVIDIA_STREAMLINE").value_or(std::string());
-		if (cacheContentPipeline != selectedContentPipeline ||
-		    cacheShaderCompiler != selectedShaderCompiler ||
-		    cacheKtxSupport != selectedKtxSupport ||
-		    cacheNvidiaStreamline != selectedNvidiaStreamline)
+		const std::string cacheNvidiaStreamline =
+		    ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_NVIDIA_STREAMLINE").value_or(std::string());
+		if (cacheContentPipeline != selectedContentPipeline || cacheShaderCompiler != selectedShaderCompiler
+		    || cacheKtxSupport != selectedKtxSupport || cacheNvidiaStreamline != selectedNvidiaStreamline)
 		{
 			status.State = BuildFilesFreshnessState::FeatureSetMismatch;
 			status.Summary = "CMake cache workspace feature toggles differ from the launcher feature set.";
@@ -97,21 +99,20 @@ namespace SparkleLauncher
 			status.Summary = "Build-file freshness stamp is missing.";
 			return status;
 		}
-
-		if (ReadBuildFilesFreshnessStampValue(status.StampPath, "generator").value_or(std::string()) != toolchain.Generator ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "platform").value_or(std::string()) != toolchain.Platform ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "toolset").value_or(std::string()) != toolchain.Toolset ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "qtRoot").value_or(std::string()) != selectedQtPrefixPath ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "vulkanSdkRoot").value_or(std::string()) != selectedVulkanSdkRoot)
+		if (ReadBuildFilesFreshnessStampValue(status.StampPath, "generator").value_or(std::string()) != toolchain.Generator
+		    || ReadBuildFilesFreshnessStampValue(status.StampPath, "platform").value_or(std::string()) != toolchain.Platform
+		    || ReadBuildFilesFreshnessStampValue(status.StampPath, "toolset").value_or(std::string()) != toolchain.Toolset
+		    || ReadBuildFilesFreshnessStampValue(status.StampPath, "qtRoot").value_or(std::string()) != selectedQtPrefixPath
+		    || ReadBuildFilesFreshnessStampValue(status.StampPath, "vulkanSdkRoot").value_or(std::string()) != selectedVulkanSdkRoot)
 		{
 			status.State = BuildFilesFreshnessState::FreshnessStampMismatch;
 			status.Summary = "Freshness stamp generator/platform/toolset/Qt prefix/Vulkan SDK differs from selected launcher toolchain.";
 			return status;
 		}
-		if (ReadBuildFilesFreshnessStampValue(status.StampPath, "contentPipeline").value_or(std::string()) != selectedContentPipeline ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "shaderCompiler").value_or(std::string()) != selectedShaderCompiler ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "ktxSupport").value_or(std::string()) != selectedKtxSupport ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "nvidiaStreamline").value_or(std::string()) != selectedNvidiaStreamline)
+		if (ReadBuildFilesFreshnessStampValue(status.StampPath, "contentPipeline").value_or(std::string()) != selectedContentPipeline
+		    || ReadBuildFilesFreshnessStampValue(status.StampPath, "shaderCompiler").value_or(std::string()) != selectedShaderCompiler
+		    || ReadBuildFilesFreshnessStampValue(status.StampPath, "ktxSupport").value_or(std::string()) != selectedKtxSupport
+		    || ReadBuildFilesFreshnessStampValue(status.StampPath, "nvidiaStreamline").value_or(std::string()) != selectedNvidiaStreamline)
 		{
 			status.State = BuildFilesFreshnessState::FeatureSetMismatch;
 			status.Summary = "Build-file freshness stamp workspace feature toggles differ from the launcher feature set.";
@@ -152,7 +153,10 @@ namespace SparkleLauncher
 		return status;
 	}
 
-	bool UpdateBuildFilesFreshnessStamp(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain, std::string& errorMessage)
+	bool UpdateBuildFilesFreshnessStamp(
+	    const std::filesystem::path& repositoryRoot,
+	    const BuildToolchainStatus& toolchain,
+	    std::string& errorMessage)
 	{
 		const std::optional<std::string> sourceListHash = ComputeSourceListHash(repositoryRoot);
 		if (!sourceListHash.has_value())
@@ -180,7 +184,6 @@ namespace SparkleLauncher
 		}
 
 		stream << "{\n"
-		       << "    \"version\": 1,\n"
 		       << "    \"generator\": \"" << Strings::EscapeJsonString(toolchain.Generator) << "\",\n"
 		       << "    \"platform\": \"" << Strings::EscapeJsonString(toolchain.Platform) << "\",\n"
 		       << "    \"toolset\": \"" << Strings::EscapeJsonString(toolchain.Toolset) << "\",\n"

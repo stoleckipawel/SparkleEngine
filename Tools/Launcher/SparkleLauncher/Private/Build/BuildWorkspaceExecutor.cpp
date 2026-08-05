@@ -1,5 +1,6 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
+#include "NativeBuildOutputReset.h"
 #include "BuildWorkspaceProcessRequests.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "SparkleLauncher/LauncherPaths.h"
@@ -147,6 +148,22 @@ namespace SparkleLauncher
 		return {};
 	}
 
+	static std::string ExtractBuildFailureDetail(std::string_view text)
+	{
+		std::istringstream stream{std::string(text)};
+		for (std::string line; std::getline(stream, line);)
+		{
+			const std::string trimmedLine = TrimCopy(line);
+			if (trimmedLine.find(": error ") != std::string::npos || trimmedLine.find(" error C") != std::string::npos
+			    || trimmedLine.find("fatal error") != std::string::npos)
+			{
+				return trimmedLine;
+			}
+		}
+
+		return {};
+	}
+
 	static std::string ExtractFailureDetail(const BuildWorkspaceProcessStep& step, const ProcessResult& result)
 	{
 		std::string text = result.CapturedOutput;
@@ -158,6 +175,10 @@ namespace SparkleLauncher
 		if (step.Id == "configure" || step.Id.starts_with("sync-asset-pack-"))
 		{
 			return ExtractCMakeFailureDetail(text, step.Id == "configure");
+		}
+		if (step.Id == "build")
+		{
+			return ExtractBuildFailureDetail(text);
 		}
 		if (step.Id == "install-host-tool"
 		    && text.find("Visual Studio Installer could not continue because Visual Studio or an MSBuild process is running.")
@@ -296,9 +317,14 @@ namespace SparkleLauncher
 		for (const std::filesystem::path& path : generatedFiles)
 		{
 			errorCode.clear();
-			if (!std::filesystem::exists(path, errorCode) || errorCode)
+			const bool exists = std::filesystem::exists(path, errorCode);
+			if (errorCode)
 			{
-				errorCode.clear();
+				errorMessage = "Failed to inspect stale generated build state: " + path.string() + ": " + errorCode.message();
+				return false;
+			}
+			if (!exists)
+			{
 				continue;
 			}
 
@@ -317,7 +343,13 @@ namespace SparkleLauncher
 	{
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(plan.RepositoryRoot) / "_deps";
 		std::error_code errorCode;
-		if (!std::filesystem::exists(dependencyCachePath, errorCode) || errorCode)
+		const bool exists = std::filesystem::exists(dependencyCachePath, errorCode);
+		if (errorCode)
+		{
+			errorMessage = "Failed to inspect the source dependency cache: " + dependencyCachePath.string() + ": " + errorCode.message();
+			return false;
+		}
+		if (!exists)
 		{
 			errorMessage.clear();
 			return true;
@@ -440,12 +472,24 @@ namespace SparkleLauncher
 			{
 				std::error_code errorCode;
 				std::filesystem::create_directories(request.WorkingDirectory, errorCode);
-				if (plan.Request.SourceDependencyId.empty()
-				    && (plan.Freshness.State == BuildFilesFreshnessState::GeneratorMismatch
-				        || plan.Freshness.State == BuildFilesFreshnessState::FreshnessStampMismatch))
+				if (errorCode)
 				{
+					operation.FailureSummary = "Failed to prepare the configure working directory: " + request.WorkingDirectory.string()
+					    + ": " + errorCode.message();
+					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
+					return operation;
+				}
+				if (plan.Request.SourceDependencyId.empty() && RequiresNativeBuildOutputReset(plan.Freshness.State))
+				{
+					if (outputCallback)
+					{
+						outputCallback(
+						    "The selected toolchain is incompatible with existing native outputs. Resetting generated build products while "
+						    "preserving downloaded sources and cooked content.\n");
+					}
+
 					std::string cleanupError;
-					if (!ClearStaleConfigureState(plan, cleanupError))
+					if (!ResetNativeBuildOutputs(plan.RepositoryRoot, plan.Freshness.BuildDirectory, cleanupError))
 					{
 						operation.FailureSummary = cleanupError;
 						MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);

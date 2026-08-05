@@ -15,5 +15,6 @@ namespace SparkleLauncher
 	};
 
 	bool IsRepositoryRoot(const std::filesystem::path& path);
+	std::optional<RepositoryRoot> TryOpenRepositoryRoot(const std::filesystem::path& rootPath, std::string& outErrorMessage);
 	std::optional<RepositoryRoot> TryFindRepositoryRoot(const std::filesystem::path& startPath, std::string& outErrorMessage);
 }

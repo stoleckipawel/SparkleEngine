@@ -1,5 +1,6 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
+#include "NativeBuildOutputReset.h"
 #include "BuildWorkspaceProcessRequests.h"
 #include "HostToolInstaller.h"
 #include "Core/Public/Diagnostics/Error.h"
@@ -203,6 +204,13 @@ namespace SparkleLauncher
 					AddPlannedEffect(
 					    plan,
 					    "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
+				}
+				if (RequiresNativeBuildOutputReset(plan.Freshness.State))
+				{
+					AddPlannedEffect(
+					    plan,
+					    "Reset compiler-produced outputs that are incompatible with the selected toolchain while preserving source caches "
+					    "and cooked content.");
 				}
 				AddConfigureStep(plan);
 				plan.CanRun = true;

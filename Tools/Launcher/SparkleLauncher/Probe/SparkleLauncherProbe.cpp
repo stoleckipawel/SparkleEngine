@@ -1,5 +1,7 @@
 #include "CMakeWorkflowProcessRequests.h"
 #include "HostToolInstaller.h"
+#include "LauncherRepositoryContext.h"
+#include "NativeBuildOutputResetTests.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
@@ -100,6 +102,26 @@ namespace SparkleLauncher
 		errorMessage.clear();
 		return true;
 	}
+
+	static bool ValidateLauncherRepositoryContext(
+	    const std::filesystem::path& launcherDirectory,
+	    const std::filesystem::path& expectedRepositoryRoot,
+	    std::string& errorMessage)
+	{
+		const std::optional<RepositoryRoot> repository = TryReadLauncherRepositoryContext(launcherDirectory, errorMessage);
+		if (!repository)
+		{
+			return false;
+		}
+		if (repository->RootPath != expectedRepositoryRoot)
+		{
+			errorMessage = "The deployed launcher repository context does not match the configured source root.";
+			return false;
+		}
+
+		errorMessage.clear();
+		return true;
+	}
 }
 
 int main(int argc, char** argv)
@@ -119,6 +141,17 @@ int main(int argc, char** argv)
 	if (!SparkleLauncher::ValidateWorkspaceCompilerContract(repositoryRoot->RootPath, errorMessage))
 	{
 		std::cerr << errorMessage << '\n';
+		return 1;
+	}
+	const std::filesystem::path launcherDirectory = std::filesystem::absolute(argv[0]).parent_path();
+	if (!SparkleLauncher::ValidateLauncherRepositoryContext(launcherDirectory, repositoryRoot->RootPath, errorMessage))
+	{
+		std::cerr << errorMessage << '\n';
+		return 1;
+	}
+	if (!SparkleLauncher::Tests::RunNativeBuildOutputResetTests(errorMessage))
+	{
+		std::cerr << "Native build-output reset validation failed: " << errorMessage << '\n';
 		return 1;
 	}
 

@@ -28,6 +28,24 @@ namespace SparkleLauncher
 		return hasWorkspaceMarker && hasEngineMarker && hasEngineDirectory && hasToolsDirectory && hasProjectsDirectory;
 	}
 
+	std::optional<RepositoryRoot> TryOpenRepositoryRoot(const std::filesystem::path& rootPath, std::string& outErrorMessage)
+	{
+		outErrorMessage.clear();
+		const std::filesystem::path normalizedRoot = Paths::Normalize(rootPath);
+		if (!IsRepositoryRoot(normalizedRoot))
+		{
+			outErrorMessage = "Invalid SparkleEngine repository root: " + rootPath.string();
+			return std::nullopt;
+		}
+
+		RepositoryRoot root;
+		root.RootPath = normalizedRoot;
+		root.EnginePath = root.RootPath / "Engine";
+		root.ToolsPath = root.RootPath / "Tools";
+		root.ContentPath = root.RootPath / "Projects";
+		return root;
+	}
+
 	std::optional<RepositoryRoot> TryFindRepositoryRoot(const std::filesystem::path& startPath, std::string& outErrorMessage)
 	{
 		outErrorMessage.clear();
@@ -47,14 +65,9 @@ namespace SparkleLauncher
 
 		const std::optional<std::filesystem::path> workspaceRoot =
 		    Filesystem::FindAncestorWithMarker(current, Filesystem::kWorkspaceMarker);
-		if (workspaceRoot && IsRepositoryRoot(*workspaceRoot))
+		if (workspaceRoot)
 		{
-			RepositoryRoot root;
-			root.RootPath = *workspaceRoot;
-			root.EnginePath = root.RootPath / "Engine";
-			root.ToolsPath = root.RootPath / "Tools";
-			root.ContentPath = root.RootPath / "Projects";
-			return root;
+			return TryOpenRepositoryRoot(*workspaceRoot, outErrorMessage);
 		}
 
 		outErrorMessage = "Could not find SparkleEngine repository root marker from: " + startPath.string();

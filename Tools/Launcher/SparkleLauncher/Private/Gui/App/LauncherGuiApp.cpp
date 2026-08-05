@@ -3,6 +3,7 @@
 #include "LauncherBackend.h"
 #include "LauncherMainWindow.h"
 #include "LauncherContentModel.h"
+#include "LauncherRepositoryContext.h"
 #include "LauncherSettings.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/RepositoryLocator.h"
@@ -14,8 +15,8 @@
 #include <QtCore/QTimer>
 #include <QtGui/QWindow>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QMessageBox>
 
-#include <array>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -44,52 +45,6 @@ namespace SparkleLauncher
 			SetForegroundWindow(handle);
 		}
 #endif
-	}
-
-	static std::filesystem::path RequestedRepositoryStartPath(const QStringList& arguments)
-	{
-		const int rootArgumentIndex = arguments.indexOf(QStringLiteral("--root"));
-		if (rootArgumentIndex < 0 || rootArgumentIndex + 1 >= arguments.size())
-		{
-			return {};
-		}
-
-		return std::filesystem::path(arguments[rootArgumentIndex + 1].toStdString());
-	}
-
-	static std::optional<RepositoryRoot> TryResolveRepositoryRoot(
-	    const std::filesystem::path& requestedStartPath,
-	    std::string& outErrorMessage)
-	{
-		if (!requestedStartPath.empty())
-		{
-			return TryFindRepositoryRoot(requestedStartPath, outErrorMessage);
-		}
-
-		const std::array<std::filesystem::path, 3> candidatePaths = {
-		    std::filesystem::current_path(),
-		    std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()),
-		    std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()),
-		};
-
-		std::string lastError;
-		for (const std::filesystem::path& candidatePath : candidatePaths)
-		{
-			std::string errorMessage;
-			if (const std::optional<RepositoryRoot> repository = TryFindRepositoryRoot(candidatePath, errorMessage))
-			{
-				outErrorMessage.clear();
-				return repository;
-			}
-
-			if (!errorMessage.empty())
-			{
-				lastError = std::move(errorMessage);
-			}
-		}
-
-		outErrorMessage = lastError;
-		return std::nullopt;
 	}
 
 	static bool TryStartShadowLauncher(const std::filesystem::path& repositoryRoot, QString& outError)
@@ -136,14 +91,10 @@ namespace SparkleLauncher
 				return false;
 			}
 		}
-
-		QStringList arguments = QCoreApplication::arguments();
-		if (!arguments.isEmpty())
-		{
-			arguments.removeFirst();
-		}
-
-		if (!QProcess::startDetached(QString::fromStdString(shadowExecutable.string()), arguments))
+		if (!QProcess::startDetached(
+		        QString::fromStdString(shadowExecutable.string()),
+		        {},
+		        QString::fromStdString(repositoryRoot.string())))
 		{
 			outError = QStringLiteral("Launcher shadow restart failed: %1").arg(QString::fromStdString(shadowExecutable.string()));
 			return false;
@@ -159,42 +110,50 @@ namespace SparkleLauncher
 		QApplication::setOrganizationName("Sparkle Engine");
 
 		std::string repositoryError;
-		std::filesystem::path repositoryRoot = std::filesystem::current_path();
-		QString startupNotice;
-		const std::filesystem::path requestedStartPath = RequestedRepositoryStartPath(QCoreApplication::arguments());
-
-		if (const std::optional<RepositoryRoot> repository = TryResolveRepositoryRoot(requestedStartPath, repositoryError))
+		const std::optional<RepositoryRoot> repository =
+		    TryReadLauncherRepositoryContext(std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()), repositoryError);
+		if (!repository)
 		{
-			repositoryRoot = repository->RootPath;
-			std::error_code errorCode;
-			std::filesystem::current_path(repositoryRoot, errorCode);
-			QDir::setCurrent(QString::fromStdString(repositoryRoot.string()));
-
-			QString shadowError;
-			if (TryStartShadowLauncher(repositoryRoot, shadowError))
-			{
-				return 0;
-			}
-			if (!shadowError.isEmpty())
-			{
-				startupNotice = shadowError;
-			}
+			QMessageBox::critical(
+			    nullptr,
+			    QStringLiteral("Sparkle Launcher"),
+			    QString::fromStdString("Launcher startup failed. " + repositoryError));
+			return 1;
 		}
-		else
+
+		const std::filesystem::path repositoryRoot = repository->RootPath;
+		std::error_code errorCode;
+		std::filesystem::current_path(repositoryRoot, errorCode);
+		if (errorCode || !QDir::setCurrent(QString::fromStdString(repositoryRoot.string())))
 		{
-			startupNotice = QString::fromStdString("Repository discovery failed: " + repositoryError);
+			QMessageBox::critical(
+			    nullptr,
+			    QStringLiteral("Sparkle Launcher"),
+			    QString::fromStdString(
+			        "Launcher startup failed. Repository working directory could not be selected: " + repositoryRoot.string()));
+			return 1;
+		}
+
+		QString shadowError;
+		if (TryStartShadowLauncher(repositoryRoot, shadowError))
+		{
+			return 0;
+		}
+		if (!shadowError.isEmpty())
+		{
+			QMessageBox::critical(nullptr, QStringLiteral("Sparkle Launcher"), shadowError);
+			return 1;
 		}
 
 		QTimer::singleShot(
 		    0,
 		    &application,
-		    [repositoryRoot, startupNotice]()
+		    [repositoryRoot]()
 		    {
 			    auto* settings = new LauncherSettings();
 			    auto* contentModel = new LauncherContentModel();
 			    auto* backend = new LauncherBackend();
 			    auto* mainWindow = new LauncherMainWindow(repositoryRoot, *contentModel, *settings, *backend);
-			    mainWindow->SetStartupNotice(startupNotice);
 			    ForceShowWindow(*mainWindow);
 			    QTimer::singleShot(0, mainWindow, [mainWindow]() { ForceShowWindow(*mainWindow); });
 			    QTimer::singleShot(250, mainWindow, [mainWindow]() { ForceShowWindow(*mainWindow); });
