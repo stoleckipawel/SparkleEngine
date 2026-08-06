@@ -10,7 +10,7 @@ This is the canonical requirements contract for SparkleEngine and the target eng
 
 - [B. Role Source Archive](RoleSourceArchive.md) preserves the supplied screenshots and CV in normalized text and maps every source bullet to these identifiers.
 - [C. Candidate and Repository Gap Assessment](GapAssessment.md) grades current evidence.
-- [F. Six-to-Twelve-Month Execution Roadmap](Roadmap.md) converts the gaps into sequenced work.
+- [F. August 2026-January 2027 Execution Roadmap](Roadmap.md) converts the gaps into sequenced work.
 - [G. Advanced Graphics Engine Executive Summary](ExecutiveSummary.md) is the short engine decision document.
 - [H. Advanced Graphics Engineer Persona](EngineerPersona.md) describes who the engineer must become.
 - [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.

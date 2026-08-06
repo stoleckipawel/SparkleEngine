@@ -1,522 +1,337 @@
-# F. Six-To-Twelve-Month Principal Graphics Roadmap
+# F. August 2026-January 2027 Principal Graphics Roadmap
 
-Status: execution plan
-Date: 2026-07-26
+Status: execution plan; gates are targets, not completion claims
+
+Planning window: 2026-08-06 through 2027-01-31
+
+Planning baseline: repository reviewed at `9cf7b3bd` on 2026-08-06; revalidate code, builds, tests, captures, and external state before acting
+
 Governing requirements: [A. Principal Graphics Engineering Requirements](Requirements.md)
-Current-state evidence: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
+
+Dated assessment: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
+
 Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md)
 
-## Outcome
+Multithreading execution detail: [K. Multithreaded Engine Implementation Plan](../Architecture/Multithreading/ImplementationPlan.md)
 
-At six months, the public body of evidence should support this claim:
+## Six-Month Outcome
 
-> I can own a modern rendering feature across C++, shaders, D3D12/Vulkan, GPU architecture, profiling, math, and integration; I can train a bounded neural model, translate it into a real-time GPU path, measure the quality/performance frontier, and hand the result to another engineer.
+By the end of January 2027, SparkleEngine should present one compact, reproducible body of evidence:
 
-The visible proof is a high-quality, performant Bistro exterior/interior flagship backed by San Miguel as a supported cross-scene correctness, indirect-lighting, and neural-generalization workload. Sponza remains the rapid regression loop.
+> A reviewer can acquire the declared workloads, build and run the engine, reproduce a measured D3D12/Vulkan path-tracing result, inspect one trained neural denoising feature running through Sparkle's shader path, compare it with a classical fallback, and understand the quality, latency, memory, failure, and ownership tradeoffs without private guidance.
 
-At twelve months, it should additionally support:
+Bistro exterior and wine interior are the narrative spine. San Miguel is the supported cross-scene and held-out generalization workload. Sponza remains the short regression loop. The six-month result is not a broader engine, a general ML framework, or a collection of unrelated effects.
 
-> I can transfer the work across a second platform or user, influence direction with evidence, publish the result, and maintain a smaller trustworthy product rather than a personal prototype.
+The public package should contain:
 
-The roadmap assumes roughly 12–15 focused hours per week beside full-time work. If actual capacity differs, preserve the order and gates. Do not run multiple implementation phases in parallel.
+- a clean reviewer path and known-good Windows configuration;
+- deterministic workload acquisition, cook, launch, capture, and benchmark records;
+- paired D3D12/Vulkan classical rendering evidence;
+- a fixed-topology neural diffuse-indirect denoiser with a versioned artifact and classical fallback;
+- three concise specialist case studies plus one adoption/reproduction record;
+- exact limitations, negative results, and deleted or rejected alternatives.
 
-`PGE-15` is the longitudinal gate across the entire roadmap: repeated ownership, technical direction, mentoring/review, honest tradeoffs, and simplification must be visible in how all other requirements are completed.
+## Current Planning Baseline
 
-## Allocation
+This table routes the next work; it does not replace the dated assessment or prove a gate complete.
 
-For the first six months:
+| Area | Source-inspected state on 2026-08-06 | Planning consequence |
+| --- | --- | --- |
+| Renderer and execution foundation | D3D12/Vulkan, frame graph, task runtime, render coordination, persistent render data, capture/timestamp primitives, and bounded content work exist. | Measure and harden the existing path. Do not restart the renderer, scheduler, or concurrency architecture. |
+| Tests | CMake currently registers eight focused tests across Core and Launcher. | Run them from a clean configuration, preserve them in CI, and add only tests required by the flagship proof. |
+| Workload acquisition | Bistro and Modern Sponza acquisition/cook/launch smoke evidence exists; San Miguel acquisition is verified. | Treat smoke evidence as a starting point, not quality or performance acceptance. |
+| Tier 1 readiness | Bistro material/camera/reference/performance gates remain open. San Miguel is source-ready but not runtime-ready because deterministic OBJ conversion/import is missing. | Close `WL-01` through `WL-04` before neural runtime work. |
+| Evidence harness | Fixed resolution, a published settled signal, named capture sidecars, timing export, and a unified run manifest remain incomplete. | `MAP-00` is the first implementation milestone. No benchmark claim precedes it. |
+| Reviewer trust | No root README or CI workflow exists and the license identity is still a placeholder. | Close the small trust surface in August; do not build a documentation portal. |
+| Python and neural graphics | Narrow asset-conversion scripts exist, but no benchmark-analysis/training package, trained model, model artifact, or shader inference path was found. | Build one analysis/training toolchain and one fixed neural feature. |
+| Platform breadth | Windows is the current product/evidence platform; both graphics APIs are targets on Windows. | Native Linux and second-hardware work remain after this six-month gate unless required to resolve a result. |
 
-| Work | Share | Reason |
-| --- | ---: | --- |
-| Neural graphics, ML, and model-to-kernel work | 40% | Largest and most differentiating `E0` gap. |
-| Classical path-tracing and GPU workload evidence | 25% | Converts strong existing code into specialist-verifiable proof. |
-| Build, tests, release, and reviewer experience | 20% | Makes all other work credible and discoverable. |
-| Writing, talks, external review, interview practice | 15% | Converts personal knowledge into principal-level transfer and influence. |
+Any baseline row may be superseded only by current code and recorded evidence. Update this roadmap's status, not the historical assessment, when a planned gate changes.
 
-Do not allocate more than 10% to editor, launcher, general engine usability, content breadth, or indie-engine features unless a flagship case study is blocked without them.
+## Capacity And Allocation
 
-## Non-Negotiable Constraints
+Plan against the conservative end of 12-15 focused hours per week: about 300 hours across the window. Keep approximately 10% unallocated for build, driver, content, and experiment failures.
 
-- Use the exact workload ladder and optional-content status owned by [I](../Engineering/BistroAndSanMiguelWorkloads.md); compatibility and source-acquisition packs do not become additional flagship stories.
-- One classical flagship and one neural flagship, not ten incomplete effects.
-- One Python evidence/analysis tool, not a tooling platform.
-- One fixed neural topology and artifact format, not a general inference framework.
-- One supported known-good hardware/driver configuration first; expand only after it is reproducible.
-- D3D12 and Vulkan are both evidence targets on Windows. Linux is a later native slice, not a current claim.
-- Apply the [validation and performance standard](../Engineering/Standards/ValidationPerformanceAndEvidence.md) to every engineering claim and I's fallback/failure gates to every flagship result.
-- A weak experiment may be deleted and published as a negative result. Keeping it because it took time is not allowed.
-- No confidential employer code, screenshots, metrics, unreleased details, or implied ownership enter the public portfolio.
+| Workstream | Planned hours | Share | Boundary |
+| --- | ---: | ---: | --- |
+| Evidence spine and Tier 1 correctness | 75 | 25% | Clean build/test path, `MAP-00`, deterministic workloads, references, material/failure records. |
+| Classical path tracing and workload analysis | 70 | 23% | Paired APIs, benchmark analysis, captures, incident, and causal bottleneck studies. |
+| Neural model and GPU inference | 95 | 32% | Data, training, artifact, conformance, shader inference, ablations, and fallback. |
+| Reproduction, writing, release, and application material | 30 | 10% | Reviewer routing, case studies, external review, release, CV/profile update. |
+| Contingency | 30 | 10% | Unplanned correctness or environment blockers only. |
 
-## Six-Month Sequence
+Editor, launcher, import, and general engine work share one rule: they enter the roadmap only when they directly block the current acceptance gate. Do not spend more than 10% of the six-month budget on usability or content breadth.
 
-## Phase 0 — Freeze And Define, Days 1–3
+## Dependency And Work-In-Progress Rule
 
-### Work
+```text
+clean baseline
+    -> MAP-00 evidence harness
+    -> correct Bistro + San Miguel workloads
+    -> paired-API measured classical result
+    -> frozen neural data + trained model
+    -> versioned artifact + shader inference
+    -> held-out evaluation + external reproduction + publication
+```
 
-- Freeze new engine features.
-- Create a one-page backlog containing only tasks that advance `PGE-02`–`PGE-13`.
-- Select the primary test GPU, OS build, driver, compiler, resolution, and two rendering configurations.
-- Adopt the scene decision, optional-content states, and exact gates in [I](../Engineering/BistroAndSanMiguelWorkloads.md) by reference; do not restate its contract in the backlog.
-- Write the three case-study titles now:
-  1. shipped performance and partner integration, public-safe;
-  2. Bistro from source to path-traced, profiled output across D3D12/Vulkan, with San Miguel breadth;
-  3. neural GI denoising from PyTorch graph to real-time shader, presented on Bistro and tested on San Miguel.
+Only one box is the primary implementation objective at a time. Learning, writing, and test maintenance may accompany it, but a later implementation box does not start while an earlier exit gate is red. Completion order is governed by evidence, not by elapsed calendar time.
 
-### Gate
+## Roadmap At A Glance
 
-- The backlog has at most 20 items.
-- Every item names a `PGE-*` gap and an expected evidence-level transition.
-- The backlog maps `WL-01` through `WL-08` from I to the roadmap phases without copying their definitions and does not add a fourth flagship story. Optional compatibility/source packs stay subordinate to those gates.
-- Anything unrelated is moved to “after application” or deleted.
+| Month | Primary outcome | Workload target | Principal evidence focus | Exit artifact |
+| --- | --- | --- | --- | --- |
+| August 2026 | Trustworthy clean baseline and accepted evidence harness | `WL-01`, `MAP-00`, `MAP-01` | `PGE-07`, `PGE-09`, `PGE-13` | Known-good build/test record, CI, reviewer README, Sponza calibration evidence package |
+| September 2026 | Correct deterministic Tier 1 content | `WL-02`, `WL-03`; sequential map review | `PGE-02`, `PGE-07`, `PGE-08`, `PGE-09` | Bistro/San Miguel inventories, frozen routes, material matrix, reference baseline |
+| October 2026 | Measured classical result across both APIs | `WL-04` | `PGE-02`, `PGE-05`, `PGE-06`, `PGE-09`, `PGE-10` | Benchmark CLI, paired captures, ranked bottlenecks, incident report, case-study drafts |
+| November 2026 | Reproducible neural training baseline | `WL-05` | `PGE-03`, `PGE-08`, `PGE-11`, `PGE-12` | Dataset manifest, model card, trained baseline, ablations, immutable export candidate |
+| December 2026 | Correct model-to-shader runtime path | `WL-06` | `PGE-03`, `PGE-04`, `PGE-09`, `PGE-10`, `PGE-12` | Versioned artifact, conformance tests, D3D12/Vulkan inference, classical fallback |
+| January 2027 | Frozen result, reproduction, and publication | `WL-07`, `WL-08` | `PGE-01`, `PGE-05`, `PGE-13`, `PGE-15` | Evidence release, three case studies, final video/report, peer reproduction record |
 
-## Phase 1 — Credibility Spine, Weeks 1–2
+The `PGE-*` columns identify intended coverage, not promised evidence levels. Grade changes require the evidence defined in [Requirements](Requirements.md).
 
-### Work
+## August - Baseline And Evidence Spine
 
-1. Make a fresh clone configure and build on a documented known-good Windows setup.
-2. Repair the current mesh-diagnostics/build break and delete stale generated test assumptions.
-3. Add a small active test target for:
-   - shader package ABI/reference decoding;
-   - frame-graph dependency/resource-state invariants;
-   - task lifetime/dependency settlement;
-   - math/reference functions needed by the flagship.
-4. Add Windows CI for configure, non-GPU build, tests, formatting/boundary checks, and artifact publication where licensing allows it.
-5. Add a root README with:
-   - one-sentence identity;
-   - one current hero image/video;
-   - three evidence cards, with unfinished ones marked “in progress”;
-   - seven-box-or-smaller architecture diagram;
-   - exact known-good build/run command;
-   - support matrix and limitations;
-   - links to selected code and case studies.
-6. Replace the placeholder license identity and add required third-party/content notices.
-7. Set repository description, website, and topics.
-8. Tag a known-good baseline release.
-9. Record Bistro and San Miguel source pages, licenses, attribution, archive identity/hash, transformation policy, and external-pack layout.
-10. Build the reusable asset inspection record needed to count geometry, materials, textures, alpha/emissive state, warnings, conversions, cooked size/time, and deterministic output.
+### Outcome
 
-### Gate
-
-- A new clone reaches a deterministic captured frame using documented commands.
-- CI is green for non-GPU gates.
-- No stale `add_test` or deleted script reference remains.
-- A reviewer reaches the executable path, flagship code, and limitations from the README in under two minutes.
-- Do not start Phase 2 while the default branch is red.
-- Bistro inspection is reproducible, San Miguel provenance is frozen, and no result depends on an undocumented workstation-only conversion.
-
-## Phase 2 — Classical Rendering Proof, Weeks 3–6
-
-### Scope
-
-Use Sparkle’s existing reference path tracing and ReSTIR/real-time lighting work on Bistro and San Miguel. Do not implement a new renderer. Bistro is the case-study spine; San Miguel proves that the content, material, reference, and lighting result is not scene-specific.
+One documented Windows configuration can build, test, launch, settle, measure, and capture Sponza from a fresh checkout. A reviewer can find the result and limitations immediately.
 
 ### Work
 
-- Import/cook/load Bistro exterior/interior and San Miguel high/low content through the shared deterministic inspection/conversion path.
-- Classify every discovered material as exact, converted, approximated, or rejected; retain the honest support/fallback matrix.
-- Treat transparent raster materials as a measured P0 gap: the current inspected pipelines disable blending. Implement only the scene-required ordering/compositing/depth behavior and validate it on both APIs; do not confuse stored alpha with rendered transparency.
-- Freeze the `BIS-*` and `SMG-*` routes, seeds, scene revisions, shader revision, and settings defined in I.
-- Define high-sample references and one or two real-time configurations for both scenes.
-- Add CPU or analytical reference checks for the material/sampling components most likely to be wrong.
-- Validate:
-  - coordinate spaces and depth/motion conventions;
-  - BRDF sampling and PDFs;
-  - throughput and Russian-roulette logic if present;
-  - accumulation/reset behavior;
-  - reservoir weight/update behavior;
-  - backend resource states, barriers, descriptors, and ray-tracing capabilities.
-- Capture D3D12 in PIX and Vulkan in RenderDoc or an equivalent backend-appropriate tool.
-- Record:
-  - per-pass GPU time;
-  - CPU submission/recording time;
-  - frame p50/p95/p99 across a fixed run;
-  - VRAM high-water and major allocations;
-  - rays/samples and resolution;
-  - queue utilization and visible synchronization;
-  - validation-layer status.
-- Compare quality with at least PSNR or FLIP and an explicit temporal/error visualization. Use perceptual images as supporting, not sole, proof.
-- Produce material/debug contact sheets and difficult close-ups for both Tier 1 scenes.
-- Use the matched San Miguel high/low variants as a controlled geometry-scaling experiment for CPU extraction, draw generation, memory, BLAS/TLAS, and traversal cost.
-- Investigate one real performance or correctness issue to root cause and retain the reduced reproducer or smallest failing scene.
-- Explain any backend delta above 10%; do not force identical performance.
+1. Record the exact repository revision, Windows build, compiler/CMake/Ninja or Visual Studio versions, SDKs, GPU, driver, and selected D3D12/Vulkan configuration.
+2. Configure and build from a clean checkout or clean worktree; run all registered tests, formatting checks, and the architecture boundary check. Fix only failures on the reviewer path.
+3. Add a small root reviewer README, correct the license identity, add required notices, and add Windows CI for configure, non-GPU build/tests, formatting, and boundary checks.
+4. Implement `MAP-00` exactly through the workload owner: fixed launch resolution, authoritative active/settled identity, named capture plus sidecar, CPU/GPU sample export, and a unified manifest.
+5. Prove the harness on Sponza, then complete `MAP-01` without upgrading Sponza into Tier 1 evidence.
+6. Reconcile Bistro and San Miguel provenance, archive identity, transformation warnings, and deterministic inspection output to close `WL-01`.
 
-### Deliverables
+### Exit Gate - 2026-08-31
 
-- `CASE-01: Bistro And San Miguel From Source Asset To Correct Pixel`
-- `CASE-02: One Bistro Frame Across Two Explicit APIs`
-- `CASE-03: Path-Traced Bistro Under Budget`
-- San Miguel hero/reference comparison and cross-scene performance appendix.
-- 60–90 second no-narration comparison video.
-- Five-minute narrated architecture/performance video.
-- One-page architecture map linked to exact code.
-- Capture files or a lawful, compact capture-derived evidence pack.
-- Benchmark data and the script that calculates statistics.
-- Incident report: symptom → hypotheses → experiments → root cause → fix → regression gate.
+- Clean configure/build/test commands and results are recorded for one supported configuration.
+- CI runs the non-GPU credibility gates from a fresh checkout.
+- `MAP-00` and `MAP-01` are accepted with raw artifacts and an honest limitation list.
+- The README routes a reviewer to build/run, architecture, workload, evidence, and limitations in under two minutes.
+- Bistro and San Miguel provenance and loss inventories satisfy `WL-01`.
 
-### Gate
+If this gate is red, September continues August work. Do not compensate with more launcher polish, maps, or neural scaffolding.
 
-- `PGE-02`, `PGE-05`, `PGE-06`, `PGE-08`, and `PGE-09` reach at least `E3`.
-- A specialist can reproduce the result without reading broad architecture documents.
-- No validation error is hidden.
-- San Miguel renders through the same material/shader path without a scene-specific shader fork.
+## September - Tier 1 Correctness And Deterministic Content
 
-## Phase 3 — Python And Workload Lab, Weeks 7–9
+### Outcome
 
-### Scope
-
-Build a narrow analysis tool that serves the case studies. Do not build a general profiler or parse proprietary capture formats.
+Bistro exterior/wine interior and San Miguel high/low travel through one deterministic content path and have frozen, reviewable correctness baselines.
 
 ### Work
 
-- Learn and use Python packaging, typing, `pytest`, NumPy, pandas or Polars, and Matplotlib only as needed.
-- Emit one versioned, stable benchmark record from Sparkle containing:
-  - build and git identity;
-  - scene, route, source/cooked manifest, camera, and material-support identity;
-  - backend and capability state;
-  - hardware/driver/configuration;
-  - per-frame CPU/GPU timings;
-  - memory high-water;
-  - selected pass counters;
-  - validation outcome.
-- Write a CLI that:
-  - validates records;
-  - rejects incomparable runs;
-  - calculates p50/p95/p99 and confidence intervals or bootstrap ranges;
-  - produces one comparison table and two useful plots;
-  - applies explicit regression thresholds;
-  - never claims causality from timing data alone.
-- Add unit tests with malformed, missing, warm-up, and outlier cases.
-- Use the tool across Bistro and San Miguel for the classical case study and later neural ablations.
+1. Follow the canonical one-map review order and finish each checkpoint before opening the next. Reuse the accepted harness; do not create per-map evidence code.
+2. Complete the Bistro material/texture inventory and classify every material as exact, converted, approximated, or rejected.
+3. Fix transparency, lighting, camera, importer, or renderer behavior only where a frozen Tier 1 view proves it blocks correctness. Preserve one backend-neutral production path.
+4. Add a pinned deterministic San Miguel OBJ/MTL/PNG-to-glTF conversion and before/after semantic inventory. Add direct OBJ import only if evidence proves it is simpler or more faithful.
+5. Freeze the required Bistro and San Miguel cameras, seeds, reference settings, exposure policy, material/debug views, and high/low matched route.
+6. Generate the first high-sample references and record unsupported material/lighting behavior without hiding fallbacks.
 
-### Gate
+### Exit Gate - 2026-09-30
 
-- `PGE-07` has real Python evidence.
-- Another engineer can run the analysis from a checked-in small data sample.
-- The tool replaces manual spreadsheet work and has fewer than five user-facing commands.
+- `WL-02` and `WL-03` pass for both Tier 1 families.
+- Bistro and San Miguel acquire, convert/import, cook, launch, settle, and capture deterministically.
+- Frozen routes produce correct baseline images and explicit material/fallback matrices.
+- San Miguel high/low share matched cameras and settings.
+- No scene-specific renderer or shader fork exists.
 
-## Phase 4 — Neural Feature Definition And Training, Weeks 10–14
+If the full compatibility-map sequence consumes the month, cut extra cameras and polish before cutting Tier 1 correctness or San Miguel support.
 
-### Selected feature
+## October - Classical Rendering And Workload Analysis
 
-A fixed-topology neural denoiser for low-sample demodulated diffuse indirect lighting.
+### Outcome
 
-Why this feature:
-
-- Sparkle already owns path-traced/reSTIR indirect signals and reference output;
-- the input/output semantics are understandable and testable;
-- it exercises sampling, denoising, temporal data, model training, shader kernels, quality metrics, and real-time budgets;
-- it can have a classical spatial/temporal denoiser fallback;
-- it does not require a general ML runtime.
-
-### MVP contract
-
-Inputs:
-
-- low-sample demodulated diffuse indirect radiance;
-- world/view normal encoded explicitly;
-- linear depth;
-- roughness or material class only if ablation proves value;
-- motion/history only after a correct spatial baseline.
-
-Output:
-
-- denoised demodulated diffuse indirect radiance, remodulated by the existing rendering path.
-
-Initial topology:
-
-- small fixed residual CNN;
-- 3×3 convolutions;
-- approximately 8–16 feature channels;
-- no dynamic shapes;
-- FP32 reference and FP16 inference candidate;
-- exact layer/operator list frozen in a versioned model contract.
-
-Initial runtime target:
-
-- 1920×1080;
-- at most 2.0 ms on the named primary GPU;
-- at most 64 MiB incremental persistent/transient memory;
-- no unbounded history;
-- no CPU readback;
-- equal or better objective quality than the classical fallback at an equal measured budget on at least one held-out scene.
-
-The target is a hypothesis. If the hardware cannot meet it, publish the measured frontier and change the product decision, not the data.
-
-### Training work
-
-- Generate inputs and high-sample targets from frozen Sparkle scenes and seeds.
-- Separate training, validation, and held-out test scenes/cameras. Bistro supplies the primary presentation routes; the final `SMG-*` cameras remain excluded from training and model selection.
-- Record color space, exposure, demodulation, clamping, normalization, and target-sample count.
-- Implement a deterministic PyTorch training pipeline.
-- Start with L1/Charbonnier and justify any structural or perceptual term.
-- Establish:
-  - classical denoiser baseline;
-  - unprocessed noisy baseline;
-  - parameter-count and FLOP estimate;
-  - overfit-one-batch sanity check;
-  - loss curves and held-out metrics;
-  - failure cases on emissive edges, disocclusion, glossy leakage, and exposure extremes.
-- Run ablations for input guides, width, precision proxy, and loss terms.
-- Create a model card and immutable export manifest.
-
-### Gate
-
-- Training is reproducible from a small public sample or a documented generator.
-- Test data never influences model selection except through the declared final evaluation.
-- The model beats the noisy input and has a credible path to the classical baseline.
-- `PGE-08`, `PGE-11`, and the offline half of `PGE-12` reach `E3`.
-
-## Phase 5 — Model-To-Shader Inference, Weeks 15–19
+The existing path-tracing and renderer work becomes one reproducible, measured D3D12/Vulkan result rather than an architecture claim.
 
 ### Work
 
-- Export weights and the fixed graph into a minimal versioned artifact.
-- Write a small Python reference runner for exported artifacts.
-- Implement the operator path in HLSL or Slang so it uses the existing DXIL/SPIR-V cook/runtime ABI.
-- Do not embed a general ONNX runtime.
-- Add tiny-tensor numerical conformance tests between PyTorch, Python export reference, and GPU output.
-- Start with direct convolutions, then profile:
-  - channel layout;
-  - texture versus buffer storage;
-  - FP32 versus FP16;
-  - dispatch dimensions;
-  - shared-memory tiling;
-  - layer fusion;
-  - weight packing;
-  - register pressure and occupancy;
-  - bandwidth and cache behavior.
-- Preserve a classical fallback and explicit capability/failure state.
-- Integrate into the existing frame graph with declared resources and history invalidation.
-- Run both D3D12 and Vulkan using the same model artifact.
-- Run the same artifact on Bistro and the held-out San Miguel routes; no scene-specific weights or shader branch is allowed.
+1. Emit one versioned benchmark record and build one narrow Python CLI that validates comparability, applies warm-up/sample policy, calculates p50/p95/p99 and uncertainty, and produces a comparison table plus two useful plots.
+2. Capture the same frozen Bistro and San Miguel routes on D3D12 and Vulkan with native validation enabled where supported.
+3. Record CPU/GPU timelines, frame pacing, memory high-water, resource/barrier/descriptor/queue state, pipeline/cache state, and BLAS/TLAS behavior defined by the workload contract.
+4. Rank measured bottlenecks. Start the three required causal studies and finish at least one difficult incident with competing hypotheses, reduced reproducer, scoped fix, and regression gate.
+5. Run K's `23`/`23A` characterization and value audit against current owners. Pull `24`-`29` forward only when a measured correctness or evidence blocker requires them.
+6. Draft `CASE-01`, `CASE-02`, and `CASE-03` from captured evidence. Do not wait until January to reconstruct the experiment history.
 
-### Required experiments
+### Exit Gate - 2026-10-31
 
-1. FP32 correctness baseline.
-2. FP16 quality and performance.
-3. direct versus tiled convolution.
-4. at least one fusion attempt.
-5. channel-count quality/performance ablation.
-6. cold-start versus steady-state inference.
-7. interference with the rest of the frame, not an isolated kernel only.
+- `WL-04` passes with paired captures and comparable records.
+- The Python tool runs from a checked-in small sample and has fewer than five user-facing commands.
+- At least one incident and one causal optimization or negative result are complete.
+- Backend differences above the declared threshold are explained or explicitly open; none are hidden.
+- The classical case has a reproducible configuration, quality result, latency distribution, memory result, and limitations.
 
-### Gate
+## November - Neural Data And Training Baseline
 
-- Numerical tolerance is defined and passes.
-- No backend has an unexplained correctness difference.
-- `PGE-03`, `PGE-04`, `PGE-05`, `PGE-09`, `PGE-10`, and the inference half of `PGE-12` reach at least `E2`; most should reach `E3` after Phase 6.
-- If the model cannot beat the classical alternative at an honest budget, the default remains classical and the result becomes a negative case study.
+### Outcome
 
-## Phase 6 — Productization And Transfer, Weeks 20–24
+A small fixed neural diffuse-indirect denoiser is trained reproducibly from declared data and evaluated against noisy and classical baselines without contaminating held-out San Miguel routes.
 
 ### Work
 
-- Freeze model, code, Bistro/San Miguel manifests, routes, captures, and benchmark versions.
-- Run the full held-out and temporal evaluation, including San Miguel generalization and failure cases.
-- Produce:
-  - PSNR/SSIM or justified quality metrics;
-  - FLIP or another rendering-aware error view;
-  - temporal stability/error sequence;
-  - latency p50/p95/p99;
-  - memory high-water;
-  - per-layer/operator timings;
-  - quality/performance Pareto chart;
-  - failure gallery.
-- Ask one graphics engineer who did not implement the feature to:
-  - clone/build/run;
-  - switch classical/neural paths;
-  - reproduce one table row;
-  - locate the model contract and fallback;
-  - report confusing steps and one technical criticism.
-- Apply the feedback without broad new infrastructure.
-- Write:
-  - eight-to-twelve-page technical report;
-  - two-page integration guide;
-  - one-page model card;
-  - ten-slide talk;
-  - 90-second comparison video;
-  - ten-minute narrated deep dive.
-- Publish the Bistro exterior/interior hero pair, the San Miguel hero, and a deterministic Bistro sequence that explicitly labels the exterior/interior scene cut unless a combined level has separately passed its composition gate.
+1. Freeze input/output meaning, tensor layout, normalization, color/exposure/demodulation rules, target sample count, and the spatial MVP topology before broad data generation.
+2. Generate immutable training/validation/test identities. Keep final San Miguel cameras out of training and model selection.
+3. Implement a deterministic PyTorch training path with a small public sample or documented generator, an overfit-one-batch check, loss curves, and exact environment lock.
+4. Establish noisy and classical baselines, parameter/FLOP estimates, held-out metrics, and failure cases.
+5. Run only decision-making ablations: input guides, width, loss, and precision proxy. Do not search architecture space broadly.
+6. Produce the model card, dataset manifest, operator/math note, and immutable export candidate aligned with K's `30` and `31` outcomes.
 
-### Gate
+### Exit Gate - 2026-11-30
 
-- Another engineer reproduces the result.
-- The code has an explicit owner, artifact version, capability gate, fallback, and deletion condition.
-- The case study states whether the neural result won, lost, or traded quality for performance.
-- Bistro and San Miguel each have an honest material/quality/performance support record; the neural result states whether it generalized to the frozen San Miguel test routes.
-- Relevant requirements reach `E3`, with `PGE-01` or `PGE-13` reaching `E4` through transfer or publication.
+- `WL-05` passes.
+- Training is reproducible and train/validation/test identities are disjoint.
+- The selected model beats the noisy input and has an evidence-backed path toward the classical quality/performance target.
+- The topology and artifact contract are frozen for runtime integration.
+- Weak inputs, layers, or losses are removed and retained only as concise negative results.
 
-## Phase 7 — Application Package, Weeks 25–26
+If the model does not justify runtime work, simplify inputs or width once. Do not respond by creating a larger topology, general training framework, or hand-picked test set.
 
-### CV
+## December - Model-To-Shader Runtime
 
-- Create ATS-safe two-page and derived one-page versions.
-- Give every 2021–present role measurable software/rendering bullets.
-- Separate production skills, independently verified skills, and current learning.
-- Link only the three strongest evidence pages.
-- Remove the generic personal-data consent paragraph unless a specific application legally requires it.
-- Call talks “Talks,” articles “Writing,” and papers “Publications.”
-- Verify all URLs and PDF text extraction.
+### Outcome
 
-### Public profile
+The frozen artifact executes through Sparkle's existing shader cook/runtime ABI on D3D12 and Vulkan with numerical conformance, bounded memory, and a classical fallback.
 
-- Headline: exact identity and specialty, not an aspirational title.
-- About section: four sentences—scope, strongest shipped result, independent flagship, collaboration/communication.
-- Featured section:
-  1. 90-second reel;
-  2. Bistro path-tracing/workload case with San Miguel cross-scene appendix;
-  3. neural model-to-shader case;
-  4. strongest talk or article.
-- Experience bullets match the CV and do not overclaim confidential work.
+### Work
 
-### Interview package
+1. Export weights and graph metadata into one minimal versioned artifact; reject incompatible version, shape, layout, operator, and precision combinations.
+2. Add reference tensors and conformance checks across PyTorch, the export/reference runner, and GPU output.
+3. Implement the fixed operators in HLSL or Slang and integrate them through the existing frame graph and renderer ownership path. Do not embed a general ONNX or tensor runtime.
+4. Establish the FP32 correctness baseline, then evaluate FP16, layout, dispatch size, tiling, fusion, weight packing, bandwidth, register pressure, and occupancy only from profiles.
+5. Run the same artifact on both APIs and both Tier 1 scene families. Preserve explicit capability failure, history invalidation where applicable, and the classical fallback.
+6. Complete K's `32` runtime-inference outcome and begin `33` only after correctness and whole-frame cost are known.
 
-Prepare three 20-minute stories:
+### Exit Gate - 2026-12-31
 
-1. shipped performance investigation;
-2. D3D12/Vulkan path-tracing incident;
-3. neural model-to-kernel optimization.
+- `WL-06` passes.
+- Numerical tolerances are defined and pass on both backends.
+- Inference latency, memory, cold start, and whole-frame interference are measured.
+- Bistro quality/performance results and the classical fallback are available from the product path.
+- Any backend or provider limitation is explicit and reproducible.
 
-Each story must answer:
+If the neural path loses at an honest budget, keep the classical path as default and preserve the neural work as a measured negative result. Do not tune away a correctness or generalization failure.
 
-- What was the constraint?
-- What did you own?
-- What were the competing hypotheses?
-- What did the capture/math say?
-- What failed?
-- What did you change?
-- What was measured?
-- How did another team adopt it?
-- What would you do differently?
+## January - Evaluation, Transfer, And Publication
 
-### Six-month application gate
+### Outcome
 
-Apply when:
+The result is frozen, independently exercised, and packaged for recruiter, hiring-manager, graphics-specialist, and adopter review paths.
 
-- the repository builds from a clean clone;
-- the README routes a reviewer in under two minutes;
-- the classical case is `E3`;
-- the neural case has a real runtime model and honest result;
-- one external engineer reproduced a case;
-- the CV passes text extraction and contains no stale URL;
-- you can defend the code, math, GPU behavior, model, data split, captures, and limitations without notes.
+### Work
 
-Do not wait for the engine to become an indie product.
+1. Freeze code, model, manifests, cameras, settings, hardware/driver record, benchmark schema, and capture versions by 2027-01-15.
+2. Run final Bistro and held-out San Miguel evaluation: objective and perceptual quality, temporal errors, latency distribution, memory, operator timings, failure gallery, and quality/performance/memory frontier.
+3. Complete all three measured bottleneck studies, including at least one rejected optimization where the evidence supports rejection.
+4. Ask one graphics engineer who did not implement the feature to clone/build/run, reproduce one result row, switch classical/neural paths, locate the artifact/fallback contract, and record one technical criticism.
+5. Fix adoption blockers without opening new infrastructure. Complete K's `34` handoff outcome.
+6. Publish three concise specialist cases: content-to-correct-pixel, paired-API/path-tracing workload analysis, and model-to-shader. Link the adoption record as supporting evidence.
+7. Produce one evidence release, an eight-to-twelve-page technical report or equivalent article series, a two-page integration guide, a model card, a short comparison video, and an honest support/limitations matrix.
+8. Update the CV, public profile, and website only with claims supported by the frozen evidence.
 
-## Months 7–12: From Strong Stretch To Sustained Principal Evidence
+### Exit Gate - 2027-01-31
 
-## Quarter 3 — Platform Breadth And External Contribution
+- `WL-07` and `WL-08` pass, or each remaining miss is named with evidence and a bounded follow-up.
+- Another engineer reproduces at least one result without private implementation guidance.
+- The repository builds from the documented clean path and the release contains or links every required small artifact.
+- Classical and neural outcomes state whether they won, lost, or traded quality, latency, and memory.
+- A reviewer reaches the headline result, code, captures, data, reproduction steps, and limitations within the time budgets in [Requirements](Requirements.md#portfolio-review-contract).
 
-Choose two, not all:
+## Monthly Tracker
 
-### Native Linux/Vulkan slice
+Update a row only when its exit evidence is linked. `Implemented` without the required gate evidence remains `In progress`.
 
-- Add platform/window/input/build support sufficient for the curated scene.
-- Use Sponza for the first native smoke, then one Tier 1 route; do not make Linux support wait for every external asset pack.
-- Build and run natively on Linux.
-- Capture with Vulkan validation and RenderDoc.
-- Add non-GPU Linux CI.
-- Publish an exact parity/limitation table.
+| Milestone | Target | Status | Evidence |
+| --- | --- | --- | --- |
+| `M0` Clean baseline and reviewer trust | 2026-08-31 | Not started | Pending |
+| `M1` Accepted evidence harness and `WL-01` | 2026-08-31 | Not started | Pending |
+| `M2` Tier 1 deterministic correctness | 2026-09-30 | Not started | Pending |
+| `M3` Paired-API classical evidence | 2026-10-31 | Not started | Pending |
+| `M4` Neural training baseline | 2026-11-30 | Not started | Pending |
+| `M5` Runtime shader inference | 2026-12-31 | Not started | Pending |
+| `M6` Reproduction and evidence release | 2027-01-31 | Not started | Pending |
 
-### Upstream graphics-tool or compiler contribution
-
-- Select one real issue in RenderDoc, DXC, Slang, Vulkan tooling, or another directly used open project.
-- Reproduce it, discuss the approach with maintainers, submit a bounded patch, and respond to review.
-- Prefer a shader reflection, capture, synchronization, or cross-platform defect related to the case study.
-
-### Second-hardware study
-
-- Run the same Bistro and San Miguel model/classical records on a materially different GPU architecture.
-- Predict the likely bottleneck before capturing.
-- Explain changed cache/bandwidth/occupancy behavior.
-- Avoid a universal conclusion from two devices.
-
-Quarter-3 gate: at least one `PGE-06`, `PGE-10`, or `PGE-14` item reaches `E4`.
-
-## Quarter 4 — Influence, Publication, And Product Restraint
-
-- Submit the neural/path-tracing result to a credible graphics conference, developer conference, journal-of-practice venue, or detailed public technical series.
-- Deliver the talk publicly or in a recorded review session.
-- Mentor or review another engineer’s related implementation and retain public-safe feedback evidence.
-- Invite a second adopter or contributor to use the fixed feature boundary.
-- Tag a stable Sparkle evidence release with archived captures/data/model card.
-- Reduce documentation and runtime surfaces made obsolete by the completed case studies.
-- Begin indie-engine usability work only where a real external user is blocked:
-  - binary/source onboarding;
-  - one project template;
-  - asset import and external-pack onboarding for the supported Sponza/Bistro/San Miguel set;
-  - crash/issue reporting;
-  - stable versioning.
-
-Do not add physics, networking, audio, scripting, marketplace, broad editor tooling, or game-framework depth during this year unless the primary evidence roadmap is complete and an actual user need is documented.
+Allowed status values are `Not started`, `In progress`, `Passed`, `Blocked`, `Deferred`, and `Rejected`. A blocked row names the blocker, owner, next decision date, and evidence gathered so far.
 
 ## Weekly Operating Rhythm
 
-For a 14-hour week:
+For a 12-hour week:
 
 | Work | Hours |
 | --- | ---: |
-| Flagship implementation | 7 |
-| ML/math/GPU architecture study tied to the next experiment | 3 |
-| Tests, benchmark, capture, and evidence curation | 2 |
-| Technical writing or video | 1 |
-| C++/systems interview practice and retrospective | 1 |
+| Current gated implementation or experiment | 6 |
+| Correctness tests, benchmark, capture, and evidence review | 3 |
+| Targeted math/ML/GPU study for the next decision | 1.5 |
+| Case-study notes and reviewer-path maintenance | 1 |
+| Backlog review and deletion/retrospective | 0.5 |
 
 Every week ends with:
 
 - one demonstrable result or falsified hypothesis;
-- updated benchmark/model record where applicable;
-- no red default branch;
-- one paragraph: what changed, what was learned, what is next, what was deleted;
-- backlog reordered by gap closure, not novelty.
+- exact commands/configuration and raw evidence where applicable;
+- a green or explicitly blocked default path;
+- one short record of what changed, what was learned, what was deleted, and what gate is next;
+- at most one primary implementation item carried into the next week.
 
-## Backlog Scoring
+At month end, review the gate before planning the next month. Never mark a calendar phase complete merely because its month ended.
 
-Score each proposed task from 0–3 on:
+## Backlog And Scope Control
 
-- closes a current `E0/E1` requirement;
-- strengthens one of the three case studies;
-- produces reproducible evidence;
-- teaches a missing interview-critical skill;
-- enables external adoption;
-- removes or consolidates existing code.
+Keep one backlog of at most 20 items in three lanes: `Now`, `Next`, and `After January`. Every `Now` or `Next` item names:
 
-Subtract 0–3 for:
+- the current roadmap gate and `PGE-*` requirement it advances;
+- the expected artifact or falsifiable result;
+- its owner and estimated focused hours;
+- prerequisite evidence;
+- what will be deleted, rejected, or left unchanged.
 
-- creates a new subsystem;
-- needs broad editor/launcher/content work;
-- depends on unowned hardware or a fragile SDK;
-- produces only a screenshot or claim;
-- duplicates an existing engine mechanism.
+Prioritize work that closes an absent/weak requirement, strengthens the three public stories, produces causal evidence, enables reproduction, or removes code. Penalize new subsystems, broad UI/tooling, unowned hardware/SDK dependencies, screenshot-only output, and duplicate mechanisms. Reject any task with no evidence output.
 
-Do the highest positive score. Reject any task with zero evidence output.
+## Scope Cuts And Decision Dates
 
-## Stop List
+Never cut correctness, deterministic identity, both Windows graphics APIs, the classical fallback, San Miguel held-out evaluation, or honest limitations. If capacity drops, cut in this order:
 
-Stop and reassess immediately if:
+1. extra cameras, videos, and presentation polish;
+2. Modern Sponza compatibility polish beyond required regression coverage;
+3. temporal neural inputs beyond the correct spatial MVP;
+4. second-hardware characterization;
+5. native Linux/Vulkan and upstream contribution work;
+6. generalization of any tool, model topology, importer, or runtime interface.
 
-- two consecutive weeks produce only infrastructure;
-- a neural runtime is being generalized before one topology works;
-- a measurement lacks a frozen configuration;
-- a case study requires more than ten minutes before the result appears;
-- a new feature does not close an identified gap;
-- the default branch remains broken while new work continues;
-- documentation grows faster than executable evidence;
-- work is motivated by removing anxiety rather than answering a technical question.
+Decision triggers:
 
-## Readiness Dashboard
+| Date | Trigger | Response |
+| --- | --- | --- |
+| 2026-08-31 | `MAP-00` or clean baseline is red | Hold Tier 1 expansion; fix the evidence spine. |
+| 2026-09-30 | San Miguel is not runtime-ready | Do not claim cross-scene or held-out readiness; close conversion/import before neural dataset freeze. |
+| 2026-10-31 | `WL-04` is red | Continue classical measurement; do not hide missing baselines behind ML work. |
+| 2026-11-30 | Model does not beat noisy input credibly | Simplify once or publish a training negative result; do not widen the model search. |
+| 2026-12-31 | GPU conformance is red | Keep classical default and fix correctness before performance tuning or publication. |
+| 2027-01-15 | New feature request appears after freeze | Move it to `After January` unless it blocks reproduction or corrects a material claim. |
 
-Track monthly:
+The minimum honest six-month package is a correct measured paired-API classical result, one real fixed neural shader path with an honest win/loss result, and one external reproduction. If that package cannot be completed, publish the strongest passed gates and name the remaining gap; do not substitute breadth.
 
-| Metric | Six-month target | Twelve-month target |
-| --- | ---: | ---: |
-| Technical `PGE-*` requirements at `E3+` | 11 of 13 technical requirements | 13 of 13 |
-| Requirements with external transfer/publication `E4` | 2 | 5 |
-| Flagship case studies | 3 including one public-safe professional case | 4 |
-| Clean-clone supported configurations | 1 Windows configuration, two graphics backends | plus native Linux/Vulkan |
-| Active automated test domains | task, frame graph, shader ABI, math/model export | plus platform and regression coverage |
-| Public releases | 1 evidence release | 2 stable evidence releases |
-| External reproductions or upstream reviews | 1 | 3 |
-| Public talks/articles from the roadmap | 1 | 3 |
+## After January - Direction, Not Commitment
 
-The dashboard is a planning instrument, not a résumé claim.
+Choose later work from measured adoption gaps, not from the old calendar:
+
+- native Linux/Vulkan build-run-capture;
+- a materially different GPU architecture study;
+- one upstream graphics/compiler/tool contribution;
+- public talk or technical-series submission;
+- a second adopter and longer-lived maintenance evidence.
+
+Physics, networking, audio, scripting, marketplace work, general ML runtime work, USD/virtual geometry, and broad editor expansion remain outside the strategy until the six-month evidence package passes and a real user demonstrates the need.
+
+## Final Acceptance
+
+The roadmap passes only when current evidence supports the outcome at the top of this document. A visually attractive image, a merged feature, an architecture document, or an elapsed deadline is a milestone, not completion.
+
+At handoff, report:
+
+1. passed, rejected, deferred, and blocked milestones;
+2. exact build/test/capture/benchmark commands and configurations;
+3. linked raw and reviewed evidence;
+4. `PGE-*` and `WL-*` transitions justified by that evidence;
+5. deleted alternatives and remaining limitations;
+6. the first recommended post-January decision.

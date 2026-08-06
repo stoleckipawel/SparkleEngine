@@ -17,7 +17,7 @@ Strategy owns desired capabilities, priority, dated assessment, sequencing, and 
 | --- | --- | --- |
 | [B. Role Source Archive](RoleSourceArchive.md) | normalized source trace for the canonical requirements | archive; not an external entry point |
 | [C. Candidate and Repository Gap Assessment](GapAssessment.md) | evidence/readiness at one repository snapshot | dated assessment; revalidate before acting |
-| [F. Six-to-Twelve-Month Roadmap](Roadmap.md) | priority, sequencing, allocation, and gates | plan; not proof of completion |
+| [F. August 2026-January 2027 Roadmap](Roadmap.md) | six-month priority, sequencing, allocation, and gates | plan; not proof of completion |
 
 Stable IDs D and E are architecture documents in the [Architecture index](../Architecture/README.md). J and K are multithreading architecture/execution documents, and L is the engineering integration contract.
 
