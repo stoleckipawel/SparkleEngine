@@ -6,8 +6,7 @@
 
 #include "SparkleLauncher/LevelOperations.h"
 
-#include <QtCore/QStringList>
-
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -15,7 +14,7 @@ namespace SparkleLauncher
 {
 	std::string RegisterLevelCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context)
 	{
-		if (!context.IsLaunchGoal())
+		if (!context.IsLevelRunGoal())
 		{
 			return {};
 		}
@@ -34,33 +33,32 @@ namespace SparkleLauncher
 				                                           : levelModel.LoadError.toStdString());
 			        }
 
-			        QStringList missingLevelIds;
-			        QStringList blockers;
-			        for (const LauncherLevelUiEntry& level : levelModel.Levels)
+			        const QString levelId = request.RequestedLevelIds.section(',', 0, 0).trimmed();
+			        const auto found = std::find_if(
+			            levelModel.Levels.begin(),
+			            levelModel.Levels.end(),
+			            [&levelId](const LauncherLevelUiEntry& level) { return level.Id == levelId; });
+			        if (levelId.isEmpty() || found == levelModel.Levels.end())
 			        {
-				        if (!level.Selected || level.Ready)
-				        {
-					        continue;
-				        }
-				        if (level.CanSync)
-				        {
-					        missingLevelIds.push_back(level.Id);
-					        continue;
-				        }
-
-				        const QString reason = level.UnsupportedReason.isEmpty() ? level.Status : level.UnsupportedReason;
-				        blockers.push_back(QStringLiteral("%1: %2").arg(level.DisplayName, reason));
+				        return LauncherCapabilityEvaluation::Blocked("The requested catalog level does not exist.");
 			        }
-			        if (!blockers.isEmpty())
+			        if (!found->RuntimeSupported || !found->CanSelect)
 			        {
-				        return LauncherCapabilityEvaluation::Blocked(blockers.join('\n').toStdString());
+				        const QString reason = found->UnsupportedReason.isEmpty() ? found->Status : found->UnsupportedReason;
+				        return LauncherCapabilityEvaluation::Blocked(
+				            QStringLiteral("%1: %2").arg(found->DisplayName, reason).toStdString());
 			        }
-			        if (missingLevelIds.isEmpty())
+			        if (found->Selected && found->Ready)
 			        {
 				        return LauncherCapabilityEvaluation::Ready();
 			        }
+			        if (!found->CanSync)
+			        {
+				        return LauncherCapabilityEvaluation::Blocked(
+				            QStringLiteral("%1 is not ready and has no available acquisition path.").arg(found->DisplayName).toStdString());
+			        }
 
-			        LauncherOperationRequest syncRequest = BuildQuickStartOperationRequest(request, "levels.sync", missingLevelIds);
+			        LauncherOperationRequest syncRequest = BuildQuickStartOperationRequest(request, "levels.sync", {levelId});
 			        const LevelOperationPlan plan = PlanLevelOperation("levels.sync", LauncherOperationRequestMapping::Levels(syncRequest));
 			        return plan.CanRun ? LauncherCapabilityEvaluation::RunOperation(std::move(syncRequest))
 			                           : LauncherCapabilityEvaluation::Blocked(BuildCapabilityReadinessSummary(plan.ReadinessMessages));

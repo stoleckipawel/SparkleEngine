@@ -129,8 +129,7 @@ namespace SparkleLauncher
 		    operationId.startsWith("cook.") && operationId != "cook.tools.prepare" ? "cook.tools.prepare" : operationId;
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(workspacePlanOperationId.toStdString(), request);
 		const QString workspaceIdeName = ResolveSelectedWorkspaceIdeName(m_settings);
-		const bool isSetupWorkflow =
-		    operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide";
+		const bool isSetupWorkflow = operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files";
 		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId.startsWith("workspace.build")
 		    || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		const bool isCookWorkflow = operationId.startsWith("cook.") && operationId != "cook.tools.prepare";
@@ -178,10 +177,7 @@ namespace SparkleLauncher
 				    "Build files",
 				    plan.Freshness.Current ? "Ready" : "Needs refresh",
 				    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesRecoveryHint(plan.Freshness)),
-				    plan.Freshness.Current ? "ok" : "warning",
-				    operationId == "workspace.open-ide" && !plan.Freshness.Current
-				        ? CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files")
-				        : nullptr);
+				    plan.Freshness.Current ? "ok" : "warning");
 			}
 
 			if (!plan.Toolchain.RequiredToolsAvailable)

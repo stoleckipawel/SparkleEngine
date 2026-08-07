@@ -105,8 +105,6 @@ namespace SparkleLauncher
 				return QChar(0xf6e3);
 			case LauncherIcon::Cook:
 				return QChar(0xf466);
-			case LauncherIcon::Levels:
-				return QChar(0xf279);
 			case LauncherIcon::Run:
 				return QChar(0xf04b);
 			case LauncherIcon::Clean:

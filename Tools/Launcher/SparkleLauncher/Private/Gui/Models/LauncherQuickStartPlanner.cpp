@@ -11,7 +11,7 @@ namespace SparkleLauncher
 	    RegisterWorkspaceCapabilities,
 	    RegisterLevelCapabilities,
 	    RegisterCookCapabilities,
-	    RegisterLaunchCapabilities};
+	    RegisterLevelRunCapabilities};
 
 	LauncherCapabilityResolution PlanLauncherQuickStartStep(
 	    const LauncherOperationRequest& launchRequest,

@@ -76,10 +76,6 @@ namespace SparkleLauncher
 		addRule("#WorkflowSurface", "background: " + background + ";");
 		addRule("#ProcessPanel", "background: " + shell + "; border: none; border-right: 1px solid #252923; padding: 0;");
 		addRule("#OptionsPanel", "background: " + background + "; border: none;");
-		addRule(
-		    "#TitleBand",
-		    "background: #242622; border: none; border-bottom: 1px solid " + divider + "; min-height: 58px; max-height: 58px;");
-		addRule("#HeaderUtilityPanel", "background: transparent; border: none;");
 		addRule("#FooterContextPanel", "background: #242622; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#ActivityBottomPanel", "background: #181a19; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#OutputPanel", "background: #181a19; border: none;");
@@ -98,24 +94,12 @@ namespace SparkleLauncher
 		    "#ActivityRail",
 		    "background: #23262a; border: none; border-top: 1px solid " + divider + "; border-right: 1px solid " + border + ";");
 		addRule("#OutputPane", "background: #202327; border: none; border-top: 1px solid " + divider + ";");
-		addRule("#HeaderFieldLabel", "color: " + textMuted + "; font-size: 8.25pt; font-weight: 650;");
 		addRule("#FooterFieldLabel", "color: " + textMuted + "; font-size: 8.25pt; font-weight: 650;");
-		addRule(
-		    "#HeaderContextCombo",
-		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 3px 9px; color: " + textBody
-		        + "; min-height: 26px; max-height: 30px; font-size: 8.5pt;");
-		addRule("#HeaderContextCombo:focus", "border: 1px solid " + focus + ";");
 		addRule(
 		    "#FooterContextCombo",
 		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 3px 9px; color: " + textBody
 		        + "; min-height: 26px; max-height: 30px; font-size: 8.5pt;");
 		addRule("#FooterContextCombo:focus", "border: 1px solid " + focus + ";");
-		addRule(
-		    "#HeaderUtilityButton",
-		    "background: transparent; color: " + textBody
-		        + "; border: 1px solid transparent; padding: 5px 9px; font-size: 8pt; font-weight: 750;");
-		addRule("#HeaderUtilityButton:hover", "background: " + panelHover + "; color: " + textPrimary + ";");
-		addRule("#HeaderUtilityButton:focus", "border: 1px solid " + focus + ";");
 		addRule(
 		    "#OptionsScrollArea, #OptionsStack, #OptionsContent, #OperationStack, #InlineOptionsSection, #ActivityDetailsPanel",
 		    "background: transparent; border: none;");
@@ -124,7 +108,6 @@ namespace SparkleLauncher
 		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 8px;");
 		addRule("#OptionLabelCell", "background: transparent; border: none;");
 		addRule("#OptionValueCell", "background: transparent; border: none;");
-		addRule("#ActiveOperationLabel", "color: " + textPrimary + "; font-size: 15.5pt; font-weight: 850; letter-spacing: -0.18px;");
 		addRule("#CommandHeroCard", "background: transparent; border: none; border-radius: 0;");
 		addRule("#CommandHeroCard[State=\"warning\"]", "background: transparent; border: none;");
 		addRule("#CommandHeroOverlay", "background: transparent; border: none;");
@@ -206,6 +189,11 @@ namespace SparkleLauncher
 		    "background: transparent; color: " + textSecondary
 		        + "; border: 1px solid #555c64; padding: 2px 8px; font-size: 8pt; font-weight: 700;");
 		addRule("#MapCardSourceButton:hover", "background: #343a34; color: #ffffff; border-color: #697866;");
+		addRule(
+		    "#MapCardActionButton",
+		    "background: #26321f; color: #f4f7f1; border: 1px solid " + accent + "; padding: 2px 8px; font-size: 8pt; font-weight: 850;");
+		addRule("#MapCardActionButton:hover", "background: " + accent + "; color: #071006; border-color: #a8ed4f;");
+		addRule("#MapCardActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
 		addRule("#StatusActionButton", "padding: 2px 8px; font-size: 8pt; font-weight: 850;");
 		addRule("#StatusActionButton[ActionState=\"warning\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
 		addRule("#StatusActionButton[ActionState=\"warning\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");

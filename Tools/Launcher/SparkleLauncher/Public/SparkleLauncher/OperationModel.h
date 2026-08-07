@@ -12,9 +12,9 @@ namespace SparkleLauncher
 	{
 		Workspace,
 		Levels,
+		LevelRun,
 		Cooking,
-		Maintenance,
-		Launch
+		Maintenance
 	};
 
 	enum class OperationStatus

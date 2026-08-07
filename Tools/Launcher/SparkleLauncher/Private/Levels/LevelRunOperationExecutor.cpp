@@ -1,28 +1,31 @@
-#include "SparkleLauncher/LaunchOperations.h"
+#include "SparkleLauncher/LevelRunOperations.h"
 
-#include "LaunchOperationProcessRequests.h"
+#include "LevelRunOperationProcessRequests.h"
 
 #include <optional>
 
 namespace SparkleLauncher
 {
-	OperationRecord RunLaunchOperationPlan(LaunchOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback)
+	OperationRecord RunLevelRunOperationPlan(
+	    LevelRunOperationPlan plan,
+	    IProcessRunner& processRunner,
+	    ProcessOutputCallback outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);
-
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Launch operation is not ready to run." : plan.ReadinessMessages.front();
+			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Level run is not ready." : plan.ReadinessMessages.front();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
 
-		for (LaunchOperationProcessStep& step : BuildLaunchProcessStepsForPlan(plan))
+		for (LevelRunOperationProcessStep& step : BuildLevelRunProcessStepsForPlan(plan))
 		{
 			ProcessRequest request = step.Request;
 			const ProcessOutputCallback existingCallback = request.OutputCallback;
-			request.OutputCallback = [existingCallback, outputCallback](std::string_view output) {
+			request.OutputCallback = [existingCallback, outputCallback](std::string_view output)
+			{
 				if (existingCallback)
 				{
 					existingCallback(output);

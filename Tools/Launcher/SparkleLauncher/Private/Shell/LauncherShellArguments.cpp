@@ -150,16 +150,6 @@ namespace SparkleLauncher
 			return true;
 		}
 
-		if (argument == "--startup-level")
-		{
-			const std::optional<std::string_view> value = ReadRequiredValue("SparkleLauncher: --startup-level requires a value.\n");
-			if (value.has_value())
-			{
-				m_outArguments->StartupLevel = *value;
-			}
-			return value.has_value();
-		}
-
 		*m_error << "SparkleLauncher: unexpected argument '" << argument << "'.\n";
 		return false;
 	}
@@ -294,13 +284,12 @@ namespace SparkleLauncher
 		output << "Usage:\n"
 		       << "  SparkleLauncher [--root <repo-root>] [--editor-profile <profile>] [--runtime-profile <profile>] "
 		          "[--ide <visual-studio|rider>] [--compiler <msvc|clang-cl>] "
-		          "[--startup-level <level-name>] [--clean-scope <scope>] "
+		          "[--clean-scope <scope>] "
 		          "[--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]] [--run <operation-id>]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
-		       << "  SparkleLauncher --startup-level <level-name> --dry-run launch.runtime\n"
 		       << "  SparkleLauncher --force-recook --dry-run cook.all\n"
 		       << "  SparkleLauncher --clean-scope cooked --dry-run workspace.clean\n"
 		       << "  SparkleLauncher --clean-scope clean-all --dry-run workspace.clean\n";

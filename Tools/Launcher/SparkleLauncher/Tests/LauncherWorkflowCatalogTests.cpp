@@ -3,6 +3,7 @@
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/LevelOperations.h"
+#include "SparkleLauncher/LevelRunOperations.h"
 
 #include <algorithm>
 #include <iostream>
@@ -19,7 +20,7 @@ namespace SparkleLauncher::LauncherWorkflowCatalogTests
 		return condition;
 	}
 
-	static bool LevelsDomainAndProjectionAgree()
+	static bool LevelsDomainAndHomeProjectionAgree()
 	{
 		bool passed = true;
 		const std::optional<LevelOperationDefinition> levelDefinition = FindLevelOperationDefinition("levels.sync");
@@ -33,34 +34,67 @@ namespace SparkleLauncher::LauncherWorkflowCatalogTests
 		passed &= Expect(
 		    !FindBuildWorkspaceOperationDefinition("workspace.sync-levels").has_value(),
 		    "The replaced workspace.sync-levels identity must not remain registered.");
+		const std::optional<LevelRunOperationDefinition> runDefinition = FindLevelRunOperationDefinition("levels.run");
+		passed &= Expect(runDefinition.has_value(), "The Levels backend must register levels.run.");
+		passed &= Expect(
+		    runDefinition.has_value() && runDefinition->Group == "Levels",
+		    "Run Level must remain a backend Levels operation regardless of its frontend placement.");
+		LevelRunOperationRequest runRequest;
+		runRequest.LevelId = "Sponza";
+		runRequest.GraphicsApi = "vulkan";
+		const LevelRunOperationPlan runPlan = PlanLevelRunOperation("levels.run", runRequest);
+		const bool selectsRequestedLevel = std::any_of(
+		    runPlan.Environment.begin(),
+		    runPlan.Environment.end(),
+		    [](const Process::EnvironmentOverride& environment)
+		    { return environment.Name == "SPARKLE_STARTUP_LEVEL" && environment.Value == "Sponza"; });
+		passed &=
+		    Expect(selectsRequestedLevel, "The final Levels operation must pass the requested catalog identity to the runtime process.");
+		const bool selectsRequestedGraphicsApi = std::any_of(
+		    runPlan.Operation.Inputs.begin(),
+		    runPlan.Operation.Inputs.end(),
+		    [](const OperationInput& input) { return input.Name == "graphicsApi" && input.Value == "vulkan"; });
+		passed &= Expect(
+		    selectsRequestedGraphicsApi,
+		    "The final Levels operation must retain the footer-selected graphics API as a typed operation input.");
 
 		const LauncherOperationUiModel uiModel = LauncherUiModelForOperation("levels.sync");
+		passed &=
+		    Expect(uiModel.PageKind == LauncherWorkflowPageKind::Home, "The Levels operation UI projection must belong to Quick Start.");
+		const LauncherOperationUiModel runUiModel = LauncherUiModelForOperation("levels.run");
 		passed &= Expect(
-		    uiModel.PageKind == LauncherWorkflowPageKind::Levels,
-		    "The Levels operation UI projection must use the Levels page kind.");
+		    runUiModel.PageKind == LauncherWorkflowPageKind::Home,
+		    "Run Level must project into Quick Start without becoming a separate rail workflow.");
 
 		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
-		const auto levels = std::find_if(
+		const auto home = std::find_if(
 		    workflows.begin(),
 		    workflows.end(),
-		    [](const LauncherWorkflowDefinition& workflow) { return workflow.PageKind == LauncherWorkflowPageKind::Levels; });
-		passed &= Expect(levels != workflows.end(), "The frontend workflow catalog must contain a Levels projection.");
-		if (levels != workflows.end())
+		    [](const LauncherWorkflowDefinition& workflow) { return workflow.PageKind == LauncherWorkflowPageKind::Home; });
+		passed &= Expect(home != workflows.end(), "The frontend workflow catalog must contain Quick Start.");
+		if (home != workflows.end())
 		{
-			passed &= Expect(levels->OperationIds == QVector<QString>{"levels.sync"}, "Levels must project only levels.sync.");
 			passed &= Expect(
-			    levels != workflows.begin() && (levels - 1)->PageKind == LauncherWorkflowPageKind::Cook,
-			    "Levels must remain directly below Cook in the frontend projection.");
+			    home->OperationIds == QVector<QString>{LauncherHomeOperationId()},
+			    "Quick Start must retain one stable page identity.");
 		}
 
-		const auto sync = std::find_if(
+		const bool directlyProjectsLevelOperations = std::any_of(
 		    workflows.begin(),
 		    workflows.end(),
-		    [](const LauncherWorkflowDefinition& workflow) { return workflow.PageKind == LauncherWorkflowPageKind::Sync; });
-		passed &= Expect(sync != workflows.end(), "The frontend workflow catalog must contain Sync.");
+		    [](const LauncherWorkflowDefinition& workflow)
+		    { return workflow.OperationIds.contains("levels.sync") || workflow.OperationIds.contains("levels.run"); });
 		passed &= Expect(
-		    sync != workflows.end() && !sync->OperationIds.contains("levels.sync"),
-		    "Sync must not visually own the Levels operation.");
+		    !directlyProjectsLevelOperations,
+		    "Level operations must be exposed by Quick Start cards rather than a separate workflow-rail operation.");
+
+		const auto cook = std::find_if(
+		    workflows.begin(),
+		    workflows.end(),
+		    [](const LauncherWorkflowDefinition& workflow) { return workflow.PageKind == LauncherWorkflowPageKind::Cook; });
+		passed &= Expect(
+		    cook != workflows.end() && cook + 1 != workflows.end() && (cook + 1)->PageKind == LauncherWorkflowPageKind::Clean,
+		    "Clean must follow Cook after the separate Levels rail group is removed.");
 		return passed;
 	}
 }
@@ -68,7 +102,7 @@ namespace SparkleLauncher::LauncherWorkflowCatalogTests
 int main()
 {
 	using namespace SparkleLauncher::LauncherWorkflowCatalogTests;
-	if (!LevelsDomainAndProjectionAgree())
+	if (!LevelsDomainAndHomeProjectionAgree())
 	{
 		return 1;
 	}

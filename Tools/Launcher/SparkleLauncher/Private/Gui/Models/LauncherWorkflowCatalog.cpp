@@ -22,7 +22,6 @@ namespace SparkleLauncher
 		            "cook.tools.prepare",
 		            "workspace.build-all"}},
 		    {LauncherWorkflowPageKind::Cook, {"cook.shaders", "cook.textures", "cook.assets", "cook.all"}},
-		    {LauncherWorkflowPageKind::Levels, {"levels.sync"}},
 		    {LauncherWorkflowPageKind::Clean, {"workspace.clean"}},
 		};
 	}

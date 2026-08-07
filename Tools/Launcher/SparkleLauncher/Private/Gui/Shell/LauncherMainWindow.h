@@ -49,7 +49,6 @@ namespace SparkleLauncher
 	struct LauncherLevelUiModel;
 	class ResponsiveCardGridWidget;
 	struct LauncherContentSummary;
-	struct LauncherStartupLevelUiEntry;
 	enum class LauncherArtworkPreset;
 
 	class LauncherMainWindow final : public QMainWindow
@@ -116,7 +115,6 @@ namespace SparkleLauncher
 		QWidget* CreateOptionsPanel(QWidget* parent);
 		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
 		QWidget* CreateOutputPanel();
-		QWidget* CreateHeaderContextPanel(QWidget* parent);
 		QWidget* CreateFooterContextPanel(QWidget* parent);
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
@@ -173,8 +171,6 @@ namespace SparkleLauncher
 		void AddSyncLevelRow(ResponsiveCardGridWidget& grid, const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
 		void ApplyLevelActionButtonState(QLabel& statusLabel, QPushButton& button, const LauncherLevelUiEntry& level);
 		void RefreshLevelActionButtons();
-		void SyncLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
-		void CleanLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
 		void SyncAllLevels();
 		void CleanAllLevels();
 		QVector<LauncherCleanTarget> BuildLevelCleanTargets(
@@ -186,15 +182,9 @@ namespace SparkleLauncher
 		    bool selected,
 		    const QString& actionName);
 		LauncherLevelUiModel BuildLevelUiModel() const;
-		QComboBox* CreateStartupLevelCombo();
-		void PopulateStartupLevelCombo(QComboBox& combo);
-		void PopulateStartupLevelSelectors();
-		QVector<QPair<QString, QString>> BuildStartupLevelOptions() const;
-		QString ResolveStartupLevelDisplayName() const;
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
-		QPushButton* CreateQuickStartButton(const QString& operationId, const QString& label);
 		void AddHomeQuickStart(QVBoxLayout& layout);
-		void StartQuickStart(const QString& operationId);
+		void StartQuickStartLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level);
 		void ContinueQuickStart();
 		void HandleQuickStartOperationFinished(const QString& runId, const QString& operationId, bool succeeded, const QString& statusText);
 		void ReportQuickStartBlocked(const QString& statusMessage);
@@ -253,18 +243,17 @@ namespace SparkleLauncher
 		QHash<QString, int> m_workflowPageByOperation;
 		QHash<int, QString> m_lastOperationByWorkflowIndex;
 		QVector<QWidget*> m_tabOrderWidgets;
-		QComboBox* m_graphicsApiCombo = nullptr;
 		QComboBox* m_buildConfigurationCombo = nullptr;
 		QComboBox* m_workspaceCompilerCombo = nullptr;
 		QComboBox* m_workspaceIdeCombo = nullptr;
+		QComboBox* m_graphicsApiCombo = nullptr;
+		QComboBox* m_shaderBackendCombo = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
-		QVector<QComboBox*> m_startupLevelSelectors;
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_cleanButton = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QPushButton* m_toggleOutputButton = nullptr;
-		QLabel* m_activeOperationLabel = nullptr;
 		QFrame* m_actionMetaPanel = nullptr;
 		QWidget* m_activityPanel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
@@ -278,9 +267,7 @@ namespace SparkleLauncher
 		QHash<QString, QString> m_runOutputs;
 		LauncherActionHistoryModel m_actionHistory;
 		std::optional<LauncherQuickStartExecution> m_quickStartExecution;
-		QVector<QPointer<QPushButton>> m_quickStartButtons;
 		QHash<QString, PendingLevelSelectionUpdate> m_pendingLevelSelectionUpdates;
-		QHash<QString, QString> m_levelSyncRunIds;
 		QHash<QString, QPointer<QLabel>> m_levelStatusLabels;
 		QHash<QString, QPointer<QPushButton>> m_levelActionButtons;
 		QHash<QString, QString> m_sourceDependencyRunIds;

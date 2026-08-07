@@ -40,14 +40,9 @@ namespace SparkleLauncher
 			}
 
 			m_model.Levels.reserve(static_cast<qsizetype>(m_catalog.levels.size()));
-			m_model.StartupLevels.reserve(static_cast<qsizetype>(m_catalog.levels.size()));
 			for (const ProjectLevelCatalogEntry& level : m_catalog.levels)
 			{
 				m_model.Levels.push_back(BuildLevel(level));
-				if (level.selected)
-				{
-					m_model.StartupLevels.push_back(BuildStartupLevel(level));
-				}
 			}
 			return std::move(m_model);
 		}
@@ -112,17 +107,6 @@ namespace SparkleLauncher
 				return QString::fromStdString(pack->runtimeBlocker);
 			}
 			return QString::fromStdString(pack->downloadBlocker);
-		}
-
-		LauncherStartupLevelUiEntry BuildStartupLevel(const ProjectLevelCatalogEntry& level) const
-		{
-			LauncherStartupLevelUiEntry entry{
-			    .Id = QString::fromStdString(level.id),
-			    .DisplayName = DisplayNameOrId(level.displayName, level.id),
-			    .Ready = m_catalog.IsLevelReady(level)};
-
-			entry.Status = entry.Ready ? "ready" : "missing source content";
-			return entry;
 		}
 
 		QString BuildLevelDetail(const ProjectLevelCatalogEntry& level, const ProjectAssetPack* pack) const

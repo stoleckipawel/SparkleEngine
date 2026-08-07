@@ -72,26 +72,19 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int PanelVerticalMargin = 14;
 	}
 
-	namespace TitleBand
+	namespace ContextSelector
 	{
-		inline constexpr int Spacing = 14;
-		inline const QMargins Margins{20, 0, 12, 0};
-	}
-
-	namespace HeaderContext
-	{
-		inline constexpr int Spacing = 10;
 		inline constexpr int ComboHeight = 28;
-		inline constexpr int LevelComboMinWidth = 170;
-		inline constexpr int LevelComboMaxWidth = 240;
-		inline constexpr int GraphicsApiComboMinWidth = 100;
-		inline constexpr int GraphicsApiComboMaxWidth = 130;
 		inline constexpr int ConfigurationComboMinWidth = 140;
 		inline constexpr int ConfigurationComboMaxWidth = 180;
 		inline constexpr int IdeComboMinWidth = 120;
 		inline constexpr int IdeComboMaxWidth = 150;
 		inline constexpr int CompilerComboMinWidth = 100;
 		inline constexpr int CompilerComboMaxWidth = 130;
+		inline constexpr int GraphicsApiComboMinWidth = 92;
+		inline constexpr int GraphicsApiComboMaxWidth = 116;
+		inline constexpr int ShaderBackendComboMinWidth = 82;
+		inline constexpr int ShaderBackendComboMaxWidth = 108;
 	}
 
 	namespace FooterContext
@@ -231,22 +224,15 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int BodyRight = 28;
 		inline constexpr int BodyBottom = 0;
 		inline constexpr int SectionSpacing = 10;
-		inline constexpr int TileSpacing = 18;
-		inline constexpr int ProductCardMinWidth = 420;
-		inline constexpr int ProductCardMaxWidth = 720;
-		inline constexpr int ProductCardMaxColumns = 3;
 	}
 
-	namespace Card
+	namespace MapCatalog
 	{
-		inline constexpr double HomeTileAspectRatio = 1.9;
-		inline constexpr int ProductBodyTop = 14;
-		inline constexpr int ProductBodyBottom = 0;
-		inline constexpr int ProductSpacing = 12;
-
-		inline const QSize ProductArtworkSize{720, 180};
-		inline const QMargins FlushArtworkMargins{0, 0, 0, Space::Large};
-		QMargins ProductMargins(bool hasArtwork);
-		inline const QMargins ProductBodyMargins{Space::XLarge, ProductBodyTop, Space::XLarge, ProductBodyBottom};
+		inline constexpr int MinimumCardWidth = 420;
+		inline constexpr int MaximumCardWidth = 1600;
+		inline constexpr int MaximumColumns = 4;
+		inline constexpr int HorizontalSpacing = 14;
+		inline constexpr int VerticalSpacing = 14;
+		inline constexpr double CardAspectRatio = 2.75;
 	}
 }

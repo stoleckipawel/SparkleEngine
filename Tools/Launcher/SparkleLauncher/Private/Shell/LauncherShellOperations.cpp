@@ -6,7 +6,6 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LevelOperations.h"
-#include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
@@ -57,17 +56,6 @@ namespace SparkleLauncher
 		request.EditorProfile = model.EditorProfile;
 		request.RequestedCleanScope = arguments.RequestedCleanScope;
 		request.DestructiveActionConfirmed = arguments.CleanConfirmed;
-		return request;
-	}
-
-	LaunchOperationRequest BuildLaunchShellRequest(const LauncherShellModel& model, const LauncherShellArguments& arguments)
-	{
-		LaunchOperationRequest request;
-		request.RepositoryRoot = model.Repository.RootPath;
-		request.ContentId = model.ContentId;
-		request.EditorProfile = model.EditorProfile;
-		request.RuntimeProfile = model.RuntimeProfile;
-		request.StartupLevel = arguments.StartupLevel;
 		return request;
 	}
 
@@ -157,26 +145,6 @@ namespace SparkleLauncher
 		RecordLauncherShellActivity(model, plan.Operation.DisplayName + " dry-run planned");
 	}
 
-	void AppendLaunchPlanDryRun(LauncherShellModel& model, const LaunchOperationPlan& plan)
-	{
-		model.JobOutput.push_back(plan.Operation.DisplayName + " [" + std::string(plan.CanRun ? "Ready" : "Blocked") + "]");
-		model.JobOutput.push_back("Profile: " + plan.Profile);
-		model.JobOutput.push_back("Target: " + plan.TargetName);
-		model.JobOutput.push_back("Executable: " + plan.ExecutablePath.string());
-		model.JobOutput.push_back("Working directory: " + plan.WorkingDirectory.string());
-		model.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
-		for (const std::string& message : plan.ReadinessMessages)
-		{
-			model.JobOutput.push_back("Readiness: " + message);
-		}
-		for (const std::string& effect : plan.PlannedEffects)
-		{
-			model.JobOutput.push_back("Effect: " + effect);
-		}
-		model.JobOutput.push_back(plan.Operation.DryRunText);
-		RecordLauncherShellActivity(model, plan.Operation.DisplayName + " dry-run planned");
-	}
-
 	void ApplyLauncherShellDryRun(LauncherShellModel& model, const LauncherShellArguments& arguments)
 	{
 		const LauncherShellOperationRow* operation = FindLauncherShellOperation(model, arguments.DryRunOperationId);
@@ -208,12 +176,6 @@ namespace SparkleLauncher
 		if (FindMaintenanceOperationDefinition(operation->Id).has_value())
 		{
 			AppendMaintenancePlanDryRun(model, PlanMaintenanceOperation(operation->Id, BuildMaintenanceShellRequest(model, arguments)));
-			return;
-		}
-
-		if (FindLaunchOperationDefinition(operation->Id).has_value())
-		{
-			AppendLaunchPlanDryRun(model, PlanLaunchOperation(operation->Id, BuildLaunchShellRequest(model, arguments)));
 			return;
 		}
 
@@ -276,15 +238,6 @@ namespace SparkleLauncher
 		{
 			const OperationRecord operation = RunMaintenanceOperationPlan(
 			    PlanMaintenanceOperation(arguments.RunOperationId, BuildMaintenanceShellRequest(model, arguments)),
-			    processRunner,
-			    [&output](std::string_view text) { output << text; });
-			return ReportLauncherShellOperationResult(operation, output, error);
-		}
-
-		if (FindLaunchOperationDefinition(arguments.RunOperationId).has_value())
-		{
-			const OperationRecord operation = RunLaunchOperationPlan(
-			    PlanLaunchOperation(arguments.RunOperationId, BuildLaunchShellRequest(model, arguments)),
 			    processRunner,
 			    [&output](std::string_view text) { output << text; });
 			return ReportLauncherShellOperationResult(operation, output, error);

@@ -80,6 +80,21 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		return mapped;
 	}
 
+	LevelRunOperationRequest LevelRun(const LauncherOperationRequest& request)
+	{
+		LevelRunOperationRequest mapped;
+		mapped.RepositoryRoot = request.RepositoryRoot;
+		mapped.ContentId = request.ContentId.toStdString();
+		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
+		const std::vector<std::string> requestedLevels = SplitList(request.RequestedLevelIds);
+		if (!requestedLevels.empty())
+		{
+			mapped.LevelId = requestedLevels.front();
+		}
+		mapped.GraphicsApi = request.GraphicsApi.toStdString();
+		return mapped;
+	}
+
 	CookOperationRequest Cook(const LauncherOperationRequest& request)
 	{
 		CookOperationRequest mapped;
@@ -131,18 +146,6 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 			}
 		}
 		mapped.DestructiveActionConfirmed = request.ConfirmClean;
-		return mapped;
-	}
-
-	LaunchOperationRequest Launch(const LauncherOperationRequest& request)
-	{
-		LaunchOperationRequest mapped;
-		mapped.RepositoryRoot = request.RepositoryRoot;
-		mapped.ContentId = request.ContentId.toStdString();
-		mapped.EditorProfile = request.EditorProfile.toStdString();
-		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
-		mapped.StartupLevel = request.StartupLevel.toStdString();
-		mapped.GraphicsApi = request.GraphicsApi.toStdString();
 		return mapped;
 	}
 }

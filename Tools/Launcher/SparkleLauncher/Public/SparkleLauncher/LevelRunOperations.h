@@ -13,32 +13,24 @@
 
 namespace SparkleLauncher
 {
-	enum class LaunchProduct
+	struct LevelRunOperationDefinition
 	{
-		Editor,
-		Runtime
-	};
-
-	struct LaunchOperationDefinition
-	{
-		LaunchProduct Product = LaunchProduct::Editor;
 		std::string Id;
 		std::string Group;
 		std::string DisplayName;
 		std::string Description;
 	};
 
-	struct LaunchOperationRequest
+	struct LevelRunOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
 		std::string ContentId = kDefaultContentId;
-		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
-		std::string StartupLevel;
+		std::string LevelId;
 		std::string GraphicsApi = "d3d12";
 	};
 
-	struct LaunchOperationStep
+	struct LevelRunOperationStep
 	{
 		std::string Id;
 		std::string DisplayName;
@@ -46,7 +38,7 @@ namespace SparkleLauncher
 		std::filesystem::path LogPath;
 	};
 
-	struct LaunchReadinessState
+	struct LevelRunReadinessState
 	{
 		bool ExecutableReady = false;
 		bool ContentDirectoryReady = false;
@@ -55,29 +47,27 @@ namespace SparkleLauncher
 		bool CookedShadersReady = false;
 	};
 
-	struct LaunchOperationPlan
+	struct LevelRunOperationPlan
 	{
 		OperationRecord Operation;
 		std::filesystem::path RepositoryRoot;
-		LaunchOperationRequest Request;
-		LaunchProduct Product = LaunchProduct::Editor;
-		std::string Profile;
+		LevelRunOperationRequest Request;
 		std::string TargetName;
 		std::filesystem::path ExecutablePath;
 		std::filesystem::path WorkingDirectory;
 		std::vector<Process::EnvironmentOverride> Environment;
-		std::vector<LaunchOperationStep> Steps;
+		std::vector<LevelRunOperationStep> Steps;
 		std::vector<std::string> PlannedEffects;
 		std::vector<std::string> ReadinessMessages;
-		LaunchReadinessState Readiness;
+		LevelRunReadinessState Readiness;
 		bool CanRun = false;
 	};
 
-	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions();
-	std::optional<LaunchOperationDefinition> FindLaunchOperationDefinition(std::string_view operationId);
-	LaunchOperationPlan PlanLaunchOperation(std::string_view operationId, const LaunchOperationRequest& request);
-	OperationRecord RunLaunchOperationPlan(
-	    LaunchOperationPlan plan,
+	const std::vector<LevelRunOperationDefinition>& GetLevelRunOperationDefinitions();
+	std::optional<LevelRunOperationDefinition> FindLevelRunOperationDefinition(std::string_view operationId);
+	LevelRunOperationPlan PlanLevelRunOperation(std::string_view operationId, const LevelRunOperationRequest& request);
+	OperationRecord RunLevelRunOperationPlan(
+	    LevelRunOperationPlan plan,
 	    IProcessRunner& processRunner,
 	    ProcessOutputCallback outputCallback = {});
 }

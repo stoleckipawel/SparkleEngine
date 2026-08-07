@@ -16,7 +16,6 @@ namespace SparkleLauncher
 	{
 		HeroPanorama,
 		WorkflowBanner,
-		ProductCard,
 	};
 
 	enum class LauncherArtworkGradientAxis

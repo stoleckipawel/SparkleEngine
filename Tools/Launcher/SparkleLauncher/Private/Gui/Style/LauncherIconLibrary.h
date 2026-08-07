@@ -12,7 +12,6 @@ namespace SparkleLauncher
 		Sync,
 		Build,
 		Cook,
-		Levels,
 		Run,
 		Clean,
 		Queued,

@@ -47,6 +47,21 @@ namespace SparkleLauncher
 		};
 	}
 
+	static QVector<LauncherSelectionOption> BuildShaderBackendOptions(const BuildToolchainStatus& toolchain)
+	{
+		const ToolchainItemStatus* shaderCompilerSdk = FindToolchainItem(toolchain, "shader-compiler-sdk");
+		const QString detail = shaderCompilerSdk == nullptr
+		    ? QStringLiteral("The cook prerequisite check will report any missing shader compiler SDK files.")
+		    : PathDetail(
+		          shaderCompilerSdk->Path,
+		          shaderCompilerSdk->Detail.empty() ? QStringLiteral("The DXC and Slang runtime bundle is installed.")
+		                                            : QString::fromStdString(shaderCompilerSdk->Detail));
+		return {
+		    {"DXC", "dxc", detail, true},
+		    {"Slang", "slang", detail, true},
+		};
+	}
+
 	struct BuildConfigurationSupport final
 	{
 		QString DisplayName;
@@ -144,6 +159,7 @@ namespace SparkleLauncher
 	{
 		return {
 		    .GraphicsApis = BuildGraphicsApiOptions(toolchain),
+		    .ShaderBackends = BuildShaderBackendOptions(toolchain),
 		    .BuildConfigurations = BuildConfigurationOptions(),
 		    .Compilers = BuildCompilerOptions(toolchain),
 		    .Ides = BuildIdeOptions(toolchain),

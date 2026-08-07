@@ -5,7 +5,7 @@
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
-#include "SparkleLauncher/LaunchOperations.h"
+#include "SparkleLauncher/LevelRunOperations.h"
 
 #include <string>
 #include <utility>
@@ -19,11 +19,11 @@ namespace SparkleLauncher
 			return QStringLiteral("cook.all");
 		}
 
-		const LaunchOperationPlan launchPlan =
-		    PlanLaunchOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::Launch(request));
-		const bool meshesMissing = !launchPlan.Readiness.CookedMeshesReady;
-		const bool texturesMissing = !launchPlan.Readiness.CookedTexturesReady;
-		const bool shadersMissing = !launchPlan.Readiness.CookedShadersReady;
+		const LevelRunOperationPlan runPlan =
+		    PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
+		const bool meshesMissing = !runPlan.Readiness.CookedMeshesReady;
+		const bool texturesMissing = !runPlan.Readiness.CookedTexturesReady;
+		const bool shadersMissing = !runPlan.Readiness.CookedShadersReady;
 		const int missingCount = static_cast<int>(meshesMissing) + static_cast<int>(texturesMissing) + static_cast<int>(shadersMissing);
 		if (missingCount > 1)
 		{
@@ -42,7 +42,7 @@ namespace SparkleLauncher
 
 	std::string RegisterCookCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context)
 	{
-		if (!context.IsLaunchGoal())
+		if (!context.IsLevelRunGoal())
 		{
 			return {};
 		}
@@ -78,10 +78,10 @@ namespace SparkleLauncher
 		        {std::string(LauncherCapabilityId::SelectedLevels), std::string(LauncherCapabilityId::CookingTools)},
 		        [request](bool invalidated)
 		        {
-			        const LaunchOperationPlan launchPlan =
-			            PlanLaunchOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::Launch(request));
-			        const bool cookedContentReady = !invalidated && launchPlan.Readiness.CookedMeshesReady
-			            && launchPlan.Readiness.CookedTexturesReady && launchPlan.Readiness.CookedShadersReady;
+			        const LevelRunOperationPlan runPlan =
+			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
+			        const bool cookedContentReady = !invalidated && runPlan.Readiness.CookedMeshesReady
+			            && runPlan.Readiness.CookedTexturesReady && runPlan.Readiness.CookedShadersReady;
 			        if (cookedContentReady)
 			        {
 				        return LauncherCapabilityEvaluation::Ready();

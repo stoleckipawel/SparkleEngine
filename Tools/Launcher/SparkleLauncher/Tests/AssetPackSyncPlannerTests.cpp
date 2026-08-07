@@ -1,5 +1,5 @@
 #include "AssetPackSyncPlanner.h"
-#include "BuildWorkspaceProcessRequests.h"
+#include "LevelOperationProcessRequests.h"
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
@@ -205,25 +205,25 @@ namespace SparkleLauncher::AssetPackSyncPlannerTests
 
 	void ExecutionPlanDriftIsRejected()
 	{
-		BuildWorkspaceOperationPlan plan;
-		BuildWorkspaceOperationStep plannedStep;
+		LevelOperationPlan plan;
+		LevelOperationStep plannedStep;
 		plannedStep.Id = "sync-asset-pack-Example";
 		plannedStep.DisplayName = "Acquire Example";
 		plannedStep.DisplayCommandLine = "cmake -DVALUE=one";
 		plannedStep.LogPath = "Example.log";
 		plan.Steps.push_back(plannedStep);
 
-		BuildWorkspaceProcessStep executableStep;
+		LevelOperationProcessStep executableStep;
 		executableStep.Id = plannedStep.Id;
 		executableStep.DisplayName = plannedStep.DisplayName;
 		executableStep.Request.ExecutablePath = "cmake";
 		executableStep.Request.Arguments = {"-DVALUE=one"};
 		executableStep.Request.LogPath = plannedStep.LogPath;
-		std::vector<BuildWorkspaceProcessStep> executableSteps = {executableStep};
-		Require(BuildWorkspaceExecutionPlanMatches(plan, executableSteps), "Identical execution plan was rejected.");
+		std::vector<LevelOperationProcessStep> executableSteps = {executableStep};
+		Require(LevelOperationExecutionPlanMatches(plan, executableSteps), "Identical execution plan was rejected.");
 
 		executableSteps.front().Request.Arguments = {"-DVALUE=two"};
-		Require(!BuildWorkspaceExecutionPlanMatches(plan, executableSteps), "Changed process arguments were accepted after planning.");
+		Require(!LevelOperationExecutionPlanMatches(plan, executableSteps), "Changed process arguments were accepted after planning.");
 	}
 
 	using TestFunction = void (*)();

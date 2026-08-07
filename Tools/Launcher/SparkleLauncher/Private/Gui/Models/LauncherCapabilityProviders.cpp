@@ -1,35 +1,25 @@
 #include "LauncherCapabilityProviders.h"
 
-#include "SparkleLauncher/LaunchOperations.h"
-
-#include <optional>
-
 namespace SparkleLauncher
 {
-	bool LauncherCapabilityContext::IsLaunchGoal() const
+	bool LauncherCapabilityContext::IsLevelRunGoal() const
 	{
-		return FindLaunchOperationDefinition(Request.OperationId.toStdString()).has_value();
-	}
-
-	bool LauncherCapabilityContext::IsRuntimeProduct() const
-	{
-		const std::optional<LaunchOperationDefinition> definition = FindLaunchOperationDefinition(Request.OperationId.toStdString());
-		return definition.has_value() && definition->Product == LaunchProduct::Runtime;
+		return Request.OperationId == QStringLiteral("levels.run");
 	}
 
 	QString LauncherCapabilityContext::ProductBuildOperationId() const
 	{
-		return IsRuntimeProduct() ? QStringLiteral("workspace.build.runtime") : QStringLiteral("workspace.build.editor");
+		return QStringLiteral("workspace.build.runtime");
 	}
 
 	std::string LauncherCapabilityContext::ProductCapabilityId() const
 	{
-		return IsRuntimeProduct() ? "product.runtime" : "product.editor";
+		return "product.runtime";
 	}
 
 	std::string LauncherCapabilityContext::ProjectCapabilityId() const
 	{
-		return IsRuntimeProduct() ? "content.project.runtime" : "content.project.editor";
+		return "content.project.runtime";
 	}
 
 	std::string BuildCapabilityReadinessSummary(const std::vector<std::string>& messages)

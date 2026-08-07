@@ -12,7 +12,6 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
-#include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <QtCore/QCoreApplication>
@@ -38,6 +37,7 @@ namespace SparkleLauncher
 
 		if (m_selectedOperationId == LauncherHomeOperationId())
 		{
+			SyncAllLevels();
 			return;
 		}
 
@@ -74,6 +74,11 @@ namespace SparkleLauncher
 		{
 			return;
 		}
+		if (m_selectedOperationId == LauncherHomeOperationId())
+		{
+			CleanAllLevels();
+			return;
+		}
 
 		if (m_selectedOperationId == "workspace.clean")
 		{
@@ -89,12 +94,6 @@ namespace SparkleLauncher
 			}
 
 			StartOperation(std::move(request), "Clean All");
-			return;
-		}
-
-		if (m_selectedOperationId == "levels.sync")
-		{
-			CleanAllLevels();
 			return;
 		}
 
@@ -199,8 +198,8 @@ namespace SparkleLauncher
 			return m_settings.CleanScope().contains("cooked");
 		}
 
-		return operationId == "levels.sync" || operationId.startsWith("workspace.build.") || operationId.startsWith("launch.")
-		    || operationId.startsWith("cook.");
+		return operationId == LauncherHomeOperationId() || operationId == "levels.sync" || operationId == "levels.run"
+		    || operationId.startsWith("workspace.build.") || operationId.startsWith("cook.");
 	}
 
 	bool LauncherMainWindow::OperationNeedsConfirmation(const QString& operationId) const
@@ -295,28 +294,10 @@ namespace SparkleLauncher
 		{
 			return "Run Cook > Cook Shaders, then retry this workflow.";
 		}
-		if (statusText.contains("executable is missing", Qt::CaseInsensitive) || statusText.contains("missing", Qt::CaseInsensitive))
-		{
-			if (operationId == "launch.runtime")
-			{
-				return "Run Build > Build Runtime, then retry this workflow.";
-			}
-			if (FindLaunchOperationDefinition(operationId.toStdString()).has_value())
-			{
-				return "Run Build > Build Editor, then retry this workflow.";
-			}
-		}
-
 		if (operationId.startsWith("cook."))
 		{
 			return "Review the output below. If tools or cooked inputs are missing, run Build Cooking Tools before retrying.";
 		}
-
-		if (FindLaunchOperationDefinition(operationId.toStdString()).has_value())
-		{
-			return "Review the output below. If local artifacts are missing, build the matching target before retrying.";
-		}
-
 		return "Review the output below, adjust the selected options, then retry.";
 	}
 

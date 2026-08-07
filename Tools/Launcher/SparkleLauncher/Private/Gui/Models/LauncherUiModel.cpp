@@ -50,49 +50,21 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::None,
 			    {},
 			    "Explore Sparkle",
-			    "Choose Editor, Runtime, or the selected IDE below. Products use the top-bar level and graphics API and launch from local "
-			    "source artifacts when "
-			    "available.",
+			    "Choose a level; Quick Start acquires missing content, prepares build and cook prerequisites, then runs that map.",
 			    "workflow-home-quickstart.png");
 		}
-		if (operationId == "launch.editor")
+		if (operationId == "levels.run")
 		{
 			return MakeOperationUiModel(
 			    operationId,
-			    "Open Editor",
-			    "Open",
-			    LauncherWorkflowPageKind::Launch,
-			    LauncherActionImpactKind::LaunchProcess,
-			    "Product shortcut: opens the selected editor directly from Quick Start when ready.",
-			    "Launch view",
-			    "Uses the level and graphics API selected in the top bar.",
-			    "workflow-editor-open.png");
-		}
-		if (operationId == "launch.runtime")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Open Runtime",
-			    "Open",
-			    LauncherWorkflowPageKind::Launch,
-			    LauncherActionImpactKind::LaunchProcess,
-			    "Product shortcut: opens the selected runtime directly from Quick Start when ready.",
-			    "Launch view",
-			    "Uses the level and graphics API selected in the top bar.",
-			    "workflow-runtime-open.png");
-		}
-		if (operationId == "workspace.open-ide")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Open IDE",
-			    "Open",
-			    LauncherWorkflowPageKind::Launch,
-			    LauncherActionImpactKind::LaunchProcess,
-			    "Navigation only: opens the selected IDE once generated workspace files are current.",
-			    "Workspace files",
-			    "Refreshes workspace files for the selected toolchain and opens the IDE when the workspace is current.",
-			    "workflow-open-ide.png");
+			    "Run Level",
+			    "Run",
+			    LauncherWorkflowPageKind::Home,
+			    LauncherActionImpactKind::LevelAssets,
+			    "Quick Start goal: prepares the selected level and its runtime prerequisites, then runs it.",
+			    "Run level",
+			    "Uses the level selected from its Quick Start card.",
+			    "workflow-home-quickstart.png");
 		}
 		if (operationId == "workspace.sync-code")
 		{
@@ -141,7 +113,7 @@ namespace SparkleLauncher
 			    operationId,
 			    "Sync Levels",
 			    "Sync",
-			    LauncherWorkflowPageKind::Levels,
+			    LauncherWorkflowPageKind::Home,
 			    LauncherActionImpactKind::LevelAssets,
 			    "Levels: syncs or cleans maps and their asset packs without changing code or SDK dependencies.",
 			    "Levels and assets",
@@ -171,7 +143,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::BuildOutputs,
 			    "Build outputs: optional local rebuild of the editor for development work.",
 			    "Build outputs",
-			    "Creates the local editor artifact used by Quick Start and manual launch workflows.",
+			    "Creates the local editor artifact used for development work.",
 			    "workflow-editor-build.png");
 		}
 		if (operationId == "workspace.build.runtime")
@@ -184,7 +156,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::BuildOutputs,
 			    "Build outputs: optional local rebuild of the runtime for development work.",
 			    "Build outputs",
-			    "Creates the local runtime artifact used by Quick Start and manual launch workflows.",
+			    "Creates the local runtime artifact used for development work.",
 			    "workflow-runtime-build.png");
 		}
 		if (operationId == "cook.tools.prepare")
@@ -302,16 +274,12 @@ namespace SparkleLauncher
 		{
 			case LauncherWorkflowPageKind::Home:
 				return "Quick Start";
-			case LauncherWorkflowPageKind::Launch:
-				return "Launch";
 			case LauncherWorkflowPageKind::Sync:
 				return "Sync";
 			case LauncherWorkflowPageKind::Build:
 				return "Build";
 			case LauncherWorkflowPageKind::Cook:
 				return "Cook";
-			case LauncherWorkflowPageKind::Levels:
-				return "Levels";
 			case LauncherWorkflowPageKind::Clean:
 				return "Clean";
 			case LauncherWorkflowPageKind::Unknown:
@@ -336,8 +304,6 @@ namespace SparkleLauncher
 				return "Build outputs";
 			case LauncherActionImpactKind::CookedOutputs:
 				return "Cooked outputs";
-			case LauncherActionImpactKind::LaunchProcess:
-				return "Launch process";
 			case LauncherActionImpactKind::GeneratedState:
 				return "Generated state";
 		}

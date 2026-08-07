@@ -12,4 +12,5 @@ namespace SparkleLauncher
 	};
 
 	std::vector<LevelOperationProcessStep> BuildLevelOperationProcessSteps(const LevelOperationPlan& plan);
+	bool LevelOperationExecutionPlanMatches(const LevelOperationPlan& plan, const std::vector<LevelOperationProcessStep>& processSteps);
 }

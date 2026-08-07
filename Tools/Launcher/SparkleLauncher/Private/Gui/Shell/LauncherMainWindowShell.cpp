@@ -40,12 +40,12 @@ namespace SparkleLauncher
 	static constexpr int kLauncherIconSize = LauncherUi::Icon::DefaultSize;
 	static constexpr const char* kColorStateQueued = LauncherUi::Color::StateQueued;
 
-	static void ApplyContextComboMetrics(QComboBox& combo, int minWidth, int maxWidth)
+	static void ApplyFooterContextComboMetrics(QComboBox& combo, int minWidth, int maxWidth)
 	{
 		combo.setMinimumWidth(minWidth);
 		combo.setMaximumWidth(maxWidth);
-		combo.setMinimumHeight(LauncherUi::HeaderContext::ComboHeight);
-		combo.setMaximumHeight(LauncherUi::HeaderContext::ComboHeight);
+		combo.setMinimumHeight(LauncherUi::ContextSelector::ComboHeight);
+		combo.setMaximumHeight(LauncherUi::ContextSelector::ComboHeight);
 	}
 
 	static void PopulateBoundContextCombo(
@@ -171,28 +171,6 @@ namespace SparkleLauncher
 		layout->setContentsMargins(0, 0, 0, 0);
 		layout->setSpacing(0);
 
-		QFrame* titleBand = new QFrame(panel);
-		titleBand->setObjectName("TitleBand");
-		QHBoxLayout* titleBandLayout = new QHBoxLayout(titleBand);
-		titleBandLayout->setContentsMargins(LauncherUi::TitleBand::Margins);
-		titleBandLayout->setSpacing(LauncherUi::TitleBand::Spacing);
-
-		QVBoxLayout* titleStack = new QVBoxLayout();
-		titleStack->setContentsMargins(0, 0, 0, 0);
-		titleStack->setSpacing(0);
-		m_activeOperationLabel = new QLabel("No workflow selected", titleBand);
-		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
-		m_activeOperationLabel->setAccessibleName("Selected workflow");
-		titleStack->addWidget(m_activeOperationLabel, 0, Qt::AlignVCenter);
-		titleBandLayout->addLayout(titleStack, 1);
-
-		QWidget* headerUtilities = CreateHeaderContextPanel(titleBand);
-		if (headerUtilities != nullptr)
-		{
-			titleBandLayout->addWidget(headerUtilities, 0, Qt::AlignRight | Qt::AlignVCenter);
-		}
-		layout->addWidget(titleBand, 0);
-
 		if (m_operationStack != nullptr)
 		{
 			m_operationStack->setParent(panel);
@@ -237,43 +215,6 @@ namespace SparkleLauncher
 		return panel;
 	}
 
-	QWidget* LauncherMainWindow::CreateHeaderContextPanel(QWidget* parent)
-	{
-		QFrame* panel = new QFrame(parent);
-		panel->setObjectName("HeaderUtilityPanel");
-		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
-		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(LauncherUi::HeaderContext::Spacing);
-
-		QLabel* levelLabel = CreateFieldLabel("Level");
-		levelLabel->setObjectName("HeaderFieldLabel");
-		rowLayout->addWidget(levelLabel, 0);
-		QComboBox* levelCombo = CreateStartupLevelCombo();
-		levelCombo->setObjectName("HeaderContextCombo");
-		levelCombo->setAccessibleName("Startup level");
-		levelCombo->setToolTip("Startup level used by editor and runtime launches.");
-		ApplyContextComboMetrics(*levelCombo, LauncherUi::HeaderContext::LevelComboMinWidth, LauncherUi::HeaderContext::LevelComboMaxWidth);
-		levelLabel->setBuddy(levelCombo);
-		rowLayout->addWidget(levelCombo, 0);
-
-		QLabel* graphicsApiLabel = CreateFieldLabel("Graphics API");
-		graphicsApiLabel->setObjectName("HeaderFieldLabel");
-		rowLayout->addWidget(graphicsApiLabel, 0);
-		m_graphicsApiCombo = CreateContextCombo(&LauncherSettings::SetGraphicsApi);
-		m_graphicsApiCombo->setObjectName("HeaderContextCombo");
-		m_graphicsApiCombo->setAccessibleName("Graphics API");
-		m_graphicsApiCombo->setToolTip(
-		    "Graphics API used by Quick Start. Available backends are selectable; supported backends that need setup are shown disabled.");
-		ApplyContextComboMetrics(
-		    *m_graphicsApiCombo,
-		    LauncherUi::HeaderContext::GraphicsApiComboMinWidth,
-		    LauncherUi::HeaderContext::GraphicsApiComboMaxWidth);
-		graphicsApiLabel->setBuddy(m_graphicsApiCombo);
-		rowLayout->addWidget(m_graphicsApiCombo, 0);
-
-		return panel;
-	}
-
 	QWidget* LauncherMainWindow::CreateFooterContextPanel(QWidget* parent)
 	{
 		QFrame* panel = new QFrame(parent);
@@ -293,7 +234,7 @@ namespace SparkleLauncher
 		const auto finishCombo = [rowLayout](QLabel& label, QComboBox& combo, int minWidth, int maxWidth)
 		{
 			combo.setObjectName("FooterContextCombo");
-			ApplyContextComboMetrics(combo, minWidth, maxWidth);
+			ApplyFooterContextComboMetrics(combo, minWidth, maxWidth);
 			label.setBuddy(&combo);
 			rowLayout->addWidget(&combo, 0);
 		};
@@ -306,8 +247,8 @@ namespace SparkleLauncher
 		finishCombo(
 		    *configurationLabel,
 		    *m_buildConfigurationCombo,
-		    LauncherUi::HeaderContext::ConfigurationComboMinWidth,
-		    LauncherUi::HeaderContext::ConfigurationComboMaxWidth);
+		    LauncherUi::ContextSelector::ConfigurationComboMinWidth,
+		    LauncherUi::ContextSelector::ConfigurationComboMaxWidth);
 
 		QLabel* compilerLabel = addLabel("Compiler");
 		m_workspaceCompilerCombo = CreateContextCombo(&LauncherSettings::SetWorkspaceCompiler);
@@ -318,19 +259,39 @@ namespace SparkleLauncher
 		finishCombo(
 		    *compilerLabel,
 		    *m_workspaceCompilerCombo,
-		    LauncherUi::HeaderContext::CompilerComboMinWidth,
-		    LauncherUi::HeaderContext::CompilerComboMaxWidth);
+		    LauncherUi::ContextSelector::CompilerComboMinWidth,
+		    LauncherUi::ContextSelector::CompilerComboMaxWidth);
 
 		QLabel* ideLabel = addLabel("IDE");
 		m_workspaceIdeCombo = CreateContextCombo(&LauncherSettings::SetWorkspaceIde);
 		m_workspaceIdeCombo->setAccessibleName("IDE");
 		m_workspaceIdeCombo->setToolTip(
-		    "IDE opened by Quick Start. Detected IDEs are selectable; supported missing IDEs remain visible for setup.");
+		    "IDE used when generating workspace files. Detected IDEs are selectable; supported missing IDEs remain visible for setup.");
 		finishCombo(
 		    *ideLabel,
 		    *m_workspaceIdeCombo,
-		    LauncherUi::HeaderContext::IdeComboMinWidth,
-		    LauncherUi::HeaderContext::IdeComboMaxWidth);
+		    LauncherUi::ContextSelector::IdeComboMinWidth,
+		    LauncherUi::ContextSelector::IdeComboMaxWidth);
+
+		QLabel* graphicsApiLabel = addLabel("Graphics API");
+		m_graphicsApiCombo = CreateContextCombo(&LauncherSettings::SetGraphicsApi);
+		m_graphicsApiCombo->setAccessibleName("Graphics API");
+		m_graphicsApiCombo->setToolTip("Graphics API passed to a level runtime launched from Quick Start.");
+		finishCombo(
+		    *graphicsApiLabel,
+		    *m_graphicsApiCombo,
+		    LauncherUi::ContextSelector::GraphicsApiComboMinWidth,
+		    LauncherUi::ContextSelector::GraphicsApiComboMaxWidth);
+
+		QLabel* shaderBackendLabel = addLabel("Shader Compiler");
+		m_shaderBackendCombo = CreateContextCombo(&LauncherSettings::SetShaderBackend);
+		m_shaderBackendCombo->setAccessibleName("Shader Compiler");
+		m_shaderBackendCombo->setToolTip("DXC or Slang backend passed to shader cook operations.");
+		finishCombo(
+		    *shaderBackendLabel,
+		    *m_shaderBackendCombo,
+		    LauncherUi::ContextSelector::ShaderBackendComboMinWidth,
+		    LauncherUi::ContextSelector::ShaderBackendComboMaxWidth);
 		return panel;
 	}
 
@@ -364,6 +325,12 @@ namespace SparkleLauncher
 		    m_settings,
 		    &LauncherSettings::SetGraphicsApi);
 		PopulateBoundContextCombo(
+		    m_shaderBackendCombo,
+		    model.ShaderBackends,
+		    m_settings.ShaderBackend(),
+		    m_settings,
+		    &LauncherSettings::SetShaderBackend);
+		PopulateBoundContextCombo(
 		    m_buildConfigurationCombo,
 		    model.BuildConfigurations,
 		    m_settings.BuildConfiguration(),
@@ -394,10 +361,9 @@ namespace SparkleLauncher
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
 		const bool isQuickStart = operationId == LauncherHomeOperationId();
-		const bool isLevelCatalog = operationId == "levels.sync";
 		scrollArea->setAlignment(isQuickStart ? Qt::AlignTop : (Qt::AlignLeft | Qt::AlignTop));
 		content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-		if (!isQuickStart && !isLevelCatalog)
+		if (!isQuickStart)
 		{
 			content->setMaximumWidth(LauncherUi::Page::MaxContentWidth);
 		}

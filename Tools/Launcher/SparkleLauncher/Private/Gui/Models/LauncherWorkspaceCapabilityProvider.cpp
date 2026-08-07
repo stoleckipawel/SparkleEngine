@@ -30,21 +30,6 @@ namespace SparkleLauncher
 			                                   : LauncherCapabilityEvaluation::DependenciesRequired(
 			                                         BuildCapabilityReadinessSummary(generatePlan.ReadinessMessages));
 		        }});
-		if (!error.empty() || request.OperationId != "workspace.open-ide")
-		{
-			return error;
-		}
-
-		return registry.Register(
-		    {"workspace.open-ide",
-		        {std::string(LauncherCapabilityId::BuildFiles)},
-		        [request](bool)
-		        {
-			        const BuildWorkspaceOperationPlan plan =
-			            PlanBuildWorkspaceOperation("workspace.open-ide", LauncherOperationRequestMapping::BuildWorkspace(request));
-			        return plan.CanRun
-			            ? LauncherCapabilityEvaluation::RunOperation(BuildQuickStartOperationRequest(request, "workspace.open-ide"))
-			            : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
-		        }});
+		return error;
 	}
 }

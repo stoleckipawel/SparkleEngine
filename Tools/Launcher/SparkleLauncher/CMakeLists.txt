@@ -3,9 +3,9 @@ set(SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ArtifactNaming.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/BuildProfileCatalog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/CookOperations.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LaunchOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherContentDefaults.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LevelOperations.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LevelRunOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/MaintenanceOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherPaths.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/OperationModel.h
@@ -69,11 +69,15 @@ set(SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperationExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperationProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelRunOperationExecutor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelRunOperationProcessRequests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelRunOperations.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/AssetPackSyncPlanner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperationProcessRequests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelRunOperationProcessRequests.h
 )
 
 set(SPARKLE_LAUNCHER_CORE_COOK_SOURCES
@@ -96,16 +100,6 @@ set(SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/MaintenanceOperationProcessRequests.h
 )
 
-set(SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperationExecutor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperationProcessRequests.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperations.cpp
-)
-
-set(SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperationProcessRequests.h
-)
-
 find_package(Qt6 6.8 REQUIRED COMPONENTS Widgets)
 
 set(SPARKLE_LAUNCHER_GUI_SOURCES
@@ -117,7 +111,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationService.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherActionHistoryModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCleanUiModel.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContextUiModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContextUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.cpp
@@ -127,7 +121,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkspaceCapabilityProvider.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelCapabilityProvider.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCookCapabilityProvider.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLaunchCapabilityProvider.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelRunCapabilityProvider.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherQuickStartExecution.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherQuickStartPlanner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContentModel.cpp
@@ -154,7 +148,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherHomeWidgets.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherLayoutWidgets.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherOutputWidgets.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherSelectionWidgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherSelectionWidgets.cpp
 )
 
 set(SPARKLE_LAUNCHER_GUI_HEADERS
@@ -167,7 +161,7 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationService.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherActionHistoryModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCleanUiModel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContextUiModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContextUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.h
@@ -189,7 +183,7 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherHomeWidgets.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherLayoutWidgets.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherOutputWidgets.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherSelectionWidgets.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherSelectionWidgets.h
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
@@ -221,8 +215,6 @@ add_library(SparkleLauncherCore STATIC
     ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS}
     ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES}
     ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS}
-    ${SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES}
-    ${SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS}
 )
 sparkle_configure_host_tool_target(SparkleLauncherCore)
 sparkle_configure_launcher_artifacts(SparkleLauncherCore)
@@ -236,7 +228,6 @@ target_include_directories(SparkleLauncherCore
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch
 )
 
 target_compile_features(SparkleLauncherCore PUBLIC cxx_std_20)
@@ -459,7 +450,7 @@ add_test(NAME launcher_workflow_catalog COMMAND LauncherWorkflowCatalogTests)
 set_tests_properties(launcher_workflow_catalog PROPERTIES LABELS "Launcher;UI;Workflow")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS})
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES} ${SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES} ${SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES} ${SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Probe PREFIX "Probe" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Probe/SparkleLauncherProbe.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.h ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CapabilityGraphTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherQuickStartExecutionTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherContextUiModelTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherWorkflowCatalogTests.cpp)

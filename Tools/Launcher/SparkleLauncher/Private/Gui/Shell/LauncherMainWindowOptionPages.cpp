@@ -44,9 +44,9 @@ namespace SparkleLauncher
 
 	bool LauncherMainWindow::UsesBuildEnvironmentStatus(const QString& operationId)
 	{
-		return operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide"
-		    || operationId == "workspace.sync-code" || operationId == "workspace.build-all" || operationId == "workspace.build.editor"
-		    || operationId == "launcher.build.self" || operationId == "workspace.build.runtime" || operationId.startsWith("cook.");
+		return operationId == "workspace.generate-build-files" || operationId == "workspace.sync-code"
+		    || operationId == "workspace.build-all" || operationId == "workspace.build.editor" || operationId == "launcher.build.self"
+		    || operationId == "workspace.build.runtime" || operationId.startsWith("cook.");
 	}
 
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
@@ -60,12 +60,6 @@ namespace SparkleLauncher
 		if (operationId == "cook.shaders")
 		{
 			AddShaderCookOptions(layout);
-			return;
-		}
-
-		if (operationId == "levels.sync")
-		{
-			AddSyncLevelContentGroups(layout);
 			return;
 		}
 
@@ -86,7 +80,8 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddShaderCookOptions(QVBoxLayout& layout)
 	{
-		QVBoxLayout* selectionLayout = AddOptionGroup(layout, "Options", "Choose the shader package, compiler, and runtime binaries.");
+		QVBoxLayout* selectionLayout =
+		    AddOptionGroup(layout, "Options", "Choose shader packages and binary targets. The footer owns the DXC/Slang selection.");
 
 		AddOptionField(
 		    *selectionLayout,
@@ -102,14 +97,6 @@ namespace SparkleLauncher
 		            {"VisualizeBuffers", "VisualizeBuffers"}},
 		        m_settings.ShaderPackages(),
 		        &LauncherSettings::SetShaderPackages));
-		AddOptionField(
-		    *selectionLayout,
-		    "Compiler backend",
-		    CreateValueCombo(
-		        {{"Auto select", "auto"}, {"DXC", "dxc"}, {"Slang", "slang"}},
-		        m_settings.ShaderBackend(),
-		        &LauncherSettings::SetShaderBackend));
-
 		QComboBox* targetPresetCombo = CreateValueCombo(
 		    {{"Default runtime set (DxilSm66 + SpirV16)", "default"},
 		        {"DirectX 12 only (DxilSm66)", "d3d12"},

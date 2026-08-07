@@ -7,11 +7,6 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/Qt>
-#include <QtGui/QFont>
-#include <QtGui/QLinearGradient>
-#include <QtGui/QPainter>
-#include <QtGui/QPainterPath>
-#include <QtGui/QPen>
 #include <QtGui/QPixmap>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QHBoxLayout>
@@ -61,87 +56,6 @@ namespace SparkleLauncher
 		}
 
 		return {};
-	}
-
-	static void DrawRiderMark(QPainter& painter, const QRect& bounds)
-	{
-		QLinearGradient gradient(bounds.topLeft(), bounds.bottomRight());
-		gradient.setColorAt(0.0, QColor(255, 122, 0));
-		gradient.setColorAt(0.46, QColor(255, 0, 141));
-		gradient.setColorAt(1.0, QColor(85, 70, 255));
-		painter.fillRect(bounds, gradient);
-
-		const QRect center = bounds.adjusted(18, 18, -18, -18);
-		painter.fillRect(center, QColor(10, 10, 12));
-		QFont markFont = painter.font();
-		markFont.setBold(true);
-		markFont.setPixelSize(34);
-		painter.setFont(markFont);
-		painter.setPen(Qt::white);
-		painter.drawText(center.adjusted(10, 6, -4, -14), Qt::AlignLeft | Qt::AlignVCenter, "RD");
-		painter.fillRect(QRect(center.left() + 11, center.bottom() - 18, 34, 4), Qt::white);
-	}
-
-	static void DrawVisualStudioMark(QPainter& painter, const QRect& bounds)
-	{
-		const QPointF left(bounds.left() + 8, bounds.center().y());
-		const QPointF top(bounds.left() + bounds.width() * 0.62, bounds.top() + 8);
-		const QPointF right(bounds.right() - 8, bounds.center().y());
-		const QPointF bottom(bounds.left() + bounds.width() * 0.62, bounds.bottom() - 8);
-		QPainterPath ribbon;
-		ribbon.moveTo(left);
-		ribbon.lineTo(bounds.left() + bounds.width() * 0.35, bounds.top() + bounds.height() * 0.30);
-		ribbon.lineTo(top);
-		ribbon.lineTo(right);
-		ribbon.lineTo(bottom);
-		ribbon.lineTo(bounds.left() + bounds.width() * 0.35, bounds.bottom() - bounds.height() * 0.30);
-		ribbon.closeSubpath();
-		QLinearGradient gradient(bounds.topLeft(), bounds.bottomRight());
-		gradient.setColorAt(0.0, QColor(177, 110, 255));
-		gradient.setColorAt(1.0, QColor(92, 45, 184));
-		painter.fillPath(ribbon, gradient);
-		painter.setPen(QPen(QColor(223, 194, 255), 3));
-		painter.drawPath(ribbon);
-
-		QFont markFont = painter.font();
-		markFont.setBold(true);
-		markFont.setPixelSize(25);
-		painter.setFont(markFont);
-		painter.setPen(Qt::white);
-		painter.drawText(bounds.adjusted(48, 0, -4, 0), Qt::AlignCenter, "VS");
-	}
-
-	QPixmap CreateIdeQuickStartArtwork(const std::filesystem::path& repositoryRoot, WorkspaceIde ide)
-	{
-		const bool riderSelected = ide == WorkspaceIde::Rider;
-		QPixmap artwork(LauncherUi::Card::ProductArtworkSize);
-		artwork.fill(QColor(16, 19, 18));
-		QPainter painter(&artwork);
-		const std::filesystem::path baseArtworkPath = FindLauncherVisualAsset(repositoryRoot, "workflow-open-ide.png");
-		const QPixmap baseArtwork = baseArtworkPath.empty() ? QPixmap() : QPixmap(QString::fromStdString(baseArtworkPath.string()));
-		PaintLauncherArtwork(painter, artwork.rect(), baseArtwork, LauncherArtworkSpec::ForPreset(LauncherArtworkPreset::ProductCard));
-
-		QLinearGradient wash(0, 0, artwork.width(), 0);
-		wash.setColorAt(0.0, QColor(8, 12, 10, 210));
-		wash.setColorAt(0.52, QColor(15, 22, 18, 185));
-		wash.setColorAt(1.0, riderSelected ? QColor(89, 36, 118, 225) : QColor(38, 45, 122, 225));
-		painter.fillRect(artwork.rect(), wash);
-
-		const QRect iconPanel(artwork.width() - 176, 22, 132, 132);
-		painter.setRenderHint(QPainter::Antialiasing, true);
-		painter.setBrush(QColor(13, 17, 15, 198));
-		painter.setPen(QPen(QColor(112, 190, 0, 185), 2));
-		painter.drawRoundedRect(iconPanel, 12, 12);
-		const QRect markBounds = iconPanel.adjusted(26, 26, -26, -26);
-		if (riderSelected)
-		{
-			DrawRiderMark(painter, markBounds);
-		}
-		else
-		{
-			DrawVisualStudioMark(painter, markBounds);
-		}
-		return artwork;
 	}
 
 	QWidget* CreateLauncherVisualArtworkWidget(
@@ -248,75 +162,4 @@ namespace SparkleLauncher
 		return card;
 	}
 
-	static QFrame* CreateQuickStartCardWithArtwork(const QString& title, QWidget* action, const QPixmap& artworkPixmap, QWidget* parent)
-	{
-		ProportionalCardFrame* card = new ProportionalCardFrame(LauncherUi::Card::HomeTileAspectRatio, parent);
-		card->setObjectName("CommandCapabilityCard");
-		card->setAccessibleName(title + " Quick Start");
-
-		const bool hasArtwork = !artworkPixmap.isNull();
-		const bool flushArtwork = hasArtwork;
-
-		QVBoxLayout* layout = new QVBoxLayout(card);
-		layout->setContentsMargins(flushArtwork ? LauncherUi::Card::FlushArtworkMargins : LauncherUi::Card::ProductMargins(hasArtwork));
-		layout->setSpacing(flushArtwork ? 0 : LauncherUi::Card::ProductSpacing);
-
-		if (QWidget* artwork = CreateLauncherVisualArtworkWidget(
-		        artworkPixmap,
-		        "CommandCardArtwork",
-		        LauncherUi::Card::ProductArtworkSize,
-		        LauncherArtworkPreset::ProductCard,
-		        card))
-		{
-			QSizePolicy artworkPolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-			artworkPolicy.setHeightForWidth(true);
-			artwork->setSizePolicy(artworkPolicy);
-			layout->addWidget(artwork);
-		}
-
-		QVBoxLayout* contentLayout = layout;
-		if (flushArtwork)
-		{
-			QWidget* body = new QWidget(card);
-			body->setObjectName("CommandCardBody");
-			QVBoxLayout* bodyLayout = new QVBoxLayout(body);
-			bodyLayout->setContentsMargins(LauncherUi::Card::ProductBodyMargins);
-			bodyLayout->setSpacing(LauncherUi::Card::ProductSpacing);
-			layout->addWidget(body, 1);
-			contentLayout = bodyLayout;
-		}
-
-		QLabel* titleLabel = new QLabel(title, card);
-		titleLabel->setObjectName("CommandCardTitle");
-		contentLayout->addWidget(titleLabel);
-		contentLayout->addStretch(1);
-
-		if (action != nullptr)
-		{
-			action->setParent(card);
-			contentLayout->addWidget(action, 0, Qt::AlignLeft);
-		}
-		return card;
-	}
-
-	QFrame* CreateQuickStartCard(
-	    const std::filesystem::path& repositoryRoot,
-	    const QString& title,
-	    QWidget* action,
-	    const QString& artworkFileName,
-	    QWidget* parent)
-	{
-		QPixmap artwork;
-		const std::filesystem::path artworkPath = FindLauncherVisualAsset(repositoryRoot, artworkFileName);
-		if (!artworkPath.empty())
-		{
-			artwork.load(QString::fromStdString(artworkPath.string()));
-		}
-		return CreateQuickStartCardWithArtwork(title, action, artwork, parent);
-	}
-
-	QFrame* CreateQuickStartCard(const QString& title, QWidget* action, const QPixmap& artwork, QWidget* parent)
-	{
-		return CreateQuickStartCardWithArtwork(title, action, artwork, parent);
-	}
 }

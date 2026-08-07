@@ -42,12 +42,12 @@ namespace SparkleLauncher
 				return PlanBuildWorkspaceOperation(operationId, LauncherOperationRequestMapping::BuildWorkspace(request));
 			case LauncherOperationCategory::Levels:
 				return PlanLevelOperation(operationId, LauncherOperationRequestMapping::Levels(request));
+			case LauncherOperationCategory::LevelRun:
+				return PlanLevelRunOperation(operationId, LauncherOperationRequestMapping::LevelRun(request));
 			case LauncherOperationCategory::Cooking:
 				return PlanCookOperation(operationId, LauncherOperationRequestMapping::Cook(request));
 			case LauncherOperationCategory::Maintenance:
 				return PlanMaintenanceOperation(operationId, LauncherOperationRequestMapping::Maintenance(request));
-			case LauncherOperationCategory::Launch:
-				return PlanLaunchOperation(operationId, LauncherOperationRequestMapping::Launch(request));
 		}
 
 		throw std::logic_error("Unknown launcher operation category.");
@@ -84,17 +84,17 @@ namespace SparkleLauncher
 			    {
 				    return RunLevelOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
 			    }
+			    else if constexpr (std::is_same_v<Plan, LevelRunOperationPlan>)
+			    {
+				    return RunLevelRunOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
+			    }
 			    else if constexpr (std::is_same_v<Plan, CookOperationPlan>)
 			    {
 				    return RunCookOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
 			    }
-			    else if constexpr (std::is_same_v<Plan, MaintenanceOperationPlan>)
-			    {
-				    return RunMaintenanceOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
-			    }
 			    else
 			    {
-				    return RunLaunchOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
+				    return RunMaintenanceOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
 			    }
 		    },
 		    std::move(plan));

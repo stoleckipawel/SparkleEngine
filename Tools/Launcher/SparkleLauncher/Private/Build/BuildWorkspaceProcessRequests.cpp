@@ -6,7 +6,6 @@
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
-#include <cstdlib>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -33,46 +32,6 @@ namespace SparkleLauncher
 	    const std::vector<std::string>& targets)
 	{
 		return MakeCMakeBuildRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, profileName, targets, "Build.txt");
-	}
-
-	static std::filesystem::path GetCommandProcessorPath()
-	{
-#if defined(_WIN32)
-		if (const char* commandProcessor = std::getenv("ComSpec"); commandProcessor != nullptr && commandProcessor[0] != '\0')
-		{
-			return std::filesystem::path(commandProcessor);
-		}
-		if (const char* systemRoot = std::getenv("SystemRoot"); systemRoot != nullptr && systemRoot[0] != '\0')
-		{
-			return std::filesystem::path(systemRoot) / "System32" / "cmd.exe";
-		}
-		return "cmd.exe";
-#else
-		return "xdg-open";
-#endif
-	}
-
-	static ProcessRequest MakeOpenIdeRequest(const BuildWorkspaceOperationPlan& plan)
-	{
-		ProcessRequest process;
-		process.WorkingDirectory = plan.RepositoryRoot;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "OpenIde.txt");
-#if defined(_WIN32)
-		process.ExecutablePath = GetCommandProcessorPath();
-		if (plan.Request.PreferredIde == WorkspaceIde::Rider)
-		{
-			process.Arguments = {"/C", "start", "", plan.Toolchain.RiderPath.string(), plan.RepositoryRoot.string()};
-		}
-		else
-		{
-			process.Arguments = {"/C", "start", "", plan.Freshness.SolutionPath.string()};
-		}
-#else
-		process.ExecutablePath = "xdg-open";
-		process.Arguments = {
-		    plan.Request.PreferredIde == WorkspaceIde::Rider ? plan.RepositoryRoot.string() : plan.Freshness.SolutionPath.string()};
-#endif
-		return process;
 	}
 
 	static std::vector<std::string> ResolveProjectTargets(std::string_view projectId, std::string_view profileName)
@@ -130,15 +89,6 @@ namespace SparkleLauncher
 		steps.push_back(std::move(step));
 	}
 
-	static void AddOpenIdeStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
-	{
-		BuildWorkspaceProcessStep step;
-		step.Id = "open-ide";
-		step.DisplayName = plan.Request.PreferredIde == WorkspaceIde::Rider ? "Open Rider" : "Open Visual Studio";
-		step.Request = MakeOpenIdeRequest(plan);
-		steps.push_back(std::move(step));
-	}
-
 	static void AddHostToolInstallStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
 	{
 		std::string errorMessage;
@@ -179,9 +129,6 @@ namespace SparkleLauncher
 				return steps;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				AddConfigureStep(steps, plan);
-				return steps;
-			case BuildWorkspaceOperationKind::OpenIde:
-				AddOpenIdeStep(steps, plan);
 				return steps;
 			case BuildWorkspaceOperationKind::BuildAll:
 				AddConfigureStep(steps, plan);

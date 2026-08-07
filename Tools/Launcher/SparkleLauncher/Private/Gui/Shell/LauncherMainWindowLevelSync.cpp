@@ -35,14 +35,37 @@
 
 namespace SparkleLauncher
 {
-	static QString LevelSyncKey(const QString& projectId, const QString& levelId)
-	{
-		return projectId + QChar(0x1f) + levelId;
-	}
-
 	static QPixmap CreateMapPlaceholder(const LauncherLevelUiEntry& level)
 	{
 		QPixmap placeholder(640, 400);
+		if (level.Id == "Empty")
+		{
+			QPainter painter(&placeholder);
+			painter.fillRect(placeholder.rect(), QColor("#101310"));
+			painter.setPen(QPen(QColor(118, 185, 45, 45), 1));
+			const QPoint horizon(placeholder.width() / 2, placeholder.height() * 2 / 5);
+			for (int x = -160; x <= placeholder.width() + 160; x += 64)
+			{
+				painter.drawLine(horizon, QPoint(x, placeholder.height()));
+			}
+			for (int y = horizon.y(); y <= placeholder.height(); y += 32)
+			{
+				painter.drawLine(0, y, placeholder.width(), y);
+			}
+
+			painter.setPen(QPen(QColor("#76b92d"), 4));
+			const QRect front(placeholder.width() / 2 - 58, placeholder.height() / 2 - 34, 116, 92);
+			const QPoint offset(38, -28);
+			const QRect back = front.translated(offset);
+			painter.drawRect(front);
+			painter.drawRect(back);
+			painter.drawLine(front.topLeft(), back.topLeft());
+			painter.drawLine(front.topRight(), back.topRight());
+			painter.drawLine(front.bottomLeft(), back.bottomLeft());
+			painter.drawLine(front.bottomRight(), back.bottomRight());
+			return placeholder;
+		}
+
 		const uint hueSeed = qHash(level.Id);
 		const QColor topColor = QColor::fromHsv(static_cast<int>(hueSeed % 80u) + 75, 125, 74);
 		const QColor bottomColor = QColor::fromHsv(static_cast<int>((hueSeed + 22u) % 80u) + 75, 175, 24);
@@ -78,8 +101,10 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddSyncLevelContentGroups(QVBoxLayout& layout)
 	{
-		QVBoxLayout* catalogLayout =
-		    AddOptionGroup(layout, "Map catalog", "Sync or clean levels directly. Empty remains available without external content.");
+		QVBoxLayout* catalogLayout = AddOptionGroup(
+		    layout,
+		    "Map catalog",
+		    "Run a level directly. Quick Start prepares its content, build, and cook prerequisites first.");
 		const LauncherContentSummary* content = m_contentModel.Content();
 		if (content == nullptr)
 		{
@@ -101,13 +126,15 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddSyncLevelRows(QVBoxLayout& layout, const LauncherContentSummary& content, const LauncherLevelUiModel& model)
 	{
-		ResponsiveCardGridWidget* grid = new ResponsiveCardGridWidget(520, 1600, 4, 14, 14, this);
+		ResponsiveCardGridWidget* grid = new ResponsiveCardGridWidget(
+		    LauncherUi::MapCatalog::MinimumCardWidth,
+		    LauncherUi::MapCatalog::MaximumCardWidth,
+		    LauncherUi::MapCatalog::MaximumColumns,
+		    LauncherUi::MapCatalog::HorizontalSpacing,
+		    LauncherUi::MapCatalog::VerticalSpacing,
+		    this);
 		for (const LauncherLevelUiEntry& level : model.Levels)
 		{
-			if (level.Id == "Empty")
-			{
-				continue;
-			}
 			AddSyncLevelRow(*grid, content, level);
 		}
 		layout.addWidget(grid);
@@ -118,7 +145,7 @@ namespace SparkleLauncher
 	    const LauncherContentSummary& content,
 	    const LauncherLevelUiEntry& level)
 	{
-		ProportionalCardFrame* card = new ProportionalCardFrame(2.75, this);
+		ProportionalCardFrame* card = new ProportionalCardFrame(LauncherUi::MapCatalog::CardAspectRatio, this);
 		card->setObjectName("MapCatalogCard");
 		card->setProperty("State", level.State);
 		card->setAccessibleName(level.DisplayName);
@@ -199,13 +226,9 @@ namespace SparkleLauncher
 		    [this, content, level, actionButton]()
 		    {
 			    const QString actionIntent = actionButton->property("ActionIntent").toString();
-			    if (actionIntent == QStringLiteral("clean"))
+			    if (actionIntent == QStringLiteral("run"))
 			    {
-				    CleanLevel(content, level);
-			    }
-			    else if (actionIntent == QStringLiteral("sync"))
-			    {
-				    SyncLevel(content, level);
+				    StartQuickStartLevel(content, level);
 			    }
 		    });
 		actions->addWidget(actionButton);
@@ -217,37 +240,26 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::ApplyLevelActionButtonState(QLabel& statusLabel, QPushButton& button, const LauncherLevelUiEntry& level)
 	{
-		const QString syncRunId = m_levelSyncRunIds.value(LevelSyncKey(m_contentModel.ContentId(), level.Id));
-		if (!syncRunId.isEmpty())
+		ApplyInlineStatusLabel(statusLabel, level.Status, level.State);
+		const bool preparing = m_quickStartExecution.has_value()
+		    && m_quickStartExecution->GoalRequest().RequestedLevelIds.section(',', 0, 0).trimmed() == level.Id;
+		button.setObjectName("MapCardActionButton");
+		button.setFixedSize(LauncherUi::Row::StatusActionWidth, LauncherUi::Row::StatusActionHeight);
+		button.setProperty("ActionIntent", preparing ? QStringLiteral("none") : QStringLiteral("run"));
+		button.setText(preparing ? QStringLiteral("Preparing...") : QStringLiteral("Run"));
+		button.setAccessibleName(preparing ? QStringLiteral("Preparing ") + level.DisplayName : QStringLiteral("Run ") + level.DisplayName);
+		button.setEnabled(!m_quickStartExecution.has_value() && level.RuntimeSupported && level.CanSelect);
+		if (preparing)
 		{
-			ApplySyncStateLabel(statusLabel, SyncItemState::Syncing);
-			ApplySyncActionButtonState(button, SyncItemState::Syncing, level.DisplayName);
-			return;
+			button.setToolTip(QStringLiteral("Quick Start is preparing this level's prerequisites."));
 		}
-
-		const bool clean = (level.Selected && level.Ready) || (!level.RuntimeSupported && level.CanClean);
-		const SyncItemState state = clean ? SyncItemState::Synced : SyncItemState::Missing;
-		ApplySyncStateLabel(statusLabel, state);
-		ApplySyncActionButtonState(button, state, level.DisplayName);
-		button.setEnabled(clean || level.CanSelect || level.CanSync);
-		if (clean)
-		{
-			button.setToolTip(
-			    level.RuntimeSupported
-			        ? QStringLiteral("Disable this level and clean its downloaded content.")
-			        : QStringLiteral("Remove this source pack. Runtime use remains unavailable: ") + level.UnsupportedReason);
-		}
-		else if (level.CanSync && !level.RuntimeSupported)
-		{
-			button.setToolTip(QStringLiteral("Download this source pack. Runtime use remains unavailable: ") + level.UnsupportedReason);
-		}
-		else if (!level.CanSelect)
+		else if (!level.RuntimeSupported || !level.CanSelect)
 		{
 			button.setToolTip(level.UnsupportedReason);
 		}
 		else
 		{
-			button.setToolTip(QStringLiteral("Enable this level and acquire any missing content."));
+			button.setToolTip(QStringLiteral("Sync missing content, prepare build and cook prerequisites, then run this level."));
 		}
 	}
 
@@ -392,72 +404,6 @@ namespace SparkleLauncher
 		return targets;
 	}
 
-	void LauncherMainWindow::SyncLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level)
-	{
-		const QString syncKey = LevelSyncKey(content.Id, level.Id);
-		if (m_levelSyncRunIds.contains(syncKey))
-		{
-			return;
-		}
-
-		if (level.RuntimeSupported
-		    && !SetLevelsSelected(content.RootPath, {level.Id.toStdString()}, true, QStringLiteral("Sync ") + level.DisplayName))
-		{
-			return;
-		}
-
-		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
-		request.ContentId = content.Id;
-		request.RequestedLevelIds = level.Id;
-		const QString runId = StartOperation(std::move(request), QStringLiteral("Sync ") + level.DisplayName);
-		m_levelSyncRunIds.insert(syncKey, runId);
-		RefreshLevelActionButtons();
-	}
-
-	void LauncherMainWindow::CleanLevel(const LauncherContentSummary& content, const LauncherLevelUiEntry& level)
-	{
-		const std::vector<std::string> levelIds{level.Id.toStdString()};
-		QVector<LauncherCleanTarget> targets;
-		try
-		{
-			targets = BuildLevelCleanTargets(content, level.Id);
-		}
-		catch (const std::exception& error)
-		{
-			QMessageBox::warning(this, QStringLiteral("Level content could not be resolved"), QString::fromUtf8(error.what()));
-			return;
-		}
-		if (targets.empty())
-		{
-			if (SetLevelsSelected(content.RootPath, levelIds, false, QStringLiteral("Clean ") + level.DisplayName))
-			{
-				PopulateStartupLevelSelectors();
-				RefreshLevelActionButtons();
-				UpdateRunAvailability();
-			}
-			return;
-		}
-
-		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("workspace.clean"));
-		request.ContentId = content.Id;
-		request.CleanTargets = targets;
-		if (!ConfirmRunRequest(request))
-		{
-			return;
-		}
-
-		const QString title = QStringLiteral("Clean ") + level.DisplayName;
-		const QString runId = StartOperation(std::move(request), title);
-		m_pendingLevelSelectionUpdates.insert(runId, {content.RootPath, levelIds, false});
-		if (QPushButton* button = m_levelActionButtons.value(level.Id, nullptr))
-		{
-			button->setText(QStringLiteral("Cleaning..."));
-			button->setEnabled(false);
-		}
-	}
-
 	void LauncherMainWindow::SyncAllLevels()
 	{
 		const LauncherContentSummary* content = m_contentModel.Content();
@@ -517,7 +463,6 @@ namespace SparkleLauncher
 		{
 			if (SetLevelsSelected(content->RootPath, levelIds, false, QStringLiteral("Clean All")))
 			{
-				PopulateStartupLevelSelectors();
 				RefreshLevelActionButtons();
 				UpdateRunAvailability();
 			}

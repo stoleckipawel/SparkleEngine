@@ -4,32 +4,27 @@
 #include "LauncherOperationRequestMapping.h"
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
-#include "SparkleLauncher/LaunchOperations.h"
+#include "SparkleLauncher/LevelRunOperations.h"
 
 #include <string>
 
 namespace SparkleLauncher
 {
-	static LaunchOperationPlan PlanRequestedProductLaunch(const LauncherOperationRequest& request)
+	std::string RegisterLevelRunCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context)
 	{
-		return PlanLaunchOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::Launch(request));
-	}
-
-	std::string RegisterLaunchCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context)
-	{
-		const LauncherOperationRequest request = context.Request;
-		if (!context.IsLaunchGoal())
+		if (!context.IsLevelRunGoal())
 		{
 			return {};
 		}
 
+		const LauncherOperationRequest request = context.Request;
 		std::string error = registry.Register(
 		    {context.ProjectCapabilityId(),
 		        {},
 		        [request](bool)
 		        {
-			        const LaunchOperationPlan plan =
-			            PlanLaunchOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::Launch(request));
+			        const LevelRunOperationPlan plan =
+			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
 			        return plan.Readiness.ContentDirectoryReady
 			            ? LauncherCapabilityEvaluation::Ready()
 			            : LauncherCapabilityEvaluation::Blocked(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
@@ -44,7 +39,9 @@ namespace SparkleLauncher
 		        {std::string(LauncherCapabilityId::BuildFiles)},
 		        [request, buildOperationId = context.ProductBuildOperationId()](bool)
 		        {
-			        if (PlanRequestedProductLaunch(request).Readiness.ExecutableReady)
+			        const LevelRunOperationPlan runPlan =
+			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
+			        if (runPlan.Readiness.ExecutableReady)
 			        {
 				        return LauncherCapabilityEvaluation::Ready();
 			        }
@@ -64,13 +61,13 @@ namespace SparkleLauncher
 		return registry.Register(
 		    {request.OperationId.toStdString(),
 		        {context.ProjectCapabilityId(),
-		            context.ProductCapabilityId(),
 		            std::string(LauncherCapabilityId::SelectedLevels),
+		            context.ProductCapabilityId(),
 		            std::string(LauncherCapabilityId::CookedContent)},
 		        [request](bool)
 		        {
-			        const LaunchOperationPlan plan =
-			            PlanLaunchOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::Launch(request));
+			        const LevelRunOperationPlan plan =
+			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
 			        return plan.CanRun
 			            ? LauncherCapabilityEvaluation::RunOperation(BuildQuickStartOperationRequest(request, request.OperationId))
 			            : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(plan.ReadinessMessages));

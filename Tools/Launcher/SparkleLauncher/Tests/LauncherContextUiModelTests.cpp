@@ -64,6 +64,7 @@ int main()
 	toolchain.Items = {
 	    ToolStatus("windowssdk", ToolchainItemState::Found),
 	    ToolStatus("vulkan-sdk", ToolchainItemState::Missing),
+	    ToolStatus("shader-compiler-sdk", ToolchainItemState::Found),
 	    ToolStatus("visualstudio", ToolchainItemState::Found),
 	    ToolStatus("visualstudio-ide", ToolchainItemState::Found),
 	    ToolStatus("msbuild", ToolchainItemState::Found),
@@ -72,11 +73,24 @@ int main()
 	};
 
 	const LauncherContextUiModel model = LauncherContextUiModel::Build(toolchain);
+	BuildToolchainStatus missingShaderSdkToolchain = toolchain;
+	for (ToolchainItemStatus& item : missingShaderSdkToolchain.Items)
+	{
+		if (item.Id == "shader-compiler-sdk")
+		{
+			item.State = ToolchainItemState::Missing;
+		}
+	}
+	const LauncherContextUiModel missingShaderSdkModel = LauncherContextUiModel::Build(missingShaderSdkToolchain);
 	std::string error;
 	const bool valid = ExpectAvailability(model.GraphicsApis, "d3d12", true, error)
-	    && ExpectAvailability(model.GraphicsApis, "vulkan", false, error) && ExpectAvailability(model.Compilers, "msvc", true, error)
-	    && ExpectAvailability(model.Compilers, "clang-cl", false, error) && ExpectAvailability(model.Ides, "visual-studio", true, error)
-	    && ExpectAvailability(model.Ides, "rider", true, error) && ExpectAvailability(model.BuildConfigurations, "development", true, error)
+	    && ExpectAvailability(model.GraphicsApis, "vulkan", false, error) && ExpectAvailability(model.ShaderBackends, "dxc", true, error)
+	    && ExpectAvailability(model.ShaderBackends, "slang", true, error)
+	    && ExpectAvailability(missingShaderSdkModel.ShaderBackends, "dxc", true, error)
+	    && ExpectAvailability(missingShaderSdkModel.ShaderBackends, "slang", true, error)
+	    && ExpectAvailability(model.Compilers, "msvc", true, error) && ExpectAvailability(model.Compilers, "clang-cl", false, error)
+	    && ExpectAvailability(model.Ides, "visual-studio", true, error) && ExpectAvailability(model.Ides, "rider", true, error)
+	    && ExpectAvailability(model.BuildConfigurations, "development", true, error)
 	    && ExpectAvailability(model.BuildConfigurations, "debug", true, error)
 	    && ExpectAvailability(model.BuildConfigurations, "shipping", true, error);
 	if (!valid)

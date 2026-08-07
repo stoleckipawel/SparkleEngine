@@ -3,7 +3,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LevelOperations.h"
-#include "SparkleLauncher/LaunchOperations.h"
+#include "SparkleLauncher/LevelRunOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 #include "Operations/LauncherOperationExecution.h"
 #include "Operations/LauncherOperationService.h"
@@ -215,6 +215,16 @@ namespace SparkleLauncher
 			        LauncherOperationCategory::Levels});
 		}
 
+		for (const LevelRunOperationDefinition& definition : GetLevelRunOperationDefinitions())
+		{
+			m_operations.push_back(
+			    {QString::fromStdString(definition.Id),
+			        QString::fromStdString(definition.Group),
+			        QString::fromStdString(definition.DisplayName),
+			        QString::fromStdString(definition.Description),
+			        LauncherOperationCategory::LevelRun});
+		}
+
 		for (const MaintenanceOperationDefinition& definition : GetMaintenanceOperationDefinitions())
 		{
 			m_operations.push_back(
@@ -223,16 +233,6 @@ namespace SparkleLauncher
 			        QString::fromStdString(definition.DisplayName),
 			        QString::fromStdString(definition.Description),
 			        LauncherOperationCategory::Maintenance});
-		}
-
-		for (const LaunchOperationDefinition& definition : GetLaunchOperationDefinitions())
-		{
-			m_operations.push_back(
-			    {QString::fromStdString(definition.Id),
-			        QString::fromStdString(definition.Group),
-			        QString::fromStdString(definition.DisplayName),
-			        QString::fromStdString(definition.Description),
-			        LauncherOperationCategory::Launch});
 		}
 	}
 

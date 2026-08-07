@@ -33,7 +33,6 @@ namespace SparkleLauncher
 		QString ShaderBackend;
 		QString ShaderCacheDirectory;
 		QString GraphicsApi;
-		QString StartupLevel;
 		QString CleanScope = "cooked";
 		QVector<LauncherCleanTarget> CleanTargets;
 		QVector<QString> PreservedPaths;

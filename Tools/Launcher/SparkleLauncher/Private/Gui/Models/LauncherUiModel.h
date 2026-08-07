@@ -7,11 +7,9 @@ namespace SparkleLauncher
 	enum class LauncherWorkflowPageKind
 	{
 		Home,
-		Launch,
 		Sync,
 		Build,
 		Cook,
-		Levels,
 		Clean,
 		Unknown
 	};
@@ -24,7 +22,6 @@ namespace SparkleLauncher
 		WorkspaceFiles,
 		BuildOutputs,
 		CookedOutputs,
-		LaunchProcess,
 		GeneratedState
 	};
 

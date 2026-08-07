@@ -205,10 +205,6 @@ namespace SparkleLauncher
 		{
 			return detail.empty() ? "Build targets failed." + logSuffix : "Build targets failed: " + detail + logSuffix;
 		}
-		if (step.Id == "open-ide")
-		{
-			return detail.empty() ? "Open IDE failed." + logSuffix : "Open IDE failed: " + detail + logSuffix;
-		}
 		if (step.Id == "install-host-tool")
 		{
 			return detail.empty() ? "Host tool installation failed." + logSuffix : "Host tool installation failed: " + detail + logSuffix;

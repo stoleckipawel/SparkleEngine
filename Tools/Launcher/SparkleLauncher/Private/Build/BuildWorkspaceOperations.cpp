@@ -77,8 +77,6 @@ namespace SparkleLauncher
 				return "SyncCode";
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				return "GenerateBuildFiles";
-			case BuildWorkspaceOperationKind::OpenIde:
-				return "OpenIde";
 			case BuildWorkspaceOperationKind::BuildAll:
 				return "BuildAll";
 			case BuildWorkspaceOperationKind::CompileLauncher:

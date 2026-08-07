@@ -68,6 +68,28 @@ namespace SparkleLauncher
 		return request;
 	}
 
+	LauncherOperationRequest BuildQuickStartOperationRequest(
+	    const LauncherOperationRequest& goalRequest,
+	    const QString& operationId,
+	    const QStringList& requestedLevelIds)
+	{
+		LauncherOperationRequest request = goalRequest;
+		request.RunId.clear();
+		request.OperationId = operationId;
+		request.SelectedTargets.clear();
+		if (!requestedLevelIds.isEmpty())
+		{
+			request.RequestedLevelIds = requestedLevelIds.join(',');
+		}
+		request.SourceDependencyId.clear();
+		request.HostToolId.clear();
+		request.ForceConfigure = false;
+		request.ForceRecook = false;
+		request.ConfirmForceRecook = false;
+		request.ConfirmClean = false;
+		return request;
+	}
+
 	LauncherOperationRequest BuildLauncherOperationRequest(
 	    const std::filesystem::path& repositoryRoot,
 	    const LauncherContentModel& contentModel,
@@ -87,38 +109,18 @@ namespace SparkleLauncher
 		request.ShaderTargets = ResolveShaderTargetSelection(settings);
 		request.ShaderBackend = settings.ShaderBackend();
 		request.ShaderCacheDirectory = settings.ShaderCacheDirectory();
+		request.GraphicsApi = settings.GraphicsApi();
 		request.ShaderUseCache = settings.ShaderUseCache();
 		request.ShaderEnableDebugInfo = settings.ShaderEnableDebugInfo();
 		request.ShaderEnableOptimizations = settings.ShaderEnableOptimizations();
 		request.ShaderWarningsAsErrors = settings.ShaderWarningsAsErrors();
 		request.ShaderStripDebugInfo = settings.ShaderStripDebugInfo();
-		request.GraphicsApi = settings.GraphicsApi();
-		request.StartupLevel = settings.StartupLevel();
 		request.CleanScope = settings.CleanScope();
 		request.ForceConfigure = settings.ForceConfigure();
 		request.ForceRecook = settings.ForceRecook();
 		request.ConfirmForceRecook = settings.ConfirmForceRecook();
 		request.ConfirmClean = settings.ConfirmClean();
 
-		return request;
-	}
-
-	LauncherOperationRequest BuildQuickStartOperationRequest(
-	    const LauncherOperationRequest& goalRequest,
-	    const QString& operationId,
-	    const QStringList& requestedLevelIds)
-	{
-		LauncherOperationRequest request = goalRequest;
-		request.RunId.clear();
-		request.OperationId = operationId;
-		request.SelectedTargets.clear();
-		request.RequestedLevelIds = requestedLevelIds.join(',');
-		request.SourceDependencyId.clear();
-		request.HostToolId.clear();
-		request.ForceConfigure = false;
-		request.ForceRecook = false;
-		request.ConfirmForceRecook = false;
-		request.ConfirmClean = false;
 		return request;
 	}
 

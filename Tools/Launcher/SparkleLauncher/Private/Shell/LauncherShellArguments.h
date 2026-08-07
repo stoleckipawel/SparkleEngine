@@ -19,7 +19,6 @@ namespace SparkleLauncher
 		WorkspaceCompiler WorkspaceCompilerPreference = WorkspaceCompiler::Msvc;
 		std::string DryRunOperationId;
 		std::string RunOperationId;
-		std::string StartupLevel;
 		CookMode RequestedCookMode = CookMode::Incremental;
 		CleanScope RequestedCleanScope = CleanScope::CookedOutputs;
 		bool ForceRecookConfirmed = false;

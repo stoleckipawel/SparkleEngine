@@ -24,7 +24,6 @@ namespace SparkleLauncher
 		const QString& ShaderCustomTargets() const;
 		const QString& ShaderCacheDirectory() const;
 		const QString& GraphicsApi() const;
-		const QString& StartupLevel() const;
 		const QString& CleanScope() const;
 		bool ShaderUseCache() const;
 		bool ShaderEnableDebugInfo() const;
@@ -48,12 +47,11 @@ namespace SparkleLauncher
 		void SetShaderTargetPreset(const QString& preset);
 		void SetShaderCustomTargets(const QString& targets);
 		void SetShaderCacheDirectory(const QString& path);
+		void SetGraphicsApi(const QString& graphicsApi);
 		void SetShaderEnableDebugInfo(bool enabled);
 		void SetShaderEnableOptimizations(bool enabled);
 		void SetShaderWarningsAsErrors(bool enabled);
 		void SetShaderStripDebugInfo(bool enabled);
-		void SetGraphicsApi(const QString& graphicsApi);
-		void SetStartupLevel(const QString& levelName);
 		void SetCleanScope(const QString& scope);
 		void SetShaderUseCache(bool enabled);
 		void SetForceConfigure(bool enabled);
@@ -70,12 +68,11 @@ namespace SparkleLauncher
 		QString m_workspaceCompiler = "msvc";
 		QString m_selectedTargets;
 		QString m_shaderPackages;
-		QString m_shaderBackend = "auto";
+		QString m_shaderBackend = "dxc";
 		QString m_shaderTargetPreset = "default";
 		QString m_shaderCustomTargets = "DxilSm66, SpirV16";
 		QString m_shaderCacheDirectory;
 		QString m_graphicsApi = "d3d12";
-		QString m_startupLevel;
 		QString m_cleanScope = "cooked";
 		bool m_shaderUseCache = true;
 		bool m_shaderEnableDebugInfo = false;

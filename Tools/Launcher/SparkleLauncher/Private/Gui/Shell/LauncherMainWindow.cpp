@@ -23,7 +23,6 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
-#include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include "Core/Public/Diagnostics/Error.h"
@@ -251,7 +250,6 @@ namespace SparkleLauncher
 			RefreshContextSelectors();
 		}
 
-		PopulateStartupLevelSelectors();
 		RebuildOptionsPages();
 		UpdateRunAvailability();
 		m_isApplyingUiRefresh = false;
@@ -384,15 +382,6 @@ namespace SparkleLauncher
 			}
 		}
 
-		m_startupLevelSelectors.clear();
-		for (QComboBox* combo : findChildren<QComboBox*>())
-		{
-			if (combo != nullptr && combo->property("StartupLevelSelector").toBool())
-			{
-				m_startupLevelSelectors.push_back(combo);
-			}
-		}
-
 		m_isRebuildingOptions = false;
 	}
 
@@ -414,16 +403,12 @@ namespace SparkleLauncher
 		{
 			case LauncherWorkflowPageKind::Home:
 				return m_icons.Icon(LauncherIcon::Start, QColor(kColorStateQueued));
-			case LauncherWorkflowPageKind::Launch:
-				return m_icons.Icon(LauncherIcon::Run, QColor(kColorStateQueued));
 			case LauncherWorkflowPageKind::Sync:
 				return m_icons.Icon(LauncherIcon::Sync, QColor(kColorStateQueued));
 			case LauncherWorkflowPageKind::Build:
 				return m_icons.Icon(LauncherIcon::Build, QColor(kColorStateQueued));
 			case LauncherWorkflowPageKind::Cook:
 				return m_icons.Icon(LauncherIcon::Cook, QColor(kColorStateQueued));
-			case LauncherWorkflowPageKind::Levels:
-				return m_icons.Icon(LauncherIcon::Levels, QColor(kColorStateQueued));
 			case LauncherWorkflowPageKind::Clean:
 				return m_icons.Icon(LauncherIcon::Clean, QColor(kColorStateQueued));
 			case LauncherWorkflowPageKind::Unknown:
@@ -497,24 +482,10 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (m_selectedOperationId == LauncherHomeOperationId())
-		{
-			const QString reason = "Use Quick Start cards for the next best action.";
-			m_cleanButton->setVisible(false);
-			m_cleanButton->setEnabled(false);
-			m_cleanButton->setToolTip("Home summarizes readiness and does not own generated outputs.");
-			m_cleanButton->setAccessibleDescription(m_cleanButton->toolTip());
-			m_runButton->setVisible(false);
-			m_runButton->setEnabled(false);
-			m_runButton->setToolTip(reason);
-			m_runButton->setAccessibleDescription(reason);
-			return;
-		}
-
 		m_runButton->setVisible(true);
-		const bool isLevelSync = m_selectedOperationId == "levels.sync";
+		const bool isLevelCatalog = m_selectedOperationId == LauncherHomeOperationId();
 		m_cleanButton->setVisible(
-		    isLevelSync || m_selectedOperationId == "workspace.clean" || SupportsActionSpecificClean(m_selectedOperationId));
+		    isLevelCatalog || m_selectedOperationId == "workspace.clean" || SupportsActionSpecificClean(m_selectedOperationId));
 
 		if (OperationNeedsContent(m_selectedOperationId) && m_contentModel.ContentId().isEmpty())
 		{
@@ -538,13 +509,15 @@ namespace SparkleLauncher
 		          m_selectedOperationId))
 		    : QVector<LauncherCleanTarget>();
 		const bool cleanWorkspaceSelected = m_selectedOperationId == "workspace.clean";
+		bool canSyncLevel = false;
 		bool hasSelectedLevels = false;
 		bool hasExtractedLevelContent = false;
-		if (isLevelSync)
+		if (isLevelCatalog)
 		{
 			const LauncherLevelUiModel levelModel = BuildLevelUiModel();
 			for (const LauncherLevelUiEntry& level : levelModel.Levels)
 			{
+				canSyncLevel = canSyncLevel || (level.Id != "Empty" && level.CanSelect);
 				if (level.Id != "Empty" && level.Selected)
 				{
 					hasSelectedLevels = true;
@@ -568,7 +541,7 @@ namespace SparkleLauncher
 		const bool canClean = cleanWorkspaceSelected || hasSelectedLevels || hasExtractedLevelContent || !cleanTargets.isEmpty();
 		m_cleanButton->setEnabled(canClean);
 		m_cleanButton->setToolTip(
-		    isLevelSync
+		    isLevelCatalog
 		        ? (canClean ? "Disable all selected levels and clean extracted external level content. Cached archives are preserved."
 		                    : "No selected levels are available to clean.")
 		        : cleanWorkspaceSelected
@@ -576,6 +549,15 @@ namespace SparkleLauncher
 		        : (canClean ? "Clean only the generated outputs tied to " + DisplayNameForOperation(m_selectedOperationId) + "."
 		                    : "Clean is not available for this workflow."));
 		m_cleanButton->setAccessibleDescription(m_cleanButton->toolTip());
+		if (isLevelCatalog)
+		{
+			const QString reason = canSyncLevel ? QStringLiteral("Sync all available levels. Existing runs keep going.")
+			                                    : QStringLiteral("No catalog levels are available to sync.");
+			m_runButton->setEnabled(canSyncLevel);
+			m_runButton->setToolTip(reason);
+			m_runButton->setAccessibleDescription(reason);
+			return;
+		}
 
 		if (FindBuildWorkspaceOperationDefinition(m_selectedOperationId.toStdString()).has_value())
 		{
@@ -599,43 +581,31 @@ namespace SparkleLauncher
 	void LauncherMainWindow::SetSelectedOperation(const QString& operationId)
 	{
 		m_selectedOperationId = operationId;
-		const QString operationTitle = DisplayNameForOperation(operationId);
-		QString workflowTitle = operationTitle;
 		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
-		if (m_workflowPageByOperation.contains(operationId))
-		{
-			const int workflowIndex = m_workflowPageByOperation.value(operationId);
-			if (workflowIndex >= 0 && workflowIndex < workflows.size())
-			{
-				workflowTitle = LauncherWorkflowPageKindName(workflows[workflowIndex].PageKind);
-			}
-		}
 		SetControlsEnabled(true);
-		const bool isStaticPage = operationId == LauncherHomeOperationId();
-		if (m_activeOperationLabel != nullptr)
-		{
-			m_activeOperationLabel->setText(workflowTitle);
-			m_activeOperationLabel->setVisible(true);
-		}
 		if (m_actionMetaPanel != nullptr)
 		{
-			m_actionMetaPanel->setVisible(!isStaticPage);
+			m_actionMetaPanel->setVisible(true);
 		}
 		if (m_runButton != nullptr)
 		{
 			m_runButton->setText(
-			    operationId == "levels.sync"           ? "Sync All"
-			        : operationId == "workspace.clean" ? "Clean Selected"
-			                                           : PrimaryActionLabelForOperationId(operationId));
+			    operationId == LauncherHomeOperationId() ? "Sync All"
+			        : operationId == "workspace.clean"   ? "Clean Selected"
+			                                             : PrimaryActionLabelForOperationId(operationId));
+			m_runButton->setAccessibleName(
+			    operationId == LauncherHomeOperationId() ? "Sync all available levels"
+			        : operationId == "workspace.clean"   ? "Clean selected generated repository state"
+			                                             : "Run selected workflow");
 		}
 		if (m_cleanButton != nullptr)
 		{
-			const bool cleanAll = operationId == "workspace.clean" || operationId == "levels.sync";
+			const bool cleanAll = operationId == "workspace.clean" || operationId == LauncherHomeOperationId();
 			m_cleanButton->setText(cleanAll ? "Clean All" : "Clean");
 			m_cleanButton->setAccessibleName(
-			    operationId == "levels.sync"           ? "Clean all selected levels"
-			        : operationId == "workspace.clean" ? "Clean all generated repository state"
-			                                           : "Clean selected workflow outputs");
+			    operationId == LauncherHomeOperationId() ? "Clean all selected levels"
+			        : operationId == "workspace.clean"   ? "Clean all generated repository state"
+			                                             : "Clean selected workflow outputs");
 		}
 		if (m_optionsStack != nullptr)
 		{

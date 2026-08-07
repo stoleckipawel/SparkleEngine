@@ -133,17 +133,6 @@ namespace SparkleLauncher
 		}
 		m_cleaningSourceDependencyRunIds.remove(runId);
 
-		for (auto levelSync = m_levelSyncRunIds.begin(); levelSync != m_levelSyncRunIds.end();)
-		{
-			if (levelSync.value() == runId)
-			{
-				levelSync = m_levelSyncRunIds.erase(levelSync);
-			}
-			else
-			{
-				++levelSync;
-			}
-		}
 		const bool refreshesLevelState = operationId == QStringLiteral("levels.sync") || m_pendingLevelSelectionUpdates.contains(runId);
 		if (m_pendingLevelSelectionUpdates.contains(runId))
 		{
@@ -155,7 +144,6 @@ namespace SparkleLauncher
 		}
 		if (refreshesLevelState)
 		{
-			PopulateStartupLevelSelectors();
 			RefreshLevelActionButtons();
 			UpdateRunAvailability();
 		}

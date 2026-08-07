@@ -108,7 +108,7 @@ Current repository-resident source-content map set:
 - `ABeautifulGame`
 - `Sponza`
 
-There is no required downloadable map or catalog startup default. `Empty` is the permanent repository core level and is not exposed as a sync choice; all showcase maps remain independent selections. If the core level cannot be read, runtime still creates an in-memory `Empty` scene so a code-only checkout remains launchable.
+There is no required downloadable map or catalog startup default. `Empty` is the permanent repository core level and is exposed as a runnable Quick Start thumbnail without becoming a sync target; all showcase maps remain independent selections. If the core level cannot be read, runtime still creates an in-memory `Empty` scene so a code-only checkout remains launchable.
 The former `SponzaPtlas` level was removed because it duplicated Sponza/Cesium scene composition as a scene-specific validation path rather than owning an independent map or workload contract.
 
 Level inventory:
@@ -353,7 +353,7 @@ Tool areas:
 
 | Tool area | Lines | Read |
 | --- | ---: | --- |
-| `Launcher/SparkleLauncher` | 18986 | Full workflow product: GUI, shell, quick start, build/cook/launch/clean/dependency/status/quality. |
+| `Launcher/SparkleLauncher` | 19510 | Workflow product: GUI, shell, Quick Start level catalog, build/cook/clean/dependency/status/quality. |
 | `Shaders/ShaderCompiler` | 9452 | Strong CLI/private shader pipeline. |
 | `Cooking/TextureCooker` | 4039 | Texture source loading and processing. |
 | `Import/SourceImporters` | 3885 | Source asset import, likely Assimp/scene-related. |
@@ -369,38 +369,35 @@ Launcher read:
 - The launcher is large enough to be judged as an application.
 - The launcher GUI owns one implicit repository content root. It does not expose project discovery or selection; the content model rejects ambiguous repositories instead of choosing among multiple roots.
 - The GUI repository root comes exclusively from the generated `RepositoryRoot.txt` deployed beside the launcher artifact and copied unchanged into live shadow generations. Startup validates that exact root and fails explicitly when the deployment context is missing or invalid; command-line arguments, process working directory, and executable ancestry are not alternate GUI authorities.
-- `Quick Start` is the primary product path. Host-tool, source-dependency, workspace, level, cook, and launch providers independently register capabilities and hierarchical dependencies with a generic resolver; it re-evaluates the graph after every completed operation and automatically drives only the missing work. Editor, runtime, and IDE opening are graph goals, while manual pages retain direct access to sync, build, cook, and clean operations for diagnosis.
-- The generic capability graph is independent of Qt and launcher operation types. It supports any number of registered dependencies, validates its complete topology before every resolution, rejects missing or duplicate registrations and edges, detects cycles, short-circuits already-ready branches, propagates blockers, and derives direct-consumer invalidations from successful operations. Operation requests are explicit optional products of evaluation rather than default-constructed placeholders.
-- Domain provider files own host-tool, source-dependency, workspace, level, cook, and launch readiness/action policy. The planner is the composition root for those providers, `LauncherQuickStartExecution` owns one run's active-step/invalidation/stall state, and the main window is limited to presenting progress and dispatching the selected operation.
-- `Sync Code` owns a flat dependency list: a row action populates only that dependency through an isolated CMake configure sharing `build/_deps`, while the page footer syncs the enabled code set. Neither path enables workspace features or acquires level content. Level acquisition is a separate UI-independent `LevelOperations` domain with the canonical `levels.sync` operation; it does not enter `BuildWorkspaceOperationKind`. The GUI workflow catalog is a typed presentation projection whose ordering places `Levels` below `Cook`, while the shell projects the same backend definition as its own `Levels` group. A focused catalog test rejects backend/frontend ownership drift and the removed `workspace.sync-levels` identity.
-- Operational `Build` and `Cook` pages remain single-operation diagnostic surfaces: inline status communicates current state and running the page executes only that selected operation. Automatic dependency traversal belongs exclusively to the capability graph instead of hardcoded prerequisite prompts. The former Launch page and launcher-owned VSync, GPU-preference, argument, and CVar overrides were removed; applications own those defaults. The top context bar owns only startup level and graphics API, while build configuration, compiler, and IDE live in the persistent footer below activity output.
-- Context selectors are read-only projections of their existing authorities: the level catalog supplies launchable maps, the build-profile catalog supplies configurations, and toolchain detection supplies graphics SDK, compiler, and IDE evidence. Each popup groups usable choices under `Available` and keeps recognized choices that still need setup visible but disabled under `Supported`; refresh rebuilds the projection after launcher operations or application activation. Visual Studio IDE availability requires an actual `devenv.exe` and remains separate from Visual Studio C++ Build Tools availability.
-- It currently models dry-run plans, logs, dependency state, GUI status pages, operation catalogs, and build/cook/launch/maintenance requests. Distribution packaging is intentionally manual and is not a launcher responsibility.
+- `Quick Start` is the level-catalog surface. It preserves the `Explore Sparkle` hero and projects the complete content-owned catalog, including the repository-resident `Empty` level, as thumbnail cards immediately below it. Each runnable card exposes one `Run` action, while the page footer retains Sync All/Clean All for catalog-wide maintenance.
+- `levels.run` is a UI-independent Levels-domain operation that owns only the final runtime process, selected startup-level environment, and graphics-API launch argument. A prerequisite capability graph resolves the requested card into the existing typed operations for level acquisition, build-file generation, runtime compilation, cook-tool preparation, and content cooking before that final operation runs. The main window submits the requested level ID plus footer context and renders progress; it does not implement those backend tasks.
+- Level acquisition remains a separate UI-independent `LevelOperations` domain with the canonical `levels.sync` operation; it does not enter `BuildWorkspaceOperationKind`. Cleaning extracted level content remains a typed `MaintenanceOperations` request. The graph composes those capabilities without creating a second acquisition, build, or cook path.
+- The typed GUI workflow catalog contains Quick Start, Sync, Build, Cook, and Clean. It has no separate Levels rail group: `levels.sync` and `levels.run` map to the Home page kind but are invoked through Quick Start rather than projected as standalone pages. The backend catalog still groups both definitions under `Levels` because backend vocabulary is independent of GUI placement. A focused catalog test rejects ownership drift, a second Levels rail projection, and the removed `workspace.sync-levels` identity.
+- The former Products category, `launch.editor`/`launch.runtime` operations, `workspace.open-ide` operation, startup-level selector, and top header band were removed together. Running a catalog map is expressed by the narrower `levels.run` goal; there is no product-card or IDE-opening compatibility path. Graphics API remains a real runtime choice and is projected only in the persistent footer.
+- `Sync Code` owns a flat dependency list: a row action populates only that dependency through an isolated CMake configure sharing `build/_deps`, while the page footer syncs the enabled code set. Neither path enables workspace features or acquires level content.
+- Operational `Build` and `Cook` pages remain single-operation diagnostic surfaces: inline status communicates current state and running the page executes only that selected operation. Build configuration, compiler, IDE, graphics API, and shader compiler remain in the persistent footer below activity output; the IDE choice selects generated workspace format and never opens the IDE. Graphics API feeds `levels.run`, while DXC/Slang feeds shader cook requests; the Cook page does not duplicate that compiler choice.
+- Footer selectors are projections of existing authorities: the build-profile catalog supplies configurations, toolchain detection supplies compiler/IDE/API/backend availability evidence, RHI owns graphics-API parsing, and CookOperations owns shader-backend execution. Each popup groups usable choices under `Available` and keeps recognized choices that still need setup visible but disabled under `Supported`; refresh rebuilds the projection after launcher operations or application activation. Visual Studio IDE availability requires an actual `devenv.exe` and remains separate from Visual Studio C++ Build Tools availability.
+- It currently models dry-run plans, logs, dependency state, GUI status pages, operation catalogs, and build/cook/level/maintenance requests. Distribution packaging is intentionally manual and is not a launcher responsibility.
 - This is useful for productization, but it should not keep validation/report/debug scaffolding alive.
-- Preferred target: launcher as a small workflow shell with one automatic quick-start path plus direct sync, build, cook, clean, and source dependency controls for diagnosis.
+- Preferred target: launcher as a small workflow shell with one Quick Start level catalog plus direct build, cook, clean, and source dependency controls for diagnosis.
 
-Quick Start capability ownership:
+Quick Start level ownership:
 
 ```text
-Quick Start goals
-|-- launch.<product>
-|   |-- content.project.<product>
-|   |-- product.<product>
-|   |   `-- workspace.build-files
-|   |-- content.selected-levels
-|   `-- content.cooked
-|       |-- content.selected-levels
-|       `-- content.cooking-tools
-|           `-- workspace.build-files
-`-- workspace.open-ide
-    `-- workspace.build-files
-        `-- workspace.source-dependencies
-            `-- source-dependency.<enabled-id> (one node per enabled dependency)
-                `-- workspace.host-tools
-                    `-- host-tool.<required-id> (one node per selected-toolchain requirement)
+Quick Start (frontend placement)
+|-- Explore Sparkle hero
+`-- LauncherLevelUiModel card catalog
+    |-- Run(levelId) -> levels.run goal
+    |   `-- capability graph
+    |       |-- levels.sync(levelId) -> LevelOperations, when content is missing
+    |       |-- workspace generation/build -> BuildWorkspaceOperations, when stale or missing
+    |       |-- cook tool/content operations -> CookOperations, when stale or missing
+    |       `-- levels.run -> LevelRunOperations final runtime process
+    |-- Sync All -> levels.sync -> LevelOperations
+    `-- Clean All -> workspace.clean -> MaintenanceOperations
 ```
 
-Each provider owns only its registrations and readiness evaluators. Host-tool nodes come from the selected toolchain, and source-dependency nodes come from the authoritative dependency inventory, so new dependencies join Quick Start without adding orchestration branches or expanding workspace ownership. Host-tool installer definitions are registered separately from detection and orchestration; a selected missing compiler can therefore contribute its own launcher operation while unavailable tools without a safe installer remain explicit blockers. An installer exit is not sufficient evidence: the executor refreshes the toolchain inventory and reports success only when the requested tool is detected. Compiler selection is a typed launcher request, not an environment-variable side channel, and build-file freshness includes the resulting CMake toolset. A generator, platform, toolset, SDK, or output-contract mismatch schedules one native build-output reset before configure; downloaded dependency sources and cooked content remain intact while compiler-produced build state, binaries, libraries, and symbols are removed. Because `content.cooked` directly depends on `content.selected-levels`, a successful level sync invalidates cooked content through graph topology rather than cross-provider knowledge; the next resolution therefore schedules an incremental cook even when older cooked directories still contain files. Every automatic activity log records the resolved capability path and selected operation.
+Frontend placement and backend ownership are deliberately separate. Moving the card catalog changes only Quick Start composition; goal resolution, sync planning, publisher validation, compilation, cooking, final process execution, and maintenance cleaning remain in their typed backend domains. Host-tool installer definitions likewise remain separate from detection and orchestration. An installer exit is not sufficient evidence: the executor refreshes the toolchain inventory and reports success only when the requested tool is detected. Compiler selection is a typed launcher request, not an environment-variable side channel, and build-file freshness includes the resulting CMake toolset. A generator, platform, toolset, SDK, or output-contract mismatch schedules one native build-output reset before configure; downloaded dependency sources and cooked content remain intact while compiler-produced build state, binaries, libraries, and symbols are removed.
 
 Cooker read:
 

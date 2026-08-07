@@ -33,7 +33,7 @@ namespace SparkleLauncher::LauncherQuickStartExecutionTests
 	void SuccessfulStepsAdvanceInvalidationState()
 	{
 		LauncherOperationRequest goalRequest;
-		goalRequest.OperationId = "launch.editor";
+		goalRequest.OperationId = "levels.run";
 		LauncherQuickStartExecution execution(goalRequest);
 		const LauncherCapabilityResolution syncStep = OperationStep("levels.sync", "content.selected-levels", false, {"content.cooked"});
 
@@ -56,7 +56,7 @@ namespace SparkleLauncher::LauncherQuickStartExecutionTests
 	void RepeatedSuccessfulStepIsRejectedAsStalled()
 	{
 		LauncherOperationRequest goalRequest;
-		goalRequest.OperationId = "launch.runtime";
+		goalRequest.OperationId = "levels.run";
 		LauncherQuickStartExecution execution(goalRequest);
 		const LauncherCapabilityResolution buildStep = OperationStep("workspace.build.runtime", "product.runtime");
 
@@ -72,26 +72,26 @@ namespace SparkleLauncher::LauncherQuickStartExecutionTests
 	void CompletionMustMatchTheActiveRunAndOperation()
 	{
 		LauncherOperationRequest goalRequest;
-		goalRequest.OperationId = "launch.editor";
+		goalRequest.OperationId = "levels.run";
 		LauncherQuickStartExecution execution(goalRequest);
-		const LauncherCapabilityResolution launchStep = OperationStep("launch.editor", "launch.editor", true);
+		const LauncherCapabilityResolution launchStep = OperationStep("levels.run", "levels.run", true);
 
 		Require(execution.BeginOperation("run-1", launchStep).empty(), "The launch step was rejected.");
 		Require(
-		    execution.CompleteOperation("another-run", "launch.editor", true) == LauncherQuickStartCompletion::Ignored,
+		    execution.CompleteOperation("another-run", "levels.run", true) == LauncherQuickStartCompletion::Ignored,
 		    "Completion from another run mutated Quick Start.");
 		Require(
 		    execution.CompleteOperation("run-1", "another-operation", true) == LauncherQuickStartCompletion::Ignored,
 		    "Completion from another operation mutated Quick Start.");
 		Require(
-		    execution.CompleteOperation("run-1", "launch.editor", true) == LauncherQuickStartCompletion::Completed,
+		    execution.CompleteOperation("run-1", "levels.run", true) == LauncherQuickStartCompletion::Completed,
 		    "The matching terminal launch did not complete Quick Start.");
 	}
 
 	void FailureSettlesTheActiveStep()
 	{
 		LauncherOperationRequest goalRequest;
-		goalRequest.OperationId = "launch.editor";
+		goalRequest.OperationId = "levels.run";
 		LauncherQuickStartExecution execution(goalRequest);
 		const LauncherCapabilityResolution cookStep = OperationStep("cook.all", "content.cooked");
 

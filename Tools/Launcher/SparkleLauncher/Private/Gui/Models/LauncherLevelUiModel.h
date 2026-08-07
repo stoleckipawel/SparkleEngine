@@ -27,20 +27,11 @@ namespace SparkleLauncher
 		bool CanClean = false;
 	};
 
-	struct LauncherStartupLevelUiEntry final
-	{
-		QString Id;
-		QString DisplayName;
-		QString Status;
-		bool Ready = false;
-	};
-
 	struct LauncherLevelUiModel final
 	{
 		bool Loaded = false;
 		QString LoadError;
 		QVector<LauncherLevelUiEntry> Levels;
-		QVector<LauncherStartupLevelUiEntry> StartupLevels;
 
 		static LauncherLevelUiModel Build(const LauncherContentSummary& content);
 	};

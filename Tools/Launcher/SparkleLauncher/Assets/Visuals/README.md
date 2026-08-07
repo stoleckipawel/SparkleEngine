@@ -1,14 +1,12 @@
 # Sparkle Launcher Visual Assets
 
-This folder owns curated imagery for the launcher Home, product cards, and contextual workflow surfaces.
+This folder owns curated imagery for the launcher Quick Start hero and contextual workflow surfaces.
 
 Current images are intentionally derived from Showcase source/cooked material and launcher validation captures so the NVIDIA-inspired shell has product visuals without hardcoding machine-local screenshots into the UI. The launcher applies crop, fade, and accent overlays at render time so images support text, CTAs, and status chips rather than compete with them.
 
-Home asset slots:
+Quick Start asset slots:
 
 - `showcase-hero.png`: Home hero artwork.
-- `showcase-editor.png`: Editor product card, profiler-focused at the product card ratio.
-- `showcase-runtime.png`: Runtime product library card.
 - `showcase-content.png`: Cooked content / scene asset tile.
 - `sparkle-architecture.png`: Architecture evidence tile.
 - `sparkle-source-tiers.png`: Source tier evidence tile.
@@ -18,11 +16,6 @@ Home asset slots:
 Workflow banner asset slots:
 
 - `workflow-home-quickstart.png`: Quick Start contextual banner.
-- `workflow-editor-open.png`: Open Editor workflow banner.
-- `workflow-runtime-open.png`: Open Runtime workflow banner.
-- `workflow-launch-editor.png`: Editor launch workflow banner.
-- `workflow-launch-runtime.png`: Runtime launch workflow banner.
-- `workflow-open-ide.png`: Open IDE workflow banner.
 - `workflow-toolchain-check.png`: Host readiness workflow banner.
 - `workflow-source-sync.png`: Source tier sync workflow banner.
 - `workflow-generate-build-files.png`: Generate build files workflow banner.

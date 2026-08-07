@@ -51,7 +51,6 @@ namespace SparkleLauncher
 		output << "  Workspace IDE: " << DisplayName(model.WorkspaceIdePreference) << " | options: Visual Studio, Rider\n";
 		output << "  Workspace compiler: " << DisplayName(model.WorkspaceCompilerPreference) << " | options: MSVC, clang-cl\n\n";
 
-		RenderLauncherOperationGroup(model, "Launch", output);
 		RenderLauncherOperationGroup(model, "Sync", output);
 		RenderLauncherOperationGroup(model, "Build", output);
 		RenderLauncherOperationGroup(model, "Cook", output);

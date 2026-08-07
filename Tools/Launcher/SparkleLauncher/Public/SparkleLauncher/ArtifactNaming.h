@@ -24,5 +24,4 @@ namespace SparkleLauncher::ArtifactNaming
 
 	inline constexpr std::string_view kActionSyncSourceDependencies = "Sync Code";
 	inline constexpr std::string_view kActionGenerateBuildFiles = "Generate Build Files";
-	inline constexpr std::string_view kActionOpenIde = "Open IDE";
 }

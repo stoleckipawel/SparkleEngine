@@ -13,12 +13,4 @@ namespace SparkleLauncher::LauncherUi
 			return color;
 		}
 	}
-
-	namespace Card
-	{
-		QMargins ProductMargins(bool hasArtwork)
-		{
-			return QMargins(18, hasArtwork ? 12 : 16, 18, 16);
-		}
-	}
 }

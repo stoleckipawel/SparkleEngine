@@ -18,6 +18,7 @@ namespace SparkleLauncher
 	struct LauncherContextUiModel final
 	{
 		QVector<LauncherSelectionOption> GraphicsApis;
+		QVector<LauncherSelectionOption> ShaderBackends;
 		QVector<LauncherSelectionOption> BuildConfigurations;
 		QVector<LauncherSelectionOption> Compilers;
 		QVector<LauncherSelectionOption> Ides;

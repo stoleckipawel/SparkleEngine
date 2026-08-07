@@ -67,19 +67,6 @@ namespace SparkleLauncher
 		return false;
 	}
 
-	static bool IsPreferredIdeAvailable(const BuildToolchainStatus& toolchain, WorkspaceIde ide)
-	{
-		switch (ide)
-		{
-			case WorkspaceIde::VisualStudio:
-				return !toolchain.VisualStudioIdePath.empty();
-			case WorkspaceIde::Rider:
-				return !toolchain.RiderPath.empty();
-		}
-
-		return false;
-	}
-
 	static std::vector<std::string> ResolveProjectTargets(std::string_view projectId, std::string_view profileName)
 	{
 		const std::optional<BuildProfile> profile = FindBuildProfile(profileName);
@@ -201,26 +188,6 @@ namespace SparkleLauncher
 					    "and cooked content.");
 				}
 				AddConfigureStep(plan);
-				plan.CanRun = true;
-				return;
-			case BuildWorkspaceOperationKind::OpenIde:
-				if (!IsPreferredIdeAvailable(plan.Toolchain, plan.Request.PreferredIde))
-				{
-					AddReadiness(plan, DisplayName(plan.Request.PreferredIde) + " is not available on this machine.");
-					return;
-				}
-				if (!RequireCurrentWorkspace(plan))
-				{
-					return;
-				}
-				if (plan.Request.PreferredIde == WorkspaceIde::Rider)
-				{
-					AddPlannedEffect(plan, "Open Rider at repository root: " + plan.RepositoryRoot.string());
-				}
-				else
-				{
-					AddPlannedEffect(plan, "Open Visual Studio solution: " + plan.Freshness.SolutionPath.string());
-				}
 				plan.CanRun = true;
 				return;
 			case BuildWorkspaceOperationKind::BuildAll:
@@ -387,11 +354,6 @@ namespace SparkleLauncher
 		        "Build",
 		        std::string(ArtifactNaming::kActionGenerateBuildFiles),
 		        "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
-		    {BuildWorkspaceOperationKind::OpenIde,
-		        "workspace.open-ide",
-		        "Launch",
-		        "Open IDE",
-		        "Open the selected IDE after generated build files are current."},
 		    {BuildWorkspaceOperationKind::BuildAll,
 		        "workspace.build-all",
 		        "Build",

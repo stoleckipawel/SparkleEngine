@@ -1,20 +1,16 @@
 #include "LauncherMainWindow.h"
 
 #include "LauncherActionWidgets.h"
-#include "LauncherContextUiModel.h"
 #include "LauncherContentModel.h"
 #include "LauncherDependencyUiModel.h"
 #include "LauncherLevelUiModel.h"
 #include "LauncherOperationRequestFactory.h"
-#include "LauncherSelectionWidgets.h"
 #include "LauncherSettings.h"
 
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 #include "SparkleLauncher/SourceDependencyState.h"
 
-#include <QtCore/QSignalBlocker>
-#include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QVBoxLayout>
@@ -185,112 +181,6 @@ namespace SparkleLauncher
 		RefreshSourceDependencyRows();
 	}
 
-	QComboBox* LauncherMainWindow::CreateStartupLevelCombo()
-	{
-		QComboBox* combo = new QComboBox(this);
-		combo->setProperty("StartupLevelSelector", true);
-		combo->setToolTip("Startup level used by editor and runtime launches.");
-		combo->setAccessibleName("Startup level");
-		combo->setAccessibleDescription("Startup level used by editor and runtime launches.");
-		RegisterFocusable(combo);
-		m_startupLevelSelectors.push_back(combo);
-		PopulateStartupLevelCombo(*combo);
-		connect(
-		    combo,
-		    static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-		    [combo, this]()
-		    {
-			    const QString levelId = combo->currentData().toString();
-			    if (!levelId.isEmpty())
-			    {
-				    m_settings.SetStartupLevel(levelId);
-			    }
-		    });
-		return combo;
-	}
-
-	void LauncherMainWindow::PopulateStartupLevelCombo(QComboBox& combo)
-	{
-		const LauncherLevelUiModel model = BuildLevelUiModel();
-		if (!model.Loaded)
-		{
-			const QSignalBlocker blocker(&combo);
-			combo.clear();
-			combo.addItem(QStringLiteral("Level catalog unavailable"), QString());
-			combo.setEnabled(false);
-			combo.setToolTip(model.LoadError.isEmpty() ? QStringLiteral("The level catalog could not be loaded.") : model.LoadError);
-			return;
-		}
-
-		const QVector<LauncherStartupLevelUiEntry>& options = model.StartupLevels;
-		if (options.empty())
-		{
-			const QSignalBlocker blocker(&combo);
-			combo.clear();
-			combo.addItem(QStringLiteral("No catalog levels"), QString());
-			combo.setEnabled(false);
-			combo.setToolTip("No catalog levels are available.");
-			return;
-		}
-
-		QVector<LauncherSelectionOption> selectionOptions;
-		selectionOptions.reserve(options.size() + 1);
-		bool hasReadyLevel = false;
-		for (const LauncherStartupLevelUiEntry& option : options)
-		{
-			hasReadyLevel = hasReadyLevel || option.Ready;
-			selectionOptions.push_back(
-			    {option.DisplayName,
-			        option.Id,
-			        option.Ready ? QStringLiteral("Synced and ready to launch.")
-			                     : QStringLiteral("%1. Open Levels to make this level available.").arg(option.Status),
-			        option.Ready});
-		}
-		if (!hasReadyLevel)
-		{
-			selectionOptions.push_front(
-			    {QStringLiteral("Built-in Empty"), QString(), QStringLiteral("Always available when no catalog level is ready."), true});
-		}
-
-		PopulateLauncherSelectionCombo(combo, selectionOptions, m_settings.StartupLevel());
-		combo.setToolTip(
-		    "Startup level used by editor and runtime launches. Synced levels are selectable; supported unsynced levels remain visible for "
-		    "setup.");
-		if (combo.currentIndex() >= 0)
-		{
-			const QString effectiveLevelId = combo.currentData().toString();
-			if (m_settings.StartupLevel() != effectiveLevelId)
-			{
-				m_settings.SetStartupLevel(effectiveLevelId);
-			}
-		}
-	}
-
-	void LauncherMainWindow::PopulateStartupLevelSelectors()
-	{
-		for (QComboBox* combo : m_startupLevelSelectors)
-		{
-			if (combo != nullptr)
-			{
-				PopulateStartupLevelCombo(*combo);
-			}
-		}
-	}
-
-	QVector<QPair<QString, QString>> LauncherMainWindow::BuildStartupLevelOptions() const
-	{
-		QVector<QPair<QString, QString>> options;
-		const LauncherLevelUiModel model = BuildLevelUiModel();
-		for (const LauncherStartupLevelUiEntry& option : model.StartupLevels)
-		{
-			if (option.Ready)
-			{
-				options.push_back({option.DisplayName, option.Id});
-			}
-		}
-		return options;
-	}
-
 	LauncherLevelUiModel LauncherMainWindow::BuildLevelUiModel() const
 	{
 		const LauncherContentSummary* content = m_contentModel.Content();
@@ -300,23 +190,5 @@ namespace SparkleLauncher
 		}
 
 		return LauncherLevelUiModel::Build(*content);
-	}
-
-	QString LauncherMainWindow::ResolveStartupLevelDisplayName() const
-	{
-		const QVector<QPair<QString, QString>> options = BuildStartupLevelOptions();
-		const QString selectedLevel = m_settings.StartupLevel();
-		for (const QPair<QString, QString>& option : options)
-		{
-			if (!selectedLevel.isEmpty() && option.second == selectedLevel)
-			{
-				return option.first;
-			}
-		}
-		if (!selectedLevel.isEmpty())
-		{
-			return selectedLevel;
-		}
-		return options.empty() ? QStringLiteral("Built-in Empty") : options.front().first;
 	}
 }

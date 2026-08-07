@@ -103,11 +103,6 @@ namespace SparkleLauncher
 		return m_graphicsApi;
 	}
 
-	const QString& LauncherSettings::StartupLevel() const
-	{
-		return m_startupLevel;
-	}
-
 	const QString& LauncherSettings::CleanScope() const
 	{
 		return m_cleanScope;
@@ -224,11 +219,12 @@ namespace SparkleLauncher
 
 	void LauncherSettings::SetShaderBackend(const QString& backend)
 	{
-		if (m_shaderBackend == backend)
+		const QString normalized = backend.trimmed().toLower() == "slang" ? QStringLiteral("slang") : QStringLiteral("dxc");
+		if (m_shaderBackend == normalized)
 		{
 			return;
 		}
-		m_shaderBackend = backend;
+		m_shaderBackend = normalized;
 		emit SettingsChanged();
 	}
 
@@ -270,17 +266,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_graphicsApi = normalized;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetStartupLevel(const QString& levelName)
-	{
-		const QString normalized = levelName.trimmed();
-		if (m_startupLevel == normalized)
-		{
-			return;
-		}
-		m_startupLevel = normalized;
 		emit SettingsChanged();
 	}
 

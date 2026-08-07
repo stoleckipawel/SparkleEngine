@@ -26,10 +26,18 @@ namespace SparkleLauncher
 		return "Asset pack acquisition failed." + logSuffix;
 	}
 
-	OperationRecord RunLevelOperationPlan(
-	    LevelOperationPlan plan,
-	    IProcessRunner& processRunner,
-	    ProcessOutputCallback outputCallback)
+	bool LevelOperationExecutionPlanMatches(const LevelOperationPlan& plan, const std::vector<LevelOperationProcessStep>& processSteps)
+	{
+		return plan.Steps.size() == processSteps.size()
+		    && std::equal(
+		        plan.Steps.begin(),
+		        plan.Steps.end(),
+		        processSteps.begin(),
+		        [](const LevelOperationStep& planned, const LevelOperationProcessStep& executable)
+		        { return MatchesPlannedStep(planned, executable); });
+	}
+
+	OperationRecord RunLevelOperationPlan(LevelOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);
@@ -53,13 +61,7 @@ namespace SparkleLauncher
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
-		if (plan.Steps.size() != processSteps.size()
-		    || !std::equal(
-		        plan.Steps.begin(),
-		        plan.Steps.end(),
-		        processSteps.begin(),
-		        [](const LevelOperationStep& planned, const LevelOperationProcessStep& executable)
-		        { return MatchesPlannedStep(planned, executable); }))
+		if (!LevelOperationExecutionPlanMatches(plan, processSteps))
 		{
 			operation.FailureSummary = "Level operation inputs changed after planning. Refresh the workflow and run it again.";
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
@@ -86,10 +88,7 @@ namespace SparkleLauncher
 			if (!result.Launched || result.Canceled || result.ExitCode != 0)
 			{
 				operation.FailureSummary = MakeLevelOperationFailureSummary(step, result);
-				MarkOperationFinished(
-				    operation,
-				    result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed,
-				    result.ExitCode);
+				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
 				return operation;
 			}
 		}
