@@ -5,6 +5,7 @@ set(SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/CookOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LaunchOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherContentDefaults.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LevelOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/MaintenanceOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherPaths.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/OperationModel.h
@@ -47,8 +48,6 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeGeneratorModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncPlanner.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncProcessRequests.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_BUILD_HEADERS
@@ -59,12 +58,22 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeGeneratorModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/HostToolInstaller.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncPlanner.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/AssetPackSyncProcessRequests.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/QtToolchainDiscovery.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/ShaderCompilerSdkDiscovery.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/VisualStudioToolchainDiscovery.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/VulkanSdkDiscovery.h
+)
+
+set(SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/AssetPackSyncPlanner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperationExecutor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperationProcessRequests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperations.cpp
+)
+
+set(SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/AssetPackSyncPlanner.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperationProcessRequests.h
 )
 
 set(SPARKLE_LAUNCHER_CORE_COOK_SOURCES
@@ -206,6 +215,8 @@ add_library(SparkleLauncherCore STATIC
     ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES}
     ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES}
     ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS}
+    ${SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES}
+    ${SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS}
     ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES}
     ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS}
     ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES}
@@ -222,6 +233,7 @@ target_include_directories(SparkleLauncherCore
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch
@@ -351,7 +363,7 @@ add_executable(AssetPackSyncPlannerTests
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp
 )
 sparkle_configure_host_tool_target(AssetPackSyncPlannerTests)
-target_include_directories(AssetPackSyncPlannerTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build)
+target_include_directories(AssetPackSyncPlannerTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels)
 target_link_libraries(AssetPackSyncPlannerTests PRIVATE SparkleLauncherCore SparkleCore)
 target_compile_features(AssetPackSyncPlannerTests PRIVATE cxx_std_20)
 add_test(NAME asset_pack_sync_planner COMMAND AssetPackSyncPlannerTests)
@@ -423,8 +435,31 @@ endif()
 add_test(NAME launcher_context_ui_model COMMAND LauncherContextUiModelTests)
 set_tests_properties(launcher_context_ui_model PROPERTIES LABELS "Launcher;UI")
 
+add_executable(LauncherWorkflowCatalogTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherWorkflowCatalogTests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherUiModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkflowCatalog.cpp
+)
+sparkle_configure_host_tool_target(LauncherWorkflowCatalogTests)
+target_include_directories(LauncherWorkflowCatalogTests
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models
+)
+target_link_libraries(LauncherWorkflowCatalogTests PRIVATE SparkleLauncherCore Qt6::Core)
+target_compile_features(LauncherWorkflowCatalogTests PRIVATE cxx_std_20)
+if(WIN32)
+    add_custom_command(TARGET LauncherWorkflowCatalogTests POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "$<TARGET_FILE:Qt6::Core>"
+            "$<TARGET_FILE_DIR:LauncherWorkflowCatalogTests>"
+        COMMENT "Deploying Qt Core for LauncherWorkflowCatalogTests"
+    )
+endif()
+add_test(NAME launcher_workflow_catalog COMMAND LauncherWorkflowCatalogTests)
+set_tests_properties(launcher_workflow_catalog PROPERTIES LABELS "Launcher;UI;Workflow")
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS})
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES} ${SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES} ${SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES} ${SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Probe PREFIX "Probe" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Probe/SparkleLauncherProbe.cpp)
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.h ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CapabilityGraphTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherQuickStartExecutionTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherContextUiModelTests.cpp)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.h ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CapabilityGraphTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherQuickStartExecutionTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherContextUiModelTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherWorkflowCatalogTests.cpp)

@@ -63,7 +63,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (operationId == "workspace.sync-levels")
+		if (operationId == "levels.sync")
 		{
 			AddSyncLevelContentGroups(layout);
 			return;

@@ -11,6 +11,7 @@ namespace SparkleLauncher
 		Sync,
 		Build,
 		Cook,
+		Levels,
 		Clean,
 		Unknown
 	};

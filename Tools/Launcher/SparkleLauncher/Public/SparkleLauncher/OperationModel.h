@@ -8,6 +8,15 @@
 
 namespace SparkleLauncher
 {
+	enum class LauncherOperationCategory
+	{
+		Workspace,
+		Levels,
+		Cooking,
+		Maintenance,
+		Launch
+	};
+
 	enum class OperationStatus
 	{
 		Pending,

@@ -135,13 +135,13 @@ namespace SparkleLauncher
 			    "Refreshes workspace files, then creates the complete local development artifact set.",
 			    "workflow-build-all.png");
 		}
-		if (operationId == "workspace.sync-levels")
+		if (operationId == "levels.sync")
 		{
 			return MakeOperationUiModel(
 			    operationId,
 			    "Sync Levels",
 			    "Sync",
-			    LauncherWorkflowPageKind::Sync,
+			    LauncherWorkflowPageKind::Levels,
 			    LauncherActionImpactKind::LevelAssets,
 			    "Levels: syncs or cleans maps and their asset packs without changing code or SDK dependencies.",
 			    "Levels and assets",
@@ -310,6 +310,8 @@ namespace SparkleLauncher
 				return "Build";
 			case LauncherWorkflowPageKind::Cook:
 				return "Cook";
+			case LauncherWorkflowPageKind::Levels:
+				return "Levels";
 			case LauncherWorkflowPageKind::Clean:
 				return "Clean";
 			case LauncherWorkflowPageKind::Unknown:

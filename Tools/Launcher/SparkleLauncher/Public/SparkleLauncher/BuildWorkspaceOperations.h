@@ -107,7 +107,6 @@ namespace SparkleLauncher
 	enum class BuildWorkspaceOperationKind
 	{
 		SyncCode,
-		SyncLevels,
 		GenerateBuildFiles,
 		OpenIde,
 		BuildAll,
@@ -136,7 +135,6 @@ namespace SparkleLauncher
 		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;
 		WorkspaceCompiler Compiler = WorkspaceCompiler::Msvc;
 		std::vector<std::string> SelectedTargets;
-		std::vector<std::string> RequestedLevelIds;
 		std::string SourceDependencyId;
 		std::string HostToolId;
 		bool ForceConfigure = false;

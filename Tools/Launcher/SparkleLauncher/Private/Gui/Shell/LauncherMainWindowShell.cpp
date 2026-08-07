@@ -104,8 +104,9 @@ namespace SparkleLauncher
 		for (int workflowIndex = 0; workflowIndex < workflows.size(); ++workflowIndex)
 		{
 			const LauncherWorkflowDefinition& workflow = workflows[workflowIndex];
+			const QString workflowTitle = LauncherWorkflowPageKindName(workflow.PageKind);
 			QToolButton* groupButton = new QToolButton(panel);
-			groupButton->setText(workflow.Title);
+			groupButton->setText(workflowTitle);
 			groupButton->setObjectName("WorkflowGroupButton");
 			groupButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 			groupButton->setMinimumHeight(kWorkflowGroupMinHeight);
@@ -114,8 +115,8 @@ namespace SparkleLauncher
 			groupButton->setMaximumWidth(kWorkflowRailWidth);
 			groupButton->setProperty("WorkflowIndex", workflowIndex);
 			groupButton->setProperty("ActiveState", "false");
-			groupButton->setAccessibleName(workflow.Title + " workflow group");
-			groupButton->setIcon(WorkflowIconForKey(workflow.IconKey));
+			groupButton->setAccessibleName(workflowTitle + " workflow group");
+			groupButton->setIcon(WorkflowIconForPageKind(workflow.PageKind));
 			groupButton->setIconSize(QSize(LauncherUi::Shell::RailIconSize, LauncherUi::Shell::RailIconSize));
 			RegisterFocusable(groupButton);
 			m_workflowGroupButtonGroup->addButton(groupButton);
@@ -393,7 +394,7 @@ namespace SparkleLauncher
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
 		const bool isQuickStart = operationId == LauncherHomeOperationId();
-		const bool isLevelCatalog = operationId == "workspace.sync-levels";
+		const bool isLevelCatalog = operationId == "levels.sync";
 		scrollArea->setAlignment(isQuickStart ? Qt::AlignTop : (Qt::AlignLeft | Qt::AlignTop));
 		content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 		if (!isQuickStart && !isLevelCatalog)

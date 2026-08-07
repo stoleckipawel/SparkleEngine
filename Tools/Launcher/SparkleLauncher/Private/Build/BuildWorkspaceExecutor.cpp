@@ -172,9 +172,9 @@ namespace SparkleLauncher
 			text = ReadLogText(step.Request.LogPath);
 		}
 
-		if (step.Id == "configure" || step.Id.starts_with("sync-asset-pack-"))
+		if (step.Id == "configure")
 		{
-			return ExtractCMakeFailureDetail(text, step.Id == "configure");
+			return ExtractCMakeFailureDetail(text, true);
 		}
 		if (step.Id == "build")
 		{
@@ -200,10 +200,6 @@ namespace SparkleLauncher
 		if (step.Id == "configure")
 		{
 			return detail.empty() ? "Generate build files failed." + logSuffix : "Generate build files failed: " + detail + logSuffix;
-		}
-		if (step.Id.starts_with("sync-asset-pack-"))
-		{
-			return detail.empty() ? "Asset pack acquisition failed." + logSuffix : "Asset pack acquisition failed: " + detail + logSuffix;
 		}
 		if (step.Id == "build")
 		{

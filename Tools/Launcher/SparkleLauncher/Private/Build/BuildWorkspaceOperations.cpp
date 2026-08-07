@@ -75,8 +75,6 @@ namespace SparkleLauncher
 		{
 			case BuildWorkspaceOperationKind::SyncCode:
 				return "SyncCode";
-			case BuildWorkspaceOperationKind::SyncLevels:
-				return "SyncLevels";
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				return "GenerateBuildFiles";
 			case BuildWorkspaceOperationKind::OpenIde:
@@ -218,8 +216,6 @@ namespace SparkleLauncher
 			case BuildWorkspaceOperationKind::SyncCode:
 				return !plan.Request.SourceDependencyId.empty() || plan.Request.ForceConfigure || !plan.Freshness.Current
 				    || HasIncompleteEnabledSourceDependencies(plan);
-			case BuildWorkspaceOperationKind::SyncLevels:
-				return false;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				return true;
 			case BuildWorkspaceOperationKind::InstallHostTool:

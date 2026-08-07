@@ -243,7 +243,7 @@ namespace SparkleLauncher
 			    {option.DisplayName,
 			        option.Id,
 			        option.Ready ? QStringLiteral("Synced and ready to launch.")
-			                     : QStringLiteral("%1. Open Sync > Sync Levels to make this level available.").arg(option.Status),
+			                     : QStringLiteral("%1. Open Levels to make this level available.").arg(option.Status),
 			        option.Ready});
 		}
 		if (!hasReadyLevel)

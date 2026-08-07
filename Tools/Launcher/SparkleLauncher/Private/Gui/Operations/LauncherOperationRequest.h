@@ -7,14 +7,6 @@
 
 namespace SparkleLauncher
 {
-	enum class LauncherOperationCategory
-	{
-		Workspace,
-		Cooking,
-		Maintenance,
-		Launch
-	};
-
 	struct LauncherCleanTarget
 	{
 		QString DisplayName;

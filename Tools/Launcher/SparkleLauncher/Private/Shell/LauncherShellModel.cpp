@@ -3,6 +3,7 @@
 #include "LauncherShellArguments.h"
 
 #include "SparkleLauncher/CookOperations.h"
+#include "SparkleLauncher/LevelOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
@@ -27,6 +28,10 @@ namespace SparkleLauncher
 			rows.push_back({definition.Group, definition.Id, definition.DisplayName, "Dry-run", definition.Description});
 		}
 		for (const CookOperationDefinition& definition : GetCookOperationDefinitions())
+		{
+			rows.push_back({definition.Group, definition.Id, definition.DisplayName, "Dry-run", definition.Description});
+		}
+		for (const LevelOperationDefinition& definition : GetLevelOperationDefinitions())
 		{
 			rows.push_back({definition.Group, definition.Id, definition.DisplayName, "Dry-run", definition.Description});
 		}

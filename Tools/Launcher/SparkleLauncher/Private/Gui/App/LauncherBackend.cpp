@@ -2,6 +2,7 @@
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
+#include "SparkleLauncher/LevelOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 #include "Operations/LauncherOperationExecution.h"
@@ -202,6 +203,16 @@ namespace SparkleLauncher
 			        QString::fromStdString(definition.DisplayName),
 			        QString::fromStdString(definition.Description),
 			        LauncherOperationCategory::Cooking});
+		}
+
+		for (const LevelOperationDefinition& definition : GetLevelOperationDefinitions())
+		{
+			m_operations.push_back(
+			    {QString::fromStdString(definition.Id),
+			        QString::fromStdString(definition.Group),
+			        QString::fromStdString(definition.DisplayName),
+			        QString::fromStdString(definition.Description),
+			        LauncherOperationCategory::Levels});
 		}
 
 		for (const MaintenanceOperationDefinition& definition : GetMaintenanceOperationDefinitions())

@@ -65,10 +65,18 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.PreferredIde = workspaceIde;
 		mapped.Compiler = workspaceCompiler;
 		mapped.SelectedTargets = SplitList(request.SelectedTargets);
-		mapped.RequestedLevelIds = SplitList(request.RequestedLevelIds);
 		mapped.SourceDependencyId = request.SourceDependencyId.toStdString();
 		mapped.HostToolId = request.HostToolId.toStdString();
 		mapped.ForceConfigure = request.ForceConfigure;
+		return mapped;
+	}
+
+	LevelOperationRequest Levels(const LauncherOperationRequest& request)
+	{
+		LevelOperationRequest mapped;
+		mapped.RepositoryRoot = request.RepositoryRoot;
+		mapped.ContentId = request.ContentId.toStdString();
+		mapped.RequestedLevelIds = SplitList(request.RequestedLevelIds);
 		return mapped;
 	}
 

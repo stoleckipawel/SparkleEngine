@@ -51,7 +51,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (m_selectedOperationId == "workspace.sync-levels")
+		if (m_selectedOperationId == "levels.sync")
 		{
 			SyncAllLevels();
 			return;
@@ -92,7 +92,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (m_selectedOperationId == "workspace.sync-levels")
+		if (m_selectedOperationId == "levels.sync")
 		{
 			CleanAllLevels();
 			return;
@@ -199,7 +199,7 @@ namespace SparkleLauncher
 			return m_settings.CleanScope().contains("cooked");
 		}
 
-		return operationId == "workspace.sync-levels" || operationId.startsWith("workspace.build.") || operationId.startsWith("launch.")
+		return operationId == "levels.sync" || operationId.startsWith("workspace.build.") || operationId.startsWith("launch.")
 		    || operationId.startsWith("cook.");
 	}
 

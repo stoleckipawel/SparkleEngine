@@ -1,7 +1,6 @@
 #include "BuildWorkspaceProcessRequests.h"
 
 #include "CMakeWorkflowProcessRequests.h"
-#include "AssetPackSyncProcessRequests.h"
 #include "HostToolInstaller.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
@@ -165,7 +164,7 @@ namespace SparkleLauncher
 			AddHostToolInstallStep(steps, plan);
 			return steps;
 		}
-		if (plan.Kind != BuildWorkspaceOperationKind::SyncLevels && !plan.Toolchain.RequiredToolsAvailable)
+		if (!plan.Toolchain.RequiredToolsAvailable)
 		{
 			return steps;
 		}
@@ -177,9 +176,6 @@ namespace SparkleLauncher
 				{
 					AddConfigureStep(steps, plan);
 				}
-				return steps;
-			case BuildWorkspaceOperationKind::SyncLevels:
-				AppendAssetPackSyncProcessSteps(steps, plan);
 				return steps;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				AddConfigureStep(steps, plan);

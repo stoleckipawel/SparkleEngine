@@ -151,7 +151,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (plan.Kind != BuildWorkspaceOperationKind::SyncLevels && !plan.Toolchain.RequiredToolsAvailable)
+		if (!plan.Toolchain.RequiredToolsAvailable)
 		{
 			AddReadiness(plan, "Required host prerequisites are missing or unsupported.");
 			return;
@@ -180,18 +180,6 @@ namespace SparkleLauncher
 				{
 					AddPlannedEffect(plan, "Repository dependency configure is current; no configure step is required.");
 				}
-				plan.CanRun = true;
-				return;
-			case BuildWorkspaceOperationKind::SyncLevels:
-				if (plan.Toolchain.CMakePath.empty())
-				{
-					AddReadiness(plan, "CMake is required to acquire selected level asset packs.");
-					return;
-				}
-				AddPlannedEffect(
-				    plan,
-				    "Acquire asset packs referenced by selected maps into gitignored content roots; unselected and disabled packs remain "
-				    "untouched.");
 				plan.CanRun = true;
 				return;
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
@@ -394,11 +382,6 @@ namespace SparkleLauncher
 		        "Download enabled repository dependencies and refresh workspace configure state; registered host-tool actions remain "
 		        "available "
 		        "on the same page."},
-		    {BuildWorkspaceOperationKind::SyncLevels,
-		        "workspace.sync-levels",
-		        "Sync",
-		        "Sync Levels",
-		        "Select levels and acquire their asset packs without changing code or SDK dependencies."},
 		    {BuildWorkspaceOperationKind::GenerateBuildFiles,
 		        "workspace.generate-build-files",
 		        "Build",

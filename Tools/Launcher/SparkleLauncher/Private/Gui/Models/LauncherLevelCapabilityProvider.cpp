@@ -4,7 +4,7 @@
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherOperationRequestMapping.h"
 
-#include "SparkleLauncher/BuildWorkspaceOperations.h"
+#include "SparkleLauncher/LevelOperations.h"
 
 #include <QtCore/QStringList>
 
@@ -60,10 +60,8 @@ namespace SparkleLauncher
 				        return LauncherCapabilityEvaluation::Ready();
 			        }
 
-			        LauncherOperationRequest syncRequest =
-			            BuildQuickStartOperationRequest(request, "workspace.sync-levels", missingLevelIds);
-			        const BuildWorkspaceOperationPlan plan =
-			            PlanBuildWorkspaceOperation("workspace.sync-levels", LauncherOperationRequestMapping::BuildWorkspace(syncRequest));
+			        LauncherOperationRequest syncRequest = BuildQuickStartOperationRequest(request, "levels.sync", missingLevelIds);
+			        const LevelOperationPlan plan = PlanLevelOperation("levels.sync", LauncherOperationRequestMapping::Levels(syncRequest));
 			        return plan.CanRun ? LauncherCapabilityEvaluation::RunOperation(std::move(syncRequest))
 			                           : LauncherCapabilityEvaluation::Blocked(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
 		        }});

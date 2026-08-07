@@ -35,13 +35,12 @@ namespace SparkleLauncher::LauncherQuickStartExecutionTests
 		LauncherOperationRequest goalRequest;
 		goalRequest.OperationId = "launch.editor";
 		LauncherQuickStartExecution execution(goalRequest);
-		const LauncherCapabilityResolution syncStep =
-		    OperationStep("workspace.sync-levels", "content.selected-levels", false, {"content.cooked"});
+		const LauncherCapabilityResolution syncStep = OperationStep("levels.sync", "content.selected-levels", false, {"content.cooked"});
 
 		Require(execution.BeginOperation("run-1", syncStep).empty(), "A valid Quick Start step was rejected.");
 		Require(execution.ActiveRunId() == "run-1", "The active run identity was not retained.");
 		Require(
-		    execution.CompleteOperation("run-1", "workspace.sync-levels", true) == LauncherQuickStartCompletion::Continue,
+		    execution.CompleteOperation("run-1", "levels.sync", true) == LauncherQuickStartCompletion::Continue,
 		    "A successful prerequisite did not continue the workflow.");
 		Require(execution.ActiveRunId().isEmpty(), "A completed prerequisite remained active.");
 		Require(execution.InvalidatedCapabilityIds().contains("content.cooked"), "Downstream invalidation was not committed.");

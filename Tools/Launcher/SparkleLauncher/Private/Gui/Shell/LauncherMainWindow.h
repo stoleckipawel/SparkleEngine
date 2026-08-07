@@ -211,7 +211,7 @@ namespace SparkleLauncher
 		void RebuildOptionsPages();
 		void ScheduleUiRefresh(bool refreshContent);
 		void ApplyScheduledUiRefresh();
-		QIcon WorkflowIconForKey(const QString& iconKey) const;
+		QIcon WorkflowIconForPageKind(LauncherWorkflowPageKind pageKind) const;
 		QIcon ActivityIconForState(RunState state) const;
 		void RegisterFocusable(QWidget* widget);
 		void SetActiveWorkflowGroup(int workflowIndex);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LauncherOperationRequest.h"
+#include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
 #include <QtCore/QObject>

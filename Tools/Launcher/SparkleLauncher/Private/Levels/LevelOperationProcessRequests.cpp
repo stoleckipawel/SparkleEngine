@@ -1,4 +1,4 @@
-#include "AssetPackSyncProcessRequests.h"
+#include "LevelOperationProcessRequests.h"
 
 #include "AssetPackSyncPlanner.h"
 
@@ -9,16 +9,17 @@
 
 namespace SparkleLauncher
 {
-	static ProcessRequest MakeSyncRequest(const BuildWorkspaceOperationPlan& plan, const ProjectAssetPack& pack)
+	static ProcessRequest MakeAssetPackSyncRequest(const LevelOperationPlan& plan, const ProjectAssetPack& pack)
 	{
 		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
-		const std::filesystem::path cacheRoot = GetLauncherStateDirectory(plan.RepositoryRoot) / "ContentArchives" / plan.Request.ContentId;
+		const std::filesystem::path cacheRoot =
+		    GetLauncherStateDirectory(plan.RepositoryRoot) / "ContentArchives" / plan.Request.ContentId;
 		const std::filesystem::path rootRelativeToExtraction = pack.rootPath.lexically_relative(pack.extractionPath);
 
 		ProcessRequest process;
 		process.WorkingDirectory = plan.RepositoryRoot;
 		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "AssetPack-" + pack.id + ".txt");
-		process.ExecutablePath = plan.Toolchain.CMakePath;
+		process.ExecutablePath = plan.CMakePath;
 		process.Arguments = {
 		    "-DSPARKLE_PACK_ID=" + pack.id,
 		    "-DSPARKLE_PACK_URL=" + pack.sourceUrl,
@@ -39,8 +40,9 @@ namespace SparkleLauncher
 		return process;
 	}
 
-	void AppendAssetPackSyncProcessSteps(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
+	std::vector<LevelOperationProcessStep> BuildLevelOperationProcessSteps(const LevelOperationPlan& plan)
 	{
+		std::vector<LevelOperationProcessStep> steps;
 		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
 		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(projectRoot);
 		for (const std::string& packId : BuildAssetPackSyncPlan(catalog, plan.Request.RequestedLevelIds))
@@ -51,11 +53,12 @@ namespace SparkleLauncher
 				continue;
 			}
 
-			BuildWorkspaceProcessStep step;
+			LevelOperationProcessStep step;
 			step.Id = "sync-asset-pack-" + pack.id;
 			step.DisplayName = "Acquire " + pack.displayName;
-			step.Request = MakeSyncRequest(plan, pack);
+			step.Request = MakeAssetPackSyncRequest(plan, pack);
 			steps.push_back(std::move(step));
 		}
+		return steps;
 	}
 }

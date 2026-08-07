@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LauncherUiModel.h"
+
 #include <QtCore/QString>
 #include <QtCore/QVector>
 
@@ -7,10 +9,8 @@ namespace SparkleLauncher
 {
 	struct LauncherWorkflowDefinition
 	{
-		QString Title;
-		QString Subtitle;
+		LauncherWorkflowPageKind PageKind = LauncherWorkflowPageKind::Unknown;
 		QVector<QString> OperationIds;
-		QString IconKey;
 	};
 
 	QString LauncherHomeOperationId();

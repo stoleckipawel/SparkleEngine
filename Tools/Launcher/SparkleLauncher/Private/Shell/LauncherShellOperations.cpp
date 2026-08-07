@@ -5,6 +5,7 @@
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
+#include "SparkleLauncher/LevelOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 #include "SparkleLauncher/OperationModel.h"
@@ -37,6 +38,14 @@ namespace SparkleLauncher
 		request.RuntimeProfile = model.RuntimeProfile;
 		request.Mode = arguments.RequestedCookMode;
 		request.ForceRecookConfirmed = arguments.ForceRecookConfirmed;
+		return request;
+	}
+
+	LevelOperationRequest BuildLevelShellRequest(const LauncherShellModel& model)
+	{
+		LevelOperationRequest request;
+		request.RepositoryRoot = model.Repository.RootPath;
+		request.ContentId = model.ContentId;
 		return request;
 	}
 
@@ -93,6 +102,23 @@ namespace SparkleLauncher
 		{
 			model.JobOutput.push_back("Confirmation required: " + ToString(plan.Operation.DestructiveScope));
 		}
+		for (const std::string& message : plan.ReadinessMessages)
+		{
+			model.JobOutput.push_back("Readiness: " + message);
+		}
+		for (const std::string& effect : plan.PlannedEffects)
+		{
+			model.JobOutput.push_back("Effect: " + effect);
+		}
+		model.JobOutput.push_back(plan.Operation.DryRunText);
+		RecordLauncherShellActivity(model, plan.Operation.DisplayName + " dry-run planned");
+	}
+
+	void AppendLevelPlanDryRun(LauncherShellModel& model, const LevelOperationPlan& plan)
+	{
+		model.JobOutput.push_back(plan.Operation.DisplayName + " [" + std::string(plan.CanRun ? "Ready" : "Blocked") + "]");
+		model.JobOutput.push_back("Content: " + model.ContentId);
+		model.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
 		for (const std::string& message : plan.ReadinessMessages)
 		{
 			model.JobOutput.push_back("Readiness: " + message);
@@ -173,6 +199,12 @@ namespace SparkleLauncher
 			return;
 		}
 
+		if (FindLevelOperationDefinition(operation->Id).has_value())
+		{
+			AppendLevelPlanDryRun(model, PlanLevelOperation(operation->Id, BuildLevelShellRequest(model)));
+			return;
+		}
+
 		if (FindMaintenanceOperationDefinition(operation->Id).has_value())
 		{
 			AppendMaintenancePlanDryRun(model, PlanMaintenanceOperation(operation->Id, BuildMaintenanceShellRequest(model, arguments)));
@@ -226,6 +258,15 @@ namespace SparkleLauncher
 		{
 			const OperationRecord operation = RunCookOperationPlan(
 			    PlanCookOperation(arguments.RunOperationId, BuildCookShellRequest(model, arguments)),
+			    processRunner,
+			    [&output](std::string_view text) { output << text; });
+			return ReportLauncherShellOperationResult(operation, output, error);
+		}
+
+		if (FindLevelOperationDefinition(arguments.RunOperationId).has_value())
+		{
+			const OperationRecord operation = RunLevelOperationPlan(
+			    PlanLevelOperation(arguments.RunOperationId, BuildLevelShellRequest(model)),
 			    processRunner,
 			    [&output](std::string_view text) { output << text; });
 			return ReportLauncherShellOperationResult(operation, output, error);

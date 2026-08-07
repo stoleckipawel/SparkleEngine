@@ -408,31 +408,26 @@ namespace SparkleLauncher
 		m_optionsStack->setCurrentIndex(pageIndex);
 	}
 
-	QIcon LauncherMainWindow::WorkflowIconForKey(const QString& iconKey) const
+	QIcon LauncherMainWindow::WorkflowIconForPageKind(LauncherWorkflowPageKind pageKind) const
 	{
-		if (iconKey == "home")
+		switch (pageKind)
 		{
-			return m_icons.Icon(LauncherIcon::Start, QColor(kColorStateQueued));
-		}
-		if (iconKey == "sync")
-		{
-			return m_icons.Icon(LauncherIcon::Sync, QColor(kColorStateQueued));
-		}
-		if (iconKey == "build")
-		{
-			return m_icons.Icon(LauncherIcon::Build, QColor(kColorStateQueued));
-		}
-		if (iconKey == "cook")
-		{
-			return m_icons.Icon(LauncherIcon::Cook, QColor(kColorStateQueued));
-		}
-		if (iconKey == "test")
-		{
-			return m_icons.Icon(LauncherIcon::Done, QColor(kColorStateQueued));
-		}
-		if (iconKey == "clean")
-		{
-			return m_icons.Icon(LauncherIcon::Clean, QColor(kColorStateQueued));
+			case LauncherWorkflowPageKind::Home:
+				return m_icons.Icon(LauncherIcon::Start, QColor(kColorStateQueued));
+			case LauncherWorkflowPageKind::Launch:
+				return m_icons.Icon(LauncherIcon::Run, QColor(kColorStateQueued));
+			case LauncherWorkflowPageKind::Sync:
+				return m_icons.Icon(LauncherIcon::Sync, QColor(kColorStateQueued));
+			case LauncherWorkflowPageKind::Build:
+				return m_icons.Icon(LauncherIcon::Build, QColor(kColorStateQueued));
+			case LauncherWorkflowPageKind::Cook:
+				return m_icons.Icon(LauncherIcon::Cook, QColor(kColorStateQueued));
+			case LauncherWorkflowPageKind::Levels:
+				return m_icons.Icon(LauncherIcon::Levels, QColor(kColorStateQueued));
+			case LauncherWorkflowPageKind::Clean:
+				return m_icons.Icon(LauncherIcon::Clean, QColor(kColorStateQueued));
+			case LauncherWorkflowPageKind::Unknown:
+				return {};
 		}
 		return {};
 	}
@@ -517,7 +512,7 @@ namespace SparkleLauncher
 		}
 
 		m_runButton->setVisible(true);
-		const bool isLevelSync = m_selectedOperationId == "workspace.sync-levels";
+		const bool isLevelSync = m_selectedOperationId == "levels.sync";
 		m_cleanButton->setVisible(
 		    isLevelSync || m_selectedOperationId == "workspace.clean" || SupportsActionSpecificClean(m_selectedOperationId));
 
@@ -612,7 +607,7 @@ namespace SparkleLauncher
 			const int workflowIndex = m_workflowPageByOperation.value(operationId);
 			if (workflowIndex >= 0 && workflowIndex < workflows.size())
 			{
-				workflowTitle = workflows[workflowIndex].Title;
+				workflowTitle = LauncherWorkflowPageKindName(workflows[workflowIndex].PageKind);
 			}
 		}
 		SetControlsEnabled(true);
@@ -629,16 +624,16 @@ namespace SparkleLauncher
 		if (m_runButton != nullptr)
 		{
 			m_runButton->setText(
-			    operationId == "workspace.sync-levels" ? "Sync All"
+			    operationId == "levels.sync"           ? "Sync All"
 			        : operationId == "workspace.clean" ? "Clean Selected"
 			                                           : PrimaryActionLabelForOperationId(operationId));
 		}
 		if (m_cleanButton != nullptr)
 		{
-			const bool cleanAll = operationId == "workspace.clean" || operationId == "workspace.sync-levels";
+			const bool cleanAll = operationId == "workspace.clean" || operationId == "levels.sync";
 			m_cleanButton->setText(cleanAll ? "Clean All" : "Clean");
 			m_cleanButton->setAccessibleName(
-			    operationId == "workspace.sync-levels" ? "Clean all selected levels"
+			    operationId == "levels.sync"           ? "Clean all selected levels"
 			        : operationId == "workspace.clean" ? "Clean all generated repository state"
 			                                           : "Clean selected workflow outputs");
 		}

@@ -12,19 +12,18 @@ namespace SparkleLauncher
 	QVector<LauncherWorkflowDefinition> CreateLauncherWorkflowCatalog()
 	{
 		return {
-		    {"Quick Start", "Launch first", {LauncherHomeOperationId()}, "home"},
-		    {"Sync", "Code and levels", {"workspace.sync-code", "workspace.sync-levels"}, "sync"},
-		    {"Build",
-		        "Generate and build",
+		    {LauncherWorkflowPageKind::Home, {LauncherHomeOperationId()}},
+		    {LauncherWorkflowPageKind::Sync, {"workspace.sync-code"}},
+		    {LauncherWorkflowPageKind::Build,
 		        {"workspace.generate-build-files",
 		            "launcher.build.self",
 		            "workspace.build.editor",
 		            "workspace.build.runtime",
 		            "cook.tools.prepare",
-		            "workspace.build-all"},
-		        "build"},
-		    {"Cook", "Asset refresh", {"cook.shaders", "cook.textures", "cook.assets", "cook.all"}, "cook"},
-		    {"Clean", "Clean generated state", {"workspace.clean"}, "clean"},
+		            "workspace.build-all"}},
+		    {LauncherWorkflowPageKind::Cook, {"cook.shaders", "cook.textures", "cook.assets", "cook.all"}},
+		    {LauncherWorkflowPageKind::Levels, {"levels.sync"}},
+		    {LauncherWorkflowPageKind::Clean, {"workspace.clean"}},
 		};
 	}
 

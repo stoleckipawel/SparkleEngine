@@ -144,8 +144,7 @@ namespace SparkleLauncher
 				++levelSync;
 			}
 		}
-		const bool refreshesLevelState =
-		    operationId == QStringLiteral("workspace.sync-levels") || m_pendingLevelSelectionUpdates.contains(runId);
+		const bool refreshesLevelState = operationId == QStringLiteral("levels.sync") || m_pendingLevelSelectionUpdates.contains(runId);
 		if (m_pendingLevelSelectionUpdates.contains(runId))
 		{
 			const PendingLevelSelectionUpdate update = m_pendingLevelSelectionUpdates.take(runId);

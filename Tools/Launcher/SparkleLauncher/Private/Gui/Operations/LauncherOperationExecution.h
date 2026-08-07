@@ -3,6 +3,7 @@
 #include "LauncherOperationRequest.h"
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
+#include "SparkleLauncher/LevelOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 #include "SparkleLauncher/OperationModel.h"
@@ -17,7 +18,7 @@ class TaskExecutionContext;
 namespace SparkleLauncher
 {
 	using LauncherOperationPlan =
-	    std::variant<BuildWorkspaceOperationPlan, CookOperationPlan, MaintenanceOperationPlan, LaunchOperationPlan>;
+	    std::variant<BuildWorkspaceOperationPlan, LevelOperationPlan, CookOperationPlan, MaintenanceOperationPlan, LaunchOperationPlan>;
 
 	LauncherOperationPlan PlanLauncherOperation(
 	    LauncherOperationCategory category,

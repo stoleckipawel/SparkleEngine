@@ -40,6 +40,8 @@ namespace SparkleLauncher
 		{
 			case LauncherOperationCategory::Workspace:
 				return PlanBuildWorkspaceOperation(operationId, LauncherOperationRequestMapping::BuildWorkspace(request));
+			case LauncherOperationCategory::Levels:
+				return PlanLevelOperation(operationId, LauncherOperationRequestMapping::Levels(request));
 			case LauncherOperationCategory::Cooking:
 				return PlanCookOperation(operationId, LauncherOperationRequestMapping::Cook(request));
 			case LauncherOperationCategory::Maintenance:
@@ -77,6 +79,10 @@ namespace SparkleLauncher
 			    if constexpr (std::is_same_v<Plan, BuildWorkspaceOperationPlan>)
 			    {
 				    return RunBuildWorkspaceOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
+			    }
+			    else if constexpr (std::is_same_v<Plan, LevelOperationPlan>)
+			    {
+				    return RunLevelOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
 			    }
 			    else if constexpr (std::is_same_v<Plan, CookOperationPlan>)
 			    {

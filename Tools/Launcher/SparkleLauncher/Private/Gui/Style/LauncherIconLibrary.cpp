@@ -97,30 +97,32 @@ namespace SparkleLauncher
 	{
 		switch (icon)
 		{
-		case LauncherIcon::Start:
-			return QChar(0xf135);
-		case LauncherIcon::Sync:
-			return QChar(0xf0ad);
-		case LauncherIcon::Build:
-			return QChar(0xf6e3);
-		case LauncherIcon::Cook:
-			return QChar(0xf466);
-		case LauncherIcon::Run:
-			return QChar(0xf04b);
-		case LauncherIcon::Clean:
-			return QChar(0xf1de);
-		case LauncherIcon::Queued:
-			return QChar(0xf017);
-		case LauncherIcon::Running:
-			return QChar(0xf04b);
-		case LauncherIcon::Done:
-			return QChar(0xf00c);
-		case LauncherIcon::Failed:
-			return QChar(0xf071);
-		case LauncherIcon::Copy:
-			return QChar(0xf0c5);
-		case LauncherIcon::Overflow:
-			return QChar(0xf142);
+			case LauncherIcon::Start:
+				return QChar(0xf135);
+			case LauncherIcon::Sync:
+				return QChar(0xf0ad);
+			case LauncherIcon::Build:
+				return QChar(0xf6e3);
+			case LauncherIcon::Cook:
+				return QChar(0xf466);
+			case LauncherIcon::Levels:
+				return QChar(0xf279);
+			case LauncherIcon::Run:
+				return QChar(0xf04b);
+			case LauncherIcon::Clean:
+				return QChar(0xf1de);
+			case LauncherIcon::Queued:
+				return QChar(0xf017);
+			case LauncherIcon::Running:
+				return QChar(0xf04b);
+			case LauncherIcon::Done:
+				return QChar(0xf00c);
+			case LauncherIcon::Failed:
+				return QChar(0xf071);
+			case LauncherIcon::Copy:
+				return QChar(0xf0c5);
+			case LauncherIcon::Overflow:
+				return QChar(0xf142);
 		}
 
 		return QString();

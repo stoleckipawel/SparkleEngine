@@ -407,7 +407,7 @@ namespace SparkleLauncher
 		}
 
 		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("workspace.sync-levels"));
+		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
 		request.ContentId = content.Id;
 		request.RequestedLevelIds = level.Id;
 		const QString runId = StartOperation(std::move(request), QStringLiteral("Sync ") + level.DisplayName);
@@ -481,7 +481,7 @@ namespace SparkleLauncher
 		}
 
 		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("workspace.sync-levels"));
+		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
 		StartOperation(std::move(request), QStringLiteral("Sync All Levels"));
 	}
 
