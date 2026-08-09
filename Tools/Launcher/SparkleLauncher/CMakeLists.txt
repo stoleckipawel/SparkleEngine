@@ -404,6 +404,16 @@ endif()
 add_test(NAME launcher_quick_start_execution COMMAND LauncherQuickStartExecutionTests)
 set_tests_properties(launcher_quick_start_execution PROPERTIES LABELS "Launcher;Workflow")
 
+add_executable(CookToolDependencyContractTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CookToolDependencyContractTests.cpp
+)
+sparkle_configure_host_tool_target(CookToolDependencyContractTests)
+target_include_directories(CookToolDependencyContractTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook)
+target_link_libraries(CookToolDependencyContractTests PRIVATE SparkleLauncherCore SparkleCore)
+target_compile_features(CookToolDependencyContractTests PRIVATE cxx_std_20)
+add_test(NAME cook_tool_dependency_contract COMMAND CookToolDependencyContractTests)
+set_tests_properties(cook_tool_dependency_contract PROPERTIES LABELS "Launcher;Cooking;Workflow")
+
 add_executable(LauncherContextUiModelTests
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherContextUiModelTests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContextUiModel.cpp
@@ -453,4 +463,16 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPA
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES} ${SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Probe PREFIX "Probe" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Probe/SparkleLauncherProbe.cpp)
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.h ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CapabilityGraphTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherQuickStartExecutionTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherContextUiModelTests.cpp ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherWorkflowCatalogTests.cpp)
+source_group(
+    TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests
+    PREFIX "Tests"
+    FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetPackSyncPlannerTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/NativeBuildOutputResetTests.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ContentDiscoveryTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CapabilityGraphTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherQuickStartExecutionTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CookToolDependencyContractTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherContextUiModelTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherWorkflowCatalogTests.cpp)

@@ -3,9 +3,14 @@
 #include "../Discovery/AssetCookerDiscovery.h"
 #include "../Dispatch/AssetCookerDispatcher.h"
 
+#include <optional>
 #include <utility>
 
-AssetCookerService::AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration)
+AssetCookerService::AssetCookerService(
+    const char* repositoryRoot,
+    const char* projectName,
+    const char* configuration,
+    const char* toolProfile)
 {
 	if (HasText(repositoryRoot))
 	{
@@ -18,6 +23,10 @@ AssetCookerService::AssetCookerService(const char* repositoryRoot, const char* p
 	if (HasText(configuration))
 	{
 		m_configuredConfiguration = configuration;
+	}
+	if (HasText(toolProfile))
+	{
+		m_configuredToolProfile = toolProfile;
 	}
 }
 
@@ -34,9 +43,18 @@ AssetCookerServiceResult AssetCookerService::Cook(
 	}
 
 	const std::string resolvedConfiguration = ResolveConfiguration(configuration);
-	if (!AssetCookerDiscovery::ValidateConfiguration(resolvedConfiguration))
+	const std::optional<std::string_view> expectedToolProfile = AssetCookerDiscovery::ResolveToolProfile(resolvedConfiguration);
+	if (!expectedToolProfile.has_value())
 	{
 		diagnostics.AddError(AssetCookerCategory_All, "Unsupported configuration '" + resolvedConfiguration + "'.");
+		return Finish(false, diagnostics);
+	}
+	const std::string resolvedToolProfile = ResolveToolProfile(*expectedToolProfile);
+	if (resolvedToolProfile != *expectedToolProfile)
+	{
+		diagnostics.AddError(
+		    AssetCookerCategory_All,
+		    "Tool profile '" + resolvedToolProfile + "' does not match runtime profile '" + resolvedConfiguration + "'.");
 		return Finish(false, diagnostics);
 	}
 
@@ -49,7 +67,7 @@ AssetCookerServiceResult AssetCookerService::Cook(
 
 	std::vector<AssetCookerOutputRecord> outputs;
 	const bool succeeded =
-	    CookProjects(repositoryRoot, resolvedConfiguration, category, projects, diagnostics, outputs);
+	    CookProjects(repositoryRoot, resolvedConfiguration, resolvedToolProfile, category, projects, diagnostics, outputs);
 	return Finish(succeeded, diagnostics, std::move(outputs));
 }
 
@@ -72,6 +90,7 @@ bool AssetCookerService::ResolveProjects(
 bool AssetCookerService::CookProjects(
     const std::filesystem::path& repositoryRoot,
     std::string_view configuration,
+    std::string_view toolProfile,
     AssetCookerCategory category,
     const std::vector<std::string>& projects,
     AssetCookerDiagnostics& diagnostics,
@@ -79,7 +98,7 @@ bool AssetCookerService::CookProjects(
 {
 	for (const std::string& projectName : projects)
 	{
-		if (!CookProject(repositoryRoot, projectName, configuration, category, diagnostics, outOutputs))
+		if (!CookProject(repositoryRoot, projectName, configuration, toolProfile, category, diagnostics, outOutputs))
 		{
 			return false;
 		}
@@ -92,18 +111,13 @@ bool AssetCookerService::CookProject(
     const std::filesystem::path& repositoryRoot,
     std::string_view projectName,
     std::string_view configuration,
+    std::string_view toolProfile,
     AssetCookerCategory category,
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs) const
 {
 	AssetCookerProjectCookPlan plan;
-	if (!AssetCookerDiscovery::BuildProjectCookPlan(
-	        repositoryRoot,
-	        projectName,
-	        configuration,
-	        category,
-	        plan,
-	        diagnostics))
+	if (!AssetCookerDiscovery::BuildProjectCookPlan(repositoryRoot, projectName, configuration, toolProfile, category, plan, diagnostics))
 	{
 		return false;
 	}
@@ -174,4 +188,13 @@ std::string AssetCookerService::ResolveConfiguration(const char* requestConfigur
 		return m_configuredConfiguration;
 	}
 	return "DevelopmentGame";
+}
+
+std::string AssetCookerService::ResolveToolProfile(std::string_view defaultToolProfile) const
+{
+	if (!m_configuredToolProfile.empty())
+	{
+		return m_configuredToolProfile;
+	}
+	return std::string(defaultToolProfile);
 }

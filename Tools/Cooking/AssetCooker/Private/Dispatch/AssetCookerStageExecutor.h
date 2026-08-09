@@ -24,9 +24,7 @@ class AssetCookerStageExecutor final
   private:
 	static bool FileExists(const std::filesystem::path& path);
 	static bool PlanUsesStep(const AssetCookerProjectCookPlan& plan, AssetCookerPlanStep step) noexcept;
-	static std::filesystem::path ResolveToolPath(
-	    const AssetCookerProjectCookPlan& plan,
-	    std::string_view executableName);
+	static std::filesystem::path ResolveToolPath(const AssetCookerProjectCookPlan& plan, std::string_view executableName);
 	static std::filesystem::path MakeTemporaryPath(
 	    const AssetCookerProjectCookPlan& plan,
 	    std::string_view stem,

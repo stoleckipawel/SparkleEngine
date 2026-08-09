@@ -23,7 +23,7 @@ struct AssetCookerProjectCookPlan final
 {
 	std::string projectName;
 	std::string configuration;
-	std::string toolConfiguration;
+	std::string toolProfile;
 	std::filesystem::path repositoryRoot;
 	std::filesystem::path projectRoot;
 	std::filesystem::path cookedRoot;

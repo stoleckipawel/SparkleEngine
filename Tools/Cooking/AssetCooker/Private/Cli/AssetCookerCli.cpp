@@ -15,6 +15,7 @@ struct AssetCookerCli::Arguments final
 	std::string Command;
 	std::string ProjectName;
 	std::string Configuration = "DevelopmentGame";
+	std::string ToolProfile;
 	std::string RepositoryRoot;
 	AssetCookerCategory Category = AssetCookerCategory_All;
 };
@@ -55,6 +56,17 @@ bool AssetCookerCli::ParseCommonArguments(
 			}
 
 			arguments.RepositoryRoot = argv[++index];
+			continue;
+		}
+		if (argument == "--tool-profile")
+		{
+			if (index + 1 >= argc)
+			{
+				std::cerr << "AssetCooker: --tool-profile requires an editor profile.\n";
+				return false;
+			}
+
+			arguments.ToolProfile = argv[++index];
 			continue;
 		}
 
@@ -113,14 +125,13 @@ bool AssetCookerCli::Parse(int argc, char** argv, Arguments& arguments)
 
 void AssetCookerCli::PrintUsage(std::ostream& output)
 {
-	constexpr std::string_view profile =
-	    "[DebugEditor|DebugGame|DevelopmentEditor|DevelopmentGame|ShippingEditor|ShippingGame]";
+	constexpr std::string_view profile = "[DebugEditor|DebugGame|DevelopmentEditor|DevelopmentGame|ShippingEditor|ShippingGame]";
 
 	output << "Usage:\n"
-	       << "  AssetCooker cook-project [ProjectName|ALL] " << profile << " [--root <repo-root>]\n"
-	       << "  AssetCooker cook-shaders <ProjectName> " << profile << " [--root <repo-root>]\n"
-	       << "  AssetCooker cook-textures <ProjectName> " << profile << " [--root <repo-root>]\n"
-	       << "  AssetCooker cook-assets <ProjectName> " << profile << " [--root <repo-root>]\n";
+	       << "  AssetCooker cook-project [ProjectName|ALL] " << profile << " [--tool-profile <EditorProfile>] [--root <repo-root>]\n"
+	       << "  AssetCooker cook-shaders <ProjectName> " << profile << " [--tool-profile <EditorProfile>] [--root <repo-root>]\n"
+	       << "  AssetCooker cook-textures <ProjectName> " << profile << " [--tool-profile <EditorProfile>] [--root <repo-root>]\n"
+	       << "  AssetCooker cook-assets <ProjectName> " << profile << " [--tool-profile <EditorProfile>] [--root <repo-root>]\n";
 }
 
 void AssetCookerCli::PrintResult(const AssetCookerServiceResult& result)
@@ -162,7 +173,8 @@ int AssetCookerCli::Run(int argc, char** argv) const
 	AssetCookerService service(
 	    arguments.RepositoryRoot.empty() ? nullptr : arguments.RepositoryRoot.c_str(),
 	    arguments.ProjectName.empty() ? nullptr : arguments.ProjectName.c_str(),
-	    arguments.Configuration.c_str());
+	    arguments.Configuration.c_str(),
+	    arguments.ToolProfile.empty() ? nullptr : arguments.ToolProfile.c_str());
 
 	const AssetCookerServiceResult result = service.Cook(
 	    arguments.ProjectName.empty() ? nullptr : arguments.ProjectName.c_str(),

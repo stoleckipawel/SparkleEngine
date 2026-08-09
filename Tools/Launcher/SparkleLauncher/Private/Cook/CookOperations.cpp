@@ -159,7 +159,7 @@ namespace SparkleLauncher
 #endif
 			case CookOperationKind::BuildTextures:
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
-				return {"TextureCooker"};
+				return {"AssetCooker", "TextureCooker"};
 #else
 				return {};
 #endif

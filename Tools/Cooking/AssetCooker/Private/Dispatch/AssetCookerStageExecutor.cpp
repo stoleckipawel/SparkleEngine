@@ -65,19 +65,9 @@ bool AssetCookerStageExecutor::PlanUsesStep(
 	return std::ranges::find(plan.steps, step) != plan.steps.end();
 }
 
-std::filesystem::path AssetCookerStageExecutor::ResolveToolPath(
-    const AssetCookerProjectCookPlan& plan,
-    std::string_view executableName)
+std::filesystem::path AssetCookerStageExecutor::ResolveToolPath(const AssetCookerProjectCookPlan& plan, std::string_view executableName)
 {
-	const std::string fileName = std::string(executableName) + ".exe";
-	const std::filesystem::path artifactPath =
-	    plan.repositoryRoot / "artifacts" / "dev" / "tools" / executableName / plan.toolConfiguration / fileName;
-	if (FileExists(artifactPath))
-	{
-		return artifactPath;
-	}
-
-	return plan.repositoryRoot / "build" / "bin" / plan.toolConfiguration / fileName;
+	return plan.repositoryRoot / "artifacts" / "dev" / "tools" / executableName / plan.toolProfile / (std::string(executableName) + ".exe");
 }
 
 std::filesystem::path AssetCookerStageExecutor::MakeTemporaryPath(

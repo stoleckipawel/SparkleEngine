@@ -4,6 +4,7 @@
 #include "../Planning/ProjectCookPlan.h"
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -15,12 +16,13 @@ class AssetCookerDiscovery final
 {
 public:
 	static bool TryFindRepositoryRoot(const std::filesystem::path& startPath, std::filesystem::path& outRepositoryRoot);
-	static bool ValidateConfiguration(std::string_view configuration);
+	static std::optional<std::string_view> ResolveToolProfile(std::string_view configuration) noexcept;
 	static std::vector<std::string> DiscoverProjects(const std::filesystem::path& repositoryRoot, AssetCookerDiagnostics& diagnostics);
 	static bool BuildProjectCookPlan(
 	    const std::filesystem::path& repositoryRoot,
 	    std::string_view projectName,
 	    std::string_view configuration,
+	    std::string_view toolProfile,
 	    AssetCookerCategory category,
 	    AssetCookerProjectCookPlan& outPlan,
 	    AssetCookerDiagnostics& diagnostics);
@@ -32,10 +34,10 @@ private:
 	    const std::filesystem::path& repositoryRoot,
 	    std::string_view projectName,
 	    std::string_view configuration,
+	    std::string_view toolProfile,
 	    AssetCookerCategory category,
 	    AssetCookerProjectCookPlan& outPlan);
 	static void AddPlanSteps(AssetCookerCategory category, std::vector<AssetCookerPlanStep>& outSteps);
-	static std::string ResolveToolConfiguration(std::string_view configuration);
 	static bool CollectSceneEntries(
 	    const std::filesystem::path& projectRoot,
 	    std::vector<AssetCookerSceneEntry>& outEntries,

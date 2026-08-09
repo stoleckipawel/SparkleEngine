@@ -38,10 +38,21 @@ bool AssetCookerDiscovery::TryFindRepositoryRoot(const std::filesystem::path& st
 	return true;
 }
 
-bool AssetCookerDiscovery::ValidateConfiguration(std::string_view configuration)
+std::optional<std::string_view> AssetCookerDiscovery::ResolveToolProfile(std::string_view configuration) noexcept
 {
-	return configuration == "DebugEditor" || configuration == "DebugGame" || configuration == "DevelopmentEditor"
-	    || configuration == "DevelopmentGame" || configuration == "ShippingEditor" || configuration == "ShippingGame";
+	if (configuration == "DebugEditor" || configuration == "DebugGame")
+	{
+		return "DebugEditor";
+	}
+	if (configuration == "DevelopmentEditor" || configuration == "DevelopmentGame")
+	{
+		return "DevelopmentEditor";
+	}
+	if (configuration == "ShippingEditor" || configuration == "ShippingGame")
+	{
+		return "ShippingEditor";
+	}
+	return std::nullopt;
 }
 
 std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
@@ -80,11 +91,12 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
     const std::filesystem::path& repositoryRoot,
     std::string_view projectName,
     std::string_view configuration,
+    std::string_view toolProfile,
     AssetCookerCategory category,
     AssetCookerProjectCookPlan& outPlan,
     AssetCookerDiagnostics& diagnostics)
 {
-	InitializePlan(repositoryRoot, projectName, configuration, category, outPlan);
+	InitializePlan(repositoryRoot, projectName, configuration, toolProfile, category, outPlan);
 
 	if (!PathExists(outPlan.projectRoot / std::string(Filesystem::kProjectMarker)))
 	{
@@ -118,13 +130,14 @@ void AssetCookerDiscovery::InitializePlan(
     const std::filesystem::path& repositoryRoot,
     std::string_view projectName,
     std::string_view configuration,
+    std::string_view toolProfile,
     AssetCookerCategory category,
     AssetCookerProjectCookPlan& outPlan)
 {
 	outPlan = {};
 	outPlan.projectName = std::string(projectName);
 	outPlan.configuration = std::string(configuration);
-	outPlan.toolConfiguration = ResolveToolConfiguration(configuration);
+	outPlan.toolProfile = std::string(toolProfile);
 	outPlan.repositoryRoot = repositoryRoot;
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
 	outPlan.cookedRoot = repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
@@ -177,11 +190,6 @@ void AssetCookerDiscovery::AddPlanSteps(AssetCookerCategory category, std::vecto
 			outSteps.push_back(AssetCookerPlanStep::SceneAssets);
 			break;
 	}
-}
-
-std::string AssetCookerDiscovery::ResolveToolConfiguration(std::string_view configuration)
-{
-	return std::string(configuration);
 }
 
 bool AssetCookerDiscovery::CollectSceneIds(

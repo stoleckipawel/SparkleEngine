@@ -10,12 +10,12 @@
 
 class AssetCookerService final
 {
-  public:
-	AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration);
+public:
+	AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration, const char* toolProfile);
 
 	AssetCookerServiceResult Cook(const char* projectName, const char* configuration, AssetCookerCategory category);
 
-  private:
+private:
 	static bool HasText(const char* text) noexcept;
 	static bool IsAllProjects(std::string_view projectName) noexcept;
 	static AssetCookerServiceResult Finish(
@@ -32,6 +32,7 @@ class AssetCookerService final
 	bool CookProjects(
 	    const std::filesystem::path& repositoryRoot,
 	    std::string_view configuration,
+	    std::string_view toolProfile,
 	    AssetCookerCategory category,
 	    const std::vector<std::string>& projects,
 	    AssetCookerDiagnostics& diagnostics,
@@ -40,13 +41,16 @@ class AssetCookerService final
 	    const std::filesystem::path& repositoryRoot,
 	    std::string_view projectName,
 	    std::string_view configuration,
+	    std::string_view toolProfile,
 	    AssetCookerCategory category,
 	    AssetCookerDiagnostics& diagnostics,
 	    std::vector<AssetCookerOutputRecord>& outOutputs) const;
 	std::string ResolveProjectName(const char* requestProjectName) const;
 	std::string ResolveConfiguration(const char* requestConfiguration) const;
+	std::string ResolveToolProfile(std::string_view defaultToolProfile) const;
 
 	std::filesystem::path m_configuredRepositoryRoot;
 	std::string m_configuredProjectName;
 	std::string m_configuredConfiguration;
+	std::string m_configuredToolProfile;
 };
