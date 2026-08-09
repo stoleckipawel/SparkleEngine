@@ -5,7 +5,7 @@ Status: documentation root and authority map
 SparkleEngine documentation is organized by responsibility, not by chronology or author.
 
 ## Areas
-
+ 
 | Area | Owns | Does not own |
 | --- | --- | --- |
 | [Strategy](Strategy/README.md) | capability targets, priorities, dated assessments, roadmaps, persona | implementation rules or system design |
@@ -40,7 +40,7 @@ Start with the [Strategy index](Strategy/README.md). Requirements, assessment, r
 ### Multithreading Work
 
 Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the target design and [K. Implementation Plan](Architecture/Multithreading/ImplementationPlan.md) for internal sequencing.
-
+ 
 ## Document Status Vocabulary
 
 - **Canonical** — current authoritative decision for its named subject.

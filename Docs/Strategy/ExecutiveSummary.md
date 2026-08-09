@@ -24,7 +24,7 @@ The engine should make it easy for a reviewer to answer:
 This summary does not restate detailed contracts:
 
 - [A. Requirements](Requirements.md) owns `PGE-01` through `PGE-15` and evidence meaning.
-- [C. Gap Assessment](GapAssessment.md) is the dated current-state assessment.
+- [C. Gap Assessment](GapAssessment.md) is the dated state assessment.
 - [F. Roadmap](Roadmap.md) owns sequencing and allocation.
 - [H. Engineer Persona](EngineerPersona.md) owns the operating model.
 - [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) owns scene, quality, performance, and evidence gates.
