@@ -157,7 +157,7 @@ namespace SparkleLauncher::LauncherUi
 		inline const QMargins RowMargins{14, 10, 14, 10};
 	}
 
-	namespace Build
+	namespace ScopeSelection
 	{
 		inline constexpr int ContentMinWidth = 960;
 		inline constexpr int ContentMaxWidth = 1180;

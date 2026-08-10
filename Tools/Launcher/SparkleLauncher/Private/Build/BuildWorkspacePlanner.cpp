@@ -445,7 +445,7 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
 		plan.Operation.Inputs.push_back({"workspaceIde", WorkspaceIdeCommandLineValue(request.PreferredIde)});
 		plan.Operation.Inputs.push_back({"workspaceCompiler", WorkspaceCompilerCommandLineValue(request.Compiler)});
-		if (!request.SelectedScopes.empty())
+		if (plan.Kind == BuildWorkspaceOperationKind::BuildWorkspace && !request.SelectedScopes.empty())
 		{
 			std::vector<std::string> scopeIds;
 			scopeIds.reserve(request.SelectedScopes.size());

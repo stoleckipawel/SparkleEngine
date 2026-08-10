@@ -3,12 +3,15 @@
 #include "SparkleLauncher/CookOperations.h"
 
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace SparkleLauncher::CookToolDependencyContractTests
@@ -38,6 +41,16 @@ namespace SparkleLauncher::CookToolDependencyContractTests
 		request.ContentId = "Showcase";
 		request.RuntimeProfile = "DevelopmentGame";
 		return PlanCookOperation(operationId, request);
+	}
+
+	static CookOperationPlan PlanWorkspace(std::vector<CookWorkspaceScope> scopes)
+	{
+		CookOperationRequest request;
+		request.RepositoryRoot = "C:/Sparkle";
+		request.ContentId = "Showcase";
+		request.RuntimeProfile = "DevelopmentGame";
+		request.SelectedScopes = std::move(scopes);
+		return PlanCookOperation("cook.workspace", request);
 	}
 
 	static void RequireToolPaths(std::string_view operationId, const std::vector<std::filesystem::path>& expected)
@@ -70,6 +83,77 @@ namespace SparkleLauncher::CookToolDependencyContractTests
 		RequireToolPaths("cook.textures", textureTools);
 		RequireToolPaths("cook.assets", sceneTools);
 		RequireToolPaths("cook.all", allTools);
+
+		std::vector<std::filesystem::path> selectedTools;
+#if SPARKLE_ENABLE_SHADER_COMPILER
+		selectedTools.push_back(ToolPath(repositoryRoot, "ShaderCompiler"));
+#endif
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+		selectedTools.push_back(ToolPath(repositoryRoot, "AssetCooker"));
+		selectedTools.push_back(ToolPath(repositoryRoot, "TextureCooker"));
+#endif
+		const CookOperationPlan selectedPlan =
+		    PlanWorkspace({CookWorkspaceScope::Shaders, CookWorkspaceScope::Textures, CookWorkspaceScope::Shaders});
+		Require(selectedPlan.RequiredToolPaths == selectedTools, "Cook Workspace did not deduplicate the selected scopes' host tools.");
+	}
+
+	static void CookWorkspaceRunsOnlySelectedStages()
+	{
+		CookOperationPlan plan;
+		plan.Kind = CookOperationKind::CookWorkspace;
+		plan.RepositoryRoot = "C:/Sparkle";
+		plan.Request.ContentId = "Showcase";
+		plan.Request.RuntimeProfile = "DevelopmentGame";
+		plan.Request.SelectedScopes = {CookWorkspaceScope::Shaders, CookWorkspaceScope::SceneAssets};
+		plan.ToolProfile = "DevelopmentEditor";
+		plan.Operation.Id = "cook.workspace";
+		plan.Toolchain.RequiredToolsAvailable = true;
+		plan.Freshness.Current = true;
+
+		const std::vector<CookOperationProcessStep> steps = BuildCookProcessStepsForPlan(plan);
+		std::size_t expectedStepCount = 0;
+#if SPARKLE_ENABLE_SHADER_COMPILER
+		expectedStepCount += 1;
+#endif
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+		expectedStepCount += 1;
+#endif
+		Require(steps.size() == expectedStepCount, "Cook Workspace did not retain exactly the selected cooking stages.");
+		Require(
+		    std::ranges::none_of(steps, [](const CookOperationProcessStep& step) { return step.Id == "cook-textures"; }),
+		    "Cook Workspace scheduled an unselected texture stage.");
+
+		const CookOperationPlan emptyPlan = PlanWorkspace({});
+		Require(
+		    std::ranges::any_of(
+		        emptyPlan.ReadinessMessages,
+		        [](const std::string& message) { return message.find("Select at least one output") != std::string::npos; }),
+		    "Cook Workspace did not explain why an empty output selection is blocked.");
+	}
+
+	static void ExistingCookToolsDoNotRequireBuildWorkspaceReadiness()
+	{
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+		const std::filesystem::path repositoryRoot = std::filesystem::temp_directory_path()
+		    / ("SparkleCookWorkspace-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+		const std::filesystem::path assetCookerPath = ToolPath(repositoryRoot, "AssetCooker");
+		std::filesystem::create_directories(assetCookerPath.parent_path());
+		std::ofstream(assetCookerPath).put('\n');
+
+		CookOperationRequest request;
+		request.RepositoryRoot = repositoryRoot;
+		request.ContentId = "Showcase";
+		request.RuntimeProfile = "DevelopmentGame";
+		request.SelectedScopes = {CookWorkspaceScope::SceneAssets};
+		const CookOperationPlan plan = PlanCookOperation("cook.workspace", request);
+		std::filesystem::remove_all(repositoryRoot);
+
+		Require(!plan.Freshness.Current, "The isolated cook contract unexpectedly found current generated build files.");
+		Require(plan.CanRun, "An available cook tool was blocked by unrelated host-build workspace readiness.");
+		Require(
+		    plan.Steps.size() == 1 && plan.Steps.front().Id == "cook-scene-assets",
+		    "The available scene cooker stage was not planned.");
+#endif
 	}
 
 	static void AssetCookerReceivesTheProvenHostToolProfile()
@@ -119,6 +203,8 @@ int main()
 	try
 	{
 		EveryCookOperationDeclaresItsCompleteHostToolSet();
+		CookWorkspaceRunsOnlySelectedStages();
+		ExistingCookToolsDoNotRequireBuildWorkspaceReadiness();
 		AssetCookerReceivesTheProvenHostToolProfile();
 		std::cout << "[PASS] Launcher cook-tool dependency contract\n";
 		return 0;

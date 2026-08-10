@@ -37,6 +37,7 @@ namespace SparkleLauncher
 		request.RuntimeProfile = model.RuntimeProfile;
 		request.Mode = arguments.RequestedCookMode;
 		request.ForceRecookConfirmed = arguments.ForceRecookConfirmed;
+		request.SelectedScopes = {CookWorkspaceScope::Shaders, CookWorkspaceScope::Textures, CookWorkspaceScope::SceneAssets};
 		return request;
 	}
 

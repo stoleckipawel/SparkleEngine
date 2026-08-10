@@ -126,6 +126,7 @@ namespace SparkleLauncher
 		request.WorkspaceIde = settings.WorkspaceIde();
 		request.WorkspaceCompiler = settings.WorkspaceCompiler();
 		request.BuildScopes = settings.BuildScopes();
+		request.CookScopes = settings.CookScopes();
 		request.SelectedTargets = settings.SelectedTargets();
 		request.ShaderPackages = settings.ShaderPackages();
 		request.ShaderTargets = ResolveShaderTargetSelection(settings);
@@ -161,6 +162,7 @@ namespace SparkleLauncher
 		    settings.EditorProfile(),
 		    settings.RuntimeProfile(),
 		    settings.BuildScopes(),
+		    settings.CookScopes(),
 		    settings.SelectedTargets()};
 	}
 

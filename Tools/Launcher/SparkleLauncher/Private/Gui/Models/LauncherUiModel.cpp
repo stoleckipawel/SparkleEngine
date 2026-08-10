@@ -187,6 +187,19 @@ namespace SparkleLauncher
 			    "Refreshes cooked content for selected catalog levels.",
 			    "workflow-cook-all.png");
 		}
+		if (operationId == "cook.workspace")
+		{
+			return MakeOperationUiModel(
+			    operationId,
+			    "Cook Workspace",
+			    "Cook",
+			    LauncherWorkflowPageKind::Cook,
+			    LauncherActionImpactKind::CookedOutputs,
+			    "Cooked outputs: incrementally refreshes the selected shader, texture, and scene content.",
+			    "Selected content outputs",
+			    "Choose shaders, textures, or scene assets, then cook them as one ordered request.",
+			    "workflow-cook-all.png");
+		}
 		if (operationId == "cook.shaders")
 		{
 			return MakeOperationUiModel(

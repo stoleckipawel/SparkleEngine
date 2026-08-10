@@ -142,7 +142,8 @@ namespace SparkleLauncher
 		static bool UsesBuildEnvironmentStatus(const QString& operationId);
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
 		void AddBuildOptions(QVBoxLayout& layout);
-		void AddBuildScopeRow(
+		void AddCookOptions(QVBoxLayout& layout);
+		void AddWorkflowScopeRow(
 		    QVBoxLayout& layout,
 		    const QString& label,
 		    const QString& value,
@@ -151,7 +152,9 @@ namespace SparkleLauncher
 		    bool available,
 		    const QStringList& selectedScopes,
 		    QVector<QCheckBox*>& scopeBoxes);
+		void AddWorkflowAutomationNote(QVBoxLayout& layout, const QString& detail);
 		void UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary);
+		void UpdateCookScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary);
 		void AddShaderCookOptions(QVBoxLayout& layout);
 		void AddCleanOptions(QVBoxLayout& layout, const QString& operationId);
 		void AddCleanScopeRow(
@@ -201,6 +204,7 @@ namespace SparkleLauncher
 		void ReportQuickStartBlocked(const QString& statusMessage);
 		void SetQuickStartButtonsEnabled(bool enabled);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
+		void AddCookEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		QPushButton* CreateHostToolActionButton(const ToolchainItemStatus& item);
 		void SelectWorkspaceCompiler(WorkspaceCompiler compiler);
 		void InstallHostTool(const ToolchainItemStatus& item);

@@ -67,6 +67,20 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		return scopes;
 	}
 
+	static std::vector<CookWorkspaceScope> ParseCookScopes(const QString& text)
+	{
+		std::vector<CookWorkspaceScope> scopes;
+		for (const std::string& value : SplitList(text))
+		{
+			CookWorkspaceScope scope = CookWorkspaceScope::Shaders;
+			if (TryParseCookWorkspaceScope(value, scope) && std::find(scopes.begin(), scopes.end(), scope) == scopes.end())
+			{
+				scopes.push_back(scope);
+			}
+		}
+		return scopes;
+	}
+
 	BuildWorkspaceOperationRequest BuildWorkspace(const LauncherOperationRequest& request)
 	{
 		BuildWorkspaceOperationRequest mapped;
@@ -122,6 +136,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
 		mapped.Mode = request.ForceRecook ? CookMode::Force : CookMode::Incremental;
 		mapped.ForceRecookConfirmed = request.ConfirmForceRecook;
+		mapped.SelectedScopes = ParseCookScopes(request.CookScopes);
 		mapped.ShaderPackages = SplitList(request.ShaderPackages);
 		mapped.ShaderTargets = SplitList(request.ShaderTargets);
 		mapped.ShaderBackend = request.ShaderBackend.toStdString();

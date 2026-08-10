@@ -78,6 +78,11 @@ namespace SparkleLauncher
 		return m_buildScopes;
 	}
 
+	const QString& LauncherSettings::CookScopes() const
+	{
+		return m_cookScopes;
+	}
+
 	const QString& LauncherSettings::SelectedTargets() const
 	{
 		return m_selectedTargets;
@@ -227,6 +232,17 @@ namespace SparkleLauncher
 		}
 
 		m_buildScopes = scopes;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetCookScopes(const QString& scopes)
+	{
+		if (m_cookScopes == scopes)
+		{
+			return;
+		}
+
+		m_cookScopes = scopes;
 		emit SettingsChanged();
 	}
 

@@ -83,7 +83,8 @@ namespace SparkleLauncher
 	bool SupportsActionSpecificClean(const QString& operationId)
 	{
 		return operationId == "launcher.build.self" || operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare"
-		    || operationId == "cook.all" || operationId == "cook.shaders" || operationId == "cook.textures" || operationId == "cook.assets";
+		    || operationId == "cook.workspace" || operationId == "cook.all" || operationId == "cook.shaders"
+		    || operationId == "cook.textures" || operationId == "cook.assets";
 	}
 
 	void AddExplicitCleanTarget(
@@ -174,6 +175,7 @@ namespace SparkleLauncher
 	{
 		QVector<LauncherCleanTarget> targets;
 		const QStringList buildScopes = context.BuildScopes.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
+		const QStringList cookScopes = context.CookScopes.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
 		const bool workspaceBuild = context.OperationId == "workspace.build";
 		const bool buildsContentProduct = workspaceBuild && (buildScopes.contains("editor") || buildScopes.contains("runtime"));
 		if ((buildsContentProduct || context.OperationId == "workspace.build.editor" || context.OperationId == "workspace.build.runtime"
@@ -297,7 +299,26 @@ namespace SparkleLauncher
 #endif
 		}
 
-		if (context.OperationId == "cook.all")
+		if (context.OperationId == "cook.workspace")
+		{
+			if (cookScopes.contains("textures") || cookScopes.contains("assets"))
+			{
+				AddExplicitCleanTarget(
+				    targets,
+				    "Cooked content",
+				    GetCookedProjectDirectory(context.RepositoryRoot, context.ContentId.toStdString()),
+				    "Generated texture, scene, mesh, and material outputs selected by Cook Workspace.");
+			}
+			if (cookScopes.contains("shaders"))
+			{
+				AddExplicitCleanTarget(
+				    targets,
+				    "Shader cache",
+				    GetBuildDirectory(context.RepositoryRoot) / "Cache" / "Shaders",
+				    "Shared local shader cache selected by Cook Workspace.");
+			}
+		}
+		else if (context.OperationId == "cook.all")
 		{
 			AddExplicitCleanTarget(
 			    targets,

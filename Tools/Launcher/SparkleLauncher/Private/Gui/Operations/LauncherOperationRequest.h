@@ -26,6 +26,7 @@ namespace SparkleLauncher
 		QString WorkspaceIde;
 		QString WorkspaceCompiler;
 		QString BuildScopes;
+		QString CookScopes;
 		QString SelectedTargets;
 		QString RequestedLevelIds;
 		QString SourceDependencyId;

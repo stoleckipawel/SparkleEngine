@@ -5,6 +5,7 @@
 #include "LauncherDependencyUiModel.h"
 #include "LauncherLayoutWidgets.h"
 #include "LauncherOperationRequestFactory.h"
+#include "LauncherOperationRequestMapping.h"
 #include "LauncherPageUtilities.h"
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"
@@ -123,16 +124,19 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
 	{
+		if (operationId.startsWith("cook.") && operationId != "cook.tools.prepare")
+		{
+			AddCookEnvironmentStatus(layout, operationId);
+			return;
+		}
+
 		const BuildWorkspaceOperationRequest request = BuildWorkspacePlanRequest(m_repositoryRoot, m_contentModel, m_settings);
 
-		const QString workspacePlanOperationId =
-		    operationId.startsWith("cook.") && operationId != "cook.tools.prepare" ? "cook.tools.prepare" : operationId;
-		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(workspacePlanOperationId.toStdString(), request);
+		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId.toStdString(), request);
 		const QString workspaceIdeName = ResolveSelectedWorkspaceIdeName(m_settings);
 		const bool isSetupWorkflow = operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files";
 		const bool isBuildWorkflow =
 		    operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
-		const bool isCookWorkflow = operationId.startsWith("cook.") && operationId != "cook.tools.prepare";
 		if (isSetupWorkflow)
 		{
 			const bool isSourceSyncWorkflow = operationId == "workspace.sync-code";
@@ -288,27 +292,84 @@ namespace SparkleLauncher
 			                           : CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files"));
 			return;
 		}
+	}
 
-		if (isCookWorkflow)
+	void LauncherMainWindow::AddCookEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
+	{
+		const LauncherOperationRequest operationRequest =
+		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, operationId);
+		const CookOperationPlan cookPlan =
+		    PlanCookOperation(operationId.toStdString(), LauncherOperationRequestMapping::Cook(operationRequest));
+		QVBoxLayout* issueLayout = nullptr;
+		const auto ensureIssueLayout = [&]() -> QVBoxLayout*
 		{
-			QVBoxLayout* cookLayout = AddOptionGroup(layout, "Readiness", QString());
+			if (issueLayout == nullptr)
+			{
+				issueLayout = AddOptionGroup(
+				    layout,
+				    "Setup needed",
+				    "Only prerequisites that need attention are shown here. Resolve them once, then cook the selected outputs.");
+			}
+			return issueLayout;
+		};
+
+		QStringList missingCookTools;
+		for (const std::filesystem::path& toolPath : cookPlan.RequiredToolPaths)
+		{
+			std::error_code errorCode;
+			if (!std::filesystem::exists(toolPath, errorCode) || errorCode)
+			{
+				missingCookTools.push_back(QString::fromStdString(toolPath.filename().string()));
+			}
+		}
+
+		if (!missingCookTools.empty())
+		{
+			for (const ToolchainItemStatus& item : cookPlan.Toolchain.Items)
+			{
+				if (!item.Required || item.State == ToolchainItemState::Found)
+				{
+					continue;
+				}
+				AddStatusRow(
+				    *ensureIssueLayout(),
+				    QString::fromStdString(item.DisplayName),
+				    ToolchainStatusText(item.State, true),
+				    CompactToolchainDetail(item),
+				    ToolchainStatusState(item.State, true),
+				    CreateHostToolActionButton(item));
+			}
+
+			if (!cookPlan.Freshness.Current)
+			{
+				AddStatusRow(
+				    *ensureIssueLayout(),
+				    "Build files",
+				    "Needs refresh",
+				    CombineStatusDetail(QString::fromStdString(cookPlan.Freshness.Summary), BuildFilesRecoveryHint(cookPlan.Freshness)),
+				    "warning",
+				    CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files"));
+			}
+
 			AddStatusRow(
-			    *cookLayout,
-			    "Required tools",
-			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
-			    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain),
-			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad",
-			    plan.Toolchain.RequiredToolsAvailable
-			        ? nullptr
-			        : CreateStatusActionButton("workspace.sync-code", "Review", "Review Sync Code", true));
-			AddStatusRow(
-			    *cookLayout,
-			    "Build files",
-			    plan.Freshness.Current ? "Ready" : "Needs refresh",
-			    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesRecoveryHint(plan.Freshness)),
-			    plan.Freshness.Current ? "ok" : "warning",
-			    plan.Freshness.Current ? nullptr
-			                           : CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files"));
+			    *ensureIssueLayout(),
+			    "Cooking tools",
+			    "Missing",
+			    "Build the required tools: " + missingCookTools.join(", ") + ".",
+			    "bad",
+			    CreateStatusActionButton("cook.tools.prepare", "Build", "Build Cooking Tools"));
+		}
+
+		if (!cookPlan.CanRun && issueLayout == nullptr && !cookPlan.Request.SelectedScopes.empty()
+		    && !(cookPlan.Request.Mode == CookMode::Force && !cookPlan.Request.ForceRecookConfirmed))
+		{
+			const QString detail = cookPlan.ReadinessMessages.empty()
+			    ? QStringLiteral("The selected cooking stages cannot run with the current workspace configuration.")
+			    : QString::fromStdString(cookPlan.ReadinessMessages.back());
+			QWidget* recoveryAction = detail.contains("Cook tool", Qt::CaseInsensitive)
+			    ? CreateStatusActionButton("cook.tools.prepare", "Build", "Build Cooking Tools")
+			    : nullptr;
+			AddStatusRow(*ensureIssueLayout(), "Cook selection", "Unavailable", detail, "bad", recoveryAction);
 		}
 	}
 

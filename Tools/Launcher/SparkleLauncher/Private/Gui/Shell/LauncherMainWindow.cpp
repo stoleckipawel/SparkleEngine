@@ -11,6 +11,7 @@
 #include "LauncherLayoutWidgets.h"
 #include "LauncherLevelUiModel.h"
 #include "LauncherOperationRequestFactory.h"
+#include "LauncherOperationRequestMapping.h"
 #include "LauncherContentModel.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherSettings.h"
@@ -565,6 +566,22 @@ namespace SparkleLauncher
 			const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(m_selectedOperationId.toStdString(), request);
 			const QString reason = plan.CanRun ? "Run " + DisplayNameForOperation(m_selectedOperationId) + ". Existing runs keep going."
 			                                   : FirstBlockingReadinessMessage(plan);
+			m_runButton->setEnabled(plan.CanRun);
+			m_runButton->setToolTip(reason);
+			m_runButton->setAccessibleDescription(reason);
+			return;
+		}
+
+		if (FindCookOperationDefinition(m_selectedOperationId.toStdString()).has_value())
+		{
+			const LauncherOperationRequest operationRequest =
+			    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, m_selectedOperationId);
+			const CookOperationPlan plan =
+			    PlanCookOperation(m_selectedOperationId.toStdString(), LauncherOperationRequestMapping::Cook(operationRequest));
+			const QString reason = plan.CanRun
+			    ? "Run " + DisplayNameForOperation(m_selectedOperationId) + ". Existing runs keep going."
+			    : (plan.ReadinessMessages.empty() ? QStringLiteral("This cooking workflow is currently blocked.")
+			                                      : QString::fromStdString(plan.ReadinessMessages.back()));
 			m_runButton->setEnabled(plan.CanRun);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);

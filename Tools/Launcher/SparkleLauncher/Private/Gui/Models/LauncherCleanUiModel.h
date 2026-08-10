@@ -28,6 +28,7 @@ namespace SparkleLauncher
 		QString EditorProfile;
 		QString RuntimeProfile;
 		QString BuildScopes;
+		QString CookScopes;
 		QString SelectedTargets;
 	};
 

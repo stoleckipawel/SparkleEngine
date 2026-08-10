@@ -63,9 +63,9 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (operationId == "cook.shaders")
+		if (operationId == "cook.workspace")
 		{
-			AddShaderCookOptions(layout);
+			AddCookOptions(layout);
 			return;
 		}
 
@@ -98,18 +98,18 @@ namespace SparkleLauncher
 		    "dependencies.");
 
 		QLabel* selectionSummary = new QLabel(buildLayout->parentWidget());
-		selectionSummary->setObjectName("BuildSelectionSummary");
+		selectionSummary->setObjectName("WorkflowSelectionSummary");
 		buildLayout->addWidget(selectionSummary);
 
 		QFrame* selectionPanel = new QFrame(buildLayout->parentWidget());
-		selectionPanel->setObjectName("BuildSelectionPanel");
-		selectionPanel->setMinimumWidth(LauncherUi::Build::ContentMinWidth);
-		selectionPanel->setMaximumWidth(LauncherUi::Build::ContentMaxWidth);
+		selectionPanel->setObjectName("WorkflowSelectionPanel");
+		selectionPanel->setMinimumWidth(LauncherUi::ScopeSelection::ContentMinWidth);
+		selectionPanel->setMaximumWidth(LauncherUi::ScopeSelection::ContentMaxWidth);
 		QVBoxLayout* selectionLayout = new QVBoxLayout(selectionPanel);
 		selectionLayout->setContentsMargins(0, 0, 0, 0);
 		selectionLayout->setSpacing(0);
 
-		AddBuildScopeRow(
+		AddWorkflowScopeRow(
 		    *selectionLayout,
 		    "Editor",
 		    "editor",
@@ -118,7 +118,7 @@ namespace SparkleLauncher
 		    true,
 		    selectedScopes,
 		    scopeBoxes);
-		AddBuildScopeRow(
+		AddWorkflowScopeRow(
 		    *selectionLayout,
 		    "Game",
 		    "runtime",
@@ -127,7 +127,7 @@ namespace SparkleLauncher
 		    true,
 		    selectedScopes,
 		    scopeBoxes);
-		AddBuildScopeRow(
+		AddWorkflowScopeRow(
 		    *selectionLayout,
 		    "Cooking tools",
 		    "cook-tools",
@@ -137,7 +137,7 @@ namespace SparkleLauncher
 		    cookToolsAvailable,
 		    selectedScopes,
 		    scopeBoxes);
-		AddBuildScopeRow(
+		AddWorkflowScopeRow(
 		    *selectionLayout,
 		    "Launcher",
 		    "launcher",
@@ -148,23 +148,9 @@ namespace SparkleLauncher
 		    scopeBoxes);
 		buildLayout->addWidget(selectionPanel);
 
-		QFrame* automationNote = new QFrame(buildLayout->parentWidget());
-		automationNote->setObjectName("BuildAutomationNote");
-		automationNote->setMinimumWidth(LauncherUi::Build::ContentMinWidth);
-		automationNote->setMaximumWidth(LauncherUi::Build::ContentMaxWidth);
-		QHBoxLayout* automationLayout = new QHBoxLayout(automationNote);
-		automationLayout->setContentsMargins(LauncherUi::Build::RowMargins);
-		automationLayout->setSpacing(LauncherUi::Build::RowSpacing);
-		QLabel* automationTitle = new QLabel("AUTOMATIC", automationNote);
-		automationTitle->setObjectName("BuildAutomationTitle");
-		automationLayout->addWidget(automationTitle, 0, Qt::AlignTop);
-		QLabel* automationDetail = new QLabel(
-		    "Generated build files are refreshed only when stale. Current targets are skipped by the incremental build.",
-		    automationNote);
-		automationDetail->setObjectName("BuildAutomationDetail");
-		automationDetail->setWordWrap(true);
-		automationLayout->addWidget(automationDetail, 1);
-		buildLayout->addWidget(automationNote);
+		AddWorkflowAutomationNote(
+		    *buildLayout,
+		    "Generated build files are refreshed only when stale. Current targets are skipped by the incremental build.");
 
 		for (QCheckBox* scopeBox : scopeBoxes)
 		{
@@ -178,7 +164,7 @@ namespace SparkleLauncher
 		AddBuildEnvironmentStatus(layout, "workspace.build");
 	}
 
-	void LauncherMainWindow::AddBuildScopeRow(
+	void LauncherMainWindow::AddWorkflowScopeRow(
 	    QVBoxLayout& layout,
 	    const QString& label,
 	    const QString& value,
@@ -189,18 +175,18 @@ namespace SparkleLauncher
 	    QVector<QCheckBox*>& scopeBoxes)
 	{
 		QFrame* scopeRow = new QFrame(layout.parentWidget());
-		scopeRow->setObjectName("BuildScopeRow");
+		scopeRow->setObjectName("WorkflowScopeRow");
 		QHBoxLayout* scopeRowLayout = new QHBoxLayout(scopeRow);
-		scopeRowLayout->setContentsMargins(LauncherUi::Build::RowMargins);
-		scopeRowLayout->setSpacing(LauncherUi::Build::RowSpacing);
+		scopeRowLayout->setContentsMargins(LauncherUi::ScopeSelection::RowMargins);
+		scopeRowLayout->setSpacing(LauncherUi::ScopeSelection::RowSpacing);
 
 		QVBoxLayout* descriptionLayout = new QVBoxLayout();
 		descriptionLayout->setContentsMargins(0, 0, 0, 0);
 		descriptionLayout->setSpacing(2);
 		QCheckBox* scopeBox = new QCheckBox(label, scopeRow);
-		scopeBox->setObjectName("BuildScopeCheckBox");
-		scopeBox->setProperty("BuildScope", value);
-		scopeBox->setProperty("BuildLabel", label);
+		scopeBox->setObjectName("WorkflowScopeCheckBox");
+		scopeBox->setProperty("ScopeValue", value);
+		scopeBox->setProperty("ScopeLabel", label);
 		scopeBox->setToolTip(detail);
 		scopeBox->setChecked(available && selectedScopes.contains(value));
 		scopeBox->setEnabled(available);
@@ -208,13 +194,13 @@ namespace SparkleLauncher
 		descriptionLayout->addWidget(scopeBox);
 
 		QLabel* scopeDescription = new QLabel(detail, scopeRow);
-		scopeDescription->setObjectName("BuildScopeDescription");
+		scopeDescription->setObjectName("WorkflowScopeDescription");
 		scopeDescription->setWordWrap(true);
 		descriptionLayout->addWidget(scopeDescription);
 		scopeRowLayout->addLayout(descriptionLayout, 1);
 
 		QLabel* scopeMetadata = new QLabel(metadata, scopeRow);
-		scopeMetadata->setObjectName("BuildScopeMetadata");
+		scopeMetadata->setObjectName("WorkflowScopeMetadata");
 		scopeMetadata->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 		scopeRowLayout->addWidget(scopeMetadata, 0);
 
@@ -234,6 +220,25 @@ namespace SparkleLauncher
 		scopeBoxes.push_back(scopeBox);
 	}
 
+	void LauncherMainWindow::AddWorkflowAutomationNote(QVBoxLayout& layout, const QString& detail)
+	{
+		QFrame* automationNote = new QFrame(layout.parentWidget());
+		automationNote->setObjectName("WorkflowAutomationNote");
+		automationNote->setMinimumWidth(LauncherUi::ScopeSelection::ContentMinWidth);
+		automationNote->setMaximumWidth(LauncherUi::ScopeSelection::ContentMaxWidth);
+		QHBoxLayout* automationLayout = new QHBoxLayout(automationNote);
+		automationLayout->setContentsMargins(LauncherUi::ScopeSelection::RowMargins);
+		automationLayout->setSpacing(LauncherUi::ScopeSelection::RowSpacing);
+		QLabel* automationTitle = new QLabel("AUTOMATIC", automationNote);
+		automationTitle->setObjectName("WorkflowAutomationTitle");
+		automationLayout->addWidget(automationTitle, 0, Qt::AlignTop);
+		QLabel* automationDetail = new QLabel(detail, automationNote);
+		automationDetail->setObjectName("WorkflowAutomationDetail");
+		automationDetail->setWordWrap(true);
+		automationLayout->addWidget(automationDetail, 1);
+		layout.addWidget(automationNote);
+	}
+
 	void LauncherMainWindow::UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary)
 	{
 		QStringList selectedValues;
@@ -242,16 +247,18 @@ namespace SparkleLauncher
 		{
 			if (scopeBox != nullptr && scopeBox->isEnabled() && scopeBox->isChecked())
 			{
-				selectedValues.push_back(scopeBox->property("BuildScope").toString());
-				selectedLabels.push_back(scopeBox->property("BuildLabel").toString());
+				selectedValues.push_back(scopeBox->property("ScopeValue").toString());
+				selectedLabels.push_back(scopeBox->property("ScopeLabel").toString());
 			}
 		}
 
 		if (selectionSummary != nullptr)
 		{
+			const QString separator = QStringLiteral("  \u00b7  ");
 			selectionSummary->setText(
-			    selectedLabels.empty() ? QStringLiteral("Select at least one product to build")
-			                           : QStringLiteral("%1 selected  ·  %2").arg(selectedLabels.size()).arg(selectedLabels.join("  ·  ")));
+			    selectedLabels.empty()
+			        ? QStringLiteral("Select at least one product to build")
+			        : QStringLiteral("%1 selected%2%3").arg(selectedLabels.size()).arg(separator).arg(selectedLabels.join(separator)));
 			selectionSummary->setProperty("State", selectedLabels.empty() ? "warning" : "ok");
 			selectionSummary->style()->unpolish(selectionSummary);
 			selectionSummary->style()->polish(selectionSummary);
@@ -260,10 +267,116 @@ namespace SparkleLauncher
 		UpdateRunAvailability();
 	}
 
+	void LauncherMainWindow::AddCookOptions(QVBoxLayout& layout)
+	{
+		const WorkspaceFeatureSettings features = GetLauncherWorkspaceFeatureSettings();
+		const QStringList selectedScopes = m_settings.CookScopes().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
+		QVector<QCheckBox*> scopeBoxes;
+
+		QVBoxLayout* cookLayout = AddOptionGroup(
+		    layout,
+		    "Choose outputs",
+		    "Select one or more content products. The launcher runs the selected cooking stages in one ordered request.");
+
+		QLabel* selectionSummary = new QLabel(cookLayout->parentWidget());
+		selectionSummary->setObjectName("WorkflowSelectionSummary");
+		cookLayout->addWidget(selectionSummary);
+
+		QFrame* selectionPanel = new QFrame(cookLayout->parentWidget());
+		selectionPanel->setObjectName("WorkflowSelectionPanel");
+		selectionPanel->setMinimumWidth(LauncherUi::ScopeSelection::ContentMinWidth);
+		selectionPanel->setMaximumWidth(LauncherUi::ScopeSelection::ContentMaxWidth);
+		QVBoxLayout* selectionLayout = new QVBoxLayout(selectionPanel);
+		selectionLayout->setContentsMargins(0, 0, 0, 0);
+		selectionLayout->setSpacing(0);
+
+		AddWorkflowScopeRow(
+		    *selectionLayout,
+		    "Shaders",
+		    "shaders",
+		    features.ShaderCompilerEnabled ? "Compile shader packages into the selected DXIL and SPIR-V binaries."
+		                                   : "Shader cooking is not enabled by this workspace configuration.",
+		    features.ShaderCompilerEnabled ? QStringLiteral("ShaderCompiler") : QStringLiteral("Unavailable"),
+		    features.ShaderCompilerEnabled,
+		    selectedScopes,
+		    scopeBoxes);
+		AddWorkflowScopeRow(
+		    *selectionLayout,
+		    "Textures",
+		    "textures",
+		    features.ContentPipelineEnabled ? "Transform source textures into runtime-ready products."
+		                                    : "Texture cooking is not enabled by this workspace configuration.",
+		    features.ContentPipelineEnabled ? QStringLiteral("AssetCooker + TextureCooker") : QStringLiteral("Unavailable"),
+		    features.ContentPipelineEnabled,
+		    selectedScopes,
+		    scopeBoxes);
+		AddWorkflowScopeRow(
+		    *selectionLayout,
+		    "Scene assets",
+		    "assets",
+		    features.ContentPipelineEnabled ? "Cook selected scenes, meshes, and materials for runtime use."
+		                                    : "Scene-asset cooking is not enabled by this workspace configuration.",
+		    features.ContentPipelineEnabled ? QStringLiteral("AssetCooker") : QStringLiteral("Unavailable"),
+		    features.ContentPipelineEnabled,
+		    selectedScopes,
+		    scopeBoxes);
+		cookLayout->addWidget(selectionPanel);
+
+		AddWorkflowAutomationNote(
+		    *cookLayout,
+		    "Current outputs are reused by incremental cooking. Setup guidance appears below only when a required tool or generated build "
+		    "file "
+		    "needs attention.");
+
+		for (QCheckBox* scopeBox : scopeBoxes)
+		{
+			connect(
+			    scopeBox,
+			    &QCheckBox::toggled,
+			    this,
+			    [this, scopeBoxes, selectionSummary]() { UpdateCookScopeSetting(scopeBoxes, selectionSummary); });
+		}
+		UpdateCookScopeSetting(scopeBoxes, selectionSummary);
+
+		if (m_settings.CookScopes().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts).contains("shaders"))
+		{
+			AddShaderCookOptions(layout);
+		}
+		AddBuildEnvironmentStatus(layout, "cook.workspace");
+	}
+
+	void LauncherMainWindow::UpdateCookScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary)
+	{
+		QStringList selectedValues;
+		QStringList selectedLabels;
+		for (QCheckBox* scopeBox : scopeBoxes)
+		{
+			if (scopeBox != nullptr && scopeBox->isEnabled() && scopeBox->isChecked())
+			{
+				selectedValues.push_back(scopeBox->property("ScopeValue").toString());
+				selectedLabels.push_back(scopeBox->property("ScopeLabel").toString());
+			}
+		}
+
+		if (selectionSummary != nullptr)
+		{
+			const QString separator = QStringLiteral("  \u00b7  ");
+			selectionSummary->setText(
+			    selectedLabels.empty()
+			        ? QStringLiteral("Select at least one output to cook")
+			        : QStringLiteral("%1 selected%2%3").arg(selectedLabels.size()).arg(separator).arg(selectedLabels.join(separator)));
+			selectionSummary->setProperty("State", selectedLabels.empty() ? "warning" : "ok");
+			selectionSummary->style()->unpolish(selectionSummary);
+			selectionSummary->style()->polish(selectionSummary);
+		}
+		m_settings.SetCookScopes(selectedValues.join(';'));
+		UpdateRunAvailability();
+	}
+
 	void LauncherMainWindow::AddShaderCookOptions(QVBoxLayout& layout)
 	{
 		QVBoxLayout* selectionLayout =
-		    AddOptionGroup(layout, "Options", "Choose shader packages and binary targets. The footer owns the DXC/Slang selection.");
+		    AddOptionGroup(layout, "Shader output", "Choose shader packages and binary targets. The footer owns the DXC/Slang selection.");
 
 		AddOptionField(
 		    *selectionLayout,
@@ -304,8 +417,6 @@ namespace SparkleLauncher
 		    &QComboBox::currentTextChanged,
 		    customTargetsRow,
 		    [this, customTargetsRow](const QString&) { customTargetsRow->setVisible(m_settings.ShaderTargetPreset() == "custom"); });
-
-		AddBuildEnvironmentStatus(layout, "cook.shaders");
 	}
 
 	void LauncherMainWindow::AddCleanOptions(QVBoxLayout& layout, const QString&)

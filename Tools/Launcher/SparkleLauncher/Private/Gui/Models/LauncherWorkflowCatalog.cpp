@@ -15,7 +15,7 @@ namespace SparkleLauncher
 		    {LauncherWorkflowPageKind::Home, {LauncherHomeOperationId()}},
 		    {LauncherWorkflowPageKind::Sync, {"workspace.sync-code"}},
 		    {LauncherWorkflowPageKind::Build, {"workspace.build"}},
-		    {LauncherWorkflowPageKind::Cook, {"cook.shaders", "cook.textures", "cook.assets", "cook.all"}},
+		    {LauncherWorkflowPageKind::Cook, {"cook.workspace"}},
 		    {LauncherWorkflowPageKind::Clean, {"workspace.clean"}},
 		};
 	}

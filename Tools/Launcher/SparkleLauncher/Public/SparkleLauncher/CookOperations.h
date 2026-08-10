@@ -15,10 +15,18 @@ namespace SparkleLauncher
 {
 	enum class CookOperationKind
 	{
+		CookWorkspace,
 		CookShaders,
 		BuildTextures,
 		BuildSceneAssets,
 		CookAllAssets
+	};
+
+	enum class CookWorkspaceScope
+	{
+		Shaders,
+		Textures,
+		SceneAssets
 	};
 
 	enum class CookMode
@@ -43,6 +51,7 @@ namespace SparkleLauncher
 		std::string RuntimeProfile = "DevelopmentGame";
 		CookMode Mode = CookMode::Incremental;
 		bool ForceRecookConfirmed = false;
+		std::vector<CookWorkspaceScope> SelectedScopes;
 		std::vector<std::string> ShaderPackages;
 		std::vector<std::string> ShaderTargets;
 		std::string ShaderBackend = "auto";
@@ -82,6 +91,9 @@ namespace SparkleLauncher
 	};
 
 	std::string ToString(CookOperationKind kind);
+	std::string ToString(CookWorkspaceScope scope);
+	std::string DisplayName(CookWorkspaceScope scope);
+	bool TryParseCookWorkspaceScope(std::string_view value, CookWorkspaceScope& outScope);
 	std::string ToString(CookMode mode);
 	const std::vector<CookOperationDefinition>& GetCookOperationDefinitions();
 	std::optional<CookOperationDefinition> FindCookOperationDefinition(std::string_view operationId);

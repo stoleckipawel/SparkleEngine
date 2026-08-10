@@ -2,6 +2,7 @@
 #include "LauncherWorkflowCatalog.h"
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
+#include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LevelOperations.h"
 #include "SparkleLauncher/LevelRunOperations.h"
 
@@ -151,6 +152,37 @@ namespace SparkleLauncher::LauncherWorkflowCatalogTests
 		passed &= Expect(uiModel.DisplayName == "Build Workspace", "The composite Build intent must have a reviewer-facing name.");
 		return passed;
 	}
+
+	static bool CookUsesOneSelectableWorkspaceIntent()
+	{
+		bool passed = true;
+		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
+		const auto cook = std::find_if(
+		    workflows.begin(),
+		    workflows.end(),
+		    [](const LauncherWorkflowDefinition& workflow) { return workflow.PageKind == LauncherWorkflowPageKind::Cook; });
+		passed &= Expect(cook != workflows.end(), "The frontend workflow catalog must contain Cook.");
+		if (cook != workflows.end())
+		{
+			passed &= Expect(
+			    cook->OperationIds == QVector<QString>{"cook.workspace"},
+			    "Cook must project one selectable workspace cook intent instead of backend operation tabs.");
+		}
+
+		const std::optional<CookOperationDefinition> definition = FindCookOperationDefinition("cook.workspace");
+		passed &= Expect(definition.has_value(), "CookOperations must register cook.workspace.");
+		passed &= Expect(
+		    definition.has_value() && definition->Kind == CookOperationKind::CookWorkspace,
+		    "cook.workspace must use the composite CookOperations planner.");
+		passed &= Expect(
+		    FindCookOperationDefinition("cook.all").has_value() && FindCookOperationDefinition("cook.shaders").has_value()
+		        && FindCookOperationDefinition("cook.textures").has_value() && FindCookOperationDefinition("cook.assets").has_value(),
+		    "Quick Start cook capability primitives must remain registered below the frontend projection.");
+
+		const LauncherOperationUiModel uiModel = LauncherUiModelForOperation("cook.workspace");
+		passed &= Expect(uiModel.DisplayName == "Cook Workspace", "The composite Cook intent must have a reviewer-facing name.");
+		return passed;
+	}
 }
 
 int main()
@@ -161,6 +193,10 @@ int main()
 		return 1;
 	}
 	if (!BuildUsesOneSelectableWorkspaceIntent())
+	{
+		return 1;
+	}
+	if (!CookUsesOneSelectableWorkspaceIntent())
 	{
 		return 1;
 	}

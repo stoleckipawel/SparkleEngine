@@ -91,6 +91,9 @@ int main()
 	LauncherOperationRequest buildRequest;
 	buildRequest.BuildScopes = "editor;cook-tools;editor;unknown";
 	const BuildWorkspaceOperationRequest mappedBuild = LauncherOperationRequestMapping::BuildWorkspace(buildRequest);
+	LauncherOperationRequest cookRequest;
+	cookRequest.CookScopes = "shaders;assets;shaders;unknown";
+	const CookOperationRequest mappedCook = LauncherOperationRequestMapping::Cook(cookRequest);
 	LauncherOperationRequest editorRequest;
 	editorRequest.EditorProfile = "DevelopmentEditor";
 	editorRequest.RuntimeProfile = "DevelopmentGame";
@@ -111,7 +114,9 @@ int main()
 	    && gameContext.ProductCapabilityId() == "product.runtime";
 	const bool buildScopeContract = settings.BuildScopes() == "editor;runtime;cook-tools"
 	    && mappedBuild.SelectedScopes == std::vector<BuildWorkspaceScope>{BuildWorkspaceScope::Editor, BuildWorkspaceScope::CookTools};
-	const bool valid = runModesAreOrdered && runModeContract && buildScopeContract
+	const bool cookScopeContract = settings.CookScopes() == "shaders;textures;assets"
+	    && mappedCook.SelectedScopes == std::vector<CookWorkspaceScope>{CookWorkspaceScope::Shaders, CookWorkspaceScope::SceneAssets};
+	const bool valid = runModesAreOrdered && runModeContract && buildScopeContract && cookScopeContract
 	    && ExpectAvailability(model.RunModes, "editor", true, error) && ExpectAvailability(model.RunModes, "game", true, error)
 	    && ExpectAvailability(model.GraphicsApis, "d3d12", true, error) && ExpectAvailability(model.GraphicsApis, "vulkan", false, error)
 	    && ExpectAvailability(model.ShaderBackends, "dxc", true, error) && ExpectAvailability(model.ShaderBackends, "slang", true, error)
@@ -135,6 +140,10 @@ int main()
 		else if (!buildScopeContract)
 		{
 			error = "Build scope defaults or typed request mapping are incorrect.";
+		}
+		else if (!cookScopeContract)
+		{
+			error = "Cook scope defaults or typed request mapping are incorrect.";
 		}
 		std::cerr << error << '\n';
 		return 1;
