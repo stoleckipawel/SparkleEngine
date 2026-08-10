@@ -259,6 +259,25 @@ namespace SparkleLauncher
 		    LauncherUi::ContextSelector::RunModeComboMaxWidth);
 		addGroupDivider();
 
+		m_graphicsApiCombo = CreateContextCombo(&LauncherSettings::SetGraphicsApi);
+		m_graphicsApiCombo->setAccessibleName("Graphics API");
+		m_graphicsApiCombo->setToolTip("Graphics API passed to a level runtime launched from Quick Start.");
+		addContextItem(
+		    "Graphics API",
+		    *m_graphicsApiCombo,
+		    LauncherUi::ContextSelector::GraphicsApiComboMinWidth,
+		    LauncherUi::ContextSelector::GraphicsApiComboMaxWidth);
+
+		m_shaderBackendCombo = CreateContextCombo(&LauncherSettings::SetShaderBackend);
+		m_shaderBackendCombo->setAccessibleName("Shader Compiler");
+		m_shaderBackendCombo->setToolTip("DXC or Slang backend passed to shader cook operations.");
+		addContextItem(
+		    "Shader Compiler",
+		    *m_shaderBackendCombo,
+		    LauncherUi::ContextSelector::ShaderBackendComboMinWidth,
+		    LauncherUi::ContextSelector::ShaderBackendComboMaxWidth);
+		addGroupDivider();
+
 		m_buildConfigurationCombo = CreateContextCombo(&LauncherSettings::SetBuildConfiguration);
 		m_buildConfigurationCombo->setAccessibleName("Build Configuration");
 		m_buildConfigurationCombo->setToolTip(
@@ -289,25 +308,6 @@ namespace SparkleLauncher
 		    *m_workspaceIdeCombo,
 		    LauncherUi::ContextSelector::IdeComboMinWidth,
 		    LauncherUi::ContextSelector::IdeComboMaxWidth);
-		addGroupDivider();
-
-		m_graphicsApiCombo = CreateContextCombo(&LauncherSettings::SetGraphicsApi);
-		m_graphicsApiCombo->setAccessibleName("Graphics API");
-		m_graphicsApiCombo->setToolTip("Graphics API passed to a level runtime launched from Quick Start.");
-		addContextItem(
-		    "Graphics API",
-		    *m_graphicsApiCombo,
-		    LauncherUi::ContextSelector::GraphicsApiComboMinWidth,
-		    LauncherUi::ContextSelector::GraphicsApiComboMaxWidth);
-
-		m_shaderBackendCombo = CreateContextCombo(&LauncherSettings::SetShaderBackend);
-		m_shaderBackendCombo->setAccessibleName("Shader Compiler");
-		m_shaderBackendCombo->setToolTip("DXC or Slang backend passed to shader cook operations.");
-		addContextItem(
-		    "Shader Compiler",
-		    *m_shaderBackendCombo,
-		    LauncherUi::ContextSelector::ShaderBackendComboMinWidth,
-		    LauncherUi::ContextSelector::ShaderBackendComboMaxWidth);
 		return panel;
 	}
 
