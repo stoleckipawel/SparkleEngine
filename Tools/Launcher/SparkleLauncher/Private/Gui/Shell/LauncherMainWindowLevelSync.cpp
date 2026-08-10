@@ -167,11 +167,12 @@ namespace SparkleLauncher
 		body->setObjectName("MapCardBody");
 		body->setAttribute(Qt::WA_StyledBackground, true);
 		QVBoxLayout* bodyLayout = new QVBoxLayout(body);
-		bodyLayout->setContentsMargins(11, 0, 11, 9);
-		bodyLayout->setSpacing(5);
+		bodyLayout->setContentsMargins(LauncherUi::MapCatalog::CardBodyMargins);
+		bodyLayout->setSpacing(LauncherUi::MapCatalog::CardContentSpacing);
 
-		QLabel* title = new QLabel(level.DisplayName, body);
+		ElidedLabel* title = new ElidedLabel(level.DisplayName, body);
 		title->setObjectName("MapCardTitle");
+		title->setProperty("State", level.State);
 		title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 		bodyLayout->addWidget(title);
 

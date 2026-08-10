@@ -14,9 +14,35 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace SparkleLauncher
 {
+	ElidedLabel::ElidedLabel(QString fullText, QWidget* parent) :
+	    QLabel(parent),
+	    m_fullText(std::move(fullText))
+	{
+		setText(m_fullText);
+		setToolTip(m_fullText);
+		setAccessibleName(m_fullText);
+	}
+
+	void ElidedLabel::resizeEvent(QResizeEvent* event)
+	{
+		QLabel::resizeEvent(event);
+		RefreshDisplayedText();
+	}
+
+	void ElidedLabel::RefreshDisplayedText()
+	{
+		const int availableWidth = std::max(0, contentsRect().width() - LauncherUi::Space::Medium);
+		const QString displayedText = fontMetrics().elidedText(m_fullText, Qt::ElideRight, availableWidth);
+		if (text() != displayedText)
+		{
+			setText(displayedText);
+		}
+	}
+
 	ProportionalCardFrame::ProportionalCardFrame(double aspectRatio, QWidget* parent)
 	    : QFrame(parent)
 	    , m_aspectRatio(aspectRatio > 0.0 ? aspectRatio : 16.0 / 9.0)

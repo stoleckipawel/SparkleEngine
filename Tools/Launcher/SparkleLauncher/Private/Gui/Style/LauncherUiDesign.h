@@ -191,11 +191,11 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int RowHeight = 26;
 		inline constexpr int HistoryRowHeight = 34;
 		inline constexpr int RunIndicatorWidth = 4;
-		inline constexpr const char* ExpandGlyph = "+";
-		inline constexpr const char* CollapseGlyph = "-";
+		inline constexpr const char* ExpandGlyph = "Show";
+		inline constexpr const char* CollapseGlyph = "Hide";
 
-		inline const QSize ToggleButtonSize{28, 24};
-		inline const QMargins HeaderMargins{10, 5, 10, 5};
+		inline const QSize ToggleButtonSize{50, 24};
+		inline const QMargins HeaderMargins{16, 5, 16, 5};
 		inline const QMargins RailMargins{4, 4, 4, 4};
 		inline const QMargins OutputMargins{6, 4, 6, 6};
 	}
@@ -238,6 +238,8 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int MaximumColumns = 4;
 		inline constexpr int HorizontalSpacing = 14;
 		inline constexpr int VerticalSpacing = 14;
+		inline constexpr int CardContentSpacing = 6;
 		inline constexpr double CardAspectRatio = 2.75;
+		inline const QMargins CardBodyMargins{12, 9, 12, 9};
 	}
 }

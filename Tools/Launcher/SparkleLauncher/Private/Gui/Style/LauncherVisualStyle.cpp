@@ -74,17 +74,19 @@ namespace SparkleLauncher
 		    "background: " + background + "; color: " + textBody + "; font-family: 'Segoe UI'; font-size: 9.25pt;");
 		addRule("QLabel", "color: " + textBody + "; background: transparent;");
 		addRule("#WorkflowSurface", "background: " + background + ";");
-		addRule("#ProcessPanel", "background: " + shell + "; border: none; border-right: 1px solid #252923; padding: 0;");
+		addRule("#ProcessPanel", "background: #171a18; border: none; border-right: 1px solid #2b2f2b; padding: 0;");
 		addRule("#OptionsPanel", "background: " + background + "; border: none;");
 		addRule("#FooterContextPanel", "background: #20231f; border: none; border-top: 1px solid #343a32;");
-		addRule("#ActivityBottomPanel", "background: #181a19; border: none; border-top: 1px solid " + divider + ";");
+		addRule("#ActivityBottomPanel", "background: #191c1a; border: none;");
 		addRule("#OutputPanel", "background: #181a19; border: none;");
-		addRule("#ActivityHeader", "background: #181a19; border: none;");
+		addRule("#ActivityHeader", "background: #1d201e; border: none; border-top: 1px solid #343934;");
+		addRule("#ActivityHeader #OutputPaneLabel", "color: " + textBody + "; font-size: 8.25pt; font-weight: 800;");
+		addRule("#ActivityHintLabel", "color: " + textMuted + "; font-size: 7.65pt; font-weight: 600;");
 		addRule(
 		    "#ActivityToggleButton",
-		    "background: transparent; color: " + textBody + "; border: 1px solid " + borderSoft
-		        + "; border-radius: 2px; padding: 0; font-size: 10pt; font-weight: 900; min-width: 28px; max-width: 28px; min-height: "
-		          "24px; max-height: 24px;");
+		    "background: transparent; color: " + textSecondary
+		        + "; border: 1px solid #414740; border-radius: 3px; padding: 0; font-size: "
+		          "7.5pt; font-weight: 750; min-width: 50px; max-width: 50px; min-height: 24px; max-height: 24px;");
 		addRule(
 		    "#ActivityToggleButton:hover",
 		    "background: " + panelHover + "; color: " + textPrimary + "; border-color: " + borderStrong + ";");
@@ -113,7 +115,7 @@ namespace SparkleLauncher
 		    "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
 		addRule("#OptionRow", "background: transparent; border-top: 1px solid " + divider + "; min-height: 38px;");
-		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 8px;");
+		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 10px;");
 		addRule("#OptionLabelCell", "background: transparent; border: none;");
 		addRule("#OptionValueCell", "background: transparent; border: none;");
 		addRule("#CommandHeroCard", "background: transparent; border: none; border-radius: 0;");
@@ -149,9 +151,9 @@ namespace SparkleLauncher
 		addRule(
 		    "#SectionLabel",
 		    "color: " + textSecondary + "; font-size: 8.1pt; font-weight: 800; padding: 6px 0 2px 0; letter-spacing: 0.25px;");
-		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 9.25pt; font-weight: 850; padding: 0 0 4px 0;");
+		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 10pt; font-weight: 850; padding: 0 0 3px 0;");
 		addRule("#FieldLabel", "color: #c9ced4; font-size: 8.5pt; font-weight: 650; padding-top: 0;");
-		addRule("#OptionHelpText", "color: " + textMuted + "; font-size: 8pt; line-height: 125%; padding: 0 0 5px 0;");
+		addRule("#OptionHelpText", "color: " + textSecondary + "; font-size: 8.15pt; line-height: 130%; padding: 0 0 7px 0;");
 		addRule(
 		    "#CleanPlanText",
 		    "color: " + textSecondary + "; background: #1d201d; border-top: 1px solid " + divider + "; padding: 8px 10px; font-size: 8pt;");
@@ -167,7 +169,7 @@ namespace SparkleLauncher
 		addRule("#CleanScopeCheckBox", "color: " + textPrimary + "; font-size: 8.5pt; font-weight: 800;");
 		addRule("#CleanScopeDescription", "color: " + textSecondary + "; font-size: 7.7pt;");
 		addRule("#CleanScopePreview", "color: " + textMuted + "; font-size: 7.5pt; padding-left: 12px;");
-		addRule("#ActionMetaPanel", "background: transparent; border: none; border-top: 1px solid " + divider + ";");
+		addRule("#ActionMetaPanel", "background: #191c1a; border: none; border-top: 1px solid #343934;");
 		addRule("#ActionMetaTitle", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 700;");
 		addRule("#ActionMetaText", "color: " + textBody + "; font-size: 7.75pt;");
 		addRule("#ActionMetaDetail", "color: " + textMuted + "; font-size: 7.5pt;");
@@ -183,23 +185,30 @@ namespace SparkleLauncher
 		addRule("#InlineStatusValue[State=\"bad\"]", "color: #ef8f86;");
 		addRule("#StatusActionCell", "background: transparent; border: none;");
 		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8.15pt;");
-		addRule("#MapCatalogCard", "background: #2b2e32; border: 1px solid #3c4147; border-radius: 2px;");
-		addRule("#MapCatalogCard:hover", "background: #30343a; border-color: #59616a;");
-		addRule("#MapCatalogCard[State=\"ok\"]", "border-color: #587d31;");
-		addRule("#MapCatalogCard[State=\"warning\"]", "border-color: #7a5a23;");
-		addRule("#MapCardThumbnail", "background: #0b0d0c; border: none; border-right: 1px solid #414750;");
-		addRule("#MapCardBody", "background: #2b2e32; border: none;");
-		addRule("#MapCardTitle", "background: " + selection + "; color: #f4f7f1; font-size: 10.5pt; font-weight: 800; padding: 4px 7px;");
-		addRule("#MapCardDescription", "color: #c8ccd1; font-size: 8.6pt; line-height: 130%; padding: 1px 2px;");
-		addRule("#MapCardMeta", "color: " + textMuted + "; font-size: 7.35pt; padding: 0 2px;");
+		addRule("#MapCatalogCard", "background: #26292c; border: 1px solid #3b4044; border-radius: 4px;");
+		addRule("#MapCatalogCard:hover", "border-color: #5a635b;");
+		addRule("#MapCatalogCard[State=\"ok\"]", "border-color: #414a3d;");
+		addRule("#MapCatalogCard[State=\"warning\"]", "border-color: #514937;");
+		addRule("#MapCardThumbnail", "background: #0b0d0c; border: none; border-right: 1px solid #3b4143;");
+		addRule("#MapCardBody", "background: #26292c; border: none;");
+		addRule("#MapCatalogCard:hover #MapCardBody", "background: #2a2e31;");
+		addRule(
+		    "#MapCardTitle",
+		    "background: transparent; color: #f4f7f1; border: none; border-left: 2px solid #596159; font-size: 10.25pt; font-weight: "
+		    "850; padding: 1px 0 1px 9px;");
+		addRule("#MapCardTitle[State=\"ok\"]", "border-left-color: " + accent + ";");
+		addRule("#MapCardTitle[State=\"warning\"]", "border-left-color: " + warning + ";");
+		addRule("#MapCardDescription", "color: #cdd2d5; font-size: 8.55pt; line-height: 132%; padding: 1px 1px;");
+		addRule("#MapCardMeta", "color: #929a96; font-size: 7.35pt; padding: 0 1px;");
 		addRule(
 		    "#MapCardSourceButton",
 		    "background: transparent; color: " + textSecondary
-		        + "; border: 1px solid #555c64; padding: 2px 8px; font-size: 8pt; font-weight: 700;");
-		addRule("#MapCardSourceButton:hover", "background: #343a34; color: #ffffff; border-color: #697866;");
+		        + "; border: 1px solid #525a5e; border-radius: 3px; padding: 2px 8px; font-size: 8pt; font-weight: 700;");
+		addRule("#MapCardSourceButton:hover", "background: #32373a; color: #ffffff; border-color: #707a75;");
 		addRule(
 		    "#MapCardActionButton",
-		    "background: #26321f; color: #f4f7f1; border: 1px solid " + accent + "; padding: 2px 8px; font-size: 8pt; font-weight: 850;");
+		    "background: #26321f; color: #f4f7f1; border: 1px solid " + accent
+		        + "; border-radius: 3px; padding: 2px 8px; font-size: 8pt; font-weight: 850;");
 		addRule("#MapCardActionButton:hover", "background: " + accent + "; color: #071006; border-color: #a8ed4f;");
 		addRule("#MapCardActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
 		addRule("#StatusActionButton", "padding: 2px 8px; font-size: 8pt; font-weight: 850;");
@@ -211,9 +220,6 @@ namespace SparkleLauncher
 		addRule("#StatusActionButton[ActionState=\"ok\"]:hover", "background: #30362e; color: " + textBody + "; border-color: #71806c;");
 		addRule("#StatusActionButton[ActionState=\"running\"]", "background: #3c351f; color: #d8c996; border: 1px solid #736438;");
 		addRule("#StatusActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
-		addRule("#OptionsScrollArea #MapCatalogCard", "background: #2b2e32; border: 1px solid #3c4147;");
-		addRule("#OptionsScrollArea #MapCardBody", "background: #2b2e32; border: none;");
-		addRule("#OptionsScrollArea #MapCardTitle", "background: " + selection + "; color: #f4f7f1; padding: 4px 7px;");
 		addRule("#ActionRow", "background: transparent; border: none; padding: 4px 0;");
 		addRule("#ActionTitle", "color: " + textPrimary + "; font-size: 8.5pt; font-weight: 700;");
 		addRule(
@@ -228,18 +234,18 @@ namespace SparkleLauncher
 		addRule(
 		    "#WorkflowGroupButton",
 		    "background: transparent; color: " + textMuted
-		        + "; border: none; border-left: 3px solid transparent; padding: 5px 5px 5px 5px; text-align: center; font-size: 7.8pt; "
-		          "font-weight: 750; min-width: 82px;");
-		addRule("#WorkflowGroupButton:hover", "background: #20231f; color: " + textBody + "; border-left: 3px solid #3a4234;");
+		        + "; border: none; border-left: 2px solid transparent; border-radius: 3px; margin: 2px 6px; padding: 7px 4px 6px 4px; "
+		          "text-align: center; font-size: 8pt; font-weight: 750;");
+		addRule("#WorkflowGroupButton:hover", "background: #20241f; color: " + textBody + "; border-left: 2px solid #475143;");
 		addRule(
 		    "#WorkflowGroupButton[ActiveState=\"true\"]",
-		    "background: #20251d; color: " + textPrimary + "; border-left: 3px solid " + accent + ";");
+		    "background: #242b20; color: " + textPrimary + "; border-left: 2px solid " + accent + ";");
 		addRule(
 		    "#WorkflowGroupButton:focus",
-		    "background: #20231f; color: " + textPrimary + "; border: none; border-left: 3px solid #56614c;");
+		    "background: #20241f; color: " + textPrimary + "; border: none; border-left: 2px solid #65715f;");
 		addRule(
 		    "#WorkflowGroupButton[ActiveState=\"true\"]:focus",
-		    "background: #20251d; color: " + textPrimary + "; border: none; border-left: 3px solid " + accent + ";");
+		    "background: #242b20; color: " + textPrimary + "; border: none; border-left: 2px solid " + accent + ";");
 		addRule(
 		    "#WorkflowButton",
 		    "background: transparent; color: " + textSecondary
@@ -287,9 +293,9 @@ namespace SparkleLauncher
 		addRule("QListWidget", "background: transparent; border: none; border-radius: 0; padding: 0; outline: 0;");
 		addRule("QListWidget::item", "padding: 3px 4px; border-radius: 0; color: " + textBody + ";");
 		addRule("QListWidget::item:selected", "background: " + selection + "; color: #ffffff;");
-		addRule("QScrollBar:vertical", "background: #151713; width: 10px; margin: 0;");
-		addRule("QScrollBar::handle:vertical", "background: #3a4037; border-radius: 4px; min-height: 36px;");
-		addRule("QScrollBar::handle:vertical:hover", "background: #58614f;");
+		addRule("QScrollBar:vertical", "background: transparent; width: 10px; margin: 2px 1px;");
+		addRule("QScrollBar::handle:vertical", "background: #434b42; border-radius: 4px; min-height: 44px;");
+		addRule("QScrollBar::handle:vertical:hover", "background: #626d5f;");
 		addRule("QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical", "height: 0; background: transparent;");
 		addRule("QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical", "background: transparent;");
 		addRule("#ActivityDetailsPanel", "background: transparent; border: none;");

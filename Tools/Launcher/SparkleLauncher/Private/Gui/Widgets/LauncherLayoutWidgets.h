@@ -1,9 +1,11 @@
 #pragma once
 
 #include <QtCore/QPointer>
+#include <QtCore/QString>
 #include <QtCore/QVector>
 #include <QtGui/QPixmap>
 #include <QtWidgets/QFrame>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QWidget>
 
 class QAbstractButton;
@@ -15,6 +17,20 @@ class QResizeEvent;
 
 namespace SparkleLauncher
 {
+	class ElidedLabel final : public QLabel
+	{
+	public:
+		explicit ElidedLabel(QString fullText, QWidget* parent = nullptr);
+
+	protected:
+		void resizeEvent(QResizeEvent* event) override;
+
+	private:
+		void RefreshDisplayedText();
+
+		QString m_fullText;
+	};
+
 	class ProportionalCardFrame final : public QFrame
 	{
 	public:

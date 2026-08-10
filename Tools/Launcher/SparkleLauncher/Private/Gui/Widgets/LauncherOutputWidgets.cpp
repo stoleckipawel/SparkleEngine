@@ -34,6 +34,9 @@ namespace SparkleLauncher
 		QLabel* activityTitle = new QLabel("Activity", header);
 		activityTitle->setObjectName("OutputPaneLabel");
 		headerLayout->addWidget(activityTitle, 0);
+		QLabel* activityHint = new QLabel("Recent runs and process output", header);
+		activityHint->setObjectName("ActivityHintLabel");
+		headerLayout->addWidget(activityHint, 0);
 
 		headerLayout->addStretch(1);
 

@@ -109,8 +109,8 @@ namespace SparkleLauncher
 			case LauncherArtworkPreset::HeroPanorama:
 				spec.AspectRatio = static_cast<double>(LauncherUi::Hero::DesignWidth) / static_cast<double>(LauncherUi::Hero::DesignHeight);
 				spec.AccentLineX = static_cast<double>(LauncherUi::Hero::CopyDividerX) / static_cast<double>(LauncherUi::Hero::DesignWidth);
-				spec.AccentLineColor = AccentColor(210);
-				spec.AccentLineWidth = 2.0;
+				spec.AccentLineColor = AccentColor(105);
+				spec.AccentLineWidth = 1.0;
 				AddLayer(
 				    spec.Layers,
 				    LauncherArtworkGradientAxis::Horizontal,
