@@ -249,6 +249,13 @@ add_executable(SparkleLauncher WIN32
 )
 sparkle_configure_host_tool_target(SparkleLauncher)
 
+qt_add_resources(SparkleLauncher SparkleLauncherUiResources
+    PREFIX "/SparkleLauncher"
+    BASE "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Ui"
+    FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/Assets/Ui/footer-chevron.xpm
+)
+
 target_include_directories(SparkleLauncher
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core

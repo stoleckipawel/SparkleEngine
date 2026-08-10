@@ -76,7 +76,7 @@ namespace SparkleLauncher
 		addRule("#WorkflowSurface", "background: " + background + ";");
 		addRule("#ProcessPanel", "background: " + shell + "; border: none; border-right: 1px solid #252923; padding: 0;");
 		addRule("#OptionsPanel", "background: " + background + "; border: none;");
-		addRule("#FooterContextPanel", "background: #242622; border: none; border-top: 1px solid " + divider + ";");
+		addRule("#FooterContextPanel", "background: #20231f; border: none; border-top: 1px solid #343a32;");
 		addRule("#ActivityBottomPanel", "background: #181a19; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#OutputPanel", "background: #181a19; border: none;");
 		addRule("#ActivityHeader", "background: #181a19; border: none;");
@@ -94,12 +94,20 @@ namespace SparkleLauncher
 		    "#ActivityRail",
 		    "background: #23262a; border: none; border-top: 1px solid " + divider + "; border-right: 1px solid " + border + ";");
 		addRule("#OutputPane", "background: #202327; border: none; border-top: 1px solid " + divider + ";");
-		addRule("#FooterFieldLabel", "color: " + textMuted + "; font-size: 8.25pt; font-weight: 650;");
+		addRule("#FooterContextItem", "background: transparent; border: none;");
+		addRule("#FooterContextDivider", "background: #3a4038; border: none;");
+		addRule("#FooterFieldLabel", "color: #9ba399; font-size: 7.65pt; font-weight: 700; padding: 0 3px; letter-spacing: 0.1px;");
 		addRule(
 		    "#FooterContextCombo",
-		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 3px 9px; color: " + textBody
-		        + "; min-height: 26px; max-height: 30px; font-size: 8.5pt;");
-		addRule("#FooterContextCombo:focus", "border: 1px solid " + focus + ";");
+		    "background: transparent; border: 1px solid transparent; border-radius: 3px; padding: 1px 22px 1px 3px; color: " + textPrimary
+		        + "; min-height: 22px; max-height: 24px; font-size: 8.75pt; font-weight: 750;");
+		addRule("#FooterContextCombo:hover", "background: #2b3029; border-color: #41483e;");
+		addRule("#FooterContextCombo:focus, #FooterContextCombo:on", "background: #293126; border-color: " + focus + ";");
+		addRule("#FooterContextCombo:disabled", "background: transparent; border-color: transparent; color: " + textMuted + ";");
+		addRule("#FooterContextCombo::drop-down", "border: none; width: 18px;");
+		addRule(
+		    "#FooterContextCombo::down-arrow",
+		    "image: url(:/SparkleLauncher/footer-chevron.xpm); width: 7px; height: 4px; margin-right: 4px;");
 		addRule(
 		    "#OptionsScrollArea, #OptionsStack, #OptionsContent, #OperationStack, #InlineOptionsSection, #ActivityDetailsPanel",
 		    "background: transparent; border: none;");

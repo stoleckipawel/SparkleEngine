@@ -74,7 +74,7 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace ContextSelector
 	{
-		inline constexpr int ComboHeight = 28;
+		inline constexpr int ComboHeight = 24;
 		inline constexpr int RunModeComboMinWidth = 86;
 		inline constexpr int RunModeComboMaxWidth = 110;
 		inline constexpr int ConfigurationComboMinWidth = 140;
@@ -91,8 +91,11 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace FooterContext
 	{
-		inline constexpr int Spacing = 10;
-		inline const QMargins Margins{16, 5, 16, 5};
+		inline constexpr int ItemSpacing = 8;
+		inline constexpr int FieldSpacing = 0;
+		inline constexpr int DividerHeight = 30;
+		inline const QMargins Margins{16, 5, 16, 6};
+		inline const QMargins FieldMargins{0, 0, 0, 0};
 	}
 
 	namespace Selector

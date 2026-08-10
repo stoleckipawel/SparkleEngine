@@ -221,84 +221,90 @@ namespace SparkleLauncher
 		panel->setObjectName("FooterContextPanel");
 		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
 		rowLayout->setContentsMargins(LauncherUi::FooterContext::Margins);
-		rowLayout->setSpacing(LauncherUi::FooterContext::Spacing);
+		rowLayout->setSpacing(LauncherUi::FooterContext::ItemSpacing);
 		rowLayout->addStretch(1);
 
-		const auto addLabel = [this, rowLayout](const QString& text)
+		const auto addContextItem = [this, panel, rowLayout](const QString& labelText, QComboBox& combo, int minWidth, int maxWidth)
 		{
-			QLabel* label = CreateFieldLabel(text);
+			QWidget* item = new QWidget(panel);
+			item->setObjectName("FooterContextItem");
+			QVBoxLayout* itemLayout = new QVBoxLayout(item);
+			itemLayout->setContentsMargins(LauncherUi::FooterContext::FieldMargins);
+			itemLayout->setSpacing(LauncherUi::FooterContext::FieldSpacing);
+
+			QLabel* label = CreateFieldLabel(labelText);
 			label->setObjectName("FooterFieldLabel");
-			rowLayout->addWidget(label, 0);
-			return label;
-		};
-		const auto finishCombo = [rowLayout](QLabel& label, QComboBox& combo, int minWidth, int maxWidth)
-		{
 			combo.setObjectName("FooterContextCombo");
 			ApplyFooterContextComboMetrics(combo, minWidth, maxWidth);
-			label.setBuddy(&combo);
-			rowLayout->addWidget(&combo, 0);
+			label->setBuddy(&combo);
+			itemLayout->addWidget(label, 0, Qt::AlignLeft | Qt::AlignBottom);
+			itemLayout->addWidget(&combo, 0);
+			rowLayout->addWidget(item, 0, Qt::AlignVCenter);
+		};
+		const auto addGroupDivider = [panel, rowLayout]()
+		{
+			QFrame* divider = new QFrame(panel);
+			divider->setObjectName("FooterContextDivider");
+			divider->setFixedSize(1, LauncherUi::FooterContext::DividerHeight);
+			rowLayout->addWidget(divider, 0, Qt::AlignVCenter);
 		};
 
-		QLabel* runModeLabel = addLabel("Run Mode");
 		m_runModeCombo = CreateContextCombo(&LauncherSettings::SetRunMode);
 		m_runModeCombo->setAccessibleName("Run Mode");
 		m_runModeCombo->setToolTip("Choose whether Quick Start opens the selected map in the editor or runs the standalone game.");
-		finishCombo(
-		    *runModeLabel,
+		addContextItem(
+		    "Run Mode",
 		    *m_runModeCombo,
 		    LauncherUi::ContextSelector::RunModeComboMinWidth,
 		    LauncherUi::ContextSelector::RunModeComboMaxWidth);
+		addGroupDivider();
 
-		QLabel* configurationLabel = addLabel("Config");
 		m_buildConfigurationCombo = CreateContextCombo(&LauncherSettings::SetBuildConfiguration);
 		m_buildConfigurationCombo->setAccessibleName("Build Configuration");
 		m_buildConfigurationCombo->setToolTip(
 		    "Global editor and runtime configuration. Only configurations backed by both product profiles are selectable.");
-		finishCombo(
-		    *configurationLabel,
+		addContextItem(
+		    "Configuration",
 		    *m_buildConfigurationCombo,
 		    LauncherUi::ContextSelector::ConfigurationComboMinWidth,
 		    LauncherUi::ContextSelector::ConfigurationComboMaxWidth);
 
-		QLabel* compilerLabel = addLabel("Compiler");
 		m_workspaceCompilerCombo = CreateContextCombo(&LauncherSettings::SetWorkspaceCompiler);
 		m_workspaceCompilerCombo->setAccessibleName("Compiler");
 		m_workspaceCompilerCombo->setToolTip(
 		    "Compiler configured by the launcher. Installed compilers are selectable; supported missing compilers remain visible for "
 		    "setup.");
-		finishCombo(
-		    *compilerLabel,
+		addContextItem(
+		    "Compiler",
 		    *m_workspaceCompilerCombo,
 		    LauncherUi::ContextSelector::CompilerComboMinWidth,
 		    LauncherUi::ContextSelector::CompilerComboMaxWidth);
 
-		QLabel* ideLabel = addLabel("IDE");
 		m_workspaceIdeCombo = CreateContextCombo(&LauncherSettings::SetWorkspaceIde);
 		m_workspaceIdeCombo->setAccessibleName("IDE");
 		m_workspaceIdeCombo->setToolTip(
 		    "IDE used when generating workspace files. Detected IDEs are selectable; supported missing IDEs remain visible for setup.");
-		finishCombo(
-		    *ideLabel,
+		addContextItem(
+		    "IDE",
 		    *m_workspaceIdeCombo,
 		    LauncherUi::ContextSelector::IdeComboMinWidth,
 		    LauncherUi::ContextSelector::IdeComboMaxWidth);
+		addGroupDivider();
 
-		QLabel* graphicsApiLabel = addLabel("Graphics API");
 		m_graphicsApiCombo = CreateContextCombo(&LauncherSettings::SetGraphicsApi);
 		m_graphicsApiCombo->setAccessibleName("Graphics API");
 		m_graphicsApiCombo->setToolTip("Graphics API passed to a level runtime launched from Quick Start.");
-		finishCombo(
-		    *graphicsApiLabel,
+		addContextItem(
+		    "Graphics API",
 		    *m_graphicsApiCombo,
 		    LauncherUi::ContextSelector::GraphicsApiComboMinWidth,
 		    LauncherUi::ContextSelector::GraphicsApiComboMaxWidth);
 
-		QLabel* shaderBackendLabel = addLabel("Shader Compiler");
 		m_shaderBackendCombo = CreateContextCombo(&LauncherSettings::SetShaderBackend);
 		m_shaderBackendCombo->setAccessibleName("Shader Compiler");
 		m_shaderBackendCombo->setToolTip("DXC or Slang backend passed to shader cook operations.");
-		finishCombo(
-		    *shaderBackendLabel,
+		addContextItem(
+		    "Shader Compiler",
 		    *m_shaderBackendCombo,
 		    LauncherUi::ContextSelector::ShaderBackendComboMinWidth,
 		    LauncherUi::ContextSelector::ShaderBackendComboMaxWidth);
