@@ -96,17 +96,17 @@ namespace SparkleLauncher
 			    "Refreshes workspace files for the selected toolchain and opens the IDE when the workspace is current.",
 			    "workflow-generate-build-files.png");
 		}
-		if (operationId == "workspace.build-all")
+		if (operationId == "workspace.build")
 		{
 			return MakeOperationUiModel(
 			    operationId,
-			    "Build All",
+			    "Build Workspace",
 			    "Build",
 			    LauncherWorkflowPageKind::Build,
 			    LauncherActionImpactKind::BuildOutputs,
-			    "Build outputs: refreshes generated workspace files, then runs the full local build set for development work.",
-			    "Build outputs",
-			    "Refreshes workspace files, then creates the complete local development artifact set.",
+			    "Build outputs: incrementally builds the selected products and refreshes generated workspace files when required.",
+			    "Selected products",
+			    "Choose the editor, game, cooking tools, or launcher, then build them as one dependency-aware request.",
 			    "workflow-build-all.png");
 		}
 		if (operationId == "levels.sync")

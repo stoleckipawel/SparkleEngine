@@ -90,6 +90,16 @@ namespace SparkleLauncher
 		return targets;
 	}
 
+	static bool HasSelectedScope(const BuildWorkspaceOperationRequest& request, BuildWorkspaceScope scope)
+	{
+		return std::find(request.SelectedScopes.begin(), request.SelectedScopes.end(), scope) != request.SelectedScopes.end();
+	}
+
+	static void AppendTargets(std::vector<std::string>& destination, const std::vector<std::string>& targets)
+	{
+		destination.insert(destination.end(), targets.begin(), targets.end());
+	}
+
 	static void AddConfigureStep(BuildWorkspaceOperationPlan& plan)
 	{
 		AddPlannedEffect(
@@ -190,7 +200,13 @@ namespace SparkleLauncher
 				AddConfigureStep(plan);
 				plan.CanRun = true;
 				return;
-			case BuildWorkspaceOperationKind::BuildAll:
+			case BuildWorkspaceOperationKind::BuildWorkspace:
+			{
+				if (request.SelectedScopes.empty())
+				{
+					AddReadiness(plan, "Select at least one workspace build scope.");
+					return;
+				}
 				if (!RequireSyncedSourceDependencies(plan))
 				{
 					return;
@@ -199,25 +215,52 @@ namespace SparkleLauncher
 				{
 					return;
 				}
-				if (sourceDependenciesMissing)
+				if (needsConfigure)
 				{
-					AddPlannedEffect(
-					    plan,
-					    "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
+					if (RequiresNativeBuildOutputReset(plan.Freshness.State))
+					{
+						AddPlannedEffect(
+						    plan,
+						    "Reset compiler-produced outputs that are incompatible with the selected toolchain while preserving source "
+						    "caches "
+						    "and cooked content.");
+					}
+					AddConfigureStep(plan);
 				}
-				AddConfigureStep(plan);
-				AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
+
+				std::vector<std::string> editorProfileTargets;
+				if (HasSelectedScope(request, BuildWorkspaceScope::Launcher))
 				{
-					std::vector<std::string> editorTargets = ResolveProjectTargets(request.ContentId, request.EditorProfile);
+					editorProfileTargets.push_back("SparkleLauncher");
+				}
+				if (HasSelectedScope(request, BuildWorkspaceScope::Editor))
+				{
+					const std::vector<std::string> editorTargets = ResolveProjectTargets(request.ContentId, request.EditorProfile);
 					if (editorTargets.empty())
 					{
 						AddReadiness(plan, "No editor build target could be resolved.");
 						return;
 					}
-					AddBuildStep(plan, request.EditorProfile, editorTargets);
+					AppendTargets(editorProfileTargets, editorTargets);
 				}
+				if (HasSelectedScope(request, BuildWorkspaceScope::CookTools))
 				{
-					std::vector<std::string> runtimeTargets = ResolveProjectTargets(request.ContentId, request.RuntimeProfile);
+					const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
+					if (cookToolTargets.empty())
+					{
+						AddReadiness(plan, "No cook-tool targets are enabled in this workspace configuration.");
+						return;
+					}
+					AppendTargets(editorProfileTargets, cookToolTargets);
+				}
+				if (!editorProfileTargets.empty())
+				{
+					AddBuildStep(plan, request.EditorProfile, editorProfileTargets);
+				}
+
+				if (HasSelectedScope(request, BuildWorkspaceScope::Runtime))
+				{
+					const std::vector<std::string> runtimeTargets = ResolveProjectTargets(request.ContentId, request.RuntimeProfile);
 					if (runtimeTargets.empty())
 					{
 						AddReadiness(plan, "No runtime build target could be resolved.");
@@ -225,26 +268,10 @@ namespace SparkleLauncher
 					}
 					AddBuildStep(plan, request.RuntimeProfile, runtimeTargets);
 				}
-				{
-					const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
-					if (!cookToolTargets.empty())
-					{
-						AddBuildStep(plan, request.EditorProfile, cookToolTargets);
-						AddPlannedEffect(
-						    plan,
-						    "Refresh generated workspace files, then build launcher, editor/runtime, and enabled cook "
-						    "tools in one pass.");
-					}
-					else
-					{
-						AddPlannedEffect(
-						    plan,
-						    "Refresh generated workspace files, then build launcher plus editor/runtime targets. Optional "
-						    "cook tools are disabled in this workspace.");
-					}
-				}
+				AddPlannedEffect(plan, "Build the selected workspace products in dependency order using incremental CMake builds.");
 				plan.CanRun = true;
 				return;
+			}
 			case BuildWorkspaceOperationKind::CompileLauncher:
 				if (!RequireSyncedSourceDependencies(plan))
 				{
@@ -354,11 +381,11 @@ namespace SparkleLauncher
 		        "Build",
 		        std::string(ArtifactNaming::kActionGenerateBuildFiles),
 		        "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
-		    {BuildWorkspaceOperationKind::BuildAll,
-		        "workspace.build-all",
+		    {BuildWorkspaceOperationKind::BuildWorkspace,
+		        "workspace.build",
 		        "Build",
-		        "Build All",
-		        "Refresh generated workspace files, then rebuild launcher, editor/runtime targets, and enabled cook tools."},
+		        "Build Workspace",
+		        "Build the selected editor, game, cooking-tool, and launcher scopes; refresh generated workspace files when needed."},
 		    {BuildWorkspaceOperationKind::CompileLauncher,
 		        "launcher.build.self",
 		        "Build",
@@ -418,6 +445,22 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
 		plan.Operation.Inputs.push_back({"workspaceIde", WorkspaceIdeCommandLineValue(request.PreferredIde)});
 		plan.Operation.Inputs.push_back({"workspaceCompiler", WorkspaceCompilerCommandLineValue(request.Compiler)});
+		if (!request.SelectedScopes.empty())
+		{
+			std::vector<std::string> scopeIds;
+			scopeIds.reserve(request.SelectedScopes.size());
+			for (const BuildWorkspaceScope scope : request.SelectedScopes)
+			{
+				scopeIds.push_back(BuildWorkspaceScopeId(scope));
+			}
+			std::vector<std::string_view> scopeViews;
+			scopeViews.reserve(scopeIds.size());
+			for (const std::string& scopeId : scopeIds)
+			{
+				scopeViews.push_back(scopeId);
+			}
+			plan.Operation.Inputs.push_back({"buildScopes", Strings::Join(scopeViews, ",")});
+		}
 		if (!request.SourceDependencyId.empty())
 		{
 			plan.Operation.Inputs.push_back({"sourceDependency", request.SourceDependencyId});

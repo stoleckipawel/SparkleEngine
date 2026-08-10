@@ -6,6 +6,7 @@
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
+#include <algorithm>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -64,6 +65,16 @@ namespace SparkleLauncher
 		targets.push_back("ShaderCompiler");
 #endif
 		return targets;
+	}
+
+	static bool HasSelectedScope(const BuildWorkspaceOperationRequest& request, BuildWorkspaceScope scope)
+	{
+		return std::find(request.SelectedScopes.begin(), request.SelectedScopes.end(), scope) != request.SelectedScopes.end();
+	}
+
+	static void AppendTargets(std::vector<std::string>& destination, const std::vector<std::string>& targets)
+	{
+		destination.insert(destination.end(), targets.begin(), targets.end());
 	}
 
 	static void AddConfigureStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
@@ -130,27 +141,40 @@ namespace SparkleLauncher
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				AddConfigureStep(steps, plan);
 				return steps;
-			case BuildWorkspaceOperationKind::BuildAll:
-				AddConfigureStep(steps, plan);
-				AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
-				AddBuildStep(
-				    steps,
-				    plan,
-				    plan.Request.EditorProfile,
-				    ResolveProjectTargets(plan.Request.ContentId, plan.Request.EditorProfile));
-				AddBuildStep(
-				    steps,
-				    plan,
-				    plan.Request.RuntimeProfile,
-				    ResolveProjectTargets(plan.Request.ContentId, plan.Request.RuntimeProfile));
+			case BuildWorkspaceOperationKind::BuildWorkspace:
+			{
+				if (BuildWorkspaceOperationRequiresConfigureStep(plan))
 				{
-					const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
-					if (!cookToolTargets.empty())
-					{
-						AddBuildStep(steps, plan, plan.Request.EditorProfile, cookToolTargets);
-					}
+					AddConfigureStep(steps, plan);
+				}
+
+				std::vector<std::string> editorProfileTargets;
+				if (HasSelectedScope(plan.Request, BuildWorkspaceScope::Launcher))
+				{
+					editorProfileTargets.push_back("SparkleLauncher");
+				}
+				if (HasSelectedScope(plan.Request, BuildWorkspaceScope::Editor))
+				{
+					AppendTargets(editorProfileTargets, ResolveProjectTargets(plan.Request.ContentId, plan.Request.EditorProfile));
+				}
+				if (HasSelectedScope(plan.Request, BuildWorkspaceScope::CookTools))
+				{
+					AppendTargets(editorProfileTargets, GetEnabledCookToolTargets());
+				}
+				if (!editorProfileTargets.empty())
+				{
+					AddBuildStep(steps, plan, plan.Request.EditorProfile, editorProfileTargets);
+				}
+				if (HasSelectedScope(plan.Request, BuildWorkspaceScope::Runtime))
+				{
+					AddBuildStep(
+					    steps,
+					    plan,
+					    plan.Request.RuntimeProfile,
+					    ResolveProjectTargets(plan.Request.ContentId, plan.Request.RuntimeProfile));
 				}
 				return steps;
+			}
 			case BuildWorkspaceOperationKind::CompileLauncher:
 				AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
 				return steps;

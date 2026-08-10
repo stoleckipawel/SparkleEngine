@@ -474,6 +474,16 @@ endif()
 add_test(NAME launcher_workflow_catalog COMMAND LauncherWorkflowCatalogTests)
 set_tests_properties(launcher_workflow_catalog PROPERTIES LABELS "Launcher;UI;Workflow")
 
+add_executable(BuildWorkspaceSelectionTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/BuildWorkspaceSelectionTests.cpp
+)
+sparkle_configure_host_tool_target(BuildWorkspaceSelectionTests)
+target_include_directories(BuildWorkspaceSelectionTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build)
+target_link_libraries(BuildWorkspaceSelectionTests PRIVATE SparkleLauncherCore SparkleCore)
+target_compile_features(BuildWorkspaceSelectionTests PRIVATE cxx_std_20)
+add_test(NAME build_workspace_selection COMMAND BuildWorkspaceSelectionTests)
+set_tests_properties(build_workspace_selection PROPERTIES LABELS "Launcher;Build;Workflow")
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_SOURCES} ${SPARKLE_LAUNCHER_CORE_BUILD_HEADERS} ${SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES} ${SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS} ${SPARKLE_LAUNCHER_CORE_COOK_SOURCES} ${SPARKLE_LAUNCHER_CORE_COOK_HEADERS} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES} ${SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS} ${SPARKLE_LAUNCHER_PRIVATE_SOURCES} ${SPARKLE_LAUNCHER_PRIVATE_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
@@ -490,4 +500,5 @@ source_group(
         ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherQuickStartExecutionTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CookToolDependencyContractTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherContextUiModelTests.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherWorkflowCatalogTests.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherWorkflowCatalogTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/BuildWorkspaceSelectionTests.cpp)

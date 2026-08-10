@@ -130,8 +130,8 @@ namespace SparkleLauncher
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(workspacePlanOperationId.toStdString(), request);
 		const QString workspaceIdeName = ResolveSelectedWorkspaceIdeName(m_settings);
 		const bool isSetupWorkflow = operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files";
-		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId.startsWith("workspace.build")
-		    || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
+		const bool isBuildWorkflow =
+		    operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		const bool isCookWorkflow = operationId.startsWith("cook.") && operationId != "cook.tools.prepare";
 		if (isSetupWorkflow)
 		{
@@ -217,6 +217,57 @@ namespace SparkleLauncher
 
 		if (isBuildWorkflow)
 		{
+			if (operationId == "workspace.build")
+			{
+				QVBoxLayout* issueLayout = nullptr;
+				const auto ensureIssueLayout = [&]() -> QVBoxLayout*
+				{
+					if (issueLayout == nullptr)
+					{
+						issueLayout = AddOptionGroup(
+						    layout,
+						    "Setup needed",
+						    "Only prerequisites that need attention are shown here. Resolve them once, then run the selected build.");
+					}
+					return issueLayout;
+				};
+
+				for (const ToolchainItemStatus& item : plan.Toolchain.Items)
+				{
+					if (!item.Required || item.State == ToolchainItemState::Found)
+					{
+						continue;
+					}
+					AddStatusRow(
+					    *ensureIssueLayout(),
+					    QString::fromStdString(item.DisplayName),
+					    ToolchainStatusText(item.State, true),
+					    CompactToolchainDetail(item),
+					    ToolchainStatusState(item.State, true),
+					    CreateHostToolActionButton(item));
+				}
+
+				if (HasIncompleteEnabledSourceDependencies(plan))
+				{
+					AddStatusRow(
+					    *ensureIssueLayout(),
+					    "Source dependencies",
+					    "Blocked",
+					    "One or more enabled repository dependencies are incomplete.",
+					    "bad",
+					    CreateStatusActionButton("workspace.sync-code", "Review", "Review Sync Code", true));
+				}
+
+				if (!plan.CanRun && issueLayout == nullptr && !request.SelectedScopes.empty())
+				{
+					const QString detail = plan.ReadinessMessages.empty()
+					    ? QStringLiteral("The selected build cannot run with the current workspace configuration.")
+					    : QString::fromStdString(plan.ReadinessMessages.back());
+					AddStatusRow(*ensureIssueLayout(), "Build selection", "Unavailable", detail, "bad");
+				}
+				return;
+			}
+
 			QVBoxLayout* buildLayout = AddOptionGroup(layout, "Readiness", QString());
 			AddStatusRow(
 			    *buildLayout,

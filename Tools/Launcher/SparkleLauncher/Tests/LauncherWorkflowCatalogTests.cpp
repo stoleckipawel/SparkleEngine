@@ -116,12 +116,51 @@ namespace SparkleLauncher::LauncherWorkflowCatalogTests
 		    "Clean must follow Cook after the separate Levels rail group is removed.");
 		return passed;
 	}
+
+	static bool BuildUsesOneSelectableWorkspaceIntent()
+	{
+		bool passed = true;
+		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
+		const auto build = std::find_if(
+		    workflows.begin(),
+		    workflows.end(),
+		    [](const LauncherWorkflowDefinition& workflow) { return workflow.PageKind == LauncherWorkflowPageKind::Build; });
+		passed &= Expect(build != workflows.end(), "The frontend workflow catalog must contain Build.");
+		if (build != workflows.end())
+		{
+			passed &= Expect(
+			    build->OperationIds == QVector<QString>{"workspace.build"},
+			    "Build must project one selectable workspace build intent instead of backend operation tabs.");
+		}
+
+		const std::optional<BuildWorkspaceOperationDefinition> definition = FindBuildWorkspaceOperationDefinition("workspace.build");
+		passed &= Expect(definition.has_value(), "The BuildWorkspace backend must register workspace.build.");
+		passed &= Expect(
+		    definition.has_value() && definition->Kind == BuildWorkspaceOperationKind::BuildWorkspace,
+		    "workspace.build must use the composite BuildWorkspace planner.");
+		passed &= Expect(
+		    !FindBuildWorkspaceOperationDefinition("workspace.build-all").has_value(),
+		    "The replaced workspace.build-all identity must not remain registered.");
+		passed &= Expect(
+		    FindBuildWorkspaceOperationDefinition("workspace.build.editor").has_value()
+		        && FindBuildWorkspaceOperationDefinition("workspace.build.runtime").has_value()
+		        && FindBuildWorkspaceOperationDefinition("cook.tools.prepare").has_value(),
+		    "Quick Start build capability primitives must remain registered below the frontend projection.");
+
+		const LauncherOperationUiModel uiModel = LauncherUiModelForOperation("workspace.build");
+		passed &= Expect(uiModel.DisplayName == "Build Workspace", "The composite Build intent must have a reviewer-facing name.");
+		return passed;
+	}
 }
 
 int main()
 {
 	using namespace SparkleLauncher::LauncherWorkflowCatalogTests;
 	if (!LevelsDomainAndHomeProjectionAgree())
+	{
+		return 1;
+	}
+	if (!BuildUsesOneSelectableWorkspaceIntent())
 	{
 		return 1;
 	}

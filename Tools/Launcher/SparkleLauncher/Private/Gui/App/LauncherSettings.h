@@ -18,6 +18,7 @@ namespace SparkleLauncher
 		const QString& RuntimeProfile() const;
 		const QString& WorkspaceIde() const;
 		const QString& WorkspaceCompiler() const;
+		const QString& BuildScopes() const;
 		const QString& SelectedTargets() const;
 		const QString& ShaderPackages() const;
 		const QString& ShaderBackend() const;
@@ -43,6 +44,7 @@ namespace SparkleLauncher
 		void SetRuntimeProfile(const QString& profileName);
 		void SetWorkspaceIde(const QString& ide);
 		void SetWorkspaceCompiler(const QString& compiler);
+		void SetBuildScopes(const QString& scopes);
 		void SetSelectedTargets(const QString& targets);
 		void SetShaderPackages(const QString& packages);
 		void SetShaderBackend(const QString& backend);
@@ -69,6 +71,7 @@ namespace SparkleLauncher
 		QString m_buildConfiguration = "development";
 		QString m_workspaceIde = "rider";
 		QString m_workspaceCompiler = "msvc";
+		QString m_buildScopes = "editor;runtime;cook-tools";
 		QString m_selectedTargets;
 		QString m_shaderPackages;
 		QString m_shaderBackend = "dxc";

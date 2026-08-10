@@ -77,8 +77,8 @@ namespace SparkleLauncher
 				return "SyncCode";
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				return "GenerateBuildFiles";
-			case BuildWorkspaceOperationKind::BuildAll:
-				return "BuildAll";
+			case BuildWorkspaceOperationKind::BuildWorkspace:
+				return "BuildWorkspace";
 			case BuildWorkspaceOperationKind::CompileLauncher:
 				return "CompileLauncher";
 			case BuildWorkspaceOperationKind::CompileEditor:
@@ -92,6 +92,48 @@ namespace SparkleLauncher
 		}
 
 		return "Unknown";
+	}
+
+	std::string BuildWorkspaceScopeId(BuildWorkspaceScope scope)
+	{
+		switch (scope)
+		{
+			case BuildWorkspaceScope::Editor:
+				return "editor";
+			case BuildWorkspaceScope::Runtime:
+				return "runtime";
+			case BuildWorkspaceScope::CookTools:
+				return "cook-tools";
+			case BuildWorkspaceScope::Launcher:
+				return "launcher";
+		}
+
+		return "unknown";
+	}
+
+	bool TryParseBuildWorkspaceScope(std::string_view text, BuildWorkspaceScope& outScope)
+	{
+		if (text == "editor")
+		{
+			outScope = BuildWorkspaceScope::Editor;
+			return true;
+		}
+		if (text == "runtime")
+		{
+			outScope = BuildWorkspaceScope::Runtime;
+			return true;
+		}
+		if (text == "cook-tools")
+		{
+			outScope = BuildWorkspaceScope::CookTools;
+			return true;
+		}
+		if (text == "launcher")
+		{
+			outScope = BuildWorkspaceScope::Launcher;
+			return true;
+		}
+		return false;
 	}
 
 	std::string ToString(WorkspaceIde ide)
@@ -216,6 +258,8 @@ namespace SparkleLauncher
 				    || HasIncompleteEnabledSourceDependencies(plan);
 			case BuildWorkspaceOperationKind::GenerateBuildFiles:
 				return true;
+			case BuildWorkspaceOperationKind::BuildWorkspace:
+				return plan.Request.ForceConfigure || !plan.Freshness.Current;
 			case BuildWorkspaceOperationKind::InstallHostTool:
 				return false;
 			default:

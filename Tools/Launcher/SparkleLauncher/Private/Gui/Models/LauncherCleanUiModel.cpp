@@ -82,9 +82,8 @@ namespace SparkleLauncher
 
 	bool SupportsActionSpecificClean(const QString& operationId)
 	{
-		return operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("workspace.build")
-		    || operationId == "cook.tools.prepare" || operationId == "cook.all" || operationId == "cook.shaders"
-		    || operationId == "cook.textures" || operationId == "cook.assets";
+		return operationId == "launcher.build.self" || operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare"
+		    || operationId == "cook.all" || operationId == "cook.shaders" || operationId == "cook.textures" || operationId == "cook.assets";
 	}
 
 	void AddExplicitCleanTarget(
@@ -174,7 +173,12 @@ namespace SparkleLauncher
 	QVector<LauncherCleanTarget> BuildActionSpecificCleanTargets(const ActionCleanTargetContext& context)
 	{
 		QVector<LauncherCleanTarget> targets;
-		if ((context.OperationId.startsWith("workspace.build") || context.OperationId.startsWith("cook.")) && context.ContentId.isEmpty())
+		const QStringList buildScopes = context.BuildScopes.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
+		const bool workspaceBuild = context.OperationId == "workspace.build";
+		const bool buildsContentProduct = workspaceBuild && (buildScopes.contains("editor") || buildScopes.contains("runtime"));
+		if ((buildsContentProduct || context.OperationId == "workspace.build.editor" || context.OperationId == "workspace.build.runtime"
+		        || context.OperationId.startsWith("cook."))
+		    && context.ContentId.isEmpty())
 		{
 			return targets;
 		}
@@ -208,7 +212,7 @@ namespace SparkleLauncher
 			    detail);
 		};
 
-		if (context.OperationId == "launcher.build.self" || context.OperationId == "workspace.build-all")
+		if (context.OperationId == "launcher.build.self" || (workspaceBuild && buildScopes.contains("launcher")))
 		{
 			AddTargetArtifactOutputs(
 			    targets,
@@ -237,7 +241,7 @@ namespace SparkleLauncher
 			    "Launcher support library debug symbols built for the selected editor profile.");
 		}
 
-		if (context.OperationId == "workspace.build.editor" || context.OperationId == "workspace.build-all")
+		if (context.OperationId == "workspace.build.editor" || (workspaceBuild && buildScopes.contains("editor")))
 		{
 			if (context.OperationId == "workspace.build.editor" && !context.SelectedTargets.trimmed().isEmpty())
 			{
@@ -252,7 +256,7 @@ namespace SparkleLauncher
 			}
 		}
 
-		if (context.OperationId == "workspace.build.runtime" || context.OperationId == "workspace.build-all")
+		if (context.OperationId == "workspace.build.runtime" || (workspaceBuild && buildScopes.contains("runtime")))
 		{
 			if (context.OperationId == "workspace.build.runtime" && !context.SelectedTargets.trimmed().isEmpty())
 			{
@@ -267,7 +271,7 @@ namespace SparkleLauncher
 			}
 		}
 
-		if (context.OperationId == "cook.tools.prepare" || context.OperationId == "workspace.build-all")
+		if (context.OperationId == "cook.tools.prepare" || (workspaceBuild && buildScopes.contains("cook-tools")))
 		{
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
 			AddTargetArtifactOutputs(

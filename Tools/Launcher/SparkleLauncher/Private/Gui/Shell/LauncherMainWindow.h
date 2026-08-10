@@ -141,6 +141,17 @@ namespace SparkleLauncher
 		void RefreshContextSelectors();
 		static bool UsesBuildEnvironmentStatus(const QString& operationId);
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
+		void AddBuildOptions(QVBoxLayout& layout);
+		void AddBuildScopeRow(
+		    QVBoxLayout& layout,
+		    const QString& label,
+		    const QString& value,
+		    const QString& detail,
+		    const QString& metadata,
+		    bool available,
+		    const QStringList& selectedScopes,
+		    QVector<QCheckBox*>& scopeBoxes);
+		void UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary);
 		void AddShaderCookOptions(QVBoxLayout& layout);
 		void AddCleanOptions(QVBoxLayout& layout, const QString& operationId);
 		void AddCleanScopeRow(

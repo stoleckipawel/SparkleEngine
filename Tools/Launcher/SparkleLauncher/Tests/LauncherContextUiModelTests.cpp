@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace SparkleLauncher
 {
@@ -87,6 +88,9 @@ int main()
 	}
 	const LauncherContextUiModel missingShaderSdkModel = LauncherContextUiModel::Build(missingShaderSdkToolchain);
 	LauncherSettings settings;
+	LauncherOperationRequest buildRequest;
+	buildRequest.BuildScopes = "editor;cook-tools;editor;unknown";
+	const BuildWorkspaceOperationRequest mappedBuild = LauncherOperationRequestMapping::BuildWorkspace(buildRequest);
 	LauncherOperationRequest editorRequest;
 	editorRequest.EditorProfile = "DevelopmentEditor";
 	editorRequest.RuntimeProfile = "DevelopmentGame";
@@ -105,10 +109,12 @@ int main()
 	    && editorContext.ProductCapabilityId() == "product.editor" && mappedGame.RunMode == LevelRunMode::Game
 	    && mappedGame.ProductProfile == "DevelopmentGame" && gameContext.ProductBuildOperationId() == "workspace.build.runtime"
 	    && gameContext.ProductCapabilityId() == "product.runtime";
-	const bool valid = runModesAreOrdered && runModeContract && ExpectAvailability(model.RunModes, "editor", true, error)
-	    && ExpectAvailability(model.RunModes, "game", true, error) && ExpectAvailability(model.GraphicsApis, "d3d12", true, error)
-	    && ExpectAvailability(model.GraphicsApis, "vulkan", false, error) && ExpectAvailability(model.ShaderBackends, "dxc", true, error)
-	    && ExpectAvailability(model.ShaderBackends, "slang", true, error)
+	const bool buildScopeContract = settings.BuildScopes() == "editor;runtime;cook-tools"
+	    && mappedBuild.SelectedScopes == std::vector<BuildWorkspaceScope>{BuildWorkspaceScope::Editor, BuildWorkspaceScope::CookTools};
+	const bool valid = runModesAreOrdered && runModeContract && buildScopeContract
+	    && ExpectAvailability(model.RunModes, "editor", true, error) && ExpectAvailability(model.RunModes, "game", true, error)
+	    && ExpectAvailability(model.GraphicsApis, "d3d12", true, error) && ExpectAvailability(model.GraphicsApis, "vulkan", false, error)
+	    && ExpectAvailability(model.ShaderBackends, "dxc", true, error) && ExpectAvailability(model.ShaderBackends, "slang", true, error)
 	    && ExpectAvailability(missingShaderSdkModel.ShaderBackends, "dxc", true, error)
 	    && ExpectAvailability(missingShaderSdkModel.ShaderBackends, "slang", true, error)
 	    && ExpectAvailability(model.Compilers, "msvc", true, error) && ExpectAvailability(model.Compilers, "clang-cl", false, error)
@@ -125,6 +131,10 @@ int main()
 		else if (!runModeContract)
 		{
 			error = "Run Mode did not select the matching profile, build operation, and product capability.";
+		}
+		else if (!buildScopeContract)
+		{
+			error = "Build scope defaults or typed request mapping are incorrect.";
 		}
 		std::cerr << error << '\n';
 		return 1;

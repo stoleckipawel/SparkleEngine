@@ -108,12 +108,20 @@ namespace SparkleLauncher
 	{
 		SyncCode,
 		GenerateBuildFiles,
-		BuildAll,
+		BuildWorkspace,
 		CompileLauncher,
 		CompileEditor,
 		CompileRuntime,
 		BuildCookTools,
 		InstallHostTool
+	};
+
+	enum class BuildWorkspaceScope
+	{
+		Editor,
+		Runtime,
+		CookTools,
+		Launcher
 	};
 
 	struct BuildWorkspaceOperationDefinition
@@ -133,6 +141,10 @@ namespace SparkleLauncher
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;
 		WorkspaceCompiler Compiler = WorkspaceCompiler::Msvc;
+		std::vector<BuildWorkspaceScope> SelectedScopes = {
+		    BuildWorkspaceScope::Editor,
+		    BuildWorkspaceScope::Runtime,
+		    BuildWorkspaceScope::CookTools};
 		std::vector<std::string> SelectedTargets;
 		std::string SourceDependencyId;
 		std::string HostToolId;
@@ -166,6 +178,8 @@ namespace SparkleLauncher
 	std::string ToString(ToolchainItemState state);
 	std::string ToString(BuildFilesFreshnessState state);
 	std::string ToString(BuildWorkspaceOperationKind kind);
+	std::string BuildWorkspaceScopeId(BuildWorkspaceScope scope);
+	bool TryParseBuildWorkspaceScope(std::string_view text, BuildWorkspaceScope& outScope);
 	std::string ToString(WorkspaceIde ide);
 	std::string DisplayName(WorkspaceIde ide);
 	std::string WorkspaceIdeCommandLineValue(WorkspaceIde ide);

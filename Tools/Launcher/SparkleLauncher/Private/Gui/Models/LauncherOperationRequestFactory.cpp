@@ -5,8 +5,27 @@
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 
+#include <QtCore/QRegularExpression>
+
+#include <algorithm>
+
 namespace SparkleLauncher
 {
+	static std::vector<BuildWorkspaceScope> ResolveSelectedBuildScopes(const LauncherSettings& settings)
+	{
+		std::vector<BuildWorkspaceScope> scopes;
+		for (const QString& part : settings.BuildScopes().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
+		{
+			BuildWorkspaceScope scope = BuildWorkspaceScope::Editor;
+			if (TryParseBuildWorkspaceScope(part.trimmed().toStdString(), scope)
+			    && std::find(scopes.begin(), scopes.end(), scope) == scopes.end())
+			{
+				scopes.push_back(scope);
+			}
+		}
+		return scopes;
+	}
+
 	WorkspaceIde ResolveSelectedWorkspaceIde(const LauncherSettings& settings)
 	{
 		WorkspaceIde ide = WorkspaceIde::VisualStudio;
@@ -64,6 +83,7 @@ namespace SparkleLauncher
 		request.RuntimeProfile = settings.RuntimeProfile().toStdString();
 		request.PreferredIde = ResolveSelectedWorkspaceIde(settings);
 		request.Compiler = ResolveSelectedWorkspaceCompiler(settings);
+		request.SelectedScopes = ResolveSelectedBuildScopes(settings);
 		request.ForceConfigure = settings.ForceConfigure();
 		return request;
 	}
@@ -105,6 +125,7 @@ namespace SparkleLauncher
 		request.RuntimeProfile = settings.RuntimeProfile();
 		request.WorkspaceIde = settings.WorkspaceIde();
 		request.WorkspaceCompiler = settings.WorkspaceCompiler();
+		request.BuildScopes = settings.BuildScopes();
 		request.SelectedTargets = settings.SelectedTargets();
 		request.ShaderPackages = settings.ShaderPackages();
 		request.ShaderTargets = ResolveShaderTargetSelection(settings);
@@ -139,6 +160,7 @@ namespace SparkleLauncher
 		    contentModel.ContentId(),
 		    settings.EditorProfile(),
 		    settings.RuntimeProfile(),
+		    settings.BuildScopes(),
 		    settings.SelectedTargets()};
 	}
 

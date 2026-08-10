@@ -2,6 +2,8 @@
 
 #include <QtCore/QRegularExpression>
 
+#include <algorithm>
+
 namespace SparkleLauncher::LauncherOperationRequestMapping
 {
 	static std::vector<std::string> SplitList(const QString& text)
@@ -51,6 +53,20 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		return CleanScope::CookedOutputs;
 	}
 
+	static std::vector<BuildWorkspaceScope> ParseBuildScopes(const QString& text)
+	{
+		std::vector<BuildWorkspaceScope> scopes;
+		for (const std::string& value : SplitList(text))
+		{
+			BuildWorkspaceScope scope = BuildWorkspaceScope::Editor;
+			if (TryParseBuildWorkspaceScope(value, scope) && std::find(scopes.begin(), scopes.end(), scope) == scopes.end())
+			{
+				scopes.push_back(scope);
+			}
+		}
+		return scopes;
+	}
+
 	BuildWorkspaceOperationRequest BuildWorkspace(const LauncherOperationRequest& request)
 	{
 		BuildWorkspaceOperationRequest mapped;
@@ -64,6 +80,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
 		mapped.PreferredIde = workspaceIde;
 		mapped.Compiler = workspaceCompiler;
+		mapped.SelectedScopes = ParseBuildScopes(request.BuildScopes);
 		mapped.SelectedTargets = SplitList(request.SelectedTargets);
 		mapped.SourceDependencyId = request.SourceDependencyId.toStdString();
 		mapped.HostToolId = request.HostToolId.toStdString();

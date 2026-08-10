@@ -73,6 +73,11 @@ namespace SparkleLauncher
 		return m_workspaceCompiler;
 	}
 
+	const QString& LauncherSettings::BuildScopes() const
+	{
+		return m_buildScopes;
+	}
+
 	const QString& LauncherSettings::SelectedTargets() const
 	{
 		return m_selectedTargets;
@@ -211,6 +216,17 @@ namespace SparkleLauncher
 		}
 
 		m_workspaceCompiler = compiler;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetBuildScopes(const QString& scopes)
+	{
+		if (m_buildScopes == scopes)
+		{
+			return;
+		}
+
+		m_buildScopes = scopes;
 		emit SettingsChanged();
 	}
 

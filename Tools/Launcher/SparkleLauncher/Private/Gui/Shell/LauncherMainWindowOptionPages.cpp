@@ -44,9 +44,9 @@ namespace SparkleLauncher
 
 	bool LauncherMainWindow::UsesBuildEnvironmentStatus(const QString& operationId)
 	{
-		return operationId == "workspace.generate-build-files" || operationId == "workspace.sync-code"
-		    || operationId == "workspace.build-all" || operationId == "workspace.build.editor" || operationId == "launcher.build.self"
-		    || operationId == "workspace.build.runtime" || operationId.startsWith("cook.");
+		return operationId == "workspace.generate-build-files" || operationId == "workspace.sync-code" || operationId == "workspace.build"
+		    || operationId == "workspace.build.editor" || operationId == "launcher.build.self" || operationId == "workspace.build.runtime"
+		    || operationId.startsWith("cook.");
 	}
 
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
@@ -54,6 +54,12 @@ namespace SparkleLauncher
 		if (operationId == LauncherHomeOperationId())
 		{
 			AddHomeQuickStart(layout);
+			return;
+		}
+
+		if (operationId == "workspace.build")
+		{
+			AddBuildOptions(layout);
 			return;
 		}
 
@@ -76,6 +82,182 @@ namespace SparkleLauncher
 		}
 
 		AddNoOptionsMessage(layout, "No settings");
+	}
+
+	void LauncherMainWindow::AddBuildOptions(QVBoxLayout& layout)
+	{
+		const WorkspaceFeatureSettings features = GetLauncherWorkspaceFeatureSettings();
+		const bool cookToolsAvailable = features.ContentPipelineEnabled || features.ShaderCompilerEnabled;
+		const QStringList selectedScopes = m_settings.BuildScopes().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
+		QVector<QCheckBox*> scopeBoxes;
+
+		QVBoxLayout* buildLayout = AddOptionGroup(
+		    layout,
+		    "Choose products",
+		    "Select one or more outputs for this build. The launcher combines compatible targets and lets CMake resolve their "
+		    "dependencies.");
+
+		QLabel* selectionSummary = new QLabel(buildLayout->parentWidget());
+		selectionSummary->setObjectName("BuildSelectionSummary");
+		buildLayout->addWidget(selectionSummary);
+
+		QFrame* selectionPanel = new QFrame(buildLayout->parentWidget());
+		selectionPanel->setObjectName("BuildSelectionPanel");
+		selectionPanel->setMinimumWidth(LauncherUi::Build::ContentMinWidth);
+		selectionPanel->setMaximumWidth(LauncherUi::Build::ContentMaxWidth);
+		QVBoxLayout* selectionLayout = new QVBoxLayout(selectionPanel);
+		selectionLayout->setContentsMargins(0, 0, 0, 0);
+		selectionLayout->setSpacing(0);
+
+		AddBuildScopeRow(
+		    *selectionLayout,
+		    "Editor",
+		    "editor",
+		    "Build the editor product for authoring, inspection, and tools workflows.",
+		    m_settings.EditorProfile(),
+		    true,
+		    selectedScopes,
+		    scopeBoxes);
+		AddBuildScopeRow(
+		    *selectionLayout,
+		    "Game",
+		    "runtime",
+		    "Build the standalone game product used by Game run mode.",
+		    m_settings.RuntimeProfile(),
+		    true,
+		    selectedScopes,
+		    scopeBoxes);
+		AddBuildScopeRow(
+		    *selectionLayout,
+		    "Cooking tools",
+		    "cook-tools",
+		    cookToolsAvailable ? "Build the asset, texture, and shader tools enabled by this workspace."
+		                       : "No cooking-tool targets are enabled by this workspace configuration.",
+		    cookToolsAvailable ? m_settings.EditorProfile() : QStringLiteral("Unavailable"),
+		    cookToolsAvailable,
+		    selectedScopes,
+		    scopeBoxes);
+		AddBuildScopeRow(
+		    *selectionLayout,
+		    "Launcher",
+		    "launcher",
+		    "Rebuild Sparkle Launcher itself. The new binary is used after the launcher restarts.",
+		    m_settings.EditorProfile(),
+		    true,
+		    selectedScopes,
+		    scopeBoxes);
+		buildLayout->addWidget(selectionPanel);
+
+		QFrame* automationNote = new QFrame(buildLayout->parentWidget());
+		automationNote->setObjectName("BuildAutomationNote");
+		automationNote->setMinimumWidth(LauncherUi::Build::ContentMinWidth);
+		automationNote->setMaximumWidth(LauncherUi::Build::ContentMaxWidth);
+		QHBoxLayout* automationLayout = new QHBoxLayout(automationNote);
+		automationLayout->setContentsMargins(LauncherUi::Build::RowMargins);
+		automationLayout->setSpacing(LauncherUi::Build::RowSpacing);
+		QLabel* automationTitle = new QLabel("AUTOMATIC", automationNote);
+		automationTitle->setObjectName("BuildAutomationTitle");
+		automationLayout->addWidget(automationTitle, 0, Qt::AlignTop);
+		QLabel* automationDetail = new QLabel(
+		    "Generated build files are refreshed only when stale. Current targets are skipped by the incremental build.",
+		    automationNote);
+		automationDetail->setObjectName("BuildAutomationDetail");
+		automationDetail->setWordWrap(true);
+		automationLayout->addWidget(automationDetail, 1);
+		buildLayout->addWidget(automationNote);
+
+		for (QCheckBox* scopeBox : scopeBoxes)
+		{
+			connect(
+			    scopeBox,
+			    &QCheckBox::toggled,
+			    this,
+			    [this, scopeBoxes, selectionSummary]() { UpdateBuildScopeSetting(scopeBoxes, selectionSummary); });
+		}
+		UpdateBuildScopeSetting(scopeBoxes, selectionSummary);
+		AddBuildEnvironmentStatus(layout, "workspace.build");
+	}
+
+	void LauncherMainWindow::AddBuildScopeRow(
+	    QVBoxLayout& layout,
+	    const QString& label,
+	    const QString& value,
+	    const QString& detail,
+	    const QString& metadata,
+	    bool available,
+	    const QStringList& selectedScopes,
+	    QVector<QCheckBox*>& scopeBoxes)
+	{
+		QFrame* scopeRow = new QFrame(layout.parentWidget());
+		scopeRow->setObjectName("BuildScopeRow");
+		QHBoxLayout* scopeRowLayout = new QHBoxLayout(scopeRow);
+		scopeRowLayout->setContentsMargins(LauncherUi::Build::RowMargins);
+		scopeRowLayout->setSpacing(LauncherUi::Build::RowSpacing);
+
+		QVBoxLayout* descriptionLayout = new QVBoxLayout();
+		descriptionLayout->setContentsMargins(0, 0, 0, 0);
+		descriptionLayout->setSpacing(2);
+		QCheckBox* scopeBox = new QCheckBox(label, scopeRow);
+		scopeBox->setObjectName("BuildScopeCheckBox");
+		scopeBox->setProperty("BuildScope", value);
+		scopeBox->setProperty("BuildLabel", label);
+		scopeBox->setToolTip(detail);
+		scopeBox->setChecked(available && selectedScopes.contains(value));
+		scopeBox->setEnabled(available);
+		RegisterFocusable(scopeBox);
+		descriptionLayout->addWidget(scopeBox);
+
+		QLabel* scopeDescription = new QLabel(detail, scopeRow);
+		scopeDescription->setObjectName("BuildScopeDescription");
+		scopeDescription->setWordWrap(true);
+		descriptionLayout->addWidget(scopeDescription);
+		scopeRowLayout->addLayout(descriptionLayout, 1);
+
+		QLabel* scopeMetadata = new QLabel(metadata, scopeRow);
+		scopeMetadata->setObjectName("BuildScopeMetadata");
+		scopeMetadata->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+		scopeRowLayout->addWidget(scopeMetadata, 0);
+
+		scopeRow->setProperty("Selected", scopeBox->isChecked());
+		connect(
+		    scopeBox,
+		    &QCheckBox::toggled,
+		    scopeRow,
+		    [scopeRow](bool selected)
+		    {
+			    scopeRow->setProperty("Selected", selected);
+			    scopeRow->style()->unpolish(scopeRow);
+			    scopeRow->style()->polish(scopeRow);
+		    });
+
+		layout.addWidget(scopeRow);
+		scopeBoxes.push_back(scopeBox);
+	}
+
+	void LauncherMainWindow::UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary)
+	{
+		QStringList selectedValues;
+		QStringList selectedLabels;
+		for (QCheckBox* scopeBox : scopeBoxes)
+		{
+			if (scopeBox != nullptr && scopeBox->isEnabled() && scopeBox->isChecked())
+			{
+				selectedValues.push_back(scopeBox->property("BuildScope").toString());
+				selectedLabels.push_back(scopeBox->property("BuildLabel").toString());
+			}
+		}
+
+		if (selectionSummary != nullptr)
+		{
+			selectionSummary->setText(
+			    selectedLabels.empty() ? QStringLiteral("Select at least one product to build")
+			                           : QStringLiteral("%1 selected  ·  %2").arg(selectedLabels.size()).arg(selectedLabels.join("  ·  ")));
+			selectionSummary->setProperty("State", selectedLabels.empty() ? "warning" : "ok");
+			selectionSummary->style()->unpolish(selectionSummary);
+			selectionSummary->style()->polish(selectionSummary);
+		}
+		m_settings.SetBuildScopes(selectedValues.join(';'));
+		UpdateRunAvailability();
 	}
 
 	void LauncherMainWindow::AddShaderCookOptions(QVBoxLayout& layout)

@@ -19,7 +19,7 @@ Workflow banner asset slots:
 - `workflow-toolchain-check.png`: Host readiness workflow banner.
 - `workflow-source-sync.png`: Source tier sync workflow banner.
 - `workflow-generate-build-files.png`: Generate build files workflow banner.
-- `workflow-build-all.png`: Build all workflow banner.
+- `workflow-build-all.png`: Selectable workspace build workflow banner.
 - `workflow-launcher-build.png`: Launcher build workflow banner.
 - `workflow-editor-build.png`: Editor build workflow banner.
 - `workflow-runtime-build.png`: Runtime build workflow banner.

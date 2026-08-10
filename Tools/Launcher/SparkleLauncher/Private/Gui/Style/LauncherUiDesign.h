@@ -157,6 +157,14 @@ namespace SparkleLauncher::LauncherUi
 		inline const QMargins RowMargins{14, 10, 14, 10};
 	}
 
+	namespace Build
+	{
+		inline constexpr int ContentMinWidth = 960;
+		inline constexpr int ContentMaxWidth = 1180;
+		inline constexpr int RowSpacing = 12;
+		inline const QMargins RowMargins{14, 10, 14, 10};
+	}
+
 	namespace Option
 	{
 		inline constexpr int LabelHorizontalPadding = 10;
