@@ -27,6 +27,7 @@ namespace SparkleLauncher
 		const LauncherLevelUiModel& LevelModel;
 
 		bool IsLevelRunGoal() const;
+		bool UsesEditorProduct() const;
 		QString ProductBuildOperationId() const;
 		std::string ProductCapabilityId() const;
 		std::string ProjectCapabilityId() const;

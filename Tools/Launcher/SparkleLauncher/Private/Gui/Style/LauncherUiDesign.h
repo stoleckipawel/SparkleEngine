@@ -75,6 +75,8 @@ namespace SparkleLauncher::LauncherUi
 	namespace ContextSelector
 	{
 		inline constexpr int ComboHeight = 28;
+		inline constexpr int RunModeComboMinWidth = 86;
+		inline constexpr int RunModeComboMaxWidth = 110;
 		inline constexpr int ConfigurationComboMinWidth = 140;
 		inline constexpr int ConfigurationComboMaxWidth = 180;
 		inline constexpr int IdeComboMinWidth = 120;

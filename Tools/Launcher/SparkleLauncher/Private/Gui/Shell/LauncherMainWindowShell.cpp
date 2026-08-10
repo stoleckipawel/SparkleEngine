@@ -239,6 +239,16 @@ namespace SparkleLauncher
 			rowLayout->addWidget(&combo, 0);
 		};
 
+		QLabel* runModeLabel = addLabel("Run Mode");
+		m_runModeCombo = CreateContextCombo(&LauncherSettings::SetRunMode);
+		m_runModeCombo->setAccessibleName("Run Mode");
+		m_runModeCombo->setToolTip("Choose whether Quick Start opens the selected map in the editor or runs the standalone game.");
+		finishCombo(
+		    *runModeLabel,
+		    *m_runModeCombo,
+		    LauncherUi::ContextSelector::RunModeComboMinWidth,
+		    LauncherUi::ContextSelector::RunModeComboMaxWidth);
+
 		QLabel* configurationLabel = addLabel("Config");
 		m_buildConfigurationCombo = CreateContextCombo(&LauncherSettings::SetBuildConfiguration);
 		m_buildConfigurationCombo->setAccessibleName("Build Configuration");
@@ -318,6 +328,7 @@ namespace SparkleLauncher
 		const BuildToolchainStatus toolchain =
 		    DetectBuildToolchain(m_repositoryRoot, ResolveSelectedWorkspaceIde(m_settings), ResolveSelectedWorkspaceCompiler(m_settings));
 		const LauncherContextUiModel model = LauncherContextUiModel::Build(toolchain);
+		PopulateBoundContextCombo(m_runModeCombo, model.RunModes, m_settings.RunMode(), m_settings, &LauncherSettings::SetRunMode);
 		PopulateBoundContextCombo(
 		    m_graphicsApiCombo,
 		    model.GraphicsApis,

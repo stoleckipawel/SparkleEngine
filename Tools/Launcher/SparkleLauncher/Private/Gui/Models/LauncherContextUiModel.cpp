@@ -29,6 +29,14 @@ namespace SparkleLauncher
 		return path.empty() ? fallback : QString::fromStdString(path.string());
 	}
 
+	static QVector<LauncherSelectionOption> BuildRunModeOptions()
+	{
+		return {
+		    {"Editor", "editor", "Open the selected map in the project editor.", true},
+		    {"Game", "game", "Run the selected map in the standalone game.", true},
+		};
+	}
+
 	static QVector<LauncherSelectionOption> BuildGraphicsApiOptions(const BuildToolchainStatus& toolchain)
 	{
 		const bool d3d12Available = IsToolAvailable(toolchain, "windowssdk");
@@ -158,6 +166,7 @@ namespace SparkleLauncher
 	LauncherContextUiModel LauncherContextUiModel::Build(const BuildToolchainStatus& toolchain)
 	{
 		return {
+		    .RunModes = BuildRunModeOptions(),
 		    .GraphicsApis = BuildGraphicsApiOptions(toolchain),
 		    .ShaderBackends = BuildShaderBackendOptions(toolchain),
 		    .BuildConfigurations = BuildConfigurationOptions(),

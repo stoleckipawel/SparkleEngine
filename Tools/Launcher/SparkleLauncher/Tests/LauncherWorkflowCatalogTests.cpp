@@ -6,6 +6,7 @@
 #include "SparkleLauncher/LevelRunOperations.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <iostream>
 #include <string>
 
@@ -40,16 +41,24 @@ namespace SparkleLauncher::LauncherWorkflowCatalogTests
 		    runDefinition.has_value() && runDefinition->Group == "Levels",
 		    "Run Level must remain a backend Levels operation regardless of its frontend placement.");
 		LevelRunOperationRequest runRequest;
+		runRequest.RepositoryRoot = "C:/Sparkle";
+		runRequest.ContentId = "Showcase";
 		runRequest.LevelId = "Sponza";
 		runRequest.GraphicsApi = "vulkan";
 		const LevelRunOperationPlan runPlan = PlanLevelRunOperation("levels.run", runRequest);
+		passed &= Expect(runPlan.Request.RunMode == LevelRunMode::Editor, "Editor must be the default level Run Mode.");
+		passed &= Expect(runPlan.TargetName == "ShowcaseEditor", "Editor Run Mode must select the editor product target.");
+		passed &= Expect(
+		    runPlan.ExecutablePath
+		        == std::filesystem::path("C:/Sparkle/artifacts/dev/projects/Showcase/editor/DevelopmentEditor/ShowcaseEditor.exe"),
+		    "Editor Run Mode must resolve the editor artifact contract.");
 		const bool selectsRequestedLevel = std::any_of(
 		    runPlan.Environment.begin(),
 		    runPlan.Environment.end(),
 		    [](const Process::EnvironmentOverride& environment)
 		    { return environment.Name == "SPARKLE_STARTUP_LEVEL" && environment.Value == "Sponza"; });
 		passed &=
-		    Expect(selectsRequestedLevel, "The final Levels operation must pass the requested catalog identity to the runtime process.");
+		    Expect(selectsRequestedLevel, "The final Levels operation must pass the requested catalog identity to the selected product.");
 		const bool selectsRequestedGraphicsApi = std::any_of(
 		    runPlan.Operation.Inputs.begin(),
 		    runPlan.Operation.Inputs.end(),
@@ -57,6 +66,16 @@ namespace SparkleLauncher::LauncherWorkflowCatalogTests
 		passed &= Expect(
 		    selectsRequestedGraphicsApi,
 		    "The final Levels operation must retain the footer-selected graphics API as a typed operation input.");
+
+		LevelRunOperationRequest gameRequest = runRequest;
+		gameRequest.RunMode = LevelRunMode::Game;
+		gameRequest.ProductProfile = "DevelopmentGame";
+		const LevelRunOperationPlan gamePlan = PlanLevelRunOperation("levels.run", gameRequest);
+		passed &= Expect(gamePlan.TargetName == "ShowcaseRuntime", "Game Run Mode must select the standalone product target.");
+		passed &= Expect(
+		    gamePlan.ExecutablePath
+		        == std::filesystem::path("C:/Sparkle/artifacts/dev/projects/Showcase/runtime/DevelopmentGame/ShowcaseRuntime.exe"),
+		    "Game Run Mode must resolve the standalone artifact contract.");
 
 		const LauncherOperationUiModel uiModel = LauncherUiModelForOperation("levels.sync");
 		passed &=

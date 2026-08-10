@@ -99,10 +99,23 @@ namespace SparkleLauncher
 		}
 	}
 
+	std::string_view ToString(LevelRunMode mode) noexcept
+	{
+		switch (mode)
+		{
+			case LevelRunMode::Editor:
+				return "editor";
+			case LevelRunMode::Game:
+				return "game";
+		}
+
+		return "unknown";
+	}
+
 	const std::vector<LevelRunOperationDefinition>& GetLevelRunOperationDefinitions()
 	{
 		static const std::vector<LevelRunOperationDefinition> definitions = {
-		    {"levels.run", "Levels", "Run Level", "Run a catalog level after its runtime prerequisites are ready."},
+		    {"levels.run", "Levels", "Run Level", "Open a catalog level in the selected product after its prerequisites are ready."},
 		};
 		return definitions;
 	}
@@ -134,7 +147,8 @@ namespace SparkleLauncher
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs = {
 		    {"content", plan.Request.ContentId},
-		    {"profile", plan.Request.RuntimeProfile},
+		    {"runMode", std::string(ToString(plan.Request.RunMode))},
+		    {"profile", plan.Request.ProductProfile},
 		    {"level", plan.Request.LevelId},
 		    {"graphicsApi", plan.Request.GraphicsApi}};
 		plan.Operation.LogPath = GetLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
@@ -149,10 +163,15 @@ namespace SparkleLauncher
 			return plan;
 		}
 
-		const std::optional<BuildProfile> profile = FindBuildProfile(plan.Request.RuntimeProfile);
-		if (!profile.has_value() || profile->Target != BuildProfileTarget::Game)
+		const BuildProfileTarget expectedTarget =
+		    plan.Request.RunMode == LevelRunMode::Editor ? BuildProfileTarget::Editor : BuildProfileTarget::Game;
+		const std::optional<BuildProfile> profile = FindBuildProfile(plan.Request.ProductProfile);
+		if (!profile.has_value() || profile->Target != expectedTarget)
 		{
-			AddReadiness(plan, "Runtime profile does not match a game target: " + plan.Request.RuntimeProfile);
+			AddReadiness(
+			    plan,
+			    "Profile does not match the selected " + std::string(ToString(plan.Request.RunMode))
+			        + " run mode: " + plan.Request.ProductProfile);
 			return plan;
 		}
 
@@ -165,9 +184,13 @@ namespace SparkleLauncher
 		}
 #endif
 		plan.ExecutablePath = FirstExistingOrPreferred({
-		    GetProjectTargetArtifactDirectory(plan.Request.RepositoryRoot, plan.Request.ContentId, "runtime", plan.Request.RuntimeProfile)
+		    GetProjectTargetArtifactDirectory(
+		        plan.Request.RepositoryRoot,
+		        plan.Request.ContentId,
+		        plan.Request.RunMode == LevelRunMode::Editor ? "editor" : "runtime",
+		        plan.Request.ProductProfile)
 		        / fileName,
-		    ResolveSparkleToolPath(plan.Request.RepositoryRoot, plan.Request.RuntimeProfile, plan.TargetName),
+		    ResolveSparkleToolPath(plan.Request.RepositoryRoot, plan.Request.ProductProfile, plan.TargetName),
 		});
 		plan.WorkingDirectory = plan.Request.RepositoryRoot / "Projects" / plan.Request.ContentId;
 		AddEnvironment(plan, "SPARKLE_STARTUP_LEVEL", plan.Request.LevelId);
@@ -183,8 +206,8 @@ namespace SparkleLauncher
 
 		AddReadiness(
 		    plan,
-		    plan.Readiness.ExecutableReady ? "Runtime executable is ready."
-		                                   : "Runtime executable is missing; compile " + plan.TargetName + " first.");
+		    plan.Readiness.ExecutableReady ? "Selected product executable is ready."
+		                                   : "Selected product executable is missing; compile " + plan.TargetName + " first.");
 		AddReadiness(
 		    plan,
 		    plan.Readiness.ContentDirectoryReady ? "Content working directory is valid."

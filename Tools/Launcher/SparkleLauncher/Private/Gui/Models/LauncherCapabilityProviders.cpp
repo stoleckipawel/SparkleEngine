@@ -7,19 +7,24 @@ namespace SparkleLauncher
 		return Request.OperationId == QStringLiteral("levels.run");
 	}
 
+	bool LauncherCapabilityContext::UsesEditorProduct() const
+	{
+		return Request.RunMode != QStringLiteral("game");
+	}
+
 	QString LauncherCapabilityContext::ProductBuildOperationId() const
 	{
-		return QStringLiteral("workspace.build.runtime");
+		return UsesEditorProduct() ? QStringLiteral("workspace.build.editor") : QStringLiteral("workspace.build.runtime");
 	}
 
 	std::string LauncherCapabilityContext::ProductCapabilityId() const
 	{
-		return "product.runtime";
+		return UsesEditorProduct() ? "product.editor" : "product.runtime";
 	}
 
 	std::string LauncherCapabilityContext::ProjectCapabilityId() const
 	{
-		return "content.project.runtime";
+		return UsesEditorProduct() ? "content.project.editor" : "content.project.runtime";
 	}
 
 	std::string BuildCapabilityReadinessSummary(const std::vector<std::string>& messages)

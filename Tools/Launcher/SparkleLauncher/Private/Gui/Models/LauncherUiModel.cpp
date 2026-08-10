@@ -50,7 +50,9 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::None,
 			    {},
 			    "Explore Sparkle",
-			    "Choose a level; Quick Start acquires missing content, prepares build and cook prerequisites, then runs that map.",
+			    "Choose a level; Quick Start acquires missing content, prepares build and cook prerequisites, then opens that map using "
+			    "the "
+			    "selected Run Mode.",
 			    "workflow-home-quickstart.png");
 		}
 		if (operationId == "levels.run")
@@ -61,8 +63,8 @@ namespace SparkleLauncher
 			    "Run",
 			    LauncherWorkflowPageKind::Home,
 			    LauncherActionImpactKind::LevelAssets,
-			    "Quick Start goal: prepares the selected level and its runtime prerequisites, then runs it.",
-			    "Run level",
+			    "Quick Start goal: prepares the selected level and product prerequisites, then opens it using the selected Run Mode.",
+			    "Open level",
 			    "Uses the level selected from its Quick Start card.",
 			    "workflow-home-quickstart.png");
 		}

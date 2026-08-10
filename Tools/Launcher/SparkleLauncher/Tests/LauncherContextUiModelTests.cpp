@@ -1,4 +1,8 @@
 #include "LauncherContextUiModel.h"
+#include "LauncherCapabilityProviders.h"
+#include "LauncherLevelUiModel.h"
+#include "LauncherOperationRequestMapping.h"
+#include "LauncherSettings.h"
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
@@ -82,8 +86,27 @@ int main()
 		}
 	}
 	const LauncherContextUiModel missingShaderSdkModel = LauncherContextUiModel::Build(missingShaderSdkToolchain);
+	LauncherSettings settings;
+	LauncherOperationRequest editorRequest;
+	editorRequest.EditorProfile = "DevelopmentEditor";
+	editorRequest.RuntimeProfile = "DevelopmentGame";
+	const LauncherLevelUiModel levelModel;
+	const LauncherCapabilityContext editorContext{editorRequest, levelModel};
+	const LevelRunOperationRequest mappedEditor = LauncherOperationRequestMapping::LevelRun(editorRequest);
+
+	LauncherOperationRequest gameRequest = editorRequest;
+	gameRequest.RunMode = "game";
+	const LauncherCapabilityContext gameContext{gameRequest, levelModel};
+	const LevelRunOperationRequest mappedGame = LauncherOperationRequestMapping::LevelRun(gameRequest);
 	std::string error;
-	const bool valid = ExpectAvailability(model.GraphicsApis, "d3d12", true, error)
+	const bool runModesAreOrdered = model.RunModes.size() == 2 && model.RunModes[0].Value == "editor" && model.RunModes[1].Value == "game";
+	const bool runModeContract = settings.RunMode() == "editor" && mappedEditor.RunMode == LevelRunMode::Editor
+	    && mappedEditor.ProductProfile == "DevelopmentEditor" && editorContext.ProductBuildOperationId() == "workspace.build.editor"
+	    && editorContext.ProductCapabilityId() == "product.editor" && mappedGame.RunMode == LevelRunMode::Game
+	    && mappedGame.ProductProfile == "DevelopmentGame" && gameContext.ProductBuildOperationId() == "workspace.build.runtime"
+	    && gameContext.ProductCapabilityId() == "product.runtime";
+	const bool valid = runModesAreOrdered && runModeContract && ExpectAvailability(model.RunModes, "editor", true, error)
+	    && ExpectAvailability(model.RunModes, "game", true, error) && ExpectAvailability(model.GraphicsApis, "d3d12", true, error)
 	    && ExpectAvailability(model.GraphicsApis, "vulkan", false, error) && ExpectAvailability(model.ShaderBackends, "dxc", true, error)
 	    && ExpectAvailability(model.ShaderBackends, "slang", true, error)
 	    && ExpectAvailability(missingShaderSdkModel.ShaderBackends, "dxc", true, error)
@@ -95,6 +118,14 @@ int main()
 	    && ExpectAvailability(model.BuildConfigurations, "shipping", true, error);
 	if (!valid)
 	{
+		if (!runModesAreOrdered)
+		{
+			error = "Run Mode must expose Editor first and Game second.";
+		}
+		else if (!runModeContract)
+		{
+			error = "Run Mode did not select the matching profile, build operation, and product capability.";
+		}
 		std::cerr << error << '\n';
 		return 1;
 	}

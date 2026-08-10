@@ -21,6 +21,11 @@ namespace SparkleLauncher
 	{
 	}
 
+	const QString& LauncherSettings::RunMode() const
+	{
+		return m_runMode;
+	}
+
 	const QString& LauncherSettings::BuildConfiguration() const
 	{
 		return m_buildConfiguration;
@@ -151,6 +156,18 @@ namespace SparkleLauncher
 	bool LauncherSettings::ConfirmClean() const
 	{
 		return m_confirmClean;
+	}
+
+	void LauncherSettings::SetRunMode(const QString& runMode)
+	{
+		const QString normalized = runMode.trimmed().toLower() == "game" ? QStringLiteral("game") : QStringLiteral("editor");
+		if (m_runMode == normalized)
+		{
+			return;
+		}
+
+		m_runMode = normalized;
+		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetBuildConfiguration(const QString& configuration)

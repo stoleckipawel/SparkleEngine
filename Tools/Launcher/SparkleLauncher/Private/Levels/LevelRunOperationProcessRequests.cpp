@@ -23,7 +23,7 @@ namespace SparkleLauncher
 
 		LevelRunOperationProcessStep step;
 		step.Id = "run-level";
-		step.DisplayName = "Run " + plan.Request.LevelId;
+		step.DisplayName = (plan.Request.RunMode == LevelRunMode::Editor ? "Open " : "Run ") + plan.Request.LevelId;
 		step.Request = std::move(request);
 		steps.push_back(std::move(step));
 		return steps;

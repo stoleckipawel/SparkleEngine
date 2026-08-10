@@ -5,6 +5,7 @@
 #include "LauncherLayoutWidgets.h"
 #include "LauncherLevelUiModel.h"
 #include "LauncherOperationRequestFactory.h"
+#include "LauncherSettings.h"
 #include "LauncherContentModel.h"
 #include "LauncherUiDesign.h"
 
@@ -104,7 +105,7 @@ namespace SparkleLauncher
 		QVBoxLayout* catalogLayout = AddOptionGroup(
 		    layout,
 		    "Map catalog",
-		    "Run a level directly. Quick Start prepares its content, build, and cook prerequisites first.");
+		    "Open a level using the footer Run Mode. Quick Start prepares its content, build, and cook prerequisites first.");
 		const LauncherContentSummary* content = m_contentModel.Content();
 		if (content == nullptr)
 		{
@@ -246,8 +247,11 @@ namespace SparkleLauncher
 		button.setObjectName("MapCardActionButton");
 		button.setFixedSize(LauncherUi::Row::StatusActionWidth, LauncherUi::Row::StatusActionHeight);
 		button.setProperty("ActionIntent", preparing ? QStringLiteral("none") : QStringLiteral("run"));
-		button.setText(preparing ? QStringLiteral("Preparing...") : QStringLiteral("Run"));
-		button.setAccessibleName(preparing ? QStringLiteral("Preparing ") + level.DisplayName : QStringLiteral("Run ") + level.DisplayName);
+		const bool editorMode = m_settings.RunMode() != QStringLiteral("game");
+		const QString actionName = editorMode ? QStringLiteral("Open") : QStringLiteral("Run");
+		button.setText(preparing ? QStringLiteral("Preparing...") : actionName);
+		button.setAccessibleName(
+		    preparing ? QStringLiteral("Preparing ") + level.DisplayName : actionName + QStringLiteral(" ") + level.DisplayName);
 		button.setEnabled(!m_quickStartExecution.has_value() && level.RuntimeSupported && level.CanSelect);
 		if (preparing)
 		{
@@ -259,7 +263,9 @@ namespace SparkleLauncher
 		}
 		else
 		{
-			button.setToolTip(QStringLiteral("Sync missing content, prepare build and cook prerequisites, then run this level."));
+			button.setToolTip(
+			    editorMode ? QStringLiteral("Sync missing content, prepare prerequisites, then open this level in the editor.")
+			               : QStringLiteral("Sync missing content, prepare prerequisites, then run this level in the standalone game."));
 		}
 	}
 

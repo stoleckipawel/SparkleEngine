@@ -100,6 +100,7 @@ namespace SparkleLauncher
 		request.RepositoryRoot = repositoryRoot;
 		request.OperationId = operationId;
 		request.ContentId = contentModel.ContentId();
+		request.RunMode = settings.RunMode();
 		request.EditorProfile = settings.EditorProfile();
 		request.RuntimeProfile = settings.RuntimeProfile();
 		request.WorkspaceIde = settings.WorkspaceIde();

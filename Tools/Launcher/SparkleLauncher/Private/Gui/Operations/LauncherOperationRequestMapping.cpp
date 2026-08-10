@@ -85,7 +85,9 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		LevelRunOperationRequest mapped;
 		mapped.RepositoryRoot = request.RepositoryRoot;
 		mapped.ContentId = request.ContentId.toStdString();
-		mapped.RuntimeProfile = request.RuntimeProfile.toStdString();
+		mapped.RunMode = request.RunMode == "game" ? LevelRunMode::Game : LevelRunMode::Editor;
+		mapped.ProductProfile =
+		    mapped.RunMode == LevelRunMode::Game ? request.RuntimeProfile.toStdString() : request.EditorProfile.toStdString();
 		const std::vector<std::string> requestedLevels = SplitList(request.RequestedLevelIds);
 		if (!requestedLevels.empty())
 		{

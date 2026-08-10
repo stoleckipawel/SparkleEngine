@@ -243,6 +243,7 @@ namespace SparkleLauncher
 		QHash<QString, int> m_workflowPageByOperation;
 		QHash<int, QString> m_lastOperationByWorkflowIndex;
 		QVector<QWidget*> m_tabOrderWidgets;
+		QComboBox* m_runModeCombo = nullptr;
 		QComboBox* m_buildConfigurationCombo = nullptr;
 		QComboBox* m_workspaceCompilerCombo = nullptr;
 		QComboBox* m_workspaceIdeCombo = nullptr;

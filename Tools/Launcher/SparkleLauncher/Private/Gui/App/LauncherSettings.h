@@ -12,6 +12,7 @@ namespace SparkleLauncher
 	public:
 		explicit LauncherSettings(QObject* parent = nullptr);
 
+		const QString& RunMode() const;
 		const QString& BuildConfiguration() const;
 		const QString& EditorProfile() const;
 		const QString& RuntimeProfile() const;
@@ -36,6 +37,7 @@ namespace SparkleLauncher
 		bool ConfirmClean() const;
 
 	public slots:
+		void SetRunMode(const QString& runMode);
 		void SetBuildConfiguration(const QString& configuration);
 		void SetEditorProfile(const QString& profileName);
 		void SetRuntimeProfile(const QString& profileName);
@@ -63,6 +65,7 @@ namespace SparkleLauncher
 		void SettingsChanged();
 
 	private:
+		QString m_runMode = "editor";
 		QString m_buildConfiguration = "development";
 		QString m_workspaceIde = "rider";
 		QString m_workspaceCompiler = "msvc";

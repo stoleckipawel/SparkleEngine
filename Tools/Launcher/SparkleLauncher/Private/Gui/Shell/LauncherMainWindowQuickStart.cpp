@@ -4,6 +4,7 @@
 #include "LauncherLevelUiModel.h"
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherQuickStartPlanner.h"
+#include "LauncherSettings.h"
 
 #include <QtCore/QDateTime>
 #include <QtCore/QStringList>
@@ -36,7 +37,8 @@ namespace SparkleLauncher
 		{
 			return;
 		}
-		if (!SetLevelsSelected(content.RootPath, {level.Id.toStdString()}, true, QStringLiteral("Run ") + level.DisplayName))
+		const QString actionName = m_settings.RunMode() == QStringLiteral("game") ? QStringLiteral("Run ") : QStringLiteral("Open ");
+		if (!SetLevelsSelected(content.RootPath, {level.Id.toStdString()}, true, actionName + level.DisplayName))
 		{
 			return;
 		}
@@ -86,7 +88,9 @@ namespace SparkleLauncher
 		}
 
 		const QString goalName = QuickStartGoalDisplayName(execution.GoalRequest());
-		const QString stepTitle = QStringLiteral("Run %1 - %2").arg(goalName, DisplayNameForOperation(operationId));
+		const QString launchVerb =
+		    execution.GoalRequest().RunMode == QStringLiteral("game") ? QStringLiteral("Run") : QStringLiteral("Open");
+		const QString stepTitle = QStringLiteral("%1 %2 - %3").arg(launchVerb, goalName, DisplayNameForOperation(operationId));
 		QStringList dependencyPath;
 		for (const std::string& capabilityId : resolution.DependencyPath)
 		{

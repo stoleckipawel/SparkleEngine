@@ -13,6 +13,12 @@
 
 namespace SparkleLauncher
 {
+	enum class LevelRunMode
+	{
+		Editor,
+		Game
+	};
+
 	struct LevelRunOperationDefinition
 	{
 		std::string Id;
@@ -25,7 +31,8 @@ namespace SparkleLauncher
 	{
 		std::filesystem::path RepositoryRoot;
 		std::string ContentId = kDefaultContentId;
-		std::string RuntimeProfile = "DevelopmentGame";
+		LevelRunMode RunMode = LevelRunMode::Editor;
+		std::string ProductProfile = "DevelopmentEditor";
 		std::string LevelId;
 		std::string GraphicsApi = "d3d12";
 	};
@@ -63,6 +70,7 @@ namespace SparkleLauncher
 		bool CanRun = false;
 	};
 
+	std::string_view ToString(LevelRunMode mode) noexcept;
 	const std::vector<LevelRunOperationDefinition>& GetLevelRunOperationDefinitions();
 	std::optional<LevelRunOperationDefinition> FindLevelRunOperationDefinition(std::string_view operationId);
 	LevelRunOperationPlan PlanLevelRunOperation(std::string_view operationId, const LevelRunOperationRequest& request);

@@ -416,12 +416,20 @@ set_tests_properties(cook_tool_dependency_contract PROPERTIES LABELS "Launcher;C
 
 add_executable(LauncherContextUiModelTests
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests/LauncherContextUiModelTests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherSettings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherSettings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationRequestMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCapabilityProviders.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContextUiModel.cpp
 )
 sparkle_configure_host_tool_target(LauncherContextUiModelTests)
+set_target_properties(LauncherContextUiModelTests PROPERTIES AUTOMOC ON)
 target_include_directories(LauncherContextUiModelTests
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations
 )
 target_link_libraries(LauncherContextUiModelTests PRIVATE SparkleLauncherCore Qt6::Core)
 target_compile_features(LauncherContextUiModelTests PRIVATE cxx_std_20)
