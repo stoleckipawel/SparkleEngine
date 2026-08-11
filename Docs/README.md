@@ -5,7 +5,7 @@ Status: documentation root and authority map
 SparkleEngine documentation is organized by responsibility, not by chronology or author.
 
 ## Areas
- 
+
 | Area | Owns | Does not own |
 | --- | --- | --- |
 | [Strategy](Strategy/README.md) | capability targets, priorities, dated assessments, roadmaps, persona | implementation rules or system design |
@@ -40,7 +40,11 @@ Start with the [Strategy index](Strategy/README.md). Requirements, assessment, r
 ### Multithreading Work
 
 Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the concurrency target design and [K. Implementation Plan](Architecture/Multithreading/ImplementationPlan.md) for concurrency-only sequencing.
- 
+
+### Performance Diagnostics Work
+
+Start with [Diagnostics Product and UX Research](Architecture/DiagnosticsUxResearch.md) for the Epic/NVIDIA/AMD precedent and requirements audit, then use [Performance Diagnostics Architecture](Architecture/PerformanceDiagnosticsArchitecture.md) for the selected product, metric, ownership, evidence, and profiler-handoff contracts. [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) remains the authority for benchmark gates and case-study deliverables.
+
 ## Document Status Vocabulary
 
 - **Canonical** — current authoritative decision for its named subject.

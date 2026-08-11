@@ -10,8 +10,9 @@ Architecture documents explain SparkleEngine's implemented shape, accepted syste
 | --- | --- | --- |
 | Current repository/module/data-flow map | [D. Whole Repository Architecture Map](WholeRepositoryMap.md) | dated source-backed snapshot |
 | External renderer/SDK comparison | [E. External Renderer Repository Comparison](ExternalRendererComparison.md) | research reference |
+| Epic/NVIDIA/AMD diagnostics product and UI/UX comparison | [Diagnostics Product And UX Research](DiagnosticsUxResearch.md) | research reference |
 | Renderer/RHI dependency and ownership boundary | [Renderer and RHI Architecture Boundary](RendererRhiBoundary.md) | canonical architecture decision |
-| CPU/GPU/memory diagnostics and profiler correlation | [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md) | target proposal; implementation must still be proven |
+| Live stat views, GPU Visualizer, CPU/GPU/memory diagnostics, and profiler correlation | [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md) | target proposal; implementation must still be proven |
 | Multithreaded target architecture and rationale | [J. Multithreaded Engine Architecture](Multithreading/MultithreadedEngineArchitecture.md) | canonical concurrency target; implementation must still be proven |
 | Ordered multithreading implementation work | [K. Multithreaded Engine Implementation Plan](Multithreading/ImplementationPlan.md) | internal concurrency execution plan |
 
@@ -21,7 +22,7 @@ For external technical review, read the repository map and Renderer/RHI boundary
 
 For multithreading work, [J](Multithreading/MultithreadedEngineArchitecture.md) owns the target design and rationale while [K](Multithreading/ImplementationPlan.md) owns sequencing. Neither replaces [engineering standards](../Engineering/Standards/README.md) or proves current implementation.
 
-For performance diagnostics work, read [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md) for metric semantics, ownership, live presentation, and profiler correlation, then use the acceptance workload for benchmark and evidence gates.
+For performance diagnostics work, read [Diagnostics Product And UX Research](DiagnosticsUxResearch.md) to audit the product precedents and option space, then [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md) for the selected information architecture, metric semantics, ownership, fixed `Stat` views, focused GPU capture, live presentation, and external-profiler correlation. Use the acceptance workload for benchmark and evidence gates.
 
 ## Architecture Document Rules
 
