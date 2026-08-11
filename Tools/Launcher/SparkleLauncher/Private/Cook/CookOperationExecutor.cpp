@@ -7,9 +7,7 @@
 
 namespace SparkleLauncher
 {
-
-		constexpr unsigned int kMissingRuntimeDependencyExitCode = 0xC0000135u;
-
+	constexpr unsigned int kMissingRuntimeDependencyExitCode = 0xC0000135u;
 
 	static std::string MakeCookFailureSummary(const CookOperationProcessStep& step, const ProcessResult& result)
 	{
@@ -20,14 +18,16 @@ namespace SparkleLauncher
 
 		if (static_cast<unsigned int>(result.ExitCode) == kMissingRuntimeDependencyExitCode)
 		{
-			if (step.Id == "cook-shaders" || step.Id == "cook-shader-package")
+			if (step.Id == "cook-shaders")
 			{
-				return "ShaderCompiler could not start because its DXC/Slang runtime support bundle is incomplete. Rebuild cooking tools after Sync confirms the Vulkan SDK, then retry. Log: " + step.Request.LogPath.string();
+				return "ShaderCompiler could not start because its DXC/Slang runtime support bundle is incomplete. Rebuild cooking tools after "
+				       "Sync confirms the Vulkan SDK, then retry. Log: "
+				    + step.Request.LogPath.string();
 			}
 			return "A required runtime DLL is missing for this tool. Rebuild the tool and retry. Log: " + step.Request.LogPath.string();
 		}
 
-		if (step.Id == "cook-shaders" || step.Id == "cook-shader-package")
+		if (step.Id == "cook-shaders")
 		{
 			return "Shader package cooking failed. Log: " + step.Request.LogPath.string();
 		}

@@ -155,7 +155,6 @@ namespace SparkleLauncher
 		void AddWorkflowAutomationNote(QVBoxLayout& layout, const QString& detail);
 		void UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary);
 		void UpdateCookScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary);
-		void AddShaderCookOptions(QVBoxLayout& layout);
 		void AddCleanOptions(QVBoxLayout& layout, const QString& operationId);
 		void AddCleanScopeRow(
 		    QVBoxLayout& layout,

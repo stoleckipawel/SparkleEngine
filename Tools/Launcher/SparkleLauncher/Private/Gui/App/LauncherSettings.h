@@ -21,10 +21,7 @@ namespace SparkleLauncher
 		const QString& BuildScopes() const;
 		const QString& CookScopes() const;
 		const QString& SelectedTargets() const;
-		const QString& ShaderPackages() const;
 		const QString& ShaderBackend() const;
-		const QString& ShaderTargetPreset() const;
-		const QString& ShaderCustomTargets() const;
 		const QString& ShaderCacheDirectory() const;
 		const QString& GraphicsApi() const;
 		const QString& CleanScope() const;
@@ -48,10 +45,7 @@ namespace SparkleLauncher
 		void SetBuildScopes(const QString& scopes);
 		void SetCookScopes(const QString& scopes);
 		void SetSelectedTargets(const QString& targets);
-		void SetShaderPackages(const QString& packages);
 		void SetShaderBackend(const QString& backend);
-		void SetShaderTargetPreset(const QString& preset);
-		void SetShaderCustomTargets(const QString& targets);
 		void SetShaderCacheDirectory(const QString& path);
 		void SetGraphicsApi(const QString& graphicsApi);
 		void SetShaderEnableDebugInfo(bool enabled);
@@ -76,10 +70,7 @@ namespace SparkleLauncher
 		QString m_buildScopes = "editor;runtime;cook-tools";
 		QString m_cookScopes = "shaders;textures;assets";
 		QString m_selectedTargets;
-		QString m_shaderPackages;
 		QString m_shaderBackend = "dxc";
-		QString m_shaderTargetPreset = "default";
-		QString m_shaderCustomTargets = "DxilSm66, SpirV16";
 		QString m_shaderCacheDirectory;
 		QString m_graphicsApi = "d3d12";
 		QString m_cleanScope = "cooked";

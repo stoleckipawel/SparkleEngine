@@ -137,8 +137,6 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.Mode = request.ForceRecook ? CookMode::Force : CookMode::Incremental;
 		mapped.ForceRecookConfirmed = request.ConfirmForceRecook;
 		mapped.SelectedScopes = ParseCookScopes(request.CookScopes);
-		mapped.ShaderPackages = SplitList(request.ShaderPackages);
-		mapped.ShaderTargets = SplitList(request.ShaderTargets);
 		mapped.ShaderBackend = request.ShaderBackend.toStdString();
 		mapped.ShaderCacheDirectory = request.ShaderCacheDirectory.toStdString();
 		mapped.ShaderUseCache = request.ShaderUseCache;

@@ -52,8 +52,6 @@ namespace SparkleLauncher
 		CookMode Mode = CookMode::Incremental;
 		bool ForceRecookConfirmed = false;
 		std::vector<CookWorkspaceScope> SelectedScopes;
-		std::vector<std::string> ShaderPackages;
-		std::vector<std::string> ShaderTargets;
 		std::string ShaderBackend = "auto";
 		std::filesystem::path ShaderCacheDirectory;
 		bool ShaderUseCache = true;

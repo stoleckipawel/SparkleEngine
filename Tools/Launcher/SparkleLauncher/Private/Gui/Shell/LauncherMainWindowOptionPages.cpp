@@ -324,9 +324,14 @@ namespace SparkleLauncher
 
 		AddWorkflowAutomationNote(
 		    *cookLayout,
-		    "Current outputs are reused by incremental cooking. Setup guidance appears below only when a required tool or generated build "
-		    "file "
-		    "needs attention.");
+		    selectedScopes.contains("shaders")
+		        ? QStringLiteral(
+		              "All registered shader packages are discovered automatically, and ShaderCompiler supplies the canonical runtime targets. "
+		              "Current outputs are reused by incremental cooking. Setup guidance appears below only when a required tool or generated "
+		              "build file needs attention.")
+		        : QStringLiteral(
+		              "Current outputs are reused by incremental cooking. Setup guidance appears below only when a required tool or generated "
+		              "build file needs attention."));
 
 		for (QCheckBox* scopeBox : scopeBoxes)
 		{
@@ -338,10 +343,6 @@ namespace SparkleLauncher
 		}
 		UpdateCookScopeSetting(scopeBoxes, selectionSummary);
 
-		if (m_settings.CookScopes().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts).contains("shaders"))
-		{
-			AddShaderCookOptions(layout);
-		}
 		AddBuildEnvironmentStatus(layout, "cook.workspace");
 	}
 
@@ -371,52 +372,6 @@ namespace SparkleLauncher
 		}
 		m_settings.SetCookScopes(selectedValues.join(';'));
 		UpdateRunAvailability();
-	}
-
-	void LauncherMainWindow::AddShaderCookOptions(QVBoxLayout& layout)
-	{
-		QVBoxLayout* selectionLayout =
-		    AddOptionGroup(layout, "Shader output", "Choose shader packages and binary targets. The footer owns the DXC/Slang selection.");
-
-		AddOptionField(
-		    *selectionLayout,
-		    "Shader package",
-		    CreateValueCombo(
-		        {{"All shader packages", ""},
-		            {"ComputeClear", "ComputeClear"},
-		            {"DirectLighting", "DirectLighting"},
-		            {"GBuffer", "GBuffer"},
-		            {"IndirectLighting", "IndirectLighting"},
-		            {"LightingComposite", "LightingComposite"},
-		            {"Sky", "Sky"},
-		            {"VisualizeBuffers", "VisualizeBuffers"}},
-		        m_settings.ShaderPackages(),
-		        &LauncherSettings::SetShaderPackages));
-		QComboBox* targetPresetCombo = CreateValueCombo(
-		    {{"Default runtime set (DxilSm66 + SpirV16)", "default"},
-		        {"DirectX 12 only (DxilSm66)", "d3d12"},
-		        {"Vulkan only (SpirV16)", "vulkan"},
-		        {"DXIL compatibility sweep (Sm60-Sm67)", "dxil-all"},
-		        {"SPIR-V compatibility sweep (1.4-1.6)", "spirv-all"},
-		        {"Custom target list", "custom"}},
-		    m_settings.ShaderTargetPreset(),
-		    &LauncherSettings::SetShaderTargetPreset);
-		AddOptionField(*selectionLayout, "Binary targets", targetPresetCombo);
-
-		QWidget* customTargetsRow = AddOptionField(
-		    *selectionLayout,
-		    "Custom targets",
-		    CreateBoundLineEdit(
-		        m_settings.ShaderCustomTargets(),
-		        "DxilSm66, SpirV16",
-		        "Comma-separated ShaderCompiler target names such as DxilSm66 or SpirV16.",
-		        &LauncherSettings::SetShaderCustomTargets));
-		customTargetsRow->setVisible(m_settings.ShaderTargetPreset() == "custom");
-		connect(
-		    targetPresetCombo,
-		    &QComboBox::currentTextChanged,
-		    customTargetsRow,
-		    [this, customTargetsRow](const QString&) { customTargetsRow->setVisible(m_settings.ShaderTargetPreset() == "custom"); });
 	}
 
 	void LauncherMainWindow::AddCleanOptions(QVBoxLayout& layout, const QString&)

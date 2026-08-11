@@ -26,11 +26,6 @@ namespace SparkleLauncher
 			arguments.push_back("--cache-dir");
 			arguments.push_back(plan.Request.ShaderCacheDirectory.string());
 		}
-		for (const std::string& target : plan.Request.ShaderTargets)
-		{
-			arguments.push_back("--target");
-			arguments.push_back(target);
-		}
 		if (!plan.Request.ShaderBackend.empty())
 		{
 			arguments.push_back("--backend");
@@ -78,20 +73,6 @@ namespace SparkleLauncher
 		return process;
 	}
 
-	static ProcessRequest MakeShaderCompilerCookRequest(const CookOperationPlan& plan, std::string_view packageId)
-	{
-		ProcessRequest process;
-		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
-		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
-		process.LogPath = GetLauncherOperationLogPath(
-		    plan.RepositoryRoot,
-		    plan.Operation.Id,
-		    std::string("ShaderPackage-") + std::string(packageId) + ".txt");
-		process.Arguments = {"cook", "--package", std::string(packageId)};
-		AppendCommonShaderCompilerArguments(plan, process.Arguments);
-		return process;
-	}
-
 	static void AddStep(std::vector<CookOperationProcessStep>& steps, std::string id, std::string displayName, ProcessRequest request)
 	{
 		CookOperationProcessStep step;
@@ -115,16 +96,7 @@ namespace SparkleLauncher
 	static void AddShaderCookSteps(std::vector<CookOperationProcessStep>& steps, const CookOperationPlan& plan)
 	{
 #if SPARKLE_ENABLE_SHADER_COMPILER
-		if (plan.Request.ShaderPackages.empty())
-		{
-			AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
-			return;
-		}
-
-		for (const std::string& packageId : plan.Request.ShaderPackages)
-		{
-			AddStep(steps, "cook-shader-package", "Cook shader package " + packageId, MakeShaderCompilerCookRequest(plan, packageId));
-		}
+		AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
 #else
 		(void) steps;
 		(void) plan;

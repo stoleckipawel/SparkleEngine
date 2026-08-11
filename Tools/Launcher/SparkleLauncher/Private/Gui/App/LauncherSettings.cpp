@@ -88,24 +88,9 @@ namespace SparkleLauncher
 		return m_selectedTargets;
 	}
 
-	const QString& LauncherSettings::ShaderPackages() const
-	{
-		return m_shaderPackages;
-	}
-
 	const QString& LauncherSettings::ShaderBackend() const
 	{
 		return m_shaderBackend;
-	}
-
-	const QString& LauncherSettings::ShaderTargetPreset() const
-	{
-		return m_shaderTargetPreset;
-	}
-
-	const QString& LauncherSettings::ShaderCustomTargets() const
-	{
-		return m_shaderCustomTargets;
 	}
 
 	const QString& LauncherSettings::ShaderCacheDirectory() const
@@ -256,16 +241,6 @@ namespace SparkleLauncher
 		emit SettingsChanged();
 	}
 
-	void LauncherSettings::SetShaderPackages(const QString& packages)
-	{
-		if (m_shaderPackages == packages)
-		{
-			return;
-		}
-		m_shaderPackages = packages;
-		emit SettingsChanged();
-	}
-
 	void LauncherSettings::SetShaderBackend(const QString& backend)
 	{
 		const QString normalized = backend.trimmed().toLower() == "slang" ? QStringLiteral("slang") : QStringLiteral("dxc");
@@ -274,26 +249,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_shaderBackend = normalized;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetShaderTargetPreset(const QString& preset)
-	{
-		if (m_shaderTargetPreset == preset)
-		{
-			return;
-		}
-		m_shaderTargetPreset = preset;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetShaderCustomTargets(const QString& targets)
-	{
-		if (m_shaderCustomTargets == targets)
-		{
-			return;
-		}
-		m_shaderCustomTargets = targets;
 		emit SettingsChanged();
 	}
 

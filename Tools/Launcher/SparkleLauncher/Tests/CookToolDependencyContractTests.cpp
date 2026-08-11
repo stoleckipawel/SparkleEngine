@@ -131,6 +131,32 @@ namespace SparkleLauncher::CookToolDependencyContractTests
 		    "Cook Workspace did not explain why an empty output selection is blocked.");
 	}
 
+	static void LauncherShaderCookUsesCompilerOwnedSelection()
+	{
+#if SPARKLE_ENABLE_SHADER_COMPILER
+		CookOperationPlan plan;
+		plan.Kind = CookOperationKind::CookWorkspace;
+		plan.RepositoryRoot = "C:/Sparkle";
+		plan.Request.ContentId = "Showcase";
+		plan.Request.RuntimeProfile = "DevelopmentGame";
+		plan.Request.SelectedScopes = {CookWorkspaceScope::Shaders};
+		plan.ToolProfile = "DevelopmentEditor";
+		plan.Operation.Id = "cook.workspace";
+
+		const std::vector<CookOperationProcessStep> steps = BuildCookProcessStepsForPlan(plan);
+		Require(steps.size() == 1 && steps.front().Id == "cook-shaders", "Launcher shader cooking did not produce one complete cook step.");
+		Require(
+		    !steps.front().Request.Arguments.empty() && steps.front().Request.Arguments.front() == "cook",
+		    "Launcher shader cooking did not invoke the complete ShaderCompiler cook command.");
+		Require(
+		    !ContainsArgument(steps.front().Request.Arguments, "--package"),
+		    "Launcher shader cooking overrode compiler-owned package discovery.");
+		Require(
+		    !ContainsArgument(steps.front().Request.Arguments, "--target"),
+		    "Launcher shader cooking overrode compiler-owned runtime targets.");
+#endif
+	}
+
 	static void ExistingCookToolsDoNotRequireBuildWorkspaceReadiness()
 	{
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
@@ -204,6 +230,7 @@ int main()
 	{
 		EveryCookOperationDeclaresItsCompleteHostToolSet();
 		CookWorkspaceRunsOnlySelectedStages();
+		LauncherShaderCookUsesCompilerOwnedSelection();
 		ExistingCookToolsDoNotRequireBuildWorkspaceReadiness();
 		AssetCookerReceivesTheProvenHostToolProfile();
 		std::cout << "[PASS] Launcher cook-tool dependency contract\n";

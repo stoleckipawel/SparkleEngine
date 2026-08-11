@@ -45,32 +45,6 @@ namespace SparkleLauncher
 		return compiler;
 	}
 
-	QString ResolveShaderTargetSelection(const LauncherSettings& settings)
-	{
-		const QString preset = settings.ShaderTargetPreset();
-		if (preset == "d3d12")
-		{
-			return "DxilSm66";
-		}
-		if (preset == "vulkan")
-		{
-			return "SpirV16";
-		}
-		if (preset == "dxil-all")
-		{
-			return "DxilSm60, DxilSm61, DxilSm62, DxilSm63, DxilSm64, DxilSm65, DxilSm66, DxilSm67";
-		}
-		if (preset == "spirv-all")
-		{
-			return "SpirV14, SpirV15, SpirV16";
-		}
-		if (preset == "custom")
-		{
-			return settings.ShaderCustomTargets();
-		}
-		return "DxilSm66, SpirV16";
-	}
-
 	BuildWorkspaceOperationRequest BuildWorkspacePlanRequest(
 	    const std::filesystem::path& repositoryRoot,
 	    const LauncherContentModel& contentModel,
@@ -128,8 +102,6 @@ namespace SparkleLauncher
 		request.BuildScopes = settings.BuildScopes();
 		request.CookScopes = settings.CookScopes();
 		request.SelectedTargets = settings.SelectedTargets();
-		request.ShaderPackages = settings.ShaderPackages();
-		request.ShaderTargets = ResolveShaderTargetSelection(settings);
 		request.ShaderBackend = settings.ShaderBackend();
 		request.ShaderCacheDirectory = settings.ShaderCacheDirectory();
 		request.GraphicsApi = settings.GraphicsApi();

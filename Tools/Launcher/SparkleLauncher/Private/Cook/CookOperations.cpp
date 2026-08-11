@@ -250,29 +250,12 @@ namespace SparkleLauncher
 				if (IncludesScope(plan, CookWorkspaceScope::Shaders))
 				{
 					AddPlannedEffect(plan, "Shader backend: " + plan.Request.ShaderBackend + ".");
-					if (!plan.Request.ShaderTargets.empty())
-					{
-						std::vector<std::string_view> shaderTargets;
-						for (const std::string& target : plan.Request.ShaderTargets)
-						{
-							shaderTargets.push_back(target);
-						}
-						AddPlannedEffect(plan, "Shader targets: " + Strings::Join(shaderTargets, ", ") + ".");
-					}
+					AddPlannedEffect(plan, "Cook all registered shader packages for the canonical runtime targets.");
 				}
 				return;
 			}
 			case CookOperationKind::CookShaders:
 				AddPlannedEffect(plan, "Shader backend: " + plan.Request.ShaderBackend + ".");
-				if (!plan.Request.ShaderTargets.empty())
-				{
-					std::vector<std::string_view> shaderTargets;
-					for (const std::string& target : plan.Request.ShaderTargets)
-					{
-						shaderTargets.push_back(target);
-					}
-					AddPlannedEffect(plan, "Shader targets: " + Strings::Join(shaderTargets, ", ") + ".");
-				}
 				AddPlannedEffect(plan, std::string("Shader cache: ") + (plan.Request.ShaderUseCache ? "enabled." : "disabled."));
 				AddPlannedEffect(
 				    plan,
@@ -288,19 +271,7 @@ namespace SparkleLauncher
 				{
 					AddPlannedEffect(plan, "Override shader cache directory: " + plan.Request.ShaderCacheDirectory.string() + ".");
 				}
-				if (plan.Request.ShaderPackages.empty())
-				{
-					AddPlannedEffect(plan, "Cook shader packages for " + plan.Request.ContentId + ".");
-				}
-				else
-				{
-					std::vector<std::string_view> packages;
-					for (const std::string& packageId : plan.Request.ShaderPackages)
-					{
-						packages.push_back(packageId);
-					}
-					AddPlannedEffect(plan, "Cook selected shader packages: " + Strings::Join(packages, ", ") + ".");
-				}
+				AddPlannedEffect(plan, "Cook all registered shader packages for the canonical runtime targets.");
 				return;
 			case CookOperationKind::BuildTextures:
 				AddPlannedEffect(plan, "Cook texture assets for " + plan.Request.ContentId + ".");
@@ -310,15 +281,6 @@ namespace SparkleLauncher
 				return;
 			case CookOperationKind::CookAllAssets:
 				AddPlannedEffect(plan, "Shader phase backend: " + plan.Request.ShaderBackend + ".");
-				if (!plan.Request.ShaderTargets.empty())
-				{
-					std::vector<std::string_view> shaderTargets;
-					for (const std::string& target : plan.Request.ShaderTargets)
-					{
-						shaderTargets.push_back(target);
-					}
-					AddPlannedEffect(plan, "Shader phase targets: " + Strings::Join(shaderTargets, ", ") + ".");
-				}
 				AddPlannedEffect(
 				    plan,
 				    std::string("Shader phase debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
@@ -512,15 +474,6 @@ namespace SparkleLauncher
 				scopeNameViews.push_back(scopeName);
 			}
 			plan.Operation.Inputs.push_back({"cookScopes", Strings::Join(scopeNameViews, ", ")});
-		}
-		if (!request.ShaderTargets.empty())
-		{
-			std::vector<std::string_view> shaderTargets;
-			for (const std::string& target : request.ShaderTargets)
-			{
-				shaderTargets.push_back(target);
-			}
-			plan.Operation.Inputs.push_back({"shaderTargets", Strings::Join(shaderTargets, ", ")});
 		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		if (request.Mode == CookMode::Force)
