@@ -67,8 +67,8 @@ namespace SparkleLauncher
 		QString m_buildConfiguration = "development";
 		QString m_workspaceIde = "rider";
 		QString m_workspaceCompiler = "msvc";
-		QString m_buildScopes = "editor;runtime;cook-tools";
-		QString m_cookScopes = "shaders;textures;assets";
+		QString m_buildScopes;
+		QString m_cookScopes;
 		QString m_selectedTargets;
 		QString m_shaderBackend = "dxc";
 		QString m_shaderCacheDirectory;

@@ -71,40 +71,39 @@ namespace SparkleLauncher
 
 		addRule(
 		    "QMainWindow, QWidget",
-		    "background: " + background + "; color: " + textBody + "; font-family: 'Segoe UI'; font-size: 9.25pt;");
+		    "background: " + background + "; color: " + textBody + "; font-family: 'Segoe UI Variable', 'Segoe UI'; font-size: 9.5pt;");
 		addRule("QLabel", "color: " + textBody + "; background: transparent;");
 		addRule("#WorkflowSurface", "background: " + background + ";");
-		addRule("#ProcessPanel", "background: #171a18; border: none; border-right: 1px solid #2b2f2b; padding: 0;");
+		addRule("#ProcessPanel", "background: " + shell + "; border: none; border-right: 1px solid " + divider + "; padding: 0;");
 		addRule("#OptionsPanel", "background: " + background + "; border: none;");
-		addRule("#FooterContextPanel", "background: #20231f; border: none; border-top: 1px solid #343a32;");
-		addRule("#ActivityBottomPanel", "background: #191c1a; border: none;");
-		addRule("#OutputPanel", "background: #181a19; border: none;");
-		addRule("#ActivityHeader", "background: #1d201e; border: none; border-top: 1px solid #343934;");
-		addRule("#ActivityHeader #OutputPaneLabel", "color: " + textBody + "; font-size: 8.25pt; font-weight: 800;");
-		addRule("#ActivityHintLabel", "color: " + textMuted + "; font-size: 7.65pt; font-weight: 600;");
+		addRule("#FooterContextPanel", "background: #181b19; border: none; border-top: 1px solid " + divider + ";");
+		addRule("#ActivityBottomPanel", "background: #171917; border: none;");
+		addRule("#OutputPanel", "background: #171917; border: none;");
+		addRule("#ActivityHeader", "background: #191c1a; border: none; border-top: 1px solid " + divider + ";");
+		addRule("#ActivityHeader #OutputPaneLabel", "color: " + textBody + "; font-size: 9pt; font-weight: 700;");
 		addRule(
 		    "#ActivityToggleButton",
 		    "background: transparent; color: " + textSecondary
 		        + "; border: 1px solid #414740; border-radius: 3px; padding: 0; font-size: "
-		          "7.5pt; font-weight: 750; min-width: 50px; max-width: 50px; min-height: 24px; max-height: 24px;");
+		          "8pt; font-weight: 700; min-width: 50px; max-width: 50px; min-height: 24px; max-height: 24px;");
 		addRule(
 		    "#ActivityToggleButton:hover",
 		    "background: " + panelHover + "; color: " + textPrimary + "; border-color: " + borderStrong + ";");
 		addRule("#ActivityToggleButton:focus", "border: 1px solid " + focus + ";");
-		addRule("#OutputPaneLabel", "color: " + textSecondary + "; font-size: 8pt; font-weight: 700; letter-spacing: 0.2px;");
+		addRule("#OutputPaneLabel", "color: " + textSecondary + "; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.2px;");
 		addRule(
 		    "#ActivityRail",
-		    "background: #23262a; border: none; border-top: 1px solid " + divider + "; border-right: 1px solid " + border + ";");
-		addRule("#OutputPane", "background: #202327; border: none; border-top: 1px solid " + divider + ";");
+		    "background: #1b1e1c; border: none; border-top: 1px solid " + divider + "; border-right: 1px solid " + border + ";");
+		addRule("#OutputPane", "background: #181b19; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#FooterContextItem", "background: transparent; border: none;");
-		addRule("#FooterContextDivider", "background: #3a4038; border: none;");
-		addRule("#FooterFieldLabel", "color: #9ba399; font-size: 7.65pt; font-weight: 700; padding: 0 3px; letter-spacing: 0.1px;");
+		addRule("#FooterContextDivider", "background: #363b37; border: none;");
+		addRule("#FooterFieldLabel", "color: " + textMuted + "; font-size: 8pt; font-weight: 650; padding: 0 4px;");
 		addRule(
 		    "#FooterContextCombo",
 		    "background: transparent; border: 1px solid transparent; border-radius: 3px; padding: 1px 22px 1px 3px; color: " + textPrimary
-		        + "; min-height: 22px; max-height: 24px; font-size: 8.75pt; font-weight: 750;");
-		addRule("#FooterContextCombo:hover", "background: #2b3029; border-color: #41483e;");
-		addRule("#FooterContextCombo:focus, #FooterContextCombo:on", "background: #293126; border-color: " + focus + ";");
+		        + "; min-height: 24px; max-height: 26px; font-size: 9pt; font-weight: 700;");
+		addRule("#FooterContextCombo:hover", "background: #242825; border-color: #414741;");
+		addRule("#FooterContextCombo:focus, #FooterContextCombo:on", "background: #222820; border-color: " + focus + ";");
 		addRule("#FooterContextCombo:disabled", "background: transparent; border-color: transparent; color: " + textMuted + ";");
 		addRule("#FooterContextCombo::drop-down", "border: none; width: 18px;");
 		addRule(
@@ -115,7 +114,7 @@ namespace SparkleLauncher
 		    "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
 		addRule("#OptionRow", "background: transparent; border-top: 1px solid " + divider + "; min-height: 38px;");
-		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 10px;");
+		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 4px;");
 		addRule("#OptionLabelCell", "background: transparent; border: none;");
 		addRule("#OptionValueCell", "background: transparent; border: none;");
 		addRule("#CommandHeroCard", "background: transparent; border: none; border-radius: 0;");
@@ -123,18 +122,18 @@ namespace SparkleLauncher
 		addRule("#CommandHeroOverlay", "background: transparent; border: none;");
 		addRule("#CommandHeroCopyPane", "background: transparent; border: none;");
 		addRule("#CommandHeroArtwork", "background: transparent; border: none;");
-		addRule("#CommandHeroTitle", "color: #ffffff; font-size: 20pt; font-weight: 900; letter-spacing: -0.3px;");
-		addRule("#CommandHeroText", "color: " + textBody + "; font-size: 10pt; line-height: 142%;");
+		addRule("#CommandHeroTitle", "color: #ffffff; font-size: 24pt; font-weight: 700; letter-spacing: -0.35px;");
+		addRule("#CommandHeroText", "color: " + textBody + "; font-size: 10.25pt; line-height: 140%;");
 		addRule(
 		    "#CommandSectionTitle",
-		    "color: " + textPrimary + "; font-size: 12.5pt; font-weight: 900; padding: 18px 0 6px 0; letter-spacing: -0.1px;");
+		    "color: " + textPrimary + "; font-size: 13pt; font-weight: 700; padding: 18px 0 6px 0; letter-spacing: -0.1px;");
 		addRule(
 		    "#CommandCapabilityCard",
 		    "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #252925, stop:0.62 #1e211f, stop:1 #161816); border: 1px solid "
 		    "#384033; border-left: 3px solid "
 		        + accent + "; border-radius: 4px;");
 		addRule("#CommandCardArtwork", "background: #070807; border: none; border-radius: 0;");
-		addRule("#CommandCardTitle", "color: " + textPrimary + "; font-size: 12.5pt; font-weight: 900; letter-spacing: -0.12px;");
+		addRule("#CommandCardTitle", "color: " + textPrimary + "; font-size: 12.5pt; font-weight: 700; letter-spacing: -0.12px;");
 		addRule(
 		    "QPushButton#CommandPrimaryButton",
 		    "background: " + primary
@@ -150,80 +149,84 @@ namespace SparkleLauncher
 		addRule("QPushButton#CommandSecondaryButton:disabled", "background: #252923; color: " + textMuted + "; border: 1px solid #343a33;");
 		addRule(
 		    "#SectionLabel",
-		    "color: " + textSecondary + "; font-size: 8.1pt; font-weight: 800; padding: 6px 0 2px 0; letter-spacing: 0.25px;");
-		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 10pt; font-weight: 850; padding: 0 0 3px 0;");
-		addRule("#FieldLabel", "color: #c9ced4; font-size: 8.5pt; font-weight: 650; padding-top: 0;");
-		addRule("#OptionHelpText", "color: " + textSecondary + "; font-size: 8.15pt; line-height: 130%; padding: 0 0 7px 0;");
+		    "color: " + textSecondary + "; font-size: 8.5pt; font-weight: 700; padding: 8px 0 3px 0; letter-spacing: 0.2px;");
+		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 13.5pt; font-weight: 700; padding: 0 0 3px 0;");
+		addRule("#FieldLabel", "color: " + textSecondary + "; font-size: 9pt; font-weight: 650; padding-top: 0;");
+		addRule("#OptionHelpText", "color: " + textSecondary + "; font-size: 9pt; line-height: 132%; padding: 0 0 9px 0;");
 		addRule(
 		    "#CleanPlanText",
 		    "color: " + textSecondary + "; background: #1d201d; border-top: 1px solid " + divider + "; padding: 8px 10px; font-size: 8pt;");
 		addRule("#CleanSelectionSummary", "color: " + textBody + "; font-size: 8.25pt; font-weight: 750; padding: 1px 0 7px 0;");
-		addRule("#CleanSelectionPanel", "background: #171a18; border: 1px solid " + divider + "; border-radius: 3px;");
+		addRule("#CleanSelectionPanel", "background: #171917; border: 1px solid " + divider + "; border-radius: 4px;");
 		addRule(
 		    "#CleanScopeGroupTitle",
-		    "background: #1d211d; color: " + textSecondary + "; border: none; border-bottom: 1px solid " + divider
-		        + "; padding: 7px 13px 5px 13px; font-size: 7.5pt; font-weight: 850;");
+		    "background: #1b1e1c; color: " + textSecondary + "; border: none; border-bottom: 1px solid " + divider
+		        + "; padding: 8px 15px 6px 15px; font-size: 8.25pt; font-weight: 700;");
 		addRule("#CleanScopeRow", "background: transparent; border: none; border-bottom: 1px solid " + divider + ";");
-		addRule("#CleanScopeRow:hover", "background: #1d211d;");
-		addRule("#CleanScopeRow[Selected=\"true\"]", "background: #20261d;");
-		addRule("#CleanScopeCheckBox", "color: " + textPrimary + "; font-size: 8.5pt; font-weight: 800;");
-		addRule("#CleanScopeDescription", "color: " + textSecondary + "; font-size: 7.7pt;");
-		addRule("#CleanScopePreview", "color: " + textMuted + "; font-size: 7.5pt; padding-left: 12px;");
-		addRule("#WorkflowSelectionSummary", "color: " + textBody + "; font-size: 8.25pt; font-weight: 750; padding: 1px 0 7px 0;");
+		addRule("#CleanScopeRow:hover", "background: #1d211e;");
+		addRule("#CleanScopeRow[Selected=\"true\"]", "background: #221c1b; border-left: 2px solid #94524d;");
+		addRule("#CleanScopeCheckBox", "color: " + textPrimary + "; font-size: 9.25pt; font-weight: 700;");
+		addRule("#CleanScopeCheckBox::indicator:checked", "background: #b64f48; border: 1px solid #dc7067;");
+		addRule("#CleanScopeDescription", "color: " + textSecondary + "; font-size: 8.5pt;");
+		addRule("#CleanScopePreview", "color: " + textMuted + "; font-size: 8.25pt; padding-left: 14px;");
+		addRule("#WorkflowSelectionSummary", "color: " + textBody + "; font-size: 8.75pt; font-weight: 650; padding: 1px 0 7px 0;");
 		addRule("#WorkflowSelectionSummary[State=\"warning\"]", "color: " + warning + ";");
-		addRule("#WorkflowSelectionPanel", "background: #171a18; border: 1px solid " + divider + "; border-radius: 3px;");
+		addRule("#WorkflowSelectionPanel", "background: #171917; border: 1px solid " + divider + "; border-radius: 4px;");
 		addRule("#WorkflowScopeRow", "background: transparent; border: none; border-bottom: 1px solid " + divider + ";");
-		addRule("#WorkflowScopeRow:hover", "background: #1d211d;");
-		addRule("#WorkflowScopeRow[Selected=\"true\"]", "background: #20261d;");
-		addRule("#WorkflowScopeCheckBox", "color: " + textPrimary + "; font-size: 8.75pt; font-weight: 800;");
-		addRule("#WorkflowScopeDescription", "color: " + textSecondary + "; font-size: 7.8pt;");
-		addRule("#WorkflowScopeMetadata", "color: " + textMuted + "; font-size: 7.6pt; font-weight: 700; padding-left: 18px;");
-		addRule("#WorkflowAutomationNote", "background: #1d211d; border: 1px solid " + divider + "; border-radius: 3px; margin-top: 7px;");
-		addRule("#WorkflowAutomationTitle", "color: " + accent + "; font-size: 7.2pt; font-weight: 900; letter-spacing: 0.35px;");
-		addRule("#WorkflowAutomationDetail", "color: " + textSecondary + "; font-size: 7.8pt;");
-		addRule("#ActionMetaPanel", "background: #191c1a; border: none; border-top: 1px solid #343934;");
+		addRule("#WorkflowScopeRow:hover", "background: #1d211e;");
+		addRule("#WorkflowScopeRow[Selected=\"true\"]", "background: #1c211a;");
+		addRule("#WorkflowScopeCheckBox", "color: " + textPrimary + "; font-size: 9.25pt; font-weight: 700;");
+		addRule("#WorkflowScopeDescription", "color: " + textSecondary + "; font-size: 8.5pt;");
+		addRule("#WorkflowScopeMetadata", "color: " + textMuted + "; font-size: 8.25pt; font-weight: 650; padding-left: 18px;");
+		addRule(
+		    "#WorkflowAutomationNote",
+		    "background: #171a17; border: 1px solid " + divider + "; border-left: 2px solid " + accent
+		        + "; border-radius: 4px; margin-top: 8px;");
+		addRule("#WorkflowAutomationTitle", "color: " + accent + "; font-size: 8pt; font-weight: 700; letter-spacing: 0.25px;");
+		addRule("#WorkflowAutomationDetail", "color: " + textSecondary + "; font-size: 8.5pt;");
+		addRule("#ActionMetaPanel", "background: #181b19; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#ActionMetaTitle", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 700;");
 		addRule("#ActionMetaText", "color: " + textBody + "; font-size: 7.75pt;");
 		addRule("#ActionMetaDetail", "color: " + textMuted + "; font-size: 7.5pt;");
 		addRule(
 		    "#StatusRow",
-		    "background: #1d201d; border: none; border-top: 1px solid " + divider + "; padding: 8px 10px; margin-top: 0;");
-		addRule("#StatusLabel", "color: " + textBody + "; font-size: 9pt; font-weight: 750;");
-		addRule("#InlineStatusValue", "background: transparent; border: none; padding: 0; font-size: 8.15pt; font-weight: 800;");
+		    "background: transparent; border: none; border-top: 1px solid " + divider + "; padding: 10px 12px; margin-top: 0;");
+		addRule("#StatusLabel", "color: " + textPrimary + "; font-size: 9.25pt; font-weight: 650;");
+		addRule("#InlineStatusValue", "background: transparent; border: none; padding: 0; font-size: 8.5pt; font-weight: 700;");
 		addRule("#InlineStatusValue[State=\"ok\"]", "color: #9bcf68;");
 		addRule("#InlineStatusValue[State=\"warning\"]", "color: #e3b95f;");
 		addRule("#InlineStatusValue[State=\"running\"]", "color: #d8c996;");
 		addRule("#InlineStatusValue[State=\"neutral\"]", "color: " + textSecondary + ";");
 		addRule("#InlineStatusValue[State=\"bad\"]", "color: #ef8f86;");
 		addRule("#StatusActionCell", "background: transparent; border: none;");
-		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8.15pt;");
-		addRule("#MapCatalogCard", "background: #26292c; border: 1px solid #3b4044; border-radius: 4px;");
-		addRule("#MapCatalogCard:hover", "border-color: #5a635b;");
-		addRule("#MapCatalogCard[State=\"ok\"]", "border-color: #414a3d;");
-		addRule("#MapCatalogCard[State=\"warning\"]", "border-color: #514937;");
-		addRule("#MapCardThumbnail", "background: #0b0d0c; border: none; border-right: 1px solid #3b4143;");
-		addRule("#MapCardBody", "background: #26292c; border: none;");
-		addRule("#MapCatalogCard:hover #MapCardBody", "background: #2a2e31;");
+		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8.5pt;");
+		addRule("#MapCatalogCard", "background: #1d201e; border: 1px solid #363b37; border-radius: 5px;");
+		addRule("#MapCatalogCard:hover", "border-color: #596159;");
+		addRule("#MapCatalogCard[State=\"ok\"]", "border-color: #3d4639;");
+		addRule("#MapCatalogCard[State=\"warning\"]", "border-color: #504936;");
+		addRule("#MapCardThumbnail", "background: #090b0a; border: none; border-right: 1px solid #343934;");
+		addRule("#MapCardBody", "background: #1d201e; border: none;");
+		addRule("#MapCatalogCard:hover #MapCardBody", "background: #222624;");
 		addRule(
 		    "#MapCardTitle",
-		    "background: transparent; color: #f4f7f1; border: none; border-left: 2px solid #596159; font-size: 10.25pt; font-weight: "
-		    "850; padding: 1px 0 1px 9px;");
+		    "background: transparent; color: #f4f7f1; border: none; border-left: 2px solid #596159; font-size: 10.5pt; font-weight: "
+		    "700; padding: 1px 0 1px 9px;");
 		addRule("#MapCardTitle[State=\"ok\"]", "border-left-color: " + accent + ";");
 		addRule("#MapCardTitle[State=\"warning\"]", "border-left-color: " + warning + ";");
-		addRule("#MapCardDescription", "color: #cdd2d5; font-size: 8.55pt; line-height: 132%; padding: 1px 1px;");
-		addRule("#MapCardMeta", "color: #929a96; font-size: 7.35pt; padding: 0 1px;");
+		addRule("#MapCardDescription", "color: " + textBody + "; font-size: 8.75pt; line-height: 132%; padding: 1px 1px;");
+		addRule("#MapCardMeta", "color: " + textMuted + "; font-size: 8pt; padding: 0 1px;");
 		addRule(
 		    "#MapCardSourceButton",
 		    "background: transparent; color: " + textSecondary
-		        + "; border: 1px solid #525a5e; border-radius: 3px; padding: 2px 8px; font-size: 8pt; font-weight: 700;");
+		        + "; border: 1px solid #4b524d; border-radius: 4px; padding: 2px 8px; font-size: 8.25pt; font-weight: 650;");
 		addRule("#MapCardSourceButton:hover", "background: #32373a; color: #ffffff; border-color: #707a75;");
 		addRule(
 		    "#MapCardActionButton",
 		    "background: #26321f; color: #f4f7f1; border: 1px solid " + accent
-		        + "; border-radius: 3px; padding: 2px 8px; font-size: 8pt; font-weight: 850;");
+		        + "; border-radius: 4px; padding: 2px 8px; font-size: 8.25pt; font-weight: 700;");
 		addRule("#MapCardActionButton:hover", "background: " + accent + "; color: #071006; border-color: #a8ed4f;");
 		addRule("#MapCardActionButton:disabled", "background: #2d312d; color: " + textMuted + "; border-color: #41483e;");
-		addRule("#StatusActionButton", "padding: 2px 8px; font-size: 8pt; font-weight: 850;");
+		addRule("#StatusActionButton", "padding: 2px 8px; font-size: 8.25pt; font-weight: 700;");
 		addRule("#StatusActionButton[ActionState=\"warning\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
 		addRule("#StatusActionButton[ActionState=\"warning\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");
 		addRule(
@@ -242,22 +245,22 @@ namespace SparkleLauncher
 		addRule("#MutedLabel", "color: " + textMuted + "; padding: 4px 0;");
 		addRule(
 		    "#ActivitySummary",
-		    "color: " + textSecondary + "; background: transparent; font-size: 7.75pt; font-weight: 600; padding: 0 0 2px 0;");
+		    "color: " + textSecondary + "; background: transparent; font-size: 8.25pt; font-weight: 600; padding: 0 0 2px 0;");
 		addRule(
 		    "#WorkflowGroupButton",
-		    "background: transparent; color: " + textMuted
-		        + "; border: none; border-left: 2px solid transparent; border-radius: 3px; margin: 2px 6px; padding: 7px 4px 6px 4px; "
-		          "text-align: center; font-size: 8pt; font-weight: 750;");
-		addRule("#WorkflowGroupButton:hover", "background: #20241f; color: " + textBody + "; border-left: 2px solid #475143;");
+		    "background: transparent; color: " + textSecondary
+		        + "; border: none; border-left: 3px solid transparent; border-radius: 4px; margin: 2px 8px; padding: 0 14px; "
+		          "text-align: left; font-size: 9.25pt; font-weight: 650;");
+		addRule("#WorkflowGroupButton:hover", "background: #1d211e; color: " + textPrimary + "; border-left: 3px solid #465044;");
 		addRule(
 		    "#WorkflowGroupButton[ActiveState=\"true\"]",
-		    "background: #242b20; color: " + textPrimary + "; border-left: 2px solid " + accent + ";");
+		    "background: #20251f; color: " + textPrimary + "; border-left: 3px solid " + accent + ";");
 		addRule(
 		    "#WorkflowGroupButton:focus",
-		    "background: #20241f; color: " + textPrimary + "; border: none; border-left: 2px solid #65715f;");
+		    "background: #1d211e; color: " + textPrimary + "; border: none; border-left: 3px solid #65715f;");
 		addRule(
 		    "#WorkflowGroupButton[ActiveState=\"true\"]:focus",
-		    "background: #242b20; color: " + textPrimary + "; border: none; border-left: 2px solid " + accent + ";");
+		    "background: #20251f; color: " + textPrimary + "; border: none; border-left: 3px solid " + accent + ";");
 		addRule(
 		    "#WorkflowButton",
 		    "background: transparent; color: " + textSecondary
@@ -274,26 +277,30 @@ namespace SparkleLauncher
 		addRule(
 		    "QPushButton",
 		    "background: " + primary
-		        + "; color: #071006; border: 1px solid #92d83a; border-radius: 2px; padding: 6px 14px; font-weight: 750;");
+		        + "; color: #071006; border: 1px solid #92d83a; border-radius: 4px; padding: 6px 15px; font-weight: 700;");
 		addRule("QPushButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton:focus", "border: 1px solid " + focus + ";");
 		addRule(
 		    "QPushButton:disabled",
 		    "background: #2d312d; border: 1px solid " + border + "; border-top-color: #41483e; color: " + textMuted + ";");
-		addRule("#PrimaryActionButton", "background: " + primary + "; color: #071006; padding: 0; font-weight: 900;");
+		addRule("#PrimaryActionButton", "background: " + primary + "; color: #071006; padding: 0; font-weight: 700;");
 		addRule("#PrimaryActionButton:hover", "background: " + primaryHover + ";");
 		addRule(
 		    "#SecondaryButton",
 		    "background: #2a2d2a; color: " + textBody + "; border: 1px solid " + borderSoft
-		        + "; padding: 0 10px; font-size: 8pt; font-weight: 650;");
+		        + "; border-radius: 4px; padding: 0 10px; font-size: 8.5pt; font-weight: 650;");
+		addRule("#PrimaryActionButton[ActionTone=\"destructive\"]", "background: #b64f48; color: #ffffff; border: 1px solid #dc7067;");
+		addRule("#PrimaryActionButton[ActionTone=\"destructive\"]:hover", "background: #ce5e56; border-color: #ef837b;");
+		addRule("#SecondaryButton[ActionTone=\"destructive\"]", "background: transparent; color: #e6a19b; border: 1px solid #70413d;");
+		addRule("#SecondaryButton[ActionTone=\"destructive\"]:hover", "background: #30201f; border-color: #9a5650;");
 		addRule(
 		    "QComboBox, QLineEdit, QTextEdit",
-		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 5px 9px; color: " + textBody
+		    "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 4px; padding: 5px 9px; color: " + textBody
 		        + "; selection-background-color: " + selection + "; min-height: 26px;");
 		addRule("QComboBox:focus, QLineEdit:focus, QTextEdit:focus", "border: 1px solid " + focus + ";");
 		addRule("QComboBox:disabled", "background: " + shell + "; border: 1px solid " + border + "; color: " + textMuted + ";");
-		addRule("QCheckBox", "spacing: 8px; padding: 0; color: " + textBody + "; font-size: 8.5pt;");
-		addRule("QCheckBox::indicator", "width: 13px; height: 13px; border-radius: 2px;");
+		addRule("QCheckBox", "spacing: 8px; padding: 0; color: " + textBody + "; font-size: 9pt;");
+		addRule("QCheckBox::indicator", "width: 14px; height: 14px; border-radius: 3px;");
 		addRule("QCheckBox::indicator:unchecked", "background: #151715; border: 1px solid #596056;");
 		addRule("QCheckBox::indicator:unchecked:hover", "border: 1px solid " + accent + ";");
 		addRule("QCheckBox::indicator:checked", "background: " + accent + "; border: 1px solid #9bdd42;");
@@ -319,14 +326,14 @@ namespace SparkleLauncher
 		addRule("#ActivityRunIndicator[RunState=\"running\"]", "background: " + UiColor(LauncherUi::Color::StateRunning) + ";");
 		addRule("#ActivityRunIndicator[RunState=\"done\"]", "background: " + UiColor(LauncherUi::Color::StateSuccess) + ";");
 		addRule("#ActivityRunIndicator[RunState=\"failed\"]", "background: " + UiColor(LauncherUi::Color::StateDestructive) + ";");
-		addRule("#ActivityRunTitle", "color: " + textBody + "; font-size: 8pt; font-weight: 650; padding: 0; margin: 0;");
-		addRule("#ActivityRunState", "color: " + textMuted + "; font-size: 7pt; font-weight: 700; padding: 0; margin: 0;");
+		addRule("#ActivityRunTitle", "color: " + textBody + "; font-size: 8.25pt; font-weight: 650; padding: 0; margin: 0;");
+		addRule("#ActivityRunState", "color: " + textMuted + "; font-size: 7.75pt; font-weight: 700; padding: 0; margin: 0;");
 		addRule("#ActivityRunRow[Selected=\"true\"] #ActivityRunTitle", "color: #ffffff;");
 		addRule("#ActivityRunRow[Selected=\"true\"] #ActivityRunState", "color: #dff3cf;");
 		addRule(
 		    "#OperationOutput",
 		    "background: transparent; border: none; border-radius: 0; padding: 2px 0 0 0; font-family: 'Cascadia Mono'; font-size: "
-		    "8.25pt;");
+		    "8.5pt;");
 
 		rootWidget.setStyleSheet(style);
 	}

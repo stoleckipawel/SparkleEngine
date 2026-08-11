@@ -9,6 +9,7 @@
 
 namespace SparkleLauncher::LauncherOperationRequestMapping
 {
+	bool RequestsLauncherRebuild(const LauncherOperationRequest& request);
 	BuildWorkspaceOperationRequest BuildWorkspace(const LauncherOperationRequest& request);
 	LevelOperationRequest Levels(const LauncherOperationRequest& request);
 	LevelRunOperationRequest LevelRun(const LauncherOperationRequest& request);

@@ -81,6 +81,21 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		return scopes;
 	}
 
+	bool RequestsLauncherRebuild(const LauncherOperationRequest& request)
+	{
+		if (request.OperationId == "launcher.build.self")
+		{
+			return true;
+		}
+		if (request.OperationId != "workspace.build")
+		{
+			return false;
+		}
+
+		const std::vector<BuildWorkspaceScope> scopes = ParseBuildScopes(request.BuildScopes);
+		return std::find(scopes.begin(), scopes.end(), BuildWorkspaceScope::Launcher) != scopes.end();
+	}
+
 	BuildWorkspaceOperationRequest BuildWorkspace(const LauncherOperationRequest& request)
 	{
 		BuildWorkspaceOperationRequest mapped;

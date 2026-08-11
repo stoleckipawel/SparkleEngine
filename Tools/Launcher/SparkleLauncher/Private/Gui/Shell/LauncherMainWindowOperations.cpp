@@ -4,6 +4,7 @@
 #include "LauncherBackend.h"
 #include "LauncherDependencyUiModel.h"
 #include "LauncherOperationRequestFactory.h"
+#include "LauncherOperationRequestMapping.h"
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherUiDesign.h"
@@ -408,6 +409,10 @@ namespace SparkleLauncher
 			request.RunId = CreateRunId();
 		}
 		const QString runId = request.RunId;
+		if (LauncherOperationRequestMapping::RequestsLauncherRebuild(request) && !m_pendingRestartRunIds.contains(runId))
+		{
+			m_pendingRestartRunIds.push_back(runId);
+		}
 		RegisterRun(request.RunId, title);
 		TrackSourceDependencyRun(request, runId);
 		m_backend.RunOperation(std::move(request));

@@ -606,6 +606,26 @@ namespace SparkleLauncher
 		}
 		if (m_runButton != nullptr)
 		{
+			const bool destructive = operationId == "workspace.clean";
+			LauncherIcon actionIcon = LauncherIcon::Run;
+			if (operationId == LauncherHomeOperationId() || operationId.startsWith("workspace.sync"))
+			{
+				actionIcon = LauncherIcon::Sync;
+			}
+			else if (operationId.startsWith("workspace.build") || operationId == "launcher.build.self")
+			{
+				actionIcon = LauncherIcon::Build;
+			}
+			else if (operationId.startsWith("cook."))
+			{
+				actionIcon = LauncherIcon::Cook;
+			}
+			else if (destructive)
+			{
+				actionIcon = LauncherIcon::Clean;
+			}
+			m_runButton->setProperty("ActionTone", destructive ? "destructive" : "primary");
+			m_runButton->setIcon(m_icons.Icon(actionIcon, QColor(destructive ? "#ffffff" : "#071006")));
 			m_runButton->setText(
 			    operationId == LauncherHomeOperationId() ? "Sync All"
 			        : operationId == "workspace.clean"   ? "Clean Selected"
@@ -614,15 +634,20 @@ namespace SparkleLauncher
 			    operationId == LauncherHomeOperationId() ? "Sync all available levels"
 			        : operationId == "workspace.clean"   ? "Clean selected generated repository state"
 			                                             : "Run selected workflow");
+			m_runButton->style()->unpolish(m_runButton);
+			m_runButton->style()->polish(m_runButton);
 		}
 		if (m_cleanButton != nullptr)
 		{
 			const bool cleanAll = operationId == "workspace.clean" || operationId == LauncherHomeOperationId();
+			m_cleanButton->setProperty("ActionTone", "destructive");
 			m_cleanButton->setText(cleanAll ? "Clean All" : "Clean");
 			m_cleanButton->setAccessibleName(
 			    operationId == LauncherHomeOperationId() ? "Clean all selected levels"
 			        : operationId == "workspace.clean"   ? "Clean all generated repository state"
 			                                             : "Clean selected workflow outputs");
+			m_cleanButton->style()->unpolish(m_cleanButton);
+			m_cleanButton->style()->polish(m_cleanButton);
 		}
 		if (m_optionsStack != nullptr)
 		{

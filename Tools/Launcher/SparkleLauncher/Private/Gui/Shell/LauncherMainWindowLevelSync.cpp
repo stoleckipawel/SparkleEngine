@@ -102,10 +102,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddSyncLevelContentGroups(QVBoxLayout& layout)
 	{
-		QVBoxLayout* catalogLayout = AddOptionGroup(
-		    layout,
-		    "Map catalog",
-		    "Open a level using the footer Run Mode. Quick Start prepares its content, build, and cook prerequisites first.");
+		QVBoxLayout* catalogLayout = AddOptionGroup(layout, "Levels", QString());
 		const LauncherContentSummary* content = m_contentModel.Content();
 		if (content == nullptr)
 		{
@@ -160,7 +157,7 @@ namespace SparkleLauncher
 		artworkSpec.AspectRatio = 16.0 / 10.0;
 		LauncherArtworkWidget* artwork = new LauncherArtworkWidget(LoadMapArtwork(level), artworkSpec, QSize(640, 400), card);
 		artwork->setObjectName("MapCardThumbnail");
-		artwork->setMinimumWidth(178);
+		artwork->setMinimumWidth(160);
 		cardLayout->addWidget(artwork, 2);
 
 		QWidget* body = new QWidget(card);
@@ -189,10 +186,9 @@ namespace SparkleLauncher
 		statusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 		metadata->addWidget(statusLabel, 0, Qt::AlignVCenter);
 
-		QLabel* detail = new QLabel(level.Detail, body);
+		ElidedLabel* detail = new ElidedLabel(level.Detail, body);
 		detail->setObjectName("MapCardMeta");
 		detail->setTextInteractionFlags(Qt::TextSelectableByMouse);
-		detail->setToolTip(level.Detail);
 		metadata->addWidget(detail, 1, Qt::AlignVCenter);
 		bodyLayout->addLayout(metadata);
 

@@ -85,7 +85,7 @@ namespace SparkleLauncher
 		panel->setObjectName("ProcessPanel");
 		panel->setFixedWidth(kWorkflowRailWidth);
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(0, 0, 0, LauncherUi::Shell::RailBottomPadding);
+		layout->setContentsMargins(0, LauncherUi::Shell::RailTopPadding, 0, LauncherUi::Shell::RailBottomPadding);
 		layout->setSpacing(LauncherUi::Space::XSmall);
 
 		QVBoxLayout* groupLayout = new QVBoxLayout();
@@ -108,7 +108,7 @@ namespace SparkleLauncher
 			QToolButton* groupButton = new QToolButton(panel);
 			groupButton->setText(workflowTitle);
 			groupButton->setObjectName("WorkflowGroupButton");
-			groupButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+			groupButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 			groupButton->setMinimumHeight(kWorkflowGroupMinHeight);
 			groupButton->setMaximumHeight(kWorkflowGroupMinHeight);
 			groupButton->setMinimumWidth(kWorkflowRailWidth);
@@ -203,7 +203,7 @@ namespace SparkleLauncher
 		m_runButton = new QPushButton("Run", panel);
 		m_runButton->setObjectName("PrimaryActionButton");
 		m_runButton->setFixedSize(LauncherUi::ActionMeta::PrimaryButtonWidth, LauncherUi::ActionMeta::ButtonHeight);
-		m_runButton->setIcon(m_icons.Icon(LauncherIcon::Run, QColor("#ffffff")));
+		m_runButton->setIcon(m_icons.Icon(LauncherIcon::Run, QColor("#071006")));
 		m_runButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
 		m_runButton->setToolTip("Run the selected workflow. Existing runs keep going.");
 		m_runButton->setEnabled(false);
@@ -378,7 +378,7 @@ namespace SparkleLauncher
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
 		const bool isQuickStart = operationId == LauncherHomeOperationId();
-		scrollArea->setAlignment(isQuickStart ? Qt::AlignTop : (Qt::AlignLeft | Qt::AlignTop));
+		scrollArea->setAlignment(isQuickStart ? Qt::AlignTop : (Qt::AlignHCenter | Qt::AlignTop));
 		content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 		if (!isQuickStart)
 		{

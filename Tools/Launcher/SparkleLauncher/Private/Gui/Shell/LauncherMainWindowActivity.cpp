@@ -157,9 +157,9 @@ namespace SparkleLauncher
 			ScheduleUiRefresh(true);
 		}
 
-		if (succeeded && operationId == "launcher.build.self" && !m_pendingRestartRunIds.contains(runId))
+		const bool launcherRestartPending = m_pendingRestartRunIds.removeAll(runId) > 0;
+		if (succeeded && launcherRestartPending)
 		{
-			m_pendingRestartRunIds.push_back(runId);
 			PromptForLauncherRestart();
 		}
 

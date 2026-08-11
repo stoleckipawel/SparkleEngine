@@ -9,23 +9,23 @@ namespace SparkleLauncher::LauncherUi
 {
 	namespace Color
 	{
-		inline constexpr const char* Background = "#111312";
+		inline constexpr const char* Background = "#0f1110";
 		inline constexpr const char* HeroBackground = "#030404";
-		inline constexpr const char* Shell = "#181a19";
-		inline constexpr const char* Panel = "#202220";
-		inline constexpr const char* PanelHover = "#2c302c";
-		inline constexpr const char* Field = "#202321";
-		inline constexpr const char* Border = "#0b0d0c";
-		inline constexpr const char* BorderSoft = "#303430";
-		inline constexpr const char* BorderStrong = "#444943";
-		inline constexpr const char* Divider = "#2b2f2b";
+		inline constexpr const char* Shell = "#151715";
+		inline constexpr const char* Panel = "#1b1e1c";
+		inline constexpr const char* PanelHover = "#242825";
+		inline constexpr const char* Field = "#191c1a";
+		inline constexpr const char* Border = "#222522";
+		inline constexpr const char* BorderSoft = "#343934";
+		inline constexpr const char* BorderStrong = "#454b45";
+		inline constexpr const char* Divider = "#292d2a";
 		inline constexpr const char* Accent = "#76b900";
 		inline constexpr const char* AccentHover = "#8bd80f";
-		inline constexpr const char* Selection = "#31451f";
-		inline constexpr const char* TextPrimary = "#f2f4f1";
-		inline constexpr const char* TextBody = "#d9ddd7";
-		inline constexpr const char* TextSecondary = "#b9c0b6";
-		inline constexpr const char* TextMuted = "#858d82";
+		inline constexpr const char* Selection = "#27351e";
+		inline constexpr const char* TextPrimary = "#f4f6f3";
+		inline constexpr const char* TextBody = "#d5d9d4";
+		inline constexpr const char* TextSecondary = "#aeb5ac";
+		inline constexpr const char* TextMuted = "#7e877d";
 		inline constexpr const char* StateQueued = "#8b949e";
 		inline constexpr const char* StateRunning = Accent;
 		inline constexpr const char* StateSuccess = "#7ee787";
@@ -61,12 +61,13 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace Shell
 	{
-		inline constexpr int RailWidth = 86;
-		inline constexpr int RailItemMinHeight = 58;
+		inline constexpr int RailWidth = 168;
+		inline constexpr int RailItemMinHeight = 48;
 		inline constexpr int TabMinHeight = 36;
-		inline constexpr int RailIconSize = 18;
-		inline constexpr int RailBottomPadding = 10;
-		inline constexpr int RailGroupSpacing = 2;
+		inline constexpr int RailIconSize = 16;
+		inline constexpr int RailTopPadding = 10;
+		inline constexpr int RailBottomPadding = 12;
+		inline constexpr int RailGroupSpacing = 4;
 		inline constexpr int WorkflowTabSpacing = 18;
 		inline constexpr int PanelHorizontalMargin = 18;
 		inline constexpr int PanelVerticalMargin = 14;
@@ -74,7 +75,7 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace ContextSelector
 	{
-		inline constexpr int ComboHeight = 24;
+		inline constexpr int ComboHeight = 26;
 		inline constexpr int RunModeComboMinWidth = 86;
 		inline constexpr int RunModeComboMaxWidth = 110;
 		inline constexpr int ConfigurationComboMinWidth = 140;
@@ -91,10 +92,10 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace FooterContext
 	{
-		inline constexpr int ItemSpacing = 8;
+		inline constexpr int ItemSpacing = 10;
 		inline constexpr int FieldSpacing = 0;
-		inline constexpr int DividerHeight = 30;
-		inline const QMargins Margins{16, 5, 16, 6};
+		inline constexpr int DividerHeight = 32;
+		inline const QMargins Margins{18, 6, 18, 7};
 		inline const QMargins FieldMargins{0, 0, 0, 0};
 	}
 
@@ -109,32 +110,32 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int FieldLabelWidth = 132;
 		inline constexpr int FieldValueWidth = 560;
 		inline constexpr int InlineStatusWidth = 88;
-		inline constexpr int StatusActionWidth = 84;
-		inline constexpr int StatusActionHeight = 26;
+		inline constexpr int StatusActionWidth = 88;
+		inline constexpr int StatusActionHeight = 28;
 	}
 
 	namespace Button
 	{
-		inline constexpr int PrimaryMinHeight = 34;
-		inline constexpr int SecondaryMinHeight = 30;
+		inline constexpr int PrimaryMinHeight = 36;
+		inline constexpr int SecondaryMinHeight = 32;
 	}
 
 	namespace Page
 	{
-		inline constexpr int MaxContentWidth = 1560;
-		inline constexpr int Spacing = 10;
+		inline constexpr int MaxContentWidth = 1280;
+		inline constexpr int Spacing = 12;
 		inline constexpr int BottomMargin = 32;
-		inline const QMargins ContentMargins{28, 22, 28, BottomMargin};
+		inline const QMargins ContentMargins{36, 28, 36, BottomMargin};
 		inline const QMargins QuickStartMargins{0, 0, 0, BottomMargin};
 	}
 
 	namespace ActionMeta
 	{
-		inline constexpr int Spacing = 8;
-		inline constexpr int PrimaryButtonWidth = 144;
-		inline constexpr int SecondaryButtonWidth = 76;
-		inline constexpr int ButtonHeight = 32;
-		inline const QMargins Margins{0, 8, Page::ContentMargins.right(), 8};
+		inline constexpr int Spacing = 10;
+		inline constexpr int PrimaryButtonWidth = 136;
+		inline constexpr int SecondaryButtonWidth = 88;
+		inline constexpr int ButtonHeight = 36;
+		inline const QMargins Margins{Page::ContentMargins.left(), 8, Page::ContentMargins.right(), 8};
 	}
 
 	namespace TextEdit
@@ -153,16 +154,16 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace Clean
 	{
-		inline constexpr int RowSpacing = 12;
-		inline const QMargins RowMargins{14, 10, 14, 10};
+		inline constexpr int RowSpacing = 14;
+		inline const QMargins RowMargins{16, 11, 16, 11};
 	}
 
 	namespace ScopeSelection
 	{
-		inline constexpr int ContentMinWidth = 960;
-		inline constexpr int ContentMaxWidth = 1180;
-		inline constexpr int RowSpacing = 12;
-		inline const QMargins RowMargins{14, 10, 14, 10};
+		inline constexpr int ContentMinWidth = 760;
+		inline constexpr int ContentMaxWidth = 1208;
+		inline constexpr int RowSpacing = 14;
+		inline const QMargins RowMargins{16, 11, 16, 11};
 	}
 
 	namespace Option
@@ -193,8 +194,8 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace Activity
 	{
-		inline constexpr int CollapsedHeight = 36;
-		inline constexpr int ExpandedHeight = 240;
+		inline constexpr int CollapsedHeight = 40;
+		inline constexpr int ExpandedHeight = 260;
 		inline constexpr int ListWidth = 280;
 		inline constexpr int RowHeight = 26;
 		inline constexpr int HistoryRowHeight = 34;
@@ -203,7 +204,7 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr const char* CollapseGlyph = "Hide";
 
 		inline const QSize ToggleButtonSize{50, 24};
-		inline const QMargins HeaderMargins{16, 5, 16, 5};
+		inline const QMargins HeaderMargins{18, 7, 18, 7};
 		inline const QMargins RailMargins{4, 4, 4, 4};
 		inline const QMargins OutputMargins{6, 4, 6, 6};
 	}
@@ -216,15 +217,15 @@ namespace SparkleLauncher::LauncherUi
 	namespace Hero
 	{
 		inline constexpr int DesignWidth = 1560;
-		inline constexpr int DesignHeight = 360;
+		inline constexpr int DesignHeight = 320;
 		inline constexpr int CopyDividerX = 624;
-		inline constexpr int MinimumHeight = 260;
+		inline constexpr int MinimumHeight = 238;
 		inline constexpr int MinimumWidth = 720;
-		inline constexpr int CopyLeft = 48;
-		inline constexpr int CopyTop = 58;
-		inline constexpr int CopyBottom = 44;
-		inline constexpr int CopyWidth = 430;
-		inline constexpr int CopySpacing = 18;
+		inline constexpr int CopyLeft = 56;
+		inline constexpr int CopyTop = 48;
+		inline constexpr int CopyBottom = 36;
+		inline constexpr int CopyWidth = 450;
+		inline constexpr int CopySpacing = 14;
 		inline constexpr int ActionTopMargin = 2;
 		inline constexpr double MinimumCopyScale = 0.74;
 		inline constexpr double MaximumCopyScale = 1.12;
@@ -232,22 +233,22 @@ namespace SparkleLauncher::LauncherUi
 
 	namespace Home
 	{
-		inline constexpr int BodyLeft = 28;
-		inline constexpr int BodyTop = 24;
-		inline constexpr int BodyRight = 28;
+		inline constexpr int BodyLeft = 36;
+		inline constexpr int BodyTop = 26;
+		inline constexpr int BodyRight = 36;
 		inline constexpr int BodyBottom = 0;
 		inline constexpr int SectionSpacing = 10;
 	}
 
 	namespace MapCatalog
 	{
-		inline constexpr int MinimumCardWidth = 420;
-		inline constexpr int MaximumCardWidth = 1600;
+		inline constexpr int MinimumCardWidth = 400;
+		inline constexpr int MaximumCardWidth = 620;
 		inline constexpr int MaximumColumns = 4;
 		inline constexpr int HorizontalSpacing = 14;
 		inline constexpr int VerticalSpacing = 14;
-		inline constexpr int CardContentSpacing = 6;
-		inline constexpr double CardAspectRatio = 2.75;
-		inline const QMargins CardBodyMargins{12, 9, 12, 9};
+		inline constexpr int CardContentSpacing = 7;
+		inline constexpr double CardAspectRatio = 2.42;
+		inline const QMargins CardBodyMargins{14, 11, 14, 11};
 	}
 }

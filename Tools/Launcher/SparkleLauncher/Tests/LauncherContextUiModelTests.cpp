@@ -89,8 +89,13 @@ int main()
 	const LauncherContextUiModel missingShaderSdkModel = LauncherContextUiModel::Build(missingShaderSdkToolchain);
 	LauncherSettings settings;
 	LauncherOperationRequest buildRequest;
-	buildRequest.BuildScopes = "editor;cook-tools;editor;unknown";
+	buildRequest.OperationId = "workspace.build";
+	buildRequest.BuildScopes = "editor;launcher;cook-tools;editor;unknown";
 	const BuildWorkspaceOperationRequest mappedBuild = LauncherOperationRequestMapping::BuildWorkspace(buildRequest);
+	LauncherOperationRequest editorOnlyBuildRequest = buildRequest;
+	editorOnlyBuildRequest.BuildScopes = "editor";
+	LauncherOperationRequest directLauncherBuildRequest;
+	directLauncherBuildRequest.OperationId = "launcher.build.self";
 	LauncherOperationRequest cookRequest;
 	cookRequest.CookScopes = "shaders;assets;shaders;unknown";
 	const CookOperationRequest mappedCook = LauncherOperationRequestMapping::Cook(cookRequest);
@@ -112,11 +117,15 @@ int main()
 	    && editorContext.ProductCapabilityId() == "product.editor" && mappedGame.RunMode == LevelRunMode::Game
 	    && mappedGame.ProductProfile == "DevelopmentGame" && gameContext.ProductBuildOperationId() == "workspace.build.runtime"
 	    && gameContext.ProductCapabilityId() == "product.runtime";
-	const bool buildScopeContract = settings.BuildScopes() == "editor;runtime;cook-tools"
-	    && mappedBuild.SelectedScopes == std::vector<BuildWorkspaceScope>{BuildWorkspaceScope::Editor, BuildWorkspaceScope::CookTools};
-	const bool cookScopeContract = settings.CookScopes() == "shaders;textures;assets"
+	const bool buildScopeContract = settings.BuildScopes().isEmpty()
+	    && mappedBuild.SelectedScopes
+	        == std::vector<BuildWorkspaceScope>{BuildWorkspaceScope::Editor, BuildWorkspaceScope::Launcher, BuildWorkspaceScope::CookTools};
+	const bool launcherRestartContract = LauncherOperationRequestMapping::RequestsLauncherRebuild(buildRequest)
+	    && !LauncherOperationRequestMapping::RequestsLauncherRebuild(editorOnlyBuildRequest)
+	    && LauncherOperationRequestMapping::RequestsLauncherRebuild(directLauncherBuildRequest);
+	const bool cookScopeContract = settings.CookScopes().isEmpty()
 	    && mappedCook.SelectedScopes == std::vector<CookWorkspaceScope>{CookWorkspaceScope::Shaders, CookWorkspaceScope::SceneAssets};
-	const bool valid = runModesAreOrdered && runModeContract && buildScopeContract && cookScopeContract
+	const bool valid = runModesAreOrdered && runModeContract && buildScopeContract && launcherRestartContract && cookScopeContract
 	    && ExpectAvailability(model.RunModes, "editor", true, error) && ExpectAvailability(model.RunModes, "game", true, error)
 	    && ExpectAvailability(model.GraphicsApis, "d3d12", true, error) && ExpectAvailability(model.GraphicsApis, "vulkan", false, error)
 	    && ExpectAvailability(model.ShaderBackends, "dxc", true, error) && ExpectAvailability(model.ShaderBackends, "slang", true, error)
@@ -140,6 +149,10 @@ int main()
 		else if (!buildScopeContract)
 		{
 			error = "Build scope defaults or typed request mapping are incorrect.";
+		}
+		else if (!launcherRestartContract)
+		{
+			error = "Launcher rebuild requests are not classified for the restart prompt.";
 		}
 		else if (!cookScopeContract)
 		{

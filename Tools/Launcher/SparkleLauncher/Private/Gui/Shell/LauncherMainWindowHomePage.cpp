@@ -23,8 +23,7 @@ namespace SparkleLauncher
 		bodyLayout->setSpacing(LauncherUi::Home::SectionSpacing);
 
 		const QString heroTitle = "Explore Sparkle";
-		const QString heroDetail = QStringLiteral(
-		    "Choose a level below. Quick Start acquires missing content, prepares build and cook prerequisites, then runs that map.");
+		const QString heroDetail = QStringLiteral("Pick a level. Quick Start syncs missing content, prepares the project, and opens it.");
 		layout.addWidget(
 		    CreateHomeHeroCard(m_repositoryRoot, heroTitle, heroDetail, "neutral", nullptr, nullptr, "showcase-hero.png", this));
 

@@ -39,7 +39,7 @@ Start with the [Strategy index](Strategy/README.md). Requirements, assessment, r
 
 ### Multithreading Work
 
-Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the target design and [K. Implementation Plan](Architecture/Multithreading/ImplementationPlan.md) for internal sequencing.
+Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the concurrency target design and [K. Implementation Plan](Architecture/Multithreading/ImplementationPlan.md) for concurrency-only sequencing.
  
 ## Document Status Vocabulary
 

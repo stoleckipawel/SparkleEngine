@@ -2,307 +2,229 @@
 
 Status: canonical target architecture and decision record; not proof of current implementation
 
-Last consolidated: 2026-08-02
+Last narrowed: 2026-08-11
 
-Scope: SparkleTasks, GameFramework publication, render coordination, frame-graph recording, RHI ownership, editor/tool background work, cancellation, and shutdown
+Scope: task execution, thread ownership, cross-thread publication, bounded queues, render coordination, parallel command recording, cancellation, and shutdown
 
 ## Purpose and Authority Boundary
 
-This document owns the multithreaded target design and the reasons behind its major choices. It does not own:
+This document owns SparkleEngine's multithreaded target topology and the reasons for its concurrency decisions. It describes where work may run, who may mutate state, how results cross thread boundaries, and how asynchronous work settles.
 
-- current repository inventory — use [D. Whole Repository Architecture Map](../WholeRepositoryMap.md) and inspect code;
-- general implementation rules — use [Engineering Standards](../../Engineering/Standards/README.md);
-- Renderer/RHI dependency direction — use the canonical [Renderer and RHI Architecture Boundary](../RendererRhiBoundary.md);
-- ordered work packages — use [K. Multithreaded Engine Implementation Plan](ImplementationPlan.md);
-- scene/performance acceptance — use [I. Acceptance Workloads](../../Engineering/BistroAndSanMiguelWorkloads.md);
-- principal capability/evidence definitions — use [A. Requirements](../../Strategy/Requirements.md).
+It does not own domain data models, renderer features, content pipelines, product capability targets, schedules, or general implementation and validation rules. Use their owners directly:
 
-K's prompt narratives and historical records do not prove current implementation. Before acting on this target, inspect the current owners, tests, and replacement history.
+- [D. Whole Repository Architecture Map](../WholeRepositoryMap.md) and current code for implemented structure;
+- [Renderer and RHI Architecture Boundary](../RendererRhiBoundary.md) for Renderer/RHI responsibilities and frame-graph authority;
+- [Engineering Standards](../../Engineering/Standards/README.md) for binding implementation rules;
+- [K. Multithreaded Engine Implementation Plan](ImplementationPlan.md) for concurrency work-package order;
+- [F. Principal Graphics Roadmap](../../Strategy/Roadmap.md) for broader feature and portfolio sequencing;
+- [A. Requirements](../../Strategy/Requirements.md) and [I. Acceptance Workloads](../../Engineering/BistroAndSanMiguelWorkloads.md) for capability and workload evidence.
 
-## Executive Decision
+Before using this target, inspect the current owners, producers, consumers, tests, waits, queues, and replacement history. This document does not prove that a target mechanism is implemented.
 
-Sparkle uses one bounded engine task runtime, explicit owner-thread commits, immutable cross-thread publication, a dedicated render coordinator, a bounded frame queue, persistent render/GPU state, frame-graph-owned rendering dependencies, exclusive backend recording contexts, and single-owner submission/presentation.
+## Decision
 
-The architecture adds concurrency only after ownership, lifetime, serial behavior, failure, and memory bounds are explicit. Task completion order is never product semantics.
+Sparkle uses one bounded `SparkleTasks` runtime for owned CPU work. Mutable domain state remains on its named owner thread. Workers consume immutable or exclusively leased input, produce task-local or exclusively writable output, and publish only through explicit owner-thread commit boundaries.
 
-The desired result is not maximum parallelism. It is predictable frame work with:
+A bounded queue transfers frame input to one render coordinator. The coordinator alone mutates render/RHI state, submits work, and presents. Dependency-independent frame-graph groups may record commands concurrently through exclusive backend recording leases; completion order never determines submission order.
 
-- one authority for every mutable state;
-- independently writable work ranges;
-- deterministic fan-in;
-- bounded queues and memory;
-- cancellation and shutdown settlement;
-- D3D12/Vulkan parity;
-- causal CPU/GPU performance evidence.
+Concurrency is accepted only when serial behavior, ownership, lifetime, deterministic fan-in, failure, cancellation, queue bounds, and a useful measured crossover are explicit.
 
-## Goals and Non-Goals
+## Concurrency Invariants
 
-### Goals
+- Every mutable object graph has one thread or task owner.
+- Cross-thread data is immutable, transferred, exclusively leased, or governed by one documented synchronization protocol.
+- Dependencies express correctness; lanes and priorities express policy only.
+- Workers never wait for sibling work and never retain borrowed epochs beyond their task.
+- Task completion order is not observable product semantics.
+- Queues, executions, progress, scratch memory, and frames in flight are bounded.
+- Every asynchronous operation reaches exactly one terminal state.
+- Owner destruction settles its work before captured state is destroyed.
+- Tiny work uses the serial path; retained parallel work has a measured crossover.
 
-- Reuse `SparkleTasks` for owned CPU work across runtime, renderer preparation, editor operations, and tools.
-- Keep GameFramework, Renderer, frame graph, RHI, and Editor authorities distinct.
-- Move data between owners as immutable values, stable handles, explicit deltas, packets, tokens, or leases.
-- Overlap useful CPU work without moving correctness into priorities, timing, or worker waits.
-- Record independent frame-graph groups concurrently while preserving one submission/present owner.
-- Reuse persistent renderer/GPU data and retire it by completion token.
-- Make tiny workloads remain near serial cost.
-- Preserve supported rendering/provider/capture behavior across both backends.
-
-### Non-Goals
-
-- one permanent thread or pool per subsystem;
-- a second ECS, renderer, frame graph, GPU scheduler, or cancellation runtime;
-- worker-side waits, detached tasks, or unbounded producer queues;
-- lock-free cross-module structures without a measured need and reclamation proof;
-- shared mutable world/renderer graphs protected by broad locks;
-- backend-native types in Renderer;
-- automatic RHI dependency discovery competing with the frame graph;
-- a general job-system SDK, general ML runtime, or diagnostics product;
-- concurrency added solely to increase worker utilization.
-
-## System Topology
+## Target Topology
 
 ```text
 Application / Editor owner
-    input, UI, semantic commands, world commit
+    input, UI, lifecycle, semantic commands
                 |
-                | immutable requests / accepted deltas
+                | immutable requests and accepted results
                 v
 GameFramework owner --------------------------+
-    ECS + resources + systems                 |
-    structural commit                         |
-    immutable structural/dynamic publication  |
+    world mutation and deterministic commit   |
+    frozen inputs for eligible system tasks   |
                 |                             |
+                | owned immutable frame input |
                 v                             |
          bounded RenderFrameQueue             |
                 |                             |
                 v                             |
 RenderCoordinator owner                       |
-    apply render deltas                        |
-    persistent render/GPU scene               |
-    build/compile frame graph                  |
+    renderer/RHI mutation                      |
+    frame-graph setup and compile              |
     dispatch recording groups ---- SparkleTasks fixed workers
-    submit / present                           |
+    ordered submission and present             |
                 |                              |
                 v                              |
        public neutral RHI contracts            |
-          /                 \                   |
+          /                 \                  |
  backend-private D3D12   backend-private Vulkan
                 |                              |
                 +---- completion tokens -------+
 ```
 
-`SparkleTasks` is shared execution infrastructure, not a mutable service locator. Each subsystem retains its domain state and commit boundaries.
+`SparkleTasks` supplies execution capacity. It does not own GameFramework, Renderer, RHI, Editor, or tool state and is not a mutable service locator.
 
-## Owner and Thread Roles
+## Thread Roles
 
-| Role | Owns | May publish | Must not do |
+| Role | Owns | Cross-thread contract | Forbidden work |
 | --- | --- | --- | --- |
-| Application/Editor owner | lifecycle, input, ImGui/widget state, semantic commands, accepted UI models | immutable requests and commands | expose live UI/world pointers to workers or Renderer |
-| GameFramework owner | world/ECS authority, resources, structural mutation, deterministic commit | generation-pinned world/render inputs | let workers structurally mutate storage or Renderer query the world |
-| SparkleTasks workers | execution of dependency-ready bounded work | task-local/exclusive results and completion | wait for sibling tasks, retain borrowed epochs, mutate unrelated owners |
-| RenderCoordinator | render-world state, frame graph execution, RHI mutation, submission, present | frame products, completion, narrow results | query ECS, invoke UI, or share submission authority |
-| RHI backend | native objects, encoding, capabilities, queues, swap chain | neutral handles/tokens and explicit interop | own renderer policy or infer a second frame graph |
-| GPU queues | submitted command execution | completion/fence/timeline progress | define CPU ownership or task dependencies |
+| Application/Editor owner | lifecycle, UI state, commands, acceptance of UI results | immutable requests, packets, and narrow results | exposing live UI or owner pointers to workers |
+| GameFramework owner | world mutation and structural commit | frozen task inputs, task-local results, immutable render input | worker-side structural mutation or shared live world access |
+| `SparkleTasks` workers | execution of dependency-ready bounded work | exclusive output ranges or task-local results | sibling waits, owner mutation, submission, presentation |
+| Render coordinator | mutable Renderer/RHI state, submission, presentation, render lifecycle | frame input, recording leases, completion tokens | world/UI queries or shared submission authority |
+| RHI backend | native recording objects and queue operations | move-only recording leases and neutral completion tokens | renderer policy or a competing scheduler |
+| GPU queues | submitted command execution | fence/timeline completion | CPU task or owner semantics |
 
-Thread names describe ownership, not a guarantee that every stage has a permanent OS thread. Lane and priority are policy only.
+Thread names describe ownership. They do not require one permanent OS thread per subsystem. Lanes and priority do not change ownership.
 
-## Frame Lifecycle
+## Frame Concurrency Lifecycle
 
-One logical frame follows this order:
+One logical frame observes these concurrency boundaries:
 
-1. Application/Editor accepts input and semantic operations.
-2. GameFramework applies structural commands at its owner boundary.
-3. Systems evaluate against a frozen world epoch, using a serial path or dependency graph.
-4. The owner deterministically commits task-local results.
-5. GameFramework publishes immutable structural and dynamic render input for one generation.
-6. The bounded frame queue transfers ownership to `RenderCoordinator`.
-7. Renderer applies deltas to persistent render-owned state.
-8. Renderer builds and compiles the frame graph serially.
-9. Dependency-independent recording groups may record through exclusive RHI leases.
-10. `RenderCoordinator` submits batches in compiled order and presents.
-11. Completion tokens retire CPU/GPU storage and unblock bounded reuse.
+1. Application/Editor applies input and accepted operation results on its owner thread.
+2. GameFramework commits owner-only mutations and freezes the inputs required by eligible system work.
+3. A serial path or dependency graph evaluates those inputs; workers write only exclusive ranges or task-local results.
+4. GameFramework deterministically joins results and performs owner-only commit.
+5. The producer transfers one owned immutable render input through the bounded frame queue.
+6. The render coordinator consumes the input and performs serial frame-graph setup/compile under the canonical Renderer/RHI boundary.
+7. Dependency-independent recording groups may run on workers through exclusive RHI recording leases.
+8. The render coordinator collects results in compiled order, submits, and presents.
+9. Completion tokens retire or release storage whose lifetime crossed CPU/GPU execution.
 
-Frames may overlap only where these owner/lifetime edges permit. CPU task concurrency, render pipelining, command recording, GPU queue overlap, and frames in flight are separate mechanisms and measurements.
+CPU task concurrency, producer/render pipelining, command recording, GPU queue overlap, and frames in flight are distinct mechanisms. Each needs its own ownership proof and measurement.
 
-## SparkleTasks Contract
+## `SparkleTasks` Execution Contract
 
 ### Public Concepts
 
-- `TaskDesc` describes work and policy.
+- `TaskDesc` describes work and scheduling policy.
 - `TaskNodeHandle` identifies topology nodes.
 - `CompiledTaskGraph` is immutable reusable topology.
-- `TaskExecution` is one graph run with its own counters, cancellation, failure, and result state.
-- `TaskExecutionContext` contains transient task-run access, not domain services.
+- `TaskExecution` holds the counters, cancellation, failure, and result state for one run.
+- `TaskExecutionContext` exposes transient run state, not domain services.
 - `TaskExecutor` owns the fixed worker runtime.
 - `TaskScope` binds asynchronous work to owner lifetime and settles before destruction.
-- `TaskEvent` is an explicit host/task completion primitive, not a general callback bus.
-- `ParallelFor` partitions a bounded range above a measured serial threshold.
-- `TaskLane` expresses scheduling policy; dependencies express correctness.
+- `TaskEvent` is a host/task completion primitive, not a callback bus.
+- `ParallelFor` partitions a bounded range only above a measured serial threshold.
+- `TaskLane` expresses policy; graph dependencies express correctness.
 
-### Execution Rules
+### Execution
 
-- Compile validates topology, dependency counts, cycles, bounds, and deterministic node identity.
-- One execution allocates bounded state and publishes ready work to the fixed workers.
-- Workers take dependency-ready tasks, read immutable input, and write exclusive or task-local output.
-- Completing a task releases dependents; fan-in becomes ready only when all prerequisites settle.
+- Graph compilation validates topology, dependency counts, cycles, bounds, and stable node identity.
+- One execution allocates bounded state and publishes dependency-ready work to fixed workers.
+- Completing a task releases dependents; fan-in becomes ready only after every prerequisite settles.
 - Finalization publishes success, failure, or cancellation exactly once.
-- Worker tasks never wait on other task handles.
-- Owner destruction first stops publication, then cancels/scopes work, settles it, and only then destroys captured state.
-- Third-party worker counts are included in oversubscription policy.
+- Owner destruction stops publication, cancels or closes owned scopes, settles them, and then destroys captured state.
+- Blocking I/O/process work uses the configured lane or existing narrow platform operation.
+- Third-party worker counts participate in the oversubscription budget.
 
-The reference implementation begins serially with the final graph/data contract. Parallel execution must preserve its result and failure semantics.
+The reference execution uses the final graph and data contract serially. Parallel execution must preserve its output and terminal-state semantics.
 
-## GameFramework and ECS Publication
+## Owner-Thread Commit and Publication
 
-### World Authority
+### GameFramework Work
 
-GameFramework owns private ECS storage. `EntityId` is generational runtime identity; dense indices and component addresses remain epoch-local. Heavy immutable assets use typed handles rather than component-owned mutable objects.
+The [GameFramework and ECS standard](../../Engineering/Standards/GameFrameworkAndEcs.md) owns world storage, identities, systems, and extraction. When that work runs concurrently, this architecture adds only these constraints:
 
-Systems declare phase, typed component reads/writes, non-ECS resource access, prerequisites, and grain policy. Access declarations derive hazards: read/read may overlap; write conflicts require ordering or graph rejection.
+- the owner freezes the input epoch before dispatch;
+- declared access and prerequisites determine which tasks may overlap;
+- workers cannot structurally mutate the world or publish directly to consumers;
+- task-local changes merge by a stable key and commit on the owner;
+- views and references cannot outlive the frozen epoch.
 
-### Structural Epoch
+### Render-Input Transfer
 
-Queries execute against a frozen structural epoch. Workers cannot create/destroy entities, add/remove components, or resize stores. They emit typed task-local commands; the GameFramework owner merges them by a stable key and commits them at the structural boundary.
+The producer publishes an owned immutable frame product with stable identity and generation/sequence information. `RenderFrameQueue` has an explicit capacity and a documented full policy: backpressure, replacement, or rejection. It never grows without a bound.
 
-### Published Streams
+The render coordinator rejects stale input according to the owning domain contract. The Renderer never dereferences live world or editor storage across the boundary.
 
-Rendering consumes two explicit derived streams:
+### Editor and Tool Work
 
-- **Structural** — identity, mesh/material/resource associations, creation/removal, topology, and other infrequent changes.
-- **Dynamic** — transforms, previous-frame values, lights, animation outputs, visibility inputs, and other frame-varying values.
+The [Editor and Tools standard](../../Engineering/Standards/EditorAndTools.md) owns UI, import, cooking, capture, and tool behavior. Their background work follows the same threading shape:
 
-Each publication carries stable identity, generation/sequence, deterministic order, and owned lifetime. Incremental application has stale-sequence rejection and a full-resynchronization path. Renderer never dereferences `GameWorld` or retains component views.
+- the owner creates an immutable request and a scope;
+- workers produce bounded progress and an immutable result;
+- the owner accepts or rejects the result by stable identity/generation;
+- close cancels and settles the scope before model or application destruction;
+- workers do not invoke UI callbacks or create private worker pools.
 
-Sparse-set storage is the initial default for packed iteration plus stable entity lookup. Archetype/chunk complexity requires workload evidence that the simpler design loses.
+## Render Recording and Submission
 
-## Render Coordination
+The frame graph remains the sole authority for pass order, resource dependencies, barriers, queue ownership, and recording eligibility. Its compiled output may form dependency-independent recording groups when they are large enough to amortize scheduling and allocator cost.
 
-### Bounded Frame Queue
+Each recording task receives one move-only `RhiCommandRecordingLease` backed by an exclusive D3D12 allocator/list or Vulkan command pool/buffer and preassigned transient storage. A recording worker may encode its compiled group. It may not create or destroy global resources, mutate shared caches, submit, present, or wait.
 
-`RenderFrameQueue` transfers owned immutable frame input between the producing owner and `RenderCoordinator`. Capacity is explicit and the full-queue policy is documented as backpressure, replacement, or rejection—never unbounded growth.
+The render coordinator joins completed groups in compiled order, applies the compiled cross-group and queue dependencies, submits, and presents. Worker completion order cannot change render order.
 
-Shutdown closes publication, wakes blocked host boundaries, settles queued/in-flight frames, retires completion-owned resources, and joins the coordinator before dependency destruction.
+Additional GPU queue or frame-pipeline overlap is a separate concurrency decision. It is retained only when correlated timelines show a benefit after synchronization, ownership-transfer, bandwidth, pacing, and input-latency cost.
 
-### Persistent Render and GPU State
+## Cancellation, Failure, and Shutdown
 
-Renderer resolves stable `RenderObjectId` values into persistent slots. Structural updates change topology/resources; dynamic updates touch bounded dirty ranges. Static resources use immutable handles and residency. Capacity growth publishes replacement storage at a frame boundary and retires old storage by GPU token.
+Every asynchronous operation has a named owner and exactly-once transition to success, failure, or cancellation. Cancellation stops unnecessary publication or work from starting; it never abandons captured state.
 
-Full-scene rebuild/upload is not the default. Measure packet bytes, dirty/upload bytes, descriptors, resource churn, memory high-water, RT build/update cost, and retirement backlog.
+Shutdown order is:
 
-### Preparation and Frame Graph
-
-Renderer preparation may use `SparkleTasks` only for independent data transforms with explicit dependencies and exclusive outputs. The deterministic join produces inputs for one frame graph.
-
-The frame graph remains the authority for pass order, resource lifetime intervals, aliasing, barriers, queue ownership, and recording eligibility:
-
-- setup declares all reads, writes, history, queue preference, and imported/persistent resources;
-- compile resolves dependency and lifetime policy;
-- execute records only compiled work.
-
-Setup/compile remains serial until its own measured cost justifies a bounded redesign.
-
-## Parallel Command Recording
-
-The compiled frame graph may form `RecordingGroup` or `FrameGraphSubmissionBatch` units that are dependency-independent and large enough to amortize scheduling/allocator cost.
-
-Each recording task receives one move-only `RhiCommandRecordingLease` backed by an exclusive D3D12 allocator/list or Vulkan command pool/buffer plus preassigned transient upload/descriptor storage. A recording worker may encode commands; it may not create/destroy global resources, mutate caches, submit, present, or wait.
-
-`RenderCoordinator` collects completed groups in compiled order, applies required cross-group/queue dependencies, submits, and presents. Recording completion order never changes render order.
-
-An additional GPU queue is accepted only when correlated timelines show useful overlap after synchronization, ownership transfer, bandwidth, and pacing cost. Parallel CPU recording alone is not evidence of GPU concurrency.
-
-## Asset Loading, Editor, and Tools
-
-### Loading and Publication
-
-Read, decode, transform, validate, and publication are distinct stages. Background work produces an immutable package; the GameFramework owner transactionally accepts it or retains the previous accepted world. Cancellation and failure never publish a partial scene.
-
-Runtime loading remains cooked-only. Weighted memory limits account for decoded scenes/textures, compiler processes, third-party workers, and publication backlog.
-
-### Editor
-
-Editor main owns ImGui, selection, transactions, draft widget values, document/application lifetime, and application of immutable results. Panels consume immutable models and submit semantic commands using stable identity.
-
-One private `EditorOperationService` uses `SparkleTasks` scopes for owned background operations. Requests/results are owned values, progress is bounded/coalesced, latest-generation-wins is explicit where appropriate, and close cancels/settles before model destruction.
-
-UI draw data and viewport/capture products cross the render boundary as owned packets/handles/tokens, never live ImGui or editor pointers.
-
-### Tools
-
-Cookers, shader compilation, import, launcher operations, and packaging reuse the same task runtime with host-specific lane and memory policy. Outputs publish deterministically and transactionally. Tools do not create second pools, asset databases, cancellation systems, or runtime authorities.
-
-## Failure, Cancellation, and Shutdown
-
-Every asynchronous operation has a named owner, terminal states, and exactly-once settlement. Cancellation means “stop accepting/starting unnecessary work and settle safely,” not “abandon captured state.”
-
-Required shutdown order is:
-
-1. stop new external requests/publication;
+1. stop accepting external requests and new publication;
 2. close bounded queues and wake host waiters;
-3. cancel owned scopes/executions;
+3. cancel owned scopes and executions;
 4. let running tasks reach defined cancellation points;
 5. settle results and reject late generations;
-6. drain/retire GPU-token-owned resources as required;
-7. join coordinator/workers;
+6. retire completion-token-owned work required by the active backends;
+7. join the render coordinator and workers;
 8. destroy captured owners, allocators, devices, and platform state.
 
-Routine operation does not use device idle. Final teardown may use a documented bounded device-idle boundary where the backend contract requires it.
+Routine operation does not use device idle as a synchronization shortcut. Final teardown may use a documented bounded device-idle boundary when the backend contract requires it.
 
 ## Architecture Decisions
 
-| Decision | Selected design | Rejected alternative | Revisit when |
-| --- | --- | --- | --- |
-| CPU runtime | one fixed `SparkleTasks` executor | per-subsystem pools, `std::async`, detached workers | product isolation cannot be expressed with scopes/lanes/bounds |
-| Correctness order | explicit DAG dependencies | priority, timing, or worker waits | never; policy cannot replace correctness |
-| Task lifetime | scopes and exactly-once settlement | raw-owner callbacks and fire-and-forget | never for owned work |
-| World storage | private sparse-set ECS first | public ECS SDK or immediate archetype framework | measured workloads show storage/iteration loss |
-| Structural mutation | deferred deterministic owner commit | mutation during queries | never |
-| Game/render boundary | immutable structural + dynamic streams | shared scene graph/mutex or renderer world queries | only if a new product contract disproves ownership split |
-| Render state | persistent slots and dirty ranges | full rebuild/upload each frame | only for bounded tiny/reference paths |
-| Render schedule | frame graph authority | renderer/RHI competing graphs | never while frame graph owns resources/barriers |
-| Recording | exclusive backend leases, parallel eligible groups | shared command contexts | only if APIs and evidence support a safer owner model |
-| Submission/present | one render-coordinator owner | worker submission or permanent RHI thread | measured submission bottleneck with preserved ownership |
-| Editor work | one scoped operation service | per-panel workers/callbacks | product requirements need a distinct real owner |
-| Publication | bounded, generation-aware, transactional | partial state or unbounded queues | never |
+| Concern | Selected design | Rejected alternative |
+| --- | --- | --- |
+| CPU execution | one fixed `SparkleTasks` executor | subsystem pools, `std::async`, detached workers |
+| Correctness order | explicit DAG dependencies | priority, timing, polling, or worker waits |
+| Task lifetime | scopes and exactly-once settlement | raw-owner callbacks or fire-and-forget work |
+| Mutable state | named owner-thread commit | broad locks around world, renderer, editor, or caches |
+| Worker output | exclusive ranges or task-local results with deterministic join | concurrent mutation whose order changes results |
+| Cross-thread transfer | owned immutable values, stable handles, or exclusive leases | borrowed live object graphs |
+| Frame transfer | bounded queue with an explicit full policy | unbounded producer backlog |
+| Render mutation | one render coordinator | shared worker mutation or permanent competing RHI thread |
+| Command recording | compiled groups with exclusive backend leases | shared command contexts |
+| Submission/present | render-coordinator ownership | worker submission or presentation |
+| Background UI/tool work | scoped work on the shared executor | panel/tool-specific pools and callback runtimes |
 
-## Verification and Performance
+## Concurrency Evidence
 
-The applicable [Concurrency](../../Engineering/Standards/Concurrency.md), [Data-Oriented Design](../../Engineering/Standards/DataOrientedDesign.md), [graphics](../../Engineering/Standards/GraphicsEngineering.md), and [validation/evidence](../../Engineering/Standards/ValidationPerformanceAndEvidence.md) standards own test and measurement rules.
+The [Concurrency](../../Engineering/Standards/Concurrency.md) and [Validation, Performance, and Evidence](../../Engineering/Standards/ValidationPerformanceAndEvidence.md) standards own the reusable test and measurement rules. Evidence for a retained mechanism includes, as applicable:
 
-Architecture acceptance requires, as applicable:
+- serial, 1-, 2-, and N-worker equality;
+- randomized completion and deterministic fan-in;
+- cancellation, failure, owner-destruction, and shutdown stress;
+- bounded-queue full-policy and memory-ceiling tests;
+- wrong-thread, expired-epoch, and recording-lease misuse rejection;
+- delayed completion-token retirement;
+- tiny-work crossover and representative critical-path measurements;
+- separate CPU-task, render-pipeline, command-recording, and GPU-queue timelines.
 
-- serial equivalence and deterministic repeated output;
-- 1/2/N worker and randomized-completion stress;
-- cancellation, owner-destruction, bounded-queue, and shutdown tests;
-- D3D12/Vulkan native validation and delayed GPU retirement;
-- tiny and representative Tier 1 workloads;
-- memory high-water and oversubscription accounting;
-- correlated CPU/GPU timelines and before/after critical-path evidence;
-- feature-preservation checks for supported raster, RT, temporal/provider, capture, and packaging paths.
-
-## Source and Rationale Trail
-
-[E. External Renderer Repository Comparison](../ExternalRendererComparison.md) owns the broad vendor/framework comparison. The architecture also relies on primary API/language authorities for memory ordering, queue synchronization, resource lifetime, and backend behavior.
-
-External sources are used narrowly:
-
-- task/DAG systems support dependency-driven bounded execution, not copying another engine's public job API;
-- Epic's game/render split and MassEntity patterns support derived render state, typed access, transient views, and deferred structural mutation, not Unreal's framework scale;
-- NVIDIA Donut/NVRHI and AMD/GPUOpen renderers support explicit backend resources, persistent indexed data, and clear feature boundaries, not a general gameplay architecture;
-- D3D12, Vulkan, and C++ specifications control correctness; sample repositories are design precedent only.
-
-Record exact source revisions in research or a focused decision when a new choice depends on them. Do not turn vendor prevalence into a Sparkle rule.
+Backend or feature validation belongs to its domain owner. It is required here only where a concurrency mechanism crosses that backend or feature path.
 
 ## Current-State Use
 
 Before implementing or resuming a stage:
 
 1. inspect current code and tests;
-2. classify prior criteria as enduring, transitional, or superseded;
-3. use this document for target ownership and decisions;
-4. use K only for bounded sequence;
-5. apply current Engineering Standards and workload gates;
-6. report current evidence rather than repeating historical completion text.
+2. inventory thread owners, queues, waits, atomics, locks, scopes, and captured lifetimes;
+3. distinguish already-implemented behavior from target behavior;
+4. use this document only for concurrency topology and decisions;
+5. use K only for the concurrency sequence;
+6. report current evidence rather than historical completion text.
 
-The architecture is complete only when code, tests, captures, and measurements prove it. This document is the map, not the proof.
+The target is complete only when current code and tests prove these concurrency contracts. This document is the decision map, not the proof.

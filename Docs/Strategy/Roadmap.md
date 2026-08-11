@@ -12,7 +12,7 @@ Dated assessment: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
 
 Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md)
 
-Multithreading execution detail: [K. Multithreaded Engine Implementation Plan](../Architecture/Multithreading/ImplementationPlan.md)
+Concurrency-only execution detail: [K. Multithreaded Engine Implementation Plan](../Architecture/Multithreading/ImplementationPlan.md)
 
 ## Six-Month Outcome
 
@@ -151,7 +151,7 @@ The existing path-tracing and renderer work becomes one reproducible, measured D
 2. Capture the same frozen Bistro and San Miguel routes on D3D12 and Vulkan with native validation enabled where supported.
 3. Record CPU/GPU timelines, frame pacing, memory high-water, resource/barrier/descriptor/queue state, pipeline/cache state, and BLAS/TLAS behavior defined by the workload contract.
 4. Rank measured bottlenecks. Start the three required causal studies and finish at least one difficult incident with competing hypotheses, reduced reproducer, scoped fix, and regression gate.
-5. Run K's `23`/`23A` characterization and value audit against current owners. Pull `24`-`29` forward only when a measured correctness or evidence blocker requires them.
+5. When a measured bottleneck is concurrent, apply K's `MT-12` through `MT-15` evidence and retention gates. Do not introduce unrelated concurrency work for a non-concurrency bottleneck.
 6. Draft `CASE-01`, `CASE-02`, and `CASE-03` from captured evidence. Do not wait until January to reconstruct the experiment history.
 
 ### Exit Gate - 2026-10-31
@@ -175,7 +175,7 @@ A small fixed neural diffuse-indirect denoiser is trained reproducibly from decl
 3. Implement a deterministic PyTorch training path with a small public sample or documented generator, an overfit-one-batch check, loss curves, and exact environment lock.
 4. Establish noisy and classical baselines, parameter/FLOP estimates, held-out metrics, and failure cases.
 5. Run only decision-making ablations: input guides, width, loss, and precision proxy. Do not search architecture space broadly.
-6. Produce the model card, dataset manifest, operator/math note, and immutable export candidate aligned with K's `30` and `31` outcomes.
+6. Produce the model card, dataset manifest, operator/math note, and immutable export candidate required by `PGE-03`, `PGE-04`, `PGE-11`, `PGE-12`, and `WL-05`.
 
 ### Exit Gate - 2026-11-30
 
@@ -200,7 +200,7 @@ The frozen artifact executes through Sparkle's existing shader cook/runtime ABI 
 3. Implement the fixed operators in HLSL or Slang and integrate them through the existing frame graph and renderer ownership path. Do not embed a general ONNX or tensor runtime.
 4. Establish the FP32 correctness baseline, then evaluate FP16, layout, dispatch size, tiling, fusion, weight packing, bandwidth, register pressure, and occupancy only from profiles.
 5. Run the same artifact on both APIs and both Tier 1 scene families. Preserve explicit capability failure, history invalidation where applicable, and the classical fallback.
-6. Complete K's `32` runtime-inference outcome and begin `33` only after correctness and whole-frame cost are known.
+6. Complete the `WL-06` runtime-inference gate and begin profile-driven tuning only after correctness and whole-frame cost are known.
 
 ### Exit Gate - 2026-12-31
 
@@ -224,7 +224,7 @@ The result is frozen, independently exercised, and packaged for recruiter, hirin
 2. Run final Bistro and held-out San Miguel evaluation: objective and perceptual quality, temporal errors, latency distribution, memory, operator timings, failure gallery, and quality/performance/memory frontier.
 3. Complete all three measured bottleneck studies, including at least one rejected optimization where the evidence supports rejection.
 4. Ask one graphics engineer who did not implement the feature to clone/build/run, reproduce one result row, switch classical/neural paths, locate the artifact/fallback contract, and record one technical criticism.
-5. Fix adoption blockers without opening new infrastructure. Complete K's `34` handoff outcome.
+5. Fix adoption blockers without opening new infrastructure and satisfy the `PGE-01`, `PGE-13`, and `PGE-15` transfer evidence required by the portfolio review contract.
 6. Publish three concise specialist cases: content-to-correct-pixel, paired-API/path-tracing workload analysis, and model-to-shader. Link the adoption record as supporting evidence.
 7. Produce one evidence release, an eight-to-twelve-page technical report or equivalent article series, a two-page integration guide, a model card, a short comparison video, and an honest support/limitations matrix.
 8. Update the CV, public profile, and website only with claims supported by the frozen evidence.

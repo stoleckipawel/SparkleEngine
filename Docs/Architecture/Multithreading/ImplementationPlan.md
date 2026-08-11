@@ -1,8 +1,8 @@
 # K. Multithreaded Engine Implementation Plan
 
-Status: internal execution plan; not architecture authority or implementation proof
+Status: internal concurrency execution plan; not architecture authority or implementation proof
 
-Last consolidated: 2026-08-02
+Last narrowed: 2026-08-11
 
 Architecture: [J. Multithreaded Engine Architecture](MultithreadedEngineArchitecture.md)
 
@@ -10,137 +10,108 @@ Implementation contract: [L. Integration Style Guide](../../Engineering/Standard
 
 ## Purpose and Boundary
 
-This document owns the ordered work packages that move the repository toward J. It deliberately does not repeat J's design, Engineering Standards, the `PGE-*` matrix, or workload contracts.
+This document sequences only the work needed to implement or prove J's multithreaded architecture: task execution, owner-thread commits, cross-thread publication, bounded queues, render coordination, recording leases, cancellation, shutdown, and concurrency evidence.
 
-A prompt ID is a stable planning reference, not a completion claim. Historical prompt wording and completion narratives remain available in Git history. Current code, tests, captures, and measurements determine actual state.
+It does not schedule ECS or renderer feature development, content/loading capability, persistent GPU-data redesign, path tracing, neural graphics, portfolio work, or general product hardening. Those outcomes remain with the [domain standards](../../Engineering/Standards/README.md), [principal roadmap](../../Strategy/Roadmap.md), [requirements](../../Strategy/Requirements.md), and [acceptance workloads](../../Engineering/BistroAndSanMiguelWorkloads.md).
 
-Before starting or resuming a prompt:
+The `MT-*` IDs are stable references for this narrowed plan. Earlier numeric prompt IDs and completion narratives remain available in Git history; they are not current requirements or proof.
 
-1. inspect the current ownership path and replacement history;
-2. classify each old criterion as enduring, transitional, or superseded;
-3. preserve the underlying correctness/ownership/evidence invariant without restoring obsolete intermediate architecture;
-4. apply the current [Change Process](../../Engineering/Standards/ChangeProcess.md), applicable domain standards, [PGE requirements](../../Strategy/Requirements.md), and [acceptance workloads](../../Engineering/BistroAndSanMiguelWorkloads.md);
-5. stop if prerequisites, scope, serial parity, ownership, deterministic output, or required backend behavior cannot be proven.
+Before starting or resuming a package:
 
-## Shared Execution Contract
+1. inspect the current owner, producer, consumer, wait, queue, captured lifetime, and replacement history;
+2. determine whether the package is absent, partially implemented, implemented but unproved, or superseded;
+3. preserve the current domain contract and supported behavior without reopening unrelated feature design;
+4. apply the [Change Process](../../Engineering/Standards/ChangeProcess.md), [Concurrency standard](../../Engineering/Standards/Concurrency.md), and only the domain standards touched by the integration;
+5. stop when serial parity, ownership, deterministic output, bounded lifetime, or a prerequisite cannot be proven.
 
-Every work package:
+## Shared Work-Package Contract
 
-- starts from repository search and an explicit use/extend/refactor/replace/add decision;
-- names mutable/lifetime owners and cross-thread publication;
-- preserves a final-contract serial/reference path before parallel execution;
-- uses bounded memory, queues, tasks, and cancellation;
-- deletes replaced paths and stale aliases in the same accepted change;
-- preserves supported D3D12/Vulkan and rendering/tool behavior in scope;
-- validates the narrow owner plus the complete touched path;
+Every package:
+
+- searches for existing runtimes, threads, queues, locks, atomics, callbacks, scopes, and producer/consumer paths;
+- names mutable and lifetime owners plus every cross-thread transfer;
+- retains a final-contract serial reference before enabling parallel execution;
+- bounds tasks, queues, scratch/progress storage, frames in flight, and cancellation state;
+- uses dependencies for correctness and deterministic owner-thread fan-in;
+- removes the worker mechanism, alias, adapter, or synchronization path it replaces;
+- validates the narrow mechanism and the complete touched ownership path;
 - reports exact evidence, limitations, unavailable checks, and `PASS` or `BLOCKED`.
 
-The detailed rule owner is the [Engineering Standards index](../../Engineering/Standards/README.md). Do not copy its checklists into a prompt.
+The [Engineering Standards index](../../Engineering/Standards/README.md) owns detailed rules. Work-package rows name only the concurrency outcome and its minimum proof.
 
 ## Dependency Shape
 
 ```text
-00
- |
-01 -> 02 -> 03 -> 03R -> 04
-                         |
-05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11 -> 12 -> 12D
-                                                  |
-13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
-                                                       |
-23 -> 23A -> 24 -> 25 -> 26 -> 27 -> 28 -> 29
-                                           |
-30 -> 31 -> 32 -> 33 -> 34
+MT-00 -> MT-01 -> MT-02 -> MT-03 -> MT-04
+MT-04 -> MT-05 -> MT-06 -> MT-08 -> MT-09 -> MT-10 -> MT-11 -> MT-12
+MT-04 -> MT-07
+MT-07 + MT-12 -> MT-13 -> MT-14 -> MT-15
 ```
 
-Dependencies describe architectural readiness, not necessarily one commit per prompt. Combine adjacent packages only when ownership and evidence remain independently reviewable.
+Dependencies express concurrency readiness, not one commit per package. Adjacent packages may be combined only when their ownership and evidence remain independently reviewable.
 
-## Phase 0 — Baseline and Task Runtime
+## Phase 0 - Task Runtime Foundation
 
-| ID | Outcome | Depends on | Minimum evidence |
+| ID | Concurrency outcome | Depends on | Minimum evidence |
 | --- | --- | --- | --- |
-| `00` | Capture current serial owners, frame order, thread roles, queues, waits, feature paths, baseline workload, and deletion/naming ledgers. | none | source-backed map, reproducible baseline, identified hazards, no implementation claim |
-| `01` | Build the immutable serial task-graph contract and deterministic execution state. | `00` | topology validation, cycle/bounds rejection, repeated serial equality, failure settlement |
-| `02` | Add one fixed worker executor without changing graph meaning. | `01` | serial/1/2/N equivalence, exclusive outputs, queue bounds, clean shutdown |
-| `03` | Complete scopes, cancellation, failure, events, lanes, and owner-lifetime settlement. | `02` | cancel/fail/destroy stress, exactly-once settlement, no worker waits |
-| `03R` | Reconcile task-runtime folders, files, public/private APIs, names, and orchestration readability. | `03` | boundary build, stale-name search, responsibility audit, no behavior regression |
-| `04` | Prove the runtime in bounded real tool work and remove competing worker mechanisms. | `03R` | deterministic tool outputs, weighted memory bounds, cancellation, old pool/thread deletion |
+| `MT-00` | Inventory current thread owners, executors, pools, queues, waits, synchronization, captured lifetimes, serial behavior, and representative baselines. | none | source-backed concurrency map, reproducible serial baseline, hazard and replacement ledger, no implementation claim |
+| `MT-01` | Establish the immutable task-graph contract and its serial executor. | `MT-00` | topology validation, cycle/bounds rejection, repeated serial equality, deterministic failure settlement |
+| `MT-02` | Add one fixed worker executor without changing graph semantics. | `MT-01` | serial/1/2/N equality, exclusive outputs, bounded ready work, clean worker startup/shutdown |
+| `MT-03` | Complete scopes, cancellation, failure, events, lanes, and owner-lifetime settlement. | `MT-02` | cancellation/failure/destruction stress, exactly-once settlement, no worker waits or detached work |
+| `MT-04` | Reconcile runtime APIs and migrate one existing bounded workload; remove its competing worker mechanism. | `MT-03` | production-path use, serial/parallel equality, old path deletion, stale-name search, no behavior regression |
 
-## Phase 1 — World, ECS, Loading, and Publication
+## Phase 1 - Owner and Publication Boundaries
 
-| ID | Outcome | Depends on | Minimum evidence |
+| ID | Concurrency outcome | Depends on | Minimum evidence |
 | --- | --- | --- | --- |
-| `05` | Establish generational `EntityId` and private sparse-set component storage with serial behavior. | `04` | stale-ID rejection, packed-store invariants, deterministic create/destroy |
-| `06` | Add typed queries, frozen structural epochs, access declarations, and deferred commands. | `05` | mutation rejection during views, stable command merge, hazard validation |
-| `07` | Convert existing scene instance state into authoritative ECS components without a parallel world. | `06` | preservation ledger, old authority deletion, identical extracted behavior |
-| `08` | Make transform/derived state explicit and publish a sequenced world change journal/read view. | `07` | known transform results, previous-frame semantics, stale/full-resync tests |
-| `09` | Add transactional asynchronous scene loading through owned immutable packages. | `08` | cancel/fail/close tests, previous-state preservation, no partial publication |
-| `10` | Build the ECS-aware system DAG and first measured parallel animation/morph/skinning work. | `09` | declared hazards, serial threshold, deterministic output, grain/crossover evidence |
-| `11` | Convert Editor panels to immutable models, stable IDs, semantic commands, and bounded transactions. | `10` | no live world pointers, stale command rejection, close/in-flight safety |
-| `12` | Establish immutable structural and dynamic GameFramework-to-Renderer streams. | `11` | renderer runs without `GameWorld`, generation/order checks, feature preservation |
-| `12D` | Prove the two streams' access-driven layout, memory bounds, identity, and deterministic transform. | `12` | data/access inventory, layout alternatives, bytes/allocations/high-water, falsifier |
+| `MT-05` | Schedule eligible GameFramework system work from frozen owner inputs using declared hazards, exclusive outputs, and deterministic owner commit. | `MT-04` | mutation-during-work rejection, stable fan-in, serial/parallel equality, measured grain threshold |
+| `MT-06` | Transfer immutable render input through a bounded `RenderFrameQueue` to one render coordinator. | `MT-05` | explicit full policy, producer/consumer stress, stale-generation rejection, ordered close and shutdown |
+| `MT-07` | Consolidate existing Editor/tool background work onto owned `SparkleTasks` scopes without worker-side UI callbacks. | `MT-04` | bounded progress, late-result rejection, cancellation/close stress, replaced pool/thread deletion |
+| `MT-08` | Express eligible renderer preparation as dependency-ready tasks with exclusive outputs and deterministic join. | `MT-06` | preserved serial result and frame-graph input, crossover evidence, critical-path trace, no shared renderer mutation |
 
-## Phase 2 — Render Ownership and Persistent State
+Domain schema, UI behavior, import/cook behavior, renderer features, and data-layout redesign are prerequisites or separate work owned by their subject documents; they are not outcomes of these packages.
 
-| ID | Outcome | Depends on | Minimum evidence |
+## Phase 2 - Backend Recording Concurrency
+
+| ID | Concurrency outcome | Depends on | Minimum evidence |
 | --- | --- | --- | --- |
-| `13` | Establish `RenderCoordinator` ownership and a bounded `RenderFrameQueue`. | `12D` | backpressure policy, producer/consumer stress, ordered shutdown, latency baseline |
-| `14` | Move UI draw data, viewports, settings, and capture through owned render packets/commands. | `13` | no live ImGui/editor pointers, bounded capture/readback, late-result rejection |
-| `15` | Build persistent render-object and GPU-scene slots driven by structural/dynamic deltas. | `14` | stable identity, dirty-range updates, no routine full rebuild/upload |
-| `16` | Complete residency, capacity growth, reload, generation rejection, and token retirement. | `15` | delayed-GPU tests, memory high-water, replacement/retirement correctness |
-| `17` | Decompose renderer preparation into a dependency DAG with exclusive outputs and deterministic join. | `16` | serial/parallel equality, measured grain, critical-path trace, preserved frame graph |
+| `MT-09` | Add exclusive D3D12 allocator/list recording leases with bounded per-recording transient storage and completion-token retirement. | `MT-08` | wrong-owner rejection, delayed-retirement stress, native validation, serial/parallel recording equality and crossover |
+| `MT-10` | Implement the equivalent Vulkan pool/buffer lease and synchronization ownership contract. | `MT-09` | Vulkan validation/synchronization, parity with the public lease contract, delayed-retirement stress |
+| `MT-11` | Record compiled dependency-independent frame-graph groups concurrently while preserving single-owner ordered submission and presentation. | `MT-10` | compiled-order equality, barrier/queue correctness, randomized completion, tiny/heavy crossover on both backends |
 
-## Phase 3 — Backend Recording and Feature Closure
+The canonical [Renderer/RHI boundary](../RendererRhiBoundary.md) continues to own pass scheduling, barriers, resource lifetime, backend responsibility, and feature policy. This phase changes only recording concurrency and its lifetime edges.
 
-| ID | Outcome | Depends on | Minimum evidence |
+## Phase 3 - Concurrency Hardening and Evidence
+
+| ID | Concurrency outcome | Depends on | Minimum evidence |
 | --- | --- | --- | --- |
-| `18` | Add exclusive D3D12 allocator/list recording leases and bounded transient storage. | `17` | D3D12 validation, wrong-owner rejection, delayed retirement, recording crossover |
-| `19` | Add equivalent Vulkan pool/buffer recording leases and synchronization ownership. | `18` | Vulkan validation/synchronization, parity with D3D12 contract, retirement stress |
-| `20` | Compile eligible frame-graph recording groups and record them concurrently; keep ordered single-owner submission. | `19` | compiled-order equality, barrier/queue correctness, tiny/heavy crossover, both backends |
-| `21` | Reconcile raster, classic TLAS/PTLAS, reservoir/path modes, temporal/providers, shader packaging, capture, and fallback. | `20` | explicit feature matrix, paired backend validation, no hidden compatibility architecture |
-| `22` | Close editor/tools/package reliability and delete transition diagnostics, pools, adapters, and aliases. | `21` | clean package/run/shutdown, transactional tool outputs, zero intended stale references |
-
-## Phase 4 — Performance, Reliability, and Forensics
-
-| ID | Outcome | Depends on | Minimum evidence |
-| --- | --- | --- | --- |
-| `23` | Characterize the full system before broad tuning. | `22` | exact config, CPU/GPU timelines, p50/p95/p99, memory high-water, tiny/Tier 1 workloads |
-| `23A` | Audit whether each multithreaded stage beats its speed-of-light and complexity limits. | `23` | serial controls, overhead model, retained/removed parallel paths, negative results |
-| `24` | Close atomic publication, wait predicates, reclamation, cancellation, and shutdown protocols. | `23A` | state-machine documentation, race stress, spurious/lost wakeup tests, sanitizers where available |
-| `25` | Establish conservative worker, lane, third-party, SMT/NUMA, and oversubscription policy. | `24` | topology/config sweep, queue delay, tail latency, product default rationale |
-| `26` | Close deterministic fan-in and evidence gates for all retained parallel algorithms. | `25` | randomized completion, stable bytes/state/images/order, injected-defect detection |
-| `27` | Bound staged I/O, compiler/process work, cold PSO/resource creation, and publication hitches. | `26` | cold/warm traces, weighted memory/backpressure, transactional failure behavior |
-| `28` | Prove or reject GPU queue concurrency and frame-pipeline overlap with correlated pacing/latency evidence. | `27` | queue timelines, synchronization/bandwidth costs, input-to-present result, rollback path |
-| `29` | Complete production forensics and an expert-defensible architecture result. | `28` | reduced incidents/reproducers, exact claims/limits, reviewer-ready code/capture trail |
-
-## Phase 5 — Principal Path Tracing and Neural Graphics
-
-| ID | Outcome | Depends on | Minimum evidence |
-| --- | --- | --- | --- |
-| `30` | Freeze the path-tracing math/reference, workload, hardware/driver, and partner-shaped baseline. | `29` | known-value math tests, Bistro/San Miguel references, paired APIs, issue/reproducer template |
-| `31` | Select one product neural feature and establish dataset/model/operator/artifact/fallback contracts. | `30` | provenance, splits, baseline, deterministic export/cook, shapes/layout/precision, package boundary |
-| `32` | Integrate renderer-owned runtime inference through frame graph/RHI with a real classical fallback. | `31` | offline/runtime conformance, capability failure, D3D12/Vulkan behavior, clean runtime package |
-| `33` | Tune model, kernels, memory, system scheduling, and driver interaction on the quality-performance-memory frontier. | `32` | ablations, per-stage profiles, counters/disassembly where causal, pacing and failure cases |
-| `34` | Complete adoption handoff and reconcile all applicable principal evidence. | `33` | reproducible integration, fallback/debug/tuning guide, peer review, demo/note, honest claims |
+| `MT-12` | Prove or reject additional frame-pipeline or GPU-queue overlap independently of CPU task and recording concurrency. | `MT-11` | correlated timelines, synchronization/ownership-transfer cost, pacing and input-latency result, rollback or deletion of losing paths |
+| `MT-13` | Close atomic publication, wait predicates, reclamation, cancellation, queue-close, and shutdown state machines across retained paths. | `MT-07`, `MT-12` | state/transition record, spurious/lost-wakeup tests, race stress, available sanitizers/native validation |
+| `MT-14` | Establish bounded worker, lane, third-party-worker, SMT/NUMA, and oversubscription policy. | `MT-13` | topology/configuration sweep, queue delay and tail latency, memory ceiling, product-default rationale |
+| `MT-15` | Complete deterministic and performance evidence for every retained parallel path and delete transition-only concurrency code. | `MT-14` | serial oracle, randomized completion, 1/2/N results, tiny/representative crossover, shutdown proof, stale-reference audit |
 
 ## Changelist Design Gate
 
-Before Prompts `13`–`34`, identify the exact final files and owners for frame transfer, renderer state, GPU state, frame-graph integration, backend recording, editor/tool products, model artifacts, and feature policy. Reject parallel compatibility trees and numbered/catch-all files. The final path must be navigable by module → subsystem → capability.
+Before a package edits code, identify the final owners and files for only the concurrency concepts it changes: executor, scope/execution state, owner commit, publication queue, coordinator handoff, recording lease, synchronization protocol, or shutdown path.
+
+Reject a second runtime, per-subsystem pool, compatibility scheduler, duplicate queue, broad-lock fallback, numbered replacement, or public diagnostics framework. When a domain change becomes necessary to make the concurrency boundary valid, stop and route that change through the owning architecture or standard instead of absorbing it into this plan.
 
 ## Completion and Resumption
 
-A work package is complete only when its product outcome exists in current code, applicable preservation/deletion ledgers reconcile, required validation passes, and the [Change Process](../../Engineering/Standards/ChangeProcess.md#completion-report) reports `PASS`.
+A package is complete only when its concurrency outcome exists in current code, its serial behavior and terminal states match, replaced concurrency paths are removed, bounds and owner lifetimes are tested, and the [Change Process completion report](../../Engineering/Standards/ChangeProcess.md#completion-report) records `PASS`.
 
-When current architecture has superseded an intermediate prompt mechanism, retain the prompt ID as traceability, update the outcome/evidence row if necessary, and prove the enduring invariant through the current owner. Do not restore obsolete code to satisfy historical wording.
+When current architecture supersedes an earlier mechanism, prove the enduring concurrency invariant through the current owner. Do not restore obsolete code to satisfy historical prompt wording.
 
 ## Final Plan Gate
 
-The program is complete when:
+The multithreading plan is complete when:
 
-- J's owner, publication, task, render, RHI, editor/tool, failure, and shutdown contracts are implemented and evidenced;
-- each retained parallel path has a useful measured crossover and bounded memory cost;
-- both supported backends and declared feature paths pass their relevant validation;
-- current workloads satisfy their applicable quality/performance gates without scene-specific architecture;
-- one path-traced and one real neural vertical slice meet the canonical `PGE-*` evidence bar;
-- replaced architecture, temporary diagnostics, stale prompts, and compatibility aliases are removed or explicitly archived;
-- another engineer can reproduce, debug, and adopt the result from the current documentation and code.
+- one bounded task runtime serves retained owned CPU work;
+- all mutable cross-thread paths have named owners and explicit immutable-transfer, lease, or synchronization contracts;
+- owner commits and fan-in are deterministic and serial-equivalent;
+- frame publication, render recording, submission, cancellation, and shutdown remain bounded and settle correctly;
+- each retained parallel mechanism beats its measured serial crossover without unacceptable memory, pacing, or latency cost;
+- competing pools, schedulers, queues, waits, aliases, and transition diagnostics are removed;
+- current code, tests, and traces reproduce the claimed concurrency behavior.
+
+Completion of this plan makes no claim that unrelated renderer, content, neural, portfolio, or product-roadmap outcomes are complete.

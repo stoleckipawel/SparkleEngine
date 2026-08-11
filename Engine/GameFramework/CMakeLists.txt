@@ -56,5 +56,21 @@ target_link_libraries(SparkleGameFramework
 
 sparkle_configure_runtime_support_artifacts(SparkleGameFramework)
 
+add_executable(CameraMovementSystemTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CameraMovementSystemTests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/World/Systems/CameraMovementSystem.cpp
+)
+target_include_directories(CameraMovementSystemTests
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Public
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+target_link_libraries(CameraMovementSystemTests PRIVATE SparkleCore)
+target_compile_features(CameraMovementSystemTests PRIVATE cxx_std_20)
+add_test(NAME camera_movement_system COMMAND CameraMovementSystemTests)
+set_tests_properties(camera_movement_system PROPERTIES LABELS "GameFramework;Camera")
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_GAMEFRAMEWORK_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_GAMEFRAMEWORK_PRIVATE_SOURCES} ${SPARKLE_GAMEFRAMEWORK_PRIVATE_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/CameraMovementSystemTests.cpp)
