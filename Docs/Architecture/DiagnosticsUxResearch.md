@@ -2,7 +2,7 @@
 
 Status: research reference; external precedent and option analysis, not proof of current implementation
 
-Research reconciliation: 2026-08-11
+Research reconciliation: 2026-08-12
 
 Scope: the visual and functional design of performance diagnostics for SparkleEngine, with emphasis on Epic Games, NVIDIA, and AMD products; data acquisition and implementation sequencing are intentionally secondary
 
@@ -18,6 +18,7 @@ The selected Sparkle behavior belongs to [Performance Diagnostics Architecture](
 - [Editor and Tools](../Engineering/Standards/EditorAndTools.md), which rejects UI-owned engine truth and incidental public diagnostic APIs;
 - [Graphics Engineering](../Engineering/Standards/GraphicsEngineering.md), which owns graphics evidence expectations;
 - [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md), including `MAP-00`, reproducible captures, and reviewer routes.
+- [External Performance Profiler Runbook](DiagnosticsProfilerRunbook.md), which owns version-sensitive tool capability, capture-build preparation, marker interoperability, and source revalidation.
 
 The research deliberately separates product design from collection design. A compelling screen is not evidence that its fields can be measured cheaply or correctly. Every selected view therefore states its minimum semantic inputs and escalation boundary, but leaves concrete data structures and thread-safe publication to the owning architecture.
 
@@ -31,7 +32,7 @@ Sparkle does not need to clone Unreal Insights, Nsight Graphics, or Radeon GPU P
 | `PGE-06`: D3D12/Vulkan queues, commands, barriers, descriptors, memory, pipelines, shaders, presentation | Sparkle should orient and expose stable names; external frame/system profilers remain the detailed authority. Backend/configuration must always be visible. |
 | `PGE-10`: counters, disassembly, concurrency evidence | The UI must make the handoff from a selected Sparkle marker to PIX/Nsight/RGP/RGA obvious. It must not invent hardware conclusions from timestamps. |
 | `PGE-13`: bounded graphics-analysis tool and productization | A focused, polished GPU marker capture is valuable; a generic trace analysis application is out of scope. |
-| `MAP-00`: fixed route, CPU/GPU p50/p95, RAM/private, VRAM, manifest, screenshot | The primary Performance workspace must be screenshot-readable and export the same definitions it displays. |
+| `MAP-00`: fixed route, CPU/GPU p50/p95, process working/private memory, precise GPU memory fields, manifest, screenshot | The primary Performance workspace must be screenshot-readable and export the same definitions it displays. |
 | Portfolio review | The first screen tells the bottleneck story in under 90 seconds; drill-down supports a 10-minute review; raw captures and methods support specialist audit. |
 | Engineering standards | No UI-side scans, unbounded histories, arbitrary module registration, public provider sprawl, capture-time files by default, or diagnostic mode that silently changes renderer topology. |
 
@@ -65,7 +66,7 @@ The direct acceptance center is therefore `PGE-05`, `PGE-06`, `PGE-10`, and `PGE
 
 | Gate/package | Required contribution from diagnostics | Design correction from this audit |
 | --- | --- | --- |
-| `MAP-00 Evidence Harness` | Fixed resolution/readiness, exact configuration, named screenshot, raw CPU/GPU samples, RAM/VRAM snapshot, manifest linkage. | Make this the first shipped subset; do not wait for every Stats group or the GPU Visualizer. |
+| `MAP-00 Evidence Harness` | Fixed resolution/readiness, exact configuration, named screenshot, raw CPU/GPU samples, process RAM/GPU memory snapshot, manifest linkage. | Make this the first shipped subset; do not wait for every Stats group or the GPU Visualizer. |
 | `WL-04 Measured Frame` | Three runs of at least 300 warm frames; CPU/GPU p50/p95/p99/worst; per-pass and queue overlap; render stages and workload counts; memory/residency/RT/compilation facts; paired API captures. | Add a benchmark-only evidence contract beyond the live 120-frame p50/p95 UI. The workload-owned Python analysis, not ImGui, computes uncertainty and comparisons. |
 | Three bottleneck studies / `WL-07` | Predeclared hypothesis, serial/control, distinguishing trace/counter, scoped change, correctness, before/after distributions, rejected alternative, regression threshold. | Add study-state and capture links to evidence design, but no experiment manager to the Editor. One study must be allowed to conclude `Do not ship`. |
 | `CASE-02 One Frame, Two APIs` | Same semantic route/pass across D3D12 and Vulkan; resource/barrier/descriptor/pipeline/RT-build comparison; difficult incident and reduced repro. | Make semantic marker paths and configuration hashes the join key; do not compare unlike API event names or assume identical implementation. |
@@ -112,7 +113,7 @@ Sparkle should own D0-D2 broadly and one bounded D3 GPU-marker workflow. D4-D5 b
 | GPU execution | queue span, marker intervals, dependencies, timestamps, validity | queue lanes synchronized with marker tree/table | queue -> submission/batch -> RDG pass -> bounded child marker | PIX GPU Capture, Nsight GPU Trace, RGP |
 | GPU API/state | draws/dispatches, barriers, pipelines, descriptors, inputs/outputs | event list and state/resource inspector | marker -> command buffer -> event -> state/resource | PIX or RenderDoc |
 | RAM | working set, private commit, tracked used, allocator blocks, category, high-water | trend and category table | process -> category -> owner; allocation site only externally | WPA/heap tool/Memory Insights equivalent |
-| VRAM/residency | tracked resources, heap/block usage, local/non-local usage/budget, retirement, paging | budget trend, category table, optional snapshot delta | segment/heap -> allocation -> resource | PIX memory, RMV, Nsight/driver tool |
+| GPU memory/residency | tracked resources, heap/block usage, local/non-local usage/budget, retirement, paging | budget trend, category table, optional snapshot delta | segment/heap -> allocation -> resource | PIX memory, RMV, Nsight/driver tool |
 | Shader/hardware | shader identity, duration association, ISA, occupancy, registers, stalls, bandwidth/cache | selected-event details plus source/ISA/counter views | marker/event -> pipeline -> shader stage -> function/instruction | Nsight Shader Profiler, RGP/RGA |
 | Workload/cardinality | passes, submissions, draws, dispatches, instances, triangles, uploads | compact counters beside timing | renderer stage -> owned count | Frame debugger or owner-specific capture |
 | Compilation/loading | compile/load wall, queueing, cache hit/miss, hitch correlation | event annotations on frame trend and bounded aggregate | operation family -> stable asset/shader token | CPU/system trace and artifact logs |
@@ -233,7 +234,7 @@ AMD's suite is strongest when treated as a set of distinct questions rather than
 | Why is CPU work slow? | [AMD uProf](https://docs.amd.com/r/en-US/57368-uProf-user-guide/uProf-User-Guide) | Separate thread timeline/concurrency and wait hotspots from source hotspots; use PMC/IBS data-access, cache, branch, CPI/IPC, and false-sharing evidence only for a predeclared CPU hypothesis. |
 | Why did the GPU fault? | RGD | Preserve last marker hierarchy, page-fault context, machine/build identity, and the reduced reproducer. |
 
-Chris Hesik's [RGP/Radeon Developer Panel guidance](https://gpuopen.com/learn/rgp-1-13-rdp-2-6/) explicitly recommends profiling-only mode unless simultaneous memory tracing is needed, because combining modes adds overhead. This becomes a general Sparkle rule: enable the minimum collector that can distinguish the current hypotheses, make observer mode visible, and never compare runs with silently different capture modes. AMD's RMV workflow also demonstrates that a memory trace and a point-in-time snapshot answer different questions; Sparkle must not flatten both into one `VRAM` number.
+Chris Hesik's [RGP/Radeon Developer Panel guidance](https://gpuopen.com/learn/rgp-1-13-rdp-2-6/) explicitly recommends profiling-only mode unless simultaneous memory tracing is needed, because combining modes adds overhead. This becomes a general Sparkle rule: enable the minimum collector that can distinguish the current hypotheses, make observer mode visible, and never compare runs with silently different capture modes. AMD's RMV workflow also demonstrates that a memory trace and a point-in-time snapshot answer different questions; Sparkle must not flatten both into one ambiguous GPU-memory number.
 
 ## Integration Architecture Study
 
@@ -300,170 +301,20 @@ The three ecosystems converge on the following design laws:
 | Separate standalone Sparkle profiler app | Keeps heavy UI out of Editor | Requires storage/protocol/tooling platform before core measurements are mature | Defer; reconsider only if a named workload demands D4 analysis |
 | Hybrid diagnostics ladder | Cheap overlay + one joined Performance workspace + bounded GPU capture + external handoff | Requires disciplined shared identity and view scope | Select |
 
-## Selected Sparkle Information Architecture
+## Selected Direction And Canonical Handoff
 
-### Product Surfaces
+The hybrid diagnostics ladder is the selected result of this research: cheap compact orientation, one joined Performance workspace, a bounded captured-frame GPU view, explicit evidence export, and stable handoff to specialized external tools. The detailed specification now lives with its durable owners instead of being repeated in this research record.
 
-Sparkle should expose three first-party surfaces, all reading the same immutable diagnostic products:
+| Selected concern | Adopted boundary | Canonical owner |
+| --- | --- | --- |
+| Product depth and surfaces | At most four composable compact groups; one fixed Overview/CPU/GPU/Memory workspace; external tools for causal depth. | [Product information architecture](PerformanceDiagnosticsArchitecture.md#diagnostics-product-information-architecture) |
+| Physical/logical ownership and metric meaning | Physical CPU thread rows, logical phases inside their real owners, independent GPU queues, distinct memory definitions, explicit validity. | [Measurement and view contracts](PerformanceDiagnosticsArchitecture.md#measurement-vocabulary) |
+| Selection and interaction | One shared frame/range/object selection; hitches are frame selections; GPU capture stays inside the GPU view; filtering never changes totals. | [Workspace interaction contract](PerformanceDiagnosticsArchitecture.md#workspace-interaction-contract) |
+| Visual and failure behavior | Milliseconds lead, color is never the only signal, configuration remains visible, and pending/stale/unsupported/lost states never masquerade as zero. | [Visual and accessibility rules](PerformanceDiagnosticsArchitecture.md#visual-validity-and-accessibility-rules) |
+| Concrete product presentation | Integrated graphical mockups, every compact group, fixed workspace views, evidence actions, keyboard baseline, and failure states. | [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsAsciiWireframes.md) |
+| Resource inspector boundary | Existing shader, mesh, and texture tools remain asset inspectors unless an accepted migration removes the old route; they do not own system performance truth. | [Product surfaces and depth boundary](PerformanceDiagnosticsArchitecture.md#product-surfaces-and-depth-boundary) |
 
-| Surface | Location | Purpose | Lifetime |
-| --- | --- | --- | --- |
-| Compact Stats | Editor viewport and DevelopmentGame overlay | D0-D1 glance/orientation; at most four composable fixed groups | Live and cheap; default can be off |
-| Performance workspace | One Editor window opened from `Windows > Performance`, viewport summary, console command, or hitch selection | D1-D3 trend, correlated CPU/GPU/memory inspection, frozen capture, explicit evidence export | Live or frozen; one window, fixed views |
-| External-tool handoff | Actions and guidance from selected workspace objects | D4-D5 capture with PIX/RenderDoc/Nsight/RGP/RMV/RGA/WPA | Explicit, tool-specific workflow |
-
-Do not add `CPU Profiler`, `Memory Profiler`, `Hitch Browser`, and `GPU Visualizer` as unrelated windows. The GPU visualizer is the `GPU / Captured frame` mode inside Performance. Hitches are selections in the shared frame navigator. Memory snapshot comparison is a mode of Memory if it is ever admitted, not another permanent panel.
-
-Existing Used Shaders/Meshes/Textures windows remain asset/resource inspection tools until a separately approved consolidation can delete an old path. They must not become parallel owners of whole-system timing or memory totals.
-
-### Performance Workspace Composition
-
-```text
-+ Performance ----------------------------------------------------------------+
-| LIVE | Frame 18422 | D3D12 | 5120x1392 | DevEditor | Basic | valid 120/120  |
-| [Overview] [CPU] [GPU] [Memory]           [Freeze] [Capture GPU] [Export...]  |
-+ Frame navigator -------------------------------------------------------------+
-| 16.7 ms budget  .........^ hitch #18391 .......... selected #18422 ......... |
-+ Main view ------------------------------------------------+ Inspector --------+
-| synchronized summary / lanes / trend / tree / table       | selection name    |
-|                                                           | identity + owner  |
-|                                                           | timing/bytes/work |
-|                                                           | validity + source |
-|                                                           | next action       |
-+ Status ----------------------------------------------------------------------+
-| likely GPU-limited | 0 lost | memory age 0.4 s | timestamps resolved +2 frames|
-+------------------------------------------------------------------------------+
-```
-
-The layout is deliberately stable:
-
-- Context ribbon: source mode, selected frame/range, build/backend/configuration, collection level, sample quality.
-- Fixed view tabs: Overview, CPU, GPU, Memory. Tabs change the main representation but not the active selection.
-- Frame navigator: a compact rolling frame/budget graph in every tab. Clicking chooses a frame; dragging chooses a range; `Live` follows the newest completed joined sample.
-- Main view: the domain-specific timeline, tree, trend, or table.
-- Inspector: details for the selected frame/range/thread/phase/queue/marker/category; it never owns independent polling.
-- Status/footer: likely-domain hint, missing/lost/stale data, observer mode, and one honest next action.
-
-Arbitrary dashboard tiles, user-authored layouts, plugin tracks, and detachable subpanes are not part of the initial product.
-
-### View Contracts
-
-#### Overview
-
-Overview is the reviewer and triage first screen. It shows:
-
-- frame interval latest/p50/p95/worst against the declared budget;
-- host/game/editor non-wait wall, render wall, task critical indicators, GPU queue span, present/throttle wait;
-- process working set/private commit and GPU local usage/budget with run high-water;
-- one likely-domain explanation with supporting observations and uncertainty;
-- exact configuration and one suggested deeper action.
-
-Use aligned rows and a compact timeline, not a wall of decorative cards. The domain with the largest number is not automatically the bottleneck because pipelined stages overlap and waits may be consequences.
-
-#### CPU
-
-CPU must lead with physical ownership:
-
-```text
-Sparkle.EditorThread  | Host | Gameplay | Extract | Editor UI | Wait(backpressure)
-Sparkle.RenderThread  | Setup | Graph compile | Record | Submit | Present
-Sparkle.Task.FC.0     | task A | ready gap | task B | join
-Sparkle.Task.BG.0     |                  background task
-Sparkle.Task.IO.0     | IO wait
-```
-
-- Rows are named OS threads first; logical phases appear within the owning row.
-- Phase tables show wall time, known classified waits, count, p50/p95/max, and source/validity.
-- Task lanes stay distinct from parent-thread wall and never get added into a fake CPU total.
-- Ready/preempted/running state and arbitrary third-party thread stacks require WPA, PIX Timing, or Nsight Systems.
-- If Editor gameplay currently runs as a phase on `Sparkle.EditorThread`, label it that way. A conventional engine architecture does not make a dedicated game or render thread universal; Sparkle reports its actual topology.
-
-#### GPU
-
-GPU has two modes over one vocabulary:
-
-1. Live: queue spans and a bounded recent top-pass ranking for trend/orientation.
-2. Captured frame: frozen queue timeline plus hierarchical marker table and inspector.
-
-```text
-Graphics | [GBuffer][------------- Lighting -------------][Composite][UI]
-Compute  |              [Async region]
-Copy     | [Upload]
-
-Marker                                 Inclusive  Exclusive  % Queue  Work
-Queue.Graphics                          159.30 ms    4.90 ms   100.0
-`- Lighting                              132.40 ms   12.70 ms    83.1   3 D
-   |- ReservoirUpdate                     38.00 ms   38.00 ms    23.9   1 D
-   `- DirectLighting                      54.20 ms   54.20 ms    34.0   1 D
-```
-
-Hierarchy, Flat Inclusive, Flat Exclusive, and Coalesced are alternative views of the same frozen records. Search only hides rows. Selecting a row highlights its interval and fills the inspector with token, full marker path, queue, parent, submission/chunk identity, timestamps, draw/dispatch counts, validity, and `Copy marker path`.
-
-Sparkle does not claim cross-queue additivity, GPU idle from an unattributed interval, or hardware cause from a duration. A selected marker offers the relevant PIX/RenderDoc/Nsight/RGP workflow.
-
-#### Memory
-
-Memory separates definitions before detail:
-
-- RAM: working set, private commit, engine-tracked used, allocator block/committed bytes.
-- VRAM: engine-tracked resources, allocator blocks, API/OS local and non-local usage/budget, pending retirement.
-- Each top row includes current, high-water, budget when defined, and sample age.
-- Fixed engine-owned categories use a trend and aligned table; categories do not have to sum to OS process/driver totals.
-- A future explicit A/B snapshot comparison may show category/resource deltas only when an acceptance workload needs it.
-- Allocation callstacks, arbitrary heap queries, fragmentation maps, page-level residency, and leak verdicts belong to external memory tools.
-
-#### Frame Navigator And Hitches
-
-The shared frame navigator is more useful than a separate hitch panel:
-
-- bars encode frame interval against budget and expose invalid/discontinuity gaps;
-- a click selects one `FrameId`; a drag selects a bounded aggregate range;
-- hitch markers carry likely domain and worst known phase/pass token;
-- `Previous hitch`/`Next hitch` moves the same selection through all tabs;
-- range selection changes percentile/aggregate columns and is always visible in the ribbon;
-- selecting a frame with delayed GPU data shows `Pending`, not a value from a different frame.
-
-### Interaction And Selection Rules
-
-| Action | Result |
-| --- | --- |
-| Click viewport summary | Open Performance Overview following the newest valid joined frame. |
-| Click frame bar | Freeze selection on that `FrameId`; all tabs and inspector use it. |
-| Drag frame range | Aggregate only valid samples in the declared interval; display included/excluded count. |
-| Click CPU phase/GPU marker/memory category | Select one typed object and update highlight, inspector, copy path, and next action. |
-| Double-click GPU marker | Zoom queue timeline to its interval and expand its hierarchy path. |
-| Search/filter | Hide nonmatching rows without changing totals, percentages, or selected identity. |
-| Switch tab | Preserve selected frame/range; carry a semantic token only when the destination has a valid correlation. |
-| Freeze/return Live | Stop/start following publication; collection demand changes only through an explicit control. |
-| Capture GPU | Arm the bounded next-frame capture and show state in the existing GPU tab. |
-| Export | Open an explicit summary/evidence action; never write continuously. |
-
-Keyboard baseline: Space toggles Live/Freeze, left/right steps frames, Shift+left/right moves between hitches, F focuses search, Home fits the active timeline, Escape clears the object selection before closing the window. Exact bindings remain target UX until implemented and user-tested.
-
-### Visual Language
-
-- Milliseconds lead for time; FPS is derived and secondary. Bytes use binary units; percentages name their denominator.
-- Use the same category colors across compact overlay, overview, lanes, and capture. Queue colors remain stable; logical-phase color does not pretend to be a physical thread.
-- Budget color applies to measured values: neutral/below budget, warning/over budget, critical/over twice budget. Gray/hatching indicates invalid, stale, unsupported, or absent samples.
-- Never communicate validity or severity with color alone. Text/icon and tooltip carry the same state.
-- Keep labels readable in screenshots. Abbreviations are reserved for narrow overlays and explained by headings/tooltips.
-- Stable row order precedes hot-value sorting on the Overview. Ranking tables may sort by a selected metric and must show the active sort.
-- Inclusive and exclusive columns are adjacent. A visible warning accompanies flat-inclusive/coalesced sums because nesting can double count.
-- Configuration and observer mode remain visible when the user scrolls or captures a screenshot.
-
-### Empty, Pending, And Failure States
-
-| State | Required UX |
-| --- | --- |
-| Warming up | `N / required valid samples`; no premature percentile or bottleneck hint |
-| GPU resolving | Selected `FrameId`, expected delayed resolution, nonblocking progress state |
-| No queue work | `No submitted compute work`, distinct from unsupported or zero duration |
-| Unsupported | Missing capability and next external/alternative action |
-| Stale memory | Last sample age and cadence; never repeat it as if frame-correlated |
-| Lost/cap exceeded | Retained count, lost count/reason, and which view is incomplete |
-| Discontinuity | Resize/reload/device/route marker; sample excluded from distributions by named rule |
-| External capture active | Capture tool/mode and observer warning; internal timestamp suppression if applicable |
-| Device loss/shutdown | Frozen invalid result with reason; no blocking wait or silent disappearance |
+This handoff preserves the adopted decisions while keeping research focused on precedents, options, tradeoffs, and why the hybrid direction won. The following low-clutter principles remain here because they summarize the implementation consequences drawn from the research.
 
 ## Low-Clutter Integration Principles
 
@@ -497,7 +348,7 @@ This reconciliation is not a request to refactor the current panels now. It esta
 One implementation slice should intentionally produce four readable artifacts:
 
 1. Hero: Sponza viewport plus compact `Stat Unit`/memory summary and exact configuration.
-2. Triage: Performance Overview showing frame distribution, physical CPU owners, GPU queue/pass ranking, RAM/VRAM, likely domain, and next action.
+2. Triage: Performance Overview showing frame distribution, physical CPU owners, GPU queue/pass ranking, process RAM plus local/non-local GPU memory, likely domain, and next action.
 3. Focused GPU: captured marker timeline/tree with inclusive/exclusive columns and a selected pass path found in PIX/Nsight/RGP.
 4. Experiment: aligned baseline/change table with p50/p95/p99 or required percentiles, high-water values, capture links, and causal caveat.
 
@@ -512,6 +363,30 @@ This research recommends design validation in this order; it is not an implement
 3. Validate Memory definitions and category ownership before drawing any graph.
 4. Prototype Performance interactions using fake immutable data: live/frozen, frame/range selection, pending/invalid, filters, inspector, GPU capture state.
 5. Only after the product questions survive review, design producer/publication slices in the canonical architecture.
+
+## Source Quality, Adoption, And Revalidation
+
+The catalog below is evidence for precedent, not a flat list of equally current authorities. Use sources according to what they can actually support:
+
+| Source kind | Appropriate use | Misuse to avoid |
+| --- | --- | --- |
+| Current API specification/reference | Timestamp stage/frequency/valid bits, calibration deviation, heap-budget scope, presentation stages, and other normative API semantics. | Inferring Sparkle ownership, cost, or tool UX from the API alone. |
+| Current tool manual/support matrix/release page | Current API/OS/hardware capability, activity distinction, marker support, and known limitations. | Treating a successful capture on one system as universal support. |
+| Current engine feature documentation | Product ladder, information architecture, terminology, and interaction precedent. | Copying engine internals or assuming the wrapper page's examples are current implementation truth. |
+| Historical blog/tutorial/video | Investigation method, teaching pattern, and design rationale that remains useful. | Using its version, performance number, capability matrix, or screenshots as current proof. |
+| API/class index | Discovering names and navigation entry points. | Treating an index as a semantic or UX specification. |
+
+Specific reconciliations from this study:
+
+- Epic's realtime GPU profiling page retains useful diagnostic-ladder ideas but contains historical UE4-era material; the current Timing Insights, Memory Insights, Stat Commands, and RDG documents are stronger current product sources.
+- Epic's ProfileVisualizer page is mainly an API/class index. It supports vocabulary discovery, not a complete claim about current user workflow or measurement semantics.
+- RenderDoc release/support material is current; its Vulkan wiki is an older workflow aid and must not anchor a current capability claim.
+- Current NVIDIA material distinguishes GPU Trace/Shader Profiler support on D3D12 and Vulkan from the live Shader Debugger's Vulkan-only support. "Nsight supports this API" is too broad unless the activity is named.
+- Current AMD material distinguishes RGP profiling, RMV trace/snapshot/comparison, RRA acceleration-structure analysis, and RGD crash breadcrumbs. Their metrics and artifacts are complementary, not interchangeable.
+- The 2022 AMD capture-overhead article remains good method precedent, but its versions and support statements are historical.
+- PIX Comparison is useful precedent for exposing selected sample `N`, histograms, p-values, and low-sample warnings. Sparkle adopts visibility of population and distribution, not a p-value-only regression policy; the canonical architecture owns practical effect bands, per-run results, correlation-aware uncertainty, and `Inconclusive`.
+
+When a source changes, record the narrow claim, source section, version/date, adopted behavior, what was not inferred, and revalidation trigger. The [profiler runbook's current matrix](DiagnosticsProfilerRunbook.md#source-and-version-reconciliation) owns operational versions; this research keeps only the durable product lesson.
 
 ## Source Catalog
 

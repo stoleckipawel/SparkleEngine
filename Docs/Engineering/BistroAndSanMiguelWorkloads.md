@@ -2,9 +2,11 @@
 
 Status: canonical flagship workload contract
 Date: 2026-07-26
+
+Last performance-contract reconciliation: 2026-08-12
 Scope: content ingestion, material and lighting correctness, raster/ray/path-traced quality, whole-system performance, neural rendering evidence, and portfolio presentation
 
-This document owns scene selection and exact workload-specific proof gates. [Principal Graphics Requirements](../Strategy/Requirements.md) owns capability/evidence meaning, while [Engineering Standards](Standards/README.md) owns reusable implementation and measurement rules.
+This document owns scene selection and exact workload-specific proof gates. [Principal Graphics Requirements](../Strategy/Requirements.md) owns capability/evidence meaning, [Engineering Standards](Standards/README.md) owns reusable implementation and measurement rules, and [Performance Diagnostics Architecture](../Architecture/PerformanceDiagnosticsArchitecture.md) owns metric/population/provenance semantics used by these gates. Revalidate external capture capability through the [External Performance Profiler Runbook](../Architecture/DiagnosticsProfilerRunbook.md).
 
 ## Decision
 
@@ -254,12 +256,14 @@ Every supported map uses the following sequence. A checkpoint folder owns its ow
 | `MAP-B Acquire` | Verify required files, publisher/version/license metadata, archive bytes, and recorded SHA-256. Built-in content records `repository content` instead of fabricating an archive step. | Provenance block with every required path present. |
 | `MAP-C Cook` | Run the required cook, capture warnings/errors, verify the selected scene/mesh/material/texture products, and state which project-wide products were reused. | Cook log, selected-product inventory, deterministic hashes where available, and zero uncategorized errors. |
 | `MAP-D Load and settle` | Launch with `SPARKLE_STARTUP_LEVEL`, prove the requested level became active, wait for the evidence-ready signal, and reject device removal, fatal diagnostics, or unresolved selected assets. | Active-level identity, settled frame ID, load duration, warning/fallback list, and clean fatal-error check. |
-| `MAP-E Stabilize and measure` | Hold the frozen camera for 300 warm-up frames after readiness, then sample at least 300 frames with VSync/presentation policy recorded. | CPU median/P95 ms, GPU-active median/P95 ms, derived FPS, RAM/private memory, VRAM when available, sample count, and raw timing artifact. |
+| `MAP-E Stabilize and measure` | Hold the frozen camera for 300 warm-up frames after readiness, then sample at least 300 frames with VSync/presentation policy recorded. | CPU median/P95 ms, GPU-active median/P95 ms, derived FPS, process working/private memory, tracked/allocator/local/non-local GPU memory where available, valid/original/excluded sample counts, provenance, and raw timing artifact. |
 | `MAP-F Capture and inspect` | Capture the lit viewport after the measured window. Inspect exposure, framing, geometry, transforms, materials, textures, normals/tangents, alpha, lighting, animation where applicable, and obvious temporal instability. | Level-named image, capture frame/config sidecar, and a `Pass`/`Warning`/`Fail` observation for every applicable visual category. |
 | `MAP-G Review` | Present only this map's screenshot, numbers, logs, known fallbacks, and defects. Classify each defect as content, importer/cooker, renderer, camera/lighting, performance, or harness. | User decision: `Accepted`, `Accepted with follow-up`, `Deferred`, or `Rejected`. No next-map work begins here. |
 | `MAP-H Restore` | Restore external packs and level defaults to their prior opt-in state. Preserve accepted evidence and create explicit follow-ups for warnings/failures. | Catalog diff check, evidence links, and closed checkpoint status. |
 
 The first comparison profile is `DevelopmentGame`, D3D12, the discrete NVIDIA adapter, fixed startup resolution, VSync disabled, a frozen initial camera, and recorded image-provider fallbacks. Vulkan, editor overhead, alternate cameras, ray-traced/reference modes, and image-provider comparisons are later routes; they must not be silently mixed into the first per-map number.
+
+`MAP-E` proves one harness run and its definitions. It is not a statistically definitive optimization result; `WL-04` and the Performance Contract below own repeated-run evidence.
 
 #### One-map review order
 
@@ -442,17 +446,19 @@ Provisional gates, to be revised once the first honest baseline is captured:
 The benchmark protocol records:
 
 - cold launch, cold content load, warm content load, and time to first correct frame;
-- at least 300 warm frames per fixed route segment and at least three runs;
+- at least 300 warm valid frames per fixed route segment and at least three runs as the acceptance floor, with per-run identity retained;
 - CPU and GPU p50/p95/p99 frame times plus worst frame;
 - per-pass GPU times and queue overlap;
 - scene extraction, culling, frame-graph compile, command recording, submission, and present CPU times;
 - draw, dispatch, pipeline, shader package, descriptor, barrier, and queue counts;
-- committed and resident RAM/VRAM high-water marks;
+- process working set/private commit, tracked GPU allocations/allocator blocks, local/non-local usage and mutable budget, residency where supported, and separately identified process-lifetime/session/run high-water marks;
 - texture upload, eviction, mip/residency, and missing-resource events;
 - BLAS/TLAS count, source geometry, build/update/compaction time, scratch/result memory, and traversal-sensitive experiments;
 - compilation/cache state and pipeline creation hitches;
 - image-quality setting, sample count, reconstruction mode, and dynamic-resolution state;
 - exact engine/content/configuration hashes.
+
+The minimum run/sample count does not make a result automatically definitive. Analysis follows the [comparison and regression contract](../Architecture/PerformanceDiagnosticsArchitecture.md#comparison-and-regression-contract): per-run distributions are primary, a combined view is secondary, exclusions and tail `FrameId` values remain visible, worst-to-worst comparison requires equal `N` or an explicit model, and the predeclared decision combines absolute/relative practical-effect bands with a correlation-aware uncertainty method. An interval overlapping the practical-effect band is `Inconclusive`; a p-value alone never closes the gate.
 
 Every optimization case study requires:
 
@@ -567,7 +573,7 @@ Bistro is complete for the six-month portfolio only when:
 - the flagship cameras have deterministic high-sample references;
 - raster/hybrid and ray/path modes meet their declared correctness and measured performance budgets or clearly report the remaining miss;
 - D3D12 and Vulkan have comparable semantic output and an explained workload delta;
-- CPU, GPU, RAM/VRAM, descriptor, residency, pipeline, and acceleration-structure behavior are measured;
+- CPU, GPU, process RAM, precise local/non-local GPU memory/residency, descriptor, pipeline, and acceleration-structure behavior are measured;
 - three causal bottleneck studies are complete;
 - the neural feature is real runtime inference with a classical fallback and held-out generalization result;
 - a clean reviewer path, source attribution, video, captures, tables, and limitations exist;

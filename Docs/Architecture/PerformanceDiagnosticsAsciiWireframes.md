@@ -1,18 +1,60 @@
-# Performance Diagnostics ASCII Tool Wireframes
+# Performance Diagnostics Visual Design And Tool Wireframes
 
 Status: design visualization of a target proposal; not proof of current implementation or measured performance
 
-Last reconciled with the target architecture: 2026-08-12
+Last reconciled with the target architecture: 2026-08-13
 
-Scope: implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md)
+Scope: graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md)
 
 ## Purpose And Authority Boundary
 
-This document shows how each proposed Sparkle diagnostics surface could look. It is a visual reading aid for product review and implementation planning. The owning architecture defines metric meaning, ownership, bounds, collection modes, validity, and acceptance rules. If a wireframe conflicts with that architecture, the architecture wins.
+This document shows how each proposed Sparkle diagnostics surface could look. It is the single visual-design owner for graphical mockups, the system-scope map, and plain-text tool layouts. It is a reading aid for product review and implementation planning. The owning architecture defines metric meaning, ownership, bounds, collection modes, validity, and acceptance rules. If a mockup or wireframe conflicts with that architecture, the architecture wins.
 
 The values below are illustrative and deliberately reused across views. They are not Sponza measurements, benchmark evidence, or proof that a surface is implemented. The source-backed starting point remains the existing viewport FPS/delta display; the layouts below describe the target product.
 
-All boxes use plain ASCII characters so they remain readable in terminals, source reviews, and plain-text exports.
+The graphical mockups communicate the overall experience and information hierarchy. The later boxes use plain ASCII characters so individual tools remain readable in terminals, source reviews, and plain-text exports.
+
+## Graphical Product Mockups
+
+Read the mockups from broad orientation to focused evidence:
+
+1. Overview shows the normal triage surface integrated into the current Editor shape.
+2. CPU shows physical thread ownership, logical phases, task lanes, waits, and ready delay.
+3. GPU shows the bounded captured-frame hierarchy and inclusive/exclusive marker costs.
+4. Memory shows distinct RAM/GPU definitions, event history, and controlled A/B/C checkpoints.
+5. System Scope shows the implementation boundary from engine producers through first-party surfaces and external profilers.
+
+### Integrated Performance Overview
+
+![SparkleEngine Performance Overview mockup](Images/Diagnostics/sparkle-performance-overview-mockup-v2.png)
+
+This is the first reviewer and triage screen: fixed configuration, frame navigator, aligned CPU/GPU/memory facts, one likely-domain explanation, and one next action. It does not claim causal proof.
+
+### CPU And Threading
+
+![SparkleEngine CPU diagnostics mockup](Images/Diagnostics/sparkle-performance-cpu-mockup.png)
+
+Physical Sparkle threads are the rows. Gameplay and renderer phases remain logical blocks inside the thread that actually executes them. Task lanes are separate and are never summed into a fabricated CPU total.
+
+### GPU Captured Frame Mockup
+
+![SparkleEngine GPU captured-frame mockup](Images/Diagnostics/sparkle-performance-gpu-capture-mockup.png)
+
+Queue lanes, frame-graph marker hierarchy, and adjacent inclusive/exclusive columns answer marker-level attribution. The selected marker carries its stable path into PIX, RenderDoc, Nsight, or RGP for API, resource, shader, and hardware evidence.
+
+### RAM, GPU Memory, And Residency
+
+![SparkleEngine memory diagnostics mockup](Images/Diagnostics/sparkle-performance-memory-mockup.png)
+
+Working set, private commit, tracked resources, allocator blocks, local/non-local API usage and budget, and retirement remain distinct. The A/B/C checkpoint workflow supports controlled load/unload analysis without prematurely declaring a leak.
+
+### Complete System Scope
+
+![SparkleEngine diagnostics system-scope visualization](Images/Diagnostics/sparkle-performance-system-scope.png)
+
+Sparkle owns bounded collection, immutable correlation, quick orientation, stable semantic identity, and benchmark linkage. External profilers continue to own call stacks, OS scheduling, API/resource state, hardware counters, ISA, allocation maps, BVH inspection, and crash dumps.
+
+These images illustrate the target product and information hierarchy. They do not add implementation requirements beyond the canonical architecture, replace workload acceptance gates, or imply that every pictured field already has an authoritative producer.
 
 ## Product Map
 
@@ -98,6 +140,10 @@ The menu submits the same typed requests as the console. It does not build comma
 ```
 
 `Stat Dump` prints one bounded snapshot to existing console output. It does not start a capture or write a file.
+
+### Keyboard Baseline
+
+Space toggles Live/Freeze, left/right steps frames, Shift+left/right moves between hitches, F focuses search, Home fits the active timeline, and Escape clears the object selection before closing the window. These bindings remain target UX until implemented and user-tested.
 
 ## Compact Stat Tools
 
@@ -566,4 +612,3 @@ These states must not collapse into `0`, blank cells, generic red coloring, or a
 - The workspace remains one fixed Overview/CPU/GPU/Memory product, not a set of unrelated profiler windows.
 - Escalation identifies the external tool and preserves the selected stable token and configuration.
 - All example values remain labeled illustrative until replaced by accepted workload evidence.
-

@@ -43,7 +43,7 @@ Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/Multithre
 
 ### Performance Diagnostics Work
 
-Start with [Diagnostics Product and UX Research](Architecture/DiagnosticsUxResearch.md) for the Epic/NVIDIA/AMD precedent and requirements audit, then use [Performance Diagnostics Architecture](Architecture/PerformanceDiagnosticsArchitecture.md) for the selected product, metric, ownership, evidence, and profiler-handoff contracts. [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) remains the authority for benchmark gates and case-study deliverables.
+Start with [Diagnostics Product and UX Research](Architecture/DiagnosticsUxResearch.md) for the Epic/NVIDIA/AMD precedent and requirements audit. Use [Performance Diagnostics Visual Design And Tool Wireframes](Architecture/PerformanceDiagnosticsAsciiWireframes.md) for the mockups and tool layouts, then [Performance Diagnostics Architecture](Architecture/PerformanceDiagnosticsArchitecture.md) for the selected product, metric, ownership, evidence, and stable profiler-handoff contracts. Before taking an external capture, use the version-sensitive [External Performance Profiler Runbook](Architecture/DiagnosticsProfilerRunbook.md). [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) remains the authority for benchmark gates and case-study deliverables.
 
 ## Document Status Vocabulary
 
