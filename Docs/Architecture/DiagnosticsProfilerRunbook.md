@@ -2,7 +2,7 @@
 
 Status: version-sensitive operational research and runbook; not proof of current Sparkle implementation or tool support
 
-Last source reconciliation: 2026-08-12
+Last source reconciliation: 2026-08-15
 
 Scope: profiling-build preparation, current external-tool capabilities, marker interoperability, capture provenance, operational capture checks, input/display measurement options, and revalidation triggers
 
@@ -28,12 +28,12 @@ Release pages and current manuals establish current capability. Older blogs, tut
 
 ## Source And Version Reconciliation
 
-| Product/source state observed on 2026-08-12 | Claim supported and adopted | Not inferred / revalidation trigger |
+| Product/source state observed on 2026-08-15 | Claim supported and adopted | Not inferred / revalidation trigger |
 | --- | --- | --- |
 | PIX and Windows Performance Toolkit current official documentation | PIX Timing/GPU Capture are the primary D3D12 timing/frame paths; WPR/WPA provides Windows sampled/precise CPU and TraceLogging analysis. | Record installed versions. A replay is not native timing; a collector can perturb the workload. Revalidate on PIX/WPT, Agility SDK, Windows, or capture-setting change. |
 | RenderDoc [v1.45 release](https://github.com/baldurk/renderdoc/releases/tag/v1.45), 2026-07-02 | Current D3D12/Vulkan frame-debugging baseline for API events, state, resources, descriptors, draws/dispatches, and outputs. | The Vulkan wiki is older workflow guidance, not a current feature matrix. RenderDoc validation/replay does not establish CPU scheduling or hardware cause. Revalidate version, driver, API feature, and replay result. |
 | Nsight Graphics [2026.3](https://developer.nvidia.com/nsight-graphics/get-started), 2026-07-23 | GPU Trace, Graphics Capture, and Shader Profiler support current NVIDIA D3D12/Vulkan work; Shader Profiler supports both APIs. | The live Shader Debugger is currently Vulkan-only and has stricter hardware/system setup. Revalidate the [feature matrix](https://docs.nvidia.com/nsight-graphics/UserGuide/appendix.html), GPU/driver, API, and activity selected. |
-| Radeon GPU Profiler [v2.7](https://gpuopen.com/rgp/), June 2026 | Current AMD queue/barrier/wave/event profiling baseline for supported D3D12/Vulkan platforms and RDNA hardware. | Counter conclusions are architecture/capture specific. Native extended PIX marker support has Agility SDK/driver requirements. Revalidate RGP/RDP, driver, OS, GPU, API, and marker path. |
+| Radeon GPU Profiler [v2.7](https://gpuopen.com/rgp/), June 2026 | Current AMD queue/barrier/wave/event profiling baseline for supported D3D12/Vulkan platforms and RDNA hardware. | Counter conclusions are architecture/capture specific. Its extended/native PIX marker path currently calls for the Agility SDK 1.721 preview path and matching AMD developer-preview driver; this is not baseline support. Revalidate RGP/RDP, driver, OS, GPU, API, and marker path. |
 | Radeon GPU Detective [v1.6.3](https://gpuopen.com/radeon-gpu-detective/), June 2026 | Current Windows 11 AMD D3D12/Vulkan crash-dump and marker-breadcrumb baseline on listed hardware/drivers. | A breadcrumb narrows location, not root cause. Point markers are ignored and cross-command-list/buffer scopes are not reliable in this version. Revalidate tool/driver/API and known issues. |
 | AMD uProf [v5.3](https://www.amd.com/en/developer/uprof.html), 2026-06-17 | Current AMD x86 hotspot, call-stack, IBS/PMC, cache, power, and supported system-analysis baseline. | Sampling skid, counter availability, multiplexing, OS, and CPU-family limitations remain capture metadata. Revalidate version, OS, CPU, selected profile type, and counter set. |
 | Current RMV and RRA manuals | RMV separates trace/current snapshot/comparison views for AMD memory investigation; RRA analyzes acceleration-structure layout/quality and traversal-oriented evidence. | A point snapshot is not an allocation event trace. RRA simulation/structure metrics are not interchangeable with RGP captured counters. Record installed tool/driver/GPU and revalidate before capture. |
@@ -78,7 +78,7 @@ Implementation and capture rules:
 
 | Backend marker path | Intended consumers | Current caveat |
 | --- | --- | --- |
-| D3D12 native PIX3 duration events | PIX; RGP/RGD when their current Agility SDK and driver requirements pass; Nsight/RenderDoc where supported | RGP v2.7 documents native PIX3 use with `D3D12SDKVersion` 721 or newer. Capture the SDK/driver result; do not add an engine-wide AGS path merely to bypass an unsupported setup. |
+| D3D12 native PIX3 duration events | PIX; RGP/RGD only when their current Agility SDK and driver requirements pass; Nsight/RenderDoc where supported | RGP v2.7's extended-marker route currently requires the 1.721 preview Agility path and matching AMD developer-preview driver. Capture the installed SDK/driver smoke-test result; do not infer ordinary 721+ support or add an engine-wide AGS path merely to bypass an unsupported setup. |
 | Vulkan `VK_EXT_debug_utils` begin/end labels | RenderDoc, Nsight, RGP, RGD where supported | Keep the pair within one command buffer. Record extension availability. |
 | Point marker | Bookmarks in tools that retain them | RGD v1.6.3 ignores D3D12 AGS/Vulkan point markers; a point never substitutes for a duration scope. |
 | API resource/object name | State/resource/crash correlation | Separate from performance range identity; dynamic resource names stay bounded and off the live timing aggregation path. |

@@ -2,7 +2,7 @@
 
 Status: design visualization of a target proposal; not proof of current implementation or measured performance
 
-Last reconciled with the target architecture: 2026-08-13
+Last reconciled with the target architecture: 2026-08-15
 
 Scope: graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md)
 
@@ -20,7 +20,7 @@ Read the mockups from broad orientation to focused evidence:
 
 1. Overview shows the normal triage surface integrated into the current Editor shape.
 2. CPU shows physical thread ownership, logical phases, task lanes, waits, and ready delay.
-3. GPU shows the bounded captured-frame hierarchy and inclusive/exclusive marker costs.
+3. GPU shows the bounded captured-frame hierarchy and inclusive/`exclusive (uncovered)` marker costs; uncovered time is not shader self time.
 4. Memory shows distinct RAM/GPU definitions, event history, and controlled A/B/C checkpoints.
 5. System Scope shows the implementation boundary from engine producers through first-party surfaces and external profilers.
 
@@ -121,7 +121,7 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 +-----------------------------------------------------------------------------+
 ```
 
-The menu submits the same typed requests as the console. It does not build command strings, own collection state, or silently enable `LiveDetailed`.
+The menu submits the same typed requests as the console. It does not build command strings, own collection state, or silently enable `LiveDetailed`. The menu illustrates the complete bounded option set; only the architecture's Tier A evidence spine is selected for initial delivery. Tier B/C groups remain workload-gated candidates, not a promised backlog.
 
 ### Console Interaction
 
@@ -264,7 +264,7 @@ Question: Which stable render passes consume the selected queue span?
 |   Unaccounted                        4.9 ms |  3.1%                         |
 | Compute                     No submitted work                              |
 | Copy                                  1.1 ms | independent; do not add     |
-| 142/256 scopes | latest 8 detailed frames | [Capture selected frame]      |
+| 142/256 scopes | detail N=8 (orientation only) | [Capture selected frame]    |
 +-----------------------------------------------------------------------------+
 ```
 
@@ -318,7 +318,7 @@ Question: What backend work and allocator pressure did Sparkle submit?
 | Pipelines             created 0 | cache hits 37 | cache misses 0           |
 | Descriptors/barriers  2,418 descriptors | 18 transitions                  |
 | Transfer              upload 12.0 MiB | readback 0 B                       |
-| Timestamps            284/512 pairs | lost 0 | Detailed capacity valid     |
+| Timestamps            284/512 slots (142 pairs) | lost 0 | capacity valid   |
 | Memory                tracked 3.56 GiB | blocks 3.84 GiB                   |
 | API heaps             local 4.02/7.36 GiB | non-local 0.12/31.8 GiB        |
 +-----------------------------------------------------------------------------+
@@ -441,10 +441,10 @@ The lanes show wall intervals owned by Sparkle. OS scheduled/running state, stac
 | Compute  No submitted work                                                  |
 | Copy     [Upload 1.1]                                                        |
 + Recent pass ranking ------------------------------+ Inspector ---------------+
-| Pass token                    p50     p95   %queue | Lighting                |
+| Pass token              p50     p95  %queue | recent N=8; orientation only |
 | > Renderer.FrameGraph.Light 129.8   134.7    83.1 | FrameId 18420           |
 |   Renderer.FrameGraph.Comp   10.6    12.1     6.9 | Inclusive 132.4 ms      |
-|   Renderer.FrameGraph.GBuf    7.5     8.2     4.9 | Exclusive 12.7 ms       |
+|   Renderer.FrameGraph.GBuf    7.5     8.2     4.9 | Uncovered 12.7 ms       |
 |   Queue.Unaccounted           4.7     5.4     3.1 | 3 dispatches            |
 |                                                   | [Copy token]            |
 | [Capture frame] [Open latest capture]             | [Profiler guidance]     |
@@ -459,8 +459,8 @@ GPU Live ranks bounded recent marker data. It does not align uncalibrated queues
 + Performance / GPU / Captured frame ----------------------------------------+
 | Capture 17 | FrameId 18420 | D3D12 | 5120x1392 | Threaded depth 1           |
 | Ready | timestamps valid | ParallelRecording ON | 142/256 scopes | lost 0   |
-| Queue: Graphics 159.3 ms | [Hierarchy] [Flat Inc] [Flat Exc] [Coalesced]    |
-+ Marker ------------------------------------ Inclusive  Exclusive  %Queue Work+
+| Queue: Graphics 159.3 ms | [Hierarchy] [Flat Inc] [Flat Uncov] [Coalesced]  |
++ Marker ------------------------------------ Inclusive  Uncovered  %Queue Work+
 | Queue.Graphics                              159.30 ms     4.90 ms  100.0%    |
 | `- Batch0 / RecordingChunk0                 154.40 ms     0.00 ms   96.9%    |
 |    |- FrameGraph/Compute/Lighting           132.40 ms    12.70 ms   83.1% 3D |
@@ -476,7 +476,7 @@ GPU Live ranks bounded recent marker data. It does not align uncalibrated queues
 +------------------------------------------------------------------------------+
 ```
 
-The hierarchy, flat-inclusive, flat-exclusive, and coalesced modes are alternate presentations of one frozen immutable capture. Flat/coalesced sums carry a double-counting warning.
+The hierarchy, flat-inclusive, flat-uncovered, and coalesced modes are alternate presentations of one frozen immutable capture. `Uncovered` is the architecture's exclusive interval-union result, not shader self time, idle, or waste. Flat/coalesced sums carry a double-counting warning.
 
 ### Memory
 

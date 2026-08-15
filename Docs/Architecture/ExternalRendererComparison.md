@@ -1,7 +1,8 @@
 # E. External Renderer Repository Comparison
 
-Status: source-linked external comparison
-Date: 2026-07-24
+Status: source-linked external comparison; external patterns are precedent, not local implementation proof
+Research snapshot: 2026-07-24
+Last local reconciliation: 2026-08-15
 Scope: vendor reference repositories/frameworks compared against SparkleEngine architecture, developer-technology transfer, path tracing, neural graphics, code construction, extensibility, productization, feature scope, and deletion-first improvement targets
 
 ## Intent
@@ -9,6 +10,8 @@ Scope: vendor reference repositories/frameworks compared against SparkleEngine a
 This document compares SparkleEngine against top-tier rendering repositories and SDKs. The purpose is not to copy their code. The purpose is to identify what makes those repositories production-grade or reviewable, then use that standard to slim and sharpen Sparkle.
 
 This document owns source-linked precedent analysis only. Local architecture decisions belong in the [Architecture index](README.md), implementation rules belong in [Engineering Standards](../Engineering/Standards/README.md), and capability grades belong in [Principal Graphics Requirements](../Strategy/Requirements.md).
+
+Repository links below may track mutable default branches. They prove only the narrow reviewed pattern as of the research snapshot; a specific API, capability, performance, or support claim must be revalidated against a pinned revision or current primary manual before use. A vendor design becomes good Sparkle practice only after its problem exists here, the owning local document accepts it, a simpler option is considered, and workload evidence validates the practical result.
 
 The main lesson is not "add more features." It is "make scope and ownership painfully clear."
 
@@ -31,8 +34,24 @@ The supplied principal graphics engineering role set adds a second comparison le
 | NVIDIA NvRTX | https://developer.nvidia.com/game-engines/unreal-engine/rtx-branch | Public page for gated Unreal RTX branches; shows versioned validated branches and experimental branches. |
 | Cauldron | https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron | Simple static framework for D3D12/Vulkan FidelityFX prototypes and samples. |
 | FidelityFX SDK | https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK | SDK layout with Kits, Samples, Tools, docs, and delivery concerns. |
+| Epic Render Dependency Graph | https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine | Core commercial-engine precedent for graph-owned lifetime/scheduling, shader-parameter reuse, graph-only pass parameters, and semantic event names. |
+| Epic PSO Precaching | https://dev.epicgames.com/documentation/en-us/unreal-engine/pso-precaching-for-unreal-engine | Separates shader availability, complete pipeline descriptors, asynchronous preparation, and runtime miss/completeness evidence. |
 
 NvRTX code is gated behind Epic/GitHub access, so this document uses the public NVIDIA developer page for that comparison rather than claiming direct code inspection.
+
+## Adversarial Local Reconciliation
+
+The 2026-08-15 pass treated every earlier Sparkle comparison as potentially stale. The durable external principles survive, but several local findings no longer do:
+
+| Earlier local statement | Reconciled result | Current owner |
+| --- | --- | --- |
+| Sparkle lacks a crisp product identity. | Resolved in documentation: Sparkle is a compact renderer-first engine and evidence platform. Implementation/evidence still determines whether the repository behaves consistently with that identity. | [Executive Summary](../Strategy/ExecutiveSummary.md) |
+| Renderer/RHI policy is implicit and needs a one-page policy. | Resolved as a documentation action; the explicit RHI/frame-graph boundary now exists. | [Renderer and RHI Architecture Boundary](RendererRhiBoundary.md) |
+| Heavy Showcase/Bistro content lives in the main depot. | Stale: acceptance content is cataloged/externalized. Future media must continue through the workload/content-pack policy. | [Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) and [Whole Repository Map](WholeRepositoryMap.md) |
+| Renderer public API exposes direct RHI access. | Stale: the reconciled `Renderer` public surface exposes bounded resource/memory/capture snapshots but no direct RHI accessor. Those remaining observation surfaces still require current consumers and bounded cost. | Code and [Renderer/RHI Boundary](RendererRhiBoundary.md) |
+| Vendor branch separation implies Sparkle should create product/research branches. | Overreach: the transferable requirement is explicit maturity/capability status and safe defaults. Branch topology is one vendor delivery choice, not a required Sparkle architecture. | Focused feature Architecture and executable capability policy |
+
+This table is a dated reconciliation, not a replacement readiness grade. [Gap Assessment](../Strategy/GapAssessment.md) remains the owner of current grading.
 
 ## External Repository Patterns
 
@@ -47,17 +66,14 @@ Donut states that it is a real-time rendering framework and explicitly says it i
 
 Sparkle comparison:
 
-- Sparkle has a similar conceptual split, but it does not state a crisp product identity.
-- Sparkle currently looks like an engine, renderer SDK, content pipeline, launcher, validation lab, and showcase all at once.
-- A production reviewer should be able to tell what Sparkle is in one minute.
+- Sparkle now declares itself a compact renderer-first engine and evidence platform.
+- Its broad module/tool surface is valid only where it advances that identity and the principal-graphics evidence requirements.
+- The remaining test is practical: a production reviewer must see the same product boundary in default builds, public APIs, workloads, and artifacts within one minute.
 
 Action:
 
-- Declare Sparkle as one of:
-  - a compact renderer-first engine,
-  - a renderer framework plus sample,
-  - or a full game engine prototype.
-- Cut or move code that serves the other identities.
+- Preserve the declared compact renderer-first identity as the authority.
+- Cut, move, or explicitly reject workflows that do not serve it; do not reopen the identity as an option list in downstream documents.
 
 ### 2. RHI Tradeoffs Are Stated, Not Implied
 
@@ -87,13 +103,8 @@ Sparkle comparison:
 
 Action:
 
-- Document Sparkle's RHI policy in one page:
-  - what RHI tracks
-  - what frame graph tracks
-  - what remains explicit to passes
-  - what native interop is allowed for providers
-  - how resource lifetimes are protected
-- Do not add another abstraction. Clarify the one you have.
+- Keep [Renderer and RHI Architecture Boundary](RendererRhiBoundary.md) as the single policy owner for what RHI tracks, what the frame graph automates, what passes state, native interop, and lifetime protection.
+- Prove the written boundary through architecture checks and representative D3D12/Vulkan paths; do not create another abstraction or duplicate policy here.
 
 ### 3. SDK Integrations Keep Application Ownership
 
@@ -117,16 +128,14 @@ SHARC ships as shader-only sources plus an integration guide. RTXNS ships exampl
 
 Sparkle comparison:
 
-- Sparkle should keep PTLAS as a product ray tracing capability, but its implementation should stay close to the original minimal reference shape instead of spreading planner, metric, and future-pack scaffolding through the renderer.
-- The problem is not PTLAS itself; the problem is letting experimental scaffolding feel like product code.
+- A vendor's shader-only/sample-only packaging does not determine PTLAS or any Sparkle feature's maturity.
+- The relevant risk is allowing unexercised planner, metric, or future-feature scaffolding to become a renderer-wide authority before an accepted consumer exists.
 
 Action:
 
-- Treat experimental features as:
-  - shader-only library plus integration notes,
-  - sample-only path,
-  - or build/runtime-gated provider.
-- Do not let experimental feature scaffolding shape the main renderer data model.
+- Classify each capability as product, preview, compiler/schema-only, or experimental at its owning declaration and in executable support evidence.
+- Choose shader-only, sample-only, provider, or main-renderer integration from actual ownership/lifetime requirements. Do not use packaging or branch labels as a substitute for runtime capability proof.
+- Do not let an experimental feature shape the main renderer data model unless a current product consumer requires that shared contract.
 
 ### 5. Sample Frameworks Keep Samples Separate
 
@@ -134,17 +143,13 @@ Cauldron is a static framework used by many FidelityFX sample projects. Fidelity
 
 Sparkle comparison:
 
-- Sparkle keeps a huge Showcase project and content inside the main depot.
-- This gives reviewers immediate demo value, but it dominates depot size and slows every clone/review.
+- Sparkle has already externalized/cataloged the heavy Bistro/San Miguel acceptance content while retaining bounded smoke/reviewer routes.
+- The external pattern remains a regression guard: uncataloged optional media must not drift back into the default clone/runtime product.
 
 Action:
 
-- Move heavy Showcase content to optional content delivery:
-  - separate repository,
-  - release asset pack,
-  - Git LFS,
-  - or media delivery script.
-- Keep a curated in-repo level set for build/runtime smoke and review, while arbitrary additional levels remain selectable through manifests/content packs.
+- Preserve the workload catalog/content-pack boundary and its clean-environment acquisition evidence.
+- Keep only the curated in-repo assets needed for build/runtime smoke and review.
 
 ### 6. Product Repos Separate Validated And Experimental Branches
 
@@ -152,16 +157,12 @@ NvRTX publicly separates Unreal Engine version branches and an experimental bran
 
 Sparkle comparison:
 
-- Sparkle currently keeps experimental and product code paths in the same default architecture.
-- PTLAS is the clearest example where product capability and experimental scaffolding need separation.
+- Sparkle still needs explicit capability maturity and safe default selection for experimental paths, but a separate Git branch is not automatically the right mechanism.
 
 Action:
 
-- Add the same distinction inside the repo:
-  - product path
-  - developer preview
-  - research/experimental
-- Shipping defaults should not depend on research scaffolding.
+- Record product, preview, compiler/schema-only, and experimental status in the owning declaration, build/runtime capability matrix, tests, and documentation.
+- Shipping/default paths must not depend on unvalidated research scaffolding. Use a branch only when release/validation workflow evidence makes it the simplest delivery mechanism.
 
 ### 7. Binary/Source Distribution Is Treated As Product Policy
 
@@ -206,17 +207,17 @@ Action:
 
 | Reference | Production pattern | Sparkle today | Improvement |
 | --- | --- | --- | --- |
-| Donut | Framework explicitly not a game engine; four module libraries; app/device management separated from render passes. | Similar module idea, but Sparkle's product identity is wider and less declared. | Write a one-page product identity and cut non-matching workflows. |
-| NVRHI | Higher-level RHI with resource/lifetime/state/barrier helpers and native escape hatches. | RHI plus renderer frame graph gives similar helper behavior, but policy is implicit. | Document automation boundaries and native interop rules. |
+| Donut | Framework explicitly not a game engine; four module libraries; app/device management separated from render passes. | Sparkle now declares a compact renderer-first engine/evidence identity and is intentionally broader. | Enforce that identity through default product surface and delete non-serving workflows. |
+| NVRHI | Higher-level RHI with resource/lifetime/state/barrier helpers and native escape hatches. | Sparkle's explicit RHI plus managed renderer frame graph is now documented. | Keep the boundary executable and avoid a parallel convenience layer. |
 | NRI | Low-level explicit API, low overhead, no hidden management/automatic barriers. | Sparkle RHI is explicit but its renderer frame graph is higher-level. | Keep this layered: RHI explicit, frame graph managed. |
 | RTXDI | App owns resources, light buffers, shaders, render passes, GBuffer addressing; SDK supplies sampling/resampling math. | Sparkle owns direct lighting path natively. | Keep ownership; do not overclaim SDK equivalence. |
-| RTXPT | Pure path tracer, guide buffers, path-space decomposition, DLSS-RR support, focused sample. | Sparkle has reference path tracing but also realtime/deferred path and provider handoff. | Make reference mode clearly offline/progressive or clearly debug. |
+| RTXPT | Pure path tracer, guide buffers, path-space decomposition, DLSS-RR support, focused sample. | Sparkle has reference path tracing plus realtime/deferred and provider paths. | Declare the reference mode's purpose, determinism, accumulation/budget, supported use, and evidence role; it may be progressive, debug, or product only when those contracts prove it. |
 | SHARC | Shader-only library with integration guide. | Sparkle tends to promote feature scaffolding into renderer core. | For experimental lighting/cache features, prefer shader-only/sample-only first. |
 | RTXNS | Slang/neural examples, training/inference structure, capability requirements, and sample ownership are explicit. | Sparkle has Slang pipeline support but no completed neural graphics feature or model workload evidence. | Keep the ABI flexible, then implement one replacement-based feature after resource/provider contracts are crisp; do not copy RTXNS into renderer core. |
 | Streamline | Include/source/shader/tools layout; release binaries outside repo; shipping integration guidance. | Sparkle has Streamline bridge in renderer provider target. | Keep bridge narrow and binary/package policy explicit. |
 | Cauldron | Static rapid-prototyping framework for D3D12/Vulkan FidelityFX samples. | Sparkle has more engine/editor/tooling scope. | Treat SDK integrations as sample/provider vertical slices, not renderer-wide design drivers. |
-| FidelityFX SDK | Kits/Samples/Tools/docs product split. | Sparkle has Engine/Tools/Projects/Docs but content and workflows are intermingled. | Move uncataloged heavy media and optional tools out of default runtime product. |
-| NvRTX | Versioned branches and experimental branch separated. | Experimental features live in normal renderer paths. | Gate or extract experimental systems. |
+| FidelityFX SDK | Kits/Samples/Tools/docs product split. | Sparkle has Engine/Tools/Projects/Docs and has externalized the heavy acceptance content. | Preserve cataloged optional delivery; admit tools only through an owned workflow. |
+| NvRTX | Versioned validated branches and an explicitly experimental branch. | Sparkle needs honest maturity/capability status and safe defaults, not necessarily the same branch structure. | Gate, extract, or branch only according to the owning feature's delivery and validation needs. |
 
 ## Sparkle Construction Differences
 
@@ -245,7 +246,7 @@ Sparkle is broad:
 - sample project and content
 - packaging
 
-This broadness is valuable only if the product is "small engine." If the product is "rendering portfolio/research engine," it is too much.
+This broadness is consistent with the declared compact renderer-first engine only while every subsystem serves a current runtime, authoring, evidence, or adoption workflow. The renderer portfolio/research goal does not independently justify general engine breadth.
 
 ### Sparkle Has Strong Internal Ownership But Too Many Observation Surfaces
 
@@ -258,10 +259,9 @@ Strong:
 
 Weak:
 
-- Renderer public API exposes memory, mesh, texture diagnostics, viewport BMP capture, and direct RHI access.
-- RHI public API exposes broad diagnostics; screenshot/BMP capture should remain, but with narrow ownership and low runtime cost.
-- Launcher exposes debug artifacts and diagnostic-flavored options.
-- Cookers write plan/timing diagnostics by default.
+- Renderer public API still exposes bounded memory, mesh, texture, and viewport-capture observations. Each needs a current consumer, immutable publication, bounded cost, and removal when superseded; direct RHI access is no longer exposed in the reconciled public surface.
+- RHI diagnostics and capture paths must remain neutral, narrow, and owner-published; UI convenience cannot widen native ownership.
+- Launcher and cooker diagnostic options/artifacts are acceptable only when explicit, bounded, and part of a documented development/evidence workflow; default incidental files remain rejected by the engineering standards.
 
 Top-tier pattern:
 
@@ -318,5 +318,4 @@ This research does not grade Sparkle or own its backlog. Current readiness belon
 
 ## Research Conclusion
 
-The references consistently reward explicit scope, one-way ownership, narrow public contracts, backend honesty, reproducible evidence, and focused deletion. Sparkle decisions should adopt those principles only through the owning Architecture, Standards, Requirements, and Roadmap documents rather than treating this comparison as local policy.
-- concise, reproducible communication of completed results
+The references consistently reward explicit scope, one-way ownership, narrow public contracts, backend honesty, reproducible evidence, focused deletion, and concise communication of completed results. Sparkle decisions should adopt those principles only through the owning Architecture, Standards, Requirements, and Roadmap documents rather than treating this comparison as local policy.

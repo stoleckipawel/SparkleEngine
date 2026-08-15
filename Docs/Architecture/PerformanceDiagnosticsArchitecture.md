@@ -2,7 +2,7 @@
 
 Status: target proposal; not proof of current implementation
 
-Last source reconciliation: 2026-08-12
+Last source reconciliation: 2026-08-15
 
 Scope: editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, benchmark evidence, and external-profiler correlation
 
@@ -29,7 +29,22 @@ It does not claim that the target is implemented, set performance targets for a 
 - [Diagnostics Product And UX Research](DiagnosticsUxResearch.md) records the Epic/NVIDIA/AMD product study and rejected UX options behind the selected presentation; it is research, not implementation authority.
 - [External Performance Profiler Runbook](DiagnosticsProfilerRunbook.md) owns version-sensitive tool capabilities, capture preparation, marker interoperability, and operational playbooks; it does not define Sparkle metrics or prove a benchmark claim.
 
-Application owns the presentation-neutral live diagnostics product, cross-domain session orchestration, active stat-view selection, and benchmark export. Editor owns its viewport menu/window presentation. DevelopmentGame owns a compact presenter through its existing runtime console/UI packet path. Each engine domain remains the authority for its own measurements. These concrete product consumers justify compact stat views; they do not justify a general task browser, allocation explorer, or trace-viewer product.
+Application owns the presentation-neutral live diagnostics product, cross-domain session orchestration, active stat-view selection, and the bounded runtime serialization mechanism used by an explicit benchmark. The acceptance workload owns the benchmark schema, route, destination/name, sample policy, analysis, and claim. Editor owns its viewport menu/window presentation. DevelopmentGame owns a compact presenter through its existing runtime console/UI packet path. Each engine domain remains the authority for its own measurements. These concrete product consumers justify compact stat views; they do not justify a general task browser, allocation explorer, or trace-viewer product.
+
+## Adversarial Review Standard
+
+This proposal was re-reviewed on 2026-08-15 with every statement treated as untrusted. A claim survives only at the following strength:
+
+| Claim kind | Required support |
+| --- | --- |
+| Current Sparkle behavior | Current code or executable configuration, with a dated source reconciliation. |
+| D3D12/Vulkan/OS semantics | Current primary API specification or platform documentation. |
+| External-product capability | Current primary manual/release material, revalidated by the profiler runbook and then smoke-tested on the installed environment. |
+| Local architecture choice | A named repository goal/consumer, explicit ownership, bounded cost/failure behavior, and a rejected simpler alternative. |
+| Numeric capacity or overhead threshold | An initial sizing or acceptance hypothesis until `sizeof`, overflow, observer-cost, and workload evidence calibrate it. It is not labeled Epic, NVIDIA, AMD, or industry best practice. |
+| Performance conclusion | Comparable raw runs, uncertainty and practical effect, a discriminating capture/experiment, and the evidence rules owned by the workload and standards. |
+
+The goals survive this review: a bounded first-party orientation layer, one focused marker capture, reproducible evidence, and strong external-profiler handoff directly support `MAP-00` and `PGE-05`/`06`/`10`/`13`. The review rejects a broad in-engine trace platform, universal hardware claims from timestamp scopes, and treating the provisional capacities below as proven constants.
 
 ## Executive Decision
 
@@ -96,7 +111,7 @@ Primary precedent sources are Epic's [Stat Commands](https://dev.epicgames.com/d
 
 ## Current Source-Backed Starting Point
 
-The following is an observation of the 2026-08-11 worktree, not a completion claim:
+The following is an observation reconciled with the 2026-08-15 worktree, not a completion claim:
 
 | Surface | Current behavior | Consequence for the target |
 | --- | --- | --- |
@@ -140,7 +155,7 @@ Every visible metric must have one owner, unit, interval, correlation identity, 
 
 ### Clock And Identity Rules
 
-`FrameId` remains the shared logical correlation identity. Diagnostics may add a benchmark `RunId`, sample-window identity, OS thread ID, queue type, and `RhiSubmissionToken`, but none becomes a second frame authority.
+`FrameId` remains the shared logical correlation identity. Diagnostics may add a benchmark `RunId`, sample-window identity, OS thread ID, queue type, and `RhiSubmissionToken`, but none becomes a second frame authority. A join by `FrameId` proves that producers describe the same logical frame; it does not prove causality, a common clock, one submission, or a one-to-one presentation. `PresentId`, input identity, and submission/dependency identity remain separate where required.
 
 CPU clocks use one monotonic source. GPU durations use backend timestamp periods. CPU and GPU absolute timestamps are not placed on one time axis unless the backend provides and the implementation validates clock calibration. Backend contracts are explicit:
 
@@ -182,7 +197,7 @@ The configuration banner, tooltips, raw schema, and comparison logic preserve pr
 | Worker occupancy | Task-body wall duration and ready-to-start delay by named `SparkleTasks` lane for the selected interval. | FrameCritical, Background, and BlockingIo task work. | Not OS CPU running time. Lane is policy, not subsystem ownership; run/ready/wait causality belongs in ETW/PIX. |
 | GPU graphics span | Earliest begin to latest end of the outer valid graphics-queue frame scope for one `FrameId`. | Queue execution enclosed by the frame scope. | Does not include CPU queueing, present scan-out, or work outside the scope. |
 | GPU scope inclusive | End timestamp minus begin timestamp for one valid scope instance on one queue. | Marked commands plus every valid nested child interval and any queue gap inside the scope. | Not shader-only active time; nested inclusive values are not additive. |
-| GPU scope exclusive | Inclusive duration minus the interval union covered by valid direct children on the same queue. | Commands, waits/bubbles, and unmarked work inside the parent but outside child scopes. | Not a hardware-unit attribution; unavailable when hierarchy/containment is invalid. |
+| GPU scope exclusive (uncovered) | Inclusive duration minus the interval union covered by valid direct children on the same queue. | Commands, waits/bubbles, and unmarked work inside the parent but outside child scopes. | Not shader self time or hardware-unit attribution; unavailable when hierarchy/containment is invalid. User-facing views keep `uncovered` adjacent to `exclusive`. |
 | GPU queue unaccounted | Synthetic queue-root inclusive duration minus the interval union of valid top-level recorded scopes. | Queue time not covered by a timed top-level marker. | A coverage signal, not automatically waste or idle time. |
 | Process working set | Current physical pages resident for the process. | Shared and private resident pages as reported by the OS. | Not ownership and not total committed memory. |
 | Process private commit | Private committed virtual memory charged to the process. | Private committed pages, resident or paged out. | Not the same as current physical RAM. |
@@ -417,6 +432,8 @@ Core does not own a profiler service. Editor does not own engine measurements. R
 | Live performance model | Application derives a read-only projection after joining | Editor panels and DevelopmentGame stat presenter | One latest immutable model plus fixed plotted windows | Replaced atomically/by owner publication; presenters retain no producer pointers or mutable spans. |
 | Evidence stream | Application session serializes accepted joined summaries | Workload-owned artifact package | Exactly the declared bounded benchmark request | Fixed-size staging/chunk buffer; write failure stops the run, preserves prior accepted evidence, and reports the incomplete artifact. |
 
+The numeric capacities in this inventory are initial sizing hypotheses chosen to make storage and failure behavior concrete. They are not vendor recommendations or permanent API constants. Before a slice freezes them, its implementation record must publish exact record sizes, query-pool distribution, normal and stress occupancy/loss, Empty/Sponza observer cost, and the consumer task that needs the retained history. The result may reduce, increase, or delete a capacity while preserving boundedness and explicit overflow. In particular, the 1,024 joined frames, 120-frame display window, eight detailed frames, 256 scopes/512 timestamp slots, 256 memory samples, four overlays, 16 compact rows, 4 MiB cap, and percentage overhead budgets all remain calibration inputs until that record is accepted.
+
 Hot records contain scalar fields, fixed arrays, stable label tokens, and typed identities only. They do not own strings, vectors, callbacks, service pointers, locks, or editor objects. Detailed records resolve tokens to display names outside collection. The storage budget is governed by:
 
 ```text
@@ -428,7 +445,7 @@ joined summary bytes
   + fixed export staging bytes
 ```
 
-Metric and view descriptors are private fixed `constexpr` tables owned by Application; modules do not register rows dynamically. The implementation record must publish exact `sizeof` values and prove the total remains within the 4 MiB live-history cap. Changing frame-pipeline depth or worker count does not multiply live diagnostic storage implicitly; any per-worker producer scratch is separately fixed and included in that proof.
+Metric and view descriptors are private fixed `constexpr` tables owned by Application; modules do not register rows dynamically. The implementation record must publish exact `sizeof` values and test the candidate 4 MiB live-history cap before freezing it. Changing frame-pipeline depth or worker count does not multiply live diagnostic storage implicitly; any per-worker producer scratch is separately fixed and included in that proof.
 
 ## Collection Modes And Cost Budget
 
@@ -441,7 +458,7 @@ Metric and view descriptors are private fixed `constexpr` tables owned by Applic
 | `Benchmark` | `MAP-00` and declared routes | Exact raw per-frame summary for the bounded sample request. | Valid top-level and per-pass values required by the workload. | Current and high-water values over the run. | Explicit manifest, raw timing, and summary artifacts only. |
 | `ExternalCapture` | PIX/RenderDoc/Nsight/WPA/RGP | Stable trace markers and symbols; live UI may be hidden. | Stable backend markers; internal timestamp collection may be disabled to avoid observer overlap. | Tool-specific capture plus a matching manifest bookmark. | Native profiler artifact by explicit user action. |
 
-Instrumentation acceptance targets for the first implementation are:
+Instrumentation acceptance budgets for the first implementation are hypotheses to test, not claims that these exact values are universally imperceptible:
 
 - zero per-frame heap allocations in `LiveBasic` after initialization;
 - at most 4 MiB total bounded live-history storage with a documented exact layout;
@@ -458,7 +475,7 @@ If a target cannot be met, the expensive collector becomes explicit capture-only
 
 ### Joined Frame Summary
 
-The live ring stores at most 1,024 joined frame summaries. A summary contains fixed fields, not variable vectors:
+The initial live-ring candidate stores at most 1,024 joined frame summaries. A summary contains fixed fields, not variable vectors:
 
 - `FrameId`, sample generation, product mode, renderer mode, pipeline depth;
 - begin/end CPU timestamps and frame interval;
@@ -493,7 +510,7 @@ The target RHI memory contract must stop using a combined local plus non-local `
 
 ### Aggregation Rules
 
-- The live window is the newest 120 joined `FrameId` summaries in the current generation. Each headline shows latest valid, p50, and p95 from all field-valid entries inside that fixed interval and displays the full population metadata defined above. Cross-domain rows derive a common-correlated cohort over the identical interval.
+- The initial live-window candidate is the newest 120 joined `FrameId` summaries in the current generation. Each headline shows latest valid, p50, and p95 from all field-valid entries inside that fixed interval and displays the full population metadata defined above. Cross-domain rows derive a common-correlated cohort over the identical interval.
 - Benchmark windows use the acceptance workload's current readiness, warm-up, sample-count, and run-count policy and record the resolved values in the manifest. The workload-owned analysis computes per-run p50/p95/p99/worst as primary results, a clearly secondary combined view, run-to-run variation, its declared correlation-aware uncertainty method, and regression verdict from raw integer samples; these do not require more live UI columns.
 - Invalid, pending, stale, and disabled values do not enter a percentile.
 - The initial percentile algorithm is nearest-rank over durations in integer nanoseconds; conversion/rounding happens only for presentation.
@@ -508,7 +525,7 @@ The live UI may show a `Likely` hint only when all required signals are valid, p
 
 | Hint | Required correlated observations | Next evidence |
 | --- | --- | --- |
-| `Likely GPU-limited` | GPU top-level span is at/over budget, non-wait host/render phases are below it, presentation throttle does not explain it, and producer/render backpressure is consistent with downstream GPU completion. | PIX Timing/GPU Capture on D3D12; Nsight Graphics or RGP GPU trace; RenderDoc for state/work inspection. |
+| `Likely GPU-limited` | A valid queue span is at/over budget, non-wait host/render phases are below it, presentation throttle does not explain it, and known submission/dependency/backpressure evidence connects that queue to downstream frame completion. A graphics-only span cannot classify the frame when unresolved async compute/copy or presentation dependencies could control completion. | PIX Timing/GPU Capture on D3D12; Nsight Graphics or RGP GPU trace; RenderDoc for state/work inspection. |
 | `Likely render-CPU-limited` | One non-wait render phase or render CPU wall is at/over budget, the GPU span is lower, and host/game work is not the critical path. | WPA/PIX Timing with symbols; inspect frame setup/compile/record/submit call stacks. |
 | `Likely host/game/editor-limited` | A non-wait host/game/editor phase is at/over budget, render/GPU spans are lower, and frame-queue backpressure is not dominant. | WPA CPU sampled plus precise scheduling; compare DevelopmentGame and DevelopmentEditor. |
 | `Likely present-limited` | Present/throttle wait dominates and the recorded VSync/frame-latency policy explains the interval. | PIX Timing or WPA/DWM/GPUView evidence with presentation configuration. |
@@ -590,7 +607,7 @@ Overview uses aligned rows and a compact trend rather than a wall of decorative 
 
 CPU lanes always distinguish physical execution from logical work. For example, gameplay in DevelopmentEditor is shown as a `Gameplay` phase on `Sparkle.EditorThread` when that is the actual topology; it is not relabeled as a physical `Game Thread` to resemble another engine. `Sparkle.RenderThread` is shown because Sparkle currently owns it, not because a renderer is required to have one. Render work could legally execute on the caller, a render thread, tasks, or a hybrid topology; diagnostics names must follow the implemented owner.
 
-GPU queue timelines are not summed. Hierarchy nesting and inclusive/exclusive columns remain adjacent. Flat-inclusive and coalesced sums carry a visible double-counting warning. `Unaccounted` means the union outside known child scopes within a valid queue root; it does not mean idle or wasted work.
+GPU queue timelines are not summed. Hierarchy nesting and inclusive/`exclusive (uncovered)` columns remain adjacent. Flat-inclusive and coalesced sums carry a visible double-counting warning. `Unaccounted` means the union outside known child scopes within a valid queue root; it does not mean idle or wasted work.
 
 Memory keeps these definitions separate:
 
@@ -685,7 +702,7 @@ External capture and workload benchmark start/stop remain separate explicit work
 | `Threads` | What did Sparkle's named physical threads do in the selected completed interval? | Editor/Game, Render, and fixed task-worker lanes; phase wall, classified wait, occupied ratio, ready delay, longest stable task label, and data age. | `LiveBasic`; OS running/ready/wait still requires a system trace. |
 | `Tasks` | Is task scheduling, imbalance, or a named task family material? | Per-lane task count, occupied wall, ready-delay p95, caller-join wall, longest stable task label, failures/cancellations. | `LiveBasic` fixed aggregates; no task history table. |
 | `Gpu` | Which GPU queue controls the current frame budget? | Graphics/compute/copy top-level span, validity, resolution delay, queue overlap notice, and presentation context. | `LiveBasic`. |
-| `GpuPasses` | Which stable render passes consume the selected queue span? | Bounded live ranking from recent resolved frames with top-level inclusive/exclusive cost, shallow hierarchy, percent of queue span, owned draw/dispatch counts, and unaccounted span. It is not the frozen tree navigator. | `LiveDetailed`; latest eight frames, 256 scope-record cap per frame. |
+| `GpuPasses` | Which stable render passes consume the selected queue span? | Bounded live ranking from recent resolved frames with top-level inclusive/`exclusive (uncovered)` cost, shallow hierarchy, percent of queue span, owned draw/dispatch counts, and unaccounted span. Nested percentages are non-additive. It is not the frozen tree navigator. | `LiveDetailed`; initial latest-eight-frame and 256-scope candidates. Always show valid `N`; this tiny recent set is orientation, not a stable benchmark distribution. |
 | `Render` | Is renderer CPU orchestration or submitted workload unexpectedly large? | Setup/prepare/extract/cull/graph setup/compile/record/submit/present wall; recording groups, passes, submissions, draws, dispatches, pipeline/shader-package/RT-build counts, barriers/transitions, upload bytes, and rejected work where already produced. | `LiveBasic`; counters are admitted only at their production owner without a diagnostic rescan. |
 | `Scene` | What scene cardinality reached each stage of the render path? | Extracted, accepted, visible, submitted, and rejected instances; meshes/materials/lights; triangle/index counts where meaningful; RT instances and BLAS/TLAS counts; dirty/upload counts. | `LiveBasic` after immutable owner counters exist. Never query live ECS or renderer caches from UI. |
 | `Rhi` | What backend work and allocator pressure did Sparkle submit? | Backend/adapter, queue submissions, command-recording groups/lists, pipeline creations/cache state, descriptor and barrier counts where owned, upload/readback bytes, timestamp capacity/loss, tracked/block/local/non-local memory. | `LiveBasic`; neutral facts only, no native handle/type leakage. |
@@ -708,7 +725,7 @@ No preset enables `GpuPasses` implicitly because detailed timestamp overhead mus
 
 ### Delivery Tiers
 
-The fixed catalog is a bounded destination, not permission to implement every group before the evidence harness. Delivery is gated by the first accepted consumer:
+The fixed catalog is a bounded option set, not a commitment to implement every group. Delivery is gated by the first accepted consumer; Tier A is the selected minimum, while Tier B/C entries remain candidates that are deleted or left external when their current consumer and measured diagnostic value do not justify them:
 
 | Tier | Required product subset | Acceptance consumer | Deferred until evidence exists |
 | --- | --- | --- | --- |
@@ -1330,5 +1347,7 @@ Version-sensitive profiler sources and the current capability matrix live in the
 - [Vulkan Memory Allocator statistics scope](https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/statistics.html)
 - [Vulkan present-timing stages, time domains, and bounded result queue](https://docs.vulkan.org/features/latest/features/proposals/VK_EXT_present_timing.html)
 - [Windows process memory counters](https://learn.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-process_memory_counters_ex2)
+- [Kalibera and Jones: quantifying performance changes with effect-size confidence intervals](https://arxiv.org/abs/2007.10899)
+- [NIST/SEMATECH e-Handbook: randomness and autocorrelation diagnostics](https://www.itl.nist.gov/div898/handbook/eda/section3/eda35d.htm)
 
-These sources explain external API semantics. They do not define Sparkle ownership, metric naming, collection cost, or evidence acceptance.
+These sources explain external API or statistical semantics. They do not define Sparkle ownership, metric naming, collection cost, the correct independent unit for a workload, or evidence acceptance.

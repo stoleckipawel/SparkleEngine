@@ -2,7 +2,7 @@
 
 Status: research reference; external precedent and option analysis, not proof of current implementation
 
-Research reconciliation: 2026-08-12
+Research reconciliation: 2026-08-15
 
 Scope: the visual and functional design of performance diagnostics for SparkleEngine, with emphasis on Epic Games, NVIDIA, and AMD products; data acquisition and implementation sequencing are intentionally secondary
 
@@ -131,7 +131,7 @@ Epic exposes a deliberate depth ladder rather than one universal profiler:
 | Product surface | UX pattern | Lesson for Sparkle |
 | --- | --- | --- |
 | Stat commands and Unit/UnitGraph/GPU groups | Immediate in-application overlays; fixed, question-oriented groups; milliseconds and rolling graphs for orientation | Keep activation fast and vocabulary fixed. An overlay should say where to look, not attempt full causal proof. |
-| GPU profiling/Profile Visualizer | A focused marked-frame hierarchy with hierarchical, flat, and coalesced ways to inspect events | Sparkle's RDG markers justify one frozen marker capture with inclusive/exclusive and instance/coalesced modes. |
+| GPU profiling/Profile Visualizer | A focused marked-frame hierarchy with hierarchical, flat, and coalesced ways to inspect events | Sparkle's RDG markers justify one frozen marker capture with inclusive/`exclusive (uncovered)` and instance/coalesced modes; the latter is not shader self time. |
 | Timing Insights | Frames overview, synchronized CPU/GPU/thread tracks, range selection, aggregate timers/counters, callers/callees, logs | Use overview -> timeline/ranking -> details and one selection context. Do not reproduce call-tree or arbitrary trace analysis in Editor. |
 | Task Graph and Context Switch Insights | Optional relationships/critical path and OS core scheduling views | Thread lanes and logical phases must remain distinct. Dependency arrows are useful only on demand because a full graph overwhelms. |
 | Memory Insights | Memory timeline, explicit A/B interval queries, grouping by tag/asset/class/callstack/heap, symbol status | Sparkle should show totals/categories/high-water and later snapshot delta; allocation callstacks and arbitrary queries remain external. |
@@ -349,7 +349,7 @@ One implementation slice should intentionally produce four readable artifacts:
 
 1. Hero: Sponza viewport plus compact `Stat Unit`/memory summary and exact configuration.
 2. Triage: Performance Overview showing frame distribution, physical CPU owners, GPU queue/pass ranking, process RAM plus local/non-local GPU memory, likely domain, and next action.
-3. Focused GPU: captured marker timeline/tree with inclusive/exclusive columns and a selected pass path found in PIX/Nsight/RGP.
+3. Focused GPU: captured marker timeline/tree with inclusive/`exclusive (uncovered)` columns and a selected pass path found in PIX/Nsight/RGP.
 4. Experiment: aligned baseline/change table with p50/p95/p99 or required percentiles, high-water values, capture links, and causal caveat.
 
 The portfolio narrative should be `symptom -> reliable baseline -> Sparkle orientation -> external capture -> hypothesis -> one controlled change -> distribution/result -> limitations`. A beautiful profiler screen without a reproducible route and causal experiment is decoration, not engineering evidence.
