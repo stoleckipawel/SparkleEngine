@@ -69,9 +69,9 @@ Sparkle adopts the following product behaviors:
 
 | Unreal precedent | Sparkle adaptation | Deliberately not copied |
 | --- | --- | --- |
-| A short console command toggles an on-screen stat group. | One case-insensitive, autocomplete-capable `Stat` command uses Sparkle's existing Editor and runtime console registries. The Editor viewport also exposes the same fixed groups in a Stat menu. | A second console, hidden command parser, or presenter-specific command implementation. |
+| A short console command toggles an on-screen stat group. | One case-insensitive, autocomplete-capable `Stat` command uses Sparkle's existing Editor and runtime console registries. The Editor viewport leads with typed task presets; `Customize Stats...` reaches the same fixed group requests. | A second console, hidden command parser, presenter-specific command implementation, or twelve raw groups presented as equal first-level choices. |
 | `stat unit` rapidly compares frame, game, draw/render, RHI-thread, and GPU time. | `Stat Unit` compares frame interval, host/game phase wall, render wall, queue waits, presentation, and GPU queue span using honest Sparkle ownership labels. | Pretending Editor gameplay has its own OS thread, or treating the numerically largest pipelined column as proof by itself. |
-| Named groups expose GPU, RHI, scene rendering, memory, gameplay, and hitch information. | A small fixed catalog exposes Fps, Unit, UnitGraph, Threads, Tasks, Gpu, GpuPasses, Render, Scene, Rhi, Memory, and Hitches views. Each group has a real producer and bounded consumer. | An open-ended global stat registry, arbitrary module macros, or hundreds of groups without an active product question. |
+| Named groups expose GPU, RHI, scene rendering, memory, gameplay, and hitch information. | A small fixed internal catalog names Fps, Unit, UnitGraph, Threads, Tasks, Gpu, GpuPasses, Render, Scene, Rhi, Memory, and Hitches. Each group is admitted only when it has a real producer, bounded consumer, and tier evidence; normal users select an investigation intent rather than assembling this catalog. | An open-ended global stat registry, arbitrary module macros, hundreds of groups without an active product question, or making internal composition the primary navigation. |
 | Stat types distinguish cycle counters, per-frame counters, persistent accumulators, and memory values. | Every Sparkle row declares duration, count, bytes, ratio, state, high-water, sampling interval, and validity semantics. | Combining unlike kinds into a typeless number or assuming every value resets per frame. |
 | Render-graph scopes feed both in-engine GPU stats and external markers. | Stable Sparkle frame-graph/pass tokens are shared by detailed GPU rows and PIX/RenderDoc/Nsight/RGP markers. | Separate UI-only pass names or per-frame formatted marker strings. |
 | A focused GPU profile can expose a hierarchical event tree while realtime GPU stats stay quick and cumulative. | `Stat Gpu`/`Stat GpuPasses` remain live orientation; `ProfileGpu` takes one bounded frozen hierarchical capture with inclusive/exclusive views. | Running a full hierarchical query capture continuously or confusing the visualizer with hardware-counter attribution. |
@@ -356,7 +356,7 @@ Application diagnostics session <---------+
         +----> bounded joined frame history
                     |
                     +----> immutable live performance model
-                    |       |-- Editor Stat menu/overlays/window
+                    |       |-- Editor Performance menu/overlays/window
                     |       `-- DevelopmentGame stat overlay
                     |
                     `----> explicit benchmark exporter
@@ -488,11 +488,11 @@ The initial live-ring candidate stores at most 1,024 joined frame summaries. A s
 - counts needed to compare work: frame-graph passes, draws, dispatches, submitted batches, visible/render instances, and upload bytes where already owned;
 - diagnostics loss/invalid counters.
 
-Detailed GPU pass records are retained only in eight fixed slots, with at most 256 fixed scope records per frame across all queues. `LiveDetailed` uses all eight as a rolling ring. `GpuProfileCapture` pins one slot for the latest frozen result and leaves seven rolling slots; a later accepted capture replaces that pinned slot. Overflow invalidates only that frame's detailed view and preserves an independently valid top-level queue span. The benchmark writer streams a declared bounded run to its explicit artifact rather than retaining an unbounded in-memory history.
+The initial detailed-ring candidate retains eight fixed slots with at most 256 scope records per frame across all queues. `LiveDetailed` uses all eight as a rolling ring. `GpuProfileCapture` pins one slot for the latest frozen result and leaves seven rolling slots; a later accepted capture replaces that pinned slot. Overflow invalidates only that frame's detailed view and preserves an independently valid top-level queue span. The benchmark writer streams a declared bounded run to its explicit artifact rather than retaining an unbounded in-memory history.
 
 ### Memory History
 
-Memory is slow-changing relative to frame scopes. A separate ring stores at most 256 samples at a default 1 Hz cadence:
+Memory is slow-changing relative to frame scopes. The initial candidate ring stores at most 256 samples at a default 1 Hz cadence:
 
 - current process working set and private commit;
 - OS-reported process-lifetime peak working set/private commit where the platform exposes them, labeled as process-lifetime values;
@@ -551,6 +551,32 @@ The viewport and DevelopmentGame overlay own no independent data model. The Perf
 
 The GPU Visualizer is the `GPU / Captured frame` mode of the Performance workspace, not another permanent Editor window. Hitches are selections in the shared frame navigator, not a Hitch Browser. A future memory A/B snapshot is a Memory view mode only if an accepted workload justifies it. Existing Used Shaders, Used Meshes, and Used Textures remain resource/asset inspectors until a separately accepted migration can consolidate and remove an old path; they do not own whole-system performance truth.
 
+### Intent-First Entry And Progressive Disclosure
+
+The first choice is the user's question, not a stat-group or collector name:
+
+| User intent | Primary entry/result | Backend automation | Details intentionally deferred |
+| --- | --- | --- | --- |
+| Is this frame healthy? | `Quick Check` opens the compact Unit summary or Overview. | Select the minimum basic collection, correlate valid fields, keep the live window, and propose one honest next action. | Individual groups, scope capacity, timestamps, provenance records, queue submissions. |
+| Why is CPU work or waiting high? | `Investigate CPU` opens CPU with the same frame/range. | Preserve selection; expose real physical owners, logical phases, waits and task-lane aggregates already available. | OS scheduling/call stacks remain an `Open WPA/PIX guidance` action. |
+| Why is GPU work high? | `Investigate GPU` opens GPU Live and selects the strongest valid expensive top-level marker. | Preserve frame/configuration, choose the minimum timing demand, maintain separate queues, and expose `Show Passes` or `Capture GPU` only when valid. | Query slots, native event APIs, pipeline/shader hashes, hardware counters and ISA. |
+| Is memory pressure or growth involved? | `Investigate Memory` opens definitions, trend, budget, and A/B/C guidance. | Select current/high-water/sample-age facts and maintain precise local/non-local semantics. | Allocation maps, call stacks and residency events remain external-tool work. |
+| Produce reproducible evidence | `Capture Evidence...` opens a review step prefilled from the selected workload/range/configuration. | Validate readiness, sample population, observer mode, required identities, destination and manifest before enabling export. | Raw schema and hashes remain expandable/copyable; no normal-run files. |
+| Customize an expert overlay | `Customize Stats...` or the console exposes the fixed catalog with cost/search. | Reject unsupported combinations before commit and derive the minimum shared collection mode. | This is not the default viewport menu and never creates another collector. |
+
+Progressive disclosure is fixed:
+
+1. **Glance:** health, frame budget, likely domain, validity, and one next action.
+2. **Investigate:** one Overview/CPU/GPU/Memory view with preserved frame/range and a contextual Inspector.
+3. **Evidence:** explicit captured frame or benchmark review with complete configuration and observer state.
+4. **Expert:** raw stat groups, exact definitions/provenance, hashes/tokens, and external-profiler guidance.
+
+The frontend automatically chooses `Off`, `LiveBasic`, or `LiveDetailed` from visible intent; those mode names are status/cost disclosure, not a normal configuration task. It also fills configuration, stable identities, supported external-tool route, and export manifest from authoritative state. It never automatically writes a file, starts an external capture, enables validation/hardware counters, changes renderer topology, or promotes a causal claim.
+
+The default ribbon shows only live/frozen state, selected frame/range, build/backend, resolution, data quality, and any non-default/observer warning. Adapter/driver, pipeline depth, full render settings, commit/configuration hashes, provenance, and capacity move into `Configuration Details` and always enter exported evidence. This keeps screenshots auditable without turning every live screen into a manifest dump.
+
+Every state has one dominant next action. Unsupported or temporarily invalid actions are hidden or disabled with the prerequisite next to them; the UI does not accept a capture/export/setup combination that its owner can already prove invalid. Suggestions remain evidence-scoped navigation, never silent setting changes or optimization commands.
+
 ### Shared Selection Model
 
 Exactly one workspace selection is active:
@@ -569,7 +595,7 @@ Switching Overview/CPU/GPU/Memory preserves the frame/range. A typed object toke
 ```text
 + Performance ----------------------------------------------------------------+
 | LIVE | Frame 18422 | D3D12 | 5120x1392 | DevEditor | Basic | valid 120/120  |
-| [Overview] [CPU] [GPU] [Memory]           [Freeze] [Capture GPU] [Export...]  |
+| [Overview] [CPU] [GPU] [Memory]      [Freeze] [Investigate GPU] [More...]     |
 + Frame navigator -------------------------------------------------------------+
 | budget 16.7 ms ........... ^ hitch #18391 ........ selected #18422 ......... |
 + Main view ------------------------------------------------+ Inspector --------+
@@ -584,12 +610,12 @@ Switching Overview/CPU/GPU/Memory preserves the frame/range. A typed object toke
 
 The composition is fixed:
 
-- The context ribbon shows source mode, selected frame/range, build/backend/adapter, render extent, renderer topology, collection mode, and data quality.
+- The compact context ribbon shows live/frozen state, selected frame/range, build/backend, render extent, data quality, and non-default observer warning; `Configuration Details` owns adapter/driver, topology, exact mode/provenance, and complete evidence identity.
 - The fixed view tabs are Overview, CPU, GPU, and Memory.
 - The frame navigator stays visible in every view. Click selects a frame, drag selects a range, and Previous/Next Hitch moves the same selection.
 - The main view changes representation without changing truth: summary, physical thread lanes, queue/marker timeline and hierarchy, or memory trend/categories.
 - The Inspector is selection-driven and never polls engine state independently.
-- The status footer keeps validity, loss, observer mode, and the most honest next action visible.
+- The status footer keeps validity/loss and the single most honest next action visible; secondary actions remain contextual or under `More`.
 
 Arbitrary dashboard tiles, plugin tracks, detachable subpanes, stored custom layouts, and a view-registration API are rejected for the initial product.
 
@@ -666,7 +692,9 @@ A proposed row, group, or mode is admitted only when it has all of the following
 3. a bounded immutable presentation model and explicit cost class;
 4. an existing surface slot in Stats or one of the four Performance views;
 5. a validity/failure presentation and observer-cost check;
-6. a clear point where an external profiler becomes the better tool.
+6. a clear point where an external profiler becomes the better tool;
+7. proof that the value changes a user decision and cannot remain a tooltip, Inspector field, exported fact, or external-tool detail;
+8. placement under an existing user intent without adding another top-level tab, toolbar action, preset, or dialog.
 
 This gate rejects instrumentation because it is merely interesting. Stable owner boundaries, RDG passes, RHI queues, allocator authorities, and the task scheduler should provide most measurements automatically. Feature code adds a child scope only when the parent cannot answer an accepted diagnostic question. No diagnostics-only scan of scene entities, resources, passes, descriptors, or tasks is permitted.
 
@@ -676,19 +704,19 @@ The Unreal-inspired surface is a set of fixed views over the existing joined dia
 
 ### Stat Interaction Contract
 
-The existing console grammar can support one root command in both Editor and DevelopmentGame:
+The existing console grammar supports expert and automation access through one root command in both Editor and DevelopmentGame. The normal viewport menu leads with task presets; it does not mirror every raw group as an equal first-level choice.
 
 | Command | Behavior |
 | --- | --- |
 | `Stat` | Prints active groups, collection mode, sample count, and compact usage. |
-| `Stat List [filter]` | Lists the fixed available groups and their collection cost. Autocomplete uses the existing console registry. |
-| `Stat <group> [On\|Off\|Toggle]` | Changes one group's visibility. Omitting the action toggles it. |
-| `Stat Preset <Quick\|Cpu\|Gpu\|Memory\|Portfolio>` | Replaces the active group set with one fixed, documented preset. |
+| `Stat List [filter]` | Expert route that lists the fixed available groups and collection cost. Autocomplete uses the existing console registry. |
+| `Stat <group> [On\|Off\|Toggle]` | Expert route that changes one group's visibility. Omitting the action toggles it. |
+| `Stat Preset <Quick\|Cpu\|Gpu\|Memory>` | Replaces the active group set with one task-oriented preset used by the normal menu. |
 | `Stat None` | Hides all stat overlays and releases their demand at the next owner commit. Benchmark, external-capture, or open Performance-view demand remains independent. |
 | `Stat Reset` | Starts a new live sample-window generation and clears live high-water/worst-frame presentation. It does not reset allocator or engine authority. |
 | `Stat Dump [group]` | Prints one bounded immutable compact snapshot to the existing console output, capped at 64 rows across active groups. It does not create a file or begin a capture. |
 
-Command names are displayed in canonical Sparkle casing but remain case-insensitive because the existing registry is case-insensitive. The Editor viewport Stat menu sends the same typed requests as the command handler; it does not construct command strings. Unknown groups, unavailable build capabilities, and invalid actions return one actionable console result.
+Command names are displayed in canonical Sparkle casing but remain case-insensitive because the existing registry is case-insensitive. The Editor viewport menu sends the same typed preset requests as the command handler and exposes `Customize Stats...` for raw groups; it does not construct command strings. Unknown groups, unavailable build capabilities, and invalid actions return one actionable console result.
 
 External capture and workload benchmark start/stop remain separate explicit workflows. `Stat Dump` must never become an accidental unbounded `StartFile` equivalent.
 
@@ -709,7 +737,7 @@ External capture and workload benchmark start/stop remain separate explicit work
 | `Memory` | Is RAM or GPU memory growing, near budget, fragmented, or awaiting retirement? | Working set/private commit, tracked used/allocator blocks, local/non-local usage/budget, categories, transient/RT scratch and result bytes, upload/eviction/residency/missing-event counters, retirement backlog, current/high-water/age. | Default 1 Hz memory sampling plus owned event deltas; allocation/residency detail remains external. |
 | `Hitches` | Which recent frames exceeded a declared budget and which domain was implicated? | Last 16 qualifying `FrameId` values, interval, likely domain, worst phase/pass or compile/load/pipeline token, discontinuity, and validity. | `LiveBasic`; annotations only when an owner emitted them; no automatic file output. |
 
-The catalog is intentionally much smaller than Unreal's because Sparkle does not yet own animation, audio, networking, streaming, or other production diagnostic products at comparable maturity. A group is added only with a present user question, authoritative producer, bounded row model, cost classification, and removal/review owner.
+The catalog is intentionally much smaller than Unreal's because Sparkle does not yet own animation, audio, networking, streaming, or other production diagnostic products at comparable maturity. It is an internal composition/expert customization catalog, not the primary information architecture. A group is added only with a present user question, authoritative producer, bounded row model, cost classification, and removal/review owner.
 
 Presets are aliases for these exact sets:
 
@@ -719,9 +747,10 @@ Presets are aliases for these exact sets:
 | `Cpu` | Unit, Threads, Tasks | Is host/render/task CPU work or waiting controlling the frame? |
 | `Gpu` | Unit, Gpu, Render | Is GPU work dominant, and did renderer workload or CPU preparation change? |
 | `Memory` | Unit, Memory, Rhi | Is process or GPU memory under pressure, growing, fragmented, or awaiting retirement? |
-| `Portfolio` | Unit, Threads, Gpu, Memory | Produce one readable orientation screenshot; use the Performance window and captures for detail. |
 
 No preset enables `GpuPasses` implicitly because detailed timestamp overhead must be a visible user choice.
+
+Portfolio/reviewer output belongs to `Capture Evidence...`, which validates and renders the required configuration rather than adding a permanent everyday viewport preset.
 
 ### Delivery Tiers
 
@@ -750,7 +779,7 @@ The fixed catalog is a bounded option set, not a commitment to implement every g
 ### Demand, Cost, And Composition
 
 - The active group set is bounded to four simultaneous compact overlays. The Editor Performance window can inspect every fixed view without placing all rows over the scene.
-- Enabling a fifth compact group fails with the active set and `Stat None`/preset guidance; it never evicts a group implicitly. Presets replace the active set atomically.
+- Expert customization that exceeds the calibrated compact-group candidate fails with the active set and `Stat None`/preset guidance; it never evicts a group implicitly. Task presets replace the active set atomically.
 - A compact group shows at most 16 rows. A bounded `+N hidden; open Performance` row replaces overflow. Stable priority precedes duration sorting so important validity/configuration rows do not jump.
 - The union of overlay groups, the open Performance view, and benchmark requests determines the minimum collection mode. `GpuPasses` visibly promotes the session to `LiveDetailed`; releasing the last detailed request returns to `LiveBasic` after the generation boundary. `ExternalCapture` is an explicit override and may suppress overlapping internal timestamps as declared in the banner.
 - `ProfileGpu` is an explicit one-shot demand outside the four-overlay limit. It pins one resolved detailed slot as the frozen product while armed/resolving and releases or replaces it only through the capture-state contract; it never makes continuous full-tree collection implicit.
@@ -894,7 +923,7 @@ resolve ticks -> validate tree -> derive inclusive/exclusive -> publish
 - The selected frame preserves the normal renderer mode, pipeline depth, recording policy, task worker policy, submission batches, and queue dependencies.
 - If a backend cannot safely preserve that topology, representative `ProfileGpu` is `Unavailable` for that backend until fixed. An explicitly labeled serial/reference diagnostic may exist for debugging, but cannot be silently compared with normal runs.
 
-The fixed 256-scope cap requires at most 512 timestamps across all queues for the detailed frame. The implementation still checks backend-specific per-queue capacity before arming because scope distribution, synthetic roots, and unavailable queue timestamp support matter more than the aggregate number.
+The initial 256-scope candidate requires at most 512 timestamp slots across all queues for the detailed frame. The implementation still checks backend-specific per-queue capacity before arming because scope distribution, synthetic roots, and unavailable queue timestamp support matter more than the aggregate number.
 
 ### Inclusive And Exclusive Calculation
 
@@ -955,7 +984,7 @@ Selecting a captured-frame node exposes `Copy marker path` so the same stable la
 
 ### Viewport Summary
 
-The existing top-right FPS text becomes the compact `Stat Unit` summary when that group is active. Milliseconds lead; FPS remains a derived convenience. A nearby Stat menu lists the same fixed groups and presets as the console command with visible checkmarks and collection-cost badges. The canonical [viewport control and compact `Unit` layouts](PerformanceDiagnosticsAsciiWireframes.md#shared-controls) live in the visual-design document.
+The existing top-right FPS text becomes the compact `Stat Unit` summary when that group is active. Milliseconds lead; FPS remains a derived convenience. A nearby Performance menu leads with `Quick Check` and `Investigate CPU/GPU/Memory`; it shows the active task preset and automatically derived collection cost. `Customize Stats...` is the searchable expert route to the fixed group catalog used by the console command. The canonical [viewport control and compact `Unit` layouts](PerformanceDiagnosticsAsciiWireframes.md#shared-controls) live in the visual-design document.
 
 Rules:
 
@@ -1198,6 +1227,17 @@ This directly advances whole-system performance, hard-debugging, low-level concu
 
 Implementation acceptance requires focused tests and measured runs, as applicable:
 
+### Frontend Workflow And Clutter
+
+- Scenario tests drive the immutable presentation model through `Quick Check`, `Investigate CPU`, `Investigate GPU`, `Investigate Memory`, `Capture Evidence`, unavailable-capability, cancellation, and failure states without constructing console strings or mutating collectors from UI code.
+- The normal route from viewport orientation to one selected domain requires no knowledge of stat-group names, collection modes, timestamp queries, counters, backend targets, hashes, manifests, or external-tool configuration. A test or structured UI audit rejects any normal path that makes one of those fields mandatory.
+- The first-level viewport menu contains the task intents, current state/cost, `Customize Stats...`, and open/hide controls; raw group names remain behind customization. Workspace snapshots verify that contextual capture/export/recovery commands do not become a permanent wall of equal toolbar actions.
+- Every unavailable or unsafe action is disabled with one visible prerequisite. The frontend cannot express contradictory collection requests, start a second exclusive capture, export invalid evidence, or silently enable a more perturbing mode.
+- Switching views and launching a contextual investigation preserves the selected frame/range and follows a typed object only where correlation is valid. Failures preserve that context and show one root cause, one next action, and a details route to raw evidence.
+- Advanced overrides are typed, validated, resettable, scoped to the current operation or saved preset, and rendered as a difference from the recommended configuration. Closing and reopening the workspace cannot silently promote them to defaults.
+- Keyboard-only navigation reaches every task intent, view, selected row, Inspector action, configuration detail, and recovery action with visible focus. Accessible names and status text communicate validity/cost without relying on color.
+- Representative engine users perform the orientation-to-investigation, failed-capture recovery, and evidence-export tasks from a clean UI state. Record completion, time, wrong turns, backtracking, and expert-setting exposure; unresolved repeated misconfiguration or terminology confusion blocks frontend acceptance.
+
 ### Semantics And Correlation
 
 - Synthetic nested scopes with known ticks prove inclusive/exclusive calculation for leaves, nested children, sibling gaps, repeated tokens, and interval-union coverage without double count.
@@ -1258,7 +1298,7 @@ Implementation acceptance requires focused tests and measured runs, as applicabl
 ### Cost And Bounds
 
 - Ring capacities, queue capacities, string/label storage, and export sizes are asserted/tested.
-- Four-overlay and 16-compact-row limits, fixed presets, hidden-row count, hitch row limit, and detailed-scope capacity are asserted/tested.
+- Candidate four-overlay, 16-compact-row, hitch-row, and detailed-scope limits plus fixed presets and hidden-row behavior are asserted/tested before the calibrated values are frozen.
 - `LiveBasic` performs no post-initialization per-frame heap allocation.
 - `Off`, `LiveBasic`, `LiveDetailed`, `GpuProfileCapture`, and external-capture overhead are measured, not assumed.
 - Fps-only, Unit, four simultaneous basic groups, GpuPasses, ProfileGpu, and UI open/closed observer costs are measured independently.
@@ -1274,11 +1314,11 @@ This is architecture decomposition, not a schedule; the Roadmap and `MAP-00` own
 
 1. Freeze metric names, units, validity, `FrameId` join behavior, and a source-backed baseline trace using existing thread/ETW/GPU markers.
 2. Add the bounded Application session, host phases, process RAM, Renderer CPU stages, frame-queue waits, and one top-level GPU queue span needed by `MAP-00`.
-3. Register the fixed `Stat` command through the existing Editor/DevelopmentGame console composition, publish `Fps`, `Unit`, and `UnitGraph` from the same model, and prove basic-mode observer cost.
+3. Register the fixed expert `Stat` command through the existing Editor/DevelopmentGame console composition; publish `Fps`, `Unit`, and `UnitGraph` from the same model; expose the task-first `Quick Check` viewport path; and prove basic-mode observer cost and keyboard completion.
 4. Complete the workload-owned `MAP-00` vertical slice: fixed resolution/readiness, explicit benchmark export and manifest integration, capture naming, and Sponza calibration.
-5. Publish Threads, Tasks, Render, and Memory views; correct GPU memory segment semantics; and expose the same groups through the Editor Stat menu and Performance window.
+5. Publish Threads, Tasks, Render, and Memory views; correct GPU memory segment semantics; and add `Investigate CPU/GPU/Memory` task presets plus contextual `Customize Stats...` over the same typed requests in the Performance menu and window.
 6. Add Gpu/GpuPasses only after top-level timing correlation and basic-mode overhead pass. Admit Scene/Rhi rows only from existing production-owner counters, never from diagnostic scans.
-7. Add the `ProfileGpu` vertical slice: stable tokens and explicit parents, a fixed per-chunk scope/query plan that preserves parallel recording, delayed validation and inclusive/exclusive derivation, one frozen result, and the hierarchical/flat/coalesced Editor views.
+7. Add the `ProfileGpu` vertical slice: stable tokens and explicit parents, a fixed per-chunk scope/query plan that preserves parallel recording, delayed validation and inclusive/`exclusive (uncovered)` derivation, one frozen result, and the hierarchical/flat/coalesced Editor views.
 8. Add bounded hitch selection/navigation to the shared frame navigator, check in the narrow WPR profile and profiler walkthrough, and capture one D3D12 and one Vulkan specialist example that correlates a GPU captured-frame node to the external marker tree.
 
 Each slice must extend the existing owner and remove any presentation path it replaces. Sparkle may publish only the bounded marker-level GPU product described here; deeper API, shader, hardware, allocation, and scheduling data remains in profiler-native artifacts rather than widening engine public APIs.
@@ -1292,7 +1332,9 @@ Each slice must extend the existing owner and remove any presentation path it re
 | Sample populations | Field-valid populations for one metric; common-correlated `FrameId` intersection for paired/cross-domain claims, with full exclusion metadata. | Comparing independently filtered percentiles or hiding missing frames. |
 | Benchmark inference | Per-run primary results, combined secondary view, practical absolute/relative band, correlation-aware uncertainty, and `Inconclusive`. | Treating 3x300 as automatically definitive, pooling away run identity, p-value-only decisions, or unequal-`N` worst comparisons. |
 | Cross-domain owner | Application session joins immutable domain results. | Global Core profiler singleton or Editor reaching into renderer/RHI state. |
-| Stat interaction | One fixed `Stat` command family and Editor menu over the same typed group requests. | A second console, command-string-driven UI, or arbitrary module registration. |
+| Frontend entry | `Quick Check`, `Investigate CPU/GPU/Memory`, and contextual `Capture Evidence` over automatically derived collection demand. | Leading with twelve stat groups, collection modes, query/counter setup, or a wall of equal toolbar actions. |
+| Progressive disclosure | Glance -> one selected workspace view -> explicit evidence -> contextual expert details/external tool, preserving one selection. | Showing hashes, manifests, raw events, complete configuration, and specialized controls on every screen or making users re-enter identity. |
+| Stat interaction | One fixed `Stat` command family; the Editor menu uses typed task presets and `Customize Stats...` reaches the same raw group requests. | A second console, command-string-driven UI, twelve equal first-level menu choices, or arbitrary module registration. |
 | Stat composition | At most four compact groups sharing one demand-derived collection mode. | Duplicate collectors per overlay or every group displayed simultaneously. |
 | Editor gameplay labeling | Logical `Gameplay.*` phases on `Sparkle.EditorThread`. | Invented editor-side `GameThread`. |
 | CPU detail | Fixed orchestration scopes live; ETW/PIX call stacks for detail. | Per-function timers and an unbounded task history panel. |

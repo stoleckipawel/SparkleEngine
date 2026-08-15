@@ -38,8 +38,9 @@ The 2026-08-15 review assumed every proposed Unreal/vendor analogy was wrong unt
 8. The cooker should generate program membership, stage masks, layout identity, compile keys, artifact keys, and the runtime manifest. Every ambiguity or collision must be a deterministic error.
 9. Shader bytecode caching and graphics/compute pipeline caching are different systems. The latter must include complete fixed-function and render-target state and should support asynchronous precaching plus hit/miss/too-late evidence.
 10. Sparkle should copy Unreal's separations and invariants, not its full material, vertex-factory, distributed-build, or plugin machinery until a real Sparkle workload requires those systems.
-11. Loading, streaming, and residency are policies over generated maps/code libraries and live RHI resources. For the current small catalog, eager loading may be best; the runtime should expose preload/readiness/budgets and select policy from measurements rather than assume a complex streamer.
-12. Inline ray queries and full ray-tracing pipelines are different systems. Sparkle currently has the former. RT library metadata is compiler-only until native state objects/pipelines, identifiers, SBT construction, trace commands, RDG/lifetime/cache integration, fallback selection, and paired execution evidence arrive together.
+11. Shader Tools should center `Apply Changed`, semantic search/selection, one operation state, source-located errors, and contextual next actions. Package/layout IDs, hashes, raw artifacts, full rebuild/reload, backend flags, and cache mechanics remain searchable expert details.
+12. Loading, streaming, and residency are policies over generated maps/code libraries and live RHI resources. For the current small catalog, eager loading may be best; the runtime should expose preload/readiness/budgets and select policy from measurements rather than assume a complex streamer.
+13. Inline ray queries and full ray-tracing pipelines are different systems. Sparkle currently has the former. RT library metadata is compiler-only until native state objects/pipelines, identifiers, SBT construction, trace commands, RDG/lifetime/cache integration, fallback selection, and paired execution evidence arrive together.
 
 The short answer is therefore:
 
@@ -282,6 +283,54 @@ builder.Dispatch<ExposureDownsamplePass>(
 
 That label describes this graph node. It does not select shader bytecode.
 
+### Intent-First Shader Frontend Contract
+
+The normal shader workflow is one `Shader Tools` surface plus the existing console/shortcut route, not a panel for every compiler, cache, package, pipeline, or artifact layer. The user supplies intent; the system resolves dependency closure, supported targets, cache policy, job scheduling, validation, publication, reload, and lifetime safety.
+
+| User intent | Primary frontend action/result | Automatically derived and validated | Contextual expert access |
+| --- | --- | --- | --- |
+| Apply saved source edits | `Apply Changed` with one shortcut and nonblocking status | changed virtual paths, reverse dependencies, affected shaders/programs, active development targets, cache hits, bounded jobs, complete replacement generation, safe activation | selected/compiled/cache-hit counts; exact job list under Details |
+| Understand a compile failure | source-located root cause, affected shader/program, `Open Source`, `Retry`, and reassurance that the previous generation remains active | duplicate diagnostics collapsed by root cause, dependent jobs classified as skipped, portable virtual paths, failure bundle creation | compiler output, command, preprocessed source, dependency hashes, reflection/layout comparison, one-job replay |
+| Inspect what the running frame uses | select/search a semantic pass, program, or shader and see `Ready`, `Stale`, `Compiling`, `Failed`, or `Unsupported` | join from pass/program to active generation, code record, PSO readiness, source, symbols, and captured marker identity | permutation, target/backend, hashes, reflection, disassembly, manifest and pipeline cache provenance |
+| Validate a development or release build | `Validate Shaders` through the normal build/cook preset | complete registered catalog, compile-policy filtering, D3D12/Vulkan targets required by that preset, deterministic publication and conformance checks | support matrix, excluded permutations with reasons, cold/warm/cache statistics |
+| Investigate a shader or PSO hitch | `Open Shader` from the selected Performance/GPU marker or pipeline event | preserve frame, marker, program, code/pipeline hashes, backend, generation, and symbol package | PIX/RenderDoc/Nsight/RGP guidance and copied replay/capture identity |
+| Reproduce one expert failure | `Replay Failed Job` from Diagnostics details | exact compiler/tool version, virtual source closure, target, environment, and bounded output location | editable command copy and machine-readable request |
+
+The common Editor layout is deliberately small:
+
+```text
++ Shader Tools ---------------------------------------------------------------+
+| 3 changed files ready       [Apply Changed]                    [Search ...] |
+| Status: Ready | active generation 42 | last apply 18 shaders, 16 cache hits |
++ Programs / shaders ----------------------+ Selection -----------------------+
+| DirectLighting        Ready              | DirectLighting / Compute          |
+| GBuffer               Ready              | source + entry                    |
+| Exposure              Changed            | used by 1 pass                    |
+| ...                                        | [Open Source] [Apply Selection]  |
++ Diagnostics ----------------------------------------------------------------+
+| No active errors. [Show last operation] [Advanced...]                       |
++------------------------------------------------------------------------------+
+```
+
+The primary list should normally expose semantic program/shader name, stage where useful, source, active status, and pass consumers. Package ID, binding-layout ID, generation number, backend/profile, artifact directory, code/input hashes, compiler command, raw reflection, and disassembly are contextual details—not ten default columns. `Reload Cooked`, `Recook All`, package-targeted recook, compiler backend/target listing, cache paths, and worker controls do not belong beside the common `Apply Changed` action. Validated publication activates automatically; `Rebuild All` and manual reload remain searchable expert recovery actions with an explanation of cost and risk.
+
+```text
+Idle -> ChangesReady -> Compiling -> Validating -> Active
+                         |              |
+                         +-> Failed <---+
+                               |
+                     previous Active generation remains
+```
+
+- One operation card owns progress, cancellation, queued/coalesced follow-up state, result, elapsed time, and the active-generation guarantee. Do not emit a dialog or toast per shader job.
+- Source watching may offer coalesced `Auto Apply Changed` as a development preference after debounce/cost measurement. The default interaction must always reveal what will compile; a widely included source or release-target expansion shows the estimated affected scope before expensive work starts.
+- The frontend chooses the named development/release preset and capabilities. An advanced override shows its difference from that preset, validates it before launch, persists only at the declared project/platform scope, and offers `Reset To Preset`.
+- A successful apply needs a short result, not raw cooker stdout. A failure leads with one actionable source diagnostic. All raw artifacts remain available without dominating the workflow.
+- Opening Shader Tools from a GPU marker, error, or pipeline event preserves that selection. The user never retypes a package, shader ID, hash, source path, or backend to continue the investigation.
+- The panel reads one immutable shader-operation/catalog model and submits typed requests through `EditorOperationService`; it never scans artifact directories, invokes the compiler, mutates the active shader map, or creates RHI objects itself.
+
+Epic's current shader-development workflow similarly centers a saved edit plus `recompileshaders changed`, asynchronous compilation, direct source diagnostics, retry, and DDC invalidation from full compile inputs. Sparkle adopts the intent and safe iteration loop while generating more of the target/dependency/publication detail and retaining the previous valid generation. [Epic Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine)
+
 ## Cooked Artifact Model
 
 Sparkle does need cooked shader data; it does not need authors to name each physical package manually.
@@ -350,7 +399,7 @@ Adopt:
 - compile-input hashes derived from the full compiler-affecting closure and compiler provenance
 - a disposable derived-data cache outside runtime packages
 - cook-time collection and deduplication of global shader code
-- one shader/graph parameter metadata authority with a persistable structural signature
+- one owner for each shader-visible parameter contract with a persistable structural signature, reused when a pass composes those contracts into its own envelope
 - render-graph event labels kept separate from shader identity
 - separate PSO precaching, cache keys, and validation evidence
 
@@ -369,6 +418,7 @@ Sources:
 - [Epic: `FShaderCompilerInput`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderCompilerInput)
 - [Epic: `FShaderCompileJob`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderCompileJob)
 - [Epic: `FShaderCompileJobKey`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderCompileJobKey)
+- [Epic: `FShaderCommonCompileJob` and full `InputHash`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderCommonCompileJob)
 - [Epic: `FShaderCompilingManager`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FShaderCompilingManager)
 - [Epic: Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine)
 - [Epic: Derived Data Cache](https://dev.epicgames.com/documentation/en-us/unreal-engine/derived-data-cache?application_version=5.3)
@@ -524,6 +574,9 @@ The separation at the right is important: graph construction may materialize a p
 - `RenderPassRuntimeCache` already builds and validates a complete replacement generation, atomically activates it, and retires the old generation only after recorded RHI submission tokens complete. This is a strong lifetime pattern and must be preserved.
 - Runtime package validation is materially stronger than the authoring layer: it verifies schema/version, source and layout identities, bounds, complete logical binding records, required stages, runtime backend format, bytecode hashes, reflection, feature flags, and ray-tracing metadata before use.
 - The editor already launches the shader cooker out of process, coalesces one follow-up request, rejects stale publications, and leaves the active generation unchanged after cook or runtime-validation failure.
+- The current `Shader Tools` window presents Refresh, Reload Cooked, Recook All, and Recook Selected as equal toolbar actions above a ten-column table. Package ID, binding layout, parameter count, backend/target text, generation, and artifact availability are visible before the user has asked an expert question. This is an implementation-oriented inventory, not the selected intent-first frontend.
+- The current selection area opens raw Source, Reflection, Disassembly, Param Match, and Compile Request artifacts and discovers their directory from shader/package identity. These are valuable expert details, but the panel lacks one operation/status model, source-located failure summary, pass/program usage, readiness, and a guided next action. Raw artifacts must move behind contextual Diagnostics/Advanced disclosure rather than be removed.
+- Current source tracking automatically schedules a changed recook, while the toolbar and console also expose manual global/package/shader actions. The target must converge these into one coalesced `Apply Changed` workflow with one visible state; full rebuild, manual reload, and identity-targeted recovery remain expert actions rather than parallel normal paths.
 - A pass runtime is materialized lazily from `FrameGraphBuilder::Draw`, `Dispatch`, or `DispatchAsync`. Its package, binding layout, and pipeline are created during graph construction, not command recording. This preserves the frame-graph Execute boundary but can place first-use pipeline creation on a frame-critical construction path.
 - D3D12 creates every graphics/compute pipeline with an empty `CachedPSO`; Vulkan calls `vkCreateGraphicsPipelines` and `vkCreateComputePipelines` with `VK_NULL_HANDLE` for the pipeline cache. Vulkan computes a local cache-key-shaped struct and then discards it. There is no renderer pipeline cache, native persistent cache, asynchronous precache coordinator, or hit/miss/too-late telemetry.
 - Pass labels, D3D12 PIX events, Vulkan object names, binding-layout names, and pipeline names are readable. They do not carry a stable program/code hash that can join a capture event to the cooker artifacts and external shader symbols.
@@ -1227,7 +1280,7 @@ Add a shader-focused CTest/CI layer rather than relying on a custom target that 
 
 Add a small runtime shader-code service over the generated maps and records. It opens and validates generation indexes, resolves code by hash, and schedules only the bounded reads/decompression/native creation selected by the physical format. It owns code-record lifetime independently from render-pass instances. Backend object policy is not universal: D3D12 PSO creation consumes shader bytecode, while Vulkan shader modules may be destroyed after pipeline creation. Cache a reusable native shader/module object only when the backend exposes one and measurements prove value. Renderer supplies required-startup and predicted-program requests; RHI supplies native creation and observable memory where available.
 
-Start with evidence, not an elaborate streamer. Measure eager indexed loading against startup-required plus predicted preload for the current 28 programs. The winning simple policy defines which of `Preload`, `IsReady`, and `Release` are meaningful; do not manufacture eviction or decompression machinery for an eager two-megabyte-scale catalog. Lazy materialization remains outside Execute and records frame-critical use as late. Accounting covers the bytes, code records, native objects, pipelines, I/O/decompression/create latency, and high-water marks that actually exist. Active programs, pipelines, generations, and GPU submissions pin only resources whose backend lifetime requires it.
+Start with evidence, not an elaborate streamer. Measure eager indexed loading against startup-required plus predicted preload for the current 28 programs and record the actual cooked bytes for each target. The winning simple policy defines which of `Preload`, `IsReady`, and `Release` are meaningful; do not manufacture eviction or decompression machinery merely because larger engines have it. Lazy materialization remains outside Execute and records frame-critical use as late. Accounting covers the bytes, code records, native objects, pipelines, I/O/decompression/create latency, and high-water marks that actually exist. Active programs, pipelines, generations, and GPU submissions pin only resources whose backend lifetime requires it.
 
 ### 16. Make Backend, Target, Stage, and Feature Support Honest
 
@@ -1359,7 +1412,7 @@ Implement this through ordered vertical slices. Each slice must replace an exist
 | 5. Jobs and DDC | split logical job identity, reusable `ShaderCompileInputHash`, and program manifest identity; add typed permutations, dedupe, priority/cancellation, dependency persistence, replay bundles, and layered-store tests | `FShaderCompileJobKey`, the full input hash, compile jobs, worker coordination, and DDC are distinct layers |
 | 6. Map and library | generate and consume `GlobalShaderMap`, `ShaderProgramManifest`, and code-hash records; deduplicate code; preserve transactional generation publication | shader maps provide logical lookup while shader code libraries provide physical delivery |
 | 7. Renderer migration | mechanically migrate remaining registrations/passes, then delete package constants, explicit-package macro, basename fallback, repeated debug strings, and duplicate parameter declarations | automation follows from one authoritative typed graph rather than from scanning files |
-| 8. Incremental development | pass changed virtual paths to the cooker, select through reverse dependencies, publish complete generations, and retain failure rollback/GPU-safe retirement | changed-shader iteration updates a map generation; it does not patch unsafe live objects |
+| 8. Incremental development and frontend | pass changed virtual paths to the cooker, select through reverse dependencies, publish complete generations, retain failure rollback/GPU-safe retirement, and replace the ten-column/multi-action Shader Tools inventory with one `Apply Changed` operation model plus contextual Diagnostics/Advanced disclosure | changed-shader iteration updates a map generation behind one user intent; the frontend does not make authors operate packages, compiler jobs, or unsafe live objects |
 | 9. PSO precache | enumerate supported global program pipeline descriptors, compile asynchronously, and report hit/miss/too-late evidence | cooked shaders and prepared PSOs solve different hitch sources |
 | 10. Loading and residency | open generation indexes once; compare eager-all with startup-required/predicted preload; add readiness, budgets, residency telemetry, and safe release without moving work into Execute | code libraries, live shader resources, and pipelines have related but independent I/O, CPU, driver, and lifetime costs |
 | 11. Capability and consumer proof | generate the backend/target/stage/feature/policy conformance matrix; explicitly reject or exercise schema-only stages and registered-only fallbacks | availability is a chain from compiler through runtime and frame selection, not a registration boolean |
@@ -1383,6 +1436,10 @@ The migration is accepted only when:
 - identical validated bytecode has one exact `ShaderCodeHash`; physical duplication is measured and removed when an indexed merged library is actually selected
 - runtime typed lookup resolves through the generated shader map/manifest, not a derived source basename or handwritten package string
 - changed includes select every dependent program and no unrelated program when dependency data is valid
+- the normal Shader Tools path is one `Apply Changed` intent with semantic search, one operation state, automatic validated activation, and no required package/layout/hash/backend/cache configuration
+- the primary shader list has a bounded task-oriented column set; raw reflection, disassembly, compile requests, hashes, manifests, backend policy, rebuild-all, and manual reload remain reachable through contextual Diagnostics/Advanced actions
+- a compile or validation failure shows one source-located root cause and next action, settles progress/cancellation once, and visibly confirms that the previous accepted generation remains active
+- opening Shader Tools from a compile error, GPU marker, or pipeline event preserves the selected source/program/pass/frame/configuration identity without retyping it
 - all registered programs validate and cook for the supported targets
 - the generated support matrix distinguishes compiler-only, runtime-validated, unsupported, and fully exercised combinations; no backend silently ignores requested compile policy
 - every advertised fallback has a selection owner and an exercised paired-backend test; registered-only alternatives are reported as such

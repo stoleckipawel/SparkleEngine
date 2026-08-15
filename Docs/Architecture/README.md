@@ -10,7 +10,7 @@ Architecture documents explain SparkleEngine's implemented shape, accepted syste
 | --- | --- | --- |
 | Current repository/module/data-flow map | [D. Whole Repository Architecture Map](WholeRepositoryMap.md) | dated source-backed snapshot |
 | External renderer/SDK comparison | [E. External Renderer Repository Comparison](ExternalRendererComparison.md) | research reference |
-| End-to-end shader authoring, compilation, cooking, runtime use, pipeline preparation, debugging, and requirements traceability | [Shader Authoring and Cooked Program Architecture](ShaderAuthoringAndCookedPrograms.md) | target proposal and current compliance audit; implementation must still be proven |
+| End-to-end shader authoring/frontend, compilation, cooking, runtime use, pipeline preparation, debugging, and requirements traceability | [Shader Authoring and Cooked Program Architecture](ShaderAuthoringAndCookedPrograms.md) | target proposal and current compliance audit; implementation must still be proven |
 | Epic/NVIDIA/AMD diagnostics product and UI/UX comparison | [Diagnostics Product And UX Research](DiagnosticsUxResearch.md) | research reference |
 | Performance diagnostics mockups, system-scope map, and individual tool layouts | [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsAsciiWireframes.md) | design visualization; not implementation evidence |
 | Renderer/RHI dependency and ownership boundary | [Renderer and RHI Architecture Boundary](RendererRhiBoundary.md) | canonical architecture decision |
@@ -23,7 +23,7 @@ Architecture documents explain SparkleEngine's implemented shape, accepted syste
 
 For external technical review, read the repository map and Renderer/RHI boundary, then inspect the relevant code. Read external comparison only to audit precedent.
 
-For shader authoring, cooking, runtime loading, pipeline, or shader-debugging changes, read [Shader Authoring and Cooked Program Architecture](ShaderAuthoringAndCookedPrograms.md) for the target identity model, current end-to-end audit, requirements traceability, evidence contract, and migration gates. Then verify the current shader registry, compiler, cooked schema, runtime cache, pass definitions, and backend pipeline creation in code. The target document does not prove that manual pass/package strings, first-use pipeline creation, or other recorded gaps have already been removed.
+For shader authoring, frontend workflow, cooking, runtime loading, pipeline, or shader-debugging changes, read [Shader Authoring and Cooked Program Architecture](ShaderAuthoringAndCookedPrograms.md) for the intent-first author experience, target identity model, current end-to-end audit, requirements traceability, evidence contract, and migration gates. Then verify the current Shader Tools UI, shader registry, compiler, cooked schema, runtime cache, pass definitions, and backend pipeline creation in code. The target document does not prove that the current multi-action inventory, manual pass/package strings, first-use pipeline creation, or other recorded gaps have already been removed.
 
 For multithreading work, [J](Multithreading/MultithreadedEngineArchitecture.md) owns the target design and rationale while [K](Multithreading/ImplementationPlan.md) owns sequencing. Neither replaces [engineering standards](../Engineering/Standards/README.md) or proves current implementation.
 

@@ -36,6 +36,10 @@ The supplied principal graphics engineering role set adds a second comparison le
 | FidelityFX SDK | https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK | SDK layout with Kits, Samples, Tools, docs, and delivery concerns. |
 | Epic Render Dependency Graph | https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine | Core commercial-engine precedent for graph-owned lifetime/scheduling, shader-parameter reuse, graph-only pass parameters, and semantic event names. |
 | Epic PSO Precaching | https://dev.epicgames.com/documentation/en-us/unreal-engine/pso-precaching-for-unreal-engine | Separates shader availability, complete pipeline descriptors, asynchronous preparation, and runtime miss/completeness evidence. |
+| Epic Shader Development | https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine | Changed-shader iteration and direct source errors show an intent-first author loop. |
+| Epic Timing Insights | https://dev.epicgames.com/documentation/en-us/unreal-engine/timing-insights-in-unreal-engine-5 | Frames/tracks plus selection-driven aggregates and callers/callees supply the overview-to-detail product pattern. |
+| NVIDIA Nsight GPU Trace UI | https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-trace-ui.html | Explicit collection state, frames/queues, range selection, event detail, contextual analysis, and report management. |
+| AMD RGP Overview | https://gpuopen.com/manuals/rgp_manual/overview_windows/ | Summary and most-expensive-event orientation with contextual navigation into deeper event/pipeline/occupancy/ISA panes. |
 
 NvRTX code is gated behind Epic/GitHub access, so this document uses the public NVIDIA developer page for that comparison rather than claiming direct code inspection.
 
@@ -203,6 +207,23 @@ Action:
 - Keep all training/offline dependencies out of the runtime package and delete experimental scaffolding that the accepted feature does not need.
 - Preserve negative results and rejected layouts/precision/concurrency choices so the guidance reflects engineering judgment.
 
+### 9. Production Frontends Preserve Intent And Hide Mechanics
+
+Epic's shader workflow asks the developer to save edits and recompile changed shaders; it does not ask them to build compiler jobs, choose cache files, or reload individual native objects. Timing Insights starts with frames and tracks, then lets one selection drive aggregate and caller/callee detail. Nsight GPU Trace exposes capture readiness/state and frames/queues before event, metric, source, and analysis panes. RGP leads with summary and most-expensive events and preserves selection while navigating to deeper panes.
+
+Sparkle comparison:
+
+- Current backend ownership is stronger than the current frontend hierarchy. Shader Tools exposes package/layout/backend/artifact fields and several recovery operations before the common changed-shader intent; the proposed diagnostics menu can similarly become cluttered if every stat group is a first-level choice.
+- Hiding detail must not mean deleting expert capability. It means deriving safe defaults and moving raw identities, manifests, hashes, compiler/capture settings, and specialized panes behind the selected task/object.
+
+Action:
+
+- Lead with a small task vocabulary: `Apply Changed`, `Quick Check`, `Investigate CPU/GPU/Memory`, and `Capture Evidence`.
+- Preserve one shader/frame/range/marker/configuration selection across summary, detail, retry, and external handoff.
+- Generate dependency closure, target/capability choice, cache use, collection mode, manifest identity, and validated publication in their backend owners.
+- Keep raw group selection, compiler jobs, package/chunk state, hashes, native handles, counters, and tool-specific settings searchable under contextual Diagnostics/Advanced surfaces.
+- Do not copy Unreal Insights, Nsight, or RGP pane counts. Copy their progressive task-to-detail navigation and explicit state/failure behavior.
+
 ## Direct Comparison Matrix
 
 | Reference | Production pattern | Sparkle today | Improvement |
@@ -218,6 +239,7 @@ Action:
 | Cauldron | Static rapid-prototyping framework for D3D12/Vulkan FidelityFX samples. | Sparkle has more engine/editor/tooling scope. | Treat SDK integrations as sample/provider vertical slices, not renderer-wide design drivers. |
 | FidelityFX SDK | Kits/Samples/Tools/docs product split. | Sparkle has Engine/Tools/Projects/Docs and has externalized the heavy acceptance content. | Preserve cataloged optional delivery; admit tools only through an owned workflow. |
 | NvRTX | Versioned validated branches and an explicitly experimental branch. | Sparkle needs honest maturity/capability status and safe defaults, not necessarily the same branch structure. | Gate, extract, or branch only according to the owning feature's delivery and validation needs. |
+| Epic/Nsight/RGP frontends | Task/overview first, explicit state and selection, contextual navigation into deeper detail. | Sparkle has capable backend data but current shader/diagnostic entry surfaces risk exposing catalogs and mechanics too early. | Use intent-first actions, automatic validated defaults, one preserved selection, and contextual Diagnostics/Advanced disclosure. |
 
 ## Sparkle Construction Differences
 

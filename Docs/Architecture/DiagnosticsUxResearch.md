@@ -288,6 +288,14 @@ The three ecosystems converge on the following design laws:
 10. Separate measurement from recommendation. A timestamp or utilization graph is an observation; a cause requires a controlled experiment or specialized capture.
 11. Save/share only on explicit action. Live orientation must not create files. A frozen capture or benchmark can be deliberately exported with its manifest.
 12. Reveal observer effects. Detailed timestamps, validation, hardware counters, replay, or multi-pass collection can perturb work and must be labeled.
+13. Ask for intent, not collector configuration. `Quick Check`, `Investigate GPU`, and `Capture Evidence` are primary tasks; queue names, trace modes, counters, buffers, and cache mechanics are derived or advanced detail.
+14. Make the recommended path the shortest path. Capability detection, minimum collection mode, correlation, default target/tool choice, and manifest population should be automatic and validated.
+15. Use progressive disclosure. One summary and next action lead; selection-specific timelines/tables follow; raw events, hashes, manifests, compiler state, and expert overrides remain searchable details.
+16. Prevent invalid setups. Hide impossible options, disable temporarily unavailable actions with the prerequisite beside them, and validate a complete operation before collection rather than failing after a long capture.
+17. Preserve an expert escape hatch without making it the default. Advanced controls show their cost, capability scope, and difference from a named preset and can be reset in one action.
+18. Preserve navigation context. A selected frame/range/marker/configuration must flow into the next view or external-tool checklist; users should not re-enter identities to continue one investigation.
+
+This is consistent with the reviewed production frontends. Epic exposes a saved-edit plus `recompileshaders changed` workflow rather than compiler-job construction, and Timing Insights moves from frame/range overview into selection-driven tracks and callers/callees. Nsight GPU Trace shows explicit collection state, frames/queues first, then event details and analysis; RGP provides an Overview with most-expensive events and context navigation into event, pipeline, occupancy, and ISA panes. Sparkle should adopt that task-to-detail progression, not their total pane count or vendor-specific datasets. [Epic Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine), [Epic Timing Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/timing-insights-in-unreal-engine-5), [Nsight GPU Trace UI](https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-trace-ui.html), [RGP Overview windows](https://gpuopen.com/manuals/rgp_manual/overview_windows/)
 
 ## Sparkle Product Options
 
@@ -307,7 +315,7 @@ The hybrid diagnostics ladder is the selected result of this research: cheap com
 
 | Selected concern | Adopted boundary | Canonical owner |
 | --- | --- | --- |
-| Product depth and surfaces | At most four composable compact groups; one fixed Overview/CPU/GPU/Memory workspace; external tools for causal depth. | [Product information architecture](PerformanceDiagnosticsArchitecture.md#diagnostics-product-information-architecture) |
+| Product depth and surfaces | Task-first Quick/CPU/GPU/Memory entry, an initially bounded compact-overlay set, one fixed Overview/CPU/GPU/Memory workspace, and external tools for causal depth. Raw stat groups remain expert customization, not the first menu. | [Product information architecture](PerformanceDiagnosticsArchitecture.md#diagnostics-product-information-architecture) |
 | Physical/logical ownership and metric meaning | Physical CPU thread rows, logical phases inside their real owners, independent GPU queues, distinct memory definitions, explicit validity. | [Measurement and view contracts](PerformanceDiagnosticsArchitecture.md#measurement-vocabulary) |
 | Selection and interaction | One shared frame/range/object selection; hitches are frame selections; GPU capture stays inside the GPU view; filtering never changes totals. | [Workspace interaction contract](PerformanceDiagnosticsArchitecture.md#workspace-interaction-contract) |
 | Visual and failure behavior | Milliseconds lead, color is never the only signal, configuration remains visible, and pending/stale/unsupported/lost states never masquerade as zero. | [Visual and accessibility rules](PerformanceDiagnosticsArchitecture.md#visual-validity-and-accessibility-rules) |
@@ -321,6 +329,7 @@ This handoff preserves the adopted decisions while keeping research focused on p
 The UX alone cannot prevent instrumentation clutter. The selected functionality imposes these implementation-facing constraints without designing the collector here:
 
 - One presentation-neutral diagnostics product feeds overlays, Performance, benchmark summaries, and export.
+- Normal entry points are user questions/presets; the fixed group catalog is available through contextual customization and the console, not displayed as twelve equal choices.
 - UI panels consume immutable snapshots and issue typed semantic requests. They do not include renderer snapshots directly, synchronously query live engine state, or define measurement semantics.
 - Instrument stable owner boundaries: application frame, named physical threads, scheduler lanes, renderer phases, frame-graph passes, RHI queue/timestamps, allocator/memory authority.
 - RDG pass declaration/execution supplies semantic GPU scopes automatically. Feature code adds a child marker only when it answers an accepted workload question.
@@ -332,7 +341,7 @@ The UX alone cannot prevent instrumentation clutter. The selected functionality 
 
 ## Current Sparkle UX Reconciliation
 
-The 2026-08-11 source snapshot shows useful foundations but no joined performance product:
+The 2026-08-15 source reconciliation shows useful foundations but no joined performance product:
 
 - `ViewportTopPanel::BuildPerformanceStats` displays ImGui's smoothed FPS and delta time only.
 - `MainMenuBarPanel` opens Settings, Shaders, Meshes, and Textures utility windows and has an explicit viewport-capture action, but no Performance workspace.
@@ -400,6 +409,7 @@ When a source changes, record the narrow claim, source section, version/date, ad
 - [Task Graph Insights](https://dev.epicgames.com/documentation/unreal-engine/task-graph-insights-in-unreal-engine-5)
 - [Context Switches](https://dev.epicgames.com/documentation/en-us/unreal-engine/context-switches-in-unreal-engine-5)
 - [Render Dependency Graph](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine)
+- [Shader Development and changed-shader iteration](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine)
 - [Render Resource Viewer](https://dev.epicgames.com/documentation/unreal-engine/render-resource-viewer-in-unreal-engine)
 - [GPUDump Viewer](https://dev.epicgames.com/documentation/en-us/unreal-engine/gpudump-viewer-tool-in-unreal-engine)
 - [ProfileVisualizer API](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Developer/ProfileVisualizer)

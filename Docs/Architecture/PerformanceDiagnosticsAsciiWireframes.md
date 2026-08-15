@@ -10,9 +10,9 @@ Scope: graphical product mockups, a system-scope map, and implementation-oriente
 
 This document shows how each proposed Sparkle diagnostics surface could look. It is the single visual-design owner for graphical mockups, the system-scope map, and plain-text tool layouts. It is a reading aid for product review and implementation planning. The owning architecture defines metric meaning, ownership, bounds, collection modes, validity, and acceptance rules. If a mockup or wireframe conflicts with that architecture, the architecture wins.
 
-The values below are illustrative and deliberately reused across views. They are not Sponza measurements, benchmark evidence, or proof that a surface is implemented. The source-backed starting point remains the existing viewport FPS/delta display; the layouts below describe the target product.
+The values below are illustrative and deliberately reused across views. They are not Sponza measurements, benchmark evidence, or proof that a surface is implemented. Numeric capacities shown in the layouts are the architecture's initial sizing candidates and must be calibrated before they become implementation constants. The source-backed starting point remains the existing viewport FPS/delta display; the layouts below describe the target product.
 
-The graphical mockups communicate the overall experience and information hierarchy. The later boxes use plain ASCII characters so individual tools remain readable in terminals, source reviews, and plain-text exports.
+The graphical mockups communicate the overall experience and information hierarchy. The later ASCII boxes own current control labels and placement; if a raster mockup still shows an older toolbar/menu label, the intent-first ASCII contract wins until the image is deliberately regenerated. The boxes also keep individual tools readable in terminals, source reviews, and plain-text exports.
 
 ## Graphical Product Mockups
 
@@ -60,10 +60,9 @@ These images illustrate the target product and information hierarchy. They do no
 
 ```text
 Quick orientation
-  Viewport Stat menu
+  Viewport Performance menu: Quick Check | Investigate CPU/GPU/Memory
   Console Stat command
-  Compact overlays: Fps, Unit, UnitGraph, Threads, Tasks, Gpu,
-                    GpuPasses, Render, Scene, Rhi, Memory, Hitches
+  Task preset chooses a compact overlay composition automatically
             |
             | click summary, frame, hitch, or Open Performance
             v
@@ -77,7 +76,7 @@ Evidence and cause
   ProfileGpu | explicit benchmark export | external-profiler handoff
 ```
 
-The compact overlay limit is four simultaneous groups. Every visible group shares the same joined diagnostics product; enabling more views does not create duplicate collectors.
+The initial compact-overlay candidate is four simultaneous groups. Every visible group shares the same joined diagnostics product; enabling more views does not create duplicate collectors.
 
 ## Shared Visual Language
 
@@ -95,33 +94,26 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 
 ## Shared Controls
 
-### Viewport Stat Menu
+### Viewport Performance Menu
 
 ```text
-+ Viewport ----------------------------------------------------------- [Stat v] +
++ Viewport ---------------------------------------------------- [Performance v] +
 |                                                                             |
-|                                      + Stat ------------------------------+ |
-|                                      | Presets                            | |
-|                                      |   Quick       Unit                 | |
-|                                      |   CPU         Unit Threads Tasks   | |
-|                                      |   GPU         Unit Gpu Render      | |
-|                                      |   Memory      Unit Memory Rhi      | |
-|                                      |   Portfolio   Unit Threads Gpu Mem | |
+|                                      + Performance -----------------------+ |
+|                                      | Quick Check                        | |
+|                                      | Investigate CPU                    | |
+|                                      | Investigate GPU                    | |
+|                                      | Investigate Memory                 | |
 |                                      +------------------------------------+ |
-|                                      | [x] Unit             Basic         | |
-|                                      | [ ] UnitGraph        Basic         | |
-|                                      | [ ] GpuPasses        Detailed      | |
-|                                      | [ ] Memory           1 Hz          | |
-|                                      | ... 8 more fixed groups            | |
-|                                      +------------------------------------+ |
+|                                      | Current: Quick | Basic | valid 120 | |
 |                                      | Open Performance...                | |
-|                                      | Reset live window                  | |
-|                                      | Hide all                           | |
+|                                      | Customize Stats...                 | |
+|                                      | Hide                              | |
 |                                      +------------------------------------+ |
 +-----------------------------------------------------------------------------+
 ```
 
-The menu submits the same typed requests as the console. It does not build command strings, own collection state, or silently enable `LiveDetailed`. The menu illustrates the complete bounded option set; only the architecture's Tier A evidence spine is selected for initial delivery. Tier B/C groups remain workload-gated candidates, not a promised backlog.
+The menu submits typed task-preset requests and shows the automatically derived collection cost. It does not build command strings, own collection state, list twelve internal groups as equal choices, or silently enable `LiveDetailed`. `Customize Stats...` is the searchable expert route to the bounded group catalog. Tier B/C groups remain workload-gated candidates, not a promised backlog.
 
 ### Console Interaction
 
@@ -147,7 +139,7 @@ Space toggles Live/Freeze, left/right steps frames, Shift+left/right moves betwe
 
 ## Compact Stat Tools
 
-Each compact tool has at most 16 rows. Overflow ends with `+N hidden; open Performance` rather than expanding over the scene.
+The initial compact-tool candidate has at most 16 rows. Overflow ends with `+N hidden; open Performance` rather than expanding over the scene.
 
 ### Fps
 
@@ -374,7 +366,7 @@ The Editor contains one fixed Performance window. Switching tabs preserves the s
 ```text
 + Performance ----------------------------------------------------------------+
 | LIVE | Frame 18422 | D3D12 | 5120x1392 | DevEditor | Basic | valid 120/120  |
-| [Overview] [CPU] [GPU] [Memory]            [Freeze] [Capture GPU] [Export...]|
+| [Overview] [CPU] [GPU] [Memory]       [Freeze] [Investigate GPU] [More...]   |
 + Frame navigator -------------------------------------------------------------+
 | 18303 .......... ^ hitch 18391 ................. > selected 18422 | 16.7 ms |
 + Main view ------------------------------------------------+ Inspector --------+
@@ -386,6 +378,8 @@ The Editor contains one fixed Performance window. Switching tabs preserves the s
 | likely GPU-limited | lost 0 | memory age 0.4 s | GPU resolved 2 frames late |
 +------------------------------------------------------------------------------+
 ```
+
+The right-side primary action is contextual: Overview offers the strongest valid investigation step, CPU offers system-trace guidance when needed, GPU offers `Show Passes` or `Capture GPU`, and Memory offers A/B/C guidance. `More...` contains configuration details, expert stat customization, reset, and `Capture Evidence...`; those actions do not compete permanently in the main toolbar.
 
 ### Overview
 
@@ -558,7 +552,7 @@ No file is emitted during normal runs. Validation failure preserves the previous
 ```text
 + Next investigation ---------------------------------------------------------+
 | Selection       FrameId 18420 / Renderer.FrameGraph.Lighting                |
-| Observation     132.4 ms inclusive; 12.7 ms exclusive on Graphics queue     |
+| Observation     132.4 ms inclusive; 12.7 ms uncovered on Graphics queue     |
 | Configuration   D3D12 | RTX adapter | 5120x1392 | VSync off | depth 1       |
 | Question        Which API, shader, synchronization, or hardware cause?       |
 |                                                                              |
@@ -603,6 +597,8 @@ These states must not collapse into `0`, blank cells, generic red coloring, or a
 
 ## Review Checklist
 
+- The first viewport menu names Quick Check and CPU/GPU/Memory investigation intents; raw stat groups appear only under searchable customization or the console.
+- The Performance toolbar has one contextual primary next action. Capture, export, reset, configuration, and expert controls do not all remain permanently visible.
 - Every compact group answers the diagnostic question in the fixed catalog and stays within 16 rows.
 - Every view keeps `FrameId` or range, configuration, collection mode, validity, loss, and age visible.
 - CPU rows distinguish physical threads from logical phases and task lanes.
@@ -611,4 +607,5 @@ These states must not collapse into `0`, blank cells, generic red coloring, or a
 - `GpuPasses` visibly requests `LiveDetailed`; `ProfileGpu` remains an explicit one-shot capture.
 - The workspace remains one fixed Overview/CPU/GPU/Memory product, not a set of unrelated profiler windows.
 - Escalation identifies the external tool and preserves the selected stable token and configuration.
+- Configuration details and raw identities remain reachable and enter exports without crowding the glance/triage surface.
 - All example values remain labeled illustrative until replaced by accepted workload evidence.
