@@ -2,7 +2,7 @@
 
 Status: version-sensitive operational research and runbook; not proof of current Sparkle implementation or tool support
 
-Last source reconciliation: 2026-08-15
+Last source reconciliation: 2026-08-16
 
 Scope: profiling-build preparation, current external-tool capabilities, marker interoperability, capture provenance, operational capture checks, input/display measurement options, and revalidation triggers
 
@@ -28,11 +28,12 @@ Release pages and current manuals establish current capability. Older blogs, tut
 
 ## Source And Version Reconciliation
 
-| Product/source state observed on 2026-08-15 | Claim supported and adopted | Not inferred / revalidation trigger |
+| Product/source state observed on 2026-08-16 | Claim supported and adopted | Not inferred / revalidation trigger |
 | --- | --- | --- |
-| PIX and Windows Performance Toolkit current official documentation | PIX Timing/GPU Capture are the primary D3D12 timing/frame paths; WPR/WPA provides Windows sampled/precise CPU and TraceLogging analysis. | Record installed versions. A replay is not native timing; a collector can perturb the workload. Revalidate on PIX/WPT, Agility SDK, Windows, or capture-setting change. |
-| RenderDoc [v1.45 release](https://github.com/baldurk/renderdoc/releases/tag/v1.45), 2026-07-02 | Current D3D12/Vulkan frame-debugging baseline for API events, state, resources, descriptors, draws/dispatches, and outputs. | The Vulkan wiki is older workflow guidance, not a current feature matrix. RenderDoc validation/replay does not establish CPU scheduling or hardware cause. Revalidate version, driver, API feature, and replay result. |
-| Nsight Graphics [2026.3](https://developer.nvidia.com/nsight-graphics/get-started), 2026-07-23 | GPU Trace and Graphics Capture cover current NVIDIA D3D12/Vulkan work; Shader Profiler supports both APIs for shader analysis when the workload is SM-limited. | Shader Profiler is not a universal answer for bandwidth, queue, CPU, or presentation limits. The live Shader Debugger is currently Vulkan-only and has stricter hardware/system setup. Revalidate the [feature matrix](https://docs.nvidia.com/nsight-graphics/UserGuide/appendix.html), GPU/driver, API, and activity selected. |
+| PIX and Windows Performance Toolkit current official documentation | PIX Timing/GPU Capture are the primary D3D12 timing/frame paths; `PIXGpuCaptureNextFrames`, `PIXSetTargetWindow`, attachment query, and capture-open APIs support an editor-owned next-frame button when the GPU capturer was loaded/injected before D3D12 device creation. WPR/WPA provides Windows sampled/precise CPU and TraceLogging analysis. | WinPixEventRuntime markers alone do not mean GPU capture is attached. Record installed versions. A replay is not native timing; a collector can perturb the workload. Revalidate on PIX/WPT, Agility SDK, Windows, or capture-setting change. |
+| RenderDoc [v1.45 release](https://github.com/baldurk/renderdoc/releases/tag/v1.45), 2026-07-02, and current in-application API | Current D3D12/Vulkan frame-debugging baseline; its dynamically queried API supports application-controlled capture without statically linking the injected module. | API/header versions must match and target device/window behavior must be smoke-tested. RenderDoc validation/replay does not establish CPU scheduling or hardware cause. Revalidate version, driver, API feature, attachment path, and replay result. |
+| Nsight Graphics [2026.3](https://developer.nvidia.com/nsight-graphics/get-started), 2026-07-23, with NGFX SDK 0.9.0 beta documentation | GPU Trace and Graphics Capture cover current NVIDIA D3D12/Vulkan work; the beta SDK supports Graphics Capture initialization, next-delimiter request, native GUI-button use, and artifact-path queries. | The SDK is explicitly beta and permits only one activity per process. Sparkle `-Nsight` means Graphics Capture, not Systems or GPU Trace. Keep the button experimental and revalidate the SDK/API, feature matrix, GPU/driver, activity, artifact finalization, and observer effect. |
+| Epic current PIX and RenderDoc integration documentation | `-AttachPix`/`-AttachRenderDoc` request attachment; successful attachment adds one provider icon in the upper-right Level Viewport and the icon performs a single-frame capture. Sparkle adopts conditional placement and explicit capture intent. | This proves Unreal UX precedent, not Sparkle implementation, identical flags, provider compatibility, or successful replay. Revalidate when Epic integration guidance changes. |
 | Radeon GPU Profiler [v2.7](https://gpuopen.com/rgp/), June 2026 | Current AMD queue/barrier/wave/event profiling baseline for supported D3D12/Vulkan platforms and RDNA hardware. | Counter conclusions are architecture/capture specific. Its extended/native PIX marker path currently calls for the Agility SDK 1.721 preview path and matching AMD developer-preview driver; this is not baseline support. Revalidate RGP/RDP, driver, OS, GPU, API, and marker path. |
 | Radeon GPU Detective [v1.6.3](https://gpuopen.com/radeon-gpu-detective/), June 2026 | Current Windows 11 AMD D3D12/Vulkan crash-dump and marker-breadcrumb baseline on listed hardware/drivers. | A breadcrumb narrows location, not root cause. Point markers are ignored and cross-command-list/buffer scopes are not reliable in this version. Revalidate tool/driver/API and known issues. |
 | AMD uProf [v5.3](https://www.amd.com/en/developer/uprof.html), 2026-06-17 | Current AMD x86 hotspot, call-stack, IBS/PMC, cache, power, and supported system-analysis baseline. | Sampling skid, counter availability, multiplexing, OS, and CPU-family limitations remain capture metadata. Revalidate version, OS, CPU, selected profile type, and counter set. |
@@ -51,7 +52,7 @@ Representative performance captures use a fully optimized profiling build. It pr
 - engine/content/configuration/marker-schema/compiler/shader-compiler hashes;
 - the same task-worker policy, threaded/serial renderer choice, pipeline depth, command-recording policy, queue topology, presentation policy, and render settings as the declared experiment.
 
-The profile-build switch does **not** silently enable assertions, D3D12 debug layer, Vulkan validation, detailed Sparkle timestamps, hardware counters, serial command recording, extra queue waits, capture files, or a different allocator. Those are explicit observer/configuration dimensions. A correctness-validation run may use them separately; it cannot be presented as the representative performance run without a measured equivalence argument.
+The profile-build switch does **not** silently enable assertions, D3D12 debug layer, Vulkan validation, detailed Sparkle timestamps, hardware counters, serial command recording, extra queue waits, capture files, an external capture provider, or a different allocator. Those are explicit observer/configuration dimensions. A correctness-validation run may use them separately; it cannot be presented as the representative performance run without a measured equivalence argument.
 
 Keep three modes distinct:
 
@@ -123,13 +124,51 @@ This map selects the narrowest likely evidence source. The capability record and
 
 RenderDoc is a frame debugger, not the CPU profiler for this design. Nsight Graphics/RGP/uProf counter conclusions apply only to the captured architecture and conditions. PIX GPU evidence is D3D12-specific. WPA remains the cross-backend Windows CPU scheduling truth. Nsight Perf SDK is deliberately not a required runtime dependency; external Nsight captures answer the planned studies first.
 
+## Attached Frame-Capture Provider Operations
+
+The architecture selects the Editor launch intents `-Pix`, `-RenderDoc`, and `-Nsight`; this runbook owns the changing provider mechanics and readiness checks. These flags and the viewport icon are target behavior, not proof that the current Sparkle executable implements them.
+
+### Common Bootstrap And Capture Sequence
+
+1. Parse exactly one provider before graphics-device creation. Record the selected backend and reject multiple providers or a provider/backend mismatch without precedence or fallback.
+2. Detect an already injected provider or load the selected capture layer through its documented pre-device path. Verify installation path, library identity/signature where supported, version/API negotiation, and clean unload/rollback behavior.
+3. Initialize or query the provider's exact activity. Marker emission is not capture readiness: WinPixEventRuntime, Vulkan debug labels, or a loaded vendor library alone cannot enable the icon.
+4. Publish `Unavailable` with one actionable reason, or `Ready` with provider, activity, API/SDK version, backend, observer warning, and supported target semantics.
+5. On a viewport click, bind that viewport's native present target, enqueue one next-valid-frame request, and show `Armed`. Do not begin capture inside the UI event handler.
+6. Observe `Capturing`/`Finalizing` only when the provider can report them; otherwise keep a truthful bounded pending state. Reject a second request and serialize against `ProfileGpu`, validation capture, or another provider.
+7. On completion, preserve the provider-native artifact and its path when available. Open the tool or folder only through a visible user action unless usability evidence accepts automatic opening. Tag the captured Sparkle frame/discontinuity and observer mode where correlation is available.
+8. On failure, timeout, resize, minimize, device loss, or shutdown, settle the request once, preserve the provider error, and prove that the next ordinary launch has no capture layer or stale callback.
+
+### Provider Matrix
+
+| Sparkle intent | Pre-device readiness | Viewport trigger | Target/artifact behavior | Primary limitation |
+| --- | --- | --- | --- | --- |
+| `-Pix` | Windows D3D12; load/inject `WinPixGpuCapturer.dll` before any D3D12 device/API creation; confirm GPU-capture attachment rather than marker runtime presence. | Set the clicked viewport's target window, then enqueue one frame with `PIXGpuCaptureNextFrames`. | `.wpix`; use the documented open-in-PIX API only after successful finalization. | D3D12/Windows only; capture/replay timing differs from native execution and the capture layer can perturb the workload. |
+| `-RenderDoc` | D3D12 or Vulkan; discover the injected module and dynamically negotiate `RENDERDOC_GetAPI` with the matching header version. Do not statically link or invent a DLL search path outside configured/official locations. | Use the validated next-frame trigger or balanced start/end API with the selected device/window; smoke-test multi-window targeting on both backends. | RenderDoc owns the capture file/list and replay UI; retrieve/open only through supported API behavior. | Injection, API version, device/window selection, unsupported API features, and replay success vary by version/driver. |
+| `-Nsight` | Supported NVIDIA D3D12/Vulkan; initialize the NGFX **Graphics Capture** activity and version every parameter struct. Only one NGFX activity may own the process. | Request one capture at the next Present or validated frame delimiter with `NGFX_GraphicsCapture_RequestCapture_*`. | Query finalized capture paths through NGFX artifact APIs; host/remote filesystem namespaces may differ. | NGFX SDK 0.9.0 is beta. Keep Sparkle support `Experimental`; do not reinterpret this intent as Nsight Systems or GPU Trace. |
+
+Launching from a provider's native UI may inject the capture layer before Sparkle starts. If exactly one supported API is detected and passes the same capability checks, Sparkle may expose the same icon without a flag. Passive detection never loads another provider, and simultaneous detected layers remain `Conflict` until the user relaunches cleanly.
+
+### Required Smoke Matrix
+
+- no flag and no injection: no provider library load and no viewport icon;
+- each requested provider missing, wrong version, wrong backend, and successfully ready;
+- native-UI launch/attach detection without a Sparkle flag;
+- D3D12 multi-window target capture for PIX and RenderDoc, plus Vulkan target capture for RenderDoc;
+- supported NVIDIA D3D12/Vulkan Nsight Graphics Capture with the exact SDK/driver/tool versions, while visibly `Experimental`;
+- capture of the clicked viewport rather than the first unrelated Editor present;
+- stable marker hierarchy and requested/captured `FrameId` correlation where the provider permits it;
+- repeated single captures, busy/conflict, resize/minimize, timeout, device loss, finalization, artifact opening, and shutdown/relaunch cleanup;
+- internal detailed timing off versus provider capture on, then the explicitly declared combined mode only if later measured safe;
+- Empty and Sponza observer-cost comparison against the same build/configuration without the provider.
+
 ## Capture Preparation And Provenance
 
 Before any native capture:
 
 1. Write the falsifiable hypothesis, competing cause, smallest discriminating tool/activity, expected signal, and failure interpretation.
 2. Build the representative profiling configuration and archive symbol/shader packages plus hashes.
-3. Fix route, readiness, resolution, render settings, backend, validation state, worker/topology, VSync/presentation, power/thermal condition, and background compilation policy.
+3. Fix route, readiness, resolution, render settings, backend, validation state, worker/topology, VSync/presentation, power/thermal condition, background compilation policy, provider launch intent/activity, and target viewport.
 4. Confirm stable thread, queue, pass, shader, resource, and `FrameId`/range identities in a short smoke capture.
 5. Run API validation separately. Resolve correctness errors before performance attribution.
 6. Disable overlapping Sparkle detailed timestamps/counters unless the experiment explicitly measures their interaction with the external collector.
@@ -250,16 +289,20 @@ The architecture keeps latency `NotInstrumented` until Sparkle owns `InputSample
 
 ## Embedded Vendor SDK Decision
 
-Native external captures are the selected first production path. A vendor SDK is admitted only as an optional RHI-private lab adapter with a named workload consumer, capability matrix, bounded lifetime, observer-cost evidence, fallback, and no Core/Application public dependency.
+Native external captures remain the production evidence path. A capture-control API is admitted only as an optional RHI-private adapter with a named user action, capability matrix, bounded request lifetime, observer-cost evidence, clean absence/fallback behavior, and no vendor types in Core, Application, Renderer public contracts, or Editor.
 
-Nsight Perf SDK remains deferred. Its current documentation describes one profiling session per GPU across the system, variable counter availability, system-global clock controls, D3D12 debug-layer incompatibility for range profiling, and Vulkan range limitations for secondary/simultaneous-use command buffers (including required behavior changes in some profiling paths). Those constraints conflict with a transparent cross-backend always-on collector and Sparkle's representative parallel-recording requirement. Reconsider only when external Nsight Graphics captures cannot answer an accepted study and a private adapter can preserve normal topology or label the experiment `NonRepresentative`.
+PIX and RenderDoc capture-control APIs satisfy a concrete consumer: the conditional viewport `Capture next frame` action. The NGFX Graphics Capture SDK addresses the same consumer but remains `Experimental` while its public documentation labels the SDK beta. This narrow admission does not admit counters, recommendations, or an always-on vendor collector.
+
+Nsight **Perf SDK** remains deferred and is distinct from the NGFX Graphics Capture control API. Its current documentation describes one profiling session per GPU across the system, variable counter availability, system-global clock controls, D3D12 debug-layer incompatibility for range profiling, and Vulkan range limitations for secondary/simultaneous-use command buffers (including required behavior changes in some profiling paths). Those constraints conflict with a transparent cross-backend always-on collector and Sparkle's representative parallel-recording requirement. Reconsider only when external Nsight Graphics captures cannot answer an accepted study and a private adapter can preserve normal topology or label the experiment `NonRepresentative`.
 
 ## Primary Sources
 
 ### Microsoft And Windows
 
+- [Epic: using PIX on Windows with Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-pix-on-windows-with-unreal-engine)
 - [PIX overview and capture selection](https://learn.microsoft.com/en-us/windows/win32/direct3dtools/pix/articles/general/pix-overview)
 - [PIX GPU captures](https://learn.microsoft.com/en-us/windows/win32/direct3dtools/pix/articles/gpu-captures/pix-gpu-captures)
+- [PIX programmatic capture APIs](https://devblogs.microsoft.com/pix/programmatic-capture/)
 - [PIX Timing Comparison layout](https://learn.microsoft.com/en-us/windows/win32/direct3dtools/pix/articles/timing-captures/layouts/pix-timing-captures-comparison-layout)
 - [Windows Performance Toolkit CPU analysis](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/cpu-analysis)
 - [TraceLogging capture with WPR/WPA](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/capture-and-view-tracelogging-data)
@@ -267,8 +310,11 @@ Nsight Perf SDK remains deferred. Its current documentation describes one profil
 
 ### RenderDoc
 
+- [Epic: using RenderDoc with Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-renderdoc-with-unreal-engine)
 - [RenderDoc project](https://github.com/baldurk/renderdoc)
 - [RenderDoc releases](https://github.com/baldurk/renderdoc/releases)
+- [RenderDoc in-application API](https://github.com/baldurk/renderdoc/blob/v1.x/docs/in_application_api.rst)
+- [RenderDoc application API header](https://github.com/baldurk/renderdoc/blob/v1.x/renderdoc/api/app/renderdoc_app.h)
 - [RenderDoc Vulkan wiki workflow](https://github.com/baldurk/renderdoc/wiki/Vulkan) - historical workflow aid; revalidate against the current release.
 
 ### NVIDIA
@@ -279,6 +325,8 @@ Nsight Perf SDK remains deferred. Its current documentation describes one profil
 - [Shader Profiler](https://docs.nvidia.com/nsight-graphics/UserGuide/shader-profiler.html)
 - [Shader Debugger overview](https://docs.nvidia.com/nsight-graphics/UserGuide/shader-debugger-overview.html)
 - [Application correlation configuration](https://docs.nvidia.com/nsight-graphics/UserGuide/configure-application.html)
+- [Nsight Graphics SDK user guide and programmatic capture](https://docs.nvidia.com/nsight-graphics/UserGuide/sdk.html)
+- [NGFX Graphics Capture API](https://docs.nvidia.com/nsight-graphics/NsightGraphicsSdk/group___n_g_f_x___a_p_i___c_o_r_e.html)
 - [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 - [Nsight Perf SDK 2025.5 limitations](https://developer.nvidia.com/nsight-perfsdk/getting-started/release-note-v2025.5)
 - [Nsight Aftermath](https://developer.nvidia.com/nsight-aftermath)

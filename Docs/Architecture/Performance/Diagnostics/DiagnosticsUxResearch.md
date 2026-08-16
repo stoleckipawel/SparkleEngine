@@ -2,7 +2,7 @@
 
 Status: research reference; external precedent and option analysis, not proof of current implementation
 
-Research reconciliation: 2026-08-15
+Research reconciliation: 2026-08-16
 
 Scope: the visual and functional design of performance diagnostics for SparkleEngine, with emphasis on Epic Games, NVIDIA, and AMD products; data acquisition and implementation sequencing are intentionally secondary
 
@@ -137,8 +137,11 @@ Epic exposes a deliberate depth ladder rather than one universal profiler:
 | Memory Insights | Memory timeline, explicit A/B interval queries, grouping by tag/asset/class/callstack/heap, symbol status | Sparkle should show totals/categories/high-water and later snapshot delta; allocation callstacks and arbitrary queries remain external. |
 | Render Resource Viewer | Snapshot-oriented searchable/sortable resource table with totals and selected details | Resource inventory is a snapshot tool, not a per-frame live overlay. Existing Sparkle mesh/texture tools should not become duplicated memory truth. |
 | RDG Insights and GPUDump Viewer | Graph/pass hierarchy, resource lifetimes, pass inputs/outputs, explicit dump workflow | Preserve RDG semantic names across Sparkle and external tools. A future graph/resource dump is separate from timing and not part of the first slice. |
+| Attached PIX and RenderDoc capture | Tool attachment is requested at launch; successful attachment adds one provider icon in the upper-right Level Viewport and the icon captures a frame. | Show one compact capture action only for a requested/detected capable provider. Keep unavailable setup, provider state, target viewport, and observer effect explicit. |
 
 Epic's [Timing Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/timing-insights-in-unreal-engine-5) uses a frame graph for trend discovery, thread/GPU tracks for temporal context, aggregate timer/counter tables for ranking, and selected-event relationships for detail. [Memory Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/memory-insights-in-unreal-engine) similarly separates the overview timeline from explicit allocation queries and hierarchical breakdowns. [Render Dependency Graph](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine) makes graph structure and resource lifetime first-class and owns profiler scopes near pass declaration/execution.
+
+Epic's current [PIX integration](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-pix-on-windows-with-unreal-engine) documents `-AttachPix`, an upper-right Level Viewport PIX icon after attachment, and an in-editor single-frame capture action. Its [RenderDoc integration](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-renderdoc-with-unreal-engine) documents the parallel `-AttachRenderDoc` flow and RenderDoc Capture button. Sparkle adopts the conditional provider-action pattern, not those exact flags, plugin boundaries, or a claim that attachment guarantees a valid capture.
 
 ### What Not To Copy
 
@@ -168,6 +171,7 @@ The strongest reusable patterns are:
 - analysis is based on a declared selection and exposes capture conditions;
 - marker-based trace comparison can align semantically corresponding regions;
 - hardware recommendations are clearly a deeper, capture-dependent layer.
+- target-application capture can be triggered by a hotkey or, with the current beta Nsight Graphics SDK, a native application button; this remains a capability-gated external activity rather than a permanent Sparkle toolbar.
 
 Nsight's [GPU Trace UI](https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-trace-ui.html) describes queue/action/marker rows, metric graphs, event/details panes, range-driven summaries, marker-tree analysis, and trace comparison. Its [GPU Trace overview](https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-trace-overview.html) makes multi-frame GPU-unit, synchronization, and under-utilization diagnosis the product boundary. Those are external-tool responsibilities for Sparkle, not arguments for embedding NVIDIA counters in the Editor.
 
@@ -294,6 +298,7 @@ The three ecosystems converge on the following design laws:
 16. Prevent invalid setups. Hide impossible options, disable temporarily unavailable actions with the prerequisite beside them, and validate a complete operation before collection rather than failing after a long capture.
 17. Preserve an expert escape hatch without making it the default. Advanced controls show their cost, capability scope, and difference from a named preset and can be reset in one action.
 18. Preserve navigation context. A selected frame/range/marker/configuration must flow into the next view or external-tool checklist; users should not re-enter identities to continue one investigation.
+19. Make external capture controls conditional. A requested or detected capable provider earns one compact action; no provider means no icon, and failed setup remains one disabled action with remediation rather than a row of inert logos.
 
 This is consistent with the reviewed production frontends. Epic exposes a saved-edit plus `recompileshaders changed` workflow rather than compiler-job construction, and Timing Insights moves from frame/range overview into selection-driven tracks and callers/callees. Nsight GPU Trace shows explicit collection state, frames/queues first, then event details and analysis; RGP provides an Overview with most-expensive events and context navigation into event, pipeline, occupancy, and ISA panes. Sparkle should adopt that task-to-detail progression, not their total pane count or vendor-specific datasets. [Epic Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine), [Epic Timing Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/timing-insights-in-unreal-engine-5), [Nsight GPU Trace UI](https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-trace-ui.html), [RGP Overview windows](https://gpuopen.com/manuals/rgp_manual/overview_windows/)
 
@@ -317,7 +322,7 @@ The hybrid diagnostics ladder is the selected result of this research: cheap com
 | --- | --- | --- |
 | Product depth and surfaces | Task-first Quick/CPU/GPU/Memory entry, an initially bounded compact-overlay set, one fixed Overview/CPU/GPU/Memory workspace, and external tools for causal depth. Raw stat groups remain expert customization, not the first menu. | [Product information architecture](PerformanceDiagnosticsArchitecture.md#diagnostics-product-information-architecture) |
 | Physical/logical ownership and metric meaning | Physical CPU thread rows, logical phases inside their real owners, independent GPU queues, distinct memory definitions, explicit validity. | [Measurement and view contracts](PerformanceDiagnosticsArchitecture.md#measurement-vocabulary) |
-| Selection and interaction | One shared frame/range/object selection; hitches are frame selections; GPU capture stays inside the GPU view; filtering never changes totals. | [Workspace interaction contract](PerformanceDiagnosticsArchitecture.md#workspace-interaction-contract) |
+| Selection and interaction | One shared frame/range/object selection; hitches are frame selections; Sparkle GPU capture stays inside the GPU view; an attached external provider may add one targeted viewport action; filtering never changes totals. | [Workspace interaction contract](PerformanceDiagnosticsArchitecture.md#workspace-interaction-contract) |
 | Visual and failure behavior | Milliseconds lead, color is never the only signal, configuration remains visible, and pending/stale/unsupported/lost states never masquerade as zero. | [Visual and accessibility rules](PerformanceDiagnosticsArchitecture.md#visual-validity-and-accessibility-rules) |
 | Concrete product presentation | Integrated graphical mockups, every compact group, fixed workspace views, evidence actions, keyboard baseline, and failure states. | [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsAsciiWireframes.md) |
 | Resource inspector boundary | Existing shader, mesh, and texture tools remain asset inspectors unless an accepted migration removes the old route; they do not own system performance truth. | [Product surfaces and depth boundary](PerformanceDiagnosticsArchitecture.md#product-surfaces-and-depth-boundary) |
@@ -412,6 +417,8 @@ When a source changes, record the narrow claim, source section, version/date, ad
 - [Shader Development and changed-shader iteration](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine)
 - [Render Resource Viewer](https://dev.epicgames.com/documentation/unreal-engine/render-resource-viewer-in-unreal-engine)
 - [GPUDump Viewer](https://dev.epicgames.com/documentation/en-us/unreal-engine/gpudump-viewer-tool-in-unreal-engine)
+- [Using PIX on Windows with Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-pix-on-windows-with-unreal-engine)
+- [Using RenderDoc with Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-renderdoc-with-unreal-engine)
 - [ProfileVisualizer API](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Developer/ProfileVisualizer)
 - [Developer Guide to Tracing](https://dev.epicgames.com/documentation/en-us/unreal-engine/developer-guide-to-tracing-in-unreal-engine)
 - [Trace architecture overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/trace-in-unreal-engine-5)
@@ -425,6 +432,7 @@ When a source changes, record the narrow claim, source section, version/date, ad
 - [GPU Trace UI](https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-trace-ui.html)
 - [Shader Profiler](https://docs.nvidia.com/nsight-graphics/UserGuide/shader-profiler.html)
 - [Configuring applications for Nsight Graphics correlation](https://docs.nvidia.com/nsight-graphics/UserGuide/configure-application.html)
+- [Nsight Graphics SDK in-application capture and trace control](https://docs.nvidia.com/nsight-graphics/UserGuide/sdk.html)
 - [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 - [Peak-Performance-Percentage rendering analysis](https://developer.nvidia.com/blog/what-is-limiting-your-rendering-performance/)
 - [Limiting CPU threads for better game performance](https://developer.nvidia.com/blog/limiting-cpu-threads-for-better-game-performance/)

@@ -2,7 +2,7 @@
 
 Status: design visualization of a target proposal; not proof of current implementation or measured performance
 
-Last reconciled with the target architecture: 2026-08-15
+Last reconciled with the target architecture: 2026-08-16
 
 Scope: graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md)
 
@@ -73,7 +73,8 @@ Focused inspection
             | selected FrameId/range/token and exact configuration
             v
 Evidence and cause
-  ProfileGpu | explicit benchmark export | external-profiler handoff
+  ProfileGpu | attached-tool frame capture | explicit benchmark export
+  external-profiler handoff
 ```
 
 The initial compact-overlay candidate is four simultaneous groups. Every visible group shares the same joined diagnostics product; enabling more views does not create duplicate collectors.
@@ -97,7 +98,7 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 ### Viewport Performance Menu
 
 ```text
-+ Viewport ---------------------------------------------------- [Performance v] +
++ Viewport ------------------------------------------- [Performance v] [PX] +
 |                                                                             |
 |                                      + Performance -----------------------+ |
 |                                      | Quick Check                        | |
@@ -113,7 +114,32 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 +-----------------------------------------------------------------------------+
 ```
 
-The menu submits typed task-preset requests and shows the automatically derived collection cost. It does not build command strings, own collection state, list twelve internal groups as equal choices, or silently enable `LiveDetailed`. `Customize Stats...` is the searchable expert route to the bounded group catalog. Tier B/C groups remain workload-gated candidates, not a promised backlog.
+`[PX]` represents the small PIX capture icon and appears only because this example was launched with `-Pix` or has one valid passively attached PIX provider. The menu submits typed task-preset requests and shows the automatically derived collection cost. It does not build command strings, own collection state, list twelve internal groups as equal choices, or silently enable `LiveDetailed`. `Customize Stats...` is the searchable expert route to the bounded group catalog. Tier B/C groups remain workload-gated candidates, not a promised backlog.
+
+### Attached Profiler Capture Icon
+
+The real control uses the selected provider's recognizable icon in a 16-20 px button at the far right of each renderable viewport header. ASCII abbreviations are used here only so state remains legible in text:
+
+```text
+No provider requested or detected
++ Viewport ---------------------------------------------- [Performance v] +
+
+PIX ready after -Pix
++ Viewport ----------------------------------------- [Performance v] [PX] +
+  Tooltip: Capture next frame with PIX | D3D12 | this viewport | Ready
+
+RenderDoc requested but unavailable
++ Viewport ---------------------------------------- [Performance v] [RD!] +
+  Disabled: RenderDoc API unavailable | Open setup guidance
+
+Nsight Graphics capture armed after -Nsight
++ Viewport -------------------------------------- [Performance v] [NG...] +
+  Status: Armed for next valid present | Graphics Capture | Experimental
+```
+
+`-Pix`, `-RenderDoc`, and `-Nsight` are case-insensitive and mutually exclusive. `-Nsight` means Nsight Graphics Capture, not Nsight Systems or GPU Trace. Clicking a ready icon submits one typed request for the next valid frame of that viewport. It never builds a command string, calls a vendor API from Editor, changes the selected Performance frame, or chooses whichever Editor window presents first.
+
+The icon states are `Unavailable`, `Ready`, `Armed`, `Capturing`, `Finalizing`, `Completed`, and `Failed`. Accessible name, tooltip, status notification, and focus styling carry the full meaning; provider color or animation is reinforcement only. Completion offers `Open in <provider>` or `Show in folder` only when the provider returns a usable artifact path.
 
 ### Console Interaction
 
@@ -560,12 +586,15 @@ No file is emitted during normal runs. Validation failure preserves the previous
 | Cross-API state [RenderDoc guidance]                                         |
 | NVIDIA          [Nsight Graphics guidance]                                  |
 | AMD             [RGP guidance]                                               |
+| Attached        PIX Ready | [Capture next viewport frame]                    |
 |                                                                              |
 | [Copy marker path] [Copy FrameId/configuration] [Open evidence checklist]    |
 +------------------------------------------------------------------------------+
 ```
 
 Sparkle carries stable identity and configuration to the handoff. External tools continue to own call stacks, scheduling causality, API/resource state, shader and hardware counters, ISA, allocation maps, residency detail, BVH inspection, and crash dumps.
+
+The attached action is shown only for the one active provider and is the same typed request as the viewport icon. It is contextual convenience, not a second provider owner or a permanent workspace-toolbar button.
 
 ## Responsive And Failure States
 
@@ -591,6 +620,9 @@ Memory          Stale | last valid sample 4.8 s ago | expected cadence 1 Hz
 GpuPasses       Dropped 19 scopes | capacity 256 | capture incomplete
 Frame range     117/120 included | 2 invalid | 1 resize discontinuity
 ProfileGpu      Invalid | device lost after submit | CaptureId 17 settled
+PIX capture     Armed | viewport 2 | waiting for next valid present
+RenderDoc       Unavailable | in-application API not detected | setup guidance
+Nsight capture  Finalizing | request 9 | Experimental | native UI owns result
 ```
 
 These states must not collapse into `0`, blank cells, generic red coloring, or a silently substituted frame.
@@ -598,6 +630,8 @@ These states must not collapse into `0`, blank cells, generic red coloring, or a
 ## Review Checklist
 
 - The first viewport menu names Quick Check and CPU/GPU/Memory investigation intents; raw stat groups appear only under searchable customization or the console.
+- With no external provider, no icon appears; one requested/detected provider produces one far-right viewport icon; an unavailable requested provider produces one disabled warning icon with setup guidance.
+- The provider icon targets the clicked viewport's next valid frame, exposes armed/finalizing/failure state accessibly, and remains visibly distinct from Sparkle `ProfileGpu`.
 - The Performance toolbar has one contextual primary next action. Capture, export, reset, configuration, and expert controls do not all remain permanently visible.
 - Every compact group answers the diagnostic question in the fixed catalog and stays within 16 rows.
 - Every view keeps `FrameId` or range, configuration, collection mode, validity, loss, and age visible.
