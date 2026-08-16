@@ -12,7 +12,7 @@ Dated assessment: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
 
 Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md)
 
-Concurrency-only execution detail: [K. Multithreaded Engine Implementation Plan](../Architecture/Multithreading/ImplementationPlan.md)
+Concurrency architecture and execution contract: [J. Multithreaded Engine Architecture](../Architecture/Multithreading/MultithreadedEngineArchitecture.md)
 
 ## Six-Month Outcome
 

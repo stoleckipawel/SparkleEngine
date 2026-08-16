@@ -12,12 +12,12 @@ This document maps the diagnostic product space before implementation. It asks w
 
 The selected Sparkle behavior belongs to [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md). This document records precedent, alternatives, and reasons. It does not override:
 
-- [A. Principal Graphics Engineering Requirements](../Strategy/Requirements.md), including `PGE-05`, `PGE-06`, `PGE-10`, and `PGE-13`;
-- [Gap Assessment](../Strategy/GapAssessment.md), which owns the role-source/profile audit, current evidence grade, and principal-readiness gaps;
-- [Validation, Performance, and Evidence](../Engineering/Standards/ValidationPerformanceAndEvidence.md), which owns measurement and claim discipline;
-- [Editor and Tools](../Engineering/Standards/EditorAndTools.md), which rejects UI-owned engine truth and incidental public diagnostic APIs;
-- [Graphics Engineering](../Engineering/Standards/GraphicsEngineering.md), which owns graphics evidence expectations;
-- [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md), including `MAP-00`, reproducible captures, and reviewer routes.
+- [A. Principal Graphics Engineering Requirements](../../../Strategy/Requirements.md), including `PGE-05`, `PGE-06`, `PGE-10`, and `PGE-13`;
+- [Gap Assessment](../../../Strategy/GapAssessment.md), which owns the role-source/profile audit, current evidence grade, and principal-readiness gaps;
+- [Validation, Performance, and Evidence](../../../Engineering/Standards/ValidationPerformanceAndEvidence.md), which owns measurement and claim discipline;
+- [Editor and Tools](../../../Engineering/Standards/EditorAndTools.md), which rejects UI-owned engine truth and incidental public diagnostic APIs;
+- [Graphics Engineering](../../../Engineering/Standards/GraphicsEngineering.md), which owns graphics evidence expectations;
+- [I. Acceptance Workloads](../../../Engineering/BistroAndSanMiguelWorkloads.md), including `MAP-00`, reproducible captures, and reviewer routes.
 - [External Performance Profiler Runbook](DiagnosticsProfilerRunbook.md), which owns version-sensitive tool capability, capture-build preparation, marker interoperability, and source revalidation.
 
 The research deliberately separates product design from collection design. A compelling screen is not evidence that its fields can be measured cheaply or correctly. Every selected view therefore states its minimum semantic inputs and escalation boundary, but leaves concrete data structures and thread-safe publication to the owning architecture.
@@ -137,7 +137,7 @@ Epic exposes a deliberate depth ladder rather than one universal profiler:
 | Memory Insights | Memory timeline, explicit A/B interval queries, grouping by tag/asset/class/callstack/heap, symbol status | Sparkle should show totals/categories/high-water and later snapshot delta; allocation callstacks and arbitrary queries remain external. |
 | Render Resource Viewer | Snapshot-oriented searchable/sortable resource table with totals and selected details | Resource inventory is a snapshot tool, not a per-frame live overlay. Existing Sparkle mesh/texture tools should not become duplicated memory truth. |
 | RDG Insights and GPUDump Viewer | Graph/pass hierarchy, resource lifetimes, pass inputs/outputs, explicit dump workflow | Preserve RDG semantic names across Sparkle and external tools. A future graph/resource dump is separate from timing and not part of the first slice. |
-| Attached PIX and RenderDoc capture | Tool attachment is requested at launch; successful attachment adds one provider icon in the upper-right Level Viewport and the icon captures a frame. | Show one compact capture action only for a requested/detected capable provider. Keep unavailable setup, provider state, target viewport, and observer effect explicit. |
+| Attached PIX and RenderDoc capture | Tool attachment is requested at launch; each successful integration adds a provider-specific icon in the upper-right Level Viewport and the icon captures a frame. | Use a compact icon group with one action per requested/detected provider; multiple provider actions may coexist. Keep per-provider setup, compatibility, state, target viewport, and observer effect explicit. |
 
 Epic's [Timing Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/timing-insights-in-unreal-engine-5) uses a frame graph for trend discovery, thread/GPU tracks for temporal context, aggregate timer/counter tables for ranking, and selected-event relationships for detail. [Memory Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/memory-insights-in-unreal-engine) similarly separates the overview timeline from explicit allocation queries and hierarchical breakdowns. [Render Dependency Graph](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine) makes graph structure and resource lifetime first-class and owns profiler scopes near pass declaration/execution.
 
@@ -298,7 +298,7 @@ The three ecosystems converge on the following design laws:
 16. Prevent invalid setups. Hide impossible options, disable temporarily unavailable actions with the prerequisite beside them, and validate a complete operation before collection rather than failing after a long capture.
 17. Preserve an expert escape hatch without making it the default. Advanced controls show their cost, capability scope, and difference from a named preset and can be reset in one action.
 18. Preserve navigation context. A selected frame/range/marker/configuration must flow into the next view or external-tool checklist; users should not re-enter identities to continue one investigation.
-19. Make external capture controls conditional. A requested or detected capable provider earns one compact action; no provider means no icon, and failed setup remains one disabled action with remediation rather than a row of inert logos.
+19. Make external capture controls conditional and composable. Every requested or detected provider earns one compact action, so multiple icons may coexist; no provider means no icon group. Failed or conflicting setup remains disabled on the affected provider with remediation, and unrequested providers never become inert logos.
 
 This is consistent with the reviewed production frontends. Epic exposes a saved-edit plus `recompileshaders changed` workflow rather than compiler-job construction, and Timing Insights moves from frame/range overview into selection-driven tracks and callers/callees. Nsight GPU Trace shows explicit collection state, frames/queues first, then event details and analysis; RGP provides an Overview with most-expensive events and context navigation into event, pipeline, occupancy, and ISA panes. Sparkle should adopt that task-to-detail progression, not their total pane count or vendor-specific datasets. [Epic Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine), [Epic Timing Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/timing-insights-in-unreal-engine-5), [Nsight GPU Trace UI](https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-trace-ui.html), [RGP Overview windows](https://gpuopen.com/manuals/rgp_manual/overview_windows/)
 

@@ -26,31 +26,31 @@ Read the mockups from broad orientation to focused evidence:
 
 ### Integrated Performance Overview
 
-![SparkleEngine Performance Overview mockup](Images/Diagnostics/sparkle-performance-overview-mockup-v2.png)
+![SparkleEngine Performance Overview mockup](Images/sparkle-performance-overview-mockup-v2.png)
 
 This is the first reviewer and triage screen: fixed configuration, frame navigator, aligned CPU/GPU/memory facts, one likely-domain explanation, and one next action. It does not claim causal proof.
 
 ### CPU And Threading
 
-![SparkleEngine CPU diagnostics mockup](Images/Diagnostics/sparkle-performance-cpu-mockup.png)
+The canonical CPU layout is the implementation-oriented [CPU wireframe](#cpu) below; no separate raster mockup is currently retained.
 
 Physical Sparkle threads are the rows. Gameplay and renderer phases remain logical blocks inside the thread that actually executes them. Task lanes are separate and are never summed into a fabricated CPU total.
 
 ### GPU Captured Frame Mockup
 
-![SparkleEngine GPU captured-frame mockup](Images/Diagnostics/sparkle-performance-gpu-capture-mockup.png)
+![SparkleEngine GPU captured-frame mockup](Images/sparkle-performance-gpu-capture-mockup.png)
 
 Queue lanes, frame-graph marker hierarchy, and adjacent inclusive/exclusive columns answer marker-level attribution. The selected marker carries its stable path into PIX, RenderDoc, Nsight, or RGP for API, resource, shader, and hardware evidence.
 
 ### RAM, GPU Memory, And Residency
 
-![SparkleEngine memory diagnostics mockup](Images/Diagnostics/sparkle-performance-memory-mockup.png)
+![SparkleEngine memory diagnostics mockup](Images/sparkle-performance-memory-mockup.png)
 
 Working set, private commit, tracked resources, allocator blocks, local/non-local API usage and budget, and retirement remain distinct. The A/B/C checkpoint workflow supports controlled load/unload analysis without prematurely declaring a leak.
 
 ### Complete System Scope
 
-![SparkleEngine diagnostics system-scope visualization](Images/Diagnostics/sparkle-performance-system-scope.png)
+![SparkleEngine diagnostics system-scope visualization](Images/sparkle-performance-system-scope.png)
 
 Sparkle owns bounded collection, immutable correlation, quick orientation, stable semantic identity, and benchmark linkage. External profilers continue to own call stacks, OS scheduling, API/resource state, hardware counters, ISA, allocation maps, BVH inspection, and crash dumps.
 
@@ -98,7 +98,7 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 ### Viewport Performance Menu
 
 ```text
-+ Viewport ------------------------------------------- [Performance v] [PX] +
++ Viewport ---------------------------------------- [Performance v] [PX] [RD] +
 |                                                                             |
 |                                      + Performance -----------------------+ |
 |                                      | Quick Check                        | |
@@ -114,11 +114,11 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 +-----------------------------------------------------------------------------+
 ```
 
-`[PX]` represents the small PIX capture icon and appears only because this example was launched with `-Pix` or has one valid passively attached PIX provider. The menu submits typed task-preset requests and shows the automatically derived collection cost. It does not build command strings, own collection state, list twelve internal groups as equal choices, or silently enable `LiveDetailed`. `Customize Stats...` is the searchable expert route to the bounded group catalog. Tier B/C groups remain workload-gated candidates, not a promised backlog.
+`[PX] [RD]` represents coexisting PIX and RenderDoc capture actions because this example requested or detected both providers. A provider that was neither requested nor detected contributes no icon. The menu submits typed task-preset requests and shows the automatically derived collection cost. It does not build command strings, own collection state, list twelve internal groups as equal choices, or silently enable `LiveDetailed`. `Customize Stats...` is the searchable expert route to the bounded group catalog. Tier B/C groups remain workload-gated candidates, not a promised backlog.
 
-### Attached Profiler Capture Icon
+### Attached Profiler Capture Icons
 
-The real control uses the selected provider's recognizable icon in a 16-20 px button at the far right of each renderable viewport header. ASCII abbreviations are used here only so state remains legible in text:
+The real control is a compact group containing each requested or detected provider's recognizable 16-20 px icon at the far right of every renderable viewport header. ASCII abbreviations are used here only so state remains legible in text:
 
 ```text
 No provider requested or detected
@@ -135,11 +135,17 @@ RenderDoc requested but unavailable
 Nsight Graphics capture armed after -Nsight
 + Viewport -------------------------------------- [Performance v] [NG...] +
   Status: Armed for next valid present | Graphics Capture | Experimental
+
+PIX and RenderDoc ready; Nsight requested but conflicting
++ Viewport --------------------------------- [Performance v] [PX] [RD] [NG!] +
+  PX Tooltip: Capture next frame with PIX | D3D12 | this viewport | Ready
+  RD Tooltip: Capture next frame with RenderDoc | D3D12 | this viewport | Ready
+  NG Disabled: incompatible provider combination | Relaunch/setup guidance
 ```
 
-`-Pix`, `-RenderDoc`, and `-Nsight` are case-insensitive and mutually exclusive. `-Nsight` means Nsight Graphics Capture, not Nsight Systems or GPU Trace. Clicking a ready icon submits one typed request for the next valid frame of that viewport. It never builds a command string, calls a vendor API from Editor, changes the selected Performance frame, or chooses whichever Editor window presents first.
+`-Pix`, `-RenderDoc`, and `-Nsight` are case-insensitive and may be combined. `-Nsight` means Nsight Graphics Capture, not Nsight Systems or GPU Trace. Compatible providers expose independent icons and states. Untested or unsafe capture-layer combinations remain visibly unavailable instead of silently choosing a winner. Clicking a ready icon submits one typed request naming that provider and the next valid frame of that viewport. It never builds a command string, calls a vendor API from Editor, changes the selected Performance frame, or chooses whichever Editor window presents first.
 
-The icon states are `Unavailable`, `Ready`, `Armed`, `Capturing`, `Finalizing`, `Completed`, and `Failed`. Accessible name, tooltip, status notification, and focus styling carry the full meaning; provider color or animation is reinforcement only. Completion offers `Open in <provider>` or `Show in folder` only when the provider returns a usable artifact path.
+Each icon has its own `Unavailable`, `Ready`, `Armed`, `Capturing`, `Finalizing`, `Completed`, and `Failed` state. Initially, only one provider may be armed/capturing/finalizing globally; other ready icons temporarily expose `Busy with <provider>`. Accessible name, tooltip, status notification, and focus styling carry the full meaning; provider color or animation is reinforcement only. Completion offers `Open in <provider>` or `Show in folder` only when that provider returns a usable artifact path.
 
 ### Console Interaction
 
@@ -594,7 +600,7 @@ No file is emitted during normal runs. Validation failure preserves the previous
 
 Sparkle carries stable identity and configuration to the handoff. External tools continue to own call stacks, scheduling causality, API/resource state, shader and hardware counters, ISA, allocation maps, residency detail, BVH inspection, and crash dumps.
 
-The attached action is shown only for the one active provider and is the same typed request as the viewport icon. It is contextual convenience, not a second provider owner or a permanent workspace-toolbar button.
+The attached handoff may show every requested or detected capable provider action and submits the same typed request as the corresponding viewport icon. It is a contextual convenience, not a second provider owner or a permanent workspace-toolbar button.
 
 ## Responsive And Failure States
 
@@ -620,7 +626,7 @@ Memory          Stale | last valid sample 4.8 s ago | expected cadence 1 Hz
 GpuPasses       Dropped 19 scopes | capacity 256 | capture incomplete
 Frame range     117/120 included | 2 invalid | 1 resize discontinuity
 ProfileGpu      Invalid | device lost after submit | CaptureId 17 settled
-PIX capture     Armed | viewport 2 | waiting for next valid present
+PIX capture     Ready | Busy with Nsight request 9
 RenderDoc       Unavailable | in-application API not detected | setup guidance
 Nsight capture  Finalizing | request 9 | Experimental | native UI owns result
 ```
@@ -631,7 +637,7 @@ These states must not collapse into `0`, blank cells, generic red coloring, or a
 
 - The first viewport menu names Quick Check and CPU/GPU/Memory investigation intents; raw stat groups appear only under searchable customization or the console.
 - With no external provider, no icon appears; one requested/detected provider produces one far-right viewport icon; an unavailable requested provider produces one disabled warning icon with setup guidance.
-- The provider icon targets the clicked viewport's next valid frame, exposes armed/finalizing/failure state accessibly, and remains visibly distinct from Sparkle `ProfileGpu`.
+- Multiple requested/detected provider icons may coexist; the clicked icon names the provider and targets that viewport's next valid frame. Every icon exposes armed/finalizing/failure/busy state accessibly and remains visibly distinct from Sparkle `ProfileGpu`.
 - The Performance toolbar has one contextual primary next action. Capture, export, reset, configuration, and expert controls do not all remain permanently visible.
 - Every compact group answers the diagnostic question in the fixed catalog and stays within 16 rows.
 - Every view keeps `FrameId` or range, configuration, collection mode, validity, loss, and age visible.

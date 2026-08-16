@@ -28,7 +28,7 @@ This summary does not restate detailed contracts:
 - [F. Roadmap](Roadmap.md) owns sequencing and allocation.
 - [H. Engineer Persona](EngineerPersona.md) owns the operating model.
 - [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) owns scene, quality, performance, and evidence gates.
-- [Architecture](../Architecture/README.md) owns system decisions and repository maps.
+- The [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md) routes system decisions and repository maps.
 - [Engineering Standards](../Engineering/Standards/README.md) own implementation and review rules.
 
 If this summary conflicts with an owning document, the owning document controls.

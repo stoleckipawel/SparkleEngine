@@ -15,8 +15,7 @@ It does not own domain data models, renderer features, content pipelines, produc
 - [D. Whole Repository Architecture Map](../WholeRepositoryMap.md) and current code for implemented structure;
 - [Renderer and RHI Architecture Boundary](../RendererRhiBoundary.md) for Renderer/RHI responsibilities and frame-graph authority;
 - [Engineering Standards](../../Engineering/Standards/README.md) for binding implementation rules;
-- [K. Multithreaded Engine Implementation Plan](ImplementationPlan.md) for concurrency work-package order;
-- [F. Principal Graphics Roadmap](../../Strategy/Roadmap.md) for broader feature and portfolio sequencing;
+- [F. Principal Graphics Roadmap](../../Strategy/Roadmap.md) for concurrency, feature, and portfolio sequencing;
 - [A. Requirements](../../Strategy/Requirements.md) and [I. Acceptance Workloads](../../Engineering/BistroAndSanMiguelWorkloads.md) for capability and workload evidence.
 
 Before using this target, inspect the current owners, producers, consumers, tests, waits, queues, and replacement history. This document does not prove that a target mechanism is implemented.

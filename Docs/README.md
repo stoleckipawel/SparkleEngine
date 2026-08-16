@@ -9,7 +9,7 @@ SparkleEngine documentation is organized by responsibility, not by chronology or
 | Area | Owns | Does not own |
 | --- | --- | --- |
 | [Strategy](Strategy/README.md) | capability targets, priorities, dated assessments, roadmaps, persona | implementation rules or system design |
-| [Architecture](Architecture/README.md) | current-system maps, target designs, decisions, rationale, external architecture research | coding conventions or evidence grades |
+| [Architecture](Architecture/WholeRepositoryMap.md) | current-system maps, target designs, decisions, rationale, external architecture research | coding conventions or evidence grades |
 | [Engineering](Engineering/README.md) | binding implementation standards, decision briefs, validation contracts | product strategy or duplicate architecture descriptions |
 
 Code and build configuration remain the authority for implemented behavior. Documentation must identify whether it is a standard, canonical decision, target proposal, plan, snapshot, research reference, or archive.
@@ -39,11 +39,11 @@ Start with the [Strategy index](Strategy/README.md). Requirements, assessment, r
 
 ### Multithreading Work
 
-Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the concurrency target design and [K. Implementation Plan](Architecture/Multithreading/ImplementationPlan.md) for concurrency-only sequencing.
+Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the concurrency target design and the [Principal Graphics Roadmap](Strategy/Roadmap.md) for broader sequencing.
 
 ### Performance Diagnostics Work
 
-Start with [Diagnostics Product and UX Research](Architecture/DiagnosticsUxResearch.md) for the Epic/NVIDIA/AMD precedent and requirements audit. Use [Performance Diagnostics Visual Design And Tool Wireframes](Architecture/PerformanceDiagnosticsAsciiWireframes.md) for the mockups and tool layouts, then [Performance Diagnostics Architecture](Architecture/PerformanceDiagnosticsArchitecture.md) for the selected product, metric, ownership, evidence, and stable profiler-handoff contracts. Before taking an external capture, use the version-sensitive [External Performance Profiler Runbook](Architecture/DiagnosticsProfilerRunbook.md). [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) remains the authority for benchmark gates and case-study deliverables.
+Start with [Diagnostics Product and UX Research](Architecture/Performance/Diagnostics/DiagnosticsUxResearch.md) for the Epic/NVIDIA/AMD precedent and requirements audit. Use [Performance Diagnostics Visual Design And Tool Wireframes](Architecture/Performance/Diagnostics/PerformanceDiagnosticsAsciiWireframes.md) for the mockups and tool layouts, then [Performance Diagnostics Architecture](Architecture/Performance/Diagnostics/PerformanceDiagnosticsArchitecture.md) for the selected product, metric, ownership, evidence, and stable profiler-handoff contracts. Use the feature-selectable [Performance Diagnostics Delivery Plan](Architecture/Performance/Diagnostics/ImplementationPlan.md) for ordered implementation. Before taking an external capture, use the version-sensitive [External Performance Profiler Runbook](Architecture/Performance/Diagnostics/DiagnosticsProfilerRunbook.md). [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) remains the authority for benchmark gates and case-study deliverables.
 
 ## Document Status Vocabulary
 

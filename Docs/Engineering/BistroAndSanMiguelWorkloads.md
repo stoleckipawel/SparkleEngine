@@ -3,10 +3,10 @@
 Status: canonical flagship workload contract
 Date: 2026-07-26
 
-Last performance-contract reconciliation: 2026-08-12
+Last performance-contract and runtime-roster reconciliation: 2026-08-16
 Scope: content ingestion, material and lighting correctness, raster/ray/path-traced quality, whole-system performance, neural rendering evidence, and portfolio presentation
 
-This document owns scene selection and exact workload-specific proof gates. [Principal Graphics Requirements](../Strategy/Requirements.md) owns capability/evidence meaning, [Engineering Standards](Standards/README.md) owns reusable implementation and measurement rules, and [Performance Diagnostics Architecture](../Architecture/PerformanceDiagnosticsArchitecture.md) owns metric/population/provenance semantics used by these gates. Revalidate external capture capability through the [External Performance Profiler Runbook](../Architecture/DiagnosticsProfilerRunbook.md).
+This document owns scene selection and exact workload-specific proof gates. [Principal Graphics Requirements](../Strategy/Requirements.md) owns capability/evidence meaning, [Engineering Standards](Standards/README.md) owns reusable implementation and measurement rules, and [Performance Diagnostics Architecture](../Architecture/Performance/Diagnostics/PerformanceDiagnosticsArchitecture.md) owns metric/population/provenance semantics used by these gates. Revalidate external capture capability through the [External Performance Profiler Runbook](../Architecture/Performance/Diagnostics/DiagnosticsProfilerRunbook.md).
 
 ## Decision
 
@@ -234,7 +234,7 @@ The combined smoke record above proves coexistence only. Visual quality and meas
 | --- | --- | --- |
 | Asset-pack acquisition and provenance | Ready for Bistro, Modern Sponza base/add-ons, San Miguel source, and Jungle Ruins source. Archive bytes and acquisition SHA-256 are recorded. | Reuse the existing transactional sync path; never download a disabled future add-on as part of verification. |
 | Level catalog and per-map run | Ready. The launcher exposes Run per runtime-supported map and Sync All/Clean All for the catalog; one internal `Selected` state remains the active-set authority. | Snapshot and restore catalog state around every external-level checkpoint. Only the active family may be enabled for the run. |
-| glTF/GLB/FBX import and cooking | Ready for the 11 runtime-supported catalog levels, including the built-in `Empty` fallback. The cooker command is project-scoped rather than level-scoped. | Record exactly which selected level assets were required and which products were reused. Do not call a project cook an isolated map cook until a level-filtered cook request exists. |
+| glTF/GLB/FBX import and cooking | Ready for the 13 runtime-supported catalog levels, including the built-in `Empty` fallback. The cooker command is project-scoped rather than level-scoped. | Derive the current roster from `Projects/Showcase/Levels.catalog`, record exactly which selected level assets were required and which products were reused, and update this contract when runtime support changes. Do not call a project cook an isolated map cook until a level-filtered cook request exists. |
 | Startup-level selection | Ready through `SPARKLE_STARTUP_LEVEL`. | Put the requested and actually active level names in the evidence manifest; a responsive process alone is insufficient. |
 | Deterministic camera | Partial. Every supported level has a serialized initial camera, but named verification routes and reference-image alignment are not complete. | Freeze the initial camera for the first pass. Add further named cameras only as separate, reviewable evidence routes. |
 | Level/streaming readiness | Partial. Level loading, bounded mesh preparation, and bounded texture loading exist, but automation has no single published `settled` signal. | Publish an evidence-ready state only after the requested level is active, scene generation is current, and mesh/texture preparation queues are empty. Warm-up starts after this signal. |
@@ -261,6 +261,14 @@ Every supported map uses the following sequence. A checkpoint folder owns its ow
 | `MAP-G Review` | Present only this map's screenshot, numbers, logs, known fallbacks, and defects. Classify each defect as content, importer/cooker, renderer, camera/lighting, performance, or harness. | User decision: `Accepted`, `Accepted with follow-up`, `Deferred`, or `Rejected`. No next-map work begins here. |
 | `MAP-H Restore` | Restore external packs and level defaults to their prior opt-in state. Preserve accepted evidence and create explicit follow-ups for warnings/failures. | Catalog diff check, evidence links, and closed checkpoint status. |
 
+#### Diagnostics-package sweep versus map acceptance
+
+Every selected package in the [Performance Diagnostics Delivery Plan](../Architecture/Performance/Diagnostics/ImplementationPlan.md#verification-comes-first) is verified on Sponza and then on every currently runtime-supported catalog level. That package sweep proves the diagnostic action, data, failure state, observer cost, and interpretation workflow across the workload range. It does not accept a map's content, visual quality, or performance gate and does not advance the one-map review ledger below.
+
+The sweep roster is derived at package start from `Projects/Showcase/Levels.catalog`: include levels with no asset pack and levels whose referenced asset pack is `RuntimeSupported = true`. The roster reconciled on 2026-08-16 is Empty, Sponza, Damaged Helmet, Cesium Man, Diffuse Transmission Plant, A Beautiful Game, LPS Head, Cornell Box, Bistro Exterior, Bistro Interior Wine, Modern Sponza, Modern Sponza Emissive Candles, and Modern Sponza Animated Knight. A missing runtime-supported external pack is acquired through the launcher or recorded as a blocking package-verification failure; it is not silently omitted.
+
+Generated package evidence belongs under `artifacts/validation/performance-diagnostics/<package-id>/<run-id>/<level-id>/`. Formal map evidence remains under `artifacts/validation/showcase-levels/<run-id>/<level-id>/` and follows `MAP-A` through `MAP-H`. This separation permits every implementation package to exercise every supported map without pretending that repeated smoke/measurement work completed the ordered content review.
+
 The first comparison profile is `DevelopmentGame`, D3D12, the discrete NVIDIA adapter, fixed startup resolution, VSync disabled, a frozen initial camera, and recorded image-provider fallbacks. Vulkan, editor overhead, alternate cameras, ray-traced/reference modes, and image-provider comparisons are later routes; they must not be silently mixed into the first per-map number.
 
 `MAP-E` proves one harness run and its definitions. It is not a statistically definitive optimization result; `WL-04` and the Performance Contract below own repeated-run evidence.
@@ -283,6 +291,8 @@ The order grows from a known architectural baseline through small material/anima
 | `MAP-09` | Modern Sponza | Base-plus-curtains composition, secondary attributes, tangent fallback, transparency, and high-resolution PBR load. | Waiting |
 | `MAP-10` | Modern Sponza Emissive Candles | Curtains baseline plus emissive density, source-light loss, and lighting cost. | Waiting |
 | `MAP-11` | Modern Sponza Animated Knight | Curtains baseline plus FBX skeleton, animation playback, and motion stability. | Waiting |
+| `MAP-12` | LPS Head | Dense head geometry, external OBJ-derived asset handling, skin/material response, focused texture/memory behavior, and camera framing. | Waiting |
+| `MAP-13` | Cornell Box | Compact lighting/reference control, material response, indirect/ray/path modes where supported, and backend comparison. | Waiting |
 
 San Miguel High/Low and Jungle Ruins receive separate source-readiness checkpoints only after the supported sequence. They do not enter screenshot/performance review until their declared OBJ or USD runtime blockers close. Ivy, Trees, Flood, and Volumetric Explosion remain future entries and are excluded from this run.
 
@@ -458,7 +468,7 @@ The benchmark protocol records:
 - image-quality setting, sample count, reconstruction mode, and dynamic-resolution state;
 - exact engine/content/configuration hashes.
 
-The minimum run/sample count does not make a result automatically definitive. Analysis follows the [comparison and regression contract](../Architecture/PerformanceDiagnosticsArchitecture.md#comparison-and-regression-contract): per-run distributions are primary, a combined view is secondary, exclusions and tail `FrameId` values remain visible, worst-to-worst comparison requires equal `N` or an explicit model, and the predeclared decision combines absolute/relative practical-effect bands with a correlation-aware uncertainty method. An interval overlapping the practical-effect band is `Inconclusive`; a p-value alone never closes the gate.
+The minimum run/sample count does not make a result automatically definitive. Analysis follows the [comparison and regression contract](../Architecture/Performance/Diagnostics/PerformanceDiagnosticsArchitecture.md#comparison-and-regression-contract): per-run distributions are primary, a combined view is secondary, exclusions and tail `FrameId` values remain visible, worst-to-worst comparison requires equal `N` or an explicit model, and the predeclared decision combines absolute/relative practical-effect bands with a correlation-aware uncertainty method. An interval overlapping the practical-effect band is `Inconclusive`; a p-value alone never closes the gate.
 
 Every optimization case study requires:
 

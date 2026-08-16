@@ -18,16 +18,17 @@ This document owns the target system design for answering four questions:
 It does not claim that the target is implemented, set performance targets for a particular scene, or replace a profiler.
 
 - Current implementation truth remains in code and executable configuration.
-- [Validation, Performance, and Evidence](../Engineering/Standards/ValidationPerformanceAndEvidence.md) owns measurement and claim rules.
-- [Concurrency](../Engineering/Standards/Concurrency.md) owns thread, task, wait, and publication rules.
-- [Graphics Engineering](../Engineering/Standards/GraphicsEngineering.md) owns graphics profiling and hardware-specific evidence rules.
-- [Editor and Tools](../Engineering/Standards/EditorAndTools.md) owns editor presentation and cross-thread UI products.
-- [J. Multithreaded Engine Architecture](Multithreading/MultithreadedEngineArchitecture.md) owns the target concurrency topology and frame concurrency lifecycle.
-- [Renderer and RHI Architecture Boundary](RendererRhiBoundary.md) owns renderer, frame-graph, and RHI authority.
-- [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) owns `MAP-00`, scene routes, warm-up/sample policy, and portfolio gates.
-- [A. Principal Graphics Engineering Requirements](../Strategy/Requirements.md) owns the `PGE-05`, `PGE-06`, `PGE-10`, and reviewer-evidence meaning advanced by this system.
+- [Validation, Performance, and Evidence](../../../Engineering/Standards/ValidationPerformanceAndEvidence.md) owns measurement and claim rules.
+- [Concurrency](../../../Engineering/Standards/Concurrency.md) owns thread, task, wait, and publication rules.
+- [Graphics Engineering](../../../Engineering/Standards/GraphicsEngineering.md) owns graphics profiling and hardware-specific evidence rules.
+- [Editor and Tools](../../../Engineering/Standards/EditorAndTools.md) owns editor presentation and cross-thread UI products.
+- [J. Multithreaded Engine Architecture](../../Multithreading/MultithreadedEngineArchitecture.md) owns the target concurrency topology and frame concurrency lifecycle.
+- [Renderer and RHI Architecture Boundary](../../RendererRhiBoundary.md) owns renderer, frame-graph, and RHI authority.
+- [I. Acceptance Workloads](../../../Engineering/BistroAndSanMiguelWorkloads.md) owns `MAP-00`, scene routes, warm-up/sample policy, and portfolio gates.
+- [A. Principal Graphics Engineering Requirements](../../../Strategy/Requirements.md) owns the `PGE-05`, `PGE-06`, `PGE-10`, and reviewer-evidence meaning advanced by this system.
 - [Diagnostics Product And UX Research](DiagnosticsUxResearch.md) records the Epic/NVIDIA/AMD product study and rejected UX options behind the selected presentation; it is research, not implementation authority.
 - [External Performance Profiler Runbook](DiagnosticsProfilerRunbook.md) owns version-sensitive tool capabilities, capture preparation, marker interoperability, and operational playbooks; it does not define Sparkle metrics or prove a benchmark claim.
+- [Performance Diagnostics Delivery Plan](ImplementationPlan.md) owns ordered, feature-selectable implementation packages and completion gates; it does not redefine this architecture.
 
 Application owns the presentation-neutral live diagnostics product, cross-domain session orchestration, active stat-view selection, and the bounded runtime serialization mechanism used by an explicit benchmark. The acceptance workload owns the benchmark schema, route, destination/name, sample policy, analysis, and claim. Editor owns its viewport menu/window presentation. DevelopmentGame owns a compact presenter through its existing runtime console/UI packet path. Each engine domain remains the authority for its own measurements. These concrete product consumers justify compact stat views; they do not justify a general task browser, allocation explorer, or trace-viewer product.
 
@@ -75,7 +76,7 @@ Sparkle adopts the following product behaviors:
 | Stat types distinguish cycle counters, per-frame counters, persistent accumulators, and memory values. | Every Sparkle row declares duration, count, bytes, ratio, state, high-water, sampling interval, and validity semantics. | Combining unlike kinds into a typeless number or assuming every value resets per frame. |
 | Render-graph scopes feed both in-engine GPU stats and external markers. | Stable Sparkle frame-graph/pass tokens are shared by detailed GPU rows and PIX/RenderDoc/Nsight/RGP markers. | Separate UI-only pass names or per-frame formatted marker strings. |
 | A focused GPU profile can expose a hierarchical event tree while realtime GPU stats stay quick and cumulative. | `Stat Gpu`/`Stat GpuPasses` remain live orientation; `ProfileGpu` takes one bounded frozen hierarchical capture with inclusive/exclusive views. | Running a full hierarchical query capture continuously or confusing the visualizer with hardware-counter attribution. |
-| PIX or RenderDoc attachment adds a compact capture button to the upper-right Level Viewport. | A requested or detected PIX, RenderDoc, or Nsight Graphics provider adds one small provider-branded `Capture next frame` icon to the right side of the Sparkle viewport header. | A permanent row of inactive vendor buttons, treating capture availability as proof of correct attachment, or copying Unreal's plugin architecture. |
+| PIX or RenderDoc attachment adds a compact provider capture button to the upper-right Level Viewport. | Every requested or detected capable PIX, RenderDoc, or Nsight Graphics provider adds its own small `Capture next frame` icon to a compact group at the right side of the Sparkle viewport header. | Permanent icons for providers that were neither requested nor detected, treating icon presence as proof of capture readiness, or copying Unreal's plugin architecture. |
 | Captures complement live stats because the overlay is quick but not a complete profiler. | Live stats answer where to look and support simple controlled comparisons; external tools remain the authority for call stacks, scheduling causality, shader/hardware limits, and API-state investigation. | Claiming that a rich overlay eliminates the need to know profiler workflows. |
 
 Primary precedent sources are Epic's [Stat Commands](https://dev.epicgames.com/documentation/unreal-engine/stat-commands-in-unreal-engine), [performance profiling introduction](https://dev.epicgames.com/documentation/unreal-engine/introduction-to-performance-profiling-and-configuration-in-unreal-engine), [Stats System overview](https://dev.epicgames.com/documentation/unreal-engine/unreal-engine-stats-system-overview), [graphics programming overview](https://dev.epicgames.com/documentation/unreal-engine/graphics-programming-overview-for-unreal-engine), [Render Dependency Graph profiling guidance](https://dev.epicgames.com/documentation/unreal-engine/render-dependency-graph-in-unreal-engine#performanceprofiling), [PIX integration](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-pix-on-windows-with-unreal-engine), and [RenderDoc integration](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-renderdoc-with-unreal-engine).
@@ -93,7 +94,7 @@ Primary precedent sources are Epic's [Stat Commands](https://dev.epicgames.com/d
 - Make D3D12 and Vulkan measurements semantically comparable while exposing backend limitations.
 - Provide fast, composable `Stat` views in both DevelopmentEditor and DevelopmentGame without requiring an attached profiler.
 - Provide an on-demand GPU captured-frame view with per-queue marker hierarchy, inclusive/exclusive cost, flat/coalesced views, and exact capture configuration.
-- When one supported external frame-capture provider is explicitly requested or already attached, expose one compact viewport-header action that captures the next valid frame from that viewport without exposing vendor APIs above the RHI-private adapter.
+- For every supported external frame-capture provider explicitly requested or already attached, expose one compact viewport-header action. Multiple provider icons may coexist, while each click captures through its named provider at the next valid frame from that viewport without exposing vendor APIs above the RHI-private adapter.
 - Make the next profiler action obvious and produce evidence a portfolio reviewer can audit.
 - Measure the observer cost of the diagnostics themselves.
 
@@ -133,7 +134,7 @@ The following is an observation reconciled with the 2026-08-15 worktree, not a c
 | Memory polling identity | `FramePipeline` currently passes the wrapping RHI frame-in-flight slot index to `RendererMemoryMonitor`, whose interval logic expects a monotonic value. | Periodic refresh cannot be treated as reliable until polling uses logical `FrameId` or monotonic time and is covered by a wrap test. |
 | RAM | No production process-memory sampler exists in the engine. | Working set and private committed bytes are required; engine CPU allocation categories are a later measured need, not an initial fiction. |
 | Editor memory route | A renderer memory provider reaches `UI`, but no current editor panel consumes it. | The target should replace this broad/synchronous presentation route with one immutable diagnostics model published by Application. |
-| Attached external capture | D3D12 emits PIX events when `WinPixEventRuntime.dll` is available, but Sparkle has no `-Pix`/`-RenderDoc`/`-Nsight` launch intent, capture-layer bootstrap, attached-provider state, or viewport capture action. | Add one capability-gated provider path; the current marker runtime alone does not prove that frame capture is available. |
+| Attached external capture | D3D12 emits PIX events when `WinPixEventRuntime.dll` is available, but Sparkle has no `-Pix`/`-RenderDoc`/`-Nsight` launch intent, capture-layer bootstrap, attached-provider state, or viewport capture action. | Add a bounded capability-gated provider-set path; the current marker runtime alone does not prove that PIX frame capture is available. |
 
 Primary code landmarks for revalidation:
 
@@ -376,9 +377,9 @@ Application diagnostics session <---------+
 | Gameplay/update/extraction wall scopes | Application around GameFramework owner calls | Initial top-level measurement needs no public ECS diagnostic snapshot. Detailed systems stay in task traces. |
 | Renderer CPU stages, frame queue, GPU timing resolution | Renderer | Immutable `FrameId`-keyed performance result; no ECS or Editor types. |
 | GPU timestamp, queue type, allocator, and budget facts | RHI | Backend-neutral values with backend capability and scope declared. No bottleneck policy. |
-| External frame-capture bootstrap and native trigger | Process bootstrap plus the selected RHI backend-private adapter | Normalize one provider before device creation, dynamically load/detect its capture layer, bind one native present target, issue one next-frame request, and publish backend-neutral capability/state. No vendor types above the private adapter. |
+| External frame-capture bootstrap and native trigger | Process bootstrap plus one RHI backend-private adapter per requested/detected provider | Normalize the provider set before device creation, admit only combinations accepted by the measured compatibility matrix, dynamically load/detect each accepted capture layer, bind one native present target per request, and publish backend-neutral per-provider capability/state. No vendor types above the private adapter. |
 | Active stat groups and presentation-neutral row models | Application | Fixed catalog maps immutable diagnostic fields to bounded rows and required collection mode. No domain measurement authority. |
-| Editor live presentation and user intent | Editor | Reads one immutable model and submits semantic group/reset/export/external-capture requests from the viewport menu, provider icon, console, or Performance window. No renderer/RHI pointers. |
+| Editor live presentation and user intent | Editor | Reads one immutable model and submits semantic group/reset/export/external-capture requests from the viewport menu, provider icon group, console, or Performance window. No renderer/RHI pointers. |
 | DevelopmentGame live presentation | Application runtime console/UI packet owner | Reads the same immutable model and submits the same semantic group requests. It does not gain Editor dependencies. |
 | Benchmark artifacts | Application evidence session | Written only for an explicit bounded request under the acceptance-workload artifact root. |
 
@@ -399,9 +400,9 @@ Renderer/Private/Diagnostics
   immutable FrameId-keyed renderer results
 RHI/<backend>/Private/Diagnostics
   timestamp capability/calibration, memory facts, native marker/object-name fanout,
-  one optional external frame-capture adapter selected before device creation
+  zero or more external frame-capture adapters selected before device creation
 Editor/Private
-  Performance/Stat presenters, conditional provider icon, and typed requests only
+  Performance/Stat presenters, conditional provider icon group, and typed requests only
 DevelopmentGame Application presenter
   compact rows through the existing runtime console/UI packet route
 ```
@@ -417,7 +418,7 @@ Core does not own a profiler service. Editor does not own engine measurements. R
 - The Application join never blocks EditorThread/GameThread waiting for RenderThread or GPU data.
 - Each presenter reads a published model no more than once per UI frame and never synchronously requests a renderer snapshot.
 - Editor menu actions and `Stat` console commands submit the same typed group-selection request; they do not parse or invoke one another's presentation path.
-- The viewport provider icon submits one typed external-capture request carrying a stable viewport/present-target token. Editor never passes an `HWND`, native device, queue, swapchain, or vendor callback across the boundary.
+- Each viewport provider icon submits one typed external-capture request carrying the provider ID and a stable viewport/present-target token. Editor never passes an `HWND`, native device, queue, swapchain, or vendor callback across the boundary.
 - External capture requests are serialized with `ProfileGpu` and any other exclusive instrumentation mode. The owner rejects `Busy` or `Conflict` before arming; it never lets two capture layers race for the same frame.
 - Enabling or disabling a group starts a new sample-window generation at an owner commit boundary. Late results from the previous demand set cannot populate a newly enabled view.
 - A dropped or overwritten result increments a bounded loss counter and invalidates the affected aggregate; it does not grow a queue.
@@ -435,7 +436,7 @@ Core does not own a profiler service. Editor does not own engine measurements. R
 | GPU scope plan | Frame-graph compile assigns stable scope tokens, parents, queues, submission order, and exclusive per-chunk record/query slices | Command recorders and delayed resolver | At most 256 scope instances and 512 timestamps for one detailed frame across queues | Immutable for the frame epoch; each task writes only its preassigned slice and merge order ignores completion order. |
 | Detailed GPU ring | Renderer resolves stable pass tokens and durations | Editor GPU detail view; explicit benchmark exporter | Eight frames, at most 256 scope records per frame across queues | Fixed storage; overflow invalidates detailed data for that frame, increments one loss counter, and preserves the independent top-level queue span where valid. |
 | Frozen GPU profile | Renderer validates and derives one resolved detailed frame | Application publication; Editor Performance/GPU captured-frame view; DevelopmentGame compact result | One armed request and one retained frozen capture | Capture request has generation/id; replacement or clear releases the prior result after presenter publication. No UI pointer crosses the boundary. |
-| Attached external frame capture | Selected RHI backend-private provider adapter at a renderer-owned present boundary | Immutable capability/state in Application diagnostics model; Editor viewport icon; explicit evidence handoff | One process provider and at most one `ExternalCaptureRequestId` armed/capturing/finalizing | Startup selection is immutable after device creation. A request binds one stable viewport target, settles exactly once, and exposes provider-owned artifact path only when the provider supplies one. No capture bytes enter the live-history ring. |
+| Attached external frame capture | RHI backend-private provider adapters at a renderer-owned present boundary | Immutable per-provider capability/state in Application diagnostics model; Editor viewport icon group; explicit evidence handoff | Bounded process provider set and at most one global `ExternalCaptureRequestId` armed/capturing/finalizing initially | Startup provider membership is immutable after device creation. Every request names one provider, binds one stable viewport target, settles exactly once, and exposes a provider-owned artifact path only when that provider supplies one. No capture bytes enter the live-history ring. |
 | Memory ring | Application samples process memory; Renderer/RHI publishes GPU memory | Editor memory view; benchmark exporter | 256 samples at default 1 Hz | Overwrites oldest live sample; each sample owns fixed categories and explicit age/validity. |
 | Active stat selection | Application applies typed requests from Editor or DevelopmentGame presenter | Collection-mode resolver and presenters | At most four compact groups plus one fixed Editor Performance view | Replaced at an owner commit; mode changes advance sample generation and never mutate producer authority. |
 | Live performance model | Application derives a read-only projection after joining | Editor panels and DevelopmentGame stat presenter | One latest immutable model plus fixed plotted windows | Replaced atomically/by owner publication; presenters retain no producer pointers or mutable spans. |
@@ -569,7 +570,7 @@ The first choice is the user's question, not a stat-group or collector name:
 | Is this frame healthy? | `Quick Check` opens the compact Unit summary or Overview. | Select the minimum basic collection, correlate valid fields, keep the live window, and propose one honest next action. | Individual groups, scope capacity, timestamps, provenance records, queue submissions. |
 | Why is CPU work or waiting high? | `Investigate CPU` opens CPU with the same frame/range. | Preserve selection; expose real physical owners, logical phases, waits and task-lane aggregates already available. | OS scheduling/call stacks remain an `Open WPA/PIX guidance` action. |
 | Why is GPU work high? | `Investigate GPU` opens GPU Live and selects the strongest valid expensive top-level marker. | Preserve frame/configuration, choose the minimum timing demand, maintain separate queues, and expose `Show Passes` or `Capture GPU` only when valid. | Query slots, native event APIs, pipeline/shader hashes, hardware counters and ISA. |
-| Capture the next frame in an attached tool | A small PIX, RenderDoc, or Nsight Graphics icon appears at the far right of that viewport header only when the provider was requested/detected. | Bind the clicked viewport's stable present target, validate provider/backend/readiness, and arm one next-valid-frame capture. | Provider injection, native handles, capture-layer options, and output transport remain private/operational detail. |
+| Capture the next frame in an attached tool | A compact group contains one small PIX, RenderDoc, and/or Nsight Graphics icon for every provider requested/detected in this process. | Select the clicked icon's provider, bind the clicked viewport's stable present target, validate provider/backend/readiness, and arm one next-valid-frame capture. | Provider injection, native handles, capture-layer options, compatibility, and output transport remain private/operational detail. |
 | Is memory pressure or growth involved? | `Investigate Memory` opens definitions, trend, budget, and A/B/C guidance. | Select current/high-water/sample-age facts and maintain precise local/non-local semantics. | Allocation maps, call stacks and residency events remain external-tool work. |
 | Produce reproducible evidence | `Capture Evidence...` opens a review step prefilled from the selected workload/range/configuration. | Validate readiness, sample population, observer mode, required identities, destination and manifest before enabling export. | Raw schema and hashes remain expandable/copyable; no normal-run files. |
 | Customize an expert overlay | `Customize Stats...` or the console exposes the fixed catalog with cost/search. | Reject unsupported combinations before commit and derive the minimum shared collection mode. | This is not the default viewport menu and never creates another collector. |
@@ -673,11 +674,11 @@ The console and UI issue the same typed requests. UI does not construct command 
 
 ### Attached External Frame Capture
 
-This workflow is distinct from `ProfileGpu`. `ProfileGpu` creates a bounded Sparkle timestamp product for marker-level orientation; the attached-tool icon asks one external capture layer to record a provider-native frame for API, state, resource, shader, or hardware analysis.
+This workflow is distinct from `ProfileGpu`. `ProfileGpu` creates a bounded Sparkle timestamp product for marker-level orientation; each attached-tool icon asks its named external capture layer to record a provider-native frame for API, state, resource, shader, or hardware analysis. Multiple icons may be visible together even though capture execution is serialized initially.
 
 #### Launch And Provider Selection
 
-The Editor accepts three case-insensitive, process-wide launch intents:
+The Editor accepts three case-insensitive, process-wide launch intents. They may be combined so a developer can keep multiple provider actions visible in the same Editor session:
 
 | Launch intent | Selected activity | Backend/capability gate | Initial delivery tier |
 | --- | --- | --- | --- |
@@ -685,26 +686,28 @@ The Editor accepts three case-insensitive, process-wide launch intents:
 | `-RenderDoc` | RenderDoc frame capture for the next targeted viewport frame. | D3D12 or Vulkan only when the dynamically discovered RenderDoc in-application API and selected device/window path pass. Sparkle does not link RenderDoc statically. | Supported target after paired-backend capture/replay and shutdown gates pass. |
 | `-Nsight` | Nsight Graphics **Graphics Capture** for the next targeted viewport frame. It does not mean Nsight Systems or GPU Trace. | Supported NVIDIA D3D12/Vulkan path only; the current NGFX Graphics Capture initialization/request API and activity must pass. | Experimental until the beta SDK/API, driver matrix, artifact finalization, and observer cost are accepted. |
 
-The three flags normalize into one internal `ExternalGpuCaptureProvider` before RHI device creation; they are not CVars and cannot change after the device exists. Multiple provider flags, a provider/backend mismatch, or a conflicting injected capture layer is an explicit startup error—Sparkle never chooses a winner or silently changes the graphics API. A requested provider that cannot initialize may leave the Editor running only after the adapter proves clean rollback; it remains visibly `Unavailable` with the exact remediation. A partially initialized or unsafe capture layer fails launch.
+The flags normalize into a bounded internal `ExternalGpuCaptureProviderSet` before RHI device creation; they are not CVars, and provider membership cannot change after the device exists. The bootstrap evaluates every requested pair/combination against a versioned, measured compatibility matrix before loading capture layers. Compatible providers initialize independently and each publish their own state and icon. An untested or conflicting combination does not use provider precedence: the affected providers remain visibly `Unavailable(Conflict)` unless the adapter can prove a safe subset without hiding what was rejected. Sparkle never silently changes the graphics API. A requested provider that cannot initialize may leave the Editor running only after its adapter proves clean rollback; a partially initialized or process-unsafe capture layer fails launch.
 
-Launching or attaching through a provider's native UI may activate the same path without a Sparkle flag when exactly one supported capture API is detected. Passive detection never causes Sparkle to inject a library, and a marker-only runtime such as WinPixEventRuntime is not sufficient evidence that PIX GPU capture is attached.
+Launching or attaching through provider-native UIs may activate the same paths without Sparkle flags. Every detected capture API is represented independently, then checked against the same backend and multi-provider compatibility matrix. Passive detection never causes Sparkle to inject another library, and a marker-only runtime such as WinPixEventRuntime is not sufficient evidence that PIX GPU capture is attached.
 
 #### Viewport Icon And Interaction
 
-- The Editor places one 16-20 px provider-branded capture icon at the far right of each renderable viewport header. With no requested/detected provider, the icon does not exist; Sparkle does not show three inert vendor buttons.
-- The accessible name and tooltip lead with `Capture next frame with <provider>` and include provider activity, backend, target viewport, readiness, observer warning, and output behavior. The icon alone never carries meaning.
-- A requested but unavailable provider keeps one disabled warning form of its icon so the user can see why the launch intent failed and open setup guidance. Ready, armed, capturing/finalizing, completed, and failed states have distinct text/tooltips; animation is optional reinforcement.
-- Clicking submits an `ExternalCaptureRequestId` plus a stable viewport target token. Renderer resolves that token to the native present surface at a safe boundary; Editor never chooses an `HWND`, swapchain, device, queue, or command buffer.
+- The Editor places a compact group of 16-20 px provider-branded capture icons at the far right of each renderable viewport header: one icon per requested or detected provider. The group uses a stable order and may contain PIX, RenderDoc, and Nsight simultaneously. With no requested/detected provider, the group does not exist; Sparkle does not show inert vendor buttons.
+- Every icon has an independent accessible name and tooltip led by `Capture next frame with <provider>` and includes provider activity, backend, target viewport, readiness, observer warning, compatibility state, and output behavior. The icon alone never carries meaning.
+- A requested but unavailable provider keeps a disabled warning form of its own icon so the user can see why that provider failed or conflicts and open setup guidance. Ready, armed, capturing/finalizing, completed, and failed states are per provider and have distinct text/tooltips; animation is optional reinforcement.
+- Clicking submits an `ExternalCaptureRequestId`, provider ID, and stable viewport target token. Renderer resolves that token to the native present surface at a safe boundary; Editor never chooses an `HWND`, swapchain, device, queue, or command buffer.
 - The capture starts at the next valid present boundary after the click, not during the ImGui event that received it. Minimized, zero-extent, resizing, device-lost, or non-presenting targets reject or remain visibly armed according to the bounded timeout policy; they never capture an unrelated window silently.
 - In a multi-window Editor, the clicked viewport is the delimiter target. PIX uses its target-window facility; RenderDoc and Nsight use their validated device/window or frame-delimiter path. Provider limitations on capturing other process windows remain visible in the result.
-- Only one external request may be armed, capturing, or finalizing. A second click returns `Busy`. `ProfileGpu`, validation modes, and another capture provider cannot overlap unless a measured provider matrix explicitly allows it; the initial policy is exclusive.
+- Icon coexistence does not imply concurrent capture. Initially only one external request across all providers may be armed, capturing, or finalizing; clicking any other provider returns `Busy` and identifies the active provider. `ProfileGpu`, validation modes, and another capture provider cannot overlap unless a measured compatibility matrix explicitly allows that exact combination.
 - The click explicitly authorizes one provider-native capture artifact. When the provider returns a finalized path, Sparkle may offer `Open in <provider>` and `Show in folder`; otherwise it reports completion through the provider's native UI. Sparkle does not copy capture contents into its live ring or silently add the artifact to benchmark evidence.
 
 #### State And Publication
 
+Each provider entry follows the same state machine independently; the global request arbiter may still make another ready provider temporarily `Busy`:
+
 ```text
 NotRequested
-    | launch flag or one passively detected provider
+    | provider launch flag or passive detection
     v
 Initializing ---> Unavailable(reason/setup)
     |
@@ -717,7 +720,7 @@ Ready --click--> Armed(next valid target present) --provider rejects--> Failed
                     `----failure----'
 ```
 
-Provider state is immutable publication data: provider/activity, backend, API/SDK version, request ID, viewport target, requested/captured `FrameId` where knowable, observer mode, status, failure code, and optional artifact path. Provider callbacks enqueue only bounded completion data; they never mutate Editor state or block EditorThread while a capture finalizes.
+Provider state is an immutable collection keyed by provider ID: activity, backend, API/SDK version, compatibility state, request ID, viewport target, requested/captured `FrameId` where knowable, observer mode, status, failure code, and optional artifact path. Provider callbacks enqueue only bounded completion data; they never mutate Editor state or block EditorThread while a capture finalizes.
 
 ### Visual, Validity, And Accessibility Rules
 
@@ -891,7 +894,7 @@ The adopted behavior is a quick live view plus a deliberate detailed frame captu
 
 Only one request may be armed or resolving. A second request returns `Busy` with the active capture ID; it does not replace an explicit capture silently. A request fails immediately with a typed reason when timestamp queries are unavailable, the renderer has no valid output extent, an external capture owns the instrumentation mode, or the fixed scope plan cannot be created.
 
-The Performance/GPU view may expose `Capture GPU`; it submits the same typed request as the command. This Sparkle capture stays inside the workspace and is visually distinct from the provider-branded viewport icon that writes an external tool artifact. UI code does not construct command strings. No `ProfileGpu` command writes a file by default.
+The Performance/GPU view may expose `Capture GPU`; it submits the same typed request as the command. This Sparkle capture stays inside the workspace and is visually distinct from the provider-branded viewport icons that write external tool artifacts. UI code does not construct command strings. No `ProfileGpu` command writes a file by default.
 
 ### Capture State And Publication
 
@@ -1043,7 +1046,7 @@ Selecting a captured-frame node exposes `Copy marker path` so the same stable la
 
 ### Viewport Summary
 
-The existing top-right FPS text becomes the compact `Stat Unit` summary when that group is active. Milliseconds lead; FPS remains a derived convenience. A nearby Performance menu leads with `Quick Check` and `Investigate CPU/GPU/Memory`; it shows the active task preset and automatically derived collection cost. `Customize Stats...` is the searchable expert route to the fixed group catalog used by the console command. When one external frame-capture provider is requested or detected, its compact capture icon occupies the far-right viewport-header slot without entering the Performance menu or workspace toolbar. The canonical [viewport controls and compact `Unit` layouts](PerformanceDiagnosticsAsciiWireframes.md#shared-controls) live in the visual-design document.
+The existing top-right FPS text becomes the compact `Stat Unit` summary when that group is active. Milliseconds lead; FPS remains a derived convenience. A nearby Performance menu leads with `Quick Check` and `Investigate CPU/GPU/Memory`; it shows the active task preset and automatically derived collection cost. `Customize Stats...` is the searchable expert route to the fixed group catalog used by the console command. Requested or detected external frame-capture providers contribute their compact icons to one far-right viewport-header group without entering the Performance menu or workspace toolbar. The canonical [viewport controls and compact `Unit` layouts](PerformanceDiagnosticsAsciiWireframes.md#shared-controls) live in the visual-design document.
 
 Rules:
 
@@ -1052,7 +1055,7 @@ Rules:
 - The resolution shown is render resolution, not inferred desktop/window size; output and client extent are in the details view.
 - Color indicates budget state, not generic "good/bad": neutral below the configured budget, warning above it, critical above twice it, gray when invalid.
 - Clicking the summary opens the Performance window at the correlated latest valid frame.
-- Clicking the provider icon arms the next valid frame for that viewport and changes only the icon/status notification; it does not replace the current workspace selection or masquerade as `ProfileGpu`.
+- Clicking any provider icon arms that named provider for the next valid frame of the viewport and changes only the relevant icon/status notification; it does not replace the current workspace selection or masquerade as `ProfileGpu`.
 - FPS is `1000 / p50 frame interval ms` and is labeled as derived; it is not averaged from instantaneous FPS samples.
 
 ### Performance Window
@@ -1195,11 +1198,11 @@ Every external investigation must:
 6. label topology-changing diagnostic controls `NonRepresentative` and keep them out of final benchmark claims; and
 7. link the narrow native capture and selected evidence into the workload-owned manifest.
 
-For an attached frame-capture provider, the viewport icon is only a trigger and state projection. It does not assert that replay is correct, that timings are representative, or that the capture belongs in an accepted evidence package. The architecture deliberately does not assert that a named tool/version supports the current adapter, API feature, marker encoding, or operating system. Revalidate the runbook before every external capture.
+For attached frame-capture providers, every viewport icon is only a trigger and state projection. It does not assert that replay is correct, that timings are representative, that coexisting capture layers are compatible, or that the capture belongs in an accepted evidence package. The architecture deliberately does not assert that a named tool/version supports the current adapter, API feature, marker encoding, operating system, or another active provider. Revalidate the runbook before every external capture.
 
 ## Benchmark And Portfolio Evidence
 
-The live Editor screenshot is one portfolio artifact, not the result. Conceptually, a reviewer-ready performance case includes the following files under the workload-owned run directory; [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) remains authoritative for exact names and placement:
+The live Editor screenshot is one portfolio artifact, not the result. Conceptually, a reviewer-ready performance case includes the following files under the workload-owned run directory; [I. Acceptance Workloads](../../../Engineering/BistroAndSanMiguelWorkloads.md) remains authoritative for exact names and placement:
 
 ```text
 artifacts/validation/showcase-levels/<run-id>/<level-id>/
@@ -1277,7 +1280,7 @@ This directly advances whole-system performance, hard-debugging, low-level concu
 - An invalid parent, parent cycle, child outside parent, significant sibling overlap, or queue mismatch invalidates the affected GPU subtree and its exclusive values. The independent top-level queue result remains usable where valid.
 - Draw, dispatch, resource, and barrier annotations without owned timestamp pairs remain marker-only. The visualizer never invents duration for them.
 - A second `ProfileGpu` while one is armed/resolving returns `Busy`; cancellation, shutdown, device loss, clear, and late completion settle one capture ID exactly once.
-- Multiple external-provider flags, provider/backend mismatch, conflicting injected layers, or a second external request are explicit typed failures; no provider or viewport is selected by precedence.
+- Unsupported provider combinations, provider/backend mismatch, conflicting injected layers, or a second active external request are explicit typed failures. Combined provider flags are valid input, but no provider or viewport is selected by hidden precedence.
 - A requested external provider that is absent or unsupported remains visibly unavailable. If initialization cannot roll back cleanly before device creation, the launch fails rather than continuing with partially installed hooks.
 - A viewport external capture targets the next valid present for the clicked viewport. Minimize, zero extent, resize, timeout, shutdown, and device loss settle the request once and never redirect capture to another Editor window.
 - Provider artifact finalization is asynchronous and bounded. Missing artifact-path reporting remains a completed native-UI handoff, not an invented Sparkle path; callback overflow or late completion is a visible failure.
@@ -1296,7 +1299,7 @@ Implementation acceptance requires focused tests and measured runs, as applicabl
 - Scenario tests drive the immutable presentation model through `Quick Check`, `Investigate CPU`, `Investigate GPU`, `Investigate Memory`, `Capture Evidence`, attached-provider ready/armed/finalizing/completed/unavailable states, cancellation, and failure without constructing console strings or mutating collectors/provider APIs from UI code.
 - The normal route from viewport orientation to one selected domain requires no knowledge of stat-group names, collection modes, timestamp queries, counters, backend targets, hashes, manifests, or external-tool configuration. A test or structured UI audit rejects any normal path that makes one of those fields mandatory.
 - The first-level viewport menu contains the task intents, current state/cost, `Customize Stats...`, and open/hide controls; raw group names remain behind customization. Workspace snapshots verify that contextual capture/export/recovery commands do not become a permanent wall of equal toolbar actions.
-- Header snapshots verify that zero provider flags/detections produce no vendor icon, exactly one valid provider produces one far-right icon, and a requested unavailable provider produces one disabled warning icon with accessible remediation—not three permanent buttons.
+- Header snapshots verify zero providers, each single-provider state, multiple compatible providers visible together in stable order, mixed ready/unavailable providers, and a compact group containing only requested/detected providers. Every disabled icon exposes provider-specific remediation.
 - Every unavailable or unsafe action is disabled with one visible prerequisite. The frontend cannot express contradictory collection requests, start a second exclusive capture, export invalid evidence, or silently enable a more perturbing mode.
 - Switching views and launching a contextual investigation preserves the selected frame/range and follows a typed object only where correlation is valid. Failures preserve that context and show one root cause, one next action, and a details route to raw evidence.
 - Advanced overrides are typed, validated, resettable, scoped to the current operation or saved preset, and rendered as a difference from the recommended configuration. Closing and reopening the workspace cannot silently promote them to defaults.
@@ -1330,7 +1333,7 @@ Implementation acceptance requires focused tests and measured runs, as applicabl
 
 - DevelopmentGame and DevelopmentEditor on D3D12 and Vulkan.
 - DevelopmentEditor external capture: PIX on D3D12; RenderDoc on D3D12 and Vulkan; Nsight Graphics Capture on its supported NVIDIA D3D12/Vulkan matrix while explicitly `Experimental`.
-- For each provider, test no flag/no injection, requested but missing, passively attached, ready, next-frame capture of the clicked viewport, multi-window target selection, busy/conflict, resize/minimize, device loss, finalization, shutdown, artifact-open/path-unavailable, and clean relaunch without the provider.
+- For each provider, test no flag/no injection, requested but missing, passively attached, ready, next-frame capture of the clicked viewport, multi-window target selection, busy/conflict, resize/minimize, device loss, finalization, shutdown, artifact-open/path-unavailable, and clean relaunch without the provider. Test supported and rejected provider combinations separately, including independent icon state and global request arbitration.
 - Threaded and serial renderer controls.
 - Normal and serial task controls.
 - Validation on/off state recorded; native validation passes on supported routes.
@@ -1387,7 +1390,7 @@ This is architecture decomposition, not a schedule; the Roadmap and `MAP-00` own
 5. Publish Threads, Tasks, Render, and Memory views; correct GPU memory segment semantics; and add `Investigate CPU/GPU/Memory` task presets plus contextual `Customize Stats...` over the same typed requests in the Performance menu and window.
 6. Add Gpu/GpuPasses only after top-level timing correlation and basic-mode overhead pass. Admit Scene/Rhi rows only from existing production-owner counters, never from diagnostic scans.
 7. Add the `ProfileGpu` vertical slice: stable tokens and explicit parents, a fixed per-chunk scope/query plan that preserves parallel recording, delayed validation and inclusive/`exclusive (uncovered)` derivation, one frozen result, and the hierarchical/flat/coalesced Editor views.
-8. Add the attached external frame-capture vertical slice: process-wide provider selection before device creation, PIX D3D12 and RenderDoc D3D12/Vulkan private adapters, conditional far-right viewport icon, stable target binding, exclusive request state, artifact handoff, and failure/observer evidence. Keep Nsight Graphics behind an explicit experimental capability gate until its beta SDK matrix passes.
+8. Add the attached external frame-capture vertical slice: bounded process-wide provider-set selection before device creation, PIX D3D12 and RenderDoc D3D12/Vulkan private adapters, a conditional far-right provider-icon group, stable target binding, global exclusive request arbitration, pairwise/multi-provider compatibility evidence, artifact handoff, and failure/observer evidence. Keep Nsight Graphics behind an explicit experimental capability gate until its beta SDK matrix passes.
 9. Add bounded hitch selection/navigation to the shared frame navigator, check in the narrow WPR profile and profiler walkthrough, and capture one D3D12 and one Vulkan specialist example that correlates a GPU captured-frame node to the external marker tree.
 
 Each slice must extend the existing owner and remove any presentation path it replaces. Sparkle may publish only the bounded marker-level GPU product described here; deeper API, shader, hardware, allocation, and scheduling data remains in profiler-native artifacts rather than widening engine public APIs.
@@ -1413,7 +1416,7 @@ Each slice must extend the existing owner and remove any presentation path it re
 | GPU profile interaction | One typed `ProfileGpu` request and one retained immutable capture, separate from live stat demand. | Always-running full trees, silent capture replacement, blocking for GPU completion, or default capture files. |
 | GPU hierarchy | Stable scope token + explicit capture-local parent; inclusive from ticks and exclusive from direct-child interval union per queue. | Completion-order/depth reconstruction, nested-duration sums, or cross-queue subtraction. |
 | GPU capture topology | Preassigned per-chunk query/record slices preserve normal parallel recording and submission topology. | Silently serializing command recording to simplify profiling. |
-| Attached external frame capture | One mutually exclusive process provider, selected before device creation; one conditional provider icon per renderable viewport; one next-valid-frame request targeted to the clicked viewport. | Three permanent vendor buttons, late capture-layer injection after device creation, provider precedence, native handles in Editor, or silently capturing whichever window presents first. |
+| Attached external frame capture | A bounded provider set selected before device creation; one conditional icon per requested/detected provider in each renderable viewport; one globally serialized next-valid-frame request naming the clicked icon's provider and viewport. | Permanent unrequested vendor buttons, assuming icon coexistence makes simultaneous capture safe, late capture-layer injection after device creation, hidden provider precedence, native handles in Editor, or silently capturing whichever window presents first. |
 | External capture delivery | PIX D3D12 and RenderDoc D3D12/Vulkan are the first supported targets; Nsight Graphics Capture is planned behind an explicit experimental gate while its SDK remains beta. | Calling all three providers equivalent, treating `-Nsight` as Nsight Systems/GPU Trace, or making a beta vendor SDK a mandatory engine dependency. |
 | Memory | Working/private RAM and tracked/block/local/non-local/retirement GPU facts. | One ambiguous "RAM" and one combined "VRAM" number. |
 | Memory peaks | OS process-lifetime peaks, Sparkle session sampled high-water, and benchmark-run sampled high-water remain distinct. | Claiming `Stat Reset` resets OS peaks or calling a sampled peak exact. |

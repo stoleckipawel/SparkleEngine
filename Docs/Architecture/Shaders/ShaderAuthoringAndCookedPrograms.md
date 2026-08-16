@@ -8,7 +8,7 @@ Scope: shader source/import, types and permutations, compilation and validation,
 
 This document decides how SparkleEngine should identify render passes and shaders without requiring authors to maintain parallel strings such as `DirectLighting`, `RendererShaderPackages::DirectLighting`, binding-layout names, pipeline names, source basenames, and cooked-package names.
 
-It also maps Epic's global-shader lifecycle onto Sparkle from source import through runtime pipeline creation, explains which Unreal patterns are worth adopting, traces the design to Sparkle's engineering and portfolio requirements, and gives an ordered migration that can be used to learn those patterns through implementation. It refines the shader-specific conclusions from [External Renderer Repository Comparison](ExternalRendererComparison.md). That comparison remains the source-linked broad research document. This document owns the proposed local shader-authoring direction and the shader-lifecycle compliance audit. Code, tests, executable build configuration, and captured evidence remain the authority for what is implemented and proven today.
+It also maps Epic's global-shader lifecycle onto Sparkle from source import through runtime pipeline creation, explains which Unreal patterns are worth adopting, traces the design to Sparkle's engineering and portfolio requirements, and gives an ordered migration that can be used to learn those patterns through implementation. It refines the shader-specific conclusions from [External Renderer Repository Comparison](../ExternalReferences/ExternalRendererComparison.md). That comparison remains the source-linked broad research document. This document owns the proposed local shader-authoring direction and the shader-lifecycle compliance audit. Code, tests, executable build configuration, and captured evidence remain the authority for what is implemented and proven today.
 
 ## Adversarial Review Verdict
 
@@ -590,35 +590,35 @@ The separation at the right is important: graph construction may materialize a p
 
 Relevant implementation entry points:
 
-- [`GlobalShader.h`](../../Engine/RHI/Public/Shaders/Authoring/GlobalShader.h)
-- [`ShaderAuthoring.cpp`](../../Engine/RHI/Private/Shaders/ShaderAuthoring.cpp)
-- [`RendererShaderPackages.h`](../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h)
-- [`DirectLightingPass.h`](../../Engine/Renderer/Private/Passes/Deferred/DirectLightingPass.h)
-- [`DirectLightingPass.cpp`](../../Engine/Renderer/Private/Passes/Deferred/DirectLightingPass.cpp)
-- [`DirectLightingShaders.cpp`](../../Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp)
-- [`FrameGraphBuilder.h`](../../Engine/Renderer/Private/FrameGraph/Builder/FrameGraphBuilder.h)
-- [`ShaderContractCatalogBuilder.cpp`](../../Tools/Shaders/ShaderCompiler/Private/Contracts/ShaderContractCatalogBuilder.cpp)
-- [`ShaderContractValidator.cpp`](../../Tools/Shaders/ShaderCompiler/Private/Contracts/ShaderContractValidator.cpp)
-- [`ShaderCookPlanExecutor.cpp`](../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderCookPlanExecutor.cpp)
-- [`ShaderCookNodeExecutor.cpp`](../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderCookNodeExecutor.cpp)
-- [`ShaderDebugArtifactWriter.cpp`](../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderDebugArtifactWriter.cpp)
-- [`IncludeClosureHasher.cpp`](../../Tools/Shaders/ShaderCompiler/Private/Cooking/Cache/IncludeClosureHasher.cpp)
-- [`ShaderCompileOptionsHasher.cpp`](../../Tools/Shaders/ShaderCompiler/Private/Cooking/Cache/ShaderCompileOptionsHasher.cpp)
-- [`CookedShaderPackage.h`](../../Engine/RHI/Public/Shaders/CookedShaderPackage.h)
-- [`CookedPackageWriter.cpp`](../../Tools/Shaders/ShaderCompiler/Private/Cooking/CookedPackageWriter.cpp)
-- [`CookedShaderPackageCache.cpp`](../../Engine/RHI/Private/Shaders/CookedShaderPackageCache.cpp)
-- [`CookedShaderPackageValidation.cpp`](../../Engine/RHI/Private/Shaders/CookedShaderPackageValidation.cpp)
-- [`PassBinder.cpp`](../../Engine/Renderer/Private/Pipeline/PassBinder.cpp)
-- [`RenderPassShaderRuntime.h`](../../Engine/Renderer/Private/Pipeline/RenderPassShaderRuntime.h)
-- [`PipelineRuntimeLibrary.cpp`](../../Engine/Renderer/Private/PipelineRuntime/PipelineRuntimeLibrary.cpp)
-- [`RenderPassRuntimeCache.cpp`](../../Engine/Renderer/Private/Pipeline/RenderPassRuntimeCache.cpp)
-- [`D3D12Pipeline.cpp`](../../Engine/RHI/Private/D3D12/Pipeline/D3D12Pipeline.cpp)
-- [`VulkanPipeline.cpp`](../../Engine/RHI/Private/Vulkan/Pipeline/VulkanPipeline.cpp)
-- [`ShaderSourceChangeTracker.cpp`](../../Engine/Application/Private/ShaderRecook/ShaderSourceChangeTracker.cpp)
-- [`ShaderRecookCoordinator.cpp`](../../Engine/Application/Private/ShaderRecook/ShaderRecookCoordinator.cpp)
-- [`ShaderCompilerProcess.cpp`](../../Engine/Application/Private/ShaderRecook/ShaderCompilerProcess.cpp)
-- [`ShaderCompiler` build definition](../../Tools/Shaders/ShaderCompiler/CMakeLists.txt)
-- [`ValidateShaderCompilerCli.cmake`](../../Tools/Shaders/ShaderCompiler/ValidateShaderCompilerCli.cmake)
+- [`GlobalShader.h`](../../../Engine/RHI/Public/Shaders/Authoring/GlobalShader.h)
+- [`ShaderAuthoring.cpp`](../../../Engine/RHI/Private/Shaders/ShaderAuthoring.cpp)
+- [`RendererShaderPackages.h`](../../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h)
+- [`DirectLightingPass.h`](../../../Engine/Renderer/Private/Passes/Deferred/DirectLightingPass.h)
+- [`DirectLightingPass.cpp`](../../../Engine/Renderer/Private/Passes/Deferred/DirectLightingPass.cpp)
+- [`DirectLightingShaders.cpp`](../../../Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp)
+- [`FrameGraphBuilder.h`](../../../Engine/Renderer/Private/FrameGraph/Builder/FrameGraphBuilder.h)
+- [`ShaderContractCatalogBuilder.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Contracts/ShaderContractCatalogBuilder.cpp)
+- [`ShaderContractValidator.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Contracts/ShaderContractValidator.cpp)
+- [`ShaderCookPlanExecutor.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderCookPlanExecutor.cpp)
+- [`ShaderCookNodeExecutor.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderCookNodeExecutor.cpp)
+- [`ShaderDebugArtifactWriter.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderDebugArtifactWriter.cpp)
+- [`IncludeClosureHasher.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/Cache/IncludeClosureHasher.cpp)
+- [`ShaderCompileOptionsHasher.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/Cache/ShaderCompileOptionsHasher.cpp)
+- [`CookedShaderPackage.h`](../../../Engine/RHI/Public/Shaders/CookedShaderPackage.h)
+- [`CookedPackageWriter.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/CookedPackageWriter.cpp)
+- [`CookedShaderPackageCache.cpp`](../../../Engine/RHI/Private/Shaders/CookedShaderPackageCache.cpp)
+- [`CookedShaderPackageValidation.cpp`](../../../Engine/RHI/Private/Shaders/CookedShaderPackageValidation.cpp)
+- [`PassBinder.cpp`](../../../Engine/Renderer/Private/Pipeline/PassBinder.cpp)
+- [`RenderPassShaderRuntime.h`](../../../Engine/Renderer/Private/Pipeline/RenderPassShaderRuntime.h)
+- [`PipelineRuntimeLibrary.cpp`](../../../Engine/Renderer/Private/PipelineRuntime/PipelineRuntimeLibrary.cpp)
+- [`RenderPassRuntimeCache.cpp`](../../../Engine/Renderer/Private/Pipeline/RenderPassRuntimeCache.cpp)
+- [`D3D12Pipeline.cpp`](../../../Engine/RHI/Private/D3D12/Pipeline/D3D12Pipeline.cpp)
+- [`VulkanPipeline.cpp`](../../../Engine/RHI/Private/Vulkan/Pipeline/VulkanPipeline.cpp)
+- [`ShaderSourceChangeTracker.cpp`](../../../Engine/Application/Private/ShaderRecook/ShaderSourceChangeTracker.cpp)
+- [`ShaderRecookCoordinator.cpp`](../../../Engine/Application/Private/ShaderRecook/ShaderRecookCoordinator.cpp)
+- [`ShaderCompilerProcess.cpp`](../../../Engine/Application/Private/ShaderRecook/ShaderCompilerProcess.cpp)
+- [`ShaderCompiler` build definition](../../../Tools/Shaders/ShaderCompiler/CMakeLists.txt)
+- [`ValidateShaderCompilerCli.cmake`](../../../Tools/Shaders/ShaderCompiler/ValidateShaderCompilerCli.cmake)
 
 ## End-to-End Shader Pipeline Atlas
 
@@ -979,11 +979,11 @@ These sources supplement the references in [External Precedent and What Sparkle 
 
 This audit routes to the owning repository authorities instead of duplicating their rules:
 
-- [Portfolio requirements](../Strategy/Requirements.md) define what the finished work must prove.
-- [Engineer persona](../Strategy/EngineerPersona.md) defines the end-to-end graphics-engineering behaviors the implementation and evidence should teach.
-- [Engineering standards map](../Engineering/Standards/README.md) selects the binding implementation, graphics, tools, concurrency, naming, and validation rules.
-- [Bistro and San Miguel workloads](../Engineering/BistroAndSanMiguelWorkloads.md) define the paired-backend stress cases and evidence shape.
-- [Renderer/RHI boundary](RendererRhiBoundary.md) owns the architectural split among Renderer policy, frame-graph scheduling, and neutral backend creation.
+- [Portfolio requirements](../../Strategy/Requirements.md) define what the finished work must prove.
+- [Engineer persona](../../Strategy/EngineerPersona.md) defines the end-to-end graphics-engineering behaviors the implementation and evidence should teach.
+- [Engineering standards map](../../Engineering/Standards/README.md) selects the binding implementation, graphics, tools, concurrency, naming, and validation rules.
+- [Bistro and San Miguel workloads](../../Engineering/BistroAndSanMiguelWorkloads.md) define the paired-backend stress cases and evidence shape.
+- [Renderer/RHI boundary](../RendererRhiBoundary.md) owns the architectural split among Renderer policy, frame-graph scheduling, and neutral backend creation.
 
 `Meets` below means the reviewed code implements the shader-specific invariant. It does not mean the corresponding portfolio requirement is fully proven. `Partial` means a useful production path exists but misses a required invariant or evidence gate. `Missing` means no production path or executable proof was found. `Explicitly deferred` means the repository correctly exposes the feature as unavailable rather than silently pretending it works.
 
@@ -991,14 +991,14 @@ This audit routes to the owning repository authorities instead of duplicating th
 
 | Authority | Current shader-lifecycle status | Required architectural response |
 | --- | --- | --- |
-| [Integration style](../Engineering/Standards/IntegrationStyleGuide.md) | **Partial.** There is one real cooker and one runtime-package path, but manually repeated package/pass/debug names and two parameter declarations create parallel authorities inside that path. | Replace each duplicated authority in a bounded vertical slice and delete its old macro, fallback, or declaration in the same slice. Do not add a second shader subsystem beside the current one. |
-| [Repository ownership](../Engineering/Standards/RepositoryStructureAndOwnership.md) and [Renderer/RHI boundary](RendererRhiBoundary.md) | **Partial.** Renderer owns concrete registrations and passes; Tools owns cooking; RHI owns neutral pipeline creation and cooked validation. The RHI-facing `GlobalShader` authoring layer still carries source/package policy that should belong to the Renderer/tooling contract. | Keep neutral bytecode, reflection, layout, shader-object, and pipeline contracts in RHI. Keep shader types, programs, permutations, and pass use in Renderer. Keep import, compilers, cache, and cook publication in Tools. Application/editor only orchestrates recook and activation. |
-| [Graphics engineering](../Engineering/Standards/GraphicsEngineering.md) | **Partial.** DXIL/SPIR-V compilation, reflection, package validation, backend capabilities, readable labels, and runtime-format selection exist. Paired inspection, disassembly/counters, fallback captures, and exact hardware/driver evidence are not automated. | Make a paired-backend vertical slice the first proof; inspect layouts and IL on both targets; preserve a named fallback; record exact compiler, backend, hardware, driver, workload, and capture. |
-| [Editor and tools](../Engineering/Standards/EditorAndTools.md) | **Partial to strong.** Cooking is out of process; publication is transactional; stale generations are rejected; previous accepted artifacts survive failure. Cancellation is shallow, compiler memory is unbudgeted, and compile failures lack replay artifacts. | Preserve transactional replacement. Add job cancellation boundaries, bounded compiler-session memory/parallelism, progress/results integration, deterministic failure bundles, and a stable command/API usable outside the editor. |
-| [Concurrency](../Engineering/Standards/Concurrency.md) | **Partial.** Bounded work uses `SparkleTasks`, with no second general pool. It lacks priority, in-flight dedupe, compiler-session cancellation, serial-vs-N evidence, and memory-ceiling proof. | Evolve cook nodes into explicit jobs coordinated through `SparkleTasks`; never add a shader-only general worker pool. Prove serial, 1/2/N, cancellation, stale generation, failure, and memory behavior. Add worker processes only from measured compiler isolation/throughput need. |
-| [Data-oriented design](../Engineering/Standards/DataOrientedDesign.md) | **Partial.** Cook plans, reflection arrays, and compact cooked records are batch-friendly, but runtime lookup is string/path-led and physical packages duplicate bytecode. | Use immutable sorted manifest/map records and content-addressed code tables; keep human-readable strings in diagnostics, not hot lookup or cache identity. Measure layout/memory changes rather than asserting them. |
-| [Naming and vocabulary](../Engineering/Standards/NamingAndVocabulary.md) | **Partial.** Neutral RHI uses `RenderPipeline`, `GraphicsPipelineDesc`, and `ComputePipelineDesc`, while semantic pass labels are useful. Authored package IDs and generic-looking `PassName` fields conflate identities. | Generate default labels from typed pass traits, keep optional instance labels, use program/shader/artifact/code terms for their distinct roles, and reserve stable hashes for content/cache identity. Do not leak `PSO` into neutral public RHI names. |
-| [Validation, performance, and evidence](../Engineering/Standards/ValidationPerformanceAndEvidence.md) | **Missing as a complete gate.** One representative CLI target exists, but no registered shader CTest suite, paired all-program validation, injected-defect proof, cold/warm report, pipeline-hitch evidence, or external capture pack was found. | Add narrow executable checks for every replaced contract, then a paired DXIL/SPIR-V cook/load slice, negative ABI/cache/reload cases, serial/N and cold/warm matrices, and capture-backed evidence. A document or successful build is not acceptance evidence. |
+| [Integration style](../../Engineering/Standards/IntegrationStyleGuide.md) | **Partial.** There is one real cooker and one runtime-package path, but manually repeated package/pass/debug names and two parameter declarations create parallel authorities inside that path. | Replace each duplicated authority in a bounded vertical slice and delete its old macro, fallback, or declaration in the same slice. Do not add a second shader subsystem beside the current one. |
+| [Repository ownership](../../Engineering/Standards/RepositoryStructureAndOwnership.md) and [Renderer/RHI boundary](../RendererRhiBoundary.md) | **Partial.** Renderer owns concrete registrations and passes; Tools owns cooking; RHI owns neutral pipeline creation and cooked validation. The RHI-facing `GlobalShader` authoring layer still carries source/package policy that should belong to the Renderer/tooling contract. | Keep neutral bytecode, reflection, layout, shader-object, and pipeline contracts in RHI. Keep shader types, programs, permutations, and pass use in Renderer. Keep import, compilers, cache, and cook publication in Tools. Application/editor only orchestrates recook and activation. |
+| [Graphics engineering](../../Engineering/Standards/GraphicsEngineering.md) | **Partial.** DXIL/SPIR-V compilation, reflection, package validation, backend capabilities, readable labels, and runtime-format selection exist. Paired inspection, disassembly/counters, fallback captures, and exact hardware/driver evidence are not automated. | Make a paired-backend vertical slice the first proof; inspect layouts and IL on both targets; preserve a named fallback; record exact compiler, backend, hardware, driver, workload, and capture. |
+| [Editor and tools](../../Engineering/Standards/EditorAndTools.md) | **Partial to strong.** Cooking is out of process; publication is transactional; stale generations are rejected; previous accepted artifacts survive failure. Cancellation is shallow, compiler memory is unbudgeted, and compile failures lack replay artifacts. | Preserve transactional replacement. Add job cancellation boundaries, bounded compiler-session memory/parallelism, progress/results integration, deterministic failure bundles, and a stable command/API usable outside the editor. |
+| [Concurrency](../../Engineering/Standards/Concurrency.md) | **Partial.** Bounded work uses `SparkleTasks`, with no second general pool. It lacks priority, in-flight dedupe, compiler-session cancellation, serial-vs-N evidence, and memory-ceiling proof. | Evolve cook nodes into explicit jobs coordinated through `SparkleTasks`; never add a shader-only general worker pool. Prove serial, 1/2/N, cancellation, stale generation, failure, and memory behavior. Add worker processes only from measured compiler isolation/throughput need. |
+| [Data-oriented design](../../Engineering/Standards/DataOrientedDesign.md) | **Partial.** Cook plans, reflection arrays, and compact cooked records are batch-friendly, but runtime lookup is string/path-led and physical packages duplicate bytecode. | Use immutable sorted manifest/map records and content-addressed code tables; keep human-readable strings in diagnostics, not hot lookup or cache identity. Measure layout/memory changes rather than asserting them. |
+| [Naming and vocabulary](../../Engineering/Standards/NamingAndVocabulary.md) | **Partial.** Neutral RHI uses `RenderPipeline`, `GraphicsPipelineDesc`, and `ComputePipelineDesc`, while semantic pass labels are useful. Authored package IDs and generic-looking `PassName` fields conflate identities. | Generate default labels from typed pass traits, keep optional instance labels, use program/shader/artifact/code terms for their distinct roles, and reserve stable hashes for content/cache identity. Do not leak `PSO` into neutral public RHI names. |
+| [Validation, performance, and evidence](../../Engineering/Standards/ValidationPerformanceAndEvidence.md) | **Missing as a complete gate.** One representative CLI target exists, but no registered shader CTest suite, paired all-program validation, injected-defect proof, cold/warm report, pipeline-hitch evidence, or external capture pack was found. | Add narrow executable checks for every replaced contract, then a paired DXIL/SPIR-V cook/load slice, negative ABI/cache/reload cases, serial/N and cold/warm matrices, and capture-backed evidence. A document or successful build is not acceptance evidence. |
 | Frame-graph execution ownership | **Partial to strong.** RDG setup declares resources and materializes runtime state before Execute; Execute only binds and records work. Duplicate parameter metadata and count-only compatibility weaken the dependency/binding proof. | Make one schema own each shader-visible field, reuse/compose it in the pass envelope, and reject structural mismatch; never permit Execute to discover resources, load shaders, or create pipelines. |
 | Reload and GPU lifetime | **Meets the reviewed invariant.** A replacement generation is fully built before activation, a failure preserves the active generation, and retirement waits on `RhiSubmissionToken` state for all queues. | Preserve this path unchanged while replacing lookup and physical storage. Test delayed GPU completion, reload churn, invalid replacements, and device-loss/error paths. |
 
@@ -1067,7 +1067,7 @@ Implementation is not accepted merely when the new API compiles. The completed s
 11. a generated support matrix proving backend/target/stage/package/feature/policy status and a consumer report distinguishing registered, cooked, runtime-valid, selected, and captured programs/fallbacks;
 12. shader-code readiness/lifetime evidence comparing eager and preload candidates, including only compression/eviction metrics that exist; if full RT is in scope, add state-object/pipeline, SBT layout/index/update/memory, trace dispatch, fallback, reload, and paired capture evidence.
 
-The [performance diagnostics architecture](PerformanceDiagnosticsArchitecture.md) owns the shared measurement and capture infrastructure. This document owns the shader-specific identities and joins that make those captures traceable. Evidence records belong under the repository's evidence path selected by the acceptance workload; they must not be embedded here as claims that age with hardware, drivers, or compiler versions.
+The [performance diagnostics architecture](../Performance/Diagnostics/PerformanceDiagnosticsArchitecture.md) owns the shared measurement and capture infrastructure. This document owns the shader-specific identities and joins that make those captures traceable. Evidence records belong under the repository's evidence path selected by the acceptance workload; they must not be embedded here as claims that age with hardware, drivers, or compiler versions.
 
 ## Changes to Make
 

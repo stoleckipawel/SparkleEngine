@@ -140,7 +140,7 @@ Do not publish confidential numbers, imply ownership of team output, or name unr
 ### Public profile and website
 
 The current public profile is stronger than the PDF:
- 
+
 - it has a focused rendering/performance headline and links to the personal site and GitHub;
 - it surfaces the frame-graph series and shipped projects;
 - it has roughly two thousand followers and strong recommendations;

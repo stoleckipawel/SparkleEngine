@@ -19,7 +19,7 @@ Strategy owns desired capabilities, priority, dated assessment, sequencing, and 
 | [C. Candidate and Repository Gap Assessment](GapAssessment.md) | evidence/readiness at one repository snapshot | dated assessment; revalidate before acting |
 | [F. August 2026-January 2027 Roadmap](Roadmap.md) | six-month priority, sequencing, allocation, and gates | plan; not proof of completion |
 
-Stable IDs D and E are architecture documents in the [Architecture index](../Architecture/README.md). J and K are multithreading architecture/execution documents, and L is the engineering integration contract.
+Stable IDs D and E are architecture documents routed from the [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md). J is the multithreading architecture/execution contract, and L is the engineering integration contract.
 
 ## Ownership Rules
 
@@ -29,4 +29,4 @@ Stable IDs D and E are architecture documents in the [Architecture index](../Arc
 - Roadmap owns sequence, not implementation rules or workload definitions.
 - Persona owns behavior and judgment, not a duplicate evidence matrix.
 - Role Source Archive preserves traceability and should not leak into product-facing claims.
-- The [acceptance workload](../Engineering/BistroAndSanMiguelWorkloads.md) owns scene and proof gates; [Architecture](../Architecture/README.md) owns system decisions.
+- The [acceptance workload](../Engineering/BistroAndSanMiguelWorkloads.md) owns scene and proof gates; the [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md) routes system decisions.

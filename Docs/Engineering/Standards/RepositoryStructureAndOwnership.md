@@ -4,7 +4,7 @@ Status: binding repository structure and ownership standard
 
 Applies to: modules, dependencies, subsystem decomposition, APIs, state authority, and lifetimes
 
-This standard owns implementation guardrails for architecture changes. The [repository map](../../Architecture/WholeRepositoryMap.md) describes a dated current-state snapshot, while focused documents under [Architecture](../../Architecture/README.md) own accepted and target system designs. Link those designs here; do not restate them as general rules.
+This standard owns implementation guardrails for architecture changes. The [repository map](../../Architecture/WholeRepositoryMap.md) describes a dated current-state snapshot and routes focused documents that own accepted and target system designs. Link those designs here; do not restate them as general rules.
 
 ## Repository Shape
 

@@ -12,7 +12,7 @@ This document owns the invariants that make a change one coherent SparkleEngine 
 
 Use the owning sources directly:
 
-- [Architecture](../../Architecture/README.md) for accepted and target system design;
+- [Whole Repository Architecture Map](../../Architecture/WholeRepositoryMap.md) for accepted and target system-design routes;
 - [Engineering Standards](README.md#standards-map) for implementation rules;
 - [Principal Graphics Requirements](../../Strategy/Requirements.md) for `PGE-*` capability/evidence definitions;
 - [Acceptance Workloads](../BistroAndSanMiguelWorkloads.md) for scene and proof gates.
