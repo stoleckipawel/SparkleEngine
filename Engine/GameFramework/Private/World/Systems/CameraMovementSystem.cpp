@@ -2,6 +2,7 @@
 
 #include "World/Systems/CameraMovementSystem.h"
 
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
 
@@ -56,7 +57,9 @@ namespace ECS
 			const float speed = movement.MoveSpeedMetersPerSecond * (intent.Sprint ? movement.SprintMultiplier : 1.0f);
 			const float distance = speed * clampedDelta;
 			const DirectX::XMVECTOR orientation = DirectX::XMLoadFloat4(&transform.Rotation);
-			const DirectX::XMVECTOR forward = DirectX::XMVector3Rotate(DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), orientation);
+			const DirectX::XMVECTOR forward = DirectX::XMVector3Rotate(
+			    DirectX::XMVectorSet(WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ, 0.0f),
+			    orientation);
 			const float yaw = std::atan2(
 			    2.0f * (transform.Rotation.w * transform.Rotation.y + transform.Rotation.x * transform.Rotation.z),
 			    1.0f - 2.0f * (transform.Rotation.x * transform.Rotation.x + transform.Rotation.y * transform.Rotation.y));
@@ -64,7 +67,13 @@ namespace ECS
 			DirectX::XMVECTOR translation = DirectX::XMLoadFloat3(&transform.Translation);
 			translation = DirectX::XMVectorMultiplyAdd(forward, DirectX::XMVectorReplicate(distance * intent.ForwardAxis), translation);
 			translation = DirectX::XMVectorMultiplyAdd(right, DirectX::XMVectorReplicate(distance * intent.RightAxis), translation);
-			translation = DirectX::XMVectorAdd(translation, DirectX::XMVectorSet(0.0f, distance * intent.UpAxis, 0.0f, 0.0f));
+			translation = DirectX::XMVectorAdd(
+			    translation,
+			    DirectX::XMVectorSet(
+			        WorldCoordinates::kUpX * distance * intent.UpAxis,
+			        WorldCoordinates::kUpY * distance * intent.UpAxis,
+			        WorldCoordinates::kUpZ * distance * intent.UpAxis,
+			        0.0f));
 			DirectX::XMStoreFloat3(&transform.Translation, translation);
 			changed = true;
 		}

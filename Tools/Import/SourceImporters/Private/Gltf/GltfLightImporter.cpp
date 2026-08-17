@@ -4,6 +4,7 @@
 
 #include "Gltf/GltfCoordinateConverter.h"
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <cgltf.h>
 
@@ -87,7 +88,9 @@ void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportOutput&
 		light.innerAngleRadians = sourceLight.spot_inner_cone_angle;
 		light.outerAngleRadians = sourceLight.spot_outer_cone_angle;
 		light.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
-		light.direction = GltfCoordinateConverter::TransformDirection(worldTransform, {0.0f, 0.0f, 1.0f});
+		light.direction = GltfCoordinateConverter::TransformDirection(
+		    worldTransform,
+		    {WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ});
 		DirectX::XMStoreFloat4x4(&light.worldTransform, worldTransform);
 		output.scene.lights.push_back(std::move(light));
 	}

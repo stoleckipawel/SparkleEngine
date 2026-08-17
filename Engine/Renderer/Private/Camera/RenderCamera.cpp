@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Camera/RenderCamera.h"
 #include "Config/DepthConvention.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 using namespace DirectX;
 
@@ -30,7 +31,7 @@ void RenderCamera::RebuildMatrices(const RenderCameraData& camera) noexcept
 	const XMVECTOR directionVec = XMLoadFloat3(&direction);
 	const XMVECTOR targetVec = XMVectorAdd(positionVec, directionVec);
 
-	const XMVECTOR worldUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	const XMVECTOR worldUp = XMVectorSet(WorldCoordinates::kUpX, WorldCoordinates::kUpY, WorldCoordinates::kUpZ, 0.0f);
 
 	const XMMATRIX view = XMMatrixLookAtLH(positionVec, targetVec, worldUp);
 	XMStoreFloat4x4(&m_viewMatrix, view);

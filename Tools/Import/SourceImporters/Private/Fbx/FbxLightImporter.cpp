@@ -4,6 +4,7 @@
 
 #include "Fbx/FbxNodeTransformConverter.h"
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <DirectXMath.h>
 
@@ -90,8 +91,12 @@ public:
 		    : FbxNodeTransformConverter::BuildNodeAttachedOrientation(node, position, localDirection, up);
 
 		const DirectX::XMMATRIX lightWorld = DirectX::XMLoadFloat4x4(&pose.Transform);
-		const DirectX::XMVECTOR direction = DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), lightWorld);
-		const DirectX::XMVECTOR tangent = DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), lightWorld);
+		const DirectX::XMVECTOR direction = DirectX::XMVector3TransformNormal(
+		    DirectX::XMVectorSet(WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ, 0.0f),
+		    lightWorld);
+		const DirectX::XMVECTOR tangent = DirectX::XMVector3TransformNormal(
+		    DirectX::XMVectorSet(WorldCoordinates::kRightX, WorldCoordinates::kRightY, WorldCoordinates::kRightZ, 0.0f),
+		    lightWorld);
 		DirectX::XMStoreFloat3(&pose.Direction, DirectX::XMVector3Normalize(direction));
 		DirectX::XMStoreFloat3(&pose.Tangent, DirectX::XMVector3Normalize(tangent));
 		return pose;

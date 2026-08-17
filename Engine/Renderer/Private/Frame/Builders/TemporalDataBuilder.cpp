@@ -3,6 +3,7 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 
 #include "Camera/RenderCamera.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "Math/MathUtils.h"
 #include "Temporal/TemporalJitterPatterns.h"
 
@@ -10,14 +11,14 @@
 
 class TemporalDataPolicy final
 {
-  public:
-		static constexpr uint32_t kMaxCachedJitteredFrames = 16u;
+public:
+	static constexpr uint32_t kMaxCachedJitteredFrames = 16u;
 
-		// Donut-style temporal AA pattern baseline: Halton(2,3) sample sequence.
-		// This keeps deterministic sub-pixel offsets and avoids RNG-sensitive temporal aliasing.
-		static constexpr float kCutPositionDeltaMeters = 5.0f;
-		static constexpr float kCutViewDirectionDotThreshold = 0.8660254f; // ~30 degrees.
-		static constexpr float kCutFovDeltaDegrees = 6.0f;
+	// Donut-style temporal AA pattern baseline: Halton(2,3) sample sequence.
+	// This keeps deterministic sub-pixel offsets and avoids RNG-sensitive temporal aliasing.
+	static constexpr float kCutPositionDeltaMeters = 5.0f;
+	static constexpr float kCutViewDirectionDotThreshold = 0.8660254f; // ~30 degrees.
+	static constexpr float kCutFovDeltaDegrees = 6.0f;
 };
 
 void TemporalDataBuilder::ResetHistory(std::string_view reason) noexcept
@@ -39,7 +40,9 @@ TemporalDataBuilder::CameraPose TemporalDataBuilder::CapturePose(
 	DirectX::XMStoreFloat4x4(&pose.ViewToClipMatrix, viewToClip);
 	DirectX::XMStoreFloat4x4(&pose.WorldToClipMatrix, worldToClip);
 	pose.Position = cameraData.Position;
-	pose.Direction = MathUtils::Normalize3(cameraData.Direction, {0.0f, 0.0f, 1.0f});
+	pose.Direction = MathUtils::Normalize3(
+	    cameraData.Direction,
+	    {WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ});
 	pose.FovYDegrees = renderCamera.GetFovYDegrees();
 	return pose;
 }
@@ -73,10 +76,10 @@ bool TemporalDataBuilder::IsLikelyCameraCut(const TemporalDataBuilder::CameraPos
 }
 
 PerTemporalConstantBufferData TemporalDataBuilder::BuildTemporalData(
-	const RenderCamera& renderCamera,
-	const PerViewCameraConstantBufferData& cameraData,
-	const RhiViewport& viewport,
-	std::uint64_t frameId) noexcept
+    const RenderCamera& renderCamera,
+    const PerViewCameraConstantBufferData& cameraData,
+    const RhiViewport& viewport,
+    std::uint64_t frameId) noexcept
 {
 	PerTemporalConstantBufferData temporalData{};
 	const CameraPose currentPose = CapturePose(renderCamera, cameraData);

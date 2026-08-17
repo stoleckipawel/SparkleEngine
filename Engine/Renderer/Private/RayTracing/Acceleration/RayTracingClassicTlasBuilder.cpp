@@ -45,8 +45,8 @@ ERhiClassicTlasBuildFlags RayTracingClassicTlasBuilder::ResolveClassicTlasBuildF
     RenderHardwareInterface& renderHardwareInterface) noexcept
 {
 	return CVarRayTracingClassicTlasRefit.Get() && SupportsClassicTlasRefit(renderHardwareInterface)
-	           ? ERhiClassicTlasBuildFlags::AllowUpdate
-	           : ERhiClassicTlasBuildFlags::None;
+	    ? ERhiClassicTlasBuildFlags::AllowUpdate
+	    : ERhiClassicTlasBuildFlags::None;
 }
 
 std::uint64_t RayTracingClassicTlasBuilder::ResolveScratchSize(
@@ -108,11 +108,8 @@ void RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexc
 
 	const ERhiClassicTlasBuildFlags buildFlags = ResolveClassicTlasBuildFlags(*m_renderHardwareInterface);
 	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
-	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(
-	        instanceCapacity,
-	        buildFlags);
-	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 ||
-	    ResolveScratchSize(prebuildInfo, buildFlags) == 0)
+	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(instanceCapacity, buildFlags);
+	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || ResolveScratchSize(prebuildInfo, buildFlags) == 0)
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingClassicTlasBuilderLogger,
@@ -128,11 +125,7 @@ void RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexc
 	    .instanceCount = 0};
 	if (!m_tlas.IsValid())
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingClassicTlasBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Classic TLAS storage has no GPU address.");
+		Diagnostics::Fatal(g_rayTracingClassicTlasBuilderLogger, __FILE__, __LINE__, "Classic TLAS storage has no GPU address.");
 	}
 }
 
@@ -167,11 +160,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	    .instanceCount = static_cast<std::uint32_t>(state.Instances.size())};
 	if (!m_tlas.IsValid())
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingClassicTlasBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Classic TLAS build did not publish a GPU resource.");
+		Diagnostics::Fatal(g_rayTracingClassicTlasBuilderLogger, __FILE__, __LINE__, "Classic TLAS build did not publish a GPU resource.");
 	}
 	return stats;
 }
@@ -260,20 +249,16 @@ void RayTracingClassicTlasBuilder::PrepareBuild(BuildState& state) noexcept
 	    L"RayTracingTlasInstances");
 	if (!m_instanceBuffer)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingClassicTlasBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Classic TLAS instance-buffer allocation failed.");
+		Diagnostics::Fatal(g_rayTracingClassicTlasBuilderLogger, __FILE__, __LINE__, "Classic TLAS instance-buffer allocation failed.");
 	}
 
-	const bool canRefit = !state.Instances.empty() && HasFlag(state.RequestedFlags, ERhiClassicTlasBuildFlags::AllowUpdate) &&
-	                      m_resourcesAllowUpdate && m_tlas.IsValid() && m_tlas.instanceCount == state.Instances.size() &&
-	                      state.PrebuildInfo.UpdateScratchDataSizeInBytes > 0;
+	const bool canRefit = !state.Instances.empty() && HasFlag(state.RequestedFlags, ERhiClassicTlasBuildFlags::AllowUpdate)
+	    && m_resourcesAllowUpdate && m_tlas.IsValid() && m_tlas.instanceCount == state.Instances.size()
+	    && state.PrebuildInfo.UpdateScratchDataSizeInBytes > 0;
 	state.Mode = canRefit
-	                 ? ERhiClassicTlasBuildMode::Update
-	                 : (HasFlag(state.RequestedFlags, ERhiClassicTlasBuildFlags::AllowUpdate) ? ERhiClassicTlasBuildMode::BuildAllowUpdate
-	                                                                                          : ERhiClassicTlasBuildMode::Build);
+	    ? ERhiClassicTlasBuildMode::Update
+	    : (HasFlag(state.RequestedFlags, ERhiClassicTlasBuildFlags::AllowUpdate) ? ERhiClassicTlasBuildMode::BuildAllowUpdate
+	                                                                             : ERhiClassicTlasBuildMode::Build);
 	state.EventName = canRefit ? "Classic TLAS Refit" : "Classic TLAS Build";
 }
 
@@ -317,7 +302,6 @@ void RayTracingClassicTlasBuilder::Clear() noexcept
 	ReleaseResources();
 	m_tlas = {};
 }
-
 
 void RayTracingClassicTlasBuilder::ReleaseResources() noexcept
 {

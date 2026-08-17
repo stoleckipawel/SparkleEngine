@@ -18,7 +18,7 @@ struct RenderSceneData;
 
 class RayTracingClassicTlasBuilder final
 {
-  public:
+public:
 	using BuildStats = RayTracingTopLevelAccelerationStructureBuildStats;
 
 	struct TlasHandle final
@@ -47,7 +47,7 @@ class RayTracingClassicTlasBuilder final
 	const TlasHandle& GetTlas() const noexcept { return m_tlas; }
 	void Clear() noexcept;
 
-  private:
+private:
 	struct BuildState;
 
 	static std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept;
@@ -64,7 +64,10 @@ class RayTracingClassicTlasBuilder final
 	    RayTracingPerformanceDiagnostics* diagnostics,
 	    BuildState& state) noexcept;
 	void PrepareBuild(BuildState& state) noexcept;
-	void RecordBuild(RenderCommandContext& commandContext, const BuildState& state, RayTracingPerformanceDiagnostics* diagnostics) const noexcept;
+	void RecordBuild(
+	    RenderCommandContext& commandContext,
+	    const BuildState& state,
+	    RayTracingPerformanceDiagnostics* diagnostics) const noexcept;
 	void TrackBuildResources(RenderCommandContext& commandContext) const noexcept;
 	void ReleaseResources() noexcept;
 	void EnsureResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo) noexcept;

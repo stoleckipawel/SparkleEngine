@@ -15,7 +15,7 @@ struct RayTracingPtlasPartitionPlan;
 
 class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAccelerationStructureStrategy
 {
-  public:
+public:
 	RayTracingPartitionedTlasStrategy(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const RayTracingCapabilityReport& capabilityReport) noexcept;
@@ -38,7 +38,7 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	std::uint32_t GetSceneTlasInstanceCount() const noexcept override;
 	void Clear() noexcept override;
 
-  private:
+private:
 	struct PartitionedBuildState;
 
 	struct PartitionedTlasResources final
@@ -69,8 +69,9 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	static RayTracingSceneTlasShaderAccessMode ResolveActiveShaderAccessMode(const RayTracingCapabilityReport& capabilityReport) noexcept;
 	static RhiPartitionedTlasInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept;
 	void EnsurePartitionedTlasResources(const RenderSceneData& sceneData, const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
-	RhiPartitionedTlasDesc BuildPartitionedTlasLayout(const RenderSceneData& sceneData, const RayTracingPtlasPartitionPlan* partitionPlan)
-	    const noexcept;
+	RhiPartitionedTlasDesc BuildPartitionedTlasLayout(
+	    const RenderSceneData& sceneData,
+	    const RayTracingPtlasPartitionPlan* partitionPlan) const noexcept;
 	RayTracingSceneFrameData BuildPartitionedTlasFrameData(const RenderSceneData& sceneData) const noexcept;
 	RayTracingTopLevelAccelerationStructureBuildResult BuildPartitionedTlas(
 	    RenderCommandContext& commandContext,
