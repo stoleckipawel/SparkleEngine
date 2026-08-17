@@ -18,6 +18,7 @@
 #include "Scene/Model/EditorSceneModelBuilder.h"
 #include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Settings/EditorRestartService.h"
+#include "Window/Window.h"
 
 #include <backends/imgui_impl_win32.h>
 #include <imgui.h>
@@ -127,7 +128,7 @@ UI::UI(EditorHostServices hostServices) :
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
 
 	InitializeImGuiContext();
-	SetupDPIScaling();
+	ApplyDpiScale(m_window->GetDpiScale());
 	if (!InitializeWin32Backend())
 	{
 		return;
@@ -143,6 +144,7 @@ UI::UI(EditorHostServices hostServices) :
 
 UI::~UI() noexcept
 {
+	m_windowDpiScaleHandle.Reset();
 	m_windowMessageHandle.Reset();
 
 	if (m_isWin32BackendInitialized)

@@ -18,7 +18,7 @@
 
 class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 {
-  public:
+public:
 	static std::unique_ptr<D3D12RenderDeviceServices> Create(
 	    Window& window,
 	    PixelFormat backBufferFormat,
@@ -57,7 +57,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	void SubmitFrame(std::uint64_t frameId) noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
 
-  private:
+private:
 	D3D12RenderDeviceServices() noexcept = default;
 
 	void Initialize(
@@ -129,12 +129,7 @@ void D3D12RenderDeviceServices::InitializePresentation(
     PixelFormat backBufferFormat,
     const RhiPresentationConfiguration& presentationConfiguration)
 {
-	m_swapChain = std::make_unique<D3D12SwapChain>(
-	    *m_rhi,
-	    window,
-	    *m_descriptorHeapManager,
-	    backBufferFormat,
-	    presentationConfiguration);
+	m_swapChain = std::make_unique<D3D12SwapChain>(*m_rhi, window, *m_descriptorHeapManager, backBufferFormat, presentationConfiguration);
 }
 
 void D3D12RenderDeviceServices::InitializeHardwareInterface()
@@ -150,12 +145,11 @@ void D3D12RenderDeviceServices::InitializeHardwareInterface()
 
 void D3D12RenderDeviceServices::InitializeCommandRecording()
 {
-	m_commandRecordingContext =
-	    std::make_unique<D3D12CommandRecordingContext>(
-	        *m_rhi,
-	        *m_renderHardwareInterface,
-	        *m_descriptorHeapManager,
-	        m_swapChain->GetMaximumFramesInFlight());
+	m_commandRecordingContext = std::make_unique<D3D12CommandRecordingContext>(
+	    *m_rhi,
+	    *m_renderHardwareInterface,
+	    *m_descriptorHeapManager,
+	    m_swapChain->GetMaximumFramesInFlight());
 	m_renderHardwareInterface->SetCommandRecordingContext(*m_commandRecordingContext);
 }
 
@@ -206,11 +200,10 @@ void D3D12RenderDeviceServices::ResizeSwapChain() noexcept
 
 void D3D12RenderDeviceServices::DrainPresentationQueue() noexcept
 {
-	const RhiSubmissionToken presentationToken = m_rhi->GetLastSubmittedToken(ERhiQueueType::Graphics);
-	if (presentationToken.IsValid())
-	{
-		m_rhi->WaitForSubmission(presentationToken);
-	}
+	// Frame submission is signaled before Present. This boundary also retires presentation and interposer work
+	// before ResizeBuffers releases the current back buffers.
+	const RhiSubmissionToken presentationToken = m_rhi->SignalQueue(ERhiQueueType::Graphics);
+	m_rhi->WaitForSubmission(presentationToken);
 }
 
 void D3D12RenderDeviceServices::BeginFrame(std::uint64_t frameId) noexcept

@@ -55,6 +55,19 @@ For neural graphics, Renderer owns feature policy, inference passes, persistent 
 
 When a dependency changes, update CMake, includes, exports, source groups, PCH assumptions, tests, and boundary checks atomically. Inspect the transitive public surface and remove obsolete compatibility includes.
 
+## Complexity Budget
+
+Complexity is permanent state another engineer must understand, validate, and retire. Every new service, abstraction, type, layer, cache, queue, task, thread, mode, flag, configuration key, public API, diagnostic, and compatibility path needs:
+
+- a current product or engine consumer;
+- one owner and one enforced invariant;
+- a lifetime and failure contract;
+- a reason direct code or an existing owner cannot express the behavior;
+- a validation or measurement that can prove its value;
+- a deletion, replacement, or reevaluation condition when its need is temporary or evidence-dependent.
+
+A change MAY add many lines while reducing system complexity. Review concepts and authority, not net line count: prefer fewer mutable representations, modes, ownership crossings, public contracts, and paths through which the same result can be produced. Do not prepay for hypothetical backends, variants, reuse, or scale. Add a seam when a real boundary changes independently, not because a design pattern has a familiar name.
+
 ## Orchestration and Capabilities
 
 An orchestrator owns ordering, lifecycle, policy selection, and composition. Its primary function should expose the workflow:
@@ -73,6 +86,15 @@ An orchestrator MUST NOT accumulate parsing, data transforms, cache insertion, t
 
 A capability implementation owns one cohesive operation, state machine, transform, policy, encoding, allocation, or lifetime and exposes only what its orchestrator needs.
 
+At function level, orchestration and mechanism are separate responsibilities:
+
+- an orchestration function reads as named stages, selects policy, sequences capabilities, handles stage-level failure, and publishes the result;
+- an implementation function performs one cohesive algorithm, transform, state transition, backend operation, or lifetime action;
+- a function does not alternate between high-level sequencing and the internal loops, parsing, allocation, synchronization, or encoding of several stages;
+- a small owner may sequence private steps that enforce the same invariant and lifetime; extraction is required by independent responsibility, not by ceremony or line count.
+
+An extracted collaborator must remove knowledge from its caller. Passing an owner facade into a one-method wrapper, moving an unchanged long function to another file, or replacing readable stages with indirection does not improve decomposition.
+
 ## Responsibility Audit
 
 Line count locates review candidates but does not decide them. Audit a class, file, or function when it has:
@@ -90,6 +112,27 @@ Line count locates review candidates but does not decide them. Audit a class, fi
 Do not answer a god unit with numbered parts, catch-all `Helpers`/`Common`/`Misc` buckets, one-method wrappers, speculative interfaces/factories/DI, arbitrary line limits, one function per file, or a second facade retaining the same authority.
 
 Every class needs one clear sentence describing what it owns, which invariant it enforces, its lifetime, and why it changes. Prefer one authoritative mutable owner, immutable value types, cohesive operation types, narrow domain services, RAII, and composition. Use inheritance only for a real substitutable contract whose implementations preserve the same behavioral and lifetime invariants.
+
+### File and Folder Cohesion
+
+- A source file owns one primary type, cohesive operation, or tightly coupled private collaboration with one reason to change.
+- A folder owns one durable subsystem, capability, lifetime, backend, or visibility boundary. Its name must let a new engineer predict what belongs there and where a responsibility lives.
+- Audit a file when unrelated features repeatedly edit it, its private declarations serve different owners, or its name no longer describes most of its contents.
+- Audit a folder when it mixes independent owners, acts as a dependency shortcut, requires vague names or filename prefixes to recover missing hierarchy, or has no sentence that excludes unrelated additions.
+- New catch-all `Helpers`, `Common`, `Misc`, `Utilities`, `Managers`, or synonym folders are forbidden. Existing catch-all areas are debt: do not add another unrelated responsibility; move touched behavior to its real owner when the extraction is bounded and validated.
+- Do not replace a god folder with deep one-file nesting or a directory per class. Split only on a real ownership or change boundary and update build membership, includes, tests, and documentation atomically.
+
+### Change Locality and Engine-Scale Growth
+
+An engine scales when a capability can evolve, validate, and retire inside a predictable ownership path. It does not scale merely because it has more abstraction layers.
+
+- Adding a capability should primarily change its owning subsystem, explicit composition point, tests, and documentation—not unrelated coordinators, generic utilities, or backend internals.
+- Backend and policy variants plug into an existing owner contract or a deliberately closed switch; they do not spread feature checks across callers.
+- A registry owns discovery for one named product workflow. It is not a service locator or a universal place every feature must edit.
+- Repeated edits across unrelated owners for each new feature signal a missing stable contract, misplaced authority, or overly central orchestrator and require responsibility review.
+- Removing a capability should have a bounded deletion path with no residual global flags, registrations, compatibility aliases, or empty framework layers.
+
+Review change fan-out and dependency direction, not only local class quality. A locally elegant type that forces repository-wide knowledge is not modular.
 
 ## SOLID Without Ceremony
 

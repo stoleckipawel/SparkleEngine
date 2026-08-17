@@ -29,10 +29,10 @@ namespace ECS
 		}
 		if (intent.SpeedStepCount != 0.0f)
 		{
-			movement.MoveSpeed = std::clamp(
-			    movement.MoveSpeed + intent.SpeedStepCount * movement.SpeedStep,
-			    movement.MinimumMoveSpeed,
-			    movement.MaximumMoveSpeed);
+			movement.MoveSpeedMetersPerSecond = std::clamp(
+			    movement.MoveSpeedMetersPerSecond + intent.SpeedStepCount * movement.SpeedStepMetersPerSecond,
+			    movement.MinimumMoveSpeedMetersPerSecond,
+			    movement.MaximumMoveSpeedMetersPerSecond);
 			changed = true;
 		}
 		if (intent.LookDeltaX != 0.0f || intent.LookDeltaY != 0.0f)
@@ -53,7 +53,7 @@ namespace ECS
 		const float clampedDelta = (std::max) (0.0f, deltaSeconds);
 		if (clampedDelta > 0.0f && (intent.ForwardAxis != 0.0f || intent.RightAxis != 0.0f || intent.UpAxis != 0.0f))
 		{
-			const float speed = movement.MoveSpeed * (intent.Sprint ? movement.SprintMultiplier : 1.0f);
+			const float speed = movement.MoveSpeedMetersPerSecond * (intent.Sprint ? movement.SprintMultiplier : 1.0f);
 			const float distance = speed * clampedDelta;
 			const DirectX::XMVECTOR orientation = DirectX::XMLoadFloat4(&transform.Rotation);
 			const DirectX::XMVECTOR forward = DirectX::XMVector3Rotate(DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), orientation);

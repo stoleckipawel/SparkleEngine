@@ -13,7 +13,8 @@ static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
 static constexpr std::uint32_t kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes = 4096;
 static constexpr std::uint32_t kNvidiaVendorId = 0x10DE;
 
-D3D12Rhi::D3D12Rhi(RhiInterposerHooks interposerHooks) noexcept : m_interposerHooks(interposerHooks)
+D3D12Rhi::D3D12Rhi(RhiInterposerHooks interposerHooks) noexcept :
+    m_interposerHooks(interposerHooks)
 {
 #if ENGINE_GPU_VALIDATION
 	m_debugLayer = std::make_unique<D3D12DebugLayer>();
@@ -403,16 +404,14 @@ bool D3D12Rhi::TryUpgradeInterposerInterface(
     REFIID requestedInterface,
     void** upgradedInterface) noexcept
 {
-	if (!m_interposerActive || m_interposerHooks.UpgradeInterface == nullptr || nativeInterface == nullptr ||
-	    upgradedInterface == nullptr)
+	if (!m_interposerActive || m_interposerHooks.UpgradeInterface == nullptr || nativeInterface == nullptr || upgradedInterface == nullptr)
 	{
 		return false;
 	}
 
 	*upgradedInterface = nullptr;
 	void* candidate = nativeInterface;
-	if (!m_interposerHooks.UpgradeInterface(kind, &candidate, m_interposerHooks.UserData) ||
-	    candidate == nullptr)
+	if (!m_interposerHooks.UpgradeInterface(kind, &candidate, m_interposerHooks.UserData) || candidate == nullptr)
 	{
 		return false;
 	}
@@ -441,8 +440,7 @@ bool D3D12Rhi::TryResolveNativeInterface(
 
 	*nativeInterface = nullptr;
 	void* resolved = nullptr;
-	if (!m_interposerHooks.ResolveNativeInterface(kind, externalInterface, &resolved, m_interposerHooks.UserData) ||
-	    resolved == nullptr)
+	if (!m_interposerHooks.ResolveNativeInterface(kind, externalInterface, &resolved, m_interposerHooks.UserData) || resolved == nullptr)
 	{
 		return false;
 	}
@@ -521,6 +519,17 @@ RhiSubmissionToken D3D12Rhi::SubmitCommandLists(
 		}
 	}
 	return m_queues[RhiQueueTypeToIndex(queueType)]->Submit(commandLists, std::span<const D3D12QueueWait>(waits.data(), waitCount));
+}
+
+RhiSubmissionToken D3D12Rhi::SignalQueue(ERhiQueueType queueType) noexcept
+{
+	if (!IsRhiQueueTypeValid(queueType))
+	{
+		Diagnostics::Fatal(g_d3d12RhiLogger, __FILE__, __LINE__, "Queue signal rejected an invalid queue type");
+		return {};
+	}
+
+	return m_queues[RhiQueueTypeToIndex(queueType)]->Signal();
 }
 
 void D3D12Rhi::QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept

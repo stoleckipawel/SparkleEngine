@@ -16,6 +16,15 @@
 /artifacts/
 /dist/
 
+/[Ss]aved/
+/[Ii]ntermediate/
+/[Dd]erived[Dd]ata[Cc]ache/
+/[Tt]emp/
+/[Tt]mp/
+/[Tt]mp-*/
+/[Tt]mp_*/
+/[Ss]cratch/
+
 # Project-local generated outputs.
 Projects/**/build/
 Projects/**/[Cc]ooked/
@@ -95,21 +104,60 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 
-# Database and temp files
+# Compiled binaries and intermediate files accidentally emitted into source.
+*.a
+*.dll
+*.dylib
+*.exe
+*.exp
+*.idb
+*.ilk
+*.iobj
+*.ipch
+*.ipdb
+*.lib
+*.lo
+*.o
+*.obj
+*.pch
+*.pdb
+*.pyd
+*.so
+*.so.*
+*.tlog
+*.lastbuildstate
+
+# Local databases, caches, logs, crash dumps, and temporary editor files.
 *.db
 *.db-shm
 *.db-wal
-.ilk
-.pdb
-.pdb/
-**/*.pdb
-.log
-.LOG
-.tmp
-.cache
-tmp_donut/
-tmp_donut_repo/
-tmp_streamline_sdk/
+*.cache
+*.dmp
+*.log
+*.stackdump
+*.temp
+*.tmp
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+*~
+
+# Python bytecode, environments, and tool caches.
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Operating-system metadata.
+.DS_Store
+Desktop.ini
+Thumbs.db
 
 # Large third-party SDK downloads are declared by CMake and cached under
 # build/_deps; keep ad-hoc local copies out of source.
@@ -120,4 +168,3 @@ tmp_streamline_sdk/
 # deliberate docs/attachment location instead of committing it from logs/.
 /logs/.*
 /logs/*
-/Saved/Captures/

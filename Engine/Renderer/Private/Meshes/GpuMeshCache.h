@@ -93,5 +93,5 @@ private:
 	std::map<CacheKey, ActiveMesh> m_cache;
 	std::unordered_map<std::uint64_t, const GpuMesh*> m_handles;
 	std::unordered_map<const Mesh*, GpuMeshHandle> m_sourceHandles;
-	std::vector<MeshRequest> m_requests;
+	std::map<CacheKey, MeshRequest> m_requests;
 };

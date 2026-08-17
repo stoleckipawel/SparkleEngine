@@ -8,12 +8,13 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 
+#include <cmath>
 #include <format>
 
 constexpr unsigned int FbxSceneReader::GetPostProcessFlags() noexcept
 {
-	return aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_SortByPType |
-	       aiProcess_ValidateDataStructure | aiProcess_ImproveCacheLocality | aiProcess_ConvertToLeftHanded;
+	return aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_SortByPType
+	    | aiProcess_ValidateDataStructure | aiProcess_ImproveCacheLocality | aiProcess_GlobalScale | aiProcess_ConvertToLeftHanded;
 }
 
 void FbxSceneReader::ConfigureImporter(Assimp::Importer& importer)
@@ -37,8 +38,17 @@ const aiScene& FbxSceneReader::LoadScene(const std::filesystem::path& filePath, 
 	const aiScene* scene = importer.ReadFile(filePath.string(), GetPostProcessFlags());
 	if (scene == nullptr || scene->mRootNode == nullptr)
 	{
-		throw Diagnostics::Error(
-		    std::format("Cannot parse FBX source '{}' ({}).", filePath.string(), importer.GetErrorString()));
+		throw Diagnostics::Error(std::format("Cannot parse FBX source '{}' ({}).", filePath.string(), importer.GetErrorString()));
 	}
 	return *scene;
+}
+
+float FbxSceneReader::GetMetersPerSourceUnit(const Assimp::Importer& importer)
+{
+	const float metersPerSourceUnit = importer.GetPropertyFloat(AI_CONFIG_APP_SCALE_KEY, 0.0f);
+	if (!std::isfinite(metersPerSourceUnit) || metersPerSourceUnit <= 0.0f)
+	{
+		throw Diagnostics::Error("FBX source does not provide a valid linear-unit conversion to metres.");
+	}
+	return metersPerSourceUnit;
 }

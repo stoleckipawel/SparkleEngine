@@ -19,11 +19,8 @@ struct D3D12QueueWait final
 
 class D3D12CommandQueue final
 {
-  public:
-	D3D12CommandQueue(
-	    ID3D12Device& device,
-	    ERhiQueueType queueType,
-	    Microsoft::WRL::ComPtr<ID3D12CommandQueue> nativeQueue = {}) noexcept;
+public:
+	D3D12CommandQueue(ID3D12Device& device, ERhiQueueType queueType, Microsoft::WRL::ComPtr<ID3D12CommandQueue> nativeQueue = {}) noexcept;
 	~D3D12CommandQueue() noexcept;
 
 	D3D12CommandQueue(const D3D12CommandQueue&) = delete;
@@ -33,9 +30,8 @@ class D3D12CommandQueue final
 
 	static D3D12_COMMAND_LIST_TYPE GetNativeCommandListType(ERhiQueueType queueType) noexcept;
 
-	RhiSubmissionToken Submit(
-	    std::span<ID3D12CommandList* const> commandLists,
-	    std::span<const D3D12QueueWait> waits = {}) noexcept;
+	RhiSubmissionToken Submit(std::span<ID3D12CommandList* const> commandLists, std::span<const D3D12QueueWait> waits = {}) noexcept;
+	RhiSubmissionToken Signal() noexcept;
 	void WaitFor(const D3D12CommandQueue& executionQueue, std::uint64_t submissionValue) noexcept;
 	void WaitForSubmission(std::uint64_t submissionValue) noexcept;
 	void WaitForIdle() noexcept;
@@ -61,7 +57,7 @@ class D3D12CommandQueue final
 		return m_fenceEvent;
 	}
 
-  private:
+private:
 	Threading::OwnerThread m_owner{"D3D12 command queue"};
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_queue;

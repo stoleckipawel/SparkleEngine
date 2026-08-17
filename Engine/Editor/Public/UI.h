@@ -62,7 +62,7 @@ struct EditorDiagnosticsProviders final
 
 class SPARKLE_EDITOR_API UI final
 {
-  public:
+public:
 	explicit UI(EditorHostServices hostServices);
 
 	~UI() noexcept;
@@ -85,7 +85,7 @@ class SPARKLE_EDITOR_API UI final
 
 	void Update();
 
-  private:
+private:
 	void NewFrame();
 
 	void Build();
@@ -93,12 +93,7 @@ class SPARKLE_EDITOR_API UI final
 	float BuildMainMenuBar();
 	void BuildSceneOutliner(bool disableInteraction, float mainMenuBarHeight);
 	void BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight);
-	void BuildViewport(
-	    bool disableInteraction,
-	    float topInset,
-	    float bottomInset,
-	    float outlinerWidth,
-	    float inspectorWidth);
+	void BuildViewport(bool disableInteraction, float topInset, float bottomInset, float outlinerWidth, float inspectorWidth);
 	void RegisterViewportInputRegion();
 	void BuildSceneInspector(bool disableInteraction, float mainMenuBarHeight);
 	void BuildUtilityPanels(bool disableInteraction);
@@ -119,7 +114,7 @@ class SPARKLE_EDITOR_API UI final
 
 	void SubscribeToWindowEvents(Window& window);
 
-	void SetupDPIScaling() noexcept;
+	void ApplyDpiScale(float dpiScale) noexcept;
 
 	std::unique_ptr<MainMenuBarPanel> m_mainMenuBar;
 	std::unique_ptr<EditorConsoleSystem> m_editorConsoleSystem;
@@ -156,4 +151,5 @@ class SPARKLE_EDITOR_API UI final
 	bool m_isWin32BackendInitialized = false;
 
 	ScopedEventHandle m_windowMessageHandle;
+	ScopedEventHandle m_windowDpiScaleHandle;
 };

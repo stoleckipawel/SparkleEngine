@@ -20,7 +20,7 @@ struct WindowMessageEvent;
 
 class RuntimeConsoleOverlay final
 {
-  public:
+public:
 	RuntimeConsoleOverlay(Timer& timer, Window& window);
 	~RuntimeConsoleOverlay() noexcept;
 
@@ -33,12 +33,12 @@ class RuntimeConsoleOverlay final
 	UiRenderPacket ConsumeRenderPacket();
 	bool IsVisible() const noexcept { return m_isVisible; }
 
-  private:
+private:
 	void HandleWindowMessage(WindowMessageEvent& event) noexcept;
 	bool ProcessWindowMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 	bool InitializeImGuiContext();
 	bool InitializeWin32Backend();
-	void SetupDPIScaling() noexcept;
+	void ApplyDpiScale(float dpiScale) noexcept;
 	bool IsReady() const noexcept;
 	void ToggleVisibility() noexcept;
 
@@ -61,6 +61,7 @@ class RuntimeConsoleOverlay final
 	Timer* m_timer = nullptr;
 	Window* m_window = nullptr;
 	ScopedEventHandle m_windowMessageHandle;
+	ScopedEventHandle m_windowDpiScaleHandle;
 	ConsoleCommandRegistry m_commandRegistry;
 	std::unique_ptr<ConsoleSession> m_consoleSession;
 	std::unique_ptr<ImGuiRenderPacketBuilder> m_renderPacketBuilder;

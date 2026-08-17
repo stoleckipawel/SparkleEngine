@@ -15,7 +15,7 @@ namespace Assets
 {
 	class SceneManifestValidation final
 	{
-	  public:
+	public:
 		template <std::size_t Capacity> static bool HasTerminatedName(const char (&name)[Capacity]) noexcept
 		{
 			return Strings::IsNullTerminated(std::span(name));
@@ -24,10 +24,7 @@ namespace Assets
 		{
 			return name[0] != '\0' && HasTerminatedName(name);
 		}
-		[[noreturn]] static void Invalid(std::string message)
-		{
-			throw Diagnostics::Error(std::move(message));
-		}
+		[[noreturn]] static void Invalid(std::string message) { throw Diagnostics::Error(std::move(message)); }
 		static bool HasFeatureFlag(std::uint32_t flags, CookedSceneFeatureFlags feature) noexcept;
 		static void ValidateFeatures(const LoadedSceneManifest& manifest);
 		static void ValidateMeshReferences(const LoadedSceneManifest& manifest);
@@ -53,14 +50,14 @@ namespace Assets
 
 	void SceneManifestValidation::ValidateFeatures(const LoadedSceneManifest& manifest)
 	{
-		constexpr std::uint32_t knownFeatureFlags = ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::Cameras) |
-		                                            ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::Lights) |
-		                                            ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::Skeletons) |
-		                                            ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::Animations) |
-		                                            ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::SkinnedMeshes) |
-		                                            ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::MorphTargets) |
-		                                            ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::MaterialVariants) |
-		                                            ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::AuthoredMeshInstancing);
+		constexpr std::uint32_t knownFeatureFlags = ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::Cameras)
+		    | ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::Lights)
+		    | ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::Skeletons)
+		    | ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::Animations)
+		    | ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::SkinnedMeshes)
+		    | ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::MorphTargets)
+		    | ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::MaterialVariants)
+		    | ToCookedSceneFeatureFlagMask(CookedSceneFeatureFlags::AuthoredMeshInstancing);
 		if ((manifest.header.featureFlags & ~knownFeatureFlags) != 0u)
 		{
 			Invalid(std::format("Cooked scene manifest uses unknown feature flag bits 0x{:08X}", manifest.header.featureFlags));
@@ -86,8 +83,8 @@ namespace Assets
 			Invalid("Cooked scene manifest has animation refs but is missing the Animations feature flag");
 		}
 
-		if ((!manifest.materialVariants.empty() || !manifest.materialVariantMappings.empty()) &&
-		    !HasFeatureFlag(manifest.header.featureFlags, CookedSceneFeatureFlags::MaterialVariants))
+		if ((!manifest.materialVariants.empty() || !manifest.materialVariantMappings.empty())
+		    && !HasFeatureFlag(manifest.header.featureFlags, CookedSceneFeatureFlags::MaterialVariants))
 		{
 			Invalid("Cooked scene manifest has material variant records but is missing the MaterialVariants feature flag");
 		}
@@ -101,8 +98,8 @@ namespace Assets
 			{
 				Invalid(std::format("Cooked scene manifest has an invalid mesh asset reference at index {}", meshReferenceIndex));
 			}
-			if (manifest.meshAssetReferences[meshReferenceIndex].meshAssetKind != CookedMeshAssetKind::Static &&
-			    manifest.meshAssetReferences[meshReferenceIndex].meshAssetKind != CookedMeshAssetKind::Skeletal)
+			if (manifest.meshAssetReferences[meshReferenceIndex].meshAssetKind != CookedMeshAssetKind::Static
+			    && manifest.meshAssetReferences[meshReferenceIndex].meshAssetKind != CookedMeshAssetKind::Skeletal)
 			{
 				Invalid(std::format("Cooked scene manifest has an invalid mesh asset kind at index {}", meshReferenceIndex));
 			}
@@ -114,52 +111,57 @@ namespace Assets
 		const CookedSceneInstanceRecord& instance = manifest.instances[instanceIndex];
 		if (instance.meshAssetIndex >= manifest.meshAssetReferences.size())
 		{
-			Invalid(std::format(
-			    "Cooked scene instance {} references mesh asset index {} but only {} mesh assets exist",
-			    instanceIndex,
-			    instance.meshAssetIndex,
-			    manifest.meshAssetReferences.size()));
+			Invalid(
+			    std::format(
+			        "Cooked scene instance {} references mesh asset index {} but only {} mesh assets exist",
+			        instanceIndex,
+			        instance.meshAssetIndex,
+			        manifest.meshAssetReferences.size()));
 		}
 
-		if (instance.materialAssetIndex != kInvalidCookedMaterialAssetIndex &&
-		    instance.materialAssetIndex >= manifest.materialAssetReferences.size())
+		if (instance.materialAssetIndex != kInvalidCookedMaterialAssetIndex
+		    && instance.materialAssetIndex >= manifest.materialAssetReferences.size())
 		{
-			Invalid(std::format(
-			    "Cooked scene instance {} references material asset index {} but only {} material assets exist",
-			    instanceIndex,
-			    instance.materialAssetIndex,
-			    manifest.materialAssetReferences.size()));
+			Invalid(
+			    std::format(
+			        "Cooked scene instance {} references material asset index {} but only {} material assets exist",
+			        instanceIndex,
+			        instance.materialAssetIndex,
+			        manifest.materialAssetReferences.size()));
 		}
 
 		if (instance.groupIndex != kInvalidCookedSceneInstanceGroupIndex && instance.groupIndex >= manifest.instanceGroups.size())
 		{
-			Invalid(std::format(
-			    "Cooked scene instance {} references instance group index {} but only {} groups exist",
-			    instanceIndex,
-			    instance.groupIndex,
-			    manifest.instanceGroups.size()));
+			Invalid(
+			    std::format(
+			        "Cooked scene instance {} references instance group index {} but only {} groups exist",
+			        instanceIndex,
+			        instance.groupIndex,
+			        manifest.instanceGroups.size()));
 		}
 
 		if (instance.skeletonRefIndex != kInvalidCookedSceneSkeletonRefIndex && instance.skeletonRefIndex >= manifest.skeletonRefs.size())
 		{
-			Invalid(std::format(
-			    "Cooked scene instance {} references skeleton ref index {} but only {} skeleton refs exist",
-			    instanceIndex,
-			    instance.skeletonRefIndex,
-			    manifest.skeletonRefs.size()));
+			Invalid(
+			    std::format(
+			        "Cooked scene instance {} references skeleton ref index {} but only {} skeleton refs exist",
+			        instanceIndex,
+			        instance.skeletonRefIndex,
+			        manifest.skeletonRefs.size()));
 		}
 
 		if (instance.firstMorphWeight != kInvalidCookedSceneMorphWeightIndex)
 		{
-			if (instance.morphWeightCount == 0u || instance.firstMorphWeight >= manifest.morphWeights.size() ||
-			    instance.morphWeightCount > manifest.morphWeights.size() - instance.firstMorphWeight)
+			if (instance.morphWeightCount == 0u || instance.firstMorphWeight >= manifest.morphWeights.size()
+			    || instance.morphWeightCount > manifest.morphWeights.size() - instance.firstMorphWeight)
 			{
-				Invalid(std::format(
-				    "Cooked scene instance {} references invalid morph weight range first={} count={} with {} weights",
-				    instanceIndex,
-				    instance.firstMorphWeight,
-				    instance.morphWeightCount,
-				    manifest.morphWeights.size()));
+				Invalid(
+				    std::format(
+				        "Cooked scene instance {} references invalid morph weight range first={} count={} with {} weights",
+				        instanceIndex,
+				        instance.firstMorphWeight,
+				        instance.morphWeightCount,
+				        manifest.morphWeights.size()));
 			}
 		}
 		else if (instance.morphWeightCount != 0u)
@@ -172,8 +174,8 @@ namespace Assets
 	{
 		const CookedSceneInstanceRecord& instance = manifest.instances[instanceIndex];
 		const CookedSceneMeshAssetRef& meshReference = manifest.meshAssetReferences[instance.meshAssetIndex];
-		if (meshReference.meshAssetKind == CookedMeshAssetKind::Skeletal &&
-		    instance.skeletonRefIndex == kInvalidCookedSceneSkeletonRefIndex)
+		if (meshReference.meshAssetKind == CookedMeshAssetKind::Skeletal
+		    && instance.skeletonRefIndex == kInvalidCookedSceneSkeletonRefIndex)
 		{
 			Invalid(std::format("Cooked scene instance {} uses a skeletal mesh without a skeleton ref", instanceIndex));
 		}
@@ -197,36 +199,39 @@ namespace Assets
 		const CookedSceneInstanceGroupRecord& group = manifest.instanceGroups[groupIndex];
 		if (group.meshAssetIndex >= manifest.meshAssetReferences.size())
 		{
-			Invalid(std::format(
-			    "Cooked scene instance group {} references mesh asset index {} but only {} mesh assets exist",
-			    groupIndex,
-			    group.meshAssetIndex,
-			    manifest.meshAssetReferences.size()));
+			Invalid(
+			    std::format(
+			        "Cooked scene instance group {} references mesh asset index {} but only {} mesh assets exist",
+			        groupIndex,
+			        group.meshAssetIndex,
+			        manifest.meshAssetReferences.size()));
 		}
 
-		if (group.materialAssetIndex != kInvalidCookedMaterialAssetIndex &&
-		    group.materialAssetIndex >= manifest.materialAssetReferences.size())
+		if (group.materialAssetIndex != kInvalidCookedMaterialAssetIndex
+		    && group.materialAssetIndex >= manifest.materialAssetReferences.size())
 		{
-			Invalid(std::format(
-			    "Cooked scene instance group {} references material asset index {} but only {} material assets exist",
-			    groupIndex,
-			    group.materialAssetIndex,
-			    manifest.materialAssetReferences.size()));
+			Invalid(
+			    std::format(
+			        "Cooked scene instance group {} references material asset index {} but only {} material assets exist",
+			        groupIndex,
+			        group.materialAssetIndex,
+			        manifest.materialAssetReferences.size()));
 		}
 	}
 
 	void SceneManifestValidation::ValidateInstanceGroupRange(const LoadedSceneManifest& manifest, std::size_t groupIndex)
 	{
 		const CookedSceneInstanceGroupRecord& group = manifest.instanceGroups[groupIndex];
-		if (group.instanceCount == 0 || group.firstInstance >= manifest.instances.size() ||
-		    group.instanceCount > manifest.instances.size() - group.firstInstance)
+		if (group.instanceCount == 0 || group.firstInstance >= manifest.instances.size()
+		    || group.instanceCount > manifest.instances.size() - group.firstInstance)
 		{
-			Invalid(std::format(
-			    "Cooked scene instance group {} references invalid instance range first={} count={} with {} instances",
-			    groupIndex,
-			    group.firstInstance,
-			    group.instanceCount,
-			    manifest.instances.size()));
+			Invalid(
+			    std::format(
+			        "Cooked scene instance group {} references invalid instance range first={} count={} with {} instances",
+			        groupIndex,
+			        group.firstInstance,
+			        group.instanceCount,
+			        manifest.instances.size()));
 		}
 
 		for (std::uint32_t instanceOffset = 0; instanceOffset < group.instanceCount; ++instanceOffset)
@@ -234,11 +239,12 @@ namespace Assets
 			const std::size_t instanceIndex = static_cast<std::size_t>(group.firstInstance) + instanceOffset;
 			if (manifest.instances[instanceIndex].groupIndex != groupIndex)
 			{
-				Invalid(std::format(
-				    "Cooked scene instance group {} range contains instance {} with mismatched group index {}",
-				    groupIndex,
-				    instanceIndex,
-				    manifest.instances[instanceIndex].groupIndex));
+				Invalid(
+				    std::format(
+				        "Cooked scene instance group {} range contains instance {} with mismatched group index {}",
+				        groupIndex,
+				        instanceIndex,
+				        manifest.instances[instanceIndex].groupIndex));
 			}
 		}
 	}
@@ -246,8 +252,8 @@ namespace Assets
 	void SceneManifestValidation::ValidateInstanceGroupKind(const LoadedSceneManifest& manifest, std::size_t groupIndex)
 	{
 		const CookedSceneInstanceGroupRecord& group = manifest.instanceGroups[groupIndex];
-		if (group.groupKind != CookedSceneInstanceGroupKind::None && group.groupKind != CookedSceneInstanceGroupKind::SharedMeshReference &&
-		    group.groupKind != CookedSceneInstanceGroupKind::AuthoredInstanceGroup)
+		if (group.groupKind != CookedSceneInstanceGroupKind::None && group.groupKind != CookedSceneInstanceGroupKind::SharedMeshReference
+		    && group.groupKind != CookedSceneInstanceGroupKind::AuthoredInstanceGroup)
 		{
 			Invalid(std::format("Cooked scene instance group {} uses an unknown group kind", groupIndex));
 		}
@@ -268,8 +274,8 @@ namespace Assets
 		for (std::size_t cameraIndex = 0; cameraIndex < manifest.cameras.size(); ++cameraIndex)
 		{
 			const CookedSceneCameraRecord& camera = manifest.cameras[cameraIndex];
-			if (!HasTerminatedName(camera.name) || camera.projectionKind != CookedSceneCameraProjectionKind::Perspective ||
-			    camera.sourceNodeIndex == (std::numeric_limits<std::uint32_t>::max)() || camera.flags != 0u)
+			if (!HasTerminatedName(camera.name) || camera.projectionKind != CookedSceneCameraProjectionKind::Perspective
+			    || camera.sourceNodeIndex == (std::numeric_limits<std::uint32_t>::max)() || camera.flags != 0u)
 			{
 				Invalid(std::format("Cooked scene camera {} has an unsupported or invalid projection", cameraIndex));
 			}
@@ -281,9 +287,9 @@ namespace Assets
 		for (std::size_t lightIndex = 0; lightIndex < manifest.lights.size(); ++lightIndex)
 		{
 			const CookedSceneLightRecord& light = manifest.lights[lightIndex];
-			if (!HasTerminatedName(light.name) ||
-			    (light.kind != CookedSceneLightKind::Directional && light.kind != CookedSceneLightKind::Point &&
-			     light.kind != CookedSceneLightKind::Spot && light.kind != CookedSceneLightKind::Rect))
+			if (!HasTerminatedName(light.name)
+			    || (light.kind != CookedSceneLightKind::Directional && light.kind != CookedSceneLightKind::Point
+			        && light.kind != CookedSceneLightKind::Spot && light.kind != CookedSceneLightKind::Rect))
 			{
 				Invalid(std::format("Cooked scene light {} uses an unknown light kind", lightIndex));
 			}
@@ -355,7 +361,6 @@ namespace Assets
 		}
 	}
 
-
 	void SceneManifestValidator::ValidateHeader(const LoadedSceneManifest& manifest)
 	{
 		if (manifest.header.fileHeader.magic != kCookedSceneManifestMagic)
@@ -365,10 +370,20 @@ namespace Assets
 
 		if (manifest.header.fileHeader.version != kCookedSceneManifestVersion)
 		{
-			SceneManifestValidation::Invalid(std::format(
-			    "Cooked scene manifest version {} is not supported by this runtime; expected version {}. Recook the scene asset.",
-			    manifest.header.fileHeader.version,
-			    kCookedSceneManifestVersion));
+			SceneManifestValidation::Invalid(
+			    std::format(
+			        "Cooked scene manifest version {} is not supported by this runtime; expected version {}. Recook the scene asset.",
+			        manifest.header.fileHeader.version,
+			        kCookedSceneManifestVersion));
+		}
+
+		if (manifest.header.coordinateContractVersion != WorldCoordinates::kCoordinateContractVersion)
+		{
+			SceneManifestValidation::Invalid(
+			    std::format(
+			        "Cooked scene coordinate contract version {} is not supported; expected {}. Recook the scene asset.",
+			        manifest.header.coordinateContractVersion,
+			        WorldCoordinates::kCoordinateContractVersion));
 		}
 	}
 

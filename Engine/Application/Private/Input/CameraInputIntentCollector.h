@@ -12,7 +12,7 @@ struct MouseWheelEvent;
 
 class CameraInputIntentCollector final
 {
-  public:
+public:
 	CameraInputIntentCollector(InputSystem& inputSystem, Window& window) noexcept;
 	~CameraInputIntentCollector() noexcept;
 
@@ -20,12 +20,12 @@ class CameraInputIntentCollector final
 	CameraInputIntentCollector& operator=(const CameraInputIntentCollector&) = delete;
 	void Publish(GameWorld& world) noexcept;
 
-  private:
+private:
 	void OnMouseButton(const MouseButtonEvent& event) noexcept;
 	void OnKeyboard(const KeyboardEvent& event) noexcept;
 	void OnMouseMove(const MouseMoveEvent& event) noexcept;
 	void OnMouseWheel(const MouseWheelEvent& event) noexcept;
-	void ResetMovement() noexcept;
+	void EndMouseLook() noexcept;
 
 	InputSystem& m_inputSystem;
 	Window& m_window;
@@ -36,12 +36,5 @@ class CameraInputIntentCollector final
 	float m_lookDeltaX = 0.0f;
 	float m_lookDeltaY = 0.0f;
 	float m_speedStepCount = 0.0f;
-	bool m_forwardHeld = false;
-	bool m_backwardHeld = false;
-	bool m_rightHeld = false;
-	bool m_leftHeld = false;
-	bool m_upHeld = false;
-	bool m_downHeld = false;
-	bool m_sprintHeld = false;
 	bool m_mouseLookActive = false;
 };

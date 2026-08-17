@@ -11,6 +11,7 @@ struct SourceImportProvenance
 {
 	std::filesystem::path sourcePath;
 	std::string importerId;
+	float sourceMetersPerUnit = 0.0f;
 };
 
 struct SourceImportOutput
@@ -29,6 +30,7 @@ struct SourceImportOutput
 	std::size_t GetMaterialVariantMappingCount() const noexcept { return scene.GetMaterialVariantMappingCount(); }
 	std::string_view GetImporterId() const noexcept { return provenance.importerId; }
 	const std::filesystem::path& GetSourcePath() const noexcept { return provenance.sourcePath; }
+	bool HasCanonicalCoordinates() const noexcept { return scene.HasCanonicalCoordinates(); }
 
 	void ReserveMeshPrimitives(std::size_t primitiveCount) { scene.ReserveMeshPrimitives(primitiveCount); }
 

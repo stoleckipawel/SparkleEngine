@@ -42,10 +42,12 @@ Every integration MUST:
 - keep one mutable authority and explicit lifetime/publication boundaries;
 - prefer a complete vertical slice over a broad unfinished framework;
 - keep public APIs smaller and more stable than their private implementations;
+- introduce only complexity required by current behavior, with a named owner, consumer, lifetime, and deletion or falsification condition;
 - remove the path, adapter, flag, representation, or compatibility spelling it replaces;
+- classify performance impact and eliminate unnecessary work, movement, allocation, synchronization, and instrumentation before adding machinery to make them faster;
 - preserve supported D3D12/Vulkan and rendering paths when the change crosses them;
 - distinguish product, preview, research, unsupported, and deleted states honestly;
-- improve the complete touched ownership path without expanding into unrelated cleanup.
+- improve the complete touched ownership path, including the directly exposed debt needed for one coherent result, without expanding into unrelated cleanup.
 
 The desired change is usually additive in capability and reductive in structure. Speculative frameworks, scene-specific architecture, duplicate schedulers/graphs/caches, and names whose claims exceed their evidence do not satisfy this contract.
 
@@ -62,8 +64,10 @@ A reviewer must be able to identify:
 - the mutable and lifetime owner;
 - the input, output, publication, and failure boundaries;
 - the reason each changed file exists;
+- the essential complexity introduced and the obsolete complexity removed;
 - the old path that was removed;
 - the supported behavior and backends that remain;
+- the performance classification, affected budgets, and proportional evidence;
 - the exact evidence and limitations.
 
 If those answers are difficult to find, the integration is not finished.

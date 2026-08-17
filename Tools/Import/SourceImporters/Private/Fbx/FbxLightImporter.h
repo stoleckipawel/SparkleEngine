@@ -6,6 +6,6 @@
 
 class FbxLightImporter final
 {
-  public:
-	static void ImportLights(const aiScene& scene, SourceImportOutput& output);
+public:
+	static void ImportLights(const aiScene& scene, float sourceMetersPerUnit, SourceImportOutput& output);
 };

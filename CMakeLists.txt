@@ -7,6 +7,7 @@ enable_testing()
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleBuildProfiles.cmake)
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleQtDiscovery.cmake)
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleArtifactContract.cmake)
+include(${CMAKE_SOURCE_DIR}/CMake/SparkleProjectProduct.cmake)
 
 # ---------------------------
 # Optional: sanitizer support
@@ -160,7 +161,7 @@ add_custom_target(
     architecture_boundary_check
     COMMAND ${CMAKE_COMMAND} -DSPARKLE_REPO_ROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/CMake/ArchitectureBoundaryCheck.cmake
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Checking Renderer/RHI architecture boundaries..."
+    COMMENT "Checking repository architecture boundaries..."
 )
 
 # ---------------------------

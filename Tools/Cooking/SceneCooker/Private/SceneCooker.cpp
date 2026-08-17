@@ -20,23 +20,20 @@
 #include "SourceImportOutput.h"
 
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <fstream>
 #include <optional>
 
 class SceneCookPipeline final
 {
-  public:
+public:
 	static void ResetManifest(CookedSceneBuild& build);
 	static void FinalizeManifestHeader(CookedSceneBuild& build) noexcept;
 	static std::filesystem::path ResolveSourceScenePath(const std::filesystem::path& sourceScenePath);
 	static std::string BuildSceneAssetId(const std::filesystem::path& resolvedSourceScenePath);
-	static void StageManifest(
-	    const CookedSceneBuild& build,
-	    std::vector<Files::FilePublication>& outPublication);
-	static void StageRegistry(
-	    std::span<const CookedSceneBuild* const> builds,
-	    std::vector<Files::FilePublication>& outPublication);
+	static void StageManifest(const CookedSceneBuild& build, std::vector<Files::FilePublication>& outPublication);
+	static void StageRegistry(std::span<const CookedSceneBuild* const> builds, std::vector<Files::FilePublication>& outPublication);
 	static std::filesystem::path ResolveManifestRelativePath(const CookedSceneBuild& build);
 };
 
@@ -52,6 +49,7 @@ void SceneCookPipeline::ResetManifest(CookedSceneBuild& build)
 void SceneCookPipeline::FinalizeManifestHeader(CookedSceneBuild& build) noexcept
 {
 	Assets::CookedSceneManifestHeader& header = build.manifest.header;
+	header.coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
 	header.meshAssetReferenceCount = static_cast<std::uint32_t>(build.manifest.meshAssetReferences.size());
 	header.materialAssetReferenceCount = static_cast<std::uint32_t>(build.manifest.materialAssetReferences.size());
 	header.instanceCount = static_cast<std::uint32_t>(build.manifest.instances.size());
@@ -76,6 +74,10 @@ CookedSceneIdentity SceneCooker::ResolveSceneIdentity(const std::filesystem::pat
 
 void SceneCooker::BuildManifest(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild)
 {
+	if (!importOutput.HasCanonicalCoordinates())
+	{
+		throw Diagnostics::Error("Source import output does not satisfy the current world-coordinate contract.");
+	}
 	SceneCookPipeline::ResetManifest(outBuild);
 
 	CookedSceneSkeletonBuilder::BuildSkeletons(importOutput, outBuild.identity.assetId, outBuild);
@@ -101,9 +103,7 @@ void SceneCooker::StageManifestsAndRegistry(
 	SceneCookPipeline::StageRegistry(builds, outPublication);
 }
 
-void SceneCookPipeline::StageManifest(
-    const CookedSceneBuild& build,
-    std::vector<Files::FilePublication>& outPublication)
+void SceneCookPipeline::StageManifest(const CookedSceneBuild& build, std::vector<Files::FilePublication>& outPublication)
 {
 	const std::filesystem::path stagedPath = Files::BuildTemporaryPath(build.identity.manifestPath, ".cook-generation");
 
@@ -117,18 +117,18 @@ void SceneCookPipeline::StageManifest(
 		throw Diagnostics::Error(std::move(errorMessage));
 	}
 
-	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifest.header, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.meshAssetReferences, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialAssetReferences, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instanceGroups, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.lights, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.skeletonRefs, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationReferences, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.morphWeights, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariants, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariantMappings, errorMessage))
+	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifest.header, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.meshAssetReferences, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialAssetReferences, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instanceGroups, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.lights, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.skeletonRefs, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationReferences, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.morphWeights, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariants, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariantMappings, errorMessage))
 	{
 		throw Diagnostics::Error(std::move(errorMessage));
 	}
@@ -163,8 +163,8 @@ std::string SceneCookPipeline::BuildSceneAssetId(const std::filesystem::path& re
 	if (!relativePath)
 	{
 		throw Diagnostics::Error(
-		    "Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '" +
-		    resolvedSourceScenePath.string() + "'.");
+		    "Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '"
+		    + resolvedSourceScenePath.string() + "'.");
 	}
 
 	std::filesystem::path sceneAssetPath(relativePath->generic_string());
@@ -172,9 +172,7 @@ std::string SceneCookPipeline::BuildSceneAssetId(const std::filesystem::path& re
 	return sceneAssetPath.generic_string();
 }
 
-void SceneCookPipeline::StageRegistry(
-    std::span<const CookedSceneBuild* const> builds,
-    std::vector<Files::FilePublication>& outPublication)
+void SceneCookPipeline::StageRegistry(std::span<const CookedSceneBuild* const> builds, std::vector<Files::FilePublication>& outPublication)
 {
 	Assets::SceneAssetRegistry registry;
 	registry.Load();

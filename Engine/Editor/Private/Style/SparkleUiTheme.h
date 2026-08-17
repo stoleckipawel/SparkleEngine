@@ -5,8 +5,8 @@ struct ImFont;
 namespace SparkleUiTheme
 {
 	void ApplyEditorialDarkTheme();
-	void ConfigureTypography(float dpiScale);
+	void ConfigureTypography();
 	ImFont* GetBodyFont();
 	ImFont* GetHeadingFont();
 	ImFont* GetMonoFont();
-}  // namespace SparkleUiTheme
+}

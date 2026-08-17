@@ -13,6 +13,7 @@
 #include <cgltf.h>
 
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 std::string_view GltfImporter::GetImporterId() const noexcept
 {
@@ -29,6 +30,8 @@ SourceImportOutput GltfImporter::Import(const std::filesystem::path& filePath) c
 	SourceImportOutput output;
 	output.provenance.sourcePath = filePath;
 	output.provenance.importerId = std::string(GetImporterId());
+	output.provenance.sourceMetersPerUnit = 1.0f;
+	output.scene.coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
 
 	GltfScene scene;
 	GltfSceneReader::LoadScene(filePath, scene);
@@ -48,9 +51,9 @@ SourceImportOutput GltfImporter::Import(const std::filesystem::path& filePath) c
 	GltfGeometryImporter::ImportGeometry(scene.data, output);
 	GltfAnimationImporter::ImportAnimations(scene.data, output);
 
-	if (output.scene.meshPrimitives.empty() != output.scene.meshInstances.empty() ||
-	    (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty() &&
-	     output.scene.animations.empty()))
+	if (output.scene.meshPrimitives.empty() != output.scene.meshInstances.empty()
+	    || (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty()
+	        && output.scene.animations.empty()))
 	{
 		throw Diagnostics::Error("glTF import produced incomplete mesh content or no supported scene content.");
 	}

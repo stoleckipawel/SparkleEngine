@@ -9,6 +9,7 @@
 #include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/RayTracing/RhiRayTracingTransformPacking.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <array>
@@ -23,23 +24,6 @@ struct RayTracingPartitionedTlasStrategy::PartitionedBuildState final
 	std::unordered_set<void*> BuiltBlasResources;
 	RhiPartitionedTlasOperationBufferLayout NativeOperationLayout = {};
 };
-
-std::array<float, 12> RayTracingPartitionedTlasStrategy::BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept
-{
-	return {
-	    worldMatrix._11,
-	    worldMatrix._12,
-	    worldMatrix._13,
-	    worldMatrix._14,
-	    worldMatrix._21,
-	    worldMatrix._22,
-	    worldMatrix._23,
-	    worldMatrix._24,
-	    worldMatrix._31,
-	    worldMatrix._32,
-	    worldMatrix._33,
-	    worldMatrix._34};
-}
 
 RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstanceFlags(
     const RenderSceneData& sceneData,
@@ -162,7 +146,7 @@ void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
 
 		state.InstanceWrites.push_back(
 		    RhiPartitionedTlasInstanceWriteDesc{
-		        .Transform = BuildInstanceTransform(draw.Transform.WorldMatrix),
+		        .Transform = RhiRayTracingTransformPacking::PackCanonicalObjectToWorld(draw.Transform.WorldMatrix),
 		        .ExplicitBoundingBox = {},
 		        .InstanceID = input.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,

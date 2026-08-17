@@ -35,8 +35,8 @@ namespace LevelParsing
 		}
 		if (parsedLine.key == "MoveSpeed")
 		{
-			levelDesc.cameraDesc.moveSpeed = ParseFloat(parsedLine.value, "camera move speed");
-			if (levelDesc.cameraDesc.moveSpeed < 0.0f)
+			levelDesc.cameraDesc.moveSpeedMetersPerSecond = ParseFloat(parsedLine.value, "camera move speed in metres per second");
+			if (levelDesc.cameraDesc.moveSpeedMetersPerSecond < 0.0f)
 				throw Diagnostics::Error("Camera move speed cannot be negative.");
 			return;
 		}
@@ -74,6 +74,6 @@ namespace LevelParsing
 		output << "FovYDegrees = " << levelDesc.cameraDesc.fovYDegrees << "\n";
 		output << "NearZ = " << levelDesc.cameraDesc.nearZ << "\n";
 		output << "FarZ = " << levelDesc.cameraDesc.farZ << "\n";
-		output << "MoveSpeed = " << levelDesc.cameraDesc.moveSpeed << "\n\n";
+		output << "MoveSpeed = " << levelDesc.cameraDesc.moveSpeedMetersPerSecond << "\n\n";
 	}
-}  // namespace LevelParsing
+}

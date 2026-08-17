@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/Public/Math/MathUtils.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/Assets/Cooked/CookedMeshAsset.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneCameraRecord.h"
@@ -16,7 +17,7 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedSceneManifestMagic = 0x4E435353u;
-	inline constexpr std::uint32_t kCookedSceneManifestVersion = 11;
+	inline constexpr std::uint32_t kCookedSceneManifestVersion = 12;
 	inline constexpr std::uint32_t kInvalidCookedMaterialAssetIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneInstanceGroupIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneSkeletonRefIndex = (std::numeric_limits<std::uint32_t>::max)();
@@ -67,6 +68,7 @@ namespace Assets
 	struct SPARKLE_ENGINE_API CookedSceneManifestHeader
 	{
 		CookedAssetHeader fileHeader{kCookedSceneManifestMagic, kCookedSceneManifestVersion};
+		std::uint32_t coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
 		std::uint32_t meshAssetReferenceCount = 0;
 		std::uint32_t materialAssetReferenceCount = 0;
 		std::uint32_t instanceCount = 0;

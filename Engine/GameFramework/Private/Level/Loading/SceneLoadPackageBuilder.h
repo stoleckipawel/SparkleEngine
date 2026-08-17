@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+
 namespace Assets
 {
 	struct SceneAssetLoadWork;
@@ -8,7 +9,7 @@ namespace Assets
 
 	class SceneLoadPackageBuilder final
 	{
-	  public:
+	public:
 		static std::size_t BuildAssetBlueprints(SceneAssetLoadWork& work);
 		static void Finalize(SceneLoadWorkState& state);
 	};

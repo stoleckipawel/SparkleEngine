@@ -67,7 +67,6 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	static const char* ResolveInactiveProviderReason(const RayTracingCapabilityReport& capabilityReport) noexcept;
 	static const char* ResolveActiveProviderReason() noexcept;
 	static RayTracingSceneTlasShaderAccessMode ResolveActiveShaderAccessMode(const RayTracingCapabilityReport& capabilityReport) noexcept;
-	static std::array<float, 12> BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
 	static RhiPartitionedTlasInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept;
 	void EnsurePartitionedTlasResources(const RenderSceneData& sceneData, const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
 	RhiPartitionedTlasDesc BuildPartitionedTlasLayout(const RenderSceneData& sceneData, const RayTracingPtlasPartitionPlan* partitionPlan)

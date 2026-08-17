@@ -40,6 +40,21 @@ Comments do not narrate obvious code, preserve obsolete history, promise unspeci
 
 Public API documentation conventions beyond this baseline remain an explicit [coding-style decision](CodingStyle.md#decision-status).
 
+## Performance Is a Delivery Property
+
+Every material runtime, editor, renderer, RHI, task, cooking, import, launcher, shader, test-infrastructure, or build-pipeline change MUST classify performance as one of:
+
+- **improves** — names the affected budget and supplies reproducible before/after evidence;
+- **preserves** — explains why the affected cost remains bounded and supplies evidence proportional to regression risk;
+- **no runtime exposure** — identifies why no shipped, authoring, loading, cooking, build, memory, or frame path changes;
+- **blocked** — names the missing workload, tool, hardware, baseline, or measurement and does not claim acceptance.
+
+Before implementation, identify applicable cost dimensions: work cardinality and complexity, scans/lookups/copies/uploads, allocation and high-water memory, cache/branch behavior, task and synchronization overhead, CPU/GPU critical path, input-to-present latency, loading/cooking/startup time, compile/link/package cost, and steady-state versus cold behavior.
+
+Not every change needs a benchmark. Every change needs an explicit cost model, and any change with material exposure or an optimization claim needs a falsifiable measurement. Correctness, quality, determinism, memory, backend support, and latency are co-equal constraints; moving cost out of one reported metric is not an optimization.
+
+Use existing counters, profiler scopes, captures, and harnesses. Temporary measurement code stays private and is removed unless an existing product workflow owns it. Do not pay permanent logging, diagnostics, snapshot, or reporting cost to demonstrate one changelist.
+
 ## Performance Order of Operations
 
 Optimize in this order unless evidence shows otherwise:
@@ -130,4 +145,3 @@ For materially AI-assisted work:
 - record which categories were independently verified.
 
 The engineer remains accountable for architecture, correctness, attribution, data/model provenance, performance, and communication.
-

@@ -19,7 +19,7 @@ struct SPARKLE_PLATFORM_API WindowMessageEvent
 
 class SPARKLE_PLATFORM_API Window final
 {
-  public:
+public:
 	enum class State
 	{
 		Normal,
@@ -36,7 +36,9 @@ class SPARKLE_PLATFORM_API Window final
 	Window(Window&&) = delete;
 	Window& operator=(Window&&) = delete;
 
+	// PollEvents broadcasts window events synchronously on its calling thread.
 	Event<void()> OnResized;
+	Event<void(float)> OnDpiScaleChanged;
 
 	Event<void(WindowMessageEvent&), 16> OnWindowMessage;
 
@@ -47,6 +49,7 @@ class SPARKLE_PLATFORM_API Window final
 
 	uint32_t GetWidth() const noexcept { return m_clientWidth.load(std::memory_order_acquire); }
 	uint32_t GetHeight() const noexcept { return m_clientHeight.load(std::memory_order_acquire); }
+	float GetDpiScale() const noexcept;
 	bool HasValidSize() const noexcept;
 
 	State GetState() const noexcept { return m_state; }
@@ -65,17 +68,19 @@ class SPARKLE_PLATFORM_API Window final
 
 	void RequestClose() noexcept { m_bShouldClose = true; }
 
-  private:
+private:
 	static LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	void RegisterWindowClass();
 	void CreateWindowHandle(std::string_view title);
 	void ApplyInitialWindowState();
 	static bool ShouldStartFullscreen() noexcept;
-	static int GetResizeBorderThickness() noexcept;
+	UINT GetDpi() const noexcept;
+	int GetResizeBorderThickness() const noexcept;
 	MONITORINFO GetCurrentMonitorInfo() const noexcept;
 
 	LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
+	void HandleDpiChanged(UINT dpi, const RECT& suggestedWindowRect);
 	void OnSizeChanged(WPARAM sizeType, uint32_t width, uint32_t height);
 	void ApplyPendingShowCommand() noexcept;
 

@@ -5,6 +5,7 @@
 
 #include <DirectXMath.h>
 
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -54,6 +55,63 @@ namespace CameraMovementSystemTests
 		Require(ApplyVerticalLook(10.0f, true) > 0.0f, "Invert Y did not reverse downward mouse motion.");
 	}
 
+	void MovementSpeedUsesMetersPerSecond()
+	{
+		CameraInputIntent intent;
+		intent.ForwardAxis = 1.0f;
+
+		ECS::Camera camera;
+		ECS::CameraMovement movement;
+		movement.MoveSpeedMetersPerSecond = 12.0f;
+		ECS::LocalTransform transform;
+
+		Require(
+		    ECS::CameraMovementSystem::Apply(EntityId::Invalid(), EntityId::Invalid(), intent, 0.25f, camera, movement, transform),
+		    "Camera movement input was not applied.");
+		Require(std::abs(transform.Translation.z - 3.0f) < 0.0001f, "Camera movement did not use metres per second.");
+	}
+
+	void IdentityCameraUsesCanonicalMovementAxes()
+	{
+		ECS::Camera camera;
+		ECS::CameraMovement movement;
+		movement.MoveSpeedMetersPerSecond = 1.0f;
+
+		CameraInputIntent intent;
+		intent.ForwardAxis = 1.0f;
+		intent.RightAxis = 1.0f;
+		intent.UpAxis = 1.0f;
+		ECS::LocalTransform transform;
+		Require(
+		    ECS::CameraMovementSystem::Apply(EntityId::Invalid(), EntityId::Invalid(), intent, 1.0f, camera, movement, transform),
+		    "Canonical camera movement input was not applied.");
+		Require(
+		    std::abs(transform.Translation.x - 1.0f) < 0.0001f && std::abs(transform.Translation.y - 1.0f) < 0.0001f
+		        && std::abs(transform.Translation.z - 1.0f) < 0.0001f,
+		    "Identity camera movement is not +X right, +Y up, and +Z forward.");
+	}
+
+	void SpeedStepClampsInTheSameUnit()
+	{
+		CameraInputIntent intent;
+		intent.SpeedStepCount = 3.0f;
+
+		ECS::Camera camera;
+		ECS::CameraMovement movement;
+		movement.MoveSpeedMetersPerSecond = 5.0f;
+		movement.MinimumMoveSpeedMetersPerSecond = 1.0f;
+		movement.MaximumMoveSpeedMetersPerSecond = 10.0f;
+		movement.SpeedStepMetersPerSecond = 2.0f;
+		ECS::LocalTransform transform;
+
+		Require(
+		    ECS::CameraMovementSystem::Apply(EntityId::Invalid(), EntityId::Invalid(), intent, 0.0f, camera, movement, transform),
+		    "Camera speed-step input was not applied.");
+		Require(
+		    movement.MoveSpeedMetersPerSecond == movement.MaximumMoveSpeedMetersPerSecond,
+		    "Camera speed step did not clamp in metres per second.");
+	}
+
 	using TestFunction = void (*)();
 
 	int Run(std::string_view name, TestFunction test)
@@ -78,5 +136,8 @@ int main()
 	int failureCount = 0;
 	failureCount += Run("default vertical look direction", DefaultVerticalLookFollowsMouseMotion);
 	failureCount += Run("inverted vertical look direction", InvertedVerticalLookReversesMouseMotion);
+	failureCount += Run("movement speed unit", MovementSpeedUsesMetersPerSecond);
+	failureCount += Run("canonical movement axes", IdentityCameraUsesCanonicalMovementAxes);
+	failureCount += Run("speed step unit and clamp", SpeedStepClampsInTheSameUnit);
 	return failureCount == 0 ? 0 : 1;
 }

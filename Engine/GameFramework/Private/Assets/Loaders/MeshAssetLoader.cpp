@@ -11,19 +11,21 @@
 
 namespace Assets
 {
-	LoadedMeshAsset MeshAssetLoader::Decode(
-	    const std::filesystem::path& path,
-	    std::span<const std::uint8_t> bytes) const
+	LoadedMeshAsset MeshAssetLoader::Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const
 	{
 		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedMeshAsset", kCookedMeshAssetVersion);
 
 		CookedAssetByteReader reader(bytes);
 		const CookedMeshAssetHeader header = reader.Read<CookedMeshAssetHeader>();
 
-		if (!header.fileHeader.Matches(kCookedMeshAssetMagic, kCookedMeshAssetVersion) ||
-		    header.vertexStride != sizeof(CookedMeshVertex) || header.indexStride != sizeof(std::uint32_t))
+		if (!header.fileHeader.Matches(kCookedMeshAssetMagic, kCookedMeshAssetVersion)
+		    || header.coordinateContractVersion != WorldCoordinates::kCoordinateContractVersion
+		    || header.vertexStride != sizeof(CookedMeshVertex) || header.indexStride != sizeof(std::uint32_t))
 		{
-			throw diagnostics.MakeError("header", "mesh magic/version plus vertex and index strides", "Invalid cooked mesh asset header");
+			throw diagnostics.MakeError(
+			    "header",
+			    "mesh magic/version, current coordinate contract, and vertex/index strides",
+			    "Invalid cooked mesh asset header; recook the spatial asset");
 		}
 
 		const bool hasSkinInfluences = (header.flags & CookedMeshAssetFlag_HasSkinInfluences) != 0u;
@@ -34,20 +36,19 @@ namespace Assets
 			throw diagnostics.MakeError("header.assetKind", "Static or Skeletal", "Invalid cooked mesh asset kind");
 		}
 
-		if ((isSkeletal && (!hasSkinInfluences || header.skinInfluenceCount != header.vertexCount)) ||
-		    (!isSkeletal && (hasSkinInfluences || header.skinInfluenceCount != 0u)) ||
-		    header.skinInfluenceStride != sizeof(CookedMeshSkinInfluence))
+		if ((isSkeletal && (!hasSkinInfluences || header.skinInfluenceCount != header.vertexCount))
+		    || (!isSkeletal && (hasSkinInfluences || header.skinInfluenceCount != 0u))
+		    || header.skinInfluenceStride != sizeof(CookedMeshSkinInfluence))
 		{
 			throw diagnostics.MakeError(
 			    "skinInfluences",
 			    "skeletal meshes have one influence record per vertex",
 			    "Invalid cooked mesh skin influence stream");
 		}
-		if ((!isSkeletal && hasMorphTargets) ||
-		    (hasMorphTargets && (header.morphTargetCount == 0u || header.morphTargetDeltaCount == 0u)) ||
-		    (!hasMorphTargets && (header.morphTargetCount != 0u || header.morphTargetDeltaCount != 0u)) ||
-		    header.morphTargetRecordStride != sizeof(CookedMeshMorphTargetRecord) ||
-		    header.morphTargetDeltaStride != sizeof(CookedMeshMorphTargetDelta))
+		if ((!isSkeletal && hasMorphTargets) || (hasMorphTargets && (header.morphTargetCount == 0u || header.morphTargetDeltaCount == 0u))
+		    || (!hasMorphTargets && (header.morphTargetCount != 0u || header.morphTargetDeltaCount != 0u))
+		    || header.morphTargetRecordStride != sizeof(CookedMeshMorphTargetRecord)
+		    || header.morphTargetDeltaStride != sizeof(CookedMeshMorphTargetDelta))
 		{
 			throw diagnostics.MakeError(
 			    "morphTargets",
@@ -85,9 +86,9 @@ namespace Assets
 		morphTargets.targets.reserve(cookedMorphTargets.size());
 		for (const CookedMeshMorphTargetRecord& cookedMorphTarget : cookedMorphTargets)
 		{
-			if (cookedMorphTarget.firstDelta > cookedMorphTargetDeltas.size() ||
-			    cookedMorphTarget.deltaCount > cookedMorphTargetDeltas.size() - cookedMorphTarget.firstDelta ||
-			    cookedMorphTarget.deltaCount != header.vertexCount)
+			if (cookedMorphTarget.firstDelta > cookedMorphTargetDeltas.size()
+			    || cookedMorphTarget.deltaCount > cookedMorphTargetDeltas.size() - cookedMorphTarget.firstDelta
+			    || cookedMorphTarget.deltaCount != header.vertexCount)
 			{
 				throw diagnostics.MakeError(
 				    "morphTargets.deltaRange",

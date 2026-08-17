@@ -8,6 +8,7 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/RayTracing/RhiRayTracingTransformPacking.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <algorithm>
@@ -221,7 +222,7 @@ void RayTracingClassicTlasBuilder::CollectInstances(
 		}
 		state.Instances.push_back(
 		    RhiRayTracingInstanceDesc{
-		        .Transform = BuildInstanceTransform(draw.Transform.WorldMatrix),
+		        .Transform = RhiRayTracingTransformPacking::PackCanonicalObjectToWorld(draw.Transform.WorldMatrix),
 		        .InstanceID = input.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
@@ -317,22 +318,6 @@ void RayTracingClassicTlasBuilder::Clear() noexcept
 	m_tlas = {};
 }
 
-std::array<float, 12> RayTracingClassicTlasBuilder::BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept
-{
-	return {
-	    worldMatrix._11,
-	    worldMatrix._12,
-	    worldMatrix._13,
-	    worldMatrix._14,
-	    worldMatrix._21,
-	    worldMatrix._22,
-	    worldMatrix._23,
-	    worldMatrix._24,
-	    worldMatrix._31,
-	    worldMatrix._32,
-	    worldMatrix._33,
-	    worldMatrix._34};
-}
 
 void RayTracingClassicTlasBuilder::ReleaseResources() noexcept
 {

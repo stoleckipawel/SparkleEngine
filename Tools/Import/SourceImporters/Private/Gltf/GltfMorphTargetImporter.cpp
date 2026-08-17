@@ -3,7 +3,7 @@
 #include "Gltf/GltfMorphTargetImporter.h"
 
 #include "Gltf/GltfAccessorReader.h"
-#include "Gltf/GltfNodeTransformConverter.h"
+#include "Gltf/GltfCoordinateConverter.h"
 
 #include <cgltf.h>
 
@@ -14,7 +14,7 @@
 
 class GltfMorphTargetMetadata final
 {
-  public:
+public:
 	static const cgltf_accessor* FindMorphAttribute(const cgltf_morph_target& target, cgltf_attribute_type type) noexcept
 	{
 		for (cgltf_size attributeIndex = 0; attributeIndex < target.attributes_count; ++attributeIndex)
@@ -62,9 +62,9 @@ std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
 		{
 			continue;
 		}
-		if ((positions != nullptr && (positions->count != vertexCount || positions->type != cgltf_type_vec3)) ||
-		    (normals != nullptr && (normals->count != vertexCount || normals->type != cgltf_type_vec3)) ||
-		    (tangents != nullptr && (tangents->count != vertexCount || tangents->type != cgltf_type_vec3)))
+		if ((positions != nullptr && (positions->count != vertexCount || positions->type != cgltf_type_vec3))
+		    || (normals != nullptr && (normals->count != vertexCount || normals->type != cgltf_type_vec3))
+		    || (tangents != nullptr && (tangents->count != vertexCount || tangents->type != cgltf_type_vec3)))
 		{
 			return {};
 		}
@@ -79,17 +79,17 @@ std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
 			if (positions != nullptr)
 			{
 				const DirectX::XMFLOAT3 value = GltfAccessorReader::ReadFloat3(positions, vertexIndex);
-				delta.position = GltfNodeTransformConverter::ConvertGltfVectorToEngine(value);
+				delta.position = GltfCoordinateConverter::ConvertMorphPositionDelta(value);
 			}
 			if (normals != nullptr)
 			{
 				const DirectX::XMFLOAT3 value = GltfAccessorReader::ReadFloat3(normals, vertexIndex);
-				delta.normal = GltfNodeTransformConverter::ConvertGltfVectorToEngine(value);
+				delta.normal = GltfCoordinateConverter::ConvertMorphNormalDelta(value);
 			}
 			if (tangents != nullptr)
 			{
 				const DirectX::XMFLOAT3 value = GltfAccessorReader::ReadFloat3(tangents, vertexIndex);
-				delta.tangent = GltfNodeTransformConverter::ConvertGltfVectorToEngine(value);
+				delta.tangent = GltfCoordinateConverter::ConvertMorphTangentDelta(value);
 			}
 		}
 
@@ -105,9 +105,9 @@ std::vector<float> GltfMorphTargetImporter::BuildNodeMorphWeights(
     std::size_t nodeWeightCount,
     std::size_t targetCount)
 {
-	if ((nodeWeightCount > 0 && nodeWeights == nullptr) || (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights == nullptr) ||
-	    (nodeWeightCount > 0 && nodeWeightCount != targetCount) ||
-	    (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights_count != targetCount))
+	if ((nodeWeightCount > 0 && nodeWeights == nullptr) || (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights == nullptr)
+	    || (nodeWeightCount > 0 && nodeWeightCount != targetCount)
+	    || (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights_count != targetCount))
 	{
 		return {};
 	}

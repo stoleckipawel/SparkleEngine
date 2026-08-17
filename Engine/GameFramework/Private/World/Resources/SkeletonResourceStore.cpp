@@ -2,20 +2,14 @@
 
 #include "World/Resources/SkeletonResourceStore.h"
 
+#include "GameFramework/Public/Scene/Animations/SkeletonTransformContract.h"
+
 class SkeletonTransformTranslation final
 {
-  public:
-	static ECS::AnimationJointTransform DecomposeLocalTransform(
-	    const SkeletonResource& skeleton,
-	    std::size_t jointIndex) noexcept
+public:
+	static ECS::AnimationJointTransform DecomposeLocalTransform(const SkeletonResource& skeleton, std::size_t jointIndex) noexcept
 	{
-		DirectX::XMMATRIX local = DirectX::XMLoadFloat4x4(&skeleton.joints[jointIndex].bindPoseWorldTransform);
-		const std::uint32_t parent = skeleton.joints[jointIndex].parentJointIndex;
-		if (parent < skeleton.joints.size())
-		{
-			const DirectX::XMMATRIX parentWorld = DirectX::XMLoadFloat4x4(&skeleton.joints[parent].bindPoseWorldTransform);
-			local = local * DirectX::XMMatrixInverse(nullptr, parentWorld);
-		}
+		const DirectX::XMMATRIX local = DirectX::XMLoadFloat4x4(&skeleton.joints[jointIndex].bindLocalTransform);
 		DirectX::XMVECTOR scale;
 		DirectX::XMVECTOR rotation;
 		DirectX::XMVECTOR translation;
@@ -41,12 +35,15 @@ void SkeletonResourceStore::Append(std::vector<SkeletonResource>&& skeletons)
 		entry.BindLocalTransforms.reserve(skeleton.joints.size());
 		for (std::size_t jointIndex = 0; jointIndex < skeleton.joints.size(); ++jointIndex)
 			entry.BindLocalTransforms.push_back(SkeletonTransformTranslation::DecomposeLocalTransform(skeleton, jointIndex));
+		if (!SkeletonTransformContract::BuildEvaluationOrder(skeleton.joints, entry.EvaluationOrder))
+		{
+			continue;
+		}
 		entry.Resource = std::move(skeleton);
 		const auto slot = static_cast<std::uint32_t>(m_entries.size());
 		m_entries.push_back(std::move(entry));
 		m_byAssetId.emplace(m_entries.back().Resource.assetId, SkeletonResourceHandle{slot, m_entries.back().Generation});
 	}
-
 }
 
 SkeletonResourceHandle SkeletonResourceStore::Find(Assets::CookedAssetId skeletonAssetId) const noexcept
@@ -61,6 +58,6 @@ ECS::SkeletonEvaluationData SkeletonResourceStore::Resolve(SkeletonResourceHandl
 		return {};
 	const Entry& entry = m_entries[handle.Slot];
 	return entry.Generation == handle.Generation
-	           ? ECS::SkeletonEvaluationData{&entry.Resource, entry.BindLocalTransforms}
-	           : ECS::SkeletonEvaluationData{};
+	    ? ECS::SkeletonEvaluationData{&entry.Resource, entry.BindLocalTransforms, entry.EvaluationOrder}
+	    : ECS::SkeletonEvaluationData{};
 }

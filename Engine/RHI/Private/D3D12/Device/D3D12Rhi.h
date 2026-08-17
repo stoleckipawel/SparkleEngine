@@ -26,7 +26,7 @@ class D3D12CommandQueue;
 
 class D3D12Rhi final
 {
-  public:
+public:
 	explicit D3D12Rhi(RhiInterposerHooks interposerHooks = {}) noexcept;
 
 	~D3D12Rhi() noexcept;
@@ -40,6 +40,7 @@ class D3D12Rhi final
 	    ERhiQueueType queueType,
 	    std::span<ID3D12CommandList* const> commandLists,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
+	RhiSubmissionToken SignalQueue(ERhiQueueType queueType) noexcept;
 
 	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept;
 	uint32_t GetCurrentFrameIndex() const noexcept;
@@ -90,7 +91,7 @@ class D3D12Rhi final
 	void NotifyInterposerPresentationReady(bool ready) noexcept;
 	void NotifyFrameLatencyMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept;
 
-  private:
+private:
 	void SelectAdapter() noexcept;
 	bool IsNvidiaAdapter() const noexcept;
 	void CreateFactory();

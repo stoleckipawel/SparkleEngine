@@ -57,7 +57,6 @@ class RayTracingClassicTlasBuilder final
 	    const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
 	    ERhiClassicTlasBuildFlags buildFlags) noexcept;
 	static RhiRayTracingInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept;
-	static std::array<float, 12> BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
 	static void CollectInstances(
 	    RenderCommandContext& commandContext,
 	    const RenderSceneData& sceneData,

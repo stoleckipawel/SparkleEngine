@@ -23,7 +23,9 @@ namespace Assets
 			joint.sourceNodeIndex = jointRecord.sourceNodeIndex;
 			joint.parentJointIndex = jointRecord.parentJointIndex;
 			joint.inverseBindMatrix = jointRecord.inverseBindMatrix;
-			joint.bindPoseWorldTransform = jointRecord.bindPoseWorldTransform;
+			joint.bindLocalTransform = jointRecord.bindLocalTransform;
+			joint.parentSpaceTransform = jointRecord.parentSpaceTransform;
+			joint.bindModelTransform = jointRecord.bindModelTransform;
 			skeleton.joints.push_back(std::move(joint));
 		}
 

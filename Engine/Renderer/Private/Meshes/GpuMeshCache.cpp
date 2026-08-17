@@ -59,22 +59,36 @@ GpuMeshHandle GpuMeshCache::Request(const ImmutableRenderMeshHandle& mesh)
 	MeshRequest* const existingRequest = FindRequest(key);
 	if (existingRequest != nullptr)
 	{
+		if (!existingRequest->Wanted)
+		{
+			return {};
+		}
 		existingRequest->Wanted = true;
 		return existingRequest->Handle;
 	}
 
-	const std::optional<AssetGenerationHandle> generation = m_residency.BeginGeneration(key.first, key.second);
-	if (!generation)
-	{
-		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh generation could not enter residency.");
-	}
 	if (m_taskScope == nullptr)
 	{
 		Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh cache has no task scope.");
 	}
 
-	const GpuMeshHandle handle = AllocateHandle();
+	const std::size_t maximumRequestCount = m_residency.GetBudget().MaximumRequestBacklog;
+	if (m_requests.size() >= maximumRequestCount)
+	{
+		RemoveTerminalRequests();
+	}
+	if (m_requests.size() >= maximumRequestCount || !m_residency.HasRequestCapacity())
+	{
+		return {};
+	}
+
 	auto prepared = std::make_shared<GpuMeshPreparedData>();
+	const std::optional<AssetGenerationHandle> generation = m_residency.BeginGeneration(key.first, key.second);
+	if (!generation)
+	{
+		return {};
+	}
+	const GpuMeshHandle handle = AllocateHandle();
 
 	MeshRequest request;
 	request.Key = key;
@@ -82,7 +96,18 @@ GpuMeshHandle GpuMeshCache::Request(const ImmutableRenderMeshHandle& mesh)
 	request.Handle = handle;
 	request.Generation = *generation;
 	request.Prepared = prepared;
-	m_requests.push_back(std::move(request));
+	try
+	{
+		if (!m_requests.emplace(key, std::move(request)).second)
+		{
+			Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh request was admitted twice.");
+		}
+	}
+	catch (...)
+	{
+		(void) m_residency.Cancel(*generation);
+		throw;
+	}
 	LaunchPendingPreparations();
 	return handle;
 }
@@ -92,8 +117,9 @@ void GpuMeshCache::UploadReadyMeshes(RenderCommandList& commandList)
 	ConsumeCompletedPreparations();
 	LaunchPendingPreparations();
 
-	for (MeshRequest& request : m_requests)
+	for (auto& entry : m_requests)
 	{
+		MeshRequest& request = entry.second;
 		if (!request.Wanted || request.Prepared == nullptr || request.Uploaded != nullptr
 		    || m_residency.GetState(request.Generation) != AssetResidencyState::ReadyForUpload
 		    || !m_residency.BeginUpload(request.Generation))
@@ -114,8 +140,9 @@ void GpuMeshCache::RecordUploadSubmission(RhiSubmissionToken token) noexcept
 {
 	if (!token.IsValid())
 	{
-		for (const MeshRequest& request : m_requests)
+		for (const auto& entry : m_requests)
 		{
+			const MeshRequest& request = entry.second;
 			if (request.Uploaded != nullptr && !request.UploadSubmitted)
 			{
 				Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh upload completed without a submission token.");
@@ -124,8 +151,9 @@ void GpuMeshCache::RecordUploadSubmission(RhiSubmissionToken token) noexcept
 		return;
 	}
 
-	for (MeshRequest& request : m_requests)
+	for (auto& entry : m_requests)
 	{
+		MeshRequest& request = entry.second;
 		if (request.Uploaded != nullptr && !request.UploadSubmitted)
 		{
 			if (!m_residency.RecordUploadSubmission(request.Generation, token, request.ResidentBytes))
@@ -165,8 +193,9 @@ void GpuMeshCache::RetainOnly(std::span<const GpuMeshHandle> handles) noexcept
 		return std::binary_search(wantedHandles.begin(), wantedHandles.end(), handle.Value);
 	};
 
-	for (MeshRequest& request : m_requests)
+	for (auto& entry : m_requests)
 	{
+		MeshRequest& request = entry.second;
 		request.Wanted = isWanted(request.Handle);
 		if (!request.Wanted)
 		{
@@ -239,9 +268,8 @@ GpuMeshHandle GpuMeshCache::AllocateHandle()
 
 GpuMeshCache::MeshRequest* GpuMeshCache::FindRequest(const CacheKey& key) noexcept
 {
-	const auto request =
-	    std::find_if(m_requests.begin(), m_requests.end(), [&key](const MeshRequest& candidate) noexcept { return candidate.Key == key; });
-	return request != m_requests.end() ? &*request : nullptr;
+	const auto request = m_requests.find(key);
+	return request != m_requests.end() ? &request->second : nullptr;
 }
 
 void GpuMeshCache::LaunchPendingPreparations()
@@ -249,11 +277,16 @@ void GpuMeshCache::LaunchPendingPreparations()
 	const std::size_t activePreparationCount = static_cast<std::size_t>(std::count_if(
 	    m_requests.begin(),
 	    m_requests.end(),
-	    [](const MeshRequest& request) noexcept { return request.PreparationStarted && request.Execution.IsValid(); }));
+	    [](const auto& entry) noexcept
+	    {
+		    const MeshRequest& request = entry.second;
+		    return request.PreparationStarted && request.Execution.IsValid();
+	    }));
 	std::size_t availableSlots =
 	    activePreparationCount < kMaximumConcurrentPreparations ? kMaximumConcurrentPreparations - activePreparationCount : 0;
-	for (MeshRequest& request : m_requests)
+	for (auto& entry : m_requests)
 	{
+		MeshRequest& request = entry.second;
 		if (availableSlots == 0)
 		{
 			return;
@@ -294,8 +327,9 @@ void GpuMeshCache::LaunchPreparation(MeshRequest& request)
 
 void GpuMeshCache::ConsumeCompletedPreparations() noexcept
 {
-	for (MeshRequest& request : m_requests)
+	for (auto& entry : m_requests)
 	{
+		MeshRequest& request = entry.second;
 		if (!request.Execution.IsValid() || !request.Execution.IsSettled())
 		{
 			continue;
@@ -339,8 +373,9 @@ void GpuMeshCache::ConsumeCompletedPreparations() noexcept
 
 void GpuMeshCache::ActivateResidentMeshes() noexcept
 {
-	for (MeshRequest& request : m_requests)
+	for (auto& entry : m_requests)
 	{
+		MeshRequest& request = entry.second;
 		if (request.Uploaded == nullptr)
 		{
 			continue;
@@ -374,17 +409,20 @@ void GpuMeshCache::ActivateResidentMeshes() noexcept
 
 void GpuMeshCache::RemoveTerminalRequests() noexcept
 {
-	m_requests.erase(
-	    std::remove_if(
-	        m_requests.begin(),
-	        m_requests.end(),
-	        [this](const MeshRequest& request) noexcept
-	        {
-		        const AssetResidencyState state = m_residency.GetState(request.Generation);
-		        return !request.Execution.IsValid() && request.Prepared == nullptr && request.Uploaded == nullptr
-		            && (state == AssetResidencyState::Resident || state == AssetResidencyState::Retired);
-	        }),
-	    m_requests.end());
+	for (auto request = m_requests.begin(); request != m_requests.end();)
+	{
+		const AssetResidencyState state = m_residency.GetState(request->second.Generation);
+		const bool terminal = !request->second.Execution.IsValid() && request->second.Prepared == nullptr
+		    && request->second.Uploaded == nullptr && (state == AssetResidencyState::Resident || state == AssetResidencyState::Retired);
+		if (terminal)
+		{
+			request = m_requests.erase(request);
+		}
+		else
+		{
+			++request;
+		}
+	}
 }
 
 void GpuMeshCache::RetireActiveMesh(ActiveMesh& mesh) noexcept

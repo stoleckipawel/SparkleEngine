@@ -7,18 +7,18 @@
 
 class D3D12CommandQueuePolicy final
 {
-  public:
+public:
 	static const std::shared_ptr<spdlog::logger>& Logger()
 	{
 		static const auto logger = Logging::GetOrCreateLogger("RHI.D3D12.Queue");
 		return logger;
 	}
 
-	#if SPARKLE_BUILD_SHIPPING
+#if SPARKLE_BUILD_SHIPPING
 	static constexpr DWORD GpuWaitTimeoutMilliseconds = INFINITE;
-	#else
+#else
 	static constexpr DWORD GpuWaitTimeoutMilliseconds = 30'000;
-	#endif
+#endif
 
 	static const wchar_t* QueueTypeName(ERhiQueueType queueType) noexcept
 	{
@@ -38,10 +38,11 @@ class D3D12CommandQueuePolicy final
 };
 
 D3D12CommandQueue::D3D12CommandQueue(
-	ID3D12Device& device,
-	ERhiQueueType queueType,
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> nativeQueue) noexcept :
-	m_queueType(queueType), m_queue(std::move(nativeQueue))
+    ID3D12Device& device,
+    ERhiQueueType queueType,
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> nativeQueue) noexcept :
+    m_queueType(queueType),
+    m_queue(std::move(nativeQueue))
 {
 	if (m_queue == nullptr)
 	{
@@ -62,8 +63,8 @@ D3D12CommandQueue::D3D12CommandQueue(
 
 	const std::wstring queueName = std::format(L"Sparkle {} Command Queue", D3D12CommandQueuePolicy::QueueTypeName(queueType));
 	const std::wstring fenceName = std::format(L"Sparkle {} Command Queue Fence", D3D12CommandQueuePolicy::QueueTypeName(queueType));
-	(void)m_queue->SetName(queueName.c_str());
-	(void)m_fence->SetName(fenceName.c_str());
+	(void) m_queue->SetName(queueName.c_str());
+	(void) m_fence->SetName(fenceName.c_str());
 }
 
 D3D12CommandQueue::~D3D12CommandQueue() noexcept
@@ -94,8 +95,8 @@ D3D12_COMMAND_LIST_TYPE D3D12CommandQueue::GetNativeCommandListType(ERhiQueueTyp
 }
 
 RhiSubmissionToken D3D12CommandQueue::Submit(
-	std::span<ID3D12CommandList* const> commandLists,
-	std::span<const D3D12QueueWait> waits) noexcept
+    std::span<ID3D12CommandList* const> commandLists,
+    std::span<const D3D12QueueWait> waits) noexcept
 {
 	m_owner.AssertAccess();
 	if (m_queue == nullptr || m_fence == nullptr || commandLists.empty())
@@ -129,15 +130,25 @@ RhiSubmissionToken D3D12CommandQueue::Submit(
 		}
 	}
 	m_queue->ExecuteCommandLists(static_cast<UINT>(commandLists.size()), commandLists.data());
+	return Signal();
+}
+
+RhiSubmissionToken D3D12CommandQueue::Signal() noexcept
+{
+	m_owner.AssertAccess();
+	if (m_queue == nullptr || m_fence == nullptr)
+	{
+		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Queue signal requested without synchronization state");
+		return {};
+	}
+
 	const std::uint64_t submissionValue = m_nextSubmissionValue++;
 	CHECK(m_queue->Signal(m_fence.Get(), submissionValue));
 	m_lastSubmittedValue = submissionValue;
 	return RhiSubmissionToken{.Queue = m_queueType, .Value = submissionValue};
 }
 
-void D3D12CommandQueue::WaitFor(
-	const D3D12CommandQueue& executionQueue,
-	std::uint64_t submissionValue) noexcept
+void D3D12CommandQueue::WaitFor(const D3D12CommandQueue& executionQueue, std::uint64_t submissionValue) noexcept
 {
 	m_owner.AssertAccess();
 	if (submissionValue == 0 || m_queueType == executionQueue.m_queueType)
@@ -185,8 +196,7 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 	const DWORD waitResult = WaitForSingleObject(m_fenceEvent, D3D12CommandQueuePolicy::GpuWaitTimeoutMilliseconds);
 	if (waitResult != WAIT_OBJECT_0)
 	{
-		const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-		    std::chrono::steady_clock::now() - waitStart);
+		const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - waitStart);
 		Diagnostics::Fatal(
 		    D3D12CommandQueuePolicy::Logger(),
 		    __FILE__,
@@ -202,17 +212,7 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 
 void D3D12CommandQueue::WaitForIdle() noexcept
 {
-	m_owner.AssertAccess();
-	if (m_queue == nullptr || m_fence == nullptr)
-	{
-		Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Idle wait requested without synchronization state");
-		return;
-	}
-
-	const std::uint64_t submissionValue = m_nextSubmissionValue++;
-	CHECK(m_queue->Signal(m_fence.Get(), submissionValue));
-	m_lastSubmittedValue = submissionValue;
-	WaitForSubmission(submissionValue);
+	WaitForSubmission(Signal().Value);
 }
 
 bool D3D12CommandQueue::HasSubmitted(std::uint64_t submissionValue) const noexcept

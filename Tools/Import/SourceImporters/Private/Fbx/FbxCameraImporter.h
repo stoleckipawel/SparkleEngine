@@ -6,9 +6,9 @@
 
 class FbxCameraImporter final
 {
-  public:
-	static void ImportCameras(const aiScene& scene, SourceImportOutput& output);
+public:
+	static void ImportCameras(const aiScene& scene, float sourceMetersPerUnit, SourceImportOutput& output);
 
-  private:
+private:
 	static float ResolveFovYRadians(const aiCamera& camera) noexcept;
 };

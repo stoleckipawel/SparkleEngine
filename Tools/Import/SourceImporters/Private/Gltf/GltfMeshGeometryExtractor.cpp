@@ -5,7 +5,7 @@
 #include "Gltf/GltfAccessorReader.h"
 #include "Gltf/GltfMeshTangentGenerator.h"
 #include "Gltf/GltfMorphTargetImporter.h"
-#include "Gltf/GltfNodeTransformConverter.h"
+#include "Gltf/GltfCoordinateConverter.h"
 #include "Gltf/GltfSkinImporter.h"
 #include "Gltf/GltfTangentFrameValidator.h"
 #include "Gltf/GltfVertexFrameBuilder.h"
@@ -133,18 +133,18 @@ void GltfMeshGeometryExtractor::PopulateVertices(const Attributes& attributes, s
 	{
 		ImportedVertex& vertex = geometry.vertices[vertexIndex];
 		const DirectX::XMFLOAT3 sourcePosition = GltfAccessorReader::ReadFloat3(attributes.Positions, vertexIndex);
-		vertex.position = GltfNodeTransformConverter::ConvertGltfVectorToEngine(sourcePosition);
+		vertex.position = GltfCoordinateConverter::ConvertPosition(sourcePosition);
 
 		try
 		{
 			const DirectX::XMFLOAT3 sourceNormal = GltfAccessorReader::ReadFloat3(attributes.Normals, vertexIndex);
-			vertex.normal = GltfVertexFrameBuilder::BuildNormal(GltfNodeTransformConverter::ConvertGltfVectorToEngine(sourceNormal));
+			vertex.normal = GltfVertexFrameBuilder::BuildNormal(GltfCoordinateConverter::ConvertNormal(sourceNormal));
 
 			if (attributes.Tangents != nullptr)
 			{
 				const DirectX::XMFLOAT4 sourceTangent = GltfAccessorReader::ReadFloat4(attributes.Tangents, vertexIndex);
 				vertex.tangent = GltfVertexFrameBuilder::BuildAuthoredTangent(
-				    GltfNodeTransformConverter::ConvertGltfTangentToEngine(sourceTangent),
+				    GltfCoordinateConverter::ConvertTangentFrame(sourceTangent),
 				    vertex.normal);
 			}
 		}
@@ -197,7 +197,7 @@ void GltfMeshGeometryExtractor::PopulateIndices(const cgltf_primitive& primitive
 			throw Diagnostics::Error("glTF primitive contains an out-of-range triangle index.");
 		}
 	}
-	GltfNodeTransformConverter::ConvertGltfTriangleWindingToEngine(geometry.indices);
+	GltfCoordinateConverter::ConvertTriangleWinding(geometry.indices);
 }
 
 ImportedMeshGeometry GltfMeshGeometryExtractor::ExtractMeshGeometry(const cgltf_mesh& mesh, const cgltf_primitive& primitive)

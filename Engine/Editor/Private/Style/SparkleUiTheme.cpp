@@ -8,67 +8,65 @@
 #include <imgui.h>
 
 #ifndef SPARKLE_FONT_AWESOME_SOLID_TTF
-	#error "Sparkle editor icons require SPARKLE_FONT_AWESOME_SOLID_TTF."
+  #error "Sparkle editor icons require SPARKLE_FONT_AWESOME_SOLID_TTF."
 #endif
 
 namespace SparkleUiTheme
 {
+	ImFont* g_bodyFont = nullptr;
+	ImFont* g_headingFont = nullptr;
+	ImFont* g_monoFont = nullptr;
 
-		ImFont* g_bodyFont = nullptr;
-		ImFont* g_headingFont = nullptr;
-		ImFont* g_monoFont = nullptr;
+	const char* GetFontAwesomeSolidPath() noexcept
+	{
+		return SPARKLE_FONT_AWESOME_SOLID_TTF;
+	}
 
-		const char* GetFontAwesomeSolidPath() noexcept
+	ImFont* LoadFirstAvailableFont(const std::array<const char*, 4>& fontPaths, float sizePixels)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		for (const char* fontPath : fontPaths)
 		{
-			return SPARKLE_FONT_AWESOME_SOLID_TTF;
-		}
-
-		ImFont* LoadFirstAvailableFont(const std::array<const char*, 4>& fontPaths, float sizePixels)
-		{
-			ImGuiIO& io = ImGui::GetIO();
-			for (const char* fontPath : fontPaths)
+			if (fontPath == nullptr)
 			{
-				if (fontPath == nullptr)
-				{
-					continue;
-				}
-
-				std::error_code errorCode;
-				if (!std::filesystem::exists(fontPath, errorCode) || errorCode)
-				{
-					continue;
-				}
-
-				ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath, sizePixels);
-				if (font != nullptr)
-				{
-					return font;
-				}
+				continue;
 			}
 
-			return nullptr;
-		}
-
-		void MergeEditorIconsIntoLastFont(float baseSizePixels)
-		{
-			const char* fontPath = GetFontAwesomeSolidPath();
 			std::error_code errorCode;
 			if (!std::filesystem::exists(fontPath, errorCode) || errorCode)
 			{
-				return;
+				continue;
 			}
 
-			ImGuiIO& io = ImGui::GetIO();
-			static constexpr ImWchar kFontAwesomeRanges[] = {0xf000, 0xf8ff, 0};
-			ImFontConfig iconConfig;
-			iconConfig.MergeMode = true;
-			iconConfig.PixelSnapH = true;
-			iconConfig.GlyphMinAdvanceX = baseSizePixels;
-
-			const float iconSize = baseSizePixels * 0.86f;
-			io.Fonts->AddFontFromFileTTF(fontPath, iconSize, &iconConfig, kFontAwesomeRanges);
+			ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath, sizePixels);
+			if (font != nullptr)
+			{
+				return font;
+			}
 		}
-	  // namespace
+
+		return nullptr;
+	}
+
+	void MergeEditorIconsIntoLastFont(float baseSizePixels)
+	{
+		const char* fontPath = GetFontAwesomeSolidPath();
+		std::error_code errorCode;
+		if (!std::filesystem::exists(fontPath, errorCode) || errorCode)
+		{
+			return;
+		}
+
+		ImGuiIO& io = ImGui::GetIO();
+		static constexpr ImWchar kFontAwesomeRanges[] = {0xf000, 0xf8ff, 0};
+		ImFontConfig iconConfig;
+		iconConfig.MergeMode = true;
+		iconConfig.PixelSnapH = true;
+		iconConfig.GlyphMinAdvanceX = baseSizePixels;
+
+		const float iconSize = baseSizePixels * 0.86f;
+		io.Fonts->AddFontFromFileTTF(fontPath, iconSize, &iconConfig, kFontAwesomeRanges);
+	}
 
 	void ApplyEditorialDarkTheme()
 	{
@@ -119,14 +117,14 @@ namespace SparkleUiTheme
 		colors[ImGuiCol_TextSelectedBg] = SparkleUiPalette::SelectionOverlay();
 	}
 
-	void ConfigureTypography(float dpiScale)
+	void ConfigureTypography()
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->Clear();
 
-		const float bodySize = 14.0f * dpiScale;
-		const float headingSize = 15.0f * dpiScale;
-		const float monoSize = 13.0f * dpiScale;
+		constexpr float bodySize = 14.0f;
+		constexpr float headingSize = 15.0f;
+		constexpr float monoSize = 13.0f;
 
 		g_bodyFont =
 		    LoadFirstAvailableFont({"C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/Inter-Regular.ttf", nullptr, nullptr}, bodySize);
@@ -151,9 +149,9 @@ namespace SparkleUiTheme
 
 		g_monoFont = LoadFirstAvailableFont(
 		    {"C:/Windows/Fonts/JetBrainsMono-Regular.ttf",
-		     "C:/Windows/Fonts/JetBrainsMonoNL-Regular.ttf",
-		     "C:/Windows/Fonts/consola.ttf",
-		     nullptr},
+		        "C:/Windows/Fonts/JetBrainsMonoNL-Regular.ttf",
+		        "C:/Windows/Fonts/consola.ttf",
+		        nullptr},
 		    monoSize);
 		if (g_monoFont != nullptr && g_monoFont != g_bodyFont)
 		{
@@ -182,4 +180,4 @@ namespace SparkleUiTheme
 	{
 		return g_monoFont;
 	}
-}  // namespace SparkleUiTheme
+}

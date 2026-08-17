@@ -4,7 +4,7 @@ Status: standards index and applicability map
 
 This directory contains repository-wide implementation guardrails. Each subject has one owner; standards link to architecture and strategy rather than restating them.
 
-Start with [L. Integration Style Guide](IntegrationStyleGuide.md), then add the documents matching the touched ownership path.
+When implementing, start with [L. Integration Style Guide](IntegrationStyleGuide.md), then add the documents matching the touched ownership path. When reviewing, start with the summary [SparkleEngine Code Review](../CodeReview.md) and follow its routes back to these owning standards.
 
 ## Standards Map
 

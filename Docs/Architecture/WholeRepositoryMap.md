@@ -9,6 +9,8 @@ Scope: implemented depot structure, module boundaries, runtime flow, tools, APIs
 This document records the repository shape observed on 2026-07-24 so reviewers can locate modules, runtime flows, APIs, tools, memory/performance surfaces, and source evidence. It is descriptive: revalidate facts against current code before using them in a change.
 
 Target capability belongs to [Principal Graphics Requirements](../Strategy/Requirements.md), binding implementation rules belong to [Engineering Standards](../Engineering/Standards/README.md), and accepted subsystem decisions belong to focused architecture documents. This map does not override any of them.
+
+The canonical world basis, units, transform math, source normalization, animation, and skinning spaces are owned by the [World Coordinate, Units, and Transform Contract](WorldCoordinateAndUnits.md).
 ## Executive Map
 
 SparkleEngine is already shaped like a modern rendering engine:

@@ -7,6 +7,21 @@ struct SkinnedVertexAttributes
 	float3 Tangent;
 };
 
+float3 TransformSkinnedNormal(const float3 normal, const float4x4 skinningMatrix)
+{
+	const float3x3 linearTransform = (float3x3) skinningMatrix;
+	const float3x3 cofactorMatrix = float3x3(
+	    cross(linearTransform[1], linearTransform[2]),
+	    cross(linearTransform[2], linearTransform[0]),
+	    cross(linearTransform[0], linearTransform[1]));
+	const float determinant = dot(linearTransform[0], cofactorMatrix[0]);
+	if (abs(determinant) <= 1.0e-8f)
+	{
+		return normalize(mul(normal, linearTransform));
+	}
+	return normalize(mul(normal, cofactorMatrix) * (determinant < 0.0f ? -1.0f : 1.0f));
+}
+
 bool IsSkinnedMeshInstance(const MeshInstanceData meshInstance)
 {
 	return (meshInstance.Flags & MeshInstanceFlag_Skinned) != 0u &&
@@ -58,7 +73,7 @@ SkinnedVertexAttributes ApplySkinning(
 
 	const float4x4 skinningMatrix = LoadSkinningMatrix(meshInstance, vertexIndex);
 	attributes.Position = mul(float4(position, 1.0f), skinningMatrix).xyz;
-	attributes.Normal = normalize(mul(normal, (float3x3) skinningMatrix));
+	attributes.Normal = TransformSkinnedNormal(normal, skinningMatrix);
 	attributes.Tangent = normalize(mul(tangent, (float3x3) skinningMatrix));
 	return attributes;
 }
@@ -82,7 +97,7 @@ SkinnedVertexAttributes ApplyPreviousSkinning(
 
 	const float4x4 skinningMatrix = LoadPreviousSkinningMatrix(meshInstance, vertexIndex);
 	attributes.Position = mul(float4(position, 1.0f), skinningMatrix).xyz;
-	attributes.Normal = normalize(mul(normal, (float3x3) skinningMatrix));
+	attributes.Normal = TransformSkinnedNormal(normal, skinningMatrix);
 	attributes.Tangent = normalize(mul(tangent, (float3x3) skinningMatrix));
 	return attributes;
 }

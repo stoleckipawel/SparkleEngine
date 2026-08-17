@@ -10,7 +10,7 @@
 
 class SceneCameraEditSubmission final
 {
-  public:
+public:
 	static void Submit(
 	    EditorTransactionHistory& transactionHistory,
 	    std::uint64_t generation,
@@ -23,10 +23,10 @@ class SceneCameraEditSubmission final
 };
 
 void SceneCameraInspector::Build(
-	const WorldCameraReadData& camera,
-	EditorTransactionHistory& transactionHistory,
-	std::uint64_t generation,
-	const std::string& filter) noexcept
+    const WorldCameraReadData& camera,
+    EditorTransactionHistory& transactionHistory,
+    std::uint64_t generation,
+    const std::string& filter) noexcept
 {
 	BuildTransformCategory(filter, camera, transactionHistory, generation);
 	BuildCameraCategory(filter, camera, transactionHistory, generation);
@@ -35,13 +35,13 @@ void SceneCameraInspector::Build(
 }
 
 void SceneCameraInspector::BuildTransformCategory(
-	const std::string& filter,
-	const WorldCameraReadData& camera,
-	EditorTransactionHistory& transactionHistory,
-	std::uint64_t generation) noexcept
+    const std::string& filter,
+    const WorldCameraReadData& camera,
+    EditorTransactionHistory& transactionHistory,
+    std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale position") ||
-	    !UiUtil::BeginDetailsCategory("Transform"))
+	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale position")
+	    || !UiUtil::BeginDetailsCategory("Transform"))
 	{
 		return;
 	}
@@ -90,13 +90,13 @@ void SceneCameraInspector::BuildTransformCategory(
 }
 
 void SceneCameraInspector::BuildCameraCategory(
-	const std::string& filter,
-	const WorldCameraReadData& camera,
-	EditorTransactionHistory& transactionHistory,
-	std::uint64_t generation) noexcept
+    const std::string& filter,
+    const WorldCameraReadData& camera,
+    EditorTransactionHistory& transactionHistory,
+    std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filter, "Camera", "field of view near clip far clip aspect ratio") ||
-	    !UiUtil::BeginDetailsCategory("Camera"))
+	if (!UiUtil::MatchesDetailsFilter(filter, "Camera", "field of view near clip far clip aspect ratio")
+	    || !UiUtil::BeginDetailsCategory("Camera"))
 	{
 		return;
 	}
@@ -127,20 +127,26 @@ void SceneCameraInspector::BuildCameraCategory(
 }
 
 void SceneCameraInspector::BuildMovementCategory(
-	const std::string& filter,
-	const WorldCameraReadData& camera,
-	EditorTransactionHistory& transactionHistory,
-	std::uint64_t generation) noexcept
+    const std::string& filter,
+    const WorldCameraReadData& camera,
+    EditorTransactionHistory& transactionHistory,
+    std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filter, "Movement", "move speed navigation") ||
-	    !UiUtil::BeginDetailsCategory("Movement"))
+	if (!UiUtil::MatchesDetailsFilter(filter, "Movement", "move speed navigation") || !UiUtil::BeginDetailsCategory("Movement"))
 	{
 		return;
 	}
 
 	CameraMovementSettings after = camera.Movement;
-	const float defaultSpeed = 0.10f;
-	if (UiUtil::EditDetailsFloat("Move Speed", after.moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f", &defaultSpeed))
+	const float defaultSpeed = CameraMovementSettings{}.moveSpeedMetersPerSecond;
+	if (UiUtil::EditDetailsFloat(
+	        "Move Speed",
+	        after.moveSpeedMetersPerSecond,
+	        after.speedStepMetersPerSecond,
+	        after.minMoveSpeedMetersPerSecond,
+	        after.maxMoveSpeedMetersPerSecond,
+	        "%.4f",
+	        &defaultSpeed))
 	{
 		SceneCameraEditSubmission::Submit(
 		    transactionHistory,
@@ -154,13 +160,12 @@ void SceneCameraInspector::BuildMovementCategory(
 }
 
 void SceneCameraInspector::BuildAdvancedParametersCategory(
-	const std::string& filter,
-	const WorldCameraReadData& camera,
-	EditorTransactionHistory& transactionHistory,
-	std::uint64_t generation) noexcept
+    const std::string& filter,
+    const WorldCameraReadData& camera,
+    EditorTransactionHistory& transactionHistory,
+    std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filter, "Advanced", "visible visibility hidden") ||
-	    !UiUtil::BeginDetailsCategory("Advanced", false))
+	if (!UiUtil::MatchesDetailsFilter(filter, "Advanced", "visible visibility hidden") || !UiUtil::BeginDetailsCategory("Advanced", false))
 	{
 		return;
 	}

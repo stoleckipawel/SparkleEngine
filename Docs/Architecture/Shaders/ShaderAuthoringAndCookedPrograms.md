@@ -10,6 +10,8 @@ This document decides how SparkleEngine should identify render passes and shader
 
 It also maps Epic's global-shader lifecycle onto Sparkle from source import through runtime pipeline creation, explains which Unreal patterns are worth adopting, traces the design to Sparkle's engineering and portfolio requirements, and gives an ordered migration that can be used to learn those patterns through implementation. It refines the shader-specific conclusions from [External Renderer Repository Comparison](../ExternalReferences/ExternalRendererComparison.md). That comparison remains the source-linked broad research document. This document owns the proposed local shader-authoring direction and the shader-lifecycle compliance audit. Code, tests, executable build configuration, and captured evidence remain the authority for what is implemented and proven today.
 
+The [Ray-Tracing Pipeline and Dual-Execution Delivery Plan](RayTracingPipelineImplementationPlan.md) owns the staged implementation, effect-level inline/pipeline selection contract, native pipeline and shader-table gates, and paired execution evidence for full ray-tracing shader support.
+
 ## Adversarial Review Verdict
 
 The 2026-08-15 review assumed every proposed Unreal/vendor analogy was wrong until a primary source, current Sparkle code, and a local requirement established its exact scope. The result keeps the end-to-end direction but narrows several earlier overclaims:

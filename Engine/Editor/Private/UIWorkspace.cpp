@@ -16,7 +16,6 @@
 #include "Panels/ViewportPanel.h"
 #include "Panels/ViewportTopPanel.h"
 #include "Timer.h"
-#include "Window/Window.h"
 
 #include <backends/imgui_impl_win32.h>
 #include <imgui.h>
@@ -32,7 +31,6 @@ void UI::NewFrame()
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.DeltaTime = static_cast<float>(m_timer->GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds));
-	io.DisplaySize = ImVec2(m_window->GetWidth(), m_window->GetHeight());
 
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();

@@ -63,41 +63,28 @@ struct AssetGenerationStatus final
 
 class AssetResidency final
 {
-  public:
+public:
 	explicit AssetResidency(AssetResidencyBudget budget = {}) noexcept;
 
-	std::optional<AssetGenerationHandle> BeginGeneration(
-	    std::uint64_t assetKey,
-	    std::uint32_t generation) noexcept;
+	std::optional<AssetGenerationHandle> BeginGeneration(std::uint64_t assetKey, std::uint32_t generation) noexcept;
 	bool BeginDecoding(AssetGenerationHandle handle) noexcept;
-	bool PublishReadyForUpload(
-	    AssetGenerationHandle handle,
-	    std::uint64_t decodedBytes,
-	    std::uint64_t uploadBytes) noexcept;
+	bool PublishReadyForUpload(AssetGenerationHandle handle, std::uint64_t decodedBytes, std::uint64_t uploadBytes) noexcept;
 	bool BeginUpload(AssetGenerationHandle handle) noexcept;
-	bool RecordUploadSubmission(
-	    AssetGenerationHandle handle,
-	    RhiSubmissionToken completionToken,
-	    std::uint64_t residentBytes) noexcept;
+	bool RecordUploadSubmission(AssetGenerationHandle handle, RhiSubmissionToken completionToken, std::uint64_t residentBytes) noexcept;
 	bool Cancel(AssetGenerationHandle handle) noexcept;
-	bool BeginEviction(
-	    AssetGenerationHandle handle,
-	    const RhiSubmissionState& lastUse) noexcept;
+	bool BeginEviction(AssetGenerationHandle handle, const RhiSubmissionState& lastUse) noexcept;
 	void Poll(RhiCommandSubmissionService& submissions) noexcept;
 
+	bool HasRequestCapacity() const noexcept { return m_counters.RequestBacklog < m_budget.MaximumRequestBacklog; }
 	const AssetGenerationStatus* Find(AssetGenerationHandle handle) const noexcept;
 	AssetResidencyState GetState(AssetGenerationHandle handle) const noexcept;
 	const AssetResidencyBudget& GetBudget() const noexcept { return m_budget; }
 	const AssetResidencyCounters& GetCounters() const noexcept { return m_counters; }
 
-  private:
+private:
 	AssetGenerationStatus* FindMutable(AssetGenerationHandle handle) noexcept;
-	bool CanPublishDecoded(
-	    std::uint64_t decodedBytes,
-	    std::uint64_t uploadBytes) const noexcept;
-	bool IsComplete(
-	    const RhiSubmissionState& completion,
-	    RhiCommandSubmissionService& submissions) const noexcept;
+	bool CanPublishDecoded(std::uint64_t decodedBytes, std::uint64_t uploadBytes) const noexcept;
+	bool IsComplete(const RhiSubmissionState& completion, RhiCommandSubmissionService& submissions) const noexcept;
 	void ReleaseCpuBudget(AssetGenerationStatus& generation) noexcept;
 	void ReleaseBacklog(AssetGenerationStatus& generation) noexcept;
 	void Retire(AssetGenerationStatus& generation) noexcept;

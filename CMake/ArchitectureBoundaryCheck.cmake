@@ -6,7 +6,7 @@ endif()
 
 file(TO_CMAKE_PATH "${SPARKLE_REPO_ROOT}" SPARKLE_REPO_ROOT)
 
-set(SPARKLE_BOUNDARY_SOURCE_FILE_REGEX "\\.(c|cc|cpp|cppm|cxx|h|hh|hpp|hxx|inl|ixx|cmake)$|/CMakeLists\\.txt$")
+set(SPARKLE_BOUNDARY_SOURCE_FILE_REGEX "\\.(c|cc|cpp|cppm|cxx|h|hh|hpp|hxx|inl|ixx|cmake|manifest)$|/CMakeLists\\.txt$")
 set(SPARKLE_BOUNDARY_NATIVE_API_REGEX "<d3d12\\.h>|<vulkan/vulkan\\.h>|ID3D12|D3D12_|Vk[A-Z]|vk[A-Z]|Vulkan::Vulkan|\"D3D12/|\"Vulkan/")
 set(SPARKLE_BOUNDARY_NATIVE_PTLAS_REGEX "VK_NV_partitioned_acceleration_structure|VkPartitionedAccelerationStructure|VkBuildPartitionedAccelerationStructure|VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV|vk(Get|Cmd)PartitionedAccelerationStructures|NvAPI_D3D12|NVAPI_D3D12|D3D12_RTAS_PARTITIONED_TLAS|ExecuteIndirectRTASOperations")
 set(SPARKLE_BOUNDARY_RENDERER_SHADER_DATA_REGEX "Per(Frame|View|Object|Temporal)ConstantBufferData|PerViewCameraConstantBufferData|Render(ViewCamera|ViewLighting|ConstantBuffer)Data|MeshInstanceShaderData|MeshInstanceData|VertexSkinInfluenceData|JointMatrixData")
@@ -18,6 +18,8 @@ set(SPARKLE_BOUNDARY_RENDERER_PROVIDER_DETAIL_REGEX
     "Streamline/|Upscaling/Nvidia|RayReconstruction/Nvidia|NvidiaDlss")
 set(SPARKLE_BOUNDARY_RENDERER_VENDOR_INTEROP_REGEX
     "^Engine/Renderer/Private/(Streamline|Upscaling/NvidiaDlss|RayReconstruction/NvidiaDlssRayReconstruction)/")
+set(SPARKLE_BOUNDARY_NATIVE_DPI_POLICY_REGEX
+    "Set(Process|Thread)DpiAwareness|GetDpiFor(Window|Monitor|System)|DPI_AWARENESS_CONTEXT_|VS_DPI_AWARE|<dpiAware(ness)?|ImGui_ImplWin32_(EnableDpiAwareness|GetDpiScaleFor)|DisplaySize[ \t]*=[ \t]*ImVec2")
 
 set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_FAILURES "")
 
@@ -99,6 +101,16 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_relative_path}"
                 "${_line_number}"
                 "Renderer shader payload layouts belong in Renderer, not RHI resource contracts."
+                "${_line}")
+        endif()
+
+        if(NOT _relative_path MATCHES "^Engine/Platform/Private/Window/(Window\\.cpp|SparkleApplication\\.manifest)$" AND
+           _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_DPI_POLICY_REGEX}")
+            sparkle_boundary_append_failure(
+                "WINDOW_DPI_POLICY_REMAINS_PLATFORM_OWNED"
+                "${_relative_path}"
+                "${_line_number}"
+                "The shared application manifest owns process DPI mode, Platform Window owns native DPI changes, and the Win32 ImGui backend owns UI client extent."
                 "${_line}")
         endif()
 
@@ -236,9 +248,12 @@ message(STATUS "Repository root: ${SPARKLE_REPO_ROOT}")
 
 sparkle_boundary_collect_source_files(
     SPARKLE_BOUNDARY_SOURCE_FILES
+    "CMake"
     "Engine"
     "Tools"
     "Projects")
+list(APPEND SPARKLE_BOUNDARY_SOURCE_FILES "${SPARKLE_REPO_ROOT}/CMakeLists.txt")
+list(FILTER SPARKLE_BOUNDARY_SOURCE_FILES EXCLUDE REGEX "/CMake/ArchitectureBoundaryCheck\\.cmake$")
 
 foreach(_file IN LISTS SPARKLE_BOUNDARY_SOURCE_FILES)
     sparkle_boundary_scan_file("${_file}")

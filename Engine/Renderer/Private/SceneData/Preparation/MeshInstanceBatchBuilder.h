@@ -4,6 +4,7 @@
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Rendering/RenderObjectId.h"
 #include "SceneData/MaterialData.h"
+#include "SceneData/MeshInstanceBatch.h"
 #include "SceneData/Preparation/RenderObjectPreparation.h"
 
 #include <cstddef>
@@ -17,10 +18,8 @@ struct MeshRenderItem final
 	RenderObjectId Object;
 	std::uint32_t DrawIndex = 0u;
 	MaterialGpuHandle Material;
-	RenderMeshInstanceGroupIndex InstanceGroupIndex =
-	    kInvalidRenderMeshInstanceGroupIndex;
-	RenderMaterialClassification Classification =
-	    RenderMaterialClassification::Rejected;
+	RenderMeshInstanceGroupIndex InstanceGroupIndex = kInvalidRenderMeshInstanceGroupIndex;
+	RenderMaterialClassification Classification = RenderMaterialClassification::Rejected;
 	std::uint32_t RenderStateKey = 0u;
 	float CameraDistanceSquared = 0.0f;
 };
@@ -41,7 +40,7 @@ struct MeshInstanceBatchBuildResult final
 
 class MeshInstanceBatchBuilder final
 {
-  public:
+public:
 	MeshInstanceBatchBuilder();
 	~MeshInstanceBatchBuilder() noexcept;
 
@@ -55,7 +54,7 @@ class MeshInstanceBatchBuilder final
 	    const MeshInstanceBatchBuildOptions& options,
 	    MeshInstanceBatchBuildResult& result);
 
-  private:
+private:
 	struct BuildScratch;
 	struct BatchKey final
 	{
@@ -64,8 +63,7 @@ class MeshInstanceBatchBuilder final
 		std::uint32_t MaterialSlot = 0u;
 		std::uint64_t SkeletonAssetId = 0u;
 		RenderMeshKind MeshKind = RenderMeshKind::Static;
-		RenderMaterialClassification Classification =
-		    RenderMaterialClassification::Rejected;
+		RenderMaterialClassification Classification = RenderMaterialClassification::Rejected;
 		std::uint32_t RenderStateKey = 0u;
 	};
 
@@ -87,9 +85,7 @@ class MeshInstanceBatchBuilder final
 	    const MeshInstanceBatchBuildOptions& options,
 	    BuildScratch& scratch,
 	    MeshInstanceBatchBuildResult& result);
-	static void PartitionRemainingItems(
-	    std::span<const MeshRenderItem> renderItems,
-	    BuildScratch& scratch);
+	static void PartitionRemainingItems(std::span<const MeshRenderItem> renderItems, BuildScratch& scratch);
 	static void AppendOpaqueBatches(
 	    std::span<const MeshRenderItem> renderItems,
 	    std::span<const MeshDraw> draws,
@@ -112,25 +108,12 @@ class MeshInstanceBatchBuilder final
 	    std::size_t instanceGroupCount,
 	    const MeshInstanceBatchBuildOptions& options,
 	    MeshGeometryInstancingDiagnostics& diagnostics) noexcept;
-	static BatchKey MakeBatchKey(
-	    const MeshRenderItem& item,
-	    std::span<const MeshDraw> draws) noexcept;
-	static bool BatchKeyLess(
-	    const BatchKey& lhs,
-	    const BatchKey& rhs) noexcept;
-	static bool CanShareBatch(
-	    const MeshRenderItem& lhs,
-	    const MeshRenderItem& rhs,
-	    std::span<const MeshDraw> draws) noexcept;
-	static bool OpaqueItemLess(
-	    const MeshRenderItem& lhs,
-	    const MeshRenderItem& rhs,
-	    std::span<const MeshDraw> draws) noexcept;
-	static bool TransparentItemLess(
-	    const MeshRenderItem& lhs,
-	    const MeshRenderItem& rhs) noexcept;
-	static MeshInstanceBatchSource ResolvePreservedGroupSource(
-	    RenderMeshInstanceGroupKind groupKind) noexcept;
+	static BatchKey MakeBatchKey(const MeshRenderItem& item, std::span<const MeshDraw> draws) noexcept;
+	static bool BatchKeyLess(const BatchKey& lhs, const BatchKey& rhs) noexcept;
+	static bool CanShareBatch(const MeshRenderItem& lhs, const MeshRenderItem& rhs, std::span<const MeshDraw> draws) noexcept;
+	static bool OpaqueItemLess(const MeshRenderItem& lhs, const MeshRenderItem& rhs, std::span<const MeshDraw> draws) noexcept;
+	static bool TransparentItemLess(const MeshRenderItem& lhs, const MeshRenderItem& rhs) noexcept;
+	static MeshInstanceBatchSource ResolvePreservedGroupSource(RenderMeshInstanceGroupKind groupKind) noexcept;
 	static void AppendBatch(
 	    std::span<const MeshRenderItem> renderItems,
 	    std::span<const MeshDraw> draws,

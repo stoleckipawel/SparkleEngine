@@ -118,6 +118,7 @@ void LevelSession::StartLevelChange(LevelAsset& requestedLevel) noexcept
 		m_lastLoadDiagnostic = error.what();
 		m_loadingLevel = nullptr;
 		m_levelChangeInProgress = false;
+		SPDLOG_LOGGER_ERROR(g_levelSessionLogger, "Failed to start loading level '{}': {}", requestedLevelName, m_lastLoadDiagnostic);
 		m_levelChangeEvents.OnLevelLoadFailed.Broadcast(requestedLevelName);
 	}
 }
@@ -147,6 +148,11 @@ void LevelSession::CompleteLevelChange() noexcept
 		m_levelChangeInProgress = false;
 		if (completion->Stage != LevelLoadOperationStage::Cancelled)
 		{
+			SPDLOG_LOGGER_ERROR(
+			    g_levelSessionLogger,
+			    "Failed to load level '{}': {}",
+			    std::string(loadedLevel->GetName()),
+			    m_lastLoadDiagnostic);
 			m_levelChangeEvents.OnLevelLoadFailed.Broadcast(loadedLevel->GetName());
 		}
 		return;
@@ -163,6 +169,11 @@ void LevelSession::CompleteLevelChange() noexcept
 	{
 		m_lastLoadDiagnostic = "Scene load package was rejected because an owner generation changed.";
 		m_levelChangeInProgress = false;
+		SPDLOG_LOGGER_ERROR(
+		    g_levelSessionLogger,
+		    "Failed to load level '{}': {}",
+		    std::string(loadedLevel->GetName()),
+		    m_lastLoadDiagnostic);
 		m_levelChangeEvents.OnLevelLoadFailed.Broadcast(loadedLevel->GetName());
 		return;
 	}

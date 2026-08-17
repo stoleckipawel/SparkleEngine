@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <format>
+#include <limits>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
@@ -21,7 +22,7 @@ static const auto g_sceneLoadPackageBuilderLogger = Logging::GetOrCreateLogger("
 
 class SceneLoadPackageAssembly final
 {
-  public:
+public:
 	static std::uint64_t MakeAuthoredInstanceId(std::string_view identity)
 	{
 		constexpr std::uint64_t OffsetBasis = 14695981039346656037ull;
@@ -37,22 +38,159 @@ class SceneLoadPackageAssembly final
 		return hash;
 	}
 
-	template <typename... Components>
-	static std::vector<ECS::ComponentSchema> Schemas() noexcept
+	template <typename... Components> static std::vector<ECS::ComponentSchema> Schemas() noexcept
 	{
 		return {ECS::GetComponentSchema<Components>()...};
 	}
 
-	static std::size_t EstimatePayloadBytes(const SceneAssetPayload& payload) noexcept
+	static std::size_t SaturatingProduct(std::size_t count, std::size_t elementBytes) noexcept
 	{
-		return payload.staticMeshAssets.size() * sizeof(SceneAssetPayload::StaticMeshAsset) +
-		       payload.skeletalMeshAssets.size() * sizeof(SceneAssetPayload::SkeletalMeshAsset) +
-		       payload.staticMeshInstances.size() * sizeof(SceneAssetPayload::StaticMeshInstance) +
-		       payload.skeletalMeshInstances.size() * sizeof(SceneAssetPayload::SkeletalMeshInstance) +
-		       payload.meshInstanceGroups.size() * sizeof(SceneAssetPayload::MeshInstanceGroup) +
-		       payload.materials.size() * sizeof(MaterialDesc) + payload.cameras.size() * sizeof(SceneAssetPayload::Camera) +
-		       payload.lights.size() * sizeof(SceneLightDesc) + payload.skeletons.size() * sizeof(SkeletonResource) +
-		       payload.animations.size() * sizeof(AnimationClipResource);
+		constexpr std::size_t Maximum = (std::numeric_limits<std::size_t>::max)();
+		return elementBytes != 0 && count > Maximum / elementBytes ? Maximum : count * elementBytes;
+	}
+
+	static void AddBytes(std::size_t& total, std::size_t amount) noexcept
+	{
+		constexpr std::size_t Maximum = (std::numeric_limits<std::size_t>::max)();
+		total = amount > Maximum - total ? Maximum : total + amount;
+	}
+
+	template <typename T> static std::size_t VectorBytes(const std::vector<T>& values) noexcept
+	{
+		return SaturatingProduct(values.capacity(), sizeof(T));
+	}
+
+	static std::size_t StringBytes(const std::string& value) noexcept { return value.capacity() + 1u; }
+
+	static void AddMeshDataBytes(std::size_t& total, const MeshData& mesh) noexcept
+	{
+		AddBytes(total, VectorBytes(mesh.vertices));
+		AddBytes(total, VectorBytes(mesh.indices));
+	}
+
+	static std::size_t EstimateRetainedDecodedBytes(const Assets::SceneAssetLoadWork& work) noexcept
+	{
+		const SceneAssetPayload& payload = work.Payload;
+		std::size_t bytes = 0;
+		AddBytes(bytes, VectorBytes(payload.staticMeshAssets));
+		AddBytes(bytes, VectorBytes(payload.skeletalMeshAssets));
+		AddBytes(bytes, VectorBytes(payload.staticMeshInstances));
+		AddBytes(bytes, VectorBytes(payload.skeletalMeshInstances));
+		AddBytes(bytes, VectorBytes(payload.meshInstanceGroups));
+		AddBytes(bytes, VectorBytes(payload.cameras));
+		AddBytes(bytes, VectorBytes(payload.lights));
+		AddBytes(bytes, VectorBytes(payload.skeletons));
+		AddBytes(bytes, VectorBytes(payload.animations));
+		AddBytes(bytes, VectorBytes(payload.materials));
+		AddBytes(bytes, VectorBytes(payload.materialVariants));
+		AddBytes(bytes, VectorBytes(payload.materialVariantMappings));
+
+		for (const SceneAssetPayload::StaticMeshAsset& mesh : payload.staticMeshAssets)
+		{
+			AddMeshDataBytes(bytes, mesh.mesh.geometry);
+		}
+		for (const SceneAssetPayload::SkeletalMeshAsset& mesh : payload.skeletalMeshAssets)
+		{
+			AddMeshDataBytes(bytes, mesh.mesh.geometry);
+			AddBytes(bytes, VectorBytes(mesh.mesh.skinInfluences));
+			AddBytes(bytes, VectorBytes(mesh.mesh.morphTargets.targets));
+			for (const MeshMorphTarget& target : mesh.mesh.morphTargets.targets)
+			{
+				AddBytes(bytes, StringBytes(target.name));
+				AddBytes(bytes, VectorBytes(target.deltas));
+			}
+		}
+		for (const SceneAssetPayload::SkeletalMeshInstance& instance : payload.skeletalMeshInstances)
+		{
+			AddBytes(bytes, VectorBytes(instance.morphWeights));
+		}
+		for (const SceneAssetPayload::Camera& camera : payload.cameras)
+		{
+			AddBytes(bytes, StringBytes(camera.name));
+		}
+		for (const SkeletonResource& skeleton : payload.skeletons)
+		{
+			AddBytes(bytes, VectorBytes(skeleton.joints));
+			for (const SkeletonJoint& joint : skeleton.joints)
+			{
+				AddBytes(bytes, StringBytes(joint.name));
+			}
+		}
+		for (const AnimationClipResource& animation : payload.animations)
+		{
+			AddBytes(bytes, StringBytes(animation.name));
+			AddBytes(bytes, VectorBytes(animation.channels));
+			AddBytes(bytes, VectorBytes(animation.keyframes));
+		}
+		for (const MaterialDesc& material : payload.materials)
+		{
+			AddBytes(bytes, StringBytes(material.name));
+			AddBytes(bytes, VectorBytes(material.textureReferences));
+			for (const Assets::CookedTextureReference& texture : material.textureReferences)
+			{
+				AddBytes(bytes, StringBytes(texture.texturePath));
+			}
+		}
+		for (const SceneAssetPayload::MaterialVariant& variant : payload.materialVariants)
+		{
+			AddBytes(bytes, StringBytes(variant.name));
+		}
+
+		AddBytes(bytes, VectorBytes(work.Entities));
+		for (const Assets::EntityBlueprint& entity : work.Entities)
+		{
+			AddBytes(bytes, StringBytes(entity.AuthoredIdentity));
+			AddBytes(bytes, VectorBytes(entity.Components));
+		}
+		return bytes;
+	}
+
+	static void ReserveFinalPackageStorage(Assets::SceneLoadWorkState& state)
+	{
+		std::size_t entityCount = state.Package->Entities.size() + 1u + state.Package->Level.lights.size();
+		for (const Assets::SceneAssetLoadWork& work : state.Assets)
+		{
+			AddBytes(entityCount, work.Entities.size());
+		}
+		const std::size_t payloadCount = state.Package->AssetPayloads.size() + state.Assets.size();
+		const std::size_t previousEntityBytes = VectorBytes(state.Package->Entities);
+		const std::size_t previousPayloadBytes = VectorBytes(state.Package->AssetPayloads);
+		const std::size_t requestedEntityBytes = SaturatingProduct(entityCount, sizeof(Assets::EntityBlueprint));
+		const std::size_t requestedPayloadBytes = SaturatingProduct(payloadCount, sizeof(SceneAssetPayload));
+
+		std::size_t reservationBytes = 0;
+		AddBytes(reservationBytes, requestedEntityBytes > previousEntityBytes ? requestedEntityBytes - previousEntityBytes : 0u);
+		AddBytes(reservationBytes, requestedPayloadBytes > previousPayloadBytes ? requestedPayloadBytes - previousPayloadBytes : 0u);
+		if (!state.Budget.TryReserve(reservationBytes))
+		{
+			throw Diagnostics::Error("Scene load exceeded the aggregate retained-data byte budget during package finalization.");
+		}
+
+		try
+		{
+			state.Package->Entities.reserve(entityCount);
+			state.Package->AssetPayloads.reserve(payloadCount);
+		}
+		catch (...)
+		{
+			state.Budget.Release(reservationBytes);
+			throw;
+		}
+
+		std::size_t retainedBytes = 0;
+		AddBytes(retainedBytes, VectorBytes(state.Package->Entities) - previousEntityBytes);
+		AddBytes(retainedBytes, VectorBytes(state.Package->AssetPayloads) - previousPayloadBytes);
+		if (retainedBytes > reservationBytes)
+		{
+			if (!state.Budget.TryReserve(retainedBytes - reservationBytes))
+			{
+				throw Diagnostics::Error("Scene load exceeded the aggregate retained-data byte budget during package finalization.");
+			}
+		}
+		else
+		{
+			state.Budget.Release(reservationBytes - retainedBytes);
+		}
 	}
 
 	static void BuildBlueprints(Assets::SceneAssetLoadWork& work)
@@ -62,35 +200,56 @@ class SceneLoadPackageAssembly final
 			work.Entities.push_back(Assets::EntityBlueprint{std::move(identity), std::move(schemas)});
 		};
 		for (const AnimationClipResource& animation : work.Payload.animations)
-			add(
-			    std::format("{}:animation:{}", work.Id.value, animation.sourceAnimationIndex),
+			add(std::format("{}:animation:{}", work.Id.value, animation.sourceAnimationIndex),
 			    Schemas<ECS::AnimationState, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
 		for (std::size_t index = 0; index < work.Payload.staticMeshInstances.size(); ++index)
 		{
 			const SceneAssetPayload::StaticMeshInstance& instance = work.Payload.staticMeshInstances[index];
-			add(
-			    std::format("{}:mesh:{}:{}", work.Id.value, instance.sourceNodeIndex, index),
-			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::MeshInstance, ECS::Visibility, ECS::AuthoredIdentity,
-			            ECS::EditorMetadata>());
+			add(std::format("{}:mesh:{}:{}", work.Id.value, instance.sourceNodeIndex, index),
+			    Schemas<
+			        ECS::LocalTransform,
+			        ECS::WorldTransform,
+			        ECS::MeshInstance,
+			        ECS::Visibility,
+			        ECS::AuthoredIdentity,
+			        ECS::EditorMetadata>());
 		}
 		for (std::size_t index = 0; index < work.Payload.skeletalMeshInstances.size(); ++index)
 		{
 			const SceneAssetPayload::SkeletalMeshInstance& instance = work.Payload.skeletalMeshInstances[index];
-			add(
-			    std::format("{}:skinned-mesh:{}:{}", work.Id.value, instance.sourceNodeIndex, index),
-			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::MeshInstance, ECS::Visibility, ECS::MorphState,
-			            ECS::SkinningState, ECS::AuthoredIdentity, ECS::EditorMetadata>());
+			add(std::format("{}:skinned-mesh:{}:{}", work.Id.value, instance.sourceNodeIndex, index),
+			    Schemas<
+			        ECS::LocalTransform,
+			        ECS::WorldTransform,
+			        ECS::MeshInstance,
+			        ECS::Visibility,
+			        ECS::MorphState,
+			        ECS::SkinningState,
+			        ECS::AuthoredIdentity,
+			        ECS::EditorMetadata>());
 		}
 		for (std::size_t index = 0; index < work.Payload.cameras.size(); ++index)
-			add(
-			    std::format("{}:camera:{}", work.Id.value, index),
-			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility,
-			            ECS::CameraMovement, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
+			add(std::format("{}:camera:{}", work.Id.value, index),
+			    Schemas<
+			        ECS::LocalTransform,
+			        ECS::WorldTransform,
+			        ECS::Camera,
+			        ECS::CameraDerivedState,
+			        ECS::Visibility,
+			        ECS::CameraMovement,
+			        ECS::Name,
+			        ECS::AuthoredIdentity,
+			        ECS::EditorMetadata>());
 		for (std::size_t index = 0; index < work.Payload.lights.size(); ++index)
-			add(
-			    std::format("{}:light:{}", work.Id.value, index),
-			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Light, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity,
-			            ECS::EditorMetadata>());
+			add(std::format("{}:light:{}", work.Id.value, index),
+			    Schemas<
+			        ECS::LocalTransform,
+			        ECS::WorldTransform,
+			        ECS::Light,
+			        ECS::Visibility,
+			        ECS::Name,
+			        ECS::AuthoredIdentity,
+			        ECS::EditorMetadata>());
 	}
 
 	static void ValidateBlueprintContract(const std::vector<Assets::EntityBlueprint>& entities)
@@ -141,11 +300,12 @@ namespace Assets
 	{
 		work.Payload.authoredInstanceId = SceneLoadPackageAssembly::MakeAuthoredInstanceId(work.Id.value);
 		SceneLoadPackageAssembly::BuildBlueprints(work);
-		return SceneLoadPackageAssembly::EstimatePayloadBytes(work.Payload);
+		return SceneLoadPackageAssembly::EstimateRetainedDecodedBytes(work);
 	}
 
 	void SceneLoadPackageBuilder::Finalize(SceneLoadWorkState& state)
 	{
+		SceneLoadPackageAssembly::ReserveFinalPackageStorage(state);
 		std::unordered_map<std::uint64_t, std::string_view> instanceIdentities;
 		for (const SceneAssetLoadWork& work : state.Assets)
 		{
@@ -166,25 +326,38 @@ namespace Assets
 					throw Diagnostics::Error("Scene load package contains an unresolved cross-asset skeleton reference.");
 				}
 
-		state.Package->Entities.push_back(EntityBlueprint{
-		    std::format("level:{}:camera:0", state.Package->Level.name),
-		    SceneLoadPackageAssembly::Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility,
-		            ECS::CameraMovement, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>()});
+		state.Package->Entities.push_back(
+		    EntityBlueprint{
+		        std::format("level:{}:camera:0", state.Package->Level.name),
+		        SceneLoadPackageAssembly::Schemas<
+		            ECS::LocalTransform,
+		            ECS::WorldTransform,
+		            ECS::Camera,
+		            ECS::CameraDerivedState,
+		            ECS::Visibility,
+		            ECS::CameraMovement,
+		            ECS::Name,
+		            ECS::AuthoredIdentity,
+		            ECS::EditorMetadata>()});
 		for (std::size_t index = 0; index < state.Package->Level.lights.size(); ++index)
-			state.Package->Entities.push_back(EntityBlueprint{
-			    std::format("level:{}:light:{}", state.Package->Level.name, index),
-			    SceneLoadPackageAssembly::Schemas<
-			        ECS::LocalTransform,
-			        ECS::WorldTransform,
-			        ECS::Light,
-			        ECS::Visibility,
-			        ECS::Name,
-			        ECS::AuthoredIdentity,
+			state.Package->Entities.push_back(
+			    EntityBlueprint{
+			        std::format("level:{}:light:{}", state.Package->Level.name, index),
+			        SceneLoadPackageAssembly::Schemas<
+			            ECS::LocalTransform,
+			            ECS::WorldTransform,
+			            ECS::Light,
+			            ECS::Visibility,
+			            ECS::Name,
+			            ECS::AuthoredIdentity,
 			            ECS::EditorMetadata>()});
 		for (SceneAssetLoadWork& work : state.Assets)
 		{
 			for (EntityBlueprint& entity : work.Entities)
 				state.Package->Entities.push_back(std::move(entity));
+			const std::size_t releasedEntityStorageBytes = SceneLoadPackageAssembly::VectorBytes(work.Entities);
+			std::vector<EntityBlueprint>().swap(work.Entities);
+			state.Budget.Release(releasedEntityStorageBytes);
 			state.Package->AssetPayloads.push_back(std::move(work.Payload));
 		}
 		SceneLoadPackageAssembly::ValidateBlueprintContract(state.Package->Entities);

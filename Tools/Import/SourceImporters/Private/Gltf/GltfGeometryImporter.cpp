@@ -6,7 +6,7 @@
 #include "Gltf/GltfMeshInstanceAppender.h"
 #include "Gltf/GltfMeshInstancingImporter.h"
 #include "Gltf/GltfMorphTargetImporter.h"
-#include "Gltf/GltfNodeTransformConverter.h"
+#include "Gltf/GltfCoordinateConverter.h"
 #include "Gltf/GltfPrimitiveMaterialResolver.h"
 #include "Gltf/GltfSkinImporter.h"
 #include "Core/Public/Diagnostics/Error.h"
@@ -99,7 +99,8 @@ void GltfGeometryImporter::ImportNode(const cgltf_data& data, const cgltf_node& 
 	    .Data = data,
 	    .Node = node,
 	    .MeshGpuInstancingTransforms = hasMeshGpuInstancing ? &meshGpuInstancingTransforms : nullptr,
-	    .WorldTransform = GltfNodeTransformConverter::ComputeNodeWorldTransform(&node),
+	    .WorldTransform = node.skin == nullptr ? GltfCoordinateConverter::ComputeNodeWorldTransform(&node)
+	                                           : GltfSkinImporter::ComputeSkinReferenceToWorldTransform(node.skin),
 	    .SkeletonIndex = skeletonIndex,
 	    .NodeIndex = nodeIndex};
 	for (cgltf_size primitiveIndex = 0; primitiveIndex < node.mesh->primitives_count; ++primitiveIndex)
@@ -135,10 +136,11 @@ ImportedMeshPrimitiveIndex GltfGeometryImporter::ResolveImportedPrimitive(
 {
 	if (primitive.type != cgltf_primitive_type_triangles || primitive.has_draco_mesh_compression)
 	{
-		throw Diagnostics::Error(std::format(
-		    "glTF {} {}.",
-		    primitiveLabel,
-		    primitive.has_draco_mesh_compression ? "uses unsupported Draco compression" : "is not a triangle primitive"));
+		throw Diagnostics::Error(
+		    std::format(
+		        "glTF {} {}.",
+		        primitiveLabel,
+		        primitive.has_draco_mesh_compression ? "uses unsupported Draco compression" : "is not a triangle primitive"));
 	}
 
 	const std::uint32_t sourceMeshIndex = static_cast<std::uint32_t>(cgltf_mesh_index(&context.Data, context.Node.mesh));

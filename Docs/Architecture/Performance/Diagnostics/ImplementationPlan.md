@@ -17,7 +17,7 @@ The following documents remain authoritative for their subjects:
 - [Diagnostics Product And UX Research](DiagnosticsUxResearch.md) owns external precedent, option analysis, and the reasons for the selected product depth.
 - [External Performance Profiler Runbook](DiagnosticsProfilerRunbook.md) owns version-sensitive provider support, profiler operations, marker compatibility, and installed-tool revalidation.
 - [Bistro And San Miguel Acceptance Workloads](../../../Engineering/BistroAndSanMiguelWorkloads.md) owns `MAP-00`, benchmark routes, evidence layout, sample policy, and acceptance claims.
-- [Engineering Standards](../../../Engineering/Standards/README.md) are binding. In particular, apply the [Integration Style Guide](../../../Engineering/Standards/IntegrationStyleGuide.md), [Change Process](../../../Engineering/Standards/ChangeProcess.md), [Concurrency](../../../Engineering/Standards/Concurrency.md), [Data-Oriented Design](../../../Engineering/Standards/DataOrientedDesign.md), [Graphics Engineering](../../../Engineering/Standards/GraphicsEngineering.md), [Editor And Tools](../../../Engineering/Standards/EditorAndTools.md), and [Validation, Performance, And Evidence](../../../Engineering/Standards/ValidationPerformanceAndEvidence.md).
+- [Engineering Standards](../../../Engineering/Standards/README.md) are binding. Select the applicable subject standards through that map and follow the [Integration Style Guide](../../../Engineering/Standards/IntegrationStyleGuide.md) and [Change Process](../../../Engineering/Standards/ChangeProcess.md) for every owned change.
 
 Code, CMake membership, tests, and observed evidence remain the authority for implemented behavior. Updating a package to `Accepted` in this plan is a useful ledger entry, not a substitute for those proofs.
 
@@ -103,6 +103,48 @@ All implementation prompts and phase gates inherit this contract even where they
 
 Literal source repetition in backend-private API translation or genuinely different presenter layout may remain when extraction would create coupling or erase a necessary boundary. The acceptance claim is therefore precise: zero competing authorities and zero unjustified duplicate implementations, with every deliberate separation accounted for.
 
+## Touched-Path Integration
+
+Every package inherits the repository's [Integration Style Guide](../../../Engineering/Standards/IntegrationStyleGuide.md), [Change Process](../../../Engineering/Standards/ChangeProcess.md), and applicable subject standards. This plan does not copy their general design, SOLID, public-surface, formatting, or evidence rules.
+
+Before a package moves to `In progress`, trace its current owner, producers, consumers, lifetime, thread, dependencies, and tests. Record the target path, any direct-path defect that must be refactored, every obsolete route to delete, and the exact checks that will prove the result. Keep that record in the package change description rather than another architecture document.
+
+The selected vertical slice must extend the canonical production path and leave it more cohesive. Unrelated cleanup stays out of scope; a direct-path correctness or ownership defect cannot be deferred behind a new facade. Public types, interfaces, queues, registries, callbacks, and wrapper files require a present boundary or consumer under the binding standards, not a hypothetical future use.
+
+A package remains `In progress` until reviewers can trace one coherent path, account for deliberate separations, confirm the old path is gone, and verify the applicable product/backend/build behavior.
+
+## Zero Authoring Tax And Shipping Erasure Gate
+
+The binding [Intent-First Instrumentation And Shipping Erasure](PerformanceDiagnosticsArchitecture.md#intent-first-instrumentation-and-shipping-erasure) architecture applies to every package. Its operational rule is simple:
+
+> Real content and feature code expresses product intent. Existing low-level owners derive and collect diagnostic facts automatically. Optional performance diagnostics disappear from Shipping.
+
+Do not make a content author, gameplay programmer, pass author, or ordinary engine contributor register stats, choose collection modes, maintain counters/history, publish samples, update UI/export schemas, configure a profiler, or understand provider APIs. A representative new level/content variation must require zero diagnostics changes. A genuinely new owner boundary may add one static `ScopeToken`/RAII marker when automatic derivation cannot name it; that annotation contains no dynamic string, local collector state, manual nesting, provider branch, or Shipping payload.
+
+Diagnostics integration belongs at existing Application orchestration, Task execution, Renderer/frame-graph compile/submit, RHI queue/timestamp, Platform sampling, and allocator commit/retire boundaries. Counts and memory facts are read from authoritative structures already needed for real work. Timings are attached at fixed owner boundaries. History, aggregation, formatting, UI, and export remain diagnostic projections. Production algorithms contain no `if (diagnosticsEnabled)`, parallel instrumented variant, diagnostic callback, or per-feature diagnostic object.
+
+`DevelopmentEditor` and `DevelopmentGame` are the optimized profiling-capable products. Runtime `Off` is their observer control, not a Shipping guarantee. `ShippingEditor` and `ShippingGame` must exclude the optional sessions, collectors, histories, timers, query planning/resolution, marker strings/fanout, stat commands, UI, export, captures, provider adapters/dependencies, CVars, and call sites at compile/link/package time. Operational facts required for correctness—such as `FrameId`, allocator bookkeeping, submission/retirement tokens, and normal capability/failure policy—remain owned by the product and do not become diagnostics abstractions.
+
+### Per-package authoring and erasure card
+
+Fill this before implementation and close it before `Accepted`:
+
+```text
+Real content/feature workflow exercised:
+Diagnostics changes required from its author: None | one justified static token
+Facts derived automatically and their existing low-level owners:
+Owner-local collection seams and why each cannot be more automatic:
+Production files containing diagnostic includes/calls and allowlist reason:
+Development default-Off and selected-mode behavior:
+Shipping sources/types/functions/commands/CVars/strings/assets excluded:
+Shipping libraries/SDKs/DLLs/layers/package entries excluded:
+Optimized object/disassembly, symbol/string/import/link-map proof:
+Shipping runtime proof: no storage/tasks/queries/files/UI/options and preserved output:
+Before/after Shipping performance and package-size evidence:
+```
+
+Every package proves erasure immediately; Phase 6 repeats the aggregate audit but is not the first deletion point. A source `#if`, empty virtual service, null provider, runtime false branch, unregistered command, or `Off` mode is insufficient unless optimized object and package evidence proves no optional code/data/dependency remains. Prefer configuration-specific source/dependency exclusion; keep sparse empty inline seams only where an owner annotation is unavoidable and prove they compile away.
+
 ## Verification Comes First
 
 Testing is part of each package definition, not a follow-up phase. Before editing code, the implementer must show how the user will invoke the selected package, what Sponza should prove, what every currently supported map should prove, and what data the user must interpret. If that cannot be stated concretely, the package is not ready to implement.
@@ -111,11 +153,12 @@ The understanding should deepen monotonically:
 
 ```text
 P0 symptom inventory
-       -> P1 trustworthy measurements
-       -> P2 likely limiting domain
-       -> P3 reproducible per-map distributions
-       -> P4 expensive owner/pass/wait/memory contributor
-       -> P5 native/internal capture corroboration
+       -> P1 trustworthy external capture and native marker baseline
+       -> P2 trustworthy internal measurements
+       -> P3 likely limiting domain
+       -> P4 reproducible per-map distributions
+       -> P5 expensive owner/pass/wait/memory contributor
+             plus native/internal capture corroboration
        -> P6 causal experiment and scoped conclusion
 ```
 
@@ -128,6 +171,11 @@ Package and selected consumer:
 User action after delivery:
 Build / product / backend:
 Collection mode and expected observer cost:
+Current/target owner path and direct defects:
+Applicable Engineering standards and required refactors:
+Authoring-isolation workflow and allowed annotation, if any:
+Automatic low-level fact derivation and owner-local seams:
+Shipping compile/link/package erasure and runtime proof:
 Authority tuple and repository searches:
 Duplicate candidates and disposition for each:
 Exact replacement/deletion proof:
@@ -207,6 +255,7 @@ These are generated evidence, not new repository planning documents. Formal `MAP
 A selected package passes its engineering AC only when all applicable statements are true:
 
 - the user action is documented at the feature entry point and works without developer-only memory inspection;
+- representative content/feature authoring remains intent-based and requires no diagnostic registration, counter/history maintenance, collector choice, UI/export edit, or provider knowledge; any static token annotation has a recorded necessity;
 - every supported map is present in the sweep with requested and active identity, backend, product, configuration, sample population, and result;
 - there is no device removal, fatal diagnostic, deadlock, unbounded wait, unexplained process exit, or uncategorized error;
 - timing runs retain at least 300 valid post-warm-up samples per run, or explicitly fail rather than silently reducing `N`;
@@ -214,6 +263,7 @@ A selected package passes its engineering AC only when all applicable statements
 - `FrameId`, generation, unit, interval, provenance, and inclusion rules match the architecture and the exported/raw record;
 - repeated runs use identical declared settings; changed settings start a new cohort and cannot be pooled silently;
 - `LiveBasic` satisfies the architecture's Empty/Sponza observer hypotheses: zero post-initialization per-frame heap allocations, under 4 MiB retained live history, CPU p50 change below 1%, CPU p95 change below 2% with the predeclared Empty noise floor, and GPU p95 disturbance below the larger of 1% or 0.1 ms;
+- applicable `ShippingEditor`/`ShippingGame` builds, object/link/package audits, and Empty/Sponza runtime checks prove optional diagnostics code/data/dependencies and author-facing surface are absent rather than runtime-disabled;
 - detailed, benchmark, internal-capture, and external-capture disturbance is measured and displayed even where no fixed budget is declared;
 - the feature-specific expected result below passes on Sponza and remains semantically valid across the full map roster.
 
@@ -253,7 +303,7 @@ Use this confidence vocabulary in `sweep-summary.md`:
 
 ### Ordered phases, selectable packages
 
-Phases close in order. Do not begin implementation from phase `P2` until the `P1` exit gate is closed, even when the desired feature appears independent. Within the active phase, any optional package may be selected, deferred, or rejected.
+Phases close in order. Phase 1 is intentionally external-first: `EXT-00`–`EXT-05` begin `Selected`, and no internal collection/session/view/export package starts until their gate closes. An adapter may become `Rejected` only when current primary documentation, installed-tool evidence, and a smoke attempt prove its declared backend path unsupported; it is not silently deferred. Within later active phases, any optional package may be selected, deferred, or rejected.
 
 Each phase contains three kinds of work:
 
@@ -281,15 +331,15 @@ Use exactly these states in the delivery ledger:
 
 A phase closes only when no package in that phase remains `Available`, `Selected`, `In progress`, or `Blocked`. Deferring every optional feature is allowed; failing to make the decisions is not.
 
-Moving `Selected -> In progress` additionally requires a complete test card and authority tuple. Moving `In progress -> Accepted` requires every duplicate candidate to have a final disposition and its required deletion/boundary proof. A package with an unresolved overlap remains `In progress` even when it builds and its new path works.
+Moving `Selected -> In progress` additionally requires a complete test card, authority tuple, touched-path record, and authoring/Shipping-erasure card. Moving `In progress -> Accepted` requires final candidate dispositions and their deletion/boundary proof, one cohesive production path, intent-first authoring, and optimized Shipping erasure. Passing a Development build alone is insufficient.
 
 ### Selection is not a feature-flag framework
 
 Feature selection primarily controls what code is implemented and retained. Do not add a compile-time or runtime switch for every package.
 
-- Fixed stat groups that ship are entries in one bounded catalog and use typed runtime demand.
-- Build switches exist only for real distribution or dependency boundaries, such as whether a vendor capture adapter may be compiled and packaged.
-- Launch options such as `-Pix`, `-RenderDoc`, and `-Nsight` express immutable process-start intent; they do not make unbuilt providers appear available.
+- Fixed stat groups retained in profiling-capable Debug/Development builds are entries in one bounded catalog and use typed runtime demand.
+- The existing Debug/Development-versus-Shipping profile is the single product eligibility boundary. Additional build switches exist only for a real optional dependency inside eligible builds, such as a selected vendor adapter; do not add one switch per metric/group/package.
+- Launch options such as `-Pix`, `-RenderDoc`, and `-Nsight` express immutable process-start intent only in an eligible build; they do not make unbuilt providers appear available and have no diagnostic handler in stripped Shipping.
 - Deferred packages leave no compatibility layer, placeholder menu item, empty source file, or reserved public API.
 - A prototype that fails its acceptance test is removed in the same package unless an explicitly selected follow-up consumes it.
 
@@ -298,13 +348,15 @@ Feature selection primarily controls what code is implemented and retained. Do n
 Every selected feature must reconcile current candidates and reach one real consumer in the same package:
 
 ```text
-overlap search -> disposition -> typed demand -> authoritative producer
-               -> bounded publication -> immutable model
-               -> one presenter/exporter -> tests/evidence
-               -> obsolete path/API/dependency/docs removed
+complete touched-flow audit -> refactor canonical base owners
+        -> overlap search -> disposition -> typed demand
+        -> authoritative producer -> bounded publication -> immutable model
+        -> one presenter/exporter -> tests/evidence
+        -> authoring-isolation + Shipping-erasure proof
+        -> obsolete path/API/dependency/docs removed -> complexity re-audit
 ```
 
-Do not land a horizontal “diagnostics framework” with no accepted row, view, capture, or export. Do not add a second collector for a second presenter. Editor and DevelopmentGame may render differently, but they consume the same Application-owned truth and submit the same typed requests.
+Do not land a horizontal “diagnostics framework” with no accepted row, view, capture, or export. Do not add a second collector for a second presenter. Editor and DevelopmentGame may render differently, but they consume the same Application-owned truth and submit the same typed requests. The real-work path remains the same in profiling-capable and stripped builds; only owner-local static seams and separately composed diagnostics disappear.
 
 ### What may be frozen
 
@@ -325,24 +377,31 @@ Copy this compact record into the active change description and update this tabl
 | ID | Package | Kind | Initial state | Hard dependencies |
 | --- | --- | --- | --- | --- |
 | `P0-GATE` | Reconcile contracts, baseline, and selected scope | Gate | Required | None |
-| `FND-01` | Application session, demand, join, and immutable publication | Spine | Available | `P0-GATE` |
+| `EXT-00` | External-provider launch, stable marker-only correlation, capability, arbitration, and icon-group spine | Spine | Selected | `P0-GATE` |
+| `EXT-01` | PIX capture on D3D12 | Feature | Selected | `EXT-00` |
+| `EXT-02` | RenderDoc capture on D3D12 | Feature | Selected | `EXT-00` |
+| `EXT-03` | RenderDoc capture on Vulkan | Feature | Selected | `EXT-00` |
+| `EXT-04` | Nsight Graphics capture on D3D12, experimental until its matrix passes | Feature | Selected | `EXT-00`; runbook matrix passes |
+| `EXT-05` | Nsight Graphics capture on Vulkan, experimental until its matrix passes | Feature | Selected | `EXT-00`; runbook matrix passes |
+| `P1-GATE` | External capture lifecycle, compatibility, artifact, authoring, and Shipping-erasure checks | Gate | Required | Final decisions for `EXT-00`–`EXT-05` |
+| `FND-01` | Application session, demand, join, and immutable publication | Spine | Available | `P1-GATE` |
 | `FND-02` | Host phase and frame-interval measurements | Feature | Available | `FND-01` |
 | `FND-03` | Renderer CPU stages, queue waits, and top-level GPU queue spans | Feature | Available | `FND-01` |
 | `FND-04` | Process working set and private commit | Feature | Available | `FND-01` |
 | `FND-05` | GPU-memory polling identity and neutral segment model | Feature | Available | `FND-01` |
-| `P1-GATE` | Foundation semantics, concurrency, and bound checks | Gate | Required | Selected `FND-*` packages |
+| `P2-GATE` | Foundation semantics, concurrency, bounds, authoring, and Shipping-erasure checks | Gate | Required | Selected `FND-*` packages |
 | `ORI-01` | Shared typed `Stat` command registration | Spine | Available | `FND-01` |
 | `ORI-02` | `Fps` compact group | Feature | Available | `FND-01`, `FND-02`, `ORI-01` |
 | `ORI-03` | `Unit` compact group and limiting-domain hint | Feature | Available | `FND-01`–`FND-03`, `ORI-01` |
 | `ORI-04` | `UnitGraph` from the joined history | Feature | Available | `ORI-03` |
 | `ORI-05` | Editor `Quick Check` and viewport summary | Feature | Available | `ORI-03` |
 | `ORI-06` | DevelopmentGame compact presenter | Feature | Available | `ORI-01` and one selected compact group |
-| `P2-GATE` | First-product usability, cost, and stale-path checks | Gate | Required | Selected `ORI-*` packages |
+| `P3-GATE` | First-product usability, cost, stale-path, authoring, and Shipping-erasure checks | Gate | Required | Selected `ORI-*` packages |
 | `EVD-01` | Deterministic evidence request, readiness, resolution, and viewport sidecar | Spine | Available | `FND-01` |
 | `EVD-02` | Raw samples, manifest, and summary export | Feature | Available | `EVD-01`, `FND-02`–`FND-05` |
 | `EVD-03` | `MAP-00` Sponza calibration run | Feature | Available | `EVD-02` |
 | `EVD-04` | Repeated-run comparison and regression analysis | Feature | Available | `EVD-02`, `EVD-03` |
-| `P3-GATE` | Evidence reproducibility and no-default-files check | Gate | Required | Selected `EVD-*` packages |
+| `P4-GATE` | Evidence reproducibility, no-default-files, authoring, and Shipping-erasure check | Gate | Required | Selected `EVD-*` packages |
 | `INV-00` | One fixed Performance workspace and shared selection | Spine | Available | `FND-01` |
 | `CAP-00` | Fixed GPU token/query plan preserving parallel recording | Spine | Available | `FND-03` |
 | `INV-01` | CPU/Threads view with physical and logical ownership | Feature | Available | `INV-00`, `FND-02`, `FND-03` |
@@ -353,30 +412,23 @@ Copy this compact record into the active change description and update this tabl
 | `INV-06` | Task-lane aggregates | Feature | Available | `INV-00`, `INV-01` |
 | `INV-07` | Scene cardinality | Feature | Available | `INV-00`; existing production-owner counters |
 | `INV-08` | Bounded hitch list and shared-frame navigation | Feature | Available | `INV-00`, `ORI-04` |
-| `P4-GATE` | Investigation value, bounds, and presenter checks | Gate | Required | Selected `INV-*`/`CAP-00` packages |
 | `CAP-01` | One frozen `ProfileGpu` capture | Feature | Available | `CAP-00`, `INV-00`, `INV-02` |
-| `EXT-00` | External-provider launch, capability, arbitration, and icon-group spine | Spine | Available | `FND-01` |
-| `EXT-01` | PIX capture on D3D12 | Feature | Available | `EXT-00` |
-| `EXT-02` | RenderDoc capture on D3D12 | Feature | Available | `EXT-00` |
-| `EXT-03` | RenderDoc capture on Vulkan | Feature | Available | `EXT-00` |
-| `EXT-04` | Nsight Graphics capture on D3D12, experimental | Feature | Available | `EXT-00`; runbook matrix passes |
-| `EXT-05` | Nsight Graphics capture on Vulkan, experimental | Feature | Available | `EXT-00`; runbook matrix passes |
-| `P5-GATE` | Capture lifecycle, topology, compatibility, and artifact checks | Gate | Required | Selected `CAP-01`/`EXT-*` packages |
+| `P5-GATE` | Internal investigation/capture value, bounds, topology, authoring, and Shipping-erasure checks | Gate | Required | Selected `INV-*`/`CAP-*` packages |
 | `FIN-01` | Product/backend/build matrix for the accepted set | Gate | Required | All accepted packages |
 | `FIN-02` | Failure, device-loss, shutdown, and stale-generation audit | Gate | Required | All accepted packages |
 | `FIN-03` | Observer cost, capacity calibration, and soak evidence | Gate | Required | All accepted packages |
 | `FIN-04` | Replacement deletion, documentation, and final shipment ledger | Gate | Required | `FIN-01`–`FIN-03` |
 
-The dependencies express capability, not schedule preference. For example, selecting `EVD-03` intentionally pulls in the complete evidence path needed by `MAP-00`. Selecting only `ORI-02` does not.
+After the mandatory external-first `P1-GATE`, dependencies express capability rather than preference among optional packages. For example, selecting `EVD-03` intentionally pulls in the complete evidence path needed by `MAP-00`; selecting only `ORI-02` does not. No post-P1 package bypasses the external gate.
 
 Example selections make the intended granularity concrete:
 
 | Desired shipment | Select | Close without optional delivery |
 | --- | --- | --- |
-| Honest FPS only | `FND-01`, `FND-02`, `ORI-01`, `ORI-02`, then `FIN-*` | Remaining Phase 1 features and Phases 3–5 |
-| `MAP-00` evidence harness without a large in-editor profiler | `FND-01`–`FND-05`, `EVD-01`–`EVD-03`, then `FIN-*`; add orientation packages only if wanted | Unselected Phase 2, 4, and 5 features |
-| RenderDoc Vulkan viewport button only | `FND-01`, `EXT-00`, `EXT-03`, then `FIN-*` | Phase 1's other features and all optional Phase 2–4 packages |
-| Internal GPU investigation | `FND-01`, `FND-03`, `INV-00`, `INV-02`, `CAP-00`, then `INV-03` and/or `CAP-01`, followed by `FIN-*` | Unrelated CPU, memory, evidence, scene, task, and external-provider packages |
+| External capture product only | `EXT-00`–`EXT-05`, close `P1-GATE`, then `FIN-*` | Every internal `FND`/`ORI`/`EVD`/`INV`/`CAP` package |
+| Honest FPS after external capture | `EXT-00`–`EXT-05`, close `P1-GATE`, then `FND-01`, `FND-02`, `ORI-01`, `ORI-02`, and `FIN-*` | Remaining Phase 2–5 packages |
+| `MAP-00` evidence harness without a large in-editor profiler | Complete `EXT-00`–`EXT-05`/`P1-GATE`, then select `FND-01`–`FND-05`, `EVD-01`–`EVD-03`, and `FIN-*`; add orientation packages only if wanted | Unselected Phase 3 and Phase 5 features |
+| Internal GPU investigation | Complete `EXT-00`–`EXT-05`/`P1-GATE`, then select `FND-01`, `FND-03`, `INV-00`, `INV-02`, `CAP-00`, `INV-03` and/or `CAP-01`, followed by `FIN-*` | Unrelated CPU, memory, evidence, scene, and task packages |
 
 In every example, the phase gates are still reviewed and closed in order. A package listed in a later phase is not implemented early merely because its dependencies are small.
 
@@ -392,6 +444,7 @@ Revalidate this table with `rg` at the start of each phase and reconcile it into
 | Console parsing | Core `ConsoleCommandRegistry`, hosted by `EditorConsoleSystem` and `RuntimeConsoleOverlay` | Add one registration function used by both composition roots. The UI sends typed requests directly; it never formats a console command. |
 | Renderer cross-thread control/publication | `RenderCoordinator`, `RenderControlCommandQueue`, and `PublishReadState` | Extend the existing bounded control/read-state route with diagnostics request/result products. Avoid synchronous per-frame queries and avoid a second mailbox framework. |
 | Renderer execution measurements | `FramePipeline`, frame-graph executor, and existing diagnostic scopes | Instrument fixed owner boundaries and publish one bounded frame result keyed by `FrameId`. Do not scan the graph after execution merely to populate counters. |
+| Content/feature authoring | Levels/content, gameplay systems, tasks, frame-graph passes, resources, and draws already declare real work to their owners | Derive facts at orchestration/compile/submit/allocator boundaries. Require zero diagnostics maintenance from content/feature authors; allow only a sparse static semantic token for a genuinely new owner boundary. Remove manual/dynamic instrumentation instead of copying it. |
 | GPU timing | `FrameExecutionDiagnostics` and backend `RenderTimingDiagnostics` | Replace dynamic strings/vectors/mutex completion with stable tokens, fixed records, preassigned per-recording-chunk ranges, deterministic merge, and bounded loss for the accepted live/capture path. |
 | Parallel command recording | `FrameGraphRecordingExecutor::ShouldRecordBatchInParallel` | Remove the `!CVarRendererDiagnosticGpuTiming` topology change before accepting `CAP-00`, `INV-03`, or `CAP-01`. A captured profile must not silently serialize normal recording. |
 | GPU memory | RHI `RenderMemoryDiagnostics` and Renderer `RendererMemoryMonitor` | Reuse allocator facts. Correct the monitor to use logical `FrameId` or monotonic time rather than the wrapping frame-in-flight slot; preserve local/non-local and used/allocated/budget distinctions. |
@@ -402,7 +455,7 @@ Revalidate this table with `rg` at the start of each phase and reconcile it into
 | Viewport screenshot | `EditorViewportCaptureCoordinator` plus Renderer/RHI readback | Keep it as image capture and reuse its nonblocking lifecycle lessons only. External profiler capture is a different operation and must not overload `RhiCaptureService`. |
 | Pre-device integrations | `RendererExternalRuntime` builds immutable `RendererBackendConfiguration` before `RenderCoordinator` creates the backend | Extend this existing process-facing owner with launch intent and capture bootstrap. Do not add a competing startup integration service. |
 | Backend diagnostics | `RenderHardwareInterface::GetDiagnostics()` returns neutral RHI diagnostic services | Add only the narrow neutral capture capability/request/result needed above RHI. Native APIs, handles, DLLs, SDK state, and provider objects remain in D3D12/Vulkan private adapters. |
-| Build membership | Module `CMakeLists.txt` files glob owned Public/Private sources; RHI composes common and backend-specific targets | Put files under the current owner and add explicit optional SDK/package rules only where provider eligibility requires them. Do not introduce a Diagnostics module. |
+| Build membership | Canonical profiles already define `SPARKLE_BUILD_SHIPPING`; module `CMakeLists.txt` files glob owned Public/Private sources; RHI composes common/backend targets | Use the existing profile as one eligibility boundary: include diagnostic implementations/dependencies in Debug/Development and exclude them from Shipping target/link/package membership. Keep sparse owner seams compile-time empty and proven absent. Add optional SDK rules only inside eligible provider builds. Do not introduce a Diagnostics module or per-feature switches. |
 | Tests | Existing CTest executables are co-located under module `Tests` | Add small pure tests with the first testable contract in its owning module. Do not build a generic diagnostics test framework. |
 
 ## Target Shape
@@ -437,6 +490,12 @@ Timer->| session + typed demand + FrameId join + bounded ring|
 
 The data direction is always producer to immutable result to Application join to presenter/export. A UI request travels back through a typed bounded command. No panel reads renderer storage, waits for the RenderThread, receives a vendor handle, or owns capture state.
 
+```text
+Shipping: Application product orchestration -> Renderer real work -> RHI real work
+          (no diagnostics session, collector, history, query/marker fanout,
+           presenter/exporter, provider adapter, or diagnostic call branch)
+```
+
 ## Phase 0 — Reconcile And Choose
 
 ### Test it first
@@ -456,10 +515,12 @@ Close uncertainty before code without creating speculative frozen contracts. The
 1. Re-read the authority documents listed above and every standard selected by the touched packages.
 2. Use `rg` to revalidate the current owners, producers, consumers, thread lifetimes, CMake membership, tests, and any overlapping uncommitted work.
 3. Build the authority tuple and duplicate-candidate ledger for every selected concept. Search names, semantic equivalents, callers, commands, flags, schemas, tests, and dependencies; assign each candidate one allowed disposition and name the deletion or separation proof.
-4. Mark every `FND-*` package `Selected`, `Deferred`, or `Rejected`. A later phase may promote a deferred package only by reopening dependency review.
-5. Capture a source-backed control run with diagnostics timing disabled and the existing thread names/ETW/GPU markers. Record product, backend, build profile, pipeline mode/depth, resolution, VSync/presentation policy, adapter/driver, commit, and known invalid data.
-6. For each selected foundation metric, write its producer, physical owner, logical phase, clock, unit, interval, inclusion/exclusion rule, `FrameId`, validity, and consumer in the implementation change description.
-7. Size the first fixed record/ring from `sizeof`, update cadence, retention need, and a deliberate overflow test. Architecture capacities remain hypotheses until this check.
+4. Complete the [Touched-Path Integration](#touched-path-integration) record for every selected package and reject speculative interfaces or scaffolding before code exists.
+5. Audit one representative content/feature workflow, current diagnostic call sites, and build/CMake/package membership. Fill the authoring/Shipping-erasure card and name the automatic owner seam plus optimized artifact proof for every selected package.
+6. Keep `EXT-00`–`EXT-05` selected, revalidate each current provider/backend/tool prerequisite, and define the exact success or evidence-backed rejection condition. Leave internal `FND-*` packages `Available` until the external gate closes; recording later priorities is allowed, implementation is not.
+7. Capture a source-backed control run with diagnostics timing disabled and the existing thread names/ETW/GPU markers. Record product, backend, build profile, pipeline mode/depth, resolution, VSync/presentation policy, adapter/driver, commit, and known invalid data.
+8. For each external provider, record launch/bootstrap order, backend/device/present-target owner, capability and marker-only correlation contract, viewport/`FrameId` identity, request/state/artifact lifetime, conflict policy, failure/timeout/shutdown behavior, and consumer.
+9. Size the fixed provider set, request/result/state records, reason/artifact metadata, and timeouts from current provider needs; no internal timing query/history/session capacity is introduced in this phase.
 
 ### Positive guardrails
 
@@ -477,8 +538,10 @@ Close uncertainty before code without creating speculative frozen contracts. The
 
 ### Exit gate
 
-- The selected foundation set and all hard dependencies are explicit.
+- The complete external provider set, current compatibility matrix, and every acceptance/rejection condition are explicit; internal packages remain unimplemented.
 - Every known and newly discovered overlap has one allowed disposition; no ambiguous owner or parallel route is approved for implementation.
+- Every selected package has a complete touched-path record and satisfies the applicable Engineering standards.
+- Authoring remains intent-first, facts have automatic low-level owner seams, and the Development/Shipping source/link/package boundary plus erasure proof is defined before implementation.
 - The baseline is reproducible and names invalid/unavailable observations.
 - No code or document claims a proposed metric is implemented.
 - `git diff --check` passes for any reconciliation edits.
@@ -493,18 +556,120 @@ wireframes, runbook, acceptance workload, AGENTS.md, and all applicable
 engineering standards. Reconcile current code owners, consumers, lifetimes,
 thread boundaries, CMake membership, tests, and dirty work with rg. Fill the
 authority tuple and duplicate-candidate ledger; give every candidate one allowed
-disposition and name exact deletion or boundary proof. I select
-these foundation packages: <FND IDs>. Mark every other FND package Deferred or
-Rejected with a reason; do not create stubs for it. Capture the smallest honest
-serial/threaded baseline and define every selected metric's owner, clock, unit,
-FrameId, validity, and inclusion rule. Resolve only decisions required by the
-selected packages. Make no product feature and no generic diagnostics framework.
+disposition and name exact deletion or boundary proof. Complete the touched-path
+record under the applicable Engineering standards. Audit representative content authoring,
+derive facts at existing low-level owners, fill the authoring/Shipping-erasure
+card, and reject runtime-disabled Shipping residue. I select these external packages:
+PIX D3D12, RenderDoc D3D12/Vulkan, and Nsight Graphics D3D12/Vulkan through
+EXT-00–EXT-05; none may be silently deferred. Revalidate each installed/current
+provider matrix and define evidence-backed rejection where a declared path is
+actually unsupported. Leave all internal FND/ORI/EVD/INV/CAP packages unimplemented.
+Capture the smallest honest serial/threaded baseline and define external launch,
+capability, marker-only identity, target, state, conflict, timeout, artifact, and
+failure semantics. Resolve only decisions required by the external slice. Make no
+internal collection session, stat product, or generic diagnostics framework.
 Run the baseline roster, give the user its symptom/blind-spot matrix to review,
 and do not close P0 before that AC decision. Report exact evidence and update the
 single delivery ledger.
 ```
 
-## Phase 1 — Build The Bounded Data Spine
+## Phase 1 — Prove External Capture End To End
+
+### Test it first
+
+Use Sponza for the first capture, then exercise every provider on each declared backend across the supported-map roster. This phase uses existing host `FrameId`, viewport identity, and marker-only boundaries for correlation; it does not wait for or create Sparkle's internal timing/history product. Captures are explicit, and large native artifacts may be linked from the sweep rather than committed.
+
+| ID | User action | Expected criteria | Required reading task |
+| --- | --- | --- | --- |
+| `EXT-00` | Launch with no provider, every provider alone, each pair, and the combined requested set; inspect all renderable viewports and click a second icon while one capture is active. | Per-provider capability/state is independent; only requested or detected capable icons appear; clicked provider/viewport identity survives; compatibility conflicts and global `Busy` are explicit; no native handle/provider API reaches Editor. | Classify every provider/backend/version/combination as supported, unavailable, experimental, or evidence-backed rejected before the gate closes. |
+| `EXT-01` | Launch `DevelopmentEditor` D3D12 with `-Pix`, then click the PIX mini icon in the intended viewport. | Correct pre-device setup, device/swapchain/present target, next valid frame, stable Sparkle marker tree/bookmark, artifact/native handoff, absent-tool behavior, and exactly-once failure/shutdown. | Open the artifact, identify the Sparkle frame/marker path, and state whether capture target and marker correlation are trustworthy. |
+| `EXT-02` | Launch `DevelopmentEditor` D3D12 with `-RenderDoc`, then click its icon. | Correct supported bootstrap/injection route and D3D12 present target; next-frame capture opens with stable markers and validation-clean state; absent tool remains honest. | Inspect one known pass/resource/pipeline state and record what RenderDoc proves that icon visibility alone does not. |
+| `EXT-03` | Launch `DevelopmentEditor` Vulkan with `-RenderDoc`, then click its icon. | Vulkan layer/bootstrap order, device/swapchain selection, next-frame artifact, marker parity, and Vulkan validation pass; D3D12 and Vulkan expose the same neutral state meanings. | Compare D3D12/Vulkan marker and target identity and explain any backend-specific capture limitation. |
+| `EXT-04` | Build the currently eligible Nsight Graphics D3D12 adapter, launch with `-Nsight`, then click its icon. | Installed SDK/tool matrix is revalidated; next-frame target, marker correlation, failure/timeout/shutdown, pairwise compatibility, and experimental status are honest. | Open the capture and decide whether the current matrix supports production use, remains experimental, or must be rejected with evidence. |
+| `EXT-05` | Repeat `EXT-04` on Vulkan. | Required layer/extension/device path and provider compatibility pass, or the adapter is evidence-backed rejected rather than emulated or retained as a stub. | Compare with D3D12 or state the exact current limitation and removal/retest condition. |
+
+For every provider and eligible combination, capture Sponza first and then one artifact per supported map/backend. Confirm all capable icons coexist in stable order, click each in turn, and verify non-active icons report global `Busy` instead of capturing simultaneously. A provider is not accepted from startup, icon visibility, marker emission, or one lucky frame.
+
+### Outcome
+
+PIX, RenderDoc, and Nsight hooks are proven before internal profiling begins. The result is a complete external path—launch intent, bootstrap, capability, marker-only correlation, viewport action, request/arbitration, native capture, artifact handoff, failure/shutdown, absent-tool behavior, and Shipping erasure—not a provider scaffold.
+
+### `EXT-00` external-provider and marker-only spine
+
+Implement this once for all five selected adapters without depending on `FND-01`, internal GPU timestamps, joined history, stat groups, evidence export, or the Performance workspace.
+
+- Parse the combinable immutable provider intent before Renderer/device creation.
+- Extend `RendererExternalRuntime` and `RendererBackendConfiguration`; keep provider bootstrap and native capture calls in RHI-private D3D12/Vulkan adapters.
+- Separate stable external marker fanout from internal timestamp collection. Reuse existing frame-graph/pass ownership, introduce only the fixed static token/schema needed for cross-tool correlation, and keep timestamp queries off and unimplemented in this phase.
+- Publish the fixed provider set and bounded `NotRequested`, `Unavailable`, `Ready`, `Armed`, `Capturing`, `Completed`, `Failed`, and `Busy` result through the existing Renderer read-state route and a narrow immutable Application-to-Editor projection. This external-capture product remains a stable submodel when `FND-01` later arrives; it is not migrated into a second state owner.
+- Render one far-right mini icon per requested or detected capable provider in every renderable viewport. Multiple icons may coexist.
+- Each click sends one typed request naming provider, stable viewport/present-target token and generation, and expected next valid frame identity. Editor receives no native window/device/queue/swapchain/provider handle.
+- Serialize capture globally initially. Other icons remain visible and report `Busy`; exact provider pairs may become concurrently eligible only after their versioned compatibility test passes.
+- Arm at the backend's safe present boundary. Resize, minimize, zero extent, stale viewport generation, timeout, device loss, viewport destruction, and shutdown settle once.
+- Keep native artifacts native. Sparkle publishes bounded status/provenance and the provider handoff/path only when supplied.
+- Keep content, gameplay, pass bodies, and ordinary feature authoring provider-agnostic. Stable markers come from existing owner plans or one justified static owner token.
+- Exclude all provider parsing, bootstrap, adapters, state, icons/assets, marker strings/fanout, imports, SDKs, layers, DLLs, and call sites from Shipping.
+
+### Provider feature packages
+
+| ID | Delivery | Required proof before `Accepted` |
+| --- | --- | --- |
+| `EXT-01` | PIX capture, D3D12 | Optimized Development startup; capture capability distinct from marker-only runtime; selected viewport/next-frame correctness; artifact/native handoff; normal run without PIX installed; pairwise compatibility; failure/shutdown; runbook operation. |
+| `EXT-02` | RenderDoc capture, D3D12 | Supported pre-device route, correct present target, API validation, artifact, absent-tool run, pairwise PIX/Nsight outcomes, and clean relaunch. |
+| `EXT-03` | RenderDoc capture, Vulkan | Layer/bootstrap ordering, correct device/swapchain target, Vulkan validation, artifact, neutral-state parity, pairwise outcomes, and clean relaunch. |
+| `EXT-04` | Nsight Graphics capture, D3D12 | Current runbook/SDK matrix, explicit experimental eligibility until it passes, artifact or evidence-backed rejection, failure semantics, pairwise compatibility, and no mandatory dependency. |
+| `EXT-05` | Nsight Graphics capture, Vulkan | `EXT-04` proof plus Vulkan layer/extension/device and validation evidence. Reject and delete rather than emulate when the current supported matrix cannot provide capture. |
+
+### Positive guardrails
+
+- Revalidate primary provider documentation and installed versions through the runbook immediately before implementation.
+- Deliver one provider end to end, then the remaining adapters through the same neutral contract; complete all selected providers before `P1-GATE`.
+- Use optimized Development builds, existing marker/pass ownership, backend-native validation, stable viewport identity, and native artifacts.
+- Test no provider, each provider, pairwise requested sets, the combined set, absent tools, relaunch, and clean shutdown.
+- Preserve screenshot readback as a separate image-capture responsibility and preserve normal rendering without an attached provider.
+
+### Negative guardrails
+
+- No internal Application performance session, live history, stat catalog, GPU timestamp/query pool, GPU visualizer, benchmark exporter, or internal `ProfileGpu` work in this phase.
+- No late device injection, vendor APIs above RHI private, static RenderDoc linkage, mandatory beta SDK dependency, or provider-specific Editor state machine.
+- No unrequested permanent icons, launch-intent-only `Ready`, hidden provider precedence, simultaneous capture assumption, or silently selected fallback provider.
+- No capture of whichever window presents first, stale viewport target, blocking UI/RenderThread wait, screenshot-service overload, automatic disk capture, or embedded profiler replacement.
+- No provider or marker payload in Shipping and no provider knowledge in content/feature/pass authoring.
+
+### `P1-GATE` exit
+
+- `EXT-00` is accepted and each of `EXT-01`–`EXT-05` is `Accepted` or evidence-backed `Rejected`; none is `Deferred`, stubbed, or represented by an untested icon.
+- Every accepted provider passes its declared backend/version/product matrix, absent-tool launch, next-valid-frame clicked-viewport capture, artifact/native handoff, and all-map sweep.
+- Multiple provider icons coexist independently; compatibility conflicts and one global capture arbitration state are honest and exactly-once.
+- Launch parsing, bootstrap, capability, marker identity, request/state, target binding, artifact, and presentation each have one owner; screenshot and external capture remain boundary-tested separate responsibilities.
+- Marker-only correlation works without any internal timestamp/history/session product and preserves normal rendering/recording topology.
+- Content/feature/pass authoring remains provider-agnostic, and Shipping configures without profiler SDKs and contains no external-capture/marker payload or dependency.
+- Timeout, resize/minimize, stale viewport, device loss, finalization, failure, clean relaunch, and shutdown tests pass.
+- Native validation, `architecture_boundary_check`, relevant builds/tests, provider artifacts, and `git diff --check` pass.
+
+### Ready-to-use implementation prompt
+
+```text
+Implement Performance Diagnostics phase 1 external capture only: EXT-00 through
+EXT-05. Begin with the test/authoring/Shipping cards and the Sponza, all-map,
+backend, provider-alone, pairwise, combined, absent-tool, failure, and relaunch
+matrix. Revalidate the profiler runbook and current primary PIX, RenderDoc, and
+Nsight Graphics documentation/tool versions. Complete the touched-path record
+and authority/duplicate ledger. Extend RendererExternalRuntime,
+the existing Renderer read-state/control route, and backend-private RHI adapters.
+Build only the stable marker-only schema needed for native correlation; do not
+create FND/ORI/EVD/INV/CAP internal timing, history, stat, export, or ProfileGpu
+code. Publish one neutral bounded provider model and typed provider+viewport
+request; render multiple conditional icons but serialize captures globally until
+an exact compatibility test permits otherwise. Keep content/feature/pass authoring
+provider-agnostic. Prove Shipping configures without profiler SDKs and contains no
+provider parser/bootstrap/adapter/state/icon/marker string/import/staged binary or
+call site. Reject and delete an adapter only with current source/tool/smoke evidence;
+never leave a stub. Hand the user every artifact and compatibility decision. Do
+not start internal diagnostics before P1-GATE is accepted.
+```
+
+## Phase 2 — Build The Bounded Data Spine
 
 ### Test it first
 
@@ -518,11 +683,11 @@ Fill one test card per selected `FND-*` package before editing. Add the named de
 | `FND-04` | `process_memory_diagnostics`: injected values, unsupported platform, cadence, high-water reset semantics. | Observe at least 60 settled seconds per map or the complete quantitative run. Working set/private commit are nonzero on Windows, sampled at the declared cadence, aged visibly, and never mislabeled as allocation detail. | Rank current and session-high-water values; identify growth between start/end and distinguish working set from private commit. |
 | `FND-05` | `renderer_memory_monitor`: frame-slot wrap, monotonic cadence, unavailable budget, segment/category bounds. | Sweep all maps/backends. Tracked used does not exceed its corresponding allocated/block amount; local/non-local/budget/retirement fields are distinct or explicitly unavailable; polling survives frame-slot wrap. | Rank GPU current/high-water and pressure per map; compare Modern Sponza/Bistro families with Empty and name missing backend facts. |
 
-Phase-1 instrumentation passes only if its Sponza and full-map records meet the universal AC and the selected metrics already expose a useful map-to-map difference or honestly show no difference. A test-only producer with no path to a selected Phase-2/3/4/5 consumer is not a shippable delivery.
+Phase-2 instrumentation passes only if its Sponza and full-map records meet the universal AC and the selected metrics already expose a useful map-to-map difference or honestly show no difference. A test-only producer with no path to a selected Phase-3/4/5 consumer is not a shippable delivery.
 
 ### Outcome
 
-Selected domains can publish correlated facts without blocking one another. Application owns one session and immutable read product; no UI is required to prove the spine.
+Selected domains can publish correlated facts without blocking one another. Application owns one internal session and immutable read product; no internal stat UI is required to prove the spine. The Phase 1 external-capture projection remains a stable composed submodel and keeps its existing request, arbitration, and provider owners.
 
 ### Package deliveries
 
@@ -530,7 +695,7 @@ Selected domains can publish correlated facts without blocking one another. Appl
 
 Value: establishes one authority for collection mode, generation, selection, delayed joins, history, and read snapshots so later features do not each invent state.
 
-Implement one Application-owned session with bounded typed demand and fixed-capacity `FrameId` joins. Producers may arrive late or out of order. Publication never waits for a missing Renderer/GPU result, never relabels an old result as current, and never combines mismatched frame identities for a correlated claim. Keep the Application-to-Editor adaptation at the existing `SparkleApplicationEditor` composition boundary to avoid an Editor/Application dependency cycle.
+Implement one Application-owned session with bounded typed demand and fixed-capacity `FrameId` joins. Producers may arrive late or out of order. Publication never waits for a missing Renderer/GPU result, never relabels an old result as current, and never combines mismatched frame identities for a correlated claim. Compose the already accepted external-capture projection into this immutable product without copying its state or changing its request/arbitration owners. Keep the Application-to-Editor adaptation at the existing `SparkleApplicationEditor` composition boundary to avoid an Editor/Application dependency cycle.
 
 Acceptance: deterministic tests cover generation changes, delayed/out-of-order results, stale rejection, missing fields, overflow/loss accounting, mode demotion, and shutdown with work in flight.
 
@@ -582,10 +747,12 @@ Acceptance: frame-in-flight wrap test, cadence test, unavailable-budget test, an
 - No second scheduler, worker pool, mailbox framework, or global Core profiler singleton.
 - No public type merely because a future package might use it.
 
-### `P1-GATE` exit
+### `P2-GATE` exit
 
 - Every selected foundation feature has a real producer and deterministic consumer/test.
 - Every authority tuple is complete; no selected metric has a second collector, mutable owner, request route, history, or public facade, and every replaced path is absent from the build.
+- The complete Timer/Application/Renderer/RHI/Platform path touched by each package was audited and refactored in its canonical owners; the session is not a clean facade over weak synchronous callbacks, ambiguous identities, or unbounded storage.
+- Representative content/gameplay/pass authoring needs no diagnostics maintenance; selected facts derive from existing owner boundaries, and optimized Shipping artifacts contain no foundation session, sample path, diagnostic memory polling, timers/queries, storage, strings, or call branches.
 - Owner/thread/lifetime assertions and overflow behavior are covered.
 - `sizeof` and total retained bytes are recorded and within the calibrated bound.
 - Serial and threaded behavior retain identical meanings; missing data stays visibly invalid.
@@ -594,12 +761,16 @@ Acceptance: frame-in-flight wrap test, cadence test, unavailable-budget test, an
 ### Ready-to-use implementation prompt
 
 ```text
-Implement only these selected phase-1 packages: <FND IDs>. Before editing, fill
+Implement only these selected phase-2 packages: <FND IDs>. Before editing, fill
 one test card per package with its named deterministic test, Sponza shakedown,
 13-map/backend sweep, expected validity/loss behavior, and owner reading AC. Fill
 the authority tuple, search for semantic and name-level overlaps, assign every
-candidate one disposition, and name the old symbols/dependencies to remove. The
-P0 gate and all hard dependencies are accepted. Extend RuntimeApplication, the existing
+candidate one disposition, and name the old symbols/dependencies to remove. Complete
+the touched-path record before adding the feature. P0-GATE, P1-GATE, and all hard dependencies
+are accepted; preserve the completed external-capture path without widening it.
+Keep authoring code intent-only, derive facts at existing low-level owners, and
+prove each diagnostic implementation/seam is absent from optimized Shipping
+objects, links, packages, and runtime. Extend RuntimeApplication, the existing
 RenderCoordinator control/read-state path, Renderer diagnostics, RHI diagnostics,
 and Platform only where their current responsibility requires it. Application
 owns session/demand/join/publication; domains own measurements. Use bounded fixed
@@ -612,7 +783,7 @@ interpretation questions; keep the package In progress until reviewed. Report
 exact build/test/boundary and evidence results.
 ```
 
-## Phase 2 — Ship The First Orientation Surface
+## Phase 3 — Ship The First Orientation Surface
 
 ### Test it first
 
@@ -631,7 +802,7 @@ The owner accepts a package only after reading the all-map summary and deciding 
 
 ### Outcome
 
-Deliver only the compact groups and presenters the owner selects. Every surface is a view over the Phase-1 product, not a new measurement path.
+Deliver only the compact groups and presenters the owner selects. Every surface is a view over the Phase 2 internal product, not a new measurement path; any external-capture action remains a projection of the independent Phase 1 product.
 
 ### Package deliveries
 
@@ -673,10 +844,12 @@ Render selected compact groups through the existing runtime console/UI packet pa
 - No silent group eviction, silent Detailed promotion, or zero used for unavailable data.
 - No duplicate FPS, histories, aggregators, or render callbacks left behind.
 
-### `P2-GATE` exit
+### `P3-GATE` exit
 
 - Selected commands autocomplete and behave identically in Editor and DevelopmentGame where eligible.
 - Command registration, frame/FPS meaning, history, demand, and presentation inputs each have one authority; the replaced ImGui/product and performance-callback routes are deleted where their consumers migrated.
+- Existing console, Application-to-Editor adaptation, runtime packet, and viewport UI flows are refactored where needed; presenters remain thin immutable views rather than glue over duplicate measurements or Renderer callbacks.
+- Groups and collection demand derive from user intent without content/feature registration; Shipping contains no performance command, row catalog, presenter/model, menu/window/icon/help string, or collection branch.
 - Selected compact UI matches the corresponding wireframe states at normal and narrow widths.
 - Keyboard-only access, non-color state labels, unavailable/stale/lost states, and overflow guidance pass.
 - Observer cost is within the declared hypothesis or the package is rejected/trimmed.
@@ -685,12 +858,16 @@ Render selected compact groups through the existing runtime console/UI packet pa
 ### Ready-to-use implementation prompt
 
 ```text
-Implement only these phase-2 orientation packages: <ORI IDs>. Begin with the test
+Implement only these phase-3 orientation packages: <ORI IDs>. Begin with the test
 card: exact Stat/menu action, Sponza expected state, all-map Editor/Game sweep,
 observer control, and the limiting-domain questions the user must answer. Fill
 the authority/duplicate-candidate ledger first; prove that multiple presenters
-share one model rather than retaining presenter-local measurements or histories. Use the
-accepted Application diagnostics snapshot and typed request path; do not add collectors.
+share one model rather than retaining presenter-local measurements or histories.
+Complete the touched-path record for the command/menu-to-producer-to-model-to-presenter
+path. Prove zero authoring work and strip
+the command/catalog/model/presenters/UI/assets plus their collection calls from
+Shipping rather than hiding them. Use the accepted Application
+diagnostics snapshot and typed request path; do not add collectors.
 Register one Stat command family through the existing Editor and runtime console
 composition. Replace overlapping ImGui FPS truth when ORI-05 is selected. Follow
 the compact layouts, row caps, validity, keyboard, and responsive behavior in the
@@ -701,7 +878,7 @@ all-map orientation/FrameId table, stale-path deletion, and exact validation.
 Keep the package In progress until the user accepts or rejects its interpretation.
 ```
 
-## Phase 3 — Deliver Reproducible Evidence
+## Phase 4 — Deliver Reproducible Evidence
 
 ### Test it first
 
@@ -714,7 +891,7 @@ Use `Capture Evidence...` (or the accepted typed benchmark entry) on Sponza firs
 | `EVD-03` | Run the workload's `MAP-00` sequence on Sponza. | `MAP-A`–`MAP-H` pass for the harness, with at least 300 warm-up and 300 valid sample frames, without claiming Sponza content/performance acceptance. | State what the harness can now prove, what remains uninstrumented, and which capacity/observer hypotheses were confirmed or falsified. |
 | `EVD-04` | Run at least three identical runs for each map being compared, then invoke the accepted offline comparison. | Per-run results remain primary; p50/p95/p99/worst, practical bands, uncertainty, equal-`N` rule, and `Inconclusive` are honored. | Rank all maps by comparable p95/worst behavior, identify unstable runs, and choose the highest-value discriminating experiment rather than optimizing the loudest single frame. |
 
-Phase-3 diagnosis AC is an auditable per-map distribution table with exact configurations and no unexplained omissions. It is acceptable for a map to be slow or inconclusive; it is not acceptable for its evidence to be incomparable or silently incomplete.
+Phase-4 diagnosis AC is an auditable per-map distribution table with exact configurations and no unexplained omissions. It is acceptable for a map to be slow or inconclusive; it is not acceptable for its evidence to be incomparable or silently incomplete.
 
 ### Outcome
 
@@ -754,10 +931,12 @@ Add only the analysis needed by a selected benchmark consumer: per-run distribut
 - No pooled runs that hide run identity and no p-value-only pass/fail.
 - No documentation screenshot presented as benchmark proof.
 
-### `P3-GATE` exit
+### `P4-GATE` exit
 
 - Every selected evidence package is reproducible from a clean declared configuration.
 - Runtime recording, artifact serialization, workload orchestration, and offline analysis each have one named owner; no view, harness, or report keeps an alternative sample store/schema.
+- The existing catalog/readiness/capture/artifact routes are integrated and improved in place; runtime orchestration, serialization, and offline analysis remain cohesive production responsibilities rather than one new report framework.
+- Ordinary level/content authoring never edits the evidence schema or diagnostics; evidence/session/export code, strings, file paths, requests, and dependencies are absent from Shipping.
 - Manifest and raw artifacts agree on frame range, populations, hashes, and capture identity.
 - A failed/interrupted run cannot masquerade as complete and restores prior catalog state.
 - Ordinary startup creates no report files.
@@ -766,11 +945,14 @@ Add only the analysis needed by a selected benchmark consumer: per-run distribut
 ### Ready-to-use implementation prompt
 
 ```text
-Implement only these phase-3 evidence packages: <EVD IDs>. Begin with the test
+Implement only these phase-4 evidence packages: <EVD IDs>. Begin with the test
 card and show how the user starts, cancels, opens, recomputes, and reviews a
 Sponza run before the full current supported-map sweep. Fill the authority tuple
 and candidate ledger first; identify every existing artifact/readback/workload
-route and assign each one a disposition before adding code. Integrate with the accepted
+route and assign each one a disposition before adding code. Complete the touched-path
+record for the evidence flow. Keep ordinary level/content authoring workflows free of evidence plumbing and prove
+the session/export/harness surface does not compile, link, register, or write in
+Shipping. Integrate with the accepted
 Application session, current level/catalog/readiness paths, viewport
 readback, and the MAP-00 artifact contract. Add one explicit typed request; no
 default files and no second sample store. Preserve raw records, FrameId,
@@ -782,7 +964,7 @@ per-map data plus the comparison questions; do not accept on generated files alo
 Report exact artifact paths, commands, results, unavailable checks, and ledger updates.
 ```
 
-## Phase 4 — Add Selected Investigation Depth
+## Phase 5 — Add Selected Internal Investigation Depth
 
 ### Test it first
 
@@ -791,7 +973,8 @@ Open the selected workspace/view on Sponza, verify selection and validity agains
 | ID | User action | Expected criteria | Required all-map interpretation AC |
 | --- | --- | --- | --- |
 | `INV-00` | Open Performance, switch selected views, select frames/ranges, return to Overview. | One workspace and one synchronized selection; no second history/catalog; banner/configuration and missing data remain visible. | Prove the same selected `FrameId`/range is shown across every selected view on Sponza and the worst map. |
-| `CAP-00` | Enable Detailed through `GpuPasses` or arm the later `ProfileGpu`; compare threaded recording on/off diagnostics. | Fixed records/tokens/parents, bounded truncation, deterministic merge, no completion-order hierarchy, and normal parallel recording/submission topology preserved. | Measure Detailed disturbance on Empty/Sponza/worst map and reject live detail if it changes the topology or exceeds its justified value. |
+| `CAP-00` | Enable Detailed through `GpuPasses` or arm `ProfileGpu`; compare threaded recording on/off diagnostics. | Fixed records/tokens/parents, bounded truncation, deterministic merge, no completion-order hierarchy, and normal parallel recording/submission topology preserved. | Measure Detailed disturbance on Empty/Sponza/worst map and reject live detail if it changes the topology or exceeds its justified value. |
+| `CAP-01` | Select a Sponza frame and invoke `ProfileGpu`; repeat one frozen internal capture per map and correlate representative frames with the already accepted external artifacts. | Exactly one `Idle -> Armed -> Submitted -> Resolving -> Frozen` result, correct viewport/`FrameId`, valid parent/token tree, inclusive/exclusive interval math, bounded failure/cancel/replace, preserved recording topology, and no default file. | For each map, name top inclusive, top exclusive-uncovered, and unattributed regions; confirm/falsify the suspected pass and explain agreement or disagreement with PIX/RenderDoc/Nsight. |
 | `INV-01` | `Performance > Investigate CPU` or `Stat Threads`. | Physical thread and logical phase are distinct; work/wait and nested values are not presented as additive totals. | Name the top CPU owner/phase and wait per map; cluster CPU-likely maps and identify the counterexample. |
 | `INV-02` | `Performance > Investigate GPU` or `Stat Gpu`. | Separate queue spans/dependencies, explicit clock/calibration state, valid top contributors, no utilization-to-ms conversion. | Rank graphics/compute/copy behavior and GPU p95; explain whether queue overlap or missing calibration limits each conclusion. |
 | `INV-03` | `Stat GpuPasses` and select the same frame in GPU Live. | Pass rows share one `FrameId`; hierarchy/flat values obey inclusive/exclusive rules; pass sum is never called GPU frame time. | Record top passes and unattributed outer span per map; compare Sponza/Bistro/Modern Sponza families and select a pass for capture. |
@@ -799,13 +982,13 @@ Open the selected workspace/view on Sponza, verify selection and validity agains
 | `INV-05` | Enable `Stat Render` and/or `Stat Rhi`. | Counts come from production owners, are bounded and neutral, and do not trigger diagnostic rescans. | Correlate draw/dispatch/barrier/submission/upload/descriptor changes with timing changes; do not claim causality from count alone. |
 | `INV-06` | `Stat Tasks` and CPU Tasks view. | Bounded lane/family aggregates match real task lanes; deep dependency/call-stack detail remains ETW/WPA. | Identify lane imbalance/starvation candidates per map and choose one ETW trace when task evidence is material. |
 | `INV-07` | `Stat Scene`. | Extracted/accepted/visible/submitted/rejected counts originate at owners and retain generation/frame identity. | Test whether the suspected cost scales with instances, triangles, materials, lights, RT structures, or none; record the map that falsifies the simplest model. |
-| `INV-08` | `Stat Hitches`; navigate each retained hitch to selected frame/export/capture. | Last 16 qualifying frames are bounded and keep budget/domain/validity; no automatic file/native capture. | Classify hitch frequency and worst frames per map, then select the most repeatable hitch for Phase-5 capture or a controlled experiment. |
+| `INV-08` | `Stat Hitches`; navigate each retained hitch to selected frame/export/capture. | Last 16 qualifying frames are bounded and keep budget/domain/validity; no automatic file/native capture. | Classify hitch frequency and worst frames per map, then select the most repeatable hitch for internal `ProfileGpu`, the accepted external capture path, or a controlled experiment. |
 
 The view passes when its data changes the investigation decision on at least one supported workload or supplies a useful negative result. “It displays numbers” is not acceptance evidence.
 
 ### Outcome
 
-Add only views that answer a current measured question. `INV-00` is implemented once if any workspace feature is selected; if every investigation feature is deferred, it is not created.
+Add only internal views/capture that answer a current measured question. `INV-00` is implemented once if a selected workspace feature or `CAP-01` needs it; if every internal investigation feature is deferred, it is not created. Phase 1 external capture remains complete and independent.
 
 ### `INV-00` workspace spine
 
@@ -813,7 +996,11 @@ Implement the one fixed Performance workspace from the wireframes with Overview 
 
 ### `CAP-00` detailed GPU record spine
 
-Implement this only when `INV-03` or the later `CAP-01` is selected. Replace the current dynamic completion stream with a preplanned fixed token/query layout per frame-graph recording chunk. Recording tasks write disjoint ranges; the owner merges deterministically after retirement. Records carry `FrameId`, token, explicit parent, source kind, queue, submission identity, begin/end ticks, counts, validity, and bounded label lookup. Ordinary exhaustion reports truncation/loss. Restore normal parallel recording and prove its topology before accepting the spine.
+Implement this only when `INV-03` or `CAP-01` is selected. Reuse the stable external marker schema accepted in Phase 1 and add internal timestamp/query records without changing its identity. Replace the current dynamic completion stream with a preplanned fixed token/query layout per frame-graph recording chunk. Recording tasks write disjoint ranges; the owner merges deterministically after retirement. Records carry `FrameId`, token, explicit parent, source kind, queue, submission identity, begin/end ticks, counts, validity, and bounded label lookup. Ordinary exhaustion reports truncation/loss. Restore normal parallel recording and prove its topology before accepting the spine.
+
+### `CAP-01` internal `ProfileGpu`
+
+Implement one typed one-shot state machine over accepted `CAP-00`: `Idle -> Armed -> Submitted -> Resolving -> Frozen` with explicit failure/cancel/replace. Capture the next valid selected viewport frame, retain one immutable result, derive inclusive and `exclusive (uncovered)` by direct-child interval union on the same queue, and render hierarchical/flat/coalesced views from the wireframes. Reuse the Phase 1 token/marker identity so the same pass path can be compared with PIX/RenderDoc/Nsight. Do not write a file unless an explicit evidence/export action requests it, and do not change the already accepted external-provider ownership or arbitration.
 
 ### Feature packages
 
@@ -834,6 +1021,7 @@ Implement this only when `INV-03` or the later `CAP-01` is selected. Replace the
 - Reuse Overview, banner, selection, graphs, and tables rather than creating a window per feature.
 - Keep aggregation definitions and `FrameId` visible near any cross-domain comparison.
 - Coalesce only in presentation; raw fixed tokens/results remain auditable.
+- Reuse the accepted external marker/token schema and compare internal attribution with native artifacts; do not fork a UI-only scope vocabulary.
 - Delete a counter/view when its measured value does not justify production and observer cost.
 
 ### Negative guardrails
@@ -844,12 +1032,15 @@ Implement this only when `INV-03` or the later `CAP-01` is selected. Replace the
 - No view implemented before its authoritative producer and bounded consumer.
 - No Tier-C row added merely because a wireframe has space.
 
-### `P4-GATE` exit
+### `P5-GATE` exit
 
 - Each selected view answers its declared question on a real workload and has a “not useful/reject” outcome available.
 - Every view reads the one joined history and synchronized selection; every detailed GPU token, record, and marker comes from the one refactored production path, with superseded timing/storage/topology paths deleted.
+- Existing frame-graph diagnostics, allocator facts, task profiling, workspace composition, and selection flow are refactored at their owners where selected; no investigation view is accepted as glue over an incoherent producer.
+- Counters/timings derive from existing task/frame-graph/queue/allocator owners; pass/feature authors add at most one justified static token, and Shipping object/string audits prove scopes, queries, histories, workspaces, and annotations disappear.
 - Fixed bounds, overflow UI, validity, selection synchronization, and observer cost pass.
 - `CAP-00` preserves command-recording/submission topology when selected.
+- `CAP-01` settles every request exactly once, retains one bounded immutable result, agrees with the Phase 1 marker identity, and does not regress the accepted external provider path.
 - Compact and workspace surfaces agree because they share the same model.
 - External-only detail remains external; replaced callbacks/panels are removed.
 - Exact builds/tests and `git diff --check` pass.
@@ -857,118 +1048,27 @@ Implement this only when `INV-03` or the later `CAP-01` is selected. Replace the
 ### Ready-to-use implementation prompt
 
 ```text
-Implement only these phase-4 investigation packages: <INV IDs and CAP-00 if
+Implement only these phase-5 internal investigation packages: <INV IDs and CAP-00/CAP-01 if
 required>. Fill the test card and state the measured question, Sponza expected
 result, full supported-map sweep, falsification condition, and user reading AC for
 each before editing. Fill and close the authority/duplicate-candidate ledger for
 every selected view, counter, GPU token/record, and current diagnostic scope path.
-If any selected
-view needs INV-00, implement one fixed workspace and one shared selection over the
+Complete the touched-path record for the full owner-to-workspace flow. Keep content/pass authoring intent-only,
+derive data at low-level owners, allow only justified static marker tokens in
+real-work code, and prove all investigation
+payload and marker strings/calls disappear from Shipping. If any selected view needs INV-00,
+implement one fixed workspace and one shared selection over the
 existing immutable Application model. Add counters only at current production
-owners and detailed GPU rows only through accepted CAP-00 records. Match the
+owners and detailed GPU rows only through accepted CAP-00 records. Build CAP-01
+only over CAP-00 using the already accepted Phase 1 marker identity; retain one
+frozen result, preserve parallel recording, and leave external provider ownership
+unchanged. Match the
 wireframes and architecture semantics. Reject/delete a feature if it requires
 diagnostic rescans, unbounded history, UI access to live state, dynamic hot-path
 labels, changed recording topology, or unjustified observer cost. Do not create a
 general diagnostics platform or code for deferred views. Give the user the owner/
 pass/wait/memory ranking and counterexample-map task. Report usefulness, bounds,
 costs, tests, evidence, decision, and exact validation.
-```
-
-## Phase 5 — Add Selected Focused And External Captures
-
-### Test it first
-
-Take the first capture on Sponza, correlate it to the selected `FrameId`/stable markers, then repeat the selected capture path on every supported map. Captures are explicit and may be retained only for the package verification/evidence action. For large native artifacts, the sweep summary may link to external storage rather than committing them.
-
-| ID | User action | Expected criteria | Required reading task |
-| --- | --- | --- | --- |
-| `CAP-01` | Select a Sponza frame and invoke `ProfileGpu`; repeat one frozen capture per map. | Exactly one `Idle -> Armed -> Submitted -> Resolving -> Frozen` result, correct viewport/frame, valid parent/token tree, inclusive/exclusive interval math, bounded failure/cancel/replace, no default file. | For each map, name top inclusive, top exclusive-uncovered, and unattributed regions; confirm or reject the `INV-03` suspected pass. |
-| `EXT-00` | Launch with no provider, each selected provider alone, every selected pair, and the selected combined flag set; exercise each visible viewport icon and click another while one capture is active. | Per-provider capability/state is independent, only requested/detected capable icons appear, clicked provider/viewport identity is preserved, conflicts are explicit, global `Busy` arbitration works, and no native handle/provider API reaches Editor. | Review the provider/backend/version/combination matrix and decide which exact combinations are supported, unavailable, experimental, or rejected before accepting any adapter. |
-| `EXT-01` | Launch D3D12 with `-Pix`, click the PIX mini icon for the desired viewport. | Icon appears only when requested/detected and capable; next valid target frame is captured; artifact opens/handoffs; absent PIX is honest and nonfatal where allowed. | Match Sparkle `FrameId`/markers to PIX events and state what PIX adds beyond built-in data for each map/signature cluster. |
-| `EXT-02` | Launch D3D12 with `-RenderDoc`, click its icon. | Correct D3D12 device/swapchain/viewport, next-frame artifact, marker tree and API validation, clean absent-tool/failure behavior. | Inspect top suspected pass resources/pipeline state on each map; record capture-confirmed or falsified hypotheses. |
-| `EXT-03` | Launch Vulkan with `-RenderDoc`, click its icon. | Correct Vulkan layer/bootstrap order and swapchain target, validation-clean capture, same neutral state semantics as D3D12. | Compare marker/pass/resource-state behavior with D3D12 for every map and explain material backend differences without vendor mythology. |
-| `EXT-04` | Build eligible experimental D3D12 Nsight support, launch with `-Nsight`, click its icon. | Current SDK/tool matrix passes; experimental state is visible; ordinary packages remain independent; capture/failure/timeout/shutdown complete once. | Use counters/shader/hardware analysis only where the selected map question needs it; record architecture/hardware scope and alternatives. |
-| `EXT-05` | Repeat `EXT-04` on Vulkan when the current matrix supports it. | Vulkan extension/layer/device path and provider compatibility pass; otherwise explicit rejection, not emulation. | Compare the same suspected mechanism across APIs or record why the matrix leaves it unresolved. |
-
-For any selected provider combination, also launch the exact combined flags, confirm all capable icons coexist, click each provider in turn, and verify the non-active icons report global `Busy` rather than capturing simultaneously. A package is not accepted from icon visibility alone; at least one usable artifact per supported map and selected backend is required unless the provider explicitly reports a supported, tested unavailability.
-
-### Outcome
-
-Deliver bounded one-frame investigation paths. Internal `ProfileGpu` and native external providers share frame identity and stable markers, but remain separate capture mechanisms.
-
-### `CAP-01` `ProfileGpu`
-
-Implement one typed one-shot state machine over accepted `CAP-00`: `Idle -> Armed -> Submitted -> Resolving -> Frozen` with explicit failure/cancel/replace. Capture the next valid selected viewport frame, retain one immutable result, derive inclusive and `exclusive (uncovered)` by direct-child interval union on the same queue, and render hierarchical/flat/coalesced views from the wireframes. Do not write a file unless an explicit evidence/export action requests it.
-
-### `EXT-00` external-provider spine
-
-Implement this once only if an `EXT-01`–`EXT-05` adapter is selected.
-
-- Parse the combinable immutable launch intent before Renderer/device creation.
-- Extend `RendererExternalRuntime` and `RendererBackendConfiguration`; keep native provider bootstrap in RHI-private backend adapters.
-- Publish a fixed provider set with independent `NotRequested`, `Unavailable`, `Ready`, `Armed`, `Capturing`, `Completed`, `Failed`, and `Busy` state plus bounded reason/artifact metadata.
-- Render one far-right mini icon per requested or detected capable provider. Multiple icons may coexist in every renderable viewport.
-- Each click sends a typed request naming provider, viewport selection token/generation, and expected frame identity; no native window/device/command-list handle reaches Editor.
-- Serialize capture execution globally at first. Other capable icons remain visible and report `Busy`; icon coexistence never implies simultaneous capture safety.
-- Resolve a checked compatibility matrix before loading more than one capture layer. Never use hidden provider precedence.
-- Arm the named provider for the next valid frame of the named viewport and trigger at the backend's safe presentation boundary. Timeout, resize, device loss, viewport destruction, and shutdown complete or cancel exactly once.
-- Keep profiler-native artifacts native. Sparkle stores only bounded status/provenance and an explicit handoff path.
-
-### Provider feature packages
-
-| ID | Delivery | Required proof before `Accepted` |
-| --- | --- | --- |
-| `EXT-01` | PIX capture, D3D12 | Profile-build startup, PIX capture capability distinct from marker-only runtime, selected viewport/next-frame correctness, artifact handoff, normal run without PIX installed, shutdown/failure, and runbook operation. |
-| `EXT-02` | RenderDoc capture, D3D12 | Pre-device supported integration, correct present target, API validation, one artifact, normal run without RenderDoc, and PIX coexistence outcome when both are requested. |
-| `EXT-03` | RenderDoc capture, Vulkan | Vulkan layer/bootstrap ordering, correct swapchain/present target, validation-clean smoke, artifact, and D3D12-semantic state parity. |
-| `EXT-04` | Nsight Graphics, D3D12, experimental | Current runbook/SDK matrix revalidated, explicit experimental build eligibility, capture success/failure semantics, pairwise compatibility, and absence from ordinary packages when unsupported. |
-| `EXT-05` | Nsight Graphics, Vulkan, experimental | Same as `EXT-04` plus Vulkan layer/extension and validation evidence. Reject rather than emulate if the installed/current SDK path is unsupported. |
-
-### Positive guardrails
-
-- Revalidate current primary provider documentation and installed versions through the runbook immediately before implementation.
-- Keep markers stable across internal and external capture so one `FrameId`/token can be correlated.
-- Treat each provider adapter as optional backend-private code with a narrow neutral service.
-- Test one provider, pairwise requested sets, all requested providers where eligible, and normal launch without tool installations.
-- Report optimized profiling-build configuration and the exact ways capture mode changes execution.
-
-### Negative guardrails
-
-- No late injection after device creation, vendor APIs above RHI private, static RenderDoc linkage, or mandatory beta SDK dependency.
-- No permanent unrequested icons and no icon presented as `Ready` from launch intent alone.
-- No simultaneous native captures until a tested compatibility entry explicitly permits the exact pair/backend/version.
-- No capture of whichever window presents first, stale viewport generation, silent fallback provider, or blocking UI/RenderThread wait.
-- No reuse of screenshot `RhiCaptureService` as the external profiler owner and no embedded replacement for the native profiler.
-
-### `P5-GATE` exit
-
-- Every accepted provider passes its supported backend/product/build matrix and an absent-tool launch.
-- Launch parsing, provider capability, request/arbitration, marker identity, and presentation state each have one neutral authority; screenshot readback and internal/native capture separations have explicit passing boundary tests.
-- Multiple provider icons render independently, request the clicked provider, and expose global Busy/arbitration honestly.
-- Compatibility, timeout, resize, device-loss, viewport-loss, failure, artifact, and shutdown paths are bounded and exactly-once.
-- Native validation, `architecture_boundary_check`, relevant tests/builds, observer evidence, and `git diff --check` pass.
-
-### Ready-to-use implementation prompt
-
-```text
-Implement only these phase-5 capture packages: <CAP-01/EXT IDs>. Begin with the
-test card: exact launch/action, Sponza capture criteria, one capture per supported
-map/backend, marker/token correlation, compatibility cases, and the hypotheses the
-user must confirm or falsify. Fill the authority/duplicate-candidate ledger for
-launch parsing, pre-device bootstrap, capability, request/arbitration, provider
-state, marker tokens, and both existing screenshot/internal capture paths.
-Revalidate the current profiler runbook and primary
-provider documentation first. Build CAP-01
-only over accepted CAP-00 records that preserve parallel recording. For external
-capture, extend RendererExternalRuntime's pre-device configuration and backend-
-private RHI adapters; publish only neutral capability/state and typed provider+
-viewport requests. Support multiple visible provider icons but globally serialize
-capture unless the exact compatibility matrix proves coexistence. Do not expose
-vendor handles, inject late, block the UI, overload screenshot readback,
-auto-capture, silently choose a provider, or retain code for deferred/failed
-adapters. Run the exact backend/product/provider and all-map matrix, boundary
-check, native validation, and failure/shutdown tests. Hand the user capture links
-and the correlation task; do not accept icon visibility alone.
 ```
 
 ## Phase 6 — Harden And Close The Selected Product
@@ -1008,7 +1108,7 @@ The selected implementation can ship with honest unresolved cards. The stronger 
 | `FIN-01` | Run the declared product/backend/build/serial-threaded/mode/provider matrix across the full current map roster. | Every applicable cell has evidence, every excluded cell has a reason, and the user can compare only genuinely equivalent cohorts. |
 | `FIN-02` | Inject minimized/invalid window, resize, stale generation, overflow, late/drop, viewport loss, provider timeout/failure, device removal, interrupted export, and shutdown. | Every request succeeds, fails, cancels, or is superseded exactly once; every map remains recoverable or reports the scoped fatal boundary; the user reviews the failure table. |
 | `FIN-03` | Repeat `Off`, Basic, maximum selected composition, Detailed, Benchmark, internal capture, and selected external-provider controls where applicable. | Basic meets fixed hypotheses; other disturbance is measured; topology changes are explicit; the user decides to retain, capture-gate, trim, or reject every costly collector. |
-| `FIN-04` | Follow the docs as a fresh user on Sponza and the current worst map, then audit source/CMake/public headers/docs/artifacts and close the authority/candidate ledger. | Zero unresolved candidates, competing authorities, unjustified duplicate implementations, replaced paths, dead flags, unused public types, empty surfaces, broken links, or unowned packages remain; every deliberate separation has boundary proof and the final package/diagnosis ledgers match evidence. |
+| `FIN-04` | Follow the docs as a fresh user on Sponza and the current worst map, exercise representative authoring, then close the touched-path, Shipping-erasure, and authority/candidate records. | No authoring tax, Shipping diagnostic residue, unresolved candidate, competing authority, replaced path, unused surface, broken link, or unowned package remains; deliberate separations have boundary proof. |
 
 ### Outcome
 
@@ -1022,13 +1122,11 @@ For every accepted feature, test only applicable cells but make omissions explic
                        D3D12                 Vulkan
 DevelopmentEditor      selected surfaces     selected surfaces
 DevelopmentGame        selected surfaces     selected surfaces
-Profile build          evidence/captures     evidence/captures
-Shipping*              absent/off/allowed    absent/off/allowed
-
-* according to the explicit eligibility decision, never by accidental linkage
+ShippingEditor          diagnostics stripped diagnostics stripped
+ShippingGame            diagnostics stripped diagnostics stripped
 ```
 
-Include serial/threaded rendering, declared pipeline depths, VSync/presentation policy, normal and narrow UI, provider absent/present, and Basic/Detailed transitions where selected.
+Development is the current optimized profiling-capable build; do not create another profile solely to rename it. Include serial/threaded rendering, declared pipeline depths, VSync/presentation policy, normal and narrow UI, provider absent/present, and Basic/Detailed transitions where selected. Shipping tests normal product behavior and erasure, never a diagnostic mode.
 
 ### `FIN-02` Failure and lifetime audit
 
@@ -1044,6 +1142,9 @@ Measure diagnostics off, Basic, each selected view/group, maximum accepted compo
 - Repeat the repository-wide semantic overlap search across types, functions, commands, CVars, launch flags, marker tokens, capture states, histories, schema keys, serializers, tests, CMake targets, and dependency edges. Close every row with one allowed disposition and evidence.
 - For each accepted concept, show one canonical owner, one mutable state, one production/request path, one history/schema where applicable, and all immutable consumers. A second presenter or backend adapter is acceptable only through its recorded boundary test.
 - Search for every removed symbol and its semantic aliases. Production references, registrations, includes, build membership, compatibility aliases, deprecated commands, and copied documentation must be zero; test fixtures or migration notes that mention an old name must clearly be non-production.
+- Close the [Touched-Path Integration](#touched-path-integration) record for every accepted package and remove remaining direct-path defects or unjustified surface under the applicable Engineering standards.
+- Re-run a representative content/feature authoring workflow and prove it needs no diagnostics knowledge or maintenance beyond any explicitly justified static token.
+- Configure and build both Shipping products without optional profiler tools/SDKs. Audit CMake source membership, link maps/imports, symbols/strings, optimized objects/disassembly, staged packages, startup/commands/UI, allocations/tasks/query pools/files, output, package size, and Empty/Sponza runtime performance for zero optional diagnostics residue.
 - Ensure every accepted command/menu/icon/view has help, validity/failure behavior, test/evidence, and an owner.
 - Ensure every deferred/rejected package has no shipped stub and a concise reason in the ledger.
 - Update architecture only for accepted semantic decisions, wireframes only for shipped UX changes, runbook only for revalidated operations, and workload ledgers only for actual evidence.
@@ -1054,7 +1155,8 @@ Complete this matrix in the final change description; do not create another repo
 ```text
 Concept | canonical owner/state | production + request route | readers
         | candidate dispositions | deletions | retained-boundary test
-        | final rg/build/behavior proof
+        | touched-path refactors | authoring impact + automatic fact owner
+        | Shipping object/link/package/runtime erasure | final rg/build/behavior proof
 ```
 
 The audit must cover at least frame identity/time/FPS, collection demand, joined history, each metric producer, console/menu requests, GPU tokens/timing/markers, process/GPU memory, task detail, workspace selection, artifact schema/export, internal capture, screenshot readback, external launch/capability/arbitration/provider state, public APIs, CMake dependencies, and owning documentation. A fresh reviewer must be able to navigate from [Docs](../../../README.md) to this architecture and then find exactly one production owner for each accepted concept.
@@ -1062,8 +1164,9 @@ The audit must cover at least frame identity/time/FPS, collection demand, joined
 ### Positive guardrails
 
 - Prefer deleting a weak feature to weakening the product's ownership or cost model.
+- Prefer refactoring the canonical base path to adding an adapter around its defect; keep orchestration readable and mechanisms cohesive.
 - Review public headers and CMake links as a deliberate compatibility surface.
-- Validate a clean configured build where feasible, not only an incremental developer tree.
+- Validate clean configured Development and Shipping builds; Shipping must configure without optional profiler SDKs/tools.
 - Preserve raw evidence and state unavailable checks explicitly.
 - Run `architecture_boundary_check` for every Renderer/RHI boundary change and `git diff --check` for every handoff.
 
@@ -1072,6 +1175,10 @@ The audit must cover at least frame identity/time/FPS, collection demand, joined
 - No “phase complete” with untested cells silently omitted or failures relabeled as unsupported.
 - No vestigial feature flags, empty panels, dead provider abstractions, or duplicate documentation.
 - No two-way state synchronization, fallback-to-old route, shadow collector, presenter-local history, alternative export schema, or generic facade that hides two competing implementations.
+- No surface or indirection without a current owner, consumer, or stable boundary under the Engineering standards.
+- No claim that new code is clean while known ownership, lifetime, data-flow, or failure defects remain in the direct base path it uses.
+- No per-content/per-feature stat registration, collector selection, manual history/counter plumbing, dynamic marker label, provider knowledge, or diagnostics mode branch in real-work code.
+- No Shipping acceptance from runtime `Off`, a false CVar, an empty/null service, preprocessor source inspection, or unregistered UI alone; optimized artifact and runtime erasure evidence is mandatory.
 - No performance or compatibility claim beyond the exact hardware, driver, backend, build, tool, and workload tested.
 - No acceptance based only on compilation, screenshots, or one successful frame.
 
@@ -1082,13 +1189,15 @@ The performance diagnostics delivery is complete for the chosen scope when:
 1. every package is `Accepted`, `Deferred`, or `Rejected` and all accepted dependencies are accepted;
 2. every accepted feature is a complete vertical slice with one authority, bounded cost/lifetime, real consumer, failure behavior, tests, and applicable evidence;
 3. the final authority/candidate ledger has zero unresolved rows and proves zero competing semantic authorities or unjustified duplicate implementations; every retained separation has a named data/lifetime boundary and passing test;
-4. every accepted package has passed its Sponza shakedown and current runtime-supported catalog sweep, with no map silently omitted;
-5. the user has completed or explicitly delegated each package's reading task and the decision cites the populated sweep evidence;
-6. all superseded and failed experimental paths, APIs, build links, flags, tests, aliases, and copied documentation are removed;
-7. the selected product/backend/build matrix and observer-cost suite pass or record a scoped, honest limitation;
-8. `MAP-00`/`WL-04`/case-study claims are made only if their own required packages and workload gates passed;
-9. documentation links to evidence instead of duplicating it, and no extra planning/status files are needed;
-10. exact verification commands/results and unavailable checks are in the final handoff.
+4. every accepted package closes its touched-path record and satisfies the applicable Engineering standards;
+5. representative content/feature authoring remains intent-first with automatic low-level collection, and optimized Shipping source/link/object/package/runtime evidence proves all optional diagnostics and provider payload is absent;
+6. every accepted package has passed its Sponza shakedown and current runtime-supported catalog sweep, with no map silently omitted;
+7. the user has completed or explicitly delegated each package's reading task and the decision cites the populated sweep evidence;
+8. all superseded and failed experimental paths, APIs, build links, flags, tests, aliases, and copied documentation are removed;
+9. the selected product/backend/build matrix and observer-cost suite pass or record a scoped, honest limitation;
+10. `MAP-00`/`WL-04`/case-study claims are made only if their own required packages and workload gates passed;
+11. documentation links to evidence instead of duplicating it, and no extra planning/status files are needed;
+12. exact verification commands/results and unavailable checks are in the final handoff.
 
 Closing with deferred packages means the selected product is finished, not that every target proposal was implemented. A later decision to promote a deferred package reopens its phase dependency audit; it does not invalidate the accepted product.
 
@@ -1104,8 +1213,13 @@ capacity, and observer-cost matrix. Reconcile public headers, CMake links, tests
 architecture boundaries, and documentation with actual behavior. Repeat the full
 authority/duplicate-candidate audit across semantic aliases, runtime routes,
 commands, flags, histories, schemas, capture state, public APIs, and dependencies;
-do not finish with an unresolved row. Remove every
-superseded path, unused public type, failed prototype, dead flag, empty surface,
+do not finish with an unresolved row. Close the touched-path record for the whole
+direct path, not only new files. Repeat the representative authoring workflow and prove automatic low-level
+fact derivation. Configure/build Shipping without profiler SDKs; audit optimized
+objects, symbols/strings/imports/link maps, packages, runtime allocations/tasks/
+queries/files/UI/options, output, size, and Empty/Sponza performance for complete
+diagnostics erasure. Runtime Off is not proof. Remove every superseded path, unused public type, failed prototype, dead
+flag, empty surface,
 and unneeded dependency. Reject rather than retain a feature whose value does not
 justify cost or complexity. Update only owning docs and actual evidence ledgers;
 do not add status/completion documents. Give the user every diagnosis card and
@@ -1123,6 +1237,15 @@ State: Selected -> In progress -> Accepted | Deferred | Rejected
 User question/value:
 User action after delivery:
 Hard dependencies and their evidence:
+Current/target owner path and direct defects:
+Applicable Engineering standards and required refactors:
+Changed files and one ownership reason for each:
+Representative content/feature authoring workflow and diagnostics edits required:
+Automatically derived facts and their low-level owners:
+Allowed static token annotations and necessity:
+Development default-Off behavior:
+Shipping source/object/link/package exclusions:
+Shipping runtime, performance, and package-size proof:
 Current owner and path being extended:
 Producer / consumer / lifetime / thread:
 Metric or request semantics:
@@ -1156,19 +1279,29 @@ Record the package-specific overlap searches alongside these commands. Search bo
 
 ```powershell
 rg -n '<old-symbol>|<semantic-alias>|<old-command-or-flag>|<old-schema-key>' Engine Tools Projects Docs
+clang-format --dry-run --Werror <changed-owned-cpp-header-shader-files>
 cmake --build <build-dir> --config <DevelopmentEditor|DevelopmentGame> --target <smallest-touched-target>
 ctest --test-dir <build-dir> -C <configuration> --output-on-failure -R <smallest-relevant-regex>
 cmake --build <build-dir> --config <configuration> --target architecture_boundary_check
+cmake --build <build-dir> --config ShippingEditor --target <touched-editor-target>
+cmake --build <build-dir> --config ShippingGame --target <touched-game-target>
+# Expected: no matches; rg exit code 1 is success for this absence check.
+rg -a -n '<diagnostic-symbol>|<marker-string>|<provider-name>' <shipping-package-root>
+dumpbin /imports <shipping-executable-or-dll>
+dumpbin /symbols <shipping-hot-object-or-library>
+dumpbin /disasm <shipping-hot-object-or-library>
 git diff --check
 ```
 
-Add D3D12/Vulkan native validation, provider smoke commands, workload automation, formatting, and clean-build checks required by the selected standards and package. If the current generator or environment cannot run a check, report it as unavailable with the reason; do not translate that into a pass.
+The `dumpbin` examples apply to the current Windows/MSVC environment; use the equivalent compiler/linker tools for another toolchain. Add D3D12/Vulkan native validation, provider smoke commands, workload automation, formatting, clean-build checks, package/import maps, and optimized-object inspection required by the selected standards and package. If the current generator or environment cannot run a check, report it as unavailable with the reason; do not translate that into a pass.
 
 ## Reference Map
 
 | Implementation question | Owning reference |
 | --- | --- |
 | How is duplicate authority prevented and proven absent? | [Zero-Duplicate-Authority Contract](#zero-duplicate-authority-contract), [Integration Style Guide](../../../Engineering/Standards/IntegrationStyleGuide.md), and [Change Process](../../../Engineering/Standards/ChangeProcess.md) |
+| How is the complete production path reviewed? | [Touched-Path Integration](#touched-path-integration), [Engineering Standards Map](../../../Engineering/Standards/README.md#standards-map), and [Change Process](../../../Engineering/Standards/ChangeProcess.md) |
+| How do production/content code stay intent-first and optional diagnostics disappear from Shipping? | [Zero Authoring Tax And Shipping Erasure Gate](#zero-authoring-tax-and-shipping-erasure-gate) and [Intent-First Instrumentation And Shipping Erasure](PerformanceDiagnosticsArchitecture.md#intent-first-instrumentation-and-shipping-erasure) |
 | What does a metric mean and who owns it? | [Measurement Vocabulary](PerformanceDiagnosticsArchitecture.md#measurement-vocabulary), [Owners](PerformanceDiagnosticsArchitecture.md#owners), and [Publication Rules](PerformanceDiagnosticsArchitecture.md#publication-rules) |
 | What is the bounded data/cost model? | [Collection Modes And Cost Budget](PerformanceDiagnosticsArchitecture.md#collection-modes-and-cost-budget), [Bounded Data Model](PerformanceDiagnosticsArchitecture.md#bounded-data-model), and [Demand, Cost, And Composition](PerformanceDiagnosticsArchitecture.md#demand-cost-and-composition) |
 | Which stat groups are candidates and what does Tier A/B/C mean? | [Fixed Group Catalog](PerformanceDiagnosticsArchitecture.md#fixed-group-catalog) and [Delivery Tiers](PerformanceDiagnosticsArchitecture.md#delivery-tiers) |

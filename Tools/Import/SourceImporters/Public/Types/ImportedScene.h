@@ -7,12 +7,15 @@
 #include "ImportedMaterial.h"
 #include "ImportedMaterialVariant.h"
 #include "ImportedSkin.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 struct ImportedScene
 {
+	std::uint32_t coordinateContractVersion = 0u;
 	std::vector<ImportedMeshPrimitive> meshPrimitives;
 	std::vector<ImportedMeshInstance> meshInstances;
 	std::vector<ImportedMeshInstanceGroup> meshInstanceGroups;
@@ -34,19 +37,11 @@ struct ImportedScene
 	std::size_t GetMaterialVariantCount() const noexcept { return materialVariants.size(); }
 	std::size_t GetMaterialVariantMappingCount() const noexcept { return materialVariantMappings.size(); }
 	std::size_t GetSkeletonCount() const noexcept { return skeletons.size(); }
+	bool HasCanonicalCoordinates() const noexcept { return coordinateContractVersion == WorldCoordinates::kCoordinateContractVersion; }
 
-	void ReserveMeshPrimitives(std::size_t primitiveCount)
-	{
-		meshPrimitives.reserve(primitiveCount);
-	}
+	void ReserveMeshPrimitives(std::size_t primitiveCount) { meshPrimitives.reserve(primitiveCount); }
 
-	void ReserveMeshInstances(std::size_t instanceCount)
-	{
-		meshInstances.reserve(instanceCount);
-	}
+	void ReserveMeshInstances(std::size_t instanceCount) { meshInstances.reserve(instanceCount); }
 
-	void ReserveMeshInstanceGroups(std::size_t instanceGroupCount)
-	{
-		meshInstanceGroups.reserve(instanceGroupCount);
-	}
+	void ReserveMeshInstanceGroups(std::size_t instanceGroupCount) { meshInstanceGroups.reserve(instanceGroupCount); }
 };

@@ -4,6 +4,8 @@ Status: binding domain integration standard
 
 Applies to: world ownership, ECS storage, systems, loading, animation, publication, and render extraction
 
+World, transform, animation, skinning, and extraction semantics must preserve the [World Coordinate, Units, and Transform Contract](../../Architecture/WorldCoordinateAndUnits.md).
+
 ## Ownership
 
 - ECS storage remains private to GameFramework.
@@ -56,4 +58,3 @@ Do not introduce:
 - Are views prevented from escaping their epoch?
 - Is render extraction explicit, immutable, and free of world pointers?
 - Are animation operations and data lifetimes independently navigable?
-

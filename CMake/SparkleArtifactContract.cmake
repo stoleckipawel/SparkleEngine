@@ -70,13 +70,6 @@ function(sparkle_configure_development_tool_artifacts target_name)
     sparkle_set_product_artifact_directories(${target_name} "${SPARKLE_DEV_TOOLS_ROOT}/${target_name}" "tools/${target_name}")
 endfunction()
 
-function(sparkle_configure_project_artifacts target_name project_name product_role)
-    sparkle_set_product_artifact_directories(
-        ${target_name}
-        "${SPARKLE_DEV_PROJECTS_ROOT}/${project_name}/${product_role}"
-        "projects/${project_name}/${product_role}")
-endfunction()
-
 function(sparkle_configure_runtime_support_artifacts target_name)
     sparkle_set_product_artifact_directories(
         ${target_name}

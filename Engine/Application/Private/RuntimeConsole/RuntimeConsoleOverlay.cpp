@@ -17,7 +17,8 @@
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window) :
-	m_timer(&timer), m_window(&window)
+    m_timer(&timer),
+    m_window(&window)
 {
 	ConsoleBuiltinCommands::Register(m_commandRegistry);
 	m_consoleSession = std::make_unique<ConsoleSession>(m_commandRegistry, ConsoleCommandContext{.Scope = ConsoleCommandScope::Runtime});
@@ -29,23 +30,23 @@ RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window) :
 		return;
 	}
 
-	SetupDPIScaling();
+	ApplyDpiScale(m_window->GetDpiScale());
 
 	if (!InitializeWin32Backend())
 	{
 		return;
 	}
 
-	auto handle = window.OnWindowMessage.Add(
-	    [this](WindowMessageEvent& event)
-	    {
-		    HandleWindowMessage(event);
-	    });
+	auto handle = window.OnWindowMessage.Add([this](WindowMessageEvent& event) { HandleWindowMessage(event); });
 	m_windowMessageHandle = ScopedEventHandle(window.OnWindowMessage, handle);
+
+	auto dpiScaleHandle = window.OnDpiScaleChanged.Add([this](float dpiScale) { ApplyDpiScale(dpiScale); });
+	m_windowDpiScaleHandle = ScopedEventHandle(window.OnDpiScaleChanged, dpiScaleHandle);
 }
 
 RuntimeConsoleOverlay::~RuntimeConsoleOverlay() noexcept
 {
+	m_windowDpiScaleHandle.Reset();
 	m_windowMessageHandle.Reset();
 
 	if (m_isWin32BackendInitialized)
@@ -103,7 +104,6 @@ bool RuntimeConsoleOverlay::InitializeImGuiContext()
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	ImGuiRenderPacketBuilder::ConfigureProducerContext();
-	ImGui::StyleColorsDark();
 	return true;
 }
 
@@ -119,19 +119,18 @@ bool RuntimeConsoleOverlay::InitializeWin32Backend()
 	return true;
 }
 
-void RuntimeConsoleOverlay::SetupDPIScaling() noexcept
+void RuntimeConsoleOverlay::ApplyDpiScale(float dpiScale) noexcept
 {
-	ImGui_ImplWin32_EnableDpiAwareness();
-	float mainScale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
 	ImGuiStyle& style = ImGui::GetStyle();
-	style.FontSizeBase = 16.0f * mainScale;
-	style.ScaleAllSizes(mainScale);
+	style = ImGuiStyle{};
+	ImGui::StyleColorsDark(&style);
+	style.FontScaleDpi = dpiScale;
+	style.ScaleAllSizes(dpiScale);
 }
 
 bool RuntimeConsoleOverlay::IsReady() const noexcept
 {
-	return m_isImGuiContextInitialized && m_isWin32BackendInitialized &&
-	       m_consoleSession != nullptr && m_renderPacketBuilder != nullptr;
+	return m_isImGuiContextInitialized && m_isWin32BackendInitialized && m_consoleSession != nullptr && m_renderPacketBuilder != nullptr;
 }
 
 void RuntimeConsoleOverlay::ToggleVisibility() noexcept
@@ -149,10 +148,6 @@ void RuntimeConsoleOverlay::Update()
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.DeltaTime = m_timer != nullptr ? static_cast<float>(m_timer->GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds)) : (1.0f / 60.0f);
-	if (m_window != nullptr)
-	{
-		io.DisplaySize = ImVec2(static_cast<float>(m_window->GetWidth()), static_cast<float>(m_window->GetHeight()));
-	}
 
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
@@ -161,9 +156,7 @@ void RuntimeConsoleOverlay::Update()
 		BuildUI();
 	}
 	ImGui::Render();
-	m_renderPacket = m_renderPacketBuilder->Build(
-	    *ImGui::GetDrawData(),
-	    UiPresentationMode::HostOverlay);
+	m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), UiPresentationMode::HostOverlay);
 }
 
 UiRenderPacket RuntimeConsoleOverlay::ConsumeRenderPacket()

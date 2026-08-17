@@ -10,6 +10,7 @@
 #include "Fbx/FbxMaterialImporter.h"
 #include "Fbx/FbxSceneReader.h"
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <assimp/Importer.hpp>
 
@@ -34,6 +35,9 @@ SourceImportOutput FbxImporter::Import(const std::filesystem::path& filePath) co
 
 	Assimp::Importer importer;
 	const aiScene& scene = FbxSceneReader::LoadScene(filePath, importer);
+	const float sourceMetersPerUnit = FbxSceneReader::GetMetersPerSourceUnit(importer);
+	output.provenance.sourceMetersPerUnit = sourceMetersPerUnit;
+	output.scene.coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
 
 	output.scene.materials.reserve(scene.mNumMaterials);
 	const std::size_t importedMeshInstanceCount = FbxGeometryImporter::CountImportedMeshInstances(*scene.mRootNode);
@@ -44,13 +48,13 @@ SourceImportOutput FbxImporter::Import(const std::filesystem::path& filePath) co
 	FbxMaterialImporter::ImportMaterials(scene, filePath.parent_path(), embeddedTexturePaths, output);
 
 	FbxGeometryImporter::ImportGeometry(scene, output);
-	FbxCameraImporter::ImportCameras(scene, output);
-	FbxLightImporter::ImportLights(scene, output);
+	FbxCameraImporter::ImportCameras(scene, sourceMetersPerUnit, output);
+	FbxLightImporter::ImportLights(scene, sourceMetersPerUnit, output);
 	FbxAnimationImporter::ImportAnimations(scene, output);
 
-	if (output.scene.meshPrimitives.empty() != output.scene.meshInstances.empty() ||
-	    (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty() &&
-	     output.scene.animations.empty()))
+	if (output.scene.meshPrimitives.empty() != output.scene.meshInstances.empty()
+	    || (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty()
+	        && output.scene.animations.empty()))
 	{
 		throw Diagnostics::Error("FBX import produced incomplete mesh content or no supported scene content.");
 	}

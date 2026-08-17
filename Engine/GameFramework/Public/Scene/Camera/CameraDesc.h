@@ -19,6 +19,6 @@ struct SPARKLE_ENGINE_API CameraDesc
 	float fovYDegrees = 60.0f;
 	float nearZ = 0.1f;
 	float farZ = 1000.0f;
-	float moveSpeed = 0.15f;
+	float moveSpeedMetersPerSecond = 0.15f;
 	CameraProjectionKind projectionKind = CameraProjectionKind::Perspective;
 };

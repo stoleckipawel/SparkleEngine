@@ -33,6 +33,10 @@ An external reviewer should follow code, captures, tests, and measurements from 
 3. Read the relevant canonical architecture decision.
 4. Use the acceptance workload only when the change affects its gates.
 
+### Reviewing a Changelist
+
+Start with [SparkleEngine Code Review](Engineering/CodeReview.md). It is the concise review procedure and reusable AI-review prompt; the Integration Style Guide, Change Process, applicable subject standards, canonical architecture, code, and executable configuration remain the authorities it applies.
+
 ### Principal Graphics Planning
 
 Start with the [Strategy index](Strategy/README.md). Requirements, assessment, roadmap, persona, and source archive are planning/audit material; they are not all part of the external reviewer path.
@@ -41,9 +45,21 @@ Start with the [Strategy index](Strategy/README.md). Requirements, assessment, r
 
 Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the concurrency target design and the [Principal Graphics Roadmap](Strategy/Roadmap.md) for broader sequencing.
 
+### World, Transform, Import, Animation, or Physics Work
+
+Start with [World Coordinate, Units, and Transform Contract](Architecture/WorldCoordinateAndUnits.md) for canonical axes, units, matrix semantics, source normalization, camera/light forward, animation, skinning, object placement, backend adaptation, and future physics boundaries. For Alembic-authored baked vertex animation, use the [Geometry Cache Animation Pipeline](Architecture/GeometryCacheAnimationImplementationPlan.md) for the tools-only source route, native cook/streaming contract, shared raster/ray deformation, and Modern Sponza Animated Knight delivery gates.
+
 ### Performance Diagnostics Work
 
-Start with [Diagnostics Product and UX Research](Architecture/Performance/Diagnostics/DiagnosticsUxResearch.md) for the Epic/NVIDIA/AMD precedent and requirements audit. Use [Performance Diagnostics Visual Design And Tool Wireframes](Architecture/Performance/Diagnostics/PerformanceDiagnosticsAsciiWireframes.md) for the mockups and tool layouts, then [Performance Diagnostics Architecture](Architecture/Performance/Diagnostics/PerformanceDiagnosticsArchitecture.md) for the selected product, metric, ownership, evidence, and stable profiler-handoff contracts. Use the feature-selectable [Performance Diagnostics Delivery Plan](Architecture/Performance/Diagnostics/ImplementationPlan.md) for ordered implementation. Before taking an external capture, use the version-sensitive [External Performance Profiler Runbook](Architecture/Performance/Diagnostics/DiagnosticsProfilerRunbook.md). [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) remains the authority for benchmark gates and case-study deliverables.
+Start with [Diagnostics Product and UX Research](Architecture/Performance/Diagnostics/DiagnosticsUxResearch.md) for the Epic/NVIDIA/AMD precedent and requirements audit. Use [Performance Diagnostics Visual Design And Tool Wireframes](Architecture/Performance/Diagnostics/PerformanceDiagnosticsAsciiWireframes.md) for the mockups and tool layouts, then [Performance Diagnostics Architecture](Architecture/Performance/Diagnostics/PerformanceDiagnosticsArchitecture.md) for the selected product, metric, ownership, evidence, and stable profiler-handoff contracts. Use the feature-selectable [Performance Diagnostics Delivery Plan](Architecture/Performance/Diagnostics/ImplementationPlan.md) for ordered implementation. Use [Performance Dashboard And Efficiency Hub Idea](Architecture/Performance/Diagnostics/PerformanceDashboardIdea.md) only when evaluating historical automation, anomaly analysis, or whether a separate dashboard application has become justified; it is exploration, not implementation authority. Before taking an external capture, use the version-sensitive [External Performance Profiler Runbook](Architecture/Performance/Diagnostics/DiagnosticsProfilerRunbook.md). [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) remains the authority for benchmark gates and case-study deliverables.
+
+### Shader And Ray-Tracing Work
+
+Start with [Shader Authoring and Cooked Program Architecture](Architecture/Shaders/ShaderAuthoringAndCookedPrograms.md) for shader identity, cooking, runtime programs, and pipeline-cache direction. Use [Ray-Tracing Pipeline and Dual-Execution Delivery Plan](Architecture/Shaders/RayTracingPipelineImplementationPlan.md) for the staged RGS/MISS/CHS/AHS/intersection/callable implementation, native D3D12/Vulkan pipeline and shader-table gates, and effect-level inline/pipeline selection contract.
+
+### Deferred Decal Work
+
+Start with [Deferred GBuffer Decal Pipeline](Architecture/DeferredGBufferDecals.md) for the shared authored/material contract, post-GBuffer raster and ray-primary resolve, later GI/reflection hit integration, ownership, staging, and Modern Sponza validation fixture.
 
 ## Document Status Vocabulary
 

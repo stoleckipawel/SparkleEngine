@@ -8,6 +8,7 @@ Engineering owns binding implementation guardrails, focused technical decision r
 
 - [Engineering Standards](Standards/README.md) — topic map and applicability.
 - [L. Integration Style Guide](Standards/IntegrationStyleGuide.md) — stable binding entry point for repository changes.
+- [SparkleEngine Code Review](CodeReview.md) — concise changelist-review procedure and reusable AI prompt; owning standards control.
 
 ## Decision Records
 

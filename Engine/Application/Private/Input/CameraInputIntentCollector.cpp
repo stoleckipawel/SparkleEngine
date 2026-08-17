@@ -5,6 +5,7 @@
 #include "Input/Dispatch/InputLayer.h"
 #include "Input/Events/MouseMoveEvent.h"
 #include "Input/Events/MouseWheelEvent.h"
+#include "Input/InputState.h"
 #include "Input/InputSystem.h"
 #include "Input/Keyboard/Key.h"
 #include "Input/Mouse/MouseButton.h"
@@ -13,16 +14,15 @@
 #include "World/GameWorld.h"
 
 CameraInputIntentCollector::CameraInputIntentCollector(InputSystem& inputSystem, Window& window) noexcept :
-    m_inputSystem(inputSystem), m_window(window)
+    m_inputSystem(inputSystem),
+    m_window(window)
 {
-	m_mouseButtonHandle = m_inputSystem.SubscribeMouseButton(
-	    [this](const MouseButtonEvent& event) { OnMouseButton(event); }, InputLayer::Gameplay);
-	m_mouseMoveHandle = m_inputSystem.SubscribeMouseMove(
-	    [this](const MouseMoveEvent& event) { OnMouseMove(event); }, InputLayer::Gameplay);
-	m_keyboardHandle = m_inputSystem.SubscribeKeyboard(
-	    [this](const KeyboardEvent& event) { OnKeyboard(event); }, InputLayer::Gameplay);
-	m_mouseWheelHandle = m_inputSystem.SubscribeMouseWheel(
-	    [this](const MouseWheelEvent& event) { OnMouseWheel(event); }, InputLayer::Gameplay);
+	m_mouseButtonHandle =
+	    m_inputSystem.SubscribeMouseButton([this](const MouseButtonEvent& event) { OnMouseButton(event); }, InputLayer::Gameplay);
+	m_mouseMoveHandle = m_inputSystem.SubscribeMouseMove([this](const MouseMoveEvent& event) { OnMouseMove(event); }, InputLayer::Gameplay);
+	m_keyboardHandle = m_inputSystem.SubscribeKeyboard([this](const KeyboardEvent& event) { OnKeyboard(event); }, InputLayer::Gameplay);
+	m_mouseWheelHandle =
+	    m_inputSystem.SubscribeMouseWheel([this](const MouseWheelEvent& event) { OnMouseWheel(event); }, InputLayer::Gameplay);
 }
 
 CameraInputIntentCollector::~CameraInputIntentCollector() noexcept
@@ -31,23 +31,27 @@ CameraInputIntentCollector::~CameraInputIntentCollector() noexcept
 	m_inputSystem.Unsubscribe(m_mouseMoveHandle);
 	m_inputSystem.Unsubscribe(m_keyboardHandle);
 	m_inputSystem.Unsubscribe(m_mouseWheelHandle);
-	if (m_mouseLookActive)
-	{
-		m_inputSystem.ReleaseMouse();
-		m_inputSystem.SetCursorVisibility(true);
-	}
+	EndMouseLook();
 }
 
 void CameraInputIntentCollector::Publish(GameWorld& world) noexcept
 {
+	const InputState& inputState = m_inputSystem.GetState(InputLayer::Gameplay);
+	const bool forwardHeld = inputState.IsKeyDown(Key::W) || inputState.IsKeyDown(Key::Up);
+	const bool backwardHeld = inputState.IsKeyDown(Key::S) || inputState.IsKeyDown(Key::Down);
+	const bool rightHeld = inputState.IsKeyDown(Key::D) || inputState.IsKeyDown(Key::Right);
+	const bool leftHeld = inputState.IsKeyDown(Key::A) || inputState.IsKeyDown(Key::Left);
+	const bool upHeld = inputState.IsKeyDown(Key::E) || inputState.IsKeyDown(Key::Space);
+	const bool downHeld = inputState.IsKeyDown(Key::Q) || inputState.IsKeyDown(Key::C);
+
 	CameraInputIntent intent;
-	intent.ForwardAxis = (m_forwardHeld ? 1.0f : 0.0f) - (m_backwardHeld ? 1.0f : 0.0f);
-	intent.RightAxis = (m_rightHeld ? 1.0f : 0.0f) - (m_leftHeld ? 1.0f : 0.0f);
-	intent.UpAxis = (m_upHeld ? 1.0f : 0.0f) - (m_downHeld ? 1.0f : 0.0f);
+	intent.ForwardAxis = (forwardHeld ? 1.0f : 0.0f) - (backwardHeld ? 1.0f : 0.0f);
+	intent.RightAxis = (rightHeld ? 1.0f : 0.0f) - (leftHeld ? 1.0f : 0.0f);
+	intent.UpAxis = (upHeld ? 1.0f : 0.0f) - (downHeld ? 1.0f : 0.0f);
 	intent.LookDeltaX = m_lookDeltaX;
 	intent.LookDeltaY = m_lookDeltaY;
 	intent.SpeedStepCount = m_speedStepCount;
-	intent.Sprint = m_sprintHeld;
+	intent.Sprint = inputState.IsKeyDown(Key::LeftShift) || inputState.IsKeyDown(Key::RightShift);
 	const float width = static_cast<float>(m_window.GetWidth());
 	const float height = static_cast<float>(m_window.GetHeight());
 	intent.HasAspectRatio = width > 0.0f && height > 0.0f;
@@ -70,38 +74,15 @@ void CameraInputIntentCollector::OnMouseButton(const MouseButtonEvent& event) no
 	}
 	else if (event.IsReleased() && m_mouseLookActive)
 	{
-		m_mouseLookActive = false;
-		ResetMovement();
-		m_inputSystem.ReleaseMouse();
-		m_inputSystem.SetCursorVisibility(true);
+		EndMouseLook();
 	}
 }
 
 void CameraInputIntentCollector::OnKeyboard(const KeyboardEvent& event) noexcept
 {
-	const bool pressed = event.IsPressed();
-	switch (event.KeyCode)
+	if (event.KeyCode == Key::Escape && event.IsPressed())
 	{
-		case Key::W: m_forwardHeld = pressed; break;
-		case Key::S: m_backwardHeld = pressed; break;
-		case Key::D: m_rightHeld = pressed; break;
-		case Key::A: m_leftHeld = pressed; break;
-		case Key::E:
-		case Key::Space: m_upHeld = pressed; break;
-		case Key::Q:
-		case Key::C: m_downHeld = pressed; break;
-		case Key::LeftShift:
-		case Key::RightShift: m_sprintHeld = pressed; break;
-		case Key::Escape:
-			if (pressed && m_mouseLookActive)
-			{
-				m_mouseLookActive = false;
-				ResetMovement();
-				m_inputSystem.ReleaseMouse();
-				m_inputSystem.SetCursorVisibility(true);
-			}
-			break;
-		default: break;
+		EndMouseLook();
 	}
 }
 
@@ -120,15 +101,14 @@ void CameraInputIntentCollector::OnMouseWheel(const MouseWheelEvent& event) noex
 		m_speedStepCount += event.Delta;
 }
 
-void CameraInputIntentCollector::ResetMovement() noexcept
+void CameraInputIntentCollector::EndMouseLook() noexcept
 {
-	m_forwardHeld = false;
-	m_backwardHeld = false;
-	m_rightHeld = false;
-	m_leftHeld = false;
-	m_upHeld = false;
-	m_downHeld = false;
-	m_sprintHeld = false;
+	if (!m_mouseLookActive)
+		return;
+
+	m_mouseLookActive = false;
 	m_lookDeltaX = 0.0f;
 	m_lookDeltaY = 0.0f;
+	m_inputSystem.ReleaseMouse();
+	m_inputSystem.SetCursorVisibility(true);
 }

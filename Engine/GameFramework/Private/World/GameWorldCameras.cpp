@@ -10,7 +10,7 @@
 
 class CameraComponentTranslation final
 {
-  public:
+public:
 	static ECS::Camera ToCameraData(const CameraDesc& desc, float aspectRatio, bool active) noexcept
 	{
 		return ECS::Camera{
@@ -25,10 +25,11 @@ class CameraComponentTranslation final
 	static ECS::CameraMovement ToMovementComponent(const CameraMovementSettings& settings) noexcept
 	{
 		return ECS::CameraMovement{
-		    .MoveSpeed = std::clamp(settings.moveSpeed, settings.minMoveSpeed, settings.maxMoveSpeed),
-		    .MinimumMoveSpeed = settings.minMoveSpeed,
-		    .MaximumMoveSpeed = settings.maxMoveSpeed,
-		    .SpeedStep = settings.speedStep,
+		    .MoveSpeedMetersPerSecond =
+		        std::clamp(settings.moveSpeedMetersPerSecond, settings.minMoveSpeedMetersPerSecond, settings.maxMoveSpeedMetersPerSecond),
+		    .MinimumMoveSpeedMetersPerSecond = settings.minMoveSpeedMetersPerSecond,
+		    .MaximumMoveSpeedMetersPerSecond = settings.maxMoveSpeedMetersPerSecond,
+		    .SpeedStepMetersPerSecond = settings.speedStepMetersPerSecond,
 		    .SprintMultiplier = settings.sprintMultiplier,
 		    .MouseSensitivity = settings.mouseSensitivity,
 		    .InvertY = settings.invertY};
@@ -47,21 +48,15 @@ namespace ECS
 
 		Transform transform(entry.desc.position, {entry.desc.pitchRadians, entry.desc.yawRadians, 0.0f});
 		CameraMovementSettings movement;
-		movement.moveSpeed = entry.desc.moveSpeed;
+		movement.moveSpeedMetersPerSecond = entry.desc.moveSpeedMetersPerSecond;
 		const LocalTransform local = WorldTransformConversion::ToLocal(transform);
-		const bool added = m_registry.Add(entity, local) &&
-		                   m_registry.Add(entity, WorldTransform{}) &&
-		                   m_registry.Add(entity, CameraComponentTranslation::ToCameraData(entry.desc, 16.0f / 9.0f, active)) &&
-		                   m_registry.Add(entity, CameraDerivedState{}) &&
-		                   m_registry.Add(entity, CameraComponentTranslation::ToMovementComponent(movement)) &&
-		                   m_registry.Add(entity, Visibility{}) &&
-		                   m_registry.Add(entity, Name{std::move(entry.name)}) &&
-		                   m_registry.Add(
-		                       entity,
-		                       AuthoredIdentity{
-		                           .SourceObjectId = ++m_nextCameraIdentity,
-		                           .Kind = AuthoredObjectKind::Camera}) &&
-		                   m_registry.Add(entity, EditorMetadata{});
+		const bool added = m_registry.Add(entity, local) && m_registry.Add(entity, WorldTransform{})
+		    && m_registry.Add(entity, CameraComponentTranslation::ToCameraData(entry.desc, 16.0f / 9.0f, active))
+		    && m_registry.Add(entity, CameraDerivedState{})
+		    && m_registry.Add(entity, CameraComponentTranslation::ToMovementComponent(movement)) && m_registry.Add(entity, Visibility{})
+		    && m_registry.Add(entity, Name{std::move(entry.name)})
+		    && m_registry.Add(entity, AuthoredIdentity{.SourceObjectId = ++m_nextCameraIdentity, .Kind = AuthoredObjectKind::Camera})
+		    && m_registry.Add(entity, EditorMetadata{});
 		if (!added)
 		{
 			m_registry.Destroy(entity);
@@ -78,9 +73,18 @@ namespace ECS
 		return entity;
 	}
 
-	std::size_t GameWorldState::GetCameraCount() const noexcept { return Count<Camera>(); }
-	EntityId GameWorldState::GetCameraEntity(std::size_t index) const noexcept { return EntityAt<Camera>(index); }
-	bool GameWorldState::IsCamera(EntityId entity) const noexcept { return m_registry.Get<Camera>(entity) != nullptr; }
+	std::size_t GameWorldState::GetCameraCount() const noexcept
+	{
+		return Count<Camera>();
+	}
+	EntityId GameWorldState::GetCameraEntity(std::size_t index) const noexcept
+	{
+		return EntityAt<Camera>(index);
+	}
+	bool GameWorldState::IsCamera(EntityId entity) const noexcept
+	{
+		return m_registry.Get<Camera>(entity) != nullptr;
+	}
 
 	std::optional<SceneCameraEntry> GameWorldState::ReadCamera(EntityId entity) const
 	{
@@ -104,7 +108,7 @@ namespace ECS
 		entry.desc.nearZ = camera->NearZ;
 		entry.desc.farZ = camera->FarZ;
 		entry.desc.projectionKind = camera->ProjectionKind;
-		entry.desc.moveSpeed = ReadCameraMovement(entity).moveSpeed;
+		entry.desc.moveSpeedMetersPerSecond = ReadCameraMovement(entity).moveSpeedMetersPerSecond;
 		return entry;
 	}
 
@@ -145,12 +149,10 @@ namespace ECS
 		}
 		Transform transform(desc.position, {desc.pitchRadians, desc.yawRadians, 0.0f});
 		CameraMovementSettings movement = ReadCameraMovement(entity);
-		movement.moveSpeed = desc.moveSpeed;
-		const bool written = WriteTransform(entity, transform) &&
-		                     m_registry.Replace(
-		                         entity,
-		                         CameraComponentTranslation::ToCameraData(desc, existing->AspectRatio, existing->Active)) &&
-		                     WriteCameraMovement(entity, movement);
+		movement.moveSpeedMetersPerSecond = desc.moveSpeedMetersPerSecond;
+		const bool written = WriteTransform(entity, transform)
+		    && m_registry.Replace(entity, CameraComponentTranslation::ToCameraData(desc, existing->AspectRatio, existing->Active))
+		    && WriteCameraMovement(entity, movement);
 		if (written)
 		{
 			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::Camera);
@@ -173,10 +175,10 @@ namespace ECS
 		CameraMovementSettings settings;
 		if (const CameraMovement* movement = m_registry.Get<CameraMovement>(entity))
 		{
-			settings.moveSpeed = movement->MoveSpeed;
-			settings.minMoveSpeed = movement->MinimumMoveSpeed;
-			settings.maxMoveSpeed = movement->MaximumMoveSpeed;
-			settings.speedStep = movement->SpeedStep;
+			settings.moveSpeedMetersPerSecond = movement->MoveSpeedMetersPerSecond;
+			settings.minMoveSpeedMetersPerSecond = movement->MinimumMoveSpeedMetersPerSecond;
+			settings.maxMoveSpeedMetersPerSecond = movement->MaximumMoveSpeedMetersPerSecond;
+			settings.speedStepMetersPerSecond = movement->SpeedStepMetersPerSecond;
 			settings.sprintMultiplier = movement->SprintMultiplier;
 			settings.mouseSensitivity = movement->MouseSensitivity;
 			settings.invertY = movement->InvertY;

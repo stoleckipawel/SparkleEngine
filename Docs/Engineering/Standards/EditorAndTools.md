@@ -4,6 +4,8 @@ Status: binding domain integration standard
 
 Applies to: Editor, ImGui, UI/render boundaries, cooking, import, compilation, capture, and background operations
 
+Import and cooking must publish the canonical basis, units, spaces, and versioned artifacts defined by the [World Coordinate, Units, and Transform Contract](../../Architecture/WorldCoordinateAndUnits.md).
+
 ## Editor Ownership
 
 Editor main owns ImGui context and widget state, selection, immutable editor scene model, transactions/undo/redo, active-widget drafts, application/document lifetime, and application of narrow operation results.

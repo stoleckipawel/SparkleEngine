@@ -8,6 +8,7 @@
 #include <DirectXMath.h>
 
 #include <algorithm>
+#include <cmath>
 #include <format>
 #include <limits>
 #include <utility>
@@ -58,9 +59,10 @@ public:
 		{
 			const float timeSeconds = static_cast<float>(keys[keyIndex].mTime / ticksPerSecond);
 			const aiVector3D& value = keys[keyIndex].mValue;
-			if (timeSeconds < 0.0f || timeSeconds <= previousTime)
+			if (!std::isfinite(timeSeconds) || timeSeconds < 0.0f || timeSeconds <= previousTime || !std::isfinite(value.x)
+			    || !std::isfinite(value.y) || !std::isfinite(value.z))
 			{
-				throw Diagnostics::Error(std::format("FBX animation vector key {} is not strictly time ordered.", keyIndex));
+				throw Diagnostics::Error(std::format("FBX animation vector key {} is invalid or not strictly time ordered.", keyIndex));
 			}
 
 			sampler.keyframes.push_back(ImportedAnimationKeyframe{.timeSeconds = timeSeconds, .value = {value.x, value.y, value.z, 0.0f}});
@@ -98,23 +100,34 @@ public:
 		ImportedAnimationSampler sampler;
 		sampler.keyframes.reserve(keyCount);
 		float previousTime = -1.0f;
+		DirectX::XMVECTOR previousRotation = DirectX::XMQuaternionIdentity();
+		bool hasPreviousRotation = false;
 		for (unsigned int keyIndex = 0; keyIndex < keyCount; ++keyIndex)
 		{
 			const float timeSeconds = static_cast<float>(keys[keyIndex].mTime / ticksPerSecond);
 			const aiQuaternion& value = keys[keyIndex].mValue;
-			const DirectX::XMVECTOR quaternion = DirectX::XMVectorSet(value.x, value.y, value.z, value.w);
+			DirectX::XMVECTOR quaternion = DirectX::XMVectorSet(value.x, value.y, value.z, value.w);
 			const float lengthSquared = DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(quaternion));
-			if (timeSeconds < 0.0f || timeSeconds <= previousTime || lengthSquared <= 1.0e-8f)
+			if (!std::isfinite(timeSeconds) || timeSeconds < 0.0f || timeSeconds <= previousTime || !std::isfinite(value.x)
+			    || !std::isfinite(value.y) || !std::isfinite(value.z) || !std::isfinite(value.w) || !std::isfinite(lengthSquared)
+			    || lengthSquared <= 1.0e-8f)
 			{
 				throw Diagnostics::Error(std::format("FBX animation rotation key {} is invalid or not strictly time ordered.", keyIndex));
 			}
 
+			quaternion = DirectX::XMQuaternionNormalize(quaternion);
+			if (hasPreviousRotation && DirectX::XMVectorGetX(DirectX::XMVector4Dot(previousRotation, quaternion)) < 0.0f)
+			{
+				quaternion = DirectX::XMVectorNegate(quaternion);
+			}
 			ImportedAnimationKeyframe keyframe;
 			keyframe.timeSeconds = timeSeconds;
-			DirectX::XMStoreFloat4(&keyframe.value, DirectX::XMQuaternionNormalize(quaternion));
+			DirectX::XMStoreFloat4(&keyframe.value, quaternion);
 			sampler.keyframes.push_back(keyframe);
 			clip.durationSeconds = (std::max) (clip.durationSeconds, timeSeconds);
 			previousTime = timeSeconds;
+			previousRotation = quaternion;
+			hasPreviousRotation = true;
 		}
 
 		const std::uint32_t samplerIndex = static_cast<std::uint32_t>(clip.samplers.size());
@@ -206,7 +219,8 @@ void FbxAnimationImporter::ImportAnimations(const aiScene& scene, SourceImportOu
 	for (unsigned int animationIndex = 0; animationIndex < scene.mNumAnimations; ++animationIndex)
 	{
 		const aiAnimation* sourceAnimation = scene.mAnimations[animationIndex];
-		if (sourceAnimation == nullptr || sourceAnimation->mDuration < 0.0 || sourceAnimation->mTicksPerSecond <= 0.0
+		if (sourceAnimation == nullptr || !std::isfinite(sourceAnimation->mDuration) || sourceAnimation->mDuration < 0.0
+		    || !std::isfinite(sourceAnimation->mTicksPerSecond) || sourceAnimation->mTicksPerSecond <= 0.0
 		    || sourceAnimation->mNumChannels == 0 || sourceAnimation->mChannels == nullptr || sourceAnimation->mNumMeshChannels != 0
 		    || sourceAnimation->mNumMorphMeshChannels != 0)
 		{

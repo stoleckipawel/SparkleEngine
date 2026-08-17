@@ -43,8 +43,7 @@ void UI::InitializeImGuiContext()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	ImGuiRenderPacketBuilder::ConfigureProducerContext();
 
-	ImGui::StyleColorsDark();
-	SparkleUiTheme::ApplyEditorialDarkTheme();
+	SparkleUiTheme::ConfigureTypography();
 }
 
 bool UI::InitializeWin32Backend()
@@ -103,16 +102,8 @@ void UI::InitializeAssetPanels()
 	m_usedMeshesPanel->SetPreviewGeometryProvider(m_meshPreviewProvider);
 	m_usedTexturesPanel = std::make_unique<UsedTexturesPanel>();
 	m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
-	m_usedShadersPanel->SetReloadHandler(
-	    [this]()
-	    {
-		    m_shaderReloadRequested = true;
-	    });
-	m_usedShadersPanel->SetRecookAllHandler(
-	    [this]()
-	    {
-		    m_shaderRecookRequested = true;
-	    });
+	m_usedShadersPanel->SetReloadHandler([this]() { m_shaderReloadRequested = true; });
+	m_usedShadersPanel->SetRecookAllHandler([this]() { m_shaderRecookRequested = true; });
 	m_usedShadersPanel->SetRecookHandler(
 	    [this](std::string packageId)
 	    {
@@ -176,11 +167,7 @@ void UI::ConfigureMainMenuBarWindowActions()
 			    m_settingsPanel->SetOpen(true);
 		    }
 	    });
-	m_mainMenuBar->SetViewportCaptureHandler(
-	    [this]()
-	    {
-		    m_viewportCaptureRequested = true;
-	    });
+	m_mainMenuBar->SetViewportCaptureHandler([this]() { m_viewportCaptureRequested = true; });
 }
 
 void UI::SubscribeToWindowEvents(Window& window)
@@ -193,8 +180,8 @@ void UI::SubscribeToWindowEvents(Window& window)
 			    return;
 		    }
 
-		    if (m_editorConsoleSystem != nullptr && ImGui::GetCurrentContext() != nullptr &&
-		        m_editorConsoleSystem->HandleShortcut(
+		    if (m_editorConsoleSystem != nullptr && ImGui::GetCurrentContext() != nullptr
+		        && m_editorConsoleSystem->HandleShortcut(
 		            static_cast<std::uint32_t>(event.msg),
 		            static_cast<std::uintptr_t>(event.wParam),
 		            ImGui::GetIO().WantTextInput))
@@ -209,14 +196,17 @@ void UI::SubscribeToWindowEvents(Window& window)
 		    }
 	    });
 	m_windowMessageHandle = ScopedEventHandle(window.OnWindowMessage, handle);
+
+	auto dpiScaleHandle = window.OnDpiScaleChanged.Add([this](float dpiScale) { ApplyDpiScale(dpiScale); });
+	m_windowDpiScaleHandle = ScopedEventHandle(window.OnDpiScaleChanged, dpiScaleHandle);
 }
 
-void UI::SetupDPIScaling() noexcept
+void UI::ApplyDpiScale(float dpiScale) noexcept
 {
-	ImGui_ImplWin32_EnableDpiAwareness();
-	const float mainScale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
-	SparkleUiTheme::ConfigureTypography(mainScale);
 	ImGuiStyle& style = ImGui::GetStyle();
-	style.FontSizeBase = 16.0f * mainScale;
-	style.ScaleAllSizes(mainScale);
+	style = ImGuiStyle{};
+	ImGui::StyleColorsDark(&style);
+	SparkleUiTheme::ApplyEditorialDarkTheme();
+	style.FontScaleDpi = dpiScale;
+	style.ScaleAllSizes(dpiScale);
 }

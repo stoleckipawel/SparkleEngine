@@ -23,8 +23,8 @@ target_link_libraries(ShowcaseRuntime PRIVATE
     SparkleGameFramework
 )
 
-sparkle_configure_project_artifacts(ShowcaseEditor Showcase editor)
-sparkle_configure_project_artifacts(ShowcaseRuntime Showcase runtime)
+sparkle_configure_project_product(ShowcaseEditor Showcase editor)
+sparkle_configure_project_product(ShowcaseRuntime Showcase runtime)
 sparkle_declare_runtime_dll_owner(
     ShowcaseEditor
     SparkleApplicationEditor

@@ -2,9 +2,9 @@
 
 Status: target proposal; not proof of current implementation
 
-Last source reconciliation: 2026-08-16
+Last source reconciliation: 2026-08-17
 
-Scope: editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, benchmark evidence, and external-profiler correlation
+Scope: editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, benchmark evidence, external-profiler correlation, authoring isolation, and Shipping erasure
 
 ## Purpose And Authority Boundary
 
@@ -60,6 +60,8 @@ Sparkle will provide four complementary diagnostic layers:
 
 The live layer is a compass, not a verdict. It must expose validity, frame identity, configuration, and likely limiting domain without pretending that utilization, FPS, summed scope time, or a single captured frame proves cause.
 
+The table describes the final diagnostic ladder, not implementation order. Delivery is deliberately external-first: after the source-backed baseline, Sparkle proves the complete PIX, RenderDoc, and Nsight Graphics launch-to-artifact paths before adding its internal session, stats, histories, timestamp queries, workspace, or `ProfileGpu`. This establishes trustworthy native captures and marker correlation against the current renderer before internal instrumentation can disturb or obscure it.
+
 ## Unreal Stat-System Precedent And Sparkle Adaptation
 
 Status of this section: external research used to shape the target; it is not local implementation authority.
@@ -90,6 +92,7 @@ Primary precedent sources are Epic's [Stat Commands](https://dev.epicgames.com/d
 - Correlate delayed and pipelined CPU/GPU samples with the existing `FrameId`.
 - Show current values, stable distributions, high-water marks, and data age with explicit units.
 - Keep all queues, buffers, label sets, and exports bounded.
+- Keep gameplay, content, render-pass, and ordinary engine code intent-first: derive diagnostics automatically from existing orchestration, task, frame-graph, queue, allocator, and publication owners; allow only sparse static semantic markers where intent cannot be derived.
 - Reuse the existing thread names, `SparkleTasks` ETW events, frame-graph GPU scopes, RHI timestamps, and allocator diagnostics.
 - Make D3D12 and Vulkan measurements semantically comparable while exposing backend limitations.
 - Provide fast, composable `Stat` views in both DevelopmentEditor and DevelopmentGame without requiring an attached profiler.
@@ -97,6 +100,7 @@ Primary precedent sources are Epic's [Stat Commands](https://dev.epicgames.com/d
 - For every supported external frame-capture provider explicitly requested or already attached, expose one compact viewport-header action. Multiple provider icons may coexist, while each click captures through its named provider at the next valid frame from that viewport without exposing vendor APIs above the RHI-private adapter.
 - Make the next profiler action obvious and produce evidence a portfolio reviewer can audit.
 - Measure the observer cost of the diagnostics themselves.
+- Compile optional performance-diagnostics collection, histories, presentation, export, marker fanout, timestamp planning, and external-provider integration out of Shipping so runtime `Off` is not mistaken for zero shipped cost.
 
 ### Non-Goals
 
@@ -105,11 +109,13 @@ Primary precedent sources are Epic's [Stat Commands](https://dev.epicgames.com/d
 - A generic public stat-registration framework or unrestricted module-defined overlays.
 - A replacement for RenderDoc/PIX resource inspection, pipeline-state debugging, shader ISA/counters, or vendor hardware analysis.
 - Per-entity, per-resource, per-draw, or arbitrary string instrumentation in the live path.
+- Requiring content authors or ordinary feature code to register stat rows, manage profiler sessions, allocate diagnostic records, maintain counters/history, select collectors, or understand backend capture APIs.
 - Inferring GPU milliseconds from GPU utilization.
 - Calling a sum of overlapping/nested GPU scopes "GPU frame time."
 - Calling aggregate CPU usage "game-thread cost."
 - Treating Editor gameplay execution as a separate OS game thread when it is not one.
 - Always-on detailed GPU timestamps or default disk reports in normal product runs.
+- A runtime Shipping toggle that leaves optional profiling code, strings, query pools, branches, dependencies, commands, panels, or provider binaries in the product.
 - Optimizing Sponza before a reproducible baseline identifies its limiting path.
 
 ## Current Source-Backed Starting Point
@@ -383,6 +389,8 @@ Application diagnostics session <---------+
 | DevelopmentGame live presentation | Application runtime console/UI packet owner | Reads the same immutable model and submits the same semantic group requests. It does not gain Editor dependencies. |
 | Benchmark artifacts | Application evidence session | Written only for an explicit bounded request under the acceptance-workload artifact root. |
 
+External-first delivery does not require the full Application diagnostics session. The first capture slice extends `RendererExternalRuntime`, the existing Renderer bounded control/read-state route, backend-private RHI adapters, and one narrow immutable Application-to-Editor projection. It uses the product's existing `FrameId` and viewport/present-target identity but owns no internal timing or history. When the Application session arrives later, it composes that projection as a stable submodel; it does not copy provider state, move native lifetime, or create a second request/arbitration path.
+
 ### Target Responsibility Placement
 
 The implementation extends existing modules and private production paths; these are responsibility boundaries, not permission to add a new top-level framework:
@@ -457,16 +465,102 @@ joined summary bytes
 
 Metric and view descriptors are private fixed `constexpr` tables owned by Application; modules do not register rows dynamically. The implementation record must publish exact `sizeof` values and test the candidate 4 MiB live-history cap before freezing it. Changing frame-pipeline depth or worker count does not multiply live diagnostic storage implicitly; any per-worker producer scratch is separately fixed and included in that proof.
 
+## Intent-First Instrumentation And Shipping Erasure
+
+The diagnostics product observes production work; production work does not become a diagnostics program. Gameplay, content, scene systems, render passes, frame-graph declarations, allocators, and platform/backend mechanisms continue to express their real intent. Diagnostic collection attaches at the smallest existing owner boundary that already knows the required fact, derives demand automatically from user intent, and publishes away from the work path.
+
+```text
+real product intent -> existing owner performs/commits/submits work
+                               |
+                 owner-local static diagnostic seam
+                               |
+             bounded collector/result only in eligible builds
+                               |
+                Application join -> immutable consumers
+
+Shipping: real product intent -> existing owner performs/commits/submits work
+          diagnostic seam, collectors, strings, UI, and providers absent
+```
+
+### Zero authoring-tax contract
+
+Adding or editing a level, material, mesh, entity, gameplay system, ordinary task, shader, render-pass instance, resource, or draw/dispatch must not require a stat registration, diagnostics descriptor, UI row, sample-history change, memory counter, profiler mode, capacity choice, export field, vendor call, or capture configuration. The content pipeline and runtime must work identically when the performance-diagnostics product is not built.
+
+Collection follows this order:
+
+1. derive identity, cardinality, bytes, queue, lifetime, and state from facts the production owner already needs to execute correctly;
+2. sample the existing owner at a natural build/commit/submit/retire boundary without a second scan;
+3. instrument a fixed orchestration boundary owned by Application, Tasks, Renderer, frame graph, allocator, or RHI when elapsed time is the missing fact;
+4. add one static semantic token/RAII scope only when the boundary cannot be derived and the user-facing investigation needs it;
+5. leave finer detail to ETW, PIX, RenderDoc, Nsight, RGP/RMV/RGA, WPA, or another native profiler instead of annotating ordinary code.
+
+The allowed local annotation is deliberately small: a compile-time `ScopeToken` or point marker at a real owner boundary, with no dynamic string formatting, start/stop pairing across functions, manual nesting/depth, counter storage, collector lookup, provider branch, or UI knowledge. Frame-graph pass markers are generated from the compiled plan and stable pass catalog rather than repeated inside each pass body. Task timing comes from the existing task executor. Queue/submission timing comes from Renderer/RHI ownership. Memory facts come from the OS and existing allocators. High-level systems do not poll or push diagnostic samples.
+
+Code that performs real work must not contain mode checks such as `if (diagnosticsEnabled)`, per-feature diagnostic state, a diagnostics callback, or parallel “instrumented” algorithms. Eligible-build composition and the owner-local diagnostic adapter decide whether a fixed fact is collected. The normal algorithm, ownership, task graph, command-recording topology, resource lifetime, and result stay the same.
+
+### Separation of operational facts and diagnostic projections
+
+| Production owner retains because execution needs it | Diagnostic-only projection in eligible builds |
+| --- | --- |
+| `FrameId`, generation, stable object/pass/task identity, queue type, submit/retirement tokens | Sample-window generation, joined history, percentiles, validity/loss summaries, row models. |
+| Task graph/execution/lane ownership and begin/end operation boundaries | ETW emission and bounded lane-duration aggregates. |
+| Frame-graph plan, pass ordering/dependencies, recording chunks, submission batches | Static marker tokens, timestamp-query plan, detailed scope records, inclusive/exclusive derivation. |
+| Allocator used/allocated blocks, heap/segment classification, budget facts needed by memory policy | Slow memory sampling, sampled high-water values, history, formatting, evidence fields. |
+| Renderer/Application phase calls and queue/present operations | Monotonic timing samples, bottleneck hint, live/benchmark aggregation. |
+| Backend/device/swapchain ownership and normal process configuration | External-provider detection/bootstrap/capture state and artifact handoff. |
+
+Diagnostic projections are one-way immutable consumers. They do not feed scheduling, culling, allocation, rendering, gameplay, asset selection, or content behavior. If a proposed metric requires a second mutable representation, per-object instrumentation, or a scan that the production operation does not need, reject it or make it an explicit capture-only external-tool question.
+
+### Build and Shipping contract
+
+Build eligibility is not a runtime collection mode:
+
+| Build profile | Performance-diagnostics eligibility |
+| --- | --- |
+| `DebugEditor`, `DebugGame` | Eligible for correctness/debugging, with observer cost never used as representative performance evidence. |
+| `DevelopmentEditor`, `DevelopmentGame` | Canonical profiling-capable builds: optimized, symbol-bearing, diagnostics compiled in, runtime default `Off`, and explicit intent enables bounded collection/capture. |
+| `ShippingEditor`, `ShippingGame` | Stripped by default: optional performance diagnostics are not compiled, linked, registered, staged, or exposed. There is no runtime path to enable them. |
+
+Use the existing build-profile authority and `SPARKLE_BUILD_SHIPPING` eligibility at one build/composition boundary. Do not add one switch per metric, view, provider, or module. If implementation needs one derived compile-time capability for readability, define it once from the canonical profile in build configuration and consume it only at diagnostics composition or owner-local static seams.
+
+Shipping retains only facts and checks required for product correctness or an independently owned shipping policy, such as `FrameId`, allocator bookkeeping used by allocation policy, GPU retirement tokens, capability selection, bounded error handling, and ordinary gameplay/render results. Their existence is not justification to retain performance histories or presentation.
+
+Shipping excludes all selected performance-diagnostics-only behavior and payload:
+
+- Application diagnostics session, demand resolver, joins, histories, aggregators, benchmark serializer, and diagnostic process-memory sampling;
+- `Stat` performance registration, compact overlays, Performance workspace/models, viewport profiler icons, help/strings, and diagnostic assets;
+- diagnostic-only CPU timers, task-event emission, GPU timestamp-query planning/resolution, detailed scope records, marker/object-name fanout, token display dictionaries, and query/readback capacity;
+- performance-memory poll/history/presentation beyond allocator facts required by the real memory policy;
+- `ProfileGpu`, evidence requests, external capture launch parsing/bootstrap/adapters/state/artifact handoff, vendor capture SDK/import libraries, DLLs/layers, and package dependencies;
+- diagnostic tasks, queues, callbacks, files, logs, commands, CVars, runtime branches, and fallback/no-op service objects retained only to support those features.
+
+An empty runtime branch is not Shipping erasure. The optimized Shipping artifact must contain no optional diagnostic call, branch, registration, symbol, marker/display string, storage, thread/task, query pool, provider import, or staged binary. Static token annotations in owner code must compile to no instructions and must not retain their names. Prefer excluding diagnostic implementation sources/dependencies by target configuration; use an empty inline seam only where a sparse owner annotation is unavoidable and prove it disappears in optimized output.
+
+External marker/capture capability belongs in optimized Development builds. A future product requirement for opt-in field telemetry, crash diagnostics, or profiling in a distributed build is a separate architecture and privacy/security/overhead decision; it does not silently weaken this Shipping contract.
+
+### Authoring-isolation and erasure acceptance
+
+- A representative new level/content variation and a representative new frame-graph pass build and run without adding or editing a diagnostics registration, UI model, history, export schema, or provider path. At most one static semantic token is accepted for a genuinely new owner boundary.
+- Repository checks reject diagnostics includes, mode branches, dynamic labels, manual counters, provider calls, or sample publication from content/gameplay/pass bodies outside the narrow allowlist of owner-local static seams.
+- Debug/Development tests prove diagnostics demand is derived from `Quick Check`, `Investigate *`, selected stats, capture, or benchmark intent; content and feature code never selects a collector.
+- `ShippingEditor` and `ShippingGame` configure and build without optional profiler SDKs/tools installed. Package manifests/import tables contain no PIX/RenderDoc/Nsight diagnostic dependency or diagnostic asset.
+- Symbol, string, link-map, object/disassembly, and package audits prove the optional sessions, commands, UI, histories, queries, marker names, providers, and call sites are absent. A source `#if` or runtime `Off` claim alone is insufficient.
+- Empty and Sponza Shipping runs, followed by the supported-map smoke roster where affected, allocate no diagnostic storage, create no diagnostic tasks/query pools/files, expose no diagnostic UI/command/launch option, and preserve output/behavior.
+- For a diagnostics-only package, compare affected optimized Shipping hot functions and package size with the pre-package control. Unexpected code/data/import or a measurable regression blocks acceptance. When the package also contains a necessary base refactor, isolate and explain that refactor's Shipping delta rather than attributing it to stripped diagnostics.
+- Development `Off` remains a measured low-overhead control, but it is never cited as proof of Shipping erasure. Development `LiveBasic`/capture and fully stripped Shipping are separate artifacts with separate claims.
+
 ## Collection Modes And Cost Budget
 
 | Mode | Intended use | CPU scopes | GPU scopes | Memory | Disk |
 | --- | --- | --- | --- | --- | --- |
-| `Off` | Shipping/default performance control where configured | Thread names only; no live aggregation. | Existing external markers follow their own build/CVar policy. | Product-required memory policy only. | None. |
+| `Off` | Default/control inside a profiling-capable Debug/Development build; not a Shipping-erasure claim. | No diagnostic timing or live aggregation; independently owned thread naming follows its build policy. | No timestamp collection; marker fanout follows the eligible-build policy. | Product-required memory policy only; no diagnostic sampling/history. | None. |
 | `LiveBasic` | Editor orientation | Fixed top-level host/render phases and bounded lane aggregates. | One top-level span per active queue; no detailed internal scopes. | Process sample at 1 Hz; RHI sample at its bounded cadence. | None. |
 | `LiveDetailed` | Short interactive diagnosis | Top-level plus selected fixed subphases. | Frame-graph pass scopes and selected fixed detailed scopes. | Same cadence; optional high-water reset. | None. |
 | `GpuProfileCapture` | One focused GPU frame investigation | Only configuration/bookmark CPU markers required for correlation. | One armed eligible frame with the full bounded stable GPU scope plan; frozen after delayed resolution. | Captured as configuration context only. | None unless attached to an explicit evidence export. |
 | `Benchmark` | `MAP-00` and declared routes | Exact raw per-frame summary for the bounded sample request. | Valid top-level and per-pass values required by the workload. | Current and high-water values over the run. | Explicit manifest, raw timing, and summary artifacts only. |
 | `ExternalCapture` | PIX/RenderDoc/Nsight/WPA/RGP | Stable trace markers and symbols; live UI may be hidden. | Stable backend markers; internal timestamp collection may be disabled to avoid observer overlap. | Tool-specific capture plus a matching manifest bookmark. | Native profiler artifact by explicit user action. |
+
+Shipping is deliberately absent from this mode table. It is a compile/link/package eligibility decision, not another runtime enum value. A stripped Shipping binary cannot transition from `Off` to a diagnostic mode because the collectors and product surfaces do not exist.
 
 Instrumentation acceptance budgets for the first implementation are hypotheses to test, not claims that these exact values are universally imperceptible:
 
@@ -1294,6 +1388,10 @@ This directly advances whole-system performance, hard-debugging, low-level concu
 
 Implementation acceptance requires focused tests and measured runs, as applicable:
 
+### Authoring Isolation And Shipping Erasure
+
+Every vertical slice passes the [authoring-isolation and erasure acceptance](#authoring-isolation-and-erasure-acceptance) checks in the same change. Reviewers inspect the real content/feature path as well as diagnostics files. Acceptance is blocked by a new authoring step, collector selection in production code, diagnostic-only state in a real-work owner, an optional profiler dependency in Shipping, or optimized Shipping object code/data that retains the diagnostic seam. Final hardening repeats this proof; it does not defer it.
+
 ### Frontend Workflow And Clutter
 
 - Scenario tests drive the immutable presentation model through `Quick Check`, `Investigate CPU`, `Investigate GPU`, `Investigate Memory`, `Capture Evidence`, attached-provider ready/armed/finalizing/completed/unavailable states, cancellation, and failure without constructing console strings or mutating collectors/provider APIs from UI code.
@@ -1381,19 +1479,19 @@ Implementation acceptance requires focused tests and measured runs, as applicabl
 
 ## Suggested Vertical Slices
 
-This is architecture decomposition, not a schedule; the Roadmap and `MAP-00` own priority.
+This is architecture decomposition and the required dependency order for this product. After the baseline, external capture is the first implementation slice; later internal features remain selectable as described by the [delivery plan](ImplementationPlan.md).
 
 1. Freeze metric names, units, validity, `FrameId` join behavior, and a source-backed baseline trace using existing thread/ETW/GPU markers.
-2. Add the bounded Application session, host phases, process RAM, Renderer CPU stages, frame-queue waits, and one top-level GPU queue span needed by `MAP-00`.
-3. Register the fixed expert `Stat` command through the existing Editor/DevelopmentGame console composition; publish `Fps`, `Unit`, and `UnitGraph` from the same model; expose the task-first `Quick Check` viewport path; and prove basic-mode observer cost and keyboard completion.
-4. Complete the workload-owned `MAP-00` vertical slice: fixed resolution/readiness, explicit benchmark export and manifest integration, capture naming, and Sponza calibration.
-5. Publish Threads, Tasks, Render, and Memory views; correct GPU memory segment semantics; and add `Investigate CPU/GPU/Memory` task presets plus contextual `Customize Stats...` over the same typed requests in the Performance menu and window.
-6. Add Gpu/GpuPasses only after top-level timing correlation and basic-mode overhead pass. Admit Scene/Rhi rows only from existing production-owner counters, never from diagnostic scans.
-7. Add the `ProfileGpu` vertical slice: stable tokens and explicit parents, a fixed per-chunk scope/query plan that preserves parallel recording, delayed validation and inclusive/`exclusive (uncovered)` derivation, one frozen result, and the hierarchical/flat/coalesced Editor views.
-8. Add the attached external frame-capture vertical slice: bounded process-wide provider-set selection before device creation, PIX D3D12 and RenderDoc D3D12/Vulkan private adapters, a conditional far-right provider-icon group, stable target binding, global exclusive request arbitration, pairwise/multi-provider compatibility evidence, artifact handoff, and failure/observer evidence. Keep Nsight Graphics behind an explicit experimental capability gate until its beta SDK matrix passes.
+2. Prove the attached external frame-capture product end to end: bounded process-wide provider-set selection before device creation; PIX D3D12, RenderDoc D3D12/Vulkan, and Nsight Graphics D3D12/Vulkan private adapters; marker-only correlation; one conditional far-right icon per capable provider in each viewport; stable target binding; global exclusive request arbitration; pairwise/multi-provider compatibility evidence; native artifact handoff; absent-tool, failure, observer-cost, and Shipping-erasure evidence. Nsight remains explicitly experimental until its current SDK/tool matrix passes, but its accept-or-evidence-backed-reject decision is completed here rather than deferred behind internal work.
+3. Add the bounded Application session, host phases, process RAM, Renderer CPU stages, frame-queue waits, and one top-level GPU queue span needed by `MAP-00`, composing the accepted external-capture projection without changing its owners.
+4. Register the fixed expert `Stat` command through the existing Editor/DevelopmentGame console composition; publish `Fps`, `Unit`, and `UnitGraph` from the same model; expose the task-first `Quick Check` viewport path; and prove basic-mode observer cost and keyboard completion.
+5. Complete the workload-owned `MAP-00` vertical slice: fixed resolution/readiness, explicit benchmark export and manifest integration, capture naming, and Sponza calibration.
+6. Publish Threads, Tasks, Render, and Memory views; correct GPU memory segment semantics; and add `Investigate CPU/GPU/Memory` task presets plus contextual `Customize Stats...` over the same typed requests in the Performance menu and window.
+7. Add Gpu/GpuPasses only after top-level timing correlation and basic-mode overhead pass. Admit Scene/Rhi rows only from existing production-owner counters, never from diagnostic scans.
+8. Add the `ProfileGpu` vertical slice: reuse the accepted external marker identity, add stable tokens and explicit parents plus a fixed per-chunk scope/query plan that preserves parallel recording, perform delayed validation and inclusive/`exclusive (uncovered)` derivation, and retain one frozen result for the hierarchical/flat/coalesced Editor views.
 9. Add bounded hitch selection/navigation to the shared frame navigator, check in the narrow WPR profile and profiler walkthrough, and capture one D3D12 and one Vulkan specialist example that correlates a GPU captured-frame node to the external marker tree.
 
-Each slice must extend the existing owner and remove any presentation path it replaces. Sparkle may publish only the bounded marker-level GPU product described here; deeper API, shader, hardware, allocation, and scheduling data remains in profiler-native artifacts rather than widening engine public APIs.
+Each slice must extend the existing owner and remove any presentation path it replaces. It must also preserve the zero authoring-tax contract and prove Shipping erasure in the same slice; deferring source/dependency stripping until final hardening is not accepted. Sparkle may publish only the bounded marker-level GPU product described here; deeper API, shader, hardware, allocation, and scheduling data remains in profiler-native artifacts rather than widening engine public APIs.
 
 ## Decisions And Rejected Alternatives
 
@@ -1404,6 +1502,8 @@ Each slice must extend the existing owner and remove any presentation path it re
 | Sample populations | Field-valid populations for one metric; common-correlated `FrameId` intersection for paired/cross-domain claims, with full exclusion metadata. | Comparing independently filtered percentiles or hiding missing frames. |
 | Benchmark inference | Per-run primary results, combined secondary view, practical absolute/relative band, correlation-aware uncertainty, and `Inconclusive`. | Treating 3x300 as automatically definitive, pooling away run identity, p-value-only decisions, or unequal-`N` worst comparisons. |
 | Cross-domain owner | Application session joins immutable domain results. | Global Core profiler singleton or Editor reaching into renderer/RHI state. |
+| Instrumentation placement | Automatic collection at existing Application/Tasks/Renderer/frame-graph/RHI/allocator owner boundaries, with sparse compile-time semantic tokens only where intent cannot be derived. | Stat registrations, mode branches, manual counters/history, dynamic labels, provider calls, or sample publication in content/gameplay/pass bodies. |
+| Shipping eligibility | Debug/Development are profiling-capable; Shipping excludes optional performance collectors, presentation, export, marker/timestamp payload, external providers, strings, dependencies, and call sites at compile/link/package time. | Treating runtime `Off`, an empty service object, disabled CVar, or an unclicked UI as zero Shipping cost. |
 | Frontend entry | `Quick Check`, `Investigate CPU/GPU/Memory`, and contextual `Capture Evidence` over automatically derived collection demand. | Leading with twelve stat groups, collection modes, query/counter setup, or a wall of equal toolbar actions. |
 | Progressive disclosure | Glance -> one selected workspace view -> explicit evidence -> contextual expert details/external tool, preserving one selection. | Showing hashes, manifests, raw events, complete configuration, and specialized controls on every screen or making users re-enter identity. |
 | Stat interaction | One fixed `Stat` command family; the Editor menu uses typed task presets and `Customize Stats...` reaches the same raw group requests. | A second console, command-string-driven UI, twelve equal first-level menu choices, or arbitrary module registration. |
@@ -1446,7 +1546,7 @@ These choices require a bounded implementation record after measurement; they do
 - the final fixed count set after the first Sponza trace proves which cardinalities distinguish the leading hypotheses;
 - the exact static token registry/hash representation and how owner-declared labels populate the bounded captured display dictionary;
 - the initial allowlist of timed pass-internal scopes versus marker-only annotations, after query-cost measurement on D3D12 and Vulkan;
-- exact Development/Shipping compilation and runtime eligibility for the Stat presenter and detailed collectors;
+- the exact per-module CMake source partition and sparse empty-seam shape used to satisfy the fixed Shipping-erasure contract, including which independently owned startup thread names or correctness diagnostics remain outside this product;
 - the benchmark CLI/request surface, which must integrate with `MAP-00` rather than create a second workflow;
 - the final provider-icon assets and whether completed captures open the provider automatically or require one explicit `Open` action after the first usability/observer study;
 - the bounded arm/finalization timeout values and clean-rollback policy for a requested provider that fails before device creation;

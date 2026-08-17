@@ -45,7 +45,7 @@ void GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
 	{
 		const DirectX::XMMATRIX authoredInstanceTransform =
 		    GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(transforms, instanceIndex);
-		const DirectX::XMMATRIX worldTransform = DirectX::XMMatrixMultiply(nodeWorldTransform, authoredInstanceTransform);
+		const DirectX::XMMATRIX worldTransform = DirectX::XMMatrixMultiply(authoredInstanceTransform, nodeWorldTransform);
 		AppendMeshInstance(
 		    output,
 		    importedPrimitiveIndex,

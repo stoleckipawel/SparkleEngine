@@ -1,11 +1,13 @@
 #include "PCH.h"
 
 #include "Gltf/GltfAnimationImporter.h"
+#include "Gltf/GltfCoordinateConverter.h"
 #include "Core/Public/Diagnostics/Error.h"
 
 #include <cgltf.h>
 
 #include <algorithm>
+#include <cmath>
 #include <format>
 #include <limits>
 #include <string>
@@ -100,11 +102,84 @@ public:
 	static float ReadInputTime(const cgltf_accessor* accessor, std::size_t index)
 	{
 		float time = 0.0f;
-		if (accessor == nullptr || index >= accessor->count || !cgltf_accessor_read_float(accessor, index, &time, 1))
+		if (accessor == nullptr || index >= accessor->count || !cgltf_accessor_read_float(accessor, index, &time, 1)
+		    || !std::isfinite(time))
 		{
 			throw Diagnostics::Error(std::format("Cannot decode glTF animation input time {}.", index));
 		}
 		return time;
+	}
+
+	static bool IsFinite(const DirectX::XMFLOAT4& value) noexcept
+	{
+		return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z) && std::isfinite(value.w);
+	}
+
+	static DirectX::XMFLOAT4 ConvertTranslationValue(const DirectX::XMFLOAT4& source, bool tangent) noexcept
+	{
+		const DirectX::XMFLOAT3 converted = tangent ? GltfCoordinateConverter::ConvertTranslationTangent({source.x, source.y, source.z})
+		                                            : GltfCoordinateConverter::ConvertTranslation({source.x, source.y, source.z});
+		return {converted.x, converted.y, converted.z, 0.0f};
+	}
+
+	static DirectX::XMFLOAT4 ConvertAnimationValue(
+	    ImportedAnimationTargetPath targetPath,
+	    const DirectX::XMFLOAT4& source,
+	    bool tangent) noexcept
+	{
+		switch (targetPath)
+		{
+			case ImportedAnimationTargetPath::Translation:
+				return ConvertTranslationValue(source, tangent);
+			case ImportedAnimationTargetPath::Rotation:
+				return tangent ? GltfCoordinateConverter::ConvertRotationTangent(source) : GltfCoordinateConverter::ConvertRotation(source);
+			case ImportedAnimationTargetPath::Scale:
+			case ImportedAnimationTargetPath::Weights:
+			case ImportedAnimationTargetPath::Unknown:
+			default:
+				return source;
+		}
+	}
+
+	static void NormalizeKeyframe(
+	    ImportedAnimationTargetPath targetPath,
+	    bool cubicSpline,
+	    const DirectX::XMFLOAT4* previousRotation,
+	    ImportedAnimationKeyframe& keyframe)
+	{
+		keyframe.value = ConvertAnimationValue(targetPath, keyframe.value, false);
+		if (cubicSpline)
+		{
+			keyframe.inTangent = ConvertAnimationValue(targetPath, keyframe.inTangent, true);
+			keyframe.outTangent = ConvertAnimationValue(targetPath, keyframe.outTangent, true);
+		}
+		if (!IsFinite(keyframe.value) || (cubicSpline && (!IsFinite(keyframe.inTangent) || !IsFinite(keyframe.outTangent))))
+		{
+			throw Diagnostics::Error("glTF animation contains a non-finite keyframe value or tangent.");
+		}
+
+		if (targetPath != ImportedAnimationTargetPath::Rotation)
+		{
+			return;
+		}
+
+		DirectX::XMVECTOR rotation = DirectX::XMLoadFloat4(&keyframe.value);
+		if (DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(rotation)) <= 1.0e-8f)
+		{
+			throw Diagnostics::Error("glTF animation contains a zero-length rotation keyframe.");
+		}
+		rotation = DirectX::XMQuaternionNormalize(rotation);
+		if (previousRotation != nullptr
+		    && DirectX::XMVectorGetX(DirectX::XMVector4Dot(DirectX::XMLoadFloat4(previousRotation), rotation)) < 0.0f)
+		{
+			rotation = DirectX::XMVectorNegate(rotation);
+			if (cubicSpline)
+			{
+				DirectX::XMStoreFloat4(&keyframe.inTangent, DirectX::XMVectorNegate(DirectX::XMLoadFloat4(&keyframe.inTangent)));
+				DirectX::XMStoreFloat4(&keyframe.outTangent, DirectX::XMVectorNegate(DirectX::XMLoadFloat4(&keyframe.outTangent)));
+			}
+		}
+		DirectX::XMStoreFloat4(&keyframe.value, rotation);
 	}
 
 	static std::uint32_t ResolveMorphWeightCount(const cgltf_node& targetNode) noexcept
@@ -224,6 +299,8 @@ public:
 		}
 		importedSampler.keyframes.reserve(input->count);
 		float previousTime = -1.0f;
+		DirectX::XMFLOAT4 previousRotation{};
+		bool hasPreviousRotation = false;
 		for (cgltf_size keyframeIndex = 0; keyframeIndex < input->count; ++keyframeIndex)
 		{
 			ImportedAnimationKeyframe keyframe;
@@ -261,6 +338,12 @@ public:
 				}
 			}
 
+			NormalizeKeyframe(targetPath, cubicSpline, hasPreviousRotation ? &previousRotation : nullptr, keyframe);
+			if (targetPath == ImportedAnimationTargetPath::Rotation)
+			{
+				previousRotation = keyframe.value;
+				hasPreviousRotation = true;
+			}
 			inOutClipDurationSeconds = (std::max) (inOutClipDurationSeconds, keyframe.timeSeconds);
 			importedSampler.keyframes.push_back(keyframe);
 			previousTime = keyframe.timeSeconds;

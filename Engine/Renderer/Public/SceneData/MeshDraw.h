@@ -8,14 +8,6 @@
 #include <cstdint>
 #include <limits>
 
-enum class MeshInstanceBatchSource : std::uint32_t
-{
-	PreservedGroup = 0,
-	AuthoredGroup = 1,
-	AutoBatch = 2,
-	SingleInstance = 3,
-};
-
 struct SPARKLE_RENDERER_API MeshDrawTransform final
 {
 	DirectX::XMFLOAT4X4 WorldMatrix = {};
@@ -65,14 +57,4 @@ struct SPARKLE_RENDERER_API MeshDraw
 	MeshDrawMorph Morph;
 	MeshDrawSourceIdentity Source;
 	MeshDrawGeometry Geometry;
-};
-
-struct SPARKLE_RENDERER_API MeshInstanceBatch
-{
-	GpuMeshHandle Mesh;
-	std::uint32_t materialSlot = 0;
-	std::uint32_t firstInstance = 0;
-	std::uint32_t instanceCount = 0;
-	RenderMeshKind meshKind = RenderMeshKind::Static;
-	MeshInstanceBatchSource source = MeshInstanceBatchSource::AutoBatch;
 };

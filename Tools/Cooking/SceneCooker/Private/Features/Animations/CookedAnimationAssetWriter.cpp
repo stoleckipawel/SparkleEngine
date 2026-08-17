@@ -6,6 +6,7 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <cstring>
@@ -13,10 +14,8 @@
 
 class CookedAnimationAssetStager final
 {
-  public:
-	static void StageAnimationAsset(
-	    const CookedAnimationAssetBuild& animationAsset,
-	    std::vector<Files::FilePublication>& outPublication);
+public:
+	static void StageAnimationAsset(const CookedAnimationAssetBuild& animationAsset, std::vector<Files::FilePublication>& outPublication);
 	static Assets::CookedAnimationAssetHeader BuildHeader(const CookedAnimationAssetBuild& animationAsset) noexcept;
 	static void CopyName(std::string_view sourceName, char (&destination)[64]) noexcept;
 };
@@ -44,10 +43,10 @@ void CookedAnimationAssetStager::StageAnimationAsset(
 	const Assets::CookedAnimationAssetHeader header = BuildHeader(animationAsset);
 	std::string errorMessage;
 	std::ofstream output;
-	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, animationAsset.channels, errorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(output, animationAsset.keyframes, errorMessage))
+	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(output, animationAsset.channels, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(output, animationAsset.keyframes, errorMessage))
 	{
 		throw Diagnostics::Error(std::move(errorMessage));
 	}
@@ -62,6 +61,7 @@ Assets::CookedAnimationAssetHeader CookedAnimationAssetStager::BuildHeader(const
 {
 	Assets::CookedAnimationAssetHeader header{
 	    .fileHeader = {Assets::kCookedAnimationAssetMagic, Assets::kCookedAnimationAssetVersion},
+	    .coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion,
 	    .targetSkeletonAssetId = animationAsset.targetSkeletonAssetId,
 	    .sourceAnimationIndex = animationAsset.sourceAnimationIndex,
 	    .durationSeconds = animationAsset.durationSeconds,

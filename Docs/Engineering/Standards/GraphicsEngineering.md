@@ -4,7 +4,7 @@ Status: binding graphics integration standard
 
 Applies to: persistent GPU data, frame metadata, shaders/kernels, path/neural rendering, captures, performance, and hardware/driver-facing work
 
-This standard owns graphics-change guardrails and review questions. The canonical [Renderer and RHI Architecture Boundary](../../Architecture/RendererRhiBoundary.md) owns the dependency, responsibility, lifetime, backend-parity, and enforcement design; graphics work must preserve it rather than reproduce a competing boundary here.
+This standard owns graphics-change guardrails and review questions. The canonical [Renderer and RHI Architecture Boundary](../../Architecture/RendererRhiBoundary.md) owns the dependency, responsibility, lifetime, backend-parity, and enforcement design. The [World Coordinate, Units, and Transform Contract](../../Architecture/WorldCoordinateAndUnits.md) owns world, matrix, camera/light, animation, and skinning semantics. Graphics work must preserve both rather than reproduce a competing boundary here.
 
 ## Persistent GPU Data
 
