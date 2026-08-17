@@ -2,7 +2,7 @@
 
 Status: implementation plan; not proof of implementation or shipment
 
-Last code and document reconciliation: 2026-08-16
+Last code and document reconciliation: 2026-08-17
 
 Scope: staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md)
 
@@ -20,6 +20,88 @@ The following documents remain authoritative for their subjects:
 - [Engineering Standards](../../../Engineering/Standards/README.md) are binding. In particular, apply the [Integration Style Guide](../../../Engineering/Standards/IntegrationStyleGuide.md), [Change Process](../../../Engineering/Standards/ChangeProcess.md), [Concurrency](../../../Engineering/Standards/Concurrency.md), [Data-Oriented Design](../../../Engineering/Standards/DataOrientedDesign.md), [Graphics Engineering](../../../Engineering/Standards/GraphicsEngineering.md), [Editor And Tools](../../../Engineering/Standards/EditorAndTools.md), and [Validation, Performance, And Evidence](../../../Engineering/Standards/ValidationPerformanceAndEvidence.md).
 
 Code, CMake membership, tests, and observed evidence remain the authority for implemented behavior. Updating a package to `Accepted` in this plan is a useful ledger entry, not a substitute for those proofs.
+
+## Zero-Duplicate-Authority Contract
+
+Zero duplicate architecture is a mandatory package and release gate. In this plan, “zero duplication” means zero unjustified competing semantic authorities, mutable owners, production routes, histories, command meanings, export schemas, capture arbiters, or public facades for the same question. It does not mean forcing unrelated operations into one class or removing small local presentation differences. Such forced reuse can violate separation of concerns as severely as a parallel subsystem.
+
+The operating rule is:
+
+```text
+one meaning -> one mutable owner -> one production path -> one joined history
+            -> one request meaning -> one evidence schema
+                                    -> any number of immutable readers/presenters
+```
+
+Two paths may remain separate only when they answer different questions, own different data or native lifetimes, and the boundary is named and tested. For example, Editor and DevelopmentGame may have different presenters over one Application snapshot. Viewport screenshot readback and native-profiler frame capture remain separate because one produces an engine-owned image while the other controls an external tool around a native API frame. They may share `FrameId`, viewport identity, and nonblocking lifecycle conventions; they must not share a misleading “capture manager” or duplicate each other's state.
+
+### Authority tuple required before implementation
+
+Before any package moves from `Selected` to `In progress`, search code, headers, tests, CMake, commands, CVars, launch flags, schemas, documentation, and uncommitted work. Record this tuple in the change description:
+
+```text
+Concept and exact user/engineering question:
+Canonical semantic definition:
+Canonical mutable owner and lifetime:
+Authoritative producer(s) and physical clocks/resources:
+Single typed request/control path:
+Single immutable publication/history/schema:
+Consumers and presenters:
+Current overlap candidates and searches used to find them:
+Disposition for every candidate:
+Exact obsolete symbols/files/links/tests to remove:
+Proof that only the intended production path remains:
+```
+
+Every candidate receives exactly one disposition:
+
+| Disposition | Meaning |
+| --- | --- |
+| `Reuse` | Use the current owner and contract without adding another path. |
+| `Extend` | Add the smallest selected behavior to the current owner and its production route. |
+| `Merge` | Move genuinely identical responsibility into the canonical owner, migrate every consumer, then delete the redundant owner. |
+| `ReplaceAndDelete` | Land the replacement and remove the old implementation, API, tests, CMake/dependency edge, flag, and documentation in the same accepted package. |
+| `KeepSeparateWithBoundary` | Retain distinct responsibilities only with a named data/lifetime boundary and a test proving they cannot become competing authorities. |
+| `RejectAndDelete` | Do not ship the candidate; remove its experiment, stub, flag, dependency, and documentation claim. |
+
+`Coexist`, `temporary`, `deprecated`, `compatibility path`, and “remove later” are not final dispositions. A migration adapter may exist only inside the active change needed to move callers; it is not built or retained when that package is accepted. No two-way synchronization is allowed between old and new state. A shared abstraction is created only when current concrete consumers prove identical semantics and a real stable boundary; deduplication is not permission to invent a generic framework.
+
+### Known candidates and mandatory disposition
+
+This is the reconciled 2026-08-17 starting inventory. Revalidate it rather than treating it as permanent truth.
+
+| Concept | Current overlap/candidate | Required outcome |
+| --- | --- | --- |
+| Frame interval and FPS | `ViewportTopPanel::BuildPerformanceStats` reads ImGui `Framerate`/`DeltaTime`, while `Timer` is the host timing authority. | `ReplaceAndDelete`: derive FPS only from the valid Application-owned unscaled interval and remove the ImGui-derived product path. ImGui may retain its internal timing for ImGui itself, never as Sparkle performance truth. |
+| Diagnostics session and history | No accepted session exists yet; future groups, graphs, workspaces, and export could each be tempted to retain samples. | `Extend` Application once: one demand/generation/join/ring/snapshot authority. `UnitGraph`, workspace views, compact presenters, and export read that ring; none owns a second history. No Core global profiler singleton. |
+| Console command semantics | Core `ConsoleCommandRegistry` is hosted separately by `EditorConsoleSystem` and `RuntimeConsoleOverlay`. | `KeepSeparateWithBoundary` for product-local registry/session/presentation lifetimes; `Merge` performance command registration and parsing into one Application-owned registration function that produces the same typed request for both. No UI-formatted command strings. |
+| Renderer request and publication transport | `RenderCoordinator`, its bounded control queue, and `PublishReadState` already cross the Renderer thread boundary. | `Extend` the existing route. Reject a second diagnostics mailbox, synchronous query facade, event bus, or UI callback channel. |
+| GPU events, markers, and timing | `FrameExecutionDiagnostics`, `PassExecutionDiagnostics`, and backend `RenderTimingDiagnostics` already form the production path; current timing uses dynamic labels/containers/completion and disables parallel recording when enabled. | `ReplaceAndDelete` inside this path: one fixed token catalog feeds both markers and timing, fixed records/ranges replace dynamic/mutexed completion, bounded loss replaces ordinary exhaustion fatality, and the topology-changing `!CVarRendererDiagnosticGpuTiming` path is removed before detailed timing is accepted. No second GPU profiler. |
+| GPU memory facts | RHI `RenderMemoryDiagnostics`, Renderer `RendererMemoryMonitor`, and a synchronous Renderer-to-Editor snapshot callback expose related facts. | `Reuse` RHI allocator facts and `Extend` the monitor using logical `FrameId`/monotonic cadence. Application retains sampled history. `ReplaceAndDelete` the overlapping synchronous performance callback after its consumers migrate; do not add another poller or allocation tracker. |
+| Process memory | No production sampler was found. | Add one narrow Platform-owned snapshot and let Application own cadence/high-water presentation. Reject duplicate OS samplers and any accidental allocation-profiler scope. |
+| Editor diagnostic providers | `UI` accepts broad Renderer callbacks, including `MemoryDiagnostics`; mesh/texture asset inspectors have different questions. | `ReplaceAndDelete` only the performance callback with the immutable Application model. `KeepSeparateWithBoundary` for asset inspectors whose data, owner, and interaction are not performance-session truth. |
+| Task detail | `TaskProfiler` already emits ETW task/dependency events from serial and scheduled executors. | `Reuse` ETW for deep traces. Live diagnostics may add bounded executor-owned lane aggregates, not another task-event store, dependency graph, timeline history, or scheduler instrumentation authority. |
+| Screenshot versus profiler capture | `EditorViewportCaptureCoordinator` and Renderer/RHI `RhiCaptureService` own nonblocking image readback; external native-profiler capture is not implemented. | `KeepSeparateWithBoundary`: never overload or rename screenshot readback into a generic capture facade. Share only viewport identity, `FrameId`, and lifecycle conventions. |
+| Pre-device external integration | `RendererExternalRuntime` already owns process-facing configuration before backend/device creation. | `Extend` it with immutable launch intent and backend configuration. Reject a second bootstrap/integration manager and late device injection. |
+| Backend diagnostic composition | `RenderHardwareInterface::GetDiagnostics()` already exposes neutral backend diagnostic services. | `Extend` the existing composition with the narrow neutral capability/request/result needed by selected providers. Native SDK types and provider objects remain backend-private; reject a parallel vendor-facing RHI facade. |
+| Internal versus external frame capture | `ProfileGpu` consumes Sparkle-owned timestamp records; PIX/RenderDoc/Nsight consume native tool captures. | `KeepSeparateWithBoundary`: share stable tokens, `FrameId`, viewport selection, and evidence correlation, but keep mechanisms/artifacts/lifetimes distinct. One global external-capture arbiter prevents simultaneous native captures unless a tested matrix later permits them. |
+| Capture presentation state | Multiple viewport icons and the workspace need the same status, while provider adapters own native execution state. | `Extend` one neutral request/result model and one global arbitration owner; each icon is an immutable projection for one provider. Provider adapters translate native state but do not invent UI/session state machines. |
+| Evidence and export | No current performance export implementation was found; this plan and the workload already define artifact ownership. | Add one Application serializer for the accepted versioned snapshot/history schema and one workload-owned orchestration/analysis path. Views never write alternative CSV/JSON meanings, and docs link to generated evidence rather than copying it. |
+| Documentation | Architecture, wireframes, UX research, runbook, workload, and this plan intentionally own different questions. | `KeepSeparateWithBoundary` and link to the owner. Merge only documents with the same audience and authority; delete copied policy/status text instead of maintaining two truths. |
+
+### Enforcement and acceptance
+
+All implementation prompts and phase gates inherit this contract even where they do not repeat it. A package cannot become `Accepted` while its candidate ledger contains an unresolved row. Proof is proportional to the change and includes all applicable items:
+
+- repository searches for old types, functions, commands, CVars, flags, schema keys, and include paths return no production consumer;
+- public headers and module dependencies expose one route, and CMake/build output does not retain an obsolete implementation or optional dependency;
+- deterministic tests prove all readers see the same identity/meaning and that an old route cannot be invoked;
+- architecture boundary checks prove the canonical owner did not move into a convenient but invalid layer;
+- the diff contains the required deletions, not only a new preferred path;
+- generated evidence contains one schema and one requested/active identity source;
+- owning documents link instead of restating one another, and the documentation link/anchor check passes.
+
+Literal source repetition in backend-private API translation or genuinely different presenter layout may remain when extraction would create coupling or erase a necessary boundary. The acceptance claim is therefore precise: zero competing authorities and zero unjustified duplicate implementations, with every deliberate separation accounted for.
 
 ## Verification Comes First
 
@@ -46,6 +128,9 @@ Package and selected consumer:
 User action after delivery:
 Build / product / backend:
 Collection mode and expected observer cost:
+Authority tuple and repository searches:
+Duplicate candidates and disposition for each:
+Exact replacement/deletion proof:
 Sponza shakedown procedure:
 All-supported-map sweep procedure:
 Expected valid, unavailable, stale, loss, and failure behavior:
@@ -196,6 +281,8 @@ Use exactly these states in the delivery ledger:
 
 A phase closes only when no package in that phase remains `Available`, `Selected`, `In progress`, or `Blocked`. Deferring every optional feature is allowed; failing to make the decisions is not.
 
+Moving `Selected -> In progress` additionally requires a complete test card and authority tuple. Moving `In progress -> Accepted` requires every duplicate candidate to have a final disposition and its required deletion/boundary proof. A package with an unresolved overlap remains `In progress` even when it builds and its new path works.
+
 ### Selection is not a feature-flag framework
 
 Feature selection primarily controls what code is implemented and retained. Do not add a compile-time or runtime switch for every package.
@@ -208,11 +295,13 @@ Feature selection primarily controls what code is implemented and retained. Do n
 
 ### Vertical-slice rule
 
-Every selected feature must reach one real consumer in the same package:
+Every selected feature must reconcile current candidates and reach one real consumer in the same package:
 
 ```text
-typed demand -> authoritative producer -> bounded publication -> immutable model
-             -> one presenter/exporter -> tests/evidence -> obsolete path removed
+overlap search -> disposition -> typed demand -> authoritative producer
+               -> bounded publication -> immutable model
+               -> one presenter/exporter -> tests/evidence
+               -> obsolete path/API/dependency/docs removed
 ```
 
 Do not land a horizontal “diagnostics framework” with no accepted row, view, capture, or export. Do not add a second collector for a second presenter. Editor and DevelopmentGame may render differently, but they consume the same Application-owned truth and submit the same typed requests.
@@ -293,7 +382,7 @@ In every example, the phase gates are still reviewed and closed in order. A pack
 
 ## Current-Code Reconciliation
 
-Revalidate this table with `rg` at the start of each phase. It records the 2026-08-16 route to extend, not permanent file-name policy.
+Revalidate this table with `rg` at the start of each phase and reconcile it into the mandatory authority/candidate ledger above. It records the 2026-08-17 route to extend, not permanent file-name policy.
 
 | Responsibility | Current owner/path | Delivery decision |
 | --- | --- | --- |
@@ -366,10 +455,11 @@ Close uncertainty before code without creating speculative frozen contracts. The
 
 1. Re-read the authority documents listed above and every standard selected by the touched packages.
 2. Use `rg` to revalidate the current owners, producers, consumers, thread lifetimes, CMake membership, tests, and any overlapping uncommitted work.
-3. Mark every `FND-*` package `Selected`, `Deferred`, or `Rejected`. A later phase may promote a deferred package only by reopening dependency review.
-4. Capture a source-backed control run with diagnostics timing disabled and the existing thread names/ETW/GPU markers. Record product, backend, build profile, pipeline mode/depth, resolution, VSync/presentation policy, adapter/driver, commit, and known invalid data.
-5. For each selected foundation metric, write its producer, physical owner, logical phase, clock, unit, interval, inclusion/exclusion rule, `FrameId`, validity, and consumer in the implementation change description.
-6. Size the first fixed record/ring from `sizeof`, update cadence, retention need, and a deliberate overflow test. Architecture capacities remain hypotheses until this check.
+3. Build the authority tuple and duplicate-candidate ledger for every selected concept. Search names, semantic equivalents, callers, commands, flags, schemas, tests, and dependencies; assign each candidate one allowed disposition and name the deletion or separation proof.
+4. Mark every `FND-*` package `Selected`, `Deferred`, or `Rejected`. A later phase may promote a deferred package only by reopening dependency review.
+5. Capture a source-backed control run with diagnostics timing disabled and the existing thread names/ETW/GPU markers. Record product, backend, build profile, pipeline mode/depth, resolution, VSync/presentation policy, adapter/driver, commit, and known invalid data.
+6. For each selected foundation metric, write its producer, physical owner, logical phase, clock, unit, interval, inclusion/exclusion rule, `FrameId`, validity, and consumer in the implementation change description.
+7. Size the first fixed record/ring from `sizeof`, update cadence, retention need, and a deliberate overflow test. Architecture capacities remain hypotheses until this check.
 
 ### Positive guardrails
 
@@ -388,6 +478,7 @@ Close uncertainty before code without creating speculative frozen contracts. The
 ### Exit gate
 
 - The selected foundation set and all hard dependencies are explicit.
+- Every known and newly discovered overlap has one allowed disposition; no ambiguous owner or parallel route is approved for implementation.
 - The baseline is reproducible and names invalid/unavailable observations.
 - No code or document claims a proposed metric is implemented.
 - `git diff --check` passes for any reconciliation edits.
@@ -400,7 +491,9 @@ test card and showing the Sponza plus current all-supported-map baseline procedu
 expected criteria, artifact path, and owner reading task. Read the architecture,
 wireframes, runbook, acceptance workload, AGENTS.md, and all applicable
 engineering standards. Reconcile current code owners, consumers, lifetimes,
-thread boundaries, CMake membership, tests, and dirty work with rg. I select
+thread boundaries, CMake membership, tests, and dirty work with rg. Fill the
+authority tuple and duplicate-candidate ledger; give every candidate one allowed
+disposition and name exact deletion or boundary proof. I select
 these foundation packages: <FND IDs>. Mark every other FND package Deferred or
 Rejected with a reason; do not create stubs for it. Capture the smallest honest
 serial/threaded baseline and define every selected metric's owner, clock, unit,
@@ -492,6 +585,7 @@ Acceptance: frame-in-flight wrap test, cadence test, unavailable-budget test, an
 ### `P1-GATE` exit
 
 - Every selected foundation feature has a real producer and deterministic consumer/test.
+- Every authority tuple is complete; no selected metric has a second collector, mutable owner, request route, history, or public facade, and every replaced path is absent from the build.
 - Owner/thread/lifetime assertions and overflow behavior are covered.
 - `sizeof` and total retained bytes are recorded and within the calibrated bound.
 - Serial and threaded behavior retain identical meanings; missing data stays visibly invalid.
@@ -502,7 +596,9 @@ Acceptance: frame-in-flight wrap test, cadence test, unavailable-budget test, an
 ```text
 Implement only these selected phase-1 packages: <FND IDs>. Before editing, fill
 one test card per package with its named deterministic test, Sponza shakedown,
-13-map/backend sweep, expected validity/loss behavior, and owner reading AC. The
+13-map/backend sweep, expected validity/loss behavior, and owner reading AC. Fill
+the authority tuple, search for semantic and name-level overlaps, assign every
+candidate one disposition, and name the old symbols/dependencies to remove. The
 P0 gate and all hard dependencies are accepted. Extend RuntimeApplication, the existing
 RenderCoordinator control/read-state path, Renderer diagnostics, RHI diagnostics,
 and Platform only where their current responsibility requires it. Application
@@ -580,6 +676,7 @@ Render selected compact groups through the existing runtime console/UI packet pa
 ### `P2-GATE` exit
 
 - Selected commands autocomplete and behave identically in Editor and DevelopmentGame where eligible.
+- Command registration, frame/FPS meaning, history, demand, and presentation inputs each have one authority; the replaced ImGui/product and performance-callback routes are deleted where their consumers migrated.
 - Selected compact UI matches the corresponding wireframe states at normal and narrow widths.
 - Keyboard-only access, non-color state labels, unavailable/stale/lost states, and overflow guidance pass.
 - Observer cost is within the declared hypothesis or the package is rejected/trimmed.
@@ -590,7 +687,9 @@ Render selected compact groups through the existing runtime console/UI packet pa
 ```text
 Implement only these phase-2 orientation packages: <ORI IDs>. Begin with the test
 card: exact Stat/menu action, Sponza expected state, all-map Editor/Game sweep,
-observer control, and the limiting-domain questions the user must answer. Use the
+observer control, and the limiting-domain questions the user must answer. Fill
+the authority/duplicate-candidate ledger first; prove that multiple presenters
+share one model rather than retaining presenter-local measurements or histories. Use the
 accepted Application diagnostics snapshot and typed request path; do not add collectors.
 Register one Stat command family through the existing Editor and runtime console
 composition. Replace overlapping ImGui FPS truth when ORI-05 is selected. Follow
@@ -658,6 +757,7 @@ Add only the analysis needed by a selected benchmark consumer: per-run distribut
 ### `P3-GATE` exit
 
 - Every selected evidence package is reproducible from a clean declared configuration.
+- Runtime recording, artifact serialization, workload orchestration, and offline analysis each have one named owner; no view, harness, or report keeps an alternative sample store/schema.
 - Manifest and raw artifacts agree on frame range, populations, hashes, and capture identity.
 - A failed/interrupted run cannot masquerade as complete and restores prior catalog state.
 - Ordinary startup creates no report files.
@@ -668,7 +768,9 @@ Add only the analysis needed by a selected benchmark consumer: per-run distribut
 ```text
 Implement only these phase-3 evidence packages: <EVD IDs>. Begin with the test
 card and show how the user starts, cancels, opens, recomputes, and reviews a
-Sponza run before the full current supported-map sweep. Integrate with the accepted
+Sponza run before the full current supported-map sweep. Fill the authority tuple
+and candidate ledger first; identify every existing artifact/readback/workload
+route and assign each one a disposition before adding code. Integrate with the accepted
 Application session, current level/catalog/readiness paths, viewport
 readback, and the MAP-00 artifact contract. Add one explicit typed request; no
 default files and no second sample store. Preserve raw records, FrameId,
@@ -745,6 +847,7 @@ Implement this only when `INV-03` or the later `CAP-01` is selected. Replace the
 ### `P4-GATE` exit
 
 - Each selected view answers its declared question on a real workload and has a “not useful/reject” outcome available.
+- Every view reads the one joined history and synchronized selection; every detailed GPU token, record, and marker comes from the one refactored production path, with superseded timing/storage/topology paths deleted.
 - Fixed bounds, overflow UI, validity, selection synchronization, and observer cost pass.
 - `CAP-00` preserves command-recording/submission topology when selected.
 - Compact and workspace surfaces agree because they share the same model.
@@ -757,7 +860,9 @@ Implement this only when `INV-03` or the later `CAP-01` is selected. Replace the
 Implement only these phase-4 investigation packages: <INV IDs and CAP-00 if
 required>. Fill the test card and state the measured question, Sponza expected
 result, full supported-map sweep, falsification condition, and user reading AC for
-each before editing. If any selected
+each before editing. Fill and close the authority/duplicate-candidate ledger for
+every selected view, counter, GPU token/record, and current diagnostic scope path.
+If any selected
 view needs INV-00, implement one fixed workspace and one shared selection over the
 existing immutable Application model. Add counters only at current production
 owners and detailed GPU rows only through accepted CAP-00 records. Match the
@@ -838,6 +943,7 @@ Implement this once only if an `EXT-01`–`EXT-05` adapter is selected.
 ### `P5-GATE` exit
 
 - Every accepted provider passes its supported backend/product/build matrix and an absent-tool launch.
+- Launch parsing, provider capability, request/arbitration, marker identity, and presentation state each have one neutral authority; screenshot readback and internal/native capture separations have explicit passing boundary tests.
 - Multiple provider icons render independently, request the clicked provider, and expose global Busy/arbitration honestly.
 - Compatibility, timeout, resize, device-loss, viewport-loss, failure, artifact, and shutdown paths are bounded and exactly-once.
 - Native validation, `architecture_boundary_check`, relevant tests/builds, observer evidence, and `git diff --check` pass.
@@ -848,7 +954,10 @@ Implement this once only if an `EXT-01`–`EXT-05` adapter is selected.
 Implement only these phase-5 capture packages: <CAP-01/EXT IDs>. Begin with the
 test card: exact launch/action, Sponza capture criteria, one capture per supported
 map/backend, marker/token correlation, compatibility cases, and the hypotheses the
-user must confirm or falsify. Revalidate the current profiler runbook and primary
+user must confirm or falsify. Fill the authority/duplicate-candidate ledger for
+launch parsing, pre-device bootstrap, capability, request/arbitration, provider
+state, marker tokens, and both existing screenshot/internal capture paths.
+Revalidate the current profiler runbook and primary
 provider documentation first. Build CAP-01
 only over accepted CAP-00 records that preserve parallel recording. For external
 capture, extend RendererExternalRuntime's pre-device configuration and backend-
@@ -899,7 +1008,7 @@ The selected implementation can ship with honest unresolved cards. The stronger 
 | `FIN-01` | Run the declared product/backend/build/serial-threaded/mode/provider matrix across the full current map roster. | Every applicable cell has evidence, every excluded cell has a reason, and the user can compare only genuinely equivalent cohorts. |
 | `FIN-02` | Inject minimized/invalid window, resize, stale generation, overflow, late/drop, viewport loss, provider timeout/failure, device removal, interrupted export, and shutdown. | Every request succeeds, fails, cancels, or is superseded exactly once; every map remains recoverable or reports the scoped fatal boundary; the user reviews the failure table. |
 | `FIN-03` | Repeat `Off`, Basic, maximum selected composition, Detailed, Benchmark, internal capture, and selected external-provider controls where applicable. | Basic meets fixed hypotheses; other disturbance is measured; topology changes are explicit; the user decides to retain, capture-gate, trim, or reject every costly collector. |
-| `FIN-04` | Follow the docs as a fresh user on Sponza and the current worst map, then audit source/CMake/public headers/docs/artifacts. | No replaced path, dead flag, unused public type, empty surface, broken link, or unowned package remains; final package and diagnosis ledgers match evidence. |
+| `FIN-04` | Follow the docs as a fresh user on Sponza and the current worst map, then audit source/CMake/public headers/docs/artifacts and close the authority/candidate ledger. | Zero unresolved candidates, competing authorities, unjustified duplicate implementations, replaced paths, dead flags, unused public types, empty surfaces, broken links, or unowned packages remain; every deliberate separation has boundary proof and the final package/diagnosis ledgers match evidence. |
 
 ### Outcome
 
@@ -932,10 +1041,23 @@ Measure diagnostics off, Basic, each selected view/group, maximum accepted compo
 ### `FIN-04` Deletion, docs, and shipment ledger
 
 - Remove replaced FPS/provider callbacks, dead CVars, experimental scaffolding, unused public types, unused icon assets, compatibility shims, and prototype dependencies.
+- Repeat the repository-wide semantic overlap search across types, functions, commands, CVars, launch flags, marker tokens, capture states, histories, schema keys, serializers, tests, CMake targets, and dependency edges. Close every row with one allowed disposition and evidence.
+- For each accepted concept, show one canonical owner, one mutable state, one production/request path, one history/schema where applicable, and all immutable consumers. A second presenter or backend adapter is acceptable only through its recorded boundary test.
+- Search for every removed symbol and its semantic aliases. Production references, registrations, includes, build membership, compatibility aliases, deprecated commands, and copied documentation must be zero; test fixtures or migration notes that mention an old name must clearly be non-production.
 - Ensure every accepted command/menu/icon/view has help, validity/failure behavior, test/evidence, and an owner.
 - Ensure every deferred/rejected package has no shipped stub and a concise reason in the ledger.
 - Update architecture only for accepted semantic decisions, wireframes only for shipped UX changes, runbook only for revalidated operations, and workload ledgers only for actual evidence.
 - Do not create a completion report document. The change handoff, tests, artifacts, and this final ledger are sufficient.
+
+Complete this matrix in the final change description; do not create another repository document for it:
+
+```text
+Concept | canonical owner/state | production + request route | readers
+        | candidate dispositions | deletions | retained-boundary test
+        | final rg/build/behavior proof
+```
+
+The audit must cover at least frame identity/time/FPS, collection demand, joined history, each metric producer, console/menu requests, GPU tokens/timing/markers, process/GPU memory, task detail, workspace selection, artifact schema/export, internal capture, screenshot readback, external launch/capability/arbitration/provider state, public APIs, CMake dependencies, and owning documentation. A fresh reviewer must be able to navigate from [Docs](../../../README.md) to this architecture and then find exactly one production owner for each accepted concept.
 
 ### Positive guardrails
 
@@ -949,6 +1071,7 @@ Measure diagnostics off, Basic, each selected view/group, maximum accepted compo
 
 - No “phase complete” with untested cells silently omitted or failures relabeled as unsupported.
 - No vestigial feature flags, empty panels, dead provider abstractions, or duplicate documentation.
+- No two-way state synchronization, fallback-to-old route, shadow collector, presenter-local history, alternative export schema, or generic facade that hides two competing implementations.
 - No performance or compatibility claim beyond the exact hardware, driver, backend, build, tool, and workload tested.
 - No acceptance based only on compilation, screenshots, or one successful frame.
 
@@ -958,13 +1081,14 @@ The performance diagnostics delivery is complete for the chosen scope when:
 
 1. every package is `Accepted`, `Deferred`, or `Rejected` and all accepted dependencies are accepted;
 2. every accepted feature is a complete vertical slice with one authority, bounded cost/lifetime, real consumer, failure behavior, tests, and applicable evidence;
-3. every accepted package has passed its Sponza shakedown and current runtime-supported catalog sweep, with no map silently omitted;
-4. the user has completed or explicitly delegated each package's reading task and the decision cites the populated sweep evidence;
-5. all superseded and failed experimental paths are removed;
-6. the selected product/backend/build matrix and observer-cost suite pass or record a scoped, honest limitation;
-7. `MAP-00`/`WL-04`/case-study claims are made only if their own required packages and workload gates passed;
-8. documentation links to evidence instead of duplicating it, and no extra planning/status files are needed;
-9. exact verification commands/results and unavailable checks are in the final handoff.
+3. the final authority/candidate ledger has zero unresolved rows and proves zero competing semantic authorities or unjustified duplicate implementations; every retained separation has a named data/lifetime boundary and passing test;
+4. every accepted package has passed its Sponza shakedown and current runtime-supported catalog sweep, with no map silently omitted;
+5. the user has completed or explicitly delegated each package's reading task and the decision cites the populated sweep evidence;
+6. all superseded and failed experimental paths, APIs, build links, flags, tests, aliases, and copied documentation are removed;
+7. the selected product/backend/build matrix and observer-cost suite pass or record a scoped, honest limitation;
+8. `MAP-00`/`WL-04`/case-study claims are made only if their own required packages and workload gates passed;
+9. documentation links to evidence instead of duplicating it, and no extra planning/status files are needed;
+10. exact verification commands/results and unavailable checks are in the final handoff.
 
 Closing with deferred packages means the selected product is finished, not that every target proposal was implemented. A later decision to promote a deferred package reopens its phase dependency audit; it does not invalidate the accepted product.
 
@@ -977,7 +1101,10 @@ cards, three-run quantitative matrix, capture/experiment requirements, observer
 controls, and the user's final reading AC. Do not promote deferred features. Run the applicable product,
 backend, build, serial/threaded, collection-mode, provider, failure, shutdown,
 capacity, and observer-cost matrix. Reconcile public headers, CMake links, tests,
-architecture boundaries, and documentation with actual behavior. Remove every
+architecture boundaries, and documentation with actual behavior. Repeat the full
+authority/duplicate-candidate audit across semantic aliases, runtime routes,
+commands, flags, histories, schemas, capture state, public APIs, and dependencies;
+do not finish with an unresolved row. Remove every
 superseded path, unused public type, failed prototype, dead flag, empty surface,
 and unneeded dependency. Reject rather than retain a feature whose value does not
 justify cost or complexity. Update only owning docs and actual evidence ledgers;
@@ -1000,6 +1127,13 @@ Current owner and path being extended:
 Producer / consumer / lifetime / thread:
 Metric or request semantics:
 Fixed bounds and overflow behavior:
+Authority tuple:
+Overlap search terms, paths, commands, flags, schemas, and dependencies:
+Duplicate candidates and consumers:
+Disposition for every candidate:
+Retained-separation boundary and test, if any:
+Exact obsolete symbols/files/tests/CMake links/docs removed:
+Proof that only the canonical production path remains:
 Add / modify / replace / delete ledger:
 Positive guardrails:
 Negative guardrails:
@@ -1018,7 +1152,10 @@ Decision and artifact links:
 
 Use the configured build directory and exact target/configuration selected by the change. Do not claim commands that were not run.
 
+Record the package-specific overlap searches alongside these commands. Search both old symbol names and semantic aliases across implementation, public headers, tests, build files, and docs; a single preferred call site is not proof that the old route is gone.
+
 ```powershell
+rg -n '<old-symbol>|<semantic-alias>|<old-command-or-flag>|<old-schema-key>' Engine Tools Projects Docs
 cmake --build <build-dir> --config <DevelopmentEditor|DevelopmentGame> --target <smallest-touched-target>
 ctest --test-dir <build-dir> -C <configuration> --output-on-failure -R <smallest-relevant-regex>
 cmake --build <build-dir> --config <configuration> --target architecture_boundary_check
@@ -1031,6 +1168,7 @@ Add D3D12/Vulkan native validation, provider smoke commands, workload automation
 
 | Implementation question | Owning reference |
 | --- | --- |
+| How is duplicate authority prevented and proven absent? | [Zero-Duplicate-Authority Contract](#zero-duplicate-authority-contract), [Integration Style Guide](../../../Engineering/Standards/IntegrationStyleGuide.md), and [Change Process](../../../Engineering/Standards/ChangeProcess.md) |
 | What does a metric mean and who owns it? | [Measurement Vocabulary](PerformanceDiagnosticsArchitecture.md#measurement-vocabulary), [Owners](PerformanceDiagnosticsArchitecture.md#owners), and [Publication Rules](PerformanceDiagnosticsArchitecture.md#publication-rules) |
 | What is the bounded data/cost model? | [Collection Modes And Cost Budget](PerformanceDiagnosticsArchitecture.md#collection-modes-and-cost-budget), [Bounded Data Model](PerformanceDiagnosticsArchitecture.md#bounded-data-model), and [Demand, Cost, And Composition](PerformanceDiagnosticsArchitecture.md#demand-cost-and-composition) |
 | Which stat groups are candidates and what does Tier A/B/C mean? | [Fixed Group Catalog](PerformanceDiagnosticsArchitecture.md#fixed-group-catalog) and [Delivery Tiers](PerformanceDiagnosticsArchitecture.md#delivery-tiers) |
