@@ -57,6 +57,14 @@ Start with [Diagnostics Product and UX Research](Architecture/Performance/Diagno
 
 Start with [Editor Viewport Camera Architecture](Architecture/EditorViewportCamera.md) for the implemented separation between scene cameras, the free editor view, persisted navigation preferences, per-viewport exposure overrides, and the final render-view boundary.
 
+### Renderer Scene, View, And Frame Work
+
+Start with [Renderer Scene, View, And Frame Architecture](Architecture/RendererSceneViewFrameArchitecture.md) for the Unreal-inspired persistent scene, one-frame view, persistent view-state, frame-slot, GPU-scene, pass-input, coherent cross-module naming, and atomic full-cutover frame-pipeline cleanup target.
+
+### Renderer Debug View Work
+
+Start with [Debug View Presentation Contract](Architecture/DebugViewPresentation.md) for the target Unreal-like per-view show-flag model, view-mode presets, the split between scene-referred HDR mapping and exact display-linear visualization, and the invariant output-encoding boundary.
+
 ### Shader And Ray-Tracing Work
 
 Start with [Shader Authoring and Cooked Program Architecture](Architecture/Shaders/ShaderAuthoringAndCookedPrograms.md) for shader identity, cooking, runtime programs, and pipeline-cache direction. Use [Ray-Tracing Pipeline and Dual-Execution Delivery Plan](Architecture/Shaders/RayTracingPipelineImplementationPlan.md) for the staged RGS/MISS/CHS/AHS/intersection/callable implementation, native D3D12/Vulkan pipeline and shader-table gates, and effect-level inline/pipeline selection contract.
