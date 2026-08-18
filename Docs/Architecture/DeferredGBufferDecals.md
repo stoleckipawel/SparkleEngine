@@ -117,7 +117,7 @@ Decals use the existing `RenderObjectId`, world transform, visibility, create/up
 
 The Renderer owns:
 
-- one CPU `RenderDecalData` array in `RenderSceneData`;
+- one scene-owned decal table projected into frame-slot `PreparedRenderScene` data;
 - one persistent structured GPU `DecalData` buffer updated through the existing dirty-range pattern;
 - one per-view primary tile plan;
 - later, one flat secondary-ray candidate index buffer and a span in each ray hit instance.
@@ -305,8 +305,8 @@ Adopt a dedicated decal AS only when receiver spans fail a recorded candidate-co
 |---|---|---|
 | GameFramework scene/cooker | `Decal` component/schema, ordinary material reference, authored transform and parameters, source validation, cooked versioning | GPU descriptors, frame order, GBuffer formats |
 | Existing world extraction | Decal publication through the same object identity, transform, visibility, and delta lifecycle as meshes | A decal-only identity map or parallel scene snapshot |
-| Renderer `RenderWorld` | Single mutable decal authority and revision | Imported asset parsing or RHI handles |
-| Renderer scene preparation | `RenderDecalData`, persistent GPU payload/dirty ranges, per-view tile plan, later receiver candidate spans | Shader blend policy duplicated in C++ |
+| Renderer `RenderScene` | Single mutable decal authority and revision | Imported asset parsing, graph handles, or view visibility |
+| Renderer scene/view preparation | `PreparedRenderScene` carries view-independent decal records; `RenderViewPreparation` owns the per-view tile plan; scene GPU capability owns persistent payload/dirty ranges and later receiver candidate spans | Shader blend policy duplicated in C++ or a second decal snapshot |
 | GBuffer frame assembly | Skip-on-empty decision and one post-producer pass placement | Material ownership or backend barriers |
 | Shared HLSL | Projection, sampling adapter, ordering assumptions, `SurfaceMaterial`, composition, GBuffer pack/decode adapters | Scene extraction or native API policy |
 | Frame graph | Resource declarations, transitions, UAV barriers, transient tile buffers, pass marker and lifetime | Decal sorting or content semantics |

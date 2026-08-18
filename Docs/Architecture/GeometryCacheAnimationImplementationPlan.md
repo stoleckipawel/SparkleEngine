@@ -43,8 +43,8 @@ The plan extends existing owners instead of adding a parallel animation or rende
 - [`ImportedSceneCooker.cpp`](../../Tools/Cooking/AssetCooker/Private/Cooking/ImportedSceneCooker.cpp) is the scene-cook orchestrator. [`CookedSceneBuild.h`](../../Tools/Cooking/SceneCooker/Public/CookedSceneBuild.h) and [`CookedSceneGenerationWriter.cpp`](../../Tools/Cooking/SceneCooker/Private/CookedSceneGenerationWriter.cpp) already stage one atomic generation of meshes, materials, skeletons, animations, and manifests.
 - [`SceneAssetFileReader.cpp`](../../Engine/GameFramework/Private/Assets/Loading/SceneAssetFileReader.cpp) currently reads complete mesh, material, skeleton, and animation products for scene activation. A geometry cache cannot join that full-file retention path; activation should read only its header and chunk directory.
 - [`AnimationComponents.h`](../../Engine/GameFramework/Private/World/ECS/Components/AnimationComponents.h) and the animation systems own skeletal and morph playback/output. Geometry-cache playback needs its own small component because its output is sampled vertex data, not a pose or weight vector.
-- [`RenderWorldDelta.h`](../../Engine/GameFramework/Public/Rendering/RenderWorldDelta.h) carries structural mesh/material state, while [`RenderFrameDynamicData.h`](../../Engine/GameFramework/Public/Rendering/RenderFrameDynamicData.h) carries per-frame transforms, joint matrices, and morph weights. Those are the existing structural and dynamic publication seams to extend.
-- [`RenderDeformationPreparation`](../../Engine/Renderer/Private/SceneData/Preparation/RenderDeformationPreparation.cpp) is the existing renderer owner for deformation inputs and current/previous history. Geometry-cache preparation belongs there or behind a focused collaborator owned by it; it must not create another scene-preparation graph.
+- The current implementation uses `RenderWorldDelta.h` and `RenderFrameDynamicData.h` for structural and dynamic publication. The committed renderer migration clean-break replaces those paths with target `RenderSceneDelta.h` and `RenderSceneDynamicData.h`; geometry-cache implementation targets the new scene publication and must not preserve the current packet through an adapter.
+- The current `RenderDeformationPreparation` implementation is under `Renderer/Private/SceneData/Preparation`. The committed renderer migration moves scene deformation continuity beneath `RenderScene` and view-independent frame materialization beneath `Scene/Preparation/RenderScenePreparation`; geometry-cache preparation belongs in that target owner or a focused collaborator owned by it, never another scene-preparation graph.
 - [`GBufferVS.hlsl`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferVS.hlsl) currently evaluates morphing and skinning in the raster vertex shader. [`RayTracingMaterialHit.hlsli`](../../Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli) repeats their attribute reconstruction at ray hits.
 - [`RayTracingBlasGeometryBuilder.cpp`](../../Engine/Renderer/Private/RayTracing/Acceleration/RayTracingBlasGeometryBuilder.cpp) currently reconstructs skinned positions on the CPU, and [`RayTracingBlasCache.cpp`](../../Engine/Renderer/Private/RayTracing/Acceleration/RayTracingBlasCache.cpp) uploads a replacement vertex buffer and rebuilds its BLAS. Geometry-cache delivery must not copy this CPU-versus-shader split.
 - [`Frame.cpp`](../../Engine/Renderer/Private/Frame/Core/Frame.cpp) builds the ray-tracing scene before the GBuffer. Shared deformed geometry must therefore be ready before both consumers rather than inserted inside either one.
@@ -310,14 +310,14 @@ Engine/GameFramework
   Public/Assets/Cooked/CookedGeometryCacheAsset.h
   Public/Rendering/RenderAssetHandles.h        cache handle
   Public/Rendering/RenderResourceTables.h      structural cache table
-  Public/Rendering/RenderFrameDynamicData.h    compact sample requests
+  Public/Rendering/RenderSceneDynamicData.h    compact sample requests
   Private/World/ECS/Components/...             playback state
   Private/Assets/Loaders/...                   metadata/directory only
 
 Engine/Renderer
   Private/GeometryCaches/GeometryCacheResidency.*
   Private/GeometryCaches/GeometryCacheDeformedPool.*
-  Private/SceneData/Preparation/...             existing deformation owner
+  Private/Scene/Preparation/...                 target deformation preparation owner
   Private/Frame/Geometry/...                    one pre-consumer compute pass
   Private/RayTracing/Acceleration/...           shared range BLAS update
 
