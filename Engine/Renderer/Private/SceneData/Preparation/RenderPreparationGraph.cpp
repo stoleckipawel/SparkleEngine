@@ -33,25 +33,14 @@ struct RenderPreparationGraph::Impl final
 		std::uint32_t MorphWeightCopyRanges = 0u;
 	};
 
-	Impl(
-	    TaskExecutor& taskExecutor,
-	    MaterialCache& materialCache,
-	    GpuMeshCache& gpuMeshCache,
-	    TextureCache& textureCache) noexcept;
+	Impl(TaskExecutor& taskExecutor, MaterialCache& materialCache, GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept;
 
-	void Execute(
-	    const RenderWorld& world,
-	    const RenderFrameDynamicData& dynamic,
-	    const Frustum& frustum,
-	    RenderSceneData& output);
+	void Execute(const RenderWorld& world, const RenderSceneDynamicData& dynamic, const Frustum& frustum, RenderSceneData& output);
 	void ResetHistory() noexcept;
 
-  private:
+private:
 	void BeginRun(RenderSceneData& output);
-	void ResolveInputs(
-	    const RenderWorld& world,
-	    const RenderFrameDynamicData& dynamic,
-	    const Frustum& frustum);
+	void ResolveInputs(const RenderWorld& world, const RenderSceneDynamicData& dynamic, const Frustum& frustum);
 	bool ExecuteCompiledGraph();
 	void FinishRun(RenderSceneData& output) noexcept;
 	void EnsureGraph(
@@ -67,10 +56,7 @@ struct RenderPreparationGraph::Impl final
 	    std::size_t morphWeightCopyRangeCount) noexcept;
 	static CompiledTaskGraph CompileGraph(const Capacity& capacity);
 	static TaskNodeHandle AddTransformBoundsTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
-	static TaskNodeHandle AddVisibilityTasks(
-	    TaskGraphBuilder& builder,
-	    std::uint32_t capacity,
-	    TaskNodeHandle transform);
+	static TaskNodeHandle AddVisibilityTasks(TaskGraphBuilder& builder, std::uint32_t capacity, TaskNodeHandle transform);
 	static TaskNodeHandle AddJointMatrixTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
 	static TaskNodeHandle AddMorphWeightTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
 	static TaskNodeHandle AddLightingTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
@@ -99,14 +85,14 @@ RenderPreparationGraph::Impl::Impl(
     MaterialCache& materialCache,
     GpuMeshCache& gpuMeshCache,
     TextureCache& textureCache) noexcept :
-	m_taskExecutor(&taskExecutor),
-	m_inputResolver(materialCache, gpuMeshCache, textureCache)
+    m_taskExecutor(&taskExecutor),
+    m_inputResolver(materialCache, gpuMeshCache, textureCache)
 {
 }
 
 void RenderPreparationGraph::Impl::Execute(
     const RenderWorld& world,
-    const RenderFrameDynamicData& dynamic,
+    const RenderSceneDynamicData& dynamic,
     const Frustum& frustum,
     RenderSceneData& output)
 {
@@ -141,18 +127,9 @@ void RenderPreparationGraph::Impl::BeginRun(RenderSceneData& output)
 	m_run.SceneData.ResetForReuse();
 }
 
-void RenderPreparationGraph::Impl::ResolveInputs(
-    const RenderWorld& world,
-    const RenderFrameDynamicData& dynamic,
-    const Frustum& frustum)
+void RenderPreparationGraph::Impl::ResolveInputs(const RenderWorld& world, const RenderSceneDynamicData& dynamic, const Frustum& frustum)
 {
-	m_inputResolver.Resolve(
-	    world,
-	    dynamic,
-	    frustum,
-	    m_previousWorldTransforms,
-	    m_deformationPreparation,
-	    m_run);
+	m_inputResolver.Resolve(world, dynamic, frustum, m_previousWorldTransforms, m_deformationPreparation, m_run);
 }
 
 bool RenderPreparationGraph::Impl::ExecuteCompiledGraph()
@@ -185,8 +162,7 @@ void RenderPreparationGraph::Impl::EnsureGraph(
     std::size_t jointMatrixCopyRangeCount,
     std::size_t morphWeightCopyRangeCount)
 {
-	const Capacity capacity =
-	    ResolveCapacities(objectCount, lightCount, jointMatrixCopyRangeCount, morphWeightCopyRangeCount);
+	const Capacity capacity = ResolveCapacities(objectCount, lightCount, jointMatrixCopyRangeCount, morphWeightCopyRangeCount);
 	if (CanReuseGraph(capacity))
 	{
 		return;
@@ -198,11 +174,9 @@ void RenderPreparationGraph::Impl::EnsureGraph(
 
 bool RenderPreparationGraph::Impl::CanReuseGraph(const Capacity& capacity) const noexcept
 {
-	return m_graph &&
-	       capacity.Objects == m_capacity.Objects &&
-	       capacity.Lights == m_capacity.Lights &&
-	       capacity.JointMatrixCopyRanges == m_capacity.JointMatrixCopyRanges &&
-	       capacity.MorphWeightCopyRanges == m_capacity.MorphWeightCopyRanges;
+	return m_graph && capacity.Objects == m_capacity.Objects && capacity.Lights == m_capacity.Lights
+	    && capacity.JointMatrixCopyRanges == m_capacity.JointMatrixCopyRanges
+	    && capacity.MorphWeightCopyRanges == m_capacity.MorphWeightCopyRanges;
 }
 
 RenderPreparationGraph::Impl::Capacity RenderPreparationGraph::Impl::ResolveCapacities(
@@ -232,9 +206,7 @@ CompiledTaskGraph RenderPreparationGraph::Impl::CompileGraph(const Capacity& cap
 	return builder.Compile();
 }
 
-TaskNodeHandle RenderPreparationGraph::Impl::AddTransformBoundsTasks(
-    TaskGraphBuilder& builder,
-    std::uint32_t capacity)
+TaskNodeHandle RenderPreparationGraph::Impl::AddTransformBoundsTasks(TaskGraphBuilder& builder, std::uint32_t capacity)
 {
 	return ParallelFor(
 	    builder,
@@ -244,10 +216,7 @@ TaskNodeHandle RenderPreparationGraph::Impl::AddTransformBoundsTasks(
 	    &RenderPreparationTasks::TransformObjects);
 }
 
-TaskNodeHandle RenderPreparationGraph::Impl::AddVisibilityTasks(
-    TaskGraphBuilder& builder,
-    std::uint32_t capacity,
-    TaskNodeHandle transform)
+TaskNodeHandle RenderPreparationGraph::Impl::AddVisibilityTasks(TaskGraphBuilder& builder, std::uint32_t capacity, TaskNodeHandle transform)
 {
 	const TaskNodeHandle visibility = ParallelFor(
 	    builder,
@@ -256,13 +225,11 @@ TaskNodeHandle RenderPreparationGraph::Impl::AddVisibilityTasks(
 	    ParallelForPolicy{.GrainSize = 64u, .SerialThreshold = 128u, .MaximumPartitions = 8u},
 	    &RenderPreparationTasks::EvaluateVisibility);
 
-	(void)builder.DependsOn(visibility, transform);
+	(void) builder.DependsOn(visibility, transform);
 	return visibility;
 }
 
-TaskNodeHandle RenderPreparationGraph::Impl::AddJointMatrixTasks(
-    TaskGraphBuilder& builder,
-    std::uint32_t capacity)
+TaskNodeHandle RenderPreparationGraph::Impl::AddJointMatrixTasks(TaskGraphBuilder& builder, std::uint32_t capacity)
 {
 	return ParallelFor(
 	    builder,
@@ -272,9 +239,7 @@ TaskNodeHandle RenderPreparationGraph::Impl::AddJointMatrixTasks(
 	    &RenderPreparationTasks::CopyJointMatrices);
 }
 
-TaskNodeHandle RenderPreparationGraph::Impl::AddMorphWeightTasks(
-    TaskGraphBuilder& builder,
-    std::uint32_t capacity)
+TaskNodeHandle RenderPreparationGraph::Impl::AddMorphWeightTasks(TaskGraphBuilder& builder, std::uint32_t capacity)
 {
 	return ParallelFor(
 	    builder,
@@ -284,9 +249,7 @@ TaskNodeHandle RenderPreparationGraph::Impl::AddMorphWeightTasks(
 	    &RenderPreparationTasks::CopyMorphWeights);
 }
 
-TaskNodeHandle RenderPreparationGraph::Impl::AddLightingTasks(
-    TaskGraphBuilder& builder,
-    std::uint32_t capacity)
+TaskNodeHandle RenderPreparationGraph::Impl::AddLightingTasks(TaskGraphBuilder& builder, std::uint32_t capacity)
 {
 	return ParallelFor(
 	    builder,
@@ -304,25 +267,16 @@ void RenderPreparationGraph::Impl::AddMergeTasks(
     TaskNodeHandle lighting)
 {
 	const std::array<TaskNodeHandle, 4> mergeInputs{visibility, jointMatrices, morphWeights, lighting};
-	const TaskNodeHandle mergeJoin = builder.WhenAll(
-	    MakeTaskDesc("Renderer.Preparation.MergeJoin"),
-	    mergeInputs);
-	const TaskNodeHandle merge = builder.ContinueWith(
-	    mergeJoin,
-	    MakeTaskDesc("Renderer.Preparation.Merge"),
-	    &RenderPreparationMerger::Merge);
+	const TaskNodeHandle mergeJoin = builder.WhenAll(MakeTaskDesc("Renderer.Preparation.MergeJoin"), mergeInputs);
+	const TaskNodeHandle merge =
+	    builder.ContinueWith(mergeJoin, MakeTaskDesc("Renderer.Preparation.Merge"), &RenderPreparationMerger::Merge);
 
-	(void)builder.ContinueWith(
-	    merge,
-	    MakeTaskDesc("Renderer.Preparation.RayTracingPlan"),
-	    &RenderPreparationMerger::BuildRayTracingPlan);
+	(void) builder.ContinueWith(merge, MakeTaskDesc("Renderer.Preparation.RayTracingPlan"), &RenderPreparationMerger::BuildRayTracingPlan);
 }
 
 TaskDesc RenderPreparationGraph::Impl::MakeTaskDesc(std::string_view name)
 {
-	return TaskDesc{
-	    .Name = TaskName(name),
-	    .Lane = TaskLane::FrameCritical};
+	return TaskDesc{.Name = TaskName(name), .Lane = TaskLane::FrameCritical};
 }
 
 void RenderPreparationGraph::Impl::CommitHistory()
@@ -332,10 +286,7 @@ void RenderPreparationGraph::Impl::CommitHistory()
 	std::uint32_t requiredSlotCount = 0u;
 	for (const PreparedRenderObject& object : m_run.PreparedObjects)
 	{
-		requiredSlotCount =
-		    (std::max)(
-		        requiredSlotCount,
-		        object.Draw.Source.GpuSceneSlot + 1u);
+		requiredSlotCount = (std::max) (requiredSlotCount, object.Draw.Source.GpuSceneSlot + 1u);
 	}
 	m_previousWorldTransforms.resize(requiredSlotCount);
 
@@ -347,9 +298,7 @@ void RenderPreparationGraph::Impl::CommitHistory()
 		}
 
 		m_previousWorldTransforms[object.Draw.Source.GpuSceneSlot] =
-		    RenderPreviousWorldTransform{
-		        .Object = object.Object,
-		        .WorldMatrix = object.Draw.Transform.WorldMatrix};
+		    RenderPreviousWorldTransform{.Object = object.Object, .WorldMatrix = object.Draw.Transform.WorldMatrix};
 	}
 
 	m_deformationPreparation.Commit(m_run.Deformation);
@@ -362,16 +311,12 @@ void RenderPreparationGraph::Impl::ReleaseInputViews(RenderPreparationRun& run) 
 	run.Deformation.MorphWeightCopyRanges.clear();
 }
 
-std::uint32_t RenderPreparationGraph::Impl::ResolveCapacity(
-    std::size_t count,
-    std::uint32_t serialThreshold) noexcept
+std::uint32_t RenderPreparationGraph::Impl::ResolveCapacity(std::size_t count, std::uint32_t serialThreshold) noexcept
 {
 	const std::size_t maximumCapacity = (std::numeric_limits<std::uint32_t>::max)();
-	const std::uint32_t boundedCount = static_cast<std::uint32_t>((std::min)(count, maximumCapacity));
+	const std::uint32_t boundedCount = static_cast<std::uint32_t>((std::min) (count, maximumCapacity));
 
-	return boundedCount <= serialThreshold
-	           ? serialThreshold
-	           : std::bit_ceil(boundedCount);
+	return boundedCount <= serialThreshold ? serialThreshold : std::bit_ceil(boundedCount);
 }
 
 RenderPreparationGraph::RenderPreparationGraph(
@@ -379,7 +324,7 @@ RenderPreparationGraph::RenderPreparationGraph(
     MaterialCache& materialCache,
     GpuMeshCache& gpuMeshCache,
     TextureCache& textureCache) :
-	m_impl(std::make_unique<Impl>(taskExecutor, materialCache, gpuMeshCache, textureCache))
+    m_impl(std::make_unique<Impl>(taskExecutor, materialCache, gpuMeshCache, textureCache))
 {
 }
 
@@ -387,7 +332,7 @@ RenderPreparationGraph::~RenderPreparationGraph() noexcept = default;
 
 void RenderPreparationGraph::Execute(
     const RenderWorld& world,
-    const RenderFrameDynamicData& dynamic,
+    const RenderSceneDynamicData& dynamic,
     const Frustum& frustum,
     RenderSceneData& output)
 {

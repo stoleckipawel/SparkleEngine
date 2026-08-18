@@ -143,7 +143,7 @@ bool EditorApplication::Tick()
 	    : 1.0f;
 	const CameraInputIntent cameraIntent = m_runtimeApplication->CollectCameraInputIntent(aspectRatio);
 	const float deltaSeconds = static_cast<float>(m_runtimeApplication->GetTimer().GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
-	const RenderCameraData renderCamera = m_ui->UpdateViewportCamera(cameraIntent, deltaSeconds);
+	const RenderViewCameraData renderCamera = m_ui->UpdateViewportCamera(cameraIntent, deltaSeconds);
 	m_runtimeApplication->UpdateEditorRuntime(renderCamera);
 	RenderEditorFrame(renderer);
 	return true;

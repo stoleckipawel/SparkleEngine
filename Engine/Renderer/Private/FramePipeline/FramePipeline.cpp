@@ -13,6 +13,7 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
+#include "Frame/RenderFrameTime.h"
 #include "Frame/Lighting/ReferenceLightingInvalidation.h"
 #include "Frame/Lighting/RestirLightingInvalidation.h"
 #include "FrameGraph/Builder/FrameGraphFactory.h"
@@ -39,7 +40,6 @@
 #include "SceneData/RenderSceneGpuData.h"
 #include "Textures/RendererTexture.h"
 #include "Textures/TextureCache.h"
-#include "Time/Timer.h"
 #include "Window/Window.h"
 
 static const auto g_framePipelineLogger = Logging::GetOrCreateLogger("Renderer.FramePipeline");
@@ -108,19 +108,9 @@ void FramePipeline::InitializeFrameContexts()
 	}
 }
 
-void FramePipeline::SubmitRenderInput(RenderInputFrame input) noexcept
+void FramePipeline::SubmitFrameSubmission(RenderFrameSubmission submission) noexcept
 {
-	FinalizeRenderInputMetadata(input);
-	(void) m_renderInputConsumer->Submit(std::move(input));
-}
-
-void FramePipeline::FinalizeRenderInputMetadata(RenderInputFrame& input) const noexcept
-{
-	const FrameResolutionExtents resolution = ResolveFrameResolution();
-	input.Dynamic.Metadata.RenderWidth = resolution.Render.Width;
-	input.Dynamic.Metadata.RenderHeight = resolution.Render.Height;
-	input.Dynamic.Metadata.OutputWidth = resolution.Output.Width;
-	input.Dynamic.Metadata.OutputHeight = resolution.Output.Height;
+	(void) m_renderInputConsumer->Submit(std::move(submission));
 }
 
 FramePipeline::~FramePipeline() noexcept
@@ -145,11 +135,11 @@ void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) n
 	m_bResizePending = true;
 }
 
-void FramePipeline::OnRender(const TimeInfo& timing, const UiRenderPacket& ui) noexcept
+void FramePipeline::OnRender(const RenderFrameTime& time, const UiRenderPacket& ui) noexcept
 {
 	m_displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
 	BeginFrame();
-	SetupFrame(timing);
+	SetupFrame(time);
 	RecordFrame();
 	RenderUiPacket(ui);
 	SubmitFrame();
@@ -247,11 +237,20 @@ void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
 void FramePipeline::BeginFrame() noexcept
 {
 	PollFrameServices();
-	ConsumeRenderInput();
+	ConsumeFrameSubmission();
 	ApplyPendingResize();
 	RefreshGraphForResolutionAndPresentation();
 	RefreshGraphForRenderModes();
 	RefreshGraphForImageProvider();
+	const std::uint64_t shaderPackageGeneration = m_rendererHost->GetShaderPackageGeneration();
+	const std::uint64_t imageProviderGeneration = m_rendererHost->GetImageProviderGeneration();
+	if ((m_previousShaderPackageGeneration && *m_previousShaderPackageGeneration != shaderPackageGeneration)
+	    || (m_previousImageProviderGeneration && *m_previousImageProviderGeneration != imageProviderGeneration))
+	{
+		ResetTemporalState("Shader or image-provider generation changed");
+	}
+	m_previousShaderPackageGeneration = shaderPackageGeneration;
+	m_previousImageProviderGeneration = imageProviderGeneration;
 	BeginBackendFrame();
 }
 
@@ -266,10 +265,10 @@ void FramePipeline::PollFrameServices() noexcept
 	m_rendererHost->GetRenderWorld().PromoteResidentGpuMeshes();
 }
 
-void FramePipeline::ConsumeRenderInput() noexcept
+void FramePipeline::ConsumeFrameSubmission() noexcept
 {
-	const RenderInputConsumeResult inputResult = m_renderInputConsumer->ConsumePending();
-	if (inputResult.SceneReset)
+	const RenderInputConsumeResult submissionResult = m_renderInputConsumer->ConsumePending();
+	if (submissionResult.SceneReset)
 	{
 		m_gpuScene->Reset();
 		m_rendererHost->GetTextureCache().UnloadSceneTextures();
@@ -337,7 +336,6 @@ void FramePipeline::RefreshGraphForImageProvider() noexcept
 	if (imageProviderFrameGraphKey != m_imageProviderFrameGraphKey)
 	{
 		m_rendererHost->RefreshImageProviders();
-		ResetTemporalState("Image provider graph mode changed");
 		RefreshFrameExecution(ResolveFrameResolution());
 		m_imageProviderFrameGraphKey = imageProviderFrameGraphKey;
 	}
@@ -346,7 +344,7 @@ void FramePipeline::RefreshGraphForImageProvider() noexcept
 void FramePipeline::BeginBackendFrame() noexcept
 {
 	RenderDeviceServices& deviceServices = m_rendererHost->GetDeviceServices();
-	deviceServices.BeginFrame(m_renderInputConsumer->GetDynamicData().Metadata.FrameId);
+	deviceServices.BeginFrame(m_renderInputConsumer->GetFrameId());
 	if (m_ownsUiBackend)
 	{
 		m_rendererHost->GetImGuiRenderer().BeginFrame();
@@ -357,7 +355,7 @@ void FramePipeline::BeginBackendFrame() noexcept
 	frameDiagnostics.ResolveTimings();
 }
 
-void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
+void FramePipeline::SetupFrame(const RenderFrameTime& time) noexcept
 {
 	RefreshViewportRenderProducts();
 
@@ -366,11 +364,11 @@ void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 	m_rendererHost->GetGpuMeshCache().UploadReadyMeshes(graphicsCommandList);
 	UploadPendingSceneTextures(deviceServices, graphicsCommandList);
 
-	m_rendererHost->GetRenderCamera().Update(m_renderInputConsumer->GetDynamicData().Camera);
+	m_rendererHost->GetRenderCamera().Update(m_renderInputConsumer->GetViewInput().Camera);
 
 	const RenderViewportExtent renderExtent =
 	    m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
-	m_perFrameData = m_perFrameDataBuilder.Build(timing, CVarRenderViewMode.Get(), renderExtent);
+	m_perFrameData = m_perFrameDataBuilder.Build(m_renderInputConsumer->GetFrameId(), time, CVarRenderViewMode.Get(), renderExtent);
 }
 
 void FramePipeline::UploadPendingSceneTextures(RenderDeviceServices& deviceServices, RenderCommandList& graphicsCommandList)
@@ -498,28 +496,33 @@ void FramePipeline::PlayUiPacket(const UiRenderPacket& packet) noexcept
 
 void FramePipeline::RecordFrame() noexcept
 {
-	const RenderFrameDynamicData& dynamic = m_renderInputConsumer->GetDynamicData();
+	const RenderSceneDynamicData& dynamic = m_renderInputConsumer->GetSceneDynamicData();
+	const RenderViewInput& view = m_renderInputConsumer->GetViewInput();
 	RenderRayTracingScene* activeRayTracingScene = m_rendererHost->GetRenderRayTracingScene();
 
-	ApplyRenderInputHistoryReset(dynamic);
+	ApplySubmissionHistoryInvalidation(view);
 	FrameContext& frame = PrepareFrameContext(dynamic, activeRayTracingScene);
 	UpdateLightingHistory(frame);
-	SetupImageProviderFrame(frame, dynamic);
+	SetupImageProviderFrame(frame);
 	BindRayTracingScene(frame, activeRayTracingScene);
 	BindSkyTexture(frame);
 	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, *frame.sceneGpuData);
 	ExecuteFrameGraph(frame, activeRayTracingScene);
 }
 
-void FramePipeline::ApplyRenderInputHistoryReset(const RenderFrameDynamicData& dynamic) noexcept
+void FramePipeline::ApplySubmissionHistoryInvalidation(const RenderViewInput& view) noexcept
 {
-	if (dynamic.Metadata.ResetHistory || m_rendererHost->GetRenderWorld().ConsumeHistoryReset())
+	const bool sceneChanged = m_rendererHost->GetRenderWorld().ConsumeHistoryReset();
+	if (sceneChanged || view.CameraCut || view.CameraTeleported)
 	{
-		ResetTemporalState(dynamic.Metadata.CameraCut ? "Render input camera cut" : "Render input generation reset");
+		ResetTemporalState(
+		    view.CameraCut              ? "Submitted view camera cut"
+		        : view.CameraTeleported ? "Submitted view camera teleport"
+		                                : "Render scene reset");
 	}
 }
 
-FrameContext& FramePipeline::PrepareFrameContext(const RenderFrameDynamicData& dynamic, RenderRayTracingScene* activeRayTracingScene)
+FrameContext& FramePipeline::PrepareFrameContext(const RenderSceneDynamicData& dynamic, RenderRayTracingScene* activeRayTracingScene)
 {
 	const std::uint32_t frameIndex = m_rendererHost->GetRenderHardwareInterface().GetCurrentFrameIndex();
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[frameIndex];
@@ -528,6 +531,7 @@ FrameContext& FramePipeline::PrepareFrameContext(const RenderFrameDynamicData& d
 	    FrameContextBuildRequest{
 	        .Dynamic = dynamic,
 	        .GpuScene = *m_gpuScene,
+	        .FrameId = m_renderInputConsumer->GetFrameId(),
 	        .FrameIndex = frameIndex,
 	        .SceneExtent = m_frameGraphRenderExtent,
 	        .RayTracingScene = activeRayTracingScene,
@@ -567,14 +571,14 @@ void FramePipeline::UpdateLightingHistory(FrameContext& frame)
 	}
 }
 
-void FramePipeline::SetupImageProviderFrame(const FrameContext& frame, const RenderFrameDynamicData& dynamic)
+void FramePipeline::SetupImageProviderFrame(const FrameContext& frame)
 {
 	m_rendererHost->GetImageProviders().SetupFrame(
 	    ImageProviderFrameContext{
 	        .RenderExtent = m_frameGraphRenderExtent,
 	        .OutputExtent = m_frameGraphOutputExtent,
-	        .FrameId = dynamic.Metadata.FrameId,
-	        .ProviderGeneration = dynamic.Metadata.ProviderGeneration,
+	        .FrameId = m_renderInputConsumer->GetFrameId(),
+	        .ProviderGeneration = m_rendererHost->GetImageProviderGeneration(),
 	        .Camera = frame.mainView.perViewData.Camera,
 	        .TemporalData = frame.mainView.perTemporalData,
 	        .TemporalState = frame.mainView.temporalState,
@@ -686,7 +690,7 @@ void FramePipeline::ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene
 void FramePipeline::SubmitFrame() noexcept
 {
 	RenderDeviceServices& deviceServices = m_rendererHost->GetDeviceServices();
-	deviceServices.SubmitFrame(m_renderInputConsumer->GetDynamicData().Metadata.FrameId);
+	deviceServices.SubmitFrame(m_renderInputConsumer->GetFrameId());
 	const RhiSubmissionToken graphicsToken = deviceServices.GetLastSubmittedToken(ERhiQueueType::Graphics);
 	m_rendererHost->GetTextureCache().RecordUploadSubmission(graphicsToken);
 	m_rendererHost->GetGpuMeshCache().RecordUploadSubmission(graphicsToken);

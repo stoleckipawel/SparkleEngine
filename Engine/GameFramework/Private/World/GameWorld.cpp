@@ -8,7 +8,7 @@
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
 #include "World/GameWorldState.h"
-#include "World/Extraction/RenderInputExtractor.h"
+#include "World/Extraction/RenderFrameSubmissionExtractor.h"
 #include "World/Editing/WorldEditCommandQueue.h"
 #include "Level/Loading/SceneLoadPackage.h"
 #include "World/Resources/GameWorldResourceStores.h"
@@ -23,7 +23,7 @@ GameWorld::GameWorld(TaskExecutor& taskExecutor) :
     m_resources(std::make_unique<GameWorldResourceStores>()),
     m_taskExecutor(taskExecutor),
     m_editCommands(std::make_unique<WorldEditCommandQueue>()),
-    m_renderInputExtractor(std::make_unique<ECS::RenderInputExtractor>())
+    m_renderFrameSubmissionExtractor(std::make_unique<ECS::RenderFrameSubmissionExtractor>())
 {
 }
 
@@ -170,9 +170,9 @@ void GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package)
 	++m_generation;
 }
 
-RenderInputFrame GameWorld::ExtractRenderInput(RenderFrameMetadata metadata)
+RenderFrameSubmission GameWorld::ExtractRenderFrameSubmission(std::uint64_t frameId)
 {
-	return m_renderInputExtractor->Extract(*m_state, *m_resources, AcquireReadView(), m_generation, metadata);
+	return m_renderFrameSubmissionExtractor->Extract(*m_state, *m_resources, AcquireReadView(), m_generation, frameId);
 }
 
 void GameWorld::FinalizeSceneLoadCommit()

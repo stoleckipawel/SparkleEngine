@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Concurrency/FrameQueue/RenderFramePacket.h"
+#include "Concurrency/FrameQueue/RenderExecutionRequest.h"
 
 #include <condition_variable>
 #include <cstdint>
@@ -33,8 +33,8 @@ public:
 	RenderFrameQueue& operator=(const RenderFrameQueue&) = delete;
 
 	std::optional<RenderFrameQueueTicket> Acquire();
-	bool Publish(RenderFrameQueueTicket ticket, RenderFramePacket packet);
-	bool Consume(RenderFrameQueueTicket ticket, RenderFramePacket& packet);
+	bool Publish(RenderFrameQueueTicket ticket, RenderExecutionRequest request);
+	bool Consume(RenderFrameQueueTicket ticket, RenderExecutionRequest& request);
 	bool Retire(RenderFrameQueueTicket ticket);
 	bool WaitUntilReusable(RenderFrameQueueTicket ticket);
 	void Close() noexcept;
@@ -45,7 +45,7 @@ private:
 	{
 		RenderFrameSlotState State = RenderFrameSlotState::Free;
 		std::uint64_t SequenceNumber = 0;
-		std::optional<RenderFramePacket> Packet;
+		std::optional<RenderExecutionRequest> Request;
 	};
 
 	bool IsTicketCurrentLocked(RenderFrameQueueTicket ticket) const noexcept;

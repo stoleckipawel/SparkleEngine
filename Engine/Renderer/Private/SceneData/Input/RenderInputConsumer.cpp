@@ -3,48 +3,42 @@
 
 #include "SceneData/RenderWorld.h"
 
-RenderInputConsumer::RenderInputConsumer(
-    RenderWorld& world) noexcept :
+RenderInputConsumer::RenderInputConsumer(RenderWorld& world) noexcept :
     m_world(&world)
 {
 }
 
-bool RenderInputConsumer::Submit(RenderInputFrame input)
+bool RenderInputConsumer::Submit(RenderFrameSubmission submission)
 {
-	if (m_pending) return false;
-	m_pending = std::move(input);
+	if (m_pending)
+		return false;
+	m_pending = std::move(submission);
 	return true;
 }
 
 RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 {
 	RenderInputConsumeResult result;
-	if (!m_pending) return result;
-	RenderInputFrame input = std::move(*m_pending);
+	if (!m_pending)
+		return result;
+	RenderFrameSubmission submission = std::move(*m_pending);
 	m_pending.reset();
 
-	const RenderFrameMetadata& metadata = input.Dynamic.Metadata;
-	if (metadata.SceneGeneration != input.WorldDelta.SceneGeneration ||
-	    metadata.FrameId <= m_lastFrameId)
+	if (submission.FrameId <= m_lastFrameId)
 	{
-		result.Diagnostic = "Render input metadata is stale or mismatched.";
+		result.Diagnostic = "Render frame submission identity is stale.";
 		return result;
 	}
-	if (m_world->ApplyFrame(input.WorldDelta, input.Dynamic, result.Diagnostic) !=
-	    RenderWorldApplyStatus::Applied)
+	if (m_world->ApplyFrame(submission.Scene.Structural, submission.Scene.Dynamic, result.Diagnostic) != RenderWorldApplyStatus::Applied)
 	{
 		return result;
 	}
 
-	input.Dynamic.Metadata.ResetHistory |=
-	    m_lastFrameId != 0 &&
-	    (metadata.SceneGeneration != m_sceneGeneration ||
-	     metadata.ProviderGeneration != m_providerGeneration);
-	m_lastFrameId = metadata.FrameId;
-	m_sceneGeneration = metadata.SceneGeneration;
-	m_providerGeneration = metadata.ProviderGeneration;
+	m_lastFrameId = submission.FrameId;
 	result.Accepted = true;
-	result.SceneReset = input.WorldDelta.ResetScene;
-	m_dynamic = std::move(input.Dynamic);
+	result.SceneReset = submission.Scene.Structural.ResetScene;
+	m_frameId = submission.FrameId;
+	m_sceneDynamic = std::move(submission.Scene.Dynamic);
+	m_viewInput = std::move(submission.View);
 	return result;
 }

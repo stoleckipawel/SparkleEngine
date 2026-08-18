@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Rendering/RenderInputFrame.h"
+#include "Rendering/RenderFrameSubmission.h"
 
 #include <optional>
 #include <string>
@@ -17,19 +17,20 @@ struct RenderInputConsumeResult final
 
 class RenderInputConsumer final
 {
-  public:
-	RenderInputConsumer(
-	    RenderWorld& world) noexcept;
+public:
+	RenderInputConsumer(RenderWorld& world) noexcept;
 
-	bool Submit(RenderInputFrame input);
+	bool Submit(RenderFrameSubmission submission);
 	RenderInputConsumeResult ConsumePending() noexcept;
-	const RenderFrameDynamicData& GetDynamicData() const noexcept { return m_dynamic; }
+	std::uint64_t GetFrameId() const noexcept { return m_frameId; }
+	const RenderSceneDynamicData& GetSceneDynamicData() const noexcept { return m_sceneDynamic; }
+	const RenderViewInput& GetViewInput() const noexcept { return m_viewInput; }
 
-  private:
+private:
 	RenderWorld* m_world = nullptr;
-	std::optional<RenderInputFrame> m_pending;
-	RenderFrameDynamicData m_dynamic;
+	std::optional<RenderFrameSubmission> m_pending;
+	RenderSceneDynamicData m_sceneDynamic;
+	RenderViewInput m_viewInput;
+	std::uint64_t m_frameId = 0;
 	std::uint64_t m_lastFrameId = 0;
-	std::uint64_t m_sceneGeneration = 0;
-	std::uint64_t m_providerGeneration = 0;
 };

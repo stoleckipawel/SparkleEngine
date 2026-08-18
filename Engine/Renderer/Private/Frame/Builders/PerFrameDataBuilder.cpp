@@ -2,13 +2,14 @@
 
 #include "Frame/Builders/PerFrameDataBuilder.h"
 
-#include "Time/Timer.h"
+#include "Frame/RenderFrameTime.h"
 
 PerFrameDataBuilder::PerFrameDataBuilder() noexcept = default;
 PerFrameDataBuilder::~PerFrameDataBuilder() noexcept = default;
 
 PerFrameConstantBufferData PerFrameDataBuilder::Build(
-    const TimeInfo& timing,
+    std::uint64_t frameId,
+    const RenderFrameTime& time,
     RenderViewMode viewMode,
     RenderViewportExtent sceneExtent) const noexcept
 {
@@ -16,11 +17,11 @@ PerFrameConstantBufferData PerFrameDataBuilder::Build(
 	const float height = static_cast<float>(sceneExtent.Height != 0u ? sceneExtent.Height : 1u);
 
 	PerFrameConstantBufferData data{};
-	data.FrameIndex = timing.frameIndex;
-	data.TotalTimeSeconds = static_cast<float>(timing.unscaledTime.count());
-	data.DeltaTimeSeconds = static_cast<float>(timing.unscaledDelta.count());
-	data.ScaledTotalTimeSeconds = static_cast<float>(timing.scaledTime.count());
-	data.ScaledDeltaTimeSeconds = static_cast<float>(timing.scaledDelta.count());
+	data.FrameIndex = static_cast<std::uint32_t>(frameId);
+	data.TotalTimeSeconds = static_cast<float>(time.UnscaledTime.count());
+	data.DeltaTimeSeconds = static_cast<float>(time.UnscaledDelta.count());
+	data.ScaledTotalTimeSeconds = static_cast<float>(time.ScaledTime.count());
+	data.ScaledDeltaTimeSeconds = static_cast<float>(time.ScaledDelta.count());
 	data.ViewModeIndex = static_cast<std::uint32_t>(viewMode);
 	data.ViewportSize = DirectX::XMFLOAT2(width, height);
 	data.ViewportSizeInv = DirectX::XMFLOAT2(1.0f / width, 1.0f / height);

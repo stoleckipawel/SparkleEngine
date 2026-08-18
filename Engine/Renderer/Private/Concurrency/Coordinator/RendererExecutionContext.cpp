@@ -29,11 +29,11 @@ RendererExecutionContext::~RendererExecutionContext() noexcept
 	m_rendererHost.reset();
 }
 
-void RendererExecutionContext::ExecuteFrame(RenderFramePacket packet) noexcept
+void RendererExecutionContext::ExecuteFrame(RenderExecutionRequest request) noexcept
 {
 	m_owner.AssertAccess();
-	m_pipeline->SubmitRenderInput(std::move(packet.Input));
-	m_pipeline->OnRender(packet.Timing, packet.Ui);
+	m_pipeline->SubmitFrameSubmission(std::move(request.Submission));
+	m_pipeline->OnRender(request.Time, request.Ui);
 }
 
 void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noexcept

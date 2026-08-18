@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Rendering/RenderFrameDynamicData.h"
+#include "GameFramework/Public/Rendering/RenderSceneDynamicData.h"
 #include "World/Extraction/WorldExtractionStorage.h"
 
 #include <limits>
@@ -15,9 +15,9 @@ namespace ECS
 	class GameWorldState;
 	class RenderObjectDeltaExtractor;
 	class RenderObjectIdentityMap;
-	class RenderFrameDynamicDataExtractor final
+	class RenderSceneDynamicDataExtractor final
 	{
-	  public:
+	public:
 		void BeginScene() noexcept;
 		void Extract(
 		    GameWorldState& state,
@@ -26,39 +26,29 @@ namespace ECS
 		    std::span<const WorldExtractionStorage::MeshSlot> meshes,
 		    const RenderObjectDeltaExtractor& objects,
 		    RenderObjectIdentityMap& identities,
-		    RenderFrameDynamicData& dynamic);
+		    RenderSceneDynamicData& dynamic);
 
-	  private:
+	private:
 		struct MorphMetadata final
 		{
 			EntityId Entity;
 			RenderAnimationAssetHandle Animation;
-			std::uint32_t TargetNodeIndex =
-			    (std::numeric_limits<std::uint32_t>::max)();
+			std::uint32_t TargetNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 		};
 
 		void ExtractObjects(
 		    std::span<const WorldExtractionStorage::MeshSlot> meshes,
 		    const RenderObjectDeltaExtractor& objects,
-		    RenderFrameDynamicData& dynamic);
-		static bool HasSameObjectData(
-		    const RenderObjectDynamicData& left,
-		    const RenderObjectDynamicData& right) noexcept;
+		    RenderSceneDynamicData& dynamic);
+		static bool HasSameObjectData(const RenderObjectDynamicData& left, const RenderObjectDynamicData& right) noexcept;
 		static void ExtractSkinning(
 		    GameWorldState& state,
 		    const GameWorldResourceStores& resources,
 		    std::span<const WorldExtractionStorage::MeshSlot> meshes,
 		    const RenderObjectDeltaExtractor& objects,
-		    RenderFrameDynamicData& dynamic);
-		void ExtractMorphWeights(
-		    GameWorldState& state,
-		    const RenderObjectDeltaExtractor& objects,
-		    RenderFrameDynamicData& dynamic);
-		static void ExtractLights(
-		    const WorldReadView& readView,
-		    RenderObjectIdentityMap& identities,
-		    RenderFrameDynamicData& dynamic);
-		static RenderCameraData BuildCamera(const WorldReadView& readView) noexcept;
+		    RenderSceneDynamicData& dynamic);
+		void ExtractMorphWeights(GameWorldState& state, const RenderObjectDeltaExtractor& objects, RenderSceneDynamicData& dynamic);
+		static void ExtractLights(const WorldReadView& readView, RenderObjectIdentityMap& identities, RenderSceneDynamicData& dynamic);
 
 		std::vector<RenderObjectDynamicData> m_publishedObjects;
 		std::vector<RenderObjectDynamicData> m_currentObjects;

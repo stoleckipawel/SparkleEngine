@@ -4,7 +4,7 @@
 #include "Renderer/Public/SceneData/PointLight.h"
 #include "Renderer/Public/SceneData/RectLight.h"
 #include "Renderer/Public/SceneData/SpotLight.h"
-#include "Rendering/RenderFrameDynamicData.h"
+#include "Rendering/RenderSceneDynamicData.h"
 
 #include <cstdint>
 #include <span>
@@ -23,8 +23,7 @@ enum class RenderLightClassification : std::uint8_t
 struct PreparedRenderLight final
 {
 	RenderObjectId Object;
-	RenderLightClassification Classification =
-	    RenderLightClassification::None;
+	RenderLightClassification Classification = RenderLightClassification::None;
 	DirectionalLight Directional;
 	PointLight Point;
 	SpotLight Spot;
@@ -33,15 +32,11 @@ struct PreparedRenderLight final
 
 class RenderLightPreparation final
 {
-  public:
-	static void PrepareRange(
-	    std::span<const RenderLightData> inputs,
-	    std::span<PreparedRenderLight> outputs) noexcept;
-	static void Commit(
-	    std::span<const PreparedRenderLight> lights,
-	    RenderSceneData& sceneData);
+public:
+	static void PrepareRange(std::span<const RenderLightData> inputs, std::span<PreparedRenderLight> outputs) noexcept;
+	static void Commit(std::span<const PreparedRenderLight> lights, RenderSceneData& sceneData);
 
-  private:
+private:
 	static void PrepareDirectional(
 	    const SceneLightDesc& light,
 	    const SceneDirectionalLightDesc& directional,

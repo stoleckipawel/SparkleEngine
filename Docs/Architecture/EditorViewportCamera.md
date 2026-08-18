@@ -35,7 +35,7 @@ The editor starts its free view from the active scene camera when a world genera
 | Free editor view pose | `EditorViewportSession` | Current editor session |
 | Viewport move speed, rotation speed, invert-Y, projection, orthographic height, and exposure overrides | Editor viewport settings | Per-workspace user file under `Saved/Config/EditorViewport.ini` |
 | Runtime navigation policy | `GameWorld` | Runtime world session only |
-| Effective render camera | Immutable `RenderViewCameraData` value | One submitted frame |
+| Effective render camera | Immutable `RenderViewCameraData` inside `RenderViewInput` | One submitted frame |
 | Renderer display defaults and tone mapper | Renderer settings | Existing renderer-settings owner |
 | Per-property exposure deviations | `ViewportExposureOverrides` on the viewport request | Editor viewport settings |
 

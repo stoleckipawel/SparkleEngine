@@ -58,7 +58,7 @@ struct RenderSkyPublication final
 	std::optional<SceneSkyDesc> Value;
 };
 
-struct RenderWorldDelta final
+struct RenderSceneDelta final
 {
 	std::uint64_t SceneGeneration = 0;
 	std::uint64_t SequenceNumber = 0;
@@ -67,7 +67,7 @@ struct RenderWorldDelta final
 	std::vector<RenderObjectUpdate> Updates;
 	std::vector<RenderObjectId> Destroys;
 	// Immutable resource tables are structural publications. They are present on a
-	// scene reset, not recopied through every dynamic frame packet.
+	// scene reset, not recopied through every dynamic scene update.
 	std::optional<RenderMaterialTable> Materials;
 	std::optional<RenderTextureTable> Textures;
 	RenderInstanceGroupPublication InstanceGroups;

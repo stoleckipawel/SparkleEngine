@@ -13,7 +13,7 @@ class RenderDeformationPreparation;
 class RenderWorld;
 class TextureCache;
 struct Frustum;
-struct RenderFrameDynamicData;
+struct RenderSceneDynamicData;
 struct RenderProxy;
 struct RenderPreparationRun;
 struct RenderSceneData;
@@ -27,21 +27,18 @@ struct RenderPreviousWorldTransform final
 
 class RenderPreparationInputResolver final
 {
-  public:
-	RenderPreparationInputResolver(
-	    MaterialCache& materialCache,
-	    GpuMeshCache& gpuMeshCache,
-	    TextureCache& textureCache) noexcept;
+public:
+	RenderPreparationInputResolver(MaterialCache& materialCache, GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept;
 
 	void Resolve(
 	    const RenderWorld& world,
-	    const RenderFrameDynamicData& dynamic,
+	    const RenderSceneDynamicData& dynamic,
 	    const Frustum& frustum,
 	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
 	    RenderDeformationPreparation& deformationPreparation,
 	    RenderPreparationRun& run);
 
-  private:
+private:
 	void ResolveObjects(
 	    const RenderWorld& world,
 	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,

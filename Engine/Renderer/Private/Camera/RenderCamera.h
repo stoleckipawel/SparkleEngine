@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Rendering/RenderInputFrame.h"
+#include "Rendering/RenderViewCameraData.h"
 
 #include "ShaderData/RenderViewCameraData.h"
 #include "Math/Frustum.h"
@@ -8,7 +8,7 @@
 
 class RenderCamera final
 {
-  public:
+public:
 	RenderCamera() noexcept;
 	~RenderCamera() noexcept = default;
 
@@ -17,9 +17,9 @@ class RenderCamera final
 	RenderCamera(RenderCamera&&) = delete;
 	RenderCamera& operator=(RenderCamera&&) = delete;
 
-	void Update(const RenderCameraData& camera) noexcept;
+	void Update(const RenderViewCameraData& camera) noexcept;
 
-	void ForceUpdate(const RenderCameraData& camera) noexcept;
+	void ForceUpdate(const RenderViewCameraData& camera) noexcept;
 
 	DirectX::XMMATRIX GetViewMatrix() const noexcept;
 	DirectX::XMMATRIX GetProjectionMatrix() const noexcept;
@@ -30,10 +30,10 @@ class RenderCamera final
 	PerViewCameraConstantBufferData GetCameraConstantBufferData() const noexcept;
 	float GetFovYDegrees() const noexcept { return m_camera.FovYDegrees; }
 
-  private:
-	void RebuildMatrices(const RenderCameraData& camera) noexcept;
+private:
+	void RebuildMatrices(const RenderViewCameraData& camera) noexcept;
 
-	RenderCameraData m_camera;
+	RenderViewCameraData m_camera;
 	DirectX::XMFLOAT4X4 m_viewMatrix;
 	DirectX::XMFLOAT4X4 m_projectionMatrix;
 	DirectX::XMFLOAT4X4 m_viewProjMatrix;

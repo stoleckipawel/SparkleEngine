@@ -34,7 +34,7 @@ struct RendererBackendConfiguration;
 
 class RendererHost final
 {
-  public:
+public:
 	RendererHost(
 	    Window& window,
 	    const RendererBackendConfiguration& backendConfiguration,
@@ -72,27 +72,25 @@ class RendererHost final
 	const RenderWorld& GetRenderWorld() const noexcept { return *m_renderWorld; }
 	RendererImageProviderStack& GetImageProviders() noexcept { return *m_imageProviders; }
 	const RendererImageProviderStack& GetImageProviders() const noexcept { return *m_imageProviders; }
+	std::uint64_t GetImageProviderGeneration() const noexcept { return m_imageProviderGeneration; }
 	TaskExecutor& GetTaskExecutor() noexcept { return *m_taskExecutor; }
 
 	void ReloadCookedShaders();
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
-	TextureDiagnosticsSnapshot CaptureTextureDiagnostics(
-	    const TexturePreviewHandleResolver& resolvePreviewTexture) const;
+	TextureDiagnosticsSnapshot CaptureTextureDiagnostics(const TexturePreviewHandleResolver& resolvePreviewTexture) const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	void TickDiagnostics(std::uint64_t frameIndex) noexcept;
 	void RefreshImageProviders() noexcept;
 	void PollRetiredImageProviders() noexcept;
 
-  private:
+private:
 	void InitializeCoreRuntime(
 	    const RendererBackendConfiguration& backendConfiguration,
 	    TaskExecutor& taskExecutor,
 	    TaskScope& applicationTaskScope) noexcept;
-	void InitializeSceneRuntime(
-	    TaskExecutor& taskExecutor,
-	    TaskScope& applicationTaskScope) noexcept;
+	void InitializeSceneRuntime(TaskExecutor& taskExecutor, TaskScope& applicationTaskScope) noexcept;
 
 	Window* m_window = nullptr;
 	TaskExecutor* m_taskExecutor = nullptr;
@@ -110,6 +108,7 @@ class RendererHost final
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<RenderWorld> m_renderWorld;
 	std::unique_ptr<RendererImageProviderStack> m_imageProviders;
+	std::uint64_t m_imageProviderGeneration = 1;
 	struct RetiredImageProviderGeneration final
 	{
 		RhiSubmissionState LastUse;

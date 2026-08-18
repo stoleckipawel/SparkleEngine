@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Meshes/GpuMesh.h"
-#include "Rendering/RenderFrameDynamicData.h"
-#include "Rendering/RenderWorldDelta.h"
+#include "Rendering/RenderSceneDelta.h"
+#include "Rendering/RenderSceneDynamicData.h"
 
 #include <memory>
 #include <span>
@@ -37,14 +37,11 @@ enum class RenderWorldApplyStatus : std::uint8_t
 
 class RenderWorld final
 {
-  public:
+public:
 	RenderWorld(RhiCommandSubmissionService* submissionService, GpuMeshCache& gpuMeshCache);
 	~RenderWorld() noexcept;
 
-	RenderWorldApplyStatus ApplyFrame(
-	    const RenderWorldDelta& delta,
-	    const RenderFrameDynamicData& dynamic,
-	    std::string& diagnostic);
+	RenderWorldApplyStatus ApplyFrame(const RenderSceneDelta& delta, const RenderSceneDynamicData& dynamic, std::string& diagnostic);
 	void PromoteResidentGpuMeshes() noexcept;
 	const RenderProxy* Find(RenderObjectId object) const noexcept;
 	std::span<const RenderProxy> GetProxies() const noexcept { return m_proxies; }
@@ -58,38 +55,26 @@ class RenderWorld final
 	std::uint64_t GetMaterialRevision() const noexcept { return m_materialRevision; }
 	bool ConsumeHistoryReset() noexcept;
 
-  private:
-	RenderWorldApplyStatus ValidateDelta(
-	    const RenderWorldDelta& delta,
-	    std::string& diagnostic) const;
-	bool ValidateDynamic(
-	    const RenderFrameDynamicData& dynamic,
-	    const RenderWorldDelta& delta,
-	    std::string& diagnostic) const;
-	RenderWorldApplyStatus ApplyValidatedDelta(
-	    const RenderWorldDelta& delta,
-	    std::string& diagnostic);
-	void ApplyDynamic(const RenderFrameDynamicData& dynamic) noexcept;
-	void ApplyDestroys(const RenderWorldDelta& delta);
+private:
+	RenderWorldApplyStatus ValidateDelta(const RenderSceneDelta& delta, std::string& diagnostic) const;
+	bool ValidateDynamic(const RenderSceneDynamicData& dynamic, const RenderSceneDelta& delta, std::string& diagnostic) const;
+	RenderWorldApplyStatus ApplyValidatedDelta(const RenderSceneDelta& delta, std::string& diagnostic);
+	void ApplyDynamic(const RenderSceneDynamicData& dynamic) noexcept;
+	void ApplyDestroys(const RenderSceneDelta& delta);
 	void ResolveGpuMeshes(
-	    const RenderWorldDelta& delta,
+	    const RenderSceneDelta& delta,
 	    std::vector<GpuMeshHandle>& createMeshes,
 	    std::vector<GpuMeshHandle>& updateMeshes);
-	void ApplyCreates(const RenderWorldDelta& delta, std::span<const GpuMeshHandle> meshes);
-	void ApplyUpdates(const RenderWorldDelta& delta, std::span<const GpuMeshHandle> meshes);
-	void PublishResources(const RenderWorldDelta& delta);
+	void ApplyCreates(const RenderSceneDelta& delta, std::span<const GpuMeshHandle> meshes);
+	void ApplyUpdates(const RenderSceneDelta& delta, std::span<const GpuMeshHandle> meshes);
+	void PublishResources(const RenderSceneDelta& delta);
 	void RetainReferencedGpuMeshes() noexcept;
-	bool IsObjectAvailable(
-	    RenderObjectId object,
-	    const RenderWorldDelta& delta) const noexcept;
-	static bool HasOrderedDeltaObjects(const RenderWorldDelta& delta) noexcept;
-	static bool HasConflictingDeltaObjects(const RenderWorldDelta& delta) noexcept;
-	static bool HasStrictlyOrderedDynamicObjects(
-	    std::span<const RenderObjectDynamicData> objects) noexcept;
-	static bool HasStrictlyOrderedJointMatrixRanges(
-	    std::span<const RenderJointMatrixRange> ranges) noexcept;
-	static bool HasStrictlyOrderedMorphWeightRanges(
-	    std::span<const RenderMorphWeightRange> ranges) noexcept;
+	bool IsObjectAvailable(RenderObjectId object, const RenderSceneDelta& delta) const noexcept;
+	static bool HasOrderedDeltaObjects(const RenderSceneDelta& delta) noexcept;
+	static bool HasConflictingDeltaObjects(const RenderSceneDelta& delta) noexcept;
+	static bool HasStrictlyOrderedDynamicObjects(std::span<const RenderObjectDynamicData> objects) noexcept;
+	static bool HasStrictlyOrderedJointMatrixRanges(std::span<const RenderJointMatrixRange> ranges) noexcept;
+	static bool HasStrictlyOrderedMorphWeightRanges(std::span<const RenderMorphWeightRange> ranges) noexcept;
 	RenderProxy* FindMutable(RenderObjectId object) noexcept;
 	std::vector<RenderProxy> m_proxies;
 	std::unique_ptr<GpuSceneSlotAllocator> m_gpuSceneSlots;
