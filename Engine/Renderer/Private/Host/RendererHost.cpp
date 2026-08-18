@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <array>
+#include <limits>
 
 RendererHost::RendererHost(
     Window& window,
@@ -35,10 +36,7 @@ RendererHost::RendererHost(
     m_window(&window),
     m_taskExecutor(&taskExecutor)
 {
-	InitializeCoreRuntime(
-	    backendConfiguration,
-	    taskExecutor,
-	    applicationTaskScope);
+	InitializeCoreRuntime(backendConfiguration, taskExecutor, applicationTaskScope);
 	InitializeSceneRuntime(taskExecutor, applicationTaskScope);
 }
 
@@ -73,11 +71,7 @@ void RendererHost::ReloadCookedShaders()
 {
 	if (m_renderPassRuntimeCache == nullptr)
 	{
-		Diagnostics::Fatal(
-		    Logging::GetOrCreateLogger("Renderer.Host"),
-		    __FILE__,
-		    __LINE__,
-		    "Renderer has no render-pass runtime cache.");
+		Diagnostics::Fatal(Logging::GetOrCreateLogger("Renderer.Host"), __FILE__, __LINE__, "Renderer has no render-pass runtime cache.");
 	}
 
 	m_renderPassRuntimeCache->ReloadCookedShaders();
@@ -93,12 +87,9 @@ MeshDiagnosticsSnapshot RendererHost::CaptureMeshDiagnostics() const
 	return MeshDiagnosticsCollector::Capture(*m_renderWorld, m_gpuMeshCache.get());
 }
 
-TextureDiagnosticsSnapshot RendererHost::CaptureTextureDiagnostics(
-    const TexturePreviewHandleResolver& resolvePreviewTexture) const
+TextureDiagnosticsSnapshot RendererHost::CaptureTextureDiagnostics(const TexturePreviewHandleResolver& resolvePreviewTexture) const
 {
-	return m_textureCache != nullptr
-	           ? m_textureCache->CaptureDiagnosticsSnapshot(resolvePreviewTexture)
-	           : TextureDiagnosticsSnapshot{};
+	return m_textureCache != nullptr ? m_textureCache->CaptureDiagnosticsSnapshot(resolvePreviewTexture) : TextureDiagnosticsSnapshot{};
 }
 
 RendererMemoryDiagnosticsSnapshot RendererHost::CaptureMemoryDiagnostics() const
@@ -120,21 +111,23 @@ void RendererHost::RefreshImageProviders() noexcept
 	{
 		return;
 	}
+	if (m_imageProviderGeneration == (std::numeric_limits<std::uint64_t>::max)())
+	{
+		Diagnostics::Fatal(
+		    Logging::GetOrCreateLogger("Renderer.Host"),
+		    __FILE__,
+		    __LINE__,
+		    "Renderer image-provider generation exhausted.");
+	}
 
 	RhiSubmissionState lastUse;
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		lastUse.MarkUsed(
-		    GetDeviceServices().GetLastSubmittedToken(
-		        static_cast<ERhiQueueType>(queueIndex)));
+		lastUse.MarkUsed(GetDeviceServices().GetLastSubmittedToken(static_cast<ERhiQueueType>(queueIndex)));
 	}
-	m_retiredImageProviders.push_back(
-	    RetiredImageProviderGeneration{
-	        .LastUse = lastUse,
-	        .Providers = std::move(m_imageProviders)});
-	m_imageProviders =
-	    std::make_unique<RendererImageProviderStack>(
-	        GetRenderHardwareInterface());
+	m_retiredImageProviders.push_back(RetiredImageProviderGeneration{.LastUse = lastUse, .Providers = std::move(m_imageProviders)});
+	m_imageProviders = std::make_unique<RendererImageProviderStack>(GetRenderHardwareInterface());
+	++m_imageProviderGeneration;
 }
 
 void RendererHost::PollRetiredImageProviders() noexcept
@@ -146,8 +139,7 @@ void RendererHost::PollRetiredImageProviders() noexcept
 	        [this](const RetiredImageProviderGeneration& generation) noexcept
 	        {
 		        std::array<RhiSubmissionToken, RhiQueueTypeCount> tokens{};
-		        const std::size_t tokenCount =
-		            generation.LastUse.CopyTokens(tokens);
+		        const std::size_t tokenCount = generation.LastUse.CopyTokens(tokens);
 		        for (std::size_t tokenIndex = 0; tokenIndex < tokenCount; ++tokenIndex)
 		        {
 			        if (!GetDeviceServices().IsSubmissionComplete(tokens[tokenIndex]))
@@ -171,28 +163,19 @@ void RendererHost::InitializeCoreRuntime(
 		m_renderPassRuntimeCache = std::make_unique<RenderPassRuntimeCache>(GetDeviceServices());
 	}
 	{
-		m_gpuMeshCache = std::make_unique<GpuMeshCache>(
-		    renderHardwareInterface,
-		    GetDeviceServices(),
-		    taskExecutor,
-		    applicationTaskScope);
+		m_gpuMeshCache = std::make_unique<GpuMeshCache>(renderHardwareInterface, GetDeviceServices(), taskExecutor, applicationTaskScope);
 	}
 
 	RenderDiagnostics& backendDiagnostics = renderHardwareInterface.GetDiagnostics();
-	const RayTracingCapabilityReport rayTracingCapabilities = RayTracingCapabilityReporter::Build(renderHardwareInterface.GetCapabilities());
+	const RayTracingCapabilityReport rayTracingCapabilities =
+	    RayTracingCapabilityReporter::Build(renderHardwareInterface.GetCapabilities());
 	m_imageProviders = std::make_unique<RendererImageProviderStack>(renderHardwareInterface);
-	m_renderRayTracingScene =
-	    std::make_unique<RenderRayTracingScene>(
-	        renderHardwareInterface,
-	        *m_gpuMeshCache,
-	        rayTracingCapabilities);
+	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(renderHardwareInterface, *m_gpuMeshCache, rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
 }
 
-void RendererHost::InitializeSceneRuntime(
-    TaskExecutor& taskExecutor,
-    TaskScope& applicationTaskScope) noexcept
+void RendererHost::InitializeSceneRuntime(TaskExecutor& taskExecutor, TaskScope& applicationTaskScope) noexcept
 {
 	RenderHardwareInterface& renderHardwareInterface = GetRenderHardwareInterface();
 	m_textureCache = std::make_unique<TextureCache>(
@@ -203,12 +186,7 @@ void RendererHost::InitializeSceneRuntime(
 	    taskExecutor,
 	    applicationTaskScope);
 	m_materialCache = std::make_unique<MaterialCache>(*m_textureCache, GetRenderHardwareInterface());
-	m_renderPreparationGraph =
-	    std::make_unique<RenderPreparationGraph>(
-	        taskExecutor,
-	        *m_materialCache,
-	        *m_gpuMeshCache,
-	        *m_textureCache);
+	m_renderPreparationGraph = std::make_unique<RenderPreparationGraph>(taskExecutor, *m_materialCache, *m_gpuMeshCache, *m_textureCache);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 

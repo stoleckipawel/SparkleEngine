@@ -26,13 +26,15 @@ RenderPreparationInputResolver::RenderPreparationInputResolver(
     MaterialCache& materialCache,
     GpuMeshCache& gpuMeshCache,
     TextureCache& textureCache) noexcept :
-    m_materialCache(&materialCache), m_gpuMeshCache(&gpuMeshCache), m_textureCache(&textureCache)
+    m_materialCache(&materialCache),
+    m_gpuMeshCache(&gpuMeshCache),
+    m_textureCache(&textureCache)
 {
 }
 
 void RenderPreparationInputResolver::Resolve(
     const RenderWorld& world,
-    const RenderFrameDynamicData& dynamic,
+    const RenderSceneDynamicData& dynamic,
     const Frustum& frustum,
     std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
     RenderDeformationPreparation& deformationPreparation,
@@ -66,8 +68,7 @@ void RenderPreparationInputResolver::ResolveObjects(
 	{
 		if (!proxy.Dynamic.Visible || !proxy.GpuMeshResident)
 			continue;
-		run.ResolvedObjects.push_back(
-		    ResolveObject(proxy, world.GetMaterials().Generation, previousWorldTransforms, run.SceneData));
+		run.ResolvedObjects.push_back(ResolveObject(proxy, world.GetMaterials().Generation, previousWorldTransforms, run.SceneData));
 	}
 }
 
@@ -86,11 +87,7 @@ ResolvedRenderObject RenderPreparationInputResolver::ResolveObject(
 
 	const GpuMesh* gpuMesh = m_gpuMeshCache->Resolve(proxy.GpuMesh);
 	if (gpuMesh == nullptr || !gpuMesh->IsValid())
-		Diagnostics::Fatal(
-		    g_renderPreparationInputResolverLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Resident render-world proxy has no GPU mesh.");
+		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Resident render-world proxy has no GPU mesh.");
 
 	const std::uint32_t materialSlot =
 	    MaterialHandleResolver::ResolveSlot(proxy.Static.Material, materialGeneration, sceneData.materials.size());
@@ -164,10 +161,6 @@ void RenderPreparationInputResolver::ResolveSky(const RenderWorld& world, Render
 		}
 	}
 	if (skyTexture == nullptr || !*skyTexture)
-		Diagnostics::Fatal(
-		    g_renderPreparationInputResolverLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Scene sky texture is unavailable.");
+		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Scene sky texture is unavailable.");
 	sceneData.sky.texture = skyTexture;
 }

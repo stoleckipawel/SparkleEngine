@@ -40,7 +40,7 @@ const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
 	return m_viewportPanel ? m_viewportPanel->GetRenderRequest() : defaultRequest;
 }
 
-RenderCameraData UI::UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept
+RenderViewCameraData UI::UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept
 {
 	UpdateSceneModel();
 	if (!m_viewportSession || !m_sceneModel)
@@ -50,7 +50,7 @@ RenderCameraData UI::UpdateViewportCamera(const CameraInputIntent& intent, float
 
 	const RenderViewportExtent extent = GetViewportRenderRequest().Extent;
 	m_viewportSession->SynchronizeWorld(m_sceneModel->GetCameras(), m_sceneModel->GetWorldGeneration());
-	const RenderCameraData camera = m_viewportSession->UpdateCamera(intent, deltaSeconds, extent);
+	const RenderViewCameraData camera = m_viewportSession->UpdateCamera(intent, deltaSeconds, extent);
 	if (m_viewportPanel)
 	{
 		m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);

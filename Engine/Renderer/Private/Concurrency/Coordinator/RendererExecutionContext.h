@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Concurrency/Control/RenderControlCommand.h"
-#include "Concurrency/FrameQueue/RenderFramePacket.h"
+#include "Concurrency/FrameQueue/RenderExecutionRequest.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <memory>
@@ -22,7 +22,7 @@ public:
 	    const RendererExecutionConfig& executionConfig);
 	~RendererExecutionContext() noexcept;
 
-	void ExecuteFrame(RenderFramePacket packet) noexcept;
+	void ExecuteFrame(RenderExecutionRequest request) noexcept;
 	void ExecuteControl(RenderControlPayload payload) noexcept;
 
 	RendererHost& GetRendererHost() noexcept;

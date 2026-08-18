@@ -63,9 +63,9 @@ MeshPreviewGeometry Renderer::CaptureMeshPreview(std::uintptr_t meshRuntimeId) c
 	return m_state->Coordinator.CaptureMeshPreview(meshRuntimeId);
 }
 
-void Renderer::SubmitRenderInput(RenderInputFrame input) noexcept
+void Renderer::SubmitRenderFrame(RenderFrameSubmission submission) noexcept
 {
-	m_state->Coordinator.StageRenderInput(std::move(input));
+	m_state->Coordinator.StageFrameSubmission(std::move(submission));
 }
 
 void Renderer::SubmitUiRenderPacket(UiRenderPacket packet) noexcept

@@ -4,6 +4,8 @@ Status: target architecture, Unreal Engine reference analysis, and atomic implem
 Date: 2026-08-18
 Scope: GameFramework-to-Renderer publication, persistent render-scene ownership, GPU-scene ownership, one-frame scene and view products, temporal view state, deferred frame orchestration, frame-graph pass inputs, Unreal-familiar concept translation, coherent cross-module naming and directory navigation, complete legacy-path removal, atomic landing, D3D12/Vulkan validation, and cleanup of the current frame path
 
+Implementation checkpoint: Phase 1 establishes the target publication and private queue boundary in source on the private migration branch. Later scene, view, frame, GPU-scene, pass, and deferred-graph phases remain target architecture, and no executable validation or landability claim is made before Phase 7.
+
 ## Decision
 
 Sparkle should adopt the lifetime and responsibility split used by Unreal's deferred renderer without copying Unreal's class size, inheritance, naming prefixes, or feature breadth:
@@ -177,11 +179,11 @@ Epic's RDG derives dependencies and transient lifetimes from pass parameter stru
 - Epic Games, [Render Dependency Graph](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine)
 - Epic Games, [`FScreenPassViewInfo`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Renderer/FScreenPassViewInfo)
 
-## Current Sparkle Mapping
+## Pre-migration Sparkle Mapping
 
-Sparkle already has most of the necessary concepts. The problem is classification and ownership, not absence.
+The Phase 0 baseline already had most of the necessary concepts. The problem was classification and ownership, not absence.
 
-| Current Sparkle concept | Closest Unreal role | Assessment |
+| Phase 0 Sparkle concept | Closest Unreal role | Assessment |
 | --- | --- | --- |
 | `GameWorld` plus world extraction | `UWorld` / component-side publication | Good boundary: gameplay is authoritative and publishes owned renderer values. |
 | `RenderWorldDelta` plus `RenderFrameDynamicData` | Render-scene mutation stream | Good structural/dynamic split, but camera and renderer-local metadata are mixed into scene dynamic data. |
@@ -201,7 +203,7 @@ Sparkle already has most of the necessary concepts. The problem is classificatio
 | `FramePipeline` | Persistent frame lifecycle plus parts of scene renderer, view family, presentation, and provider orchestration | Too many responsibilities currently converge here. |
 | `RendererHost` | Composition root | Correct long-lived role, but its many getters make it easy for downstream code to treat it as a service locator. |
 
-### Current evidence of mixed responsibilities
+### Phase 0 evidence of mixed responsibilities
 
 As inspected on 2026-08-18:
 
@@ -212,7 +214,7 @@ As inspected on 2026-08-18:
 - [`PassRuntimeContext.h`](../../Engine/Renderer/Private/FrameGraph/PassRuntimeContext.h) is referenced by 45 Renderer private files. `mainView` is referenced by 24 files. This is coupling evidence, not a reason to create a larger replacement context.
 - [`PerFrameConstantBufferData.h`](../../Engine/Renderer/Private/ShaderData/PerFrameConstantBufferData.h) mixes true frame time/index values with view mode and viewport size.
 - [`FramePipeline::FinalizeRenderInputMetadata`](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) writes render/output dimensions into a GameFramework-owned input packet after publication. Those dimensions are renderer/view configuration, not GameFramework scene metadata.
-- `RenderFrameMetadata::Exposure` has no current consumer. Motion-vector and depth conventions are stable renderer/shader contracts rather than per-frame input. `ProviderGeneration` is populated from shader-package generation and then participates in input/history/capture behavior under a misleading name.
+- At the Phase 0 baseline, `RenderFrameMetadata::Exposure` had no consumer. Motion-vector and depth conventions were stable renderer/shader contracts rather than per-frame input, while `ProviderGeneration` was populated from shader-package generation and participated in input/history/capture behavior under a misleading name.
 - `ViewportRenderRequest::ViewKind`, `ViewSelection`, and `FeatureFlags` currently have no `FramePipeline` consumer. The request contains the right intent categories, but they do not yet reach a first-class render view.
 
 These are dated observations. Re-run the searches at the start of implementation because the frame path is actively changing.

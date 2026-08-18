@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Application.h"
-#include "../../GameFramework/Public/Rendering/RenderFrameDynamicData.h"
+#include "../../GameFramework/Public/Rendering/RenderViewCameraData.h"
 #include "../../GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 
@@ -72,9 +72,9 @@ private:
 	void InitializeRenderer();
 	void InitializeRuntimeConsole();
 	CameraInputIntent CollectCameraInputIntent(float aspectRatio) noexcept;
-	void UpdateRuntimeFrame(const CameraInputIntent* worldCameraIntent, const RenderCameraData* renderCameraOverride) noexcept;
-	void UpdateEditorRuntime(const RenderCameraData& renderCamera) noexcept;
-	void SubmitWorldRenderInput(std::uint64_t frameId, const RenderCameraData* renderCameraOverride);
+	void UpdateRuntimeFrame(const CameraInputIntent* worldCameraIntent, const RenderViewCameraData* renderCameraOverride) noexcept;
+	void UpdateEditorRuntime(const RenderViewCameraData& renderCamera) noexcept;
+	void SubmitRenderFrame(std::uint64_t frameId, const RenderViewCameraData* renderCameraOverride);
 	GameWorld& GetWorldForEditor() noexcept;
 
 	std::unique_ptr<Timer> m_timer;

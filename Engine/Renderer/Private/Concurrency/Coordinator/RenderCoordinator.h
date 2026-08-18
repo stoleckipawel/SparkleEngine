@@ -29,7 +29,7 @@ public:
 	RenderCoordinator(const RenderCoordinator&) = delete;
 	RenderCoordinator& operator=(const RenderCoordinator&) = delete;
 
-	void StageRenderInput(RenderInputFrame input);
+	void StageFrameSubmission(RenderFrameSubmission submission);
 	void StageUiRenderPacket(UiRenderPacket packet);
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings);
 	void SubmitViewportRequest(ViewportRenderRequest request);
@@ -58,7 +58,7 @@ private:
 	void StartRenderThread();
 	bool WaitForRenderThreadStart();
 	void HandleRenderThreadStartFailure();
-	RenderFramePacket TakePendingFrame();
+	RenderExecutionRequest TakePendingExecutionRequest();
 	void ExecuteSerialFrame();
 	void SubmitThreadedFrame();
 	void RenderThreadMain();
@@ -83,7 +83,7 @@ private:
 	std::unique_ptr<RendererExecutionContext> m_context;
 	std::thread m_renderThread;
 	ScopedEventHandle m_resizeHandle;
-	std::optional<RenderInputFrame> m_pendingInput;
+	std::optional<RenderFrameSubmission> m_pendingSubmission;
 	std::optional<UiRenderPacket> m_pendingUi;
 	std::uint64_t m_nextControlSequence = 1;
 	std::uint64_t m_lastConsumedControlSequence = 0;

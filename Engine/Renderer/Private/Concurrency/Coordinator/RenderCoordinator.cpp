@@ -66,15 +66,15 @@ RenderCoordinator::~RenderCoordinator() noexcept
 	}
 }
 
-void RenderCoordinator::StageRenderInput(RenderInputFrame input)
+void RenderCoordinator::StageFrameSubmission(RenderFrameSubmission submission)
 {
 	m_producerOwner.AssertAccess();
-	if (m_pendingInput)
+	if (m_pendingSubmission)
 	{
 		RenderFrame();
 	}
 
-	m_pendingInput = std::move(input);
+	m_pendingSubmission = std::move(submission);
 }
 
 void RenderCoordinator::StageUiRenderPacket(UiRenderPacket packet)
@@ -110,7 +110,7 @@ void RenderCoordinator::SubmitViewportRequest(ViewportRenderRequest request)
 void RenderCoordinator::RenderFrame()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_pendingInput)
+	if (!m_pendingSubmission)
 	{
 		return;
 	}
@@ -125,21 +125,37 @@ void RenderCoordinator::RenderFrame()
 	}
 }
 
-RenderFramePacket RenderCoordinator::TakePendingFrame()
+RenderExecutionRequest RenderCoordinator::TakePendingExecutionRequest()
 {
-	RenderFramePacket packet{
-	    .Input = std::move(*m_pendingInput),
-	    .Timing = m_timer->GetTimeInfo(),
+	const TimeInfo timing = m_timer->GetTimeInfo();
+	if (timing.frameIndex != m_pendingSubmission->FrameId)
+	{
+		Diagnostics::Fatal(
+		    g_renderCoordinatorLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Render frame submission identity does not match the application timer frame.");
+	}
+
+	RenderExecutionRequest request{
+	    .Submission = std::move(*m_pendingSubmission),
+	    .Time =
+	        {
+	            .UnscaledTime = timing.unscaledTime,
+	            .ScaledTime = timing.scaledTime,
+	            .UnscaledDelta = timing.unscaledDelta,
+	            .ScaledDelta = timing.scaledDelta,
+	        },
 	    .Ui = m_pendingUi ? std::move(*m_pendingUi) : UiRenderPacket{}};
 
-	m_pendingInput.reset();
+	m_pendingSubmission.reset();
 	m_pendingUi.reset();
-	return packet;
+	return request;
 }
 
 void RenderCoordinator::ExecuteSerialFrame()
 {
-	GetSerialContext().ExecuteFrame(TakePendingFrame());
+	GetSerialContext().ExecuteFrame(TakePendingExecutionRequest());
 	PublishReadState();
 }
 
@@ -155,7 +171,7 @@ void RenderCoordinator::SubmitThreadedFrame()
 		    "Render frame queue closed while the producer was acquiring a slot.");
 	}
 
-	if (!m_frameQueue->Publish(*ticket, TakePendingFrame()))
+	if (!m_frameQueue->Publish(*ticket, TakePendingExecutionRequest()))
 	{
 		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render frame queue rejected its producer-owned writing ticket.");
 	}
@@ -412,12 +428,12 @@ void RenderCoordinator::ProcessThreadedCommand(RenderControlCommand command)
 
 void RenderCoordinator::ExecuteThreadedFrame(RenderFrameQueueTicket ticket)
 {
-	RenderFramePacket packet;
-	if (!m_frameQueue->Consume(ticket, packet))
+	RenderExecutionRequest request;
+	if (!m_frameQueue->Consume(ticket, request))
 	{
 		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render frame queue rejected a queued frame ticket.");
 	}
-	m_context->ExecuteFrame(std::move(packet));
+	m_context->ExecuteFrame(std::move(request));
 	PublishReadState();
 	if (!m_frameQueue->Retire(ticket))
 	{

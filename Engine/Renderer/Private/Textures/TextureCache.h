@@ -2,7 +2,7 @@
 
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
-#include "Rendering/RenderInputFrame.h"
+#include "Rendering/RenderResourceTables.h"
 #include "Resources/Residency/AssetResidency.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "Textures/CookedTextureLoadTask.h"

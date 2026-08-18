@@ -12,14 +12,15 @@ class RenderPreparationGraph;
 class RenderRayTracingScene;
 struct FrameContext;
 class RenderWorld;
-struct RenderFrameDynamicData;
+struct RenderSceneDynamicData;
 struct RhiRect;
 struct RhiViewport;
 
 struct FrameContextBuildRequest final
 {
-	const RenderFrameDynamicData& Dynamic;
+	const RenderSceneDynamicData& Dynamic;
 	PersistentRenderGpuScene& GpuScene;
+	std::uint64_t FrameId = 0;
 	std::uint32_t FrameIndex = 0;
 	RenderViewportExtent SceneExtent;
 	RenderRayTracingScene* RayTracingScene = nullptr;

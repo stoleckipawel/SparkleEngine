@@ -12,7 +12,7 @@
 #include "RHI/Public/Commands/RhiQueue.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "ShaderData/PerFrameConstantBufferData.h"
-#include "Rendering/RenderInputFrame.h"
+#include "Rendering/RenderFrameSubmission.h"
 #include "Renderer/Public/UI/UiRenderPacket.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
@@ -35,8 +35,9 @@ class RendererHost;
 class RenderInputConsumer;
 class PersistentRenderGpuScene;
 class RenderRayTracingScene;
-struct RenderFrameDynamicData;
-struct TimeInfo;
+struct RenderFrameTime;
+struct RenderSceneDynamicData;
+struct RenderViewInput;
 
 struct FrameResolutionExtents final
 {
@@ -56,11 +57,11 @@ public:
 	FramePipeline& operator=(FramePipeline&&) = delete;
 
 	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept { m_viewportRenderRequest = std::move(request); }
-	void SubmitRenderInput(RenderInputFrame input) noexcept;
+	void SubmitFrameSubmission(RenderFrameSubmission submission) noexcept;
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
 
-	void OnRender(const TimeInfo& timing, const UiRenderPacket& ui) noexcept;
+	void OnRender(const RenderFrameTime& time, const UiRenderPacket& ui) noexcept;
 
 	bool BeginViewportCapture(ViewportCaptureId id, const ViewportCaptureRequest& request) noexcept;
 	std::vector<ViewportCaptureReadback> TakeCompletedViewportCaptures();
@@ -79,17 +80,16 @@ private:
 	bool ShouldOutputToBackBuffer() const noexcept;
 	RenderViewportExtent ResolveOutputExtent() const noexcept;
 	FrameResolutionExtents ResolveFrameResolution() const noexcept;
-	void FinalizeRenderInputMetadata(RenderInputFrame& input) const noexcept;
 	void BeginFrame() noexcept;
 	void PollFrameServices() noexcept;
-	void ConsumeRenderInput() noexcept;
+	void ConsumeFrameSubmission() noexcept;
 	void ApplyPendingResize() noexcept;
 	void RefreshGraphForResolutionAndPresentation() noexcept;
 	void RefreshGraphForRenderModes() noexcept;
 	void RefreshGraphForImageProvider() noexcept;
 	void BeginBackendFrame() noexcept;
 	void PollViewportCaptures() noexcept;
-	void SetupFrame(const TimeInfo& timing) noexcept;
+	void SetupFrame(const RenderFrameTime& time) noexcept;
 	void UploadPendingSceneTextures(RenderDeviceServices& deviceServices, RenderCommandList& graphicsCommandList);
 	void RefreshViewportRenderProducts() noexcept;
 	bool BeginViewportEditorTexturePresentation(RenderOutputFlags output) noexcept;
@@ -101,10 +101,10 @@ private:
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
-	void ApplyRenderInputHistoryReset(const RenderFrameDynamicData& dynamic) noexcept;
-	FrameContext& PrepareFrameContext(const RenderFrameDynamicData& dynamic, RenderRayTracingScene* activeRayTracingScene);
+	void ApplySubmissionHistoryInvalidation(const RenderViewInput& view) noexcept;
+	FrameContext& PrepareFrameContext(const RenderSceneDynamicData& dynamic, RenderRayTracingScene* activeRayTracingScene);
 	void UpdateLightingHistory(FrameContext& frame);
-	void SetupImageProviderFrame(const FrameContext& frame, const RenderFrameDynamicData& dynamic);
+	void SetupImageProviderFrame(const FrameContext& frame);
 	void BindRayTracingScene(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene);
 	void BindSkyTexture(const FrameContext& frame);
 	void ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene);
@@ -131,6 +131,8 @@ private:
 	PerFrameConstantBufferData m_perFrameData = {};
 	std::optional<std::uint64_t> m_previousReferenceLightingHistoryInvalidationHash;
 	std::optional<std::uint64_t> m_previousRestirLightingHistoryInvalidationHash;
+	std::optional<std::uint64_t> m_previousShaderPackageGeneration;
+	std::optional<std::uint64_t> m_previousImageProviderGeneration;
 	std::unique_ptr<RenderInputConsumer> m_renderInputConsumer;
 	std::unique_ptr<PersistentRenderGpuScene> m_gpuScene;
 	std::unique_ptr<UiRenderPacketPlayer> m_uiRenderPacketPlayer;
@@ -139,7 +141,8 @@ private:
 	{
 		ViewportCaptureId Id;
 		RhiCaptureTicket Ticket;
-		RenderFrameMetadata Metadata;
+		std::uint64_t SceneGeneration = 0;
+		std::uint64_t ProviderGeneration = 0;
 	};
 	std::vector<std::unique_ptr<PendingViewportCapture>> m_pendingViewportCaptures;
 	std::vector<ViewportCaptureReadback> m_completedViewportCaptures;

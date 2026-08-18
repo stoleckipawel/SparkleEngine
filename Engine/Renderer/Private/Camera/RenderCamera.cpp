@@ -12,17 +12,17 @@ RenderCamera::RenderCamera() noexcept
 	RebuildMatrices(m_camera);
 }
 
-void RenderCamera::Update(const RenderCameraData& camera) noexcept
+void RenderCamera::Update(const RenderViewCameraData& camera) noexcept
 {
 	RebuildMatrices(camera);
 }
 
-void RenderCamera::ForceUpdate(const RenderCameraData& camera) noexcept
+void RenderCamera::ForceUpdate(const RenderViewCameraData& camera) noexcept
 {
 	RebuildMatrices(camera);
 }
 
-void RenderCamera::RebuildMatrices(const RenderCameraData& camera) noexcept
+void RenderCamera::RebuildMatrices(const RenderViewCameraData& camera) noexcept
 {
 	m_camera = camera;
 

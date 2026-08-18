@@ -5,7 +5,7 @@
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Temporal/TemporalFrameState.h"
-#include "Rendering/RenderFrameDynamicData.h"
+#include "Rendering/RenderSceneDynamicData.h"
 #include "Camera/RenderCamera.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "SceneData/Preparation/RenderPreparationGraph.h"
@@ -61,10 +61,7 @@ void FrameContextBuilder::Build(FrameContext& frame, const FrameContextBuildRequ
 
 	const RhiViewport sceneViewport = BuildSceneViewport(request.SceneExtent);
 	frame.mainView = m_perViewDataBuilder.BuildView(cameraData, sceneViewport, BuildSceneScissorRect(request.SceneExtent));
-	frame.mainView.perTemporalData = m_temporalDataBuilder.BuildTemporalData(
-	    m_renderCamera,
-	    frame.mainView.perViewData.Camera,
-	    sceneViewport,
-	    request.Dynamic.Metadata.FrameId);
+	frame.mainView.perTemporalData =
+	    m_temporalDataBuilder.BuildTemporalData(m_renderCamera, frame.mainView.perViewData.Camera, sceneViewport, request.FrameId);
 	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
 }

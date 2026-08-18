@@ -32,7 +32,7 @@ std::optional<RenderFrameQueueTicket> RenderFrameQueue::Acquire()
 	return RenderFrameQueueTicket{slotIndex, sequenceNumber};
 }
 
-bool RenderFrameQueue::Publish(RenderFrameQueueTicket ticket, RenderFramePacket packet)
+bool RenderFrameQueue::Publish(RenderFrameQueueTicket ticket, RenderExecutionRequest request)
 {
 	std::lock_guard lock(m_mutex);
 	if (!IsTicketCurrentLocked(ticket))
@@ -46,12 +46,12 @@ bool RenderFrameQueue::Publish(RenderFrameQueueTicket ticket, RenderFramePacket 
 		return false;
 	}
 
-	slot.Packet.emplace(std::move(packet));
+	slot.Request.emplace(std::move(request));
 	slot.State = RenderFrameSlotState::Ready;
 	return true;
 }
 
-bool RenderFrameQueue::Consume(RenderFrameQueueTicket ticket, RenderFramePacket& packet)
+bool RenderFrameQueue::Consume(RenderFrameQueueTicket ticket, RenderExecutionRequest& request)
 {
 	std::lock_guard lock(m_mutex);
 	if (!IsTicketCurrentLocked(ticket))
@@ -60,14 +60,14 @@ bool RenderFrameQueue::Consume(RenderFrameQueueTicket ticket, RenderFramePacket&
 	}
 
 	Slot& slot = m_slots[ticket.SlotIndex];
-	if (slot.State != RenderFrameSlotState::Ready || !slot.Packet)
+	if (slot.State != RenderFrameSlotState::Ready || !slot.Request)
 	{
 		return false;
 	}
 
 	slot.State = RenderFrameSlotState::Rendering;
-	packet = std::move(*slot.Packet);
-	slot.Packet.reset();
+	request = std::move(*slot.Request);
+	slot.Request.reset();
 	return true;
 }
 
@@ -125,7 +125,7 @@ void RenderFrameQueue::SettleAll() noexcept
 		for (std::uint32_t slotIndex = 0; slotIndex < m_capacity; ++slotIndex)
 		{
 			Slot& slot = m_slots[slotIndex];
-			slot.Packet.reset();
+			slot.Request.reset();
 			slot.State = RenderFrameSlotState::Free;
 		}
 	}

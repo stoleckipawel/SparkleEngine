@@ -20,11 +20,10 @@ namespace ECS
 	    std::span<const SceneMeshInstanceGroupData> instanceGroups,
 	    const std::optional<SkyEnvironment>& sky,
 	    GameWorldResourceStores& resources,
-	    RenderWorldDelta& delta)
+	    RenderSceneDelta& delta)
 	{
 		PublishInstanceGroups(instanceGroups, delta);
-		const std::optional<SceneSkyDesc> skyDescription =
-		    sky ? std::optional<SceneSkyDesc>(sky->Description) : std::nullopt;
+		const std::optional<SceneSkyDesc> skyDescription = sky ? std::optional<SceneSkyDesc>(sky->Description) : std::nullopt;
 		PublishSky(skyDescription, delta);
 
 		std::optional<std::filesystem::path> skyTexturePath;
@@ -35,19 +34,27 @@ namespace ECS
 
 	void RenderResourcePublisher::PublishInstanceGroups(
 	    std::span<const SceneMeshInstanceGroupData> instanceGroups,
-	    RenderWorldDelta& delta) const
+	    RenderSceneDelta& delta) const
 	{
-		if (!delta.ResetScene) return;
+		if (!delta.ResetScene)
+			return;
 		delta.InstanceGroups.Published = true;
 		delta.InstanceGroups.Values.reserve(instanceGroups.size());
 		for (const SceneMeshInstanceGroupData& group : instanceGroups)
-			delta.InstanceGroups.Values.push_back({group.meshAssetId, group.meshAssetIndex, group.materialHandle,
-			                                       group.firstInstance, group.instanceCount, group.groupKind, group.flags});
+			delta.InstanceGroups.Values.push_back(
+			    {group.meshAssetId,
+			        group.meshAssetIndex,
+			        group.materialHandle,
+			        group.firstInstance,
+			        group.instanceCount,
+			        group.groupKind,
+			        group.flags});
 	}
 
-	void RenderResourcePublisher::PublishSky(const std::optional<SceneSkyDesc>& sky, RenderWorldDelta& delta)
+	void RenderResourcePublisher::PublishSky(const std::optional<SceneSkyDesc>& sky, RenderSceneDelta& delta)
 	{
-		if (!delta.ResetScene && m_skyPublished && HasSameSky(sky, m_sky)) return;
+		if (!delta.ResetScene && m_skyPublished && HasSameSky(sky, m_sky))
+			return;
 		delta.Sky.Published = true;
 		delta.Sky.Value = sky;
 		m_sky = sky;
@@ -57,7 +64,7 @@ namespace ECS
 	void RenderResourcePublisher::PublishChangedTables(
 	    GameWorldResourceStores& resources,
 	    const std::optional<std::filesystem::path>& skyTexturePath,
-	    RenderWorldDelta& delta)
+	    RenderSceneDelta& delta)
 	{
 		const std::uint64_t materialRevision = resources.Materials.GetContentRevision();
 		if (delta.ResetScene || materialRevision != m_materialRevision)
@@ -70,8 +77,7 @@ namespace ECS
 		if (delta.ResetScene || textureRevision != m_textureRevision || skyTexturePath != m_skyTexturePath)
 		{
 			if (skyTexturePath)
-				delta.Textures = resources.Textures.CaptureRenderTable(
-				    std::span<const std::filesystem::path>(&*skyTexturePath, 1));
+				delta.Textures = resources.Textures.CaptureRenderTable(std::span<const std::filesystem::path>(&*skyTexturePath, 1));
 			else
 				delta.Textures = resources.Textures.CaptureRenderTable();
 			m_textureRevision = textureRevision;
@@ -79,15 +85,15 @@ namespace ECS
 		}
 	}
 
-	bool RenderResourcePublisher::HasSameSky(
-	    const std::optional<SceneSkyDesc>& left,
-	    const std::optional<SceneSkyDesc>& right) noexcept
+	bool RenderResourcePublisher::HasSameSky(const std::optional<SceneSkyDesc>& left, const std::optional<SceneSkyDesc>& right) noexcept
 	{
-		if (left.has_value() != right.has_value()) return false;
-		if (!left) return true;
-		return left->enabled == right->enabled && left->color.x == right->color.x && left->color.y == right->color.y &&
-		       left->color.z == right->color.z && left->brightness == right->brightness &&
-		       left->skyTexture.texturePath == right->skyTexture.texturePath &&
-		       left->skyTexture.textureGroup == right->skyTexture.textureGroup;
+		if (left.has_value() != right.has_value())
+			return false;
+		if (!left)
+			return true;
+		return left->enabled == right->enabled && left->color.x == right->color.x && left->color.y == right->color.y
+		    && left->color.z == right->color.z && left->brightness == right->brightness
+		    && left->skyTexture.texturePath == right->skyTexture.texturePath
+		    && left->skyTexture.textureGroup == right->skyTexture.textureGroup;
 	}
 }

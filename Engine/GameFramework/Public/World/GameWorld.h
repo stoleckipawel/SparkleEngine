@@ -8,7 +8,7 @@
 #include "GameFramework/Public/World/WorldChange.h"
 #include "GameFramework/Public/World/WorldReadView.h"
 #include "GameFramework/Public/World/EntityId.h"
-#include "GameFramework/Public/Rendering/RenderInputFrame.h"
+#include "GameFramework/Public/Rendering/RenderFrameSubmission.h"
 #include "GameFramework/Public/World/WorldEditCommand.h"
 #include "GameFramework/Public/World/WorldMaterialVariantView.h"
 
@@ -22,7 +22,7 @@
 namespace ECS
 {
 	class GameWorldState;
-	class RenderInputExtractor;
+	class RenderFrameSubmissionExtractor;
 }
 namespace Assets
 {
@@ -35,7 +35,7 @@ class TaskExecutor;
 
 class SPARKLE_ENGINE_API GameWorld final
 {
-  public:
+public:
 	explicit GameWorld(TaskExecutor& taskExecutor);
 	~GameWorld() noexcept;
 
@@ -45,7 +45,7 @@ class SPARKLE_ENGINE_API GameWorld final
 	GameWorld& operator=(GameWorld&&) = delete;
 
 	void Update(float deltaSeconds);
-	RenderInputFrame ExtractRenderInput(RenderFrameMetadata metadata);
+	RenderFrameSubmission ExtractRenderFrameSubmission(std::uint64_t frameId);
 	WorldReadView AcquireReadView() const noexcept;
 	WorldChangeBatch ReadChanges(const WorldChangeCursor& cursor) const;
 	bool AcknowledgeChanges(WorldChangeCursor& cursor, WorldSequence sequence) const noexcept;
@@ -62,7 +62,7 @@ class SPARKLE_ENGINE_API GameWorld final
 	bool IsEntityAlive(EntityId entity) const noexcept;
 	bool DestroyEntity(EntityId entity) noexcept;
 
-  private:
+private:
 	friend class LevelSession;
 	void CommitWorldChanges();
 	void InitializeStagedLevel(const LevelDesc& desc);
@@ -78,5 +78,5 @@ class SPARKLE_ENGINE_API GameWorld final
 	CameraNavigationSettings m_cameraNavigationSettings;
 	std::uint64_t m_generation = 1;
 	std::unique_ptr<WorldEditCommandQueue> m_editCommands;
-	std::unique_ptr<ECS::RenderInputExtractor> m_renderInputExtractor;
+	std::unique_ptr<ECS::RenderFrameSubmissionExtractor> m_renderFrameSubmissionExtractor;
 };
