@@ -1,7 +1,9 @@
 #pragma once
 
-#include "GameFramework/Public/Rendering/RenderInputFrame.h"
+#include "GameFramework/Public/Rendering/RenderSceneDelta.h"
 #include "GameFramework/Public/World/EntityId.h"
+
+#include <DirectXMath.h>
 
 #include <span>
 #include <vector>
@@ -12,7 +14,7 @@ namespace ECS
 
 	class WorldExtractionStorage final
 	{
-	  public:
+	public:
 		struct MeshSlot final
 		{
 			EntityId Entity;
@@ -34,7 +36,7 @@ namespace ECS
 		std::span<const MeshSlot> GetExtractedMeshes() const noexcept { return m_extractedMeshes; }
 		std::span<const SceneMeshInstanceGroupData> GetMeshGroups() const noexcept { return m_meshGroups; }
 
-	  private:
+	private:
 		std::vector<MeshSlot> m_meshSlots;
 		std::vector<MeshSlot> m_extractedMeshes;
 		std::vector<SceneMeshInstanceGroupData> m_meshGroups;

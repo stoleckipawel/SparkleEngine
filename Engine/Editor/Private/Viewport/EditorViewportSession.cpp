@@ -46,7 +46,7 @@ void EditorViewportSession::SynchronizeWorld(std::span<const WorldCameraReadData
 	m_cameraInitialized = true;
 }
 
-RenderCameraData EditorViewportSession::UpdateCamera(
+RenderViewCameraData EditorViewportSession::UpdateCamera(
     const CameraInputIntent& intent,
     float deltaSeconds,
     RenderViewportExtent extent) noexcept

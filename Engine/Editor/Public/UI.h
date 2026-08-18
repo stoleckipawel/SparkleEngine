@@ -10,7 +10,7 @@
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
-#include "../../GameFramework/Public/Rendering/RenderFrameDynamicData.h"
+#include "../../GameFramework/Public/Rendering/RenderViewCameraData.h"
 #include "../../GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "../../GameFramework/Public/World/WorldChange.h"
 #include "../../GameFramework/Public/World/WorldEditCommand.h"
@@ -75,7 +75,7 @@ public:
 	UI& operator=(UI&&) = delete;
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
-	RenderCameraData UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept;
+	RenderViewCameraData UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTexture(EditorTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);

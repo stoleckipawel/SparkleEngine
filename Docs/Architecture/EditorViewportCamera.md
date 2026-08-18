@@ -4,7 +4,7 @@ Status: canonical architecture decision
 
 Scope: the editor viewport camera, navigation preferences, projection, exposure overrides, and the effective render-view boundary
 
-Migration status: the ownership contract is canonical. The current runtime type is still `RenderCameraData`; Phase 1 of [Renderer Scene, View, And Frame Architecture](RendererSceneViewFrameArchitecture.md) clean-break replaces that spelling with the target `RenderViewCameraData`. The names do not coexist in the final runtime.
+Implementation status: the ownership contract is canonical, and Phase 1 of [Renderer Scene, View, And Frame Architecture](RendererSceneViewFrameArchitecture.md) now publishes the effective camera as `RenderViewCameraData` inside the singular `RenderViewInput`.
 
 ## Decision
 
@@ -35,7 +35,7 @@ The editor starts its free view from the active scene camera when a world genera
 | Free editor view pose | `EditorViewportSession` | Current editor session |
 | Viewport move speed, rotation speed, invert-Y, projection, orthographic height, and exposure overrides | Editor viewport settings | Per-workspace user file under `Saved/Config/EditorViewport.ini` |
 | Runtime navigation policy | `GameWorld` | Runtime world session only |
-| Effective render camera | Immutable `RenderViewCameraData` value | One submitted frame |
+| Effective render camera | Immutable `RenderViewCameraData` inside `RenderViewInput` | One submitted frame |
 | Renderer display defaults and tone mapper | Renderer settings | Existing renderer-settings owner |
 | Per-property exposure deviations | `ViewportExposureOverrides` on the viewport request | Editor viewport settings |
 

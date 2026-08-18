@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Rendering/RenderFrameDynamicData.h"
+#include "GameFramework/Public/Rendering/RenderViewCameraData.h"
 #include "GameFramework/Public/Scene/Camera/CameraNavigation.h"
 #include "Viewport/EditorViewportSettings.h"
 #include "World/WorldReadView.h"
@@ -15,7 +15,7 @@ public:
 	explicit EditorViewportSession(EditorViewportSettings settings);
 
 	void SynchronizeWorld(std::span<const WorldCameraReadData> cameras, std::uint64_t worldGeneration) noexcept;
-	RenderCameraData UpdateCamera(const CameraInputIntent& intent, float deltaSeconds, RenderViewportExtent extent) noexcept;
+	RenderViewCameraData UpdateCamera(const CameraInputIntent& intent, float deltaSeconds, RenderViewportExtent extent) noexcept;
 
 	const EditorViewportSettingsState& GetSettings() const noexcept { return m_settings.GetState(); }
 	void SetMoveSpeed(float speedMetersPerSecond) noexcept;
@@ -28,7 +28,7 @@ public:
 private:
 	EditorViewportSettings m_settings;
 	CameraNavigationState m_navigationState;
-	RenderCameraData m_camera;
+	RenderViewCameraData m_camera;
 	std::uint64_t m_worldGeneration = 0;
 	bool m_cameraInitialized = false;
 };

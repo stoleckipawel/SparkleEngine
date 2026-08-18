@@ -28,8 +28,8 @@ class TaskExecutor;
 
 namespace ECS
 {
-	class RenderInputExtractor;
-	class RenderFrameDynamicDataExtractor;
+	class RenderFrameSubmissionExtractor;
+	class RenderSceneDynamicDataExtractor;
 	class SimulationSystemExecution;
 	class AnimationSystemExecution;
 	class TransformSystemExecution;
@@ -101,8 +101,8 @@ namespace ECS
 		WorldChangeBatch ReadChanges(WorldSequence acknowledgedSequence) const;
 
 	private:
-		friend class RenderInputExtractor;
-		friend class RenderFrameDynamicDataExtractor;
+		friend class RenderFrameSubmissionExtractor;
+		friend class RenderSceneDynamicDataExtractor;
 		friend class SimulationSystemExecution;
 		friend class AnimationSystemExecution;
 		friend class TransformSystemExecution;

@@ -6,7 +6,7 @@
 #include "Diagnostics/MeshPreviewGeometry.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
-#include "Rendering/RenderInputFrame.h"
+#include "Rendering/RenderFrameSubmission.h"
 #include "Concurrency/RendererExecutionConfig.h"
 #include "UI/UiRenderPacket.h"
 #include "Settings/EngineRenderingSettings.h"
@@ -30,7 +30,7 @@ public:
 	Renderer& operator=(Renderer&&) = delete;
 
 	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept;
-	void SubmitRenderInput(RenderInputFrame input) noexcept;
+	void SubmitRenderFrame(RenderFrameSubmission submission) noexcept;
 	void SubmitUiRenderPacket(UiRenderPacket packet) noexcept;
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept;
 	void BeginSimulationFrame(std::uint64_t frameId) noexcept;

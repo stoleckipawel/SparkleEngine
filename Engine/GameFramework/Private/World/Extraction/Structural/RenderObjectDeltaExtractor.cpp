@@ -17,7 +17,7 @@ namespace ECS
 	void RenderObjectDeltaExtractor::Extract(
 	    std::span<const WorldExtractionStorage::MeshSlot> meshes,
 	    RenderObjectIdentityMap& identities,
-	    RenderWorldDelta& delta)
+	    RenderSceneDelta& delta)
 	{
 		m_current.clear();
 		m_current.reserve(meshes.size());
@@ -34,13 +34,9 @@ namespace ECS
 		m_published.swap(m_current);
 	}
 
-	void RenderObjectDeltaExtractor::RetirePublishedBefore(
-	    EntityId entity,
-	    std::size_t& publishedIndex,
-	    RenderWorldDelta& delta) const
+	void RenderObjectDeltaExtractor::RetirePublishedBefore(EntityId entity, std::size_t& publishedIndex, RenderSceneDelta& delta) const
 	{
-		while (publishedIndex < m_published.size() &&
-		       m_published[publishedIndex].Entity < entity)
+		while (publishedIndex < m_published.size() && m_published[publishedIndex].Entity < entity)
 		{
 			delta.Destroys.push_back(m_published[publishedIndex].Object);
 			++publishedIndex;
@@ -51,7 +47,7 @@ namespace ECS
 	    const WorldExtractionStorage::MeshSlot& mesh,
 	    RenderObjectIdentityMap& identities,
 	    std::size_t& publishedIndex,
-	    RenderWorldDelta& delta) const
+	    RenderSceneDelta& delta) const
 	{
 		const RenderObjectStaticData staticData{
 		    .Mesh = mesh.Mesh,
@@ -61,13 +57,9 @@ namespace ECS
 		    .MeshAssetIndex = mesh.MeshAssetIndex,
 		    .InstanceGroupIndex = mesh.InstanceGroupIndex};
 
-		if (publishedIndex >= m_published.size() ||
-		    m_published[publishedIndex].Entity != mesh.Entity)
+		if (publishedIndex >= m_published.size() || m_published[publishedIndex].Entity != mesh.Entity)
 		{
-			PublishedObject published{
-			    .Entity = mesh.Entity,
-			    .Object = identities.Resolve(mesh.Entity),
-			    .Static = staticData};
+			PublishedObject published{.Entity = mesh.Entity, .Object = identities.Resolve(mesh.Entity), .Static = staticData};
 			delta.Creates.push_back({published.Object, published.Static});
 			return published;
 		}
@@ -81,9 +73,7 @@ namespace ECS
 		return published;
 	}
 
-	void RenderObjectDeltaExtractor::RetireRemaining(
-	    std::size_t publishedIndex,
-	    RenderWorldDelta& delta) const
+	void RenderObjectDeltaExtractor::RetireRemaining(std::size_t publishedIndex, RenderSceneDelta& delta) const
 	{
 		for (; publishedIndex < m_published.size(); ++publishedIndex)
 		{
@@ -91,22 +81,16 @@ namespace ECS
 		}
 	}
 
-	void RenderObjectDeltaExtractor::SortDeltaObjects(RenderWorldDelta& delta)
+	void RenderObjectDeltaExtractor::SortDeltaObjects(RenderSceneDelta& delta)
 	{
 		std::sort(
 		    delta.Creates.begin(),
 		    delta.Creates.end(),
-		    [](const RenderObjectCreate& left, const RenderObjectCreate& right)
-		    {
-			    return left.Object < right.Object;
-		    });
+		    [](const RenderObjectCreate& left, const RenderObjectCreate& right) { return left.Object < right.Object; });
 		std::sort(
 		    delta.Updates.begin(),
 		    delta.Updates.end(),
-		    [](const RenderObjectUpdate& left, const RenderObjectUpdate& right)
-		    {
-			    return left.Object < right.Object;
-		    });
+		    [](const RenderObjectUpdate& left, const RenderObjectUpdate& right) { return left.Object < right.Object; });
 		std::sort(delta.Destroys.begin(), delta.Destroys.end());
 	}
 
@@ -116,21 +100,14 @@ namespace ECS
 		    m_published.begin(),
 		    m_published.end(),
 		    entity,
-		    [](const PublishedObject& candidate, EntityId identity)
-		    {
-			    return candidate.Entity < identity;
-		    });
-		return object == m_published.end() || object->Entity != entity
-		           ? RenderObjectId{}
-		           : object->Object;
+		    [](const PublishedObject& candidate, EntityId identity) { return candidate.Entity < identity; });
+		return object == m_published.end() || object->Entity != entity ? RenderObjectId{} : object->Object;
 	}
 
-	bool RenderObjectDeltaExtractor::HasSameStaticData(
-	    const RenderObjectStaticData& left,
-	    const RenderObjectStaticData& right) noexcept
+	bool RenderObjectDeltaExtractor::HasSameStaticData(const RenderObjectStaticData& left, const RenderObjectStaticData& right) noexcept
 	{
-		return left.Mesh.RefersToSameResource(right.Mesh) && left.Material == right.Material &&
-		       left.Skeleton == right.Skeleton && left.MeshKind == right.MeshKind &&
-		       left.MeshAssetIndex == right.MeshAssetIndex && left.InstanceGroupIndex == right.InstanceGroupIndex;
+		return left.Mesh.RefersToSameResource(right.Mesh) && left.Material == right.Material && left.Skeleton == right.Skeleton
+		    && left.MeshKind == right.MeshKind && left.MeshAssetIndex == right.MeshAssetIndex
+		    && left.InstanceGroupIndex == right.InstanceGroupIndex;
 	}
 }

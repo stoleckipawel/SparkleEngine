@@ -8,12 +8,12 @@ class MaterialCache;
 class RenderWorld;
 class TaskExecutor;
 class TextureCache;
-struct RenderFrameDynamicData;
+struct RenderSceneDynamicData;
 struct RenderSceneData;
 
 class RenderPreparationGraph final
 {
-  public:
+public:
 	RenderPreparationGraph(
 	    TaskExecutor& taskExecutor,
 	    MaterialCache& materialCache,
@@ -21,23 +21,15 @@ class RenderPreparationGraph final
 	    TextureCache& textureCache);
 	~RenderPreparationGraph() noexcept;
 
-	RenderPreparationGraph(
-	    const RenderPreparationGraph&) = delete;
-	RenderPreparationGraph& operator=(
-	    const RenderPreparationGraph&) = delete;
-	RenderPreparationGraph(
-	    RenderPreparationGraph&&) = delete;
-	RenderPreparationGraph& operator=(
-	    RenderPreparationGraph&&) = delete;
+	RenderPreparationGraph(const RenderPreparationGraph&) = delete;
+	RenderPreparationGraph& operator=(const RenderPreparationGraph&) = delete;
+	RenderPreparationGraph(RenderPreparationGraph&&) = delete;
+	RenderPreparationGraph& operator=(RenderPreparationGraph&&) = delete;
 
-	void Execute(
-	    const RenderWorld& world,
-	    const RenderFrameDynamicData& dynamic,
-	    const Frustum& frustum,
-	    RenderSceneData& output);
+	void Execute(const RenderWorld& world, const RenderSceneDynamicData& dynamic, const Frustum& frustum, RenderSceneData& output);
 	void ResetHistory() noexcept;
 
-  private:
+private:
 	struct Impl;
 	std::unique_ptr<Impl> m_impl;
 };

@@ -184,14 +184,14 @@ CameraInputIntent RuntimeApplication::CollectCameraInputIntent(float aspectRatio
 	return m_cameraInputIntentCollector != nullptr ? m_cameraInputIntentCollector->Collect(aspectRatio) : CameraInputIntent{};
 }
 
-void RuntimeApplication::UpdateEditorRuntime(const RenderCameraData& renderCamera) noexcept
+void RuntimeApplication::UpdateEditorRuntime(const RenderViewCameraData& renderCamera) noexcept
 {
 	UpdateRuntimeFrame(nullptr, &renderCamera);
 }
 
 void RuntimeApplication::UpdateRuntimeFrame(
     const CameraInputIntent* worldCameraIntent,
-    const RenderCameraData* renderCameraOverride) noexcept
+    const RenderViewCameraData* renderCameraOverride) noexcept
 {
 	if (m_gameWorld && m_timer)
 	{
@@ -201,23 +201,18 @@ void RuntimeApplication::UpdateRuntimeFrame(
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 		m_gameWorld->Update(deltaSeconds);
 		m_renderer->EndSimulationFrame(frameId);
-		SubmitWorldRenderInput(frameId, renderCameraOverride);
+		SubmitRenderFrame(frameId, renderCameraOverride);
 	}
 }
 
-void RuntimeApplication::SubmitWorldRenderInput(std::uint64_t frameId, const RenderCameraData* renderCameraOverride)
+void RuntimeApplication::SubmitRenderFrame(std::uint64_t frameId, const RenderViewCameraData* renderCameraOverride)
 {
-	RenderFrameMetadata metadata;
-	metadata.FrameId = frameId;
-	metadata.ProviderGeneration = m_renderer->GetShaderPackageGeneration();
-	metadata.RenderWidth = metadata.OutputWidth = m_window->GetWidth();
-	metadata.RenderHeight = metadata.OutputHeight = m_window->GetHeight();
-	RenderInputFrame input = m_gameWorld->ExtractRenderInput(metadata);
+	RenderFrameSubmission submission = m_gameWorld->ExtractRenderFrameSubmission(frameId);
 	if (renderCameraOverride != nullptr)
 	{
-		input.Dynamic.Camera = *renderCameraOverride;
+		submission.View.Camera = *renderCameraOverride;
 	}
-	m_renderer->SubmitRenderInput(std::move(input));
+	m_renderer->SubmitRenderFrame(std::move(submission));
 }
 
 void RuntimeApplication::SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept

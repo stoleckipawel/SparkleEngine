@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SceneData/MaterialTextureTable.h"
-#include "Rendering/RenderInputFrame.h"
+#include "Rendering/RenderResourceTables.h"
 #include "SceneData/MaterialData.h"
 
 #include <cstdint>
@@ -16,7 +16,7 @@ struct MaterialDesc;
 
 class MaterialCache final
 {
-  public:
+public:
 	MaterialCache(TextureCache& textureCache, RenderHardwareInterface& renderHardwareInterface) noexcept;
 	~MaterialCache() noexcept;
 
@@ -25,24 +25,14 @@ class MaterialCache final
 	MaterialCache(MaterialCache&&) = delete;
 	MaterialCache& operator=(MaterialCache&&) = delete;
 
-	void BuildMaterials(
-	    const RenderMaterialTable& materials,
-	    std::uint64_t sourceRevision,
-	    RenderSceneData& sceneData);
+	void BuildMaterials(const RenderMaterialTable& materials, std::uint64_t sourceRevision, RenderSceneData& sceneData);
 	void Reset() noexcept;
 
-  private:
+private:
 	struct RebuildOutput;
 
-	void Rebuild(
-	    const RenderMaterialTable& materials,
-	    std::uint64_t sourceRevision,
-	    std::uint64_t textureRevision);
-	void BuildMaterial(
-	    const MaterialDesc& desc,
-	    std::uint32_t materialIndex,
-	    std::uint64_t generation,
-	    RebuildOutput& output);
+	void Rebuild(const RenderMaterialTable& materials, std::uint64_t sourceRevision, std::uint64_t textureRevision);
+	void BuildMaterial(const MaterialDesc& desc, std::uint32_t materialIndex, std::uint64_t generation, RebuildOutput& output);
 	void PublishMaterialTextureTable(RenderSceneData& sceneData) const noexcept;
 	std::uint64_t GetNextGeneration() const noexcept;
 
