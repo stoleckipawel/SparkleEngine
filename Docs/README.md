@@ -59,7 +59,7 @@ Start with [Editor Viewport Camera Architecture](Architecture/EditorViewportCame
 
 ### Renderer Scene, View, And Frame Work
 
-Start with [Renderer Scene, View, And Frame Architecture](Architecture/RendererSceneViewFrameArchitecture.md) for the Unreal-inspired persistent scene, one-frame view, persistent view-state, frame-slot, GPU-scene, pass-input, coherent cross-module naming, and atomic full-cutover frame-pipeline cleanup target.
+Start with [Renderer Scene, View, And Frame Architecture](Architecture/RendererSceneViewFrameArchitecture.md) for the Unreal-familiar concept/navigation map and the per-phase implementation prompts, references, guardrails, acceptance criteria, cleanup/CL boundaries, no-intermediate-build rule, and atomic full-cutover target for persistent scene, view, frame, GPU-scene, and pass ownership.
 
 ### Renderer Debug View Work
 

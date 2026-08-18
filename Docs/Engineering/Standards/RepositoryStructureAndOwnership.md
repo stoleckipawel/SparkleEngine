@@ -34,7 +34,7 @@ The repository patterns that currently justify this structure are explicit modul
 | `Tasks` | product-independent task DAG, execution, scopes, lanes, cancellation, worker runtime | renderer, RHI, ECS, editor, provider, or cooking policy |
 | `GameFramework` | runtime world, private ECS, systems, immutable resources, loading commit, world publication and extraction | renderer/RHI mutation or editor UI |
 | `RHI` | explicit backend-neutral GPU contracts and backend-private D3D12/Vulkan implementation | frame-graph policy, game types, renderer shader-data policy |
-| `Renderer` | render world, frame preparation, frame graph, passes, providers, render coordination, GPU-scene policy | ECS queries, `GameWorld` dereference, editor state, native APIs outside narrow bridges |
+| `Renderer` | persistent render-scene mirror, frame/view preparation, frame graph, passes, providers, render coordination, GPU-scene policy | ECS queries, `GameWorld` dereference, editor state, native APIs outside narrow bridges |
 | `Editor` | ImGui presentation, panels, immutable editor models, semantic UI requests | live ECS storage, renderer cache ownership, task-scheduler internals |
 | `Application` | host orchestration, lifecycle, subsystem composition, boundary publication | mechanisms with an existing subsystem owner |
 | `Tools` | import, cook, compiler, launcher, packaging, and validation workflows | runtime scene/render authority or a duplicate task runtime |
