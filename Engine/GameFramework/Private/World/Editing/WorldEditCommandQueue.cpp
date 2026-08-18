@@ -64,8 +64,7 @@ bool WorldEditCommandQueue::IsTargetAvailable(
 	    {
 		    using T = std::decay_t<decltype(command)>;
 		    if constexpr (std::is_same_v<T, SetActiveCameraCommand> ||
-		                  std::is_same_v<T, SetCameraDescriptionCommand> ||
-		                  std::is_same_v<T, SetCameraMovementCommand>)
+		                  std::is_same_v<T, SetCameraDescriptionCommand>)
 			    return state.IsCamera(command.Entity);
 		    else if constexpr (std::is_same_v<T, SetLocalTransformCommand> ||
 		                       std::is_same_v<T, SetEntityVisibilityCommand>)
@@ -93,8 +92,6 @@ void WorldEditCommandQueue::ApplyPayload(
 			    (void) state.WriteTransform(command.Entity, command.Value);
 		    else if constexpr (std::is_same_v<T, SetCameraDescriptionCommand>)
 			    (void) state.WriteCameraDesc(command.Entity, command.Value);
-		    else if constexpr (std::is_same_v<T, SetCameraMovementCommand>)
-			    (void) state.WriteCameraMovement(command.Entity, command.Value);
 		    else if constexpr (std::is_same_v<T, SetEntityVisibilityCommand>)
 			    (void) state.WriteVisibility(command.Entity, command.Value);
 		    else if constexpr (std::is_same_v<T, SetLightDescriptionCommand>)

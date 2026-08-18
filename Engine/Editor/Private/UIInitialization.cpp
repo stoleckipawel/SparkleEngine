@@ -21,6 +21,7 @@
 #include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Settings/EditorRestartService.h"
 #include "Style/SparkleUiTheme.h"
+#include "Viewport/EditorViewportSession.h"
 #include "Window/Window.h"
 
 #include <backends/imgui_impl_win32.h>
@@ -88,9 +89,11 @@ void UI::InitializeCorePanels()
 
 void UI::InitializeViewportPanels()
 {
-	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelSession, m_renderingSettings.get());
+	m_viewportSession = std::make_unique<EditorViewportSession>();
+	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelSession, m_renderingSettings.get(), m_viewportSession.get());
 	m_viewportPanel =
 	    std::make_unique<ViewportPanel>(EditorWorkspaceLayout::SceneOutlinerWidth, EditorWorkspaceLayout::SceneInspectorWidth);
+	m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);
 }
 
 void UI::InitializeAssetPanels()

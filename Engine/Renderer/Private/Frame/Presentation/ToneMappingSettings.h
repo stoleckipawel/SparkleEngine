@@ -2,7 +2,10 @@
 
 #include "Frame/PostProcessing/ExposureUniformData.h"
 #include "Frame/Presentation/ToneMappingUniformData.h"
-#include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
+#include "Frame/Presentation/ViewportDisplaySettings.h"
 
-ExposureUniformData BuildExposureUniformData(float frameDeltaSeconds, bool exposureHistoryValid) noexcept;
-ToneMappingUniformData BuildToneMappingUniformData() noexcept;
+ExposureUniformData BuildExposureUniformData(
+    const ResolvedViewportDisplaySettings& settings,
+    float frameDeltaSeconds,
+    bool exposureHistoryValid) noexcept;
+ToneMappingUniformData BuildToneMappingUniformData(EngineToneMapper toneMapper) noexcept;

@@ -1,13 +1,11 @@
 #include "../../PCH.h"
 #include "Frame/Presentation/ToneMappingSettings.h"
 
-#include "Frame/Presentation/ToneMappingCVars.h"
-
 static const auto g_toneMappingSettingsLogger = Logging::GetOrCreateLogger("Renderer.ToneMappingSettings");
 
 class ToneMappingValueTranslation final
 {
-  public:
+public:
 	static std::uint32_t ToShaderToneMapper(EngineToneMapper toneMapper) noexcept
 	{
 		switch (toneMapper)
@@ -45,23 +43,25 @@ class ToneMappingValueTranslation final
 	}
 };
 
-ExposureUniformData BuildExposureUniformData(float frameDeltaSeconds, bool exposureHistoryValid) noexcept
+ExposureUniformData BuildExposureUniformData(
+    const ResolvedViewportDisplaySettings& settings,
+    float frameDeltaSeconds,
+    bool exposureHistoryValid) noexcept
 {
 	return ExposureUniformData{
-	    .ExposureMode = ToneMappingValueTranslation::ToShaderExposureMode(CVarExposureMode.Get()),
+	    .ExposureMode = ToneMappingValueTranslation::ToShaderExposureMode(settings.ExposureMode),
 	    .ExposureHistoryValid = exposureHistoryValid ? 1u : 0u,
 	    .FrameDeltaSeconds = frameDeltaSeconds,
-	    .ManualExposure = CVarManualExposure.Get(),
-	    .ExposureCompensation = CVarExposureCompensation.Get(),
-	    .ExposureTargetLuminance = CVarExposureTargetLuminance.Get(),
-	    .ExposureMin = CVarExposureMin.Get(),
-	    .ExposureMax = CVarExposureMax.Get(),
-	    .ExposureAdaptationSpeedUp = CVarExposureAdaptationSpeedUp.Get(),
-	    .ExposureAdaptationSpeedDown = CVarExposureAdaptationSpeedDown.Get()};
+	    .ManualExposure = settings.ManualExposure,
+	    .ExposureCompensation = settings.ExposureCompensation,
+	    .ExposureTargetLuminance = settings.ExposureTargetLuminance,
+	    .ExposureMin = settings.ExposureMin,
+	    .ExposureMax = settings.ExposureMax,
+	    .ExposureAdaptationSpeedUp = settings.ExposureAdaptationSpeedUp,
+	    .ExposureAdaptationSpeedDown = settings.ExposureAdaptationSpeedDown};
 }
 
-ToneMappingUniformData BuildToneMappingUniformData() noexcept
+ToneMappingUniformData BuildToneMappingUniformData(EngineToneMapper toneMapper) noexcept
 {
-	return ToneMappingUniformData{
-	    .ToneMapper = ToneMappingValueTranslation::ToShaderToneMapper(CVarToneMapper.Get())};
+	return ToneMappingUniformData{.ToneMapper = ToneMappingValueTranslation::ToShaderToneMapper(toneMapper)};
 }

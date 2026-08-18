@@ -10,10 +10,10 @@ namespace Assets
 	class CookedAssetFileSet;
 	class SceneAssetPayloadMeshAppender final
 	{
-	  public:
+	public:
 		static void AppendMeshAssets(
 		    const LoadedSceneManifest& sceneManifest,
-		    const CookedAssetFileSet& files,
+		    CookedAssetFileSet& files,
 		    SceneAssetPayload& sceneAssetPayload);
 
 		static void AppendMeshInstances(

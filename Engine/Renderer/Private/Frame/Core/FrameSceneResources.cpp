@@ -8,24 +8,31 @@
 #include "RHI/Public/Interop/ResourceState.h"
 #include "SceneData/RenderSceneGpuData.h"
 
-void CreateFrameSceneResources(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent,
-    RenderViewportExtent outputExtent,
-    PixelFormat backBufferFormat,
-    FrameAssemblyResourceLayout& resources)
+void CreateFrameSceneResources(FrameGraphBuilder& builder, const FrameBuildSettings& settings, FrameAssemblyResourceLayout& resources)
 {
 	const FrameGraphTextureHandle sceneColor = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor("SceneColor", renderExtent.Width, renderExtent.Height, FrameRenderFormats::SceneColor));
+	    FrameGraphTextureDesc::CreateColor(
+	        "SceneColor",
+	        settings.RenderExtent.Width,
+	        settings.RenderExtent.Height,
+	        FrameRenderFormats::SceneColor));
 
 	const FrameGraphTextureHandle sceneDepth = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor("SceneDepth", renderExtent.Width, renderExtent.Height, FrameRenderFormats::SceneDepth));
+	    FrameGraphTextureDesc::CreateColor(
+	        "SceneDepth",
+	        settings.RenderExtent.Width,
+	        settings.RenderExtent.Height,
+	        FrameRenderFormats::SceneDepth));
 
 	const FrameGraphTextureHandle finalSceneColor = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor("FinalSceneColor", outputExtent.Width, outputExtent.Height, FrameRenderFormats::SceneColor));
+	    FrameGraphTextureDesc::CreateColor(
+	        "FinalSceneColor",
+	        settings.OutputExtent.Width,
+	        settings.OutputExtent.Height,
+	        FrameRenderFormats::SceneColor));
 
 	const FrameGraphTextureHandle backBuffer = builder.ImportBackBuffer(
-	    FrameGraphTextureDesc::CreateColor("BackBuffer", outputExtent.Width, outputExtent.Height, backBufferFormat),
+	    FrameGraphTextureDesc::CreateColor("BackBuffer", settings.OutputExtent.Width, settings.OutputExtent.Height, settings.OutputFormat),
 	    ResourceState::Present);
 
 	const FrameGraphTextureHandle exposure =
@@ -42,9 +49,8 @@ void CreateFrameSceneResources(
 	resources.Transient.Exposure = exposure;
 	resources.External.Sky = sky;
 	resources.External.Scene = DeclareRenderSceneGpuResources(builder);
-	resources.History = DeclareFrameHistoryResources(builder, renderExtent);
+	resources.History = DeclareFrameHistoryResources(builder, settings.RenderExtent);
 	resources.ViewportProducts.SceneColor = sceneColor;
 	resources.ViewportProducts.SceneDepth = sceneDepth;
-	resources.ViewportProducts.FinalSceneColor = finalSceneColor;
 	resources.ViewportProducts.Exposure = exposure;
 }

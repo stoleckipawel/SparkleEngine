@@ -6,7 +6,7 @@
 
 class RendererFacadeState final
 {
-  public:
+public:
 	RendererFacadeState(Timer& timer, Window& window, RendererExecutionConfig config) :
 	    Coordinator(timer, window, config, ExternalRuntime.GetBackendConfiguration())
 	{
@@ -23,9 +23,9 @@ Renderer::Renderer(Timer& timer, Window& window, RendererExecutionConfig config)
 
 Renderer::~Renderer() noexcept = default;
 
-void Renderer::SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
+void Renderer::SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept
 {
-	m_state->Coordinator.SubmitViewportRequest(request);
+	m_state->Coordinator.SubmitViewportRequest(std::move(request));
 }
 
 ViewportRenderProducts Renderer::GetViewportRenderProducts() const
@@ -88,14 +88,12 @@ void Renderer::EndSimulationFrame(std::uint64_t frameId) noexcept
 	m_state->ExternalRuntime.EndSimulationFrame(frameId);
 }
 
-ViewportCaptureId Renderer::RequestViewportCapture(
-    ViewportCaptureRequest request) noexcept
+ViewportCaptureId Renderer::RequestViewportCapture(ViewportCaptureRequest request) noexcept
 {
 	return m_state->Coordinator.RequestViewportCapture(std::move(request));
 }
 
-bool Renderer::TryTakeViewportCapture(
-    ViewportCaptureReadback& readback) noexcept
+bool Renderer::TryTakeViewportCapture(ViewportCaptureReadback& readback) noexcept
 {
 	return m_state->Coordinator.TryTakeViewportCapture(readback);
 }

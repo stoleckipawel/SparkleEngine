@@ -26,7 +26,9 @@ Before adding a persistent concept, state:
 - the user or engine outcome and authoritative production path;
 - the current owner that will absorb the change;
 - the essential state, branch, type, dependency, configuration, or public API being added;
+- each material copy or new value holder and the boundary reason that prevents using a reference, view, handle, or move;
 - the old path, repeated policy, dead surface, or unnecessary work being removed or simplified;
+- the owned artifacts that will be regenerated and the internal versions, migrations, adapters, aliases, fallbacks, or dual paths that will be deleted rather than preserved;
 - the performance classification and budgets that may move;
 - explicit non-goals that bound cleanup and prevent a second architecture.
 
@@ -54,11 +56,12 @@ For each touched or proposed file record:
 
 - target, module, subsystem, and `Public`/`Private` placement;
 - primary type/operation and reason to change;
+- each changed capability/invariant's authoritative definition and every material use classified as authority, composition, producer, consumer, or duplicate;
 - mutable-state and lifetime owners;
 - direct producers and consumers;
 - final location and nearby instances of the same ownership defect.
 
-Inspect the complete direct ownership path, not only prompt-named files. This is bounded reconciliation, not permission for unrelated cleanup.
+Trace definitions to uses and changed uses back to their proper definition using the [definition and usage placement audit](RepositoryStructureAndOwnership.md#definition-and-usage-placement). Inspect the complete direct ownership path, not only prompt-named files. This is bounded reconciliation, not permission for unrelated cleanup.
 
 ### Reconcile the Touched Neighborhood
 
@@ -77,15 +80,29 @@ Record preservation and deletion for every material change. Add the [data/access
 
 Before parallelism or pipelining, define ownership, input/output identity, deterministic ordering, serial reference behavior, exclusive writable ranges, serial crossover, and failure/publication policy. Partial publication and ambiguous ownership are not policies.
 
+### Plan the Fast Feedback Loop
+
+Implement or generate one coherent owner/invariant-sized batch at a time. Before each batch, identify the files and production edge expected to change plus the cheapest check that could expose a mistake. Then:
+
+1. locate the current owner and nearby accepted precedent with exact searches;
+2. make the bounded implementation or generation pass;
+3. inspect the scoped diff immediately for unintended files, duplicated policy or data, unjustified holders/copies, stale names, generated boilerplate, internal versioning/compatibility machinery, and ownership drift;
+4. run cheap applicable formatting, static, schema, documentation, or architecture checks;
+5. compile the smallest owning target only when the batch needs compilation evidence;
+6. escalate runtime or broad validation only under the [claim-driven validation rules](ValidationPerformanceAndEvidence.md#claim-driven-validation-selection).
+
+Do not accumulate a large AI-generated diff and use a full engine, game, editor, or workspace build as the first feedback signal. Broad builds, whole validation sets, all-content cooks, clean rebuilds, multi-backend runs, and acceptance workloads are final evidence only when the affected contract makes that breadth applicable. Uncertainty is resolved by inspecting the owner and choosing a more discriminating check, not by launching unrelated work.
+
 ## During Implementation
 
 - Keep high-level workflow visible as orchestration and cohesive mechanism in capability implementations.
 - Keep one mutable authority and one production path.
+- Apply the [single-truth and copy budget](DataOrientedDesign.md#single-truth-and-copy-budget): prefer references, views, handles, and moves; copy only at a named lifetime or publication boundary and resolve that snapshot once per epoch.
 - Spend the declared complexity budget only on current behavior; remove scaffolding that becomes unnecessary as the vertical slice closes.
-- Delete replaced paths in the same change unless an accepted migration names a later owner and deletion gate.
-- Update implementation, headers, build membership, exports, tests, and documentation atomically when ownership moves.
+- Apply the [current clean-break policy](IntegrationStyleGuide.md#current-clean-break-policy): update all producers and consumers, delete replaced paths and internal compatibility/versioning machinery in the same coherent change, and regenerate disposable local artifacts. Do not leave a later compatibility or deletion gate.
+- Update implementation, headers, build membership, exports, removal of obsolete test registrations, and documentation atomically when ownership moves. Temporary validation tests are not submitted; follow [Validation, Performance, and Evidence](ValidationPerformanceAndEvidence.md#submitted-test-code).
 - Re-check preservation and deletion when a new consumer appears.
-- Treat generated and AI-assisted output as untrusted until independently reviewed and validated.
+- Keep generated and AI-assisted batches bounded, inspect their scoped diff immediately, and treat every changed line as untrusted until independently reviewed and proportionally validated.
 - Stop when a product or architecture decision exceeds the task's authority.
 
 ## Review and Acceptance
@@ -97,9 +114,10 @@ Use the [SparkleEngine Code Review](../CodeReview.md) procedure and run the revi
 - moved, split, or deleted paths are reconciled with build membership, includes, exports, tests, and documentation;
 - preservation and deletion records match the final implementation;
 - old names and production references are gone where intended;
+- no internal version, migration reader/writer, compatibility adapter, alias, fallback, old/new dispatch, or dual representation preserves the replaced Sparkle-owned contract;
 - the final structure spends no unexplained complexity and leaves the touched ownership path easier to navigate;
 - performance impact is classified and any material hot-path, memory, latency, loading, cooking, or build-time risk has proportional evidence;
-- exact validation commands, configurations, backends, results, and unavailable checks are recorded;
+- exact claim-to-check mappings, validation commands, configurations, backends, results, escalation, and applicable unavailable checks are recorded; unrelated broad checks are not reported as missing evidence;
 - performance and AI-assisted claims meet [Validation, Performance, and Evidence](ValidationPerformanceAndEvidence.md);
 - applicable `PGE-*` and workload gates are linked and classified without copying their contracts.
 

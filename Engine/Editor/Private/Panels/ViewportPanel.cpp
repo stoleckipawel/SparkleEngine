@@ -9,7 +9,7 @@
 
 class ViewportImageLayout final
 {
-  public:
+public:
 	static constexpr float MinimumViewportExtent = 64.0f;
 
 	static ImVec2 ComputeViewportImageSize(const ImVec2& availableRegion, const RenderViewportExtent& extent) noexcept
@@ -24,11 +24,11 @@ class ViewportImageLayout final
 		const float scale = (std::min) (availableRegion.x / extentWidth, availableRegion.y / extentHeight);
 		return ImVec2(extentWidth * scale, extentHeight * scale);
 	}
-
 };
 
 ViewportPanel::ViewportPanel(float leftInsetPixels, float rightInsetPixels) noexcept :
-    m_leftInsetPixels(leftInsetPixels), m_rightInsetPixels(rightInsetPixels)
+    m_leftInsetPixels(leftInsetPixels),
+    m_rightInsetPixels(rightInsetPixels)
 {
 	m_renderRequest.ViewportId = 1;
 	m_renderRequest.Generation = 1;
@@ -72,10 +72,18 @@ void ViewportPanel::SetRenderProducts(const ViewportRenderProducts& renderProduc
 	m_renderProducts = renderProducts;
 }
 
-void ViewportPanel::SetSceneColorTexture(
-    EditorTextureHandle texture) noexcept
+void ViewportPanel::SetSceneColorTexture(EditorTextureHandle texture) noexcept
 {
 	m_sceneColorTexture = texture;
+}
+
+void ViewportPanel::SetExposureOverrides(const ViewportExposureOverrides& overrides) noexcept
+{
+	if (!(m_renderRequest.Exposure == overrides))
+	{
+		m_renderRequest.Exposure = overrides;
+		++m_renderRequest.Generation;
+	}
 }
 
 const ViewportRenderRequest& ViewportPanel::GetRenderRequest() const noexcept
@@ -101,15 +109,15 @@ void ViewportPanel::UpdateRequestedExtent(float availableWidth, float availableH
 {
 	const float clampedWidth = (std::max) (ViewportImageLayout::MinimumViewportExtent, availableWidth);
 	const float clampedHeight = (std::max) (ViewportImageLayout::MinimumViewportExtent, availableHeight);
-	SetRequestedExtent(
-	    RenderViewportExtent{static_cast<std::uint32_t>(clampedWidth), static_cast<std::uint32_t>(clampedHeight)});
+	SetRequestedExtent(RenderViewportExtent{static_cast<std::uint32_t>(clampedWidth), static_cast<std::uint32_t>(clampedHeight)});
 }
 
 void ViewportPanel::BuildEmptyState() noexcept
 {
 	ImGui::TextDisabled("Viewport output unavailable");
 	ImGui::Spacing();
-	ImGui::TextWrapped("EditorApplication is requesting runtime scene output, but no scene color surface is available for presentation yet.");
+	ImGui::TextWrapped(
+	    "EditorApplication is requesting runtime scene output, but no scene color surface is available for presentation yet.");
 }
 
 void ViewportPanel::BuildUI(bool disableInteraction)
@@ -127,7 +135,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	    "Viewport",
 	    nullptr,
 	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-	ImGui::PopStyleVar();  // WindowPadding
+	ImGui::PopStyleVar(); // WindowPadding
 
 	const float surfaceRegionHeight = (std::max) (ViewportImageLayout::MinimumViewportExtent, ImGui::GetContentRegionAvail().y);
 	ImGui::BeginDisabled(disableInteraction);
@@ -164,10 +172,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 			ImGui::SetCursorPosY(start.y + ((availableRegion.y - imageSize.y) * 0.5f));
 		}
 
-		ImGui::Image(
-		    static_cast<ImTextureID>(
-		        m_sceneColorTexture.Pack()),
-		    imageSize);
+		ImGui::Image(static_cast<ImTextureID>(m_sceneColorTexture.Pack()), imageSize);
 	}
 
 	ImGui::EndChild();

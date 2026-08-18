@@ -12,11 +12,9 @@
 #include "Assets/Payload/SceneAssetPayloadMeshBindings.h"
 #include "Assets/Payload/SceneAssetPayloadSkeletonAppender.h"
 
-	namespace Assets
+namespace Assets
 {
-	SceneAssetPayload SceneAssetPayloadDecoder::Decode(
-	    const LoadedSceneManifest& manifest,
-	    const CookedAssetFileSet& files)
+	SceneAssetPayload SceneAssetPayloadDecoder::Decode(const LoadedSceneManifest& manifest, CookedAssetFileSet& files)
 	{
 		SceneAssetPayload payload;
 		const std::vector<SceneAssetPayloadMeshBinding> meshAssetBindings = BuildSceneAssetPayloadMeshBindings(manifest);

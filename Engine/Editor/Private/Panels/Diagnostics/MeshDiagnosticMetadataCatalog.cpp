@@ -32,7 +32,7 @@ static std::optional<MeshDiagnosticMetadata> LoadCookedMeshMetadata(std::uint64_
 	}
 
 	std::string schema;
-	if (!Json::TryReadStringProperty(metadataText, "schema", schema) || schema != "cooked-mesh-metadata-v1")
+	if (!Json::TryReadStringProperty(metadataText, "schema", schema) || schema != "cooked-mesh-metadata")
 	{
 		return std::nullopt;
 	}

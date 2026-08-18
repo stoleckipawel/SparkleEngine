@@ -17,7 +17,6 @@ constexpr std::uint32_t MakeCookedTextureAssetMagic(char a, char b, char c, char
 inline constexpr std::string_view kCookedTextureAssetExtension = ".stex";
 inline constexpr std::wstring_view kCookedTextureAssetExtensionWide = L".stex";
 inline constexpr std::uint32_t kCookedTextureAssetMagic = MakeCookedTextureAssetMagic('S', 'T', 'E', 'X');
-inline constexpr std::uint32_t kCookedTextureAssetVersion = 1;
 
 constexpr std::uint32_t PackCookedTextureLayout(TextureResourceDimension dimension, std::uint16_t arraySize) noexcept
 {
@@ -38,7 +37,6 @@ constexpr TextureResourceDimension UnpackCookedTextureDimension(std::uint32_t pa
 struct SPARKLE_RHI_API CookedTextureAssetHeader
 {
 	std::uint32_t magic = kCookedTextureAssetMagic;
-	std::uint32_t version = kCookedTextureAssetVersion;
 	std::uint32_t width = 0;
 	std::uint32_t height = 0;
 	std::uint32_t format = 0;
@@ -46,10 +44,7 @@ struct SPARKLE_RHI_API CookedTextureAssetHeader
 	std::uint32_t mipCount = 0;
 	std::uint32_t packedLayout = PackCookedTextureLayout(TextureResourceDimension::Texture2D, 1);
 
-	constexpr bool MatchesExpectedLayout() const noexcept
-	{
-		return magic == kCookedTextureAssetMagic && version == kCookedTextureAssetVersion;
-	}
+	constexpr bool HasExpectedMagic() const noexcept { return magic == kCookedTextureAssetMagic; }
 
 	constexpr std::uint16_t GetArraySize() const noexcept { return UnpackCookedTextureArraySize(packedLayout); }
 	constexpr TextureResourceDimension GetDimension() const noexcept { return UnpackCookedTextureDimension(packedLayout); }

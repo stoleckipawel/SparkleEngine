@@ -10,6 +10,8 @@
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
+#include "../../GameFramework/Public/Rendering/RenderFrameDynamicData.h"
+#include "../../GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "../../GameFramework/Public/World/WorldChange.h"
 #include "../../GameFramework/Public/World/WorldEditCommand.h"
 #include "../../GameFramework/Public/World/WorldMaterialVariantView.h"
@@ -73,6 +75,7 @@ public:
 	UI& operator=(UI&&) = delete;
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
+	RenderCameraData UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTexture(EditorTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
@@ -122,6 +125,7 @@ private:
 	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
 	std::unique_ptr<ViewportTopPanel> m_viewportTopPanel;
 	std::unique_ptr<ViewportPanel> m_viewportPanel;
+	std::unique_ptr<class EditorViewportSession> m_viewportSession;
 	std::unique_ptr<SettingsPanel> m_settingsPanel;
 	std::unique_ptr<UsedShadersPanel> m_usedShadersPanel;
 	std::unique_ptr<UsedMeshesPanel> m_usedMeshesPanel;

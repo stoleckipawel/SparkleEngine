@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Application.h"
+#include "../../GameFramework/Public/Rendering/RenderFrameDynamicData.h"
+#include "../../GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -31,12 +33,11 @@ struct RuntimeApplicationOptions final
 	bool EnableRuntimeConsole = true;
 	bool AllowThreadedRenderer = true;
 	bool EnableUiRenderPackets = false;
-	bool EnableOscillatingMeshMotion = false;
 };
 
 class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 {
-  public:
+public:
 	RuntimeApplication();
 	explicit RuntimeApplication(RuntimeApplicationOptions options) noexcept;
 	~RuntimeApplication();
@@ -49,7 +50,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	void Initialize() override;
 	RuntimeApplicationFrameResult BeginFrame();
 	void UpdateRuntime() noexcept;
-	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
+	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept;
 	ViewportRenderProducts GetViewportRenderProducts() const;
 	Timer& GetTimer() noexcept;
 	Window& GetWindow() noexcept;
@@ -61,7 +62,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	bool Tick() override;
 	void Shutdown() override;
 
-  private:
+private:
 	friend class EditorApplication;
 
 	static bool WantsImGuiInputCapture() noexcept;
@@ -70,7 +71,10 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	void InitializeGameRuntime();
 	void InitializeRenderer();
 	void InitializeRuntimeConsole();
-	void SubmitWorldRenderInput(std::uint64_t frameId);
+	CameraInputIntent CollectCameraInputIntent(float aspectRatio) noexcept;
+	void UpdateRuntimeFrame(const CameraInputIntent* worldCameraIntent, const RenderCameraData* renderCameraOverride) noexcept;
+	void UpdateEditorRuntime(const RenderCameraData& renderCamera) noexcept;
+	void SubmitWorldRenderInput(std::uint64_t frameId, const RenderCameraData* renderCameraOverride);
 	GameWorld& GetWorldForEditor() noexcept;
 
 	std::unique_ptr<Timer> m_timer;

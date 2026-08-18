@@ -10,7 +10,6 @@
 #include "Fbx/FbxMaterialImporter.h"
 #include "Fbx/FbxSceneReader.h"
 #include "Core/Public/Diagnostics/Error.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <assimp/Importer.hpp>
 
@@ -37,8 +36,6 @@ SourceImportOutput FbxImporter::Import(const std::filesystem::path& filePath) co
 	const aiScene& scene = FbxSceneReader::LoadScene(filePath, importer);
 	const float sourceMetersPerUnit = FbxSceneReader::GetMetersPerSourceUnit(importer);
 	output.provenance.sourceMetersPerUnit = sourceMetersPerUnit;
-	output.scene.coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
-
 	output.scene.materials.reserve(scene.mNumMaterials);
 	const std::size_t importedMeshInstanceCount = FbxGeometryImporter::CountImportedMeshInstances(*scene.mRootNode);
 	output.ReserveMeshPrimitives(scene.mNumMeshes);

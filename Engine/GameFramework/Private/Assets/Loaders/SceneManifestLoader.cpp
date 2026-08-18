@@ -14,7 +14,7 @@ namespace Assets
 	    const std::filesystem::path& path,
 	    std::span<const std::uint8_t> bytes) const
 	{
-		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedSceneManifest", kCookedSceneManifestVersion);
+		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedSceneManifest");
 
 		CookedAssetByteReader reader(bytes);
 		LoadedSceneManifest manifest;

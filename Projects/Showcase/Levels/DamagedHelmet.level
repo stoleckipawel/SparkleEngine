@@ -6,7 +6,6 @@ Position = 0.0370000005, 0.153095871, -2.19272876
 YawRadians = 0.0169122405
 PitchRadians = 0.0134999566
 FovYDegrees = 60
-MoveSpeed = 0.00999999978
 
 [Lighting]
 DirectionalLight0Direction = 0.42, -0.82, 0.39

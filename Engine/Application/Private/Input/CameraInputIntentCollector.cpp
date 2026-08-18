@@ -9,9 +9,7 @@
 #include "Input/InputSystem.h"
 #include "Input/Keyboard/Key.h"
 #include "Input/Mouse/MouseButton.h"
-#include "Scene/Camera/CameraInputIntent.h"
 #include "Window/Window.h"
-#include "World/GameWorld.h"
 
 CameraInputIntentCollector::CameraInputIntentCollector(InputSystem& inputSystem, Window& window) noexcept :
     m_inputSystem(inputSystem),
@@ -34,7 +32,7 @@ CameraInputIntentCollector::~CameraInputIntentCollector() noexcept
 	EndMouseLook();
 }
 
-void CameraInputIntentCollector::Publish(GameWorld& world) noexcept
+CameraInputIntent CameraInputIntentCollector::Collect(float aspectRatio) noexcept
 {
 	const InputState& inputState = m_inputSystem.GetState(InputLayer::Gameplay);
 	const bool forwardHeld = inputState.IsKeyDown(Key::W) || inputState.IsKeyDown(Key::Up);
@@ -52,14 +50,12 @@ void CameraInputIntentCollector::Publish(GameWorld& world) noexcept
 	intent.LookDeltaY = m_lookDeltaY;
 	intent.SpeedStepCount = m_speedStepCount;
 	intent.Sprint = inputState.IsKeyDown(Key::LeftShift) || inputState.IsKeyDown(Key::RightShift);
-	const float width = static_cast<float>(m_window.GetWidth());
-	const float height = static_cast<float>(m_window.GetHeight());
-	intent.HasAspectRatio = width > 0.0f && height > 0.0f;
-	intent.AspectRatio = intent.HasAspectRatio ? width / height : 1.0f;
-	world.PublishCameraInputIntent(intent);
+	intent.HasAspectRatio = aspectRatio > 0.0f;
+	intent.AspectRatio = intent.HasAspectRatio ? aspectRatio : 1.0f;
 	m_lookDeltaX = 0.0f;
 	m_lookDeltaY = 0.0f;
 	m_speedStepCount = 0.0f;
+	return intent;
 }
 
 void CameraInputIntentCollector::OnMouseButton(const MouseButtonEvent& event) noexcept

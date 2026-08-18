@@ -192,6 +192,8 @@ void LevelSession::CompleteLevelChange() noexcept
 	}
 	m_gameWorld->FinalizeSceneLoadCommit();
 	m_activeLevel = loadedLevel;
+	SPDLOG_LOGGER_INFO(g_levelSessionLogger, "Activated level '{}'.", loadedLevelName);
+	g_levelSessionLogger->flush();
 	LevelChangedEventArgs changedArgs;
 	changedArgs.previousLevelName = previousLevelName;
 	changedArgs.activeLevelName = loadedLevelName;

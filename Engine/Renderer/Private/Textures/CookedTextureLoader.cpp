@@ -18,7 +18,7 @@ class CookedTextureDecoder final
 	    const CookedTextureAssetHeader& header,
 	    const std::filesystem::path& resolvedPath)
 	{
-		if (!header.MatchesExpectedLayout())
+		if (!header.HasExpectedMagic())
 			throw Diagnostics::Error("Invalid cooked texture asset header for '" + resolvedPath.string() + "'");
 
 		if (header.width == 0 || header.height == 0 || header.mipCount == 0 ||

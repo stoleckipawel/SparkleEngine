@@ -52,17 +52,6 @@ namespace ECS
 		bool Active = true;
 	};
 
-	struct CameraMovement final
-	{
-		float MoveSpeedMetersPerSecond = 0.10f;
-		float MinimumMoveSpeedMetersPerSecond = 0.0001f;
-		float MaximumMoveSpeedMetersPerSecond = 10.0f;
-		float SpeedStepMetersPerSecond = 0.0001f;
-		float SprintMultiplier = 2.0f;
-		float MouseSensitivity = 0.00125f;
-		bool InvertY = false;
-	};
-
 	struct Light final
 	{
 		SceneLightKind Kind = SceneLightKind::Unknown;

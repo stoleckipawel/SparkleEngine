@@ -93,8 +93,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	}
 
-	if (MatchesFilter(filterText, "Lighting", "lighting light budget directional point spot rect area") &&
-	    BeginSettingsCategory("Lighting"))
+	if (MatchesFilter(filterText, "Lighting", "lighting mode") && BeginSettingsCategory("Lighting"))
 	{
 		if (BeginSettingsTable("##RenderingLightingSettings"))
 		{
@@ -106,38 +105,6 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    [this](LightingMode value)
 			    {
 				    m_settings->SetLightingMode(value);
-			    });
-			DrawUnsignedIntInputRow(
-			    "##MaxDirectionalLights",
-			    "Max directional lights",
-			    settings.MaxDirectionalLights,
-			    [this](std::uint32_t value)
-			    {
-				    m_settings->SetMaxDirectionalLights(value);
-			    });
-			DrawUnsignedIntInputRow(
-			    "##MaxPointLights",
-			    "Max point lights",
-			    settings.MaxPointLights,
-			    [this](std::uint32_t value)
-			    {
-				    m_settings->SetMaxPointLights(value);
-			    });
-			DrawUnsignedIntInputRow(
-			    "##MaxSpotLights",
-			    "Max spot lights",
-			    settings.MaxSpotLights,
-			    [this](std::uint32_t value)
-			    {
-				    m_settings->SetMaxSpotLights(value);
-			    });
-			DrawUnsignedIntInputRow(
-			    "##MaxRectLights",
-			    "Max rect lights",
-			    settings.MaxRectLights,
-			    [this](std::uint32_t value)
-			    {
-				    m_settings->SetMaxRectLights(value);
 			    });
 			ImGui::EndTable();
 		}

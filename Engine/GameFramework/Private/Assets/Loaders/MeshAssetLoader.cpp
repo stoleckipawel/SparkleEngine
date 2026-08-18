@@ -6,26 +6,36 @@
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
 #include <algorithm>
+#include <cstring>
 #include <iterator>
 #include <utility>
 
 namespace Assets
 {
+	namespace MeshAssetLoaderDetail
+	{
+		template <typename T> T ReadRecord(std::span<const std::uint8_t> bytes, std::size_t index) noexcept
+		{
+			T value;
+			std::memcpy(&value, bytes.data() + index * sizeof(T), sizeof(T));
+			return value;
+		}
+	}
+
 	LoadedMeshAsset MeshAssetLoader::Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const
 	{
-		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedMeshAsset", kCookedMeshAssetVersion);
+		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedMeshAsset");
 
 		CookedAssetByteReader reader(bytes);
 		const CookedMeshAssetHeader header = reader.Read<CookedMeshAssetHeader>();
 
-		if (!header.fileHeader.Matches(kCookedMeshAssetMagic, kCookedMeshAssetVersion)
-		    || header.coordinateContractVersion != WorldCoordinates::kCoordinateContractVersion
-		    || header.vertexStride != sizeof(CookedMeshVertex) || header.indexStride != sizeof(std::uint32_t))
+		if (!header.fileHeader.HasMagic(kCookedMeshAssetMagic) || header.vertexStride != sizeof(CookedMeshVertex)
+		    || header.indexStride != sizeof(std::uint32_t))
 		{
 			throw diagnostics.MakeError(
 			    "header",
-			    "mesh magic/version, current coordinate contract, and vertex/index strides",
-			    "Invalid cooked mesh asset header; recook the spatial asset");
+			    "mesh magic and current vertex/index strides",
+			    "Invalid cooked mesh asset header; recook the asset");
 		}
 
 		const bool hasSkinInfluences = (header.flags & CookedMeshAssetFlag_HasSkinInfluences) != 0u;
@@ -56,14 +66,24 @@ namespace Assets
 			    "Invalid cooked mesh morph target stream");
 		}
 
-		std::vector<CookedMeshVertex> cookedVertices = reader.ReadArray<CookedMeshVertex>(header.vertexCount);
-		std::vector<std::uint32_t> cookedIndices = reader.ReadArray<std::uint32_t>(header.indexCount);
-		const std::vector<CookedMeshSkinInfluence> cookedSkinInfluences =
-		    reader.ReadArray<CookedMeshSkinInfluence>(header.skinInfluenceCount);
+		const std::span<const std::uint8_t> cookedVertices = reader.ReadArrayBytes<CookedMeshVertex>(header.vertexCount);
+		MeshData geometry;
+		geometry.vertices.resize(header.vertexCount);
+		for (std::size_t vertexIndex = 0; vertexIndex < geometry.vertices.size(); ++vertexIndex)
+		{
+			const CookedMeshVertex cookedVertex = MeshAssetLoaderDetail::ReadRecord<CookedMeshVertex>(cookedVertices, vertexIndex);
+			geometry.vertices[vertexIndex] =
+			    VertexData(cookedVertex.position, cookedVertex.uv, cookedVertex.color, cookedVertex.normal, cookedVertex.tangent);
+		}
+
+		geometry.indices = reader.ReadArray<std::uint32_t>(header.indexCount);
+
+		const std::span<const std::uint8_t> cookedSkinInfluences =
+		    reader.ReadArrayBytes<CookedMeshSkinInfluence>(header.skinInfluenceCount);
 		const std::vector<CookedMeshMorphTargetRecord> cookedMorphTargets =
 		    reader.ReadArray<CookedMeshMorphTargetRecord>(header.morphTargetCount);
-		const std::vector<CookedMeshMorphTargetDelta> cookedMorphTargetDeltas =
-		    reader.ReadArray<CookedMeshMorphTargetDelta>(header.morphTargetDeltaCount);
+		const std::span<const std::uint8_t> cookedMorphTargetDeltas =
+		    reader.ReadArrayBytes<CookedMeshMorphTargetDelta>(header.morphTargetDeltaCount);
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
@@ -73,21 +93,12 @@ namespace Assets
 			    "Cooked mesh asset contains unexpected trailing bytes");
 		}
 
-		MeshData geometry;
-		geometry.indices = std::move(cookedIndices);
-		geometry.vertices.resize(cookedVertices.size());
-		for (std::size_t vertexIndex = 0; vertexIndex < cookedVertices.size(); ++vertexIndex)
-		{
-			const CookedMeshVertex& cookedVertex = cookedVertices[vertexIndex];
-			geometry.vertices[vertexIndex] =
-			    VertexData(cookedVertex.position, cookedVertex.uv, cookedVertex.color, cookedVertex.normal, cookedVertex.tangent);
-		}
 		MeshMorphData morphTargets;
 		morphTargets.targets.reserve(cookedMorphTargets.size());
 		for (const CookedMeshMorphTargetRecord& cookedMorphTarget : cookedMorphTargets)
 		{
-			if (cookedMorphTarget.firstDelta > cookedMorphTargetDeltas.size()
-			    || cookedMorphTarget.deltaCount > cookedMorphTargetDeltas.size() - cookedMorphTarget.firstDelta
+			if (cookedMorphTarget.firstDelta > header.morphTargetDeltaCount
+			    || cookedMorphTarget.deltaCount > header.morphTargetDeltaCount - cookedMorphTarget.firstDelta
 			    || cookedMorphTarget.deltaCount != header.vertexCount)
 			{
 				throw diagnostics.MakeError(
@@ -102,7 +113,9 @@ namespace Assets
 			morphTarget.deltas.resize(cookedMorphTarget.deltaCount);
 			for (std::uint32_t deltaIndex = 0; deltaIndex < cookedMorphTarget.deltaCount; ++deltaIndex)
 			{
-				const CookedMeshMorphTargetDelta& cookedDelta = cookedMorphTargetDeltas[cookedMorphTarget.firstDelta + deltaIndex];
+				const CookedMeshMorphTargetDelta cookedDelta = MeshAssetLoaderDetail::ReadRecord<CookedMeshMorphTargetDelta>(
+				    cookedMorphTargetDeltas,
+				    cookedMorphTarget.firstDelta + deltaIndex);
 				morphTarget.deltas[deltaIndex] =
 				    MeshMorphTargetDelta{.position = cookedDelta.position, .normal = cookedDelta.normal, .tangent = cookedDelta.tangent};
 			}
@@ -113,10 +126,11 @@ namespace Assets
 			SkeletalMeshData loadedSkeletalMesh;
 			loadedSkeletalMesh.geometry = std::move(geometry);
 			loadedSkeletalMesh.morphTargets = std::move(morphTargets);
-			loadedSkeletalMesh.skinInfluences.resize(cookedSkinInfluences.size());
-			for (std::size_t influenceIndex = 0; influenceIndex < cookedSkinInfluences.size(); ++influenceIndex)
+			loadedSkeletalMesh.skinInfluences.resize(header.skinInfluenceCount);
+			for (std::size_t influenceIndex = 0; influenceIndex < loadedSkeletalMesh.skinInfluences.size(); ++influenceIndex)
 			{
-				const CookedMeshSkinInfluence& cookedInfluence = cookedSkinInfluences[influenceIndex];
+				const CookedMeshSkinInfluence cookedInfluence =
+				    MeshAssetLoaderDetail::ReadRecord<CookedMeshSkinInfluence>(cookedSkinInfluences, influenceIndex);
 				VertexSkinInfluence& influence = loadedSkeletalMesh.skinInfluences[influenceIndex];
 				std::copy(
 				    std::begin(cookedInfluence.jointIndices),

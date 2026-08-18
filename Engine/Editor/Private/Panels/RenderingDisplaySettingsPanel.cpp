@@ -2,6 +2,7 @@
 
 #include "Panels/RenderingDisplaySettingsPanel.h"
 
+#include "Panels/ExposureSettingsEditor.h"
 #include "Panels/RenderingSettingsPanelUi.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
@@ -24,14 +25,6 @@ void DrawDisplaySettingsSection(
 	    {"Reinhard", EngineToneMapper::Reinhard},
 	    {"ACES approximate", EngineToneMapper::AcesApprox},
 	    {"ACES fitted filmic", EngineToneMapper::AcesFilmic},
-	};
-	static constexpr ComboOption<EngineExposureMode> exposureModeOptions[] = {
-	    {"Manual", EngineExposureMode::Manual},
-	    {"Automatic", EngineExposureMode::Automatic},
-	};
-	static constexpr ComboOption<EngineExposureMeteringMethod> exposureMeteringMethodOptions[] = {
-	    {"Parallel reduction", EngineExposureMeteringMethod::ParallelReduction},
-	    {"Downsample pyramid", EngineExposureMeteringMethod::DownsamplePyramid},
 	};
 	static constexpr ComboOption<EngineOutputColorEncoding> outputColorEncodingOptions[] = {
 	    {"Automatic", EngineOutputColorEncoding::Automatic},
@@ -73,81 +66,12 @@ void DrawDisplaySettingsSection(
 		    toneMapperOptions,
 		    [&settingsSection](EngineToneMapper value) { settingsSection.SetToneMapper(value); });
 		DrawComboOptionRow(
-		    "##ExposureMode",
-		    "Exposure mode",
-		    settings.ExposureMode,
-		    exposureModeOptions,
-		    [&settingsSection](EngineExposureMode value) { settingsSection.SetExposureMode(value); });
-		DrawComboOptionRow(
-		    "##ExposureMeteringMethod",
-		    "Exposure metering",
-		    settings.ExposureMeteringMethod,
-		    exposureMeteringMethodOptions,
-		    [&settingsSection](EngineExposureMeteringMethod value) { settingsSection.SetExposureMeteringMethod(value); });
-		DrawComboOptionRow(
 		    "##OutputColorEncoding",
 		    "Output encoding",
 		    settings.OutputColorEncoding,
 		    outputColorEncodingOptions,
 		    [&settingsSection](EngineOutputColorEncoding value) { settingsSection.SetOutputColorEncoding(value); });
-		ImGui::BeginDisabled(settings.ExposureMode != EngineExposureMode::Manual);
-		DrawFloatInputRow(
-		    "##ManualExposure",
-		    "Manual exposure",
-		    settings.ManualExposure,
-		    [&settingsSection](float value) { settingsSection.SetManualExposure(value); },
-		    0.1f,
-		    1.0f,
-		    "%.4f");
-		ImGui::EndDisabled();
-		DrawFloatInputRow(
-		    "##ExposureCompensation",
-		    "Exposure compensation EV",
-		    settings.ExposureCompensation,
-		    [&settingsSection](float value) { settingsSection.SetExposureCompensation(value); },
-		    0.1f,
-		    1.0f,
-		    "%.2f");
-		DrawFloatInputRow(
-		    "##ExposureTargetLuminance",
-		    "Target luminance",
-		    settings.ExposureTargetLuminance,
-		    [&settingsSection](float value) { settingsSection.SetExposureTargetLuminance(value); },
-		    0.01f,
-		    0.1f,
-		    "%.4f");
-		DrawFloatInputRow(
-		    "##ExposureMin",
-		    "Min exposure",
-		    settings.ExposureMin,
-		    [&settingsSection](float value) { settingsSection.SetExposureMin(value); },
-		    0.0001f,
-		    0.01f,
-		    "%.6f");
-		DrawFloatInputRow(
-		    "##ExposureMax",
-		    "Max exposure",
-		    settings.ExposureMax,
-		    [&settingsSection](float value) { settingsSection.SetExposureMax(value); },
-		    1.0f,
-		    64.0f,
-		    "%.3f");
-		DrawFloatInputRow(
-		    "##ExposureAdaptationSpeedUp",
-		    "Adapt speed up",
-		    settings.ExposureAdaptationSpeedUp,
-		    [&settingsSection](float value) { settingsSection.SetExposureAdaptationSpeedUp(value); },
-		    0.1f,
-		    1.0f,
-		    "%.3f");
-		DrawFloatInputRow(
-		    "##ExposureAdaptationSpeedDown",
-		    "Adapt speed down",
-		    settings.ExposureAdaptationSpeedDown,
-		    [&settingsSection](float value) { settingsSection.SetExposureAdaptationSpeedDown(value); },
-		    0.1f,
-		    1.0f,
-		    "%.3f");
+		ExposureSettingsEditor::DrawSettings(settingsSection, settings);
 		ImGui::EndTable();
 	}
 	ImGui::Dummy(ImVec2(0.0f, 4.0f));

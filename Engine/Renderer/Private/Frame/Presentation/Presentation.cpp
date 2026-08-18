@@ -10,7 +10,7 @@
 
 class PresentationFormat final
 {
-  public:
+public:
 	static PixelFormat ResolveEncodedIntermediateFormat(PixelFormat backBufferFormat) noexcept
 	{
 		switch (backBufferFormat)
@@ -25,35 +25,34 @@ class PresentationFormat final
 	}
 };
 
-void AddPresentationPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    PixelFormat backBufferFormat,
-    const SceneRenderTargets& sceneTargets,
-    FrameGraphTextureHandle exposure)
+void AddPresentationPasses(FrameGraphBuilder& builder, const FrameBuildSettings& settings, FrameAssemblyResourceLayout& resources)
 {
 	const FrameGraphTextureHandle toneMappedColor = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "ToneMappedSceneColor",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        settings.OutputExtent.Width,
+	        settings.OutputExtent.Height,
 	        FrameRenderFormats::SceneColor));
 	const FrameGraphTextureHandle encodedColor = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "EncodedSceneColor",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        PresentationFormat::ResolveEncodedIntermediateFormat(backBufferFormat)));
+	        settings.OutputExtent.Width,
+	        settings.OutputExtent.Height,
+	        PresentationFormat::ResolveEncodedIntermediateFormat(settings.OutputFormat)));
 
 	auto& toneMappingParameters = builder.AllocParameters<ToneMappingPass::Parameters>();
-	toneMappingParameters->SceneColor = builder.CreateSRV(sceneTargets.FinalSceneColor);
-	toneMappingParameters->ExposureTexture = builder.CreateSRV(exposure);
+	toneMappingParameters->SceneColor = builder.CreateSRV(resources.Transient.Scene.FinalSceneColor);
+	toneMappingParameters->ExposureTexture = builder.CreateSRV(resources.Transient.Exposure);
 	toneMappingParameters->ToneMappedColor = builder.CreateUAV(toneMappedColor);
-	builder.Dispatch<ToneMappingPass>(toneMappingParameters, sceneExtent.Width, sceneExtent.Height);
+	builder.Dispatch<ToneMappingPass>(toneMappingParameters, settings.OutputExtent.Width, settings.OutputExtent.Height);
 
 	auto& outputEncodingParameters = builder.AllocParameters<OutputEncodingPass::Parameters>();
 	outputEncodingParameters->DisplayLinearColor = builder.CreateSRV(toneMappedColor);
 	outputEncodingParameters->EncodedColor = builder.CreateUAV(encodedColor);
-	builder.Dispatch<OutputEncodingPass>(outputEncodingParameters, sceneExtent.Width, sceneExtent.Height);
-	FrameGraphCopyPasses::AddTextureCopy(builder, "CopyEncodedColorToBackBuffer", sceneTargets.BackBuffer, encodedColor);
+	builder.Dispatch<OutputEncodingPass>(outputEncodingParameters, settings.OutputExtent.Width, settings.OutputExtent.Height);
+	if (settings.PresentationTarget == FramePresentationTarget::BackBuffer)
+	{
+		FrameGraphCopyPasses::AddTextureCopy(builder, "CopyEncodedColorToBackBuffer", resources.Transient.Scene.BackBuffer, encodedColor);
+	}
+	resources.ViewportProducts.FinalSceneColor = encodedColor;
 }

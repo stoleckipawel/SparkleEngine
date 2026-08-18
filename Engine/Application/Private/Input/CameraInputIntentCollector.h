@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Events/EventHandle.h"
+#include "Scene/Camera/CameraInputIntent.h"
 
-class GameWorld;
 class InputSystem;
 class Window;
 struct KeyboardEvent;
@@ -18,7 +18,7 @@ public:
 
 	CameraInputIntentCollector(const CameraInputIntentCollector&) = delete;
 	CameraInputIntentCollector& operator=(const CameraInputIntentCollector&) = delete;
-	void Publish(GameWorld& world) noexcept;
+	CameraInputIntent Collect(float aspectRatio) noexcept;
 
 private:
 	void OnMouseButton(const MouseButtonEvent& event) noexcept;

@@ -1,14 +1,7 @@
 #pragma once
 
-#include "Frame/Core/FrameAssembly.h"
-#include "RHI/Public/Formats/PixelFormat.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "Frame/Core/Frame.h"
 
 class FrameGraphBuilder;
 
-void CreateFrameSceneResources(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent,
-    RenderViewportExtent outputExtent,
-    PixelFormat backBufferFormat,
-    FrameAssemblyResourceLayout& resources);
+void CreateFrameSceneResources(FrameGraphBuilder& builder, const FrameBuildSettings& settings, FrameAssemblyResourceLayout& resources);

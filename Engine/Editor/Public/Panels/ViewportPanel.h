@@ -8,7 +8,7 @@
 
 class SPARKLE_EDITOR_API ViewportPanel final
 {
-  public:
+public:
 	ViewportPanel(float leftInsetPixels = 320.0f, float rightInsetPixels = 456.0f) noexcept;
 	~ViewportPanel() noexcept;
 
@@ -21,6 +21,7 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	void SetBottomInset(float bottomInsetPixels) noexcept;
 	void SetSideInsets(float leftInsetPixels, float rightInsetPixels) noexcept;
 	void SetRequestedExtent(RenderViewportExtent extent) noexcept;
+	void SetExposureOverrides(const ViewportExposureOverrides& overrides) noexcept;
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetSceneColorTexture(EditorTextureHandle texture) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
@@ -28,7 +29,7 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	bool GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept;
 	void BuildUI(bool disableInteraction = false);
 
-  private:
+private:
 	void UpdateRequestedExtent(float availableWidth, float availableHeight) noexcept;
 	void BuildEmptyState() noexcept;
 

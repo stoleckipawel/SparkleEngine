@@ -18,14 +18,12 @@ namespace Assets
 	};
 
 	inline constexpr std::uint32_t kCookedMaterialAssetMagic = 0x54414D53u;
-	inline constexpr std::uint32_t kCookedMaterialAssetVersion = 3;
 
 	struct SPARKLE_ENGINE_API CookedMaterialAssetHeader
 	{
-		CookedAssetHeader fileHeader{kCookedMaterialAssetMagic, kCookedMaterialAssetVersion};
+		CookedAssetHeader fileHeader{kCookedMaterialAssetMagic};
 		std::uint32_t nameByteCount = 0;
 		std::uint32_t textureReferenceCount = 0;
-		std::uint32_t textureReferenceVersion = kCookedTextureReferenceVersion;
 		CookedAlphaMode alphaMode = CookedAlphaMode::Opaque;
 		DirectX::XMFLOAT4 baseColor = {1.0f, 1.0f, 1.0f, 1.0f};
 		float metallic = 0.0f;

@@ -114,7 +114,7 @@ namespace SparkleLauncher
 		    GetDeveloperLibraryDirectory(repositoryRoot, "runtime-support/" + targetName.toStdString(), profileName.toStdString());
 		std::filesystem::path symbolDirectory =
 		    GetSymbolDirectory(repositoryRoot) / "runtime-support" / targetName.toStdString() / profileName.toStdString();
-		if (targetName == "SparkleLauncher" || targetName == "SparkleLauncherProbe")
+		if (targetName == "SparkleLauncher")
 		{
 			binaryDirectory = GetLauncherArtifactDirectory(repositoryRoot, profileName.toStdString());
 			libraryDirectory = GetDeveloperLibraryDirectory(repositoryRoot, "launcher", profileName.toStdString());
@@ -223,12 +223,6 @@ namespace SparkleLauncher
 			    "SparkleLauncher",
 			    "Launcher direct build outputs. The currently running launcher executable is preserved until restart.",
 			    context.RunningLauncherPath);
-			AddTargetArtifactOutputs(
-			    targets,
-			    context.RepositoryRoot,
-			    context.EditorProfile,
-			    "SparkleLauncherProbe",
-			    "Launcher probe binary and matching direct build outputs.");
 			AddExplicitCleanTarget(
 			    targets,
 			    "SparkleLauncherCore library",

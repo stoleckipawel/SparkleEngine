@@ -13,8 +13,21 @@
 #include "SceneData/RenderWorld.h"
 #include "SceneData/RenderSceneGpuData.h"
 
-RhiViewport FrameContextBuilder::BuildSceneViewport(
-    RenderViewportExtent sceneExtent) noexcept
+FrameContextBuilder::FrameContextBuilder(
+    const RenderWorld& world,
+    const RenderCamera& renderCamera,
+    RenderPreparationGraph& renderPreparationGraph,
+    PerViewDataBuilder& perViewDataBuilder,
+    TemporalDataBuilder& temporalDataBuilder) noexcept :
+    m_world(world),
+    m_renderCamera(renderCamera),
+    m_renderPreparationGraph(renderPreparationGraph),
+    m_perViewDataBuilder(perViewDataBuilder),
+    m_temporalDataBuilder(temporalDataBuilder)
+{
+}
+
+RhiViewport FrameContextBuilder::BuildSceneViewport(RenderViewportExtent sceneExtent) noexcept
 {
 	return RhiViewport{
 	    .X = 0.0f,
@@ -25,54 +38,33 @@ RhiViewport FrameContextBuilder::BuildSceneViewport(
 	    .MaxDepth = 1.0f};
 }
 
-RhiRect FrameContextBuilder::BuildSceneScissorRect(
-    RenderViewportExtent sceneExtent) noexcept
+RhiRect FrameContextBuilder::BuildSceneScissorRect(RenderViewportExtent sceneExtent) noexcept
 {
 	return RhiRect{
 	    .Left = 0,
 	    .Top = 0,
-	    .Right =
-	        static_cast<std::int32_t>(sceneExtent.Width),
-	    .Bottom =
-	        static_cast<std::int32_t>(sceneExtent.Height)};
+	    .Right = static_cast<std::int32_t>(sceneExtent.Width),
+	    .Bottom = static_cast<std::int32_t>(sceneExtent.Height)};
 }
 
-void FrameContextBuilder::Build(
-    FrameContext& frame,
-    const RenderWorld& world,
-    const RenderFrameDynamicData& dynamic,
-    PersistentRenderGpuScene& gpuScene,
-    std::uint32_t frameIndex,
-    const RenderCamera& renderCamera,
-    RenderViewportExtent sceneExtent,
-    RenderPreparationGraph& renderPreparationGraph,
-    RenderRayTracingScene* renderRayTracingScene,
-    PerViewDataBuilder& perViewDataBuilder,
-    TemporalDataBuilder& temporalDataBuilder)
+void FrameContextBuilder::Build(FrameContext& frame, const FrameContextBuildRequest& request) const
 {
-	const PerViewCameraConstantBufferData cameraData = renderCamera.GetCameraConstantBufferData();
-	renderPreparationGraph.Execute(
-	    world,
-	    dynamic,
-	    renderCamera.GetFrustum(),
-	    frame.sceneData);
+	const PerViewCameraConstantBufferData cameraData = m_renderCamera.GetCameraConstantBufferData();
+	m_renderPreparationGraph.Execute(m_world, request.Dynamic, m_renderCamera.GetFrustum(), frame.sceneData);
 
-	if (renderRayTracingScene != nullptr)
+	if (request.RayTracingScene != nullptr)
 	{
-		renderRayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
+		request.RayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
 	}
 
-	frame.sceneGpuData = &gpuScene.Update(frame.sceneData, frameIndex);
+	frame.sceneGpuData = &request.GpuScene.Update(frame.sceneData, request.FrameIndex);
 
-	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);
-	frame.mainView = perViewDataBuilder.BuildView(
-	    cameraData,
-	    sceneViewport,
-	    BuildSceneScissorRect(sceneExtent));
-	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(
-	    renderCamera,
+	const RhiViewport sceneViewport = BuildSceneViewport(request.SceneExtent);
+	frame.mainView = m_perViewDataBuilder.BuildView(cameraData, sceneViewport, BuildSceneScissorRect(request.SceneExtent));
+	frame.mainView.perTemporalData = m_temporalDataBuilder.BuildTemporalData(
+	    m_renderCamera,
 	    frame.mainView.perViewData.Camera,
 	    sceneViewport,
-	    dynamic.Metadata.FrameId);
+	    request.Dynamic.Metadata.FrameId);
 	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
 }

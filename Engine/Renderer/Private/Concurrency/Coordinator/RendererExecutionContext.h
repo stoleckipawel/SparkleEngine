@@ -15,7 +15,7 @@ struct RendererExecutionConfig;
 
 class RendererExecutionContext final
 {
-  public:
+public:
 	RendererExecutionContext(
 	    Window& window,
 	    const RendererBackendConfiguration& backendConfiguration,
@@ -23,14 +23,14 @@ class RendererExecutionContext final
 	~RendererExecutionContext() noexcept;
 
 	void ExecuteFrame(RenderFramePacket packet) noexcept;
-	void ExecuteControl(const RenderControlPayload& payload) noexcept;
+	void ExecuteControl(RenderControlPayload payload) noexcept;
 
 	RendererHost& GetRendererHost() noexcept;
 	const RendererHost& GetRendererHost() const noexcept;
 	FramePipeline& GetPipeline() noexcept;
 	const FramePipeline& GetPipeline() const noexcept;
 
-  private:
+private:
 	void CompleteDiagnostics(const RenderDiagnosticsCommand& command);
 	void SettleRendererBeforeDestruction() noexcept;
 

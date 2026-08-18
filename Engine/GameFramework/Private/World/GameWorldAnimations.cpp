@@ -35,18 +35,16 @@ namespace ECS
 			{
 				continue;
 			}
-			const bool added = m_registry.Add(
-			                       entity,
-			                       AnimationState{.Resource = resource, .AnimationAssetId = animationAssetId}) &&
-			                   m_registry.Add(entity, Name{name}) &&
-			                   m_registry.Add(
-			                       entity,
-			                       AuthoredIdentity{
-			                           .SourceAssetId = animationAssetId,
-			                           .SourceInstanceId = sourceInstanceId,
-			                           .SourceObjectId = sourceAnimationIndex,
-			                           .Kind = AuthoredObjectKind::Animation}) &&
-			                   m_registry.Add(entity, EditorMetadata{});
+			const bool added = m_registry.Add(entity, AnimationState{.Resource = resource, .AnimationAssetId = animationAssetId})
+			    && m_registry.Add(entity, Name{name})
+			    && m_registry.Add(
+			        entity,
+			        AuthoredIdentity{
+			            .SourceAssetId = animationAssetId,
+			            .SourceInstanceId = sourceInstanceId,
+			            .SourceObjectId = sourceAnimationIndex,
+			            .Kind = AuthoredObjectKind::Animation})
+			    && m_registry.Add(entity, EditorMetadata{});
 			if (!added)
 			{
 				m_registry.Destroy(entity);
@@ -59,17 +57,13 @@ namespace ECS
 
 	bool GameWorldState::PrepareSystemResources(GameWorldResourceStores& resources)
 	{
-		return resources.AnimationClips.ResolveTargets(resources.Skeletons, resources.Generation) &&
-		       m_animationOutput.Prepare(m_registry, resources.AnimationClips, resources.Skeletons, m_morphWeights, resources.Generation) &&
-		       m_extraction.Prepare(m_registry);
+		return resources.AnimationClips.ResolveTargets(resources.Skeletons, resources.Generation)
+		    && m_animationOutput.Prepare(m_registry, resources.AnimationClips, resources.Skeletons, m_morphWeights, resources.Generation)
+		    && m_extraction.Prepare(m_registry);
 	}
 
-	bool GameWorldState::ExecuteSystems(
-	    GameWorldResourceStores& resources,
-	    TaskExecutor& executor,
-	    const CameraInputIntent& cameraIntent,
-	    float deltaSeconds)
+	bool GameWorldState::ExecuteSystems(const GameWorldSystemExecutionContext& context)
 	{
-		return ExecuteGameWorldSystems(*this, resources, executor, cameraIntent, deltaSeconds);
+		return ExecuteGameWorldSystems(*this, context);
 	}
 }

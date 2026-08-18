@@ -94,16 +94,16 @@ void RenderCoordinator::SubmitRenderingSettings(EngineRenderingSettingsState set
 	ApplyEngineRenderingSettingsStateToCVars(settings);
 }
 
-void RenderCoordinator::SubmitViewportRequest(const ViewportRenderRequest& request)
+void RenderCoordinator::SubmitViewportRequest(ViewportRenderRequest request)
 {
 	m_producerOwner.AssertAccess();
 	if (m_config.IsThreaded())
 	{
-		SubmitControl(RenderViewportCommand{request});
+		SubmitControl(RenderViewportCommand{std::move(request)});
 	}
 	else
 	{
-		GetSerialContext().GetPipeline().SubmitViewportRenderRequest(request);
+		GetSerialContext().GetPipeline().SubmitViewportRenderRequest(std::move(request));
 	}
 }
 
@@ -405,7 +405,7 @@ void RenderCoordinator::ProcessThreadedCommand(RenderControlCommand command)
 	}
 	else
 	{
-		m_context->ExecuteControl(command.Payload);
+		m_context->ExecuteControl(std::move(command.Payload));
 		PublishReadState();
 	}
 }

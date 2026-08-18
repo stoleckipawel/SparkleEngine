@@ -363,27 +363,9 @@ namespace Assets
 
 	void SceneManifestValidator::ValidateHeader(const LoadedSceneManifest& manifest)
 	{
-		if (manifest.header.fileHeader.magic != kCookedSceneManifestMagic)
+		if (!manifest.header.fileHeader.HasMagic(kCookedSceneManifestMagic))
 		{
 			SceneManifestValidation::Invalid("Invalid cooked scene manifest magic");
-		}
-
-		if (manifest.header.fileHeader.version != kCookedSceneManifestVersion)
-		{
-			SceneManifestValidation::Invalid(
-			    std::format(
-			        "Cooked scene manifest version {} is not supported by this runtime; expected version {}. Recook the scene asset.",
-			        manifest.header.fileHeader.version,
-			        kCookedSceneManifestVersion));
-		}
-
-		if (manifest.header.coordinateContractVersion != WorldCoordinates::kCoordinateContractVersion)
-		{
-			SceneManifestValidation::Invalid(
-			    std::format(
-			        "Cooked scene coordinate contract version {} is not supported; expected {}. Recook the scene asset.",
-			        manifest.header.coordinateContractVersion,
-			        WorldCoordinates::kCoordinateContractVersion));
 		}
 	}
 

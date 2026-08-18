@@ -2,6 +2,7 @@
 
 #include "../Editor/EditorTextureHandle.h"
 #include "../RendererAPI.h"
+#include "../Settings/EngineRenderingDisplayTypes.h"
 
 #include <cstdint>
 #include <cstddef>
@@ -55,6 +56,30 @@ struct SPARKLE_RENDERER_API RenderViewportExtent
 
 	bool IsValid() const noexcept;
 	bool operator==(const RenderViewportExtent& other) const noexcept;
+};
+
+struct SPARKLE_RENDERER_API ViewportExposureOverrides final
+{
+	bool OverrideMode = false;
+	EngineExposureMode Mode = EngineExposureMode::Automatic;
+	bool OverrideMeteringMethod = false;
+	EngineExposureMeteringMethod MeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
+	bool OverrideManualExposure = false;
+	float ManualExposure = 1.0f;
+	bool OverrideCompensation = false;
+	float Compensation = 0.0f;
+	bool OverrideTargetLuminance = false;
+	float TargetLuminance = 0.18f;
+	bool OverrideMinimum = false;
+	float Minimum = 0.000001f;
+	bool OverrideMaximum = false;
+	float Maximum = 65536.0f;
+	bool OverrideAdaptationSpeedUp = false;
+	float AdaptationSpeedUp = 3.0f;
+	bool OverrideAdaptationSpeedDown = false;
+	float AdaptationSpeedDown = 1.0f;
+
+	bool operator==(const ViewportExposureOverrides&) const noexcept = default;
 };
 
 struct SPARKLE_RENDERER_API RenderViewSelectionToken
@@ -143,12 +168,10 @@ struct SPARKLE_RENDERER_API ViewportCaptureReadback
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 	std::uint32_t RowPitch = 0;
-	ViewportCapturePixelFormat Format =
-	    ViewportCapturePixelFormat::Rgba8Unorm;
+	ViewportCapturePixelFormat Format = ViewportCapturePixelFormat::Rgba8Unorm;
 };
 
-SPARKLE_RENDERER_API bool WriteViewportCaptureBmp(
-    const ViewportCaptureReadback& readback) noexcept;
+SPARKLE_RENDERER_API bool WriteViewportCaptureBmp(const ViewportCaptureReadback& readback) noexcept;
 
 struct SPARKLE_RENDERER_API ViewportRenderRequest
 {
@@ -159,6 +182,7 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 	RenderViewSelectionToken ViewSelection = {};
 	RenderFeatureFlags FeatureFlags = RenderFeatureFlags::None;
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::SceneColor;
+	ViewportExposureOverrides Exposure;
 };
 
 struct SPARKLE_RENDERER_API ViewportRenderProducts
@@ -182,7 +206,7 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 	void ClearProduct(RenderOutputFlags output) noexcept;
 	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept;
 
-  private:
+private:
 	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept;
 	const RenderProduct* SelectProduct(RenderOutputFlags output) const noexcept;
 	void RemoveAvailableOutput(RenderOutputFlags output) noexcept;

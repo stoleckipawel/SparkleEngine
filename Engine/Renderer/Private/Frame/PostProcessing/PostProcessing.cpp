@@ -8,34 +8,20 @@
 
 void AddPreReconstructionPostProcessingPasses(
     FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent,
+    const FrameBuildSettings& settings,
     FrameAssemblyResourceLayout& resources)
 {
-	AddExposurePass(
-	    builder,
-	    renderExtent,
-	    resources.Transient.Scene.SceneColor,
-	    resources.History.Exposure,
-	    resources.Transient.Exposure);
+	AddExposurePass(builder, settings, resources);
 }
 
-void AddPostProcessingPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent,
-    RenderViewportExtent outputExtent,
-    PixelFormat backBufferFormat,
-    bool presentToBackBuffer,
-    FrameAssemblyResourceLayout& resources)
+void AddPostProcessingPasses(FrameGraphBuilder& builder, const FrameBuildSettings& settings, FrameAssemblyResourceLayout& resources)
 {
 	if (!resources.FinalSceneColorProduced)
 	{
-		AddUpscalingPasses(builder, renderExtent, outputExtent, resources);
+		AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, resources);
 	}
 
 	AddDebugPasses(builder, resources);
 
-	if (presentToBackBuffer)
-	{
-		AddPresentationPass(builder, outputExtent, backBufferFormat, resources.Transient.Scene, resources.Transient.Exposure);
-	}
+	AddPresentationPasses(builder, settings, resources);
 }

@@ -6,7 +6,6 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <fstream>
@@ -38,8 +37,7 @@ void CookedSkeletonAssetStager::StageSkeletonAsset(
 	outPublication.push_back({stagedOutputPath, outputPath});
 
 	const Assets::CookedSkeletonAssetHeader header{
-	    .fileHeader = {Assets::kCookedSkeletonAssetMagic, Assets::kCookedSkeletonAssetVersion},
-	    .coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion,
+	    .fileHeader = {Assets::kCookedSkeletonAssetMagic},
 	    .jointCount = static_cast<std::uint32_t>(skeletonAsset.joints.size()),
 	    .jointStride = sizeof(Assets::CookedSkeletonJointRecord),
 	    .flags = 0};

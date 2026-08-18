@@ -11,7 +11,7 @@ namespace ECS
 	class SystemChangeCommitter final
 	{
 	  public:
-		static bool CommitSystemOutputs(GameWorldState& state, float nextMotionTime);
+		static bool CommitSystemOutputs(GameWorldState& state);
 		static bool CommitExtraction(GameWorldState& state);
 
 	  private:

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "World/ECS/Components/AnimationComponents.h"
-#include "World/ECS/Components/MotionComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
 #include "World/ECS/Query.h"
@@ -12,7 +11,6 @@ namespace ECS
 	namespace GameWorldSystemIds
 	{
 		constexpr GameSystemId CameraMovement = MakeGameSystemId("Sparkle.Game.CameraMovement");
-		constexpr GameSystemId OscillatingMeshMotion = MakeGameSystemId("Sparkle.Game.OscillatingMeshMotion");
 		constexpr GameSystemId PlaybackAdvance = MakeGameSystemId("Sparkle.Game.AnimationPlaybackAdvance");
 		constexpr GameSystemId PoseEvaluation = MakeGameSystemId("Sparkle.Game.AnimationPoseEvaluation");
 		constexpr GameSystemId MorphWeightEvaluation = MakeGameSystemId("Sparkle.Game.MorphWeightEvaluation");
@@ -25,8 +23,7 @@ namespace ECS
 		constexpr GameSystemId ExtractionCommit = MakeGameSystemId("Sparkle.Game.ExtractionCommit");
 	}
 
-	using CameraMovementQuery = Query<Write<Camera>, Write<CameraMovement>, Write<LocalTransform>>;
-	using OscillatingMotionQuery = Query<Read<OscillatingMotion>, Write<LocalTransform>>;
+	using CameraMovementQuery = Query<Write<Camera>, Write<LocalTransform>>;
 	using PlaybackAdvanceQuery = Query<Write<AnimationState>>;
 	using PoseEvaluationQuery = Query<Read<AnimationState>>;
 	using MorphEvaluationQuery = Query<Read<AnimationState>>;
@@ -37,7 +34,6 @@ namespace ECS
 	namespace GameWorldSystemGrain
 	{
 		constexpr ParallelForPolicy Camera{.GrainSize = 32, .SerialThreshold = 64, .MaximumPartitions = 4};
-		constexpr ParallelForPolicy Motion{.GrainSize = 32, .SerialThreshold = 64, .MaximumPartitions = 8};
 		constexpr ParallelForPolicy Animation{.GrainSize = 8, .SerialThreshold = 16, .MaximumPartitions = 16};
 		constexpr ParallelForPolicy Pose{.GrainSize = 2, .SerialThreshold = 4, .MaximumPartitions = 16};
 		constexpr ParallelForPolicy Transform{.GrainSize = 64, .SerialThreshold = 128, .MaximumPartitions = 16};

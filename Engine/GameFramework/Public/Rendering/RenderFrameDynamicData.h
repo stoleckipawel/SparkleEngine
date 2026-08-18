@@ -4,6 +4,7 @@
 #include "GameFramework/Public/Rendering/RenderAssetHandles.h"
 #include "GameFramework/Public/Rendering/RenderFrameMetadata.h"
 #include "GameFramework/Public/Rendering/RenderObjectId.h"
+#include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 
 #include <DirectXMath.h>
@@ -20,6 +21,8 @@ struct RenderCameraData final
 	float AspectRatio = 1.0f;
 	float NearZ = 0.1f;
 	float FarZ = 1000.0f;
+	float OrthographicHeightMeters = 10.0f;
+	CameraProjectionKind ProjectionKind = CameraProjectionKind::Perspective;
 };
 
 struct RenderObjectDynamicData final

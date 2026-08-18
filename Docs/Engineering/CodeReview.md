@@ -31,12 +31,39 @@ documentation. Apply IntegrationStyleGuide.md, ChangeProcess.md, every applicabl
 subject standard, and the relevant canonical architecture. Code and executable build
 configuration prove implemented behavior.
 
+Keep review and validation claim-driven. Start from the diff, use exact searches and
+bounded owner/consumer reads, and do not scan unrelated subsystems. Before running a
+command, name the claim it can falsify and the condition that would justify escalation.
+Do not run a full engine/game/workspace build, whole suite or cook, clean rebuild,
+paired-backend smoke, or acceptance workload merely because it might be useful. Run a
+broad check only when the affected contract, selected standard/gate, explicit request,
+or an inconclusive narrower result requires that exact surface.
+
 Find real defects and unmanaged complexity, not arbitrary size or style preferences.
 Reject duplicate authority, incomplete replacement, speculative abstraction, hidden
 lifetime or concurrency, orchestrators containing capability mechanics, god functions,
 classes, files, or folders, needless diagnostics/logging, and performance claims or
 material regressions without proportional evidence. Require bounded cleanup of the
 complete touched ownership path while avoiding unrelated refactors.
+
+Apply the current clean-break policy: Sparkle has no active compatibility obligation.
+Require one current owned representation, update every producer and consumer, delete
+the replaced path, and regenerate local artifacts. Reject new or extended internal
+version fields, legacy paths, migration readers/writers, compatibility adapters/shims,
+deprecated aliases, old/new dispatch, dual read/write, and fallbacks. Do not confuse
+external API/tool/file-format versions or lifetime generations with legacy support.
+
+For every changed capability or invariant, find its authoritative definition and every
+material use. Classify each site as authority, composition, producer, consumer, or
+duplicate. Verify that orchestrators own intent/order while capability owners contain
+mechanics, and that callers do not repeat policy, transforms, validation, state, caches,
+fallbacks, or backend decisions. Search semantic equivalents, not only matching names.
+
+Apply the single-truth and copy budget to every new holder and material data copy. Prefer
+references, views, handles, and moves. Accept a copied snapshot only for a named lifetime,
+thread, publication, edit/commit, serialization, or ABI boundary; require one producer,
+immutable consumption, an exact epoch, and one resolution per epoch. Reject convenience
+mirrors, copied defaults/settings, forwarding DTOs, and parallel mutable truth.
 
 Report actionable findings first, ordered by severity, with precise file:line evidence,
 the failure scenario, violated owner or invariant, and the smallest coherent correction
@@ -52,13 +79,27 @@ Accept a changelist only when it delivers the requested outcome through the auth
 
 The review surface is larger than the textual diff and smaller than the repository. It includes changed lines plus the direct owner, producers, consumers, lifetime/publication/failure edges, nearby code expressing the same invariant, build membership, tests, configuration, and documentation. This is the **touched ownership path**.
 
+## Review Budget and Escalation
+
+Review depth follows risk and unresolved questions, not repository size. Use four bounded passes:
+
+1. **Orient** — inspect guidance, status, diff/rename/delete statistics, and changed-file build membership; produce an impact map before reading deeply.
+2. **Trace** — follow exact symbols through the touched ownership path and selected authority. Read additional files only to answer a concrete ownership, lifetime, behavior, or replacement question.
+3. **Challenge** — form specific failure hypotheses and verify them against code or executable policy. Stop searches that cannot produce an actionable finding or change acceptance.
+4. **Validate** — map each remaining claim to the cheapest check that can falsify it, then follow the [claim-driven validation ladder](Standards/ValidationPerformanceAndEvidence.md#claim-driven-validation-selection).
+
+Do not read whole subsystems, enumerate unrelated files, or execute broad checks to demonstrate effort. Reliability comes from closing the owner/producer/consumer/lifetime and failure path for each material change, then selecting discriminating evidence. A review may `PASS` without a full build when no applicable claim requires one and narrower evidence is sufficient. It may not `PASS` by silently classifying applicable evidence as optional.
+
+Once a concrete P0–P2 finding already makes the review `BLOCKED`, skip expensive acceptance validation that cannot change that status. Continue only the bounded tracing needed to find other actionable defects, qualify the blocker, or satisfy an explicit validation request.
+
 ## Review Procedure
 
 ### 1. Establish Scope and Intent
 
 - Inspect repository guidance, status, diff statistics, staged/unstaged changes, renames, deletions, and relevant untracked files.
+- Build a changed-file and ownership impact map before opening broad context. Prefer exact symbol, path, build-membership, and rejected-name searches over subsystem-wide reading.
 - State the intended user or engine outcome in one sentence.
-- Identify preserved behavior, explicit non-goals, comparison base, and any accepted migration.
+- Identify preserved current behavior, explicit non-goals, comparison base, and the complete clean-break replacement/regeneration boundary.
 - Separate the reviewed changelist from unrelated user work already present in the tree.
 - Reject a diff that cannot explain why each changed file participates in one coherent result.
 
@@ -79,10 +120,26 @@ Trace input to output across success, rejection, cancellation, failure, publicat
 - allocation, publication, reclamation, and stale-result behavior;
 - build target, source membership, exports, configuration, tests, and documentation;
 - the old path and every production reference that should disappear.
+- any internal version, migration, compatibility, legacy, alias, fallback, or dual-representation mechanism in the touched path that should disappear rather than be extended.
 
 Reading only changed lines is insufficient when their contract lives elsewhere.
 
-### 4. Review Outcome and Correctness
+### 4. Audit Definition and Usage Placement
+
+For each changed capability, policy, transform, validation rule, and mutable fact, apply the [definition and usage placement audit](Standards/RepositoryStructureAndOwnership.md#definition-and-usage-placement):
+
+1. name the authoritative definition, module, class/file owner, invariant, lifetime, and failure boundary;
+2. search from the definition to every material use, then from every changed use back to the owner that should define its behavior;
+3. classify each site as **authority**, **composition**, **producer**, **consumer**, or **duplicate**;
+4. search semantic equivalents, copied branches/validation/error text, repeated switches, parallel state/caches, rejected names, and callers that reach around an owner facade;
+5. verify high-level files express intent, ordering, lifecycle, and composition while lower capability owners contain algorithms, loops, parsing, encoding, allocation, synchronization, and backend mechanics;
+6. apply the [single-truth and copy budget](Standards/DataOrientedDesign.md#single-truth-and-copy-budget) to every new holder and material copy, including its source, boundary reason, lifetime/epoch, producer, consumers, and invalidation;
+7. apply the [mandatory orchestrator/implementor boundary](Standards/RepositoryStructureAndOwnership.md#mandatory-orchestratorimplementor-boundary) across the complete touched family: each independently changing payload/type/policy/backend behavior has a dedicated implementor, while the actual lifecycle owner only selects, sequences, and publishes it;
+8. verify module dependency direction, `Public`/`Private` placement, build membership, and the ability to change or delete the capability through one bounded owner path.
+
+Report a placement defect when the same behavior or fact has more than one production authority, when logic lives in a caller because it was convenient rather than owned, or when feature work scatters knowledge across unrelated modules. Do not consolidate code whose semantics, lifetimes, failure contracts, or cost models are genuinely different merely because its syntax looks similar.
+
+### 5. Review Outcome and Correctness
 
 - Does the real production path deliver the requested behavior, or only scaffolding, a test double, a debug path, or an unused API?
 - Are inputs, outputs, invariants, units, coordinate spaces, errors, fallback, and unsupported states explicit?
@@ -90,7 +147,7 @@ Reading only changed lines is insufficient when their contract lives elsewhere.
 - Are D3D12/Vulkan, serial/parallel, runtime/editor, cold/warm, and feature variants preserved where applicable?
 - Do tests exercise observable behavior and fail when the claimed invariant is deliberately broken?
 
-### 5. Review Ownership, Decomposition, and Bloat
+### 6. Review Ownership, Decomposition, and Bloat
 
 For every persistent concept ask: **Who owns it? Who consumes it now? Which invariant requires it? When does it die? What older complexity does it replace?**
 
@@ -116,18 +173,18 @@ A code-positive change can be structurally reductive. A short change can still a
 
 Review **change locality** as the scaling test: a capability should evolve and be removable through its owner, explicit composition point, tests, and documentation. If every feature requires edits to unrelated coordinators, generic utilities, global registries, backend internals, or scattered mode checks, the architecture is centralizing complexity rather than scaling.
 
-### 6. Review Touched-Path Cleanup
+### 7. Review Touched-Path Cleanup
 
 Require cleanup when it is necessary to make the delivered path coherent:
 
-- delete the replaced implementation, adapter, alias, flag, fallback, and stale name;
+- delete the replaced implementation, internal version field, migration reader/writer, compatibility adapter/shim, alias, flag, fallback, dual path, and stale name;
 - remove dead includes, exports, build entries, tests, comments, logs, counters, configuration, and documentation;
 - repair the same directly adjacent ownership or vocabulary defect when leaving it creates two conventions or preserves duplicate authority;
 - update moved contracts, consumers, tests, build membership, and documents atomically.
 
 Do not demand broad unrelated cleanup, repository-wide formatting, speculative frameworks, or a refactor whose validation cannot fit the changelist. If a large prerequisite is essential, split it explicitly and review it first; do not bridge it with an indefinite compatibility architecture.
 
-### 7. Review Performance as Part of Delivery
+### 8. Review Performance as Part of Delivery
 
 Require one classification from [Performance Is a Delivery Property](Standards/ValidationPerformanceAndEvidence.md#performance-is-a-delivery-property): **improves**, **preserves**, **no runtime exposure**, or **blocked**.
 
@@ -141,9 +198,11 @@ Inspect the cost model relevant to the change:
 
 Prefer removal of work and data movement before caching, parallelism, custom allocators, lock-free code, or backend special cases. Require reproducible before/after evidence for optimization claims and proportional regression evidence for material exposure. Reuse existing profilers and validation; do not accept permanent logs, counters, dashboards, snapshot APIs, or report files created only to prove this change.
 
-### 8. Review Evidence and Completion
+### 9. Review Evidence and Completion
 
-- Run the smallest relevant build, tests, formatter/static checks, architecture checks, and evidence gates available for the touched targets.
+- For each material claim, record the smallest check that can falsify it and the trigger for escalation. Availability alone does not make a check applicable.
+- Start with scoped inspection and cheap deterministic checks. Compile the smallest owning target only when compilation evidence is required; add runtime, cook, backend, capture, or workload breadth only when the claim crosses that boundary.
+- Do not run full product/workspace builds, whole suites/cooks, clean rebuilds, paired backends, or acceptance workloads as speculative confidence checks. Apply the binding selection rules in [Validation, Performance, and Evidence](Standards/ValidationPerformanceAndEvidence.md#claim-driven-validation-selection).
 - Run `architecture_boundary_check` when Renderer/RHI boundaries change.
 - Run `git diff --check` before acceptance.
 - Record exact commands, configuration, backends/hardware where relevant, results, and unavailable checks.
@@ -180,7 +239,7 @@ Return:
 2. **Changelist assessment** — outcome, touched ownership path, applicable authority, preserved behavior, and old path removed.
 3. **Architecture and complexity** — owner/orchestrator/implementation boundaries, complexity spent and deleted, public/dependency effect, and bounded neighborhood cleanup.
 4. **Performance** — classification, affected budgets, evidence, and tradeoffs.
-5. **Validation** — exact commands and results; distinguish passed, failed, and unavailable.
+5. **Validation** — claim-to-check mapping, exact commands and results, escalation used, and applicable unavailable evidence; do not list unrelated broad checks as missing.
 6. **Residual risk** — only concrete unverified behavior or evidence gaps.
 7. **Status** — `PASS` only when no P0-P2 finding remains and required evidence is sufficient; otherwise `BLOCKED` with the blocking items.
 
@@ -191,9 +250,11 @@ Keep the report findings-first and proportional to risk. Do not bury a productio
 Before `PASS`, answer yes to every applicable question:
 
 - Is there one real outcome, mutable authority, lifetime owner, and production path?
+- Does every material copy or new holder have a real boundary reason, one producer, an exact lifetime, and no path to become stale mutable truth?
 - Can every new concept and changed file justify its current consumer and reason to exist?
 - Are orchestration and capability mechanics separated without wrapper ceremony?
 - Did the changelist remove the complete replaced path and directly exposed duplicate authority?
+- Did it preserve exactly one current Sparkle-owned representation, with no internal versioning or legacy/migration/compatibility path and with disposable artifacts regenerated?
 - Are functions, classes, files, and folders cohesive by ownership rather than arbitrary size?
 - Can this capability evolve or be removed through a bounded ownership path without unrelated repository-wide edits?
 - Is performance classified, with material risk or improvement measured proportionally?

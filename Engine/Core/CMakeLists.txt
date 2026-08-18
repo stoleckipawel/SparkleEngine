@@ -102,15 +102,6 @@ target_compile_definitions(SparkleCore
 
 sparkle_configure_runtime_support_artifacts(SparkleCore)
 
-add_executable(ProjectLevelCatalogTests
-    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ProjectLevelCatalogTests.cpp
-)
-target_link_libraries(ProjectLevelCatalogTests PRIVATE SparkleCore)
-target_compile_features(ProjectLevelCatalogTests PRIVATE cxx_std_20)
-add_test(NAME project_level_catalog COMMAND ProjectLevelCatalogTests)
-set_tests_properties(project_level_catalog PROPERTIES LABELS "Core;Projects")
-
 # IDE organization
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_CORE_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_CORE_PRIVATE_SOURCES} ${SPARKLE_CORE_PRIVATE_HEADERS})
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/ProjectLevelCatalogTests.cpp)

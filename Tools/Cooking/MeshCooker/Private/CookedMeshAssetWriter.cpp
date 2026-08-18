@@ -6,7 +6,6 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
@@ -67,8 +66,7 @@ void CookedMeshAssetStager::WriteMeshAsset(const CookedMeshAssetBuild& meshAsset
 void CookedMeshAssetStager::WriteMeshMetadata(const CookedMeshAssetBuild& meshAsset, const std::filesystem::path& outputPath)
 {
 	Json::ObjectWriter writer;
-	writer.WriteString("schema", "cooked-mesh-metadata-v1");
-	writer.WriteUInt64("coordinateContractVersion", WorldCoordinates::kCoordinateContractVersion);
+	writer.WriteString("schema", "cooked-mesh-metadata");
 	writer.WriteHexUInt64("assetId", meshAsset.assetId);
 	writer.WriteString("displayName", meshAsset.displayName);
 	writer.WriteString("source", meshAsset.sourcePath.generic_string());
@@ -82,8 +80,7 @@ void CookedMeshAssetStager::WriteMeshMetadata(const CookedMeshAssetBuild& meshAs
 Assets::CookedMeshAssetHeader CookedMeshAssetStager::BuildHeader(const CookedMeshAssetBuild& meshAsset) noexcept
 {
 	return Assets::CookedMeshAssetHeader{
-	    .fileHeader = {Assets::kCookedMeshAssetMagic, Assets::kCookedMeshAssetVersion},
-	    .coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion,
+	    .fileHeader = {Assets::kCookedMeshAssetMagic},
 	    .vertexCount = static_cast<std::uint32_t>(meshAsset.vertices.size()),
 	    .indexCount = static_cast<std::uint32_t>(meshAsset.indices.size()),
 	    .skinInfluenceCount = static_cast<std::uint32_t>(meshAsset.skinInfluences.size()),

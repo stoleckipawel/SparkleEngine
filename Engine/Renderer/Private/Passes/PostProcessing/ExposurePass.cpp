@@ -8,7 +8,10 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-ExposurePass::ExposurePass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+ExposurePass::ExposurePass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const ExposurePass::ParameterMetadata& ExposurePass::GetParameterMetadata() noexcept
 {
@@ -17,17 +20,16 @@ const ExposurePass::ParameterMetadata& ExposurePass::GetParameterMetadata() noex
 
 const RenderPassDefinition& ExposurePass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassOperations::BuildDefinition(
-	    PassName,
-	    RendererShaderPackages::Exposure,
-	    L"Exposure_BindingLayout",
-	    L"Exposure_Pipeline");
+	static const RenderPassDefinition definition =
+	    ComputePassOperations::BuildDefinition(PassName, RendererShaderPackages::Exposure, L"Exposure_BindingLayout", L"Exposure_Pipeline");
 	return definition;
 }
 
 void ExposurePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	parameters->ExposureConstants =
-	    BuildExposureUniformData(context.Runtime.PerFrame.DeltaTimeSeconds, context.Runtime.History.Exposure);
+	parameters->ExposureConstants = BuildExposureUniformData(
+	    context.Runtime.DisplaySettings,
+	    context.Runtime.PerFrame.DeltaTimeSeconds,
+	    context.Runtime.History.Exposure);
 	ComputePassOperations::Dispatch<ExposurePass>(context, m_runtime, parameters, ComputeDispatchDesc{1u, 1u, 1u});
 }

@@ -101,22 +101,8 @@ if(TARGET assimp)
     )
 endif()
 
-add_executable(AssetCookerProfileContractTests
-    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetCookerProfileContractTests.cpp
-)
-sparkle_configure_host_tool_target(AssetCookerProfileContractTests)
-target_include_directories(AssetCookerProfileContractTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Private)
-target_link_libraries(AssetCookerProfileContractTests PRIVATE AssetCookerCore)
-target_compile_features(AssetCookerProfileContractTests PRIVATE cxx_std_20)
-add_test(NAME asset_cooker_profile_contract COMMAND AssetCookerProfileContractTests)
-set_tests_properties(asset_cooker_profile_contract PROPERTIES LABELS "Cooking;Tools")
-
 source_group(
     TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private
     PREFIX "Private"
     FILES ${ASSET_COOKER_CORE_SOURCES} ${ASSET_COOKER_CORE_HEADERS} ${ASSET_COOKER_CLI_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
-source_group(
-    TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests
-    PREFIX "Tests"
-    FILES ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetCookerProfileContractTests.cpp)

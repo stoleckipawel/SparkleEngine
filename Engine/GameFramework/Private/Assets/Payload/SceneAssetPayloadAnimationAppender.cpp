@@ -16,7 +16,7 @@ namespace Assets
 {
 	void SceneAssetPayloadAnimationAppender::AppendAnimations(
 	    const LoadedSceneManifest& sceneManifest,
-	    const CookedAssetFileSet& files,
+	    CookedAssetFileSet& files,
 	    SceneAssetPayload& sceneAssetPayload)
 	{
 		AnimationAssetLoader animationAssetLoader;
@@ -27,6 +27,7 @@ namespace Assets
 			const std::filesystem::path animationAssetPath = Paths::CookedAnimationAsset(animationRef.animationAssetId);
 			const LoadedAnimationAsset animationAsset = animationAssetLoader.Decode(animationAssetPath, files.Get(animationAssetPath));
 			sceneAssetPayload.animations.push_back(BuildSceneAssetAnimation(animationAsset, animationRef.animationAssetId));
+			files.Release(animationAssetPath);
 		}
 	}
 }

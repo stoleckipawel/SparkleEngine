@@ -4,8 +4,6 @@
 #include "Animation/AnimationClipResource.h"
 #include "GameFramework/Public/Scene/Animations/AnimationOutput.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
-#include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
-#include "GameFramework/Public/Scene/Camera/CameraMovementSettings.h"
 #include "GameFramework/Public/Scene/Camera/SceneCameraEntry.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 #include "GameFramework/Public/Scene/Transform.h"
@@ -37,10 +35,11 @@ namespace ECS
 	class TransformSystemExecution;
 	class MeshExtractionSystemExecution;
 	class SystemChangeCommitter;
+	struct GameWorldSystemExecutionContext;
 
 	class GameWorldState final
 	{
-	  public:
+	public:
 		GameWorldState();
 		bool IsAlive(EntityId entity) const noexcept { return m_registry.IsAlive(entity); }
 		std::size_t GetEntityCount() const noexcept { return m_registry.GetLiveCount(); }
@@ -54,8 +53,6 @@ namespace ECS
 		bool SetActiveCamera(EntityId entity) noexcept;
 		EntityId GetActiveCamera() const noexcept { return m_activeCamera; }
 		bool WriteCameraDesc(EntityId entity, const CameraDesc& desc) noexcept;
-		bool WriteCameraMovement(EntityId entity, const CameraMovementSettings& settings) noexcept;
-		CameraMovementSettings ReadCameraMovement(EntityId entity) const noexcept;
 		float ReadCameraAspectRatio(EntityId entity) const noexcept;
 		bool WriteCameraAspectRatio(EntityId entity, float aspectRatio) noexcept;
 		bool WriteTransform(EntityId entity, const Transform& transform) noexcept;
@@ -75,14 +72,8 @@ namespace ECS
 		std::uint32_t ReadMeshSourceNodeIndex(EntityId entity) const noexcept;
 		void AppendMeshInstanceGroups(std::vector<SceneMeshInstanceGroupData>&& groups);
 		std::size_t GetMeshInstanceGroupCount() const noexcept { return m_meshInstanceGroups.size(); }
-		std::span<const WorldExtractionStorage::MeshSlot> GetExtractedMeshes() const noexcept
-		{
-			return m_extraction.GetExtractedMeshes();
-		}
-		std::span<const SceneMeshInstanceGroupData> GetExtractedMeshGroups() const noexcept
-		{
-			return m_extraction.GetMeshGroups();
-		}
+		std::span<const WorldExtractionStorage::MeshSlot> GetExtractedMeshes() const noexcept { return m_extraction.GetExtractedMeshes(); }
+		std::span<const SceneMeshInstanceGroupData> GetExtractedMeshGroups() const noexcept { return m_extraction.GetMeshGroups(); }
 
 		EntityId AddLight(SceneLightDesc&& desc);
 		std::size_t GetLightCount() const noexcept;
@@ -96,13 +87,8 @@ namespace ECS
 		    AnimationClipResourceStore& resources,
 		    std::uint64_t sourceInstanceId);
 		bool PrepareSystemResources(GameWorldResourceStores& resources);
-		bool ExecuteSystems(
-		    GameWorldResourceStores& resources,
-		    TaskExecutor& executor,
-		    const CameraInputIntent& cameraIntent,
-		    float deltaSeconds);
+		bool ExecuteSystems(const GameWorldSystemExecutionContext& context);
 		const AnimationOutput& GetAnimationOutput() const noexcept { return m_animationOutput.GetOutput(); }
-		void ConfigureOscillatingMeshMotion(bool enabled);
 
 		std::optional<SkyEnvironment> ReadSkyEnvironment() const { return m_skyEnvironment; }
 		bool HasSkyEnvironment() const noexcept { return m_skyEnvironment.has_value(); }
@@ -114,7 +100,7 @@ namespace ECS
 		WorldReadView AcquireReadView() const noexcept;
 		WorldChangeBatch ReadChanges(WorldSequence acknowledgedSequence) const;
 
-	  private:
+	private:
 		friend class RenderInputExtractor;
 		friend class RenderFrameDynamicDataExtractor;
 		friend class SimulationSystemExecution;
@@ -122,17 +108,11 @@ namespace ECS
 		friend class TransformSystemExecution;
 		friend class MeshExtractionSystemExecution;
 		friend class SystemChangeCommitter;
-		friend bool ExecuteGameWorldSystems(
-		    GameWorldState&,
-		    GameWorldResourceStores&,
-		    TaskExecutor&,
-		    const CameraInputIntent&,
-		    float);
+		friend bool ExecuteGameWorldSystems(GameWorldState&, const GameWorldSystemExecutionContext&);
 
 		struct SystemExecutionArena final
 		{
 			std::vector<EntityId> CameraChanges;
-			std::vector<EntityId> MotionChanges;
 			std::vector<EntityId> AnimationChanges;
 			std::vector<EntityId> MorphChanges;
 			std::vector<EntityId> DirtyTransforms;
@@ -179,7 +159,5 @@ namespace ECS
 		EntityId m_activeCamera;
 		std::uint64_t m_nextCameraIdentity = 0;
 		std::uint64_t m_nextLightIdentity = 0;
-		float m_motionTimeSeconds = 0.0f;
-		bool m_oscillatingMeshMotionEnabled = false;
 	};
 }

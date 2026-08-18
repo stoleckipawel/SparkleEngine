@@ -45,7 +45,14 @@
 static const auto g_framePipelineLogger = Logging::GetOrCreateLogger("Renderer.FramePipeline");
 
 FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPackets) noexcept :
-    m_rendererHost(&rendererHost), m_ownsUiBackend(enableUiRenderPackets)
+    m_rendererHost(&rendererHost),
+    m_frameContextBuilder(
+        rendererHost.GetRenderWorld(),
+        rendererHost.GetRenderCamera(),
+        rendererHost.GetRenderPreparationGraph(),
+        rendererHost.GetPerViewDataBuilder(),
+        rendererHost.GetTemporalDataBuilder()),
+    m_ownsUiBackend(enableUiRenderPackets)
 {
 	m_windowExtent = {
 	    static_cast<std::uint32_t>(rendererHost.GetWindow().GetWidth()),
@@ -54,6 +61,7 @@ FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPack
 	InitializeSceneData();
 	InitializeUiRendering();
 	InitializeFrameStorage();
+	m_displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
 	InitializeFrameGraph();
 }
 
@@ -127,10 +135,7 @@ FramePipeline::~FramePipeline() noexcept
 TextureDiagnosticsSnapshot FramePipeline::CaptureTextureDiagnostics()
 {
 	return m_rendererHost->CaptureTextureDiagnostics(
-	    [this](std::uint64_t nativeTextureId)
-	    {
-		    return m_editorTextureRegistry->Register(nativeTextureId);
-	    });
+	    [this](std::uint64_t nativeTextureId) { return m_editorTextureRegistry->Register(nativeTextureId); });
 }
 
 void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) noexcept
@@ -142,6 +147,7 @@ void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) n
 
 void FramePipeline::OnRender(const TimeInfo& timing, const UiRenderPacket& ui) noexcept
 {
+	m_displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
 	BeginFrame();
 	SetupFrame(timing);
 	RecordFrame();
@@ -164,8 +170,8 @@ FrameResolutionExtents FramePipeline::ResolveFrameResolution() const noexcept
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const ImageProviderPipeline imagePipeline = GetLightingMode() == LightingMode::RestirPathTraced
-	                                                ? ImageProviderPipeline::RayReconstruction
-	                                                : ImageProviderPipeline::PresentationUpscaling;
+	    ? ImageProviderPipeline::RayReconstruction
+	    : ImageProviderPipeline::PresentationUpscaling;
 	return FrameResolutionExtents{
 	    .Render = m_rendererHost->GetImageProviders().ResolveRenderExtent(outputExtent, imagePipeline),
 	    .Output = outputExtent};
@@ -183,29 +189,28 @@ void FramePipeline::InitializeFrameGraph() noexcept
 
 void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noexcept
 {
+	const FramePresentationTarget presentationTarget =
+	    ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct;
 	const FrameGraphDependencies dependencies{
 	    m_rendererHost->GetRenderHardwareInterface(),
 	    m_rendererHost->GetRenderPassRuntimeCache(),
 	    m_rendererHost->GetWindow(),
 	    resolution.Render,
 	    resolution.Output,
-	    ShouldOutputToBackBuffer()};
+	    m_displaySettings.ExposureMeteringMethod,
+	    presentationTarget};
 
 	FrameGraphFactory frameGraphFactory(dependencies);
 	FrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphRenderExtent = dependencies.renderExtent;
 	m_frameGraphOutputExtent = dependencies.outputExtent;
-	m_frameGraphPresentsToBackBuffer = dependencies.presentSceneToBackBuffer;
+	m_frameGraphPresentationTarget = dependencies.presentationTarget;
 	m_frameResources = buildResult.Resources;
 	m_gBufferMode = CVarGBufferMode.Get();
 	m_lightingMode = GetLightingMode();
+	m_exposureMeteringMethod = m_displaySettings.ExposureMeteringMethod;
 	m_imageProviderFrameGraphKey = m_rendererHost->GetImageProviders().GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
-}
-
-void FramePipeline::RefreshFrameExecution() noexcept
-{
-	RefreshFrameExecution(ResolveFrameResolution());
 }
 
 void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noexcept
@@ -289,12 +294,13 @@ void FramePipeline::ApplyPendingResize() noexcept
 void FramePipeline::RefreshGraphForResolutionAndPresentation() noexcept
 {
 	const FrameResolutionExtents frameResolution = ResolveFrameResolution();
-	const bool presentsToBackBuffer = ShouldOutputToBackBuffer();
-	const bool resolutionChanged = frameResolution.Render.Width != m_frameGraphRenderExtent.Width ||
-	                               frameResolution.Render.Height != m_frameGraphRenderExtent.Height ||
-	                               frameResolution.Output.Width != m_frameGraphOutputExtent.Width ||
-	                               frameResolution.Output.Height != m_frameGraphOutputExtent.Height;
-	const bool presentationChanged = presentsToBackBuffer != m_frameGraphPresentsToBackBuffer;
+	const FramePresentationTarget presentationTarget =
+	    ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct;
+	const bool resolutionChanged = frameResolution.Render.Width != m_frameGraphRenderExtent.Width
+	    || frameResolution.Render.Height != m_frameGraphRenderExtent.Height
+	    || frameResolution.Output.Width != m_frameGraphOutputExtent.Width
+	    || frameResolution.Output.Height != m_frameGraphOutputExtent.Height;
+	const bool presentationChanged = presentationTarget != m_frameGraphPresentationTarget;
 	if (resolutionChanged || presentationChanged)
 	{
 		ResetTemporalState(presentationChanged ? "Frame presentation mode changed" : "Frame resolution changed");
@@ -315,6 +321,12 @@ void FramePipeline::RefreshGraphForRenderModes() noexcept
 	if (lightingMode != m_lightingMode)
 	{
 		ResetTemporalState("Lighting mode changed");
+		RefreshFrameExecution(ResolveFrameResolution());
+	}
+
+	if (m_displaySettings.ExposureMeteringMethod != m_exposureMeteringMethod)
+	{
+		ResetTemporalState("Exposure metering method changed");
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
 }
@@ -364,9 +376,8 @@ void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 void FramePipeline::UploadPendingSceneTextures(RenderDeviceServices& deviceServices, RenderCommandList& graphicsCommandList)
 {
 	TextureCache& textureCache = m_rendererHost->GetTextureCache();
-	const bool useCopyQueue =
-	    textureCache.HasPendingSceneTextureUploads() &&
-	    m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(ERhiQueueType::Copy);
+	const bool useCopyQueue = textureCache.HasPendingSceneTextureUploads()
+	    && m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(ERhiQueueType::Copy);
 
 	RhiCommandRecordingLease uploadLease;
 	RenderCommandList* uploadCommandList = &graphicsCommandList;
@@ -392,10 +403,9 @@ void FramePipeline::UploadPendingSceneTextures(RenderDeviceServices& deviceServi
 
 void FramePipeline::RefreshViewportRenderProducts() noexcept
 {
-	const FrameResolutionExtents resolution =
-	    m_frameGraphOutputExtent.IsValid() && m_frameGraphRenderExtent.IsValid()
-	        ? FrameResolutionExtents{.Render = m_frameGraphRenderExtent, .Output = m_frameGraphOutputExtent}
-	        : ResolveFrameResolution();
+	const FrameResolutionExtents resolution = m_frameGraphOutputExtent.IsValid() && m_frameGraphRenderExtent.IsValid()
+	    ? FrameResolutionExtents{.Render = m_frameGraphRenderExtent, .Output = m_frameGraphOutputExtent}
+	    : ResolveFrameResolution();
 
 	m_viewportRenderProducts.Clear();
 	m_viewportRenderProducts.SetGeneration(m_viewportRenderRequest.Generation);
@@ -406,8 +416,8 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	        .Extent = resolution.Output,
 	        .Format = RenderProductFormat::ColorLdr});
 
-	if (m_frameResources.ViewportProducts.SceneDepth.IsValid() &&
-	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
+	if (m_frameResources.ViewportProducts.SceneDepth.IsValid()
+	    && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::SceneDepth,
@@ -417,8 +427,8 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 		        .Format = RenderProductFormat::Float});
 	}
 
-	if (m_frameResources.ViewportProducts.Normals.IsValid() &&
-	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::Normals))
+	if (m_frameResources.ViewportProducts.Normals.IsValid()
+	    && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::Normals))
 	{
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::Normals,
@@ -513,18 +523,15 @@ FrameContext& FramePipeline::PrepareFrameContext(const RenderFrameDynamicData& d
 {
 	const std::uint32_t frameIndex = m_rendererHost->GetRenderHardwareInterface().GetCurrentFrameIndex();
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[frameIndex];
-	FrameContextBuilder::Build(
+	m_frameContextBuilder.Build(
 	    *frameSlot,
-	    m_rendererHost->GetRenderWorld(),
-	    dynamic,
-	    *m_gpuScene,
-	    frameIndex,
-	    m_rendererHost->GetRenderCamera(),
-	    m_frameGraphRenderExtent,
-	    m_rendererHost->GetRenderPreparationGraph(),
-	    activeRayTracingScene,
-	    m_rendererHost->GetPerViewDataBuilder(),
-	    m_rendererHost->GetTemporalDataBuilder());
+	    FrameContextBuildRequest{
+	        .Dynamic = dynamic,
+	        .GpuScene = *m_gpuScene,
+	        .FrameIndex = frameIndex,
+	        .SceneExtent = m_frameGraphRenderExtent,
+	        .RayTracingScene = activeRayTracingScene,
+	    });
 	return *frameSlot;
 }
 
@@ -576,8 +583,8 @@ void FramePipeline::SetupImageProviderFrame(const FrameContext& frame, const Ren
 
 void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene)
 {
-	if (m_frameGraph == nullptr || !m_frameResources.SceneTlas.IsValid() || activeRayTracingScene == nullptr ||
-	    !activeRayTracingScene->IsAvailable())
+	if (m_frameGraph == nullptr || !m_frameResources.SceneTlas.IsValid() || activeRayTracingScene == nullptr
+	    || !activeRayTracingScene->IsAvailable())
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -587,8 +594,8 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 	}
 
 	frame.rayTracingScene = activeRayTracingScene->Prepare(frame.sceneData);
-	if (!frame.rayTracingScene.HasBoundTlas() ||
-	    frame.rayTracingScene.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
+	if (!frame.rayTracingScene.HasBoundTlas()
+	    || frame.rayTracingScene.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -596,13 +603,13 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 		    __LINE__,
 		    "Ray-tracing scene producer failed to provide the descriptor-access SceneTlas consumed by frame shaders.");
 	}
-	if (!frame.sceneData.materialTextureTable || !frame.sceneGpuData->RayTracing.HasCompleteBuffers() ||
-	    !frame.sceneGpuData->Geometry.HasMeshInstanceBuffers())
+	if (!frame.sceneData.materialTextureTable || !frame.sceneGpuData->RayTracing.HasCompleteBuffers()
+	    || !frame.sceneGpuData->Geometry.HasMeshInstanceBuffers())
 	{
 		Diagnostics::Fatal(g_framePipelineLogger, __FILE__, __LINE__, "Ray-tracing frame shader resources are incomplete.");
 	}
-	if (frame.rayTracingScene.HasTraceableInstances() &&
-	    (frame.sceneGpuData->RayTracing.InstanceCount == 0u || frame.sceneGpuData->RayTracing.MaterialCount == 0u))
+	if (frame.rayTracingScene.HasTraceableInstances()
+	    && (frame.sceneGpuData->RayTracing.InstanceCount == 0u || frame.sceneGpuData->RayTracing.MaterialCount == 0u))
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -659,6 +666,7 @@ void FramePipeline::ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene
 	    .HardwareInterface = renderHardwareInterface,
 	    .PassRuntimes = m_rendererHost->GetRenderPassRuntimeCache(),
 	    .PerFrame = m_perFrameData,
+	    .DisplaySettings = m_displaySettings,
 	    .History = ResolveFrameHistoryValidity(*m_frameGraph, m_frameResources.History),
 	    .Meshes = &m_rendererHost->GetGpuMeshCache(),
 	    .Textures = &m_rendererHost->GetTextureCache(),

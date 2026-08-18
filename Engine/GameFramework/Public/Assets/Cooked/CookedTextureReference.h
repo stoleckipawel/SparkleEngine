@@ -9,8 +9,6 @@
 
 namespace Assets
 {
-	inline constexpr std::uint32_t kCookedTextureReferenceVersion = 2;
-
 	struct SPARKLE_ENGINE_API CookedTextureReferenceRecord
 	{
 		std::uint32_t texturePathByteCount = 0;

@@ -9,7 +9,10 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-ToneMappingPass::ToneMappingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+ToneMappingPass::ToneMappingPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const ToneMappingPass::ParameterMetadata& ToneMappingPass::GetParameterMetadata() noexcept
 {
@@ -32,6 +35,6 @@ void ToneMappingPass::Execute(
     std::uint32_t outputWidth,
     std::uint32_t outputHeight) const
 {
-	parameters->ToneMappingConstants = BuildToneMappingUniformData();
+	parameters->ToneMappingConstants = BuildToneMappingUniformData(context.Runtime.DisplaySettings.ToneMapper);
 	ComputePassOperations::DispatchSized<ToneMappingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

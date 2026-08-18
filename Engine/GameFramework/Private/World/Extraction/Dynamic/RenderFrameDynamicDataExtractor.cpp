@@ -278,7 +278,8 @@ namespace ECS
 			if (!camera.Active) continue;
 			return {.Position = camera.LocalTransform.GetTranslation(), .Direction = camera.Direction,
 			        .FovYDegrees = camera.Description.fovYDegrees, .AspectRatio = camera.AspectRatio,
-			        .NearZ = camera.Description.nearZ, .FarZ = camera.Description.farZ};
+			        .NearZ = camera.Description.nearZ, .FarZ = camera.Description.farZ,
+			        .ProjectionKind = camera.Description.projectionKind};
 		}
 		return {};
 	}

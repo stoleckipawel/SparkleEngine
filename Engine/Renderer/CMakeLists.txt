@@ -197,42 +197,9 @@ endif()
 
 sparkle_configure_runtime_support_artifacts(SparkleRenderer)
 
-add_executable(AssetResidencyTests
-    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetResidencyTests.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Resources/Residency/AssetResidency.cpp
-)
-target_include_directories(AssetResidencyTests
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
-)
-target_link_libraries(AssetResidencyTests PRIVATE SparkleCore SparkleRHI)
-target_compile_features(AssetResidencyTests PRIVATE cxx_std_20)
-add_test(NAME asset_residency COMMAND AssetResidencyTests)
-set_tests_properties(asset_residency PROPERTIES LABELS "Renderer;Residency")
-
-add_executable(RayTracingTransformContractTests
-    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RayTracingTransformContractTests.cpp
-)
-target_include_directories(RayTracingTransformContractTests
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
-)
-target_link_libraries(RayTracingTransformContractTests PRIVATE SparkleCore SparkleRHI)
-target_compile_features(RayTracingTransformContractTests PRIVATE cxx_std_20)
-add_test(NAME ray_tracing_transform_contract COMMAND RayTracingTransformContractTests)
-set_tests_properties(ray_tracing_transform_contract PROPERTIES LABELS "Renderer;RayTracing;WorldCoordinates")
-
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_RENDERER_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_RENDERER_PRIVATE_SOURCES} ${SPARKLE_RENDERER_PRIVATE_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Upscaling/NvidiaDlss PREFIX "Private\\Upscaling\\NvidiaDlss" FILES ${SPARKLE_RENDERER_UPSCALING_NVIDIA_DLSS_SOURCES} ${SPARKLE_RENDERER_UPSCALING_NVIDIA_DLSS_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/RayReconstruction/NvidiaDlssRayReconstruction PREFIX "Private\\RayReconstruction\\NvidiaDlssRayReconstruction" FILES ${SPARKLE_RENDERER_NVIDIA_RAY_RECONSTRUCTION_SOURCES} ${SPARKLE_RENDERER_NVIDIA_RAY_RECONSTRUCTION_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Streamline PREFIX "Private\\Streamline" FILES ${SPARKLE_RENDERER_STREAMLINE_SHARED_SOURCES} ${SPARKLE_RENDERER_STREAMLINE_SHARED_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations PREFIX "ShaderRegistrations" FILES ${SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES} ${SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS})
-source_group(
-    TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests
-    PREFIX "Tests"
-    FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/AssetResidencyTests.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RayTracingTransformContractTests.cpp
-)

@@ -9,9 +9,7 @@ namespace Assets
 
 	class SceneAssetPayloadDecoder final
 	{
-	  public:
-		static SceneAssetPayload Decode(
-		    const LoadedSceneManifest& manifest,
-		    const CookedAssetFileSet& files);
+	public:
+		static SceneAssetPayload Decode(const LoadedSceneManifest& manifest, CookedAssetFileSet& files);
 	};
 }

@@ -42,7 +42,6 @@ namespace ECS
 			read.Name = entry->name;
 			read.Description = entry->desc;
 		}
-		read.Movement = ReadCameraMovement(entity);
 		read.LocalTransform = ReadTransform(entity);
 		if (const WorldTransform* world = m_registry.Get<WorldTransform>(entity))
 		{

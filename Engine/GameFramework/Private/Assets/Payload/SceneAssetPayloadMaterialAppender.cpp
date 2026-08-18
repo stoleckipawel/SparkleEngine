@@ -17,7 +17,7 @@ namespace Assets
 {
 	void SceneAssetPayloadMaterialAppender::AppendMaterials(
 	    const LoadedSceneManifest& sceneManifest,
-	    const CookedAssetFileSet& files,
+	    CookedAssetFileSet& files,
 	    SceneAssetPayload& sceneAssetPayload)
 	{
 		MaterialAssetLoader materialAssetLoader;
@@ -29,6 +29,7 @@ namespace Assets
 			const std::filesystem::path materialAssetPath = Paths::CookedMaterialAsset(materialReference.materialAssetId);
 			const LoadedMaterialAsset materialAsset = materialAssetLoader.Decode(materialAssetPath, files.Get(materialAssetPath));
 			sceneAssetPayload.materials.push_back(materialTranslator.Translate(materialAsset));
+			files.Release(materialAssetPath);
 		}
 	}
 }

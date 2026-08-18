@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
+#include "World/Systems/CameraSimulationInput.h"
 
 class GameWorldResourceStores;
 class TaskExecutor;
@@ -8,10 +8,13 @@ class TaskExecutor;
 namespace ECS
 {
 	class GameWorldState;
-	bool ExecuteGameWorldSystems(
-	    GameWorldState& state,
-	    GameWorldResourceStores& resources,
-	    TaskExecutor& executor,
-	    const CameraInputIntent& cameraIntent,
-	    float deltaSeconds);
+
+	struct GameWorldSystemExecutionContext final
+	{
+		GameWorldResourceStores& Resources;
+		TaskExecutor& Executor;
+		CameraSimulationInput Camera;
+	};
+
+	bool ExecuteGameWorldSystems(GameWorldState& state, const GameWorldSystemExecutionContext& context);
 }

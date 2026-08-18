@@ -13,18 +13,17 @@ namespace Assets
 	    const std::filesystem::path& path,
 	    std::span<const std::uint8_t> bytes) const
 	{
-		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedMaterialAsset", kCookedMaterialAssetVersion);
+		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedMaterialAsset");
 
 		CookedAssetByteReader reader(bytes);
 		LoadedMaterialAsset materialAsset;
 		materialAsset.header = reader.Read<CookedMaterialAssetHeader>();
 
-		if (!materialAsset.header.fileHeader.Matches(kCookedMaterialAssetMagic, kCookedMaterialAssetVersion) ||
-		    materialAsset.header.textureReferenceVersion != kCookedTextureReferenceVersion)
+		if (!materialAsset.header.fileHeader.HasMagic(kCookedMaterialAssetMagic))
 		{
 			throw diagnostics.MakeError(
 			    "header",
-			    "material magic/version and texture reference version",
+			    "material magic",
 			    "Invalid cooked material asset header");
 		}
 

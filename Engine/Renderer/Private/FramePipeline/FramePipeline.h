@@ -1,7 +1,9 @@
 #pragma once
 
+#include "Frame/Builders/FrameContextBuilder.h"
 #include "Frame/Builders/PerFrameDataBuilder.h"
-#include "Frame/Core/FrameAssembly.h"
+#include "Frame/Core/Frame.h"
+#include "Frame/Presentation/ViewportDisplaySettings.h"
 #include "FramePipeline/FrameExecutionRetirementQueue.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Resources/History/FrameHistory.h"
@@ -19,6 +21,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 class FrameExecutionDiagnostics;
@@ -43,7 +46,7 @@ struct FrameResolutionExtents final
 
 class FramePipeline final
 {
-  public:
+public:
 	FramePipeline(RendererHost& rendererHost, bool enableUiRenderPackets) noexcept;
 	~FramePipeline() noexcept;
 
@@ -52,7 +55,7 @@ class FramePipeline final
 	FramePipeline(FramePipeline&&) = delete;
 	FramePipeline& operator=(FramePipeline&&) = delete;
 
-	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept { m_viewportRenderRequest = request; }
+	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept { m_viewportRenderRequest = std::move(request); }
 	void SubmitRenderInput(RenderInputFrame input) noexcept;
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
@@ -63,14 +66,13 @@ class FramePipeline final
 	std::vector<ViewportCaptureReadback> TakeCompletedViewportCaptures();
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 
-  private:
+private:
 	void InitializeSceneData();
 	void InitializeUiRendering();
 	void InitializeFrameStorage();
 	void InitializeFrameContexts();
 	void InitializeFrameGraph() noexcept;
 	void InitializeFrameGraph(FrameResolutionExtents resolution) noexcept;
-	void RefreshFrameExecution() noexcept;
 	void RefreshFrameExecution(FrameResolutionExtents resolution) noexcept;
 	void RebuildFrameExecutionAfterSwapChainDrain(FrameResolutionExtents resolution) noexcept;
 	void RetireFrameExecution() noexcept;
@@ -113,6 +115,7 @@ class FramePipeline final
 	const FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() const noexcept;
 
 	RendererHost* m_rendererHost = nullptr;
+	FrameContextBuilder m_frameContextBuilder;
 	std::unique_ptr<FrameGraph> m_frameGraph;
 	PerFrameDataBuilder m_perFrameDataBuilder;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
@@ -121,7 +124,7 @@ class FramePipeline final
 	RenderViewportExtent m_frameGraphRenderExtent = {};
 	RenderViewportExtent m_frameGraphOutputExtent = {};
 	RenderViewportExtent m_windowExtent = {};
-	bool m_frameGraphPresentsToBackBuffer = true;
+	FramePresentationTarget m_frameGraphPresentationTarget = FramePresentationTarget::BackBuffer;
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	FrameAssemblyResourceLayout m_frameResources = {};
@@ -144,6 +147,8 @@ class FramePipeline final
 	bool m_windowMinimized = false;
 	GBufferMode m_gBufferMode = GBufferMode::Rasterized;
 	LightingMode m_lightingMode = LightingMode::RestirPathTraced;
+	EngineExposureMeteringMethod m_exposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
+	ResolvedViewportDisplaySettings m_displaySettings = {};
 	ImageProviderGraphKey m_imageProviderFrameGraphKey = {};
 	bool m_ownsUiBackend = false;
 };

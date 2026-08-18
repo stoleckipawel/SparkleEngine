@@ -13,7 +13,6 @@
 #include <cgltf.h>
 
 #include "Core/Public/Diagnostics/Error.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 std::string_view GltfImporter::GetImporterId() const noexcept
 {
@@ -31,8 +30,6 @@ SourceImportOutput GltfImporter::Import(const std::filesystem::path& filePath) c
 	output.provenance.sourcePath = filePath;
 	output.provenance.importerId = std::string(GetImporterId());
 	output.provenance.sourceMetersPerUnit = 1.0f;
-	output.scene.coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
-
 	GltfScene scene;
 	GltfSceneReader::LoadScene(filePath, scene);
 

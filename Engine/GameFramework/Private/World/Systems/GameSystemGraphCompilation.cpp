@@ -62,8 +62,8 @@ namespace ECS
 				case GameSystemResourceDomain::UpdateInputs:
 					return {GameSystemPhase::Simulation, GameSystemPhase::Animation};
 				case GameSystemResourceDomain::CameraInputIntent:
+				case GameSystemResourceDomain::CameraNavigationSettings:
 					return {GameSystemPhase::Simulation, GameSystemPhase::Simulation};
-				case GameSystemResourceDomain::MotionClock:
 				case GameSystemResourceDomain::SystemChangeScratch:
 					return {GameSystemPhase::Simulation, GameSystemPhase::Deformation};
 				case GameSystemResourceDomain::AnimationClips:

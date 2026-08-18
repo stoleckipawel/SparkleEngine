@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/Core/FrameAssembly.h"
+#include "Frame/Core/Frame.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
@@ -20,7 +20,8 @@ struct FrameGraphDependencies
 	Window& window;
 	RenderViewportExtent renderExtent;
 	RenderViewportExtent outputExtent;
-	bool presentSceneToBackBuffer = true;
+	EngineExposureMeteringMethod exposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
+	FramePresentationTarget presentationTarget = FramePresentationTarget::BackBuffer;
 };
 
 struct FrameGraphBuildResult
@@ -39,19 +40,14 @@ struct FrameGraphBuildResult
 
 class FrameGraphFactory final
 {
-  public:
+public:
 	explicit FrameGraphFactory(const FrameGraphDependencies& dependencies) noexcept;
 
 	FrameGraphBuildResult Build() const;
 
-  private:
-	static void ExportTextureIfValid(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle handle,
-	    std::string_view name) noexcept;
-	static void ExportFrameProductRoots(
-	    FrameGraphBuilder& builder,
-	    const FrameAssemblyResourceLayout& resources) noexcept;
+private:
+	static void ExportTextureIfValid(FrameGraphBuilder& builder, FrameGraphTextureHandle handle, std::string_view name) noexcept;
+	static void ExportFrameProductRoots(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources) noexcept;
 
 	FrameGraphDependencies m_dependencies;
 };

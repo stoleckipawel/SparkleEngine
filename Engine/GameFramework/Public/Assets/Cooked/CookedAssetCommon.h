@@ -14,11 +14,8 @@ namespace Assets
 	struct SPARKLE_ENGINE_API CookedAssetHeader
 	{
 		std::uint32_t magic = 0;
-		std::uint32_t version = 0;
 
-		bool Matches(
-		    std::uint32_t expectedMagic,
-		    std::uint32_t expectedVersion) const noexcept;
+		bool HasMagic(std::uint32_t expectedMagic) const noexcept;
 	};
 }
 

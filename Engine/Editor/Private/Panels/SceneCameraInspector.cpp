@@ -30,7 +30,6 @@ void SceneCameraInspector::Build(
 {
 	BuildTransformCategory(filter, camera, transactionHistory, generation);
 	BuildCameraCategory(filter, camera, transactionHistory, generation);
-	BuildMovementCategory(filter, camera, transactionHistory, generation);
 	BuildAdvancedParametersCategory(filter, camera, transactionHistory, generation);
 }
 
@@ -121,39 +120,6 @@ void SceneCameraInspector::BuildCameraCategory(
 		    SetCameraDescriptionCommand{camera.Entity, after},
 		    SetCameraDescriptionCommand{camera.Entity, camera.Description},
 		    "camera-description");
-	}
-
-	UiUtil::EndDetailsCategory();
-}
-
-void SceneCameraInspector::BuildMovementCategory(
-    const std::string& filter,
-    const WorldCameraReadData& camera,
-    EditorTransactionHistory& transactionHistory,
-    std::uint64_t generation) noexcept
-{
-	if (!UiUtil::MatchesDetailsFilter(filter, "Movement", "move speed navigation") || !UiUtil::BeginDetailsCategory("Movement"))
-	{
-		return;
-	}
-
-	CameraMovementSettings after = camera.Movement;
-	const float defaultSpeed = CameraMovementSettings{}.moveSpeedMetersPerSecond;
-	if (UiUtil::EditDetailsFloat(
-	        "Move Speed",
-	        after.moveSpeedMetersPerSecond,
-	        after.speedStepMetersPerSecond,
-	        after.minMoveSpeedMetersPerSecond,
-	        after.maxMoveSpeedMetersPerSecond,
-	        "%.4f",
-	        &defaultSpeed))
-	{
-		SceneCameraEditSubmission::Submit(
-		    transactionHistory,
-		    generation,
-		    SetCameraMovementCommand{camera.Entity, after},
-		    SetCameraMovementCommand{camera.Entity, camera.Movement},
-		    "camera-movement");
 	}
 
 	UiUtil::EndDetailsCategory();

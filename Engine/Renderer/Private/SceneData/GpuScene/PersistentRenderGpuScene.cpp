@@ -4,7 +4,8 @@
 #include "RHI/Public/Frame/RhiFrameConstants.h"
 #include "SceneData/GpuScene/PersistentStructuredBuffer.h"
 #include "SceneData/GpuScene/RenderGpuGeometryState.h"
-#include "SceneData/GpuScene/RenderGpuScenePayloadBuilder.h"
+#include "SceneData/GpuScene/RenderGpuLightingPayloadBuilder.h"
+#include "SceneData/GpuScene/RenderGpuRayTracingPayloadBuilder.h"
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/RenderSceneGpuData.h"
 
@@ -74,7 +75,11 @@ void RenderGpuRayTracingStorage::Reset() noexcept
 
 struct PersistentRenderGpuScene::Impl final
 {
-	Impl(RhiResourceService& resourceService, const GpuMeshCache& meshes) noexcept : ResourceService(&resourceService), Meshes(&meshes) {}
+	Impl(RhiResourceService& resourceService, const GpuMeshCache& meshes) noexcept :
+	    ResourceService(&resourceService),
+	    Meshes(&meshes)
+	{
+	}
 
 	const RenderSceneGpuData& Update(const RenderSceneData& sceneData, std::uint32_t frameIndex)
 	{
@@ -89,7 +94,7 @@ struct PersistentRenderGpuScene::Impl final
 
 	void UpdateLighting(const RenderSceneData& sceneData, RenderGpuDynamicFrameStorage& storage)
 	{
-		RenderGpuScenePayloadBuilder::BuildLighting(sceneData, LightingPayloads);
+		RenderGpuLightingPayloadBuilder::Build(sceneData, LightingPayloads);
 
 		storage.DirectionalLights.Update(*ResourceService, std::span{LightingPayloads.DirectionalLights}, L"DirectionalLights");
 		storage.PointLights.Update(*ResourceService, std::span{LightingPayloads.PointLights}, L"PointLights");
@@ -144,9 +149,9 @@ struct PersistentRenderGpuScene::Impl final
 		    topologyChanged || sceneData.materialRevision != RayTracingMaterialRevision || textureGeneration != RayTracingTextureGeneration;
 		if (payloadChanged)
 		{
-			RenderGpuScenePayloadBuilder::BuildRayTracing(sceneData, *Meshes, RayTracingPayloads);
-			if (topologyChanged || RayTracingPayloads.InstanceCount == 0u || !RayTracing.Vertices.GetBinding() ||
-			    !RayTracing.MorphTargetDeltas.GetBinding())
+			RenderGpuRayTracingPayloadBuilder::Build(sceneData, *Meshes, RayTracingPayloads);
+			if (topologyChanged || RayTracingPayloads.InstanceCount == 0u || !RayTracing.Vertices.GetBinding()
+			    || !RayTracing.MorphTargetDeltas.GetBinding())
 			{
 				UpdateRayTracingTopology();
 			}

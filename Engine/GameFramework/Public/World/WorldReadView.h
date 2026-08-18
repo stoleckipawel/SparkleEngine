@@ -3,7 +3,6 @@
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
-#include "GameFramework/Public/Scene/Camera/CameraMovementSettings.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/SceneMeshKind.h"
@@ -29,7 +28,6 @@ struct WorldCameraReadData final
 	EntityId Entity;
 	std::string Name;
 	CameraDesc Description;
-	CameraMovementSettings Movement;
 	Transform LocalTransform;
 	DirectX::XMFLOAT4X4 WorldMatrix{};
 	DirectX::XMFLOAT3 Direction{0.0f, 0.0f, 1.0f};

@@ -32,7 +32,6 @@ enum class WorldDataKind : std::uint8_t
 	WorldTransform,
 	Camera,
 	CameraDerivedState,
-	CameraMovement,
 	Visibility,
 	MeshInstance,
 	Light,

@@ -16,25 +16,34 @@ struct RenderFrameDynamicData;
 struct RhiRect;
 struct RhiViewport;
 
+struct FrameContextBuildRequest final
+{
+	const RenderFrameDynamicData& Dynamic;
+	PersistentRenderGpuScene& GpuScene;
+	std::uint32_t FrameIndex = 0;
+	RenderViewportExtent SceneExtent;
+	RenderRayTracingScene* RayTracingScene = nullptr;
+};
+
 class FrameContextBuilder final
 {
-  public:
-	static void Build(
-	    FrameContext& output,
+public:
+	FrameContextBuilder(
 	    const RenderWorld& world,
-	    const RenderFrameDynamicData& dynamic,
-	    PersistentRenderGpuScene& gpuScene,
-	    std::uint32_t frameIndex,
 	    const RenderCamera& renderCamera,
-	    RenderViewportExtent sceneExtent,
 	    RenderPreparationGraph& renderPreparationGraph,
-	    RenderRayTracingScene* renderRayTracingScene,
 	    PerViewDataBuilder& perViewDataBuilder,
-	    TemporalDataBuilder& temporalDataBuilder);
+	    TemporalDataBuilder& temporalDataBuilder) noexcept;
 
-  private:
-	static RhiViewport BuildSceneViewport(
-	    RenderViewportExtent sceneExtent) noexcept;
-	static RhiRect BuildSceneScissorRect(
-	    RenderViewportExtent sceneExtent) noexcept;
+	void Build(FrameContext& output, const FrameContextBuildRequest& request) const;
+
+private:
+	static RhiViewport BuildSceneViewport(RenderViewportExtent sceneExtent) noexcept;
+	static RhiRect BuildSceneScissorRect(RenderViewportExtent sceneExtent) noexcept;
+
+	const RenderWorld& m_world;
+	const RenderCamera& m_renderCamera;
+	RenderPreparationGraph& m_renderPreparationGraph;
+	PerViewDataBuilder& m_perViewDataBuilder;
+	TemporalDataBuilder& m_temporalDataBuilder;
 };

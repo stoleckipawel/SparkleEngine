@@ -2,7 +2,6 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
-#include "GameFramework/Public/Scene/Camera/CameraMovementSettings.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialVariant.h"
 #include "GameFramework/Public/Scene/Transform.h"
@@ -31,12 +30,6 @@ struct SetCameraDescriptionCommand final
 	CameraDesc Value;
 };
 
-struct SetCameraMovementCommand final
-{
-	EntityId Entity;
-	CameraMovementSettings Value;
-};
-
 struct SetEntityVisibilityCommand final
 {
 	EntityId Entity;
@@ -63,7 +56,6 @@ using WorldEditPayload = std::variant<
     SetActiveCameraCommand,
     SetLocalTransformCommand,
     SetCameraDescriptionCommand,
-    SetCameraMovementCommand,
     SetEntityVisibilityCommand,
     SetLightDescriptionCommand,
     SetSkyEnvironmentCommand,

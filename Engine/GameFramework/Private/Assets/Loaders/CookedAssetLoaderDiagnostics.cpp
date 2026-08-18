@@ -8,12 +8,10 @@ namespace Assets
 {
 	CookedAssetLoaderDiagnostics::CookedAssetLoaderDiagnostics(
 	    const std::filesystem::path& path,
-	    std::string_view schemaName,
-	    std::uint32_t schemaVersion) :
+	    std::string_view schemaName) :
 	    m_path(path),
 	    m_assetId(path.stem().generic_string()),
-	    m_schemaName(schemaName),
-	    m_schemaVersion(schemaVersion)
+	    m_schemaName(schemaName)
 	{
 	}
 
@@ -23,11 +21,10 @@ namespace Assets
 	    std::string_view reason) const
 	{
 		return Diagnostics::Error(std::format(
-		    "Cooked asset load failed: asset='{}', path='{}', schema='{}', version={}, record='{}', expected='{}', reason='{}'",
+		    "Cooked asset load failed: asset='{}', path='{}', schema='{}', record='{}', expected='{}', reason='{}'",
 		    m_assetId,
 		    m_path.generic_string(),
 		    m_schemaName,
-		    m_schemaVersion,
 		    recordKind,
 		    expectedFeature,
 		    reason));

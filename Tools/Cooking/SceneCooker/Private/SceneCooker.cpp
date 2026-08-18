@@ -20,7 +20,6 @@
 #include "SourceImportOutput.h"
 
 #include "Core/Public/Diagnostics/Error.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <fstream>
 #include <optional>
@@ -49,7 +48,6 @@ void SceneCookPipeline::ResetManifest(CookedSceneBuild& build)
 void SceneCookPipeline::FinalizeManifestHeader(CookedSceneBuild& build) noexcept
 {
 	Assets::CookedSceneManifestHeader& header = build.manifest.header;
-	header.coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
 	header.meshAssetReferenceCount = static_cast<std::uint32_t>(build.manifest.meshAssetReferences.size());
 	header.materialAssetReferenceCount = static_cast<std::uint32_t>(build.manifest.materialAssetReferences.size());
 	header.instanceCount = static_cast<std::uint32_t>(build.manifest.instances.size());
@@ -74,10 +72,6 @@ CookedSceneIdentity SceneCooker::ResolveSceneIdentity(const std::filesystem::pat
 
 void SceneCooker::BuildManifest(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild)
 {
-	if (!importOutput.HasCanonicalCoordinates())
-	{
-		throw Diagnostics::Error("Source import output does not satisfy the current world-coordinate contract.");
-	}
 	SceneCookPipeline::ResetManifest(outBuild);
 
 	CookedSceneSkeletonBuilder::BuildSkeletons(importOutput, outBuild.identity.assetId, outBuild);

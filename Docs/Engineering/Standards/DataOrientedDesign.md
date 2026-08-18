@@ -31,6 +31,23 @@ If these facts are unknown, inspect or measure them before choosing a layout.
 - Regenerated content publishes only the newest supported representation.
 - A generation for stale-handle or lifetime rejection is not content compatibility versioning.
 
+## Single-Truth and Copy Budget
+
+> **Default rule: reference, view, handle, or move. A data copy requires a named boundary reason.**
+
+Do not introduce a struct, DTO, cache, snapshot, resolved-state object, copied default, or forwarding packet merely because passing the owner's data is inconvenient. Every additional value holder increases the state that readers and debuggers must classify and creates a possible stale truth.
+
+For each material copy or new holder, identify:
+
+- the authoritative source and the single direction in which data flows;
+- why a reference, `std::span`, view, stable handle/ID, or ownership move cannot satisfy the consumer;
+- the exact scope or epoch, producer, consumers, publication point, and invalidation or reclamation rule;
+- copied bytes, element cardinality, and copy cadence when the path is large, repeated, or frame-hot.
+
+Copies are justified only by a real consumption boundary such as immutable frame/task publication, thread isolation, source-lifetime decoupling, atomic editing/commit, serialization, or a required CPU/GPU ABI. Keep such values immutable after publication, name the boundary or lifetime in the type or variable, resolve them once per epoch, and do not permit mutation or writeback to create a second authority.
+
+Reject convenience mirrors, persistent copies of another owner's settings, parallel mutable read models, repeated resolution of the same snapshot within one epoch, and wrapper objects that only relay copied fields. A short-lived parser buffer or UI edit draft is not authority: keep it local, publish it through the owner once, and discard it. When no boundary reason survives review, remove the holder and read the owner directly.
+
 ## Layout Selection
 
 Choose AoS, SoA, AoSoA, sparse set, archetype chunk, indexed table, flat stream, packed record, or object ownership from observed access:
@@ -116,4 +133,3 @@ When a real neural feature is selected, inventory offline and runtime data:
 Feature-private bounded descriptors are preferred over a generic engine tensor primitive. Artifacts are immutable, validated, provenance-tracked, and contain no training framework state. Parse and resolve them outside frame-hot work; keep training dependencies out of runtime packages. Persistent weights follow renderer/RHI retirement, dynamic intermediates use declared frame-graph resources, and the classical path remains a tested product fallback.
 
 Quality metrics require visual/temporal failure cases and dataset scope. Choose a model/kernel configuration from the quality-performance-memory frontier rather than one isolated metric.
-

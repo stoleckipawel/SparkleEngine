@@ -15,8 +15,11 @@ namespace Assets
 {
 	class CookedAssetByteReader final
 	{
-	  public:
-		explicit CookedAssetByteReader(std::span<const std::uint8_t> bytes) noexcept : m_bytes(bytes) {}
+	public:
+		explicit CookedAssetByteReader(std::span<const std::uint8_t> bytes) noexcept :
+		    m_bytes(bytes)
+		{
+		}
 
 		template <typename T> T Read()
 		{
@@ -35,25 +38,33 @@ namespace Assets
 
 		template <typename T> std::vector<T> ReadArray(std::size_t elementCount)
 		{
-			static_assert(std::is_trivially_copyable_v<T>, "CookedAssetByteReader::ReadArray accepts only trivially copyable element types.");
+			static_assert(
+			    std::is_trivially_copyable_v<T>,
+			    "CookedAssetByteReader::ReadArray accepts only trivially copyable element types.");
 
-			if (elementCount > (std::numeric_limits<std::size_t>::max)() / sizeof(T))
-			{
-				throw Diagnostics::Error("Cooked asset array byte count exceeds the host address range.");
-			}
-			const std::size_t byteCount = sizeof(T) * elementCount;
-			if (byteCount > m_bytes.size() - m_offset)
-			{
-				throw Diagnostics::Error("Unexpected end of cooked asset array data.");
-			}
-
+			const std::span<const std::uint8_t> bytes = ReadArrayBytes<T>(elementCount);
 			std::vector<T> values(elementCount);
-			if (byteCount > 0)
-			{
-				std::memcpy(values.data(), m_bytes.data() + m_offset, byteCount);
-				m_offset += byteCount;
-			}
+			if (!bytes.empty())
+				std::memcpy(values.data(), bytes.data(), bytes.size_bytes());
+			return values;
+		}
 
+		template <typename T> std::span<const std::uint8_t> ReadArrayBytes(std::size_t elementCount)
+		{
+			static_assert(
+			    std::is_trivially_copyable_v<T>,
+			    "CookedAssetByteReader::ReadArrayBytes accepts only trivially copyable element types.");
+			if (elementCount > (std::numeric_limits<std::size_t>::max)() / sizeof(T))
+				throw Diagnostics::Error("Cooked asset array byte count exceeds the host address range.");
+			return ReadBytes(sizeof(T) * elementCount);
+		}
+
+		std::span<const std::uint8_t> ReadBytes(std::size_t byteCount)
+		{
+			if (byteCount > m_bytes.size() - m_offset)
+				throw Diagnostics::Error("Unexpected end of cooked asset data.");
+			const std::span<const std::uint8_t> values = m_bytes.subspan(m_offset, byteCount);
+			m_offset += byteCount;
 			return values;
 		}
 
@@ -71,7 +82,7 @@ namespace Assets
 
 		std::size_t GetRemainingByteCount() const noexcept { return m_bytes.size() - m_offset; }
 
-	  private:
+	private:
 		std::span<const std::uint8_t> m_bytes;
 		std::size_t m_offset = 0;
 	};

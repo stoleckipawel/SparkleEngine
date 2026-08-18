@@ -42,26 +42,5 @@ target_link_libraries(SourceImporters
         assimp::assimp
 )
 
-add_executable(WorldCoordinateImportTests
-    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/WorldCoordinateImportTests.cpp
-)
-target_include_directories(WorldCoordinateImportTests
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private
-        ${CMAKE_SOURCE_DIR}/Engine
-)
-target_link_libraries(WorldCoordinateImportTests
-    PRIVATE
-        SourceImporters
-        assimp::assimp
-        cgltf
-)
-target_compile_features(WorldCoordinateImportTests PRIVATE cxx_std_20)
-add_test(NAME world_coordinate_import COMMAND WorldCoordinateImportTests ${CMAKE_SOURCE_DIR})
-set_tests_properties(world_coordinate_import PROPERTIES LABELS "Import;Coordinates;Animation")
-
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SOURCE_IMPORTER_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SOURCE_IMPORTER_PRIVATE_SOURCES} ${SOURCE_IMPORTER_PRIVATE_HEADERS})
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Tests PREFIX "Tests" FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Tests/WorldCoordinateImportTests.cpp
-)

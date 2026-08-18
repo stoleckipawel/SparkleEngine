@@ -4,7 +4,7 @@ Status: binding domain integration standard
 
 Applies to: Editor, ImGui, UI/render boundaries, cooking, import, compilation, capture, and background operations
 
-Import and cooking must publish the canonical basis, units, spaces, and versioned artifacts defined by the [World Coordinate, Units, and Transform Contract](../../Architecture/WorldCoordinateAndUnits.md).
+Import and cooking must publish the one current canonical basis, units, spaces, and artifact representation defined by the [World Coordinate, Units, and Transform Contract](../../Architecture/WorldCoordinateAndUnits.md). Owned output is regenerated from source when that contract changes; tools do not add or preserve internal compatibility versions, migration readers, or legacy artifacts.
 
 ## Editor Ownership
 

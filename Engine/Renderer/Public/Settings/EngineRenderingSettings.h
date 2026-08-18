@@ -28,10 +28,6 @@ struct EngineRenderingSettingsState final
 	float ExposureMax = 65536.0f;
 	float ExposureAdaptationSpeedUp = 3.0f;
 	float ExposureAdaptationSpeedDown = 1.0f;
-	std::uint32_t MaxDirectionalLights = 2;
-	std::uint32_t MaxPointLights = 512;
-	std::uint32_t MaxSpotLights = 512;
-	std::uint32_t MaxRectLights = 128;
 	EUpscalerProviderKind UpscalerProvider = EUpscalerProviderKind::Linear;
 	EUpscalerQualityMode UpscalerQualityMode = EUpscalerQualityMode::NativeAA;
 	EngineRayReconstructionMode RayReconstructionMode = EngineRayReconstructionMode::Off;
@@ -49,7 +45,7 @@ struct EngineRenderingSettingsState final
 
 class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 {
-  public:
+public:
 	using CommitHandler = std::function<void(EngineRenderingSettingsState)>;
 
 	EngineRenderingSettingsSection();
@@ -79,10 +75,6 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 	void SetExposureMax(float exposure);
 	void SetExposureAdaptationSpeedUp(float speed);
 	void SetExposureAdaptationSpeedDown(float speed);
-	void SetMaxDirectionalLights(std::uint32_t count);
-	void SetMaxPointLights(std::uint32_t count);
-	void SetMaxSpotLights(std::uint32_t count);
-	void SetMaxRectLights(std::uint32_t count);
 	void SetUpscalerProvider(EUpscalerProviderKind provider);
 	void SetUpscalerQualityMode(EUpscalerQualityMode mode);
 	void SetRayReconstructionMode(EngineRayReconstructionMode mode);
@@ -97,9 +89,8 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 	void SetPtlasModeChangeDistance(float distance);
 	void SetRenderViewMode(RenderViewMode viewMode);
 
-  private:
-	template <typename TValue>
-	void SetValue(TValue& destination, TValue value)
+private:
+	template <typename TValue> void SetValue(TValue& destination, TValue value)
 	{
 		if (destination == value)
 		{
@@ -110,15 +101,14 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 	}
 
 	void CommitState();
-	EngineRenderingSettingsState CaptureRuntimeState() const noexcept;
-	bool ComputePendingRestart(const EngineRenderingSettingsState& baseline, const EngineRenderingSettingsState& current) const noexcept;
-	std::string DescribePendingRestart(const EngineRenderingSettingsState& baseline, const EngineRenderingSettingsState& current) const;
+	bool ComputePendingRestart() const noexcept;
+	std::string DescribePendingRestart() const;
 
 	EngineRenderingSettingsState m_state{};
-	EngineRenderingSettingsState m_sessionBaseline{};
+	PixelFormat m_sessionBackBufferFormat = RhiPresentationDefaults::DefaultBackBufferFormat;
+	bool m_sessionPreferHighPerformanceAdapter = true;
 	CommitHandler m_commitHandler;
 };
 
 SPARKLE_RENDERER_API void ApplyPersistedEngineRenderingSettingsToCVars() noexcept;
-SPARKLE_RENDERER_API void ApplyEngineRenderingSettingsStateToCVars(
-    const EngineRenderingSettingsState& state) noexcept;
+SPARKLE_RENDERER_API void ApplyEngineRenderingSettingsStateToCVars(const EngineRenderingSettingsState& state) noexcept;

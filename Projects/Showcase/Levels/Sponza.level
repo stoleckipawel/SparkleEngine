@@ -8,7 +8,6 @@ PitchRadians = -0.575296998
 FovYDegrees = 66.9000015
 NearZ = 0.100000001
 FarZ = 1000
-MoveSpeed = 0.00999999978
 
 [Lighting]
 DirectionalLight0Name = Directional Light 1

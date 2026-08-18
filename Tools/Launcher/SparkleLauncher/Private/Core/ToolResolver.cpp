@@ -427,7 +427,7 @@ namespace SparkleLauncher
 			fileName += ".exe";
 		}
 #endif
-		if (executableName == "SparkleLauncher" || executableName == "SparkleLauncherProbe")
+		if (executableName == "SparkleLauncher")
 		{
 			return GetLauncherArtifactDirectory(repositoryRoot, profileName) / fileName;
 		}

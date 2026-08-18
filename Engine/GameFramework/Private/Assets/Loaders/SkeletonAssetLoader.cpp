@@ -18,20 +18,19 @@ namespace Assets
 {
 	LoadedSkeletonAsset SkeletonAssetLoader::Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const
 	{
-		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedSkeletonAsset", kCookedSkeletonAssetVersion);
+		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedSkeletonAsset");
 
 		CookedAssetByteReader reader(bytes);
 		LoadedSkeletonAsset skeletonAsset;
 		skeletonAsset.header = reader.Read<CookedSkeletonAssetHeader>();
 
-		if (!skeletonAsset.header.fileHeader.Matches(kCookedSkeletonAssetMagic, kCookedSkeletonAssetVersion)
-		    || skeletonAsset.header.coordinateContractVersion != WorldCoordinates::kCoordinateContractVersion
+		if (!skeletonAsset.header.fileHeader.HasMagic(kCookedSkeletonAssetMagic)
 		    || skeletonAsset.header.jointStride != sizeof(CookedSkeletonJointRecord))
 		{
 			throw diagnostics.MakeError(
 			    "header",
-			    "skeleton magic/version, current coordinate contract, and joint stride",
-			    "Invalid cooked skeleton asset header; recook the spatial asset");
+			    "skeleton magic and current joint stride",
+			    "Invalid cooked skeleton asset header; recook the asset");
 		}
 
 		skeletonAsset.joints = reader.ReadArray<CookedSkeletonJointRecord>(skeletonAsset.header.jointCount);

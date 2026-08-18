@@ -52,7 +52,7 @@ namespace ECS
 	{
 		UpdateInputs,
 		CameraInputIntent,
-		MotionClock,
+		CameraNavigationSettings,
 		SystemChangeScratch,
 		AnimationClips,
 		SkeletonResources,

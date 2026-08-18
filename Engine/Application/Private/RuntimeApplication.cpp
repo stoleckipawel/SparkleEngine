@@ -14,19 +14,20 @@
 #include "CVars/RHICVars.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 
-
 #include <imgui.h>
 
 bool RuntimeApplication::WantsImGuiInputCapture() noexcept
 {
 	const ImGuiContext* currentContext = ImGui::GetCurrentContext();
-	return currentContext != nullptr &&
-	       (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
+	return currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
 }
 
 RuntimeApplication::RuntimeApplication() = default;
 
-RuntimeApplication::RuntimeApplication(RuntimeApplicationOptions options) noexcept : m_options(options) {}
+RuntimeApplication::RuntimeApplication(RuntimeApplicationOptions options) noexcept :
+    m_options(options)
+{
+}
 
 RuntimeApplication::~RuntimeApplication() = default;
 
@@ -60,9 +61,15 @@ Renderer& RuntimeApplication::GetRenderer() noexcept
 	return *m_renderer;
 }
 
-TaskExecutor& RuntimeApplication::GetTaskExecutor() noexcept { return m_taskRuntime->GetExecutor(); }
+TaskExecutor& RuntimeApplication::GetTaskExecutor() noexcept
+{
+	return m_taskRuntime->GetExecutor();
+}
 
-TaskScope& RuntimeApplication::GetApplicationTaskScope() noexcept { return m_taskRuntime->GetApplicationScope(); }
+TaskScope& RuntimeApplication::GetApplicationTaskScope() noexcept
+{
+	return m_taskRuntime->GetApplicationScope();
+}
 
 void RuntimeApplication::Initialize()
 {
@@ -97,22 +104,14 @@ void RuntimeApplication::InitializeGameRuntime()
 	m_taskRuntime = std::make_unique<ApplicationTaskRuntime>();
 	m_gameWorld = std::make_unique<GameWorld>(m_taskRuntime->GetExecutor());
 	m_cameraInputIntentCollector = std::make_unique<CameraInputIntentCollector>(*m_inputSystem, *m_window);
-	if (m_options.EnableOscillatingMeshMotion)
-	{
-		m_gameWorld->EnableOscillatingMeshMotion();
-	}
 
-	m_levelSession = std::make_unique<LevelSession>(
-	    *m_gameWorld,
-	    m_taskRuntime->GetExecutor(),
-	    m_taskRuntime->GetApplicationScope());
+	m_levelSession = std::make_unique<LevelSession>(*m_gameWorld, m_taskRuntime->GetExecutor(), m_taskRuntime->GetApplicationScope());
 }
 
 void RuntimeApplication::InitializeRenderer()
 {
 	RendererExecutionConfig rendererConfig;
-	if (m_options.AllowThreadedRenderer &&
-	    ConcurrencyLaunchCVars::UseThreadedRenderer())
+	if (m_options.AllowThreadedRenderer && ConcurrencyLaunchCVars::UseThreadedRenderer())
 	{
 		rendererConfig.Mode = RendererExecutionMode::Threaded;
 		rendererConfig.RenderPipelineDepth = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth();
@@ -122,12 +121,12 @@ void RuntimeApplication::InitializeRenderer()
 			    Logging::GetOrCreateLogger("Application.Concurrency"),
 			    __FILE__,
 			    __LINE__,
-			    "r.RenderPipelineDepth must be lower than r.MaximumFramesInFlight so queued simulation frames have distinct GPU frame slots.");
+			    "r.RenderPipelineDepth must be lower than r.MaximumFramesInFlight so queued simulation frames have distinct GPU frame "
+			    "slots.");
 		}
 	}
 
-	rendererConfig.EnableUiRenderPackets =
-	    m_options.EnableUiRenderPackets || m_options.EnableRuntimeConsole;
+	rendererConfig.EnableUiRenderPackets = m_options.EnableUiRenderPackets || m_options.EnableRuntimeConsole;
 	rendererConfig.AssetTaskExecutor = &m_taskRuntime->GetExecutor();
 	rendererConfig.ApplicationTaskScope = &m_taskRuntime->GetApplicationScope();
 	m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
@@ -174,33 +173,58 @@ RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 
 void RuntimeApplication::UpdateRuntime() noexcept
 {
+	const float width = static_cast<float>(m_window->GetWidth());
+	const float height = static_cast<float>(m_window->GetHeight());
+	const CameraInputIntent cameraIntent = CollectCameraInputIntent(height > 0.0f ? width / height : 1.0f);
+	UpdateRuntimeFrame(&cameraIntent, nullptr);
+}
+
+CameraInputIntent RuntimeApplication::CollectCameraInputIntent(float aspectRatio) noexcept
+{
+	return m_cameraInputIntentCollector != nullptr ? m_cameraInputIntentCollector->Collect(aspectRatio) : CameraInputIntent{};
+}
+
+void RuntimeApplication::UpdateEditorRuntime(const RenderCameraData& renderCamera) noexcept
+{
+	UpdateRuntimeFrame(nullptr, &renderCamera);
+}
+
+void RuntimeApplication::UpdateRuntimeFrame(
+    const CameraInputIntent* worldCameraIntent,
+    const RenderCameraData* renderCameraOverride) noexcept
+{
 	if (m_gameWorld && m_timer)
 	{
 		const std::uint64_t frameId = m_timer->GetFrameCount();
 		m_renderer->BeginSimulationFrame(frameId);
-		m_cameraInputIntentCollector->Publish(*m_gameWorld);
+		m_gameWorld->PublishCameraInputIntent(worldCameraIntent != nullptr ? *worldCameraIntent : CameraInputIntent{});
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 		m_gameWorld->Update(deltaSeconds);
 		m_renderer->EndSimulationFrame(frameId);
-		SubmitWorldRenderInput(frameId);
+		SubmitWorldRenderInput(frameId, renderCameraOverride);
 	}
 }
 
-void RuntimeApplication::SubmitWorldRenderInput(std::uint64_t frameId)
+void RuntimeApplication::SubmitWorldRenderInput(std::uint64_t frameId, const RenderCameraData* renderCameraOverride)
 {
 	RenderFrameMetadata metadata;
 	metadata.FrameId = frameId;
 	metadata.ProviderGeneration = m_renderer->GetShaderPackageGeneration();
 	metadata.RenderWidth = metadata.OutputWidth = m_window->GetWidth();
 	metadata.RenderHeight = metadata.OutputHeight = m_window->GetHeight();
-	m_renderer->SubmitRenderInput(m_gameWorld->ExtractRenderInput(metadata));
+	RenderInputFrame input = m_gameWorld->ExtractRenderInput(metadata);
+	if (renderCameraOverride != nullptr)
+	{
+		input.Dynamic.Camera = *renderCameraOverride;
+	}
+	m_renderer->SubmitRenderInput(std::move(input));
 }
 
-void RuntimeApplication::SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
+void RuntimeApplication::SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept
 {
 	if (m_renderer)
 	{
-		m_renderer->SubmitViewportRenderRequest(request);
+		m_renderer->SubmitViewportRenderRequest(std::move(request));
 	}
 }
 
@@ -229,12 +253,7 @@ bool RuntimeApplication::Tick()
 
 	if (m_runtimeConsoleHost != nullptr)
 	{
-		m_runtimeConsoleHost->TickFrame(
-		    *m_renderer,
-		    [this]()
-		    {
-			    UpdateRuntime();
-		    });
+		m_runtimeConsoleHost->TickFrame(*m_renderer, [this]() { UpdateRuntime(); });
 	}
 	else
 	{

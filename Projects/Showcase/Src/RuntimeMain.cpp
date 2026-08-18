@@ -2,7 +2,5 @@
 
 int main()
 {
-	return RunRuntimeApplication(
-	    RuntimeApplicationOptions{
-	        .EnableOscillatingMeshMotion = true});
+	return RunRuntimeApplication();
 }

@@ -3,6 +3,7 @@
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Resources/History/FrameHistory.h"
+#include "Frame/Presentation/ViewportDisplaySettings.h"
 
 #include "ShaderData/PerFrameConstantBufferData.h"
 #include "RayTracing/Scene/RayTracingPassContext.h"
@@ -23,6 +24,7 @@ struct PassRuntimeContext
 	RenderHardwareInterface& HardwareInterface;
 	const RenderPassRuntimeCache& PassRuntimes;
 	const PerFrameConstantBufferData& PerFrame;
+	const ResolvedViewportDisplaySettings& DisplaySettings;
 	FrameHistoryValidity History = {};
 	const GpuMeshCache* Meshes = nullptr;
 	const TextureCache* Textures = nullptr;

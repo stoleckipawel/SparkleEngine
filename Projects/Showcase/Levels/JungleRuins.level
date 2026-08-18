@@ -8,7 +8,6 @@ PitchRadians = 0
 FovYDegrees = 66.9
 NearZ = 0.1
 FarZ = 10000
-MoveSpeed = 0.05
 
 [Lighting]
 DirectionalLight0Direction = -0.44, -0.88, 0.14

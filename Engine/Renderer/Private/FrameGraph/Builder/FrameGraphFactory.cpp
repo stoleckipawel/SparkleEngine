@@ -21,14 +21,11 @@ FrameGraphBuildResult::FrameGraphBuildResult(FrameGraphBuildResult&&) noexcept =
 FrameGraphBuildResult& FrameGraphBuildResult::operator=(FrameGraphBuildResult&&) noexcept = default;
 
 FrameGraphFactory::FrameGraphFactory(const FrameGraphDependencies& dependencies) noexcept :
-	m_dependencies(dependencies)
+    m_dependencies(dependencies)
 {
 }
 
-void FrameGraphFactory::ExportTextureIfValid(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle handle,
-    std::string_view name) noexcept
+void FrameGraphFactory::ExportTextureIfValid(FrameGraphBuilder& builder, FrameGraphTextureHandle handle, std::string_view name) noexcept
 {
 	if (handle.IsValid())
 	{
@@ -36,9 +33,7 @@ void FrameGraphFactory::ExportTextureIfValid(
 	}
 }
 
-void FrameGraphFactory::ExportFrameProductRoots(
-    FrameGraphBuilder& builder,
-    const FrameAssemblyResourceLayout& resources) noexcept
+void FrameGraphFactory::ExportFrameProductRoots(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources) noexcept
 {
 	ExportTextureIfValid(builder, resources.ViewportProducts.SceneColor, "Viewport.SceneColor");
 	ExportTextureIfValid(builder, resources.ViewportProducts.FinalSceneColor, "Viewport.FinalSceneColor");
@@ -50,16 +45,16 @@ void FrameGraphFactory::ExportFrameProductRoots(
 
 FrameGraphBuildResult FrameGraphFactory::Build() const
 {
-	auto frameGraph =
-	    std::make_unique<FrameGraph>(&m_dependencies.renderHardwareInterface, &m_dependencies.window);
+	auto frameGraph = std::make_unique<FrameGraph>(&m_dependencies.renderHardwareInterface, &m_dependencies.window);
 
 	FrameGraphBuilder builder(*frameGraph, m_dependencies.renderPassRuntimeCache);
-	const FrameBuildResult frameLoop = BuildFrame(
-	    builder,
-	    m_dependencies.renderExtent,
-	    m_dependencies.outputExtent,
-	    m_dependencies.renderHardwareInterface.GetPresentationService().GetPresentColorFormat(),
-	    m_dependencies.presentSceneToBackBuffer);
+	const FrameBuildSettings settings{
+	    .RenderExtent = m_dependencies.renderExtent,
+	    .OutputExtent = m_dependencies.outputExtent,
+	    .OutputFormat = m_dependencies.renderHardwareInterface.GetPresentationService().GetPresentColorFormat(),
+	    .ExposureMeteringMethod = m_dependencies.exposureMeteringMethod,
+	    .PresentationTarget = m_dependencies.presentationTarget};
+	const FrameBuildResult frameLoop = BuildFrame(builder, settings);
 
 	ExportFrameProductRoots(builder, frameLoop.Resources);
 

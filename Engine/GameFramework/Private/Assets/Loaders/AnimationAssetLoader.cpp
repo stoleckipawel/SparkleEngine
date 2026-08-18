@@ -55,22 +55,21 @@ namespace Assets
 {
 	LoadedAnimationAsset AnimationAssetLoader::Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const
 	{
-		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedAnimationAsset", kCookedAnimationAssetVersion);
+		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedAnimationAsset");
 
 		CookedAssetByteReader reader(bytes);
 		LoadedAnimationAsset animationAsset;
 		animationAsset.header = reader.Read<CookedAnimationAssetHeader>();
 
-		if (!animationAsset.header.fileHeader.Matches(kCookedAnimationAssetMagic, kCookedAnimationAssetVersion)
-		    || animationAsset.header.coordinateContractVersion != WorldCoordinates::kCoordinateContractVersion
+		if (!animationAsset.header.fileHeader.HasMagic(kCookedAnimationAssetMagic)
 		    || animationAsset.header.channelStride != sizeof(CookedAnimationChannelRecord)
 		    || animationAsset.header.keyframeStride != sizeof(CookedAnimationKeyframeRecord)
 		    || !Strings::IsNullTerminated(std::span(animationAsset.header.name)))
 		{
 			throw diagnostics.MakeError(
 			    "header",
-			    "animation magic/version, current coordinate contract, and channel/keyframe strides",
-			    "Invalid cooked animation asset header; recook the spatial asset");
+			    "animation magic and current channel/keyframe strides",
+			    "Invalid cooked animation asset header; recook the asset");
 		}
 
 		animationAsset.channels = reader.ReadArray<CookedAnimationChannelRecord>(animationAsset.header.channelCount);

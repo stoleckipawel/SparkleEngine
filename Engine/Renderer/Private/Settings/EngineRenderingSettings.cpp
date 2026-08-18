@@ -2,277 +2,12 @@
 
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
-#include "Core/Public/Console/CVar.h"
-#include "Core/Public/Console/CVarRegistry.h"
-#include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Strings/StringUtils.h"
-#include "Frame/Presentation/ToneMappingCVars.h"
-#include "Lighting/LightingCVars.h"
-#include "RayReconstruction/RayReconstructionSettings.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
-#include "RHI/Public/CVars/RHICVars.h"
-#include "Upscaling/UpscalerSettings.h"
+#include "Settings/EngineRenderingSettingsPersistence.h"
+#include "Settings/EngineRenderingSettingsRuntime.h"
 
-#include <filesystem>
-#include <fstream>
 #include <sstream>
-#include <string>
-#include <system_error>
 #include <utility>
 #include <vector>
-
-class RenderingSettingsPersistence final
-{
-  public:
-	static constexpr std::string_view kRenderingSettingsSection = "/Script/SparkleRenderer.EngineRenderingSettings";
-
-	static std::filesystem::path GetRenderingSettingsConfigPath()
-	{
-		return Filesystem::GetWorkspaceRootPath() / "Config" / "DefaultEngine.ini";
-	}
-
-	template <typename OnValue> static void LoadRenderingSettingsConfigValues(OnValue&& onValue)
-	{
-		std::ifstream input(GetRenderingSettingsConfigPath());
-		if (!input.is_open())
-		{
-			return;
-		}
-
-		bool inTargetSection = false;
-		for (std::string line; std::getline(input, line);)
-		{
-			const std::string trimmed = Strings::TrimCopy(line);
-			if (trimmed.empty() || trimmed.starts_with(';') || trimmed.starts_with('#'))
-			{
-				continue;
-			}
-
-			if (trimmed.starts_with('[') && trimmed.ends_with(']'))
-			{
-				inTargetSection = trimmed.size() > 2 && trimmed.substr(1, trimmed.size() - 2) == kRenderingSettingsSection;
-				continue;
-			}
-
-			if (!inTargetSection)
-			{
-				continue;
-			}
-
-			const std::size_t separator = trimmed.find('=');
-			if (separator == std::string::npos)
-			{
-				continue;
-			}
-
-			onValue(std::string_view(trimmed).substr(0, separator), std::string_view(trimmed).substr(separator + 1));
-		}
-	}
-
-	static void WriteRenderingSettingsConfigValues(const std::vector<std::pair<std::string, std::string>>& values)
-	{
-		const std::filesystem::path configPath = GetRenderingSettingsConfigPath();
-		std::error_code errorCode;
-		std::filesystem::create_directories(configPath.parent_path(), errorCode);
-
-		std::vector<std::string> lines;
-		{
-			std::ifstream input(configPath);
-			for (std::string line; std::getline(input, line);)
-			{
-				lines.push_back(std::move(line));
-			}
-		}
-
-		std::vector<std::string> sectionLines;
-		sectionLines.emplace_back("[" + std::string(kRenderingSettingsSection) + "]");
-		for (const auto& [key, value] : values)
-		{
-			sectionLines.emplace_back(key + "=" + value);
-		}
-
-		std::size_t sectionStart = lines.size();
-		std::size_t sectionEnd = lines.size();
-		for (std::size_t index = 0; index < lines.size(); ++index)
-		{
-			const std::string trimmed = Strings::TrimCopy(lines[index]);
-			if (!trimmed.starts_with('[') || !trimmed.ends_with(']'))
-			{
-				continue;
-			}
-
-			if (trimmed.size() > 2 && trimmed.substr(1, trimmed.size() - 2) == kRenderingSettingsSection)
-			{
-				sectionStart = index;
-				sectionEnd = index + 1;
-				while (sectionEnd < lines.size())
-				{
-					const std::string nextTrimmed = Strings::TrimCopy(lines[sectionEnd]);
-					if (nextTrimmed.starts_with('[') && nextTrimmed.ends_with(']'))
-					{
-						break;
-					}
-					++sectionEnd;
-				}
-				break;
-			}
-		}
-
-		if (sectionStart < lines.size())
-		{
-			lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(sectionStart), lines.begin() + static_cast<std::ptrdiff_t>(sectionEnd));
-			lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(sectionStart), sectionLines.begin(), sectionLines.end());
-		}
-		else
-		{
-			if (!lines.empty() && !Strings::TrimCopy(lines.back()).empty())
-			{
-				lines.emplace_back();
-			}
-			lines.insert(lines.end(), sectionLines.begin(), sectionLines.end());
-		}
-
-		std::ofstream output(configPath, std::ios::trunc);
-		for (const std::string& line : lines)
-		{
-			output << line << '\n';
-		}
-	}
-
-	static constexpr std::string_view kPersistedRenderingCVarNames[] = {
-	    "r.VSync",
-	    "r.BackBufferFormat",
-	    "r.PreferHighPerformanceAdapter",
-	    "r.ToneMapper",
-	    "r.Exposure.Mode",
-	    "r.Exposure.MeteringMethod",
-	    "r.OutputColorEncoding",
-	    "r.Exposure.Manual",
-	    "r.Exposure.Compensation",
-	    "r.Exposure.TargetLuminance",
-	    "r.Exposure.Min",
-	    "r.Exposure.Max",
-	    "r.Exposure.AdaptationSpeedUp",
-	    "r.Exposure.AdaptationSpeedDown",
-	    "r.Lighting.MaxDirectionalLights",
-	    "r.Lighting.MaxPointLights",
-	    "r.Lighting.MaxSpotLights",
-	    "r.Lighting.MaxRectLights",
-	    "r.MeshAutoBatching",
-	    "r.Upscaler.Provider",
-	    "r.Upscaler.QualityMode",
-	    "r.RayReconstruction.Mode",
-	    "r.GBuffer.Mode",
-	    "r.Lighting.Mode",
-	    "r.RayTracing.Tlas.Refit",
-	    "r.RayTracing.PreferPartitionedTlas",
-	    "r.RayTracing.Ptlas.PartitionsPerAxis",
-	    "r.RayTracing.Ptlas.PartitionUpdateMode",
-	    "r.RayTracing.Ptlas.MarkAllDynamicInPartition",
-	    "r.RayTracing.Ptlas.ModeChangeDistance"};
-
-	static bool IsPersistedRenderingCVarName(std::string_view name) noexcept
-	{
-		for (const std::string_view persistedName : kPersistedRenderingCVarNames)
-		{
-			if (name == persistedName)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	static ConsoleVariableBase* FindPersistedRenderingCVar(std::string_view key) noexcept
-	{
-		const std::string trimmedKey = Strings::TrimCopy(key);
-		if (!IsPersistedRenderingCVarName(trimmedKey))
-		{
-			return nullptr;
-		}
-
-		return ConsoleVariableRegistry::Get().Find(trimmedKey);
-	}
-
-	static void ApplyRenderingSettingsConfigValue(std::string_view key, std::string_view value)
-	{
-		ConsoleVariableBase* variable = FindPersistedRenderingCVar(key);
-		if (variable == nullptr)
-		{
-			return;
-		}
-
-		const std::string trimmedValue = Strings::TrimCopy(value);
-		std::string errorMessage;
-		(void) variable->TrySetValueFromString(trimmedValue, errorMessage);
-	}
-
-	template <typename TValue>
-	static std::string PersistedValue(TValue value)
-	{
-		if constexpr (std::is_enum_v<TValue>)
-		{
-			return std::to_string(static_cast<std::underlying_type_t<TValue>>(value));
-		}
-		else if constexpr (std::is_same_v<TValue, bool>)
-		{
-			return value ? "1" : "0";
-		}
-		else
-		{
-			return std::to_string(value);
-		}
-	}
-
-	static std::vector<std::pair<std::string, std::string>> BuildRenderingSettingsConfigValues(
-	    const EngineRenderingSettingsState& state)
-	{
-		std::vector<std::pair<std::string, std::string>> values;
-		values.reserve(sizeof(kPersistedRenderingCVarNames) / sizeof(kPersistedRenderingCVarNames[0]));
-		values.emplace_back("r.VSync", PersistedValue(state.VSync));
-		values.emplace_back("r.BackBufferFormat", PersistedValue(state.BackBufferFormat));
-		values.emplace_back("r.PreferHighPerformanceAdapter", PersistedValue(state.PreferHighPerformanceAdapter));
-		values.emplace_back("r.ToneMapper", PersistedValue(state.ToneMapper));
-		values.emplace_back("r.Exposure.Mode", PersistedValue(state.ExposureMode));
-		values.emplace_back("r.Exposure.MeteringMethod", PersistedValue(state.ExposureMeteringMethod));
-		values.emplace_back("r.OutputColorEncoding", PersistedValue(state.OutputColorEncoding));
-		values.emplace_back("r.Exposure.Manual", PersistedValue(state.ManualExposure));
-		values.emplace_back("r.Exposure.Compensation", PersistedValue(state.ExposureCompensation));
-		values.emplace_back("r.Exposure.TargetLuminance", PersistedValue(state.ExposureTargetLuminance));
-		values.emplace_back("r.Exposure.Min", PersistedValue(state.ExposureMin));
-		values.emplace_back("r.Exposure.Max", PersistedValue(state.ExposureMax));
-		values.emplace_back("r.Exposure.AdaptationSpeedUp", PersistedValue(state.ExposureAdaptationSpeedUp));
-		values.emplace_back("r.Exposure.AdaptationSpeedDown", PersistedValue(state.ExposureAdaptationSpeedDown));
-		values.emplace_back("r.Lighting.MaxDirectionalLights", PersistedValue(state.MaxDirectionalLights));
-		values.emplace_back("r.Lighting.MaxPointLights", PersistedValue(state.MaxPointLights));
-		values.emplace_back("r.Lighting.MaxSpotLights", PersistedValue(state.MaxSpotLights));
-		values.emplace_back("r.Lighting.MaxRectLights", PersistedValue(state.MaxRectLights));
-		values.emplace_back("r.MeshAutoBatching", PersistedValue(state.MeshAutoBatching));
-		values.emplace_back("r.Upscaler.Provider", PersistedValue(state.UpscalerProvider));
-		values.emplace_back("r.Upscaler.QualityMode", PersistedValue(state.UpscalerQualityMode));
-		values.emplace_back("r.RayReconstruction.Mode", PersistedValue(state.RayReconstructionMode));
-		values.emplace_back("r.GBuffer.Mode", PersistedValue(state.GBuffer));
-		values.emplace_back("r.Lighting.Mode", PersistedValue(state.Lighting));
-		values.emplace_back("r.RayTracing.Tlas.Refit", PersistedValue(state.RefitTlas));
-		values.emplace_back("r.RayTracing.PreferPartitionedTlas", PersistedValue(state.PtlasActive));
-		values.emplace_back("r.RayTracing.Ptlas.PartitionsPerAxis", PersistedValue(state.PtlasPartitionsPerAxis));
-		values.emplace_back("r.RayTracing.Ptlas.PartitionUpdateMode", PersistedValue(state.PtlasPartitionUpdateMode));
-		values.emplace_back("r.RayTracing.Ptlas.MarkAllDynamicInPartition", PersistedValue(state.PtlasMarkAllDynamicInPartition));
-		values.emplace_back("r.RayTracing.Ptlas.ModeChangeDistance", PersistedValue(state.PtlasModeChangeDistance));
-		return values;
-	}
-
-	template <typename TCVar, typename TValue> static bool SetCVarIfChanged(TCVar& cvar, const TValue& value) noexcept
-	{
-		if (cvar.Get() == value)
-		{
-			return false;
-		}
-
-		cvar.Set(value);
-		return true;
-	}
-};
 
 EngineRenderingSettingsSection::EngineRenderingSettingsSection()
 {
@@ -281,28 +16,25 @@ EngineRenderingSettingsSection::EngineRenderingSettingsSection()
 
 void EngineRenderingSettingsSection::RefreshFromRuntimeState() noexcept
 {
-	m_state = CaptureRuntimeState();
-	m_sessionBaseline = m_state;
+	m_state = EngineRenderingSettingsRuntime::Capture();
+	m_sessionBackBufferFormat = m_state.BackBufferFormat;
+	m_sessionPreferHighPerformanceAdapter = m_state.PreferHighPerformanceAdapter;
 }
 
 void EngineRenderingSettingsSection::ApplyPersistedValuesToRuntimeState() noexcept
 {
-	RenderingSettingsPersistence::LoadRenderingSettingsConfigValues(
-	    [](std::string_view key, std::string_view value)
-	    {
-		    RenderingSettingsPersistence::ApplyRenderingSettingsConfigValue(key, value);
-	    });
+	EngineRenderingSettingsRuntime::ApplyPersistedValues();
 	RefreshFromRuntimeState();
 }
 
 bool EngineRenderingSettingsSection::HasPendingRestart() const noexcept
 {
-	return ComputePendingRestart(m_sessionBaseline, m_state);
+	return ComputePendingRestart();
 }
 
 std::string EngineRenderingSettingsSection::BuildPendingRestartMessage() const
 {
-	return DescribePendingRestart(m_sessionBaseline, m_state);
+	return DescribePendingRestart();
 }
 
 void EngineRenderingSettingsSection::SetCommitHandler(CommitHandler handler)
@@ -312,8 +44,7 @@ void EngineRenderingSettingsSection::SetCommitHandler(CommitHandler handler)
 
 void EngineRenderingSettingsSection::CommitState()
 {
-	RenderingSettingsPersistence::WriteRenderingSettingsConfigValues(
-	    RenderingSettingsPersistence::BuildRenderingSettingsConfigValues(m_state));
+	EngineRenderingSettingsPersistence::Write(m_state);
 	if (m_commitHandler)
 	{
 		m_commitHandler(m_state);
@@ -392,26 +123,6 @@ void EngineRenderingSettingsSection::SetExposureAdaptationSpeedDown(float speed)
 	SetValue(m_state.ExposureAdaptationSpeedDown, speed);
 }
 
-void EngineRenderingSettingsSection::SetMaxDirectionalLights(std::uint32_t count)
-{
-	SetValue(m_state.MaxDirectionalLights, count);
-}
-
-void EngineRenderingSettingsSection::SetMaxPointLights(std::uint32_t count)
-{
-	SetValue(m_state.MaxPointLights, count);
-}
-
-void EngineRenderingSettingsSection::SetMaxSpotLights(std::uint32_t count)
-{
-	SetValue(m_state.MaxSpotLights, count);
-}
-
-void EngineRenderingSettingsSection::SetMaxRectLights(std::uint32_t count)
-{
-	SetValue(m_state.MaxRectLights, count);
-}
-
 void EngineRenderingSettingsSection::SetUpscalerProvider(EUpscalerProviderKind provider)
 {
 	SetValue(m_state.UpscalerProvider, provider);
@@ -472,67 +183,25 @@ void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
 	SetValue(m_state.PtlasModeChangeDistance, distance);
 }
 
-void EngineRenderingSettingsSection::SetRenderViewMode(
-    RenderViewMode viewMode)
+void EngineRenderingSettingsSection::SetRenderViewMode(RenderViewMode viewMode)
 {
 	SetValue(m_state.ViewMode, viewMode);
 }
 
-EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState() const noexcept
+bool EngineRenderingSettingsSection::ComputePendingRestart() const noexcept
 {
-	EngineRenderingSettingsState state;
-	state.VSync = CVarVSync.Get();
-	state.BackBufferFormat = CVarBackBufferFormat.Get();
-	state.PreferHighPerformanceAdapter = CVarPreferHighPerformanceAdapter.Get();
-	state.ToneMapper = CVarToneMapper.Get();
-	state.ExposureMode = CVarExposureMode.Get();
-	state.ExposureMeteringMethod = CVarExposureMeteringMethod.Get();
-	state.OutputColorEncoding = CVarOutputColorEncoding.Get();
-	state.ManualExposure = CVarManualExposure.Get();
-	state.ExposureCompensation = CVarExposureCompensation.Get();
-	state.ExposureTargetLuminance = CVarExposureTargetLuminance.Get();
-	state.ExposureMin = CVarExposureMin.Get();
-	state.ExposureMax = CVarExposureMax.Get();
-	state.ExposureAdaptationSpeedUp = CVarExposureAdaptationSpeedUp.Get();
-	state.ExposureAdaptationSpeedDown = CVarExposureAdaptationSpeedDown.Get();
-	state.MaxDirectionalLights = CVarMaxDirectionalLights.Get();
-	state.MaxPointLights = CVarMaxPointLights.Get();
-	state.MaxSpotLights = CVarMaxSpotLights.Get();
-	state.MaxRectLights = CVarMaxRectLights.Get();
-	state.UpscalerProvider = CVarUpscalerProvider.Get();
-	state.UpscalerQualityMode = CVarUpscalerQualityMode.Get();
-	state.RayReconstructionMode = CVarRayReconstructionMode.Get();
-	state.GBuffer = CVarGBufferMode.Get();
-	state.Lighting = GetLightingMode();
-	state.MeshAutoBatching = CVarRendererMeshAutoBatching.Get();
-	state.RefitTlas = CVarRayTracingClassicTlasRefit.Get();
-	state.PtlasActive = CVarRayTracingPreferPartitionedTlas.Get();
-	state.PtlasPartitionsPerAxis = CVarRayTracingPartitionsPerAxis.Get();
-	state.PtlasPartitionUpdateMode = CVarRayTracingPtlasPartitionUpdateMode.Get();
-	state.PtlasMarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get();
-	state.PtlasModeChangeDistance = CVarRayTracingPtlasModeChangeDistance.Get();
-	state.ViewMode = CVarRenderViewMode.Get();
-	return state;
+	return m_sessionPreferHighPerformanceAdapter != m_state.PreferHighPerformanceAdapter
+	    || m_sessionBackBufferFormat != m_state.BackBufferFormat;
 }
 
-bool EngineRenderingSettingsSection::ComputePendingRestart(
-    const EngineRenderingSettingsState& baseline,
-    const EngineRenderingSettingsState& current) const noexcept
-{
-	return baseline.PreferHighPerformanceAdapter != current.PreferHighPerformanceAdapter ||
-	       baseline.BackBufferFormat != current.BackBufferFormat;
-}
-
-std::string EngineRenderingSettingsSection::DescribePendingRestart(
-    const EngineRenderingSettingsState& baseline,
-    const EngineRenderingSettingsState& current) const
+std::string EngineRenderingSettingsSection::DescribePendingRestart() const
 {
 	std::vector<std::string> reasons;
-	if (baseline.PreferHighPerformanceAdapter != current.PreferHighPerformanceAdapter)
+	if (m_sessionPreferHighPerformanceAdapter != m_state.PreferHighPerformanceAdapter)
 	{
 		reasons.emplace_back("GPU adapter preference");
 	}
-	if (baseline.BackBufferFormat != current.BackBufferFormat)
+	if (m_sessionBackBufferFormat != m_state.BackBufferFormat)
 	{
 		reasons.emplace_back("back buffer format");
 	}
@@ -555,60 +224,12 @@ std::string EngineRenderingSettingsSection::DescribePendingRestart(
 	return stream.str();
 }
 
-void ApplyEngineRenderingSettingsStateToCVars(
-    const EngineRenderingSettingsState& state) noexcept
+void ApplyEngineRenderingSettingsStateToCVars(const EngineRenderingSettingsState& state) noexcept
 {
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarVSync, state.VSync);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarBackBufferFormat, state.BackBufferFormat);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarPreferHighPerformanceAdapter,
-	    state.PreferHighPerformanceAdapter);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarToneMapper, state.ToneMapper);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMode, state.ExposureMode);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMeteringMethod, state.ExposureMeteringMethod);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarOutputColorEncoding, state.OutputColorEncoding);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarManualExposure, state.ManualExposure);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureCompensation, state.ExposureCompensation);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureTargetLuminance, state.ExposureTargetLuminance);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMin, state.ExposureMin);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureMax, state.ExposureMax);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureAdaptationSpeedUp, state.ExposureAdaptationSpeedUp);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarExposureAdaptationSpeedDown, state.ExposureAdaptationSpeedDown);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxDirectionalLights, state.MaxDirectionalLights);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxPointLights, state.MaxPointLights);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxSpotLights, state.MaxSpotLights);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarMaxRectLights, state.MaxRectLights);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarUpscalerProvider, state.UpscalerProvider);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarUpscalerQualityMode, state.UpscalerQualityMode);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarRayReconstructionMode,
-	    state.RayReconstructionMode);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarGBufferMode, state.GBuffer);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarLightingMode, state.Lighting);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarRendererMeshAutoBatching, state.MeshAutoBatching);
-	RenderingSettingsPersistence::SetCVarIfChanged(CVarRayTracingClassicTlasRefit, state.RefitTlas);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarRayTracingPreferPartitionedTlas,
-	    state.PtlasActive);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarRayTracingPartitionsPerAxis,
-	    state.PtlasPartitionsPerAxis);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarRayTracingPtlasPartitionUpdateMode,
-	    state.PtlasPartitionUpdateMode);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarRayTracingPtlasMarkAllDynamicInPartition,
-	    state.PtlasMarkAllDynamicInPartition);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarRayTracingPtlasModeChangeDistance,
-	    state.PtlasModeChangeDistance);
-	RenderingSettingsPersistence::SetCVarIfChanged(
-	    CVarRenderViewMode,
-	    state.ViewMode);
+	EngineRenderingSettingsRuntime::Apply(state);
 }
 
 void ApplyPersistedEngineRenderingSettingsToCVars() noexcept
 {
-	EngineRenderingSettingsSection renderingSettings;
-	renderingSettings.ApplyPersistedValuesToRuntimeState();
+	EngineRenderingSettingsRuntime::ApplyPersistedValues();
 }

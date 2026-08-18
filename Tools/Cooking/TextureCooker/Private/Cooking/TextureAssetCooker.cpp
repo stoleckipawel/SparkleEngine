@@ -59,7 +59,6 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 
 	CookedTextureAssetHeader header;
 	header.magic = kCookedTextureAssetMagic;
-	header.version = kCookedTextureAssetVersion;
 	header.width = cookedTexture.width;
 	header.height = cookedTexture.height;
 	header.format = static_cast<std::uint32_t>(cookedTexture.dxgiFormat);

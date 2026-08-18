@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <DirectXMath.h>
 
@@ -12,7 +11,6 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedSkeletonAssetMagic = 0x4C4B5353u;
-	inline constexpr std::uint32_t kCookedSkeletonAssetVersion = 2;
 	inline constexpr std::uint32_t kInvalidCookedSkeletonJointIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 	struct SPARKLE_ENGINE_API CookedSkeletonJointRecord
@@ -28,8 +26,7 @@ namespace Assets
 
 	struct SPARKLE_ENGINE_API CookedSkeletonAssetHeader
 	{
-		CookedAssetHeader fileHeader{kCookedSkeletonAssetMagic, kCookedSkeletonAssetVersion};
-		std::uint32_t coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
+		CookedAssetHeader fileHeader{kCookedSkeletonAssetMagic};
 		std::uint32_t jointCount = 0;
 		std::uint32_t jointStride = sizeof(CookedSkeletonJointRecord);
 		std::uint32_t flags = 0;

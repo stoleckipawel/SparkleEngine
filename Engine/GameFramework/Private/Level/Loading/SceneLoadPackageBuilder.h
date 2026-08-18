@@ -10,7 +10,7 @@ namespace Assets
 	class SceneLoadPackageBuilder final
 	{
 	public:
-		static std::size_t BuildAssetBlueprints(SceneAssetLoadWork& work);
+		static void BuildAssetBlueprints(SceneAssetLoadWork& work);
 		static void Finalize(SceneLoadWorkState& state);
 	};
 }

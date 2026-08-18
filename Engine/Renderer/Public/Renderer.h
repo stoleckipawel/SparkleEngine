@@ -20,7 +20,7 @@ class RendererFacadeState;
 
 class SPARKLE_RENDERER_API Renderer final
 {
-  public:
+public:
 	Renderer(Timer& timer, Window& window, RendererExecutionConfig config = {}) noexcept;
 	~Renderer() noexcept;
 
@@ -29,7 +29,7 @@ class SPARKLE_RENDERER_API Renderer final
 	Renderer(Renderer&&) = delete;
 	Renderer& operator=(Renderer&&) = delete;
 
-	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
+	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept;
 	void SubmitRenderInput(RenderInputFrame input) noexcept;
 	void SubmitUiRenderPacket(UiRenderPacket packet) noexcept;
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept;
@@ -49,6 +49,6 @@ class SPARKLE_RENDERER_API Renderer final
 
 	void OnRender() noexcept;
 
-  private:
+private:
 	std::unique_ptr<RendererFacadeState> m_state;
 };

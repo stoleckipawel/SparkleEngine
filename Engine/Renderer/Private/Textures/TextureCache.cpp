@@ -13,8 +13,9 @@
 #include "RHI/Public/Resources/RhiResourceService.h"
 #include "RHI/Public/Resources/RhiUploadService.h"
 #include "Tasks/Public/TaskExecutor.h"
-#include "Tasks/Public/TaskGraph.h"
 #include "Tasks/Public/TaskScope.h"
+#include "Textures/CookedTextureLoader.h"
+#include "Textures/TextureDiagnosticsSnapshotBuilder.h"
 
 #include <algorithm>
 #include <array>
@@ -34,7 +35,7 @@ TextureCache::TextureCache(
     TaskScope& applicationScope) :
     m_resourceService(resourceService),
     m_descriptorService(descriptorService),
-    m_uploadService(uploadService),
+    m_textureFactory(resourceService, descriptorService, uploadService),
     m_submissions(submissions),
     m_taskExecutor(taskExecutor),
     m_taskScope(
@@ -161,7 +162,7 @@ void TextureCache::UnloadAll() noexcept
 		(void) m_residency.Cancel(request.Generation);
 		if (request.Uploaded)
 		{
-			ReleaseTexture(*request.Uploaded);
+			m_textureFactory.Release(*request.Uploaded);
 			request.Uploaded.reset();
 		}
 	}
@@ -170,7 +171,7 @@ void TextureCache::UnloadAll() noexcept
 	for (auto& [cacheKey, texture] : m_defaultTextures)
 	{
 		(void) cacheKey;
-		ReleaseTexture(texture);
+		m_textureFactory.Release(texture);
 	}
 	m_defaultTextures.clear();
 	for (auto& [cacheKey, texture] : m_pathTextures)
@@ -241,46 +242,16 @@ const RendererTexture* TextureCache::ResolveTextureReferenceOrSemanticDefault(
 
 TextureDiagnosticsSnapshot TextureCache::CaptureDiagnosticsSnapshot(const PreviewTextureResolver& resolvePreviewTexture) const
 {
-	TextureDiagnosticsSnapshot snapshot;
-	snapshot.Rows.reserve(m_defaultTextures.size() + m_pathTextures.size());
+	TextureDiagnosticsSnapshotBuilder builder(m_descriptorService, resolvePreviewTexture, m_defaultTextures.size() + m_pathTextures.size());
 	for (const auto& [cacheKey, texture] : m_defaultTextures)
 	{
-		if (!texture)
-		{
-			continue;
-		}
-		TextureDiagnosticsRow row = BuildDiagnosticsRow(
-		    texture,
-		    TextureDiagnosticsKind::DefaultPath,
-		    std::filesystem::path(cacheKey).generic_string(),
-		    resolvePreviewTexture);
-		row.StreamManaged = false;
-		snapshot.Rows.push_back(std::move(row));
+		builder.Add(texture, TextureDiagnosticsKind::DefaultPath, std::filesystem::path(cacheKey).generic_string(), false);
 	}
 	for (const auto& [cacheKey, texture] : m_pathTextures)
 	{
-		if (!texture.Texture)
-		{
-			continue;
-		}
-		snapshot.Rows.push_back(BuildDiagnosticsRow(
-		    texture.Texture,
-		    TextureDiagnosticsKind::Scene,
-		    std::filesystem::path(cacheKey).generic_string(),
-		    resolvePreviewTexture));
+		builder.Add(texture.Texture, TextureDiagnosticsKind::Scene, std::filesystem::path(cacheKey).generic_string(), true);
 	}
-	std::sort(
-	    snapshot.Rows.begin(),
-	    snapshot.Rows.end(),
-	    [](const TextureDiagnosticsRow& lhs, const TextureDiagnosticsRow& rhs) noexcept
-	    {
-		    if (lhs.Kind != rhs.Kind)
-		    {
-			    return static_cast<std::uint8_t>(lhs.Kind) < static_cast<std::uint8_t>(rhs.Kind);
-		    }
-		    return lhs.Key < rhs.Key;
-	    });
-	return snapshot;
+	return std::move(builder).Build();
 }
 
 void TextureCache::LoadDefaultTextures(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources)
@@ -323,7 +294,7 @@ void TextureCache::LoadDefaultTextures(RenderCommandList& commandList, std::vect
 			    std::format("Default texture '{}' failed to load: {}", source->Path.string(), error.what()));
 		}
 
-		RendererTexture texture = CreateTexture(source->Path, decodedTexture, commandList);
+		RendererTexture texture = m_textureFactory.Create(source->Path, decodedTexture, commandList);
 		uploadedResources.push_back(m_resourceService.GetResourceHandle(texture.Resource));
 		m_defaultTextures.emplace(source->CacheKey, std::move(texture));
 	}
@@ -369,7 +340,7 @@ void TextureCache::RequestTexture(const ResolvedTexturePath& source, std::uint32
 	TextureRequest request;
 	request.Source = source;
 	request.Generation = *handle;
-	request.Payload = std::make_shared<TextureLoadPayload>();
+	request.Payload = std::make_shared<CookedTextureLoadTask::Payload>();
 	m_requests.push_back(std::move(request));
 	LaunchPendingRequests();
 }
@@ -459,41 +430,8 @@ void TextureCache::LaunchPendingRequests()
 
 void TextureCache::LaunchRequest(TextureRequest& request)
 {
-	const std::filesystem::path path = request.Source.Path;
-	const std::shared_ptr<TextureLoadPayload> payload = request.Payload;
-	TaskGraphBuilder graph;
-	const TaskNodeHandle read = graph.Add(
-	    TaskDesc{.Name = TaskName("Read cooked texture generation"), .Lane = TaskLane::BlockingIo},
-	    [path, payload](TaskExecutionContext& context)
-	    {
-		    if (context.IsCancellationRequested())
-		    {
-			    return TaskResult::Cancelled("Texture read cancelled.");
-		    }
-		    payload->File = CookedTextureLoader::Read(path);
-		    return TaskResult::Success();
-	    });
-	graph.ContinueWith(
-	    read,
-	    TaskDesc{.Name = TaskName("Decode cooked texture generation"), .Lane = TaskLane::Background},
-	    [payload](TaskExecutionContext& context)
-	    {
-		    if (context.IsCancellationRequested())
-		    {
-			    payload->File = {};
-			    return TaskResult::Cancelled("Texture decode cancelled.");
-		    }
-		    payload->Texture = CookedTextureLoader::Decode(payload->File);
-		    payload->File = {};
-		    return TaskResult::Success();
-	    });
-
-	request.Execution = m_taskExecutor.Launch(*m_taskScope, graph.Compile());
+	request.Execution = CookedTextureLoadTask::Launch(m_taskExecutor, *m_taskScope, request.Source.Path, request.Payload);
 	request.LoadStarted = true;
-	if (!request.Execution.IsValid())
-	{
-		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture loading task graph launch failed.");
-	}
 }
 
 void TextureCache::ConsumeCompletedRequests() noexcept
@@ -535,7 +473,7 @@ void TextureCache::ConsumeCompletedRequests() noexcept
 		{
 			Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture generation could not enter decoding.");
 		}
-		const std::uint64_t decodedBytes = CalculateTexturePayloadBytes(request.Payload->Texture.Upload);
+		const std::uint64_t decodedBytes = RendererTextureFactory::CalculatePayloadBytes(request.Payload->Texture.Upload);
 		if (!m_residency.PublishReadyForUpload(request.Generation, decodedBytes, decodedBytes))
 		{
 			Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Texture generation exceeded residency capacity.");
@@ -568,81 +506,12 @@ void TextureCache::UploadReadyTextures(RenderCommandList& commandList, std::vect
 			continue;
 		}
 
-		request.Uploaded = CreateTexture(request.Source.Path, *request.Decoded, commandList);
+		request.Uploaded = m_textureFactory.Create(request.Source.Path, *request.Decoded, commandList);
 
 		request.Decoded.reset();
 		request.UploadedResource = m_resourceService.GetResourceHandle(request.Uploaded->Resource);
 		uploadedResources.push_back(request.UploadedResource);
 	}
-}
-
-RendererTexture TextureCache::CreateTexture(
-    const std::filesystem::path& texturePath,
-    LoadedTextureData& loadedTexture,
-    RenderCommandList& commandList) const
-{
-	const RhiTextureUploadDesc& textureUpload = loadedTexture.Upload;
-	const std::wstring debugName = texturePath.filename().wstring();
-	const RhiTextureResourceDesc resourceDesc{
-	    .Width = textureUpload.Width,
-	    .Height = textureUpload.Height,
-	    .Format = textureUpload.Format,
-	    .MipLevels = textureUpload.GetMipCount(),
-	    .ArraySize = textureUpload.GetArraySize(),
-	    .Dimension = textureUpload.Dimension};
-	RhiOwnedResourceHandle resource = m_resourceService.CreateTextureResource(
-	    resourceDesc,
-	    ResourceState::CopyDest,
-	    RhiMemoryCategory::Texture,
-	    RhiMemoryResidencyClass::DeviceLocal,
-	    debugName);
-	if (!resource)
-	{
-		Diagnostics::Fatal(
-		    g_textureCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Texture resource creation failed for '{}'.", texturePath.string()));
-	}
-
-	if (!m_uploadService.UploadTexture(commandList, resource, textureUpload, ResourceState::ShaderResource, debugName))
-	{
-		m_resourceService.ReleaseOwnedResource(resource);
-		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, std::format("Texture upload failed for '{}'.", texturePath.string()));
-	}
-
-	const RhiResourceHandle nativeResource = m_resourceService.GetResourceHandle(resource);
-	RhiResourceViewHandle shaderResourceView = m_descriptorService.CreateResourceView(
-	    RhiResourceViewDesc::TextureShaderResource(
-	        nativeResource,
-	        textureUpload.Format,
-	        RhiTextureViewRange{
-	            .MostDetailedMip = 0,
-	            .MipCount = textureUpload.GetMipCount(),
-	            .FirstArraySlice = 0,
-	            .ArraySize = textureUpload.GetArraySize()},
-	        textureUpload.Dimension));
-	if (!shaderResourceView)
-	{
-		m_resourceService.ReleaseOwnedResource(resource);
-		Diagnostics::Fatal(
-		    g_textureCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Texture shader-resource view creation failed for '{}'.", texturePath.string()));
-	}
-
-	return RendererTexture{
-	    .Resource = resource,
-	    .ShaderResourceView = shaderResourceView,
-	    .Width = textureUpload.Width,
-	    .Height = textureUpload.Height,
-	    .ArraySize = textureUpload.ArraySize,
-	    .Dimension = textureUpload.Dimension,
-	    .Format = textureUpload.Format,
-	    .FormatIntent = loadedTexture.FormatIntent,
-	    .MipCount = textureUpload.GetMipCount(),
-	    .EstimatedByteSize = CalculateTexturePayloadBytes(textureUpload)};
 }
 
 TextureCache::TextureRequest* TextureCache::FindRequest(const TextureKey& cacheKey, std::uint32_t generation) noexcept
@@ -672,7 +541,7 @@ void TextureCache::ActivateResidentRequests() noexcept
 		const AssetResidencyState state = m_residency.GetState(request.Generation);
 		if (!request.Wanted && state == AssetResidencyState::Retired)
 		{
-			ReleaseTexture(*request.Uploaded);
+			m_textureFactory.Release(*request.Uploaded);
 			request.Uploaded.reset();
 			continue;
 		}
@@ -727,7 +596,7 @@ void TextureCache::ReleaseActiveTexture(ActiveTexture& texture) noexcept
 	{
 		Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, "Resident texture could not enter eviction.");
 	}
-	ReleaseTexture(texture.Texture);
+	m_textureFactory.Release(texture.Texture);
 }
 
 RhiSubmissionState TextureCache::CaptureLastSubmittedState() const noexcept
@@ -784,58 +653,6 @@ std::optional<TextureCache::ResolvedTexturePath> TextureCache::ResolveTexturePat
 		return std::nullopt;
 	}
 	return ResolvedTexturePath{.Path = *resolvedPath, .CacheKey = std::move(cacheKey)};
-}
-
-void TextureCache::ReleaseTexture(RendererTexture& texture) noexcept
-{
-	if (texture.ShaderResourceView)
-	{
-		m_descriptorService.ReleaseResourceView(texture.ShaderResourceView);
-	}
-	if (texture.Resource)
-	{
-		m_resourceService.ReleaseOwnedResource(texture.Resource);
-	}
-	texture = {};
-}
-
-TextureDiagnosticsRow TextureCache::BuildDiagnosticsRow(
-    const RendererTexture& texture,
-    TextureDiagnosticsKind kind,
-    const std::string& key,
-    const PreviewTextureResolver& resolvePreviewTexture) const
-{
-	TextureDiagnosticsRow row;
-	row.Key = key;
-	row.Kind = kind;
-	row.Dimension = texture.Dimension;
-	row.FormatIntent = texture.FormatIntent;
-	row.ResidencyState = TextureDiagnosticsResidencyState::Resident;
-	row.Width = texture.Width;
-	row.Height = texture.Height;
-	row.ArraySize = texture.ArraySize;
-	row.Format = PixelFormatName(texture.Format);
-	row.MipCount = texture.MipCount;
-	row.EstimatedByteSize = texture.EstimatedByteSize;
-	const std::uint64_t nativeTextureId = m_descriptorService.GetResourceViewGpuHandle(texture.ShaderResourceView).Value;
-	row.PreviewTexture = resolvePreviewTexture ? resolvePreviewTexture(nativeTextureId) : EditorTextureHandle{};
-	row.Loaded = static_cast<bool>(texture);
-	row.StreamManaged = true;
-	return row;
-}
-
-std::uint64_t TextureCache::CalculateTexturePayloadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
-{
-	std::uint64_t byteCount = 0;
-	for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
-	{
-		for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
-		{
-			byteCount += mipLevel.Data.size();
-		}
-	}
-
-	return byteCount;
 }
 
 std::uint64_t TextureCache::MakeAssetKey(const TextureKey& cacheKey)

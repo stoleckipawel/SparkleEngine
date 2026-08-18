@@ -3,7 +3,6 @@
 
 #include "Scene/Meshes/Mesh.h"
 #include "World/ECS/Components/EditorComponents.h"
-#include "World/ECS/Components/MotionComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
 #include "World/WorldTransformConversion.h"
@@ -53,14 +52,6 @@ namespace ECS
 			added = morphState.IsValid() &&
 			        m_registry.Add(entity, MorphState{.Weights = morphState}) &&
 			        m_registry.Add(entity, SkinningState{.SkeletonAssetId = instance.SkeletonAssetId});
-			if (added && m_oscillatingMeshMotionEnabled)
-			{
-				added = m_registry.Add(
-				    entity,
-				    OscillatingMotion{
-				        .BaseTransform = local,
-				        .LaneIndex = static_cast<std::uint32_t>(Count<OscillatingMotion>())});
-			}
 		}
 		if (!added)
 		{
@@ -145,36 +136,4 @@ namespace ECS
 		RecordChange(EntityId::Invalid(), WorldChangeKind::ResourceChanged, WorldDataKind::MeshInstance);
 	}
 
-
-	void GameWorldState::ConfigureOscillatingMeshMotion(bool enabled)
-	{
-		if (m_oscillatingMeshMotionEnabled == enabled)
-			return;
-		m_oscillatingMeshMotionEnabled = enabled;
-		m_motionTimeSeconds = 0.0f;
-		if (!enabled)
-		{
-			const ComponentStorage<OscillatingMotion>* motions = m_registry.FindStorage<OscillatingMotion>();
-			if (motions == nullptr)
-				return;
-			const std::vector<EntityId> entities(motions->GetEntities().begin(), motions->GetEntities().end());
-			for (EntityId entity : entities)
-				m_registry.Remove<OscillatingMotion>(entity);
-			return;
-		}
-
-		const ComponentStorage<MeshInstance>* meshes = m_registry.FindStorage<MeshInstance>();
-		if (meshes == nullptr)
-			return;
-		std::uint32_t laneIndex = 0;
-		for (std::size_t index = 0; index < meshes->GetEntities().size(); ++index)
-		{
-			if (meshes->GetComponents()[index].Kind != SceneMeshKind::Skeletal)
-				continue;
-			const EntityId entity = meshes->GetEntities()[index];
-			const LocalTransform* local = m_registry.Get<LocalTransform>(entity);
-			if (local != nullptr)
-				m_registry.Add(entity, OscillatingMotion{.BaseTransform = *local, .LaneIndex = laneIndex++});
-		}
-	}
 }

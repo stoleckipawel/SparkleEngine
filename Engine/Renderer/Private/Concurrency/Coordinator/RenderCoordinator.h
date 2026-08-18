@@ -32,7 +32,7 @@ public:
 	void StageRenderInput(RenderInputFrame input);
 	void StageUiRenderPacket(UiRenderPacket packet);
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings);
-	void SubmitViewportRequest(const ViewportRenderRequest& request);
+	void SubmitViewportRequest(ViewportRenderRequest request);
 	void RenderFrame();
 
 	ViewportRenderProducts GetViewportRenderProducts() const;

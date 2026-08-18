@@ -25,10 +25,9 @@ namespace ECS
 		}
 	}
 
-	bool SystemChangeCommitter::CommitSystemOutputs(GameWorldState& state, float nextMotionTime)
+	bool SystemChangeCommitter::CommitSystemOutputs(GameWorldState& state)
 	{
 		RecordTransformChanges(state, state.m_systemArena.CameraChanges);
-		RecordTransformChanges(state, state.m_systemArena.MotionChanges);
 		std::erase(state.m_systemArena.AnimationChanges, EntityId::Invalid());
 		SortUnique(state.m_systemArena.AnimationChanges);
 		for (EntityId entity : state.m_systemArena.AnimationChanges)
@@ -38,7 +37,6 @@ namespace ECS
 		for (EntityId entity : state.m_systemArena.MorphChanges)
 			state.RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::MorphState);
 		SortUnique(state.m_systemArena.DirtyTransforms);
-		state.m_motionTimeSeconds = nextMotionTime;
 		return true;
 	}
 

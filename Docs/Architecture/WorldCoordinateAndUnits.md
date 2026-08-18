@@ -139,7 +139,7 @@ Importer normalization - exactly once
     |  produces canonical engine coordinates
     v
 ImportedScene - LH, +Y up, +Z forward, metres
-    |  validated and coordinate-contract-versioned
+    |  validated as canonical import output
     v
 Cooked assets - canonical; no source-space remnants
     v
@@ -154,11 +154,11 @@ Every importer must:
 1. determine the source handedness, semantic right/up/forward axes, linear unit, angular unit, transform convention, and camera/light local directions from authoritative format metadata or specification;
 2. reject missing or contradictory metadata when no deterministic format default exists;
 3. normalize every spatial semantic into the canonical engine contract;
-4. record source metres-per-unit in provenance and publish the accepted coordinate-contract version on `ImportedScene`;
+4. record source metres-per-unit in provenance;
 5. validate finite values, invertibility where required, normalized directions/quaternions, hierarchy ownership, and converted bounds before publication;
 6. publish only a canonical `ImportedScene`.
 
-The cooker rejects import output that does not name the current coordinate-contract version. Runtime loading is cooked-only and rejects spatial artifacts from another version. Compatibility conversion at runtime is prohibited; assets are recooked from source.
+`ImportedScene` is the canonical-coordinate representation, so it carries no alternate-basis tag or contract version. Runtime loading is cooked-only and validates the current artifact's type identity, concrete record layout, ranges, and semantic invariants. When that representation changes, local cooked artifacts are cleared and regenerated from source; no historical reader or runtime compatibility conversion is retained.
 
 ### glTF 2.0 mapping
 
@@ -281,12 +281,12 @@ The skinning invariant is that `JointMatrix` produces ObjectSpace/SkinReferenceS
 - D3D12 and Vulkan show the same winding, culling, lighting, camera orientation, and motion;
 - the current skinned glTF regression asset, CesiumMan, is checked at multiple animation frames rather than only at bind pose.
 
-### Artifact and migration
+### Artifact validation and regeneration
 
-- imported output declares the current coordinate-contract version and provenance records source metres-per-unit;
-- scene, mesh, skeleton, and animation cooked headers declare the current version;
-- stale spatial artifacts fail with an actionable recook error;
-- a contract change bumps affected cooked versions and deterministically recooks all spatial content;
+- imported provenance records source metres-per-unit while the imported scene type itself guarantees canonical coordinates;
+- scene, mesh, skeleton, and animation cooked headers identify their asset type and declare only current structural data;
+- loaders validate the current structure and semantics, with actionable recook errors where a malformed artifact is detected;
+- a contract change clears and deterministically recooks all affected local spatial content instead of introducing a format version or compatibility path;
 - no asset-specific axis rotations, per-level unit scales, or backend-specific world corrections remain.
 
 ## Rejected Patterns

@@ -12,18 +12,10 @@ namespace ECS
 		camera.DeclareQuery<CameraMovementQuery>();
 		camera.Resources = {{GameSystemResourceDomain::UpdateInputs, GameSystemAccessMode::Read},
 		                    {GameSystemResourceDomain::CameraInputIntent, GameSystemAccessMode::Read},
+		                    {GameSystemResourceDomain::CameraNavigationSettings, GameSystemAccessMode::Read},
 		                    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Write}};
 		camera.Execution = ParallelRanges(GameWorldSystemGrain::Camera);
 		graph.Add(std::move(camera));
-
-		GameSystemDesc motion{GameWorldSystemIds::OscillatingMeshMotion, "Game.OscillatingMeshMotion", GameSystemPhase::Simulation};
-		motion.DeclareQuery<OscillatingMotionQuery>();
-		motion.Resources = {{GameSystemResourceDomain::UpdateInputs, GameSystemAccessMode::Read},
-		                    {GameSystemResourceDomain::MotionClock, GameSystemAccessMode::Read},
-		                    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Write}};
-		motion.Prerequisites = {GameWorldSystemIds::CameraMovement};
-		motion.Execution = ParallelRanges(GameWorldSystemGrain::Motion);
-		graph.Add(std::move(motion));
 
 		GameSystemDesc playback{GameWorldSystemIds::PlaybackAdvance, "Game.AnimationPlaybackAdvance", GameSystemPhase::Animation};
 		playback.DeclareQuery<PlaybackAdvanceQuery>();
@@ -69,7 +61,6 @@ namespace ECS
 		outputCommit.Resources = {{GameSystemResourceDomain::SkinningOutput, GameSystemAccessMode::Read},
 		                         {GameSystemResourceDomain::MorphOutput, GameSystemAccessMode::Read},
 		                         {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Read},
-		                         {GameSystemResourceDomain::MotionClock, GameSystemAccessMode::Write},
 		                         {GameSystemResourceDomain::DirtyTransforms, GameSystemAccessMode::Write},
 		                         {GameSystemResourceDomain::WorldChanges, GameSystemAccessMode::Write}};
 		outputCommit.Prerequisites = {GameWorldSystemIds::SkinningMatrixEvaluation, GameWorldSystemIds::MorphOutputCommit};

@@ -6,7 +6,6 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <cstring>
@@ -60,8 +59,7 @@ void CookedAnimationAssetStager::StageAnimationAsset(
 Assets::CookedAnimationAssetHeader CookedAnimationAssetStager::BuildHeader(const CookedAnimationAssetBuild& animationAsset) noexcept
 {
 	Assets::CookedAnimationAssetHeader header{
-	    .fileHeader = {Assets::kCookedAnimationAssetMagic, Assets::kCookedAnimationAssetVersion},
-	    .coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion,
+	    .fileHeader = {Assets::kCookedAnimationAssetMagic},
 	    .targetSkeletonAssetId = animationAsset.targetSkeletonAssetId,
 	    .sourceAnimationIndex = animationAsset.sourceAnimationIndex,
 	    .durationSeconds = animationAsset.durationSeconds,

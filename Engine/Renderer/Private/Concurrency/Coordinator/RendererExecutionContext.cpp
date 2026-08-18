@@ -18,9 +18,7 @@ RendererExecutionContext::RendererExecutionContext(
 	    backendConfiguration,
 	    *executionConfig.AssetTaskExecutor,
 	    *executionConfig.ApplicationTaskScope);
-	m_pipeline = std::make_unique<FramePipeline>(
-	    *m_rendererHost,
-	    executionConfig.EnableUiRenderPackets);
+	m_pipeline = std::make_unique<FramePipeline>(*m_rendererHost, executionConfig.EnableUiRenderPackets);
 }
 
 RendererExecutionContext::~RendererExecutionContext() noexcept
@@ -38,17 +36,17 @@ void RendererExecutionContext::ExecuteFrame(RenderFramePacket packet) noexcept
 	m_pipeline->OnRender(packet.Timing, packet.Ui);
 }
 
-void RendererExecutionContext::ExecuteControl(const RenderControlPayload& payload) noexcept
+void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noexcept
 {
 	m_owner.AssertAccess();
 	std::visit(
-	    [this](const auto& command)
+	    [this](auto& command)
 	    {
 		    using TCommand = std::decay_t<decltype(command)>;
 		    if constexpr (std::is_same_v<TCommand, RenderResizeCommand>)
 			    m_pipeline->RequestResize(command.Extent, command.Minimized);
 		    else if constexpr (std::is_same_v<TCommand, RenderViewportCommand>)
-			    m_pipeline->SubmitViewportRenderRequest(command.Request);
+			    m_pipeline->SubmitViewportRenderRequest(std::move(command.Request));
 		    else if constexpr (std::is_same_v<TCommand, RenderReloadShadersCommand>)
 		    {
 			    try

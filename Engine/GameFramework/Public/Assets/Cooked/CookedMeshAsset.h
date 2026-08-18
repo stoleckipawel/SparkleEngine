@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <DirectXMath.h>
 
@@ -11,7 +10,6 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedMeshAssetMagic = 0x48534D53u;
-	inline constexpr std::uint32_t kCookedMeshAssetVersion = 7;
 
 	enum class CookedMeshAssetKind : std::uint32_t
 	{
@@ -53,8 +51,7 @@ namespace Assets
 
 	struct SPARKLE_ENGINE_API CookedMeshAssetHeader
 	{
-		CookedAssetHeader fileHeader{kCookedMeshAssetMagic, kCookedMeshAssetVersion};
-		std::uint32_t coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
+		CookedAssetHeader fileHeader{kCookedMeshAssetMagic};
 		std::uint32_t vertexCount = 0;
 		std::uint32_t indexCount = 0;
 		std::uint32_t skinInfluenceCount = 0;

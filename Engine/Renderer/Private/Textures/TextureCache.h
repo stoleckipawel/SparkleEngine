@@ -5,9 +5,9 @@
 #include "Rendering/RenderInputFrame.h"
 #include "Resources/Residency/AssetResidency.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
-#include "Tasks/Public/TaskExecution.h"
-#include "Textures/CookedTextureLoader.h"
+#include "Textures/CookedTextureLoadTask.h"
 #include "Textures/RendererTexture.h"
+#include "Textures/RendererTextureFactory.h"
 
 #include <array>
 #include <cstdint>
@@ -86,18 +86,12 @@ private:
 		TextureKey CacheKey;
 	};
 
-	struct TextureLoadPayload final
-	{
-		CookedTextureFilePayload File;
-		LoadedTextureData Texture;
-	};
-
 	struct TextureRequest final
 	{
 		ResolvedTexturePath Source;
 		AssetGenerationHandle Generation;
 		TaskExecution Execution;
-		std::shared_ptr<TextureLoadPayload> Payload;
+		std::shared_ptr<CookedTextureLoadTask::Payload> Payload;
 		std::optional<LoadedTextureData> Decoded;
 		std::optional<RendererTexture> Uploaded;
 		RhiResourceHandle UploadedResource;
@@ -128,10 +122,6 @@ private:
 	void LaunchRequest(TextureRequest& request);
 	void ConsumeCompletedRequests() noexcept;
 	void UploadReadyTextures(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources);
-	RendererTexture CreateTexture(
-	    const std::filesystem::path& texturePath,
-	    LoadedTextureData& loadedTexture,
-	    RenderCommandList& commandList) const;
 	TextureRequest* FindRequest(const TextureKey& cacheKey, std::uint32_t generation) noexcept;
 	const TextureRequest* FindRequest(const TextureKey& cacheKey, std::uint32_t generation) const noexcept;
 	void ActivateResidentRequests() noexcept;
@@ -141,18 +131,11 @@ private:
 	const RendererTexture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
 	bool HasPendingRequest(const std::filesystem::path& texturePath) const noexcept;
 	std::optional<ResolvedTexturePath> ResolveTexturePath(const std::filesystem::path& texturePath) const noexcept;
-	void ReleaseTexture(RendererTexture& texture) noexcept;
-	TextureDiagnosticsRow BuildDiagnosticsRow(
-	    const RendererTexture& texture,
-	    TextureDiagnosticsKind kind,
-	    const std::string& key,
-	    const PreviewTextureResolver& resolvePreviewTexture) const;
-	static std::uint64_t CalculateTexturePayloadBytes(const RhiTextureUploadDesc& textureUpload) noexcept;
 	static std::uint64_t MakeAssetKey(const TextureKey& cacheKey);
 
 	RhiResourceService& m_resourceService;
 	RhiDescriptorService& m_descriptorService;
-	RhiUploadService& m_uploadService;
+	RendererTextureFactory m_textureFactory;
 	RhiCommandSubmissionService& m_submissions;
 	TaskExecutor& m_taskExecutor;
 	std::unique_ptr<TaskScope> m_taskScope;

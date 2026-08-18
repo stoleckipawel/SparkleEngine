@@ -91,7 +91,7 @@ Do not call every identity a GUID.
 
 - `Guid` is a 128-bit persistent value primitive, not a global manager.
 - `AssetGuid`, `AuthoredInstanceGuid`, and `AuthoredObjectGuid` are persistent authoring identities.
-- Derived `Source*Id` hashes are migration/lookup keys, not GUIDs.
+- Derived `Source*Id` hashes are source lookup/reimport keys, not GUIDs.
 - `EntityId` is compact runtime ECS identity with stale-handle generation.
 - `RenderObjectId` is separate renderer identity created by extraction.
 - Runtime resource handles identify immutable assets.
@@ -104,11 +104,11 @@ Storage, resolution, and hot-path rules for these identities belong to [Data-Ori
 
 Do not introduce:
 
-- `New*`, `*2`, or `Legacy*` without a short explicit deletion gate;
+- `New*`, `*2`, or `Legacy*` used to keep both a replacement and an obsolete Sparkle-owned concept alive;
 - `Async*`, `ThreadSafe*`, `LockFree*`, `MultiThreaded*`, or `MT*` as vague claims;
 - `SceneAnimation*` for distinct sampling, pose, morph, skinning, or output responsibilities;
 - `Data`, `Info`, `Thing`, `Object`, `Manager`, `Helper`, or `Util` when a precise responsibility exists;
 - overloaded “queue” names that blur CPU tasks, render control, RHI command lists, and GPU queues;
 - `Snapshot` for broad mutable-world copies; use a precise packet, read model, immutable state, or diagnostics product.
 
-Temporary compatibility names are allowed only inside an active bounded migration and are deleted before its acceptance gate unless a prompt assigns a named later owner.
+The [current clean-break policy](IntegrationStyleGuide.md#current-clean-break-policy) does not allow temporary compatibility names or deferred renames. Rename all owned producers and consumers atomically and delete the obsolete spelling.

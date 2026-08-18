@@ -3,6 +3,7 @@
 
 #include "Assets/SceneAssetPayload.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include "GameFramework/Public/Scene/Camera/CameraNavigation.h"
 #include "World/GameWorldSceneAssetCommitter.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
@@ -11,6 +12,7 @@
 #include "World/Editing/WorldEditCommandQueue.h"
 #include "Level/Loading/SceneLoadPackage.h"
 #include "World/Resources/GameWorldResourceStores.h"
+#include "World/Systems/GameWorldSystems.h"
 
 #include <utility>
 
@@ -18,10 +20,10 @@ static const auto g_gameWorldLogger = Logging::GetOrCreateLogger("GameFramework.
 
 GameWorld::GameWorld(TaskExecutor& taskExecutor) :
     m_state(std::make_unique<ECS::GameWorldState>()),
-	m_resources(std::make_unique<GameWorldResourceStores>()),
-	m_taskExecutor(taskExecutor),
-	m_editCommands(std::make_unique<WorldEditCommandQueue>()),
-	m_renderInputExtractor(std::make_unique<ECS::RenderInputExtractor>())
+    m_resources(std::make_unique<GameWorldResourceStores>()),
+    m_taskExecutor(taskExecutor),
+    m_editCommands(std::make_unique<WorldEditCommandQueue>()),
+    m_renderInputExtractor(std::make_unique<ECS::RenderInputExtractor>())
 {
 }
 
@@ -64,7 +66,25 @@ void GameWorld::InitializeStagedLevel(const LevelDesc& desc)
 void GameWorld::Update(float deltaSeconds)
 {
 	m_editCommands->Apply(m_generation, *m_state, *m_resources);
-	if (!m_state->ExecuteSystems(*m_resources, m_taskExecutor, m_cameraInputIntent, deltaSeconds))
+	if (m_cameraInputIntent.SpeedStepCount != 0.0f)
+	{
+		m_cameraNavigationSettings.MoveSpeedMetersPerSecond = CameraNavigation::ApplySpeedSteps(
+		    m_cameraNavigationSettings.MoveSpeedMetersPerSecond,
+		    m_cameraInputIntent.SpeedStepCount,
+		    m_cameraNavigationSettings.MinimumMoveSpeedMetersPerSecond,
+		    m_cameraNavigationSettings.MaximumMoveSpeedMetersPerSecond);
+	}
+	const ECS::GameWorldSystemExecutionContext executionContext{
+	    .Resources = *m_resources,
+	    .Executor = m_taskExecutor,
+	    .Camera =
+	        {
+	            .Intent = m_cameraInputIntent,
+	            .NavigationSettings = m_cameraNavigationSettings,
+	            .DeltaSeconds = deltaSeconds,
+	        },
+	};
+	if (!m_state->ExecuteSystems(executionContext))
 	{
 		Diagnostics::Fatal(g_gameWorldLogger, __FILE__, __LINE__, "Game-system graph execution failed.");
 	}
@@ -83,19 +103,13 @@ void GameWorld::PublishCameraInputIntent(const CameraInputIntent& intent) noexce
 	m_cameraInputIntent = intent;
 }
 
-void GameWorld::EnableOscillatingMeshMotion(bool enabled)
-{
-	m_oscillatingMeshMotionEnabled = enabled;
-	m_state->ConfigureOscillatingMeshMotion(enabled);
-}
-
 void GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package)
 {
 	std::size_t expectedEntityCount = 1 + package.Level.lights.size();
 	for (const SceneAssetPayload& payload : package.AssetPayloads)
 	{
-		expectedEntityCount += payload.animations.size() + payload.staticMeshInstances.size() +
-		                       payload.skeletalMeshInstances.size() + payload.cameras.size() + payload.lights.size();
+		expectedEntityCount += payload.animations.size() + payload.staticMeshInstances.size() + payload.skeletalMeshInstances.size()
+		    + payload.cameras.size() + payload.lights.size();
 	}
 	if (package.Entities.size() != expectedEntityCount)
 	{
@@ -107,13 +121,9 @@ void GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package)
 	}
 
 	GameWorld stagedWorld(m_taskExecutor);
-	stagedWorld.m_oscillatingMeshMotionEnabled = m_oscillatingMeshMotionEnabled;
-	stagedWorld.m_state->ConfigureOscillatingMeshMotion(m_oscillatingMeshMotionEnabled);
 	stagedWorld.InitializeStagedLevel(package.Level);
 
-	GameWorldSceneAssetCommitter committer(
-	    *stagedWorld.m_state,
-	    *stagedWorld.m_resources);
+	GameWorldSceneAssetCommitter committer(*stagedWorld.m_state, *stagedWorld.m_resources);
 	for (SceneAssetPayload& payload : package.AssetPayloads)
 	{
 		committer.Commit(std::move(payload));
@@ -142,11 +152,7 @@ void GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package)
 	}
 	if (!stagedWorld.m_state->PrepareSystemResources(*stagedWorld.m_resources))
 	{
-		Diagnostics::Fatal(
-		    g_gameWorldLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Staged world could not resolve animation targets and output slots.");
+		Diagnostics::Fatal(g_gameWorldLogger, __FILE__, __LINE__, "Staged world could not resolve animation targets and output slots.");
 	}
 	if (stagedWorld.m_state->GetEntityCount() != package.Entities.size())
 	{
@@ -174,11 +180,20 @@ void GameWorld::FinalizeSceneLoadCommit()
 	CommitWorldChanges();
 }
 
-bool GameWorld::IsEntityAlive(EntityId entity) const noexcept { return m_state->IsAlive(entity); }
+bool GameWorld::IsEntityAlive(EntityId entity) const noexcept
+{
+	return m_state->IsAlive(entity);
+}
 
-bool GameWorld::DestroyEntity(EntityId entity) noexcept { return m_state->Destroy(entity); }
+bool GameWorld::DestroyEntity(EntityId entity) noexcept
+{
+	return m_state->Destroy(entity);
+}
 
-WorldReadView GameWorld::AcquireReadView() const noexcept { return m_state->AcquireReadView(); }
+WorldReadView GameWorld::AcquireReadView() const noexcept
+{
+	return m_state->AcquireReadView();
+}
 
 WorldChangeBatch GameWorld::ReadChanges(const WorldChangeCursor& cursor) const
 {
@@ -196,16 +211,25 @@ bool GameWorld::AcknowledgeChanges(WorldChangeCursor& cursor, WorldSequence sequ
 	return true;
 }
 
-void GameWorld::CommitWorldChanges() { m_state->CommitDerivedStateAndPublish(); }
+void GameWorld::CommitWorldChanges()
+{
+	m_state->CommitDerivedStateAndPublish();
+}
 
-std::size_t GameWorld::GetMaterialVariantCount() const noexcept { return m_resources->MaterialVariants.GetCount(); }
+std::size_t GameWorld::GetMaterialVariantCount() const noexcept
+{
+	return m_resources->MaterialVariants.GetCount();
+}
 
 std::string_view GameWorld::GetMaterialVariantName(std::size_t index) const noexcept
 {
 	return m_resources->MaterialVariants.GetName(index);
 }
 
-MaterialVariantIndex GameWorld::GetActiveMaterialVariant() const noexcept { return m_resources->MaterialVariants.GetActive(); }
+MaterialVariantIndex GameWorld::GetActiveMaterialVariant() const noexcept
+{
+	return m_resources->MaterialVariants.GetActive();
+}
 
 bool GameWorld::ApplyMaterialVariant(MaterialVariantIndex index)
 {

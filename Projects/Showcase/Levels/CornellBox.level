@@ -6,7 +6,6 @@ Position = 0.0, 1.0, 3.8
 YawRadians = 3.14159265
 PitchRadians = 0.0
 FovYDegrees = 45.0
-MoveSpeed = 0.05
 
 [Lighting]
 RectLight0Name = Ceiling Panel

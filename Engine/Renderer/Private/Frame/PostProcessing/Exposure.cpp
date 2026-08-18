@@ -2,25 +2,19 @@
 #include "Frame/PostProcessing/Exposure.h"
 
 #include "Frame/PostProcessing/ExposureMomentChain.h"
-#include "Frame/Presentation/ToneMappingCVars.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/PostProcessing/ExposurePass.h"
 
-void AddExposurePass(
-	FrameGraphBuilder& builder,
-	RenderViewportExtent sceneExtent,
-	FrameGraphTextureHandle finalSceneColor,
-	const FrameGraphTextureHistory& history,
-	FrameGraphTextureHandle exposure)
+void AddExposurePass(FrameGraphBuilder& builder, const FrameBuildSettings& settings, const FrameAssemblyResourceLayout& resources)
 {
 	ExposureMomentChain::Texture moments;
-	switch (CVarExposureMeteringMethod.Get())
+	switch (settings.ExposureMeteringMethod)
 	{
 		case EngineExposureMeteringMethod::ParallelReduction:
-			moments = ExposureMomentChain::AddReduction(builder, sceneExtent, finalSceneColor);
+			moments = ExposureMomentChain::AddReduction(builder, settings.RenderExtent, resources.Transient.Scene.SceneColor);
 			break;
 		case EngineExposureMeteringMethod::DownsamplePyramid:
-			moments = ExposureMomentChain::AddDownsample(builder, sceneExtent, finalSceneColor);
+			moments = ExposureMomentChain::AddDownsample(builder, settings.RenderExtent, resources.Transient.Scene.SceneColor);
 			break;
 		default:
 		{
@@ -31,8 +25,8 @@ void AddExposurePass(
 
 	auto& parameters = builder.AllocParameters<ExposurePass::Parameters>();
 	parameters->LuminanceMoments = builder.CreateSRV(moments.TextureHandle);
-	parameters->PreviousExposureTexture = builder.CreateSRV(history.Previous);
-	parameters->ExposureHistoryTexture = builder.CreateUAV(history.Current);
-	parameters->ExposureTexture = builder.CreateUAV(exposure);
+	parameters->PreviousExposureTexture = builder.CreateSRV(resources.History.Exposure.Previous);
+	parameters->ExposureHistoryTexture = builder.CreateUAV(resources.History.Exposure.Current);
+	parameters->ExposureTexture = builder.CreateUAV(resources.Transient.Exposure);
 	builder.DispatchAsync<ExposurePass>(parameters);
 }

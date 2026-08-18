@@ -8,10 +8,10 @@ namespace Assets
 	class CookedAssetFileSet;
 	class SceneAssetPayloadSkeletonAppender final
 	{
-	  public:
+	public:
 		static void AppendSkeletons(
 		    const LoadedSceneManifest& sceneManifest,
-		    const CookedAssetFileSet& files,
+		    CookedAssetFileSet& files,
 		    SceneAssetPayload& sceneAssetPayload);
 	};
 }

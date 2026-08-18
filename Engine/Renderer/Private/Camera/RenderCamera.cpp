@@ -3,6 +3,8 @@
 #include "Config/DepthConvention.h"
 #include "Core/Public/Math/WorldCoordinateSystem.h"
 
+#include <algorithm>
+
 using namespace DirectX;
 
 RenderCamera::RenderCamera() noexcept
@@ -41,7 +43,23 @@ void RenderCamera::RebuildMatrices(const RenderCameraData& camera) noexcept
 	const float nearZ = m_camera.NearZ;
 	const float farZ = m_camera.FarZ;
 
-	const XMMATRIX proj = DepthConvention::CreatePerspectiveFovLH(fovYRadians, aspect, nearZ, farZ);
+	XMMATRIX proj;
+	if (m_camera.ProjectionKind == CameraProjectionKind::Orthographic)
+	{
+		const float orthographicHeight = (std::max) (m_camera.OrthographicHeightMeters, 0.001f);
+		const float orthographicWidth = orthographicHeight * (std::max) (aspect, 0.001f);
+		proj = DepthConvention::CreateOrthographicOffCenterLH(
+		    -orthographicWidth * 0.5f,
+		    orthographicWidth * 0.5f,
+		    -orthographicHeight * 0.5f,
+		    orthographicHeight * 0.5f,
+		    nearZ,
+		    farZ);
+	}
+	else
+	{
+		proj = DepthConvention::CreatePerspectiveFovLH(fovYRadians, aspect, nearZ, farZ);
+	}
 	XMStoreFloat4x4(&m_projectionMatrix, proj);
 
 	const XMMATRIX viewProj = XMMatrixMultiply(view, proj);

@@ -17,7 +17,6 @@ namespace ECS
 	struct ComponentSchema final
 	{
 		ComponentSchemaId Id;
-		std::uint32_t Version = 0;
 		std::string_view Name;
 	};
 

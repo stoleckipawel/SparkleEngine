@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
-#include "Core/Public/Math/WorldCoordinateSystem.h"
 
 #include <DirectXMath.h>
 
@@ -12,7 +11,6 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedAnimationAssetMagic = 0x4D4E4153u;
-	inline constexpr std::uint32_t kCookedAnimationAssetVersion = 2;
 	inline constexpr std::uint32_t kInvalidCookedAnimationJointIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 	enum class CookedAnimationInterpolation : std::uint32_t
@@ -33,8 +31,7 @@ namespace Assets
 
 	struct SPARKLE_ENGINE_API CookedAnimationAssetHeader
 	{
-		CookedAssetHeader fileHeader{kCookedAnimationAssetMagic, kCookedAnimationAssetVersion};
-		std::uint32_t coordinateContractVersion = WorldCoordinates::kCoordinateContractVersion;
+		CookedAssetHeader fileHeader{kCookedAnimationAssetMagic};
 		char name[64] = {};
 		CookedAssetId targetSkeletonAssetId = InvalidCookedAssetId;
 		std::uint32_t sourceAnimationIndex = 0;

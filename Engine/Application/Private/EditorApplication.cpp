@@ -66,8 +66,7 @@ void EditorApplication::InitializeEditorOperations()
 
 	if (!m_viewportCaptureCoordinator)
 	{
-		m_viewportCaptureCoordinator =
-		    std::make_unique<EditorViewportCaptureCoordinator>(*m_operationService);
+		m_viewportCaptureCoordinator = std::make_unique<EditorViewportCaptureCoordinator>(*m_operationService);
 	}
 }
 
@@ -88,68 +87,34 @@ void EditorApplication::InitializeUi()
 	ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
 }
 
-EditorHostServices EditorApplication::BuildUiHostServices(
-    Renderer& renderer,
-    GameWorld& world)
+EditorHostServices EditorApplication::BuildUiHostServices(Renderer& renderer, GameWorld& world)
 {
 	return EditorHostServices{
 	    .RuntimeTimer = m_runtimeApplication->GetTimer(),
 	    .Levels = m_runtimeApplication->GetLevelSession(),
-	    .AcquireWorldReadView = [&world]()
-	    {
-		    return world.AcquireReadView();
-	    },
-	    .ReadWorldChanges = [&world](const WorldChangeCursor& cursor)
-	    {
-		    return world.ReadChanges(cursor);
-	    },
+	    .AcquireWorldReadView = [&world]() { return world.AcquireReadView(); },
+	    .ReadWorldChanges = [&world](const WorldChangeCursor& cursor) { return world.ReadChanges(cursor); },
 	    .AcknowledgeWorldChanges = [&world](WorldChangeCursor& cursor, WorldSequence sequence)
-	    {
-		    return world.AcknowledgeChanges(cursor, sequence);
-	    },
-	    .WorldGeneration = [&world]() noexcept
-	    {
-		    return world.GetGeneration();
-	    },
-	    .MaterialVariants = [&world]()
-	    {
-		    return world.CaptureMaterialVariants();
-	    },
+	    { return world.AcknowledgeChanges(cursor, sequence); },
+	    .WorldGeneration = [&world]() noexcept { return world.GetGeneration(); },
+	    .MaterialVariants = [&world]() { return world.CaptureMaterialVariants(); },
 	    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation)
-	    {
-		    return world.SubmitEdit(std::move(command), generation);
-	    },
+	    { return world.SubmitEdit(std::move(command), generation); },
 	    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings)
-	    {
-		    renderer.SubmitRenderingSettings(std::move(settings));
-	    },
+	    { renderer.SubmitRenderingSettings(std::move(settings)); },
 	    .HostWindow = m_runtimeApplication->GetWindow(),
 	    .Input = m_runtimeApplication->GetInputSystem()};
 }
 
 void EditorApplication::ConfigureUiDiagnostics(Renderer& renderer)
 {
-	m_ui->SetDiagnosticsProviders(EditorDiagnosticsProviders{
-	    .ShaderPackageGeneration = [&renderer]() noexcept
-	    {
-		    return renderer.GetShaderPackageGeneration();
-	    },
-	    .MeshDiagnostics = [&renderer]()
-	    {
-		    return renderer.CaptureMeshDiagnostics();
-	    },
-	    .TextureDiagnostics = [&renderer]()
-	    {
-		    return renderer.CaptureTextureDiagnostics();
-	    },
-	    .MemoryDiagnostics = [&renderer]()
-	    {
-		    return renderer.CaptureMemoryDiagnostics();
-	    },
-	    .MeshPreview = [&renderer](std::uintptr_t meshRuntimeId)
-	    {
-		    return renderer.CaptureMeshPreview(meshRuntimeId);
-	    }});
+	m_ui->SetDiagnosticsProviders(
+	    EditorDiagnosticsProviders{
+	        .ShaderPackageGeneration = [&renderer]() noexcept { return renderer.GetShaderPackageGeneration(); },
+	        .MeshDiagnostics = [&renderer]() { return renderer.CaptureMeshDiagnostics(); },
+	        .TextureDiagnostics = [&renderer]() { return renderer.CaptureTextureDiagnostics(); },
+	        .MemoryDiagnostics = [&renderer]() { return renderer.CaptureMemoryDiagnostics(); },
+	        .MeshPreview = [&renderer](std::uintptr_t meshRuntimeId) { return renderer.CaptureMeshPreview(meshRuntimeId); }});
 }
 
 bool EditorApplication::Tick()
@@ -172,7 +137,14 @@ bool EditorApplication::Tick()
 
 	Renderer& renderer = m_runtimeApplication->GetRenderer();
 	UpdateEditorOperations(renderer);
-	m_runtimeApplication->UpdateRuntime();
+	const ViewportRenderRequest& viewportRequest = m_ui->GetViewportRenderRequest();
+	const float aspectRatio = viewportRequest.Extent.IsValid()
+	    ? static_cast<float>(viewportRequest.Extent.Width) / static_cast<float>(viewportRequest.Extent.Height)
+	    : 1.0f;
+	const CameraInputIntent cameraIntent = m_runtimeApplication->CollectCameraInputIntent(aspectRatio);
+	const float deltaSeconds = static_cast<float>(m_runtimeApplication->GetTimer().GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
+	const RenderCameraData renderCamera = m_ui->UpdateViewportCamera(cameraIntent, deltaSeconds);
+	m_runtimeApplication->UpdateEditorRuntime(renderCamera);
 	RenderEditorFrame(renderer);
 	return true;
 }
@@ -202,9 +174,7 @@ void EditorApplication::RenderEditorFrame(Renderer& renderer)
 	EditorUiFrameRenderer::Render(*m_runtimeApplication, renderer, *m_ui);
 	if (m_viewportCaptureCoordinator && m_ui->ConsumeViewportCaptureRequest())
 	{
-		m_viewportCaptureCoordinator->Request(
-		    renderer,
-		    m_runtimeApplication->GetTimer().GetFrameCount());
+		m_viewportCaptureCoordinator->Request(renderer, m_runtimeApplication->GetTimer().GetFrameCount());
 	}
 
 	m_runtimeApplication->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());

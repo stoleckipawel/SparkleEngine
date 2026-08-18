@@ -2,7 +2,6 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 
-#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -14,8 +13,7 @@ namespace Assets
 	  public:
 		CookedAssetLoaderDiagnostics(
 		    const std::filesystem::path& path,
-		    std::string_view schemaName,
-		    std::uint32_t schemaVersion);
+		    std::string_view schemaName);
 
 		Diagnostics::Error MakeError(std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) const;
 
@@ -23,6 +21,5 @@ namespace Assets
 		std::filesystem::path m_path;
 		std::string m_assetId;
 		std::string m_schemaName;
-		std::uint32_t m_schemaVersion = 0;
 	};
 }

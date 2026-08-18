@@ -31,7 +31,7 @@ An older prompt that says “apply `IntegrationStyleGuide.md` in full” means t
 
 Recommended prompt attachment:
 
-> Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md`, follow `ChangeProcess.md`, and select every applicable subject standard from the standards map. Reconcile the current ownership path, preserve supported behavior, delete replaced paths, and report exact validation and limitations.
+> Apply `Docs/Engineering/Standards/IntegrationStyleGuide.md`, follow `ChangeProcess.md`, and select every applicable subject standard from the standards map. Reconcile the current ownership path, preserve supported behavior, and apply the current clean-break policy: update every owned producer and consumer, delete replaced representations and compatibility machinery, regenerate local artifacts, and add no internal versioning or legacy path. Report exact validation and limitations.
 
 ## Integration Invariants
 
@@ -51,6 +51,23 @@ Every integration MUST:
 
 The desired change is usually additive in capability and reductive in structure. Speculative frameworks, scene-specific architecture, duplicate schedulers/graphs/caches, and names whose claims exceed their evidence do not satisfy this contract.
 
+## Current Clean-Break Policy
+
+SparkleEngine currently has no active users, shipped compatibility contract, supported persisted user data, public SDK/plugin ABI, or network protocol. Until an explicit product decision updates this standard, every owned change MUST assume that source, configuration, APIs, and owned representations can change in place, while serialized/cooked/generated data, caches, and other local artifacts can be discarded and regenerated from source.
+
+For an owned contract change:
+
+- change the authoritative representation in place and update every producer, consumer, build entry, fixture, configuration, and document in the same coherent change;
+- delete the replaced representation and regenerate disposable local artifacts from source;
+- fail, clear, or regenerate when old local output is encountered instead of interpreting, upgrading, or preserving it;
+- remove pre-existing compatibility machinery in the touched ownership path rather than extending it.
+
+Do not add an internal content, schema, ABI, protocol, or contract version to an owned Sparkle representation. Invalidate disposable output by deleting and regenerating it, not by encoding revision dispatch. Do not add migration/upgrade/downgrade readers or writers, compatibility adapters or shims, deprecated aliases, old/new dispatch, dual read/write paths, legacy feature flags, fallbacks to the replaced representation, or a delayed cleanup gate. A boundary adapter remains valid only when it converts a currently supported external API, tool, or source format into Sparkle's one current representation; it MUST NOT preserve an older Sparkle representation.
+
+External API/tool/file-format versions required to consume the current external contract, build and evidence provenance, and sequence/generation counters used for stale-handle or lifetime rejection are not compatibility versions. They must not select or decode an obsolete Sparkle-owned representation.
+
+This policy controls conflicts with older documents or existing code that still describe internal versioning or compatibility migration. Such code is cleanup debt, not precedent: remove it when its ownership path is changed. A request to support real persisted user data or an installed external consumer is a product-policy change and must update this section before compatibility code is introduced.
+
 ## Subject Authority
 
 Authority follows the subject map in the [documentation root](../../README.md) and [standards authority model](README.md#authority-model). Current code and executable configuration prove what exists; plans, snapshots, research, summaries, and historical prompts do not override their named owners.
@@ -62,6 +79,7 @@ Resolve ambiguity in the document that owns the subject, then update dependent l
 A reviewer must be able to identify:
 
 - the mutable and lifetime owner;
+- the authoritative definition of each changed capability/invariant and why every material use belongs at its abstraction and module level;
 - the input, output, publication, and failure boundaries;
 - the reason each changed file exists;
 - the essential complexity introduced and the obsolete complexity removed;

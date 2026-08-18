@@ -57,7 +57,7 @@ When a dependency changes, update CMake, includes, exports, source groups, PCH a
 
 ## Complexity Budget
 
-Complexity is permanent state another engineer must understand, validate, and retire. Every new service, abstraction, type, layer, cache, queue, task, thread, mode, flag, configuration key, public API, diagnostic, and compatibility path needs:
+Complexity is permanent state another engineer must understand, validate, and retire. Every new service, abstraction, type, layer, cache, queue, task, thread, mode, flag, configuration key, public API, and diagnostic needs:
 
 - a current product or engine consumer;
 - one owner and one enforced invariant;
@@ -66,7 +66,27 @@ Complexity is permanent state another engineer must understand, validate, and re
 - a validation or measurement that can prove its value;
 - a deletion, replacement, or reevaluation condition when its need is temporary or evidence-dependent.
 
+Legacy and compatibility paths are not complexity-budget candidates under the [current clean-break policy](IntegrationStyleGuide.md#current-clean-break-policy); they are prohibited for owned Sparkle representations.
+
 A change MAY add many lines while reducing system complexity. Review concepts and authority, not net line count: prefer fewer mutable representations, modes, ownership crossings, public contracts, and paths through which the same result can be produced. Do not prepay for hypothetical backends, variants, reuse, or scale. Add a seam when a real boundary changes independently, not because a design pattern has a familiar name.
+
+## Definition and Usage Placement
+
+Every capability, policy, transform, validation rule, and mutable fact has one authoritative definition in the narrowest owner that knows its invariant, lifetime, and failure behavior. Placement follows responsibility rather than the first caller that needed the behavior:
+
+- high-level modules and orchestrators own intent, ordering, lifecycle, policy selection, and composition;
+- capability owners own the cohesive algorithm, state machine, transform, validation, encoding, allocation, or retirement mechanism;
+- backend-private owners implement native details without selecting product workflow;
+- producers submit through the owner's contract and consumers read the owner's result; neither reimplements the owner's decision;
+- genuinely shared behavior belongs to the lowest common semantic owner, not automatically to `Core`, `Common`, a utility file, or a global registry.
+
+Audit both directions: start at each changed definition and find every use, then start at each changed use and find the definition that should own its behavior. Classify every material site as **authority**, **composition**, **producer**, **consumer**, or **duplicate**. Search exact symbols plus semantic equivalents, repeated switches, copied validation/error text, parallel caches/state, and rejected/old names. Build membership and dependency direction must agree with the claimed owner.
+
+Apply the [single-truth and copy budget](DataOrientedDesign.md#single-truth-and-copy-budget) to representation placement. A value holder belongs at the real lifetime or publication boundary it serves; convenience mirrors and copied settings do not become owners merely because they have a type name.
+
+The change fails placement review when callers repeat the same policy, transform, validation, state transition, or fallback; an orchestrator implements stage mechanics; a low-level capability selects unrelated workflows; two modules derive or mutate the same fact independently; a facade exists while callers still reach around it; or feature work must scatter edits across unrelated files. Move the behavior to its real owner, reduce callers to intent-level operations, and delete every duplicate production path in the same change.
+
+Do not merge code merely because syntax looks similar. Different semantic owners, lifetimes, failure contracts, or cost models may justify local repetition; duplicated authority never does.
 
 ## Orchestration and Capabilities
 
@@ -85,6 +105,14 @@ Extract a nontrivial stage when a precise name makes the workflow clearer, hides
 An orchestrator MUST NOT accumulate parsing, data transforms, cache insertion, task partition mechanics, backend-native branches, serialization, diagnostic formatting, UI widget internals, or another owner's allocation/retirement policy.
 
 A capability implementation owns one cohesive operation, state machine, transform, policy, encoding, allocation, or lifetime and exposes only what its orchestrator needs.
+
+### Mandatory Orchestrator/Implementor Boundary
+
+An orchestration owner MUST remain generic over the behaviors it composes. When a workflow contains independently changing payload types, resource kinds, policies, backends, stages, or other behavioral variants, each variant's algorithm and invariant belong to a dedicated capability implementor. The orchestrator may select, order, invoke, and publish those capabilities; it MUST NOT implement their per-variant loops, transforms, validation, encoding, allocation, task-graph construction, or failure details.
+
+Apply this boundary to the complete touched family, not only the newly added case. Adding or materially changing one variant requires auditing its sibling variants and extracting any mechanics still embedded in the orchestrator. A switch or repeated type-specific region in an orchestrator is a placement warning even when every branch is currently small.
+
+The actual lifecycle/composition owner is the orchestrator. Do not add a generic `Manager`, `Builder`, facade, or base interface merely to forward calls to implementors; use the existing lifecycle owner when it already sequences the work. Implementors may share a concrete helper only when they enforce the same invariant and change together. Different lifetimes, inputs, outputs, failure contracts, or cost models require separate implementors even when their syntax looks similar.
 
 At function level, orchestration and mechanism are separate responsibilities:
 
@@ -170,7 +198,7 @@ MUST:
 - keep one canonical identity and stale-handle rule per domain;
 - keep one scheduler, frame-graph authority, queue-submit owner, editor-operation runtime, and content-publication path;
 - consolidate repeated transforms or validation owned by the same domain;
-- delete compatibility spelling and duplicate paths after migration;
+- delete compatibility spelling and duplicate paths atomically with their replacement;
 - derive read models, render projections, caches, and GPU tables in one direction from authority.
 
 Do not unify algorithms with different lifetimes or consumers, hide concrete transforms behind premature generic containers, retain dual mutable representations, or branch one function through full legacy/new or serial/parallel architectures. Local repetition is preferable to a misleading abstraction; duplicated authority is not.

@@ -33,13 +33,6 @@ namespace LevelParsing
 				throw Diagnostics::Error("Camera FOV must be between 0 and 180 degrees.");
 			return;
 		}
-		if (parsedLine.key == "MoveSpeed")
-		{
-			levelDesc.cameraDesc.moveSpeedMetersPerSecond = ParseFloat(parsedLine.value, "camera move speed in metres per second");
-			if (levelDesc.cameraDesc.moveSpeedMetersPerSecond < 0.0f)
-				throw Diagnostics::Error("Camera move speed cannot be negative.");
-			return;
-		}
 		if (parsedLine.key == "NearZ")
 		{
 			levelDesc.cameraDesc.nearZ = ParseFloat(parsedLine.value, "camera near plane");
@@ -74,6 +67,6 @@ namespace LevelParsing
 		output << "FovYDegrees = " << levelDesc.cameraDesc.fovYDegrees << "\n";
 		output << "NearZ = " << levelDesc.cameraDesc.nearZ << "\n";
 		output << "FarZ = " << levelDesc.cameraDesc.farZ << "\n";
-		output << "MoveSpeed = " << levelDesc.cameraDesc.moveSpeedMetersPerSecond << "\n\n";
+		output << "\n";
 	}
 }

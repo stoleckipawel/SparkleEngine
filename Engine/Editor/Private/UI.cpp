@@ -18,6 +18,7 @@
 #include "Scene/Model/EditorSceneModelBuilder.h"
 #include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Settings/EditorRestartService.h"
+#include "Viewport/EditorViewportSession.h"
 #include "Window/Window.h"
 
 #include <backends/imgui_impl_win32.h>
@@ -37,6 +38,24 @@ const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
 	}();
 
 	return m_viewportPanel ? m_viewportPanel->GetRenderRequest() : defaultRequest;
+}
+
+RenderCameraData UI::UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept
+{
+	UpdateSceneModel();
+	if (!m_viewportSession || !m_sceneModel)
+	{
+		return {};
+	}
+
+	const RenderViewportExtent extent = GetViewportRenderRequest().Extent;
+	m_viewportSession->SynchronizeWorld(m_sceneModel->GetCameras(), m_sceneModel->GetWorldGeneration());
+	const RenderCameraData camera = m_viewportSession->UpdateCamera(intent, deltaSeconds, extent);
+	if (m_viewportPanel)
+	{
+		m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);
+	}
+	return camera;
 }
 
 void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept

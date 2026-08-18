@@ -1,21 +1,12 @@
 #pragma once
 
-#include "Frame/Core/FrameAssembly.h"
-#include "Frame/Targets/FrameRenderTargets.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "RHI/Public/Formats/PixelFormat.h"
+#include "Frame/Core/Frame.h"
 
 class FrameGraphBuilder;
 
 void AddPreReconstructionPostProcessingPasses(
     FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent,
+    const FrameBuildSettings& settings,
     FrameAssemblyResourceLayout& resources);
 
-void AddPostProcessingPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent,
-    RenderViewportExtent outputExtent,
-    PixelFormat backBufferFormat,
-    bool presentToBackBuffer,
-    FrameAssemblyResourceLayout& resources);
+void AddPostProcessingPasses(FrameGraphBuilder& builder, const FrameBuildSettings& settings, FrameAssemblyResourceLayout& resources);
