@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Frame/Core/RenderViewData.h"
 #include "RayTracing/Scene/RayTracingSceneFrameData.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 #include "SceneData/RenderSceneGpuData.h"
+#include "View/RenderView.h"
 
 struct FrameContext
 {
-	RenderSceneData sceneData = {};
+	PreparedRenderScene preparedScene = {};
 	const RenderSceneGpuData* sceneGpuData = nullptr;
 	RayTracingSceneFrameData rayTracingScene = {};
-	RenderViewData mainView = {};
+	RenderView view = {};
 };

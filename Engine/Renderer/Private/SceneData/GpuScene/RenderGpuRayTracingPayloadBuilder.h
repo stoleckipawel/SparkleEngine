@@ -6,21 +6,21 @@ class GpuMeshCache;
 struct MaterialData;
 struct MeshDraw;
 struct RenderRayTracingBlasInput;
-struct RenderSceneData;
+struct PreparedRenderScene;
 
 class RenderGpuRayTracingPayloadBuilder final
 {
 public:
-	static void Build(const RenderSceneData& sceneData, const GpuMeshCache& meshes, RenderGpuRayTracingPayloads& payloads);
+	static void Build(const PreparedRenderScene& preparedScene, const GpuMeshCache& meshes, RenderGpuRayTracingPayloads& payloads);
 
 private:
 	struct BuildState;
 
-	static void AppendMaterials(const RenderSceneData& sceneData, RenderGpuRayTracingPayloads& payloads);
-	static void PrepareInstances(const RenderSceneData& sceneData, RenderGpuRayTracingPayloads& payloads, BuildState& state);
+	static void AppendMaterials(const PreparedRenderScene& preparedScene, RenderGpuRayTracingPayloads& payloads);
+	static void PrepareInstances(const PreparedRenderScene& preparedScene, RenderGpuRayTracingPayloads& payloads, BuildState& state);
 	static void AppendInstance(
 	    const RenderRayTracingBlasInput& input,
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    const GpuMeshCache& meshes,
 	    RenderGpuRayTracingPayloads& payloads,
 	    BuildState& state);

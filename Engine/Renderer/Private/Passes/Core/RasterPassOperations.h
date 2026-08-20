@@ -17,8 +17,7 @@
 
 namespace RasterPassOperations
 {
-	template <typename TPass>
-	const typename TPass::ParameterMetadata& BuildParameterMetadata()
+	template <typename TPass> const typename TPass::ParameterMetadata& BuildParameterMetadata()
 	{
 		static const typename TPass::ParameterMetadata metadata = []
 		{
@@ -40,8 +39,7 @@ namespace RasterPassOperations
 	    PixelFormat renderTargetFormat,
 	    bool usePresentColorFormat);
 
-	template <typename TPass>
-	bool DrawFullscreen(
+	template <typename TPass> bool DrawFullscreen(
 	    PassExecutionContext& context,
 	    const RasterPassPipelineRuntime& runtime,
 	    typename TPass::ParameterInstance& parameters)
@@ -49,8 +47,8 @@ namespace RasterPassOperations
 		const bool valid = parameters.Sync();
 		assert(valid);
 
-		context.Commands.SetViewport(context.Frame.mainView.viewport);
-		context.Commands.SetScissorRect(context.Frame.mainView.scissorRect);
+		context.Commands.SetViewport(context.Frame.view.viewport);
+		context.Commands.SetScissorRect(context.Frame.view.scissorRect);
 		context.Resources.BindRenderTarget(context.Commands, parameters->RenderTarget[0]);
 
 		const bool bound = RasterShaderPass<typename TPass::Parameters>::Bind(

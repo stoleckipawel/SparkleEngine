@@ -5,7 +5,10 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/FrameUniformData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/RenderViewLightingData.h"
 
 #include <cstdint>
@@ -15,7 +18,7 @@ struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeContext;
 struct FrameContext;
-struct RenderViewData;
+struct RenderView;
 struct DirectShadowSignalResources;
 
 struct DirectLightingPassParameters
@@ -31,9 +34,10 @@ struct DirectLightingPassParameters
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferSubsurface;
 	ShaderTexture2D<void> SceneDepth;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
-	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<FrameUniformData> Frame;
+	ShaderUniform<ViewUniformData> View;
+	ShaderUniform<ViewCameraUniformData> ViewCamera;
+	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderBuffer<void> DirectionalLights;
 	ShaderBuffer<void> PointLights;
@@ -62,9 +66,10 @@ struct DirectLightingPassParameters
 		builder.ReadTexture("GBufferMaterial", &DirectLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferSubsurface", &DirectLightingPassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("SceneDepth", &DirectLightingPassParameters::SceneDepth, ShaderStageVisibility::Compute);
-		builder.Uniform("PerFrame", &DirectLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
-		builder.Uniform("PerView", &DirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
-		builder.Uniform("PerTemporal", &DirectLightingPassParameters::PerTemporal, ShaderStageVisibility::Compute);
+		builder.Uniform("Frame", &DirectLightingPassParameters::Frame, ShaderStageVisibility::Compute);
+		builder.Uniform("View", &DirectLightingPassParameters::View, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewCamera", &DirectLightingPassParameters::ViewCamera, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewTemporal", &DirectLightingPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
 		builder.Uniform("ViewLighting", &DirectLightingPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("DirectionalLights", &DirectLightingPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &DirectLightingPassParameters::PointLights, ShaderStageVisibility::Compute);
@@ -75,7 +80,7 @@ struct DirectLightingPassParameters
 
 class DirectLightingPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "DirectLighting";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -90,11 +95,11 @@ class DirectLightingPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
-  private:
+private:
 	void SetParameters(
 	    ParameterInstance& parameters,
 	    const FrameContext& frame,
-	    const RenderViewData& viewData,
+	    const RenderView& view,
 	    const PassRuntimeContext& passRuntimeContext) const;
 
 	const ComputePassPipelineRuntime& m_runtime;

@@ -1,6 +1,8 @@
 #ifndef SPARKLE_RAY_TRACING_PATH_SAMPLING_HLSLI
 #define SPARKLE_RAY_TRACING_PATH_SAMPLING_HLSLI
 
+#include "Resources/FrameUniformData.hlsli"
+
 #include "BRDF/BRDF.hlsli"
 #include "BRDF/SpecularSampling.hlsli"
 #include "Common/Random.hlsli"
@@ -88,18 +90,16 @@ namespace RayTracingPathSampling
 		return result;
 	}
 
-	RayTracingPathSample::DirectionSample SampleSpecularLobe(
-	    RayTracingPathSurface surface,
-	    uint sampleMode,
-	    float lobePdf,
-	    float2 randomSample)
+	RayTracingPathSample::DirectionSample SampleSpecularLobe(RayTracingPathSurface surface,
+	                                                         uint sampleMode,
+	                                                         float lobePdf,
+	                                                         float2 randomSample)
 	{
-		const BRDF::SpecularSampling::LobeSample specularSample = BRDF::SpecularSampling::SampleReflectionLobe(
-		    surface.NormalWorld,
-		    surface.ViewDirWorld,
-		    surface.Roughness,
-		    sampleMode,
-		    randomSample);
+		const BRDF::SpecularSampling::LobeSample specularSample = BRDF::SpecularSampling::SampleReflectionLobe(surface.NormalWorld,
+		                                                                                                       surface.ViewDirWorld,
+		                                                                                                       surface.Roughness,
+		                                                                                                       sampleMode,
+		                                                                                                       randomSample);
 
 		RayTracingPathSample::DirectionSample result = InvalidSample(RayTracingPathSample::LobeSpecular);
 		result.DirectionWorld = specularSample.DirectionWorld;
@@ -119,10 +119,9 @@ namespace RayTracingPathSampling
 
 		const float3 f0 = SurfaceLighting::BuildF0(surface.BaseColor, surface.Metallic, surface.DielectricF0);
 		const float3 fresnel = BRDF::Fresnel::EvaluateDirect(shadingData.VoH, f0);
-		result.Throughput =
-		    specularSample.Mirror
-		        ? max(fresnel / lobePdf, 0.0f.xxx)
-		        : max(BRDF::Specular::EvaluateDirect(shadingData, surface.Roughness, fresnel) * (shadingData.NoL / result.Pdf), 0.0f.xxx);
+		result.Throughput = specularSample.Mirror
+		    ? max(fresnel / lobePdf, 0.0f.xxx)
+		    : max(BRDF::Specular::EvaluateDirect(shadingData, surface.Roughness, fresnel) * (shadingData.NoL / result.Pdf), 0.0f.xxx);
 		result.RejectionReason = RayTracingPathSample::RejectionReasonNone;
 		return result;
 	}

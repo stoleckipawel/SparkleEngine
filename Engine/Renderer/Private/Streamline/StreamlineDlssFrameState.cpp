@@ -1,7 +1,10 @@
 #include "../PCH.h"
 #include "Streamline/StreamlineDlssFrameState.h"
 
-StreamlineDlssFrameState::StreamlineDlssFrameState() noexcept : m_qualityMode(GetRequestedQualityMode()) {}
+StreamlineDlssFrameState::StreamlineDlssFrameState() noexcept :
+    m_qualityMode(GetRequestedQualityMode())
+{
+}
 
 EUpscalerQualityMode StreamlineDlssFrameState::GetRequestedQualityMode() const noexcept
 {
@@ -18,23 +21,23 @@ RenderViewportExtent StreamlineDlssFrameState::StoreResolution(
 	return providerRenderExtent;
 }
 
-void StreamlineDlssFrameState::SetupFrame(const ImageProviderFrameContext& frameContext) noexcept
+void StreamlineDlssFrameState::SetupFrame(const ImageProviderFrameInput& frameInput) noexcept
 {
-	m_frameContext = frameContext;
+	m_frameInput = frameInput;
 	const EUpscalerQualityMode qualityMode = GetRequestedQualityMode();
 	if (qualityMode != m_qualityMode)
 	{
 		m_qualityMode = qualityMode;
-		m_frameContext.ResetHistory = true;
+		m_frameInput.ResetHistory = true;
 	}
 
-	m_frameValid = m_resolvedRenderExtent.IsValid() && frameContext.OutputExtent == m_resolvedOutputExtent &&
-	               frameContext.RenderExtent == m_resolvedRenderExtent;
+	m_frameValid = m_resolvedRenderExtent.IsValid() && frameInput.OutputExtent == m_resolvedOutputExtent
+	    && frameInput.RenderExtent == m_resolvedRenderExtent;
 }
 
 void StreamlineDlssFrameState::Reset() noexcept
 {
-	m_frameContext = {};
+	m_frameInput = {};
 	m_resolvedOutputExtent = {};
 	m_resolvedRenderExtent = {};
 	m_frameValid = false;

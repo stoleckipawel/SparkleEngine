@@ -1,7 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Debug/VisualizeBuffersPass.h"
 
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "FrameGraph/PassRuntimeContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -9,7 +9,10 @@
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-VisualizeBuffersPass::VisualizeBuffersPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+VisualizeBuffersPass::VisualizeBuffersPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const VisualizeBuffersPass::ParameterMetadata& VisualizeBuffersPass::GetParameterMetadata() noexcept
 {
@@ -26,22 +29,18 @@ const RenderPassDefinition& VisualizeBuffersPass::GetDefinition() noexcept
 	return definition;
 }
 
-void VisualizeBuffersPass::SetParameters(
-    ParameterInstance& parameters,
-    const RenderViewData& viewData,
-    const PassRuntimeContext& passRuntimeContext) const
+void VisualizeBuffersPass::SetParameters(ParameterInstance& parameters, const RenderView& view) const
 {
-	(void) viewData;
-	parameters->PerFrame = passRuntimeContext.PerFrame;
+	parameters->View = view.uniform;
 }
 
 void VisualizeBuffersPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame.mainView, context.Runtime);
+	SetParameters(parameters, context.Frame.view);
 	ComputePassOperations::DispatchSized<VisualizeBuffersPass>(
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

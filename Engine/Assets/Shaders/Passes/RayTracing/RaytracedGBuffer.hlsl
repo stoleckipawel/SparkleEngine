@@ -1,4 +1,7 @@
-#include "Resources/ConstantBuffers.hlsli"
+#include "Resources/ViewUniformData.hlsli"
+#include "Resources/ViewCameraUniformData.hlsli"
+#include "Resources/ViewTemporalUniformData.hlsli"
+
 #include "Debug/InstanceView.hlsli"
 #include "Geometry/ScreenSpace.hlsli"
 #include "Geometry/Transforms.hlsli"
@@ -54,9 +57,11 @@ void StoreRaytracedGBufferHit(uint2 pixelCoord, RayTracingHitSurfaceData surface
 {
 	const float3 baseColor = InstanceView::ApplyInstanceVisualization(surface.BaseColor, surface.GpuSceneSlot);
 
-	GBufferBaseColor[pixelCoord] = GBufferPacking::PackBaseColor(baseColor, surface.Alpha, surface.AlphaMode, RayTracingHitSurface::AlphaModeBlended);
+	GBufferBaseColor[pixelCoord] =
+	    GBufferPacking::PackBaseColor(baseColor, surface.Alpha, surface.AlphaMode, RayTracingHitSurface::AlphaModeBlended);
 	GBufferNormal[pixelCoord] = GBufferPacking::PackNormal(surface.NormalWorld);
-	GBufferMaterial[pixelCoord] = GBufferPacking::PackMaterial(surface.Metallic, surface.Roughness, surface.AmbientOcclusion, surface.DielectricF0);
+	GBufferMaterial[pixelCoord] =
+	    GBufferPacking::PackMaterial(surface.Metallic, surface.Roughness, surface.AmbientOcclusion, surface.DielectricF0);
 	GBufferEmissive[pixelCoord] = GBufferPacking::PackEmissive(surface.EmissiveColor);
 	GBufferSubsurface[pixelCoord] = GBufferPacking::PackSubsurface(surface.SubsurfaceColor, surface.SubsurfaceStrength);
 	GBufferDeviceZ[pixelCoord] = ComputeRaytracedGBufferDeviceZ(surface.PositionWorld);
@@ -77,23 +82,21 @@ void StoreRaytracedGBufferHit(uint2 pixelCoord, RayTracingHitSurfaceData surface
 	const uint2 pixelCoord = dispatchThreadId.xy;
 	RayTracingPathTrace::TraceSettings traceSettings;
 	traceSettings.NormalBias = 0.0f;
-	traceSettings.MaxDistance = Camera.FarZ;
+	traceSettings.MaxDistance = FarZ;
 	traceSettings.MinT = RaytracedGBufferMinimumTMin;
 	traceSettings.RayFlags = RaytracedGBufferRayFlags;
 	traceSettings.InstanceMask = RaytracedGBufferInstanceMask;
 
-	const float3 rayOriginWorld = Camera.Position;
+	const float3 rayOriginWorld = Position;
 	const float3 rayDirectionWorld = ComputeSkyViewDirectionWorld(pixelCoord);
-	const RayTracingTraceResult primaryTrace =
-	    RayTracingPathTrace::TraceSceneRay(rayOriginWorld, rayDirectionWorld, traceSettings);
+	const RayTracingTraceResult primaryTrace = RayTracingPathTrace::TraceSceneRay(rayOriginWorld, rayDirectionWorld, traceSettings);
 	if (!primaryTrace.Hit)
 	{
 		StoreRaytracedGBufferMiss(pixelCoord);
 		return;
 	}
 
-	const RayTracingHitSurfaceData surface =
-	    ReconstructRayTracingHitSurface(primaryTrace, rayOriginWorld, rayDirectionWorld);
+	const RayTracingHitSurfaceData surface = ReconstructRayTracingHitSurface(primaryTrace, rayOriginWorld, rayDirectionWorld);
 	if (!surface.Valid)
 	{
 		StoreRaytracedGBufferMiss(pixelCoord);

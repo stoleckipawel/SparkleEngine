@@ -11,7 +11,7 @@ struct FrameContext;
 struct PassExecutionContext;
 struct PassRuntimeContext;
 struct RenderPassDefinition;
-struct RenderViewData;
+struct RenderView;
 
 struct DirectLightReservoirSpatialPassParameters : DirectLightReservoirCommonParameters
 {
@@ -20,7 +20,7 @@ struct DirectLightReservoirSpatialPassParameters : DirectLightReservoirCommonPar
 	ShaderRWTexture2D<void> CurrentReservoirSample;
 	ShaderRWTexture2D<void> CurrentReservoirWeight;
 	ShaderRWTexture2D<void> CurrentReservoirSurface;
-	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightReservoirSpatialPassParameters>& builder)
 	{
@@ -46,14 +46,14 @@ struct DirectLightReservoirSpatialPassParameters : DirectLightReservoirCommonPar
 		    ShaderStageVisibility::Compute);
 		DescribeGBuffer(builder);
 		DescribeFrame(builder);
-		builder.Uniform("PerTemporal", &DirectLightReservoirSpatialPassParameters::PerTemporal, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewTemporal", &DirectLightReservoirSpatialPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
 		DescribeLighting(builder);
 	}
 };
 
 class DirectLightReservoirSpatialPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "DirectLightReservoirSpatial";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -68,11 +68,11 @@ class DirectLightReservoirSpatialPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
-  private:
+private:
 	void SetParameters(
 	    ParameterInstance& parameters,
 	    const FrameContext& frame,
-	    const RenderViewData& viewData,
+	    const RenderView& view,
 	    const PassRuntimeContext& passRuntimeContext) const;
 
 	const ComputePassPipelineRuntime& m_runtime;

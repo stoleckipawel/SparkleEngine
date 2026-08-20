@@ -1,26 +1,34 @@
 #pragma once
 
 #include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "Renderer/Public/Debug/RenderViewMode.h"
 
 #include <cstdint>
 
-class PerViewDataBuilder;
-class RenderCamera;
 class PersistentRenderGpuScene;
-class TemporalDataBuilder;
-class RenderPreparationGraph;
+class RenderScenePreparation;
 class RenderRayTracingScene;
+class RenderViewBuilder;
+class RenderViewPreparation;
+class RenderViewState;
 struct FrameContext;
 class RenderScene;
-struct RhiRect;
-struct RhiViewport;
+struct RenderViewInput;
 
 struct FrameContextBuildRequest final
 {
 	PersistentRenderGpuScene& GpuScene;
+	RenderViewState& ViewState;
+	const RenderViewInput& ViewInput;
+	const ViewportRenderRequest& ViewportRequest;
 	std::uint64_t FrameId = 0;
+	std::uint64_t ShaderGeneration = 0;
+	std::uint64_t ImageProviderGeneration = 0;
+	std::uint64_t GraphTopologyGeneration = 0;
 	std::uint32_t FrameIndex = 0;
-	RenderViewportExtent SceneExtent;
+	RenderViewportExtent RenderExtent;
+	RenderViewportExtent OutputExtent;
+	RenderViewMode ViewMode = RenderViewMode::Lit;
 	RenderRayTracingScene* RayTracingScene = nullptr;
 };
 
@@ -29,20 +37,15 @@ class FrameContextBuilder final
 public:
 	FrameContextBuilder(
 	    RenderScene& scene,
-	    const RenderCamera& renderCamera,
-	    RenderPreparationGraph& renderPreparationGraph,
-	    PerViewDataBuilder& perViewDataBuilder,
-	    TemporalDataBuilder& temporalDataBuilder) noexcept;
+	    RenderScenePreparation& renderScenePreparation,
+	    RenderViewBuilder& renderViewBuilder,
+	    RenderViewPreparation& renderViewPreparation) noexcept;
 
 	void Build(FrameContext& output, const FrameContextBuildRequest& request) const;
 
 private:
-	static RhiViewport BuildSceneViewport(RenderViewportExtent sceneExtent) noexcept;
-	static RhiRect BuildSceneScissorRect(RenderViewportExtent sceneExtent) noexcept;
-
 	RenderScene& m_scene;
-	const RenderCamera& m_renderCamera;
-	RenderPreparationGraph& m_renderPreparationGraph;
-	PerViewDataBuilder& m_perViewDataBuilder;
-	TemporalDataBuilder& m_temporalDataBuilder;
+	RenderScenePreparation& m_renderScenePreparation;
+	RenderViewBuilder& m_renderViewBuilder;
+	RenderViewPreparation& m_renderViewPreparation;
 };

@@ -9,7 +9,7 @@
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingTransformPacking.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 
 #include <algorithm>
 #include <unordered_set>
@@ -61,11 +61,11 @@ std::uint64_t RayTracingClassicTlasBuilder::ResolveScratchSize(
 }
 
 RhiRayTracingInstanceFlags RayTracingClassicTlasBuilder::ResolveInstanceFlags(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshDraw& draw) noexcept
 {
 	RhiRayTracingInstanceFlags flags = RhiRayTracingInstanceFlags::None;
-	if (draw.Material.Slot >= sceneData.materials.size())
+	if (draw.Material.Slot >= preparedScene.materials.size())
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingClassicTlasBuilderLogger,
@@ -73,7 +73,7 @@ RhiRayTracingInstanceFlags RayTracingClassicTlasBuilder::ResolveInstanceFlags(
 		    __LINE__,
 		    "Classic TLAS input references a material outside the render scene.");
 	}
-	const MaterialData& material = sceneData.materials[draw.Material.Slot];
+	const MaterialData& material = preparedScene.materials[draw.Material.Slot];
 	if (material.doubleSided)
 	{
 		flags = flags | RhiRayTracingInstanceFlags::TriangleFacingCullDisable;
@@ -131,7 +131,7 @@ void RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexc
 
 RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     RayTracingBlasCache& blasCache,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
@@ -145,10 +145,10 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 		    "Classic TLAS build has no render hardware interface.");
 	}
 
-	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
 	BuildState state;
 	state.Instances.reserve(work.ClassicTlasBlasInputIndices.size());
-	CollectInstances(commandContext, sceneData, blasCache, diagnostics, state);
+	CollectInstances(commandContext, preparedScene, blasCache, diagnostics, state);
 	stats.InstanceCount = static_cast<std::uint32_t>(state.Instances.size());
 	PrepareBuild(state);
 
@@ -167,12 +167,12 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 
 void RayTracingClassicTlasBuilder::CollectInstances(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     RayTracingBlasCache& blasCache,
     RayTracingPerformanceDiagnostics* diagnostics,
     BuildState& state) noexcept
 {
-	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
 	for (const std::uint32_t blasInputIndex : work.ClassicTlasBlasInputIndices)
 	{
 		if (blasInputIndex >= work.BlasInputs.size())
@@ -184,7 +184,7 @@ void RayTracingClassicTlasBuilder::CollectInstances(
 			    "Classic TLAS work references a BLAS input outside the prepared work plan.");
 		}
 		const RenderRayTracingBlasInput& input = work.BlasInputs[blasInputIndex];
-		if (input.MeshInstanceIndex >= sceneData.meshInstances.size())
+		if (input.PrimitiveIndex >= preparedScene.primitives.size())
 		{
 			Diagnostics::Fatal(
 			    g_rayTracingClassicTlasBuilderLogger,
@@ -192,7 +192,7 @@ void RayTracingClassicTlasBuilder::CollectInstances(
 			    __LINE__,
 			    "Classic TLAS work references a mesh instance outside the render scene.");
 		}
-		const MeshDraw& draw = sceneData.meshInstances[input.MeshInstanceIndex];
+		const MeshDraw& draw = preparedScene.primitives[input.PrimitiveIndex].Draw;
 		if (!draw.Geometry.Mesh)
 		{
 			Diagnostics::Fatal(
@@ -202,7 +202,8 @@ void RayTracingClassicTlasBuilder::CollectInstances(
 			    "Classic TLAS work references a mesh instance with no GPU mesh handle.");
 		}
 
-		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(commandContext, sceneData, draw, input.GpuSceneSlot, diagnostics);
+		const RayTracingBlasCache::BlasHandle blas =
+		    blasCache.EnsureBlas(commandContext, preparedScene, draw, input.GpuSceneSlot, diagnostics);
 
 		commandContext.TrackResource(blas.resource);
 		if (blas.builtThisFrame)
@@ -215,7 +216,7 @@ void RayTracingClassicTlasBuilder::CollectInstances(
 		        .InstanceID = input.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
-		        .Flags = ResolveInstanceFlags(sceneData, draw),
+		        .Flags = ResolveInstanceFlags(preparedScene, draw),
 		        .AccelerationStructure = blas.gpuAddress});
 	}
 }

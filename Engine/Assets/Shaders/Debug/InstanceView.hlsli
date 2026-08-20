@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Resources/ViewUniformData.hlsli"
+
 #include "Common/Hash.hlsli"
 #include "Debug/RenderViewModeConstants.hlsli"
 
@@ -13,4 +15,4 @@ namespace InstanceView
 		}
 		return baseColor;
 	}
-}  // namespace InstanceView
+} // namespace InstanceView

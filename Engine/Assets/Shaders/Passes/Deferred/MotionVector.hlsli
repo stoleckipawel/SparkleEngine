@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Resources/ViewUniformData.hlsli"
+#include "Resources/ViewTemporalUniformData.hlsli"
+
 #include "Geometry/ScreenSpace.hlsli"
 
 namespace MotionVectors
@@ -30,10 +33,7 @@ namespace MotionVectors
 		return currentPixels - prevPixels;
 	}
 
-	float2 ComputeRaster(
-		const float2 rasterPositionPixels,
-		const float4 previousClipPosition,
-		const float2 viewportSize)
+	float2 ComputeRaster(const float2 rasterPositionPixels, const float4 previousClipPosition, const float2 viewportSize)
 	{
 		if (HistoryValid == 0u || previousClipPosition.w <= 1.0e-6f)
 		{
@@ -57,10 +57,7 @@ namespace MotionVectors
 		return (float2(pixelCoord) + 0.5f) - motionPixels + jitterDeltaPixels;
 	}
 
-	float2 ComputeCameraRotation(
-		const uint2 pixelCoord,
-		const float3 currentDirectionWorld,
-		const float2 viewportSize)
+	float2 ComputeCameraRotation(const uint2 pixelCoord, const float3 currentDirectionWorld, const float2 viewportSize)
 	{
 		const float2 currentNdc = PixelCenterToUnjitteredNdc(pixelCoord);
 		const float4 currentClipPosition = float4(currentNdc, 1.0f, 1.0f);
@@ -68,4 +65,4 @@ namespace MotionVectors
 		const float4 previousClipPosition = mul(previousDirectionView, PreviousViewToClipMatrix);
 		return Compute(currentClipPosition, previousClipPosition, viewportSize);
 	}
-}  // namespace MotionVectors
+} // namespace MotionVectors

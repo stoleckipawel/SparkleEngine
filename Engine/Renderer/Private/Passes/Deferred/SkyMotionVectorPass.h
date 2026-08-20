@@ -4,7 +4,9 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
 
 #include <cstdint>
 
@@ -16,23 +18,23 @@ struct SkyMotionVectorPassParameters
 {
 	ShaderTexture2D<void> GBufferDeviceZ;
 	ShaderRWTexture2D<void> GBufferMotionVector;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
-	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<ViewUniformData> View;
+	ShaderUniform<ViewCameraUniformData> ViewCamera;
+	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
 
 	static void Describe(ShaderParameterStructBuilder<SkyMotionVectorPassParameters>& builder)
 	{
 		builder.ReadTexture("GBufferDeviceZ", &SkyMotionVectorPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
 		builder.RWTexture("GBufferMotionVector", &SkyMotionVectorPassParameters::GBufferMotionVector, ShaderStageVisibility::Compute);
-		builder.Uniform("PerFrame", &SkyMotionVectorPassParameters::PerFrame, ShaderStageVisibility::Compute);
-		builder.Uniform("PerView", &SkyMotionVectorPassParameters::PerView, ShaderStageVisibility::Compute);
-		builder.Uniform("PerTemporal", &SkyMotionVectorPassParameters::PerTemporal, ShaderStageVisibility::Compute);
+		builder.Uniform("View", &SkyMotionVectorPassParameters::View, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewCamera", &SkyMotionVectorPassParameters::ViewCamera, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewTemporal", &SkyMotionVectorPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
 	}
 };
 
 class SkyMotionVectorPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "SkyMotionVector";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -47,6 +49,6 @@ class SkyMotionVectorPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

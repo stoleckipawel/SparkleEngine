@@ -1,16 +1,14 @@
 #pragma once
 
-#include "Scene/Materials/MaterialTextureTable.h"
 #include "Rendering/RenderResourceTables.h"
-#include "Scene/Materials/MaterialData.h"
 
 #include <cstdint>
 #include <memory>
-#include <vector>
 
-struct RenderSceneData;
+struct PreparedRenderScene;
 class RenderBindingSet;
 class RenderHardwareInterface;
+class RenderMaterialGeneration;
 class TextureCache;
 struct MaterialDesc;
 
@@ -25,24 +23,16 @@ public:
 	MaterialCache(MaterialCache&&) = delete;
 	MaterialCache& operator=(MaterialCache&&) = delete;
 
-	void BuildMaterials(const RenderMaterialTable& materials, std::uint64_t sourceRevision, RenderSceneData& sceneData);
+	void BuildMaterials(const RenderMaterialTable& materials, std::uint64_t sourceRevision, PreparedRenderScene& preparedScene);
 	void Reset() noexcept;
 
 private:
-	struct RebuildOutput;
-
 	void Rebuild(const RenderMaterialTable& materials, std::uint64_t sourceRevision, std::uint64_t textureRevision);
-	void BuildMaterial(const MaterialDesc& desc, std::uint32_t materialIndex, std::uint64_t generation, RebuildOutput& output);
-	void PublishMaterialTextureTable(RenderSceneData& sceneData) const noexcept;
+	void BuildMaterial(const MaterialDesc& desc, std::uint32_t materialIndex, std::uint64_t generation, RenderMaterialGeneration& output);
+	void PublishMaterialTextureTable(PreparedRenderScene& preparedScene) const noexcept;
 	std::uint64_t GetNextGeneration() const noexcept;
 
 	TextureCache& m_textureCache;
 	RenderHardwareInterface& m_renderHardwareInterface;
-	std::vector<MaterialData> m_cachedMaterialData;
-	std::vector<std::unique_ptr<RenderBindingSet>> m_materialTextureBindingSets;
-	MaterialTextureTable m_materialTextureTable;
-	std::uint64_t m_sourceRevision = 0u;
-	std::uint64_t m_textureRevision = 0u;
-	std::uint64_t m_generation = 0u;
-	bool m_materialCacheBuilt = false;
+	std::shared_ptr<const RenderMaterialGeneration> m_currentGeneration;
 };

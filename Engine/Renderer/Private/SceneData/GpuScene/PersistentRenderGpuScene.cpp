@@ -6,7 +6,8 @@
 #include "SceneData/GpuScene/RenderGpuGeometryState.h"
 #include "SceneData/GpuScene/RenderGpuLightingPayloadBuilder.h"
 #include "SceneData/GpuScene/RenderGpuRayTracingPayloadBuilder.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
+#include "View/RenderView.h"
 #include "SceneData/RenderSceneGpuData.h"
 
 #include <array>
@@ -81,20 +82,20 @@ struct PersistentRenderGpuScene::Impl final
 	{
 	}
 
-	const RenderSceneGpuData& Update(const RenderSceneData& sceneData, std::uint32_t frameIndex)
+	const RenderSceneGpuData& Update(const PreparedRenderScene& preparedScene, const RenderView& view, std::uint32_t frameIndex)
 	{
 		RenderGpuDynamicFrameStorage& dynamicStorage = DynamicFrames[frameIndex % DynamicFrames.size()];
-		Geometry.Update(sceneData);
+		Geometry.Update(preparedScene, view);
 
-		UpdateLighting(sceneData, dynamicStorage);
+		UpdateLighting(preparedScene, dynamicStorage);
 		UpdateGeometry(dynamicStorage);
-		UpdateRayTracing(sceneData, dynamicStorage);
+		UpdateRayTracing(preparedScene, dynamicStorage);
 		return dynamicStorage.Data;
 	}
 
-	void UpdateLighting(const RenderSceneData& sceneData, RenderGpuDynamicFrameStorage& storage)
+	void UpdateLighting(const PreparedRenderScene& preparedScene, RenderGpuDynamicFrameStorage& storage)
 	{
-		RenderGpuLightingPayloadBuilder::Build(sceneData, LightingPayloads);
+		RenderGpuLightingPayloadBuilder::Build(preparedScene, LightingPayloads);
 
 		storage.DirectionalLights.Update(*ResourceService, std::span{LightingPayloads.DirectionalLights}, L"DirectionalLights");
 		storage.PointLights.Update(*ResourceService, std::span{LightingPayloads.PointLights}, L"PointLights");
@@ -141,23 +142,23 @@ struct PersistentRenderGpuScene::Impl final
 		    .PreviousMorphWeights = storage.PreviousMorphWeights.GetBinding()};
 	}
 
-	void UpdateRayTracing(const RenderSceneData& sceneData, RenderGpuDynamicFrameStorage& storage)
+	void UpdateRayTracing(const PreparedRenderScene& preparedScene, RenderGpuDynamicFrameStorage& storage)
 	{
-		const std::uint64_t textureGeneration = sceneData.materialTextureTable.Generation;
-		const bool topologyChanged = sceneData.structuralRevision != RayTracingStructuralRevision;
-		const bool payloadChanged =
-		    topologyChanged || sceneData.materialRevision != RayTracingMaterialRevision || textureGeneration != RayTracingTextureGeneration;
+		const std::uint64_t textureGeneration = preparedScene.materialTextureTable.Generation;
+		const bool topologyChanged = preparedScene.structuralRevision != RayTracingStructuralRevision;
+		const bool payloadChanged = topologyChanged || preparedScene.materialRevision != RayTracingMaterialRevision
+		    || textureGeneration != RayTracingTextureGeneration;
 		if (payloadChanged)
 		{
-			RenderGpuRayTracingPayloadBuilder::Build(sceneData, *Meshes, RayTracingPayloads);
+			RenderGpuRayTracingPayloadBuilder::Build(preparedScene, *Meshes, RayTracingPayloads);
 			if (topologyChanged || RayTracingPayloads.InstanceCount == 0u || !RayTracing.Vertices.GetBinding()
 			    || !RayTracing.MorphTargetDeltas.GetBinding())
 			{
 				UpdateRayTracingTopology();
 			}
 
-			RayTracingStructuralRevision = sceneData.structuralRevision;
-			RayTracingMaterialRevision = sceneData.materialRevision;
+			RayTracingStructuralRevision = preparedScene.structuralRevision;
+			RayTracingMaterialRevision = preparedScene.materialRevision;
 			RayTracingTextureGeneration = textureGeneration;
 			++RayTracingPayloadRevision;
 		}
@@ -228,9 +229,12 @@ PersistentRenderGpuScene::PersistentRenderGpuScene(RhiResourceService& resourceS
 
 PersistentRenderGpuScene::~PersistentRenderGpuScene() noexcept = default;
 
-const RenderSceneGpuData& PersistentRenderGpuScene::Update(const RenderSceneData& sceneData, std::uint32_t frameIndex)
+const RenderSceneGpuData& PersistentRenderGpuScene::Update(
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
+    std::uint32_t frameIndex)
 {
-	return m_impl->Update(sceneData, frameIndex);
+	return m_impl->Update(preparedScene, view, frameIndex);
 }
 
 void PersistentRenderGpuScene::Reset() noexcept

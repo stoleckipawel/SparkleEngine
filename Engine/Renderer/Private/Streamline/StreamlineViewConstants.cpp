@@ -2,16 +2,16 @@
 #include "Streamline/StreamlineViewConstants.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	#include <cmath>
-	#include <cstddef>
-	#include <string>
-	#include <string_view>
+  #include <cmath>
+  #include <cstddef>
+  #include <string>
+  #include <string_view>
 
 static const auto g_streamlineViewConstantsLogger = Logging::GetOrCreateLogger("Renderer.StreamlineViewConstants");
 
 class StreamlineViewConstantTranslation final
 {
-  public:
+public:
 	static void Require(bool condition, std::string_view message)
 	{
 		if (!condition)
@@ -36,10 +36,7 @@ class StreamlineViewConstantTranslation final
 		return ToStreamlineMatrix(stored);
 	}
 
-	static sl::float3 ToStreamlineFloat3(const DirectX::XMFLOAT3& source)
-	{
-		return sl::float3{source.x, source.y, source.z};
-	}
+	static sl::float3 ToStreamlineFloat3(const DirectX::XMFLOAT3& source) { return sl::float3{source.x, source.y, source.z}; }
 
 	static sl::float3 NormalizeToStreamlineFloat3(const DirectX::XMFLOAT3& source)
 	{
@@ -69,9 +66,7 @@ class StreamlineViewConstantTranslation final
 	{
 		const float projectionXScale = projection.m[0][0];
 		const float projectionYScale = projection.m[1][1];
-		Require(
-		    projectionXScale > 1.0e-6f && projectionYScale > 1.0e-6f,
-		    "Streamline camera projection has a non-positive aspect scale.");
+		Require(projectionXScale > 1.0e-6f && projectionYScale > 1.0e-6f, "Streamline camera projection has a non-positive aspect scale.");
 		return projectionYScale / projectionXScale;
 	}
 
@@ -115,12 +110,11 @@ void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewC
 
 	DirectX::XMMATRIX clipToPrevClip = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX prevClipToClip = DirectX::XMMatrixIdentity();
-	if (input.TemporalState.HistoryValid)
+	if (input.Temporal.HistoryValid != 0u)
 	{
 		const DirectX::XMMATRIX invProjection = DirectX::XMLoadFloat4x4(&input.Camera.InvProjectionMTX);
 		const DirectX::XMMATRIX invView = DirectX::XMLoadFloat4x4(&input.Camera.InvViewMTX);
-		const DirectX::XMMATRIX previousWorldToClip =
-		    DirectX::XMLoadFloat4x4(&input.TemporalData.PreviousWorldToClipMatrix);
+		const DirectX::XMMATRIX previousWorldToClip = DirectX::XMLoadFloat4x4(&input.Temporal.PreviousWorldToClipMatrix);
 		clipToPrevClip = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(invProjection, invView), previousWorldToClip);
 		prevClipToClip = DirectX::XMMatrixInverse(nullptr, clipToPrevClip);
 	}
@@ -131,7 +125,7 @@ void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewC
 	constants.clipToPrevClip = StreamlineViewConstantTranslation::ToStreamlineMatrixFromMatrix(clipToPrevClip);
 	constants.prevClipToClip = StreamlineViewConstantTranslation::ToStreamlineMatrixFromMatrix(prevClipToClip);
 	constants.jitterOffset =
-	    StreamlineViewConstantTranslation::ConvertNdcJitterToPixelJitter(input.TemporalState.CurrentJitterNdc, input.RenderExtent);
+	    StreamlineViewConstantTranslation::ConvertNdcJitterToPixelJitter(input.Temporal.CurrentJitterNdc, input.RenderExtent);
 	constants.mvecScale = StreamlineViewConstantTranslation::BuildMotionVectorScale(input);
 	constants.cameraPinholeOffset = sl::float2{0.0f, 0.0f};
 	constants.cameraPos = StreamlineViewConstantTranslation::ToStreamlineFloat3(input.Camera.Position);
@@ -145,7 +139,7 @@ void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewC
 	constants.depthInverted = input.ReversedDeviceDepth ? sl::Boolean::eTrue : sl::Boolean::eFalse;
 	constants.cameraMotionIncluded = sl::Boolean::eTrue;
 	constants.motionVectors3D = sl::Boolean::eFalse;
-	constants.reset = input.ResetRequested || !input.TemporalState.HistoryValid ? sl::Boolean::eTrue : sl::Boolean::eFalse;
+	constants.reset = input.ResetRequested || input.Temporal.HistoryValid == 0u ? sl::Boolean::eTrue : sl::Boolean::eFalse;
 	constants.motionVectorsJittered = sl::Boolean::eFalse;
 }
 #endif

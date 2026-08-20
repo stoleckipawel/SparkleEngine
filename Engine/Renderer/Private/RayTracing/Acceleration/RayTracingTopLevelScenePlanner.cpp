@@ -4,7 +4,7 @@
 
 #include "Debug/RendererCVars.h"
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 
 struct RayTracingTopLevelScenePlanner::Impl final
 {
@@ -12,11 +12,14 @@ struct RayTracingTopLevelScenePlanner::Impl final
 	RayTracingPtlasPartitionPlan CurrentPartitionPlan;
 };
 
-RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept : m_impl(std::make_unique<Impl>()) {}
+RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept :
+    m_impl(std::make_unique<Impl>())
+{
+}
 
 RayTracingTopLevelScenePlanner::~RayTracingTopLevelScenePlanner() noexcept = default;
 
-void RayTracingTopLevelScenePlanner::PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept
+void RayTracingTopLevelScenePlanner::PlanFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
 	if (m_impl == nullptr)
 	{
@@ -24,7 +27,7 @@ void RayTracingTopLevelScenePlanner::PlanFrame(const RenderSceneData& sceneData,
 	}
 
 	m_impl->CurrentPartitionPlan = m_impl->PartitionPlanner.Build(
-	    sceneData,
+	    preparedScene,
 	    RayTracingPtlasPartitionPlannerConfig{
 	        .PartitionsPerAxis = CVarRayTracingPartitionsPerAxis.Get(),
 	        .PartitionUpdateMode = CVarRayTracingPtlasPartitionUpdateMode.Get(),
@@ -40,12 +43,12 @@ const RayTracingPtlasPartitionPlan* RayTracingTopLevelScenePlanner::GetCurrentPa
 
 RayTracingClassicTlasBuilder::BuildStats RayTracingTopLevelScenePlanner::BuildClassicTlas(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     RayTracingClassicTlasBuilder& classicTlasBuilder,
     RayTracingBlasCache& blasCache,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	return classicTlasBuilder.Build(commandContext, sceneData, blasCache, diagnostics);
+	return classicTlasBuilder.Build(commandContext, preparedScene, blasCache, diagnostics);
 }
 
 void RayTracingTopLevelScenePlanner::Clear() noexcept

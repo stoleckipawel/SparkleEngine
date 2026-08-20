@@ -12,22 +12,22 @@
 
 class FrameExecutionDiagnostics;
 class GpuMeshCache;
-class PerViewDataBuilder;
 class RenderPassRuntimeCache;
-class RenderCamera;
 class RendererBackendOwner;
 class RenderDeviceServices;
 class RenderHardwareInterface;
 class RendererMemoryMonitor;
 class RendererImageProviderStack;
 class RenderRayTracingScene;
-class RenderPreparationGraph;
+class RenderScenePreparation;
 class RhiImGuiRenderer;
 class RenderScene;
-class TemporalDataBuilder;
 class TextureCache;
 class TaskExecutor;
 class TaskScope;
+class RenderViewBuilder;
+class RenderViewPreparation;
+class RenderViewState;
 class Window;
 struct RendererBackendConfiguration;
 
@@ -60,12 +60,12 @@ public:
 	const RenderPassRuntimeCache& GetRenderPassRuntimeCache() const noexcept { return *m_renderPassRuntimeCache; }
 	GpuMeshCache& GetGpuMeshCache() noexcept { return *m_gpuMeshCache; }
 	TextureCache& GetTextureCache() noexcept { return *m_textureCache; }
-	RenderPreparationGraph& GetRenderPreparationGraph() noexcept { return *m_renderPreparationGraph; }
+	RenderScenePreparation& GetRenderScenePreparation() noexcept { return *m_renderScenePreparation; }
 	RenderRayTracingScene* GetRenderRayTracingScene() noexcept { return m_renderRayTracingScene.get(); }
 	const RenderRayTracingScene* GetRenderRayTracingScene() const noexcept { return m_renderRayTracingScene.get(); }
-	PerViewDataBuilder& GetPerViewDataBuilder() noexcept { return *m_perViewDataBuilder; }
-	TemporalDataBuilder& GetTemporalDataBuilder() noexcept { return *m_temporalDataBuilder; }
-	RenderCamera& GetRenderCamera() noexcept { return *m_renderCamera; }
+	RenderViewBuilder& GetRenderViewBuilder() noexcept { return *m_renderViewBuilder; }
+	RenderViewPreparation& GetRenderViewPreparation() noexcept { return *m_renderViewPreparation; }
+	RenderViewState& GetRenderViewState() noexcept { return *m_renderViewState; }
 	RenderScene& GetRenderScene() noexcept { return *m_renderScene; }
 	const RenderScene& GetRenderScene() const noexcept { return *m_renderScene; }
 	RendererImageProviderStack& GetImageProviders() noexcept { return *m_imageProviders; }
@@ -98,11 +98,11 @@ private:
 	std::unique_ptr<RendererMemoryMonitor> m_memoryMonitor;
 	std::unique_ptr<GpuMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureCache> m_textureCache;
-	std::unique_ptr<RenderPreparationGraph> m_renderPreparationGraph;
+	std::unique_ptr<RenderScenePreparation> m_renderScenePreparation;
 	std::unique_ptr<RenderRayTracingScene> m_renderRayTracingScene;
-	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
-	std::unique_ptr<TemporalDataBuilder> m_temporalDataBuilder;
-	std::unique_ptr<RenderCamera> m_renderCamera;
+	std::unique_ptr<RenderViewBuilder> m_renderViewBuilder;
+	std::unique_ptr<RenderViewPreparation> m_renderViewPreparation;
+	std::unique_ptr<RenderViewState> m_renderViewState;
 	std::unique_ptr<RenderScene> m_renderScene;
 	std::unique_ptr<RendererImageProviderStack> m_imageProviders;
 	std::uint64_t m_imageProviderGeneration = 1;

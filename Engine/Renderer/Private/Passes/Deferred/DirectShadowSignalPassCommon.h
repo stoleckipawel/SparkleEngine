@@ -5,12 +5,15 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/FrameUniformData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/RenderViewLightingData.h"
 
 struct FrameContext;
 struct PassRuntimeContext;
-struct RenderViewData;
+struct RenderView;
 
 struct DirectShadowSignalCommonPassParameters
 {
@@ -18,9 +21,10 @@ struct DirectShadowSignalCommonPassParameters
 	ShaderTexture2D<void> CurrentReservoirSample;
 	ShaderTexture2D<void> CurrentReservoirWeight;
 	ShaderTexture2D<void> SceneDepth;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
-	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<FrameUniformData> Frame;
+	ShaderUniform<ViewUniformData> View;
+	ShaderUniform<ViewCameraUniformData> ViewCamera;
+	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderBuffer<void> DirectionalLights;
 	ShaderBuffer<void> PointLights;
@@ -46,16 +50,20 @@ struct DirectShadowSignalCommonPassParameters
 		    static_cast<ShaderTexture2D<void> TParameters::*>(&DirectShadowSignalCommonPassParameters::SceneDepth),
 		    ShaderStageVisibility::Compute);
 		builder.Uniform(
-		    "PerFrame",
-		    static_cast<ShaderUniform<PerFrameConstantBufferData> TParameters::*>(&DirectShadowSignalCommonPassParameters::PerFrame),
+		    "Frame",
+		    static_cast<ShaderUniform<FrameUniformData> TParameters::*>(&DirectShadowSignalCommonPassParameters::Frame),
 		    ShaderStageVisibility::Compute);
 		builder.Uniform(
-		    "PerView",
-		    static_cast<ShaderUniform<PerViewConstantBufferData> TParameters::*>(&DirectShadowSignalCommonPassParameters::PerView),
+		    "View",
+		    static_cast<ShaderUniform<ViewUniformData> TParameters::*>(&DirectShadowSignalCommonPassParameters::View),
 		    ShaderStageVisibility::Compute);
 		builder.Uniform(
-		    "PerTemporal",
-		    static_cast<ShaderUniform<PerTemporalConstantBufferData> TParameters::*>(&DirectShadowSignalCommonPassParameters::PerTemporal),
+		    "ViewCamera",
+		    static_cast<ShaderUniform<ViewCameraUniformData> TParameters::*>(&DirectShadowSignalCommonPassParameters::ViewCamera),
+		    ShaderStageVisibility::Compute);
+		builder.Uniform(
+		    "ViewTemporal",
+		    static_cast<ShaderUniform<ViewTemporalUniformData> TParameters::*>(&DirectShadowSignalCommonPassParameters::ViewTemporal),
 		    ShaderStageVisibility::Compute);
 		builder.Uniform(
 		    "ViewLighting",
@@ -136,13 +144,13 @@ namespace DirectShadowSignalPassCommon
 	void SetParameters(
 	    DirectShadowSignalCommonPassParameters& parameters,
 	    const FrameContext& frame,
-	    const RenderViewData& viewData,
+	    const RenderView& view,
 	    const PassRuntimeContext& passRuntimeContext);
 
 	void SetRayQueryParameters(
 	    DirectShadowSignalRayQueryPassParameters& parameters,
 	    const FrameContext& frame,
-	    const RenderViewData& viewData,
+	    const RenderView& view,
 	    const PassRuntimeContext& passRuntimeContext,
 	    bool hasTraceableInstances);
 }

@@ -1,3 +1,5 @@
+#include "Resources/ViewCameraUniformData.hlsli"
+
 #include "Lighting/DirectLightReservoir.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
@@ -9,16 +11,15 @@ Texture2D<float4> ShadowVisibilitySignalTexture;
 Texture2D<float4> CurrentReservoirSampleTexture;
 Texture2D<float4> CurrentReservoirWeightTexture;
 
-void AddDirectLightSample(
-    GBufferData gBuffer,
-    float3 viewDirWorld,
-    bool evaluateSubsurface,
-    LightSampling::DirectLightSample lightSample,
-    ShadowVisibilitySignal shadow,
-    float sampleWeight,
-    inout float3 directDiffuse,
-    inout float3 directSpecular,
-    inout float3 directSubsurface)
+void AddDirectLightSample(GBufferData gBuffer,
+                          float3 viewDirWorld,
+                          bool evaluateSubsurface,
+                          LightSampling::DirectLightSample lightSample,
+                          ShadowVisibilitySignal shadow,
+                          float sampleWeight,
+                          inout float3 directDiffuse,
+                          inout float3 directSpecular,
+                          inout float3 directSubsurface)
 {
 	if (!lightSample.Valid || sampleWeight <= 0.0f)
 	{
@@ -28,21 +29,20 @@ void AddDirectLightSample(
 	float3 lightDiffuse;
 	float3 lightSpecular;
 	float3 lightSubsurface;
-	SurfaceLighting::AccumulateDirectLightSample(
-	    viewDirWorld,
-	    gBuffer.NormalWorld,
-	    gBuffer.BaseColor,
-	    gBuffer.Roughness,
-	    gBuffer.Metallic,
-	    gBuffer.DielectricF0,
-	    gBuffer.SubsurfaceColor,
-	    gBuffer.SubsurfaceStrength,
-	    evaluateSubsurface,
-	    lightSample,
-	    shadow.Visibility,
-	    lightDiffuse,
-	    lightSpecular,
-	    lightSubsurface);
+	SurfaceLighting::AccumulateDirectLightSample(viewDirWorld,
+	                                             gBuffer.NormalWorld,
+	                                             gBuffer.BaseColor,
+	                                             gBuffer.Roughness,
+	                                             gBuffer.Metallic,
+	                                             gBuffer.DielectricF0,
+	                                             gBuffer.SubsurfaceColor,
+	                                             gBuffer.SubsurfaceStrength,
+	                                             evaluateSubsurface,
+	                                             lightSample,
+	                                             shadow.Visibility,
+	                                             lightDiffuse,
+	                                             lightSpecular,
+	                                             lightSubsurface);
 
 	directDiffuse += lightDiffuse * sampleWeight;
 	directSpecular += lightSpecular * sampleWeight;
@@ -69,36 +69,32 @@ void AddDirectLightSample(
 		return;
 	}
 
-	const float3 positionWorld =
-	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, gBuffer.SceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
-	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
+	const float3 positionWorld = ReconstructGBufferWorldPosition(dispatchThreadId.xy, gBuffer.SceneDepth, InvViewMTX, InvProjectionMTX);
+	const float3 viewDirWorld = normalize(Position - positionWorld);
 
 	float3 directDiffuse = 0.0f;
 	float3 directSpecular = 0.0f;
 	float3 directSubsurface = 0.0f;
 	const DirectLightReservoir::Reservoir reservoir =
-	    DirectLightReservoir::UnpackReservoir(
-	        CurrentReservoirSampleTexture.Load(int3(dispatchThreadId.xy, 0)),
-	        CurrentReservoirWeightTexture.Load(int3(dispatchThreadId.xy, 0)));
+	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSampleTexture.Load(int3(dispatchThreadId.xy, 0)),
+	                                          CurrentReservoirWeightTexture.Load(int3(dispatchThreadId.xy, 0)));
 	const ShadowVisibilitySignal shadowSignal =
 	    RayTracedShadowSignalPacking::UnpackShadowSignal(ShadowVisibilitySignalTexture.Load(int3(dispatchThreadId.xy, 0)));
 	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
 	if (DirectLightReservoir::IsValid(reservoir))
 	{
-		const LightSampling::DirectLightSample lightSample =
-		    DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
+		const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
 		const float reservoirWeight = DirectLightReservoir::GetFinalWeight(reservoir);
 
-		AddDirectLightSample(
-		    gBuffer,
-		    viewDirWorld,
-		    evaluateSubsurface,
-		    lightSample,
-		    shadowSignal,
-		    reservoirWeight,
-		    directDiffuse,
-		    directSpecular,
-		    directSubsurface);
+		AddDirectLightSample(gBuffer,
+		                     viewDirWorld,
+		                     evaluateSubsurface,
+		                     lightSample,
+		                     shadowSignal,
+		                     reservoirWeight,
+		                     directDiffuse,
+		                     directSpecular,
+		                     directSubsurface);
 	}
 
 	DirectDiffuseTexture[dispatchThreadId.xy] = float4(directDiffuse, gBuffer.Alpha);

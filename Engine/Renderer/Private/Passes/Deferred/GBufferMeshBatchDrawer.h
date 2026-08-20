@@ -13,11 +13,12 @@ struct FrameContext;
 struct MeshInstanceBatch;
 struct PassRuntimeContext;
 struct RasterPassPipelineRuntime;
-struct RenderSceneData;
+struct PreparedRenderScene;
+struct RenderView;
 
 class GBufferMeshBatchDrawer final
 {
-  public:
+public:
 	static void DrawOpaqueMeshes(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
@@ -27,24 +28,19 @@ class GBufferMeshBatchDrawer final
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata);
 
-  private:
+private:
 	static bool BindMaterial(
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    GBufferPass::DrawParameterInstance& drawParameters,
 	    std::uint32_t materialSlot);
-	static const GpuMesh* ResolveBatch(
-	    const RenderSceneData& sceneData,
-	    const MeshInstanceBatch& batch,
-	    const GpuMeshCache& meshes) noexcept;
-	static bool HasValidSkinning(
-	    const RenderSceneData& sceneData,
-	    const MeshInstanceBatch& batch) noexcept;
+	static const GpuMesh* ResolveBatch(const RenderView& view, const MeshInstanceBatch& batch, const GpuMeshCache& meshes) noexcept;
+	static bool HasValidSkinning(const PreparedRenderScene& preparedScene, const RenderView& view, const MeshInstanceBatch& batch) noexcept;
 	static void ConfigureDrawParameters(
 	    const GBufferPass::Parameters& passParameters,
 	    const MeshInstanceBatch& batch,
 	    GBufferPass::DrawParameterInstance& drawParameters);
 	static RasterPassPipelineRuntime ResolveBatchRuntime(
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    const MeshInstanceBatch& batch,
 	    const RasterPassPipelineRuntime& runtime);
 	static bool BindBatchPipeline(

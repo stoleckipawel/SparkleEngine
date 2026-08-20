@@ -6,7 +6,7 @@
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "Frame/Deferred/GBufferFormats.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeContext.h"
@@ -14,7 +14,7 @@
 #include "Passes/Core/ShaderPassOperations.h"
 #include "Passes/Core/RasterPassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 #include "Scene/Materials/MaterialData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Meshes/GpuMesh.h"
@@ -23,7 +23,7 @@
 
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-#include "ShaderData/RenderConstantBufferData.h"
+
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Pipeline/PassBinder.h"
@@ -42,9 +42,9 @@ void GBufferPassParameters::Describe(ShaderParameterStructBuilder<GBufferPassPar
 	builder.RenderTarget("Subsurface", &GBufferPassParameters::Subsurface, ShaderStageVisibility::AllGraphics);
 	builder.RenderTarget("MotionVector", &GBufferPassParameters::MotionVector, ShaderStageVisibility::AllGraphics);
 	builder.DepthTarget("DeviceZ", &GBufferPassParameters::DeviceZ, ShaderStageVisibility::AllGraphics);
-	builder.Uniform("PerFrame", &GBufferPassParameters::PerFrame, ShaderStageVisibility::Pixel);
-	builder.Uniform("PerView", &GBufferPassParameters::PerView, ShaderStageVisibility::Vertex);
-	builder.Uniform("PerTemporal", &GBufferPassParameters::PerTemporal, ShaderStageVisibility::Vertex | ShaderStageVisibility::Pixel);
+	builder.Uniform("View", &GBufferPassParameters::View, ShaderStageVisibility::Pixel);
+	builder.Uniform("ViewCamera", &GBufferPassParameters::ViewCamera, ShaderStageVisibility::Vertex);
+	builder.Uniform("ViewTemporal", &GBufferPassParameters::ViewTemporal, ShaderStageVisibility::Vertex | ShaderStageVisibility::Pixel);
 	builder.Sampler("SamplerAniso16xWrap", &GBufferPassParameters::SamplerAniso16xWrap, ShaderStageVisibility::Pixel);
 	builder.ReadBuffer("MeshInstances", &GBufferPassParameters::MeshInstances, ShaderStageVisibility::Vertex);
 	builder.ReadBuffer("MeshInstanceSlots", &GBufferPassParameters::MeshInstanceSlots, ShaderStageVisibility::Vertex);
@@ -129,21 +129,18 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 
 void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame.mainView, context.Runtime);
-	ConfigurePipeline(context.Commands, context.Frame.mainView);
+	SetParameters(parameters, context.Frame.view);
+	ConfigurePipeline(context.Commands, context.Frame.view);
 	PrepareTargets(context, parameters.GetFields());
-	BindPassResources(context.Resources, context.Commands, parameters, context.Runtime);
+	BindPassResources(context.Resources, context.Commands, parameters, context.Frame.view, context.Runtime);
 	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, parameters.GetFields(), context.Runtime);
 }
 
-void GBufferPass::SetParameters(
-    ParameterInstance& parameters,
-    const RenderViewData& viewData,
-    const PassRuntimeContext& passRuntimeContext) const
+void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderView& view) const
 {
-	parameters->PerFrame = passRuntimeContext.PerFrame;
-	parameters->PerView = viewData.perViewData;
-	parameters->PerTemporal = viewData.perTemporalData;
+	parameters->View = view.uniform;
+	parameters->ViewCamera = view.cameraUniform;
+	parameters->ViewTemporal = view.temporalUniform;
 	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 	const bool valid = parameters.Sync();
 	assert(valid);
@@ -166,10 +163,10 @@ void GBufferPass::PrepareTargets(PassExecutionContext& context, const GBufferPas
 	context.Resources.ClearDepthStencil(context.Commands, parameters.DeviceZ[0]);
 }
 
-void GBufferPass::ConfigurePipeline(RenderCommandContext& commandContext, const RenderViewData& viewData) const
+void GBufferPass::ConfigurePipeline(RenderCommandContext& commandContext, const RenderView& view) const
 {
-	commandContext.SetViewport(viewData.viewport);
-	commandContext.SetScissorRect(viewData.scissorRect);
+	commandContext.SetViewport(view.viewport);
+	commandContext.SetScissorRect(view.scissorRect);
 	commandContext.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 }
 
@@ -177,6 +174,7 @@ void GBufferPass::BindPassResources(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
     const ParameterInstance& parameters,
+    const RenderView& view,
     const PassRuntimeContext& passRuntimeContext) const
 {
 	RenderHardwareInterface& renderHardwareInterface = passRuntimeContext.HardwareInterface;
@@ -189,7 +187,7 @@ void GBufferPass::BindPassResources(
 	    nullptr,
 	    PassName,
 	    true,
-	    passRuntimeContext.PerFrame.ViewModeIndex);
+	    view.uniform.ViewModeIndex);
 	assert(bound);
 }
 

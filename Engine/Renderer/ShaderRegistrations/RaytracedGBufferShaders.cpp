@@ -7,7 +7,11 @@
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/FrameUniformData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
+#include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
 
 class RaytracedGBufferCS final : public TGlobalShader<RaytracedGBufferCS>
@@ -24,9 +28,10 @@ public:
 	SHADER_PARAMETER_UAV(RWTexture2D, GBufferDeviceZ)
 	SHADER_PARAMETER_UAV(RWTexture2D, GBufferMotionVector)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
-	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
-	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
-	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(Frame, FrameUniformData, FrameUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(View, ViewUniformData, ViewUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(ViewCamera, ViewCameraUniformData, ViewCameraUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(ViewTemporal, ViewTemporalUniformData, ViewTemporalUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(RaytracedGBufferConstants, RaytracedGBufferUniformData, RaytracedGBufferUniformData)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(MorphTargetDeltaData, MorphTargetDeltas)

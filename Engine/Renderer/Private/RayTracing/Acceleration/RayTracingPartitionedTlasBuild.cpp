@@ -10,7 +10,7 @@
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingTransformPacking.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 
 #include <array>
 #include <unordered_set>
@@ -26,11 +26,11 @@ struct RayTracingPartitionedTlasStrategy::PartitionedBuildState final
 };
 
 RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstanceFlags(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshDraw& draw) noexcept
 {
 	RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::None;
-	if (draw.Material.Slot >= sceneData.materials.size())
+	if (draw.Material.Slot >= preparedScene.materials.size())
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingPartitionedTlasBuildLogger,
@@ -38,7 +38,7 @@ RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstan
 		    __LINE__,
 		    "Partitioned TLAS input references a material outside the render scene.");
 	}
-	const MaterialData& material = sceneData.materials[draw.Material.Slot];
+	const MaterialData& material = preparedScene.materials[draw.Material.Slot];
 	if (material.doubleSided)
 	{
 		flags = flags | RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
@@ -52,7 +52,7 @@ RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstan
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStrategy::BuildPartitionedTlas(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     RayTracingBlasCache& blasCache,
     RayTracingTopLevelScenePlanner* scenePlanner,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
@@ -60,7 +60,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	RayTracingTopLevelAccelerationStructureBuildResult result{};
 	result.ActiveProvider = ERhiRayTracingTopLevelProvider::PartitionedTlas;
 	result.ActiveProviderReason = GetActiveProviderReason();
-	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
 
 	if (!CanUseActivePartitionedTlasProvider())
 	{
@@ -72,11 +72,11 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	}
 
 	const RayTracingPtlasPartitionPlan* partitionPlan = scenePlanner != nullptr ? scenePlanner->GetCurrentPartitionPlan() : nullptr;
-	EnsurePartitionedTlasResources(sceneData, partitionPlan);
+	EnsurePartitionedTlasResources(preparedScene, partitionPlan);
 
 	PartitionedBuildState state;
 	state.InstanceWrites.reserve(work.PartitionedTlasBlasInputIndices.size());
-	CollectPartitionedInstances(commandContext, sceneData, partitionPlan, blasCache, diagnostics, state);
+	CollectPartitionedInstances(commandContext, preparedScene, partitionPlan, blasCache, diagnostics, state);
 	const std::uint32_t nativeWriteCount = static_cast<std::uint32_t>(state.InstanceWrites.size());
 	result.Stats.InstanceCount = nativeWriteCount;
 	PreparePartitionedOperationBuffer(state);
@@ -89,13 +89,13 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 
 void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const RayTracingPtlasPartitionPlan* partitionPlan,
     RayTracingBlasCache& blasCache,
     RayTracingPerformanceDiagnostics* diagnostics,
     PartitionedBuildState& state) noexcept
 {
-	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
 	for (const std::uint32_t blasInputIndex : work.PartitionedTlasBlasInputIndices)
 	{
 		if (blasInputIndex >= work.BlasInputs.size())
@@ -107,7 +107,7 @@ void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
 			    "Partitioned TLAS work references a BLAS input outside the prepared work plan.");
 		}
 		const RenderRayTracingBlasInput& input = work.BlasInputs[blasInputIndex];
-		if (input.MeshInstanceIndex >= sceneData.meshInstances.size())
+		if (input.PrimitiveIndex >= preparedScene.primitives.size())
 		{
 			Diagnostics::Fatal(
 			    g_rayTracingPartitionedTlasBuildLogger,
@@ -115,7 +115,7 @@ void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
 			    __LINE__,
 			    "Partitioned TLAS work references a mesh instance outside the render scene.");
 		}
-		const MeshDraw& draw = sceneData.meshInstances[input.MeshInstanceIndex];
+		const MeshDraw& draw = preparedScene.primitives[input.PrimitiveIndex].Draw;
 		if (!draw.Geometry.Mesh)
 		{
 			Diagnostics::Fatal(
@@ -125,7 +125,8 @@ void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
 			    "Partitioned TLAS work references a mesh instance with no GPU mesh handle.");
 		}
 
-		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(commandContext, sceneData, draw, input.GpuSceneSlot, diagnostics);
+		const RayTracingBlasCache::BlasHandle blas =
+		    blasCache.EnsureBlas(commandContext, preparedScene, draw, input.GpuSceneSlot, diagnostics);
 
 		commandContext.TrackResource(blas.resource);
 		if (blas.builtThisFrame)
@@ -134,7 +135,7 @@ void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
 		}
 
 		const RayTracingPtlasPartitionEntry* entry =
-		    partitionPlan != nullptr ? partitionPlan->FindByRenderInstance(input.MeshInstanceIndex) : nullptr;
+		    partitionPlan != nullptr ? partitionPlan->FindByPrimitive(input.PrimitiveIndex) : nullptr;
 		if (entry == nullptr || !entry->Valid)
 		{
 			Diagnostics::Fatal(
@@ -151,7 +152,7 @@ void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
 		        .InstanceID = input.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
-		        .Flags = ResolveInstanceFlags(sceneData, draw),
+		        .Flags = ResolveInstanceFlags(preparedScene, draw),
 		        .InstanceIndex = input.GpuSceneSlot,
 		        .PartitionIndex = entry->Assignment.PartitionId,
 		        .AccelerationStructure = blas.gpuAddress});

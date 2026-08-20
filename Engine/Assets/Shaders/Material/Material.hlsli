@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Resources/ConstantBuffers.hlsli"
+#include "Resources/ObjectShaderData.hlsli"
 #include "Resources/Samplers.hlsli"
 #include "Geometry/Basis.hlsli"
 #include "Geometry/PixelInput.hlsli"
@@ -30,7 +30,6 @@ namespace Material
 	static const uint AlphaModeMask = 1u;
 	static const uint AlphaModeBlend = 2u;
 
-
 	uint TextureGroupFlag(uint textureGroup)
 	{
 		return 1u << textureGroup;
@@ -59,10 +58,8 @@ namespace Material
 		float DielectricF0;
 		float AmbientOcclusion;
 
-
 		float3 SubsurfaceColor;
 		float SubsurfaceStrength;
-
 
 		float3 Emissive;
 		float Alpha;
@@ -171,7 +168,8 @@ namespace Material
 		props.AlphaMode = AlphaMode;
 		ApplyAlphaMode(props.Alpha);
 		props.NormalTangent = SampleNormalTangent(Input.TexCoord);
-		props.NormalWorld = TransformTangentNormalToWorld(props.NormalTangent, Input.NormalWorld, Input.TangentWorld.xyz, Input.BitangentWorld);
+		props.NormalWorld =
+		    TransformTangentNormalToWorld(props.NormalTangent, Input.NormalWorld, Input.TangentWorld.xyz, Input.BitangentWorld);
 		if (!Input.IsFrontFace)
 		{
 			props.NormalWorld = -props.NormalWorld;
@@ -185,4 +183,4 @@ namespace Material
 		props.Emissive = SampleEmissive(Input.TexCoord);
 		return props;
 	}
-}  // namespace Material
+} // namespace Material

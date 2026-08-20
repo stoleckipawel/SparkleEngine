@@ -12,7 +12,6 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
-#include "SceneData/Input/RenderInputConsumer.h"
 #include "Scene/RenderScene.h"
 
 class FramePipelineViewportProductsImplementation final
@@ -164,7 +163,7 @@ void FramePipeline::EndViewportEditorTexturePresentation(RenderOutputFlags outpu
 
 bool FramePipeline::BeginViewportCapture(ViewportCaptureId id, const ViewportCaptureRequest& request) noexcept
 {
-	const std::uint64_t frameId = m_renderInputConsumer->GetFrameId();
+	const std::uint64_t frameId = m_frameId;
 	const std::uint64_t sceneGeneration = m_rendererHost->GetRenderScene().GetSceneGeneration();
 	const std::uint64_t providerGeneration = m_rendererHost->GetImageProviderGeneration();
 	ViewportCaptureResult result =

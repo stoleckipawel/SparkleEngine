@@ -2,7 +2,7 @@
 #include "Passes/Deferred/DirectShadowSignalPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -10,7 +10,10 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-DirectShadowSignalPass::DirectShadowSignalPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+DirectShadowSignalPass::DirectShadowSignalPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const DirectShadowSignalPass::ParameterMetadata& DirectShadowSignalPass::GetParameterMetadata() noexcept
 {
@@ -33,13 +36,13 @@ void DirectShadowSignalPass::Execute(PassExecutionContext& context, ParameterIns
 	DirectShadowSignalPassCommon::SetRayQueryParameters(
 	    *parameters,
 	    context.Frame,
-	    context.Frame.mainView,
+	    context.Frame.view,
 	    context.Runtime,
 	    context.Frame.rayTracingScene.HasTraceableInstances());
 	ComputePassOperations::DispatchSized<DirectShadowSignalPass>(
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

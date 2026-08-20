@@ -4,16 +4,16 @@
 #include "RayReconstruction/NvidiaDlssRayReconstruction/StreamlineRayReconstructionEvaluation.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	#include "Streamline/StreamlineRuntimeSupport.h"
+  #include "Streamline/StreamlineRuntimeSupport.h"
 
-	#include <sl.h>
-	#include <sl_dlss.h>
-	#include <sl_dlss_d.h>
+  #include <sl.h>
+  #include <sl_dlss.h>
+  #include <sl_dlss_d.h>
 #endif
 
 class NvidiaDlssRayReconstructionProviderConstants final
 {
-  public:
+public:
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	static constexpr std::uint32_t kRayReconstructionViewportId = 2u;
 #endif
@@ -43,9 +43,9 @@ RenderViewportExtent NvidiaDlssRayReconstructionProvider::ResolveRenderExtent(Re
 	return m_frameState.StoreResolution(outputExtent, providerRenderExtent);
 }
 
-void NvidiaDlssRayReconstructionProvider::SetupFrame(const ImageProviderFrameContext& frameContext)
+void NvidiaDlssRayReconstructionProvider::SetupFrame(const ImageProviderFrameInput& frameInput)
 {
-	m_frameState.SetupFrame(frameContext);
+	m_frameState.SetupFrame(frameInput);
 }
 
 bool NvidiaDlssRayReconstructionProvider::Evaluate(const RayReconstructionEvaluationDesc& evaluation)
@@ -57,7 +57,7 @@ bool NvidiaDlssRayReconstructionProvider::Evaluate(const RayReconstructionEvalua
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	return EvaluateStreamlineRayReconstructionFrame(
-	    m_frameState.GetFrameContext(),
+	    m_frameState.GetFrameInput(),
 	    m_frameState.GetQualityMode(),
 	    sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId},
 	    evaluation);

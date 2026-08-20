@@ -5,7 +5,11 @@
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 #include "Frame/Targets/FrameRenderTargets.h"
 
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
+#include "ShaderData/MeshInstanceShaderData.h"
+#include "ShaderData/PerObjectConstantBufferData.h"
 #include "ShaderData/MorphTargetShaderData.h"
 
 #include <cstddef>
@@ -14,10 +18,10 @@ class RenderCommandContext;
 struct RasterPassPipelineRuntime;
 struct RenderPassDefinition;
 struct PassExecutionContext;
-struct RenderSceneData;
+struct PreparedRenderScene;
 struct MeshInstanceBatch;
 struct PassRuntimeContext;
-struct RenderViewData;
+struct RenderView;
 struct FrameContext;
 class FrameGraphResourceCommands;
 
@@ -30,9 +34,9 @@ struct GBufferPassParameters
 	ShaderRenderTarget Subsurface;
 	ShaderRenderTarget MotionVector;
 	ShaderDepthTarget DeviceZ;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
-	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<ViewUniformData> View;
+	ShaderUniform<ViewCameraUniformData> ViewCamera;
+	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
 	ShaderSamplerSet SamplerAniso16xWrap;
 	ShaderBuffer<MeshInstanceData> MeshInstances;
 	ShaderBuffer<std::uint32_t> MeshInstanceSlots;
@@ -41,8 +45,7 @@ struct GBufferPassParameters
 	ShaderBuffer<float> MorphWeights;
 	ShaderBuffer<float> PreviousMorphWeights;
 
-	static void Describe(
-	    ShaderParameterStructBuilder<GBufferPassParameters>& builder);
+	static void Describe(ShaderParameterStructBuilder<GBufferPassParameters>& builder);
 };
 
 struct GBufferDrawParameters
@@ -66,13 +69,12 @@ struct GBufferDrawParameters
 	ShaderTexture2DSRV TextureSubsurfaceColor;
 	ShaderTexture2DSRV TextureSubsurfaceStrength;
 
-	static void Describe(
-	    ShaderParameterStructBuilder<GBufferDrawParameters>& builder);
+	static void Describe(ShaderParameterStructBuilder<GBufferDrawParameters>& builder);
 };
 
 class GBufferPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "GBuffer";
 	using Parameters = GBufferPassParameters;
 	using DrawParameters = GBufferDrawParameters;
@@ -90,15 +92,15 @@ class GBufferPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
-
-  private:
-	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeContext& passRuntimeContext) const;
+private:
+	void SetParameters(ParameterInstance& parameters, const RenderView& view) const;
 	void PrepareTargets(PassExecutionContext& context, const Parameters& parameters) const;
-	void ConfigurePipeline(RenderCommandContext& commandContext, const RenderViewData& viewData) const;
+	void ConfigurePipeline(RenderCommandContext& commandContext, const RenderView& view) const;
 	void BindPassResources(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
 	    const ParameterInstance& parameters,
+	    const RenderView& view,
 	    const PassRuntimeContext& passRuntimeContext) const;
 	void DrawOpaqueMeshes(
 	    const FrameGraphResourceCommands& resources,

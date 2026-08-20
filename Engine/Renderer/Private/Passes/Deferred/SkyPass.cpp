@@ -9,7 +9,10 @@
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-SkyPass::SkyPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+SkyPass::SkyPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const SkyPass::ParameterMetadata& SkyPass::GetParameterMetadata() noexcept
 {
@@ -23,12 +26,12 @@ const RenderPassDefinition& SkyPass::GetDefinition() noexcept
 	return definition;
 }
 
-void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeContext& passRuntimeContext) const
+void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& frame) const
 {
-	parameters->PerFrame = passRuntimeContext.PerFrame;
-	parameters->PerView = frame.mainView.perViewData;
-	parameters->PerTemporal = frame.mainView.perTemporalData;
-	parameters->Sky = MakeSkyUniformData(frame.sceneData.sky);
+	parameters->View = frame.view.uniform;
+	parameters->ViewCamera = frame.view.cameraUniform;
+	parameters->ViewTemporal = frame.view.temporalUniform;
+	parameters->Sky = MakeSkyUniformData(frame.preparedScene.sky);
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -37,11 +40,11 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& f
 
 void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame, context.Runtime);
+	SetParameters(parameters, context.Frame);
 	ComputePassOperations::DispatchSized<SkyPass>(
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

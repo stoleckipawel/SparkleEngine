@@ -5,7 +5,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/ViewUniformData.h"
 
 #include <cstdint>
 
@@ -13,7 +13,7 @@ struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeContext;
-struct RenderViewData;
+struct RenderView;
 
 struct VisualizeBuffersPassParameters
 {
@@ -28,7 +28,7 @@ struct VisualizeBuffersPassParameters
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferEmissive;
 	ShaderTexture2D<void> GBufferSubsurface;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
+	ShaderUniform<ViewUniformData> View;
 
 	static void Describe(ShaderParameterStructBuilder<VisualizeBuffersPassParameters>& builder)
 	{
@@ -43,13 +43,13 @@ struct VisualizeBuffersPassParameters
 		builder.ReadTexture("GBufferMaterial", &VisualizeBuffersPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferEmissive", &VisualizeBuffersPassParameters::GBufferEmissive, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferSubsurface", &VisualizeBuffersPassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
-		builder.Uniform("PerFrame", &VisualizeBuffersPassParameters::PerFrame, ShaderStageVisibility::Compute);
+		builder.Uniform("View", &VisualizeBuffersPassParameters::View, ShaderStageVisibility::Compute);
 	}
 };
 
 class VisualizeBuffersPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "VisualizeBuffers";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -64,8 +64,8 @@ class VisualizeBuffersPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
-  private:
-	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeContext& passRuntimeContext) const;
+private:
+	void SetParameters(ParameterInstance& parameters, const RenderView& view) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

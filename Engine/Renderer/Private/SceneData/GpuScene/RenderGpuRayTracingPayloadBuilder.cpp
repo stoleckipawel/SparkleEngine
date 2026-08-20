@@ -5,7 +5,7 @@
 #include "Meshes/GpuMesh.h"
 #include "Meshes/GpuMeshCache.h"
 #include "Meshes/GpuMeshPreparation.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 
 #include <algorithm>
 #include <limits>
@@ -83,10 +83,10 @@ RenderGpuMeshHitDataOffsets RenderGpuRayTracingPayloadBuilder::BuildState::Resol
 	return offsets;
 }
 
-void RenderGpuRayTracingPayloadBuilder::AppendMaterials(const RenderSceneData& sceneData, RenderGpuRayTracingPayloads& payloads)
+void RenderGpuRayTracingPayloadBuilder::AppendMaterials(const PreparedRenderScene& preparedScene, RenderGpuRayTracingPayloads& payloads)
 {
-	payloads.Materials.reserve(sceneData.materials.size());
-	for (const MaterialData& material : sceneData.materials)
+	payloads.Materials.reserve(preparedScene.materials.size());
+	for (const MaterialData& material : preparedScene.materials)
 	{
 		payloads.Materials.push_back(
 		    RayTracingHitMaterial{
@@ -116,13 +116,13 @@ void RenderGpuRayTracingPayloadBuilder::AppendMaterials(const RenderSceneData& s
 }
 
 void RenderGpuRayTracingPayloadBuilder::PrepareInstances(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     RenderGpuRayTracingPayloads& payloads,
     BuildState& state)
 {
 	std::uint32_t instanceCapacity = 1;
 	std::unordered_set<std::uint32_t> occupiedGpuSceneSlots;
-	for (const RenderRayTracingBlasInput& input : sceneData.rayTracingWork.BlasInputs)
+	for (const RenderRayTracingBlasInput& input : preparedScene.rayTracingWork.BlasInputs)
 	{
 		if (input.GpuSceneSlot == (std::numeric_limits<std::uint32_t>::max)() || !occupiedGpuSceneSlots.insert(input.GpuSceneSlot).second)
 		{
@@ -136,17 +136,17 @@ void RenderGpuRayTracingPayloadBuilder::PrepareInstances(
 	}
 
 	payloads.Instances.resize(instanceCapacity);
-	state.MeshOffsets.reserve(sceneData.rayTracingWork.BlasInputs.size());
+	state.MeshOffsets.reserve(preparedScene.rayTracingWork.BlasInputs.size());
 }
 
 void RenderGpuRayTracingPayloadBuilder::AppendInstance(
     const RenderRayTracingBlasInput& input,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const GpuMeshCache& meshes,
     RenderGpuRayTracingPayloads& payloads,
     BuildState& state)
 {
-	if (input.MeshInstanceIndex >= sceneData.meshInstances.size())
+	if (input.PrimitiveIndex >= preparedScene.primitives.size())
 	{
 		Diagnostics::Fatal(
 		    g_renderGpuRayTracingPayloadBuilderLogger,
@@ -154,8 +154,8 @@ void RenderGpuRayTracingPayloadBuilder::AppendInstance(
 		    __LINE__,
 		    "Ray-tracing work references a mesh instance outside the render scene.");
 	}
-	const MeshDraw& draw = sceneData.meshInstances[input.MeshInstanceIndex];
-	if (draw.Material.Slot >= sceneData.materials.size())
+	const MeshDraw& draw = preparedScene.primitives[input.PrimitiveIndex].Draw;
+	if (draw.Material.Slot >= preparedScene.materials.size())
 	{
 		Diagnostics::Fatal(
 		    g_renderGpuRayTracingPayloadBuilderLogger,
@@ -177,7 +177,7 @@ void RenderGpuRayTracingPayloadBuilder::AppendInstance(
 		    "Ray-tracing work references incomplete mesh or skinning data.");
 	}
 
-	const MaterialData& material = sceneData.materials[draw.Material.Slot];
+	const MaterialData& material = preparedScene.materials[draw.Material.Slot];
 	const RenderGpuMeshHitDataOffsets offsets = state.ResolveMeshOffsets(*gpuMesh, payloads);
 	RayTracingHitInstance& instance = payloads.Instances[input.GpuSceneSlot];
 	instance = RayTracingHitInstance{
@@ -197,18 +197,18 @@ void RenderGpuRayTracingPayloadBuilder::AppendInstance(
 }
 
 void RenderGpuRayTracingPayloadBuilder::Build(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const GpuMeshCache& meshes,
     RenderGpuRayTracingPayloads& payloads)
 {
 	Clear(payloads);
 
-	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
 	if (work.BlasInputs.empty())
 	{
 		return;
 	}
-	if (sceneData.materials.empty())
+	if (preparedScene.materials.empty())
 	{
 		Diagnostics::Fatal(
 		    g_renderGpuRayTracingPayloadBuilderLogger,
@@ -217,13 +217,13 @@ void RenderGpuRayTracingPayloadBuilder::Build(
 		    "Ray-tracing work exists without any material records.");
 	}
 
-	AppendMaterials(sceneData, payloads);
+	AppendMaterials(preparedScene, payloads);
 
 	BuildState state;
-	PrepareInstances(sceneData, payloads, state);
+	PrepareInstances(preparedScene, payloads, state);
 	for (const RenderRayTracingBlasInput& input : work.BlasInputs)
 	{
-		AppendInstance(input, sceneData, meshes, payloads, state);
+		AppendInstance(input, preparedScene, meshes, payloads, state);
 	}
 
 	if (payloads.Vertices.empty() || payloads.Indices.empty())

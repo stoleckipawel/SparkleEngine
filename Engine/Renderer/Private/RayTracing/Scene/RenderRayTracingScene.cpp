@@ -9,7 +9,7 @@
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureStrategy.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 
 static const auto g_renderRayTracingSceneLogger = Logging::GetOrCreateLogger("Renderer.RenderRayTracingScene");
 
@@ -17,7 +17,8 @@ RenderRayTracingScene::RenderRayTracingScene(
     RenderHardwareInterface& renderHardwareInterface,
     const GpuMeshCache& meshes,
     const RayTracingCapabilityReport& capabilityReport) noexcept :
-    m_renderHardwareInterface(&renderHardwareInterface), m_capabilityReport(capabilityReport)
+    m_renderHardwareInterface(&renderHardwareInterface),
+    m_capabilityReport(capabilityReport)
 {
 	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
 	m_performanceMetrics.Providers.TopLevelProviderReason = m_capabilityReport.TopLevelProvider.SelectionReason;
@@ -39,16 +40,16 @@ RenderRayTracingScene::RenderRayTracingScene(
 
 RenderRayTracingScene::~RenderRayTracingScene() noexcept = default;
 
-void RenderRayTracingScene::PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept
+void RenderRayTracingScene::PlanFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
 	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
 	if (m_topLevelScenePlanner != nullptr)
 	{
-		m_topLevelScenePlanner->PlanFrame(sceneData, cameraPosition);
+		m_topLevelScenePlanner->PlanFrame(preparedScene, cameraPosition);
 	}
 }
 
-RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData) noexcept
+RayTracingSceneFrameData RenderRayTracingScene::Prepare(const PreparedRenderScene& preparedScene) noexcept
 {
 	if (m_topLevelAccelerationStructureStrategy == nullptr)
 	{
@@ -60,12 +61,12 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 	}
 	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
 
-	return m_topLevelAccelerationStructureStrategy->Prepare(sceneData, m_topLevelScenePlanner.get());
+	return m_topLevelAccelerationStructureStrategy->Prepare(preparedScene, m_topLevelScenePlanner.get());
 }
 
 void RenderRayTracingScene::Build(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     PassExecutionDiagnostics* diagnostics) noexcept
 {
 	RayTracingPerformanceDiagnostics performanceDiagnostics{diagnostics};
@@ -81,7 +82,8 @@ void RenderRayTracingScene::Build(
 
 	m_blasCache->BeginFrame();
 	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild =
-	    m_topLevelAccelerationStructureStrategy->Build(commandContext, sceneData, *m_blasCache, m_topLevelScenePlanner.get(), &performanceDiagnostics);
+	    m_topLevelAccelerationStructureStrategy
+	        ->Build(commandContext, preparedScene, *m_blasCache, m_topLevelScenePlanner.get(), &performanceDiagnostics);
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
 	const RayTracingTopLevelAccelerationStructureBuildStats& topLevelStats = topLevelBuild.Stats;
 

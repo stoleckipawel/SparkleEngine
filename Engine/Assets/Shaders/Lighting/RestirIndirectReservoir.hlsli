@@ -1,6 +1,8 @@
 #ifndef SPARKLE_RESTIR_INDIRECT_RESERVOIR_HLSLI
 #define SPARKLE_RESTIR_INDIRECT_RESERVOIR_HLSLI
 
+#include "Resources/FrameUniformData.hlsli"
+
 #include "Common/Color.hlsli"
 #include "Common/Random.hlsli"
 #include "Lighting/RestirReservoirCommon.hlsli"
@@ -42,16 +44,15 @@ namespace RestirIndirectReservoir
 
 	bool AreSurfacesCompatible(Surface surface, float4 packedSurface)
 	{
-		return RestirReservoirCommon::AreSurfacesCompatible(
-		    surface.Valid,
-		    surface.GBuffer.NormalWorld,
-		    surface.ViewDistance,
-		    packedSurface);
+		return RestirReservoirCommon::AreSurfacesCompatible(surface.Valid,
+		                                                    surface.GBuffer.NormalWorld,
+		                                                    surface.ViewDistance,
+		                                                    packedSurface);
 	}
 
 	Reservoir EmptyReservoir()
 	{
-		Reservoir reservoir = (Reservoir) 0;
+		Reservoir reservoir = (Reservoir)0;
 		return reservoir;
 	}
 
@@ -62,11 +63,10 @@ namespace RestirIndirectReservoir
 
 	float4 PackSample(Reservoir reservoir)
 	{
-		return IsValid(reservoir) ? float4(
-		                                float(reservoir.Selected.RandomPixel.x),
-		                                float(reservoir.Selected.RandomPixel.y),
-		                                float(reservoir.Selected.SampleIndex),
-		                                float(reservoir.Selected.RandomFrameIndex))
+		return IsValid(reservoir) ? float4(float(reservoir.Selected.RandomPixel.x),
+		                                   float(reservoir.Selected.RandomPixel.y),
+		                                   float(reservoir.Selected.SampleIndex),
+		                                   float(reservoir.Selected.RandomFrameIndex))
 		                          : 0.0f.xxxx;
 	}
 
@@ -105,16 +105,15 @@ namespace RestirIndirectReservoir
 
 	RayTracingPathLighting::Result EvaluateCandidate(Surface surface, Candidate candidate, Texture2D skyTexture, SamplerState skySampler)
 	{
-		return RayTracingPathLighting::TraceSurfacePathWithRandomFrame(
-		    skyTexture,
-		    skySampler,
-		    surface.PathSurface,
-		    candidate.RandomPixel,
-		    candidate.SampleIndex,
-		    RayTracingPathSampling::SpecularSampleModeStochasticGGX,
-		    RestirIndirectBounceCount,
-		    candidate.RandomFrameIndex,
-		    BuildTraceSettings());
+		return RayTracingPathLighting::TraceSurfacePathWithRandomFrame(skyTexture,
+		                                                               skySampler,
+		                                                               surface.PathSurface,
+		                                                               candidate.RandomPixel,
+		                                                               candidate.SampleIndex,
+		                                                               RayTracingPathSampling::SpecularSampleModeStochasticGGX,
+		                                                               RestirIndirectBounceCount,
+		                                                               candidate.RandomFrameIndex,
+		                                                               BuildTraceSettings());
 	}
 
 	float EvaluateTarget(RayTracingPathLighting::Result path)
@@ -141,14 +140,13 @@ namespace RestirIndirectReservoir
 		return selected;
 	}
 
-	bool CombineReservoir(
-	    inout Reservoir reservoir,
-	    Reservoir candidateReservoir,
-	    Surface surface,
-	    Texture2D skyTexture,
-	    SamplerState skySampler,
-	    float maxM,
-	    float random)
+	bool CombineReservoir(inout Reservoir reservoir,
+	                      Reservoir candidateReservoir,
+	                      Surface surface,
+	                      Texture2D skyTexture,
+	                      SamplerState skySampler,
+	                      float maxM,
+	                      float random)
 	{
 		if (!surface.Valid || candidateReservoir.M <= 0.0f)
 		{

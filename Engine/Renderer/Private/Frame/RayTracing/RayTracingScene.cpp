@@ -11,7 +11,7 @@
 namespace RayTracingSceneFrameGraphContract
 {
 	constexpr std::string_view kSceneBuildPassName = "RayTracingSceneBuild";
-}  // namespace RayTracingSceneFrameGraphContract
+} // namespace RayTracingSceneFrameGraphContract
 
 static const auto g_rayTracingSceneFrameGraphLogger = Logging::GetOrCreateLogger("Renderer.RayTracingSceneFrameGraph");
 
@@ -40,8 +40,8 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 	    },
 	    [](PassExecutionContext& context)
 	    {
-		    if (!context.Frame.rayTracingScene.HasBoundTlas() || context.Runtime.RayTracing == nullptr ||
-		        context.Runtime.RayTracing->Scene == nullptr)
+		    if (!context.Frame.rayTracingScene.HasBoundTlas() || context.Runtime.RayTracing == nullptr
+		        || context.Runtime.RayTracing->Scene == nullptr)
 		    {
 			    Diagnostics::Fatal(
 			        g_rayTracingSceneFrameGraphLogger,
@@ -50,7 +50,7 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 			        "Ray-tracing scene build did not receive a bound SceneTlas and active scene producer.");
 		    }
 
-		    context.Runtime.RayTracing->Scene->Build(context.Commands, context.Frame.sceneData, &context.Diagnostics);
+		    context.Runtime.RayTracing->Scene->Build(context.Commands, context.Frame.preparedScene, &context.Diagnostics);
 	    });
 }
 

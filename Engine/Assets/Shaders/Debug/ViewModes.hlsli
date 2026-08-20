@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Resources/ViewUniformData.hlsli"
+
 #include "Debug/RenderViewModeConstants.hlsli"
 
 namespace ViewMode
@@ -20,14 +22,13 @@ namespace ViewMode
 		return safe / (1.0f + safe);
 	}
 
-	float3 Resolve(
-	    float3 lit,
-	    Material::Properties matProps,
-	    float3 directDiffuse,
-	    float3 directSpecular,
-	    float3 directSubsurface,
-	    float3 indirectDiffuse,
-	    float3 indirectSpecular)
+	float3 Resolve(float3 lit,
+	               Material::Properties matProps,
+	               float3 directDiffuse,
+	               float3 directSpecular,
+	               float3 directSubsurface,
+	               float3 indirectDiffuse,
+	               float3 indirectSpecular)
 	{
 		switch (ViewModeIndex)
 		{
@@ -77,4 +78,4 @@ namespace ViewMode
 				return lit;
 		}
 	}
-}  // namespace ViewMode
+} // namespace ViewMode

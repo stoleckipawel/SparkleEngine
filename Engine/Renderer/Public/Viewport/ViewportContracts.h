@@ -19,21 +19,6 @@ enum class RenderViewKind : std::uint8_t
 	Debug = 4,
 };
 
-enum class RenderFeatureFlags : std::uint16_t
-{
-	None = 0,
-	Picking = 1 << 0,
-	Wireframe = 1 << 1,
-	LightingOnly = 1 << 2,
-	DebugOverlay = 1 << 3,
-	GizmoOverlay = 1 << 4,
-};
-
-SPARKLE_RENDERER_API RenderFeatureFlags operator|(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept;
-SPARKLE_RENDERER_API RenderFeatureFlags operator&(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept;
-SPARKLE_RENDERER_API RenderFeatureFlags& operator|=(RenderFeatureFlags& lhs, RenderFeatureFlags rhs) noexcept;
-SPARKLE_RENDERER_API bool HasAnyRenderFeatureFlags(RenderFeatureFlags flags, RenderFeatureFlags test) noexcept;
-
 enum class RenderOutputFlags : std::uint16_t
 {
 	None = 0,
@@ -180,7 +165,6 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 	RenderViewKind ViewKind = RenderViewKind::Game;
 	RenderViewportExtent Extent = {};
 	RenderViewSelectionToken ViewSelection = {};
-	RenderFeatureFlags FeatureFlags = RenderFeatureFlags::None;
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::SceneColor;
 	ViewportExposureOverrides Exposure;
 };

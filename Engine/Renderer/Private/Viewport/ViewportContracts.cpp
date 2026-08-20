@@ -1,39 +1,14 @@
 #include "PCH.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
-RenderFeatureFlags operator|(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept
-{
-	return static_cast<RenderFeatureFlags>(
-	    static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
-}
-
-RenderFeatureFlags operator&(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept
-{
-	return static_cast<RenderFeatureFlags>(
-	    static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
-}
-
-RenderFeatureFlags& operator|=(RenderFeatureFlags& lhs, RenderFeatureFlags rhs) noexcept
-{
-	lhs = lhs | rhs;
-	return lhs;
-}
-
-bool HasAnyRenderFeatureFlags(RenderFeatureFlags flags, RenderFeatureFlags test) noexcept
-{
-	return (flags & test) != RenderFeatureFlags::None;
-}
-
 RenderOutputFlags operator|(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept
 {
-	return static_cast<RenderOutputFlags>(
-	    static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
+	return static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
 }
 
 RenderOutputFlags operator&(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept
 {
-	return static_cast<RenderOutputFlags>(
-	    static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
+	return static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
 }
 
 RenderOutputFlags& operator|=(RenderOutputFlags& lhs, RenderOutputFlags rhs) noexcept
@@ -170,7 +145,6 @@ const RenderProduct* ViewportRenderProducts::SelectProduct(RenderOutputFlags out
 
 void ViewportRenderProducts::RemoveAvailableOutput(RenderOutputFlags output) noexcept
 {
-	m_availableOutputs = static_cast<RenderOutputFlags>(
-	    static_cast<std::uint16_t>(m_availableOutputs) &
-	    ~static_cast<std::uint16_t>(output));
+	m_availableOutputs =
+	    static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(m_availableOutputs) & ~static_cast<std::uint16_t>(output));
 }

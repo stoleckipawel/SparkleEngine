@@ -6,7 +6,10 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 #include "Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/FrameUniformData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
 
 #include <cstdint>
 #include <type_traits>
@@ -16,7 +19,7 @@ struct FrameContext;
 struct PassExecutionContext;
 struct PassRuntimeContext;
 struct RenderPassDefinition;
-struct RenderViewData;
+struct RenderView;
 
 struct RaytracedGBufferUniformData
 {
@@ -40,9 +43,10 @@ struct RaytracedGBufferPassParameters
 	ShaderRWTexture2D<void> GBufferDeviceZ;
 	ShaderRWTexture2D<void> GBufferMotionVector;
 	ShaderAccelerationStructure SceneTlas;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
-	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<FrameUniformData> Frame;
+	ShaderUniform<ViewUniformData> View;
+	ShaderUniform<ViewCameraUniformData> ViewCamera;
+	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
 	ShaderUniform<RaytracedGBufferUniformData> RaytracedGBufferConstants;
 	ShaderBuffer<void> RayTracingHitVertices;
 	ShaderBuffer<void> MorphTargetDeltas;
@@ -82,7 +86,7 @@ private:
 	void SetParameters(
 	    ParameterInstance& parameters,
 	    const FrameContext& frame,
-	    const RenderViewData& viewData,
+	    const RenderView& view,
 	    const PassRuntimeContext& passRuntimeContext) const;
 
 	const ComputePassPipelineRuntime& m_runtime;

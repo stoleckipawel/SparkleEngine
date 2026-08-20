@@ -1,4 +1,3 @@
-#include "Resources/ConstantBuffers.hlsli"
 #include "Lighting/RestirIndirectLightingUniform.hlsli"
 
 Texture2D<float4> CurrentReservoirSampleTexture;
@@ -25,9 +24,9 @@ SamplerState SamplerLinearClamp;
 		return;
 	}
 	const RestirIndirectReservoir::Surface surface = RestirIndirectReservoir::LoadSurface(pixelCoord);
-	const RestirIndirectReservoir::Reservoir reservoir = RestirIndirectReservoir::UnpackReservoir(
-	    CurrentReservoirSampleTexture.Load(int3(pixelCoord, 0)),
-	    CurrentReservoirWeightTexture.Load(int3(pixelCoord, 0)));
+	const RestirIndirectReservoir::Reservoir reservoir =
+	    RestirIndirectReservoir::UnpackReservoir(CurrentReservoirSampleTexture.Load(int3(pixelCoord, 0)),
+	                                             CurrentReservoirWeightTexture.Load(int3(pixelCoord, 0)));
 
 	if (!surface.Valid)
 	{
@@ -64,10 +63,6 @@ SamplerState SamplerLinearClamp;
 	IndirectSpecular[pixelCoord] = float4(specular, specularSelected ? 1.0f : 0.0f);
 	if (writeRayReconstructionGuides)
 	{
-		RayReconstructionGuides::WriteSpecularHitDistance(
-		    pixelCoord,
-		    path,
-		    surface.PathSurface.PositionWorld,
-		    specularSelected);
+		RayReconstructionGuides::WriteSpecularHitDistance(pixelCoord, path, surface.PathSurface.PositionWorld, specularSelected);
 	}
 }

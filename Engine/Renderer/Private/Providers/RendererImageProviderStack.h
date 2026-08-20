@@ -8,7 +8,7 @@
 class IRayReconstructionProvider;
 class RenderHardwareInterface;
 class IUpscalerProvider;
-struct ImageProviderFrameContext;
+struct ImageProviderFrameInput;
 
 struct ImageProviderPassContext final
 {
@@ -32,7 +32,7 @@ enum class ImageProviderPipeline : std::uint8_t
 
 class RendererImageProviderStack final
 {
-  public:
+public:
 	explicit RendererImageProviderStack(RenderHardwareInterface& renderHardwareInterface);
 	~RendererImageProviderStack() noexcept;
 
@@ -42,15 +42,13 @@ class RendererImageProviderStack final
 	RendererImageProviderStack& operator=(RendererImageProviderStack&&) = delete;
 
 	void ResetHistory() noexcept;
-	void SetupFrame(const ImageProviderFrameContext& frameContext);
-	RenderViewportExtent ResolveRenderExtent(
-	    RenderViewportExtent outputExtent,
-	    ImageProviderPipeline pipeline) noexcept;
+	void SetupFrame(const ImageProviderFrameInput& frameInput);
+	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent, ImageProviderPipeline pipeline) noexcept;
 
 	ImageProviderGraphKey GetFrameGraphKey() const noexcept;
 	ImageProviderPassContext BuildPassContext() noexcept;
 
-  private:
+private:
 	void Initialize(RenderHardwareInterface& renderHardwareInterface);
 	void Shutdown() noexcept;
 

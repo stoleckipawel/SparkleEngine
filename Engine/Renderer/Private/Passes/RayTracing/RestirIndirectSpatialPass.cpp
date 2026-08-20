@@ -2,7 +2,7 @@
 #include "Passes/RayTracing/RestirIndirectSpatialPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -36,9 +36,10 @@ void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<
 	    &RestirIndirectSpatialPassParameters::CurrentReservoirSurfaceTexture,
 	    ShaderStageVisibility::Compute);
 	builder.AccelerationStructure("SceneTlas", &RestirIndirectSpatialPassParameters::SceneTlas, ShaderStageVisibility::Compute);
-	builder.Uniform("PerFrame", &RestirIndirectSpatialPassParameters::PerFrame, ShaderStageVisibility::Compute);
-	builder.Uniform("PerView", &RestirIndirectSpatialPassParameters::PerView, ShaderStageVisibility::Compute);
-	builder.Uniform("PerTemporal", &RestirIndirectSpatialPassParameters::PerTemporal, ShaderStageVisibility::Compute);
+	builder.Uniform("Frame", &RestirIndirectSpatialPassParameters::Frame, ShaderStageVisibility::Compute);
+	builder.Uniform("View", &RestirIndirectSpatialPassParameters::View, ShaderStageVisibility::Compute);
+	builder.Uniform("ViewCamera", &RestirIndirectSpatialPassParameters::ViewCamera, ShaderStageVisibility::Compute);
+	builder.Uniform("ViewTemporal", &RestirIndirectSpatialPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewLighting", &RestirIndirectSpatialPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 	builder.Uniform("RayTracedShadows", &RestirIndirectSpatialPassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
 	builder.Uniform("Sky", &RestirIndirectSpatialPassParameters::Sky, ShaderStageVisibility::Compute);
@@ -56,10 +57,7 @@ void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<
 	    "RayTracingHitVertices",
 	    &RestirIndirectSpatialPassParameters::RayTracingHitVertices,
 	    ShaderStageVisibility::Compute);
-	builder.ReadBuffer(
-	    "MorphTargetDeltas",
-	    &RestirIndirectSpatialPassParameters::MorphTargetDeltas,
-	    ShaderStageVisibility::Compute);
+	builder.ReadBuffer("MorphTargetDeltas", &RestirIndirectSpatialPassParameters::MorphTargetDeltas, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("RayTracingHitIndices", &RestirIndirectSpatialPassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
 	builder.ReadBuffer(
 	    "RayTracingHitInstances",
@@ -81,9 +79,8 @@ void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<
 	builder.Sampler("MaterialTextureSampler", &RestirIndirectSpatialPassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
 }
 
-RestirIndirectSpatialPass::RestirIndirectSpatialPass(
-    const ComputePassPipelineRuntime& runtime) noexcept :
-	m_runtime(runtime)
+RestirIndirectSpatialPass::RestirIndirectSpatialPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
 {
 }
 
@@ -105,12 +102,13 @@ const RenderPassDefinition& RestirIndirectSpatialPass::GetDefinition() noexcept
 
 void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	parameters->PerFrame = context.Runtime.PerFrame;
-	parameters->PerView = context.Frame.mainView.perViewData;
-	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
+	parameters->Frame = context.Runtime.Frame;
+	parameters->View = context.Frame.view.uniform;
+	parameters->ViewCamera = context.Frame.view.cameraUniform;
+	parameters->ViewTemporal = context.Frame.view.temporalUniform;
 	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
-	parameters->Sky = MakeSkyUniformData(context.Frame.sceneData.sky);
-	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
+	parameters->Sky = MakeSkyUniformData(context.Frame.preparedScene.sky);
+	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -135,6 +133,6 @@ void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, Parameter
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

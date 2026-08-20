@@ -1,7 +1,7 @@
 #include "../PCH.h"
 #include "Providers/RendererImageProviderStack.h"
 
-#include "Providers/ImageProviderFrameContext.h"
+#include "Providers/ImageProviderFrameInput.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
 #include "RayReconstruction/RayReconstructionProviderFactory.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
@@ -83,18 +83,18 @@ void RendererImageProviderStack::ResetHistory() noexcept
 	m_resetHistoryPending = true;
 }
 
-void RendererImageProviderStack::SetupFrame(const ImageProviderFrameContext& frameContext)
+void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frameInput)
 {
-	ImageProviderFrameContext providerFrame = frameContext;
-	providerFrame.ResetHistory |= m_resetHistoryPending;
+	ImageProviderFrameInput providerInput = frameInput;
+	providerInput.ResetHistory |= m_resetHistoryPending;
 	m_resetHistoryPending = false;
 	if (m_upscaler != nullptr)
 	{
-		m_upscaler->SetupFrame(providerFrame);
+		m_upscaler->SetupFrame(providerInput);
 	}
 	if (m_rayReconstruction != nullptr)
 	{
-		m_rayReconstruction->SetupFrame(providerFrame);
+		m_rayReconstruction->SetupFrame(providerInput);
 	}
 }
 

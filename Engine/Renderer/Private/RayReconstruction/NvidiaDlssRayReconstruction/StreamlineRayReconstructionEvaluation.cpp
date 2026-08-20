@@ -3,21 +3,20 @@
 #include "Upscaling/UpscalerSettings.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-#include "RayReconstruction/NvidiaDlssRayReconstruction/StreamlineRayReconstructionResourceTags.h"
-#include "Streamline/StreamlineDlssOptions.h"
-#include "Streamline/StreamlineFrameEvaluation.h"
-#include "Streamline/StreamlineResourceInterop.h"
-#include "Streamline/StreamlineViewConstants.h"
+  #include "RayReconstruction/NvidiaDlssRayReconstruction/StreamlineRayReconstructionResourceTags.h"
+  #include "Streamline/StreamlineDlssOptions.h"
+  #include "Streamline/StreamlineFrameEvaluation.h"
+  #include "Streamline/StreamlineResourceInterop.h"
+  #include "Streamline/StreamlineViewConstants.h"
 
-#include <sl_dlss.h>
-#include <sl_dlss_d.h>
+  #include <sl_dlss.h>
+  #include <sl_dlss_d.h>
 
-static const auto g_streamlineRayReconstructionEvaluationLogger =
-	Logging::GetOrCreateLogger("Renderer.Streamline.RayReconstruction");
+static const auto g_streamlineRayReconstructionEvaluationLogger = Logging::GetOrCreateLogger("Renderer.Streamline.RayReconstruction");
 
 static sl::DLSSDOptions BuildStreamlineRayReconstructionOptions(
-	EUpscalerQualityMode qualityMode,
-	RenderViewportExtent outputExtent) noexcept
+    EUpscalerQualityMode qualityMode,
+    RenderViewportExtent outputExtent) noexcept
 {
 	sl::DLSSDOptions options{};
 	options.mode = ToStreamlineDlssMode(qualityMode);
@@ -53,29 +52,30 @@ RenderViewportExtent QueryStreamlineRayReconstructionOptimalRenderExtent(
 }
 
 bool EvaluateStreamlineRayReconstructionFrame(
-    const ImageProviderFrameContext& frameContext,
+    const ImageProviderFrameInput& frameInput,
     EUpscalerQualityMode qualityMode,
     sl::ViewportHandle viewport,
     const RayReconstructionEvaluationDesc& evaluation)
 {
-	if (!evaluation.NativeCommandList || !AreStreamlineTextureViewsValid(
-	                                         evaluation.BackendApi,
-	                                         evaluation.NativeNoisyInputColorView,
-	                                         evaluation.NativeOutputColorView,
-	                                         evaluation.NativeDepthView,
-	                                         evaluation.NativeMotionVectorsView,
-	                                         evaluation.NativeNormalsView,
-	                                         evaluation.NativeRoughnessView,
-	                                         evaluation.NativeDiffuseAlbedoView,
-	                                         evaluation.NativeSpecularAlbedoView,
-	                                         evaluation.NativeSpecularHitDistanceView,
-	                                         evaluation.NativeExposureView))
+	if (!evaluation.NativeCommandList
+	    || !AreStreamlineTextureViewsValid(
+	        evaluation.BackendApi,
+	        evaluation.NativeNoisyInputColorView,
+	        evaluation.NativeOutputColorView,
+	        evaluation.NativeDepthView,
+	        evaluation.NativeMotionVectorsView,
+	        evaluation.NativeNormalsView,
+	        evaluation.NativeRoughnessView,
+	        evaluation.NativeDiffuseAlbedoView,
+	        evaluation.NativeSpecularAlbedoView,
+	        evaluation.NativeSpecularHitDistanceView,
+	        evaluation.NativeExposureView))
 	{
 		return false;
 	}
 
 	StreamlineFrameEvaluation frameEvaluation(viewport, evaluation.NativeCommandList);
-	if (!frameEvaluation.AcquireFrameToken(frameContext.FrameId))
+	if (!frameEvaluation.AcquireFrameToken(frameInput.FrameId))
 	{
 		return false;
 	}
@@ -87,9 +87,9 @@ bool EvaluateStreamlineRayReconstructionFrame(
 	}
 
 	sl::DLSSDOptions options = BuildStreamlineRayReconstructionOptions(qualityMode, evaluation.OutputExtent);
-	options.worldToCameraView = ToStreamlineMatrix(frameContext.Camera.ViewMTX);
-	options.cameraViewToWorld = ToStreamlineMatrix(frameContext.Camera.InvViewMTX);
-	if (slDLSSDSetOptions(viewport, options) != sl::Result::eOk || !frameEvaluation.SetViewConstants(frameContext))
+	options.worldToCameraView = ToStreamlineMatrix(frameInput.Camera.ViewMTX);
+	options.cameraViewToWorld = ToStreamlineMatrix(frameInput.Camera.InvViewMTX);
+	if (slDLSSDSetOptions(viewport, options) != sl::Result::eOk || !frameEvaluation.SetViewConstants(frameInput))
 	{
 		return false;
 	}

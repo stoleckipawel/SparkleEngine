@@ -2,10 +2,10 @@
 
 #include "SceneData/GpuScene/RenderGpuScenePayloads.h"
 
-struct RenderSceneData;
+struct PreparedRenderScene;
 
 class RenderGpuLightingPayloadBuilder final
 {
 public:
-	static void Build(const RenderSceneData& sceneData, RenderGpuLightingPayloads& payloads);
+	static void Build(const PreparedRenderScene& preparedScene, RenderGpuLightingPayloads& payloads);
 };

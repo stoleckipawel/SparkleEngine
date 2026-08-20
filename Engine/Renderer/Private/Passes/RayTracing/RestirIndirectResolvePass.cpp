@@ -2,7 +2,7 @@
 #include "Passes/RayTracing/RestirIndirectResolvePass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -42,9 +42,10 @@ void RestirIndirectResolvePassParameters::Describe(ShaderParameterStructBuilder<
 	    &RestirIndirectResolvePassParameters::RayReconstructionSpecularHitDistance,
 	    ShaderStageVisibility::Compute);
 	builder.AccelerationStructure("SceneTlas", &RestirIndirectResolvePassParameters::SceneTlas, ShaderStageVisibility::Compute);
-	builder.Uniform("PerFrame", &RestirIndirectResolvePassParameters::PerFrame, ShaderStageVisibility::Compute);
-	builder.Uniform("PerView", &RestirIndirectResolvePassParameters::PerView, ShaderStageVisibility::Compute);
-	builder.Uniform("PerTemporal", &RestirIndirectResolvePassParameters::PerTemporal, ShaderStageVisibility::Compute);
+	builder.Uniform("Frame", &RestirIndirectResolvePassParameters::Frame, ShaderStageVisibility::Compute);
+	builder.Uniform("View", &RestirIndirectResolvePassParameters::View, ShaderStageVisibility::Compute);
+	builder.Uniform("ViewCamera", &RestirIndirectResolvePassParameters::ViewCamera, ShaderStageVisibility::Compute);
+	builder.Uniform("ViewTemporal", &RestirIndirectResolvePassParameters::ViewTemporal, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewLighting", &RestirIndirectResolvePassParameters::ViewLighting, ShaderStageVisibility::Compute);
 	builder.Uniform("RayTracedShadows", &RestirIndirectResolvePassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
 	builder.Uniform("Sky", &RestirIndirectResolvePassParameters::Sky, ShaderStageVisibility::Compute);
@@ -62,10 +63,7 @@ void RestirIndirectResolvePassParameters::Describe(ShaderParameterStructBuilder<
 	    "RayTracingHitVertices",
 	    &RestirIndirectResolvePassParameters::RayTracingHitVertices,
 	    ShaderStageVisibility::Compute);
-	builder.ReadBuffer(
-	    "MorphTargetDeltas",
-	    &RestirIndirectResolvePassParameters::MorphTargetDeltas,
-	    ShaderStageVisibility::Compute);
+	builder.ReadBuffer("MorphTargetDeltas", &RestirIndirectResolvePassParameters::MorphTargetDeltas, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("RayTracingHitIndices", &RestirIndirectResolvePassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
 	builder.ReadBuffer(
 	    "RayTracingHitInstances",
@@ -87,9 +85,8 @@ void RestirIndirectResolvePassParameters::Describe(ShaderParameterStructBuilder<
 	builder.Sampler("MaterialTextureSampler", &RestirIndirectResolvePassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
 }
 
-RestirIndirectResolvePass::RestirIndirectResolvePass(
-    const ComputePassPipelineRuntime& runtime) noexcept :
-	m_runtime(runtime)
+RestirIndirectResolvePass::RestirIndirectResolvePass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
 {
 }
 
@@ -111,12 +108,13 @@ const RenderPassDefinition& RestirIndirectResolvePass::GetDefinition() noexcept
 
 void RestirIndirectResolvePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	parameters->PerFrame = context.Runtime.PerFrame;
-	parameters->PerView = context.Frame.mainView.perViewData;
-	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
+	parameters->Frame = context.Runtime.Frame;
+	parameters->View = context.Frame.view.uniform;
+	parameters->ViewCamera = context.Frame.view.cameraUniform;
+	parameters->ViewTemporal = context.Frame.view.temporalUniform;
 	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
-	parameters->Sky = MakeSkyUniformData(context.Frame.sceneData.sky);
-	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
+	parameters->Sky = MakeSkyUniformData(context.Frame.preparedScene.sky);
+	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -141,6 +139,6 @@ void RestirIndirectResolvePass::Execute(PassExecutionContext& context, Parameter
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

@@ -4,7 +4,7 @@ Status: target architecture, Unreal Engine reference analysis, and atomic implem
 Date: 2026-08-18
 Scope: GameFramework-to-Renderer publication, persistent render-scene ownership, GPU-scene ownership, one-frame scene and view products, temporal view state, deferred frame orchestration, frame-graph pass inputs, Unreal-familiar concept translation, coherent cross-module naming and directory navigation, complete legacy-path removal, atomic landing, D3D12/Vulkan validation, and cleanup of the current frame path
 
-Implementation checkpoint: Phase 1 establishes the target publication and private queue boundary in source on the private migration branch. Later scene, view, frame, GPU-scene, pass, and deferred-graph phases remain target architecture, and no executable validation or landability claim is made before Phase 7.
+Implementation checkpoint: Phases 1 and 2 established the target publication boundary and persistent `RenderScene` authority on `master`. Phase 3 is the source-level scene/view/ABI cutover CL. Later GPU-scene, pass, and deferred-graph phases remain target architecture, and no executable validation or release-readiness claim is made before Phase 7.
 
 ## Decision
 
@@ -14,11 +14,11 @@ Sparkle should adopt the lifetime and responsibility split used by Unreal's defe
 2. `RenderGpuScene` and the ray-tracing scene are scene capabilities owned beneath `RenderScene`, not frame-pipeline state.
 3. `PreparedRenderScene` is an immutable, frame-slot-owned projection of the scene used by one submitted frame.
 4. `RenderView` is an immutable one-frame view: camera, matrices, frustum, rectangles, resolved view policy, temporal shader values, and view-derived visibility/draw products.
-5. `RenderViewState` is the persistent continuity for one stable viewport/view identity: previous camera state, jitter sequence, semantic history validity, exposure continuity, and view-history invalidation state.
+5. `RenderViewState` is the persistent continuity for one stable viewport/view identity: previous camera state, jitter sequence, semantic history validity, and view-history invalidation state. Exposure remains resolved viewport display policy, and graph/provider history remains with its existing owner.
 6. `RenderFrame` owns only one frame's identity, time, frame-in-flight slot, `PreparedRenderScene`, and current `RenderView`. It is a lifetime boundary, not a service locator.
 7. `FramePipeline` sequences the render-thread frame and owns the cached frame-graph execution. It delegates scene preparation, view preparation, history, providers, presentation, and pass-specific work to their existing or newly clarified owners.
 8. Frame-graph passes declare narrow pass parameters. `FrameContext`, `FrameContextBuilder`, `PassExecutionContext`, `PassRuntimeContext`, `RayTracingPassContext`, and `ImageProviderPassContext` are removed rather than renamed into new catch-all bags; `PassCommandContext` retains only recording infrastructure.
-9. The migration lands as one complete architectural cutover. The work may be organized into reviewable workstreams, but no intermediate mixture of current and target ownership, naming, packet, shader ABI, pass context, or scene/view paths may merge or ship.
+9. The migration completes as one architectural cutover series on `master`. Each phase must clean-break its owned scope, and no intermediate mixture of current and target ownership, naming, packet, shader ABI, pass context, or scene/view paths may ship.
 
 The target flow is:
 
@@ -51,7 +51,7 @@ RenderCoordinator
                 compile -> record -> submit -> present -> retire
 ```
 
-This is a target design. Current code and executable build configuration remain the authority for implemented behavior. Mainline must remain wholly on the current architecture until the final cutover gate passes; after that landing, it must contain only the target architecture.
+This is a target design. Current code and executable build configuration remain the authority for implemented behavior. `master` may contain the user-reviewed phase checkpoints, but those checkpoints are private migration states: they are not releasable, downstream-integration-ready, or evidence that the complete architecture works. After Phase 7, `master` must contain only the target architecture.
 
 ## Outcome
 
@@ -208,40 +208,41 @@ The Phase 0 baseline already had most of the necessary concepts. The problem was
 As inspected on 2026-08-18:
 
 - [`FramePipeline.cpp`](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) is 698 lines and coordinates input consumption, resize, graph rebuilds, uploads, camera mutation, per-frame constants, scene and view preparation, history invalidation, providers, ray tracing, scene resource binding, graph execution, submission, capture, UI, and presentation.
-- [`RenderSceneData.h`](../../Engine/Renderer/Private/SceneData/RenderSceneData.h) contains scene revisions, lights, sky, all mesh/deformation records, materials, view-frustum-selected raster indices, camera-distance-sorted batches, workload values, and ray-tracing work.
-- [`RenderPreparationInputResolver.cpp`](../../Engine/Renderer/Private/SceneData/Preparation/RenderPreparationInputResolver.cpp) receives both `RenderWorld` and a view frustum/camera position. Its result cannot be accurately described as scene-only.
+- Historical `Renderer/Private/SceneData/RenderSceneData.h` contained scene revisions, lights, sky, all mesh/deformation records, materials, view-frustum-selected raster indices, camera-distance-sorted batches, workload values, and ray-tracing work.
+- Historical `Renderer/Private/SceneData/Preparation/RenderPreparationInputResolver.cpp` received both `RenderWorld` and a view frustum/camera position. Its result could not be accurately described as scene-only.
 - [`FrameContextBuilder.cpp`](../../Engine/Renderer/Private/Frame/Builders/FrameContextBuilder.cpp) prepares scene data, plans ray tracing from camera position, updates GPU Scene, constructs the view, and advances temporal history in one function.
 - [`PassRuntimeContext.h`](../../Engine/Renderer/Private/FrameGraph/PassRuntimeContext.h) is referenced by 45 Renderer private files. `mainView` is referenced by 24 files. This is coupling evidence, not a reason to create a larger replacement context.
-- [`PerFrameConstantBufferData.h`](../../Engine/Renderer/Private/ShaderData/PerFrameConstantBufferData.h) mixes true frame time/index values with view mode and viewport size.
+- Historical `Renderer/Private/ShaderData/PerFrameConstantBufferData.h` mixed true frame time/index values with view mode and viewport size.
 - [`FramePipeline::FinalizeRenderInputMetadata`](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) writes render/output dimensions into a GameFramework-owned input packet after publication. Those dimensions are renderer/view configuration, not GameFramework scene metadata.
 - At the Phase 0 baseline, `RenderFrameMetadata::Exposure` had no consumer. Motion-vector and depth conventions were stable renderer/shader contracts rather than per-frame input, while `ProviderGeneration` was populated from shader-package generation and participated in input/history/capture behavior under a misleading name.
-- `ViewportRenderRequest::ViewKind`, `ViewSelection`, and `FeatureFlags` currently have no `FramePipeline` consumer. The request contains the right intent categories, but they do not yet reach a first-class render view.
+- At the Phase 0 baseline, `ViewportRenderRequest::ViewKind`, `ViewSelection`, and `FeatureFlags` had no `FramePipeline` consumer. Phase 3 routes stable view kind and selection into view identity and deletes the unsupported generic feature-flag promise instead of carrying it inertly.
 
 These are dated observations. Re-run the searches at the start of implementation because the frame path is actively changing.
 
 ## Atomic Migration Contract
 
-This refactor has one landable state: the complete target architecture in this document. The work breakdown later in the document is an execution and review aid, not a sequence of supported repository states.
+This refactor has one supported release state: the complete target architecture in this document. The phase breakdown is an execution and review aid on `master`, not a sequence of supported engine architectures.
 
 ```text
-mainline before cutover                  migration branch                       mainline after cutover
+master before migration                 master phase series                   validated master
 
-current architecture          ->        all workstreams completed       ->     target architecture only
-no target aliases                       final head validated                    no current paths or names
+current architecture          ->        clean-break phase checkpoints   ->     target architecture only
+no target aliases                       never release a checkpoint              no current paths or names
 ```
 
 The following rules are binding:
 
-- Mainline does not receive a scene-only, view-only, packet-only, GPU-only, pass-context-only, naming-only, or shader-ABI-only subset.
-- If review requires multiple commits or stacked pull requests, they target one private integration branch and are not independently mergeable, releasable, or described as implemented architecture.
+- All phase work occurs directly in the checked-out `master` worktree. Do not create, switch, merge, rebase, or otherwise use a migration branch for any phase.
+- The implementation agent leaves each phase unstaged and uncommitted for user review. Only the user may stage, commit, push, or submit a phase.
+- A user-created phase commit on `master` is a private checkpoint only. It is not independently releasable, downstream-integratable, cherry-pickable as a supported feature, or described as the complete implemented architecture.
 - The final integration unit updates GameFramework, Application, Editor, Renderer, shaders, CMake membership, tests, generated/cooked artifacts, and documentation together.
 - No feature flag, build option, CVar, runtime branch, typedef, adapter, overload, reader, writer, or fallback selects between current and target architectures.
 - No target owner reads a current representation, and no current owner reads a target representation. There is one publication packet, one scene owner, one view path, one shader ABI, and one pass-input model at final head.
 - Temporary migration scripts may mechanically rewrite source or regenerate artifacts, but they are not runtime code and are removed before landing unless they remain the canonical generator.
-- Failed final validation is fixed on the migration branch. It is not bypassed by restoring an old path alongside the new one.
+- Failed final validation is fixed at the real owner directly on `master`. It is not bypassed by restoring an old path alongside the new one.
 - Rollback means reverting the complete migration. There is no runtime compatibility fallback and no partial rollback that resurrects selected current owners.
 
-At no point may documentation mark an individual workstream as implemented architecture. Only the complete cutover changes this document and the implemented repository map from target to implemented status.
+At no point may documentation mark an individual phase as the complete implemented architecture. Only the validated Phase 7 state changes this document and the implemented repository map from target to implemented status.
 
 ### No-halfway review rule
 
@@ -587,7 +588,7 @@ Keep the name `FramePipeline` for the thin lifecycle sequencer. Do not add a par
 
 ## Target Code Shape
 
-These names are the committed target vocabulary. A rename discovered to be necessary during implementation requires updating this contract first and then applying the replacement everywhere in the same migration branch; it does not permit local synonyms.
+These names are the committed target vocabulary. A rename discovered to be necessary during implementation requires updating this contract first and then applying the replacement everywhere in the same master-worktree CL; it does not permit local synonyms.
 
 ```text
 Engine/GameFramework
@@ -697,16 +698,16 @@ Phase-specific references below add to this set. If any link, standard, current 
 
 ### Phase CL and no-intermediate-build rules
 
-- Each phase is one logical, reviewable CL/commit on the private migration branch. Do not commit a phase until all of its scoped producers, consumers, moves, build entries, documentation, and legacy deletions meet that phase's acceptance criteria.
-- A phase CL is a source-control and review boundary, not a supported architecture. It is not independently mergeable, releasable, cherry-pickable to mainline, or proof that the engine builds or runs.
-- Mainline receives the complete phase series through one ref update and one reviewed integration transaction, using a merge or squash strategy that never lands an individual phase by itself.
+- Each phase is one logical, reviewable CL directly in the unstaged `master` worktree. No phase creates, switches, merges, rebases, or depends on another branch.
+- The implementation agent never stages, commits, pushes, submits, or rewrites user commits. It leaves the complete phase diff on `master`; the user owns review and every source-control action.
+- A user-created phase commit is a private checkpoint and not a supported architecture, release boundary, downstream integration unit, or proof that the engine builds or runs. Continue forward on `master` until Phase 7 validates the complete series.
 - Phases 0 through 6 do not configure, compile, link, compile shaders, cook, launch, capture, or run performance workloads. Use exact searches, scoped diff inspection, CMake/include audits, documentation checks, `git diff --check`, and no-write formatting only. Executable acceptance occurs once in Phase 7 against the complete candidate.
 - If a valid before-change executable/performance baseline does not already exist, acquire it before Phase 0 edits begin. Record its source revision and environment. Do not build a new baseline between migration phases.
 - No-build phase acceptance makes no compilation or runtime claim. It proves source-level ownership closure, cleanup, and reviewability only.
-- Update existing durable tests when they are consumers of a changed contract. Do not add submitted test fixtures, executables, probes, or CTest registrations without explicit user authorization; temporary local validation code is removed before its phase commit.
-- If a phase cannot delete its assigned legacy concept because an unplanned consumer remains, move that consumer into the same phase or revise the phase boundaries before committing. Do not bridge the gap with an alias, adapter, overload, feature flag, fallback, or duplicate directory.
+- Update existing durable tests when they are consumers of a changed contract. Do not add submitted test fixtures, executables, probes, or CTest registrations without explicit user authorization; temporary local validation code is removed before phase handoff.
+- If a phase cannot delete its assigned legacy concept because an unplanned consumer remains, move that consumer into the same phase or revise the phase boundaries before handoff. Do not bridge the gap with an alias, adapter, overload, feature flag, fallback, or duplicate directory.
 - Inspect and preserve unrelated dirty work before every phase. A phase CL contains only its owned migration scope and the directly required standards/documentation reconciliation.
-- Phase 7 failures are fixed in the owning phase and folded into that phase CL before final review. Do not accumulate a miscellaneous final "make it build" commit that obscures ownership.
+- Phase 7 failures are fixed at the owning responsibility and kept attributable in the final review. Do not accumulate a miscellaneous final "make it build" change that obscures ownership.
 
 ## Migration Phase Implementation Prompts
 
@@ -714,7 +715,7 @@ Phase-specific references below add to this set. If any link, standard, current 
 
 #### Implementation prompt
 
-> Implement Phase 0 of the Renderer Scene/View/Frame migration as one documentation and inventory CL on the private migration branch. Apply every required standard above. Reconcile current code and executable policy, freeze the exact target vocabulary and owner map, assign every legacy definition and consumer to one later phase, and remove stale/conflicting documentation in scope. Do not change runtime source and do not configure, build, compile shaders, cook, launch, or capture. This CL is not independently landable.
+> Implement Phase 0 of the Renderer Scene/View/Frame migration as one documentation and inventory CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Apply every required standard above. Reconcile current code and executable policy, freeze the exact target vocabulary and owner map, assign every legacy definition and consumer to one later phase, and remove stale/conflicting documentation in scope. Do not change runtime source and do not configure, build, compile shaders, cook, launch, or capture. This CL is not independently landable.
 
 #### Phase-specific references
 
@@ -761,11 +762,11 @@ Phase-specific references below add to this set. If any link, standard, current 
 
 Suggested title: `Renderer: freeze atomic scene-view-frame migration contract`.
 
-Commit only the reconciled plan, standards/routes, and inventory evidence. This phase cleans obsolete documentation and vocabulary; it does not preserve conflicting old rules for a later documentation-only cleanup.
+The handoff contains only the reconciled plan, standards/routes, and inventory evidence. This phase cleans obsolete documentation and vocabulary; it does not preserve conflicting old rules for a later documentation-only cleanup.
 
 #### Phase 0 completion record
 
-This inventory was frozen before runtime edits on 2026-08-18 from `7a0833d5762f01b96e927e7a355d7b8e18a583f8` (`rendere refactor plan`, committed `2026-08-18T22:37:18+02:00`) on the private branch `renderer-scene-view-frame-migration`. `git status --short` was empty before the branch was created. Therefore the path-level exclusion list for unrelated tracked or untracked work is empty.
+This inventory was frozen before runtime edits on 2026-08-18 from `7a0833d5762f01b96e927e7a355d7b8e18a583f8` (`rendere refactor plan`, committed `2026-08-18T22:37:18+02:00`). The original Phase 0 provenance recorded a temporary branch and a clean worktree; that is historical evidence only. The migration is now recovered on `master`, and the binding master-only rule above applies to every current and future phase. The path-level exclusion list for unrelated tracked or untracked work remains empty.
 
 The following ignored local products are not source, are not part of any Phase 0 claim, and must not enter a Phase 1-6 CL: `artifacts/`, `build/`, `logs/`, `Saved/`, ignored source-content drops under `Projects/Showcase/Assets/Meshes/`, `Projects/Showcase/Cooked/`, and `Projects/Showcase/imgui.ini`. Phase 3 may remove stale shader ABI products from disposable cache/cooked paths, and Phase 7 may regenerate canonical outputs, but neither exception authorizes committing or deleting unrelated user content. Re-inspect `git status --short --untracked-files=all` before every phase; any later dirty path is added to that phase's explicit exclusion list before editing.
 
@@ -889,8 +890,8 @@ The current mutable value is assembled through `RenderPreparationGraph`, `Render
 
 | Current field | Classification | Mutable owner and producer | Material consumers | Copy/lifetime decision | Phase 3 destination |
 | --- | --- | --- | --- | --- | --- |
-| `structuralRevision` | scene frame | `RenderScene` revision, currently copied from `RenderWorld` by `RenderPreparationInputResolver` | `PersistentRenderGpuScene` topology invalidation | Copy one scalar into the immutable slot product. | `PreparedRenderScene::StructuralRevision` |
-| `materialRevision` | scene frame | `RenderScene` material revision; resolver/`MaterialCache` currently publish it | `PersistentRenderGpuScene` material invalidation | Copy one scalar into the slot product. | `PreparedRenderScene::MaterialRevision` |
+| `structuralRevision` | scene frame | `RenderScene` revision, historically copied from `RenderWorld` by `RenderPreparationInputResolver` | `PersistentRenderGpuScene` topology invalidation | Copy one scalar into the immutable slot product. | `PreparedRenderScene::structuralRevision` |
+| `materialRevision` | scene frame | `RenderScene` material revision; resolver/`MaterialCache` publish it | `PersistentRenderGpuScene` material invalidation | Copy one scalar into the slot product. | `PreparedRenderScene::materialRevision` |
 | `directionalLights` | scene frame | latest scene light table; `RenderLightPreparation` | `RenderGpuLightingPayloadBuilder`, lighting invalidation hash | Move/copy compact prepared records into slot storage for parallel recording. | prepared scene light collection |
 | `pointLights` | scene frame | same | same | same | prepared scene light collection |
 | `spotLights` | scene frame | same | same | same | prepared scene light collection |
@@ -986,7 +987,7 @@ Therefore these Phase 7 comparative claims are `BLOCKED` unless an already-exist
 
 #### Implementation prompt
 
-> Implement Phase 1 as one source-consistent publication-boundary CL on the private migration branch. Replace the old GameFramework-to-Renderer frame packet, update every producer and consumer, and delete all old packet types and names owned by this phase. Apply the common standards and phase-specific references. Do not add compatibility and do not build, compile shaders, cook, launch, or run tests. Do not commit until the Phase 1 legacy search is clean. This CL is not independently landable.
+> Implement Phase 1 as one source-consistent publication-boundary CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Replace the old GameFramework-to-Renderer frame packet, update every producer and consumer, and delete all old packet types and names owned by this phase. Apply the common standards and phase-specific references. Do not add compatibility and do not build, compile shaders, cook, launch, or run tests. Do not hand off until the Phase 1 legacy search is clean. This CL is not independently landable.
 
 #### Phase-specific references
 
@@ -1035,13 +1036,13 @@ Therefore these Phase 7 comparative claims are `BLOCKED` unless an already-exist
 
 Suggested title: `Renderer: replace frame publication with scene and view inputs`.
 
-The CL must delete the old publication and queue-envelope headers/sources and their build entries. If any consumer still needs an old type, the phase is incomplete and must not be committed.
+The CL must delete the old publication and queue-envelope headers/sources and their build entries. If any consumer still needs an old type, the phase is incomplete and must not be handed off.
 
 ### Phase 2 - Establish the persistent `RenderScene` authority
 
 #### Implementation prompt
 
-> Implement Phase 2 as one persistent-scene authority CL on the private migration branch. Replace `RenderWorld` and `RenderProxy` with the committed `RenderScene` and `RenderPrimitive` model, move persistent CPU scene state and scene-owned continuity to that authority, update every direct consumer, and delete the two phase-owned legacy names and paths. Keep `RenderSceneData` as the sole current frame carrier until Phase 3; do not introduce `PreparedRenderScene`, `RenderView`, an adapter, or a second representation in this CL. Do not build. This CL is not independently landable.
+> Implement Phase 2 as one persistent-scene authority CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Replace `RenderWorld` and `RenderProxy` with the committed `RenderScene` and `RenderPrimitive` model, move persistent CPU scene state and scene-owned continuity to that authority, update every direct consumer, and delete the two phase-owned legacy names and paths. Keep `RenderSceneData` as the sole current frame carrier until Phase 3; do not introduce `PreparedRenderScene`, `RenderView`, an adapter, or a second representation in this CL. Do not build. This CL is not independently landable.
 
 #### Phase-specific references
 
@@ -1057,7 +1058,7 @@ The CL must delete the old publication and queue-envelope headers/sources and th
 - move the persistent CPU scene and material owners assigned to this phase from `Renderer/Private/SceneData` to `Renderer/Private/Scene`, leaving input acceptance, preparation, and GPU-scene paths to their already assigned phases, and keep one stable `RenderObjectId`/GPU-scene-slot relationship;
 - make `RenderScene` the sole mutable renderer scene authority for primitives, materials, texture table, sky, lights, revisions, accepted sequence, dirty state, and scene-owned continuity;
 - move previous object transforms and deformation continuity out of the preparation helper and beneath `RenderScene`, while preserving their current behavior until the Phase 3 split;
-- keep one existing `RenderSceneData` production/consumption route for this private-branch checkpoint; update it to consume `RenderScene` directly without creating a target frame product beside it;
+- keep one existing `RenderSceneData` production/consumption route for this master-worktree checkpoint; update it to consume `RenderScene` directly without creating a target frame product beside it;
 - preserve accepted generation/sequence rejection, stable slot allocation, reset behavior, task-graph dependencies, deterministic mutation, and existing frame-slot reuse while changing the persistent owner;
 - update all includes, filenames, diagnostics, existing tests-as-consumers, and recursive-glob build membership for the two renamed types in this CL.
 
@@ -1097,7 +1098,7 @@ Phase 2 checkpoint: runtime source now has one `RenderScene` owned by `RendererH
 
 #### Implementation prompt
 
-> Implement Phase 3 as one atomic scene-frame/current-view/persistent-view-state and paired C++/HLSL ABI CL on the private migration branch. Replace mixed `RenderSceneData` and every old camera/view/temporal builder with immutable frame-slot `PreparedRenderScene`, immutable current `RenderView`, persistent `RenderViewState`, and their focused preparation paths. Update every source and shader consumer, move view-derived work under `View`, and delete all old representations plus stale generated/cooked output. Do not build, compile shaders, cook, or retain old layouts. This CL is not independently landable.
+> Implement Phase 3 as one atomic scene-frame/current-view/persistent-view-state and paired C++/HLSL ABI CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Replace mixed `RenderSceneData` and every old camera/view/temporal builder with immutable frame-slot `PreparedRenderScene`, immutable current `RenderView`, persistent `RenderViewState`, and their focused preparation paths. Update every source and shader consumer, move view-derived work under `View`, and delete all old representations plus stale generated/cooked output. Do not build, compile shaders, cook, or retain old layouts. This CL is not independently landable.
 
 #### Phase-specific references
 
@@ -1116,7 +1117,7 @@ Phase 2 checkpoint: runtime source now has one `RenderScene` owned by `RendererH
 - publish scene revisions, all primitive records/bounds, material values/bindings, prepared lights/sky, current/previous deformation, and view-independent ray inputs into `PreparedRenderScene` using moves, stable indices, and justified per-slot storage;
 - move camera construction and view-owned work from `Camera`, `Frame/Builders`, and mixed scene preparation into `Renderer/Private/View`;
 - construct matrices, frustum, rectangles, extents, and current camera values from immutable `RenderViewInput` plus the actual `ViewportRenderRequest`;
-- wire request identity, view kind/mode, feature flags, output flags, and exposure to the view or graph topology key; delete any unsupported field instead of leaving it inert;
+- wire request identity and view kind into `RenderViewState`, view mode into `RenderView`, and output flags/exposure into existing graph and presentation policy; delete the unsupported generic feature-flag field instead of leaving it inert;
 - move visibility, camera distance, sorting, batching, raster work, workload summary, and view-sensitive ray planning into `RenderViewPreparation`;
 - remove frustum, camera position, visibility, camera-distance ordering, raster batching, viewport, history, and graph handles from `RenderScenePreparation` and `PreparedRenderScene`;
 - key `RenderViewState` by stable view identity and make it the sole semantic owner of previous matrices/jitter, temporal sample, continuity, and invalidation reasons;
@@ -1156,13 +1157,13 @@ Phase 2 checkpoint: runtime source now has one `RenderScene` owned by `RendererH
 
 Suggested title: `Renderer: split prepared scene and render view with unified shader ABI`.
 
-The CL is not committable while any old view builder/layout remains. Do not split the C++ and HLSL rename into separate commits.
+The CL is not ready for handoff while any old view builder/layout remains. Keep the C++ and HLSL rename in this one review unit.
 
 ### Phase 4 - Move GPU Scene and ray-tracing scene capabilities under `RenderScene`
 
 #### Implementation prompt
 
-> Implement Phase 4 as one persistent scene-GPU capability ownership and paired scene-lighting ABI CL on the private migration branch. Move GPU Scene and ray-tracing scene lifetime under `RenderScene`, preserve frame-slot and GPU-retirement correctness, update every allocation/reset/import/shader consumer, and delete the old FramePipeline/RendererHost ownership routes and types. Do not build, compile shaders, cook, run a backend, or add a fallback. This CL is not independently landable.
+> Implement Phase 4 as one persistent scene-GPU capability ownership and paired scene-lighting ABI CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Move GPU Scene and ray-tracing scene lifetime under `RenderScene`, preserve frame-slot and GPU-retirement correctness, update every allocation/reset/import/shader consumer, and delete the old FramePipeline/RendererHost ownership routes and types. Do not build, compile shaders, cook, run a backend, or add a fallback. This CL is not independently landable.
 
 #### Phase-specific references
 
@@ -1221,7 +1222,7 @@ This phase cleans every old capability owner and name. Failure to prove one cons
 
 #### Implementation prompt
 
-> Implement Phase 5 as one pass-input and recording-surface CL on the private migration branch. Replace broad semantic contexts with pass-specific parameters and the narrow `PassCommandContext`, update every authored pass and frame-graph execution consumer, reconcile the naming standard, and delete all old context bags and forwarding access. Do not build or add context-shaped replacements. This CL is not independently landable.
+> Implement Phase 5 as one pass-input and recording-surface CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Replace broad semantic contexts with pass-specific parameters and the narrow `PassCommandContext`, update every authored pass and frame-graph execution consumer, reconcile the naming standard, and delete all old context bags and forwarding access. Do not build or add context-shaped replacements. This CL is not independently landable.
 
 #### Phase-specific references
 
@@ -1274,7 +1275,7 @@ All context consumers and deletions belong in this one CL. A context retained fo
 
 #### Implementation prompt
 
-> Implement Phase 6 as one frame-orchestration, graph-vocabulary, and physical-layout CL on the private migration branch. Make `FramePipeline` a thin lifecycle sequencer, rename deferred graph construction/resources exactly as specified, move files to the canonical Scene/View/Frame/Passes/FrameGraph paths, reconcile CMake/includes, and delete emptied roots and forwarding helpers. Do not build and do not add a `DeferredRenderer` facade. This CL is not independently landable.
+> Implement Phase 6 as one frame-orchestration, graph-vocabulary, and physical-layout CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Make `FramePipeline` a thin lifecycle sequencer, rename deferred graph construction/resources exactly as specified, move files to the canonical Scene/View/Frame/Passes/FrameGraph paths, reconcile CMake/includes, and delete emptied roots and forwarding helpers. Do not build and do not add a `DeferredRenderer` facade. This CL is not independently landable.
 
 #### Phase-specific references
 
@@ -1323,13 +1324,13 @@ All context consumers and deletions belong in this one CL. A context retained fo
 
 Suggested title: `Renderer: finalize scene-view-frame ownership and navigation`.
 
-The phase commits the physical architecture, not a cosmetic file shuffle. Every move must correspond to the owner map, and every emptied legacy path is deleted in this CL.
+The phase delivers the physical architecture, not a cosmetic file shuffle. Every move must correspond to the owner map, and every emptied legacy path is deleted in this CL.
 
 ### Phase 7 - Regenerate, validate, reconcile, and atomically land
 
 #### Implementation prompt
 
-> Implement Phase 7 against the complete Phase 0-6 candidate. Run the final legacy-eradication gate first, regenerate canonical artifacts once, then perform claim-driven focused checks, shader validation, the required DevelopmentEditor D3D12/Vulkan build and Showcase runtime/capture evidence. Fix failures at their real owner and fold source fixes back into the owning phase CL. Update current architecture documentation only after all acceptance criteria pass. Land the complete phase series in one mainline integration transaction; never land an individual phase or add compatibility to make validation pass.
+> Implement Phase 7 directly in the unstaged `master` worktree against the complete Phase 0-6 candidate. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and every source-control action. Run the final legacy-eradication gate first, regenerate canonical artifacts once, then perform claim-driven focused checks, shader validation, the required DevelopmentEditor D3D12/Vulkan build and Showcase runtime/capture evidence. Fix failures at their real owner and keep them attributable in final review. Update current architecture documentation only after all acceptance criteria pass; never add compatibility to make validation pass.
 
 #### Phase-specific references
 
@@ -1354,15 +1355,15 @@ The phase commits the physical architecture, not a cosmetic file shuffle. Every 
 
 - escalate validation from exact/source checks to focused compilation, then paired-backend runtime only because the final shared contract requires it;
 - classify performance honestly as improves, preserves, or blocked with exact workload/hardware/build evidence;
-- fold code fixes into the phase that owns the invariant, then rerun affected and final evidence on the exact candidate;
+- fix code at the responsibility that owns the invariant, then rerun affected and final evidence on the exact `master` candidate;
 - preserve unsupported/unavailable evidence as an explicit blocked claim rather than simulated success.
 
 #### Negative guardrails
 
 - no compatibility alias, legacy reader, fallback path, disabled assertion, skipped backend, device-idle workaround, or widened context to make the candidate pass;
 - no broad clean rebuild/all-content cook unless a specific final claim requires it or stale state makes narrower evidence inconclusive;
-- no miscellaneous Phase 7 source-fix commit, permanent migration validator, new submitted test harness, or documentation claim ahead of executable proof;
-- no partial merge, cherry-pick, fast-forward sequence, release, or status update for an individual phase.
+- no miscellaneous Phase 7 source-fix bucket, permanent migration validator, new submitted test harness, or documentation claim ahead of executable proof;
+- no branch, merge, cherry-pick, rebase, release, or status update that treats an individual phase as the completed architecture.
 
 #### Acceptance criteria (AC)
 
@@ -1370,14 +1371,14 @@ The phase commits the physical architecture, not a cosmetic file shuffle. Every 
 - regenerated/tracked artifacts contain only target names/layouts and disposable old output is absent from package/build inputs;
 - focused checks, shader validation, `DevelopmentEditor` D3D12/Vulkan build, both Showcase smokes, required captures, lifetime/retirement evidence, and applicable performance comparison have exact recorded results;
 - the final diff contains no unrelated changes, temporary proof code, compatibility machinery, stale CMake/include/document references, or deferred cleanup;
-- any unavailable required evidence makes the candidate `BLOCKED`; no mainline integration occurs;
-- mainline receives the complete phase series in one reviewed integration transaction and rollback reverts that complete unit.
+- any unavailable required evidence makes the candidate `BLOCKED`; `master` remains a private, non-releasable migration state;
+- the user reviews the exact validated `master` candidate and alone decides whether to commit, push, submit, release, or roll it back.
 
 #### CL boundary
 
 Suggested title: `Renderer: validate and accept scene-view-frame architecture`.
 
-The Phase 7 CL contains canonical regenerated artifacts and final truthful documentation/evidence reconciliation only. Source fixes discovered here are folded into their owning Phase 1-6 CL before final review. The final candidate has one scene owner, one view owner, one view-state owner, one frame-slot product, one shader ABI, and narrow pass inputs on both backends.
+The Phase 7 CL contains canonical regenerated artifacts and final truthful documentation/evidence reconciliation. Source fixes discovered here remain attributed to their owning responsibility in final review. The final candidate has one scene owner, one view owner, one view-state owner, one frame-slot product, one shader ABI, and narrow pass inputs on both backends.
 
 ## Final Atomic Cutover Gate
 
@@ -1397,7 +1398,7 @@ The candidate is not landable until every gate below passes against the exact in
 | Target wiring | Every new request field, generation, invalidation cause, state value, binding, and graph key has an intentional producer and consumer, or is deleted. No target field exists only to preserve the shape of the current packet. | Field-level producer/consumer inventory and focused behavior tests for each accepted intent. |
 | Generated and cached output | Generated shader metadata, cooked shader packages, local generated manifests, and checked-in generated artifacts are regenerated from the target ABI and contain no current names or layouts. Disposable stale caches are excluded from evidence and cannot be packaged. | Regeneration from the candidate, artifact search, shader cook/validation, and package/build manifest inspection. |
 | Documentation truth | Current-state maps and reviewer routes describe only the implemented target after the code passes. Historical analysis is clearly marked as history or target rationale. | Documentation link/status check and comparison with executable owners and build membership. |
-| Atomic repository state | The exact candidate contains all code, shader, build, test, generated-artifact, and documentation changes. Mainline observes either the pre-migration head or this complete candidate, never an internal checkpoint. | Final full diff/state review and one merge transaction; required checks run on the exact candidate or resulting merge commit. Rollback reverts that complete unit. |
+| Atomic repository state | The exact `master` candidate contains all code, shader, build, test, generated-artifact, and documentation changes. Earlier phase commits remain private checkpoints and are never presented as supported releases. | Final full diff/state review on `master`; required checks run on the exact candidate. The user alone performs any commit, push, submit, release, or rollback. |
 
 The legacy-symbol set is a floor, not a fixed allowlist. The Phase 0 inventory must add any current synonym, wrapper, file, registration label, or ownership route discovered before implementation. A final search match is resolved by deletion or an explicit correction to this target document before landing; it is never silently exempted because replacing it is inconvenient.
 
@@ -1432,7 +1433,7 @@ The refactor should reuse existing tests and evidence surfaces. Add a permanent 
 - Graph resource handles are invalid outside their graph generation. Do not store them in persistent scene/view owners to simplify call signatures.
 - Shader constant reclassification is an ABI change and must update every C++ producer, shader declaration, and consumer together.
 - A temporary compatibility adapter or dual context path is more dangerous than a larger clean-break changelist because it creates two authorities.
-- If a workstream cannot preserve behavior with a single owner, stop work on the migration branch and revise this target rather than adding a fallback or landing a partial state.
+- If a workstream cannot preserve behavior with a single owner, stop editing the `master` worktree and revise this target rather than adding a fallback or presenting a partial state as complete.
 
 ## What Sparkle Should And Should Not Copy
 
@@ -1464,7 +1465,7 @@ Do not copy from Unreal:
 
 The refactor is complete only when:
 
-- it lands as one complete integration unit, and the final atomic cutover gate passes on the exact candidate with no deferred cleanup;
+- the complete `master` phase series passes the final atomic cutover gate on the exact candidate with no deferred cleanup;
 - `RenderScene` is the sole persistent renderer scene authority;
 - GPU Scene and ray-tracing scene live under that authority as focused capabilities;
 - scene publication contains no camera, viewport, exposure, provider, or renderer-convention metadata;

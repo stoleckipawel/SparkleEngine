@@ -14,7 +14,7 @@ class RenderCommandContext;
 class RenderHardwareInterface;
 class RayTracingPerformanceDiagnostics;
 struct MeshDraw;
-struct RenderSceneData;
+struct PreparedRenderScene;
 
 class RayTracingClassicTlasBuilder final
 {
@@ -41,7 +41,7 @@ public:
 	void Prepare(std::uint32_t instanceCapacity) noexcept;
 	BuildStats Build(
 	    RenderCommandContext& commandContext,
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
 	const TlasHandle& GetTlas() const noexcept { return m_tlas; }
@@ -56,10 +56,10 @@ private:
 	static std::uint64_t ResolveScratchSize(
 	    const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
 	    ERhiClassicTlasBuildFlags buildFlags) noexcept;
-	static RhiRayTracingInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept;
+	static RhiRayTracingInstanceFlags ResolveInstanceFlags(const PreparedRenderScene& preparedScene, const MeshDraw& draw) noexcept;
 	static void CollectInstances(
 	    RenderCommandContext& commandContext,
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingPerformanceDiagnostics* diagnostics,
 	    BuildState& state) noexcept;

@@ -20,9 +20,9 @@ class MaterialCache;
 class RenderHardwareInterface;
 class RhiCommandSubmissionService;
 class TextureCache;
-struct PreparedRenderObject;
+struct PreparedRenderPrimitive;
 struct RenderDeformationWork;
-struct RenderSceneData;
+struct PreparedRenderScene;
 
 enum class RenderSceneApplyStatus : std::uint8_t
 {
@@ -45,13 +45,13 @@ public:
 
 	RenderSceneApplyStatus Apply(const RenderSceneDelta& delta, RenderSceneDynamicData dynamic, std::string& diagnostic);
 	void PromoteResidentGpuMeshes() noexcept;
-	void BuildMaterials(RenderSceneData& sceneData);
-	void CommitContinuity(std::span<const PreparedRenderObject> objects, const RenderDeformationWork& deformation);
+	void BuildMaterials(PreparedRenderScene& preparedScene);
+	void CommitContinuity(std::span<const PreparedRenderPrimitive> primitives, const RenderDeformationWork& deformation);
 	void ResetContinuity() noexcept;
 	DirectX::XMFLOAT4X4 ResolvePreviousWorldMatrix(const RenderPrimitive& primitive) const noexcept;
-	std::span<const DirectX::XMFLOAT4X4> FindPreviousJointMatrices(RenderObjectId object) const noexcept;
-	std::span<const float> FindPreviousMorphWeights(RenderObjectId object) const noexcept;
-	const RenderPrimitive* Find(RenderObjectId object) const noexcept;
+	std::span<const DirectX::XMFLOAT4X4> FindPreviousJointMatrices(RenderObjectId primitiveId) const noexcept;
+	std::span<const float> FindPreviousMorphWeights(RenderObjectId primitiveId) const noexcept;
+	const RenderPrimitive* Find(RenderObjectId primitiveId) const noexcept;
 	std::span<const RenderPrimitive> GetPrimitives() const noexcept { return m_primitives; }
 	const RenderMaterialTable& GetMaterials() const noexcept { return m_materials; }
 	const RenderTextureTable& GetTextures() const noexcept { return m_textures; }
@@ -66,7 +66,6 @@ public:
 	std::uint64_t GetSequenceNumber() const noexcept { return m_sequenceNumber; }
 	std::uint64_t GetStructuralRevision() const noexcept { return m_structuralRevision; }
 	std::uint64_t GetMaterialRevision() const noexcept { return m_materialRevision; }
-	bool ConsumeHistoryReset() noexcept;
 
 private:
 	RenderSceneApplyStatus ValidateDelta(const RenderSceneDelta& delta, std::string& diagnostic) const;
@@ -82,16 +81,16 @@ private:
 	void ApplyUpdates(const RenderSceneDelta& delta, std::span<const GpuMeshHandle> meshes);
 	void PublishResources(const RenderSceneDelta& delta);
 	void RetainReferencedGpuMeshes() noexcept;
-	void CommitPreviousWorldTransforms(std::span<const PreparedRenderObject> objects);
+	void CommitPreviousWorldTransforms(std::span<const PreparedRenderPrimitive> primitives);
 	void CommitJointMatrixContinuity(const RenderDeformationWork& deformation);
 	void CommitMorphWeightContinuity(const RenderDeformationWork& deformation);
-	bool IsObjectAvailable(RenderObjectId object, const RenderSceneDelta& delta) const noexcept;
+	bool IsObjectAvailable(RenderObjectId primitiveId, const RenderSceneDelta& delta) const noexcept;
 	static bool HasOrderedDeltaObjects(const RenderSceneDelta& delta) noexcept;
 	static bool HasConflictingDeltaObjects(const RenderSceneDelta& delta) noexcept;
-	static bool HasStrictlyOrderedDynamicObjects(std::span<const RenderObjectDynamicData> objects) noexcept;
+	static bool HasStrictlyOrderedDynamicObjects(std::span<const RenderObjectDynamicData> primitives) noexcept;
 	static bool HasStrictlyOrderedJointMatrixRanges(std::span<const RenderJointMatrixRange> ranges) noexcept;
 	static bool HasStrictlyOrderedMorphWeightRanges(std::span<const RenderMorphWeightRange> ranges) noexcept;
-	RenderPrimitive* FindMutable(RenderObjectId object) noexcept;
+	RenderPrimitive* FindMutable(RenderObjectId primitiveId) noexcept;
 	struct PreviousWorldTransform final
 	{
 		RenderObjectId Object;
@@ -118,5 +117,4 @@ private:
 	std::uint64_t m_sequenceNumber = 0;
 	std::uint64_t m_structuralRevision = 0;
 	std::uint64_t m_materialRevision = 0;
-	bool m_historyReset = false;
 };

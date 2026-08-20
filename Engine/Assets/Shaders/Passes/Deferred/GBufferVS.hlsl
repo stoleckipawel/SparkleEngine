@@ -1,5 +1,7 @@
+#include "Resources/ViewTemporalUniformData.hlsli"
+#include "Resources/MeshInstanceShaderData.hlsli"
+
 #include "CommonVS.hlsli"
-#include "Resources/TemporalConstantBuffer.hlsli"
 #include "Geometry/Basis.hlsli"
 #include "Geometry/Morphing.hlsli"
 #include "Geometry/Skinning.hlsli"
@@ -11,43 +13,24 @@ void main(in VS::Input Input, out VS::Output Output)
 	const MeshInstanceData meshInstance = MeshInstances[instanceSlot];
 	const float4x4 worldMatrix = meshInstance.WorldMatrix;
 	const float4x4 previousWorldMatrix = meshInstance.PreviousWorldMatrix;
-	const float3x3 worldInverseTranspose = (float3x3) meshInstance.WorldInverseTranspose;
+	const float3x3 worldInverseTranspose = (float3x3)meshInstance.WorldInverseTranspose;
 
 	const MorphedVertexAttributes morphedVertex =
-	    ApplyMorphing(
-	        meshInstance,
-	        0u,
-	        Input.VertexId,
-	        Input.Position,
-	        Input.Normal,
-	        Input.Tangent.xyz);
+	    ApplyMorphing(meshInstance, 0u, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
 	const MorphedVertexAttributes previousMorphedVertex =
-	    ApplyPreviousMorphing(
-	        meshInstance,
-	        0u,
-	        Input.VertexId,
-	        Input.Position,
-	        Input.Normal,
-	        Input.Tangent.xyz);
+	    ApplyPreviousMorphing(meshInstance, 0u, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
 	const SkinnedVertexAttributes localVertex =
-	    ApplySkinning(
-	        meshInstance,
-	        Input.VertexId,
-	        morphedVertex.Position,
-	        morphedVertex.Normal,
-	        morphedVertex.Tangent);
-	const SkinnedVertexAttributes previousLocalVertex =
-	    ApplyPreviousSkinning(
-	        meshInstance,
-	        Input.VertexId,
-	        previousMorphedVertex.Position,
-	        previousMorphedVertex.Normal,
-	        previousMorphedVertex.Tangent);
+	    ApplySkinning(meshInstance, Input.VertexId, morphedVertex.Position, morphedVertex.Normal, morphedVertex.Tangent);
+	const SkinnedVertexAttributes previousLocalVertex = ApplyPreviousSkinning(meshInstance,
+	                                                                          Input.VertexId,
+	                                                                          previousMorphedVertex.Position,
+	                                                                          previousMorphedVertex.Normal,
+	                                                                          previousMorphedVertex.Tangent);
 
 	const float4 positionWorld = mul(float4(localVertex.Position, 1.0f), worldMatrix);
 	const float4 previousPositionWorld = mul(float4(previousLocalVertex.Position, 1.0f), previousWorldMatrix);
 	const float3 normalWorld = normalize(mul(localVertex.Normal, worldInverseTranspose));
-	const float3 tangentWorld = OrthonormalizeTangent(mul(localVertex.Tangent, (float3x3) worldMatrix), normalWorld);
+	const float3 tangentWorld = OrthonormalizeTangent(mul(localVertex.Tangent, (float3x3)worldMatrix), normalWorld);
 	const float3 bitangentWorld = ComputeBitangentFromSign(normalWorld, tangentWorld, Input.Tangent.w);
 
 	const float4 positionClip = PositionWorldToClip(positionWorld);

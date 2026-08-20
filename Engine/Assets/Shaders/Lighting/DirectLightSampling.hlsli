@@ -1,10 +1,10 @@
 #ifndef SPARKLE_DIRECT_LIGHT_SAMPLING_HLSLI
 #define SPARKLE_DIRECT_LIGHT_SAMPLING_HLSLI
 
+#include "Resources/LightConstantBufferData.hlsli"
+
 #include "Common/Color.hlsli"
 #include "Lighting/AreaLights.hlsli"
-#include "Resources/ConstantBuffers.hlsli"
-
 namespace DirectLightSampling
 {
 	struct LightId
@@ -62,10 +62,8 @@ namespace DirectLightSampling
 
 	uint GetDirectLightCount()
 	{
-		return ViewLighting.DirectionalLightCount +
-		       ViewLighting.PointLightCount +
-		       ViewLighting.SpotLightCount +
-		       ViewLighting.RectLightCount;
+		return ViewLighting.DirectionalLightCount + ViewLighting.PointLightCount + ViewLighting.SpotLightCount
+		    + ViewLighting.RectLightCount;
 	}
 
 	LightId GetDirectLightId(uint linearIndex)
@@ -150,9 +148,8 @@ namespace DirectLightSampling
 	{
 		const float3 directionWorld = PunctualLights::GetDirectionalLightDirection(lightIndex);
 		const float noL = max(dot(normalWorld, directionWorld), 0.0f);
-		return CommonColor::LuminanceRec709(
-		           max(DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Illuminance, 0.0f.xxx)) *
-		       noL;
+		return CommonColor::LuminanceRec709(max(DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Illuminance, 0.0f.xxx))
+		    * noL;
 	}
 
 	float EstimatePointLightWeight(uint lightIndex, float3 positionWorld, float3 normalWorld)
@@ -162,10 +159,7 @@ namespace DirectLightSampling
 		const float noL = max(dot(normalWorld, directionWorld), 0.0f);
 		const PointLightConstantBufferData light = PointLights[lightIndex];
 		const float distanceAttenuation =
-		    PunctualLights::ComputePunctualDistanceAttenuation(
-		        distanceToLight,
-		        light.Range,
-		        light.DistanceAttenuationCoefficients);
+		    PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
 		return CommonColor::LuminanceRec709(max(light.Color * light.LuminousIntensity * distanceAttenuation, 0.0f.xxx)) * noL;
 	}
 
@@ -176,18 +170,11 @@ namespace DirectLightSampling
 		const float noL = max(dot(normalWorld, directionWorld), 0.0f);
 		const SpotLightConstantBufferData light = SpotLights[lightIndex];
 		const float distanceAttenuation =
-		    PunctualLights::ComputePunctualDistanceAttenuation(
-		        distanceToLight,
-		        light.Range,
-		        light.DistanceAttenuationCoefficients);
-		const float angularAttenuation = PunctualLights::ComputeSpotAngularAttenuation(
-		    -directionWorld,
-		    light.Direction,
-		    light.InnerAngleCosine,
-		    light.OuterAngleCosine);
-		return CommonColor::LuminanceRec709(
-		           max(light.Color * light.LuminousIntensity * distanceAttenuation * angularAttenuation, 0.0f.xxx)) *
-		       noL;
+		    PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
+		const float angularAttenuation =
+		    PunctualLights::ComputeSpotAngularAttenuation(-directionWorld, light.Direction, light.InnerAngleCosine, light.OuterAngleCosine);
+		return CommonColor::LuminanceRec709(max(light.Color * light.LuminousIntensity * distanceAttenuation * angularAttenuation, 0.0f.xxx))
+		    * noL;
 	}
 
 	float EstimateRectLightWeight(uint lightIndex, float3 positionWorld, float3 normalWorld)

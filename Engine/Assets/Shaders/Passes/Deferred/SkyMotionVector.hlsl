@@ -1,4 +1,5 @@
-#include "Resources/ConstantBuffers.hlsli"
+#include "Resources/ViewUniformData.hlsli"
+
 #include "Geometry/ScreenSpace.hlsli"
 #include "Passes/Deferred/MotionVector.hlsli"
 #include "Passes/Deferred/SceneDepthUtils.hlsli"

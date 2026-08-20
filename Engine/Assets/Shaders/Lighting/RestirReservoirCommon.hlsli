@@ -1,9 +1,9 @@
 #ifndef SPARKLE_RESTIR_RESERVOIR_COMMON_HLSLI
 #define SPARKLE_RESTIR_RESERVOIR_COMMON_HLSLI
 
-#include "Common/Random.hlsli"
-#include "Resources/ConstantBuffers.hlsli"
+#include "Resources/FrameUniformData.hlsli"
 
+#include "Common/Random.hlsli"
 namespace RestirReservoirCommon
 {
 	static const uint InitialCandidateCount = 4u;
@@ -33,11 +33,7 @@ namespace RestirReservoirCommon
 		return packedSurface.w > 0.0f && dot(packedSurface.xyz, packedSurface.xyz) > 0.25f;
 	}
 
-	bool AreSurfacesCompatible(
-	    bool valid,
-	    float3 normalWorld,
-	    float viewDistance,
-	    float4 packedSurface)
+	bool AreSurfacesCompatible(bool valid, float3 normalWorld, float viewDistance, float4 packedSurface)
 	{
 		if (!valid || !IsPackedSurfaceValid(packedSurface))
 		{

@@ -8,7 +8,7 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshData.h"
-#include "SceneData/Preparation/MeshInstanceBatchBuilder.h"
+#include "View/MeshInstanceBatchBuilder.h"
 #include "SceneData/RenderMeshClassificationConversion.h"
 #include "Scene/RenderScene.h"
 

@@ -4,7 +4,7 @@
 
 #include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GpuMesh.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 
 #include <span>
@@ -13,11 +13,11 @@ static const auto g_rayTracingBlasGeometryBuilderLogger = Logging::GetOrCreateLo
 
 bool RayTracingBlasGeometryBuilder::GeometryEquals(const RhiRayTracingGeometryDesc& left, const RhiRayTracingGeometryDesc& right) noexcept
 {
-	return left.VertexBuffer.Resource.Value == right.VertexBuffer.Resource.Value &&
-	       left.VertexBuffer.OffsetInBytes == right.VertexBuffer.OffsetInBytes && left.VertexStrideInBytes == right.VertexStrideInBytes &&
-	       left.VertexCount == right.VertexCount && left.IndexBuffer.Resource.Value == right.IndexBuffer.Resource.Value &&
-	       left.IndexBuffer.OffsetInBytes == right.IndexBuffer.OffsetInBytes && left.IndexCount == right.IndexCount &&
-	       left.IndexFormat == right.IndexFormat && left.Opaque == right.Opaque;
+	return left.VertexBuffer.Resource.Value == right.VertexBuffer.Resource.Value
+	    && left.VertexBuffer.OffsetInBytes == right.VertexBuffer.OffsetInBytes && left.VertexStrideInBytes == right.VertexStrideInBytes
+	    && left.VertexCount == right.VertexCount && left.IndexBuffer.Resource.Value == right.IndexBuffer.Resource.Value
+	    && left.IndexBuffer.OffsetInBytes == right.IndexBuffer.OffsetInBytes && left.IndexCount == right.IndexCount
+	    && left.IndexFormat == right.IndexFormat && left.Opaque == right.Opaque;
 }
 
 std::uint64_t RayTracingBlasGeometryBuilder::AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
@@ -31,13 +31,13 @@ bool RayTracingBlasGeometryBuilder::IsSkinnedDraw(const MeshDraw& draw) noexcept
 }
 
 void RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshDraw& draw,
     const GpuMesh& mesh,
     std::vector<DirectX::XMFLOAT3>& outPositions) noexcept
 {
-	if (!mesh.HasRayTracingHitData() || !mesh.HasSkinInfluences() ||
-	    mesh.GetRayTracingHitVertices().size() != mesh.GetSkinInfluences().size() || sceneData.jointMatrices.empty())
+	if (!mesh.HasRayTracingHitData() || !mesh.HasSkinInfluences()
+	    || mesh.GetRayTracingHitVertices().size() != mesh.GetSkinInfluences().size() || preparedScene.jointMatrices.empty())
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingBlasGeometryBuilderLogger,
@@ -48,7 +48,7 @@ void RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(
 
 	const std::span<const RayTracingHitVertex> vertices = mesh.GetRayTracingHitVertices();
 	const std::span<const VertexSkinInfluence> skinInfluences = mesh.GetSkinInfluences();
-	ValidateMorphInputs(sceneData, draw, mesh);
+	ValidateMorphInputs(preparedScene, draw, mesh);
 
 	outPositions.clear();
 	outPositions.reserve(vertices.size());
@@ -63,7 +63,7 @@ void RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(
 
 			const std::uint32_t jointMatrixIndex =
 			    draw.Skinning.JointMatrixOffset + skinInfluences[vertexIndex].jointIndices[influenceIndex];
-			if (jointMatrixIndex >= sceneData.jointMatrices.size())
+			if (jointMatrixIndex >= preparedScene.jointMatrices.size())
 			{
 				Diagnostics::Fatal(
 				    g_rayTracingBlasGeometryBuilderLogger,
@@ -74,19 +74,15 @@ void RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(
 		}
 
 		outPositions.push_back(TransformSkinnedPosition(
-		    ApplyMorphPosition(vertices[vertexIndex].Position, vertexIndex, sceneData, draw, mesh),
+		    ApplyMorphPosition(vertices[vertexIndex].Position, vertexIndex, preparedScene, draw, mesh),
 		    skinInfluences[vertexIndex],
 		    draw.Skinning.JointMatrixOffset,
-		    sceneData.jointMatrices));
+		    preparedScene.jointMatrices));
 	}
 
 	if (outPositions.empty())
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasGeometryBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Skinned BLAS input contains no vertices.");
+		Diagnostics::Fatal(g_rayTracingBlasGeometryBuilderLogger, __FILE__, __LINE__, "Skinned BLAS input contains no vertices.");
 	}
 }
 
@@ -131,7 +127,7 @@ DirectX::XMFLOAT3 RayTracingBlasGeometryBuilder::TransformSkinnedPosition(
 }
 
 void RayTracingBlasGeometryBuilder::ValidateMorphInputs(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshDraw& draw,
     const GpuMesh& mesh) noexcept
 {
@@ -140,10 +136,10 @@ void RayTracingBlasGeometryBuilder::ValidateMorphInputs(
 		return;
 	}
 
-	if (draw.Morph.VertexCount != mesh.GetVertexCount() || mesh.GetMorphTargetCount() != draw.Morph.TargetCount ||
-	    draw.Morph.WeightOffset > sceneData.morphWeights.size() ||
-	    draw.Morph.TargetCount > sceneData.morphWeights.size() - draw.Morph.WeightOffset ||
-	    mesh.GetMorphTargetDeltas().size() != static_cast<std::size_t>(draw.Morph.TargetCount) * draw.Morph.VertexCount)
+	if (draw.Morph.VertexCount != mesh.GetVertexCount() || mesh.GetMorphTargetCount() != draw.Morph.TargetCount
+	    || draw.Morph.WeightOffset > preparedScene.morphWeights.size()
+	    || draw.Morph.TargetCount > preparedScene.morphWeights.size() - draw.Morph.WeightOffset
+	    || mesh.GetMorphTargetDeltas().size() != static_cast<std::size_t>(draw.Morph.TargetCount) * draw.Morph.VertexCount)
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingBlasGeometryBuilderLogger,
@@ -156,7 +152,7 @@ void RayTracingBlasGeometryBuilder::ValidateMorphInputs(
 DirectX::XMFLOAT3 RayTracingBlasGeometryBuilder::ApplyMorphPosition(
     const DirectX::XMFLOAT3& position,
     std::size_t vertexIndex,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshDraw& draw,
     const GpuMesh& mesh) noexcept
 {
@@ -169,7 +165,7 @@ DirectX::XMFLOAT3 RayTracingBlasGeometryBuilder::ApplyMorphPosition(
 	const std::span<const MorphTargetDeltaData> deltas = mesh.GetMorphTargetDeltas();
 	for (std::uint32_t targetIndex = 0u; targetIndex < draw.Morph.TargetCount; ++targetIndex)
 	{
-		const float weight = sceneData.morphWeights[draw.Morph.WeightOffset + targetIndex];
+		const float weight = preparedScene.morphWeights[draw.Morph.WeightOffset + targetIndex];
 		const MorphTargetDeltaData& delta = deltas[static_cast<std::size_t>(targetIndex) * draw.Morph.VertexCount + vertexIndex];
 
 		morphed.x += delta.Position.x * weight;

@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "FramePipeline/FramePipeline.h"
 
-#include "Camera/RenderCamera.h"
 #include "Commands/RenderCommandContext.h"
 #include "Frame/RhiFrameConstants.h"
 #include "Debug/RendererCVars.h"
@@ -9,8 +8,6 @@
 #include "UI/UiRenderPacketPlayer.h"
 #include "Editor/EditorTextureRegistry.h"
 #include "Frame/Builders/FrameContextBuilder.h"
-#include "Frame/Builders/PerViewDataBuilder.h"
-#include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "Frame/RenderFrameTime.h"
@@ -22,7 +19,7 @@
 #include "Host/RendererHost.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "Providers/RendererImageProviderStack.h"
-#include "Providers/ImageProviderFrameContext.h"
+#include "Providers/ImageProviderFrameInput.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 #include "RayTracing/Scene/RayTracingPassContext.h"
@@ -31,9 +28,8 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
-#include "SceneData/Preparation/RenderPreparationGraph.h"
+#include "Scene/Preparation/RenderScenePreparation.h"
 #include "SceneData/GpuScene/PersistentRenderGpuScene.h"
-#include "SceneData/Input/RenderInputConsumer.h"
 #include "Scene/RenderScene.h"
 #include "Meshes/GpuMeshCache.h"
 #include "SceneData/RenderSceneGpuData.h"
@@ -43,14 +39,23 @@
 
 static const auto g_framePipelineLogger = Logging::GetOrCreateLogger("Renderer.FramePipeline");
 
+FrameUniformData FramePipeline::BuildFrameUniformData(std::uint64_t frameId, const RenderFrameTime& time) noexcept
+{
+	return FrameUniformData{
+	    .FrameIndex = static_cast<std::uint32_t>(frameId),
+	    .TotalTimeSeconds = static_cast<float>(time.UnscaledTime.count()),
+	    .DeltaTimeSeconds = static_cast<float>(time.UnscaledDelta.count()),
+	    .ScaledTotalTimeSeconds = static_cast<float>(time.ScaledTime.count()),
+	    .ScaledDeltaTimeSeconds = static_cast<float>(time.ScaledDelta.count())};
+}
+
 FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPackets) noexcept :
     m_rendererHost(&rendererHost),
     m_frameContextBuilder(
         rendererHost.GetRenderScene(),
-        rendererHost.GetRenderCamera(),
-        rendererHost.GetRenderPreparationGraph(),
-        rendererHost.GetPerViewDataBuilder(),
-        rendererHost.GetTemporalDataBuilder()),
+        rendererHost.GetRenderScenePreparation(),
+        rendererHost.GetRenderViewBuilder(),
+        rendererHost.GetRenderViewPreparation()),
     m_ownsUiBackend(enableUiRenderPackets)
 {
 	m_windowExtent = {
@@ -66,8 +71,6 @@ FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPack
 
 void FramePipeline::InitializeSceneData()
 {
-	m_renderInputConsumer = std::make_unique<RenderInputConsumer>(m_rendererHost->GetRenderScene());
-
 	m_gpuScene = std::make_unique<PersistentRenderGpuScene>(
 	    m_rendererHost->GetRenderHardwareInterface().GetResourceService(),
 	    m_rendererHost->GetGpuMeshCache());
@@ -107,11 +110,6 @@ void FramePipeline::InitializeFrameContexts()
 	}
 }
 
-void FramePipeline::SubmitFrameSubmission(RenderFrameSubmission submission) noexcept
-{
-	(void) m_renderInputConsumer->Submit(std::move(submission));
-}
-
 FramePipeline::~FramePipeline() noexcept
 {
 	if (m_ownsUiBackend)
@@ -134,12 +132,15 @@ void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) n
 	m_bResizePending = true;
 }
 
-void FramePipeline::OnRender(const RenderFrameTime& time, const UiRenderPacket& ui) noexcept
+void FramePipeline::OnRender(RenderFrameSubmission submission, const RenderFrameTime& time, const UiRenderPacket& ui) noexcept
 {
 	m_displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
-	BeginFrame();
+	if (!BeginFrame(submission))
+	{
+		return;
+	}
 	SetupFrame(time);
-	RecordFrame();
+	RecordFrame(submission.View);
 	RenderUiPacket(ui);
 	SubmitFrame();
 	EndFrame();
@@ -200,6 +201,7 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	m_exposureMeteringMethod = m_displaySettings.ExposureMeteringMethod;
 	m_imageProviderFrameGraphKey = m_rendererHost->GetImageProviders().GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
+	++m_graphTopologyGeneration;
 }
 
 void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noexcept
@@ -224,33 +226,31 @@ void FramePipeline::RetireFrameExecution() noexcept
 	}
 }
 
-void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
+void FramePipeline::InvalidateViewHistory(RenderViewInvalidationReason reason) noexcept
 {
-	InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
+	if (m_frameGraph != nullptr)
+	{
+		InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
+	}
 	m_previousReferenceLightingHistoryInvalidationHash.reset();
 	m_previousRestirLightingHistoryInvalidationHash.reset();
-	m_rendererHost->GetTemporalDataBuilder().ResetHistory(reason);
+	m_rendererHost->GetRenderViewState().Invalidate(reason);
 	m_rendererHost->GetImageProviders().ResetHistory();
 }
 
-void FramePipeline::BeginFrame() noexcept
+bool FramePipeline::BeginFrame(RenderFrameSubmission& submission) noexcept
 {
 	PollFrameServices();
-	ConsumeFrameSubmission();
+	if (!AcceptFrameSubmission(submission))
+	{
+		return false;
+	}
 	ApplyPendingResize();
 	RefreshGraphForResolutionAndPresentation();
 	RefreshGraphForRenderModes();
 	RefreshGraphForImageProvider();
-	const std::uint64_t shaderPackageGeneration = m_rendererHost->GetShaderPackageGeneration();
-	const std::uint64_t imageProviderGeneration = m_rendererHost->GetImageProviderGeneration();
-	if ((m_previousShaderPackageGeneration && *m_previousShaderPackageGeneration != shaderPackageGeneration)
-	    || (m_previousImageProviderGeneration && *m_previousImageProviderGeneration != imageProviderGeneration))
-	{
-		ResetTemporalState("Shader or image-provider generation changed");
-	}
-	m_previousShaderPackageGeneration = shaderPackageGeneration;
-	m_previousImageProviderGeneration = imageProviderGeneration;
 	BeginBackendFrame();
+	return true;
 }
 
 void FramePipeline::PollFrameServices() noexcept
@@ -264,14 +264,31 @@ void FramePipeline::PollFrameServices() noexcept
 	m_rendererHost->GetRenderScene().PromoteResidentGpuMeshes();
 }
 
-void FramePipeline::ConsumeFrameSubmission() noexcept
+bool FramePipeline::AcceptFrameSubmission(RenderFrameSubmission& submission) noexcept
 {
-	const RenderInputConsumeResult submissionResult = m_renderInputConsumer->ConsumePending();
-	if (submissionResult.SceneReset)
+	if (submission.FrameId <= m_frameId)
+	{
+		return false;
+	}
+
+	std::string diagnostic;
+	const bool sceneReset = submission.Scene.Structural.ResetScene;
+	const RenderSceneApplyStatus applyStatus =
+	    m_rendererHost->GetRenderScene().Apply(submission.Scene.Structural, std::move(submission.Scene.Dynamic), diagnostic);
+	if (applyStatus != RenderSceneApplyStatus::Applied)
+	{
+		g_framePipelineLogger->error("Render frame submission {} was rejected: {}", submission.FrameId, diagnostic);
+		return false;
+	}
+
+	m_frameId = submission.FrameId;
+	if (sceneReset)
 	{
 		m_gpuScene->Reset();
 		m_rendererHost->GetTextureCache().UnloadSceneTextures();
+		InvalidateViewHistory(RenderViewInvalidationReason::SceneGeneration);
 	}
+	return true;
 }
 
 void FramePipeline::ApplyPendingResize() noexcept
@@ -279,7 +296,7 @@ void FramePipeline::ApplyPendingResize() noexcept
 	if (m_bResizePending)
 	{
 		m_bResizePending = false;
-		ResetTemporalState("Window resize");
+		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 
 		if (!m_windowMinimized && m_windowExtent.IsValid())
 		{
@@ -301,7 +318,7 @@ void FramePipeline::RefreshGraphForResolutionAndPresentation() noexcept
 	const bool presentationChanged = presentationTarget != m_frameGraphPresentationTarget;
 	if (resolutionChanged || presentationChanged)
 	{
-		ResetTemporalState(presentationChanged ? "Frame presentation mode changed" : "Frame resolution changed");
+		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(frameResolution);
 	}
 }
@@ -311,20 +328,20 @@ void FramePipeline::RefreshGraphForRenderModes() noexcept
 	const GBufferMode gBufferMode = CVarGBufferMode.Get();
 	if (gBufferMode != m_gBufferMode)
 	{
-		ResetTemporalState("GBuffer mode changed");
+		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
 
 	const LightingMode lightingMode = GetLightingMode();
 	if (lightingMode != m_lightingMode)
 	{
-		ResetTemporalState("Lighting mode changed");
+		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
 
 	if (m_displaySettings.ExposureMeteringMethod != m_exposureMeteringMethod)
 	{
-		ResetTemporalState("Exposure metering method changed");
+		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
 }
@@ -343,7 +360,7 @@ void FramePipeline::RefreshGraphForImageProvider() noexcept
 void FramePipeline::BeginBackendFrame() noexcept
 {
 	RenderDeviceServices& deviceServices = m_rendererHost->GetDeviceServices();
-	deviceServices.BeginFrame(m_renderInputConsumer->GetFrameId());
+	deviceServices.BeginFrame(m_frameId);
 	if (m_ownsUiBackend)
 	{
 		m_rendererHost->GetImGuiRenderer().BeginFrame();
@@ -363,11 +380,7 @@ void FramePipeline::SetupFrame(const RenderFrameTime& time) noexcept
 	m_rendererHost->GetGpuMeshCache().UploadReadyMeshes(graphicsCommandList);
 	UploadPendingSceneTextures(deviceServices, graphicsCommandList);
 
-	m_rendererHost->GetRenderCamera().Update(m_renderInputConsumer->GetViewInput().Camera);
-
-	const RenderViewportExtent renderExtent =
-	    m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
-	m_perFrameData = m_perFrameDataBuilder.Build(m_renderInputConsumer->GetFrameId(), time, CVarRenderViewMode.Get(), renderExtent);
+	m_frameUniform = BuildFrameUniformData(m_frameId, time);
 }
 
 void FramePipeline::UploadPendingSceneTextures(RenderDeviceServices& deviceServices, RenderCommandList& graphicsCommandList)
@@ -493,13 +506,11 @@ void FramePipeline::PlayUiPacket(const UiRenderPacket& packet) noexcept
 	m_uiRenderPacketPlayer->Render(packet, *m_editorTextureRegistry, imguiRenderer);
 }
 
-void FramePipeline::RecordFrame() noexcept
+void FramePipeline::RecordFrame(const RenderViewInput& viewInput) noexcept
 {
-	const RenderViewInput& view = m_renderInputConsumer->GetViewInput();
 	RenderRayTracingScene* activeRayTracingScene = m_rendererHost->GetRenderRayTracingScene();
 
-	ApplySubmissionHistoryInvalidation(view);
-	FrameContext& frame = PrepareFrameContext(activeRayTracingScene);
+	FrameContext& frame = PrepareFrameContext(viewInput, activeRayTracingScene);
 	UpdateLightingHistory(frame);
 	SetupImageProviderFrame(frame);
 	BindRayTracingScene(frame, activeRayTracingScene);
@@ -508,19 +519,7 @@ void FramePipeline::RecordFrame() noexcept
 	ExecuteFrameGraph(frame, activeRayTracingScene);
 }
 
-void FramePipeline::ApplySubmissionHistoryInvalidation(const RenderViewInput& view) noexcept
-{
-	const bool sceneChanged = m_rendererHost->GetRenderScene().ConsumeHistoryReset();
-	if (sceneChanged || view.CameraCut || view.CameraTeleported)
-	{
-		ResetTemporalState(
-		    view.CameraCut              ? "Submitted view camera cut"
-		        : view.CameraTeleported ? "Submitted view camera teleport"
-		                                : "Render scene reset");
-	}
-}
-
-FrameContext& FramePipeline::PrepareFrameContext(RenderRayTracingScene* activeRayTracingScene)
+FrameContext& FramePipeline::PrepareFrameContext(const RenderViewInput& viewInput, RenderRayTracingScene* activeRayTracingScene)
 {
 	const std::uint32_t frameIndex = m_rendererHost->GetRenderHardwareInterface().GetCurrentFrameIndex();
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[frameIndex];
@@ -528,9 +527,17 @@ FrameContext& FramePipeline::PrepareFrameContext(RenderRayTracingScene* activeRa
 	    *frameSlot,
 	    FrameContextBuildRequest{
 	        .GpuScene = *m_gpuScene,
-	        .FrameId = m_renderInputConsumer->GetFrameId(),
+	        .ViewState = m_rendererHost->GetRenderViewState(),
+	        .ViewInput = viewInput,
+	        .ViewportRequest = m_viewportRenderRequest,
+	        .FrameId = m_frameId,
+	        .ShaderGeneration = m_rendererHost->GetShaderPackageGeneration(),
+	        .ImageProviderGeneration = m_rendererHost->GetImageProviderGeneration(),
+	        .GraphTopologyGeneration = m_graphTopologyGeneration,
 	        .FrameIndex = frameIndex,
-	        .SceneExtent = m_frameGraphRenderExtent,
+	        .RenderExtent = m_frameGraphRenderExtent,
+	        .OutputExtent = m_frameGraphOutputExtent,
+	        .ViewMode = CVarRenderViewMode.Get(),
 	        .RayTracingScene = activeRayTracingScene,
 	    });
 	return *frameSlot;
@@ -562,7 +569,7 @@ void FramePipeline::UpdateLightingHistory(FrameContext& frame)
 		m_previousReferenceLightingHistoryInvalidationHash = invalidationHash;
 	}
 
-	if (frame.mainView.perTemporalData.HistoryValid == 0u)
+	if (frame.view.temporalUniform.HistoryValid == 0u)
 	{
 		InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
 	}
@@ -571,15 +578,14 @@ void FramePipeline::UpdateLightingHistory(FrameContext& frame)
 void FramePipeline::SetupImageProviderFrame(const FrameContext& frame)
 {
 	m_rendererHost->GetImageProviders().SetupFrame(
-	    ImageProviderFrameContext{
-	        .RenderExtent = m_frameGraphRenderExtent,
-	        .OutputExtent = m_frameGraphOutputExtent,
-	        .FrameId = m_renderInputConsumer->GetFrameId(),
+	    ImageProviderFrameInput{
+	        .RenderExtent = frame.view.renderExtent,
+	        .OutputExtent = frame.view.outputExtent,
+	        .FrameId = m_frameId,
 	        .ProviderGeneration = m_rendererHost->GetImageProviderGeneration(),
-	        .Camera = frame.mainView.perViewData.Camera,
-	        .TemporalData = frame.mainView.perTemporalData,
-	        .TemporalState = frame.mainView.temporalState,
-	        .ResetHistory = frame.mainView.perTemporalData.HistoryValid == 0u});
+	        .Camera = frame.view.cameraUniform,
+	        .Temporal = frame.view.temporalUniform,
+	        .ResetHistory = frame.view.temporalUniform.HistoryValid == 0u});
 }
 
 void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene)
@@ -594,7 +600,7 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 		    "Ray-tracing scene producer or persistent SceneTlas resource is unavailable.");
 	}
 
-	frame.rayTracingScene = activeRayTracingScene->Prepare(frame.sceneData);
+	frame.rayTracingScene = activeRayTracingScene->Prepare(frame.preparedScene);
 	if (!frame.rayTracingScene.HasBoundTlas()
 	    || frame.rayTracingScene.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
 	{
@@ -604,7 +610,7 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 		    __LINE__,
 		    "Ray-tracing scene producer failed to provide the descriptor-access SceneTlas consumed by frame shaders.");
 	}
-	if (!frame.sceneData.materialTextureTable || !frame.sceneGpuData->RayTracing.HasCompleteBuffers()
+	if (!frame.preparedScene.materialTextureTable || !frame.sceneGpuData->RayTracing.HasCompleteBuffers()
 	    || !frame.sceneGpuData->Geometry.HasMeshInstanceBuffers())
 	{
 		Diagnostics::Fatal(g_framePipelineLogger, __FILE__, __LINE__, "Ray-tracing frame shader resources are incomplete.");
@@ -627,7 +633,7 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 
 void FramePipeline::BindSkyTexture(const FrameContext& frame)
 {
-	if (!frame.sceneData.sky.HasTexture())
+	if (!frame.preparedScene.sky.HasTexture())
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -636,7 +642,7 @@ void FramePipeline::BindSkyTexture(const FrameContext& frame)
 		    "TextureCache did not provide a valid sky texture before frame recording.");
 	}
 
-	const RendererTexture& skyTexture = *frame.sceneData.sky.texture;
+	const RendererTexture& skyTexture = *frame.preparedScene.sky.texture;
 	m_frameGraph->BindPersistentTexture(
 	    m_frameResources.External.Sky,
 	    skyTexture.Resource,
@@ -666,7 +672,7 @@ void FramePipeline::ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene
 	const PassRuntimeContext passRuntimeContext{
 	    .HardwareInterface = renderHardwareInterface,
 	    .PassRuntimes = m_rendererHost->GetRenderPassRuntimeCache(),
-	    .PerFrame = m_perFrameData,
+	    .Frame = m_frameUniform,
 	    .DisplaySettings = m_displaySettings,
 	    .History = ResolveFrameHistoryValidity(*m_frameGraph, m_frameResources.History),
 	    .Meshes = &m_rendererHost->GetGpuMeshCache(),
@@ -687,7 +693,7 @@ void FramePipeline::ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene
 void FramePipeline::SubmitFrame() noexcept
 {
 	RenderDeviceServices& deviceServices = m_rendererHost->GetDeviceServices();
-	deviceServices.SubmitFrame(m_renderInputConsumer->GetFrameId());
+	deviceServices.SubmitFrame(m_frameId);
 	const RhiSubmissionToken graphicsToken = deviceServices.GetLastSubmittedToken(ERhiQueueType::Graphics);
 	m_rendererHost->GetTextureCache().RecordUploadSubmission(graphicsToken);
 	m_rendererHost->GetGpuMeshCache().RecordUploadSubmission(graphicsToken);

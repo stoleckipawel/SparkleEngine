@@ -4,15 +4,15 @@
 #include "Upscaling/NvidiaDlss/StreamlineDlssEvaluation.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	#include "Streamline/StreamlineRuntimeSupport.h"
+  #include "Streamline/StreamlineRuntimeSupport.h"
 
-	#include <sl.h>
-	#include <sl_dlss.h>
+  #include <sl.h>
+  #include <sl_dlss.h>
 #endif
 
 class NvidiaDlssUpscalerProviderConstants final
 {
-  public:
+public:
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	static constexpr std::uint32_t kDlssViewportId = 1u;
 #endif
@@ -36,16 +36,15 @@ RenderViewportExtent NvidiaDlssUpscalerProvider::ResolveRenderExtent(RenderViewp
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	if (m_initialized)
 	{
-		providerRenderExtent =
-		    QueryStreamlineDlssOptimalRenderExtent(outputExtent, m_frameState.GetRequestedQualityMode());
+		providerRenderExtent = QueryStreamlineDlssOptimalRenderExtent(outputExtent, m_frameState.GetRequestedQualityMode());
 	}
 #endif
 	return m_frameState.StoreResolution(outputExtent, providerRenderExtent);
 }
 
-void NvidiaDlssUpscalerProvider::SetupFrame(const ImageProviderFrameContext& frameContext)
+void NvidiaDlssUpscalerProvider::SetupFrame(const ImageProviderFrameInput& frameInput)
 {
-	m_frameState.SetupFrame(frameContext);
+	m_frameState.SetupFrame(frameInput);
 }
 
 bool NvidiaDlssUpscalerProvider::Evaluate(const UpscalerEvaluationDesc& evaluation)
@@ -57,7 +56,7 @@ bool NvidiaDlssUpscalerProvider::Evaluate(const UpscalerEvaluationDesc& evaluati
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	return EvaluateStreamlineDlssFrame(
-	    m_frameState.GetFrameContext(),
+	    m_frameState.GetFrameInput(),
 	    m_frameState.GetQualityMode(),
 	    sl::ViewportHandle{NvidiaDlssUpscalerProviderConstants::kDlssViewportId},
 	    evaluation);

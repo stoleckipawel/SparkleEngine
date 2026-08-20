@@ -19,11 +19,11 @@ class PassExecutionDiagnostics;
 class RayTracingBlasCache;
 class RayTracingTopLevelAccelerationStructureStrategy;
 class RayTracingTopLevelScenePlanner;
-struct RenderSceneData;
+struct PreparedRenderScene;
 
 class RenderRayTracingScene final
 {
-  public:
+public:
 	RenderRayTracingScene(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const GpuMeshCache& meshes,
@@ -35,11 +35,11 @@ class RenderRayTracingScene final
 	RenderRayTracingScene(RenderRayTracingScene&&) = delete;
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
-	void PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept;
-	RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData) noexcept;
+	void PlanFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept;
+	RayTracingSceneFrameData Prepare(const PreparedRenderScene& preparedScene) noexcept;
 	void Build(
 	    RenderCommandContext& commandContext,
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
 
@@ -52,7 +52,7 @@ class RenderRayTracingScene final
 	const RayTracingCapabilityReport& GetCapabilities() const noexcept { return m_capabilityReport; }
 	const RayTracingPerformanceMetrics& GetPerformanceMetrics() const noexcept;
 
-  private:
+private:
 	void EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept;
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;

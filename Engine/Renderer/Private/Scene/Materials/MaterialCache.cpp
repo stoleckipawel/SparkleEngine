@@ -1,28 +1,22 @@
 #include "PCH.h"
 
-#include "MaterialCache.h"
+#include "Scene/Materials/MaterialCache.h"
 
-#include "Scene/Materials/MaterialDesc.h"
-#include "Scene/Materials/MaterialData.h"
-#include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "Scene/Materials/MaterialData.h"
+#include "Scene/Materials/MaterialDesc.h"
 #include "Scene/Materials/MaterialTextureTableCapability.h"
-#include "Textures/TextureCache.h"
+#include "Scene/Materials/RenderMaterialGeneration.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 #include "Textures/RendererTexture.h"
+#include "Textures/TextureCache.h"
 
 #include <array>
 #include <format>
 
 static const auto g_materialCacheLogger = Logging::GetOrCreateLogger("Renderer.MaterialCache");
-
-struct MaterialCache::RebuildOutput final
-{
-	std::vector<MaterialData> Materials;
-	std::vector<std::unique_ptr<RenderBindingSet>> RasterTextureTables;
-	MaterialTextureTable SceneTextureTable;
-};
 
 MaterialCache::MaterialCache(TextureCache& textureCache, RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_textureCache(textureCache),
@@ -30,58 +24,56 @@ MaterialCache::MaterialCache(TextureCache& textureCache, RenderHardwareInterface
 {
 }
 
-MaterialCache::~MaterialCache() noexcept
-{
-	Reset();
-}
+MaterialCache::~MaterialCache() noexcept = default;
 
-void MaterialCache::BuildMaterials(const RenderMaterialTable& materials, std::uint64_t sourceRevision, RenderSceneData& sceneData)
+void MaterialCache::BuildMaterials(const RenderMaterialTable& materials, std::uint64_t sourceRevision, PreparedRenderScene& preparedScene)
 {
 	const std::uint64_t textureRevision = m_textureCache.GetBindingRevision();
-	const bool rebuildRequired = !m_materialCacheBuilt || m_sourceRevision != sourceRevision || m_textureRevision != textureRevision;
+	const bool rebuildRequired = m_currentGeneration == nullptr || m_currentGeneration->GetSourceRevision() != sourceRevision
+	    || m_currentGeneration->GetTextureRevision() != textureRevision;
 	if (rebuildRequired)
 	{
 		Rebuild(materials, sourceRevision, textureRevision);
 	}
 
-	sceneData.materials = m_cachedMaterialData;
-	PublishMaterialTextureTable(sceneData);
+	preparedScene.materialGeneration = m_currentGeneration;
+	preparedScene.materials = m_currentGeneration->GetMaterials();
+	PublishMaterialTextureTable(preparedScene);
 }
 
 void MaterialCache::Rebuild(const RenderMaterialTable& materials, std::uint64_t sourceRevision, std::uint64_t textureRevision)
 {
 	const std::uint64_t nextGeneration = GetNextGeneration();
-	RebuildOutput output;
+	std::shared_ptr<RenderMaterialGeneration> output(new RenderMaterialGeneration());
 	const RendererTexture* tableAnchor = m_textureCache.ResolveTextureReferenceOrSemanticDefault(nullptr, DefaultTexture::White);
 	if (tableAnchor == nullptr)
 	{
 		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Material texture table anchor was not loaded.");
 	}
-	output.SceneTextureTable.GetOrAddTextureIndex(tableAnchor->ShaderResourceView);
+	output->m_textureTable.GetOrAddTextureIndex(tableAnchor->ShaderResourceView);
 
 	if (!materials.Values.empty())
 	{
-		output.Materials.reserve(materials.Values.size());
-		output.RasterTextureTables.reserve(materials.Values.size());
-
+		output->m_materials.reserve(materials.Values.size());
+		output->m_rasterTextureTables.reserve(materials.Values.size());
 		for (std::uint32_t materialIndex = 0u; materialIndex < static_cast<std::uint32_t>(materials.Values.size()); ++materialIndex)
 		{
-			BuildMaterial(materials.Values[materialIndex], materialIndex, nextGeneration, output);
+			BuildMaterial(materials.Values[materialIndex], materialIndex, nextGeneration, *output);
 		}
 	}
-	output.SceneTextureTable.BuildBindingSet(m_renderHardwareInterface);
-
-	m_cachedMaterialData = std::move(output.Materials);
-	m_materialTextureBindingSets = std::move(output.RasterTextureTables);
-	m_materialTextureTable = std::move(output.SceneTextureTable);
-	m_sourceRevision = sourceRevision;
-	m_textureRevision = textureRevision;
-	m_generation = nextGeneration;
-	m_materialCacheBuilt = true;
+	output->m_textureTable.BuildBindingSet(m_renderHardwareInterface);
+	output->m_sourceRevision = sourceRevision;
+	output->m_textureRevision = textureRevision;
+	output->m_generation = nextGeneration;
+	m_currentGeneration = std::move(output);
 	m_textureCache.CommitBindingRevision(textureRevision);
 }
 
-void MaterialCache::BuildMaterial(const MaterialDesc& desc, std::uint32_t materialIndex, std::uint64_t generation, RebuildOutput& output)
+void MaterialCache::BuildMaterial(
+    const MaterialDesc& desc,
+    std::uint32_t materialIndex,
+    std::uint64_t generation,
+    RenderMaterialGeneration& output)
 {
 	MaterialData material = MaterialData::FromDesc(desc);
 	material.gpuHandle = MaterialGpuHandle{.Index = materialIndex, .Generation = generation};
@@ -124,8 +116,7 @@ void MaterialCache::BuildMaterial(const MaterialDesc& desc, std::uint32_t materi
 		{
 			Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Raster material texture descriptor write failed.");
 		}
-
-		material.materialTextureIndices[slot] = output.SceneTextureTable.GetOrAddTextureIndex(textureView);
+		material.materialTextureIndices[slot] = output.m_textureTable.GetOrAddTextureIndex(textureView);
 	}
 
 	material.rasterTextureTable = textureBindingSet->GetTableBinding(0u);
@@ -134,35 +125,34 @@ void MaterialCache::BuildMaterial(const MaterialDesc& desc, std::uint32_t materi
 		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Raster material texture table has no GPU binding.");
 	}
 
-	output.RasterTextureTables.push_back(std::move(textureBindingSet));
-	output.Materials.push_back(material);
+	output.m_rasterTextureTables.push_back(std::move(textureBindingSet));
+	output.m_materials.push_back(material);
 }
 
 void MaterialCache::Reset() noexcept
 {
-	m_materialTextureBindingSets.clear();
-	m_materialTextureTable.Reset();
-	m_cachedMaterialData.clear();
-	m_sourceRevision = 0u;
-	m_textureRevision = 0u;
-	m_materialCacheBuilt = false;
+	m_currentGeneration.reset();
 }
 
-void MaterialCache::PublishMaterialTextureTable(RenderSceneData& sceneData) const noexcept
+void MaterialCache::PublishMaterialTextureTable(PreparedRenderScene& preparedScene) const noexcept
 {
-	const std::uint32_t descriptorCount = m_materialTextureTable.GetTextureCount();
-	const RhiDescriptorTableBinding binding = m_materialTextureTable.GetTableBinding();
-	if (!m_materialTextureTable.IsValid() || !binding || descriptorCount > MaterialTextureTableFixedCapacity)
+	const MaterialTextureTable& textureTable = m_currentGeneration->GetTextureTable();
+	const std::uint32_t descriptorCount = textureTable.GetTextureCount();
+	const RhiDescriptorTableBinding binding = textureTable.GetTableBinding();
+	if (!textureTable.IsValid() || !binding || descriptorCount > MaterialTextureTableFixedCapacity)
 	{
 		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Material texture table publication contract is incomplete.");
 	}
-	sceneData.materialTextureTable =
-	    ResolvedMaterialTextureTable{.Binding = binding, .DescriptorCount = descriptorCount, .Generation = m_generation};
+	preparedScene.materialTextureTable = ResolvedMaterialTextureTable{
+	    .Binding = binding,
+	    .DescriptorCount = descriptorCount,
+	    .Generation = m_currentGeneration->GetGeneration()};
 }
 
 std::uint64_t MaterialCache::GetNextGeneration() const noexcept
 {
-	const std::uint64_t nextGeneration = m_generation + 1u;
+	const std::uint64_t currentGeneration = m_currentGeneration != nullptr ? m_currentGeneration->GetGeneration() : 0u;
+	const std::uint64_t nextGeneration = currentGeneration + 1u;
 	if (nextGeneration == 0u)
 	{
 		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Material cache generation overflowed.");

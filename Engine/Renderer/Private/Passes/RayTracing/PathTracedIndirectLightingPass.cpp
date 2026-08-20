@@ -15,9 +15,10 @@
 void PathTracedIndirectLightingPassParameters::Describe(ShaderParameterStructBuilder<PathTracedIndirectLightingPassParameters>& builder)
 {
 	builder.AccelerationStructure("SceneTlas", &PathTracedIndirectLightingPassParameters::SceneTlas, ShaderStageVisibility::Compute);
-	builder.Uniform("PerFrame", &PathTracedIndirectLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
-	builder.Uniform("PerView", &PathTracedIndirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
-	builder.Uniform("PerTemporal", &PathTracedIndirectLightingPassParameters::PerTemporal, ShaderStageVisibility::Compute);
+	builder.Uniform("Frame", &PathTracedIndirectLightingPassParameters::Frame, ShaderStageVisibility::Compute);
+	builder.Uniform("View", &PathTracedIndirectLightingPassParameters::View, ShaderStageVisibility::Compute);
+	builder.Uniform("ViewCamera", &PathTracedIndirectLightingPassParameters::ViewCamera, ShaderStageVisibility::Compute);
+	builder.Uniform("ViewTemporal", &PathTracedIndirectLightingPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewLighting", &PathTracedIndirectLightingPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 	builder.Uniform("RayTracedShadows", &PathTracedIndirectLightingPassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
 	builder.Uniform("Sky", &PathTracedIndirectLightingPassParameters::Sky, ShaderStageVisibility::Compute);
@@ -31,10 +32,7 @@ void PathTracedIndirectLightingPassParameters::Describe(ShaderParameterStructBui
 	    "RayTracingHitVertices",
 	    &PathTracedIndirectLightingPassParameters::RayTracingHitVertices,
 	    ShaderStageVisibility::Compute);
-	builder.ReadBuffer(
-	    "MorphTargetDeltas",
-	    &PathTracedIndirectLightingPassParameters::MorphTargetDeltas,
-	    ShaderStageVisibility::Compute);
+	builder.ReadBuffer("MorphTargetDeltas", &PathTracedIndirectLightingPassParameters::MorphTargetDeltas, ShaderStageVisibility::Compute);
 	builder.ReadBuffer(
 	    "RayTracingHitIndices",
 	    &PathTracedIndirectLightingPassParameters::RayTracingHitIndices,
@@ -71,7 +69,10 @@ void PathTracedIndirectLightingPassParameters::Describe(ShaderParameterStructBui
 	    ShaderStageVisibility::Compute);
 }
 
-PathTracedIndirectLightingPass::PathTracedIndirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+PathTracedIndirectLightingPass::PathTracedIndirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const PathTracedIndirectLightingPass::ParameterMetadata& PathTracedIndirectLightingPass::GetParameterMetadata() noexcept
 {
@@ -91,12 +92,13 @@ const RenderPassDefinition& PathTracedIndirectLightingPass::GetDefinition() noex
 
 void PathTracedIndirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	parameters->PerFrame = context.Runtime.PerFrame;
-	parameters->PerView = context.Frame.mainView.perViewData;
-	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
+	parameters->Frame = context.Runtime.Frame;
+	parameters->View = context.Frame.view.uniform;
+	parameters->ViewCamera = context.Frame.view.cameraUniform;
+	parameters->ViewTemporal = context.Frame.view.temporalUniform;
 	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
-	parameters->Sky = MakeSkyUniformData(context.Frame.sceneData.sky);
-	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
+	parameters->Sky = MakeSkyUniformData(context.Frame.preparedScene.sky);
+	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -121,6 +123,6 @@ void PathTracedIndirectLightingPass::Execute(PassExecutionContext& context, Para
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

@@ -2,7 +2,7 @@
 #include "Passes/Deferred/DirectLightReservoirTemporalPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeContext.h"
@@ -11,7 +11,8 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-DirectLightReservoirTemporalPass::DirectLightReservoirTemporalPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime)
+DirectLightReservoirTemporalPass::DirectLightReservoirTemporalPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
 {
 }
 
@@ -33,25 +34,25 @@ const RenderPassDefinition& DirectLightReservoirTemporalPass::GetDefinition() no
 void DirectLightReservoirTemporalPass::SetParameters(
     ParameterInstance& parameters,
     const FrameContext& frame,
-    const RenderViewData& viewData,
+    const RenderView& view,
     const PassRuntimeContext& passRuntimeContext) const
 {
-	DirectLightReservoirPassCommon::SetParameters(*parameters, frame, viewData, passRuntimeContext);
-	PerTemporalConstantBufferData reservoirTemporalData = viewData.perTemporalData;
+	DirectLightReservoirPassCommon::SetParameters(*parameters, frame, view, passRuntimeContext);
+	ViewTemporalUniformData reservoirTemporalData = view.temporalUniform;
 	if (!passRuntimeContext.History.DirectLightReservoir)
 	{
 		reservoirTemporalData.HistoryValid = 0u;
 	}
-	parameters->PerTemporal = reservoirTemporalData;
+	parameters->ViewTemporal = reservoirTemporalData;
 }
 
 void DirectLightReservoirTemporalPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.Runtime);
+	SetParameters(parameters, context.Frame, context.Frame.view, context.Runtime);
 	ComputePassOperations::DispatchSized<DirectLightReservoirTemporalPass>(
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

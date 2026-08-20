@@ -2,7 +2,7 @@
 #include "SceneData/GpuScene/RenderGpuLightingPayloadBuilder.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 
 #include <format>
 #include <string_view>
@@ -43,12 +43,12 @@ private:
 	static constexpr std::size_t MaximumLocalLightCountPerType = 1024u;
 };
 
-void RenderGpuLightingPayloadBuilder::Build(const RenderSceneData& sceneData, RenderGpuLightingPayloads& payloads)
+void RenderGpuLightingPayloadBuilder::Build(const PreparedRenderScene& preparedScene, RenderGpuLightingPayloads& payloads)
 {
-	const std::size_t directionalLightCount = sceneData.directionalLights.size();
-	const std::size_t pointLightCount = sceneData.pointLights.size();
-	const std::size_t spotLightCount = sceneData.spotLights.size();
-	const std::size_t rectLightCount = sceneData.rectLights.size();
+	const std::size_t directionalLightCount = preparedScene.directionalLights.size();
+	const std::size_t pointLightCount = preparedScene.pointLights.size();
+	const std::size_t spotLightCount = preparedScene.spotLights.size();
+	const std::size_t rectLightCount = preparedScene.rectLights.size();
 	RenderGpuLightingContract::ValidateCounts(directionalLightCount, pointLightCount, spotLightCount, rectLightCount);
 
 	payloads.DirectionalLights.clear();
@@ -68,7 +68,7 @@ void RenderGpuLightingPayloadBuilder::Build(const RenderSceneData& sceneData, Re
 
 	for (std::size_t lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
-		const DirectionalLight& light = sceneData.directionalLights[lightIndex];
+		const DirectionalLight& light = preparedScene.directionalLights[lightIndex];
 		payloads.DirectionalLights.push_back(
 		    DirectionalLightConstantBufferData{
 		        .Direction = {light.direction.x, light.direction.y, light.direction.z},
@@ -80,7 +80,7 @@ void RenderGpuLightingPayloadBuilder::Build(const RenderSceneData& sceneData, Re
 
 	for (std::size_t lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 	{
-		const PointLight& light = sceneData.pointLights[lightIndex];
+		const PointLight& light = preparedScene.pointLights[lightIndex];
 		payloads.PointLights.push_back(
 		    PointLightConstantBufferData{
 		        .Position = {light.position.x, light.position.y, light.position.z},
@@ -94,7 +94,7 @@ void RenderGpuLightingPayloadBuilder::Build(const RenderSceneData& sceneData, Re
 
 	for (std::size_t lightIndex = 0; lightIndex < spotLightCount; ++lightIndex)
 	{
-		const SpotLight& light = sceneData.spotLights[lightIndex];
+		const SpotLight& light = preparedScene.spotLights[lightIndex];
 		payloads.SpotLights.push_back(
 		    SpotLightConstantBufferData{
 		        .Position = {light.position.x, light.position.y, light.position.z},
@@ -111,7 +111,7 @@ void RenderGpuLightingPayloadBuilder::Build(const RenderSceneData& sceneData, Re
 
 	for (std::size_t lightIndex = 0; lightIndex < rectLightCount; ++lightIndex)
 	{
-		const RectLight& light = sceneData.rectLights[lightIndex];
+		const RectLight& light = preparedScene.rectLights[lightIndex];
 		payloads.RectLights.push_back(
 		    RectLightConstantBufferData{
 		        .Position = {light.position.x, light.position.y, light.position.z},

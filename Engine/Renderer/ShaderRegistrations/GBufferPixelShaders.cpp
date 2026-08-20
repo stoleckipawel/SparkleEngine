@@ -3,15 +3,17 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
+#include "ShaderData/PerObjectConstantBufferData.h"
 
 class GBufferPS final : public TGlobalShader<GBufferPS>
 {
-  public:
+public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(View, ViewUniformData, ViewUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerObjectPS, PerObjectPSConstantBufferData, PerObjectPSConstantBufferData)
-	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(ViewTemporal, ViewTemporalUniformData, ViewTemporalUniformData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, TextureBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, TextureNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, TextureRoughness)

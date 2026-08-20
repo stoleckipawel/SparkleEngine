@@ -2,7 +2,7 @@
 #include "Passes/Deferred/DirectShadowSignalDeviceAddressPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -36,13 +36,13 @@ void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context,
 	DirectShadowSignalPassCommon::SetRayQueryParameters(
 	    *parameters,
 	    context.Frame,
-	    context.Frame.mainView,
+	    context.Frame.view,
 	    context.Runtime,
 	    context.Frame.rayTracingScene.HasTraceableInstances());
 	ComputePassOperations::DispatchSized<DirectShadowSignalDeviceAddressPass>(
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

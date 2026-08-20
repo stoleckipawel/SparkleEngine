@@ -2,7 +2,7 @@
 #include "Passes/RayTracing/ReferenceLightingAccumulationPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeContext.h"
 #include "Passes/Core/ComputePassOperations.h"
@@ -64,12 +64,12 @@ const RenderPassDefinition& ReferenceLightingAccumulationPass::GetDefinition() n
 void ReferenceLightingAccumulationPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	parameters->ReferenceLightingAccumulationConstants = ReferenceLightingAccumulationUniformData{
-	    .SamplesPerFrame = BuildPathTracedLightingSettings().SamplesPerPixel,
+	    .SamplesFrame = BuildPathTracedLightingSettings().SamplesPerPixel,
 	    .HistoryValid = context.Runtime.History.ReferenceLighting ? 1u : 0u};
 	ComputePassOperations::DispatchSized<ReferenceLightingAccumulationPass>(
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

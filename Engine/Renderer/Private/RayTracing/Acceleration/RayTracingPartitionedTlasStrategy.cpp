@@ -7,7 +7,7 @@
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 
 #include <algorithm>
 
@@ -15,14 +15,14 @@ static const auto g_rayTracingPartitionedTlasStrategyLogger = Logging::GetOrCrea
 
 bool RayTracingPartitionedTlasStrategy::IsUsablePartitionPlan(const RayTracingPtlasPartitionPlan* partitionPlan) noexcept
 {
-	return partitionPlan != nullptr && !partitionPlan->Validation.HasDuplicateStableIndices &&
-	       !partitionPlan->Validation.HasPartitionOverflow && partitionPlan->Counts.PartitionCount != 0;
+	return partitionPlan != nullptr && !partitionPlan->Validation.HasDuplicateStableIndices
+	    && !partitionPlan->Validation.HasPartitionOverflow && partitionPlan->Counts.PartitionCount != 0;
 }
 
-std::uint32_t RayTracingPartitionedTlasStrategy::ResolveInstanceCapacity(const RenderSceneData& sceneData) noexcept
+std::uint32_t RayTracingPartitionedTlasStrategy::ResolveInstanceCapacity(const PreparedRenderScene& preparedScene) noexcept
 {
 	std::uint32_t instanceCapacity = 0;
-	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
 	for (const std::uint32_t blasInputIndex : work.PartitionedTlasBlasInputIndices)
 	{
 		if (blasInputIndex >= work.BlasInputs.size())
@@ -58,8 +58,8 @@ std::uint32_t RayTracingPartitionedTlasStrategy::ResolveMaxInstancesPerPartition
 
 bool RayTracingPartitionedTlasStrategy::CanUsePartitionedTlasProvider(const RayTracingCapabilityReport& capabilityReport) noexcept
 {
-	return capabilityReport.PartitionedTlas.Supported &&
-	       (capabilityReport.TlasShaderAccess.SupportsDescriptor || capabilityReport.TlasShaderAccess.SupportsShaderDeviceAddress);
+	return capabilityReport.PartitionedTlas.Supported
+	    && (capabilityReport.TlasShaderAccess.SupportsDescriptor || capabilityReport.TlasShaderAccess.SupportsShaderDeviceAddress);
 }
 
 const char* RayTracingPartitionedTlasStrategy::ResolveInactiveProviderReason(const RayTracingCapabilityReport& capabilityReport) noexcept
@@ -95,7 +95,8 @@ bool RayTracingPartitionedTlasStrategy::PartitionedTlasResources::HasSceneTlas()
 RayTracingPartitionedTlasStrategy::RayTracingPartitionedTlasStrategy(
     RenderHardwareInterface& renderHardwareInterface,
     const RayTracingCapabilityReport& capabilityReport) noexcept :
-    m_renderHardwareInterface(&renderHardwareInterface), m_capabilityReport(capabilityReport)
+    m_renderHardwareInterface(&renderHardwareInterface),
+    m_capabilityReport(capabilityReport)
 {
 }
 
@@ -120,7 +121,7 @@ const char* RayTracingPartitionedTlasStrategy::GetActiveProviderReason() const n
 }
 
 RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::Prepare(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     RayTracingTopLevelScenePlanner* scenePlanner) noexcept
 {
 	const RayTracingPtlasPartitionPlan* partitionPlan = scenePlanner != nullptr ? scenePlanner->GetCurrentPartitionPlan() : nullptr;
@@ -133,19 +134,19 @@ RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::Prepare(
 		    "Partitioned TLAS strategy was selected without a usable device provider.");
 	}
 
-	EnsurePartitionedTlasResources(sceneData, partitionPlan);
+	EnsurePartitionedTlasResources(preparedScene, partitionPlan);
 	m_activeProviderReason = ResolveActiveProviderReason();
-	return BuildPartitionedTlasFrameData(sceneData);
+	return BuildPartitionedTlasFrameData(preparedScene);
 }
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStrategy::Build(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     RayTracingBlasCache& blasCache,
     RayTracingTopLevelScenePlanner* scenePlanner,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	return BuildPartitionedTlas(commandContext, sceneData, blasCache, scenePlanner, diagnostics);
+	return BuildPartitionedTlas(commandContext, preparedScene, blasCache, scenePlanner, diagnostics);
 }
 
 bool RayTracingPartitionedTlasStrategy::HasValidSceneTlas() const noexcept
@@ -185,7 +186,7 @@ bool RayTracingPartitionedTlasStrategy::CanUseActivePartitionedTlasProvider() co
 }
 
 void RayTracingPartitionedTlasStrategy::EnsurePartitionedTlasResources(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const RayTracingPtlasPartitionPlan* partitionPlan) noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
@@ -197,7 +198,7 @@ void RayTracingPartitionedTlasStrategy::EnsurePartitionedTlasResources(
 		    "Partitioned TLAS resource allocation has no render hardware interface.");
 	}
 
-	const RhiPartitionedTlasDesc layout = BuildPartitionedTlasLayout(sceneData, partitionPlan);
+	const RhiPartitionedTlasDesc layout = BuildPartitionedTlasLayout(preparedScene, partitionPlan);
 	if (layout.InstanceCapacity == 0 || layout.PartitionCount == 0)
 	{
 		Diagnostics::Fatal(
@@ -207,11 +208,11 @@ void RayTracingPartitionedTlasStrategy::EnsurePartitionedTlasResources(
 		    "Partitioned TLAS planner produced an unusable resource layout.");
 	}
 
-	const bool layoutChanged = m_partitionedResources.Layout.InstanceCapacity < layout.InstanceCapacity ||
-	                           m_partitionedResources.Layout.PartitionCount != layout.PartitionCount ||
-	                           m_partitionedResources.Layout.MaxInstancesPerPartition < layout.MaxInstancesPerPartition ||
-	                           m_partitionedResources.Layout.MaxOperations < layout.MaxOperations ||
-	                           m_partitionedResources.Layout.MaxInstancesInGlobalPartition < layout.MaxInstancesInGlobalPartition;
+	const bool layoutChanged = m_partitionedResources.Layout.InstanceCapacity < layout.InstanceCapacity
+	    || m_partitionedResources.Layout.PartitionCount != layout.PartitionCount
+	    || m_partitionedResources.Layout.MaxInstancesPerPartition < layout.MaxInstancesPerPartition
+	    || m_partitionedResources.Layout.MaxOperations < layout.MaxOperations
+	    || m_partitionedResources.Layout.MaxInstancesInGlobalPartition < layout.MaxInstancesInGlobalPartition;
 	if (layoutChanged)
 	{
 		ReleasePartitionedTlasResources();
@@ -262,11 +263,11 @@ void RayTracingPartitionedTlasStrategy::EnsurePartitionedTlasResources(
 }
 
 RhiPartitionedTlasDesc RayTracingPartitionedTlasStrategy::BuildPartitionedTlasLayout(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const RayTracingPtlasPartitionPlan* partitionPlan) const noexcept
 {
-	const std::uint32_t instanceCapacity = ResolveInstanceCapacity(sceneData);
-	if (sceneData.rayTracingWork.BlasInputs.empty())
+	const std::uint32_t instanceCapacity = ResolveInstanceCapacity(preparedScene);
+	if (preparedScene.rayTracingWork.BlasInputs.empty())
 	{
 		return RhiPartitionedTlasDesc{
 		    .InstanceCapacity = 1,
@@ -287,13 +288,14 @@ RhiPartitionedTlasDesc RayTracingPartitionedTlasStrategy::BuildPartitionedTlasLa
 	    .AllowPartitionTranslation = false};
 }
 
-RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::BuildPartitionedTlasFrameData(const RenderSceneData& sceneData) const noexcept
+RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::BuildPartitionedTlasFrameData(
+    const PreparedRenderScene& preparedScene) const noexcept
 {
 	RayTracingSceneFrameData frameData{};
 	frameData.TlasResource = m_partitionedResources.Storage;
 	frameData.TlasGpuAddress = m_partitionedResources.StorageAddress;
 	frameData.TlasShaderAccessMode = GetSceneTlasShaderAccessMode();
-	frameData.EstimatedInstanceCount = static_cast<std::uint32_t>(sceneData.rayTracingWork.PartitionedTlasBlasInputIndices.size());
+	frameData.EstimatedInstanceCount = static_cast<std::uint32_t>(preparedScene.rayTracingWork.PartitionedTlasBlasInputIndices.size());
 	return frameData;
 }
 

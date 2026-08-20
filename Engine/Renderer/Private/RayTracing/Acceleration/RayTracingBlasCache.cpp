@@ -8,7 +8,7 @@
 #include "Meshes/GpuMesh.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 
 #include <utility>
@@ -20,29 +20,19 @@ bool RayTracingBlasCache::BlasHandle::IsValid() const noexcept
 	return resource && gpuAddress != 0;
 }
 
-bool RayTracingBlasCache::SkinnedEntryKey::operator==(
-    const SkinnedEntryKey& other) const noexcept
+bool RayTracingBlasCache::SkinnedEntryKey::operator==(const SkinnedEntryKey& other) const noexcept
 {
-	return Mesh == other.Mesh &&
-	       GpuSceneSlot == other.GpuSceneSlot;
+	return Mesh == other.Mesh && GpuSceneSlot == other.GpuSceneSlot;
 }
 
-std::size_t
-RayTracingBlasCache::SkinnedEntryKeyHash::operator()(
-    const SkinnedEntryKey& key) const noexcept
+std::size_t RayTracingBlasCache::SkinnedEntryKeyHash::operator()(const SkinnedEntryKey& key) const noexcept
 {
-	const std::size_t meshHash =
-	    std::hash<std::uint64_t>{}(key.Mesh.Value);
-	const std::size_t slotHash =
-	    std::hash<std::uint32_t>{}(key.GpuSceneSlot);
-	return meshHash ^
-	       (slotHash + 0x9e3779b9u + (meshHash << 6u) +
-	        (meshHash >> 2u));
+	const std::size_t meshHash = std::hash<std::uint64_t>{}(key.Mesh.Value);
+	const std::size_t slotHash = std::hash<std::uint32_t>{}(key.GpuSceneSlot);
+	return meshHash ^ (slotHash + 0x9e3779b9u + (meshHash << 6u) + (meshHash >> 2u));
 }
 
-RayTracingBlasCache::RayTracingBlasCache(
-    RenderHardwareInterface& renderHardwareInterface,
-    const GpuMeshCache& meshes) noexcept :
+RayTracingBlasCache::RayTracingBlasCache(RenderHardwareInterface& renderHardwareInterface, const GpuMeshCache& meshes) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface),
     m_meshes(&meshes)
 {
@@ -71,7 +61,6 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
     const GpuMesh& gpuMesh,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-
 	if (m_renderHardwareInterface == nullptr || !gpuMesh.IsValid())
 	{
 		Diagnostics::Fatal(
@@ -100,23 +89,17 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
 
 RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshDraw& draw,
     std::uint32_t gpuSceneSlot,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	if (RayTracingBlasGeometryBuilder::IsSkinnedDraw(draw))
 	{
-		return EnsureSkinnedBlas(
-		    commandContext,
-		    sceneData,
-		    draw,
-		    gpuSceneSlot,
-		    diagnostics);
+		return EnsureSkinnedBlas(commandContext, preparedScene, draw, gpuSceneSlot, diagnostics);
 	}
 
-	const GpuMesh* gpuMesh =
-	    m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
+	const GpuMesh* gpuMesh = m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
 	if (gpuMesh == nullptr)
 	{
 		Diagnostics::Fatal(
@@ -138,11 +121,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildBlas(
 	    m_renderHardwareInterface->GetRayTracingService().GetBottomLevelAccelerationStructurePrebuildInfo(geometry);
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || prebuildInfo.ScratchDataSizeInBytes == 0)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "BLAS prebuild sizing produced an unusable resource layout.");
+		Diagnostics::Fatal(g_rayTracingBlasCacheLogger, __FILE__, __LINE__, "BLAS prebuild sizing produced an unusable resource layout.");
 	}
 
 	EnsureEntryResources(prebuildInfo, entry);
@@ -165,33 +144,26 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildBlas(
 
 RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureSkinnedBlas(
     RenderCommandContext& commandContext,
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshDraw& draw,
     std::uint32_t gpuSceneSlot,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	const GpuMesh* gpuMesh =
-	    m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
+	const GpuMesh* gpuMesh = m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
 	if (m_renderHardwareInterface == nullptr || gpuMesh == nullptr || !gpuMesh->IsValid())
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Skinned BLAS cache could not resolve a valid GPU mesh.");
+		Diagnostics::Fatal(g_rayTracingBlasCacheLogger, __FILE__, __LINE__, "Skinned BLAS cache could not resolve a valid GPU mesh.");
 	}
 
 	++m_currentFrameStats.referencedMeshCount;
 
-	SkinnedEntryKey key{
-	    .Mesh = draw.Geometry.Mesh,
-	    .GpuSceneSlot = gpuSceneSlot};
+	SkinnedEntryKey key{.Mesh = draw.Geometry.Mesh, .GpuSceneSlot = gpuSceneSlot};
 	auto [it, inserted] = m_skinnedEntries.try_emplace(key);
-	(void)inserted;
+	(void) inserted;
 	Entry& entry = it->second;
 	entry.touchedThisFrame = true;
 
-	return BuildBlas(commandContext, BuildSkinnedGeometry(sceneData, draw, entry), entry, diagnostics);
+	return BuildBlas(commandContext, BuildSkinnedGeometry(preparedScene, draw, entry), entry, diagnostics);
 }
 
 RayTracingBlasCache::BuildStats RayTracingBlasCache::EndFrame() noexcept
@@ -263,14 +235,13 @@ void RayTracingBlasCache::ReleaseEntryResources(Entry& entry) noexcept
 }
 
 RhiRayTracingGeometryDesc RayTracingBlasCache::BuildSkinnedGeometry(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshDraw& draw,
     Entry& entry) noexcept
 {
-	const GpuMesh* resolvedMesh =
-	    m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
-	if (m_renderHardwareInterface == nullptr || resolvedMesh == nullptr ||
-	    draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset)
+	const GpuMesh* resolvedMesh = m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
+	if (m_renderHardwareInterface == nullptr || resolvedMesh == nullptr
+	    || draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset)
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingBlasCacheLogger,
@@ -280,14 +251,12 @@ RhiRayTracingGeometryDesc RayTracingBlasCache::BuildSkinnedGeometry(
 	}
 
 	const GpuMesh& gpuMesh = *resolvedMesh;
-	RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(sceneData, draw, gpuMesh, m_skinnedPositionScratch);
+	RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(preparedScene, draw, gpuMesh, m_skinnedPositionScratch);
 	ReplaceDynamicVertexBuffer(m_skinnedPositionScratch, entry);
 	return BuildSkinnedGeometryDesc(gpuMesh, entry, static_cast<std::uint32_t>(m_skinnedPositionScratch.size()));
 }
 
-void RayTracingBlasCache::ReplaceDynamicVertexBuffer(
-    std::span<const DirectX::XMFLOAT3> positions,
-    Entry& entry) noexcept
+void RayTracingBlasCache::ReplaceDynamicVertexBuffer(std::span<const DirectX::XMFLOAT3> positions, Entry& entry) noexcept
 {
 	if (entry.dynamicVertexBuffer)
 	{
@@ -302,14 +271,10 @@ void RayTracingBlasCache::ReplaceDynamicVertexBuffer(
 	        static_cast<std::uint32_t>(sizeof(DirectX::XMFLOAT3)),
 	        L"RayTracingSkinnedBlasVertices",
 	        entry.dynamicVertexBuffer,
-	        entry.dynamicVertexBufferView) ||
-	    !entry.dynamicVertexBuffer)
+	        entry.dynamicVertexBufferView)
+	    || !entry.dynamicVertexBuffer)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Skinned BLAS dynamic vertex-buffer allocation failed.");
+		Diagnostics::Fatal(g_rayTracingBlasCacheLogger, __FILE__, __LINE__, "Skinned BLAS dynamic vertex-buffer allocation failed.");
 	}
 }
 
@@ -322,28 +287,20 @@ RhiRayTracingGeometryDesc RayTracingBlasCache::BuildSkinnedGeometryDesc(
 	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
 
 	return RhiRayTracingGeometryDesc{
-	    .VertexBuffer = RhiRayTracingBufferBinding{
-	        .Resource = resources.GetResourceHandle(entry.dynamicVertexBuffer)},
+	    .VertexBuffer = RhiRayTracingBufferBinding{.Resource = resources.GetResourceHandle(entry.dynamicVertexBuffer)},
 	    .VertexStrideInBytes = entry.dynamicVertexBufferView.StrideInBytes,
 	    .VertexCount = vertexCount,
-	    .IndexBuffer = RhiRayTracingBufferBinding{
-	        .Resource = resources.GetResourceHandle(gpuMesh.GetIndexBufferResource())},
+	    .IndexBuffer = RhiRayTracingBufferBinding{.Resource = resources.GetResourceHandle(gpuMesh.GetIndexBufferResource())},
 	    .IndexCount = gpuMesh.GetIndexCount(),
 	    .IndexFormat = indexBufferView.Format,
 	    .Opaque = true};
 }
 
-void RayTracingBlasCache::EnsureEntryResources(
-    const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
-    Entry& entry) noexcept
+void RayTracingBlasCache::EnsureEntryResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo, Entry& entry) noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "BLAS resource allocation has no render hardware interface.");
+		Diagnostics::Fatal(g_rayTracingBlasCacheLogger, __FILE__, __LINE__, "BLAS resource allocation has no render hardware interface.");
 	}
 
 	if (entry.scratchBuffer && entry.scratchBufferSizeInBytes < prebuildInfo.ScratchDataSizeInBytes)
@@ -382,17 +339,11 @@ void RayTracingBlasCache::EnsureEntryResources(
 
 	if (!entry.scratchBuffer || !entry.accelerationStructureBuffer)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "BLAS scratch or acceleration-structure allocation failed.");
+		Diagnostics::Fatal(g_rayTracingBlasCacheLogger, __FILE__, __LINE__, "BLAS scratch or acceleration-structure allocation failed.");
 	}
 }
 
-void RayTracingBlasCache::TrackBuildResources(
-    RenderCommandContext& commandContext,
-    const Entry& entry) const noexcept
+void RayTracingBlasCache::TrackBuildResources(RenderCommandContext& commandContext, const Entry& entry) const noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -414,11 +365,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildHandle(const Entry& en
 {
 	if (m_renderHardwareInterface == nullptr || !entry.accelerationStructureBuffer)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "BLAS cache entry has no acceleration-structure storage.");
+		Diagnostics::Fatal(g_rayTracingBlasCacheLogger, __FILE__, __LINE__, "BLAS cache entry has no acceleration-structure storage.");
 	}
 
 	const BlasHandle handle{
@@ -426,12 +373,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildHandle(const Entry& en
 	    .gpuAddress = m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.accelerationStructureBuffer)};
 	if (!handle.IsValid())
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "BLAS cache entry has no GPU resource or address.");
+		Diagnostics::Fatal(g_rayTracingBlasCacheLogger, __FILE__, __LINE__, "BLAS cache entry has no GPU resource or address.");
 	}
 	return handle;
 }
-

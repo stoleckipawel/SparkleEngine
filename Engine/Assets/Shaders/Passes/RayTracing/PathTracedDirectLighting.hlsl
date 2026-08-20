@@ -1,4 +1,7 @@
-#include "Resources/ConstantBuffers.hlsli"
+#include "Resources/FrameUniformData.hlsli"
+#include "Resources/ViewCameraUniformData.hlsli"
+#include "Resources/LightConstantBufferData.hlsli"
+
 #include "Passes/Deferred/GBufferUtils.hlsli"
 #include "Lighting/AreaLights.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
@@ -14,15 +17,14 @@ float2 BuildLightSample(float3 positionWorld, uint lightIndex, uint dimensionTag
 	return LightSampling::StableLightSample2D(positionWorld, lightIndex, dimensionTag, FrameIndex + sampleIndex * 4099u);
 }
 
-void AccumulatePathTracedDirectLight(
-    GBufferData surface,
-    float3 positionWorld,
-    float3 viewDirWorld,
-    LightSampling::DirectLightSample lightSample,
-    bool castsShadow,
-    inout float3 diffuse,
-    inout float3 specular,
-    inout float3 subsurface)
+void AccumulatePathTracedDirectLight(GBufferData surface,
+                                     float3 positionWorld,
+                                     float3 viewDirWorld,
+                                     LightSampling::DirectLightSample lightSample,
+                                     bool castsShadow,
+                                     inout float3 diffuse,
+                                     inout float3 specular,
+                                     inout float3 subsurface)
 {
 	if (!lightSample.Valid)
 	{
@@ -33,34 +35,32 @@ void AccumulatePathTracedDirectLight(
 	float3 lightDiffuse = 0.0f.xxx;
 	float3 lightSpecular = 0.0f.xxx;
 	float3 lightSubsurface = 0.0f.xxx;
-	SurfaceLighting::AccumulateDirectLightSample(
-	    viewDirWorld,
-	    surface.NormalWorld,
-	    surface.BaseColor,
-	    surface.Roughness,
-	    surface.Metallic,
-	    surface.DielectricF0,
-	    surface.SubsurfaceColor,
-	    surface.SubsurfaceStrength,
-	    any(surface.SubsurfaceColor > 0.0f.xxx) && surface.SubsurfaceStrength > 0.0f,
-	    lightSample,
-	    shadow.Visibility,
-	    lightDiffuse,
-	    lightSpecular,
-	    lightSubsurface);
+	SurfaceLighting::AccumulateDirectLightSample(viewDirWorld,
+	                                             surface.NormalWorld,
+	                                             surface.BaseColor,
+	                                             surface.Roughness,
+	                                             surface.Metallic,
+	                                             surface.DielectricF0,
+	                                             surface.SubsurfaceColor,
+	                                             surface.SubsurfaceStrength,
+	                                             any(surface.SubsurfaceColor > 0.0f.xxx) && surface.SubsurfaceStrength > 0.0f,
+	                                             lightSample,
+	                                             shadow.Visibility,
+	                                             lightDiffuse,
+	                                             lightSpecular,
+	                                             lightSubsurface);
 	diffuse += lightDiffuse;
 	specular += lightSpecular;
 	subsurface += lightSubsurface;
 }
 
-void EvaluatePathTracedDirectLighting(
-    GBufferData surface,
-    float3 positionWorld,
-    float3 viewDirWorld,
-    uint sampleIndex,
-    out float3 diffuse,
-    out float3 specular,
-    out float3 subsurface)
+void EvaluatePathTracedDirectLighting(GBufferData surface,
+                                      float3 positionWorld,
+                                      float3 viewDirWorld,
+                                      uint sampleIndex,
+                                      out float3 diffuse,
+                                      out float3 specular,
+                                      out float3 subsurface)
 {
 	diffuse = 0.0f.xxx;
 	specular = 0.0f.xxx;
@@ -137,8 +137,8 @@ void EvaluatePathTracedDirectLighting(
 		return;
 	}
 
-	const float3 positionWorld = ReconstructGBufferWorldPosition(pixel, g.SceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
-	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
+	const float3 positionWorld = ReconstructGBufferWorldPosition(pixel, g.SceneDepth, InvViewMTX, InvProjectionMTX);
+	const float3 viewDirWorld = normalize(Position - positionWorld);
 	float3 diffuse = 0.0f.xxx;
 	float3 specular = 0.0f.xxx;
 	float3 subsurface = 0.0f.xxx;

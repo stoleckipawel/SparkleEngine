@@ -1,8 +1,7 @@
 #ifndef SPARKLE_PUNCTUAL_LIGHTS_HLSLI
 #define SPARKLE_PUNCTUAL_LIGHTS_HLSLI
 
-#include "Resources/ConstantBuffers.hlsli"
-
+#include "Resources/LightConstantBufferData.hlsli"
 namespace PunctualLights
 {
 	float3 GetDirectionalLightDirection(uint lightIndex)
@@ -36,44 +35,29 @@ namespace PunctualLights
 		return smoothRange * smoothRange;
 	}
 
-	float ComputeDistanceAttenuationDenominator(
-	    float distanceToLight,
-	    float3 distanceAttenuationCoefficients)
+	float ComputeDistanceAttenuationDenominator(float distanceToLight, float3 distanceAttenuationCoefficients)
 	{
-		return distanceAttenuationCoefficients.x +
-		       distanceAttenuationCoefficients.y * distanceToLight +
-		       distanceAttenuationCoefficients.z *
-		           distanceToLight *
-		           distanceToLight;
+		return distanceAttenuationCoefficients.x + distanceAttenuationCoefficients.y * distanceToLight
+		    + distanceAttenuationCoefficients.z * distanceToLight * distanceToLight;
 	}
 
-	float ComputePunctualDistanceAttenuation(
-	    float distanceToLight,
-	    float range,
-	    float3 distanceAttenuationCoefficients)
+	float ComputePunctualDistanceAttenuation(float distanceToLight, float range, float3 distanceAttenuationCoefficients)
 	{
-		const float denominator =
-		    ComputeDistanceAttenuationDenominator(
-		        distanceToLight,
-		        distanceAttenuationCoefficients);
-		return rcp(max(denominator, 1.0e-4f)) *
-		       ComputeRangeAttenuation(distanceToLight, range);
+		const float denominator = ComputeDistanceAttenuationDenominator(distanceToLight, distanceAttenuationCoefficients);
+		return rcp(max(denominator, 1.0e-4f)) * ComputeRangeAttenuation(distanceToLight, range);
 	}
 
-	float ComputeAreaDistanceAttenuationCorrection(
-	    float distanceToLight,
-	    float3 distanceAttenuationCoefficients)
+	float ComputeAreaDistanceAttenuationCorrection(float distanceToLight, float3 distanceAttenuationCoefficients)
 	{
-		const float distanceSquared =
-		    max(distanceToLight * distanceToLight, 1.0e-4f);
-		const float denominator =
-		    ComputeDistanceAttenuationDenominator(
-		        distanceToLight,
-		        distanceAttenuationCoefficients);
+		const float distanceSquared = max(distanceToLight * distanceToLight, 1.0e-4f);
+		const float denominator = ComputeDistanceAttenuationDenominator(distanceToLight, distanceAttenuationCoefficients);
 		return distanceSquared / max(denominator, 1.0e-4f);
 	}
 
-	float ComputeSpotAngularAttenuation(float3 lightToSurfaceDirection, float3 spotDirection, float innerAngleCosine, float outerAngleCosine)
+	float ComputeSpotAngularAttenuation(float3 lightToSurfaceDirection,
+	                                    float3 spotDirection,
+	                                    float innerAngleCosine,
+	                                    float outerAngleCosine)
 	{
 		const float coneCosine = dot(normalize(lightToSurfaceDirection), normalize(spotDirection));
 		const float angularTransition = max(innerAngleCosine - outerAngleCosine, 0.0001f);

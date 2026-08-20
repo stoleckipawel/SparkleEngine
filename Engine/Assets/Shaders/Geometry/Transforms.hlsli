@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Resources/ConstantBuffers.hlsli"
-
+#include "Resources/ViewCameraUniformData.hlsli"
+#include "Resources/ObjectShaderData.hlsli"
 float4 PositionLocalToWorld(float4 localPosition)
 {
 	return mul(localPosition, WorldMatrix);
@@ -9,12 +9,12 @@ float4 PositionLocalToWorld(float4 localPosition)
 
 float4 PositionWorldToView(float4 worldPosition)
 {
-	return mul(worldPosition, Camera.ViewMTX);
+	return mul(worldPosition, ViewMTX);
 }
 
 float4 PositionViewToClip(float4 viewPosition)
 {
-	return mul(viewPosition, Camera.ProjectionMTX);
+	return mul(viewPosition, ProjectionMTX);
 }
 
 float4 PositionLocalToClip(float4 localPosition)
@@ -26,7 +26,7 @@ float4 PositionLocalToClip(float4 localPosition)
 
 float4 PositionWorldToClip(float4 worldPosition)
 {
-	return mul(worldPosition, Camera.ViewProjMTX);
+	return mul(worldPosition, ViewProjMTX);
 }
 
 float4 ApplyTemporalJitterClipOffset(float4 clipPosition, float2 jitterNdc)
@@ -35,32 +35,27 @@ float4 ApplyTemporalJitterClipOffset(float4 clipPosition, float2 jitterNdc)
 	return clipPosition;
 }
 
-
 float3 NormalLocalToWorld(float3 normalLocal)
 {
 	return normalize(mul(normalLocal, WorldInverseTranspose));
 }
 
-
 float4 TangentLocalToWorld(float4 tangentLocal)
 {
-	const float3 worldTangent = mul(tangentLocal.xyz, (float3x3) WorldMatrix);
+	const float3 worldTangent = mul(tangentLocal.xyz, (float3x3)WorldMatrix);
 	return float4(worldTangent, tangentLocal.w);
 }
-
 
 float3 ComputeBitangent(float3 normalWorld, float4 tangentWorld)
 {
 	return tangentWorld.w * normalize(cross(normalWorld, tangentWorld.xyz));
 }
 
-
 float3 TransformNormalToWorld(float3 normalTangent, float3 vertexNormalWorld, float3 vertexTangentWorld, float3 vertexBitangentWorld)
 {
 	const float3x3 TBN = float3x3(vertexTangentWorld, vertexBitangentWorld, vertexNormalWorld);
 	return mul(normalTangent, TBN);
 }
-
 
 float3 Rotate(float3 v, float3 axis, float angle)
 {
@@ -70,16 +65,15 @@ float3 Rotate(float3 v, float3 axis, float angle)
 
 	const float3 a = normalize(axis);
 
-	const float3x3 rotMtx = float3x3(
-	    c + a.x * a.x * oneMinusC,
-	    a.x * a.y * oneMinusC - a.z * s,
-	    a.x * a.z * oneMinusC + a.y * s,
-	    a.y * a.x * oneMinusC + a.z * s,
-	    c + a.y * a.y * oneMinusC,
-	    a.y * a.z * oneMinusC - a.x * s,
-	    a.z * a.x * oneMinusC - a.y * s,
-	    a.z * a.y * oneMinusC + a.x * s,
-	    c + a.z * a.z * oneMinusC);
+	const float3x3 rotMtx = float3x3(c + a.x * a.x * oneMinusC,
+	                                 a.x * a.y * oneMinusC - a.z * s,
+	                                 a.x * a.z * oneMinusC + a.y * s,
+	                                 a.y * a.x * oneMinusC + a.z * s,
+	                                 c + a.y * a.y * oneMinusC,
+	                                 a.y * a.z * oneMinusC - a.x * s,
+	                                 a.z * a.x * oneMinusC - a.y * s,
+	                                 a.z * a.y * oneMinusC + a.x * s,
+	                                 c + a.z * a.z * oneMinusC);
 
 	return mul(v, rotMtx);
 }

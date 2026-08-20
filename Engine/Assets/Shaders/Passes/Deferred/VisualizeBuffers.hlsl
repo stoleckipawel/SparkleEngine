@@ -1,4 +1,5 @@
-#include "Resources/ConstantBuffers.hlsli"
+#include "Resources/ViewUniformData.hlsli"
+
 #include "Debug/RenderViewModeConstants.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 

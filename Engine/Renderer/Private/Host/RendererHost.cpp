@@ -1,12 +1,9 @@
 #include "PCH.h"
 #include "Host/RendererHost.h"
 
-#include "Camera/RenderCamera.h"
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Diagnostics/MeshDiagnosticsCollector.h"
 #include "Diagnostics/RendererMemoryMonitor.h"
-#include "Frame/Builders/PerViewDataBuilder.h"
-#include "Frame/Builders/TemporalDataBuilder.h"
 #include "Host/RendererBackendOwner.h"
 #include "Host/RendererBackendConfiguration.h"
 #include "Meshes/GpuMeshCache.h"
@@ -19,9 +16,12 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "RHI/Public/CVars/RHICVars.h"
 #include "Scene/RenderScene.h"
-#include "SceneData/Preparation/RenderPreparationGraph.h"
+#include "Scene/Preparation/RenderScenePreparation.h"
 #include "Textures/TextureCache.h"
 #include "Window/Window.h"
+#include "View/RenderViewBuilder.h"
+#include "View/RenderViewPreparation.h"
+#include "View/RenderViewState.h"
 
 #include <algorithm>
 #include <array>
@@ -184,11 +184,10 @@ void RendererHost::InitializeSceneRuntime(TaskExecutor& taskExecutor, TaskScope&
 	    GetDeviceServices(),
 	    taskExecutor,
 	    applicationTaskScope);
-	m_renderPreparationGraph = std::make_unique<RenderPreparationGraph>(taskExecutor, *m_gpuMeshCache, *m_textureCache);
-	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
-	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
-
-	m_renderCamera = std::make_unique<RenderCamera>();
+	m_renderScenePreparation = std::make_unique<RenderScenePreparation>(taskExecutor, *m_gpuMeshCache, *m_textureCache);
+	m_renderViewBuilder = std::make_unique<RenderViewBuilder>();
+	m_renderViewPreparation = std::make_unique<RenderViewPreparation>(taskExecutor);
+	m_renderViewState = std::make_unique<RenderViewState>();
 	m_renderScene = std::make_unique<RenderScene>(&GetDeviceServices(), *m_gpuMeshCache, *m_textureCache, GetRenderHardwareInterface());
 }
 

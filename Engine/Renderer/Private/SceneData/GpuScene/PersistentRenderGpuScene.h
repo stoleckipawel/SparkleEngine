@@ -5,26 +5,23 @@
 
 class GpuMeshCache;
 class RhiResourceService;
-struct RenderSceneData;
+struct PreparedRenderScene;
+struct RenderView;
 struct RenderSceneGpuData;
 
 class PersistentRenderGpuScene final
 {
-  public:
-	PersistentRenderGpuScene(
-	    RhiResourceService& resourceService,
-	    const GpuMeshCache& meshes);
+public:
+	PersistentRenderGpuScene(RhiResourceService& resourceService, const GpuMeshCache& meshes);
 	~PersistentRenderGpuScene() noexcept;
 
 	PersistentRenderGpuScene(const PersistentRenderGpuScene&) = delete;
 	PersistentRenderGpuScene& operator=(const PersistentRenderGpuScene&) = delete;
 
-	const RenderSceneGpuData& Update(
-	    const RenderSceneData& sceneData,
-	    std::uint32_t frameIndex);
+	const RenderSceneGpuData& Update(const PreparedRenderScene& preparedScene, const RenderView& view, std::uint32_t frameIndex);
 	void Reset() noexcept;
 
-  private:
+private:
 	struct Impl;
 	std::unique_ptr<Impl> m_impl;
 };

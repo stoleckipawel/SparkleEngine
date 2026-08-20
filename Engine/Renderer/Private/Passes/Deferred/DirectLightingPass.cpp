@@ -2,7 +2,7 @@
 #include "Passes/Deferred/DirectLightingPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/PassRuntimeContext.h"
 #include "Passes/Core/ComputePassOperations.h"
@@ -11,7 +11,10 @@
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-DirectLightingPass::DirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+DirectLightingPass::DirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const DirectLightingPass::ParameterMetadata& DirectLightingPass::GetParameterMetadata() noexcept
 {
@@ -31,24 +34,25 @@ const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 void DirectLightingPass::SetParameters(
     ParameterInstance& parameters,
     const FrameContext& frame,
-    const RenderViewData& viewData,
+    const RenderView& view,
     const PassRuntimeContext& passRuntimeContext) const
 {
-	parameters->PerFrame = passRuntimeContext.PerFrame;
-	parameters->PerView = viewData.perViewData;
-	parameters->PerTemporal = viewData.perTemporalData;
+	parameters->Frame = passRuntimeContext.Frame;
+	parameters->View = view.uniform;
+	parameters->ViewCamera = view.cameraUniform;
+	parameters->ViewTemporal = view.temporalUniform;
 	parameters->ViewLighting = frame.sceneGpuData->Lighting.Constants;
 }
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.Runtime);
+	SetParameters(parameters, context.Frame, context.Frame.view, context.Runtime);
 	{
 		ComputePassOperations::DispatchSized<DirectLightingPass>(
 		    context,
 		    m_runtime,
 		    parameters,
-		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+		    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+		    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 	}
 }

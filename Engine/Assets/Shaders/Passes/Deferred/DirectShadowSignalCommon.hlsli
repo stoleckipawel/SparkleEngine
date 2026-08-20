@@ -1,6 +1,8 @@
 #ifndef SPARKLE_DIRECT_SHADOW_SIGNAL_COMMON_HLSLI
 #define SPARKLE_DIRECT_SHADOW_SIGNAL_COMMON_HLSLI
 
+#include "Resources/ViewCameraUniformData.hlsli"
+
 #include "Lighting/DirectLightReservoir.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
@@ -29,12 +31,11 @@ void EvaluateDirectShadowSignal(uint3 dispatchThreadId)
 		return;
 	}
 
-	const float3 positionWorld =
-	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, sceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
+	const float3 positionWorld = ReconstructGBufferWorldPosition(dispatchThreadId.xy, sceneDepth, InvViewMTX, InvProjectionMTX);
 	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(int3(dispatchThreadId.xy, 0)).xyz);
-	const DirectLightReservoir::Reservoir reservoir = DirectLightReservoir::UnpackReservoir(
-	    CurrentReservoirSampleTexture.Load(int3(dispatchThreadId.xy, 0)),
-	    CurrentReservoirWeightTexture.Load(int3(dispatchThreadId.xy, 0)));
+	const DirectLightReservoir::Reservoir reservoir =
+	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSampleTexture.Load(int3(dispatchThreadId.xy, 0)),
+	                                          CurrentReservoirWeightTexture.Load(int3(dispatchThreadId.xy, 0)));
 	if (!DirectLightReservoir::IsValid(reservoir))
 	{
 		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
@@ -43,11 +44,11 @@ void EvaluateDirectShadowSignal(uint3 dispatchThreadId)
 	}
 
 	const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
-	const ShadowVisibilitySignal shadowSignal = RayTracedShadowVisibility::TraceDirectLightSample(
-	    positionWorld,
-	    normalWorld,
-	    lightSample,
-	    DirectLightSampling::CastsShadow(reservoir.Candidate.Light));
+	const ShadowVisibilitySignal shadowSignal =
+	    RayTracedShadowVisibility::TraceDirectLightSample(positionWorld,
+	                                                      normalWorld,
+	                                                      lightSample,
+	                                                      DirectLightSampling::CastsShadow(reservoir.Candidate.Light));
 
 	ShadowVisibilitySignalTexture[dispatchThreadId.xy] = RayTracedShadowSignalPacking::PackShadowSignal(shadowSignal);
 }

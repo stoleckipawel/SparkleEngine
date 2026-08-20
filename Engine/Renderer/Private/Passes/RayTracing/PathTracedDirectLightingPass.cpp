@@ -2,7 +2,7 @@
 #include "Passes/RayTracing/PathTracedDirectLightingPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Core/RenderViewData.h"
+#include "View/RenderView.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeContext.h"
 #include "Passes/Core/ComputePassOperations.h"
@@ -20,9 +20,10 @@ void PathTracedDirectLightingPassParameters::Describe(ShaderParameterStructBuild
 	builder.RWTexture("DirectSpecular", &PathTracedDirectLightingPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
 	builder.RWTexture("DirectSubsurface", &PathTracedDirectLightingPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
 	builder.AccelerationStructure("SceneTlas", &PathTracedDirectLightingPassParameters::SceneTlas, ShaderStageVisibility::Compute);
-	builder.Uniform("PerFrame", &PathTracedDirectLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
-	builder.Uniform("PerView", &PathTracedDirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
-	builder.Uniform("PerTemporal", &PathTracedDirectLightingPassParameters::PerTemporal, ShaderStageVisibility::Compute);
+	builder.Uniform("Frame", &PathTracedDirectLightingPassParameters::Frame, ShaderStageVisibility::Compute);
+	builder.Uniform("View", &PathTracedDirectLightingPassParameters::View, ShaderStageVisibility::Compute);
+	builder.Uniform("ViewCamera", &PathTracedDirectLightingPassParameters::ViewCamera, ShaderStageVisibility::Compute);
+	builder.Uniform("ViewTemporal", &PathTracedDirectLightingPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewLighting", &PathTracedDirectLightingPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 	builder.Uniform("RayTracedShadows", &PathTracedDirectLightingPassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
 	builder.Uniform(
@@ -64,7 +65,10 @@ void PathTracedDirectLightingPassParameters::Describe(ShaderParameterStructBuild
 	    ShaderStageVisibility::Compute);
 }
 
-PathTracedDirectLightingPass::PathTracedDirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+PathTracedDirectLightingPass::PathTracedDirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const PathTracedDirectLightingPass::ParameterMetadata& PathTracedDirectLightingPass::GetParameterMetadata() noexcept
 {
@@ -83,9 +87,10 @@ const RenderPassDefinition& PathTracedDirectLightingPass::GetDefinition() noexce
 
 void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	parameters->PerFrame = context.Runtime.PerFrame;
-	parameters->PerView = context.Frame.mainView.perViewData;
-	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
+	parameters->Frame = context.Runtime.Frame;
+	parameters->View = context.Frame.view.uniform;
+	parameters->ViewCamera = context.Frame.view.cameraUniform;
+	parameters->ViewTemporal = context.Frame.view.temporalUniform;
 	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
 	parameters->MaterialTextureSampler = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
@@ -93,7 +98,7 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
 	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 
-	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
+	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(
 	    context.Runtime.RayTracing,
 	    context.Frame.rayTracingScene.HasTraceableInstances(),
@@ -110,6 +115,6 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

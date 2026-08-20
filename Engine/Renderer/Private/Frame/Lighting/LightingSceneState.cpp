@@ -11,7 +11,7 @@
 #include <cstdint>
 class LightingSceneStateHasher final
 {
-  public:
+public:
 	template <typename TRange> static std::uint64_t AppendCount(std::uint64_t hash, const TRange& values) noexcept
 	{
 		return Hash::ContinueFnv1a64Value(hash, static_cast<std::uint64_t>(values.size()));
@@ -64,9 +64,7 @@ class LightingSceneStateHasher final
 	}
 
 	template <typename TLight>
-	static std::uint64_t AppendLightsState(
-	    std::uint64_t hash,
-	    const RenderLightCollection<TLight>& lights) noexcept
+	static std::uint64_t AppendLightsState(std::uint64_t hash, const RenderLightCollection<TLight>& lights) noexcept
 	{
 		hash = Hash::ContinueFnv1a64Value(hash, static_cast<std::uint64_t>(lights.size()));
 		for (std::size_t index = 0; index < lights.size(); ++index)
@@ -136,38 +134,39 @@ std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noex
 	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowsEnabled.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowNormalBias.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowMaxDistance.Get());
-	hash = LightingSceneStateHasher::AppendSkyState(hash, frame.sceneData.sky);
-	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.sceneData.directionalLights);
-	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.sceneData.pointLights);
-	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.sceneData.spotLights);
-	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.sceneData.rectLights);
+	hash = LightingSceneStateHasher::AppendSkyState(hash, frame.preparedScene.sky);
+	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.preparedScene.directionalLights);
+	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.preparedScene.pointLights);
+	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.preparedScene.spotLights);
+	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.preparedScene.rectLights);
 
-	hash = LightingSceneStateHasher::AppendCount(hash, frame.sceneData.meshInstances);
-	for (const MeshDraw& draw : frame.sceneData.meshInstances)
+	hash = LightingSceneStateHasher::AppendCount(hash, frame.preparedScene.primitives);
+	for (const PreparedRenderPrimitive& primitive : frame.preparedScene.primitives)
 	{
+		const MeshDraw& draw = primitive.Draw;
 		hash = LightingSceneStateHasher::AppendMeshState(hash, draw);
 	}
 
-	hash = LightingSceneStateHasher::AppendCount(hash, frame.sceneData.jointMatrices);
-	for (const DirectX::XMFLOAT4X4& jointMatrix : frame.sceneData.jointMatrices)
+	hash = LightingSceneStateHasher::AppendCount(hash, frame.preparedScene.jointMatrices);
+	for (const DirectX::XMFLOAT4X4& jointMatrix : frame.preparedScene.jointMatrices)
 	{
 		hash = LightingStateHash::AppendMatrix(hash, jointMatrix);
 	}
 
-	hash = LightingSceneStateHasher::AppendCount(hash, frame.sceneData.morphWeights);
-	for (float morphWeight : frame.sceneData.morphWeights)
+	hash = LightingSceneStateHasher::AppendCount(hash, frame.preparedScene.morphWeights);
+	for (float morphWeight : frame.preparedScene.morphWeights)
 	{
 		hash = Hash::ContinueFnv1a64Value(hash, morphWeight);
 	}
 
-	hash = LightingSceneStateHasher::AppendCount(hash, frame.sceneData.materials);
-	for (const MaterialData& material : frame.sceneData.materials)
+	hash = LightingSceneStateHasher::AppendCount(hash, frame.preparedScene.materials);
+	for (const MaterialData& material : frame.preparedScene.materials)
 	{
 		hash = LightingSceneStateHasher::AppendMaterialState(hash, material);
 	}
 
-	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTable.Binding.Table.Value);
-	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTable.DescriptorCount);
-	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTable.Generation);
+	hash = Hash::ContinueFnv1a64Value(hash, frame.preparedScene.materialTextureTable.Binding.Table.Value);
+	hash = Hash::ContinueFnv1a64Value(hash, frame.preparedScene.materialTextureTable.DescriptorCount);
+	hash = Hash::ContinueFnv1a64Value(hash, frame.preparedScene.materialTextureTable.Generation);
 	return Hash::FinalizeFnv1a64(hash);
 }

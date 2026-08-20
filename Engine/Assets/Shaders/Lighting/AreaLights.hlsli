@@ -1,13 +1,13 @@
 #ifndef SPARKLE_AREA_LIGHTS_HLSLI
 #define SPARKLE_AREA_LIGHTS_HLSLI
 
+#include "Resources/LightConstantBufferData.hlsli"
+
 #include "Common/Constants.hlsli"
 #include "Common/Math.hlsli"
 #include "Common/Sampling.hlsli"
 #include "Lighting/LightSampling.hlsli"
 #include "Lighting/PunctualLights.hlsli"
-#include "Resources/ConstantBuffers.hlsli"
-
 namespace AreaLights
 {
 	LightSampling::DirectLightSample SampleDirectionalLight(uint lightIndex, float2 sample)
@@ -29,11 +29,11 @@ namespace AreaLights
 			return LightSampling::PunctualDirectLightSample(centerDirectionWorld, illuminance, FLT_MAX, true);
 		}
 
-		LightSampling::DirectLightSample result = LightSampling::PunctualDirectLightSample(
-		    CommonSampling::SampleConeDirection(centerDirectionWorld, coneHalfAngle, sample),
-		    illuminance / projectedSolidAngle,
-		    FLT_MAX,
-		    true);
+		LightSampling::DirectLightSample result =
+		    LightSampling::PunctualDirectLightSample(CommonSampling::SampleConeDirection(centerDirectionWorld, coneHalfAngle, sample),
+		                                             illuminance / projectedSolidAngle,
+		                                             FLT_MAX,
+		                                             true);
 		result.PdfW = rcp(solidAngle);
 		return result;
 	}
@@ -47,39 +47,27 @@ namespace AreaLights
 		if (radius <= 1.0e-4f)
 		{
 			const float distanceAttenuation =
-			    PunctualLights::ComputePunctualDistanceAttenuation(
-			        distanceToLight,
-			        light.Range,
-			        light.DistanceAttenuationCoefficients);
-			return LightSampling::PunctualDirectLightSample(
-			    centerDirectionWorld,
-			    light.Color * light.LuminousIntensity * distanceAttenuation,
-			    distanceToLight,
-			    false);
+			    PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
+			return LightSampling::PunctualDirectLightSample(centerDirectionWorld,
+			                                                light.Color * light.LuminousIntensity * distanceAttenuation,
+			                                                distanceToLight,
+			                                                false);
 		}
 
-		const float3 samplePositionWorld = CommonSampling::SampleSpherePoint(
-		    light.Position,
-		    radius,
-		    positionWorld - light.Position,
-		    sample);
+		const float3 samplePositionWorld =
+		    CommonSampling::SampleSpherePoint(light.Position, radius, positionWorld - light.Position, sample);
 		const float3 normalWorld = SafeNormalize(samplePositionWorld - light.Position);
 		const float sphereArea = 4.0f * PI * radius * radius;
 		const float3 emittedRadiance = light.Color * light.LuminousIntensity / max(PI * radius * radius, 1.0e-4f);
-		const float distanceToSample =
-		    length(samplePositionWorld - positionWorld);
+		const float distanceToSample = length(samplePositionWorld - positionWorld);
 		return LightSampling::AreaDirectLightSample(
 		    positionWorld,
 		    samplePositionWorld,
 		    normalWorld,
 		    emittedRadiance,
 		    rcp(max(sphereArea, 1.0e-4f)),
-		    PunctualLights::ComputeRangeAttenuation(
-		        distanceToSample,
-		        light.Range) *
-		        PunctualLights::ComputeAreaDistanceAttenuationCorrection(
-		            distanceToSample,
-		            light.DistanceAttenuationCoefficients));
+		    PunctualLights::ComputeRangeAttenuation(distanceToSample, light.Range)
+		        * PunctualLights::ComputeAreaDistanceAttenuationCorrection(distanceToSample, light.DistanceAttenuationCoefficients));
 	}
 
 	LightSampling::DirectLightSample SampleSpotLight(float3 positionWorld, uint lightIndex, float2 sample)
@@ -93,32 +81,26 @@ namespace AreaLights
 		{
 			const float3 lightToSurfaceDirection = -centerDirectionWorld;
 			const float distanceAttenuation =
-			    PunctualLights::ComputePunctualDistanceAttenuation(
-			        distanceToLight,
-			        light.Range,
-			        light.DistanceAttenuationCoefficients);
-			const float angularAttenuation = PunctualLights::ComputeSpotAngularAttenuation(
-			    lightToSurfaceDirection,
-			    lightDirectionWorld,
-			    light.InnerAngleCosine,
-			    light.OuterAngleCosine);
-			return LightSampling::PunctualDirectLightSample(
-			    centerDirectionWorld,
-			    light.Color * light.LuminousIntensity * distanceAttenuation * angularAttenuation,
-			    distanceToLight,
-			    false);
+			    PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
+			const float angularAttenuation = PunctualLights::ComputeSpotAngularAttenuation(lightToSurfaceDirection,
+			                                                                               lightDirectionWorld,
+			                                                                               light.InnerAngleCosine,
+			                                                                               light.OuterAngleCosine);
+			return LightSampling::PunctualDirectLightSample(centerDirectionWorld,
+			                                                light.Color * light.LuminousIntensity * distanceAttenuation
+			                                                    * angularAttenuation,
+			                                                distanceToLight,
+			                                                false);
 		}
 
 		const float3 samplePositionWorld = CommonSampling::SampleDiskPoint(light.Position, lightDirectionWorld, radius, sample);
 		const float3 surfaceToSample = samplePositionWorld - positionWorld;
 		const float distanceToSample = length(surfaceToSample);
 		const float3 sampledDirectionWorld = distanceToSample > 1.0e-4f ? surfaceToSample / distanceToSample : centerDirectionWorld;
-		const float angularAttenuation =
-		    PunctualLights::ComputeSpotAngularAttenuation(
-		        -sampledDirectionWorld,
-		        lightDirectionWorld,
-		        light.InnerAngleCosine,
-		        light.OuterAngleCosine);
+		const float angularAttenuation = PunctualLights::ComputeSpotAngularAttenuation(-sampledDirectionWorld,
+		                                                                               lightDirectionWorld,
+		                                                                               light.InnerAngleCosine,
+		                                                                               light.OuterAngleCosine);
 		const float diskArea = PI * radius * radius;
 		const float3 emittedRadiance = light.Color * light.LuminousIntensity * angularAttenuation / max(diskArea, 1.0e-4f);
 		return LightSampling::AreaDirectLightSample(
@@ -127,12 +109,8 @@ namespace AreaLights
 		    lightDirectionWorld,
 		    emittedRadiance,
 		    rcp(max(diskArea, 1.0e-4f)),
-		    PunctualLights::ComputeRangeAttenuation(
-		        distanceToSample,
-		        light.Range) *
-		        PunctualLights::ComputeAreaDistanceAttenuationCorrection(
-		            distanceToSample,
-		            light.DistanceAttenuationCoefficients));
+		    PunctualLights::ComputeRangeAttenuation(distanceToSample, light.Range)
+		        * PunctualLights::ComputeAreaDistanceAttenuationCorrection(distanceToSample, light.DistanceAttenuationCoefficients));
 	}
 
 	void BuildRectFrame(RectLightConstantBufferData light, out float3 normalWorld, out float3 tangentWorld, out float3 bitangentWorld)
@@ -155,16 +133,13 @@ namespace AreaLights
 		float3 bitangentWorld;
 		BuildRectFrame(light, normalWorld, tangentWorld, bitangentWorld);
 		const float3 samplePositionWorld =
-		    light.Position +
-		    tangentWorld * ((sample.x - 0.5f) * width) +
-		    bitangentWorld * ((sample.y - 0.5f) * height);
-		return LightSampling::AreaDirectLightSample(
-		    positionWorld,
-		    samplePositionWorld,
-		    normalWorld,
-		    light.Color * light.Luminance,
-		    rcp(area),
-		    1.0f);
+		    light.Position + tangentWorld * ((sample.x - 0.5f) * width) + bitangentWorld * ((sample.y - 0.5f) * height);
+		return LightSampling::AreaDirectLightSample(positionWorld,
+		                                            samplePositionWorld,
+		                                            normalWorld,
+		                                            light.Color * light.Luminance,
+		                                            rcp(area),
+		                                            1.0f);
 	}
 }
 

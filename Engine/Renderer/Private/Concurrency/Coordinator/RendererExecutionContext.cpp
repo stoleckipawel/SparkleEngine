@@ -32,8 +32,7 @@ RendererExecutionContext::~RendererExecutionContext() noexcept
 void RendererExecutionContext::ExecuteFrame(RenderExecutionRequest request) noexcept
 {
 	m_owner.AssertAccess();
-	m_pipeline->SubmitFrameSubmission(std::move(request.Submission));
-	m_pipeline->OnRender(request.Time, request.Ui);
+	m_pipeline->OnRender(std::move(request.Submission), request.Time, request.Ui);
 }
 
 void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noexcept

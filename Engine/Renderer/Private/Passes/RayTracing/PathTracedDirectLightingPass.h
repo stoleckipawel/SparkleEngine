@@ -8,7 +8,10 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 #include "Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/FrameUniformData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/RenderViewLightingData.h"
 
 #include <cstdint>
@@ -23,9 +26,10 @@ struct PathTracedDirectLightingPassParameters
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
 	ShaderAccelerationStructure SceneTlas;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
-	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<FrameUniformData> Frame;
+	ShaderUniform<ViewUniformData> View;
+	ShaderUniform<ViewCameraUniformData> ViewCamera;
+	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
 	ShaderUniform<PathTracedLightingUniformData> PathTracedLightingConstants;

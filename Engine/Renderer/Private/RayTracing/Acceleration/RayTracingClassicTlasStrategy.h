@@ -7,7 +7,7 @@ class RenderHardwareInterface;
 
 class RayTracingClassicTlasStrategy final : public RayTracingTopLevelAccelerationStructureStrategy
 {
-  public:
+public:
 	explicit RayTracingClassicTlasStrategy(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    RayTracingSceneTlasShaderAccessMode shaderAccessMode = RayTracingSceneTlasShaderAccessMode::Descriptor) noexcept;
@@ -17,11 +17,11 @@ class RayTracingClassicTlasStrategy final : public RayTracingTopLevelAcceleratio
 	ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept override;
 	const char* GetActiveProviderReason() const noexcept override;
 	RayTracingSceneFrameData Prepare(
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept override;
 	RayTracingTopLevelAccelerationStructureBuildResult Build(
 	    RenderCommandContext& commandContext,
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
@@ -32,7 +32,7 @@ class RayTracingClassicTlasStrategy final : public RayTracingTopLevelAcceleratio
 	std::uint32_t GetSceneTlasInstanceCount() const noexcept override;
 	void Clear() noexcept override;
 
-  private:
+private:
 	RayTracingClassicTlasBuilder m_classicTlasBuilder;
 	RayTracingSceneTlasShaderAccessMode m_shaderAccessMode = RayTracingSceneTlasShaderAccessMode::Descriptor;
 };

@@ -5,7 +5,9 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/SkyUniformData.h"
 
 #include <cstdint>
@@ -22,9 +24,9 @@ struct SkyPassParameters
 	ShaderTexture2D<void> SceneDepth;
 	ShaderTexture2D<void> SkyTexture;
 	ShaderSamplerSet SamplerLinearClamp;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
-	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<ViewUniformData> View;
+	ShaderUniform<ViewCameraUniformData> ViewCamera;
+	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
 	ShaderUniform<SkyUniformData> Sky;
 
 	static void Describe(ShaderParameterStructBuilder<SkyPassParameters>& builder)
@@ -33,16 +35,16 @@ struct SkyPassParameters
 		builder.ReadTexture("SceneDepth", &SkyPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.ReadTexture("SkyTexture", &SkyPassParameters::SkyTexture, ShaderStageVisibility::Compute);
 		builder.Sampler("SamplerLinearClamp", &SkyPassParameters::SamplerLinearClamp, ShaderStageVisibility::Compute);
-		builder.Uniform("PerFrame", &SkyPassParameters::PerFrame, ShaderStageVisibility::Compute);
-		builder.Uniform("PerView", &SkyPassParameters::PerView, ShaderStageVisibility::Compute);
-		builder.Uniform("PerTemporal", &SkyPassParameters::PerTemporal, ShaderStageVisibility::Compute);
+		builder.Uniform("View", &SkyPassParameters::View, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewCamera", &SkyPassParameters::ViewCamera, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewTemporal", &SkyPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
 		builder.Uniform("Sky", &SkyPassParameters::Sky, ShaderStageVisibility::Compute);
 	}
 };
 
 class SkyPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "Sky";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -57,8 +59,8 @@ class SkyPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
-  private:
-	void SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeContext& passRuntimeContext) const;
+private:
+	void SetParameters(ParameterInstance& parameters, const FrameContext& frame) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

@@ -1,6 +1,8 @@
 #ifndef SPARKLE_DIRECT_LIGHT_RESERVOIR_HLSLI
 #define SPARKLE_DIRECT_LIGHT_RESERVOIR_HLSLI
 
+#include "Resources/ViewCameraUniformData.hlsli"
+
 #include "Common/Color.hlsli"
 #include "Common/Random.hlsli"
 #include "Lighting/DirectLightSampling.hlsli"
@@ -47,13 +49,11 @@ namespace DirectLightReservoir
 			return surface;
 		}
 
-		surface.PositionWorld =
-		    ReconstructGBufferWorldPosition(pixelCoord, surface.GBuffer.SceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
-		const float3 cameraToSurface = surface.PositionWorld - Camera.Position;
+		surface.PositionWorld = ReconstructGBufferWorldPosition(pixelCoord, surface.GBuffer.SceneDepth, InvViewMTX, InvProjectionMTX);
+		const float3 cameraToSurface = surface.PositionWorld - Position;
 		surface.ViewDistance = length(cameraToSurface);
 		surface.ViewDirWorld = surface.ViewDistance > 1.0e-5f ? -cameraToSurface / surface.ViewDistance : 0.0f.xxx;
-		surface.EvaluateSubsurface =
-		    any(surface.GBuffer.SubsurfaceColor > 0.0f.xxx) && surface.GBuffer.SubsurfaceStrength > 0.0f;
+		surface.EvaluateSubsurface = any(surface.GBuffer.SubsurfaceColor > 0.0f.xxx) && surface.GBuffer.SubsurfaceStrength > 0.0f;
 		surface.Valid = true;
 		return surface;
 	}
@@ -65,11 +65,10 @@ namespace DirectLightReservoir
 
 	bool AreSurfacesCompatible(Surface surface, float4 packedSurface)
 	{
-		return RestirReservoirCommon::AreSurfacesCompatible(
-		    surface.Valid,
-		    surface.GBuffer.NormalWorld,
-		    surface.ViewDistance,
-		    packedSurface);
+		return RestirReservoirCommon::AreSurfacesCompatible(surface.Valid,
+		                                                    surface.GBuffer.NormalWorld,
+		                                                    surface.ViewDistance,
+		                                                    packedSurface);
 	}
 
 	Reservoir EmptyReservoir()
@@ -86,29 +85,22 @@ namespace DirectLightReservoir
 
 	bool IsValid(Reservoir reservoir)
 	{
-		return reservoir.Valid > 0.5f &&
-		       DirectLightSampling::IsValid(reservoir.Candidate) &&
-		       reservoir.WeightSum > 0.0f &&
-		       reservoir.TargetPdf > 0.0f &&
-		       reservoir.M > 0.0f;
+		return reservoir.Valid > 0.5f && DirectLightSampling::IsValid(reservoir.Candidate) && reservoir.WeightSum > 0.0f
+		    && reservoir.TargetPdf > 0.0f && reservoir.M > 0.0f;
 	}
 
 	float4 PackReservoirSample(Reservoir reservoir)
 	{
-		return IsValid(reservoir)
-		           ? float4(
-		                 (float)reservoir.Candidate.Light.Type,
-		                 (float)reservoir.Candidate.Light.Index,
-		                 reservoir.ShapeSample.x,
-		                 reservoir.ShapeSample.y)
-		           : 0.0f.xxxx;
+		return IsValid(reservoir) ? float4((float)reservoir.Candidate.Light.Type,
+		                                   (float)reservoir.Candidate.Light.Index,
+		                                   reservoir.ShapeSample.x,
+		                                   reservoir.ShapeSample.y)
+		                          : 0.0f.xxxx;
 	}
 
 	float4 PackReservoirWeight(Reservoir reservoir)
 	{
-		return reservoir.M > 0.0f
-		           ? float4(reservoir.WeightSum, reservoir.TargetPdf, reservoir.M, reservoir.Valid)
-		           : 0.0f.xxxx;
+		return reservoir.M > 0.0f ? float4(reservoir.WeightSum, reservoir.TargetPdf, reservoir.M, reservoir.Valid) : 0.0f.xxxx;
 	}
 
 	Reservoir UnpackReservoir(float4 samplePayload, float4 weightPayload)
@@ -149,8 +141,7 @@ namespace DirectLightReservoir
 
 		DirectLightSampling::LightCandidate candidate = reservoir.Candidate;
 		candidate.SelectionPdf = 1.0f;
-		LightSampling::DirectLightSample sample =
-		    DirectLightSampling::SampleDirectLight(candidate, positionWorld, reservoir.ShapeSample);
+		LightSampling::DirectLightSample sample = DirectLightSampling::SampleDirectLight(candidate, positionWorld, reservoir.ShapeSample);
 		sample.LightSelectionPdf = 1.0f;
 		sample.PdfW = 1.0f;
 		return sample;
@@ -167,21 +158,20 @@ namespace DirectLightReservoir
 		float3 diffuse = 0.0f;
 		float3 specular = 0.0f;
 		float3 subsurface = 0.0f;
-		SurfaceLighting::AccumulateDirectLightSample(
-		    surface.ViewDirWorld,
-		    surface.GBuffer.NormalWorld,
-		    surface.GBuffer.BaseColor,
-		    surface.GBuffer.Roughness,
-		    surface.GBuffer.Metallic,
-		    surface.GBuffer.DielectricF0,
-		    surface.GBuffer.SubsurfaceColor,
-		    surface.GBuffer.SubsurfaceStrength,
-		    surface.EvaluateSubsurface,
-		    lightSample,
-		    1.0f,
-		    diffuse,
-		    specular,
-		    subsurface);
+		SurfaceLighting::AccumulateDirectLightSample(surface.ViewDirWorld,
+		                                             surface.GBuffer.NormalWorld,
+		                                             surface.GBuffer.BaseColor,
+		                                             surface.GBuffer.Roughness,
+		                                             surface.GBuffer.Metallic,
+		                                             surface.GBuffer.DielectricF0,
+		                                             surface.GBuffer.SubsurfaceColor,
+		                                             surface.GBuffer.SubsurfaceStrength,
+		                                             surface.EvaluateSubsurface,
+		                                             lightSample,
+		                                             1.0f,
+		                                             diffuse,
+		                                             specular,
+		                                             subsurface);
 		return max(diffuse + specular + subsurface, 0.0f.xxx);
 	}
 
@@ -197,18 +187,16 @@ namespace DirectLightReservoir
 			return 0.0f;
 		}
 
-		const LightSampling::DirectLightSample sample =
-		    DirectLightSampling::SampleDirectLight(candidate, positionWorld, shapeSample);
+		const LightSampling::DirectLightSample sample = DirectLightSampling::SampleDirectLight(candidate, positionWorld, shapeSample);
 		return max(candidate.SelectionPdf * sample.PdfW, 0.0f);
 	}
 
-	bool StreamWeightedSample(
-	    inout Reservoir reservoir,
-	    DirectLightSampling::LightCandidate candidate,
-	    float2 shapeSample,
-	    float targetPdf,
-	    float sourcePdf,
-	    float random)
+	bool StreamWeightedSample(inout Reservoir reservoir,
+	                          DirectLightSampling::LightCandidate candidate,
+	                          float2 shapeSample,
+	                          float targetPdf,
+	                          float sourcePdf,
+	                          float random)
 	{
 		reservoir.M += 1.0f;
 		if (!DirectLightSampling::IsValid(candidate) || targetPdf <= MinPdf || sourcePdf <= MinPdf)
@@ -231,12 +219,7 @@ namespace DirectLightReservoir
 		return selected;
 	}
 
-	bool CombineReservoir(
-	    inout Reservoir reservoir,
-	    Reservoir candidateReservoir,
-	    Surface surface,
-	    float maxM,
-	    float random)
+	bool CombineReservoir(inout Reservoir reservoir, Reservoir candidateReservoir, Surface surface, float maxM, float random)
 	{
 		if (!surface.Valid || candidateReservoir.M <= 0.0f)
 		{
@@ -258,8 +241,7 @@ namespace DirectLightReservoir
 		}
 
 		const float historyScale = acceptedM / candidateM;
-		const float sampleWeight =
-		    candidateReservoir.WeightSum * historyScale * targetPdf / max(candidateReservoir.TargetPdf, MinPdf);
+		const float sampleWeight = candidateReservoir.WeightSum * historyScale * targetPdf / max(candidateReservoir.TargetPdf, MinPdf);
 		if (sampleWeight <= MinPdf)
 		{
 			return false;

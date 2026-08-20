@@ -1,4 +1,3 @@
-#include "Resources/ConstantBuffers.hlsli"
 #include "Lighting/IndirectLightingOutputs.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 #include "RayTracing/GBufferPathSurface.hlsli"
@@ -40,15 +39,15 @@ void ClearPathTracedIndirectLightingPixel(uint2 pixelCoord)
 	const uint sampleCount = max(PathTracedLightingSamplesPerPixel, 1u);
 	[loop] for (uint sampleIndex = 0u; sampleIndex < sampleCount; ++sampleIndex)
 	{
-		const RayTracingPathLighting::Result path = RayTracingPathLighting::TraceSurfacePath(
-		    SkyTexture,
-		    SamplerLinearClamp,
-		    primarySurface.PathSurface,
-		    pixelCoord,
-		    sampleIndex,
-		    RayTracingPathSampling::SpecularSampleModeStochasticGGX,
-		    PathTracedLightingBounceCount,
-		    traceSettings);
+		const RayTracingPathLighting::Result path =
+		    RayTracingPathLighting::TraceSurfacePath(SkyTexture,
+		                                             SamplerLinearClamp,
+		                                             primarySurface.PathSurface,
+		                                             pixelCoord,
+		                                             sampleIndex,
+		                                             RayTracingPathSampling::SpecularSampleModeStochasticGGX,
+		                                             PathTracedLightingBounceCount,
+		                                             traceSettings);
 		if (path.PrimaryLobe == RayTracingPathSample::LobeDiffuse)
 		{
 			indirectDiffuse += path.FinalContribution;

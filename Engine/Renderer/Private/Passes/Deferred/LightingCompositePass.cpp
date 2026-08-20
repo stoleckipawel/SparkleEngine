@@ -7,7 +7,10 @@
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-LightingCompositePass::LightingCompositePass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+LightingCompositePass::LightingCompositePass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const LightingCompositePass::ParameterMetadata& LightingCompositePass::GetParameterMetadata() noexcept
 {
@@ -30,6 +33,6 @@ void LightingCompositePass::Execute(PassExecutionContext& context, ParameterInst
 	    context,
 	    m_runtime,
 	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
 }

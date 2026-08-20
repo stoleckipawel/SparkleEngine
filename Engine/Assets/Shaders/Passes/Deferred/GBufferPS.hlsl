@@ -1,3 +1,5 @@
+#include "Resources/ViewUniformData.hlsli"
+
 #include "CommonPS.hlsli"
 #include "Debug/InstanceView.hlsli"
 #include "Passes/Deferred/GBufferPacking.hlsli"
@@ -22,11 +24,7 @@ void main(in PS::Input Input, out GBufferOutput Output)
 
 	Output.BaseColor = GBufferPacking::PackBaseColor(MatProps.BaseColor, MatProps.Alpha, MatProps.AlphaMode, Material::AlphaModeBlend);
 	Output.Normal = GBufferPacking::PackNormal(MatProps.NormalWorld);
-	Output.Material = GBufferPacking::PackMaterial(
-	    MatProps.Metallic,
-	    MatProps.Roughness,
-	    MatProps.AmbientOcclusion,
-	    MatProps.DielectricF0);
+	Output.Material = GBufferPacking::PackMaterial(MatProps.Metallic, MatProps.Roughness, MatProps.AmbientOcclusion, MatProps.DielectricF0);
 	Output.Emissive = GBufferPacking::PackEmissive(MatProps.Emissive);
 	Output.Subsurface = GBufferPacking::PackSubsurface(MatProps.SubsurfaceColor, MatProps.SubsurfaceStrength);
 

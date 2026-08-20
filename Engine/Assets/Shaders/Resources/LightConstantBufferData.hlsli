@@ -72,3 +72,9 @@ struct ViewLightingData
 	uint SpotLightCount;
 	uint RectLightCount;
 };
+
+ConstantBuffer<ViewLightingData> ViewLighting;
+StructuredBuffer<DirectionalLightConstantBufferData> DirectionalLights;
+StructuredBuffer<PointLightConstantBufferData> PointLights;
+StructuredBuffer<SpotLightConstantBufferData> SpotLights;
+StructuredBuffer<RectLightConstantBufferData> RectLights;

@@ -4,7 +4,6 @@
 #include "RayTracing/RayTracingHitData.h"
 #include "Scene/Meshes/MeshSkinningData.h"
 #include "ShaderData/MorphTargetShaderData.h"
-#include "ShaderData/RenderConstantBufferData.h"
 
 #include <DirectXMath.h>
 
@@ -32,11 +31,11 @@ struct GpuMeshPreparedData final
 
 class GpuMeshPreparation final
 {
-  public:
+public:
 	static GpuMeshPreparedData Build(const ImmutableRenderMeshHandle& source);
 	static VertexSkinInfluenceData ConvertSkinInfluence(const VertexSkinInfluence& influence) noexcept;
 
-  private:
+private:
 	static void BuildBoundsAndRayTracing(GpuMeshPreparedData& output);
 	static void BuildSkinInfluences(GpuMeshPreparedData& output);
 	static void BuildMorphTargets(GpuMeshPreparedData& output);

@@ -13,7 +13,7 @@ class RayTracingTopLevelScenePlanner;
 class RenderCommandContext;
 class RenderHardwareInterface;
 struct RayTracingCapabilityReport;
-struct RenderSceneData;
+struct PreparedRenderScene;
 
 struct RayTracingTopLevelAccelerationStructureBuildResult final
 {
@@ -24,7 +24,7 @@ struct RayTracingTopLevelAccelerationStructureBuildResult final
 
 class RayTracingTopLevelAccelerationStructureStrategy
 {
-  public:
+public:
 	virtual ~RayTracingTopLevelAccelerationStructureStrategy() noexcept;
 
 	RayTracingTopLevelAccelerationStructureStrategy(const RayTracingTopLevelAccelerationStructureStrategy&) = delete;
@@ -36,11 +36,11 @@ class RayTracingTopLevelAccelerationStructureStrategy
 	virtual ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept = 0;
 	virtual const char* GetActiveProviderReason() const noexcept = 0;
 	virtual RayTracingSceneFrameData Prepare(
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept = 0;
 	virtual RayTracingTopLevelAccelerationStructureBuildResult Build(
 	    RenderCommandContext& commandContext,
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
@@ -51,11 +51,10 @@ class RayTracingTopLevelAccelerationStructureStrategy
 	virtual std::uint32_t GetSceneTlasInstanceCount() const noexcept = 0;
 	virtual void Clear() noexcept = 0;
 
-  protected:
+protected:
 	RayTracingTopLevelAccelerationStructureStrategy() noexcept;
 };
 
 std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> CreateRayTracingTopLevelAccelerationStructureStrategy(
     RenderHardwareInterface& renderHardwareInterface,
     const RayTracingCapabilityReport& capabilityReport) noexcept;
-

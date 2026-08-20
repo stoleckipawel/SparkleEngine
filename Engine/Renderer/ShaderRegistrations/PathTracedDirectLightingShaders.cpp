@@ -6,7 +6,10 @@
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/FrameUniformData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/RenderViewLightingData.h"
 
 class PathTracedDirectLightingCS final : public TGlobalShader<PathTracedDirectLightingCS>
@@ -18,9 +21,10 @@ public:
 	SHADER_PARAMETER_UAV(RWTexture2D, DirectSpecular)
 	SHADER_PARAMETER_UAV(RWTexture2D, DirectSubsurface)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
-	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
-	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
-	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(Frame, FrameUniformData, FrameUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(View, ViewUniformData, ViewUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(ViewCamera, ViewCameraUniformData, ViewCameraUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(ViewTemporal, ViewTemporalUniformData, ViewTemporalUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewLighting, ViewLighting, ViewLightingData)
 	SHADER_PARAMETER_CBUFFER_NAMED(RayTracedShadows, RayTracedShadowUniformData, RayTracedShadowUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PathTracedLightingConstants, PathTracedLightingUniformData, PathTracedLightingUniformData)

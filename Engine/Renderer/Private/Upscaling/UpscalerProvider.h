@@ -6,7 +6,7 @@
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 
 #include <cstdint>
-struct ImageProviderFrameContext;
+struct ImageProviderFrameInput;
 struct RhiCapabilities;
 
 struct UpscalerEvaluationDesc final
@@ -24,12 +24,12 @@ struct UpscalerEvaluationDesc final
 
 class IUpscalerProvider
 {
-  public:
+public:
 	virtual ~IUpscalerProvider() = default;
 
 	virtual bool Initialize(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) = 0;
 	virtual RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept = 0;
-	virtual void SetupFrame(const ImageProviderFrameContext& frameContext) = 0;
+	virtual void SetupFrame(const ImageProviderFrameInput& frameInput) = 0;
 	virtual bool Evaluate(const UpscalerEvaluationDesc& evaluation) = 0;
 	virtual void Shutdown() noexcept = 0;
 };

@@ -14,11 +14,11 @@ class RayTracingBlasCache;
 class RayTracingPerformanceDiagnostics;
 class RenderCommandContext;
 struct RayTracingPtlasPartitionPlan;
-struct RenderSceneData;
+struct PreparedRenderScene;
 
 class RayTracingTopLevelScenePlanner final
 {
-  public:
+public:
 	RayTracingTopLevelScenePlanner() noexcept;
 	~RayTracingTopLevelScenePlanner() noexcept;
 
@@ -27,20 +27,17 @@ class RayTracingTopLevelScenePlanner final
 	RayTracingTopLevelScenePlanner(RayTracingTopLevelScenePlanner&&) = delete;
 	RayTracingTopLevelScenePlanner& operator=(RayTracingTopLevelScenePlanner&&) = delete;
 
-	void PlanFrame(
-	    const RenderSceneData& sceneData,
-	    const DirectX::XMFLOAT3& cameraPosition) noexcept;
+	void PlanFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	const RayTracingPtlasPartitionPlan* GetCurrentPartitionPlan() const noexcept;
 	RayTracingClassicTlasBuilder::BuildStats BuildClassicTlas(
 	    RenderCommandContext& commandContext,
-	    const RenderSceneData& sceneData,
+	    const PreparedRenderScene& preparedScene,
 	    RayTracingClassicTlasBuilder& classicTlasBuilder,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
 	void Clear() noexcept;
 
-  private:
+private:
 	struct Impl;
 	std::unique_ptr<Impl> m_impl;
 };
-

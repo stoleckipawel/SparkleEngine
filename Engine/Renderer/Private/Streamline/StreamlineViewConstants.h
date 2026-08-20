@@ -1,18 +1,16 @@
 #pragma once
 
-#include "Frame/Temporal/TemporalFrameState.h"
-#include "ShaderData/PerFrameConstantBufferData.h"
-#include "ShaderData/RenderViewCameraData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
 #include "Viewport/ViewportContracts.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	#include <sl.h>
+  #include <sl.h>
 
 struct StreamlineViewConstantsInput final
 {
-	PerViewCameraConstantBufferData Camera = {};
-	PerTemporalConstantBufferData TemporalData = {};
-	RenderTemporalFrameState TemporalState = {};
+	ViewCameraUniformData Camera = {};
+	ViewTemporalUniformData Temporal = {};
 	RenderViewportExtent RenderExtent = {};
 	bool MotionVectorsCurrentMinusPrevious = true;
 	bool ReversedDeviceDepth = true;

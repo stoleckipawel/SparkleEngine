@@ -17,7 +17,7 @@ std::uint64_t BuildReferenceLightingHistoryInvalidationHash(const FrameContext& 
 	hash = Hash::ContinueFnv1a64Value(hash, settings.NormalBias);
 	hash = Hash::ContinueFnv1a64Value(hash, settings.MaxDistance);
 	hash = Hash::ContinueFnv1a64Value(hash, CVarRenderViewMode.Get());
-	const PerViewCameraConstantBufferData& camera = frame.mainView.perViewData.Camera;
+	const ViewCameraUniformData& camera = frame.view.cameraUniform;
 	hash = LightingStateHash::AppendMatrix(hash, camera.ViewMTX);
 	hash = LightingStateHash::AppendMatrix(hash, camera.ProjectionMTX);
 	return Hash::FinalizeFnv1a64(hash);

@@ -6,14 +6,14 @@
 
 class NvidiaDlssUpscalerProvider final : public IUpscalerProvider
 {
-  public:
+public:
 	bool Initialize(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) override;
 	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept override;
-	void SetupFrame(const ImageProviderFrameContext& frameContext) override;
+	void SetupFrame(const ImageProviderFrameInput& frameInput) override;
 	bool Evaluate(const UpscalerEvaluationDesc& evaluation) override;
 	void Shutdown() noexcept override;
 
-  private:
+private:
 	StreamlineDlssFrameState m_frameState;
 	bool m_initialized = false;
 };

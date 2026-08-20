@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Resources/MeshInstanceShaderData.hlsli"
+
 struct SkinnedVertexAttributes
 {
 	float3 Position;

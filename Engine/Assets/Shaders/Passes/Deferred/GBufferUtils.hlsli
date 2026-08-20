@@ -1,6 +1,8 @@
 #ifndef SPARKLE_GBUFFER_UTILS_HLSLI
 #define SPARKLE_GBUFFER_UTILS_HLSLI
 
+#include "Resources/ViewCameraUniformData.hlsli"
+
 #include "Passes/Deferred/GBufferPacking.hlsli"
 #include "Passes/Deferred/SceneDepthUtils.hlsli"
 #include "Geometry/ScreenSpace.hlsli"
@@ -29,12 +31,12 @@ struct GBufferData
 
 float GetSkySceneDepthValue()
 {
-	return SceneDepthUtils::SkyDepth(Camera.FarZ);
+	return SceneDepthUtils::SkyDepth(FarZ);
 }
 
 bool IsSkyPixel(float sceneDepth)
 {
-	return SceneDepthUtils::IsSkyDepth(sceneDepth, Camera.FarZ);
+	return SceneDepthUtils::IsSkyDepth(sceneDepth, FarZ);
 }
 
 float3 DecodeGBufferNormal(float3 normalWorld)
@@ -80,7 +82,7 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 float3 ReconstructGBufferWorldPosition(uint2 pixelCoord, float sceneDepth, float4x4 invView, float4x4 invProjection)
 {
 	const float2 ndc = PixelCenterToUnjitteredNdc(pixelCoord);
-	const float deviceZ = SceneDepthUtils::DeviceZFromLinearDepth(sceneDepth, Camera.NearZ);
+	const float deviceZ = SceneDepthUtils::DeviceZFromLinearDepth(sceneDepth, NearZ);
 	const float4 positionClip = float4(ndc, deviceZ, 1.0f);
 	const float4 positionView = mul(positionClip, invProjection);
 	const float4 positionWorld = mul(float4(positionView.xyz / positionView.w, 1.0f), invView);

@@ -4,14 +4,16 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
-#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/FrameUniformData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/RenderViewLightingData.h"
 
 #include <type_traits>
 
 struct FrameContext;
 struct PassRuntimeContext;
-struct RenderViewData;
+struct RenderView;
 
 struct DirectLightReservoirCommonParameters
 {
@@ -20,8 +22,9 @@ struct DirectLightReservoirCommonParameters
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferSubsurface;
 	ShaderTexture2D<void> SceneDepth;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<FrameUniformData> Frame;
+	ShaderUniform<ViewUniformData> View;
+	ShaderUniform<ViewCameraUniformData> ViewCamera;
 	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderBuffer<void> DirectionalLights;
 	ShaderBuffer<void> PointLights;
@@ -54,8 +57,12 @@ struct DirectLightReservoirCommonParameters
 
 	template <typename TParameters> static void DescribeFrame(ShaderParameterStructBuilder<TParameters>& builder)
 	{
-		builder.Uniform("PerFrame", Member<TParameters>(&DirectLightReservoirCommonParameters::PerFrame), ShaderStageVisibility::Compute);
-		builder.Uniform("PerView", Member<TParameters>(&DirectLightReservoirCommonParameters::PerView), ShaderStageVisibility::Compute);
+		builder.Uniform("Frame", Member<TParameters>(&DirectLightReservoirCommonParameters::Frame), ShaderStageVisibility::Compute);
+		builder.Uniform("View", Member<TParameters>(&DirectLightReservoirCommonParameters::View), ShaderStageVisibility::Compute);
+		builder.Uniform(
+		    "ViewCamera",
+		    Member<TParameters>(&DirectLightReservoirCommonParameters::ViewCamera),
+		    ShaderStageVisibility::Compute);
 	}
 
 	template <typename TParameters> static void DescribeLighting(ShaderParameterStructBuilder<TParameters>& builder)
@@ -82,7 +89,7 @@ struct DirectLightReservoirCommonParameters
 		    ShaderStageVisibility::Compute);
 	}
 
-  private:
+private:
 	template <typename TParameters, typename TField>
 	static constexpr auto Member(TField DirectLightReservoirCommonParameters::* member) noexcept -> TField TParameters::*
 	{
@@ -96,6 +103,6 @@ namespace DirectLightReservoirPassCommon
 	void SetParameters(
 	    DirectLightReservoirCommonParameters& parameters,
 	    const FrameContext& frame,
-	    const RenderViewData& viewData,
+	    const RenderView& view,
 	    const PassRuntimeContext& passRuntimeContext);
 }

@@ -5,7 +5,7 @@
 #include "Resources/History/FrameHistory.h"
 #include "Frame/Presentation/ViewportDisplaySettings.h"
 
-#include "ShaderData/PerFrameConstantBufferData.h"
+#include "ShaderData/FrameUniformData.h"
 #include "RayTracing/Scene/RayTracingPassContext.h"
 
 class RenderHardwareInterface;
@@ -23,7 +23,7 @@ struct PassRuntimeContext
 {
 	RenderHardwareInterface& HardwareInterface;
 	const RenderPassRuntimeCache& PassRuntimes;
-	const PerFrameConstantBufferData& PerFrame;
+	const FrameUniformData& Frame;
 	const ResolvedViewportDisplaySettings& DisplaySettings;
 	FrameHistoryValidity History = {};
 	const GpuMeshCache* Meshes = nullptr;

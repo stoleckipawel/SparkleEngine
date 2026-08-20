@@ -1,6 +1,8 @@
 #ifndef SPARKLE_LIGHT_SAMPLING_HLSLI
 #define SPARKLE_LIGHT_SAMPLING_HLSLI
 
+#include "Resources/FrameUniformData.hlsli"
+
 #include "Common/Math.hlsli"
 #include "Common/Random.hlsli"
 
@@ -64,13 +66,12 @@ namespace LightSampling
 		return pdfA * distanceToLight * distanceToLight / max(abs(cosLight), 1.0e-4f);
 	}
 
-	DirectLightSample AreaDirectLightSample(
-	    float3 positionWorld,
-	    float3 samplePositionWorld,
-	    float3 emitterNormalWorld,
-	    float3 emittedRadiance,
-	    float pdfA,
-	    float rangeCutoff)
+	DirectLightSample AreaDirectLightSample(float3 positionWorld,
+	                                        float3 samplePositionWorld,
+	                                        float3 emitterNormalWorld,
+	                                        float3 emittedRadiance,
+	                                        float pdfA,
+	                                        float rangeCutoff)
 	{
 		const float3 surfaceToLight = samplePositionWorld - positionWorld;
 		const float distanceToLight = length(surfaceToLight);

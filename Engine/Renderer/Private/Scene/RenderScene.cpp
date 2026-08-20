@@ -3,8 +3,8 @@
 
 #include "Meshes/GpuMeshCache.h"
 #include "Scene/Materials/MaterialCache.h"
-#include "SceneData/Preparation/RenderDeformationPreparation.h"
-#include "SceneData/Preparation/RenderObjectPreparation.h"
+#include "Scene/Preparation/RenderDeformationPreparation.h"
+#include "Scene/Preparation/RenderPrimitivePreparation.h"
 #include "SceneData/GpuScene/GpuSceneSlotAllocator.h"
 
 #include <algorithm>
@@ -43,9 +43,9 @@ RenderSceneApplyStatus RenderScene::Apply(const RenderSceneDelta& delta, RenderS
 	return applyStatus;
 }
 
-void RenderScene::BuildMaterials(RenderSceneData& sceneData)
+void RenderScene::BuildMaterials(PreparedRenderScene& preparedScene)
 {
-	m_materialCache->BuildMaterials(m_materials, m_materialRevision, sceneData);
+	m_materialCache->BuildMaterials(m_materials, m_materialRevision, preparedScene);
 }
 
 DirectX::XMFLOAT4X4 RenderScene::ResolvePreviousWorldMatrix(const RenderPrimitive& primitive) const noexcept
@@ -61,43 +61,43 @@ DirectX::XMFLOAT4X4 RenderScene::ResolvePreviousWorldMatrix(const RenderPrimitiv
 	return primitive.Dynamic.WorldMatrix;
 }
 
-std::span<const DirectX::XMFLOAT4X4> RenderScene::FindPreviousJointMatrices(RenderObjectId object) const noexcept
+std::span<const DirectX::XMFLOAT4X4> RenderScene::FindPreviousJointMatrices(RenderObjectId primitiveId) const noexcept
 {
-	const auto history = m_jointMatrixHistory.find(object);
+	const auto history = m_jointMatrixHistory.find(primitiveId);
 	return history != m_jointMatrixHistory.end() ? std::span<const DirectX::XMFLOAT4X4>{history->second}
 	                                             : std::span<const DirectX::XMFLOAT4X4>{};
 }
 
-std::span<const float> RenderScene::FindPreviousMorphWeights(RenderObjectId object) const noexcept
+std::span<const float> RenderScene::FindPreviousMorphWeights(RenderObjectId primitiveId) const noexcept
 {
-	const auto history = m_morphWeightHistory.find(object);
+	const auto history = m_morphWeightHistory.find(primitiveId);
 	return history != m_morphWeightHistory.end() ? std::span<const float>{history->second} : std::span<const float>{};
 }
 
-void RenderScene::CommitContinuity(std::span<const PreparedRenderObject> objects, const RenderDeformationWork& deformation)
+void RenderScene::CommitContinuity(std::span<const PreparedRenderPrimitive> primitives, const RenderDeformationWork& deformation)
 {
-	CommitPreviousWorldTransforms(objects);
+	CommitPreviousWorldTransforms(primitives);
 	CommitJointMatrixContinuity(deformation);
 	CommitMorphWeightContinuity(deformation);
 }
 
-void RenderScene::CommitPreviousWorldTransforms(std::span<const PreparedRenderObject> objects)
+void RenderScene::CommitPreviousWorldTransforms(std::span<const PreparedRenderPrimitive> primitives)
 {
 	m_previousWorldTransforms.clear();
 
 	std::uint32_t requiredSlotCount = 0u;
-	for (const PreparedRenderObject& object : objects)
+	for (const PreparedRenderPrimitive& primitive : primitives)
 	{
-		requiredSlotCount = (std::max) (requiredSlotCount, object.Draw.Source.GpuSceneSlot + 1u);
+		requiredSlotCount = (std::max) (requiredSlotCount, primitive.Draw.Source.GpuSceneSlot + 1u);
 	}
 	m_previousWorldTransforms.resize(requiredSlotCount);
 
-	for (const PreparedRenderObject& object : objects)
+	for (const PreparedRenderPrimitive& primitive : primitives)
 	{
-		if (object.Object.IsValid())
+		if (primitive.Object.IsValid())
 		{
-			m_previousWorldTransforms[object.Draw.Source.GpuSceneSlot] =
-			    PreviousWorldTransform{.Object = object.Object, .WorldMatrix = object.Draw.Transform.WorldMatrix};
+			m_previousWorldTransforms[primitive.Draw.Source.GpuSceneSlot] =
+			    PreviousWorldTransform{.Object = primitive.Object, .WorldMatrix = primitive.Draw.Transform.WorldMatrix};
 		}
 	}
 }
@@ -247,7 +247,6 @@ RenderSceneApplyStatus RenderScene::ApplyValidatedDelta(const RenderSceneDelta& 
 		}
 		m_primitives.clear();
 		ResetContinuity();
-		m_historyReset = true;
 	}
 	if (delta.ResetScene || !delta.Creates.empty() || !delta.Updates.empty() || !delta.Destroys.empty() || delta.InstanceGroups.Published
 	    || delta.Sky.Published)
@@ -275,15 +274,15 @@ bool RenderScene::ValidateDynamic(const RenderSceneDynamicData& dynamic, const R
 	if (!HasStrictlyOrderedDynamicObjects(dynamic.Objects) || !HasStrictlyOrderedJointMatrixRanges(dynamic.JointMatrixRanges)
 	    || !HasStrictlyOrderedMorphWeightRanges(dynamic.MorphWeightRanges))
 	{
-		diagnostic = "Render-frame object updates are unordered or duplicated.";
+		diagnostic = "Render-frame primitive updates are unordered or duplicated.";
 		return false;
 	}
 
-	for (const RenderObjectDynamicData& object : dynamic.Objects)
+	for (const RenderObjectDynamicData& primitive : dynamic.Objects)
 	{
-		if (!object.Object.IsValid() || !IsObjectAvailable(object.Object, delta))
+		if (!primitive.Object.IsValid() || !IsObjectAvailable(primitive.Object, delta))
 		{
-			diagnostic = "Render-frame object update is invalid.";
+			diagnostic = "Render-frame primitive update is invalid.";
 			return false;
 		}
 	}
@@ -294,11 +293,11 @@ bool RenderScene::ValidateDynamic(const RenderSceneDynamicData& dynamic, const R
 		    dynamic.Objects.begin(),
 		    dynamic.Objects.end(),
 		    create.Object,
-		    [](const RenderObjectDynamicData& object, RenderObjectId identity) { return object.Object < identity; });
+		    [](const RenderObjectDynamicData& primitive, RenderObjectId identity) { return primitive.Object < identity; });
 		const bool hasDynamicData = dynamicObject != dynamic.Objects.end() && dynamicObject->Object == create.Object;
 		if (!hasDynamicData)
 		{
-			diagnostic = "Render scene create has no dynamic object data.";
+			diagnostic = "Render scene create has no dynamic primitive data.";
 			return false;
 		}
 	}
@@ -330,12 +329,12 @@ bool RenderScene::ValidateDynamic(const RenderSceneDynamicData& dynamic, const R
 
 void RenderScene::ApplyDynamic(RenderSceneDynamicData&& dynamic) noexcept
 {
-	for (const RenderObjectDynamicData& object : dynamic.Objects)
+	for (const RenderObjectDynamicData& dynamicPrimitive : dynamic.Objects)
 	{
-		RenderPrimitive* primitive = FindMutable(object.Object);
+		RenderPrimitive* primitive = FindMutable(dynamicPrimitive.Object);
 		if (primitive != nullptr)
 		{
-			primitive->Dynamic = object;
+			primitive->Dynamic = dynamicPrimitive;
 		}
 	}
 	m_lights = std::move(dynamic.Lights);
@@ -374,18 +373,18 @@ RenderSceneApplyStatus RenderScene::ValidateDelta(const RenderSceneDelta& delta,
 	}
 	if (!HasOrderedDeltaObjects(delta))
 	{
-		diagnostic = "Render scene object changes are not deterministically ordered.";
+		diagnostic = "Render scene primitive changes are not deterministically ordered.";
 		return RenderSceneApplyStatus::Rejected;
 	}
 	if (HasConflictingDeltaObjects(delta))
 	{
-		diagnostic = "Render scene object changes are duplicated or conflicting.";
+		diagnostic = "Render scene primitive changes are duplicated or conflicting.";
 		return RenderSceneApplyStatus::Rejected;
 	}
 
-	for (RenderObjectId object : delta.Destroys)
+	for (RenderObjectId primitiveId : delta.Destroys)
 	{
-		if (!object.IsValid() || delta.ResetScene || Find(object) == nullptr)
+		if (!primitiveId.IsValid() || delta.ResetScene || Find(primitiveId) == nullptr)
 		{
 			diagnostic = "Render scene destroy is invalid.";
 			return RenderSceneApplyStatus::Rejected;
@@ -413,14 +412,14 @@ RenderSceneApplyStatus RenderScene::ValidateDelta(const RenderSceneDelta& delta,
 
 void RenderScene::ApplyDestroys(const RenderSceneDelta& delta)
 {
-	for (RenderObjectId object : delta.Destroys)
+	for (RenderObjectId primitiveId : delta.Destroys)
 	{
 		const auto primitive = std::lower_bound(
 		    m_primitives.begin(),
 		    m_primitives.end(),
-		    object,
+		    primitiveId,
 		    [](const RenderPrimitive& candidate, RenderObjectId identity) { return candidate.Object < identity; });
-		if (primitive == m_primitives.end() || primitive->Object != object)
+		if (primitive == m_primitives.end() || primitive->Object != primitiveId)
 		{
 			continue;
 		}
@@ -529,14 +528,14 @@ void RenderScene::RetainReferencedGpuMeshes() noexcept
 	m_gpuMeshCache->RetainOnly(handles);
 }
 
-bool RenderScene::IsObjectAvailable(RenderObjectId object, const RenderSceneDelta& delta) const noexcept
+bool RenderScene::IsObjectAvailable(RenderObjectId primitiveId, const RenderSceneDelta& delta) const noexcept
 {
 	const auto created = std::lower_bound(
 	    delta.Creates.begin(),
 	    delta.Creates.end(),
-	    object,
+	    primitiveId,
 	    [](const RenderObjectCreate& create, RenderObjectId identity) { return create.Object < identity; });
-	if (created != delta.Creates.end() && created->Object == object)
+	if (created != delta.Creates.end() && created->Object == primitiveId)
 	{
 		return true;
 	}
@@ -546,8 +545,8 @@ bool RenderScene::IsObjectAvailable(RenderObjectId object, const RenderSceneDelt
 		return false;
 	}
 
-	const bool destroyed = std::binary_search(delta.Destroys.begin(), delta.Destroys.end(), object);
-	return !destroyed && Find(object) != nullptr;
+	const bool destroyed = std::binary_search(delta.Destroys.begin(), delta.Destroys.end(), primitiveId);
+	return !destroyed && Find(primitiveId) != nullptr;
 }
 
 bool RenderScene::HasOrderedDeltaObjects(const RenderSceneDelta& delta) noexcept
@@ -603,11 +602,11 @@ bool RenderScene::HasConflictingDeltaObjects(const RenderSceneDelta& delta) noex
 	return false;
 }
 
-bool RenderScene::HasStrictlyOrderedDynamicObjects(std::span<const RenderObjectDynamicData> objects) noexcept
+bool RenderScene::HasStrictlyOrderedDynamicObjects(std::span<const RenderObjectDynamicData> primitives) noexcept
 {
-	for (std::size_t index = 1u; index < objects.size(); ++index)
+	for (std::size_t index = 1u; index < primitives.size(); ++index)
 	{
-		if (!(objects[index - 1u].Object < objects[index].Object))
+		if (!(primitives[index - 1u].Object < primitives[index].Object))
 		{
 			return false;
 		}
@@ -639,22 +638,17 @@ bool RenderScene::HasStrictlyOrderedMorphWeightRanges(std::span<const RenderMorp
 	return true;
 }
 
-const RenderPrimitive* RenderScene::Find(RenderObjectId object) const noexcept
+const RenderPrimitive* RenderScene::Find(RenderObjectId primitiveId) const noexcept
 {
 	const auto primitive = std::lower_bound(
 	    m_primitives.begin(),
 	    m_primitives.end(),
-	    object,
+	    primitiveId,
 	    [](const RenderPrimitive& candidate, RenderObjectId identity) { return candidate.Object < identity; });
-	return primitive == m_primitives.end() || primitive->Object != object ? nullptr : &*primitive;
+	return primitive == m_primitives.end() || primitive->Object != primitiveId ? nullptr : &*primitive;
 }
 
-RenderPrimitive* RenderScene::FindMutable(RenderObjectId object) noexcept
+RenderPrimitive* RenderScene::FindMutable(RenderObjectId primitiveId) noexcept
 {
-	return const_cast<RenderPrimitive*>(std::as_const(*this).Find(object));
-}
-
-bool RenderScene::ConsumeHistoryReset() noexcept
-{
-	return std::exchange(m_historyReset, false);
+	return const_cast<RenderPrimitive*>(std::as_const(*this).Find(primitiveId));
 }

@@ -12,19 +12,20 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Materials/MaterialData.h"
-#include "SceneData/RenderSceneData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
+#include "View/RenderView.h"
 
 bool GBufferMeshBatchDrawer::BindMaterial(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     GBufferPass::DrawParameterInstance& drawParameters,
     std::uint32_t materialSlot)
 {
-	if (materialSlot >= sceneData.materials.size())
+	if (materialSlot >= preparedScene.materials.size())
 	{
 		return false;
 	}
 
-	const MaterialData& material = sceneData.materials[materialSlot];
+	const MaterialData& material = preparedScene.materials[materialSlot];
 	if (!material.gpuHandle || !material.rasterTextureTable)
 	{
 		return false;
@@ -44,12 +45,12 @@ bool GBufferMeshBatchDrawer::BindMaterial(
 }
 
 const GpuMesh* GBufferMeshBatchDrawer::ResolveBatch(
-    const RenderSceneData& sceneData,
+    const RenderView& view,
     const MeshInstanceBatch& batch,
     const GpuMeshCache& meshes) noexcept
 {
-	if (batch.instanceCount == 0u || batch.firstInstance >= sceneData.rasterMeshInstanceIndices.size()
-	    || batch.instanceCount > sceneData.rasterMeshInstanceIndices.size() - batch.firstInstance)
+	if (batch.instanceCount == 0u || batch.firstInstance >= view.rasterPrimitiveIndices.size()
+	    || batch.instanceCount > view.rasterPrimitiveIndices.size() - batch.firstInstance)
 	{
 		return nullptr;
 	}
@@ -58,16 +59,19 @@ const GpuMesh* GBufferMeshBatchDrawer::ResolveBatch(
 	return gpuMesh != nullptr && gpuMesh->IsValid() ? gpuMesh : nullptr;
 }
 
-bool GBufferMeshBatchDrawer::HasValidSkinning(const RenderSceneData& sceneData, const MeshInstanceBatch& batch) noexcept
+bool GBufferMeshBatchDrawer::HasValidSkinning(
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
+    const MeshInstanceBatch& batch) noexcept
 {
 	for (std::uint32_t instanceOffset = 0u; instanceOffset < batch.instanceCount; ++instanceOffset)
 	{
-		const std::uint32_t drawIndex = sceneData.rasterMeshInstanceIndices[batch.firstInstance + instanceOffset];
-		if (drawIndex >= sceneData.meshInstances.size())
+		const std::uint32_t drawIndex = view.rasterPrimitiveIndices[batch.firstInstance + instanceOffset];
+		if (drawIndex >= preparedScene.primitives.size())
 		{
 			return false;
 		}
-		const MeshDraw& draw = sceneData.meshInstances[drawIndex];
+		const MeshDraw& draw = preparedScene.primitives[drawIndex].Draw;
 		if (draw.Geometry.MeshKind != RenderMeshKind::Skeletal || draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset)
 		{
 			return false;
@@ -91,11 +95,11 @@ void GBufferMeshBatchDrawer::ConfigureDrawParameters(
 }
 
 RasterPassPipelineRuntime GBufferMeshBatchDrawer::ResolveBatchRuntime(
-    const RenderSceneData& sceneData,
+    const PreparedRenderScene& preparedScene,
     const MeshInstanceBatch& batch,
     const RasterPassPipelineRuntime& runtime)
 {
-	const bool useTwoSidedPipeline = sceneData.materials[batch.materialSlot].doubleSided && runtime.TwoSidedPipeline != nullptr;
+	const bool useTwoSidedPipeline = preparedScene.materials[batch.materialSlot].doubleSided && runtime.TwoSidedPipeline != nullptr;
 	return RasterPassPipelineRuntime{
 	    runtime.BindingLayout,
 	    useTwoSidedPipeline ? *runtime.TwoSidedPipeline : runtime.Pipeline,
@@ -140,9 +144,9 @@ void GBufferMeshBatchDrawer::DrawBatch(
     const MeshInstanceBatch& batch,
     std::uint32_t viewModeIndex)
 {
-	const RenderSceneData& sceneData = frame.sceneData;
+	const PreparedRenderScene& preparedScene = frame.preparedScene;
 	if (batch.meshKind == RenderMeshKind::Skeletal
-	    && (!frame.sceneGpuData->Geometry.HasSkinningBuffers() || !HasValidSkinning(sceneData, batch)))
+	    && (!frame.sceneGpuData->Geometry.HasSkinningBuffers() || !HasValidSkinning(preparedScene, frame.view, batch)))
 	{
 		return;
 	}
@@ -151,12 +155,12 @@ void GBufferMeshBatchDrawer::DrawBatch(
 
 	GBufferPass::DrawParameterInstance drawParameters(drawParameterMetadata);
 	ConfigureDrawParameters(passParameters, batch, drawParameters);
-	if (!BindMaterial(sceneData, drawParameters, batch.materialSlot))
+	if (!BindMaterial(preparedScene, drawParameters, batch.materialSlot))
 	{
 		return;
 	}
 
-	const RasterPassPipelineRuntime batchRuntime = ResolveBatchRuntime(sceneData, batch, runtime);
+	const RasterPassPipelineRuntime batchRuntime = ResolveBatchRuntime(preparedScene, batch, runtime);
 	if (!BindBatchPipeline(resources, commandContext, renderHardwareInterface, batchRuntime, drawParameters, gpuMesh, viewModeIndex))
 	{
 		return;
@@ -179,9 +183,9 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 		return;
 	}
 
-	const RenderSceneData& sceneData = frame.sceneData;
-	const std::uint32_t viewModeIndex = passRuntimeContext.PerFrame.ViewModeIndex;
-	for (const MeshInstanceBatch& batch : sceneData.meshInstanceBatches)
+	const PreparedRenderScene& preparedScene = frame.preparedScene;
+	const std::uint32_t viewModeIndex = frame.view.uniform.ViewModeIndex;
+	for (const MeshInstanceBatch& batch : frame.view.meshInstanceBatches)
 	{
 		if (batch.materialClassification != RenderMaterialClassification::Opaque
 		    && batch.materialClassification != RenderMaterialClassification::AlphaTested)
@@ -189,7 +193,7 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 			continue;
 		}
 
-		const GpuMesh* gpuMesh = ResolveBatch(sceneData, batch, *passRuntimeContext.Meshes);
+		const GpuMesh* gpuMesh = ResolveBatch(frame.view, batch, *passRuntimeContext.Meshes);
 		if (gpuMesh == nullptr)
 		{
 			continue;

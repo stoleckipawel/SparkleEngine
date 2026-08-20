@@ -1,4 +1,5 @@
-#include "Resources/ConstantBuffers.hlsli"
+#include "Resources/ViewCameraUniformData.hlsli"
+
 #include "Passes/Deferred/SceneDepthUtils.hlsli"
 
 Texture2D<float> GBufferDeviceZ;
@@ -16,6 +17,5 @@ RWTexture2D<float> SceneDepth;
 	}
 
 	const float deviceZ = GBufferDeviceZ.Load(int3(dispatchThreadId.xy, 0)).r;
-	SceneDepth[dispatchThreadId.xy] =
-	    SceneDepthUtils::LinearizeDeviceZ(deviceZ, Camera.NearZ, Camera.FarZ);
+	SceneDepth[dispatchThreadId.xy] = SceneDepthUtils::LinearizeDeviceZ(deviceZ, NearZ, FarZ);
 }

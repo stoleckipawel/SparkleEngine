@@ -5,7 +5,7 @@
 
 struct ReferenceLightingAccumulationUniformData
 {
-	std::uint32_t SamplesPerFrame = 1u;
+	std::uint32_t SamplesFrame = 1u;
 	std::uint32_t HistoryValid = 0u;
 	std::uint32_t Padding1 = 0u;
 	std::uint32_t Padding2 = 0u;

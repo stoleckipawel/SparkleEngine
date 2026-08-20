@@ -27,9 +27,7 @@ const RenderPassDefinition& ExposurePass::GetDefinition() noexcept
 
 void ExposurePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	parameters->ExposureConstants = BuildExposureUniformData(
-	    context.Runtime.DisplaySettings,
-	    context.Runtime.PerFrame.DeltaTimeSeconds,
-	    context.Runtime.History.Exposure);
+	parameters->ExposureConstants =
+	    BuildExposureUniformData(context.Runtime.DisplaySettings, context.Runtime.Frame.DeltaTimeSeconds, context.Runtime.History.Exposure);
 	ComputePassOperations::Dispatch<ExposurePass>(context, m_runtime, parameters, ComputeDispatchDesc{1u, 1u, 1u});
 }
