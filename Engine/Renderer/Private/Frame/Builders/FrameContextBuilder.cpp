@@ -5,21 +5,20 @@
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Temporal/TemporalFrameState.h"
-#include "Rendering/RenderSceneDynamicData.h"
 #include "Camera/RenderCamera.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "SceneData/Preparation/RenderPreparationGraph.h"
 #include "SceneData/GpuScene/PersistentRenderGpuScene.h"
-#include "SceneData/RenderWorld.h"
+#include "Scene/RenderScene.h"
 #include "SceneData/RenderSceneGpuData.h"
 
 FrameContextBuilder::FrameContextBuilder(
-    const RenderWorld& world,
+    RenderScene& scene,
     const RenderCamera& renderCamera,
     RenderPreparationGraph& renderPreparationGraph,
     PerViewDataBuilder& perViewDataBuilder,
     TemporalDataBuilder& temporalDataBuilder) noexcept :
-    m_world(world),
+    m_scene(scene),
     m_renderCamera(renderCamera),
     m_renderPreparationGraph(renderPreparationGraph),
     m_perViewDataBuilder(perViewDataBuilder),
@@ -50,7 +49,7 @@ RhiRect FrameContextBuilder::BuildSceneScissorRect(RenderViewportExtent sceneExt
 void FrameContextBuilder::Build(FrameContext& frame, const FrameContextBuildRequest& request) const
 {
 	const PerViewCameraConstantBufferData cameraData = m_renderCamera.GetCameraConstantBufferData();
-	m_renderPreparationGraph.Execute(m_world, request.Dynamic, m_renderCamera.GetFrustum(), frame.sceneData);
+	m_renderPreparationGraph.Execute(m_scene, m_renderCamera.GetFrustum(), cameraData.Position, frame.sceneData);
 
 	if (request.RayTracingScene != nullptr)
 	{

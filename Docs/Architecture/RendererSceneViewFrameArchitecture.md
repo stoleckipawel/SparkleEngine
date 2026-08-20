@@ -1091,6 +1091,8 @@ Suggested title: `Renderer: establish persistent render scene authority`.
 
 This CL owns complete deletion of `RenderWorld` and `RenderProxy`, not the mixed frame product. Phase 3 owns the one-shot `RenderSceneData`/view split. Keeping the current carrier until then avoids both a temporary bridge and two simultaneous scene-frame representations.
 
+Phase 2 checkpoint: runtime source now has one `RenderScene` owned by `RendererHost`, one `RenderPrimitive` record, and scene-owned material, light, dynamic-deformation, stable-slot, revision, accepted-sequence, dirty, and continuity state under `Renderer/Private/Scene`. `RenderSceneData` deliberately remains the only current frame carrier; input acceptance and preparation remain on their Phase 3 paths until their atomic replacement.
+
 ### Phase 3 - Atomically split the prepared scene, view, view state, and shader ABI
 
 #### Implementation prompt

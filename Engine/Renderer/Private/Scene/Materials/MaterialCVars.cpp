@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "SceneData/MaterialCVars.h"
+#include "Scene/Materials/MaterialCVars.h"
 
 ConsoleVariable<MaterialBindingMode> CVarRendererMaterialBindingMode(
     "r.Material.BindingMode",

@@ -11,7 +11,7 @@
 #include "Passes/Core/ShaderPassOperations.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "SceneData/MaterialData.h"
+#include "Scene/Materials/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
 
 bool GBufferMeshBatchDrawer::BindMaterial(

@@ -3,12 +3,12 @@
 #include "MaterialCache.h"
 
 #include "Scene/Materials/MaterialDesc.h"
-#include "SceneData/MaterialData.h"
+#include "Scene/Materials/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "SceneData/MaterialTextureTableCapability.h"
+#include "Scene/Materials/MaterialTextureTableCapability.h"
 #include "Textures/TextureCache.h"
 #include "Textures/RendererTexture.h"
 
@@ -25,7 +25,8 @@ struct MaterialCache::RebuildOutput final
 };
 
 MaterialCache::MaterialCache(TextureCache& textureCache, RenderHardwareInterface& renderHardwareInterface) noexcept :
-    m_textureCache(textureCache), m_renderHardwareInterface(renderHardwareInterface)
+    m_textureCache(textureCache),
+    m_renderHardwareInterface(renderHardwareInterface)
 {
 }
 
@@ -51,15 +52,10 @@ void MaterialCache::Rebuild(const RenderMaterialTable& materials, std::uint64_t 
 {
 	const std::uint64_t nextGeneration = GetNextGeneration();
 	RebuildOutput output;
-	const RendererTexture* tableAnchor =
-	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(nullptr, DefaultTexture::White);
+	const RendererTexture* tableAnchor = m_textureCache.ResolveTextureReferenceOrSemanticDefault(nullptr, DefaultTexture::White);
 	if (tableAnchor == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_materialCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Material texture table anchor was not loaded.");
+		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Material texture table anchor was not loaded.");
 	}
 	output.SceneTextureTable.GetOrAddTextureIndex(tableAnchor->ShaderResourceView);
 
@@ -85,23 +81,15 @@ void MaterialCache::Rebuild(const RenderMaterialTable& materials, std::uint64_t 
 	m_textureCache.CommitBindingRevision(textureRevision);
 }
 
-void MaterialCache::BuildMaterial(
-    const MaterialDesc& desc,
-    std::uint32_t materialIndex,
-    std::uint64_t generation,
-    RebuildOutput& output)
+void MaterialCache::BuildMaterial(const MaterialDesc& desc, std::uint32_t materialIndex, std::uint64_t generation, RebuildOutput& output)
 {
 	MaterialData material = MaterialData::FromDesc(desc);
 	material.gpuHandle = MaterialGpuHandle{.Index = materialIndex, .Generation = generation};
 
 	const std::array<const RendererTexture*, MaterialTextureSlots::Count> textures{
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::Diffuse), DefaultTexture::White),
-	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
-	        desc.FindTextureReference(TextureGroup::NormalMap),
-	        DefaultTexture::Normal),
-	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
-	        desc.FindTextureReference(TextureGroup::Roughness),
-	        DefaultTexture::White),
+	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::NormalMap), DefaultTexture::Normal),
+	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::Roughness), DefaultTexture::White),
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::Metallic), DefaultTexture::Black),
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
 	        desc.FindTextureReference(TextureGroup::AmbientOcclusion),
@@ -120,11 +108,7 @@ void MaterialCache::BuildMaterial(
 	        .DescriptorCount = MaterialTextureSlots::Count});
 	if (!textureBindingSet || !*textureBindingSet)
 	{
-		Diagnostics::Fatal(
-		    g_materialCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Raster material texture-table allocation failed.");
+		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Raster material texture-table allocation failed.");
 	}
 
 	for (std::uint32_t slot = 0u; slot < textures.size(); ++slot)
@@ -132,21 +116,13 @@ void MaterialCache::BuildMaterial(
 		const RendererTexture* texture = textures[slot];
 		if (texture == nullptr)
 		{
-			Diagnostics::Fatal(
-			    g_materialCacheLogger,
-			    __FILE__,
-			    __LINE__,
-			    "A semantic material texture was not loaded.");
+			Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "A semantic material texture was not loaded.");
 		}
 
 		const RhiResourceViewHandle textureView = texture->ShaderResourceView;
 		if (!textureBindingSet->WriteResourceView(slot, textureView))
 		{
-			Diagnostics::Fatal(
-			    g_materialCacheLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Raster material texture descriptor write failed.");
+			Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Raster material texture descriptor write failed.");
 		}
 
 		material.materialTextureIndices[slot] = output.SceneTextureTable.GetOrAddTextureIndex(textureView);
@@ -155,11 +131,7 @@ void MaterialCache::BuildMaterial(
 	material.rasterTextureTable = textureBindingSet->GetTableBinding(0u);
 	if (!material.rasterTextureTable)
 	{
-		Diagnostics::Fatal(
-		    g_materialCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Raster material texture table has no GPU binding.");
+		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Raster material texture table has no GPU binding.");
 	}
 
 	output.RasterTextureTables.push_back(std::move(textureBindingSet));
@@ -182,11 +154,7 @@ void MaterialCache::PublishMaterialTextureTable(RenderSceneData& sceneData) cons
 	const RhiDescriptorTableBinding binding = m_materialTextureTable.GetTableBinding();
 	if (!m_materialTextureTable.IsValid() || !binding || descriptorCount > MaterialTextureTableFixedCapacity)
 	{
-		Diagnostics::Fatal(
-		    g_materialCacheLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Material texture table publication contract is incomplete.");
+		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Material texture table publication contract is incomplete.");
 	}
 	sceneData.materialTextureTable =
 	    ResolvedMaterialTextureTable{.Binding = binding, .DescriptorCount = descriptorCount, .Generation = m_generation};

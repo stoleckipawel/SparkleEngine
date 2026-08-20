@@ -32,10 +32,9 @@
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "SceneData/Preparation/RenderPreparationGraph.h"
-#include "SceneData/Caching/MaterialCache.h"
 #include "SceneData/GpuScene/PersistentRenderGpuScene.h"
 #include "SceneData/Input/RenderInputConsumer.h"
-#include "SceneData/RenderWorld.h"
+#include "Scene/RenderScene.h"
 #include "Meshes/GpuMeshCache.h"
 #include "SceneData/RenderSceneGpuData.h"
 #include "Textures/RendererTexture.h"
@@ -47,7 +46,7 @@ static const auto g_framePipelineLogger = Logging::GetOrCreateLogger("Renderer.F
 FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPackets) noexcept :
     m_rendererHost(&rendererHost),
     m_frameContextBuilder(
-        rendererHost.GetRenderWorld(),
+        rendererHost.GetRenderScene(),
         rendererHost.GetRenderCamera(),
         rendererHost.GetRenderPreparationGraph(),
         rendererHost.GetPerViewDataBuilder(),
@@ -67,7 +66,7 @@ FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPack
 
 void FramePipeline::InitializeSceneData()
 {
-	m_renderInputConsumer = std::make_unique<RenderInputConsumer>(m_rendererHost->GetRenderWorld());
+	m_renderInputConsumer = std::make_unique<RenderInputConsumer>(m_rendererHost->GetRenderScene());
 
 	m_gpuScene = std::make_unique<PersistentRenderGpuScene>(
 	    m_rendererHost->GetRenderHardwareInterface().GetResourceService(),
@@ -262,7 +261,7 @@ void FramePipeline::PollFrameServices() noexcept
 	m_rendererHost->GetRenderPassRuntimeCache().PollRetiredGenerations();
 	m_rendererHost->GetTextureCache().PollResidency();
 	m_rendererHost->GetGpuMeshCache().PollResidency();
-	m_rendererHost->GetRenderWorld().PromoteResidentGpuMeshes();
+	m_rendererHost->GetRenderScene().PromoteResidentGpuMeshes();
 }
 
 void FramePipeline::ConsumeFrameSubmission() noexcept
@@ -386,7 +385,7 @@ void FramePipeline::UploadPendingSceneTextures(RenderDeviceServices& deviceServi
 	}
 
 	const std::vector<RhiResourceHandle> uploadedResources =
-	    textureCache.LoadSceneTextures(m_rendererHost->GetRenderWorld().GetTextures(), *uploadCommandList);
+	    textureCache.LoadSceneTextures(m_rendererHost->GetRenderScene().GetTextures(), *uploadCommandList);
 	if (useCopyQueue)
 	{
 		const RhiSubmissionToken uploadToken = deviceServices.SubmitCommandRecordingLease(std::move(uploadLease));
@@ -496,12 +495,11 @@ void FramePipeline::PlayUiPacket(const UiRenderPacket& packet) noexcept
 
 void FramePipeline::RecordFrame() noexcept
 {
-	const RenderSceneDynamicData& dynamic = m_renderInputConsumer->GetSceneDynamicData();
 	const RenderViewInput& view = m_renderInputConsumer->GetViewInput();
 	RenderRayTracingScene* activeRayTracingScene = m_rendererHost->GetRenderRayTracingScene();
 
 	ApplySubmissionHistoryInvalidation(view);
-	FrameContext& frame = PrepareFrameContext(dynamic, activeRayTracingScene);
+	FrameContext& frame = PrepareFrameContext(activeRayTracingScene);
 	UpdateLightingHistory(frame);
 	SetupImageProviderFrame(frame);
 	BindRayTracingScene(frame, activeRayTracingScene);
@@ -512,7 +510,7 @@ void FramePipeline::RecordFrame() noexcept
 
 void FramePipeline::ApplySubmissionHistoryInvalidation(const RenderViewInput& view) noexcept
 {
-	const bool sceneChanged = m_rendererHost->GetRenderWorld().ConsumeHistoryReset();
+	const bool sceneChanged = m_rendererHost->GetRenderScene().ConsumeHistoryReset();
 	if (sceneChanged || view.CameraCut || view.CameraTeleported)
 	{
 		ResetTemporalState(
@@ -522,14 +520,13 @@ void FramePipeline::ApplySubmissionHistoryInvalidation(const RenderViewInput& vi
 	}
 }
 
-FrameContext& FramePipeline::PrepareFrameContext(const RenderSceneDynamicData& dynamic, RenderRayTracingScene* activeRayTracingScene)
+FrameContext& FramePipeline::PrepareFrameContext(RenderRayTracingScene* activeRayTracingScene)
 {
 	const std::uint32_t frameIndex = m_rendererHost->GetRenderHardwareInterface().GetCurrentFrameIndex();
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[frameIndex];
 	m_frameContextBuilder.Build(
 	    *frameSlot,
 	    FrameContextBuildRequest{
-	        .Dynamic = dynamic,
 	        .GpuScene = *m_gpuScene,
 	        .FrameId = m_renderInputConsumer->GetFrameId(),
 	        .FrameIndex = frameIndex,

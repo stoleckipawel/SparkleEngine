@@ -36,7 +36,7 @@ The design extends the existing owner instead of adding a second renderer path:
 - [`Frame/Deferred/GBuffer.cpp`](../../Engine/Renderer/Private/Frame/Deferred/GBuffer.cpp) creates one `GBufferRenderTargets` set and selects either `AddRasterizedGBufferPass` or `AddRaytracedGBufferPass`. Both branches meet before sky motion vectors and device-depth linearization.
 - [`GBufferFormats.h`](../../Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h) defines the shared BaseColor, Normal, Material, Emissive, Subsurface, DeviceZ, and MotionVector products.
 - [`GBufferPS.hlsl`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl) and [`RaytracedGBuffer.hlsl`](../../Engine/Assets/Shaders/Passes/RayTracing/RaytracedGBuffer.hlsl) already share [`GBufferPacking.hlsli`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferPacking.hlsli).
-- [`MaterialCache.cpp`](../../Engine/Renderer/Private/SceneData/Caching/MaterialCache.cpp) already resolves semantic defaults, per-material raster tables, and one scene-wide material texture table. The latter must become a scene-material capability, not remain described as ray-tracing-only.
+- [`MaterialCache.cpp`](../../Engine/Renderer/Private/Scene/Materials/MaterialCache.cpp) resolves semantic defaults, per-material raster tables, and one scene-wide material texture table beneath the persistent render-scene authority. The latter must remain a scene-material capability, not be described as ray-tracing-only.
 - [`RayTracingMaterialHit.hlsli`](../../Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli) is the central base-material reconstruction path for arbitrary ray hits. [`PathLighting.hlsli`](../../Engine/Assets/Shaders/RayTracing/PathLighting.hlsli) is one current secondary-hit consumer.
 - The frame graph already derives unordered-access allocation and barriers from declared use. Raster depth is shader-readable on both backends. No new public RHI operation is required by the selected primary path.
 - Graphics pipeline blending is currently fixed off in both backends. Adding blend state would not solve the semantic problem: GBuffer alpha components contain independent material data, including receiver alpha and dielectric F0, so one hardware source-alpha blend cannot express the required per-field preservation and normalized-normal composition.
@@ -113,7 +113,7 @@ One receiver bit, `ReceivesDecals`, is added to mesh-instance data and defaults 
 
 ### Runtime identity and lifetime
 
-Decals use the existing `RenderObjectId`, world transform, visibility, create/update/destroy sequence, and render-world generation. Evolve `RenderObjectStaticData` into an explicit mesh-or-decal payload rather than creating a second object delta protocol. An entity that attempts to publish both payload kinds fails validation until a real combined-object use case exists.
+Decals use the existing `RenderObjectId`, world transform, visibility, create/update/destroy sequence, and render-scene generation. Evolve `RenderObjectStaticData` into an explicit mesh-or-decal payload rather than creating a second object delta protocol. An entity that attempts to publish both payload kinds fails validation until a real combined-object use case exists.
 
 The Renderer owns:
 

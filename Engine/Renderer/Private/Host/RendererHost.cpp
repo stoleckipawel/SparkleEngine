@@ -18,9 +18,8 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "RHI/Public/CVars/RHICVars.h"
-#include "SceneData/RenderWorld.h"
+#include "Scene/RenderScene.h"
 #include "SceneData/Preparation/RenderPreparationGraph.h"
-#include "SceneData/Caching/MaterialCache.h"
 #include "Textures/TextureCache.h"
 #include "Window/Window.h"
 
@@ -84,7 +83,7 @@ std::uint64_t RendererHost::GetShaderPackageGeneration() const noexcept
 
 MeshDiagnosticsSnapshot RendererHost::CaptureMeshDiagnostics() const
 {
-	return MeshDiagnosticsCollector::Capture(*m_renderWorld, m_gpuMeshCache.get());
+	return MeshDiagnosticsCollector::Capture(*m_renderScene, m_gpuMeshCache.get());
 }
 
 TextureDiagnosticsSnapshot RendererHost::CaptureTextureDiagnostics(const TexturePreviewHandleResolver& resolvePreviewTexture) const
@@ -185,16 +184,15 @@ void RendererHost::InitializeSceneRuntime(TaskExecutor& taskExecutor, TaskScope&
 	    GetDeviceServices(),
 	    taskExecutor,
 	    applicationTaskScope);
-	m_materialCache = std::make_unique<MaterialCache>(*m_textureCache, GetRenderHardwareInterface());
-	m_renderPreparationGraph = std::make_unique<RenderPreparationGraph>(taskExecutor, *m_materialCache, *m_gpuMeshCache, *m_textureCache);
+	m_renderPreparationGraph = std::make_unique<RenderPreparationGraph>(taskExecutor, *m_gpuMeshCache, *m_textureCache);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 
 	m_renderCamera = std::make_unique<RenderCamera>();
-	m_renderWorld = std::make_unique<RenderWorld>(&GetDeviceServices(), *m_gpuMeshCache);
+	m_renderScene = std::make_unique<RenderScene>(&GetDeviceServices(), *m_gpuMeshCache, *m_textureCache, GetRenderHardwareInterface());
 }
 
 MeshPreviewGeometry RendererHost::CaptureMeshPreview(std::uintptr_t meshRuntimeId) const
 {
-	return MeshDiagnosticsCollector::CapturePreview(*m_renderWorld, meshRuntimeId);
+	return MeshDiagnosticsCollector::CapturePreview(*m_renderScene, meshRuntimeId);
 }

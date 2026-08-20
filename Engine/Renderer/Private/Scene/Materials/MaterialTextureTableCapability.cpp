@@ -1,11 +1,11 @@
 #include "PCH.h"
-#include "SceneData/MaterialTextureTableCapability.h"
+#include "Scene/Materials/MaterialTextureTableCapability.h"
 
 #include <algorithm>
 
 class MaterialTextureTableCapacity final
 {
-  public:
+public:
 	static std::uint32_t ResolveShaderResourceDescriptorCapacity(const RhiBindingLimits& limits) noexcept
 	{
 		std::uint32_t capacity = limits.MaxShaderResourceDescriptors;
@@ -17,31 +17,26 @@ class MaterialTextureTableCapacity final
 	}
 };
 
-MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(
-    const RhiCapabilities& capabilities) noexcept
+MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(const RhiCapabilities& capabilities) noexcept
 {
 	if (capabilities.BackendApi == ERhiBackendApi::Unknown || capabilities.DescriptorModel == ERhiDescriptorModel::Unknown)
 	{
-		return MaterialTextureTableCapabilityReport{
-		    .StatusReason = "backend-descriptor-model-unknown"};
+		return MaterialTextureTableCapabilityReport{.StatusReason = "backend-descriptor-model-unknown"};
 	}
 	if (!capabilities.DescriptorIndexing.SupportsSampledImageArrayNonUniformIndexing)
 	{
-		return MaterialTextureTableCapabilityReport{
-		    .StatusReason = "sampled-image-array-non-uniform-indexing-unavailable"};
+		return MaterialTextureTableCapabilityReport{.StatusReason = "sampled-image-array-non-uniform-indexing-unavailable"};
 	}
 	if (!capabilities.DescriptorIndexing.SupportsPartiallyBoundDescriptorArrays)
 	{
-		return MaterialTextureTableCapabilityReport{
-		    .StatusReason = "partially-bound-descriptor-arrays-unavailable"};
+		return MaterialTextureTableCapabilityReport{.StatusReason = "partially-bound-descriptor-arrays-unavailable"};
 	}
 
 	const std::uint32_t shaderResourceCapacity =
 	    MaterialTextureTableCapacity::ResolveShaderResourceDescriptorCapacity(capabilities.BindingLimits);
 	if (shaderResourceCapacity == 0)
 	{
-		return MaterialTextureTableCapabilityReport{
-		    .StatusReason = "shader-resource-descriptor-limit-unavailable"};
+		return MaterialTextureTableCapabilityReport{.StatusReason = "shader-resource-descriptor-limit-unavailable"};
 	}
 
 	if (shaderResourceCapacity < MaterialTextureTableFixedCapacity)

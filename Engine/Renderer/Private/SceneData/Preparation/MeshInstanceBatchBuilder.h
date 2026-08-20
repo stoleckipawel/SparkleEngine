@@ -3,7 +3,7 @@
 #include "Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Rendering/RenderObjectId.h"
-#include "SceneData/MaterialData.h"
+#include "Scene/Materials/MaterialData.h"
 #include "SceneData/MeshInstanceBatch.h"
 #include "SceneData/Preparation/RenderObjectPreparation.h"
 

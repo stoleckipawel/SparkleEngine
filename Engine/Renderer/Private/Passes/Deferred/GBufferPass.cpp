@@ -15,7 +15,7 @@
 #include "Passes/Core/RasterPassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "SceneData/RenderSceneData.h"
-#include "SceneData/MaterialData.h"
+#include "Scene/Materials/MaterialData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Meshes/GpuMesh.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
@@ -33,158 +33,53 @@
 
 static const auto g_gbufferPassLogger = Logging::GetOrCreateLogger("Renderer.GBufferPass");
 
-void GBufferPassParameters::Describe(
-    ShaderParameterStructBuilder<GBufferPassParameters>& builder)
+void GBufferPassParameters::Describe(ShaderParameterStructBuilder<GBufferPassParameters>& builder)
 {
-	builder.RenderTarget(
-	    "BaseColor",
-	    &GBufferPassParameters::BaseColor,
-	    ShaderStageVisibility::AllGraphics);
-	builder.RenderTarget(
-	    "Normal",
-	    &GBufferPassParameters::Normal,
-	    ShaderStageVisibility::AllGraphics);
-	builder.RenderTarget(
-	    "Material",
-	    &GBufferPassParameters::Material,
-	    ShaderStageVisibility::AllGraphics);
-	builder.RenderTarget(
-	    "Emissive",
-	    &GBufferPassParameters::Emissive,
-	    ShaderStageVisibility::AllGraphics);
-	builder.RenderTarget(
-	    "Subsurface",
-	    &GBufferPassParameters::Subsurface,
-	    ShaderStageVisibility::AllGraphics);
-	builder.RenderTarget(
-	    "MotionVector",
-	    &GBufferPassParameters::MotionVector,
-	    ShaderStageVisibility::AllGraphics);
-	builder.DepthTarget(
-	    "DeviceZ",
-	    &GBufferPassParameters::DeviceZ,
-	    ShaderStageVisibility::AllGraphics);
-	builder.Uniform(
-	    "PerFrame",
-	    &GBufferPassParameters::PerFrame,
-	    ShaderStageVisibility::Pixel);
-	builder.Uniform(
-	    "PerView",
-	    &GBufferPassParameters::PerView,
-	    ShaderStageVisibility::Vertex);
-	builder.Uniform(
-	    "PerTemporal",
-	    &GBufferPassParameters::PerTemporal,
-	    ShaderStageVisibility::Vertex |
-	        ShaderStageVisibility::Pixel);
-	builder.Sampler(
-	    "SamplerAniso16xWrap",
-	    &GBufferPassParameters::SamplerAniso16xWrap,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadBuffer(
-	    "MeshInstances",
-	    &GBufferPassParameters::MeshInstances,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "MeshInstanceSlots",
-	    &GBufferPassParameters::MeshInstanceSlots,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "JointMatrices",
-	    &GBufferPassParameters::JointMatrices,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "PreviousJointMatrices",
-	    &GBufferPassParameters::PreviousJointMatrices,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "MorphWeights",
-	    &GBufferPassParameters::MorphWeights,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "PreviousMorphWeights",
-	    &GBufferPassParameters::PreviousMorphWeights,
-	    ShaderStageVisibility::Vertex);
+	builder.RenderTarget("BaseColor", &GBufferPassParameters::BaseColor, ShaderStageVisibility::AllGraphics);
+	builder.RenderTarget("Normal", &GBufferPassParameters::Normal, ShaderStageVisibility::AllGraphics);
+	builder.RenderTarget("Material", &GBufferPassParameters::Material, ShaderStageVisibility::AllGraphics);
+	builder.RenderTarget("Emissive", &GBufferPassParameters::Emissive, ShaderStageVisibility::AllGraphics);
+	builder.RenderTarget("Subsurface", &GBufferPassParameters::Subsurface, ShaderStageVisibility::AllGraphics);
+	builder.RenderTarget("MotionVector", &GBufferPassParameters::MotionVector, ShaderStageVisibility::AllGraphics);
+	builder.DepthTarget("DeviceZ", &GBufferPassParameters::DeviceZ, ShaderStageVisibility::AllGraphics);
+	builder.Uniform("PerFrame", &GBufferPassParameters::PerFrame, ShaderStageVisibility::Pixel);
+	builder.Uniform("PerView", &GBufferPassParameters::PerView, ShaderStageVisibility::Vertex);
+	builder.Uniform("PerTemporal", &GBufferPassParameters::PerTemporal, ShaderStageVisibility::Vertex | ShaderStageVisibility::Pixel);
+	builder.Sampler("SamplerAniso16xWrap", &GBufferPassParameters::SamplerAniso16xWrap, ShaderStageVisibility::Pixel);
+	builder.ReadBuffer("MeshInstances", &GBufferPassParameters::MeshInstances, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("MeshInstanceSlots", &GBufferPassParameters::MeshInstanceSlots, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("JointMatrices", &GBufferPassParameters::JointMatrices, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("PreviousJointMatrices", &GBufferPassParameters::PreviousJointMatrices, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("MorphWeights", &GBufferPassParameters::MorphWeights, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("PreviousMorphWeights", &GBufferPassParameters::PreviousMorphWeights, ShaderStageVisibility::Vertex);
 }
 
-void GBufferDrawParameters::Describe(
-    ShaderParameterStructBuilder<GBufferDrawParameters>& builder)
+void GBufferDrawParameters::Describe(ShaderParameterStructBuilder<GBufferDrawParameters>& builder)
 {
-	builder.Uniform(
-	    "MeshInstanceDraw",
-	    &GBufferDrawParameters::MeshInstanceDraw,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "MeshInstances",
-	    &GBufferDrawParameters::MeshInstances,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "MeshInstanceSlots",
-	    &GBufferDrawParameters::MeshInstanceSlots,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "SkinInfluences",
-	    &GBufferDrawParameters::SkinInfluences,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "MorphTargetDeltas",
-	    &GBufferDrawParameters::MorphTargetDeltas,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "JointMatrices",
-	    &GBufferDrawParameters::JointMatrices,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "PreviousJointMatrices",
-	    &GBufferDrawParameters::PreviousJointMatrices,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "MorphWeights",
-	    &GBufferDrawParameters::MorphWeights,
-	    ShaderStageVisibility::Vertex);
-	builder.ReadBuffer(
-	    "PreviousMorphWeights",
-	    &GBufferDrawParameters::PreviousMorphWeights,
-	    ShaderStageVisibility::Vertex);
-	builder.Uniform(
-	    "PerObjectPS",
-	    &GBufferDrawParameters::PerObjectPS,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadTexture(
-	    "TextureBaseColor",
-	    &GBufferDrawParameters::TextureBaseColor,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadTexture(
-	    "TextureNormal",
-	    &GBufferDrawParameters::TextureNormal,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadTexture(
-	    "TextureRoughness",
-	    &GBufferDrawParameters::TextureRoughness,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadTexture(
-	    "TextureMetallic",
-	    &GBufferDrawParameters::TextureMetallic,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadTexture(
-	    "TextureOcclusion",
-	    &GBufferDrawParameters::TextureOcclusion,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadTexture(
-	    "TextureEmissive",
-	    &GBufferDrawParameters::TextureEmissive,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadTexture(
-	    "TextureSubsurfaceColor",
-	    &GBufferDrawParameters::TextureSubsurfaceColor,
-	    ShaderStageVisibility::Pixel);
-	builder.ReadTexture(
-	    "TextureSubsurfaceStrength",
-	    &GBufferDrawParameters::TextureSubsurfaceStrength,
-	    ShaderStageVisibility::Pixel);
+	builder.Uniform("MeshInstanceDraw", &GBufferDrawParameters::MeshInstanceDraw, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("MeshInstances", &GBufferDrawParameters::MeshInstances, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("MeshInstanceSlots", &GBufferDrawParameters::MeshInstanceSlots, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("SkinInfluences", &GBufferDrawParameters::SkinInfluences, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("MorphTargetDeltas", &GBufferDrawParameters::MorphTargetDeltas, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("JointMatrices", &GBufferDrawParameters::JointMatrices, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("PreviousJointMatrices", &GBufferDrawParameters::PreviousJointMatrices, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("MorphWeights", &GBufferDrawParameters::MorphWeights, ShaderStageVisibility::Vertex);
+	builder.ReadBuffer("PreviousMorphWeights", &GBufferDrawParameters::PreviousMorphWeights, ShaderStageVisibility::Vertex);
+	builder.Uniform("PerObjectPS", &GBufferDrawParameters::PerObjectPS, ShaderStageVisibility::Pixel);
+	builder.ReadTexture("TextureBaseColor", &GBufferDrawParameters::TextureBaseColor, ShaderStageVisibility::Pixel);
+	builder.ReadTexture("TextureNormal", &GBufferDrawParameters::TextureNormal, ShaderStageVisibility::Pixel);
+	builder.ReadTexture("TextureRoughness", &GBufferDrawParameters::TextureRoughness, ShaderStageVisibility::Pixel);
+	builder.ReadTexture("TextureMetallic", &GBufferDrawParameters::TextureMetallic, ShaderStageVisibility::Pixel);
+	builder.ReadTexture("TextureOcclusion", &GBufferDrawParameters::TextureOcclusion, ShaderStageVisibility::Pixel);
+	builder.ReadTexture("TextureEmissive", &GBufferDrawParameters::TextureEmissive, ShaderStageVisibility::Pixel);
+	builder.ReadTexture("TextureSubsurfaceColor", &GBufferDrawParameters::TextureSubsurfaceColor, ShaderStageVisibility::Pixel);
+	builder.ReadTexture("TextureSubsurfaceStrength", &GBufferDrawParameters::TextureSubsurfaceStrength, ShaderStageVisibility::Pixel);
 }
 
-GBufferPass::GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+GBufferPass::GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const GBufferPass::ParameterMetadata& GBufferPass::GetParameterMetadata() noexcept
 {
@@ -222,11 +117,11 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 	                .DepthFunc = DepthConvention::GetDepthComparisonLessEqualFunc()},
 	        .RenderTargetFormats =
 	            {GBufferFormats::BaseColor,
-	             GBufferFormats::Normal,
-	             GBufferFormats::Material,
-	             GBufferFormats::Emissive,
-	             GBufferFormats::Subsurface,
-	             GBufferFormats::MotionVector},
+	                GBufferFormats::Normal,
+	                GBufferFormats::Material,
+	                GBufferFormats::Emissive,
+	                GBufferFormats::Subsurface,
+	                GBufferFormats::MotionVector},
 	        .RenderTargetCount = 6,
 	        .DepthStencilFormat = GBufferFormats::RasterizedDeviceZ}};
 	return definition;
@@ -305,5 +200,12 @@ void GBufferPass::DrawOpaqueMeshes(
     const Parameters& parameters,
     const PassRuntimeContext& passRuntimeContext) const
 {
-	GBufferMeshBatchDrawer::DrawOpaqueMeshes(resources, commandContext, frame, parameters, passRuntimeContext, m_runtime, GetDrawParameterMetadata());
+	GBufferMeshBatchDrawer::DrawOpaqueMeshes(
+	    resources,
+	    commandContext,
+	    frame,
+	    parameters,
+	    passRuntimeContext,
+	    m_runtime,
+	    GetDrawParameterMetadata());
 }

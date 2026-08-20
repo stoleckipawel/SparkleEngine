@@ -5,7 +5,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
-#include "SceneData/MaterialTextureTableCapability.h"
+#include "Scene/Materials/MaterialTextureTableCapability.h"
 #include "ShaderData/RenderConstantBufferData.h"
 
 #include <cstdint>
@@ -58,14 +58,12 @@ struct RaytracedGBufferPassParameters
 	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
 	ShaderSamplerSet MaterialTextureSampler;
 
-	static void Describe(
-	    ShaderParameterStructBuilder<
-	        RaytracedGBufferPassParameters>& builder);
+	static void Describe(ShaderParameterStructBuilder<RaytracedGBufferPassParameters>& builder);
 };
 
 class RaytracedGBufferPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "RaytracedGBuffer";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -80,7 +78,7 @@ class RaytracedGBufferPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
-  private:
+private:
 	void SetParameters(
 	    ParameterInstance& parameters,
 	    const FrameContext& frame,

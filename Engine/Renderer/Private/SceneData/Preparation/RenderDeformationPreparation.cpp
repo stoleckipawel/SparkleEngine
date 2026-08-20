@@ -2,20 +2,18 @@
 
 #include "SceneData/Preparation/RenderDeformationPreparation.h"
 
+#include "Scene/RenderScene.h"
 #include "SceneData/Preparation/RenderObjectPreparation.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 
 #include <algorithm>
 
-void RenderDeformationPreparation::Prepare(
-    const RenderSceneDynamicData& dynamic,
-    std::span<ResolvedRenderObject> objects,
-    RenderDeformationWork& work)
+void RenderDeformationPreparation::Prepare(const RenderScene& scene, std::span<ResolvedRenderObject> objects, RenderDeformationWork& work)
 {
 	ResetWork(work);
 	ResetObjectOutputs(objects);
-	PrepareJointMatrices(dynamic.JointMatrixRanges, dynamic.JointMatrices, objects, work);
-	PrepareMorphWeights(dynamic.MorphWeightRanges, dynamic.MorphWeights, objects, work);
+	PrepareJointMatrices(scene, scene.GetJointMatrixRanges(), scene.GetJointMatrices(), objects, work);
+	PrepareMorphWeights(scene, scene.GetMorphWeightRanges(), scene.GetMorphWeights(), objects, work);
 }
 
 void RenderDeformationPreparation::ResetWork(RenderDeformationWork& work) noexcept
@@ -38,6 +36,7 @@ void RenderDeformationPreparation::ResetObjectOutputs(std::span<ResolvedRenderOb
 }
 
 void RenderDeformationPreparation::PrepareJointMatrices(
+    const RenderScene& scene,
     std::span<const RenderJointMatrixRange> jointMatrixRanges,
     std::span<const DirectX::XMFLOAT4X4> jointMatrices,
     std::span<ResolvedRenderObject> objects,
@@ -60,11 +59,8 @@ void RenderDeformationPreparation::PrepareJointMatrices(
 
 		ResolvedRenderObject& target = objects[objectIndex];
 		const std::span<const DirectX::XMFLOAT4X4> currentMatrices = jointMatrices.subspan(range.JointMatrixOffset, range.JointMatrixCount);
-		const auto previous = m_jointMatrixHistory.find(range.Object);
-		const std::span<const DirectX::XMFLOAT4X4> previousMatrices =
-		    previous != m_jointMatrixHistory.end() && previous->second.size() == currentMatrices.size()
-		    ? std::span<const DirectX::XMFLOAT4X4>{previous->second}
-		    : currentMatrices;
+		const std::span<const DirectX::XMFLOAT4X4> history = scene.FindPreviousJointMatrices(range.Object);
+		const std::span<const DirectX::XMFLOAT4X4> previousMatrices = history.size() == currentMatrices.size() ? history : currentMatrices;
 
 		target.Draw.Skinning.JointMatrixOffset = static_cast<std::uint32_t>(jointMatrixCount);
 		work.JointMatrixCopyRanges.push_back(
@@ -81,6 +77,7 @@ void RenderDeformationPreparation::PrepareJointMatrices(
 }
 
 void RenderDeformationPreparation::PrepareMorphWeights(
+    const RenderScene& scene,
     std::span<const RenderMorphWeightRange> morphWeightRanges,
     std::span<const float> weights,
     std::span<ResolvedRenderObject> objects,
@@ -103,8 +100,8 @@ void RenderDeformationPreparation::PrepareMorphWeights(
 		const RenderMorphWeightRange* sample =
 		    morphIndex < morphWeightRanges.size() && morphWeightRanges[morphIndex].Object == object.Object ? &morphWeightRanges[morphIndex]
 		                                                                                                   : nullptr;
-		const auto history = m_morphWeightHistory.find(object.Object);
-		if (sample == nullptr && (history == m_morphWeightHistory.end() || AreAllZero(history->second)))
+		const std::span<const float> history = scene.FindPreviousMorphWeights(object.Object);
+		if (sample == nullptr && (history.empty() || AreAllZero(history)))
 		{
 			continue;
 		}
@@ -113,9 +110,7 @@ void RenderDeformationPreparation::PrepareMorphWeights(
 		    sample != nullptr && sample->WeightOffset <= weights.size() && sample->WeightCount <= weights.size() - sample->WeightOffset;
 		const std::span<const float> current =
 		    validSample ? weights.subspan(sample->WeightOffset, sample->WeightCount) : std::span<const float>{};
-		const std::span<const float> previous = history != m_morphWeightHistory.end() && history->second.size() == object.MorphTargetCount
-		    ? std::span<const float>{history->second}
-		    : current;
+		const std::span<const float> previous = history.size() == object.MorphTargetCount ? history : current;
 
 		object.Draw.Morph = MeshDrawMorph{
 		    .WeightOffset = static_cast<std::uint32_t>(morphWeightCount),
@@ -133,97 +128,6 @@ void RenderDeformationPreparation::PrepareMorphWeights(
 
 	work.MorphWeights.resize(morphWeightCount);
 	work.PreviousMorphWeights.resize(morphWeightCount);
-}
-
-void RenderDeformationPreparation::Commit(const RenderDeformationWork& work)
-{
-	CommitJointMatrixHistory(work);
-	CommitMorphWeightHistory(work);
-}
-
-void RenderDeformationPreparation::CommitJointMatrixHistory(const RenderDeformationWork& work)
-{
-	std::size_t rangeIndex = 0u;
-	for (auto history = m_jointMatrixHistory.begin(); history != m_jointMatrixHistory.end();)
-	{
-		while (rangeIndex < work.JointMatrixCopyRanges.size() && work.JointMatrixCopyRanges[rangeIndex].Object < history->first)
-		{
-			++rangeIndex;
-		}
-		if (rangeIndex >= work.JointMatrixCopyRanges.size() || work.JointMatrixCopyRanges[rangeIndex].Object != history->first)
-		{
-			history = m_jointMatrixHistory.erase(history);
-		}
-		else
-		{
-			++history;
-		}
-	}
-
-	for (const RenderJointMatrixCopyRange& range : work.JointMatrixCopyRanges)
-	{
-		const std::size_t begin = range.OutputOffset;
-		const std::size_t end = begin + range.Current.size();
-		if (end <= work.JointMatrices.size())
-		{
-			std::vector<DirectX::XMFLOAT4X4>& history = m_jointMatrixHistory[range.Object];
-			history.assign(work.JointMatrices.begin() + begin, work.JointMatrices.begin() + end);
-		}
-	}
-}
-
-void RenderDeformationPreparation::CommitMorphWeightHistory(const RenderDeformationWork& work)
-{
-	std::size_t rangeIndex = 0u;
-	for (auto history = m_morphWeightHistory.begin(); history != m_morphWeightHistory.end();)
-	{
-		while (rangeIndex < work.MorphWeightCopyRanges.size() && work.MorphWeightCopyRanges[rangeIndex].Object < history->first)
-		{
-			++rangeIndex;
-		}
-		const bool retain = rangeIndex < work.MorphWeightCopyRanges.size()
-		    && work.MorphWeightCopyRanges[rangeIndex].Object == history->first
-		    && RetainsMorphWeightHistory(work, work.MorphWeightCopyRanges[rangeIndex]);
-		if (!retain)
-		{
-			history = m_morphWeightHistory.erase(history);
-		}
-		else
-		{
-			++history;
-		}
-	}
-
-	for (const RenderMorphWeightCopyRange& range : work.MorphWeightCopyRanges)
-	{
-		const std::size_t begin = range.OutputOffset;
-		const std::size_t end = begin + range.TargetCount;
-		if (end > work.MorphWeights.size() || !RetainsMorphWeightHistory(work, range))
-		{
-			continue;
-		}
-		std::vector<float>& history = m_morphWeightHistory[range.Object];
-		history.assign(work.MorphWeights.begin() + begin, work.MorphWeights.begin() + end);
-	}
-}
-
-bool RenderDeformationPreparation::RetainsMorphWeightHistory(
-    const RenderDeformationWork& work,
-    const RenderMorphWeightCopyRange& range) noexcept
-{
-	const std::size_t begin = range.OutputOffset;
-	const std::size_t end = begin + range.TargetCount;
-	if (end > work.MorphWeights.size())
-	{
-		return false;
-	}
-	return !range.Current.empty() || !AreAllZero(std::span<const float>{work.MorphWeights.data() + begin, range.TargetCount});
-}
-
-void RenderDeformationPreparation::Reset() noexcept
-{
-	m_jointMatrixHistory.clear();
-	m_morphWeightHistory.clear();
 }
 
 void RenderDeformationPreparation::CopyJointMatrixRanges(

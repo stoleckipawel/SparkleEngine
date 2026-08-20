@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 
-class RenderWorld;
+class RenderScene;
 
 struct RenderInputConsumeResult final
 {
@@ -18,18 +18,16 @@ struct RenderInputConsumeResult final
 class RenderInputConsumer final
 {
 public:
-	RenderInputConsumer(RenderWorld& world) noexcept;
+	RenderInputConsumer(RenderScene& scene) noexcept;
 
 	bool Submit(RenderFrameSubmission submission);
 	RenderInputConsumeResult ConsumePending() noexcept;
 	std::uint64_t GetFrameId() const noexcept { return m_frameId; }
-	const RenderSceneDynamicData& GetSceneDynamicData() const noexcept { return m_sceneDynamic; }
 	const RenderViewInput& GetViewInput() const noexcept { return m_viewInput; }
 
 private:
-	RenderWorld* m_world = nullptr;
+	RenderScene* m_scene = nullptr;
 	std::optional<RenderFrameSubmission> m_pending;
-	RenderSceneDynamicData m_sceneDynamic;
 	RenderViewInput m_viewInput;
 	std::uint64_t m_frameId = 0;
 	std::uint64_t m_lastFrameId = 0;

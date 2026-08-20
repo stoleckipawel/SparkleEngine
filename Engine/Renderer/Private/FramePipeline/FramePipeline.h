@@ -36,7 +36,6 @@ class RenderInputConsumer;
 class PersistentRenderGpuScene;
 class RenderRayTracingScene;
 struct RenderFrameTime;
-struct RenderSceneDynamicData;
 struct RenderViewInput;
 
 struct FrameResolutionExtents final
@@ -102,7 +101,7 @@ private:
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
 	void ApplySubmissionHistoryInvalidation(const RenderViewInput& view) noexcept;
-	FrameContext& PrepareFrameContext(const RenderSceneDynamicData& dynamic, RenderRayTracingScene* activeRayTracingScene);
+	FrameContext& PrepareFrameContext(RenderRayTracingScene* activeRayTracingScene);
 	void UpdateLightingHistory(FrameContext& frame);
 	void SetupImageProviderFrame(const FrameContext& frame);
 	void BindRayTracingScene(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene);

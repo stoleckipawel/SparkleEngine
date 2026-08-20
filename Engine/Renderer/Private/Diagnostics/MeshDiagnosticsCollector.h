@@ -5,22 +5,17 @@
 
 class GpuMeshCache;
 class Mesh;
-class RenderWorld;
+class RenderScene;
 
 class MeshDiagnosticsCollector final
 {
-  public:
-	static MeshDiagnosticsSnapshot Capture(const RenderWorld& world, const GpuMeshCache* gpuMeshCache);
-	static MeshPreviewGeometry CapturePreview(const RenderWorld& world, std::uintptr_t meshRuntimeId);
+public:
+	static MeshDiagnosticsSnapshot Capture(const RenderScene& scene, const GpuMeshCache* gpuMeshCache);
+	static MeshPreviewGeometry CapturePreview(const RenderScene& scene, std::uintptr_t meshRuntimeId);
 
-  private:
-	static void CollectRows(
-	    const RenderWorld& world,
-	    const GpuMeshCache* gpuMeshCache,
-	    MeshDiagnosticsSnapshot& snapshot);
+private:
+	static void CollectRows(const RenderScene& scene, const GpuMeshCache* gpuMeshCache, MeshDiagnosticsSnapshot& snapshot);
 	static void SortRows(MeshDiagnosticsSnapshot& snapshot);
-	static MeshGeometryInstancingDiagnostics CaptureGeometryInstancing(
-	    const RenderWorld& world,
-	    const GpuMeshCache* gpuMeshCache);
+	static MeshGeometryInstancingDiagnostics CaptureGeometryInstancing(const RenderScene& scene, const GpuMeshCache* gpuMeshCache);
 	static void PopulateMeshRow(MeshDiagnosticsRow& row, const Mesh& mesh, const GpuMeshCache* gpuMeshCache);
 };

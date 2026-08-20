@@ -37,7 +37,7 @@ Application / Editor
 
 - `RenderCoordinator` owns mutable renderer/RHI state, queue submission, presentation, and render lifecycle.
 - Renderer consumes immutable owned values or stable handles; it does not query ECS or dereference `GameWorld`.
-- Render-owned proxies and tables are derived state, never a second gameplay authority.
+- Render-owned primitives and tables are derived state, never a second gameplay authority.
 - CPU packet lifetime and GPU resource lifetime are distinct.
 
 ## Frame Graph Contract

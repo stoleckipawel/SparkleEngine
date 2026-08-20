@@ -4,7 +4,7 @@
 #include "Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
-#include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
+#include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
 #include "Shaders/Authoring/GlobalShader.h"
 #include "ShaderData/RenderConstantBufferData.h"
 #include "ShaderData/MorphTargetShaderData.h"
@@ -13,7 +13,7 @@
 
 class RestirIndirectSpatialCS final : public TGlobalShader<RestirIndirectSpatialCS>
 {
-  public:
+public:
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::DescriptorRayQuery;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )

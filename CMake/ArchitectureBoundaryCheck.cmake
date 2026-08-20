@@ -125,7 +125,7 @@ function(sparkle_boundary_scan_file absolute_path)
 				"${_line}")
 		endif()
 
-		if(_relative_path MATCHES "^Engine/RHI/" AND _line MATCHES "Upscaler|RayReconstruction|GBuffer|RenderWorld")
+		if(_relative_path MATCHES "^Engine/RHI/" AND _line MATCHES "Upscaler|RayReconstruction|GBuffer|RenderScene")
 			sparkle_boundary_append_failure(
 				"RHI_NO_RENDERER_FEATURE_POLICY"
 				"${_relative_path}"

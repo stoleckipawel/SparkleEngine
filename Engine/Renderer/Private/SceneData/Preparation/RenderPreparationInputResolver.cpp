@@ -6,12 +6,11 @@
 #include "Meshes/GpuMesh.h"
 #include "Meshes/GpuMeshCache.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
-#include "SceneData/Caching/MaterialCache.h"
-#include "SceneData/Caching/MaterialHandleResolver.h"
+#include "Scene/Materials/MaterialHandleResolver.h"
 #include "SceneData/Preparation/RenderDeformationPreparation.h"
 #include "SceneData/Preparation/RenderPreparationRun.h"
 #include "SceneData/RenderMeshClassificationConversion.h"
-#include "SceneData/RenderWorld.h"
+#include "Scene/RenderScene.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "Textures/RendererTexture.h"
 #include "Textures/TextureCache.h"
@@ -22,114 +21,100 @@
 
 static const auto g_renderPreparationInputResolverLogger = Logging::GetOrCreateLogger("Renderer.RenderPreparationInputResolver");
 
-RenderPreparationInputResolver::RenderPreparationInputResolver(
-    MaterialCache& materialCache,
-    GpuMeshCache& gpuMeshCache,
-    TextureCache& textureCache) noexcept :
-    m_materialCache(&materialCache),
+RenderPreparationInputResolver::RenderPreparationInputResolver(GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept :
     m_gpuMeshCache(&gpuMeshCache),
     m_textureCache(&textureCache)
 {
 }
 
 void RenderPreparationInputResolver::Resolve(
-    const RenderWorld& world,
-    const RenderSceneDynamicData& dynamic,
+    RenderScene& scene,
     const Frustum& frustum,
-    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
+    const DirectX::XMFLOAT3& cameraPosition,
     RenderDeformationPreparation& deformationPreparation,
     RenderPreparationRun& run)
 {
 	run.ViewFrustum = frustum;
-	run.CameraPosition = dynamic.Camera.Position;
-	run.Lights = std::span<const RenderLightData>{dynamic.Lights};
+	run.CameraPosition = cameraPosition;
+	run.Lights = scene.GetLights();
 	run.EnableAutoBatching = CVarRendererMeshAutoBatching.Get();
-	run.SceneData.structuralRevision = world.GetStructuralRevision();
-	run.SceneData.materialRevision = world.GetMaterialRevision();
-	m_materialCache->BuildMaterials(world.GetMaterials(), run.SceneData.materialRevision, run.SceneData);
+	run.SceneData.structuralRevision = scene.GetStructuralRevision();
+	run.SceneData.materialRevision = scene.GetMaterialRevision();
+	scene.BuildMaterials(run.SceneData);
 
-	ResolveSky(world, run.SceneData);
-	ResolveObjects(world, previousWorldTransforms, run);
-	ResolveInstanceGroups(world, run);
+	ResolveSky(scene, run.SceneData);
+	ResolveObjects(scene, run);
+	ResolveInstanceGroups(scene, run);
 
 	run.PreparedObjects.resize(run.ResolvedObjects.size());
-	run.PreparedLights.resize(dynamic.Lights.size());
-	deformationPreparation.Prepare(dynamic, run.ResolvedObjects, run.Deformation);
+	run.PreparedLights.resize(scene.GetLights().size());
+	deformationPreparation.Prepare(scene, run.ResolvedObjects, run.Deformation);
 }
 
-void RenderPreparationInputResolver::ResolveObjects(
-    const RenderWorld& world,
-    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
-    RenderPreparationRun& run)
+void RenderPreparationInputResolver::ResolveObjects(const RenderScene& scene, RenderPreparationRun& run)
 {
 	run.ResolvedObjects.clear();
-	run.ResolvedObjects.reserve(world.GetProxies().size());
-	for (const RenderProxy& proxy : world.GetProxies())
+	run.ResolvedObjects.reserve(scene.GetPrimitives().size());
+	for (const RenderPrimitive& primitive : scene.GetPrimitives())
 	{
-		if (!proxy.Dynamic.Visible || !proxy.GpuMeshResident)
+		if (!primitive.Dynamic.Visible || !primitive.GpuMeshResident)
 			continue;
-		run.ResolvedObjects.push_back(ResolveObject(proxy, world.GetMaterials().Generation, previousWorldTransforms, run.SceneData));
+		run.ResolvedObjects.push_back(ResolveObject(scene, primitive, scene.GetMaterials().Generation, run.SceneData));
 	}
 }
 
 ResolvedRenderObject RenderPreparationInputResolver::ResolveObject(
-    const RenderProxy& proxy,
+    const RenderScene& scene,
+    const RenderPrimitive& primitive,
     std::uint32_t materialGeneration,
-    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
     RenderSceneData& sceneData)
 {
-	if (!proxy.Dynamic.Object.IsValid() || !proxy.Static.Mesh.IsValid())
+	if (!primitive.Dynamic.Object.IsValid() || !primitive.Static.Mesh.IsValid())
 		Diagnostics::Fatal(
 		    g_renderPreparationInputResolverLogger,
 		    __FILE__,
 		    __LINE__,
-		    "Render-world proxy contains an invalid object or mesh identity.");
+		    "Render scene primitive contains an invalid object or mesh identity.");
 
-	const GpuMesh* gpuMesh = m_gpuMeshCache->Resolve(proxy.GpuMesh);
+	const GpuMesh* gpuMesh = m_gpuMeshCache->Resolve(primitive.GpuMesh);
 	if (gpuMesh == nullptr || !gpuMesh->IsValid())
-		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Resident render-world proxy has no GPU mesh.");
+		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Resident render scene primitive has no GPU mesh.");
 
 	const std::uint32_t materialSlot =
-	    MaterialHandleResolver::ResolveSlot(proxy.Static.Material, materialGeneration, sceneData.materials.size());
+	    MaterialHandleResolver::ResolveSlot(primitive.Static.Material, materialGeneration, sceneData.materials.size());
 	const MaterialData& material = sceneData.materials[materialSlot];
 
 	MeshDraw draw;
 	draw.Material.Slot = materialSlot;
-	draw.Source.GpuSceneSlot = proxy.GpuSceneSlot;
-	draw.Source.MeshAssetId = proxy.Static.Mesh.GetAssetId();
-	draw.Source.MeshGeneration = proxy.Static.Mesh.GetGeneration();
-	draw.Skinning.SkeletonAssetId = proxy.Static.Skeleton.GetAssetId();
+	draw.Source.GpuSceneSlot = primitive.GpuSceneSlot;
+	draw.Source.MeshAssetId = primitive.Static.Mesh.GetAssetId();
+	draw.Source.MeshGeneration = primitive.Static.Mesh.GetGeneration();
+	draw.Skinning.SkeletonAssetId = primitive.Static.Skeleton.GetAssetId();
 	draw.Skinning.JointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
-	draw.Geometry.MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy.Static.MeshKind);
+	draw.Geometry.MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(primitive.Static.MeshKind);
 	draw.Geometry.Mesh = gpuMesh->GetHandle();
 	draw.Geometry.LocalBoundsMin = gpuMesh->GetLocalBounds().Min;
 	draw.Geometry.LocalBoundsMax = gpuMesh->GetLocalBounds().Max;
 	draw.Geometry.HasLocalBounds = gpuMesh->GetLocalBounds().Valid;
 
-	DirectX::XMFLOAT4X4 previousWorldMatrix = proxy.Dynamic.WorldMatrix;
-	if (proxy.GpuSceneSlot < previousWorldTransforms.size() && previousWorldTransforms[proxy.GpuSceneSlot].Object == proxy.Object)
-	{
-		previousWorldMatrix = previousWorldTransforms[proxy.GpuSceneSlot].WorldMatrix;
-	}
-
 	return ResolvedRenderObject{
-	    .Object = proxy.Object,
+	    .Object = primitive.Object,
 	    .Draw = draw,
-	    .WorldMatrix = proxy.Dynamic.WorldMatrix,
-	    .PreviousWorldMatrix = previousWorldMatrix,
-	    .WorldInverseTranspose = proxy.Dynamic.WorldInverseTranspose,
+	    .WorldMatrix = primitive.Dynamic.WorldMatrix,
+	    .PreviousWorldMatrix = scene.ResolvePreviousWorldMatrix(primitive),
+	    .WorldInverseTranspose = primitive.Dynamic.WorldInverseTranspose,
 	    .Material = material.gpuHandle,
-	    .InstanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy.Static.InstanceGroupIndex),
+	    .InstanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(primitive.Static.InstanceGroupIndex),
 	    .MaterialAlphaMode = material.alphaMode,
 	    .MorphTargetCount = gpuMesh->GetMorphTargetCount(),
 	    .MorphTargetVertexCount = gpuMesh->GetVertexCount()};
 }
 
-void RenderPreparationInputResolver::ResolveInstanceGroups(const RenderWorld& world, RenderPreparationRun& run) const
+void RenderPreparationInputResolver::ResolveInstanceGroups(const RenderScene& scene, RenderPreparationRun& run) const
 {
 	run.InstanceGroups.clear();
-	run.InstanceGroups.reserve(world.GetInstanceGroups().size());
-	for (const RenderMeshInstanceGroupData& group : world.GetInstanceGroups())
+	run.InstanceGroups.reserve(scene.GetInstanceGroups().size());
+	for (const RenderMeshInstanceGroupData& group : scene.GetInstanceGroups())
 	{
 		run.InstanceGroups.push_back(
 		    RenderMeshInstanceGroup{
@@ -138,10 +123,10 @@ void RenderPreparationInputResolver::ResolveInstanceGroups(const RenderWorld& wo
 	}
 }
 
-void RenderPreparationInputResolver::ResolveSky(const RenderWorld& world, RenderSceneData& sceneData) const
+void RenderPreparationInputResolver::ResolveSky(const RenderScene& scene, RenderSceneData& sceneData) const
 {
 	const RendererTexture* skyTexture = nullptr;
-	const SceneSkyDesc* sky = world.GetSky() ? &*world.GetSky() : nullptr;
+	const SceneSkyDesc* sky = scene.GetSky() ? &*scene.GetSky() : nullptr;
 	if (sky == nullptr)
 	{
 		skyTexture = m_textureCache->ResolveDefaultSkyTexture();

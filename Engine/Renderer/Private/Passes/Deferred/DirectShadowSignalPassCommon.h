@@ -4,7 +4,7 @@
 #include "RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
-#include "SceneData/MaterialTextureTableCapability.h"
+#include "Scene/Materials/MaterialTextureTableCapability.h"
 #include "ShaderData/RenderConstantBufferData.h"
 #include "ShaderData/RenderViewLightingData.h"
 

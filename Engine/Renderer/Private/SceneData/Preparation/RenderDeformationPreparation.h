@@ -1,16 +1,16 @@
 #pragma once
 
-#include "Rendering/RenderSceneDynamicData.h"
 #include "Rendering/RenderObjectId.h"
+#include "Rendering/RenderSceneDynamicData.h"
 
 #include <DirectXMath.h>
 
 #include <cstdint>
-#include <map>
 #include <span>
 #include <vector>
 
 struct ResolvedRenderObject;
+class RenderScene;
 
 struct RenderJointMatrixCopyRange final
 {
@@ -42,9 +42,7 @@ struct RenderDeformationWork final
 class RenderDeformationPreparation final
 {
 public:
-	void Prepare(const RenderSceneDynamicData& dynamic, std::span<ResolvedRenderObject> objects, RenderDeformationWork& work);
-	void Commit(const RenderDeformationWork& work);
-	void Reset() noexcept;
+	void Prepare(const RenderScene& scene, std::span<ResolvedRenderObject> objects, RenderDeformationWork& work);
 
 	static void CopyJointMatrixRanges(
 	    std::span<const RenderJointMatrixCopyRange> ranges,
@@ -59,21 +57,17 @@ private:
 	static void ResetWork(RenderDeformationWork& work) noexcept;
 	static void ResetObjectOutputs(std::span<ResolvedRenderObject> objects) noexcept;
 	void PrepareJointMatrices(
+	    const RenderScene& scene,
 	    std::span<const RenderJointMatrixRange> jointMatrixRanges,
 	    std::span<const DirectX::XMFLOAT4X4> jointMatrices,
 	    std::span<ResolvedRenderObject> objects,
 	    RenderDeformationWork& work);
 	void PrepareMorphWeights(
+	    const RenderScene& scene,
 	    std::span<const RenderMorphWeightRange> morphWeightRanges,
 	    std::span<const float> weights,
 	    std::span<ResolvedRenderObject> objects,
 	    RenderDeformationWork& work);
 	static bool AreAllZero(std::span<const float> weights) noexcept;
 	static void CopyMorphWeightSpan(std::span<const float> source, std::span<float> destination) noexcept;
-	void CommitJointMatrixHistory(const RenderDeformationWork& work);
-	void CommitMorphWeightHistory(const RenderDeformationWork& work);
-	static bool RetainsMorphWeightHistory(const RenderDeformationWork& work, const RenderMorphWeightCopyRange& range) noexcept;
-
-	std::map<RenderObjectId, std::vector<DirectX::XMFLOAT4X4>> m_jointMatrixHistory;
-	std::map<RenderObjectId, std::vector<float>> m_morphWeightHistory;
 };

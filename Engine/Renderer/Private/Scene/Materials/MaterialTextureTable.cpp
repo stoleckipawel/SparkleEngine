@@ -1,8 +1,8 @@
 #include "PCH.h"
-#include "SceneData/MaterialTextureTable.h"
+#include "Scene/Materials/MaterialTextureTable.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
-#include "SceneData/MaterialTextureTableCapability.h"
+#include "Scene/Materials/MaterialTextureTableCapability.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
@@ -21,11 +21,7 @@ std::uint32_t MaterialTextureTable::GetOrAddTextureIndex(RhiResourceViewHandle t
 {
 	if (!textureView)
 	{
-		Diagnostics::Fatal(
-		    g_materialTextureTableLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Material texture table received an invalid texture view.");
+		Diagnostics::Fatal(g_materialTextureTableLogger, __FILE__, __LINE__, "Material texture table received an invalid texture view.");
 	}
 
 	for (std::uint32_t index = 0u; index < static_cast<std::uint32_t>(m_textureViews.size()); ++index)
@@ -55,11 +51,7 @@ void MaterialTextureTable::BuildBindingSet(RenderHardwareInterface& renderHardwa
 	m_bindingSet.reset();
 	if (m_textureViews.empty())
 	{
-		Diagnostics::Fatal(
-		    g_materialTextureTableLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Material texture table has no texture views.");
+		Diagnostics::Fatal(g_materialTextureTableLogger, __FILE__, __LINE__, "Material texture table has no texture views.");
 	}
 	if (m_textureViews.size() > MaterialTextureTableFixedCapacity)
 	{
@@ -88,22 +80,14 @@ void MaterialTextureTable::BuildBindingSet(RenderHardwareInterface& renderHardwa
 	        .DescriptorCount = static_cast<std::uint32_t>(m_textureViews.size())});
 	if (!bindingSet || !*bindingSet)
 	{
-		Diagnostics::Fatal(
-		    g_materialTextureTableLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Material texture descriptor-table allocation failed.");
+		Diagnostics::Fatal(g_materialTextureTableLogger, __FILE__, __LINE__, "Material texture descriptor-table allocation failed.");
 	}
 
 	for (std::uint32_t index = 0u; index < static_cast<std::uint32_t>(m_textureViews.size()); ++index)
 	{
 		if (!bindingSet->WriteResourceView(index, m_textureViews[index]))
 		{
-			Diagnostics::Fatal(
-			    g_materialTextureTableLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Material texture descriptor write failed.");
+			Diagnostics::Fatal(g_materialTextureTableLogger, __FILE__, __LINE__, "Material texture descriptor write failed.");
 		}
 	}
 

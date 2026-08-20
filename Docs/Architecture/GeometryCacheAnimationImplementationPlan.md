@@ -11,7 +11,7 @@ Sparkle should support baked vertex animation as a first-class geometry-cache ca
 1. Alembic is a source format used by host tools only. The runtime never loads Alembic or USD.
 2. The source importer normalizes axes, handedness, units, transforms, time samples, topology, attributes, face sets, and bounds into one `ImportedGeometryCache` contract.
 3. The cooker publishes one versioned, range-readable native geometry-cache asset with immutable topology and a chunk directory followed by compressed sample data.
-4. GameFramework owns instance playback state and publishes requested current and previous times through the existing render-world identity and extraction lifecycle.
+4. GameFramework owns instance playback state and publishes requested current and previous times through the existing render-scene identity and extraction lifecycle.
 5. The Renderer owns chunk residency, decoding, GPU upload, deformation materialization, temporal history, and bounds used for rendering.
 6. One renderer-owned `DeformedGeometry` product is generated before both ray-scene construction and GBuffer rasterization. Raster vertex fetch, ray-tracing BLAS geometry, and ray-hit material reconstruction consume that same product.
 7. The first supported profile requires constant topology and stable vertex identity per track. Changing topology is rejected during cooking until a named workload justifies a separate accepted phase.
@@ -286,7 +286,7 @@ Record full-build versus update time, BLAS memory, scratch high-water, and total
 | Scene/geometry-cache cooker | Cooked identity/version, static topology, chunking, codec, bounds, checksums, atomic publication, manifest references | Runtime cache policy or renderer handles |
 | GameFramework asset loading | Header/directory validation, immutable asset handle and metadata, scene-generation publication | Full bulk-cache retention, decompression, GPU allocation |
 | GameFramework ECS/systems | Playback state/time/discontinuity and ordinary entity lifetime | Chunk bytes, sample arrays, frame-graph work |
-| Existing extraction | Structural cache handle and compact per-frame sample requests keyed by `RenderObjectId` | A second render-world snapshot or cache thread pool |
+| Existing extraction | Structural cache handle and compact per-frame sample requests keyed by `RenderObjectId` | A second render-scene snapshot or cache thread pool |
 | Renderer deformation preparation | Sample resolution, deformed ranges, current/previous history, bounds, skip-on-empty decision | Alembic parsing or gameplay playback policy |
 | Renderer geometry-cache residency | Range reads, decode/upload state, budgets, look-ahead, cancellation, GPU-safe retirement | ECS ownership or per-feature task runtime |
 | Frame graph | Compute ordering, external/transient resource declarations, barriers, and pass lifetime | Sample timing or cache eviction policy |
@@ -443,7 +443,7 @@ The Knight evidence record includes source and cooked bytes, track/sample/vertex
 | Static BLAS in ray modes | Produces visibly wrong reflections, shadows, and GI while pretending the feature is supported. |
 | Silent first-frame/static-FBX fallback | Masks missing/corrupt data and invalidates animation evidence. |
 | Changing-topology support in the first slice | Adds sample-varying indices, hit-data remapping, BLAS rebuild policy, and material-batch churn before a required workload demonstrates the need. |
-| New task pool, render world, or residency state machine | Duplicates existing owners and complicates cancellation, budgets, and lifetime. |
+| New task pool, render scene, or residency state machine | Duplicates existing owners and complicates cancellation, budgets, and lifetime. |
 | Codec/playback/debug CVars from day one | Creates unsupported combinations and test burden without an accepted content requirement. |
 
 ## Completion Definition

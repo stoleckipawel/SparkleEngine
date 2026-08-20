@@ -7,7 +7,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
-#include "SceneData/MaterialTextureTableCapability.h"
+#include "Scene/Materials/MaterialTextureTableCapability.h"
 #include "ShaderData/RenderConstantBufferData.h"
 #include "ShaderData/RenderViewLightingData.h"
 #include "ShaderData/SkyUniformData.h"
@@ -59,9 +59,8 @@ struct RestirIndirectSpatialPassParameters
 
 class RestirIndirectSpatialPass final
 {
-  public:
-	explicit RestirIndirectSpatialPass(
-	    const ComputePassPipelineRuntime& runtime) noexcept;
+public:
+	explicit RestirIndirectSpatialPass(const ComputePassPipelineRuntime& runtime) noexcept;
 	static constexpr const char* PassName = "RestirIndirectSpatial";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -73,6 +72,6 @@ class RestirIndirectSpatialPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

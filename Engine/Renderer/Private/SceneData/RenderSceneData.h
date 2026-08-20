@@ -4,7 +4,7 @@
 #include "Renderer/Public/SceneData/PointLight.h"
 #include "Renderer/Public/SceneData/RectLight.h"
 #include "Renderer/Public/SceneData/SpotLight.h"
-#include "SceneData/MaterialData.h"
+#include "Scene/Materials/MaterialData.h"
 #include "SceneData/MeshInstanceBatch.h"
 #include "SceneData/RenderLightCollection.h"
 #include "SceneData/RenderMeshWorldBounds.h"

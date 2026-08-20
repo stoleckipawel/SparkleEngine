@@ -10,34 +10,31 @@
 #include "Scene/Meshes/MeshData.h"
 #include "SceneData/Preparation/MeshInstanceBatchBuilder.h"
 #include "SceneData/RenderMeshClassificationConversion.h"
-#include "SceneData/RenderWorld.h"
+#include "Scene/RenderScene.h"
 
 #include <algorithm>
 #include <limits>
 #include <unordered_map>
 
-MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& world, const GpuMeshCache* gpuMeshCache)
+MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderScene& scene, const GpuMeshCache* gpuMeshCache)
 {
 	MeshDiagnosticsSnapshot snapshot;
-	CollectRows(world, gpuMeshCache, snapshot);
+	CollectRows(scene, gpuMeshCache, snapshot);
 	SortRows(snapshot);
-	snapshot.GeometryInstancing = CaptureGeometryInstancing(world, gpuMeshCache);
+	snapshot.GeometryInstancing = CaptureGeometryInstancing(scene, gpuMeshCache);
 	return snapshot;
 }
 
-void MeshDiagnosticsCollector::CollectRows(
-    const RenderWorld& world,
-    const GpuMeshCache* gpuMeshCache,
-    MeshDiagnosticsSnapshot& snapshot)
+void MeshDiagnosticsCollector::CollectRows(const RenderScene& scene, const GpuMeshCache* gpuMeshCache, MeshDiagnosticsSnapshot& snapshot)
 {
-	snapshot.Rows.reserve(world.GetProxies().size());
+	snapshot.Rows.reserve(scene.GetPrimitives().size());
 
 	std::unordered_map<const Mesh*, std::size_t> rowIndices;
-	rowIndices.reserve(world.GetProxies().size());
+	rowIndices.reserve(scene.GetPrimitives().size());
 
-	for (const RenderProxy& proxy : world.GetProxies())
+	for (const RenderPrimitive& primitive : scene.GetPrimitives())
 	{
-		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
+		const Mesh* mesh = primitive.Static.Mesh.GetResource().get();
 		if (mesh == nullptr)
 		{
 			continue;
@@ -59,14 +56,14 @@ void MeshDiagnosticsCollector::CollectRows(
 
 		++row->InstanceCount;
 		++row->VisibleInstanceCount;
-		if (proxy.Static.MeshKind == SceneMeshKind::Skeletal)
+		if (primitive.Static.MeshKind == SceneMeshKind::Skeletal)
 		{
 			++row->SkinnedInstanceCount;
 			row->HasSkeletonBinding = true;
 			row->HasSkinInfluences = true;
 		}
 
-		const MaterialHandle materialHandle = proxy.Static.Material;
+		const MaterialHandle materialHandle = primitive.Static.Material;
 		if (!row->HasMaterial && materialHandle.IsValid())
 		{
 			row->HasMaterial = true;
@@ -99,19 +96,20 @@ void MeshDiagnosticsCollector::SortRows(MeshDiagnosticsSnapshot& snapshot)
 }
 
 MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInstancing(
-    const RenderWorld& world,
+    const RenderScene& scene,
     const GpuMeshCache* gpuMeshCache)
 {
 	std::vector<MeshRenderItem> renderItems;
-	renderItems.reserve(world.GetProxies().size());
+	renderItems.reserve(scene.GetPrimitives().size());
 
 	std::vector<MeshDraw> draws;
-	draws.reserve(world.GetProxies().size());
+	draws.reserve(scene.GetPrimitives().size());
 
 	std::vector<RenderMeshInstanceGroup> renderInstanceGroups;
-	for (const RenderMeshInstanceGroupData& group : world.GetInstanceGroups())
+	for (const RenderMeshInstanceGroupData& group : scene.GetInstanceGroups())
 	{
-		renderInstanceGroups.push_back({RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind), group.InstanceCount});
+		renderInstanceGroups.push_back(
+		    {RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind), group.InstanceCount});
 	}
 
 	MeshGeometryInstancingDiagnostics instancingDiagnostics;
@@ -128,9 +126,9 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 		}
 	}
 
-	for (const RenderProxy& proxy : world.GetProxies())
+	for (const RenderPrimitive& primitive : scene.GetPrimitives())
 	{
-		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
+		const Mesh* mesh = primitive.Static.Mesh.GetResource().get();
 		if (mesh == nullptr)
 		{
 			continue;
@@ -141,44 +139,20 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 		const std::uint32_t drawIndex = static_cast<std::uint32_t>(draws.size());
 		draws.push_back(
 		    MeshDraw{
-		        .Transform =
-		            MeshDrawTransform{
-		                .WorldMatrix =
-		                    MathUtils::IdentityFloat4x4(),
-		                .WorldInvTranspose = {}},
-		        .Material =
-		            MeshDrawMaterial{
-		                .Slot =
-		                    proxy.Static.Material.IsValid()
-		                        ? proxy.Static.Material.GetIndex()
-		                        : 0u},
-		        .Skinning =
-		            MeshDrawSkinning{
-		                .SkeletonAssetId =
-		                    proxy.Static.Skeleton.GetAssetId()},
-		        .Source =
-		            MeshDrawSourceIdentity{
-		                .GpuSceneSlot = proxy.GpuSceneSlot},
-		        .Geometry =
-		            MeshDrawGeometry{
-		                .MeshKind =
-		                    RenderMeshClassificationConversion::
-		                        ToRenderMeshKind(
-		                            proxy.Static.MeshKind),
-		                .Mesh =
-		                    gpuMesh != nullptr
-		                        ? gpuMesh->GetHandle()
-		                        : GpuMeshHandle{}}});
+		        .Transform = MeshDrawTransform{.WorldMatrix = MathUtils::IdentityFloat4x4(), .WorldInvTranspose = {}},
+		        .Material = MeshDrawMaterial{.Slot = primitive.Static.Material.IsValid() ? primitive.Static.Material.GetIndex() : 0u},
+		        .Skinning = MeshDrawSkinning{.SkeletonAssetId = primitive.Static.Skeleton.GetAssetId()},
+		        .Source = MeshDrawSourceIdentity{.GpuSceneSlot = primitive.GpuSceneSlot},
+		        .Geometry = MeshDrawGeometry{
+		            .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(primitive.Static.MeshKind),
+		            .Mesh = gpuMesh != nullptr ? gpuMesh->GetHandle() : GpuMeshHandle{}}});
 		renderItems.push_back(
 		    MeshRenderItem{
-		        .Object = proxy.Object,
+		        .Object = primitive.Object,
 		        .DrawIndex = drawIndex,
 		        .InstanceGroupIndex =
-		            RenderMeshClassificationConversion::
-		                ToRenderMeshInstanceGroupIndex(
-		                    proxy.Static.InstanceGroupIndex),
-		        .Classification =
-		            RenderMaterialClassification::Opaque});
+		            RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(primitive.Static.InstanceGroupIndex),
+		        .Classification = RenderMaterialClassification::Opaque});
 	}
 
 	MeshInstanceBatchBuilder batchBuilder;
@@ -200,7 +174,7 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 	return diagnostics;
 }
 
-MeshPreviewGeometry MeshDiagnosticsCollector::CapturePreview(const RenderWorld& world, std::uintptr_t meshRuntimeId)
+MeshPreviewGeometry MeshDiagnosticsCollector::CapturePreview(const RenderScene& scene, std::uintptr_t meshRuntimeId)
 {
 	MeshPreviewGeometry geometry;
 	if (meshRuntimeId == 0)
@@ -208,9 +182,9 @@ MeshPreviewGeometry MeshDiagnosticsCollector::CapturePreview(const RenderWorld& 
 		return geometry;
 	}
 
-	for (const RenderProxy& proxy : world.GetProxies())
+	for (const RenderPrimitive& primitive : scene.GetPrimitives())
 	{
-		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
+		const Mesh* mesh = primitive.Static.Mesh.GetResource().get();
 		if (mesh == nullptr || reinterpret_cast<std::uintptr_t>(mesh) != meshRuntimeId)
 		{
 			continue;
@@ -277,7 +251,7 @@ void MeshDiagnosticsCollector::PopulateMeshRow(MeshDiagnosticsRow& row, const Me
 		row.GpuMeshRuntimeId = reinterpret_cast<std::uintptr_t>(gpuMesh);
 		row.GpuResident = gpuMesh->IsValid();
 		row.ResidencyState = row.GpuResident ? MeshDiagnosticsResidencyState::Resident : MeshDiagnosticsResidencyState::Unloaded;
-		row.EstimatedGpuByteSize = static_cast<std::uint64_t>(gpuMesh->GetVertexBufferView().SizeInBytes) +
-		                          static_cast<std::uint64_t>(gpuMesh->GetIndexBufferView().SizeInBytes);
+		row.EstimatedGpuByteSize = static_cast<std::uint64_t>(gpuMesh->GetVertexBufferView().SizeInBytes)
+		    + static_cast<std::uint64_t>(gpuMesh->GetIndexBufferView().SizeInBytes);
 	}
 }

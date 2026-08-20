@@ -4,14 +4,14 @@
 #include "Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
-#include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
+#include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
 #include "Shaders/Authoring/GlobalShader.h"
 #include "ShaderData/RenderConstantBufferData.h"
 #include "ShaderData/RenderViewLightingData.h"
 
 class DirectShadowSignalDeviceAddressCS final : public TGlobalShader<DirectShadowSignalDeviceAddressCS>
 {
-  public:
+public:
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::DeviceAddressRayQuery;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )

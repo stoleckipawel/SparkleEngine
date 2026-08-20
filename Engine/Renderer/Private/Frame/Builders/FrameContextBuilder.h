@@ -11,14 +11,12 @@ class TemporalDataBuilder;
 class RenderPreparationGraph;
 class RenderRayTracingScene;
 struct FrameContext;
-class RenderWorld;
-struct RenderSceneDynamicData;
+class RenderScene;
 struct RhiRect;
 struct RhiViewport;
 
 struct FrameContextBuildRequest final
 {
-	const RenderSceneDynamicData& Dynamic;
 	PersistentRenderGpuScene& GpuScene;
 	std::uint64_t FrameId = 0;
 	std::uint32_t FrameIndex = 0;
@@ -30,7 +28,7 @@ class FrameContextBuilder final
 {
 public:
 	FrameContextBuilder(
-	    const RenderWorld& world,
+	    RenderScene& scene,
 	    const RenderCamera& renderCamera,
 	    RenderPreparationGraph& renderPreparationGraph,
 	    PerViewDataBuilder& perViewDataBuilder,
@@ -42,7 +40,7 @@ private:
 	static RhiViewport BuildSceneViewport(RenderViewportExtent sceneExtent) noexcept;
 	static RhiRect BuildSceneScissorRect(RenderViewportExtent sceneExtent) noexcept;
 
-	const RenderWorld& m_world;
+	RenderScene& m_scene;
 	const RenderCamera& m_renderCamera;
 	RenderPreparationGraph& m_renderPreparationGraph;
 	PerViewDataBuilder& m_perViewDataBuilder;

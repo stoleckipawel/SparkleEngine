@@ -10,11 +10,7 @@ namespace MaterialHandleResolver
 	std::uint32_t ResolveSlot(MaterialHandle handle, std::uint32_t materialGeneration, std::size_t materialCount)
 	{
 		if (!handle.IsValid() || handle.GetGeneration() != materialGeneration || handle.GetIndex() >= materialCount)
-			Diagnostics::Fatal(
-			    g_materialHandleResolverLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Render object references an invalid material handle.");
+			Diagnostics::Fatal(g_materialHandleResolverLogger, __FILE__, __LINE__, "Render object references an invalid material handle.");
 		return handle.GetIndex();
 	}
-}  // namespace MaterialHandleResolver
+}

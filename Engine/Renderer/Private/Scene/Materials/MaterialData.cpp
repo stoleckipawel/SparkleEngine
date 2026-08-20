@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "SceneData/MaterialData.h"
+#include "Scene/Materials/MaterialData.h"
 #include "Scene/Materials/MaterialDesc.h"
 
 MaterialGpuHandle::operator bool() const noexcept
@@ -7,8 +7,7 @@ MaterialGpuHandle::operator bool() const noexcept
 	return Index != UINT32_MAX && Generation != 0u;
 }
 
-bool MaterialGpuHandle::operator==(
-    const MaterialGpuHandle&) const noexcept = default;
+bool MaterialGpuHandle::operator==(const MaterialGpuHandle&) const noexcept = default;
 
 MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 {

@@ -1,10 +1,10 @@
 #include "PCH.h"
 #include "SceneData/Input/RenderInputConsumer.h"
 
-#include "SceneData/RenderWorld.h"
+#include "Scene/RenderScene.h"
 
-RenderInputConsumer::RenderInputConsumer(RenderWorld& world) noexcept :
-    m_world(&world)
+RenderInputConsumer::RenderInputConsumer(RenderScene& scene) noexcept :
+    m_scene(&scene)
 {
 }
 
@@ -29,7 +29,8 @@ RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 		result.Diagnostic = "Render frame submission identity is stale.";
 		return result;
 	}
-	if (m_world->ApplyFrame(submission.Scene.Structural, submission.Scene.Dynamic, result.Diagnostic) != RenderWorldApplyStatus::Applied)
+	if (m_scene->Apply(submission.Scene.Structural, std::move(submission.Scene.Dynamic), result.Diagnostic)
+	    != RenderSceneApplyStatus::Applied)
 	{
 		return result;
 	}
@@ -38,7 +39,6 @@ RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 	result.Accepted = true;
 	result.SceneReset = submission.Scene.Structural.ResetScene;
 	m_frameId = submission.FrameId;
-	m_sceneDynamic = std::move(submission.Scene.Dynamic);
 	m_viewInput = std::move(submission.View);
 	return result;
 }

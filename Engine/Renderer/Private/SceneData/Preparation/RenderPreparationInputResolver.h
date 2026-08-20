@@ -1,57 +1,41 @@
 #pragma once
 
-#include "Rendering/RenderObjectId.h"
-
 #include <DirectXMath.h>
 
 #include <cstdint>
-#include <span>
 
 class GpuMeshCache;
-class MaterialCache;
 class RenderDeformationPreparation;
-class RenderWorld;
+class RenderScene;
 class TextureCache;
 struct Frustum;
-struct RenderSceneDynamicData;
-struct RenderProxy;
+struct RenderPrimitive;
 struct RenderPreparationRun;
 struct RenderSceneData;
 struct ResolvedRenderObject;
 
-struct RenderPreviousWorldTransform final
-{
-	RenderObjectId Object;
-	DirectX::XMFLOAT4X4 WorldMatrix = {};
-};
-
 class RenderPreparationInputResolver final
 {
 public:
-	RenderPreparationInputResolver(MaterialCache& materialCache, GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept;
+	RenderPreparationInputResolver(GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept;
 
 	void Resolve(
-	    const RenderWorld& world,
-	    const RenderSceneDynamicData& dynamic,
+	    RenderScene& scene,
 	    const Frustum& frustum,
-	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
+	    const DirectX::XMFLOAT3& cameraPosition,
 	    RenderDeformationPreparation& deformationPreparation,
 	    RenderPreparationRun& run);
 
 private:
-	void ResolveObjects(
-	    const RenderWorld& world,
-	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
-	    RenderPreparationRun& run);
+	void ResolveObjects(const RenderScene& scene, RenderPreparationRun& run);
 	ResolvedRenderObject ResolveObject(
-	    const RenderProxy& proxy,
+	    const RenderScene& scene,
+	    const RenderPrimitive& primitive,
 	    std::uint32_t materialGeneration,
-	    std::span<const RenderPreviousWorldTransform> previousWorldTransforms,
 	    RenderSceneData& sceneData);
-	void ResolveInstanceGroups(const RenderWorld& world, RenderPreparationRun& run) const;
-	void ResolveSky(const RenderWorld& world, RenderSceneData& sceneData) const;
+	void ResolveInstanceGroups(const RenderScene& scene, RenderPreparationRun& run) const;
+	void ResolveSky(const RenderScene& scene, RenderSceneData& sceneData) const;
 
-	MaterialCache* m_materialCache = nullptr;
 	GpuMeshCache* m_gpuMeshCache = nullptr;
 	TextureCache* m_textureCache = nullptr;
 };

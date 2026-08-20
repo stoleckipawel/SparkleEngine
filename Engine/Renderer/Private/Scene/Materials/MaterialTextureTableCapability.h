@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHI/Public/Core/RhiCapabilities.h"
-#include "SceneData/MaterialBindingMode.h"
+#include "Scene/Materials/MaterialBindingMode.h"
 
 #include <cstdint>
 
@@ -43,5 +43,4 @@ struct MaterialTextureTableCapabilityReport final
 	}
 };
 
-MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(
-    const RhiCapabilities& capabilities) noexcept;
+MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(const RhiCapabilities& capabilities) noexcept;

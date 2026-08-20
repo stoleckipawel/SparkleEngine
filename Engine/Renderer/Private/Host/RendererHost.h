@@ -12,7 +12,6 @@
 
 class FrameExecutionDiagnostics;
 class GpuMeshCache;
-class MaterialCache;
 class PerViewDataBuilder;
 class RenderPassRuntimeCache;
 class RenderCamera;
@@ -24,7 +23,7 @@ class RendererImageProviderStack;
 class RenderRayTracingScene;
 class RenderPreparationGraph;
 class RhiImGuiRenderer;
-class RenderWorld;
+class RenderScene;
 class TemporalDataBuilder;
 class TextureCache;
 class TaskExecutor;
@@ -61,15 +60,14 @@ public:
 	const RenderPassRuntimeCache& GetRenderPassRuntimeCache() const noexcept { return *m_renderPassRuntimeCache; }
 	GpuMeshCache& GetGpuMeshCache() noexcept { return *m_gpuMeshCache; }
 	TextureCache& GetTextureCache() noexcept { return *m_textureCache; }
-	MaterialCache& GetMaterialCache() noexcept { return *m_materialCache; }
 	RenderPreparationGraph& GetRenderPreparationGraph() noexcept { return *m_renderPreparationGraph; }
 	RenderRayTracingScene* GetRenderRayTracingScene() noexcept { return m_renderRayTracingScene.get(); }
 	const RenderRayTracingScene* GetRenderRayTracingScene() const noexcept { return m_renderRayTracingScene.get(); }
 	PerViewDataBuilder& GetPerViewDataBuilder() noexcept { return *m_perViewDataBuilder; }
 	TemporalDataBuilder& GetTemporalDataBuilder() noexcept { return *m_temporalDataBuilder; }
 	RenderCamera& GetRenderCamera() noexcept { return *m_renderCamera; }
-	RenderWorld& GetRenderWorld() noexcept { return *m_renderWorld; }
-	const RenderWorld& GetRenderWorld() const noexcept { return *m_renderWorld; }
+	RenderScene& GetRenderScene() noexcept { return *m_renderScene; }
+	const RenderScene& GetRenderScene() const noexcept { return *m_renderScene; }
 	RendererImageProviderStack& GetImageProviders() noexcept { return *m_imageProviders; }
 	const RendererImageProviderStack& GetImageProviders() const noexcept { return *m_imageProviders; }
 	std::uint64_t GetImageProviderGeneration() const noexcept { return m_imageProviderGeneration; }
@@ -100,13 +98,12 @@ private:
 	std::unique_ptr<RendererMemoryMonitor> m_memoryMonitor;
 	std::unique_ptr<GpuMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureCache> m_textureCache;
-	std::unique_ptr<MaterialCache> m_materialCache;
 	std::unique_ptr<RenderPreparationGraph> m_renderPreparationGraph;
 	std::unique_ptr<RenderRayTracingScene> m_renderRayTracingScene;
 	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
 	std::unique_ptr<TemporalDataBuilder> m_temporalDataBuilder;
 	std::unique_ptr<RenderCamera> m_renderCamera;
-	std::unique_ptr<RenderWorld> m_renderWorld;
+	std::unique_ptr<RenderScene> m_renderScene;
 	std::unique_ptr<RendererImageProviderStack> m_imageProviders;
 	std::uint64_t m_imageProviderGeneration = 1;
 	struct RetiredImageProviderGeneration final

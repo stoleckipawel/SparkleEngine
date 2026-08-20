@@ -7,4 +7,4 @@
 namespace MaterialHandleResolver
 {
 	std::uint32_t ResolveSlot(MaterialHandle handle, std::uint32_t materialGeneration, std::size_t materialCount);
-}  // namespace MaterialHandleResolver
+}

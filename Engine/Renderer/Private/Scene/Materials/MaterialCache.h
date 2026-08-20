@@ -1,8 +1,8 @@
 #pragma once
 
-#include "SceneData/MaterialTextureTable.h"
+#include "Scene/Materials/MaterialTextureTable.h"
 #include "Rendering/RenderResourceTables.h"
-#include "SceneData/MaterialData.h"
+#include "Scene/Materials/MaterialData.h"
 
 #include <cstdint>
 #include <memory>

@@ -12,7 +12,7 @@ class RenderHardwareInterface;
 
 class MaterialTextureTable final
 {
-  public:
+public:
 	MaterialTextureTable() noexcept = default;
 	~MaterialTextureTable() noexcept = default;
 
@@ -29,7 +29,7 @@ class MaterialTextureTable final
 	RhiDescriptorTableBinding GetTableBinding() const noexcept;
 	std::uint32_t GetTextureCount() const noexcept { return static_cast<std::uint32_t>(m_textureViews.size()); }
 
-  private:
+private:
 	std::vector<RhiResourceViewHandle> m_textureViews;
 	std::unique_ptr<RenderBindingSet> m_bindingSet;
 };

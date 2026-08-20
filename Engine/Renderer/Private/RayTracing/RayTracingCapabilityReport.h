@@ -2,7 +2,7 @@
 
 #include "RHI/Public/Core/RhiBackendApi.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
-#include "SceneData/MaterialTextureTableCapability.h"
+#include "Scene/Materials/MaterialTextureTableCapability.h"
 
 #include <cstdint>
 
@@ -64,9 +64,9 @@ struct RayTracingCapabilityReport final
 
 class RayTracingCapabilityReporter final
 {
-  public:
+public:
 	static RayTracingCapabilityReport Build(const RhiCapabilities& capabilities) noexcept;
 
-  private:
+private:
 	static RayTracingCapabilityReport BuildFromCapabilities(const RhiCapabilities& capabilities) noexcept;
 };

@@ -2,6 +2,7 @@
 
 #include "SceneData/Preparation/RenderPreparationGraph.h"
 
+#include "Scene/RenderScene.h"
 #include "SceneData/Preparation/RenderDeformationPreparation.h"
 #include "SceneData/Preparation/RenderPreparationInputResolver.h"
 #include "SceneData/Preparation/RenderPreparationMerger.h"
@@ -33,14 +34,13 @@ struct RenderPreparationGraph::Impl final
 		std::uint32_t MorphWeightCopyRanges = 0u;
 	};
 
-	Impl(TaskExecutor& taskExecutor, MaterialCache& materialCache, GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept;
+	Impl(TaskExecutor& taskExecutor, GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept;
 
-	void Execute(const RenderWorld& world, const RenderSceneDynamicData& dynamic, const Frustum& frustum, RenderSceneData& output);
-	void ResetHistory() noexcept;
+	void Execute(RenderScene& scene, const Frustum& frustum, const DirectX::XMFLOAT3& cameraPosition, RenderSceneData& output);
 
 private:
 	void BeginRun(RenderSceneData& output);
-	void ResolveInputs(const RenderWorld& world, const RenderSceneDynamicData& dynamic, const Frustum& frustum);
+	void ResolveInputs(RenderScene& scene, const Frustum& frustum, const DirectX::XMFLOAT3& cameraPosition);
 	bool ExecuteCompiledGraph();
 	void FinishRun(RenderSceneData& output) noexcept;
 	void EnsureGraph(
@@ -67,7 +67,7 @@ private:
 	    TaskNodeHandle morphWeights,
 	    TaskNodeHandle lighting);
 	static TaskDesc MakeTaskDesc(std::string_view name);
-	void CommitHistory();
+	void CommitHistory(RenderScene& scene);
 	static void ReleaseInputViews(RenderPreparationRun& run) noexcept;
 	static std::uint32_t ResolveCapacity(std::size_t count, std::uint32_t serialThreshold) noexcept;
 
@@ -75,29 +75,24 @@ private:
 	RenderPreparationInputResolver m_inputResolver;
 	RenderDeformationPreparation m_deformationPreparation;
 	RenderPreparationRun m_run;
-	std::vector<RenderPreviousWorldTransform> m_previousWorldTransforms;
 	CompiledTaskGraph m_graph;
 	Capacity m_capacity;
 };
 
-RenderPreparationGraph::Impl::Impl(
-    TaskExecutor& taskExecutor,
-    MaterialCache& materialCache,
-    GpuMeshCache& gpuMeshCache,
-    TextureCache& textureCache) noexcept :
+RenderPreparationGraph::Impl::Impl(TaskExecutor& taskExecutor, GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept :
     m_taskExecutor(&taskExecutor),
-    m_inputResolver(materialCache, gpuMeshCache, textureCache)
+    m_inputResolver(gpuMeshCache, textureCache)
 {
 }
 
 void RenderPreparationGraph::Impl::Execute(
-    const RenderWorld& world,
-    const RenderSceneDynamicData& dynamic,
+    RenderScene& scene,
     const Frustum& frustum,
+    const DirectX::XMFLOAT3& cameraPosition,
     RenderSceneData& output)
 {
 	BeginRun(output);
-	ResolveInputs(world, dynamic, frustum);
+	ResolveInputs(scene, frustum, cameraPosition);
 	EnsureGraph(
 	    m_run.ResolvedObjects.size(),
 	    m_run.PreparedLights.size(),
@@ -106,13 +101,13 @@ void RenderPreparationGraph::Impl::Execute(
 
 	if (!ExecuteCompiledGraph())
 	{
-		ResetHistory();
+		scene.ResetContinuity();
 		m_run.SceneData.ResetForReuse();
 		FinishRun(output);
 		return;
 	}
 
-	CommitHistory();
+	CommitHistory(scene);
 	RenderPreparationMerger::PublishFrameOutputs(m_run);
 	FinishRun(output);
 }
@@ -127,9 +122,9 @@ void RenderPreparationGraph::Impl::BeginRun(RenderSceneData& output)
 	m_run.SceneData.ResetForReuse();
 }
 
-void RenderPreparationGraph::Impl::ResolveInputs(const RenderWorld& world, const RenderSceneDynamicData& dynamic, const Frustum& frustum)
+void RenderPreparationGraph::Impl::ResolveInputs(RenderScene& scene, const Frustum& frustum, const DirectX::XMFLOAT3& cameraPosition)
 {
-	m_inputResolver.Resolve(world, dynamic, frustum, m_previousWorldTransforms, m_deformationPreparation, m_run);
+	m_inputResolver.Resolve(scene, frustum, cameraPosition, m_deformationPreparation, m_run);
 }
 
 bool RenderPreparationGraph::Impl::ExecuteCompiledGraph()
@@ -148,12 +143,6 @@ void RenderPreparationGraph::Impl::FinishRun(RenderSceneData& output) noexcept
 {
 	ReleaseInputViews(m_run);
 	output = std::move(m_run.SceneData);
-}
-
-void RenderPreparationGraph::Impl::ResetHistory() noexcept
-{
-	m_previousWorldTransforms.clear();
-	m_deformationPreparation.Reset();
 }
 
 void RenderPreparationGraph::Impl::EnsureGraph(
@@ -279,29 +268,9 @@ TaskDesc RenderPreparationGraph::Impl::MakeTaskDesc(std::string_view name)
 	return TaskDesc{.Name = TaskName(name), .Lane = TaskLane::FrameCritical};
 }
 
-void RenderPreparationGraph::Impl::CommitHistory()
+void RenderPreparationGraph::Impl::CommitHistory(RenderScene& scene)
 {
-	m_previousWorldTransforms.clear();
-
-	std::uint32_t requiredSlotCount = 0u;
-	for (const PreparedRenderObject& object : m_run.PreparedObjects)
-	{
-		requiredSlotCount = (std::max) (requiredSlotCount, object.Draw.Source.GpuSceneSlot + 1u);
-	}
-	m_previousWorldTransforms.resize(requiredSlotCount);
-
-	for (const PreparedRenderObject& object : m_run.PreparedObjects)
-	{
-		if (!object.Object.IsValid())
-		{
-			continue;
-		}
-
-		m_previousWorldTransforms[object.Draw.Source.GpuSceneSlot] =
-		    RenderPreviousWorldTransform{.Object = object.Object, .WorldMatrix = object.Draw.Transform.WorldMatrix};
-	}
-
-	m_deformationPreparation.Commit(m_run.Deformation);
+	scene.CommitContinuity(m_run.PreparedObjects, m_run.Deformation);
 }
 
 void RenderPreparationGraph::Impl::ReleaseInputViews(RenderPreparationRun& run) noexcept
@@ -319,27 +288,18 @@ std::uint32_t RenderPreparationGraph::Impl::ResolveCapacity(std::size_t count, s
 	return boundedCount <= serialThreshold ? serialThreshold : std::bit_ceil(boundedCount);
 }
 
-RenderPreparationGraph::RenderPreparationGraph(
-    TaskExecutor& taskExecutor,
-    MaterialCache& materialCache,
-    GpuMeshCache& gpuMeshCache,
-    TextureCache& textureCache) :
-    m_impl(std::make_unique<Impl>(taskExecutor, materialCache, gpuMeshCache, textureCache))
+RenderPreparationGraph::RenderPreparationGraph(TaskExecutor& taskExecutor, GpuMeshCache& gpuMeshCache, TextureCache& textureCache) :
+    m_impl(std::make_unique<Impl>(taskExecutor, gpuMeshCache, textureCache))
 {
 }
 
 RenderPreparationGraph::~RenderPreparationGraph() noexcept = default;
 
 void RenderPreparationGraph::Execute(
-    const RenderWorld& world,
-    const RenderSceneDynamicData& dynamic,
+    RenderScene& scene,
     const Frustum& frustum,
+    const DirectX::XMFLOAT3& cameraPosition,
     RenderSceneData& output)
 {
-	m_impl->Execute(world, dynamic, frustum, output);
-}
-
-void RenderPreparationGraph::ResetHistory() noexcept
-{
-	m_impl->ResetHistory();
+	m_impl->Execute(scene, frustum, cameraPosition, output);
 }

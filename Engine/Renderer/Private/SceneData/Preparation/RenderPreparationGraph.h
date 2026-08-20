@@ -1,24 +1,20 @@
 #pragma once
 
+#include <DirectXMath.h>
+
 #include <memory>
 
 struct Frustum;
 class GpuMeshCache;
-class MaterialCache;
-class RenderWorld;
+class RenderScene;
 class TaskExecutor;
 class TextureCache;
-struct RenderSceneDynamicData;
 struct RenderSceneData;
 
 class RenderPreparationGraph final
 {
 public:
-	RenderPreparationGraph(
-	    TaskExecutor& taskExecutor,
-	    MaterialCache& materialCache,
-	    GpuMeshCache& gpuMeshCache,
-	    TextureCache& textureCache);
+	RenderPreparationGraph(TaskExecutor& taskExecutor, GpuMeshCache& gpuMeshCache, TextureCache& textureCache);
 	~RenderPreparationGraph() noexcept;
 
 	RenderPreparationGraph(const RenderPreparationGraph&) = delete;
@@ -26,8 +22,7 @@ public:
 	RenderPreparationGraph(RenderPreparationGraph&&) = delete;
 	RenderPreparationGraph& operator=(RenderPreparationGraph&&) = delete;
 
-	void Execute(const RenderWorld& world, const RenderSceneDynamicData& dynamic, const Frustum& frustum, RenderSceneData& output);
-	void ResetHistory() noexcept;
+	void Execute(RenderScene& scene, const Frustum& frustum, const DirectX::XMFLOAT3& cameraPosition, RenderSceneData& output);
 
 private:
 	struct Impl;
