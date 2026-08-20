@@ -8,6 +8,10 @@
 #include <cstdint>
 
 class FrameGraphBuilder;
+class GpuMeshCache;
+class IRayReconstructionProvider;
+class IUpscalerProvider;
+class RenderRayTracingScene;
 
 struct FrameBuildResult
 {
@@ -29,4 +33,10 @@ struct FrameBuildSettings final
 	FramePresentationTarget PresentationTarget = FramePresentationTarget::BackBuffer;
 };
 
-FrameBuildResult BuildFrame(FrameGraphBuilder& builder, const FrameBuildSettings& settings);
+FrameBuildResult BuildFrame(
+    FrameGraphBuilder& builder,
+    const FrameBuildSettings& settings,
+    GpuMeshCache& gpuMeshCache,
+    RenderRayTracingScene& rayTracingScene,
+    IUpscalerProvider* upscalerProvider,
+    IRayReconstructionProvider* rayReconstructionProvider);

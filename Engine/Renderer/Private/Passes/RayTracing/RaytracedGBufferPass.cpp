@@ -1,18 +1,13 @@
 #include "../../PCH.h"
 
-#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/RayTracing/RaytracedGBufferPass.h"
 
-#include "Frame/Core/FrameContext.h"
-#include "View/RenderView.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
 void RaytracedGBufferPassParameters::Describe(ShaderParameterStructBuilder<RaytracedGBufferPassParameters>& builder)
 {
@@ -68,35 +63,11 @@ const RenderPassDefinition& RaytracedGBufferPass::GetDefinition() noexcept
 	return definition;
 }
 
-void RaytracedGBufferPass::SetParameters(
+void RaytracedGBufferPass::Execute(
+    PassCommandContext& context,
     ParameterInstance& parameters,
-    const FrameContext& frame,
-    const RenderView& view,
-    const PassRuntimeContext& passRuntimeContext) const
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight) const
 {
-	parameters->Frame = passRuntimeContext.Frame;
-	parameters->View = view.uniform;
-	parameters->ViewCamera = view.cameraUniform;
-	parameters->ViewTemporal = view.temporalUniform;
-	parameters->MaterialTextureSampler = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
-	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
-}
-
-void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
-{
-	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
-
-	SetParameters(parameters, context.Frame, context.Frame.view, context.Runtime);
-	parameters->RaytracedGBufferConstants = RaytracedGBufferUniformData{
-	    .RayTracingHitInstanceCount = context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount,
-	    .RayTracingHitMaterialCount = context.Frame.preparedScene.gpuBindings->RayTracing.MaterialCount};
-	ComputePassOperations::DispatchSized<RaytracedGBufferPass>(
-	    context,
-	    m_runtime,
-	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
+	ComputePassOperations::DispatchSized<RaytracedGBufferPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

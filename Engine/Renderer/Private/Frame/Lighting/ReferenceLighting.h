@@ -4,8 +4,12 @@
 
 class FrameGraphBuilder;
 
-void AddReferenceLightingProducerPasses(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources);
+void AddReferenceLightingProducerPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    const FrameAssemblyResourceLayout& resources);
 void FinalizeReferenceLightingPasses(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     FrameGraphTextureHandle referenceSample,
     const FrameAssemblyResourceLayout& resources);

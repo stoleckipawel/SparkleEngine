@@ -14,14 +14,18 @@ void AddPreReconstructionPostProcessingPasses(
 	AddExposurePass(builder, settings, resources);
 }
 
-void AddPostProcessingPasses(FrameGraphBuilder& builder, const FrameBuildSettings& settings, FrameAssemblyResourceLayout& resources)
+void AddPostProcessingPasses(
+    FrameGraphBuilder& builder,
+    const FrameBuildSettings& settings,
+    IUpscalerProvider* upscalerProvider,
+    FrameAssemblyResourceLayout& resources)
 {
 	if (!resources.FinalSceneColorProduced)
 	{
-		AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, resources);
+		AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, upscalerProvider, resources);
 	}
 
-	AddDebugPasses(builder, resources);
+	AddDebugPasses(builder, settings.OutputExtent, resources);
 
 	AddPresentationPasses(builder, settings, resources);
 }

@@ -7,7 +7,7 @@
 #include <cstdint>
 
 struct ComputePassPipelineRuntime;
-struct PassExecutionContext;
+struct PassCommandContext;
 struct RenderPassDefinition;
 
 struct ReferenceLightingAccumulationPassParameters
@@ -25,7 +25,7 @@ struct ReferenceLightingAccumulationPassParameters
 
 class ReferenceLightingAccumulationPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "ReferenceLightingAccumulation";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -37,8 +37,8 @@ class ReferenceLightingAccumulationPass final
 	explicit ReferenceLightingAccumulationPass(const ComputePassPipelineRuntime& runtime) noexcept;
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

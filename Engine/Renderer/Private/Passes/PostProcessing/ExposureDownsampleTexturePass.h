@@ -7,7 +7,7 @@
 #include <cstdint>
 
 struct ComputePassPipelineRuntime;
-struct PassExecutionContext;
+struct PassCommandContext;
 struct RenderPassDefinition;
 
 struct ExposureDownsampleTexturePassParameters
@@ -30,7 +30,7 @@ struct ExposureDownsampleTexturePassParameters
 
 class ExposureDownsampleTexturePass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "ExposureDownsampleTexture";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -43,8 +43,8 @@ class ExposureDownsampleTexturePass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

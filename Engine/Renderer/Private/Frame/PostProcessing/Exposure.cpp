@@ -24,9 +24,11 @@ void AddExposurePass(FrameGraphBuilder& builder, const FrameBuildSettings& setti
 	}
 
 	auto& parameters = builder.AllocParameters<ExposurePass::Parameters>();
+	auto* parameterFields = parameters.operator->();
 	parameters->LuminanceMoments = builder.CreateSRV(moments.TextureHandle);
 	parameters->PreviousExposureTexture = builder.CreateSRV(resources.History.Exposure.Previous);
 	parameters->ExposureHistoryTexture = builder.CreateUAV(resources.History.Exposure.Current);
 	parameters->ExposureTexture = builder.CreateUAV(resources.Transient.Exposure);
+	builder.AddExposureSetup([parameterFields](const ExposureUniformData& exposure) { parameterFields->ExposureConstants = exposure; });
 	builder.DispatchAsync<ExposurePass>(parameters);
 }

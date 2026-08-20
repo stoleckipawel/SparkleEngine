@@ -15,24 +15,15 @@ FrameGraphRecordingExecutor::FrameGraphRecordingExecutor(
     const FrameGraphPlan& plan,
     RhiCommandSubmissionService& submissionService,
     TaskExecutor& taskExecutor,
-    const FrameContext& frame,
-    const PassRuntimeContext& passRuntimeContext,
     FrameExecutionDiagnostics& frameDiagnostics) noexcept :
-	m_plan(plan),
-	m_submissionService(submissionService),
-	m_taskExecutor(taskExecutor),
-	m_chunkRecorder(
-	    frameGraph,
-	    plan,
-	    frame,
-	    passRuntimeContext,
-	    frameDiagnostics)
+    m_plan(plan),
+    m_submissionService(submissionService),
+    m_taskExecutor(taskExecutor),
+    m_chunkRecorder(frameGraph, plan, frameDiagnostics)
 {
 }
 
-bool FrameGraphRecordingExecutor::RecordBatch(
-    const FrameGraphSubmissionBatch& batch,
-    RhiCommandRecordingLease initializationLease)
+bool FrameGraphRecordingExecutor::RecordBatch(const FrameGraphSubmissionBatch& batch, RhiCommandRecordingLease initializationLease)
 {
 	m_firstChunk = batch.recordingChunkOffset;
 	if (!ShouldRecordBatchInParallel(batch))
@@ -45,18 +36,13 @@ bool FrameGraphRecordingExecutor::RecordBatch(
 	return RecordChunks();
 }
 
-bool FrameGraphRecordingExecutor::ShouldRecordBatchInParallel(
-    const FrameGraphSubmissionBatch& batch) const noexcept
+bool FrameGraphRecordingExecutor::ShouldRecordBatchInParallel(const FrameGraphSubmissionBatch& batch) const noexcept
 {
-	return CVarRendererParallelFrameGraphRecording.Get() &&
-	       !CVarRendererDiagnosticGpuTiming.Get() &&
-	       batch.recordingChunkCount >= 2 &&
-	       m_taskExecutor.GetWorkerCount(TaskLane::FrameCritical) >= 2;
+	return CVarRendererParallelFrameGraphRecording.Get() && !CVarRendererDiagnosticGpuTiming.Get() && batch.recordingChunkCount >= 2
+	    && m_taskExecutor.GetWorkerCount(TaskLane::FrameCritical) >= 2;
 }
 
-void FrameGraphRecordingExecutor::RecordBatchSerial(
-    const FrameGraphSubmissionBatch& batch,
-    RhiCommandRecordingLease initializationLease)
+void FrameGraphRecordingExecutor::RecordBatchSerial(const FrameGraphSubmissionBatch& batch, RhiCommandRecordingLease initializationLease)
 {
 	assert(batch.recordingChunkCount != 0);
 	m_resultCount = 1;
@@ -74,9 +60,7 @@ void FrameGraphRecordingExecutor::RecordBatchSerial(
 	}
 
 	RenderCommandList& commandList = result.Lease.GetCommandList();
-	for (std::uint32_t chunkOffset = 0;
-	     chunkOffset < batch.recordingChunkCount;
-	     ++chunkOffset)
+	for (std::uint32_t chunkOffset = 0; chunkOffset < batch.recordingChunkCount; ++chunkOffset)
 	{
 		const RecordingChunkIndex chunkIndex = batch.recordingChunkOffset + chunkOffset;
 		m_chunkRecorder.Record(m_plan.recording.Chunks[chunkIndex], commandList);
@@ -85,16 +69,12 @@ void FrameGraphRecordingExecutor::RecordBatchSerial(
 	result.Lease.Close();
 }
 
-void FrameGraphRecordingExecutor::AcquireBatchLeases(
-    const FrameGraphSubmissionBatch& batch,
-    RhiCommandRecordingLease initializationLease)
+void FrameGraphRecordingExecutor::AcquireBatchLeases(const FrameGraphSubmissionBatch& batch, RhiCommandRecordingLease initializationLease)
 {
 	assert(batch.recordingChunkCount <= m_results.size());
 	m_resultCount = batch.recordingChunkCount;
 
-	for (std::uint32_t resultIndex = 0;
-	     resultIndex < m_resultCount;
-	     ++resultIndex)
+	for (std::uint32_t resultIndex = 0; resultIndex < m_resultCount; ++resultIndex)
 	{
 		const RecordingChunk& chunk = GetChunk(resultIndex);
 		RecordingChunkResult& result = m_results[resultIndex];
@@ -107,12 +87,9 @@ void FrameGraphRecordingExecutor::AcquireBatchLeases(
 			continue;
 		}
 
-		const RhiCommandRecordingOwner owner =
-		    chunk.ContextRequirement == RecordingContextRequirement::Coordinator
-		        ? RhiCommandRecordingOwner{}
-		        : RhiCommandRecordingOwner{
-		              .PartitionIndex = resultIndex,
-		              .TaskIdentity = BuildTaskIdentity(chunk.SubmissionOrder)};
+		const RhiCommandRecordingOwner owner = chunk.ContextRequirement == RecordingContextRequirement::Coordinator
+		    ? RhiCommandRecordingOwner{}
+		    : RhiCommandRecordingOwner{.PartitionIndex = resultIndex, .TaskIdentity = BuildTaskIdentity(chunk.SubmissionOrder)};
 
 		result.Lease = m_submissionService.AcquireCommandRecordingLease(chunk.Queue, owner);
 	}
@@ -150,12 +127,10 @@ bool FrameGraphRecordingExecutor::RecordChunks()
 	return true;
 }
 
-std::uint32_t FrameGraphRecordingExecutor::FindParallelRangeEnd(
-    std::uint32_t firstResult) const noexcept
+std::uint32_t FrameGraphRecordingExecutor::FindParallelRangeEnd(std::uint32_t firstResult) const noexcept
 {
 	std::uint32_t endResult = firstResult;
-	while (endResult < m_resultCount &&
-	       CanRecordParallel(m_results[endResult], GetChunk(endResult)))
+	while (endResult < m_resultCount && CanRecordParallel(m_results[endResult], GetChunk(endResult)))
 	{
 		++endResult;
 	}
@@ -163,44 +138,29 @@ std::uint32_t FrameGraphRecordingExecutor::FindParallelRangeEnd(
 	return endResult;
 }
 
-void FrameGraphRecordingExecutor::RecordSerialRange(
-    std::uint32_t firstResult,
-    std::uint32_t endResult)
+void FrameGraphRecordingExecutor::RecordSerialRange(std::uint32_t firstResult, std::uint32_t endResult)
 {
-	for (std::uint32_t resultIndex = firstResult;
-	     resultIndex < endResult;
-	     ++resultIndex)
+	for (std::uint32_t resultIndex = firstResult; resultIndex < endResult; ++resultIndex)
 	{
 		RecordChunk(resultIndex);
 	}
 }
 
-bool FrameGraphRecordingExecutor::RecordParallelRange(
-    std::uint32_t firstResult,
-    std::uint32_t resultCount)
+bool FrameGraphRecordingExecutor::RecordParallelRange(std::uint32_t firstResult, std::uint32_t resultCount)
 {
-	TaskGraphBuilder builder(
-	    TaskGraphLimits{
-	        .MaximumTasks = resultCount,
-	        .MaximumEdges = 0});
+	TaskGraphBuilder builder(TaskGraphLimits{.MaximumTasks = resultCount, .MaximumEdges = 0});
 
-	for (std::uint32_t resultOffset = 0;
-	     resultOffset < resultCount;
-	     ++resultOffset)
+	for (std::uint32_t resultOffset = 0; resultOffset < resultCount; ++resultOffset)
 	{
 		const std::uint32_t resultIndex = firstResult + resultOffset;
-		(void)builder.Add(
-		    TaskDesc{
-		        .Name = TaskName("Renderer.FrameGraph.RecordChunk"),
-		        .Lane = TaskLane::FrameCritical},
+		(void) builder.Add(
+		    TaskDesc{.Name = TaskName("Renderer.FrameGraph.RecordChunk"), .Lane = TaskLane::FrameCritical},
 		    [resultIndex](TaskExecutionContext& context)
 		    {
-			    FrameGraphRecordingExecutor* const executor =
-			        context.TryGet<FrameGraphRecordingExecutor>();
+			    FrameGraphRecordingExecutor* const executor = context.TryGet<FrameGraphRecordingExecutor>();
 			    if (executor == nullptr)
 			    {
-				    return TaskResult::Failure(
-				        "Frame-graph recording task has no execution owner.");
+				    return TaskResult::Failure("Frame-graph recording task has no execution owner.");
 			    }
 
 			    executor->RecordChunk(resultIndex);
@@ -210,8 +170,7 @@ bool FrameGraphRecordingExecutor::RecordParallelRange(
 
 	const CompiledTaskGraph graph = builder.Compile();
 	TaskExecutionContext context(*this);
-	const TaskExecution execution =
-	    m_taskExecutor.Submit(graph, context);
+	const TaskExecution execution = m_taskExecutor.Submit(graph, context);
 	return execution.GetStatus() == TaskExecutionStatus::Succeeded;
 }
 
@@ -225,36 +184,25 @@ void FrameGraphRecordingExecutor::RecordChunk(std::uint32_t resultIndex)
 	result.Lease.Close();
 }
 
-bool FrameGraphRecordingExecutor::CanRecordParallel(
-    const RecordingChunkResult& result,
-    const RecordingChunk& chunk) const noexcept
+bool FrameGraphRecordingExecutor::CanRecordParallel(const RecordingChunkResult& result, const RecordingChunk& chunk) const noexcept
 {
-	return !result.UsesInitializationLease &&
-	       chunk.ContextRequirement ==
-	           RecordingContextRequirement::ExclusiveLease;
+	return !result.UsesInitializationLease && chunk.ContextRequirement == RecordingContextRequirement::ExclusiveLease;
 }
 
-bool FrameGraphRecordingExecutor::ShouldExecuteParallelRange(
-    std::uint32_t firstResult,
-    std::uint32_t resultCount) const noexcept
+bool FrameGraphRecordingExecutor::ShouldExecuteParallelRange(std::uint32_t firstResult, std::uint32_t resultCount) const noexcept
 {
 	if (resultCount < 2)
 	{
 		return false;
 	}
 
-	return EstimateRangeCost(firstResult, resultCount) >=
-	       RecordingPlan::MinimumParallelRecordingCost;
+	return EstimateRangeCost(firstResult, resultCount) >= RecordingPlan::MinimumParallelRecordingCost;
 }
 
-std::uint32_t FrameGraphRecordingExecutor::EstimateRangeCost(
-    std::uint32_t firstResult,
-    std::uint32_t resultCount) const noexcept
+std::uint32_t FrameGraphRecordingExecutor::EstimateRangeCost(std::uint32_t firstResult, std::uint32_t resultCount) const noexcept
 {
 	std::uint32_t estimatedCost = 0;
-	for (std::uint32_t resultOffset = 0;
-	     resultOffset < resultCount;
-	     ++resultOffset)
+	for (std::uint32_t resultOffset = 0; resultOffset < resultCount; ++resultOffset)
 	{
 		estimatedCost += GetChunk(firstResult + resultOffset).EstimatedRecordingCost;
 	}
@@ -264,9 +212,7 @@ std::uint32_t FrameGraphRecordingExecutor::EstimateRangeCost(
 
 std::span<RhiCommandRecordingLease> FrameGraphRecordingExecutor::Aggregate()
 {
-	for (std::uint32_t resultIndex = 0;
-	     resultIndex < m_resultCount;
-	     ++resultIndex)
+	for (std::uint32_t resultIndex = 0; resultIndex < m_resultCount; ++resultIndex)
 	{
 		m_aggregatedLeases[resultIndex] = std::move(m_results[resultIndex].Lease);
 	}
@@ -274,17 +220,14 @@ std::span<RhiCommandRecordingLease> FrameGraphRecordingExecutor::Aggregate()
 	return std::span<RhiCommandRecordingLease>(m_aggregatedLeases.data(), m_resultCount);
 }
 
-const RecordingChunk& FrameGraphRecordingExecutor::GetChunk(
-    std::uint32_t resultIndex) const noexcept
+const RecordingChunk& FrameGraphRecordingExecutor::GetChunk(std::uint32_t resultIndex) const noexcept
 {
 	assert(m_firstChunk != InvalidRecordingChunkIndex);
 	assert(resultIndex < m_resultCount);
 	return m_plan.recording.Chunks[m_firstChunk + resultIndex];
 }
 
-std::uint64_t FrameGraphRecordingExecutor::BuildTaskIdentity(
-    SubmissionOrderKey submissionOrder) noexcept
+std::uint64_t FrameGraphRecordingExecutor::BuildTaskIdentity(SubmissionOrderKey submissionOrder) noexcept
 {
-	return static_cast<std::uint64_t>(submissionOrder.Batch) << 32u |
-	       submissionOrder.Position;
+	return static_cast<std::uint64_t>(submissionOrder.Batch) << 32u | submissionOrder.Position;
 }

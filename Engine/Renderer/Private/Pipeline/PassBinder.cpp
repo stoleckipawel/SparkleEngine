@@ -15,7 +15,7 @@ struct PassBinder::BindingRequest final
 {
 	RenderCommandContext& CommandContext;
 	const FrameGraphResourceCommands& Resources;
-	RenderHardwareInterface* HardwareInterface;
+	RenderHardwareInterface& HardwareInterface;
 	const CompiledBinding& Binding;
 	const PassParameterBinding* Parameters;
 	const PassBindingOverrides* Overrides;
@@ -25,33 +25,30 @@ struct PassBinder::BindingRequest final
 void PassBinder::BindGraphics(
     RenderCommandContext& commandContext,
     const FrameGraphResourceCommands& resources,
-    RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides,
     bool bindLayout)
 {
-	BindImpl(commandContext, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, bindLayout, false);
+	BindImpl(commandContext, resources, layout, parameterSet, bindingNames, overrides, bindLayout, false);
 }
 
 void PassBinder::BindCompute(
     RenderCommandContext& commandContext,
     const FrameGraphResourceCommands& resources,
-    RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides,
     bool bindLayout)
 {
-	BindImpl(commandContext, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, bindLayout, true);
+	BindImpl(commandContext, resources, layout, parameterSet, bindingNames, overrides, bindLayout, true);
 }
 
 void PassBinder::BindImpl(
     RenderCommandContext& commandContext,
     const FrameGraphResourceCommands& resources,
-    RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
@@ -87,7 +84,6 @@ void PassBinder::BindImpl(
 			BindCompiledBinding(
 			    commandContext,
 			    resources,
-			    renderHardwareInterface,
 			    compiledBinding,
 			    parameterSet.FindBinding(compiledBinding.Name),
 			    overrides,
@@ -107,14 +103,7 @@ void PassBinder::BindImpl(
 				continue;
 			}
 
-			BindCompiledBinding(
-			    commandContext,
-			    resources,
-			    renderHardwareInterface,
-			    compiledBinding,
-			    parameterSet.FindBinding(bindingName),
-			    overrides,
-			    isCompute);
+			BindCompiledBinding(commandContext, resources, compiledBinding, parameterSet.FindBinding(bindingName), overrides, isCompute);
 			boundAny = true;
 		}
 
@@ -125,7 +114,6 @@ void PassBinder::BindImpl(
 void PassBinder::BindCompiledBinding(
     RenderCommandContext& commandContext,
     const FrameGraphResourceCommands& resources,
-    RenderHardwareInterface* renderHardwareInterface,
     const CompiledBinding& compiledBinding,
     const PassParameterBinding* parameterBinding,
     const PassBindingOverrides* overrides,
@@ -134,7 +122,7 @@ void PassBinder::BindCompiledBinding(
 	const BindingRequest request{
 	    .CommandContext = commandContext,
 	    .Resources = resources,
-	    .HardwareInterface = renderHardwareInterface,
+	    .HardwareInterface = resources.GetRenderHardwareInterface(),
 	    .Binding = compiledBinding,
 	    .Parameters = parameterBinding,
 	    .Overrides = overrides,
@@ -177,11 +165,10 @@ void PassBinder::BindConstantBuffer(const BindingRequest& request)
 		return;
 	}
 
-	Require(request.HardwareInterface != nullptr, "Constant-buffer binding requires an active render hardware interface.");
 	Require(request.Parameters != nullptr, "Constant-buffer binding is absent from the pass parameter set.");
 	const PassParameterUniformBindingData* uniformData = request.Parameters->AsUniformData();
 	Require(uniformData != nullptr, "Constant-buffer binding has incompatible parameter data.");
-	const RhiGpuVirtualAddress gpuAddress = request.HardwareInterface->GetUploadService().AllocateUniformConstantBuffer(
+	const RhiGpuVirtualAddress gpuAddress = request.HardwareInterface.GetUploadService().AllocateUniformConstantBuffer(
 	    request.CommandContext.GetRenderCommandList(),
 	    uniformData->Data,
 	    uniformData->SizeInBytes);
@@ -201,10 +188,9 @@ void PassBinder::BindReadOnlyAddress(const BindingRequest& request)
 	Require(request.Parameters != nullptr, "Read-only address binding is absent from the pass parameter set.");
 	const PassParameterAccelerationStructureBindingData* accelerationStructureData = request.Parameters->AsAccelerationStructureData();
 	Require(accelerationStructureData != nullptr, "Read-only address binding has incompatible parameter data.");
-	const RhiGpuVirtualAddress gpuAddress =
-	    accelerationStructureData->Handle.IsValid()
-	        ? request.Resources.ResolveAccelerationStructureGpuAddress(accelerationStructureData->Handle)
-	        : accelerationStructureData->GpuAddress;
+	const RhiGpuVirtualAddress gpuAddress = accelerationStructureData->Handle.IsValid()
+	    ? request.Resources.ResolveAccelerationStructureGpuAddress(accelerationStructureData->Handle)
+	    : accelerationStructureData->GpuAddress;
 	BindGpuAddress(request.CommandContext, request.Binding, gpuAddress, request.IsCompute);
 }
 
@@ -274,12 +260,11 @@ void PassBinder::BindSamplerTable(const BindingRequest& request)
 		return;
 	}
 
-	Require(request.HardwareInterface != nullptr, "Sampler binding requires an active render hardware interface.");
 	Require(request.Parameters != nullptr, "Sampler binding is absent from the pass parameter set.");
 	const PassParameterSamplerBindingData* samplerData = request.Parameters->AsSamplerData();
 	Require(samplerData != nullptr, "Sampler binding has incompatible parameter data.");
 	const RhiDescriptorTableBinding samplerBinding =
-	    request.HardwareInterface->GetDescriptorService().GetSharedSamplerBinding(samplerData->Desc);
+	    request.HardwareInterface.GetDescriptorService().GetSharedSamplerBinding(samplerData->Desc);
 	Require(static_cast<bool>(samplerBinding), "Sampler binding did not resolve a descriptor table.");
 	BindDescriptorTable(request.CommandContext, request.Binding, samplerBinding, request.IsCompute);
 }

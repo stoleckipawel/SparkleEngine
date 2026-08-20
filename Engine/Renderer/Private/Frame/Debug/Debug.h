@@ -5,6 +5,4 @@
 
 class FrameGraphBuilder;
 
-void AddDebugPasses(
-    FrameGraphBuilder& builder,
-    const FrameAssemblyResourceLayout& resources);
+void AddDebugPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const FrameAssemblyResourceLayout& resources);

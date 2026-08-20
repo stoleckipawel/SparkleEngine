@@ -12,10 +12,6 @@
 #include "ShaderData/LightGpuData.h"
 #include "ShaderData/SceneLightingUniformData.h"
 
-struct FrameContext;
-struct PassRuntimeContext;
-struct RenderView;
-
 struct DirectShadowSignalCommonPassParameters
 {
 	ShaderRWTexture2D<void> ShadowVisibilitySignal;
@@ -139,19 +135,3 @@ struct DirectShadowSignalRayQueryPassParameters : DirectShadowSignalCommonPassPa
 		    ShaderStageVisibility::Compute);
 	}
 };
-
-namespace DirectShadowSignalPassCommon
-{
-	void SetParameters(
-	    DirectShadowSignalCommonPassParameters& parameters,
-	    const FrameContext& frame,
-	    const RenderView& view,
-	    const PassRuntimeContext& passRuntimeContext);
-
-	void SetRayQueryParameters(
-	    DirectShadowSignalRayQueryPassParameters& parameters,
-	    const FrameContext& frame,
-	    const RenderView& view,
-	    const PassRuntimeContext& passRuntimeContext,
-	    bool hasTraceableInstances);
-}

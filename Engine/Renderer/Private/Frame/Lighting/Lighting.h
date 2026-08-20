@@ -6,10 +6,12 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+class IRayReconstructionProvider;
 
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources);
 void AddLightingReconstructionPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     RenderViewportExtent outputExtent,
+    IRayReconstructionProvider* rayReconstructionProvider,
     FrameAssemblyResourceLayout& resources);

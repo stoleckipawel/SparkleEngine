@@ -1,10 +1,5 @@
 #pragma once
 
-#include "Commands/RenderCommandContext.h"
-#include "Frame/Core/FrameContext.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeContext.h"
-#include "Passes/Core/ShaderPassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Passes/Core/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -39,32 +34,4 @@ namespace RasterPassOperations
 	    PixelFormat renderTargetFormat,
 	    bool usePresentColorFormat);
 
-	template <typename TPass> bool DrawFullscreen(
-	    PassExecutionContext& context,
-	    const RasterPassPipelineRuntime& runtime,
-	    typename TPass::ParameterInstance& parameters)
-	{
-		const bool valid = parameters.Sync();
-		assert(valid);
-
-		context.Commands.SetViewport(context.Frame.view.viewport);
-		context.Commands.SetScissorRect(context.Frame.view.scissorRect);
-		context.Resources.BindRenderTarget(context.Commands, parameters->RenderTarget[0]);
-
-		const bool bound = RasterShaderPass<typename TPass::Parameters>::Bind(
-		    context.Resources,
-		    context.Commands,
-		    &context.Runtime.HardwareInterface,
-		    runtime.BindingLayout,
-		    runtime.Pipeline,
-		    parameters,
-		    nullptr,
-		    0,
-		    nullptr,
-		    TPass::PassName);
-		assert(bound);
-
-		ShaderPassOperations::DrawFullscreenTriangle(context.Commands);
-		return bound;
-	}
 }

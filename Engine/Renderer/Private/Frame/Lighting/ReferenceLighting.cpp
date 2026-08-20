@@ -5,16 +5,20 @@
 #include "Frame/Lighting/PathTracedIndirectLighting.h"
 #include "Frame/Lighting/ReferenceLightingAccumulation.h"
 
-void AddReferenceLightingProducerPasses(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources)
+void AddReferenceLightingProducerPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    const FrameAssemblyResourceLayout& resources)
 {
-	AddPathTracedDirectLightingPass(builder, resources);
-	AddPathTracedIndirectLightingPass(builder, resources);
+	AddPathTracedDirectLightingPass(builder, sceneExtent, resources);
+	AddPathTracedIndirectLightingPass(builder, sceneExtent, resources);
 }
 
 void FinalizeReferenceLightingPasses(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     FrameGraphTextureHandle referenceSample,
     const FrameAssemblyResourceLayout& resources)
 {
-	AddReferenceLightingAccumulationPass(builder, referenceSample, resources);
+	AddReferenceLightingAccumulationPass(builder, sceneExtent, referenceSample, resources);
 }

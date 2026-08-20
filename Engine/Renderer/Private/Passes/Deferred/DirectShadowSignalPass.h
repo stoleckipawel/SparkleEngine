@@ -7,7 +7,7 @@
 #include <cstdint>
 
 struct ComputePassPipelineRuntime;
-struct PassExecutionContext;
+struct PassCommandContext;
 struct RenderPassDefinition;
 
 struct DirectShadowSignalPassParameters : DirectShadowSignalRayQueryPassParameters
@@ -23,7 +23,7 @@ struct DirectShadowSignalPassParameters : DirectShadowSignalRayQueryPassParamete
 
 class DirectShadowSignalPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "DirectShadowSignal";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -36,8 +36,8 @@ class DirectShadowSignalPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

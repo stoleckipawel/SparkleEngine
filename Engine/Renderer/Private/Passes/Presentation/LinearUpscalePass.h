@@ -7,7 +7,7 @@
 #include <cstdint>
 
 struct ComputePassPipelineRuntime;
-struct PassExecutionContext;
+struct PassCommandContext;
 struct RenderPassDefinition;
 
 struct LinearUpscalePassParameters
@@ -26,7 +26,7 @@ struct LinearUpscalePassParameters
 
 class LinearUpscalePass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "LinearUpscale";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8u;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8u;
@@ -39,12 +39,8 @@ class LinearUpscalePass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(
-	    PassExecutionContext& context,
-	    ParameterInstance& parameters,
-	    std::uint32_t outputWidth,
-	    std::uint32_t outputHeight) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

@@ -10,7 +10,7 @@ void AddRestirIndirectLightingPasses(FrameGraphBuilder& builder, RenderViewportE
 {
 	const RestirIndirectWorkingReservoirs workingReservoirs = CreateRestirIndirectWorkingReservoirs(builder, sceneExtent);
 	AddRestirIndirectReservoirClearPasses(builder, sceneExtent, workingReservoirs, resources.History.RestirIndirectReservoir);
-	AddRestirIndirectTemporalPass(builder, workingReservoirs, resources);
-	AddRestirIndirectSpatialPass(builder, workingReservoirs, resources);
-	AddRestirIndirectResolvePass(builder, resources);
+	AddRestirIndirectTemporalPass(builder, sceneExtent, workingReservoirs, resources);
+	AddRestirIndirectSpatialPass(builder, sceneExtent, workingReservoirs, resources);
+	AddRestirIndirectResolvePass(builder, sceneExtent, resources);
 }

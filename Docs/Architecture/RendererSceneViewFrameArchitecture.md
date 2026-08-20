@@ -210,8 +210,8 @@ As inspected on 2026-08-18:
 - [`FramePipeline.cpp`](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) is 698 lines and coordinates input consumption, resize, graph rebuilds, uploads, camera mutation, per-frame constants, scene and view preparation, history invalidation, providers, ray tracing, scene resource binding, graph execution, submission, capture, UI, and presentation.
 - Historical `Renderer/Private/SceneData/RenderSceneData.h` contained scene revisions, lights, sky, all mesh/deformation records, materials, view-frustum-selected raster indices, camera-distance-sorted batches, workload values, and ray-tracing work.
 - Historical `Renderer/Private/SceneData/Preparation/RenderPreparationInputResolver.cpp` received both `RenderWorld` and a view frustum/camera position. Its result could not be accurately described as scene-only.
-- [`FrameContextBuilder.cpp`](../../Engine/Renderer/Private/Frame/Builders/FrameContextBuilder.cpp) prepares scene data, plans ray tracing from camera position, updates GPU Scene, constructs the view, and advances temporal history in one function.
-- [`PassRuntimeContext.h`](../../Engine/Renderer/Private/FrameGraph/PassRuntimeContext.h) is referenced by 45 Renderer private files. `mainView` is referenced by 24 files. This is coupling evidence, not a reason to create a larger replacement context.
+- At the Phase 0 baseline, `FrameContextBuilder.cpp` prepared scene data, planned ray tracing from camera position, updated GPU Scene, constructed the view, and advanced temporal history in one function.
+- At the Phase 0 baseline, `PassRuntimeContext.h` was referenced by 45 Renderer private files and `mainView` by 24 files. This was coupling evidence, not a reason to create a larger replacement context.
 - Historical `Renderer/Private/ShaderData/PerFrameConstantBufferData.h` mixed true frame time/index values with view mode and viewport size.
 - [`FramePipeline::FinalizeRenderInputMetadata`](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) writes render/output dimensions into a GameFramework-owned input packet after publication. Those dimensions are renderer/view configuration, not GameFramework scene metadata.
 - At the Phase 0 baseline, `RenderFrameMetadata::Exposure` had no consumer. Motion-vector and depth conventions were stable renderer/shader contracts rather than per-frame input, while `ProviderGeneration` was populated from shader-package generation and participated in input/history/capture behavior under a misleading name.
@@ -930,7 +930,7 @@ Today `FramePipeline` owns `m_frameContexts[frameIndex]`, where `frameIndex` is 
 
 ##### Field ownership ledger: pass and provider contexts
 
-`RayTracingPassContext`, `ImageProviderPassContext`, and `PassRuntimeContext` are stack values built in `FramePipeline::ExecuteFrameGraph` and borrowed only during the synchronous graph execution/recording call. They have no frame-slot or GPU-retirement ownership. Their referents are owned by Host, scene, graph, provider stack, or pipeline-runtime generations. Phase 5 removes the bags and gives each consumer the narrow lifetime it actually requires.
+At the Phase 0 baseline, the three broad ray/provider/pass contexts were stack values built in `FramePipeline::ExecuteFrameGraph` and borrowed only during the synchronous graph execution/recording call. They had no frame-slot or GPU-retirement ownership. Their referents were owned by Host, scene, graph, provider stack, or pipeline-runtime generations. Phase 5 removes the bags and gives each consumer the narrow lifetime it actually requires.
 
 | Current field | Classification | Current producer and material consumers | Phase 5 destination or deletion |
 | --- | --- | --- | --- |
@@ -1218,7 +1218,7 @@ Suggested title: `Renderer: move GPU and ray-tracing scene lifetime under render
 
 This phase cleans every old capability owner and name. Failure to prove one construction/reset/retirement route blocks the CL; it is not solved with a fallback instance.
 
-Phase 4 checkpoint: `RenderScene` is the sole lifetime owner of separate `RenderGpuScene` and `RenderRayTracingScene` capabilities. The selected prepared-scene slot borrows one `RenderSceneGpuBindings` projection, while `RenderRayTracingFrameBindings` exists only during graph import binding. Scene lighting now uses paired `SceneLightingUniformData` and `LightGpuData` C++/HLSL headers with the exact `SceneLighting` binding. Graph handles remain owned by the existing frame-graph resource layout until its Phase 5 clean-break rename; no graph handle is stored by either persistent scene capability. Backend compilation and execution evidence remains deferred to Phase 7.
+Phase 4 checkpoint: `RenderScene` is the sole lifetime owner of separate `RenderGpuScene` and `RenderRayTracingScene` capabilities. The selected prepared-scene slot borrows one `RenderSceneGpuBindings` projection, while `RenderRayTracingFrameBindings` exists only during graph import binding. Scene lighting now uses paired `SceneLightingUniformData` and `LightGpuData` C++/HLSL headers with the exact `SceneLighting` binding. Graph handles remain owned by the existing frame-graph resource layout until its Phase 6 clean-break rename; no graph handle is stored by either persistent scene capability. Backend compilation and execution evidence remains deferred to Phase 7.
 
 ### Phase 5 - Remove broad frame/pass contexts and make pass inputs explicit
 
@@ -1272,6 +1272,8 @@ Phase 4 checkpoint: `RenderScene` is the sole lifetime owner of separate `Render
 Suggested title: `Renderer: replace broad pass contexts with explicit inputs`.
 
 All context consumers and deletions belong in this one CL. A context retained for one difficult pass means the phase is incomplete.
+
+Phase 5 source checkpoint: `RenderFrame` is the frame-slot owner for identity/time, one `PreparedRenderScene`, and one `RenderView`. Frame-graph setup copies only consumed semantic values into pass parameters; concrete pass runtimes, image providers, ray-tracing scene capability, and the GBuffer mesh cache are captured or injected at graph-generation owner boundaries. Recording receives only `PassCommandContext` command, declared-resource, and diagnostic infrastructure. The six legacy carrier/builder types and their forwarding access are absent from runtime source. This checkpoint is source-only and not independently landable; compilation and recording evidence remains deferred to Phase 7.
 
 ### Phase 6 - Make frame orchestration and directory ownership match the target
 

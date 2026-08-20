@@ -12,10 +12,6 @@
 
 #include <type_traits>
 
-struct FrameContext;
-struct PassRuntimeContext;
-struct RenderView;
-
 struct DirectLightReservoirCommonParameters
 {
 	ShaderTexture2D<void> GBufferBaseColor;
@@ -98,12 +94,3 @@ private:
 		return static_cast<TField TParameters::*>(member);
 	}
 };
-
-namespace DirectLightReservoirPassCommon
-{
-	void SetParameters(
-	    DirectLightReservoirCommonParameters& parameters,
-	    const FrameContext& frame,
-	    const RenderView& view,
-	    const PassRuntimeContext& passRuntimeContext);
-}

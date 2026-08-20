@@ -1,15 +1,19 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/RestirIndirectTemporal.h"
 
+#include "Frame/Lighting/RayTracingLightingParameters.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/RayTracing/RestirIndirectTemporalPass.h"
+#include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
 
 void AddRestirIndirectTemporalPass(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     const RestirIndirectWorkingReservoirs& workingReservoirs,
     const FrameAssemblyResourceLayout& resources)
 {
 	auto& parameters = builder.AllocParameters<RestirIndirectTemporalPass::Parameters>();
+	auto* parameterFields = parameters.operator->();
 	parameters->TemporalReservoirSampleTexture = builder.CreateUAV(workingReservoirs.TemporalSample);
 	parameters->TemporalReservoirWeightTexture = builder.CreateUAV(workingReservoirs.TemporalWeight);
 	parameters->PreviousReservoirSampleTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Sample.Previous);
@@ -35,5 +39,25 @@ void AddRestirIndirectTemporalPass(
 	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
 	parameters->MorphWeights = builder.CreateSRV(resources.External.Scene.Geometry.MorphWeights);
-	builder.Dispatch<RestirIndirectTemporalPass>(parameters);
+	RegisterRayTracingLightingParameterSetups(builder, parameters);
+	builder.AddRestirIndirectReservoirHistorySetup(
+	    [parameterFields](bool historyValid)
+	    {
+		    if (!historyValid)
+		    {
+			    ViewTemporalUniformData temporal = *parameterFields->ViewTemporal.GetValue();
+			    temporal.HistoryValid = 0u;
+			    parameterFields->ViewTemporal = temporal;
+		    }
+	    });
+	builder.AddPassParameterSetup(
+	    [parameterFields]
+	    {
+		    const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
+		    parameterFields->RestirIndirectConstants = RestirIndirectLightingUniformData{
+		        .BounceCount = settings.BounceCount,
+		        .NormalBias = settings.NormalBias,
+		        .MaxDistance = settings.MaxDistance};
+	    });
+	builder.Dispatch<RestirIndirectTemporalPass>(parameters, sceneExtent.Width, sceneExtent.Height);
 }

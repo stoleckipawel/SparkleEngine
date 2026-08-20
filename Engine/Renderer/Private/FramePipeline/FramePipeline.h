@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Frame/Builders/FrameContextBuilder.h"
 #include "Frame/Core/Frame.h"
 #include "Frame/Presentation/ViewportDisplaySettings.h"
 #include "FramePipeline/FrameExecutionRetirementQueue.h"
@@ -26,7 +25,7 @@
 class FrameExecutionDiagnostics;
 class UiRenderPacketPlayer;
 class EditorTextureRegistry;
-struct FrameContext;
+struct RenderFrame;
 class FrameGraph;
 class RenderCommandList;
 class RenderDeviceServices;
@@ -65,7 +64,7 @@ public:
 private:
 	void InitializeUiRendering();
 	void InitializeFrameStorage();
-	void InitializeFrameContexts();
+	void InitializeRenderFrames();
 	void InitializeFrameGraph() noexcept;
 	void InitializeFrameGraph(FrameResolutionExtents resolution) noexcept;
 	void RefreshFrameExecution(FrameResolutionExtents resolution) noexcept;
@@ -83,7 +82,7 @@ private:
 	void RefreshGraphForImageProvider() noexcept;
 	void BeginBackendFrame() noexcept;
 	void PollViewportCaptures() noexcept;
-	void SetupFrame(const RenderFrameTime& time) noexcept;
+	void SetupFrame() noexcept;
 	static FrameUniformData BuildFrameUniformData(std::uint64_t frameId, const RenderFrameTime& time) noexcept;
 	void UploadPendingSceneTextures(RenderDeviceServices& deviceServices, RenderCommandList& graphicsCommandList);
 	void RefreshViewportRenderProducts() noexcept;
@@ -95,13 +94,13 @@ private:
 	void PlayUiPacket(const UiRenderPacket& packet) noexcept;
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
-	void RecordFrame(const RenderViewInput& viewInput) noexcept;
-	FrameContext& PrepareFrameContext(const RenderViewInput& viewInput);
-	void UpdateLightingHistory(FrameContext& frame);
-	void SetupImageProviderFrame(const FrameContext& frame);
-	void BindRayTracingScene(const FrameContext& frame, const RenderRayTracingFrameBindings& rayTracingBindings);
-	void BindSkyTexture(const FrameContext& frame);
-	void ExecuteFrameGraph(FrameContext& frame);
+	void RecordFrame(const RenderViewInput& viewInput, const RenderFrameTime& time) noexcept;
+	RenderFrame& PrepareRenderFrame(const RenderViewInput& viewInput, const RenderFrameTime& time);
+	void UpdateLightingHistory(const RenderFrame& frame);
+	void SetupImageProviderFrame(const RenderFrame& frame);
+	void BindRayTracingScene(const RenderFrame& frame, const RenderRayTracingFrameBindings& rayTracingBindings);
+	void BindSkyTexture(const RenderFrame& frame);
+	void ExecuteFrameGraph(const RenderFrame& frame, const RenderRayTracingFrameBindings& rayTracingBindings);
 	void InvalidateViewHistory(RenderViewInvalidationReason reason) noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
@@ -109,10 +108,9 @@ private:
 	const FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() const noexcept;
 
 	RendererHost* m_rendererHost = nullptr;
-	FrameContextBuilder m_frameContextBuilder;
 	std::unique_ptr<FrameGraph> m_frameGraph;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
-	std::vector<std::unique_ptr<FrameContext>> m_frameContexts;
+	std::vector<std::unique_ptr<RenderFrame>> m_renderFrames;
 	FrameExecutionRetirementQueue m_frameExecutionRetirementQueue;
 	RenderViewportExtent m_frameGraphRenderExtent = {};
 	RenderViewportExtent m_frameGraphOutputExtent = {};
@@ -121,7 +119,6 @@ private:
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	FrameAssemblyResourceLayout m_frameResources = {};
-	FrameUniformData m_frameUniform = {};
 	std::optional<std::uint64_t> m_previousReferenceLightingHistoryInvalidationHash;
 	std::optional<std::uint64_t> m_previousRestirLightingHistoryInvalidationHash;
 	std::uint64_t m_frameId = 0u;

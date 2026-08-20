@@ -6,5 +6,6 @@ class FrameGraphBuilder;
 
 void AddReferenceLightingAccumulationPass(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     FrameGraphTextureHandle referenceSample,
     const FrameAssemblyResourceLayout& resources);

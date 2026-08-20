@@ -63,8 +63,8 @@ Shared graphics contracts use the same vocabulary at every boundary:
 - Backend implementations of an `Rhi*Service` are `D3D12*Service` or `Vulkan*Service`; contained allocators remain `*Allocator`.
 - `RendererHost` owns composition lifetime. `RendererBackendOwner` owns `RenderDeviceServices`. Callers use `deviceServices`; a `RenderHardwareInterface` reference is `renderHardwareInterface`.
 - `TextureCache`, `MaterialCache`, and `RenderPassRuntimeCache` are persistent generation/revision-keyed caches. Do not reintroduce `*Manager` variants.
-- `RenderCommandContext` is the backend-neutral command-recording wrapper. Under the target [Renderer Scene, View, and Frame Architecture](../../Architecture/RendererSceneViewFrameArchitecture.md), `PassCommandContext` is the narrower frame-graph pass recording surface and contains only command, declared-resource, and diagnostic infrastructure.
-- Pass-specific parameter structs carry semantic frame, scene, view, ray-tracing, provider, history, and display inputs. Broad `PassRuntimeContext`, `RayTracingPassContext`, and `ImageProviderPassContext` bags are prohibited in the target architecture; current references are cleanup debt and MUST NOT gain new consumers before their atomic removal.
+- `RenderCommandContext` is the backend-neutral command-recording wrapper. `PassCommandContext` is the narrower frame-graph pass recording surface and contains only command, declared-resource, and diagnostic infrastructure.
+- Pass-specific parameter structs carry semantic frame, scene, view, ray-tracing, provider, history, and display inputs. Broad semantic context bags are prohibited; do not introduce a service bag under a different `*Context`, `*Services`, or `*Resources` name.
 - `SourceImportOutput` contains imported content plus `SourceImportProvenance`; import failure is `Diagnostics::Error`. Prefer `output` or `importOutput`, not `result`.
 - Use `GpuMesh`, `GpuMeshCache`, and `commandContext`; do not use `GPU*` casing or `cmd` in owned neutral code.
 - Neutral render-target APIs use `renderTarget`, `renderTargets`, `renderTargetCount`, and `depthStencil`; `rtv`/`dsv` remain native D3D boundary terms.

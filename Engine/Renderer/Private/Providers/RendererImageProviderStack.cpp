@@ -119,8 +119,3 @@ ImageProviderGraphKey RendererImageProviderStack::GetFrameGraphKey() const noexc
 	    .UpscalerProvider = GetUpscalerProviderSelectionKey(),
 	    .RayReconstructionMode = GetRayReconstructionModeKey()};
 }
-
-ImageProviderPassContext RendererImageProviderStack::BuildPassContext() noexcept
-{
-	return ImageProviderPassContext{.Upscaling = m_upscaler.get(), .RayReconstruction = m_rayReconstruction.get()};
-}

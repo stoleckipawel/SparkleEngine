@@ -3,7 +3,6 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
-#include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
 #include "FrameGraph/Execution/FrameGraphSubmissionExecutor.h"
 #include "RHI/Public/Commands/RhiCommandSubmissionService.h"
@@ -12,8 +11,6 @@
 void FrameGraph::Execute(
     const FrameGraphPlan& plan,
     RhiCommandSubmissionService& submissionService,
-    const FrameContext& frame,
-    const PassRuntimeContext& passRuntimeContext,
     FrameExecutionDiagnostics& frameDiagnostics,
     TaskExecutor& taskExecutor) const
 {
@@ -25,15 +22,8 @@ void FrameGraph::Execute(
 	RenderCommandList& initialGraphicsCommandList = submissionService.GetCurrentGraphicsCommandList();
 	RecordFrameBeginBarriers(plan, initialGraphicsCommandList, frameDiagnostics);
 
-	FrameGraphSubmissionExecutor submissionExecutor(
-	    *this,
-	    plan,
-	    submissionService,
-	    frame,
-	    passRuntimeContext,
-	    frameDiagnostics,
-	    taskExecutor,
-	    m_submissionBatchTokens);
+	FrameGraphSubmissionExecutor
+	    submissionExecutor(*this, plan, submissionService, frameDiagnostics, taskExecutor, m_submissionBatchTokens);
 	RenderCommandList& finalGraphicsCommandList = submissionExecutor.Execute(initialGraphicsCommandList);
 	RecordFrameEndBarriers(plan, finalGraphicsCommandList, frameDiagnostics);
 

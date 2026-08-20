@@ -8,17 +8,23 @@
 #include "Frame/RayTracing/RayTracingScene.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-FrameBuildResult BuildFrame(FrameGraphBuilder& builder, const FrameBuildSettings& settings)
+FrameBuildResult BuildFrame(
+    FrameGraphBuilder& builder,
+    const FrameBuildSettings& settings,
+    GpuMeshCache& gpuMeshCache,
+    RenderRayTracingScene& rayTracingScene,
+    IUpscalerProvider* upscalerProvider,
+    IRayReconstructionProvider* rayReconstructionProvider)
 {
 	FrameAssemblyResourceLayout resources = {};
 	CreateFrameSceneResources(builder, settings, resources);
-	AddRaytracingScenePasses(builder, resources);
-	AddGBufferPasses(builder, settings.RenderExtent, resources);
+	AddRaytracingScenePasses(builder, rayTracingScene, resources);
+	AddGBufferPasses(builder, gpuMeshCache, settings.RenderExtent, resources);
 	AddLightingPasses(builder, settings.RenderExtent, resources);
 	AddPreReconstructionPostProcessingPasses(builder, settings, resources);
-	AddLightingReconstructionPasses(builder, settings.RenderExtent, settings.OutputExtent, resources);
+	AddLightingReconstructionPasses(builder, settings.RenderExtent, settings.OutputExtent, rayReconstructionProvider, resources);
 
-	AddPostProcessingPasses(builder, settings, resources);
+	AddPostProcessingPasses(builder, settings, upscalerProvider, resources);
 
 	return FrameBuildResult{.Resources = resources};
 }

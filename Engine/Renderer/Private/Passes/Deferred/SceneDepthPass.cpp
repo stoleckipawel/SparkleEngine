@@ -1,8 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/SceneDepthPass.h"
 
-#include "View/RenderView.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -28,13 +27,11 @@ const RenderPassDefinition& SceneDepthPass::GetDefinition() noexcept
 	return definition;
 }
 
-void SceneDepthPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
+void SceneDepthPass::Execute(
+    PassCommandContext& context,
+    ParameterInstance& parameters,
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight) const
 {
-	parameters->ViewCamera = context.Frame.view.cameraUniform;
-	ComputePassOperations::DispatchSized<SceneDepthPass>(
-	    context,
-	    m_runtime,
-	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
+	ComputePassOperations::DispatchSized<SceneDepthPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

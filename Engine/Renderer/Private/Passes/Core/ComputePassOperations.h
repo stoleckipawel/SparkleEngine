@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Frame/Core/FrameContext.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ShaderPassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Passes/Core/ShaderPass.h"
@@ -16,8 +14,7 @@
 
 namespace ComputePassOperations
 {
-	template <typename TPass>
-	const typename TPass::ParameterMetadata& BuildParameterMetadata()
+	template <typename TPass> const typename TPass::ParameterMetadata& BuildParameterMetadata()
 	{
 		static const typename TPass::ParameterMetadata metadata = []
 		{
@@ -38,9 +35,8 @@ namespace ComputePassOperations
 	    const wchar_t* pipelineName,
 	    CookedShaderPackageFeatureFlags requiredFeatures = CookedShaderPackageFeatureFlags::None);
 
-	template <typename TPass>
-	bool Dispatch(
-	    PassExecutionContext& context,
+	template <typename TPass> bool Dispatch(
+	    PassCommandContext& context,
 	    const ComputePassPipelineRuntime& runtime,
 	    const typename TPass::ParameterInstance& parameters,
 	    const ComputeDispatchDesc& dispatch)
@@ -50,7 +46,6 @@ namespace ComputePassOperations
 		const bool dispatched = ShaderPassOperations::DispatchComputePassWithRuntime<TPass>(
 		    context.Resources,
 		    context.Commands,
-		    context.Runtime.HardwareInterface,
 		    runtime,
 		    parameters,
 		    dispatch,
@@ -59,9 +54,8 @@ namespace ComputePassOperations
 		return dispatched;
 	}
 
-	template <typename TPass>
-	bool DispatchSized(
-	    PassExecutionContext& context,
+	template <typename TPass> bool DispatchSized(
+	    PassCommandContext& context,
 	    const ComputePassPipelineRuntime& runtime,
 	    const typename TPass::ParameterInstance& parameters,
 	    std::uint32_t outputWidth,

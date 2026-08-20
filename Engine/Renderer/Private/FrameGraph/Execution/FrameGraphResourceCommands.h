@@ -10,13 +10,15 @@
 #include <span>
 
 class FrameGraph;
+class PassBinder;
 class RenderCommandContext;
+class RenderHardwareInterface;
 struct NativeTextureViewInfo;
 struct RhiNativeInteropRequest;
 
 class FrameGraphResourceCommands final
 {
-  public:
+public:
 	explicit FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept;
 
 	void BindRenderTarget(
@@ -27,8 +29,14 @@ class FrameGraphResourceCommands final
 	    RenderCommandContext& commandContext,
 	    std::span<const FrameGraphTextureHandle> renderTargetHandles,
 	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
-	void CopyTexture(RenderCommandContext& commandContext, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept;
-	void CopyBuffer(RenderCommandContext& commandContext, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept;
+	void CopyTexture(
+	    RenderCommandContext& commandContext,
+	    FrameGraphTextureHandle destinationHandle,
+	    FrameGraphTextureHandle sourceHandle) const noexcept;
+	void CopyBuffer(
+	    RenderCommandContext& commandContext,
+	    FrameGraphBufferHandle destinationHandle,
+	    FrameGraphBufferHandle sourceHandle) const noexcept;
 	void ClearRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	void ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	RhiResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
@@ -41,7 +49,10 @@ class FrameGraphResourceCommands final
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept;
 	RhiGpuVirtualAddress ResolveAccelerationStructureGpuAddress(FrameGraphAccelerationStructureHandle handle) const noexcept;
+	void BindGlobalDescriptorState(RenderCommandContext& commandContext) const noexcept;
 
-  private:
-	const FrameGraph* m_frameGraph = nullptr;
+private:
+	friend class PassBinder;
+	RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
+	const FrameGraph& m_frameGraph;
 };

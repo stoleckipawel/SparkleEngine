@@ -4,14 +4,10 @@
 
 class RenderCommandContext;
 class PassExecutionDiagnostics;
-struct FrameContext;
-struct PassRuntimeContext;
 
-struct PassExecutionContext
+struct PassCommandContext final
 {
 	RenderCommandContext& Commands;
-	const FrameContext& Frame;
-	const PassRuntimeContext& Runtime;
 	PassExecutionDiagnostics& Diagnostics;
 	FrameGraphResourceCommands Resources;
 };

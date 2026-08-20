@@ -3,7 +3,7 @@
 #include "FrameGraph/Builder/FrameGraphCopyPasses.h"
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 
 namespace FrameGraphCopyPasses
 {
@@ -22,17 +22,10 @@ namespace FrameGraphCopyPasses
 			    resources.Read(source, ResourceUsage::CopySource, "Source");
 			    resources.Write(destination, ResourceUsage::CopyDest, "Destination");
 		    },
-		    [destination, source](PassExecutionContext& context)
-		    {
-			    context.Resources.CopyTexture(context.Commands, destination, source);
-		    });
+		    [destination, source](PassCommandContext& context) { context.Resources.CopyTexture(context.Commands, destination, source); });
 	}
 
-	void AddBufferCopy(
-	    FrameGraphBuilder& builder,
-	    std::string_view name,
-	    FrameGraphBufferHandle destination,
-	    FrameGraphBufferHandle source)
+	void AddBufferCopy(FrameGraphBuilder& builder, std::string_view name, FrameGraphBufferHandle destination, FrameGraphBufferHandle source)
 	{
 		builder.AddPass(
 		    name,
@@ -43,9 +36,6 @@ namespace FrameGraphCopyPasses
 			    resources.Read(source, ResourceUsage::CopySource, "Source");
 			    resources.Write(destination, ResourceUsage::CopyDest, "Destination");
 		    },
-		    [destination, source](PassExecutionContext& context)
-		    {
-			    context.Resources.CopyBuffer(context.Commands, destination, source);
-		    });
+		    [destination, source](PassCommandContext& context) { context.Resources.CopyBuffer(context.Commands, destination, source); });
 	}
-}  // namespace FrameGraphCopyPasses
+} // namespace FrameGraphCopyPasses

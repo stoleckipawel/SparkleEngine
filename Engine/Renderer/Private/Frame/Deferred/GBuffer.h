@@ -6,6 +6,11 @@
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 
 class FrameGraphBuilder;
+class GpuMeshCache;
 
 GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode);
-void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources);
+void AddGBufferPasses(
+    FrameGraphBuilder& builder,
+    GpuMeshCache& gpuMeshCache,
+    RenderViewportExtent sceneExtent,
+    FrameAssemblyResourceLayout& resources);

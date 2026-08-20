@@ -4,12 +4,12 @@
 
 #include <cstdint>
 
-struct RayTracingPassContext;
+struct RayTracedShadowPassInput;
 
 namespace RayTracedShadowPassData
 {
 	RayTracedShadowUniformData Build(
-	    const RayTracingPassContext* context,
+	    const RayTracedShadowPassInput& input,
 	    bool hasTraceableInstances,
 	    std::uint32_t hitInstanceCount,
 	    std::uint32_t hitMaterialCount) noexcept;

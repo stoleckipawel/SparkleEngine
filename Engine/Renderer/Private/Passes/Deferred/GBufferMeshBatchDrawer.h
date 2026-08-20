@@ -8,10 +8,7 @@ class FrameGraphResourceCommands;
 class GpuMesh;
 class GpuMeshCache;
 class RenderCommandContext;
-class RenderHardwareInterface;
-struct FrameContext;
 struct MeshInstanceBatch;
-struct PassRuntimeContext;
 struct RasterPassPipelineRuntime;
 struct PreparedRenderScene;
 struct RenderView;
@@ -19,14 +16,19 @@ struct RenderView;
 class GBufferMeshBatchDrawer final
 {
 public:
-	static void DrawOpaqueMeshes(
+	explicit GBufferMeshBatchDrawer(const GpuMeshCache& gpuMeshCache) noexcept :
+	    m_gpuMeshCache(gpuMeshCache)
+	{
+	}
+
+	void DrawOpaqueMeshes(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    const FrameContext& frame,
+	    const PreparedRenderScene& preparedScene,
+	    const RenderView& view,
 	    const GBufferPass::Parameters& parameters,
-	    const PassRuntimeContext& passRuntimeContext,
 	    const RasterPassPipelineRuntime& runtime,
-	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata);
+	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata) const;
 
 private:
 	static bool BindMaterial(
@@ -46,7 +48,6 @@ private:
 	static bool BindBatchPipeline(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    RenderHardwareInterface& renderHardwareInterface,
 	    const RasterPassPipelineRuntime& runtime,
 	    GBufferPass::DrawParameterInstance& drawParameters,
 	    const GpuMesh& gpuMesh,
@@ -54,12 +55,14 @@ private:
 	static void DrawBatch(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    const FrameContext& frame,
+	    const PreparedRenderScene& preparedScene,
+	    const RenderView& view,
 	    const GBufferPass::Parameters& passParameters,
-	    RenderHardwareInterface& renderHardwareInterface,
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
 	    const GpuMesh& gpuMesh,
 	    const MeshInstanceBatch& batch,
 	    std::uint32_t viewModeIndex);
+
+	const GpuMeshCache& m_gpuMeshCache;
 };

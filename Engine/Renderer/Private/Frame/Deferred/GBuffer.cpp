@@ -14,7 +14,7 @@
 
 class GBufferTargetFactory final
 {
-  public:
+public:
 	static FrameGraphTextureHandle CreateGBufferColor(
 	    FrameGraphBuilder& builder,
 	    const char* name,
@@ -22,12 +22,7 @@ class GBufferTargetFactory final
 	    PixelFormat format,
 	    std::array<float, 4> clearColor)
 	{
-		FrameGraphTextureDesc desc =
-		    FrameGraphTextureDesc::CreateColor(
-		        name,
-		        sceneExtent.Width,
-		        sceneExtent.Height,
-		        format);
+		FrameGraphTextureDesc desc = FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, format);
 		desc.clearColor = clearColor;
 		return builder.CreateTexture(desc);
 	}
@@ -56,10 +51,7 @@ class GBufferTargetFactory final
 	}
 };
 
-GBufferRenderTargets CreateGBufferRenderTargets(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    GBufferMode gBufferMode)
+GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
 {
 	GBufferRenderTargets targets{};
 	targets.BaseColor = GBufferTargetFactory::CreateGBufferColor(
@@ -68,12 +60,8 @@ GBufferRenderTargets CreateGBufferRenderTargets(
 	    sceneExtent,
 	    GBufferFormats::BaseColor,
 	    {0.0f, 0.0f, 0.0f, 1.0f});
-	targets.Normal = GBufferTargetFactory::CreateGBufferColor(
-	    builder,
-	    "GBufferNormal",
-	    sceneExtent,
-	    GBufferFormats::Normal,
-	    {0.0f, 0.0f, 1.0f, 0.0f});
+	targets.Normal =
+	    GBufferTargetFactory::CreateGBufferColor(builder, "GBufferNormal", sceneExtent, GBufferFormats::Normal, {0.0f, 0.0f, 1.0f, 0.0f});
 	targets.Material = GBufferTargetFactory::CreateGBufferColor(
 	    builder,
 	    "GBufferMaterial",
@@ -86,30 +74,25 @@ GBufferRenderTargets CreateGBufferRenderTargets(
 	    sceneExtent,
 	    GBufferFormats::Emissive,
 	    {0.0f, 0.0f, 0.0f, 0.0f});
-	targets.Subsurface =
-	    GBufferTargetFactory::CreateGBufferColor(
-	        builder,
-	        "GBufferSubsurface",
-	        sceneExtent,
-	        GBufferFormats::Subsurface,
-	        {0.0f, 0.0f, 0.0f, 0.0f});
-	targets.MotionVector =
-	    GBufferTargetFactory::CreateGBufferColor(
-	        builder,
-	        "GBufferMotionVector",
-	        sceneExtent,
-	        GBufferFormats::MotionVector,
-	        {0.0f, 0.0f, 0.0f, 0.0f});
-	targets.DeviceZ =
-	    GBufferTargetFactory::CreateGBufferDeviceZ(
-	        builder,
-	        sceneExtent,
-	        gBufferMode);
+	targets.Subsurface = GBufferTargetFactory::CreateGBufferColor(
+	    builder,
+	    "GBufferSubsurface",
+	    sceneExtent,
+	    GBufferFormats::Subsurface,
+	    {0.0f, 0.0f, 0.0f, 0.0f});
+	targets.MotionVector = GBufferTargetFactory::CreateGBufferColor(
+	    builder,
+	    "GBufferMotionVector",
+	    sceneExtent,
+	    GBufferFormats::MotionVector,
+	    {0.0f, 0.0f, 0.0f, 0.0f});
+	targets.DeviceZ = GBufferTargetFactory::CreateGBufferDeviceZ(builder, sceneExtent, gBufferMode);
 	return targets;
 }
 
 void AddGBufferPasses(
     FrameGraphBuilder& builder,
+    GpuMeshCache& gpuMeshCache,
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources)
 {
@@ -122,13 +105,13 @@ void AddGBufferPasses(
 	{
 		case GBufferMode::Rasterized:
 		default:
-			AddRasterizedGBufferPass(builder, resources.Transient.GBuffer, resources.External);
+			AddRasterizedGBufferPass(builder, gpuMeshCache, resources.Transient.GBuffer, resources.External);
 			break;
 		case GBufferMode::Raytraced:
-			AddRaytracedGBufferPass(builder, resources.Transient.GBuffer, resources.SceneTlas, resources.External);
+			AddRaytracedGBufferPass(builder, sceneExtent, resources.Transient.GBuffer, resources.SceneTlas, resources.External);
 			break;
 	}
 
-	AddSkyMotionVectorPass(builder, resources.Transient.GBuffer);
-	AddLinearizeDeviceZPass(builder, resources.Transient.GBuffer.DeviceZ, resources.Transient.Scene.SceneDepth);
+	AddSkyMotionVectorPass(builder, sceneExtent, resources.Transient.GBuffer);
+	AddLinearizeDeviceZPass(builder, sceneExtent, resources.Transient.GBuffer.DeviceZ, resources.Transient.Scene.SceneDepth);
 }

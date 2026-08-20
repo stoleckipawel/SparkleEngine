@@ -1,11 +1,8 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/DirectLightReservoirSpatialPass.h"
 
-#include "Frame/Core/FrameContext.h"
-#include "View/RenderView.h"
 #include "Frame/Lighting/ShadowVisibility.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -31,23 +28,11 @@ const RenderPassDefinition& DirectLightReservoirSpatialPass::GetDefinition() noe
 	return definition;
 }
 
-void DirectLightReservoirSpatialPass::SetParameters(
+void DirectLightReservoirSpatialPass::Execute(
+    PassCommandContext& context,
     ParameterInstance& parameters,
-    const FrameContext& frame,
-    const RenderView& view,
-    const PassRuntimeContext& passRuntimeContext) const
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight) const
 {
-	DirectLightReservoirPassCommon::SetParameters(*parameters, frame, view, passRuntimeContext);
-	parameters->ViewTemporal = view.temporalUniform;
-}
-
-void DirectLightReservoirSpatialPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
-{
-	SetParameters(parameters, context.Frame, context.Frame.view, context.Runtime);
-	ComputePassOperations::DispatchSized<DirectLightReservoirSpatialPass>(
-	    context,
-	    m_runtime,
-	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
+	ComputePassOperations::DispatchSized<DirectLightReservoirSpatialPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

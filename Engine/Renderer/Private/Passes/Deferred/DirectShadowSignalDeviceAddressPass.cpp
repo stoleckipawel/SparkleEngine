@@ -1,11 +1,8 @@
 #include "../../PCH.h"
 
-#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/Deferred/DirectShadowSignalDeviceAddressPass.h"
 
-#include "Frame/Core/FrameContext.h"
-#include "View/RenderView.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
@@ -33,18 +30,11 @@ const RenderPassDefinition& DirectShadowSignalDeviceAddressPass::GetDefinition()
 	return definition;
 }
 
-void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
+void DirectShadowSignalDeviceAddressPass::Execute(
+    PassCommandContext& context,
+    ParameterInstance& parameters,
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight) const
 {
-	DirectShadowSignalPassCommon::SetRayQueryParameters(
-	    *parameters,
-	    context.Frame,
-	    context.Frame.view,
-	    context.Runtime,
-	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount > 0u);
-	ComputePassOperations::DispatchSized<DirectShadowSignalDeviceAddressPass>(
-	    context,
-	    m_runtime,
-	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
+	ComputePassOperations::DispatchSized<DirectShadowSignalDeviceAddressPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

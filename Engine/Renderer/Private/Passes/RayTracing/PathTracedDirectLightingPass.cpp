@@ -1,20 +1,13 @@
 #include "../../PCH.h"
 
-#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/RayTracing/PathTracedDirectLightingPass.h"
 
-#include "Frame/Core/FrameContext.h"
-#include "View/RenderView.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Pipeline/PassPipelineRuntime.h"
-#include "RayTracing/Effects/PathTracedLighting/PathTracedLightingSettings.h"
-#include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
 void PathTracedDirectLightingPassParameters::Describe(ShaderParameterStructBuilder<PathTracedDirectLightingPassParameters>& builder)
 {
@@ -87,36 +80,11 @@ const RenderPassDefinition& PathTracedDirectLightingPass::GetDefinition() noexce
 	return definition;
 }
 
-void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
+void PathTracedDirectLightingPass::Execute(
+    PassCommandContext& context,
+    ParameterInstance& parameters,
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight) const
 {
-	parameters->Frame = context.Runtime.Frame;
-	parameters->View = context.Frame.view.uniform;
-	parameters->ViewCamera = context.Frame.view.cameraUniform;
-	parameters->ViewTemporal = context.Frame.view.temporalUniform;
-	parameters->SceneLighting = context.Frame.preparedScene.gpuBindings->Lighting.Uniform;
-	parameters->MaterialTextureSampler = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
-	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
-
-	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
-	parameters->RayTracedShadows = RayTracedShadowPassData::Build(
-	    context.Runtime.RayTracing,
-	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount > 0u,
-	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount,
-	    context.Frame.preparedScene.gpuBindings->RayTracing.MaterialCount);
-
-	const PathTracedLightingSettings settings = BuildPathTracedLightingSettings();
-	parameters->PathTracedLightingConstants = PathTracedLightingUniformData{
-	    .SamplesPerPixel = settings.SamplesPerPixel,
-	    .BounceCount = settings.BounceCount,
-	    .NormalBias = settings.NormalBias,
-	    .MaxDistance = settings.MaxDistance};
-	ComputePassOperations::DispatchSized<PathTracedDirectLightingPass>(
-	    context,
-	    m_runtime,
-	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
+	ComputePassOperations::DispatchSized<PathTracedDirectLightingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

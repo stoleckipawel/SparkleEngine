@@ -4,6 +4,7 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+class IUpscalerProvider;
 
 struct UpscalerPassResources final
 {
@@ -16,6 +17,7 @@ struct UpscalerPassResources final
 
 void AddUpscalerPass(
     FrameGraphBuilder& builder,
+    IUpscalerProvider& provider,
     RenderViewportExtent renderExtent,
     RenderViewportExtent outputExtent,
     const UpscalerPassResources& inputs);

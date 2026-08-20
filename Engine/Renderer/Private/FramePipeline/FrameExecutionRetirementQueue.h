@@ -5,13 +5,13 @@
 #include <memory>
 #include <vector>
 
-struct FrameContext;
+struct RenderFrame;
 class FrameGraph;
 class RenderDeviceServices;
 
 class FrameExecutionRetirementQueue final
 {
-  public:
+public:
 	FrameExecutionRetirementQueue() noexcept;
 	~FrameExecutionRetirementQueue() noexcept;
 
@@ -23,15 +23,15 @@ class FrameExecutionRetirementQueue final
 	void Retire(
 	    const RenderDeviceServices& deviceServices,
 	    std::unique_ptr<FrameGraph> graph,
-	    std::vector<std::unique_ptr<FrameContext>> frameContexts) noexcept;
+	    std::vector<std::unique_ptr<RenderFrame>> renderFrames) noexcept;
 	void Poll(const RenderDeviceServices& deviceServices) noexcept;
 
-  private:
+private:
 	struct RetiredFrameExecution final
 	{
 		RhiSubmissionState LastUse;
 		std::unique_ptr<FrameGraph> Graph;
-		std::vector<std::unique_ptr<FrameContext>> FrameContexts;
+		std::vector<std::unique_ptr<RenderFrame>> RenderFrames;
 	};
 
 	static RhiSubmissionState CaptureLastSubmittedState(const RenderDeviceServices& deviceServices) noexcept;

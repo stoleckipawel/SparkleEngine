@@ -10,6 +10,7 @@ void AddUpscalingPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent renderExtent,
     RenderViewportExtent outputExtent,
+    IUpscalerProvider* upscalerProvider,
     FrameAssemblyResourceLayout& resources)
 {
 	const UpscalerPassResources inputs{
@@ -20,9 +21,9 @@ void AddUpscalingPasses(
 	    .Exposure = resources.Transient.Exposure};
 
 	AddLinearUpscalePass(builder, inputs.InputColor, inputs.OutputColor, outputExtent);
-	if (IsExternalUpscalerEnabled())
+	if (IsExternalUpscalerEnabled() && upscalerProvider != nullptr)
 	{
-		AddUpscalerPass(builder, renderExtent, outputExtent, inputs);
+		AddUpscalerPass(builder, *upscalerProvider, renderExtent, outputExtent, inputs);
 	}
 
 	resources.FinalSceneColorProduced = true;

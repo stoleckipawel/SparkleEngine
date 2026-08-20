@@ -13,7 +13,7 @@
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
@@ -40,19 +40,26 @@ class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
 class FrameGraphSubmissionExecutor;
 class FrameGraphRecordingChunkRecorder;
+class FrameGraphBuilder;
 class TaskExecutor;
-struct PassRuntimeContext;
 class Window;
 class RenderHardwareInterface;
 struct NativeTextureViewInfo;
 struct RhiNativeInteropRequest;
-struct FrameContext;
+struct ExposureUniformData;
+struct FrameUniformData;
+struct PreparedRenderScene;
+struct RayTracedShadowPassInput;
+struct RenderView;
+struct ToneMappingUniformData;
 
 class FrameGraph
 {
 	friend class FrameGraphRecordingChunkRecorder;
+	friend class FrameGraphResourceCommands;
+	friend class FrameGraphBuilder;
 
-  private:
+private:
 	struct VirtualTransientResource;
 
 	struct AllocatedParameterInstanceBase
@@ -62,12 +69,15 @@ class FrameGraph
 
 	template <typename TParameters> struct AllocatedParameterInstance final : AllocatedParameterInstanceBase
 	{
-		explicit AllocatedParameterInstance(const ShaderParameterStructMetadata<TParameters>& metadata) : Instance(metadata) {}
+		explicit AllocatedParameterInstance(const ShaderParameterStructMetadata<TParameters>& metadata) :
+		    Instance(metadata)
+		{
+		}
 
 		TypedPassParameterInstance<TParameters> Instance;
 	};
 
-  public:
+public:
 	FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window);
 	~FrameGraph();
 
@@ -76,8 +86,7 @@ class FrameGraph
 	FrameGraph(FrameGraph&&) = delete;
 	FrameGraph& operator=(FrameGraph&&) = delete;
 
-	template <typename SetupFn, typename ExecuteFn>
-	void AddPass(
+	template <typename SetupFn, typename ExecuteFn> void AddPass(
 	    std::string_view name,
 	    EFrameGraphPassKind kind,
 	    EFrameGraphQueuePreference queuePreference,
@@ -88,12 +97,11 @@ class FrameGraph
 		using ExecuteFnType = std::decay_t<ExecuteFn>;
 
 		static_assert(
-		    std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&> ||
-		        std::is_invocable_v<SetupFnType&, PassResourceBuilder&>,
-		    "FrameGraph setup lambda must accept (PassResourceBuilder&, const FrameContext&) or (PassResourceBuilder&).\n");
+		    std::is_invocable_v<SetupFnType&, PassResourceBuilder&>,
+		    "FrameGraph setup lambda must accept (PassResourceBuilder&).\n");
 		static_assert(
-		    std::is_invocable_v<ExecuteFnType&, PassExecutionContext&>,
-		    "FrameGraph execute lambda must accept (PassExecutionContext&). ");
+		    std::is_invocable_v<ExecuteFnType&, PassCommandContext&>,
+		    "FrameGraph execute lambda must accept (PassCommandContext&). ");
 
 		SetupFnType normalizedSetup(std::forward<SetupFn>(setupFn));
 		ExecuteFnType normalizedExecute(std::forward<ExecuteFn>(executeFn));
@@ -104,28 +112,16 @@ class FrameGraph
 		        .kind = kind,
 		        .queuePreference = queuePreference,
 		        .setupCallback =
-		            [setup = std::move(normalizedSetup)](PassResourceBuilder& builder, const FrameContext& frame) mutable
+		            [setup = std::move(normalizedSetup)](PassResourceBuilder& builder) mutable
 		        {
-			        if constexpr (std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&>)
-			        {
-				        setup(builder, frame);
-			        }
-			        else
-			        {
-				        setup(builder);
-			        }
-
+			        setup(builder);
 			        return true;
 		        },
-		        .executeCallback =
-		            [execute = std::move(normalizedExecute)](PassExecutionContext& context) mutable
-		        {
-			        execute(context);
-		        }});
+		        .executeCallback = [execute = std::move(normalizedExecute)](PassCommandContext& context) mutable { execute(context); }});
 	}
 
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
+	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
 	void AddRasterPass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		AddTypedShaderPass(
@@ -133,15 +129,13 @@ class FrameGraph
 		    EFrameGraphPassKind::Raster,
 		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const FrameContext&, const char* passName)
-		    {
-			    return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
-		    },
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    { return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName); },
 		    std::forward<ExecuteFn>(executeFn));
 	}
 
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
+	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		AddTypedShaderPass(
@@ -149,15 +143,13 @@ class FrameGraph
 		    EFrameGraphPassKind::Compute,
 		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const FrameContext&, const char* passName)
-		    {
-			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
-		    },
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    { return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName); },
 		    std::forward<ExecuteFn>(executeFn));
 	}
 
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
+	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
 	void AddAsyncComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		AddTypedShaderPass(
@@ -165,22 +157,28 @@ class FrameGraph
 		    EFrameGraphPassKind::Compute,
 		    EFrameGraphQueuePreference::AsyncCompute,
 		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const FrameContext&, const char* passName)
-		    {
-			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
-		    },
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    { return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName); },
 		    std::forward<ExecuteFn>(executeFn));
 	}
 
-	void Setup(const FrameContext& frame);
+	void Setup();
+	void ApplyPassParameterDefaults();
+	void ApplyFrameUniformParameters(const FrameUniformData& frame);
+	void ApplyPreparedSceneParameters(const PreparedRenderScene& preparedScene);
+	void ApplyRenderViewParameters(const RenderView& view);
+	void ApplyExposureParameters(const ExposureUniformData& exposure);
+	void ApplyToneMappingParameters(const ToneMappingUniformData& toneMapping);
+	void ApplyDirectLightReservoirHistory(bool historyValid);
+	void ApplyRestirIndirectReservoirHistory(bool historyValid);
+	void ApplyReferenceLightingHistory(bool historyValid);
+	void ApplyRayTracedShadowParameters(const PreparedRenderScene& preparedScene, const RayTracedShadowPassInput& rayTracedShadows);
 
 	const FrameGraphPlan& Compile();
 
 	void Execute(
 	    const FrameGraphPlan& plan,
 	    RhiCommandSubmissionService& submissionService,
-	    const FrameContext& frame,
-	    const PassRuntimeContext& passRuntimeContext,
 	    FrameExecutionDiagnostics& frameDiagnostics,
 	    TaskExecutor& taskExecutor) const;
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
@@ -261,10 +259,14 @@ class FrameGraph
 	    RenderCommandContext& commandContext,
 	    std::span<const FrameGraphTextureHandle> renderTargetHandles,
 	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
-	void CopyTexture(RenderCommandContext& commandContext, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle)
-	    const noexcept;
-	void CopyBuffer(RenderCommandContext& commandContext, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle)
-	    const noexcept;
+	void CopyTexture(
+	    RenderCommandContext& commandContext,
+	    FrameGraphTextureHandle destinationHandle,
+	    FrameGraphTextureHandle sourceHandle) const noexcept;
+	void CopyBuffer(
+	    RenderCommandContext& commandContext,
+	    FrameGraphBufferHandle destinationHandle,
+	    FrameGraphBufferHandle sourceHandle) const noexcept;
 	void ClearRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	void ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	RhiResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
@@ -327,27 +329,34 @@ class FrameGraph
 		return field;
 	}
 
-  private:
-	using SetupCallback = std::function<bool(PassResourceBuilder&, const FrameContext&)>;
-	using ExecuteCallback = std::function<void(PassExecutionContext&)>;
+private:
+	using SetupCallback = std::function<bool(PassResourceBuilder&)>;
+	using ExecuteCallback = std::function<void(PassCommandContext&)>;
+	using PassParameterSetupCallback = std::function<void()>;
+	using FrameUniformSetupCallback = std::function<void(const FrameUniformData&)>;
+	using PreparedSceneSetupCallback = std::function<void(const PreparedRenderScene&)>;
+	using RenderViewSetupCallback = std::function<void(const RenderView&)>;
+	using ExposureSetupCallback = std::function<void(const ExposureUniformData&)>;
+	using ToneMappingSetupCallback = std::function<void(const ToneMappingUniformData&)>;
+	using HistorySetupCallback = std::function<void(bool)>;
+	using RayTracedShadowSetupCallback = std::function<void(const PreparedRenderScene&, const RayTracedShadowPassInput&)>;
 
 	template <typename TParameterBindings, typename ExecuteFn>
 	static ExecuteCallback MakeParameterizedExecuteCallback(TParameterBindings* parameters, ExecuteFn&& executeFn)
 	{
 		using ExecuteFnType = std::decay_t<ExecuteFn>;
 		static_assert(
-		    std::is_invocable_v<ExecuteFnType&, PassExecutionContext&, TParameterBindings&>,
-		    "Typed pass execute lambda must accept (PassExecutionContext&, Parameters&). ");
+		    std::is_invocable_v<ExecuteFnType&, PassCommandContext&, TParameterBindings&>,
+		    "Typed pass execute lambda must accept (PassCommandContext&, Parameters&). ");
 
 		ExecuteFnType callback(std::forward<ExecuteFn>(executeFn));
-		return [parameters, callback = std::move(callback)](PassExecutionContext& context) mutable
+		return [parameters, callback = std::move(callback)](PassCommandContext& context) mutable
 		{
 			callback(context, *parameters);
 		};
 	}
 
-	template <typename TParameterBindings, typename SetupFn, typename ExecuteFn>
-	void AddTypedShaderPass(
+	template <typename TParameterBindings, typename SetupFn, typename ExecuteFn> void AddTypedShaderPass(
 	    std::string_view name,
 	    EFrameGraphPassKind kind,
 	    EFrameGraphQueuePreference queuePreference,
@@ -364,20 +373,14 @@ class FrameGraph
 		        .kind = kind,
 		        .queuePreference = queuePreference,
 		        .executionModel = FrameGraphPassExecutionModel::TypedShader,
-		        .setupCallback =
-		            [parameterBindings,
-		             passName,
-		             setupFn = std::forward<SetupFn>(setupFn)](PassResourceBuilder& builder, const FrameContext& frame) mutable
-		        {
-			        return setupFn(builder, *parameterBindings, frame, passName.c_str());
-		        },
+		        .setupCallback = [parameterBindings, passName, setupFn = std::forward<SetupFn>(setupFn)](
+		                             PassResourceBuilder& builder) mutable
+		        { return setupFn(builder, *parameterBindings, passName.c_str()); },
 		        .executeCallback = MakeParameterizedExecuteCallback(
 		            parameterBindings,
 		            [executeFn =
-		                 std::forward<ExecuteFn>(executeFn)](PassExecutionContext& context, TParameterBindings& typedParameters) mutable
-		            {
-			            executeFn(context, typedParameters);
-		            })});
+		                    std::forward<ExecuteFn>(executeFn)](PassCommandContext& context, TParameterBindings& typedParameters) mutable
+		            { executeFn(context, typedParameters); })});
 	}
 
 	RhiCpuDescriptorHandle ResolveRenderTargetView(FrameGraphResourceHandle handle) const noexcept;
@@ -392,8 +395,10 @@ class FrameGraph
 	    FrameGraphResourceHandle handle,
 	    ResourceState state,
 	    const RhiNativeInteropRequest& request) const noexcept;
-	void CopyResource(RenderCommandContext& commandContext, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle)
-	    const noexcept;
+	void CopyResource(
+	    RenderCommandContext& commandContext,
+	    FrameGraphResourceHandle destinationHandle,
+	    FrameGraphResourceHandle sourceHandle) const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
 	FrameGraphTransientResourcePlan BuildTransientResourcePlan(
@@ -403,18 +408,26 @@ class FrameGraph
 	void EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept;
 	void ReleaseExternalResourceViews() noexcept;
 	void ReleaseExternalResourceViews(FrameGraphResourceHandle handle) noexcept;
-	void EmitTransientAliasingBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
+	void EmitTransientAliasingBarriers(
+	    RenderCommandContext& commandContext,
+	    const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
 	void EmitTransientAliasingBarriers(
 	    RenderCommandContext& commandContext,
 	    std::string_view passName,
 	    const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
-	void EmitCompiledBarriers(RenderCommandContext& commandContext, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
-	    const noexcept;
-	void RecordFrameBeginBarriers(const FrameGraphPlan& plan, RenderCommandList& commandList, FrameExecutionDiagnostics& frameDiagnostics)
-	    const;
-	void RecordFrameEndBarriers(const FrameGraphPlan& plan, RenderCommandList& commandList, FrameExecutionDiagnostics& frameDiagnostics)
-	    const;
+	void EmitCompiledBarriers(
+	    RenderCommandContext& commandContext,
+	    std::string_view passName,
+	    const std::vector<FrameGraphBarrier>& barriers) const noexcept;
+	void RecordFrameBeginBarriers(
+	    const FrameGraphPlan& plan,
+	    RenderCommandList& commandList,
+	    FrameExecutionDiagnostics& frameDiagnostics) const;
+	void RecordFrameEndBarriers(
+	    const FrameGraphPlan& plan,
+	    RenderCommandList& commandList,
+	    FrameExecutionDiagnostics& frameDiagnostics) const;
 	void PrepareTextureHistories(const FrameGraphPlan& plan);
 	void CommitTextureHistories() const noexcept;
 	void ReleaseTextureHistories() noexcept;
@@ -458,6 +471,16 @@ class FrameGraph
 	};
 
 	std::vector<RegisteredPass> m_passes;
+	std::vector<PassParameterSetupCallback> m_passParameterSetups;
+	std::vector<FrameUniformSetupCallback> m_frameUniformSetups;
+	std::vector<PreparedSceneSetupCallback> m_preparedSceneSetups;
+	std::vector<RenderViewSetupCallback> m_renderViewSetups;
+	std::vector<ExposureSetupCallback> m_exposureSetups;
+	std::vector<ToneMappingSetupCallback> m_toneMappingSetups;
+	std::vector<HistorySetupCallback> m_directLightReservoirHistorySetups;
+	std::vector<HistorySetupCallback> m_restirIndirectReservoirHistorySetups;
+	std::vector<HistorySetupCallback> m_referenceLightingHistorySetups;
+	std::vector<RayTracedShadowSetupCallback> m_rayTracedShadowSetups;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	Window* m_window = nullptr;
 	FrameGraphResourceRegistry m_resourceRegistry;

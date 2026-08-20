@@ -13,17 +13,27 @@
 #include "ShaderData/MorphTargetShaderData.h"
 
 #include <cstddef>
+#include <functional>
+#include <memory>
+#include <optional>
 
 class RenderCommandContext;
+class GBufferMeshBatchDrawer;
+class GpuMeshCache;
 struct RasterPassPipelineRuntime;
 struct RenderPassDefinition;
-struct PassExecutionContext;
+struct PassCommandContext;
 struct PreparedRenderScene;
 struct MeshInstanceBatch;
-struct PassRuntimeContext;
 struct RenderView;
-struct FrameContext;
 class FrameGraphResourceCommands;
+
+struct GBufferPassFrameInput final
+{
+	// These required values are borrowed only between frame-graph setup and the synchronous recording call.
+	std::optional<std::reference_wrapper<const PreparedRenderScene>> PreparedScene;
+	std::optional<std::reference_wrapper<const RenderView>> View;
+};
 
 struct GBufferPassParameters
 {
@@ -85,29 +95,33 @@ public:
 	using DrawParameterInstance = TypedPassParameterInstance<DrawParameters>;
 	using PipelineRuntime = RasterPassPipelineRuntime;
 
-	explicit GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept;
+	GBufferPass(
+	    const RasterPassPipelineRuntime& runtime,
+	    GpuMeshCache& gpuMeshCache,
+	    const std::shared_ptr<GBufferPassFrameInput>& frameInput) noexcept;
+	~GBufferPass() noexcept;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters) const;
 
 private:
-	void SetParameters(ParameterInstance& parameters, const RenderView& view) const;
-	void PrepareTargets(PassExecutionContext& context, const Parameters& parameters) const;
+	void PrepareTargets(PassCommandContext& context, const Parameters& parameters) const;
 	void ConfigurePipeline(RenderCommandContext& commandContext, const RenderView& view) const;
 	void BindPassResources(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
 	    const ParameterInstance& parameters,
-	    const RenderView& view,
-	    const PassRuntimeContext& passRuntimeContext) const;
+	    const RenderView& view) const;
 	void DrawOpaqueMeshes(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    const FrameContext& frame,
-	    const Parameters& parameters,
-	    const PassRuntimeContext& passRuntimeContext) const;
+	    const PreparedRenderScene& preparedScene,
+	    const RenderView& view,
+	    const Parameters& parameters) const;
 
 	const RasterPassPipelineRuntime& m_runtime;
+	std::shared_ptr<const GBufferMeshBatchDrawer> m_meshBatchDrawer;
+	std::shared_ptr<GBufferPassFrameInput> m_frameInput;
 };

@@ -245,8 +245,8 @@ High-level runtime flow:
 Per-frame renderer flow:
 
 1. `FramePipeline::BeginFrame()` handles resize, scene extent changes, render path switches, image provider graph key changes, backend begin-frame, and timing resolution.
-2. `FramePipeline::SetupFrame()` ticks time, refreshes viewport products, captures a scene snapshot, loads scene textures, updates camera, and builds per-frame constants.
-3. `FramePipeline::RecordFrame()` builds `FrameContext`, sets provider input contracts, prepares ray tracing scene/TLAS resources, binds exposure and direct-light reservoir histories, runs `FrameGraph::Setup(frame)`, compiles the frame graph, builds pass runtime services, opens GPU frame scope when enabled, and executes the graph.
+2. `FramePipeline::SetupFrame()` refreshes viewport products and uploads ready mesh and scene-texture data.
+3. `FramePipeline::RecordFrame()` fills the selected `RenderFrame` slot with identity/time, `PreparedRenderScene`, and `RenderView`; supplies pass-specific parameters and provider frame inputs; prepares and binds ray-tracing/GPU-scene resources; then sets up, compiles, and executes the frame graph through the infrastructure-only `PassCommandContext` recording surface.
 4. `FramePipeline::SubmitFrame()` submits the current backend frame.
 5. `FramePipeline::EndFrame()` marks exposure/reservoir history validity and advances frame-in-flight.
 

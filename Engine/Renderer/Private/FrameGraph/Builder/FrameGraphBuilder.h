@@ -1,7 +1,6 @@
 #pragma once
 
 #include "FrameGraph/FrameGraph.h"
-#include "FrameGraph/PassRuntimeContext.h"
 
 #include <cstdint>
 #include <string_view>
@@ -19,7 +18,7 @@ class RenderPassRuntimeCache;
 
 class FrameGraphBuilder final
 {
-  public:
+public:
 	FrameGraphBuilder(FrameGraph& frameGraph, const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept;
 
 	template <typename SetupFn, typename ExecuteFn>
@@ -28,8 +27,7 @@ class FrameGraphBuilder final
 		AddPass(name, kind, EFrameGraphQueuePreference::Graphics, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename SetupFn, typename ExecuteFn>
-	void AddPass(
+	template <typename SetupFn, typename ExecuteFn> void AddPass(
 	    std::string_view name,
 	    EFrameGraphPassKind kind,
 	    EFrameGraphQueuePreference queuePreference,
@@ -39,16 +37,27 @@ class FrameGraphBuilder final
 		m_frameGraph.AddPass(name, kind, queuePreference, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename TPass> void Draw(typename TPass::ParameterInstance& parameters)
+	template <typename TPass, typename... TDependencies>
+	void Draw(typename TPass::ParameterInstance& parameters, TDependencies&... dependencies)
 	{
 		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
-		m_frameGraph.AddRasterPass<TPass>(TPass::PassName, parameters, &ExecutePass<TPass>);
+		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>(), dependencies...);
+		m_frameGraph.AddRasterPass<TPass>(
+		    TPass::PassName,
+		    parameters,
+		    [pass](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
+		    { pass.Execute(context, passParameters); });
 	}
 
 	template <typename TPass> void Dispatch(typename TPass::ParameterInstance& parameters)
 	{
 		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
-		m_frameGraph.AddComputePass<TPass>(TPass::PassName, parameters, &ExecutePass<TPass>);
+		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>());
+		m_frameGraph.AddComputePass<TPass>(
+		    TPass::PassName,
+		    parameters,
+		    [pass](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
+		    { pass.Execute(context, passParameters); });
 	}
 
 	template <typename TPass>
@@ -60,24 +69,27 @@ class FrameGraphBuilder final
 	template <typename TPass> void DispatchAsync(typename TPass::ParameterInstance& parameters)
 	{
 		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
-		m_frameGraph.AddAsyncComputePass<TPass>(TPass::PassName, parameters, &ExecutePass<TPass>);
+		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>());
+		m_frameGraph.AddAsyncComputePass<TPass>(
+		    TPass::PassName,
+		    parameters,
+		    [pass](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
+		    { pass.Execute(context, passParameters); });
 	}
 
-	template <typename TPass>
-	void Dispatch(
+	template <typename TPass> void Dispatch(
 	    std::string_view name,
 	    typename TPass::ParameterInstance& parameters,
 	    std::uint32_t outputWidth,
 	    std::uint32_t outputHeight)
 	{
 		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
+		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>());
 		m_frameGraph.AddComputePass<TPass>(
 		    name,
 		    parameters,
-		    [outputWidth, outputHeight](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
-		    {
-			    ExecuteSizedPass<TPass>(context, passParameters, outputWidth, outputHeight);
-		    });
+		    [pass, outputWidth, outputHeight](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
+		    { pass.Execute(context, passParameters, outputWidth, outputHeight); });
 	}
 
 	template <typename TPass>
@@ -86,26 +98,74 @@ class FrameGraphBuilder final
 		DispatchAsync<TPass>(TPass::PassName, parameters, outputWidth, outputHeight);
 	}
 
-	template <typename TPass>
-	void DispatchAsync(
+	template <typename TPass> void DispatchAsync(
 	    std::string_view name,
 	    typename TPass::ParameterInstance& parameters,
 	    std::uint32_t outputWidth,
 	    std::uint32_t outputHeight)
 	{
 		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
+		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>());
 		m_frameGraph.AddAsyncComputePass<TPass>(
 		    name,
 		    parameters,
-		    [outputWidth, outputHeight](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
-		    {
-			    ExecuteSizedPass<TPass>(context, passParameters, outputWidth, outputHeight);
-		    });
+		    [pass, outputWidth, outputHeight](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
+		    { pass.Execute(context, passParameters, outputWidth, outputHeight); });
 	}
 
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
 	{
 		return m_frameGraph.AllocParameters<TParameters>();
+	}
+
+	template <typename TCallback> void AddFrameUniformSetup(TCallback&& callback)
+	{
+		m_frameGraph.m_frameUniformSetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddPassParameterSetup(TCallback&& callback)
+	{
+		m_frameGraph.m_passParameterSetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddPreparedSceneSetup(TCallback&& callback)
+	{
+		m_frameGraph.m_preparedSceneSetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddRenderViewSetup(TCallback&& callback)
+	{
+		m_frameGraph.m_renderViewSetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddExposureSetup(TCallback&& callback)
+	{
+		m_frameGraph.m_exposureSetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddToneMappingSetup(TCallback&& callback)
+	{
+		m_frameGraph.m_toneMappingSetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddDirectLightReservoirHistorySetup(TCallback&& callback)
+	{
+		m_frameGraph.m_directLightReservoirHistorySetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddRestirIndirectReservoirHistorySetup(TCallback&& callback)
+	{
+		m_frameGraph.m_restirIndirectReservoirHistorySetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddReferenceLightingHistorySetup(TCallback&& callback)
+	{
+		m_frameGraph.m_referenceLightingHistorySetups.emplace_back(std::forward<TCallback>(callback));
+	}
+
+	template <typename TCallback> void AddRayTracedShadowSetup(TCallback&& callback)
+	{
+		m_frameGraph.m_rayTracedShadowSetups.emplace_back(std::forward<TCallback>(callback));
 	}
 
 	FrameGraphTextureHandle ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
@@ -157,24 +217,7 @@ class FrameGraphBuilder final
 	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept;
 	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept;
 
-  private:
-	template <typename TPass> static void ExecutePass(PassExecutionContext& context, typename TPass::ParameterInstance& parameters)
-	{
-		const TPass pass(context.Runtime.GetPassRuntime<TPass>());
-		pass.Execute(context, parameters);
-	}
-
-	template <typename TPass>
-	static void ExecuteSizedPass(
-	    PassExecutionContext& context,
-	    typename TPass::ParameterInstance& parameters,
-	    std::uint32_t outputWidth,
-	    std::uint32_t outputHeight)
-	{
-		const TPass pass(context.Runtime.GetPassRuntime<TPass>());
-		pass.Execute(context, parameters, outputWidth, outputHeight);
-	}
-
+private:
 	FrameGraph& m_frameGraph;
 	const RenderPassRuntimeCache& m_renderPassRuntimeCache;
 };

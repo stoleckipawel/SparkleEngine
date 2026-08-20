@@ -27,9 +27,7 @@ namespace ShaderPassOperations
 	    const PassBindingOverrides* overrides) noexcept;
 
 	template <typename TRasterPipelineRuntime>
-	const RenderPipeline& ResolveRasterPipeline(
-	    const TRasterPipelineRuntime& runtime,
-	    std::uint32_t viewModeIndex) noexcept
+	const RenderPipeline& ResolveRasterPipeline(const TRasterPipelineRuntime& runtime, std::uint32_t viewModeIndex) noexcept
 	{
 		if constexpr (requires { runtime.WireframePipeline; })
 		{
@@ -42,11 +40,9 @@ namespace ShaderPassOperations
 		return runtime.Pipeline;
 	}
 
-	template <typename TRasterPipelineRuntime>
-	bool BindRasterPassWithRuntime(
+	template <typename TRasterPipelineRuntime> bool BindRasterPassWithRuntime(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPipelineRuntime& runtime,
 	    const PassParameterSet& parameters,
 	    const char* const* bindingNames = nullptr,
@@ -59,7 +55,6 @@ namespace ShaderPassOperations
 		return RasterShaderPass<PassParameterSet>::Bind(
 		    resources,
 		    commandContext,
-		    renderHardwareInterface,
 		    runtime.BindingLayout,
 		    ResolveRasterPipeline(runtime, viewModeIndex),
 		    parameters,
@@ -70,11 +65,9 @@ namespace ShaderPassOperations
 		    bindLayout);
 	}
 
-	template <typename TRasterPipelineRuntime>
-	bool BindAvailableRasterPassWithRuntime(
+	template <typename TRasterPipelineRuntime> bool BindAvailableRasterPassWithRuntime(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPipelineRuntime& runtime,
 	    const PassParameterSet& parameters,
 	    const PassBindingOverrides* overrides = nullptr,
@@ -86,7 +79,6 @@ namespace ShaderPassOperations
 		return BindRasterPassWithRuntime(
 		    resources,
 		    commandContext,
-		    renderHardwareInterface,
 		    runtime,
 		    parameters,
 		    bindingNames.data(),
@@ -97,11 +89,9 @@ namespace ShaderPassOperations
 		    viewModeIndex);
 	}
 
-	template <typename TRasterPipelineRuntime, std::size_t N>
-	bool BindRasterPassOverridesWithRuntime(
+	template <typename TRasterPipelineRuntime, std::size_t N> bool BindRasterPassOverridesWithRuntime(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPipelineRuntime& runtime,
 	    const std::array<const char*, N>& bindingNames,
 	    const PassBindingOverrides& overrides,
@@ -110,7 +100,6 @@ namespace ShaderPassOperations
 		return BindRasterPassWithRuntime(
 		    resources,
 		    commandContext,
-		    renderHardwareInterface,
 		    runtime,
 		    GetEmptyPassParameterSet(),
 		    bindingNames.data(),
@@ -119,30 +108,19 @@ namespace ShaderPassOperations
 		    passName);
 	}
 
-	template <typename TRasterPipelineRuntime>
-	bool BindRasterPassOverridesWithRuntime(
+	template <typename TRasterPipelineRuntime> bool BindRasterPassOverridesWithRuntime(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPipelineRuntime& runtime,
 	    const PassBindingOverrides& overrides,
 	    const char* passName = nullptr) noexcept
 	{
-		return BindAvailableRasterPassWithRuntime(
-		    resources,
-		    commandContext,
-		    renderHardwareInterface,
-		    runtime,
-		    GetEmptyPassParameterSet(),
-		    &overrides,
-		    passName);
+		return BindAvailableRasterPassWithRuntime(resources, commandContext, runtime, GetEmptyPassParameterSet(), &overrides, passName);
 	}
 
-	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings>
-	bool DispatchComputePassWithRuntime(
+	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings> bool DispatchComputePassWithRuntime(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
 	    const TParameterBindings& parameters,
 	    const ComputeDispatchDesc& dispatch,
@@ -153,7 +131,6 @@ namespace ShaderPassOperations
 		return ComputeShaderPass<Parameters>::Dispatch(
 		    resources,
 		    commandContext,
-		    renderHardwareInterface,
 		    runtime.BindingLayout,
 		    runtime.Pipeline,
 		    parameters,
@@ -164,11 +141,9 @@ namespace ShaderPassOperations
 		    passName);
 	}
 
-	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings>
-	bool DispatchComputePassWithRuntime(
+	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings> bool DispatchComputePassWithRuntime(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
 	    const TParameterBindings& parameters,
 	    const ComputeDispatchDesc& dispatch,
@@ -182,7 +157,6 @@ namespace ShaderPassOperations
 		return ComputeShaderPass<Parameters>::Dispatch(
 		    resources,
 		    commandContext,
-		    renderHardwareInterface,
 		    runtime.BindingLayout,
 		    runtime.Pipeline,
 		    parameters,
@@ -193,11 +167,9 @@ namespace ShaderPassOperations
 		    passName);
 	}
 
-	template <typename TComputePass, typename TComputePassRuntime>
-	bool DispatchAvailableComputePassWithRuntime(
+	template <typename TComputePass, typename TComputePassRuntime> bool DispatchAvailableComputePassWithRuntime(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
 	    const PassParameterSet& parameters,
 	    const ComputeDispatchDesc& dispatch,
@@ -208,7 +180,6 @@ namespace ShaderPassOperations
 		return DispatchComputePassWithRuntime<TComputePass>(
 		    resources,
 		    commandContext,
-		    renderHardwareInterface,
 		    runtime,
 		    parameters,
 		    dispatch,
@@ -218,4 +189,4 @@ namespace ShaderPassOperations
 		    passName);
 	}
 
-}  // namespace ShaderPassOperations
+} // namespace ShaderPassOperations

@@ -2,15 +2,13 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "FrameGraph/Diagnostics/FrameGraphResourceContractDiagnostics.h"
-#include "Frame/Core/FrameContext.h"
-
 #include <cassert>
 #include <string>
 #include <utility>
 
 class FrameGraphPassLabelFormatter final
 {
-  public:
+public:
 	static std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassKind passKind)
 	{
 		std::string label{"FrameGraph/"};
@@ -30,7 +28,87 @@ class FrameGraphPassLabelFormatter final
 	}
 };
 
-void FrameGraph::Setup(const FrameContext& frame)
+void FrameGraph::ApplyFrameUniformParameters(const FrameUniformData& frame)
+{
+	for (const FrameUniformSetupCallback& setup : m_frameUniformSetups)
+	{
+		setup(frame);
+	}
+}
+
+void FrameGraph::ApplyPreparedSceneParameters(const PreparedRenderScene& preparedScene)
+{
+	for (const PreparedSceneSetupCallback& setup : m_preparedSceneSetups)
+	{
+		setup(preparedScene);
+	}
+}
+
+void FrameGraph::ApplyRenderViewParameters(const RenderView& view)
+{
+	for (const RenderViewSetupCallback& setup : m_renderViewSetups)
+	{
+		setup(view);
+	}
+}
+
+void FrameGraph::ApplyExposureParameters(const ExposureUniformData& exposure)
+{
+	for (const ExposureSetupCallback& setup : m_exposureSetups)
+	{
+		setup(exposure);
+	}
+}
+
+void FrameGraph::ApplyToneMappingParameters(const ToneMappingUniformData& toneMapping)
+{
+	for (const ToneMappingSetupCallback& setup : m_toneMappingSetups)
+	{
+		setup(toneMapping);
+	}
+}
+
+void FrameGraph::ApplyDirectLightReservoirHistory(bool historyValid)
+{
+	for (const HistorySetupCallback& setup : m_directLightReservoirHistorySetups)
+	{
+		setup(historyValid);
+	}
+}
+
+void FrameGraph::ApplyRestirIndirectReservoirHistory(bool historyValid)
+{
+	for (const HistorySetupCallback& setup : m_restirIndirectReservoirHistorySetups)
+	{
+		setup(historyValid);
+	}
+}
+
+void FrameGraph::ApplyReferenceLightingHistory(bool historyValid)
+{
+	for (const HistorySetupCallback& setup : m_referenceLightingHistorySetups)
+	{
+		setup(historyValid);
+	}
+}
+
+void FrameGraph::ApplyRayTracedShadowParameters(const PreparedRenderScene& preparedScene, const RayTracedShadowPassInput& rayTracedShadows)
+{
+	for (const RayTracedShadowSetupCallback& setup : m_rayTracedShadowSetups)
+	{
+		setup(preparedScene, rayTracedShadows);
+	}
+}
+
+void FrameGraph::ApplyPassParameterDefaults()
+{
+	for (const PassParameterSetupCallback& setup : m_passParameterSetups)
+	{
+		setup();
+	}
+}
+
+void FrameGraph::Setup()
 {
 	m_compiledPlan.Clear();
 	m_compiledPlan.productRoots = m_productRoots;
@@ -41,7 +119,7 @@ void FrameGraph::Setup(const FrameContext& frame)
 		auto& pass = m_passes[passIndex];
 		std::vector<PassResourceDeclaration> declarations;
 		PassResourceBuilder builder(declarations);
-		pass.active = pass.setupCallback(builder, frame);
+		pass.active = pass.setupCallback(builder);
 		FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(pass.name, pass.kind, declarations);
 		assert(IsQueuePreferenceCompatible(pass.kind, pass.queuePreference));
 		m_compiledPlan.passes.push_back(
@@ -51,7 +129,10 @@ void FrameGraph::Setup(const FrameContext& frame)
 		        .kind = pass.kind,
 		        .queuePreference = pass.queuePreference,
 		        .diagnosticName = FrameGraphPassLabelFormatter::FormatPassDiagnosticName(pass.name),
-		        .eventScopeLabel = FrameGraphPassLabelFormatter::FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.kind),
+		        .eventScopeLabel = FrameGraphPassLabelFormatter::FormatPassEventScopeLabel(
+		            static_cast<FrameGraphPassIndex>(passIndex),
+		            pass.name,
+		            pass.kind),
 		        .declarations = std::move(declarations),
 		        .executionModel = pass.executionModel});
 	}

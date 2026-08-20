@@ -6,6 +6,7 @@
 
 void AddLightingCompositePass(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     FrameGraphTextureHandle output,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer)
@@ -19,5 +20,5 @@ void AddLightingCompositePass(
 	parameters->IndirectSpecular = builder.CreateSRV(lighting.IndirectSpecular);
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 	parameters->GBufferEmissive = builder.CreateSRV(gbuffer.Emissive);
-	builder.Dispatch<LightingCompositePass>(parameters);
+	builder.Dispatch<LightingCompositePass>(parameters, sceneExtent.Width, sceneExtent.Height);
 }

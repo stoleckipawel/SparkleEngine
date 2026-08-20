@@ -1,17 +1,26 @@
 #include "../../PCH.h"
 #include "Frame/RayTracing/RayTracingScene.h"
 
-#include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeContext.h"
-#include "Scene/RenderScene.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
+
+#include <functional>
+#include <memory>
+#include <optional>
 
 namespace RayTracingSceneFrameGraphContract
 {
 	constexpr std::string_view kSceneBuildPassName = "RayTracingSceneBuild";
-} // namespace RayTracingSceneFrameGraphContract
+}
+
+struct RayTracingSceneBuildPassInput final
+{
+	// Populated during graph setup and consumed synchronously while recording this frame.
+	std::optional<std::reference_wrapper<const PreparedRenderScene>> PreparedScene;
+};
 
 static const auto g_rayTracingSceneFrameGraphLogger = Logging::GetOrCreateLogger("Renderer.RayTracingSceneFrameGraph");
 
@@ -20,12 +29,17 @@ FrameGraphAccelerationStructureHandle CreateRayTracingSceneFrameGraphResource(Fr
 	return builder.ReservePersistentAccelerationStructure(FrameGraphAccelerationStructureDesc::Create("SceneTlas"));
 }
 
-void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAccelerationStructureHandle sceneTlas)
+void AddRayTracingSceneBuildPasses(
+    FrameGraphBuilder& builder,
+    RenderRayTracingScene& rayTracingScene,
+    FrameGraphAccelerationStructureHandle sceneTlas)
 {
+	auto input = std::make_shared<RayTracingSceneBuildPassInput>();
+	builder.AddPreparedSceneSetup([input](const PreparedRenderScene& preparedScene) { input->PreparedScene = std::cref(preparedScene); });
 	builder.AddPass(
 	    RayTracingSceneFrameGraphContract::kSceneBuildPassName,
 	    EFrameGraphPassKind::Compute,
-	    [sceneTlas](PassResourceBuilder& resourceBuilder, const FrameContext&)
+	    [sceneTlas](PassResourceBuilder& resourceBuilder)
 	    {
 		    if (!sceneTlas.IsValid())
 		    {
@@ -38,10 +52,9 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 
 		    resourceBuilder.Use(sceneTlas, ResourceUsage::AccelerationStructureBuild, "SceneTopLevelAccelerationStructure");
 	    },
-	    [](PassExecutionContext& context)
+	    [&rayTracingScene, input](PassCommandContext& context)
 	    {
-		    if (context.Runtime.RayTracing == nullptr || context.Runtime.RayTracing->Scene == nullptr
-		        || !context.Runtime.RayTracing->Scene->HasValidRayTracingTlas())
+		    if (!input->PreparedScene.has_value() || !rayTracingScene.HasValidTlas())
 		    {
 			    Diagnostics::Fatal(
 			        g_rayTracingSceneFrameGraphLogger,
@@ -50,12 +63,12 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 			        "Ray-tracing scene build did not receive a bound SceneTlas and active scene producer.");
 		    }
 
-		    context.Runtime.RayTracing->Scene->BuildRayTracingScene(context.Commands, context.Frame.preparedScene, &context.Diagnostics);
+		    rayTracingScene.Build(context.Commands, input->PreparedScene->get(), &context.Diagnostics);
 	    });
 }
 
-void AddRaytracingScenePasses(FrameGraphBuilder& builder, FrameAssemblyResourceLayout& resources)
+void AddRaytracingScenePasses(FrameGraphBuilder& builder, RenderRayTracingScene& rayTracingScene, FrameAssemblyResourceLayout& resources)
 {
 	resources.SceneTlas = CreateRayTracingSceneFrameGraphResource(builder);
-	AddRayTracingSceneBuildPasses(builder, resources.SceneTlas);
+	AddRayTracingSceneBuildPasses(builder, rayTracingScene, resources.SceneTlas);
 }

@@ -1,12 +1,18 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/RestirIndirectResolve.h"
 
+#include "Frame/Lighting/RayTracingLightingParameters.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/RayTracing/RestirIndirectResolvePass.h"
+#include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
 
-void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources)
+void AddRestirIndirectResolvePass(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    const FrameAssemblyResourceLayout& resources)
 {
 	auto& parameters = builder.AllocParameters<RestirIndirectResolvePass::Parameters>();
+	auto* parameterFields = parameters.operator->();
 	parameters->CurrentReservoirSampleTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Sample.Current);
 	parameters->CurrentReservoirWeightTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Weight.Current);
 	parameters->IndirectDiffuse = builder.CreateUAV(resources.Transient.Lighting.IndirectDiffuse);
@@ -35,5 +41,15 @@ void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, const FrameAssembl
 	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
 	parameters->MorphWeights = builder.CreateSRV(resources.External.Scene.Geometry.MorphWeights);
-	builder.Dispatch<RestirIndirectResolvePass>(parameters);
+	RegisterRayTracingLightingParameterSetups(builder, parameters);
+	builder.AddPassParameterSetup(
+	    [parameterFields]
+	    {
+		    const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
+		    parameterFields->RestirIndirectConstants = RestirIndirectLightingUniformData{
+		        .BounceCount = settings.BounceCount,
+		        .NormalBias = settings.NormalBias,
+		        .MaxDistance = settings.MaxDistance};
+	    });
+	builder.Dispatch<RestirIndirectResolvePass>(parameters, sceneExtent.Width, sceneExtent.Height);
 }

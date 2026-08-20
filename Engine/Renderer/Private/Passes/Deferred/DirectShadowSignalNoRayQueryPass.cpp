@@ -1,9 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/DirectShadowSignalNoRayQueryPass.h"
 
-#include "Frame/Core/FrameContext.h"
-#include "View/RenderView.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -29,13 +27,11 @@ const RenderPassDefinition& DirectShadowSignalNoRayQueryPass::GetDefinition() no
 	return definition;
 }
 
-void DirectShadowSignalNoRayQueryPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
+void DirectShadowSignalNoRayQueryPass::Execute(
+    PassCommandContext& context,
+    ParameterInstance& parameters,
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight) const
 {
-	DirectShadowSignalPassCommon::SetParameters(*parameters, context.Frame, context.Frame.view, context.Runtime);
-	ComputePassOperations::DispatchSized<DirectShadowSignalNoRayQueryPass>(
-	    context,
-	    m_runtime,
-	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
+	ComputePassOperations::DispatchSized<DirectShadowSignalNoRayQueryPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

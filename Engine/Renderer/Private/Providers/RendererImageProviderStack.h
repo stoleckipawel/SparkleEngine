@@ -10,12 +10,6 @@ class RenderHardwareInterface;
 class IUpscalerProvider;
 struct ImageProviderFrameInput;
 
-struct ImageProviderPassContext final
-{
-	IUpscalerProvider* Upscaling = nullptr;
-	IRayReconstructionProvider* RayReconstruction = nullptr;
-};
-
 struct ImageProviderGraphKey final
 {
 	std::uint32_t UpscalerProvider = 0;
@@ -46,7 +40,8 @@ public:
 	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent, ImageProviderPipeline pipeline) noexcept;
 
 	ImageProviderGraphKey GetFrameGraphKey() const noexcept;
-	ImageProviderPassContext BuildPassContext() noexcept;
+	IUpscalerProvider* GetUpscalerProvider() noexcept { return m_upscaler.get(); }
+	IRayReconstructionProvider* GetRayReconstructionProvider() noexcept { return m_rayReconstruction.get(); }
 
 private:
 	void Initialize(RenderHardwareInterface& renderHardwareInterface);

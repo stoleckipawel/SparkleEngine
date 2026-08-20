@@ -4,4 +4,7 @@
 
 class FrameGraphBuilder;
 
-void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources);
+void AddRestirIndirectResolvePass(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    const FrameAssemblyResourceLayout& resources);

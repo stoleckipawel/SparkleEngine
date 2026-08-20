@@ -9,14 +9,22 @@
 
 class FrameGraph;
 class FrameGraphBuilder;
+class GpuMeshCache;
+class IRayReconstructionProvider;
+class IUpscalerProvider;
 class RenderPassRuntimeCache;
 class RenderHardwareInterface;
+class RenderRayTracingScene;
 class Window;
 
 struct FrameGraphDependencies
 {
 	RenderHardwareInterface& renderHardwareInterface;
 	const RenderPassRuntimeCache& renderPassRuntimeCache;
+	GpuMeshCache& gpuMeshCache;
+	RenderRayTracingScene& rayTracingScene;
+	IUpscalerProvider* upscalerProvider = nullptr;
+	IRayReconstructionProvider* rayReconstructionProvider = nullptr;
 	Window& window;
 	RenderViewportExtent renderExtent;
 	RenderViewportExtent outputExtent;

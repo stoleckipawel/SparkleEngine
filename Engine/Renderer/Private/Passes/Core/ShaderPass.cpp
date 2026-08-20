@@ -5,7 +5,6 @@
 #include "Commands/RenderCommandContext.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
@@ -16,7 +15,7 @@
 
 class ShaderPassValidation final
 {
-  public:
+public:
 	inline static std::shared_ptr<spdlog::logger> g_rendererLogger = Logging::GetOrCreateLogger("Renderer");
 
 	static const char* GetShaderPassName(const char* passName) noexcept
@@ -60,7 +59,9 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 
 		if (parameter.Visibility == ShaderStageVisibility::None)
 		{
-			return ShaderPassValidation::ReportShaderPassLayoutError(passName, "parameter '" + parameter.Name + "' has no shader stage visibility.");
+			return ShaderPassValidation::ReportShaderPassLayoutError(
+			    passName,
+			    "parameter '" + parameter.Name + "' has no shader stage visibility.");
 		}
 
 		if (passKind == ShaderPassKind::Compute)
@@ -95,8 +96,7 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 
 void BindComputeShaderPass(
     RenderCommandContext& commandContext,
-	const FrameGraphResourceCommands& resources,
-    RenderHardwareInterface* renderHardwareInterface,
+    const FrameGraphResourceCommands& resources,
     const RenderBindingLayout& bindingLayout,
     const RenderPipeline& pipeline,
     const PassParameterSet& parameterSet,
@@ -105,16 +105,15 @@ void BindComputeShaderPass(
     const PassBindingOverrides* overrides,
     bool bindLayout) noexcept
 {
-	if (bindLayout && renderHardwareInterface != nullptr)
+	if (bindLayout)
 	{
-		renderHardwareInterface->GetDescriptorService().BindGlobalDescriptorState(commandContext.GetRenderCommandList());
+		resources.BindGlobalDescriptorState(commandContext);
 	}
 
 	commandContext.SetPipeline(pipeline);
 	PassBinder::BindCompute(
 	    commandContext,
 	    resources,
-	    renderHardwareInterface,
 	    bindingLayout,
 	    parameterSet,
 	    bindingNames != nullptr ? std::span<const char* const>(bindingNames, bindingNameCount) : std::span<const char* const>{},
@@ -124,8 +123,7 @@ void BindComputeShaderPass(
 
 void BindRasterShaderPass(
     RenderCommandContext& commandContext,
-	const FrameGraphResourceCommands& resources,
-    RenderHardwareInterface* renderHardwareInterface,
+    const FrameGraphResourceCommands& resources,
     const RenderBindingLayout& bindingLayout,
     const RenderPipeline& pipeline,
     const PassParameterSet& parameterSet,
@@ -134,16 +132,15 @@ void BindRasterShaderPass(
     const PassBindingOverrides* overrides,
     bool bindLayout) noexcept
 {
-	if (bindLayout && renderHardwareInterface != nullptr)
+	if (bindLayout)
 	{
-		renderHardwareInterface->GetDescriptorService().BindGlobalDescriptorState(commandContext.GetRenderCommandList());
+		resources.BindGlobalDescriptorState(commandContext);
 	}
 
 	commandContext.SetPipeline(pipeline);
 	PassBinder::BindGraphics(
 	    commandContext,
 	    resources,
-	    renderHardwareInterface,
 	    bindingLayout,
 	    parameterSet,
 	    bindingNames != nullptr ? std::span<const char* const>(bindingNames, bindingNameCount) : std::span<const char* const>{},

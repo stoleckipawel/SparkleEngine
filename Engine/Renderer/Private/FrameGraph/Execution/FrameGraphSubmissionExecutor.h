@@ -11,25 +11,21 @@ class FrameGraph;
 class RenderCommandList;
 class RhiCommandSubmissionService;
 class TaskExecutor;
-struct FrameContext;
-struct PassRuntimeContext;
 
 class FrameGraphSubmissionExecutor final
 {
-  public:
+public:
 	FrameGraphSubmissionExecutor(
 	    const FrameGraph& frameGraph,
 	    const FrameGraphPlan& plan,
 	    RhiCommandSubmissionService& submissionService,
-	    const FrameContext& frame,
-	    const PassRuntimeContext& passRuntimeContext,
 	    FrameExecutionDiagnostics& frameDiagnostics,
 	    TaskExecutor& taskExecutor,
 	    std::span<RhiSubmissionToken> batchTokens) noexcept;
 
 	RenderCommandList& Execute(RenderCommandList& initialGraphicsCommandList);
 
-  private:
+private:
 	struct BatchWaitTokens final
 	{
 		std::array<RhiSubmissionToken, RhiQueueTypeCount> Values = {};

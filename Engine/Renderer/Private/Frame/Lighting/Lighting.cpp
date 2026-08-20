@@ -30,20 +30,20 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 			AddRestirLightingProducerPasses(builder, sceneExtent, resources);
 			break;
 		case LightingMode::ReferencePathTraced:
-			AddReferenceLightingProducerPasses(builder, resources);
+			AddReferenceLightingProducerPasses(builder, sceneExtent, resources);
 			break;
 	}
 
 	const FrameGraphTextureHandle lightingSample = lightingMode == LightingMode::ReferencePathTraced
-	                                                   ? CreateReferenceLightingSample(builder, sceneExtent)
-	                                                   : resources.Transient.Scene.SceneColor;
-	AddLightingCompositePass(builder, lightingSample, resources.Transient.Lighting, resources.Transient.GBuffer);
-	AddSkyPass(builder, lightingSample, resources.Transient.Scene.SceneDepth, resources.External.Sky);
+	    ? CreateReferenceLightingSample(builder, sceneExtent)
+	    : resources.Transient.Scene.SceneColor;
+	AddLightingCompositePass(builder, sceneExtent, lightingSample, resources.Transient.Lighting, resources.Transient.GBuffer);
+	AddSkyPass(builder, sceneExtent, lightingSample, resources.Transient.Scene.SceneDepth, resources.External.Sky);
 
 	switch (lightingMode)
 	{
 		case LightingMode::ReferencePathTraced:
-			FinalizeReferenceLightingPasses(builder, lightingSample, resources);
+			FinalizeReferenceLightingPasses(builder, sceneExtent, lightingSample, resources);
 			break;
 		case LightingMode::RestirPathTraced:
 		default:
@@ -55,10 +55,11 @@ void AddLightingReconstructionPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     RenderViewportExtent outputExtent,
+    IRayReconstructionProvider* rayReconstructionProvider,
     FrameAssemblyResourceLayout& resources)
 {
 	if (GetLightingMode() == LightingMode::RestirPathTraced)
 	{
-		AddRestirRayReconstructionPass(builder, sceneExtent, outputExtent, resources);
+		AddRestirRayReconstructionPass(builder, sceneExtent, outputExtent, rayReconstructionProvider, resources);
 	}
 }

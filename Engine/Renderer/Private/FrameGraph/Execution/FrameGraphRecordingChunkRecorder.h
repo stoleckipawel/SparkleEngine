@@ -8,29 +8,21 @@ class FrameGraphExecutionDiagnostics;
 class RenderCommandContext;
 class RenderCommandList;
 class ScopedGpuScope;
-struct FrameContext;
-struct PassRuntimeContext;
 
 struct RecordingChunk;
 
 class FrameGraphRecordingChunkRecorder final
 {
-  public:
+public:
 	FrameGraphRecordingChunkRecorder(
 	    const FrameGraph& frameGraph,
 	    const FrameGraphPlan& plan,
-	    const FrameContext& frame,
-	    const PassRuntimeContext& passRuntimeContext,
 	    FrameExecutionDiagnostics& frameDiagnostics) noexcept;
 
-	void Record(
-	    const RecordingChunk& chunk,
-	    RenderCommandList& commandList) const;
+	void Record(const RecordingChunk& chunk, RenderCommandList& commandList) const;
 
-  private:
-	ScopedGpuScope BeginChunkScope(
-	    const RecordingChunk& chunk,
-	    RenderCommandContext& commands) const;
+private:
+	ScopedGpuScope BeginChunkScope(const RecordingChunk& chunk, RenderCommandContext& commands) const;
 	void RecordGroup(
 	    const RecordingGroup& group,
 	    RenderCommandList& commandList,
@@ -41,13 +33,9 @@ class FrameGraphRecordingChunkRecorder final
 	    RenderCommandList& commandList,
 	    RenderCommandContext& commands,
 	    FrameGraphExecutionDiagnostics& graphDiagnostics) const;
-	void TrackPassResources(
-	    const FrameGraphPassNode& pass,
-	    RenderCommandList& commandList) const;
+	void TrackPassResources(const FrameGraphPassNode& pass, RenderCommandList& commandList) const;
 
 	const FrameGraph& m_frameGraph;
 	const FrameGraphPlan& m_plan;
-	const FrameContext& m_frame;
-	const PassRuntimeContext& m_passRuntimeContext;
 	FrameExecutionDiagnostics& m_frameDiagnostics;
 };

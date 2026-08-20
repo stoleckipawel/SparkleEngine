@@ -8,7 +8,7 @@
 
 class RestirRayReconstructionInputBuilder final
 {
-  public:
+public:
 	static RayReconstructionPassResources BuildRayReconstructionInputs(
 	    const SceneRenderTargets& sceneTargets,
 	    const GBufferRenderTargets& gbuffer,
@@ -33,6 +33,7 @@ void AddRestirRayReconstructionPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     RenderViewportExtent outputExtent,
+    IRayReconstructionProvider* rayReconstructionProvider,
     FrameAssemblyResourceLayout& resources)
 {
 	if (!IsRayReconstructionEnabled())
@@ -46,17 +47,11 @@ void AddRestirRayReconstructionPass(
 	    resources.Transient.Lighting,
 	    resources.Transient.Exposure);
 
-	AddLinearUpscalePass(
-	    builder,
-	    resources.Transient.Scene.SceneColor,
-	    resources.Transient.Scene.FinalSceneColor,
-	    outputExtent);
-	AddRayReconstructionPass(
-	    builder,
-	    "DlssRayReconstruction",
-	    sceneExtent,
-	    outputExtent,
-	    providerInputs);
+	AddLinearUpscalePass(builder, resources.Transient.Scene.SceneColor, resources.Transient.Scene.FinalSceneColor, outputExtent);
+	if (rayReconstructionProvider != nullptr)
+	{
+		AddRayReconstructionPass(builder, *rayReconstructionProvider, "DlssRayReconstruction", sceneExtent, outputExtent, providerInputs);
+	}
 	// The linear pass is the guaranteed output path. The provider pass, when
 	// available, overwrites it with the reconstructed result.
 	resources.FinalSceneColorProduced = true;

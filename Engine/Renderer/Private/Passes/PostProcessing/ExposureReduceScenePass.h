@@ -7,7 +7,7 @@
 #include <cstdint>
 
 struct ComputePassPipelineRuntime;
-struct PassExecutionContext;
+struct PassCommandContext;
 struct RenderPassDefinition;
 
 struct ExposureReduceScenePassParameters
@@ -27,7 +27,7 @@ struct ExposureReduceScenePassParameters
 
 class ExposureReduceScenePass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "ExposureReduceScene";
 	static constexpr std::uint32_t ThreadGroupSizeX = 16;
 	static constexpr std::uint32_t ThreadGroupSizeY = 16;
@@ -40,8 +40,8 @@ class ExposureReduceScenePass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

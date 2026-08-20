@@ -1,15 +1,19 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/RestirIndirectSpatial.h"
 
+#include "Frame/Lighting/RayTracingLightingParameters.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/RayTracing/RestirIndirectSpatialPass.h"
+#include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
 
 void AddRestirIndirectSpatialPass(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     const RestirIndirectWorkingReservoirs& workingReservoirs,
     const FrameAssemblyResourceLayout& resources)
 {
 	auto& parameters = builder.AllocParameters<RestirIndirectSpatialPass::Parameters>();
+	auto* parameterFields = parameters.operator->();
 	parameters->TemporalReservoirSampleTexture = builder.CreateSRV(workingReservoirs.TemporalSample);
 	parameters->TemporalReservoirWeightTexture = builder.CreateSRV(workingReservoirs.TemporalWeight);
 	parameters->CurrentReservoirSampleTexture = builder.CreateUAV(resources.History.RestirIndirectReservoir.Sample.Current);
@@ -34,5 +38,15 @@ void AddRestirIndirectSpatialPass(
 	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
 	parameters->MorphWeights = builder.CreateSRV(resources.External.Scene.Geometry.MorphWeights);
-	builder.Dispatch<RestirIndirectSpatialPass>(parameters);
+	RegisterRayTracingLightingParameterSetups(builder, parameters);
+	builder.AddPassParameterSetup(
+	    [parameterFields]
+	    {
+		    const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
+		    parameterFields->RestirIndirectConstants = RestirIndirectLightingUniformData{
+		        .BounceCount = settings.BounceCount,
+		        .NormalBias = settings.NormalBias,
+		        .MaxDistance = settings.MaxDistance};
+	    });
+	builder.Dispatch<RestirIndirectSpatialPass>(parameters, sceneExtent.Width, sceneExtent.Height);
 }

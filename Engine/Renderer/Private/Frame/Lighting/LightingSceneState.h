@@ -2,6 +2,6 @@
 
 #include <cstdint>
 
-struct FrameContext;
+struct PreparedRenderScene;
 
-std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noexcept;
+std::uint64_t BuildLightingSceneInvalidationHash(const PreparedRenderScene& scene) noexcept;

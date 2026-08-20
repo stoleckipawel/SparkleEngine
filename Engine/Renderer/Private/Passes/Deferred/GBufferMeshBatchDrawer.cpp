@@ -5,14 +5,10 @@
 #include "Passes/Deferred/GBufferMeshBatchDrawer.h"
 
 #include "Commands/RenderCommandContext.h"
-#include "Frame/Core/FrameContext.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeContext.h"
 #include "Meshes/GpuMesh.h"
 #include "Meshes/GpuMeshCache.h"
 #include "Passes/Core/ShaderPassOperations.h"
 #include "Pipeline/PassPipelineRuntime.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Materials/MaterialData.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
@@ -112,7 +108,6 @@ RasterPassPipelineRuntime GBufferMeshBatchDrawer::ResolveBatchRuntime(
 bool GBufferMeshBatchDrawer::BindBatchPipeline(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
-    RenderHardwareInterface& renderHardwareInterface,
     const RasterPassPipelineRuntime& runtime,
     GBufferPass::DrawParameterInstance& drawParameters,
     const GpuMesh& gpuMesh,
@@ -125,7 +120,6 @@ bool GBufferMeshBatchDrawer::BindBatchPipeline(
 	return ShaderPassOperations::BindAvailableRasterPassWithRuntime(
 	    resources,
 	    commandContext,
-	    &renderHardwareInterface,
 	    runtime,
 	    drawParameters.GetPassParameterSet(),
 	    &overrides,
@@ -137,18 +131,17 @@ bool GBufferMeshBatchDrawer::BindBatchPipeline(
 void GBufferMeshBatchDrawer::DrawBatch(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
-    const FrameContext& frame,
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
     const GBufferPass::Parameters& passParameters,
-    RenderHardwareInterface& renderHardwareInterface,
     const RasterPassPipelineRuntime& runtime,
     const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
     const GpuMesh& gpuMesh,
     const MeshInstanceBatch& batch,
     std::uint32_t viewModeIndex)
 {
-	const PreparedRenderScene& preparedScene = frame.preparedScene;
 	if (batch.meshKind == RenderMeshKind::Skeletal
-	    && (!frame.preparedScene.gpuBindings->Geometry.HasSkinningBuffers() || !HasValidSkinning(preparedScene, frame.view, batch)))
+	    && (!preparedScene.gpuBindings->Geometry.HasSkinningBuffers() || !HasValidSkinning(preparedScene, view, batch)))
 	{
 		return;
 	}
@@ -163,7 +156,7 @@ void GBufferMeshBatchDrawer::DrawBatch(
 	}
 
 	const RasterPassPipelineRuntime batchRuntime = ResolveBatchRuntime(preparedScene, batch, runtime);
-	if (!BindBatchPipeline(resources, commandContext, renderHardwareInterface, batchRuntime, drawParameters, gpuMesh, viewModeIndex))
+	if (!BindBatchPipeline(resources, commandContext, batchRuntime, drawParameters, gpuMesh, viewModeIndex))
 	{
 		return;
 	}
@@ -174,20 +167,19 @@ void GBufferMeshBatchDrawer::DrawBatch(
 void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
-    const FrameContext& frame,
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
     const GBufferPass::Parameters& parameters,
-    const PassRuntimeContext& passRuntimeContext,
     const RasterPassPipelineRuntime& runtime,
-    const GBufferPass::DrawParameterMetadata& drawParameterMetadata)
+    const GBufferPass::DrawParameterMetadata& drawParameterMetadata) const
 {
-	if (passRuntimeContext.Meshes == nullptr || !frame.preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
+	if (!preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
 	{
 		return;
 	}
 
-	const PreparedRenderScene& preparedScene = frame.preparedScene;
-	const std::uint32_t viewModeIndex = frame.view.uniform.ViewModeIndex;
-	for (const MeshInstanceBatch& batch : frame.view.meshInstanceBatches)
+	const std::uint32_t viewModeIndex = view.uniform.ViewModeIndex;
+	for (const MeshInstanceBatch& batch : view.meshInstanceBatches)
 	{
 		if (batch.materialClassification != RenderMaterialClassification::Opaque
 		    && batch.materialClassification != RenderMaterialClassification::AlphaTested)
@@ -195,7 +187,7 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 			continue;
 		}
 
-		const GpuMesh* gpuMesh = ResolveBatch(frame.view, batch, *passRuntimeContext.Meshes);
+		const GpuMesh* gpuMesh = ResolveBatch(view, batch, m_gpuMeshCache);
 		if (gpuMesh == nullptr)
 		{
 			continue;
@@ -204,9 +196,9 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 		DrawBatch(
 		    resources,
 		    commandContext,
-		    frame,
+		    preparedScene,
+		    view,
 		    parameters,
-		    passRuntimeContext.HardwareInterface,
 		    runtime,
 		    drawParameterMetadata,
 		    *gpuMesh,

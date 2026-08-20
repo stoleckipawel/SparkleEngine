@@ -14,7 +14,7 @@ class FrameGraphBuilder;
 class PassParameterLayout;
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
-struct PassExecutionContext;
+struct PassCommandContext;
 
 struct ComputeClearPassParameters
 {
@@ -28,7 +28,7 @@ struct ComputeClearPassParameters
 
 class ComputeClearPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "ComputeClear";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8;
@@ -43,10 +43,10 @@ class ComputeClearPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const PassParameterLayout& GetParameterLayout() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, const ParameterInstance& parameters, std::uint32_t width, std::uint32_t height)
+	void Execute(PassCommandContext& context, const ParameterInstance& parameters, std::uint32_t width, std::uint32_t height)
 	    const noexcept;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };
 

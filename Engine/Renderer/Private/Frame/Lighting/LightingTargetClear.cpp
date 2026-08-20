@@ -2,14 +2,14 @@
 #include "Frame/Lighting/LightingTargetClear.h"
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "FrameGraph/ResourceUsage.h"
 
 #include <array>
 
 class LightingTargetClearPlan final
 {
-  public:
+public:
 	static constexpr const char* kLightingTargetClearPassName = "LightingTargetClear";
 
 	static auto GetLightingTargets(const LightingRenderTargets& lighting) noexcept
@@ -54,17 +54,14 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 			        lighting.ReconstructionGuides.SpecularAlbedo,
 			        ResourceUsage::RenderTarget,
 			        "RayReconstructionSpecularAlbedo");
-			    resourceBuilder.Write(
-			        lighting.ReconstructionGuides.Roughness,
-			        ResourceUsage::RenderTarget,
-			        "RayReconstructionRoughness");
+			    resourceBuilder.Write(lighting.ReconstructionGuides.Roughness, ResourceUsage::RenderTarget, "RayReconstructionRoughness");
 			    resourceBuilder.Write(
 			        lighting.ReconstructionGuides.SpecularHitDistance,
 			        ResourceUsage::RenderTarget,
 			        "RayReconstructionSpecularHitDistance");
 		    }
 	    },
-	    [lighting](PassExecutionContext& context)
+	    [lighting](PassCommandContext& context)
 	    {
 		    for (FrameGraphTextureHandle target : LightingTargetClearPlan::GetLightingTargets(lighting))
 		    {

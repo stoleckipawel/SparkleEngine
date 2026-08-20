@@ -70,6 +70,7 @@ public:
 	bool HasValidRayTracingTlas() const noexcept;
 	RhiGpuVirtualAddress GetRayTracingTlasGpuAddress() const noexcept;
 	const RayTracingCapabilityReport& GetRayTracingCapabilities() const noexcept;
+	RenderRayTracingScene& GetRayTracingSceneCapability() noexcept { return *m_renderRayTracingScene; }
 	void CommitContinuity(std::span<const PreparedRenderPrimitive> primitives, const RenderDeformationWork& deformation);
 	void ResetContinuity() noexcept;
 	DirectX::XMFLOAT4X4 ResolvePreviousWorldMatrix(const RenderPrimitive& primitive) const noexcept;

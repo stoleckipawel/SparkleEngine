@@ -11,15 +11,13 @@ class RenderCommandContext;
 class FrameGraphResourceCommands;
 struct PassParameterBinding;
 class PassParameterSet;
-class RenderHardwareInterface;
 
 class PassBinder final
 {
-  public:
+public:
 	static void BindGraphics(
 	    RenderCommandContext& commandContext,
 	    const FrameGraphResourceCommands& resources,
-	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames = {},
@@ -29,20 +27,18 @@ class PassBinder final
 	static void BindCompute(
 	    RenderCommandContext& commandContext,
 	    const FrameGraphResourceCommands& resources,
-	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames = {},
 	    const PassBindingOverrides* overrides = nullptr,
 	    bool bindLayout = true);
 
-  private:
+private:
 	struct BindingRequest;
 
 	static void BindImpl(
 	    RenderCommandContext& commandContext,
 	    const FrameGraphResourceCommands& resources,
-	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames,
@@ -52,7 +48,6 @@ class PassBinder final
 	static void BindCompiledBinding(
 	    RenderCommandContext& commandContext,
 	    const FrameGraphResourceCommands& resources,
-	    RenderHardwareInterface* renderHardwareInterface,
 	    const CompiledBinding& compiledBinding,
 	    const PassParameterBinding* parameterBinding,
 	    const PassBindingOverrides* overrides,

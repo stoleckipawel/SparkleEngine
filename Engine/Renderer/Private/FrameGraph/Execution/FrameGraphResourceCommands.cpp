@@ -2,9 +2,12 @@
 #include "FrameGraph/Execution/FrameGraphResourceCommands.h"
 
 #include "FrameGraph/FrameGraph.h"
+#include "Commands/RenderCommandContext.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Interop/RhiInteropService.h"
 
-FrameGraphResourceCommands::FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept : m_frameGraph(&frameGraph)
+FrameGraphResourceCommands::FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept :
+    m_frameGraph(frameGraph)
 {
 }
 
@@ -13,7 +16,7 @@ void FrameGraphResourceCommands::BindRenderTarget(
     FrameGraphTextureHandle renderTargetHandle,
     FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
-	m_frameGraph->BindRenderTarget(commandContext, renderTargetHandle, depthStencilHandle);
+	m_frameGraph.BindRenderTarget(commandContext, renderTargetHandle, depthStencilHandle);
 }
 
 void FrameGraphResourceCommands::BindRenderTargets(
@@ -21,7 +24,7 @@ void FrameGraphResourceCommands::BindRenderTargets(
     std::span<const FrameGraphTextureHandle> renderTargetHandles,
     FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
-	m_frameGraph->BindRenderTargets(commandContext, renderTargetHandles, depthStencilHandle);
+	m_frameGraph.BindRenderTargets(commandContext, renderTargetHandles, depthStencilHandle);
 }
 
 void FrameGraphResourceCommands::CopyTexture(
@@ -29,7 +32,7 @@ void FrameGraphResourceCommands::CopyTexture(
     FrameGraphTextureHandle destinationHandle,
     FrameGraphTextureHandle sourceHandle) const noexcept
 {
-	m_frameGraph->CopyTexture(commandContext, destinationHandle, sourceHandle);
+	m_frameGraph.CopyTexture(commandContext, destinationHandle, sourceHandle);
 }
 
 void FrameGraphResourceCommands::CopyBuffer(
@@ -37,54 +40,64 @@ void FrameGraphResourceCommands::CopyBuffer(
     FrameGraphBufferHandle destinationHandle,
     FrameGraphBufferHandle sourceHandle) const noexcept
 {
-	m_frameGraph->CopyBuffer(commandContext, destinationHandle, sourceHandle);
+	m_frameGraph.CopyBuffer(commandContext, destinationHandle, sourceHandle);
 }
 
 void FrameGraphResourceCommands::ClearRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept
 {
-	m_frameGraph->ClearRenderTarget(commandContext, handle);
+	m_frameGraph.ClearRenderTarget(commandContext, handle);
 }
 
 void FrameGraphResourceCommands::ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept
 {
-	m_frameGraph->ClearDepthStencil(commandContext, handle);
+	m_frameGraph.ClearDepthStencil(commandContext, handle);
 }
 
 RhiResourceHandle FrameGraphResourceCommands::ResolveResource(FrameGraphTextureHandle handle) const noexcept
 {
-	return m_frameGraph->ResolveResource(handle);
+	return m_frameGraph.ResolveResource(handle);
 }
 
 NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(
-	FrameGraphTextureHandle handle,
-	ResourceState state,
-	const RhiNativeInteropRequest& request) const noexcept
+    FrameGraphTextureHandle handle,
+    ResourceState state,
+    const RhiNativeInteropRequest& request) const noexcept
 {
-	return m_frameGraph->ResolveNativeTextureView(handle, state, request);
+	return m_frameGraph.ResolveNativeTextureView(handle, state, request);
 }
 
 RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept
 {
-	return m_frameGraph->ResolveShaderResourceView(handle);
+	return m_frameGraph.ResolveShaderResourceView(handle);
 }
 
 RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept
 {
-	return m_frameGraph->ResolveShaderResourceView(handle);
+	return m_frameGraph.ResolveShaderResourceView(handle);
 }
 
 RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept
 {
-	return m_frameGraph->ResolveUnorderedAccessView(handle);
+	return m_frameGraph.ResolveUnorderedAccessView(handle);
 }
 
 RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept
 {
-	return m_frameGraph->ResolveUnorderedAccessView(handle);
+	return m_frameGraph.ResolveUnorderedAccessView(handle);
 }
 
 RhiGpuVirtualAddress FrameGraphResourceCommands::ResolveAccelerationStructureGpuAddress(
     FrameGraphAccelerationStructureHandle handle) const noexcept
 {
-	return m_frameGraph->ResolveAccelerationStructureGpuAddress(handle);
+	return m_frameGraph.ResolveAccelerationStructureGpuAddress(handle);
+}
+
+void FrameGraphResourceCommands::BindGlobalDescriptorState(RenderCommandContext& commandContext) const noexcept
+{
+	GetRenderHardwareInterface().GetDescriptorService().BindGlobalDescriptorState(commandContext.GetRenderCommandList());
+}
+
+RenderHardwareInterface& FrameGraphResourceCommands::GetRenderHardwareInterface() const noexcept
+{
+	return *m_frameGraph.m_renderHardwareInterface;
 }

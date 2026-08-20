@@ -19,11 +19,8 @@
 #include <cstdint>
 
 struct ComputePassPipelineRuntime;
-struct FrameContext;
-struct PassExecutionContext;
-struct PassRuntimeContext;
+struct PassCommandContext;
 struct RenderPassDefinition;
-struct RenderView;
 
 struct PathTracedIndirectLightingPassParameters
 {
@@ -78,7 +75,7 @@ public:
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
 
 private:
 	const ComputePassPipelineRuntime& m_runtime;

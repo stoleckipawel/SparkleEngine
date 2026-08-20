@@ -7,23 +7,22 @@
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "UI/UiRenderPacketPlayer.h"
 #include "Editor/EditorTextureRegistry.h"
-#include "Frame/Builders/FrameContextBuilder.h"
-#include "Frame/Core/FrameContext.h"
+#include "Frame/RenderFrame.h"
 #include "Frame/Core/FrameSceneResources.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "Frame/RenderFrameTime.h"
 #include "Frame/Lighting/ReferenceLightingInvalidation.h"
 #include "Frame/Lighting/RestirLightingInvalidation.h"
+#include "Frame/Presentation/ToneMappingSettings.h"
 #include "FrameGraph/Builder/FrameGraphFactory.h"
 #include "FrameGraph/FrameGraph.h"
-#include "FrameGraph/PassRuntimeContext.h"
 #include "Host/RendererHost.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Providers/ImageProviderFrameInput.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
-#include "RayTracing/Scene/RayTracingPassContext.h"
+#include "RayTracing/Effects/Shadows/RayTracedShadowPassInput.h"
 #include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -35,6 +34,8 @@
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Textures/RendererTexture.h"
 #include "Textures/TextureCache.h"
+#include "View/RenderViewBuilder.h"
+#include "View/RenderViewPreparation.h"
 #include "Window/Window.h"
 
 static const auto g_framePipelineLogger = Logging::GetOrCreateLogger("Renderer.FramePipeline");
@@ -51,11 +52,6 @@ FrameUniformData FramePipeline::BuildFrameUniformData(std::uint64_t frameId, con
 
 FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPackets) noexcept :
     m_rendererHost(&rendererHost),
-    m_frameContextBuilder(
-        rendererHost.GetRenderScene(),
-        rendererHost.GetRenderScenePreparation(),
-        rendererHost.GetRenderViewBuilder(),
-        rendererHost.GetRenderViewPreparation()),
     m_ownsUiBackend(enableUiRenderPackets)
 {
 	m_windowExtent = {
@@ -83,7 +79,7 @@ void FramePipeline::InitializeFrameStorage()
 	const std::uint32_t maximumFramesInFlight =
 	    m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Presentation.MaximumFramesInFlight;
 	m_frameExecutionDiagnostics.resize(maximumFramesInFlight);
-	InitializeFrameContexts();
+	InitializeRenderFrames();
 
 	RenderDiagnostics& backendDiagnostics = m_rendererHost->GetRenderHardwareInterface().GetDiagnostics();
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
@@ -92,13 +88,13 @@ void FramePipeline::InitializeFrameStorage()
 	}
 }
 
-void FramePipeline::InitializeFrameContexts()
+void FramePipeline::InitializeRenderFrames()
 {
-	m_frameContexts.clear();
-	m_frameContexts.resize(m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Presentation.MaximumFramesInFlight);
-	for (std::unique_ptr<FrameContext>& frameContext : m_frameContexts)
+	m_renderFrames.clear();
+	m_renderFrames.resize(m_rendererHost->GetRenderHardwareInterface().GetCapabilities().Presentation.MaximumFramesInFlight);
+	for (std::unique_ptr<RenderFrame>& renderFrame : m_renderFrames)
 	{
-		frameContext = std::make_unique<FrameContext>();
+		renderFrame = std::make_unique<RenderFrame>();
 	}
 }
 
@@ -131,8 +127,8 @@ void FramePipeline::OnRender(RenderFrameSubmission submission, const RenderFrame
 	{
 		return;
 	}
-	SetupFrame(time);
-	RecordFrame(submission.View);
+	SetupFrame();
+	RecordFrame(submission.View, time);
 	RenderUiPacket(ui);
 	SubmitFrame();
 	EndFrame();
@@ -176,6 +172,10 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	const FrameGraphDependencies dependencies{
 	    m_rendererHost->GetRenderHardwareInterface(),
 	    m_rendererHost->GetRenderPassRuntimeCache(),
+	    m_rendererHost->GetGpuMeshCache(),
+	    m_rendererHost->GetRenderScene().GetRayTracingSceneCapability(),
+	    m_rendererHost->GetImageProviders().GetUpscalerProvider(),
+	    m_rendererHost->GetImageProviders().GetRayReconstructionProvider(),
 	    m_rendererHost->GetWindow(),
 	    resolution.Render,
 	    resolution.Output,
@@ -204,7 +204,7 @@ void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noe
 
 void FramePipeline::RebuildFrameExecutionAfterSwapChainDrain(FrameResolutionExtents resolution) noexcept
 {
-	InitializeFrameContexts();
+	InitializeRenderFrames();
 	m_frameGraph.reset();
 	InitializeFrameGraph(resolution);
 }
@@ -213,8 +213,8 @@ void FramePipeline::RetireFrameExecution() noexcept
 {
 	if (m_frameGraph != nullptr)
 	{
-		m_frameExecutionRetirementQueue.Retire(m_rendererHost->GetDeviceServices(), std::move(m_frameGraph), std::move(m_frameContexts));
-		InitializeFrameContexts();
+		m_frameExecutionRetirementQueue.Retire(m_rendererHost->GetDeviceServices(), std::move(m_frameGraph), std::move(m_renderFrames));
+		InitializeRenderFrames();
 	}
 }
 
@@ -362,7 +362,7 @@ void FramePipeline::BeginBackendFrame() noexcept
 	frameDiagnostics.ResolveTimings();
 }
 
-void FramePipeline::SetupFrame(const RenderFrameTime& time) noexcept
+void FramePipeline::SetupFrame() noexcept
 {
 	RefreshViewportRenderProducts();
 
@@ -370,8 +370,6 @@ void FramePipeline::SetupFrame(const RenderFrameTime& time) noexcept
 	RenderCommandList& graphicsCommandList = deviceServices.GetCurrentGraphicsCommandList();
 	m_rendererHost->GetGpuMeshCache().UploadReadyMeshes(graphicsCommandList);
 	UploadPendingSceneTextures(deviceServices, graphicsCommandList);
-
-	m_frameUniform = BuildFrameUniformData(m_frameId, time);
 }
 
 void FramePipeline::UploadPendingSceneTextures(RenderDeviceServices& deviceServices, RenderCommandList& graphicsCommandList)
@@ -497,50 +495,61 @@ void FramePipeline::PlayUiPacket(const UiRenderPacket& packet) noexcept
 	m_uiRenderPacketPlayer->Render(packet, *m_editorTextureRegistry, imguiRenderer);
 }
 
-void FramePipeline::RecordFrame(const RenderViewInput& viewInput) noexcept
+void FramePipeline::RecordFrame(const RenderViewInput& viewInput, const RenderFrameTime& time) noexcept
 {
 	RenderScene& renderScene = m_rendererHost->GetRenderScene();
-	FrameContext& frame = PrepareFrameContext(viewInput);
+	const RenderFrame& frame = PrepareRenderFrame(viewInput, time);
 	UpdateLightingHistory(frame);
 	SetupImageProviderFrame(frame);
 	if (!renderScene.IsRayTracingAvailable())
 	{
 		Diagnostics::Fatal(g_framePipelineLogger, __FILE__, __LINE__, "Ray-tracing scene capability is unavailable.");
 	}
-	const RenderRayTracingFrameBindings rayTracingBindings = renderScene.PrepareRayTracingFrame(frame.preparedScene);
+	const RenderRayTracingFrameBindings rayTracingBindings = renderScene.PrepareRayTracingFrame(frame.PreparedScene);
 	BindRayTracingScene(frame, rayTracingBindings);
 	BindSkyTexture(frame);
-	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, *frame.preparedScene.gpuBindings);
-	ExecuteFrameGraph(frame);
+	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, *frame.PreparedScene.gpuBindings);
+	ExecuteFrameGraph(frame, rayTracingBindings);
 }
 
-FrameContext& FramePipeline::PrepareFrameContext(const RenderViewInput& viewInput)
+RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput, const RenderFrameTime& time)
 {
 	const std::uint32_t frameIndex = m_rendererHost->GetRenderHardwareInterface().GetCurrentFrameIndex();
-	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[frameIndex];
-	m_frameContextBuilder.Build(
-	    *frameSlot,
-	    FrameContextBuildRequest{
-	        .ViewState = m_rendererHost->GetRenderViewState(),
-	        .ViewInput = viewInput,
+	std::unique_ptr<RenderFrame>& frameSlot = m_renderFrames[frameIndex];
+	RenderFrame& frame = *frameSlot;
+	RenderScene& scene = m_rendererHost->GetRenderScene();
+	frame.Identity = RenderFrameIdentity{
+	    .FrameId = m_frameId,
+	    .ShaderPackageGeneration = m_rendererHost->GetShaderPackageGeneration(),
+	    .ImageProviderGeneration = m_rendererHost->GetImageProviderGeneration()};
+	frame.Time = time;
+	frame.FrameInFlightIndex = frameIndex;
+
+	m_rendererHost->GetRenderScenePreparation().Execute(scene, frame.PreparedScene);
+	m_rendererHost->GetRenderViewBuilder().Build(
+	    frame.View,
+	    m_rendererHost->GetRenderViewState(),
+	    RenderViewBuildRequest{
+	        .Input = viewInput,
 	        .ViewportRequest = m_viewportRenderRequest,
-	        .FrameId = m_frameId,
-	        .ShaderGeneration = m_rendererHost->GetShaderPackageGeneration(),
-	        .ImageProviderGeneration = m_rendererHost->GetImageProviderGeneration(),
-	        .GraphTopologyGeneration = m_graphTopologyGeneration,
-	        .FrameIndex = frameIndex,
 	        .RenderExtent = m_frameGraphRenderExtent,
 	        .OutputExtent = m_frameGraphOutputExtent,
 	        .ViewMode = CVarRenderViewMode.Get(),
-	    });
+	        .FrameId = frame.Identity.FrameId,
+	        .SceneGeneration = scene.GetSceneGeneration(),
+	        .ShaderGeneration = frame.Identity.ShaderPackageGeneration,
+	        .ImageProviderGeneration = frame.Identity.ImageProviderGeneration,
+	        .GraphTopologyGeneration = m_graphTopologyGeneration});
+	m_rendererHost->GetRenderViewPreparation().Prepare(frame.PreparedScene, frame.View, scene);
+	frame.PreparedScene.gpuBindings = &scene.UpdateGpuScene(frame.PreparedScene, frame.View, frame.FrameInFlightIndex);
 	return *frameSlot;
 }
 
-void FramePipeline::UpdateLightingHistory(FrameContext& frame)
+void FramePipeline::UpdateLightingHistory(const RenderFrame& frame)
 {
 	if (GetLightingMode() == LightingMode::RestirPathTraced)
 	{
-		const std::uint64_t invalidationHash = BuildRestirLightingHistoryInvalidationHash(frame);
+		const std::uint64_t invalidationHash = BuildRestirLightingHistoryInvalidationHash(frame.PreparedScene);
 		const bool invalidateHistory =
 		    !m_previousRestirLightingHistoryInvalidationHash || invalidationHash != *m_previousRestirLightingHistoryInvalidationHash;
 		if (invalidateHistory)
@@ -552,7 +561,7 @@ void FramePipeline::UpdateLightingHistory(FrameContext& frame)
 	}
 	else if (GetLightingMode() == LightingMode::ReferencePathTraced)
 	{
-		const std::uint64_t invalidationHash = BuildReferenceLightingHistoryInvalidationHash(frame);
+		const std::uint64_t invalidationHash = BuildReferenceLightingHistoryInvalidationHash(frame.PreparedScene, frame.View);
 		const bool invalidateHistory =
 		    !m_previousReferenceLightingHistoryInvalidationHash || invalidationHash != *m_previousReferenceLightingHistoryInvalidationHash;
 		if (invalidateHistory)
@@ -562,26 +571,26 @@ void FramePipeline::UpdateLightingHistory(FrameContext& frame)
 		m_previousReferenceLightingHistoryInvalidationHash = invalidationHash;
 	}
 
-	if (frame.view.temporalUniform.HistoryValid == 0u)
+	if (frame.View.temporalUniform.HistoryValid == 0u)
 	{
 		InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
 	}
 }
 
-void FramePipeline::SetupImageProviderFrame(const FrameContext& frame)
+void FramePipeline::SetupImageProviderFrame(const RenderFrame& frame)
 {
 	m_rendererHost->GetImageProviders().SetupFrame(
 	    ImageProviderFrameInput{
-	        .RenderExtent = frame.view.renderExtent,
-	        .OutputExtent = frame.view.outputExtent,
-	        .FrameId = m_frameId,
-	        .ProviderGeneration = m_rendererHost->GetImageProviderGeneration(),
-	        .Camera = frame.view.cameraUniform,
-	        .Temporal = frame.view.temporalUniform,
-	        .ResetHistory = frame.view.temporalUniform.HistoryValid == 0u});
+	        .RenderExtent = frame.View.renderExtent,
+	        .OutputExtent = frame.View.outputExtent,
+	        .FrameId = frame.Identity.FrameId,
+	        .ProviderGeneration = frame.Identity.ImageProviderGeneration,
+	        .Camera = frame.View.cameraUniform,
+	        .Temporal = frame.View.temporalUniform,
+	        .ResetHistory = frame.View.temporalUniform.HistoryValid == 0u});
 }
 
-void FramePipeline::BindRayTracingScene(const FrameContext& frame, const RenderRayTracingFrameBindings& rayTracingBindings)
+void FramePipeline::BindRayTracingScene(const RenderFrame& frame, const RenderRayTracingFrameBindings& rayTracingBindings)
 {
 	if (m_frameGraph == nullptr || !m_frameResources.SceneTlas.IsValid())
 	{
@@ -600,14 +609,14 @@ void FramePipeline::BindRayTracingScene(const FrameContext& frame, const RenderR
 		    __LINE__,
 		    "Ray-tracing scene producer failed to provide the descriptor-access SceneTlas consumed by frame shaders.");
 	}
-	if (!frame.preparedScene.materialTextureTable || !frame.preparedScene.gpuBindings->RayTracing.HasCompleteBuffers()
-	    || !frame.preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
+	if (!frame.PreparedScene.materialTextureTable || !frame.PreparedScene.gpuBindings->RayTracing.HasCompleteBuffers()
+	    || !frame.PreparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
 	{
 		Diagnostics::Fatal(g_framePipelineLogger, __FILE__, __LINE__, "Ray-tracing frame shader resources are incomplete.");
 	}
 	if (rayTracingBindings.HasTraceableInstances()
-	    && (frame.preparedScene.gpuBindings->RayTracing.InstanceCount == 0u
-	        || frame.preparedScene.gpuBindings->RayTracing.MaterialCount == 0u))
+	    && (frame.PreparedScene.gpuBindings->RayTracing.InstanceCount == 0u
+	        || frame.PreparedScene.gpuBindings->RayTracing.MaterialCount == 0u))
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -622,9 +631,9 @@ void FramePipeline::BindRayTracingScene(const FrameContext& frame, const RenderR
 	    rayTracingBindings.TlasGpuAddress);
 }
 
-void FramePipeline::BindSkyTexture(const FrameContext& frame)
+void FramePipeline::BindSkyTexture(const RenderFrame& frame)
 {
-	if (!frame.preparedScene.sky.HasTexture())
+	if (!frame.PreparedScene.sky.HasTexture())
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -633,7 +642,7 @@ void FramePipeline::BindSkyTexture(const FrameContext& frame)
 		    "TextureCache did not provide a valid sky texture before frame recording.");
 	}
 
-	const RendererTexture& skyTexture = *frame.preparedScene.sky.texture;
+	const RendererTexture& skyTexture = *frame.PreparedScene.sky.texture;
 	m_frameGraph->BindPersistentTexture(
 	    m_frameResources.External.Sky,
 	    skyTexture.Resource,
@@ -642,43 +651,35 @@ void FramePipeline::BindSkyTexture(const FrameContext& frame)
 	    ResourceState::ShaderResource);
 }
 
-void FramePipeline::ExecuteFrameGraph(FrameContext& frame)
+void FramePipeline::ExecuteFrameGraph(const RenderFrame& frame, const RenderRayTracingFrameBindings& rayTracingBindings)
 {
-	RenderHardwareInterface& renderHardwareInterface = m_rendererHost->GetRenderHardwareInterface();
 	const RayTracedShadowSettings shadowSettings{
 	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
 	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
 	const bool rayTracedShadowsEnabled = CVarRayTracedShadowsEnabled.Get();
 
-	m_frameGraph->Setup(frame);
+	const FrameHistoryValidity history = ResolveFrameHistoryValidity(*m_frameGraph, m_frameResources.History);
+	m_frameGraph->ApplyPassParameterDefaults();
+	m_frameGraph->ApplyFrameUniformParameters(BuildFrameUniformData(frame.Identity.FrameId, frame.Time));
+	m_frameGraph->ApplyPreparedSceneParameters(frame.PreparedScene);
+	m_frameGraph->ApplyRenderViewParameters(frame.View);
+	m_frameGraph->ApplyExposureParameters(
+	    BuildExposureUniformData(m_displaySettings, static_cast<float>(frame.Time.UnscaledDelta.count()), history.Exposure));
+	m_frameGraph->ApplyToneMappingParameters(BuildToneMappingUniformData(m_displaySettings.ToneMapper));
+	m_frameGraph->ApplyDirectLightReservoirHistory(history.DirectLightReservoir);
+	m_frameGraph->ApplyRestirIndirectReservoirHistory(history.RestirIndirectReservoir);
+	m_frameGraph->ApplyReferenceLightingHistory(history.ReferenceLighting);
+	m_frameGraph->ApplyRayTracedShadowParameters(
+	    frame.PreparedScene,
+	    RayTracedShadowPassInput{
+	        .Settings = shadowSettings,
+	        .SceneTlasGpuAddress = rayTracingBindings.TlasGpuAddress,
+	        .Enabled = rayTracedShadowsEnabled});
+	m_frameGraph->Setup();
 	const FrameGraphPlan& compiledPlan = m_frameGraph->Compile();
-
-	const RayTracingPassContext rayTracingPassContext{
-	    .Scene = &m_rendererHost->GetRenderScene(),
-	    .CapabilityReport = &m_rendererHost->GetRenderScene().GetRayTracingCapabilities(),
-	    .ShadowSettings = &shadowSettings,
-	    .ShadowsEnabled = rayTracedShadowsEnabled};
-	const ImageProviderPassContext imageProviderPassContext = m_rendererHost->GetImageProviders().BuildPassContext();
-
-	const PassRuntimeContext passRuntimeContext{
-	    .HardwareInterface = renderHardwareInterface,
-	    .PassRuntimes = m_rendererHost->GetRenderPassRuntimeCache(),
-	    .Frame = m_frameUniform,
-	    .DisplaySettings = m_displaySettings,
-	    .History = ResolveFrameHistoryValidity(*m_frameGraph, m_frameResources.History),
-	    .Meshes = &m_rendererHost->GetGpuMeshCache(),
-	    .Textures = &m_rendererHost->GetTextureCache(),
-	    .RayTracing = &rayTracingPassContext,
-	    .ImageProviders = &imageProviderPassContext};
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
-	m_frameGraph->Execute(
-	    compiledPlan,
-	    m_rendererHost->GetDeviceServices(),
-	    frame,
-	    passRuntimeContext,
-	    frameDiagnostics,
-	    m_rendererHost->GetTaskExecutor());
+	m_frameGraph->Execute(compiledPlan, m_rendererHost->GetDeviceServices(), frameDiagnostics, m_rendererHost->GetTaskExecutor());
 }
 
 void FramePipeline::SubmitFrame() noexcept

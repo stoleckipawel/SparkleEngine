@@ -6,7 +6,7 @@
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 struct ComputePassPipelineRuntime;
-struct PassExecutionContext;
+struct PassCommandContext;
 struct RenderPassDefinition;
 
 struct ExposurePassParameters
@@ -29,7 +29,7 @@ struct ExposurePassParameters
 
 class ExposurePass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "Exposure";
 	using Parameters = ExposurePassParameters;
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
@@ -40,8 +40,8 @@ class ExposurePass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

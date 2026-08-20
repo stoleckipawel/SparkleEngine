@@ -5,11 +5,9 @@
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Logger.h"
-#include "Frame/Core/FrameContext.h"
 #include "View/RenderView.h"
 #include "Frame/Deferred/GBufferFormats.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Deferred/GBufferMeshBatchDrawer.h"
 #include "Passes/Core/ShaderPassOperations.h"
 #include "Passes/Core/RasterPassOperations.h"
@@ -24,7 +22,6 @@
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Pipeline/PassBinder.h"
 
@@ -76,10 +73,17 @@ void GBufferDrawParameters::Describe(ShaderParameterStructBuilder<GBufferDrawPar
 	builder.ReadTexture("TextureSubsurfaceStrength", &GBufferDrawParameters::TextureSubsurfaceStrength, ShaderStageVisibility::Pixel);
 }
 
-GBufferPass::GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept :
-    m_runtime(runtime)
+GBufferPass::GBufferPass(
+    const RasterPassPipelineRuntime& runtime,
+    GpuMeshCache& gpuMeshCache,
+    const std::shared_ptr<GBufferPassFrameInput>& frameInput) noexcept :
+    m_runtime(runtime),
+    m_meshBatchDrawer(std::make_shared<GBufferMeshBatchDrawer>(gpuMeshCache)),
+    m_frameInput(frameInput)
 {
 }
+
+GBufferPass::~GBufferPass() noexcept = default;
 
 const GBufferPass::ParameterMetadata& GBufferPass::GetParameterMetadata() noexcept
 {
@@ -127,26 +131,18 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 	return definition;
 }
 
-void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
+void GBufferPass::Execute(PassCommandContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame.view);
-	ConfigurePipeline(context.Commands, context.Frame.view);
+	assert(m_frameInput != nullptr && m_frameInput->PreparedScene.has_value() && m_frameInput->View.has_value());
+	const PreparedRenderScene& preparedScene = m_frameInput->PreparedScene->get();
+	const RenderView& view = m_frameInput->View->get();
+	ConfigurePipeline(context.Commands, view);
 	PrepareTargets(context, parameters.GetFields());
-	BindPassResources(context.Resources, context.Commands, parameters, context.Frame.view, context.Runtime);
-	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, parameters.GetFields(), context.Runtime);
+	BindPassResources(context.Resources, context.Commands, parameters, view);
+	DrawOpaqueMeshes(context.Resources, context.Commands, preparedScene, view, parameters.GetFields());
 }
 
-void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderView& view) const
-{
-	parameters->View = view.uniform;
-	parameters->ViewCamera = view.cameraUniform;
-	parameters->ViewTemporal = view.temporalUniform;
-	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
-	const bool valid = parameters.Sync();
-	assert(valid);
-}
-
-void GBufferPass::PrepareTargets(PassExecutionContext& context, const GBufferPass::Parameters& parameters) const
+void GBufferPass::PrepareTargets(PassCommandContext& context, const GBufferPass::Parameters& parameters) const
 {
 	const std::array<FrameGraphTextureHandle, 6> renderTargets = {
 	    parameters.BaseColor[0],
@@ -174,14 +170,11 @@ void GBufferPass::BindPassResources(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
     const ParameterInstance& parameters,
-    const RenderView& view,
-    const PassRuntimeContext& passRuntimeContext) const
+    const RenderView& view) const
 {
-	RenderHardwareInterface& renderHardwareInterface = passRuntimeContext.HardwareInterface;
 	const bool bound = ShaderPassOperations::BindAvailableRasterPassWithRuntime(
 	    resources,
 	    commandContext,
-	    &renderHardwareInterface,
 	    m_runtime,
 	    parameters.GetPassParameterSet(),
 	    nullptr,
@@ -194,16 +187,9 @@ void GBufferPass::BindPassResources(
 void GBufferPass::DrawOpaqueMeshes(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
-    const FrameContext& frame,
-    const Parameters& parameters,
-    const PassRuntimeContext& passRuntimeContext) const
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
+    const Parameters& parameters) const
 {
-	GBufferMeshBatchDrawer::DrawOpaqueMeshes(
-	    resources,
-	    commandContext,
-	    frame,
-	    parameters,
-	    passRuntimeContext,
-	    m_runtime,
-	    GetDrawParameterMetadata());
+	m_meshBatchDrawer->DrawOpaqueMeshes(resources, commandContext, preparedScene, view, parameters, m_runtime, GetDrawParameterMetadata());
 }

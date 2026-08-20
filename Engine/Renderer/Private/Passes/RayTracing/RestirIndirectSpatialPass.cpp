@@ -3,14 +3,11 @@
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/RayTracing/RestirIndirectSpatialPass.h"
 
-#include "Frame/Core/FrameContext.h"
-#include "View/RenderView.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "FrameGraph/PassRuntimeContext.h"
 #include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
@@ -102,39 +99,11 @@ const RenderPassDefinition& RestirIndirectSpatialPass::GetDefinition() noexcept
 	return definition;
 }
 
-void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
+void RestirIndirectSpatialPass::Execute(
+    PassCommandContext& context,
+    ParameterInstance& parameters,
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight) const
 {
-	parameters->Frame = context.Runtime.Frame;
-	parameters->View = context.Frame.view.uniform;
-	parameters->ViewCamera = context.Frame.view.cameraUniform;
-	parameters->ViewTemporal = context.Frame.view.temporalUniform;
-	parameters->SceneLighting = context.Frame.preparedScene.gpuBindings->Lighting.Uniform;
-	parameters->Sky = MakeSkyUniformData(context.Frame.preparedScene.sky);
-	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
-	parameters->SamplerLinearClamp = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
-	parameters->MaterialTextureSampler = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
-	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
-	parameters->RayTracedShadows = RayTracedShadowPassData::Build(
-	    context.Runtime.RayTracing,
-	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount > 0u,
-	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount,
-	    context.Frame.preparedScene.gpuBindings->RayTracing.MaterialCount);
-
-	const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
-	parameters->RestirIndirectConstants = RestirIndirectLightingUniformData{
-	    .BounceCount = settings.BounceCount,
-	    .NormalBias = settings.NormalBias,
-	    .MaxDistance = settings.MaxDistance};
-	ComputePassOperations::DispatchSized<RestirIndirectSpatialPass>(
-	    context,
-	    m_runtime,
-	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
+	ComputePassOperations::DispatchSized<RestirIndirectSpatialPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

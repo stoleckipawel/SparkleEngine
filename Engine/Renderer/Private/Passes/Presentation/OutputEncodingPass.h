@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-struct PassExecutionContext;
+struct PassCommandContext;
 struct ComputePassPipelineRuntime;
 struct RenderPassDefinition;
 
@@ -21,16 +21,13 @@ struct OutputEncodingPassParameters
 	{
 		builder.RWTexture("EncodedColor", &OutputEncodingPassParameters::EncodedColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("DisplayLinearColor", &OutputEncodingPassParameters::DisplayLinearColor, ShaderStageVisibility::Compute);
-		builder.Uniform(
-		    "OutputEncodingConstants",
-		    &OutputEncodingPassParameters::OutputEncodingConstants,
-		    ShaderStageVisibility::Compute);
+		builder.Uniform("OutputEncodingConstants", &OutputEncodingPassParameters::OutputEncodingConstants, ShaderStageVisibility::Compute);
 	}
 };
 
 class OutputEncodingPass final
 {
-  public:
+public:
 	static constexpr const char* PassName = "OutputEncoding";
 	static constexpr std::uint32_t ThreadGroupSizeX = 8u;
 	static constexpr std::uint32_t ThreadGroupSizeY = 8u;
@@ -43,12 +40,8 @@ class OutputEncodingPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(
-	    PassExecutionContext& context,
-	    ParameterInstance& parameters,
-	    std::uint32_t outputWidth,
-	    std::uint32_t outputHeight) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
 
-  private:
+private:
 	const ComputePassPipelineRuntime& m_runtime;
 };

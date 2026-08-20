@@ -2,14 +2,17 @@
 #include "Passes/Utility/ComputeClearPass.h"
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
-ComputeClearPass::ComputeClearPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+ComputeClearPass::ComputeClearPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
 
 const ComputeClearPass::ParameterMetadata& ComputeClearPass::GetParameterMetadata() noexcept
 {
@@ -32,7 +35,7 @@ const RenderPassDefinition& ComputeClearPass::GetDefinition() noexcept
 }
 
 void ComputeClearPass::Execute(
-    PassExecutionContext& context,
+    PassCommandContext& context,
     const ComputeClearPass::ParameterInstance& parameters,
     std::uint32_t width,
     std::uint32_t height) const noexcept
@@ -48,9 +51,5 @@ void AddComputeClearPass(
 {
 	auto& parameters = builder.AllocParameters<ComputeClearPass::Parameters>();
 	parameters->Output = builder.CreateUAV(outputTexture);
-	builder.Dispatch<ComputeClearPass>(
-	    passName,
-	    parameters,
-	    outputExtent.Width,
-	    outputExtent.Height);
+	builder.Dispatch<ComputeClearPass>(passName, parameters, outputExtent.Width, outputExtent.Height);
 }

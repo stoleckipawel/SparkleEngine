@@ -2,7 +2,7 @@
 
 #include "FramePipeline/FrameExecutionRetirementQueue.h"
 
-#include "Frame/Core/FrameContext.h"
+#include "Frame/RenderFrame.h"
 #include "FrameGraph/FrameGraph.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 
@@ -16,7 +16,7 @@ FrameExecutionRetirementQueue::~FrameExecutionRetirementQueue() noexcept = defau
 void FrameExecutionRetirementQueue::Retire(
     const RenderDeviceServices& deviceServices,
     std::unique_ptr<FrameGraph> graph,
-    std::vector<std::unique_ptr<FrameContext>> frameContexts) noexcept
+    std::vector<std::unique_ptr<RenderFrame>> renderFrames) noexcept
 {
 	if (graph == nullptr)
 	{
@@ -27,7 +27,7 @@ void FrameExecutionRetirementQueue::Retire(
 	    RetiredFrameExecution{
 	        .LastUse = CaptureLastSubmittedState(deviceServices),
 	        .Graph = std::move(graph),
-	        .FrameContexts = std::move(frameContexts)});
+	        .RenderFrames = std::move(renderFrames)});
 }
 
 void FrameExecutionRetirementQueue::Poll(const RenderDeviceServices& deviceServices) noexcept
@@ -37,9 +37,7 @@ void FrameExecutionRetirementQueue::Poll(const RenderDeviceServices& deviceServi
 	        m_retiredExecutions.begin(),
 	        m_retiredExecutions.end(),
 	        [&deviceServices](const RetiredFrameExecution& execution) noexcept
-	        {
-		        return IsSubmissionStateComplete(deviceServices, execution.LastUse);
-	        }),
+	        { return IsSubmissionStateComplete(deviceServices, execution.LastUse); }),
 	    m_retiredExecutions.end());
 }
 

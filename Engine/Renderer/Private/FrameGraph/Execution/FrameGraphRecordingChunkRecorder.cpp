@@ -5,7 +5,6 @@
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
-#include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
 #include "FrameGraph/Execution/FrameGraphResourceCommands.h"
 #include "FrameGraph/FrameGraph.h"
@@ -16,20 +15,14 @@
 FrameGraphRecordingChunkRecorder::FrameGraphRecordingChunkRecorder(
     const FrameGraph& frameGraph,
     const FrameGraphPlan& plan,
-    const FrameContext& frame,
-    const PassRuntimeContext& passRuntimeContext,
     FrameExecutionDiagnostics& frameDiagnostics) noexcept :
-	m_frameGraph(frameGraph),
-	m_plan(plan),
-	m_frame(frame),
-	m_passRuntimeContext(passRuntimeContext),
-	m_frameDiagnostics(frameDiagnostics)
+    m_frameGraph(frameGraph),
+    m_plan(plan),
+    m_frameDiagnostics(frameDiagnostics)
 {
 }
 
-void FrameGraphRecordingChunkRecorder::Record(
-    const RecordingChunk& chunk,
-    RenderCommandList& commandList) const
+void FrameGraphRecordingChunkRecorder::Record(const RecordingChunk& chunk, RenderCommandList& commandList) const
 {
 	RenderCommandContext commands(commandList);
 	FrameGraphExecutionDiagnostics graphDiagnostics(m_frameDiagnostics, commands);
@@ -42,37 +35,21 @@ void FrameGraphRecordingChunkRecorder::Record(
 	for (std::uint32_t groupOffset = 0; groupOffset < chunk.GroupCount; ++groupOffset)
 	{
 		const RecordingGroupIndex groupIndex = chunk.FirstGroup + groupOffset;
-		RecordGroup(
-		    m_plan.recording.Groups[groupIndex],
-		    commandList,
-		    commands,
-		    graphDiagnostics);
+		RecordGroup(m_plan.recording.Groups[groupIndex], commandList, commands, graphDiagnostics);
 	}
 }
 
-ScopedGpuScope FrameGraphRecordingChunkRecorder::BeginChunkScope(
-    const RecordingChunk& chunk,
-    RenderCommandContext& commands) const
+ScopedGpuScope FrameGraphRecordingChunkRecorder::BeginChunkScope(const RecordingChunk& chunk, RenderCommandContext& commands) const
 {
 	if (CVarRendererDiagnosticMarkerVerbosity.Get() == RendererDiagnosticMarkerVerbosity::Off)
 	{
 		return {};
 	}
 
-	const std::string chunkLabel = std::format(
-	    "GPU Frame/{}/Batch {}/RecordingChunk {}",
-	    RhiQueueTypeToString(chunk.Queue),
-	    chunk.SubmissionOrder.Batch,
-	    chunk.Index);
-	const RhiDiagnosticLabelColor color{
-	    .Red = 180,
-	    .Green = 200,
-	    .Blue = 220,
-	    .Alpha = 255};
-	return m_frameDiagnostics.BeginGpuScope(
-	    commands,
-	    chunkLabel,
-	    color);
+	const std::string chunkLabel =
+	    std::format("GPU Frame/{}/Batch {}/RecordingChunk {}", RhiQueueTypeToString(chunk.Queue), chunk.SubmissionOrder.Batch, chunk.Index);
+	const RhiDiagnosticLabelColor color{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255};
+	return m_frameDiagnostics.BeginGpuScope(commands, chunkLabel, color);
 }
 
 void FrameGraphRecordingChunkRecorder::RecordGroup(
@@ -83,11 +60,7 @@ void FrameGraphRecordingChunkRecorder::RecordGroup(
 {
 	for (std::uint32_t passOffset = 0; passOffset < group.PassCount; ++passOffset)
 	{
-		RecordPass(
-		    m_plan.recording.Passes[group.PassOffset + passOffset],
-		    commandList,
-		    commands,
-		    graphDiagnostics);
+		RecordPass(m_plan.recording.Passes[group.PassOffset + passOffset], commandList, commands, graphDiagnostics);
 	}
 }
 
@@ -106,19 +79,10 @@ void FrameGraphRecordingChunkRecorder::RecordPass(
 	graphDiagnostics.InsertPassResourceBarrierMarker(passRecord);
 	m_frameGraph.EmitCompiledBarriers(commands, passRecord.passName, passRecord.compiledBarriers);
 
-	PassExecutionDiagnostics passDiagnostics(
-	    m_frameDiagnostics,
-	    commands,
-	    passRecord.eventScopeLabel,
-	    passRecord.kind);
+	PassExecutionDiagnostics passDiagnostics(m_frameDiagnostics, commands, passRecord.eventScopeLabel, passRecord.kind);
 	auto passScope = graphDiagnostics.BeginPassScope(passDiagnostics);
 
-	PassExecutionContext passContext{
-	    commands,
-	    m_frame,
-	    m_passRuntimeContext,
-	    passDiagnostics,
-	    FrameGraphResourceCommands{m_frameGraph}};
+	PassCommandContext passContext{commands, passDiagnostics, FrameGraphResourceCommands{m_frameGraph}};
 	const FrameGraph::RegisteredPass& registeredPass = m_frameGraph.m_passes[passIndex];
 	if (registeredPass.active)
 	{
@@ -133,9 +97,7 @@ void FrameGraphRecordingChunkRecorder::RecordPass(
 	m_frameGraph.EmitCompiledBarriers(commands, passRecord.passName, passRecord.compiledReleaseBarriers);
 }
 
-void FrameGraphRecordingChunkRecorder::TrackPassResources(
-    const FrameGraphPassNode& pass,
-    RenderCommandList& commandList) const
+void FrameGraphRecordingChunkRecorder::TrackPassResources(const FrameGraphPassNode& pass, RenderCommandList& commandList) const
 {
 	for (const PassResourceDeclaration& declaration : pass.declarations)
 	{

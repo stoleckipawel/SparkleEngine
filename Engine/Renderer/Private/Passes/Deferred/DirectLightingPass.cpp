@@ -1,16 +1,12 @@
 #include "../../PCH.h"
 
-#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/Deferred/DirectLightingPass.h"
 
-#include "Frame/Core/FrameContext.h"
-#include "View/RenderView.h"
 #include "Frame/Lighting/ShadowVisibility.h"
-#include "FrameGraph/PassRuntimeContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 DirectLightingPass::DirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept :
@@ -33,28 +29,11 @@ const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 	return definition;
 }
 
-void DirectLightingPass::SetParameters(
+void DirectLightingPass::Execute(
+    PassCommandContext& context,
     ParameterInstance& parameters,
-    const FrameContext& frame,
-    const RenderView& view,
-    const PassRuntimeContext& passRuntimeContext) const
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight) const
 {
-	parameters->Frame = passRuntimeContext.Frame;
-	parameters->View = view.uniform;
-	parameters->ViewCamera = view.cameraUniform;
-	parameters->ViewTemporal = view.temporalUniform;
-	parameters->SceneLighting = frame.preparedScene.gpuBindings->Lighting.Uniform;
-}
-
-void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
-{
-	SetParameters(parameters, context.Frame, context.Frame.view, context.Runtime);
-	{
-		ComputePassOperations::DispatchSized<DirectLightingPass>(
-		    context,
-		    m_runtime,
-		    parameters,
-		    static_cast<std::uint32_t>(context.Frame.view.viewport.Width),
-		    static_cast<std::uint32_t>(context.Frame.view.viewport.Height));
-	}
+	ComputePassOperations::DispatchSized<DirectLightingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

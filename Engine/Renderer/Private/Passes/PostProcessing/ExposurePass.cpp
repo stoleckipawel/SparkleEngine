@@ -1,8 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/PostProcessing/ExposurePass.h"
 
-#include "Frame/Presentation/ToneMappingSettings.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -25,9 +24,7 @@ const RenderPassDefinition& ExposurePass::GetDefinition() noexcept
 	return definition;
 }
 
-void ExposurePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
+void ExposurePass::Execute(PassCommandContext& context, ParameterInstance& parameters) const
 {
-	parameters->ExposureConstants =
-	    BuildExposureUniformData(context.Runtime.DisplaySettings, context.Runtime.Frame.DeltaTimeSeconds, context.Runtime.History.Exposure);
 	ComputePassOperations::Dispatch<ExposurePass>(context, m_runtime, parameters, ComputeDispatchDesc{1u, 1u, 1u});
 }

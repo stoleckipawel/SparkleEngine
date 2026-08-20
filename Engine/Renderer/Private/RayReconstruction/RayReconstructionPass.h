@@ -4,6 +4,7 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+class IRayReconstructionProvider;
 
 struct RayReconstructionPassResources final
 {
@@ -21,6 +22,7 @@ struct RayReconstructionPassResources final
 
 void AddRayReconstructionPass(
     FrameGraphBuilder& builder,
+    IRayReconstructionProvider& provider,
     const char* passName,
     RenderViewportExtent renderExtent,
     RenderViewportExtent outputExtent,

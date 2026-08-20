@@ -5,9 +5,13 @@
 #include "Frame/Core/FrameAssembly.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Deferred/DirectLightingPass.h"
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
+#include "View/RenderView.h"
 
 void AddDirectLightingPass(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     const LightingRenderTargets& lighting,
     const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
@@ -15,6 +19,7 @@ void AddDirectLightingPass(
     const FrameAssemblyExternalResources& externalResources)
 {
 	auto& parameters = builder.AllocParameters<DirectLightingPass::Parameters>();
+	auto* parameterFields = parameters.operator->();
 	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
 	parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
@@ -30,5 +35,15 @@ void AddDirectLightingPass(
 	parameters->PointLights = builder.CreateSRV(externalResources.Scene.Lighting.PointLights);
 	parameters->SpotLights = builder.CreateSRV(externalResources.Scene.Lighting.SpotLights);
 	parameters->RectLights = builder.CreateSRV(externalResources.Scene.Lighting.RectLights);
-	builder.Dispatch<DirectLightingPass>(parameters);
+	builder.AddFrameUniformSetup([parameterFields](const FrameUniformData& frame) { parameterFields->Frame = frame; });
+	builder.AddRenderViewSetup(
+	    [parameterFields](const RenderView& view)
+	    {
+		    parameterFields->View = view.uniform;
+		    parameterFields->ViewCamera = view.cameraUniform;
+		    parameterFields->ViewTemporal = view.temporalUniform;
+	    });
+	builder.AddPreparedSceneSetup(
+	    [parameterFields](const PreparedRenderScene& scene) { parameterFields->SceneLighting = scene.gpuBindings->Lighting.Uniform; });
+	builder.Dispatch<DirectLightingPass>(parameters, sceneExtent.Width, sceneExtent.Height);
 }

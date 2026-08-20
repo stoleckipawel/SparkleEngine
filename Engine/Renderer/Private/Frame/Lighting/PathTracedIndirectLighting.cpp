@@ -2,12 +2,18 @@
 #include "Frame/Lighting/PathTracedIndirectLighting.h"
 
 #include "Frame/Core/FrameAssembly.h"
+#include "Frame/Lighting/RayTracingLightingParameters.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/RayTracing/PathTracedIndirectLightingPass.h"
+#include "RayTracing/Effects/PathTracedLighting/PathTracedLightingSettings.h"
 
-void AddPathTracedIndirectLightingPass(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources)
+void AddPathTracedIndirectLightingPass(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    const FrameAssemblyResourceLayout& resources)
 {
 	auto& parameters = builder.AllocParameters<PathTracedIndirectLightingPass::Parameters>();
+	auto* parameterFields = parameters.operator->();
 	parameters->IndirectDiffuse = builder.CreateUAV(resources.Transient.Lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = builder.CreateUAV(resources.Transient.Lighting.IndirectSpecular);
 	parameters->SceneTlas = builder.Read(resources.SceneTlas);
@@ -29,5 +35,16 @@ void AddPathTracedIndirectLightingPass(FrameGraphBuilder& builder, const FrameAs
 	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
 	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
 	parameters->MorphWeights = builder.CreateSRV(resources.External.Scene.Geometry.MorphWeights);
-	builder.Dispatch<PathTracedIndirectLightingPass>(parameters);
+	RegisterRayTracingLightingParameterSetups(builder, parameters);
+	builder.AddPassParameterSetup(
+	    [parameterFields]
+	    {
+		    const PathTracedLightingSettings settings = BuildPathTracedLightingSettings();
+		    parameterFields->PathTracedLightingConstants = PathTracedLightingUniformData{
+		        .SamplesPerPixel = settings.SamplesPerPixel,
+		        .BounceCount = settings.BounceCount,
+		        .NormalBias = settings.NormalBias,
+		        .MaxDistance = settings.MaxDistance};
+	    });
+	builder.Dispatch<PathTracedIndirectLightingPass>(parameters, sceneExtent.Width, sceneExtent.Height);
 }

@@ -54,7 +54,13 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	    .OutputFormat = m_dependencies.renderHardwareInterface.GetPresentationService().GetPresentColorFormat(),
 	    .ExposureMeteringMethod = m_dependencies.exposureMeteringMethod,
 	    .PresentationTarget = m_dependencies.presentationTarget};
-	const FrameBuildResult frameLoop = BuildFrame(builder, settings);
+	const FrameBuildResult frameLoop = BuildFrame(
+	    builder,
+	    settings,
+	    m_dependencies.gpuMeshCache,
+	    m_dependencies.rayTracingScene,
+	    m_dependencies.upscalerProvider,
+	    m_dependencies.rayReconstructionProvider);
 
 	ExportFrameProductRoots(builder, frameLoop.Resources);
 

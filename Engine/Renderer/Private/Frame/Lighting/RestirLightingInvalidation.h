@@ -2,6 +2,6 @@
 
 #include <cstdint>
 
-struct FrameContext;
+struct PreparedRenderScene;
 
-std::uint64_t BuildRestirLightingHistoryInvalidationHash(const FrameContext& frame) noexcept;
+std::uint64_t BuildRestirLightingHistoryInvalidationHash(const PreparedRenderScene& scene) noexcept;

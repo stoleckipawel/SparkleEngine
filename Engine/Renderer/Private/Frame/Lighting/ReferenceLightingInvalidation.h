@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
-struct FrameContext;
+struct PreparedRenderScene;
+struct RenderView;
 
-std::uint64_t BuildReferenceLightingHistoryInvalidationHash(const FrameContext& frame) noexcept;
+std::uint64_t BuildReferenceLightingHistoryInvalidationHash(const PreparedRenderScene& scene, const RenderView& view) noexcept;

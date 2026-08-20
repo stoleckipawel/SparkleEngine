@@ -2,14 +2,14 @@
 #include "Frame/GBuffer/RaytracedGBufferTargetClear.h"
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/Execution/PassCommandContext.h"
 #include "FrameGraph/ResourceUsage.h"
 
 #include <array>
 
 class RaytracedGBufferTargetSet final
 {
-  public:
+public:
 	static auto GetRaytracedGBufferTargets(const GBufferRenderTargets& targets) noexcept
 	{
 		return std::array{
@@ -35,7 +35,7 @@ void AddRaytracedGBufferTargetClearPass(FrameGraphBuilder& builder, const GBuffe
 			    resourceBuilder.Write(target, ResourceUsage::RenderTarget, "RaytracedGBufferTarget");
 		    }
 	    },
-	    [targets](PassExecutionContext& context)
+	    [targets](PassCommandContext& context)
 	    {
 		    for (const FrameGraphTextureHandle target : RaytracedGBufferTargetSet::GetRaytracedGBufferTargets(targets))
 		    {

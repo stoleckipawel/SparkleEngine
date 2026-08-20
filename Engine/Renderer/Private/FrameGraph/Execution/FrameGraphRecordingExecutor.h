@@ -12,8 +12,6 @@ class FrameExecutionDiagnostics;
 class FrameGraph;
 class RhiCommandSubmissionService;
 class TaskExecutor;
-struct FrameContext;
-struct PassRuntimeContext;
 
 struct RecordingChunkResult final
 {
@@ -23,52 +21,31 @@ struct RecordingChunkResult final
 
 class FrameGraphRecordingExecutor final
 {
-  public:
+public:
 	FrameGraphRecordingExecutor(
 	    const FrameGraph& frameGraph,
 	    const FrameGraphPlan& plan,
 	    RhiCommandSubmissionService& submissionService,
 	    TaskExecutor& taskExecutor,
-	    const FrameContext& frame,
-	    const PassRuntimeContext& passRuntimeContext,
 	    FrameExecutionDiagnostics& frameDiagnostics) noexcept;
 
-	bool RecordBatch(
-	    const FrameGraphSubmissionBatch& batch,
-	    RhiCommandRecordingLease initializationLease = {});
+	bool RecordBatch(const FrameGraphSubmissionBatch& batch, RhiCommandRecordingLease initializationLease = {});
 	std::span<RhiCommandRecordingLease> Aggregate();
 
-  private:
-	bool ShouldRecordBatchInParallel(
-	    const FrameGraphSubmissionBatch& batch) const noexcept;
-	void RecordBatchSerial(
-	    const FrameGraphSubmissionBatch& batch,
-	    RhiCommandRecordingLease initializationLease);
-	void AcquireBatchLeases(
-	    const FrameGraphSubmissionBatch& batch,
-	    RhiCommandRecordingLease initializationLease);
+private:
+	bool ShouldRecordBatchInParallel(const FrameGraphSubmissionBatch& batch) const noexcept;
+	void RecordBatchSerial(const FrameGraphSubmissionBatch& batch, RhiCommandRecordingLease initializationLease);
+	void AcquireBatchLeases(const FrameGraphSubmissionBatch& batch, RhiCommandRecordingLease initializationLease);
 	bool RecordChunks();
-	std::uint32_t FindParallelRangeEnd(
-	    std::uint32_t firstResult) const noexcept;
-	void RecordSerialRange(
-	    std::uint32_t firstResult,
-	    std::uint32_t endResult);
-	bool RecordParallelRange(
-	    std::uint32_t firstResult,
-	    std::uint32_t resultCount);
+	std::uint32_t FindParallelRangeEnd(std::uint32_t firstResult) const noexcept;
+	void RecordSerialRange(std::uint32_t firstResult, std::uint32_t endResult);
+	bool RecordParallelRange(std::uint32_t firstResult, std::uint32_t resultCount);
 	void RecordChunk(std::uint32_t resultIndex);
-	bool CanRecordParallel(
-	    const RecordingChunkResult& result,
-	    const RecordingChunk& chunk) const noexcept;
-	bool ShouldExecuteParallelRange(
-	    std::uint32_t firstResult,
-	    std::uint32_t resultCount) const noexcept;
-	std::uint32_t EstimateRangeCost(
-	    std::uint32_t firstResult,
-	    std::uint32_t resultCount) const noexcept;
+	bool CanRecordParallel(const RecordingChunkResult& result, const RecordingChunk& chunk) const noexcept;
+	bool ShouldExecuteParallelRange(std::uint32_t firstResult, std::uint32_t resultCount) const noexcept;
+	std::uint32_t EstimateRangeCost(std::uint32_t firstResult, std::uint32_t resultCount) const noexcept;
 	const RecordingChunk& GetChunk(std::uint32_t resultIndex) const noexcept;
-	static std::uint64_t BuildTaskIdentity(
-	    SubmissionOrderKey submissionOrder) noexcept;
+	static std::uint64_t BuildTaskIdentity(SubmissionOrderKey submissionOrder) noexcept;
 
 	const FrameGraphPlan& m_plan;
 	RhiCommandSubmissionService& m_submissionService;

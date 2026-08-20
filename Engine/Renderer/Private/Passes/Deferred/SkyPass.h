@@ -14,9 +14,7 @@
 
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
-struct PassExecutionContext;
-struct PassRuntimeContext;
-struct FrameContext;
+struct PassCommandContext;
 
 struct SkyPassParameters
 {
@@ -57,10 +55,8 @@ public:
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+	void Execute(PassCommandContext& context, ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight) const;
 
 private:
-	void SetParameters(ParameterInstance& parameters, const FrameContext& frame) const;
-
 	const ComputePassPipelineRuntime& m_runtime;
 };
