@@ -1,6 +1,6 @@
 #pragma once
 
-struct DirectionalLightConstantBufferData
+struct DirectionalLightGpuData
 {
 	float3 Direction;
 	// Illuminance in lux.
@@ -13,7 +13,7 @@ struct DirectionalLightConstantBufferData
 	uint3 Padding;
 };
 
-struct PointLightConstantBufferData
+struct PointLightGpuData
 {
 	float3 Position;
 	float Range;
@@ -29,7 +29,7 @@ struct PointLightConstantBufferData
 	uint3 Padding;
 };
 
-struct SpotLightConstantBufferData
+struct SpotLightGpuData
 {
 	float3 Position;
 	float Range;
@@ -49,7 +49,7 @@ struct SpotLightConstantBufferData
 	uint2 Padding;
 };
 
-struct RectLightConstantBufferData
+struct RectLightGpuData
 {
 	float3 Position;
 	float Width;
@@ -65,16 +65,7 @@ struct RectLightConstantBufferData
 	uint CastShadow;
 };
 
-struct ViewLightingData
-{
-	uint DirectionalLightCount;
-	uint PointLightCount;
-	uint SpotLightCount;
-	uint RectLightCount;
-};
-
-ConstantBuffer<ViewLightingData> ViewLighting;
-StructuredBuffer<DirectionalLightConstantBufferData> DirectionalLights;
-StructuredBuffer<PointLightConstantBufferData> PointLights;
-StructuredBuffer<SpotLightConstantBufferData> SpotLights;
-StructuredBuffer<RectLightConstantBufferData> RectLights;
+StructuredBuffer<DirectionalLightGpuData> DirectionalLights;
+StructuredBuffer<PointLightGpuData> PointLights;
+StructuredBuffer<SpotLightGpuData> SpotLights;
+StructuredBuffer<RectLightGpuData> RectLights;

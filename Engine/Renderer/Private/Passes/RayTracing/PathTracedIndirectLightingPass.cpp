@@ -1,4 +1,6 @@
 #include "../../PCH.h"
+
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/RayTracing/PathTracedIndirectLightingPass.h"
 
 #include "FrameGraph/Execution/PassExecutionContext.h"
@@ -19,7 +21,7 @@ void PathTracedIndirectLightingPassParameters::Describe(ShaderParameterStructBui
 	builder.Uniform("View", &PathTracedIndirectLightingPassParameters::View, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewCamera", &PathTracedIndirectLightingPassParameters::ViewCamera, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewTemporal", &PathTracedIndirectLightingPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
-	builder.Uniform("ViewLighting", &PathTracedIndirectLightingPassParameters::ViewLighting, ShaderStageVisibility::Compute);
+	builder.Uniform("SceneLighting", &PathTracedIndirectLightingPassParameters::SceneLighting, ShaderStageVisibility::Compute);
 	builder.Uniform("RayTracedShadows", &PathTracedIndirectLightingPassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
 	builder.Uniform("Sky", &PathTracedIndirectLightingPassParameters::Sky, ShaderStageVisibility::Compute);
 	builder.ReadTexture("GBufferBaseColor", &PathTracedIndirectLightingPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
@@ -96,7 +98,7 @@ void PathTracedIndirectLightingPass::Execute(PassExecutionContext& context, Para
 	parameters->View = context.Frame.view.uniform;
 	parameters->ViewCamera = context.Frame.view.cameraUniform;
 	parameters->ViewTemporal = context.Frame.view.temporalUniform;
-	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
+	parameters->SceneLighting = context.Frame.preparedScene.gpuBindings->Lighting.Uniform;
 	parameters->Sky = MakeSkyUniformData(context.Frame.preparedScene.sky);
 	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
@@ -110,9 +112,9 @@ void PathTracedIndirectLightingPass::Execute(PassExecutionContext& context, Para
 	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(
 	    context.Runtime.RayTracing,
-	    context.Frame.rayTracingScene.HasTraceableInstances(),
-	    context.Frame.sceneGpuData->RayTracing.InstanceCount,
-	    context.Frame.sceneGpuData->RayTracing.MaterialCount);
+	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount > 0u,
+	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount,
+	    context.Frame.preparedScene.gpuBindings->RayTracing.MaterialCount);
 	const PathTracedLightingSettings settings = BuildPathTracedLightingSettings();
 	parameters->PathTracedLightingConstants = PathTracedLightingUniformData{
 	    .SamplesPerPixel = settings.SamplesPerPixel,

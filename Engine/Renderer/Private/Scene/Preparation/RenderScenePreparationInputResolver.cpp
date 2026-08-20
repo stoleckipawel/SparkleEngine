@@ -8,7 +8,7 @@
 #include "Scene/Materials/MaterialHandleResolver.h"
 #include "Scene/Preparation/RenderDeformationPreparation.h"
 #include "Scene/Preparation/RenderScenePreparationRun.h"
-#include "SceneData/RenderMeshClassificationConversion.h"
+#include "Scene/Preparation/RenderMeshClassificationConversion.h"
 #include "Scene/RenderScene.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "Textures/RendererTexture.h"

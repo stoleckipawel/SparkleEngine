@@ -12,7 +12,8 @@
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
-#include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/LightGpuData.h"
+#include "ShaderData/SceneLightingUniformData.h"
 #include "ShaderData/SkyUniformData.h"
 
 #include <cstdint>
@@ -28,7 +29,7 @@ struct RestirIndirectTemporalPassParameters
 	ShaderUniform<ViewUniformData> View;
 	ShaderUniform<ViewCameraUniformData> ViewCamera;
 	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
-	ShaderUniform<ViewLightingData> ViewLighting;
+	ShaderUniform<SceneLightingUniformData> SceneLighting;
 	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
 	ShaderUniform<SkyUniformData> Sky;
 	ShaderTexture2D<void> GBufferBaseColor;

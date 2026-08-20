@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SceneData/GpuScene/RenderGpuScenePayloads.h"
+#include "Scene/GpuScene/RenderGpuScenePayloads.h"
 
 class GpuMeshCache;
 struct MaterialData;

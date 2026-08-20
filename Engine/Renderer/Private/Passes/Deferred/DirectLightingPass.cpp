@@ -1,4 +1,6 @@
 #include "../../PCH.h"
+
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/Deferred/DirectLightingPass.h"
 
 #include "Frame/Core/FrameContext.h"
@@ -41,7 +43,7 @@ void DirectLightingPass::SetParameters(
 	parameters->View = view.uniform;
 	parameters->ViewCamera = view.cameraUniform;
 	parameters->ViewTemporal = view.temporalUniform;
-	parameters->ViewLighting = frame.sceneGpuData->Lighting.Constants;
+	parameters->SceneLighting = frame.preparedScene.gpuBindings->Lighting.Uniform;
 }
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

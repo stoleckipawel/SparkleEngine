@@ -4,18 +4,19 @@
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
 #include "ShaderData/MeshInstanceShaderData.h"
-#include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/LightGpuData.h"
+#include "ShaderData/SceneLightingUniformData.h"
 
 #include <cstdint>
 #include <vector>
 
 struct RenderGpuLightingPayloads final
 {
-	ViewLightingData Constants = {};
-	std::vector<DirectionalLightConstantBufferData> DirectionalLights;
-	std::vector<PointLightConstantBufferData> PointLights;
-	std::vector<SpotLightConstantBufferData> SpotLights;
-	std::vector<RectLightConstantBufferData> RectLights;
+	SceneLightingUniformData Uniform = {};
+	std::vector<DirectionalLightGpuData> DirectionalLights;
+	std::vector<PointLightGpuData> PointLights;
+	std::vector<SpotLightGpuData> SpotLights;
+	std::vector<RectLightGpuData> RectLights;
 };
 
 struct RenderGpuGeometryPayloads final

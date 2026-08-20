@@ -24,7 +24,7 @@ public:
 	const char* GetStrategyName() const noexcept override;
 	ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept override;
 	const char* GetActiveProviderReason() const noexcept override;
-	RayTracingSceneFrameData Prepare(
+	RenderRayTracingFrameBindings Prepare(
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept override;
 	RayTracingTopLevelAccelerationStructureBuildResult Build(
@@ -76,7 +76,7 @@ private:
 	RhiPartitionedTlasDesc BuildPartitionedTlasLayout(
 	    const PreparedRenderScene& preparedScene,
 	    const RayTracingPtlasPartitionPlan* partitionPlan) const noexcept;
-	RayTracingSceneFrameData BuildPartitionedTlasFrameData(const PreparedRenderScene& preparedScene) const noexcept;
+	RenderRayTracingFrameBindings BuildPartitionedTlasFrameData(const PreparedRenderScene& preparedScene) const noexcept;
 	RayTracingTopLevelAccelerationStructureBuildResult BuildPartitionedTlas(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,

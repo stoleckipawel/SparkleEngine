@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Resources/LightConstantBufferData.hlsli"
+#include "Resources/LightGpuData.hlsli"
+#include "Resources/SceneLightingUniformData.hlsli"
 
 #include "Lighting/AreaLights.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
@@ -54,10 +55,10 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface,
 
 	float3 incidentRadiance = max(surface.EmissiveColor, 0.0f.xxx);
 	const float3 viewDirWorld = normalize(-rayDirectionWorld);
-	const uint directionalLightCount = ViewLighting.DirectionalLightCount;
-	const uint pointLightCount = ViewLighting.PointLightCount;
-	const uint spotLightCount = ViewLighting.SpotLightCount;
-	const uint rectLightCount = ViewLighting.RectLightCount;
+	const uint directionalLightCount = SceneLighting.DirectionalLightCount;
+	const uint pointLightCount = SceneLighting.PointLightCount;
+	const uint spotLightCount = SceneLighting.SpotLightCount;
+	const uint rectLightCount = SceneLighting.RectLightCount;
 
 	[loop] for (uint lightIndex = 0u; lightIndex < directionalLightCount; ++lightIndex)
 	{

@@ -1,4 +1,6 @@
 #include "../../PCH.h"
+
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/RayTracing/RestirIndirectSpatialPass.h"
 
 #include "Frame/Core/FrameContext.h"
@@ -40,7 +42,7 @@ void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<
 	builder.Uniform("View", &RestirIndirectSpatialPassParameters::View, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewCamera", &RestirIndirectSpatialPassParameters::ViewCamera, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewTemporal", &RestirIndirectSpatialPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
-	builder.Uniform("ViewLighting", &RestirIndirectSpatialPassParameters::ViewLighting, ShaderStageVisibility::Compute);
+	builder.Uniform("SceneLighting", &RestirIndirectSpatialPassParameters::SceneLighting, ShaderStageVisibility::Compute);
 	builder.Uniform("RayTracedShadows", &RestirIndirectSpatialPassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
 	builder.Uniform("Sky", &RestirIndirectSpatialPassParameters::Sky, ShaderStageVisibility::Compute);
 	builder.Uniform(
@@ -106,7 +108,7 @@ void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, Parameter
 	parameters->View = context.Frame.view.uniform;
 	parameters->ViewCamera = context.Frame.view.cameraUniform;
 	parameters->ViewTemporal = context.Frame.view.temporalUniform;
-	parameters->ViewLighting = context.Frame.sceneGpuData->Lighting.Constants;
+	parameters->SceneLighting = context.Frame.preparedScene.gpuBindings->Lighting.Uniform;
 	parameters->Sky = MakeSkyUniformData(context.Frame.preparedScene.sky);
 	parameters->MaterialTextureTable = context.Frame.preparedScene.materialTextureTable.Binding;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
@@ -120,9 +122,9 @@ void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, Parameter
 	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(
 	    context.Runtime.RayTracing,
-	    context.Frame.rayTracingScene.HasTraceableInstances(),
-	    context.Frame.sceneGpuData->RayTracing.InstanceCount,
-	    context.Frame.sceneGpuData->RayTracing.MaterialCount);
+	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount > 0u,
+	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount,
+	    context.Frame.preparedScene.gpuBindings->RayTracing.MaterialCount);
 
 	const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
 	parameters->RestirIndirectConstants = RestirIndirectLightingUniformData{

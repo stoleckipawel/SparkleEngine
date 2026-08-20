@@ -5,9 +5,7 @@
 
 #include <cstdint>
 
-class PersistentRenderGpuScene;
 class RenderScenePreparation;
-class RenderRayTracingScene;
 class RenderViewBuilder;
 class RenderViewPreparation;
 class RenderViewState;
@@ -17,7 +15,6 @@ struct RenderViewInput;
 
 struct FrameContextBuildRequest final
 {
-	PersistentRenderGpuScene& GpuScene;
 	RenderViewState& ViewState;
 	const RenderViewInput& ViewInput;
 	const ViewportRenderRequest& ViewportRequest;
@@ -29,7 +26,6 @@ struct FrameContextBuildRequest final
 	RenderViewportExtent RenderExtent;
 	RenderViewportExtent OutputExtent;
 	RenderViewMode ViewMode = RenderViewMode::Lit;
-	RenderRayTracingScene* RayTracingScene = nullptr;
 };
 
 class FrameContextBuilder final

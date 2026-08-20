@@ -9,6 +9,7 @@
 #include "Editor/EditorTextureRegistry.h"
 #include "Frame/Builders/FrameContextBuilder.h"
 #include "Frame/Core/FrameContext.h"
+#include "Frame/Core/FrameSceneResources.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "Frame/RenderFrameTime.h"
 #include "Frame/Lighting/ReferenceLightingInvalidation.h"
@@ -23,16 +24,15 @@
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 #include "RayTracing/Scene/RayTracingPassContext.h"
-#include "RayTracing/Scene/RenderRayTracingScene.h"
+#include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "Scene/Preparation/RenderScenePreparation.h"
-#include "SceneData/GpuScene/PersistentRenderGpuScene.h"
 #include "Scene/RenderScene.h"
 #include "Meshes/GpuMeshCache.h"
-#include "SceneData/RenderSceneGpuData.h"
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Textures/RendererTexture.h"
 #include "Textures/TextureCache.h"
 #include "Window/Window.h"
@@ -62,18 +62,10 @@ FramePipeline::FramePipeline(RendererHost& rendererHost, bool enableUiRenderPack
 	    static_cast<std::uint32_t>(rendererHost.GetWindow().GetWidth()),
 	    static_cast<std::uint32_t>(rendererHost.GetWindow().GetHeight())};
 
-	InitializeSceneData();
 	InitializeUiRendering();
 	InitializeFrameStorage();
 	m_displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
 	InitializeFrameGraph();
-}
-
-void FramePipeline::InitializeSceneData()
-{
-	m_gpuScene = std::make_unique<PersistentRenderGpuScene>(
-	    m_rendererHost->GetRenderHardwareInterface().GetResourceService(),
-	    m_rendererHost->GetGpuMeshCache());
 }
 
 void FramePipeline::InitializeUiRendering()
@@ -284,7 +276,6 @@ bool FramePipeline::AcceptFrameSubmission(RenderFrameSubmission& submission) noe
 	m_frameId = submission.FrameId;
 	if (sceneReset)
 	{
-		m_gpuScene->Reset();
 		m_rendererHost->GetTextureCache().UnloadSceneTextures();
 		InvalidateViewHistory(RenderViewInvalidationReason::SceneGeneration);
 	}
@@ -508,25 +499,28 @@ void FramePipeline::PlayUiPacket(const UiRenderPacket& packet) noexcept
 
 void FramePipeline::RecordFrame(const RenderViewInput& viewInput) noexcept
 {
-	RenderRayTracingScene* activeRayTracingScene = m_rendererHost->GetRenderRayTracingScene();
-
-	FrameContext& frame = PrepareFrameContext(viewInput, activeRayTracingScene);
+	RenderScene& renderScene = m_rendererHost->GetRenderScene();
+	FrameContext& frame = PrepareFrameContext(viewInput);
 	UpdateLightingHistory(frame);
 	SetupImageProviderFrame(frame);
-	BindRayTracingScene(frame, activeRayTracingScene);
+	if (!renderScene.IsRayTracingAvailable())
+	{
+		Diagnostics::Fatal(g_framePipelineLogger, __FILE__, __LINE__, "Ray-tracing scene capability is unavailable.");
+	}
+	const RenderRayTracingFrameBindings rayTracingBindings = renderScene.PrepareRayTracingFrame(frame.preparedScene);
+	BindRayTracingScene(frame, rayTracingBindings);
 	BindSkyTexture(frame);
-	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, *frame.sceneGpuData);
-	ExecuteFrameGraph(frame, activeRayTracingScene);
+	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, *frame.preparedScene.gpuBindings);
+	ExecuteFrameGraph(frame);
 }
 
-FrameContext& FramePipeline::PrepareFrameContext(const RenderViewInput& viewInput, RenderRayTracingScene* activeRayTracingScene)
+FrameContext& FramePipeline::PrepareFrameContext(const RenderViewInput& viewInput)
 {
 	const std::uint32_t frameIndex = m_rendererHost->GetRenderHardwareInterface().GetCurrentFrameIndex();
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[frameIndex];
 	m_frameContextBuilder.Build(
 	    *frameSlot,
 	    FrameContextBuildRequest{
-	        .GpuScene = *m_gpuScene,
 	        .ViewState = m_rendererHost->GetRenderViewState(),
 	        .ViewInput = viewInput,
 	        .ViewportRequest = m_viewportRenderRequest,
@@ -538,7 +532,6 @@ FrameContext& FramePipeline::PrepareFrameContext(const RenderViewInput& viewInpu
 	        .RenderExtent = m_frameGraphRenderExtent,
 	        .OutputExtent = m_frameGraphOutputExtent,
 	        .ViewMode = CVarRenderViewMode.Get(),
-	        .RayTracingScene = activeRayTracingScene,
 	    });
 	return *frameSlot;
 }
@@ -588,10 +581,9 @@ void FramePipeline::SetupImageProviderFrame(const FrameContext& frame)
 	        .ResetHistory = frame.view.temporalUniform.HistoryValid == 0u});
 }
 
-void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene)
+void FramePipeline::BindRayTracingScene(const FrameContext& frame, const RenderRayTracingFrameBindings& rayTracingBindings)
 {
-	if (m_frameGraph == nullptr || !m_frameResources.SceneTlas.IsValid() || activeRayTracingScene == nullptr
-	    || !activeRayTracingScene->IsAvailable())
+	if (m_frameGraph == nullptr || !m_frameResources.SceneTlas.IsValid())
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -600,9 +592,7 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 		    "Ray-tracing scene producer or persistent SceneTlas resource is unavailable.");
 	}
 
-	frame.rayTracingScene = activeRayTracingScene->Prepare(frame.preparedScene);
-	if (!frame.rayTracingScene.HasBoundTlas()
-	    || frame.rayTracingScene.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
+	if (!rayTracingBindings.HasBoundTlas() || rayTracingBindings.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -610,13 +600,14 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 		    __LINE__,
 		    "Ray-tracing scene producer failed to provide the descriptor-access SceneTlas consumed by frame shaders.");
 	}
-	if (!frame.preparedScene.materialTextureTable || !frame.sceneGpuData->RayTracing.HasCompleteBuffers()
-	    || !frame.sceneGpuData->Geometry.HasMeshInstanceBuffers())
+	if (!frame.preparedScene.materialTextureTable || !frame.preparedScene.gpuBindings->RayTracing.HasCompleteBuffers()
+	    || !frame.preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
 	{
 		Diagnostics::Fatal(g_framePipelineLogger, __FILE__, __LINE__, "Ray-tracing frame shader resources are incomplete.");
 	}
-	if (frame.rayTracingScene.HasTraceableInstances()
-	    && (frame.sceneGpuData->RayTracing.InstanceCount == 0u || frame.sceneGpuData->RayTracing.MaterialCount == 0u))
+	if (rayTracingBindings.HasTraceableInstances()
+	    && (frame.preparedScene.gpuBindings->RayTracing.InstanceCount == 0u
+	        || frame.preparedScene.gpuBindings->RayTracing.MaterialCount == 0u))
 	{
 		Diagnostics::Fatal(
 		    g_framePipelineLogger,
@@ -627,8 +618,8 @@ void FramePipeline::BindRayTracingScene(FrameContext& frame, RenderRayTracingSce
 
 	m_frameGraph->BindPersistentAccelerationStructure(
 	    m_frameResources.SceneTlas,
-	    frame.rayTracingScene.TlasResource,
-	    frame.rayTracingScene.TlasGpuAddress);
+	    rayTracingBindings.TlasResource,
+	    rayTracingBindings.TlasGpuAddress);
 }
 
 void FramePipeline::BindSkyTexture(const FrameContext& frame)
@@ -651,7 +642,7 @@ void FramePipeline::BindSkyTexture(const FrameContext& frame)
 	    ResourceState::ShaderResource);
 }
 
-void FramePipeline::ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene)
+void FramePipeline::ExecuteFrameGraph(FrameContext& frame)
 {
 	RenderHardwareInterface& renderHardwareInterface = m_rendererHost->GetRenderHardwareInterface();
 	const RayTracedShadowSettings shadowSettings{
@@ -663,8 +654,8 @@ void FramePipeline::ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene
 	const FrameGraphPlan& compiledPlan = m_frameGraph->Compile();
 
 	const RayTracingPassContext rayTracingPassContext{
-	    .Scene = activeRayTracingScene,
-	    .CapabilityReport = activeRayTracingScene != nullptr ? &activeRayTracingScene->GetCapabilities() : nullptr,
+	    .Scene = &m_rendererHost->GetRenderScene(),
+	    .CapabilityReport = &m_rendererHost->GetRenderScene().GetRayTracingCapabilities(),
 	    .ShadowSettings = &shadowSettings,
 	    .ShadowsEnabled = rayTracedShadowsEnabled};
 	const ImageProviderPassContext imageProviderPassContext = m_rendererHost->GetImageProviders().BuildPassContext();

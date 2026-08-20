@@ -4,7 +4,7 @@ Status: target architecture, Unreal Engine reference analysis, and atomic implem
 Date: 2026-08-18
 Scope: GameFramework-to-Renderer publication, persistent render-scene ownership, GPU-scene ownership, one-frame scene and view products, temporal view state, deferred frame orchestration, frame-graph pass inputs, Unreal-familiar concept translation, coherent cross-module naming and directory navigation, complete legacy-path removal, atomic landing, D3D12/Vulkan validation, and cleanup of the current frame path
 
-Implementation checkpoint: Phases 1 and 2 established the target publication boundary and persistent `RenderScene` authority on `master`. Phase 3 is the source-level scene/view/ABI cutover CL. Later GPU-scene, pass, and deferred-graph phases remain target architecture, and no executable validation or release-readiness claim is made before Phase 7.
+Implementation checkpoint: Phases 1 through 3 established the target publication boundary, persistent scene authority, prepared scene/current view split, and focused frame/view ABI on `master`. Phase 4 is the unstaged source-level GPU-scene/ray-scene ownership and scene-lighting ABI cutover CL. Later pass and deferred-graph phases remain target architecture, and no executable validation or release-readiness claim is made before Phase 7.
 
 ## Decision
 
@@ -1217,6 +1217,8 @@ The CL is not ready for handoff while any old view builder/layout remains. Keep 
 Suggested title: `Renderer: move GPU and ray-tracing scene lifetime under render scene`.
 
 This phase cleans every old capability owner and name. Failure to prove one construction/reset/retirement route blocks the CL; it is not solved with a fallback instance.
+
+Phase 4 checkpoint: `RenderScene` is the sole lifetime owner of separate `RenderGpuScene` and `RenderRayTracingScene` capabilities. The selected prepared-scene slot borrows one `RenderSceneGpuBindings` projection, while `RenderRayTracingFrameBindings` exists only during graph import binding. Scene lighting now uses paired `SceneLightingUniformData` and `LightGpuData` C++/HLSL headers with the exact `SceneLighting` binding. Graph handles remain owned by the existing frame-graph resource layout until its Phase 5 clean-break rename; no graph handle is stored by either persistent scene capability. Backend compilation and execution evidence remains deferred to Phase 7.
 
 ### Phase 5 - Remove broad frame/pass contexts and make pass inputs explicit
 

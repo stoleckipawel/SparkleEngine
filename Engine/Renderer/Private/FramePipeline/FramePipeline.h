@@ -31,9 +31,8 @@ class FrameGraph;
 class RenderCommandList;
 class RenderDeviceServices;
 class RendererHost;
-class PersistentRenderGpuScene;
-class RenderRayTracingScene;
 struct RenderFrameTime;
+struct RenderRayTracingFrameBindings;
 struct RenderViewInput;
 
 struct FrameResolutionExtents final
@@ -64,7 +63,6 @@ public:
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 
 private:
-	void InitializeSceneData();
 	void InitializeUiRendering();
 	void InitializeFrameStorage();
 	void InitializeFrameContexts();
@@ -98,12 +96,12 @@ private:
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame(const RenderViewInput& viewInput) noexcept;
-	FrameContext& PrepareFrameContext(const RenderViewInput& viewInput, RenderRayTracingScene* activeRayTracingScene);
+	FrameContext& PrepareFrameContext(const RenderViewInput& viewInput);
 	void UpdateLightingHistory(FrameContext& frame);
 	void SetupImageProviderFrame(const FrameContext& frame);
-	void BindRayTracingScene(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene);
+	void BindRayTracingScene(const FrameContext& frame, const RenderRayTracingFrameBindings& rayTracingBindings);
 	void BindSkyTexture(const FrameContext& frame);
-	void ExecuteFrameGraph(FrameContext& frame, RenderRayTracingScene* activeRayTracingScene);
+	void ExecuteFrameGraph(FrameContext& frame);
 	void InvalidateViewHistory(RenderViewInvalidationReason reason) noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
@@ -128,7 +126,6 @@ private:
 	std::optional<std::uint64_t> m_previousRestirLightingHistoryInvalidationHash;
 	std::uint64_t m_frameId = 0u;
 	std::uint64_t m_graphTopologyGeneration = 0u;
-	std::unique_ptr<PersistentRenderGpuScene> m_gpuScene;
 	std::unique_ptr<UiRenderPacketPlayer> m_uiRenderPacketPlayer;
 	std::unique_ptr<EditorTextureRegistry> m_editorTextureRegistry;
 	struct PendingViewportCapture final

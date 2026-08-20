@@ -12,7 +12,8 @@
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
-#include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/LightGpuData.h"
+#include "ShaderData/SceneLightingUniformData.h"
 
 #include <cstdint>
 
@@ -30,7 +31,7 @@ struct PathTracedDirectLightingPassParameters
 	ShaderUniform<ViewUniformData> View;
 	ShaderUniform<ViewCameraUniformData> ViewCamera;
 	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
-	ShaderUniform<ViewLightingData> ViewLighting;
+	ShaderUniform<SceneLightingUniformData> SceneLighting;
 	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
 	ShaderUniform<PathTracedLightingUniformData> PathTracedLightingConstants;
 	ShaderTexture2D<void> GBufferBaseColor;

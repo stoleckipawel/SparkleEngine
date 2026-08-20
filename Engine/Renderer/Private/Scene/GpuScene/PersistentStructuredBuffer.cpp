@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "SceneData/GpuScene/PersistentStructuredBuffer.h"
+#include "Scene/GpuScene/PersistentStructuredBuffer.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
 #include "RHI/Public/Resources/RhiResourceService.h"
@@ -78,9 +78,12 @@ void PersistentStructuredBuffer::UpdateRanges(
 	WriteRanges(payload, ranges);
 }
 
-RenderSceneGpuBuffer PersistentStructuredBuffer::GetBinding() const noexcept
+RenderSceneGpuBufferBinding PersistentStructuredBuffer::GetBinding() const noexcept
 {
-	return RenderSceneGpuBuffer{.Resource = m_buffer.GetResource(), .SizeInBytes = m_shadow.size(), .StrideInBytes = m_strideInBytes};
+	return RenderSceneGpuBufferBinding{
+	    .Resource = m_buffer.GetResource(),
+	    .SizeInBytes = m_shadow.size(),
+	    .StrideInBytes = m_strideInBytes};
 }
 
 void PersistentStructuredBuffer::Reset() noexcept
@@ -118,15 +121,13 @@ void PersistentStructuredBuffer::Grow(
 		    "Persistent structured-buffer allocation or upload failed.");
 	}
 
+	// ReleaseOwnedResource retires the replaced allocation against its recorded GPU submissions; growth never requires device idle.
 	m_buffer = std::move(replacement);
 	m_shadow = std::move(shadow);
 	m_strideInBytes = strideInBytes;
 }
 
-void PersistentStructuredBuffer::UpdateEmpty(
-    RhiResourceService& resourceService,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName)
+void PersistentStructuredBuffer::UpdateEmpty(RhiResourceService& resourceService, std::uint32_t strideInBytes, std::wstring_view debugName)
 {
 	if (!m_buffer || m_strideInBytes != strideInBytes)
 	{
@@ -134,13 +135,8 @@ void PersistentStructuredBuffer::UpdateEmpty(
 		return;
 	}
 
-	const auto firstNonZero = std::find_if(
-	    m_shadow.begin(),
-	    m_shadow.begin() + strideInBytes,
-	    [](std::byte value)
-	    {
-		    return value != std::byte{};
-	    });
+	const auto firstNonZero =
+	    std::find_if(m_shadow.begin(), m_shadow.begin() + strideInBytes, [](std::byte value) { return value != std::byte{}; });
 	if (firstNonZero == m_shadow.begin() + strideInBytes)
 	{
 		return;
@@ -200,9 +196,7 @@ void PersistentStructuredBuffer::WriteDirtyRanges(std::span<const std::byte> pay
 	}
 }
 
-void PersistentStructuredBuffer::WriteRanges(
-    std::span<const std::byte> payload,
-    std::span<const StructuredBufferElementRange> ranges)
+void PersistentStructuredBuffer::WriteRanges(std::span<const std::byte> payload, std::span<const StructuredBufferElementRange> ranges)
 {
 	const std::size_t elementCount = payload.size_bytes() / m_strideInBytes;
 	for (const StructuredBufferElementRange& range : ranges)
@@ -220,11 +214,7 @@ void PersistentStructuredBuffer::WriteRanges(
 		const std::size_t dirtySize = static_cast<std::size_t>(range.ElementCount) * m_strideInBytes;
 		if (!m_buffer.Write(dirtyOffset, payload.data() + dirtyOffset, dirtySize))
 		{
-			Diagnostics::Fatal(
-			    g_persistentStructuredBufferLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Persistent structured-buffer range update failed.");
+			Diagnostics::Fatal(g_persistentStructuredBufferLogger, __FILE__, __LINE__, "Persistent structured-buffer range update failed.");
 		}
 
 		std::memcpy(m_shadow.data() + dirtyOffset, payload.data() + dirtyOffset, dirtySize);

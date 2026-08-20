@@ -1,8 +1,9 @@
 #include "PCH.h"
-#include "SceneData/GpuScene/RenderGpuLightingPayloadBuilder.h"
+#include "Scene/GpuScene/RenderGpuLightingPayloadBuilder.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "ShaderData/SceneLightingUniformData.h"
 
 #include <format>
 #include <string_view>
@@ -56,7 +57,7 @@ void RenderGpuLightingPayloadBuilder::Build(const PreparedRenderScene& preparedS
 	payloads.SpotLights.clear();
 	payloads.RectLights.clear();
 
-	payloads.Constants = ViewLightingData{
+	payloads.Uniform = SceneLightingUniformData{
 	    .DirectionalLightCount = static_cast<std::uint32_t>(directionalLightCount),
 	    .PointLightCount = static_cast<std::uint32_t>(pointLightCount),
 	    .SpotLightCount = static_cast<std::uint32_t>(spotLightCount),
@@ -70,7 +71,7 @@ void RenderGpuLightingPayloadBuilder::Build(const PreparedRenderScene& preparedS
 	{
 		const DirectionalLight& light = preparedScene.directionalLights[lightIndex];
 		payloads.DirectionalLights.push_back(
-		    DirectionalLightConstantBufferData{
+		    DirectionalLightGpuData{
 		        .Direction = {light.direction.x, light.direction.y, light.direction.z},
 		        .Illuminance = light.illuminance,
 		        .Color = {light.color.x, light.color.y, light.color.z},
@@ -82,7 +83,7 @@ void RenderGpuLightingPayloadBuilder::Build(const PreparedRenderScene& preparedS
 	{
 		const PointLight& light = preparedScene.pointLights[lightIndex];
 		payloads.PointLights.push_back(
-		    PointLightConstantBufferData{
+		    PointLightGpuData{
 		        .Position = {light.position.x, light.position.y, light.position.z},
 		        .Range = light.range,
 		        .Color = {light.color.x, light.color.y, light.color.z},
@@ -96,7 +97,7 @@ void RenderGpuLightingPayloadBuilder::Build(const PreparedRenderScene& preparedS
 	{
 		const SpotLight& light = preparedScene.spotLights[lightIndex];
 		payloads.SpotLights.push_back(
-		    SpotLightConstantBufferData{
+		    SpotLightGpuData{
 		        .Position = {light.position.x, light.position.y, light.position.z},
 		        .Range = light.range,
 		        .Direction = {light.direction.x, light.direction.y, light.direction.z},
@@ -113,7 +114,7 @@ void RenderGpuLightingPayloadBuilder::Build(const PreparedRenderScene& preparedS
 	{
 		const RectLight& light = preparedScene.rectLights[lightIndex];
 		payloads.RectLights.push_back(
-		    RectLightConstantBufferData{
+		    RectLightGpuData{
 		        .Position = {light.position.x, light.position.y, light.position.z},
 		        .Width = light.width,
 		        .Direction = {light.direction.x, light.direction.y, light.direction.z},

@@ -1,4 +1,6 @@
 #include "../../PCH.h"
+
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/Deferred/DirectShadowSignalPassCommon.h"
 
 #include "Frame/Core/FrameContext.h"
@@ -18,7 +20,7 @@ void DirectShadowSignalPassCommon::SetParameters(
 	parameters.View = view.uniform;
 	parameters.ViewCamera = view.cameraUniform;
 	parameters.ViewTemporal = view.temporalUniform;
-	parameters.ViewLighting = frame.sceneGpuData->Lighting.Constants;
+	parameters.SceneLighting = frame.preparedScene.gpuBindings->Lighting.Uniform;
 }
 
 void DirectShadowSignalPassCommon::SetRayQueryParameters(
@@ -39,6 +41,6 @@ void DirectShadowSignalPassCommon::SetRayQueryParameters(
 	parameters.RayTracedShadows = RayTracedShadowPassData::Build(
 	    passRuntimeContext.RayTracing,
 	    hasTraceableInstances,
-	    frame.sceneGpuData->RayTracing.InstanceCount,
-	    frame.sceneGpuData->RayTracing.MaterialCount);
+	    frame.preparedScene.gpuBindings->RayTracing.InstanceCount,
+	    frame.preparedScene.gpuBindings->RayTracing.MaterialCount);
 }

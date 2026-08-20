@@ -1,4 +1,6 @@
 #include "../../PCH.h"
+
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/Deferred/DirectLightReservoirPassCommon.h"
 
 #include "Frame/Core/FrameContext.h"
@@ -16,6 +18,6 @@ namespace DirectLightReservoirPassCommon
 		parameters.Frame = passRuntimeContext.Frame;
 		parameters.View = view.uniform;
 		parameters.ViewCamera = view.cameraUniform;
-		parameters.ViewLighting = frame.sceneGpuData->Lighting.Constants;
+		parameters.SceneLighting = frame.preparedScene.gpuBindings->Lighting.Uniform;
 	}
 }

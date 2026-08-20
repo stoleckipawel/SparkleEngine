@@ -1,4 +1,6 @@
 #include "../../PCH.h"
+
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/Deferred/DirectShadowSignalDeviceAddressPass.h"
 
 #include "Frame/Core/FrameContext.h"
@@ -38,7 +40,7 @@ void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context,
 	    context.Frame,
 	    context.Frame.view,
 	    context.Runtime,
-	    context.Frame.rayTracingScene.HasTraceableInstances());
+	    context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount > 0u);
 	ComputePassOperations::DispatchSized<DirectShadowSignalDeviceAddressPass>(
 	    context,
 	    m_runtime,

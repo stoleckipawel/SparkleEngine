@@ -1,6 +1,7 @@
 #include "Resources/FrameUniformData.hlsli"
 #include "Resources/ViewCameraUniformData.hlsli"
-#include "Resources/LightConstantBufferData.hlsli"
+#include "Resources/LightGpuData.hlsli"
+#include "Resources/SceneLightingUniformData.hlsli"
 
 #include "Passes/Deferred/GBufferUtils.hlsli"
 #include "Lighting/AreaLights.hlsli"
@@ -65,7 +66,7 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 	diffuse = 0.0f.xxx;
 	specular = 0.0f.xxx;
 	subsurface = 0.0f.xxx;
-	[loop] for (uint i = 0u; i < ViewLighting.DirectionalLightCount; ++i)
+	[loop] for (uint i = 0u; i < SceneLighting.DirectionalLightCount; ++i)
 	{
 		AccumulatePathTracedDirectLight(
 		    surface,
@@ -78,7 +79,7 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 		    subsurface);
 	}
 
-	[loop] for (uint i = 0u; i < ViewLighting.PointLightCount; ++i)
+	[loop] for (uint i = 0u; i < SceneLighting.PointLightCount; ++i)
 	{
 		AccumulatePathTracedDirectLight(
 		    surface,
@@ -91,7 +92,7 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 		    subsurface);
 	}
 
-	[loop] for (uint i = 0u; i < ViewLighting.SpotLightCount; ++i)
+	[loop] for (uint i = 0u; i < SceneLighting.SpotLightCount; ++i)
 	{
 		AccumulatePathTracedDirectLight(
 		    surface,
@@ -104,7 +105,7 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 		    subsurface);
 	}
 
-	[loop] for (uint i = 0u; i < ViewLighting.RectLightCount; ++i)
+	[loop] for (uint i = 0u; i < SceneLighting.RectLightCount; ++i)
 	{
 		AccumulatePathTracedDirectLight(
 		    surface,

@@ -16,7 +16,7 @@ public:
 	const char* GetStrategyName() const noexcept override;
 	ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept override;
 	const char* GetActiveProviderReason() const noexcept override;
-	RayTracingSceneFrameData Prepare(
+	RenderRayTracingFrameBindings Prepare(
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept override;
 	RayTracingTopLevelAccelerationStructureBuildResult Build(

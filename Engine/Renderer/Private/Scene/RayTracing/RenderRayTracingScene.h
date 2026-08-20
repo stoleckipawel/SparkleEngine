@@ -1,9 +1,8 @@
 #pragma once
 
 #include "RayTracing/Diagnostics/RayTracingPerformanceMetrics.h"
-#include "RayTracing/Scene/RayTracingSceneFrameData.h"
+#include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
-#include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 
 #include <memory>
 
@@ -36,7 +35,7 @@ public:
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
 	void PlanFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept;
-	RayTracingSceneFrameData Prepare(const PreparedRenderScene& preparedScene) noexcept;
+	RenderRayTracingFrameBindings Prepare(const PreparedRenderScene& preparedScene) noexcept;
 	void Build(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
@@ -45,12 +44,8 @@ public:
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.Core.SupportsRayTracing; }
 	bool HasValidTlas() const noexcept;
-	RhiOwnedResourceHandle GetTlasResource() const noexcept;
 	RhiGpuVirtualAddress GetTlasGpuAddress() const noexcept;
-	RayTracingSceneTlasShaderAccessMode GetTlasShaderAccessMode() const noexcept;
-	std::uint32_t GetTlasInstanceCount() const noexcept;
 	const RayTracingCapabilityReport& GetCapabilities() const noexcept { return m_capabilityReport; }
-	const RayTracingPerformanceMetrics& GetPerformanceMetrics() const noexcept;
 
 private:
 	void EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept;

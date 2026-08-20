@@ -30,21 +30,21 @@ const char* RayTracingClassicTlasStrategy::GetActiveProviderReason() const noexc
 	return "classic-tlas-strategy-selected";
 }
 
-RayTracingSceneFrameData RayTracingClassicTlasStrategy::Prepare(
+RenderRayTracingFrameBindings RayTracingClassicTlasStrategy::Prepare(
     const PreparedRenderScene& preparedScene,
     RayTracingTopLevelScenePlanner* scenePlanner) noexcept
 {
 	(void) scenePlanner;
-	RayTracingSceneFrameData frameData{};
+	RenderRayTracingFrameBindings frameBindings{};
 	const std::uint32_t estimatedInstanceCount =
 	    static_cast<std::uint32_t>(preparedScene.rayTracingWork.ClassicTlasBlasInputIndices.size());
 	m_classicTlasBuilder.Prepare(estimatedInstanceCount);
 
-	frameData.TlasResource = m_classicTlasBuilder.GetTlas().resource;
-	frameData.TlasGpuAddress = m_classicTlasBuilder.GetTlas().gpuAddress;
-	frameData.TlasShaderAccessMode = m_shaderAccessMode;
-	frameData.EstimatedInstanceCount = estimatedInstanceCount;
-	return frameData;
+	frameBindings.TlasResource = m_classicTlasBuilder.GetTlas().resource;
+	frameBindings.TlasGpuAddress = m_classicTlasBuilder.GetTlas().gpuAddress;
+	frameBindings.TlasShaderAccessMode = m_shaderAccessMode;
+	frameBindings.EstimatedInstanceCount = estimatedInstanceCount;
+	return frameBindings;
 }
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingClassicTlasStrategy::Build(

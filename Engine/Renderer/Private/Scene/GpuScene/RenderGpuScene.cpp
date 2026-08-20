@@ -1,14 +1,14 @@
 #include "PCH.h"
-#include "SceneData/GpuScene/PersistentRenderGpuScene.h"
+#include "Scene/GpuScene/RenderGpuScene.h"
 
 #include "RHI/Public/Frame/RhiFrameConstants.h"
-#include "SceneData/GpuScene/PersistentStructuredBuffer.h"
-#include "SceneData/GpuScene/RenderGpuGeometryState.h"
-#include "SceneData/GpuScene/RenderGpuLightingPayloadBuilder.h"
-#include "SceneData/GpuScene/RenderGpuRayTracingPayloadBuilder.h"
+#include "Scene/GpuScene/PersistentStructuredBuffer.h"
+#include "Scene/GpuScene/RenderGpuGeometryState.h"
+#include "Scene/GpuScene/RenderGpuLightingPayloadBuilder.h"
+#include "Scene/GpuScene/RenderGpuRayTracingPayloadBuilder.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
-#include "SceneData/RenderSceneGpuData.h"
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 
 #include <array>
 #include <limits>
@@ -30,7 +30,7 @@ struct RenderGpuDynamicFrameStorage final
 	PersistentStructuredBuffer PreviousMorphWeights;
 	PersistentStructuredBuffer RayTracingInstances;
 	PersistentStructuredBuffer RayTracingMaterials;
-	RenderSceneGpuData Data;
+	RenderSceneGpuBindings Bindings;
 	std::uint64_t MeshInstanceRevision = 0u;
 	std::uint64_t MeshInstanceSlotRevision = 0u;
 	std::uint64_t RayTracingPayloadRevision = 0u;
@@ -60,7 +60,7 @@ void RenderGpuDynamicFrameStorage::Reset() noexcept
 	PreviousMorphWeights.Reset();
 	RayTracingInstances.Reset();
 	RayTracingMaterials.Reset();
-	Data = {};
+	Bindings = {};
 	MeshInstanceRevision = 0u;
 	MeshInstanceSlotRevision = 0u;
 	RayTracingPayloadRevision = 0u;
@@ -74,7 +74,7 @@ void RenderGpuRayTracingStorage::Reset() noexcept
 	Indices.Reset();
 }
 
-struct PersistentRenderGpuScene::Impl final
+struct RenderGpuScene::Impl final
 {
 	Impl(RhiResourceService& resourceService, const GpuMeshCache& meshes) noexcept :
 	    ResourceService(&resourceService),
@@ -82,7 +82,7 @@ struct PersistentRenderGpuScene::Impl final
 	{
 	}
 
-	const RenderSceneGpuData& Update(const PreparedRenderScene& preparedScene, const RenderView& view, std::uint32_t frameIndex)
+	const RenderSceneGpuBindings& Update(const PreparedRenderScene& preparedScene, const RenderView& view, std::uint32_t frameIndex)
 	{
 		RenderGpuDynamicFrameStorage& dynamicStorage = DynamicFrames[frameIndex % DynamicFrames.size()];
 		Geometry.Update(preparedScene, view);
@@ -90,7 +90,7 @@ struct PersistentRenderGpuScene::Impl final
 		UpdateLighting(preparedScene, dynamicStorage);
 		UpdateGeometry(dynamicStorage);
 		UpdateRayTracing(preparedScene, dynamicStorage);
-		return dynamicStorage.Data;
+		return dynamicStorage.Bindings;
 	}
 
 	void UpdateLighting(const PreparedRenderScene& preparedScene, RenderGpuDynamicFrameStorage& storage)
@@ -102,8 +102,8 @@ struct PersistentRenderGpuScene::Impl final
 		storage.SpotLights.Update(*ResourceService, std::span{LightingPayloads.SpotLights}, L"SpotLights");
 		storage.RectLights.Update(*ResourceService, std::span{LightingPayloads.RectLights}, L"RectLights");
 
-		storage.Data.Lighting = RenderSceneGpuLightingData{
-		    .Constants = LightingPayloads.Constants,
+		storage.Bindings.Lighting = RenderSceneGpuLightingBindings{
+		    .Uniform = LightingPayloads.Uniform,
 		    .DirectionalLights = storage.DirectionalLights.GetBinding(),
 		    .PointLights = storage.PointLights.GetBinding(),
 		    .SpotLights = storage.SpotLights.GetBinding(),
@@ -133,7 +133,7 @@ struct PersistentRenderGpuScene::Impl final
 		storage.MorphWeights.Update(*ResourceService, std::span{payloads.MorphWeights}, L"MorphWeights");
 		storage.PreviousMorphWeights.Update(*ResourceService, std::span{payloads.PreviousMorphWeights}, L"PreviousMorphWeights");
 
-		storage.Data.Geometry = RenderSceneGpuGeometryData{
+		storage.Bindings.Geometry = RenderSceneGpuGeometryBindings{
 		    .MeshInstances = storage.MeshInstances.GetBinding(),
 		    .MeshInstanceSlots = storage.MeshInstanceSlots.GetBinding(),
 		    .JointMatrices = storage.JointMatrices.GetBinding(),
@@ -170,7 +170,7 @@ struct PersistentRenderGpuScene::Impl final
 			storage.RayTracingPayloadRevision = RayTracingPayloadRevision;
 		}
 
-		storage.Data.RayTracing = RenderSceneGpuRayTracingData{
+		storage.Bindings.RayTracing = RenderSceneGpuRayTracingBindings{
 		    .Vertices = RayTracing.Vertices.GetBinding(),
 		    .SkinInfluences = RayTracing.SkinInfluences.GetBinding(),
 		    .MorphTargetDeltas = RayTracing.MorphTargetDeltas.GetBinding(),
@@ -210,6 +210,7 @@ struct PersistentRenderGpuScene::Impl final
 
 	RhiResourceService* ResourceService = nullptr;
 	const GpuMeshCache* Meshes = nullptr;
+	// RHI frame-slot reuse waits for the slot's submission token, so a borrowed binding projection remains stable through execution.
 	std::array<RenderGpuDynamicFrameStorage, RhiFrameConstants::MaxFrameSlotCount> DynamicFrames;
 	RenderGpuRayTracingStorage RayTracing;
 	RenderGpuGeometryState Geometry;
@@ -222,14 +223,14 @@ struct PersistentRenderGpuScene::Impl final
 	std::uint64_t RayTracingTextureGeneration = (std::numeric_limits<std::uint64_t>::max)();
 };
 
-PersistentRenderGpuScene::PersistentRenderGpuScene(RhiResourceService& resourceService, const GpuMeshCache& meshes) :
+RenderGpuScene::RenderGpuScene(RhiResourceService& resourceService, const GpuMeshCache& meshes) :
     m_impl(std::make_unique<Impl>(resourceService, meshes))
 {
 }
 
-PersistentRenderGpuScene::~PersistentRenderGpuScene() noexcept = default;
+RenderGpuScene::~RenderGpuScene() noexcept = default;
 
-const RenderSceneGpuData& PersistentRenderGpuScene::Update(
+const RenderSceneGpuBindings& RenderGpuScene::Update(
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
     std::uint32_t frameIndex)
@@ -237,7 +238,7 @@ const RenderSceneGpuData& PersistentRenderGpuScene::Update(
 	return m_impl->Update(preparedScene, view, frameIndex);
 }
 
-void PersistentRenderGpuScene::Reset() noexcept
+void RenderGpuScene::Reset() noexcept
 {
 	m_impl->Reset();
 }

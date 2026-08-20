@@ -3,8 +3,8 @@
 #include "View/RenderViewPreparation.h"
 
 #include "Renderer/Public/Debug/RendererCVars.h"
-#include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/RenderScene.h"
 #include "Tasks/Public/ParallelFor.h"
 #include "Tasks/Public/TaskExecution.h"
 #include "Tasks/Public/TaskExecutionContext.h"
@@ -21,12 +21,12 @@ RenderViewPreparation::RenderViewPreparation(TaskExecutor& taskExecutor) noexcep
 {
 }
 
-void RenderViewPreparation::Prepare(const PreparedRenderScene& scene, RenderView& view, RenderRayTracingScene* rayTracingScene)
+void RenderViewPreparation::Prepare(const PreparedRenderScene& preparedScene, RenderView& view, RenderScene& renderScene)
 {
-	m_run.Scene = &scene;
+	m_run.Scene = &preparedScene;
 	m_run.View = &view;
-	m_run.Items.resize(scene.primitives.size());
-	EnsureGraph(scene.primitives.size());
+	m_run.Items.resize(preparedScene.primitives.size());
+	EnsureGraph(preparedScene.primitives.size());
 
 	TaskExecutionContext context(m_run);
 	const TaskExecution execution = m_taskExecutor->Submit(m_graph, context);
@@ -54,8 +54,8 @@ void RenderViewPreparation::Prepare(const PreparedRenderScene& scene, RenderView
 	m_batchResult.Batches = std::move(view.meshInstanceBatches);
 	m_batchBuilder.Build(
 	    m_visibleItems,
-	    scene.primitives,
-	    scene.instanceGroups,
+	    preparedScene.primitives,
+	    preparedScene.instanceGroups,
 	    MeshInstanceBatchBuildOptions{
 	        .EnableAutoBatching = CVarRendererMeshAutoBatching.Get(),
 	        .RequireMaterialBindingSet = true,
@@ -63,11 +63,8 @@ void RenderViewPreparation::Prepare(const PreparedRenderScene& scene, RenderView
 	    m_batchResult);
 	view.rasterPrimitiveIndices = std::move(m_batchResult.RasterInstanceIndices);
 	view.meshInstanceBatches = std::move(m_batchResult.Batches);
-	BuildWorkload(scene, view);
-	if (rayTracingScene != nullptr)
-	{
-		rayTracingScene->PlanFrame(scene, view.cameraUniform.Position);
-	}
+	BuildWorkload(preparedScene, view);
+	renderScene.PlanRayTracingFrame(preparedScene, view.cameraUniform.Position);
 
 	m_run.Scene = nullptr;
 	m_run.View = nullptr;

@@ -9,7 +9,8 @@
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
-#include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/LightGpuData.h"
+#include "ShaderData/SceneLightingUniformData.h"
 
 struct FrameContext;
 struct PassRuntimeContext;
@@ -25,7 +26,7 @@ struct DirectShadowSignalCommonPassParameters
 	ShaderUniform<ViewUniformData> View;
 	ShaderUniform<ViewCameraUniformData> ViewCamera;
 	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
-	ShaderUniform<ViewLightingData> ViewLighting;
+	ShaderUniform<SceneLightingUniformData> SceneLighting;
 	ShaderBuffer<void> DirectionalLights;
 	ShaderBuffer<void> PointLights;
 	ShaderBuffer<void> SpotLights;
@@ -66,8 +67,8 @@ struct DirectShadowSignalCommonPassParameters
 		    static_cast<ShaderUniform<ViewTemporalUniformData> TParameters::*>(&DirectShadowSignalCommonPassParameters::ViewTemporal),
 		    ShaderStageVisibility::Compute);
 		builder.Uniform(
-		    "ViewLighting",
-		    static_cast<ShaderUniform<ViewLightingData> TParameters::*>(&DirectShadowSignalCommonPassParameters::ViewLighting),
+		    "SceneLighting",
+		    static_cast<ShaderUniform<SceneLightingUniformData> TParameters::*>(&DirectShadowSignalCommonPassParameters::SceneLighting),
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "DirectionalLights",

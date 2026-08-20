@@ -4,7 +4,7 @@
 
 #include "Core/Public/Diagnostics/Verify.h"
 #include "RayTracing/Scene/RayTracingPassContext.h"
-#include "RayTracing/Scene/RenderRayTracingScene.h"
+#include "Scene/RenderScene.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 
 static const auto g_rayTracedShadowPassDataLogger = Logging::GetOrCreateLogger("Renderer.RayTracedShadowPassData");
@@ -19,11 +19,7 @@ namespace RayTracedShadowPassData
 	{
 		if (context == nullptr || context->ShadowSettings == nullptr || context->Scene == nullptr)
 		{
-			Diagnostics::Fatal(
-			    g_rayTracedShadowPassDataLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Ray-traced shadow pass context is incomplete.");
+			Diagnostics::Fatal(g_rayTracedShadowPassDataLogger, __FILE__, __LINE__, "Ray-traced shadow pass context is incomplete.");
 		}
 		if (!context->ShadowsEnabled || !hasTraceableInstances)
 		{
@@ -31,14 +27,10 @@ namespace RayTracedShadowPassData
 		}
 
 		const RayTracedShadowSettings& settings = *context->ShadowSettings;
-		const RhiGpuVirtualAddress sceneTlasAddress = context->Scene->GetTlasGpuAddress();
+		const RhiGpuVirtualAddress sceneTlasAddress = context->Scene->GetRayTracingTlasGpuAddress();
 		if (sceneTlasAddress == 0u)
 		{
-			Diagnostics::Fatal(
-			    g_rayTracedShadowPassDataLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Ray-traced shadow pass has no SceneTlas GPU address.");
+			Diagnostics::Fatal(g_rayTracedShadowPassDataLogger, __FILE__, __LINE__, "Ray-traced shadow pass has no SceneTlas GPU address.");
 		}
 		return RayTracedShadowUniformData{
 		    .DirectionalShadowsEnabled = 1u,

@@ -1,7 +1,7 @@
 #ifndef SPARKLE_AREA_LIGHTS_HLSLI
 #define SPARKLE_AREA_LIGHTS_HLSLI
 
-#include "Resources/LightConstantBufferData.hlsli"
+#include "Resources/LightGpuData.hlsli"
 
 #include "Common/Constants.hlsli"
 #include "Common/Math.hlsli"
@@ -12,7 +12,7 @@ namespace AreaLights
 {
 	LightSampling::DirectLightSample SampleDirectionalLight(uint lightIndex, float2 sample)
 	{
-		const DirectionalLightConstantBufferData light = DirectionalLights[lightIndex];
+		const DirectionalLightGpuData light = DirectionalLights[lightIndex];
 		const float3 centerDirectionWorld = PunctualLights::GetDirectionalLightDirection(lightIndex);
 		const float3 illuminance = light.Color * light.Illuminance;
 		const float coneHalfAngle = light.AngularSizeRadians * 0.5f;
@@ -40,7 +40,7 @@ namespace AreaLights
 
 	LightSampling::DirectLightSample SamplePointLight(float3 positionWorld, uint lightIndex, float2 sample)
 	{
-		const PointLightConstantBufferData light = PointLights[lightIndex];
+		const PointLightGpuData light = PointLights[lightIndex];
 		float distanceToLight = 0.0f;
 		const float3 centerDirectionWorld = PunctualLights::GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float radius = light.Radius;
@@ -72,7 +72,7 @@ namespace AreaLights
 
 	LightSampling::DirectLightSample SampleSpotLight(float3 positionWorld, uint lightIndex, float2 sample)
 	{
-		const SpotLightConstantBufferData light = SpotLights[lightIndex];
+		const SpotLightGpuData light = SpotLights[lightIndex];
 		float distanceToLight = 0.0f;
 		const float3 centerDirectionWorld = PunctualLights::GetSpotLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float3 lightDirectionWorld = normalize(light.Direction);
@@ -113,7 +113,7 @@ namespace AreaLights
 		        * PunctualLights::ComputeAreaDistanceAttenuationCorrection(distanceToSample, light.DistanceAttenuationCoefficients));
 	}
 
-	void BuildRectFrame(RectLightConstantBufferData light, out float3 normalWorld, out float3 tangentWorld, out float3 bitangentWorld)
+	void BuildRectFrame(RectLightGpuData light, out float3 normalWorld, out float3 tangentWorld, out float3 bitangentWorld)
 	{
 		normalWorld = normalize(light.Direction);
 		tangentWorld = light.Tangent - normalWorld * dot(light.Tangent, normalWorld);
@@ -123,7 +123,7 @@ namespace AreaLights
 
 	LightSampling::DirectLightSample SampleRectLight(float3 positionWorld, uint lightIndex, float2 sample)
 	{
-		const RectLightConstantBufferData light = RectLights[lightIndex];
+		const RectLightGpuData light = RectLights[lightIndex];
 		const float width = light.Width;
 		const float height = light.Height;
 		const float area = width * height;

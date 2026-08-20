@@ -5,7 +5,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeContext.h"
-#include "RayTracing/Scene/RenderRayTracingScene.h"
+#include "Scene/RenderScene.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 
 namespace RayTracingSceneFrameGraphContract
@@ -40,8 +40,8 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 	    },
 	    [](PassExecutionContext& context)
 	    {
-		    if (!context.Frame.rayTracingScene.HasBoundTlas() || context.Runtime.RayTracing == nullptr
-		        || context.Runtime.RayTracing->Scene == nullptr)
+		    if (context.Runtime.RayTracing == nullptr || context.Runtime.RayTracing->Scene == nullptr
+		        || !context.Runtime.RayTracing->Scene->HasValidRayTracingTlas())
 		    {
 			    Diagnostics::Fatal(
 			        g_rayTracingSceneFrameGraphLogger,
@@ -50,7 +50,7 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 			        "Ray-tracing scene build did not receive a bound SceneTlas and active scene producer.");
 		    }
 
-		    context.Runtime.RayTracing->Scene->Build(context.Commands, context.Frame.preparedScene, &context.Diagnostics);
+		    context.Runtime.RayTracing->Scene->BuildRayTracingScene(context.Commands, context.Frame.preparedScene, &context.Diagnostics);
 	    });
 }
 

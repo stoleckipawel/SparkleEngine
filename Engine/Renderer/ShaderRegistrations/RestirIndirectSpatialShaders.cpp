@@ -12,7 +12,8 @@
 #include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
-#include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/LightGpuData.h"
+#include "ShaderData/SceneLightingUniformData.h"
 #include "ShaderData/SkyUniformData.h"
 
 class RestirIndirectSpatialCS final : public TGlobalShader<RestirIndirectSpatialCS>
@@ -31,7 +32,7 @@ public:
 	SHADER_PARAMETER_CBUFFER_NAMED(View, ViewUniformData, ViewUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewCamera, ViewCameraUniformData, ViewCameraUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewTemporal, ViewTemporalUniformData, ViewTemporalUniformData)
-	SHADER_PARAMETER_CBUFFER_NAMED(ViewLighting, ViewLighting, ViewLightingData)
+	SHADER_PARAMETER_CBUFFER_NAMED(SceneLighting, SceneLighting, SceneLightingUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(RayTracedShadows, RayTracedShadowUniformData, RayTracedShadowUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(Sky, SkyUniformData, SkyUniformData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
@@ -49,10 +50,10 @@ public:
 	SHADER_PARAMETER_RDG_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, JointMatrices)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(float, MorphWeights)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(DirectionalLightConstantBufferData, DirectionalLights)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(PointLightConstantBufferData, PointLights)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(SpotLightConstantBufferData, SpotLights)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(RectLightConstantBufferData, RectLights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(DirectionalLightGpuData, DirectionalLights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(PointLightGpuData, PointLights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(SpotLightGpuData, SpotLights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(RectLightGpuData, RectLights)
 	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	SHADER_PARAMETER_CBUFFER_NAMED(RestirIndirectConstants, RestirIndirectLightingUniformData, RestirIndirectLightingUniformData)

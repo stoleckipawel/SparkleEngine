@@ -3,6 +3,7 @@
 #include "Scene/RenderPrimitive.h"
 #include "Rendering/RenderSceneDelta.h"
 #include "Rendering/RenderSceneDynamicData.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 
 #include <DirectXMath.h>
 
@@ -17,12 +18,20 @@
 class GpuSceneSlotAllocator;
 class GpuMeshCache;
 class MaterialCache;
+class PassExecutionDiagnostics;
+class RenderCommandContext;
+class RenderGpuScene;
 class RenderHardwareInterface;
+class RenderRayTracingScene;
 class RhiCommandSubmissionService;
 class TextureCache;
+struct RayTracingCapabilityReport;
 struct PreparedRenderPrimitive;
 struct RenderDeformationWork;
 struct PreparedRenderScene;
+struct RenderRayTracingFrameBindings;
+struct RenderSceneGpuBindings;
+struct RenderView;
 
 enum class RenderSceneApplyStatus : std::uint8_t
 {
@@ -40,12 +49,27 @@ public:
 	    RhiCommandSubmissionService* submissionService,
 	    GpuMeshCache& gpuMeshCache,
 	    TextureCache& textureCache,
-	    RenderHardwareInterface& renderHardwareInterface);
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RayTracingCapabilityReport& rayTracingCapabilities);
 	~RenderScene() noexcept;
 
 	RenderSceneApplyStatus Apply(const RenderSceneDelta& delta, RenderSceneDynamicData dynamic, std::string& diagnostic);
 	void PromoteResidentGpuMeshes() noexcept;
 	void BuildMaterials(PreparedRenderScene& preparedScene);
+	const RenderSceneGpuBindings& UpdateGpuScene(
+	    const PreparedRenderScene& preparedScene,
+	    const RenderView& view,
+	    std::uint32_t frameIndex);
+	void PlanRayTracingFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept;
+	RenderRayTracingFrameBindings PrepareRayTracingFrame(const PreparedRenderScene& preparedScene) noexcept;
+	void BuildRayTracingScene(
+	    RenderCommandContext& commandContext,
+	    const PreparedRenderScene& preparedScene,
+	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
+	bool IsRayTracingAvailable() const noexcept;
+	bool HasValidRayTracingTlas() const noexcept;
+	RhiGpuVirtualAddress GetRayTracingTlasGpuAddress() const noexcept;
+	const RayTracingCapabilityReport& GetRayTracingCapabilities() const noexcept;
 	void CommitContinuity(std::span<const PreparedRenderPrimitive> primitives, const RenderDeformationWork& deformation);
 	void ResetContinuity() noexcept;
 	DirectX::XMFLOAT4X4 ResolvePreviousWorldMatrix(const RenderPrimitive& primitive) const noexcept;
@@ -99,6 +123,8 @@ private:
 
 	std::vector<RenderPrimitive> m_primitives;
 	std::unique_ptr<GpuSceneSlotAllocator> m_gpuSceneSlots;
+	std::unique_ptr<RenderGpuScene> m_renderGpuScene;
+	std::unique_ptr<RenderRayTracingScene> m_renderRayTracingScene;
 	GpuMeshCache* m_gpuMeshCache = nullptr;
 	std::unique_ptr<MaterialCache> m_materialCache;
 	RenderMaterialTable m_materials;

@@ -18,7 +18,6 @@ class RenderDeviceServices;
 class RenderHardwareInterface;
 class RendererMemoryMonitor;
 class RendererImageProviderStack;
-class RenderRayTracingScene;
 class RenderScenePreparation;
 class RhiImGuiRenderer;
 class RenderScene;
@@ -61,8 +60,6 @@ public:
 	GpuMeshCache& GetGpuMeshCache() noexcept { return *m_gpuMeshCache; }
 	TextureCache& GetTextureCache() noexcept { return *m_textureCache; }
 	RenderScenePreparation& GetRenderScenePreparation() noexcept { return *m_renderScenePreparation; }
-	RenderRayTracingScene* GetRenderRayTracingScene() noexcept { return m_renderRayTracingScene.get(); }
-	const RenderRayTracingScene* GetRenderRayTracingScene() const noexcept { return m_renderRayTracingScene.get(); }
 	RenderViewBuilder& GetRenderViewBuilder() noexcept { return *m_renderViewBuilder; }
 	RenderViewPreparation& GetRenderViewPreparation() noexcept { return *m_renderViewPreparation; }
 	RenderViewState& GetRenderViewState() noexcept { return *m_renderViewState; }
@@ -99,7 +96,6 @@ private:
 	std::unique_ptr<GpuMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureCache> m_textureCache;
 	std::unique_ptr<RenderScenePreparation> m_renderScenePreparation;
-	std::unique_ptr<RenderRayTracingScene> m_renderRayTracingScene;
 	std::unique_ptr<RenderViewBuilder> m_renderViewBuilder;
 	std::unique_ptr<RenderViewPreparation> m_renderViewPreparation;
 	std::unique_ptr<RenderViewState> m_renderViewState;

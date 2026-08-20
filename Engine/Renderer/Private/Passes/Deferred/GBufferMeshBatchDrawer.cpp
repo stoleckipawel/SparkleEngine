@@ -1,5 +1,7 @@
 #include "../../PCH.h"
 
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
+
 #include "Passes/Deferred/GBufferMeshBatchDrawer.h"
 
 #include "Commands/RenderCommandContext.h"
@@ -146,7 +148,7 @@ void GBufferMeshBatchDrawer::DrawBatch(
 {
 	const PreparedRenderScene& preparedScene = frame.preparedScene;
 	if (batch.meshKind == RenderMeshKind::Skeletal
-	    && (!frame.sceneGpuData->Geometry.HasSkinningBuffers() || !HasValidSkinning(preparedScene, frame.view, batch)))
+	    && (!frame.preparedScene.gpuBindings->Geometry.HasSkinningBuffers() || !HasValidSkinning(preparedScene, frame.view, batch)))
 	{
 		return;
 	}
@@ -178,7 +180,7 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
     const RasterPassPipelineRuntime& runtime,
     const GBufferPass::DrawParameterMetadata& drawParameterMetadata)
 {
-	if (passRuntimeContext.Meshes == nullptr || !frame.sceneGpuData->Geometry.HasMeshInstanceBuffers())
+	if (passRuntimeContext.Meshes == nullptr || !frame.preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
 	{
 		return;
 	}

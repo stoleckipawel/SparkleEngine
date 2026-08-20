@@ -9,7 +9,7 @@ file(TO_CMAKE_PATH "${SPARKLE_REPO_ROOT}" SPARKLE_REPO_ROOT)
 set(SPARKLE_BOUNDARY_SOURCE_FILE_REGEX "\\.(c|cc|cpp|cppm|cxx|h|hh|hpp|hxx|inl|ixx|cmake|manifest)$|/CMakeLists\\.txt$")
 set(SPARKLE_BOUNDARY_NATIVE_API_REGEX "<d3d12\\.h>|<vulkan/vulkan\\.h>|ID3D12|D3D12_|Vk[A-Z]|vk[A-Z]|Vulkan::Vulkan|\"D3D12/|\"Vulkan/")
 set(SPARKLE_BOUNDARY_NATIVE_PTLAS_REGEX "VK_NV_partitioned_acceleration_structure|VkPartitionedAccelerationStructure|VkBuildPartitionedAccelerationStructure|VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV|vk(Get|Cmd)PartitionedAccelerationStructures|NvAPI_D3D12|NVAPI_D3D12|D3D12_RTAS_PARTITIONED_TLAS|ExecuteIndirectRTASOperations")
-set(SPARKLE_BOUNDARY_RENDERER_SHADER_DATA_REGEX "(Frame|View|ViewCamera|ViewTemporal)UniformData|PerObjectConstantBufferData|RenderViewLightingData|MeshInstanceShaderData|MeshInstanceData|VertexSkinInfluenceData|JointMatrixData")
+set(SPARKLE_BOUNDARY_RENDERER_SHADER_DATA_REGEX "(Frame|View|ViewCamera|ViewTemporal)UniformData|PerObjectConstantBufferData|SceneLightingUniformData|LightGpuData|MeshInstanceShaderData|MeshInstanceData|VertexSkinInfluenceData|JointMatrixData")
 set(SPARKLE_BOUNDARY_D3D12_IN_VULKAN_REGEX "D3D12/|<d3d12\\.h>|ID3D12|D3D12_")
 set(SPARKLE_BOUNDARY_VULKAN_IN_D3D12_REGEX "Vulkan/|<vulkan/vulkan\\.h>|Vk[A-Z]|vk[A-Z]|Vulkan::Vulkan")
 set(SPARKLE_BOUNDARY_RENDERER_HIGH_LEVEL_ORCHESTRATOR_REGEX

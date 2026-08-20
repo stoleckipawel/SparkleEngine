@@ -20,6 +20,7 @@
 #include <vector>
 
 class RenderMaterialGeneration;
+struct RenderSceneGpuBindings;
 
 struct ResolvedMaterialTextureTable final
 {
@@ -49,6 +50,8 @@ struct PreparedRenderScene final
 	std::shared_ptr<const RenderMaterialGeneration> materialGeneration;
 	std::span<const MaterialData> materials;
 	ResolvedMaterialTextureTable materialTextureTable = {};
+	// This borrows the selected frame-slot projection owned by RenderScene's GPU capability.
+	const RenderSceneGpuBindings* gpuBindings = nullptr;
 
 	void ResetForReuse() noexcept;
 };

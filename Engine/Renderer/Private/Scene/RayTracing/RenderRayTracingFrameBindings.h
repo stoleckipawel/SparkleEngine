@@ -1,25 +1,19 @@
 #pragma once
 
-#include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
+#include "Scene/RayTracing/RayTracingSceneTlasShaderAccessMode.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 
 #include <cstdint>
 
-struct RayTracingSceneFrameData final
+struct RenderRayTracingFrameBindings final
 {
 	RhiOwnedResourceHandle TlasResource = {};
 	RhiGpuVirtualAddress TlasGpuAddress = 0;
 	RayTracingSceneTlasShaderAccessMode TlasShaderAccessMode = RayTracingSceneTlasShaderAccessMode::Descriptor;
 	std::uint32_t EstimatedInstanceCount = 0;
 
-	bool HasBoundTlas() const noexcept
-	{
-		return TlasResource && TlasGpuAddress != 0;
-	}
+	bool HasBoundTlas() const noexcept { return TlasResource && TlasGpuAddress != 0; }
 
-	bool HasTraceableInstances() const noexcept
-	{
-		return HasBoundTlas() && EstimatedInstanceCount > 0;
-	}
+	bool HasTraceableInstances() const noexcept { return HasBoundTlas() && EstimatedInstanceCount > 0; }
 };

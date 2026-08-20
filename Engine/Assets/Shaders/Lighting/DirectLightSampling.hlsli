@@ -1,7 +1,8 @@
 #ifndef SPARKLE_DIRECT_LIGHT_SAMPLING_HLSLI
 #define SPARKLE_DIRECT_LIGHT_SAMPLING_HLSLI
 
-#include "Resources/LightConstantBufferData.hlsli"
+#include "Resources/LightGpuData.hlsli"
+#include "Resources/SceneLightingUniformData.hlsli"
 
 #include "Common/Color.hlsli"
 #include "Lighting/AreaLights.hlsli"
@@ -39,22 +40,22 @@ namespace DirectLightSampling
 	{
 		if (light.Type == LightSampling::LightTypeDirectional)
 		{
-			return light.Index < ViewLighting.DirectionalLightCount;
+			return light.Index < SceneLighting.DirectionalLightCount;
 		}
 
 		if (light.Type == LightSampling::LightTypePoint)
 		{
-			return light.Index < ViewLighting.PointLightCount;
+			return light.Index < SceneLighting.PointLightCount;
 		}
 
 		if (light.Type == LightSampling::LightTypeSpot)
 		{
-			return light.Index < ViewLighting.SpotLightCount;
+			return light.Index < SceneLighting.SpotLightCount;
 		}
 
 		if (light.Type == LightSampling::LightTypeRect)
 		{
-			return light.Index < ViewLighting.RectLightCount;
+			return light.Index < SceneLighting.RectLightCount;
 		}
 
 		return false;
@@ -62,38 +63,38 @@ namespace DirectLightSampling
 
 	uint GetDirectLightCount()
 	{
-		return ViewLighting.DirectionalLightCount + ViewLighting.PointLightCount + ViewLighting.SpotLightCount
-		    + ViewLighting.RectLightCount;
+		return SceneLighting.DirectionalLightCount + SceneLighting.PointLightCount + SceneLighting.SpotLightCount
+		    + SceneLighting.RectLightCount;
 	}
 
 	LightId GetDirectLightId(uint linearIndex)
 	{
 		LightId light;
-		if (linearIndex < ViewLighting.DirectionalLightCount)
+		if (linearIndex < SceneLighting.DirectionalLightCount)
 		{
 			light.Type = LightSampling::LightTypeDirectional;
 			light.Index = linearIndex;
 			return light;
 		}
 
-		linearIndex -= ViewLighting.DirectionalLightCount;
-		if (linearIndex < ViewLighting.PointLightCount)
+		linearIndex -= SceneLighting.DirectionalLightCount;
+		if (linearIndex < SceneLighting.PointLightCount)
 		{
 			light.Type = LightSampling::LightTypePoint;
 			light.Index = linearIndex;
 			return light;
 		}
 
-		linearIndex -= ViewLighting.PointLightCount;
-		if (linearIndex < ViewLighting.SpotLightCount)
+		linearIndex -= SceneLighting.PointLightCount;
+		if (linearIndex < SceneLighting.SpotLightCount)
 		{
 			light.Type = LightSampling::LightTypeSpot;
 			light.Index = linearIndex;
 			return light;
 		}
 
-		linearIndex -= ViewLighting.SpotLightCount;
-		if (linearIndex < ViewLighting.RectLightCount)
+		linearIndex -= SceneLighting.SpotLightCount;
+		if (linearIndex < SceneLighting.RectLightCount)
 		{
 			light.Type = LightSampling::LightTypeRect;
 			light.Index = linearIndex;
@@ -157,7 +158,7 @@ namespace DirectLightSampling
 		float distanceToLight = 0.0f;
 		const float3 directionWorld = PunctualLights::GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float noL = max(dot(normalWorld, directionWorld), 0.0f);
-		const PointLightConstantBufferData light = PointLights[lightIndex];
+		const PointLightGpuData light = PointLights[lightIndex];
 		const float distanceAttenuation =
 		    PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
 		return CommonColor::LuminanceRec709(max(light.Color * light.LuminousIntensity * distanceAttenuation, 0.0f.xxx)) * noL;
@@ -168,7 +169,7 @@ namespace DirectLightSampling
 		float distanceToLight = 0.0f;
 		const float3 directionWorld = PunctualLights::GetSpotLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float noL = max(dot(normalWorld, directionWorld), 0.0f);
-		const SpotLightConstantBufferData light = SpotLights[lightIndex];
+		const SpotLightGpuData light = SpotLights[lightIndex];
 		const float distanceAttenuation =
 		    PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
 		const float angularAttenuation =
@@ -179,7 +180,7 @@ namespace DirectLightSampling
 
 	float EstimateRectLightWeight(uint lightIndex, float3 positionWorld, float3 normalWorld)
 	{
-		const RectLightConstantBufferData light = RectLights[lightIndex];
+		const RectLightGpuData light = RectLights[lightIndex];
 		const float width = max(light.Width, 0.0f);
 		const float height = max(light.Height, 0.0f);
 		const float area = width * height;

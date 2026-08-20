@@ -1,12 +1,12 @@
 #pragma once
 
-class RenderRayTracingScene;
+class RenderScene;
 struct RayTracingCapabilityReport;
 struct RayTracedShadowSettings;
 
 struct RayTracingPassContext
 {
-	RenderRayTracingScene* Scene = nullptr;
+	RenderScene* Scene = nullptr;
 	const RayTracingCapabilityReport* CapabilityReport = nullptr;
 	const RayTracedShadowSettings* ShadowSettings = nullptr;
 	bool ShadowsEnabled = true;

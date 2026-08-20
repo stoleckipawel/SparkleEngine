@@ -14,7 +14,7 @@
 class TaskExecutionContext;
 class TaskExecutor;
 struct PreparedRenderScene;
-class RenderRayTracingScene;
+class RenderScene;
 struct RenderMeshWorldBounds;
 struct RenderView;
 
@@ -22,7 +22,7 @@ class RenderViewPreparation final
 {
 public:
 	explicit RenderViewPreparation(TaskExecutor& taskExecutor) noexcept;
-	void Prepare(const PreparedRenderScene& scene, RenderView& view, RenderRayTracingScene* rayTracingScene);
+	void Prepare(const PreparedRenderScene& preparedScene, RenderView& view, RenderScene& renderScene);
 
 private:
 	struct Run final

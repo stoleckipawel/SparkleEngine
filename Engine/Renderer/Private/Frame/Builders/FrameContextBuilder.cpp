@@ -3,10 +3,8 @@
 #include "Frame/Builders/FrameContextBuilder.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "Scene/Preparation/RenderScenePreparation.h"
 #include "Scene/RenderScene.h"
-#include "SceneData/GpuScene/PersistentRenderGpuScene.h"
 #include "View/RenderViewBuilder.h"
 #include "View/RenderViewPreparation.h"
 #include "View/RenderViewState.h"
@@ -40,8 +38,8 @@ void FrameContextBuilder::Build(FrameContext& frame, const FrameContextBuildRequ
 	        .ShaderGeneration = request.ShaderGeneration,
 	        .ImageProviderGeneration = request.ImageProviderGeneration,
 	        .GraphTopologyGeneration = request.GraphTopologyGeneration});
-			
-	m_renderViewPreparation.Prepare(frame.preparedScene, frame.view, request.RayTracingScene);
 
-	frame.sceneGpuData = &request.GpuScene.Update(frame.preparedScene, frame.view, request.FrameIndex);
+	m_renderViewPreparation.Prepare(frame.preparedScene, frame.view, m_scene);
+
+	frame.preparedScene.gpuBindings = &m_scene.UpdateGpuScene(frame.preparedScene, frame.view, request.FrameIndex);
 }

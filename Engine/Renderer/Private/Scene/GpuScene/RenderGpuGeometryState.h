@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SceneData/GpuScene/PersistentStructuredBuffer.h"
-#include "SceneData/GpuScene/RenderGpuScenePayloads.h"
+#include "Scene/GpuScene/PersistentStructuredBuffer.h"
+#include "Scene/GpuScene/RenderGpuScenePayloads.h"
 
 #include <cstdint>
 #include <vector>

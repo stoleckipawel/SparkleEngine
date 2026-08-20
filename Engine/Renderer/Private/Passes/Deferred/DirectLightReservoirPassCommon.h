@@ -7,7 +7,8 @@
 #include "ShaderData/FrameUniformData.h"
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
-#include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/LightGpuData.h"
+#include "ShaderData/SceneLightingUniformData.h"
 
 #include <type_traits>
 
@@ -25,7 +26,7 @@ struct DirectLightReservoirCommonParameters
 	ShaderUniform<FrameUniformData> Frame;
 	ShaderUniform<ViewUniformData> View;
 	ShaderUniform<ViewCameraUniformData> ViewCamera;
-	ShaderUniform<ViewLightingData> ViewLighting;
+	ShaderUniform<SceneLightingUniformData> SceneLighting;
 	ShaderBuffer<void> DirectionalLights;
 	ShaderBuffer<void> PointLights;
 	ShaderBuffer<void> SpotLights;
@@ -68,8 +69,8 @@ struct DirectLightReservoirCommonParameters
 	template <typename TParameters> static void DescribeLighting(ShaderParameterStructBuilder<TParameters>& builder)
 	{
 		builder.Uniform(
-		    "ViewLighting",
-		    Member<TParameters>(&DirectLightReservoirCommonParameters::ViewLighting),
+		    "SceneLighting",
+		    Member<TParameters>(&DirectLightReservoirCommonParameters::SceneLighting),
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "DirectionalLights",

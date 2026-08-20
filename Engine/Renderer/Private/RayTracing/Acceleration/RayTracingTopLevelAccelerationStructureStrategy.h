@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RayTracing/Scene/RayTracingSceneFrameData.h"
-#include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
+#include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
+#include "Scene/RayTracing/RayTracingSceneTlasShaderAccessMode.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureBuildStats.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
@@ -35,7 +35,7 @@ public:
 	virtual const char* GetStrategyName() const noexcept = 0;
 	virtual ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept = 0;
 	virtual const char* GetActiveProviderReason() const noexcept = 0;
-	virtual RayTracingSceneFrameData Prepare(
+	virtual RenderRayTracingFrameBindings Prepare(
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept = 0;
 	virtual RayTracingTopLevelAccelerationStructureBuildResult Build(

@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "SceneData/GpuScene/RenderGpuRayTracingPayloadBuilder.h"
+#include "Scene/GpuScene/RenderGpuRayTracingPayloadBuilder.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Meshes/GpuMesh.h"

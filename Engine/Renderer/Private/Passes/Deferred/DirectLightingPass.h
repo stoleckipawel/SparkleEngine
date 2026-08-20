@@ -9,7 +9,8 @@
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
-#include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/LightGpuData.h"
+#include "ShaderData/SceneLightingUniformData.h"
 
 #include <cstdint>
 
@@ -38,7 +39,7 @@ struct DirectLightingPassParameters
 	ShaderUniform<ViewUniformData> View;
 	ShaderUniform<ViewCameraUniformData> ViewCamera;
 	ShaderUniform<ViewTemporalUniformData> ViewTemporal;
-	ShaderUniform<ViewLightingData> ViewLighting;
+	ShaderUniform<SceneLightingUniformData> SceneLighting;
 	ShaderBuffer<void> DirectionalLights;
 	ShaderBuffer<void> PointLights;
 	ShaderBuffer<void> SpotLights;
@@ -70,7 +71,7 @@ struct DirectLightingPassParameters
 		builder.Uniform("View", &DirectLightingPassParameters::View, ShaderStageVisibility::Compute);
 		builder.Uniform("ViewCamera", &DirectLightingPassParameters::ViewCamera, ShaderStageVisibility::Compute);
 		builder.Uniform("ViewTemporal", &DirectLightingPassParameters::ViewTemporal, ShaderStageVisibility::Compute);
-		builder.Uniform("ViewLighting", &DirectLightingPassParameters::ViewLighting, ShaderStageVisibility::Compute);
+		builder.Uniform("SceneLighting", &DirectLightingPassParameters::SceneLighting, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("DirectionalLights", &DirectLightingPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &DirectLightingPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &DirectLightingPassParameters::SpotLights, ShaderStageVisibility::Compute);

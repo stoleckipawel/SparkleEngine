@@ -9,14 +9,13 @@ class RhiCommandSubmissionService;
 
 class GpuSceneSlotAllocator final
 {
-  public:
-	explicit GpuSceneSlotAllocator(
-	    RhiCommandSubmissionService* submissionService) noexcept;
+public:
+	explicit GpuSceneSlotAllocator(RhiCommandSubmissionService* submissionService) noexcept;
 
 	std::uint32_t Allocate();
 	void Retire(std::uint32_t slot);
 
-  private:
+private:
 	struct RetiredSlot final
 	{
 		std::uint32_t Slot = 0;

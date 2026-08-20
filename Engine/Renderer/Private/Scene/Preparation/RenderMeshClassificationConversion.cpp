@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "SceneData/RenderMeshClassificationConversion.h"
+#include "Scene/Preparation/RenderMeshClassificationConversion.h"
 
 namespace RenderMeshClassificationConversion
 {
@@ -11,9 +11,13 @@ namespace RenderMeshClassificationConversion
 	{
 		switch (kind)
 		{
-			case SceneMeshInstanceGroupKind::SharedMeshReference: return RenderMeshInstanceGroupKind::SharedMeshReference;
-			case SceneMeshInstanceGroupKind::AuthoredInstanceGroup: return RenderMeshInstanceGroupKind::AuthoredInstanceGroup;
-			case SceneMeshInstanceGroupKind::None: default: return RenderMeshInstanceGroupKind::None;
+			case SceneMeshInstanceGroupKind::SharedMeshReference:
+				return RenderMeshInstanceGroupKind::SharedMeshReference;
+			case SceneMeshInstanceGroupKind::AuthoredInstanceGroup:
+				return RenderMeshInstanceGroupKind::AuthoredInstanceGroup;
+			case SceneMeshInstanceGroupKind::None:
+			default:
+				return RenderMeshInstanceGroupKind::None;
 		}
 	}
 	RenderMeshInstanceGroupIndex ToRenderMeshInstanceGroupIndex(SceneMeshInstanceGroupIndex index) noexcept

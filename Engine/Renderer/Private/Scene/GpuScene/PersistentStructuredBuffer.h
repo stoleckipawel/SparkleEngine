@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Resources/OwnedStructuredBuffer.h"
-#include "SceneData/RenderSceneGpuData.h"
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 
 #include <cstddef>
 #include <span>
@@ -18,7 +18,7 @@ struct StructuredBufferElementRange final
 
 class PersistentStructuredBuffer final
 {
-  public:
+public:
 	void Update(
 	    RhiResourceService& resourceService,
 	    std::span<const std::byte> payload,
@@ -45,10 +45,10 @@ class PersistentStructuredBuffer final
 	    std::uint32_t strideInBytes,
 	    std::span<const StructuredBufferElementRange> ranges,
 	    std::wstring_view debugName);
-	RenderSceneGpuBuffer GetBinding() const noexcept;
+	RenderSceneGpuBufferBinding GetBinding() const noexcept;
 	void Reset() noexcept;
 
-  private:
+private:
 	void Grow(
 	    RhiResourceService& resourceService,
 	    std::span<const std::byte> payload,

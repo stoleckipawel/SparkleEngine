@@ -120,7 +120,7 @@ const char* RayTracingPartitionedTlasStrategy::GetActiveProviderReason() const n
 	return m_activeProviderReason;
 }
 
-RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::Prepare(
+RenderRayTracingFrameBindings RayTracingPartitionedTlasStrategy::Prepare(
     const PreparedRenderScene& preparedScene,
     RayTracingTopLevelScenePlanner* scenePlanner) noexcept
 {
@@ -288,15 +288,15 @@ RhiPartitionedTlasDesc RayTracingPartitionedTlasStrategy::BuildPartitionedTlasLa
 	    .AllowPartitionTranslation = false};
 }
 
-RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::BuildPartitionedTlasFrameData(
+RenderRayTracingFrameBindings RayTracingPartitionedTlasStrategy::BuildPartitionedTlasFrameData(
     const PreparedRenderScene& preparedScene) const noexcept
 {
-	RayTracingSceneFrameData frameData{};
-	frameData.TlasResource = m_partitionedResources.Storage;
-	frameData.TlasGpuAddress = m_partitionedResources.StorageAddress;
-	frameData.TlasShaderAccessMode = GetSceneTlasShaderAccessMode();
-	frameData.EstimatedInstanceCount = static_cast<std::uint32_t>(preparedScene.rayTracingWork.PartitionedTlasBlasInputIndices.size());
-	return frameData;
+	RenderRayTracingFrameBindings frameBindings{};
+	frameBindings.TlasResource = m_partitionedResources.Storage;
+	frameBindings.TlasGpuAddress = m_partitionedResources.StorageAddress;
+	frameBindings.TlasShaderAccessMode = GetSceneTlasShaderAccessMode();
+	frameBindings.EstimatedInstanceCount = static_cast<std::uint32_t>(preparedScene.rayTracingWork.PartitionedTlasBlasInputIndices.size());
+	return frameBindings;
 }
 
 void RayTracingPartitionedTlasStrategy::ReleasePartitionedTlasResources() noexcept

@@ -28,4 +28,5 @@ void PreparedRenderScene::ResetForReuse() noexcept
 	materialGeneration.reset();
 	materials = {};
 	materialTextureTable = {};
+	gpuBindings = nullptr;
 }

@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "RayTracing/Scene/RenderRayTracingScene.h"
+#include "Scene/RayTracing/RenderRayTracingScene.h"
 
 #include "Commands/RenderCommandContext.h"
 #include "Meshes/GpuMeshCache.h"
@@ -49,7 +49,7 @@ void RenderRayTracingScene::PlanFrame(const PreparedRenderScene& preparedScene, 
 	}
 }
 
-RayTracingSceneFrameData RenderRayTracingScene::Prepare(const PreparedRenderScene& preparedScene) noexcept
+RenderRayTracingFrameBindings RenderRayTracingScene::Prepare(const PreparedRenderScene& preparedScene) noexcept
 {
 	if (m_topLevelAccelerationStructureStrategy == nullptr)
 	{
@@ -120,15 +120,6 @@ bool RenderRayTracingScene::HasValidTlas() const noexcept
 	return m_topLevelAccelerationStructureStrategy != nullptr && m_topLevelAccelerationStructureStrategy->HasValidSceneTlas();
 }
 
-RhiOwnedResourceHandle RenderRayTracingScene::GetTlasResource() const noexcept
-{
-	if (m_topLevelAccelerationStructureStrategy == nullptr)
-	{
-		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS resource owner.");
-	}
-	return m_topLevelAccelerationStructureStrategy->GetSceneTlasResource();
-}
-
 RhiGpuVirtualAddress RenderRayTracingScene::GetTlasGpuAddress() const noexcept
 {
 	if (m_topLevelAccelerationStructureStrategy == nullptr)
@@ -136,29 +127,6 @@ RhiGpuVirtualAddress RenderRayTracingScene::GetTlasGpuAddress() const noexcept
 		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS address owner.");
 	}
 	return m_topLevelAccelerationStructureStrategy->GetSceneTlasGpuAddress();
-}
-
-RayTracingSceneTlasShaderAccessMode RenderRayTracingScene::GetTlasShaderAccessMode() const noexcept
-{
-	if (m_topLevelAccelerationStructureStrategy == nullptr)
-	{
-		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS shader-access owner.");
-	}
-	return m_topLevelAccelerationStructureStrategy->GetSceneTlasShaderAccessMode();
-}
-
-std::uint32_t RenderRayTracingScene::GetTlasInstanceCount() const noexcept
-{
-	if (m_topLevelAccelerationStructureStrategy == nullptr)
-	{
-		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS instance-count owner.");
-	}
-	return m_topLevelAccelerationStructureStrategy->GetSceneTlasInstanceCount();
-}
-
-const RayTracingPerformanceMetrics& RenderRayTracingScene::GetPerformanceMetrics() const noexcept
-{
-	return m_performanceMetrics;
 }
 
 void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept

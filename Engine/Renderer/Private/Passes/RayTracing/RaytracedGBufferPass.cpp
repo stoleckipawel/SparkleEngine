@@ -1,4 +1,6 @@
 #include "../../PCH.h"
+
+#include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Passes/RayTracing/RaytracedGBufferPass.h"
 
 #include "Frame/Core/FrameContext.h"
@@ -89,8 +91,8 @@ void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInsta
 
 	SetParameters(parameters, context.Frame, context.Frame.view, context.Runtime);
 	parameters->RaytracedGBufferConstants = RaytracedGBufferUniformData{
-	    .RayTracingHitInstanceCount = context.Frame.sceneGpuData->RayTracing.InstanceCount,
-	    .RayTracingHitMaterialCount = context.Frame.sceneGpuData->RayTracing.MaterialCount};
+	    .RayTracingHitInstanceCount = context.Frame.preparedScene.gpuBindings->RayTracing.InstanceCount,
+	    .RayTracingHitMaterialCount = context.Frame.preparedScene.gpuBindings->RayTracing.MaterialCount};
 	ComputePassOperations::DispatchSized<RaytracedGBufferPass>(
 	    context,
 	    m_runtime,

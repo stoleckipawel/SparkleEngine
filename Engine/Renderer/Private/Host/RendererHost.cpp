@@ -12,7 +12,6 @@
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
-#include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "RHI/Public/CVars/RHICVars.h"
 #include "Scene/RenderScene.h"
@@ -166,10 +165,7 @@ void RendererHost::InitializeCoreRuntime(
 	}
 
 	RenderDiagnostics& backendDiagnostics = renderHardwareInterface.GetDiagnostics();
-	const RayTracingCapabilityReport rayTracingCapabilities =
-	    RayTracingCapabilityReporter::Build(renderHardwareInterface.GetCapabilities());
 	m_imageProviders = std::make_unique<RendererImageProviderStack>(renderHardwareInterface);
-	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(renderHardwareInterface, *m_gpuMeshCache, rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
 }
@@ -177,6 +173,8 @@ void RendererHost::InitializeCoreRuntime(
 void RendererHost::InitializeSceneRuntime(TaskExecutor& taskExecutor, TaskScope& applicationTaskScope) noexcept
 {
 	RenderHardwareInterface& renderHardwareInterface = GetRenderHardwareInterface();
+	const RayTracingCapabilityReport rayTracingCapabilities =
+	    RayTracingCapabilityReporter::Build(renderHardwareInterface.GetCapabilities());
 	m_textureCache = std::make_unique<TextureCache>(
 	    renderHardwareInterface.GetResourceService(),
 	    renderHardwareInterface.GetDescriptorService(),
@@ -188,7 +186,12 @@ void RendererHost::InitializeSceneRuntime(TaskExecutor& taskExecutor, TaskScope&
 	m_renderViewBuilder = std::make_unique<RenderViewBuilder>();
 	m_renderViewPreparation = std::make_unique<RenderViewPreparation>(taskExecutor);
 	m_renderViewState = std::make_unique<RenderViewState>();
-	m_renderScene = std::make_unique<RenderScene>(&GetDeviceServices(), *m_gpuMeshCache, *m_textureCache, GetRenderHardwareInterface());
+	m_renderScene = std::make_unique<RenderScene>(
+	    &GetDeviceServices(),
+	    *m_gpuMeshCache,
+	    *m_textureCache,
+	    renderHardwareInterface,
+	    rayTracingCapabilities);
 }
 
 MeshPreviewGeometry RendererHost::CaptureMeshPreview(std::uintptr_t meshRuntimeId) const

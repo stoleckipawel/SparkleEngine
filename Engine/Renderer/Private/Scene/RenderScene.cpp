@@ -2,10 +2,13 @@
 #include "Scene/RenderScene.h"
 
 #include "Meshes/GpuMeshCache.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "Scene/GpuScene/RenderGpuScene.h"
 #include "Scene/Materials/MaterialCache.h"
 #include "Scene/Preparation/RenderDeformationPreparation.h"
 #include "Scene/Preparation/RenderPrimitivePreparation.h"
-#include "SceneData/GpuScene/GpuSceneSlotAllocator.h"
+#include "Scene/GpuScene/GpuSceneSlotAllocator.h"
+#include "Scene/RayTracing/RenderRayTracingScene.h"
 
 #include <algorithm>
 #include <utility>
@@ -14,14 +17,63 @@ RenderScene::RenderScene(
     RhiCommandSubmissionService* submissionService,
     GpuMeshCache& gpuMeshCache,
     TextureCache& textureCache,
-    RenderHardwareInterface& renderHardwareInterface) :
+    RenderHardwareInterface& renderHardwareInterface,
+    const RayTracingCapabilityReport& rayTracingCapabilities) :
     m_gpuSceneSlots(std::make_unique<GpuSceneSlotAllocator>(submissionService)),
+    m_renderGpuScene(std::make_unique<RenderGpuScene>(renderHardwareInterface.GetResourceService(), gpuMeshCache)),
+    m_renderRayTracingScene(std::make_unique<RenderRayTracingScene>(renderHardwareInterface, gpuMeshCache, rayTracingCapabilities)),
     m_gpuMeshCache(&gpuMeshCache),
     m_materialCache(std::make_unique<MaterialCache>(textureCache, renderHardwareInterface))
 {
 }
 
 RenderScene::~RenderScene() noexcept = default;
+
+const RenderSceneGpuBindings& RenderScene::UpdateGpuScene(
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
+    std::uint32_t frameIndex)
+{
+	return m_renderGpuScene->Update(preparedScene, view, frameIndex);
+}
+
+void RenderScene::PlanRayTracingFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept
+{
+	m_renderRayTracingScene->PlanFrame(preparedScene, cameraPosition);
+}
+
+RenderRayTracingFrameBindings RenderScene::PrepareRayTracingFrame(const PreparedRenderScene& preparedScene) noexcept
+{
+	return m_renderRayTracingScene->Prepare(preparedScene);
+}
+
+void RenderScene::BuildRayTracingScene(
+    RenderCommandContext& commandContext,
+    const PreparedRenderScene& preparedScene,
+    PassExecutionDiagnostics* diagnostics) noexcept
+{
+	m_renderRayTracingScene->Build(commandContext, preparedScene, diagnostics);
+}
+
+bool RenderScene::IsRayTracingAvailable() const noexcept
+{
+	return m_renderRayTracingScene->IsAvailable();
+}
+
+bool RenderScene::HasValidRayTracingTlas() const noexcept
+{
+	return m_renderRayTracingScene->HasValidTlas();
+}
+
+RhiGpuVirtualAddress RenderScene::GetRayTracingTlasGpuAddress() const noexcept
+{
+	return m_renderRayTracingScene->GetTlasGpuAddress();
+}
+
+const RayTracingCapabilityReport& RenderScene::GetRayTracingCapabilities() const noexcept
+{
+	return m_renderRayTracingScene->GetCapabilities();
+}
 
 RenderSceneApplyStatus RenderScene::Apply(const RenderSceneDelta& delta, RenderSceneDynamicData dynamic, std::string& diagnostic)
 {
@@ -241,6 +293,8 @@ RenderSceneApplyStatus RenderScene::ApplyValidatedDelta(const RenderSceneDelta& 
 
 	if (delta.ResetScene)
 	{
+		m_renderGpuScene->Reset();
+		m_renderRayTracingScene->Clear();
 		for (const RenderPrimitive& primitive : m_primitives)
 		{
 			m_gpuSceneSlots->Retire(primitive.GpuSceneSlot);
