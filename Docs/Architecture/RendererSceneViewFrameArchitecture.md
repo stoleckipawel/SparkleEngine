@@ -2,9 +2,9 @@
 
 Status: target architecture, Unreal Engine reference analysis, and atomic implementation cutover plan; not implemented behavior
 Date: 2026-08-18
-Scope: GameFramework-to-Renderer publication, persistent render-scene ownership, GPU-scene ownership, one-frame scene and view products, temporal view state, deferred frame orchestration, frame-graph pass inputs, Unreal-familiar concept translation, coherent cross-module naming and directory navigation, complete legacy-path removal, atomic landing, D3D12/Vulkan validation, and cleanup of the current frame path
+Scope: GameFramework-to-Renderer publication, persistent render-scene ownership, GPU-scene ownership, one-frame scene and view products, temporal view state, render-frame orchestration, frame-graph pass inputs, Unreal-familiar concept translation, coherent cross-module naming and directory navigation, complete legacy-path removal, atomic landing, D3D12/Vulkan validation, and cleanup of the current frame path
 
-Implementation checkpoint: Phases 1 through 3 established the target publication boundary, persistent scene authority, prepared scene/current view split, and focused frame/view ABI on `master`. Phase 4 is the unstaged source-level GPU-scene/ray-scene ownership and scene-lighting ABI cutover CL. Later pass and deferred-graph phases remain target architecture, and no executable validation or release-readiness claim is made before Phase 7.
+Implementation checkpoint: Phases 1 through 5 established the target publication boundary, persistent scene authority, prepared scene/current view split, focused frame/view ABI, scene-owned GPU/ray-tracing capabilities, and explicit pass inputs on `master`. The render-frame graph and physical-layout phase remains target architecture, and no executable validation or release-readiness claim is made before Phase 7.
 
 ## Decision
 
@@ -199,7 +199,7 @@ The Phase 0 baseline already had most of the necessary concepts. The problem was
 | `FrameContext` | One render invocation's scene/view aggregate | Owns useful one-frame values, but encourages all passes to reach all frame data. |
 | `PassRuntimeContext` | No desirable direct equivalent | A broad service bag containing RHI, pass runtimes, frame values, display settings, history, caches, ray tracing, and providers. It defeats narrow pass ownership. |
 | `FrameAssemblyResourceLayout` | Scene textures, history, external bindings, and output handles | Legitimate graph topology, but the name hides distinct transient, external, history, and product categories. |
-| `BuildFrame` | Deferred render-graph topology construction | It builds a deferred graph; it does not build a complete frame value. |
+| `BuildFrame` | Render-frame graph topology construction | It builds renderer graph topology; it does not build a complete frame value. |
 | `FramePipeline` | Persistent frame lifecycle plus parts of scene renderer, view family, presentation, and provider orchestration | Too many responsibilities currently converge here. |
 | `RendererHost` | Composition root | Correct long-lived role, but its many getters make it easy for downstream code to treat it as a service locator. |
 
@@ -281,8 +281,8 @@ Coherence means that the same semantic concept uses the same root name across it
 | Scene lighting shader data | scene lights in `RenderSceneDynamicData` | prepared lights plus scene GPU capability | `SceneLightingUniformData` and `DirectionalLightGpuData`/`PointLightGpuData`/`SpotLightGpuData`/`RectLightGpuData` | Counts and structured-buffer records are scene GPU data, never a `ViewLighting*` value or `*ConstantBufferData` record. |
 | Current view | `RenderViewInput` / `ViewportRenderRequest` | `RenderView` | `ViewUniformData`, `ViewTemporalUniformData` | `PerView*` and `PerTemporal*` names are removed in the clean break. |
 | Persistent view continuity | none | `RenderViewState` | graph/provider histories remain with their resource owners | State owns semantic continuity, not history resources. |
-| Deferred graph construction | none | `BuildDeferredFrameGraph` | frame-graph resource handles | Delete generic `BuildFrame`; the function builds graph topology. |
-| Deferred graph resource namespace | none | `DeferredFrameGraphResources` | transient, imported-scene, history, and viewport-product handles | Delete the ambiguous `FrameAssembly*` vocabulary; these are graph handles, not a frame value or scene owner. |
+| Render-frame graph construction | none | `BuildRenderFrameGraph` | frame-graph resource handles | Delete generic `BuildFrame`; the function builds renderer graph topology without naming a shading technique. |
+| Render-frame graph resource namespace | none | `RenderFrameGraphResources` | transient, imported-scene, history, and viewport-product handles | Delete the ambiguous `FrameAssembly*` vocabulary; these are graph handles, not a frame value or scene owner. |
 | Pass recording surface | none | `PassCommandContext` | declared pass parameters | `Context` is allowed only for transient command/resource/diagnostic infrastructure. |
 
 The final implementation must freeze exact spellings before the first mechanical rename. Once frozen, all headers, filenames, forward declarations, member names, diagnostics labels, tests, CMake entries, shader structs, comments, and current documentation use the selected vocabulary. Synonyms such as world/scene, proxy/primitive, camera/view, snapshot/prepared scene, and frame/context must not survive as competing architectural terms.
@@ -303,9 +303,9 @@ An engineer who knows Unreal should recognize the major nouns and lifetimes, the
 | `FSceneViewInitOptions` | `RenderViewInput` plus `ViewportRenderRequest` | GameFramework `Public/Rendering`, then `Renderer/Private/View/RenderViewBuilder.*` | Authored camera publication and renderer-owned viewport/output policy remain separate until view construction. |
 | `FSceneView` plus renderer-private `FViewInfo` | `RenderView` plus `RenderViewPreparation` | `Engine/Renderer/Private/View` | One immutable view value carries the current view and renderer-private view products; there is no inheritance layer or duplicate base/derived storage. |
 | `FSceneViewStateInterface` and private view state | `RenderViewState` | `Engine/Renderer/Private/View/RenderViewState.*` | One concrete owner is enough for the current single-view renderer. History resources remain with the graph/providers. |
-| `FSceneViewFamily` | no target type yet | `RenderFrame` for frame-slot lifetime; deferred graph settings for shared topology policy | `RenderFrame` is not renamed to view family. Add `RenderViewFamily` only when one invocation truly owns multiple simultaneous views. |
-| `FSceneRenderer` / `FDeferredShadingSceneRenderer` | `FramePipeline` plus `BuildDeferredFrameGraph` | `Engine/Renderer/Private/Frame/FramePipeline.*`, then `Frame/Deferred` | Sparkle separates the persistent lifecycle sequencer from deferred graph topology instead of creating one large renderer-invocation class. |
-| scene textures and RDG resource collections | `DeferredFrameGraphResources` | `Engine/Renderer/Private/Frame/Deferred` | These are graph handles grouped by graph role, never persistent `RenderScene` or `RenderView` fields. |
+| `FSceneViewFamily` | no target type yet | `RenderFrame` for frame-slot lifetime; render-frame graph settings for shared topology policy | `RenderFrame` is not renamed to view family. Add `RenderViewFamily` only when one invocation truly owns multiple simultaneous views. |
+| `FSceneRenderer` / `FDeferredShadingSceneRenderer` | `FramePipeline` plus `BuildRenderFrameGraph` | `Engine/Renderer/Private/Frame/FramePipeline.*`, then `Frame/Graph` | Sparkle separates the persistent lifecycle sequencer from technique-neutral graph topology instead of creating one large renderer-invocation class. |
+| scene textures and RDG resource collections | `RenderFrameGraphResources` | `Engine/Renderer/Private/Frame/Graph` | These are graph handles grouped by graph role, never persistent `RenderScene` or `RenderView` fields. |
 | RDG builder/compiler/executor | `FrameGraphBuilder` and `FrameGraph` infrastructure | `Engine/Renderer/Private/FrameGraph` | This folder is rendering-feature-agnostic graph machinery; deferred pass order does not live here. |
 | RDG pass parameter structs | pass-specific parameter structs plus `PassCommandContext` | `Engine/Renderer/Private/Passes` | Semantic inputs are explicit; the execution context contains only commands, declared resources, and diagnostics. |
 
@@ -340,7 +340,7 @@ The path tells the same ownership story as the type name:
 | --- | --- | --- |
 | `Scene/` | retained `RenderScene`, `RenderPrimitive`, scene-owned GPU/ray-tracing capabilities, materials, and view-independent preparation | a home for camera, viewport, visibility, or graph topology |
 | `View/` | `RenderView` construction, `RenderViewState`, visibility, sorting, batching, and other view-derived work | a second scene store or owner of history textures |
-| `Frame/` | `FramePipeline`, `RenderFrame`, frame identity/retirement, and deferred graph assembly | a broad bag of scene, view, pass, and service implementations |
+| `Frame/` | `FramePipeline`, `RenderFrame`, frame identity/retirement, and render-frame graph assembly | a broad bag of scene, view, pass, and service implementations |
 | `Passes/` | feature pass setup, pass-specific parameters, and recording behavior grouped by rendering feature | persistent scene/view state or generic graph machinery |
 | `FrameGraph/` | graph declaration, compilation, resource lifetime/barriers, recording plans, and execution infrastructure | deferred-renderer policy or feature-specific pass order |
 | `ShaderData/` | C++ values that mirror shader ABI layouts | shader reflection/binding machinery or renderer state owners |
@@ -540,17 +540,17 @@ All semantic inputs are pass-specific:
 
 Delete `FrameContext`, `FrameContextBuilder`, `PassExecutionContext`, `PassRuntimeContext`, `RayTracingPassContext`, and `ImageProviderPassContext` after every consumer is assigned to explicit setup, a pass-specific value, a captured focused capability, or deletion. Replace only the recording surface with `PassCommandContext`. Do not introduce `RenderContext`, `RendererServices`, `FrameResources`, or another struct whose purpose is "everything passes may need."
 
-`FrameAssemblyResourceLayout` and its `FrameAssembly*` nested names are clean-break replaced by graph-specific vocabulary:
+`FrameAssemblyResourceLayout` and its `FrameAssembly*` nested names are clean-break replaced by technique-neutral graph vocabulary:
 
-- `DeferredFrameGraphResources`: the top-level handle namespace passed while constructing deferred topology;
-- `DeferredTransientResources`: transient scene, GBuffer, lighting, exposure, and reconstruction handles;
-- `DeferredImportedSceneResources`: graph imports for GPU Scene, sky, and TLAS;
+- `RenderFrameGraphResources`: the top-level handle namespace passed while constructing renderer frame topology;
+- `RenderFrameGraphTransientResources`: transient scene, GBuffer, lighting, exposure, and reconstruction handles;
+- `RenderFrameGraphImportedSceneResources`: graph imports for GPU Scene, sky, and TLAS;
 - `FrameHistoryResourceLayout`: graph-owned persistent history handles;
 - `ViewportFrameProducts`: requested exported viewport-product handles.
 
-`FrameBuildSettings` is replaced by `DeferredFrameGraphSettings`. `BuildDeferredFrameGraph` returns `DeferredFrameGraphResources` directly, so the one-field `FrameBuildResult` wrapper is deleted. `FinalSceneColorProduced` is replaced by one initially invalid `ResolvedSceneColor` graph handle: reconstruction or upscaling publishes the handle it produced, and presentation consumes that handle. `ViewportFrameProducts::FinalSceneColor` remains the distinct encoded viewport product. `FrameGraphBuildResult` remains the distinct factory result that owns the built graph plus its exported resource handles.
+`FrameBuildSettings` is replaced by `RenderFrameGraphSettings`. `BuildRenderFrameGraph` returns `RenderFrameGraphResources` directly, so the one-field `FrameBuildResult` wrapper is deleted. `FinalSceneColorProduced` is replaced by one initially invalid `ResolvedSceneColor` graph handle: reconstruction or upscaling publishes the handle it produced, and presentation consumes that handle. `ViewportFrameProducts::FinalSceneColor` remains the distinct encoded viewport product. `RenderFrameGraphBuildResult` remains the distinct factory result that owns the built graph plus its exported resource handles.
 
-`BuildFrame` becomes `BuildDeferredFrameGraph` because it creates graph topology. Graph handles never move into `RenderScene`, `PreparedRenderScene`, or `RenderView`.
+`BuildFrame` becomes `BuildRenderFrameGraph` because it creates renderer frame-graph topology. Graph handles never move into `RenderScene`, `PreparedRenderScene`, or `RenderView`.
 
 ## Frame Pipeline After The Refactor
 
@@ -584,7 +584,7 @@ SubmitAndPresent
 
 Presentation, editor texture publication, UI playback, and capture may remain subordinate capabilities called by the pipeline, but their implementation should not be interleaved with scene/view preparation.
 
-Keep the name `FramePipeline` for the thin lifecycle sequencer. Do not add a parallel `DeferredRenderer` wrapper or retain a forwarding facade merely to copy Unreal's name; the deferred-specific topology already has the explicit `BuildDeferredFrameGraph` name.
+Keep the name `FramePipeline` for the thin lifecycle sequencer. Do not add a parallel `DeferredRenderer` wrapper or retain a forwarding facade merely to copy Unreal's name; technique selection remains explicit pass/topology policy beneath the neutral `BuildRenderFrameGraph` entry point.
 
 ## Target Code Shape
 
@@ -623,8 +623,8 @@ Engine/Renderer/Private
     RenderFrameIdentity.h
     RenderFrameTime.h
     Retirement/FrameExecutionRetirementQueue.*
-    Deferred/BuildDeferredFrameGraph.*
-    Deferred/DeferredFrameGraphResources.h
+    Graph/BuildRenderFrameGraph.*
+    Graph/RenderFrameGraphResources.h
   Passes/                                      feature-specific setup/recording
     Deferred/...
     RayTracing/...
@@ -777,7 +777,7 @@ The inventory used word-bounded exact names over runtime source, project consume
 ```powershell
 $legacyNames = 'RenderInputFrame|RenderFrameMetadata|RenderWorldDelta|RenderFrameDynamicData|RenderCameraData|RenderFramePacket|RenderWorld|RenderProxy|RenderInputConsumer|RenderInputConsumeResult|RenderSceneData|RenderViewData|RenderCamera|PerFrameDataBuilder|PerViewDataBuilder|TemporalDataBuilder|FrameContextBuilder|FrameContext|PassExecutionContext|PassRuntimeContext|RayTracingPassContext|ImageProviderPassContext|PersistentRenderGpuScene|RenderSceneGpuData|RenderSceneGpuBuffer|RenderSceneGpuLightingData|RenderSceneGpuGeometryData|RenderSceneGpuRayTracingData|RayTracingSceneFrameData|FrameAssemblyResourceLayout|FrameAssemblyTransientResources|FrameAssemblyExternalResources|FrameAssemblyViewportProducts|FrameBuildSettings|FrameBuildResult|FrameResolutionExtents|FinalSceneColorProduced|PerFrameConstantBufferData|PerViewConstantBufferData|PerViewCameraConstantBufferData|PerTemporalConstantBufferData|BuildFrame|RenderTemporalFrameState|ImageProviderFrameContext|RenderConstantBufferData|mainView|RenderViewLightingData|ViewLightingData|ViewLighting|DirectionalLightConstantBufferData|PointLightConstantBufferData|SpotLightConstantBufferData|RectLightConstantBufferData'
 $legacyPathNames = $legacyNames + '|ConstantBuffers|CameraConstantBufferData|TemporalConstantBuffer|LightConstantBufferData'
-$targetNames = 'RenderFrameSubmission|RenderSceneUpdate|RenderSceneDelta|RenderSceneDynamicData|RenderViewInput|RenderViewCameraData|RenderExecutionRequest|RenderFrameIdentity|RenderFrameTime|RenderScene|RenderPrimitive|PreparedRenderScene|RenderScenePreparation|RenderView|RenderViewBuilder|RenderViewState|RenderViewPreparation|RenderGpuScene|RenderSceneGpuBufferBinding|RenderSceneGpuLightingBindings|RenderSceneGpuGeometryBindings|RenderSceneGpuRayTracingBindings|RenderSceneGpuBindings|RenderRayTracingFrameBindings|FrameUniformData|ViewUniformData|ViewCameraUniformData|ViewTemporalUniformData|SceneLightingUniformData|SceneLighting|DirectionalLightGpuData|PointLightGpuData|SpotLightGpuData|RectLightGpuData|PassCommandContext|ImageProviderFrameInput|BuildDeferredFrameGraph|DeferredFrameGraphSettings|DeferredFrameGraphResources|DeferredTransientResources|DeferredImportedSceneResources|ViewportFrameProducts|ResolvedSceneColor'
+$targetNames = 'RenderFrameSubmission|RenderSceneUpdate|RenderSceneDelta|RenderSceneDynamicData|RenderViewInput|RenderViewCameraData|RenderExecutionRequest|RenderFrameIdentity|RenderFrameTime|RenderScene|RenderPrimitive|PreparedRenderScene|RenderScenePreparation|RenderView|RenderViewBuilder|RenderViewState|RenderViewPreparation|RenderGpuScene|RenderSceneGpuBufferBinding|RenderSceneGpuLightingBindings|RenderSceneGpuGeometryBindings|RenderSceneGpuRayTracingBindings|RenderSceneGpuBindings|RenderRayTracingFrameBindings|FrameUniformData|ViewUniformData|ViewCameraUniformData|ViewTemporalUniformData|SceneLightingUniformData|SceneLighting|DirectionalLightGpuData|PointLightGpuData|SpotLightGpuData|RectLightGpuData|PassCommandContext|ImageProviderFrameInput|BuildRenderFrameGraph|RenderFrameGraphSettings|RenderFrameGraphResources|RenderFrameGraphTransientResources|RenderFrameGraphImportedSceneResources|ViewportFrameProducts|ResolvedSceneColor'
 $targetPathNames = $targetNames + '|LightGpuData'
 $legacy = '\b(' + $legacyNames + ')\b'
 $legacyPath = '\b(' + $legacyPathNames + ')\b'
@@ -880,7 +880,7 @@ The Renderer and GameFramework CMake targets use recursive `CONFIGURE_DEPENDS` g
 | `Renderer/Private/SceneData/GpuScene/**`, `SceneData/RenderSceneGpuData.*`, `RayTracing/Scene/RayTracingSceneFrameData.h`, current `RayTracing/Scene/RenderRayTracingScene.*` ownership path | 4 | Move/rename to scene-owned `Scene/GpuScene` and `Scene/RayTracing`; replace every old `*Data` binding group with the frozen `*Bindings` vocabulary and remove old owners/getters. The old `SceneData` root is removed when its last Phase 4 child is gone. |
 | `Renderer/Private/ShaderData/RenderViewLightingData.h`, `Assets/Shaders/Resources/LightConstantBufferData.hlsli`, and their registrations | 4 | Split scene light counts from structured-buffer records into the paired `SceneLightingUniformData` and `LightGpuData` C++/HLSL headers; replace the seven rejected names including every `ViewLighting` binding label. |
 | `Frame/Builders/FrameContextBuilder.*`, `Frame/Core/FrameContext.h`, `FrameGraph/Execution/PassExecutionContext.h`, `FrameGraph/PassRuntimeContext.h`, `RayTracing/Scene/RayTracingPassContext.h`, and the `ImageProviderPassContext` definition in `RendererImageProviderStack.h` | 5 | Replace consumers atomically with `RenderFrame`, explicit semantic inputs, captured focused dependencies, and `PassCommandContext`; delete all old definitions. |
-| Remaining `Frame/Core/**`, `FramePipeline/**`, current feature-assembly directories under `Frame/**`, and old `FrameAssembly*`/`FrameBuild*` paths | 6 | Move retained owners to the frozen `Frame`, `Frame/Deferred`, `Passes`, and `FrameGraph` paths; delete emptied roots and forwarding helpers. |
+| Remaining `Frame/Core/**`, `FramePipeline/**`, current feature-assembly directories under `Frame/**`, and old `FrameAssembly*`/`FrameBuild*` paths | 6 | Move retained owners to the frozen `Frame`, `Frame/Graph`, `Passes`, and `FrameGraph` paths; delete emptied roots and forwarding helpers. |
 
 The dated [Whole Repository Architecture Map](WholeRepositoryMap.md) intentionally retains current names as a source-backed historical snapshot until Phase 7. The binding naming standard already marks broad contexts as target cleanup debt. The target-only geometry-cache, deferred-decal, and editor-camera documents are reconciled in Phase 0 to target vocabulary; none may present an old renderer name as future architecture.
 
@@ -969,7 +969,7 @@ None of the six audited carriers is the final mutable owner of persistent scene 
 | `RenderRayTracingScene`, `RenderRayTracingFrameBindings` | `RenderScene` owns capability/resources; graph/pass setup borrows focused frame bindings | `Engine/Renderer/Private/Scene/RayTracing/RenderRayTracingScene.*`, `RenderRayTracingFrameBindings.h` | 4 |
 | `RenderFrame`, `RenderFrameIdentity` | `FramePipeline` owns active frame slots; retirement queue owns old graph-generation slots until tokens complete | `Engine/Renderer/Private/Frame/RenderFrame.h`, `RenderFrameIdentity.h` | 5 |
 | `PassCommandContext` | frame-graph recording executor lends command/resource/diagnostic infrastructure for one recording call | `Engine/Renderer/Private/FrameGraph/Execution/PassCommandContext.h` | 5 |
-| `BuildDeferredFrameGraph`, `DeferredFrameGraphSettings`, `DeferredFrameGraphResources`, `DeferredTransientResources`, `DeferredImportedSceneResources`, `ViewportFrameProducts`, `ResolvedSceneColor` | graph factory/setup owns topology values and handles for one graph generation | `Engine/Renderer/Private/Frame/Deferred/BuildDeferredFrameGraph.*`, `DeferredFrameGraphResources.h` | 6 |
+| `BuildRenderFrameGraph`, `RenderFrameGraphSettings`, `RenderFrameGraphResources`, `RenderFrameGraphTransientResources`, `RenderFrameGraphImportedSceneResources`, `ViewportFrameProducts`, `ResolvedSceneColor` | graph factory/setup owns topology values and handles for one graph generation | `Engine/Renderer/Private/Frame/Graph/BuildRenderFrameGraph.*`, `RenderFrameGraphResources.h` | 6 |
 
 `SceneLighting` is the one exact C++ pass member, shader-registration binding, and HLSL global name for `SceneLightingUniformData`; no `ViewLighting` alias remains.
 
@@ -1182,7 +1182,7 @@ The CL is not ready for handoff while any old view builder/layout remains. Keep 
 - move logical ownership of `RenderRayTracingScene` beneath `RenderScene` in `Scene/RayTracing`, while keeping rendering passes in `Passes/RayTracing` and backend mechanics behind RHI;
 - update GPU Scene from `PreparedRenderScene` for the selected frame slot, preserving stable slots, dirty ranges, revisions, capacity growth, frame boundaries, and token-based retirement;
 - separate view-independent traceable inputs, view-dependent TLAS planning, and persistent BLAS/TLAS resources according to their lifetimes;
-- keep graph import handles in `DeferredImportedSceneResources`, never in persistent scene capabilities;
+- keep graph import handles in `RenderFrameGraphImportedSceneResources`, never in persistent scene capabilities;
 - reconcile construction, reset, resize, device loss, shutdown, generation invalidation, frame-slot reuse, and delayed GPU completion;
 - remove all old ownership members, getters, reset paths, allocation sites, files, includes, and CMake entries.
 
@@ -1279,7 +1279,7 @@ Phase 5 source checkpoint: `RenderFrame` is the frame-slot owner for identity/ti
 
 #### Implementation prompt
 
-> Implement Phase 6 as one frame-orchestration, graph-vocabulary, and physical-layout CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Make `FramePipeline` a thin lifecycle sequencer, rename deferred graph construction/resources exactly as specified, move files to the canonical Scene/View/Frame/Passes/FrameGraph paths, reconcile CMake/includes, and delete emptied roots and forwarding helpers. Do not build and do not add a `DeferredRenderer` facade. This CL is not independently landable.
+> Implement Phase 6 as one frame-orchestration, graph-vocabulary, and physical-layout CL directly in the unstaged master worktree. Do not create or switch branches, and do not stage, commit, push, or submit; the user owns manual review and any source-control action. Make `FramePipeline` a thin lifecycle sequencer, replace technique-specific or ambiguous graph construction/resource names with the exact neutral `RenderFrameGraph` vocabulary, move files to the canonical Scene/View/Frame/Passes/FrameGraph paths, reconcile CMake/includes, and delete emptied roots and forwarding helpers. Do not build and do not add a renderer facade. This CL is not independently landable.
 
 #### Phase-specific references
 
@@ -1291,13 +1291,13 @@ Phase 5 source checkpoint: `RenderFrame` is the frame-slot owner for identity/ti
 
 #### Required work
 
-- replace `BuildFrame`, `FrameBuildSettings`, and `FrameBuildResult` with `BuildDeferredFrameGraph` and `DeferredFrameGraphSettings`, returning `DeferredFrameGraphResources` directly;
-- replace `FrameAssemblyResourceLayout` and nested `FrameAssembly*` types with `DeferredFrameGraphResources`, `DeferredTransientResources`, `DeferredImportedSceneResources`, and `ViewportFrameProducts`;
+- replace `BuildFrame`, `FrameBuildSettings`, and `FrameBuildResult` with `BuildRenderFrameGraph` and `RenderFrameGraphSettings`, returning `RenderFrameGraphResources` directly;
+- replace `FrameAssemblyResourceLayout` and nested `FrameAssembly*` types with `RenderFrameGraphResources`, `RenderFrameGraphTransientResources`, `RenderFrameGraphImportedSceneResources`, and `ViewportFrameProducts`;
 - replace `FinalSceneColorProduced` with one initially invalid `ResolvedSceneColor` handle published by reconstruction/upscaling and consumed by presentation;
-- delete `FrameResolutionExtents`; render/output extents have one current-view value and are copied into `DeferredFrameGraphSettings` only as topology inputs;
-- keep render/output extent, presentation target, render modes, exposure metering topology, requested outputs, and provider graph key local to deferred graph/pipeline topology;
+- delete `FrameResolutionExtents`; render/output extents have one current-view value and are copied into `RenderFrameGraphSettings` only as topology inputs;
+- keep render/output extent, presentation target, render modes, exposure metering topology, requested outputs, and provider graph key local to render-frame graph/pipeline topology;
 - make `FramePipeline` read as `BeginFrame`, `PrepareFrame`, `ExecuteFrame`, and `SubmitAndPresent`, delegating capability mechanics to their owners;
-- move `FramePipeline.*` under `Frame`, dissolve touched generic `Frame/Core` files into `Frame`, `Frame/Deferred`, `View`, or deletion, and enforce the target directory navigation map;
+- move `FramePipeline.*` under `Frame`, dissolve touched generic `Frame/Core` files into `Frame`, `Frame/Graph`, `View`, or deletion, and enforce the target directory navigation map;
 - keep feature passes under `Passes`, generic graph compilation/execution under `FrameGraph`, shader ABI values under `ShaderData`, and binding/reflection mechanics under `ShaderParameters`;
 - narrow `RendererHost` getters/constructor wiring, delete forwarding-only helpers/members/files, and reconcile all includes, filenames, CMake/source groups, exports, diagnostics, and documentation.
 
@@ -1390,7 +1390,7 @@ The candidate is not landable until every gate below passes against the exact in
 
 | Gate | Required final state | Required proof |
 | --- | --- | --- |
-| Legacy runtime symbols | No definition, declaration, include, construction, parameter, member, call site, test fixture, shader declaration, or registration remains for `RenderInputFrame`, `RenderFrameMetadata`, `RenderWorldDelta`, `RenderFrameDynamicData`, `RenderCameraData`, `RenderFramePacket`, `RenderInputConsumer`, `RenderInputConsumeResult`, `RenderWorld`, `RenderProxy`, `RenderSceneData`, `RenderViewData`, `RenderCamera`, `PerFrameDataBuilder`, `PerViewDataBuilder`, `TemporalDataBuilder`, `RenderTemporalFrameState`, `ImageProviderFrameContext`, `FrameContextBuilder`, `FrameContext`, `PassExecutionContext`, `PassRuntimeContext`, `RayTracingPassContext`, `ImageProviderPassContext`, `PersistentRenderGpuScene`, `RenderSceneGpuData`, `RenderSceneGpuBuffer`, `RenderSceneGpuLightingData`, `RenderSceneGpuGeometryData`, `RenderSceneGpuRayTracingData`, `RayTracingSceneFrameData`, `RenderViewLightingData`, `ViewLightingData`, `ViewLighting`, the four light `*ConstantBufferData` records, `FrameAssemblyResourceLayout`, the nested `FrameAssembly*` types, `FrameBuildSettings`, `FrameBuildResult`, `FrameResolutionExtents`, `FinalSceneColorProduced`, `RenderConstantBufferData`, `PerFrameConstantBufferData`, `PerViewConstantBufferData`, `PerViewCameraConstantBufferData`, or `PerTemporalConstantBufferData`. The deferred graph has no old `BuildFrame` declaration/call site or `mainView` member/access. | Whole-repository exact-symbol search over `Engine`, `Projects`, executable build files, shader sources, tests, and generators returns zero matches. The old `ConstantBuffers.hlsli`, `CameraConstantBufferData.hlsli`, `TemporalConstantBuffer.hlsli`, `LightConstantBufferData.hlsli`, Renderer-private `ShaderData/RenderViewCameraData.h`, and `ShaderData/RenderViewLightingData.h` paths are absent; the target GameFramework `RenderViewCameraData` is the only permitted exact type. This target document may retain old names only to define their deletion. |
+| Legacy runtime symbols | No definition, declaration, include, construction, parameter, member, call site, test fixture, shader declaration, or registration remains for `RenderInputFrame`, `RenderFrameMetadata`, `RenderWorldDelta`, `RenderFrameDynamicData`, `RenderCameraData`, `RenderFramePacket`, `RenderInputConsumer`, `RenderInputConsumeResult`, `RenderWorld`, `RenderProxy`, `RenderSceneData`, `RenderViewData`, `RenderCamera`, `PerFrameDataBuilder`, `PerViewDataBuilder`, `TemporalDataBuilder`, `RenderTemporalFrameState`, `ImageProviderFrameContext`, `FrameContextBuilder`, `FrameContext`, `PassExecutionContext`, `PassRuntimeContext`, `RayTracingPassContext`, `ImageProviderPassContext`, `PersistentRenderGpuScene`, `RenderSceneGpuData`, `RenderSceneGpuBuffer`, `RenderSceneGpuLightingData`, `RenderSceneGpuGeometryData`, `RenderSceneGpuRayTracingData`, `RayTracingSceneFrameData`, `RenderViewLightingData`, `ViewLightingData`, `ViewLighting`, the four light `*ConstantBufferData` records, `FrameAssemblyResourceLayout`, the nested `FrameAssembly*` types, `FrameBuildSettings`, `FrameBuildResult`, `FrameResolutionExtents`, `FinalSceneColorProduced`, `RenderConstantBufferData`, `PerFrameConstantBufferData`, `PerViewConstantBufferData`, `PerViewCameraConstantBufferData`, or `PerTemporalConstantBufferData`. The render-frame graph has no old `BuildFrame` declaration/call site or `mainView` member/access. | Whole-repository exact-symbol search over `Engine`, `Projects`, executable build files, shader sources, tests, and generators returns zero matches. The old `ConstantBuffers.hlsli`, `CameraConstantBufferData.hlsli`, `TemporalConstantBuffer.hlsli`, `LightConstantBufferData.hlsli`, Renderer-private `ShaderData/RenderViewCameraData.h`, and `ShaderData/RenderViewLightingData.h` paths are absent; the target GameFramework `RenderViewCameraData` is the only permitted exact type. This target document may retain old names only to define their deletion. |
 | Legacy files and build membership | No old header/source/shader filename, abandoned directory, CMake source entry, install list, generated manifest entry, or test-data path remains. | `rg --files` inventory plus CMake/manifest searches; configure/build cannot discover an old file through a stale explicit or globbed entry. |
 | Transition machinery | No feature flag, build switch, CVar, environment variable, runtime conditional, typedef, alias, conversion constructor, compatibility overload, adapter, legacy reader/writer, deprecated wrapper, or fallback can select or reconstruct the current architecture. | Diff review plus targeted search for migration vocabulary and old-to-new conversions; every temporary migration helper is absent from the candidate unless it is the canonical generator. |
 | Single runtime authority | Exactly one `RenderScene`, one scene-owned `RenderGpuScene`, one scene-owned `RenderRayTracingScene`, one active `RenderViewState`, and one target frame/view preparation path exist for the current one-view renderer. `FramePipeline` owns none of those persistent capabilities. | Construction/destruction/reset/device-loss/resize/retirement trace; ownership tests; repository search for all allocations, members, getters, and reset paths. |
@@ -1482,7 +1482,7 @@ The refactor is complete only when:
 - the Unreal-to-Sparkle translation table and directory navigation rule match the executable owner graph, with every touched concept in one canonical target path and all emptied old roots removed;
 - `FrameUniformData`, `ViewUniformData`, `ViewCameraUniformData`, `ViewTemporalUniformData`, and focused scene bindings are the only frame/view/scene ABI;
 - graph topology/resources remain owned by the frame graph;
-- `BuildDeferredFrameGraph` is the only deferred graph-construction entry point;
+- `BuildRenderFrameGraph` is the only renderer frame-graph construction entry point;
 - passes use explicit semantic parameters plus narrow `PassCommandContext` infrastructure and cannot reach a broad context or service locator;
 - `FramePipeline` sequences owned stages without owning scene/view capabilities;
 - every target value has one producer, intentional consumers, one lifetime, and a tested invalidation/retirement rule; unsupported request fields are deleted rather than left inert;
