@@ -69,6 +69,7 @@ class SPARKLE_RHI_API RenderCommandList
 	    const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept = 0;
 	virtual void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept = 0;
 	virtual void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept = 0;
+	virtual void EndRasterPass() noexcept = 0;
 	virtual void SetViewport(const RhiViewport& viewport) noexcept = 0;
 	virtual void SetScissorRect(const RhiRect& rect) noexcept = 0;
 	virtual void DrawIndexedInstanced(

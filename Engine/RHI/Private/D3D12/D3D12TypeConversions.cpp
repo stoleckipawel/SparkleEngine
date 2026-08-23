@@ -210,7 +210,7 @@ D3D12_RESOURCE_DESC D3D12TypeConversions::BuildTextureResourceDesc(const RhiText
 	resourceDesc.DepthOrArraySize = desc.ArraySize;
 	resourceDesc.MipLevels = desc.MipLevels;
 	resourceDesc.Format = D3D12ResourceFormatTranslation::ResolveTextureResourceFormat(desc);
-	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Count = desc.SampleCount;
 	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;

@@ -64,6 +64,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil) noexcept override;
 	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept override;
 	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil) noexcept override;
+	void EndRasterPass() noexcept override;
 	void SetViewport(const RhiViewport& viewport) noexcept override;
 	void SetScissorRect(const RhiRect& rect) noexcept override;
 	void DrawIndexedInstanced(

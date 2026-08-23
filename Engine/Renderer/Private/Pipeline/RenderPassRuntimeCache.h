@@ -1,10 +1,13 @@
 #pragma once
 
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Strings/StringUtils.h"
 #include "Pipeline/PassPipelineRuntime.h"
+#include "Pipeline/GraphicsPipelineMaterialization.h"
 #include "Pipeline/RenderPassShaderRuntime.h"
 #include "RHI/Public/Commands/RhiQueue.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
+#include "RHI/Public/Shaders/ShaderParameterLayoutBuilder.h"
 
 #include <cassert>
 #include <cstdint>
@@ -22,7 +25,7 @@ class RenderHardwareInterface;
 class RenderPassRuntimeCache final
 {
 private:
-	template <typename TVertexShader, typename TPixelShader> struct GraphicsShaderPipelineKey;
+	template <typename TVertexShader, typename TPixelShader> struct GraphicsRuntimeTypeTag;
 	template <typename TVertexShader, typename TPixelShader> struct GraphicsRuntimeStorageHolder;
 
 public:
@@ -62,32 +65,42 @@ public:
 	}
 
 	template <typename TVertexShader, typename TPixelShader>
-	void MaterializeGraphicsShaderRuntime(const GraphicsShaderPipelineState& pipelineState) const noexcept
+	void MaterializeGraphicsShaderRuntime(
+	    const RasterPassRenderState& passState,
+	    const RhiRasterizerState& rasterizer,
+	    RhiPrimitiveTopology primitiveTopology,
+	    const RhiVertexInputDeclaration& vertexInput,
+	    const GraphicsAttachmentSignature& attachments) const noexcept
 	{
-		GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& holder =
-		    GetOrCreateGraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>(pipelineState);
-		if (!holder.Runtime.has_value())
+		GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& holder = GetOrCreateGraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>();
+		try
 		{
-			try
-			{
-				holder.Create(*m_renderHardwareInterface, *m_activeGeneration);
-			}
-			catch (const Diagnostics::Error& error)
-			{
-				HandleRuntimeCreationFailure(error.what());
-			}
+			holder.Materialize(
+			    *m_renderHardwareInterface,
+			    *m_activeGeneration,
+			    BuildGraphicsPipelineRequest(passState, rasterizer, primitiveTopology, vertexInput, attachments));
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			HandleRuntimeCreationFailure(error.what());
 		}
 	}
 
-	template <typename TVertexShader, typename TPixelShader> const RasterPassPipelineRuntime& GetGraphicsShaderRuntime() const noexcept
+	template <typename TVertexShader, typename TPixelShader>
+	RasterPassRuntime GetGraphicsShaderRuntime(
+	    const RasterPassRenderState& passState,
+	    const RhiRasterizerState& rasterizer,
+	    RhiPrimitiveTopology primitiveTopology,
+	    const RhiVertexInputDeclaration& vertexInput,
+	    const GraphicsAttachmentSignature& attachments) const noexcept
 	{
-		using PipelineKey = GraphicsShaderPipelineKey<TVertexShader, TPixelShader>;
+		using RuntimeType = GraphicsRuntimeTypeTag<TVertexShader, TPixelShader>;
 		const auto& holders = m_activeGeneration->RuntimeStorageByShaderType;
-		const auto runtime = holders.find(typeid(PipelineKey));
+		const auto runtime = holders.find(typeid(RuntimeType));
 		assert(runtime != holders.end() && "Graphics shader runtime must be materialized before recording.");
 		const auto* const holder = static_cast<const GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>*>(runtime->second.get());
-		assert(holder != nullptr && holder->Runtime.has_value());
-		return *holder->Runtime;
+		assert(holder != nullptr);
+		return holder->Get(BuildGraphicsPipelineRequest(passState, rasterizer, primitiveTopology, vertexInput, attachments));
 	}
 
 private:
@@ -111,8 +124,9 @@ private:
 			    shader,
 			    shaderRef,
 			    Storage,
+			    Pipeline,
 			    [](ComputePipelineDesc&) {});
-			Runtime.emplace(*Storage.BindingLayout, *Storage.Pipeline);
+			Runtime.emplace(*Storage.BindingLayout, *Pipeline);
 		}
 
 		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
@@ -125,22 +139,19 @@ private:
 		}
 
 		RenderPassShaderRuntimeStorage Storage;
+		std::unique_ptr<RenderPipeline> Pipeline;
 		std::optional<ComputePassPipelineRuntime> Runtime;
 	};
 
-	template <typename TVertexShader, typename TPixelShader> struct GraphicsShaderPipelineKey final
+	template <typename TVertexShader, typename TPixelShader> struct GraphicsRuntimeTypeTag final
 	{
 	};
 
 	template <typename TVertexShader, typename TPixelShader> struct GraphicsRuntimeStorageHolder final : IRuntimeStorageHolder
 	{
-		explicit GraphicsRuntimeStorageHolder(GraphicsShaderPipelineState pipelineState) noexcept :
-		    PipelineState(std::move(pipelineState))
-		{
-		}
-
 		void Create(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation)
 		{
+			Generation = generation.Generation;
 			const ShaderRegistrationDesc& vertexShader = GlobalShader<TVertexShader>::GetRegistration();
 			const ShaderRegistrationDesc& pixelShader = GlobalShader<TPixelShader>::GetRegistration();
 			const ShaderRef<TVertexShader> vertexRef =
@@ -153,35 +164,78 @@ private:
 			    vertexRef,
 			    pixelShader,
 			    pixelRef,
-			    true,
-			    Storage,
-			    [this](GraphicsPipelineDesc& pipeline)
-			    {
-				    pipeline.VertexLayout = PipelineState.VertexLayout;
-				    pipeline.RenderWireframe = PipelineState.RenderWireframe;
-				    pipeline.CullMode = PipelineState.CullMode;
-				    pipeline.FrontFaceWinding = PipelineState.FrontFaceWinding;
-				    pipeline.DepthTest = PipelineState.DepthTest;
-				    pipeline.StencilTest = PipelineState.StencilTest;
-				    pipeline.RenderTargetFormats = PipelineState.RenderTargetFormats;
-				    pipeline.RenderTargetCount = PipelineState.RenderTargetCount;
-				    pipeline.DepthStencilFormat = PipelineState.DepthStencilFormat;
-			    });
-			Runtime.emplace(*Storage.BindingLayout, *Storage.Pipeline, Storage.WireframePipeline.get(), Storage.TwoSidedPipeline.get());
+			    Storage);
+			for (const GraphicsPipelineRequest& request : Requests)
+			{
+				MaterializePipeline(renderHardwareInterface, request);
+			}
+		}
+
+		void Materialize(
+		    RenderHardwareInterface& renderHardwareInterface,
+		    const ShaderRuntimeGeneration& generation,
+		    const GraphicsPipelineRequest& request)
+		{
+			if (Storage.BindingLayout == nullptr)
+			{
+				Create(renderHardwareInterface, generation);
+			}
+			const GraphicsPipelineKey key = BuildKey(request);
+			if (Pipelines.contains(key))
+			{
+				return;
+			}
+			Requests.push_back(request);
+			MaterializePipeline(renderHardwareInterface, request);
+		}
+
+		RasterPassRuntime Get(const GraphicsPipelineRequest& request) const noexcept
+		{
+			const auto pipeline = Pipelines.find(BuildKey(request));
+			assert(Storage.BindingLayout != nullptr && pipeline != Pipelines.end() && pipeline->second != nullptr);
+			return RasterPassRuntime{*Storage.BindingLayout, *pipeline->second};
 		}
 
 		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
 		    RenderHardwareInterface& renderHardwareInterface,
 		    const ShaderRuntimeGeneration& generation) const override
 		{
-			auto replacement = std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>(PipelineState);
+			auto replacement = std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>();
+			replacement->Requests = Requests;
 			replacement->Create(renderHardwareInterface, generation);
 			return replacement;
 		}
 
-		GraphicsShaderPipelineState PipelineState;
+		GraphicsPipelineKey BuildKey(const GraphicsPipelineRequest& request) const noexcept
+		{
+			assert(Storage.Shaders.size() == 2 && Storage.Shaders[0].Entry != nullptr && Storage.Shaders[1].Entry != nullptr);
+			return GraphicsPipelineKey{
+			    .ShaderGeneration = Generation,
+			    .VertexShaderCode = Storage.Shaders[0].Entry->CodeHash,
+			    .PixelShaderCode = Storage.Shaders[1].Entry->CodeHash,
+			    .BindingLayout = BuildShaderParameterSignature(Storage.ParameterLayout),
+			    .Request = request};
+		}
+
+		void MaterializePipeline(RenderHardwareInterface& renderHardwareInterface, const GraphicsPipelineRequest& request)
+		{
+			const GraphicsPipelineKey key = BuildKey(request);
+			std::wstring debugName = Strings::ToWide(GlobalShader<TVertexShader>::GetRegistration().ShaderName);
+			debugName += L"_GraphicsKey_";
+			debugName += std::to_wstring(GraphicsPipelineKeyHash{}(key));
+			const GraphicsPipelineDesc desc = BuildGraphicsPipelineDesc(
+			    request,
+			    *Storage.BindingLayout,
+			    Storage.Shaders[0],
+			    Storage.Shaders[1],
+			    debugName.c_str());
+			Pipelines.emplace(key, PipelineRuntimeLibrary::CreateGraphicsPipeline(renderHardwareInterface, desc));
+		}
+
 		RenderPassShaderRuntimeStorage Storage;
-		std::optional<RasterPassPipelineRuntime> Runtime;
+		std::uint64_t Generation = 0;
+		std::vector<GraphicsPipelineRequest> Requests;
+		std::unordered_map<GraphicsPipelineKey, std::unique_ptr<RenderPipeline>, GraphicsPipelineKeyHash> Pipelines;
 	};
 
 	struct ShaderRuntimeGeneration final
@@ -222,26 +276,21 @@ private:
 	}
 
 	template <typename TVertexShader, typename TPixelShader>
-	GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& GetOrCreateGraphicsRuntimeStorageHolder(
-	    const GraphicsShaderPipelineState& pipelineState) const noexcept
+	GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& GetOrCreateGraphicsRuntimeStorageHolder() const noexcept
 	{
-		using PipelineKey = GraphicsShaderPipelineKey<TVertexShader, TPixelShader>;
+		using RuntimeType = GraphicsRuntimeTypeTag<TVertexShader, TPixelShader>;
 		auto& holders = m_activeGeneration->RuntimeStorageByShaderType;
-		auto runtime = holders.find(typeid(PipelineKey));
+		auto runtime = holders.find(typeid(RuntimeType));
 		if (runtime == holders.end())
 		{
 			runtime = holders
 			              .emplace(
-			                  typeid(PipelineKey),
-			                  std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>(pipelineState))
+			                  typeid(RuntimeType),
+			                  std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>())
 			              .first;
 		}
 		auto* const holder = static_cast<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>*>(runtime->second.get());
 		assert(holder != nullptr);
-		if (!(holder->PipelineState == pipelineState))
-		{
-			HandleRuntimeCreationFailure("One graphics shader pair cannot silently reuse a different pipeline state.");
-		}
 		return *holder;
 	}
 

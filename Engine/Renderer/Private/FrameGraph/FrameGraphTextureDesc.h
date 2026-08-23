@@ -20,6 +20,7 @@ struct FrameGraphTextureDesc
 	std::uint32_t height = 0;
 	PixelFormat format = PixelFormat::Unknown;
 	FrameGraphTextureKind kind = FrameGraphTextureKind::Color;
+	std::uint8_t sampleCount = 1;
 	std::array<float, 4> clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
 	static FrameGraphTextureDesc CreateDepthTarget(

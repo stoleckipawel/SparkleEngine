@@ -3,6 +3,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "FrameGraph/FrameGraphRasterPass.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
@@ -20,6 +21,8 @@ class FrameGraphResourceCommands final
 {
 public:
 	explicit FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept;
+	void BeginRasterPass(RenderCommandContext& commandContext, const FrameGraphRasterPass& rasterPass) const noexcept;
+	void EndRasterPass(RenderCommandContext& commandContext) const noexcept;
 
 	void BindRenderTarget(
 	    RenderCommandContext& commandContext,

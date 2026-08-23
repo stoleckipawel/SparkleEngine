@@ -10,6 +10,7 @@
 #include "FrameGraph/FrameGraphResourceResolver.h"
 #include "FrameGraph/FrameGraphResourceStateTracker.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
+#include "FrameGraph/FrameGraphRasterPass.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "FrameGraph/Execution/PassCommandContext.h"
@@ -45,6 +46,7 @@ class FrameGraphBuilder;
 class TaskExecutor;
 class Window;
 class RenderHardwareInterface;
+class RasterPassRenderState;
 struct NativeTextureViewInfo;
 struct RhiNativeInteropRequest;
 class FrameGraph
@@ -321,8 +323,9 @@ public:
 	}
 
 	ShaderAccelerationStructure CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept;
-	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept;
-	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept;
+	FrameGraphRasterPass BuildRasterPass(
+	    const PassParameterSet& parameters,
+	    const RasterPassRenderState& renderState) const;
 
 	template <typename TValue> ShaderUniform<TValue> Uniform(const TValue& value) const noexcept
 	{

@@ -9,6 +9,10 @@
 #include "Meshes/GpuMeshCache.h"
 #include "Passes/Core/ShaderPassOperations.h"
 #include "Pipeline/PassPipelineRuntime.h"
+#include "Pipeline/GraphicsPipelineMaterialization.h"
+#include "Pipeline/RasterPassRenderState.h"
+#include "Pipeline/RenderPassRuntimeCache.h"
+#include "Passes/GBuffer/GBufferShaders.h"
 #include "Scene/Materials/MaterialData.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
@@ -88,31 +92,43 @@ void GBufferMeshBatchDrawer::ConfigureDrawParameters(
 	drawParameters->Vertex.MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = batch.firstInstance};
 }
 
-RasterPassPipelineRuntime GBufferMeshBatchDrawer::ResolveBatchRuntime(
+RhiRasterizerState GBufferMeshBatchDrawer::ResolveRasterizerState(
     const PreparedRenderScene& preparedScene,
     const MeshInstanceBatch& batch,
-    const RasterPassPipelineRuntime& runtime)
+    const GpuMesh& gpuMesh,
+    bool wireframe) noexcept
 {
-	const bool useTwoSidedPipeline = preparedScene.materials[batch.materialSlot].doubleSided && runtime.TwoSidedPipeline != nullptr;
-	return RasterPassPipelineRuntime{
-	    runtime.BindingLayout,
-	    useTwoSidedPipeline ? *runtime.TwoSidedPipeline : runtime.Pipeline,
-	    runtime.WireframePipeline,
-	    runtime.TwoSidedPipeline};
+	const bool twoSided = batch.materialSlot < preparedScene.materials.size()
+	    && preparedScene.materials[batch.materialSlot].doubleSided;
+	return RhiRasterizerState{
+	    .FillMode = wireframe ? RhiFillMode::Wireframe : RhiFillMode::Solid,
+	    .CullMode = twoSided || wireframe ? ERhiCullMode::None : ERhiCullMode::Back,
+	    .FrontFaceWinding = gpuMesh.GetFrontFaceWinding(),
+	    .DepthClipEnable = gpuMesh.UsesDepthClipping()};
 }
 
 bool GBufferMeshBatchDrawer::BindBatchPipeline(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
-    const RasterPassPipelineRuntime& runtime,
+    const RenderPassRuntimeCache& runtimeCache,
+    const RasterPassRenderState& renderState,
+    const GraphicsAttachmentSignature& attachments,
+    const PreparedRenderScene& preparedScene,
+    const MeshInstanceBatch& batch,
     GBufferMeshPass::DrawParameterInstance& drawParameters,
     const GpuMesh& gpuMesh,
-    std::uint32_t viewModeIndex)
+    bool wireframe)
 {
 	PassBindingOverrides overrides;
 	overrides.SetDescriptorTable("SkinInfluences", gpuMesh.GetSkinInfluencesShaderResourceView());
 	overrides.SetDescriptorTable("MorphTargetDeltas", gpuMesh.GetMorphTargetDeltasShaderResourceView());
 
+	const RasterPassRuntime runtime = runtimeCache.GetGraphicsShaderRuntime<GBufferVS, GBufferPS>(
+	    renderState,
+	    ResolveRasterizerState(preparedScene, batch, gpuMesh, wireframe),
+	    gpuMesh.GetPrimitiveTopology(),
+	    gpuMesh.GetVertexInputDeclaration(),
+	    attachments);
 	return ShaderPassOperations::BindAvailableRasterPassWithRuntime(
 	    resources,
 	    commandContext,
@@ -120,8 +136,7 @@ bool GBufferMeshBatchDrawer::BindBatchPipeline(
 	    drawParameters.GetPassParameterSet(),
 	    &overrides,
 	    "GBuffer",
-	    false,
-	    viewModeIndex);
+	    true);
 }
 
 void GBufferMeshBatchDrawer::DrawBatch(
@@ -130,11 +145,13 @@ void GBufferMeshBatchDrawer::DrawBatch(
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
     const GBufferMeshPass::Parameters& passParameters,
-    const RasterPassPipelineRuntime& runtime,
+    const RenderPassRuntimeCache& runtimeCache,
+    const RasterPassRenderState& renderState,
+    const GraphicsAttachmentSignature& attachments,
     const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata,
     const GpuMesh& gpuMesh,
     const MeshInstanceBatch& batch,
-    std::uint32_t viewModeIndex)
+    bool wireframe)
 {
 	if (batch.meshKind == RenderMeshKind::Skeletal
 	    && (!preparedScene.gpuBindings->Geometry.HasSkinningBuffers() || !HasValidSkinning(preparedScene, view, batch)))
@@ -151,8 +168,17 @@ void GBufferMeshBatchDrawer::DrawBatch(
 		return;
 	}
 
-	const RasterPassPipelineRuntime batchRuntime = ResolveBatchRuntime(preparedScene, batch, runtime);
-	if (!BindBatchPipeline(resources, commandContext, batchRuntime, drawParameters, gpuMesh, viewModeIndex))
+	if (!BindBatchPipeline(
+	        resources,
+	        commandContext,
+	        runtimeCache,
+	        renderState,
+	        attachments,
+	        preparedScene,
+	        batch,
+	        drawParameters,
+	        gpuMesh,
+	        wireframe))
 	{
 		return;
 	}
@@ -166,7 +192,10 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
     const GBufferMeshPass::Parameters& parameters,
-    const RasterPassPipelineRuntime& runtime,
+    const RenderPassRuntimeCache& runtimeCache,
+    const RasterPassRenderState& renderState,
+    const GraphicsAttachmentSignature& attachments,
+    bool wireframe,
     const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata) const
 {
 	if (!preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
@@ -174,7 +203,6 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 		return;
 	}
 
-	const std::uint32_t viewModeIndex = view.uniform.ViewModeIndex;
 	for (const MeshInstanceBatch& batch : view.meshInstanceBatches)
 	{
 		if (batch.materialClassification != RenderMaterialClassification::Opaque
@@ -195,10 +223,48 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 		    preparedScene,
 		    view,
 		    parameters,
-		    runtime,
+		    runtimeCache,
+		    renderState,
+		    attachments,
 		    drawParameterMetadata,
 		    *gpuMesh,
 		    batch,
-		    viewModeIndex);
+		    wireframe);
+	}
+}
+
+void GBufferMeshBatchDrawer::MaterializePipelines(
+    const RenderPassRuntimeCache& runtimeCache,
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
+    const RasterPassRenderState& renderState,
+    const GraphicsAttachmentSignature& attachments,
+    bool wireframe) const
+{
+	for (const MeshInstanceBatch& batch : view.meshInstanceBatches)
+	{
+		if (batch.materialClassification != RenderMaterialClassification::Opaque
+		    && batch.materialClassification != RenderMaterialClassification::AlphaTested)
+		{
+			continue;
+		}
+		const GpuMesh* const gpuMesh = ResolveBatch(view, batch, m_gpuMeshCache);
+		if (gpuMesh == nullptr || batch.materialSlot >= preparedScene.materials.size())
+		{
+			continue;
+		}
+		const MaterialData& material = preparedScene.materials[batch.materialSlot];
+		if (!material.gpuHandle || !material.rasterTextureTable
+		    || (batch.meshKind == RenderMeshKind::Skeletal
+		        && (!preparedScene.gpuBindings->Geometry.HasSkinningBuffers() || !HasValidSkinning(preparedScene, view, batch))))
+		{
+			continue;
+		}
+		runtimeCache.MaterializeGraphicsShaderRuntime<GBufferVS, GBufferPS>(
+		    renderState,
+		    ResolveRasterizerState(preparedScene, batch, *gpuMesh, wireframe),
+		    gpuMesh->GetPrimitiveTopology(),
+		    gpuMesh->GetVertexInputDeclaration(),
+		    attachments);
 	}
 }

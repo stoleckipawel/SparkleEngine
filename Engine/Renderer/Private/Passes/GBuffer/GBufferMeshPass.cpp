@@ -5,12 +5,11 @@
 #include "View/RenderView.h"
 #include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/GBuffer/GBufferMeshBatchDrawer.h"
-#include "Passes/Core/ShaderPassOperations.h"
+#include "Pipeline/GraphicsPipelineMaterialization.h"
+#include "Pipeline/RasterPassRenderState.h"
+#include "Pipeline/RenderPassRuntimeCache.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 
-#include "Pipeline/PassPipelineRuntime.h"
-
-#include <array>
 #include <cassert>
 
 void GBufferShaderParameters::Describe(ShaderParameterStructBuilder<GBufferShaderParameters>& builder)
@@ -49,58 +48,50 @@ const GBufferMeshPass::DrawParameterMetadata& GBufferMeshPass::GetDrawParameterM
 	return metadata;
 }
 
-void GBufferMeshPass::Draw(PassCommandContext& context, ParameterInstance& parameters, const RasterPassPipelineRuntime& runtime) const
+void GBufferMeshPass::MaterializePipelines(
+    const RenderPassRuntimeCache& runtimeCache,
+    const RasterPassRenderState& renderState,
+    const GraphicsAttachmentSignature& attachments) const
+{
+	assert(m_frameInput != nullptr && m_frameInput->PreparedScene.has_value() && m_frameInput->View.has_value());
+	const RenderView& view = m_frameInput->View->get();
+	m_meshBatchDrawer->MaterializePipelines(
+	    runtimeCache,
+	    m_frameInput->PreparedScene->get(),
+	    view,
+	    renderState,
+	    attachments,
+	    m_frameInput->Wireframe);
+}
+
+void GBufferMeshPass::Draw(
+    PassCommandContext& context,
+    ParameterInstance& parameters,
+    const RenderPassRuntimeCache& runtimeCache,
+    const RasterPassRenderState& renderState,
+    const GraphicsAttachmentSignature& attachments) const
 {
 	assert(m_frameInput != nullptr && m_frameInput->PreparedScene.has_value() && m_frameInput->View.has_value());
 	const PreparedRenderScene& preparedScene = m_frameInput->PreparedScene->get();
 	const RenderView& view = m_frameInput->View->get();
-	ConfigurePipeline(context.Commands, view);
-	PrepareTargets(context, parameters.GetFields());
-	BindPassResources(context.Resources, context.Commands, parameters, view, runtime);
-	DrawOpaqueMeshes(context.Resources, context.Commands, preparedScene, view, parameters.GetFields(), runtime);
+	DrawOpaqueMeshes(
+	    context.Resources,
+	    context.Commands,
+	    preparedScene,
+	    view,
+	    parameters.GetFields(),
+	    runtimeCache,
+	    renderState,
+	    attachments,
+	    m_frameInput->Wireframe);
 }
 
-void GBufferMeshPass::PrepareTargets(PassCommandContext& context, const GBufferMeshPass::Parameters& parameters) const
+void GBufferMeshPass::PrepareRasterPass(RenderCommandContext& commandContext) const
 {
-	const std::array<FrameGraphTextureHandle, 6> renderTargets = {
-	    parameters.BaseColor[0],
-	    parameters.Normal[0],
-	    parameters.Material[0],
-	    parameters.Emissive[0],
-	    parameters.Subsurface[0],
-	    parameters.MotionVector[0]};
-	context.Resources.BindRenderTargets(context.Commands, renderTargets, parameters.DeviceZ[0]);
-	for (FrameGraphTextureHandle renderTarget : renderTargets)
-	{
-		context.Resources.ClearRenderTarget(context.Commands, renderTarget);
-	}
-	context.Resources.ClearDepthStencil(context.Commands, parameters.DeviceZ[0]);
-}
-
-void GBufferMeshPass::ConfigurePipeline(RenderCommandContext& commandContext, const RenderView& view) const
-{
+	assert(m_frameInput != nullptr && m_frameInput->View.has_value());
+	const RenderView& view = m_frameInput->View->get();
 	commandContext.SetViewport(view.viewport);
 	commandContext.SetScissorRect(view.scissorRect);
-	commandContext.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
-}
-
-void GBufferMeshPass::BindPassResources(
-    const FrameGraphResourceCommands& resources,
-    RenderCommandContext& commandContext,
-    const ParameterInstance& parameters,
-    const RenderView& view,
-    const RasterPassPipelineRuntime& runtime) const
-{
-	const bool bound = ShaderPassOperations::BindAvailableRasterPassWithRuntime(
-	    resources,
-	    commandContext,
-	    runtime,
-	    parameters.GetPassParameterSet(),
-	    nullptr,
-	    "GBuffer",
-	    true,
-	    view.uniform.ViewModeIndex);
-	assert(bound);
 }
 
 void GBufferMeshPass::DrawOpaqueMeshes(
@@ -109,7 +100,20 @@ void GBufferMeshPass::DrawOpaqueMeshes(
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
     const Parameters& parameters,
-    const RasterPassPipelineRuntime& runtime) const
+    const RenderPassRuntimeCache& runtimeCache,
+    const RasterPassRenderState& renderState,
+    const GraphicsAttachmentSignature& attachments,
+    bool wireframe) const
 {
-	m_meshBatchDrawer->DrawOpaqueMeshes(resources, commandContext, preparedScene, view, parameters, runtime, GetDrawParameterMetadata());
+	m_meshBatchDrawer->DrawOpaqueMeshes(
+	    resources,
+	    commandContext,
+	    preparedScene,
+	    view,
+	    parameters,
+	    runtimeCache,
+	    renderState,
+	    attachments,
+	    wireframe,
+	    GetDrawParameterMetadata());
 }

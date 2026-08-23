@@ -2,6 +2,7 @@
 
 #include "PassParameterSet.h"
 #include "../FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "../FrameGraph/FrameGraphAttachment.h"
 #include "Renderer/Public/RendererAPI.h"
 
 #include <array>
@@ -175,22 +176,42 @@ class ShaderRWTexture2D final : public ShaderParameterFields::ResourceArrayField
 	using Base::Base;
 };
 
-class ShaderRenderTarget final : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, 1>
+class ShaderRenderTarget final
 {
-  public:
-	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, 1>;
+public:
 	using Semantic = RenderTarget;
-	using Base::operator=;
-	using Base::Base;
+
+	ShaderRenderTarget& operator=(FrameGraphAttachmentBinding binding) noexcept
+	{
+		m_binding = binding;
+		return *this;
+	}
+
+	const FrameGraphTextureHandle& operator[](std::size_t) const noexcept { return m_binding.Handle; }
+	bool IsBound() const noexcept { return m_binding.Handle.IsValid(); }
+	const FrameGraphAttachmentBinding& GetBinding() const noexcept { return m_binding; }
+
+private:
+	FrameGraphAttachmentBinding m_binding = {};
 };
 
-class ShaderDepthTarget final : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, 1>
+class ShaderDepthTarget final
 {
-  public:
-	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, 1>;
+public:
 	using Semantic = DepthTarget;
-	using Base::operator=;
-	using Base::Base;
+
+	ShaderDepthTarget& operator=(FrameGraphAttachmentBinding binding) noexcept
+	{
+		m_binding = binding;
+		return *this;
+	}
+
+	const FrameGraphTextureHandle& operator[](std::size_t) const noexcept { return m_binding.Handle; }
+	bool IsBound() const noexcept { return m_binding.Handle.IsValid(); }
+	const FrameGraphAttachmentBinding& GetBinding() const noexcept { return m_binding; }
+
+private:
+	FrameGraphAttachmentBinding m_binding = {};
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>

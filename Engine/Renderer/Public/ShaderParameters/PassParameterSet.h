@@ -5,6 +5,7 @@
 #include "../../../RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "../../../RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "../FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "../FrameGraph/FrameGraphAttachment.h"
 #include "../FrameGraph/FrameGraphBufferHandle.h"
 #include "../FrameGraph/FrameGraphTextureHandle.h"
 #include "../RendererAPI.h"
@@ -29,6 +30,8 @@ enum class PassParameterValueKind : std::uint8_t
 struct PassParameterTextureBindingData
 {
 	std::vector<FrameGraphTextureHandle> Handles;
+	FrameGraphAttachmentBinding Attachment = {};
+	bool IsAttachment = false;
 
 	bool IsBound() const noexcept { return !Handles.empty(); }
 };
@@ -121,6 +124,7 @@ class SPARKLE_RENDERER_API PassParameterSet final
 
 	bool SetTexture(const char* name, FrameGraphTextureHandle handle);
 	bool SetTextureArray(const char* name, const std::vector<FrameGraphTextureHandle>& handles);
+	bool SetAttachment(const char* name, FrameGraphAttachmentBinding binding);
 	bool SetBuffer(const char* name, FrameGraphBufferHandle handle);
 	bool SetBufferArray(const char* name, const std::vector<FrameGraphBufferHandle>& handles);
 	bool SetShaderResourceView(const char* name, RhiDescriptorTableBinding descriptorTable);

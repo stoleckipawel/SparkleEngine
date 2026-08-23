@@ -10,6 +10,7 @@
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshData.h"
 
+#include <cstddef>
 #include <span>
 #include <utility>
 
@@ -200,9 +201,43 @@ void GpuMesh::Bind(RenderCommandContext& commandContext) const noexcept
 		commandContext.TrackResource(resources.GetResourceHandle(m_indexBuffer));
 	}
 
-	commandContext.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
+	commandContext.SetPrimitiveTopology(GetPrimitiveTopology());
 	commandContext.BindVertexBuffer(GetVertexBufferView());
 	commandContext.BindIndexBuffer(GetIndexBufferView());
+}
+
+const RhiVertexInputDeclaration& GpuMesh::GetVertexInputDeclaration() const noexcept
+{
+	static const RhiVertexInputDeclaration declaration{
+	    .Bindings = {RhiVertexInputBinding{.Binding = 0, .StrideInBytes = sizeof(VertexData)}},
+	    .Elements = {
+	        RhiVertexInputElement{
+	            .Semantic = RhiVertexSemantic::Position,
+	            .Location = 0,
+	            .Binding = 0,
+	            .Format = RhiVertexElementFormat::Float3,
+	            .OffsetInBytes = offsetof(VertexData, position)},
+	        RhiVertexInputElement{
+	            .Semantic = RhiVertexSemantic::TexCoord,
+	            .Location = 1,
+	            .Binding = 0,
+	            .Format = RhiVertexElementFormat::Float2,
+	            .OffsetInBytes = offsetof(VertexData, uv)},
+	        RhiVertexInputElement{
+	            .Semantic = RhiVertexSemantic::Normal,
+	            .Location = 2,
+	            .Binding = 0,
+	            .Format = RhiVertexElementFormat::Float3,
+	            .OffsetInBytes = offsetof(VertexData, normal)},
+	        RhiVertexInputElement{
+	            .Semantic = RhiVertexSemantic::Tangent,
+	            .Location = 3,
+	            .Binding = 0,
+	            .Format = RhiVertexElementFormat::Float4,
+	            .OffsetInBytes = offsetof(VertexData, tangent)}},
+	    .BindingCount = 1,
+	    .ElementCount = 4};
+	return declaration;
 }
 
 RhiVertexBufferView GpuMesh::GetVertexBufferView() const noexcept

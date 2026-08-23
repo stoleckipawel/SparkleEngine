@@ -6,9 +6,42 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Interop/RhiInteropService.h"
 
+#include <array>
+
 FrameGraphResourceCommands::FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept :
     m_frameGraph(frameGraph)
 {
+}
+
+void FrameGraphResourceCommands::BeginRasterPass(
+    RenderCommandContext& commandContext,
+    const FrameGraphRasterPass& rasterPass) const noexcept
+{
+	std::array<FrameGraphTextureHandle, 8> colorHandles = {};
+	for (std::uint32_t index = 0; index < rasterPass.ColorCount; ++index)
+	{
+		colorHandles[index] = rasterPass.Colors[index].Handle;
+	}
+	BindRenderTargets(
+	    commandContext,
+	    std::span<const FrameGraphTextureHandle>(colorHandles.data(), rasterPass.ColorCount),
+	    rasterPass.HasDepthStencil ? rasterPass.DepthStencil.Handle : FrameGraphTextureHandle::Invalid());
+	for (std::uint32_t index = 0; index < rasterPass.ColorCount; ++index)
+	{
+		if (rasterPass.Colors[index].Load == FrameGraphAttachmentLoadAction::Clear)
+		{
+			ClearRenderTarget(commandContext, rasterPass.Colors[index].Handle);
+		}
+	}
+	if (rasterPass.HasDepthStencil && rasterPass.DepthStencil.Load == FrameGraphAttachmentLoadAction::Clear)
+	{
+		ClearDepthStencil(commandContext, rasterPass.DepthStencil.Handle);
+	}
+}
+
+void FrameGraphResourceCommands::EndRasterPass(RenderCommandContext& commandContext) const noexcept
+{
+	commandContext.EndRasterPass();
 }
 
 void FrameGraphResourceCommands::BindRenderTarget(

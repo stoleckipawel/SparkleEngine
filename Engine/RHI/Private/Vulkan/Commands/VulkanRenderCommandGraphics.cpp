@@ -147,6 +147,11 @@ void VulkanRenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle depthSten
 	vkCmdClearAttachments(m_commandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
+void VulkanRenderCommandList::EndRasterPass() noexcept
+{
+	EndDynamicRenderingIfNeeded();
+}
+
 void VulkanRenderCommandList::SetViewport(const RhiViewport& viewport) noexcept
 {
 	if (m_commandBuffer == VK_NULL_HANDLE)

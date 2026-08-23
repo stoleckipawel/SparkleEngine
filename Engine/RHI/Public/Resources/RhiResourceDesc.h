@@ -75,6 +75,7 @@ struct RhiTextureResourceDesc
 	PixelFormat Format = PixelFormat::Unknown;
 	std::uint16_t MipLevels = 1;
 	std::uint16_t ArraySize = 1;
+	std::uint8_t SampleCount = 1;
 	TextureResourceDimension Dimension = TextureResourceDimension::Texture2D;
 	bool AllowRenderTarget = false;
 	bool AllowDepthStencil = false;

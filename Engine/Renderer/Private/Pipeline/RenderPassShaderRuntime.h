@@ -18,23 +18,18 @@ struct RenderPassShaderRuntimeStorage
 	PassParameterLayout ParameterLayout;
 	std::vector<ResolvedShader> Shaders;
 	std::unique_ptr<RenderBindingLayout> BindingLayout;
-	std::unique_ptr<RenderPipeline> Pipeline;
-	std::unique_ptr<RenderPipeline> WireframePipeline;
-	std::unique_ptr<RenderPipeline> TwoSidedPipeline;
 };
 
 class RenderPassShaderRuntime final
 {
 public:
-	template <typename TVertexShader, typename TPixelShader, typename ConfigurePipeline> static void CreateGraphicsRuntime(
+	template <typename TVertexShader, typename TPixelShader> static void CreateGraphicsRuntime(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const ShaderRegistrationDesc& vertexRegistration,
 	    ShaderRef<TVertexShader> vertexShader,
 	    const ShaderRegistrationDesc& pixelRegistration,
 	    ShaderRef<TPixelShader> pixelShader,
-	    bool allowInputAssemblerInputLayout,
-	    RenderPassShaderRuntimeStorage& storage,
-	    ConfigurePipeline configurePipeline)
+	    RenderPassShaderRuntimeStorage& storage)
 	{
 		if (!vertexShader || !pixelShader)
 		{
@@ -50,25 +45,8 @@ public:
 		    renderHardwareInterface,
 		    storage.ParameterLayout,
 		    storage.Shaders,
-		    allowInputAssemblerInputLayout,
+		    true,
 		    debugName.c_str());
-		GraphicsPipelineDesc pipeline;
-		pipeline.BindingLayout = storage.BindingLayout.get();
-		pipeline.VertexShader = RhiShaderStageDesc{&storage.Shaders[0]};
-		pipeline.PixelShader = RhiShaderStageDesc{&storage.Shaders[1]};
-		pipeline.DebugName = debugName.c_str();
-		configurePipeline(pipeline);
-		storage.Pipeline = PipelineRuntimeLibrary::CreateGraphicsPipeline(renderHardwareInterface, pipeline);
-		if (allowInputAssemblerInputLayout && !pipeline.RenderWireframe)
-		{
-			GraphicsPipelineDesc twoSided = pipeline;
-			twoSided.CullMode = ERhiCullMode::None;
-			storage.TwoSidedPipeline = PipelineRuntimeLibrary::CreateGraphicsPipeline(renderHardwareInterface, twoSided);
-			GraphicsPipelineDesc wireframe = pipeline;
-			wireframe.RenderWireframe = true;
-			wireframe.CullMode = ERhiCullMode::None;
-			storage.WireframePipeline = PipelineRuntimeLibrary::CreateGraphicsPipeline(renderHardwareInterface, wireframe);
-		}
 	}
 
 	template <typename TShader, typename ConfigurePipeline> static void CreateComputeRuntime(
@@ -76,6 +54,7 @@ public:
 	    const ShaderRegistrationDesc& registration,
 	    ShaderRef<TShader> shader,
 	    RenderPassShaderRuntimeStorage& storage,
+	    std::unique_ptr<RenderPipeline>& pipelineStorage,
 	    ConfigurePipeline configurePipeline)
 	{
 		if (!shader)
@@ -97,7 +76,7 @@ public:
 		pipeline.ComputeShader = RhiShaderStageDesc{&storage.Shaders.front()};
 		pipeline.DebugName = debugName.c_str();
 		configurePipeline(pipeline);
-		storage.Pipeline = PipelineRuntimeLibrary::CreateComputePipeline(renderHardwareInterface, pipeline);
+		pipelineStorage = PipelineRuntimeLibrary::CreateComputePipeline(renderHardwareInterface, pipeline);
 	}
 
 private:

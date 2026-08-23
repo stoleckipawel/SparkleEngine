@@ -75,6 +75,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	    override;
 	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept override;
 	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept override;
+	void EndRasterPass() noexcept override;
 	void SetViewport(const RhiViewport& viewport) noexcept override;
 	void SetScissorRect(const RhiRect& rect) noexcept override;
 	void DrawIndexedInstanced(

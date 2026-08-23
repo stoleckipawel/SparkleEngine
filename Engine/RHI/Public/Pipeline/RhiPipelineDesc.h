@@ -3,6 +3,7 @@
 #include "../Formats/CompareOp.h"
 #include "../Formats/PixelFormat.h"
 #include "../RHIAPI.h"
+#include "../Resources/RhiResourceDesc.h"
 #include "../ShaderParameters/ShaderParameterSemantics.h"
 #include "../Shaders/ShaderStage.h"
 #include "../Shaders/GlobalShaderMap.h"
@@ -41,9 +42,38 @@ enum class RhiStencilOp : std::uint8_t
 	DecrementWrap = 7,
 };
 
-enum class RhiVertexLayoutKind : std::uint8_t
+enum class RhiFillMode : std::uint8_t
 {
-	StaticMesh = 0,
+	Solid = 0,
+	Wireframe = 1,
+};
+
+enum class RhiBlendFactor : std::uint8_t
+{
+	Zero = 0,
+	One = 1,
+	SourceAlpha = 2,
+	InverseSourceAlpha = 3,
+};
+
+enum class RhiBlendOperation : std::uint8_t
+{
+	Add = 0,
+};
+
+enum class RhiVertexElementFormat : std::uint8_t
+{
+	Float2 = 0,
+	Float3 = 1,
+	Float4 = 2,
+};
+
+enum class RhiVertexSemantic : std::uint8_t
+{
+	Position = 0,
+	TexCoord = 1,
+	Normal = 2,
+	Tangent = 3,
 };
 
 enum class CompiledBindingType : std::uint8_t
@@ -117,16 +147,49 @@ private:
 	std::vector<std::string> m_bindingNames;
 };
 
-struct RhiDepthTestDesc
+struct RhiBlendTargetState
+{
+	bool BlendEnable = false;
+	RhiBlendFactor SourceColor = RhiBlendFactor::One;
+	RhiBlendFactor DestinationColor = RhiBlendFactor::Zero;
+	RhiBlendOperation ColorOperation = RhiBlendOperation::Add;
+	RhiBlendFactor SourceAlpha = RhiBlendFactor::One;
+	RhiBlendFactor DestinationAlpha = RhiBlendFactor::Zero;
+	RhiBlendOperation AlphaOperation = RhiBlendOperation::Add;
+	std::uint8_t ColorWriteMask = 0x0F;
+
+	bool operator==(const RhiBlendTargetState&) const noexcept = default;
+};
+
+struct RhiBlendState
+{
+	bool AlphaToCoverageEnable = false;
+	bool IndependentBlendEnable = false;
+	std::array<RhiBlendTargetState, 8> Targets = {};
+
+	bool operator==(const RhiBlendState&) const noexcept = default;
+};
+
+struct RhiRasterizerState
+{
+	RhiFillMode FillMode = RhiFillMode::Solid;
+	ERhiCullMode CullMode = ERhiCullMode::Back;
+	ERhiFrontFaceWinding FrontFaceWinding = ERhiFrontFaceWinding::Clockwise;
+	bool DepthClipEnable = true;
+
+	bool operator==(const RhiRasterizerState&) const noexcept = default;
+};
+
+struct RhiDepthState
 {
 	bool DepthEnable = true;
 	bool DepthWriteEnable = true;
 	CompareOp DepthFunc = CompareOp::Less;
 
-	bool operator==(const RhiDepthTestDesc&) const noexcept = default;
+	bool operator==(const RhiDepthState&) const noexcept = default;
 };
 
-struct RhiStencilTestDesc
+struct RhiStencilState
 {
 	bool StencilEnable = false;
 	std::uint8_t StencilReadMask = 0xFF;
@@ -140,7 +203,38 @@ struct RhiStencilTestDesc
 	RhiStencilOp BackFaceStencilDepthFailOp = RhiStencilOp::Keep;
 	RhiStencilOp BackFaceStencilPassOp = RhiStencilOp::Keep;
 
-	bool operator==(const RhiStencilTestDesc&) const noexcept = default;
+	bool operator==(const RhiStencilState&) const noexcept = default;
+};
+
+struct RhiVertexInputBinding
+{
+	std::uint32_t Binding = 0;
+	std::uint32_t StrideInBytes = 0;
+	bool PerInstance = false;
+
+	bool operator==(const RhiVertexInputBinding&) const noexcept = default;
+};
+
+struct RhiVertexInputElement
+{
+	RhiVertexSemantic Semantic = RhiVertexSemantic::Position;
+	std::uint8_t SemanticIndex = 0;
+	std::uint8_t Location = 0;
+	std::uint8_t Binding = 0;
+	RhiVertexElementFormat Format = RhiVertexElementFormat::Float3;
+	std::uint32_t OffsetInBytes = 0;
+
+	bool operator==(const RhiVertexInputElement&) const noexcept = default;
+};
+
+struct RhiVertexInputDeclaration
+{
+	std::array<RhiVertexInputBinding, 4> Bindings = {};
+	std::array<RhiVertexInputElement, 16> Elements = {};
+	std::uint8_t BindingCount = 0;
+	std::uint8_t ElementCount = 0;
+
+	bool operator==(const RhiVertexInputDeclaration&) const noexcept = default;
 };
 
 struct RhiShaderStageDesc
@@ -153,18 +247,19 @@ struct RhiShaderStageDesc
 
 struct GraphicsPipelineDesc
 {
-	RhiVertexLayoutKind VertexLayout = RhiVertexLayoutKind::StaticMesh;
 	const RenderBindingLayout* BindingLayout = nullptr;
 	RhiShaderStageDesc VertexShader = {};
 	RhiShaderStageDesc PixelShader = {};
-	bool RenderWireframe = false;
-	ERhiCullMode CullMode = ERhiCullMode::Back;
-	ERhiFrontFaceWinding FrontFaceWinding = ERhiFrontFaceWinding::Clockwise;
-	RhiDepthTestDesc DepthTest = {};
-	RhiStencilTestDesc StencilTest = {};
-	std::array<PixelFormat, 8> RenderTargetFormats = {};
-	std::uint32_t RenderTargetCount = 1;
-	PixelFormat DepthStencilFormat = PixelFormat::Unknown;
+	RhiBlendState Blend = {};
+	RhiRasterizerState Rasterizer = {};
+	RhiDepthState Depth = {};
+	RhiStencilState Stencil = {};
+	RhiPrimitiveTopology PrimitiveTopology = RhiPrimitiveTopology::TriangleList;
+	RhiVertexInputDeclaration VertexInput = {};
+	std::array<PixelFormat, 8> ColorAttachmentFormats = {};
+	std::uint32_t ColorAttachmentCount = 0;
+	PixelFormat DepthStencilAttachmentFormat = PixelFormat::Unknown;
+	std::uint8_t SampleCount = 1;
 	const wchar_t* DebugName = L"RHI_GraphicsPipeline";
 };
 

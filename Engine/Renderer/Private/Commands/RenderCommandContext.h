@@ -60,6 +60,7 @@ class RenderCommandContext final
 	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept;
 
 	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept;
+	void EndRasterPass() noexcept;
 	void SetViewport(const RhiViewport& viewport) noexcept;
 
 	void SetViewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f) noexcept;

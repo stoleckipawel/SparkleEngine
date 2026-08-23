@@ -387,7 +387,7 @@ VkImageCreateInfo VulkanTypeConversions::BuildTextureCreateInfo(const RhiTexture
 	    .extent = VkExtent3D{.width = desc.Width, .height = desc.Height, .depth = 1},
 	    .mipLevels = desc.MipLevels,
 	    .arrayLayers = desc.ArraySize,
-	    .samples = VK_SAMPLE_COUNT_1_BIT,
+	    .samples = static_cast<VkSampleCountFlagBits>(desc.SampleCount),
 	    .tiling = VK_IMAGE_TILING_OPTIMAL,
 	    .usage = usage,
 	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,

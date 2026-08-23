@@ -63,6 +63,7 @@ class FrameGraphTransientResourcePlanner final
 		resourceDesc.Height = desc.height;
 		resourceDesc.Format = desc.format;
 		resourceDesc.MipLevels = 1;
+		resourceDesc.SampleCount = desc.sampleCount;
 		resourceDesc.AllowRenderTarget = kind == FrameGraphResourceKind::ColorRenderTarget && requiresRenderTarget;
 		resourceDesc.AllowDepthStencil = kind == FrameGraphResourceKind::DepthStencil;
 		resourceDesc.AllowUnorderedAccess = requiresUnorderedAccess;

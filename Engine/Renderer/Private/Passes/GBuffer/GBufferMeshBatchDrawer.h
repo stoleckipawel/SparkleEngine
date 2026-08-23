@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Passes/GBuffer/GBufferMeshPass.h"
+#include "RHI/Public/Pipeline/RhiPipelineDesc.h"
 
 #include <cstdint>
 
@@ -9,7 +10,9 @@ class GpuMesh;
 class GpuMeshCache;
 class RenderCommandContext;
 struct MeshInstanceBatch;
-struct RasterPassPipelineRuntime;
+class RasterPassRenderState;
+class RenderPassRuntimeCache;
+struct GraphicsAttachmentSignature;
 struct PreparedRenderScene;
 struct RenderView;
 
@@ -27,8 +30,18 @@ public:
 	    const PreparedRenderScene& preparedScene,
 	    const RenderView& view,
 	    const GBufferMeshPass::Parameters& parameters,
-	    const RasterPassPipelineRuntime& runtime,
+	    const RenderPassRuntimeCache& runtimeCache,
+	    const RasterPassRenderState& renderState,
+	    const GraphicsAttachmentSignature& attachments,
+	    bool wireframe,
 	    const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata) const;
+	void MaterializePipelines(
+	    const RenderPassRuntimeCache& runtimeCache,
+	    const PreparedRenderScene& preparedScene,
+	    const RenderView& view,
+	    const RasterPassRenderState& renderState,
+	    const GraphicsAttachmentSignature& attachments,
+	    bool wireframe) const;
 
 private:
 	static bool BindMaterial(
@@ -41,28 +54,35 @@ private:
 	    const GBufferMeshPass::Parameters& passParameters,
 	    const MeshInstanceBatch& batch,
 	    GBufferMeshPass::DrawParameterInstance& drawParameters);
-	static RasterPassPipelineRuntime ResolveBatchRuntime(
+	static RhiRasterizerState ResolveRasterizerState(
 	    const PreparedRenderScene& preparedScene,
 	    const MeshInstanceBatch& batch,
-	    const RasterPassPipelineRuntime& runtime);
+	    const GpuMesh& gpuMesh,
+	    bool wireframe) noexcept;
 	static bool BindBatchPipeline(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    const RasterPassPipelineRuntime& runtime,
+	    const RenderPassRuntimeCache& runtimeCache,
+	    const RasterPassRenderState& renderState,
+	    const GraphicsAttachmentSignature& attachments,
+	    const PreparedRenderScene& preparedScene,
+	    const MeshInstanceBatch& batch,
 	    GBufferMeshPass::DrawParameterInstance& drawParameters,
 	    const GpuMesh& gpuMesh,
-	    std::uint32_t viewModeIndex);
+	    bool wireframe);
 	static void DrawBatch(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    const RenderView& view,
 	    const GBufferMeshPass::Parameters& passParameters,
-	    const RasterPassPipelineRuntime& runtime,
+	    const RenderPassRuntimeCache& runtimeCache,
+	    const RasterPassRenderState& renderState,
+	    const GraphicsAttachmentSignature& attachments,
 	    const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata,
 	    const GpuMesh& gpuMesh,
 	    const MeshInstanceBatch& batch,
-	    std::uint32_t viewModeIndex);
+	    bool wireframe);
 
 	const GpuMeshCache& m_gpuMeshCache;
 };

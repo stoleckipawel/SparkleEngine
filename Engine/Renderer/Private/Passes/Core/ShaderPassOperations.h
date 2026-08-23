@@ -5,7 +5,6 @@
 #include "Pipeline/PassBindingOverrides.h"
 #include "Passes/Core/ShaderPass.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
-#include "Renderer/Public/Debug/RenderViewMode.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
 #include <vector>
@@ -17,20 +16,6 @@ namespace ShaderPassOperations
 	    const PassParameterSet& parameters,
 	    const PassBindingOverrides* overrides) noexcept;
 
-	template <typename TRasterPipelineRuntime>
-	const RenderPipeline& ResolveRasterPipeline(const TRasterPipelineRuntime& runtime, std::uint32_t viewModeIndex) noexcept
-	{
-		if constexpr (requires { runtime.WireframePipeline; })
-		{
-			if (runtime.WireframePipeline != nullptr && viewModeIndex == static_cast<std::uint32_t>(RenderViewMode::Wireframe))
-			{
-				return *runtime.WireframePipeline;
-			}
-		}
-
-		return runtime.Pipeline;
-	}
-
 	template <typename TRasterPipelineRuntime> bool BindRasterPassWithRuntime(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
@@ -40,14 +25,13 @@ namespace ShaderPassOperations
 	    std::uint32_t bindingNameCount = 0,
 	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr,
-	    bool bindLayout = true,
-	    std::uint32_t viewModeIndex = 0u) noexcept
+	    bool bindLayout = true) noexcept
 	{
 		return BindRasterShader(
 		    resources,
 		    commandContext,
 		    runtime.BindingLayout,
-		    ResolveRasterPipeline(runtime, viewModeIndex),
+		    runtime.Pipeline,
 		    parameters,
 		    bindingNames,
 		    bindingNameCount,
@@ -63,8 +47,7 @@ namespace ShaderPassOperations
 	    const PassParameterSet& parameters,
 	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr,
-	    bool bindLayout = true,
-	    std::uint32_t viewModeIndex = 0u) noexcept
+	    bool bindLayout = true) noexcept
 	{
 		const std::vector<const char*> bindingNames = BuildBoundBindingNames(runtime.BindingLayout, parameters, overrides);
 		return BindRasterPassWithRuntime(
@@ -76,8 +59,7 @@ namespace ShaderPassOperations
 		    static_cast<std::uint32_t>(bindingNames.size()),
 		    overrides,
 		    passName,
-		    bindLayout,
-		    viewModeIndex);
+		    bindLayout);
 	}
 
-} // namespace ShaderPassOperations
+}

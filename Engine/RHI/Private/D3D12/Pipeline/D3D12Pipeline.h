@@ -27,14 +27,13 @@ class D3D12Pipeline final : public RenderPipeline
 	void HandlePsoCreateFailure(HRESULT hr) const noexcept;
 
 	void SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept;
-	void SetRasterizerState(
+	void SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiRasterizerState& rasterizer) noexcept;
+	void SetRenderTargetBlendState(
 	    D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
-	    bool bRenderWireframe,
-	    ERhiCullMode cullMode,
-	    ERhiFrontFaceWinding frontFaceWinding) noexcept;
-	void SetRenderTargetBlendState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, D3D12_RENDER_TARGET_BLEND_DESC blendDesc) noexcept;
-	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiDepthTestDesc depthDesc) noexcept;
-	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiStencilTestDesc stencilDesc) noexcept;
+	    const RhiBlendState& blend,
+	    std::uint32_t colorAttachmentCount) noexcept;
+	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiDepthState depthDesc) noexcept;
+	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiStencilState stencilDesc) noexcept;
 	void Create(const GraphicsPipelineDesc& desc);
 	void Create(const ComputePipelineDesc& desc);
 

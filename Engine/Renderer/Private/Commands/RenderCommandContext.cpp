@@ -140,6 +140,11 @@ void RenderCommandContext::ClearDepthStencil(RhiCpuDescriptorHandle depthStencil
 	m_commandList->ClearDepthStencil(depthStencil, depth, stencil);
 }
 
+void RenderCommandContext::EndRasterPass() noexcept
+{
+	m_commandList->EndRasterPass();
+}
+
 void RenderCommandContext::SetViewport(const RhiViewport& viewport) noexcept
 {
 	m_commandList->SetViewport(viewport);

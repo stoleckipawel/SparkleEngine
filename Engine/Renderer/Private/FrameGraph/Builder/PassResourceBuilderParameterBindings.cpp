@@ -102,7 +102,10 @@ void PassResourceBuilder::DeclareTextureBinding(const PassParameterDesc& paramet
 	const PassParameterTextureBindingData* textureData = binding.AsTextureData();
 	assert(textureData != nullptr);
 
-	const ResourceUsage usage = GetFrameGraphUsage(parameter);
+	const ResourceUsage usage = parameter.Kind == ShaderParameterSemanticKind::DepthTarget && textureData->IsAttachment
+	        && textureData->Attachment.DepthStencilAccess == FrameGraphDepthStencilAccess::ReadOnly
+	    ? ResourceUsage::DepthRead
+	    : GetFrameGraphUsage(parameter);
 	for (std::uint32_t arrayIndex = 0; arrayIndex < static_cast<std::uint32_t>(textureData->Handles.size()); ++arrayIndex)
 	{
 		DeclareResourceHandle(textureData->Handles[arrayIndex].GetResourceHandle(), usage, parameter, arrayIndex);

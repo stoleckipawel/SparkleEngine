@@ -37,20 +37,6 @@ ShaderAccelerationStructure FrameGraph::CreateAccelerationStructureBinding(Frame
 	return field;
 }
 
-ShaderRenderTarget FrameGraph::CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
-{
-	ShaderRenderTarget field;
-	field = handle;
-	return field;
-}
-
-ShaderDepthTarget FrameGraph::CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept
-{
-	ShaderDepthTarget field;
-	field = handle;
-	return field;
-}
-
 const FrameGraphPlan& FrameGraph::Compile()
 {
 	PrepareTextureHistories(m_compiledPlan);

@@ -109,6 +109,10 @@ void D3D12RenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle depthStenc
 	}
 }
 
+void D3D12RenderCommandList::EndRasterPass() noexcept
+{
+}
+
 void D3D12RenderCommandList::SetViewport(const RhiViewport& viewport) noexcept
 {
 	if (m_commandList == nullptr)

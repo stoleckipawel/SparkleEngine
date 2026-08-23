@@ -27,7 +27,7 @@ bool BindParameterField(
     const char* name,
     const ShaderRenderTarget& field)
 {
-	return parameterSet.SetTexture(name, field.GetValues()[0]);
+	return field.IsBound() && parameterSet.SetAttachment(name, field.GetBinding());
 }
 
 bool BindParameterField(
@@ -35,7 +35,7 @@ bool BindParameterField(
     const char* name,
     const ShaderDepthTarget& field)
 {
-	return parameterSet.SetTexture(name, field.GetValues()[0]);
+	return field.IsBound() && parameterSet.SetAttachment(name, field.GetBinding());
 }
 
 bool BindParameterField(

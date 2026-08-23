@@ -139,6 +139,7 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 				        .Height = resolvedDesc.height,
 				        .Format = resolvedDesc.format,
 				        .MipLevels = 1u,
+				        .SampleCount = resolvedDesc.sampleCount,
 				        .AllowRenderTarget = history.allowRenderTarget,
 				        .AllowDepthStencil = history.allowDepthStencil,
 				        .AllowUnorderedAccess = history.allowUnorderedAccess},

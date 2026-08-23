@@ -129,6 +129,23 @@ bool PassParameterSet::SetTextureArray(const char* name, const std::vector<Frame
 	return true;
 }
 
+bool PassParameterSet::SetAttachment(const char* name, FrameGraphAttachmentBinding binding)
+{
+	std::uint32_t index = 0;
+	const PassParameterDesc* parameter = FindParameter(name, index);
+	if (parameter == nullptr || parameter->ResourceDomain != ShaderParameterResourceDomain::Texture
+	    || (parameter->Kind != ShaderParameterSemanticKind::RenderTarget
+	        && parameter->Kind != ShaderParameterSemanticKind::DepthTarget)
+	    || !binding.Handle.IsValid())
+	{
+		return false;
+	}
+
+	m_bindings[index].SetValue(
+	    PassParameterTextureBindingData{.Handles = {binding.Handle}, .Attachment = binding, .IsAttachment = true});
+	return true;
+}
+
 bool PassParameterSet::SetBuffer(const char* name, FrameGraphBufferHandle handle)
 {
 	return SetBufferArray(name, std::vector<FrameGraphBufferHandle>{handle});

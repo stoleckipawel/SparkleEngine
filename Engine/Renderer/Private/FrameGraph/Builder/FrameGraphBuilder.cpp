@@ -61,12 +61,23 @@ ShaderAccelerationStructure FrameGraphBuilder::CreateAccelerationStructureBindin
 	return m_frameGraph.CreateAccelerationStructureBinding(handle);
 }
 
-ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
+ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(
+    FrameGraphTextureHandle handle,
+    FrameGraphAttachmentLoadAction load,
+    FrameGraphAttachmentStoreAction store) const noexcept
 {
-	return m_frameGraph.CreateRenderTarget(handle);
+	ShaderRenderTarget result;
+	result = FrameGraphAttachmentBinding{.Handle = handle, .Load = load, .Store = store};
+	return result;
 }
 
-ShaderDepthTarget FrameGraphBuilder::CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept
+ShaderDepthTarget FrameGraphBuilder::CreateDepthTarget(
+    FrameGraphTextureHandle handle,
+    FrameGraphAttachmentLoadAction load,
+    FrameGraphAttachmentStoreAction store,
+    FrameGraphDepthStencilAccess access) const noexcept
 {
-	return m_frameGraph.CreateDepthTarget(handle);
+	ShaderDepthTarget result;
+	result = FrameGraphAttachmentBinding{.Handle = handle, .Load = load, .Store = store, .DepthStencilAccess = access};
+	return result;
 }

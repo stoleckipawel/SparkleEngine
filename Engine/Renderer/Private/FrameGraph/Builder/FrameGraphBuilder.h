@@ -3,6 +3,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/Core/ShaderPass.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
+#include "Pipeline/RasterPassRenderState.h"
 
 #include <cstdint>
 #include <cassert>
@@ -24,11 +25,11 @@ public:
 
 	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator> void Draw(
 	    TypedPassParameterInstance<TParameters>& parameters,
-	    const GraphicsShaderPipelineState& pipelineState,
+	    const RasterPassRenderState& renderState,
 	    TDrawCollaborator drawCollaborator)
 	{
 		const ShaderRegistrationDesc& shader = GlobalShader<TPixelShader>::GetRegistration();
-		Draw<TVertexShader, TPixelShader>(shader.ShaderName, parameters, pipelineState, std::move(drawCollaborator));
+		Draw<TVertexShader, TPixelShader>(shader.ShaderName, parameters, renderState, std::move(drawCollaborator));
 	}
 
 	template <typename SetupFn, typename ExecuteFn>
@@ -50,19 +51,40 @@ public:
 	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator> void Draw(
 	    std::string_view label,
 	    TypedPassParameterInstance<TParameters>& parameters,
-	    const GraphicsShaderPipelineState& pipelineState,
+	    const RasterPassRenderState& renderState,
 	    TDrawCollaborator drawCollaborator)
 	{
-		m_renderPassRuntimeCache.MaterializeGraphicsShaderRuntime<TVertexShader, TPixelShader>(pipelineState);
-		const RasterPassPipelineRuntime* const runtime = &m_renderPassRuntimeCache.GetGraphicsShaderRuntime<TVertexShader, TPixelShader>();
+		auto rasterPass = std::make_shared<FrameGraphRasterPass>();
+		auto* parameterInstance = &parameters;
+		auto* frameGraph = &m_frameGraph;
+		auto* runtimeCache = &m_renderPassRuntimeCache;
+		m_frameGraph.m_passParameterSetups.emplace_back(
+		    [parameterInstance, frameGraph, runtimeCache, renderState, rasterPass, materializer = drawCollaborator]() mutable
+		    {
+			    *rasterPass = frameGraph->BuildRasterPass(parameterInstance->GetPassParameterSet(), renderState);
+			    materializer.MaterializePipelines(
+			        *runtimeCache,
+			        renderState,
+			        rasterPass->Compatibility);
+		    });
 		const std::string diagnosticLabel(label);
 		m_frameGraph.AddRasterPass(
 		    diagnosticLabel,
 		    parameters,
-		    [runtime, drawCollaborator = std::move(drawCollaborator)](
+		    [runtimeCache, renderState, rasterPass, drawCollaborator = std::move(drawCollaborator)](
 		        PassCommandContext& context,
 		        TypedPassParameterInstance<TParameters>& passParameters) mutable
-		    { drawCollaborator.Draw(context, passParameters, *runtime); });
+		    {
+			    drawCollaborator.PrepareRasterPass(context.Commands);
+			    context.Resources.BeginRasterPass(context.Commands, *rasterPass);
+			    drawCollaborator.Draw(
+			        context,
+			        passParameters,
+			        *runtimeCache,
+			        renderState,
+			        rasterPass->Compatibility);
+			    context.Resources.EndRasterPass(context.Commands);
+		    });
 	}
 
 	template <typename TShader>
@@ -240,8 +262,15 @@ public:
 	}
 
 	ShaderAccelerationStructure CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept;
-	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept;
-	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept;
+	ShaderRenderTarget CreateRenderTarget(
+	    FrameGraphTextureHandle handle,
+	    FrameGraphAttachmentLoadAction load,
+	    FrameGraphAttachmentStoreAction store) const noexcept;
+	ShaderDepthTarget CreateDepthTarget(
+	    FrameGraphTextureHandle handle,
+	    FrameGraphAttachmentLoadAction load,
+	    FrameGraphAttachmentStoreAction store,
+	    FrameGraphDepthStencilAccess access) const noexcept;
 
 private:
 	FrameGraph& m_frameGraph;

@@ -6,6 +6,7 @@
 #include "RayTracing/RayTracingHitData.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
+#include "RHI/Public/Pipeline/RhiPipelineDesc.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 #include "Scene/Meshes/MeshSkinningData.h"
@@ -55,6 +56,10 @@ class GpuMesh final
 
 	RhiVertexBufferView GetVertexBufferView() const noexcept;
 	RhiIndexBufferView GetIndexBufferView() const noexcept;
+	const RhiVertexInputDeclaration& GetVertexInputDeclaration() const noexcept;
+	RhiPrimitiveTopology GetPrimitiveTopology() const noexcept { return RhiPrimitiveTopology::TriangleList; }
+	ERhiFrontFaceWinding GetFrontFaceWinding() const noexcept { return ERhiFrontFaceWinding::Clockwise; }
+	bool UsesDepthClipping() const noexcept { return true; }
 	RhiOwnedResourceHandle GetVertexBufferResource() const noexcept { return m_vertexBuffer; }
 	RhiOwnedResourceHandle GetIndexBufferResource() const noexcept { return m_indexBuffer; }
 	RhiGpuDescriptorHandle GetSkinInfluencesShaderResourceView() const noexcept { return m_skinInfluences.GetShaderResourceView(); }
