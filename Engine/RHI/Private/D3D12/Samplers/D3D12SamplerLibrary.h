@@ -10,26 +10,6 @@ class D3D12Rhi;
 class D3D12SamplerLibrary
 {
   public:
-	enum class MinMagFilter : uint8_t
-	{
-		Point,
-		Linear
-	};
-
-	enum class MipFilter : uint8_t
-	{
-		None,
-		Point,
-		Linear
-	};
-
-	enum class AddressMode : uint8_t
-	{
-		Wrap,
-		Clamp,
-		Mirror
-	};
-
 	enum class Slot : uint32_t
 	{
 		PointMipPointWrap = 0,
@@ -85,22 +65,19 @@ class D3D12SamplerLibrary
 	static bool TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& outSlot) noexcept;
 
   private:
-	struct SamplerConfig
-	{
-		MinMagFilter minMag;
-		MipFilter mip;
-		AddressMode address;
-		uint32_t maxAnisotropy;
-	};
-
-	void CreateSampler(Slot slot, const SamplerConfig& config);
+	void CreateSampler(Slot slot, const RhiSamplerDesc& desc);
+	static RhiSamplerDesc MakeSamplerDesc(
+	    RhiSamplerMinMagFilter minMagFilter,
+	    RhiSamplerMipFilter mipFilter,
+	    RhiSamplerAddressMode addressMode,
+	    RhiSamplerAnisotropy maxAnisotropy) noexcept;
 	static bool TryGetAddressOffset(RhiSamplerAddressMode addressMode, std::uint32_t& outOffset) noexcept;
 	static bool TryGetUniformAddressMode(const RhiSamplerDesc& samplerDesc, RhiSamplerAddressMode& outAddressMode) noexcept;
 	static bool TryGetPointSlot(RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept;
 	static bool TryGetLinearSlot(RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept;
 	static bool TryGetAnisotropicSlot(RhiSamplerAnisotropy maxAnisotropy, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept;
-	static D3D12_FILTER ToD3D12Filter(MinMagFilter minMag, MipFilter mip, bool anisotropic);
-	static D3D12_TEXTURE_ADDRESS_MODE ToD3D12Address(AddressMode address);
+	static D3D12_FILTER ToD3D12Filter(RhiSamplerMinMagFilter minMag, RhiSamplerMipFilter mip, bool anisotropic);
+	static D3D12_TEXTURE_ADDRESS_MODE ToD3D12Address(RhiSamplerAddressMode address);
 
 	bool m_bInitialized = false;
 	D3D12Rhi* m_rhi = nullptr;

@@ -2,6 +2,7 @@
 
 #include "Vulkan/Capture/VulkanCaptureService.h"
 
+#include "Capture/RhiCaptureFormat.h"
 #include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/VulkanTypeConversions.h"
@@ -11,37 +12,7 @@
 
 class VulkanCaptureCommands final
 {
-  public:
-	static bool ResolveCaptureFormat(
-	    PixelFormat pixelFormat,
-	    RhiBmpSourceFormat& captureFormat,
-	    std::uint32_t& bytesPerPixel) noexcept
-	{
-		switch (pixelFormat)
-		{
-			case PixelFormat::R32G32B32A32_Float:
-				captureFormat = RhiBmpSourceFormat::Rgba32Float;
-				bytesPerPixel = 16;
-				return true;
-			case PixelFormat::R16G16B16A16_Float:
-				captureFormat = RhiBmpSourceFormat::Rgba16Float;
-				bytesPerPixel = 8;
-				return true;
-			case PixelFormat::R8G8B8A8_UNorm:
-			case PixelFormat::R8G8B8A8_UNorm_Srgb:
-				captureFormat = RhiBmpSourceFormat::Rgba8Unorm;
-				bytesPerPixel = 4;
-				return true;
-			case PixelFormat::B8G8R8A8_UNorm:
-			case PixelFormat::B8G8R8A8_UNorm_Srgb:
-				captureFormat = RhiBmpSourceFormat::Bgra8Unorm;
-				bytesPerPixel = 4;
-				return true;
-			default:
-				return false;
-		}
-	}
-
+public:
 	static std::uint32_t FindMemoryType(
 	    VkPhysicalDevice physicalDevice,
 	    std::uint32_t typeBits,
@@ -49,14 +20,10 @@ class VulkanCaptureCommands final
 	{
 		VkPhysicalDeviceMemoryProperties properties{};
 		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &properties);
-		for (std::uint32_t index = 0;
-		     index < properties.memoryTypeCount;
-		     ++index)
+		for (std::uint32_t index = 0; index < properties.memoryTypeCount; ++index)
 		{
 			const bool typeAvailable = (typeBits & (1u << index)) != 0;
-			const bool flagsMatch =
-			    (properties.memoryTypes[index].propertyFlags & requiredFlags) ==
-			    requiredFlags;
+			const bool flagsMatch = (properties.memoryTypes[index].propertyFlags & requiredFlags) == requiredFlags;
 			if (typeAvailable && flagsMatch)
 			{
 				return index;
@@ -65,21 +32,14 @@ class VulkanCaptureCommands final
 		return UINT32_MAX;
 	}
 
-	static void RecordTransition(
-	    VkCommandBuffer commandBuffer,
-	    VkImage image,
-	    ResourceState before,
-	    ResourceState after) noexcept
+	static void RecordTransition(VkCommandBuffer commandBuffer, VkImage image, ResourceState before, ResourceState after) noexcept
 	{
-		if (commandBuffer == VK_NULL_HANDLE || image == VK_NULL_HANDLE ||
-		    before == after)
+		if (commandBuffer == VK_NULL_HANDLE || image == VK_NULL_HANDLE || before == after)
 		{
 			return;
 		}
-		const VulkanResourceStateMapping source =
-		    VulkanTypeConversions::ToResourceStateMapping(before);
-		const VulkanResourceStateMapping destination =
-		    VulkanTypeConversions::ToResourceStateMapping(after);
+		const VulkanResourceStateMapping source = VulkanTypeConversions::ToResourceStateMapping(before);
+		const VulkanResourceStateMapping destination = VulkanTypeConversions::ToResourceStateMapping(after);
 		const VkImageMemoryBarrier2 barrier{
 		    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 		    .srcStageMask = source.StageMask,
@@ -91,13 +51,12 @@ class VulkanCaptureCommands final
 		    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		    .image = image,
-		    .subresourceRange =
-		        VkImageSubresourceRange{
-		            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		            .baseMipLevel = 0,
-		            .levelCount = 1,
-		            .baseArrayLayer = 0,
-		            .layerCount = 1}};
+		    .subresourceRange = VkImageSubresourceRange{
+		        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		        .baseMipLevel = 0,
+		        .levelCount = 1,
+		        .baseArrayLayer = 0,
+		        .layerCount = 1}};
 		const VkDependencyInfo dependency{
 		    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		    .imageMemoryBarrierCount = 1,
@@ -117,12 +76,12 @@ struct VulkanCaptureService::PendingReadback final
 	VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
 	std::uint64_t ByteCount = 0;
 	std::uint32_t RowPitch = 0;
-	RhiBmpSourceFormat Format = RhiBmpSourceFormat::Rgba8Unorm;
+	PixelFormat Format = PixelFormat::Unknown;
 	bool Cancelled = false;
 };
 
 VulkanCaptureService::VulkanCaptureService(VulkanRhi& rhi) noexcept :
-	m_rhi(&rhi)
+    m_rhi(&rhi)
 {
 }
 
@@ -134,8 +93,7 @@ VulkanCaptureService::~VulkanCaptureService() noexcept
 		{
 			if (pending && pending->Submission.IsValid())
 			{
-				m_rhi->GetCommandQueue(ERhiQueueType::Graphics)
-				    .WaitForSubmission(pending->Submission.Value);
+				m_rhi->GetCommandQueue(ERhiQueueType::Graphics).WaitForSubmission(pending->Submission.Value);
 			}
 		}
 	}
@@ -145,12 +103,10 @@ VulkanCaptureService::~VulkanCaptureService() noexcept
 	}
 }
 
-RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
-    const RhiTextureCaptureRequest& request) noexcept
+RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(const RhiTextureCaptureRequest& request) noexcept
 {
 	DrainCancelledReadbacks();
-	if (m_rhi == nullptr || !request.Resource ||
-	    request.Width == 0 || request.Height == 0)
+	if (m_rhi == nullptr || !request.Resource || request.Width == 0 || request.Height == 0)
 	{
 		return {};
 	}
@@ -159,44 +115,35 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	const VkPhysicalDevice physicalDevice = m_rhi->GetPhysicalDevice();
 	const VkImage sourceImage = static_cast<VkImage>(request.Resource.Value);
 	std::uint32_t bytesPerPixel = 0;
-	RhiBmpSourceFormat format = RhiBmpSourceFormat::Rgba8Unorm;
-	if (device == VK_NULL_HANDLE || physicalDevice == VK_NULL_HANDLE ||
-	    sourceImage == VK_NULL_HANDLE ||
-	    !VulkanCaptureCommands::ResolveCaptureFormat(
-	        request.SourceFormat,
-	        format,
-	        bytesPerPixel))
+	if (device == VK_NULL_HANDLE || physicalDevice == VK_NULL_HANDLE || sourceImage == VK_NULL_HANDLE
+	    || !IsRhiCapturePixelFormat(request.SourceFormat))
 	{
 		return {};
 	}
+	bytesPerPixel = PixelFormatBytesPerTexel(request.SourceFormat);
 
 	auto pending = std::make_unique<PendingReadback>();
 	pending->Ticket = RhiCaptureTicket{m_nextTicket++};
 	pending->Request = request;
-	pending->Format = format;
+	pending->Format = request.SourceFormat;
 	pending->RowPitch = request.Width * bytesPerPixel;
-	pending->ByteCount =
-	    static_cast<std::uint64_t>(pending->RowPitch) * request.Height;
+	pending->ByteCount = static_cast<std::uint64_t>(pending->RowPitch) * request.Height;
 	const VkBufferCreateInfo bufferInfo{
 	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 	    .size = pending->ByteCount,
 	    .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE};
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &pending->Buffer) !=
-	        VK_SUCCESS ||
-	    pending->Buffer == VK_NULL_HANDLE)
+	if (vkCreateBuffer(device, &bufferInfo, nullptr, &pending->Buffer) != VK_SUCCESS || pending->Buffer == VK_NULL_HANDLE)
 	{
 		return {};
 	}
 
 	VkMemoryRequirements requirements{};
 	vkGetBufferMemoryRequirements(device, pending->Buffer, &requirements);
-	const std::uint32_t memoryType =
-	    VulkanCaptureCommands::FindMemoryType(
-	        physicalDevice,
-	        requirements.memoryTypeBits,
-	        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-	            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	const std::uint32_t memoryType = VulkanCaptureCommands::FindMemoryType(
+	    physicalDevice,
+	    requirements.memoryTypeBits,
+	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	if (memoryType == UINT32_MAX)
 	{
 		vkDestroyBuffer(device, pending->Buffer, nullptr);
@@ -206,17 +153,8 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	    .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 	    .allocationSize = requirements.size,
 	    .memoryTypeIndex = memoryType};
-	if (vkAllocateMemory(
-	        device,
-	        &allocation,
-	        nullptr,
-	        &pending->Memory) != VK_SUCCESS ||
-	    pending->Memory == VK_NULL_HANDLE ||
-	    vkBindBufferMemory(
-	        device,
-	        pending->Buffer,
-	        pending->Memory,
-	        0) != VK_SUCCESS)
+	if (vkAllocateMemory(device, &allocation, nullptr, &pending->Memory) != VK_SUCCESS || pending->Memory == VK_NULL_HANDLE
+	    || vkBindBufferMemory(device, pending->Buffer, pending->Memory, 0) != VK_SUCCESS)
 	{
 		if (pending->Memory != VK_NULL_HANDLE)
 		{
@@ -230,11 +168,7 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	    .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 	    .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
 	    .queueFamilyIndex = m_rhi->GetGraphicsQueueFamilyIndex()};
-	if (vkCreateCommandPool(
-	        device,
-	        &poolInfo,
-	        nullptr,
-	        &pending->CommandPool) != VK_SUCCESS)
+	if (vkCreateCommandPool(device, &poolInfo, nullptr, &pending->CommandPool) != VK_SUCCESS)
 	{
 		vkFreeMemory(device, pending->Memory, nullptr);
 		vkDestroyBuffer(device, pending->Buffer, nullptr);
@@ -245,10 +179,7 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	    .commandPool = pending->CommandPool,
 	    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 	    .commandBufferCount = 1};
-	if (vkAllocateCommandBuffers(
-	        device,
-	        &commandBufferInfo,
-	        &pending->CommandBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(device, &commandBufferInfo, &pending->CommandBuffer) != VK_SUCCESS)
 	{
 		vkDestroyCommandPool(device, pending->CommandPool, nullptr);
 		vkFreeMemory(device, pending->Memory, nullptr);
@@ -266,35 +197,13 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 		return {};
 	}
 
-	VulkanCaptureCommands::RecordTransition(
-	    pending->CommandBuffer,
-	    sourceImage,
-	    request.SourceState,
-	    ResourceState::CopySource);
+	VulkanCaptureCommands::RecordTransition(pending->CommandBuffer, sourceImage, request.SourceState, ResourceState::CopySource);
 	const VkBufferImageCopy copyRegion{
 	    .imageSubresource =
-	        VkImageSubresourceLayers{
-	            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-	            .mipLevel = 0,
-	            .baseArrayLayer = 0,
-	            .layerCount = 1},
-	    .imageExtent =
-	        VkExtent3D{
-	            .width = request.Width,
-	            .height = request.Height,
-	            .depth = 1}};
-	vkCmdCopyImageToBuffer(
-	    pending->CommandBuffer,
-	    sourceImage,
-	    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-	    pending->Buffer,
-	    1,
-	    &copyRegion);
-	VulkanCaptureCommands::RecordTransition(
-	    pending->CommandBuffer,
-	    sourceImage,
-	    ResourceState::CopySource,
-	    request.SourceState);
+	        VkImageSubresourceLayers{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1},
+	    .imageExtent = VkExtent3D{.width = request.Width, .height = request.Height, .depth = 1}};
+	vkCmdCopyImageToBuffer(pending->CommandBuffer, sourceImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, pending->Buffer, 1, &copyRegion);
+	VulkanCaptureCommands::RecordTransition(pending->CommandBuffer, sourceImage, ResourceState::CopySource, request.SourceState);
 	if (vkEndCommandBuffer(pending->CommandBuffer) != VK_SUCCESS)
 	{
 		vkDestroyCommandPool(device, pending->CommandPool, nullptr);
@@ -304,11 +213,7 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	}
 	pending->Submission =
 	    m_rhi->GetCommandQueue(ERhiQueueType::Graphics)
-	        .Submit(VulkanQueueSubmission{
-	            .CommandBuffers =
-	                std::span<const VkCommandBuffer>(
-	                    &pending->CommandBuffer,
-	                    1)});
+	        .Submit(VulkanQueueSubmission{.CommandBuffers = std::span<const VkCommandBuffer>(&pending->CommandBuffer, 1)});
 	if (!pending->Submission.IsValid())
 	{
 		vkDestroyCommandPool(device, pending->CommandPool, nullptr);
@@ -322,28 +227,18 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	return ticket;
 }
 
-bool VulkanCaptureService::TryTakeTextureReadback(
-    RhiCaptureTicket ticket,
-    RhiCaptureReadback& readback) noexcept
+bool VulkanCaptureService::TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCaptureReadback& readback) noexcept
 {
 	DrainCancelledReadbacks();
 	PendingReadback* pending = FindPending(ticket);
-	if (pending == nullptr || m_rhi == nullptr ||
-	    !m_rhi->GetCommandQueue(ERhiQueueType::Graphics)
-	         .IsSubmissionComplete(pending->Submission.Value))
+	if (pending == nullptr || m_rhi == nullptr
+	    || !m_rhi->GetCommandQueue(ERhiQueueType::Graphics).IsSubmissionComplete(pending->Submission.Value))
 	{
 		return false;
 	}
 
 	void* mappedData = nullptr;
-	if (vkMapMemory(
-	        m_rhi->GetDevice(),
-	        pending->Memory,
-	        0,
-	        pending->ByteCount,
-	        0,
-	        &mappedData) != VK_SUCCESS ||
-	    mappedData == nullptr)
+	if (vkMapMemory(m_rhi->GetDevice(), pending->Memory, 0, pending->ByteCount, 0, &mappedData) != VK_SUCCESS || mappedData == nullptr)
 	{
 		return false;
 	}
@@ -359,10 +254,7 @@ bool VulkanCaptureService::TryTakeTextureReadback(
 	readback.RowPitch = pending->RowPitch;
 	readback.Format = pending->Format;
 	readback.Pixels.resize(static_cast<std::size_t>(pending->ByteCount));
-	std::memcpy(
-	    readback.Pixels.data(),
-	    mappedData,
-	    readback.Pixels.size());
+	std::memcpy(readback.Pixels.data(), mappedData, readback.Pixels.size());
 	vkUnmapMemory(m_rhi->GetDevice(), pending->Memory);
 
 	for (std::size_t index = 0; index < m_pendingReadbacks.size(); ++index)
@@ -376,13 +268,11 @@ bool VulkanCaptureService::TryTakeTextureReadback(
 	return true;
 }
 
-void VulkanCaptureService::CancelTextureReadback(
-    RhiCaptureTicket ticket) noexcept
+void VulkanCaptureService::CancelTextureReadback(RhiCaptureTicket ticket) noexcept
 {
 	for (std::size_t index = 0; index < m_pendingReadbacks.size(); ++index)
 	{
-		const std::unique_ptr<PendingReadback>& pending =
-		    m_pendingReadbacks[index];
+		const std::unique_ptr<PendingReadback>& pending = m_pendingReadbacks[index];
 		if (!pending || pending->Ticket.Value != ticket.Value)
 		{
 			continue;
@@ -393,8 +283,7 @@ void VulkanCaptureService::CancelTextureReadback(
 	}
 }
 
-VulkanCaptureService::PendingReadback* VulkanCaptureService::FindPending(
-    RhiCaptureTicket ticket) noexcept
+VulkanCaptureService::PendingReadback* VulkanCaptureService::FindPending(RhiCaptureTicket ticket) noexcept
 {
 	for (const std::unique_ptr<PendingReadback>& pending : m_pendingReadbacks)
 	{
@@ -412,14 +301,11 @@ void VulkanCaptureService::DrainCancelledReadbacks() noexcept
 	{
 		return;
 	}
-	for (std::size_t index = 0;
-	     index < m_pendingReadbacks.size();)
+	for (std::size_t index = 0; index < m_pendingReadbacks.size();)
 	{
-		const std::unique_ptr<PendingReadback>& pending =
-		    m_pendingReadbacks[index];
-		if (!pending || !pending->Cancelled ||
-		    !m_rhi->GetCommandQueue(ERhiQueueType::Graphics)
-		         .IsSubmissionComplete(pending->Submission.Value))
+		const std::unique_ptr<PendingReadback>& pending = m_pendingReadbacks[index];
+		if (!pending || !pending->Cancelled
+		    || !m_rhi->GetCommandQueue(ERhiQueueType::Graphics).IsSubmissionComplete(pending->Submission.Value))
 		{
 			++index;
 			continue;
@@ -434,8 +320,7 @@ void VulkanCaptureService::ReleasePending(std::size_t index) noexcept
 	{
 		return;
 	}
-	const VkDevice device =
-	    m_rhi != nullptr ? m_rhi->GetDevice() : VK_NULL_HANDLE;
+	const VkDevice device = m_rhi != nullptr ? m_rhi->GetDevice() : VK_NULL_HANDLE;
 	const std::unique_ptr<PendingReadback>& pending = m_pendingReadbacks[index];
 	if (device != VK_NULL_HANDLE && pending)
 	{

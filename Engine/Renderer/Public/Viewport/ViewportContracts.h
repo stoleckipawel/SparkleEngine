@@ -3,6 +3,7 @@
 #include "../Editor/EditorTextureHandle.h"
 #include "../RendererAPI.h"
 #include "../Settings/EngineRenderingDisplayTypes.h"
+#include "RHI/Public/Formats/PixelFormat.h"
 
 #include <cstdint>
 #include <cstddef>
@@ -137,14 +138,6 @@ struct SPARKLE_RENDERER_API ViewportCaptureId
 	explicit operator bool() const noexcept;
 };
 
-enum class ViewportCapturePixelFormat : std::uint8_t
-{
-	Rgba32Float = 0,
-	Rgba16Float,
-	Rgba8Unorm,
-	Bgra8Unorm,
-};
-
 struct SPARKLE_RENDERER_API ViewportCaptureReadback
 {
 	ViewportCaptureId Id;
@@ -153,7 +146,7 @@ struct SPARKLE_RENDERER_API ViewportCaptureReadback
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 	std::uint32_t RowPitch = 0;
-	ViewportCapturePixelFormat Format = ViewportCapturePixelFormat::Rgba8Unorm;
+	PixelFormat Format = PixelFormat::Unknown;
 };
 
 SPARKLE_RENDERER_API bool WriteViewportCaptureBmp(const ViewportCaptureReadback& readback) noexcept;

@@ -4,27 +4,6 @@
 
 #include "RHI/Public/Capture/RhiCaptureService.h"
 
-class ViewportCaptureEncoding final
-{
-  public:
-	static RhiBmpSourceFormat ToRhiFormat(
-	    ViewportCapturePixelFormat format) noexcept
-	{
-		switch (format)
-		{
-			case ViewportCapturePixelFormat::Rgba32Float:
-				return RhiBmpSourceFormat::Rgba32Float;
-			case ViewportCapturePixelFormat::Rgba16Float:
-				return RhiBmpSourceFormat::Rgba16Float;
-			case ViewportCapturePixelFormat::Bgra8Unorm:
-				return RhiBmpSourceFormat::Bgra8Unorm;
-			case ViewportCapturePixelFormat::Rgba8Unorm:
-			default:
-				return RhiBmpSourceFormat::Rgba8Unorm;
-		}
-	}
-};
-
 bool WriteViewportCaptureBmp(
     const ViewportCaptureReadback& readback) noexcept
 {
@@ -33,8 +12,7 @@ bool WriteViewportCaptureBmp(
 	rhiReadback.Width = readback.Width;
 	rhiReadback.Height = readback.Height;
 	rhiReadback.RowPitch = readback.RowPitch;
-	rhiReadback.Format =
-	    ViewportCaptureEncoding::ToRhiFormat(readback.Format);
+	rhiReadback.Format = readback.Format;
 	return WriteRhiCaptureBmp(
 	    rhiReadback,
 	    readback.Result.ArtifactPath);

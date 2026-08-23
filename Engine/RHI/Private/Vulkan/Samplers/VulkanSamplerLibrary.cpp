@@ -35,7 +35,7 @@ RhiDescriptorTableBinding VulkanSamplerLibrary::GetSharedSamplerBinding(const Rh
 {
 	for (const SamplerRecord& samplerRecord : m_samplerRecords)
 	{
-		if (SamplerDescEquals(samplerRecord.Desc, samplerDesc))
+		if (samplerRecord.Desc == samplerDesc)
 		{
 			return RhiDescriptorTableBinding{.Table = samplerRecord.Table, .DescriptorIndex = 0};
 		}
@@ -51,12 +51,6 @@ RhiDescriptorTableBinding VulkanSamplerLibrary::GetSharedSamplerBinding(const Rh
 	m_descriptorService.WriteSamplerDescriptor(table, sampler);
 	m_samplerRecords.push_back(SamplerRecord{.Desc = samplerDesc, .Sampler = sampler, .Table = table});
 	return RhiDescriptorTableBinding{.Table = table, .DescriptorIndex = 0};
-}
-
-bool VulkanSamplerLibrary::SamplerDescEquals(const RhiSamplerDesc& lhs, const RhiSamplerDesc& rhs) noexcept
-{
-	return lhs.MinMagFilter == rhs.MinMagFilter && lhs.MipFilter == rhs.MipFilter && lhs.Address.U == rhs.Address.U &&
-	       lhs.Address.V == rhs.Address.V && lhs.Address.W == rhs.Address.W && lhs.MaxAnisotropy == rhs.MaxAnisotropy;
 }
 
 VkFilter VulkanSamplerLibrary::ToVkFilter(RhiSamplerMinMagFilter filter) noexcept

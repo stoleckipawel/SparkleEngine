@@ -6,6 +6,7 @@
 #include "RayTracing/RhiPartitionedTlasOperationLayout.h"
 #include "RayTracing/RhiRayTracingDesc.h"
 #include "Resources/RhiResourceDesc.h"
+#include "Validation/RhiContract.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
@@ -191,13 +192,7 @@ RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelA
 {
 	const RhiRayTracingCapabilities capabilities = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !capabilities.Groups.PartitionedTlas.Supported ||
-	    operationPack.OperationCount == 0 || operationPack.Operations == nullptr)
-	{
-		return {};
-	}
-	if ((operationPack.InstanceWriteCount > 0 && operationPack.InstanceWrites == nullptr) ||
-	    (operationPack.InstanceUpdateCount > 0 && operationPack.InstanceUpdates == nullptr) ||
-	    (operationPack.PartitionTranslationCount > 0 && operationPack.PartitionTranslations == nullptr))
+	    !RhiContract::IsPartitionedTlasOperationPackUsable(operationPack))
 	{
 		return {};
 	}

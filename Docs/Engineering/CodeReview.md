@@ -136,6 +136,7 @@ For each changed capability, policy, transform, validation rule, and mutable fac
 6. apply the [single-truth and copy budget](Standards/DataOrientedDesign.md#single-truth-and-copy-budget) to every new holder and material copy, including its source, boundary reason, lifetime/epoch, producer, consumers, and invalidation;
 7. apply the [mandatory orchestrator/implementor boundary](Standards/RepositoryStructureAndOwnership.md#mandatory-orchestratorimplementor-boundary) across the complete touched family: each independently changing payload/type/policy/backend behavior has a dedicated implementor, while the actual lifecycle owner only selects, sequences, and publishes it;
 8. verify module dependency direction, `Public`/`Private` placement, build membership, and the ability to change or delete the capability through one bounded owner path.
+9. for backend/provider sibling families, separate neutral invariants from native mechanics: search for repeated case lists, predicates, validation, and error meaning; require one neutral owner when the inputs and rule are common, while retaining local native translation, capability queries, and genuinely different failure contracts.
 
 Report a placement defect when the same behavior or fact has more than one production authority, when logic lives in a caller because it was convenient rather than owned, or when feature work scatters knowledge across unrelated modules. Do not consolidate code whose semantics, lifetimes, failure contracts, or cost models are genuinely different merely because its syntax looks similar.
 
@@ -253,6 +254,7 @@ Before `PASS`, answer yes to every applicable question:
 - Does every material copy or new holder have a real boundary reason, one producer, an exact lifetime, and no path to become stale mutable truth?
 - Can every new concept and changed file justify its current consumer and reason to exist?
 - Are orchestration and capability mechanics separated without wrapper ceremony?
+- Does every shared invariant live with its neutral/domain owner, with sibling backends/providers containing only their genuinely native or capability-specific mechanics?
 - Did the changelist remove the complete replaced path and directly exposed duplicate authority?
 - Did it preserve exactly one current Sparkle-owned representation, with no internal versioning or legacy/migration/compatibility path and with disposable artifacts regenerated?
 - Are functions, classes, files, and folders cohesive by ownership rather than arbitrary size?

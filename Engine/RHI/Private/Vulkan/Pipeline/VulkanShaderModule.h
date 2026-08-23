@@ -10,9 +10,9 @@ class VulkanRhi;
 
 class VulkanShaderModule final
 {
-  public:
+public:
 	VulkanShaderModule() = default;
-	VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc& desc, std::string_view pipelineName, bool required);
+	VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc& desc, std::string_view pipelineName);
 	~VulkanShaderModule() noexcept;
 
 	VulkanShaderModule(const VulkanShaderModule&) = delete;
@@ -25,7 +25,7 @@ class VulkanShaderModule final
 
 	VkPipelineShaderStageCreateInfo BuildStageCreateInfo() const noexcept;
 
-  private:
+private:
 	static VkShaderStageFlagBits ToVkShaderStage(ShaderStage stage) noexcept;
 	void Reset() noexcept;
 

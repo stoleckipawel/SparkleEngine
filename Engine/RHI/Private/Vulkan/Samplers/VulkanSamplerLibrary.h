@@ -29,7 +29,6 @@ class VulkanSamplerLibrary final
 		RhiDescriptorTableHandle Table = {};
 	};
 
-	static bool SamplerDescEquals(const RhiSamplerDesc& lhs, const RhiSamplerDesc& rhs) noexcept;
 	static VkFilter ToVkFilter(RhiSamplerMinMagFilter filter) noexcept;
 	static VkSamplerMipmapMode ToVkMipmapMode(RhiSamplerMipFilter filter) noexcept;
 	static VkSamplerAddressMode ToVkAddressMode(RhiSamplerAddressMode mode) noexcept;

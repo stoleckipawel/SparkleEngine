@@ -98,6 +98,14 @@ bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc
 	return true;
 }
 
+bool RhiContract::IsPartitionedTlasOperationPackUsable(const RhiPartitionedTlasOperationPackDesc& operationPack) noexcept
+{
+	return operationPack.OperationCount != 0 && operationPack.Operations != nullptr
+	    && (operationPack.InstanceWriteCount == 0 || operationPack.InstanceWrites != nullptr)
+	    && (operationPack.InstanceUpdateCount == 0 || operationPack.InstanceUpdates != nullptr)
+	    && (operationPack.PartitionTranslationCount == 0 || operationPack.PartitionTranslations != nullptr);
+}
+
 bool RhiContract::IsRayTracingGpuAddressPresent(RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	return gpuAddress != 0;

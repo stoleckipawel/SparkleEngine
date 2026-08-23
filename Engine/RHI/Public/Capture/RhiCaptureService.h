@@ -19,14 +19,6 @@ enum class ERhiCaptureStatus : std::uint8_t
 	Succeeded = 2
 };
 
-enum class RhiBmpSourceFormat : std::uint8_t
-{
-	Rgba32Float = 0,
-	Rgba16Float,
-	Rgba8Unorm,
-	Bgra8Unorm
-};
-
 struct RhiCaptureTicket final
 {
 	std::uint64_t Value = 0;
@@ -66,22 +58,17 @@ struct RhiCaptureReadback final
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 	std::uint32_t RowPitch = 0;
-	RhiBmpSourceFormat Format = RhiBmpSourceFormat::Rgba8Unorm;
+	PixelFormat Format = PixelFormat::Unknown;
 };
 
 class SPARKLE_RHI_API RhiCaptureService
 {
-  public:
+public:
 	virtual ~RhiCaptureService() noexcept;
 
-	virtual RhiCaptureTicket BeginTextureReadback(
-	    const RhiTextureCaptureRequest& request) noexcept = 0;
-	virtual bool TryTakeTextureReadback(
-	    RhiCaptureTicket ticket,
-	    RhiCaptureReadback& readback) noexcept = 0;
+	virtual RhiCaptureTicket BeginTextureReadback(const RhiTextureCaptureRequest& request) noexcept = 0;
+	virtual bool TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCaptureReadback& readback) noexcept = 0;
 	virtual void CancelTextureReadback(RhiCaptureTicket ticket) noexcept = 0;
 };
 
-SPARKLE_RHI_API bool WriteRhiCaptureBmp(
-    const RhiCaptureReadback& readback,
-    const std::filesystem::path& outputPath) noexcept;
+SPARKLE_RHI_API bool WriteRhiCaptureBmp(const RhiCaptureReadback& readback, const std::filesystem::path& outputPath) noexcept;

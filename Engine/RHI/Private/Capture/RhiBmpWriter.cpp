@@ -8,7 +8,7 @@
 
 class RhiBmpWriterImplementation final
 {
-  public:
+public:
 #pragma pack(push, 1)
 	struct BmpFileHeader final
 	{
@@ -41,10 +41,7 @@ class RhiBmpWriterImplementation final
 		return static_cast<std::byte>(static_cast<std::uint32_t>(clamped * 255.0f + 0.5f));
 	}
 
-	static bool ConvertPixel(
-	    const std::byte* sourcePixel,
-	    RhiBmpSourceFormat sourceFormat,
-	    std::byte* outputPixel) noexcept
+	static bool ConvertPixel(const std::byte* sourcePixel, PixelFormat sourceFormat, std::byte* outputPixel) noexcept
 	{
 		if (sourcePixel == nullptr || outputPixel == nullptr)
 		{
@@ -53,54 +50,41 @@ class RhiBmpWriterImplementation final
 
 		switch (sourceFormat)
 		{
-		case RhiBmpSourceFormat::Rgba32Float:
-		{
-			const float* rgba = reinterpret_cast<const float*>(sourcePixel);
-			outputPixel[0] = ToByte(rgba[2]);
-			outputPixel[1] = ToByte(rgba[1]);
-			outputPixel[2] = ToByte(rgba[0]);
-			outputPixel[3] = ToByte(rgba[3]);
-			return true;
-		}
-		case RhiBmpSourceFormat::Rgba16Float:
-		{
-			const std::uint16_t* rgba = reinterpret_cast<const std::uint16_t*>(sourcePixel);
-			outputPixel[0] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[2]));
-			outputPixel[1] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[1]));
-			outputPixel[2] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[0]));
-			outputPixel[3] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[3]));
-			return true;
-		}
-		case RhiBmpSourceFormat::Rgba8Unorm:
-			outputPixel[0] = sourcePixel[2];
-			outputPixel[1] = sourcePixel[1];
-			outputPixel[2] = sourcePixel[0];
-			outputPixel[3] = sourcePixel[3];
-			return true;
-		case RhiBmpSourceFormat::Bgra8Unorm:
-			outputPixel[0] = sourcePixel[0];
-			outputPixel[1] = sourcePixel[1];
-			outputPixel[2] = sourcePixel[2];
-			outputPixel[3] = sourcePixel[3];
-			return true;
+			case PixelFormat::R32G32B32A32_Float:
+			{
+				const float* rgba = reinterpret_cast<const float*>(sourcePixel);
+				outputPixel[0] = ToByte(rgba[2]);
+				outputPixel[1] = ToByte(rgba[1]);
+				outputPixel[2] = ToByte(rgba[0]);
+				outputPixel[3] = ToByte(rgba[3]);
+				return true;
+			}
+			case PixelFormat::R16G16B16A16_Float:
+			{
+				const std::uint16_t* rgba = reinterpret_cast<const std::uint16_t*>(sourcePixel);
+				outputPixel[0] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[2]));
+				outputPixel[1] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[1]));
+				outputPixel[2] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[0]));
+				outputPixel[3] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[3]));
+				return true;
+			}
+			case PixelFormat::R8G8B8A8_UNorm:
+			case PixelFormat::R8G8B8A8_UNorm_Srgb:
+				outputPixel[0] = sourcePixel[2];
+				outputPixel[1] = sourcePixel[1];
+				outputPixel[2] = sourcePixel[0];
+				outputPixel[3] = sourcePixel[3];
+				return true;
+			case PixelFormat::B8G8R8A8_UNorm:
+			case PixelFormat::B8G8R8A8_UNorm_Srgb:
+				outputPixel[0] = sourcePixel[0];
+				outputPixel[1] = sourcePixel[1];
+				outputPixel[2] = sourcePixel[2];
+				outputPixel[3] = sourcePixel[3];
+				return true;
 		}
 
 		return false;
-	}
-
-	static std::uint32_t GetSourcePixelStride(RhiBmpSourceFormat sourceFormat) noexcept
-	{
-		switch (sourceFormat)
-		{
-			case RhiBmpSourceFormat::Rgba32Float:
-				return 16u;
-			case RhiBmpSourceFormat::Rgba16Float:
-				return 8u;
-			case RhiBmpSourceFormat::Rgba8Unorm:
-			case RhiBmpSourceFormat::Bgra8Unorm:
-			default:
-				return 4u;
-		}
 	}
 };
 
@@ -110,7 +94,7 @@ bool WriteRhiBmp(
     std::uint32_t width,
     std::uint32_t height,
     std::uint32_t sourceRowPitch,
-    RhiBmpSourceFormat sourceFormat) noexcept
+    PixelFormat sourceFormat) noexcept
 {
 	if (sourcePixels == nullptr || width == 0 || height == 0 || sourceRowPitch == 0)
 	{
@@ -127,7 +111,11 @@ bool WriteRhiBmp(
 		}
 	}
 
-	const std::uint32_t sourcePixelStride = RhiBmpWriterImplementation::GetSourcePixelStride(sourceFormat);
+	const std::uint32_t sourcePixelStride = PixelFormatBytesPerTexel(sourceFormat);
+	if (sourcePixelStride == 0)
+	{
+		return false;
+	}
 	const std::uint32_t outputRowPitch = width * 4u;
 	std::vector<std::byte> outputPixels(static_cast<std::size_t>(outputRowPitch) * height);
 	for (std::uint32_t y = 0; y < height; ++y)

@@ -10,6 +10,7 @@
 #include "Memory/RhiMemoryTypes.h"
 #include "RayTracing/RhiPartitionedTlasOperationLayout.h"
 #include "Resources/RhiResourceDesc.h"
+#include "Validation/RhiContract.h"
 
 #include <cstring>
 #include <memory>
@@ -159,13 +160,7 @@ RhiOwnedResourceHandle D3D12PartitionedTlasServices::CreatePartitionedTopLevelAc
 {
 	const RhiRayTracingCapabilities capabilities = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !capabilities.Groups.PartitionedTlas.Supported ||
-	    operationPack.OperationCount == 0 || operationPack.Operations == nullptr)
-	{
-		return {};
-	}
-	if ((operationPack.InstanceWriteCount > 0 && operationPack.InstanceWrites == nullptr) ||
-	    (operationPack.InstanceUpdateCount > 0 && operationPack.InstanceUpdates == nullptr) ||
-	    (operationPack.PartitionTranslationCount > 0 && operationPack.PartitionTranslations == nullptr))
+	    !RhiContract::IsPartitionedTlasOperationPackUsable(operationPack))
 	{
 		return {};
 	}

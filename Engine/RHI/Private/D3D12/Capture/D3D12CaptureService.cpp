@@ -2,6 +2,7 @@
 
 #include "D3D12/Capture/D3D12CaptureService.h"
 
+#include "Capture/RhiCaptureFormat.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Device/D3D12Rhi.h"
 
@@ -13,32 +14,7 @@
 
 class D3D12CaptureCommands final
 {
-  public:
-	static bool TryMapCaptureFormat(
-	    DXGI_FORMAT sourceFormat,
-	    RhiBmpSourceFormat& outFormat) noexcept
-	{
-		switch (sourceFormat)
-		{
-			case DXGI_FORMAT_R32G32B32A32_FLOAT:
-				outFormat = RhiBmpSourceFormat::Rgba32Float;
-				return true;
-			case DXGI_FORMAT_R16G16B16A16_FLOAT:
-				outFormat = RhiBmpSourceFormat::Rgba16Float;
-				return true;
-			case DXGI_FORMAT_R8G8B8A8_UNORM:
-			case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-				outFormat = RhiBmpSourceFormat::Rgba8Unorm;
-				return true;
-			case DXGI_FORMAT_B8G8R8A8_UNORM:
-			case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
-				outFormat = RhiBmpSourceFormat::Bgra8Unorm;
-				return true;
-			default:
-				return false;
-		}
-	}
-
+public:
 	static void RecordTransition(
 	    ID3D12GraphicsCommandList* commandList,
 	    ID3D12Resource* resource,
@@ -54,10 +30,8 @@ class D3D12CaptureCommands final
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Transition.pResource = resource;
 		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore =
-		    D3D12TypeConversions::ToResourceStates(before);
-		barrier.Transition.StateAfter =
-		    D3D12TypeConversions::ToResourceStates(after);
+		barrier.Transition.StateBefore = D3D12TypeConversions::ToResourceStates(before);
+		barrier.Transition.StateAfter = D3D12TypeConversions::ToResourceStates(after);
 		commandList->ResourceBarrier(1, &barrier);
 	}
 };
@@ -72,12 +46,12 @@ struct D3D12CaptureService::PendingReadback final
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> CommandList;
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT Footprint{};
 	std::uint64_t TotalBytes = 0;
-	RhiBmpSourceFormat Format = RhiBmpSourceFormat::Rgba8Unorm;
+	PixelFormat Format = PixelFormat::Unknown;
 	bool Cancelled = false;
 };
 
 D3D12CaptureService::D3D12CaptureService(D3D12Rhi& rhi) noexcept :
-	m_rhi(&rhi)
+    m_rhi(&rhi)
 {
 }
 
@@ -96,26 +70,20 @@ D3D12CaptureService::~D3D12CaptureService() noexcept
 	m_pendingReadbacks.clear();
 }
 
-RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
-    const RhiTextureCaptureRequest& request) noexcept
+RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptureRequest& request) noexcept
 {
 	DrainCancelledReadbacks();
-	ID3D12Device* const device =
-	    m_rhi != nullptr ? m_rhi->GetDevice().Get() : nullptr;
-	ID3D12Resource* const sourceResource =
-	    static_cast<ID3D12Resource*>(request.Resource.Value);
+	ID3D12Device* const device = m_rhi != nullptr ? m_rhi->GetDevice().Get() : nullptr;
+	ID3D12Resource* const sourceResource = static_cast<ID3D12Resource*>(request.Resource.Value);
 	if (device == nullptr || sourceResource == nullptr)
 	{
 		return {};
 	}
 
 	const D3D12_RESOURCE_DESC sourceDesc = sourceResource->GetDesc();
-	RhiBmpSourceFormat captureFormat = RhiBmpSourceFormat::Rgba8Unorm;
-	if (sourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D ||
-	    sourceDesc.Width == 0 || sourceDesc.Height == 0 ||
-	    !D3D12CaptureCommands::TryMapCaptureFormat(
-	        sourceDesc.Format,
-	        captureFormat))
+	if (sourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D || sourceDesc.Width == 0 || sourceDesc.Height == 0
+	    || !IsRhiCapturePixelFormat(request.SourceFormat)
+	    || sourceDesc.Format != D3D12TypeConversions::ToDxgiFormat(request.SourceFormat))
 	{
 		return {};
 	}
@@ -123,18 +91,10 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
 	auto pending = std::make_unique<PendingReadback>();
 	pending->Ticket = RhiCaptureTicket{m_nextTicket++};
 	pending->Request = request;
-	pending->Format = captureFormat;
+	pending->Format = request.SourceFormat;
 	UINT rowCount = 0;
 	UINT64 rowSizeInBytes = 0;
-	device->GetCopyableFootprints(
-	    &sourceDesc,
-	    0,
-	    1,
-	    0,
-	    &pending->Footprint,
-	    &rowCount,
-	    &rowSizeInBytes,
-	    &pending->TotalBytes);
+	device->GetCopyableFootprints(&sourceDesc, 0, 1, 0, &pending->Footprint, &rowCount, &rowSizeInBytes, &pending->TotalBytes);
 	if (pending->TotalBytes == 0 || rowCount == 0)
 	{
 		return {};
@@ -158,11 +118,9 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
 	        &readbackDesc,
 	        D3D12_RESOURCE_STATE_COPY_DEST,
 	        nullptr,
-	        IID_PPV_ARGS(&pending->Buffer))) ||
-	    FAILED(device->CreateCommandAllocator(
-	        D3D12_COMMAND_LIST_TYPE_DIRECT,
-	        IID_PPV_ARGS(&pending->CommandAllocator))) ||
-	    FAILED(device->CreateCommandList(
+	        IID_PPV_ARGS(&pending->Buffer)))
+	    || FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pending->CommandAllocator)))
+	    || FAILED(device->CreateCommandList(
 	        0,
 	        D3D12_COMMAND_LIST_TYPE_DIRECT,
 	        pending->CommandAllocator.Get(),
@@ -172,11 +130,7 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
 		return {};
 	}
 
-	D3D12CaptureCommands::RecordTransition(
-	    pending->CommandList.Get(),
-	    sourceResource,
-	    request.SourceState,
-	    ResourceState::CopySource);
+	D3D12CaptureCommands::RecordTransition(pending->CommandList.Get(), sourceResource, request.SourceState, ResourceState::CopySource);
 	D3D12_TEXTURE_COPY_LOCATION sourceLocation{};
 	sourceLocation.pResource = sourceResource;
 	sourceLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
@@ -184,26 +138,15 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
 	destinationLocation.pResource = pending->Buffer.Get();
 	destinationLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 	destinationLocation.PlacedFootprint = pending->Footprint;
-	pending->CommandList->CopyTextureRegion(
-	    &destinationLocation,
-	    0,
-	    0,
-	    0,
-	    &sourceLocation,
-	    nullptr);
-	D3D12CaptureCommands::RecordTransition(
-	    pending->CommandList.Get(),
-	    sourceResource,
-	    ResourceState::CopySource,
-	    request.SourceState);
+	pending->CommandList->CopyTextureRegion(&destinationLocation, 0, 0, 0, &sourceLocation, nullptr);
+	D3D12CaptureCommands::RecordTransition(pending->CommandList.Get(), sourceResource, ResourceState::CopySource, request.SourceState);
 	if (FAILED(pending->CommandList->Close()))
 	{
 		return {};
 	}
 
 	ID3D12CommandList* const commandLists[] = {pending->CommandList.Get()};
-	pending->Submission =
-	    m_rhi->SubmitCommandLists(ERhiQueueType::Graphics, commandLists);
+	pending->Submission = m_rhi->SubmitCommandLists(ERhiQueueType::Graphics, commandLists);
 	if (!pending->Submission.IsValid())
 	{
 		return {};
@@ -214,24 +157,18 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
 	return ticket;
 }
 
-bool D3D12CaptureService::TryTakeTextureReadback(
-    RhiCaptureTicket ticket,
-    RhiCaptureReadback& readback) noexcept
+bool D3D12CaptureService::TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCaptureReadback& readback) noexcept
 {
 	DrainCancelledReadbacks();
 	PendingReadback* pending = FindPending(ticket);
-	if (pending == nullptr || m_rhi == nullptr ||
-	    !m_rhi->IsSubmissionComplete(pending->Submission))
+	if (pending == nullptr || m_rhi == nullptr || !m_rhi->IsSubmissionComplete(pending->Submission))
 	{
 		return false;
 	}
 
 	void* mappedData = nullptr;
-	const D3D12_RANGE readRange{
-	    0,
-	    static_cast<SIZE_T>(pending->TotalBytes)};
-	if (FAILED(pending->Buffer->Map(0, &readRange, &mappedData)) ||
-	    mappedData == nullptr)
+	const D3D12_RANGE readRange{0, static_cast<SIZE_T>(pending->TotalBytes)};
+	if (FAILED(pending->Buffer->Map(0, &readRange, &mappedData)) || mappedData == nullptr)
 	{
 		return false;
 	}
@@ -247,11 +184,9 @@ bool D3D12CaptureService::TryTakeTextureReadback(
 	readback.Height = pending->Footprint.Footprint.Height;
 	readback.RowPitch = pending->Footprint.Footprint.RowPitch;
 	readback.Format = pending->Format;
-	const std::size_t byteCount =
-	    static_cast<std::size_t>(readback.RowPitch) * readback.Height;
+	const std::size_t byteCount = static_cast<std::size_t>(readback.RowPitch) * readback.Height;
 	readback.Pixels.resize(byteCount);
-	const std::byte* source =
-	    static_cast<const std::byte*>(mappedData) + pending->Footprint.Offset;
+	const std::byte* source = static_cast<const std::byte*>(mappedData) + pending->Footprint.Offset;
 	std::memcpy(readback.Pixels.data(), source, byteCount);
 	const D3D12_RANGE writeRange{0, 0};
 	pending->Buffer->Unmap(0, &writeRange);
@@ -259,10 +194,7 @@ bool D3D12CaptureService::TryTakeTextureReadback(
 	const auto iterator = std::find_if(
 	    m_pendingReadbacks.begin(),
 	    m_pendingReadbacks.end(),
-	    [ticket](const std::unique_ptr<PendingReadback>& candidate)
-	    {
-		    return candidate && candidate->Ticket.Value == ticket.Value;
-	    });
+	    [ticket](const std::unique_ptr<PendingReadback>& candidate) { return candidate && candidate->Ticket.Value == ticket.Value; });
 	if (iterator != m_pendingReadbacks.end())
 	{
 		m_pendingReadbacks.erase(iterator);
@@ -270,16 +202,12 @@ bool D3D12CaptureService::TryTakeTextureReadback(
 	return true;
 }
 
-void D3D12CaptureService::CancelTextureReadback(
-    RhiCaptureTicket ticket) noexcept
+void D3D12CaptureService::CancelTextureReadback(RhiCaptureTicket ticket) noexcept
 {
 	const auto iterator = std::find_if(
 	    m_pendingReadbacks.begin(),
 	    m_pendingReadbacks.end(),
-	    [ticket](const std::unique_ptr<PendingReadback>& candidate)
-	    {
-		    return candidate && candidate->Ticket.Value == ticket.Value;
-	    });
+	    [ticket](const std::unique_ptr<PendingReadback>& candidate) { return candidate && candidate->Ticket.Value == ticket.Value; });
 	if (iterator == m_pendingReadbacks.end())
 	{
 		return;
@@ -288,8 +216,7 @@ void D3D12CaptureService::CancelTextureReadback(
 	DrainCancelledReadbacks();
 }
 
-D3D12CaptureService::PendingReadback* D3D12CaptureService::FindPending(
-    RhiCaptureTicket ticket) noexcept
+D3D12CaptureService::PendingReadback* D3D12CaptureService::FindPending(RhiCaptureTicket ticket) noexcept
 {
 	for (const std::unique_ptr<PendingReadback>& pending : m_pendingReadbacks)
 	{
@@ -307,18 +234,14 @@ void D3D12CaptureService::DrainCancelledReadbacks() noexcept
 	{
 		return;
 	}
-	for (std::size_t index = 0;
-	     index < m_pendingReadbacks.size();)
+	for (std::size_t index = 0; index < m_pendingReadbacks.size();)
 	{
-		const std::unique_ptr<PendingReadback>& pending =
-		    m_pendingReadbacks[index];
-		if (!pending || !pending->Cancelled ||
-		    !m_rhi->IsSubmissionComplete(pending->Submission))
+		const std::unique_ptr<PendingReadback>& pending = m_pendingReadbacks[index];
+		if (!pending || !pending->Cancelled || !m_rhi->IsSubmissionComplete(pending->Submission))
 		{
 			++index;
 			continue;
 		}
-		m_pendingReadbacks.erase(
-		    m_pendingReadbacks.begin() + index);
+		m_pendingReadbacks.erase(m_pendingReadbacks.begin() + index);
 	}
 }

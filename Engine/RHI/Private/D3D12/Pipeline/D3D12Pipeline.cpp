@@ -3,9 +3,10 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
-#include "Config/DepthConvention.h"
 #include "Strings/StringUtils.h"
+#include "Validation/RhiContract.h"
 
+#include <cassert>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -20,29 +21,6 @@ void D3D12Pipeline::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc)
 class D3D12PipelineImplementation final
 {
 public:
-	static bool IsColorAttachmentFormat(PixelFormat format) noexcept
-	{
-		switch (format)
-		{
-			case PixelFormat::R32G32B32A32_Float:
-			case PixelFormat::R16G16B16A16_Float:
-			case PixelFormat::R8G8B8A8_UNorm:
-			case PixelFormat::R8G8B8A8_UNorm_Srgb:
-			case PixelFormat::R16G16_Float:
-			case PixelFormat::R32_Float:
-			case PixelFormat::B8G8R8A8_UNorm:
-			case PixelFormat::B8G8R8A8_UNorm_Srgb:
-				return true;
-			default:
-				return false;
-		}
-	}
-
-	static bool IsDepthStencilAttachmentFormat(PixelFormat format) noexcept
-	{
-		return format == PixelFormat::D32_Float || format == PixelFormat::D24_UNorm_S8_UInt;
-	}
-
 	static D3D12_CULL_MODE ToD3D12CullMode(ERhiCullMode cullMode) noexcept
 	{
 		switch (cullMode)
@@ -187,10 +165,7 @@ public:
 					break;
 				}
 			}
-			if (binding == nullptr)
-			{
-				Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 vertex input references a missing binding.");
-			}
+			assert(binding != nullptr && "Neutral graphics pipeline validation must reject missing vertex bindings.");
 			result.push_back(
 			    D3D12_INPUT_ELEMENT_DESC{
 			        ToD3D12Semantic(element.Semantic),
@@ -209,22 +184,10 @@ public:
 		D3D12_SHADER_BYTECODE Bytecode = {};
 	};
 
-	static ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(
-	    const RhiShaderStageDesc& shaderDesc,
-	    std::string_view pipelineName,
-	    bool required)
+	static ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(const RhiShaderStageDesc& shaderDesc, std::string_view pipelineName)
 	{
 		if (!shaderDesc.IsValid())
 		{
-			if (required)
-			{
-				Diagnostics::Fatal(
-				    g_pipelineLogger,
-				    __FILE__,
-				    __LINE__,
-				    std::format("Pipeline '{}' is missing a required cooked shader stage descriptor", pipelineName));
-			}
-
 			return {};
 		}
 
@@ -407,49 +370,13 @@ D3D12Pipeline::D3D12Pipeline(D3D12Rhi& rhi, const ComputePipelineDesc& desc) :
 
 void D3D12Pipeline::Create(const GraphicsPipelineDesc& desc)
 {
-	if (desc.BindingLayout == nullptr || (desc.ColorAttachmentCount == 0 && desc.DepthStencilAttachmentFormat == PixelFormat::Unknown)
-	    || desc.ColorAttachmentCount > desc.ColorAttachmentFormats.size()
-	    || desc.VertexInput.BindingCount > desc.VertexInput.Bindings.size()
-	    || desc.VertexInput.ElementCount > desc.VertexInput.Elements.size()
-	    || (desc.SampleCount != 1 && desc.SampleCount != 2 && desc.SampleCount != 4 && desc.SampleCount != 8))
-	{
-		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported graphics pipeline description.");
-	}
-	if ((desc.Depth.DepthEnable || desc.Depth.DepthWriteEnable || desc.Stencil.StencilEnable)
-	    && desc.DepthStencilAttachmentFormat == PixelFormat::Unknown)
-	{
-		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 depth-stencil state requires an attachment format.");
-	}
-	if (desc.Stencil.StencilEnable && desc.DepthStencilAttachmentFormat != PixelFormat::D24_UNorm_S8_UInt)
-	{
-		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 stencil state requires a stencil-capable attachment format.");
-	}
-	for (std::uint32_t index = 0; index < desc.ColorAttachmentCount; ++index)
-	{
-		if (!D3D12PipelineImplementation::IsColorAttachmentFormat(desc.ColorAttachmentFormats[index]))
-		{
-			Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 color attachment format must be explicit.");
-		}
-	}
-	if (desc.DepthStencilAttachmentFormat != PixelFormat::Unknown
-	    && !D3D12PipelineImplementation::IsDepthStencilAttachmentFormat(desc.DepthStencilAttachmentFormat))
-	{
-		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported depth-stencil attachment format.");
-	}
-	const std::uint32_t blendTargetCount = desc.Blend.IndependentBlendEnable ? desc.ColorAttachmentCount : 1;
-	for (std::uint32_t index = 0; index < blendTargetCount; ++index)
-	{
-		if ((desc.Blend.Targets[index].ColorWriteMask & 0xF0u) != 0)
-		{
-			Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported color write mask.");
-		}
-	}
+	RhiContract::ValidateGraphicsPipelineDesc(desc);
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_GraphicsPipeline";
 	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage vertexShader =
-	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.VertexShader, pipelineName, true);
+	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.VertexShader, pipelineName);
 	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage pixelShader =
-	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.PixelShader, pipelineName, false);
+	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.PixelShader, pipelineName);
 
 	const std::vector<D3D12_INPUT_ELEMENT_DESC> vertexLayout = D3D12PipelineImplementation::BuildVertexInput(desc.VertexInput);
 	psoDesc.InputLayout.NumElements = static_cast<UINT>(vertexLayout.size());
@@ -497,10 +424,11 @@ void D3D12Pipeline::Create(const GraphicsPipelineDesc& desc)
 
 void D3D12Pipeline::Create(const ComputePipelineDesc& desc)
 {
+	RhiContract::ValidateComputePipelineDesc(desc);
 	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_ComputePipeline";
 	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage computeShader =
-	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName, true);
+	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName);
 	const auto* bindingLayout = static_cast<const D3D12BindingLayout*>(desc.BindingLayout);
 	psoDesc.pRootSignature = bindingLayout != nullptr ? bindingLayout->GetRootSignature().GetRaw() : nullptr;
 	psoDesc.CS = computeShader.Bytecode;

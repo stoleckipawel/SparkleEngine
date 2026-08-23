@@ -3,6 +3,7 @@
 #include "Vulkan/Pipeline/VulkanPipeline.h"
 
 #include "Strings/StringUtils.h"
+#include "Validation/RhiContract.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
@@ -21,29 +22,6 @@ static const auto g_vulkanPipelineLogger = Logging::GetOrCreateLogger("RHI.Vulka
 class VulkanPipelineImplementation final
 {
 public:
-	static bool IsColorAttachmentFormat(PixelFormat format) noexcept
-	{
-		switch (format)
-		{
-			case PixelFormat::R32G32B32A32_Float:
-			case PixelFormat::R16G16B16A16_Float:
-			case PixelFormat::R8G8B8A8_UNorm:
-			case PixelFormat::R8G8B8A8_UNorm_Srgb:
-			case PixelFormat::R16G16_Float:
-			case PixelFormat::R32_Float:
-			case PixelFormat::B8G8R8A8_UNorm:
-			case PixelFormat::B8G8R8A8_UNorm_Srgb:
-				return true;
-			default:
-				return false;
-		}
-	}
-
-	static bool IsDepthStencilAttachmentFormat(PixelFormat format) noexcept
-	{
-		return format == PixelFormat::D32_Float || format == PixelFormat::D24_UNorm_S8_UInt;
-	}
-
 	static std::string ToDebugName(const wchar_t* debugName)
 	{
 		return debugName != nullptr ? Strings::ToNarrow(debugName) : std::string{"VulkanPipeline"};
@@ -64,17 +42,6 @@ public:
 		    .compareMask = desc.StencilReadMask,
 		    .writeMask = desc.StencilWriteMask,
 		    .reference = 0};
-	}
-
-	static bool HasStencilAspect(PixelFormat format) noexcept
-	{
-		switch (format)
-		{
-			case PixelFormat::D24_UNorm_S8_UInt:
-				return true;
-			default:
-				return false;
-		}
 	}
 
 	static void HandlePipelineCreateFailure(std::string_view debugName, const char* functionName, VkResult result)
@@ -155,68 +122,16 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
     m_device(rhi.GetDevice()),
     m_bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
 {
-	if (desc.BindingLayout == nullptr || (desc.ColorAttachmentCount == 0 && desc.DepthStencilAttachmentFormat == PixelFormat::Unknown)
-	    || desc.ColorAttachmentCount > desc.ColorAttachmentFormats.size()
-	    || desc.VertexInput.BindingCount > desc.VertexInput.Bindings.size()
-	    || desc.VertexInput.ElementCount > desc.VertexInput.Elements.size()
-	    || (desc.SampleCount != 1 && desc.SampleCount != 2 && desc.SampleCount != 4 && desc.SampleCount != 8))
-	{
-		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported graphics pipeline description.");
-	}
-	for (std::uint32_t elementIndex = 0; elementIndex < desc.VertexInput.ElementCount; ++elementIndex)
-	{
-		const std::uint8_t binding = desc.VertexInput.Elements[elementIndex].Binding;
-		bool bindingExists = false;
-		for (std::uint32_t bindingIndex = 0; bindingIndex < desc.VertexInput.BindingCount; ++bindingIndex)
-		{
-			bindingExists = bindingExists || desc.VertexInput.Bindings[bindingIndex].Binding == binding;
-		}
-		if (!bindingExists)
-		{
-			Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan vertex input references a missing binding.");
-		}
-	}
+	RhiContract::ValidateGraphicsPipelineDesc(desc);
 	const bool hasDepthStencilFormat = desc.DepthStencilAttachmentFormat != PixelFormat::Unknown;
-	const bool hasStencilFormat = VulkanPipelineImplementation::HasStencilAspect(desc.DepthStencilAttachmentFormat);
-	if ((desc.Depth.DepthEnable || desc.Depth.DepthWriteEnable || desc.Stencil.StencilEnable) && !hasDepthStencilFormat)
-	{
-		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan depth-stencil state requires an attachment format.");
-	}
-	if (desc.Stencil.StencilEnable && !hasStencilFormat)
-	{
-		Diagnostics::Fatal(
-		    g_vulkanPipelineLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan stencil state requires a stencil-capable attachment format.");
-	}
-	for (std::uint32_t index = 0; index < desc.ColorAttachmentCount; ++index)
-	{
-		if (!VulkanPipelineImplementation::IsColorAttachmentFormat(desc.ColorAttachmentFormats[index]))
-		{
-			Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan color attachment format must be explicit.");
-		}
-	}
-	if (desc.DepthStencilAttachmentFormat != PixelFormat::Unknown
-	    && !VulkanPipelineImplementation::IsDepthStencilAttachmentFormat(desc.DepthStencilAttachmentFormat))
-	{
-		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported depth-stencil attachment format.");
-	}
-	const std::uint32_t blendTargetCount = desc.Blend.IndependentBlendEnable ? desc.ColorAttachmentCount : 1;
-	for (std::uint32_t index = 0; index < blendTargetCount; ++index)
-	{
-		if ((desc.Blend.Targets[index].ColorWriteMask & 0xF0u) != 0)
-		{
-			Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported color write mask.");
-		}
-	}
+	const bool hasStencilFormat = PixelFormatHasStencilAspect(desc.DepthStencilAttachmentFormat);
 	const std::string debugName = VulkanPipelineImplementation::ToDebugName(desc.DebugName);
 	VulkanPipelineLayoutBuilder layoutBuilder;
 	layoutBuilder.SetBindingLayout(desc.BindingLayout);
 	m_pipelineLayout = layoutBuilder.Build(rhi, debugName);
 
-	VulkanShaderModule vertexShader(rhi, desc.VertexShader, debugName, true);
-	VulkanShaderModule pixelShader(rhi, desc.PixelShader, debugName, false);
+	VulkanShaderModule vertexShader(rhi, desc.VertexShader, debugName);
+	VulkanShaderModule pixelShader(rhi, desc.PixelShader, debugName);
 
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	shaderStages.push_back(vertexShader.BuildStageCreateInfo());
@@ -404,12 +319,13 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const ComputePipelineDesc& desc) 
     m_device(rhi.GetDevice()),
     m_bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)
 {
+	RhiContract::ValidateComputePipelineDesc(desc);
 	const std::string debugName = VulkanPipelineImplementation::ToDebugName(desc.DebugName);
 	VulkanPipelineLayoutBuilder layoutBuilder;
 	layoutBuilder.SetBindingLayout(desc.BindingLayout);
 	m_pipelineLayout = layoutBuilder.Build(rhi, debugName);
 
-	VulkanShaderModule computeShader(rhi, desc.ComputeShader, debugName, true);
+	VulkanShaderModule computeShader(rhi, desc.ComputeShader, debugName);
 	const VkPipelineShaderStageCreateInfo shaderStage = computeShader.BuildStageCreateInfo();
 	const VkComputePipelineCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,

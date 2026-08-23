@@ -11,19 +11,11 @@
 
 static const auto g_vulkanShaderModuleLogger = Logging::GetOrCreateLogger("RHI.Vulkan.ShaderModule");
 
-VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc& desc, std::string_view pipelineName, bool required) :
-	m_device(rhi.GetDevice())
+VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc& desc, std::string_view pipelineName) :
+    m_device(rhi.GetDevice())
 {
 	if (!desc.IsValid())
 	{
-		if (required)
-		{
-			Diagnostics::Fatal(
-			    g_vulkanShaderModuleLogger,
-			    __FILE__,
-			    __LINE__,
-			    std::format("Pipeline '{}' is missing a required cooked shader stage descriptor", pipelineName));
-		}
 		return;
 	}
 

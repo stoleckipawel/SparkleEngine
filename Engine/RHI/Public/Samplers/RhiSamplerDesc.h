@@ -27,6 +27,8 @@ struct RhiSamplerAddressModes
 	RhiSamplerAddressMode U = RhiSamplerAddressMode::Wrap;
 	RhiSamplerAddressMode V = RhiSamplerAddressMode::Wrap;
 	RhiSamplerAddressMode W = RhiSamplerAddressMode::Wrap;
+
+	bool operator==(const RhiSamplerAddressModes&) const noexcept = default;
 };
 
 constexpr RhiSamplerAddressModes MakeRhiSamplerAddressModes(RhiSamplerAddressMode addressMode) noexcept
@@ -49,4 +51,6 @@ struct RhiSamplerDesc
 	RhiSamplerMipFilter MipFilter = RhiSamplerMipFilter::Linear;
 	RhiSamplerAddressModes Address = {};
 	RhiSamplerAnisotropy MaxAnisotropy = RhiSamplerAnisotropy::X1;
+
+	bool operator==(const RhiSamplerDesc&) const noexcept = default;
 };
