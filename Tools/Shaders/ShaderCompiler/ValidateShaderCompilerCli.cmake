@@ -10,6 +10,14 @@ if(NOT DEFINED REPRESENTATIVE_PACKAGE OR REPRESENTATIVE_PACKAGE STREQUAL "")
     set(REPRESENTATIVE_PACKAGE "ComputeClear")
 endif()
 
+if(NOT DEFINED REPRESENTATIVE_SHADER OR REPRESENTATIVE_SHADER STREQUAL "")
+    set(REPRESENTATIVE_SHADER "ComputeClearCS")
+endif()
+
+if(NOT DEFINED REPRESENTATIVE_VIRTUAL_SOURCE OR REPRESENTATIVE_VIRTUAL_SOURCE STREQUAL "")
+    set(REPRESENTATIVE_VIRTUAL_SOURCE "/Engine/Passes/Compute/ComputeClear.hlsl")
+endif()
+
 if(NOT DEFINED REPRESENTATIVE_PACKAGE_KEY OR REPRESENTATIVE_PACKAGE_KEY STREQUAL "")
     message(FATAL_ERROR "REPRESENTATIVE_PACKAGE_KEY is required so package identity changes are intentional.")
 endif()
@@ -33,7 +41,10 @@ run_shader_compiler(list-backends)
 run_shader_compiler(list-targets)
 run_shader_compiler(list-shaders --validate)
 run_shader_compiler(inspect-shader "${REPRESENTATIVE_PACKAGE}")
-run_shader_compiler(cook --package "${REPRESENTATIVE_PACKAGE}" --target DxilSm66 --target SpirV16 --analysis cooked-shader-stats)
+run_shader_compiler(cook --target DxilSm66 --target SpirV16 --analysis cooked-shader-stats)
+run_shader_compiler(cook --changed "${REPRESENTATIVE_VIRTUAL_SOURCE}" --target DxilSm66 --target SpirV16)
+run_shader_compiler(cook --shader-id "${REPRESENTATIVE_SHADER}" --target DxilSm66 --target SpirV16)
+run_shader_compiler(cook --shader-id "${REPRESENTATIVE_SHADER}" --target DxilSm66 --target SpirV16)
 
 set(representative_package_path
     "${WORKING_DIRECTORY}/artifacts/dev/projects/${REPRESENTATIVE_PROJECT}/cooked/Shaders/Packages/${REPRESENTATIVE_PACKAGE_KEY}.sparkshader")

@@ -4,19 +4,16 @@
 
 #include <format>
 
-std::string ShaderCookDiagnostics::FormatNodeContext(
-    const CookNode& node,
-    std::string_view backendName,
-    ShaderTarget target)
+std::string ShaderCookDiagnostics::FormatJobContext(const ShaderCompileJob& job, std::string_view backendName, ShaderTarget target)
 {
 	return std::format(
-	    "shader package '{}' shader '{}' entry '{}' stage '{}' backend '{}' target '{}' profile '{}' compileInputHash {:016X}",
-	    node.jobIdentity.packageId,
-	    node.jobIdentity.sourcePath,
-	    node.jobIdentity.entryPoint,
-	    GetShaderStagePrefix(node.jobIdentity.stage),
+	    "shader type '{}' source '{}' entry '{}' stage '{}' backend '{}' target '{}' profile '{}' compileInputHash {:016X}",
+	    job.Request.ShaderTypeName,
+	    job.Request.VirtualSourcePath,
+	    job.Request.EntryPoint,
+	    GetShaderStagePrefix(job.Request.Stage),
 	    backendName,
 	    GetShaderTargetName(target),
-	    node.jobIdentity.profileName,
-	    node.jobIdentity.compileInputHash);
+	    job.TargetProfile,
+	    job.InputHash);
 }

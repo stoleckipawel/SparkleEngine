@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ShaderCompileOptions.h"
+#include "Compiler/ShaderCompileRequest.h"
 
 #include <cstdint>
 #include <span>
@@ -8,10 +8,8 @@
 
 class SpirVBindingNormalizer final
 {
-  public:
+public:
 	SpirVBindingNormalizer() = delete;
 
-	static void Normalize(
-	    std::vector<std::uint8_t>& bytecode,
-	    std::span<const ShaderDescriptorBindingRemap> remaps);
+	static void Normalize(std::vector<std::uint8_t>& bytecode, std::span<const ShaderDescriptorBindingRemap> remaps);
 };

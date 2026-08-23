@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cooking/CookedStageBuild.h"
-#include "Cooking/CookNode.h"
+#include "Cooking/ShaderCompileJob.h"
 
 #include <string>
 #include <string_view>
@@ -10,14 +10,11 @@ struct ShaderDebugArtifactSet;
 
 class ShaderParameterStructCookVerifier final
 {
-  public:
+public:
 	ShaderParameterStructCookVerifier() = delete;
 
-	static void Verify(
-	    const CookNode& node,
-	    const CookedStageBuild& compiledStage,
-	    ShaderDebugArtifactSet* debugArtifacts);
+	static void Verify(const ShaderCompileJob& job, const CookedStageBuild& compiledStage, ShaderDebugArtifactSet* debugArtifacts);
 
-  private:
+private:
 	static void WriteSkippedReport(ShaderDebugArtifactSet* debugArtifacts, std::string_view reason);
 };

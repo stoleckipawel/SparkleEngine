@@ -1,18 +1,15 @@
 #pragma once
 
 #include "Backend/ShaderTarget.h"
-#include "Cooking/CookNode.h"
+#include "Cooking/ShaderCompileJob.h"
 
 #include <string>
 #include <string_view>
 
 class ShaderCookDiagnostics final
 {
-  public:
+public:
 	ShaderCookDiagnostics() = delete;
 
-	static std::string FormatNodeContext(
-	    const CookNode& node,
-	    std::string_view backendName,
-	    ShaderTarget target);
+	static std::string FormatJobContext(const ShaderCompileJob& job, std::string_view backendName, ShaderTarget target);
 };

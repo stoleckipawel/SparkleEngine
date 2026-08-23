@@ -7,6 +7,7 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include "Core/Public/Hash/HashUtils.h"
 
 #include <algorithm>
 #include <format>
@@ -16,10 +17,19 @@ static const auto g_shaderContractCatalogBuilderLogger = Logging::GetOrCreateLog
 
 class ShaderContractCatalogAssembly final
 {
-  public:
+public:
+	static ShaderTypeId BuildShaderTypeId(std::string_view shaderName)
+	{
+		std::string canonical = "Sparkle.ShaderType|";
+		canonical += shaderName;
+		const ShaderTypeId typeId = Hash::Fnv1a64(canonical);
+		return typeId != 0 ? typeId : Hash::kFnv64OffsetBasis;
+	}
+
 	static ShaderContractStage BuildStageContract(const ShaderRegistrationDesc& shader)
 	{
 		ShaderContractStage stage;
+		stage.shaderTypeId = BuildShaderTypeId(shader.ShaderName);
 		stage.shaderName = std::string(shader.ShaderName);
 		stage.packageId = GetShaderRegistrationPackageId(shader);
 		stage.bindingLayoutId = GetShaderRegistrationBindingLayoutId(shader);
@@ -91,14 +101,18 @@ class ShaderContractCatalogAssembly final
 	}
 };
 
-ShaderContractCatalog ShaderContractCatalogBuilder::Build(
-    ShaderContractSelectionKind selectionKind,
-    std::string_view requestedId)
+ShaderContractCatalog ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind selectionKind, std::string_view requestedId)
 {
 	ShaderContractCatalog catalog;
+	std::unordered_map<ShaderTypeId, std::string> shaderTypeNames;
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
 	{
 		ShaderContractStage stage = ShaderContractCatalogAssembly::BuildStageContract(shader);
+		const auto [existing, inserted] = shaderTypeNames.emplace(stage.shaderTypeId, stage.shaderName);
+		if (!inserted && existing->second != stage.shaderName)
+		{
+			throw Diagnostics::Error(std::format("Shader type id collision between '{}' and '{}'.", existing->second, stage.shaderName));
+		}
 		if (ShaderContractCatalogAssembly::MatchesSelection(stage, selectionKind, requestedId))
 		{
 			catalog.stages.push_back(std::move(stage));
@@ -116,8 +130,7 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(
 			ShaderContractPackage package;
 			package.packageId = stage.packageId;
 			package.bindingLayoutId = stage.bindingLayoutId;
-			package.bindingLayout =
-			    ShaderPackageLayoutBuilder::Build(stage.packageId, GlobalShaderRegistry::GetRegistrations());
+			package.bindingLayout = ShaderPackageLayoutBuilder::Build(stage.packageId, GlobalShaderRegistry::GetRegistrations());
 			package.packageKind = stage.packageKind;
 			package.packageFeatures = stage.packageFeatures;
 			package.rayTracingPayloadSizeInBytes = stage.rayTracingPayloadSizeInBytes;
@@ -138,8 +151,8 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(
 	for (const RayTracingHitGroupRegistrationDesc& hitGroup : GlobalShaderRegistry::GetRayTracingHitGroups())
 	{
 		const std::string packageId(hitGroup.PackageName);
-		const bool selected = selectionKind == ShaderContractSelectionKind::All ||
-		    (selectionKind == ShaderContractSelectionKind::PackageId && packageId == requestedId);
+		const bool selected = selectionKind == ShaderContractSelectionKind::All
+		    || (selectionKind == ShaderContractSelectionKind::PackageId && packageId == requestedId);
 		if (!selected)
 		{
 			continue;
@@ -167,9 +180,9 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(
 
 	if (selectionKind != ShaderContractSelectionKind::All && catalog.packages.empty())
 	{
-		const std::string subject = selectionKind == ShaderContractSelectionKind::PackageId
-		    ? "typed shader package"
-		    : selectionKind == ShaderContractSelectionKind::ShaderId ? "registered shader" : "registered shader or package";
+		const std::string subject = selectionKind == ShaderContractSelectionKind::PackageId ? "typed shader package"
+		    : selectionKind == ShaderContractSelectionKind::ShaderId                        ? "registered shader"
+		                                                                                    : "registered shader or package";
 		throw Diagnostics::Error(std::format("Unknown {} '{}'.", subject, requestedId));
 	}
 

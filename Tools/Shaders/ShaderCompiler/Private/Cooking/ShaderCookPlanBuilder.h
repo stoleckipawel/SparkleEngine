@@ -9,23 +9,16 @@ struct ShaderPackageCookSettings;
 
 class ShaderCookPlanBuilder final
 {
-  public:
+public:
 	ShaderCookPlanBuilder() = delete;
 
-	static ShaderCookPipelinePlan Build(
-	    const ShaderPackageCookSettings& settings,
-	    ShaderBackendPool& backendPool);
+	static ShaderCookPipelinePlan Build(const ShaderPackageCookSettings& settings, ShaderBackendPool& backendPool);
 
-  private:
-	static void AddPackageNodes(
+private:
+	static void AddPackageJobs(
 	    const ShaderPackageCookSettings& settings,
 	    std::size_t packageIndex,
 	    ShaderBackendPool& backendPool,
 	    ShaderCookPipelinePlan& plan);
-
-	static bool ShouldCookPackageTarget(
-	    const ShaderPackageCookSettings& settings,
-	    const ShaderCookPackageDesc& package,
-	    ShaderTarget target,
-	    ShaderBackendPool& backendPool);
+	static void BuildDependencyManifest(const ShaderPackageCookSettings& settings, ShaderCookPipelinePlan& plan);
 };

@@ -7,14 +7,11 @@
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 #include <format>
 #include <sstream>
 
-void ShaderDebugArtifactWriter::WriteText(
-    const std::filesystem::path& path,
-    std::string_view contents)
+void ShaderDebugArtifactWriter::WriteText(const std::filesystem::path& path, std::string_view contents)
 {
 	std::string fileError;
 	if (!Files::TryWriteAllText(path, contents, fileError))
@@ -24,36 +21,30 @@ void ShaderDebugArtifactWriter::WriteText(
 }
 
 void ShaderDebugArtifactWriter::Write(
-	const std::filesystem::path& rootDirectory,
-	const ShaderCookPackageDesc& package,
-	const ShaderCookStageDesc& stage,
-	const ShaderCompileOptions& options,
-	const CookedStageBuild& compiledStage,
-	const ShaderDebugArtifactSet& debugArtifacts)
+    const std::filesystem::path& rootDirectory,
+    const ShaderCompileRequest& request,
+    const CookedStageBuild& compiledStage,
+    const ShaderDebugArtifactSet& debugArtifacts)
 {
-	const std::filesystem::path bundleDirectory = rootDirectory / BuildBundleDirectoryName(package, stage, options, compiledStage);
-	WriteCompileInputs(bundleDirectory, package, stage, options, compiledStage);
+	const std::filesystem::path bundleDirectory = rootDirectory / BuildBundleDirectoryName(request, compiledStage);
+	WriteCompileInputs(bundleDirectory, request, compiledStage);
 	WriteCompilerOutputs(bundleDirectory, debugArtifacts, compiledStage);
 }
 
 void ShaderDebugArtifactWriter::WriteCompileInputs(
-	const std::filesystem::path& bundleDirectory,
-	const ShaderCookPackageDesc& package,
-	const ShaderCookStageDesc& stage,
-	const ShaderCompileOptions& options,
-	const CookedStageBuild& compiledStage)
+    const std::filesystem::path& bundleDirectory,
+    const ShaderCompileRequest& request,
+    const CookedStageBuild& compiledStage)
 {
-	WriteText(
-	    bundleDirectory / "compile-request.json",
-	    BuildCompileRequestJson(package, stage, options, compiledStage));
-	WriteText(bundleDirectory / "compile-identity.json", BuildCompileIdentityJson(options, compiledStage));
-	WriteText(bundleDirectory / "defines.json", Json::WriteStringArray(options.Defines));
+	WriteText(bundleDirectory / "compile-request.json", BuildCompileRequestJson(request, compiledStage));
+	WriteText(bundleDirectory / "compile-identity.json", BuildCompileIdentityJson(request, compiledStage));
+	WriteText(bundleDirectory / "defines.json", Json::WriteStringArray(request.Defines));
 }
 
 void ShaderDebugArtifactWriter::WriteCompilerOutputs(
-	const std::filesystem::path& bundleDirectory,
-	const ShaderDebugArtifactSet& debugArtifacts,
-	const CookedStageBuild& compiledStage)
+    const std::filesystem::path& bundleDirectory,
+    const ShaderDebugArtifactSet& debugArtifacts,
+    const CookedStageBuild& compiledStage)
 {
 	WriteText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource);
 	WriteText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection));
@@ -66,55 +57,45 @@ void ShaderDebugArtifactWriter::WriteCompilerOutputs(
 	WriteText(bundleDirectory / "compile-args.json", Json::WriteStringArray(debugArtifacts.CompileArguments));
 }
 
-std::string ShaderDebugArtifactWriter::BuildBundleDirectoryName(
-	const ShaderCookPackageDesc& package,
-	const ShaderCookStageDesc& stage,
-	const ShaderCompileOptions& options,
-	const CookedStageBuild& compiledStage)
+std::string ShaderDebugArtifactWriter::BuildBundleDirectoryName(const ShaderCompileRequest& request, const CookedStageBuild& compiledStage)
 {
-	const std::string shaderId = Paths::MakeSafePathComponent(package.packageId + "_" + std::string(GetShaderStagePrefix(stage.stage)));
+	const std::string shaderId = Paths::MakeSafePathComponent(request.ShaderTypeName);
 	return std::format(
 	    "{}__{}__{}__{}",
 	    shaderId,
-	    Formatting::FormatHexUInt64(BuildShaderPackageKey(package.packageId)),
+	    Formatting::FormatHexUInt64(request.ShaderType),
 	    Paths::MakeSafePathComponent(compiledStage.backendName),
-	    Paths::MakeSafePathComponent(GetShaderTargetName(options.Target)));
+	    Paths::MakeSafePathComponent(GetShaderTargetName(request.Target)));
 }
 
-std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(
-	const ShaderCookPackageDesc& package,
-	const ShaderCookStageDesc& stage,
-	const ShaderCompileOptions& options,
-	const CookedStageBuild& compiledStage)
+std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(const ShaderCompileRequest& request, const CookedStageBuild& compiledStage)
 {
 	Json::ObjectWriter writer;
-	writer.WriteString("packageId", package.packageId);
-	writer.WriteString("bindingLayoutId", package.bindingLayoutId);
-	writer.WriteString("sourcePath", stage.sourcePath);
-	writer.WriteString("entryPoint", stage.entryPoint);
-	writer.WriteString("stage", GetShaderStagePrefix(stage.stage));
-	writer.WriteString("target", GetShaderTargetName(options.Target));
+	writer.WriteHexUInt64("shaderTypeId", request.ShaderType);
+	writer.WriteString("shaderType", request.ShaderTypeName);
+	writer.WriteString("sourcePath", request.VirtualSourcePath);
+	writer.WriteString("entryPoint", request.EntryPoint);
+	writer.WriteString("stage", GetShaderStagePrefix(request.Stage));
+	writer.WriteString("target", GetShaderTargetName(request.Target));
 	writer.WriteString("backend", compiledStage.backendName);
 	writer.WriteUInt64("backendVersion", compiledStage.backendVersion);
 	writer.WriteString("format", compiledStage.format == CookedShaderBinaryFormat::SpirV ? "SpirV" : "Dxil");
 	writer.WriteHexUInt64("sourceHash", compiledStage.sourceHash);
 	writer.WriteHexUInt64("includeClosureHash", compiledStage.includeClosureHash);
-	writer.WriteHexUInt64("optionsHash", compiledStage.optionsHash);
+	writer.WriteHexUInt64("requestHash", compiledStage.requestHash);
 	writer.WriteHexUInt64("compileInputHash", compiledStage.compileInputHash);
 	writer.WriteString("debugArtifact", compiledStage.debugArtifact);
 	return writer.Finish();
 }
 
-std::string ShaderDebugArtifactWriter::BuildCompileIdentityJson(
-    const ShaderCompileOptions& options,
-    const CookedStageBuild& compiledStage)
+std::string ShaderDebugArtifactWriter::BuildCompileIdentityJson(const ShaderCompileRequest& request, const CookedStageBuild& compiledStage)
 {
 	Json::ObjectWriter writer;
 	writer.WriteHexUInt64("compileInputHash", compiledStage.compileInputHash);
 	writer.WriteHexUInt64("sourceHash", compiledStage.sourceHash);
 	writer.WriteHexUInt64("includeClosureHash", compiledStage.includeClosureHash);
-	writer.WriteHexUInt64("optionsHash", compiledStage.optionsHash);
-	writer.WriteString("target", GetShaderTargetName(options.Target));
+	writer.WriteHexUInt64("requestHash", compiledStage.requestHash);
+	writer.WriteString("target", GetShaderTargetName(request.Target));
 	writer.WriteString("format", compiledStage.format == CookedShaderBinaryFormat::SpirV ? "SpirV" : "Dxil");
 	writer.WriteString("backend", compiledStage.backendName);
 	writer.WriteUInt64("backendVersion", compiledStage.backendVersion);

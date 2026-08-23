@@ -9,7 +9,8 @@
 struct EditorOperationService::ControlState final
 {
 	ControlState(TaskExecutor& executor, TaskScope& applicationScope) :
-	    Executor(executor), Scope(TaskScopeDesc{TaskScopeKind::Document, "Editor operations"}, &applicationScope)
+	    Executor(executor),
+	    Scope(TaskScopeDesc{TaskScopeKind::Document, "Editor operations"}, &applicationScope)
 	{
 	}
 	TaskExecutor& Executor;
@@ -37,7 +38,9 @@ void EditorOperationService::CancelDocument() noexcept
 }
 
 bool EditorOperationService::StartShaderRecook(
-    std::uint64_t requestId, std::uint64_t baselinePublicationId, ShaderRecookRequest request,
+    std::uint64_t requestId,
+    std::uint64_t baselinePublicationId,
+    ShaderRecookRequest request,
     std::string& outErrorMessage) noexcept
 {
 	if (m_control->Execution.IsValid() && !m_control->Execution.IsSettled())
@@ -50,15 +53,17 @@ bool EditorOperationService::StartShaderRecook(
 		m_control->ShaderRecookResult = std::make_shared<ShaderRecookExecutionResult>();
 		const auto result = m_control->ShaderRecookResult;
 		TaskGraphBuilder graph;
-		graph.Add(TaskDesc{TaskName("Run shader compiler"), TaskLane::BlockingIo},
-		          [requestId, baselinePublicationId, request = std::move(request), result](TaskExecutionContext& context)
-		          {
-			          *result = ShaderRecookOperation::Execute(
-			              requestId, baselinePublicationId, std::move(request), context.GetCancellationToken());
-			          if (context.IsCancellationRequested()) return TaskResult::Cancelled("Editor shader recook was cancelled.");
-			          return result->Process.Succeeded() ? TaskResult::Success()
+		graph.Add(
+		    TaskDesc{TaskName("Run shader compiler"), TaskLane::BlockingIo},
+		    [requestId, baselinePublicationId, request = std::move(request), result](TaskExecutionContext& context)
+		    {
+			    *result =
+			        ShaderRecookOperation::Execute(requestId, baselinePublicationId, std::move(request), context.GetCancellationToken());
+			    if (result->Process.SettledSuccessfully())
+				    return TaskResult::Success();
+			    return context.IsCancellationRequested() ? TaskResult::Cancelled("Editor shader recook was cancelled.")
 			                                             : TaskResult::Failure("Shader compiler process failed.");
-		          });
+		    });
 		m_control->Execution = m_control->Executor.Launch(m_control->Scope, graph.Compile());
 		outErrorMessage.clear();
 		return true;
@@ -78,54 +83,43 @@ bool EditorOperationService::StartShaderRecook(
 
 bool EditorOperationService::TryConsumeShaderRecook(ShaderRecookExecutionResult& outResult) noexcept
 {
-	if (!m_control->Execution.IsValid() || !m_control->Execution.IsSettled()) return false;
+	if (!m_control->Execution.IsValid() || !m_control->Execution.IsSettled())
+		return false;
 	outResult = m_control->ShaderRecookResult ? std::move(*m_control->ShaderRecookResult) : ShaderRecookExecutionResult{};
 	m_control->ShaderRecookResult.reset();
 	m_control->Execution = TaskExecution{};
 	return true;
 }
 
-bool EditorOperationService::StartViewportCaptureWrite(
-    ViewportCaptureReadback readback,
-    std::string& outErrorMessage) noexcept
+bool EditorOperationService::StartViewportCaptureWrite(ViewportCaptureReadback readback, std::string& outErrorMessage) noexcept
 {
-	if (m_control->CaptureExecution.IsValid() &&
-	    !m_control->CaptureExecution.IsSettled())
+	if (m_control->CaptureExecution.IsValid() && !m_control->CaptureExecution.IsSettled())
 	{
 		outErrorMessage = "A viewport capture is already being written.";
 		return false;
 	}
 	try
 	{
-		m_control->CaptureResult =
-		    std::make_shared<ViewportCaptureResult>(readback.Result);
+		m_control->CaptureResult = std::make_shared<ViewportCaptureResult>(readback.Result);
 		const auto result = m_control->CaptureResult;
 		TaskGraphBuilder graph;
 		graph.Add(
 		    TaskDesc{TaskName("Write viewport capture"), TaskLane::BlockingIo},
-		    [readback = std::move(readback), result](
-		        TaskExecutionContext& context)
+		    [readback = std::move(readback), result](TaskExecutionContext& context)
 		    {
 			    if (context.IsCancellationRequested())
 			    {
-				    return TaskResult::Cancelled(
-				        "Viewport capture write was cancelled.");
+				    return TaskResult::Cancelled("Viewport capture write was cancelled.");
 			    }
 			    const bool written = WriteViewportCaptureBmp(readback);
-			    result->Status = written
-			                         ? ViewportCaptureStatus::Succeeded
-			                         : ViewportCaptureStatus::Failed;
+			    result->Status = written ? ViewportCaptureStatus::Succeeded : ViewportCaptureStatus::Failed;
 			    if (!written)
 			    {
-				    result->FailureReason =
-				        "Viewport capture BMP encoding or write failed";
+				    result->FailureReason = "Viewport capture BMP encoding or write failed";
 			    }
-			    return written
-			               ? TaskResult::Success()
-			               : TaskResult::Failure(result->FailureReason);
+			    return written ? TaskResult::Success() : TaskResult::Failure(result->FailureReason);
 		    });
-		m_control->CaptureExecution =
-		    m_control->Executor.Launch(m_control->Scope, graph.Compile());
+		m_control->CaptureExecution = m_control->Executor.Launch(m_control->Scope, graph.Compile());
 		outErrorMessage.clear();
 		return true;
 	}
@@ -142,17 +136,13 @@ bool EditorOperationService::StartViewportCaptureWrite(
 	return false;
 }
 
-bool EditorOperationService::TryConsumeViewportCapture(
-    ViewportCaptureResult& outResult) noexcept
+bool EditorOperationService::TryConsumeViewportCapture(ViewportCaptureResult& outResult) noexcept
 {
-	if (!m_control->CaptureExecution.IsValid() ||
-	    !m_control->CaptureExecution.IsSettled())
+	if (!m_control->CaptureExecution.IsValid() || !m_control->CaptureExecution.IsSettled())
 	{
 		return false;
 	}
-	outResult = m_control->CaptureResult
-	                ? std::move(*m_control->CaptureResult)
-	                : ViewportCaptureResult{};
+	outResult = m_control->CaptureResult ? std::move(*m_control->CaptureResult) : ViewportCaptureResult{};
 	m_control->CaptureResult.reset();
 	m_control->CaptureExecution = TaskExecution{};
 	return true;

@@ -3,10 +3,10 @@
 #include "Backend/IShaderBackend.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef NOMINMAX
-	#define NOMINMAX
+  #define NOMINMAX
 #endif
 #include <ObjIdl.h>
 #include <Unknwn.h>
@@ -22,7 +22,7 @@
 // Produces both DXIL and SPIR-V via DXC's `-spirv` mode.
 class DxcShaderBackend final : public IShaderBackend
 {
-  public:
+public:
 	DxcShaderBackend();
 	~DxcShaderBackend() override = default;
 
@@ -40,11 +40,11 @@ class DxcShaderBackend final : public IShaderBackend
 	std::string_view GetBackendName() const override;
 	std::uint64_t GetBackendVersion() const override;
 
-	CompiledShader Compile(const ShaderCompileOptions& options) override;
+	CompiledShader Compile(const ShaderCompileRequest& request) override;
 
-  private:
+private:
 	static void BuildCompileArguments(
-	    const ShaderCompileOptions& options,
+	    const ShaderCompileRequest& request,
 	    const std::wstring& wSourcePath,
 	    const std::wstring& wEntryPoint,
 	    const std::wstring& wTargetProfile,
@@ -60,12 +60,9 @@ class DxcShaderBackend final : public IShaderBackend
 	    IDxcCompiler3& compiler,
 	    const DxcBuffer& sourceBuffer,
 	    const std::vector<LPCWSTR>& compileArgs);
-	static std::string ExtractDisassembly(
-	    IDxcUtils& utils,
-	    IDxcCompiler3& compiler,
-	    std::span<const std::uint8_t> bytecode);
+	static std::string ExtractDisassembly(IDxcUtils& utils, IDxcCompiler3& compiler, std::span<const std::uint8_t> bytecode);
 	static ShaderDebugArtifactSet CaptureDebugArtifacts(
-	    const ShaderCompileOptions& options,
+	    const ShaderCompileRequest& request,
 	    IDxcUtils& utils,
 	    IDxcCompiler3& compiler,
 	    const DxcBuffer& sourceBuffer,

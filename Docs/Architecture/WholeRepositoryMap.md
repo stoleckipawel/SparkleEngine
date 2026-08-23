@@ -350,7 +350,7 @@ Shader source shape:
 - Pass shaders follow semantic owners under `Engine/Assets/Shaders/Passes/GBuffer`, `Lighting`, `PostProcessing`, `Presentation`, `RayTracing`, and `Debug`.
 - C++ shader registrations under `Engine/Renderer/ShaderRegistrations`.
 - RHI public shader package, reflection, authoring macros, and pass parameter layout types.
-- Shader compiler tool under `Tools/Shaders/ShaderCompiler` with DXC/Slang backends, reflection extractors, contracts, cooking, cache, inspection, CLI commands, and verification.
+- Shader compiler tool under `Tools/Shaders/ShaderCompiler` with DXC/Slang backends, reflection extractors, immutable compile jobs, virtual dependency selection, transactional cooking, inspection, CLI commands, and verification.
 
 Strengths:
 

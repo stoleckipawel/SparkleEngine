@@ -11,36 +11,35 @@
 #include <format>
 
 void ShaderParameterStructCookVerifier::Verify(
-    const CookNode& node,
+    const ShaderCompileJob& job,
     const CookedStageBuild& compiledStage,
     ShaderDebugArtifactSet* debugArtifacts)
 {
-	if (!node.parameterStructDescriptor.has_value())
+	if (!job.Request.ParameterStruct.has_value())
 	{
 		WriteSkippedReport(debugArtifacts, "no parameter-struct descriptor declared for this shader stage");
 		return;
 	}
-	if (node.package->packageKind == CookedShaderPackageKind::RayTracingLibrary)
+	if (job.Request.UnitKind == ShaderCompileUnitKind::Library)
 	{
 		WriteSkippedReport(debugArtifacts, "ray-tracing library packages do not use pass parameter-struct validation");
 		return;
 	}
 
 	const ShaderParameterStructVerificationResult verificationResult =
-	    ShaderParameterStructVerifier::Verify(
-	        *node.parameterStructDescriptor,
-	        compiledStage.reflection);
+	    ShaderParameterStructVerifier::Verify(*job.Request.ParameterStruct, compiledStage.reflection);
 	if (debugArtifacts != nullptr)
 	{
 		debugArtifacts->ParameterMatchReportJson = verificationResult.BuildJsonReport();
 	}
 	if (!verificationResult.mismatches.empty())
 	{
-		throw Diagnostics::Error(std::format(
-		    "SC2001 {} parameter-struct '{}' verification failed: {}",
-		    ShaderCookDiagnostics::FormatNodeContext(node, compiledStage.backendName, node.compileOptions.Target),
-		    node.parameterStructDescriptor->Name,
-		    verificationResult.mismatches.front()));
+		throw Diagnostics::Error(
+		    std::format(
+		        "SC2001 {} parameter-struct '{}' verification failed: {}",
+		        ShaderCookDiagnostics::FormatJobContext(job, compiledStage.backendName, job.Request.Target),
+		        job.Request.ParameterStruct->Name,
+		        verificationResult.mismatches.front()));
 	}
 }
 

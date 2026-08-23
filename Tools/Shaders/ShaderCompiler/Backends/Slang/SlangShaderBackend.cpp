@@ -3,7 +3,6 @@
 #include "Slang/SlangShaderBackend.h"
 
 #include "Compiler/ShaderCompileProfile.h"
-#include "Compiler/ShaderSourcePreprocessor.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Slang/SlangReflectionExtractor.h"
@@ -60,22 +59,22 @@ std::uint64_t SlangShaderBackend::GetBackendVersion() const
 	return m_backendVersion;
 }
 
-CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
+CompiledShader SlangShaderBackend::Compile(const ShaderCompileRequest& request)
 {
 	if (!IsValid())
 	{
 		throw Diagnostics::Error("Slang global session is unavailable");
 	}
 
-	const std::string sourceText = ShaderSourcePreprocessor::Load(options.SourcePath, options);
+	const std::string& sourceText = request.SourceCode;
 
 	std::vector<slang::PreprocessorMacroDesc> macroDescs;
-	macroDescs.reserve(options.Defines.size());
+	macroDescs.reserve(request.Defines.size());
 	std::vector<std::string> defineNames;
 	std::vector<std::string> defineValues;
-	defineNames.reserve(options.Defines.size());
-	defineValues.reserve(options.Defines.size());
-	for (const std::string& define : options.Defines)
+	defineNames.reserve(request.Defines.size());
+	defineValues.reserve(request.Defines.size());
+	for (const std::string& define : request.Defines)
 	{
 		const std::size_t equals = define.find('=');
 		defineNames.push_back(define.substr(0, equals));
@@ -84,8 +83,8 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 	}
 
 	slang::TargetDesc targetDesc{};
-	targetDesc.format = MapTarget(options.Target);
-	targetDesc.profile = m_globalSession->findProfile(ShaderCompileProfile::GetSlangTargetProfileName(options.Target));
+	targetDesc.format = MapTarget(request.Target);
+	targetDesc.profile = m_globalSession->findProfile(ShaderCompileProfile::GetSlangTargetProfileName(request.Target));
 	if (targetDesc.format == SLANG_TARGET_UNKNOWN || targetDesc.profile == SLANG_PROFILE_UNKNOWN)
 	{
 		throw Diagnostics::Error("Slang backend does not support requested shader target");
@@ -94,7 +93,7 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 	std::array<slang::CompilerOptionEntry, 1> spirvOptions = {{
 	    {slang::CompilerOptionName::EmitSpirvDirectly, {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}},
 	}};
-	if (IsSpirVTarget(options.Target))
+	if (IsSpirVTarget(request.Target))
 	{
 		targetDesc.compilerOptionEntries = spirvOptions.data();
 		targetDesc.compilerOptionEntryCount = static_cast<std::uint32_t>(spirvOptions.size());
@@ -117,12 +116,9 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 	std::string diagnostics;
 	Slang::ComPtr<slang::IBlob> diagnosticBlob;
 	constexpr std::string_view moduleName = "SparkleShader";
-	const std::string& modulePath = options.SourcePath;
-	slang::IModule* module = session->loadModuleFromSourceString(
-	    moduleName.data(),
-	    modulePath.c_str(),
-	    sourceText.c_str(),
-	    diagnosticBlob.writeRef());
+	const std::string& modulePath = request.VirtualSourcePath;
+	slang::IModule* module =
+	    session->loadModuleFromSourceString(moduleName.data(), modulePath.c_str(), sourceText.c_str(), diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (module == nullptr)
 	{
@@ -131,9 +127,9 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 
 	Slang::ComPtr<slang::IEntryPoint> entryPoint;
 	diagnosticBlob.setNull();
-	const SlangStage stage = MapStage(options.Stage);
-	SlangResult entryResult = module->findAndCheckEntryPoint(
-	    options.EntryPoint.c_str(), stage, entryPoint.writeRef(), diagnosticBlob.writeRef());
+	const SlangStage stage = MapStage(request.Stage);
+	SlangResult entryResult =
+	    module->findAndCheckEntryPoint(request.EntryPoint.c_str(), stage, entryPoint.writeRef(), diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (SLANG_FAILED(entryResult) || !entryPoint)
 	{
@@ -143,8 +139,8 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 	std::array<slang::IComponentType*, 2> components = {module, entryPoint.get()};
 	Slang::ComPtr<slang::IComponentType> composedProgram;
 	diagnosticBlob.setNull();
-	SlangResult composeResult = session->createCompositeComponentType(
-	    components.data(), components.size(), composedProgram.writeRef(), diagnosticBlob.writeRef());
+	SlangResult composeResult =
+	    session->createCompositeComponentType(components.data(), components.size(), composedProgram.writeRef(), diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (SLANG_FAILED(composeResult) || !composedProgram)
 	{
@@ -178,16 +174,16 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 	if (layout == nullptr)
 	{
 		throw Diagnostics::Error(
-		    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(options.Target)} +
-		    "' source '" + options.SourcePath + "' entry '" + options.EntryPoint + "' - " + diagnostics);
+		    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(request.Target)} + "' source '"
+		    + request.VirtualSourcePath + "' entry '" + request.EntryPoint + "' - " + diagnostics);
 	}
 
-	ShaderReflection reflection = SlangReflectionExtractor::Extract(*layout, options.Stage);
+	ShaderReflection reflection = SlangReflectionExtractor::Extract(*layout, request.Stage);
 
 	ShaderDebugArtifactSet debugArtifacts;
-	if (options.CaptureDebugArtifacts)
+	if (request.CaptureDebugArtifacts)
 	{
-		debugArtifacts = CaptureDebugArtifacts(options, sourceText, diagnostics);
+		debugArtifacts = CaptureDebugArtifacts(request, sourceText, diagnostics);
 	}
 
 	CompiledShader compiledShader(std::move(bytecode));
@@ -228,26 +224,26 @@ std::string SlangShaderBackend::BlobToString(slang::IBlob* blob)
 	return std::string(static_cast<const char*>(blob->getBufferPointer()), blob->getBufferSize());
 }
 
-std::vector<std::string> SlangShaderBackend::BuildDebugArgumentStrings(const ShaderCompileOptions& options)
+std::vector<std::string> SlangShaderBackend::BuildDebugArgumentStrings(const ShaderCompileRequest& request)
 {
 	std::vector<std::string> args;
 	args.push_back("slang-api");
 	args.push_back("-entry");
-	args.push_back(options.EntryPoint);
+	args.push_back(request.EntryPoint);
 	args.push_back("-target");
-	args.push_back(IsSpirVTarget(options.Target) ? "spirv" : "dxil");
+	args.push_back(IsSpirVTarget(request.Target) ? "spirv" : "dxil");
 	args.push_back("-profile");
-	args.push_back(ShaderCompileProfile::GetSlangTargetProfileName(options.Target));
+	args.push_back(ShaderCompileProfile::GetSlangTargetProfileName(request.Target));
 	return args;
 }
 
 ShaderDebugArtifactSet SlangShaderBackend::CaptureDebugArtifacts(
-    const ShaderCompileOptions& options,
+    const ShaderCompileRequest& request,
     std::string_view sourceText,
     std::string_view diagnostics)
 {
 	ShaderDebugArtifactSet artifacts;
-	artifacts.CompileArguments = BuildDebugArgumentStrings(options);
+	artifacts.CompileArguments = BuildDebugArgumentStrings(request);
 	artifacts.CompilerOutput.assign(diagnostics);
 	artifacts.PreprocessedSource.assign(sourceText);
 	return artifacts;

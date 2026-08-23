@@ -9,8 +9,11 @@
 #include <string>
 #include <vector>
 
+using ShaderTypeId = std::uint64_t;
+
 struct ShaderContractStage final
 {
+	ShaderTypeId shaderTypeId = 0;
 	std::string shaderName;
 	std::string packageId;
 	std::string bindingLayoutId;
@@ -68,19 +71,4 @@ struct ShaderContractVerificationFailure final
 	std::string parameterName;
 	std::string expectedLayout;
 	std::string reason;
-};
-
-struct ShaderContractJobIdentity final
-{
-	std::string packageId;
-	std::string sourcePath;
-	std::string entryPoint;
-	ShaderStage stage = ShaderStage::Count;
-	std::string backendName;
-	std::string targetName;
-	std::string profileName;
-	std::uint64_t sourceHash = 0;
-	std::uint64_t includeClosureHash = 0;
-	std::uint64_t optionsHash = 0;
-	std::uint64_t compileInputHash = 0;
 };

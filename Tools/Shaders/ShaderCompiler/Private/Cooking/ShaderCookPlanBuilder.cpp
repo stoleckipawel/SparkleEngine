@@ -2,34 +2,46 @@
 
 #include "Cooking/ShaderCookPlanBuilder.h"
 
-#include "Backend/IShaderBackend.h"
 #include "Backend/ShaderBackendPool.h"
-#include "Cooking/ShaderCookNodeBuilder.h"
+#include "Cooking/ShaderCompileJobBuilder.h"
 #include "Cooking/ShaderCookPlanner.h"
 #include "Cooking/ShaderCookSettings.h"
-
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include <format>
+#include <unordered_map>
+#include <utility>
 
-ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(
-    const ShaderPackageCookSettings& settings,
-    ShaderBackendPool& backendPool)
+ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(const ShaderPackageCookSettings& settings, ShaderBackendPool& backendPool)
 {
 	ShaderCookPipelinePlan plan;
-	plan.packages = ShaderCookPlanner::BuildPackages(settings);
+	const std::filesystem::path dependencyPath = ShaderDependencyManifest::GetPath(Filesystem::GetCookedShaderRootPath());
+	const bool fullCatalog = settings.packageId.empty() && settings.shaderId.empty() && settings.changedVirtualPaths.empty();
+	if (!settings.changedVirtualPaths.empty())
+	{
+		plan.dependencyManifest = ShaderDependencyManifest::ReadRequired(dependencyPath);
+	}
+	else if (!fullCatalog)
+	{
+		if (std::optional<ShaderDependencyManifest> existing = ShaderDependencyManifest::ReadForUpdate(dependencyPath))
+		{
+			plan.dependencyManifest = std::move(*existing);
+		}
+	}
+	plan.packages = ShaderCookPlanner::BuildPackages(settings, plan.dependencyManifest);
 
 	plan.packageContexts.resize(plan.packages.size());
 	for (std::size_t packageIndex = 0; packageIndex < plan.packages.size(); ++packageIndex)
 	{
-		AddPackageNodes(settings, packageIndex, backendPool, plan);
+		AddPackageJobs(settings, packageIndex, backendPool, plan);
 	}
+	BuildDependencyManifest(settings, plan);
 
 	return plan;
 }
 
-
-void ShaderCookPlanBuilder::AddPackageNodes(
+void ShaderCookPlanBuilder::AddPackageJobs(
     const ShaderPackageCookSettings& settings,
     std::size_t packageIndex,
     ShaderBackendPool& backendPool,
@@ -38,66 +50,48 @@ void ShaderCookPlanBuilder::AddPackageNodes(
 	const ShaderCookPackageDesc& package = plan.packages[packageIndex];
 	ShaderCookPackageContext& packageContext = plan.packageContexts[packageIndex];
 	packageContext.reserve(package.stages.size() * settings.targets.size());
-	const std::size_t packageNodeStart = plan.nodes.size();
-
 	for (std::size_t targetIndex = 0; targetIndex < settings.targets.size(); ++targetIndex)
 	{
-		if (!ShouldCookPackageTarget(settings, package, settings.targets[targetIndex], backendPool))
-		{
-			continue;
-		}
-
 		for (std::size_t stageIndex = 0; stageIndex < package.stages.size(); ++stageIndex)
 		{
-			ShaderCookNodeBuilder::BuildAndAdd(
-			    settings,
-			    packageIndex,
-			    stageIndex,
-			    targetIndex,
-			    backendPool,
-			    plan);
+			ShaderCompileJobBuilder::BuildAndAdd(settings, packageIndex, stageIndex, settings.targets[targetIndex], backendPool, plan);
 		}
-	}
-
-	if (plan.nodes.size() == packageNodeStart)
-	{
-		throw Diagnostics::Error(std::format(
-		    "No supported shader targets were available for shader package '{}' from the requested target set",
-		    package.packageId));
 	}
 }
 
-bool ShaderCookPlanBuilder::ShouldCookPackageTarget(
-    const ShaderPackageCookSettings& settings,
-    const ShaderCookPackageDesc& package,
-    ShaderTarget target,
-    ShaderBackendPool& backendPool)
+void ShaderCookPlanBuilder::BuildDependencyManifest(const ShaderPackageCookSettings& settings, ShaderCookPipelinePlan& plan)
 {
-	if (package.stages.empty())
+	const bool fullCatalog = settings.packageId.empty() && settings.shaderId.empty() && settings.changedVirtualPaths.empty();
+	std::unordered_map<ShaderTypeId, ShaderDependencyRecord> records;
+	for (const ShaderCompileConsumer& consumer : plan.consumers)
 	{
-		throw Diagnostics::Error(std::format("Shader package '{}' has no registered stages.", package.packageId));
+		const ShaderCompileJob& job = plan.jobs[consumer.JobIndex];
+		const std::string& publicationGroup = plan.packages[consumer.PackageIndex].packageId;
+		auto [record, inserted] = records.try_emplace(
+		    job.Request.ShaderType,
+		    ShaderDependencyRecord{
+		        .ShaderType = job.Request.ShaderType,
+		        .ShaderTypeName = job.Request.ShaderTypeName,
+		        .VirtualSourcePath = job.Request.VirtualSourcePath,
+		        .PublicationGroup = publicationGroup});
+		if (!inserted
+		    && (record->second.ShaderTypeName != job.Request.ShaderTypeName
+		        || record->second.VirtualSourcePath != job.Request.VirtualSourcePath
+		        || record->second.PublicationGroup != publicationGroup))
+		{
+			throw Diagnostics::Error(
+			    std::format("Shader type '{}' produced conflicting dependency identities.", job.Request.ShaderTypeName));
+		}
+		record->second.VirtualDependencies.insert(
+		    record->second.VirtualDependencies.end(),
+		    job.VirtualDependencies.begin(),
+		    job.VirtualDependencies.end());
 	}
-
-	ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(package.stages.front());
-	compileOptions.Target = target;
-
-	IShaderBackend& backend = backendPool.ResolveAndAcquire(
-	    compileOptions.SourcePath,
-	    compileOptions.Target,
-	    settings.backendName);
-
-	const ShaderBackendCapabilities capabilities = backend.GetCapabilities();
-	if (package.packageKind == CookedShaderPackageKind::RayTracingLibrary &&
-	    !capabilities.SupportsRayTracingLibrary(target))
+	for (auto& [shaderType, record] : records)
 	{
-		return false;
+		(void) shaderType;
+		plan.dependencyManifest.Replace(std::move(record));
 	}
-
-	if (HasCookedShaderPackageFeature(package.packageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
-	    !capabilities.SupportsInlineRayQuery(target))
-	{
-		return false;
-	}
-
-	return true;
+	plan.dependencyManifest.SetCompleteCatalog(fullCatalog || plan.dependencyManifest.IsCompleteCatalog());
+	plan.dependencyManifest.SortAndValidate();
 }

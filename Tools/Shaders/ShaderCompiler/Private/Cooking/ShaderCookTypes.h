@@ -10,6 +10,8 @@
 
 struct ShaderCookStageDesc final
 {
+	ShaderTypeId shaderTypeId = 0;
+	std::string shaderTypeName;
 	ShaderStage stage = ShaderStage::Count;
 	std::string sourcePath;
 	std::string entryPoint;

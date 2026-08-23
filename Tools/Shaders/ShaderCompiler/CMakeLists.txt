@@ -125,6 +125,8 @@ add_custom_target(ShaderCompilerCliValidation
         "-DWORKING_DIRECTORY=${CMAKE_SOURCE_DIR}"
         "-DREPRESENTATIVE_PROJECT=Shared"
         "-DREPRESENTATIVE_PACKAGE=ComputeClear"
+        "-DREPRESENTATIVE_SHADER=ComputeClearCS"
+        "-DREPRESENTATIVE_VIRTUAL_SOURCE=/Engine/Passes/Compute/ComputeClear.hlsl"
         "-DREPRESENTATIVE_PACKAGE_KEY=A5C7ADD3A0B8D443"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/ValidateShaderCompilerCli.cmake"
     DEPENDS ShaderCompiler

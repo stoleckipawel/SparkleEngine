@@ -19,11 +19,13 @@ ShaderPackageCookSettings CookShadersArgumentParser::Parse(std::span<const std::
 void CookShadersArgumentParser::PrintHelp(std::ostream& output)
 {
 	output << "Usage:\n"
-	       << "  ShaderCompiler cook [--package <package-id> | --shader-id <registered-shader-name>] [options]\n\n"
+	       << "  ShaderCompiler cook [--package <package-id> | --shader-id <registered-shader-name> | --changed <virtual-path>...] "
+	          "[options]\n\n"
 	       << "Cooks typed shader registrations into .sparkshader packages and ShaderPackageRegistry.sreg.\n\n"
 	       << "Selection options:\n"
 	       << "  --package <package-id>      Cook one registered shader package.\n"
 	       << "  --shader-id <shader-id>     Cook one registered shader entry by shader id.\n\n"
+	       << "  --changed <virtual-path>    Cook shader types affected by a changed virtual source. Repeat for each path.\n\n"
 	       << "Cook options:\n"
 	       << "  --target <name>             Add a codegen target such as DxilSm66 or SpirV16. "
 	          "Defaults to DxilSm66 and SpirV16.\n"
@@ -87,15 +89,9 @@ bool CookShadersArgumentParser::ConsumeFlag(std::string_view argument)
 
 bool CookShadersArgumentParser::ConsumeValueOption(std::string_view argument)
 {
-	if (argument != "--package" &&
-	    argument != "--shader-id" &&
-	    argument != "--target" &&
-	    argument != "--backend" &&
-	    argument != "--debug-artifacts" &&
-	    argument != "--analysis" &&
-	    argument != "--parallel-compiles" &&
-	    argument != "--warnings-as-errors" &&
-	    argument != "--strip-debug")
+	if (argument != "--package" && argument != "--shader-id" && argument != "--changed" && argument != "--cancellation-signal"
+	    && argument != "--target" && argument != "--backend" && argument != "--debug-artifacts" && argument != "--analysis"
+	    && argument != "--parallel-compiles" && argument != "--warnings-as-errors" && argument != "--strip-debug")
 	{
 		return false;
 	}
@@ -104,9 +100,7 @@ bool CookShadersArgumentParser::ConsumeValueOption(std::string_view argument)
 	return true;
 }
 
-void CookShadersArgumentParser::ApplyValue(
-    std::string_view argument,
-    std::string_view value)
+void CookShadersArgumentParser::ApplyValue(std::string_view argument, std::string_view value)
 {
 	if (argument == "--package")
 	{
@@ -117,6 +111,22 @@ void CookShadersArgumentParser::ApplyValue(
 	if (argument == "--shader-id")
 	{
 		m_settings.shaderId = value;
+		return;
+	}
+
+	if (argument == "--changed")
+	{
+		if (value.empty() || value.front() != '/')
+		{
+			throw Diagnostics::Error("--changed requires a canonical virtual shader path beginning with '/'.");
+		}
+		m_settings.changedVirtualPaths.emplace_back(value);
+		return;
+	}
+
+	if (argument == "--cancellation-signal")
+	{
+		m_settings.cancellationSignalPath = std::filesystem::path(std::string(value));
 		return;
 	}
 
@@ -179,12 +189,8 @@ void CookShadersArgumentParser::AddTarget(std::string_view value)
 void CookShadersArgumentParser::SetParallelCompileCount(std::string_view value)
 {
 	std::uint32_t count = 0;
-	const auto parsed =
-	    std::from_chars(value.data(), value.data() + value.size(), count);
-	if (parsed.ec != std::errc{} ||
-	    parsed.ptr != value.data() + value.size() ||
-	    count < 1 ||
-	    count > 8)
+	const auto parsed = std::from_chars(value.data(), value.data() + value.size(), count);
+	if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() || count < 1 || count > 8)
 	{
 		throw Diagnostics::Error("Expected a value from 1 through 8 after --parallel-compiles");
 	}
@@ -192,9 +198,7 @@ void CookShadersArgumentParser::SetParallelCompileCount(std::string_view value)
 	m_settings.maximumParallelCompiles = count;
 }
 
-void CookShadersArgumentParser::SetBooleanOption(
-    std::string_view argument,
-    std::string_view value)
+void CookShadersArgumentParser::SetBooleanOption(std::string_view argument, std::string_view value)
 {
 	const std::optional<bool> parsedValue = ParseBoolean(value);
 	if (!parsedValue)
@@ -224,15 +228,15 @@ std::string_view CookShadersArgumentParser::TakeValue(std::string_view argument)
 
 void CookShadersArgumentParser::ValidateSelection() const
 {
-	if (!m_settings.packageId.empty() && !m_settings.shaderId.empty())
+	const std::uint32_t selectionCount = static_cast<std::uint32_t>(!m_settings.packageId.empty())
+	    + static_cast<std::uint32_t>(!m_settings.shaderId.empty()) + static_cast<std::uint32_t>(!m_settings.changedVirtualPaths.empty());
+	if (selectionCount > 1)
 	{
-		throw Diagnostics::Error("Use either --package or --shader-id, not both");
+		throw Diagnostics::Error("Use one selection: --package, --shader-id, or one or more --changed paths");
 	}
 }
 
-bool CookShadersArgumentParser::ContainsTarget(
-    std::span<const ShaderTarget> targets,
-    ShaderTarget target) noexcept
+bool CookShadersArgumentParser::ContainsTarget(std::span<const ShaderTarget> targets, ShaderTarget target) noexcept
 {
 	for (const ShaderTarget existingTarget : targets)
 	{
@@ -248,8 +252,8 @@ bool CookShadersArgumentParser::ContainsTarget(
 std::optional<ShaderTarget> CookShadersArgumentParser::ParseTarget(std::string_view value) noexcept
 {
 	for (std::uint16_t candidate = static_cast<std::uint16_t>(ShaderTarget::DxilSm60);
-	     candidate <= static_cast<std::uint16_t>(ShaderTarget::SpirV16);
-	     ++candidate)
+	    candidate <= static_cast<std::uint16_t>(ShaderTarget::SpirV16);
+	    ++candidate)
 	{
 		const auto target = static_cast<ShaderTarget>(candidate);
 		if (value == GetShaderTargetName(target))

@@ -10,7 +10,7 @@
 
 class SlangShaderBackend final : public IShaderBackend
 {
-  public:
+public:
 	SlangShaderBackend();
 	~SlangShaderBackend() override = default;
 
@@ -26,15 +26,15 @@ class SlangShaderBackend final : public IShaderBackend
 	ShaderBackendCapabilities GetCapabilities() const override;
 	std::string_view GetBackendName() const override;
 	std::uint64_t GetBackendVersion() const override;
-	CompiledShader Compile(const ShaderCompileOptions& options) override;
+	CompiledShader Compile(const ShaderCompileRequest& request) override;
 
-  private:
+private:
 	static SlangStage MapStage(ShaderStage stage);
 	static SlangCompileTarget MapTarget(ShaderTarget target);
 	static std::string BlobToString(slang::IBlob* blob);
-	static std::vector<std::string> BuildDebugArgumentStrings(const ShaderCompileOptions& options);
+	static std::vector<std::string> BuildDebugArgumentStrings(const ShaderCompileRequest& request);
 	static ShaderDebugArtifactSet CaptureDebugArtifacts(
-	    const ShaderCompileOptions& options,
+	    const ShaderCompileRequest& request,
 	    std::string_view sourceText,
 	    std::string_view diagnostics);
 	static std::uint64_t QueryBackendVersion(slang::IGlobalSession& globalSession);

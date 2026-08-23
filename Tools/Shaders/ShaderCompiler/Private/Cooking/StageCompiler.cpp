@@ -8,51 +8,46 @@
 #include "Core/Public/Paths/PathUtils.h"
 
 CookedStageBuild StageCompiler::Compile(
-	IShaderBackend& backend,
-	const ShaderCookStageDesc& stage,
-	const ShaderCompileOptions& options,
-	ShaderDebugArtifactSet* outDebugArtifacts)
+    IShaderBackend& backend,
+    const ShaderCompileRequest& request,
+    ShaderDebugArtifactSet* outDebugArtifacts)
 {
 	const ShaderBackendCapabilities capabilities = backend.GetCapabilities();
-	if (!capabilities.SupportsTarget(options.Target))
+	if (!capabilities.SupportsTarget(request.Target))
 	{
 		throw Diagnostics::Error(
-		    std::string{"Active shader backend does not support target '"} + GetShaderTargetName(options.Target) + "'.");
+		    std::string{"Active shader backend does not support target '"} + GetShaderTargetName(request.Target) + "'.");
 	}
-	if (options.PackageKind == CookedShaderPackageKind::RayTracingLibrary &&
-	    !capabilities.SupportsRayTracingLibrary(options.Target))
+	if (request.UnitKind == ShaderCompileUnitKind::Library && !capabilities.SupportsRayTracingLibrary(request.Target))
 	{
 		throw Diagnostics::Error(
-		    std::string{"Active shader backend does not support ray tracing library packages for target '"} +
-		    GetShaderTargetName(options.Target) + "'.");
+		    std::string{"Active shader backend does not support shader libraries for target '"} + GetShaderTargetName(request.Target)
+		    + "'.");
 	}
-	if (HasCookedShaderPackageFeature(options.PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
-	    !capabilities.SupportsInlineRayQuery(options.Target))
+	if (HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::InlineRayQuery)
+	    && !capabilities.SupportsInlineRayQuery(request.Target))
 	{
 		throw Diagnostics::Error(
-		    std::string{"Active shader backend does not support inline ray queries for target '"} +
-		    GetShaderTargetName(options.Target) + "'.");
+		    std::string{"Active shader backend does not support inline ray queries for target '"} + GetShaderTargetName(request.Target)
+		    + "'.");
 	}
 
-	CompiledShader compiledShader = backend.Compile(options);
+	CompiledShader compiledShader = backend.Compile(request);
 	const ShaderBytecode bytecode = compiledShader.GetBytecode();
 	if (!bytecode.IsValid())
 	{
-		throw Diagnostics::Error(
-		    "Backend returned empty bytecode for shader source '" + stage.sourcePath + "'.");
+		throw Diagnostics::Error("Backend returned empty bytecode for shader source '" + request.VirtualSourcePath + "'.");
 	}
 
 	const auto* bytecodeBegin = static_cast<const std::uint8_t*>(bytecode.Data);
 	CookedStageBuild compiledStage;
-	compiledStage.stage = stage.stage;
-	compiledStage.format = IsSpirVTarget(options.Target)
-		? CookedShaderBinaryFormat::SpirV
-		: CookedShaderBinaryFormat::Dxil;
-	compiledStage.sourcePath = stage.sourcePath;
-	compiledStage.entryPoint = stage.entryPoint;
+	compiledStage.stage = request.Stage;
+	compiledStage.format = IsSpirVTarget(request.Target) ? CookedShaderBinaryFormat::SpirV : CookedShaderBinaryFormat::Dxil;
+	compiledStage.sourcePath = request.VirtualSourcePath;
+	compiledStage.entryPoint = request.EntryPoint;
 	compiledStage.debugArtifact = Paths::MakeProjectRelativeString(compiledShader.GetDebugArtifactPath());
 	compiledStage.backendName.assign(backend.GetBackendName());
-	compiledStage.codegenTarget.assign(GetShaderTargetName(options.Target));
+	compiledStage.codegenTarget.assign(GetShaderTargetName(request.Target));
 	compiledStage.backendVersion = backend.GetBackendVersion();
 	compiledStage.bytecode.assign(bytecodeBegin, bytecodeBegin + bytecode.Size);
 	compiledStage.bytecodeHash = Hash::Fnv1a64(compiledStage.bytecode.data(), compiledStage.bytecode.size());

@@ -14,35 +14,43 @@
 
 CommandRegistry::CommandRegistry()
 {
-	m_registrations.push_back(Registration{
-	    .verbs = {kCommandCook},
-	    .command = std::make_shared<CookShadersCommand>(),
-	    .usageLine = "  ShaderCompiler cook [--package <package-id> | --shader-id <registered-shader-name>] [--target <name>] [--backend <name>] [--debug-artifacts <dir>] [--analysis <pass>] [--debug-info] [--disable-optimizations]"});
+	m_registrations.push_back(
+	    Registration{
+	        .verbs = {kCommandCook},
+	        .command = std::make_shared<CookShadersCommand>(),
+	        .usageLine = "  ShaderCompiler cook [--package <package-id> | --shader-id <registered-shader-name> | --changed "
+	                     "<virtual-path>...] [--target <name>] [--backend <name>] [--debug-artifacts <dir>] [--analysis <pass>] "
+	                     "[--debug-info] [--disable-optimizations]"});
 
-	m_registrations.push_back(Registration{
-	    .verbs = {kCommandListBackends},
-	    .command = std::make_shared<ListBackendsCommand>(),
-	    .usageLine = "  ShaderCompiler list-backends"});
+	m_registrations.push_back(
+	    Registration{
+	        .verbs = {kCommandListBackends},
+	        .command = std::make_shared<ListBackendsCommand>(),
+	        .usageLine = "  ShaderCompiler list-backends"});
 
-	m_registrations.push_back(Registration{
-	    .verbs = {kCommandListTargets},
-	    .command = std::make_shared<ListTargetsCommand>(),
-	    .usageLine = "  ShaderCompiler list-targets"});
+	m_registrations.push_back(
+	    Registration{
+	        .verbs = {kCommandListTargets},
+	        .command = std::make_shared<ListTargetsCommand>(),
+	        .usageLine = "  ShaderCompiler list-targets"});
 
-	m_registrations.push_back(Registration{
-	    .verbs = {kCommandInspectPackage},
-	    .command = std::make_shared<InspectPackageCommand>(),
-	    .usageLine = "  ShaderCompiler inspect-package <path>"});
+	m_registrations.push_back(
+	    Registration{
+	        .verbs = {kCommandInspectPackage},
+	        .command = std::make_shared<InspectPackageCommand>(),
+	        .usageLine = "  ShaderCompiler inspect-package <path>"});
 
-	m_registrations.push_back(Registration{
-	    .verbs = {kCommandListShaders},
-	    .command = std::make_shared<ListShadersCommand>(),
-	    .usageLine = "  ShaderCompiler list-shaders [--validate]"});
+	m_registrations.push_back(
+	    Registration{
+	        .verbs = {kCommandListShaders},
+	        .command = std::make_shared<ListShadersCommand>(),
+	        .usageLine = "  ShaderCompiler list-shaders [--validate]"});
 
-	m_registrations.push_back(Registration{
-	    .verbs = {kCommandInspectShader},
-	    .command = std::make_shared<InspectShaderCommand>(),
-	    .usageLine = "  ShaderCompiler inspect-shader <shader-id>"});
+	m_registrations.push_back(
+	    Registration{
+	        .verbs = {kCommandInspectShader},
+	        .command = std::make_shared<InspectShaderCommand>(),
+	        .usageLine = "  ShaderCompiler inspect-shader <shader-id>"});
 }
 
 const ICommand* CommandRegistry::Find(std::string_view verb) const noexcept
@@ -67,5 +75,4 @@ void CommandRegistry::PrintUsage(std::ostream& output) const
 	{
 		output << registration.usageLine << '\n';
 	}
-
 }

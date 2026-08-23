@@ -1,18 +1,16 @@
 #pragma once
 
+#include "Compiler/ShaderCompileRequest.h"
 #include "Cooking/CookedStageBuild.h"
-#include "Cooking/ShaderCookTypes.h"
 #include "ShaderDebugArtifactSet.h"
-#include "ShaderCompileOptions.h"
 
 class IShaderBackend;
 
 class StageCompiler final
 {
-  public:
+public:
 	static CookedStageBuild Compile(
 	    IShaderBackend& backend,
-	    const ShaderCookStageDesc& stage,
-	    const ShaderCompileOptions& options,
+	    const ShaderCompileRequest& request,
 	    ShaderDebugArtifactSet* outDebugArtifacts);
 };

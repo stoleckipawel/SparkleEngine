@@ -12,7 +12,8 @@
 #include <format>
 #include <utility>
 
-ShaderRecookCoordinator::ShaderRecookCoordinator(EditorOperationService& operations) : m_operations(&operations)
+ShaderRecookCoordinator::ShaderRecookCoordinator(EditorOperationService& operations) :
+    m_operations(&operations)
 {
 }
 
@@ -30,10 +31,35 @@ void ShaderRecookCoordinator::RequestRecook() noexcept
 
 void ShaderRecookCoordinator::RequestRecook(ShaderRecookRequest request) noexcept
 {
+	if (request.Type == ShaderRecookRequestType::Changed && request.ChangedVirtualPaths.empty())
+	{
+		request.ChangedVirtualPaths = m_shaderSourceChangeTracker.CollectChangedVirtualPaths();
+		if (request.ChangedVirtualPaths.empty())
+		{
+			PublishStatus("No changed shader source paths are pending; no shader compiler process was launched.");
+			return;
+		}
+	}
+
 	if (m_hasActiveRecook)
 	{
-		m_queuedRequest = std::move(request);
-		m_hasQueuedRecook = true;
+		if (m_hasQueuedRecook && m_queuedRequest.Type == ShaderRecookRequestType::Changed
+		    && request.Type == ShaderRecookRequestType::Changed)
+		{
+			m_queuedRequest.ChangedVirtualPaths.insert(
+			    m_queuedRequest.ChangedVirtualPaths.end(),
+			    request.ChangedVirtualPaths.begin(),
+			    request.ChangedVirtualPaths.end());
+			std::ranges::sort(m_queuedRequest.ChangedVirtualPaths);
+			m_queuedRequest.ChangedVirtualPaths.erase(
+			    std::unique(m_queuedRequest.ChangedVirtualPaths.begin(), m_queuedRequest.ChangedVirtualPaths.end()),
+			    m_queuedRequest.ChangedVirtualPaths.end());
+		}
+		else if (!m_hasQueuedRecook || m_queuedRequest.Type != ShaderRecookRequestType::Global)
+		{
+			m_queuedRequest = std::move(request);
+			m_hasQueuedRecook = true;
+		}
 		PublishStatus(std::format("Shader recook already running; queued one follow-up request for {}.", DescribeRequest(m_queuedRequest)));
 		return;
 	}
@@ -49,10 +75,14 @@ void ShaderRecookCoordinator::RequestReload() noexcept
 
 void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) noexcept
 {
-	if (m_shaderSourceChangeTracker.HasChanged())
+	std::vector<std::string> changedVirtualPaths = m_shaderSourceChangeTracker.CollectChangedVirtualPaths();
+	if (!changedVirtualPaths.empty())
 	{
-		PublishStatus("Shader source change detected; scheduling out-of-process recook.");
-		RequestRecook(ShaderRecookRequest{.Type = ShaderRecookRequestType::Changed});
+		PublishStatus(
+		    std::format(
+		        "Detected {} changed shader source path(s); scheduling dependency-directed compilation.",
+		        changedVirtualPaths.size()));
+		RequestRecook(ShaderRecookRequest{.Type = ShaderRecookRequestType::Changed, .ChangedVirtualPaths = std::move(changedVirtualPaths)});
 	}
 
 	if (m_reloadRequested || reloadRequested)
@@ -114,6 +144,15 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 {
 	if (result.RequestId != m_latestRequestId)
 	{
+		return;
+	}
+	if (result.Process.NoWork())
+	{
+		PublishStatus(
+		    std::format(
+		        "Shader recook #{} ({}) found no affected registered shader types; no compilation or publication was performed.",
+		        result.RequestId,
+		        DescribeRequest(result.Request)));
 		return;
 	}
 
@@ -306,7 +345,7 @@ std::string ShaderRecookCoordinator::DescribeRequest(const ShaderRecookRequest& 
 	switch (request.Type)
 	{
 		case ShaderRecookRequestType::Changed:
-			return "changed shader sources";
+			return std::format("{} changed shader source path(s)", request.ChangedVirtualPaths.size());
 		case ShaderRecookRequestType::PackageId:
 			return request.Target.empty() ? "shader package <empty>" : "shader package '" + request.Target + "'";
 		case ShaderRecookRequestType::ShaderId:

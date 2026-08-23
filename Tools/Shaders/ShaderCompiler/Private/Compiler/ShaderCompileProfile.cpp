@@ -10,7 +10,7 @@
 
 class ShaderModelProfile final
 {
-  public:
+public:
 	static std::uint32_t GetProfileShaderModelMinor(ShaderTarget target) noexcept
 	{
 		switch (target)
@@ -82,14 +82,14 @@ const char* ShaderCompileProfile::GetSlangTargetProfileName(ShaderTarget target)
 	return IsSpirVTarget(target) ? GetSpirVProfileName(target) : GetShaderModelProfileName(target);
 }
 
-std::string ShaderCompileProfile::BuildTargetProfile(const ShaderCompileOptions& options)
+std::string ShaderCompileProfile::BuildTargetProfile(const ShaderCompileRequest& request)
 {
 	std::string profile;
 	profile.reserve(8);
-	profile += options.PackageKind == CookedShaderPackageKind::RayTracingLibrary ? "lib" : GetShaderStagePrefix(options.Stage);
+	profile += request.UnitKind == ShaderCompileUnitKind::Library ? "lib" : GetShaderStagePrefix(request.Stage);
 	profile += '_';
 	profile += std::to_string(CookedShaderPackageContract::ShaderModelMajor);
 	profile += '_';
-	profile += std::to_string(ShaderModelProfile::GetProfileShaderModelMinor(options.Target));
+	profile += std::to_string(ShaderModelProfile::GetProfileShaderModelMinor(request.Target));
 	return profile;
 }

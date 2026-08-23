@@ -16,19 +16,13 @@
 
 class CookShadersCommandExecution final
 {
-  public:
-	static void PrintSummary(
-	    const ShaderPackageCookResult& result,
-	    const ShaderPackageCookSettings& settings);
-	static int RunAnalysisPasses(
-	    const ShaderPackageCookResult& result,
-	    const ShaderPackageCookSettings& settings);
+public:
+	static void PrintSummary(const ShaderPackageCookResult& result, const ShaderPackageCookSettings& settings);
+	static int RunAnalysisPasses(const ShaderPackageCookResult& result, const ShaderPackageCookSettings& settings);
 
-  private:
-	static std::string FormatTargets(
-	    std::span<const ShaderTarget> targets);
-	static void RunCookedShaderStats(
-	    const ShaderPackageCookResult& result);
+private:
+	static std::string FormatTargets(std::span<const ShaderTarget> targets);
+	static void RunCookedShaderStats(const ShaderPackageCookResult& result);
 };
 
 int CookShadersCommand::Run(std::span<const std::string_view> args) const
@@ -71,25 +65,25 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	}
 
 	CookShadersCommandExecution::PrintSummary(cookResult, settings);
-	return CookShadersCommandExecution::RunAnalysisPasses(
-	    cookResult,
-	    settings);
+	if (cookResult.packages.empty())
+	{
+		return kExitCodeNoWork;
+	}
+	return CookShadersCommandExecution::RunAnalysisPasses(cookResult, settings);
 }
 
-void CookShadersCommandExecution::PrintSummary(
-    const ShaderPackageCookResult& result,
-    const ShaderPackageCookSettings& settings)
+void CookShadersCommandExecution::PrintSummary(const ShaderPackageCookResult& result, const ShaderPackageCookSettings& settings)
 {
 	ToolConsole::Summary(
 	    std::cout,
 	    "Cooked shader generation",
-	    {ToolConsole::Field("packages", std::to_string(result.packages.size())),
-	     ToolConsole::QuotedField("targets", FormatTargets(settings.targets))});
+	    {ToolConsole::Field("shaderTypes", std::to_string(result.selectedShaderCount)),
+	        ToolConsole::Field("compileJobs", std::to_string(result.compileJobCount)),
+	        ToolConsole::Field("packages", std::to_string(result.packages.size())),
+	        ToolConsole::QuotedField("targets", FormatTargets(settings.targets))});
 }
 
-int CookShadersCommandExecution::RunAnalysisPasses(
-    const ShaderPackageCookResult& result,
-    const ShaderPackageCookSettings& settings)
+int CookShadersCommandExecution::RunAnalysisPasses(const ShaderPackageCookResult& result, const ShaderPackageCookSettings& settings)
 {
 	for (const std::string& analysisPass : settings.analysisPasses)
 	{
@@ -105,8 +99,7 @@ int CookShadersCommandExecution::RunAnalysisPasses(
 				    std::cerr,
 				    ToolConsoleSeverity::Error,
 				    "Failed to run analysis pass",
-				    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"),
-				     ToolConsole::QuotedField("reason", error.what())});
+				    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"), ToolConsole::QuotedField("reason", error.what())});
 				return kExitCodeCookFailure;
 			}
 			continue;
@@ -123,8 +116,7 @@ int CookShadersCommandExecution::RunAnalysisPasses(
 	return kExitCodeSuccess;
 }
 
-std::string CookShadersCommandExecution::FormatTargets(
-    std::span<const ShaderTarget> targets)
+std::string CookShadersCommandExecution::FormatTargets(std::span<const ShaderTarget> targets)
 {
 	std::string result;
 	for (std::size_t index = 0; index < targets.size(); ++index)
@@ -140,17 +132,15 @@ std::string CookShadersCommandExecution::FormatTargets(
 	return result;
 }
 
-void CookShadersCommandExecution::RunCookedShaderStats(
-    const ShaderPackageCookResult& result)
+void CookShadersCommandExecution::RunCookedShaderStats(const ShaderPackageCookResult& result)
 {
-	const CookedShaderStatsReport report =
-	    CookedShaderStatsPass::WriteCsv(result.packages, result.outputDirectory / "Analysis");
+	const CookedShaderStatsReport report = CookedShaderStatsPass::WriteCsv(result.packages, result.outputDirectory / "Analysis");
 
 	ToolConsole::Message(
 	    std::cout,
 	    ToolConsoleSeverity::Info,
 	    "Analysis pass wrote output",
 	    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"),
-	     ToolConsole::Field("rows", std::to_string(report.rowCount)),
-	     ToolConsole::PathField("output", report.outputPath)});
+	        ToolConsole::Field("rows", std::to_string(report.rowCount)),
+	        ToolConsole::PathField("output", report.outputPath)});
 }
