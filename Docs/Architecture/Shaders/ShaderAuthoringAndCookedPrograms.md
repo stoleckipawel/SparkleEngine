@@ -35,7 +35,7 @@ The 2026-08-15 review assumed every proposed Unreal/vendor analogy was wrong unt
 1. Sparkle should adopt Unreal's global-shader flow as its core mental model: one concrete shader class owns its parameter contract and compile hooks; one implementation declaration supplies virtual source, entry point, and stage; cooking produces a global shader map and code records; runtime resolves a typed shader reference from the active map.
 2. A one-shader compute pass does not need an authored program alias, pass-registration macro, duplicate pass-parameter struct, or forwarding pass class. The frame graph should accept the shader type, its nested `Parameters`, a diagnostic label only when the generated default is insufficient, and the dispatch dimensions.
 3. Graphics work names the concrete vertex/pixel shader types at the draw site with the actual pipeline description. Ray tracing uses one narrowly scoped `RayTracingPipelineComposition` only because exports and hit groups form a real multi-stage execution unit. Sparkle does not add a universal authored `ShaderProgram` abstraction.
-4. Shader inputs and outputs live in the shader class's nested `Parameters` schema. The frame graph consumes the same schema to declare resource access; runtime binding and reflection validation derive from it. Multi-shader or shaderless graph work may own a small envelope only for composition or graph-only fields.
+4. A shader class declares nested `Parameters` only when that shader is a direct graph-dispatch binding owner. Compute and ray-generation shaders normally own them; miss, hit, intersection, and callable shaders do not repeat the ray-generation root schema. The frame graph consumes the selected dispatch shader's schema to declare resource access, and runtime binding/reflection validation derive from it. A multi-shader, shaderless, or local-record owner may add one small envelope only for fields that no shader root schema already owns.
 5. A semantic render-pass label remains necessary for frame-graph diagnostics, GPU markers, errors, captures, and profiling, but it does not select code. Generate the one-to-one default from the shader type and accept an instance override for mip, cascade, phase, view, or repeated use.
 6. A shader filename is a virtual source input, not the pass, shader-map, pipeline, or diagnostic identity.
 7. Sparkle should keep cooked shader data but replace handwritten packages with two generated authorities: `GlobalShaderMap` for typed logical lookup and `CookedShaderLibrary` for validated code records addressed by hash. `RenderPassRuntimeCache` continues to own generation-safe materialized layouts/pipelines derived from the active map.
@@ -43,6 +43,7 @@ The 2026-08-15 review assumed every proposed Unreal/vendor analogy was wrong unt
 9. PSO precaching/prewarming, preload controls, and driver-cache integration are outside this implementation plan. Preserve correct lazy materialization before command recording; add earlier preparation only after measured first-use hitch evidence justifies it.
 10. Shader Tools should center `Apply Changed`, semantic shader/source selection, one operation state, source-located errors, and contextual next actions. Package/layout IDs, hashes, raw artifacts, full rebuild/reload, backend flags, and runtime materialization mechanics remain expert details.
 11. Inline ray queries and full ray-tracing pipelines remain different execution systems that share shader identity, parameters, maps, scene/TLAS/material data, semantic HLSL kernels, runtime generation, and retirement. Their native invocation and SBT mechanisms remain distinct, while this one plan delivers both without a parallel shader architecture.
+12. Classic TLAS versus partitioned TLAS and descriptor encoding versus device-address storage are RHI binding mechanics, not shader identities or effect choices. One shader class declares one semantic acceleration-structure parameter and one HLSL entry. The selected backend/provider lowers that parameter to its exact native descriptor representation. Sparkle deletes the duplicate device-address shader, raw-address shader uniform fields, access-mode frontend, and no-query shadow shader; it does not replace them with a hidden compiler variant or author-facing permutation.
 
 The short answer is therefore:
 
@@ -131,7 +132,7 @@ The mapping is architectural, not a request to copy Unreal class names or source
 ```text
 AUTHORING
   shader class
-    + nested Parameters
+    + nested Parameters when it owns direct graph bindings
     + optional compile eligibility/environment/validation hooks
   IMPLEMENT_GLOBAL_SHADER(class, virtual source, entry, stage)
                          |
@@ -169,7 +170,7 @@ DEVELOPMENT RELOAD
 The lean design is not "compile every file automatically." It is automatic generation from small, explicit declarations:
 
 - source files provide implementation text and includes;
-- shader classes provide executable entry points, nested parameter metadata, and only the compile hooks they actually need;
+- shader classes provide executable entry points, direct-binding parameter metadata only where used, and only the compile hooks they actually need;
 - graph dispatch names the concrete shader type(s) and supplies execution dimensions or draw work;
 - parameter metadata provides the shared graph-resource and shader-binding contract;
 - shader maps provide logical typed lookup;
@@ -177,7 +178,7 @@ The lean design is not "compile every file automatically." It is automatic gener
 - pipeline descriptors add fixed-function state;
 - render-pass labels provide diagnostics only.
 
-This is why filenames cannot safely replace shader types, graph operations, or pipelines. Automation derives map identity, package/layout names, binding metadata, and runtime lookup. Authors state only facts the system cannot infer: class, virtual source, entry, stage, parameter fields, optional capability policy, and the actual dispatch/draw request.
+This is why filenames cannot safely replace shader types, graph operations, or pipelines. Automation derives map identity, code-library records, binding metadata, and runtime lookup. Authors state only facts the system cannot infer: class, virtual source, entry, stage, parameter fields, optional capability policy, and the actual dispatch/draw request.
 
 ## Proposed Authoring Experience
 
@@ -229,13 +230,62 @@ That label describes this graph node. It does not select shader bytecode.
 
 Graphics follows the same rule without inventing a program alias: the draw path requests typed `ShaderRef<GBufferVS>` and `ShaderRef<GBufferPS>` from the map and combines them with the actual vertex layout, render-target formats, depth/stencil, blend, raster, topology, and draw data. A focused mesh-pass collaborator may remain when it owns real draw-list/cache behavior; one-method pass wrappers that only forward parameters to a shader do not.
 
-Ray-tracing shader declarations use the same class shape—nested root `Parameters`, virtual source, entry/export, stage, compile eligibility, and payload/attribute metadata only where required. Ray-generation, miss, hit, intersection, and callable shaders resolve through the same `GlobalShaderMap`. A focused `RayTracingPipelineComposition` names typed exports, hit groups, payload/attribute contracts, recursion, and optional bounded local data; it is not a universal `TShaderProgram`, package, or second registration framework. The target semantics remain in the [ray-tracing target architecture](RayTracingPipelineImplementationPlan.md), while the phases below deliver the entire path.
+Ray-tracing stages use the same concrete `GlobalShader` registration and `ShaderRef` lookup as raster and compute, but they do not pretend to have identical binding roles. The selected ray-generation shader owns the dispatch-global nested `Parameters` used by the graph. Miss, closest-hit, any-hit, intersection, and callable classes declare only stage identity and optional compile hooks; they do not repeat the ray-generation root parameters or introduce empty placeholder structs. A focused `RayTracingPipelineComposition` names typed stage membership and hit groups and owns the composition-wide payload type, attribute type, minimum recursion, and optional bounded local-record schemas exactly once. It is not a universal `TShaderProgram`, package, or second registration framework. The target semantics remain in the [ray-tracing target architecture](RayTracingPipelineImplementationPlan.md), while the phases below deliver the entire path.
+
+The intended authoring surface mirrors Unreal's useful production split without copying its prefixes or legacy binding adapters. This abridged example shows the declaration shape; the product implementation supplies the complete GBuffer output schema required by Phase 6.
+
+```cpp
+class RayTracedGBufferRGS final : public GlobalShader<RayTracedGBufferRGS>
+{
+public:
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+		SHADER_PARAMETER_CBUFFER(View, ViewUniformData)
+		SHADER_PARAMETER_SRV(RaytracingAccelerationStructure, RayTracingScene)
+		SHADER_PARAMETER_UAV(RWTexture2D, BaseColor)
+	END_SHADER_PARAMETER_STRUCT()
+};
+
+class RayTracedGBufferMissMS final : public GlobalShader<RayTracedGBufferMissMS> {};
+
+class RayTracedGBufferClosestHitCHS final : public GlobalShader<RayTracedGBufferClosestHitCHS> {};
+
+IMPLEMENT_GLOBAL_SHADER(
+	RayTracedGBufferRGS,
+	"/Engine/Passes/GBuffer/RayTracedGBuffer.hlsl",
+	"RayGeneration",
+	RayGeneration);
+
+IMPLEMENT_GLOBAL_SHADER(
+	RayTracedGBufferMissMS,
+	"/Engine/Passes/GBuffer/RayTracedGBuffer.hlsl",
+	"Miss",
+	Miss);
+
+IMPLEMENT_GLOBAL_SHADER(
+	RayTracedGBufferClosestHitCHS,
+	"/Engine/Passes/GBuffer/RayTracedGBuffer.hlsl",
+	"ClosestHit",
+	ClosestHit);
+```
+
+The effect owner declares one `RayTracingPipelineComposition` relating those typed stages and its hit group. That declaration is also the single author-facing location for `GBufferRayPayload`, `BuiltInTriangleAttributes`, recursion, and any genuinely consumed local record; individual shader classes do not restate those facts. Graph construction then remains as lean as compute dispatch:
+
+```cpp
+auto& parameters = builder.AllocParameters<RayTracedGBufferRGS>();
+parameters.View = viewUniforms;
+parameters.RayTracingScene = rayTracingScene;
+parameters.BaseColor = builder.CreateUAV(baseColor);
+
+builder.TraceRays<RayTracedGBufferRGS>(rayTracedGBufferPipeline, parameters, renderExtent);
+```
+
+`TraceRays<RayGenerationShader>` is the Renderer/frame-graph frontend. It resolves the typed ray-generation shader and focused composition, derives the global layout from `RayGenerationShader::Parameters`, asks the existing runtime owner for the exact pipeline/table generation, declares all graph resources, and records later. The author does not pass a native pipeline, SBT, global binding writer, code hash, export string, table address, stride, or backend command. An explicit `RenderPassLabel` overload changes diagnostics only.
 
 The final form has these invariants:
 
-- the shader class is the sole author-facing owner of shader-visible parameters;
+- the direct dispatch shader is the sole author-facing owner of its global shader-visible parameters; optional local-record fields have one separate group/stage owner and are never mirrored;
 - the implementation declaration states only class, virtual source, entry, and stage/export facts;
-- optional compile hooks appear only on shader classes that use them; the common class has none;
+- optional compile hooks appear only on shader classes that use them; composition-wide payload/attribute facts and bounded local records appear once on the focused composition or owning hit group;
 - no precache hook or permutation-domain boilerplate exists in the base migration;
 - no `DirectLightingProgram`, `SPARKLE_RENDER_PASS`, duplicated `DirectLightingPassParameters`, or forwarding `DirectLightingPass` is required for the one-to-one compute case;
 - raw shader directory scanning does not replace registration because include/library files are not executable entries;
@@ -386,11 +436,29 @@ Sources:
 - [Epic: PSO Precaching](https://dev.epicgames.com/documentation/en-us/unreal-engine/pso-precaching-for-unreal-engine)
 - [Epic: Debugging the Shader Compile Process](https://dev.epicgames.com/documentation/en-us/unreal-engine/debugging-the-shader-compile-process-in-unreal-engine)
 
+For ray tracing specifically, current Unreal 5.8 keeps the same shader-type center but separates three responsibilities that Sparkle must also keep separate:
+
+1. `FShaderType`/`FShader` carry root-parameter metadata, compile hooks, and a ray-tracing payload hook.
+2. `FRayTracingPipelineStateInitializer` relates ray-generation, miss, hit-group, and callable shader tables plus the shared binding layout. It is pipeline composition, not another shader declaration system.
+3. `RayTraceDispatch` receives the materialized pipeline, selected ray-generation shader, shader binding table, global parameters, and dimensions. Unreal 5.5 began replacing the older ray-tracing binding writer with the normal batched shader-parameter path; Sparkle should start with its one typed `Parameters` path and copy no deprecated writer layer.
+
+Sparkle retains those responsibilities but removes repetition that its smaller frontend does not need: `GlobalShader` stage classes, ray-generation-owned root `Parameters`, one focused typed `RayTracingPipelineComposition` owning the shared payload/attribute contract, and `TraceRays<RayGenerationShader>`. The compiler validates every participating export against that composition contract; the frame graph/runtime derives and retains the materialized pipeline, table, and binding state that Unreal's lower-level RHI call receives explicitly. This preserves Unreal's authoring experience while respecting Sparkle's graph and RHI ownership.
+
+Primary sources:
+
+- [Epic: `FShader` root parameters and ray-tracing payload hook](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/RenderCore/FShader)
+- [Epic: `FRHIRayTracingShader` stage hierarchy](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/RHI/FRHIRayTracingShader)
+- [Epic: `FRayTracingPipelineStateInitializer`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RHI/FRayTracingPipelineStateInitiali-)
+- [Epic: `RayTraceDispatch`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/RHI/FRHIComputeCommandList/RayTraceDispatch)
+- [Epic 5.5 release note for batched ray-tracing shader parameters](https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-5-5-release-notes)
+
 ### NVIDIA Donut and NVRHI
 
 Donut's `ShaderFactory` resolves bytecode using a filename plus entry point and selects an embedded DXBC, DXIL, or SPIR-V variant when available. It may use the filename as the shader object's default debug name. Its deferred-lighting implementation nevertheless creates the shader from `deferred_lighting_cs.hlsl` and separately emits the semantic GPU marker `DeferredLighting`.
 
 NVRHI keeps `shaderType`, `debugName`, and `entryName` as distinct fields in `ShaderDesc`; a shader library resolves a shader by entry name and shader type. This is useful evidence that the low-level RHI description should not be responsible for Sparkle's source-package authoring policy.
+
+NVRHI's RT API also confirms that pipeline description, shader table, command state, and ray dispatch are separate mechanism objects. Sparkle adopts that separation and paired D3D12/Vulkan contract, but not NVRHI's name-addressed mutable/versioned shader table. Sparkle's Renderer owns typed logical records, and backend-private RHI materializes an immutable table tied to one exact pipeline generation.
 
 Adopt:
 
@@ -404,12 +472,16 @@ Sources:
 - [NVIDIA Donut `ShaderFactory.cpp` at `bfdebdd`](https://github.com/NVIDIA-RTX/Donut/blob/bfdebdd7dd5455c503b2737a1967a4ef651c145b/src/engine/ShaderFactory.cpp)
 - [NVIDIA Donut `DeferredLightingPass.cpp` at `bfdebdd`](https://github.com/NVIDIA-RTX/Donut/blob/bfdebdd7dd5455c503b2737a1967a4ef651c145b/src/render/DeferredLightingPass.cpp)
 - [NVIDIA NVRHI `nvrhi.h` at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/include/nvrhi/nvrhi.h)
+- [NVIDIA NVRHI programming guide at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md)
+- [NVIDIA NVRHI ray-tracing tutorial at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/Tutorial.md)
 
 ### AMD Cauldron and FidelityFX
 
 Cauldron's reviewed D3D12 paths compile shaders with an explicit file, entry point, target profile, and define list. It hashes shader source recursively through includes and hashes defines. Its rendering code uses separate user-marker strings such as `GltfPbrPass::DrawBatchList`.
 
 FidelityFX uses an effect-specific pass enum and permutation flags to select generated shader blobs, then gives the created pipeline a separate human-readable name. Its useful precedent for Sparkle is only the separation of executable identity from the human-readable pipeline label. Sparkle's unified migration does not adopt FidelityFX's effect/pass enum or generated-variant selector; the concrete shader class and typed draw/dispatch/trace already provide the required identity.
+
+AMD's reviewed Vulkan capability path keeps ray-tracing-pipeline and ray-query feature structures distinct, and FidelityFX's denoiser sample keeps reusable ray construction/traversal/material helpers in shared HLSL. Sparkle adopts those two boundaries: independent capability truth and shared semantic kernels with thin execution frontends. Cauldron/FidelityFX do not provide a typed engine shader-class frontend comparable to Unreal's, so they are not evidence for adding another authoring macro, pass enum, program alias, or string-addressed pipeline layer.
 
 Adopt:
 
@@ -425,6 +497,32 @@ Sources:
 - [AMD Cauldron `ShadowResolvePass.cpp` at `b92d559`](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/b92d559bd083f44df9f8f42a6ad149c1584ae94c/src/DX12/PostProc/ShadowResolvePass.cpp)
 - [AMD Cauldron `GltfPbrPass.cpp` at `b92d559`](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/b92d559bd083f44df9f8f42a6ad149c1584ae94c/src/DX12/GLTF/GltfPbrPass.cpp)
 - [AMD FidelityFX optical-flow program selection at `60f4ea8`](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/FidelityFX/framegeneration/fsr3/internal/ffx_opticalflow.cpp)
+- [AMD Cauldron ray-pipeline/ray-query capability separation at `b92d559`](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/b92d559bd083f44df9f8f42a6ad149c1584ae94c/src/VK/base/ExtRayTracing.cpp)
+- [AMD FidelityFX shared ray-tracing HLSL at `60f4ea8`](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Samples/Denoisers/FidelityFX_Denoiser/dx12/shaders/raytracing_common.hlsl)
+
+### Acceleration-Structure Binding Decision
+
+The current shadow duplication is not a legitimate shader-authoring variant. `DirectShadowSignalCS` and `DirectShadowSignalDeviceAddressCS` execute the same entry and shared algorithm; the latter exists only to define `SPARKLE_RAY_TRACING_SCENE_TLAS_DEVICE_ADDRESS`, omit the semantic `SceneTlas` parameter, and reconstruct an opaque acceleration structure from two address words stored in an effect uniform. The separate class, source root, pass wrapper, package, feature flags, parameter schema, address fields, and selection enum are one backend representation leaking through every frontend layer.
+
+Production API precedent removes the reason for that leak:
+
+- DirectX declares one HLSL `RaytracingAccelerationStructure` resource. D3D12 may bind it through an acceleration-structure SRV or a root SRV whose native value is a GPU virtual address; the HLSL shader identity does not change.
+- NVRHI exposes one semantic `ResourceType::AccelStruct` binding and lets its D3D12/Vulkan implementations materialize API-specific layouts and bindings.
+- Vulkan defines both `VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR` and `VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV`. `VkWriteDescriptorSetPartitionedAccelerationStructureNV` carries the PTLAS device address inside the native descriptor write. Therefore a PTLAS address is backend descriptor data, not an HLSL constant or a reason for another shader class.
+- Sparkle already resolves an acceleration-structure binding to a classic or partitioned native descriptor in Vulkan command recording. The missing contract is to select and validate that completed descriptor route consistently instead of advertising only the raw-address alternative.
+
+The frozen target is one `SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)` field on `DirectShadowSignalCS` and every other shader that traces the scene. The graph binds one `FrameGraphAccelerationStructureHandle`. The selected TLAS provider is fixed before shader layout/pipeline materialization, and private RHI chooses the exact native descriptor type and write structure. Renderer shader/effect code never receives a TLAS GPU address or access-mode enum. If a provider cannot complete that semantic binding on the active device, that provider is unavailable and selection retains the supported classic provider; Sparkle does not compile a second shader or silently branch on a raw address.
+
+This is not the postponed permutation system. The catalog and map retain one code record per `(ShaderTypeId, Target)`, the shader author writes no define or mode, and the shader bytecode does not fork for the binding representation. A future backend that truly cannot implement the semantic binding must extend the RHI capability and binding contract with evidence; it may not create `*DeviceAddressShader`, `*DescriptorShader`, or an internal pseudo-permutation by convention.
+
+The no-query shadow program is also deleted rather than generalized. Lack of ray-query readiness is renderer graph policy: select the accepted raster/no-ray path or produce the established unshadowed resource result through the existing graph resource operation. A compute shader that recompiles the same lighting code only to skip traversal is not a backend fallback.
+
+Primary sources:
+
+- [Microsoft DXR acceleration-structure resource binding](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html)
+- [NVIDIA NVRHI acceleration-structure binding model at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md)
+- [Khronos `VK_NV_partitioned_acceleration_structure`](https://docs.vulkan.org/refpages/latest/refpages/source/VK_NV_partitioned_acceleration_structure.html)
+- [Khronos partitioned-AS descriptor write](https://docs.vulkan.org/refpages/latest/refpages/source/VkWriteDescriptorSetPartitionedAccelerationStructureNV.html)
 
 ### Compiler, Capture, and Native Pipeline Precedent
 
@@ -537,7 +635,7 @@ The separation at the right is important: graph construction may materialize a p
 - D3D12 creates every graphics/compute pipeline with an empty `CachedPSO`; Vulkan calls `vkCreateGraphicsPipelines` and `vkCreateComputePipelines` with `VK_NULL_HANDLE` for the pipeline cache. Vulkan computes a local cache-key-shaped struct and then discards it. There is no renderer pipeline cache, native persistent cache, asynchronous precache coordinator, or hit/miss/too-late telemetry.
 - Pass labels, D3D12 PIX events, Vulkan object names, binding-layout names, and pipeline names are readable. They do not carry stable shader-type/code identity that can join a capture event to the cooker artifacts and external shader symbols.
 - Ray-tracing library registration, cooking, inspection, and metadata validation exist in the generic schema/tooling, but there are no renderer `IMPLEMENT_RAY_TRACING_SHADER` registrations. Runtime validation explicitly rejects a ray-tracing library because RT state-object/pipeline execution is not enabled. Current ray-query lighting passes are compute shaders and must not be presented as proof of a ray-tracing shader pipeline.
-- `DirectShadowSignalNoRayQuery` and `DirectShadowSignalDeviceAddress` are registered and have pass implementations, but the production frame path always dispatches `DirectShadowSignal`. `CanUseInlineRayQueryShadows` has no selection consumer, and top-level provider selection falls back to classic descriptor access rather than choosing the device-address shader. These alternatives are not verified fallbacks.
+- `DirectShadowSignalNoRayQuery` and `DirectShadowSignalDeviceAddress` are registered and have pass implementations, but the production frame path always dispatches `DirectShadowSignal`. `CanUseInlineRayQueryShadows` has no selection consumer, and top-level provider selection falls back to classic descriptor access rather than choosing the device-address shader. These alternatives are not verified fallbacks. The device-address root duplicates the live shader solely because native AS binding representation leaked into shader identity; the no-query root duplicates lighting work only to skip traversal. Phase 1 deletes both instead of moving or retaining them.
 - Geometry, hull, and domain stages appear in shader enums, package validation, and Vulkan shader-module mapping, but current graphics pipeline descriptions/backends wire only vertex plus optional pixel stages. Mesh/task stages are absent and both RHI capability reports mark them unsupported. Schema awareness is not executable stage support.
 - Runtime capability checks directly reject missing acceleration-structure and inline-ray-query support, but do not explicitly check every declared package feature such as acceleration-structure device-address access and descriptor indexing in the same capability gate.
 - CLI validation structurally validates the catalog but cooks and inspects only the representative `ComputeClear` artifact. `ShaderCompilerCliValidation` is a custom build target rather than a registered CTest, and no shader-specific unit/integration test suite was found.
@@ -607,7 +705,7 @@ The parameter counts deliberately distinguish declarations from effective use. `
 
 ### Complete shader-class and nested-parameter inventory
 
-Every row retains the concrete shader and its nested schema as the Phase 2 authority. The current `FParameters` spelling becomes `Parameters`; the corresponding pass schema, pass metadata accessor, package selector, and forwarding Execute body do not survive.
+Every live semantic row retains the concrete shader and its nested schema as the Phase 2 authority. The current `FParameters` spelling becomes `Parameters`; the corresponding pass schema, pass metadata accessor, package selector, and forwarding Execute body do not survive. The two catalog-only shadow variants are explicit Phase 1 deletions and never reach the target catalog.
 
 | Shader class | Stage | Nested fields | Logical program | Current graph status |
 | --- | --- | ---: | --- | --- |
@@ -615,8 +713,8 @@ Every row retains the concrete shader and its nested schema as the Phase 2 autho
 | `DirectLightingCS` | compute | 19 | `DirectLighting` | live |
 | `DirectLightReservoirSpatialCS` | compute | 19 | `DirectLightReservoirSpatial` | live |
 | `DirectLightReservoirTemporalCS` | compute | 20 | `DirectLightReservoirTemporal` | live |
-| `DirectShadowSignalDeviceAddressCS` | compute | 20 | `DirectShadowSignalDeviceAddress` | catalog-only; no graph dispatch consumer |
-| `DirectShadowSignalNoRayQueryCS` | compute | 12 | `DirectShadowSignalNoRayQuery` | catalog-only; no graph dispatch consumer |
+| `DirectShadowSignalDeviceAddressCS` | compute | 20 | `DirectShadowSignalDeviceAddress` | Phase 1 deletion; backend binding detail, no graph consumer |
+| `DirectShadowSignalNoRayQueryCS` | compute | 12 | `DirectShadowSignalNoRayQuery` | Phase 1 deletion; graph fallback policy, no graph consumer |
 | `DirectShadowSignalCS` | compute | 21 | `DirectShadowSignal` | live |
 | `ExposureDownsampleSceneCS` | compute | 2 | `ExposureDownsampleScene` | live |
 | `ExposureDownsampleTextureCS` | compute | 2 | `ExposureDownsampleTexture` | live |
@@ -647,7 +745,7 @@ The only current one-field pass schema is `ComputeClearPassParameters::Output`. 
 
 | Classification | Complete current set | Frozen disposition |
 | --- | --- | --- |
-| direct one-shader compute wrappers | `ComputeClearPass`; `DirectLightingPass`; `DirectLightReservoirSpatialPass`; `DirectLightReservoirTemporalPass`; `DirectShadowSignalPass`; `DirectShadowSignalDeviceAddressPass`; `DirectShadowSignalNoRayQueryPass`; `ExposureDownsampleScenePass`; `ExposureDownsampleTexturePass`; `ExposureReduceScenePass`; `ExposureReduceTexturePass`; `ExposurePass`; `LightingCompositePass`; `LinearUpscalePass`; `OutputEncodingPass`; `PathTracedDirectLightingPass`; `PathTracedIndirectLightingPass`; `RaytracedGBufferPass`; `ReferenceLightingAccumulationPass`; `RestirIndirectResolvePass`; `RestirIndirectSpatialPass`; `RestirIndirectTemporalPass`; `SceneDepthPass`; `SkyMotionVectorPass`; `SkyPass`; `ToneMappingPass`; `VisualizeBuffersPass` | All 27 classes and their wrapper files are Phase 2 deletion. Twenty-six Execute bodies only call sized compute forwarding; `ExposurePass` forwards a fixed `1x1x1` dispatch. Catalog-only shadow alternatives do not justify wrappers. `AddComputeClearPass` may remain only as a narrow repeated graph-intent helper after it dispatches `ComputeClearCS` directly. |
+| direct one-shader compute wrappers | `ComputeClearPass`; `DirectLightingPass`; `DirectLightReservoirSpatialPass`; `DirectLightReservoirTemporalPass`; `DirectShadowSignalPass`; `DirectShadowSignalDeviceAddressPass`; `DirectShadowSignalNoRayQueryPass`; `ExposureDownsampleScenePass`; `ExposureDownsampleTexturePass`; `ExposureReduceScenePass`; `ExposureReduceTexturePass`; `ExposurePass`; `LightingCompositePass`; `LinearUpscalePass`; `OutputEncodingPass`; `PathTracedDirectLightingPass`; `PathTracedIndirectLightingPass`; `RaytracedGBufferPass`; `ReferenceLightingAccumulationPass`; `RestirIndirectResolvePass`; `RestirIndirectSpatialPass`; `RestirIndirectTemporalPass`; `SceneDepthPass`; `SkyMotionVectorPass`; `SkyPass`; `ToneMappingPass`; `VisualizeBuffersPass` | Phase 1 deletes the two catalog-only shadow variant wrappers with their shader roots. Phase 2 deletes the remaining 25 forwarding classes/files. Twenty-six current Execute bodies only call sized compute forwarding; `ExposurePass` forwards a fixed `1x1x1` dispatch. `AddComputeClearPass` may remain only as a narrow repeated graph-intent helper after it dispatches `ComputeClearCS` directly. |
 | multi-stage graphics | `GBufferPass` using `GBufferVS` and `GBufferPS` | Retain and narrow in Phase 2. It owns target clears/binds, viewport/scissor/topology, mesh-batch traversal, material table binding, skeletal validity, two-sided/wireframe pipeline choice, and draw calls. Remove its package/runtime-definition/metadata boilerplate and shader-visible copies. |
 | real focused collaborator | `GBufferMeshBatchDrawer` | Retain with explicit GBuffer draw inputs. It owns mesh/cache iteration and per-draw behavior; it must not become a shader/package/runtime service locator. |
 | shaderless graph work | texture copy, buffer copy, `LightingTargetClear`, `RaytracedGBufferTargetClear`, `RayTracingSceneBuild`, external upscaler evaluation, external ray-reconstruction evaluation | Retain as graph resource operations or focused provider/RT collaborators. They declare resources but do not need a fake shader class, shader parameters, or forwarding pass wrapper. |
@@ -668,8 +766,9 @@ Parameter-metadata consumers have one destination each:
 
 | Current field family | Current producer and consumers | Target owner | Exact phase |
 | --- | --- | --- | --- |
-| every nested shader `FParameters` field | concrete shader class; registry/catalog/verifier; pass-side mirror | same concrete shader class as nested `Parameters`; graph and binding use the same metadata | Phase 2 retain/rename |
-| all 369 effective compute `*PassParameters` fields, including `DirectLightReservoirCommonParameters`, `DirectShadowSignalCommonPassParameters`, and `DirectShadowSignalRayQueryPassParameters` expansion | semantic graph builder copies values into pass record; Execute/binder reads it | corresponding concrete compute shader `Parameters` field with the same semantic name | Phase 2 delete mirrors |
+| every live semantic shader `FParameters` field | concrete shader class; registry/catalog/verifier; pass-side mirror | same concrete shader class as nested `Parameters`; graph and binding use the same metadata | Phase 2 retain/rename |
+| 32 fields on the two catalog-only shadow variant schemas and their pass mirrors | duplicate registrations/wrappers with no graph producer | deletion; live `DirectShadowSignalCS::Parameters` owns the semantic AS binding and no-query behavior is graph fallback policy | Phase 1 delete |
+| remaining effective compute `*PassParameters` fields, including `DirectLightReservoirCommonParameters`, `DirectShadowSignalCommonPassParameters`, and `DirectShadowSignalRayQueryPassParameters` expansion | semantic graph builder copies values into pass record; Execute/binder reads it | corresponding concrete compute shader `Parameters` field with the same semantic name | Phase 2 delete mirrors |
 | ten shader-visible `GBufferPassParameters` fields and all eighteen `GBufferDrawParameters` field uses | raster graph builder/pass/drawer | `GBufferVS::Parameters` and `GBufferPS::Parameters`, composed at the real draw owner without another schema | Phase 2 delete mirrors |
 | seven GBuffer attachment fields | raster graph builder and GBuffer pass | narrow graph-only GBuffer envelope | Phase 2 retain/narrow |
 | `RenderPassDefinition::PassName` and each pass `PassName` | pass class; graph diagnostics | shader-type-derived default or graph-instance `RenderPassLabel` override | Phase 2 delete/derive |
@@ -705,7 +804,7 @@ Every old package definition, spelling, and consumer is owned below. A path name
 
 ### Source/include and diagnostic dispositions
 
-The 18 files under `Passes/Deferred` are `DirectLighting.hlsl`, `DirectLightReservoirSpatial.hlsl`, `DirectLightReservoirTemporal.hlsl`, `DirectShadowSignal.hlsl`, `DirectShadowSignalCommon.hlsli`, `DirectShadowSignalDeviceAddress.hlsl`, `DirectShadowSignalNoRayQuery.hlsl`, `GBufferPacking.hlsli`, `GBufferPS.hlsl`, `GBufferUtils.hlsli`, `GBufferVS.hlsl`, `LightingComposite.hlsl`, `MotionVector.hlsli`, `SceneDepth.hlsl`, `SceneDepthUtils.hlsli`, `Sky.hlsl`, `SkyMotionVector.hlsl`, and `VisualizeBuffers.hlsl`. Phase 1 moves every file, registration source path, root/relative include, source resolver input, dependency/hash diagnostic, CMake/source-group presentation, and documentation spelling to semantic virtual-source ownership, then deletes `Passes/Deferred`.
+The 18 files under `Passes/Deferred` are `DirectLighting.hlsl`, `DirectLightReservoirSpatial.hlsl`, `DirectLightReservoirTemporal.hlsl`, `DirectShadowSignal.hlsl`, `DirectShadowSignalCommon.hlsli`, `DirectShadowSignalDeviceAddress.hlsl`, `DirectShadowSignalNoRayQuery.hlsl`, `GBufferPacking.hlsli`, `GBufferPS.hlsl`, `GBufferUtils.hlsli`, `GBufferVS.hlsl`, `LightingComposite.hlsl`, `MotionVector.hlsli`, `SceneDepth.hlsl`, `SceneDepthUtils.hlsli`, `Sky.hlsl`, `SkyMotionVector.hlsl`, and `VisualizeBuffers.hlsl`. Phase 1 deletes the two redundant shadow roots and moves the remaining sixteen files, registration source paths, root/relative includes, source resolver inputs, dependency/hash diagnostics, CMake/source-group presentation, and documentation spellings to semantic virtual-source ownership, then deletes `Passes/Deferred`.
 
 Current author-written identity/diagnostic repetition comprises 28 pass labels, 28 package constants, 28 binding-layout labels, and 28 pipeline labels. Phase 2 deletes or derives pass/layout/pipeline presentation; Phase 4 deletes package constants. Compiler/cook/runtime/frontend diagnostics that currently say package ID/key/path/generation change to shader type, virtual source, target, code hash, map/library record, renderer generation, and when applicable RT composition/pipeline/table/effect identity in Phases 3 through 9. Diagnostic labels remain bounded presentation and never become lookup keys.
 
@@ -713,8 +812,8 @@ Current author-written identity/diagnostic repetition comprises 28 pass labels, 
 
 The owning phase is incomplete while its exact floor returns a runtime/tool/build/current-document definition or consumer:
 
-- Phase 1: `Passes/Deferred`, physical authored registration roots, project-first source shadowing, basename fallback, and absolute authored shader includes.
-- Phase 2: `TGlobalShader`, `TShaderRef`, nested `FParameters`, `*PassParameters` mirrors, `RenderPassDefinition`, `RenderPassDefinitionRuntime`, `GetDefinition`, `GetParameterMetadata`, `ComputePassOperations`, the 27 forwarding pass class names/files, authored `_BindingLayout`/`_Pipeline` strings, and count-only parameter-layout acceptance.
+- Phase 1: `Passes/Deferred`, physical authored registration roots, project-first source shadowing, basename fallback, absolute authored shader includes, `DirectShadowSignalDeviceAddress*`, `DirectShadowSignalNoRayQuery*`, `SPARKLE_RAY_TRACING_SCENE_TLAS_DEVICE_ADDRESS`, `SPARKLE_RAY_TRACED_SHADOWS_DISABLED`, `DeviceAddressRayQuery`, `RayTracingSceneTlasShaderAccessMode`, shader/effect `SceneTlasGpuAddress*` fields, and shader-visible raw-address conversion.
+- Phase 2: `TGlobalShader`, `TShaderRef`, nested `FParameters`, remaining `*PassParameters` mirrors, `RenderPassDefinition`, `RenderPassDefinitionRuntime`, `GetDefinition`, `GetParameterMetadata`, `ComputePassOperations`, the remaining 25 forwarding pass class names/files, authored `_BindingLayout`/`_Pipeline` strings, and count-only parameter-layout acceptance.
 - Phase 3: `CookNode`, cook-plan records used as compile identity, checkout-path-bearing include/option hashes, full-catalog changed fallback, and any persistent compiler-result/cache spelling.
 - Phase 4: `RendererShaderPackages`, `IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE`, `ShaderPackageDefinition`, `BuildShaderPackageIdFromSourcePath`, `CookedShaderPackage`, `LoadedShaderPackage`, `ShaderPackageLayoutBuilder`, `PipelineRuntimePackageRequest`, `ShaderPackageGeneration`, `GetShaderPackageGeneration`, package readers/writers/cache/identity/path/schema dispatch, `ShaderPackageRegistry`, `.sparkshader`, `--package`, `inspect-package`, `ShaderRecookRequestType::PackageId`, and all package-named Application/Editor request/publication/model/help/diagnostic fields.
 - Phase 5: compiler-only RT records/rejection, ambiguous `SupportsRayTracing`, duplicate RT registry, disabled RT public facade, backend/graph bypass, native identifiers outside backend-private RHI, compute-disguised trace, second runtime cache/generation, and stale pipeline/table generation acceptance.
@@ -747,7 +846,7 @@ The same revision-pinned source audit freezes the RT starting point:
 | scene/SBT mapping | RHI classic and partitioned TLAS descriptors/native builders preserve `InstanceContributionToHitGroupIndex`; both Renderer builders publish constant zero | Phase 6 uses intentional all-zero opaque mapping; Phase 7 introduces the one authoritative nontrivial instance/geometry/ray-type contribution plan for classic and partitioned TLAS |
 | effect selection | `GBufferMode::Raytraced` currently means inline compute; lighting modes select algorithms, not the execution API; `CanUseInlineRayQueryShadows` has no selection consumer | Phases 6-8 separate algorithm/effect choice from `RayTracingExecutionMode`, resolve one immutable plan before graph construction, and delete ambiguous/unused policy |
 
-`RaytracedGBuffer` is frozen as the first product parity route. Both frontends use the same prepared scene, TLAS, geometry/material buffers, view, output attachments, hit reconstruction, motion/depth conventions, and raster fallback. The initial pipeline uses ray generation, miss, and opaque triangle closest hit; one ray type; recursion depth one; global resources; and no local SBT data. Phase 7 adds alpha any-hit, shadow visibility, and the nontrivial index formula. Procedural intersection and callable support are proved by the permanent focused conformance route in Phase 5 rather than by fake empty stages in product effects.
+`RaytracedGBuffer` is frozen as the first product parity route. Both frontends use the same prepared scene, TLAS, geometry/material buffers, view, output attachments, hit reconstruction, motion/depth conventions, and raster fallback. The initial pipeline uses ray generation, miss, and opaque triangle closest hit; one ray type; recursion depth one; global resources; and no local SBT data. Phase 7 adds alpha any-hit, shadow visibility, and the nontrivial index formula. Procedural intersection and callable support are proved through existing validation surfaces or a temporary local conformance harness removed before handoff rather than by fake empty stages in product effects or submitted test scaffolding.
 
 No revision-pinned current inline D3D12/Vulkan parity capture, valid-library rejection transcript, compiler target matrix, native-feature absence report, or RT performance baseline with complete provenance was found. Those Phase 10 claims are blocked pending fresh final-candidate evidence.
 
@@ -810,7 +909,7 @@ diagnostics -> replay -> inspection/disassembly -> captures/counters -> hot relo
 | 2. Source namespace/import | physical paths; basename lookup; virtual mounted paths | Unreal-style `/Engine`, `/Project`, and `/Plugin/<Name>` virtual paths mapped to physical roots by tooling. | A mount table and collision rules are required; checkout-independent identity and portable diagnostics are gained. | Physical project-first/engine-second lookup, absolute includes, and basename package fallback. |
 | 3. Language and modules | HLSL only; Slang only; HLSL plus opt-in Slang; generated kernels | Keep HLSL/DXC as the production reference path. Keep Slang as an explicit backend/language experiment until policy and output parity are proved. Permit generated source only through one provenance-recorded generator with source maps and deterministic regeneration. | One reference path is less flexible; two unqualified paths multiply conformance work. | `.hlsl` auto-selects DXC; `.slang` auto-selects Slang. Explicit backend selection can override that convention. |
 | 4. Includes and reusable code | textual includes; language modules; generated amalgamation | Preserve small textual includes now, record the complete dependency graph, and evaluate Slang modules only where generics/composition remove measured duplication. | Textual preprocessing is simple but recompiles shared text; modules improve composition at toolchain and cache-complexity cost. | Recursive includes, `#pragma once`, recursion detection, and line directives exist. |
-| 5. Executable shader type | infer every file; string registration; generated catalog; typed C++ registration | Lean immutable shader class with nested parameters, explicit virtual source/entry/stage, optional used compile hooks, and declaration location. | Authors still state irreducible facts; invalid files and entry points are not guessed. | Mutable `GlobalShaderRegistry` entries with explicit source/entry/stage and repeated package string. |
+| 5. Executable shader type | infer every file; string registration; generated catalog; typed C++ registration | Lean immutable shader class with direct-binding parameters only when used, explicit virtual source/entry/stage, optional compile/RT ABI hooks, and declaration location. | Authors still state irreducible facts; invalid files and entry points are not guessed. | Mutable `GlobalShaderRegistry` entries with explicit source/entry/stage and repeated package string. |
 | 6. Parameter and GPU ABI | hand-authored root signatures/layouts; reflection-only binding; typed parameter metadata | One typed shader-visible declaration drives reflection validation, backend layouts, and binding; reuse it directly or compose it into an RDG pass envelope with graph-only fields. | Code generation/metadata is needed; composition must preserve one owner for every shader-visible field. | Shader `FParameters` and pass parameters are separate; runtime has strong record validation but `PassBinder` retains a count-only compatibility path. |
 | 7. Variants | preprocessor permutations; specialization constants; dynamic branches; separate source files | Keep one variant per shader/target in the unified migration; design typed permutations only as a later measured extension. | Avoids unused authoring/cache/map complexity now; later variants require one atomic extension. | Free-form defines and specialization records exist; no typed permutation domain. |
 | 8. Stage composition | filename grouping; manual package grouping; typed stage types at use | Compute names one shader type; graphics names concrete vertex/pixel types with the real pipeline description; ray tracing uses a focused typed pipeline composition for exports and hit groups. | No universal program layer; genuine multi-stage call sites remain explicit. | Package ID groups stages; `GBuffer` is the only current VS+PS grouping. |
@@ -1052,7 +1151,7 @@ bind RT pipeline + SBT regions + DispatchRays / vkCmdTraceRaysKHR
 | --- | --- | --- | --- |
 | library/pipeline granularity | one large library/RTPSO; collections/libraries plus link; one pipeline per effect | Begin with one small complete effect pipeline whose `RayTracingPipelineComposition` names concrete RT shader-class references; do not add a universal `TRayTracingProgram` authoring type. Measure compile/link before introducing collections. | Large pipelines maximize shared optimization but are slow and hard to replace; many small pipelines duplicate work and switches. |
 | shader exports and hit groups | string lists; generated typed IDs; reflection discovery | Typed declared exports/hit groups validated against compiler output; persist stable logical IDs but query native identifiers per native pipeline. | Native shader identifiers/group handles are pipeline-specific and cannot be serialized as universal shader identity. |
-| global/local parameters | all global descriptors; local root/record data; bindless indices/device addresses | Keep most resources in global/bindless tables; keep SBT record data to small stable indices/constants only. | Fat local records are simple per hit but multiply SBT memory, upload bandwidth, and update complexity. |
+| global/local parameters | all global descriptors; local root/record data; bindless indices/device addresses | Derive the global layout from the selected ray-generation shader's `Parameters`; keep most resources global/bindless and SBT record data to small stable indices/constants only. Do not repeat the root schema on miss/hit/callable stages. | Fat or duplicated local records multiply authoring drift, SBT memory, upload bandwidth, and update complexity. |
 | SBT organization | per instance; per geometry/material/ray type; deduplicated records with indirection | Explicit formula and one ray type in the first vertical slice; use TLAS instance contribution plus geometry/ray offsets; deduplicate material/geometry data outside SBT. | Indirection reduces memory and churn but adds shader loads and indexing complexity. |
 | SBT update | rebuild every frame; patch dirty ranges; persistent GPU-generated table | CPU-build an immutable/persistent table per validated scene generation first; add dirty-range or GPU generation only from measured update cost. | Full rebuild is simple but scales poorly; incremental/GPU updates complicate synchronization and validation. |
 | alignment/layout | backend-specific code paths; one conservative cross-API layout; normalized builder with backend rules | One backend-neutral record builder that applies D3D12/Vulkan handle size, base alignment, record alignment/stride, region, and bounds rules explicitly. | A conservative maximum wastes memory; backend-specific packing needs paired tests. |
@@ -1175,7 +1274,7 @@ The shader architecture directly owns `PGE-09` and contributes evidence to sever
 | Create/use graphics and compute pipelines | **Correct lazy path, unmeasured first-use cost.** Complete descriptors reach RHI and first graph use synchronously creates native pipelines. | Preserve complete descriptors and graph-time lazy materialization under `RenderPassRuntimeCache`. Do not add descriptor caches, precache policy, or native cache integration in this migration. | Cold/warm D3D12 and Vulkan creation timings, first-use frame impact, descriptor completeness, generation reuse, and feature preservation. |
 | Debug/profile on GPU | **Partial.** Semantic events and native object names exist; compiler artifacts are not joined to captured shader hashes or external symbols. | Stable capture correlation record from event label and pipeline identity to shader type, code hash, virtual source, compile request, and debug symbol. | PIX and RenderDoc paired captures plus Nsight or RGA analysis on the exact cooked shader; record counters, IL/ISA, hardware, driver, API, and workload. |
 | Recook and hot reload | **Strong foundation, coarse invalidation.** Out-of-process cook, transactional signal, stale rejection, rollback, generation swap, and GPU-safe retirement exist; any change plans the whole catalog. | Persist reverse dependencies, select affected shader types, publish a complete new generation, and retain current rollback/lifetime behavior. | Root/include change selection, unrelated-shader exclusion, rapid edit coalescing, invalid replacement, delayed completion, and reload-churn tests. |
-| Inline ray-query capability/fallback | **Live primary path, unproved alternatives.** Compute shaders use TLAS/inline queries, while the no-query and device-address shadow passes have no frame selection consumer. | One capability-selection owner chooses descriptor, supported device-address, or accepted no-ray behavior; each branch has complete feature/ABI validation. | Forced-capability paired tests/captures prove selection, resources, output, and failure reason for every advertised branch. |
+| Inline ray-query capability/fallback | **Live primary path, duplicated dead alternatives.** Compute shaders use TLAS/inline queries, while the no-query and device-address shadow passes have no frame selection consumer. Vulkan private RHI already contains classic/partitioned descriptor-writing mechanics, but PTLAS descriptor readiness is not selected coherently. | One semantic acceleration-structure shader parameter and graph handle serve classic/partitioned providers. Private RHI chooses and validates the native descriptor representation; renderer policy selects the accepted no-ray fallback without another shader. | Forced-provider paired tests/captures prove one shader class/source/parameter schema on classic and partitioned TLAS, exact native descriptor writes, output parity, and an actionable unavailable reason. |
 | Full RT pipeline and SBT | **Missing at runtime.** Schema/cooker inspection exists; no renderer RT registrations, native state-object/pipeline, group identifier, SBT, or trace-rays command path exists. | Phase 5 adds one paired complete vertical slice with typed exports/hit groups, layouts, payload/attribute/recursion policy, native pipelines, SBT builder/index formula, typed graph command/lifetime/cache integration, and all-stage conformance; Phases 6-8 add product effects and fallbacks. | Raygen/miss/hit/intersection/callable execution on D3D12/Vulkan; identifier-generation, alignment/index/bounds, reload/retirement, corruption, fallback, cold/warm pipeline, SBT memory/update, and capture evidence. |
 | Automated conformance | **Missing as a complete gate.** The CLI validation custom target covers catalog structure and one shader artifact only. | Extend existing tool/product validation and CI evidence gates for identity, dependency, compilation, layout, schema, and paired end-to-end cook/load/reload/pipeline behavior; use temporary local harnesses only when an existing surface cannot falsify the invariant. | Named executable checks, injected failures, all-shader catalog cook, paired backends, `architecture_boundary_check`, clean diff/build evidence, and no submitted test-only scaffold unless separately authorized. |
 
@@ -1210,21 +1309,21 @@ Create one immutable `ShaderSourceMountTable` with `/Engine`, `/Project`, and `/
 
 Replace the current mixed `F*`/`T*` Unreal-prefix vocabulary with Sparkle names such as `GlobalShader<Shader>` and `ShaderRef<Shader>`. A concrete shader class owns:
 
-- nested `Parameters`, declared inline for the normal case or aliased to one shared schema only when several shader stages truly share it;
+- nested `Parameters` when it is the direct graph-dispatch binding owner; compute and ray generation declare them inline for the normal case;
 - optional compile eligibility, environment mutation, and compiled-result validation hooks only when that shader uses them;
-- ray-tracing payload/attribute/export metadata only for a ray-tracing shader that requires it.
+- no empty parameter carrier or composition-wide payload/attribute declaration on a non-dispatch RT stage.
 
 `IMPLEMENT_GLOBAL_SHADER(Class, VirtualSource, Entry, Stage)` remains the one implementation declaration. Sparkle does not need separate `DECLARE_GLOBAL_SHADER` or `SHADER_USE_PARAMETER_STRUCT` macros because its CRTP base and implementation declaration already know the concrete type and parameter owner. Raw source scanning never substitutes for typed registration.
 
 ### 3. Frozen Shader Catalog
 
-`ShaderTypeDesc` records deterministic `ShaderTypeId`, readable type/stage, declaration location, virtual source/entry, `Parameters` metadata/signature, capability requirements, and optional compile hooks. Collect declarations, validate collisions, sort, freeze, then query. Duplicate or late declarations report both source locations and fail; static initialization order is not catalog order.
+`ShaderTypeDesc` records deterministic `ShaderTypeId`, readable type/stage, declaration location, virtual source/entry, optional direct-binding `Parameters` metadata/signature, capability requirements, and optional compile hooks. The focused RT composition record separately owns payload/attribute/recursion and hit-group compatibility. Collect declarations, validate collisions, sort, freeze, then query. Duplicate or late declarations report both source locations and fail; static initialization order is not catalog order.
 
 ### 4. One Parameter Schema from Graph Setup through Binding
 
 For a one-shader pass, `Shader::Parameters` is simultaneously the graph dependency declaration, parameter storage, reflection contract, structural signature, and runtime binding input. `FrameGraphBuilder::AllocParameters<Shader>()` allocates that exact nested type. Inputs/outputs use typed graph resource wrappers, so access and lifetime derive from the fields the author fills.
 
-A real multi-stage graphics operation may compose `VertexShader::Parameters`, `PixelShader::Parameters`, and graph-only attachments in one small envelope. A shaderless copy/clear pass owns graph-only parameters. No envelope restates a shader-visible field. Delete count-only compatibility and report the first structural mismatch before pipeline creation.
+A real multi-stage graphics operation may compose `VertexShader::Parameters`, `PixelShader::Parameters`, and graph-only attachments in one small envelope. A ray trace uses the selected ray-generation shader's `Parameters` as its global graph/binding schema; optional local data has one bounded hit-group/stage record schema and no empty or mirrored carrier. A shaderless copy/clear pass owns graph-only parameters. No envelope restates a shader-visible field. Delete count-only compatibility and report the first structural mismatch before pipeline creation.
 
 ### 5. Thin Typed Graph Dispatch
 
@@ -1233,6 +1332,7 @@ Provide Unreal-like focused entry points over existing owners:
 - `Dispatch<Shader>(parameters, groupCount)` and async equivalent for compute;
 - an optional leading `RenderPassLabel` only for a distinct graph instance;
 - typed graphics draw helpers that take the actual vertex/pixel shader types, complete pipeline description, parameters, and draw collaborator/data;
+- `TraceRays<RayGenerationShader>(composition, parameters, dimensions)` for RT pipelines, with the same optional diagnostic-label rule;
 - no package/program/layout/pipeline strings at the call site.
 
 The helper resolves `ShaderRef<Shader>` from the active `GlobalShaderMap`, derives the default label from the shader type, declares resources from `Shader::Parameters`, asks `RenderPassRuntimeCache` for the generation-bound layout/pipeline, and records binding/dispatch later through `PassCommandContext`. Delete one-method pass classes, duplicate `*PassParameters`, `GetDefinition`, `GetParameterMetadata`, and forwarding Execute bodies where the shader type and graph helper express the entire operation. Keep focused pass collaborators only when they own real mesh/draw/feature behavior.
@@ -1269,7 +1369,7 @@ One read-only trace joins shader type or graph/capture label to catalog declarat
 
 ### 11. Honest Backend and Ray-Tracing Boundaries
 
-Report language/backend/target/stage/feature support as supported, unsupported, compiler-only, or runtime-validated. No backend silently ignores compile policy. Inline ray-query compute shaders use the normal compute class/map/dispatch route. Phase 5 may publish ray-generation/miss/hit/intersection/callable declarations only in the same CL that consumes them through typed composition, native pipelines, SBTs, graph trace dispatch, generation lifetime, and paired conformance; there is no accepted compiler-only RT checkpoint.
+Report language/backend/target/stage/feature support as supported, unsupported, compiler-only, or runtime-validated. No backend silently ignores compile policy. Inline ray-query compute shaders use the normal compute class/map/dispatch route. Acceleration-structure storage and native descriptor representation are selected below Renderer shader/effect code: one semantic parameter and one shader code record cover classic and partitioned TLAS, and provider readiness is false unless the backend can bind that parameter through its exact native descriptor contract. Phase 5 may publish ray-generation/miss/hit/intersection/callable declarations only in the same CL that consumes them through typed composition, native pipelines, SBTs, graph trace dispatch, generation lifetime, and paired conformance; there is no accepted compiler-only RT checkpoint.
 
 ### 12. Explicitly Deferred Follow-Ups
 
@@ -1376,6 +1476,7 @@ The unified shader and ray-tracing migration is an ordered clean break, not a me
 - Preserve one `SparkleTasks` runtime, one out-of-process cooker, one transactional publication route, one active renderer shader generation, and all-queue `RhiSubmissionToken` retirement.
 - Preserve `PassCommandContext` as command/declared-resource/diagnostic infrastructure only. Pass recording performs no file I/O, compilation, shader-map/library lookup, layout creation, pipeline creation, or hidden resource discovery.
 - Do not add permutations, `ShouldPrecachePermutation`, pipeline precaching/prewarming, preload/readiness/streaming controls, native driver caches, or a universal authored shader-program layer. Full RT execution is delivered only through the focused composition, RHI, backend, graph, scene, and effect owners frozen here.
+- Do not encode classic/partitioned, descriptor/device-address, or no-query fallback selection in shader class names, HLSL root filenames, authored defines, effect uniforms, or graph call-site mode parameters. One semantic AS parameter is lowered by private RHI; no-query fallback is renderer graph policy.
 - Do not add one-field carriers, broad context/service/resource bags, a second catalog/map/runtime-generation owner, permanent migration diagnostics, per-job logging, a compiler-result browser, report generators, feature flags, compatibility formats, or submitted test scaffolding.
 - Update definitions, consumers, filenames, includes, CMake/source groups, CLI/help/autocomplete, editor models, diagnostics, current documentation, and disposable generated/cooked outputs in the phase that owns their replacement.
 - Preserve unrelated dirty work. Phase 0 records the path-level exclusion list and every later phase rechecks it.
@@ -1393,6 +1494,7 @@ The unified shader and ray-tracing migration is an ordered clean break, not a me
 | cooked code | `ShaderCodeRecord`, `ShaderCodeHash`, `CookedShaderLibrary` | generated cook output; neutral validation records in RHI public |
 | typed runtime lookup | `ShaderRef<Shader>` | Renderer resolves through the active `GlobalShaderMap` |
 | graph use | `AllocParameters<Shader>`, `Dispatch<Shader>`, typed graphics draw helpers, `TraceRays`, `RenderPassLabel` override | `FrameGraphBuilder` focused helpers over existing graph/runtime owners |
+| shader-visible scene AS | one acceleration-structure field such as `SceneTlas` and one `FrameGraphAccelerationStructureHandle` value | concrete dispatch shader declares semantics; frame graph declares access; private RHI selects classic/partitioned native descriptor representation |
 | RT stage composition | `RayTracingPipelineComposition` with typed shader refs, hit groups, payload/attribute/recursion policy, and optional bounded local data | Renderer semantic effect/shader owner; never used for one-shader compute or ordinary graphics |
 | RT logical table mapping | `RayTracingShaderTablePlan` and the documented instance/geometry/ray-type formula | Renderer scene/effect owner |
 | neutral/native RT mechanism | opaque `RayTracingPipeline`, `RayTracingShaderTable`, and `TraceRaysDesc` | RHI public contract and D3D12/Vulkan private implementations |
@@ -1414,7 +1516,7 @@ No former RT task is deferred back to the target-state document:
 | frame graph/runtime cache/lifetime | Phase 5 | native execution cannot bypass graph/resource/generation ownership even temporarily |
 | opaque GBuffer parity | Phase 6 | first product effect builds directly on the complete foundation while preserving raster fallback |
 | alpha hit semantics, shadow ray type, scene indexing | Phase 7 | adds one meaningful production slice and one nontrivial shared scene-to-SBT mapping |
-| intersection and callable proof | Phase 5 | permanent conformance proves legal stage support with the native foundation; product effects do not receive fake empty stages |
+| intersection and callable proof | Phase 5 | focused existing validation or a removed-before-handoff local harness proves legal stage support with the native foundation; product effects do not receive fake empty stages and no test-only fixture is submitted |
 | eligible effects and whole-frame switch | Phase 8 | selection expands only after two accepted dual-mode effects and production indexing exist |
 | Shader Tools/provenance | Phase 9 | the frontend describes the final map/pipeline/table/effect owners rather than an intermediate package/runtime model |
 | failure, capture, performance, release evidence | Phase 10 | one final candidate is regenerated and measured after every shader and RT legacy path is gone |
@@ -1527,7 +1629,7 @@ Suggested title: `Shaders: establish virtual sources and semantic navigation`.
 #### Required work
 
 - Clean-break rename `TGlobalShader` to `GlobalShader`, `TShaderRef` to `ShaderRef`, and nested `FParameters` to `Parameters` across macros, traits, registrations, tools, and consumers. Delete or rename unused `FGlobalShader`/`FComputeShader`/`FRay*Shader` prefix types; no aliases remain.
-- Keep shader-visible inputs/outputs inside each concrete shader class. Move class declarations beside their semantic feature owner where graph setup must name the type.
+- Keep shader-visible inputs/outputs inside their direct-dispatch shader class. Move class declarations beside their semantic feature owner where graph setup must name the type.
 - Make `AllocParameters<Shader>()` allocate `Shader::Parameters`. Make `Dispatch<Shader>()` and async dispatch accept that same instance and group count, resolve the current shader runtime internally, and derive the default diagnostic label from the shader type.
 - Provide an explicit label overload for repeated graph instances. It changes diagnostics only.
 - Make graphics graph setup name concrete vertex/pixel shader types plus complete pipeline state and real draw collaborator/data. Do not require a program alias.
@@ -1661,7 +1763,7 @@ Suggested title: `Shaders: replace cooked packages with the global shader map`.
 
 #### Implementation prompt
 
-> Implement Phase 5 as one intentionally atomic shader-map-to-GPU ray-tracing vertical-slice CL directly in the unstaged `master` worktree. Extend the lean shader frontend and final `GlobalShaderMap`/`CookedShaderLibrary` representation to all six RT stages, add the focused typed pipeline composition, complete DXIL/SPIR-V compilation and validation, clean-break the RHI capability contract, materialize native D3D12/Vulkan pipelines and shader tables, add typed frame-graph trace execution and runtime-generation lifetime, and prove the permanent conformance route end to end on both backends. Delete the old runtime rejection and ambiguous capability only when the complete replacement works. Do not split this into compiler-only, backend-only, disabled-public-API, or graph-bypass checkpoints; do not stage, commit, push, or submit.
+> Implement Phase 5 as one intentionally atomic shader-map-to-GPU ray-tracing vertical-slice CL directly in the unstaged `master` worktree. Extend the lean shader frontend and final `GlobalShaderMap`/`CookedShaderLibrary` representation to all six RT stages, add the focused typed pipeline composition, complete DXIL/SPIR-V compilation and validation, clean-break the RHI capability contract, materialize native D3D12/Vulkan pipelines and shader tables, add typed frame-graph trace execution and runtime-generation lifetime, and prove the complete path end to end on both backends through existing validation surfaces or a temporary local harness removed before handoff. Delete the old runtime rejection and ambiguous capability only when the complete replacement works. Do not split this into compiler-only, backend-only, disabled-public-API, or graph-bypass checkpoints; do not stage, commit, push, or submit.
 
 #### Phase-specific references
 
@@ -1671,7 +1773,7 @@ Suggested title: `Shaders: replace cooked packages with the global shader map`.
 - [Validation, Performance, and Evidence](../../Engineering/Standards/ValidationPerformanceAndEvidence.md)
 - [Microsoft DXR functional specification](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html)
 - [Khronos Vulkan ray-tracing chapter](https://docs.vulkan.org/spec/latest/chapters/raytracing.html)
-- [NVIDIA NVRHI programming guide](https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/ProgrammingGuide.md)
+- [NVIDIA NVRHI programming guide at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md)
 - [Unreal Engine hardware ray tracing](https://dev.epicgames.com/documentation/unreal-engine/hardware-ray-tracing-in-unreal-engine)
 - [Unreal Engine `FRayTracingPipelineStateInitializer`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RHI/FRayTracingPipelineStateInitiali-)
 - [Unreal Engine `FRayTracingShaderBindingTableInitializer`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/RHI/FRayTracingShaderBindingTableIni-)
@@ -1679,10 +1781,10 @@ Suggested title: `Shaders: replace cooked packages with the global shader map`.
 
 #### Required work
 
-- Add concrete ray-generation, miss, closest-hit, any-hit, intersection, and callable shader classes through the same `GlobalShader`, nested `Parameters`, virtual-source, implementation-registration, catalog, compile-job, map, code-library, provenance, and typed `ShaderRef` path as raster/compute. No second RT registry or package identity exists.
-- Add one focused `RayTracingPipelineComposition` that names typed shader refs, triangle/procedural hit groups, shared global parameter layout, payload/attribute contracts, minimum recursion policy, and optional bounded local POD. It is not used for compute or ordinary graphics and does not duplicate shader declarations.
+- Add concrete ray-generation, miss, closest-hit, any-hit, intersection, and callable shader classes through the same `GlobalShader`, virtual-source, implementation-registration, catalog, compile-job, map, code-library, provenance, and typed `ShaderRef` path as raster/compute. Ray-generation owns nested global `Parameters`; other stages declare no root-parameter struct or empty parameter carrier. Optional local data uses its focused hit-group/stage record schema rather than a second root contract. No second RT registry or package identity exists.
+- Add one focused `RayTracingPipelineComposition` that names typed shader refs, triangle/procedural hit groups, payload/attribute compatibility, minimum recursion policy, and optional bounded local POD. Derive the global binding layout from the selected ray-generation shader's `Parameters`; local record schemas have one group/stage owner and are absent when unused. The composition is not used for compute or ordinary graphics and does not duplicate shader declarations.
 - Extend final map/library records and ShaderCompiler validation/inspection for exports, groups, layout hashes, payload/attribute limits, recursion, local records, target/backend/source identity, and deterministic ordering. Prove DXC DXIL and SPIR-V RT-library output before advertising either target; keep Slang RT capability false until its own equivalent conformance passes.
-- Provide a permanent focused conformance composition that executes all six stage kinds, one triangle hit group, one procedural hit group, miss, callable indexing, global bindings, bounded local-record validation, and exact sentinel outputs. Invalid cases cover duplicate/missing exports, illegal group composition, layout mismatch, malformed local data, payload/attribute/recursion limits, and target capability failure.
+- Exercise all six stage kinds, one triangle hit group, one procedural hit group, miss, callable indexing, global bindings, bounded local-record validation, and exact sentinel outputs through an existing validation route or a focused temporary local harness. Invalid cases cover duplicate/missing exports, illegal group composition, layout mismatch, malformed local data, payload/attribute/recursion limits, and target capability failure. Remove every test-only class, file, fixture, executable, registration, shader, and generated output before handoff unless the user separately authorizes submitted test code.
 - Replace ambiguous `SupportsRayTracing` authority with independent acceleration-structure, inline-ray-query, and RT-pipeline readiness across every RHI/Renderer producer and consumer; delete the old field. Readiness requires the complete extension/feature/property/function/backend chain, not an extension bit.
 - Add immutable backend-neutral RT pipeline composition descriptors, opaque `RayTracingPipeline` and `RayTracingShaderTable` products with generation identity, a logical table materialization request containing names and bounded POD rather than native identifiers, and `TraceRaysDesc` with raygen/miss/hit/callable regions and dimensions.
 - Extend existing RHI pipeline/device/command owners. Define global/local binding semantics, resource states, tracking, legal queues, checked 64-bit size/index arithmetic, region bounds, failure reporting, and `TraceRays`; expose no D3D12/Vulkan handle, identifier bytes, or native table layout to Renderer.
@@ -1696,7 +1798,7 @@ Suggested title: `Shaders: replace cooked packages with the global shader map`.
 
 - One source-to-GPU identity chain covers every stage: shader class -> compile job -> map entry -> code record -> typed composition -> native pipeline generation -> table generation -> graph event/capture.
 - Identifier/group-handle bytes and backend alignment remain backend-private; Renderer owns only logical exports, groups, record meaning, and bounds.
-- The conformance route is a permanent focused validation consumer of legal stages, not temporary product scaffolding or fake empty stages in effects.
+- All-stage conformance uses the smallest existing product/tool route or removed-before-handoff local harness; product effects receive no fake empty stages and the submitted architecture contains no test-only consumer.
 - Run focused compiler, map/library, RHI contract, D3D12/Vulkan construction, invalid-input, native-validation, typed-graph, reload, and retirement checks. Use the same sentinels and logical table oracle on both APIs.
 
 #### Negative guardrails
@@ -1708,7 +1810,7 @@ Suggested title: `Shaders: replace cooked packages with the global shader map`.
 
 #### Acceptance criteria
 
-- All six RT stage kinds compile, validate, publish through the final map/library, resolve by typed class, compose legally, materialize, execute, capture, reload, and retire through one permanent conformance path on D3D12 and Vulkan.
+- All six RT stage kinds compile, validate, publish through the final map/library, resolve by typed class, compose legally, materialize, execute, capture, reload, and retire in focused D3D12/Vulkan evidence, with any temporary conformance harness removed before handoff.
 - Exact searches return zero old package RT records/readers/rejection, ambiguous `SupportsRayTracing`, duplicate RT registry, native trace call outside backend-private RHI, graph bypass, disabled public RT facade, and stale-generation acceptance.
 - Invalid export/group/layout/local-record/payload/attribute/recursion/capability/table arithmetic/queue/generation inputs fail before unsafe native execution with one bounded owner-local diagnostic.
 - D3D12/Vulkan native validation is clean; table addresses, region sizes, strides, alignments, counts, and logical indices agree with the neutral oracle; sentinels prove raygen, miss, triangle hit, procedural intersection/hit, any-hit, and callable execution.
@@ -1732,8 +1834,8 @@ This phase is intentionally larger than an ordinary subsystem CL. Splitting its 
 - [Ray-tracing target dual-execution contract](RayTracingPipelineImplementationPlan.md#effect-level-dual-execution-contract)
 - [Ray-tracing target shader/SBT contract](RayTracingPipelineImplementationPlan.md#pipeline-abi-and-shader-table-contract)
 - [Frame graph typed resource precedent](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine)
-- [NVIDIA NVRHI tutorial](https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/Tutorial.md)
-- [AMD FidelityFX inline ray-tracing helper](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/main/Samples/Denoisers/FidelityFX_Denoiser/dx12/shaders/raytracing_common.hlsl)
+- [NVIDIA NVRHI tutorial at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/Tutorial.md)
+- [AMD FidelityFX inline ray-tracing helper at `60f4ea8`](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Samples/Denoisers/FidelityFX_Denoiser/dx12/shaders/raytracing_common.hlsl)
 
 #### Required work
 
@@ -1825,7 +1927,7 @@ Suggested title: `Renderer: unify production ray hit semantics and SBT indexing`
 - [Ray-tracing target selection semantics](RayTracingPipelineImplementationPlan.md#selection-semantics)
 - [Ray-tracing target shared HLSL boundary](RayTracingPipelineImplementationPlan.md#shared-hlsl-boundary)
 - [NVIDIA RTX Path Tracing](https://github.com/NVIDIA-RTX/RTXPT)
-- [AMD Cauldron ray-tracing capability separation](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/master/src/VK/base/ExtRayTracing.cpp)
+- [AMD Cauldron ray-tracing capability separation at `b92d559`](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/b92d559bd083f44df9f8f42a6ad149c1584ae94c/src/VK/base/ExtRayTracing.cpp)
 - [Debug View Presentation Contract](../DebugViewPresentation.md)
 
 #### Required work
@@ -2010,7 +2112,7 @@ Legacy-eradication searches:
 ### Unified review checklist
 
 - Does the change extend one existing owner and delete every replaced authority in the same CL?
-- Is every shader-visible field declared once inside its concrete shader class and used by graph/binding from the same metadata?
+- Is every direct-binding shader-visible field declared once on its dispatch shader and used by graph/binding from the same metadata? Does every local-record field have one distinct group/stage owner rather than a mirror?
 - Is a multi-stage composition present only where graphics draw state or an RT export/hit-group set genuinely requires it?
 - Do catalog, compile job, map, code library, runtime generation, native pipeline, and table each own a distinct responsibility?
 - Are effect/algorithm selection and inline/pipeline execution selection independent and resolved before pass creation?
@@ -2042,14 +2144,13 @@ Primary ray-tracing implementation references:
 
 - [Microsoft DirectX Raytracing functional specification](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html)
 - [Khronos Vulkan ray-tracing chapter](https://docs.vulkan.org/spec/latest/chapters/raytracing.html)
-- [NVIDIA NVRHI programming guide](https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/ProgrammingGuide.md)
-- [NVIDIA NVRHI tutorial](https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/Tutorial.md)
+- [NVIDIA NVRHI programming guide at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md)
+- [NVIDIA NVRHI tutorial at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/Tutorial.md)
 - [NVIDIA RTX Path Tracing](https://github.com/NVIDIA-RTX/RTXPT)
 - [NVIDIA DXR shader binding table tutorial](https://developer.nvidia.com/rtx/raytracing/dxr/DX12-Raytracing-tutorial-Part-2)
 - [NVIDIA SBT data-layout optimization](https://developer.nvidia.com/blog/efficient-ray-tracing-with-nvidia-optix-shader-binding-table-optimization/)
-- [AMD FidelityFX inline ray-tracing helper](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/main/Samples/Denoisers/FidelityFX_Denoiser/dx12/shaders/raytracing_common.hlsl)
-- [AMD Cauldron2 ray-tracing module](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/main/Kits/Cauldron2/dx12/framework/render/rendermodules/raytracing/raytracingrendermodule.cpp)
-- [AMD Cauldron ray-tracing capability separation](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/master/src/VK/base/ExtRayTracing.cpp)
+- [AMD FidelityFX inline ray-tracing helper at `60f4ea8`](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Samples/Denoisers/FidelityFX_Denoiser/dx12/shaders/raytracing_common.hlsl)
+- [AMD Cauldron ray-tracing capability separation at `b92d559`](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/b92d559bd083f44df9f8f42a6ad149c1584ae94c/src/VK/base/ExtRayTracing.cpp)
 - [Unreal Engine hardware ray tracing](https://dev.epicgames.com/documentation/unreal-engine/hardware-ray-tracing-in-unreal-engine)
 - [Unreal Engine `RHISupportsInlineRayTracing`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/RHI/RHISupportsInlineRayTracing)
 - [Unreal Engine `FRayTracingPipelineStateInitializer`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RHI/FRayTracingPipelineStateInitiali-)
@@ -2077,7 +2178,7 @@ The unified shader and ray-tracing migration is accepted only when:
 - Shader Tools presents one `Apply Changed` intent, one operation state, automatic validated activation, source navigation, and contextual shader/effect-to-map/pipeline/table/capture details without artifact scans, package mechanics, or native backend controls;
 - compile/validation failure reports one source-located root cause and preserves the previous accepted generation;
 - every supported raster, compute, and RT shader cooks and validates for the required DXIL/SPIR-V targets; unsupported language/backend/target combinations remain honestly classified;
-- all six RT shader stages traverse class, compile job, map, library, typed composition, native D3D12/Vulkan pipeline, shader table, typed graph trace, capture, reload, and retirement through the permanent conformance route;
+- all six RT shader stages traverse class, compile job, map, library, typed composition, native D3D12/Vulkan pipeline, shader table, typed graph trace, capture, reload, and retirement in focused evidence, and any temporary conformance harness is absent from the handoff diff;
 - acceleration-structure, inline-query, and RT-pipeline capabilities are independent and full pipeline readiness becomes true only when the complete backend/graph/runtime path is ready;
 - native identifiers and group handles remain backend-private and every table region/index/alignment/bounds check is tied to the exact pipeline generation;
 - ray-traced GBuffer and shadow visibility pass same-frame inline/pipeline parity, alpha/material semantics, two-ray-type indexing, classic/partitioned TLAS mapping, and accepted raster/no-ray fallbacks on both APIs;
@@ -2089,6 +2190,6 @@ The unified shader and ray-tracing migration is accepted only when:
 
 ## Final Position
 
-Sparkle should follow Unreal's lean global-shader center end to end: one shader class owns its nested parameters and optional compile hooks; one implementation declaration owns virtual source, entry, and stage; one frozen catalog drives reproducible compile-every-time jobs; one generated global shader map resolves typed shader references to code-library records; and the frame graph dispatches, draws, or traces those shader types with the same parameter metadata. A focused ray-tracing composition names only the exports, hit groups, and ABI that a native RT pipeline genuinely needs. Render-graph labels remain diagnostic presentation, while map, code, native pipeline, table, and generation mechanics stay behind their owners.
+Sparkle should follow Unreal's lean global-shader center end to end: one direct-dispatch shader class owns its nested parameters and optional compile hooks; non-dispatch RT stages add only stage-specific compile policy when needed; one implementation declaration owns virtual source, entry, and stage; one frozen catalog drives reproducible compile-every-time jobs; one generated global shader map resolves typed shader references to code-library records; and the frame graph dispatches, draws, or traces those shader types through the same typed metadata. A focused ray-tracing composition names only the exports, hit groups, and shared ABI that a native RT pipeline genuinely needs, deriving global bindings from the selected ray-generation shader. Render-graph labels remain diagnostic presentation, while map, code, native pipeline, table, and generation mechanics stay behind their owners.
 
 The clean target is neither "the filename is everything" nor "copy every Unreal subsystem." It is "the author states only the shader class, parameters, source/entry/stage, the focused RT composition when several stages truly cooperate, and the actual draw/dispatch/trace; the engine derives and validates everything else." Permutations, universal program types, precaching, preload/streaming, and native driver caches stay out until a measured workload earns them.

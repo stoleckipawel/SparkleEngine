@@ -49,7 +49,7 @@ Portability belongs to the effect contract, not to arbitrary shader entry points
 | pipeline | a ray-generation shader calls `TraceRay`; a native RT pipeline schedules miss, hit-group, and optional callable stages |
 | effect | one renderer operation with one input/output/quality/history/fallback contract, such as GBuffer or shadow visibility |
 | frontend | thin inline-query or RT-stage code that invokes shared effect semantics |
-| pipeline composition | typed exports, hit groups, binding layout, payload/attribute contract, recursion, and optional bounded local data for one native RT pipeline |
+| pipeline composition | typed stage membership and hit groups, payload/attribute compatibility, recursion, and optional bounded local data for one native RT pipeline; global bindings derive from the selected ray-generation shader |
 | logical table plan | Renderer-owned selection and indexing of ray-generation, miss, hit-group, and callable records |
 | shader table | RHI-owned backend-materialized GPU records containing identifiers/group handles from one exact native pipeline generation plus bounded local POD |
 | pipeline generation | immutable native pipeline version; every compatible table identifies the generation that produced its native identifiers |
@@ -78,7 +78,8 @@ The enduring invariants are:
 - Do not silently fall back from an explicitly requested mode or partially schedule a strict frame.
 - Do not rebuild every shader table every frame when its logical content and exact pipeline generation are unchanged.
 - Do not put descriptors, owning pointers, transient addresses, variable-size objects, or duplicated material data in local records.
-- Do not require any-hit, intersection, callable, recursion, collections, pipeline libraries, GPU-generated tables, permutations, or precaching where a real effect or permanent conformance invariant does not need them.
+- Do not require any-hit, intersection, callable, recursion, collections, pipeline libraries, GPU-generated tables, permutations, or precaching where a real effect or the explicitly required all-stage evidence does not need them.
+- Do not submit permanent test-only shaders, fixtures, executables, registrations, or conformance routes. Use existing validation surfaces or a temporary local harness removed before handoff unless the user separately authorizes submitted test code.
 
 ## Current-to-target reconciliation
 
@@ -189,9 +190,12 @@ Thin frontends are siblings beside their semantic effect owner. They do not dupl
 
 ## Shader authoring and pipeline composition
 
-Every RT stage is an ordinary concrete shader class in the same global-shader system:
+Every RT stage is an ordinary concrete shader class in the same global-shader system, but stage classes expose only the contracts they consume:
 
-- nested `Parameters` owns shader-visible global input/output fields;
+- the selected ray-generation shader's nested `Parameters` owns dispatch-global shader-visible input/output fields and is the frame-graph parameter schema;
+- miss, hit, intersection, and callable shaders do not repeat that root schema or declare an empty parameter carrier;
+- the focused composition owns its shared payload and attribute types once and validates every participating export against them;
+- optional local data has one bounded hit-group/stage record schema only where a shader actually consumes it;
 - implementation registration owns virtual source, entry/export, and stage;
 - the frozen catalog owns immutable type metadata;
 - compile jobs and the final map/library own target code and ABI records;
@@ -205,11 +209,13 @@ A composition specifies only what is structurally required:
 - miss shaders ordered by logical ray type;
 - triangle/procedural hit groups naming typed closest-hit and optional any-hit/intersection shaders;
 - optional callable shaders;
-- one authoritative global parameter layout and explicit bounded local layouts when present;
+- compatibility with the selected ray-generation shader's authoritative global parameter layout and explicit bounded local layouts when present;
 - payload and attribute contracts;
 - minimum required recursion policy and debug identity.
 
 Compute and ordinary graphics never use this type. Graphics continues to name concrete vertex/pixel shader refs with the actual draw pipeline description. There is no universal `ShaderProgram`, `TShaderProgram`, pass-registration macro, or string-only export registry.
+
+The graph frontend is `TraceRays<RayGenerationShader>(composition, parameters, dimensions)` with an optional diagnostic-label overload. It mirrors Unreal's separation among global shader class, ray-tracing pipeline initializer, and ray dispatch while hiding Sparkle's materialized pipeline, shader table, native identifiers, global binding writer, addresses, and strides behind the frame-graph/runtime/RHI owners. The exact class and call-site example lives in the [unified authoring document](ShaderAuthoringAndCookedPrograms.md#proposed-authoring-experience) so this target contract does not duplicate implementation guidance.
 
 ## Pipeline ABI and shader-table contract
 
@@ -224,13 +230,13 @@ Full pipeline support means every legal stage can traverse source, compilation, 
 | closest hit | triangle/procedural groups as selected; proves attributes, payload, instance/geometry/material identity |
 | any hit | only effects/groups needing alpha/visibility; proves ignore/accept parity with inline candidate filtering |
 | intersection | procedural AABB conformance and any product procedural geometry; proves attributes, distances, group legality |
-| callable | optional composition; permanent focused conformance proves region/index/ABI/bounds without forcing product use |
+| callable | optional composition; focused existing validation or a temporary removed-before-handoff harness proves region/index/ABI/bounds without forcing product use or submitting a test-only fixture |
 
 No product effect adds an empty stage merely to claim coverage. Procedural and callable support may remain conformance-only when no product workload benefits; that limitation is explicit.
 
 ### Binding and local data
 
-- One typed global parameter layout is authoritative across composition exports unless a measured case justifies a local association.
+- The selected ray-generation shader's typed `Parameters` schema is the authoritative global binding layout; other stages do not mirror it.
 - The first product GBuffer pipeline uses global/bindless resources and zero local data.
 - Later local records contain only bounded POD such as stable material/geometry indices or small constants.
 - Descriptors, pointers, variable-sized objects, transient addresses, and duplicated material data never enter a logical or native record.
@@ -323,7 +329,7 @@ Every remaining current ray-query effect is classified `Dual`, `InlineOnly`, `Pi
 
 The target is realized only when implementation evidence proves all of the following together:
 
-- all six RT stages traverse the final shader/map/library/runtime/graph path on D3D12 and Vulkan;
+- all six RT stages traverse the final shader/map/library/runtime/graph path in focused D3D12/Vulkan evidence, and any temporary conformance harness is absent from the handoff diff;
 - native identifiers/group handles remain private and table regions/indexing/alignment/bounds match the exact pipeline generation;
 - ray-traced GBuffer and shadow visibility pass same-frame dual-mode parity including alpha and fallback behavior;
 - classic/partitioned TLAS share one logical contribution plan and no scene/material/history authority is duplicated;

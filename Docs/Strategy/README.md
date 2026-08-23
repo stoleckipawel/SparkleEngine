@@ -18,6 +18,7 @@ Strategy owns desired capabilities, priority, dated assessment, sequencing, and 
 | [B. Role Source Archive](RoleSourceArchive.md) | normalized source trace for the canonical requirements | archive; not an external entry point |
 | [C. Candidate and Repository Gap Assessment](GapAssessment.md) | evidence/readiness at one repository snapshot | dated assessment; revalidate before acting |
 | [F. August 2026-January 2027 Roadmap](Roadmap.md) | six-month priority, sequencing, allocation, and gates | plan; not proof of completion |
+| [Repository Quality and Complexity Executive Assessment](RepositoryQualityAndComplexityAssessment.md) | current-feature structural quality and prioritized refactoring direction at one repository snapshot | dated assessment; preserve features and revalidate before acting |
 
 Stable IDs D and E are architecture documents routed from the [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md). J is the multithreading architecture/execution contract, and L is the engineering integration contract.
 
@@ -26,6 +27,7 @@ Stable IDs D and E are architecture documents routed from the [Whole Repository 
 - Requirements owns `PGE-*` definitions and evidence meaning.
 - Executive Summary orients; it does not create new requirements.
 - Gap Assessment records a dated state; it does not define target architecture.
+- Repository Quality and Complexity Assessment records a dated structural/refactoring view; it does not override feature scope, roadmap sequence, or engineering standards.
 - Roadmap owns sequence, not implementation rules or workload definitions.
 - Persona owns behavior and judgment, not a duplicate evidence matrix.
 - Role Source Archive preserves traceability and should not leak into product-facing claims.
