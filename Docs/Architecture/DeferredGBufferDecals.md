@@ -16,7 +16,7 @@ Sparkle should implement decals as material overlays, never as a forward-lit col
 
 This is a target design. Code, cooked schemas, build configuration, and executable tests remain the authority for what exists today.
 
-This document owns decal semantics, data flow, pass placement, shared raster/ray composition, and delivery order. [Shader Authoring and Cooked Program Architecture](Shaders/ShaderAuthoringAndCookedPrograms.md) continues to own shader/program identity and publication. The [Ray-Tracing Pipeline and Dual-Execution Delivery Plan](Shaders/RayTracingPipelineImplementationPlan.md) continues to own inline-versus-pipeline execution and SBT/RHI delivery; adding decals must not create a third execution contract.
+This document owns decal semantics, data flow, pass placement, shared raster/ray composition, and delivery order. [Shader Authoring and Cooked Shader Architecture](Shaders/ShaderAuthoringAndCookedPrograms.md) owns shader identity/publication and the single implementation sequence for native RT pipeline/SBT/RHI delivery. The [Ray-Tracing Pipeline and Dual-Execution Target Architecture](Shaders/RayTracingPipelineImplementationPlan.md) owns the enduring inline-versus-pipeline and SBT semantics; adding decals must not create a third execution contract.
 
 ## Outcome
 
