@@ -66,6 +66,7 @@ The enduring invariants are:
 8. A shader-table record can execute only with the exact live pipeline generation from which its identifier/group handle came.
 9. TLAS instance contribution, geometry index, ray type, table order, and shader trace parameters follow one documented checked formula.
 10. Map/library/pipeline/table/resource generations publish atomically and retire by all-queue submission token, never CPU frame age or device-idle convenience.
+11. Classic versus partitioned TLAS and descriptor versus device-address storage never create another shader class, HLSL root, parameter schema, or effect branch. Shaders declare one semantic AS parameter; private RHI lowers it to the selected provider's exact native descriptor representation.
 
 ## Non-goals
 
@@ -73,6 +74,7 @@ The enduring invariants are:
 - Do not force every effect to support both modes or every legal RT stage.
 - Do not create an Unreal-scale material, vertex-factory, plugin, or shader-program framework.
 - Do not expose D3D12 state objects, Vulkan pipelines, native identifiers/group handles, addresses, strides, or record bytes to Renderer.
+- Do not expose TLAS descriptor/device-address representation as a shader class, authored define, effect uniform, graph mode, code variant, or fallback program.
 - Do not create a second scene, acceleration-structure, material, history, map, runtime-generation, or effect-settings system.
 - Do not advertise pipeline support because compilation or metadata alone succeeds.
 - Do not silently fall back from an explicitly requested mode or partially schedule a strict frame.
@@ -117,8 +119,8 @@ The target replaces the compiler-only RT package scaffolding rather than adaptin
 | --- | --- | --- |
 | ShaderCompiler | target capability, export discovery/validation, hit-group legality, parameter/layout/payload/attribute/recursion/local metadata, deterministic map/library records, inspection, source diagnostics | native GPU objects, scene policy, table lifetime |
 | `GlobalShaderMap` / `CookedShaderLibrary` | typed target lookup and validated code/ABI records for raster, compute, and RT stages | effect selection, native identifiers, table record meaning |
-| RHI public contract | independent AS/inline/pipeline capabilities; immutable RT pipeline descriptor; opaque pipeline/table products; logical table materialization request; trace descriptor; states and validation errors | effect/material names, frame scheduling, native handles/bytes |
-| D3D12/Vulkan private RHI | native pipeline/state object, layout association, identifier/group-handle retrieval, record packing/alignment, GPU table resources, command encoding, native validation | which material, geometry, ray type, or effect a logical slot means |
+| RHI public contract | independent AS/inline/pipeline capabilities; one semantic AS resource binding; immutable RT pipeline descriptor; opaque pipeline/table products; logical table materialization request; trace descriptor; states and validation errors | effect/material names, frame scheduling, native handles/bytes, shader access-mode policy |
+| D3D12/Vulkan private RHI | selected-provider AS descriptor lowering; native pipeline/state object, layout association, identifier/group-handle retrieval, record packing/alignment, GPU table resources, command encoding, native validation | which material, geometry, ray type, or effect a logical slot means |
 | Renderer shader/effect owner | concrete RT shader classes, focused typed composition, shared effect ABI/semantics, requested/active mode, exactly one frontend, output/history/fallback | raw identifier bytes, backend table layout, compiler process policy |
 | `RenderScene` and RT scene capabilities | one AS generation, instance/geometry/material identity, logical table contribution plan, dirty generation, classic/partitioned TLAS parity | backend strides/addresses, effect selection, graph handles |
 | frame graph / `RenderPassRuntimeCache` | typed trace resource declarations, queue/state/dependency rules, pre-execute pipeline/table materialization, exact generation capture, atomic reload, submission-token retirement | shader authoring, mutable scene semantics, editor policy |
@@ -188,6 +190,8 @@ Keep frontend-specific:
 
 Thin frontends are siblings beside their semantic effect owner. They do not duplicate hit reconstruction, material evaluation, output stores, or temporal policy.
 
+Acceleration-structure binding representation is not frontend-specific. Inline compute and RT ray generation declare the same semantic scene-AS parameter shape used by their effect. Whether the active scene uses classic TLAS or partitioned TLAS, and whether the native API carries that opaque resource through a descriptor containing a handle or device address, is resolved below shader/effect code. The shader never reconstructs an acceleration structure from address words.
+
 ## Shader authoring and pipeline composition
 
 Every RT stage is an ordinary concrete shader class in the same global-shader system, but stage classes expose only the contracts they consume:
@@ -237,6 +241,7 @@ No product effect adds an empty stage merely to claim coverage. Procedural and c
 ### Binding and local data
 
 - The selected ray-generation shader's typed `Parameters` schema is the authoritative global binding layout; other stages do not mirror it.
+- Every scene traversal parameter is one semantic acceleration-structure field. Graph setup converts one AS handle through `CreateAccelerationStructureBinding`; it does not use a generic texture/buffer `Read` or pretend the cross-API AS descriptor is an SRV. Private RHI selects and validates the classic/partitioned native descriptor kind and write operation fixed for the active provider before layout/pipeline materialization.
 - The first product GBuffer pipeline uses global/bindless resources and zero local data.
 - Later local records contain only bounded POD such as stable material/geometry indices or small constants.
 - Descriptors, pointers, variable-sized objects, transient addresses, and duplicated material data never enter a logical or native record.
@@ -277,6 +282,16 @@ Capability is not one `SupportsRayTracing` boolean. The target distinguishes:
 - native RT-pipeline compilation, feature/property/function readiness, materialization, shader-table support, command encoding, and typed graph execution.
 
 Pipeline readiness is true only when the full compiler-to-graph chain is usable for the selected target/effect. Extension presence, successful library compilation, generic stage enums, valid metadata, or one backend alone cannot advertise product support.
+
+AS provider readiness is similarly complete-chain truth. A classic or partitioned provider is usable only when construction, resource registration, graph state/lifetime, semantic AS binding, exact native descriptor layout/write, and shader traversal all work together. DirectX binds the same HLSL `RaytracingAccelerationStructure` through native SRV forms; Vulkan defines distinct classic and partitioned acceleration-structure descriptor types, with the PTLAS device address carried by the descriptor write. The Renderer therefore sees neither a device address nor an access-mode enum. If the provider's descriptor route is unavailable, provider selection retains a supported provider or the effect uses its accepted renderer fallback; it does not select another shader.
+
+Provider selection is fixed before binding-layout and pipeline materialization. The backend creates the exact selected-provider descriptor layout; it does not enable or preserve mutable-descriptor machinery solely to switch classic and partitioned AS representations after layout creation.
+
+For the current shadow-visibility effect, the accepted no-ray result is the same authoritative graph product cleared to packed unshadowed visibility `(1, 0, 1, 0)` by a declared shaderless graph pass. This replaces the catalog-only no-query compute shader; lack of traversal support does not create a shader identity.
+
+This boundary follows the [Microsoft DXR resource contract](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html), [NVIDIA NVRHI semantic acceleration-structure binding](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md), and the Khronos [`VK_NV_partitioned_acceleration_structure` descriptor contract](https://docs.vulkan.org/refpages/latest/refpages/source/VK_NV_partitioned_acceleration_structure.html).
+
+This binding choice is not a shader permutation. One `(ShaderTypeId, Target)` code record serves every supported AS provider for that target. There is no `DeviceAddress` shader suffix, authored preprocessor define, hidden backend variant, or second graph path.
 
 Every unavailable result identifies the missing owner-level requirement: compiler target, export/group ABI, backend feature/function, layout/limit, native pipeline/table creation, graph queue/resource rule, generation mismatch, effect frontend, or fallback.
 
@@ -333,6 +348,7 @@ The target is realized only when implementation evidence proves all of the follo
 - native identifiers/group handles remain private and table regions/indexing/alignment/bounds match the exact pipeline generation;
 - ray-traced GBuffer and shadow visibility pass same-frame dual-mode parity including alpha and fallback behavior;
 - classic/partitioned TLAS share one logical contribution plan and no scene/material/history authority is duplicated;
+- classic/partitioned TLAS use one semantic AS shader/graph binding and private native descriptor lowering; no address/access-mode shader duplicate or fallback shader remains;
 - one immutable whole-frame plan implements strict/automatic selection and schedules exactly one frontend per effect;
 - map/library/pipeline/table reload and device recreation preserve the previous accepted generation on failure and retire old state by submission token;
 - capture/provenance follows shader/effect identity through source, compile job, map/code, composition, native pipeline/table, graph event, and symbols;
