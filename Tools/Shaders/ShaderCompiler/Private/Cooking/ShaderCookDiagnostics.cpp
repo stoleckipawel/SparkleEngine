@@ -10,7 +10,7 @@ std::string ShaderCookDiagnostics::FormatNodeContext(
     ShaderTarget target)
 {
 	return std::format(
-	    "shader package '{}' shader '{}' entry '{}' stage '{}' backend '{}' target '{}' profile '{}' jobKey {:016X}",
+	    "shader package '{}' shader '{}' entry '{}' stage '{}' backend '{}' target '{}' profile '{}' compileInputHash {:016X}",
 	    node.jobIdentity.packageId,
 	    node.jobIdentity.sourcePath.generic_string(),
 	    node.jobIdentity.entryPoint,
@@ -18,5 +18,5 @@ std::string ShaderCookDiagnostics::FormatNodeContext(
 	    backendName,
 	    GetShaderTargetName(target),
 	    node.jobIdentity.profileName,
-	    node.jobIdentity.jobKey);
+	    node.jobIdentity.compileInputHash);
 }

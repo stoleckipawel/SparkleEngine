@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Cooking/Cache/ShaderCompileOptionsHasher.h"
+#include "Cooking/Identity/ShaderCompileOptionsHasher.h"
 
 #include "Compiler/ShaderCompileProfile.h"
 #include "Core/Public/Hash/HashUtils.h"

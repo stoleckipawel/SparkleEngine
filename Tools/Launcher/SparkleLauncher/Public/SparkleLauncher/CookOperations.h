@@ -53,8 +53,6 @@ namespace SparkleLauncher
 		bool ForceRecookConfirmed = false;
 		std::vector<CookWorkspaceScope> SelectedScopes;
 		std::string ShaderBackend = "auto";
-		std::filesystem::path ShaderCacheDirectory;
-		bool ShaderUseCache = true;
 		bool ShaderEnableDebugInfo = false;
 		bool ShaderEnableOptimizations = true;
 		bool ShaderWarningsAsErrors = true;

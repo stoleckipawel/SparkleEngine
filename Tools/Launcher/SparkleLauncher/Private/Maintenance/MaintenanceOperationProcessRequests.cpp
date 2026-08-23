@@ -139,14 +139,6 @@ namespace SparkleLauncher
 				    MaintenanceCleanBehavior::RemovePath);
 				AddContentGeneratedCleanSteps(steps, plan, false, false, true);
 				return;
-			case CleanScope::ShaderCache:
-				AddCleanStep(
-				    steps,
-				    "clean-shader-cache",
-				    "Clean shader cache",
-				    GetBuildDirectory(plan.RepositoryRoot) / "Cache" / "Shaders",
-				    MaintenanceCleanBehavior::RemovePath);
-				return;
 			case CleanScope::ThirdPartyDependencyCache:
 				AddCleanStep(
 				    steps,

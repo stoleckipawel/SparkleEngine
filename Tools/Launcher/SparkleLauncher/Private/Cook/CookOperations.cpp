@@ -256,7 +256,6 @@ namespace SparkleLauncher
 			}
 			case CookOperationKind::CookShaders:
 				AddPlannedEffect(plan, "Shader backend: " + plan.Request.ShaderBackend + ".");
-				AddPlannedEffect(plan, std::string("Shader cache: ") + (plan.Request.ShaderUseCache ? "enabled." : "disabled."));
 				AddPlannedEffect(
 				    plan,
 				    std::string("Shader debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
@@ -267,10 +266,6 @@ namespace SparkleLauncher
 				    plan,
 				    std::string("Warnings as errors: ") + (plan.Request.ShaderWarningsAsErrors ? "enabled." : "disabled."));
 				AddPlannedEffect(plan, std::string("Strip debug info: ") + (plan.Request.ShaderStripDebugInfo ? "enabled." : "disabled."));
-				if (!plan.Request.ShaderCacheDirectory.empty())
-				{
-					AddPlannedEffect(plan, "Override shader cache directory: " + plan.Request.ShaderCacheDirectory.string() + ".");
-				}
 				AddPlannedEffect(plan, "Cook all registered shader packages for the canonical runtime targets.");
 				return;
 			case CookOperationKind::BuildTextures:

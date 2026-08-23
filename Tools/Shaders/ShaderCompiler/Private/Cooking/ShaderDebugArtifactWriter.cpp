@@ -46,7 +46,7 @@ void ShaderDebugArtifactWriter::WriteCompileInputs(
 	WriteText(
 	    bundleDirectory / "compile-request.json",
 	    BuildCompileRequestJson(package, stage, options, compiledStage));
-	WriteText(bundleDirectory / "cache-info.json", BuildCacheInfoJson(options, compiledStage));
+	WriteText(bundleDirectory / "compile-identity.json", BuildCompileIdentityJson(options, compiledStage));
 	WriteText(bundleDirectory / "defines.json", Json::WriteStringArray(options.Defines));
 }
 
@@ -100,17 +100,17 @@ std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(
 	writer.WriteHexUInt64("sourceHash", compiledStage.sourceHash);
 	writer.WriteHexUInt64("includeClosureHash", compiledStage.includeClosureHash);
 	writer.WriteHexUInt64("optionsHash", compiledStage.optionsHash);
-	writer.WriteHexUInt64("cacheKey", compiledStage.cacheKey);
-	writer.WriteString("cacheStatus", compiledStage.cacheStatus);
+	writer.WriteHexUInt64("compileInputHash", compiledStage.compileInputHash);
 	writer.WriteString("debugArtifact", compiledStage.debugArtifact);
 	return writer.Finish();
 }
 
-std::string ShaderDebugArtifactWriter::BuildCacheInfoJson(const ShaderCompileOptions& options, const CookedStageBuild& compiledStage)
+std::string ShaderDebugArtifactWriter::BuildCompileIdentityJson(
+    const ShaderCompileOptions& options,
+    const CookedStageBuild& compiledStage)
 {
 	Json::ObjectWriter writer;
-	writer.WriteString("cacheStatus", compiledStage.cacheStatus);
-	writer.WriteHexUInt64("cacheKey", compiledStage.cacheKey);
+	writer.WriteHexUInt64("compileInputHash", compiledStage.compileInputHash);
 	writer.WriteHexUInt64("sourceHash", compiledStage.sourceHash);
 	writer.WriteHexUInt64("includeClosureHash", compiledStage.includeClosureHash);
 	writer.WriteHexUInt64("optionsHash", compiledStage.optionsHash);

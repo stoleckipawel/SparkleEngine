@@ -19,7 +19,7 @@ class CookedShaderPublication final
   public:
 	CookedShaderPublication(
 	    const ShaderCookPipelinePlan& plan,
-	    const std::filesystem::path& cacheDirectory) noexcept;
+	    const std::filesystem::path& outputDirectory) noexcept;
 
 	std::vector<CookedShaderPackageOutput> Publish();
 
@@ -32,7 +32,7 @@ class CookedShaderPublication final
 	void CleanupStagedFiles() const;
 
 	const ShaderCookPipelinePlan& m_plan;
-	const std::filesystem::path& m_cacheDirectory;
+	const std::filesystem::path& m_outputDirectory;
 	std::vector<CookedShaderPackageOutput> m_packages;
 	std::vector<Files::FilePublication> m_files;
 	std::filesystem::path m_registryPath;
@@ -41,9 +41,9 @@ class CookedShaderPublication final
 
 CookedShaderPublication::CookedShaderPublication(
     const ShaderCookPipelinePlan& plan,
-    const std::filesystem::path& cacheDirectory) noexcept :
+    const std::filesystem::path& outputDirectory) noexcept :
     m_plan(plan),
-    m_cacheDirectory(cacheDirectory)
+    m_outputDirectory(outputDirectory)
 {
 }
 
@@ -125,7 +125,7 @@ void CookedShaderPublication::StageRegistry()
 
 void CookedShaderPublication::StageRecookSignal()
 {
-	const std::filesystem::path publishedSignalPath = Paths::ShaderRecookSignal(m_cacheDirectory);
+	const std::filesystem::path publishedSignalPath = Paths::ShaderRecookSignal(m_outputDirectory);
 	const std::filesystem::path stagedSignalPath =
 	    Files::BuildTemporaryPath(publishedSignalPath, ".cook-generation");
 	Files::CleanupTemporaryFile(stagedSignalPath);
@@ -165,7 +165,7 @@ void CookedShaderPublication::CleanupStagedFiles() const
 
 std::vector<CookedShaderPackageOutput> CookedShaderPackageEmitter::Emit(
     const ShaderCookPipelinePlan& plan,
-    const std::filesystem::path& cacheDirectory)
+    const std::filesystem::path& outputDirectory)
 {
-	return CookedShaderPublication(plan, cacheDirectory).Publish();
+	return CookedShaderPublication(plan, outputDirectory).Publish();
 }

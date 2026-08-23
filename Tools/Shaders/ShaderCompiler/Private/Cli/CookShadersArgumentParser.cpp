@@ -25,8 +25,6 @@ void CookShadersArgumentParser::PrintHelp(std::ostream& output)
 	       << "  --package <package-id>      Cook one registered shader package.\n"
 	       << "  --shader-id <shader-id>     Cook one registered shader entry by shader id.\n\n"
 	       << "Cook options:\n"
-	       << "  --no-cache                  Disable the local compile cache.\n"
-	       << "  --cache-dir <path>          Override the local compile cache directory.\n"
 	       << "  --target <name>             Add a codegen target such as DxilSm66 or SpirV16. "
 	          "Defaults to DxilSm66 and SpirV16.\n"
 	       << "  --backend <name>            Select a compiler backend, or auto.\n"
@@ -72,12 +70,6 @@ void CookShadersArgumentParser::ParseArgument(std::string_view argument)
 
 bool CookShadersArgumentParser::ConsumeFlag(std::string_view argument)
 {
-	if (argument == "--no-cache")
-	{
-		m_settings.useCache = false;
-		return true;
-	}
-
 	if (argument == "--debug-info")
 	{
 		m_settings.enableDebugInfo = true;
@@ -95,8 +87,7 @@ bool CookShadersArgumentParser::ConsumeFlag(std::string_view argument)
 
 bool CookShadersArgumentParser::ConsumeValueOption(std::string_view argument)
 {
-	if (argument != "--cache-dir" &&
-	    argument != "--package" &&
+	if (argument != "--package" &&
 	    argument != "--shader-id" &&
 	    argument != "--target" &&
 	    argument != "--backend" &&
@@ -117,12 +108,6 @@ void CookShadersArgumentParser::ApplyValue(
     std::string_view argument,
     std::string_view value)
 {
-	if (argument == "--cache-dir")
-	{
-		m_settings.cacheDirectory = std::filesystem::path(std::string(value));
-		return;
-	}
-
 	if (argument == "--package")
 	{
 		m_settings.packageId = value;

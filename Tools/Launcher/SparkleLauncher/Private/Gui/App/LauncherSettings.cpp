@@ -93,11 +93,6 @@ namespace SparkleLauncher
 		return m_shaderBackend;
 	}
 
-	const QString& LauncherSettings::ShaderCacheDirectory() const
-	{
-		return m_shaderCacheDirectory;
-	}
-
 	const QString& LauncherSettings::GraphicsApi() const
 	{
 		return m_graphicsApi;
@@ -106,11 +101,6 @@ namespace SparkleLauncher
 	const QString& LauncherSettings::CleanScope() const
 	{
 		return m_cleanScope;
-	}
-
-	bool LauncherSettings::ShaderUseCache() const
-	{
-		return m_shaderUseCache;
 	}
 
 	bool LauncherSettings::ShaderEnableDebugInfo() const
@@ -252,16 +242,6 @@ namespace SparkleLauncher
 		emit SettingsChanged();
 	}
 
-	void LauncherSettings::SetShaderCacheDirectory(const QString& path)
-	{
-		if (m_shaderCacheDirectory == path)
-		{
-			return;
-		}
-		m_shaderCacheDirectory = path;
-		emit SettingsChanged();
-	}
-
 	void LauncherSettings::SetGraphicsApi(const QString& graphicsApi)
 	{
 		const QString normalized = graphicsApi.trimmed().toLower() == "vulkan" ? QStringLiteral("vulkan") : QStringLiteral("d3d12");
@@ -280,16 +260,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_cleanScope = scope;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetShaderUseCache(bool enabled)
-	{
-		if (m_shaderUseCache == enabled)
-		{
-			return;
-		}
-		m_shaderUseCache = enabled;
 		emit SettingsChanged();
 	}
 

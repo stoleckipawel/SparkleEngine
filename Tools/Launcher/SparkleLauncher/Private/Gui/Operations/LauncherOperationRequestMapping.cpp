@@ -34,10 +34,6 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		{
 			return CleanScope::WorkspaceState;
 		}
-		if (text == "shader-cache")
-		{
-			return CleanScope::ShaderCache;
-		}
 		if (text == "deps")
 		{
 			return CleanScope::ThirdPartyDependencyCache;
@@ -153,8 +149,6 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.ForceRecookConfirmed = request.ConfirmForceRecook;
 		mapped.SelectedScopes = ParseCookScopes(request.CookScopes);
 		mapped.ShaderBackend = request.ShaderBackend.toStdString();
-		mapped.ShaderCacheDirectory = request.ShaderCacheDirectory.toStdString();
-		mapped.ShaderUseCache = request.ShaderUseCache;
 		mapped.ShaderEnableDebugInfo = request.ShaderEnableDebugInfo;
 		mapped.ShaderEnableOptimizations = request.ShaderEnableOptimizations;
 		mapped.ShaderWarningsAsErrors = request.ShaderWarningsAsErrors;

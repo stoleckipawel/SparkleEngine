@@ -13,5 +13,5 @@ class CookedShaderPackageEmitter final
 
 	static std::vector<CookedShaderPackageOutput> Emit(
 	    const ShaderCookPipelinePlan& plan,
-	    const std::filesystem::path& cacheDirectory);
+	    const std::filesystem::path& outputDirectory);
 };

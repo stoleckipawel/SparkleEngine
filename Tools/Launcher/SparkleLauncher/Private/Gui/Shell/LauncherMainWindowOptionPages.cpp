@@ -358,7 +358,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddCleanOptions(QVBoxLayout& layout, const QString&)
 	{
-		const std::array<CleanScopeUiOption, 7> cleanScopes{{
+		const std::array<CleanScopeUiOption, 6> cleanScopes{{
 		    {"Cooked content", "cooked", "Remove generated cooked assets for this workspace.", QString(), "Content outputs"},
 		    {"Build workspace",
 		        "build-tree",
@@ -374,11 +374,6 @@ namespace SparkleLauncher
 		        "workspace-state",
 		        "Reset local Visual Studio, Rider, VS Code, and ImGui workspace state.",
 		        ".vs, .vscode, .idea, and ImGui workspace state",
-		        "Local state and caches"},
-		    {"Shader cache",
-		        "shader-cache",
-		        "Remove transient shader data; shaders regenerate on the next cook.",
-		        QString(),
 		        "Local state and caches"},
 		    {"Source dependency cache",
 		        "deps",

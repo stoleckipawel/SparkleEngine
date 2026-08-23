@@ -17,15 +17,6 @@ namespace SparkleLauncher
 
 	static void AppendCommonShaderCompilerArguments(const CookOperationPlan& plan, std::vector<std::string>& arguments)
 	{
-		if (!plan.Request.ShaderUseCache)
-		{
-			arguments.push_back("--no-cache");
-		}
-		if (!plan.Request.ShaderCacheDirectory.empty())
-		{
-			arguments.push_back("--cache-dir");
-			arguments.push_back(plan.Request.ShaderCacheDirectory.string());
-		}
 		if (!plan.Request.ShaderBackend.empty())
 		{
 			arguments.push_back("--backend");

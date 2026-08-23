@@ -21,8 +21,7 @@ struct CookedStageBuild final
 	std::uint64_t sourceHash = 0;
 	std::uint64_t includeClosureHash = 0;
 	std::uint64_t optionsHash = 0;
-	std::uint64_t cacheKey = 0;
-	std::string cacheStatus;
+	std::uint64_t compileInputHash = 0;
 	std::vector<std::uint8_t> bytecode;
 	std::uint64_t bytecodeHash = 0;
 	ShaderReflection reflection;

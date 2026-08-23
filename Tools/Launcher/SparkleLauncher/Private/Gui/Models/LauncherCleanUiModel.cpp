@@ -28,10 +28,6 @@ namespace SparkleLauncher
 		{
 			return repositoryRoot;
 		}
-		if (scope == "shader-cache")
-		{
-			return GetBuildDirectory(repositoryRoot) / "Cache" / "Shaders";
-		}
 		if (scope == "deps")
 		{
 			return GetBuildDirectory(repositoryRoot) / "_deps";
@@ -60,10 +56,6 @@ namespace SparkleLauncher
 		if (scopeValue == "workspace-state")
 		{
 			return "IDE And Workspace State";
-		}
-		if (scopeValue == "shader-cache")
-		{
-			return "Shader Cache";
 		}
 		if (scopeValue == "deps")
 		{
@@ -307,9 +299,9 @@ namespace SparkleLauncher
 			{
 				AddExplicitCleanTarget(
 				    targets,
-				    "Shader cache",
-				    GetBuildDirectory(context.RepositoryRoot) / "Cache" / "Shaders",
-				    "Shared local shader cache selected by Cook Workspace.");
+				    "Cooked shaders",
+				    GetCookedProjectDirectory(context.RepositoryRoot, context.ContentId.toStdString()) / "Shaders",
+				    "Generated shader outputs selected by Cook Workspace.");
 			}
 		}
 		else if (context.OperationId == "cook.all")
@@ -321,17 +313,17 @@ namespace SparkleLauncher
 			    "All generated cooked content.");
 			AddExplicitCleanTarget(
 			    targets,
-			    "Shader cache",
-			    GetBuildDirectory(context.RepositoryRoot) / "Cache" / "Shaders",
-			    "Shared local shader cache refreshed by cook operations.");
+			    "Cooked shaders",
+			    GetCookedProjectDirectory(context.RepositoryRoot, context.ContentId.toStdString()) / "Shaders",
+			    "Generated shader outputs refreshed by cook operations.");
 		}
 		else if (context.OperationId == "cook.shaders")
 		{
 			AddExplicitCleanTarget(
 			    targets,
-			    "Shader cache",
-			    GetBuildDirectory(context.RepositoryRoot) / "Cache" / "Shaders",
-			    "Shared local shader cache refreshed by shader cooking.");
+			    "Cooked shaders",
+			    GetCookedProjectDirectory(context.RepositoryRoot, context.ContentId.toStdString()) / "Shaders",
+			    "Generated shader outputs refreshed by shader cooking.");
 		}
 		else if (context.OperationId == "cook.textures" || context.OperationId == "cook.assets")
 		{

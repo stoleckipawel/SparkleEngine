@@ -2,7 +2,6 @@
 
 #include "Cooking/CookedStageBuild.h"
 
-#include <filesystem>
 #include <vector>
 
 struct ShaderCookPipelinePlan;
@@ -15,6 +14,5 @@ class ShaderCookPlanExecutor final
 
 	static std::vector<CookedStageBuild> Execute(
 	    const ShaderPackageCookSettings& settings,
-	    const ShaderCookPipelinePlan& plan,
-	    const std::filesystem::path& cacheDirectory);
+	    const ShaderCookPipelinePlan& plan);
 };

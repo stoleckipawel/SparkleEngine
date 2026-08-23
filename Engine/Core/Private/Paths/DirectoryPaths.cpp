@@ -82,8 +82,8 @@ namespace Paths
 		return Filesystem::GetBuildOutputRootPath() / "Cache" / "ImportedTextures";
 	}
 
-	std::filesystem::path ShaderRecookSignal(const std::filesystem::path& shaderCacheRoot)
+	std::filesystem::path ShaderRecookSignal(const std::filesystem::path& cookedShaderRoot)
 	{
-		return Filesystem::BuildShaderRecookSignalPath(shaderCacheRoot);
+		return Filesystem::BuildShaderRecookSignalPath(cookedShaderRoot);
 	}
 }  // namespace Paths

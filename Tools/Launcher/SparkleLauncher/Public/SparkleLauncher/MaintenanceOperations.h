@@ -25,7 +25,6 @@ namespace SparkleLauncher
 		BuildTree,
 		ArtifactOutputs,
 		WorkspaceState,
-		ShaderCache,
 		ThirdPartyDependencyCache,
 		Logs,
 		PristineGeneratedWorkspace

@@ -17,8 +17,7 @@ static const auto g_shaderCookPlanExecutorLogger = Logging::GetOrCreateLogger("S
 
 std::vector<CookedStageBuild> ShaderCookPlanExecutor::Execute(
     const ShaderPackageCookSettings& settings,
-    const ShaderCookPipelinePlan& plan,
-    const std::filesystem::path& cacheDirectory)
+    const ShaderCookPipelinePlan& plan)
 {
 	const std::uint32_t hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
 	const std::uint32_t compileWorkers = std::clamp(settings.maximumParallelCompiles, 1u, std::min(hardwareThreads, 8u));
@@ -40,8 +39,7 @@ std::vector<CookedStageBuild> ShaderCookPlanExecutor::Execute(
 		    {
 			    if (context.IsCancellationRequested())
 				    return TaskResult::Cancelled("Shader cook was cancelled.");
-			    compiledStages[nodeIndex] =
-			        ShaderCookNodeExecutor::Execute(settings, plan.nodes[nodeIndex], cacheDirectory);
+			    compiledStages[nodeIndex] = ShaderCookNodeExecutor::Execute(settings, plan.nodes[nodeIndex]);
 			    return TaskResult::Success();
 		    });
 	}

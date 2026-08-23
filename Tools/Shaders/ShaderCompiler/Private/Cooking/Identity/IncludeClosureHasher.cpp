@@ -1,6 +1,6 @@
 ﻿#include "PCH.h"
 
-#include "Cooking/Cache/IncludeClosureHasher.h"
+#include "Cooking/Identity/IncludeClosureHasher.h"
 
 #include "Compiler/ShaderIncludeResolver.h"
 #include "Core/Public/Diagnostics/Error.h"

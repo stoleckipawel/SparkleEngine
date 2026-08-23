@@ -135,13 +135,6 @@ namespace SparkleLauncher
 				AddCleanTarget(plan, "Root ImGui state", plan.RepositoryRoot / "imgui.ini", "Root imgui.ini.");
 				AddContentGeneratedTargets(plan, false, false, true);
 				return;
-			case CleanScope::ShaderCache:
-				AddCleanTarget(
-				    plan,
-				    "Shader cache",
-				    GetBuildDirectory(plan.RepositoryRoot) / "Cache" / "Shaders",
-				    "Local shader cache, recook signal, and transient shader outputs.");
-				return;
 			case CleanScope::ThirdPartyDependencyCache:
 				AddCleanTarget(
 				    plan,
@@ -248,8 +241,6 @@ namespace SparkleLauncher
 				return OperationDestructiveScope::ArtifactOutputs;
 			case CleanScope::WorkspaceState:
 				return OperationDestructiveScope::WorkspaceState;
-			case CleanScope::ShaderCache:
-				return OperationDestructiveScope::ShaderCache;
 			case CleanScope::ThirdPartyDependencyCache:
 				return OperationDestructiveScope::DependencyCache;
 			case CleanScope::Logs:
@@ -304,8 +295,6 @@ namespace SparkleLauncher
 				return "artifact-outputs";
 			case CleanScope::WorkspaceState:
 				return "workspace-state";
-			case CleanScope::ShaderCache:
-				return "shader-cache";
 			case CleanScope::ThirdPartyDependencyCache:
 				return "deps";
 			case CleanScope::Logs:

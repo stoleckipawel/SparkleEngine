@@ -32,12 +32,10 @@ namespace SparkleLauncher
 		QString SourceDependencyId;
 		QString HostToolId;
 		QString ShaderBackend;
-		QString ShaderCacheDirectory;
 		QString GraphicsApi;
 		QString CleanScope = "cooked";
 		QVector<LauncherCleanTarget> CleanTargets;
 		QVector<QString> PreservedPaths;
-		bool ShaderUseCache = true;
 		bool ShaderEnableDebugInfo = false;
 		bool ShaderEnableOptimizations = true;
 		bool ShaderWarningsAsErrors = true;

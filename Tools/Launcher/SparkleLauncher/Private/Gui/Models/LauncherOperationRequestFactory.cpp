@@ -103,9 +103,7 @@ namespace SparkleLauncher
 		request.CookScopes = settings.CookScopes();
 		request.SelectedTargets = settings.SelectedTargets();
 		request.ShaderBackend = settings.ShaderBackend();
-		request.ShaderCacheDirectory = settings.ShaderCacheDirectory();
 		request.GraphicsApi = settings.GraphicsApi();
-		request.ShaderUseCache = settings.ShaderUseCache();
 		request.ShaderEnableDebugInfo = settings.ShaderEnableDebugInfo();
 		request.ShaderEnableOptimizations = settings.ShaderEnableOptimizations();
 		request.ShaderWarningsAsErrors = settings.ShaderWarningsAsErrors();

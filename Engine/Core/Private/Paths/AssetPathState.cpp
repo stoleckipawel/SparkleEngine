@@ -45,6 +45,7 @@ namespace Filesystem::Private
 			state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
 			state.cookedShaderPackageRootPath = Paths::Normalize(state.cookedShaderRootPath / "Packages");
 			state.cookedShaderRegistryPath = Paths::Normalize(state.cookedShaderRootPath / "ShaderPackageRegistry.sreg");
+			state.shaderRecookSignalPath = Filesystem::BuildShaderRecookSignalPath(state.cookedShaderRootPath);
 			state.cookedTextureRootPath = Paths::Normalize(state.cookedAssetRootPath / "Textures");
 			state.cookedSceneManifestRootPath = Paths::Normalize(state.cookedAssetRootPath / "SceneManifests");
 			state.cookedMeshRootPath = Paths::Normalize(state.cookedAssetRootPath / "Meshes");
@@ -68,7 +69,6 @@ namespace Filesystem::Private
 			    &state.cookedMaterialRootPath,
 			    &state.cookedSkeletonRootPath,
 			    &state.cookedAnimationRootPath,
-			    &state.shaderCacheRootPath,
 			    &state.shaderSymbolsOutputPath,
 			};
 
@@ -128,7 +128,6 @@ namespace Filesystem::Private
 			ValidatePath(logger, "Cooked Shader Root", state.cookedShaderRootPath, true);
 			ValidatePath(logger, "Cooked Skeleton Root", state.cookedSkeletonRootPath, true);
 			ValidatePath(logger, "Cooked Animation Root", state.cookedAnimationRootPath, true);
-			ValidatePath(logger, "Shader Cache Root", state.shaderCacheRootPath, true);
 			ValidatePath(logger, "Engine", state.enginePath, !state.packageRuntimeRoot);
 			ValidatePath(logger, "Engine Assets", state.engineAssetsPath, !state.packageRuntimeRoot);
 			ValidatePath(logger, "Project", state.projectPath, false);
@@ -177,8 +176,6 @@ namespace Filesystem::Private
 			state.logsRootPath = state.packageRuntimeRoot ?
 			                         Paths::Normalize(state.workspacePath / "logs") :
 			                         Filesystem::ResolveLogsRootPath();
-			state.shaderCacheRootPath = Paths::Normalize(state.buildOutputRootPath / "Cache" / "Shaders");
-			state.shaderRecookSignalPath = Filesystem::BuildShaderRecookSignalPath(state.shaderCacheRootPath);
 			RebuildProjectPaths(state);
 			return state;
 		}

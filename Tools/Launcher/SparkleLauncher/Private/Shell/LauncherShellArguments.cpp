@@ -256,7 +256,6 @@ namespace SparkleLauncher
 		    {"build-tree", CleanScope::BuildTree},
 		    {"artifacts", CleanScope::ArtifactOutputs},
 		    {"workspace-state", CleanScope::WorkspaceState},
-		    {"shader-cache", CleanScope::ShaderCache},
 		    {"deps", CleanScope::ThirdPartyDependencyCache},
 		    {"logs", CleanScope::Logs},
 		    {"clean-all", CleanScope::PristineGeneratedWorkspace}};

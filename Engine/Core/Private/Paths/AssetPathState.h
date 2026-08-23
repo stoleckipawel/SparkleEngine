@@ -25,7 +25,6 @@ namespace Filesystem::Private
 		std::filesystem::path cookedSkeletonRootPath;
 		std::filesystem::path cookedAnimationRootPath;
 		std::filesystem::path sceneAssetRegistryPath;
-		std::filesystem::path shaderCacheRootPath;
 		std::filesystem::path shaderRecookSignalPath;
 		std::filesystem::path projectPath;
 		std::filesystem::path projectAssetsPath;

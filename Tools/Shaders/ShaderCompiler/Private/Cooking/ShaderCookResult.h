@@ -8,6 +8,6 @@
 
 struct ShaderPackageCookResult final
 {
-	std::filesystem::path cacheDirectory;
+	std::filesystem::path outputDirectory;
 	std::vector<CookedShaderPackageOutput> packages;
 };

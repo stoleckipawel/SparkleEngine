@@ -4,17 +4,42 @@
 
 #include "Backend/IShaderBackend.h"
 #include "Backend/ShaderBackendPool.h"
-#include "Cooking/Cache/IncludeClosureHasher.h"
-#include "Cooking/Cache/ShaderCacheKey.h"
-#include "Cooking/Cache/ShaderCompileOptionsHasher.h"
+#include "Cooking/Identity/IncludeClosureHasher.h"
+#include "Cooking/Identity/ShaderCompileOptionsHasher.h"
 #include "Cooking/ShaderCookPlanner.h"
 #include "Cooking/ShaderCookSettings.h"
 #include "Compiler/ShaderCompileProfile.h"
 
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Hash/HashUtils.h"
 
 #include <format>
 #include <utility>
+
+namespace
+{
+	std::uint64_t BuildCompileInputHash(
+	    const std::uint64_t sourceHash,
+	    const std::uint64_t includeClosureHash,
+	    const std::uint64_t optionsHash,
+	    const std::string_view backendName,
+	    const std::uint64_t backendVersion)
+	{
+		std::string canonical;
+		canonical.reserve(128);
+		canonical += std::to_string(sourceHash);
+		canonical += '|';
+		canonical += std::to_string(includeClosureHash);
+		canonical += '|';
+		canonical += std::to_string(optionsHash);
+		canonical += '|';
+		canonical += backendName;
+		canonical += '|';
+		canonical += std::to_string(backendVersion);
+		const std::uint64_t hash = Hash::Fnv1a64(canonical);
+		return hash != 0 ? hash : Hash::kFnv64OffsetBasis;
+	}
+}
 
 void ShaderCookNodeBuilder::BuildAndAdd(
     const ShaderPackageCookSettings& settings,
@@ -125,8 +150,7 @@ void ShaderCookNodeBuilder::AppendNode(
 	const IncludeClosureHash includeHash = IncludeClosureHasher::Compute(compileOptions);
 
 	const std::uint64_t optionsHash = ShaderCompileOptionsHasher::Compute(compileOptions);
-	const ShaderCacheKey cacheKey = ShaderCacheKey::Compute(
-	    package,
+	const std::uint64_t compileInputHash = BuildCompileInputHash(
 	    includeHash.sourceHash,
 	    includeHash.includeClosureHash,
 	    optionsHash,
@@ -145,7 +169,6 @@ void ShaderCookNodeBuilder::AppendNode(
 	    .sourceHash = includeHash.sourceHash,
 	    .includeClosureHash = includeHash.includeClosureHash,
 	    .optionsHash = optionsHash,
-	    .cacheKey = cacheKey,
 	    .jobIdentity = ShaderContractJobIdentity{
 	        .packageId = package.packageId,
 	        .sourcePath = stage.sourcePath,
@@ -157,5 +180,5 @@ void ShaderCookNodeBuilder::AppendNode(
 	        .sourceHash = includeHash.sourceHash,
 	        .includeClosureHash = includeHash.includeClosureHash,
 	        .optionsHash = optionsHash,
-	        .jobKey = cacheKey.value}});
+	        .compileInputHash = compileInputHash}});
 }

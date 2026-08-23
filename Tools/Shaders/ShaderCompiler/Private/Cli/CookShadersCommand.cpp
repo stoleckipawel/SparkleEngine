@@ -144,7 +144,7 @@ void CookShadersCommandExecution::RunCookedShaderStats(
     const ShaderPackageCookResult& result)
 {
 	const CookedShaderStatsReport report =
-	    CookedShaderStatsPass::WriteCsv(result.packages, result.cacheDirectory / "Analysis");
+	    CookedShaderStatsPass::WriteCsv(result.packages, result.outputDirectory / "Analysis");
 
 	ToolConsole::Message(
 	    std::cout,

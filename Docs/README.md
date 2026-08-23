@@ -67,7 +67,7 @@ Start with [Debug View Presentation Contract](Architecture/DebugViewPresentation
 
 ### Shader And Ray-Tracing Work
 
-Start with [Shader Authoring and Cooked Program Architecture](Architecture/Shaders/ShaderAuthoringAndCookedPrograms.md) for shader identity, cooking, runtime programs, and pipeline-cache direction. Use [Ray-Tracing Pipeline and Dual-Execution Delivery Plan](Architecture/Shaders/RayTracingPipelineImplementationPlan.md) for the staged RGS/MISS/CHS/AHS/intersection/callable implementation, native D3D12/Vulkan pipeline and shader-table gates, and effect-level inline/pipeline selection contract.
+Start with [Shader Authoring and Cooked Shader Architecture](Architecture/Shaders/ShaderAuthoringAndCookedPrograms.md) for the lean shader-class frontend, compile-every-selected-input policy, global shader map/code library, typed graph use, and explicitly deferred pipeline features. Use [Ray-Tracing Pipeline and Dual-Execution Delivery Plan](Architecture/Shaders/RayTracingPipelineImplementationPlan.md) for the staged RGS/MISS/CHS/AHS/intersection/callable implementation, native D3D12/Vulkan pipeline and shader-table gates, and effect-level inline/pipeline selection contract.
 
 ### Deferred Decal Work
 

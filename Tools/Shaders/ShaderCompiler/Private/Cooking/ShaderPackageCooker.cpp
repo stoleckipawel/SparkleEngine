@@ -13,18 +13,17 @@
 ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSettings& settings) const
 {
 	ShaderPackageCookResult result;
-	result.cacheDirectory = settings.cacheDirectory.empty() ? Filesystem::GetShaderCacheRootPath() : settings.cacheDirectory;
+	result.outputDirectory = Filesystem::GetCookedShaderRootPath();
 	ShaderBackendPool backendPool;
 	ShaderCookPipelinePlan plan = ShaderCookPlanBuilder::Build(settings, backendPool);
 
-	std::vector<CookedStageBuild> compiledStages =
-	    ShaderCookPlanExecutor::Execute(settings, plan, result.cacheDirectory);
+	std::vector<CookedStageBuild> compiledStages = ShaderCookPlanExecutor::Execute(settings, plan);
 	for (std::size_t index = 0; index < compiledStages.size(); ++index)
 	{
 		plan.packageContexts[plan.nodes[index].packageIndex].push_back(std::move(compiledStages[index]));
 	}
 
-	result.packages = CookedShaderPackageEmitter::Emit(plan, result.cacheDirectory);
+	result.packages = CookedShaderPackageEmitter::Emit(plan, result.outputDirectory);
 
 	return result;
 }

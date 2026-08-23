@@ -1,8 +1,8 @@
 # Shader Authoring and Cooked Shader Architecture
 
 Status: target architecture and implementation plan; current-state findings are source-backed, while target completion requires the final evidence phase
-Current audit: 2026-08-23 at `0e85e99d3afeb671bcf9d4f6b494dcf7c8a2c1d6`
-Scope: base implementation covers virtual sources, lean shader classes and parameters, compilation/validation, local DDC, global shader map/code library publication, typed runtime lookup, graph draw/dispatch, reload, diagnostics, and evidence; permutations, precaching/prewarming, preload/streaming, native driver caches, and full RT execution are research context or deferred follow-ups, not base deliverables
+Current audit: 2026-08-23 against the unstaged `master` worktree based on `0e85e99d3afeb671bcf9d4f6b494dcf7c8a2c1d6`
+Scope: base implementation covers virtual sources, lean shader classes and parameters, compilation/validation without persistent compile-result caching, global shader map/code library publication, typed runtime lookup, graph draw/dispatch, reload, diagnostics, and evidence; permutations, precaching/prewarming, preload/streaming, native driver caches, and full RT execution are research context or deferred follow-ups, not base deliverables
 
 ## Purpose
 
@@ -24,7 +24,7 @@ The 2026-08-15 review assumed every proposed Unreal/vendor analogy was wrong unt
 | Every pass needs a handwritten `PassName`. | Rejected. The semantic event label is necessary, but the one-to-one default can derive from the concrete shader class; only instance-specific text remains authored at scheduling. |
 | Authors need named shader packages. | Rejected. Authors need concrete shader classes and cooked runtime artifacts; physical map/library membership is generated delivery policy. |
 | One shader parameter struct must be every pass struct. | Overconstrained and corrected. Epic RDG intentionally reuses shader parameters for common one-to-one passes but also supports pass parameters without shader semantics. Sparkle selects one owner per shader-visible field plus explicit pass-envelope composition. |
-| Unreal's `FShaderCompileJobKey` is the full content/DDC hash. | False and corrected. It is a narrower logical type/platform/permutation key; the complete job-input hash is separate. Sparkle names its content identity `ShaderCompileInputHash`. |
+| A compile-input hash requires a persistent compile-result cache. | Rejected. Sparkle needs deterministic input identity for diagnostics, deduplication within one operation, and provenance, but every selected job still invokes the compiler. |
 | A deduplicated compressed/streamed physical code library is always required. | Not proven for the current catalog. Exact hashes, maps, and code-record schemas are required; physical merging, compression, chunks, and streaming require measured byte/I/O value. |
 | D3D12 pipeline libraries and a long-lived shader/module cache are universal baseline best practice. | Rejected as universal. Complete pipeline descriptions, correct lazy graph-time materialization, and first-use measurement are the base contract. Async preparation, native caches, and shader/module object retention are backend/capability-specific measured follow-ups. |
 
@@ -41,7 +41,7 @@ The 2026-08-15 review assumed every proposed Unreal/vendor analogy was wrong unt
 7. Sparkle should keep cooked shader data but replace handwritten packages with two generated authorities: `GlobalShaderMap` for typed logical lookup and `CookedShaderLibrary` for validated code records addressed by hash. `RenderPassRuntimeCache` continues to own generation-safe materialized layouts/pipelines derived from the active map.
 8. Permutation infrastructure is deliberately postponed until after the non-permuted shader-map path is complete and accepted. The base map key is `(ShaderTypeId, Target)`; a later measured follow-up may extend it with a typed `PermutationId` without changing the lean one-variant authoring path.
 9. PSO precaching/prewarming, preload controls, and driver-cache integration are outside this implementation plan. Preserve correct lazy materialization before command recording; add earlier preparation only after measured first-use hitch evidence justifies it.
-10. Shader Tools should center `Apply Changed`, semantic shader/source selection, one operation state, source-located errors, and contextual next actions. Package/layout IDs, hashes, raw artifacts, full rebuild/reload, backend flags, and cache mechanics remain expert details.
+10. Shader Tools should center `Apply Changed`, semantic shader/source selection, one operation state, source-located errors, and contextual next actions. Package/layout IDs, hashes, raw artifacts, full rebuild/reload, backend flags, and runtime materialization mechanics remain expert details.
 11. Inline ray queries and full ray-tracing pipelines are different systems. Sparkle currently has the former. RT shader declarations may share the same class/parameter/map pattern, while native pipeline grouping, SBT construction, trace commands, and execution evidence stay in the separate RT plan.
 
 The short answer is therefore:
@@ -77,7 +77,7 @@ Each identity has one responsibility and one owner.
 | Shader-map entry | target-specific typed lookup from shader class to validated code record | generated `GlobalShaderMap` | source basename or authored package |
 | Pipeline | concrete shader references plus fixed-function and target state | complete pipeline description/cache key at graph use | one shader or diagnostic label alone |
 
-Pass labels and debug names may be human-readable. Lookup and cache identities must be typed or hash-backed and collision checked.
+Pass labels and debug names may be human-readable. Lookup and reuse identities must be typed or hash-backed and collision checked.
 
 ## Target Shape
 
@@ -87,7 +87,7 @@ Pass labels and debug names may be human-readable. Lookup and cache identities m
 
   DirectLightingCS                  GlobalShaderCatalog              AllocParameters<DirectLightingCS>()
   + virtual source/entry/stage ---> ShaderCompileJob                 fill typed inputs/outputs
-  + nested Parameters               ShaderDerivedDataCache           Dispatch<DirectLightingCS>()
+  + nested Parameters               bounded compile jobs             Dispatch<DirectLightingCS>()
   + optional compile hooks          GlobalShaderMap                  optional instance label
             |                       CookedShaderLibrary                        |
             |                                  |                              |
@@ -102,7 +102,7 @@ Pass labels and debug names may be human-readable. Lookup and cache identities m
                                       record draw/dispatch
 ```
 
-There is one lookup chain, not a catalog plus handwritten program registry plus package cache. `GlobalShaderCatalog` describes what can be compiled. `GlobalShaderMap` is the active target-specific typed lookup. `CookedShaderLibrary` supplies validated bytes by hash. `RenderPassRuntimeCache` derives generation-bound layouts and pipelines from shader references plus the actual draw/dispatch description. The RHI owns neutral descriptors, record validation primitives, and backend objects; Renderer owns concrete shader classes, graph use, and runtime generation policy; ShaderCompiler owns source dependency, jobs, derived data, map/library generation, and transactional publication.
+There is one lookup chain, not a catalog plus handwritten program registry plus package cache. `GlobalShaderCatalog` describes what can be compiled. `GlobalShaderMap` is the active target-specific typed lookup. `CookedShaderLibrary` supplies validated bytes by hash. `RenderPassRuntimeCache` derives generation-bound layouts and pipelines from shader references plus the actual draw/dispatch description. The RHI owns neutral descriptors, record validation primitives, and backend objects; Renderer owns concrete shader classes, graph use, and runtime generation policy; ShaderCompiler owns source dependency, bounded compilation, map/library generation, and transactional publication.
 
 ## Unreal-Aligned System Model
 
@@ -116,7 +116,6 @@ Unreal does not have one object called a "shader package" that owns every concer
 | `FShaderCompilerInput` | complete read-only input for one compilation | `ShaderCompileRequest` | `ShaderCompileOptions` plus cook-node metadata |
 | `FShaderCompileJob` / `FShaderCompileJobKey` / input hash | scheduled unit and logical shader/target key, plus a separate hash over all compiler-affecting inputs | `ShaderCompileJob` plus `ShaderCompileInputHash`; a small logical job ID may exist only for scheduling | `CookNode` plus `TaskExecutor` task |
 | `FShaderCompilingManager` and Shader Compile Workers | asynchronous coordination and compiler-process isolation | compile-job coordination on the existing cooker `TaskExecutor`; optional worker processes only when justified | one out-of-process cooker with bounded in-process stage tasks |
-| shader job cache / DDC | disposable content-addressed derived compilation results | cooker-owned `ShaderDerivedDataCache` with one local implementation | local per-stage artifact store |
 | Global Shader Map / `TShaderMapRef<T>` | typed target-specific lookup and shader lifetime | `GlobalShaderMap` / `ShaderRef<Shader>` | pass runtime cache loading by package ID |
 | `FShaderMapResourceCode` | code hashes and map resource content | generated map resource record | code embedded in each `.sparkshader` program package |
 | `FShaderCodeLibrary` | cook-time collection of unique code and runtime loading by hash | `CookedShaderLibrary` | no cross-package code library |
@@ -140,7 +139,7 @@ AUTHORING
 CATALOG / COMPILE
   validate and freeze ShaderTypeDesc records
   create one ShaderCompileJob per (ShaderTypeId, Target)
-  preprocess virtual include closure -> input hash -> DDC hit or bounded compile
+  preprocess virtual include closure -> input hash -> bounded compile
   verify reflection against Shader::Parameters
                          |
                          v
@@ -245,14 +244,14 @@ The final form has these invariants:
 
 ### Intent-First Shader Frontend Contract
 
-The normal shader workflow is one `Shader Tools` surface plus the existing console/shortcut route, not a panel for every compiler, cache, package, pipeline, or artifact layer. The user supplies intent; the system resolves dependency closure, supported targets, cache policy, job scheduling, validation, publication, reload, and lifetime safety.
+The normal shader workflow is one `Shader Tools` surface plus the existing console/shortcut route, not a panel for every compiler, package, pipeline, or artifact layer. The user supplies intent; the system resolves dependency closure, supported targets, job scheduling, validation, publication, reload, and lifetime safety.
 
 | User intent | Primary frontend action/result | Automatically derived and validated | Contextual expert access |
 | --- | --- | --- | --- |
-| Apply saved source edits | `Apply Changed` with one shortcut and nonblocking status | changed virtual paths, reverse dependencies, affected shader types, active development targets, cache hits, bounded jobs, complete replacement generation, safe activation | selected/compiled/cache-hit counts; exact job list under Details |
+| Apply saved source edits | `Apply Changed` with one shortcut and nonblocking status | changed virtual paths, reverse dependencies, affected shader types, active development targets, bounded jobs, complete replacement generation, safe activation | selected/compiled counts; exact job list under Details |
 | Understand a compile failure | source-located root cause, affected shader type, `Open Source`, `Retry`, and reassurance that the previous generation remains active | duplicate diagnostics collapsed by root cause, dependent jobs classified as skipped, portable virtual paths, failure bundle creation | compiler output, command, preprocessed source, dependency hashes, reflection/layout comparison, one-job replay |
 | Inspect what the running frame uses | select/search a semantic graph operation or shader and see active, changed, compiling, failed, or unsupported state | join from graph label/shader type to active shader-map entry, code record, source, symbols, pipeline, and captured marker identity | target/backend, hashes, reflection, disassembly, map record, and pipeline provenance |
-| Validate a development or release build | `Validate Shaders` through the normal build/cook preset | complete registered catalog, compile-policy filtering, D3D12/Vulkan targets required by that preset, deterministic publication and conformance checks | support matrix and cold/warm cache statistics |
+| Validate a development or release build | `Validate Shaders` through the normal build/cook preset | complete registered catalog, compile-policy filtering, D3D12/Vulkan targets required by that preset, deterministic publication and conformance checks | support matrix, compiled-job counts, compiler time, and memory statistics |
 | Investigate a shader or pipeline hitch | `Open Shader` from the selected Performance/GPU marker or pipeline event | preserve frame, marker, shader/code/pipeline hashes, backend, generation, and symbol identity | PIX/RenderDoc/Nsight/RGP guidance and copied replay/capture identity |
 | Reproduce one expert failure | `Replay Failed Job` from Diagnostics details | exact compiler/tool version, virtual source closure, target, environment, and bounded output location | editable command copy and machine-readable request |
 
@@ -261,7 +260,7 @@ The common Editor layout is deliberately small:
 ```text
 + Shader Tools ---------------------------------------------------------------+
 | 3 changed files ready       [Apply Changed]                    [Search ...] |
-| Status: Ready | active generation 42 | last apply 18 shaders, 16 cache hits |
+| Status: Ready | active generation 42 | last apply compiled 18 shaders |
 + Shaders ---------------------------------+ Selection -----------------------+
 | DirectLighting        Ready              | DirectLighting / Compute          |
 | GBuffer               Ready              | source + entry                    |
@@ -272,7 +271,7 @@ The common Editor layout is deliberately small:
 +------------------------------------------------------------------------------+
 ```
 
-The primary list should normally expose shader name, stage, virtual source, active status, and graph consumers. Package ID, binding-layout ID, generation number, backend/profile, artifact directory, code/input hashes, compiler command, raw reflection, and disassembly are contextual details—not ten default columns. `Reload Cooked`, `Recook All`, package-targeted recook, compiler backend/target listing, cache paths, and worker controls do not belong beside the common `Apply Changed` action. Validated publication activates automatically; `Rebuild All` and manual reload remain searchable expert recovery actions with an explanation of cost and risk.
+The primary list should normally expose shader name, stage, virtual source, active status, and graph consumers. Package ID, binding-layout ID, generation number, backend/profile, artifact directory, code/input hashes, compiler command, raw reflection, and disassembly are contextual details—not ten default columns. `Reload Cooked`, `Recook All`, package-targeted recook, compiler backend/target listing, and worker controls do not belong beside the common `Apply Changed` action. Validated publication activates automatically; `Rebuild All` and manual reload remain searchable expert recovery actions with an explanation of cost and risk.
 
 ```text
 Idle -> ChangesReady -> Compiling -> Validating -> Active
@@ -289,7 +288,7 @@ Idle -> ChangesReady -> Compiling -> Validating -> Active
 - Opening Shader Tools from a GPU marker, error, or pipeline event preserves that selection. The user never retypes a package, shader ID, hash, source path, or backend to continue the investigation.
 - The panel reads one immutable shader-operation/catalog model and submits typed requests through `EditorOperationService`; it never scans artifact directories, invokes the compiler, mutates the active shader map, or creates RHI objects itself.
 
-Epic's current shader-development workflow similarly centers a saved edit plus `recompileshaders changed`, asynchronous compilation, direct source diagnostics, retry, and DDC invalidation from full compile inputs. Sparkle adopts the intent and safe iteration loop while generating more of the target/dependency/publication detail and retaining the previous valid generation. [Epic Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine)
+Epic's current shader-development workflow similarly centers a saved edit plus `recompileshaders changed`, asynchronous compilation, direct source diagnostics, and retry. Sparkle adopts that intent and safe iteration loop while generating more of the target/dependency/publication detail, compiling every selected job, and retaining the previous valid generation. [Epic Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine)
 
 ## Cooked Artifact Model
 
@@ -338,9 +337,9 @@ The sources below are precedents, not local implementation authority. Repository
 
 Epic's global-shader documentation registers a C++ shader type against a source file, entry point, and shader stage. Its example deliberately registers vertex and pixel shader types from the same file with different entry points, then retrieves instances by type from the Global Shader Map. `FShaderType` metadata also carries the source filename, function, frequency, permutation count, parameter metadata, and hooks for compile eligibility, environment modification, output validation, and precaching. A source file is therefore an input to a shader type, never the universal runtime identity.
 
-Epic's `FShaderCompilerInput` gathers the read-only inputs for one compile, including the virtual source path, entry point, target, platform/format, environment, parameter metadata, debug information, and its job-cache hash. `FShaderCompileJob` pairs input, a logical job key, preprocess output, compiler output, and diagnostics; the logical `FShaderCompileJobKey` is not the full content hash. `FShaderCompilingManager` coordinates priorities, pending jobs, result application, cancellation, worker processes, and optional distributed execution. Epic explains that Shader Compile Workers provide process-level parallelism around compiler implementations that may otherwise serialize internally.
+Epic's `FShaderCompilerInput` gathers the read-only inputs for one compile, including the virtual source path, entry point, target, platform/format, environment, parameter metadata, debug information, and deterministic input identity. `FShaderCompileJob` pairs input, a logical job key, preprocess output, compiler output, and diagnostics; the logical `FShaderCompileJobKey` is not the full content hash. `FShaderCompilingManager` coordinates priorities, pending jobs, result application, cancellation, worker processes, and optional distributed execution. Epic explains that Shader Compile Workers provide process-level parallelism around compiler implementations that may otherwise serialize internally.
 
-Unreal stores disposable compile outputs in its Derived Data Cache, whose hierarchy can include local, shared, and packaged read-only layers. Cooking then collects unique shader code into shader libraries. At runtime `FShaderCodeLibrary` can open project/plugin libraries, test for code by hash, and preload or release code. `FShaderMapResource` separately owns the render-resource lifetime and can create/preload individual RHI shaders. This is the reason Sparkle should separate derived compilation cache, logical shader map, cooked code library, and live RHI objects.
+Unreal cooking collects unique shader code into shader libraries. At runtime `FShaderCodeLibrary` can open project/plugin libraries and test for code by hash. `FShaderMapResource` separately owns the render-resource lifetime. Sparkle adopts the logical shader map, cooked code library, and live RHI-object separation while deliberately omitting persistent storage of compiler results.
 
 Unreal's Render Dependency Graph intentionally lets a shader parameter structure also describe the common one-to-one pass, while `FRDGBuilder::AddPass` still receives a separate event name for debugging and profiling. Epic also documents pass parameter structures without shader semantics, such as copy passes. Sparkle should therefore reuse or compose one authoritative shader-visible schema, not force every graph pass into one shader struct. Epic's parameter metadata exposes both a layout hash and a strong persistable layout signature; that is stronger than Sparkle's current independent Direct Lighting declarations plus count-only runtime fallback.
 
@@ -354,7 +353,6 @@ Adopt now:
 - complete immutable compile inputs, deterministic input hashes and logical job IDs, in-flight deduplication, priorities, and cancellation
 - typed shader-map lookup and independently owned RHI shader lifetime
 - compile-input hashes derived from the full compiler-affecting closure and compiler provenance
-- a disposable derived-data cache outside runtime packages
 - cook-time collection and deduplication of global shader code
 - a nested shader parameter contract reused directly by one-to-one graph dispatch, with a pass envelope only for real multi-shader or graph-only composition
 - render-graph event labels kept separate from shader identity
@@ -364,7 +362,7 @@ Do not copy yet:
 
 - Unreal's full material, vertex-factory, and permutation universe
 - authored shader-pipeline types, PSO precaching/prewarming, driver-cache integration, and preload/residency controls before measurements justify them
-- distributed compilation, cloud cache, and worker-farm infrastructure before local scale justifies it
+- distributed compilation and worker-farm infrastructure before local scale justifies it
 - engine-scale macro, plugin, chunking, and patching complexity where Sparkle has no corresponding workload
 
 Sources:
@@ -379,7 +377,6 @@ Sources:
 - [Epic: `FShaderCommonCompileJob` and full `InputHash`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderCommonCompileJob)
 - [Epic: `FShaderCompilingManager`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FShaderCompilingManager)
 - [Epic: Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine)
-- [Epic: Derived Data Cache](https://dev.epicgames.com/documentation/en-us/unreal-engine/derived-data-cache?application_version=5.3)
 - [Epic: `FShaderCodeLibrary`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderCodeLibrary)
 - [Epic: `FShaderLibraryCooker`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderLibraryCooker)
 - [Epic: `FShaderMapResource`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderMapResource)
@@ -486,7 +483,7 @@ C++ pass Parameters ---+----> contract catalog ----> cook plan                  
                                               |                   |                  |
                                               +--> bytecode + reflection             |
                                                         |                            |
-                                              local stage artifact cache             |
+                                              compile every selected stage           |
                                                         |                            |
                                               transactional .sparkshader             |
                                               + registry + recook signal             |
@@ -515,20 +512,17 @@ The separation at the right is important: graph construction may materialize a p
 - Direct Lighting and comparable passes declare resources twice: `DirectLightingPassParameters` drives frame-graph/pass binding, while `DirectLightingCS::FParameters` independently drives shader reflection verification. Both lists can compile while drifting semantically.
 - `PassBinder` accepts either the same parameter-layout instance or merely the same parameter count. Equal counts do not prove equal binding order, kinds, names, visibility, or sizes.
 - Source resolution is based on physical paths and searches project shaders before engine shaders. Includes search the includer's directory, a primary root, then additional roots, and absolute include paths are accepted. This is functional locally but lacks an explicit virtual namespace, permits machine-specific source identity, and can silently shadow an engine shader with a project file of the same relative path.
-- The preprocessor already expands nested includes, detects recursion, handles `#pragma once`, and emits line directives. `IncludeClosureHasher` and compile-option hashing feed a versioned per-stage cache key.
-- That cache key currently includes the package identity and binding-layout identity. This prevents otherwise identical compile work from being shared across shader consumers and mixes compile identity with current package composition.
-- `ShaderCookPlanExecutor` already performs bounded parallel stage jobs through `TaskExecutor`, and each job validates parameter metadata on both cache hits and compiler misses. This should evolve into the Unreal-style job model rather than be replaced.
+- The preprocessor already expands nested includes, detects recursion, handles `#pragma once`, and emits line directives. `IncludeClosureHasher` and compile-option hashing feed a deterministic `compileInputHash` used only for job identity, diagnostics, and provenance.
+- `ShaderCookPlanExecutor` performs bounded parallel stage jobs through `TaskExecutor`, and every selected job invokes the compiler and validates parameter metadata. There is no persisted compile-result lookup, local artifact store, cache key/status, cache-directory option, or Launcher cache control.
 - Cancellation is checked before a cook-node task begins, but an executing compiler session or child operation is not cooperatively cancelled. Jobs have no priority, no in-flight duplicate fan-out, no time-sliced result integration, and no measured worker-memory ceiling.
-- The local artifact-store behavior and atomic cache publication are useful foundations for one cooker-owned `ShaderDerivedDataCache`. The implementation phase should replace the generic store vocabulary with that concrete authority rather than retain a second cache abstraction. Runtime cooked data remains separate from the disposable cache.
-- Include-closure keys serialize normalized physical paths, and compile-option keys include physical include directories. Cache identity is therefore tied to a checkout/machine layout even when source bytes and virtual meaning are identical.
-- Corrupt or incompatible local cache data fails the cook instead of being quarantined and treated as a cache miss. The cached payload has no independent integrity record comparable to the runtime package's bytecode hash validation.
-- Changed-source monitoring detects that some shader file changed, then invokes a full catalog `cook`. Include-aware stage cache hits avoid recompiling unchanged jobs, but the planner does not yet select only the shader types affected through reverse dependencies.
+- Include-closure hashes serialize normalized physical paths, and compile-option hashes include physical include directories. Compile identity is therefore tied to a checkout/machine layout even when source bytes and virtual meaning are identical.
+- Changed-source monitoring detects that some shader file changed, then invokes a full catalog `cook`; because selected jobs always compile, the missing reverse-dependency selection directly recompiles every registered shader.
 - The cooker publishes selected `.sparkshader` files, a registry, and a recook signal as one transactional file set. The registry is not currently the runtime lookup authority; runtime computes a path directly from the manually repeated package ID.
-- Bytecode is embedded per current package and `ShaderCacheKey` contains package identity, so Sparkle has neither compile-job deduplication across shader consumers nor a cooked unique-code library addressed by code hash.
+- Bytecode is embedded per current package, so Sparkle has neither in-operation compile-job deduplication across identical shader inputs nor a cooked unique-code library addressed by code hash.
 - DXC can emit disassembly, preprocessed source, compiler arguments, diagnostics, and separate debug data for a successful opt-in analysis cook. Slang's current analysis output is narrower and does not emit equivalent disassembly.
 - The DXC backend applies requested debug information, optimization, warnings-as-errors, and debug stripping. The Slang backend currently does not apply equivalent cook-policy switches, and its stage mapping covers vertex, pixel/fragment, and compute rather than the full stage enum. Slang is therefore an architectural backend seam, not a proved release-equivalent compiler path.
 - Debug-artifact publication begins only after compilation succeeds. A syntax error or backend failure throws before `ShaderDebugArtifactWriter` receives an artifact set, so the failure most in need of reproduction has no complete replay bundle, dependency manifest, or one-job command.
-- `CookedShaderStats.csv` reports package/stage/backend/target/entry, bytecode bytes, reflection counts, and layout-record counts. It does not report queue/wall/CPU time, peak memory, cache aggregates, source/code hash correlation, native pipeline creation, or runtime hitch percentiles.
+- `CookedShaderStats.csv` reports package/stage/backend/target/entry, bytecode bytes, reflection counts, and layout-record counts. It does not report queue/wall/CPU time, peak memory, source/code hash correlation, native pipeline creation, or runtime hitch percentiles.
 - `inspect-shader` inspects registration/catalog metadata; `inspect-package` inspects the cooked container, reflection, layouts, and ray-tracing records. There is no single command that follows a typed shader from declaration through compile-input hash, code hash, active map/library record, runtime shader reference, pipeline, and captured GPU event.
 - `RenderPassRuntimeCache` already builds and validates a complete replacement generation, atomically activates it, and retires the old generation only after recorded RHI submission tokens complete. This is a strong lifetime pattern and must be preserved.
 - Runtime package validation is materially stronger than the authoring layer: it verifies schema/version, source and layout identities, bounds, complete logical binding records, required stages, runtime backend format, bytecode hashes, reflection, feature flags, and ray-tracing metadata before use.
@@ -565,8 +559,8 @@ Relevant implementation entry points:
 - [`ShaderCookPlanExecutor.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderCookPlanExecutor.cpp)
 - [`ShaderCookNodeExecutor.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderCookNodeExecutor.cpp)
 - [`ShaderDebugArtifactWriter.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderDebugArtifactWriter.cpp)
-- [`IncludeClosureHasher.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/Cache/IncludeClosureHasher.cpp)
-- [`ShaderCompileOptionsHasher.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/Cache/ShaderCompileOptionsHasher.cpp)
+- [`IncludeClosureHasher.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/Identity/IncludeClosureHasher.cpp)
+- [`ShaderCompileOptionsHasher.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/Identity/ShaderCompileOptionsHasher.cpp)
 - [`CookedShaderPackage.h`](../../../Engine/RHI/Public/Shaders/CookedShaderPackage.h)
 - [`CookedPackageWriter.cpp`](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/CookedPackageWriter.cpp)
 - [`CookedShaderPackageCache.cpp`](../../../Engine/RHI/Private/Shaders/CookedShaderPackageCache.cpp)
@@ -609,7 +603,7 @@ parameter ABI --------------> front end -> IR -> optimize/codegen        |
     |                             |                                      |
 shader class + Parameters ---> reflection + ABI validation              |
     |                             |                                      |
-RDG pass                         DDC lookup/publication                    |
+RDG pass                         bounded compile/publication               |
                                   |                                      |
                                   +-> shader map + code records ----------+
                                   +-> symbols/provenance                  |
@@ -655,16 +649,16 @@ diagnostics -> replay -> inspection/disassembly -> captures/counters -> hot relo
 | 10. Selection | compile all; package/shader selection; changed dependency closure; on-demand runtime compile | Cook all registered shader types for release; use shader-type selection for tools and reverse-dependency selection for development. Do not compile at shipping runtime. | Dependency metadata must be durable, integrity-checked, and regenerated with the current tool contract; development iteration becomes proportional to the edit. | CLI supports all, package, or shader ID. Editor `Changed` and `Global` both launch an unfiltered `cook`. |
 | 11. Eligibility | compile every registered target; capability filter before scheduling; runtime compile | Apply target/stage/feature eligibility before one-variant jobs; do not compile at shipping runtime. | Simple bounded selection now; permutation enumeration is deferred. | Target capability skips exist. |
 | 12. Preprocessing/dependencies | compiler-owned preprocessing; engine-owned preprocessing; both | Use one canonical Sparkle preprocessing/dependency pass for identity and diagnostics, then invoke the backend with controlled input. Validate that backend include behavior cannot introduce hidden inputs. | Engine preprocessing gives portability and replayability but must track compiler semantics accurately. | Sparkle preprocesses before both DXC and Slang and hashes the include closure. |
-| 13. Compile request/input hash | path/timestamp key; package-scoped key; full content-addressed input hash | Immutable request plus `ShaderCompileInputHash` over virtual source closure, entry/stage, environment, compiler-affecting parameter metadata, target, backend, and compiler version. Exclude validation-only and package/pass presentation identity. | Larger hash construction cost; safe cross-consumer deduplication and deterministic invalidation. | Versioned cache key includes physical paths, package ID, and binding-layout identity. |
+| 13. Compile request/input hash | path/timestamp key; package-scoped key; full content-addressed input hash | Immutable request plus `ShaderCompileInputHash` over virtual source closure, entry/stage, environment, compiler-affecting parameter metadata, target, backend, and compiler version. Exclude validation-only and package/pass presentation identity. | Larger hash construction cost; safe in-operation deduplication and deterministic invalidation. | `compileInputHash` combines source, include-closure, option, backend, and compiler-version identity for diagnostics; it is not a persisted-result lookup key. |
 | 14. Scheduling/isolation | serial; in-process task parallelism; persistent worker processes; distributed farm | Keep bounded `SparkleTasks` jobs now. Add priority, in-flight dedupe, cancellation, and memory budgets. Add worker processes only when compiler isolation or scale is measured. | Processes isolate crashes/leaks and bypass compiler locks but add IPC, startup, deployment, and debugging cost. | One out-of-process cooker, 1-8 in-process compiler sessions, shallow cancellation, no priority/dedupe/memory ceiling. |
 | 15. Front end and intermediate form | DXC HLSL to DXIL/SPIR-V; Slang to DXIL/SPIR-V; source-specific compilers | DXC is the release oracle for HLSL. Slang output is accepted only after the same options, reflection, diagnostics, symbols, and paired-backend tests pass. | Compiler diversity finds issues and enables language features but doubles versioning and reproducibility obligations. | DXC is feature-complete for current HLSL. Slang is narrower and does not honor all cook policy switches. |
 | 16. Optimization/code generation | debug/O0; optimized/O3; separate analysis variants; profile-guided/vendor compilation | Cook optimized runtime bytecode; produce replayable debug/symbol artifacts by policy; compare disassembly and resource use for selected acceptance shaders. | Debuggable code may differ from optimized execution; analysis must preserve provenance to avoid comparing the wrong binary. | DXC applies optimization/debug/strip policy; Slang policy parity is incomplete. |
-| 17. Reflection and ABI validation | trust hand-authored bindings; runtime reflection; offline reflection plus runtime signature | Extract reflection offline, normalize it, compare against typed parameters on cache hit and miss, persist a strong signature, and revalidate package integrity at load. | More cooker work and schema data; binding failures move out of rendering. | Strong cooker/runtime record validation exists; the authoring side still has duplicate parameter authorities. |
+| 17. Reflection and ABI validation | trust hand-authored bindings; runtime reflection; offline reflection plus runtime signature | Extract reflection for every compilation, normalize it, compare against typed parameters, persist a strong signature in cooked output, and revalidate integrity at load. | More cooker work and schema data; binding failures move out of rendering. | Strong cooker/runtime record validation exists; the authoring side still has duplicate parameter authorities. |
 | 18. Static shader analysis | compiler warnings only; lint/validation; DXIL/SPIR-V validation; vendor ISA analysis | Warnings-as-errors in owned release shaders, DXIL/SPIR-V validators, bounded statistics, and opt-in RGA/Nsight/PIX analysis for representative hot shaders. | Vendor analysis is hardware/tool-version specific and cannot be a hermetic gate. | Warnings policy and cooked statistics exist; no complete validation/ISA regression lane. |
 | 19. Compile diagnostics | console errors; dump every job; dump failures; reproducible job bundle | Structured source diagnostics plus a failure-first replay bundle containing preprocessed source, dependencies, arguments, compiler identity, reflection, and a one-job command. | Bundles consume storage; failure-only default controls bloat. | Successful opt-in DXC bundles exist; failed compiles and Slang do not have equivalent replay artifacts. |
-| 20. Derived-data cache | no cache; local path cache; layered content-addressed DDC; remote farm cache | Layered disposable content-addressed DDC with local writable and optional shared/read-only layers, integrity checks, quarantine, and hit provenance. | Shared caches need permissions, eviction, and poisoning defense; they must never become source authority. | Atomic local stage cache; debug-artifact mode bypasses reads; corrupt data fails instead of becoming a recoverable miss. |
+| 20. Compile execution | compile every selected job; deduplicate identical jobs within one cook | Compile every selected shader input and deduplicate identical in-flight jobs only within the active cook. Persist no compiler-result data and expose no storage/configuration surface. | Repeated cooks spend compiler time again; the implementation has fewer owners, formats, invalidation rules, failure modes, and cleanup paths. | The local artifact store, key/status fields, cache directory, CLI flags, and Launcher controls are deleted in the current worktree. |
 | 21. Cooked logical map | per-pass file; global shader map; material/asset-local shader maps | Generated `GlobalShaderMap` from shader type/target to code hash and ABI metadata; no base program manifest. | Map indirection gives typed lookup and stable identity. | Per-package `.sparkshader`; generated registry is published but runtime does not use it as lookup authority. |
-| 22. Code records and physical library | code embedded per package; indexed records; one library; project/plugin/chunk libraries | Emit exact code hashes and map references. Merge/compress/chunk only after measured byte, I/O, or patch benefit; never expose membership to passes. | A simple index is proportionate; richer libraries add formats and failure modes. | Bytecode is duplicated inside package containers and compile cache keys are package-scoped. |
+| 22. Code records and physical library | code embedded per package; indexed records; one library; project/plugin/chunk libraries | Emit exact code hashes and map references. Merge/compress/chunk only after measured byte, I/O, or patch benefit; never expose membership to passes. | A simple index is proportionate; richer libraries add formats and failure modes. | Bytecode is duplicated inside package containers. |
 | 23. Compression/chunking | loose uncompressed records; block compression; whole-library compression; platform containers | Keep the first indexed migration format simple. Add independently compressed blocks/chunks only when startup, size, patch, or preload measurements justify them and retain integrity coverage. | Small blocks stream well but compress less; large blocks compress well but amplify reads and patch deltas; uncompressed records may win at current scale. | One container per program; no cross-program compression/chunk policy. |
 | 24. Publication/security | overwrite in place; temporary files plus rename; generation manifest; signing | Deterministic transactional generation publication with hashes, schema/toolchain provenance, rollback, and optional platform signing at release packaging. | Keeping generations costs disk; it prevents partial activation and makes failures auditable. | Transactional packages, registry, and recook signal with stale-generation rejection already exist. |
 
@@ -693,10 +687,10 @@ diagnostics -> replay -> inspection/disassembly -> captures/counters -> hot relo
 | 38. Semantic labels and provenance | human names only; hashes only; both | Carry readable event/shader names plus stable shader-type, code, pipeline, and generation identities into bounded markers, object names, captures, and crash records. | Extra metadata has storage/runtime cost; bounded development metadata makes evidence joinable without cluttering normal control flow. | Readable names exist, stable cooker-to-capture hash correlation does not. |
 | 39. Source debugging | visual output; shader printf/asserts; source debugger; replay capture | Support all four: cheap visualization first, bounded debug instrumentation, external PIX/RenderDoc/Nsight debugging, and reproducible compiler/capture artifacts. | Debug builds and instrumentation alter timing and code generation; conclusions must identify the binary used. | Visualize Buffers and capture labels exist; symbol/provenance workflow is incomplete. |
 | 40. Performance analysis | compiler statistics; IR/disassembly; vendor ISA; GPU counters/timelines | Preserve DXIL/SPIR-V inspection, add selected RGA/Nsight analysis, and correlate static register/LDS data with runtime occupancy, cache, bandwidth, and latency evidence. | Static estimates do not prove runtime bottlenecks; hardware results are device/driver specific. | Cooked byte/reflection stats exist; no joined static/runtime shader evidence. |
-| 41. Hot reload invalidation | reload all; timestamp scan; content/dependency invalidation; runtime patch-in-place | Changed virtual paths select reverse dependencies; produce a complete validated generation; atomically swap; never patch individual live entries. | Whole-generation publication duplicates some data briefly but keeps rollback and lifetime coherent. | Timestamp polling notices `.hlsl`, `.hlsli`, and `.slang`; all-catalog plan plus cache hits; safe generation swap. |
+| 41. Hot reload invalidation | reload all; timestamp scan; content/dependency invalidation; runtime patch-in-place | Changed virtual paths select reverse dependencies; produce a complete validated generation; atomically swap; never patch individual live entries. | Whole-generation publication duplicates some data briefly but keeps rollback and lifetime coherent. | Timestamp polling notices `.hlsl`, `.hlsli`, and `.slang`; the all-catalog plan recompiles every job; generation swap is safe. |
 | 42. Cancellation/failure | abort process; cooperative job cancellation; keep partial output; transactional rollback | Cooperative cancellation at job/backend/process boundaries; discard incomplete generation; keep previous active generation; initial startup failure is explicit. | Some compiler calls are not interruptible; process isolation may be needed to bound cancellation. | Child process can be cancelled, but running compiler sessions are not cooperatively stopped. Rollback is strong. |
 | 43. Lifetime/retirement | device idle; immediate destroy; queue-fence/token retirement | Reference resources through the active generation and retire old shader/pipeline/library state only after every recorded queue submission token completes. | More bookkeeping and transient overlap; no global device-idle reload hitch. | Implemented by `RenderPassRuntimeCache`; preserve it. |
-| 44. Release evidence | successful compile; one smoke frame; paired deterministic evidence | Prove clean/warm cooks, cache corruption recovery, map/library lookup, lazy materialization cost, D3D12/Vulkan captures, hash-to-source lookup, representative disassembly, fallback behavior, and latency/memory. | Evidence takes hardware time and storage. | Catalog validation and one representative CLI artifact exist; paired hardware evidence is incomplete. |
+| 44. Release evidence | successful compile; one smoke frame; paired deterministic evidence | Prove clean and repeated cooks, repeated-operation recompilation, map/library lookup, lazy materialization cost, D3D12/Vulkan captures, hash-to-source lookup, representative disassembly, fallback behavior, and latency/memory. | Evidence takes hardware time and storage. | Catalog validation and one representative CLI artifact exist; paired hardware evidence is incomplete. |
 
 The recommended base path is intentionally conventional at the API boundary: offline high-level compilation, typed maps/libraries, conventional complete pipelines, and lazy graph-time materialization outside Execute. Asynchronous preparation, Vulkan shader objects, graphics pipeline libraries, Vulkan pipeline binaries, D3D12 partial programs, work graphs, and distributed compilation remain options, not assumed improvements. Each adds a capability branch and requires its own proposal only after current pipeline counts, first-use timings, and a representative workload show that the simpler path is insufficient.
 
@@ -750,7 +744,7 @@ The current catalog therefore has 28 logical program/package IDs and 29 stage re
 | package kind | graphics; compute; RT library | graphics/compute can reach runtime; valid RT library packages are deliberately rejected at runtime | Keep the rejection explicit until paired state-object/pipeline, SBT, command, lifetime, and tests land. |
 | compiler capability filter | supported; skipped target; no targets left | RT libraries are skipped per target if backend capability is absent; DXC advertises DXIL RT library but not SPIR-V RT library; Slang advertises neither | Capabilities must be target- and policy-probed, reported in manifests, and tested rather than inferred from backend name. |
 | feature flags | inline ray query; AS; AS device address; descriptor indexing | planning can filter some compiler capabilities; runtime library directly checks AS and inline ray query only | Validate every declared feature, including device-address and descriptor-indexing requirements, before materialization. |
-| local compile cache | disabled; hit; miss; corrupt/incompatible | debug-artifact mode forces a read miss; normal corrupt/incompatible data terminates the cook | Treat corrupt/incompatible disposable cache entries as quarantined misses and report recovery. |
+| compile execution | selected jobs; worker bound; cancellation | every selected job compiles; 1-8 bounded compiler sessions; cancellation is checked before job execution | Preserve compile-every-time behavior and add only in-operation identical-job fan-out. |
 | compile policy | debug info; optimization; warnings-as-errors; strip debug | DXC applies these controls; Slang currently does not apply equivalent policy | One canonical request must either be honored or rejected as unsupported by every backend. Never silently ignore release policy. |
 | analysis | none; debug-artifact directory; `cooked-shader-stats` | DXC success can emit source/arguments/disassembly/debug data; Slang is narrower; failures have no full bundle | Failure-first portable replay bundles plus optional successful analysis and backend-specific extensions. |
 | task execution | serial through 8 sessions | bounded tasks, one backend instance per node, cancellation before job start | Add job priority, dedupe/fan-out, cancellation boundary, timings, and memory budget before adding another worker pool. |
@@ -801,20 +795,19 @@ Catalog-only shadow alternatives:
 
 This is why capability declaration, successful cooking, runtime creation, and frame consumption need separate evidence states. A fallback is real only when a selection owner chooses it, its resources and parameter ABI are valid, and an exercised test or capture proves its output.
 
-## Cache and Deferred Delivery Taxonomy
+## Runtime Residency and Deferred Delivery Taxonomy
 
-Calling all of the following a "shader cache" hides ownership and invalidation bugs. The first four rows are base-migration responsibilities. Streaming, driver caches, and prewarming remain deferred research.
+Compile inputs, cooked runtime data, live backend objects, and native driver acceleration have different owners and lifetimes. Sparkle persists no compiler result. The first four rows are base-migration responsibilities; streaming, explicit native pipeline persistence, and prewarming remain deferred research.
 
 | Layer | Prevents or reduces | Correct key/invalidation owner | Recommended policy | Current Sparkle |
 | --- | --- | --- | --- | --- |
-| dependency/preprocess record | rescanning and re-deriving include closure | virtual source contents, preprocessor provenance, defines; ShaderCompiler | persist reverse dependencies with compile records; regenerate when the current tool contract or integrity check rejects them | closure is rebuilt and hashed; reverse graph is not a durable selection authority |
-| in-flight job cache | duplicate concurrent compilation | full `ShaderCompileInputHash`; compile coordinator | one producer with result fan-out, priority escalation, and cancellation reference counts | absent |
-| completed compile DDC | repeated front-end/codegen/reflection work | full `ShaderCompileInputHash` and compiler provenance; ShaderCompiler | one disposable local store with integrity/quarantine | local package-scoped stage cache |
+| dependency/preprocess record | rescanning and re-deriving include closure | virtual source contents, preprocessor provenance, defines; ShaderCompiler | persist a reverse-dependency index; regenerate when the current tool contract or integrity check rejects it | closure is rebuilt and hashed; reverse graph is not a durable selection authority |
+| in-flight job coalescing | duplicate concurrent compilation | full `ShaderCompileInputHash`; compile coordinator | one producer with result fan-out, priority escalation, and cancellation reference counts; retain nothing after the operation | absent |
 | global shader map | repeated discovery and unstable lookup | shader type/target; ShaderCompiler/Renderer generation | immutable per-generation entries with strong references to code hashes | package registry published but not runtime authority |
 | cooked code records/library | duplicate bytecode and scattered I/O | exact code hash; ShaderCompiler/Renderer generation | independently indexed and integrity checked; merge/compress only after measured benefit | bytecode embedded per package |
 | OS/file/decompression cache | disk reads and decompression | physical records/chunks; platform I/O/runtime service | measured reads; add block compression and decompressed residency only if the selected format needs them | ordinary per-file reads; no explicit streaming/decompression layer |
-| code and transient backend-object cache | repeated code reads or backend object creation | code hash + backend creation identity; runtime/RHI | code/object lifetime follows map/runtime generations; keep current lazy owner and add caching only from evidence | live objects are owned by each materialized pass runtime |
-| canonical pipeline descriptor cache | duplicate logical pipeline requests | complete `RenderPipelineKey`; Renderer | deferred; first measure current generation-bound lazy materialization | absent |
+| code and transient backend-object reuse | repeated code reads or backend object creation | code hash + backend creation identity; runtime/RHI | code/object lifetime follows map/runtime generations; keep the current lazy owner and add no second reuse authority without evidence | live objects are owned by each materialized pass runtime |
+| canonical pipeline descriptor reuse | duplicate logical pipeline requests | complete `RenderPipelineKey`; Renderer | deferred; first measure current generation-bound lazy materialization | absent |
 | recorded/stable PSO database | unknown content-driven PSO enumeration | stable high-level descriptor plus build/platform version; Renderer/cooker | add only when content creates combinations that bounded declarations cannot enumerate | absent |
 | native pipeline cache/library/binary | repeated driver compilation/linking | native API/device/driver/cache UUID identity; RHI backend | validated, transactionally persisted, recoverable miss; never source authority | D3D12 empty cached state and Vulkan null cache |
 | opaque driver internal cache | vendor-specific repeated work | driver-owned | treat as helpful but unobservable/non-portable; do not use as readiness proof | implicitly relied upon |
@@ -908,7 +901,6 @@ The current cooked schema already models RT exports, hit groups, local parameter
 | Vulkan pipeline binaries | explicit reusable native pipeline artifacts | newer capability with strict device/driver lifecycle and distribution concerns | target platform support plus measured improvement over robust `VkPipelineCache` |
 | D3D12 partial programs/advanced shader delivery | reusable/precompiled state-object components | evolving platform capability and unnecessary for 28 bounded programs | target OS/driver availability and measured pipeline-delivery bottleneck |
 | work graphs/execution graphs | GPU-driven scheduling of dependent work | distinct program, memory, synchronization, debugging, and capability model | accepted workload, conventional-compute comparison, fallback, and end-to-end evidence |
-| distributed shader compilation/shared remote DDC | scale large teams/platform/permutation spaces | operational cost and poisoning/security/diagnostic complexity exceed current scale | local critical path and cache data show material benefit with reproducible administration |
 | runtime source compilation | modding or developer experimentation | nondeterministic shipping startup, toolchain deployment, security, and failure containment | development-only sandbox or explicit product requirement; never the normal cooked runtime |
 
 ### Primary References for the Atlas
@@ -955,13 +947,13 @@ This audit routes to the owning repository authorities instead of duplicating th
 | Authority | Current shader-lifecycle status | Required architectural response |
 | --- | --- | --- |
 | [Integration style](../../Engineering/Standards/IntegrationStyleGuide.md) | **Partial.** There is one real cooker and one runtime-package path, but manually repeated package/pass/debug names and two parameter declarations create parallel authorities inside that path. | Replace each duplicated authority in a bounded vertical slice and delete its old macro, fallback, or declaration in the same slice. Do not add a second shader subsystem beside the current one. |
-| [Repository ownership](../../Engineering/Standards/RepositoryStructureAndOwnership.md) and [Renderer/RHI boundary](../RendererRhiBoundary.md) | **Partial.** Renderer owns concrete registrations and passes; Tools owns cooking; RHI owns neutral pipeline creation and cooked validation. The RHI-facing `GlobalShader` authoring layer still carries source/package policy that should belong to the Renderer/tooling contract. | Keep neutral bytecode, reflection, layout, shader-object, and pipeline contracts in RHI. Keep concrete shader classes, nested parameters, graph use, and runtime generation in Renderer. Keep virtual-source resolution, compilers, DDC, map/library publication, and cooker policy in Tools. Application/editor only orchestrates recook and activation. |
+| [Repository ownership](../../Engineering/Standards/RepositoryStructureAndOwnership.md) and [Renderer/RHI boundary](../RendererRhiBoundary.md) | **Partial.** Renderer owns concrete registrations and passes; Tools owns cooking; RHI owns neutral pipeline creation and cooked validation. The RHI-facing `GlobalShader` authoring layer still carries source/package policy that should belong to the Renderer/tooling contract. | Keep neutral bytecode, reflection, layout, shader-object, and pipeline contracts in RHI. Keep concrete shader classes, nested parameters, graph use, and runtime generation in Renderer. Keep virtual-source resolution, compiler execution, map/library publication, and cooker policy in Tools. Application/editor only orchestrates recook and activation. |
 | [Graphics engineering](../../Engineering/Standards/GraphicsEngineering.md) | **Partial.** DXIL/SPIR-V compilation, reflection, package validation, backend capabilities, readable labels, and runtime-format selection exist. Paired inspection, disassembly/counters, fallback captures, and exact hardware/driver evidence are not automated. | Make a paired-backend vertical slice the first proof; inspect layouts and IL on both targets; preserve a named fallback; record exact compiler, backend, hardware, driver, workload, and capture. |
 | [Editor and tools](../../Engineering/Standards/EditorAndTools.md) | **Partial to strong.** Cooking is out of process; publication is transactional; stale generations are rejected; previous accepted artifacts survive failure. Cancellation is shallow, compiler memory is unbudgeted, and compile failures lack replay artifacts. | Preserve transactional replacement. Add job cancellation boundaries, bounded compiler-session memory/parallelism, progress/results integration, deterministic failure bundles, and a stable command/API usable outside the editor. |
 | [Concurrency](../../Engineering/Standards/Concurrency.md) | **Partial.** Bounded work uses `SparkleTasks`, with no second general pool. It lacks priority, in-flight dedupe, compiler-session cancellation, serial-vs-N evidence, and memory-ceiling proof. | Evolve cook nodes into explicit jobs coordinated through `SparkleTasks`; never add a shader-only general worker pool. Prove serial, 1/2/N, cancellation, stale generation, failure, and memory behavior. Add worker processes only from measured compiler isolation/throughput need. |
 | [Data-oriented design](../../Engineering/Standards/DataOrientedDesign.md) | **Partial.** Cook plans, reflection arrays, and compact cooked records are batch-friendly, but runtime lookup is string/path-led and physical packages duplicate bytecode. | Use immutable sorted manifest/map records and content-addressed code tables; keep human-readable strings in diagnostics, not hot lookup or cache identity. Measure layout/memory changes rather than asserting them. |
 | [Naming and vocabulary](../../Engineering/Standards/NamingAndVocabulary.md) | **Partial.** Neutral RHI uses `RenderPipeline`, `GraphicsPipelineDesc`, and `ComputePipelineDesc`, while semantic pass labels are useful. Authored package IDs and generic-looking `PassName` fields conflate identities. | Derive the default event label from the concrete shader class or call site, keep an explicit label overload for real pass instances, distinguish shader type, compile input, code, map entry, and pipeline identities, and reserve stable hashes for content/cache identity. Do not leak `PSO` into neutral public RHI names. |
-| [Validation, performance, and evidence](../../Engineering/Standards/ValidationPerformanceAndEvidence.md) | **Missing as a complete gate.** One representative CLI target exists, but no paired all-shader validation, injected-defect proof, cold/warm report, first-materialization evidence, or external capture pack was found. | Extend existing product/tool validation surfaces for every replaced contract, use temporary removed-before-handoff harnesses only where necessary, then run the paired DXIL/SPIR-V cook/load slice, negative ABI/DDC/reload cases, serial/N and cold/warm matrices, first-materialization measurements, and capture-backed evidence. A document or successful build is not acceptance evidence. |
+| [Validation, performance, and evidence](../../Engineering/Standards/ValidationPerformanceAndEvidence.md) | **Missing as a complete gate.** One representative CLI target exists, but no paired all-shader validation, injected-defect proof, compile-time report, first-materialization evidence, or external capture pack was found. | Extend existing product/tool validation surfaces for every replaced contract, use temporary removed-before-handoff harnesses only where necessary, then run the paired DXIL/SPIR-V cook/load slice, negative ABI/compile/reload cases, serial/N matrices, first-materialization measurements, and capture-backed evidence. A document or successful build is not acceptance evidence. |
 | Frame-graph execution ownership | **Partial to strong.** RDG setup declares resources and materializes runtime state before Execute; Execute only binds and records work. Duplicate parameter metadata and count-only compatibility weaken the dependency/binding proof. | Make one schema own each shader-visible field, reuse/compose it in the pass envelope, and reject structural mismatch; never permit Execute to discover resources, load shaders, or create pipelines. |
 | Reload and GPU lifetime | **Meets the reviewed invariant.** A replacement generation is fully built before activation, a failure preserves the active generation, and retirement waits on `RhiSubmissionToken` state for all queues. | Preserve this path unchanged while replacing lookup and physical storage. Test delayed GPU completion, reload churn, invalid replacements, and device-loss/error paths. |
 
@@ -975,7 +967,7 @@ The shader architecture directly owns `PGE-09` and contributes evidence to sever
 | `PGE-02` Real-time ray tracing, GI, and path tracing | **Partial.** Sparkle has BLAS/TLAS and several path/ReSTIR compute programs using inline ray query, but no full RT pipeline/SBT and no verified no-ray/device-address shadow selection. | Prove raster, ray-query, and accepted fallback behavior under Bistro/San Miguel quality, temporal, latency, memory, and paired-capture gates. Add a full RT pipeline only through the complete conditional vertical slice. |
 | `PGE-03` Neural graphics product feature | **No shader-lifecycle feature proof.** The architecture can carry future generated or fixed inference shaders, but it does not provide a trained model, runtime inference, or classical fallback. | Reuse this exact shader-class/map/library/ABI/pipeline/provenance path for a real model artifact and shader kernels; do not create a neural-only compiler/runtime authority. Evidence remains owned by the neural workload. |
 | `PGE-04` Model-to-kernel translation | **Future contribution only.** Slang is a backend seam, but no model-to-shader generator, operator contract, or generated-kernel runtime was found. | Use provenance-recorded generated virtual sources/source maps, deterministic regeneration, the normal compile request and ABI validation, numerical reference checks, latency/memory, disassembly/counters, precision/layout/fusion decisions, and classical fallback. |
-| `PGE-05` Whole-system performance | **Partial.** Package sizes and runtime load microseconds exist; compile, map/library loading, native pipeline, and hitch distributions do not. | Record compile queue/wall/CPU time, local-DDC cold/warm behavior, map/library open time, lazy pipeline creation, frame pacing, memory high-water, and p50/p95/p99 under a pinned workload. Native-cache, streaming, and preloading experiments belong to later measured proposals. |
+| `PGE-05` Whole-system performance | **Partial.** Package sizes and runtime load microseconds exist; compile, map/library loading, native pipeline, and hitch distributions do not. | Record compile queue/wall/CPU time for every selected job, map/library open time, lazy pipeline creation, frame pacing, memory high-water, and p50/p95/p99 under a pinned workload. Native-cache, streaming, and preloading experiments belong to later measured proposals. |
 | `PGE-06` Workload analysis and hard debugging | **Partial.** The catalog targets DXIL/SPIR-V and both backends expose markers/debug names, but captured shaders are not joined to compile provenance. | Capture the same workload on both APIs; inspect queues, barriers, descriptors, memory, pipelines, shaders, symbols, and one hard incident with hypotheses, experiments, root cause, and minimal reproducer. |
 | `PGE-07` C++ and Python software engineering | **Partial.** A C++ CLI, out-of-process orchestration, transactional cook, and runtime validation exist; no useful Python shader-analysis automation is required or proved by this design alone. | Keep the C++ ownership narrow and tested; add Python only for a concrete report/conformance/analysis workflow; provide clean-clone commands, deterministic artifacts, and documentation matching executable behavior. |
 | `PGE-08` Applied mathematics and modeling | **Indirect.** Shader infrastructure cannot prove estimator, signal-processing, stability, or cost mathematics. | Let shader-type metadata link to the owning feature's math/reference tests and preserve exact compile-input/code/capture identity so predicted cost/quality can be compared with measurement. |
@@ -1000,7 +992,7 @@ The shader architecture directly owns `PGE-09` and contributes evidence to sever
 | Schedule compilation | **Partial.** Bounded `SparkleTasks` execution works. | Explicit logical job identity, `ShaderCompileInputHash`, result, priority, in-flight/completed dedupe, cooperative cancellation, bounded result application, and measured worker/session budget. | Serial/1/2/N, duplicate fan-out, cancellation, backend crash/failure, stale result, and memory-ceiling tests. |
 | Compile DXIL/SPIR-V | **Strong foundation, incomplete parity proof.** DXC and Slang expose target capabilities; DXC produces DXIL/SPIR-V and rich successful analysis artifacts; reflection is extracted for both formats. | A backend-neutral result contract with equivalent diagnostics/provenance and declared analysis capability differences. | Representative optimized DXIL and SPIR-V builds for all supported stage kinds; reflection/layout comparison and compiler-version record. |
 | Enforce compiler policy/capabilities | **Unsafe partial.** Target/package capability filters exist, but DXC and Slang do not honor the same policy controls and schema-known stages exceed executable runtime support. | Generated matrix for language, backend, target, stage, package kind, feature, and debug/optimization/warning/symbol policy; unsupported requests fail before jobs. | Every matrix cell is produced by a capability probe and executable positive/negative test; no ignored policy or unreported target skip. |
-| Cache derived compile output | **Partial.** Atomic local store and cache-hit revalidation are good; keys mix package identity with reusable compilation and cache corruption is fatal. | `ShaderCompileInputHash` independent from package/pass presentation identity; one focused local derived-data owner; integrity validation; corrupt-entry quarantine; bounded stats and size policy. Add another store only for a proved current consumer. | Cold/warm, corrupt entry, compiler/tool provenance invalidation, same-input dedupe, cancellation, and deterministic publication evidence. |
+| Compile selected shader inputs | **Simplified in the current worktree.** Every selected job invokes the compiler; the local artifact store and its key/status/configuration surface are deleted. | `ShaderCompileInputHash` is independent from package/pass presentation identity and exists only for in-operation deduplication, diagnostics, and provenance. | Repeated identical cooks both compile; identical jobs within one operation fan out one result; cancellation and deterministic publication remain proven. |
 | Cook and publish runtime data | **Strong publication, coarse storage.** Per-program packages, registry, and recook signal publish transactionally; code is duplicated and registry is not runtime authority. | One generated `GlobalShaderMap` plus unique code-hash library; physical file policy remains cooker-owned and invisible to Renderer callers. | Reproducible map/library hashes, one copy per unique bytecode, transactional rollback, and map/library validation. |
 | Inspect and reproduce compilation | **Partial.** Catalog/package inspection and successful opt-in artifacts exist. | One trace command plus always-available failure bundle containing virtual dependencies, preprocess output where available, exact arguments/defines, compiler/version, parameter comparison, and replay command. | Injected syntax/include/ABI/backend failures replay outside the editor and navigate to portable virtual paths. |
 | Load and validate runtime shader | **Strong.** Cooked schema, target format, hashes, records, stages, features, reflection, and logical layouts are validated before use. | `ShaderRef<Shader>` resolves through the active `GlobalShaderMap` and code hash, independent of physical library filenames. | Cold/warm map/library open time and memory, corrupt/truncated/wrong-backend/wrong-layout records, and typed lookup across generation replacement. |
@@ -1011,7 +1003,7 @@ The shader architecture directly owns `PGE-09` and contributes evidence to sever
 | Recook and hot reload | **Strong foundation, coarse invalidation.** Out-of-process cook, transactional signal, stale rejection, rollback, generation swap, and GPU-safe retirement exist; any change plans the whole catalog. | Persist reverse dependencies, select affected shader types, publish a complete new generation, and retain current rollback/lifetime behavior. | Root/include change selection, unrelated-shader exclusion, rapid edit coalescing, invalid replacement, delayed completion, and reload-churn tests. |
 | Inline ray-query capability/fallback | **Live primary path, unproved alternatives.** Compute shaders use TLAS/inline queries, while the no-query and device-address shadow passes have no frame selection consumer. | One capability-selection owner chooses descriptor, supported device-address, or accepted no-ray behavior; each branch has complete feature/ABI validation. | Forced-capability paired tests/captures prove selection, resources, output, and failure reason for every advertised branch. |
 | Full RT pipeline and SBT | **Explicitly deferred at runtime.** Schema/cooker inspection exists; no renderer RT registrations, native state-object/pipeline, group identifier, SBT, or trace-rays command path exists. | Add only as one paired vertical slice with typed exports/hit groups, layouts, payload/attribute/recursion/stack policy, native pipeline, SBT builder/index formula, RDG command/lifetime/cache integration, and selected fallback. | Raygen/miss/hit execution on D3D12/Vulkan; identifier-generation, alignment/index/bounds, reload/retirement, corruption, fallback, cold/warm pipeline, SBT memory/update, and capture evidence. |
-| Automated conformance | **Missing as a complete gate.** The CLI validation custom target covers catalog structure and one shader artifact only. | Extend existing tool/product validation and CI evidence gates for identity, dependency, DDC, layout, schema, and paired end-to-end cook/load/reload/pipeline behavior; use temporary local harnesses only when an existing surface cannot falsify the invariant. | Named executable checks, injected failures, all-shader catalog cook, paired backends, `architecture_boundary_check`, clean diff/build evidence, and no submitted test-only scaffold unless separately authorized. |
+| Automated conformance | **Missing as a complete gate.** The CLI validation custom target covers catalog structure and one shader artifact only. | Extend existing tool/product validation and CI evidence gates for identity, dependency, compilation, layout, schema, and paired end-to-end cook/load/reload/pipeline behavior; use temporary local harnesses only when an existing surface cannot falsify the invariant. | Named executable checks, injected failures, all-shader catalog cook, paired backends, `architecture_boundary_check`, clean diff/build evidence, and no submitted test-only scaffold unless separately authorized. |
 
 ### Required Evidence Pack
 
@@ -1020,7 +1012,7 @@ Implementation is not accepted merely when the new API compiles. The completed s
 1. an authoring trace from the concrete shader class and nested `Parameters` to virtual source, entry, parameter signature, compile-input hash, code hash, global-shader-map record, runtime shader reference, pipeline identity, and GPU event;
 2. optimized DXIL and SPIR-V artifacts for representative graphics stages and compute shaders, with reflection/layout comparison and readable compiler diagnostics;
 3. one deliberately broken binding contract and one deliberately broken compile/include, both rejected with portable source locations and replayable failure bundles;
-4. cold and warm cook/cache results for serial, 1, 2, and N workers, including compile count, cache hits/misses, wall/CPU time, peak memory, cancellation, and identical-output checks;
+4. repeated cook results for serial, 1, 2, and N workers, including selected/compiled job counts, wall/CPU time, peak memory, cancellation, in-operation deduplication, and identical-output checks;
 5. cold and warm D3D12/Vulkan pipeline results, including graph-time creation, generation reuse, first-use frame impact, and proof that Execute performs no loading or creation;
 6. paired PIX and RenderDoc captures for the same representative scene and settings, plus Nsight or RGA shader analysis where the finding requires source/IL/ISA counters;
 7. exact engine commit, global-shader-map/library hash, compiler backend and version, target, optimization/debug policy, GPU, driver, API, scene, camera, resolution, warm-up, capture frame, and run count;
@@ -1071,11 +1063,11 @@ Provide Unreal-like focused entry points over existing owners:
 
 The helper resolves `ShaderRef<Shader>` from the active `GlobalShaderMap`, derives the default label from the shader type, declares resources from `Shader::Parameters`, asks `RenderPassRuntimeCache` for the generation-bound layout/pipeline, and records binding/dispatch later through `PassCommandContext`. Delete one-method pass classes, duplicate `*PassParameters`, `GetDefinition`, `GetParameterMetadata`, and forwarding Execute bodies where the shader type and graph helper express the entire operation. Keep focused pass collaborators only when they own real mesh/draw/feature behavior.
 
-### 6. Reproducible Compile Jobs and Local Derived Data
+### 6. Reproducible Compile Jobs without Persistent Compiler Results
 
 Create one immutable `ShaderCompileRequest` and `ShaderCompileJob` per `(ShaderTypeId, Target)`. `ShaderCompileInputHash` covers the virtual source closure, entry, stage, compiler-affecting parameters/environment, target, backend/tool provenance, and compile policy. It excludes pass labels, packages, pipelines, and presentation strings.
 
-Replace package-shaped cook nodes/cache keys with jobs on the existing `TaskExecutor`. Keep one out-of-process cooker, bounded compiler sessions/memory, deterministic ordering/result merge, cancellation settlement, in-flight duplicate fan-out, and one concrete local `ShaderDerivedDataCache`. Corrupt disposable entries are quarantined misses. No shader-only thread pool, persistent workers, cloud cache, or cache browser is introduced.
+Replace package-shaped cook nodes with jobs on the existing `TaskExecutor`. Keep one out-of-process cooker, bounded compiler sessions/memory, deterministic ordering/result merge, cancellation settlement, and in-flight duplicate fan-out. Every selected input invokes the compiler; `ShaderCompileInputHash` is identity and provenance, never a persisted-result lookup key. There is no compiler-result store, cache directory, enable/disable flag, storage schema, cache browser, or cleanup operation.
 
 ### 7. Global Shader Map and Cooked Code Library
 
@@ -1099,7 +1091,7 @@ Persist forward and reverse virtual-source dependencies. Editor submits `Apply C
 
 Failures identify shader type, virtual source, entry, stage, target, backend/tool, compile input hash, and declaration location. One bounded replay bundle contains the canonical request, dependency closure, preprocessed source where available, arguments, compiler diagnostics, and reflection mismatch. Successful debug artifacts remain opt-in.
 
-One read-only trace joins shader type or graph/capture label to catalog declaration, virtual dependencies, compile job/hash, DDC outcome, shader-map entry, code hash/record, generation, binding layout, pipeline key, graph consumers, and external symbol/capture paths. It reads authoritative metadata and creates no registry or permanent log stream.
+One read-only trace joins shader type or graph/capture label to catalog declaration, virtual dependencies, compile job/input hash, compiler result, shader-map entry, code hash/record, generation, binding layout, pipeline key, graph consumers, and external symbol/capture paths. It reads authoritative metadata and creates no registry or permanent log stream.
 
 ### 11. Honest Backend and Ray-Tracing Boundaries
 
@@ -1107,9 +1099,9 @@ Report language/backend/target/stage/feature support as supported, unsupported, 
 
 ### 12. Explicitly Deferred Follow-Ups
 
-After this base migration is accepted, a separate measured proposal may add typed shader permutations. It must preserve a zero-boilerplate one-variant default, extend the shader-map key to `(ShaderTypeId, PermutationId, Target)`, keep permutation selection typed, and update compile/DDC/map/diagnostics together. It does not reopen packages or program aliases.
+After this base migration is accepted, a separate measured proposal may add typed shader permutations. It must preserve a zero-boilerplate one-variant default, extend the shader-map key to `(ShaderTypeId, PermutationId, Target)`, keep permutation selection typed, and update compile-input identity, map publication, and diagnostics together. It does not reopen packages or program aliases.
 
-PSO precaching/prewarming, preload/residency/streaming controls, Vulkan pipeline cache, D3D12 cached/library paths, distributed compilation, worker farms, cloud DDC, material shaders, and vertex factories remain outside this plan. A future proposal requires current workload evidence and its own owner/AC; none is scaffolded here.
+PSO precaching/prewarming, preload/residency/streaming controls, Vulkan pipeline cache, D3D12 cached/library paths, distributed compilation, worker farms, material shaders, and vertex factories remain outside this plan. Persistent compiler-result storage is rejected rather than deferred. A future proposal for another listed capability requires current workload evidence and its own owner/AC; none is scaffolded here.
 
 ## Ownership and Dependency Boundaries
 
@@ -1119,7 +1111,7 @@ PSO precaching/prewarming, preload/residency/streaming controls, Vulkan pipeline
 | RHI public contract | shader stages/formats, backend-neutral cooked-record validation primitives, parameter metadata primitives, shader/pipeline descriptors, RHI handles | renderer pass catalog, project source discovery, compile orchestration, runtime map policy |
 | RHI backend | create/destroy backend shader and pipeline objects from validated data | source preprocessing, renderer shader/pass policy, package naming |
 | Renderer | concrete global shader classes and nested parameters, graph dispatch/draw use, shader-map references, runtime generation, lazy layout/pipeline materialization | filesystem source resolution, compiler backend selection, editor process UI, precache/preload policy in this migration |
-| ShaderCompiler tool | virtual source mounts, preprocessing/dependencies, compile requests/jobs, backend invocation, DDC, reflection validation, shader map/library cook and atomic publication | renderer scheduling, live RHI ownership, editor workflow state |
+| ShaderCompiler tool | virtual source mounts, preprocessing/dependencies, compile requests/jobs, backend invocation, reflection validation, shader map/library cook and atomic publication | persisted compiler-result storage, renderer scheduling, live RHI ownership, editor workflow state |
 | Application | changed-path watching, typed operation dispatch, publication notification, and activation request routing | dependency resolution, compilation algorithms, catalog construction, shader-map mutation, editor presentation, direct RHI shader construction |
 | Editor | immutable shader catalog/operation presentation, semantic selection, source navigation, cancellation intent, and contextual diagnostics | artifact-directory scanning, dependency calculation, compiler invocation, publication, shader-map mutation, cache policy, direct RHI shader construction |
 
@@ -1129,11 +1121,12 @@ The generic shader authoring primitives may remain in RHI public code if they st
 
 | Disposition | Item |
 | --- | --- |
-| Preserve | explicit source/entry/stage registration; DXIL and SPIR-V targets; DXC/Slang backend boundary; recursive preprocessing; include-closure/options hashing; reflection extraction; parameter verification on hit and miss; bounded task execution; atomic local cache publication behavior; out-of-process cook; transactional publication; validated generation swap; GPU-token retirement; strict runtime rejection of RT libraries until execution is complete |
-| Improve | physical paths into virtual paths; mutable registry into validated frozen metadata; mixed Unreal prefixes into Sparkle vocabulary; cook nodes into input-hash-deduplicated jobs; the current local artifact behavior into one focused `ShaderDerivedDataCache`; package registry into the runtime `GlobalShaderMap`; change polling into reverse-dependency selection; layout count check into a strong structural signature; diagnostics into replayable per-job bundles; package-led load into typed map lookup; silent backend-policy differences into a generated conformance matrix |
+| Preserve | explicit source/entry/stage registration; DXIL and SPIR-V targets; DXC/Slang backend boundary; recursive preprocessing; include-closure/options hashing; reflection extraction; parameter verification for every compilation; bounded task execution; out-of-process cook; transactional cooked-output publication; validated generation swap; GPU-token retirement; strict runtime rejection of RT libraries until execution is complete |
+| Improve | physical paths into virtual paths; mutable registry into validated frozen metadata; cook nodes into input-hash-deduplicated jobs; mixed Unreal prefixes into Sparkle vocabulary; package registry into the runtime `GlobalShaderMap`; change polling into reverse-dependency selection; layout count check into a strong structural signature; diagnostics into replayable per-job bundles; package-led load into typed map lookup; silent backend-policy differences into a generated conformance matrix |
+| Delete now and never replace | `ShaderCacheKey`; `IShaderArtifactStore`; `LocalDiskShaderArtifactStore`; cache key/status fields; compile-result serialization; `--no-cache`; `--cache-dir`; Launcher shader-cache settings; `Build/Cache/Shaders`; the standalone shader-cache cleanup scope |
 | Delete after migration | `RendererShaderPackages.h`; `IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE`; basename-derived package fallback; authored program/pass aliases; repeated pass/package/layout/pipeline strings; one-method shader pass wrappers; duplicated shader-visible fields across pass and shader declarations; silent duplicate suppression; count-only layout acceptance; direct runtime path construction from author package IDs |
-| Defer until measured | typed permutations; shader pipeline authoring types; PSO precaching/prewarming; preload/residency/streaming controls; native driver caches; material shaders; vertex factories; remote/distributed compilation; persistent worker-process pool; cloud DDC; complex plugin loading phases; library chunk/patch system; Vulkan shader objects/pipeline binaries; D3D12 partial programs; work graphs; mesh/task shaders |
-| Require one complete future slice | RT state objects/pipelines, native identifiers/group handles, SBT build/indexing, trace-rays commands, graph integration, cache/generation lifetime, selected fallback, and paired execution evidence |
+| Defer until measured | typed permutations; shader pipeline authoring types; PSO precaching/prewarming; preload/residency/streaming controls; native driver caches; material shaders; vertex factories; distributed compilation; persistent worker-process pool; complex plugin loading phases; library chunk/patch system; Vulkan shader objects/pipeline binaries; D3D12 partial programs; work graphs; mesh/task shaders |
+| Require one complete future slice | RT state objects/pipelines, native identifiers/group handles, SBT build/indexing, trace-rays commands, graph integration, pipeline/generation lifetime, selected fallback, and paired execution evidence |
 
 ## Error Policy
 
@@ -1149,7 +1142,7 @@ The cooker or startup validation must fail on:
 - source-path canonicalization collisions
 - inconsistent reflected layouts across stages/backends or a parameter layout/signature mismatch
 - compiler output that fails a shader type's `ValidateCompiledResult`
-- corrupt or incompatible cache entries that cannot be regenerated
+- corrupt or incompatible cooked map/library records
 - duplicate cooked records with the same identity but different content
 - a shader-map entry whose code hash, source hash, layout signature, feature set, or declared stage does not match
 - a shader-map reference whose code hash is absent from the opened library
@@ -1191,7 +1184,7 @@ Rejected because they are toolchain-specific and unstable. Macro stringization o
 
 ### Copy Unreal's complete shader subsystem
 
-Rejected because Unreal's materials, vertex factories, cook workers, distributed compilers, plugin loading phases, platform count, and content scale solve workloads Sparkle does not currently have. Sparkle should copy responsibility boundaries, invariants, cache semantics, typed authoring, and failure behavior while keeping the implementation proportional.
+Rejected because Unreal's materials, vertex factories, cook workers, distributed compilers, plugin loading phases, platform count, and content scale solve workloads Sparkle does not currently have. Sparkle should copy responsibility boundaries, invariants, typed authoring, lifetime rules, and failure behavior while keeping the implementation proportional.
 
 ### Launch one compiler process per shader immediately
 
@@ -1209,8 +1202,8 @@ The base migration is an ordered clean break, not a menu. Each phase is one manu
 - Preserve one `SparkleTasks` runtime, one out-of-process cooker, one transactional publication route, one active renderer shader generation, and all-queue `RhiSubmissionToken` retirement.
 - Preserve `PassCommandContext` as command/declared-resource/diagnostic infrastructure only. Pass recording performs no file I/O, compilation, shader-map/library lookup, layout creation, pipeline creation, or hidden resource discovery.
 - Do not add permutations, `ShouldPrecachePermutation`, pipeline precaching/prewarming, preload/readiness/streaming controls, native driver caches, an authored shader-program layer, or full RT execution in this migration.
-- Do not add one-field carriers, broad context/service/resource bags, a second catalog/map/cache, permanent migration diagnostics, per-job logging, a cache browser, report generators, feature flags, compatibility formats, or submitted test scaffolding.
-- Update definitions, consumers, filenames, includes, CMake/source groups, CLI/help/autocomplete, editor models, diagnostics, current documentation, and disposable generated/cooked/cache outputs in the phase that owns their replacement.
+- Do not add one-field carriers, broad context/service/resource bags, a second catalog/map/runtime-generation owner, permanent migration diagnostics, per-job logging, a compiler-result browser, report generators, feature flags, compatibility formats, or submitted test scaffolding.
+- Update definitions, consumers, filenames, includes, CMake/source groups, CLI/help/autocomplete, editor models, diagnostics, current documentation, and disposable generated/cooked outputs in the phase that owns their replacement.
 - Preserve unrelated dirty work. Phase 0 records the path-level exclusion list and every later phase rechecks it.
 
 ### Frozen base vocabulary and navigation
@@ -1222,7 +1215,6 @@ The base migration is an ordered clean break, not a menu. Each phase is one manu
 | implementation registration | `IMPLEMENT_GLOBAL_SHADER(Class, VirtualSource, Entry, Stage)` | concrete shader implementation |
 | immutable metadata | `ShaderTypeDesc`, `ShaderTypeId`, `GlobalShaderCatalog` | catalog built from concrete Renderer declarations and frozen before query |
 | compile work | `ShaderCompileRequest`, `ShaderCompileJob`, `ShaderCompileInputHash`, `ShaderCompileResult` | ShaderCompiler compilation capability |
-| disposable compile data | `ShaderDerivedDataCache` | ShaderCompiler local cache capability |
 | cooked logical lookup | `GlobalShaderMap` | generated by ShaderCompiler; opened read-only by Renderer runtime generation |
 | cooked code | `ShaderCodeRecord`, `ShaderCodeHash`, `CookedShaderLibrary` | generated cook output; neutral validation records in RHI public |
 | typed runtime lookup | `ShaderRef<Shader>` | Renderer resolves through the active `GlobalShaderMap` |
@@ -1366,11 +1358,11 @@ Suggested title: `Shaders: establish virtual sources and semantic navigation`.
 
 Suggested title: `Renderer: make shader classes drive typed graph dispatch`.
 
-### Phase 3 - Establish reproducible compile jobs, DDC, and changed dependencies
+### Phase 3 - Establish reproducible compile jobs and changed dependencies
 
 #### Implementation prompt
 
-> Implement Phase 3 as one compiler-job, local-derived-data, dependency-selection, and replay-diagnostics CL directly in the unstaged `master` worktree. Replace package-shaped cook nodes/cache keys with immutable one-variant shader compile requests/jobs/results keyed by compiler-affecting input, persist virtual dependencies, make Changed select the exact reverse closure, and delete old node/cache identities and full-catalog Changed behavior. Preserve one cooker and `SparkleTasks`. Do not add permutations, workers, remote caches, or executable checks.
+> Implement Phase 3 as one compiler-job, dependency-selection, and replay-diagnostics CL directly in the unstaged `master` worktree. Replace package-shaped cook nodes with immutable one-variant shader compile requests/jobs/results keyed by compiler-affecting input, persist virtual dependencies, make Changed select the exact reverse closure, and delete old node identities and full-catalog Changed behavior. Preserve one cooker, `SparkleTasks`, and the compile-every-selected-input rule. Do not add permutations, persistent compiler-result storage, workers, or executable checks.
 
 #### Phase-specific references
 
@@ -1378,14 +1370,13 @@ Suggested title: `Renderer: make shader classes drive typed graph dispatch`.
 - [Editor and Tools](../../Engineering/Standards/EditorAndTools.md)
 - [Validation, Performance, and Evidence](../../Engineering/Standards/ValidationPerformanceAndEvidence.md)
 - [Epic shader compile job](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FShaderCompileJob)
-- [Epic Derived Data Cache](https://dev.epicgames.com/documentation/en-us/unreal-engine/derived-data-cache)
 
 #### Required work
 
 - Introduce `ShaderCompileRequest`, `ShaderCompileJob`, `ShaderCompileInputHash`, and `ShaderCompileResult` for `(ShaderTypeId, Target)`.
 - Hash virtual source identity/content closure, entry, stage, compiler-affecting environment/ABI, target, backend/tool provenance, and policy. Exclude package, program, pass label, filename basename, and presentation text.
-- Replace `CookNode`, node builders/executors, `ShaderCacheKey`, and package-led compile options in one path.
-- Replace interface-plus-single-local artifact storage with one concrete `ShaderDerivedDataCache`; validate integrity, quarantine corrupt entries as misses, and publish atomically.
+- Replace `CookNode`, node builders/executors, and package-led compile options in one path while retaining the already established `ShaderCompileInputHash` identity.
+- Compile every selected input. Deduplicate only identical in-flight jobs inside the active cook and fan out their one result; persist no compiler output between operations.
 - Persist forward/reverse dependencies. Change source tracking from a boolean to changed virtual paths and select only affected shader types.
 - Use one `TaskExecutor` graph with deterministic ordering, duplicate fan-out, bounded compiler sessions/memory, cancellation settlement, and no worker waits.
 - Emit one bounded failure replay bundle; successful analysis artifacts remain opt-in.
@@ -1394,22 +1385,22 @@ Suggested title: `Renderer: make shader classes drive typed graph dispatch`.
 
 - Identical compiler-affecting requests compile once regardless of graph consumers.
 - Cancellation/failure publishes nothing partial.
-- Application supplies intent/changed paths; compiler owners select work and cache policy.
+- Application supplies intent/changed paths; compiler owners select and schedule work.
 
 #### Negative guardrails
 
-- No shader thread pool, `std::async`, persistent worker, cloud/shared cache, retry loop, cache service locator, per-job log stream, permutation dimension, or valid-dependency full-catalog fallback.
+- No shader thread pool, `std::async`, persistent worker, compiler-result store, cache configuration/service/browser, retry loop, per-job log stream, permutation dimension, or valid-dependency full-catalog fallback.
 
 #### Acceptance criteria
 
 - Exact searches return zero old cook-node/cache-key definitions and consumers.
 - Checkout moves preserve the input hash; any compiler-affecting change invalidates it.
-- Duplicate fan-out compiles once, corrupt cache is a miss, cancellation settles all jobs, and changed dependency selection reaches all and only affected shader types.
+- Duplicate fan-out compiles once per operation, a repeated cook recompiles its selected jobs, cancellation settles all jobs, and changed dependency selection reaches all and only affected shader types.
 - Includes/CMake/help/docs reconcile and `git diff --check` passes.
 
 #### CL boundary
 
-Suggested title: `Shaders: establish compile jobs and dependency-directed derived data`.
+Suggested title: `Shaders: establish compile jobs and dependency-directed cooking`.
 
 ### Phase 4 - Replace cooked packages with the global shader map
 
@@ -1476,7 +1467,7 @@ Suggested title: `Shaders: replace cooked packages with the global shader map`.
 - Keep expert `Rebuild All` and typed shader targeting in Advanced/CLI only. Remove package targeting and manual normal-path reload.
 - Replace package/editor rows and artifact scans with shader type, stage, virtual source, active status, and graph consumers from immutable owner read models.
 - Present one concise result. Failure leads with source root cause, next action, and confirmation that the previous generation remains active.
-- Add one trace from shader type, graph/capture label, code hash, or pipeline key through declaration, dependencies, compile job/hash, DDC outcome, map entry, code record, runtime generation/materialization, consumers, and symbols/capture.
+- Add one trace from shader type, graph/capture label, code hash, or pipeline key through declaration, dependencies, compile job/input hash/result, map entry, code record, runtime generation/materialization, consumers, and symbols/capture.
 - Delete duplicated coordinator/console/panel lifecycle logs/status formatting; keep one bounded operation result through `EditorOperationService`.
 
 #### Positive guardrails
@@ -1504,7 +1495,7 @@ Suggested title: `Shader Tools: deliver Apply Changed and shader provenance`.
 
 #### Implementation prompt
 
-> Implement Phase 6 directly in the unstaged `master` worktree against the complete Phase 0-5 candidate. Run the final legacy-eradication gate first, delete obsolete disposable shader/cache/cooked output, regenerate the one current catalog/map/library once, then perform claim-driven formatting, architecture, compiler, cook, runtime, reload, lifetime, capture, and performance validation. Fix failures at their owning responsibility without compatibility. Remove temporary harnesses, fault injectors, verbose logging, reports, and excessive diagnostics before handoff. Do not stage, commit, push, or submit.
+> Implement Phase 6 directly in the unstaged `master` worktree against the complete Phase 0-5 candidate. Run the final legacy-eradication gate first, delete obsolete disposable shader and cooked output, regenerate the one current catalog/map/library once, then perform claim-driven formatting, architecture, compiler, cook, runtime, reload, lifetime, capture, and performance validation. Fix failures at their owning responsibility without compatibility. Remove temporary harnesses, fault injectors, verbose logging, reports, and excessive diagnostics before handoff. Do not stage, commit, push, or submit.
 
 #### Phase-specific references
 
@@ -1517,13 +1508,13 @@ Suggested title: `Shader Tools: deliver Apply Changed and shader provenance`.
 #### Required work
 
 - Prove zero definitions/uses of every phase-owned package/program/pass-wrapper/duplicate-parameter/old-prefix/old-path/compatibility symbol and no permutation/precache/preload scaffold.
-- Regenerate the complete catalog, dependency records, DDC outputs, global shader map, code library, provenance, and publication metadata once from final source.
+- Regenerate the complete catalog, dependency records, global shader map, code library, provenance, and publication metadata once from final source.
 - Run pinned no-write formatting where available, `git diff --check`, local-link validation, file/CMake/include inventory, and `architecture_boundary_check`.
 - Build the smallest owning ShaderCompiler/Renderer targets, then the exact D3D12/Vulkan DevelopmentEditor product target required by the contract.
 - Cook and inspect every supported current shader for DXIL and SPIR-V; compare reflection/layout/type/code identities and capability policy without silently skipped cells.
-- Validate cold/warm DDC, checkout-independent hashes, duplicate fan-out, changed dependency closure, corrupt recovery, cancellation, failed-job replay, transactional publication, stale rejection, invalid replacement rollback, delayed GPU completion, and generation retirement.
+- Validate checkout-independent hashes, in-operation duplicate fan-out, repeated-operation recompilation, changed dependency closure, cancellation, failed-job replay, transactional publication, stale rejection, invalid replacement rollback, delayed GPU completion, and generation retirement.
 - Run D3D12/Vulkan Showcase smokes/captures for supported raster, compute/inline-ray-query, exposure, presentation, debug, and advertised fallback branches. Full RT execution remains explicitly unavailable under its separate plan.
-- Measure compile queue/wall/CPU time, compiler-session memory, DDC results, generated/cooked bytes, map/library open time, lazy materialization time, runtime overlap during reload, and frame impact. Do not add precache/readiness metrics for a system not implemented.
+- Measure compile queue/wall/CPU time, compiler-session memory, selected/compiled job counts, generated/cooked bytes, map/library open time, lazy materialization time, runtime overlap during reload, and frame impact. Do not add precache/readiness metrics for a system not implemented.
 - Perform a final diagnostic/code-structure audit: no migration log stream, per-job spam, default report files, cache browser, submitted test scaffold, god orchestrator/folder/function, forwarding wrapper, or duplicated validation/policy remains.
 - Recheck `master`, empty staged diff, unrelated dirty exclusions, generated/cooked source-control policy, and exact diff boundaries. Leave all work unstaged.
 
@@ -1540,8 +1531,8 @@ Suggested title: `Shader Tools: deliver Apply Changed and shader provenance`.
 #### Acceptance criteria
 
 - Every final acceptance criterion below has exact evidence or is explicitly blocked; no unrun/static-only check is called passed.
-- Shader class/catalog/job/DDC/map/library/runtime/graph/frontend has one authority at each stage and no legacy/compatibility path.
-- Required generated artifacts match final source; no cache/report/debug/capture/log/temporary proof file is unintentionally included.
+- Shader class/catalog/job/map/library/runtime/graph/frontend has one authority at each stage and no legacy/compatibility path.
+- Required generated artifacts match final source; no obsolete output, report, debug artifact, capture, log, or temporary proof file is unintentionally included.
 - Diagnostics are bounded, orchestration reads as named stages, and no owner/folder/function mixes unrelated responsibilities.
 - Branch is `master`, staged diff is empty, scoped checks pass where available, and the user receives the unstaged changelist for manual review.
 
@@ -1563,7 +1554,7 @@ The base migration is accepted only when:
 - catalog freeze rejects duplicate/late declarations with both source locations;
 - the base catalog/map contains exactly one variant per `(ShaderTypeId, Target)` and no permutation/precache/preload scaffolding;
 - `ShaderCompileInputHash` changes for every compiler-affecting input, survives checkout relocation, and excludes package/pass/presentation text;
-- identical compile requests deduplicate, corrupt DDC entries recover as misses, cancellation settles, and no partial publication appears;
+- identical compile requests deduplicate only within one active operation, repeated cooks compile again, cancellation settles, and no partial publication appears;
 - `GlobalShaderMap` is the sole typed logical lookup and every map entry references a validated `ShaderCodeHash` in `CookedShaderLibrary`;
 - runtime lookup never derives source basenames, package IDs, or cooked paths and no `.sparkshader` reader/writer remains;
 - `RenderPassRuntimeCache` is the sole active/replacement/retired generation and materialized layout/pipeline owner; lazy creation occurs before recording, not in Execute;
@@ -1579,6 +1570,6 @@ The base migration is accepted only when:
 
 ## Final Position
 
-Sparkle should follow Unreal's lean global-shader center end to end: one shader class owns its nested parameters and optional compile hooks; one implementation declaration owns virtual source, entry, and stage; one frozen catalog drives reproducible jobs and disposable derived data; one generated global shader map resolves typed shader references to code-library records; and the frame graph dispatches those shader types directly with the same parameter schema. Render-graph labels remain diagnostic presentation, while package, map, layout, and pipeline mechanics stay behind their owners.
+Sparkle should follow Unreal's lean global-shader center end to end: one shader class owns its nested parameters and optional compile hooks; one implementation declaration owns virtual source, entry, and stage; one frozen catalog drives reproducible compile-every-time jobs; one generated global shader map resolves typed shader references to code-library records; and the frame graph dispatches those shader types directly with the same parameter schema. Render-graph labels remain diagnostic presentation, while package, map, layout, and pipeline mechanics stay behind their owners.
 
 The clean target is neither "the filename is everything" nor "copy every Unreal subsystem." It is "the author states only the shader class, parameters, source/entry/stage, and the actual draw/dispatch; the engine derives and validates everything else." Permutations, authored program types, precaching, preload/streaming, and full RT execution stay out until a measured workload earns them.

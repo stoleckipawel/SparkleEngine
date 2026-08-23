@@ -9,12 +9,10 @@
 
 struct ShaderPackageCookSettings final
 {
-	bool useCache = true;
 	std::vector<ShaderTarget> targets = {ShaderTarget::DxilSm66, ShaderTarget::SpirV16};
 	std::string backendName = "auto";
 	std::string packageId;
 	std::string shaderId;
-	std::filesystem::path cacheDirectory;
 	std::filesystem::path debugArtifactDirectory;
 	std::vector<std::string> analysisPasses;
 	bool enableDebugInfo = false;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Cooking/Cache/ShaderCacheKey.h"
 #include "Cooking/ShaderCookTypes.h"
 #include "ShaderCompileOptions.h"
 #include "ShaderContractCatalog.h"
@@ -22,6 +21,5 @@ struct CookNode final
 	std::uint64_t sourceHash = 0;
 	std::uint64_t includeClosureHash = 0;
 	std::uint64_t optionsHash = 0;
-	ShaderCacheKey cacheKey{};
 	ShaderContractJobIdentity jobIdentity;
 };

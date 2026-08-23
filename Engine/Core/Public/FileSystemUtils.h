@@ -49,9 +49,8 @@ namespace Filesystem
 	const std::filesystem::path& GetCookedSkeletonRootPath();
 	const std::filesystem::path& GetCookedAnimationRootPath();
 	const std::filesystem::path& GetSceneAssetRegistryPath();
-	const std::filesystem::path& GetShaderCacheRootPath();
 	const std::filesystem::path& GetShaderRecookSignalPath();
-	std::filesystem::path BuildShaderRecookSignalPath(const std::filesystem::path& shaderCacheRootPath);
+	std::filesystem::path BuildShaderRecookSignalPath(const std::filesystem::path& cookedShaderRootPath);
 
 	// Marker-based repository discovery
 	std::optional<std::filesystem::path> FindAncestorWithMarker(

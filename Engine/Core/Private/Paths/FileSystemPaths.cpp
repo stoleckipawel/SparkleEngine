@@ -112,19 +112,14 @@ namespace Filesystem
 		return Private::GetAssetPathState().sceneAssetRegistryPath;
 	}
 
-	const std::filesystem::path& GetShaderCacheRootPath()
-	{
-		return Private::GetAssetPathState().shaderCacheRootPath;
-	}
-
 	const std::filesystem::path& GetShaderRecookSignalPath()
 	{
 		return Private::GetAssetPathState().shaderRecookSignalPath;
 	}
 
-	std::filesystem::path BuildShaderRecookSignalPath(const std::filesystem::path& shaderCacheRootPath)
+	std::filesystem::path BuildShaderRecookSignalPath(const std::filesystem::path& cookedShaderRootPath)
 	{
-		return Paths::Normalize(shaderCacheRootPath / "recook.signal");
+		return Paths::Normalize(cookedShaderRootPath / "recook.signal");
 	}
 
 	const std::filesystem::path& GetShaderSymbolsOutputPath()

@@ -64,8 +64,6 @@ namespace SparkleLauncher
 				return "ArtifactOutputs";
 			case OperationDestructiveScope::WorkspaceState:
 				return "WorkspaceState";
-			case OperationDestructiveScope::ShaderCache:
-				return "ShaderCache";
 			case OperationDestructiveScope::DependencyCache:
 				return "DependencyCache";
 			case OperationDestructiveScope::Logs:

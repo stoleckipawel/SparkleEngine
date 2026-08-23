@@ -83,5 +83,5 @@ struct ShaderContractJobIdentity final
 	std::uint64_t sourceHash = 0;
 	std::uint64_t includeClosureHash = 0;
 	std::uint64_t optionsHash = 0;
-	std::uint64_t jobKey = 0;
+	std::uint64_t compileInputHash = 0;
 };

@@ -22,10 +22,8 @@ namespace SparkleLauncher
 		const QString& CookScopes() const;
 		const QString& SelectedTargets() const;
 		const QString& ShaderBackend() const;
-		const QString& ShaderCacheDirectory() const;
 		const QString& GraphicsApi() const;
 		const QString& CleanScope() const;
-		bool ShaderUseCache() const;
 		bool ShaderEnableDebugInfo() const;
 		bool ShaderEnableOptimizations() const;
 		bool ShaderWarningsAsErrors() const;
@@ -46,14 +44,12 @@ namespace SparkleLauncher
 		void SetCookScopes(const QString& scopes);
 		void SetSelectedTargets(const QString& targets);
 		void SetShaderBackend(const QString& backend);
-		void SetShaderCacheDirectory(const QString& path);
 		void SetGraphicsApi(const QString& graphicsApi);
 		void SetShaderEnableDebugInfo(bool enabled);
 		void SetShaderEnableOptimizations(bool enabled);
 		void SetShaderWarningsAsErrors(bool enabled);
 		void SetShaderStripDebugInfo(bool enabled);
 		void SetCleanScope(const QString& scope);
-		void SetShaderUseCache(bool enabled);
 		void SetForceConfigure(bool enabled);
 		void SetForceRecook(bool enabled);
 		void SetConfirmForceRecook(bool enabled);
@@ -71,10 +67,8 @@ namespace SparkleLauncher
 		QString m_cookScopes;
 		QString m_selectedTargets;
 		QString m_shaderBackend = "dxc";
-		QString m_shaderCacheDirectory;
 		QString m_graphicsApi = "d3d12";
 		QString m_cleanScope = "cooked";
-		bool m_shaderUseCache = true;
 		bool m_shaderEnableDebugInfo = false;
 		bool m_shaderEnableOptimizations = true;
 		bool m_shaderWarningsAsErrors = true;
