@@ -12,7 +12,7 @@
 
 class CookedShaderPackageCanonicalization final
 {
-  public:
+public:
 	static std::string NormalizeShaderPackageToken(std::string_view value, std::string_view fallback = {})
 	{
 		std::string normalized = Strings::ToLowerCopy(Strings::TrimAsciiWhitespace(value));
@@ -91,8 +91,6 @@ std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout)
 	for (const PassParameterDesc& parameter : layout.GetParameters())
 	{
 		canonicalLayout += parameter.Name;
-		canonicalLayout += '|';
-		canonicalLayout += parameter.GetShaderName();
 		canonicalLayout += '|';
 		canonicalLayout += std::to_string(static_cast<std::uint32_t>(parameter.Kind));
 		canonicalLayout += '|';

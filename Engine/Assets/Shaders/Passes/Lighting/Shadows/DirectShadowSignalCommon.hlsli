@@ -8,15 +8,15 @@
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
 #include "/Engine/RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 
-RWTexture2D<float4> ShadowVisibilitySignalTexture;
-Texture2D<float4> CurrentReservoirSampleTexture;
-Texture2D<float4> CurrentReservoirWeightTexture;
+RWTexture2D<float4> ShadowVisibilitySignal;
+Texture2D<float4> CurrentReservoirSample;
+Texture2D<float4> CurrentReservoirWeight;
 
 void EvaluateDirectShadowSignal(uint3 dispatchThreadId)
 {
 	uint width = 0;
 	uint height = 0;
-	ShadowVisibilitySignalTexture.GetDimensions(width, height);
+	ShadowVisibilitySignal.GetDimensions(width, height);
 
 	if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
 	{
@@ -26,7 +26,7 @@ void EvaluateDirectShadowSignal(uint3 dispatchThreadId)
 	const float sceneDepth = LoadSceneDepth(dispatchThreadId.xy);
 	if (IsSkyPixel(sceneDepth))
 	{
-		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
+		ShadowVisibilitySignal[dispatchThreadId.xy] =
 		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
 		return;
 	}
@@ -34,11 +34,11 @@ void EvaluateDirectShadowSignal(uint3 dispatchThreadId)
 	const float3 positionWorld = ReconstructGBufferWorldPosition(dispatchThreadId.xy, sceneDepth, InvViewMTX, InvProjectionMTX);
 	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(int3(dispatchThreadId.xy, 0)).xyz);
 	const DirectLightReservoir::Reservoir reservoir =
-	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSampleTexture.Load(int3(dispatchThreadId.xy, 0)),
-	                                          CurrentReservoirWeightTexture.Load(int3(dispatchThreadId.xy, 0)));
+	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(dispatchThreadId.xy, 0)),
+	                                          CurrentReservoirWeight.Load(int3(dispatchThreadId.xy, 0)));
 	if (!DirectLightReservoir::IsValid(reservoir))
 	{
-		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
+		ShadowVisibilitySignal[dispatchThreadId.xy] =
 		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
 		return;
 	}
@@ -50,7 +50,7 @@ void EvaluateDirectShadowSignal(uint3 dispatchThreadId)
 	                                                      lightSample,
 	                                                      DirectLightSampling::CastsShadow(reservoir.Candidate.Light));
 
-	ShadowVisibilitySignalTexture[dispatchThreadId.xy] = RayTracedShadowSignalPacking::PackShadowSignal(shadowSignal);
+	ShadowVisibilitySignal[dispatchThreadId.xy] = RayTracedShadowSignalPacking::PackShadowSignal(shadowSignal);
 }
 
 #endif

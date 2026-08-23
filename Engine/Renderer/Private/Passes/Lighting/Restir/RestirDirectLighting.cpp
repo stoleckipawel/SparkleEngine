@@ -6,11 +6,7 @@
 #include "Passes/Lighting/Shadows/ShadowVisibility.h"
 #include "Passes/Lighting/Shadows/DirectShadowSignal.h"
 
-void AddRestirDirectLightingPasses(
-    FrameGraphBuilder& builder,
-    bool enableInlineRayQueryShadows,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources)
+void AddRestirDirectLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
 {
 	const DirectShadowSignalResources shadowSignals = CreateDirectShadowSignalResources(builder, sceneExtent, resources);
 	AddDirectLightReservoirPasses(
@@ -20,21 +16,14 @@ void AddRestirDirectLightingPasses(
 	    resources.Transient.GBuffer,
 	    shadowSignals,
 	    resources.ImportedScene);
-	if (enableInlineRayQueryShadows)
-	{
-		AddDirectShadowSignalPass(
-		    builder,
-		    sceneExtent,
-		    resources.Transient.Scene,
-		    resources.Transient.GBuffer,
-		    resources.SceneTlas,
-		    shadowSignals,
-		    resources.ImportedScene);
-	}
-	else
-	{
-		AddShadowVisibilityFallbackPass(builder, shadowSignals.Visibility);
-	}
+	AddDirectShadowSignalPass(
+	    builder,
+	    sceneExtent,
+	    resources.Transient.Scene,
+	    resources.Transient.GBuffer,
+	    resources.SceneTlas,
+	    shadowSignals,
+	    resources.ImportedScene);
 	AddDirectLightingPass(
 	    builder,
 	    sceneExtent,

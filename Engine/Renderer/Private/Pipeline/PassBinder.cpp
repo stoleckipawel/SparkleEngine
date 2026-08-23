@@ -62,9 +62,7 @@ void PassBinder::BindImpl(
 		const PassParameterLayout* parameterLayout = parameterSet.GetLayout();
 		const PassParameterLayout& compiledLayout = layout.GetParameterLayout();
 		Require(parameterLayout != nullptr, "Pass parameter layout is unavailable.");
-		const bool sameLayoutInstance = parameterLayout == &compiledLayout;
-		const bool matchingParameterShape = parameterLayout->GetParameterCount() == compiledLayout.GetParameterCount();
-		Require(sameLayoutInstance || matchingParameterShape, "Pass parameter layout does not match the compiled binding layout.");
+		Require(parameterLayout->Matches(compiledLayout), "Pass parameter layout does not match the compiled binding layout.");
 	}
 
 	if (bindLayout && isCompute)

@@ -1,6 +1,6 @@
 #pragma once
 
-cbuffer ViewCameraUniformData
+cbuffer ViewCamera
 {
 	row_major float4x4 ViewMTX;
 	row_major float4x4 ProjectionMTX;

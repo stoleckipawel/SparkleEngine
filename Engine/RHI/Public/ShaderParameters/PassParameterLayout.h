@@ -19,31 +19,20 @@ enum class ShaderStageVisibility : std::uint8_t
 	All = (1 << 0) | (1 << 1) | (1 << 2),
 };
 
-SPARKLE_RHI_API ShaderStageVisibility operator|(
-    ShaderStageVisibility lhs,
-    ShaderStageVisibility rhs) noexcept;
-SPARKLE_RHI_API ShaderStageVisibility operator&(
-    ShaderStageVisibility lhs,
-    ShaderStageVisibility rhs) noexcept;
-SPARKLE_RHI_API ShaderStageVisibility& operator|=(
-    ShaderStageVisibility& lhs,
-    ShaderStageVisibility rhs) noexcept;
-SPARKLE_RHI_API bool HasAnyShaderStageVisibility(
-    ShaderStageVisibility value,
-    ShaderStageVisibility flags) noexcept;
+SPARKLE_RHI_API ShaderStageVisibility operator|(ShaderStageVisibility lhs, ShaderStageVisibility rhs) noexcept;
+SPARKLE_RHI_API ShaderStageVisibility operator&(ShaderStageVisibility lhs, ShaderStageVisibility rhs) noexcept;
+SPARKLE_RHI_API ShaderStageVisibility& operator|=(ShaderStageVisibility& lhs, ShaderStageVisibility rhs) noexcept;
+SPARKLE_RHI_API bool HasAnyShaderStageVisibility(ShaderStageVisibility value, ShaderStageVisibility flags) noexcept;
 
 struct PassParameterDesc
 {
 	std::string Name;
-	std::string ShaderName;
 	ShaderParameterSemanticKind Kind = ShaderParameterSemanticKind::ReadTexture;
 	ShaderParameterResourceDomain ResourceDomain = ShaderParameterResourceDomain::None;
 	ShaderParameterAccess Access = ShaderParameterAccess::None;
 	ShaderStageVisibility Visibility = ShaderStageVisibility::All;
 	std::uint32_t ArrayCount = 1;
 	std::uint32_t ValueSizeInBytes = 0;
-
-	std::string_view GetShaderName() const noexcept { return ShaderName.empty() ? std::string_view(Name) : std::string_view(ShaderName); }
 
 	bool IsArray() const noexcept { return ArrayCount > 1; }
 
@@ -62,7 +51,7 @@ template <typename T> struct PassParameterValueSize<UniformData<T>>
 
 class SPARKLE_RHI_API PassParameterLayout final
 {
-  public:
+public:
 	PassParameterLayout();
 	explicit PassParameterLayout(const char* debugName);
 
@@ -75,24 +64,22 @@ class SPARKLE_RHI_API PassParameterLayout final
 	std::size_t GetParameterCount() const noexcept { return m_parameters.size(); }
 
 	const std::vector<PassParameterDesc>& GetParameters() const noexcept { return m_parameters; }
+	void SetAllVisibility(ShaderStageVisibility visibility) noexcept;
 
 	const PassParameterDesc* FindParameter(std::string_view name) const noexcept;
+	bool Matches(const PassParameterLayout& other) const noexcept;
 
 	bool HasParameter(std::string_view name) const noexcept { return FindParameter(name) != nullptr; }
 
 	std::uint32_t AddParameter(PassParameterDesc parameter);
 
 	template <typename T>
-	std::uint32_t Add(
-	    const char* name,
-	    ShaderStageVisibility visibility = ShaderStageVisibility::All,
-	    std::uint32_t arrayCount = 1)
+	std::uint32_t Add(const char* name, ShaderStageVisibility visibility = ShaderStageVisibility::All, std::uint32_t arrayCount = 1)
 	{
 		static_assert(IsShaderParameterSemanticV<T>, "Add<T> requires a shader-parameter semantic type.");
 
 		PassParameterDesc parameter{};
 		parameter.Name = name != nullptr ? name : "";
-		parameter.ShaderName = parameter.Name;
 		parameter.Kind = ShaderParameterSemanticTraits<T>::Kind;
 		parameter.ResourceDomain = ShaderParameterSemanticTraits<T>::ResourceDomain;
 		parameter.Access = ShaderParameterSemanticTraits<T>::Access;
@@ -102,7 +89,7 @@ class SPARKLE_RHI_API PassParameterLayout final
 		return AddParameter(std::move(parameter));
 	}
 
-  private:
+private:
 	std::string m_debugName;
 	std::vector<PassParameterDesc> m_parameters;
 };

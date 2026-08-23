@@ -5,8 +5,4 @@
 
 class FrameGraphBuilder;
 
-void AddRestirDirectLightingPasses(
-    FrameGraphBuilder& builder,
-    bool enableInlineRayQueryShadows,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources);
+void AddRestirDirectLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);

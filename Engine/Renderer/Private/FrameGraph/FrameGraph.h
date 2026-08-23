@@ -114,7 +114,7 @@ public:
 		        .executeCallback = [execute = std::move(normalizedExecute)](PassCommandContext& context) mutable { execute(context); }});
 	}
 
-	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+	template <typename TParameterBindings, typename ExecuteFn>
 	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
 	void AddRasterPass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
@@ -124,11 +124,11 @@ public:
 		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
 		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
-		    { return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName); },
+		    { return SetupShaderParameters(builder, typedParameters, passName); },
 		    std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+	template <typename TParameterBindings, typename ExecuteFn>
 	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
@@ -138,11 +138,11 @@ public:
 		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
 		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
-		    { return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName); },
+		    { return SetupShaderParameters(builder, typedParameters, passName); },
 		    std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+	template <typename TParameterBindings, typename ExecuteFn>
 	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
 	void AddAsyncComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
@@ -152,7 +152,7 @@ public:
 		    EFrameGraphQueuePreference::AsyncCompute,
 		    parameters,
 		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
-		    { return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName); },
+		    { return SetupShaderParameters(builder, typedParameters, passName); },
 		    std::forward<ExecuteFn>(executeFn));
 	}
 
@@ -164,8 +164,7 @@ public:
 	{
 		auto& callbacks = m_parameterSetups[typeid(TValue)];
 		callbacks.emplace_back(
-		    [setup = std::forward<TCallback>(callback)](const void* value) mutable
-		    { setup(*static_cast<const TValue*>(value)); });
+		    [setup = std::forward<TCallback>(callback)](const void* value) mutable { setup(*static_cast<const TValue*>(value)); });
 	}
 
 	template <typename TValue> void ApplyParameters(const TValue& value)
@@ -188,10 +187,12 @@ public:
 	    RhiCommandSubmissionService& submissionService,
 	    FrameExecutionDiagnostics& frameDiagnostics,
 	    TaskExecutor& taskExecutor) const;
-	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
+	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters(
+	    const char* debugName,
+	    ShaderStageVisibility visibility = ShaderStageVisibility::None)
 	{
 		static const ShaderParameterStructMetadata<TParameters> metadata =
-		    ShaderParameterStructBuilder<TParameters>::BuildMetadata("FrameGraphParameters");
+		    ShaderParameterStructBuilder<TParameters>::BuildMetadata(debugName, visibility);
 
 		auto allocation = std::make_unique<AllocatedParameterInstance<TParameters>>(metadata);
 		TypedPassParameterInstance<TParameters>& instance = allocation->Instance;
@@ -207,14 +208,8 @@ public:
 	FrameGraphTextureHistory CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept;
 	void InvalidateTextureHistory(FrameGraphTextureHistory history) noexcept;
 	bool HasBeenProduced(FrameGraphResourceHandle handle) const noexcept;
-	bool HasBeenProduced(FrameGraphTextureHandle handle) const noexcept
-	{
-		return HasBeenProduced(handle.GetResourceHandle());
-	}
-	bool HasBeenProduced(FrameGraphBufferHandle handle) const noexcept
-	{
-		return HasBeenProduced(handle.GetResourceHandle());
-	}
+	bool HasBeenProduced(FrameGraphTextureHandle handle) const noexcept { return HasBeenProduced(handle.GetResourceHandle()); }
+	bool HasBeenProduced(FrameGraphBufferHandle handle) const noexcept { return HasBeenProduced(handle.GetResourceHandle()); }
 	bool HasBeenProduced(FrameGraphAccelerationStructureHandle handle) const noexcept
 	{
 		return HasBeenProduced(handle.GetResourceHandle());
@@ -297,28 +292,18 @@ public:
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept;
 	RhiResourceHandle ResolveAccelerationStructure(FrameGraphAccelerationStructureHandle handle) const noexcept;
 
-	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
+	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(FrameGraphTextureHandle handle) const noexcept
 	{
 		ShaderTexture2D<TValue> field;
 		field = handle;
 		return field;
 	}
 
-	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(FrameGraphTextureHandle handle) const noexcept
-	{
-		return Read<TValue>(handle);
-	}
-
-	template <typename TValue = void> ShaderBuffer<TValue> Read(FrameGraphBufferHandle handle) const noexcept
+	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(FrameGraphBufferHandle handle) const noexcept
 	{
 		ShaderBuffer<TValue> field;
 		field = handle;
 		return field;
-	}
-
-	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(FrameGraphBufferHandle handle) const noexcept
-	{
-		return Read<TValue>(handle);
 	}
 
 	template <typename TValue = void> ShaderRWTexture2D<TValue> CreateUAV(FrameGraphTextureHandle handle) const noexcept

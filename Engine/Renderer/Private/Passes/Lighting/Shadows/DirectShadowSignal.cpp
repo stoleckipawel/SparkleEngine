@@ -1,10 +1,11 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Shadows/DirectShadowSignal.h"
 
+#include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Passes/Lighting/Shadows/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Lighting/Shadows/DirectShadowSignalPass.h"
+#include "Passes/Lighting/Shadows/DirectShadowSignalShader.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassInput.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
@@ -21,7 +22,7 @@ void AddDirectShadowSignalPass(
     const DirectShadowSignalResources& shadowSignals,
     const RenderFrameGraphImportedSceneResources& externalResources)
 {
-	auto& descriptorParameters = builder.AllocParameters<DirectShadowSignalPass::Parameters>();
+	auto& descriptorParameters = builder.AllocParameters<DirectShadowSignalCS>();
 	descriptorParameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
 	descriptorParameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
 	descriptorParameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
@@ -59,6 +60,8 @@ void AddDirectShadowSignalPass(
 	builder.AddParameterSetup<RayTracedShadowPassInput>(
 	    descriptorParameters,
 	    [](auto& fields, const RayTracedShadowPassInput& input)
-	    { fields.RayTracedShadows = RayTracedShadowPassData::Build(input); });
-	builder.Dispatch<DirectShadowSignalPass>(descriptorParameters, sceneExtent.Width, sceneExtent.Height);
+	    { fields.RayTracedShadowConstants = RayTracedShadowPassData::Build(input); });
+	builder.Dispatch<DirectShadowSignalCS>(
+	    descriptorParameters,
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

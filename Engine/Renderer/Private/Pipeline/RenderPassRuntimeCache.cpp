@@ -44,15 +44,15 @@ void RenderPassRuntimeCache::ReloadCookedShaders()
 
 	try
 	{
-		for (const auto& [passType, activeHolder] : m_activeGeneration->RuntimeStorageByPassType)
+		for (const auto& [shaderType, activeHolder] : m_activeGeneration->RuntimeStorageByShaderType)
 		{
 			if (activeHolder == nullptr)
 			{
-				HandleRuntimeCreationFailure("Shader runtime cache contains an empty pass holder.");
+				HandleRuntimeCreationFailure("Shader runtime cache contains an empty shader holder.");
 			}
 
-			replacement->RuntimeStorageByPassType.emplace(
-			    passType,
+			replacement->RuntimeStorageByShaderType.emplace(
+			    shaderType,
 			    activeHolder->CreateReplacement(*m_renderHardwareInterface, replacement->ShaderPackages));
 		}
 	}

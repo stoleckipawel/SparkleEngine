@@ -5,7 +5,7 @@ RWTexture2D<float4> CurrentReferenceLighting;
 Texture2D<float4> ReferenceSampleValidity;
 Texture2D<float2> GBufferMotionVector;
 
-cbuffer ReferenceLightingAccumulationUniformData
+cbuffer ReferenceLightingAccumulationConstants
 {
 	uint ReferenceLightingSamplesPerFrame;
 	uint ReferenceLightingHistoryValid;
@@ -47,7 +47,8 @@ cbuffer ReferenceLightingAccumulationUniformData
 
 	const float currentSampleCount = float(max(ReferenceLightingSamplesPerFrame, 1u));
 	const float accumulatedSampleCount = previousSampleCount + currentSampleCount;
-	const float3 accumulatedRadiance = (previousRadiance * previousSampleCount + currentSample.rgb * currentSampleCount) / accumulatedSampleCount;
+	const float3 accumulatedRadiance =
+	    (previousRadiance * previousSampleCount + currentSample.rgb * currentSampleCount) / accumulatedSampleCount;
 
 	CurrentReferenceLighting[pixelCoord] = float4(accumulatedRadiance, accumulatedSampleCount);
 	SceneColorTexture[pixelCoord] = float4(accumulatedRadiance, currentSample.a);

@@ -1,9 +1,12 @@
 #pragma once
 
 #include "FrameGraph/FrameGraph.h"
+#include "Passes/Core/ShaderPass.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 
 #include <cstdint>
+#include <cassert>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -18,6 +21,15 @@ class FrameGraphBuilder final
 {
 public:
 	FrameGraphBuilder(FrameGraph& frameGraph, const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept;
+
+	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator> void Draw(
+	    TypedPassParameterInstance<TParameters>& parameters,
+	    const GraphicsShaderPipelineState& pipelineState,
+	    TDrawCollaborator drawCollaborator)
+	{
+		const ShaderRegistrationDesc& shader = GlobalShader<TPixelShader>::GetRegistration();
+		Draw<TVertexShader, TPixelShader>(shader.ShaderName, parameters, pipelineState, std::move(drawCollaborator));
+	}
 
 	template <typename SetupFn, typename ExecuteFn>
 	void AddPass(std::string_view name, EFrameGraphPassKind kind, SetupFn&& setupFn, ExecuteFn&& executeFn)
@@ -35,85 +47,128 @@ public:
 		m_frameGraph.AddPass(name, kind, queuePreference, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename TPass, typename... TDependencies>
-	void Draw(typename TPass::ParameterInstance& parameters, TDependencies&... dependencies)
+	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator> void Draw(
+	    std::string_view label,
+	    TypedPassParameterInstance<TParameters>& parameters,
+	    const GraphicsShaderPipelineState& pipelineState,
+	    TDrawCollaborator drawCollaborator)
 	{
-		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
-		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>(), dependencies...);
-		m_frameGraph.AddRasterPass<TPass>(
-		    TPass::PassName,
+		m_renderPassRuntimeCache.MaterializeGraphicsShaderRuntime<TVertexShader, TPixelShader>(pipelineState);
+		const RasterPassPipelineRuntime* const runtime = &m_renderPassRuntimeCache.GetGraphicsShaderRuntime<TVertexShader, TPixelShader>();
+		const std::string diagnosticLabel(label);
+		m_frameGraph.AddRasterPass(
+		    diagnosticLabel,
 		    parameters,
-		    [pass](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
-		    { pass.Execute(context, passParameters); });
+		    [runtime, drawCollaborator = std::move(drawCollaborator)](
+		        PassCommandContext& context,
+		        TypedPassParameterInstance<TParameters>& passParameters) mutable
+		    { drawCollaborator.Draw(context, passParameters, *runtime); });
 	}
 
-	template <typename TPass> void Dispatch(typename TPass::ParameterInstance& parameters)
+	template <typename TShader>
+	void Dispatch(TypedPassParameterInstance<typename TShader::Parameters>& parameters, const ComputeDispatchDesc& groupCount)
 	{
-		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
-		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>());
-		m_frameGraph.AddComputePass<TPass>(
-		    TPass::PassName,
+		const ShaderRegistrationDesc& shader = GlobalShader<TShader>::GetRegistration();
+		Dispatch<TShader>(shader.ShaderName, parameters, groupCount);
+	}
+
+	template <typename TShader> void Dispatch(
+	    std::string_view label,
+	    TypedPassParameterInstance<typename TShader::Parameters>& parameters,
+	    const ComputeDispatchDesc& groupCount)
+	{
+		m_renderPassRuntimeCache.MaterializeComputeShaderRuntime<TShader>();
+		const ComputePassPipelineRuntime* const runtime = &m_renderPassRuntimeCache.GetComputeShaderRuntime<TShader>();
+		const std::string diagnosticLabel(label);
+		m_frameGraph.AddComputePass(
+		    diagnosticLabel,
 		    parameters,
-		    [pass](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
-		    { pass.Execute(context, passParameters); });
+		    [runtime,
+		        groupCount,
+		        diagnosticLabel](PassCommandContext& context, TypedPassParameterInstance<typename TShader::Parameters>& passParameters)
+		    {
+			    const bool valid = passParameters.Sync();
+			    assert(valid);
+			    const bool dispatched = DispatchComputeShader(
+			        context.Resources,
+			        context.Commands,
+			        runtime->BindingLayout,
+			        runtime->Pipeline,
+			        passParameters,
+			        groupCount,
+			        nullptr,
+			        0,
+			        nullptr,
+			        diagnosticLabel.c_str());
+			    assert(dispatched);
+		    });
 	}
 
-	template <typename TPass>
-	void Dispatch(typename TPass::ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight)
+	template <typename TShader>
+	void DispatchAsync(TypedPassParameterInstance<typename TShader::Parameters>& parameters, const ComputeDispatchDesc& groupCount)
 	{
-		Dispatch<TPass>(TPass::PassName, parameters, outputWidth, outputHeight);
+		const ShaderRegistrationDesc& shader = GlobalShader<TShader>::GetRegistration();
+		DispatchAsync<TShader>(shader.ShaderName, parameters, groupCount);
 	}
 
-	template <typename TPass> void DispatchAsync(typename TPass::ParameterInstance& parameters)
+	template <typename TShader> void DispatchAsync(
+	    std::string_view label,
+	    TypedPassParameterInstance<typename TShader::Parameters>& parameters,
+	    const ComputeDispatchDesc& groupCount)
 	{
-		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
-		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>());
-		m_frameGraph.AddAsyncComputePass<TPass>(
-		    TPass::PassName,
+		m_renderPassRuntimeCache.MaterializeComputeShaderRuntime<TShader>();
+		const ComputePassPipelineRuntime* const runtime = &m_renderPassRuntimeCache.GetComputeShaderRuntime<TShader>();
+		const std::string diagnosticLabel(label);
+		m_frameGraph.AddAsyncComputePass(
+		    diagnosticLabel,
 		    parameters,
-		    [pass](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
-		    { pass.Execute(context, passParameters); });
+		    [runtime,
+		        groupCount,
+		        diagnosticLabel](PassCommandContext& context, TypedPassParameterInstance<typename TShader::Parameters>& passParameters)
+		    {
+			    const bool valid = passParameters.Sync();
+			    assert(valid);
+			    const bool dispatched = DispatchComputeShader(
+			        context.Resources,
+			        context.Commands,
+			        runtime->BindingLayout,
+			        runtime->Pipeline,
+			        passParameters,
+			        groupCount,
+			        nullptr,
+			        0,
+			        nullptr,
+			        diagnosticLabel.c_str());
+			    assert(dispatched);
+		    });
 	}
 
-	template <typename TPass> void Dispatch(
-	    std::string_view name,
-	    typename TPass::ParameterInstance& parameters,
-	    std::uint32_t outputWidth,
-	    std::uint32_t outputHeight)
+	template <typename TShader> TypedPassParameterInstance<typename TShader::Parameters>& AllocParameters()
 	{
-		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
-		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>());
-		m_frameGraph.AddComputePass<TPass>(
-		    name,
-		    parameters,
-		    [pass, outputWidth, outputHeight](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
-		    { pass.Execute(context, passParameters, outputWidth, outputHeight); });
+		const ShaderRegistrationDesc& shader = GlobalShader<TShader>::GetRegistration();
+		ShaderStageVisibility visibility = ShaderStageVisibility::None;
+		switch (shader.Stage)
+		{
+			case ShaderStage::Vertex:
+				visibility = ShaderStageVisibility::Vertex;
+				break;
+			case ShaderStage::Pixel:
+				visibility = ShaderStageVisibility::Pixel;
+				break;
+			case ShaderStage::Compute:
+				visibility = ShaderStageVisibility::Compute;
+				break;
+			case ShaderStage::Count:
+			default:
+				assert(false && "Graph parameters require a concrete shader stage.");
+				break;
+		}
+		return m_frameGraph.AllocParameters<typename TShader::Parameters>(shader.ShaderName.data(), visibility);
 	}
 
-	template <typename TPass>
-	void DispatchAsync(typename TPass::ParameterInstance& parameters, std::uint32_t outputWidth, std::uint32_t outputHeight)
+	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocGraphParameters(const char* label)
 	{
-		DispatchAsync<TPass>(TPass::PassName, parameters, outputWidth, outputHeight);
-	}
-
-	template <typename TPass> void DispatchAsync(
-	    std::string_view name,
-	    typename TPass::ParameterInstance& parameters,
-	    std::uint32_t outputWidth,
-	    std::uint32_t outputHeight)
-	{
-		m_renderPassRuntimeCache.MaterializePassRuntime<TPass>();
-		const TPass pass(m_renderPassRuntimeCache.GetPassRuntime<TPass>());
-		m_frameGraph.AddAsyncComputePass<TPass>(
-		    name,
-		    parameters,
-		    [pass, outputWidth, outputHeight](PassCommandContext& context, typename TPass::ParameterInstance& passParameters)
-		    { pass.Execute(context, passParameters, outputWidth, outputHeight); });
-	}
-
-	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
-	{
-		return m_frameGraph.AllocParameters<TParameters>();
+		return m_frameGraph.AllocParameters<TParameters>(label);
 	}
 
 	template <typename TParameters, typename TCallback>
@@ -121,8 +176,7 @@ public:
 	{
 		auto* parameterInstance = &parameters;
 		m_frameGraph.m_passParameterSetups.emplace_back(
-		    [parameterInstance, setup = std::forward<TCallback>(callback)]() mutable
-		    { setup(parameterInstance->GetFields()); });
+		    [parameterInstance, setup = std::forward<TCallback>(callback)]() mutable { setup(parameterInstance->GetFields()); });
 	}
 
 	template <typename TValue, typename TCallback> void AddParameterSetup(TCallback&& callback)
@@ -134,13 +188,11 @@ public:
 	void AddParameterSetup(TypedPassParameterInstance<TParameters>& parameters, TCallback&& callback)
 	{
 		auto* parameterInstance = &parameters;
-		m_frameGraph.AddParameterSetup<TValue>(
-		    [parameterInstance, setup = std::forward<TCallback>(callback)](const TValue& value) mutable
+		m_frameGraph.AddParameterSetup<TValue>([parameterInstance, setup = std::forward<TCallback>(callback)](const TValue& value) mutable
 		    { setup(parameterInstance->GetFields(), value); });
 	}
 
-	template <typename TParameters, typename TCallback>
-	void AddResourceProductionSetup(
+	template <typename TParameters, typename TCallback> void AddResourceProductionSetup(
 	    TypedPassParameterInstance<TParameters>& parameters,
 	    FrameGraphTextureHandle resource,
 	    TCallback&& callback)
@@ -167,19 +219,9 @@ public:
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept;
 
-	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
-	{
-		return m_frameGraph.Read<TValue>(handle);
-	}
-
 	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(FrameGraphTextureHandle handle) const noexcept
 	{
 		return m_frameGraph.CreateSRV<TValue>(handle);
-	}
-
-	template <typename TValue = void> ShaderBuffer<TValue> Read(FrameGraphBufferHandle handle) const noexcept
-	{
-		return m_frameGraph.Read<TValue>(handle);
 	}
 
 	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(FrameGraphBufferHandle handle) const noexcept

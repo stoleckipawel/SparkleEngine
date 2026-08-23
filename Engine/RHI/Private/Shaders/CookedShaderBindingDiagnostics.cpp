@@ -8,25 +8,38 @@
 
 class CookedShaderBindingFormatting final
 {
-  public:
+public:
 	static const char* FormatResourceKindName(CookedShaderResourceKind kind) noexcept
 	{
 		switch (kind)
 		{
-			case CookedShaderResourceKind::ConstantBuffer: return "ConstantBuffer";
-			case CookedShaderResourceKind::Texture: return "Texture";
-			case CookedShaderResourceKind::StructuredBuffer: return "StructuredBuffer";
-			case CookedShaderResourceKind::ByteAddressBuffer: return "ByteAddressBuffer";
-			case CookedShaderResourceKind::TypedBuffer: return "TypedBuffer";
-			case CookedShaderResourceKind::RWTexture: return "RWTexture";
-			case CookedShaderResourceKind::RWStructuredBuffer: return "RWStructuredBuffer";
-			case CookedShaderResourceKind::RWByteAddressBuffer: return "RWByteAddressBuffer";
-			case CookedShaderResourceKind::RWTypedBuffer: return "RWTypedBuffer";
-			case CookedShaderResourceKind::Sampler: return "Sampler";
-			case CookedShaderResourceKind::AccelerationStructure: return "AccelerationStructure";
-			case CookedShaderResourceKind::PushConstantBlock: return "PushConstantBlock";
+			case CookedShaderResourceKind::ConstantBuffer:
+				return "ConstantBuffer";
+			case CookedShaderResourceKind::Texture:
+				return "Texture";
+			case CookedShaderResourceKind::StructuredBuffer:
+				return "StructuredBuffer";
+			case CookedShaderResourceKind::ByteAddressBuffer:
+				return "ByteAddressBuffer";
+			case CookedShaderResourceKind::TypedBuffer:
+				return "TypedBuffer";
+			case CookedShaderResourceKind::RWTexture:
+				return "RWTexture";
+			case CookedShaderResourceKind::RWStructuredBuffer:
+				return "RWStructuredBuffer";
+			case CookedShaderResourceKind::RWByteAddressBuffer:
+				return "RWByteAddressBuffer";
+			case CookedShaderResourceKind::RWTypedBuffer:
+				return "RWTypedBuffer";
+			case CookedShaderResourceKind::Sampler:
+				return "Sampler";
+			case CookedShaderResourceKind::AccelerationStructure:
+				return "AccelerationStructure";
+			case CookedShaderResourceKind::PushConstantBlock:
+				return "PushConstantBlock";
 			case CookedShaderResourceKind::Unknown:
-			default: return "Unknown";
+			default:
+				return "Unknown";
 		}
 	}
 
@@ -34,18 +47,29 @@ class CookedShaderBindingFormatting final
 	{
 		switch (dimension)
 		{
-			case CookedShaderResourceDimension::Buffer: return "Buffer";
-			case CookedShaderResourceDimension::Texture1D: return "Texture1D";
-			case CookedShaderResourceDimension::Texture1DArray: return "Texture1DArray";
-			case CookedShaderResourceDimension::Texture2D: return "Texture2D";
-			case CookedShaderResourceDimension::Texture2DArray: return "Texture2DArray";
-			case CookedShaderResourceDimension::Texture2DMS: return "Texture2DMS";
-			case CookedShaderResourceDimension::Texture2DMSArray: return "Texture2DMSArray";
-			case CookedShaderResourceDimension::Texture3D: return "Texture3D";
-			case CookedShaderResourceDimension::TextureCube: return "TextureCube";
-			case CookedShaderResourceDimension::TextureCubeArray: return "TextureCubeArray";
+			case CookedShaderResourceDimension::Buffer:
+				return "Buffer";
+			case CookedShaderResourceDimension::Texture1D:
+				return "Texture1D";
+			case CookedShaderResourceDimension::Texture1DArray:
+				return "Texture1DArray";
+			case CookedShaderResourceDimension::Texture2D:
+				return "Texture2D";
+			case CookedShaderResourceDimension::Texture2DArray:
+				return "Texture2DArray";
+			case CookedShaderResourceDimension::Texture2DMS:
+				return "Texture2DMS";
+			case CookedShaderResourceDimension::Texture2DMSArray:
+				return "Texture2DMSArray";
+			case CookedShaderResourceDimension::Texture3D:
+				return "Texture3D";
+			case CookedShaderResourceDimension::TextureCube:
+				return "TextureCube";
+			case CookedShaderResourceDimension::TextureCubeArray:
+				return "TextureCubeArray";
 			case CookedShaderResourceDimension::Unknown:
-			default: return "Unknown";
+			default:
+				return "Unknown";
 		}
 	}
 
@@ -53,13 +77,20 @@ class CookedShaderBindingFormatting final
 	{
 		switch (visibility)
 		{
-			case ShaderStageVisibility::None: return "None";
-			case ShaderStageVisibility::Vertex: return "Vertex";
-			case ShaderStageVisibility::Pixel: return "Pixel";
-			case ShaderStageVisibility::Compute: return "Compute";
-			case ShaderStageVisibility::AllGraphics: return "AllGraphics";
-			case ShaderStageVisibility::All: return "All";
-			default: return "Unknown";
+			case ShaderStageVisibility::None:
+				return "None";
+			case ShaderStageVisibility::Vertex:
+				return "Vertex";
+			case ShaderStageVisibility::Pixel:
+				return "Pixel";
+			case ShaderStageVisibility::Compute:
+				return "Compute";
+			case ShaderStageVisibility::AllGraphics:
+				return "AllGraphics";
+			case ShaderStageVisibility::All:
+				return "All";
+			default:
+				return "Unknown";
 		}
 	}
 
@@ -67,16 +98,26 @@ class CookedShaderBindingFormatting final
 	{
 		switch (kind)
 		{
-			case ShaderParameterSemanticKind::ReadTexture: return "ReadTexture";
-			case ShaderParameterSemanticKind::ReadBuffer: return "ReadBuffer";
-			case ShaderParameterSemanticKind::RWTexture: return "RWTexture";
-			case ShaderParameterSemanticKind::RWBuffer: return "RWBuffer";
-			case ShaderParameterSemanticKind::RenderTarget: return "RenderTarget";
-			case ShaderParameterSemanticKind::DepthTarget: return "DepthTarget";
-			case ShaderParameterSemanticKind::UniformData: return "UniformData";
-			case ShaderParameterSemanticKind::SamplerSet: return "SamplerSet";
-			case ShaderParameterSemanticKind::AccelerationStructure: return "AccelerationStructure";
-			default: return "Unknown";
+			case ShaderParameterSemanticKind::ReadTexture:
+				return "ReadTexture";
+			case ShaderParameterSemanticKind::ReadBuffer:
+				return "ReadBuffer";
+			case ShaderParameterSemanticKind::RWTexture:
+				return "RWTexture";
+			case ShaderParameterSemanticKind::RWBuffer:
+				return "RWBuffer";
+			case ShaderParameterSemanticKind::RenderTarget:
+				return "RenderTarget";
+			case ShaderParameterSemanticKind::DepthTarget:
+				return "DepthTarget";
+			case ShaderParameterSemanticKind::UniformData:
+				return "UniformData";
+			case ShaderParameterSemanticKind::SamplerSet:
+				return "SamplerSet";
+			case ShaderParameterSemanticKind::AccelerationStructure:
+				return "AccelerationStructure";
+			default:
+				return "Unknown";
 		}
 	}
 
@@ -92,9 +133,8 @@ class CookedShaderBindingFormatting final
 		{
 			result += result.empty() ? "" : "; ";
 			result += std::format(
-			    "{}(shader='{}', kind={}, visibility={}, size={}, array={})",
+			    "{}(kind={}, visibility={}, size={}, array={})",
 			    parameter.Name,
-			    parameter.GetShaderName(),
 			    FormatSemanticKind(parameter.Kind),
 			    FormatVisibility(parameter.Visibility),
 			    parameter.ValueSizeInBytes,
@@ -134,13 +174,12 @@ class CookedShaderBindingFormatting final
 		const auto& resourceBindings = package.GetResourceBindings();
 
 		std::string result;
-		for (std::size_t reflectionIndex = 0;
-		     reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size();
-		     ++reflectionIndex)
+		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size();
+		    ++reflectionIndex)
 		{
 			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-			if (!package.IsRuntimeBinary(binaryRecord, runtimeBinaryFormat) ||
-			    !CookedShaderBindingRules::HasAllStages(definition.ExpectedStages, ToShaderStageMask(binaryRecord.Stage)))
+			if (!package.IsRuntimeBinary(binaryRecord, runtimeBinaryFormat)
+			    || !CookedShaderBindingRules::HasAllStages(definition.ExpectedStages, ToShaderStageMask(binaryRecord.Stage)))
 			{
 				continue;
 			}

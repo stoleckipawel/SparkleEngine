@@ -100,10 +100,7 @@ void GlobalShaderRegistry::Register(ShaderRegistrationDesc desc)
 	std::vector<ShaderRegistrationDesc>& registrations = MutableGlobalShaderRegistrations();
 	const auto existing = std::ranges::find_if(
 	    registrations,
-	    [shaderName = desc.ShaderName](const ShaderRegistrationDesc& registeredDesc)
-	    {
-		    return registeredDesc.ShaderName == shaderName;
-	    });
+	    [shaderName = desc.ShaderName](const ShaderRegistrationDesc& registeredDesc) { return registeredDesc.ShaderName == shaderName; });
 	if (existing != registrations.end())
 	{
 		return;
@@ -118,9 +115,7 @@ void GlobalShaderRegistry::RegisterRayTracingHitGroup(RayTracingHitGroupRegistra
 	const auto existing = std::ranges::find_if(
 	    registrations,
 	    [desc](const RayTracingHitGroupRegistrationDesc& registeredDesc)
-	    {
-		    return registeredDesc.PackageName == desc.PackageName && registeredDesc.HitGroupName == desc.HitGroupName;
-	    });
+	    { return registeredDesc.PackageName == desc.PackageName && registeredDesc.HitGroupName == desc.HitGroupName; });
 	if (existing != registrations.end())
 	{
 		return;
@@ -142,13 +137,19 @@ std::span<const RayTracingHitGroupRegistrationDesc> GlobalShaderRegistry::GetRay
 const ShaderRegistrationDesc* GlobalShaderRegistry::FindByName(std::string_view shaderName) noexcept
 {
 	const std::vector<ShaderRegistrationDesc>& registrations = GlobalShaderRegistrationSnapshot();
-	const auto found = std::ranges::find_if(
-	    registrations,
-	    [shaderName](const ShaderRegistrationDesc& desc)
-	    {
-		    return desc.ShaderName == shaderName;
-	    });
+	const auto found =
+	    std::ranges::find_if(registrations, [shaderName](const ShaderRegistrationDesc& desc) { return desc.ShaderName == shaderName; });
 	return found != registrations.end() ? &(*found) : nullptr;
+}
+
+const ShaderRegistrationDesc* GlobalShaderRegistry::FindByType(const std::type_info& shaderType) noexcept
+{
+	const std::span<const ShaderRegistrationDesc> registrations = GetRegistrations();
+	const auto registration = std::ranges::find_if(
+	    registrations,
+	    [&shaderType](const ShaderRegistrationDesc& candidate)
+	    { return candidate.ShaderType != nullptr && *candidate.ShaderType == shaderType; });
+	return registration != registrations.end() ? &*registration : nullptr;
 }
 
 std::string BuildShaderParameterStructReport(const ShaderParameterStructDescriptor& descriptor)
@@ -157,8 +158,8 @@ std::string BuildShaderParameterStructReport(const ShaderParameterStructDescript
 	stream << descriptor.Name << " parameter(s)=" << descriptor.Fields.size();
 	for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 	{
-		stream << "\n  layout=" << field.GetLayoutName() << " shader=" << field.GetShaderName()
-		       << " kind=" << static_cast<std::uint32_t>(field.Kind) << " dimension=" << static_cast<std::uint32_t>(field.Dimension)
+		stream << "\n  name=" << field.Name << " kind=" << static_cast<std::uint32_t>(field.Kind)
+		       << " dimension=" << static_cast<std::uint32_t>(field.Dimension)
 		       << " semantic=" << static_cast<std::uint32_t>(field.SemanticKind)
 		       << " domain=" << static_cast<std::uint32_t>(field.ResourceDomain) << " access=" << static_cast<std::uint32_t>(field.Access)
 		       << " visibility=" << static_cast<std::uint32_t>(field.Visibility) << " array=" << field.ArrayCount;

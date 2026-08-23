@@ -16,7 +16,7 @@ RWTexture2D<float4> GBufferSubsurface;
 RWTexture2D<float> GBufferDeviceZ;
 RWTexture2D<float2> GBufferMotionVector;
 
-cbuffer RaytracedGBufferUniformData
+cbuffer RaytracedGBufferConstants
 {
 	uint RayTracingHitInstanceCount;
 	uint RayTracingHitMaterialCount;

@@ -1,10 +1,11 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Direct/PathTracedDirectLighting.h"
 
+#include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "ShaderData/RayTracingLightingParameters.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/RayTracing/PathTracedDirectLightingPass.h"
+#include "Passes/RayTracing/PathTracedDirectLightingShader.h"
 #include "RayTracing/Effects/PathTracedLighting/PathTracedLightingSettings.h"
 
 void AddPathTracedDirectLightingPass(
@@ -12,7 +13,7 @@ void AddPathTracedDirectLightingPass(
     RenderViewportExtent sceneExtent,
     const RenderFrameGraphResources& resources)
 {
-	auto& parameters = builder.AllocParameters<PathTracedDirectLightingPass::Parameters>();
+	auto& parameters = builder.AllocParameters<PathTracedDirectLightingCS>();
 	parameters->DirectDiffuse = builder.CreateUAV(resources.Transient.Lighting.DirectDiffuse);
 	parameters->DirectSpecular = builder.CreateUAV(resources.Transient.Lighting.DirectSpecular);
 	parameters->DirectSubsurface = builder.CreateUAV(resources.Transient.Lighting.DirectSubsurface);
@@ -42,5 +43,7 @@ void AddPathTracedDirectLightingPass(
 		        .NormalBias = settings.NormalBias,
 		        .MaxDistance = settings.MaxDistance};
 	    });
-	builder.Dispatch<PathTracedDirectLightingPass>(parameters, sceneExtent.Width, sceneExtent.Height);
+	builder.Dispatch<PathTracedDirectLightingCS>(
+	    parameters,
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

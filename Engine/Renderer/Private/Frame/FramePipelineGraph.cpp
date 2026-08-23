@@ -11,9 +11,23 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "Resources/History/FrameHistory.h"
-#include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "Scene/RenderScene.h"
+#include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "View/ViewportDisplaySettings.h"
+
+static const auto g_framePipelineGraphLogger = Logging::GetOrCreateLogger("Renderer.FramePipeline");
+
+static void RequireShadowVisibilityProducer(LightingMode lighting, const RenderRayTracingScene& rayTracingScene) noexcept
+{
+	if (lighting != LightingMode::RestirPathTraced || rayTracingScene.CanUseInlineRayQueryShadows())
+	{
+		return;
+	}
+
+	std::string message = "ReSTIR direct lighting requires an inline ray-query shadow-visibility producer: ";
+	message += rayTracingScene.GetInlineRayQueryShadowUnavailableReason();
+	Diagnostics::Fatal(g_framePipelineGraphLogger, __FILE__, __LINE__, message);
+}
 
 RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 {
@@ -29,8 +43,8 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const LightingMode lighting = GetLightingMode();
-	const ResolvedViewportDisplaySettings displaySettings =
-	    ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
+	RequireShadowVisibilityProducer(lighting, m_renderScene.GetRayTracingSceneCapability());
+	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
 	const ImageProviderPipeline imagePipeline = lighting == LightingMode::RestirPathTraced ? ImageProviderPipeline::RayReconstruction
 	                                                                                       : ImageProviderPipeline::PresentationUpscaling;
 	return RenderFrameGraphSettings{
@@ -41,8 +55,6 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 	    .PresentationTarget = ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct,
 	    .GBuffer = CVarGBufferMode.Get(),
 	    .Lighting = lighting,
-	    .EnableInlineRayQueryShadows =
-	        m_renderScene.GetRayTracingSceneCapability().CanUseInlineRayQueryShadows() && CVarRayTracedShadowsEnabled.Get(),
 	    .RequestedOutputs = m_viewportRenderRequest.RequestedOutputs};
 }
 

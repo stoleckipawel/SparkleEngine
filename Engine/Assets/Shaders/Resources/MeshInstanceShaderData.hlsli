@@ -39,7 +39,7 @@ struct JointMatrixData
 	row_major float4x4 Matrix;
 };
 
-cbuffer MeshInstanceDrawConstantBufferData
+cbuffer MeshInstanceDraw
 {
 	uint FirstInstance;
 	uint3 Padding;

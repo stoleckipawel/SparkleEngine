@@ -1,7 +1,7 @@
 #ifndef SPARKLE_RESTIR_INDIRECT_LIGHTING_UNIFORM_HLSLI
 #define SPARKLE_RESTIR_INDIRECT_LIGHTING_UNIFORM_HLSLI
 
-cbuffer RestirIndirectLightingUniformData
+cbuffer RestirIndirectConstants
 {
 	uint RestirIndirectBounceCount;
 	float RestirIndirectNormalBias;

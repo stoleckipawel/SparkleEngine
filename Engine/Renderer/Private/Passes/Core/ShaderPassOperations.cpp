@@ -7,20 +7,7 @@
 
 namespace ShaderPassOperations
 {
-	void DrawFullscreenTriangle(RenderCommandContext& commandContext) noexcept
-	{
-		commandContext.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
-		commandContext.DrawInstanced(3, 1, 0, 0);
-	}
-
-	const PassParameterSet& GetEmptyPassParameterSet() noexcept
-	{
-		static const PassParameterLayout emptyLayout("ShaderPassOperations.EmptyPassParameters");
-		static const PassParameterSet emptyParameters(emptyLayout, {});
-		return emptyParameters;
-	}
-
-	void AppendBindingNameIfCompiled(
+	static void AppendBindingNameIfCompiled(
 	    std::vector<const char*>& bindingNames,
 	    const RenderBindingLayout& bindingLayout,
 	    const char* bindingName) noexcept
@@ -33,9 +20,7 @@ namespace ShaderPassOperations
 		const auto existing = std::ranges::find_if(
 		    bindingNames,
 		    [bindingName](const char* existingName)
-		    {
-			    return std::string_view(existingName != nullptr ? existingName : "") == bindingName;
-		    });
+		    { return std::string_view(existingName != nullptr ? existingName : "") == bindingName; });
 		if (existing == bindingNames.end())
 		{
 			bindingNames.push_back(bindingName);
@@ -72,4 +57,4 @@ namespace ShaderPassOperations
 		return bindingNames;
 	}
 
-}  // namespace ShaderPassOperations
+} // namespace ShaderPassOperations

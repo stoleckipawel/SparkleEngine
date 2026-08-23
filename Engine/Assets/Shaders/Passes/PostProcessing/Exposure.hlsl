@@ -5,7 +5,7 @@ Texture2D PreviousExposureTexture;
 RWTexture2D<float4> ExposureTexture;
 RWTexture2D<float4> ExposureHistoryTexture;
 
-cbuffer ExposureUniformData
+cbuffer ExposureConstants
 {
 	uint ExposureMode;
 	uint ExposureHistoryValid;
@@ -25,27 +25,23 @@ cbuffer ExposureUniformData
 {
 	const float averageLuminance = Exposure::ResolveAverageLuminance(LuminanceMoments.Load(int3(0, 0, 0)).xy);
 
-	const float targetExposure =
-	    Exposure::ComputeExposure(
-	        ExposureMode,
-	        ManualExposure,
-	        ExposureCompensation,
-	        ExposureTargetLuminance,
-	        ExposureMin,
-	        ExposureMax,
-	        averageLuminance);
+	const float targetExposure = Exposure::ComputeExposure(ExposureMode,
+	                                                       ManualExposure,
+	                                                       ExposureCompensation,
+	                                                       ExposureTargetLuminance,
+	                                                       ExposureMin,
+	                                                       ExposureMax,
+	                                                       averageLuminance);
 
 	const float previousExposure = PreviousExposureTexture.Load(int3(0, 0, 0)).r;
-	
-	const float exposure =
-	    Exposure::AdaptExposure(
-	        ExposureMode,
-	        ExposureHistoryValid != 0u,
-	        previousExposure,
-	        targetExposure,
-	        FrameDeltaSeconds,
-	        ExposureAdaptationSpeedUp,
-	        ExposureAdaptationSpeedDown);
+
+	const float exposure = Exposure::AdaptExposure(ExposureMode,
+	                                               ExposureHistoryValid != 0u,
+	                                               previousExposure,
+	                                               targetExposure,
+	                                               FrameDeltaSeconds,
+	                                               ExposureAdaptationSpeedUp,
+	                                               ExposureAdaptationSpeedDown);
 
 	const float4 exposurePayload = float4(exposure, averageLuminance, targetExposure, previousExposure);
 	ExposureTexture[uint2(0u, 0u)] = exposurePayload;

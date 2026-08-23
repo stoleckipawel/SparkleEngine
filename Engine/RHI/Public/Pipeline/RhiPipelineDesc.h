@@ -96,7 +96,7 @@ struct RenderBindingLayoutCompileDesc
 
 class SPARKLE_RHI_API RenderBindingLayout
 {
-  public:
+public:
 	virtual ~RenderBindingLayout() noexcept;
 
 	const PassParameterLayout& GetParameterLayout() const noexcept;
@@ -104,13 +104,13 @@ class SPARKLE_RHI_API RenderBindingLayout
 	std::size_t GetBindingCount() const noexcept;
 	const CompiledBinding* FindBinding(const char* name) const noexcept;
 
-  protected:
+protected:
 	RenderBindingLayout(
 	    const PassParameterLayout& parameterLayout,
 	    std::vector<CompiledBinding> bindings,
 	    std::vector<std::string> bindingNames) noexcept;
 
-  private:
+private:
 	const PassParameterLayout* m_parameterLayout = nullptr;
 	std::vector<CompiledBinding> m_bindings;
 	std::vector<std::string> m_bindingNames;
@@ -121,6 +121,8 @@ struct RhiDepthTestDesc
 	bool DepthEnable = true;
 	bool DepthWriteEnable = true;
 	CompareOp DepthFunc = CompareOp::Less;
+
+	bool operator==(const RhiDepthTestDesc&) const noexcept = default;
 };
 
 struct RhiStencilTestDesc
@@ -136,6 +138,8 @@ struct RhiStencilTestDesc
 	RhiStencilOp BackFaceStencilFailOp = RhiStencilOp::Keep;
 	RhiStencilOp BackFaceStencilDepthFailOp = RhiStencilOp::Keep;
 	RhiStencilOp BackFaceStencilPassOp = RhiStencilOp::Keep;
+
+	bool operator==(const RhiStencilTestDesc&) const noexcept = default;
 };
 
 struct RhiShaderStageDesc
@@ -173,6 +177,6 @@ struct ComputePipelineDesc
 
 class SPARKLE_RHI_API RenderPipeline
 {
-  public:
+public:
 	virtual ~RenderPipeline() noexcept = default;
 };

@@ -6,7 +6,7 @@ cbuffer PerObjectVSConstantBufferData
 	row_major float3x3 WorldInverseTranspose;
 };
 
-cbuffer PerObjectPSConstantBufferData
+cbuffer PerObjectPS
 {
 	float4 BaseColor;
 

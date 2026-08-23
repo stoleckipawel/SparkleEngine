@@ -2,7 +2,7 @@
 
 Status: target proposal and semantic contract; not implementation authority or proof of runtime support
 Current-state audit provenance: 2026-08-23 source reconciliation is recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#ray-tracing-phase-0-extension)
-Scope: ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, fallback, and target completion invariants
+Scope: ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, supported alternates, mandatory failure, and target completion invariants
 
 ## Purpose and authority boundary
 
@@ -20,7 +20,7 @@ Related authority:
 
 ## Target outcome
 
-A selected ray-traced effect can run through an inline ray-query frontend or a native ray-tracing-pipeline frontend without changing its prepared scene, TLAS, material/geometry data, view, output, temporal, or fallback contract.
+A selected ray-traced effect can run through an inline ray-query frontend or a native ray-tracing-pipeline frontend without changing its prepared scene, TLAS, material/geometry data, view, output, temporal, or supported-alternate contract.
 
 ```text
                          Renderer effect request
@@ -47,7 +47,7 @@ Portability belongs to the effect contract, not to arbitrary shader entry points
 | --- | --- |
 | inline | a graphics/compute shader traverses an acceleration structure with `RayQuery`, `TraceRayInline`, and `Proceed` |
 | pipeline | a ray-generation shader calls `TraceRay`; a native RT pipeline schedules miss, hit-group, and optional callable stages |
-| effect | one renderer operation with one input/output/quality/history/fallback contract, such as GBuffer or shadow visibility |
+| effect | one renderer operation with one input/output/quality/history contract plus an explicit supported alternate or mandatory-failure policy, such as GBuffer or shadow visibility |
 | frontend | thin inline-query or RT-stage code that invokes shared effect semantics |
 | pipeline composition | typed stage membership and hit groups, payload/attribute compatibility, recursion, and optional bounded local data for one native RT pipeline; global bindings derive from the selected ray-generation shader |
 | logical table plan | Renderer-owned selection and indexing of ray-generation, miss, hit-group, and callable records |
@@ -56,7 +56,7 @@ Portability belongs to the effect contract, not to arbitrary shader entry points
 
 The enduring invariants are:
 
-1. One effect owns one public input/output/temporal/fallback contract regardless of execution mode.
+1. One effect owns one public input/output/temporal contract and any supported alternate or mandatory-failure policy regardless of execution mode.
 2. Inline and pipeline frontends share semantic kernels and data schemas, never stage intrinsics.
 3. One `RenderScene`, prepared scene, TLAS generation, material/geometry identity, and view serve both modes.
 4. Renderer policy selects the mode before graph construction; RHI reports capability and performs mechanism.
@@ -121,7 +121,7 @@ The target replaces the compiler-only RT package scaffolding rather than adaptin
 | `GlobalShaderMap` / `CookedShaderLibrary` | typed target lookup and validated code/ABI records for raster, compute, and RT stages | effect selection, native identifiers, table record meaning |
 | RHI public contract | independent AS/inline/pipeline capabilities; one semantic AS resource binding; immutable RT pipeline descriptor; opaque pipeline/table products; logical table materialization request; trace descriptor; states and validation errors | effect/material names, frame scheduling, native handles/bytes, shader access-mode policy |
 | D3D12/Vulkan private RHI | selected-provider AS descriptor lowering; native pipeline/state object, layout association, identifier/group-handle retrieval, record packing/alignment, GPU table resources, command encoding, native validation | which material, geometry, ray type, or effect a logical slot means |
-| Renderer shader/effect owner | concrete RT shader classes, focused typed composition, shared effect ABI/semantics, requested/active mode, exactly one frontend, output/history/fallback | raw identifier bytes, backend table layout, compiler process policy |
+| Renderer shader/effect owner | concrete RT shader classes, focused typed composition, shared effect ABI/semantics, requested/active mode, exactly one frontend, output/history/supported-alternate/failure policy | raw identifier bytes, backend table layout, compiler process policy |
 | `RenderScene` and RT scene capabilities | one AS generation, instance/geometry/material identity, logical table contribution plan, dirty generation, classic/partitioned TLAS parity | backend strides/addresses, effect selection, graph handles |
 | frame graph / `RenderPassRuntimeCache` | typed trace resource declarations, queue/state/dependency rules, pre-execute pipeline/table materialization, exact generation capture, atomic reload, submission-token retirement | shader authoring, mutable scene semantics, editor policy |
 | Application/Editor | one `Apply Changed` intent, bounded immutable status/provenance presentation, requested renderer setting | compiler scheduling, map mutation, RHI objects, native construction, table bytes |
@@ -137,7 +137,7 @@ Shared semantic HLSL owners
 Inline frontend: typed compute/graphics shader and dispatch shape
 Pipeline frontend: typed raygen + miss[] + hit groups[] + callable[] and trace shape
 Required scene features and ray types
-Readiness and accepted non-RT fallback
+Readiness and supported alternate or mandatory failure
 Correctness/quality comparison policy
 ```
 
@@ -165,7 +165,7 @@ Exact placement may follow current Renderer settings style, but the meaning is f
 | `Automatic` | yes | yes | one inspectable Renderer policy chooses and records reason |
 | `Automatic` | yes | no | inline with pipeline-unavailable reason |
 | `Automatic` | no | yes | pipeline with inline-unavailable reason |
-| `Automatic` | no | no | accepted non-RT fallback or explicit effect failure |
+| `Automatic` | no | no | explicit supported alternate or effect failure before graph construction |
 
 A strict whole-frame request preflights every selected effect, lists every incompatibility, and schedules nothing if any selected effect cannot honor the request. `Automatic` may mix modes, but never hides the result. Algorithm choices such as raster/ray GBuffer, Reference/ReSTIR lighting, or denoising remain independent axes from the execution API.
 
@@ -283,17 +283,17 @@ Capability is not one `SupportsRayTracing` boolean. The target distinguishes:
 
 Pipeline readiness is true only when the full compiler-to-graph chain is usable for the selected target/effect. Extension presence, successful library compilation, generic stage enums, valid metadata, or one backend alone cannot advertise product support.
 
-AS provider readiness is similarly complete-chain truth. A classic or partitioned provider is usable only when construction, resource registration, graph state/lifetime, semantic AS binding, exact native descriptor layout/write, and shader traversal all work together. DirectX binds the same HLSL `RaytracingAccelerationStructure` through native SRV forms; Vulkan defines distinct classic and partitioned acceleration-structure descriptor types, with the PTLAS device address carried by the descriptor write. The Renderer therefore sees neither a device address nor an access-mode enum. If the provider's descriptor route is unavailable, provider selection retains a supported provider or the effect uses its accepted renderer fallback; it does not select another shader.
+AS provider readiness is similarly complete-chain truth. A classic or partitioned provider is usable only when construction, resource registration, graph state/lifetime, semantic AS binding, exact native descriptor layout/write, and shader traversal all work together. DirectX binds the same HLSL `RaytracingAccelerationStructure` through native SRV forms; Vulkan defines distinct classic and partitioned acceleration-structure descriptor types, with the PTLAS device address carried by the descriptor write. The Renderer therefore sees neither a device address nor an access-mode enum. If the selected provider's descriptor route is unavailable, provider selection retains another fully supported provider, chooses a real effect-level alternate algorithm when one exists, or fails before graph construction; it does not select another shader representation or fabricate a product.
 
 Provider selection is fixed before binding-layout and pipeline materialization. The backend creates the exact selected-provider descriptor layout; it does not enable or preserve mutable-descriptor machinery solely to switch classic and partitioned AS representations after layout creation.
 
-For the current shadow-visibility effect, the accepted no-ray result is the same authoritative graph product cleared to packed unshadowed visibility `(1, 0, 1, 0)` by a declared shaderless graph pass. This replaces the catalog-only no-query compute shader; lack of traversal support does not create a shader identity.
+Shadow visibility is mandatory for direct lighting. Until the pipeline/RGS frontend is complete, inline ray query is the sole real producer and its absence fails before graph construction. Once both frontends exist, the immutable execution plan selects exactly one. A clear, copy, no-op, default texture, stale history, or no-query shader cannot publish the product merely to satisfy graph production.
 
 This boundary follows the [Microsoft DXR resource contract](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html), [NVIDIA NVRHI semantic acceleration-structure binding](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md), and the Khronos [`VK_NV_partitioned_acceleration_structure` descriptor contract](https://docs.vulkan.org/refpages/latest/refpages/source/VK_NV_partitioned_acceleration_structure.html).
 
 This binding choice is not a shader permutation. One `(ShaderTypeId, Target)` code record serves every supported AS provider for that target. There is no `DeviceAddress` shader suffix, authored preprocessor define, hidden backend variant, or second graph path.
 
-Every unavailable result identifies the missing owner-level requirement: compiler target, export/group ABI, backend feature/function, layout/limit, native pipeline/table creation, graph queue/resource rule, generation mismatch, effect frontend, or fallback.
+Every unavailable result identifies the missing owner-level requirement: compiler target, export/group ABI, backend feature/function, layout/limit, native pipeline/table creation, graph queue/resource rule, generation mismatch, effect frontend, supported alternate, or mandatory producer.
 
 ## Runtime, graph, and lifetime contract
 
@@ -329,7 +329,7 @@ The first product effect is the ray-traced GBuffer:
 - inline compute frontend and raygen/miss/opaque-triangle-closest-hit frontend;
 - one ray type, recursion depth one, global parameters, no local data, zero contribution mapping;
 - exact identity/sentinel comparisons and field-specific floating-point tolerances in the same frame;
-- raster GBuffer remains the accepted non-RT fallback.
+- rasterized GBuffer remains an explicit supported algorithm, not a fabricated ray-traced result.
 
 The production hit slice adds:
 
@@ -338,7 +338,7 @@ The production hit slice adds:
 - nontrivial instance/geometry/ray-type mapping shared across classic and partitioned TLAS;
 - dirty table generation without unnecessary BLAS/TLAS rebuild.
 
-Every remaining current ray-query effect is classified `Dual`, `InlineOnly`, `PipelineOnly`, or `NonRtFallback`. Migration requires a useful pipeline design and accepted correctness/quality/history oracle. A global mega-pipeline and forced migration for API coverage are rejected.
+Every remaining current ray-query effect is classified `Dual`, `InlineOnly`, `PipelineOnly`, or `SupportedAlternate`. A `SupportedAlternate` is a real algorithm with its own contract and evidence; shadow visibility has none. Migration requires a useful pipeline design and accepted correctness/quality/history oracle. A global mega-pipeline and forced migration for API coverage are rejected.
 
 ## Target completion invariants
 
@@ -346,14 +346,14 @@ The target is realized only when implementation evidence proves all of the follo
 
 - all six RT stages traverse the final shader/map/library/runtime/graph path in focused D3D12/Vulkan evidence, and any temporary conformance harness is absent from the handoff diff;
 - native identifiers/group handles remain private and table regions/indexing/alignment/bounds match the exact pipeline generation;
-- ray-traced GBuffer and shadow visibility pass same-frame dual-mode parity including alpha and fallback behavior;
+- ray-traced GBuffer and shadow visibility pass same-frame dual-mode parity including alpha, supported-alternate, and mandatory-failure behavior;
 - classic/partitioned TLAS share one logical contribution plan and no scene/material/history authority is duplicated;
 - classic/partitioned TLAS use one semantic AS shader/graph binding and private native descriptor lowering; no address/access-mode shader duplicate or fallback shader remains;
 - one immutable whole-frame plan implements strict/automatic selection and schedules exactly one frontend per effect;
 - map/library/pipeline/table reload and device recreation preserve the previous accepted generation on failure and retire old state by submission token;
 - capture/provenance follows shader/effect identity through source, compile job, map/code, composition, native pipeline/table, graph event, and symbols;
 - paired correctness, failure, capture, and performance evidence uses fixed hardware/driver/build/scene/camera/settings/sample provenance;
-- accepted raster/no-ray fallbacks remain functional and every single-mode effect is documented honestly;
+- explicit supported alternate algorithms remain functional, missing mandatory products fail before scheduling, and every single-mode effect is documented honestly;
 - no package compatibility, compiler-only RT replacement, ambiguous capability/mode, backend/graph bypass, universal shader-program layer, duplicate owner, permanent migration diagnostics, or unearned precache/permutation framework remains.
 
 The exact implementation prompts, phase ordering, validation matrix, references, and final evidence contract are intentionally centralized in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#implementation-contract).

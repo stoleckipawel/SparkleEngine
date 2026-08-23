@@ -38,6 +38,7 @@ Recommended prompt attachment:
 Every integration MUST:
 
 - deliver or preserve a real runtime, editor, renderer, RHI, cooking, launcher, capture, debugging, or validation workflow;
+- fail before scheduling or publication when required work has no real producer; never manufacture apparent success with a no-op, clear, copy, dummy value, or swallowed failure;
 - extend the existing owner and production path instead of creating a parallel subsystem or duplicate authority;
 - keep one mutable authority and explicit lifetime/publication boundaries;
 - prefer a complete vertical slice over a broad unfinished framework;
@@ -50,6 +51,14 @@ Every integration MUST:
 - improve the complete touched ownership path, including the directly exposed debt needed for one coherent result, without expanding into unrelated cleanup.
 
 The desired change is usually additive in capability and reductive in structure. Speculative frameworks, scene-specific architecture, duplicate schedulers/graphs/caches, and names whose claims exceed their evidence do not satisfy this contract.
+
+## Required Work and Alternate Implementations
+
+A required product or operation MUST be produced by a real implementation of its semantic contract. Missing capability, input, state, or implementation fails at the earliest owner that can make the complete decision, before partial scheduling, mutation, or publication whenever possible. The failure must name the missing requirement and must not be converted into plausible output.
+
+Do not add a pass, callback, adapter, default object, or error path whose only purpose is to clear, copy, fabricate, or retain a value so downstream code behaves as though required work ran. Null checks, invalid handles, `HasBeenProduced`-style state, assertions, and validation are detectors for a broken contract; they are not reasons to manufacture production.
+
+An alternate implementation is valid only when it genuinely implements the same product contract, is selected by the policy owner before work is scheduled, has inspectable requested/active state when selection is user-visible, and has proportional correctness evidence. Unsupported or deferred work is not an alternate implementation. Keep the current real path mandatory or block the vertical slice until the replacement can land coherently; do not bridge the gap with a silent fallback or placeholder.
 
 ## Current Clean-Break Policy
 

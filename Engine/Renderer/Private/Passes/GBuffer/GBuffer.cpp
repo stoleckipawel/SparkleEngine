@@ -89,7 +89,7 @@ GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, Rend
 	return targets;
 }
 
-void AddGBufferPasses(
+void AddGBufferMeshPasses(
     FrameGraphBuilder& builder,
     GpuMeshCache& gpuMeshCache,
     GBufferMode mode,
@@ -103,10 +103,10 @@ void AddGBufferPasses(
 	{
 		case GBufferMode::Rasterized:
 		default:
-			AddRasterizedGBufferPass(builder, gpuMeshCache, resources.Transient.GBuffer, resources.ImportedScene);
+			AddRasterizedGBufferMeshPass(builder, gpuMeshCache, resources.Transient.GBuffer, resources.ImportedScene);
 			break;
 		case GBufferMode::Raytraced:
-			AddRaytracedGBufferPass(builder, sceneExtent, resources.Transient.GBuffer, resources.SceneTlas, resources.ImportedScene);
+			AddRaytracedGBufferMeshPass(builder, sceneExtent, resources.Transient.GBuffer, resources.SceneTlas, resources.ImportedScene);
 			break;
 	}
 

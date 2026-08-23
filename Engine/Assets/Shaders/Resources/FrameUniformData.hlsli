@@ -1,6 +1,6 @@
 #pragma once
 
-cbuffer FrameUniformData
+cbuffer Frame
 {
 	uint FrameIndex;
 	float TotalTimeSeconds;

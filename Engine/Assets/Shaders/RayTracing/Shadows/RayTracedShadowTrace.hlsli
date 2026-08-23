@@ -3,7 +3,7 @@
 
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
-cbuffer RayTracedShadowUniformData
+cbuffer RayTracedShadowConstants
 {
 	uint RayTracedDirectionalShadowsEnabled;
 	uint RayTracedLocalLightShadowsEnabled;
@@ -41,13 +41,12 @@ namespace RayTracedShadows
 	ShadowVisibilitySignal TraceShadowRay(float3 originWorld, float3 directionWorld, float maxDistance)
 	{
 		const float clampedMaxDistance = max(maxDistance, MinimumShadowTMin);
-		const RayTracingTraceResult trace = RayTracingSceneTlas::TraceRayQueryWithAlphaTest(
-		    originWorld,
-		    directionWorld,
-		    MinimumShadowTMin,
-		    clampedMaxDistance,
-		    ShadowRayFlags,
-		    ShadowInstanceMask);
+		const RayTracingTraceResult trace = RayTracingSceneTlas::TraceRayQueryWithAlphaTest(originWorld,
+		                                                                                    directionWorld,
+		                                                                                    MinimumShadowTMin,
+		                                                                                    clampedMaxDistance,
+		                                                                                    ShadowRayFlags,
+		                                                                                    ShadowInstanceMask);
 
 		if (trace.Hit)
 		{
@@ -57,13 +56,12 @@ namespace RayTracedShadows
 		return RayTracedShadowSignals::BuildUnshadowedSignal(clampedMaxDistance);
 	}
 
-	ShadowVisibilitySignal TraceDirectLightSample(
-	    float3 positionWorld,
-	    float3 normalWorld,
-	    float3 lightDirectionWorld,
-	    float lightDistance,
-	    bool directionalLight,
-	    bool castsShadow)
+	ShadowVisibilitySignal TraceDirectLightSample(float3 positionWorld,
+	                                              float3 normalWorld,
+	                                              float3 lightDirectionWorld,
+	                                              float lightDistance,
+	                                              bool directionalLight,
+	                                              bool castsShadow)
 	{
 		const bool supported = directionalLight ? SupportsDirectionalShadows() : SupportsLocalLightShadows();
 		const float maxDistance = directionalLight ? RayTracedShadowMaxDistance : lightDistance;
@@ -78,7 +76,8 @@ namespace RayTracedShadows
 		}
 
 		const float3 originWorld = BuildRayOrigin(positionWorld, normalWorld);
-		const float traceDistance = directionalLight ? RayTracedShadowMaxDistance : max(lightDistance - MinimumShadowTMin, MinimumShadowTMin);
+		const float traceDistance =
+		    directionalLight ? RayTracedShadowMaxDistance : max(lightDistance - MinimumShadowTMin, MinimumShadowTMin);
 		return TraceShadowRay(originWorld, lightDirectionWorld, traceDistance);
 	}
 }

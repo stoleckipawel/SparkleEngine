@@ -2,7 +2,7 @@
 #include "/Engine/Lighting/Sky.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
 
-RWTexture2D<float4> SceneColorTexture;
+RWTexture2D<float4> SceneColor;
 Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
 
@@ -10,7 +10,7 @@ SamplerState SamplerLinearClamp;
 {
 	uint width = 0;
 	uint height = 0;
-	SceneColorTexture.GetDimensions(width, height);
+	SceneColor.GetDimensions(width, height);
 
 	if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
 	{
@@ -25,5 +25,5 @@ SamplerState SamplerLinearClamp;
 
 	const float3 worldDirection = ComputeSkyViewDirectionWorld(dispatchThreadId.xy);
 	const float3 skyColor = SampleSkyRadiance(SkyTexture, SamplerLinearClamp, worldDirection);
-	SceneColorTexture[dispatchThreadId.xy] = float4(skyColor, 1.0f);
+	SceneColor[dispatchThreadId.xy] = float4(skyColor, 1.0f);
 }

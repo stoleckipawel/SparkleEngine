@@ -3,7 +3,7 @@
 #include "/Engine/Debug/RenderViewModeConstants.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
 
-RWTexture2D<float4> SceneColorTexture;
+RWTexture2D<float4> SceneColor;
 Texture2D DirectDiffuse;
 Texture2D DirectSpecular;
 Texture2D DirectSubsurface;
@@ -35,7 +35,7 @@ float3 PreviewHdr(float3 color)
 
 	uint width = 0;
 	uint height = 0;
-	SceneColorTexture.GetDimensions(width, height);
+	SceneColor.GetDimensions(width, height);
 
 	if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
 	{
@@ -99,5 +99,5 @@ float3 PreviewHdr(float3 color)
 			return;
 	}
 
-	SceneColorTexture[dispatchThreadId.xy] = float4(outputColor, gBuffer.Alpha);
+	SceneColor[dispatchThreadId.xy] = float4(outputColor, gBuffer.Alpha);
 }

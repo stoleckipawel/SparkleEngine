@@ -3,7 +3,7 @@
 Texture2D DisplayLinearColor;
 RWTexture2D<float4> EncodedColor;
 
-cbuffer OutputEncodingUniformData
+cbuffer OutputEncodingConstants
 {
 	uint OutputColorEncoding;
 	uint OutputEncodingPadding0;

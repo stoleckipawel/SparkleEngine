@@ -4,7 +4,7 @@ Texture2D SceneColor;
 Texture2D ExposureTexture;
 RWTexture2D<float4> ToneMappedColor;
 
-cbuffer ToneMappingUniformData
+cbuffer ToneMappingConstants
 {
 	uint ToneMapper;
 	uint ToneMappingPadding0;

@@ -5,8 +5,4 @@
 
 class FrameGraphBuilder;
 
-void AddRestirLightingProducerPasses(
-    FrameGraphBuilder& builder,
-    bool enableInlineRayQueryShadows,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources);
+void AddRestirLightingProducerPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);

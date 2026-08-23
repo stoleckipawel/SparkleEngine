@@ -12,7 +12,6 @@ class IRayReconstructionProvider;
 void AddLightingPasses(
     FrameGraphBuilder& builder,
     LightingMode mode,
-	bool enableInlineRayQueryShadows,
     RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources);
 void AddLightingReconstructionPasses(

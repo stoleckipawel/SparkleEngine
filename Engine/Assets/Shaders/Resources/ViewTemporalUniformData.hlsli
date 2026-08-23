@@ -1,6 +1,6 @@
 #pragma once
 
-cbuffer ViewTemporalUniformData
+cbuffer ViewTemporal
 {
 	row_major float4x4 PreviousWorldToViewMatrix;
 	row_major float4x4 PreviousViewToClipMatrix;

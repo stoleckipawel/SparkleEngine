@@ -6,7 +6,7 @@ class FrameGraphBuilder;
 class GpuMeshCache;
 struct RenderFrameGraphImportedSceneResources;
 
-void AddRasterizedGBufferPass(
+void AddRasterizedGBufferMeshPass(
     FrameGraphBuilder& builder,
     GpuMeshCache& gpuMeshCache,
     const GBufferRenderTargets& targets,

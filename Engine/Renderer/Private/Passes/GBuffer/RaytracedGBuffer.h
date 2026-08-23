@@ -7,7 +7,7 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphImportedSceneResources;
 
-void AddRaytracedGBufferPass(
+void AddRaytracedGBufferMeshPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     const GBufferRenderTargets& targets,

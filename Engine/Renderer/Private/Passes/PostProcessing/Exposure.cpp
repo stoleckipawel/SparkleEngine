@@ -3,7 +3,7 @@
 
 #include "Passes/PostProcessing/ExposureMomentChain.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/PostProcessing/ExposurePass.h"
+#include "Passes/PostProcessing/ExposureShader.h"
 
 void AddExposurePass(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, const RenderFrameGraphResources& resources)
 {
@@ -23,7 +23,7 @@ void AddExposurePass(FrameGraphBuilder& builder, const RenderFrameGraphSettings&
 		}
 	}
 
-	auto& parameters = builder.AllocParameters<ExposurePass::Parameters>();
+	auto& parameters = builder.AllocParameters<ExposureCS>();
 	parameters->LuminanceMoments = builder.CreateSRV(moments.TextureHandle);
 	parameters->PreviousExposureTexture = builder.CreateSRV(resources.History.Exposure.Previous);
 	parameters->ExposureHistoryTexture = builder.CreateUAV(resources.History.Exposure.Current);
@@ -40,5 +40,5 @@ void AddExposurePass(FrameGraphBuilder& builder, const RenderFrameGraphSettings&
 		    exposure.ExposureHistoryValid = hasBeenProduced ? 1u : 0u;
 		    fields.ExposureConstants = exposure;
 	    });
-	builder.DispatchAsync<ExposurePass>(parameters);
+	builder.DispatchAsync<ExposureCS>(parameters, ComputeDispatchDesc{1u, 1u, 1u});
 }

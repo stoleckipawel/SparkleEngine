@@ -1,7 +1,6 @@
 #include "../../../PCH.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 
-ConsoleVariable<bool> CVarRayTracedShadowsEnabled("r.RayTracedShadows.Enabled", true, "Enable ray traced shadow ray queries.");
 ConsoleVariable<float> CVarRayTracedShadowNormalBias(
     "r.RayTracedShadows.NormalBias",
     0.01f,

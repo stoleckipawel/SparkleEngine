@@ -19,9 +19,7 @@ struct ShaderPackageLayoutBuilder::MergeEntry final
 	ShaderStage SourceStage = ShaderStage::Count;
 };
 
-PassParameterLayout ShaderPackageLayoutBuilder::Build(
-    std::string_view packageId,
-    std::span<const ShaderRegistrationDesc> registrations)
+PassParameterLayout ShaderPackageLayoutBuilder::Build(std::string_view packageId, std::span<const ShaderRegistrationDesc> registrations)
 {
 	if (packageId.empty())
 	{
@@ -49,20 +47,22 @@ PassParameterLayout ShaderPackageLayoutBuilder::Build(
 			PassParameterDesc parameter = BuildParameterDesc(field, registration.Stage);
 			if (parameter.Name.empty())
 			{
-				throw Diagnostics::Error(std::format(
-				    "Shader package '{}' contains an unnamed parameter in shader '{}' parameter struct '{}'.",
-				    packageId,
-				    registration.ShaderName,
-				    descriptor.Name));
+				throw Diagnostics::Error(
+				    std::format(
+				        "Shader package '{}' contains an unnamed parameter in shader '{}' parameter struct '{}'.",
+				        packageId,
+				        registration.ShaderName,
+				        descriptor.Name));
 			}
 
 			if (parameter.ArrayCount == 0)
 			{
-				throw Diagnostics::Error(std::format(
-				    "Shader package '{}' parameter '{}' in shader '{}' has invalid array count 0.",
-				    packageId,
-				    parameter.Name,
-				    registration.ShaderName));
+				throw Diagnostics::Error(
+				    std::format(
+				        "Shader package '{}' parameter '{}' in shader '{}' has invalid array count 0.",
+				        packageId,
+				        parameter.Name,
+				        registration.ShaderName));
 			}
 
 			MergeParameter(entries, std::move(parameter), field.ValueAlignmentInBytes, registration, descriptor.Name);
@@ -117,8 +117,7 @@ ShaderStageVisibility ShaderPackageLayoutBuilder::ResolveVisibility(
 PassParameterDesc ShaderPackageLayoutBuilder::BuildParameterDesc(const ShaderParameterStructFieldDescriptor& field, ShaderStage stage)
 {
 	PassParameterDesc parameter{};
-	parameter.Name = std::string(field.GetLayoutName());
-	parameter.ShaderName = std::string(field.GetShaderName());
+	parameter.Name = field.Name;
 	parameter.Kind = field.SemanticKind;
 	parameter.ResourceDomain = field.ResourceDomain;
 	parameter.Access = field.Access;
@@ -150,12 +149,8 @@ void ShaderPackageLayoutBuilder::MergeParameter(
     const ShaderRegistrationDesc& registration,
     std::string_view shaderStructName)
 {
-	const auto existing = std::ranges::find_if(
-	    entries,
-	    [&parameter](const MergeEntry& entry)
-	    {
-		    return entry.Parameter.Name == parameter.Name;
-	    });
+	const auto existing =
+	    std::ranges::find_if(entries, [&parameter](const MergeEntry& entry) { return entry.Parameter.Name == parameter.Name; });
 
 	if (existing == entries.end())
 	{
@@ -172,17 +167,19 @@ void ShaderPackageLayoutBuilder::MergeParameter(
 
 	if (!MatchesExistingBinding(*existing, parameter, valueAlignmentInBytes))
 	{
-		throw Diagnostics::Error(std::format(
-		    "Shader package '{}' has conflicting binding '{}': first declared by shader '{}' struct '{}' as {}; shader '{}' struct '{}' "
-		    "declares {}.",
-		    GetShaderRegistrationPackageId(registration),
-		    parameter.Name,
-		    existing->SourceShaderName,
-		    existing->SourceStructName,
-		    FormatParameterDesc(existing->Parameter, existing->ValueAlignmentInBytes),
-		    registration.ShaderName,
-		    shaderStructName,
-		    FormatParameterDesc(parameter, valueAlignmentInBytes)));
+		throw Diagnostics::Error(
+		    std::format(
+		        "Shader package '{}' has conflicting binding '{}': first declared by shader '{}' struct '{}' as {}; shader '{}' struct "
+		        "'{}' "
+		        "declares {}.",
+		        GetShaderRegistrationPackageId(registration),
+		        parameter.Name,
+		        existing->SourceShaderName,
+		        existing->SourceStructName,
+		        FormatParameterDesc(existing->Parameter, existing->ValueAlignmentInBytes),
+		        registration.ShaderName,
+		        shaderStructName,
+		        FormatParameterDesc(parameter, valueAlignmentInBytes)));
 	}
 
 	existing->Parameter.Visibility |= parameter.Visibility;
@@ -194,9 +191,8 @@ bool ShaderPackageLayoutBuilder::MatchesExistingBinding(
     std::uint32_t incomingAlignment) noexcept
 {
 	const PassParameterDesc& current = existing.Parameter;
-	if (current.ShaderName != incoming.ShaderName || current.Kind != incoming.Kind || current.ResourceDomain != incoming.ResourceDomain ||
-	    current.Access != incoming.Access || current.ArrayCount != incoming.ArrayCount ||
-	    current.ValueSizeInBytes != incoming.ValueSizeInBytes)
+	if (current.Kind != incoming.Kind || current.ResourceDomain != incoming.ResourceDomain || current.Access != incoming.Access
+	    || current.ArrayCount != incoming.ArrayCount || current.ValueSizeInBytes != incoming.ValueSizeInBytes)
 	{
 		return false;
 	}
@@ -212,8 +208,8 @@ bool ShaderPackageLayoutBuilder::MatchesExistingBinding(
 std::string ShaderPackageLayoutBuilder::FormatParameterDesc(const PassParameterDesc& parameter, std::uint32_t alignmentInBytes)
 {
 	return std::format(
-	    "shaderName='{}' kind={} domain={} access={} array={} size={} align={} visibility={}",
-	    parameter.GetShaderName(),
+	    "name='{}' kind={} domain={} access={} array={} size={} align={} visibility={}",
+	    parameter.Name,
 	    static_cast<std::uint32_t>(parameter.Kind),
 	    static_cast<std::uint32_t>(parameter.ResourceDomain),
 	    static_cast<std::uint32_t>(parameter.Access),

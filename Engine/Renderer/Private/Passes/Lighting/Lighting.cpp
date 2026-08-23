@@ -16,7 +16,6 @@
 void AddLightingPasses(
     FrameGraphBuilder& builder,
     LightingMode mode,
-    bool enableInlineRayQueryShadows,
     RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources)
 {
@@ -30,7 +29,7 @@ void AddLightingPasses(
 	{
 		case LightingMode::RestirPathTraced:
 		default:
-			AddRestirLightingProducerPasses(builder, enableInlineRayQueryShadows, sceneExtent, resources);
+			AddRestirLightingProducerPasses(builder, sceneExtent, resources);
 			break;
 		case LightingMode::ReferencePathTraced:
 			AddReferenceLightingProducerPasses(builder, sceneExtent, resources);

@@ -1,10 +1,10 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Direct/DirectLighting.h"
 
+#include "Core/Public/Math/MathUtils.h"
 #include "Passes/Lighting/Shadows/ShadowVisibility.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Lighting/Direct/DirectLightingPass.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
@@ -18,7 +18,7 @@ void AddDirectLightingPass(
     const DirectShadowSignalResources& shadowSignals,
     const RenderFrameGraphImportedSceneResources& externalResources)
 {
-	auto& parameters = builder.AllocParameters<DirectLightingPass::Parameters>();
+	auto& parameters = builder.AllocParameters<DirectLightingCS>();
 	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
 	parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
@@ -45,5 +45,7 @@ void AddDirectLightingPass(
 	builder.AddParameterSetup<PreparedRenderScene>(
 	    parameters,
 	    [](auto& fields, const PreparedRenderScene& scene) { fields.SceneLighting = scene.gpuBindings->Lighting.Uniform; });
-	builder.Dispatch<DirectLightingPass>(parameters, sceneExtent.Width, sceneExtent.Height);
+	builder.Dispatch<DirectLightingCS>(
+	    parameters,
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

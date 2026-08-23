@@ -21,11 +21,7 @@ enum class ShaderParameterSamplerBindingPolicy : std::uint8_t
 
 struct ShaderParameterStructFieldDescriptor final
 {
-	// Shared default used when layout and shader names are identical.
-	// Prefer LayoutName for engine binding identity and ShaderName for reflected HLSL symbols.
 	std::string Name;
-	std::string LayoutName;
-	std::string ShaderName;
 	CookedShaderResourceKind Kind = CookedShaderResourceKind::Unknown;
 	CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::Unknown;
 	ShaderParameterSemanticKind SemanticKind = ShaderParameterSemanticKind::ReadTexture;
@@ -37,10 +33,6 @@ struct ShaderParameterStructFieldDescriptor final
 	std::uint32_t ValueAlignmentInBytes = 0;
 	bool Reflected = true;
 	ShaderParameterSamplerBindingPolicy SamplerPolicy = ShaderParameterSamplerBindingPolicy::None;
-
-	std::string_view GetLayoutName() const noexcept { return LayoutName.empty() ? Name : LayoutName; }
-
-	std::string_view GetShaderName() const noexcept { return ShaderName.empty() ? Name : ShaderName; }
 };
 
 struct ShaderParameterStructDescriptor final
@@ -51,30 +43,17 @@ struct ShaderParameterStructDescriptor final
 	bool IsEmpty() const noexcept { return Fields.empty(); }
 };
 
-template <typename TParameters> class TShaderParameterStructRegistry final
+template <typename TParameters> class ShaderParameterDescriptorRegistry final
 {
-  public:
-	TShaderParameterStructRegistry() = delete;
+public:
+	ShaderParameterDescriptorRegistry() = delete;
 
 	static void AddField(ShaderParameterStructFieldDescriptor field)
 	{
-		if (field.Name.empty())
-		{
-			field.Name = !field.ShaderName.empty() ? field.ShaderName : field.LayoutName;
-		}
-		if (field.LayoutName.empty())
-		{
-			field.LayoutName = field.Name;
-		}
-		if (field.ShaderName.empty())
-		{
-			field.ShaderName = field.Name;
-		}
-
 		std::vector<ShaderParameterStructFieldDescriptor>& fields = MutableFields();
 		for (const ShaderParameterStructFieldDescriptor& existing : fields)
 		{
-			if (existing.GetLayoutName() == field.GetLayoutName())
+			if (existing.Name == field.Name)
 			{
 				return;
 			}
@@ -91,7 +70,7 @@ template <typename TParameters> class TShaderParameterStructRegistry final
 		return descriptor;
 	}
 
-  private:
+private:
 	static std::vector<ShaderParameterStructFieldDescriptor>& MutableFields()
 	{
 		static std::vector<ShaderParameterStructFieldDescriptor> fields;
@@ -99,12 +78,11 @@ template <typename TParameters> class TShaderParameterStructRegistry final
 	}
 };
 
-template <typename TParameters> class TShaderParameterFieldAutoRegister final
+template <typename TParameters> class ShaderParameterDescriptorAutoRegister final
 {
-  public:
-	TShaderParameterFieldAutoRegister(
-	    std::string_view layoutName,
-	    std::string_view shaderName,
+public:
+	ShaderParameterDescriptorAutoRegister(
+	    std::string_view name,
 	    CookedShaderResourceKind kind,
 	    CookedShaderResourceDimension dimension,
 	    ShaderParameterSemanticKind semanticKind,
@@ -117,11 +95,9 @@ template <typename TParameters> class TShaderParameterFieldAutoRegister final
 	    bool reflected,
 	    ShaderParameterSamplerBindingPolicy samplerPolicy = ShaderParameterSamplerBindingPolicy::None)
 	{
-		TShaderParameterStructRegistry<TParameters>::AddField(
+		ShaderParameterDescriptorRegistry<TParameters>::AddField(
 		    ShaderParameterStructFieldDescriptor{
-		        .Name = std::string(shaderName.empty() ? layoutName : shaderName),
-		        .LayoutName = std::string(layoutName),
-		        .ShaderName = std::string(shaderName.empty() ? layoutName : shaderName),
+		        .Name = std::string(name),
 		        .Kind = kind,
 		        .Dimension = dimension,
 		        .SemanticKind = semanticKind,
@@ -136,15 +112,14 @@ template <typename TParameters> class TShaderParameterFieldAutoRegister final
 		    });
 	}
 
-	TShaderParameterFieldAutoRegister(
+	ShaderParameterDescriptorAutoRegister(
 	    std::string_view name,
 	    CookedShaderResourceKind kind,
 	    CookedShaderResourceDimension dimension,
 	    std::uint32_t arrayCount,
 	    std::uint32_t valueSizeInBytes,
 	    std::uint32_t valueAlignmentInBytes) :
-	    TShaderParameterFieldAutoRegister(
-	        name,
+	    ShaderParameterDescriptorAutoRegister(
 	        name,
 	        kind,
 	        dimension,
@@ -159,7 +134,7 @@ template <typename TParameters> class TShaderParameterFieldAutoRegister final
 	{
 	}
 
-  private:
+private:
 	static constexpr ShaderParameterSemanticKind GetShaderParameterSemanticKind(CookedShaderResourceKind kind) noexcept
 	{
 		switch (kind)
@@ -283,43 +258,42 @@ struct ShaderDepthTargetParameter final
 {
 };
 
-template <typename TResource> struct TShaderParameterResourceTraits;
+template <typename TResource> struct ShaderParameterResourceTraits;
 
-template <> struct TShaderParameterResourceTraits<Texture2D>
+template <> struct ShaderParameterResourceTraits<Texture2D>
 {
 	static constexpr CookedShaderResourceKind Kind = CookedShaderResourceKind::Texture;
 	static constexpr CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::Texture2D;
 };
 
-template <> struct TShaderParameterResourceTraits<Texture3D>
+template <> struct ShaderParameterResourceTraits<Texture3D>
 {
 	static constexpr CookedShaderResourceKind Kind = CookedShaderResourceKind::Texture;
 	static constexpr CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::Texture3D;
 };
 
-template <> struct TShaderParameterResourceTraits<TextureCube>
+template <> struct ShaderParameterResourceTraits<TextureCube>
 {
 	static constexpr CookedShaderResourceKind Kind = CookedShaderResourceKind::Texture;
 	static constexpr CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::TextureCube;
 };
 
-template <> struct TShaderParameterResourceTraits<RWTexture2D>
+template <> struct ShaderParameterResourceTraits<RWTexture2D>
 {
 	static constexpr CookedShaderResourceKind Kind = CookedShaderResourceKind::RWTexture;
 	static constexpr CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::Texture2D;
 };
 
-template <> struct TShaderParameterResourceTraits<SamplerState>
+template <> struct ShaderParameterResourceTraits<SamplerState>
 {
 	static constexpr CookedShaderResourceKind Kind = CookedShaderResourceKind::Sampler;
 	static constexpr CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::Unknown;
 };
 
-template <> struct TShaderParameterResourceTraits<RaytracingAccelerationStructure>
+template <> struct ShaderParameterResourceTraits<RaytracingAccelerationStructure>
 {
 	static constexpr CookedShaderResourceKind Kind = CookedShaderResourceKind::AccelerationStructure;
 	static constexpr CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::Unknown;
 };
 
 SPARKLE_RHI_API std::string BuildShaderParameterStructReport(const ShaderParameterStructDescriptor& descriptor);
-

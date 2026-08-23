@@ -9,7 +9,7 @@ class FrameGraphBuilder;
 class GpuMeshCache;
 
 GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode);
-void AddGBufferPasses(
+void AddGBufferMeshPasses(
     FrameGraphBuilder& builder,
     GpuMeshCache& gpuMeshCache,
     GBufferMode mode,

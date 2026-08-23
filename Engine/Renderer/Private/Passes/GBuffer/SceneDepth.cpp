@@ -1,8 +1,9 @@
 #include "PCH.h"
 #include "Passes/GBuffer/SceneDepth.h"
 
+#include "Core/Public/Math/MathUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/GBuffer/SceneDepthPass.h"
+#include "Passes/GBuffer/SceneDepthShader.h"
 #include "View/RenderView.h"
 
 void AddLinearizeDeviceZPass(
@@ -11,11 +12,11 @@ void AddLinearizeDeviceZPass(
     FrameGraphTextureHandle deviceZ,
     FrameGraphTextureHandle sceneDepth)
 {
-	auto& parameters = builder.AllocParameters<SceneDepthPass::Parameters>();
+	auto& parameters = builder.AllocParameters<SceneDepthCS>();
 	parameters->GBufferDeviceZ = builder.CreateSRV(deviceZ);
 	parameters->SceneDepth = builder.CreateUAV(sceneDepth);
-	builder.AddParameterSetup<RenderView>(
+	builder.AddParameterSetup<RenderView>(parameters, [](auto& fields, const RenderView& view) { fields.ViewCamera = view.cameraUniform; });
+	builder.DispatchAsync<SceneDepthCS>(
 	    parameters,
-	    [](auto& fields, const RenderView& view) { fields.ViewCamera = view.cameraUniform; });
-	builder.DispatchAsync<SceneDepthPass>(parameters, sceneExtent.Width, sceneExtent.Height);
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

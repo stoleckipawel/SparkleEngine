@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Passes/GBuffer/GBufferPass.h"
+#include "Passes/GBuffer/GBufferMeshPass.h"
 
 #include <cstdint>
 
@@ -26,21 +26,21 @@ public:
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    const RenderView& view,
-	    const GBufferPass::Parameters& parameters,
+	    const GBufferMeshPass::Parameters& parameters,
 	    const RasterPassPipelineRuntime& runtime,
-	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata) const;
+	    const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata) const;
 
 private:
 	static bool BindMaterial(
 	    const PreparedRenderScene& preparedScene,
-	    GBufferPass::DrawParameterInstance& drawParameters,
+	    GBufferMeshPass::DrawParameterInstance& drawParameters,
 	    std::uint32_t materialSlot);
 	static const GpuMesh* ResolveBatch(const RenderView& view, const MeshInstanceBatch& batch, const GpuMeshCache& meshes) noexcept;
 	static bool HasValidSkinning(const PreparedRenderScene& preparedScene, const RenderView& view, const MeshInstanceBatch& batch) noexcept;
 	static void ConfigureDrawParameters(
-	    const GBufferPass::Parameters& passParameters,
+	    const GBufferMeshPass::Parameters& passParameters,
 	    const MeshInstanceBatch& batch,
-	    GBufferPass::DrawParameterInstance& drawParameters);
+	    GBufferMeshPass::DrawParameterInstance& drawParameters);
 	static RasterPassPipelineRuntime ResolveBatchRuntime(
 	    const PreparedRenderScene& preparedScene,
 	    const MeshInstanceBatch& batch,
@@ -49,7 +49,7 @@ private:
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
 	    const RasterPassPipelineRuntime& runtime,
-	    GBufferPass::DrawParameterInstance& drawParameters,
+	    GBufferMeshPass::DrawParameterInstance& drawParameters,
 	    const GpuMesh& gpuMesh,
 	    std::uint32_t viewModeIndex);
 	static void DrawBatch(
@@ -57,9 +57,9 @@ private:
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    const RenderView& view,
-	    const GBufferPass::Parameters& passParameters,
+	    const GBufferMeshPass::Parameters& passParameters,
 	    const RasterPassPipelineRuntime& runtime,
-	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
+	    const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata,
 	    const GpuMesh& gpuMesh,
 	    const MeshInstanceBatch& batch,
 	    std::uint32_t viewModeIndex);

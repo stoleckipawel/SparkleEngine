@@ -4,12 +4,8 @@
 #include "Passes/Lighting/Restir/RestirDirectLighting.h"
 #include "Passes/Lighting/Restir/RestirIndirectLighting.h"
 
-void AddRestirLightingProducerPasses(
-    FrameGraphBuilder& builder,
-    bool enableInlineRayQueryShadows,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources)
+void AddRestirLightingProducerPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
 {
-	AddRestirDirectLightingPasses(builder, enableInlineRayQueryShadows, sceneExtent, resources);
+	AddRestirDirectLightingPasses(builder, sceneExtent, resources);
 	AddRestirIndirectLightingPasses(builder, sceneExtent, resources);
 }

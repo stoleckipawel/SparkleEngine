@@ -1,16 +1,17 @@
 #include "PCH.h"
 #include "Passes/GBuffer/RaytracedGBuffer.h"
 
+#include "Core/Public/Math/MathUtils.h"
 #include "Passes/GBuffer/RaytracedGBufferTargetClear.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/RayTracing/RaytracedGBufferPass.h"
+#include "Passes/RayTracing/RaytracedGBufferShader.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
 
-void AddRaytracedGBufferPass(
+void AddRaytracedGBufferMeshPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     const GBufferRenderTargets& targets,
@@ -18,7 +19,7 @@ void AddRaytracedGBufferPass(
     const RenderFrameGraphImportedSceneResources& externalResources)
 {
 	AddRaytracedGBufferTargetClearPass(builder, targets);
-	auto& parameters = builder.AllocParameters<RaytracedGBufferPass::Parameters>();
+	auto& parameters = builder.AllocParameters<RaytracedGBufferCS>();
 	parameters->GBufferBaseColor = builder.CreateUAV(targets.BaseColor);
 	parameters->GBufferNormal = builder.CreateUAV(targets.Normal);
 	parameters->GBufferMaterial = builder.CreateUAV(targets.Material);
@@ -61,5 +62,7 @@ void AddRaytracedGBufferPass(
 		        .RayTracingHitInstanceCount = rayTracing.InstanceCount,
 		        .RayTracingHitMaterialCount = rayTracing.MaterialCount};
 	    });
-	builder.Dispatch<RaytracedGBufferPass>(parameters, sceneExtent.Width, sceneExtent.Height);
+	builder.Dispatch<RaytracedGBufferCS>(
+	    parameters,
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

@@ -1,11 +1,12 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Direct/DirectLightReservoir.h"
 
+#include "Core/Public/Math/MathUtils.h"
 #include "Passes/Lighting/Shadows/ShadowVisibility.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Lighting/Direct/DirectLightReservoirSpatialPass.h"
-#include "Passes/Lighting/Direct/DirectLightReservoirTemporalPass.h"
+#include "Passes/Lighting/Direct/DirectLightReservoirSpatialShader.h"
+#include "Passes/Lighting/Direct/DirectLightReservoirTemporalShader.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
@@ -32,9 +33,7 @@ void AddDirectLightReservoirPasses(
 	};
 	const auto bindFrameParameters = [&](auto& parameters)
 	{
-		builder.AddParameterSetup<FrameUniformData>(
-		    parameters,
-		    [](auto& fields, const FrameUniformData& frame) { fields.Frame = frame; });
+		builder.AddParameterSetup<FrameUniformData>(parameters, [](auto& fields, const FrameUniformData& frame) { fields.Frame = frame; });
 		builder.AddParameterSetup<RenderView>(
 		    parameters,
 		    [](auto& fields, const RenderView& view)
@@ -48,7 +47,7 @@ void AddDirectLightReservoirPasses(
 		    [](auto& fields, const PreparedRenderScene& scene) { fields.SceneLighting = scene.gpuBindings->Lighting.Uniform; });
 	};
 
-	auto& temporalParameters = builder.AllocParameters<DirectLightReservoirTemporalPass::Parameters>();
+	auto& temporalParameters = builder.AllocParameters<DirectLightReservoirTemporalCS>();
 	temporalParameters->TemporalReservoirSample = builder.CreateUAV(shadowSignals.TemporalReservoirSample);
 	temporalParameters->TemporalReservoirWeight = builder.CreateUAV(shadowSignals.TemporalReservoirWeight);
 	temporalParameters->PreviousReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Previous);
@@ -66,21 +65,14 @@ void AddDirectLightReservoirPasses(
 			fields.ViewTemporal = temporal;
 		}
 	};
-	builder.AddResourceProductionSetup(
+	builder.AddResourceProductionSetup(temporalParameters, shadowSignals.ReservoirHistory.Sample.Previous, invalidateTemporalHistory);
+	builder.AddResourceProductionSetup(temporalParameters, shadowSignals.ReservoirHistory.Weight.Previous, invalidateTemporalHistory);
+	builder.AddResourceProductionSetup(temporalParameters, shadowSignals.ReservoirHistory.Surface.Previous, invalidateTemporalHistory);
+	builder.Dispatch<DirectLightReservoirTemporalCS>(
 	    temporalParameters,
-	    shadowSignals.ReservoirHistory.Sample.Previous,
-	    invalidateTemporalHistory);
-	builder.AddResourceProductionSetup(
-	    temporalParameters,
-	    shadowSignals.ReservoirHistory.Weight.Previous,
-	    invalidateTemporalHistory);
-	builder.AddResourceProductionSetup(
-	    temporalParameters,
-	    shadowSignals.ReservoirHistory.Surface.Previous,
-	    invalidateTemporalHistory);
-	builder.Dispatch<DirectLightReservoirTemporalPass>(temporalParameters, sceneExtent.Width, sceneExtent.Height);
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 
-	auto& spatialParameters = builder.AllocParameters<DirectLightReservoirSpatialPass::Parameters>();
+	auto& spatialParameters = builder.AllocParameters<DirectLightReservoirSpatialCS>();
 	spatialParameters->TemporalReservoirSample = builder.CreateSRV(shadowSignals.TemporalReservoirSample);
 	spatialParameters->TemporalReservoirWeight = builder.CreateSRV(shadowSignals.TemporalReservoirWeight);
 	spatialParameters->CurrentReservoirSample = builder.CreateUAV(shadowSignals.ReservoirHistory.Sample.Current);
@@ -88,5 +80,7 @@ void AddDirectLightReservoirPasses(
 	spatialParameters->CurrentReservoirSurface = builder.CreateUAV(shadowSignals.ReservoirHistory.Surface.Current);
 	bindCommonParameters(spatialParameters);
 	bindFrameParameters(spatialParameters);
-	builder.Dispatch<DirectLightReservoirSpatialPass>(spatialParameters, sceneExtent.Width, sceneExtent.Height);
+	builder.Dispatch<DirectLightReservoirSpatialCS>(
+	    spatialParameters,
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

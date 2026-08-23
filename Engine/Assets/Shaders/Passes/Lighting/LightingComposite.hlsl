@@ -1,4 +1,4 @@
-RWTexture2D<float4> SceneColorTexture;
+RWTexture2D<float4> SceneColor;
 Texture2D DirectDiffuse;
 Texture2D DirectSpecular;
 Texture2D DirectSubsurface;
@@ -41,7 +41,7 @@ float3 ComposeSpecularLighting(LightingTerms terms)
 {
 	uint width = 0;
 	uint height = 0;
-	SceneColorTexture.GetDimensions(width, height);
+	SceneColor.GetDimensions(width, height);
 
 	if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
 	{
@@ -55,5 +55,5 @@ float3 ComposeSpecularLighting(LightingTerms terms)
 	const float3 emissive = max(GBufferEmissive.Load(pixel).rgb, 0.0f);
 	const float alpha = GBufferBaseColor.Load(pixel).a;
 	const float3 lit = diffuseLighting + specularLighting + lighting.DirectSubsurface + emissive;
-	SceneColorTexture[dispatchThreadId.xy] = float4(lit, alpha);
+	SceneColor[dispatchThreadId.xy] = float4(lit, alpha);
 }

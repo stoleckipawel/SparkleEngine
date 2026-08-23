@@ -29,9 +29,7 @@ public:
 	RenderRayTracingScene(RenderRayTracingScene&&) = delete;
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
-	RenderRayTracingFrameBindings Prepare(
-	    const PreparedRenderScene& preparedScene,
-	    const RayTracingPtlasPartitionPlan& viewPlan) noexcept;
+	RenderRayTracingFrameBindings Prepare(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan& viewPlan) noexcept;
 	void Build(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
@@ -41,6 +39,10 @@ public:
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.Core.SupportsRayTracing; }
 	bool CanUseInlineRayQueryShadows() const noexcept { return m_capabilityReport.CanUseInlineRayQueryShadows(); }
+	const char* GetInlineRayQueryShadowUnavailableReason() const noexcept
+	{
+		return m_capabilityReport.GetInlineRayQueryShadowUnavailableReason();
+	}
 	bool HasValidTlas() const noexcept;
 
 private:

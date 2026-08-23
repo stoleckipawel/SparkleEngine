@@ -15,7 +15,7 @@
 
 bool GBufferMeshBatchDrawer::BindMaterial(
     const PreparedRenderScene& preparedScene,
-    GBufferPass::DrawParameterInstance& drawParameters,
+    GBufferMeshPass::DrawParameterInstance& drawParameters,
     std::uint32_t materialSlot)
 {
 	if (materialSlot >= preparedScene.materials.size())
@@ -29,16 +29,16 @@ bool GBufferMeshBatchDrawer::BindMaterial(
 		return false;
 	}
 
-	drawParameters->PerObjectPS = material.ToPerObjectPSData();
+	drawParameters->Pixel.PerObjectPS = material.ToPerObjectPSData();
 	const RhiDescriptorTableHandle textureTable = material.rasterTextureTable.Table;
-	drawParameters->TextureBaseColor = {textureTable, MaterialTextureSlots::BaseColor};
-	drawParameters->TextureNormal = {textureTable, MaterialTextureSlots::Normal};
-	drawParameters->TextureRoughness = {textureTable, MaterialTextureSlots::Roughness};
-	drawParameters->TextureMetallic = {textureTable, MaterialTextureSlots::Metallic};
-	drawParameters->TextureOcclusion = {textureTable, MaterialTextureSlots::Occlusion};
-	drawParameters->TextureEmissive = {textureTable, MaterialTextureSlots::Emissive};
-	drawParameters->TextureSubsurfaceColor = {textureTable, MaterialTextureSlots::SubsurfaceColor};
-	drawParameters->TextureSubsurfaceStrength = {textureTable, MaterialTextureSlots::SubsurfaceStrength};
+	drawParameters->Pixel.TextureBaseColor = {textureTable, MaterialTextureSlots::BaseColor};
+	drawParameters->Pixel.TextureNormal = {textureTable, MaterialTextureSlots::Normal};
+	drawParameters->Pixel.TextureRoughness = {textureTable, MaterialTextureSlots::Roughness};
+	drawParameters->Pixel.TextureMetallic = {textureTable, MaterialTextureSlots::Metallic};
+	drawParameters->Pixel.TextureOcclusion = {textureTable, MaterialTextureSlots::Occlusion};
+	drawParameters->Pixel.TextureEmissive = {textureTable, MaterialTextureSlots::Emissive};
+	drawParameters->Pixel.TextureSubsurfaceColor = {textureTable, MaterialTextureSlots::SubsurfaceColor};
+	drawParameters->Pixel.TextureSubsurfaceStrength = {textureTable, MaterialTextureSlots::SubsurfaceStrength};
 	return true;
 }
 
@@ -79,17 +79,13 @@ bool GBufferMeshBatchDrawer::HasValidSkinning(
 }
 
 void GBufferMeshBatchDrawer::ConfigureDrawParameters(
-    const GBufferPass::Parameters& passParameters,
+    const GBufferMeshPass::Parameters& passParameters,
     const MeshInstanceBatch& batch,
-    GBufferPass::DrawParameterInstance& drawParameters)
+    GBufferMeshPass::DrawParameterInstance& drawParameters)
 {
-	drawParameters->MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = batch.firstInstance};
-	drawParameters->MeshInstances = passParameters.MeshInstances;
-	drawParameters->MeshInstanceSlots = passParameters.MeshInstanceSlots;
-	drawParameters->JointMatrices = passParameters.JointMatrices;
-	drawParameters->PreviousJointMatrices = passParameters.PreviousJointMatrices;
-	drawParameters->MorphWeights = passParameters.MorphWeights;
-	drawParameters->PreviousMorphWeights = passParameters.PreviousMorphWeights;
+	drawParameters->Vertex = passParameters.Shader.Vertex;
+	drawParameters->Pixel = passParameters.Shader.Pixel;
+	drawParameters->Vertex.MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = batch.firstInstance};
 }
 
 RasterPassPipelineRuntime GBufferMeshBatchDrawer::ResolveBatchRuntime(
@@ -109,7 +105,7 @@ bool GBufferMeshBatchDrawer::BindBatchPipeline(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
     const RasterPassPipelineRuntime& runtime,
-    GBufferPass::DrawParameterInstance& drawParameters,
+    GBufferMeshPass::DrawParameterInstance& drawParameters,
     const GpuMesh& gpuMesh,
     std::uint32_t viewModeIndex)
 {
@@ -123,7 +119,7 @@ bool GBufferMeshBatchDrawer::BindBatchPipeline(
 	    runtime,
 	    drawParameters.GetPassParameterSet(),
 	    &overrides,
-	    GBufferPass::PassName,
+	    "GBuffer",
 	    false,
 	    viewModeIndex);
 }
@@ -133,9 +129,9 @@ void GBufferMeshBatchDrawer::DrawBatch(
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
-    const GBufferPass::Parameters& passParameters,
+    const GBufferMeshPass::Parameters& passParameters,
     const RasterPassPipelineRuntime& runtime,
-    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
+    const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata,
     const GpuMesh& gpuMesh,
     const MeshInstanceBatch& batch,
     std::uint32_t viewModeIndex)
@@ -148,7 +144,7 @@ void GBufferMeshBatchDrawer::DrawBatch(
 
 	gpuMesh.Bind(commandContext);
 
-	GBufferPass::DrawParameterInstance drawParameters(drawParameterMetadata);
+	GBufferMeshPass::DrawParameterInstance drawParameters(drawParameterMetadata);
 	ConfigureDrawParameters(passParameters, batch, drawParameters);
 	if (!BindMaterial(preparedScene, drawParameters, batch.materialSlot))
 	{
@@ -169,9 +165,9 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
-    const GBufferPass::Parameters& parameters,
+    const GBufferMeshPass::Parameters& parameters,
     const RasterPassPipelineRuntime& runtime,
-    const GBufferPass::DrawParameterMetadata& drawParameterMetadata) const
+    const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata) const
 {
 	if (!preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
 	{

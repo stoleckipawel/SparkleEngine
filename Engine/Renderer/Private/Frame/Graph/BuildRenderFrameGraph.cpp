@@ -19,8 +19,8 @@ RenderFrameGraphResources BuildRenderFrameGraph(
 	RenderFrameGraphResources resources = {};
 	CreateRenderFrameGraphResources(builder, settings, resources);
 	AddRaytracingScenePasses(builder, rayTracingScene, resources);
-	AddGBufferPasses(builder, gpuMeshCache, settings.GBuffer, settings.RenderExtent, resources);
-	AddLightingPasses(builder, settings.Lighting, settings.EnableInlineRayQueryShadows, settings.RenderExtent, resources);
+	AddGBufferMeshPasses(builder, gpuMeshCache, settings.GBuffer, settings.RenderExtent, resources);
+	AddLightingPasses(builder, settings.Lighting, settings.RenderExtent, resources);
 	AddPreReconstructionPostProcessingPasses(builder, settings, resources);
 	AddLightingReconstructionPasses(
 	    builder,

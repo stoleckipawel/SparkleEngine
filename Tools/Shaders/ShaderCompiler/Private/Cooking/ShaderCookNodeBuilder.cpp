@@ -49,21 +49,12 @@ void ShaderCookNodeBuilder::BuildAndAdd(
 	const ShaderCookPackageDesc& package = plan.packages[packageIndex];
 	const ShaderCookStageDesc& stage = package.stages[stageIndex];
 	const ShaderTarget target = settings.targets[targetIndex];
-	ShaderCompileOptions compileOptions =
-	    BuildCompileOptions(settings, package, stage, target);
+	ShaderCompileOptions compileOptions = BuildCompileOptions(settings, package, stage, target);
 
 	IShaderBackend& backend = ResolveBackend(settings, package, stage, target, compileOptions, backendPool);
 	const std::string backendName(backend.GetBackendName());
 
-	AppendNode(
-	    packageIndex,
-	    package,
-	    stage,
-	    target,
-	    std::move(compileOptions),
-	    backendName,
-	    backend,
-	    plan);
+	AppendNode(packageIndex, package, stage, target, std::move(compileOptions), backendName, backend, plan);
 }
 
 ShaderCompileOptions ShaderCookNodeBuilder::BuildCompileOptions(
@@ -72,11 +63,9 @@ ShaderCompileOptions ShaderCookNodeBuilder::BuildCompileOptions(
     const ShaderCookStageDesc& stage,
     ShaderTarget target)
 {
-	ShaderCompileOptions compileOptions =
-	    ShaderCookPlanner::BuildCompileOptions(stage);
+	ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(stage);
 	compileOptions.Target = target;
-	compileOptions.CaptureDebugArtifacts =
-	    !settings.debugArtifactDirectory.empty();
+	compileOptions.CaptureDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	compileOptions.EnableDebugInfo = settings.enableDebugInfo;
 	compileOptions.EnableOptimizations = settings.enableOptimizations;
 	compileOptions.TreatWarningsAsErrors = settings.treatWarningsAsErrors;
@@ -86,25 +75,19 @@ ShaderCompileOptions ShaderCookNodeBuilder::BuildCompileOptions(
 	return compileOptions;
 }
 
-void ShaderCookNodeBuilder::AppendDescriptorBindingRemaps(
-    const ShaderCookPackageDesc& package,
-    ShaderCompileOptions& compileOptions)
+void ShaderCookNodeBuilder::AppendDescriptorBindingRemaps(const ShaderCookPackageDesc& package, ShaderCompileOptions& compileOptions)
 {
 	const std::vector<PassParameterDesc>& parameters = package.bindingLayout.GetParameters();
 	compileOptions.DescriptorBindingRemaps.reserve(parameters.size());
 	for (std::uint32_t parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex)
 	{
 		const PassParameterDesc& parameter = parameters[parameterIndex];
-		if (parameter.Kind == ShaderParameterSemanticKind::RenderTarget ||
-		    parameter.Kind == ShaderParameterSemanticKind::DepthTarget)
+		if (parameter.Kind == ShaderParameterSemanticKind::RenderTarget || parameter.Kind == ShaderParameterSemanticKind::DepthTarget)
 		{
 			continue;
 		}
 		compileOptions.DescriptorBindingRemaps.push_back(
-		    ShaderDescriptorBindingRemap{
-		        .Name = std::string(parameter.GetShaderName()),
-		        .Set = 0,
-		        .Binding = parameterIndex});
+		    ShaderDescriptorBindingRemap{.Name = parameter.Name, .Set = 0, .Binding = parameterIndex});
 	}
 }
 
@@ -118,19 +101,17 @@ IShaderBackend& ShaderCookNodeBuilder::ResolveBackend(
 {
 	try
 	{
-		return backendPool.ResolveAndAcquire(
-		    compileOptions.SourcePath,
-		    compileOptions.Target,
-		    settings.backendName);
+		return backendPool.ResolveAndAcquire(compileOptions.SourcePath, compileOptions.Target, settings.backendName);
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		throw Diagnostics::Error(std::format(
-		    "Failed to resolve a shader backend for shader package '{}' stage '{}' target '{}' - {}",
-		    package.packageId,
-		    GetShaderStagePrefix(stage.stage),
-		    GetShaderTargetName(target),
-		    error.what()));
+		throw Diagnostics::Error(
+		    std::format(
+		        "Failed to resolve a shader backend for shader package '{}' stage '{}' target '{}' - {}",
+		        package.packageId,
+		        GetShaderStagePrefix(stage.stage),
+		        GetShaderTargetName(target),
+		        error.what()));
 	}
 }
 
@@ -153,29 +134,29 @@ void ShaderCookNodeBuilder::AppendNode(
 	    optionsHash,
 	    backendName,
 	    backend.GetBackendVersion());
-	const std::string profileName =
-	    ShaderCompileProfile::BuildTargetProfile(compileOptions);
+	const std::string profileName = ShaderCompileProfile::BuildTargetProfile(compileOptions);
 
-	plan.nodes.push_back(CookNode{
-	    .packageIndex = packageIndex,
-	    .package = &package,
-	    .stage = &stage,
-	    .backendName = backendName,
-	    .compileOptions = std::move(compileOptions),
-	    .parameterStructDescriptor = stage.parameterStructDescriptor,
-	    .sourceHash = includeHash.sourceHash,
-	    .includeClosureHash = includeHash.includeClosureHash,
-	    .optionsHash = optionsHash,
-	    .jobIdentity = ShaderContractJobIdentity{
-	        .packageId = package.packageId,
-	        .sourcePath = stage.sourcePath,
-	        .entryPoint = stage.entryPoint,
-	        .stage = stage.stage,
+	plan.nodes.push_back(
+	    CookNode{
+	        .packageIndex = packageIndex,
+	        .package = &package,
+	        .stage = &stage,
 	        .backendName = backendName,
-	        .targetName = GetShaderTargetName(target),
-	        .profileName = profileName,
+	        .compileOptions = std::move(compileOptions),
+	        .parameterStructDescriptor = stage.parameterStructDescriptor,
 	        .sourceHash = includeHash.sourceHash,
 	        .includeClosureHash = includeHash.includeClosureHash,
 	        .optionsHash = optionsHash,
-	        .compileInputHash = compileInputHash}});
+	        .jobIdentity = ShaderContractJobIdentity{
+	            .packageId = package.packageId,
+	            .sourcePath = stage.sourcePath,
+	            .entryPoint = stage.entryPoint,
+	            .stage = stage.stage,
+	            .backendName = backendName,
+	            .targetName = GetShaderTargetName(target),
+	            .profileName = profileName,
+	            .sourceHash = includeHash.sourceHash,
+	            .includeClosureHash = includeHash.includeClosureHash,
+	            .optionsHash = optionsHash,
+	            .compileInputHash = compileInputHash}});
 }

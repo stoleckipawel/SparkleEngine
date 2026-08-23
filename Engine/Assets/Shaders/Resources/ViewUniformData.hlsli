@@ -1,6 +1,6 @@
 #pragma once
 
-cbuffer ViewUniformData
+cbuffer View
 {
 	float2 ViewportSize;
 	float2 ViewportSizeInv;

@@ -19,4 +19,3 @@ DirectShadowSignalResources CreateDirectShadowSignalResources(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources);
-void AddShadowVisibilityFallbackPass(FrameGraphBuilder& builder, FrameGraphTextureHandle visibility);

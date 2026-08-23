@@ -1,14 +1,15 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Restir/RestirIndirectResolve.h"
 
+#include "Core/Public/Math/MathUtils.h"
 #include "ShaderData/RayTracingLightingParameters.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/RayTracing/RestirIndirectResolvePass.h"
+#include "Passes/RayTracing/RestirIndirectResolveShader.h"
 #include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
 
 void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
-	auto& parameters = builder.AllocParameters<RestirIndirectResolvePass::Parameters>();
+	auto& parameters = builder.AllocParameters<RestirIndirectResolveCS>();
 	parameters->CurrentReservoirSampleTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Sample.Current);
 	parameters->CurrentReservoirWeightTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Weight.Current);
 	parameters->IndirectDiffuse = builder.CreateUAV(resources.Transient.Lighting.IndirectDiffuse);
@@ -48,5 +49,7 @@ void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExte
 		        .NormalBias = settings.NormalBias,
 		        .MaxDistance = settings.MaxDistance};
 	    });
-	builder.Dispatch<RestirIndirectResolvePass>(parameters, sceneExtent.Width, sceneExtent.Height);
+	builder.Dispatch<RestirIndirectResolveCS>(
+	    parameters,
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

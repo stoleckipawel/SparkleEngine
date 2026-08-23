@@ -1,8 +1,9 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Reference/ReferenceLightingAccumulation.h"
 
+#include "Core/Public/Math/MathUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/RayTracing/ReferenceLightingAccumulationPass.h"
+#include "Passes/RayTracing/ReferenceLightingAccumulationShader.h"
 #include "RayTracing/Effects/PathTracedLighting/PathTracedLightingSettings.h"
 
 void AddReferenceLightingAccumulationPass(
@@ -11,7 +12,7 @@ void AddReferenceLightingAccumulationPass(
     FrameGraphTextureHandle referenceSample,
     const RenderFrameGraphResources& resources)
 {
-	auto& parameters = builder.AllocParameters<ReferenceLightingAccumulationPass::Parameters>();
+	auto& parameters = builder.AllocParameters<ReferenceLightingAccumulationCS>();
 	parameters->ReferenceLightingSample = builder.CreateSRV(referenceSample);
 	parameters->SceneColorTexture = builder.CreateUAV(resources.Transient.Scene.SceneColor);
 	parameters->PreviousReferenceLighting = builder.CreateSRV(resources.History.ReferenceLighting.Previous);
@@ -35,5 +36,7 @@ void AddReferenceLightingAccumulationPass(
 		    constants.HistoryValid = hasBeenProduced ? 1u : 0u;
 		    fields.ReferenceLightingAccumulationConstants = constants;
 	    });
-	builder.Dispatch<ReferenceLightingAccumulationPass>(parameters, sceneExtent.Width, sceneExtent.Height);
+	builder.Dispatch<ReferenceLightingAccumulationCS>(
+	    parameters,
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }
