@@ -27,10 +27,10 @@ Prefer persistent indexed state plus dirty ranges over full scene rebuild/upload
 
 ## Required Render Products
 
-- Every required graph product has exactly one scheduled semantic producer before any consumer can execute. Validate the selected feature and hardware capability before graph construction when that decision is already available.
+- Every required graph product has exactly one scheduled semantic producer before any consumer can execute. Frame/feature orchestration schedules that producer and does not duplicate shader, acceleration-structure, descriptor, pipeline, or backend capability checks owned below it.
 - Never add a clear, copy, no-op, dummy resource, default value, or stale-history pass merely to mark a required product as produced. Invalid handles, null checks, graph production state, native validation, and assertions must expose the missing producer rather than conceal it.
 - A supported alternate renderer path must produce the same declared product contract, be selected explicitly by the owning Renderer policy, and carry its own correctness evidence. A deferred implementation is not a fallback.
-- Shadow visibility consumed by direct lighting is mandatory. Until both frontends exist, the available inline-query or ray-tracing-pipeline implementation is required; if no real producer is available, fail before graph construction.
+- Shadow visibility consumed by direct lighting is mandatory. Schedule the selected real producer without a high-level capability guard; shader/runtime/RHI owners expose an unavailable implementation through their normal materialization or execution failure contract.
 
 ## Shader Parameter Identity
 

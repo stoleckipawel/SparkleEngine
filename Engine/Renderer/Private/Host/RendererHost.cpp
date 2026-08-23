@@ -66,8 +66,7 @@ void RendererHost::InitializeCoreRuntime(
 void RendererHost::InitializeSceneRuntime(TaskExecutor& taskExecutor, TaskScope& applicationTaskScope) noexcept
 {
 	RenderHardwareInterface& renderHardwareInterface = GetDeviceServices().GetRenderHardwareInterface();
-	const RayTracingCapabilityReport rayTracingCapabilities =
-	    RayTracingCapabilityReporter::Build(renderHardwareInterface.GetCapabilities());
+	const RayTracingCapabilityReport rayTracingCapabilities = BuildRayTracingCapabilityReport(renderHardwareInterface.GetCapabilities());
 	m_textureCache = std::make_unique<TextureCache>(
 	    renderHardwareInterface.GetResourceService(),
 	    renderHardwareInterface.GetDescriptorService(),

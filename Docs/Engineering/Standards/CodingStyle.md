@@ -188,7 +188,7 @@ Do not define classes, structs, or enum-like implementation records inside funct
 
 ### Namespaces
 
-Anonymous namespaces are forbidden in owned source; the expected repository count is zero. Do not replace them with `Detail`, `Internal`, `Private`, `Local`, `Implementation`, `Helpers`, `Common`, or `Misc` buckets. Behavior supporting one owner belongs to that owner; free functions belong only in a genuine established domain namespace.
+Anonymous (unnamed) namespaces are forbidden in owned source; the expected repository count is zero. Do not replace them with `Detail`, `Internal`, `Private`, `Local`, `Implementation`, `Helpers`, `Common`, or `Misc` buckets. Behavior supporting one owner belongs to that owner; free functions belong only in a genuine established domain namespace.
 
 Indent every named namespace. Do not place a trailing `// namespace ...` comment after its closing brace. Existing namespace-end comments are migration debt and MUST be removed by the dedicated formatting change or when their file is otherwise modified.
 

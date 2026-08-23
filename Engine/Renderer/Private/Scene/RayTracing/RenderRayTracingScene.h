@@ -37,12 +37,7 @@ public:
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
 
-	bool IsAvailable() const noexcept { return m_capabilityReport.Core.SupportsRayTracing; }
-	bool CanUseInlineRayQueryShadows() const noexcept { return m_capabilityReport.CanUseInlineRayQueryShadows(); }
-	const char* GetInlineRayQueryShadowUnavailableReason() const noexcept
-	{
-		return m_capabilityReport.GetInlineRayQueryShadowUnavailableReason();
-	}
+	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsRayTracing; }
 	bool HasValidTlas() const noexcept;
 
 private:

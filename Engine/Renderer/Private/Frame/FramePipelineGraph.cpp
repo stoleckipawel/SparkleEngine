@@ -12,22 +12,7 @@
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "Resources/History/FrameHistory.h"
 #include "Scene/RenderScene.h"
-#include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "View/ViewportDisplaySettings.h"
-
-static const auto g_framePipelineGraphLogger = Logging::GetOrCreateLogger("Renderer.FramePipeline");
-
-static void RequireShadowVisibilityProducer(LightingMode lighting, const RenderRayTracingScene& rayTracingScene) noexcept
-{
-	if (lighting != LightingMode::RestirPathTraced || rayTracingScene.CanUseInlineRayQueryShadows())
-	{
-		return;
-	}
-
-	std::string message = "ReSTIR direct lighting requires an inline ray-query shadow-visibility producer: ";
-	message += rayTracingScene.GetInlineRayQueryShadowUnavailableReason();
-	Diagnostics::Fatal(g_framePipelineGraphLogger, __FILE__, __LINE__, message);
-}
 
 RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 {
@@ -43,7 +28,6 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const LightingMode lighting = GetLightingMode();
-	RequireShadowVisibilityProducer(lighting, m_renderScene.GetRayTracingSceneCapability());
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
 	const ImageProviderPipeline imagePipeline = lighting == LightingMode::RestirPathTraced ? ImageProviderPipeline::RayReconstruction
 	                                                                                       : ImageProviderPipeline::PresentationUpscaling;

@@ -23,7 +23,7 @@ RenderRayTracingScene::RenderRayTracingScene(
 	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
 	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
 	m_performanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
-	if (!m_capabilityReport.Core.SupportsRayTracing)
+	if (!m_capabilityReport.SupportsRayTracing)
 	{
 		return;
 	}
@@ -69,8 +69,7 @@ void RenderRayTracingScene::Build(
 
 	m_blasCache->BeginFrame();
 	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild =
-	    m_topLevelAccelerationStructureStrategy
-	        ->Build(commandContext, preparedScene, *m_blasCache, viewPlan, &performanceDiagnostics);
+	    m_topLevelAccelerationStructureStrategy->Build(commandContext, preparedScene, *m_blasCache, viewPlan, &performanceDiagnostics);
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
 
 	m_performanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;
