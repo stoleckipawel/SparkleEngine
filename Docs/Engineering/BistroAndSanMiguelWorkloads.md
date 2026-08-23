@@ -404,7 +404,7 @@ Every comparison freezes:
 - light transforms, intensities, spectra/colors, and environment;
 - material manifest version;
 - random seed and sample count where applicable;
-- engine commit, shader package hash, asset hash, hardware, operating system, driver, and API.
+- engine commit, active shader-map and code-library hashes, asset hash, hardware, operating system, driver, and API.
 
 Quality evaluation combines:
 
@@ -460,7 +460,7 @@ The benchmark protocol records:
 - CPU and GPU p50/p95/p99 frame times plus worst frame;
 - per-pass GPU times and queue overlap;
 - scene extraction, culling, frame-graph compile, command recording, submission, and present CPU times;
-- draw, dispatch, pipeline, shader package, descriptor, barrier, and queue counts;
+- draw, dispatch, pipeline, shader-type, active-map, code-record, descriptor, barrier, and queue counts;
 - process working set/private commit, tracked GPU allocations/allocator blocks, local/non-local usage and mutable budget, residency where supported, and separately identified process-lifetime/session/run high-water marks;
 - texture upload, eviction, mip/residency, and missing-resource events;
 - BLAS/TLAS count, source geometry, build/update/compaction time, scratch/result memory, and traversal-sensitive experiments;

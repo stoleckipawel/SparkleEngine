@@ -59,7 +59,7 @@ Start with [Editor Viewport Camera Architecture](Architecture/EditorViewportCame
 
 ### Renderer Scene, View, And Frame Work
 
-Start with [Renderer Scene, View, And Frame Architecture](Architecture/RendererSceneViewFrameArchitecture.md) for the Unreal-familiar concept/navigation map and the per-phase implementation prompts, references, guardrails, acceptance criteria, cleanup/CL boundaries, no-intermediate-build rule, and atomic full-cutover target for persistent scene, view, frame, GPU-scene, and pass ownership.
+Start with the [current renderer navigation overlay](Architecture/WholeRepositoryMap.md#current-renderer-navigation-overlay) for the implemented Scene/View/Frame owner map and source routes. The completed migration plan is no longer a current authority; code remains the implementation authority and the overlay is its reviewer map.
 
 ### Renderer Debug View Work
 

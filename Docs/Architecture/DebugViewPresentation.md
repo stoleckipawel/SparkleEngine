@@ -27,7 +27,7 @@ This proposal does not change code. The current implementation remains authorita
 
 ## Authority Boundary
 
-This document owns the target show-flag semantics, signal-domain classification, and presentation routing for view modes. [Renderer Scene, View, And Frame Architecture](RendererSceneViewFrameArchitecture.md) owns the broader target placement of view mode, resolved display settings, view state, and narrow pass inputs. Its generic "resolved view feature values" become the resolved `RenderShowFlagSet`; during that refactor, place them in `RenderView` and focused pass parameters rather than preserving access through a broad runtime context.
+This document owns the target show-flag semantics, signal-domain classification, and presentation routing for view modes. The [current renderer navigation overlay](WholeRepositoryMap.md#current-renderer-navigation-overlay) records the broader implemented placement of view mode, resolved display settings, view state, and narrow pass inputs. The generic resolved view-feature values become the resolved `RenderShowFlagSet`; during that refactor, place them in `RenderView` and focused pass parameters rather than preserving access through a broad runtime context.
 
 [Editor Viewport Camera Architecture](EditorViewportCamera.md) continues to own per-viewport exposure overrides. [Renderer and RHI Architecture Boundary](RendererRhiBoundary.md) continues to own frame-graph and backend responsibility. Engineering requirements and evidence rules remain in the [Engineering Standards](../Engineering/Standards/README.md).
 
@@ -49,7 +49,7 @@ The path is visible in these current owners:
 - [`Passes/Debug/VisualizeBuffers.cpp`](../../Engine/Renderer/Private/Passes/Debug/VisualizeBuffers.cpp) overwrites `FinalSceneColor` for non-lit views.
 - [`Passes/Presentation/Presentation.cpp`](../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp) always schedules `ToneMappingPass` and `OutputEncodingPass`.
 - [`Passes/Presentation/ToneMapping.hlsl`](../../Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl) always multiplies by the exposure texture and applies the selected tone mapper.
-- [`Passes/Deferred/VisualizeBuffers.hlsl`](../../Engine/Assets/Shaders/Passes/Deferred/VisualizeBuffers.hlsl) already maps HDR lighting and emissive values with `x / (1 + x)` before the global tone mapper runs.
+- In the pre-shader-migration source layout, [`Passes/Deferred/VisualizeBuffers.hlsl`](../../Engine/Assets/Shaders/Passes/Deferred/VisualizeBuffers.hlsl) already maps HDR lighting and emissive values with `x / (1 + x)` before the global tone mapper runs. Phase 1 of the [shader-authoring implementation plan](Shaders/ShaderAuthoringAndCookedPrograms.md#phase-1---establish-virtual-sources-semantic-navigation-and-one-as-binding) moves it to its semantic debug owner and updates this link.
 - [`Viewport/ViewportContracts.h`](../../Engine/Renderer/Public/Viewport/ViewportContracts.h) declares `RenderFeatureFlags`, but the current frame pipeline does not consume the request field; its entries also mix picking, view-mode, and overlay intents.
 - [`Frame/FramePipeline.cpp`](../../Engine/Renderer/Private/Frame/FramePipeline.cpp) reads `CVarRenderViewMode` directly, so the current view mode is process-wide rather than resolved from a viewport request.
 
@@ -314,7 +314,7 @@ Keep `VisualizeBuffers` as the single visualization producer for the current GBu
 - use explicit source-to-output coordinate mapping when render and output extents differ;
 - use point selection for exact buffer values so upscaling does not invent category IDs, material values, or false colors.
 
-The currently unused `Debug/ViewModes.hlsli` duplicates preview mappings that are implemented by `Passes/Deferred/VisualizeBuffers.hlsl`. If implementation-time search still finds no consumer of `ViewMode::Resolve` or its preview helpers, remove that duplicate and its broad include rather than updating two visualization authorities.
+The currently unused `Debug/ViewModes.hlsli` duplicates preview mappings implemented by the pre-migration `Passes/Deferred/VisualizeBuffers.hlsl` source. If implementation-time search still finds no consumer of `ViewMode::Resolve` or its preview helpers, remove that duplicate and its broad include rather than updating two visualization authorities. The retained visualization source moves to semantic debug ownership in shader-authoring Phase 1; `Passes/Deferred` is not a target directory.
 
 The existing post-reconstruction placement can remain for the first slice: lit output is reconstructed normally, then an active debug visualization overwrites it at output extent. This avoids temporal reconstruction, sharpening, or scene post effects changing exact views. The visualization pass must not assume its GBuffer and lighting inputs have the same extent as `FinalSceneColor`.
 

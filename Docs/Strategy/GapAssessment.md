@@ -163,7 +163,7 @@ Required site structure:
 | --- | --- | --- |
 | Explicit graphics backends | About 80 D3D12 files / 14.4k lines and 76 Vulkan files / 12.7k lines under [RHI](../../Engine/RHI). | Direct match for paired explicit-API ownership. |
 | Renderer architecture | About 32.4k source lines under [Renderer](../../Engine/Renderer), including frame graph, persistent scene data, resources, passes, temporal state, providers, and ray tracing. | Proves system breadth if the review path selects the right slices. |
-| Path tracing and ReSTIR | [ray-tracing effects](../../Engine/Renderer/Private/RayTracing/Effects), [lighting assembly](../../Engine/Renderer/Private/Frame/Lighting), and [ray-tracing shaders](../../Engine/Assets/Shaders/Passes/RayTracing). | Best existing flagship candidate for `PGE-02`, `PGE-05`, `PGE-08`, and `PGE-09`. |
+| Path tracing and ReSTIR | [ray-tracing effects](../../Engine/Renderer/Private/RayTracing/Effects), [lighting assembly](../../Engine/Renderer/Private/Passes/Lighting), and [ray-tracing shaders](../../Engine/Assets/Shaders/Passes/RayTracing). | Best existing flagship candidate for `PGE-02`, `PGE-05`, `PGE-08`, and `PGE-09`. |
 | Shader toolchain | [ShaderCompiler](../../Tools/Shaders/ShaderCompiler) has DXC and Slang backends, reflection, contracts, cache, cooking, inspection, and runtime package support. | Distinctive evidence; stronger than another visual effect. |
 | Frame graph | [FrameGraph](../../Engine/Renderer/Private/FrameGraph) plus the public article series. | Code and communication reinforce one another. |
 | Concurrency | [Tasks](../../Engine/Tasks), immutable extraction, render thread, bounded frame queue, and persistent render data. | Useful for `PGE-05`, `PGE-07`, and `PGE-10` once tested and measured. |

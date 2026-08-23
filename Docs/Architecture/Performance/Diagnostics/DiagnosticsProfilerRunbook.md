@@ -46,7 +46,7 @@ Release pages and current manuals establish current capability. Older blogs, tut
 Representative performance captures use a fully optimized profiling build. It preserves production code generation and renderer topology while retaining correlation material:
 
 - CPU symbols and exact binary/PDB or platform-symbol hashes;
-- shader package, entry point, compiler options, source/debug package, intermediate/binary, and hashes needed by the selected tool;
+- shader type, virtual source, entry point, compiler options, active map/code-library records, source/debug artifacts, intermediate/binary, and hashes needed by the selected tool;
 - stable Windows thread descriptions and task/phase identities;
 - stable D3D12 object names, Vulkan debug object names, queue names, and semantic duration markers;
 - engine/content/configuration/marker-schema/compiler/shader-compiler hashes;
@@ -116,7 +116,7 @@ This map selects the narrowest likely evidence source. The capability record and
 | What D3D12/Vulkan API state, resources, descriptors, draws, and dispatches produced one frame? | RenderDoc | D3D12 or Vulkan | Backend debug labels/object names and frame-graph pass names. |
 | Which NVIDIA GPU units, shaders, barriers, queues, or RT work limit the frame? | Nsight Graphics GPU Trace; graphics capture/debugger where supported | NVIDIA D3D12/Vulkan | Frame/pass markers, queue names, shader debug data, exact driver/hardware. |
 | Which AMD GPU waves, barriers, queues, or synchronization limit the frame? | Radeon GPU Profiler | AMD D3D12/Vulkan | PIX/Vulkan user markers, queue submits, exact driver/hardware. |
-| Which shader instruction/resource pressure supports the selected GPU hypothesis? | Nsight Shader Profiler on NVIDIA; Radeon GPU Analyzer/RGP on AMD | Vendor/target-architecture specific | Pass -> pipeline -> shader package -> entry point -> source/binary hash. |
+| Which shader instruction/resource pressure supports the selected GPU hypothesis? | Nsight Shader Profiler on NVIDIA; Radeon GPU Analyzer/RGP on AMD | Vendor/target-architecture specific | Pass -> pipeline -> shader type -> active map/code record -> entry point -> source/binary hash. |
 | Which GPU allocation, heap, residency, fragmentation, or lifetime changed? | Radeon Memory Visualizer on AMD; PIX memory/residency or supported vendor equivalent | Tool/API/hardware specific | Named resource/category, A/B/C route bookmarks, local/non-local definitions, build/configuration. |
 | Which BLAS/TLAS structure or traversal behavior explains RT cost? | Radeon Raytracing Analyzer on AMD; PIX/Nsight/RGP RT views where supported | Vendor/API specific | Route, TLAS/BLAS semantic token, geometry/instance/build policy, selected dispatch. |
 | What evidence accompanies a GPU crash/page fault/device loss? | Nsight Aftermath on NVIDIA; Radeon GPU Detective on AMD; API diagnostics/validation | Vendor/API specific | Last completed/in-flight marker path, shader/resource/build identity, device/driver, reproducer. |
@@ -168,7 +168,7 @@ Launching from provider-native UIs may inject one or more capture layers before 
 Before any native capture:
 
 1. Write the falsifiable hypothesis, competing cause, smallest discriminating tool/activity, expected signal, and failure interpretation.
-2. Build the representative profiling configuration and archive symbol/shader packages plus hashes.
+2. Build the representative profiling configuration and archive CPU symbols plus shader source/debug/code artifacts and hashes.
 3. Fix route, readiness, resolution, render settings, backend, validation state, worker/topology, VSync/presentation, power/thermal condition, background compilation policy, provider launch intent/activity, and target viewport.
 4. Confirm stable thread, queue, pass, shader, resource, and `FrameId`/range identities in a short smoke capture.
 5. Run API validation separately. Resolve correctness errors before performance attribution.

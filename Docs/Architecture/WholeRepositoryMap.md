@@ -14,7 +14,7 @@ The canonical world basis, units, transform math, source normalization, animatio
 
 ## Current Renderer Navigation Overlay
 
-The renderer Scene/View/Frame migration completed its source-layout checkpoint on 2026-08-22. For current renderer navigation, use the accepted owner map in [Renderer Scene, View, and Frame Architecture](RendererSceneViewFrameArchitecture.md#directory-navigation-rule): persistent scene authority is under `Renderer/Private/Scene`, current and persistent view semantics under `Renderer/Private/View`, lifecycle and technique-neutral graph assembly under `Renderer/Private/Frame`, feature setup/recording under `Renderer/Private/Passes`, and generic graph compilation/execution under `Renderer/Private/FrameGraph`. The old private `SceneData`, `Camera`, `FramePipeline`, and touched `Frame/Core` roots described in the dated snapshot below are historical and are not current navigation routes.
+The renderer Scene/View/Frame migration completed its source-layout checkpoint on 2026-08-22. The current owner map observed in source is: persistent scene authority under `Renderer/Private/Scene`, current and persistent view semantics under `Renderer/Private/View`, lifecycle and technique-neutral graph assembly under `Renderer/Private/Frame`, feature setup/recording under `Renderer/Private/Passes`, and generic graph compilation/execution under `Renderer/Private/FrameGraph`. The old private `SceneData`, `Camera`, `FramePipeline`, and touched `Frame/Core` roots described in the dated snapshot below are historical and are not current navigation routes.
 
 The current high-level renderer route is:
 

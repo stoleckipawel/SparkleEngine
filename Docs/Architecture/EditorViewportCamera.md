@@ -4,7 +4,7 @@ Status: canonical architecture decision
 
 Scope: the editor viewport camera, navigation preferences, projection, exposure overrides, and the effective render-view boundary
 
-Implementation status: the ownership contract is canonical, and Phase 1 of [Renderer Scene, View, And Frame Architecture](RendererSceneViewFrameArchitecture.md) now publishes the effective camera as `RenderViewCameraData` inside the singular `RenderViewInput`.
+Implementation status: the ownership contract is canonical. The [renderer navigation overlay](WholeRepositoryMap.md#current-renderer-navigation-overlay) records the implemented publication of the effective camera as `RenderViewCameraData` inside the singular `RenderViewInput`.
 
 ## Decision
 

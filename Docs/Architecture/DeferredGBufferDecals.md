@@ -35,7 +35,7 @@ The design extends the existing owner instead of adding a second renderer path:
 
 - [`Passes/GBuffer/GBuffer.cpp`](../../Engine/Renderer/Private/Passes/GBuffer/GBuffer.cpp) creates one `GBufferRenderTargets` set and selects either `AddRasterizedGBufferPass` or `AddRaytracedGBufferPass`. Both branches meet before sky motion vectors and device-depth linearization.
 - [`GBufferFormats.h`](../../Engine/Renderer/Private/Passes/GBuffer/GBufferFormats.h) defines the shared BaseColor, Normal, Material, Emissive, Subsurface, DeviceZ, and MotionVector products.
-- [`GBufferPS.hlsl`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl) and [`RaytracedGBuffer.hlsl`](../../Engine/Assets/Shaders/Passes/RayTracing/RaytracedGBuffer.hlsl) already share [`GBufferPacking.hlsli`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferPacking.hlsli).
+- In the pre-shader-migration source layout, [`GBufferPS.hlsl`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl) and [`RaytracedGBuffer.hlsl`](../../Engine/Assets/Shaders/Passes/RayTracing/RaytracedGBuffer.hlsl) already share [`GBufferPacking.hlsli`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferPacking.hlsli). Phase 1 of the [shader-authoring implementation plan](Shaders/ShaderAuthoringAndCookedPrograms.md#phase-1---establish-virtual-sources-semantic-navigation-and-one-as-binding) moves the retained files to semantic virtual-source ownership and updates these links atomically.
 - [`MaterialCache.cpp`](../../Engine/Renderer/Private/Scene/Materials/MaterialCache.cpp) resolves semantic defaults, per-material raster tables, and one scene-wide material texture table beneath the persistent render-scene authority. The latter must remain a scene-material capability, not be described as ray-tracing-only.
 - [`RayTracingMaterialHit.hlsli`](../../Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli) is the central base-material reconstruction path for arbitrary ray hits. [`PathLighting.hlsli`](../../Engine/Assets/Shaders/RayTracing/PathLighting.hlsli) is one current secondary-hit consumer.
 - The frame graph already derives unordered-access allocation and barriers from declared use. Raster depth is shader-readable on both backends. No new public RHI operation is required by the selected primary path.
@@ -337,7 +337,7 @@ Engine/Assets/Shaders
   Decals/DecalProjection.hlsli
   Decals/DecalMaterialSampling.hlsli
   Decals/DecalComposite.hlsli
-  Passes/Deferred/DeferredDecalResolve.hlsl
+  Passes/GBuffer/Decals/DeferredDecalResolve.hlsl
 ```
 
 Do not create separate `RasterDecal`, `RayDecal`, `DecalMaterial`, or `DecalTextureCache` directories/classes. The later ray lookup belongs beside existing ray scene preparation and adds no second copy of the shared files above.
