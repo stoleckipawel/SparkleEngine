@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/Targets/FrameRenderTargets.h"
+#include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "RayTracing/Effects/RestirLighting/RestirIndirectLightingUniformData.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
@@ -8,7 +8,6 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 #include "Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/FrameUniformData.h"
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
@@ -25,7 +24,6 @@ struct RenderPassDefinition;
 struct RestirIndirectResolvePassParameters
 {
 	ShaderAccelerationStructure SceneTlas;
-	ShaderUniform<FrameUniformData> Frame;
 	ShaderUniform<ViewUniformData> View;
 	ShaderUniform<ViewCameraUniformData> ViewCamera;
 	ShaderUniform<ViewTemporalUniformData> ViewTemporal;

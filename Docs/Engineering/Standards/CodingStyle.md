@@ -84,6 +84,25 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 
 Ownership/lifetime and inheritance rules belong to [Repository Structure and Ownership](RepositoryStructureAndOwnership.md); units, domains, and ABI vocabulary belong to [Naming and Vocabulary](NamingAndVocabulary.md).
 
+### One-field types
+
+Status: binding for owned C++ and shader-facing records.
+
+Do not introduce a nominal struct whose only instance field is immediately unwrapped by every consumer. Pass the value directly, query the authoritative owner, or put the field on the record that owns its lifetime. A distinct name is not enough justification for another carrier, snapshot, result, settings, validity, or context type.
+
+A one-field type is permitted only when the type itself enforces a contract that the underlying value cannot express:
+
+- a strong ID, handle, unit, or index with distinct overload resolution and explicit validity, comparison, generation, or ownership semantics;
+- an RAII/PIMPL owner whose destructor, move contract, or incomplete-type boundary is material;
+- a tagged command/variant alternative or ECS component whose nominal type is consumed by dispatch or schema registration;
+- a required C++/shader, cooked-file, platform, vendor, reflection, or other external ABI record;
+- a fixed-size mathematical object whose array field represents the object's elements;
+- a generic storage implementation whose wrapper is required to preserve the contained type, lifetime, or type erasure.
+
+An allowed type MUST expose or participate in that contract at its owner. Do not keep a one-field aggregate for possible future fields, naming symmetry, member-access aesthetics, or to avoid changing producers and consumers. When a touched type no longer satisfies an exception, remove it and update every consumer in the same change.
+
+Enforcement is an exact definition/consumer audit in review. A raw field-count check is advisory because strong handles, ABI records, tagged alternatives, and RAII owners are intentional positives. The accepted external precedents are narrow: Unreal Engine 5.8 keeps production state on the graph resource through [`FRDGViewableResource::HasBeenProduced`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FRDGViewableResource), AMD RPS revision [`f3330f5`](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/tools/rps_hlslc/rpsl/rpsl.h) makes temporal layers and read/write access properties of declared resources, and AMD FidelityFX revision [`1680d1e`](https://github.com/GPUOpen-Effects/FidelityFX-FSR2/blob/1680d1edd5c034f88ebbbb793d8b88f8842cf804/src/ffx-fsr2-api/ffx_types.h) exposes a one-field `FfxResourceInternal` only as an actual internal resource handle. NVIDIA Falcor revision [`eb540f6`](https://github.com/NVIDIAGameWorks/Falcor/blob/eb540f6748774680ce0039aaf3ac9279266ec521/Source/Falcor/RenderGraph/RenderGraph.cpp) resolves graph inputs/outputs as resources and uses null resource references for absence. Sparkle adopts owner/resource queries and strong-handle exceptions; it does not copy those frameworks' APIs or scale.
+
 ## Language-Specific Profiles
 
 ### C++

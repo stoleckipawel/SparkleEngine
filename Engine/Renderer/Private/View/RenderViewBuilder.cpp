@@ -39,6 +39,7 @@ void RenderViewBuilder::Build(RenderView& output, RenderViewState& state, const 
 	output.kind = request.ViewportRequest.ViewKind;
 	output.renderExtent = request.RenderExtent;
 	output.outputExtent = request.OutputExtent;
+	output.displaySettings = ResolvedViewportDisplaySettings::Resolve(request.ViewportRequest.Exposure);
 	output.camera = request.Input.Camera;
 
 	const RenderViewportExtent projectionExtent =

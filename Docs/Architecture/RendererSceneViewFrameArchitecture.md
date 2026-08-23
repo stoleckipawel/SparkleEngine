@@ -1,10 +1,10 @@
 # Renderer Scene, View, And Frame Architecture
 
-Status: target architecture, Unreal Engine reference analysis, and atomic implementation cutover plan; not implemented behavior
+Status: implemented source architecture and atomic validation plan; final acceptance remains blocked by the Phase 7 evidence gates
 Date: 2026-08-18
 Scope: GameFramework-to-Renderer publication, persistent render-scene ownership, GPU-scene ownership, one-frame scene and view products, temporal view state, render-frame orchestration, frame-graph pass inputs, Unreal-familiar concept translation, coherent cross-module naming and directory navigation, complete legacy-path removal, atomic landing, D3D12/Vulkan validation, and cleanup of the current frame path
 
-Implementation checkpoint: Phases 1 through 5 established the target publication boundary, persistent scene authority, prepared scene/current view split, focused frame/view ABI, scene-owned GPU/ray-tracing capabilities, and explicit pass inputs on `master`. The render-frame graph and physical-layout phase remains target architecture, and no executable validation or release-readiness claim is made before Phase 7.
+Implementation checkpoint: Phases 1 through 6 established the target publication boundary, persistent scene authority, prepared scene/current view split, focused frame/view ABI, scene-owned GPU/ray-tracing capabilities, explicit pass inputs, technique-neutral render-frame graph vocabulary, four-stage frame sequencing, and canonical private layout on `master`. Final cleanup moved UI playback, texture upload policy, frame-history mutation, and graph execution mechanics out of `FramePipeline`; split scene and coordinator implementation by responsibility; removed the broad `Passes/Deferred` C++ bucket; and grouped GBuffer, direct, reference, ReSTIR, shadow, and sky code under semantic pass owners. Phase 7 evidence, rather than source layout alone, still decides release readiness.
 
 ## Decision
 
@@ -40,10 +40,10 @@ RenderCoordinator
        +--> RenderViewBuilder.Build(input, viewport request, view state)
        |        matrices / frustum / extents / policy / temporal values
        |
-       +--> RenderScene.PrepareFrame(frame slot)
+       +--> RenderScenePreparation.Execute(scene, frame slot)
        |        immutable PreparedRenderScene
        |
-       +--> PrepareView(scene frame, view)
+       +--> RenderViewPreparation.Prepare(scene frame, view, view state)
        |        visible indices / batches / view workload
        |
        `--> FramePipeline
@@ -207,13 +207,13 @@ The Phase 0 baseline already had most of the necessary concepts. The problem was
 
 As inspected on 2026-08-18:
 
-- [`FramePipeline.cpp`](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) is 698 lines and coordinates input consumption, resize, graph rebuilds, uploads, camera mutation, per-frame constants, scene and view preparation, history invalidation, providers, ray tracing, scene resource binding, graph execution, submission, capture, UI, and presentation.
+- Historical `Renderer/Private/FramePipeline/FramePipeline.cpp` was 698 lines and coordinated input consumption, resize, graph rebuilds, uploads, camera mutation, per-frame constants, scene and view preparation, history invalidation, providers, ray tracing, scene resource binding, graph execution, submission, capture, UI, and presentation.
 - Historical `Renderer/Private/SceneData/RenderSceneData.h` contained scene revisions, lights, sky, all mesh/deformation records, materials, view-frustum-selected raster indices, camera-distance-sorted batches, workload values, and ray-tracing work.
 - Historical `Renderer/Private/SceneData/Preparation/RenderPreparationInputResolver.cpp` received both `RenderWorld` and a view frustum/camera position. Its result could not be accurately described as scene-only.
 - At the Phase 0 baseline, `FrameContextBuilder.cpp` prepared scene data, planned ray tracing from camera position, updated GPU Scene, constructed the view, and advanced temporal history in one function.
 - At the Phase 0 baseline, `PassRuntimeContext.h` was referenced by 45 Renderer private files and `mainView` by 24 files. This was coupling evidence, not a reason to create a larger replacement context.
 - Historical `Renderer/Private/ShaderData/PerFrameConstantBufferData.h` mixed true frame time/index values with view mode and viewport size.
-- [`FramePipeline::FinalizeRenderInputMetadata`](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) writes render/output dimensions into a GameFramework-owned input packet after publication. Those dimensions are renderer/view configuration, not GameFramework scene metadata.
+- Historical `FramePipeline::FinalizeRenderInputMetadata` wrote render/output dimensions into a GameFramework-owned input packet after publication. Those dimensions were renderer/view configuration, not GameFramework scene metadata.
 - At the Phase 0 baseline, `RenderFrameMetadata::Exposure` had no consumer. Motion-vector and depth conventions were stable renderer/shader contracts rather than per-frame input, while `ProviderGeneration` was populated from shader-package generation and participated in input/history/capture behavior under a misleading name.
 - At the Phase 0 baseline, `ViewportRenderRequest::ViewKind`, `ViewSelection`, and `FeatureFlags` had no `FramePipeline` consumer. Phase 3 routes stable view kind and selection into view identity and deletes the unsupported generic feature-flag promise instead of carrying it inertly.
 
@@ -341,7 +341,7 @@ The path tells the same ownership story as the type name:
 | `Scene/` | retained `RenderScene`, `RenderPrimitive`, scene-owned GPU/ray-tracing capabilities, materials, and view-independent preparation | a home for camera, viewport, visibility, or graph topology |
 | `View/` | `RenderView` construction, `RenderViewState`, visibility, sorting, batching, and other view-derived work | a second scene store or owner of history textures |
 | `Frame/` | `FramePipeline`, `RenderFrame`, frame identity/retirement, and render-frame graph assembly | a broad bag of scene, view, pass, and service implementations |
-| `Passes/` | feature pass setup, pass-specific parameters, and recording behavior grouped by rendering feature | persistent scene/view state or generic graph machinery |
+| `Passes/` | feature pass setup, pass-specific parameters, and recording behavior grouped by semantic feature (`GBuffer`, `Lighting/Direct`, `Lighting/Reference`, `Lighting/Restir`, `Lighting/Shadows`, `Lighting/Sky`, post-processing, presentation, and ray tracing) | persistent scene/view state, generic graph machinery, or a technique-wide catch-all folder |
 | `FrameGraph/` | graph declaration, compilation, resource lifetime/barriers, recording plans, and execution infrastructure | deferred-renderer policy or feature-specific pass order |
 | `ShaderData/` | C++ values that mirror shader ABI layouts | shader reflection/binding machinery or renderer state owners |
 | `ShaderParameters/` | generic parameter-field binding and reflection mechanics | semantic frame, scene, or view storage |
@@ -532,7 +532,7 @@ All semantic inputs are pass-specific:
 - shader/pass parameter structs receive copied frame, scene, and view uniform values during setup;
 - mesh passes receive the prepared scene and current view explicitly while producing their pass parameters/draw work;
 - a pass runtime/pipeline is captured by its pass object when the graph is built;
-- history validity is copied only into passes that consume the corresponding history;
+- each history-consuming pass queries `FrameGraph::HasBeenProduced` for the exact previous resource it declared; no pipeline validity mirror or one-field validity carrier exists;
 - ray-tracing settings and capabilities are supplied only to ray-tracing passes;
 - image providers are captured by their provider passes for the provider generation that caused graph construction;
 - mesh cache access is injected into the mesh-drawing owner, not exposed to all passes;
@@ -559,26 +559,25 @@ Delete `FrameContext`, `FrameContextBuilder`, `PassExecutionContext`, `PassRunti
 ```text
 BeginFrame
   poll retirement and captures
-  accept scene/view input
+  accept and apply the scene/view submission
   resolve resize and graph topology key
   begin backend frame
 
 PrepareFrame
-  apply scene update
-  build current RenderView seed from input, request, and view state
+  upload ready scene assets through their cache owners
+  build current RenderView from input, request, and view state
   prepare immutable scene frame
   prepare view visibility and draw work
   update scene GPU resources and ray-tracing plan
   resolve history/provider state
 
 ExecuteFrame
-  bind imported graph resources
-  setup pass parameters from scene and view
-  compile and execute graph
+  delegate imported-resource binding and explicit parameter setup
+  compile and execute through the frame-graph execution owner
 
 SubmitAndPresent
-  submit
-  publish products/captures/UI
+  render UI through the UI-frame owner
+  submit and publish products/captures
   advance frame slot and retire completed work
 ```
 
@@ -626,7 +625,14 @@ Engine/Renderer/Private
     Graph/BuildRenderFrameGraph.*
     Graph/RenderFrameGraphResources.h
   Passes/                                      feature-specific setup/recording
-    Deferred/...
+    GBuffer/...
+    Lighting/Direct/...
+    Lighting/Reference/...
+    Lighting/Restir/...
+    Lighting/Shadows/...
+    Lighting/Sky/...
+    PostProcessing/...
+    Presentation/...
     RayTracing/...
   FrameGraph/
     Execution/PassCommandContext.h             infrastructure only
@@ -938,7 +944,7 @@ At the Phase 0 baseline, the three broad ray/provider/pass contexts were stack v
 | `PassRuntimeContext::PassRuntimes` | focused owner dependency | Host runtime cache; templated graph builder constructs passes through `GetPassRuntime` | Capture each pass's concrete pipeline runtime when building the graph generation; delete generic accessor. |
 | `PassRuntimeContext::PerFrame` | pass parameter | pipeline's current old frame ABI; GBuffer, lighting, sky, debug, exposure and ray passes | Copy only consumed `FrameUniformData` and view-owned values into specific pass parameters during setup. |
 | `PassRuntimeContext::DisplaySettings` | pass parameter | pipeline-resolved display settings; exposure and tone mapping | Resolve/copy focused exposure and tone-mapping values into those passes only. |
-| `PassRuntimeContext::History` | pass parameter | graph `ResolveFrameHistoryValidity`; exposure, reservoir, and reference accumulation | Copy each history-valid bit only to its consuming pass; graph remains resource owner. |
+| `PassRuntimeContext::History` | graph resource state | graph `HasBeenProduced`; exposure, reservoir, and reference accumulation | Each consuming pass queries its declared previous resource after history-slot preparation; delete copied validity records and keep the graph authoritative. |
 | `PassRuntimeContext::Meshes` | focused owner dependency | Host `GpuMeshCache`; GBuffer mesh drawer only | Inject a required cache reference into the GBuffer mesh-drawing collaborator at its owner boundary. |
 | `PassRuntimeContext::Textures` | deletion | Host `TextureCache`; no context-field consumer found | Delete without replacement. |
 | `PassRuntimeContext::RayTracing` | focused owner dependency | pipeline stack context; ray scene recording and ray/deferred shadow parameters | Give each ray pass exact scene bindings/settings/flags; capture stable capabilities at the owning pass/graph generation. |
@@ -1240,7 +1246,7 @@ Phase 4 checkpoint: `RenderScene` is the sole lifetime owner of separate `Render
 - retain `RenderCommandContext` as the backend-neutral command wrapper and replace `PassExecutionContext` with `PassCommandContext` containing only command, declared-resource, and diagnostic infrastructure;
 - copy only actually consumed frame/view/scene uniform values into pass parameters at setup;
 - inject mesh drawing/cache access into its owning GBuffer mesh collaborator, capture provider objects in their graph-generation passes, and give ray-tracing passes only the exact scene/capability/settings they consume;
-- move history validity, display/exposure values, and feature policy into the specific pass parameters that consume them;
+- derive history availability in each consuming pass from `FrameGraph::HasBeenProduced` on its declared previous resource; move display/exposure values and feature policy into the specific pass parameters that consume them;
 - update graph executor, recording chunks, pass base operations, authored passes, includes, forwards, tests-as-consumers, naming standard examples, and CMake membership;
 - delete all five old context types, builders, nullable pointer checks, generic getters, unused texture-cache exposure, and comments that endorse broad context growth.
 
@@ -1330,6 +1336,8 @@ Suggested title: `Renderer: finalize scene-view-frame ownership and navigation`.
 
 The phase delivers the physical architecture, not a cosmetic file shuffle. Every move must correspond to the owner map, and every emptied legacy path is deleted in this CL.
 
+Phase 6 checkpoint: general graph construction now uses only `BuildRenderFrameGraph`, `RenderFrameGraphSettings`, and the `RenderFrameGraph*` resource vocabulary under `Frame/Graph`; shading technique names remain confined to feature policy and pass owners. `FramePipeline` lives under `Frame`, directly sequences `BeginFrame`, `PrepareFrame`, `ExecuteFrame`, and `SubmitAndPresent`, and receives focused collaborators from `RendererExecutionContext` rather than a `RendererHost` service locator. Feature assembly is under `Passes`, shader ABI records are under `ShaderData`, provider generations retire beneath `RendererImageProviderStack`, and the emptied `SceneData`, `Camera`, `FramePipeline`, `Frame/Core`, and touched feature roots under `Frame` are absent. This checkpoint records source organization only; Phase 7 owns formatting, compilation, shader, backend, runtime, capture, and performance evidence.
+
 ### Phase 7 - Regenerate, validate, reconcile, and atomically land
 
 #### Implementation prompt
@@ -1395,7 +1403,7 @@ The candidate is not landable until every gate below passes against the exact in
 | Transition machinery | No feature flag, build switch, CVar, environment variable, runtime conditional, typedef, alias, conversion constructor, compatibility overload, adapter, legacy reader/writer, deprecated wrapper, or fallback can select or reconstruct the current architecture. | Diff review plus targeted search for migration vocabulary and old-to-new conversions; every temporary migration helper is absent from the candidate unless it is the canonical generator. |
 | Single runtime authority | Exactly one `RenderScene`, one scene-owned `RenderGpuScene`, one scene-owned `RenderRayTracingScene`, one active `RenderViewState`, and one target frame/view preparation path exist for the current one-view renderer. `FramePipeline` owns none of those persistent capabilities. | Construction/destruction/reset/device-loss/resize/retirement trace; ownership tests; repository search for all allocations, members, getters, and reset paths. |
 | Publication and naming | GameFramework/Application/Editor publish only `RenderFrameSubmission` containing the committed scene and view values. Renderer names, diagnostic labels, captures, tests, and current docs use the target vocabulary consistently. | Trace every producer and consumer; public-header and include graph inspection; no old packet or synonym can enter the render queue. |
-| Unreal-familiar navigation | The concept translation and directory table match executable ownership. Retained scene code is under `Scene`, current/persistent view code under `View`, lifecycle/deferred assembly under `Frame`, feature passes under `Passes`, and generic graph machinery under `FrameGraph`. The old `SceneData`, `Camera`, `FramePipeline`, and touched generic `Frame/Core` roots are empty and removed. | `rg --files`, include/CMake inspection, and owner-to-path review show one canonical location per concept and no old/new directory split. An Unreal anchor in the translation table reaches the target owner without a forwarding layer. |
+| Unreal-familiar navigation | The concept translation and directory table match executable ownership. Retained scene code is under `Scene`, current/persistent view code under `View`, lifecycle and technique-neutral render-frame graph assembly under `Frame`, feature passes under `Passes`, and generic graph machinery under `FrameGraph`. The old `SceneData`, `Camera`, `FramePipeline`, and touched generic `Frame/Core` roots are empty and removed. | `rg --files`, include/CMake inspection, and owner-to-path review show one canonical location per concept and no old/new directory split. An Unreal anchor in the translation table reaches the target owner without a forwarding layer. |
 | Scene/view separation | `PreparedRenderScene` contains no camera, frustum, viewport, exposure, view visibility, camera-distance ordering, raster batches, history state, or graph handles. `RenderView` contains the resolved current-view values and view-derived work but no persistent scene/GPU/history-resource owner. | Field-by-field owner audit, focused include-boundary checks, and scene/view construction tests. |
 | Shader ABI | C++ and HLSL use only `FrameUniformData`, `ViewUniformData`, `ViewCameraUniformData`, `ViewTemporalUniformData`, and focused scene bindings. No old registration name, duplicated field, layout alias, shader macro bridge, or old cooked metadata is accepted. | Layout assertions, registration inventory, shader validation/cook, clean generated metadata, and D3D12/Vulkan builds against the same source revision. |
 | Pass surface | Pass setup supplies narrow semantic parameters and recording receives only `PassCommandContext` infrastructure. No pass can recover a service locator through `RendererHost`, `RenderFrame`, an owner pointer, or a replacement context bag. | Consumer-by-consumer audit, explicit resource/use comparison, parallel recording checks, and zero broad-context matches. |

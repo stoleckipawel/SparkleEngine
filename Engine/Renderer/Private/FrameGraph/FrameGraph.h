@@ -3,7 +3,6 @@
 #include "FrameGraph/FrameGraphPassKind.h"
 #include "FrameGraph/FrameGraphQueuePreference.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
@@ -30,6 +29,8 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <typeindex>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -46,13 +47,6 @@ class Window;
 class RenderHardwareInterface;
 struct NativeTextureViewInfo;
 struct RhiNativeInteropRequest;
-struct ExposureUniformData;
-struct FrameUniformData;
-struct PreparedRenderScene;
-struct RayTracedShadowPassInput;
-struct RenderView;
-struct ToneMappingUniformData;
-
 class FrameGraph
 {
 	friend class FrameGraphRecordingChunkRecorder;
@@ -164,15 +158,28 @@ public:
 
 	void Setup();
 	void ApplyPassParameterDefaults();
-	void ApplyFrameUniformParameters(const FrameUniformData& frame);
-	void ApplyPreparedSceneParameters(const PreparedRenderScene& preparedScene);
-	void ApplyRenderViewParameters(const RenderView& view);
-	void ApplyExposureParameters(const ExposureUniformData& exposure);
-	void ApplyToneMappingParameters(const ToneMappingUniformData& toneMapping);
-	void ApplyDirectLightReservoirHistory(bool historyValid);
-	void ApplyRestirIndirectReservoirHistory(bool historyValid);
-	void ApplyReferenceLightingHistory(bool historyValid);
-	void ApplyRayTracedShadowParameters(const PreparedRenderScene& preparedScene, const RayTracedShadowPassInput& rayTracedShadows);
+	void ApplyResourceProductionSetups();
+
+	template <typename TValue, typename TCallback> void AddParameterSetup(TCallback&& callback)
+	{
+		auto& callbacks = m_parameterSetups[typeid(TValue)];
+		callbacks.emplace_back(
+		    [setup = std::forward<TCallback>(callback)](const void* value) mutable
+		    { setup(*static_cast<const TValue*>(value)); });
+	}
+
+	template <typename TValue> void ApplyParameters(const TValue& value)
+	{
+		const auto callbacks = m_parameterSetups.find(typeid(TValue));
+		if (callbacks == m_parameterSetups.end())
+		{
+			return;
+		}
+		for (const ParameterSetupCallback& setup : callbacks->second)
+		{
+			setup(&value);
+		}
+	}
 
 	const FrameGraphPlan& Compile();
 
@@ -199,13 +206,25 @@ public:
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	FrameGraphTextureHistory CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept;
 	void InvalidateTextureHistory(FrameGraphTextureHistory history) noexcept;
-	bool IsTextureHistoryValid(FrameGraphTextureHistory history) const noexcept;
+	bool HasBeenProduced(FrameGraphResourceHandle handle) const noexcept;
+	bool HasBeenProduced(FrameGraphTextureHandle handle) const noexcept
+	{
+		return HasBeenProduced(handle.GetResourceHandle());
+	}
+	bool HasBeenProduced(FrameGraphBufferHandle handle) const noexcept
+	{
+		return HasBeenProduced(handle.GetResourceHandle());
+	}
+	bool HasBeenProduced(FrameGraphAccelerationStructureHandle handle) const noexcept
+	{
+		return HasBeenProduced(handle.GetResourceHandle());
+	}
 	FrameGraphBufferHandle ReservePersistentBuffer(
 	    const FrameGraphBufferDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
 	FrameGraphAccelerationStructureHandle ReservePersistentAccelerationStructure(
-	    const FrameGraphAccelerationStructureDesc& desc,
+	    std::string_view name,
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void BindPersistentAccelerationStructure(
 	    FrameGraphAccelerationStructureHandle handle,
@@ -333,13 +352,8 @@ private:
 	using SetupCallback = std::function<bool(PassResourceBuilder&)>;
 	using ExecuteCallback = std::function<void(PassCommandContext&)>;
 	using PassParameterSetupCallback = std::function<void()>;
-	using FrameUniformSetupCallback = std::function<void(const FrameUniformData&)>;
-	using PreparedSceneSetupCallback = std::function<void(const PreparedRenderScene&)>;
-	using RenderViewSetupCallback = std::function<void(const RenderView&)>;
-	using ExposureSetupCallback = std::function<void(const ExposureUniformData&)>;
-	using ToneMappingSetupCallback = std::function<void(const ToneMappingUniformData&)>;
-	using HistorySetupCallback = std::function<void(bool)>;
-	using RayTracedShadowSetupCallback = std::function<void(const PreparedRenderScene&, const RayTracedShadowPassInput&)>;
+	using ResourceProductionSetupCallback = std::function<void()>;
+	using ParameterSetupCallback = std::function<void(const void*)>;
 
 	template <typename TParameterBindings, typename ExecuteFn>
 	static ExecuteCallback MakeParameterizedExecuteCallback(TParameterBindings* parameters, ExecuteFn&& executeFn)
@@ -472,15 +486,8 @@ private:
 
 	std::vector<RegisteredPass> m_passes;
 	std::vector<PassParameterSetupCallback> m_passParameterSetups;
-	std::vector<FrameUniformSetupCallback> m_frameUniformSetups;
-	std::vector<PreparedSceneSetupCallback> m_preparedSceneSetups;
-	std::vector<RenderViewSetupCallback> m_renderViewSetups;
-	std::vector<ExposureSetupCallback> m_exposureSetups;
-	std::vector<ToneMappingSetupCallback> m_toneMappingSetups;
-	std::vector<HistorySetupCallback> m_directLightReservoirHistorySetups;
-	std::vector<HistorySetupCallback> m_restirIndirectReservoirHistorySetups;
-	std::vector<HistorySetupCallback> m_referenceLightingHistorySetups;
-	std::vector<RayTracedShadowSetupCallback> m_rayTracedShadowSetups;
+	std::vector<ResourceProductionSetupCallback> m_resourceProductionSetups;
+	std::unordered_map<std::type_index, std::vector<ParameterSetupCallback>> m_parameterSetups;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	Window* m_window = nullptr;
 	FrameGraphResourceRegistry m_resourceRegistry;

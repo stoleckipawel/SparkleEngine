@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/Targets/FrameRenderTargets.h"
+#include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"

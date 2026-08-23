@@ -1,5 +1,5 @@
 # SparkleRenderer Module
-# High-level rendering: Camera, Materials, Render passes, Texture management
+# High-level rendering: scene/view preparation, frame-graph assembly, passes, materials, and textures
 # Dependencies: SparkleCore, SparklePlatform, SparkleRHI, SparkleGameFramework runtime scene types
 # Renderer consumes runtime scene/material data only. Source import, conversion,
 # and authoring-side dependencies must stay out of this module.

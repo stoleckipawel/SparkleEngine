@@ -1,12 +1,11 @@
 #pragma once
 
-#include "Frame/Targets/FrameRenderTargets.h"
+#include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 #include "Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/FrameUniformData.h"
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
@@ -40,7 +39,6 @@ struct RaytracedGBufferPassParameters
 	ShaderRWTexture2D<void> GBufferDeviceZ;
 	ShaderRWTexture2D<void> GBufferMotionVector;
 	ShaderAccelerationStructure SceneTlas;
-	ShaderUniform<FrameUniformData> Frame;
 	ShaderUniform<ViewUniformData> View;
 	ShaderUniform<ViewCameraUniformData> ViewCamera;
 	ShaderUniform<ViewTemporalUniformData> ViewTemporal;

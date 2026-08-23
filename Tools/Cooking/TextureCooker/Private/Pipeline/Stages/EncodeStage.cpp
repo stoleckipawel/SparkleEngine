@@ -67,11 +67,11 @@ namespace TextureCookPipeline
 		{
 			const auto& workingSlice = workingTexture.arraySlices[arraySliceIndex];
 			auto& outputSlice = processedTexture.arraySlices[arraySliceIndex];
-			outputSlice.mipLevels.reserve(workingSlice.size());
+			outputSlice.reserve(workingSlice.size());
 
 			for (const WorkingMipLevel& workingMip : workingSlice)
 			{
-				outputSlice.mipLevels.push_back(EncodeUncompressedMip(workingMip, workingTexture.sourceWasFloat, outputFormat));
+				outputSlice.push_back(EncodeUncompressedMip(workingMip, workingTexture.sourceWasFloat, outputFormat));
 			}
 		}
 
@@ -95,11 +95,11 @@ namespace TextureCookPipeline
 		{
 			const auto& workingSlice = workingTexture.arraySlices[arraySliceIndex];
 			auto& outputSlice = processedTexture.arraySlices[arraySliceIndex];
-			outputSlice.mipLevels.reserve(workingSlice.size());
+			outputSlice.reserve(workingSlice.size());
 
 			for (const WorkingMipLevel& workingMip : workingSlice)
 			{
-				outputSlice.mipLevels.push_back(compressor.CompressMip(request, workingMip));
+				outputSlice.push_back(compressor.CompressMip(request, workingMip));
 			}
 		}
 
@@ -127,9 +127,9 @@ namespace TextureCookPipeline
 		{
 			for (TextureArraySliceData& arraySlice : sourceTexture.arraySlices)
 			{
-				if (arraySlice.mipLevels.size() > 1)
+				if (arraySlice.size() > 1)
 				{
-					arraySlice.mipLevels.resize(1);
+					arraySlice.resize(1);
 				}
 			}
 		}

@@ -8,9 +8,5 @@ struct RayTracedShadowPassInput;
 
 namespace RayTracedShadowPassData
 {
-	RayTracedShadowUniformData Build(
-	    const RayTracedShadowPassInput& input,
-	    bool hasTraceableInstances,
-	    std::uint32_t hitInstanceCount,
-	    std::uint32_t hitMaterialCount) noexcept;
+	RayTracedShadowUniformData Build(const RayTracedShadowPassInput& input) noexcept;
 }

@@ -24,11 +24,6 @@ enum class ConsoleCommandSeverity : std::uint8_t
 	Error,
 };
 
-struct SPARKLE_CORE_API ConsoleCommandContext final
-{
-	ConsoleCommandScope Scope = ConsoleCommandScope::Runtime;
-};
-
 struct SPARKLE_CORE_API ConsoleCommandResult final
 {
 	bool Succeeded = true;
@@ -47,9 +42,9 @@ struct SPARKLE_CORE_API ConsoleAutocompleteRequest final
 	std::string_view CurrentToken;
 };
 
-using ConsoleCommandCallback = std::function<ConsoleCommandResult(const ConsoleCommandContext&, std::span<const std::string_view>)>;
+using ConsoleCommandCallback = std::function<ConsoleCommandResult(ConsoleCommandScope, std::span<const std::string_view>)>;
 using ConsoleAutocompleteCallback =
-    std::function<std::vector<std::string>(const ConsoleCommandContext&, const ConsoleAutocompleteRequest&)>;
+    std::function<std::vector<std::string>(ConsoleCommandScope, const ConsoleAutocompleteRequest&)>;
 
 struct SPARKLE_CORE_API ConsoleCommandDescriptor final
 {
@@ -69,8 +64,8 @@ class SPARKLE_CORE_API ConsoleCommandRegistry final
 	const ConsoleCommandDescriptor* Find(std::string_view commandName) const;
 	const std::vector<ConsoleCommandDescriptor>& GetCommands() const noexcept { return m_commands; }
 
-	ConsoleCommandResult ExecuteLine(std::string_view input, const ConsoleCommandContext& context) const;
-	std::vector<std::string> CompleteLine(std::string_view input, const ConsoleCommandContext& context) const;
+	ConsoleCommandResult ExecuteLine(std::string_view input, ConsoleCommandScope scope) const;
+	std::vector<std::string> CompleteLine(std::string_view input, ConsoleCommandScope scope) const;
 
   private:
 	static bool IsScopeAllowed(ConsoleCommandScope commandScope, ConsoleCommandScope contextScope) noexcept;

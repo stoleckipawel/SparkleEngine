@@ -26,7 +26,7 @@ EditorConsoleSystem::EditorConsoleSystem()
 {
 	m_commandRegistry = std::make_unique<ConsoleCommandRegistry>();
 	ConsoleBuiltinCommands::Register(*m_commandRegistry);
-	m_session = std::make_unique<ConsoleSession>(*m_commandRegistry, ConsoleCommandContext{.Scope = ConsoleCommandScope::Editor});
+	m_session = std::make_unique<ConsoleSession>(*m_commandRegistry, ConsoleCommandScope::Editor);
 	m_consolePanel = std::make_unique<EditorConsolePanel>(*m_session);
 }
 

@@ -12,7 +12,6 @@
 #include <memory>
 #include <optional>
 #include <span>
-#include <string>
 #include <vector>
 
 class GpuSceneSlotAllocator;
@@ -29,18 +28,10 @@ struct RayTracingCapabilityReport;
 struct PreparedRenderPrimitive;
 struct RenderDeformationWork;
 struct PreparedRenderScene;
+struct RayTracingPtlasPartitionPlan;
 struct RenderRayTracingFrameBindings;
 struct RenderSceneGpuBindings;
 struct RenderView;
-
-enum class RenderSceneApplyStatus : std::uint8_t
-{
-	Applied,
-	Duplicate,
-	Stale,
-	OutOfOrder,
-	Rejected
-};
 
 class RenderScene final
 {
@@ -53,23 +44,17 @@ public:
 	    const RayTracingCapabilityReport& rayTracingCapabilities);
 	~RenderScene() noexcept;
 
-	RenderSceneApplyStatus Apply(const RenderSceneDelta& delta, RenderSceneDynamicData dynamic, std::string& diagnostic);
+	bool Apply(const RenderSceneDelta& delta, RenderSceneDynamicData dynamic);
 	void PromoteResidentGpuMeshes() noexcept;
 	void BuildMaterials(PreparedRenderScene& preparedScene);
 	const RenderSceneGpuBindings& UpdateGpuScene(
 	    const PreparedRenderScene& preparedScene,
 	    const RenderView& view,
 	    std::uint32_t frameIndex);
-	void PlanRayTracingFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept;
-	RenderRayTracingFrameBindings PrepareRayTracingFrame(const PreparedRenderScene& preparedScene) noexcept;
-	void BuildRayTracingScene(
-	    RenderCommandContext& commandContext,
+	RenderRayTracingFrameBindings PrepareRayTracingFrame(
 	    const PreparedRenderScene& preparedScene,
-	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
+	    const RayTracingPtlasPartitionPlan& viewPlan) noexcept;
 	bool IsRayTracingAvailable() const noexcept;
-	bool HasValidRayTracingTlas() const noexcept;
-	RhiGpuVirtualAddress GetRayTracingTlasGpuAddress() const noexcept;
-	const RayTracingCapabilityReport& GetRayTracingCapabilities() const noexcept;
 	RenderRayTracingScene& GetRayTracingSceneCapability() noexcept { return *m_renderRayTracingScene; }
 	void CommitContinuity(std::span<const PreparedRenderPrimitive> primitives, const RenderDeformationWork& deformation);
 	void ResetContinuity() noexcept;
@@ -93,9 +78,9 @@ public:
 	std::uint64_t GetMaterialRevision() const noexcept { return m_materialRevision; }
 
 private:
-	RenderSceneApplyStatus ValidateDelta(const RenderSceneDelta& delta, std::string& diagnostic) const;
-	bool ValidateDynamic(const RenderSceneDynamicData& dynamic, const RenderSceneDelta& delta, std::string& diagnostic) const;
-	RenderSceneApplyStatus ApplyValidatedDelta(const RenderSceneDelta& delta, std::string& diagnostic);
+	bool ValidateDelta(const RenderSceneDelta& delta) const;
+	bool ValidateDynamic(const RenderSceneDynamicData& dynamic, const RenderSceneDelta& delta) const;
+	void ApplyValidatedDelta(const RenderSceneDelta& delta);
 	void ApplyDynamic(RenderSceneDynamicData&& dynamic) noexcept;
 	void ApplyDestroys(const RenderSceneDelta& delta);
 	void ResolveGpuMeshes(

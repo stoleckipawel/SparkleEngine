@@ -14,7 +14,7 @@
 class SPARKLE_CORE_API ConsoleSession final : public ConsoleOutputSink
 {
   public:
-	ConsoleSession(ConsoleCommandRegistry& commandRegistry, ConsoleCommandContext context = {});
+	ConsoleSession(ConsoleCommandRegistry& commandRegistry, ConsoleCommandScope scope = ConsoleCommandScope::Runtime);
 
 	void SubmitLine(std::string_view line);
 	std::vector<std::string> CompleteLine(std::string_view line) const;
@@ -30,14 +30,14 @@ class SPARKLE_CORE_API ConsoleSession final : public ConsoleOutputSink
 	const std::vector<ConsoleOutputRecord>& GetOutputRecords() const noexcept { return m_outputRecords; }
 	const ConsoleHistoryBuffer& GetHistory() const noexcept { return m_history; }
 	ConsoleHistoryBuffer& GetHistory() noexcept { return m_history; }
-	const ConsoleCommandContext& GetContext() const noexcept { return m_context; }
-	void SetContext(ConsoleCommandContext context) noexcept { m_context = context; }
+	ConsoleCommandScope GetScope() const noexcept { return m_scope; }
+	void SetScope(ConsoleCommandScope scope) noexcept { m_scope = scope; }
 
   private:
 	static constexpr std::size_t kMaxOutputRecords = 512;
 
 	ConsoleCommandRegistry* m_commandRegistry = nullptr;
-	ConsoleCommandContext m_context;
+	ConsoleCommandScope m_scope = ConsoleCommandScope::Runtime;
 	ConsoleHistoryBuffer m_history;
 	std::vector<ConsoleOutputRecord> m_outputRecords;
 };

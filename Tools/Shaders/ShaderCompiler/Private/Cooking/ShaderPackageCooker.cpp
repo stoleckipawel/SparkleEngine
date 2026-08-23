@@ -21,7 +21,7 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 	    ShaderCookPlanExecutor::Execute(settings, plan, result.cacheDirectory);
 	for (std::size_t index = 0; index < compiledStages.size(); ++index)
 	{
-		plan.packageContexts[plan.nodes[index].packageIndex].compiledStages.push_back(std::move(compiledStages[index]));
+		plan.packageContexts[plan.nodes[index].packageIndex].push_back(std::move(compiledStages[index]));
 	}
 
 	result.packages = CookedShaderPackageEmitter::Emit(plan, result.cacheDirectory);

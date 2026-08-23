@@ -311,7 +311,7 @@ TextureLoadResult DdsTextureSourceLoader::BuildLoadResult(
 	loadResult.arraySlices.resize(loadResult.arraySize);
 	for (TextureArraySliceData& arraySlice : loadResult.arraySlices)
 	{
-		arraySlice.mipLevels.reserve(ResolveMipCount(header));
+		arraySlice.reserve(ResolveMipCount(header));
 	}
 
 	std::size_t byteOffset = ResolvePixelDataOffset(header);
@@ -340,9 +340,9 @@ TextureLoadResult DdsTextureSourceLoader::BuildLoadResult(
 			mipLevel.data.assign(
 			    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset),
 			    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset + mipLevel.slicePitch));
-			loadResult.arraySlices[arraySliceIndex].mipLevels.push_back(std::move(mipLevel));
+			loadResult.arraySlices[arraySliceIndex].push_back(std::move(mipLevel));
 
-			byteOffset += loadResult.arraySlices[arraySliceIndex].mipLevels.back().slicePitch;
+			byteOffset += loadResult.arraySlices[arraySliceIndex].back().slicePitch;
 			mipWidth = (std::max)(1u, mipWidth >> 1u);
 			mipHeight = (std::max)(1u, mipHeight >> 1u);
 		}

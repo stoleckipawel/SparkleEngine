@@ -6,19 +6,14 @@
 
 #include <memory>
 
-namespace DirectX
-{
-	struct XMFLOAT3;
-}
-
 class RenderCommandContext;
 class RenderHardwareInterface;
 class GpuMeshCache;
 class PassExecutionDiagnostics;
 class RayTracingBlasCache;
 class RayTracingTopLevelAccelerationStructureStrategy;
-class RayTracingTopLevelScenePlanner;
 struct PreparedRenderScene;
+struct RayTracingPtlasPartitionPlan;
 
 class RenderRayTracingScene final
 {
@@ -34,18 +29,18 @@ public:
 	RenderRayTracingScene(RenderRayTracingScene&&) = delete;
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
-	void PlanFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept;
-	RenderRayTracingFrameBindings Prepare(const PreparedRenderScene& preparedScene) noexcept;
+	RenderRayTracingFrameBindings Prepare(
+	    const PreparedRenderScene& preparedScene,
+	    const RayTracingPtlasPartitionPlan& viewPlan) noexcept;
 	void Build(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
+	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.Core.SupportsRayTracing; }
 	bool HasValidTlas() const noexcept;
-	RhiGpuVirtualAddress GetTlasGpuAddress() const noexcept;
-	const RayTracingCapabilityReport& GetCapabilities() const noexcept { return m_capabilityReport; }
 
 private:
 	void EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept;
@@ -55,6 +50,5 @@ private:
 	RayTracingPerformanceMetrics m_performanceMetrics = {};
 	std::unique_ptr<RayTracingBlasCache> m_blasCache;
 	std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> m_topLevelAccelerationStructureStrategy;
-	std::unique_ptr<RayTracingTopLevelScenePlanner> m_topLevelScenePlanner;
 	bool m_topLevelStrategyPrefersPartitionedTlas = false;
 };

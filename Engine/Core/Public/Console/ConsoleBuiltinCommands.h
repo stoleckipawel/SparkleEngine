@@ -2,6 +2,7 @@
 
 #include "Core/Public/CoreAPI.h"
 
+#include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
@@ -10,7 +11,7 @@
 class ConsoleCommandRegistry;
 class ConsoleVariableBase;
 class ConsoleVariableRegistry;
-struct ConsoleCommandContext;
+enum class ConsoleCommandScope : std::uint8_t;
 struct ConsoleCommandResult;
 
 class SPARKLE_CORE_API ConsoleBuiltinCommands final
@@ -22,7 +23,7 @@ class SPARKLE_CORE_API ConsoleBuiltinCommands final
   private:
 	static ConsoleCommandResult ExecuteHelp(
 	    const ConsoleCommandRegistry& commandRegistry,
-	    const ConsoleCommandContext& context,
+	    ConsoleCommandScope scope,
 	    std::span<const std::string_view> arguments);
 	static ConsoleCommandResult ExecuteListCVars(const ConsoleVariableRegistry& cvarRegistry, std::span<const std::string_view> arguments);
 	static ConsoleCommandResult ExecuteGetCVar(const ConsoleVariableRegistry& cvarRegistry, std::span<const std::string_view> arguments);

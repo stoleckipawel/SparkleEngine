@@ -26,12 +26,12 @@ public:
 	const char* GetActiveProviderReason() const noexcept override;
 	RenderRayTracingFrameBindings Prepare(
 	    const PreparedRenderScene& preparedScene,
-	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept override;
+	    const RayTracingPtlasPartitionPlan& viewPlan) noexcept override;
 	RayTracingTopLevelAccelerationStructureBuildResult Build(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
-	    RayTracingTopLevelScenePlanner* scenePlanner,
+	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
 	bool HasValidSceneTlas() const noexcept override;
 	RhiOwnedResourceHandle GetSceneTlasResource() const noexcept override;
@@ -81,7 +81,7 @@ private:
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
-	    RayTracingTopLevelScenePlanner* scenePlanner,
+	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
 	static void CollectPartitionedInstances(
 	    RenderCommandContext& commandContext,

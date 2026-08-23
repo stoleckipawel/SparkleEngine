@@ -15,10 +15,7 @@ struct RhiTextureMipUploadData
 	std::vector<std::uint8_t> Data;
 };
 
-struct RhiTextureArraySliceUploadData
-{
-	std::vector<RhiTextureMipUploadData> MipLevels;
-};
+using RhiTextureArraySliceUploadData = std::vector<RhiTextureMipUploadData>;
 
 struct RhiTextureUploadDesc
 {
@@ -31,7 +28,7 @@ struct RhiTextureUploadDesc
 
 	std::uint16_t GetMipCount() const noexcept
 	{
-		return ArraySlices.empty() ? 0 : static_cast<std::uint16_t>(ArraySlices.front().MipLevels.size());
+		return ArraySlices.empty() ? 0 : static_cast<std::uint16_t>(ArraySlices.front().size());
 	}
 
 	std::uint16_t GetArraySize() const noexcept { return static_cast<std::uint16_t>(ArraySize); }
@@ -52,7 +49,7 @@ struct RhiTextureUploadDesc
 			return false;
 		}
 
-		const std::size_t expectedMipCount = ArraySlices.front().MipLevels.size();
+		const std::size_t expectedMipCount = ArraySlices.front().size();
 		if (expectedMipCount == 0)
 		{
 			return false;
@@ -65,12 +62,12 @@ struct RhiTextureUploadDesc
 
 		for (const RhiTextureArraySliceUploadData& arraySlice : ArraySlices)
 		{
-			if (arraySlice.MipLevels.size() != expectedMipCount)
+			if (arraySlice.size() != expectedMipCount)
 			{
 				return false;
 			}
 
-			for (const RhiTextureMipUploadData& mip : arraySlice.MipLevels)
+			for (const RhiTextureMipUploadData& mip : arraySlice)
 			{
 				if (mip.Width == 0 || mip.Height == 0 || mip.RowPitch == 0 || mip.SlicePitch == 0 || mip.Data.empty())
 				{

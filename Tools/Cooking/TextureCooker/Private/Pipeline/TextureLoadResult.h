@@ -16,10 +16,7 @@ struct TextureMipLevelData
 	std::vector<std::uint8_t> data;
 };
 
-struct TextureArraySliceData
-{
-	std::vector<TextureMipLevelData> mipLevels;
-};
+using TextureArraySliceData = std::vector<TextureMipLevelData>;
 
 struct TextureLoadResult
 {
@@ -33,7 +30,7 @@ struct TextureLoadResult
 
 	std::uint16_t GetMipCount() const noexcept
 	{
-		return static_cast<std::uint16_t>(arraySlices.front().mipLevels.size());
+		return static_cast<std::uint16_t>(arraySlices.front().size());
 	}
 
 	std::uint16_t GetArraySize() const noexcept { return static_cast<std::uint16_t>(arraySize); }

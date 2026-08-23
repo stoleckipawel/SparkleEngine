@@ -43,11 +43,6 @@ class D3D12UploadService final : public RhiUploadService
 	    std::wstring_view debugName) override;
 
   private:
-	struct PendingUpload final
-	{
-		std::unique_ptr<D3D12GpuAllocationRecord> StagingResource;
-	};
-
 	bool ValidateBufferUploadRequest(
 	    const RenderCommandList& commandList,
 	    const D3D12GpuAllocationRecord* destination,
@@ -79,5 +74,5 @@ class D3D12UploadService final : public RhiUploadService
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
-	std::vector<PendingUpload> m_pendingUploads;
+	std::vector<std::unique_ptr<D3D12GpuAllocationRecord>> m_pendingUploads;
 };

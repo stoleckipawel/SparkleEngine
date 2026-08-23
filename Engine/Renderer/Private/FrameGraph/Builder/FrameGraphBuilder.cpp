@@ -44,10 +44,10 @@ FrameGraphBufferHandle FrameGraphBuilder::CreateBuffer(const FrameGraphBufferDes
 }
 
 FrameGraphAccelerationStructureHandle FrameGraphBuilder::ReservePersistentAccelerationStructure(
-    const FrameGraphAccelerationStructureDesc& desc,
+    std::string_view name,
     ResourceState initialState) noexcept
 {
-	return m_frameGraph.ReservePersistentAccelerationStructure(desc, initialState);
+	return m_frameGraph.ReservePersistentAccelerationStructure(name, initialState);
 }
 
 void FrameGraphBuilder::ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept

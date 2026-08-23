@@ -15,11 +15,6 @@ struct SPARKLE_RENDERER_API MeshDrawTransform final
 	DirectX::XMFLOAT3X4 WorldInvTranspose = {};
 };
 
-struct SPARKLE_RENDERER_API MeshDrawMaterial final
-{
-	std::uint32_t Slot = 0;
-};
-
 struct SPARKLE_RENDERER_API MeshDrawSkinning final
 {
 	std::uint64_t SkeletonAssetId = 0;
@@ -52,7 +47,7 @@ struct SPARKLE_RENDERER_API MeshDrawGeometry final
 struct SPARKLE_RENDERER_API MeshDraw
 {
 	MeshDrawTransform Transform;
-	MeshDrawMaterial Material;
+	std::uint32_t MaterialSlot = 0;
 	MeshDrawSkinning Skinning;
 	MeshDrawMorph Morph;
 	MeshDrawSourceIdentity Source;

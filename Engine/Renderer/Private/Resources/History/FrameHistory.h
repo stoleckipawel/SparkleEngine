@@ -5,6 +5,11 @@
 
 class FrameGraph;
 class FrameGraphBuilder;
+class RendererImageProviderStack;
+class RenderViewState;
+enum class LightingMode : std::uint8_t;
+struct PreparedRenderScene;
+struct RenderView;
 
 struct FrameGraphReservoirHistoryHandles final
 {
@@ -21,20 +26,17 @@ struct FrameHistoryResourceLayout final
 	FrameGraphReservoirHistoryHandles RestirIndirectReservoir = {};
 };
 
-struct FrameHistoryValidity final
-{
-	bool Exposure = false;
-	bool ReferenceLighting = false;
-	bool DirectLightReservoir = false;
-	bool RestirIndirectReservoir = false;
-};
-
 FrameHistoryResourceLayout DeclareFrameHistoryResources(
     FrameGraphBuilder& builder,
     RenderViewportExtent renderExtent);
 
 void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept;
 void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept;
-FrameHistoryValidity ResolveFrameHistoryValidity(
-    const FrameGraph& frameGraph,
-    const FrameHistoryResourceLayout& history) noexcept;
+void UpdateFrameHistory(
+    FrameGraph& frameGraph,
+    const FrameHistoryResourceLayout& history,
+    LightingMode lighting,
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
+    RenderViewState& viewState,
+    RendererImageProviderStack& imageProviders);

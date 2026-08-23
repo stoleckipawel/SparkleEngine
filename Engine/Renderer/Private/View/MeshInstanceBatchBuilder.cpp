@@ -268,7 +268,7 @@ MeshInstanceBatchBuilder::BatchKey MeshInstanceBatchBuilder::MakeBatchKey(
 	return BatchKey{
 	    .Mesh = draw.Geometry.Mesh,
 	    .Material = item.Material,
-	    .MaterialSlot = draw.Material.Slot,
+	    .MaterialSlot = draw.MaterialSlot,
 	    .SkeletonAssetId = draw.Skinning.SkeletonAssetId,
 	    .MeshKind = draw.Geometry.MeshKind,
 	    .Classification = item.Classification,
@@ -378,7 +378,7 @@ void MeshInstanceBatchBuilder::AppendBatch(
 	result.Batches.push_back(
 	    MeshInstanceBatch{
 	        .Mesh = firstDraw.Geometry.Mesh,
-	        .materialSlot = firstDraw.Material.Slot,
+	        .materialSlot = firstDraw.MaterialSlot,
 	        .firstInstance = firstInstance,
 	        .instanceCount = static_cast<std::uint32_t>(itemIndices.size()),
 	        .meshKind = firstDraw.Geometry.MeshKind,

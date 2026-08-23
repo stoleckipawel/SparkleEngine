@@ -61,18 +61,6 @@ void FrameGraph::InvalidateTextureHistory(FrameGraphTextureHistory history) noex
 	}
 }
 
-bool FrameGraph::IsTextureHistoryValid(FrameGraphTextureHistory history) const noexcept
-{
-	const auto it = std::find_if(
-	    m_textureHistories.begin(),
-	    m_textureHistories.end(),
-	    [history](const TextureHistoryRecord& record)
-	    {
-		    return record.handles.Previous == history.Previous && record.handles.Current == history.Current;
-	    });
-	return it != m_textureHistories.end() && it->usedThisFrame && it->generations[it->previousIndex] == it->generation;
-}
-
 void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 {
 	RhiResourceService& resourceService = m_renderHardwareInterface->GetResourceService();
@@ -172,6 +160,12 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 		    history.handles.Current.GetResourceHandle(), currentState, ResourceState::ShaderResource);
 		BindPersistentTexture(history.handles.Previous, history.resources[history.previousIndex], previousState);
 		BindPersistentTexture(history.handles.Current, history.resources[history.currentIndex], currentState);
+		m_resourceRegistry.SetExternalContentsProduced(
+		    history.handles.Previous.GetResourceHandle(),
+		    history.generations[history.previousIndex] == history.generation);
+		m_resourceRegistry.SetExternalContentsProduced(
+		    history.handles.Current.GetResourceHandle(),
+		    history.generations[history.currentIndex] == history.generation);
 	}
 }
 

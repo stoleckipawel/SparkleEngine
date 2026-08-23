@@ -16,9 +16,9 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .ArgumentSyntax = "[filter]",
 	        .Scope = ConsoleCommandScope::Runtime,
 	        .Execute =
-	            [&commandRegistry](const ConsoleCommandContext& context, std::span<const std::string_view> arguments)
+	            [&commandRegistry](ConsoleCommandScope scope, std::span<const std::string_view> arguments)
 	        {
-		        return ExecuteHelp(commandRegistry, context, arguments);
+		        return ExecuteHelp(commandRegistry, scope, arguments);
 	        },
 	    });
 
@@ -29,12 +29,12 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .ArgumentSyntax = "[filter]",
 	        .Scope = ConsoleCommandScope::Runtime,
 	        .Execute =
-	            [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments)
+	            [&cvarRegistry](ConsoleCommandScope, std::span<const std::string_view> arguments)
 	        {
 		        return ExecuteListCVars(cvarRegistry, arguments);
 	        },
 	        .Complete =
-	            [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request)
+	            [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
 	        {
 		        return CompleteCVarName(cvarRegistry, request.CurrentToken);
 	        },
@@ -47,12 +47,12 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .ArgumentSyntax = "<name>",
 	        .Scope = ConsoleCommandScope::Runtime,
 	        .Execute =
-	            [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments)
+	            [&cvarRegistry](ConsoleCommandScope, std::span<const std::string_view> arguments)
 	        {
 		        return ExecuteGetCVar(cvarRegistry, arguments);
 	        },
 	        .Complete =
-	            [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request)
+	            [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
 	        {
 		        return CompleteCVarName(cvarRegistry, request.CurrentToken);
 	        },
@@ -65,12 +65,12 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .ArgumentSyntax = "<name> <value>",
 	        .Scope = ConsoleCommandScope::Runtime,
 	        .Execute =
-	            [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments)
+	            [&cvarRegistry](ConsoleCommandScope, std::span<const std::string_view> arguments)
 	        {
 		        return ExecuteSetCVar(cvarRegistry, arguments);
 	        },
 	        .Complete =
-	            [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request)
+	            [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
 	        {
 		        return CompleteCVarName(cvarRegistry, request.CurrentToken);
 	        },
@@ -84,15 +84,15 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry)
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
     const ConsoleCommandRegistry& commandRegistry,
-    const ConsoleCommandContext& context,
+    ConsoleCommandScope scope,
     std::span<const std::string_view> arguments)
 {
 	const std::string_view filter = arguments.empty() ? std::string_view{} : arguments.front();
 	std::string output;
 	for (const ConsoleCommandDescriptor& command : commandRegistry.GetCommands())
 	{
-		const bool scopeAllowed = command.Scope == ConsoleCommandScope::Runtime || context.Scope == ConsoleCommandScope::Developer ||
-		                          (command.Scope == ConsoleCommandScope::Editor && context.Scope == ConsoleCommandScope::Editor);
+		const bool scopeAllowed = command.Scope == ConsoleCommandScope::Runtime || scope == ConsoleCommandScope::Developer ||
+		                          (command.Scope == ConsoleCommandScope::Editor && scope == ConsoleCommandScope::Editor);
 		if (!scopeAllowed)
 		{
 			continue;

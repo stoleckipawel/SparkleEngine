@@ -9,13 +9,9 @@ static const auto g_rayTracedShadowPassDataLogger = Logging::GetOrCreateLogger("
 
 namespace RayTracedShadowPassData
 {
-	RayTracedShadowUniformData Build(
-	    const RayTracedShadowPassInput& input,
-	    bool hasTraceableInstances,
-	    std::uint32_t hitInstanceCount,
-	    std::uint32_t hitMaterialCount) noexcept
+	RayTracedShadowUniformData Build(const RayTracedShadowPassInput& input) noexcept
 	{
-		if (!input.Enabled || !hasTraceableInstances)
+		if (!input.Enabled || input.HitInstanceCount == 0u)
 		{
 			return RayTracedShadowUniformData{};
 		}
@@ -35,8 +31,8 @@ namespace RayTracedShadowPassData
 		    .Padding3 = 0.0f,
 		    .SceneTlasGpuAddressLow = static_cast<std::uint32_t>(input.SceneTlasGpuAddress & 0xFFFFFFFFull),
 		    .SceneTlasGpuAddressHigh = static_cast<std::uint32_t>((input.SceneTlasGpuAddress >> 32u) & 0xFFFFFFFFull),
-		    .RayTracingHitInstanceCount = hitInstanceCount,
-		    .RayTracingHitMaterialCount = hitMaterialCount,
+		    .RayTracingHitInstanceCount = input.HitInstanceCount,
+		    .RayTracingHitMaterialCount = input.HitMaterialCount,
 		    .Padding4 = 0u,
 		    .Padding5 = 0u,
 		    .Padding6 = 0u,

@@ -13,7 +13,7 @@ set(SPARKLE_BOUNDARY_RENDERER_SHADER_DATA_REGEX "(Frame|View|ViewCamera|ViewTemp
 set(SPARKLE_BOUNDARY_D3D12_IN_VULKAN_REGEX "D3D12/|<d3d12\\.h>|ID3D12|D3D12_")
 set(SPARKLE_BOUNDARY_VULKAN_IN_D3D12_REGEX "Vulkan/|<vulkan/vulkan\\.h>|Vk[A-Z]|vk[A-Z]|Vulkan::Vulkan")
 set(SPARKLE_BOUNDARY_RENDERER_HIGH_LEVEL_ORCHESTRATOR_REGEX
-    "^Engine/Renderer/Private/(Host/RendererSystemRoot|FramePipeline/FramePipeline|Providers/RendererImageProviderStack)\\.(cpp|h)$")
+    "^Engine/Renderer/Private/(Host/RendererHost|Frame/FramePipeline|Providers/RendererImageProviderStack)\\.(cpp|h)$")
 set(SPARKLE_BOUNDARY_RENDERER_PROVIDER_DETAIL_REGEX
     "Streamline/|Upscaling/Nvidia|RayReconstruction/Nvidia|NvidiaDlss")
 set(SPARKLE_BOUNDARY_RENDERER_VENDOR_INTEROP_REGEX
@@ -202,7 +202,8 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
-        if(_relative_path STREQUAL "Engine/Renderer/Private/Frame/Core/Frame.cpp" AND _line MATCHES "Passes/")
+        if(_relative_path STREQUAL "Engine/Renderer/Private/Frame/Graph/BuildRenderFrameGraph.cpp" AND
+           _line MATCHES "Passes/.+Pass\\.h")
             sparkle_boundary_append_failure(
                 "FRAME_ORCHESTRATOR_NO_PASS_IMPLEMENTATIONS"
                 "${_relative_path}"

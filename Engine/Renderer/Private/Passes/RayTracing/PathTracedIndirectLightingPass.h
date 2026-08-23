@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/Targets/FrameRenderTargets.h"
+#include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "RayTracing/Effects/PathTracedLighting/PathTracedLightingUniformData.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"

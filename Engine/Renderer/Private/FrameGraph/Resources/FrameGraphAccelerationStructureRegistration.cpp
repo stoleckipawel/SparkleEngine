@@ -12,17 +12,9 @@ static const auto g_frameGraphAccelerationStructureLogger = Logging::GetOrCreate
 class FrameGraphAccelerationStructureBindingValidator final
 {
   public:
-	static FrameGraphAccelerationStructureDesc ResolveAccelerationStructureDesc(
-	    const FrameGraphAccelerationStructureDesc& desc,
-	    std::string_view defaultName)
+	static std::string ResolveName(std::string_view name, std::string_view defaultName)
 	{
-		FrameGraphAccelerationStructureDesc resolvedDesc = desc;
-		if (resolvedDesc.name.empty())
-		{
-			resolvedDesc.name = std::string(defaultName);
-		}
-
-		return resolvedDesc;
+		return std::string(name.empty() ? defaultName : name);
 	}
 
 	static std::string FormatHandle(FrameGraphResourceHandle handle)
@@ -54,12 +46,13 @@ class FrameGraphAccelerationStructureBindingValidator final
 };
 
 FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationStructure(
-    const FrameGraphAccelerationStructureDesc& desc,
+    std::string_view name,
     ResourceState initialState) noexcept
 {
-	const FrameGraphAccelerationStructureDesc resolvedDesc = FrameGraphAccelerationStructureBindingValidator::ResolveAccelerationStructureDesc(desc, "PersistentAccelerationStructure");
+	const std::string resolvedName =
+	    FrameGraphAccelerationStructureBindingValidator::ResolveName(name, "PersistentAccelerationStructure");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterPersistentAccelerationStructure(handle, resolvedDesc, initialState);
+	m_resourceRegistry.RegisterPersistentAccelerationStructure(handle, resolvedName, initialState);
 	m_resourceStateTracker.RegisterResource(handle, initialState);
 	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
 	m_resourceResolver.ClearResolvedAccess(handle);
@@ -117,6 +110,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 	access.resource = resource;
 	access.accelerationStructureGpuAddress = gpuAddress;
 	m_resourceResolver.SetResolvedAccess(resourceHandle, access);
+	m_resourceRegistry.SetExternalContentsProduced(resourceHandle, true);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
 }
 
@@ -158,6 +152,7 @@ void FrameGraph::ClearPersistentAccelerationStructureBinding(FrameGraphAccelerat
 	}
 
 	m_resourceResolver.ClearResolvedAccess(resourceHandle);
+	m_resourceRegistry.SetExternalContentsProduced(resourceHandle, false);
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, metadata.initialState);
 }

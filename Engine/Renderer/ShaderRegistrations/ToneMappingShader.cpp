@@ -3,11 +3,11 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-#include "Renderer/Private/Frame/Presentation/ToneMappingUniformData.h"
+#include "Renderer/Private/ShaderData/ToneMappingUniformData.h"
 
 class ToneMappingCS final : public TGlobalShader<ToneMappingCS>
 {
-  public:
+public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV(RWTexture2D, ToneMappedColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, SceneColor)

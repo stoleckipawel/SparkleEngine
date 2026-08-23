@@ -270,7 +270,7 @@ void D3D12ResourceService::ReleaseOwnedResource(RhiOwnedResourceHandle resource)
 
 	DrainCompletedResourceReleases();
 	ownedRecord->PendingRelease = true;
-	m_pendingOwnedResourceReleases.push_back(PendingOwnedResourceRelease{.Record = std::move(ownedRecord)});
+	m_pendingOwnedResourceReleases.push_back(std::move(ownedRecord));
 }
 
 void D3D12ResourceService::DrainCompletedResourceReleases() noexcept
@@ -297,24 +297,24 @@ void D3D12ResourceService::DrainCompletedResourceReleases() noexcept
 	auto eraseBegin = std::remove_if(
 	    m_pendingOwnedResourceReleases.begin(),
 	    m_pendingOwnedResourceReleases.end(),
-	    [&completedValues](const PendingOwnedResourceRelease& pendingRelease)
+	    [&completedValues](const std::unique_ptr<D3D12GpuAllocationRecord>& record)
 	    {
-		    return pendingRelease.Record == nullptr ||
-		           (pendingRelease.Record->RecordingReferenceCount.load(
+		    return record == nullptr ||
+		           (record->RecordingReferenceCount.load(
 		                std::memory_order_relaxed) == 0 &&
-		            pendingRelease.Record->LastUse.IsComplete(completedValues));
+		            record->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingOwnedResourceReleases.erase(eraseBegin, m_pendingOwnedResourceReleases.end());
 
 	auto heapEraseBegin = std::remove_if(
 	    m_pendingOwnedMemoryBlockReleases.begin(),
 	    m_pendingOwnedMemoryBlockReleases.end(),
-	    [&completedValues](const PendingOwnedMemoryBlockRelease& pendingRelease)
+	    [&completedValues](const std::unique_ptr<D3D12GpuHeapRecord>& record)
 	    {
-		    return pendingRelease.Record == nullptr ||
-		           (pendingRelease.Record->RecordingReferenceCount.load(
+		    return record == nullptr ||
+		           (record->RecordingReferenceCount.load(
 		                std::memory_order_relaxed) == 0 &&
-		            pendingRelease.Record->LastUse.IsComplete(completedValues));
+		            record->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingOwnedMemoryBlockReleases.erase(heapEraseBegin, m_pendingOwnedMemoryBlockReleases.end());
 }
@@ -385,7 +385,7 @@ void D3D12ResourceService::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle
 	}
 
 	DrainCompletedResourceReleases();
-	m_pendingOwnedMemoryBlockReleases.push_back(PendingOwnedMemoryBlockRelease{.Record = std::move(ownedMemoryBlock)});
+	m_pendingOwnedMemoryBlockReleases.push_back(std::move(ownedMemoryBlock));
 }
 
 RhiOwnedResourceHandle D3D12ResourceService::CreateAliasingTextureResource(

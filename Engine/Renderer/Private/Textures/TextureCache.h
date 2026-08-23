@@ -20,6 +20,7 @@
 #include <vector>
 
 class RenderCommandList;
+class RenderDeviceServices;
 class RhiCommandSubmissionService;
 class RhiDescriptorService;
 class RhiResourceService;
@@ -58,8 +59,7 @@ public:
 	TextureCache(TextureCache&&) = delete;
 	TextureCache& operator=(TextureCache&&) = delete;
 
-	std::vector<RhiResourceHandle> LoadSceneTextures(const RenderTextureTable& textures, RenderCommandList& commandList);
-	bool HasPendingSceneTextureUploads() const noexcept;
+	void UpdateSceneTextures(const RenderTextureTable& textures, RenderDeviceServices& deviceServices);
 	void RecordUploadSubmission(RhiSubmissionToken token) noexcept;
 	void PollResidency() noexcept;
 	void CommitBindingRevision(std::uint64_t bindingRevision) noexcept;
@@ -116,6 +116,8 @@ private:
 	static constexpr std::size_t kMaximumConcurrentLoads = 16;
 
 	void LoadDefaultTextures(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources);
+	std::vector<RhiResourceHandle> LoadSceneTextures(const RenderTextureTable& textures, RenderCommandList& commandList);
+	bool HasPendingSceneTextureUploads() const noexcept;
 	void RequestTexture(const ResolvedTexturePath& source, std::uint32_t generation);
 	void SynchronizeSceneTextures(const RenderTextureTable& textures);
 	void LaunchPendingRequests();

@@ -5,7 +5,6 @@
 #include "Scene/Materials/MaterialData.h"
 #include "Scene/Preparation/RenderPrimitivePreparation.h"
 #include "View/MeshInstanceBatch.h"
-#include "Scene/Preparation/RenderPrimitivePreparation.h"
 
 #include <cstddef>
 #include <cstdint>

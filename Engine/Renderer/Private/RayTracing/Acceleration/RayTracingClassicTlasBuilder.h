@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
-#include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureBuildStats.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
 #include <DirectXMath.h>
@@ -19,8 +18,6 @@ struct PreparedRenderScene;
 class RayTracingClassicTlasBuilder final
 {
 public:
-	using BuildStats = RayTracingTopLevelAccelerationStructureBuildStats;
-
 	struct TlasHandle final
 	{
 		RhiOwnedResourceHandle resource = {};
@@ -39,7 +36,7 @@ public:
 	RayTracingClassicTlasBuilder& operator=(RayTracingClassicTlasBuilder&&) = delete;
 
 	void Prepare(std::uint32_t instanceCapacity) noexcept;
-	BuildStats Build(
+	std::uint32_t Build(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,

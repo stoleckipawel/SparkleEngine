@@ -2,6 +2,7 @@
 #include "Passes/Core/ShaderPass.h"
 
 #include "FrameGraph/Builder/PassResourceBuilder.h"
+#include "FrameGraph/Execution/FrameGraphResourceCommands.h"
 #include "Commands/RenderCommandContext.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 

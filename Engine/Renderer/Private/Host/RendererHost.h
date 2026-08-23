@@ -1,26 +1,15 @@
 #pragma once
 
-#include "Diagnostics/RendererMemoryDiagnostics.h"
-#include "Meshes/MeshDiagnostics.h"
-#include "Diagnostics/MeshPreviewGeometry.h"
-#include "Resources/Textures/TextureDiagnostics.h"
-#include "RHI/Public/Commands/RhiQueue.h"
-
-#include <cstdint>
 #include <memory>
-#include <vector>
 
-class FrameExecutionDiagnostics;
 class GpuMeshCache;
 class RenderPassRuntimeCache;
 class RendererBackendOwner;
 class RenderDeviceServices;
-class RenderHardwareInterface;
 class RendererMemoryMonitor;
 class RendererImageProviderStack;
-class RenderScenePreparation;
-class RhiImGuiRenderer;
 class RenderScene;
+class RenderScenePreparation;
 class TextureCache;
 class TaskExecutor;
 class TaskScope;
@@ -51,10 +40,6 @@ public:
 	RenderDeviceServices& GetDeviceServices() noexcept;
 	const RenderDeviceServices& GetDeviceServices() const noexcept;
 	bool HasDeviceServices() const noexcept { return m_backendOwner != nullptr; }
-	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
-	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
-	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
-
 	RenderPassRuntimeCache& GetRenderPassRuntimeCache() noexcept { return *m_renderPassRuntimeCache; }
 	const RenderPassRuntimeCache& GetRenderPassRuntimeCache() const noexcept { return *m_renderPassRuntimeCache; }
 	GpuMeshCache& GetGpuMeshCache() noexcept { return *m_gpuMeshCache; }
@@ -67,18 +52,8 @@ public:
 	const RenderScene& GetRenderScene() const noexcept { return *m_renderScene; }
 	RendererImageProviderStack& GetImageProviders() noexcept { return *m_imageProviders; }
 	const RendererImageProviderStack& GetImageProviders() const noexcept { return *m_imageProviders; }
-	std::uint64_t GetImageProviderGeneration() const noexcept { return m_imageProviderGeneration; }
 	TaskExecutor& GetTaskExecutor() noexcept { return *m_taskExecutor; }
-
-	void ReloadCookedShaders();
-	std::uint64_t GetShaderPackageGeneration() const noexcept;
-	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
-	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
-	TextureDiagnosticsSnapshot CaptureTextureDiagnostics(const TexturePreviewHandleResolver& resolvePreviewTexture) const;
-	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
-	void TickDiagnostics(std::uint64_t frameIndex) noexcept;
-	void RefreshImageProviders() noexcept;
-	void PollRetiredImageProviders() noexcept;
+	RendererMemoryMonitor& GetMemoryMonitor() noexcept { return *m_memoryMonitor; }
 
 private:
 	void InitializeCoreRuntime(
@@ -101,11 +76,4 @@ private:
 	std::unique_ptr<RenderViewState> m_renderViewState;
 	std::unique_ptr<RenderScene> m_renderScene;
 	std::unique_ptr<RendererImageProviderStack> m_imageProviders;
-	std::uint64_t m_imageProviderGeneration = 1;
-	struct RetiredImageProviderGeneration final
-	{
-		RhiSubmissionState LastUse;
-		std::unique_ptr<RendererImageProviderStack> Providers;
-	};
-	std::vector<RetiredImageProviderGeneration> m_retiredImageProviders;
 };

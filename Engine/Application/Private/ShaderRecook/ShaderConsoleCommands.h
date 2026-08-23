@@ -12,7 +12,6 @@ class ConsoleCommandRegistry;
 class ShaderRecookCoordinator;
 class UI;
 struct ConsoleAutocompleteRequest;
-struct ConsoleCommandContext;
 struct ConsoleCommandResult;
 
 class ShaderConsoleCommands final

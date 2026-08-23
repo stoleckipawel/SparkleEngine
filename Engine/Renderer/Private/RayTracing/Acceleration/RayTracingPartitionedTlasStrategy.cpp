@@ -5,7 +5,6 @@
 #include "Commands/RenderCommandContext.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
-#include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 
@@ -122,9 +121,9 @@ const char* RayTracingPartitionedTlasStrategy::GetActiveProviderReason() const n
 
 RenderRayTracingFrameBindings RayTracingPartitionedTlasStrategy::Prepare(
     const PreparedRenderScene& preparedScene,
-    RayTracingTopLevelScenePlanner* scenePlanner) noexcept
+    const RayTracingPtlasPartitionPlan& viewPlan) noexcept
 {
-	const RayTracingPtlasPartitionPlan* partitionPlan = scenePlanner != nullptr ? scenePlanner->GetCurrentPartitionPlan() : nullptr;
+	const RayTracingPtlasPartitionPlan* partitionPlan = &viewPlan;
 	if (!CanUseActivePartitionedTlasProvider())
 	{
 		Diagnostics::Fatal(
@@ -143,10 +142,10 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
     RayTracingBlasCache& blasCache,
-    RayTracingTopLevelScenePlanner* scenePlanner,
+    const RayTracingPtlasPartitionPlan& viewPlan,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	return BuildPartitionedTlas(commandContext, preparedScene, blasCache, scenePlanner, diagnostics);
+	return BuildPartitionedTlas(commandContext, preparedScene, blasCache, viewPlan, diagnostics);
 }
 
 bool RayTracingPartitionedTlasStrategy::HasValidSceneTlas() const noexcept

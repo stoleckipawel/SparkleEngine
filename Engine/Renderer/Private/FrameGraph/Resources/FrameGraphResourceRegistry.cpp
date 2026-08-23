@@ -24,7 +24,6 @@ void FrameGraphResourceRegistry::RegisterBackBuffer(
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
-	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterTransientTexture(
@@ -43,7 +42,6 @@ void FrameGraphResourceRegistry::RegisterTransientTexture(
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
-	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterTransientBuffer(
@@ -61,7 +59,6 @@ void FrameGraphResourceRegistry::RegisterTransientBuffer(
 	    initialState);
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
-	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterPersistentTexture(
@@ -80,7 +77,6 @@ void FrameGraphResourceRegistry::RegisterPersistentTexture(
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
-	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterPersistentBuffer(
@@ -98,12 +94,11 @@ void FrameGraphResourceRegistry::RegisterPersistentBuffer(
 	    initialState);
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
-	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterPersistentAccelerationStructure(
     FrameGraphResourceHandle handle,
-    const FrameGraphAccelerationStructureDesc& desc,
+    std::string_view name,
     ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
@@ -111,12 +106,11 @@ void FrameGraphResourceRegistry::RegisterPersistentAccelerationStructure(
 	    FrameGraphResourceClass::AccelerationStructure,
 	    FrameGraphResourceKind::AccelerationStructure,
 	    FrameGraphResourceOwnership::ExternalPersistent,
-	    desc.name,
+	    name,
 	    initialState,
 	    initialState);
 	metadata.textureDesc = {};
 	metadata.bufferDesc = {};
-	metadata.accelerationStructureDesc = desc;
 }
 
 void FrameGraphResourceRegistry::SetBoundaryStates(
@@ -127,6 +121,13 @@ void FrameGraphResourceRegistry::SetBoundaryStates(
 	FrameGraphResourceMetadata& metadata = GetMetadata(handle);
 	metadata.initialState = initialState;
 	metadata.finalState = finalState;
+}
+
+void FrameGraphResourceRegistry::SetExternalContentsProduced(
+    FrameGraphResourceHandle handle,
+    bool hasBeenProduced) noexcept
+{
+	GetMetadata(handle).hasExternalContents = hasBeenProduced;
 }
 
 bool FrameGraphResourceRegistry::IsRegistered(FrameGraphResourceHandle handle) const noexcept
@@ -178,6 +179,7 @@ FrameGraphResourceMetadata& FrameGraphResourceRegistry::RegisterMetadata(
 
 	if (!alreadyRegistered)
 	{
+		entry.hasExternalContents = false;
 		m_registeredHandles.push_back(handle);
 	}
 

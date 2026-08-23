@@ -65,7 +65,7 @@ RhiRayTracingInstanceFlags RayTracingClassicTlasBuilder::ResolveInstanceFlags(
     const MeshDraw& draw) noexcept
 {
 	RhiRayTracingInstanceFlags flags = RhiRayTracingInstanceFlags::None;
-	if (draw.Material.Slot >= preparedScene.materials.size())
+	if (draw.MaterialSlot >= preparedScene.materials.size())
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingClassicTlasBuilderLogger,
@@ -73,7 +73,7 @@ RhiRayTracingInstanceFlags RayTracingClassicTlasBuilder::ResolveInstanceFlags(
 		    __LINE__,
 		    "Classic TLAS input references a material outside the render scene.");
 	}
-	const MaterialData& material = preparedScene.materials[draw.Material.Slot];
+	const MaterialData& material = preparedScene.materials[draw.MaterialSlot];
 	if (material.doubleSided)
 	{
 		flags = flags | RhiRayTracingInstanceFlags::TriangleFacingCullDisable;
@@ -129,13 +129,12 @@ void RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexc
 	}
 }
 
-RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
+std::uint32_t RayTracingClassicTlasBuilder::Build(
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
     RayTracingBlasCache& blasCache,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	BuildStats stats{};
 	if (m_renderHardwareInterface == nullptr)
 	{
 		Diagnostics::Fatal(
@@ -149,7 +148,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	BuildState state;
 	state.Instances.reserve(work.ClassicTlasBlasInputIndices.size());
 	CollectInstances(commandContext, preparedScene, blasCache, diagnostics, state);
-	stats.InstanceCount = static_cast<std::uint32_t>(state.Instances.size());
+	const std::uint32_t instanceCount = static_cast<std::uint32_t>(state.Instances.size());
 	PrepareBuild(state);
 
 	RecordBuild(commandContext, state, diagnostics);
@@ -162,7 +161,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	{
 		Diagnostics::Fatal(g_rayTracingClassicTlasBuilderLogger, __FILE__, __LINE__, "Classic TLAS build did not publish a GPU resource.");
 	}
-	return stats;
+	return instanceCount;
 }
 
 void RayTracingClassicTlasBuilder::CollectInstances(

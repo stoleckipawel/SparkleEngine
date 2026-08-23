@@ -63,7 +63,7 @@ TextureLoadResult TextureSourceLoadStages::BuildByteTextureLoadResult(
 	loadResult.dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadResult.formatIntent = TextureFormatIntent::Unknown;
 	loadResult.arraySlices.resize(1);
-	loadResult.arraySlices.front().mipLevels.push_back(std::move(baseMip));
+	loadResult.arraySlices.front().push_back(std::move(baseMip));
 
 	return loadResult;
 }
@@ -101,7 +101,7 @@ TextureLoadResult TextureSourceLoadStages::BuildFloatTextureLoadResult(
 	loadResult.dxgiFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	loadResult.formatIntent = TextureFormatIntent::DataLinear;
 	loadResult.arraySlices.resize(1);
-	loadResult.arraySlices.front().mipLevels.push_back(std::move(baseMip));
+	loadResult.arraySlices.front().push_back(std::move(baseMip));
 
 	return loadResult;
 }

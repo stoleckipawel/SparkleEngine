@@ -43,7 +43,4 @@ struct SPARKLE_RENDERER_API TextureDiagnosticsRow final
 	bool StreamManaged = false;
 };
 
-struct SPARKLE_RENDERER_API TextureDiagnosticsSnapshot final
-{
-	std::vector<TextureDiagnosticsRow> Rows;
-};
+using TextureDiagnosticsSnapshot = std::vector<TextureDiagnosticsRow>;

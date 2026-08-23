@@ -33,8 +33,8 @@ It deliberately does not implement forward decals, mesh decals, transparent-surf
 
 The design extends the existing owner instead of adding a second renderer path:
 
-- [`Frame/Deferred/GBuffer.cpp`](../../Engine/Renderer/Private/Frame/Deferred/GBuffer.cpp) creates one `GBufferRenderTargets` set and selects either `AddRasterizedGBufferPass` or `AddRaytracedGBufferPass`. Both branches meet before sky motion vectors and device-depth linearization.
-- [`GBufferFormats.h`](../../Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h) defines the shared BaseColor, Normal, Material, Emissive, Subsurface, DeviceZ, and MotionVector products.
+- [`Passes/GBuffer/GBuffer.cpp`](../../Engine/Renderer/Private/Passes/GBuffer/GBuffer.cpp) creates one `GBufferRenderTargets` set and selects either `AddRasterizedGBufferPass` or `AddRaytracedGBufferPass`. Both branches meet before sky motion vectors and device-depth linearization.
+- [`GBufferFormats.h`](../../Engine/Renderer/Private/Passes/GBuffer/GBufferFormats.h) defines the shared BaseColor, Normal, Material, Emissive, Subsurface, DeviceZ, and MotionVector products.
 - [`GBufferPS.hlsl`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl) and [`RaytracedGBuffer.hlsl`](../../Engine/Assets/Shaders/Passes/RayTracing/RaytracedGBuffer.hlsl) already share [`GBufferPacking.hlsli`](../../Engine/Assets/Shaders/Passes/Deferred/GBufferPacking.hlsli).
 - [`MaterialCache.cpp`](../../Engine/Renderer/Private/Scene/Materials/MaterialCache.cpp) resolves semantic defaults, per-material raster tables, and one scene-wide material texture table beneath the persistent render-scene authority. The latter must remain a scene-material capability, not be described as ray-tracing-only.
 - [`RayTracingMaterialHit.hlsli`](../../Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli) is the central base-material reconstruction path for arbitrary ray hits. [`PathLighting.hlsli`](../../Engine/Assets/Shaders/RayTracing/PathLighting.hlsli) is one current secondary-hit consumer.
@@ -329,8 +329,8 @@ Engine/Renderer
   Private/SceneData/DecalData.h
   Private/SceneData/Preparation/DecalPreparation.*
   Private/ShaderData/DecalShaderData.h
-  Private/Frame/GBuffer/DeferredDecals.*        pass placement
-  Private/Passes/Deferred/DeferredDecalResolvePass.*
+  Private/Passes/GBuffer/DeferredDecals.*         pass placement
+  Private/Passes/GBuffer/DeferredDecalResolvePass.*
 
 Engine/Assets/Shaders
   Material/SurfaceMaterial.hlsli                shared material value

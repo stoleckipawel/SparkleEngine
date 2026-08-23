@@ -41,7 +41,6 @@ void RestirIndirectResolvePassParameters::Describe(ShaderParameterStructBuilder<
 	    &RestirIndirectResolvePassParameters::RayReconstructionSpecularHitDistance,
 	    ShaderStageVisibility::Compute);
 	builder.AccelerationStructure("SceneTlas", &RestirIndirectResolvePassParameters::SceneTlas, ShaderStageVisibility::Compute);
-	builder.Uniform("Frame", &RestirIndirectResolvePassParameters::Frame, ShaderStageVisibility::Compute);
 	builder.Uniform("View", &RestirIndirectResolvePassParameters::View, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewCamera", &RestirIndirectResolvePassParameters::ViewCamera, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewTemporal", &RestirIndirectResolvePassParameters::ViewTemporal, ShaderStageVisibility::Compute);

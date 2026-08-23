@@ -155,7 +155,7 @@ void RenderGpuRayTracingPayloadBuilder::AppendInstance(
 		    "Ray-tracing work references a mesh instance outside the render scene.");
 	}
 	const MeshDraw& draw = preparedScene.primitives[input.PrimitiveIndex].Draw;
-	if (draw.Material.Slot >= preparedScene.materials.size())
+	if (draw.MaterialSlot >= preparedScene.materials.size())
 	{
 		Diagnostics::Fatal(
 		    g_renderGpuRayTracingPayloadBuilderLogger,
@@ -177,7 +177,7 @@ void RenderGpuRayTracingPayloadBuilder::AppendInstance(
 		    "Ray-tracing work references incomplete mesh or skinning data.");
 	}
 
-	const MaterialData& material = preparedScene.materials[draw.Material.Slot];
+	const MaterialData& material = preparedScene.materials[draw.MaterialSlot];
 	const RenderGpuMeshHitDataOffsets offsets = state.ResolveMeshOffsets(*gpuMesh, payloads);
 	RayTracingHitInstance& instance = payloads.Instances[input.GpuSceneSlot];
 	instance = RayTracingHitInstance{
@@ -185,7 +185,7 @@ void RenderGpuRayTracingPayloadBuilder::AppendInstance(
 	    .FirstIndex = offsets.FirstIndex,
 	    .VertexCount = offsets.VertexCount,
 	    .IndexCount = offsets.IndexCount,
-	    .MaterialSlot = draw.Material.Slot,
+	    .MaterialSlot = draw.MaterialSlot,
 	    .Flags = RayTracingHitData::InstanceFlag_Valid | (material.alphaMode == 0 ? RayTracingHitData::InstanceFlag_Opaque : 0u)
 	        | (draw.Geometry.MeshKind == RenderMeshKind::Static ? RayTracingHitData::InstanceFlag_StaticMesh : 0u)
 	        | (material.doubleSided ? RayTracingHitData::InstanceFlag_TwoSided : 0u),

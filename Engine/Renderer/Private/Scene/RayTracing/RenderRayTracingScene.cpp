@@ -8,7 +8,7 @@
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureStrategy.h"
-#include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
+#include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 
 static const auto g_renderRayTracingSceneLogger = Logging::GetOrCreateLogger("Renderer.RenderRayTracingScene");
@@ -25,8 +25,6 @@ RenderRayTracingScene::RenderRayTracingScene(
 	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
 	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
 	m_performanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
-	m_topLevelScenePlanner = std::make_unique<RayTracingTopLevelScenePlanner>();
-
 	if (!m_capabilityReport.Core.SupportsRayTracing)
 	{
 		return;
@@ -40,16 +38,9 @@ RenderRayTracingScene::RenderRayTracingScene(
 
 RenderRayTracingScene::~RenderRayTracingScene() noexcept = default;
 
-void RenderRayTracingScene::PlanFrame(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept
-{
-	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
-	if (m_topLevelScenePlanner != nullptr)
-	{
-		m_topLevelScenePlanner->PlanFrame(preparedScene, cameraPosition);
-	}
-}
-
-RenderRayTracingFrameBindings RenderRayTracingScene::Prepare(const PreparedRenderScene& preparedScene) noexcept
+RenderRayTracingFrameBindings RenderRayTracingScene::Prepare(
+    const PreparedRenderScene& preparedScene,
+    const RayTracingPtlasPartitionPlan& viewPlan) noexcept
 {
 	if (m_topLevelAccelerationStructureStrategy == nullptr)
 	{
@@ -61,12 +52,13 @@ RenderRayTracingFrameBindings RenderRayTracingScene::Prepare(const PreparedRende
 	}
 	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
 
-	return m_topLevelAccelerationStructureStrategy->Prepare(preparedScene, m_topLevelScenePlanner.get());
+	return m_topLevelAccelerationStructureStrategy->Prepare(preparedScene, viewPlan);
 }
 
 void RenderRayTracingScene::Build(
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
+    const RayTracingPtlasPartitionPlan& viewPlan,
     PassExecutionDiagnostics* diagnostics) noexcept
 {
 	RayTracingPerformanceDiagnostics performanceDiagnostics{diagnostics};
@@ -83,9 +75,8 @@ void RenderRayTracingScene::Build(
 	m_blasCache->BeginFrame();
 	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild =
 	    m_topLevelAccelerationStructureStrategy
-	        ->Build(commandContext, preparedScene, *m_blasCache, m_topLevelScenePlanner.get(), &performanceDiagnostics);
+	        ->Build(commandContext, preparedScene, *m_blasCache, viewPlan, &performanceDiagnostics);
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
-	const RayTracingTopLevelAccelerationStructureBuildStats& topLevelStats = topLevelBuild.Stats;
 
 	m_performanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;
 	m_performanceMetrics.Providers.TopLevelProviderReason = topLevelBuild.ActiveProviderReason;
@@ -95,7 +86,7 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.Blas.ReferencedMeshCount = blasStats.referencedMeshCount;
 	m_performanceMetrics.Blas.BuiltCount = blasStats.builtBlasCount;
 	m_performanceMetrics.Blas.ReusedCount = blasStats.reusedBlasCount;
-	m_performanceMetrics.ClassicTlas.InstanceCount = topLevelStats.InstanceCount;
+	m_performanceMetrics.TopLevelInstanceCount = topLevelBuild.InstanceCount;
 }
 
 void RenderRayTracingScene::Clear() noexcept
@@ -109,24 +100,11 @@ void RenderRayTracingScene::Clear() noexcept
 	{
 		m_blasCache->Clear();
 	}
-	if (m_topLevelScenePlanner != nullptr)
-	{
-		m_topLevelScenePlanner->Clear();
-	}
 }
 
 bool RenderRayTracingScene::HasValidTlas() const noexcept
 {
 	return m_topLevelAccelerationStructureStrategy != nullptr && m_topLevelAccelerationStructureStrategy->HasValidSceneTlas();
-}
-
-RhiGpuVirtualAddress RenderRayTracingScene::GetTlasGpuAddress() const noexcept
-{
-	if (m_topLevelAccelerationStructureStrategy == nullptr)
-	{
-		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no TLAS address owner.");
-	}
-	return m_topLevelAccelerationStructureStrategy->GetSceneTlasGpuAddress();
 }
 
 void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept
@@ -145,10 +123,6 @@ void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRu
 	if (m_topLevelAccelerationStructureStrategy != nullptr)
 	{
 		m_topLevelAccelerationStructureStrategy->Clear();
-	}
-	if (m_topLevelScenePlanner != nullptr)
-	{
-		m_topLevelScenePlanner->Clear();
 	}
 	m_topLevelAccelerationStructureStrategy =
 	    CreateRayTracingTopLevelAccelerationStructureStrategy(*m_renderHardwareInterface, m_capabilityReport);

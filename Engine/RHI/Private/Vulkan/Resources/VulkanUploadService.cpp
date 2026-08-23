@@ -22,7 +22,7 @@ std::uint64_t VulkanUploadService::CalculateTextureUploadBytes(const RhiTextureU
 	VkDeviceSize offset = 0;
 	for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
 	{
-		for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
+		for (const RhiTextureMipUploadData& mipLevel : arraySlice)
 		{
 			offset = AlignTextureUploadOffset(offset);
 			offset += mipLevel.Data.size();
@@ -40,9 +40,9 @@ bool VulkanUploadService::CopyTextureUploadData(
 	for (std::uint32_t arrayLayer = 0; arrayLayer < textureUpload.ArraySlices.size(); ++arrayLayer)
 	{
 		const RhiTextureArraySliceUploadData& arraySlice = textureUpload.ArraySlices[arrayLayer];
-		for (std::uint32_t mipIndex = 0; mipIndex < arraySlice.MipLevels.size(); ++mipIndex)
+		for (std::uint32_t mipIndex = 0; mipIndex < arraySlice.size(); ++mipIndex)
 		{
-			const RhiTextureMipUploadData& mipLevel = arraySlice.MipLevels[mipIndex];
+			const RhiTextureMipUploadData& mipLevel = arraySlice[mipIndex];
 			offset = AlignTextureUploadOffset(offset);
 			if (offset + mipLevel.Data.size() > destination.size())
 			{

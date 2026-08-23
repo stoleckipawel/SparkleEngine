@@ -170,7 +170,7 @@ MeshInstanceData RenderGpuGeometryState::BuildMeshInstance(const MeshDraw& draw)
 	    .WorldMatrix = draw.Transform.WorldMatrix,
 	    .PreviousWorldMatrix = draw.Transform.PreviousWorldMatrix,
 	    .WorldInverseTranspose = draw.Transform.WorldInvTranspose,
-	    .MaterialSlot = draw.Material.Slot,
+	    .MaterialSlot = draw.MaterialSlot,
 	    .Flags =
 	        (draw.Geometry.MeshKind == RenderMeshKind::Skeletal && draw.Skinning.JointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset
 	                ? MeshInstanceFlag_Skinned

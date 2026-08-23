@@ -90,7 +90,7 @@ void CookedShaderPublication::StagePackage(std::size_t packageIndex)
 	{
 		m_packages.push_back(CookedPackageWriter::Write(
 		    package,
-		    packageContext.compiledStages,
+		    packageContext,
 		    stagedPath,
 		    publishedPath));
 	}

@@ -79,7 +79,7 @@ ResolvedRenderPrimitive RenderScenePreparationInputResolver::ResolvePrimitive(
 	const MaterialData& material = preparedScene.materials[materialSlot];
 
 	MeshDraw draw;
-	draw.Material.Slot = materialSlot;
+	draw.MaterialSlot = materialSlot;
 	draw.Source.GpuSceneSlot = primitive.GpuSceneSlot;
 	draw.Source.MeshAssetId = primitive.Static.Mesh.GetAssetId();
 	draw.Source.MeshGeneration = primitive.Static.Mesh.GetGeneration();

@@ -12,7 +12,6 @@ struct RhiCommandRecordingLeaseInitialization final
 	std::uint32_t FrameSlot = 0;
 	RhiCommandRecordingContextId ContextId = {};
 	RhiCommandRecordingOwner Owner = {};
-	RhiCommandRecordingUploadPage UploadPage = {};
 	RhiCommandRecordingDescriptorPage DescriptorPage = {};
 	RhiSubmissionToken RetirementToken = {};
 	void (*Begin)(void*) noexcept = nullptr;

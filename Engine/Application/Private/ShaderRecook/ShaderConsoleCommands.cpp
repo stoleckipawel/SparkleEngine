@@ -34,12 +34,12 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .ArgumentSyntax = "Global|Changed|Package <package-id>|Shader <shader-id>",
 	        .Scope = ConsoleCommandScope::Editor,
 	        .Execute =
-	            [handlers](const ConsoleCommandContext&, std::span<const std::string_view> arguments)
+	            [handlers](ConsoleCommandScope, std::span<const std::string_view> arguments)
 	        {
 		        return ExecuteRecompileShaders(handlers, arguments);
 	        },
 	        .Complete =
-	            [](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request)
+	            [](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
 	        {
 		        return CompleteRecompileShaders(request);
 	        },
@@ -51,7 +51,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Help = "Reloads currently cooked shader packages without recooking.",
 	        .Scope = ConsoleCommandScope::Editor,
 	        .Execute =
-	            [handlers](const ConsoleCommandContext&, std::span<const std::string_view>)
+	            [handlers](ConsoleCommandScope, std::span<const std::string_view>)
 	        {
 		        return ExecuteReloadShaders(handlers);
 	        },
@@ -63,7 +63,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Help = "Lists registered global shaders from the typed shader registry.",
 	        .Scope = ConsoleCommandScope::Editor,
 	        .Execute =
-	            [](const ConsoleCommandContext&, std::span<const std::string_view>)
+	            [](ConsoleCommandScope, std::span<const std::string_view>)
 	        {
 		        return ExecuteListShaders();
 	        },
@@ -75,7 +75,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Help = "Lists shader compiler backends mirrored from the tool surface.",
 	        .Scope = ConsoleCommandScope::Editor,
 	        .Execute =
-	            [](const ConsoleCommandContext&, std::span<const std::string_view>)
+	            [](ConsoleCommandScope, std::span<const std::string_view>)
 	        {
 		        return ExecuteListShaderBackends();
 	        },
@@ -87,7 +87,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Help = "Lists shader target names accepted by the shader compiler.",
 	        .Scope = ConsoleCommandScope::Editor,
 	        .Execute =
-	            [](const ConsoleCommandContext&, std::span<const std::string_view>)
+	            [](ConsoleCommandScope, std::span<const std::string_view>)
 	        {
 		        return ExecuteListShaderTargets();
 	        },

@@ -21,7 +21,7 @@ RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window) :
     m_window(&window)
 {
 	ConsoleBuiltinCommands::Register(m_commandRegistry);
-	m_consoleSession = std::make_unique<ConsoleSession>(m_commandRegistry, ConsoleCommandContext{.Scope = ConsoleCommandScope::Runtime});
+	m_consoleSession = std::make_unique<ConsoleSession>(m_commandRegistry, ConsoleCommandScope::Runtime);
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
 	m_consoleSession->AddOutput(ConsoleCommandSeverity::Info, "Runtime console ready. Press tilde to close.");
 

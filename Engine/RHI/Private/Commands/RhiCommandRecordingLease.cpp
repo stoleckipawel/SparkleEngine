@@ -84,7 +84,6 @@ void RhiCommandRecordingLease::Reset() noexcept
 	m_frameSlot = 0;
 	m_contextId = {};
 	m_owner = {};
-	m_uploadPage = {};
 	m_descriptorPage = {};
 	m_retirementToken = {};
 	m_closed = false;
@@ -111,7 +110,6 @@ void RhiCommandRecordingLease::MoveFrom(RhiCommandRecordingLease&& other) noexce
 	m_frameSlot = other.m_frameSlot;
 	m_contextId = other.m_contextId;
 	m_owner = other.m_owner;
-	m_uploadPage = other.m_uploadPage;
 	m_descriptorPage = other.m_descriptorPage;
 	m_retirementToken = other.m_retirementToken;
 	m_closed = other.m_closed;
@@ -141,7 +139,6 @@ RhiCommandRecordingLease RhiCommandRecordingLeaseAccess::Create(
 	lease.m_frameSlot = initialization.FrameSlot;
 	lease.m_contextId = initialization.ContextId;
 	lease.m_owner = initialization.Owner;
-	lease.m_uploadPage = initialization.UploadPage;
 	lease.m_descriptorPage = initialization.DescriptorPage;
 	lease.m_retirementToken = initialization.RetirementToken;
 	return lease;

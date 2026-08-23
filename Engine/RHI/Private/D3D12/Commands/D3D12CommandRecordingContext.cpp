@@ -66,7 +66,6 @@ RhiCommandRecordingLease D3D12CommandRecordingContext::Acquire(
 	    .FrameSlot = slot.FrameSlot,
 	    .ContextId = RhiCommandRecordingContextId{.Value = slot.ContextIndex},
 	    .Owner = owner,
-	    .UploadPage = RhiCommandRecordingUploadPage{.CapacityInBytes = slot.UploadPage.GetCapacityInBytes()},
 	    .DescriptorPage = RhiCommandRecordingDescriptorPage{
 	        .CpuBase = RhiCpuDescriptorHandle{.Value = slot.DescriptorPage.GetCPU().ptr},
 	        .GpuBase = RhiGpuDescriptorHandle{.Value = slot.DescriptorPage.GetGPU().ptr},

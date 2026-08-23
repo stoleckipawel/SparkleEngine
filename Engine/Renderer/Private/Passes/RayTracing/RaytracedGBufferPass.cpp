@@ -19,7 +19,6 @@ void RaytracedGBufferPassParameters::Describe(ShaderParameterStructBuilder<Raytr
 	builder.RWTexture("GBufferDeviceZ", &RaytracedGBufferPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
 	builder.RWTexture("GBufferMotionVector", &RaytracedGBufferPassParameters::GBufferMotionVector, ShaderStageVisibility::Compute);
 	builder.AccelerationStructure("SceneTlas", &RaytracedGBufferPassParameters::SceneTlas, ShaderStageVisibility::Compute);
-	builder.Uniform("Frame", &RaytracedGBufferPassParameters::Frame, ShaderStageVisibility::Compute);
 	builder.Uniform("View", &RaytracedGBufferPassParameters::View, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewCamera", &RaytracedGBufferPassParameters::ViewCamera, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewTemporal", &RaytracedGBufferPassParameters::ViewTemporal, ShaderStageVisibility::Compute);

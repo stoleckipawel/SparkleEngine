@@ -14,7 +14,7 @@ TextureDiagnosticsSnapshotBuilder::TextureDiagnosticsSnapshotBuilder(
     m_descriptorService(descriptorService),
     m_resolvePreviewTexture(resolvePreviewTexture)
 {
-	m_snapshot.Rows.reserve(expectedRowCount);
+	m_snapshot.reserve(expectedRowCount);
 }
 
 void TextureDiagnosticsSnapshotBuilder::Add(
@@ -44,14 +44,14 @@ void TextureDiagnosticsSnapshotBuilder::Add(
 	row.PreviewTexture = m_resolvePreviewTexture ? m_resolvePreviewTexture(nativeTextureId) : EditorTextureHandle{};
 	row.Loaded = true;
 	row.StreamManaged = streamManaged;
-	m_snapshot.Rows.push_back(std::move(row));
+	m_snapshot.push_back(std::move(row));
 }
 
 TextureDiagnosticsSnapshot TextureDiagnosticsSnapshotBuilder::Build() &&
 {
 	std::sort(
-	    m_snapshot.Rows.begin(),
-	    m_snapshot.Rows.end(),
+	    m_snapshot.begin(),
+	    m_snapshot.end(),
 	    [](const TextureDiagnosticsRow& lhs, const TextureDiagnosticsRow& rhs) noexcept
 	    {
 		    if (lhs.Kind != rhs.Kind)

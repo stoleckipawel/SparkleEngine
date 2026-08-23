@@ -193,6 +193,7 @@ void FrameGraph::BindPersistentBuffer(FrameGraphBufferHandle handle, RhiResource
 		ReleaseExternalResourceViews(resourceHandle);
 		access.resource = resource;
 	}
+	m_resourceRegistry.SetExternalContentsProduced(resourceHandle, true);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
 }
 
@@ -241,6 +242,7 @@ void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, RhiResour
 		ReleaseExternalResourceViews(resourceHandle);
 		access.resource = resource;
 	}
+	m_resourceRegistry.SetExternalContentsProduced(resourceHandle, true);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
 }
 
@@ -317,6 +319,7 @@ void FrameGraph::ClearPersistentTextureBinding(FrameGraphTextureHandle handle) n
 
 	ReleaseExternalResourceViews(resourceHandle);
 	m_resourceResolver.ClearResolvedAccess(resourceHandle);
+	m_resourceRegistry.SetExternalContentsProduced(resourceHandle, false);
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, metadata.initialState);
 }
@@ -373,6 +376,7 @@ void FrameGraph::ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noe
 
 	ReleaseExternalResourceViews(resourceHandle);
 	m_resourceResolver.ClearResolvedAccess(resourceHandle);
+	m_resourceRegistry.SetExternalContentsProduced(resourceHandle, false);
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, metadata.initialState);
 }

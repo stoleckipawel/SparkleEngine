@@ -4,12 +4,12 @@
 
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
-#include "Scene/RenderScene.h"
 #include "Tasks/Public/ParallelFor.h"
 #include "Tasks/Public/TaskExecution.h"
 #include "Tasks/Public/TaskExecutionContext.h"
 #include "Tasks/Public/TaskExecutor.h"
 #include "View/RenderView.h"
+#include "View/RenderViewState.h"
 
 #include <algorithm>
 #include <bit>
@@ -21,7 +21,7 @@ RenderViewPreparation::RenderViewPreparation(TaskExecutor& taskExecutor) noexcep
 {
 }
 
-void RenderViewPreparation::Prepare(const PreparedRenderScene& preparedScene, RenderView& view, RenderScene& renderScene)
+void RenderViewPreparation::Prepare(const PreparedRenderScene& preparedScene, RenderView& view, RenderViewState& viewState)
 {
 	m_run.Scene = &preparedScene;
 	m_run.View = &view;
@@ -64,7 +64,7 @@ void RenderViewPreparation::Prepare(const PreparedRenderScene& preparedScene, Re
 	view.rasterPrimitiveIndices = std::move(m_batchResult.RasterInstanceIndices);
 	view.meshInstanceBatches = std::move(m_batchResult.Batches);
 	BuildWorkload(preparedScene, view);
-	renderScene.PlanRayTracingFrame(preparedScene, view.cameraUniform.Position);
+	view.rayTracingPlan = viewState.BuildRayTracingPlan(preparedScene, view.cameraUniform.Position);
 
 	m_run.Scene = nullptr;
 	m_run.View = nullptr;

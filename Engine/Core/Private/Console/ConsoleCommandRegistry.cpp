@@ -54,7 +54,7 @@ const ConsoleCommandDescriptor* ConsoleCommandRegistry::Find(std::string_view co
 	return &m_commands[iterator->second];
 }
 
-ConsoleCommandResult ConsoleCommandRegistry::ExecuteLine(std::string_view input, const ConsoleCommandContext& context) const
+ConsoleCommandResult ConsoleCommandRegistry::ExecuteLine(std::string_view input, ConsoleCommandScope scope) const
 {
 	const ConsoleParsedInput parsedInput = ConsoleInputParser::Parse(input);
 	if (!parsedInput.Succeeded)
@@ -71,16 +71,16 @@ ConsoleCommandResult ConsoleCommandRegistry::ExecuteLine(std::string_view input,
 	{
 		return ConsoleCommandResult::Error("unknown command: " + parsedInput.CommandName);
 	}
-	if (!IsScopeAllowed(descriptor->Scope, context.Scope))
+	if (!IsScopeAllowed(descriptor->Scope, scope))
 	{
 		return ConsoleCommandResult::Error("command is not available in this console scope: " + descriptor->Name);
 	}
 
 	const std::vector<std::string_view> argumentViews = BuildArgumentViews(parsedInput.Arguments);
-	return descriptor->Execute(context, argumentViews);
+	return descriptor->Execute(scope, argumentViews);
 }
 
-std::vector<std::string> ConsoleCommandRegistry::CompleteLine(std::string_view input, const ConsoleCommandContext& context) const
+std::vector<std::string> ConsoleCommandRegistry::CompleteLine(std::string_view input, ConsoleCommandScope scope) const
 {
 	const bool commandNameOnly = !Strings::ContainsAsciiWhitespace(input);
 	if (commandNameOnly)
@@ -88,7 +88,7 @@ std::vector<std::string> ConsoleCommandRegistry::CompleteLine(std::string_view i
 		std::vector<std::string> completions;
 		for (const ConsoleCommandDescriptor& command : m_commands)
 		{
-			if (IsScopeAllowed(command.Scope, context.Scope) && Strings::StartsWithIgnoreCase(command.Name, input))
+			if (IsScopeAllowed(command.Scope, scope) && Strings::StartsWithIgnoreCase(command.Name, input))
 			{
 				completions.push_back(command.Name);
 			}
@@ -103,7 +103,7 @@ std::vector<std::string> ConsoleCommandRegistry::CompleteLine(std::string_view i
 	}
 
 	const ConsoleCommandDescriptor* descriptor = Find(parsedInput.CommandName);
-	if (descriptor == nullptr || !descriptor->Complete || !IsScopeAllowed(descriptor->Scope, context.Scope))
+	if (descriptor == nullptr || !descriptor->Complete || !IsScopeAllowed(descriptor->Scope, scope))
 	{
 		return {};
 	}
@@ -111,7 +111,7 @@ std::vector<std::string> ConsoleCommandRegistry::CompleteLine(std::string_view i
 	const std::vector<std::string_view> argumentViews = BuildArgumentViews(parsedInput.Arguments);
 	const std::string_view currentToken = argumentViews.empty() ? std::string_view{} : argumentViews.back();
 	return descriptor->Complete(
-	    context,
+	    scope,
 	    ConsoleAutocompleteRequest{
 	        .CommandName = descriptor->Name,
 	        .Arguments = argumentViews,

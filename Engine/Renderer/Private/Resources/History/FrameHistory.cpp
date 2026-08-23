@@ -5,6 +5,13 @@
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
+#include "Passes/Lighting/Reference/ReferenceLightingInvalidation.h"
+#include "Passes/Lighting/Restir/RestirLightingInvalidation.h"
+#include "Providers/RendererImageProviderStack.h"
+#include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
+#include "View/RenderView.h"
+#include "View/RenderViewState.h"
 
 #include <string>
 
@@ -34,11 +41,6 @@ class ReservoirFrameHistory final
 		frameGraph.InvalidateTextureHistory(history.Surface);
 	}
 
-	static bool IsReservoirValid(const FrameGraph& frameGraph, const FrameGraphReservoirHistoryHandles& history) noexcept
-	{
-		return frameGraph.IsTextureHistoryValid(history.Sample) && frameGraph.IsTextureHistoryValid(history.Weight) &&
-		       frameGraph.IsTextureHistoryValid(history.Surface);
-	}
 };
 
 FrameHistoryResourceLayout DeclareFrameHistoryResources(
@@ -80,19 +82,33 @@ void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryR
 	    history.RestirIndirectReservoir);
 }
 
-FrameHistoryValidity ResolveFrameHistoryValidity(
-    const FrameGraph& frameGraph,
-    const FrameHistoryResourceLayout& history) noexcept
+void UpdateFrameHistory(
+    FrameGraph& frameGraph,
+    const FrameHistoryResourceLayout& history,
+    LightingMode lighting,
+    const PreparedRenderScene& preparedScene,
+    const RenderView& view,
+    RenderViewState& viewState,
+    RendererImageProviderStack& imageProviders)
 {
-	return FrameHistoryValidity{
-	    .Exposure = frameGraph.IsTextureHistoryValid(history.Exposure),
-	    .ReferenceLighting = frameGraph.IsTextureHistoryValid(history.ReferenceLighting),
-	    .DirectLightReservoir =
-	        ReservoirFrameHistory::IsReservoirValid(
-	            frameGraph,
-	            history.DirectLightReservoir),
-	    .RestirIndirectReservoir =
-	        ReservoirFrameHistory::IsReservoirValid(
-	            frameGraph,
-	            history.RestirIndirectReservoir)};
+	if (lighting == LightingMode::RestirPathTraced)
+	{
+		if (viewState.UpdateRestirLightingHistory(BuildRestirLightingHistoryInvalidationHash(preparedScene)))
+		{
+			InvalidateRestirLightingHistory(frameGraph, history);
+			imageProviders.ResetHistory();
+		}
+	}
+	else if (lighting == LightingMode::ReferencePathTraced)
+	{
+		if (viewState.UpdateReferenceLightingHistory(BuildReferenceLightingHistoryInvalidationHash(preparedScene, view)))
+		{
+			frameGraph.InvalidateTextureHistory(history.ReferenceLighting);
+		}
+	}
+
+	if (view.temporalUniform.HistoryValid == 0u)
+	{
+		InvalidateFrameHistory(frameGraph, history);
+	}
 }

@@ -20,7 +20,7 @@ std::size_t TextureAssetCooker::CalculatePixelDataBytes(const TextureLoadResult&
 	std::size_t bytes = 0;
 	for (const TextureArraySliceData& slice : texture.arraySlices)
 	{
-		for (const TextureMipLevelData& mip : slice.mipLevels)
+		for (const TextureMipLevelData& mip : slice)
 		{
 			bytes += mip.data.size();
 		}
@@ -40,7 +40,7 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 	mipHeaders.reserve(cookedTexture.GetSubresourceCount());
 	for (const TextureArraySliceData& arraySlice : cookedTexture.arraySlices)
 	{
-		for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
+		for (const TextureMipLevelData& mipLevel : arraySlice)
 		{
 			if (mipLevel.data.size() > (std::numeric_limits<std::uint32_t>::max)())
 			{
@@ -90,7 +90,7 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 
 		for (const TextureArraySliceData& arraySlice : cookedTexture.arraySlices)
 		{
-			for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
+			for (const TextureMipLevelData& mipLevel : arraySlice)
 			{
 				if (!Files::BinaryStreamWriter::WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), fileError))
 				{

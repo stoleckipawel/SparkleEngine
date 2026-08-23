@@ -2,22 +2,21 @@
 
 #include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "Scene/RayTracing/RayTracingSceneTlasShaderAccessMode.h"
-#include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureBuildStats.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
 #include <memory>
 
 class RayTracingBlasCache;
 class RayTracingPerformanceDiagnostics;
-class RayTracingTopLevelScenePlanner;
 class RenderCommandContext;
 class RenderHardwareInterface;
 struct RayTracingCapabilityReport;
 struct PreparedRenderScene;
+struct RayTracingPtlasPartitionPlan;
 
 struct RayTracingTopLevelAccelerationStructureBuildResult final
 {
-	RayTracingTopLevelAccelerationStructureBuildStats Stats;
+	std::uint32_t InstanceCount = 0;
 	ERhiRayTracingTopLevelProvider ActiveProvider = ERhiRayTracingTopLevelProvider::None;
 	const char* ActiveProviderReason = "not-built";
 };
@@ -37,12 +36,12 @@ public:
 	virtual const char* GetActiveProviderReason() const noexcept = 0;
 	virtual RenderRayTracingFrameBindings Prepare(
 	    const PreparedRenderScene& preparedScene,
-	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept = 0;
+	    const RayTracingPtlasPartitionPlan& viewPlan) noexcept = 0;
 	virtual RayTracingTopLevelAccelerationStructureBuildResult Build(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
-	    RayTracingTopLevelScenePlanner* scenePlanner,
+	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
 	virtual bool HasValidSceneTlas() const noexcept = 0;
 	virtual RhiOwnedResourceHandle GetSceneTlasResource() const noexcept = 0;

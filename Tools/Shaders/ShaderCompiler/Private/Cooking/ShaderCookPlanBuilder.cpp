@@ -37,7 +37,7 @@ void ShaderCookPlanBuilder::AddPackageNodes(
 {
 	const ShaderCookPackageDesc& package = plan.packages[packageIndex];
 	ShaderCookPackageContext& packageContext = plan.packageContexts[packageIndex];
-	packageContext.compiledStages.reserve(package.stages.size() * settings.targets.size());
+	packageContext.reserve(package.stages.size() * settings.targets.size());
 	const std::size_t packageNodeStart = plan.nodes.size();
 
 	for (std::size_t targetIndex = 0; targetIndex < settings.targets.size(); ++targetIndex)

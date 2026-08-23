@@ -11,11 +11,6 @@ class GltfTangentVertexRemapper final
 	static void Apply(ImportedMeshGeometry& geometry, const GltfGeneratedTangentFrameSet& frames);
 
   private:
-	struct TangentVariant final
-	{
-		std::uint32_t remappedVertexIndex = 0;
-	};
-
 	static constexpr float kTangentEqualityTolerance = 1.0e-6f;
 
 	GltfTangentVertexRemapper(ImportedMeshGeometry& geometry, const GltfGeneratedTangentFrameSet& frames);
@@ -29,7 +24,7 @@ class GltfTangentVertexRemapper final
 
 	ImportedMeshGeometry& m_geometry;
 	const GltfGeneratedTangentFrameSet& m_frames;
-	std::vector<std::vector<TangentVariant>> m_variantsBySourceVertex;
+	std::vector<std::vector<std::uint32_t>> m_variantsBySourceVertex;
 	bool m_hasSkinInfluences = false;
 	std::vector<ImportedVertex> m_vertices;
 	std::vector<std::uint32_t> m_indices;

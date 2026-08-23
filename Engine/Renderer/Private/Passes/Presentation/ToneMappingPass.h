@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/Presentation/ToneMappingUniformData.h"
+#include "ShaderData/ToneMappingUniformData.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"

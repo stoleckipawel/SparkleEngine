@@ -26,11 +26,6 @@ struct RhiCommandRecordingContextId final
 	constexpr bool IsValid() const noexcept { return Value != ~0u; }
 };
 
-struct RhiCommandRecordingUploadPage final
-{
-	std::uint64_t CapacityInBytes = 0;
-};
-
 struct RhiCommandRecordingDescriptorPage final
 {
 	RhiCpuDescriptorHandle CpuBase = {};
@@ -62,7 +57,6 @@ class SPARKLE_RHI_API RhiCommandRecordingLease final
 	std::uint32_t GetFrameSlot() const noexcept { return m_frameSlot; }
 	RhiCommandRecordingContextId GetContextId() const noexcept { return m_contextId; }
 	RhiCommandRecordingOwner GetOwner() const noexcept { return m_owner; }
-	const RhiCommandRecordingUploadPage& GetUploadPage() const noexcept { return m_uploadPage; }
 	const RhiCommandRecordingDescriptorPage& GetDescriptorPage() const noexcept { return m_descriptorPage; }
 	RhiSubmissionToken GetRetirementToken() const noexcept { return m_retirementToken; }
 	bool IsValid() const noexcept { return m_commandList != nullptr; }
@@ -95,7 +89,6 @@ class SPARKLE_RHI_API RhiCommandRecordingLease final
 	std::uint32_t m_frameSlot = 0;
 	RhiCommandRecordingContextId m_contextId = {};
 	RhiCommandRecordingOwner m_owner = {};
-	RhiCommandRecordingUploadPage m_uploadPage = {};
 	RhiCommandRecordingDescriptorPage m_descriptorPage = {};
 	RhiSubmissionToken m_retirementToken = {};
 	bool m_closed = false;

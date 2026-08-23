@@ -11,6 +11,22 @@ This document records the repository shape observed on 2026-07-24 so reviewers c
 Target capability belongs to [Principal Graphics Requirements](../Strategy/Requirements.md), binding implementation rules belong to [Engineering Standards](../Engineering/Standards/README.md), and accepted subsystem decisions belong to focused architecture documents. This map does not override any of them.
 
 The canonical world basis, units, transform math, source normalization, animation, and skinning spaces are owned by the [World Coordinate, Units, and Transform Contract](WorldCoordinateAndUnits.md).
+
+## Current Renderer Navigation Overlay
+
+The renderer Scene/View/Frame migration completed its source-layout checkpoint on 2026-08-22. For current renderer navigation, use the accepted owner map in [Renderer Scene, View, and Frame Architecture](RendererSceneViewFrameArchitecture.md#directory-navigation-rule): persistent scene authority is under `Renderer/Private/Scene`, current and persistent view semantics under `Renderer/Private/View`, lifecycle and technique-neutral graph assembly under `Renderer/Private/Frame`, feature setup/recording under `Renderer/Private/Passes`, and generic graph compilation/execution under `Renderer/Private/FrameGraph`. The old private `SceneData`, `Camera`, `FramePipeline`, and touched `Frame/Core` roots described in the dated snapshot below are historical and are not current navigation routes.
+
+The current high-level renderer route is:
+
+```text
+RendererExecutionContext
+  -> Frame/FramePipeline
+       BeginFrame -> PrepareFrame -> ExecuteFrame -> SubmitAndPresent
+  -> Frame/Graph/BuildRenderFrameGraph
+  -> Passes/<Feature>
+  -> FrameGraph/<Generic graph infrastructure>
+```
+
 ## Executive Map
 
 SparkleEngine is already shaped like a modern rendering engine:
@@ -238,22 +254,21 @@ High-level runtime flow:
 | Runtime scene | `Engine/GameFramework` | Level, scene, assets, cooked loaders, material/mesh/light/camera data. |
 | Renderer facade | `Engine/Renderer/Public/Renderer.h` | Public facade for render requests/products, host frame steps, RHI access, shader reload, and diagnostics/capture APIs. |
 | System root | `RendererSystemRoot` | Private dependency hub for renderer services. |
-| Frame pipeline | `FramePipeline` | Prepares, records, submits frames; owns histories and frame graph lifetime. |
+| Frame pipeline | `FramePipeline` | Sequences the render-thread frame lifecycle and cached graph execution; focused scene, view, history, upload, UI, and graph-execution owners retain their mechanics. |
 | Frame graph | `FrameGraph` | Declares passes/resources, compiles dependencies/barriers/transients, executes passes. |
 | RHI | `RenderHardwareInterface` | Backend services for resources, descriptors, pipelines, upload, ray tracing, interop, capture, diagnostics, presentation. |
 
 Per-frame renderer flow:
 
-1. `FramePipeline::BeginFrame()` handles resize, scene extent changes, render path switches, image provider graph key changes, backend begin-frame, and timing resolution.
-2. `FramePipeline::SetupFrame()` refreshes viewport products and uploads ready mesh and scene-texture data.
-3. `FramePipeline::RecordFrame()` fills the selected `RenderFrame` slot with identity/time, `PreparedRenderScene`, and `RenderView`; supplies pass-specific parameters and provider frame inputs; prepares and binds ray-tracing/GPU-scene resources; then sets up, compiles, and executes the frame graph through the infrastructure-only `PassCommandContext` recording surface.
-4. `FramePipeline::SubmitFrame()` submits the current backend frame.
-5. `FramePipeline::EndFrame()` marks exposure/reservoir history validity and advances frame-in-flight.
+1. `FramePipeline::BeginFrame()` polls owned services, accepts and applies one scene/view submission, resolves resize/topology changes, and begins the backend frame.
+2. `FramePipeline::PrepareFrame()` refreshes viewport products, asks mesh/texture owners to upload ready assets, fills the selected `RenderFrame` slot, updates history/provider inputs, and prepares scene-owned ray tracing.
+3. `FramePipeline::ExecuteFrame()` delegates imported-resource binding and explicit parameter application to `ExecuteRenderFrameGraph`, which sets up, compiles, and executes through the infrastructure-only `PassCommandContext` recording surface.
+4. `FramePipeline::SubmitAndPresent()` delegates UI playback, submits the backend frame, records upload retirement tokens, and advances frame-in-flight.
 
 Important CPU observation:
 
 - The frame graph object is rebuilt on resize, render path changes, or provider graph changes.
-- The graph setup and compile happen during `RecordFrame()` each frame.
+- The graph setup and compile happen during `ExecuteFrame()` each frame.
 - This is architecturally clear but should be profiled: per-frame setup/compile gives flexibility but can become CPU overhead once pass topology is stable. A future cleanup should cache compiled topology when it can delete more dynamic per-frame planning code than it adds.
 
 ## RHI Map
@@ -317,7 +332,7 @@ Feature map:
 | Feature | Owner | State |
 | --- | --- | --- |
 | Frame graph | `FrameGraph` and `Frame/Core/Frame.cpp` factory | Strong foundation with product roots, transient resources, barriers, typed pass parameters. |
-| Deferred path | `Frame/Deferred`, `Frame/Lighting`, `Passes/Deferred`, HLSL | GBuffer, direct lighting, reservoir path, shadows, indirect diffuse/specular, composite, sky. |
+| GBuffer and lighting paths | `Passes/GBuffer`, semantic `Passes/Lighting/*` feature folders, and HLSL | GBuffer, direct lighting, ReSTIR, reference lighting, shadows, composite, and sky remain discoverable without a technique-wide C++ bucket. |
 | Reference path tracing | `Frame/Reference`, `Passes/Reference`, HLSL | Owns reference outputs and guide buffers; motion-vector/accumulation/product story needs sharper scope. |
 | Direct-light reservoir | `DirectLightReservoir*` C++ and HLSL | ReSTIR DI-shaped native path; should be tuned/qualified before being marketed as RTXDI-equivalent. |
 | Ray tracing scene | `RayTracing/Scene`, `RayTracing/Acceleration`, RHI RT services | Classic TLAS and PTLAS should both be product-owned; remaining ambiguity is scaffolding, not capability. |

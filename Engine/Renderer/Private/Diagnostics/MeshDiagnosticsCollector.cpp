@@ -102,8 +102,8 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(scene.GetPrimitives().size());
 
-	std::vector<MeshDraw> draws;
-	draws.reserve(scene.GetPrimitives().size());
+	std::vector<PreparedRenderPrimitive> primitives;
+	primitives.reserve(scene.GetPrimitives().size());
 
 	std::vector<RenderMeshInstanceGroup> renderInstanceGroups;
 	for (const RenderMeshInstanceGroupData& group : scene.GetInstanceGroups())
@@ -136,16 +136,17 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 
 		const GpuMesh* gpuMesh = gpuMeshCache != nullptr ? gpuMeshCache->Find(*mesh) : nullptr;
 
-		const std::uint32_t drawIndex = static_cast<std::uint32_t>(draws.size());
-		draws.push_back(
-		    MeshDraw{
+		const std::uint32_t drawIndex = static_cast<std::uint32_t>(primitives.size());
+		primitives.push_back(
+		    PreparedRenderPrimitive{.Object = primitive.Object,
+		        .Draw = MeshDraw{
 		        .Transform = MeshDrawTransform{.WorldMatrix = MathUtils::IdentityFloat4x4(), .WorldInvTranspose = {}},
-		        .Material = MeshDrawMaterial{.Slot = primitive.Static.Material.IsValid() ? primitive.Static.Material.GetIndex() : 0u},
+		        .MaterialSlot = primitive.Static.Material.IsValid() ? primitive.Static.Material.GetIndex() : 0u,
 		        .Skinning = MeshDrawSkinning{.SkeletonAssetId = primitive.Static.Skeleton.GetAssetId()},
 		        .Source = MeshDrawSourceIdentity{.GpuSceneSlot = primitive.GpuSceneSlot},
 		        .Geometry = MeshDrawGeometry{
 		            .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(primitive.Static.MeshKind),
-		            .Mesh = gpuMesh != nullptr ? gpuMesh->GetHandle() : GpuMeshHandle{}}});
+		            .Mesh = gpuMesh != nullptr ? gpuMesh->GetHandle() : GpuMeshHandle{}}}});
 		renderItems.push_back(
 		    MeshRenderItem{
 		        .Object = primitive.Object,
@@ -159,7 +160,7 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 	MeshInstanceBatchBuildResult batchResult;
 	batchBuilder.Build(
 	    renderItems,
-	    draws,
+	    primitives,
 	    renderInstanceGroups,
 	    MeshInstanceBatchBuildOptions{
 	        .EnableAutoBatching = CVarRendererMeshAutoBatching.Get(),

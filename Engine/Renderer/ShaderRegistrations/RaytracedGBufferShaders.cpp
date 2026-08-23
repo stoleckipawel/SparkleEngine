@@ -7,7 +7,6 @@
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/FrameUniformData.h"
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
@@ -28,7 +27,6 @@ public:
 	SHADER_PARAMETER_UAV(RWTexture2D, GBufferDeviceZ)
 	SHADER_PARAMETER_UAV(RWTexture2D, GBufferMotionVector)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
-	SHADER_PARAMETER_CBUFFER_NAMED(Frame, FrameUniformData, FrameUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(View, ViewUniformData, ViewUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewCamera, ViewCameraUniformData, ViewCameraUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewTemporal, ViewTemporalUniformData, ViewTemporalUniformData)

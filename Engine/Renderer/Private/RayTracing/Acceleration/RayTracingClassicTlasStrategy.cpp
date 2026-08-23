@@ -2,7 +2,6 @@
 
 #include "RayTracing/Acceleration/RayTracingClassicTlasStrategy.h"
 
-#include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 
 RayTracingClassicTlasStrategy::RayTracingClassicTlasStrategy(
@@ -32,9 +31,9 @@ const char* RayTracingClassicTlasStrategy::GetActiveProviderReason() const noexc
 
 RenderRayTracingFrameBindings RayTracingClassicTlasStrategy::Prepare(
     const PreparedRenderScene& preparedScene,
-    RayTracingTopLevelScenePlanner* scenePlanner) noexcept
+    const RayTracingPtlasPartitionPlan& viewPlan) noexcept
 {
-	(void) scenePlanner;
+	(void) viewPlan;
 	RenderRayTracingFrameBindings frameBindings{};
 	const std::uint32_t estimatedInstanceCount =
 	    static_cast<std::uint32_t>(preparedScene.rayTracingWork.ClassicTlasBlasInputIndices.size());
@@ -51,15 +50,14 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingClassicTlasStrategy
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
     RayTracingBlasCache& blasCache,
-    RayTracingTopLevelScenePlanner* scenePlanner,
+    const RayTracingPtlasPartitionPlan& viewPlan,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
+	(void) viewPlan;
 	RayTracingTopLevelAccelerationStructureBuildResult result{};
 	result.ActiveProvider = GetActiveProvider();
 	result.ActiveProviderReason = GetActiveProviderReason();
-	result.Stats = scenePlanner != nullptr
-	    ? scenePlanner->BuildClassicTlas(commandContext, preparedScene, m_classicTlasBuilder, blasCache, diagnostics)
-	    : m_classicTlasBuilder.Build(commandContext, preparedScene, blasCache, diagnostics);
+	result.InstanceCount = m_classicTlasBuilder.Build(commandContext, preparedScene, blasCache, diagnostics);
 	return result;
 }
 

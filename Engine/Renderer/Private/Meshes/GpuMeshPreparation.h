@@ -3,6 +3,7 @@
 #include "GameFramework/Public/Rendering/RenderAssetHandles.h"
 #include "RayTracing/RayTracingHitData.h"
 #include "Scene/Meshes/MeshSkinningData.h"
+#include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
 
 #include <DirectXMath.h>

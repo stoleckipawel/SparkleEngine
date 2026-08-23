@@ -45,13 +45,13 @@ Scene or debug color
 
 The path is visible in these current owners:
 
-- [`Frame/PostProcessing/PostProcessing.cpp`](../../Engine/Renderer/Private/Frame/PostProcessing/PostProcessing.cpp) schedules debug visualization and then presentation.
-- [`Frame/Debug/VisualizeBuffers.cpp`](../../Engine/Renderer/Private/Frame/Debug/VisualizeBuffers.cpp) overwrites `FinalSceneColor` for non-lit views.
-- [`Frame/Presentation/Presentation.cpp`](../../Engine/Renderer/Private/Frame/Presentation/Presentation.cpp) always schedules `ToneMappingPass` and `OutputEncodingPass`.
+- [`Passes/PostProcessing/PostProcessing.cpp`](../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp) schedules debug visualization and then presentation.
+- [`Passes/Debug/VisualizeBuffers.cpp`](../../Engine/Renderer/Private/Passes/Debug/VisualizeBuffers.cpp) overwrites `FinalSceneColor` for non-lit views.
+- [`Passes/Presentation/Presentation.cpp`](../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp) always schedules `ToneMappingPass` and `OutputEncodingPass`.
 - [`Passes/Presentation/ToneMapping.hlsl`](../../Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl) always multiplies by the exposure texture and applies the selected tone mapper.
 - [`Passes/Deferred/VisualizeBuffers.hlsl`](../../Engine/Assets/Shaders/Passes/Deferred/VisualizeBuffers.hlsl) already maps HDR lighting and emissive values with `x / (1 + x)` before the global tone mapper runs.
 - [`Viewport/ViewportContracts.h`](../../Engine/Renderer/Public/Viewport/ViewportContracts.h) declares `RenderFeatureFlags`, but the current frame pipeline does not consume the request field; its entries also mix picking, view-mode, and overlay intents.
-- [`FramePipeline/FramePipeline.cpp`](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) reads `CVarRenderViewMode` directly, so the current view mode is process-wide rather than resolved from a viewport request.
+- [`Frame/FramePipeline.cpp`](../../Engine/Renderer/Private/Frame/FramePipeline.cpp) reads `CVarRenderViewMode` directly, so the current view mode is process-wide rather than resolved from a viewport request.
 
 The last two facts cause double mapping for HDR diagnostic views. The same global presentation step also changes bounded quantities and false colors: a roughness value, encoded normal, or instance-ID palette no longer reaches the display as the visualization shader authored it.
 

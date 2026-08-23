@@ -88,10 +88,7 @@ bool D3D12UploadService::UploadBuffer(
 	        stagingResource->Resource.Get()});
 
 	DrainCompletedUploads();
-	m_pendingUploads.push_back(
-	    PendingUpload{
-	        .StagingResource =
-	            std::move(stagingResource)});
+	m_pendingUploads.push_back(std::move(stagingResource));
 	return true;
 }
 
@@ -136,10 +133,7 @@ bool D3D12UploadService::UploadTexture(
 	commandList.TrackResource(RhiResourceHandle{stagingResource->Resource.Get()});
 
 	DrainCompletedUploads();
-	m_pendingUploads.push_back(
-	    PendingUpload{
-	        .StagingResource =
-	            std::move(stagingResource)});
+	m_pendingUploads.push_back(std::move(stagingResource));
 	return true;
 }
 
@@ -297,7 +291,7 @@ bool D3D12UploadService::RecordTextureUpload(
 	subresources.reserve(subresourceCount);
 	for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
 	{
-		for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
+		for (const RhiTextureMipUploadData& mipLevel : arraySlice)
 		{
 			subresources.push_back(
 			    D3D12_SUBRESOURCE_DATA{
@@ -352,12 +346,12 @@ void D3D12UploadService::DrainCompletedUploads() noexcept
 	const auto firstPending = std::remove_if(
 	    m_pendingUploads.begin(),
 	    m_pendingUploads.end(),
-	    [&completedValues](const PendingUpload& upload)
+	    [&completedValues](const std::unique_ptr<D3D12GpuAllocationRecord>& stagingResource)
 	    {
-		    return upload.StagingResource == nullptr ||
-		           (upload.StagingResource->RecordingReferenceCount.load(
+		    return stagingResource == nullptr ||
+		           (stagingResource->RecordingReferenceCount.load(
 		                std::memory_order_relaxed) == 0 &&
-		            upload.StagingResource->LastUse.IsComplete(completedValues));
+		            stagingResource->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingUploads.erase(
 	    firstPending,

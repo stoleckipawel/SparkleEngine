@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
@@ -45,8 +44,8 @@ struct FrameGraphResourceMetadata
 	FrameGraphResourceOwnership ownership = FrameGraphResourceOwnership::Transient;
 	ResourceState initialState = ResourceState::Common;
 	ResourceState finalState = ResourceState::Common;
+	bool hasExternalContents = false;
 	std::string debugName;
 	FrameGraphTextureDesc textureDesc{};
 	FrameGraphBufferDesc bufferDesc{};
-	FrameGraphAccelerationStructureDesc accelerationStructureDesc{};
 };

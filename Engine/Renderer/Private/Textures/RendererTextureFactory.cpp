@@ -113,7 +113,7 @@ std::uint64_t RendererTextureFactory::CalculatePayloadBytes(const RhiTextureUplo
 	std::uint64_t byteCount = 0;
 	for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
 	{
-		for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
+		for (const RhiTextureMipUploadData& mipLevel : arraySlice)
 		{
 			byteCount += mipLevel.Data.size();
 		}

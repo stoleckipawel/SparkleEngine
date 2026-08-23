@@ -77,7 +77,7 @@ void UsedTexturesPanel::DrawToolbar()
 	ImGui::SameLine();
 	ImGui::TextDisabled(
 	    "%zu texture(s), %zu loaded, %s estimated",
-	    m_snapshot.Rows.size(),
+	    m_snapshot.size(),
 	    TextureDiagnosticsPresentation::CountLoadedTextures(m_snapshot),
 	    PanelDiagnosticsFormatting::FormatByteSize(TextureDiagnosticsPresentation::SumEstimatedTextureBytes(m_snapshot)).c_str());
 }
@@ -104,7 +104,7 @@ void UsedTexturesPanel::DrawTextureTable(bool disableInteraction)
 	ImGui::TableHeadersRow();
 
 	ImGui::BeginDisabled(disableInteraction);
-	for (const TextureDiagnosticsRow& row : m_snapshot.Rows)
+	for (const TextureDiagnosticsRow& row : m_snapshot)
 	{
 		if (!MatchesFilter(row))
 		{
@@ -223,7 +223,7 @@ void UsedTexturesPanel::DrawSelectedTextureDetails(const TextureDiagnosticsRow& 
 
 const TextureDiagnosticsRow* UsedTexturesPanel::GetSelectedRow() const noexcept
 {
-	for (const TextureDiagnosticsRow& row : m_snapshot.Rows)
+	for (const TextureDiagnosticsRow& row : m_snapshot)
 	{
 		if (row.Key == m_selectedKey)
 		{

@@ -99,17 +99,17 @@ void GltfTangentVertexRemapper::Remap()
 std::uint32_t GltfTangentVertexRemapper::ResolveVertex(std::size_t cornerIndex)
 {
 	const std::uint32_t sourceVertexIndex = m_geometry.indices[cornerIndex];
-	std::vector<TangentVariant>& variants = m_variantsBySourceVertex[sourceVertexIndex];
+	std::vector<std::uint32_t>& variants = m_variantsBySourceVertex[sourceVertexIndex];
 	const auto matchingVariant = std::find_if(
 	    variants.begin(),
 	    variants.end(),
-	    [this, cornerIndex](const TangentVariant& variant)
+	    [this, cornerIndex](std::uint32_t remappedVertexIndex)
 	    {
-		    return FrameSetsMatch(variant.remappedVertexIndex, cornerIndex);
+		    return FrameSetsMatch(remappedVertexIndex, cornerIndex);
 	    });
 	if (matchingVariant != variants.end())
 	{
-		return matchingVariant->remappedVertexIndex;
+		return *matchingVariant;
 	}
 
 	if (m_vertices.size() >= static_cast<std::size_t>((std::numeric_limits<std::uint32_t>::max)()))
@@ -130,7 +130,7 @@ std::uint32_t GltfTangentVertexRemapper::ResolveVertex(std::size_t cornerIndex)
 		delta.tangent = m_frames.morphCornerTangentDeltas[targetIndex][cornerIndex];
 		m_morphTargets[targetIndex].deltas.push_back(delta);
 	}
-	variants.push_back(TangentVariant{.remappedVertexIndex = remappedVertexIndex});
+	variants.push_back(remappedVertexIndex);
 	return remappedVertexIndex;
 }
 

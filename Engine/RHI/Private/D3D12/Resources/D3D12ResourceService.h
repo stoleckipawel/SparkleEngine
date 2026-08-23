@@ -96,16 +96,6 @@ class D3D12ResourceService final : public RhiResourceService
 	    D3D12RecordingResourceUseToken use,
 	    RhiSubmissionToken submissionToken) noexcept;
 
-	struct PendingOwnedResourceRelease
-	{
-		std::unique_ptr<D3D12GpuAllocationRecord> Record;
-	};
-
-	struct PendingOwnedMemoryBlockRelease
-	{
-		std::unique_ptr<D3D12GpuHeapRecord> Record;
-	};
-
 	static std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName);
 	static RhiOwnedResourceHandle WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;
 	static RhiOwnedMemoryBlockHandle WrapOwnedMemoryBlock(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
@@ -115,7 +105,7 @@ class D3D12ResourceService final : public RhiResourceService
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 	const RhiCapabilities* m_capabilities = nullptr;
-	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;
-	std::vector<PendingOwnedMemoryBlockRelease> m_pendingOwnedMemoryBlockReleases;
+	std::vector<std::unique_ptr<D3D12GpuAllocationRecord>> m_pendingOwnedResourceReleases;
+	std::vector<std::unique_ptr<D3D12GpuHeapRecord>> m_pendingOwnedMemoryBlockReleases;
 	bool m_crashDiagnosticsCollected = false;
 };

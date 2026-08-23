@@ -88,7 +88,7 @@ namespace TextureCookPipeline
 			for (std::uint32_t mipIndex = 0; mipIndex < mipCountToDecode; ++mipIndex)
 			{
 				workingSlice.push_back(DecodeMipLevel(
-				    sourceSlice.mipLevels[mipIndex],
+				    sourceSlice[mipIndex],
 				    sourceTexture.dxgiFormat,
 				    request.policy.colorProcessingPolicy));
 			}

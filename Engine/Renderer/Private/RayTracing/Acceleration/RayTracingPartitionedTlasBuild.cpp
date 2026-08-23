@@ -6,7 +6,6 @@
 #include "Meshes/GpuMesh.h"
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
-#include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingTransformPacking.h"
@@ -30,7 +29,7 @@ RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstan
     const MeshDraw& draw) noexcept
 {
 	RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::None;
-	if (draw.Material.Slot >= preparedScene.materials.size())
+	if (draw.MaterialSlot >= preparedScene.materials.size())
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingPartitionedTlasBuildLogger,
@@ -38,7 +37,7 @@ RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstan
 		    __LINE__,
 		    "Partitioned TLAS input references a material outside the render scene.");
 	}
-	const MaterialData& material = preparedScene.materials[draw.Material.Slot];
+	const MaterialData& material = preparedScene.materials[draw.MaterialSlot];
 	if (material.doubleSided)
 	{
 		flags = flags | RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
@@ -54,7 +53,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
     RayTracingBlasCache& blasCache,
-    RayTracingTopLevelScenePlanner* scenePlanner,
+    const RayTracingPtlasPartitionPlan& viewPlan,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	RayTracingTopLevelAccelerationStructureBuildResult result{};
@@ -71,14 +70,14 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		    "Partitioned TLAS build has no usable device provider.");
 	}
 
-	const RayTracingPtlasPartitionPlan* partitionPlan = scenePlanner != nullptr ? scenePlanner->GetCurrentPartitionPlan() : nullptr;
+	const RayTracingPtlasPartitionPlan* partitionPlan = &viewPlan;
 	EnsurePartitionedTlasResources(preparedScene, partitionPlan);
 
 	PartitionedBuildState state;
 	state.InstanceWrites.reserve(work.PartitionedTlasBlasInputIndices.size());
 	CollectPartitionedInstances(commandContext, preparedScene, partitionPlan, blasCache, diagnostics, state);
 	const std::uint32_t nativeWriteCount = static_cast<std::uint32_t>(state.InstanceWrites.size());
-	result.Stats.InstanceCount = nativeWriteCount;
+	result.InstanceCount = nativeWriteCount;
 	PreparePartitionedOperationBuffer(state);
 
 	RecordPartitionedBuild(commandContext, state, diagnostics);

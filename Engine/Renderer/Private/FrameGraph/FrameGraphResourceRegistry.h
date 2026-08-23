@@ -32,9 +32,10 @@ class FrameGraphResourceRegistry final
 	void RegisterPersistentBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
 	void RegisterPersistentAccelerationStructure(
 	    FrameGraphResourceHandle handle,
-	    const FrameGraphAccelerationStructureDesc& desc,
+	    std::string_view name,
 	    ResourceState initialState) noexcept;
 	void SetBoundaryStates(FrameGraphResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept;
+	void SetExternalContentsProduced(FrameGraphResourceHandle handle, bool hasBeenProduced) noexcept;
 	bool IsRegistered(FrameGraphResourceHandle handle) const noexcept;
 
 	FrameGraphResourceMetadata& GetMetadata(FrameGraphResourceHandle handle) noexcept;

@@ -5,6 +5,7 @@
 #include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "Math/MathUtils.h"
 #include "Temporal/TemporalJitterPatterns.h"
+#include "View/RayTracing/RenderRayTracingViewPlanner.h"
 
 #include <cmath>
 
@@ -17,6 +18,13 @@ public:
 	static constexpr float CutFovDeltaDegrees = 6.0f;
 };
 
+RenderViewState::RenderViewState() :
+    m_rayTracingPlanner(std::make_unique<RenderRayTracingViewPlanner>())
+{
+}
+
+RenderViewState::~RenderViewState() noexcept = default;
+
 RenderViewInvalidationReason RenderViewState::CombineInvalidationReasons(
     RenderViewInvalidationReason left,
     RenderViewInvalidationReason right) noexcept
@@ -27,6 +35,35 @@ RenderViewInvalidationReason RenderViewState::CombineInvalidationReasons(
 void RenderViewState::Invalidate(RenderViewInvalidationReason reason) noexcept
 {
 	m_pendingInvalidationReasons = CombineInvalidationReasons(m_pendingInvalidationReasons, reason);
+	m_referenceLightingHistoryInvalidationHash.reset();
+	m_restirLightingHistoryInvalidationHash.reset();
+	m_rayTracingPlanner->Reset();
+}
+
+RayTracingPtlasPartitionPlan RenderViewState::BuildRayTracingPlan(
+    const PreparedRenderScene& preparedScene,
+    const DirectX::XMFLOAT3& cameraPosition) noexcept
+{
+	return m_rayTracingPlanner->Build(preparedScene, cameraPosition);
+}
+
+bool RenderViewState::UpdateHistoryInvalidationHash(
+    std::optional<std::uint64_t>& previousHash,
+    std::uint64_t currentHash) noexcept
+{
+	const bool invalidated = !previousHash || *previousHash != currentHash;
+	previousHash = currentHash;
+	return invalidated;
+}
+
+bool RenderViewState::UpdateReferenceLightingHistory(std::uint64_t invalidationHash) noexcept
+{
+	return UpdateHistoryInvalidationHash(m_referenceLightingHistoryInvalidationHash, invalidationHash);
+}
+
+bool RenderViewState::UpdateRestirLightingHistory(std::uint64_t invalidationHash) noexcept
+{
+	return UpdateHistoryInvalidationHash(m_restirLightingHistoryInvalidationHash, invalidationHash);
 }
 
 void RenderViewState::ObserveIdentityAndGenerations(const RenderViewStateBuildInput& input) noexcept

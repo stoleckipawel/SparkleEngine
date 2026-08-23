@@ -1,7 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Presentation/ToneMappingPass.h"
 
-#include "Frame/Core/FrameRenderFormats.h"
+#include "Frame/Graph/RenderFrameGraphFormats.h"
 #include "FrameGraph/Execution/PassCommandContext.h"
 #include "Passes/Core/ComputePassOperations.h"
 #include "Passes/Core/RenderPassDefinition.h"

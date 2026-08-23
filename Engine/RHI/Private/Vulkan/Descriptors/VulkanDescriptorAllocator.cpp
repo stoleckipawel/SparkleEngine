@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <format>
 
 static const auto g_vulkanDescriptorAllocatorLogger = Logging::GetOrCreateLogger("RHI.Vulkan.DescriptorAllocator");
 
@@ -350,7 +351,16 @@ void VulkanDescriptorAllocator::WriteDescriptorTable(
 		    g_vulkanDescriptorAllocatorLogger,
 		    __FILE__,
 		    __LINE__,
-		    "Vulkan descriptor-table binding references a stale or unavailable table.");
+		    std::format(
+		        "Vulkan descriptor-table binding '{}' references stale or unavailable table {} generation {} "
+		        "(snapshot allocated={}, generation={}, descriptor count={}, first descriptor={}).",
+		        binding.Name != nullptr ? binding.Name : "<unnamed>",
+		        tableIndex,
+		        generation,
+		        table.Allocated,
+		        table.Generation,
+		        table.Entries != nullptr ? table.Entries->size() : 0u,
+		        tableBinding.DescriptorIndex));
 	}
 
 	const std::size_t availableDescriptorCount = table.Entries->size() - tableBinding.DescriptorIndex;

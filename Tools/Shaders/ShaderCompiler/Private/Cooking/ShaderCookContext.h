@@ -6,10 +6,7 @@
 
 #include <vector>
 
-struct ShaderCookPackageContext final
-{
-	std::vector<CookedStageBuild> compiledStages;
-};
+using ShaderCookPackageContext = std::vector<CookedStageBuild>;
 
 struct ShaderCookPipelinePlan final
 {

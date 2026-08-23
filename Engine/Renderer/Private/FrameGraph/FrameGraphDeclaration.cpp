@@ -2,6 +2,7 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "FrameGraph/Diagnostics/FrameGraphResourceContractDiagnostics.h"
+#include <algorithm>
 #include <cassert>
 #include <string>
 #include <utility>
@@ -28,84 +29,52 @@ public:
 	}
 };
 
-void FrameGraph::ApplyFrameUniformParameters(const FrameUniformData& frame)
-{
-	for (const FrameUniformSetupCallback& setup : m_frameUniformSetups)
-	{
-		setup(frame);
-	}
-}
-
-void FrameGraph::ApplyPreparedSceneParameters(const PreparedRenderScene& preparedScene)
-{
-	for (const PreparedSceneSetupCallback& setup : m_preparedSceneSetups)
-	{
-		setup(preparedScene);
-	}
-}
-
-void FrameGraph::ApplyRenderViewParameters(const RenderView& view)
-{
-	for (const RenderViewSetupCallback& setup : m_renderViewSetups)
-	{
-		setup(view);
-	}
-}
-
-void FrameGraph::ApplyExposureParameters(const ExposureUniformData& exposure)
-{
-	for (const ExposureSetupCallback& setup : m_exposureSetups)
-	{
-		setup(exposure);
-	}
-}
-
-void FrameGraph::ApplyToneMappingParameters(const ToneMappingUniformData& toneMapping)
-{
-	for (const ToneMappingSetupCallback& setup : m_toneMappingSetups)
-	{
-		setup(toneMapping);
-	}
-}
-
-void FrameGraph::ApplyDirectLightReservoirHistory(bool historyValid)
-{
-	for (const HistorySetupCallback& setup : m_directLightReservoirHistorySetups)
-	{
-		setup(historyValid);
-	}
-}
-
-void FrameGraph::ApplyRestirIndirectReservoirHistory(bool historyValid)
-{
-	for (const HistorySetupCallback& setup : m_restirIndirectReservoirHistorySetups)
-	{
-		setup(historyValid);
-	}
-}
-
-void FrameGraph::ApplyReferenceLightingHistory(bool historyValid)
-{
-	for (const HistorySetupCallback& setup : m_referenceLightingHistorySetups)
-	{
-		setup(historyValid);
-	}
-}
-
-void FrameGraph::ApplyRayTracedShadowParameters(const PreparedRenderScene& preparedScene, const RayTracedShadowPassInput& rayTracedShadows)
-{
-	for (const RayTracedShadowSetupCallback& setup : m_rayTracedShadowSetups)
-	{
-		setup(preparedScene, rayTracedShadows);
-	}
-}
-
 void FrameGraph::ApplyPassParameterDefaults()
 {
 	for (const PassParameterSetupCallback& setup : m_passParameterSetups)
 	{
 		setup();
 	}
+}
+
+void FrameGraph::ApplyResourceProductionSetups()
+{
+	for (const ResourceProductionSetupCallback& setup : m_resourceProductionSetups)
+	{
+		setup();
+	}
+}
+
+bool FrameGraph::HasBeenProduced(FrameGraphResourceHandle handle) const noexcept
+{
+	if (!handle.IsValid() || !m_resourceRegistry.IsRegistered(handle))
+	{
+		return false;
+	}
+
+	if (m_resourceRegistry.GetMetadata(handle).hasExternalContents)
+	{
+		return true;
+	}
+
+	const auto resource = std::find_if(
+	    m_compiledPlan.resources.begin(),
+	    m_compiledPlan.resources.end(),
+	    [handle](const FrameGraphResourceNode& candidate) { return candidate.handle == handle; });
+	if (resource == m_compiledPlan.resources.end())
+	{
+		return false;
+	}
+
+	return std::any_of(
+	    resource->versions.begin(),
+	    resource->versions.end(),
+	    [this](const FrameGraphResourceVersion& version)
+	    {
+		    return version.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX
+		        && version.writerPass < m_compiledPlan.passes.size()
+		        && m_compiledPlan.passes[version.writerPass].alive;
+	    });
 }
 
 void FrameGraph::Setup()

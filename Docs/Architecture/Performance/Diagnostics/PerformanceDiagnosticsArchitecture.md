@@ -150,7 +150,7 @@ Primary code landmarks for revalidation:
 - `Engine/Core/Private/Threading/ThreadOwnership.cpp`
 - `Engine/Tasks/Private/Profiling/TaskProfiler.cpp`
 - `Engine/Renderer/Private/Concurrency/Coordinator/RenderCoordinator.cpp`
-- `Engine/Renderer/Private/FramePipeline/FramePipeline.cpp`
+- `Engine/Renderer/Private/Frame/FramePipeline.cpp`
 - `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.cpp`
 - `Engine/Renderer/Private/Diagnostics/PassExecutionDiagnostics.cpp`
 - `Engine/Renderer/Private/FrameGraph/Execution/FrameGraphRecordingChunkRecorder.cpp`

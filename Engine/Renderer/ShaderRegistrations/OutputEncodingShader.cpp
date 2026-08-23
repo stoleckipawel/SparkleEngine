@@ -3,11 +3,11 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-#include "Renderer/Private/Frame/Presentation/OutputEncodingUniformData.h"
+#include "Renderer/Private/ShaderData/OutputEncodingUniformData.h"
 
 class OutputEncodingCS final : public TGlobalShader<OutputEncodingCS>
 {
-  public:
+public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV(RWTexture2D, EncodedColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, DisplayLinearColor)

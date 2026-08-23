@@ -1,20 +1,18 @@
 #pragma once
 
 #include "FrameGraph/FrameGraph.h"
+#include "Pipeline/RenderPassRuntimeCache.h"
 
 #include <cstdint>
 #include <string_view>
 #include <utility>
 
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
-
-class RenderPassRuntimeCache;
 
 class FrameGraphBuilder final
 {
@@ -118,54 +116,40 @@ public:
 		return m_frameGraph.AllocParameters<TParameters>();
 	}
 
-	template <typename TCallback> void AddFrameUniformSetup(TCallback&& callback)
+	template <typename TParameters, typename TCallback>
+	void AddPassParameterSetup(TypedPassParameterInstance<TParameters>& parameters, TCallback&& callback)
 	{
-		m_frameGraph.m_frameUniformSetups.emplace_back(std::forward<TCallback>(callback));
+		auto* parameterInstance = &parameters;
+		m_frameGraph.m_passParameterSetups.emplace_back(
+		    [parameterInstance, setup = std::forward<TCallback>(callback)]() mutable
+		    { setup(parameterInstance->GetFields()); });
 	}
 
-	template <typename TCallback> void AddPassParameterSetup(TCallback&& callback)
+	template <typename TValue, typename TCallback> void AddParameterSetup(TCallback&& callback)
 	{
-		m_frameGraph.m_passParameterSetups.emplace_back(std::forward<TCallback>(callback));
+		m_frameGraph.AddParameterSetup<TValue>(std::forward<TCallback>(callback));
 	}
 
-	template <typename TCallback> void AddPreparedSceneSetup(TCallback&& callback)
+	template <typename TValue, typename TParameters, typename TCallback>
+	void AddParameterSetup(TypedPassParameterInstance<TParameters>& parameters, TCallback&& callback)
 	{
-		m_frameGraph.m_preparedSceneSetups.emplace_back(std::forward<TCallback>(callback));
+		auto* parameterInstance = &parameters;
+		m_frameGraph.AddParameterSetup<TValue>(
+		    [parameterInstance, setup = std::forward<TCallback>(callback)](const TValue& value) mutable
+		    { setup(parameterInstance->GetFields(), value); });
 	}
 
-	template <typename TCallback> void AddRenderViewSetup(TCallback&& callback)
+	template <typename TParameters, typename TCallback>
+	void AddResourceProductionSetup(
+	    TypedPassParameterInstance<TParameters>& parameters,
+	    FrameGraphTextureHandle resource,
+	    TCallback&& callback)
 	{
-		m_frameGraph.m_renderViewSetups.emplace_back(std::forward<TCallback>(callback));
-	}
-
-	template <typename TCallback> void AddExposureSetup(TCallback&& callback)
-	{
-		m_frameGraph.m_exposureSetups.emplace_back(std::forward<TCallback>(callback));
-	}
-
-	template <typename TCallback> void AddToneMappingSetup(TCallback&& callback)
-	{
-		m_frameGraph.m_toneMappingSetups.emplace_back(std::forward<TCallback>(callback));
-	}
-
-	template <typename TCallback> void AddDirectLightReservoirHistorySetup(TCallback&& callback)
-	{
-		m_frameGraph.m_directLightReservoirHistorySetups.emplace_back(std::forward<TCallback>(callback));
-	}
-
-	template <typename TCallback> void AddRestirIndirectReservoirHistorySetup(TCallback&& callback)
-	{
-		m_frameGraph.m_restirIndirectReservoirHistorySetups.emplace_back(std::forward<TCallback>(callback));
-	}
-
-	template <typename TCallback> void AddReferenceLightingHistorySetup(TCallback&& callback)
-	{
-		m_frameGraph.m_referenceLightingHistorySetups.emplace_back(std::forward<TCallback>(callback));
-	}
-
-	template <typename TCallback> void AddRayTracedShadowSetup(TCallback&& callback)
-	{
-		m_frameGraph.m_rayTracedShadowSetups.emplace_back(std::forward<TCallback>(callback));
+		auto* parameterInstance = &parameters;
+		auto* frameGraph = &m_frameGraph;
+		m_frameGraph.m_resourceProductionSetups.emplace_back(
+		    [parameterInstance, frameGraph, resource, setup = std::forward<TCallback>(callback)]() mutable
+		    { setup(parameterInstance->GetFields(), frameGraph->HasBeenProduced(resource)); });
 	}
 
 	FrameGraphTextureHandle ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
@@ -179,7 +163,7 @@ public:
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
 	FrameGraphAccelerationStructureHandle ReservePersistentAccelerationStructure(
-	    const FrameGraphAccelerationStructureDesc& desc,
+	    std::string_view name,
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept;
 

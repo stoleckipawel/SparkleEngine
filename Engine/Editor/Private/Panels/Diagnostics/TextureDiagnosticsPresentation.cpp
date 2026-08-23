@@ -130,7 +130,7 @@ namespace TextureDiagnosticsPresentation
 	std::size_t CountLoadedTextures(const TextureDiagnosticsSnapshot& snapshot) noexcept
 	{
 		std::size_t loadedCount = 0;
-		for (const TextureDiagnosticsRow& row : snapshot.Rows)
+		for (const TextureDiagnosticsRow& row : snapshot)
 		{
 			if (row.Loaded)
 			{
@@ -143,7 +143,7 @@ namespace TextureDiagnosticsPresentation
 	std::uint64_t SumEstimatedTextureBytes(const TextureDiagnosticsSnapshot& snapshot) noexcept
 	{
 		std::uint64_t byteCount = 0;
-		for (const TextureDiagnosticsRow& row : snapshot.Rows)
+		for (const TextureDiagnosticsRow& row : snapshot)
 		{
 			byteCount += row.EstimatedByteSize;
 		}
@@ -163,4 +163,3 @@ namespace TextureDiagnosticsPresentation
 		return ImVec2(textureWidth * scale, textureHeight * scale);
 	}
 }
-

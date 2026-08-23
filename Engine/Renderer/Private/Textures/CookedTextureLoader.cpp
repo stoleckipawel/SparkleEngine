@@ -143,7 +143,7 @@ LoadedTextureData CookedTextureLoader::Decode(const CookedTextureFilePayload& pa
 		mipLevel.Data.assign(mipPayload.begin(), mipPayload.end());
 
 		const std::uint32_t arraySliceIndex = subresourceIndex / mipCount;
-		textureUpload.ArraySlices[arraySliceIndex].MipLevels.push_back(std::move(mipLevel));
+		textureUpload.ArraySlices[arraySliceIndex].push_back(std::move(mipLevel));
 	}
 
 	if (reader.GetRemainingByteCount() != 0)
