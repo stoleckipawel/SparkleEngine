@@ -2,6 +2,7 @@
 
 #include "ShaderContractCatalog.h"
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <span>
@@ -27,13 +28,12 @@ public:
 
 	std::unordered_set<ShaderTypeId> SelectAffectedShaderTypes(std::span<const std::string> changedVirtualPaths) const;
 	void Replace(ShaderDependencyRecord record);
+	std::size_t RemoveUnregisteredShaderTypes(std::span<const ShaderTypeId> registeredShaderTypes);
 	void SortAndValidate();
-	void SetCompleteCatalog(bool complete) noexcept { m_completeCatalog = complete; }
-	bool IsCompleteCatalog() const noexcept { return m_completeCatalog; }
+	bool MatchesShaderTypes(std::span<const ShaderTypeId> shaderTypes) const noexcept;
 
 private:
-	static ShaderDependencyManifest Read(const std::filesystem::path& path, bool requireComplete);
+	static ShaderDependencyManifest Read(const std::filesystem::path& path);
 
 	std::vector<ShaderDependencyRecord> m_records;
-	bool m_completeCatalog = false;
 };

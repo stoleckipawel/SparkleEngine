@@ -57,21 +57,26 @@ public:
 	{
 		switch (visibility)
 		{
-			case ShaderStageVisibility::Vertex: return ShaderStageMask::Vertex;
-			case ShaderStageVisibility::Pixel: return ShaderStageMask::Pixel;
-			case ShaderStageVisibility::Compute: return ShaderStageMask::Compute;
-			case ShaderStageVisibility::AllGraphics: return ShaderStageMask::Vertex | ShaderStageMask::Pixel;
-			case ShaderStageVisibility::All: return ShaderStageMask::Vertex | ShaderStageMask::Pixel | ShaderStageMask::Compute;
+			case ShaderStageVisibility::Vertex:
+				return ShaderStageMask::Vertex;
+			case ShaderStageVisibility::Pixel:
+				return ShaderStageMask::Pixel;
+			case ShaderStageVisibility::Compute:
+				return ShaderStageMask::Compute;
+			case ShaderStageVisibility::AllGraphics:
+				return ShaderStageMask::Vertex | ShaderStageMask::Pixel;
+			case ShaderStageVisibility::All:
+				return ShaderStageMask::Vertex | ShaderStageMask::Pixel | ShaderStageMask::Compute;
 			case ShaderStageVisibility::None:
-			default: return ShaderStageMask::None;
+			default:
+				return ShaderStageMask::None;
 		}
 	}
 
 	static std::uint32_t FindBindingIndex(const ShaderCookProduct& product, std::string_view name)
 	{
-		const auto found = std::ranges::find_if(
-		    product.bindingRemaps,
-		    [name](const ShaderDescriptorBindingRemap& remap) { return remap.Name == name; });
+		const auto found =
+		    std::ranges::find_if(product.bindingRemaps, [name](const ShaderDescriptorBindingRemap& remap) { return remap.Name == name; });
 		if (found == product.bindingRemaps.end())
 		{
 			throw Diagnostics::Error(std::format("Compiled shader output is missing descriptor binding '{}'.", name));
@@ -85,13 +90,24 @@ public:
 		{
 			throw Diagnostics::Error("A compiled shader product cannot publish empty bytecode.");
 		}
+		const ShaderCodeHash codeHash = Hash::Fnv1a64(product.compiled.bytecode.data(), product.compiled.bytecode.size());
+		if (product.shaderTypeId != shader.shaderTypeId || !IsShaderTarget(product.target) || product.features != shader.features
+		    || product.compiled.stage != shader.stage || product.compiled.format != GetShaderBinaryFormat(product.target)
+		    || product.compiled.sourcePath != shader.sourcePath || product.compiled.entryPoint != shader.entryPoint
+		    || product.compiled.backendName.empty() || product.compiled.codegenTarget != GetShaderTargetName(product.target)
+		    || product.compiled.backendVersion == 0 || product.compiled.compileInputHash == 0 || product.compiled.bytecodeHash != codeHash
+		    || BuildShaderParameterSignature(product.parameterLayout) != BuildShaderParameterSignature(shader.parameterLayout))
+		{
+			throw Diagnostics::Error(
+			    std::format("Compiled shader product for '{}' does not match its catalog contract.", shader.shaderTypeName));
+		}
 
 		Entry entry;
 		entry.ShaderType = product.shaderTypeId;
 		entry.Target = product.target;
 		entry.Stage = product.compiled.stage;
 		entry.Features = product.features;
-		entry.CodeHash = Hash::Fnv1a64(product.compiled.bytecode.data(), product.compiled.bytecode.size());
+		entry.CodeHash = codeHash;
 		entry.ParameterSignature = BuildShaderParameterSignature(product.parameterLayout);
 		entry.CompileInputHash = product.compiled.compileInputHash;
 		entry.BackendVersion = product.compiled.backendVersion;
@@ -211,10 +227,7 @@ public:
 		return result;
 	}
 
-	static Entry FromExisting(
-	    const GlobalShaderMap& map,
-	    const CookedShaderLibrary& library,
-	    const GlobalShaderMapEntry& source)
+	static Entry FromExisting(const GlobalShaderMap& map, const CookedShaderLibrary& library, const GlobalShaderMapEntry& source)
 	{
 		Entry entry;
 		entry.ShaderType = source.ShaderType;
@@ -249,9 +262,7 @@ public:
 			throw Diagnostics::Error("Existing global shader map references missing library code.");
 		}
 		const ShaderBytecode bytecode = library.GetBytecode(*code);
-		entry.Code.assign(
-		    static_cast<const std::uint8_t*>(bytecode.Data),
-		    static_cast<const std::uint8_t*>(bytecode.Data) + bytecode.Size);
+		entry.Code.assign(static_cast<const std::uint8_t*>(bytecode.Data), static_cast<const std::uint8_t*>(bytecode.Data) + bytecode.Size);
 		return entry;
 	}
 };
@@ -267,9 +278,7 @@ public:
 		std::ranges::sort(
 		    entries,
 		    [](const ShaderArtifactAssembly::Entry& left, const ShaderArtifactAssembly::Entry& right)
-		    {
-			    return left.ShaderType < right.ShaderType || (left.ShaderType == right.ShaderType && left.Target < right.Target);
-		    });
+		    { return left.ShaderType < right.ShaderType || (left.ShaderType == right.ShaderType && left.Target < right.Target); });
 		const auto duplicate = std::adjacent_find(
 		    entries.begin(),
 		    entries.end(),
@@ -343,9 +352,7 @@ public:
 			const std::uint32_t offset = static_cast<std::uint32_t>(codeBlob.size());
 			codeBlob.insert(codeBlob.end(), bytes.begin(), bytes.end());
 			codeRecords.push_back(
-			    CookedShaderCodeRecord{
-			        .CodeHash = hash,
-			        .Code = ShaderCodeBlobRef{offset, static_cast<std::uint32_t>(bytes.size())}});
+			    CookedShaderCodeRecord{.CodeHash = hash, .Code = ShaderCodeBlobRef{offset, static_cast<std::uint32_t>(bytes.size())}});
 		}
 		result.uniqueCodeCount = codeRecords.size();
 
@@ -381,13 +388,7 @@ public:
 		libraryHeader.PublicationHash = publicationHash;
 		libraryHeader.CodeBlobSizeInBytes = static_cast<std::uint32_t>(codeBlob.size());
 
-		WriteMap(
-		    mapPath,
-		    mapHeader,
-		    mapEntries,
-		    bindings,
-		    reflectionOutput,
-		    strings.GetBytes());
+		WriteMap(mapPath, mapHeader, mapEntries, bindings, reflectionOutput, strings.GetBytes());
 		WriteLibrary(libraryPath, libraryHeader, codeRecords, codeBlob);
 		return result;
 	}
@@ -408,8 +409,7 @@ private:
 	{
 		std::ofstream output;
 		std::string error;
-		if (!Files::TryOpenBinaryOutput(path, output, error)
-		    || !Files::BinaryStreamWriter::WriteValue(output, header, error)
+		if (!Files::TryOpenBinaryOutput(path, output, error) || !Files::BinaryStreamWriter::WriteValue(output, header, error)
 		    || !Files::BinaryStreamWriter::WriteArray(output, entries, error)
 		    || !Files::BinaryStreamWriter::WriteArray(output, bindings, error)
 		    || !Files::BinaryStreamWriter::WriteArray(output, reflection.reflectionRecords, error)
@@ -419,8 +419,7 @@ private:
 		    || !Files::BinaryStreamWriter::WriteArray(output, reflection.inputElements, error)
 		    || !Files::BinaryStreamWriter::WriteArray(output, reflection.pushConstantRanges, error)
 		    || !Files::BinaryStreamWriter::WriteArray(output, reflection.specializationConstants, error)
-		    || !Files::BinaryStreamWriter::WriteArray(output, strings, error)
-		    || !Files::TryCloseOutput(output, path, error))
+		    || !Files::BinaryStreamWriter::WriteArray(output, strings, error) || !Files::TryCloseOutput(output, path, error))
 		{
 			throw Diagnostics::Error(std::move(error));
 		}
@@ -434,10 +433,8 @@ private:
 	{
 		std::ofstream output;
 		std::string error;
-		if (!Files::TryOpenBinaryOutput(path, output, error)
-		    || !Files::BinaryStreamWriter::WriteValue(output, header, error)
-		    || !Files::BinaryStreamWriter::WriteArray(output, records, error)
-		    || !Files::BinaryStreamWriter::WriteArray(output, code, error)
+		if (!Files::TryOpenBinaryOutput(path, output, error) || !Files::BinaryStreamWriter::WriteValue(output, header, error)
+		    || !Files::BinaryStreamWriter::WriteArray(output, records, error) || !Files::BinaryStreamWriter::WriteArray(output, code, error)
 		    || !Files::TryCloseOutput(output, path, error))
 		{
 			throw Diagnostics::Error(std::move(error));
@@ -476,6 +473,10 @@ ShaderCookOutput ShaderArtifactPublication::Publish(
 			const GlobalShaderMap existingMap = GlobalShaderMap::Open(mapPath, existingLibrary);
 			for (const GlobalShaderMapEntry& entry : existingMap.GetEntries())
 			{
+				if (!std::ranges::binary_search(plan.registeredShaderTypes, entry.ShaderType))
+				{
+					continue;
+				}
 				entries.emplace(
 				    std::pair{entry.ShaderType, entry.Target},
 				    ShaderArtifactAssembly::FromExisting(existingMap, existingLibrary, entry));

@@ -61,15 +61,13 @@ public:
 		    || !ContainsRange(constantBuffers, reflection.ConstantBufferOffset, reflection.ConstantBufferCount)
 		    || !ContainsRange(inputs, reflection.InputElementOffset, reflection.InputElementCount)
 		    || !ContainsRange(pushConstants, reflection.PushConstantRangeOffset, reflection.PushConstantRangeCount)
-		    || !ContainsRange(
-		        specializationConstants,
-		        reflection.SpecializationConstantOffset,
-		        reflection.SpecializationConstantCount))
+		    || !ContainsRange(specializationConstants, reflection.SpecializationConstantOffset, reflection.SpecializationConstantCount))
 		{
 			throw Diagnostics::Error("Global shader map contains an out-of-range reflection record.");
 		}
 
-		for (const CookedShaderResourceBindingRecord& resource : resources.subspan(reflection.ResourceBindingOffset, reflection.ResourceBindingCount))
+		for (const CookedShaderResourceBindingRecord& resource :
+		    resources.subspan(reflection.ResourceBindingOffset, reflection.ResourceBindingCount))
 		{
 			const bool validConstantBuffer = resource.ConstantBufferIndex == kCookedShaderReflectionInvalidIndex
 			    || (resource.ConstantBufferIndex >= reflection.ConstantBufferOffset
@@ -80,14 +78,16 @@ public:
 				throw Diagnostics::Error("Global shader map contains an invalid reflected resource binding.");
 			}
 		}
-		for (const CookedShaderConstantBufferRecord& buffer : constantBuffers.subspan(reflection.ConstantBufferOffset, reflection.ConstantBufferCount))
+		for (const CookedShaderConstantBufferRecord& buffer :
+		    constantBuffers.subspan(reflection.ConstantBufferOffset, reflection.ConstantBufferCount))
 		{
 			if (!ContainsRange(strings, buffer.NameOffsetInBytes, buffer.NameSizeInBytes) || buffer.NameSizeInBytes == 0
 			    || !ContainsRange(constantBufferMembers, buffer.MemberOffset, buffer.MemberCount))
 			{
 				throw Diagnostics::Error("Global shader map contains an invalid reflected constant buffer.");
 			}
-			for (const CookedShaderConstantBufferMemberRecord& member : constantBufferMembers.subspan(buffer.MemberOffset, buffer.MemberCount))
+			for (const CookedShaderConstantBufferMemberRecord& member :
+			    constantBufferMembers.subspan(buffer.MemberOffset, buffer.MemberCount))
 			{
 				if (!ContainsRange(strings, member.NameOffsetInBytes, member.NameSizeInBytes) || member.NameSizeInBytes == 0
 				    || member.ArrayCount == 0 || member.OffsetInBytes > buffer.SizeInBytes
@@ -104,9 +104,8 @@ public:
 				throw Diagnostics::Error("Global shader map contains an invalid reflected input element.");
 			}
 		}
-		for (const CookedShaderSpecializationConstantRecord& value : specializationConstants.subspan(
-		         reflection.SpecializationConstantOffset,
-		         reflection.SpecializationConstantCount))
+		for (const CookedShaderSpecializationConstantRecord& value :
+		    specializationConstants.subspan(reflection.SpecializationConstantOffset, reflection.SpecializationConstantCount))
 		{
 			if (!ContainsRange(strings, value.NameOffsetInBytes, value.NameSizeInBytes) || value.NameSizeInBytes == 0)
 			{
@@ -226,8 +225,13 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 	{
 		const bool ordered = !hasPrevious || previousType < entry.ShaderType
 		    || (previousType == entry.ShaderType && static_cast<std::uint16_t>(previousTarget) < static_cast<std::uint16_t>(entry.Target));
-		if (entry.ShaderType == 0 || entry.CodeHash == 0 || entry.ParameterSignature == 0 || entry.Stage >= ShaderStage::Count
-		    || !IsShaderTarget(entry.Target) || !ordered)
+		const std::uint32_t featureBits = static_cast<std::uint32_t>(entry.Features);
+		constexpr std::uint32_t knownFeatureBits = static_cast<std::uint32_t>(ShaderFeatureFlags::UsesInlineRayQuery)
+		    | static_cast<std::uint32_t>(ShaderFeatureFlags::UsesAccelerationStructure)
+		    | static_cast<std::uint32_t>(ShaderFeatureFlags::UsesDescriptorIndexing);
+		if (entry.ShaderType == 0 || entry.CodeHash == 0 || entry.ParameterSignature == 0 || entry.CompileInputHash == 0
+		    || entry.BackendVersion == 0 || entry.Stage >= ShaderStage::Count || !IsShaderTarget(entry.Target)
+		    || (featureBits & ~knownFeatureBits) != 0 || !ordered)
 		{
 			throw Diagnostics::Error("Global shader map contains an invalid or duplicate logical key.");
 		}
@@ -235,7 +239,8 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 		{
 			throw Diagnostics::Error("Global shader map entry references missing or incompatible shader code.");
 		}
-		if (!ShaderMapValidation::ContainsString(map.m_stringTable, entry.ShaderName)
+		if (!entry.ShaderName.IsValid() || !entry.EntryPoint.IsValid() || !entry.BackendName.IsValid() || !entry.CodegenTarget.IsValid()
+		    || !ShaderMapValidation::ContainsString(map.m_stringTable, entry.ShaderName)
 		    || !ShaderMapValidation::ContainsString(map.m_stringTable, entry.EntryPoint)
 		    || !ShaderMapValidation::ContainsString(map.m_stringTable, entry.BackendName)
 		    || !ShaderMapValidation::ContainsString(map.m_stringTable, entry.CodegenTarget)
@@ -247,6 +252,11 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 		{
 			throw Diagnostics::Error("Global shader map entry contains an out-of-range metadata reference.");
 		}
+		if (BuildShaderTypeId(map.ResolveString(entry.ShaderName)) != entry.ShaderType
+		    || map.ResolveString(entry.CodegenTarget) != GetShaderTargetName(entry.Target))
+		{
+			throw Diagnostics::Error("Global shader map entry contains inconsistent identity or target provenance.");
+		}
 		ShaderMapValidation::ValidateReflection(
 		    map.m_reflectionRecords[entry.ReflectionRecordIndex],
 		    map.m_resourceBindings,
@@ -256,11 +266,10 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 		    map.m_pushConstantRanges,
 		    map.m_specializationConstants,
 		    map.m_stringTable);
-		for (const ShaderMapBindingRecord& binding : std::span<const ShaderMapBindingRecord>(map.m_bindingRecords)
-		         .subspan(entry.BindingRecordOffset, entry.BindingRecordCount))
+		for (const ShaderMapBindingRecord& binding :
+		    std::span<const ShaderMapBindingRecord>(map.m_bindingRecords).subspan(entry.BindingRecordOffset, entry.BindingRecordCount))
 		{
-			if (!ShaderMapValidation::ContainsString(map.m_stringTable, binding.Name) || !binding.Name.IsValid()
-			    || binding.ArrayCount == 0)
+			if (!ShaderMapValidation::ContainsString(map.m_stringTable, binding.Name) || !binding.Name.IsValid() || binding.ArrayCount == 0)
 			{
 				throw Diagnostics::Error("Global shader map entry contains an invalid parameter binding.");
 			}
@@ -279,9 +288,7 @@ const GlobalShaderMapEntry* GlobalShaderMap::Find(ShaderTypeId shaderType, Shade
 	    m_entries.end(),
 	    std::pair{shaderType, target},
 	    [](const GlobalShaderMapEntry& entry, const std::pair<ShaderTypeId, ShaderTarget>& key)
-	    {
-		    return entry.ShaderType < key.first || (entry.ShaderType == key.first && entry.Target < key.second);
-	    });
+	    { return entry.ShaderType < key.first || (entry.ShaderType == key.first && entry.Target < key.second); });
 	return found != m_entries.end() && found->ShaderType == shaderType && found->Target == target ? &*found : nullptr;
 }
 

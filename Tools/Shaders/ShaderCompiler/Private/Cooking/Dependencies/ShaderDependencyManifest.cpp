@@ -20,7 +20,7 @@ std::filesystem::path ShaderDependencyManifest::GetPath(const std::filesystem::p
 	return cookedShaderRoot / "ShaderDependencies.sdep";
 }
 
-ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::path& path, bool requireComplete)
+ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::path& path)
 {
 	std::vector<std::uint8_t> bytes;
 	std::string fileError;
@@ -33,18 +33,12 @@ ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::p
 	std::istringstream input{std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size())};
 	std::string header;
 	std::getline(input, header);
-	if (header != std::string(kShaderDependencyManifestHeader) + " complete"
-	    && header != std::string(kShaderDependencyManifestHeader) + " partial")
+	if (header != kShaderDependencyManifestHeader)
 	{
 		throw Diagnostics::Error("Shader dependency metadata is invalid. Run RecompileShaders Global to rebuild all shaders.");
 	}
 
 	ShaderDependencyManifest manifest;
-	manifest.SetCompleteCatalog(header.ends_with(" complete"));
-	if (requireComplete && !manifest.IsCompleteCatalog())
-	{
-		throw Diagnostics::Error("Shader dependency metadata is incomplete. Run RecompileShaders Global to rebuild all shaders.");
-	}
 	std::unordered_map<ShaderTypeId, std::size_t> recordIndices;
 	std::vector<std::pair<std::string, ShaderTypeId>> persistedReverseDependencies;
 	std::string line;
@@ -125,7 +119,7 @@ ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::p
 
 ShaderDependencyManifest ShaderDependencyManifest::ReadRequired(const std::filesystem::path& path)
 {
-	return Read(path, true);
+	return Read(path);
 }
 
 std::optional<ShaderDependencyManifest> ShaderDependencyManifest::ReadForUpdate(const std::filesystem::path& path)
@@ -140,7 +134,7 @@ std::optional<ShaderDependencyManifest> ShaderDependencyManifest::ReadForUpdate(
 	{
 		return std::nullopt;
 	}
-	return Read(path, false);
+	return Read(path);
 }
 
 void ShaderDependencyManifest::Write(const ShaderDependencyManifest& manifest, const std::filesystem::path& path)
@@ -153,7 +147,7 @@ void ShaderDependencyManifest::Write(const ShaderDependencyManifest& manifest, c
 		throw Diagnostics::Error(std::move(fileError));
 	}
 
-	output << kShaderDependencyManifestHeader << (manifest.m_completeCatalog ? " complete\n" : " partial\n");
+	output << kShaderDependencyManifestHeader << '\n';
 	for (const ShaderDependencyRecord& record : manifest.m_records)
 	{
 		output << "shader " << std::hex << record.ShaderType << ' ' << std::quoted(record.ShaderTypeName) << ' '
@@ -216,6 +210,31 @@ void ShaderDependencyManifest::Replace(ShaderDependencyRecord record)
 	{
 		*existing = std::move(record);
 	}
+}
+
+std::size_t ShaderDependencyManifest::RemoveUnregisteredShaderTypes(std::span<const ShaderTypeId> registeredShaderTypes)
+{
+	if (!std::ranges::is_sorted(registeredShaderTypes)
+	    || std::adjacent_find(registeredShaderTypes.begin(), registeredShaderTypes.end()) != registeredShaderTypes.end())
+	{
+		throw Diagnostics::Error("Current shader catalog identities must be sorted and unique before dependency reconciliation.");
+	}
+	const std::size_t previousCount = m_records.size();
+	std::erase_if(
+	    m_records,
+	    [registeredShaderTypes](const ShaderDependencyRecord& record)
+	    { return !std::ranges::binary_search(registeredShaderTypes, record.ShaderType); });
+	return previousCount - m_records.size();
+}
+
+bool ShaderDependencyManifest::MatchesShaderTypes(std::span<const ShaderTypeId> shaderTypes) const noexcept
+{
+	return shaderTypes.size() == m_records.size()
+	    && std::equal(
+	        shaderTypes.begin(),
+	        shaderTypes.end(),
+	        m_records.begin(),
+	        [](ShaderTypeId shaderType, const ShaderDependencyRecord& record) { return shaderType == record.ShaderType; });
 }
 
 void ShaderDependencyManifest::SortAndValidate()

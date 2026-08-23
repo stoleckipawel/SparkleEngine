@@ -13,5 +13,5 @@ public:
 	static ShaderCookPipelinePlan Build(const ShaderCookSettings& settings, ShaderBackendPool& backendPool);
 
 private:
-	static void BuildDependencyManifest(const ShaderCookSettings& settings, ShaderCookPipelinePlan& plan);
+	static void BuildDependencyManifest(ShaderCookPipelinePlan& plan);
 };

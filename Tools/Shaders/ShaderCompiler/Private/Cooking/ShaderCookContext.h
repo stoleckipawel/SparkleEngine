@@ -4,6 +4,7 @@
 #include "Cooking/ShaderCompileJob.h"
 #include "Cooking/ShaderCookTypes.h"
 
+#include <cstddef>
 #include <vector>
 
 struct ShaderCookPipelinePlan final
@@ -12,5 +13,7 @@ struct ShaderCookPipelinePlan final
 	std::vector<ShaderCookOutputSet> shaderOutputs;
 	std::vector<ShaderCompileJob> jobs;
 	std::vector<ShaderCompileConsumer> consumers;
+	std::vector<ShaderTypeId> registeredShaderTypes;
 	ShaderDependencyManifest dependencyManifest;
+	std::size_t removedShaderTypeCount = 0;
 };
