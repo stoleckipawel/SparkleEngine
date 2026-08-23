@@ -8,7 +8,7 @@
 #include "Core/Public/Diagnostics/Error.h"
 
 IShaderBackend& ShaderBackendPool::ResolveAndAcquire(
-    const std::filesystem::path& sourcePath,
+    std::string_view sourcePath,
     ShaderTarget target,
     std::string_view requestedName)
 {

@@ -1,11 +1,11 @@
 #ifndef SPARKLE_DIRECT_LIGHT_SAMPLING_HLSLI
 #define SPARKLE_DIRECT_LIGHT_SAMPLING_HLSLI
 
-#include "Resources/LightGpuData.hlsli"
-#include "Resources/SceneLightingUniformData.hlsli"
+#include "/Engine/Resources/LightGpuData.hlsli"
+#include "/Engine/Resources/SceneLightingUniformData.hlsli"
 
-#include "Common/Color.hlsli"
-#include "Lighting/AreaLights.hlsli"
+#include "/Engine/Common/Color.hlsli"
+#include "/Engine/Lighting/AreaLights.hlsli"
 namespace DirectLightSampling
 {
 	struct LightId

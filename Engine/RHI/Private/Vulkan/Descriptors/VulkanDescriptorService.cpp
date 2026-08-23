@@ -175,8 +175,6 @@ RhiResourceViewHandle VulkanDescriptorService::CreateResourceView(const RhiResou
 		case ERhiResourceViewKind::BufferShaderResource:
 		case ERhiResourceViewKind::BufferUnorderedAccess:
 			return CreateBufferDescriptorView(desc);
-		case ERhiResourceViewKind::AccelerationStructureShaderResource:
-			return CreateAccelerationStructureDescriptorView(desc);
 	}
 	Diagnostics::Fatal(g_vulkanDescriptorServiceLogger, __FILE__, __LINE__, "Vulkan resource view uses an unknown view kind.");
 }
@@ -237,29 +235,6 @@ RhiResourceViewHandle VulkanDescriptorService::CreateBufferDescriptorView(const 
 		return {};
 	}
 	return AddResourceView(ResourceViewRecord{.Kind = desc.Kind, .Buffer = buffer, .DescriptorHandle = descriptorHandle});
-}
-
-RhiResourceViewHandle VulkanDescriptorService::CreateAccelerationStructureDescriptorView(const RhiResourceViewDesc& desc)
-{
-	VulkanGpuAllocationRecord* const record = m_memoryAllocator.FindAllocationRecordByDeviceAddress(desc.AccelerationStructureGpuAddress);
-	if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
-	{
-		return {};
-	}
-
-	const RhiGpuDescriptorHandle descriptorHandle =
-	    record->IsPartitionedAccelerationStructure ? m_allocator.RegisterPartitionedAccelerationStructureDescriptor(record->DeviceAddress)
-	                                               : m_allocator.RegisterAccelerationStructureDescriptor(record->AccelerationStructure);
-	if (!descriptorHandle)
-	{
-		return {};
-	}
-	return AddResourceView(
-	    ResourceViewRecord{
-	        .Kind = desc.Kind,
-	        .Buffer = record->Buffer,
-	        .AccelerationStructure = record->AccelerationStructure,
-	        .DescriptorHandle = descriptorHandle});
 }
 
 void VulkanDescriptorService::ReleaseResourceView(RhiResourceViewHandle view) noexcept

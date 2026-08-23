@@ -95,7 +95,7 @@ const RenderPassDefinition& RestirIndirectSpatialPass::GetDefinition() noexcept
 	    RendererShaderPackages::RestirIndirectSpatial,
 	    L"RestirIndirectSpatial_BindingLayout",
 	    L"RestirIndirectSpatial_Pipeline",
-	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
+	    RayTracingShaderFeatureFlags::InlineRayQuery);
 	return definition;
 }
 

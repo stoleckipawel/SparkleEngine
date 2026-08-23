@@ -19,6 +19,6 @@ public:
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     ToneMappingCS,
     RendererShaderPackages::ToneMapping,
-    "Passes/Presentation/ToneMapping.hlsl",
+    "/Engine/Passes/Presentation/ToneMapping.hlsl",
     "main",
     Compute);

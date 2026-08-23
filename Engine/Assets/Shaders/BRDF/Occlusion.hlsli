@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BRDF/Config.hlsli"
+#include "/Engine/BRDF/Config.hlsli"
 
 namespace BRDF
 {

@@ -19,7 +19,7 @@
 class RestirIndirectTemporalCS final : public TGlobalShader<RestirIndirectTemporalCS>
 {
 public:
-	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::DescriptorRayQuery;
+	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV(RWTexture2D, TemporalReservoirSampleTexture)
@@ -64,6 +64,6 @@ public:
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     RestirIndirectTemporalCS,
     RendererShaderPackages::RestirIndirectTemporal,
-    "Passes/RayTracing/RestirIndirectTemporal.hlsl",
+    "/Engine/Passes/RayTracing/RestirIndirectTemporal.hlsl",
     "main",
     Compute);

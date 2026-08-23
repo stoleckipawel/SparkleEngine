@@ -1,12 +1,12 @@
 #ifndef SPARKLE_RAY_TRACING_PATH_LIGHTING_HLSLI
 #define SPARKLE_RAY_TRACING_PATH_LIGHTING_HLSLI
 
-#include "Resources/FrameUniformData.hlsli"
+#include "/Engine/Resources/FrameUniformData.hlsli"
 
-#include "Lighting/Sky.hlsli"
-#include "RayTracing/PathSampling.hlsli"
-#include "RayTracing/PathTrace.hlsli"
-#include "RayTracing/RayTracingHitLighting.hlsli"
+#include "/Engine/Lighting/Sky.hlsli"
+#include "/Engine/RayTracing/PathSampling.hlsli"
+#include "/Engine/RayTracing/PathTrace.hlsli"
+#include "/Engine/RayTracing/RayTracingHitLighting.hlsli"
 
 namespace RayTracingPathLighting
 {

@@ -22,7 +22,6 @@ struct RhiPartitionedTlasCapabilities
 	bool NvidiaDeviceOnly = false;
 	bool CurrentDeviceIsNvidia = false;
 	bool SupportsDescriptorAccess = false;
-	bool SupportsShaderDeviceAddressAccess = false;
 	bool SupportsCpuPackedOperations = false;
 	bool SupportsGpuDrivenOperations = false;
 	bool SupportsGpuOperationCount = false;

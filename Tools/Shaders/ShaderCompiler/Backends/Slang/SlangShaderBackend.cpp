@@ -3,7 +3,6 @@
 #include "Slang/SlangShaderBackend.h"
 
 #include "Compiler/ShaderCompileProfile.h"
-#include "Compiler/ShaderCompilerPaths.h"
 #include "Compiler/ShaderSourcePreprocessor.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Hash/HashUtils.h"
@@ -68,27 +67,7 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 		throw Diagnostics::Error("Slang global session is unavailable");
 	}
 
-	const std::filesystem::path sourcePath = ShaderCompilerPaths::CanonicalizeForCompiler(options.SourcePath);
-	const std::string sourceText = ShaderSourcePreprocessor::Load(sourcePath, options);
-
-	const std::string includeDir = ShaderCompilerPaths::MakeIncludeDirectoryArgument(options.IncludeDir);
-	std::vector<std::string> includeStorage;
-	includeStorage.reserve(1 + options.AdditionalIncludeDirs.size());
-	if (!includeDir.empty())
-	{
-		includeStorage.push_back(includeDir);
-	}
-	for (const std::filesystem::path& includePath : options.AdditionalIncludeDirs)
-	{
-		includeStorage.push_back(ShaderCompilerPaths::MakeIncludeDirectoryArgument(includePath));
-	}
-
-	std::vector<const char*> includePaths;
-	includePaths.reserve(includeStorage.size());
-	for (const std::string& includePath : includeStorage)
-	{
-		includePaths.push_back(includePath.c_str());
-	}
+	const std::string sourceText = ShaderSourcePreprocessor::Load(options.SourcePath, options);
 
 	std::vector<slang::PreprocessorMacroDesc> macroDescs;
 	macroDescs.reserve(options.Defines.size());
@@ -124,8 +103,8 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 	slang::SessionDesc sessionDesc{};
 	sessionDesc.targets = &targetDesc;
 	sessionDesc.targetCount = 1;
-	sessionDesc.searchPaths = includePaths.data();
-	sessionDesc.searchPathCount = static_cast<SlangInt>(includePaths.size());
+	sessionDesc.searchPaths = nullptr;
+	sessionDesc.searchPathCount = 0;
 	sessionDesc.preprocessorMacros = macroDescs.data();
 	sessionDesc.preprocessorMacroCount = static_cast<SlangInt>(macroDescs.size());
 
@@ -137,10 +116,10 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 
 	std::string diagnostics;
 	Slang::ComPtr<slang::IBlob> diagnosticBlob;
-	const std::string moduleName = sourcePath.stem().generic_string();
-	const std::string modulePath = sourcePath.generic_string();
+	constexpr std::string_view moduleName = "SparkleShader";
+	const std::string& modulePath = options.SourcePath;
 	slang::IModule* module = session->loadModuleFromSourceString(
-	    moduleName.c_str(),
+	    moduleName.data(),
 	    modulePath.c_str(),
 	    sourceText.c_str(),
 	    diagnosticBlob.writeRef());
@@ -200,7 +179,7 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileOptions& options)
 	{
 		throw Diagnostics::Error(
 		    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(options.Target)} +
-		    "' source '" + options.SourcePath.generic_string() + "' entry '" + options.EntryPoint + "' - " + diagnostics);
+		    "' source '" + options.SourcePath + "' entry '" + options.EntryPoint + "' - " + diagnostics);
 	}
 
 	ShaderReflection reflection = SlangReflectionExtractor::Extract(*layout, options.Stage);

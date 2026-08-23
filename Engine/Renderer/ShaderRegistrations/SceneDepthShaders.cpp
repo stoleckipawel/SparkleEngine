@@ -15,4 +15,9 @@ public:
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(SceneDepthCS, RendererShaderPackages::SceneDepth, "Passes/GBuffer/SceneDepth.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    SceneDepthCS,
+    RendererShaderPackages::SceneDepth,
+    "/Engine/Passes/GBuffer/SceneDepth.hlsl",
+    "main",
+    Compute);

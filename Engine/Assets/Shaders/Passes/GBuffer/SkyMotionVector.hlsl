@@ -1,8 +1,8 @@
-#include "Resources/ViewUniformData.hlsli"
+#include "/Engine/Resources/ViewUniformData.hlsli"
 
-#include "Geometry/ScreenSpace.hlsli"
-#include "Passes/Deferred/MotionVector.hlsli"
-#include "Passes/Deferred/SceneDepthUtils.hlsli"
+#include "/Engine/Geometry/ScreenSpace.hlsli"
+#include "/Engine/Passes/GBuffer/MotionVector.hlsli"
+#include "/Engine/Passes/GBuffer/SceneDepthUtils.hlsli"
 
 Texture2D<float> GBufferDeviceZ;
 RWTexture2D<float2> GBufferMotionVector;

@@ -1,7 +1,7 @@
-#include "Resources/ViewUniformData.hlsli"
+#include "/Engine/Resources/ViewUniformData.hlsli"
 
-#include "Debug/RenderViewModeConstants.hlsli"
-#include "Passes/Deferred/GBufferUtils.hlsli"
+#include "/Engine/Debug/RenderViewModeConstants.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
 
 RWTexture2D<float4> SceneColorTexture;
 Texture2D DirectDiffuse;

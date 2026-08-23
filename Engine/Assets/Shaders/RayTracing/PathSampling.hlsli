@@ -1,15 +1,15 @@
 #ifndef SPARKLE_RAY_TRACING_PATH_SAMPLING_HLSLI
 #define SPARKLE_RAY_TRACING_PATH_SAMPLING_HLSLI
 
-#include "Resources/FrameUniformData.hlsli"
+#include "/Engine/Resources/FrameUniformData.hlsli"
 
-#include "BRDF/BRDF.hlsli"
-#include "BRDF/SpecularSampling.hlsli"
-#include "Common/Random.hlsli"
-#include "Common/Sampling.hlsli"
-#include "Lighting/SurfaceLighting.hlsli"
-#include "RayTracing/PathSurface.hlsli"
-#include "RayTracing/RayTracingPathSample.hlsli"
+#include "/Engine/BRDF/BRDF.hlsli"
+#include "/Engine/BRDF/SpecularSampling.hlsli"
+#include "/Engine/Common/Random.hlsli"
+#include "/Engine/Common/Sampling.hlsli"
+#include "/Engine/Lighting/SurfaceLighting.hlsli"
+#include "/Engine/RayTracing/PathSurface.hlsli"
+#include "/Engine/RayTracing/RayTracingPathSample.hlsli"
 
 namespace RayTracingPathSampling
 {

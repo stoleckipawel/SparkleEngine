@@ -55,26 +55,14 @@ void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIn
 	{
 		return;
 	}
-	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
-	{
-		VkDescriptorSet descriptorSet = EnsureDescriptorSet(
-		    m_graphicsBindingLayout,
-		    binding->BindingPoint.Set,
-		    m_graphicsDescriptorSets,
-		    m_graphicsBoundDescriptorSets);
-		WriteAccelerationStructureBinding(descriptorSet, *binding, gpuAddress);
-	}
-	else
-	{
-		VkDescriptorSet descriptorSet = EnsureDescriptorSet(
-		    m_graphicsBindingLayout,
-		    binding->BindingPoint.Set,
-		    m_graphicsDescriptorSets,
-		    m_graphicsBoundDescriptorSets);
-		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
-		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
-		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
-	}
+	VkDescriptorSet descriptorSet = EnsureDescriptorSet(
+	    m_graphicsBindingLayout,
+	    binding->BindingPoint.Set,
+	    m_graphicsDescriptorSets,
+	    m_graphicsBoundDescriptorSets);
+	const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
+	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
+	m_retainedDescriptorBuffers.push_back(buffer.Buffer);
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
@@ -85,32 +73,36 @@ void VulkanRenderCommandList::BindGraphicsShaderResource(std::uint32_t bindingIn
 	{
 		return;
 	}
-	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
-	{
-		VkDescriptorSet descriptorSet = EnsureDescriptorSet(
-		    m_graphicsBindingLayout,
-		    binding->BindingPoint.Set,
-		    m_graphicsDescriptorSets,
-		    m_graphicsBoundDescriptorSets);
-		WriteAccelerationStructureBinding(descriptorSet, *binding, gpuAddress);
-	}
-	else
-	{
-		VkDescriptorSet descriptorSet = EnsureDescriptorSet(
-		    m_graphicsBindingLayout,
-		    binding->BindingPoint.Set,
-		    m_graphicsDescriptorSets,
-		    m_graphicsBoundDescriptorSets);
-		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
-		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
-		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
-	}
+	VkDescriptorSet descriptorSet = EnsureDescriptorSet(
+	    m_graphicsBindingLayout,
+	    binding->BindingPoint.Set,
+	    m_graphicsDescriptorSets,
+	    m_graphicsBoundDescriptorSets);
+	const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
+	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
+	m_retainedDescriptorBuffers.push_back(buffer.Buffer);
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindGraphicsUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	BindGraphicsShaderResource(bindingIndex, gpuAddress);
+}
+
+void VulkanRenderCommandList::BindGraphicsAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept
+{
+	const CompiledBinding* const binding = FindBindingByIndex(m_graphicsBindingLayout, bindingIndex);
+	if (binding == nullptr || m_descriptorAllocator == nullptr)
+	{
+		return;
+	}
+	VkDescriptorSet descriptorSet = EnsureDescriptorSet(
+	    m_graphicsBindingLayout,
+	    binding->BindingPoint.Set,
+	    m_graphicsDescriptorSets,
+	    m_graphicsBoundDescriptorSets);
+	WriteAccelerationStructureBinding(descriptorSet, *binding, resource);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept
@@ -172,20 +164,11 @@ void VulkanRenderCommandList::BindComputeConstantBuffer(std::uint32_t bindingInd
 	{
 		return;
 	}
-	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
-	{
-		VkDescriptorSet descriptorSet =
-		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		WriteAccelerationStructureBinding(descriptorSet, *binding, gpuAddress);
-	}
-	else
-	{
-		VkDescriptorSet descriptorSet =
-		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
-		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
-		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
-	}
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
+	const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
+	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
+	m_retainedDescriptorBuffers.push_back(buffer.Buffer);
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
@@ -196,26 +179,33 @@ void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingInd
 	{
 		return;
 	}
-	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
-	{
-		VkDescriptorSet descriptorSet =
-		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		WriteAccelerationStructureBinding(descriptorSet, *binding, gpuAddress);
-	}
-	else
-	{
-		VkDescriptorSet descriptorSet =
-		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
-		const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
-		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
-		m_retainedDescriptorBuffers.push_back(buffer.Buffer);
-	}
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
+	const BufferBinding buffer = ResolveBufferBinding(gpuAddress);
+	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, buffer.Buffer, buffer.Offset, buffer.Range);
+	m_retainedDescriptorBuffers.push_back(buffer.Buffer);
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindComputeUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	BindComputeShaderResource(bindingIndex, gpuAddress);
+}
+
+void VulkanRenderCommandList::BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept
+{
+	const CompiledBinding* const binding = FindBindingByIndex(m_computeBindingLayout, bindingIndex);
+	if (binding == nullptr || m_descriptorAllocator == nullptr)
+	{
+		return;
+	}
+	VkDescriptorSet descriptorSet = EnsureDescriptorSet(
+	    m_computeBindingLayout,
+	    binding->BindingPoint.Set,
+	    m_computeDescriptorSets,
+	    m_computeBoundDescriptorSets);
+	WriteAccelerationStructureBinding(descriptorSet, *binding, resource);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept
@@ -309,26 +299,26 @@ VkShaderStageFlags VulkanRenderCommandList::ToVkShaderStages(ShaderStageMask vis
 void VulkanRenderCommandList::WriteAccelerationStructureBinding(
     VkDescriptorSet descriptorSet,
     const CompiledBinding& binding,
-    RhiGpuVirtualAddress address) noexcept
+    RhiResourceHandle resourceHandle) noexcept
 {
-	VulkanRecordingResource resource;
-	if (!ResolveAddress(address, resource) ||
-	    (resource.AccelerationStructure == VK_NULL_HANDLE && !resource.IsPartitionedAccelerationStructure))
+	VulkanGpuAllocationRecord* const allocation =
+	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resourceHandle) : nullptr;
+	if (allocation == nullptr || (allocation->AccelerationStructure == VK_NULL_HANDLE && !allocation->IsPartitionedAccelerationStructure))
 	{
 		Diagnostics::Fatal(
 		    g_vulkanRenderCommandListLogger,
 		    __FILE__,
 		    __LINE__,
-		    "Vulkan acceleration-structure binding references an unresolved GPU address.");
+		    "Vulkan acceleration-structure binding references an unresolved resource.");
 	}
 
-	if (resource.IsPartitionedAccelerationStructure)
+	if (allocation->IsPartitionedAccelerationStructure)
 	{
-		m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, binding, resource.DeviceAddress);
+		m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, binding, allocation->DeviceAddress);
 		return;
 	}
 
-	m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, binding, resource.AccelerationStructure);
+	m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, binding, allocation->AccelerationStructure);
 }
 
 VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(

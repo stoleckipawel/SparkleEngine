@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
-#include "Scene/RayTracing/RayTracingSceneTlasShaderAccessMode.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
 #include <memory>
@@ -44,10 +43,6 @@ public:
 	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
 	virtual bool HasValidSceneTlas() const noexcept = 0;
-	virtual RhiOwnedResourceHandle GetSceneTlasResource() const noexcept = 0;
-	virtual RhiGpuVirtualAddress GetSceneTlasGpuAddress() const noexcept = 0;
-	virtual RayTracingSceneTlasShaderAccessMode GetSceneTlasShaderAccessMode() const noexcept = 0;
-	virtual std::uint32_t GetSceneTlasInstanceCount() const noexcept = 0;
 	virtual void Clear() noexcept = 0;
 
 protected:

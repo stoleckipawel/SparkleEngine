@@ -48,7 +48,7 @@ public:
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept;
-	RhiGpuVirtualAddress ResolveAccelerationStructureGpuAddress(FrameGraphAccelerationStructureHandle handle) const noexcept;
+	RhiResourceHandle ResolveAccelerationStructure(FrameGraphAccelerationStructureHandle handle) const noexcept;
 	void BindGlobalDescriptorState(RenderCommandContext& commandContext) const noexcept;
 
 private:

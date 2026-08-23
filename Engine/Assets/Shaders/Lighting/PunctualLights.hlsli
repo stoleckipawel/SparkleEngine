@@ -1,7 +1,7 @@
 #ifndef SPARKLE_PUNCTUAL_LIGHTS_HLSLI
 #define SPARKLE_PUNCTUAL_LIGHTS_HLSLI
 
-#include "Resources/LightGpuData.hlsli"
+#include "/Engine/Resources/LightGpuData.hlsli"
 namespace PunctualLights
 {
 	float3 GetDirectionalLightDirection(uint lightIndex)

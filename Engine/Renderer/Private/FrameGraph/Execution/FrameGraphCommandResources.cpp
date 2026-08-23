@@ -83,10 +83,10 @@ RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphBufferHa
 	return ResolveUnorderedAccessView(handle.GetResourceHandle());
 }
 
-RhiGpuVirtualAddress FrameGraph::ResolveAccelerationStructureGpuAddress(FrameGraphAccelerationStructureHandle handle) const noexcept
+RhiResourceHandle FrameGraph::ResolveAccelerationStructure(FrameGraphAccelerationStructureHandle handle) const noexcept
 {
 	assert(handle.IsValid());
-	return ResolveAccelerationStructureGpuAddress(handle.GetResourceHandle());
+	return ResolveResource(handle.GetResourceHandle());
 }
 
 void FrameGraph::CopyTexture(RenderCommandContext& commandContext, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept

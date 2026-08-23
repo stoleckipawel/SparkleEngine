@@ -48,6 +48,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
 	void BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
 	void BindGraphicsUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindGraphicsAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept override;
 	void BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
 	void BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
 	void SetGraphicsPushConstants(
@@ -58,6 +59,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void BindComputeConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
 	void BindComputeShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
 	void BindComputeUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept override;
 	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
 	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
 	void SetComputePushConstants(
@@ -169,7 +171,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void WriteAccelerationStructureBinding(
 	    VkDescriptorSet descriptorSet,
 	    const CompiledBinding& binding,
-	    RhiGpuVirtualAddress address) noexcept;
+	    RhiResourceHandle resource) noexcept;
 	void BeginDynamicRenderingIfNeeded() noexcept;
 	void EndDynamicRenderingIfNeeded() noexcept;
 	VkDescriptorSet EnsureDescriptorSet(

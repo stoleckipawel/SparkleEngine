@@ -23,7 +23,7 @@ PassParameterValueKind PassParameterBinding::GetKind() const noexcept
 		    {
 			    return PassParameterValueKind::DescriptorTable;
 		    }
-		    else if constexpr (std::is_same_v<ValueType, PassParameterAccelerationStructureBindingData>)
+		    else if constexpr (std::is_same_v<ValueType, FrameGraphAccelerationStructureHandle>)
 		    {
 			    return PassParameterValueKind::AccelerationStructure;
 		    }
@@ -52,6 +52,10 @@ bool PassParameterBinding::IsBound() const noexcept
 		    if constexpr (std::is_same_v<ValueType, std::monostate>)
 		    {
 			    return false;
+		    }
+		    else if constexpr (std::is_same_v<ValueType, FrameGraphAccelerationStructureHandle>)
+		    {
+			    return value.IsValid();
 		    }
 		    else
 		    {
@@ -189,24 +193,6 @@ bool PassParameterSet::SetUnorderedAccessView(const char* name, RhiGpuDescriptor
 	    ShaderParameterSemanticKind::RWBuffer);
 }
 
-bool PassParameterSet::SetAccelerationStructure(const char* name, RhiGpuVirtualAddress gpuAddress)
-{
-	std::uint32_t index = 0;
-	const PassParameterDesc* parameter = FindParameter(name, index);
-	if (parameter == nullptr || parameter->Kind != ShaderParameterSemanticKind::AccelerationStructure)
-	{
-		return false;
-	}
-
-	if (parameter->ArrayCount != 1u)
-	{
-		return false;
-	}
-
-	m_bindings[index].SetValue(PassParameterAccelerationStructureBindingData{.GpuAddress = gpuAddress});
-	return true;
-}
-
 bool PassParameterSet::SetAccelerationStructure(const char* name, FrameGraphAccelerationStructureHandle handle)
 {
 	std::uint32_t index = 0;
@@ -221,7 +207,7 @@ bool PassParameterSet::SetAccelerationStructure(const char* name, FrameGraphAcce
 		return false;
 	}
 
-	m_bindings[index].SetValue(PassParameterAccelerationStructureBindingData{.Handle = handle});
+	m_bindings[index].SetValue(handle);
 	return true;
 }
 

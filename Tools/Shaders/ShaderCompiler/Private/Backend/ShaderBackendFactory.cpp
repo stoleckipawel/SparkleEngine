@@ -46,9 +46,20 @@ static bool HasSourceExtension(const ShaderBackendStaticDescriptor& descriptor, 
 	       descriptor.SourceExtensions.end();
 }
 
-static std::string SelectAutomaticShaderBackendName(const std::filesystem::path& sourcePath, ShaderTarget target)
+static std::string GetVirtualSourceExtension(std::string_view sourcePath)
 {
-	const std::string extension = NormalizeShaderBackendName(sourcePath.extension().string());
+	const std::size_t separator = sourcePath.find_last_of('/');
+	const std::size_t period = sourcePath.find_last_of('.');
+	if (period == std::string_view::npos || (separator != std::string_view::npos && period < separator))
+	{
+		return {};
+	}
+	return NormalizeShaderBackendName(sourcePath.substr(period));
+}
+
+static std::string SelectAutomaticShaderBackendName(std::string_view sourcePath, ShaderTarget target)
+{
+	const std::string extension = GetVirtualSourceExtension(sourcePath);
 	const std::span<const ShaderBackendRegistration> registrations = GetBuiltinShaderBackendRegistrations();
 	for (const ShaderBackendRegistration& registration : registrations)
 	{
@@ -131,9 +142,9 @@ std::unique_ptr<IShaderBackend> CreateShaderBackend(std::string_view name)
 }
 
 std::string ResolveShaderBackendName(
-	const std::filesystem::path& sourcePath,
-	ShaderTarget target,
-	std::string_view requestedName)
+    std::string_view sourcePath,
+    ShaderTarget target,
+    std::string_view requestedName)
 {
 	std::string normalizedRequestedName = NormalizeShaderBackendName(requestedName);
 	if (normalizedRequestedName.empty())
@@ -148,7 +159,7 @@ std::string ResolveShaderBackendName(
 		if (selectedName.empty())
 		{
 			throw Diagnostics::Error(
-			    "Unable to auto-select a shader backend for source '" + sourcePath.generic_string() +
+			    "Unable to auto-select a shader backend for source '" + std::string(sourcePath) +
 			    "' and target '" + GetShaderTargetName(target) + "'.");
 		}
 	}

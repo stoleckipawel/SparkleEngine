@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Common/Constants.hlsli"
-#include "Common/Math.hlsli"
-#include "Geometry/PixelInput.hlsli"
-#include "Geometry/PixelOutput.hlsli"
-#include "Material/Material.hlsli"
-#include "BRDF/BRDF.hlsli"
-#include "Debug/ViewModes.hlsli"
+#include "/Engine/Common/Constants.hlsli"
+#include "/Engine/Common/Math.hlsli"
+#include "/Engine/Geometry/PixelInput.hlsli"
+#include "/Engine/Geometry/PixelOutput.hlsli"
+#include "/Engine/Material/Material.hlsli"
+#include "/Engine/BRDF/BRDF.hlsli"
+#include "/Engine/Debug/ViewModes.hlsli"

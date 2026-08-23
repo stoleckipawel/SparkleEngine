@@ -115,7 +115,7 @@ std::string ShaderContractValidator::FormatFailure(const ShaderContractVerificat
 	    failure.shaderName.empty() ? "<empty>" : failure.shaderName,
 	    failure.packageId.empty() ? "<empty>" : failure.packageId,
 	    failure.bindingLayoutId.empty() ? "<empty>" : failure.bindingLayoutId,
-	    failure.sourcePath.empty() ? "<empty>" : failure.sourcePath.generic_string(),
+	    failure.sourcePath.empty() ? "<empty>" : failure.sourcePath,
 	    failure.entryPoint.empty() ? "<empty>" : failure.entryPoint,
 	    GetShaderStagePrefix(failure.stage),
 	    failure.reason);

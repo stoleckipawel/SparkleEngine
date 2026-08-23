@@ -1,10 +1,10 @@
 #ifndef SPARKLE_LIGHT_SAMPLING_HLSLI
 #define SPARKLE_LIGHT_SAMPLING_HLSLI
 
-#include "Resources/FrameUniformData.hlsli"
+#include "/Engine/Resources/FrameUniformData.hlsli"
 
-#include "Common/Math.hlsli"
-#include "Common/Random.hlsli"
+#include "/Engine/Common/Math.hlsli"
+#include "/Engine/Common/Random.hlsli"
 
 namespace LightSampling
 {

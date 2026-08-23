@@ -1,9 +1,9 @@
 #ifndef SPARKLE_RESTIR_RESERVOIR_COMMON_HLSLI
 #define SPARKLE_RESTIR_RESERVOIR_COMMON_HLSLI
 
-#include "Resources/FrameUniformData.hlsli"
+#include "/Engine/Resources/FrameUniformData.hlsli"
 
-#include "Common/Random.hlsli"
+#include "/Engine/Common/Random.hlsli"
 namespace RestirReservoirCommon
 {
 	static const uint InitialCandidateCount = 4u;

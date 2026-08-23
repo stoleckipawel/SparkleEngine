@@ -74,14 +74,12 @@ class VulkanDescriptorService final : public RhiDescriptorService
 	RhiResourceViewHandle CreateTextureDescriptorView(const RhiResourceViewDesc& desc);
 	RhiResourceViewHandle CreateAttachmentView(const RhiResourceViewDesc& desc);
 	RhiResourceViewHandle CreateBufferDescriptorView(const RhiResourceViewDesc& desc);
-	RhiResourceViewHandle CreateAccelerationStructureDescriptorView(const RhiResourceViewDesc& desc);
 
 	struct ResourceViewRecord final
 	{
 		ERhiResourceViewKind Kind = ERhiResourceViewKind::TextureShaderResource;
 		VkImage Image = VK_NULL_HANDLE;
 		VkBuffer Buffer = VK_NULL_HANDLE;
-		VkAccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
 		VkImageView ImageView = VK_NULL_HANDLE;
 		PixelFormat Format = PixelFormat::Unknown;
 		VkExtent3D Extent = {};

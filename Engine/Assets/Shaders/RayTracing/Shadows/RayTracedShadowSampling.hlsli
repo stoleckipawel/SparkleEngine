@@ -1,9 +1,9 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_SAMPLING_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_SAMPLING_HLSLI
 
-#include "Resources/FrameUniformData.hlsli"
+#include "/Engine/Resources/FrameUniformData.hlsli"
 
-#include "Common/Random.hlsli"
+#include "/Engine/Common/Random.hlsli"
 
 namespace RayTracedShadowSampling
 {

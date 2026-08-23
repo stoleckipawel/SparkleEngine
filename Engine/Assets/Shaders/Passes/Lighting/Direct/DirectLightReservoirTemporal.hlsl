@@ -1,7 +1,7 @@
-#include "Resources/ViewTemporalUniformData.hlsli"
+#include "/Engine/Resources/ViewTemporalUniformData.hlsli"
 
-#include "Lighting/DirectLightReservoir.hlsli"
-#include "Passes/Deferred/MotionVector.hlsli"
+#include "/Engine/Lighting/DirectLightReservoir.hlsli"
+#include "/Engine/Passes/GBuffer/MotionVector.hlsli"
 
 RWTexture2D<float4> TemporalReservoirSampleTexture;
 RWTexture2D<float4> TemporalReservoirWeightTexture;

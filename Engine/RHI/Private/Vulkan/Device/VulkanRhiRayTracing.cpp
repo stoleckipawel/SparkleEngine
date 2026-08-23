@@ -109,7 +109,6 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .NvidiaDeviceOnly = true,
 	    .CurrentDeviceIsNvidia = m_adapterInfo.VendorId == NvidiaVendorId,
 	    .SupportsDescriptorAccess = false,
-	    .SupportsShaderDeviceAddressAccess = false,
 	    .CapabilityStatusReason = m_adapterInfo.VendorId != NvidiaVendorId
 	                                  ? "vulkan-nv-ptlas-requires-nvidia-device"
 	                                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
@@ -151,10 +150,6 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .NvidiaDeviceOnly = true,
 	    .CurrentDeviceIsNvidia = m_adapterInfo.VendorId == NvidiaVendorId,
 	    .SupportsDescriptorAccess = false,
-	    .SupportsShaderDeviceAddressAccess =
-	        m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure && m_featureStatus.EnabledShaderInt64 &&
-	        m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
-	        m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature && m_rayTracingCapabilities.SupportsInlineRayQuery,
 	    .SupportsCpuPackedOperations = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
 	    .SupportsGpuDrivenOperations = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
 	    .SupportsGpuOperationCount = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,

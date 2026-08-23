@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Common/Constants.hlsli"
-#include "Common/Math.hlsli"
+#include "/Engine/Common/Constants.hlsli"
+#include "/Engine/Common/Math.hlsli"
 
 namespace CommonSampling
 {

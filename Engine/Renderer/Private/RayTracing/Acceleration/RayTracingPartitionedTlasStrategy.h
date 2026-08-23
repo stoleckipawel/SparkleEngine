@@ -34,10 +34,6 @@ public:
 	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
 	bool HasValidSceneTlas() const noexcept override;
-	RhiOwnedResourceHandle GetSceneTlasResource() const noexcept override;
-	RhiGpuVirtualAddress GetSceneTlasGpuAddress() const noexcept override;
-	RayTracingSceneTlasShaderAccessMode GetSceneTlasShaderAccessMode() const noexcept override;
-	std::uint32_t GetSceneTlasInstanceCount() const noexcept override;
 	void Clear() noexcept override;
 
 private:
@@ -68,7 +64,6 @@ private:
 	static bool CanUsePartitionedTlasProvider(const RayTracingCapabilityReport& capabilityReport) noexcept;
 	static const char* ResolveInactiveProviderReason(const RayTracingCapabilityReport& capabilityReport) noexcept;
 	static const char* ResolveActiveProviderReason() noexcept;
-	static RayTracingSceneTlasShaderAccessMode ResolveActiveShaderAccessMode(const RayTracingCapabilityReport& capabilityReport) noexcept;
 	static RhiPartitionedTlasInstanceFlags ResolveInstanceFlags(const PreparedRenderScene& preparedScene, const MeshDraw& draw) noexcept;
 	void EnsurePartitionedTlasResources(
 	    const PreparedRenderScene& preparedScene,

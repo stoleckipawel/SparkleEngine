@@ -15,7 +15,7 @@ void AddPathTracedIndirectLightingPass(
 	auto& parameters = builder.AllocParameters<PathTracedIndirectLightingPass::Parameters>();
 	parameters->IndirectDiffuse = builder.CreateUAV(resources.Transient.Lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = builder.CreateUAV(resources.Transient.Lighting.IndirectSpecular);
-	parameters->SceneTlas = builder.Read(resources.SceneTlas);
+	parameters->SceneTlas = builder.CreateAccelerationStructureBinding(resources.SceneTlas);
 	parameters->GBufferBaseColor = builder.CreateSRV(resources.Transient.GBuffer.BaseColor);
 	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);

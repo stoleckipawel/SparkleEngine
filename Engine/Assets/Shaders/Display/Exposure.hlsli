@@ -1,7 +1,7 @@
 #ifndef SPARKLE_DISPLAY_EXPOSURE_HLSLI
 #define SPARKLE_DISPLAY_EXPOSURE_HLSLI
 
-#include "Common/Color.hlsli"
+#include "/Engine/Common/Color.hlsli"
 
 namespace Exposure
 {

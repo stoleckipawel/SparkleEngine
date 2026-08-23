@@ -2,8 +2,6 @@
 
 #include "Compiler/ShaderCompilerPaths.h"
 
-#include "Core/Public/Strings/StringUtils.h"
-
 namespace ShaderCompilerPaths
 {
 	std::filesystem::path CanonicalizeForCompiler(const std::filesystem::path& path)
@@ -23,32 +21,5 @@ namespace ShaderCompilerPaths
 		}
 
 		return normalizedPath;
-	}
-
-	std::string MakePathArgument(const std::filesystem::path& path)
-	{
-		return CanonicalizeForCompiler(path).generic_string();
-	}
-
-	std::string MakeIncludeDirectoryArgument(const std::filesystem::path& path)
-	{
-		std::string genericPath = MakePathArgument(path);
-		if (!genericPath.empty() && genericPath.back() != '/')
-		{
-			genericPath.push_back('/');
-		}
-		return genericPath;
-	}
-
-	std::wstring MakeWidePathArgument(const std::filesystem::path& path)
-	{
-		const std::string genericPath = MakePathArgument(path);
-		return Strings::ToWide(std::string_view{genericPath});
-	}
-
-	std::wstring MakeWideIncludeDirectoryArgument(const std::filesystem::path& path)
-	{
-		const std::string genericPath = MakeIncludeDirectoryArgument(path);
-		return Strings::ToWide(std::string_view{genericPath});
 	}
 }

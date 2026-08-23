@@ -1,12 +1,12 @@
 #ifndef SPARKLE_DIRECT_SHADOW_SIGNAL_COMMON_HLSLI
 #define SPARKLE_DIRECT_SHADOW_SIGNAL_COMMON_HLSLI
 
-#include "Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
 
-#include "Lighting/DirectLightReservoir.hlsli"
-#include "Passes/Deferred/GBufferUtils.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
+#include "/Engine/Lighting/DirectLightReservoir.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 
 RWTexture2D<float4> ShadowVisibilitySignalTexture;
 Texture2D<float4> CurrentReservoirSampleTexture;

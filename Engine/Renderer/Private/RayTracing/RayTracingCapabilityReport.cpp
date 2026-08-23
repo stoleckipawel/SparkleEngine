@@ -6,8 +6,21 @@
 
 bool RayTracingCapabilityReport::CanUseInlineRayQueryShadows() const noexcept
 {
-	return Core.SupportsRayTracing && Core.SupportsInlineRayQuery && AccelerationStructures.HasAccelerationStructureAlignment &&
-	       AccelerationStructures.HasScratchBufferAlignment && AccelerationStructures.HasInstanceDescSize;
+	const bool hasAccelerationStructureContract = Core.SupportsRayTracing && Core.SupportsInlineRayQuery &&
+	    AccelerationStructures.HasAccelerationStructureAlignment && AccelerationStructures.HasScratchBufferAlignment &&
+	    AccelerationStructures.HasInstanceDescSize;
+	if (!hasAccelerationStructureContract)
+	{
+		return false;
+	}
+
+	if (TopLevelProvider.SelectedProvider == ERhiRayTracingTopLevelProvider::ClassicTlas)
+	{
+		return true;
+	}
+
+	return TopLevelProvider.SelectedProvider == ERhiRayTracingTopLevelProvider::PartitionedTlas && PartitionedTlas.Supported &&
+	       PartitionedTlas.SupportsDescriptor;
 }
 
 const char* RayTracingCapabilityReport::GetInlineRayQueryShadowUnavailableReason() const noexcept
@@ -32,6 +45,15 @@ const char* RayTracingCapabilityReport::GetInlineRayQueryShadowUnavailableReason
 	{
 		return "missing-instance-desc-size";
 	}
+	if (TopLevelProvider.SelectedProvider == ERhiRayTracingTopLevelProvider::None)
+	{
+		return "top-level-provider-unavailable";
+	}
+	if (TopLevelProvider.SelectedProvider == ERhiRayTracingTopLevelProvider::PartitionedTlas &&
+	    (!PartitionedTlas.Supported || !PartitionedTlas.SupportsDescriptor))
+	{
+		return "partitioned-tlas-semantic-binding-unavailable";
+	}
 	return "available";
 }
 
@@ -44,10 +66,7 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 {
 	const ERhiBackendApi backendApi = capabilities.BackendApi;
 	const RhiRayTracingCapabilities& rayTracing = capabilities.RayTracing;
-	const bool supportsClassicDescriptorTlas = rayTracing.Groups.ClassicTlas.SupportsClassicTlasBuild &&
-	                                           rayTracing.Groups.AccelerationStructures.SupportsAccelerationStructureShaderBinding;
 	const bool supportsPartitionedDescriptorTlas = rayTracing.Groups.PartitionedTlas.SupportsDescriptorAccess;
-	const bool supportsPartitionedShaderDeviceAddress = rayTracing.Groups.PartitionedTlas.SupportsShaderDeviceAddressAccess;
 	return RayTracingCapabilityReport{
 	    .BackendApi = backendApi,
 	    .Core =
@@ -74,11 +93,6 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 	            .Provider = rayTracing.Groups.PartitionedTlas.Provider,
 	            .Supported = rayTracing.Groups.PartitionedTlas.Supported,
 	            .SupportsDescriptor = supportsPartitionedDescriptorTlas,
-	            .SupportsShaderDeviceAddress = supportsPartitionedShaderDeviceAddress,
 	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason},
-	    .TlasShaderAccess =
-	        RayTracingTlasShaderAccessCapabilityReport{
-	            .SupportsDescriptor = rayTracing.SupportsRayTracing && (supportsClassicDescriptorTlas || supportsPartitionedDescriptorTlas),
-	            .SupportsShaderDeviceAddress = rayTracing.SupportsRayTracing && supportsPartitionedShaderDeviceAddress},
 	    .MaterialTextureTable = BuildMaterialTextureTableCapabilityReport(capabilities)};
 }

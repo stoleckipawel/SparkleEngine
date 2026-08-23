@@ -1,7 +1,7 @@
 #ifndef SPARKLE_DISPLAY_OUTPUT_ENCODING_HLSLI
 #define SPARKLE_DISPLAY_OUTPUT_ENCODING_HLSLI
 
-#include "Common/Color.hlsli"
+#include "/Engine/Common/Color.hlsli"
 
 namespace OutputEncoding
 {

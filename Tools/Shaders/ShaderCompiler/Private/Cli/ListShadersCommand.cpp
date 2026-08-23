@@ -69,7 +69,7 @@ int ListShadersCommand::Run(std::span<const std::string_view> args) const
 			std::cout << stage.shaderName << " package=" << stage.packageId
 			          << " layout=" << stage.bindingLayoutId
 			          << " stage=" << GetShaderStagePrefix(stage.stage)
-			          << " source=" << stage.sourcePath.generic_string()
+			          << " source=" << stage.sourcePath
 			          << " entry=" << stage.entryPoint
 			          << " parameters=" << stage.parameterStruct.Fields.size() << "\n";
 		}

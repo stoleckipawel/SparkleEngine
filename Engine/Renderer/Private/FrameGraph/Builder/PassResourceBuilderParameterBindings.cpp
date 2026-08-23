@@ -89,11 +89,11 @@ ResourceUsage PassResourceBuilder::GetFrameGraphUsage(const PassParameterDesc& p
 void PassResourceBuilder::DeclareAccelerationStructureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept
 {
 	assert(parameter.ResourceDomain == ShaderParameterResourceDomain::AccelerationStructure);
-	const PassParameterAccelerationStructureBindingData* accelerationStructureData = binding.AsAccelerationStructureData();
-	assert(accelerationStructureData != nullptr);
-	assert(accelerationStructureData->Handle.IsValid());
+	const FrameGraphAccelerationStructureHandle* accelerationStructure = binding.AsAccelerationStructureHandle();
+	assert(accelerationStructure != nullptr);
+	assert(accelerationStructure->IsValid());
 
-	DeclareResourceHandle(accelerationStructureData->Handle.GetResourceHandle(), GetFrameGraphUsage(parameter), parameter, 0);
+	DeclareResourceHandle(accelerationStructure->GetResourceHandle(), GetFrameGraphUsage(parameter), parameter, 0);
 }
 
 void PassResourceBuilder::DeclareTextureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept

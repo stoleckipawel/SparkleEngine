@@ -19,7 +19,7 @@ void AddRestirIndirectTemporalPass(
 	parameters->PreviousReservoirWeightTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Weight.Previous);
 	parameters->PreviousReservoirSurfaceTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Surface.Previous);
 	parameters->GBufferMotionVector = builder.CreateSRV(resources.Transient.GBuffer.MotionVector);
-	parameters->SceneTlas = builder.Read(resources.SceneTlas);
+	parameters->SceneTlas = builder.CreateAccelerationStructureBinding(resources.SceneTlas);
 	parameters->GBufferBaseColor = builder.CreateSRV(resources.Transient.GBuffer.BaseColor);
 	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);

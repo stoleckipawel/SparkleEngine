@@ -1,9 +1,9 @@
 #ifndef SPARKLE_RAY_RECONSTRUCTION_GUIDES_HLSLI
 #define SPARKLE_RAY_RECONSTRUCTION_GUIDES_HLSLI
 
-#include "Lighting/SurfaceLighting.hlsli"
-#include "Passes/Deferred/GBufferUtils.hlsli"
-#include "RayTracing/PathLighting.hlsli"
+#include "/Engine/Lighting/SurfaceLighting.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
+#include "/Engine/RayTracing/PathLighting.hlsli"
 
 RWTexture2D<float4> RayReconstructionDiffuseAlbedo;
 RWTexture2D<float4> RayReconstructionSpecularAlbedo;

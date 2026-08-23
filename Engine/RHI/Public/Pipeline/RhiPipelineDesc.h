@@ -50,6 +50,7 @@ enum class CompiledBindingType : std::uint8_t
 	ConstantBuffer,
 	ReadOnlyAddress,
 	ReadWriteAddress,
+	AccelerationStructure,
 	ReadOnlyResourceTable,
 	ReadWriteResourceTable,
 	SamplerTable,

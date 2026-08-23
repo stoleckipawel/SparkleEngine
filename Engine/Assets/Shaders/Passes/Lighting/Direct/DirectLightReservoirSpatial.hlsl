@@ -1,4 +1,4 @@
-#include "Lighting/DirectLightReservoir.hlsli"
+#include "/Engine/Lighting/DirectLightReservoir.hlsli"
 
 Texture2D<float4> TemporalReservoirSampleTexture;
 Texture2D<float4> TemporalReservoirWeightTexture;

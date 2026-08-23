@@ -1,4 +1,4 @@
-#include "Lighting/RestirIndirectLightingUniform.hlsli"
+#include "/Engine/Lighting/RestirIndirectLightingUniform.hlsli"
 
 Texture2D<float4> TemporalReservoirSampleTexture;
 Texture2D<float4> TemporalReservoirWeightTexture;
@@ -8,7 +8,7 @@ RWTexture2D<float4> CurrentReservoirSurfaceTexture;
 Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
 
-#include "Lighting/RestirIndirectReservoir.hlsli"
+#include "/Engine/Lighting/RestirIndirectReservoir.hlsli"
 
 static const int2 SpatialOffsets[8] =
     {int2(1, 0), int2(-1, 0), int2(0, 1), int2(0, -1), int2(2, 1), int2(-2, 1), int2(2, -1), int2(-2, -1)};

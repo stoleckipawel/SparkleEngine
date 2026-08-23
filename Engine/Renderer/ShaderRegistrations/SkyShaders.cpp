@@ -23,4 +23,4 @@ public:
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(SkyCS, RendererShaderPackages::Sky, "Passes/Deferred/Sky.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(SkyCS, RendererShaderPackages::Sky, "/Engine/Passes/Lighting/Sky/Sky.hlsl", "main", Compute);

@@ -1,7 +1,7 @@
 #ifndef SPARKLE_RAY_TRACING_PATH_SURFACE_HLSLI
 #define SPARKLE_RAY_TRACING_PATH_SURFACE_HLSLI
 
-#include "RayTracing/RayTracingMaterialHit.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
 
 struct RayTracingPathSurface
 {

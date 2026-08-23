@@ -35,7 +35,7 @@ void AddDirectShadowSignalPass(
 	descriptorParameters->RayTracingHitIndices = builder.CreateSRV(externalResources.Scene.RayTracing.Indices);
 	descriptorParameters->RayTracingHitInstances = builder.CreateSRV(externalResources.Scene.RayTracing.Instances);
 	descriptorParameters->RayTracingHitMaterials = builder.CreateSRV(externalResources.Scene.RayTracing.Materials);
-	descriptorParameters->SceneTlas = builder.Read(sceneTlas);
+	descriptorParameters->SceneTlas = builder.CreateAccelerationStructureBinding(sceneTlas);
 	descriptorParameters->MaterialTextureSampler = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Resources/ViewUniformData.hlsli"
-#include "Resources/ViewTemporalUniformData.hlsli"
+#include "/Engine/Resources/ViewUniformData.hlsli"
+#include "/Engine/Resources/ViewTemporalUniformData.hlsli"
 
-#include "Geometry/ScreenSpace.hlsli"
+#include "/Engine/Geometry/ScreenSpace.hlsli"
 
 namespace MotionVectors
 {

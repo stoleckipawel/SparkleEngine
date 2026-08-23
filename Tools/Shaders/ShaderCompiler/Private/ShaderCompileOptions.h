@@ -4,7 +4,7 @@
 #include "RHI/Public/Shaders/CookedShaderPackage.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
 
-#include <filesystem>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,12 +15,14 @@ struct ShaderDescriptorBindingRemap final
 	std::uint32_t Binding = 0;
 };
 
+class ShaderSourceMountTable;
+
 // Inputs to one shader compile invocation. Owned by the offline tool; runtime
 // modules must not include this header.
 struct ShaderCompileOptions
 {
-	std::filesystem::path SourcePath;
-	std::filesystem::path IncludeDir;
+	std::string SourcePath;
+	std::shared_ptr<const ShaderSourceMountTable> SourceMounts;
 	std::string EntryPoint = "main";
 	ShaderStage Stage = ShaderStage::Pixel;
 	ShaderTarget Target = kDefaultShaderTarget;
@@ -34,7 +36,6 @@ struct ShaderCompileOptions
 	bool StripDebugInfo = true;
 	bool CaptureDebugArtifacts = false;
 
-	std::vector<std::filesystem::path> AdditionalIncludeDirs;
 	std::vector<std::string> Defines;
 	std::vector<ShaderDescriptorBindingRemap> DescriptorBindingRemaps;
 };

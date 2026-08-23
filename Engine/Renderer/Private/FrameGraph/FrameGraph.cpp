@@ -30,7 +30,7 @@ FrameGraph::~FrameGraph()
 	ReleaseTextureHistories();
 }
 
-ShaderAccelerationStructure FrameGraph::Read(FrameGraphAccelerationStructureHandle handle) const noexcept
+ShaderAccelerationStructure FrameGraph::CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept
 {
 	ShaderAccelerationStructure field;
 	field = handle;

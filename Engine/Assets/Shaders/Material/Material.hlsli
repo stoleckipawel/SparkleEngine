@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Resources/ObjectShaderData.hlsli"
-#include "Resources/Samplers.hlsli"
-#include "Geometry/Basis.hlsli"
-#include "Geometry/PixelInput.hlsli"
-#include "Material/MaterialNormal.hlsli"
+#include "/Engine/Resources/ObjectShaderData.hlsli"
+#include "/Engine/Resources/Samplers.hlsli"
+#include "/Engine/Geometry/Basis.hlsli"
+#include "/Engine/Geometry/PixelInput.hlsli"
+#include "/Engine/Material/MaterialNormal.hlsli"
 
 Texture2D TextureBaseColor;
 Texture2D TextureNormal;

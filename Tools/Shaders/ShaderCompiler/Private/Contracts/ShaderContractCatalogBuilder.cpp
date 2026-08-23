@@ -23,7 +23,7 @@ class ShaderContractCatalogAssembly final
 		stage.shaderName = std::string(shader.ShaderName);
 		stage.packageId = GetShaderRegistrationPackageId(shader);
 		stage.bindingLayoutId = GetShaderRegistrationBindingLayoutId(shader);
-		stage.sourcePath = std::filesystem::path(std::string(shader.SourcePath));
+		stage.sourcePath = shader.SourcePath;
 		stage.entryPoint = std::string(shader.EntryPoint);
 		stage.stage = shader.Stage;
 		stage.packageKind = shader.PackageKind;
@@ -70,9 +70,9 @@ class ShaderContractCatalogAssembly final
 		{
 			return static_cast<std::uint32_t>(lhs.stage) < static_cast<std::uint32_t>(rhs.stage);
 		}
-		if (lhs.sourcePath.generic_string() != rhs.sourcePath.generic_string())
+		if (lhs.sourcePath != rhs.sourcePath)
 		{
-			return lhs.sourcePath.generic_string() < rhs.sourcePath.generic_string();
+			return lhs.sourcePath < rhs.sourcePath;
 		}
 		if (lhs.entryPoint != rhs.entryPoint)
 		{

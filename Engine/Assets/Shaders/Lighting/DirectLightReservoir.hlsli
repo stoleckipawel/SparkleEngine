@@ -1,14 +1,14 @@
 #ifndef SPARKLE_DIRECT_LIGHT_RESERVOIR_HLSLI
 #define SPARKLE_DIRECT_LIGHT_RESERVOIR_HLSLI
 
-#include "Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
 
-#include "Common/Color.hlsli"
-#include "Common/Random.hlsli"
-#include "Lighting/DirectLightSampling.hlsli"
-#include "Lighting/RestirReservoirCommon.hlsli"
-#include "Lighting/SurfaceLighting.hlsli"
-#include "Passes/Deferred/GBufferUtils.hlsli"
+#include "/Engine/Common/Color.hlsli"
+#include "/Engine/Common/Random.hlsli"
+#include "/Engine/Lighting/DirectLightSampling.hlsli"
+#include "/Engine/Lighting/RestirReservoirCommon.hlsli"
+#include "/Engine/Lighting/SurfaceLighting.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
 
 namespace DirectLightReservoir
 {

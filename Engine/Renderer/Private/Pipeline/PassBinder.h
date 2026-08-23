@@ -55,6 +55,7 @@ private:
 	static void BindConstantBuffer(const BindingRequest& request);
 	static void BindReadOnlyAddress(const BindingRequest& request);
 	static void BindReadWriteAddress(const BindingRequest& request);
+	static void BindAccelerationStructure(const BindingRequest& request);
 	static void BindResourceTable(const BindingRequest& request, bool readWrite);
 	static void BindSamplerTable(const BindingRequest& request);
 	static void BindPushConstantData(const BindingRequest& request);

@@ -27,21 +27,20 @@ class FrameGraphAccelerationStructureBindingValidator final
 	    std::string_view resourceName,
 	    FrameGraphResourceHandle handle,
 	    ResourceState state,
-	    bool hasResource,
-	    RhiGpuVirtualAddress gpuAddress) noexcept
+	    bool hasResource) noexcept
 	{
 		Diagnostics::Fatal(
 		    g_frameGraphAccelerationStructureLogger,
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "FrameGraph acceleration-structure validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} gpuAddress={} remediation='bind acceleration structures through a valid frame-graph handle with a native backing resource and GPU virtual address'",
+		        "FrameGraph acceleration-structure validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} "
+		        "remediation='bind acceleration structures through a valid frame-graph handle with a native backing resource'",
 		        operation,
 		        resourceName.empty() ? "<unnamed>" : resourceName,
 		        FormatHandle(handle),
 		        ResourceStateToString(state),
-		        hasResource,
-		        gpuAddress));
+		        hasResource));
 	}
 };
 
@@ -62,7 +61,6 @@ FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationS
 void FrameGraph::BindPersistentAccelerationStructure(
     FrameGraphAccelerationStructureHandle handle,
     RhiResourceHandle resource,
-    RhiGpuVirtualAddress gpuAddress,
     ResourceState currentState) noexcept
 {
 	if (!handle.IsValid())
@@ -70,15 +68,14 @@ void FrameGraph::BindPersistentAccelerationStructure(
 		return;
 	}
 
-	if (!resource || gpuAddress == 0)
+	if (!resource)
 	{
 		FrameGraphAccelerationStructureBindingValidator::FailInvalidAccelerationStructureBinding(
 		    "BindPersistentAccelerationStructure",
 		    {},
 		    handle.GetResourceHandle(),
 		    currentState,
-		    static_cast<bool>(resource),
-		    gpuAddress);
+		    static_cast<bool>(resource));
 	}
 
 	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
@@ -89,8 +86,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 		    {},
 		    resourceHandle,
 		    currentState,
-		    static_cast<bool>(resource),
-		    gpuAddress);
+		    static_cast<bool>(resource));
 	}
 
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
@@ -102,13 +98,11 @@ void FrameGraph::BindPersistentAccelerationStructure(
 		    metadata.debugName,
 		    resourceHandle,
 		    currentState,
-		    static_cast<bool>(resource),
-		    gpuAddress);
+		    static_cast<bool>(resource));
 	}
 
 	FrameGraphResourceAccess access{};
 	access.resource = resource;
-	access.accelerationStructureGpuAddress = gpuAddress;
 	m_resourceResolver.SetResolvedAccess(resourceHandle, access);
 	m_resourceRegistry.SetExternalContentsProduced(resourceHandle, true);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
@@ -117,7 +111,6 @@ void FrameGraph::BindPersistentAccelerationStructure(
 void FrameGraph::BindPersistentAccelerationStructure(
     FrameGraphAccelerationStructureHandle handle,
     RhiOwnedResourceHandle resource,
-    RhiGpuVirtualAddress gpuAddress,
     ResourceState currentState) noexcept
 {
 	if (m_renderHardwareInterface == nullptr || !resource)
@@ -127,14 +120,12 @@ void FrameGraph::BindPersistentAccelerationStructure(
 		    {},
 		    handle.GetResourceHandle(),
 		    currentState,
-		    false,
-		    gpuAddress);
+		    false);
 	}
 
 	BindPersistentAccelerationStructure(
 	    handle,
 	    m_renderHardwareInterface->GetResourceService().GetResourceHandle(resource),
-	    gpuAddress,
 	    currentState);
 }
 
@@ -155,10 +146,4 @@ void FrameGraph::ClearPersistentAccelerationStructureBinding(FrameGraphAccelerat
 	m_resourceRegistry.SetExternalContentsProduced(resourceHandle, false);
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, metadata.initialState);
-}
-
-RhiGpuVirtualAddress FrameGraph::ResolveAccelerationStructureGpuAddress(FrameGraphResourceHandle handle) const noexcept
-{
-	assert(handle.IsValid());
-	return m_resourceResolver.GetResolvedAccess(handle).accelerationStructureGpuAddress;
 }

@@ -83,7 +83,7 @@ const RenderPassDefinition& PathTracedIndirectLightingPass::GetDefinition() noex
 	    RendererShaderPackages::PathTracedIndirectLighting,
 	    L"PathTracedIndirectLighting_BindingLayout",
 	    L"PathTracedIndirectLighting_Pipeline",
-	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
+	    RayTracingShaderFeatureFlags::InlineRayQuery);
 	return definition;
 }
 

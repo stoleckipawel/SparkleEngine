@@ -3,6 +3,8 @@
 #include "Cooking/ShaderCookContext.h"
 
 #include <cstddef>
+#include <cstdint>
+#include <string_view>
 
 class ShaderBackendPool;
 class IShaderBackend;
@@ -30,6 +32,12 @@ class ShaderCookNodeBuilder final
 	static void AppendDescriptorBindingRemaps(
 	    const ShaderCookPackageDesc& package,
 	    ShaderCompileOptions& compileOptions);
+	static std::uint64_t BuildCompileInputHash(
+	    std::uint64_t sourceHash,
+	    std::uint64_t includeClosureHash,
+	    std::uint64_t optionsHash,
+	    std::string_view backendName,
+	    std::uint64_t backendVersion);
 	static IShaderBackend& ResolveBackend(
 	    const ShaderPackageCookSettings& settings,
 	    const ShaderCookPackageDesc& package,

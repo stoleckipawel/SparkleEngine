@@ -26,7 +26,7 @@ const RenderPassDefinition& DirectShadowSignalPass::GetDefinition() noexcept
 	    RendererShaderPackages::DirectShadowSignal,
 	    L"DirectShadowSignal_BindingLayout",
 	    L"DirectShadowSignal_Pipeline",
-	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
+	    RayTracingShaderFeatureFlags::InlineRayQuery);
 	return definition;
 }
 

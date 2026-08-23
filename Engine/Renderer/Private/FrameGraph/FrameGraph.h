@@ -229,12 +229,10 @@ public:
 	void BindPersistentAccelerationStructure(
 	    FrameGraphAccelerationStructureHandle handle,
 	    RhiResourceHandle resource,
-	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void BindPersistentAccelerationStructure(
 	    FrameGraphAccelerationStructureHandle handle,
 	    RhiOwnedResourceHandle resource,
-	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
 	void BindPersistentTexture(
@@ -297,7 +295,7 @@ public:
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept;
-	RhiGpuVirtualAddress ResolveAccelerationStructureGpuAddress(FrameGraphAccelerationStructureHandle handle) const noexcept;
+	RhiResourceHandle ResolveAccelerationStructure(FrameGraphAccelerationStructureHandle handle) const noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
 	{
@@ -337,7 +335,7 @@ public:
 		return field;
 	}
 
-	ShaderAccelerationStructure Read(FrameGraphAccelerationStructureHandle handle) const noexcept;
+	ShaderAccelerationStructure CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept;
 	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept;
 	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept;
 
@@ -401,7 +399,6 @@ private:
 	RhiCpuDescriptorHandle ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
-	RhiGpuVirtualAddress ResolveAccelerationStructureGpuAddress(FrameGraphResourceHandle handle) const noexcept;
 	std::array<float, 4> GetClearColor(FrameGraphResourceHandle handle) const noexcept;
 	float GetClearDepth(FrameGraphResourceHandle handle) const noexcept;
 	RhiResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;

@@ -1,4 +1,4 @@
-#include "Display/Exposure.hlsli"
+#include "/Engine/Display/Exposure.hlsli"
 
 Texture2D LuminanceMoments;
 Texture2D PreviousExposureTexture;

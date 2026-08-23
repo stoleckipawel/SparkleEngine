@@ -174,7 +174,7 @@ static std::uint32_t FindBinaryRecordIndexForStage(
 	for (std::size_t binaryIndex = 0; binaryIndex < compiledStages.size(); ++binaryIndex)
 	{
 		const CookedStageBuild& compiledStage = compiledStages[binaryIndex];
-		if (compiledStage.stage == stage.stage && compiledStage.sourcePath.ends_with(stage.sourcePath.generic_string()) &&
+		if (compiledStage.stage == stage.stage && compiledStage.sourcePath == stage.sourcePath &&
 		    compiledStage.entryPoint == stage.entryPoint)
 		{
 			return static_cast<std::uint32_t>(binaryIndex);

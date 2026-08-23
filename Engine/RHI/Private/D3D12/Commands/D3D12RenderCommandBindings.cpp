@@ -29,6 +29,15 @@ void D3D12RenderCommandList::BindGraphicsUnorderedAccess(std::uint32_t bindingIn
 	}
 }
 
+void D3D12RenderCommandList::BindGraphicsAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept
+{
+	ID3D12Resource* const nativeResource = D3D12TypeConversions::ToResource(resource);
+	if (m_commandList != nullptr && nativeResource != nullptr)
+	{
+		m_commandList->SetGraphicsRootShaderResourceView(bindingIndex, nativeResource->GetGPUVirtualAddress());
+	}
+}
+
 void D3D12RenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept
 {
 	if (m_commandList == nullptr || m_owner == nullptr || !tableBinding)
@@ -82,6 +91,15 @@ void D3D12RenderCommandList::BindComputeUnorderedAccess(std::uint32_t bindingInd
 	if (m_commandList != nullptr)
 	{
 		m_commandList->SetComputeRootUnorderedAccessView(bindingIndex, gpuAddress);
+	}
+}
+
+void D3D12RenderCommandList::BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept
+{
+	ID3D12Resource* const nativeResource = D3D12TypeConversions::ToResource(resource);
+	if (m_commandList != nullptr && nativeResource != nullptr)
+	{
+		m_commandList->SetComputeRootShaderResourceView(bindingIndex, nativeResource->GetGPUVirtualAddress());
 	}
 }
 

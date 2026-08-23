@@ -18,7 +18,7 @@ void AddRestirIndirectSpatialPass(
 	parameters->CurrentReservoirSampleTexture = builder.CreateUAV(resources.History.RestirIndirectReservoir.Sample.Current);
 	parameters->CurrentReservoirWeightTexture = builder.CreateUAV(resources.History.RestirIndirectReservoir.Weight.Current);
 	parameters->CurrentReservoirSurfaceTexture = builder.CreateUAV(resources.History.RestirIndirectReservoir.Surface.Current);
-	parameters->SceneTlas = builder.Read(resources.SceneTlas);
+	parameters->SceneTlas = builder.CreateAccelerationStructureBinding(resources.SceneTlas);
 	parameters->GBufferBaseColor = builder.CreateSRV(resources.Transient.GBuffer.BaseColor);
 	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);

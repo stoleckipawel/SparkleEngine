@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Common/Constants.hlsli"
-#include "Common/Math.hlsli"
-#include "Common/Sampling.hlsli"
-#include "BRDF/Distribution.hlsli"
-#include "BRDF/Geometry.hlsli"
+#include "/Engine/Common/Constants.hlsli"
+#include "/Engine/Common/Math.hlsli"
+#include "/Engine/Common/Sampling.hlsli"
+#include "/Engine/BRDF/Distribution.hlsli"
+#include "/Engine/BRDF/Geometry.hlsli"
 
 namespace BRDF
 {

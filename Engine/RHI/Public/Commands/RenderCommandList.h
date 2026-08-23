@@ -40,6 +40,7 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindGraphicsUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
+	virtual void BindGraphicsAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept = 0;
 	virtual void BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
 	virtual void BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
 	virtual void SetGraphicsPushConstants(
@@ -50,6 +51,7 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void BindComputeConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindComputeShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindComputeUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
+	virtual void BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept = 0;
 	virtual void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
 	virtual void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
 	virtual void SetComputePushConstants(

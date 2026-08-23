@@ -22,6 +22,6 @@ public:
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     SkyMotionVectorCS,
     RendererShaderPackages::SkyMotionVector,
-    "Passes/Deferred/SkyMotionVector.hlsl",
+    "/Engine/Passes/GBuffer/SkyMotionVector.hlsl",
     "main",
     Compute);

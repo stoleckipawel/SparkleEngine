@@ -59,13 +59,13 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(
 		return true;
 	}
 
-	const PassParameterAccelerationStructureBindingData* accelerationStructureData = binding.AsAccelerationStructureData();
-	if (accelerationStructureData == nullptr)
+	const FrameGraphAccelerationStructureHandle* accelerationStructure = binding.AsAccelerationStructureHandle();
+	if (accelerationStructure == nullptr)
 	{
 		return FrameGraphResourceContractFailureReporter::ReportValidationFailure(passName, "acceleration-structure parameter binding type did not match the reflected layout.");
 	}
 
-	if (!accelerationStructureData->Handle.IsValid())
+	if (!accelerationStructure->IsValid())
 	{
 		std::string message = "acceleration-structure parameter '";
 		message += parameter.Name;

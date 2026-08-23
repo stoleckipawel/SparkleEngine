@@ -1,29 +1,21 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 
-#include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
 cbuffer RayTracedShadowUniformData
 {
 	uint RayTracedDirectionalShadowsEnabled;
 	uint RayTracedLocalLightShadowsEnabled;
-	uint RayTracedShadowPadding0;
-	uint RayTracedShadowPadding1;
+	uint RayTracingHitInstanceCount;
+	uint RayTracingHitMaterialCount;
 	float RayTracedShadowNormalBias;
 	float RayTracedShadowMaxDistance;
 	float RayTracedShadowPadding2;
 	float RayTracedShadowPadding3;
-	uint RayTracedShadowSceneTlasGpuAddressLow;
-	uint RayTracedShadowSceneTlasGpuAddressHigh;
-	uint RayTracingHitInstanceCount;
-	uint RayTracingHitMaterialCount;
-	uint RayTracedShadowPadding4;
-	uint RayTracedShadowPadding5;
-	uint RayTracedShadowPadding6;
-	uint RayTracedShadowPadding7;
 };
 
-#include "RayTracing/RayTracingSceneTlasTrace.hlsli"
+#include "/Engine/RayTracing/RayTracingSceneTlasTrace.hlsli"
 
 namespace RayTracedShadows
 {
@@ -50,8 +42,6 @@ namespace RayTracedShadows
 	{
 		const float clampedMaxDistance = max(maxDistance, MinimumShadowTMin);
 		const RayTracingTraceResult trace = RayTracingSceneTlas::TraceRayQueryWithAlphaTest(
-		    RayTracedShadowSceneTlasGpuAddressLow,
-		    RayTracedShadowSceneTlasGpuAddressHigh,
 		    originWorld,
 		    directionWorld,
 		    MinimumShadowTMin,

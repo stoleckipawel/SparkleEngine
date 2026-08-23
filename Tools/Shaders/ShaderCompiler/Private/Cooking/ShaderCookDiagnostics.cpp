@@ -12,7 +12,7 @@ std::string ShaderCookDiagnostics::FormatNodeContext(
 	return std::format(
 	    "shader package '{}' shader '{}' entry '{}' stage '{}' backend '{}' target '{}' profile '{}' compileInputHash {:016X}",
 	    node.jobIdentity.packageId,
-	    node.jobIdentity.sourcePath.generic_string(),
+	    node.jobIdentity.sourcePath,
 	    node.jobIdentity.entryPoint,
 	    GetShaderStagePrefix(node.jobIdentity.stage),
 	    backendName,

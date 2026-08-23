@@ -1,12 +1,10 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_VISIBILITY_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_VISIBILITY_HLSLI
 
-#include "Lighting/LightSampling.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
+#include "/Engine/Lighting/LightSampling.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
-#if !defined(SPARKLE_RAY_TRACED_SHADOWS_DISABLED)
-#include "RayTracing/Shadows/RayTracedShadowTrace.hlsli"
-#endif
+#include "/Engine/RayTracing/Shadows/RayTracedShadowTrace.hlsli"
 
 namespace RayTracedShadowVisibility
 {
@@ -21,9 +19,6 @@ namespace RayTracedShadowVisibility
 			return RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
 		}
 
-#if defined(SPARKLE_RAY_TRACED_SHADOWS_DISABLED)
-		return RayTracedShadowSignals::BuildUnshadowedSignal(lightSample.VisibilityDistance);
-#else
 		return RayTracedShadows::TraceDirectLightSample(
 		    positionWorld,
 		    normalWorld,
@@ -31,7 +26,6 @@ namespace RayTracedShadowVisibility
 		    lightSample.VisibilityDistance,
 		    lightSample.IsDirectional,
 		    castsShadow);
-#endif
 	}
 }
 

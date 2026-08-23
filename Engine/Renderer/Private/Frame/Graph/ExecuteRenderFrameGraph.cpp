@@ -42,14 +42,13 @@ namespace RenderFrameGraphExecution
 	    const PreparedRenderScene& scene,
 	    const RenderRayTracingFrameBindings& bindings)
 	{
-		if (!resources.SceneTlas.IsValid() || !bindings.HasBoundTlas()
-		    || bindings.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
+		if (!resources.SceneTlas.IsValid() || !bindings.HasBoundTlas())
 		{
 			Diagnostics::Fatal(
 			    g_renderFrameGraphExecutionLogger,
 			    __FILE__,
 			    __LINE__,
-			    "Frame-graph SceneTlas binding is incomplete or not descriptor-accessible.");
+			    "Frame-graph SceneTlas binding is incomplete.");
 		}
 
 		const RenderSceneGpuBindings& gpuBindings = *scene.gpuBindings;
@@ -63,7 +62,7 @@ namespace RenderFrameGraphExecution
 			    "Traceable SceneTlas instances have no matching hit-instance or material records.");
 		}
 
-		frameGraph.BindPersistentAccelerationStructure(resources.SceneTlas, bindings.TlasResource, bindings.TlasGpuAddress);
+		frameGraph.BindPersistentAccelerationStructure(resources.SceneTlas, bindings.TlasResource);
 	}
 
 	void BindSkyTexture(
@@ -111,10 +110,8 @@ namespace RenderFrameGraphExecution
 		frameGraph.ApplyParameters(
 		    RayTracedShadowPassInput{
 		        .Settings = shadowSettings,
-		        .SceneTlasGpuAddress = rayTracingBindings.TlasGpuAddress,
 		        .HitInstanceCount = rayTracing.InstanceCount,
-		        .HitMaterialCount = rayTracing.MaterialCount,
-		        .Enabled = CVarRayTracedShadowsEnabled.Get()});
+		        .HitMaterialCount = rayTracing.MaterialCount});
 		frameGraph.Setup();
 		const FrameGraphPlan& plan = frameGraph.Compile();
 		frameGraph.ApplyResourceProductionSetups();

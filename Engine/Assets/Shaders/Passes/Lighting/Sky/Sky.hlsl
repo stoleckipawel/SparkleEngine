@@ -1,6 +1,6 @@
-#include "Geometry/ScreenSpace.hlsli"
-#include "Lighting/Sky.hlsli"
-#include "Passes/Deferred/GBufferUtils.hlsli"
+#include "/Engine/Geometry/ScreenSpace.hlsli"
+#include "/Engine/Lighting/Sky.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
 
 RWTexture2D<float4> SceneColorTexture;
 Texture2D SkyTexture;

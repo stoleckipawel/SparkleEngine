@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Common/Constants.hlsli"
-#include "Common/Math.hlsli"
-#include "Geometry/VertexInput.hlsli"
-#include "Geometry/VertexOutput.hlsli"
-#include "Geometry/Transforms.hlsli"
+#include "/Engine/Common/Constants.hlsli"
+#include "/Engine/Common/Math.hlsli"
+#include "/Engine/Geometry/VertexInput.hlsli"
+#include "/Engine/Geometry/VertexOutput.hlsli"
+#include "/Engine/Geometry/Transforms.hlsli"

@@ -58,7 +58,7 @@ const RenderPassDefinition& RaytracedGBufferPass::GetDefinition() noexcept
 	    RendererShaderPackages::RaytracedGBuffer,
 	    L"RaytracedGBuffer_BindingLayout",
 	    L"RaytracedGBuffer_Pipeline",
-	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
+	    RayTracingShaderFeatureFlags::InlineRayQuery);
 	return definition;
 }
 

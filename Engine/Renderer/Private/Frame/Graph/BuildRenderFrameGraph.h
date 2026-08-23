@@ -29,6 +29,7 @@ struct RenderFrameGraphSettings final
 	FramePresentationTarget PresentationTarget = FramePresentationTarget::BackBuffer;
 	GBufferMode GBuffer = GBufferMode::Rasterized;
 	LightingMode Lighting = LightingMode::RestirPathTraced;
+	bool EnableInlineRayQueryShadows = false;
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::None;
 
 	bool operator==(const RenderFrameGraphSettings&) const noexcept = default;

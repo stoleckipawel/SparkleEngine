@@ -44,8 +44,6 @@ class VulkanDescriptorAllocator final
 	    VkBuffer buffer,
 	    std::uint64_t offsetInBytes,
 	    std::uint64_t sizeInBytes);
-	RhiGpuDescriptorHandle RegisterAccelerationStructureDescriptor(VkAccelerationStructureKHR accelerationStructure);
-	RhiGpuDescriptorHandle RegisterPartitionedAccelerationStructureDescriptor(VkDeviceAddress accelerationStructureAddress);
 	void ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept;
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
 	bool WriteRegisteredDescriptor(RhiCpuDescriptorHandle destination, RhiGpuDescriptorHandle source) noexcept;

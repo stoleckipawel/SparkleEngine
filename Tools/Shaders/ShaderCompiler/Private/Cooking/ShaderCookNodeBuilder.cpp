@@ -16,29 +16,26 @@
 #include <format>
 #include <utility>
 
-namespace
+std::uint64_t ShaderCookNodeBuilder::BuildCompileInputHash(
+    const std::uint64_t sourceHash,
+    const std::uint64_t includeClosureHash,
+    const std::uint64_t optionsHash,
+    const std::string_view backendName,
+    const std::uint64_t backendVersion)
 {
-	std::uint64_t BuildCompileInputHash(
-	    const std::uint64_t sourceHash,
-	    const std::uint64_t includeClosureHash,
-	    const std::uint64_t optionsHash,
-	    const std::string_view backendName,
-	    const std::uint64_t backendVersion)
-	{
-		std::string canonical;
-		canonical.reserve(128);
-		canonical += std::to_string(sourceHash);
-		canonical += '|';
-		canonical += std::to_string(includeClosureHash);
-		canonical += '|';
-		canonical += std::to_string(optionsHash);
-		canonical += '|';
-		canonical += backendName;
-		canonical += '|';
-		canonical += std::to_string(backendVersion);
-		const std::uint64_t hash = Hash::Fnv1a64(canonical);
-		return hash != 0 ? hash : Hash::kFnv64OffsetBasis;
-	}
+	std::string canonical;
+	canonical.reserve(128);
+	canonical += std::to_string(sourceHash);
+	canonical += '|';
+	canonical += std::to_string(includeClosureHash);
+	canonical += '|';
+	canonical += std::to_string(optionsHash);
+	canonical += '|';
+	canonical += backendName;
+	canonical += '|';
+	canonical += std::to_string(backendVersion);
+	const std::uint64_t hash = Hash::Fnv1a64(canonical);
+	return hash != 0 ? hash : Hash::kFnv64OffsetBasis;
 }
 
 void ShaderCookNodeBuilder::BuildAndAdd(

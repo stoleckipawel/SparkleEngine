@@ -4,11 +4,8 @@
 
 #include "Scene/Preparation/PreparedRenderScene.h"
 
-RayTracingClassicTlasStrategy::RayTracingClassicTlasStrategy(
-    RenderHardwareInterface& renderHardwareInterface,
-    RayTracingSceneTlasShaderAccessMode shaderAccessMode) noexcept :
-    m_classicTlasBuilder(renderHardwareInterface),
-    m_shaderAccessMode(shaderAccessMode)
+RayTracingClassicTlasStrategy::RayTracingClassicTlasStrategy(RenderHardwareInterface& renderHardwareInterface) noexcept :
+    m_classicTlasBuilder(renderHardwareInterface)
 {
 }
 
@@ -40,8 +37,6 @@ RenderRayTracingFrameBindings RayTracingClassicTlasStrategy::Prepare(
 	m_classicTlasBuilder.Prepare(estimatedInstanceCount);
 
 	frameBindings.TlasResource = m_classicTlasBuilder.GetTlas().resource;
-	frameBindings.TlasGpuAddress = m_classicTlasBuilder.GetTlas().gpuAddress;
-	frameBindings.TlasShaderAccessMode = m_shaderAccessMode;
 	frameBindings.EstimatedInstanceCount = estimatedInstanceCount;
 	return frameBindings;
 }
@@ -64,26 +59,6 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingClassicTlasStrategy
 bool RayTracingClassicTlasStrategy::HasValidSceneTlas() const noexcept
 {
 	return m_classicTlasBuilder.GetTlas().IsValid();
-}
-
-RhiOwnedResourceHandle RayTracingClassicTlasStrategy::GetSceneTlasResource() const noexcept
-{
-	return m_classicTlasBuilder.GetTlas().resource;
-}
-
-RhiGpuVirtualAddress RayTracingClassicTlasStrategy::GetSceneTlasGpuAddress() const noexcept
-{
-	return m_classicTlasBuilder.GetTlas().gpuAddress;
-}
-
-RayTracingSceneTlasShaderAccessMode RayTracingClassicTlasStrategy::GetSceneTlasShaderAccessMode() const noexcept
-{
-	return m_shaderAccessMode;
-}
-
-std::uint32_t RayTracingClassicTlasStrategy::GetSceneTlasInstanceCount() const noexcept
-{
-	return m_classicTlasBuilder.GetTlas().instanceCount;
 }
 
 void RayTracingClassicTlasStrategy::Clear() noexcept

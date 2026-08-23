@@ -48,7 +48,6 @@ class DxcShaderBackend final : public IShaderBackend
 	    const std::wstring& wSourcePath,
 	    const std::wstring& wEntryPoint,
 	    const std::wstring& wTargetProfile,
-	    std::vector<std::wstring>& wIncludeDirs,
 	    std::vector<std::wstring>& wDefines,
 	    std::vector<LPCWSTR>& outArgs);
 

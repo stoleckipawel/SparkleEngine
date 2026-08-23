@@ -76,7 +76,7 @@ const RenderPassDefinition& PathTracedDirectLightingPass::GetDefinition() noexce
 	    RendererShaderPackages::PathTracedDirectLighting,
 	    L"PathTracedDirectLighting_BindingLayout",
 	    L"PathTracedDirectLighting_Pipeline",
-	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
+	    RayTracingShaderFeatureFlags::InlineRayQuery);
 	return definition;
 }
 

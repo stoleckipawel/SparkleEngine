@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Resources/MeshInstanceShaderData.hlsli"
+#include "/Engine/Resources/MeshInstanceShaderData.hlsli"
 
 struct SkinnedVertexAttributes
 {

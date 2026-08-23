@@ -26,7 +26,7 @@ void AddRaytracedGBufferPass(
 	parameters->GBufferSubsurface = builder.CreateUAV(targets.Subsurface);
 	parameters->GBufferDeviceZ = builder.CreateUAV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
-	parameters->SceneTlas = builder.Read(sceneTlas);
+	parameters->SceneTlas = builder.CreateAccelerationStructureBinding(sceneTlas);
 	parameters->RayTracingHitVertices = builder.CreateSRV(externalResources.Scene.RayTracing.Vertices);
 	parameters->MorphTargetDeltas = builder.CreateSRV(externalResources.Scene.RayTracing.MorphTargetDeltas);
 	parameters->SkinInfluences = builder.CreateSRV(externalResources.Scene.RayTracing.SkinInfluences);

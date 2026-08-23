@@ -18,7 +18,7 @@ void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExte
 	parameters->RayReconstructionRoughness = builder.CreateUAV(resources.Transient.Lighting.ReconstructionGuides.Roughness);
 	parameters->RayReconstructionSpecularHitDistance =
 	    builder.CreateUAV(resources.Transient.Lighting.ReconstructionGuides.SpecularHitDistance);
-	parameters->SceneTlas = builder.Read(resources.SceneTlas);
+	parameters->SceneTlas = builder.CreateAccelerationStructureBinding(resources.SceneTlas);
 	parameters->GBufferBaseColor = builder.CreateSRV(resources.Transient.GBuffer.BaseColor);
 	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);

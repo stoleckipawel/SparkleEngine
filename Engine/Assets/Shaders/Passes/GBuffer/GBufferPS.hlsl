@@ -1,8 +1,8 @@
-#include "Resources/ViewUniformData.hlsli"
+#include "/Engine/Resources/ViewUniformData.hlsli"
 
-#include "CommonPS.hlsli"
-#include "Debug/InstanceView.hlsli"
-#include "Passes/Deferred/GBufferPacking.hlsli"
+#include "/Engine/CommonPS.hlsli"
+#include "/Engine/Debug/InstanceView.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
 #include "MotionVector.hlsli"
 
 struct GBufferOutput

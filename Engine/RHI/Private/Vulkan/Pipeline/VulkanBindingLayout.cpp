@@ -122,13 +122,9 @@ class VulkanBindingLayoutCompilerImpl final
 
 			std::vector<VkDescriptorSetLayoutBinding> nativeBindings;
 			std::vector<VkSampler> nativeImmutableSamplers;
-			std::vector<MutableDescriptorTypeStorage> mutableDescriptorTypes;
-			std::vector<VkMutableDescriptorTypeListEXT> mutableDescriptorTypeLists;
 			std::vector<VkDescriptorBindingFlags> nativeBindingFlags;
 			nativeBindings.reserve(descriptorBindings.size());
 			nativeImmutableSamplers.reserve(descriptorBindings.size());
-			mutableDescriptorTypes.resize(descriptorBindings.size());
-			mutableDescriptorTypeLists.resize(descriptorBindings.size());
 			nativeBindingFlags.reserve(descriptorBindings.size());
 			for (const PendingDescriptorBinding& descriptorBinding : descriptorBindings)
 			{
@@ -139,40 +135,20 @@ class VulkanBindingLayoutCompilerImpl final
 					nativeImmutableSamplers.push_back(descriptorBinding.ImmutableSampler);
 					nativeBindings.back().pImmutableSamplers = &nativeImmutableSamplers.back();
 				}
-				if (descriptorBinding.Binding.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT)
-				{
-					const std::size_t nativeBindingIndex = nativeBindings.size() - 1u;
-					mutableDescriptorTypes[nativeBindingIndex] = MutableDescriptorTypeStorage{
-					    VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
-					    VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV};
-					mutableDescriptorTypeLists[nativeBindingIndex] = VkMutableDescriptorTypeListEXT{
-					    .descriptorTypeCount = static_cast<std::uint32_t>(mutableDescriptorTypes[nativeBindingIndex].size()),
-					    .pDescriptorTypes = mutableDescriptorTypes[nativeBindingIndex].data()};
-				}
 			}
 
-			const bool hasMutableDescriptorTypes = std::any_of(
-			    mutableDescriptorTypeLists.begin(),
-			    mutableDescriptorTypeLists.end(),
-			    [](const VkMutableDescriptorTypeListEXT& typeList) noexcept { return typeList.descriptorTypeCount > 0; });
-			const VkMutableDescriptorTypeCreateInfoEXT mutableDescriptorCreateInfo{
-			    .sType = VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT,
-			    .pNext = nullptr,
-			    .mutableDescriptorTypeListCount = static_cast<std::uint32_t>(mutableDescriptorTypeLists.size()),
-			    .pMutableDescriptorTypeLists = mutableDescriptorTypeLists.empty() ? nullptr : mutableDescriptorTypeLists.data()};
 			const bool hasBindingFlags = std::any_of(
 			    nativeBindingFlags.begin(),
 			    nativeBindingFlags.end(),
 			    [](VkDescriptorBindingFlags flags) noexcept { return flags != 0; });
 			const VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCreateInfo{
 			    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
-			    .pNext = hasMutableDescriptorTypes ? &mutableDescriptorCreateInfo : nullptr,
+			    .pNext = nullptr,
 			    .bindingCount = static_cast<std::uint32_t>(nativeBindingFlags.size()),
 			    .pBindingFlags = nativeBindingFlags.empty() ? nullptr : nativeBindingFlags.data()};
 			const VkDescriptorSetLayoutCreateInfo createInfo{
 			    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-			    .pNext = hasBindingFlags ? static_cast<const void*>(&bindingFlagsCreateInfo)
-			                             : (hasMutableDescriptorTypes ? static_cast<const void*>(&mutableDescriptorCreateInfo) : nullptr),
+			    .pNext = hasBindingFlags ? static_cast<const void*>(&bindingFlagsCreateInfo) : nullptr,
 			    .flags = 0,
 			    .bindingCount = static_cast<std::uint32_t>(nativeBindings.size()),
 			    .pBindings = nativeBindings.data()};
@@ -234,8 +210,6 @@ class VulkanBindingLayoutCompilerImpl final
 		VkDescriptorBindingFlags BindingFlags = 0;
 		VkSampler ImmutableSampler = VK_NULL_HANDLE;
 	};
-	using MutableDescriptorTypeStorage = std::array<VkDescriptorType, 2>;
-
 	static CompiledBindingType ToCompiledBindingType(ShaderParameterSemanticKind semanticKind, bool inlineUniformDataAsPushConstants) noexcept
 	{
 		switch (semanticKind)
@@ -251,7 +225,7 @@ class VulkanBindingLayoutCompilerImpl final
 			case ShaderParameterSemanticKind::SamplerSet:
 				return CompiledBindingType::SamplerTable;
 			case ShaderParameterSemanticKind::AccelerationStructure:
-				return CompiledBindingType::ReadOnlyAddress;
+				return CompiledBindingType::AccelerationStructure;
 			default:
 				return CompiledBindingType::ReadOnlyResourceTable;
 		}
@@ -334,7 +308,10 @@ class VulkanBindingLayoutCompilerImpl final
 			case ShaderParameterSemanticKind::SamplerSet:
 				return VK_DESCRIPTOR_TYPE_SAMPLER;
 			case ShaderParameterSemanticKind::AccelerationStructure:
-				return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+				return rhi.GetRayTracingCapabilities().Groups.Provider.SelectedTopLevelProvider ==
+				        ERhiRayTracingTopLevelProvider::PartitionedTlas
+				    ? VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV
+				    : VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 			default:
 				return VK_DESCRIPTOR_TYPE_MAX_ENUM;
 		}

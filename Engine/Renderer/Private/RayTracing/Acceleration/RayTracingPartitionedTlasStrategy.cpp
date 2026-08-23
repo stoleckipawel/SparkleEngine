@@ -57,8 +57,7 @@ std::uint32_t RayTracingPartitionedTlasStrategy::ResolveMaxInstancesPerPartition
 
 bool RayTracingPartitionedTlasStrategy::CanUsePartitionedTlasProvider(const RayTracingCapabilityReport& capabilityReport) noexcept
 {
-	return capabilityReport.PartitionedTlas.Supported
-	    && (capabilityReport.TlasShaderAccess.SupportsDescriptor || capabilityReport.TlasShaderAccess.SupportsShaderDeviceAddress);
+	return capabilityReport.PartitionedTlas.Supported && capabilityReport.PartitionedTlas.SupportsDescriptor;
 }
 
 const char* RayTracingPartitionedTlasStrategy::ResolveInactiveProviderReason(const RayTracingCapabilityReport& capabilityReport) noexcept
@@ -67,7 +66,7 @@ const char* RayTracingPartitionedTlasStrategy::ResolveInactiveProviderReason(con
 	{
 		return capabilityReport.PartitionedTlas.CapabilityStatusReason;
 	}
-	if (!capabilityReport.TlasShaderAccess.SupportsDescriptor && !capabilityReport.TlasShaderAccess.SupportsShaderDeviceAddress)
+	if (!capabilityReport.PartitionedTlas.SupportsDescriptor)
 	{
 		return "partitioned-tlas-shader-binding-path-unavailable";
 	}
@@ -77,13 +76,6 @@ const char* RayTracingPartitionedTlasStrategy::ResolveInactiveProviderReason(con
 const char* RayTracingPartitionedTlasStrategy::ResolveActiveProviderReason() noexcept
 {
 	return "partitioned-tlas-selected";
-}
-
-RayTracingSceneTlasShaderAccessMode RayTracingPartitionedTlasStrategy::ResolveActiveShaderAccessMode(
-    const RayTracingCapabilityReport& capabilityReport) noexcept
-{
-	return capabilityReport.TlasShaderAccess.SupportsDescriptor ? RayTracingSceneTlasShaderAccessMode::Descriptor
-	                                                            : RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress;
 }
 
 bool RayTracingPartitionedTlasStrategy::PartitionedTlasResources::HasSceneTlas() const noexcept
@@ -151,26 +143,6 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 bool RayTracingPartitionedTlasStrategy::HasValidSceneTlas() const noexcept
 {
 	return m_partitionedResources.HasSceneTlas();
-}
-
-RhiOwnedResourceHandle RayTracingPartitionedTlasStrategy::GetSceneTlasResource() const noexcept
-{
-	return m_partitionedResources.Storage;
-}
-
-RhiGpuVirtualAddress RayTracingPartitionedTlasStrategy::GetSceneTlasGpuAddress() const noexcept
-{
-	return m_partitionedResources.StorageAddress;
-}
-
-RayTracingSceneTlasShaderAccessMode RayTracingPartitionedTlasStrategy::GetSceneTlasShaderAccessMode() const noexcept
-{
-	return ResolveActiveShaderAccessMode(m_capabilityReport);
-}
-
-std::uint32_t RayTracingPartitionedTlasStrategy::GetSceneTlasInstanceCount() const noexcept
-{
-	return m_partitionedResources.InstanceCount;
 }
 
 void RayTracingPartitionedTlasStrategy::Clear() noexcept
@@ -292,8 +264,6 @@ RenderRayTracingFrameBindings RayTracingPartitionedTlasStrategy::BuildPartitione
 {
 	RenderRayTracingFrameBindings frameBindings{};
 	frameBindings.TlasResource = m_partitionedResources.Storage;
-	frameBindings.TlasGpuAddress = m_partitionedResources.StorageAddress;
-	frameBindings.TlasShaderAccessMode = GetSceneTlasShaderAccessMode();
 	frameBindings.EstimatedInstanceCount = static_cast<std::uint32_t>(preparedScene.rayTracingWork.PartitionedTlasBlasInputIndices.size());
 	return frameBindings;
 }

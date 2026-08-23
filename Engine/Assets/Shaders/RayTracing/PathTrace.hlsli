@@ -1,8 +1,8 @@
 #ifndef SPARKLE_RAY_TRACING_PATH_TRACE_HLSLI
 #define SPARKLE_RAY_TRACING_PATH_TRACE_HLSLI
 
-#include "RayTracing/PathSurface.hlsli"
-#include "RayTracing/RayTracingSceneTlasTrace.hlsli"
+#include "/Engine/RayTracing/PathSurface.hlsli"
+#include "/Engine/RayTracing/RayTracingSceneTlasTrace.hlsli"
 
 namespace RayTracingPathTrace
 {

@@ -25,8 +25,7 @@ enum class CookedShaderPackageFeatureFlags : std::uint32_t
 	None = 0,
 	UsesInlineRayQuery = 1u << 0u,
 	UsesAccelerationStructure = 1u << 1u,
-	UsesAccelerationStructureDeviceAddress = 1u << 2u,
-	UsesDescriptorIndexing = 1u << 3u,
+	UsesDescriptorIndexing = 1u << 2u,
 };
 
 SPARKLE_RHI_API CookedShaderPackageFeatureFlags operator|(

@@ -1,14 +1,14 @@
 #ifndef SPARKLE_RESTIR_INDIRECT_RESERVOIR_HLSLI
 #define SPARKLE_RESTIR_INDIRECT_RESERVOIR_HLSLI
 
-#include "Resources/FrameUniformData.hlsli"
+#include "/Engine/Resources/FrameUniformData.hlsli"
 
-#include "Common/Color.hlsli"
-#include "Common/Random.hlsli"
-#include "Lighting/RestirReservoirCommon.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
-#include "RayTracing/GBufferPathSurface.hlsli"
-#include "RayTracing/PathLighting.hlsli"
+#include "/Engine/Common/Color.hlsli"
+#include "/Engine/Common/Random.hlsli"
+#include "/Engine/Lighting/RestirReservoirCommon.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
+#include "/Engine/RayTracing/GBufferPathSurface.hlsli"
+#include "/Engine/RayTracing/PathLighting.hlsli"
 
 namespace RestirIndirectReservoir
 {

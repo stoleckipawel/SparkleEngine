@@ -2,18 +2,19 @@
 
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterStruct.h"
 
-class ComputeClearCS final : public TGlobalShader<ComputeClearCS>
+class ComputeClearCS final : public GlobalShader<ComputeClearCS>
 {
   public:
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, Output, OutputTexture)
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	SHADER_PARAMETER_TEXTURE_UAV_NAMED(RWTexture2D, Output, OutputTexture)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     ComputeClearCS,
     RendererShaderPackages::ComputeClear,
-    "Passes/Compute/ComputeClear.hlsl",
+    "/Engine/Passes/Compute/ComputeClear.hlsl",
     "main",
     Compute);

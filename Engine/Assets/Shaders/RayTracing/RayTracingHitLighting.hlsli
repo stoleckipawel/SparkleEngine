@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Resources/LightGpuData.hlsli"
-#include "Resources/SceneLightingUniformData.hlsli"
+#include "/Engine/Resources/LightGpuData.hlsli"
+#include "/Engine/Resources/SceneLightingUniformData.hlsli"
 
-#include "Lighting/AreaLights.hlsli"
-#include "Lighting/SurfaceLighting.hlsli"
-#include "RayTracing/RayTracingMaterialHit.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
+#include "/Engine/Lighting/AreaLights.hlsli"
+#include "/Engine/Lighting/SurfaceLighting.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 
 void AccumulateRayTracingHitDirectLightSample(RayTracingHitSurfaceData surface,
                                               float3 viewDirWorld,

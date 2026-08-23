@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Resources/ViewUniformData.hlsli"
+#include "/Engine/Resources/ViewUniformData.hlsli"
 
-#include "Common/Hash.hlsli"
-#include "Debug/RenderViewModeConstants.hlsli"
+#include "/Engine/Common/Hash.hlsli"
+#include "/Engine/Debug/RenderViewModeConstants.hlsli"
 
 namespace InstanceView
 {

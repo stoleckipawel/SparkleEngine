@@ -1,7 +1,7 @@
-#include "Resources/ViewTemporalUniformData.hlsli"
+#include "/Engine/Resources/ViewTemporalUniformData.hlsli"
 
-#include "Lighting/RestirIndirectLightingUniform.hlsli"
-#include "Passes/Deferred/MotionVector.hlsli"
+#include "/Engine/Lighting/RestirIndirectLightingUniform.hlsli"
+#include "/Engine/Passes/GBuffer/MotionVector.hlsli"
 
 RWTexture2D<float4> TemporalReservoirSampleTexture;
 RWTexture2D<float4> TemporalReservoirWeightTexture;
@@ -12,7 +12,7 @@ Texture2D GBufferMotionVector;
 Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
 
-#include "Lighting/RestirIndirectReservoir.hlsli"
+#include "/Engine/Lighting/RestirIndirectReservoir.hlsli"
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {

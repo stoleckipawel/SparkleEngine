@@ -131,7 +131,6 @@ public:
 std::uint64_t BuildLightingSceneInvalidationHash(const PreparedRenderScene& scene) noexcept
 {
 	std::uint64_t hash = Hash::kFnv64OffsetBasis;
-	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowsEnabled.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowNormalBias.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowMaxDistance.Get());
 	hash = LightingSceneStateHasher::AppendSkyState(hash, scene.sky);

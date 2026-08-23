@@ -3,7 +3,8 @@
 #include "ShaderCompileOptions.h"
 
 #include <cstdint>
-#include <optional>
+#include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -20,16 +21,16 @@ class IncludeClosureHasher final
 	static IncludeClosureHash Compute(const ShaderCompileOptions& options);
 
   private:
-	using HashPair = std::pair<std::wstring, std::uint64_t>;
+	using HashPair = std::pair<std::string, std::uint64_t>;
 
 	static void VisitFile(
-	    const std::filesystem::path& filePath,
+	    std::string_view filePath,
 	    const ShaderCompileOptions& options,
-	    std::unordered_set<std::wstring>& visitedPathKeys,
+	    std::unordered_set<std::string>& visitedPathKeys,
 	    std::vector<HashPair>& outFileHashes);
 	static std::uint64_t ComputeClosureHash(
 	    std::vector<HashPair>& fileHashes);
 	static std::uint64_t FindSourceHash(
-	    const std::filesystem::path& sourcePath,
+	    std::string_view sourcePath,
 	    const std::vector<HashPair>& fileHashes);
 };

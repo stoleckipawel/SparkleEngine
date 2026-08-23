@@ -232,7 +232,7 @@ class D3D12BindingLayoutCompilerImpl final
 			bindings.push_back(
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
-			        .Type = CompiledBindingType::ReadOnlyAddress,
+			        .Type = CompiledBindingType::AccelerationStructure,
 			        .SemanticKind = bindingRecord.SemanticKind,
 			        .BindingIndex = bindingIndex,
 			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},

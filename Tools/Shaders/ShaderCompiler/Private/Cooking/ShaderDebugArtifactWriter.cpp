@@ -90,7 +90,7 @@ std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(
 	Json::ObjectWriter writer;
 	writer.WriteString("packageId", package.packageId);
 	writer.WriteString("bindingLayoutId", package.bindingLayoutId);
-	writer.WriteString("sourcePath", stage.sourcePath.generic_string());
+	writer.WriteString("sourcePath", stage.sourcePath);
 	writer.WriteString("entryPoint", stage.entryPoint);
 	writer.WriteString("stage", GetShaderStagePrefix(stage.stage));
 	writer.WriteString("target", GetShaderTargetName(options.Target));

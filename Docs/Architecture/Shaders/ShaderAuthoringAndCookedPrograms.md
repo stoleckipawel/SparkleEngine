@@ -531,7 +531,7 @@ Sources:
 
 ### Acceleration-Structure Binding Decision
 
-The current shadow duplication is not a legitimate shader-authoring variant. `DirectShadowSignalCS` and `DirectShadowSignalDeviceAddressCS` execute the same entry and shared algorithm; the latter exists only to define `SPARKLE_RAY_TRACING_SCENE_TLAS_DEVICE_ADDRESS`, omit the semantic `SceneTlas` parameter, and reconstruct an opaque acceleration structure from two address words stored in an effect uniform. The separate class, source root, pass wrapper, package, feature flags, parameter schema, address fields, and selection enum are one backend representation leaking through every frontend layer.
+The Phase 0 baseline shadow duplication was not a legitimate shader-authoring variant. `DirectShadowSignalCS` and `DirectShadowSignalDeviceAddressCS` executed the same entry and shared algorithm; the latter existed only to define `SPARKLE_RAY_TRACING_SCENE_TLAS_DEVICE_ADDRESS`, omit the semantic `SceneTlas` parameter, and reconstruct an opaque acceleration structure from two address words stored in an effect uniform. The separate class, source root, pass wrapper, package, feature flags, parameter schema, address fields, and selection enum were one backend representation leaking through every frontend layer.
 
 Production API precedent removes the reason for that leak:
 
@@ -542,7 +542,7 @@ Production API precedent removes the reason for that leak:
 
 The frozen target is one `SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)` field on `DirectShadowSignalCS` and every other shader that traces the scene. The graph binds one `FrameGraphAccelerationStructureHandle`. The selected TLAS provider is fixed before shader layout/pipeline materialization, and private RHI chooses the exact native descriptor type and write structure. Renderer shader/effect code never receives a TLAS GPU address or access-mode enum. If a provider cannot complete that semantic binding on the active device, that provider is unavailable and selection retains the supported classic provider; Sparkle does not compile a second shader or silently branch on a raw address.
 
-The current Vulkan mutable-descriptor feature/bootstrap/layout scaffold has no independent consumer outside this attempted classic/partitioned binding switch. Because provider selection is fixed before layout creation, Phase 1 deletes that scaffold and creates the exact descriptor layout for the selected provider. Sparkle does not retain a device feature, `pNext` chain, or generalized layout mechanism for hypothetical run-time switching.
+The Phase 0 Vulkan mutable-descriptor feature/bootstrap/layout scaffold had no independent consumer outside this attempted classic/partitioned binding switch. Because provider selection is fixed before layout creation, Phase 1 deletes that scaffold and creates the exact descriptor layout for the selected provider. Sparkle does not retain a device feature, `pNext` chain, or generalized layout mechanism for hypothetical run-time switching.
 
 This is not the postponed permutation system. The catalog and map retain one code record per `(ShaderTypeId, Target)`, the shader author writes no define or mode, and the shader bytecode does not fork for the binding representation. A future backend that truly cannot implement the semantic binding must extend the RHI capability and binding contract with evidence; it may not create `*DeviceAddressShader`, `*DescriptorShader`, or an internal pseudo-permutation by convention.
 
@@ -585,9 +585,9 @@ Sources:
 - [Microsoft: D3D12 pipeline-state cache sample](https://learn.microsoft.com/en-us/samples/microsoft/directx-graphics-samples/d3d12-pipeline-state-cache-sample-win32/)
 - [Khronos: Vulkan pipeline cache](https://docs.vulkan.org/guide/latest/pipeline_cache.html)
 
-## Current Sparkle Findings
+## Phase 0 Baseline Findings
 
-The 2026-08-23 source review at `5b0bd1469339897eef1fde3e5c9ab07137860d0f` traced this production path:
+The 2026-08-23 Phase 0 source review at `5b0bd1469339897eef1fde3e5c9ab07137860d0f` traced the pre-migration production path below. This section is retained as frozen inventory and provenance; it is not a statement of the post-Phase 1 worktree.
 
 ```text
 Authoring                     Host tooling                              Runtime and GPU
@@ -1051,9 +1051,7 @@ This table covers every current renderer shader package/program. "Live" means a 
 | Current program/package | Stage and required feature | Producer or selection branch | Code-backed status |
 | --- | --- | --- | --- |
 | `ComputeClear` | compute | utility helper; used for reservoir and other clears with per-instance labels | **Live and reused.** One shader program legitimately serves several graph operations. |
-| `DirectShadowSignalNoRayQuery` | compute; no RT feature | intended no-ray fallback | **Registered/cooked but unconsumed.** No frame producer dispatches this pass. |
-| `DirectShadowSignal` | compute; descriptor indexing + AS + inline ray query | ReSTIR direct-light shadow signal | **Live.** The producer always selects this descriptor path. |
-| `DirectShadowSignalDeviceAddress` | compute; descriptor features + AS device address + inline ray query | intended partitioned-TLAS/device-address path | **Registered/cooked but unconsumed.** Provider selection and the frame producer do not choose it. |
+| `DirectShadowSignal` | compute; descriptor indexing + AS + inline ray query | ReSTIR direct-light shadow signal | **Live when inline ray-query shadows are available and enabled.** Otherwise a shaderless graph clear publishes the same unshadowed visibility product. |
 | `DirectLightReservoirTemporal` | compute | ReSTIR direct temporal reservoir | **Live in `RestirPathTraced`.** |
 | `DirectLightReservoirSpatial` | compute | ReSTIR direct spatial reservoir | **Live in `RestirPathTraced`.** |
 | `DirectLighting` | compute | ReSTIR direct resolve/lighting | **Live in `RestirPathTraced`.** |
@@ -1079,7 +1077,7 @@ This table covers every current renderer shader package/program. "Live" means a 
 | `ToneMapping` | compute | presentation when a back buffer is requested | **Live conditional on presentation.** |
 | `OutputEncoding` | compute | presentation after tone mapping | **Live conditional on presentation.** |
 
-The current catalog therefore has 28 logical program/package IDs and 29 stage registrations. Twenty-six programs have at least one frame producer. The two no-ray/device-address shadow alternatives are catalog-only. All current ray/path names still execute compute shaders with inline ray queries. There is no registered ray-generation, miss, closest-hit, any-hit, intersection, or callable shader in Renderer.
+The current catalog therefore has 26 logical program/package IDs and 27 stage registrations. Every retained program has a frame producer, although configuration and capability policy determine which conditional producers execute. All current ray/path names still execute compute shaders with inline ray queries. There is no registered ray-generation, miss, closest-hit, any-hit, intersection, or callable shader in Renderer.
 
 ### Compile, Cook, and Runtime Decision Branches
 
@@ -1091,7 +1089,7 @@ The current catalog therefore has 28 logical program/package IDs and 29 stage re
 | stage | VS, PS, GS, HS, DS, CS; RT library metadata | cooker/schema know six raster/compute stages; Slang maps only VS/PS/CS; runtime graphics descriptors create VS plus optional PS only | Treat GS/HS/DS as schema-only until RHI descriptors and tests exist; mesh/task are unsupported; RT library is compiler-only. |
 | package kind | graphics; compute; RT library | graphics/compute can reach runtime; valid RT library packages are deliberately rejected at runtime | Keep the rejection explicit until paired state-object/pipeline, SBT, command, lifetime, and tests land. |
 | compiler capability filter | supported; skipped target; no targets left | RT libraries are skipped per target if backend capability is absent; DXC advertises DXIL RT library but not SPIR-V RT library; Slang advertises neither | Capabilities must be target- and policy-probed, reported in manifests, and tested rather than inferred from backend name. |
-| feature flags | inline ray query; AS; AS device address; descriptor indexing | planning can filter some compiler capabilities; runtime library directly checks AS and inline ray query only | Phase 1 deletes the AS-device-address shader feature and its variant. Retain descriptor indexing only where the shader's actual semantic resources require it, and validate every retained feature before materialization. |
+| feature flags | inline ray query; AS; descriptor indexing | planning can filter some compiler capabilities; runtime library directly checks AS and inline ray query only | Retain descriptor indexing only where the shader's actual semantic resources require it, and validate every retained feature before materialization. |
 | compile execution | selected jobs; worker bound; cancellation | every selected job compiles; 1-8 bounded compiler sessions; cancellation is checked before job execution | Preserve compile-every-time behavior and add only in-operation identical-job fan-out. |
 | compile policy | debug info; optimization; warnings-as-errors; strip debug | DXC applies these controls; Slang currently does not apply equivalent policy | One canonical request must either be honored or rejected as unsupported by every backend. Never silently ignore release policy. |
 | analysis | none; debug-artifact directory; `cooked-shader-stats` | DXC success can emit source/arguments/disassembly/debug data; Slang is narrower; failures have no full bundle | Failure-first portable replay bundles plus optional successful analysis and backend-specific extensions. |
@@ -1116,7 +1114,9 @@ Frame
  |
  +-- LightingMode
  |    +-- RestirPathTraced
- |    |    +--> Direct reservoirs --> DirectShadowSignal CS -------> inline ray query
+ |    |    +--> Direct reservoirs --> inline query available/enabled?
+ |    |    |                            +-- yes --> DirectShadowSignal CS --> inline ray query
+ |    |    |                            `-- no ---> shaderless clear (1, 0, 1, 0)
  |    |    +--> DirectLighting CS
  |    |    `--> ReSTIR indirect temporal/spatial/resolve ----------> inline ray query
  |    |
@@ -1135,10 +1135,6 @@ Frame
  +--> LinearUpscale CS --> optional external upscaler
  +--> optional VisualizeBuffers CS
  `--> ToneMapping CS --> OutputEncoding CS --> copy/present
-
-Catalog-only shadow alternatives:
-  DirectShadowSignalNoRayQuery CS       (no producer selects it)
-  DirectShadowSignalDeviceAddress CS    (no producer/provider selects it)
 ```
 
 This is why capability declaration, successful cooking, runtime creation, and frame consumption need separate evidence states. A fallback is real only when a selection owner chooses it, its resources and parameter ABI are valid, and an exercised test or capture proves its output.

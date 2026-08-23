@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Common/Math.hlsli"
-#include "BRDF/Config.hlsli"
+#include "/Engine/Common/Math.hlsli"
+#include "/Engine/BRDF/Config.hlsli"
 
 namespace BRDF
 {

@@ -3,7 +3,6 @@
 #include "Backend/IShaderBackend.h"
 #include "Backend/ShaderTarget.h"
 
-#include <filesystem>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -13,7 +12,7 @@ class ShaderBackendPool final
 {
   public:
 	IShaderBackend& ResolveAndAcquire(
-	    const std::filesystem::path& sourcePath,
+	    std::string_view sourcePath,
 	    ShaderTarget target,
 	    std::string_view requestedName);
 

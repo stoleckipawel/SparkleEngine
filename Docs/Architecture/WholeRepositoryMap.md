@@ -345,8 +345,9 @@ Feature map:
 
 Shader source shape:
 
+- Authored and dependency identity uses the immutable `/Engine`, `/Project`, and `/Plugin/<Name>` virtual namespace; physical shader roots are bounded ShaderCompiler read locations only.
 - Shared HLSL include libraries under `Engine/Assets/Shaders/BRDF`, `Common`, `Geometry`, `Lighting`, `Material`, `RayTracing`, `Resources`, `Display`, and `Debug`.
-- Pass shaders under `Engine/Assets/Shaders/Passes`.
+- Pass shaders follow semantic owners under `Engine/Assets/Shaders/Passes/GBuffer`, `Lighting`, `PostProcessing`, `Presentation`, `RayTracing`, and `Debug`.
 - C++ shader registrations under `Engine/Renderer/ShaderRegistrations`.
 - RHI public shader package, reflection, authoring macros, and pass parameter layout types.
 - Shader compiler tool under `Tools/Shaders/ShaderCompiler` with DXC/Slang backends, reflection extractors, contracts, cooking, cache, inspection, CLI commands, and verification.

@@ -1,6 +1,6 @@
-#include "Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
 
-#include "Passes/Deferred/SceneDepthUtils.hlsli"
+#include "/Engine/Passes/GBuffer/SceneDepthUtils.hlsli"
 
 Texture2D<float> GBufferDeviceZ;
 RWTexture2D<float> SceneDepth;

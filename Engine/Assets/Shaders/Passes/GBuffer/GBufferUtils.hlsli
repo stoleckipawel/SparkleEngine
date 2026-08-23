@@ -1,11 +1,11 @@
 #ifndef SPARKLE_GBUFFER_UTILS_HLSLI
 #define SPARKLE_GBUFFER_UTILS_HLSLI
 
-#include "Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
 
-#include "Passes/Deferred/GBufferPacking.hlsli"
-#include "Passes/Deferred/SceneDepthUtils.hlsli"
-#include "Geometry/ScreenSpace.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
+#include "/Engine/Passes/GBuffer/SceneDepthUtils.hlsli"
+#include "/Engine/Geometry/ScreenSpace.hlsli"
 
 Texture2D GBufferBaseColor;
 Texture2D GBufferNormal;

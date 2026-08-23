@@ -9,6 +9,62 @@
 #include <type_traits>
 #include <vector>
 
+template <typename TParameters> class ShaderParameterStructBuilder;
+
+template <typename TParameters> class ShaderParameterStructRegistry final
+{
+  public:
+	using DescribeField = std::function<void(ShaderParameterStructBuilder<TParameters>&)>;
+
+	static void AddField(std::string name, DescribeField describe)
+	{
+		auto& fields = MutableFields();
+		const auto existing = std::ranges::find_if(
+		    fields,
+		    [&name](const RegisteredField& field) { return field.Name == name; });
+		if (existing == fields.end())
+		{
+			fields.push_back(RegisteredField{std::move(name), std::move(describe)});
+		}
+	}
+
+	static void Describe(ShaderParameterStructBuilder<TParameters>& builder)
+	{
+		for (const RegisteredField& field : MutableFields())
+		{
+			field.Describe(builder);
+		}
+	}
+
+  private:
+	struct RegisteredField final
+	{
+		std::string Name;
+		DescribeField Describe;
+	};
+
+	static std::vector<RegisteredField>& MutableFields()
+	{
+		static std::vector<RegisteredField> fields;
+		return fields;
+	}
+};
+
+template <typename TParameters, typename TField> class ShaderParameterFieldAutoRegister final
+{
+  public:
+	ShaderParameterFieldAutoRegister(
+	    const char* name,
+	    TField TParameters::* member,
+	    ShaderStageVisibility visibility = ShaderStageVisibility::All)
+	{
+		ShaderParameterStructRegistry<TParameters>::AddField(
+		    name != nullptr ? name : "",
+		    [name, member, visibility](ShaderParameterStructBuilder<TParameters>& builder)
+		    { builder.Add(name, member, visibility); });
+	}
+};
+
 template <typename TParameters> struct ShaderParameterStructBinding
 {
 	std::string Name;
@@ -173,7 +229,14 @@ template <typename TParameters> class ShaderParameterStructBuilder final
 	static ShaderParameterStructMetadata<TParameters> BuildMetadata(const char* debugName)
 	{
 		ShaderParameterStructBuilder builder(debugName);
-		TParameters::Describe(builder);
+		if constexpr (requires { TParameters::Describe(builder); })
+		{
+			TParameters::Describe(builder);
+		}
+		else
+		{
+			ShaderParameterStructRegistry<TParameters>::Describe(builder);
+		}
 		return builder.Build();
 	}
 

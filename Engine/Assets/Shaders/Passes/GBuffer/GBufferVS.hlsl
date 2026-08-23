@@ -1,10 +1,10 @@
-#include "Resources/ViewTemporalUniformData.hlsli"
-#include "Resources/MeshInstanceShaderData.hlsli"
+#include "/Engine/Resources/ViewTemporalUniformData.hlsli"
+#include "/Engine/Resources/MeshInstanceShaderData.hlsli"
 
-#include "CommonVS.hlsli"
-#include "Geometry/Basis.hlsli"
-#include "Geometry/Morphing.hlsli"
-#include "Geometry/Skinning.hlsli"
+#include "/Engine/CommonVS.hlsli"
+#include "/Engine/Geometry/Basis.hlsli"
+#include "/Engine/Geometry/Morphing.hlsli"
+#include "/Engine/Geometry/Skinning.hlsli"
 
 void main(in VS::Input Input, out VS::Output Output)
 {

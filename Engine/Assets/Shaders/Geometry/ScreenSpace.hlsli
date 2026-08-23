@@ -1,9 +1,9 @@
 #ifndef SPARKLE_GEOMETRY_SCREEN_SPACE_HLSLI
 #define SPARKLE_GEOMETRY_SCREEN_SPACE_HLSLI
 
-#include "Resources/ViewUniformData.hlsli"
-#include "Resources/ViewCameraUniformData.hlsli"
-#include "Resources/ViewTemporalUniformData.hlsli"
+#include "/Engine/Resources/ViewUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/ViewTemporalUniformData.hlsli"
 float2 PixelCenterToNdc(uint2 pixelCoord)
 {
 	const float2 uv = (float2(pixelCoord) + 0.5f) * ViewportSizeInv;

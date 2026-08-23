@@ -7,8 +7,8 @@
 
 #include "Backend/ShaderBackendFactory.h"
 #include "Compiler/ShaderCompileProfile.h"
-#include "Compiler/ShaderCompilerPaths.h"
 #include "Compiler/ShaderSourcePreprocessor.h"
+#include "Compiler/ShaderSourceMountTable.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
@@ -122,22 +122,24 @@ CompiledShader DxcShaderBackend::Compile(const ShaderCompileOptions& options)
 		throw Diagnostics::Error("DXC backend is not initialized");
 	}
 
-	const std::filesystem::path sourcePath = ShaderCompilerPaths::CanonicalizeForCompiler(options.SourcePath);
-	const std::string sourceText = ShaderSourcePreprocessor::Load(sourcePath, options);
+	if (options.SourceMounts == nullptr)
+	{
+		throw Diagnostics::Error("DXC compilation requires a virtual shader source mount table.");
+	}
+	const std::string sourceText = ShaderSourcePreprocessor::Load(options.SourcePath, options);
 
 	DxcBuffer sourceBuffer{};
 	sourceBuffer.Ptr = sourceText.data();
 	sourceBuffer.Size = sourceText.size();
 	sourceBuffer.Encoding = DXC_CP_UTF8;
 
-	std::wstring wSourcePath = ShaderCompilerPaths::MakeWidePathArgument(sourcePath);
+	std::wstring wSourcePath = Strings::ToWide(std::string_view{options.SourcePath});
 	std::wstring wEntryPoint = Strings::ToWide(std::string_view{options.EntryPoint});
 	std::wstring wTargetProfile = Strings::ToWide(std::string_view{ShaderCompileProfile::BuildTargetProfile(options)});
-	std::vector<std::wstring> wIncludeDirs;
 	std::vector<std::wstring> wDefines;
 	std::vector<LPCWSTR> args;
 
-	BuildCompileArguments(options, wSourcePath, wEntryPoint, wTargetProfile, wIncludeDirs, wDefines, args);
+	BuildCompileArguments(options, wSourcePath, wEntryPoint, wTargetProfile, wDefines, args);
 
 	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler;
 	m_utils->CreateDefaultIncludeHandler(includeHandler.ReleaseAndGetAddressOf());
@@ -184,7 +186,9 @@ CompiledShader DxcShaderBackend::Compile(const ShaderCompileOptions& options)
 
 	// PDBs only meaningful for DXIL today; SPIR-V output does not produce a
 	// DXC PDB blob, so SaveShaderSymbols returns an empty path harmlessly.
-	const std::filesystem::path debugArtifactPath = SaveShaderSymbols(result.Get(), options.SourcePath);
+	const std::filesystem::path debugArtifactPath = SaveShaderSymbols(
+	    result.Get(),
+	    options.SourceMounts->ResolvePhysicalPath(options.SourcePath));
 
 	ShaderReflection reflection;
 	if (options.PackageKind != CookedShaderPackageKind::RayTracingLibrary)
@@ -218,7 +222,6 @@ void DxcShaderBackend::BuildCompileArguments(
 	const std::wstring& wSourcePath,
 	const std::wstring& wEntryPoint,
 	const std::wstring& wTargetProfile,
-	std::vector<std::wstring>& wIncludeDirs,
 	std::vector<std::wstring>& wDefines,
 	std::vector<LPCWSTR>& outArgs)
 {
@@ -238,18 +241,6 @@ void DxcShaderBackend::BuildCompileArguments(
 
 	outArgs.push_back(L"-HV");
 	outArgs.push_back(L"2021");
-
-	wIncludeDirs.clear();
-	wIncludeDirs.push_back(ShaderCompilerPaths::MakeWideIncludeDirectoryArgument(options.IncludeDir));
-	for (const auto& dir : options.AdditionalIncludeDirs)
-	{
-		wIncludeDirs.push_back(ShaderCompilerPaths::MakeWideIncludeDirectoryArgument(dir));
-	}
-	for (const auto& dir : wIncludeDirs)
-	{
-		outArgs.push_back(L"-I");
-		outArgs.push_back(dir.c_str());
-	}
 
 	wDefines.clear();
 	for (const auto& def : options.Defines)
@@ -473,13 +464,13 @@ ShaderDebugArtifactSet DxcShaderBackend::CaptureDebugArtifacts(
 	if (debugArtifacts.Disassembly.empty())
 	{
 		throw Diagnostics::Error(
-		    "DXC failed to capture disassembly for shader source '" + options.SourcePath.generic_string() + "'.");
+		    "DXC failed to capture disassembly for shader source '" + options.SourcePath + "'.");
 	}
 	debugArtifacts.PreprocessedSource = ExtractPreprocessedSource(utils, compiler, sourceBuffer, compileArgs);
 	if (debugArtifacts.PreprocessedSource.empty())
 	{
 		throw Diagnostics::Error(
-		    "DXC failed to capture preprocessed source for shader source '" + options.SourcePath.generic_string() + "'.");
+		    "DXC failed to capture preprocessed source for shader source '" + options.SourcePath + "'.");
 	}
 	return debugArtifacts;
 }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Resources/ViewUniformData.hlsli"
+#include "/Engine/Resources/ViewUniformData.hlsli"
 
-#include "Debug/RenderViewModeConstants.hlsli"
+#include "/Engine/Debug/RenderViewModeConstants.hlsli"
 
 namespace ViewMode
 {

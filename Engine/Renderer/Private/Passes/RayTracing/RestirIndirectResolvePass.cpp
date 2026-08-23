@@ -100,7 +100,7 @@ const RenderPassDefinition& RestirIndirectResolvePass::GetDefinition() noexcept
 	    RendererShaderPackages::RestirIndirectResolve,
 	    L"RestirIndirectResolve_BindingLayout",
 	    L"RestirIndirectResolve_Pipeline",
-	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
+	    RayTracingShaderFeatureFlags::InlineRayQuery);
 	return definition;
 }
 

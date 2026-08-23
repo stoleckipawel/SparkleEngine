@@ -1,7 +1,7 @@
 #ifndef SPARKLE_SCENE_DEPTH_UTILS_HLSLI
 #define SPARKLE_SCENE_DEPTH_UTILS_HLSLI
 
-#include "Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
 
 namespace SceneDepthUtils
 {

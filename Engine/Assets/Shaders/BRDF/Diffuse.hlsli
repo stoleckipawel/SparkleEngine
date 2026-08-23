@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Common/Constants.hlsli"
-#include "Common/Math.hlsli"
-#include "BRDF/Config.hlsli"
-#include "BRDF/ShadingData.hlsli"
+#include "/Engine/Common/Constants.hlsli"
+#include "/Engine/Common/Math.hlsli"
+#include "/Engine/BRDF/Config.hlsli"
+#include "/Engine/BRDF/ShadingData.hlsli"
 
 namespace BRDF
 {

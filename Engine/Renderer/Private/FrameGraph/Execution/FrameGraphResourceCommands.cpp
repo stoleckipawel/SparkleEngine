@@ -86,10 +86,10 @@ RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveUnorderedAccessView(Fr
 	return m_frameGraph.ResolveUnorderedAccessView(handle);
 }
 
-RhiGpuVirtualAddress FrameGraphResourceCommands::ResolveAccelerationStructureGpuAddress(
+RhiResourceHandle FrameGraphResourceCommands::ResolveAccelerationStructure(
     FrameGraphAccelerationStructureHandle handle) const noexcept
 {
-	return m_frameGraph.ResolveAccelerationStructureGpuAddress(handle);
+	return m_frameGraph.ResolveAccelerationStructure(handle);
 }
 
 void FrameGraphResourceCommands::BindGlobalDescriptorState(RenderCommandContext& commandContext) const noexcept

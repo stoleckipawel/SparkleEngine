@@ -1,8 +1,8 @@
 #ifndef SPARKLE_SURFACE_LIGHTING_HLSLI
 #define SPARKLE_SURFACE_LIGHTING_HLSLI
 
-#include "BRDF/BRDF.hlsli"
-#include "Lighting/LightSampling.hlsli"
+#include "/Engine/BRDF/BRDF.hlsli"
+#include "/Engine/Lighting/LightSampling.hlsli"
 
 namespace SurfaceLighting
 {

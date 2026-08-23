@@ -138,6 +138,9 @@ void PassBinder::BindCompiledBinding(
 		case CompiledBindingType::ReadWriteAddress:
 			BindReadWriteAddress(request);
 			return;
+		case CompiledBindingType::AccelerationStructure:
+			BindAccelerationStructure(request);
+			return;
 		case CompiledBindingType::ReadOnlyResourceTable:
 			BindResourceTable(request, false);
 			return;
@@ -185,13 +188,7 @@ void PassBinder::BindReadOnlyAddress(const BindingRequest& request)
 		return;
 	}
 
-	Require(request.Parameters != nullptr, "Read-only address binding is absent from the pass parameter set.");
-	const PassParameterAccelerationStructureBindingData* accelerationStructureData = request.Parameters->AsAccelerationStructureData();
-	Require(accelerationStructureData != nullptr, "Read-only address binding has incompatible parameter data.");
-	const RhiGpuVirtualAddress gpuAddress = accelerationStructureData->Handle.IsValid()
-	    ? request.Resources.ResolveAccelerationStructureGpuAddress(accelerationStructureData->Handle)
-	    : accelerationStructureData->GpuAddress;
-	BindGpuAddress(request.CommandContext, request.Binding, gpuAddress, request.IsCompute);
+	Require(false, "Read-only address binding requires an explicit pass override.");
 }
 
 void PassBinder::BindReadWriteAddress(const BindingRequest& request)
@@ -201,6 +198,21 @@ void PassBinder::BindReadWriteAddress(const BindingRequest& request)
 	    request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::UnorderedAccessView);
 	Require(bindingOverride != nullptr, "Read-write address binding has no unordered-access override.");
 	BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.IsCompute);
+}
+
+void PassBinder::BindAccelerationStructure(const BindingRequest& request)
+{
+	Require(request.Parameters != nullptr, "Acceleration-structure binding is absent from the pass parameter set.");
+	const FrameGraphAccelerationStructureHandle* accelerationStructure = request.Parameters->AsAccelerationStructureHandle();
+	Require(accelerationStructure != nullptr, "Acceleration-structure binding has incompatible parameter data.");
+	const RhiResourceHandle resource = request.Resources.ResolveAccelerationStructure(*accelerationStructure);
+	Require(static_cast<bool>(resource), "Acceleration-structure binding resolved to no resource.");
+	if (request.IsCompute)
+	{
+		request.CommandContext.BindComputeAccelerationStructure(request.Binding.BindingIndex, resource);
+		return;
+	}
+	request.CommandContext.BindAccelerationStructure(request.Binding.BindingIndex, resource);
 }
 
 void PassBinder::BindResourceTable(const BindingRequest& request, bool readWrite)

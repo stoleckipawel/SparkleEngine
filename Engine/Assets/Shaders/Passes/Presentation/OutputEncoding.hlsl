@@ -1,4 +1,4 @@
-#include "Display/OutputEncoding.hlsli"
+#include "/Engine/Display/OutputEncoding.hlsli"
 
 Texture2D DisplayLinearColor;
 RWTexture2D<float4> EncodedColor;

@@ -1,5 +1,5 @@
-#include "Display/Exposure.hlsli"
-#include "Passes/PostProcessing/ExposureReduceCommon.hlsli"
+#include "/Engine/Display/Exposure.hlsli"
+#include "/Engine/Passes/PostProcessing/ExposureReduceCommon.hlsli"
 
 Texture2D SceneColor;
 

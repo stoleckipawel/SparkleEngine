@@ -43,7 +43,7 @@ int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 		for (const ShaderContractStage& stage : package.stages)
 		{
 			std::cout << "  shader='" << stage.shaderName << "' " << GetShaderStagePrefix(stage.stage)
-			          << ": " << stage.sourcePath.generic_string() << " entry=" << stage.entryPoint
+			          << ": " << stage.sourcePath << " entry=" << stage.entryPoint
 			          << " parameters=" << stage.parameterStruct.Fields.size() << "\n";
 		}
 	}

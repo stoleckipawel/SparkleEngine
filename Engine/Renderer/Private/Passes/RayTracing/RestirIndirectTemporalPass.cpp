@@ -102,7 +102,7 @@ const RenderPassDefinition& RestirIndirectTemporalPass::GetDefinition() noexcept
 	    RendererShaderPackages::RestirIndirectTemporal,
 	    L"RestirIndirectTemporal_BindingLayout",
 	    L"RestirIndirectTemporal_Pipeline",
-	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
+	    RayTracingShaderFeatureFlags::InlineRayQuery);
 	return definition;
 }
 

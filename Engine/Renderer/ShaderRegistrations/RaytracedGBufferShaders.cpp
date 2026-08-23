@@ -2,6 +2,7 @@
 
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterStruct.h"
 
 #include "Passes/RayTracing/RaytracedGBufferPass.h"
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
@@ -13,36 +14,36 @@
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
 
-class RaytracedGBufferCS final : public TGlobalShader<RaytracedGBufferCS>
+class RaytracedGBufferCS final : public GlobalShader<RaytracedGBufferCS>
 {
 public:
-	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::DescriptorRayQuery;
+	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-	SHADER_PARAMETER_UAV(RWTexture2D, GBufferBaseColor)
-	SHADER_PARAMETER_UAV(RWTexture2D, GBufferNormal)
-	SHADER_PARAMETER_UAV(RWTexture2D, GBufferMaterial)
-	SHADER_PARAMETER_UAV(RWTexture2D, GBufferEmissive)
-	SHADER_PARAMETER_UAV(RWTexture2D, GBufferSubsurface)
-	SHADER_PARAMETER_UAV(RWTexture2D, GBufferDeviceZ)
-	SHADER_PARAMETER_UAV(RWTexture2D, GBufferMotionVector)
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferBaseColor)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferNormal)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferMaterial)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferEmissive)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferSubsurface)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferMotionVector)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	SHADER_PARAMETER_CBUFFER_NAMED(View, ViewUniformData, ViewUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewCamera, ViewCameraUniformData, ViewCameraUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewTemporal, ViewTemporalUniformData, ViewTemporalUniformData)
 	SHADER_PARAMETER_CBUFFER_NAMED(RaytracedGBufferConstants, RaytracedGBufferUniformData, RaytracedGBufferUniformData)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(MorphTargetDeltaData, MorphTargetDeltas)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(uint32_t, RayTracingHitIndices)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(MeshInstanceData, MeshInstances)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, JointMatrices)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, PreviousJointMatrices)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(float, MorphWeights)
-	SHADER_PARAMETER_RDG_BUFFER_SRV(float, PreviousMorphWeights)
-	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
+	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
+	SHADER_PARAMETER_BUFFER_SRV(MorphTargetDeltaData, MorphTargetDeltas)
+	SHADER_PARAMETER_BUFFER_SRV(uint32_t, RayTracingHitIndices)
+	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)
+	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
+	SHADER_PARAMETER_BUFFER_SRV(MeshInstanceData, MeshInstances)
+	SHADER_PARAMETER_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)
+	SHADER_PARAMETER_BUFFER_SRV(JointMatrixData, JointMatrices)
+	SHADER_PARAMETER_BUFFER_SRV(JointMatrixData, PreviousJointMatrices)
+	SHADER_PARAMETER_BUFFER_SRV(float, MorphWeights)
+	SHADER_PARAMETER_BUFFER_SRV(float, PreviousMorphWeights)
+	SHADER_PARAMETER_TEXTURE_SRV_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	END_SHADER_PARAMETER_STRUCT()
 };
@@ -50,6 +51,6 @@ public:
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     RaytracedGBufferCS,
     RendererShaderPackages::RaytracedGBuffer,
-    "Passes/RayTracing/RaytracedGBuffer.hlsl",
+    "/Engine/Passes/RayTracing/RaytracedGBuffer.hlsl",
     "main",
     Compute);

@@ -4,7 +4,6 @@
 #include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 #include "Shaders/Authoring/ShaderParameterStruct.h"
 
-#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -12,7 +11,7 @@
 struct ShaderCookStageDesc final
 {
 	ShaderStage stage = ShaderStage::Count;
-	std::filesystem::path sourcePath;
+	std::string sourcePath;
 	std::string entryPoint;
 	CookedShaderPackageKind packageKind = CookedShaderPackageKind::Graphics;
 	CookedShaderPackageFeatureFlags packageFeatures = CookedShaderPackageFeatureFlags::None;

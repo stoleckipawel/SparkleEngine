@@ -193,57 +193,6 @@ RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterBufferDescriptor(
 	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(descriptors.size() - 1));
 }
 
-RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterAccelerationStructureDescriptor(VkAccelerationStructureKHR accelerationStructure)
-{
-	if (accelerationStructure == VK_NULL_HANDLE)
-	{
-		return {};
-	}
-
-	DescriptorEntry entry{};
-	entry.Kind = EntryKind::AccelerationStructure;
-	entry.AccelerationStructure = accelerationStructure;
-
-	std::scoped_lock lock(m_registryMutex);
-	std::vector<DescriptorEntry>& descriptors = EditRegisteredDescriptors();
-	if (!m_freeRegisteredDescriptorIndices.empty())
-	{
-		const std::uint32_t index = m_freeRegisteredDescriptorIndices.back();
-		m_freeRegisteredDescriptorIndices.pop_back();
-		descriptors[index] = entry;
-		return VulkanDescriptorHandles::MakeGpuDescriptorHandle(index);
-	}
-
-	descriptors.push_back(entry);
-	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(descriptors.size() - 1));
-}
-
-RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterPartitionedAccelerationStructureDescriptor(
-    VkDeviceAddress accelerationStructureAddress)
-{
-	if (accelerationStructureAddress == 0)
-	{
-		return {};
-	}
-
-	DescriptorEntry entry{};
-	entry.Kind = EntryKind::PartitionedAccelerationStructure;
-	entry.PartitionedAccelerationStructureAddress = accelerationStructureAddress;
-
-	std::scoped_lock lock(m_registryMutex);
-	std::vector<DescriptorEntry>& descriptors = EditRegisteredDescriptors();
-	if (!m_freeRegisteredDescriptorIndices.empty())
-	{
-		const std::uint32_t index = m_freeRegisteredDescriptorIndices.back();
-		m_freeRegisteredDescriptorIndices.pop_back();
-		descriptors[index] = entry;
-		return VulkanDescriptorHandles::MakeGpuDescriptorHandle(index);
-	}
-
-	descriptors.push_back(entry);
-	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(descriptors.size() - 1));
-}
-
 void VulkanDescriptorAllocator::ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept
 {
 	std::uint32_t index = 0;

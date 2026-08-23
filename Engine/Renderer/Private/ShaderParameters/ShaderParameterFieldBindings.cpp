@@ -19,9 +19,7 @@ bool BindParameterField(
     const char* name,
     const ShaderAccelerationStructure& field)
 {
-	return field.IsBound() && (field.GetHandle().IsValid()
-	                               ? parameterSet.SetAccelerationStructure(name, field.GetHandle())
-	                               : parameterSet.SetAccelerationStructure(name, field.GetGpuAddress()));
+	return field.IsBound() && parameterSet.SetAccelerationStructure(name, field.GetHandle());
 }
 
 bool BindParameterField(

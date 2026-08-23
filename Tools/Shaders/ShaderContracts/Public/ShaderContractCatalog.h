@@ -6,7 +6,6 @@
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -15,7 +14,7 @@ struct ShaderContractStage final
 	std::string shaderName;
 	std::string packageId;
 	std::string bindingLayoutId;
-	std::filesystem::path sourcePath;
+	std::string sourcePath;
 	std::string entryPoint;
 	ShaderStage stage = ShaderStage::Count;
 	CookedShaderPackageKind packageKind = CookedShaderPackageKind::Graphics;
@@ -63,7 +62,7 @@ struct ShaderContractVerificationFailure final
 	std::string shaderName;
 	std::string packageId;
 	std::string bindingLayoutId;
-	std::filesystem::path sourcePath;
+	std::string sourcePath;
 	std::string entryPoint;
 	ShaderStage stage = ShaderStage::Count;
 	std::string parameterName;
@@ -74,7 +73,7 @@ struct ShaderContractVerificationFailure final
 struct ShaderContractJobIdentity final
 {
 	std::string packageId;
-	std::filesystem::path sourcePath;
+	std::string sourcePath;
 	std::string entryPoint;
 	ShaderStage stage = ShaderStage::Count;
 	std::string backendName;

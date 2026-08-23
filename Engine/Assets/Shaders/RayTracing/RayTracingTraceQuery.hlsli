@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RayTracing/RayTracingMaterialHit.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
 
 RayTracingTraceResult TraceRayQueryWithAlphaTest(
     RaytracingAccelerationStructure sceneTlas,

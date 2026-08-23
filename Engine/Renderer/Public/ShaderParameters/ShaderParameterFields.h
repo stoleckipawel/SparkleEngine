@@ -145,38 +145,23 @@ class SPARKLE_RENDERER_API ShaderAccelerationStructure final
 
 	ShaderAccelerationStructure();
 
-	ShaderAccelerationStructure& operator=(RhiGpuVirtualAddress gpuAddress) noexcept
-	{
-		m_handle = FrameGraphAccelerationStructureHandle::Invalid();
-		m_gpuAddress = gpuAddress;
-		m_isBound = true;
-		return *this;
-	}
-
 	ShaderAccelerationStructure& operator=(FrameGraphAccelerationStructureHandle handle) noexcept
 	{
 		m_handle = handle;
-		m_gpuAddress = 0;
-		m_isBound = handle.IsValid();
 		return *this;
 	}
 
-	RhiGpuVirtualAddress GetGpuAddress() const noexcept { return m_gpuAddress; }
 	FrameGraphAccelerationStructureHandle GetHandle() const noexcept { return m_handle; }
 
-	bool IsBound() const noexcept { return m_isBound; }
+	bool IsBound() const noexcept { return m_handle.IsValid(); }
 
 	void Reset() noexcept
 	{
 		m_handle = FrameGraphAccelerationStructureHandle::Invalid();
-		m_gpuAddress = 0;
-		m_isBound = false;
 	}
 
   private:
 	FrameGraphAccelerationStructureHandle m_handle = FrameGraphAccelerationStructureHandle::Invalid();
-	RhiGpuVirtualAddress m_gpuAddress = 0;
-	bool m_isBound = false;
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>

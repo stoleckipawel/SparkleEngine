@@ -11,6 +11,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "Resources/History/FrameHistory.h"
+#include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "Scene/RenderScene.h"
 #include "View/ViewportDisplaySettings.h"
 
@@ -40,6 +41,8 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 	    .PresentationTarget = ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct,
 	    .GBuffer = CVarGBufferMode.Get(),
 	    .Lighting = lighting,
+	    .EnableInlineRayQueryShadows =
+	        m_renderScene.GetRayTracingSceneCapability().CanUseInlineRayQueryShadows() && CVarRayTracedShadowsEnabled.Get(),
 	    .RequestedOutputs = m_viewportRenderRequest.RequestedOutputs};
 }
 

@@ -64,8 +64,6 @@ bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noex
 				return desc.Buffer.OffsetInBytes % sizeof(std::uint32_t) == 0 && desc.Buffer.SizeInBytes % sizeof(std::uint32_t) == 0;
 			}
 			return desc.Buffer.OffsetInBytes % desc.Buffer.StrideInBytes == 0 && desc.Buffer.SizeInBytes % desc.Buffer.StrideInBytes == 0;
-		case ERhiResourceViewKind::AccelerationStructureShaderResource:
-			return desc.AccelerationStructureGpuAddress != 0;
 	}
 
 	return false;

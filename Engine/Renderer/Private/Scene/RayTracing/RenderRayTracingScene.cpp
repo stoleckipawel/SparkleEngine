@@ -4,7 +4,6 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "Meshes/GpuMeshCache.h"
-#include "RHI/Public/CVars/RHICVars.h"
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureStrategy.h"
@@ -17,7 +16,6 @@ RenderRayTracingScene::RenderRayTracingScene(
     RenderHardwareInterface& renderHardwareInterface,
     const GpuMeshCache& meshes,
     const RayTracingCapabilityReport& capabilityReport) noexcept :
-    m_renderHardwareInterface(&renderHardwareInterface),
     m_capabilityReport(capabilityReport)
 {
 	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
@@ -31,7 +29,6 @@ RenderRayTracingScene::RenderRayTracingScene(
 	}
 
 	m_blasCache = std::make_unique<RayTracingBlasCache>(renderHardwareInterface, meshes);
-	m_topLevelStrategyPrefersPartitionedTlas = CVarRayTracingPreferPartitionedTlas.Get();
 	m_topLevelAccelerationStructureStrategy =
 	    CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);
 }
@@ -50,8 +47,6 @@ RenderRayTracingFrameBindings RenderRayTracingScene::Prepare(
 		    __LINE__,
 		    "Ray-tracing scene has no top-level acceleration-structure strategy.");
 	}
-	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
-
 	return m_topLevelAccelerationStructureStrategy->Prepare(preparedScene, viewPlan);
 }
 
@@ -105,26 +100,4 @@ void RenderRayTracingScene::Clear() noexcept
 bool RenderRayTracingScene::HasValidTlas() const noexcept
 {
 	return m_topLevelAccelerationStructureStrategy != nullptr && m_topLevelAccelerationStructureStrategy->HasValidSceneTlas();
-}
-
-void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept
-{
-	if (m_renderHardwareInterface == nullptr || !m_capabilityReport.Core.SupportsRayTracing)
-	{
-		return;
-	}
-
-	const bool wantsPartitionedTlas = CVarRayTracingPreferPartitionedTlas.Get();
-	if (m_topLevelAccelerationStructureStrategy != nullptr && wantsPartitionedTlas == m_topLevelStrategyPrefersPartitionedTlas)
-	{
-		return;
-	}
-
-	if (m_topLevelAccelerationStructureStrategy != nullptr)
-	{
-		m_topLevelAccelerationStructureStrategy->Clear();
-	}
-	m_topLevelAccelerationStructureStrategy =
-	    CreateRayTracingTopLevelAccelerationStructureStrategy(*m_renderHardwareInterface, m_capabilityReport);
-	m_topLevelStrategyPrefersPartitionedTlas = wantsPartitionedTlas;
 }

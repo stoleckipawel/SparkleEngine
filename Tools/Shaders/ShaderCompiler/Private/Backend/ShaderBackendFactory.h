@@ -3,7 +3,6 @@
 #include "Backend/IShaderBackend.h"
 #include "Backend/ShaderBackendCapabilities.h"
 
-#include <filesystem>
 #include <memory>
 #include <span>
 #include <string>
@@ -41,6 +40,6 @@ std::span<const ShaderBinaryFormatDescriptor> ListShaderBinaryFormats() noexcept
 std::span<const ShaderCodegenTargetDescriptor> ListShaderCodegenTargets() noexcept;
 std::unique_ptr<IShaderBackend> CreateShaderBackend(std::string_view name);
 std::string ResolveShaderBackendName(
-	const std::filesystem::path& sourcePath,
+	std::string_view sourcePath,
 	ShaderTarget target,
 	std::string_view requestedName);

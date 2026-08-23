@@ -1,7 +1,7 @@
 #ifndef SPARKLE_LIGHTING_SKY_HLSLI
 #define SPARKLE_LIGHTING_SKY_HLSLI
 
-#include "Lighting/SkyUniform.hlsli"
+#include "/Engine/Lighting/SkyUniform.hlsli"
 
 float2 ComputeSkyUv(float3 worldDirection)
 {

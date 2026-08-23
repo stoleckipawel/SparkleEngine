@@ -1,7 +1,7 @@
 #ifndef SPARKLE_EXPOSURE_DOWNSAMPLE_COMMON_HLSLI
 #define SPARKLE_EXPOSURE_DOWNSAMPLE_COMMON_HLSLI
 
-#include "Display/Exposure.hlsli"
+#include "/Engine/Display/Exposure.hlsli"
 
 RWTexture2D<float4> LuminanceMomentsOutput;
 

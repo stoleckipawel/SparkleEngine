@@ -1,4 +1,4 @@
-#include "Passes/PostProcessing/ExposureDownsampleCommon.hlsli"
+#include "/Engine/Passes/PostProcessing/ExposureDownsampleCommon.hlsli"
 
 Texture2D LuminanceMomentsInput;
 

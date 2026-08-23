@@ -19,7 +19,6 @@ enum class ERhiResourceViewKind : std::uint8_t
 	DepthStencil = 3,
 	BufferShaderResource = 4,
 	BufferUnorderedAccess = 5,
-	AccelerationStructureShaderResource = 6,
 };
 
 struct RhiTextureViewRange
@@ -45,7 +44,6 @@ struct RhiResourceViewDesc
 	RhiTextureViewRange Texture = {};
 	TextureResourceDimension TextureDimension = TextureResourceDimension::Texture2D;
 	RhiBufferViewRange Buffer = {};
-	RhiGpuVirtualAddress AccelerationStructureGpuAddress = 0;
 
 	static constexpr RhiResourceViewDesc TextureShaderResource(
 	    RhiResourceHandle resource,
@@ -98,13 +96,5 @@ struct RhiResourceViewDesc
 		    .Kind = ERhiResourceViewKind::BufferUnorderedAccess,
 		    .Resource = resource,
 		    .Buffer = RhiBufferViewRange{.OffsetInBytes = offsetInBytes, .SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes}};
-	}
-
-	static constexpr RhiResourceViewDesc AccelerationStructureShaderResource(
-	    RhiGpuVirtualAddress accelerationStructureGpuAddress) noexcept
-	{
-		return RhiResourceViewDesc{
-		    .Kind = ERhiResourceViewKind::AccelerationStructureShaderResource,
-		    .AccelerationStructureGpuAddress = accelerationStructureGpuAddress};
 	}
 };

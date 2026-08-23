@@ -39,7 +39,7 @@ CookedStageBuild StageCompiler::Compile(
 	if (!bytecode.IsValid())
 	{
 		throw Diagnostics::Error(
-		    "Backend returned empty bytecode for shader source '" + stage.sourcePath.generic_string() + "'.");
+		    "Backend returned empty bytecode for shader source '" + stage.sourcePath + "'.");
 	}
 
 	const auto* bytecodeBegin = static_cast<const std::uint8_t*>(bytecode.Data);
@@ -48,7 +48,7 @@ CookedStageBuild StageCompiler::Compile(
 	compiledStage.format = IsSpirVTarget(options.Target)
 		? CookedShaderBinaryFormat::SpirV
 		: CookedShaderBinaryFormat::Dxil;
-	compiledStage.sourcePath = stage.sourcePath.generic_string();
+	compiledStage.sourcePath = stage.sourcePath;
 	compiledStage.entryPoint = stage.entryPoint;
 	compiledStage.debugArtifact = Paths::MakeProjectRelativeString(compiledShader.GetDebugArtifactPath());
 	compiledStage.backendName.assign(backend.GetBackendName());

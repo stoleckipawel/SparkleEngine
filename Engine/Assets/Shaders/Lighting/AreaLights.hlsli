@@ -1,13 +1,13 @@
 #ifndef SPARKLE_AREA_LIGHTS_HLSLI
 #define SPARKLE_AREA_LIGHTS_HLSLI
 
-#include "Resources/LightGpuData.hlsli"
+#include "/Engine/Resources/LightGpuData.hlsli"
 
-#include "Common/Constants.hlsli"
-#include "Common/Math.hlsli"
-#include "Common/Sampling.hlsli"
-#include "Lighting/LightSampling.hlsli"
-#include "Lighting/PunctualLights.hlsli"
+#include "/Engine/Common/Constants.hlsli"
+#include "/Engine/Common/Math.hlsli"
+#include "/Engine/Common/Sampling.hlsli"
+#include "/Engine/Lighting/LightSampling.hlsli"
+#include "/Engine/Lighting/PunctualLights.hlsli"
 namespace AreaLights
 {
 	LightSampling::DirectLightSample SampleDirectionalLight(uint lightIndex, float2 sample)

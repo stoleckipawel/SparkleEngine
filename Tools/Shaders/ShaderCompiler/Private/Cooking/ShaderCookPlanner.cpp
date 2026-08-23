@@ -2,42 +2,33 @@
 
 #include "Cooking/ShaderCookPlanner.h"
 
-#include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Paths/PathUtils.h"
+#include "Compiler/ShaderSourceMountTable.h"
 #include "Contracts/ShaderContractCatalogBuilder.h"
 
 #include <algorithm>
 #include <format>
 #include <unordered_map>
 
+static const std::shared_ptr<const ShaderSourceMountTable>& GetShaderSourceMounts()
+{
+	static const auto mounts = std::make_shared<const ShaderSourceMountTable>(
+	    Filesystem::GetShaderPath(PathRoot::Engine),
+	    Filesystem::GetShaderPath(PathRoot::Project));
+	return mounts;
+}
+
 ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStageDesc& stage)
 {
 	ShaderCompileOptions options{};
-	options.SourcePath = Filesystem::ResolveAssetPathValidated(stage.sourcePath, AssetType::Shader);
+	options.SourceMounts = GetShaderSourceMounts();
+	options.SourcePath = options.SourceMounts->CanonicalizeVirtualPath(stage.sourcePath);
 	options.EntryPoint = stage.entryPoint;
 	options.Stage = stage.stage;
 	options.PackageKind = stage.packageKind;
 	options.PackageFeatures = stage.packageFeatures;
 	options.RayTracingExportKind = stage.rayTracingExportKind;
-
-	const std::filesystem::path& projectShaderRoot = Filesystem::GetShaderPath(PathRoot::Project);
-	const std::filesystem::path& engineShaderRoot = Filesystem::GetShaderPath(PathRoot::Engine);
-
-	if (!projectShaderRoot.empty())
-	{
-		options.IncludeDir = projectShaderRoot;
-		if (!engineShaderRoot.empty() &&
-		    Paths::MakePathKey(engineShaderRoot) != Paths::MakePathKey(projectShaderRoot))
-		{
-			options.AdditionalIncludeDirs.push_back(engineShaderRoot);
-		}
-	}
-	else
-	{
-		options.IncludeDir = engineShaderRoot;
-	}
 
 #if defined(ENGINE_SHADERS_DEBUG)
 	options.EnableDebugInfo = true;

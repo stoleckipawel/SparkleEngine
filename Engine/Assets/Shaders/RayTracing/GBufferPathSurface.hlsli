@@ -1,10 +1,10 @@
 #ifndef SPARKLE_GBUFFER_PATH_SURFACE_HLSLI
 #define SPARKLE_GBUFFER_PATH_SURFACE_HLSLI
 
-#include "Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
 
-#include "Passes/Deferred/GBufferUtils.hlsli"
-#include "RayTracing/PathSurface.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
+#include "/Engine/RayTracing/PathSurface.hlsli"
 
 namespace RayTracingGBufferPathSurface
 {

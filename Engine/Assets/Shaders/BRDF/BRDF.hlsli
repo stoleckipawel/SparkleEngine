@@ -1,13 +1,13 @@
 #pragma once
 
-#include "BRDF/ShadingData.hlsli"
-#include "BRDF/Fresnel.hlsli"
-#include "BRDF/Distribution.hlsli"
-#include "BRDF/Geometry.hlsli"
-#include "BRDF/Diffuse.hlsli"
-#include "BRDF/Subsurface.hlsli"
-#include "BRDF/Specular.hlsli"
-#include "BRDF/Occlusion.hlsli"
+#include "/Engine/BRDF/ShadingData.hlsli"
+#include "/Engine/BRDF/Fresnel.hlsli"
+#include "/Engine/BRDF/Distribution.hlsli"
+#include "/Engine/BRDF/Geometry.hlsli"
+#include "/Engine/BRDF/Diffuse.hlsli"
+#include "/Engine/BRDF/Subsurface.hlsli"
+#include "/Engine/BRDF/Specular.hlsli"
+#include "/Engine/BRDF/Occlusion.hlsli"
 
 namespace BRDF
 {

@@ -1,12 +1,12 @@
-#include "Resources/ViewUniformData.hlsli"
-#include "Resources/ViewCameraUniformData.hlsli"
-#include "Resources/ViewTemporalUniformData.hlsli"
+#include "/Engine/Resources/ViewUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/ViewTemporalUniformData.hlsli"
 
-#include "Debug/InstanceView.hlsli"
-#include "Geometry/ScreenSpace.hlsli"
-#include "Geometry/Transforms.hlsli"
-#include "Passes/Deferred/GBufferPacking.hlsli"
-#include "Passes/Deferred/MotionVector.hlsli"
+#include "/Engine/Debug/InstanceView.hlsli"
+#include "/Engine/Geometry/ScreenSpace.hlsli"
+#include "/Engine/Geometry/Transforms.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
+#include "/Engine/Passes/GBuffer/MotionVector.hlsli"
 
 RWTexture2D<float4> GBufferBaseColor;
 RWTexture2D<float4> GBufferNormal;
@@ -24,7 +24,7 @@ cbuffer RaytracedGBufferUniformData
 	uint RaytracedGBufferPadding1;
 };
 
-#include "RayTracing/PathTrace.hlsli"
+#include "/Engine/RayTracing/PathTrace.hlsli"
 
 static const uint RaytracedGBufferRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_CULL_BACK_FACING_TRIANGLES;
 static const uint RaytracedGBufferInstanceMask = 0xFFu;

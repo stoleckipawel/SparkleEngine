@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Common/Hash.hlsli"
-#include "RayTracing/RayTracingDebugModes.hlsli"
-#include "RayTracing/RayTracingHitSurface.hlsli"
+#include "/Engine/Common/Hash.hlsli"
+#include "/Engine/RayTracing/RayTracingDebugModes.hlsli"
+#include "/Engine/RayTracing/RayTracingHitSurface.hlsli"
 
 float3 RayTracingDebugReasonColor(uint reason)
 {

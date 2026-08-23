@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Resources/FrameUniformData.hlsli"
+#include "/Engine/Resources/FrameUniformData.hlsli"
 
 namespace CommonRandom
 {

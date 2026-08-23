@@ -197,7 +197,7 @@ public:
 		return m_frameGraph.CreateUAV<TValue>(handle);
 	}
 
-	ShaderAccelerationStructure Read(FrameGraphAccelerationStructureHandle handle) const noexcept;
+	ShaderAccelerationStructure CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept;
 	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept;
 	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept;
 

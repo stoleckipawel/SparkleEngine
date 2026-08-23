@@ -48,14 +48,6 @@ struct PassParameterDescriptorTableBindingData
 	bool IsBound() const noexcept { return static_cast<bool>(Table) || static_cast<bool>(GpuHandle); }
 };
 
-struct PassParameterAccelerationStructureBindingData
-{
-	FrameGraphAccelerationStructureHandle Handle = FrameGraphAccelerationStructureHandle::Invalid();
-	RhiGpuVirtualAddress GpuAddress = 0;
-
-	bool IsBound() const noexcept { return Handle.IsValid() || GpuAddress != 0; }
-};
-
 struct PassParameterUniformBindingData
 {
 	const void* Data = nullptr;
@@ -76,7 +68,7 @@ using PassParameterBindingValue = std::variant<
     PassParameterTextureBindingData,
     PassParameterBufferBindingData,
     PassParameterDescriptorTableBindingData,
-    PassParameterAccelerationStructureBindingData,
+    FrameGraphAccelerationStructureHandle,
     PassParameterUniformBindingData,
     PassParameterSamplerBindingData>;
 
@@ -94,9 +86,9 @@ struct SPARKLE_RENDERER_API PassParameterBinding
 		return std::get_if<PassParameterDescriptorTableBindingData>(&m_value);
 	}
 
-	const PassParameterAccelerationStructureBindingData* AsAccelerationStructureData() const noexcept
+	const FrameGraphAccelerationStructureHandle* AsAccelerationStructureHandle() const noexcept
 	{
-		return std::get_if<PassParameterAccelerationStructureBindingData>(&m_value);
+		return std::get_if<FrameGraphAccelerationStructureHandle>(&m_value);
 	}
 
 	const PassParameterUniformBindingData* AsUniformData() const noexcept { return std::get_if<PassParameterUniformBindingData>(&m_value); }
@@ -136,7 +128,6 @@ class SPARKLE_RENDERER_API PassParameterSet final
 	bool UsesGraphResource(std::uint32_t index) const noexcept;
 	bool SetUnorderedAccessView(const char* name, RhiDescriptorTableBinding descriptorTable);
 	bool SetUnorderedAccessView(const char* name, RhiGpuDescriptorHandle descriptorTable);
-	bool SetAccelerationStructure(const char* name, RhiGpuVirtualAddress gpuAddress);
 	bool SetAccelerationStructure(const char* name, FrameGraphAccelerationStructureHandle handle);
 
 	template <typename T> bool SetUniformDataReference(const char* name, const T& value)

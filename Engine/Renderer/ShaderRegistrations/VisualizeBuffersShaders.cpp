@@ -27,6 +27,6 @@ public:
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     VisualizeBuffersCS,
     RendererShaderPackages::VisualizeBuffers,
-    "Passes/Deferred/VisualizeBuffers.hlsl",
+    "/Engine/Passes/Debug/VisualizeBuffers.hlsl",
     "main",
     Compute);

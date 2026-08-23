@@ -37,6 +37,7 @@ class RenderCommandContext final
 	    std::uint32_t destOffsetIn32BitValues) noexcept;
 	void BindShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept;
 
 	void BindDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
 	void BindDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept;
@@ -50,6 +51,7 @@ class RenderCommandContext final
 	    std::uint32_t destOffsetIn32BitValues) noexcept;
 	void BindComputeShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindComputeUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept;
 
 	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 

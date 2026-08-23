@@ -1,7 +1,7 @@
 #ifndef SPARKLE_DISPLAY_TONE_MAPPING_HLSLI
 #define SPARKLE_DISPLAY_TONE_MAPPING_HLSLI
 
-#include "Common/Color.hlsli"
+#include "/Engine/Common/Color.hlsli"
 
 namespace ToneMapping
 {

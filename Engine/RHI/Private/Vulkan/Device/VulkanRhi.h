@@ -42,7 +42,6 @@ struct VulkanFeatureStatus final
 	bool SupportsSampledImageArrayNonUniformIndexing = false;
 	bool SupportsPartiallyBoundDescriptorArrays = false;
 	bool SupportsShaderDemoteToHelperInvocation = false;
-	bool SupportsMutableDescriptorType = false;
 	bool EnabledSynchronization2 = false;
 	bool EnabledTimelineSemaphore = false;
 	bool EnabledDynamicRendering = false;
@@ -54,7 +53,6 @@ struct VulkanFeatureStatus final
 	bool EnabledSampledImageArrayNonUniformIndexing = false;
 	bool EnabledPartiallyBoundDescriptorArrays = false;
 	bool EnabledShaderDemoteToHelperInvocation = false;
-	bool EnabledMutableDescriptorType = false;
 	VulkanRayTracingFeatureStatus RayTracing;
 };
 
@@ -135,7 +133,6 @@ class VulkanRhi final
 	static bool IsLayerAvailable(const char* layerName) noexcept;
 	static bool IsInstanceExtensionAvailable(const char* extensionName) noexcept;
 	static bool IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept;
-	static bool QueryMutableDescriptorTypeFeature(VkPhysicalDevice physicalDevice) noexcept;
 	static bool AppendAvailableDeviceExtension(
 	    VkPhysicalDevice physicalDevice,
 	    std::vector<const char*>& extensions,

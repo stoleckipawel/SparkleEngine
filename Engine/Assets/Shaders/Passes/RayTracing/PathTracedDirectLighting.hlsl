@@ -1,13 +1,13 @@
-#include "Resources/FrameUniformData.hlsli"
-#include "Resources/ViewCameraUniformData.hlsli"
-#include "Resources/LightGpuData.hlsli"
-#include "Resources/SceneLightingUniformData.hlsli"
+#include "/Engine/Resources/FrameUniformData.hlsli"
+#include "/Engine/Resources/ViewCameraUniformData.hlsli"
+#include "/Engine/Resources/LightGpuData.hlsli"
+#include "/Engine/Resources/SceneLightingUniformData.hlsli"
 
-#include "Passes/Deferred/GBufferUtils.hlsli"
-#include "Lighting/AreaLights.hlsli"
-#include "Lighting/SurfaceLighting.hlsli"
-#include "RayTracing/PathTracedLightingUniform.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
+#include "/Engine/Lighting/AreaLights.hlsli"
+#include "/Engine/Lighting/SurfaceLighting.hlsli"
+#include "/Engine/RayTracing/PathTracedLightingUniform.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 
 RWTexture2D<float4> DirectDiffuse;
 RWTexture2D<float4> DirectSpecular;

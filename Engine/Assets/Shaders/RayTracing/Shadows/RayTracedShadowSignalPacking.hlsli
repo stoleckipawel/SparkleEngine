@@ -1,7 +1,7 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_SIGNAL_PACKING_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_SIGNAL_PACKING_HLSLI
 
-#include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
 namespace RayTracedShadowSignalPacking
 {

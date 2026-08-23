@@ -40,15 +40,12 @@ public:
 	void Clear() noexcept;
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.Core.SupportsRayTracing; }
+	bool CanUseInlineRayQueryShadows() const noexcept { return m_capabilityReport.CanUseInlineRayQueryShadows(); }
 	bool HasValidTlas() const noexcept;
 
 private:
-	void EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept;
-
-	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	RayTracingCapabilityReport m_capabilityReport = {};
 	RayTracingPerformanceMetrics m_performanceMetrics = {};
 	std::unique_ptr<RayTracingBlasCache> m_blasCache;
 	std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> m_topLevelAccelerationStructureStrategy;
-	bool m_topLevelStrategyPrefersPartitionedTlas = false;
 };

@@ -511,7 +511,6 @@ ERhiDescriptorAllocatorType D3D12DescriptorService::ResolveResourceViewDescripto
 		case ERhiResourceViewKind::TextureUnorderedAccess:
 		case ERhiResourceViewKind::BufferShaderResource:
 		case ERhiResourceViewKind::BufferUnorderedAccess:
-		case ERhiResourceViewKind::AccelerationStructureShaderResource:
 		default:
 			return ERhiDescriptorAllocatorType::ShaderResource;
 	}
@@ -659,20 +658,6 @@ bool D3D12DescriptorService::WriteResourceViewDescriptor(
 				viewDesc.Buffer.NumElements = static_cast<UINT>(desc.Buffer.SizeInBytes / sizeof(std::uint32_t));
 			}
 			device->CreateUnorderedAccessView(D3D12TypeConversions::ToResource(desc.Resource), nullptr, &viewDesc, nativeDestination);
-			return true;
-		}
-		case ERhiResourceViewKind::AccelerationStructureShaderResource:
-		{
-			if (desc.AccelerationStructureGpuAddress == 0)
-			{
-				return false;
-			}
-
-			D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-			viewDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-			viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-			viewDesc.RaytracingAccelerationStructure.Location = desc.AccelerationStructureGpuAddress;
-			device->CreateShaderResourceView(nullptr, &viewDesc, nativeDestination);
 			return true;
 		}
 		default:

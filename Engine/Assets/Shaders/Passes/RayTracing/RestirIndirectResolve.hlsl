@@ -1,13 +1,13 @@
-#include "Lighting/RestirIndirectLightingUniform.hlsli"
+#include "/Engine/Lighting/RestirIndirectLightingUniform.hlsli"
 
 Texture2D<float4> CurrentReservoirSampleTexture;
 Texture2D<float4> CurrentReservoirWeightTexture;
 Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
 
-#include "Lighting/RestirIndirectReservoir.hlsli"
-#include "Lighting/IndirectLightingOutputs.hlsli"
-#include "Lighting/RayReconstructionGuides.hlsli"
+#include "/Engine/Lighting/RestirIndirectReservoir.hlsli"
+#include "/Engine/Lighting/IndirectLightingOutputs.hlsli"
+#include "/Engine/Lighting/RayReconstructionGuides.hlsli"
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
