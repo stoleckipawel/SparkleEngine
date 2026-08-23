@@ -61,8 +61,7 @@ ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::p
 		if (kind == "shader")
 		{
 			ShaderDependencyRecord record;
-			lineInput >> std::hex >> record.ShaderType >> std::quoted(record.ShaderTypeName) >> std::quoted(record.VirtualSourcePath)
-			    >> std::quoted(record.PublicationGroup);
+			lineInput >> std::hex >> record.ShaderType >> std::quoted(record.ShaderTypeName) >> std::quoted(record.VirtualSourcePath);
 			lineInput >> std::ws;
 			if (!lineInput || !lineInput.eof() || record.ShaderType == 0
 			    || !recordIndices.emplace(record.ShaderType, manifest.m_records.size()).second)
@@ -158,7 +157,7 @@ void ShaderDependencyManifest::Write(const ShaderDependencyManifest& manifest, c
 	for (const ShaderDependencyRecord& record : manifest.m_records)
 	{
 		output << "shader " << std::hex << record.ShaderType << ' ' << std::quoted(record.ShaderTypeName) << ' '
-		       << std::quoted(record.VirtualSourcePath) << ' ' << std::quoted(record.PublicationGroup) << '\n';
+		       << std::quoted(record.VirtualSourcePath) << '\n';
 		for (const std::string& dependency : record.VirtualDependencies)
 		{
 			output << "dependency " << std::hex << record.ShaderType << ' ' << std::quoted(dependency) << '\n';
@@ -194,21 +193,9 @@ std::unordered_set<ShaderTypeId> ShaderDependencyManifest::SelectAffectedShaderT
 {
 	std::unordered_set<std::string> changed(changedVirtualPaths.begin(), changedVirtualPaths.end());
 	std::unordered_set<ShaderTypeId> affected;
-	std::unordered_set<std::string> affectedPublicationGroups;
 	for (const ShaderDependencyRecord& record : m_records)
 	{
 		if (std::ranges::any_of(record.VirtualDependencies, [&changed](const std::string& path) { return changed.contains(path); }))
-		{
-			affected.insert(record.ShaderType);
-			affectedPublicationGroups.insert(record.PublicationGroup);
-		}
-	}
-
-	// Physical multi-stage packages remain atomic until Phase 4. Their shader types
-	// form one publication dependency group and therefore compile together.
-	for (const ShaderDependencyRecord& record : m_records)
-	{
-		if (affectedPublicationGroups.contains(record.PublicationGroup))
 		{
 			affected.insert(record.ShaderType);
 		}
@@ -235,7 +222,7 @@ void ShaderDependencyManifest::SortAndValidate()
 {
 	for (ShaderDependencyRecord& record : m_records)
 	{
-		if (record.ShaderType == 0 || record.ShaderTypeName.empty() || record.VirtualSourcePath.empty() || record.PublicationGroup.empty())
+		if (record.ShaderType == 0 || record.ShaderTypeName.empty() || record.VirtualSourcePath.empty())
 		{
 			throw Diagnostics::Error("Shader dependency metadata contains an incomplete shader record.");
 		}

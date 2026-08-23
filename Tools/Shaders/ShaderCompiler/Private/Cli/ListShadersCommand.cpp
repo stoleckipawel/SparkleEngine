@@ -7,10 +7,8 @@
 #include "Contracts/ShaderContractValidator.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
-#include "RHI/Public/Shaders/CookedShaderPackageIdentity.h"
 
 #include <iostream>
-#include <string>
 
 int ListShadersCommand::Run(std::span<const std::string_view> args) const
 {
@@ -28,51 +26,28 @@ int ListShadersCommand::Run(std::span<const std::string_view> args) const
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		std::cerr << "ShaderCompiler: failed to build shader contract catalog - " << error.what() << "\n";
+		std::cerr << "ShaderCompiler: failed to build shader catalog - " << error.what() << "\n";
 		return kExitCodeCookFailure;
 	}
-
 	const std::vector<ShaderContractVerificationFailure> failures = ShaderContractValidator::Validate(catalog);
+	for (const ShaderContractVerificationFailure& failure : failures)
+	{
+		std::cerr << "ShaderCompiler: shader contract invalid " << ShaderContractValidator::FormatFailure(failure) << "\n";
+	}
+	if (!failures.empty())
+	{
+		return kExitCodeCookFailure;
+	}
 	if (validateOnly)
 	{
-		for (const ShaderContractVerificationFailure& failure : failures)
-		{
-			std::cerr << "ShaderCompiler: shader contract invalid "
-			          << ShaderContractValidator::FormatFailure(failure) << "\n";
-		}
-		if (!failures.empty())
-		{
-			std::cerr << "ShaderCompiler: " << failures.size() << " shader contract validation error(s)\n";
-			return kExitCodeCookFailure;
-		}
-		std::cout << "ShaderCompiler: " << catalog.stages.size() << " typed shader registration(s) valid"
-		          << " packages=" << catalog.packages.size() << "\n";
+		std::cout << "ShaderCompiler: " << catalog.size() << " typed shader registration(s) valid\n";
 		return kExitCodeSuccess;
 	}
-
-	if (!catalog.stages.empty())
+	for (const ShaderContract& shader : catalog)
 	{
-		std::cout << "Typed shader packages:\n";
-		for (const ShaderContractPackage& package : catalog.packages)
-		{
-			std::cout << package.packageId
-			          << " key=" << Formatting::FormatPrefixedHexUInt64(BuildShaderPackageKey(package.packageId))
-			          << " layout=" << package.bindingLayoutId
-			          << " layoutHash=" << Formatting::FormatPrefixedHexUInt64(BuildPassParameterLayoutHash(package.bindingLayout))
-			          << " stages=" << package.stages.size()
-			          << " parameters=" << package.bindingLayout.GetParameters().size() << "\n";
-		}
-
-		std::cout << "Typed shader registrations:\n";
-		for (const ShaderContractStage& stage : catalog.stages)
-		{
-			std::cout << stage.shaderName << " package=" << stage.packageId
-			          << " layout=" << stage.bindingLayoutId
-			          << " stage=" << GetShaderStagePrefix(stage.stage)
-			          << " source=" << stage.sourcePath
-			          << " entry=" << stage.entryPoint
-			          << " parameters=" << stage.parameterStruct.Fields.size() << "\n";
-		}
+		std::cout << shader.shaderName << " type=" << Formatting::FormatPrefixedHexUInt64(shader.shaderTypeId)
+		          << " stage=" << GetShaderStagePrefix(shader.stage) << " source=" << shader.sourcePath
+		          << " entry=" << shader.entryPoint << " parameters=" << shader.parameterStruct.Fields.size() << "\n";
 	}
 	return kExitCodeSuccess;
 }

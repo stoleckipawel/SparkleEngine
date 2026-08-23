@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Backend/ShaderTarget.h"
+#include "RHI/Public/Shaders/ShaderTarget.h"
 
 // What a backend can produce.
 // The orchestrator picks the first backend that supports the requested target.

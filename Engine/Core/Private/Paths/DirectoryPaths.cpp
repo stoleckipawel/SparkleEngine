@@ -40,11 +40,6 @@ namespace Paths
 		       PathFormatting::TimestampedFileName(executableStem, ".log");
 	}
 
-	std::filesystem::path CookedShaderPackage(std::uint64_t packageKey)
-	{
-		return Filesystem::GetCookedShaderPackageRootPath() / (Formatting::FormatHexUInt64(packageKey) + ".sparkshader");
-	}
-
 	std::filesystem::path CookedSceneManifest(std::string_view sceneAssetId)
 	{
 		std::filesystem::path relativeScenePath{std::string(sceneAssetId)};

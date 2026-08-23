@@ -1,15 +1,14 @@
 #pragma once
 
-#include "Cooking/CookedShaderPackageOutput.h"
+#include "Cooking/ShaderCookOutput.h"
 
-#include <cstdint>
+#include <cstddef>
 #include <filesystem>
-#include <vector>
 
-struct ShaderPackageCookResult final
+struct ShaderCookResult final
 {
 	std::filesystem::path outputDirectory;
-	std::vector<CookedShaderPackageOutput> packages;
+	ShaderCookOutput output;
 	std::size_t selectedShaderCount = 0;
 	std::size_t compileJobCount = 0;
 };

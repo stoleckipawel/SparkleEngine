@@ -213,8 +213,8 @@ function(sparkle_boundary_scan_file absolute_path)
         endif()
 
         if(_relative_path MATCHES "^Tools/Shaders/ShaderCompiler/Private/(Cooking|Verification)/" AND
-           NOT _relative_path STREQUAL "Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderPackageCooker.cpp" AND
-           _line MATCHES "Cooking/ShaderPackageCooker\\.h")
+           NOT _relative_path STREQUAL "Tools/Shaders/ShaderCompiler/Private/Cooking/GlobalShaderCooker.cpp" AND
+           _line MATCHES "Cooking/GlobalShaderCooker\\.h")
             sparkle_boundary_append_failure(
                 "SHADER_COOKING_NO_FACADE_DEPENDENCY"
                 "${_relative_path}"

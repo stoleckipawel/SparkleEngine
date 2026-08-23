@@ -6,7 +6,6 @@
 #include "Device/RenderDeviceServicesState.h"
 #include "CVars/RHICVars.h"
 #include "Presentation/RhiPresentationDefaults.h"
-#include "Shaders/CookedShaderPackageIdentity.h"
 
 #include "Window/Window.h"
 

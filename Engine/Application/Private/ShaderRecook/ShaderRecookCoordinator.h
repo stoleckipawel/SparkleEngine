@@ -32,7 +32,7 @@ class ShaderRecookCoordinator final
   private:
 	void StartRecook(ShaderRecookRequest request) noexcept;
 	void CompleteRecook(Renderer& renderer, ShaderRecookExecutionResult result) noexcept;
-	void ReloadCookedShaders(Renderer& renderer);
+	void ReloadShaders(Renderer& renderer);
 	void HandleManualReload(Renderer& renderer) noexcept;
 	void HandleExternalRecookPublication(Renderer& renderer) noexcept;
 	void PublishStatus(std::string status) noexcept;

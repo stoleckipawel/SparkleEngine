@@ -42,7 +42,7 @@ CookedStageBuild StageCompiler::Compile(
 	const auto* bytecodeBegin = static_cast<const std::uint8_t*>(bytecode.Data);
 	CookedStageBuild compiledStage;
 	compiledStage.stage = request.Stage;
-	compiledStage.format = IsSpirVTarget(request.Target) ? CookedShaderBinaryFormat::SpirV : CookedShaderBinaryFormat::Dxil;
+	compiledStage.format = IsSpirVTarget(request.Target) ? ShaderBinaryFormat::SpirV : ShaderBinaryFormat::Dxil;
 	compiledStage.sourcePath = request.VirtualSourcePath;
 	compiledStage.entryPoint = request.EntryPoint;
 	compiledStage.debugArtifact = Paths::MakeProjectRelativeString(compiledShader.GetDebugArtifactPath());

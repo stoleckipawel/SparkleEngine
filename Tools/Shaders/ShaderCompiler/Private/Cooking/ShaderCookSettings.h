@@ -1,17 +1,16 @@
 #pragma once
 
-#include "Backend/ShaderTarget.h"
+#include "RHI/Public/Shaders/ShaderTarget.h"
 
 #include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
 
-struct ShaderPackageCookSettings final
+struct ShaderCookSettings final
 {
 	std::vector<ShaderTarget> targets = {ShaderTarget::DxilSm66, ShaderTarget::SpirV16};
 	std::string backendName = "auto";
-	std::string packageId;
 	std::string shaderId;
 	std::vector<std::string> changedVirtualPaths;
 	std::filesystem::path cancellationSignalPath;

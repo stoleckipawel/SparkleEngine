@@ -141,11 +141,11 @@ void UsedShadersPanel::DrawToolbar(bool disableInteraction)
 	const std::string recookSelectedLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Refresh, "Recook Selected");
 	if (ImGui::Button(recookSelectedLabel.c_str()) && selectedRow != nullptr && m_recookHandler)
 	{
-		m_recookHandler(selectedRow->PackageId);
+		m_recookHandler(selectedRow->ShaderId);
 	}
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(260.0f);
-	const std::string filterHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Filter shader/package/source");
+	const std::string filterHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Filter shader/source");
 	ImGui::InputTextWithHint("##UsedShadersFilter", filterHint.c_str(), m_filterBuffer.data(), m_filterBuffer.size());
 	ImGui::SameLine();
 	ImGui::TextDisabled("%zu registered shader stage(s)", m_model.GetRows().size());
@@ -156,18 +156,17 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 {
 	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
 	                                   ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
-	if (!ImGui::BeginTable("##UsedShadersTableV2", 10, tableFlags, ImVec2(0.0f, 0.0f)))
+	if (!ImGui::BeginTable("##UsedShadersTableV2", 9, tableFlags, ImVec2(0.0f, 0.0f)))
 	{
 		return;
 	}
 
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableSetupColumn("Shader Id");
-	ImGui::TableSetupColumn("Package Id");
+	ImGui::TableSetupColumn("Shader Type Id");
 	ImGui::TableSetupColumn("Stage");
 	ImGui::TableSetupColumn("Source Path");
 	ImGui::TableSetupColumn("Entry");
-	ImGui::TableSetupColumn("Layout");
 	ImGui::TableSetupColumn("Params");
 	ImGui::TableSetupColumn("Backend/Target");
 	ImGui::TableSetupColumn("Generation");
@@ -191,15 +190,13 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 			RefreshSelectedShaderArtifacts();
 		}
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(row.PackageId.c_str());
+		ImGui::Text("%016llx", static_cast<unsigned long long>(row.ShaderTypeId));
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(row.Stage.c_str());
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(row.SourcePath.c_str());
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(row.EntryPoint.c_str());
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(row.BindingLayoutId.c_str());
 		ImGui::TableNextColumn();
 		ImGui::Text("%zu", row.ParameterCount);
 		ImGui::TableNextColumn();
@@ -226,7 +223,7 @@ void UsedShadersPanel::DrawSelectedShaderArtifacts()
 	RefreshSelectedShaderArtifacts();
 	ImGui::TextUnformatted(selectedRow->ShaderId.c_str());
 	ImGui::SameLine();
-	ImGui::TextDisabled("%s | %s | %s", selectedRow->PackageId.c_str(), selectedRow->Stage.c_str(), selectedRow->EntryPoint.c_str());
+	ImGui::TextDisabled("%016llx | %s | %s", static_cast<unsigned long long>(selectedRow->ShaderTypeId), selectedRow->Stage.c_str(), selectedRow->EntryPoint.c_str());
 	if (m_selectedArtifactDirectory.empty())
 	{
 		ImGui::TextWrapped(
@@ -318,6 +315,6 @@ const RegisteredShaderRow* UsedShadersPanel::GetSelectedRow() const noexcept
 bool UsedShadersPanel::MatchesFilter(const RegisteredShaderRow& row) const noexcept
 {
 	const std::string_view filter(m_filterBuffer.data());
-	return filter.empty() || Strings::ContainsIgnoreCase(row.ShaderId, filter) || Strings::ContainsIgnoreCase(row.PackageId, filter) ||
-	       Strings::ContainsIgnoreCase(row.SourcePath, filter) || Strings::ContainsIgnoreCase(row.Stage, filter);
+	return filter.empty() || Strings::ContainsIgnoreCase(row.ShaderId, filter) || Strings::ContainsIgnoreCase(row.SourcePath, filter)
+	       || Strings::ContainsIgnoreCase(row.Stage, filter);
 }

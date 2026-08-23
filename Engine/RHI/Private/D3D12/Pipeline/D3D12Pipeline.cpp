@@ -5,7 +5,6 @@
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12VertexLayout.h"
 #include "Config/DepthConvention.h"
-#include "Shaders/LoadedShaderPackage.h"
 #include "Strings/StringUtils.h"
 
 #include <cstdio>
@@ -77,7 +76,6 @@ class D3D12PipelineImplementation final
 	struct ResolvedD3D12ShaderStage final
 	{
 		D3D12_SHADER_BYTECODE Bytecode = {};
-		std::string_view DebugArtifact = {};
 	};
 
 	static ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(const RhiShaderStageDesc& shaderDesc, std::string_view pipelineName, bool required)
@@ -96,23 +94,20 @@ class D3D12PipelineImplementation final
 			return {};
 		}
 
-		const LoadedShaderPackage& shaderPackage = *shaderDesc.Package;
-		const CookedShaderBinaryRecord* shaderBinary =
-		    shaderPackage.FindRuntimeBinaryRecord(shaderDesc.Stage, CookedShaderBinaryFormat::Dxil);
-		if (shaderBinary == nullptr)
+		const ResolvedShader& shader = *shaderDesc.Shader;
+		if (shader.Entry->BinaryFormat != ShaderBinaryFormat::Dxil)
 		{
 			Diagnostics::Fatal(
 			    g_pipelineLogger,
 			    __FILE__,
 			    __LINE__,
 			    std::format(
-			        "Pipeline '{}' is missing a cooked DXIL/{} binary for shader stage '{}'",
+			        "Pipeline '{}' received non-DXIL code for shader stage '{}'",
 			        pipelineName,
-			        GetRuntimeShaderCodegenTarget(CookedShaderBinaryFormat::Dxil),
-			        GetShaderStagePrefix(shaderDesc.Stage)));
+			        GetShaderStagePrefix(shader.Entry->Stage)));
 		}
 
-		const ShaderBytecode bytecode = shaderPackage.GetBytecode(*shaderBinary);
+		const ShaderBytecode bytecode = shader.GetBytecode();
 		if (!bytecode.IsValid())
 		{
 			Diagnostics::Fatal(
@@ -122,25 +117,13 @@ class D3D12PipelineImplementation final
 			    std::format(
 			        "Pipeline '{}' has invalid cooked shader bytecode for stage '{}'",
 			        pipelineName,
-			        GetShaderStagePrefix(shaderDesc.Stage)));
+			        GetShaderStagePrefix(shader.Entry->Stage)));
 		}
 
 		ResolvedD3D12ShaderStage resolved{};
 		resolved.Bytecode.pShaderBytecode = bytecode.Data;
 		resolved.Bytecode.BytecodeLength = bytecode.Size;
-		resolved.DebugArtifact = shaderPackage.ResolveString(shaderBinary->DebugArtifact);
 		return resolved;
-	}
-
-	static void LogShaderDebugArtifact(std::string_view stageName, std::string_view debugArtifact)
-	{
-		if (!debugArtifact.empty())
-		{
-			SPDLOG_LOGGER_ERROR(
-			    g_pipelineLogger,
-			    "{}",
-			    std::format("D3D12 PSO stage '{}' debug artifact: {}", stageName, debugArtifact));
-		}
 	}
 
 	static std::string_view GetDiagnosticSeverityLabel(ERhiDiagnosticMessageSeverity severity) noexcept
@@ -336,8 +319,6 @@ void D3D12Pipeline::Create(const GraphicsPipelineDesc& desc)
 	HRESULT hr = m_rhi.GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(m_pso.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		D3D12PipelineImplementation::LogShaderDebugArtifact("vs", vertexShader.DebugArtifact);
-		D3D12PipelineImplementation::LogShaderDebugArtifact("ps", pixelShader.DebugArtifact);
 		HandlePsoCreateFailure(hr);
 	}
 
@@ -359,7 +340,6 @@ void D3D12Pipeline::Create(const ComputePipelineDesc& desc)
 	HRESULT hr = m_rhi.GetDevice()->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(m_pso.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		D3D12PipelineImplementation::LogShaderDebugArtifact("cs", computeShader.DebugArtifact);
 		HandlePsoCreateFailure(hr);
 	}
 

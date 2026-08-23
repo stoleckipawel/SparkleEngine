@@ -70,7 +70,7 @@ void ShaderRecookCoordinator::RequestRecook(ShaderRecookRequest request) noexcep
 void ShaderRecookCoordinator::RequestReload() noexcept
 {
 	m_reloadRequested = true;
-	PublishStatus("Shader reload requested; cooked shader packages will reload at the next coordinator update.");
+	PublishStatus("Shader reload requested; the cooked shader map and code library will reload at the next coordinator update.");
 }
 
 void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) noexcept
@@ -166,7 +166,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 			PublishStatus(
 			    std::format(
 			        "Shader recook #{} ({}) finished with process success, but runtime reload was rejected before touching active "
-			        "packages: {}\nCommand: {}\n\n{}",
+			        "shader artifacts: {}\nCommand: {}\n\n{}",
 			        result.RequestId,
 			        DescribeRequest(result.Request),
 			        publicationDiagnostic,
@@ -177,7 +177,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 
 		try
 		{
-			ReloadCookedShaders(renderer);
+			ReloadShaders(renderer);
 		}
 		catch (const Diagnostics::Error& error)
 		{
@@ -186,7 +186,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 			PublishStatus(
 			    std::format(
 			        "Shader recook #{} ({}) published fresh result {} but runtime validation rejected the replacement set; previous cooked "
-			        "shader packages remain active. {}\nCommand: {}\n\n{}",
+			        "shader map remains active. {}\nCommand: {}\n\n{}",
 			        result.RequestId,
 			        DescribeRequest(result.Request),
 			        publication.PublicationId,
@@ -212,7 +212,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 
 	PublishStatus(
 	    std::format(
-	        "Shader recook #{} ({}) failed with exit code {}. Previous cooked shader packages remain active; no recook publication was "
+	        "Shader recook #{} ({}) failed with exit code {}. The previous shader map remains active; no recook publication was "
 	        "accepted and old artifacts remain loaded.\nCommand: {}\n\n{}",
 	        result.RequestId,
 	        DescribeRequest(result.Request),
@@ -221,27 +221,27 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 	        result.Process.Output));
 }
 
-void ShaderRecookCoordinator::ReloadCookedShaders(Renderer& renderer)
+void ShaderRecookCoordinator::ReloadShaders(Renderer& renderer)
 {
 	PublishStatus("Shader reload accepted; validating a replacement runtime generation at the render boundary.");
-	renderer.ReloadCookedShaders();
+	renderer.ReloadShaders();
 }
 
 void ShaderRecookCoordinator::HandleManualReload(Renderer& renderer) noexcept
 {
 	try
 	{
-		ReloadCookedShaders(renderer);
+		ReloadShaders(renderer);
 		PublishStatus(
 		    std::format(
 		        "Manual shader reload activated generation {} without a device-idle drain.",
-		        renderer.GetShaderPackageGeneration()));
+		        renderer.GetShaderGeneration()));
 	}
 	catch (const Diagnostics::Error& error)
 	{
 		PublishStatus(
 		    std::format(
-		        "Manual shader reload was rejected by runtime validation; previous cooked shader packages remain active. {}",
+		        "Manual shader reload was rejected by runtime validation; the previous shader map remains active. {}",
 		        error.what()));
 	}
 }
@@ -297,7 +297,7 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 
 	try
 	{
-		ReloadCookedShaders(renderer);
+		ReloadShaders(renderer);
 	}
 	catch (const Diagnostics::Error& error)
 	{
@@ -307,7 +307,7 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 		PublishStatus(
 		    std::format(
 		        "External shader recook publication {} was fresh, but runtime validation rejected the replacement set; previous cooked "
-		        "shader packages remain active. {}",
+		        "shader map remains active. {}",
 		        publication.PublicationId,
 		        error.what()));
 		return;
@@ -320,7 +320,7 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 	    std::format(
 	        "External shader recook publication {} accepted and activated without a device-idle drain (generation={}).",
 	        publication.PublicationId,
-	        renderer.GetShaderPackageGeneration()));
+	        renderer.GetShaderGeneration()));
 }
 
 void ShaderRecookCoordinator::PublishStatus(std::string status) noexcept
@@ -346,8 +346,6 @@ std::string ShaderRecookCoordinator::DescribeRequest(const ShaderRecookRequest& 
 	{
 		case ShaderRecookRequestType::Changed:
 			return std::format("{} changed shader source path(s)", request.ChangedVirtualPaths.size());
-		case ShaderRecookRequestType::PackageId:
-			return request.Target.empty() ? "shader package <empty>" : "shader package '" + request.Target + "'";
 		case ShaderRecookRequestType::ShaderId:
 			return request.Target.empty() ? "shader id <empty>" : "shader id '" + request.Target + "'";
 		case ShaderRecookRequestType::Global:
@@ -383,7 +381,7 @@ bool ShaderRecookCoordinator::TryAcceptFreshPublication(
 	if (readResult.Missing)
 	{
 		outDiagnostic =
-		    "Shader compiler process succeeded, but no recook publication file was found; reload rejected before touching active packages.";
+		    "Shader compiler process succeeded, but no recook publication file was found; reload rejected before touching active shaders.";
 		return false;
 	}
 
@@ -395,7 +393,7 @@ bool ShaderRecookCoordinator::TryAcceptFreshPublication(
 
 	if (!readResult.Publication.has_value())
 	{
-		outDiagnostic = "Shader recook publication was not readable; reload rejected before touching active packages.";
+		outDiagnostic = "Shader recook publication was not readable; reload rejected before touching active shaders.";
 		return false;
 	}
 
@@ -404,7 +402,7 @@ bool ShaderRecookCoordinator::TryAcceptFreshPublication(
 	if (publication.PublicationId <= freshnessFloor)
 	{
 		outDiagnostic = std::format(
-		    "Shader recook publication {} is stale; expected a publication newer than {}. Reload rejected before touching active packages.",
+		    "Shader recook publication {} is stale; expected a publication newer than {}. Reload rejected before touching active shaders.",
 		    publication.PublicationId,
 		    freshnessFloor);
 		return false;

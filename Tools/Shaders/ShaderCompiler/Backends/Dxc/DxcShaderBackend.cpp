@@ -238,7 +238,7 @@ void DxcShaderBackend::BuildCompileArguments(
 		outArgs.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
 	}
 
-	// Cooked packages serialize typed reflection separately, so runtime DXIL
+	// Cooked shader artifacts serialize typed reflection separately, so runtime DXIL
 	// does not need the embedded reflection payload. Both flags are DXIL-only.
 	if (!IsSpirVTarget(request.Target))
 	{

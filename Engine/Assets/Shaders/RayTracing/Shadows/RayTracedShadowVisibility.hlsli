@@ -8,7 +8,7 @@
 
 namespace RayTracedShadowVisibility
 {
-	ShadowVisibilitySignal TraceDirectLightSample(
+	ShadowVisibilitySample TraceDirectLightSample(
 	    float3 positionWorld,
 	    float3 normalWorld,
 	    LightSampling::DirectLightSample lightSample,

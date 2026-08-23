@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
-template <typename TParameters> class TypedPassParameterInstance final : public TParameters
+template <typename TParameters> class TypedPassParameterInstance final
 {
-  public:
+public:
 	using Parameters = TParameters;
 	using Metadata = ShaderParameterStructMetadata<TParameters>;
 
@@ -19,26 +19,26 @@ template <typename TParameters> class TypedPassParameterInstance final : public 
 	TParameters& GetFields() noexcept
 	{
 		m_isDirty = true;
-		return static_cast<TParameters&>(*this);
+		return m_fields;
 	}
 
-	const TParameters& GetFields() const noexcept { return static_cast<const TParameters&>(*this); }
+	const TParameters& GetFields() const noexcept { return m_fields; }
 
 	TParameters* operator->() noexcept
 	{
 		m_isDirty = true;
-		return &static_cast<TParameters&>(*this);
+		return &m_fields;
 	}
 
-	const TParameters* operator->() const noexcept { return &static_cast<const TParameters&>(*this); }
+	const TParameters* operator->() const noexcept { return &m_fields; }
 
 	TParameters& operator*() noexcept
 	{
 		m_isDirty = true;
-		return static_cast<TParameters&>(*this);
+		return m_fields;
 	}
 
-	const TParameters& operator*() const noexcept { return static_cast<const TParameters&>(*this); }
+	const TParameters& operator*() const noexcept { return m_fields; }
 
 	bool Sync() const
 	{
@@ -48,7 +48,7 @@ template <typename TParameters> class TypedPassParameterInstance final : public 
 		}
 
 		m_isDirty = false;
-		return m_metadata->Commit(static_cast<const TParameters&>(*this), m_parameterSet, &m_missingBindings);
+		return m_metadata->Commit(m_fields, m_parameterSet, &m_missingBindings);
 	}
 
 	const std::vector<std::string>& GetMissingBindings() const
@@ -63,8 +63,9 @@ template <typename TParameters> class TypedPassParameterInstance final : public 
 		return m_parameterSet;
 	}
 
-  private:
+private:
 	const Metadata* m_metadata = nullptr;
+	TParameters m_fields = {};
 	mutable bool m_isDirty = true;
 	mutable std::vector<std::string> m_missingBindings;
 	mutable PassParameterSet m_parameterSet;

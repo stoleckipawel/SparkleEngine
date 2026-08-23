@@ -16,8 +16,8 @@ namespace Filesystem::Private
 		std::filesystem::path logsRootPath;
 		std::filesystem::path cookedAssetRootPath;
 		std::filesystem::path cookedShaderRootPath;
-		std::filesystem::path cookedShaderPackageRootPath;
-		std::filesystem::path cookedShaderRegistryPath;
+		std::filesystem::path globalShaderMapPath;
+		std::filesystem::path cookedShaderLibraryPath;
 		std::filesystem::path cookedTextureRootPath;
 		std::filesystem::path cookedSceneManifestRootPath;
 		std::filesystem::path cookedMeshRootPath;

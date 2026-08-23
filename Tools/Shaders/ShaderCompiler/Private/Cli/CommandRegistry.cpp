@@ -3,7 +3,6 @@
 #include "Cli/CommandRegistry.h"
 
 #include "Cli/CookShadersCommand.h"
-#include "Cli/InspectPackageCommand.h"
 #include "Cli/InspectShaderCommand.h"
 #include "Cli/ListBackendsCommand.h"
 #include "Cli/ListShadersCommand.h"
@@ -18,7 +17,7 @@ CommandRegistry::CommandRegistry()
 	    Registration{
 	        .verbs = {kCommandCook},
 	        .command = std::make_shared<CookShadersCommand>(),
-	        .usageLine = "  ShaderCompiler cook [--package <package-id> | --shader-id <registered-shader-name> | --changed "
+	        .usageLine = "  ShaderCompiler cook [--shader-id <registered-shader-name> | --changed "
 	                     "<virtual-path>...] [--target <name>] [--backend <name>] [--debug-artifacts <dir>] [--analysis <pass>] "
 	                     "[--debug-info] [--disable-optimizations]"});
 
@@ -33,12 +32,6 @@ CommandRegistry::CommandRegistry()
 	        .verbs = {kCommandListTargets},
 	        .command = std::make_shared<ListTargetsCommand>(),
 	        .usageLine = "  ShaderCompiler list-targets"});
-
-	m_registrations.push_back(
-	    Registration{
-	        .verbs = {kCommandInspectPackage},
-	        .command = std::make_shared<InspectPackageCommand>(),
-	        .usageLine = "  ShaderCompiler inspect-package <path>"});
 
 	m_registrations.push_back(
 	    Registration{

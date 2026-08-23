@@ -37,8 +37,6 @@ namespace RayTracingPathTrace
 	RayTracingTraceResult TraceSceneRay(float3 originWorld, float3 directionWorld, TraceSettings settings)
 	{
 		return RayTracingSceneTlas::TraceRayQueryWithAlphaTest(
-		    0u,
-		    0u,
 		    originWorld,
 		    directionWorld,
 		    settings.MinT,

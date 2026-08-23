@@ -19,7 +19,7 @@ void AccumulateRayTracingHitDirectLightSample(RayTracingHitSurfaceData surface,
 		return;
 	}
 
-	const ShadowVisibilitySignal shadow =
+	const ShadowVisibilitySample shadow =
 	    RayTracedShadowVisibility::TraceDirectLightSample(surface.PositionWorld, surface.NormalWorld, lightSample, castsShadow);
 	float3 diffuse = 0.0f.xxx;
 	float3 specular = 0.0f.xxx;

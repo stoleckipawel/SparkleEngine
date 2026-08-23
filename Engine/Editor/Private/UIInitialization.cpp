@@ -99,7 +99,7 @@ void UI::InitializeViewportPanels()
 void UI::InitializeAssetPanels()
 {
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
-	m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
+	m_usedShadersPanel->SetGenerationProvider(m_shaderGenerationProvider);
 	m_usedMeshesPanel = std::make_unique<UsedMeshesPanel>();
 	m_usedMeshesPanel->SetDiagnosticsProvider(m_meshDiagnosticsProvider);
 	m_usedMeshesPanel->SetPreviewGeometryProvider(m_meshPreviewProvider);
@@ -108,11 +108,11 @@ void UI::InitializeAssetPanels()
 	m_usedShadersPanel->SetReloadHandler([this]() { m_shaderReloadRequested = true; });
 	m_usedShadersPanel->SetRecookAllHandler([this]() { m_shaderRecookRequested = true; });
 	m_usedShadersPanel->SetRecookHandler(
-	    [this](std::string packageId)
+	    [this](std::string shaderId)
 	    {
 		    if (m_editorConsoleSystem)
 		    {
-			    m_editorConsoleSystem->SubmitLine("RecompileShaders " + packageId);
+			    m_editorConsoleSystem->SubmitLine("RecompileShaders Shader " + shaderId);
 		    }
 	    });
 }

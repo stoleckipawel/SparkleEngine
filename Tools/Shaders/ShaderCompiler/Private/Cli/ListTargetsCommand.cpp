@@ -2,7 +2,7 @@
 
 #include "Cli/ListTargetsCommand.h"
 
-#include "Backend/ShaderTarget.h"
+#include "RHI/Public/Shaders/ShaderTarget.h"
 #include "Constants/ShaderCompilerConstants.h"
 
 #include <iostream>

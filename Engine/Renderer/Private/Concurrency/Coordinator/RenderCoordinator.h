@@ -36,8 +36,8 @@ public:
 	void RenderFrame();
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
-	void ReloadCookedShaders();
-	std::uint64_t GetShaderPackageGeneration() const noexcept;
+	void ReloadShaders();
+	std::uint64_t GetShaderGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics();
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId);
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
@@ -93,7 +93,7 @@ private:
 	bool m_startSucceeded = false;
 	mutable std::mutex m_readStateMutex;
 	ViewportRenderProducts m_publishedViewportProducts;
-	std::atomic<std::uint64_t> m_shaderPackageGeneration{0};
+	std::atomic<std::uint64_t> m_shaderGeneration{0};
 	std::vector<ViewportCaptureReadback> m_publishedViewportCaptures;
 	std::uint64_t m_nextViewportCaptureId = 1;
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Backend/ShaderTarget.h"
+#include "RHI/Public/Shaders/ShaderTarget.h"
 #include "RHI/Public/Shaders/Authoring/ShaderParameterStruct.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
 #include "ShaderContractCatalog.h"

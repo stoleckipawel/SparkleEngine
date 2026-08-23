@@ -26,12 +26,12 @@ template <typename TResult> TResult RenderCoordinator::ExtractControlResult(Rend
 	Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render control returned an incompatible payload.");
 }
 
-void RenderCoordinator::ReloadCookedShaders()
+void RenderCoordinator::ReloadShaders()
 {
 	m_producerOwner.AssertAccess();
 	if (!m_config.IsThreaded())
 	{
-		GetSerialContext().GetRendererHost().GetRenderPassRuntimeCache().ReloadCookedShaders();
+		GetSerialContext().GetRendererHost().GetRenderPassRuntimeCache().ReloadShaders();
 		return;
 	}
 
@@ -39,11 +39,11 @@ void RenderCoordinator::ReloadCookedShaders()
 	    SubmitSynchronousControl(RenderReloadShadersCommand{std::make_shared<RenderControlCompletion>()}));
 }
 
-std::uint64_t RenderCoordinator::GetShaderPackageGeneration() const noexcept
+std::uint64_t RenderCoordinator::GetShaderGeneration() const noexcept
 {
 	m_producerOwner.AssertAccess();
-	return m_config.IsThreaded() ? m_shaderPackageGeneration.load(std::memory_order_acquire)
-	                             : GetSerialContext().GetRendererHost().GetRenderPassRuntimeCache().GetShaderPackageGeneration();
+	return m_config.IsThreaded() ? m_shaderGeneration.load(std::memory_order_acquire)
+	                             : GetSerialContext().GetRendererHost().GetRenderPassRuntimeCache().GetShaderGeneration();
 }
 
 MeshDiagnosticsSnapshot RenderCoordinator::CaptureMeshDiagnostics()
@@ -151,8 +151,8 @@ void RenderCoordinator::PublishReadState()
 			m_publishedViewportCaptures.push_back(std::move(capture));
 		}
 	}
-	m_shaderPackageGeneration.store(
-	    m_context->GetRendererHost().GetRenderPassRuntimeCache().GetShaderPackageGeneration(),
+	m_shaderGeneration.store(
+	    m_context->GetRendererHost().GetRenderPassRuntimeCache().GetShaderGeneration(),
 	    std::memory_order_release);
 }
 

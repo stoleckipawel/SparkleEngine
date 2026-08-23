@@ -3,7 +3,7 @@
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
 #include "Frame/RhiFrameConstants.h"
-#include "Shaders/CookedShaderPackage.h"
+#include "Shaders/ShaderTarget.h"
 #include "Vulkan/Capture/VulkanCaptureService.h"
 #include "Vulkan/Commands/VulkanCommandRecordingContext.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
@@ -177,7 +177,7 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 
 	RhiCapabilities capabilities{};
 	capabilities.BackendApi = ERhiBackendApi::Vulkan;
-	capabilities.RuntimeShaderBinaryFormat = CookedShaderBinaryFormat::SpirV;
+	capabilities.RuntimeShaderBinaryFormat = ShaderBinaryFormat::SpirV;
 	const std::uint32_t apiVersion = m_rhi->GetAdapterInfo().ApiVersion;
 	capabilities.BackendVersion = RhiBackendVersionInfo{
 	    .Semantic = ERhiBackendVersionSemantic::ApiVersion,

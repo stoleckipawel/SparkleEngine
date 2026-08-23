@@ -6,20 +6,12 @@ if(NOT DEFINED WORKING_DIRECTORY OR WORKING_DIRECTORY STREQUAL "")
     message(FATAL_ERROR "WORKING_DIRECTORY is required.")
 endif()
 
-if(NOT DEFINED REPRESENTATIVE_PACKAGE OR REPRESENTATIVE_PACKAGE STREQUAL "")
-    set(REPRESENTATIVE_PACKAGE "ComputeClear")
-endif()
-
 if(NOT DEFINED REPRESENTATIVE_SHADER OR REPRESENTATIVE_SHADER STREQUAL "")
     set(REPRESENTATIVE_SHADER "ComputeClearCS")
 endif()
 
 if(NOT DEFINED REPRESENTATIVE_VIRTUAL_SOURCE OR REPRESENTATIVE_VIRTUAL_SOURCE STREQUAL "")
     set(REPRESENTATIVE_VIRTUAL_SOURCE "/Engine/Passes/Compute/ComputeClear.hlsl")
-endif()
-
-if(NOT DEFINED REPRESENTATIVE_PACKAGE_KEY OR REPRESENTATIVE_PACKAGE_KEY STREQUAL "")
-    message(FATAL_ERROR "REPRESENTATIVE_PACKAGE_KEY is required so package identity changes are intentional.")
 endif()
 
 if(NOT DEFINED REPRESENTATIVE_PROJECT OR REPRESENTATIVE_PROJECT STREQUAL "")
@@ -40,17 +32,16 @@ endfunction()
 run_shader_compiler(list-backends)
 run_shader_compiler(list-targets)
 run_shader_compiler(list-shaders --validate)
-run_shader_compiler(inspect-shader "${REPRESENTATIVE_PACKAGE}")
 run_shader_compiler(cook --target DxilSm66 --target SpirV16 --analysis cooked-shader-stats)
+run_shader_compiler(inspect-shader "${REPRESENTATIVE_SHADER}")
 run_shader_compiler(cook --changed "${REPRESENTATIVE_VIRTUAL_SOURCE}" --target DxilSm66 --target SpirV16)
 run_shader_compiler(cook --shader-id "${REPRESENTATIVE_SHADER}" --target DxilSm66 --target SpirV16)
 run_shader_compiler(cook --shader-id "${REPRESENTATIVE_SHADER}" --target DxilSm66 --target SpirV16)
 
-set(representative_package_path
-    "${WORKING_DIRECTORY}/artifacts/dev/projects/${REPRESENTATIVE_PROJECT}/cooked/Shaders/Packages/${REPRESENTATIVE_PACKAGE_KEY}.sparkshader")
-if(NOT EXISTS "${representative_package_path}")
-    message(FATAL_ERROR
-        "Expected cooked package for project ${REPRESENTATIVE_PROJECT}, package ${REPRESENTATIVE_PACKAGE}, key ${REPRESENTATIVE_PACKAGE_KEY}.")
+set(global_shader_map_path
+    "${WORKING_DIRECTORY}/artifacts/dev/projects/${REPRESENTATIVE_PROJECT}/cooked/Shaders/GlobalShaderMap.smap")
+set(cooked_shader_library_path
+    "${WORKING_DIRECTORY}/artifacts/dev/projects/${REPRESENTATIVE_PROJECT}/cooked/Shaders/CookedShaderLibrary.slib")
+if(NOT EXISTS "${global_shader_map_path}" OR NOT EXISTS "${cooked_shader_library_path}")
+    message(FATAL_ERROR "Expected the cooked shader map and code library for project ${REPRESENTATIVE_PROJECT}.")
 endif()
-
-run_shader_compiler(inspect-package "${representative_package_path}")

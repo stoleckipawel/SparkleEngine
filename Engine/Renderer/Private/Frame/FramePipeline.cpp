@@ -214,7 +214,7 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	RenderScene& scene = m_renderScene;
 	frame.Identity = RenderFrameIdentity{
 	    .FrameId = m_frameId,
-	    .ShaderPackageGeneration = m_renderPassRuntimeCache.GetShaderPackageGeneration(),
+	    .ShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration(),
 	    .ImageProviderGeneration = m_imageProviders.GetGeneration()};
 	frame.Time = time;
 	frame.FrameInFlightIndex = frameIndex;
@@ -231,7 +231,7 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	        .ViewMode = CVarRenderViewMode.Get(),
 	        .FrameId = frame.Identity.FrameId,
 	        .SceneGeneration = scene.GetSceneGeneration(),
-	        .ShaderGeneration = frame.Identity.ShaderPackageGeneration,
+	        .ShaderGeneration = frame.Identity.ShaderGeneration,
 	        .ImageProviderGeneration = frame.Identity.ImageProviderGeneration,
 	        .GraphTopologyGeneration = m_graphTopologyGeneration});
 	m_renderViewPreparation.Prepare(frame.PreparedScene, frame.View, m_renderViewState);

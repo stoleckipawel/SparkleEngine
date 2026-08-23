@@ -36,5 +36,5 @@ struct ShaderCompileResult final
 struct ShaderCompileConsumer final
 {
 	std::size_t JobIndex = 0;
-	std::size_t PackageIndex = 0;
+	std::size_t ShaderIndex = 0;
 };

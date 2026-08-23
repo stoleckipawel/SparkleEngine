@@ -2,12 +2,11 @@
 
 #include "Cooking/ShaderCookContext.h"
 
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
 class ShaderBackendPool;
-struct ShaderPackageCookSettings;
+struct ShaderCookSettings;
 
 class ShaderCompileJobBuilder final
 {
@@ -15,21 +14,19 @@ public:
 	ShaderCompileJobBuilder() = delete;
 
 	static void BuildAndAdd(
-	    const ShaderPackageCookSettings& settings,
-	    std::size_t packageIndex,
-	    std::size_t stageIndex,
+	    const ShaderCookSettings& settings,
+	    std::size_t shaderIndex,
 	    ShaderTarget target,
 	    ShaderBackendPool& backendPool,
 	    ShaderCookPipelinePlan& plan);
 
 private:
 	static ShaderCompileRequest BuildRequest(
-	    const ShaderPackageCookSettings& settings,
-	    const ShaderCookPackageDesc& package,
-	    const ShaderCookStageDesc& stage,
+	    const ShaderCookSettings& settings,
+	    const ShaderCookDesc& shader,
 	    ShaderTarget target);
-	static void AppendDescriptorBindingRemaps(const ShaderCookPackageDesc& package, ShaderCompileRequest& request);
-	static ShaderCompileFeatureFlags BuildRequiredFeatures(CookedShaderPackageFeatureFlags packageFeatures) noexcept;
+	static void AppendDescriptorBindingRemaps(const ShaderCookDesc& shader, ShaderCompileRequest& request);
+	static ShaderCompileFeatureFlags BuildRequiredFeatures(ShaderFeatureFlags features) noexcept;
 	static const ShaderSourceMountTable& GetSourceMounts();
 	static ShaderCompileInputHash BuildInputHash(
 	    std::uint64_t sourceContentHash,

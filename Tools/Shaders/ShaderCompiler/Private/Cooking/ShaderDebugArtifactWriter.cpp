@@ -79,7 +79,7 @@ std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(const ShaderCompi
 	writer.WriteString("target", GetShaderTargetName(request.Target));
 	writer.WriteString("backend", compiledStage.backendName);
 	writer.WriteUInt64("backendVersion", compiledStage.backendVersion);
-	writer.WriteString("format", compiledStage.format == CookedShaderBinaryFormat::SpirV ? "SpirV" : "Dxil");
+	writer.WriteString("format", compiledStage.format == ShaderBinaryFormat::SpirV ? "SpirV" : "Dxil");
 	writer.WriteHexUInt64("sourceHash", compiledStage.sourceHash);
 	writer.WriteHexUInt64("includeClosureHash", compiledStage.includeClosureHash);
 	writer.WriteHexUInt64("requestHash", compiledStage.requestHash);
@@ -96,7 +96,7 @@ std::string ShaderDebugArtifactWriter::BuildCompileIdentityJson(const ShaderComp
 	writer.WriteHexUInt64("includeClosureHash", compiledStage.includeClosureHash);
 	writer.WriteHexUInt64("requestHash", compiledStage.requestHash);
 	writer.WriteString("target", GetShaderTargetName(request.Target));
-	writer.WriteString("format", compiledStage.format == CookedShaderBinaryFormat::SpirV ? "SpirV" : "Dxil");
+	writer.WriteString("format", compiledStage.format == ShaderBinaryFormat::SpirV ? "SpirV" : "Dxil");
 	writer.WriteString("backend", compiledStage.backendName);
 	writer.WriteUInt64("backendVersion", compiledStage.backendVersion);
 	return writer.Finish();

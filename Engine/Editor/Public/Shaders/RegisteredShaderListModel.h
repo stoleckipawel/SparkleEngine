@@ -10,11 +10,10 @@
 struct RegisteredShaderRow final
 {
 	std::string ShaderId;
-	std::string PackageId;
+	std::uint64_t ShaderTypeId = 0;
 	std::string SourcePath;
 	std::string EntryPoint;
 	std::string Stage;
-	std::string BindingLayoutId;
 	std::size_t ParameterCount = 0;
 	std::uint64_t RuntimeGeneration = 0;
 	bool ArtifactAvailable = false;
@@ -32,7 +31,7 @@ class RegisteredShaderListModel final
 	const std::vector<RegisteredShaderRow>& GetRows() const noexcept { return m_rows; }
 
   private:
-	static std::filesystem::path FindDebugArtifactDirectoryFor(std::string_view shaderId, std::string_view packageId);
+	static std::filesystem::path FindDebugArtifactDirectoryFor(std::string_view shaderId);
 
 	GenerationProvider m_generationProvider;
 	std::vector<RegisteredShaderRow> m_rows;

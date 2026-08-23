@@ -20,7 +20,7 @@
 class RestirIndirectSpatialCS final : public GlobalShader<RestirIndirectSpatialCS>
 {
 public:
-	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, TemporalReservoirSampleTexture)

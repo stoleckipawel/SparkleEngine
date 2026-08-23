@@ -29,7 +29,7 @@ namespace SparkleLauncher
 
 		if (step.Id == "cook-shaders")
 		{
-			return "Shader package cooking failed. Log: " + step.Request.LogPath.string();
+			return "Shader cooking failed. Log: " + step.Request.LogPath.string();
 		}
 		if (step.Id == "cook-textures")
 		{

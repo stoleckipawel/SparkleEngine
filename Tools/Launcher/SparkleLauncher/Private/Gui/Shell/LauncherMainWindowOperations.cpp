@@ -296,7 +296,7 @@ namespace SparkleLauncher
 			return "Run Build > Build Cooking Tools after Sync shows the Vulkan SDK and shader compiler bundle as ready, then retry this "
 			       "workflow.";
 		}
-		if (statusText.contains("shader package", Qt::CaseInsensitive) || statusText.contains("shader", Qt::CaseInsensitive))
+		if (statusText.contains("shader", Qt::CaseInsensitive))
 		{
 			return "Run Cook > Cook Shaders, then retry this workflow.";
 		}

@@ -2,7 +2,6 @@
 
 #include "Vulkan/Pipeline/VulkanShaderModule.h"
 
-#include "Shaders/LoadedShaderPackage.h"
 #include "Strings/StringUtils.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
@@ -28,23 +27,20 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 		return;
 	}
 
-	const LoadedShaderPackage& shaderPackage = *desc.Package;
-	const CookedShaderBinaryRecord* shaderBinary =
-	    shaderPackage.FindRuntimeBinaryRecord(desc.Stage, CookedShaderBinaryFormat::SpirV);
-	if (shaderBinary == nullptr)
+	const ResolvedShader& shader = *desc.Shader;
+	if (shader.Entry->BinaryFormat != ShaderBinaryFormat::SpirV)
 	{
 		Diagnostics::Fatal(
 		    g_vulkanShaderModuleLogger,
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "Pipeline '{}' is missing a cooked SPIR-V/{} binary for shader stage '{}'",
+		        "Pipeline '{}' received non-SPIR-V code for shader stage '{}'",
 		        pipelineName,
-		        GetRuntimeShaderCodegenTarget(CookedShaderBinaryFormat::SpirV),
-		        GetShaderStagePrefix(desc.Stage)));
+		        GetShaderStagePrefix(shader.Entry->Stage)));
 	}
 
-	const ShaderBytecode bytecode = shaderPackage.GetBytecode(*shaderBinary);
+	const ShaderBytecode bytecode = shader.GetBytecode();
 	if (!bytecode.IsValid() || (bytecode.Size % sizeof(std::uint32_t)) != 0)
 	{
 		Diagnostics::Fatal(
@@ -54,10 +50,10 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 		    std::format(
 		        "Pipeline '{}' has invalid cooked SPIR-V bytecode for stage '{}'",
 		        pipelineName,
-		        GetShaderStagePrefix(desc.Stage)));
+		        GetShaderStagePrefix(shader.Entry->Stage)));
 	}
 
-	const std::string_view entryPoint = shaderPackage.ResolveString(shaderBinary->EntryPoint);
+	const std::string_view entryPoint = shader.Map->ResolveString(shader.Entry->EntryPoint);
 	if (!entryPoint.empty())
 	{
 		m_entryPoint.assign(entryPoint.begin(), entryPoint.end());
@@ -72,21 +68,16 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 	const VkResult result = vkCreateShaderModule(m_device, &createInfo, nullptr, &m_module);
 	if (!VulkanResult::Succeeded(result))
 	{
-		const std::string_view debugArtifact = shaderPackage.ResolveString(shaderBinary->DebugArtifact);
-		if (!debugArtifact.empty())
-		{
-			SPDLOG_LOGGER_ERROR(g_vulkanShaderModuleLogger, "Vulkan shader module debug artifact: {}", debugArtifact);
-		}
 		Diagnostics::Fatal(g_vulkanShaderModuleLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateShaderModule", result));
 	}
 
-	m_stage = desc.Stage;
+	m_stage = shader.Entry->Stage;
 	VulkanDebugNames::SetObjectName(
 	    rhi.GetSetDebugUtilsObjectName(),
 	    m_device,
 	    VK_OBJECT_TYPE_SHADER_MODULE,
 	    reinterpret_cast<std::uint64_t>(m_module),
-	    std::format("{}:{}", pipelineName, GetShaderStagePrefix(desc.Stage)));
+	    std::format("{}:{}", pipelineName, GetShaderStagePrefix(shader.Entry->Stage)));
 }
 
 VulkanShaderModule::~VulkanShaderModule() noexcept

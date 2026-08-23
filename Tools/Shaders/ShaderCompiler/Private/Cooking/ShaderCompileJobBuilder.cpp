@@ -5,17 +5,21 @@
 #include "Backend/IShaderBackend.h"
 #include "Backend/ShaderBackendPool.h"
 #include "Compiler/ShaderCompileProfile.h"
-#include "Compiler/ShaderSourcePreprocessor.h"
 #include "Compiler/ShaderSourceMountTable.h"
+#include "Compiler/ShaderSourcePreprocessor.h"
 #include "Cooking/Identity/IncludeClosureHasher.h"
 #include "Cooking/Identity/ShaderCompileRequestHasher.h"
 #include "Cooking/ShaderCookSettings.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "Shaders/Authoring/GlobalShader.h"
+#include "Shaders/ShaderParameterLayoutBuilder.h"
 
+#include <algorithm>
 #include <format>
-#include <utility>
+#include <tuple>
+#include <unordered_map>
 
 ShaderCompileInputHash ShaderCompileJobBuilder::BuildInputHash(
     std::uint64_t sourceContentHash,
@@ -24,69 +28,37 @@ ShaderCompileInputHash ShaderCompileJobBuilder::BuildInputHash(
     std::string_view backendName,
     std::uint64_t backendVersion)
 {
-	std::string canonical;
-	canonical.reserve(128);
-	canonical += "Sparkle.ShaderCompileInput;";
-	canonical += std::to_string(sourceContentHash);
-	canonical += '|';
-	canonical += std::to_string(dependencyClosureHash);
-	canonical += '|';
-	canonical += std::to_string(requestHash);
-	canonical += '|';
-	canonical += std::to_string(backendName.size());
-	canonical += ':';
-	canonical += backendName;
-	canonical += ';';
-	canonical += std::to_string(backendVersion);
-	const ShaderCompileInputHash hash = Hash::Fnv1a64(canonical);
-	return hash != 0 ? hash : Hash::kFnv64OffsetBasis;
+	std::uint64_t hash = Hash::kFnv64OffsetBasis;
+	hash = Hash::ContinueFnv1a64Value(hash, sourceContentHash);
+	hash = Hash::ContinueFnv1a64Value(hash, dependencyClosureHash);
+	hash = Hash::ContinueFnv1a64Value(hash, requestHash);
+	hash = Hash::ContinueFnv1a64(hash, backendName.data(), backendName.size());
+	hash = Hash::ContinueFnv1a64Value(hash, backendVersion);
+	return Hash::FinalizeFnv1a64(hash);
 }
 
 void ShaderCompileJobBuilder::BuildAndAdd(
-    const ShaderPackageCookSettings& settings,
-    std::size_t packageIndex,
-    std::size_t stageIndex,
+    const ShaderCookSettings& settings,
+    std::size_t shaderIndex,
     ShaderTarget target,
     ShaderBackendPool& backendPool,
     ShaderCookPipelinePlan& plan)
 {
-	const ShaderCookPackageDesc& package = plan.packages[packageIndex];
-	const ShaderCookStageDesc& stage = package.stages[stageIndex];
-	ShaderCompileRequest request = BuildRequest(settings, package, stage, target);
-
-	IShaderBackend* backend = nullptr;
-	try
-	{
-		backend = &backendPool.ResolveAndAcquire(request.VirtualSourcePath, request.Target, settings.backendName);
-	}
-	catch (const Diagnostics::Error& error)
-	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Failed to resolve a shader backend for shader type '{}' source '{}' target '{}' - {}",
-		        request.ShaderTypeName,
-		        request.VirtualSourcePath,
-		        GetShaderTargetName(request.Target),
-		        error.what()));
-	}
-
-	const IncludeClosureHash closureBeforeSnapshot = IncludeClosureHasher::Compute(request);
+	const ShaderCookDesc& shader = plan.shaders[shaderIndex];
+	ShaderCompileRequest request = BuildRequest(settings, shader, target);
+	IShaderBackend& backend = backendPool.ResolveAndAcquire(request.VirtualSourcePath, request.Target, settings.backendName);
+	const IncludeClosureHash before = IncludeClosureHasher::Compute(request);
 	request.SourceCode = ShaderSourcePreprocessor::Load(request.VirtualSourcePath, request);
 	const IncludeClosureHash closure = IncludeClosureHasher::Compute(request);
-	if (closureBeforeSnapshot.sourceHash != closure.sourceHash || closureBeforeSnapshot.includeClosureHash != closure.includeClosureHash
-	    || closureBeforeSnapshot.virtualDependencies != closure.virtualDependencies)
+	if (before.sourceHash != closure.sourceHash || before.includeClosureHash != closure.includeClosureHash
+	    || before.virtualDependencies != closure.virtualDependencies)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Shader source closure changed while constructing compile job for '{}' source '{}'; retry the cook.",
-		        request.ShaderTypeName,
-		        request.VirtualSourcePath));
+		throw Diagnostics::Error(std::format("Shader source closure changed while constructing compile job for '{}'.", shader.shaderTypeName));
 	}
-	const std::uint64_t sourceContentHash = Hash::Fnv1a64(request.SourceCode);
-	const std::uint64_t stableSourceContentHash = sourceContentHash != 0 ? sourceContentHash : Hash::kFnv64OffsetBasis;
+	const std::uint64_t sourceHash = Hash::Fnv1a64(request.SourceCode);
 	const std::uint64_t requestHash = ShaderCompileRequestHasher::Compute(request);
-	const std::string backendName(backend->GetBackendName());
-	const std::uint64_t backendVersion = backend->GetBackendVersion();
+	const std::string backendName(backend.GetBackendName());
+	const std::uint64_t backendVersion = backend.GetBackendVersion();
 	const std::string targetProfile = ShaderCompileProfile::BuildTargetProfile(request);
 	const std::size_t jobIndex = plan.jobs.size();
 	plan.jobs.push_back(
@@ -95,83 +67,123 @@ void ShaderCompileJobBuilder::BuildAndAdd(
 	        .BackendName = backendName,
 	        .TargetProfile = targetProfile,
 	        .BackendVersion = backendVersion,
-	        .SourceContentHash = stableSourceContentHash,
+	        .SourceContentHash = sourceHash,
 	        .DependencyClosureHash = closure.includeClosureHash,
 	        .RequestHash = requestHash,
-	        .InputHash = BuildInputHash(stableSourceContentHash, closure.includeClosureHash, requestHash, backendName, backendVersion),
+	        .InputHash = BuildInputHash(sourceHash, closure.includeClosureHash, requestHash, backendName, backendVersion),
 	        .VirtualDependencies = closure.virtualDependencies});
-	plan.consumers.push_back(ShaderCompileConsumer{.JobIndex = jobIndex, .PackageIndex = packageIndex});
+	plan.consumers.push_back(ShaderCompileConsumer{.JobIndex = jobIndex, .ShaderIndex = shaderIndex});
 }
 
 ShaderCompileRequest ShaderCompileJobBuilder::BuildRequest(
-    const ShaderPackageCookSettings& settings,
-    const ShaderCookPackageDesc& package,
-    const ShaderCookStageDesc& stage,
+    const ShaderCookSettings& settings,
+    const ShaderCookDesc& shader,
     ShaderTarget target)
 {
-	if (stage.packageKind == CookedShaderPackageKind::RayTracingLibrary)
-	{
-		throw Diagnostics::Error(
-		    "Ray-tracing library compile jobs remain disabled until Phase 6 publishes their complete runtime consumer.");
-	}
-
 	ShaderCompileRequest request(GetSourceMounts());
-	request.ShaderType = stage.shaderTypeId;
-	request.ShaderTypeName = stage.shaderTypeName;
-	request.VirtualSourcePath = request.SourceMounts.get().CanonicalizeVirtualPath(stage.sourcePath);
-	request.EntryPoint = stage.entryPoint;
-	request.Stage = stage.stage;
+	request.ShaderType = shader.shaderTypeId;
+	request.ShaderTypeName = shader.shaderTypeName;
+	request.VirtualSourcePath = request.SourceMounts.get().CanonicalizeVirtualPath(shader.sourcePath);
+	request.EntryPoint = shader.entryPoint;
+	request.Stage = shader.stage;
 	request.Target = target;
 	request.UnitKind = ShaderCompileUnitKind::EntryPoint;
-	request.RequiredFeatures = BuildRequiredFeatures(stage.packageFeatures);
-	request.ParameterStruct = stage.parameterStructDescriptor;
+	request.RequiredFeatures = BuildRequiredFeatures(shader.features);
+	request.ParameterStruct = shader.parameterStruct;
 	request.CaptureDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	request.EnableDebugInfo = settings.enableDebugInfo;
 	request.EnableOptimizations = settings.enableOptimizations;
 	request.TreatWarningsAsErrors = settings.treatWarningsAsErrors;
 	request.StripDebugInfo = settings.stripDebugInfo;
-	AppendDescriptorBindingRemaps(package, request);
+	AppendDescriptorBindingRemaps(shader, request);
 	return request;
 }
 
-const ShaderSourceMountTable& ShaderCompileJobBuilder::GetSourceMounts()
+void ShaderCompileJobBuilder::AppendDescriptorBindingRemaps(const ShaderCookDesc& shader, ShaderCompileRequest& request)
 {
-	static const ShaderSourceMountTable sourceMounts(
-	    Filesystem::GetShaderPath(PathRoot::Engine),
-	    Filesystem::GetShaderPath(PathRoot::Project));
-	return sourceMounts;
-}
-
-void ShaderCompileJobBuilder::AppendDescriptorBindingRemaps(const ShaderCookPackageDesc& package, ShaderCompileRequest& request)
-{
-	const std::vector<PassParameterDesc>& parameters = package.bindingLayout.GetParameters();
-	request.DescriptorBindingRemaps.reserve(parameters.size());
-	for (std::uint32_t parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex)
+	struct BindingIdentity final
 	{
-		const PassParameterDesc& parameter = parameters[parameterIndex];
+		std::string Name;
+		ShaderParameterSemanticKind Kind = ShaderParameterSemanticKind::ReadTexture;
+		ShaderParameterResourceDomain Domain = ShaderParameterResourceDomain::None;
+		ShaderParameterAccess Access = ShaderParameterAccess::None;
+	};
+	std::vector<BindingIdentity> bindings;
+	for (const ShaderRegistrationDesc& registration : GlobalShaderRegistry::GetRegistrations())
+	{
+		const PassParameterLayout layout = BuildShaderParameterLayout(registration);
+		for (const PassParameterDesc& parameter : layout.GetParameters())
+		{
+			if (parameter.Kind == ShaderParameterSemanticKind::RenderTarget || parameter.Kind == ShaderParameterSemanticKind::DepthTarget)
+			{
+				continue;
+			}
+			const auto existing = std::ranges::find_if(
+			    bindings,
+			    [&parameter](const BindingIdentity& value)
+			    {
+				    return value.Name == parameter.Name && value.Kind == parameter.Kind && value.Domain == parameter.ResourceDomain
+				        && value.Access == parameter.Access;
+			    });
+			if (existing == bindings.end())
+			{
+				bindings.push_back(BindingIdentity{parameter.Name, parameter.Kind, parameter.ResourceDomain, parameter.Access});
+			}
+		}
+	}
+	std::ranges::sort(
+	    bindings,
+	    [](const BindingIdentity& left, const BindingIdentity& right)
+	    {
+		    return std::tie(left.Name, left.Kind, left.Domain, left.Access) < std::tie(right.Name, right.Kind, right.Domain, right.Access);
+	    });
+	for (const PassParameterDesc& parameter : shader.parameterLayout.GetParameters())
+	{
 		if (parameter.Kind == ShaderParameterSemanticKind::RenderTarget || parameter.Kind == ShaderParameterSemanticKind::DepthTarget)
 		{
 			continue;
 		}
+		const auto found = std::ranges::find_if(
+		    bindings,
+		    [&parameter](const BindingIdentity& value)
+		    {
+			    return value.Name == parameter.Name && value.Kind == parameter.Kind && value.Domain == parameter.ResourceDomain
+			        && value.Access == parameter.Access;
+		    });
+		if (found == bindings.end())
+		{
+			throw Diagnostics::Error(std::format("Shader parameter '{}' is missing from the global binding assignment.", parameter.Name));
+		}
 		request.DescriptorBindingRemaps.push_back(
-		    ShaderDescriptorBindingRemap{.Name = parameter.Name, .Set = 0, .Binding = parameterIndex});
+		    ShaderDescriptorBindingRemap{
+		        .Name = parameter.Name,
+		        .Set = 0,
+		        .Binding = static_cast<std::uint32_t>(std::distance(bindings.begin(), found))});
 	}
 }
 
-ShaderCompileFeatureFlags ShaderCompileJobBuilder::BuildRequiredFeatures(CookedShaderPackageFeatureFlags packageFeatures) noexcept
+ShaderCompileFeatureFlags ShaderCompileJobBuilder::BuildRequiredFeatures(ShaderFeatureFlags features) noexcept
 {
-	ShaderCompileFeatureFlags features = ShaderCompileFeatureFlags::None;
-	if (HasCookedShaderPackageFeature(packageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery))
+	ShaderCompileFeatureFlags result = ShaderCompileFeatureFlags::None;
+	if (HasShaderFeature(features, ShaderFeatureFlags::UsesInlineRayQuery))
 	{
-		features |= ShaderCompileFeatureFlags::InlineRayQuery;
+		result |= ShaderCompileFeatureFlags::InlineRayQuery;
 	}
-	if (HasCookedShaderPackageFeature(packageFeatures, CookedShaderPackageFeatureFlags::UsesAccelerationStructure))
+	if (HasShaderFeature(features, ShaderFeatureFlags::UsesAccelerationStructure))
 	{
-		features |= ShaderCompileFeatureFlags::AccelerationStructure;
+		result |= ShaderCompileFeatureFlags::AccelerationStructure;
 	}
-	if (HasCookedShaderPackageFeature(packageFeatures, CookedShaderPackageFeatureFlags::UsesDescriptorIndexing))
+	if (HasShaderFeature(features, ShaderFeatureFlags::UsesDescriptorIndexing))
 	{
-		features |= ShaderCompileFeatureFlags::DescriptorIndexing;
+		result |= ShaderCompileFeatureFlags::DescriptorIndexing;
 	}
-	return features;
+	return result;
+}
+
+const ShaderSourceMountTable& ShaderCompileJobBuilder::GetSourceMounts()
+{
+	static const ShaderSourceMountTable mounts(
+	    Filesystem::GetShaderPath(PathRoot::Engine),
+	    Filesystem::GetShaderPath(PathRoot::Project));
+	return mounts;
 }

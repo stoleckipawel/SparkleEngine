@@ -1,6 +1,7 @@
 #pragma once
 
-#include "RHI/Public/Shaders/CookedShaderPackage.h"
+#include "RHI/Public/Shaders/ShaderTarget.h"
+#include "RHI/Public/Shaders/ShaderStage.h"
 #include "ShaderReflection.h"
 
 #include <cstdint>
@@ -10,13 +11,12 @@
 struct CookedStageBuild final
 {
 	ShaderStage stage = ShaderStage::Count;
-	CookedShaderBinaryFormat format = CookedShaderBinaryFormat::Dxil;
+	ShaderBinaryFormat format = ShaderBinaryFormat::Dxil;
 	std::string sourcePath;
 	std::string entryPoint;
 	std::string debugArtifact;
 	std::string backendName;
 	std::string codegenTarget;
-	std::uint64_t shaderBlobId = 0;
 	std::uint64_t backendVersion = 0;
 	std::uint64_t sourceHash = 0;
 	std::uint64_t includeClosureHash = 0;

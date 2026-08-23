@@ -8,15 +8,12 @@
 #include <type_traits>
 
 // ShaderReflection — backend-neutral reflection metadata extracted from a
-// compiled shader binary by the offline cooker and serialized into the cooked
-// shader package. Runtime modules (RHI, Renderer) consume this data through
-// LoadedShaderReflection to build root signatures, descriptor set layouts,
-// PSOs, and to verify C++ parameter struct declarations against what the
-// shader actually expects.
+// compiled shader binary by the offline cooker and serialized into the shader
+// map. Runtime modules consume it to build binding layouts and verify C++
+// parameter declarations against the compiled shader ABI.
 //
-// All POD record types live here so the loader can mmap the package and
-// reinterpret the records directly. String references point into the
-// per-package string table.
+// The POD records are serialized directly. String references point into the
+// map string table.
 
 constexpr std::uint32_t kCookedShaderReflectionInvalidIndex = 0xFFFFFFFFu;
 
@@ -103,7 +100,7 @@ struct CookedShaderConstantBufferMemberRecord
 };
 
 // A constant buffer / push-constant block. Members are stored in a single
-// flat array on the package; this record points to a contiguous range of it.
+// flat array in the map; this record points to a contiguous range of it.
 struct CookedShaderConstantBufferRecord
 {
 	std::uint32_t NameOffsetInBytes = 0;
@@ -150,8 +147,8 @@ struct CookedShaderSpecializationConstantRecord
 };
 
 // Per-binary reflection block. One CookedShaderReflectionRecord exists for
-// every CookedShaderBinaryRecord, in the same order. Each record points to
-// contiguous ranges in the typed reflection arrays at the package level.
+// every map entry. Each record points to contiguous ranges in the map's typed
+// reflection arrays.
 struct CookedShaderReflectionRecord
 {
 	std::uint32_t ResourceBindingOffset = 0;

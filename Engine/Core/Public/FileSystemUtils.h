@@ -40,8 +40,8 @@ namespace Filesystem
 	// Generated cooked/cache/output roots
 	const std::filesystem::path& GetCookedAssetRootPath();
 	const std::filesystem::path& GetCookedShaderRootPath();
-	const std::filesystem::path& GetCookedShaderPackageRootPath();
-	const std::filesystem::path& GetCookedShaderRegistryPath();
+	const std::filesystem::path& GetGlobalShaderMapPath();
+	const std::filesystem::path& GetCookedShaderLibraryPath();
 	const std::filesystem::path& GetCookedTextureRootPath();
 	const std::filesystem::path& GetCookedSceneManifestRootPath();
 	const std::filesystem::path& GetCookedMeshRootPath();

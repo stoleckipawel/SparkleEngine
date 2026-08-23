@@ -95,6 +95,46 @@ sparkle_target_precompile_headers(SparkleRendererShaderRegistrations
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
+add_library(SparkleRendererShaderCookRegistrations OBJECT
+    ${SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES}
+    ${SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS}
+)
+
+target_include_directories(SparkleRendererShaderCookRegistrations
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations
+        ${CMAKE_CURRENT_SOURCE_DIR}/Public
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
+)
+
+target_compile_features(SparkleRendererShaderCookRegistrations PUBLIC cxx_std_20)
+target_compile_definitions(SparkleRendererShaderCookRegistrations PRIVATE SPARKLE_SHADER_CONTRACTS_ONLY=1)
+
+target_link_libraries(SparkleRendererShaderCookRegistrations
+    PUBLIC
+        SparkleRHI
+    PRIVATE
+        SparkleCore
+)
+
+sparkle_target_precompile_headers(SparkleRendererShaderCookRegistrations
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
+)
+
+add_library(SparkleRendererShaderCookRegistrationObjects INTERFACE)
+
+target_sources(SparkleRendererShaderCookRegistrationObjects
+    INTERFACE
+        $<TARGET_OBJECTS:SparkleRendererShaderCookRegistrations>
+)
+
+target_link_libraries(SparkleRendererShaderCookRegistrationObjects
+    INTERFACE
+        SparkleRendererShaderCookRegistrations
+)
+
 add_library(SparkleRendererShaderRegistrationObjects INTERFACE)
 
 target_sources(SparkleRendererShaderRegistrationObjects

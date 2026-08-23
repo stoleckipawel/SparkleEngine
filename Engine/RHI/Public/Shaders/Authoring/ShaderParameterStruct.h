@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -55,7 +56,7 @@ public:
 		{
 			if (existing.Name == field.Name)
 			{
-				return;
+				throw std::logic_error("Duplicate shader parameter field registration: " + field.Name);
 			}
 		}
 

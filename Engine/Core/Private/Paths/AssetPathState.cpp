@@ -43,8 +43,8 @@ namespace Filesystem::Private
 			                                Paths::Normalize(state.workspacePath / "Projects" / projectName / "Cooked") :
 			                                Paths::Normalize(state.workspacePath / "artifacts" / "dev" / "projects" / projectName / "cooked");
 			state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
-			state.cookedShaderPackageRootPath = Paths::Normalize(state.cookedShaderRootPath / "Packages");
-			state.cookedShaderRegistryPath = Paths::Normalize(state.cookedShaderRootPath / "ShaderPackageRegistry.sreg");
+			state.globalShaderMapPath = Paths::Normalize(state.cookedShaderRootPath / "GlobalShaderMap.smap");
+			state.cookedShaderLibraryPath = Paths::Normalize(state.cookedShaderRootPath / "CookedShaderLibrary.slib");
 			state.shaderRecookSignalPath = Filesystem::BuildShaderRecookSignalPath(state.cookedShaderRootPath);
 			state.cookedTextureRootPath = Paths::Normalize(state.cookedAssetRootPath / "Textures");
 			state.cookedSceneManifestRootPath = Paths::Normalize(state.cookedAssetRootPath / "SceneManifests");
@@ -62,7 +62,7 @@ namespace Filesystem::Private
 			    &state.buildOutputRootPath,
 			    &state.logsRootPath,
 			    &state.cookedAssetRootPath,
-			    &state.cookedShaderPackageRootPath,
+			    &state.cookedShaderRootPath,
 			    &state.cookedTextureRootPath,
 			    &state.cookedSceneManifestRootPath,
 			    &state.cookedMeshRootPath,

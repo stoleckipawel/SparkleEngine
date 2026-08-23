@@ -4,7 +4,7 @@
 #include "../Commands/RhiQueueCapabilities.h"
 #include "../Formats/PixelFormat.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
-#include "../Shaders/CookedShaderPackage.h"
+#include "../Shaders/ShaderTarget.h"
 
 #include <array>
 #include <cstdint>
@@ -167,7 +167,7 @@ inline constexpr std::array<PixelFormat, 23> kRhiCapabilityPixelFormats = {
 struct RhiCapabilities
 {
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
-	CookedShaderBinaryFormat RuntimeShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
+	ShaderBinaryFormat RuntimeShaderBinaryFormat = ShaderBinaryFormat::Dxil;
 	RhiBackendVersionInfo BackendVersion;
 	ERhiDescriptorModel DescriptorModel = ERhiDescriptorModel::Unknown;
 	RhiBindingLimits BindingLimits;

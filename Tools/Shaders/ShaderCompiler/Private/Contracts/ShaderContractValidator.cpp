@@ -3,28 +3,18 @@
 #include "Contracts/ShaderContractValidator.h"
 
 #include <format>
-#include <unordered_map>
 #include <unordered_set>
 
-class ShaderContractValidatorImplementation final
+class ShaderContractValidation final
 {
-  public:
-	struct PackageValidationState final
-	{
-		std::string bindingLayoutId;
-		CookedShaderPackageKind packageKind = CookedShaderPackageKind::Graphics;
-		std::unordered_set<std::uint8_t> declaredStages;
-	};
-
-	static ShaderContractVerificationFailure BuildFailure(const ShaderContractStage& stage, std::string reason)
+public:
+	static ShaderContractVerificationFailure Failure(const ShaderContract& shader, std::string reason)
 	{
 		return ShaderContractVerificationFailure{
-		    .shaderName = stage.shaderName,
-		    .packageId = stage.packageId,
-		    .bindingLayoutId = stage.bindingLayoutId,
-		    .sourcePath = stage.sourcePath,
-		    .entryPoint = stage.entryPoint,
-		    .stage = stage.stage,
+		    .shaderName = shader.shaderName,
+		    .sourcePath = shader.sourcePath,
+		    .entryPoint = shader.entryPoint,
+		    .stage = shader.stage,
 		    .reason = std::move(reason)};
 	}
 };
@@ -32,89 +22,43 @@ class ShaderContractValidatorImplementation final
 std::vector<ShaderContractVerificationFailure> ShaderContractValidator::Validate(const ShaderContractCatalog& catalog)
 {
 	std::vector<ShaderContractVerificationFailure> failures;
-	std::unordered_set<std::string> shaderNames;
-	std::unordered_map<std::string, ShaderContractValidatorImplementation::PackageValidationState> packages;
-
-	for (const ShaderContractStage& stage : catalog.stages)
+	std::unordered_set<std::string> names;
+	std::unordered_set<ShaderTypeId> typeIds;
+	for (const ShaderContract& shader : catalog)
 	{
-		if (stage.shaderName.empty())
+		if (shader.shaderName.empty() || !names.insert(shader.shaderName).second)
 		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "empty-shader-name"));
+			failures.push_back(ShaderContractValidation::Failure(shader, "missing-or-duplicate-shader-name"));
 		}
-		else if (!shaderNames.insert(stage.shaderName).second)
+		if (shader.shaderTypeId == 0 || !typeIds.insert(shader.shaderTypeId).second)
 		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "duplicate-shader-name"));
+			failures.push_back(ShaderContractValidation::Failure(shader, "missing-or-duplicate-shader-type-id"));
 		}
-
-		if (stage.packageId.empty())
+		if (shader.sourcePath.empty())
 		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "empty-package-id"));
+			failures.push_back(ShaderContractValidation::Failure(shader, "empty-source-path"));
 		}
-		if (stage.bindingLayoutId.empty())
+		if (shader.entryPoint.empty())
 		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "empty-binding-layout-id"));
+			failures.push_back(ShaderContractValidation::Failure(shader, "empty-entry-point"));
 		}
-		if (stage.sourcePath.empty())
+		if (shader.stage == ShaderStage::Count)
 		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "empty-source-path"));
+			failures.push_back(ShaderContractValidation::Failure(shader, "unsupported-stage"));
 		}
-		if (stage.entryPoint.empty())
+		if (!shader.hasParameterStruct)
 		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "empty-entry-point"));
-		}
-		if (!stage.hasParameterStruct)
-		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "missing-parameter-descriptor-builder"));
-		}
-
-		const bool rayTracingLibrary = stage.packageKind == CookedShaderPackageKind::RayTracingLibrary;
-		if (stage.stage == ShaderStage::Count && !rayTracingLibrary)
-		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "stage-count-is-only-valid-for-ray-tracing-library-packages"));
-		}
-		if (stage.stage != ShaderStage::Count && rayTracingLibrary)
-		{
-			failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "ray-tracing-library-package-must-use-library-stage"));
-		}
-
-		ShaderContractValidatorImplementation::PackageValidationState& packageState = packages[stage.packageId];
-		if (packageState.bindingLayoutId.empty())
-		{
-			packageState.bindingLayoutId = stage.bindingLayoutId;
-			packageState.packageKind = stage.packageKind;
-		}
-		else
-		{
-			if (packageState.bindingLayoutId != stage.bindingLayoutId)
-			{
-				failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "package-binding-layout-mismatch"));
-			}
-			if (packageState.packageKind != stage.packageKind)
-			{
-				failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "package-kind-mismatch"));
-			}
-		}
-
-		if (!rayTracingLibrary)
-		{
-			const std::uint8_t stageKey = static_cast<std::uint8_t>(stage.stage);
-			if (!packageState.declaredStages.insert(stageKey).second)
-			{
-				failures.push_back(ShaderContractValidatorImplementation::BuildFailure(stage, "duplicate-stage-in-package"));
-			}
+			failures.push_back(ShaderContractValidation::Failure(shader, "missing-parameter-descriptor-builder"));
 		}
 	}
-
 	return failures;
 }
 
 std::string ShaderContractValidator::FormatFailure(const ShaderContractVerificationFailure& failure)
 {
 	return std::format(
-	    "shader={} package={} layout={} source={} entry={} stage={} reason={}",
+	    "shader={} source={} entry={} stage={} reason={}",
 	    failure.shaderName.empty() ? "<empty>" : failure.shaderName,
-	    failure.packageId.empty() ? "<empty>" : failure.packageId,
-	    failure.bindingLayoutId.empty() ? "<empty>" : failure.bindingLayoutId,
 	    failure.sourcePath.empty() ? "<empty>" : failure.sourcePath,
 	    failure.entryPoint.empty() ? "<empty>" : failure.entryPoint,
 	    GetShaderStagePrefix(failure.stage),

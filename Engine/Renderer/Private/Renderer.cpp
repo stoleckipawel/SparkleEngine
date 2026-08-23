@@ -33,14 +33,14 @@ ViewportRenderProducts Renderer::GetViewportRenderProducts() const
 	return m_state->Coordinator.GetViewportRenderProducts();
 }
 
-void Renderer::ReloadCookedShaders()
+void Renderer::ReloadShaders()
 {
-	m_state->Coordinator.ReloadCookedShaders();
+	m_state->Coordinator.ReloadShaders();
 }
 
-std::uint64_t Renderer::GetShaderPackageGeneration() const noexcept
+std::uint64_t Renderer::GetShaderGeneration() const noexcept
 {
-	return m_state->Coordinator.GetShaderPackageGeneration();
+	return m_state->Coordinator.GetShaderGeneration();
 }
 
 MeshDiagnosticsSnapshot Renderer::CaptureMeshDiagnostics() const

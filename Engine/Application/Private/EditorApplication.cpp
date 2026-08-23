@@ -110,7 +110,7 @@ void EditorApplication::ConfigureUiDiagnostics(Renderer& renderer)
 {
 	m_ui->SetDiagnosticsProviders(
 	    EditorDiagnosticsProviders{
-	        .ShaderPackageGeneration = [&renderer]() noexcept { return renderer.GetShaderPackageGeneration(); },
+	        .ShaderGeneration = [&renderer]() noexcept { return renderer.GetShaderGeneration(); },
 	        .MeshDiagnostics = [&renderer]() { return renderer.CaptureMeshDiagnostics(); },
 	        .TextureDiagnostics = [&renderer]() { return renderer.CaptureTextureDiagnostics(); },
 	        .MemoryDiagnostics = [&renderer]() { return renderer.CaptureMemoryDiagnostics(); },

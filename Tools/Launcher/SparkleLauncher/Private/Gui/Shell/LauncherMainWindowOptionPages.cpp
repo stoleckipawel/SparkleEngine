@@ -283,7 +283,7 @@ namespace SparkleLauncher
 		    *selectionLayout,
 		    "Shaders",
 		    "shaders",
-		    features.ShaderCompilerEnabled ? "Compile every registered shader package."
+		    features.ShaderCompilerEnabled ? "Compile every registered shader into the cooked map and code library."
 		                                   : "Shader cooking is not enabled by this workspace configuration.",
 		    features.ShaderCompilerEnabled ? QStringLiteral("DXIL + SPIR-V") : QStringLiteral("Unavailable"),
 		    features.ShaderCompilerEnabled,
@@ -315,7 +315,7 @@ namespace SparkleLauncher
 		    *cookLayout,
 		    selectedScopes.contains("shaders")
 		        ? QStringLiteral(
-		              "ShaderCompiler discovers registered packages and canonical targets. Incremental cooking reuses current outputs.")
+		              "ShaderCompiler discovers typed shaders and canonical targets. Incremental cooking preserves unaffected map entries.")
 		        : QStringLiteral("Incremental cooking reuses current outputs."));
 
 		for (QCheckBox* scopeBox : scopeBoxes)

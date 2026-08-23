@@ -44,7 +44,7 @@ void EvaluateDirectShadowSignal(uint3 dispatchThreadId)
 	}
 
 	const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
-	const ShadowVisibilitySignal shadowSignal =
+	const ShadowVisibilitySample shadowSignal =
 	    RayTracedShadowVisibility::TraceDirectLightSample(positionWorld,
 	                                                      normalWorld,
 	                                                      lightSample,

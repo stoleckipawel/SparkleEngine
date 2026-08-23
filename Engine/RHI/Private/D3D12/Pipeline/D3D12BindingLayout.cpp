@@ -4,7 +4,6 @@
 #include "D3D12/Pipeline/D3D12RootSignatureBuilder.h"
 
 #include "Pipeline/RhiShaderBindingReflection.h"
-#include "Shaders/LoadedShaderPackage.h"
 #include "ShaderParameters/PassParameterLayout.h"
 
 #include <cassert>
@@ -17,10 +16,8 @@ class D3D12BindingLayoutCompilerImpl final
 	static std::unique_ptr<D3D12BindingLayout> Compile(D3D12Rhi& rhi, const RenderBindingLayoutCompileDesc& desc)
 	{
 		assert(desc.ParameterLayout != nullptr);
-		assert(desc.ShaderPackage != nullptr);
-
-		const LoadedShaderPackage& shaderPackage = *desc.ShaderPackage;
-		const std::vector<CookedShaderBindingRecord>& bindingRecords = shaderPackage.GetBindingRecords();
+		assert(!desc.Shaders.empty());
+		const std::vector<PassParameterDesc>& bindingRecords = desc.ParameterLayout->GetParameters();
 
 		D3D12RootSignatureBuilder builder;
 		builder.SetFlags(
@@ -32,11 +29,11 @@ class D3D12BindingLayoutCompilerImpl final
 		bindings.reserve(bindingRecords.size() * static_cast<std::size_t>(ShaderStage::Count));
 		bindingNames.reserve(bindingRecords.size() * static_cast<std::size_t>(ShaderStage::Count));
 
-		for (const CookedShaderBindingRecord& bindingRecord : bindingRecords)
+		for (const PassParameterDesc& bindingRecord : bindingRecords)
 		{
-			const std::string_view bindingName = shaderPackage.ResolveString(bindingRecord.Name);
+			const std::string_view bindingName = bindingRecord.Name;
 			assert(!bindingName.empty());
-			switch (bindingRecord.SemanticKind)
+			switch (bindingRecord.Kind)
 			{
 				case ShaderParameterSemanticKind::UniformData:
 					CompileUniformBinding(
@@ -45,7 +42,6 @@ class D3D12BindingLayoutCompilerImpl final
 					    bindingNames,
 					    bindingRecord,
 					    bindingName,
-					    shaderPackage,
 					    desc);
 					break;
 				case ShaderParameterSemanticKind::ReadTexture:
@@ -56,7 +52,7 @@ class D3D12BindingLayoutCompilerImpl final
 					    bindingNames,
 					    bindingRecord,
 					    bindingName,
-					    shaderPackage,
+					    desc.Shaders,
 					    *desc.ParameterLayout,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
 					    CompiledBindingType::ReadOnlyResourceTable);
@@ -68,7 +64,7 @@ class D3D12BindingLayoutCompilerImpl final
 					    bindingNames,
 					    bindingRecord,
 					    bindingName,
-					    shaderPackage,
+					    desc.Shaders,
 					    *desc.ParameterLayout);
 					break;
 				case ShaderParameterSemanticKind::RWTexture:
@@ -79,7 +75,7 @@ class D3D12BindingLayoutCompilerImpl final
 					    bindingNames,
 					    bindingRecord,
 					    bindingName,
-					    shaderPackage,
+					    desc.Shaders,
 					    *desc.ParameterLayout,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
 					    CompiledBindingType::ReadWriteResourceTable);
@@ -91,7 +87,7 @@ class D3D12BindingLayoutCompilerImpl final
 					    bindingNames,
 					    bindingRecord,
 					    bindingName,
-					    shaderPackage,
+					    desc.Shaders,
 					    *desc.ParameterLayout,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER,
 					    CompiledBindingType::SamplerTable);
@@ -117,17 +113,16 @@ class D3D12BindingLayoutCompilerImpl final
 	    D3D12RootSignatureBuilder& builder,
 	    std::vector<CompiledBinding>& bindings,
 	    std::vector<std::string>& bindingNames,
-	    const CookedShaderBindingRecord& bindingRecord,
+	    const PassParameterDesc& bindingRecord,
 	    std::string_view bindingName,
-	    const LoadedShaderPackage& shaderPackage,
 	    const RenderBindingLayoutCompileDesc& desc)
 	{
 		assert(bindingRecord.ValueSizeInBytes > 0);
 		const std::vector<RhiReflectedBindingLocation> reflectedLocations = RhiShaderBindingReflection::ResolveLocations(
-		    shaderPackage,
+		    desc.Shaders,
 		    *desc.ParameterLayout,
-		    bindingRecord,
-		    CookedShaderBinaryFormat::Dxil);
+		    bindingName,
+		    bindingRecord.Kind);
 
 		for (const RhiReflectedBindingLocation& reflectedLocation : reflectedLocations)
 		{
@@ -148,7 +143,7 @@ class D3D12BindingLayoutCompilerImpl final
 				    CompiledBinding{
 				        .Name = bindingNames.back().c_str(),
 				        .Type = CompiledBindingType::PushConstants,
-				        .SemanticKind = bindingRecord.SemanticKind,
+					    .SemanticKind = bindingRecord.Kind,
 				        .BindingIndex = bindingIndex,
 				        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 				        .VisibilityMask = reflectedLocation.VisibilityMask,
@@ -161,7 +156,7 @@ class D3D12BindingLayoutCompilerImpl final
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
 			        .Type = CompiledBindingType::ConstantBuffer,
-			        .SemanticKind = bindingRecord.SemanticKind,
+			        .SemanticKind = bindingRecord.Kind,
 			        .BindingIndex = bindingIndex,
 			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 			        .VisibilityMask = reflectedLocation.VisibilityMask,
@@ -173,19 +168,19 @@ class D3D12BindingLayoutCompilerImpl final
 	    D3D12RootSignatureBuilder& builder,
 	    std::vector<CompiledBinding>& bindings,
 	    std::vector<std::string>& bindingNames,
-	    const CookedShaderBindingRecord& bindingRecord,
+	    const PassParameterDesc& bindingRecord,
 	    std::string_view bindingName,
-	    const LoadedShaderPackage& shaderPackage,
+	    std::span<const ResolvedShader> shaders,
 	    const PassParameterLayout& parameterLayout,
 	    D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
 	    CompiledBindingType bindingType)
 	{
 		const std::uint32_t descriptorCount = bindingRecord.ArrayCount;
 		const std::vector<RhiReflectedBindingLocation> reflectedLocations = RhiShaderBindingReflection::ResolveLocations(
-		    shaderPackage,
+		    shaders,
 		    parameterLayout,
-		    bindingRecord,
-		    CookedShaderBinaryFormat::Dxil);
+		    bindingName,
+		    bindingRecord.Kind);
 
 		for (const RhiReflectedBindingLocation& reflectedLocation : reflectedLocations)
 		{
@@ -199,7 +194,7 @@ class D3D12BindingLayoutCompilerImpl final
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
 			        .Type = bindingType,
-			        .SemanticKind = bindingRecord.SemanticKind,
+			        .SemanticKind = bindingRecord.Kind,
 			        .BindingIndex = bindingIndex,
 			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 			        .VisibilityMask = reflectedLocation.VisibilityMask,
@@ -211,16 +206,16 @@ class D3D12BindingLayoutCompilerImpl final
 	    D3D12RootSignatureBuilder& builder,
 	    std::vector<CompiledBinding>& bindings,
 	    std::vector<std::string>& bindingNames,
-	    const CookedShaderBindingRecord& bindingRecord,
+	    const PassParameterDesc& bindingRecord,
 	    std::string_view bindingName,
-	    const LoadedShaderPackage& shaderPackage,
+	    std::span<const ResolvedShader> shaders,
 	    const PassParameterLayout& parameterLayout)
 	{
 		const std::vector<RhiReflectedBindingLocation> reflectedLocations = RhiShaderBindingReflection::ResolveLocations(
-		    shaderPackage,
+		    shaders,
 		    parameterLayout,
-		    bindingRecord,
-		    CookedShaderBinaryFormat::Dxil);
+		    bindingName,
+		    bindingRecord.Kind);
 
 		for (const RhiReflectedBindingLocation& reflectedLocation : reflectedLocations)
 		{
@@ -233,7 +228,7 @@ class D3D12BindingLayoutCompilerImpl final
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
 			        .Type = CompiledBindingType::AccelerationStructure,
-			        .SemanticKind = bindingRecord.SemanticKind,
+			        .SemanticKind = bindingRecord.Kind,
 			        .BindingIndex = bindingIndex,
 			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 			        .VisibilityMask = reflectedLocation.VisibilityMask,

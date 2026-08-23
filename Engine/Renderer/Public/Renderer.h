@@ -38,8 +38,8 @@ public:
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
 
-	void ReloadCookedShaders();
-	std::uint64_t GetShaderPackageGeneration() const noexcept;
+	void ReloadShaders();
+	std::uint64_t GetShaderGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Backend/IShaderBackend.h"
-#include "Backend/ShaderTarget.h"
+#include "RHI/Public/Shaders/ShaderTarget.h"
 
 #include <memory>
 #include <string>

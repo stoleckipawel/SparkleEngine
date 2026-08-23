@@ -7,7 +7,7 @@
 
 class ShaderContractValidator final
 {
-  public:
+public:
 	ShaderContractValidator() = delete;
 
 	static std::vector<ShaderContractVerificationFailure> Validate(const ShaderContractCatalog& catalog);

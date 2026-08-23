@@ -11,7 +11,6 @@ namespace Paths
 {
 	SPARKLE_CORE_API std::array<std::filesystem::path, 2> ExecutableLookupCandidates(std::string_view executableFileName);
 	SPARKLE_CORE_API std::filesystem::path LogFile(std::string_view configuredFile = {}, bool ensureParentExists = true);
-	SPARKLE_CORE_API std::filesystem::path CookedShaderPackage(std::uint64_t packageKey);
 	SPARKLE_CORE_API std::filesystem::path CookedSceneManifest(std::string_view sceneAssetId);
 	SPARKLE_CORE_API std::filesystem::path CookedSceneManifestRelative(const std::filesystem::path& relativeManifestPath);
 	SPARKLE_CORE_API std::filesystem::path CookedMeshAsset(std::uint64_t meshAssetId);

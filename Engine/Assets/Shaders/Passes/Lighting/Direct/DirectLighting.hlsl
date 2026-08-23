@@ -15,7 +15,7 @@ void AddDirectLightSample(GBufferData gBuffer,
                           float3 viewDirWorld,
                           bool evaluateSubsurface,
                           LightSampling::DirectLightSample lightSample,
-                          ShadowVisibilitySignal shadow,
+                          ShadowVisibilitySample shadow,
                           float sampleWeight,
                           inout float3 directDiffuse,
                           inout float3 directSpecular,
@@ -78,7 +78,7 @@ void AddDirectLightSample(GBufferData gBuffer,
 	const DirectLightReservoir::Reservoir reservoir =
 	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(dispatchThreadId.xy, 0)),
 	                                          CurrentReservoirWeight.Load(int3(dispatchThreadId.xy, 0)));
-	const ShadowVisibilitySignal shadowSignal =
+	const ShadowVisibilitySample shadowSignal =
 	    RayTracedShadowSignalPacking::UnpackShadowSignal(ShadowVisibilitySignal.Load(int3(dispatchThreadId.xy, 0)));
 	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
 	if (DirectLightReservoir::IsValid(reservoir))

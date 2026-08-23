@@ -27,20 +27,19 @@ void RegisteredShaderListModel::Refresh()
 
 		RegisteredShaderRow row;
 		row.ShaderId = std::string(shader.ShaderName);
-		row.PackageId = GetShaderRegistrationPackageId(shader);
+		row.ShaderTypeId = shader.TypeId;
 		row.SourcePath = std::string(shader.SourcePath);
 		row.EntryPoint = std::string(shader.EntryPoint);
 		row.Stage = GetShaderStagePrefix(shader.Stage);
-		row.BindingLayoutId = std::string(GetShaderRegistrationBindingLayoutId(shader));
 		row.ParameterCount = parameters.Fields.size();
 		row.RuntimeGeneration = generation;
-		row.ArtifactDirectory = FindDebugArtifactDirectoryFor(row.ShaderId, row.PackageId);
+		row.ArtifactDirectory = FindDebugArtifactDirectoryFor(row.ShaderId);
 		row.ArtifactAvailable = !row.ArtifactDirectory.empty();
 		m_rows.push_back(std::move(row));
 	}
 }
 
-std::filesystem::path RegisteredShaderListModel::FindDebugArtifactDirectoryFor(std::string_view shaderId, std::string_view packageId)
+std::filesystem::path RegisteredShaderListModel::FindDebugArtifactDirectoryFor(std::string_view shaderId)
 {
 	const std::filesystem::path root = Filesystem::GetShaderSymbolsOutputPath();
 	std::error_code errorCode;
@@ -58,7 +57,7 @@ std::filesystem::path RegisteredShaderListModel::FindDebugArtifactDirectoryFor(s
 		}
 
 		const std::string directoryName = it->path().filename().generic_string();
-		if ((Strings::ContainsIgnoreCase(directoryName, shaderId) || Strings::ContainsIgnoreCase(directoryName, packageId)) &&
+		if (Strings::ContainsIgnoreCase(directoryName, shaderId) &&
 		    std::filesystem::exists(it->path() / "compile-request.json", errorCode) && !errorCode)
 		{
 			return it->path();

@@ -110,11 +110,11 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookReq
 	std::vector<std::string> arguments{"cook"};
 	arguments.emplace_back("--cancellation-signal");
 	arguments.push_back(cancellationSignal.GetPath().string());
-	if (request.Type == ShaderRecookRequestType::PackageId || request.Type == ShaderRecookRequestType::ShaderId)
+	if (request.Type == ShaderRecookRequestType::ShaderId)
 	{
 		if (request.Target.empty())
-			return ShaderCompilerProcessResult{.Output = "Targeted shader recook requires a package id or shader id."};
-		arguments.push_back(request.Type == ShaderRecookRequestType::PackageId ? "--package" : "--shader-id");
+			return ShaderCompilerProcessResult{.Output = "Targeted shader recook requires a shader id."};
+		arguments.push_back("--shader-id");
 		arguments.push_back(request.Target);
 	}
 	else if (request.Type == ShaderRecookRequestType::Changed)

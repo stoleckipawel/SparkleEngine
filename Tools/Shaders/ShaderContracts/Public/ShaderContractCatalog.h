@@ -1,70 +1,30 @@
 #pragma once
 
-#include "RHI/Public/Shaders/Authoring/ShaderParameterStruct.h"
-#include "RHI/Public/Shaders/CookedShaderPackage.h"
-#include "RHI/Public/Shaders/ShaderStage.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
+#include "RHI/Public/Shaders/Authoring/ShaderParameterStruct.h"
+#include "RHI/Public/Shaders/ShaderMap.h"
 
-#include <cstdint>
 #include <string>
 #include <vector>
 
-using ShaderTypeId = std::uint64_t;
-
-struct ShaderContractStage final
+struct ShaderContract final
 {
 	ShaderTypeId shaderTypeId = 0;
 	std::string shaderName;
-	std::string packageId;
-	std::string bindingLayoutId;
 	std::string sourcePath;
 	std::string entryPoint;
 	ShaderStage stage = ShaderStage::Count;
-	CookedShaderPackageKind packageKind = CookedShaderPackageKind::Graphics;
-	CookedShaderPackageFeatureFlags packageFeatures = CookedShaderPackageFeatureFlags::None;
-	CookedShaderRayTracingExportKind rayTracingExportKind = CookedShaderRayTracingExportKind::None;
-	std::string rayTracingExportName;
-	std::uint32_t rayTracingPayloadSizeInBytes = 0;
-	std::uint32_t rayTracingAttributeSizeInBytes = 0;
-	std::uint32_t rayTracingMaxRecursionDepth = 0;
+	ShaderFeatureFlags features = ShaderFeatureFlags::None;
 	ShaderParameterStructDescriptor parameterStruct;
+	PassParameterLayout parameterLayout;
 	bool hasParameterStruct = false;
 };
 
-struct ShaderContractRayTracingHitGroup final
-{
-	std::string packageId;
-	std::string name;
-	std::string closestHitExportName;
-	std::string anyHitExportName;
-	std::string intersectionExportName;
-};
-
-struct ShaderContractPackage final
-{
-	std::string packageId;
-	std::string bindingLayoutId;
-	PassParameterLayout bindingLayout;
-	CookedShaderPackageKind packageKind = CookedShaderPackageKind::Graphics;
-	CookedShaderPackageFeatureFlags packageFeatures = CookedShaderPackageFeatureFlags::None;
-	std::uint32_t rayTracingPayloadSizeInBytes = 0;
-	std::uint32_t rayTracingAttributeSizeInBytes = 0;
-	std::uint32_t rayTracingMaxRecursionDepth = 0;
-	std::vector<ShaderContractStage> stages;
-	std::vector<ShaderContractRayTracingHitGroup> rayTracingHitGroups;
-};
-
-struct ShaderContractCatalog final
-{
-	std::vector<ShaderContractPackage> packages;
-	std::vector<ShaderContractStage> stages;
-};
+using ShaderContractCatalog = std::vector<ShaderContract>;
 
 struct ShaderContractVerificationFailure final
 {
 	std::string shaderName;
-	std::string packageId;
-	std::string bindingLayoutId;
 	std::string sourcePath;
 	std::string entryPoint;
 	ShaderStage stage = ShaderStage::Count;

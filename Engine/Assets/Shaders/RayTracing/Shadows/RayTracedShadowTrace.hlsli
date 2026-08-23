@@ -38,7 +38,7 @@ namespace RayTracedShadows
 		return positionWorld + normalize(normalWorld) * RayTracedShadowNormalBias;
 	}
 
-	ShadowVisibilitySignal TraceShadowRay(float3 originWorld, float3 directionWorld, float maxDistance)
+	ShadowVisibilitySample TraceShadowRay(float3 originWorld, float3 directionWorld, float maxDistance)
 	{
 		const float clampedMaxDistance = max(maxDistance, MinimumShadowTMin);
 		const RayTracingTraceResult trace = RayTracingSceneTlas::TraceRayQueryWithAlphaTest(originWorld,
@@ -56,7 +56,7 @@ namespace RayTracedShadows
 		return RayTracedShadowSignals::BuildUnshadowedSignal(clampedMaxDistance);
 	}
 
-	ShadowVisibilitySignal TraceDirectLightSample(float3 positionWorld,
+	ShadowVisibilitySample TraceDirectLightSample(float3 positionWorld,
 	                                              float3 normalWorld,
 	                                              float3 lightDirectionWorld,
 	                                              float lightDistance,

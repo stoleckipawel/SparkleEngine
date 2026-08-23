@@ -26,7 +26,7 @@ private:
 	template <typename TVertexShader, typename TPixelShader> struct GraphicsRuntimeStorageHolder;
 
 public:
-	explicit RenderPassRuntimeCache(RenderDeviceServices& deviceServices) noexcept;
+	explicit RenderPassRuntimeCache(RenderDeviceServices& deviceServices);
 	~RenderPassRuntimeCache() noexcept;
 
 	RenderPassRuntimeCache(const RenderPassRuntimeCache&) = delete;
@@ -34,8 +34,8 @@ public:
 	RenderPassRuntimeCache(RenderPassRuntimeCache&&) = delete;
 	RenderPassRuntimeCache& operator=(RenderPassRuntimeCache&&) = delete;
 
-	std::uint64_t GetShaderPackageGeneration() const noexcept;
-	void ReloadCookedShaders();
+	std::uint64_t GetShaderGeneration() const noexcept;
+	void ReloadShaders();
 	void PollRetiredGenerations() noexcept;
 
 	template <typename TShader> void MaterializeComputeShaderRuntime() const noexcept
@@ -45,7 +45,7 @@ public:
 		{
 			try
 			{
-				holder.Create(*m_renderHardwareInterface, m_activeGeneration->ShaderPackages);
+				holder.Create(*m_renderHardwareInterface, *m_activeGeneration);
 			}
 			catch (const Diagnostics::Error& error)
 			{
@@ -70,7 +70,7 @@ public:
 		{
 			try
 			{
-				holder.Create(*m_renderHardwareInterface, m_activeGeneration->ShaderPackages);
+				holder.Create(*m_renderHardwareInterface, *m_activeGeneration);
 			}
 			catch (const Diagnostics::Error& error)
 			{
@@ -91,28 +91,25 @@ public:
 	}
 
 private:
+	struct ShaderRuntimeGeneration;
 	struct IRuntimeStorageHolder
 	{
 		virtual ~IRuntimeStorageHolder() noexcept;
 		virtual std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
 		    RenderHardwareInterface& renderHardwareInterface,
-		    CookedShaderPackageCache& shaderPackages) const = 0;
+		    const ShaderRuntimeGeneration& generation) const = 0;
 	};
 
 	template <typename TShader> struct RuntimeStorageHolder final : IRuntimeStorageHolder
 	{
-		void Create(RenderHardwareInterface& renderHardwareInterface, CookedShaderPackageCache& shaderPackages)
+		void Create(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation)
 		{
 			const ShaderRegistrationDesc& shader = GlobalShader<TShader>::GetRegistration();
-			const ShaderPackageDefinition package{
-			    .PackageId = shader.PackageName.data(),
-			    .ExpectedStages = ShaderStageMask::Compute,
-			    .RequiredFeatures = shader.PackageFeatures};
+			const ShaderRef<TShader> shaderRef = ShaderRef<TShader>::Resolve(generation.Map, generation.Library, generation.Target);
 			RenderPassShaderRuntime::CreateComputeRuntime(
 			    renderHardwareInterface,
-			    shaderPackages,
-			    shader.ShaderName,
-			    package,
+			    shader,
+			    shaderRef,
 			    Storage,
 			    [](ComputePipelineDesc&) {});
 			Runtime.emplace(*Storage.BindingLayout, *Storage.Pipeline);
@@ -120,10 +117,10 @@ private:
 
 		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
 		    RenderHardwareInterface& renderHardwareInterface,
-		    CookedShaderPackageCache& shaderPackages) const override
+		    const ShaderRuntimeGeneration& generation) const override
 		{
 			auto replacement = std::make_unique<RuntimeStorageHolder<TShader>>();
-			replacement->Create(renderHardwareInterface, shaderPackages);
+			replacement->Create(renderHardwareInterface, generation);
 			return replacement;
 		}
 
@@ -142,20 +139,20 @@ private:
 		{
 		}
 
-		void Create(RenderHardwareInterface& renderHardwareInterface, CookedShaderPackageCache& shaderPackages)
+		void Create(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation)
 		{
 			const ShaderRegistrationDesc& vertexShader = GlobalShader<TVertexShader>::GetRegistration();
 			const ShaderRegistrationDesc& pixelShader = GlobalShader<TPixelShader>::GetRegistration();
-			assert(vertexShader.PackageName == pixelShader.PackageName);
-			const ShaderPackageDefinition package{
-			    .PackageId = vertexShader.PackageName.data(),
-			    .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel,
-			    .RequiredFeatures = vertexShader.PackageFeatures | pixelShader.PackageFeatures};
+			const ShaderRef<TVertexShader> vertexRef =
+			    ShaderRef<TVertexShader>::Resolve(generation.Map, generation.Library, generation.Target);
+			const ShaderRef<TPixelShader> pixelRef =
+			    ShaderRef<TPixelShader>::Resolve(generation.Map, generation.Library, generation.Target);
 			RenderPassShaderRuntime::CreateGraphicsRuntime(
 			    renderHardwareInterface,
-			    shaderPackages,
-			    vertexShader.ShaderName,
-			    package,
+			    vertexShader,
+			    vertexRef,
+			    pixelShader,
+			    pixelRef,
 			    true,
 			    Storage,
 			    [this](GraphicsPipelineDesc& pipeline)
@@ -175,10 +172,10 @@ private:
 
 		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
 		    RenderHardwareInterface& renderHardwareInterface,
-		    CookedShaderPackageCache& shaderPackages) const override
+		    const ShaderRuntimeGeneration& generation) const override
 		{
 			auto replacement = std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>(PipelineState);
-			replacement->Create(renderHardwareInterface, shaderPackages);
+			replacement->Create(renderHardwareInterface, generation);
 			return replacement;
 		}
 
@@ -190,7 +187,9 @@ private:
 	struct ShaderRuntimeGeneration final
 	{
 		std::uint64_t Generation = 1;
-		CookedShaderPackageCache ShaderPackages;
+		ShaderTarget Target = kDefaultShaderTarget;
+		CookedShaderLibrary Library;
+		GlobalShaderMap Map;
 		std::unordered_map<std::type_index, std::unique_ptr<IRuntimeStorageHolder>> RuntimeStorageByShaderType;
 	};
 
@@ -247,6 +246,8 @@ private:
 	}
 
 	RhiSubmissionState CaptureLastSubmittedState() const noexcept;
+	std::unique_ptr<ShaderRuntimeGeneration> OpenGeneration(std::uint64_t generation) const;
+	static void ValidateGenerationContracts(const ShaderRuntimeGeneration& generation);
 	bool IsComplete(const RhiSubmissionState& state) const noexcept;
 	[[noreturn]] void HandleRuntimeCreationFailure(std::string_view errorMessage) const;
 

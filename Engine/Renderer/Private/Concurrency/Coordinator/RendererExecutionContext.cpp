@@ -68,7 +68,7 @@ void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noex
 		    {
 			    try
 			    {
-				    m_rendererHost->GetRenderPassRuntimeCache().ReloadCookedShaders();
+				    m_rendererHost->GetRenderPassRuntimeCache().ReloadShaders();
 				    command.Completion->Complete(std::monostate{});
 			    }
 			    catch (const Diagnostics::Error& error)

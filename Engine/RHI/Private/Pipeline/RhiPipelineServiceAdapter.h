@@ -15,7 +15,7 @@ class RhiPipelineServiceAdapter final : public RhiPipelineService
 
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override
 	{
-		if (desc.ParameterLayout == nullptr || desc.ShaderPackage == nullptr)
+		if (desc.ParameterLayout == nullptr || desc.Shaders.empty())
 		{
 			Fail("Binding-layout creation received an incomplete compile description.");
 		}

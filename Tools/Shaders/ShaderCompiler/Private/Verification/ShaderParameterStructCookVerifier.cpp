@@ -22,7 +22,7 @@ void ShaderParameterStructCookVerifier::Verify(
 	}
 	if (job.Request.UnitKind == ShaderCompileUnitKind::Library)
 	{
-		WriteSkippedReport(debugArtifacts, "ray-tracing library packages do not use pass parameter-struct validation");
+		WriteSkippedReport(debugArtifacts, "ray-tracing library compile units do not use pass parameter-struct validation");
 		return;
 	}
 

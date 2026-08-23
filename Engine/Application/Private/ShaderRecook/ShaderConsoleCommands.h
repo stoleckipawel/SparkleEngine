@@ -34,6 +34,5 @@ class ShaderConsoleCommands final
 	static ConsoleCommandResult ExecuteListShaderTargets();
 	static std::vector<std::string> CompleteRecompileShaders(const ConsoleAutocompleteRequest& request);
 	static std::string BuildShaderList();
-	static std::vector<std::string> BuildShaderPackageCompletions(std::string_view prefix);
 	static std::vector<std::string> BuildShaderIdCompletions(std::string_view prefix);
 };

@@ -8,14 +8,12 @@
 enum class ShaderContractSelectionKind
 {
 	All,
-	PackageId,
 	ShaderId,
-	RegisteredId,
 };
 
 class ShaderContractCatalogBuilder final
 {
-  public:
+public:
 	ShaderContractCatalogBuilder() = delete;
 
 	static ShaderContractCatalog Build(

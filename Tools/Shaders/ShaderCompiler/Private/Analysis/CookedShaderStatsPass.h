@@ -1,10 +1,8 @@
 #pragma once
 
-#include "Cooking/CookedShaderPackageOutput.h"
+#include "Cooking/ShaderCookOutput.h"
 
 #include <filesystem>
-#include <span>
-#include <string>
 
 struct CookedShaderStatsReport final
 {
@@ -14,10 +12,10 @@ struct CookedShaderStatsReport final
 
 class CookedShaderStatsPass final
 {
-  public:
+public:
 	CookedShaderStatsPass() = delete;
 
 	static CookedShaderStatsReport WriteCsv(
-	    std::span<const CookedShaderPackageOutput> packages,
+	    const ShaderCookOutput& output,
 	    const std::filesystem::path& analysisDirectory);
 };

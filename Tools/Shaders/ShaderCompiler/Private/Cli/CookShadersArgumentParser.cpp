@@ -11,7 +11,7 @@
 #include <ostream>
 #include <system_error>
 
-ShaderPackageCookSettings CookShadersArgumentParser::Parse(std::span<const std::string_view> arguments)
+ShaderCookSettings CookShadersArgumentParser::Parse(std::span<const std::string_view> arguments)
 {
 	return CookShadersArgumentParser(arguments).ParseAll();
 }
@@ -19,18 +19,17 @@ ShaderPackageCookSettings CookShadersArgumentParser::Parse(std::span<const std::
 void CookShadersArgumentParser::PrintHelp(std::ostream& output)
 {
 	output << "Usage:\n"
-	       << "  ShaderCompiler cook [--package <package-id> | --shader-id <registered-shader-name> | --changed <virtual-path>...] "
+	       << "  ShaderCompiler cook [--shader-id <registered-shader-name> | --changed <virtual-path>...] "
 	          "[options]\n\n"
-	       << "Cooks typed shader registrations into .sparkshader packages and ShaderPackageRegistry.sreg.\n\n"
+	       << "Compiles typed shader registrations into GlobalShaderMap.smap and CookedShaderLibrary.slib.\n\n"
 	       << "Selection options:\n"
-	       << "  --package <package-id>      Cook one registered shader package.\n"
 	       << "  --shader-id <shader-id>     Cook one registered shader entry by shader id.\n\n"
 	       << "  --changed <virtual-path>    Cook shader types affected by a changed virtual source. Repeat for each path.\n\n"
 	       << "Cook options:\n"
 	       << "  --target <name>             Add a codegen target such as DxilSm66 or SpirV16. "
 	          "Defaults to DxilSm66 and SpirV16.\n"
 	       << "  --backend <name>            Select a compiler backend, or auto.\n"
-	       << "  --debug-artifacts <dir>     Write debug artifact bundles outside runtime packages.\n"
+	       << "  --debug-artifacts <dir>     Write optional compiler diagnostics outside runtime artifacts.\n"
 	       << "  --analysis <pass[,pass]>    Run optional analysis report passes such as cooked-shader-stats.\n"
 	       << "  --parallel-compiles <1-8>   Bound concurrent compiler sessions. Defaults to 4; use 1 as the serial oracle.\n"
 	       << "  --debug-info                Request backend debug information and symbol emission where supported.\n"
@@ -44,7 +43,7 @@ CookShadersArgumentParser::CookShadersArgumentParser(std::span<const std::string
 {
 }
 
-ShaderPackageCookSettings CookShadersArgumentParser::ParseAll()
+ShaderCookSettings CookShadersArgumentParser::ParseAll()
 {
 	for (m_index = 0; m_index < m_arguments.size(); ++m_index)
 	{
@@ -89,7 +88,7 @@ bool CookShadersArgumentParser::ConsumeFlag(std::string_view argument)
 
 bool CookShadersArgumentParser::ConsumeValueOption(std::string_view argument)
 {
-	if (argument != "--package" && argument != "--shader-id" && argument != "--changed" && argument != "--cancellation-signal"
+	if (argument != "--shader-id" && argument != "--changed" && argument != "--cancellation-signal"
 	    && argument != "--target" && argument != "--backend" && argument != "--debug-artifacts" && argument != "--analysis"
 	    && argument != "--parallel-compiles" && argument != "--warnings-as-errors" && argument != "--strip-debug")
 	{
@@ -102,12 +101,6 @@ bool CookShadersArgumentParser::ConsumeValueOption(std::string_view argument)
 
 void CookShadersArgumentParser::ApplyValue(std::string_view argument, std::string_view value)
 {
-	if (argument == "--package")
-	{
-		m_settings.packageId = value;
-		return;
-	}
-
 	if (argument == "--shader-id")
 	{
 		m_settings.shaderId = value;
@@ -228,11 +221,11 @@ std::string_view CookShadersArgumentParser::TakeValue(std::string_view argument)
 
 void CookShadersArgumentParser::ValidateSelection() const
 {
-	const std::uint32_t selectionCount = static_cast<std::uint32_t>(!m_settings.packageId.empty())
-	    + static_cast<std::uint32_t>(!m_settings.shaderId.empty()) + static_cast<std::uint32_t>(!m_settings.changedVirtualPaths.empty());
+	const std::uint32_t selectionCount = static_cast<std::uint32_t>(!m_settings.shaderId.empty())
+	    + static_cast<std::uint32_t>(!m_settings.changedVirtualPaths.empty());
 	if (selectionCount > 1)
 	{
-		throw Diagnostics::Error("Use one selection: --package, --shader-id, or one or more --changed paths");
+		throw Diagnostics::Error("Use one selection: --shader-id or one or more --changed paths");
 	}
 }
 

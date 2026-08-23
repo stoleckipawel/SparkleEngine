@@ -5,14 +5,14 @@
 
 namespace RayTracedShadowSignalPacking
 {
-	float4 PackShadowSignal(ShadowVisibilitySignal signal)
+	float4 PackShadowSignal(ShadowVisibilitySample signal)
 	{
 		return float4(signal.Visibility, signal.HitDistance, signal.Confidence, signal.MaxDistance);
 	}
 
-	ShadowVisibilitySignal UnpackShadowSignal(float4 packedSignal)
+	ShadowVisibilitySample UnpackShadowSignal(float4 packedSignal)
 	{
-		ShadowVisibilitySignal signal;
+		ShadowVisibilitySample signal;
 		signal.Visibility = packedSignal.x;
 		signal.HitDistance = packedSignal.y;
 		signal.Confidence = packedSignal.z;

@@ -5,15 +5,16 @@
 #include "../RHIAPI.h"
 #include "../ShaderParameters/ShaderParameterSemantics.h"
 #include "../Shaders/ShaderStage.h"
+#include "../Shaders/GlobalShaderMap.h"
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <span>
 #include <vector>
 
 class PassParameterLayout;
-class LoadedShaderPackage;
 
 enum class ERhiCullMode : std::uint8_t
 {
@@ -88,7 +89,7 @@ struct CompiledBinding
 struct RenderBindingLayoutCompileDesc
 {
 	const PassParameterLayout* ParameterLayout = nullptr;
-	const LoadedShaderPackage* ShaderPackage = nullptr;
+	std::span<const ResolvedShader> Shaders;
 	bool AllowInputAssemblerInputLayout = false;
 	const wchar_t* DebugName = L"RHI_BindingLayout";
 	bool InlineUniformDataAsPushConstants = false;
@@ -144,11 +145,10 @@ struct RhiStencilTestDesc
 
 struct RhiShaderStageDesc
 {
-	const LoadedShaderPackage* Package = nullptr;
-	ShaderStage Stage = ShaderStage::Count;
+	const ResolvedShader* Shader = nullptr;
 
-	constexpr bool IsValid() const noexcept { return Package != nullptr && Stage != ShaderStage::Count; }
-	explicit constexpr operator bool() const noexcept { return IsValid(); }
+	bool IsValid() const noexcept { return Shader != nullptr && Shader->IsValid(); }
+	explicit operator bool() const noexcept { return IsValid(); }
 };
 
 struct GraphicsPipelineDesc

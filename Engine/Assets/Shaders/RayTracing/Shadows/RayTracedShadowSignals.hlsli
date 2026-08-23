@@ -1,7 +1,7 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_SIGNALS_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_SIGNALS_HLSLI
 
-struct ShadowVisibilitySignal
+struct ShadowVisibilitySample
 {
 	float Visibility;
 	float HitDistance;
@@ -11,9 +11,9 @@ struct ShadowVisibilitySignal
 
 namespace RayTracedShadowSignals
 {
-	ShadowVisibilitySignal BuildUnshadowedSignal(float maxDistance)
+	ShadowVisibilitySample BuildUnshadowedSignal(float maxDistance)
 	{
-		ShadowVisibilitySignal signal;
+		ShadowVisibilitySample signal;
 		signal.Visibility = 1.0f;
 		signal.HitDistance = maxDistance;
 		signal.Confidence = 1.0f;
@@ -21,9 +21,9 @@ namespace RayTracedShadowSignals
 		return signal;
 	}
 
-	ShadowVisibilitySignal BuildOccludedSignal(float hitDistance, float maxDistance)
+	ShadowVisibilitySample BuildOccludedSignal(float hitDistance, float maxDistance)
 	{
-		ShadowVisibilitySignal signal;
+		ShadowVisibilitySample signal;
 		signal.Visibility = 0.0f;
 		signal.HitDistance = hitDistance;
 		signal.Confidence = 1.0f;

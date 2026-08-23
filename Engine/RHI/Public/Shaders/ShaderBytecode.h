@@ -3,7 +3,7 @@
 #include <cstddef>
 
 // Lightweight non-owning view of cooked shader bytecode. Lives in RHI public
-// because runtime cooked-package readers return it; the offline compile result
+// because the cooked code library returns it; the offline compile result
 // type that previously co-located here moved out of RHI public into the
 // offline shader-cooking tool's public surface.
 struct ShaderBytecode

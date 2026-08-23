@@ -102,7 +102,6 @@ Largest individual files:
 | --- | ---: | --- |
 | `Engine/RHI/Private/D3D12/ThirdParty/d3dx12.h` | 3850 | Third-party header, not a Sparkle cleanup target. |
 | `Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.cpp` | 1235 | Backend command code, performance-sensitive. |
-| `Engine/RHI/Private/Shaders/CookedShaderPackageCache.cpp` | 1061 | Shader runtime package load/cache. |
 | `Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp` | 948 | Vulkan device/bootstrap. |
 | `Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator.cpp` | 941 | Memory allocator integration. |
 | `Engine/Editor/Private/Util/UiUtil.cpp` | 876 | Editor utility concentration. |
@@ -292,7 +291,7 @@ Backend split:
 
 - D3D12 backend: command list, device, descriptor heaps, pipeline state/root signatures, resources, memory via D3D12MA, ray tracing, NVAPI PTLAS provider, diagnostics, presentation, swap chain, ImGui backend.
 - Vulkan backend: command list/context, descriptor allocator/manager, pipeline/layout/shader modules, resources, memory via VMA, ray tracing/classic/PTLAS services, diagnostics/debug labels/names, presentation, swap chain, ImGui backend.
-- Common RHI: shader packages/cache, bindings, capture writer, config/depth conventions, resource validation, type conversions.
+- Common RHI: global shader-map and cooked-code-library validation, bindings, capture writer, config/depth conventions, resource validation, and type conversions.
 
 RHI strength:
 
@@ -349,13 +348,13 @@ Shader source shape:
 - Shared HLSL include libraries under `Engine/Assets/Shaders/BRDF`, `Common`, `Geometry`, `Lighting`, `Material`, `RayTracing`, `Resources`, `Display`, and `Debug`.
 - Pass shaders follow semantic owners under `Engine/Assets/Shaders/Passes/GBuffer`, `Lighting`, `PostProcessing`, `Presentation`, `RayTracing`, and `Debug`.
 - C++ shader registrations under `Engine/Renderer/ShaderRegistrations`.
-- RHI public shader package, reflection, authoring macros, and pass parameter layout types.
+- RHI public shader-map/code-library records, reflection, authoring macros, and pass parameter layout types.
 - Shader compiler tool under `Tools/Shaders/ShaderCompiler` with DXC/Slang backends, reflection extractors, immutable compile jobs, virtual dependency selection, transactional cooking, inspection, CLI commands, and verification.
 
 Strengths:
 
-- Offline compiler and runtime shader package cache are product-level systems.
-- Cooked shader packages and reflection give a real ABI story.
+- Offline compilation and Renderer-owned shader generations are product-level systems.
+- The generated global shader map joins typed shader identity and reflection to content-addressed cooked code.
 - Typed pass parameters make render pass bindings reviewable.
 - DXC and Slang support positions the engine for D3D12/Vulkan and future neural rendering paths.
 
@@ -363,7 +362,7 @@ Slimming targets:
 
 - Debug artifact bundles and cooked stats CSV should be opt-in developer tooling or deleted from default workflows.
 - Shader registration and HLSL resource declarations remain duplicated; avoid adding a generator unless it deletes materially more code than it adds.
-- Shader compatibility targets and per-package selection belong to direct ShaderCompiler diagnostic workflows, not the default launcher UI.
+- Shader compatibility targets and typed shader selection belong to direct ShaderCompiler diagnostic workflows, not the default launcher UI.
 
 ## Tools And Workflow Map
 
@@ -453,7 +452,7 @@ Current GPU performance strengths:
 - GPU marker/timing support through RHI diagnostics and frame execution diagnostics.
 - Ray tracing scene preparation with BLAS/TLAS ownership.
 - Provider contracts for DLSS upscaling and ray reconstruction guide resources.
-- HLSL layout and shader package ABI validation.
+- HLSL layout and global shader-map ABI validation.
 
 GPU performance risks:
 
@@ -471,7 +470,7 @@ CPU-sensitive surfaces:
 | Frame graph setup/compile | Runs every recorded frame. | Flexible, but could become CPU overhead. Cache topology if it deletes more dynamic planning code than it adds. |
 | Scene snapshot/build frame context | Captures scene snapshot, builds render scene data, ray tracing plan, per-view/temporal data. | Needs profiling on large scenes. |
 | Texture loading | `TextureManager::LoadSceneTextures` during setup. | Ensure it is incremental/cache-backed; avoid per-frame redundant scans. |
-| Shader package cache | Large runtime loader file. | Strong, but watch startup/cook/runtime split. |
+| Shader map/library generation | Opens validated immutable artifacts once per Renderer generation. | Preserve replacement-before-switch and all-queue retirement. |
 | Launcher | Qt GUI and CLI planning for many workflows. | Large workstation app overhead, not runtime overhead. |
 | Cookers/importers | Source pipeline tools. | Keep out of runtime package. |
 
@@ -507,8 +506,8 @@ Normative coding, graphics, neural, driver, and evidence implications belong in 
 | --- | --- | --- |
 | GameFramework world extraction | Renderer input consumer/RenderWorld | Sequenced `RenderWorldDelta` plus immutable `RenderFrameDynamicData` and stable resource handles. |
 | Renderer frame graph | RHI services | Resource, descriptor, pipeline, command, ray tracing, interop, presentation services. |
-| Shader registrations | ShaderCompiler | Package names, source paths, entries, stages, parameters. |
-| ShaderCompiler | RHI runtime shader cache | Cooked shader package binary, reflection, layout metadata. |
+| Shader registrations | ShaderCompiler | Typed identity, virtual source paths, entries, stages, features, and parameters. |
+| ShaderCompiler | Renderer shader generation | Global shader map, content-addressed cooked code library, reflection, and layout metadata. |
 | Asset cookers | GameFramework loaders | Cooked scene/mesh/material/texture package contracts. |
 | Launcher | CMake/tools/projects | Build/cook/launch/clean process requests. Distribution assembly remains manual and outside launcher ownership. |
 | Renderer providers | Streamline/DLSS | Tagged resources and native interop. |

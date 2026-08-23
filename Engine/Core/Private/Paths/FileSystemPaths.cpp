@@ -67,14 +67,14 @@ namespace Filesystem
 		return Private::GetAssetPathState().cookedShaderRootPath;
 	}
 
-	const std::filesystem::path& GetCookedShaderPackageRootPath()
+	const std::filesystem::path& GetGlobalShaderMapPath()
 	{
-		return Private::GetAssetPathState().cookedShaderPackageRootPath;
+		return Private::GetAssetPathState().globalShaderMapPath;
 	}
 
-	const std::filesystem::path& GetCookedShaderRegistryPath()
+	const std::filesystem::path& GetCookedShaderLibraryPath()
 	{
-		return Private::GetAssetPathState().cookedShaderRegistryPath;
+		return Private::GetAssetPathState().cookedShaderLibraryPath;
 	}
 
 	const std::filesystem::path& GetCookedTextureRootPath()

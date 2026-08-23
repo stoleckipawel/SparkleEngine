@@ -53,6 +53,10 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 			return ::ShaderParameterDescriptorRegistry<ThisShaderParameterStruct>::BuildDescriptor(#StructName); \
 		}
 
+#if defined(SPARKLE_SHADER_CONTRACTS_ONLY)
+#define SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, Visibility)
+#define SPARKLE_REGISTER_EXTERNAL_GRAPH_SHADER_PARAMETER(Name, Visibility)
+#else
 #define SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, Visibility)                                                                       \
 	inline static const ::ShaderParameterFieldAutoRegister<ThisShaderParameterStruct, decltype(Name)> AutoRegisterGraphParameter_##Name \
 	{                                                                                                                                   \
@@ -64,9 +68,10 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	{                                                                                                                                   \
 		#Name, &ThisShaderParameterStruct::Name, Visibility, false                                                                      \
 	}
+#endif
 
-#define SHADER_PARAMETER_CBUFFER(Type, Name)                                                                             \
-	::ShaderUniform<Type> Name{};                                                                                        \
+#define SHADER_PARAMETER_CBUFFER(UniformType, Name)                                                                      \
+	::ShaderUniform<UniformType> Name{};                                                                                 \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \
 	    ::CookedShaderResourceKind::ConstantBuffer,                                                                      \
@@ -76,28 +81,44 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	    ::ShaderParameterAccess::None,                                                                                   \
 	    ::ShaderStageVisibility::None,                                                                                   \
 	    1u,                                                                                                              \
-	    static_cast<std::uint32_t>(sizeof(Type)),                                                                        \
-	    static_cast<std::uint32_t>(alignof(Type)),                                                                       \
+	    static_cast<std::uint32_t>(sizeof(UniformType)),                                                                 \
+	    static_cast<std::uint32_t>(alignof(UniformType)),                                                                \
 	    true};                                                                                                           \
 	SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
 
-#define SHADER_PARAMETER_TEXTURE_SRV(Type, Name)                                                                         \
-	typename ::ShaderTextureSRVField<::Type>::Type Name{};                                                               \
+#define SHADER_PARAMETER_TEXTURE_SRV(ResourceType, Name)                                                                 \
+	typename ::ShaderTextureSRVField<::ResourceType>::Type Name{};                                                       \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \
-	    ::ShaderParameterResourceTraits<::Type>::Kind,                                                                   \
-	    ::ShaderParameterResourceTraits<::Type>::Dimension,                                                              \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Kind,                                                           \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Dimension,                                                      \
 	    1u,                                                                                                              \
 	    0u,                                                                                                              \
 	    0u};                                                                                                             \
 	SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
 
-#define SHADER_PARAMETER_TEXTURE_SRV_ARRAY(Type, Name, Count)                                                            \
-	typename ::ShaderTextureSRVField<::Type, Count>::Type Name{};                                                        \
+#define SHADER_PARAMETER_EXTERNAL_TEXTURE_SRV(ResourceType, Name)                                                        \
+	::ShaderTexture2DSRV Name{};                                                                                         \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \
-	    ::ShaderParameterResourceTraits<::Type>::Kind,                                                                   \
-	    ::ShaderParameterResourceTraits<::Type>::Dimension,                                                              \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Kind,                                                           \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Dimension,                                                      \
+	    ::ShaderParameterSemanticKind::ReadTexture,                                                                      \
+	    ::ShaderParameterResourceDomain::Texture,                                                                        \
+	    ::ShaderParameterAccess::Read,                                                                                   \
+	    ::ShaderStageVisibility::None,                                                                                   \
+	    1u,                                                                                                              \
+	    0u,                                                                                                              \
+	    0u,                                                                                                              \
+	    true};                                                                                                           \
+	SPARKLE_REGISTER_EXTERNAL_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
+
+#define SHADER_PARAMETER_TEXTURE_SRV_ARRAY(ResourceType, Name, Count)                                                    \
+	::ShaderTexture2DTableSRV<Count> Name{};                                                                             \
+	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
+	    #Name,                                                                                                           \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Kind,                                                           \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Dimension,                                                      \
 	    ::ShaderParameterSemanticKind::ReadTexture,                                                                      \
 	    ::ShaderParameterResourceDomain::Texture,                                                                        \
 	    ::ShaderParameterAccess::Read,                                                                                   \
@@ -106,14 +127,14 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	    0u,                                                                                                              \
 	    0u,                                                                                                              \
 	    true};                                                                                                           \
-	SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
+	SPARKLE_REGISTER_EXTERNAL_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
 
-#define SHADER_PARAMETER_TEXTURE_UAV(Type, Name)                                                                         \
-	typename ::ShaderTextureUAVField<::Type>::Type Name{};                                                               \
+#define SHADER_PARAMETER_TEXTURE_UAV(ResourceType, Name)                                                                 \
+	typename ::ShaderTextureUAVField<::ResourceType>::Type Name{};                                                       \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \
-	    ::ShaderParameterResourceTraits<::Type>::Kind,                                                                   \
-	    ::ShaderParameterResourceTraits<::Type>::Dimension,                                                              \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Kind,                                                           \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Dimension,                                                      \
 	    ::ShaderParameterSemanticKind::RWTexture,                                                                        \
 	    ::ShaderParameterResourceDomain::Texture,                                                                        \
 	    ::ShaderParameterAccess::ReadWrite,                                                                              \
@@ -124,8 +145,8 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	    true};                                                                                                           \
 	SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
 
-#define SHADER_PARAMETER_BUFFER_SRV(Type, Name)                                                                          \
-	typename ::ShaderBufferSRVField<::StructuredBuffer<Type>>::Type Name{};                                              \
+#define SHADER_PARAMETER_BUFFER_SRV(ValueType, Name)                                                                     \
+	typename ::ShaderBufferSRVField<::StructuredBuffer<ValueType>>::Type Name{};                                         \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \
 	    ::CookedShaderResourceKind::StructuredBuffer,                                                                    \
@@ -135,8 +156,8 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	    0u};                                                                                                             \
 	SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
 
-#define SHADER_PARAMETER_EXTERNAL_BUFFER_SRV(Type, Name)                                                                 \
-	typename ::ShaderBufferSRVField<::StructuredBuffer<Type>>::Type Name{};                                              \
+#define SHADER_PARAMETER_EXTERNAL_BUFFER_SRV(ValueType, Name)                                                            \
+	typename ::ShaderBufferSRVField<::StructuredBuffer<ValueType>>::Type Name{};                                         \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \
 	    ::CookedShaderResourceKind::StructuredBuffer,                                                                    \
@@ -146,8 +167,8 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	    0u};                                                                                                             \
 	SPARKLE_REGISTER_EXTERNAL_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
 
-#define SHADER_PARAMETER_BUFFER_UAV(Type, Name)                                                                          \
-	typename ::ShaderBufferUAVField<::RWStructuredBuffer<Type>>::Type Name{};                                            \
+#define SHADER_PARAMETER_BUFFER_UAV(ValueType, Name)                                                                     \
+	typename ::ShaderBufferUAVField<::RWStructuredBuffer<ValueType>>::Type Name{};                                       \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \
 	    ::CookedShaderResourceKind::RWStructuredBuffer,                                                                  \
@@ -157,12 +178,12 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	    0u};                                                                                                             \
 	SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, ::ShaderStageVisibility::All);
 
-#define SHADER_PARAMETER_SAMPLER(Type, Name)                                                                             \
+#define SHADER_PARAMETER_SAMPLER(ResourceType, Name)                                                                     \
 	::ShaderSamplerSet Name{};                                                                                           \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \
-	    ::ShaderParameterResourceTraits<::Type>::Kind,                                                                   \
-	    ::ShaderParameterResourceTraits<::Type>::Dimension,                                                              \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Kind,                                                           \
+	    ::ShaderParameterResourceTraits<::ResourceType>::Dimension,                                                      \
 	    ::ShaderParameterSemanticKind::SamplerSet,                                                                       \
 	    ::ShaderParameterResourceDomain::Sampler,                                                                        \
 	    ::ShaderParameterAccess::None,                                                                                   \

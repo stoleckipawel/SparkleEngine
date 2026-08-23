@@ -3,10 +3,10 @@
 #include "Cli/CookShadersCommand.h"
 
 #include "Analysis/CookedShaderStatsPass.h"
-#include "Backend/ShaderTarget.h"
+#include "RHI/Public/Shaders/ShaderTarget.h"
 #include "Cli/CookShadersArgumentParser.h"
 #include "Constants/ShaderCompilerConstants.h"
-#include "Cooking/ShaderPackageCooker.h"
+#include "Cooking/GlobalShaderCooker.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "ToolConsole.h"
 
@@ -17,12 +17,12 @@
 class CookShadersCommandExecution final
 {
 public:
-	static void PrintSummary(const ShaderPackageCookResult& result, const ShaderPackageCookSettings& settings);
-	static int RunAnalysisPasses(const ShaderPackageCookResult& result, const ShaderPackageCookSettings& settings);
+	static void PrintSummary(const ShaderCookResult& result, const ShaderCookSettings& settings);
+	static int RunAnalysisPasses(const ShaderCookResult& result, const ShaderCookSettings& settings);
 
 private:
 	static std::string FormatTargets(std::span<const ShaderTarget> targets);
-	static void RunCookedShaderStats(const ShaderPackageCookResult& result);
+	static void RunCookedShaderStats(const ShaderCookResult& result);
 };
 
 int CookShadersCommand::Run(std::span<const std::string_view> args) const
@@ -33,7 +33,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 		return kExitCodeSuccess;
 	}
 
-	ShaderPackageCookSettings settings;
+	ShaderCookSettings settings;
 	try
 	{
 		settings = CookShadersArgumentParser::Parse(args);
@@ -48,8 +48,8 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 		return kExitCodeUsage;
 	}
 
-	ShaderPackageCooker cooker;
-	ShaderPackageCookResult cookResult;
+	GlobalShaderCooker cooker;
+	ShaderCookResult cookResult;
 	try
 	{
 		cookResult = cooker.CookAll(settings);
@@ -59,31 +59,32 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
-		    "Failed to cook shader packages",
+		    "Failed to publish cooked shaders",
 		    {ToolConsole::QuotedField("reason", error.what())});
 		return kExitCodeCookFailure;
 	}
 
 	CookShadersCommandExecution::PrintSummary(cookResult, settings);
-	if (cookResult.packages.empty())
+	if (cookResult.output.entries.empty())
 	{
 		return kExitCodeNoWork;
 	}
 	return CookShadersCommandExecution::RunAnalysisPasses(cookResult, settings);
 }
 
-void CookShadersCommandExecution::PrintSummary(const ShaderPackageCookResult& result, const ShaderPackageCookSettings& settings)
+void CookShadersCommandExecution::PrintSummary(const ShaderCookResult& result, const ShaderCookSettings& settings)
 {
 	ToolConsole::Summary(
 	    std::cout,
 	    "Cooked shader generation",
 	    {ToolConsole::Field("shaderTypes", std::to_string(result.selectedShaderCount)),
 	        ToolConsole::Field("compileJobs", std::to_string(result.compileJobCount)),
-	        ToolConsole::Field("packages", std::to_string(result.packages.size())),
+	        ToolConsole::Field("mapEntries", std::to_string(result.output.entries.size())),
+	        ToolConsole::Field("uniqueCodeRecords", std::to_string(result.output.uniqueCodeCount)),
 	        ToolConsole::QuotedField("targets", FormatTargets(settings.targets))});
 }
 
-int CookShadersCommandExecution::RunAnalysisPasses(const ShaderPackageCookResult& result, const ShaderPackageCookSettings& settings)
+int CookShadersCommandExecution::RunAnalysisPasses(const ShaderCookResult& result, const ShaderCookSettings& settings)
 {
 	for (const std::string& analysisPass : settings.analysisPasses)
 	{
@@ -132,9 +133,9 @@ std::string CookShadersCommandExecution::FormatTargets(std::span<const ShaderTar
 	return result;
 }
 
-void CookShadersCommandExecution::RunCookedShaderStats(const ShaderPackageCookResult& result)
+void CookShadersCommandExecution::RunCookedShaderStats(const ShaderCookResult& result)
 {
-	const CookedShaderStatsReport report = CookedShaderStatsPass::WriteCsv(result.packages, result.outputDirectory / "Analysis");
+	const CookedShaderStatsReport report = CookedShaderStatsPass::WriteCsv(result.output, result.outputDirectory / "Analysis");
 
 	ToolConsole::Message(
 	    std::cout,

@@ -9,8 +9,10 @@ struct ShaderRecookPublication final
 {
 	std::uint64_t PublicationId = 0;
 	std::uint64_t PublishedAtUnixMs = 0;
-	std::uint64_t RegistryHash = 0;
-	std::filesystem::path RegistryPath;
+	std::uint64_t GlobalShaderMapHash = 0;
+	std::uint64_t CookedShaderLibraryHash = 0;
+	std::filesystem::path GlobalShaderMapPath;
+	std::filesystem::path CookedShaderLibraryPath;
 	std::string Status;
 };
 

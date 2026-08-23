@@ -10,11 +10,12 @@
 #include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
+#include "ShaderData/RaytracedGBufferUniformData.h"
 
 class RaytracedGBufferCS final : public GlobalShader<RaytracedGBufferCS>
 {
 public:
-	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferBaseColor)

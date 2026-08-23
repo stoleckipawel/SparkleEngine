@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Backend/ShaderTarget.h"
+#include "RHI/Public/Shaders/ShaderTarget.h"
 #include "Cooking/ShaderCompileJob.h"
 
 #include <string>

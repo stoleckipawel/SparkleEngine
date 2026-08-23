@@ -55,5 +55,5 @@ void RegisterRayTracingLightingParameterSetups(FrameGraphBuilder& builder, TPara
 	builder.AddParameterSetup<RayTracedShadowPassInput>(
 	    parameters,
 	    [](auto& fields, const RayTracedShadowPassInput& input)
-	    { fields.RayTracedShadows = RayTracedShadowPassData::Build(input); });
+	    { fields.RayTracedShadowConstants = RayTracedShadowPassData::Build(input); });
 }

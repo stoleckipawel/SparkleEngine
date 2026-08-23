@@ -25,7 +25,7 @@
 #include "D3D12/UI/D3D12ImGuiBackend.h"
 #include "Presentation/RhiPresentationServiceAdapter.h"
 #include "Pipeline/RhiPipelineServiceAdapter.h"
-#include "Shaders/CookedShaderPackage.h"
+#include "Shaders/ShaderTarget.h"
 
 #include <d3d12.h>
 #include <string>
@@ -79,7 +79,7 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	                                        : featureLevel == D3D_FEATURE_LEVEL_11_0 ? 0u
 	                                                                                 : 0u;
 	capabilities.BackendApi = ERhiBackendApi::D3D12;
-	capabilities.RuntimeShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
+	capabilities.RuntimeShaderBinaryFormat = ShaderBinaryFormat::Dxil;
 	capabilities.BackendVersion = RhiBackendVersionInfo{
 	    .Semantic = ERhiBackendVersionSemantic::FeatureLevel,
 	    .Major = featureLevelMajor,

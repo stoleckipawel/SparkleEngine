@@ -125,12 +125,12 @@ bool AssetCookerStageExecutor::RunShaders(
 {
 	if (AssetCookerToolProcess::Run(ResolveToolPath(plan, "ShaderCompiler"), {"cook"}, plan.projectRoot) != 0)
 	{
-		diagnostics.AddError(AssetCookerCategory_Shaders, "Shader package cooking failed.");
+		diagnostics.AddError(AssetCookerCategory_Shaders, "Shader cooking failed.");
 		return false;
 	}
 
-	AppendOutput(outputs, AssetCookerCategory_Shaders, "shader-packages", plan.cookedRoot / "Shaders" / "Packages");
-	AppendOutput(outputs, AssetCookerCategory_Shaders, "shader-registry", plan.cookedRoot / "Shaders" / "ShaderPackageRegistry.sreg");
+	AppendOutput(outputs, AssetCookerCategory_Shaders, "global-shader-map", plan.cookedRoot / "Shaders" / "GlobalShaderMap.smap");
+	AppendOutput(outputs, AssetCookerCategory_Shaders, "cooked-shader-library", plan.cookedRoot / "Shaders" / "CookedShaderLibrary.slib");
 	return true;
 }
 

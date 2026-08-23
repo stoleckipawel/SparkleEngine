@@ -8,7 +8,9 @@ class ShaderRecookSignal final
 	ShaderRecookSignal() = delete;
 
 	static void Write(
-	    const std::filesystem::path& registryReadPath,
-	    const std::filesystem::path& publishedRegistryPath,
+	    const std::filesystem::path& mapReadPath,
+	    const std::filesystem::path& publishedMapPath,
+	    const std::filesystem::path& libraryReadPath,
+	    const std::filesystem::path& publishedLibraryPath,
 	    const std::filesystem::path& signalStoragePath);
 };

@@ -55,7 +55,7 @@ struct EditorHostServices final
 
 struct EditorDiagnosticsProviders final
 {
-	std::function<std::uint64_t()> ShaderPackageGeneration;
+	std::function<std::uint64_t()> ShaderGeneration;
 	std::function<MeshDiagnosticsSnapshot()> MeshDiagnostics;
 	std::function<TextureDiagnosticsSnapshot()> TextureDiagnostics;
 	std::function<RendererMemoryDiagnosticsSnapshot()> MemoryDiagnostics;
@@ -137,7 +137,7 @@ private:
 	Window* m_window = nullptr;
 	InputSystem* m_inputSystem = nullptr;
 	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
-	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;
+	std::function<std::uint64_t()> m_shaderGenerationProvider;
 	std::function<MeshDiagnosticsSnapshot()> m_meshDiagnosticsProvider;
 	std::function<TextureDiagnosticsSnapshot()> m_textureDiagnosticsProvider;
 	std::function<RendererMemoryDiagnosticsSnapshot()> m_memoryDiagnosticsProvider;

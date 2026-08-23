@@ -31,7 +31,7 @@ void AccumulatePathTracedDirectLight(GBufferData surface,
 	{
 		return;
 	}
-	const ShadowVisibilitySignal shadow =
+	const ShadowVisibilitySample shadow =
 	    RayTracedShadowVisibility::TraceDirectLightSample(positionWorld, surface.NormalWorld, lightSample, castsShadow);
 	float3 lightDiffuse = 0.0f.xxx;
 	float3 lightSpecular = 0.0f.xxx;

@@ -8,7 +8,6 @@ enum class ShaderRecookRequestType : std::uint8_t
 {
 	Global = 0,
 	Changed,
-	PackageId,
 	ShaderId,
 };
 

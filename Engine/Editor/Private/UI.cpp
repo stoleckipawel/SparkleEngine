@@ -77,7 +77,7 @@ void UI::SetViewportSceneColorTexture(EditorTextureHandle texture) noexcept
 
 void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 {
-	m_shaderPackageGenerationProvider = std::move(providers.ShaderPackageGeneration);
+	m_shaderGenerationProvider = std::move(providers.ShaderGeneration);
 	m_meshDiagnosticsProvider = std::move(providers.MeshDiagnostics);
 	m_textureDiagnosticsProvider = std::move(providers.TextureDiagnostics);
 	m_memoryDiagnosticsProvider = std::move(providers.MemoryDiagnostics);
@@ -85,7 +85,7 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 
 	if (m_usedShadersPanel)
 	{
-		m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
+		m_usedShadersPanel->SetGenerationProvider(m_shaderGenerationProvider);
 	}
 	if (m_usedMeshesPanel)
 	{

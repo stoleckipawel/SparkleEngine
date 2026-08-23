@@ -1,13 +1,13 @@
 ﻿#pragma once
 
 #include "Core/Public/Strings/StringTableBuilder.h"
-#include "RHI/Public/Shaders/CookedShaderPackage.h"
+#include "RHI/Public/Shaders/ShaderReflection.h"
 #include "ShaderReflection.h"
 
 #include <span>
 #include <vector>
 
-// Flattens per-stage ShaderReflection into the package POD arrays.
+// Flattens per-stage ShaderReflection into the global shader map POD arrays.
 // Strings are interned through the caller-owned StringTableBuilder.
 class ReflectionSerializer final
 {

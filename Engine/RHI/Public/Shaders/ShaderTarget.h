@@ -1,12 +1,14 @@
 #pragma once
 
-#include "RHI/Public/Shaders/CookedShaderPackageContract.h"
-
 #include <cstdint>
 #include <string_view>
 
-// Backend target families. DXIL targets select their corresponding shader
-// model; SPIR-V targets select their corresponding SPIR-V environment.
+enum class ShaderBinaryFormat : std::uint8_t
+{
+	Dxil = 0,
+	SpirV = 1,
+};
+
 enum class ShaderTarget : std::uint16_t
 {
 	DxilSm60 = 0,
@@ -34,6 +36,11 @@ constexpr bool IsSpirVTarget(ShaderTarget target) noexcept
 	return target >= ShaderTarget::SpirV14 && target <= ShaderTarget::SpirV16;
 }
 
+constexpr bool IsShaderTarget(ShaderTarget target) noexcept
+{
+	return IsDxilTarget(target) || IsSpirVTarget(target);
+}
+
 constexpr const char* GetShaderTargetName(ShaderTarget target) noexcept
 {
 	switch (target)
@@ -46,16 +53,24 @@ constexpr const char* GetShaderTargetName(ShaderTarget target) noexcept
 		case ShaderTarget::DxilSm65: return "DxilSm65";
 		case ShaderTarget::DxilSm66: return "DxilSm66";
 		case ShaderTarget::DxilSm67: return "DxilSm67";
-		case ShaderTarget::SpirV14:  return "SpirV14";
-		case ShaderTarget::SpirV15:  return "SpirV15";
-		case ShaderTarget::SpirV16:  return "SpirV16";
+		case ShaderTarget::SpirV14: return "SpirV14";
+		case ShaderTarget::SpirV15: return "SpirV15";
+		case ShaderTarget::SpirV16: return "SpirV16";
 	}
 	return "Unknown";
 }
 
-static_assert(
-    std::string_view{GetShaderTargetName(ShaderTarget::DxilSm66)} ==
-    CookedShaderPackageContract::DxilRuntimeCodegenTarget);
-static_assert(
-    std::string_view{GetShaderTargetName(ShaderTarget::SpirV16)} ==
-    CookedShaderPackageContract::SpirVRuntimeCodegenTarget);
+constexpr ShaderBinaryFormat GetShaderBinaryFormat(ShaderTarget target) noexcept
+{
+	return IsDxilTarget(target) ? ShaderBinaryFormat::Dxil : ShaderBinaryFormat::SpirV;
+}
+
+constexpr ShaderTarget GetRuntimeShaderTarget(ShaderBinaryFormat format) noexcept
+{
+	return format == ShaderBinaryFormat::Dxil ? ShaderTarget::DxilSm66 : ShaderTarget::SpirV16;
+}
+
+constexpr const char* ShaderBinaryFormatToString(ShaderBinaryFormat format) noexcept
+{
+	return format == ShaderBinaryFormat::Dxil ? "DXIL" : "SPIR-V";
+}

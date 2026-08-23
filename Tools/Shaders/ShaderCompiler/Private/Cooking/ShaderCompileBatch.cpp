@@ -18,7 +18,7 @@
 #include <unordered_map>
 
 std::vector<ShaderCompileResult> ShaderCompileBatch::Execute(
-    const ShaderPackageCookSettings& settings,
+    const ShaderCookSettings& settings,
     std::span<const ShaderCompileJob> jobs)
 {
 	if (jobs.empty())
@@ -65,7 +65,7 @@ ShaderCompileBatch::ProducerMap ShaderCompileBatch::SelectProducers(std::span<co
 }
 
 std::vector<ShaderCompileResult> ShaderCompileBatch::CompileProducers(
-    const ShaderPackageCookSettings& settings,
+    const ShaderCookSettings& settings,
     std::span<const ShaderCompileJob> jobs,
     std::span<const std::size_t> producerJobIndices)
 {
@@ -149,7 +149,7 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::FanOutResults(
 }
 
 void ShaderCompileBatch::FinalizeResults(
-    const ShaderPackageCookSettings& settings,
+    const ShaderCookSettings& settings,
     std::span<const ShaderCompileJob> jobs,
     std::span<ShaderCompileResult> results)
 {

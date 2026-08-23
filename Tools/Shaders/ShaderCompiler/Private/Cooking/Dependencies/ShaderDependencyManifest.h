@@ -14,7 +14,6 @@ struct ShaderDependencyRecord final
 	ShaderTypeId ShaderType = 0;
 	std::string ShaderTypeName;
 	std::string VirtualSourcePath;
-	std::string PublicationGroup;
 	std::vector<std::string> VirtualDependencies;
 };
 

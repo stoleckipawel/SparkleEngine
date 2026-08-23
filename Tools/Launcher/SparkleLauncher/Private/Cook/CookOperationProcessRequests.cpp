@@ -87,7 +87,7 @@ namespace SparkleLauncher
 	static void AddShaderCookSteps(std::vector<CookOperationProcessStep>& steps, const CookOperationPlan& plan)
 	{
 #if SPARKLE_ENABLE_SHADER_COMPILER
-		AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
+		AddStep(steps, "cook-shaders", "Cook shaders", MakeShaderCompilerCookAllRequest(plan));
 #else
 		(void) steps;
 		(void) plan;
@@ -135,7 +135,7 @@ namespace SparkleLauncher
 				return steps;
 			case CookOperationKind::CookAllAssets:
 #if SPARKLE_ENABLE_SHADER_COMPILER
-				AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
+				AddStep(steps, "cook-shaders", "Cook shaders", MakeShaderCompilerCookAllRequest(plan));
 #endif
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
 				AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));

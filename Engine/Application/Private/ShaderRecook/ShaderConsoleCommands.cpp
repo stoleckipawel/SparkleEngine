@@ -30,8 +30,8 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	commandRegistry.Register(
 	    ConsoleCommandDescriptor{
 	        .Name = "RecompileShaders",
-	        .Help = "Queues an out-of-process shader recook. Targets: Global, Changed, Package <package-id>, or Shader <shader-id>.",
-	        .ArgumentSyntax = "Global|Changed|Package <package-id>|Shader <shader-id>",
+	        .Help = "Queues an out-of-process shader recook. Targets: Global, Changed, or Shader <shader-id>.",
+	        .ArgumentSyntax = "Global|Changed|Shader <shader-id>",
 	        .Scope = ConsoleCommandScope::Editor,
 	        .Execute =
 	            [handlers](ConsoleCommandScope, std::span<const std::string_view> arguments)
@@ -48,7 +48,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	commandRegistry.Register(
 	    ConsoleCommandDescriptor{
 	        .Name = "ReloadShaders",
-	        .Help = "Reloads currently cooked shader packages without recooking.",
+	        .Help = "Reloads the current cooked shader map and code library without recooking.",
 	        .Scope = ConsoleCommandScope::Editor,
 	        .Execute =
 	            [handlers](ConsoleCommandScope, std::span<const std::string_view>)
@@ -142,15 +142,6 @@ ConsoleCommandResult ShaderConsoleCommands::ExecuteRecompileShaders(const Handle
 	{
 		request.Type = ShaderRecookRequestType::Changed;
 	}
-	else if (Strings::EqualsIgnoreCase(arguments.front(), "Package"))
-	{
-		if (arguments.size() < 2)
-		{
-			return ConsoleCommandResult::Error("RecompileShaders Package requires a package id");
-		}
-		request.Type = ShaderRecookRequestType::PackageId;
-		request.Target = Strings::Join(arguments.subspan(1), " ");
-	}
 	else if (Strings::EqualsIgnoreCase(arguments.front(), "Shader"))
 	{
 		if (arguments.size() < 2)
@@ -162,7 +153,7 @@ ConsoleCommandResult ShaderConsoleCommands::ExecuteRecompileShaders(const Handle
 	}
 	else
 	{
-		return ConsoleCommandResult::Error("Use RecompileShaders Global, Changed, Package <package-id>, or Shader <shader-id>");
+		return ConsoleCommandResult::Error("Use RecompileShaders Global, Changed, or Shader <shader-id>");
 	}
 
 	handlers.RequestRecook(request);
@@ -178,7 +169,7 @@ ConsoleCommandResult ShaderConsoleCommands::ExecuteReloadShaders(const Handlers&
 	}
 
 	handlers.RequestReload();
-	return ConsoleCommandResult::Success("queued cooked shader package reload");
+	return ConsoleCommandResult::Success("queued cooked shader map reload");
 }
 
 ConsoleCommandResult ShaderConsoleCommands::ExecuteListShaders()
@@ -214,10 +205,6 @@ ConsoleCommandResult ShaderConsoleCommands::ExecuteListShaderTargets()
 std::vector<std::string> ShaderConsoleCommands::CompleteRecompileShaders(const ConsoleAutocompleteRequest& request)
 {
 	const std::string_view prefix = request.CurrentToken;
-	if (!request.Arguments.empty() && Strings::EqualsIgnoreCase(request.Arguments.front(), "Package"))
-	{
-		return BuildShaderPackageCompletions(prefix);
-	}
 	if (!request.Arguments.empty() && Strings::EqualsIgnoreCase(request.Arguments.front(), "Shader"))
 	{
 		return BuildShaderIdCompletions(prefix);
@@ -231,10 +218,6 @@ std::vector<std::string> ShaderConsoleCommands::CompleteRecompileShaders(const C
 	if (Strings::StartsWithIgnoreCase("Changed", prefix))
 	{
 		completions.emplace_back("Changed");
-	}
-	if (Strings::StartsWithIgnoreCase("Package", prefix))
-	{
-		completions.emplace_back("Package");
 	}
 	if (Strings::StartsWithIgnoreCase("Shader", prefix))
 	{
@@ -256,29 +239,15 @@ std::string ShaderConsoleCommands::BuildShaderList()
 			output += '\n';
 		}
 		output += std::format(
-		    "{} package={} stage={} source={} entry={} parameters={}",
+		    "{} type={:016x} stage={} source={} entry={} parameters={}",
 		    shader.ShaderName,
-		    GetShaderRegistrationPackageId(shader),
+		    shader.TypeId,
 		    GetShaderStagePrefix(shader.Stage),
 		    shader.SourcePath,
 		    shader.EntryPoint,
 		    parameters.Fields.size());
 	}
 	return output;
-}
-
-std::vector<std::string> ShaderConsoleCommands::BuildShaderPackageCompletions(std::string_view prefix)
-{
-	std::set<std::string> uniqueCompletions;
-	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
-	{
-		const std::string packageName = GetShaderRegistrationPackageId(shader);
-		if (Strings::StartsWithIgnoreCase(packageName, prefix))
-		{
-			uniqueCompletions.insert(packageName);
-		}
-	}
-	return {uniqueCompletions.begin(), uniqueCompletions.end()};
 }
 
 std::vector<std::string> ShaderConsoleCommands::BuildShaderIdCompletions(std::string_view prefix)

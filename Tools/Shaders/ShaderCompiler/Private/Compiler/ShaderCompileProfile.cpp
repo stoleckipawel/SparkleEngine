@@ -2,7 +2,6 @@
 
 #include "Compiler/ShaderCompileProfile.h"
 
-#include "RHI/Public/Shaders/CookedShaderPackageContract.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
 
 #include <cstdint>
@@ -32,7 +31,7 @@ public:
 			case ShaderTarget::DxilSm67:
 				return 7;
 			default:
-				return CookedShaderPackageContract::ShaderModelMinor;
+				return 6;
 		}
 	}
 };
@@ -88,7 +87,7 @@ std::string ShaderCompileProfile::BuildTargetProfile(const ShaderCompileRequest&
 	profile.reserve(8);
 	profile += request.UnitKind == ShaderCompileUnitKind::Library ? "lib" : GetShaderStagePrefix(request.Stage);
 	profile += '_';
-	profile += std::to_string(CookedShaderPackageContract::ShaderModelMajor);
+	profile += '6';
 	profile += '_';
 	profile += std::to_string(ShaderModelProfile::GetProfileShaderModelMinor(request.Target));
 	return profile;

@@ -17,7 +17,7 @@
 class PathTracedDirectLightingCS final : public GlobalShader<PathTracedDirectLightingCS>
 {
 public:
-	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectDiffuse)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectSpecular)

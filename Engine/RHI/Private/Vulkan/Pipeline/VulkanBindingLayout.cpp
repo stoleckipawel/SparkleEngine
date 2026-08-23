@@ -4,7 +4,6 @@
 
 #include "Pipeline/RhiShaderBindingReflection.h"
 #include "ShaderParameters/PassParameterLayout.h"
-#include "Shaders/LoadedShaderPackage.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 
@@ -23,32 +22,32 @@ class VulkanBindingLayoutCompilerImpl final
 	static std::unique_ptr<VulkanBindingLayout> Compile(VulkanRhi& rhi, const RenderBindingLayoutCompileDesc& desc)
 	{
 		assert(desc.ParameterLayout != nullptr);
-		assert(desc.ShaderPackage != nullptr);
-
-		const LoadedShaderPackage& shaderPackage = *desc.ShaderPackage;
+		assert(!desc.Shaders.empty());
+		const std::vector<PassParameterDesc>& parameters = desc.ParameterLayout->GetParameters();
 		std::vector<CompiledBinding> bindings;
 		std::vector<std::string> bindingNames;
 		std::vector<VkPushConstantRange> pushConstantRanges;
 		std::map<std::uint32_t, std::vector<PendingDescriptorBinding>> descriptorBindingsBySet;
 		std::vector<VkSampler> immutableSamplers;
 
-		bindings.reserve(shaderPackage.GetBindingRecords().size());
-		bindingNames.reserve(shaderPackage.GetBindingRecords().size());
+		bindings.reserve(parameters.size());
+		bindingNames.reserve(parameters.size());
 
-		for (const CookedShaderBindingRecord& bindingRecord : shaderPackage.GetBindingRecords())
+		for (std::size_t parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex)
 		{
-			if (bindingRecord.SemanticKind == ShaderParameterSemanticKind::RenderTarget ||
-			    bindingRecord.SemanticKind == ShaderParameterSemanticKind::DepthTarget)
+			const PassParameterDesc& bindingRecord = parameters[parameterIndex];
+			if (bindingRecord.Kind == ShaderParameterSemanticKind::RenderTarget ||
+			    bindingRecord.Kind == ShaderParameterSemanticKind::DepthTarget)
 			{
 				continue;
 			}
 
-			const std::string_view bindingName = shaderPackage.ResolveString(bindingRecord.Name);
+			const std::string_view bindingName = bindingRecord.Name;
 			const std::vector<RhiReflectedBindingLocation> reflectedLocations = RhiShaderBindingReflection::ResolveLocations(
-			    shaderPackage,
+			    desc.Shaders,
 			    *desc.ParameterLayout,
-			    bindingRecord,
-			    CookedShaderBinaryFormat::SpirV);
+			    bindingName,
+			    bindingRecord.Kind);
 			if (reflectedLocations.size() != 1u)
 			{
 				Diagnostics::Fatal(
@@ -62,11 +61,11 @@ class VulkanBindingLayoutCompilerImpl final
 
 			CompiledBinding compiledBinding{};
 			compiledBinding.Name = bindingNames.back().c_str();
-			compiledBinding.Type = ToCompiledBindingType(bindingRecord.SemanticKind, desc.InlineUniformDataAsPushConstants);
-			compiledBinding.SemanticKind = bindingRecord.SemanticKind;
-			compiledBinding.BindingIndex = bindingRecord.LogicalBindingIndex;
+			compiledBinding.Type = ToCompiledBindingType(bindingRecord.Kind, desc.InlineUniformDataAsPushConstants);
+			compiledBinding.SemanticKind = bindingRecord.Kind;
+			compiledBinding.BindingIndex = static_cast<std::uint32_t>(parameterIndex);
 			compiledBinding.BindingPoint = bindingPoint;
-			compiledBinding.VisibilityMask = bindingRecord.VisibilityMask;
+			compiledBinding.VisibilityMask = reflectedLocations.front().VisibilityMask;
 			compiledBinding.DescriptorCount = std::max(1u, bindingRecord.ArrayCount);
 			compiledBinding.PushConstantCount = bindingRecord.ValueSizeInBytes / sizeof(std::uint32_t);
 			compiledBinding.Bindless.BindlessEligible = bindingRecord.ArrayCount > 1u;
@@ -77,13 +76,13 @@ class VulkanBindingLayoutCompilerImpl final
 			if (compiledBinding.Type == CompiledBindingType::PushConstants)
 			{
 				pushConstantRanges.push_back(VkPushConstantRange{
-				    .stageFlags = ToVkShaderStages(bindingRecord.VisibilityMask),
+				    .stageFlags = ToVkShaderStages(compiledBinding.VisibilityMask),
 				    .offset = 0,
 				    .size = bindingRecord.ValueSizeInBytes});
 				continue;
 			}
 
-			const VkDescriptorType descriptorType = ToVkDescriptorType(bindingRecord.SemanticKind, rhi);
+			const VkDescriptorType descriptorType = ToVkDescriptorType(bindingRecord.Kind, rhi);
 			if (descriptorType == VK_DESCRIPTOR_TYPE_MAX_ENUM)
 			{
 				continue;
@@ -104,7 +103,7 @@ class VulkanBindingLayoutCompilerImpl final
 			        .binding = bindingPoint.Binding,
 			        .descriptorType = descriptorType,
 			        .descriptorCount = std::max(1u, bindingRecord.ArrayCount),
-			        .stageFlags = ToVkShaderStages(bindingRecord.VisibilityMask),
+			        .stageFlags = ToVkShaderStages(compiledBinding.VisibilityMask),
 			        .pImmutableSamplers = nullptr},
 			    compiledBinding.Bindless.BindlessEligible ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0u);
 		}

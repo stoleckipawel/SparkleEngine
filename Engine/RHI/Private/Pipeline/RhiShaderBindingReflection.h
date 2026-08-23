@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Pipeline/RhiPipelineDesc.h"
-#include "Shaders/CookedShaderPackage.h"
 
+#include <span>
+#include <string_view>
 #include <vector>
 
-class LoadedShaderPackage;
 class PassParameterLayout;
 
 struct RhiReflectedBindingLocation final
@@ -16,10 +16,10 @@ struct RhiReflectedBindingLocation final
 
 class RhiShaderBindingReflection final
 {
-  public:
+public:
 	static std::vector<RhiReflectedBindingLocation> ResolveLocations(
-	    const LoadedShaderPackage& shaderPackage,
+	    std::span<const ResolvedShader> shaders,
 	    const PassParameterLayout& parameterLayout,
-	    const CookedShaderBindingRecord& bindingRecord,
-	    CookedShaderBinaryFormat binaryFormat);
+	    std::string_view bindingName,
+	    ShaderParameterSemanticKind semanticKind);
 };
