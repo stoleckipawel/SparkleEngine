@@ -3,6 +3,8 @@
 
 #include "Core/Public/Hash/HashUtils.h"
 
+#include <algorithm>
+
 namespace GraphicsPipelineMaterialization
 {
 	template <typename TValue> void Append(std::uint64_t& hash, const TValue& value) noexcept
@@ -14,14 +16,16 @@ namespace GraphicsPipelineMaterialization
 	{
 		Append(hash, declaration.BindingCount);
 		Append(hash, declaration.ElementCount);
-		for (std::uint32_t index = 0; index < declaration.BindingCount; ++index)
+		const std::uint32_t bindingCount = std::min<std::uint32_t>(declaration.BindingCount, declaration.Bindings.size());
+		const std::uint32_t elementCount = std::min<std::uint32_t>(declaration.ElementCount, declaration.Elements.size());
+		for (std::uint32_t index = 0; index < bindingCount; ++index)
 		{
 			const RhiVertexInputBinding& binding = declaration.Bindings[index];
 			Append(hash, binding.Binding);
 			Append(hash, binding.StrideInBytes);
 			Append(hash, binding.PerInstance);
 		}
-		for (std::uint32_t index = 0; index < declaration.ElementCount; ++index)
+		for (std::uint32_t index = 0; index < elementCount; ++index)
 		{
 			const RhiVertexInputElement& element = declaration.Elements[index];
 			Append(hash, element.Semantic);
@@ -37,8 +41,10 @@ namespace GraphicsPipelineMaterialization
 	{
 		Append(hash, blend.AlphaToCoverageEnable);
 		Append(hash, blend.IndependentBlendEnable);
-		for (const RhiBlendTargetState& target : blend.Targets)
+		const std::size_t targetCount = blend.IndependentBlendEnable ? blend.Targets.size() : 1;
+		for (std::size_t index = 0; index < targetCount; ++index)
 		{
+			const RhiBlendTargetState& target = blend.Targets[index];
 			Append(hash, target.BlendEnable);
 			Append(hash, target.SourceColor);
 			Append(hash, target.DestinationColor);
@@ -85,7 +91,9 @@ std::size_t GraphicsPipelineKeyHash::operator()(const GraphicsPipelineKey& key) 
 	GraphicsPipelineMaterialization::Append(hash, key.Request.PrimitiveTopology);
 	GraphicsPipelineMaterialization::AppendVertexInput(hash, key.Request.VertexInput);
 	GraphicsPipelineMaterialization::Append(hash, key.Request.Attachments.ColorCount);
-	for (std::uint32_t index = 0; index < key.Request.Attachments.ColorCount; ++index)
+	const std::uint32_t colorCount =
+	    std::min<std::uint32_t>(key.Request.Attachments.ColorCount, key.Request.Attachments.ColorFormats.size());
+	for (std::uint32_t index = 0; index < colorCount; ++index)
 	{
 		GraphicsPipelineMaterialization::Append(hash, key.Request.Attachments.ColorFormats[index]);
 	}

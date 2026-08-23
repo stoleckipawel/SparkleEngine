@@ -8,7 +8,14 @@ FrameGraphTextureDesc FrameGraphTextureDesc::CreateDepthTarget(
     std::uint32_t height,
     PixelFormat format) noexcept
 {
-	return FrameGraphTextureDesc{std::string(name), width, height, format, FrameGraphTextureKind::DepthStencil, 1, {0.0f, 0.0f, 0.0f, 1.0f}};
+	return FrameGraphTextureDesc{
+	    std::string(name),
+	    width,
+	    height,
+	    format,
+	    FrameGraphTextureKind::DepthStencil,
+	    1,
+	    {0.0f, 0.0f, 0.0f, 1.0f}};
 }
 
 FrameGraphTextureDesc FrameGraphTextureDesc::CreateColor(

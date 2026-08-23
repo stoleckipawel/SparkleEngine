@@ -12,7 +12,7 @@
 
 class FrameGraphTextureHistoryPlanner final
 {
-  public:
+public:
 	static bool UsesHandle(const PassResourceDeclaration& declaration, FrameGraphTextureHandle handle) noexcept
 	{
 		return declaration.handle == handle.GetResourceHandle();
@@ -46,9 +46,7 @@ void FrameGraph::InvalidateTextureHistory(FrameGraphTextureHistory history) noex
 	    m_textureHistories.begin(),
 	    m_textureHistories.end(),
 	    [history](const TextureHistoryRecord& record)
-	    {
-		    return record.handles.Previous == history.Previous && record.handles.Current == history.Current;
-	    });
+	    { return record.handles.Previous == history.Previous && record.handles.Current == history.Current; });
 	if (it == m_textureHistories.end())
 	{
 		return;
@@ -64,9 +62,8 @@ void FrameGraph::InvalidateTextureHistory(FrameGraphTextureHistory history) noex
 void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 {
 	RhiResourceService& resourceService = m_renderHardwareInterface->GetResourceService();
-	const std::uint32_t historyResourceCount = (std::max)(
-	    2u,
-	    m_renderHardwareInterface->GetCapabilities().Presentation.MaximumFramesInFlight);
+	const std::uint32_t historyResourceCount =
+	    (std::max) (2u, m_renderHardwareInterface->GetCapabilities().Presentation.MaximumFramesInFlight);
 	for (TextureHistoryRecord& history : m_textureHistories)
 	{
 		history.usedThisFrame = false;
@@ -98,10 +95,8 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 			continue;
 		}
 
-		const bool requiresRecreation =
-		    (requiresRenderTarget && !history.allowRenderTarget) ||
-		    (requiresDepthStencil && !history.allowDepthStencil) ||
-		    (requiresUnorderedAccess && !history.allowUnorderedAccess);
+		const bool requiresRecreation = (requiresRenderTarget && !history.allowRenderTarget)
+		    || (requiresDepthStencil && !history.allowDepthStencil) || (requiresUnorderedAccess && !history.allowUnorderedAccess);
 		if (requiresRecreation && history.resources.front())
 		{
 			ReleaseExternalResourceViews(history.handles.Previous.GetResourceHandle());
@@ -126,8 +121,7 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 		history.allowDepthStencil = history.allowDepthStencil || requiresDepthStencil;
 		history.allowUnorderedAccess = history.allowUnorderedAccess || requiresUnorderedAccess;
 
-		const FrameGraphTextureDesc& resolvedDesc =
-		    m_resourceRegistry.GetMetadata(history.handles.Current.GetResourceHandle()).textureDesc;
+		const FrameGraphTextureDesc& resolvedDesc = m_resourceRegistry.GetMetadata(history.handles.Current.GetResourceHandle()).textureDesc;
 		for (std::uint32_t historyIndex = 0; historyIndex < historyResourceCount; ++historyIndex)
 		{
 			RhiOwnedResourceHandle& resource = history.resources[historyIndex];
@@ -151,14 +145,11 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 		}
 
 		history.currentIndex = static_cast<std::uint32_t>(m_historyFrameIndex % historyResourceCount);
-		history.previousIndex =
-		    (history.currentIndex + historyResourceCount - 1u) % historyResourceCount;
+		history.previousIndex = (history.currentIndex + historyResourceCount - 1u) % historyResourceCount;
 		const ResourceState previousState = history.states[history.previousIndex];
 		const ResourceState currentState = history.states[history.currentIndex];
-		m_resourceRegistry.SetBoundaryStates(
-		    history.handles.Previous.GetResourceHandle(), previousState, ResourceState::ShaderResource);
-		m_resourceRegistry.SetBoundaryStates(
-		    history.handles.Current.GetResourceHandle(), currentState, ResourceState::ShaderResource);
+		m_resourceRegistry.SetBoundaryStates(history.handles.Previous.GetResourceHandle(), previousState, ResourceState::ShaderResource);
+		m_resourceRegistry.SetBoundaryStates(history.handles.Current.GetResourceHandle(), currentState, ResourceState::ShaderResource);
 		BindPersistentTexture(history.handles.Previous, history.resources[history.previousIndex], previousState);
 		BindPersistentTexture(history.handles.Current, history.resources[history.currentIndex], currentState);
 		m_resourceRegistry.SetExternalContentsProduced(

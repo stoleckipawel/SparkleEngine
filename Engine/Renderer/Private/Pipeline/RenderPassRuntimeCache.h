@@ -9,6 +9,7 @@
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 #include "RHI/Public/Shaders/ShaderParameterLayoutBuilder.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <memory>
@@ -65,20 +66,13 @@ public:
 	}
 
 	template <typename TVertexShader, typename TPixelShader>
-	void MaterializeGraphicsShaderRuntime(
-	    const RasterPassRenderState& passState,
-	    const RhiRasterizerState& rasterizer,
-	    RhiPrimitiveTopology primitiveTopology,
-	    const RhiVertexInputDeclaration& vertexInput,
-	    const GraphicsAttachmentSignature& attachments) const noexcept
+	void MaterializeGraphicsShaderRuntime(const GraphicsPipelineRequest& request) const noexcept
 	{
-		GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& holder = GetOrCreateGraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>();
+		GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& holder =
+		    GetOrCreateGraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>();
 		try
 		{
-			holder.Materialize(
-			    *m_renderHardwareInterface,
-			    *m_activeGeneration,
-			    BuildGraphicsPipelineRequest(passState, rasterizer, primitiveTopology, vertexInput, attachments));
+			holder.Materialize(*m_renderHardwareInterface, *m_activeGeneration, request);
 		}
 		catch (const Diagnostics::Error& error)
 		{
@@ -87,20 +81,23 @@ public:
 	}
 
 	template <typename TVertexShader, typename TPixelShader>
-	RasterPassRuntime GetGraphicsShaderRuntime(
-	    const RasterPassRenderState& passState,
-	    const RhiRasterizerState& rasterizer,
-	    RhiPrimitiveTopology primitiveTopology,
-	    const RhiVertexInputDeclaration& vertexInput,
-	    const GraphicsAttachmentSignature& attachments) const noexcept
+	RasterPassRuntime GetGraphicsShaderRuntime(const GraphicsPipelineRequest& request) const noexcept
 	{
 		using RuntimeType = GraphicsRuntimeTypeTag<TVertexShader, TPixelShader>;
 		const auto& holders = m_activeGeneration->RuntimeStorageByShaderType;
 		const auto runtime = holders.find(typeid(RuntimeType));
-		assert(runtime != holders.end() && "Graphics shader runtime must be materialized before recording.");
+		if (runtime == holders.end())
+		{
+			HandleRuntimeCreationFailure("Graphics shader runtime lookup preceded materialization.");
+		}
 		const auto* const holder = static_cast<const GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>*>(runtime->second.get());
-		assert(holder != nullptr);
-		return holder->Get(BuildGraphicsPipelineRequest(passState, rasterizer, primitiveTopology, vertexInput, attachments));
+		const RenderBindingLayout* const bindingLayout = holder != nullptr ? holder->GetBindingLayout() : nullptr;
+		const RenderPipeline* const pipeline = holder != nullptr ? holder->FindPipeline(request) : nullptr;
+		if (bindingLayout == nullptr || pipeline == nullptr)
+		{
+			HandleRuntimeCreationFailure("Graphics pipeline materialization did not publish the requested key.");
+		}
+		return RasterPassRuntime{*bindingLayout, *pipeline};
 	}
 
 private:
@@ -165,10 +162,6 @@ private:
 			    pixelShader,
 			    pixelRef,
 			    Storage);
-			for (const GraphicsPipelineRequest& request : Requests)
-			{
-				MaterializePipeline(renderHardwareInterface, request);
-			}
 		}
 
 		void Materialize(
@@ -185,15 +178,15 @@ private:
 			{
 				return;
 			}
-			Requests.push_back(request);
 			MaterializePipeline(renderHardwareInterface, request);
 		}
 
-		RasterPassRuntime Get(const GraphicsPipelineRequest& request) const noexcept
+		const RenderBindingLayout* GetBindingLayout() const noexcept { return Storage.BindingLayout.get(); }
+
+		const RenderPipeline* FindPipeline(const GraphicsPipelineRequest& request) const noexcept
 		{
 			const auto pipeline = Pipelines.find(BuildKey(request));
-			assert(Storage.BindingLayout != nullptr && pipeline != Pipelines.end() && pipeline->second != nullptr);
-			return RasterPassRuntime{*Storage.BindingLayout, *pipeline->second};
+			return pipeline != Pipelines.end() ? pipeline->second.get() : nullptr;
 		}
 
 		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
@@ -201,8 +194,21 @@ private:
 		    const ShaderRuntimeGeneration& generation) const override
 		{
 			auto replacement = std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>();
-			replacement->Requests = Requests;
 			replacement->Create(renderHardwareInterface, generation);
+			std::vector<const GraphicsPipelineKey*> requestedKeys;
+			requestedKeys.reserve(Pipelines.size());
+			for (const auto& entry : Pipelines)
+			{
+				requestedKeys.push_back(&entry.first);
+			}
+			std::ranges::sort(
+			    requestedKeys,
+			    [](const GraphicsPipelineKey* left, const GraphicsPipelineKey* right)
+			    { return GraphicsPipelineKeyHash{}(*left) < GraphicsPipelineKeyHash{}(*right); });
+			for (const GraphicsPipelineKey* key : requestedKeys)
+			{
+				replacement->MaterializePipeline(renderHardwareInterface, key->Request);
+			}
 			return replacement;
 		}
 
@@ -220,21 +226,25 @@ private:
 		void MaterializePipeline(RenderHardwareInterface& renderHardwareInterface, const GraphicsPipelineRequest& request)
 		{
 			const GraphicsPipelineKey key = BuildKey(request);
+			const std::size_t keyHash = GraphicsPipelineKeyHash{}(key);
+			const std::size_t bucket = Pipelines.bucket(key);
+			for (auto existing = Pipelines.begin(bucket); existing != Pipelines.end(bucket); ++existing)
+			{
+				if (GraphicsPipelineKeyHash{}(existing->first) == keyHash && existing->first != key)
+				{
+					throw Diagnostics::Error("Distinct graphics pipeline keys produced the same hash.");
+				}
+			}
 			std::wstring debugName = Strings::ToWide(GlobalShader<TVertexShader>::GetRegistration().ShaderName);
 			debugName += L"_GraphicsKey_";
-			debugName += std::to_wstring(GraphicsPipelineKeyHash{}(key));
-			const GraphicsPipelineDesc desc = BuildGraphicsPipelineDesc(
-			    request,
-			    *Storage.BindingLayout,
-			    Storage.Shaders[0],
-			    Storage.Shaders[1],
-			    debugName.c_str());
+			debugName += std::to_wstring(keyHash);
+			const GraphicsPipelineDesc desc =
+			    BuildGraphicsPipelineDesc(request, *Storage.BindingLayout, Storage.Shaders[0], Storage.Shaders[1], debugName.c_str());
 			Pipelines.emplace(key, PipelineRuntimeLibrary::CreateGraphicsPipeline(renderHardwareInterface, desc));
 		}
 
 		RenderPassShaderRuntimeStorage Storage;
 		std::uint64_t Generation = 0;
-		std::vector<GraphicsPipelineRequest> Requests;
 		std::unordered_map<GraphicsPipelineKey, std::unique_ptr<RenderPipeline>, GraphicsPipelineKeyHash> Pipelines;
 	};
 
@@ -283,11 +293,8 @@ private:
 		auto runtime = holders.find(typeid(RuntimeType));
 		if (runtime == holders.end())
 		{
-			runtime = holders
-			              .emplace(
-			                  typeid(RuntimeType),
-			                  std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>())
-			              .first;
+			runtime =
+			    holders.emplace(typeid(RuntimeType), std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>()).first;
 		}
 		auto* const holder = static_cast<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>*>(runtime->second.get());
 		assert(holder != nullptr);

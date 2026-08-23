@@ -17,24 +17,12 @@
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
 
-bool GBufferMeshBatchDrawer::BindMaterial(
-    const PreparedRenderScene& preparedScene,
-    GBufferMeshPass::DrawParameterInstance& drawParameters,
-    std::uint32_t materialSlot)
+GBufferMeshBatchDrawer::~GBufferMeshBatchDrawer() noexcept = default;
+
+void GBufferMeshBatchDrawer::BindMaterial(GBufferMeshPass::DrawParameterInstance& drawParameters, const PreparedDraw& draw)
 {
-	if (materialSlot >= preparedScene.materials.size())
-	{
-		return false;
-	}
-
-	const MaterialData& material = preparedScene.materials[materialSlot];
-	if (!material.gpuHandle || !material.rasterTextureTable)
-	{
-		return false;
-	}
-
-	drawParameters->Pixel.PerObjectPS = material.ToPerObjectPSData();
-	const RhiDescriptorTableHandle textureTable = material.rasterTextureTable.Table;
+	drawParameters->Pixel.PerObjectPS = draw.MaterialParameters;
+	const RhiDescriptorTableHandle textureTable = draw.MaterialTextures;
 	drawParameters->Pixel.TextureBaseColor = {textureTable, MaterialTextureSlots::BaseColor};
 	drawParameters->Pixel.TextureNormal = {textureTable, MaterialTextureSlots::Normal};
 	drawParameters->Pixel.TextureRoughness = {textureTable, MaterialTextureSlots::Roughness};
@@ -43,7 +31,6 @@ bool GBufferMeshBatchDrawer::BindMaterial(
 	drawParameters->Pixel.TextureEmissive = {textureTable, MaterialTextureSlots::Emissive};
 	drawParameters->Pixel.TextureSubsurfaceColor = {textureTable, MaterialTextureSlots::SubsurfaceColor};
 	drawParameters->Pixel.TextureSubsurfaceStrength = {textureTable, MaterialTextureSlots::SubsurfaceStrength};
-	return true;
 }
 
 const GpuMesh* GBufferMeshBatchDrawer::ResolveBatch(
@@ -84,25 +71,22 @@ bool GBufferMeshBatchDrawer::HasValidSkinning(
 
 void GBufferMeshBatchDrawer::ConfigureDrawParameters(
     const GBufferMeshPass::Parameters& passParameters,
-    const MeshInstanceBatch& batch,
+    std::uint32_t firstInstance,
     GBufferMeshPass::DrawParameterInstance& drawParameters)
 {
 	drawParameters->Vertex = passParameters.Shader.Vertex;
 	drawParameters->Pixel = passParameters.Shader.Pixel;
-	drawParameters->Vertex.MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = batch.firstInstance};
+	drawParameters->Vertex.MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = firstInstance};
 }
 
 RhiRasterizerState GBufferMeshBatchDrawer::ResolveRasterizerState(
-    const PreparedRenderScene& preparedScene,
-    const MeshInstanceBatch& batch,
+    const MaterialData& material,
     const GpuMesh& gpuMesh,
     bool wireframe) noexcept
 {
-	const bool twoSided = batch.materialSlot < preparedScene.materials.size()
-	    && preparedScene.materials[batch.materialSlot].doubleSided;
 	return RhiRasterizerState{
 	    .FillMode = wireframe ? RhiFillMode::Wireframe : RhiFillMode::Solid,
-	    .CullMode = twoSided || wireframe ? ERhiCullMode::None : ERhiCullMode::Back,
+	    .CullMode = material.doubleSided || wireframe ? ERhiCullMode::None : ERhiCullMode::Back,
 	    .FrontFaceWinding = gpuMesh.GetFrontFaceWinding(),
 	    .DepthClipEnable = gpuMesh.UsesDepthClipping()};
 }
@@ -110,25 +94,15 @@ RhiRasterizerState GBufferMeshBatchDrawer::ResolveRasterizerState(
 bool GBufferMeshBatchDrawer::BindBatchPipeline(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
-    const RenderPassRuntimeCache& runtimeCache,
-    const RasterPassRenderState& renderState,
-    const GraphicsAttachmentSignature& attachments,
-    const PreparedRenderScene& preparedScene,
-    const MeshInstanceBatch& batch,
     GBufferMeshPass::DrawParameterInstance& drawParameters,
-    const GpuMesh& gpuMesh,
-    bool wireframe)
+    const PreparedDraw& draw)
 {
+	const GpuMesh& mesh = draw.Mesh.get();
 	PassBindingOverrides overrides;
-	overrides.SetDescriptorTable("SkinInfluences", gpuMesh.GetSkinInfluencesShaderResourceView());
-	overrides.SetDescriptorTable("MorphTargetDeltas", gpuMesh.GetMorphTargetDeltasShaderResourceView());
+	overrides.SetDescriptorTable("SkinInfluences", mesh.GetSkinInfluencesShaderResourceView());
+	overrides.SetDescriptorTable("MorphTargetDeltas", mesh.GetMorphTargetDeltasShaderResourceView());
 
-	const RasterPassRuntime runtime = runtimeCache.GetGraphicsShaderRuntime<GBufferVS, GBufferPS>(
-	    renderState,
-	    ResolveRasterizerState(preparedScene, batch, gpuMesh, wireframe),
-	    gpuMesh.GetPrimitiveTopology(),
-	    gpuMesh.GetVertexInputDeclaration(),
-	    attachments);
+	const RasterPassRuntime runtime{draw.BindingLayout.get(), draw.Pipeline.get()};
 	return ShaderPassOperations::BindAvailableRasterPassWithRuntime(
 	    resources,
 	    commandContext,
@@ -142,105 +116,51 @@ bool GBufferMeshBatchDrawer::BindBatchPipeline(
 void GBufferMeshBatchDrawer::DrawBatch(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
-    const PreparedRenderScene& preparedScene,
-    const RenderView& view,
     const GBufferMeshPass::Parameters& passParameters,
-    const RenderPassRuntimeCache& runtimeCache,
-    const RasterPassRenderState& renderState,
-    const GraphicsAttachmentSignature& attachments,
     const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata,
-    const GpuMesh& gpuMesh,
-    const MeshInstanceBatch& batch,
-    bool wireframe)
+    const PreparedDraw& draw)
 {
-	if (batch.meshKind == RenderMeshKind::Skeletal
-	    && (!preparedScene.gpuBindings->Geometry.HasSkinningBuffers() || !HasValidSkinning(preparedScene, view, batch)))
-	{
-		return;
-	}
-
-	gpuMesh.Bind(commandContext);
+	const GpuMesh& mesh = draw.Mesh.get();
+	mesh.Bind(commandContext);
 
 	GBufferMeshPass::DrawParameterInstance drawParameters(drawParameterMetadata);
-	ConfigureDrawParameters(passParameters, batch, drawParameters);
-	if (!BindMaterial(preparedScene, drawParameters, batch.materialSlot))
+	ConfigureDrawParameters(passParameters, draw.FirstInstance, drawParameters);
+	BindMaterial(drawParameters, draw);
+
+	if (!BindBatchPipeline(resources, commandContext, drawParameters, draw))
 	{
 		return;
 	}
 
-	if (!BindBatchPipeline(
-	        resources,
-	        commandContext,
-	        runtimeCache,
-	        renderState,
-	        attachments,
-	        preparedScene,
-	        batch,
-	        drawParameters,
-	        gpuMesh,
-	        wireframe))
-	{
-		return;
-	}
-
-	commandContext.DrawIndexedInstanced(gpuMesh.GetIndexCount(), batch.instanceCount, 0, 0, 0);
+	commandContext.DrawIndexedInstanced(mesh.GetIndexCount(), draw.InstanceCount, 0, 0, 0);
 }
 
-void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
+void GBufferMeshBatchDrawer::DrawPreparedMeshes(
     const FrameGraphResourceCommands& resources,
     RenderCommandContext& commandContext,
+    const GBufferMeshPass::Parameters& parameters,
+    const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata)
+{
+	for (const PreparedDraw& draw : m_preparedDraws)
+	{
+		DrawBatch(resources, commandContext, parameters, drawParameterMetadata, draw);
+	}
+	m_preparedDraws.clear();
+}
+
+void GBufferMeshBatchDrawer::PrepareDrawsAndMaterializePipelines(
+    const RenderPassRuntimeCache& runtimeCache,
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
-    const GBufferMeshPass::Parameters& parameters,
-    const RenderPassRuntimeCache& runtimeCache,
     const RasterPassRenderState& renderState,
     const GraphicsAttachmentSignature& attachments,
-    bool wireframe,
-    const GBufferMeshPass::DrawParameterMetadata& drawParameterMetadata) const
+    bool wireframe)
 {
-	if (!preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
+	m_preparedDraws.clear();
+	if (preparedScene.gpuBindings == nullptr || !preparedScene.gpuBindings->Geometry.HasMeshInstanceBuffers())
 	{
 		return;
 	}
-
-	for (const MeshInstanceBatch& batch : view.meshInstanceBatches)
-	{
-		if (batch.materialClassification != RenderMaterialClassification::Opaque
-		    && batch.materialClassification != RenderMaterialClassification::AlphaTested)
-		{
-			continue;
-		}
-
-		const GpuMesh* gpuMesh = ResolveBatch(view, batch, m_gpuMeshCache);
-		if (gpuMesh == nullptr)
-		{
-			continue;
-		}
-
-		DrawBatch(
-		    resources,
-		    commandContext,
-		    preparedScene,
-		    view,
-		    parameters,
-		    runtimeCache,
-		    renderState,
-		    attachments,
-		    drawParameterMetadata,
-		    *gpuMesh,
-		    batch,
-		    wireframe);
-	}
-}
-
-void GBufferMeshBatchDrawer::MaterializePipelines(
-    const RenderPassRuntimeCache& runtimeCache,
-    const PreparedRenderScene& preparedScene,
-    const RenderView& view,
-    const RasterPassRenderState& renderState,
-    const GraphicsAttachmentSignature& attachments,
-    bool wireframe) const
-{
 	for (const MeshInstanceBatch& batch : view.meshInstanceBatches)
 	{
 		if (batch.materialClassification != RenderMaterialClassification::Opaque
@@ -260,11 +180,22 @@ void GBufferMeshBatchDrawer::MaterializePipelines(
 		{
 			continue;
 		}
-		runtimeCache.MaterializeGraphicsShaderRuntime<GBufferVS, GBufferPS>(
+		const GraphicsPipelineRequest pipelineRequest = BuildGraphicsPipelineRequest(
 		    renderState,
-		    ResolveRasterizerState(preparedScene, batch, *gpuMesh, wireframe),
+		    ResolveRasterizerState(material, *gpuMesh, wireframe),
 		    gpuMesh->GetPrimitiveTopology(),
 		    gpuMesh->GetVertexInputDeclaration(),
 		    attachments);
+		runtimeCache.MaterializeGraphicsShaderRuntime<GBufferVS, GBufferPS>(pipelineRequest);
+		const RasterPassRuntime pipeline = runtimeCache.GetGraphicsShaderRuntime<GBufferVS, GBufferPS>(pipelineRequest);
+		m_preparedDraws.push_back(
+		    PreparedDraw{
+		        .Mesh = std::cref(*gpuMesh),
+		        .FirstInstance = batch.firstInstance,
+		        .InstanceCount = batch.instanceCount,
+		        .MaterialParameters = material.ToPerObjectPSData(),
+		        .MaterialTextures = material.rasterTextureTable.Table,
+		        .BindingLayout = std::ref(pipeline.BindingLayout),
+		        .Pipeline = std::ref(pipeline.Pipeline)});
 	}
 }

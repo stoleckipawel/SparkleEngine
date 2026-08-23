@@ -37,6 +37,17 @@ void FrameGraph::ApplyPassParameterDefaults()
 	}
 }
 
+void FrameGraph::PreparePasses()
+{
+	for (const auto& [passIndex, prepare] : m_passPreparations)
+	{
+		if (passIndex < m_compiledPlan.passes.size() && m_compiledPlan.passes[passIndex].alive)
+		{
+			prepare();
+		}
+	}
+}
+
 void FrameGraph::ApplyResourceProductionSetups()
 {
 	for (const ResourceProductionSetupCallback& setup : m_resourceProductionSetups)
@@ -71,8 +82,7 @@ bool FrameGraph::HasBeenProduced(FrameGraphResourceHandle handle) const noexcept
 	    resource->versions.end(),
 	    [this](const FrameGraphResourceVersion& version)
 	    {
-		    return version.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX
-		        && version.writerPass < m_compiledPlan.passes.size()
+		    return version.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && version.writerPass < m_compiledPlan.passes.size()
 		        && m_compiledPlan.passes[version.writerPass].alive;
 	    });
 }

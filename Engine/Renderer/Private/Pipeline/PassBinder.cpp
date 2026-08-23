@@ -242,6 +242,7 @@ void PassBinder::BindResourceTable(const BindingRequest& request, bool readWrite
 
 	if (const PassParameterTextureBindingData* textureData = request.Parameters->AsTextureData())
 	{
+		Require(!textureData->IsAttachment(), "Graph attachments cannot be bound as shader resource tables.");
 		Require(textureData->Handles.size() == 1, "Texture binding must contain exactly one resource.");
 		const RhiGpuDescriptorHandle view = readWrite ? request.Resources.ResolveUnorderedAccessView(textureData->Handles[0])
 		                                              : request.Resources.ResolveShaderResourceView(textureData->Handles[0]);

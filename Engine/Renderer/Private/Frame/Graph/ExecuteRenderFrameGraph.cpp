@@ -44,16 +44,11 @@ namespace RenderFrameGraphExecution
 	{
 		if (!resources.SceneTlas.IsValid() || !bindings.HasBoundTlas())
 		{
-			Diagnostics::Fatal(
-			    g_renderFrameGraphExecutionLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Frame-graph SceneTlas binding is incomplete.");
+			Diagnostics::Fatal(g_renderFrameGraphExecutionLogger, __FILE__, __LINE__, "Frame-graph SceneTlas binding is incomplete.");
 		}
 
 		const RenderSceneGpuBindings& gpuBindings = *scene.gpuBindings;
-		if (bindings.HasTraceableInstances()
-		    && (gpuBindings.RayTracing.InstanceCount == 0u || gpuBindings.RayTracing.MaterialCount == 0u))
+		if (bindings.HasTraceableInstances() && (gpuBindings.RayTracing.InstanceCount == 0u || gpuBindings.RayTracing.MaterialCount == 0u))
 		{
 			Diagnostics::Fatal(
 			    g_renderFrameGraphExecutionLogger,
@@ -65,10 +60,7 @@ namespace RenderFrameGraphExecution
 		frameGraph.BindPersistentAccelerationStructure(resources.SceneTlas, bindings.TlasResource);
 	}
 
-	void BindSkyTexture(
-	    FrameGraph& frameGraph,
-	    const RenderFrameGraphResources& resources,
-	    const PreparedRenderScene& scene)
+	void BindSkyTexture(FrameGraph& frameGraph, const RenderFrameGraphResources& resources, const PreparedRenderScene& scene)
 	{
 		const RendererTexture& skyTexture = *scene.sky.texture;
 		frameGraph.BindPersistentTexture(
@@ -104,8 +96,7 @@ namespace RenderFrameGraphExecution
 		frameGraph.ApplyParameters(BuildFrameUniformData(identity.FrameId, time));
 		frameGraph.ApplyParameters(scene);
 		frameGraph.ApplyParameters(view);
-		frameGraph.ApplyParameters(
-		    BuildExposureUniformData(view.displaySettings, static_cast<float>(time.UnscaledDelta.count())));
+		frameGraph.ApplyParameters(BuildExposureUniformData(view.displaySettings, static_cast<float>(time.UnscaledDelta.count())));
 		frameGraph.ApplyParameters(BuildToneMappingUniformData(view.displaySettings.ToneMapper));
 		frameGraph.ApplyParameters(
 		    RayTracedShadowPassInput{
@@ -114,6 +105,7 @@ namespace RenderFrameGraphExecution
 		        .HitMaterialCount = rayTracing.MaterialCount});
 		frameGraph.Setup();
 		const FrameGraphPlan& plan = frameGraph.Compile();
+		frameGraph.PreparePasses();
 		frameGraph.ApplyResourceProductionSetups();
 		frameGraph.Execute(plan, deviceServices, diagnostics, taskExecutor);
 	}

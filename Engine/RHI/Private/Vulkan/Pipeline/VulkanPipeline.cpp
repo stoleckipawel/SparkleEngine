@@ -20,7 +20,30 @@ static const auto g_vulkanPipelineLogger = Logging::GetOrCreateLogger("RHI.Vulka
 
 class VulkanPipelineImplementation final
 {
-  public:
+public:
+	static bool IsColorAttachmentFormat(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+			case PixelFormat::R32G32B32A32_Float:
+			case PixelFormat::R16G16B16A16_Float:
+			case PixelFormat::R8G8B8A8_UNorm:
+			case PixelFormat::R8G8B8A8_UNorm_Srgb:
+			case PixelFormat::R16G16_Float:
+			case PixelFormat::R32_Float:
+			case PixelFormat::B8G8R8A8_UNorm:
+			case PixelFormat::B8G8R8A8_UNorm_Srgb:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	static bool IsDepthStencilAttachmentFormat(PixelFormat format) noexcept
+	{
+		return format == PixelFormat::D32_Float || format == PixelFormat::D24_UNorm_S8_UInt;
+	}
+
 	static std::string ToDebugName(const wchar_t* debugName)
 	{
 		return debugName != nullptr ? Strings::ToNarrow(debugName) : std::string{"VulkanPipeline"};
@@ -65,7 +88,26 @@ class VulkanPipelineImplementation final
 
 	static VkFrontFace ToVkFrontFace(ERhiFrontFaceWinding winding) noexcept
 	{
-		return winding == ERhiFrontFaceWinding::Clockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		switch (winding)
+		{
+			case ERhiFrontFaceWinding::Clockwise:
+				return VK_FRONT_FACE_CLOCKWISE;
+			case ERhiFrontFaceWinding::CounterClockwise:
+				return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		}
+		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported front-face winding.");
+	}
+
+	static VkPolygonMode ToVkPolygonMode(RhiFillMode fillMode) noexcept
+	{
+		switch (fillMode)
+		{
+			case RhiFillMode::Solid:
+				return VK_POLYGON_MODE_FILL;
+			case RhiFillMode::Wireframe:
+				return VK_POLYGON_MODE_LINE;
+		}
+		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported fill mode.");
 	}
 
 	static VkFormat ToVkVertexFormat(RhiVertexElementFormat format) noexcept
@@ -77,9 +119,9 @@ class VulkanPipelineImplementation final
 			case RhiVertexElementFormat::Float4:
 				return VK_FORMAT_R32G32B32A32_SFLOAT;
 			case RhiVertexElementFormat::Float3:
-			default:
 				return VK_FORMAT_R32G32B32_SFLOAT;
 		}
+		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported vertex element format.");
 	}
 
 	static VkBlendFactor ToVkBlendFactor(RhiBlendFactor factor) noexcept
@@ -93,27 +135,79 @@ class VulkanPipelineImplementation final
 			case RhiBlendFactor::InverseSourceAlpha:
 				return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 			case RhiBlendFactor::One:
-			default:
 				return VK_BLEND_FACTOR_ONE;
 		}
+		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported blend factor.");
+	}
+
+	static VkBlendOp ToVkBlendOperation(RhiBlendOperation operation) noexcept
+	{
+		switch (operation)
+		{
+			case RhiBlendOperation::Add:
+				return VK_BLEND_OP_ADD;
+		}
+		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported blend operation.");
 	}
 };
 
 VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc) :
-	m_device(rhi.GetDevice()), m_bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
+    m_device(rhi.GetDevice()),
+    m_bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
 {
-	if (desc.ColorAttachmentCount > desc.ColorAttachmentFormats.size()
+	if (desc.BindingLayout == nullptr || (desc.ColorAttachmentCount == 0 && desc.DepthStencilAttachmentFormat == PixelFormat::Unknown)
+	    || desc.ColorAttachmentCount > desc.ColorAttachmentFormats.size()
 	    || desc.VertexInput.BindingCount > desc.VertexInput.Bindings.size()
 	    || desc.VertexInput.ElementCount > desc.VertexInput.Elements.size()
 	    || (desc.SampleCount != 1 && desc.SampleCount != 2 && desc.SampleCount != 4 && desc.SampleCount != 8))
 	{
 		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported graphics pipeline description.");
 	}
-	for (std::uint32_t index = 0; index < desc.VertexInput.ElementCount; ++index)
+	for (std::uint32_t elementIndex = 0; elementIndex < desc.VertexInput.ElementCount; ++elementIndex)
 	{
-		if (desc.VertexInput.Elements[index].Binding >= desc.VertexInput.BindingCount)
+		const std::uint8_t binding = desc.VertexInput.Elements[elementIndex].Binding;
+		bool bindingExists = false;
+		for (std::uint32_t bindingIndex = 0; bindingIndex < desc.VertexInput.BindingCount; ++bindingIndex)
+		{
+			bindingExists = bindingExists || desc.VertexInput.Bindings[bindingIndex].Binding == binding;
+		}
+		if (!bindingExists)
 		{
 			Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan vertex input references a missing binding.");
+		}
+	}
+	const bool hasDepthStencilFormat = desc.DepthStencilAttachmentFormat != PixelFormat::Unknown;
+	const bool hasStencilFormat = VulkanPipelineImplementation::HasStencilAspect(desc.DepthStencilAttachmentFormat);
+	if ((desc.Depth.DepthEnable || desc.Depth.DepthWriteEnable || desc.Stencil.StencilEnable) && !hasDepthStencilFormat)
+	{
+		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan depth-stencil state requires an attachment format.");
+	}
+	if (desc.Stencil.StencilEnable && !hasStencilFormat)
+	{
+		Diagnostics::Fatal(
+		    g_vulkanPipelineLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan stencil state requires a stencil-capable attachment format.");
+	}
+	for (std::uint32_t index = 0; index < desc.ColorAttachmentCount; ++index)
+	{
+		if (!VulkanPipelineImplementation::IsColorAttachmentFormat(desc.ColorAttachmentFormats[index]))
+		{
+			Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan color attachment format must be explicit.");
+		}
+	}
+	if (desc.DepthStencilAttachmentFormat != PixelFormat::Unknown
+	    && !VulkanPipelineImplementation::IsDepthStencilAttachmentFormat(desc.DepthStencilAttachmentFormat))
+	{
+		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported depth-stencil attachment format.");
+	}
+	const std::uint32_t blendTargetCount = desc.Blend.IndependentBlendEnable ? desc.ColorAttachmentCount : 1;
+	for (std::uint32_t index = 0; index < blendTargetCount; ++index)
+	{
+		if ((desc.Blend.Targets[index].ColorWriteMask & 0xF0u) != 0)
+		{
+			Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, "Vulkan received an unsupported color write mask.");
 		}
 	}
 	const std::string debugName = VulkanPipelineImplementation::ToDebugName(desc.DebugName);
@@ -181,7 +275,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	    .flags = 0,
 	    .depthClampEnable = desc.Rasterizer.DepthClipEnable ? VK_FALSE : VK_TRUE,
 	    .rasterizerDiscardEnable = VK_FALSE,
-	    .polygonMode = desc.Rasterizer.FillMode == RhiFillMode::Wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL,
+	    .polygonMode = VulkanPipelineImplementation::ToVkPolygonMode(desc.Rasterizer.FillMode),
 	    .cullMode = VulkanTypeConversions::ToVkCullModeFlags(desc.Rasterizer.CullMode),
 	    .frontFace = VulkanPipelineImplementation::ToVkFrontFace(desc.Rasterizer.FrontFaceWinding),
 	    .depthBiasEnable = VK_FALSE,
@@ -209,10 +303,10 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 		    .blendEnable = blend.BlendEnable ? VK_TRUE : VK_FALSE,
 		    .srcColorBlendFactor = VulkanPipelineImplementation::ToVkBlendFactor(blend.SourceColor),
 		    .dstColorBlendFactor = VulkanPipelineImplementation::ToVkBlendFactor(blend.DestinationColor),
-		    .colorBlendOp = VK_BLEND_OP_ADD,
+		    .colorBlendOp = VulkanPipelineImplementation::ToVkBlendOperation(blend.ColorOperation),
 		    .srcAlphaBlendFactor = VulkanPipelineImplementation::ToVkBlendFactor(blend.SourceAlpha),
 		    .dstAlphaBlendFactor = VulkanPipelineImplementation::ToVkBlendFactor(blend.DestinationAlpha),
-		    .alphaBlendOp = VK_BLEND_OP_ADD,
+		    .alphaBlendOp = VulkanPipelineImplementation::ToVkBlendOperation(blend.AlphaOperation),
 		    .colorWriteMask = blend.ColorWriteMask};
 	}
 	const VkPipelineColorBlendStateCreateInfo colorBlendState{
@@ -225,8 +319,6 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	    .pAttachments = blendAttachments.data(),
 	    .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f}};
 
-	const bool hasDepthStencilFormat = desc.DepthStencilAttachmentFormat != PixelFormat::Unknown;
-	const bool hasStencilFormat = VulkanPipelineImplementation::HasStencilAspect(desc.DepthStencilAttachmentFormat);
 	const VkPipelineDepthStencilStateCreateInfo depthStencilState{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
 	    .pNext = nullptr,
@@ -309,7 +401,8 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 }
 
 VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const ComputePipelineDesc& desc) :
-	m_device(rhi.GetDevice()), m_bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)
+    m_device(rhi.GetDevice()),
+    m_bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)
 {
 	const std::string debugName = VulkanPipelineImplementation::ToDebugName(desc.DebugName);
 	VulkanPipelineLayoutBuilder layoutBuilder;

@@ -19,7 +19,30 @@ void D3D12Pipeline::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc)
 
 class D3D12PipelineImplementation final
 {
-  public:
+public:
+	static bool IsColorAttachmentFormat(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+			case PixelFormat::R32G32B32A32_Float:
+			case PixelFormat::R16G16B16A16_Float:
+			case PixelFormat::R8G8B8A8_UNorm:
+			case PixelFormat::R8G8B8A8_UNorm_Srgb:
+			case PixelFormat::R16G16_Float:
+			case PixelFormat::R32_Float:
+			case PixelFormat::B8G8R8A8_UNorm:
+			case PixelFormat::B8G8R8A8_UNorm_Srgb:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	static bool IsDepthStencilAttachmentFormat(PixelFormat format) noexcept
+	{
+		return format == PixelFormat::D32_Float || format == PixelFormat::D24_UNorm_S8_UInt;
+	}
+
 	static D3D12_CULL_MODE ToD3D12CullMode(ERhiCullMode cullMode) noexcept
 	{
 		switch (cullMode)
@@ -29,19 +52,33 @@ class D3D12PipelineImplementation final
 			case ERhiCullMode::Front:
 				return D3D12_CULL_MODE_FRONT;
 			case ERhiCullMode::Back:
-			default:
 				return D3D12_CULL_MODE_BACK;
 		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported cull mode.");
 	}
 
 	static BOOL ToD3D12FrontCounterClockwise(ERhiFrontFaceWinding winding) noexcept
 	{
-		return winding == ERhiFrontFaceWinding::CounterClockwise ? TRUE : FALSE;
+		switch (winding)
+		{
+			case ERhiFrontFaceWinding::Clockwise:
+				return FALSE;
+			case ERhiFrontFaceWinding::CounterClockwise:
+				return TRUE;
+		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported front-face winding.");
 	}
 
 	static D3D12_FILL_MODE ToD3D12FillMode(RhiFillMode fillMode) noexcept
 	{
-		return fillMode == RhiFillMode::Wireframe ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
+		switch (fillMode)
+		{
+			case RhiFillMode::Solid:
+				return D3D12_FILL_MODE_SOLID;
+			case RhiFillMode::Wireframe:
+				return D3D12_FILL_MODE_WIREFRAME;
+		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported fill mode.");
 	}
 
 	static D3D12_PRIMITIVE_TOPOLOGY_TYPE ToD3D12PrimitiveTopologyType(RhiPrimitiveTopology topology) noexcept
@@ -49,9 +86,9 @@ class D3D12PipelineImplementation final
 		switch (topology)
 		{
 			case RhiPrimitiveTopology::TriangleList:
-			default:
 				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported primitive topology.");
 	}
 
 	static D3D12_BLEND ToD3D12Blend(RhiBlendFactor factor) noexcept
@@ -65,9 +102,19 @@ class D3D12PipelineImplementation final
 			case RhiBlendFactor::InverseSourceAlpha:
 				return D3D12_BLEND_INV_SRC_ALPHA;
 			case RhiBlendFactor::One:
-			default:
 				return D3D12_BLEND_ONE;
 		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported blend factor.");
+	}
+
+	static D3D12_BLEND_OP ToD3D12BlendOperation(RhiBlendOperation operation) noexcept
+	{
+		switch (operation)
+		{
+			case RhiBlendOperation::Add:
+				return D3D12_BLEND_OP_ADD;
+		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported blend operation.");
 	}
 
 	static DXGI_FORMAT ToD3D12VertexFormat(RhiVertexElementFormat format) noexcept
@@ -79,9 +126,9 @@ class D3D12PipelineImplementation final
 			case RhiVertexElementFormat::Float4:
 				return DXGI_FORMAT_R32G32B32A32_FLOAT;
 			case RhiVertexElementFormat::Float3:
-			default:
 				return DXGI_FORMAT_R32G32B32_FLOAT;
 		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported vertex element format.");
 	}
 
 	static const char* ToD3D12Semantic(RhiVertexSemantic semantic) noexcept
@@ -95,9 +142,9 @@ class D3D12PipelineImplementation final
 			case RhiVertexSemantic::Tangent:
 				return "TANGENT";
 			case RhiVertexSemantic::Position:
-			default:
 				return "POSITION";
 		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported vertex semantic.");
 	}
 
 	static D3D12_STENCIL_OP ToD3D12StencilOp(RhiStencilOp op) noexcept
@@ -119,9 +166,9 @@ class D3D12PipelineImplementation final
 			case RhiStencilOp::DecrementWrap:
 				return D3D12_STENCIL_OP_DECR;
 			case RhiStencilOp::Keep:
-			default:
 				return D3D12_STENCIL_OP_KEEP;
 		}
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported stencil operation.");
 	}
 
 	static std::vector<D3D12_INPUT_ELEMENT_DESC> BuildVertexInput(const RhiVertexInputDeclaration& declaration)
@@ -131,7 +178,19 @@ class D3D12PipelineImplementation final
 		for (std::uint32_t index = 0; index < declaration.ElementCount; ++index)
 		{
 			const RhiVertexInputElement& element = declaration.Elements[index];
-			const RhiVertexInputBinding& binding = declaration.Bindings[element.Binding];
+			const RhiVertexInputBinding* binding = nullptr;
+			for (std::uint32_t bindingIndex = 0; bindingIndex < declaration.BindingCount; ++bindingIndex)
+			{
+				if (declaration.Bindings[bindingIndex].Binding == element.Binding)
+				{
+					binding = &declaration.Bindings[bindingIndex];
+					break;
+				}
+			}
+			if (binding == nullptr)
+			{
+				Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 vertex input references a missing binding.");
+			}
 			result.push_back(
 			    D3D12_INPUT_ELEMENT_DESC{
 			        ToD3D12Semantic(element.Semantic),
@@ -139,9 +198,8 @@ class D3D12PipelineImplementation final
 			        ToD3D12VertexFormat(element.Format),
 			        element.Binding,
 			        element.OffsetInBytes,
-			        binding.PerInstance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA
-			                            : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-			        binding.PerInstance ? 1u : 0u});
+			        binding->PerInstance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+			        binding->PerInstance ? 1u : 0u});
 		}
 		return result;
 	}
@@ -151,7 +209,10 @@ class D3D12PipelineImplementation final
 		D3D12_SHADER_BYTECODE Bytecode = {};
 	};
 
-	static ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(const RhiShaderStageDesc& shaderDesc, std::string_view pipelineName, bool required)
+	static ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(
+	    const RhiShaderStageDesc& shaderDesc,
+	    std::string_view pipelineName,
+	    bool required)
 	{
 		if (!shaderDesc.IsValid())
 		{
@@ -265,9 +326,7 @@ class D3D12PipelineImplementation final
 	}
 };
 
-void D3D12Pipeline::SetRasterizerState(
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
-    const RhiRasterizerState& rasterizer) noexcept
+void D3D12Pipeline::SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiRasterizerState& rasterizer) noexcept
 {
 	auto& rs = psoDesc.RasterizerState;
 	rs = {};
@@ -299,15 +358,15 @@ void D3D12Pipeline::SetRenderTargetBlendState(
 		target.BlendEnable = source.BlendEnable ? TRUE : FALSE;
 		target.SrcBlend = D3D12PipelineImplementation::ToD3D12Blend(source.SourceColor);
 		target.DestBlend = D3D12PipelineImplementation::ToD3D12Blend(source.DestinationColor);
-		target.BlendOp = D3D12_BLEND_OP_ADD;
+		target.BlendOp = D3D12PipelineImplementation::ToD3D12BlendOperation(source.ColorOperation);
 		target.SrcBlendAlpha = D3D12PipelineImplementation::ToD3D12Blend(source.SourceAlpha);
 		target.DestBlendAlpha = D3D12PipelineImplementation::ToD3D12Blend(source.DestinationAlpha);
-		target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		target.BlendOpAlpha = D3D12PipelineImplementation::ToD3D12BlendOperation(source.AlphaOperation);
 		target.RenderTargetWriteMask = source.ColorWriteMask;
 	}
 }
 
-void D3D12Pipeline::SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiDepthState depthDesc) noexcept
+void D3D12Pipeline::SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiDepthState& depthDesc) noexcept
 {
 	auto& ds = psoDesc.DepthStencilState;
 	ds = {};
@@ -316,7 +375,7 @@ void D3D12Pipeline::SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDes
 	ds.DepthFunc = D3D12TypeConversions::ToComparisonFunc(depthDesc.DepthFunc);
 }
 
-void D3D12Pipeline::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiStencilState stencilDesc) noexcept
+void D3D12Pipeline::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiStencilState& stencilDesc) noexcept
 {
 	auto& ds = psoDesc.DepthStencilState;
 	ds.StencilEnable = stencilDesc.StencilEnable ? TRUE : FALSE;
@@ -334,36 +393,63 @@ void D3D12Pipeline::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoD
 	ds.BackFace.StencilPassOp = D3D12PipelineImplementation::ToD3D12StencilOp(stencilDesc.BackFaceStencilPassOp);
 }
 
-D3D12Pipeline::D3D12Pipeline(D3D12Rhi& rhi, const GraphicsPipelineDesc& desc) : m_rhi(rhi)
+D3D12Pipeline::D3D12Pipeline(D3D12Rhi& rhi, const GraphicsPipelineDesc& desc) :
+    m_rhi(rhi)
 {
 	Create(desc);
 }
 
-D3D12Pipeline::D3D12Pipeline(D3D12Rhi& rhi, const ComputePipelineDesc& desc) : m_rhi(rhi)
+D3D12Pipeline::D3D12Pipeline(D3D12Rhi& rhi, const ComputePipelineDesc& desc) :
+    m_rhi(rhi)
 {
 	Create(desc);
 }
 
 void D3D12Pipeline::Create(const GraphicsPipelineDesc& desc)
 {
-	if (desc.ColorAttachmentCount > desc.ColorAttachmentFormats.size()
+	if (desc.BindingLayout == nullptr || (desc.ColorAttachmentCount == 0 && desc.DepthStencilAttachmentFormat == PixelFormat::Unknown)
+	    || desc.ColorAttachmentCount > desc.ColorAttachmentFormats.size()
 	    || desc.VertexInput.BindingCount > desc.VertexInput.Bindings.size()
 	    || desc.VertexInput.ElementCount > desc.VertexInput.Elements.size()
 	    || (desc.SampleCount != 1 && desc.SampleCount != 2 && desc.SampleCount != 4 && desc.SampleCount != 8))
 	{
 		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported graphics pipeline description.");
 	}
-	for (std::uint32_t index = 0; index < desc.VertexInput.ElementCount; ++index)
+	if ((desc.Depth.DepthEnable || desc.Depth.DepthWriteEnable || desc.Stencil.StencilEnable)
+	    && desc.DepthStencilAttachmentFormat == PixelFormat::Unknown)
 	{
-		if (desc.VertexInput.Elements[index].Binding >= desc.VertexInput.BindingCount)
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 depth-stencil state requires an attachment format.");
+	}
+	if (desc.Stencil.StencilEnable && desc.DepthStencilAttachmentFormat != PixelFormat::D24_UNorm_S8_UInt)
+	{
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 stencil state requires a stencil-capable attachment format.");
+	}
+	for (std::uint32_t index = 0; index < desc.ColorAttachmentCount; ++index)
+	{
+		if (!D3D12PipelineImplementation::IsColorAttachmentFormat(desc.ColorAttachmentFormats[index]))
 		{
-			Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 vertex input references a missing binding.");
+			Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 color attachment format must be explicit.");
+		}
+	}
+	if (desc.DepthStencilAttachmentFormat != PixelFormat::Unknown
+	    && !D3D12PipelineImplementation::IsDepthStencilAttachmentFormat(desc.DepthStencilAttachmentFormat))
+	{
+		Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported depth-stencil attachment format.");
+	}
+	const std::uint32_t blendTargetCount = desc.Blend.IndependentBlendEnable ? desc.ColorAttachmentCount : 1;
+	for (std::uint32_t index = 0; index < blendTargetCount; ++index)
+	{
+		if ((desc.Blend.Targets[index].ColorWriteMask & 0xF0u) != 0)
+		{
+			Diagnostics::Fatal(g_pipelineLogger, __FILE__, __LINE__, "D3D12 received an unsupported color write mask.");
 		}
 	}
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_GraphicsPipeline";
-	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage vertexShader = D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.VertexShader, pipelineName, true);
-	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage pixelShader = D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.PixelShader, pipelineName, false);
+	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage vertexShader =
+	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.VertexShader, pipelineName, true);
+	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage pixelShader =
+	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.PixelShader, pipelineName, false);
 
 	const std::vector<D3D12_INPUT_ELEMENT_DESC> vertexLayout = D3D12PipelineImplementation::BuildVertexInput(desc.VertexInput);
 	psoDesc.InputLayout.NumElements = static_cast<UINT>(vertexLayout.size());
@@ -413,7 +499,8 @@ void D3D12Pipeline::Create(const ComputePipelineDesc& desc)
 {
 	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_ComputePipeline";
-	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage computeShader = D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName, true);
+	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage computeShader =
+	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName, true);
 	const auto* bindingLayout = static_cast<const D3D12BindingLayout*>(desc.BindingLayout);
 	psoDesc.pRootSignature = bindingLayout != nullptr ? bindingLayout->GetRootSignature().GetRaw() : nullptr;
 	psoDesc.CS = computeShader.Bytecode;

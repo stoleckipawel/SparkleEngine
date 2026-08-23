@@ -38,8 +38,16 @@ public:
 		const ShaderRegistrationDesc* registrations[] = {&vertexRegistration, &pixelRegistration};
 		storage.ParameterLayout = BuildShaderPipelineParameterLayout(registrations);
 		storage.Shaders = {vertexShader.GetResolvedShader(), pixelShader.GetResolvedShader()};
-		ValidateResolvedShader(renderHardwareInterface, vertexRegistration, storage.Shaders[0], BuildShaderParameterLayout(vertexRegistration));
-		ValidateResolvedShader(renderHardwareInterface, pixelRegistration, storage.Shaders[1], BuildShaderParameterLayout(pixelRegistration));
+		ValidateResolvedShader(
+		    renderHardwareInterface,
+		    vertexRegistration,
+		    storage.Shaders[0],
+		    BuildShaderParameterLayout(vertexRegistration));
+		ValidateResolvedShader(
+		    renderHardwareInterface,
+		    pixelRegistration,
+		    storage.Shaders[1],
+		    BuildShaderParameterLayout(pixelRegistration));
 		std::wstring debugName = Strings::ToWide(vertexRegistration.ShaderName);
 		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(
 		    renderHardwareInterface,
@@ -90,7 +98,8 @@ private:
 		if (shader.Entry->Stage != registration.Stage || shader.Entry->Features != registration.Features
 		    || shader.Entry->ParameterSignature != BuildShaderParameterSignature(parameterLayout))
 		{
-			throw Diagnostics::Error(std::format("Shader '{}' map metadata does not match its registered contract.", registration.ShaderName));
+			throw Diagnostics::Error(
+			    std::format("Shader '{}' map metadata does not match its registered contract.", registration.ShaderName));
 		}
 	}
 };

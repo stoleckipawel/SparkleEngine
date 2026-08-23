@@ -119,8 +119,7 @@ RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveUnorderedAccessView(Fr
 	return m_frameGraph.ResolveUnorderedAccessView(handle);
 }
 
-RhiResourceHandle FrameGraphResourceCommands::ResolveAccelerationStructure(
-    FrameGraphAccelerationStructureHandle handle) const noexcept
+RhiResourceHandle FrameGraphResourceCommands::ResolveAccelerationStructure(FrameGraphAccelerationStructureHandle handle) const noexcept
 {
 	return m_frameGraph.ResolveAccelerationStructure(handle);
 }

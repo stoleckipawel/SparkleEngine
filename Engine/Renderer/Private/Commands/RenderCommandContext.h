@@ -7,7 +7,7 @@
 
 class RenderCommandContext final
 {
-  public:
+public:
 	explicit RenderCommandContext(RenderCommandList& commandList) noexcept;
 	~RenderCommandContext() noexcept = default;
 
@@ -55,7 +55,10 @@ class RenderCommandContext final
 
 	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 
-	void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
+	void SetRenderTargets(
+	    std::uint32_t renderTargetCount,
+	    const RhiCpuDescriptorHandle* renderTargets,
+	    const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 
 	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept;
 
@@ -109,7 +112,7 @@ class RenderCommandContext final
 
 	RenderCommandList& GetRenderCommandList() const noexcept { return *m_commandList; }
 
-  private:
+private:
 	void EmitDrawMarker() noexcept;
 	void EmitDispatchMarker(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
 

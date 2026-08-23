@@ -13,7 +13,7 @@ class D3D12RecordingUploadPage;
 
 class D3D12RenderCommandList final : public RenderCommandList
 {
-  public:
+public:
 	D3D12RenderCommandList(
 	    D3D12RenderHardwareInterface& owner,
 	    ID3D12GraphicsCommandList7* commandList,
@@ -61,7 +61,10 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void BindVertexBuffer(const RhiVertexBufferView& view) noexcept override;
 	void BindIndexBuffer(const RhiIndexBufferView& view) noexcept override;
 	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil) noexcept override;
-	void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil) noexcept override;
+	void SetRenderTargets(
+	    std::uint32_t renderTargetCount,
+	    const RhiCpuDescriptorHandle* renderTargets,
+	    const RhiCpuDescriptorHandle* depthStencil) noexcept override;
 	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept override;
 	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil) noexcept override;
 	void EndRasterPass() noexcept override;
@@ -95,7 +98,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept override;
 	void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept override;
 
-  private:
+private:
 	friend class D3D12CommandRecordingContext;
 
 	struct RecordingResourceUse final

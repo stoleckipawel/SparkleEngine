@@ -17,12 +17,6 @@ void RasterPassRenderState::SetDepthWrite(bool enabled) noexcept
 	m_depth.DepthWriteEnable = enabled;
 }
 
-void RasterPassRenderState::DisableDepth() noexcept
-{
-	m_depth.DepthEnable = false;
-	m_depth.DepthWriteEnable = false;
-}
-
 void RasterPassRenderState::DisableStencil() noexcept
 {
 	m_stencil = {};

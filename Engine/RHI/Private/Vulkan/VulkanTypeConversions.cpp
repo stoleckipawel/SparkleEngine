@@ -276,8 +276,8 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 			    .ImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 		case ResourceState::DepthRead:
 			return VulkanResourceStateMapping{
-			    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT |
-			                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+			    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT
+			        | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 			    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL};
 		case ResourceState::ShaderResource:
@@ -292,8 +292,8 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 		case ResourceState::RayTracingAccelerationStructure:
 			return VulkanResourceStateMapping{
-			    .StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-			                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+			    .StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+			        | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 			    .AccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 		case ResourceState::CopySource:
@@ -333,8 +333,7 @@ VkBufferCreateInfo VulkanTypeConversions::BuildBufferCreateInfo(const RhiBufferR
 		case RhiBufferKind::Generic:
 			if (desc.StrideInBytes > 0)
 			{
-				usage |=
-				    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+				usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 			}
 			break;
 		default:
@@ -346,9 +345,7 @@ VkBufferCreateInfo VulkanTypeConversions::BuildBufferCreateInfo(const RhiBufferR
 	}
 	if (desc.AllowRayTracingBuildInput)
 	{
-		usage |=
-		    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-		    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+		usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 	}
 
 	return VkBufferCreateInfo{
@@ -428,6 +425,10 @@ VkImageAspectFlags VulkanTypeConversions::ResolveAspectMask(PixelFormat format) 
 			return VK_IMAGE_ASPECT_COLOR_BIT;
 		case PixelFormat::Unknown:
 		default:
-			Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Cannot resolve an aspect mask for an unknown Vulkan format.");
+			Diagnostics::Fatal(
+			    g_vulkanTypeConversionsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Cannot resolve an aspect mask for an unknown Vulkan format.");
 	}
 }

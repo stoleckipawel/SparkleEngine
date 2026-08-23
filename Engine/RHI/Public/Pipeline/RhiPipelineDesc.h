@@ -167,7 +167,22 @@ struct RhiBlendState
 	bool IndependentBlendEnable = false;
 	std::array<RhiBlendTargetState, 8> Targets = {};
 
-	bool operator==(const RhiBlendState&) const noexcept = default;
+	bool operator==(const RhiBlendState& other) const noexcept
+	{
+		if (AlphaToCoverageEnable != other.AlphaToCoverageEnable || IndependentBlendEnable != other.IndependentBlendEnable)
+		{
+			return false;
+		}
+		const std::size_t targetCount = IndependentBlendEnable ? Targets.size() : 1;
+		for (std::size_t index = 0; index < targetCount; ++index)
+		{
+			if (Targets[index] != other.Targets[index])
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 };
 
 struct RhiRasterizerState
@@ -234,7 +249,32 @@ struct RhiVertexInputDeclaration
 	std::uint8_t BindingCount = 0;
 	std::uint8_t ElementCount = 0;
 
-	bool operator==(const RhiVertexInputDeclaration&) const noexcept = default;
+	bool operator==(const RhiVertexInputDeclaration& other) const noexcept
+	{
+		if (BindingCount != other.BindingCount || ElementCount != other.ElementCount)
+		{
+			return false;
+		}
+		if (BindingCount > Bindings.size() || ElementCount > Elements.size())
+		{
+			return Bindings == other.Bindings && Elements == other.Elements;
+		}
+		for (std::uint32_t index = 0; index < BindingCount; ++index)
+		{
+			if (Bindings[index] != other.Bindings[index])
+			{
+				return false;
+			}
+		}
+		for (std::uint32_t index = 0; index < ElementCount; ++index)
+		{
+			if (Elements[index] != other.Elements[index])
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 };
 
 struct RhiShaderStageDesc

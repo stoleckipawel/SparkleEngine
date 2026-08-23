@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Passes/GBuffer/GBufferShaders.h"
+#include "RHI/Public/Resources/RhiResourceDesc.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
@@ -21,9 +22,11 @@ class FrameGraphResourceCommands;
 
 struct GBufferMeshPassInput final
 {
-	// These required values are borrowed only between frame-graph setup and the synchronous recording call.
+	// These required values are borrowed only from parameter application through compiled-pass preparation.
 	std::optional<std::reference_wrapper<const PreparedRenderScene>> PreparedScene;
 	std::optional<std::reference_wrapper<const RenderView>> View;
+	RhiViewport Viewport = {};
+	RhiRect Scissor = {};
 	bool Wireframe = false;
 };
 
@@ -68,25 +71,14 @@ public:
 	    const RasterPassRenderState& renderState,
 	    const GraphicsAttachmentSignature& attachments) const;
 	void PrepareRasterPass(RenderCommandContext& commandContext) const;
-	void Draw(
-	    PassCommandContext& context,
-	    ParameterInstance& parameters,
-	    const RenderPassRuntimeCache& runtimeCache,
-	    const RasterPassRenderState& renderState,
-	    const GraphicsAttachmentSignature& attachments) const;
+	void Draw(PassCommandContext& context, ParameterInstance& parameters) const;
 
 private:
-	void DrawOpaqueMeshes(
+	void DrawPreparedMeshes(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,
-	    const PreparedRenderScene& preparedScene,
-	    const RenderView& view,
-	    const Parameters& parameters,
-	    const RenderPassRuntimeCache& runtimeCache,
-	    const RasterPassRenderState& renderState,
-	    const GraphicsAttachmentSignature& attachments,
-	    bool wireframe) const;
+	    const Parameters& parameters) const;
 
-	std::shared_ptr<const GBufferMeshBatchDrawer> m_meshBatchDrawer;
+	std::shared_ptr<GBufferMeshBatchDrawer> m_meshBatchDrawer;
 	std::shared_ptr<GBufferMeshPassInput> m_frameInput;
 };

@@ -84,7 +84,7 @@ namespace FrameGraphTextureRegistration
 		        ResourceStateToString(state),
 		        hasResource));
 	}
-}  // namespace FrameGraphTextureRegistration
+} // namespace FrameGraphTextureRegistration
 
 FrameGraphTextureHandle FrameGraph::ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
@@ -285,8 +285,8 @@ void FrameGraph::BindPersistentTexture(
 		return;
 	}
 	const FrameGraphTextureDesc resolvedDesc = FrameGraphTextureRegistration::ResolveTextureDesc(desc, *m_window, metadata.debugName);
-	if (metadata.textureDesc.width != resolvedDesc.width || metadata.textureDesc.height != resolvedDesc.height ||
-	    metadata.textureDesc.format != resolvedDesc.format || metadata.textureDesc.sampleCount != resolvedDesc.sampleCount)
+	if (metadata.textureDesc.width != resolvedDesc.width || metadata.textureDesc.height != resolvedDesc.height
+	    || metadata.textureDesc.format != resolvedDesc.format || metadata.textureDesc.sampleCount != resolvedDesc.sampleCount)
 	{
 		ReleaseExternalResourceViews(resourceHandle);
 	}

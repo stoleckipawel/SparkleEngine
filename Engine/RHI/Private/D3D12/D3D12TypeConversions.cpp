@@ -8,7 +8,7 @@ static const auto g_d3d12TypeConversionsLogger = Logging::GetOrCreateLogger("RHI
 
 class D3D12ResourceFormatTranslation final
 {
-  public:
+public:
 	static DXGI_FORMAT ResolveTextureResourceFormat(const RhiTextureResourceDesc& desc) noexcept
 	{
 		if (!desc.AllowDepthStencil)

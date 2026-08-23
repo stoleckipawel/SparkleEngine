@@ -4,9 +4,18 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "Pipeline/RasterPassRenderState.h"
 
-FrameGraphRasterPass FrameGraph::BuildRasterPass(
-    const PassParameterSet& parameters,
-    const RasterPassRenderState& renderState) const
+namespace FrameGraphRasterPassValidation
+{
+	bool StencilWrites(const RhiStencilState& stencil) noexcept
+	{
+		return stencil.StencilEnable && stencil.StencilWriteMask != 0
+		    && (stencil.FrontFaceStencilFailOp != RhiStencilOp::Keep || stencil.FrontFaceStencilDepthFailOp != RhiStencilOp::Keep
+		        || stencil.FrontFaceStencilPassOp != RhiStencilOp::Keep || stencil.BackFaceStencilFailOp != RhiStencilOp::Keep
+		        || stencil.BackFaceStencilDepthFailOp != RhiStencilOp::Keep || stencil.BackFaceStencilPassOp != RhiStencilOp::Keep);
+	}
+}
+
+FrameGraphRasterPass FrameGraph::BuildRasterPass(const PassParameterSet& parameters, const RasterPassRenderState& renderState) const
 {
 	const PassParameterLayout* const layout = parameters.GetLayout();
 	if (layout == nullptr)
@@ -18,16 +27,14 @@ FrameGraphRasterPass FrameGraph::BuildRasterPass(
 	for (std::uint32_t index = 0; index < layout->GetParameterCount(); ++index)
 	{
 		const PassParameterDesc& parameter = layout->GetParameters()[index];
-		if (parameter.Kind != ShaderParameterSemanticKind::RenderTarget
-		    && parameter.Kind != ShaderParameterSemanticKind::DepthTarget)
+		if (parameter.Kind != ShaderParameterSemanticKind::RenderTarget && parameter.Kind != ShaderParameterSemanticKind::DepthTarget)
 		{
 			continue;
 		}
 
 		const PassParameterBinding* const binding = parameters.GetBinding(index);
 		const PassParameterTextureBindingData* const texture = binding != nullptr ? binding->AsTextureData() : nullptr;
-		if (texture == nullptr || !texture->IsAttachment || texture->Handles.size() != 1
-		    || !texture->Attachment.Handle.IsValid())
+		if (texture == nullptr || !texture->IsAttachment())
 		{
 			throw Diagnostics::Error("Raster pass attachment is not fully declared through the graph.");
 		}
@@ -71,8 +78,7 @@ FrameGraphRasterPass FrameGraph::BuildRasterPass(
 	result.Compatibility.SampleCount = 1;
 	for (std::uint32_t index = 0; index < result.ColorCount; ++index)
 	{
-		const FrameGraphTextureDesc& desc =
-		    m_resourceRegistry.GetMetadata(result.Colors[index].Handle.GetResourceHandle()).textureDesc;
+		const FrameGraphTextureDesc& desc = m_resourceRegistry.GetMetadata(result.Colors[index].Handle.GetResourceHandle()).textureDesc;
 		if (index == 0)
 		{
 			result.Compatibility.SampleCount = desc.sampleCount;
@@ -84,13 +90,13 @@ FrameGraphRasterPass FrameGraph::BuildRasterPass(
 	}
 	if (result.HasDepthStencil)
 	{
-		const FrameGraphTextureDesc& depthDesc =
-		    m_resourceRegistry.GetMetadata(result.DepthStencil.Handle.GetResourceHandle()).textureDesc;
+		const FrameGraphTextureDesc& depthDesc = m_resourceRegistry.GetMetadata(result.DepthStencil.Handle.GetResourceHandle()).textureDesc;
 		if ((result.ColorCount != 0 && depthDesc.sampleCount != result.Compatibility.SampleCount)
-		    || (renderState.GetDepth().DepthWriteEnable
-	        && result.DepthStencil.DepthStencilAccess != FrameGraphDepthStencilAccess::ReadWrite))
+		    || (result.DepthStencil.DepthStencilAccess == FrameGraphDepthStencilAccess::ReadOnly
+		        && (result.DepthStencil.Load == FrameGraphAttachmentLoadAction::Clear || renderState.GetDepth().DepthWriteEnable
+		            || FrameGraphRasterPassValidation::StencilWrites(renderState.GetStencil()))))
 		{
-			throw Diagnostics::Error("Raster depth attachment is incompatible with pass depth or sample state.");
+			throw Diagnostics::Error("Raster depth attachment is incompatible with pass depth, stencil, access, load, or sample state.");
 		}
 		result.Compatibility.SampleCount = depthDesc.sampleCount;
 	}
@@ -98,8 +104,12 @@ FrameGraphRasterPass FrameGraph::BuildRasterPass(
 	{
 		throw Diagnostics::Error("Raster depth or stencil state requires a graph depth-stencil attachment.");
 	}
-	if (result.Compatibility.SampleCount != 1 && result.Compatibility.SampleCount != 2
-	    && result.Compatibility.SampleCount != 4 && result.Compatibility.SampleCount != 8)
+	if (!renderState.GetDepth().DepthEnable && renderState.GetDepth().DepthWriteEnable)
+	{
+		throw Diagnostics::Error("Raster depth writes require depth testing to be enabled.");
+	}
+	if (result.Compatibility.SampleCount != 1 && result.Compatibility.SampleCount != 2 && result.Compatibility.SampleCount != 4
+	    && result.Compatibility.SampleCount != 8)
 	{
 		throw Diagnostics::Error("Raster pass attachments use an unsupported sample count.");
 	}

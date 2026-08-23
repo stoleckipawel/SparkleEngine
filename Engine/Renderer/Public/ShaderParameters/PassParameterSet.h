@@ -31,9 +31,9 @@ struct PassParameterTextureBindingData
 {
 	std::vector<FrameGraphTextureHandle> Handles;
 	FrameGraphAttachmentBinding Attachment = {};
-	bool IsAttachment = false;
 
-	bool IsBound() const noexcept { return !Handles.empty(); }
+	bool IsAttachment() const noexcept { return Attachment.Handle.IsValid(); }
+	bool IsBound() const noexcept { return IsAttachment() || !Handles.empty(); }
 };
 
 struct PassParameterBufferBindingData
@@ -98,7 +98,7 @@ struct SPARKLE_RENDERER_API PassParameterBinding
 
 	const PassParameterSamplerBindingData* AsSamplerData() const noexcept { return std::get_if<PassParameterSamplerBindingData>(&m_value); }
 
-  private:
+private:
 	friend class PassParameterSet;
 
 	void Reset() noexcept;
@@ -109,7 +109,7 @@ struct SPARKLE_RENDERER_API PassParameterBinding
 
 class SPARKLE_RENDERER_API PassParameterSet final
 {
-  public:
+public:
 	PassParameterSet(const PassParameterLayout& layout, std::vector<bool> graphResourceParameters);
 
 	void ClearBindings() noexcept;
@@ -147,7 +147,7 @@ class SPARKLE_RENDERER_API PassParameterSet final
 	bool HasAllRequiredBindings() const noexcept;
 	std::vector<std::string> GetMissingBindings() const;
 
-  private:
+private:
 	const PassParameterDesc* FindParameter(const char* name, std::uint32_t& outIndex) const noexcept;
 	const PassParameterBinding* FindBinding(const char* name, std::uint32_t& outIndex) const noexcept;
 	bool SetDescriptorTable(

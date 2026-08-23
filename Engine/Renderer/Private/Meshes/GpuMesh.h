@@ -32,7 +32,7 @@ struct GpuMeshBounds final
 
 class GpuMesh final
 {
-  public:
+public:
 	explicit GpuMesh(GpuMeshHandle handle = {}) noexcept;
 	~GpuMesh() noexcept;
 
@@ -41,10 +41,7 @@ class GpuMesh final
 	GpuMesh(GpuMesh&&) = delete;
 	GpuMesh& operator=(GpuMesh&&) = delete;
 
-	void Upload(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    RenderCommandList& commandList,
-	    GpuMeshPreparedData preparedData);
+	void Upload(RenderHardwareInterface& renderHardwareInterface, RenderCommandList& commandList, GpuMeshPreparedData preparedData);
 
 	void Bind(RenderCommandContext& commandContext) const noexcept;
 
@@ -75,21 +72,12 @@ class GpuMesh final
 	std::uint32_t GetMorphTargetCount() const noexcept { return m_morphTargets.GetTargetCount(); }
 	std::span<const MorphTargetDeltaData> GetMorphTargetDeltas() const noexcept { return m_morphTargets.GetDeltas(); }
 
-  private:
-	void CreateGeometryBuffers(
-	    RenderCommandList& commandList,
-	    const MeshData& meshData);
-	void CreateVertexBuffer(
-	    RenderCommandList& commandList,
-	    const MeshData& meshData);
-	void CreateIndexBuffer(
-	    RenderCommandList& commandList,
-	    const MeshData& meshData);
-	void CreateDeformationBuffers(
-	    RenderCommandList& commandList,
-	    GpuMeshPreparedData& preparedData);
-	void CommitPreparedData(
-	    GpuMeshPreparedData&& preparedData);
+private:
+	void CreateGeometryBuffers(RenderCommandList& commandList, const MeshData& meshData);
+	void CreateVertexBuffer(RenderCommandList& commandList, const MeshData& meshData);
+	void CreateIndexBuffer(RenderCommandList& commandList, const MeshData& meshData);
+	void CreateDeformationBuffers(RenderCommandList& commandList, GpuMeshPreparedData& preparedData);
+	void CommitPreparedData(GpuMeshPreparedData&& preparedData);
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	GpuMeshHandle m_handle = {};

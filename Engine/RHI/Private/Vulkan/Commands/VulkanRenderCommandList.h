@@ -25,7 +25,7 @@ class VulkanUploadService;
 struct VulkanResourceStateMapping;
 class VulkanRenderCommandList final : public RenderCommandList
 {
-  public:
+public:
 	VulkanRenderCommandList();
 	~VulkanRenderCommandList() noexcept override;
 
@@ -71,8 +71,10 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void BindVertexBuffer(const RhiVertexBufferView& view) noexcept override;
 	void BindIndexBuffer(const RhiIndexBufferView& view) noexcept override;
 	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept override;
-	void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept
-	    override;
+	void SetRenderTargets(
+	    std::uint32_t renderTargetCount,
+	    const RhiCpuDescriptorHandle* renderTargets,
+	    const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept override;
 	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept override;
 	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept override;
 	void EndRasterPass() noexcept override;
@@ -106,7 +108,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept override;
 	void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept override;
 
-  private:
+private:
 	friend class VulkanCommandRecordingContext;
 	friend class VulkanUploadService;
 

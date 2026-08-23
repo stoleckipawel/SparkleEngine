@@ -1,11 +1,9 @@
 #include "PCH.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-FrameGraphBuilder::FrameGraphBuilder(
-    FrameGraph& frameGraph,
-    const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept :
-	m_frameGraph(frameGraph),
-	m_renderPassRuntimeCache(renderPassRuntimeCache)
+FrameGraphBuilder::FrameGraphBuilder(FrameGraph& frameGraph, const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept :
+    m_frameGraph(frameGraph),
+    m_renderPassRuntimeCache(renderPassRuntimeCache)
 {
 }
 
@@ -14,9 +12,7 @@ FrameGraphTextureHandle FrameGraphBuilder::ImportBackBuffer(const FrameGraphText
 	return m_frameGraph.ImportBackBuffer(desc, initialState);
 }
 
-FrameGraphTextureHandle FrameGraphBuilder::ReservePersistentTexture(
-    const FrameGraphTextureDesc& desc,
-    ResourceState initialState) noexcept
+FrameGraphTextureHandle FrameGraphBuilder::ReservePersistentTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
 	return m_frameGraph.ReservePersistentTexture(desc, initialState);
 }
@@ -31,9 +27,7 @@ FrameGraphTextureHistory FrameGraphBuilder::CreateTextureHistory(const FrameGrap
 	return m_frameGraph.CreateTextureHistory(desc);
 }
 
-FrameGraphBufferHandle FrameGraphBuilder::ReservePersistentBuffer(
-    const FrameGraphBufferDesc& desc,
-    ResourceState initialState) noexcept
+FrameGraphBufferHandle FrameGraphBuilder::ReservePersistentBuffer(const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept
 {
 	return m_frameGraph.ReservePersistentBuffer(desc, initialState);
 }

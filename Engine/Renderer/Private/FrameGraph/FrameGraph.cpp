@@ -58,10 +58,7 @@ void FrameGraph::ExportTexture(FrameGraphTextureHandle handle, std::string_view 
 		return;
 	}
 
-	m_productRoots.push_back(
-	    FrameGraphProductRoot{
-	        .handle = resourceHandle,
-	        .name = std::string(name)});
+	m_productRoots.push_back(FrameGraphProductRoot{.handle = resourceHandle, .name = std::string(name)});
 }
 
 PixelFormat FrameGraph::GetTextureFormat(FrameGraphTextureHandle handle) const noexcept

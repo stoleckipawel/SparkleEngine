@@ -19,7 +19,7 @@
 
 class SPARKLE_RHI_API RenderCommandList
 {
-  public:
+public:
 	virtual ~RenderCommandList() noexcept;
 
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
@@ -100,13 +100,10 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept = 0;
 	virtual void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept = 0;
 
-
-  protected:
+protected:
 	virtual void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept = 0;
-	virtual void OnResourceTrackingFinished(
-	    RhiResourceHandle resource,
-	    RhiSubmissionToken submissionToken) noexcept = 0;
+	virtual void OnResourceTrackingFinished(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept = 0;
 
-  private:
+private:
 	std::vector<RhiResourceHandle> m_trackedResources;
 };

@@ -11,7 +11,9 @@
 
 static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("RHI.Vulkan.CommandList");
 
-void VulkanRenderCommandList::SetPrimitiveTopology(RhiPrimitiveTopology) noexcept {}
+void VulkanRenderCommandList::SetPrimitiveTopology(RhiPrimitiveTopology) noexcept
+{
+}
 
 void VulkanRenderCommandList::BindVertexBuffer(const RhiVertexBufferView& view) noexcept
 {
@@ -125,8 +127,8 @@ void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle renderTar
 
 void VulkanRenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil) noexcept
 {
-	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect ||
-	    VulkanDescriptorHandles::DecodeImageViewCpuHandle(depthStencil) != m_depthStencil)
+	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect
+	    || VulkanDescriptorHandles::DecodeImageViewCpuHandle(depthStencil) != m_depthStencil)
 	{
 		return;
 	}
@@ -241,12 +243,11 @@ void VulkanRenderCommandList::Dispatch(std::uint32_t groupCountX, std::uint32_t 
 
 void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
 {
-	if (m_dynamicRenderingActive || m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect ||
-	    (m_renderTargetCount == 0 && m_depthStencil == VK_NULL_HANDLE))
+	if (m_dynamicRenderingActive || m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect
+	    || (m_renderTargetCount == 0 && m_depthStencil == VK_NULL_HANDLE))
 	{
 		return;
 	}
-
 
 	std::array<VkRenderingAttachmentInfo, MaxRenderTargets> colorAttachments = {};
 	for (std::uint32_t index = 0; index < m_renderTargetCount; ++index)

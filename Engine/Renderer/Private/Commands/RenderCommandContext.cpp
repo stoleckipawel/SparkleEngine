@@ -5,7 +5,10 @@
 
 static const auto g_renderCommandContextLogger = Logging::GetOrCreateLogger("Renderer.CommandContext");
 
-RenderCommandContext::RenderCommandContext(RenderCommandList& commandList) noexcept : m_commandList(&commandList) {}
+RenderCommandContext::RenderCommandContext(RenderCommandList& commandList) noexcept :
+    m_commandList(&commandList)
+{
+}
 
 void RenderCommandContext::EnableDrawDispatchDiagnostics() noexcept
 {
@@ -125,7 +128,10 @@ void RenderCommandContext::SetRenderTarget(RhiCpuDescriptorHandle renderTarget, 
 	m_commandList->SetRenderTarget(renderTarget, depthStencil);
 }
 
-void RenderCommandContext::SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil) noexcept
+void RenderCommandContext::SetRenderTargets(
+    std::uint32_t renderTargetCount,
+    const RhiCpuDescriptorHandle* renderTargets,
+    const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
 	m_commandList->SetRenderTargets(renderTargetCount, renderTargets, depthStencil);
 }
@@ -226,11 +232,7 @@ void RenderCommandContext::BuildBottomLevelAccelerationStructure(
 		m_commandList->BuildBottomLevelAccelerationStructure(geometry, scratchGpuAddress, resultGpuAddress);
 		return;
 	}
-	Diagnostics::Fatal(
-	    g_renderCommandContextLogger,
-	    __FILE__,
-	    __LINE__,
-	    "BLAS build has no active render command list.");
+	Diagnostics::Fatal(g_renderCommandContextLogger, __FILE__, __LINE__, "BLAS build has no active render command list.");
 }
 
 void RenderCommandContext::BuildTopLevelAccelerationStructure(
@@ -242,19 +244,11 @@ void RenderCommandContext::BuildTopLevelAccelerationStructure(
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList->BuildTopLevelAccelerationStructure(
-		    instanceDescsGpuAddress,
-		    instanceCount,
-		    scratchGpuAddress,
-		    resultGpuAddress,
-		    buildMode);
+		m_commandList
+		    ->BuildTopLevelAccelerationStructure(instanceDescsGpuAddress, instanceCount, scratchGpuAddress, resultGpuAddress, buildMode);
 		return;
 	}
-	Diagnostics::Fatal(
-	    g_renderCommandContextLogger,
-	    __FILE__,
-	    __LINE__,
-	    "Classic TLAS build has no active render command list.");
+	Diagnostics::Fatal(g_renderCommandContextLogger, __FILE__, __LINE__, "Classic TLAS build has no active render command list.");
 }
 
 void RenderCommandContext::BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept
@@ -264,11 +258,7 @@ void RenderCommandContext::BuildPartitionedTopLevelAccelerationStructure(const R
 		m_commandList->BuildPartitionedTopLevelAccelerationStructure(desc);
 		return;
 	}
-	Diagnostics::Fatal(
-	    g_renderCommandContextLogger,
-	    __FILE__,
-	    __LINE__,
-	    "Partitioned TLAS build has no active render command list.");
+	Diagnostics::Fatal(g_renderCommandContextLogger, __FILE__, __LINE__, "Partitioned TLAS build has no active render command list.");
 }
 
 void RenderCommandContext::TrackResource(RhiResourceHandle resource) noexcept

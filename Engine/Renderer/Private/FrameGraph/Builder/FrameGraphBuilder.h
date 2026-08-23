@@ -58,31 +58,25 @@ public:
 		auto* parameterInstance = &parameters;
 		auto* frameGraph = &m_frameGraph;
 		auto* runtimeCache = &m_renderPassRuntimeCache;
-		m_frameGraph.m_passParameterSetups.emplace_back(
+		const FrameGraphPassIndex passIndex = static_cast<FrameGraphPassIndex>(m_frameGraph.m_passes.size());
+		m_frameGraph.m_passPreparations.emplace_back(
+		    passIndex,
 		    [parameterInstance, frameGraph, runtimeCache, renderState, rasterPass, materializer = drawCollaborator]() mutable
 		    {
 			    *rasterPass = frameGraph->BuildRasterPass(parameterInstance->GetPassParameterSet(), renderState);
-			    materializer.MaterializePipelines(
-			        *runtimeCache,
-			        renderState,
-			        rasterPass->Compatibility);
+			    materializer.MaterializePipelines(*runtimeCache, renderState, rasterPass->Compatibility);
 		    });
 		const std::string diagnosticLabel(label);
 		m_frameGraph.AddRasterPass(
 		    diagnosticLabel,
 		    parameters,
-		    [runtimeCache, renderState, rasterPass, drawCollaborator = std::move(drawCollaborator)](
+		    [rasterPass, drawCollaborator = std::move(drawCollaborator)](
 		        PassCommandContext& context,
 		        TypedPassParameterInstance<TParameters>& passParameters) mutable
 		    {
 			    drawCollaborator.PrepareRasterPass(context.Commands);
 			    context.Resources.BeginRasterPass(context.Commands, *rasterPass);
-			    drawCollaborator.Draw(
-			        context,
-			        passParameters,
-			        *runtimeCache,
-			        renderState,
-			        rasterPass->Compatibility);
+			    drawCollaborator.Draw(context, passParameters);
 			    context.Resources.EndRasterPass(context.Commands);
 		    });
 	}

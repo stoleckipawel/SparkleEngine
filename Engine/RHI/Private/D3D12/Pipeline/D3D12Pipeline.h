@@ -12,7 +12,7 @@ class D3D12Rhi;
 
 class D3D12Pipeline final : public RenderPipeline
 {
-  public:
+public:
 	D3D12Pipeline(D3D12Rhi& rhi, const GraphicsPipelineDesc& desc);
 	D3D12Pipeline(D3D12Rhi& rhi, const ComputePipelineDesc& desc);
 
@@ -23,7 +23,7 @@ class D3D12Pipeline final : public RenderPipeline
 
 	const ComPtr<ID3D12PipelineState>& Get() const noexcept { return m_pso; }
 
-  private:
+private:
 	void HandlePsoCreateFailure(HRESULT hr) const noexcept;
 
 	void SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept;
@@ -32,12 +32,12 @@ class D3D12Pipeline final : public RenderPipeline
 	    D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
 	    const RhiBlendState& blend,
 	    std::uint32_t colorAttachmentCount) noexcept;
-	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiDepthState depthDesc) noexcept;
-	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiStencilState stencilDesc) noexcept;
+	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiDepthState& depthDesc) noexcept;
+	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiStencilState& stencilDesc) noexcept;
 	void Create(const GraphicsPipelineDesc& desc);
 	void Create(const ComputePipelineDesc& desc);
 
-  private:
+private:
 	D3D12Rhi& m_rhi;
 	ComPtr<ID3D12PipelineState> m_pso = nullptr;
 };

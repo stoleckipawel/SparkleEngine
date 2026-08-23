@@ -76,7 +76,9 @@ void PassParameterBinding::SetValue(PassParameterBindingValue value)
 }
 
 PassParameterSet::PassParameterSet(const PassParameterLayout& layout, std::vector<bool> graphResourceParameters) :
-    m_layout(&layout), m_bindings(layout.GetParameterCount()), m_graphResourceParameters(std::move(graphResourceParameters))
+    m_layout(&layout),
+    m_bindings(layout.GetParameterCount()),
+    m_graphResourceParameters(std::move(graphResourceParameters))
 {
 	assert(m_graphResourceParameters.size() == layout.GetParameterCount());
 }
@@ -134,15 +136,13 @@ bool PassParameterSet::SetAttachment(const char* name, FrameGraphAttachmentBindi
 	std::uint32_t index = 0;
 	const PassParameterDesc* parameter = FindParameter(name, index);
 	if (parameter == nullptr || parameter->ResourceDomain != ShaderParameterResourceDomain::Texture
-	    || (parameter->Kind != ShaderParameterSemanticKind::RenderTarget
-	        && parameter->Kind != ShaderParameterSemanticKind::DepthTarget)
+	    || (parameter->Kind != ShaderParameterSemanticKind::RenderTarget && parameter->Kind != ShaderParameterSemanticKind::DepthTarget)
 	    || !binding.Handle.IsValid())
 	{
 		return false;
 	}
 
-	m_bindings[index].SetValue(
-	    PassParameterTextureBindingData{.Handles = {binding.Handle}, .Attachment = binding, .IsAttachment = true});
+	m_bindings[index].SetValue(PassParameterTextureBindingData{.Attachment = binding});
 	return true;
 }
 

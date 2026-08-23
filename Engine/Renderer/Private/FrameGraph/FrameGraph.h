@@ -160,6 +160,7 @@ public:
 
 	void Setup();
 	void ApplyPassParameterDefaults();
+	void PreparePasses();
 	void ApplyResourceProductionSetups();
 
 	template <typename TValue, typename TCallback> void AddParameterSetup(TCallback&& callback)
@@ -323,9 +324,7 @@ public:
 	}
 
 	ShaderAccelerationStructure CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept;
-	FrameGraphRasterPass BuildRasterPass(
-	    const PassParameterSet& parameters,
-	    const RasterPassRenderState& renderState) const;
+	FrameGraphRasterPass BuildRasterPass(const PassParameterSet& parameters, const RasterPassRenderState& renderState) const;
 
 	template <typename TValue> ShaderUniform<TValue> Uniform(const TValue& value) const noexcept
 	{
@@ -338,6 +337,8 @@ private:
 	using SetupCallback = std::function<bool(PassResourceBuilder&)>;
 	using ExecuteCallback = std::function<void(PassCommandContext&)>;
 	using PassParameterSetupCallback = std::function<void()>;
+	using PassPreparationCallback = std::function<void()>;
+	using PassPreparation = std::pair<FrameGraphPassIndex, PassPreparationCallback>;
 	using ResourceProductionSetupCallback = std::function<void()>;
 	using ParameterSetupCallback = std::function<void(const void*)>;
 
@@ -471,6 +472,7 @@ private:
 
 	std::vector<RegisteredPass> m_passes;
 	std::vector<PassParameterSetupCallback> m_passParameterSetups;
+	std::vector<PassPreparation> m_passPreparations;
 	std::vector<ResourceProductionSetupCallback> m_resourceProductionSetups;
 	std::unordered_map<std::type_index, std::vector<ParameterSetupCallback>> m_parameterSetups;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
