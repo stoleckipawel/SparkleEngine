@@ -81,8 +81,9 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptu
 	}
 
 	const D3D12_RESOURCE_DESC sourceDesc = sourceResource->GetDesc();
+	RhiCaptureFormat captureFormat;
 	if (sourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D || sourceDesc.Width == 0 || sourceDesc.Height == 0
-	    || !IsRhiCapturePixelFormat(request.SourceFormat)
+	    || !TryResolveRhiCaptureFormat(request.SourceFormat, captureFormat)
 	    || sourceDesc.Format != D3D12TypeConversions::ToDxgiFormat(request.SourceFormat))
 	{
 		return {};

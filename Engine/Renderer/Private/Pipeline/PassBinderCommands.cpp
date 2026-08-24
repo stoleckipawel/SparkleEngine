@@ -26,38 +26,40 @@ void PassBinder::BindGpuAddress(
     bool isCompute)
 {
 	Require(gpuAddress != 0, "Pass address binding resolved to a null GPU address.");
-	if (isCompute)
-	{
-		switch (compiledBinding.Type)
-		{
-			case CompiledBindingType::ConstantBuffer:
-				commandContext.BindComputeConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
-				return;
-			case CompiledBindingType::ReadOnlyAddress:
-				commandContext.BindComputeShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
-				return;
-			case CompiledBindingType::ReadWriteAddress:
-				commandContext.BindComputeUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
-				return;
-			default:
-				Require(false, "Compute pass address binding has an unsupported type.");
-				return;
-		}
-	}
-
 	switch (compiledBinding.Type)
 	{
 		case CompiledBindingType::ConstantBuffer:
-			commandContext.BindConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
+			if (isCompute)
+			{
+				commandContext.BindComputeConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
+			}
+			else
+			{
+				commandContext.BindConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
+			}
 			return;
 		case CompiledBindingType::ReadOnlyAddress:
-			commandContext.BindShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
+			if (isCompute)
+			{
+				commandContext.BindComputeShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
+			}
+			else
+			{
+				commandContext.BindShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
+			}
 			return;
 		case CompiledBindingType::ReadWriteAddress:
-			commandContext.BindUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
+			if (isCompute)
+			{
+				commandContext.BindComputeUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
+			}
+			else
+			{
+				commandContext.BindUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
+			}
 			return;
 		default:
-			Require(false, "Graphics pass address binding has an unsupported type.");
+			Require(false, "Pass address binding has an unsupported type.");
 			return;
 	}
 }

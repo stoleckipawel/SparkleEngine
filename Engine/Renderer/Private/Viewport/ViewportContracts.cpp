@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
+#include <utility>
+
 RenderOutputFlags operator|(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept
 {
 	return static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
@@ -105,22 +107,7 @@ void ViewportRenderProducts::SetProduct(RenderOutputFlags output, RenderProduct 
 
 RenderProduct* ViewportRenderProducts::SelectProduct(RenderOutputFlags output) noexcept
 {
-	switch (output)
-	{
-		case RenderOutputFlags::SceneColor:
-			return &m_sceneColor;
-		case RenderOutputFlags::SceneDepth:
-			return &m_sceneDepth;
-		case RenderOutputFlags::ObjectId:
-			return &m_objectId;
-		case RenderOutputFlags::Normals:
-			return &m_normals;
-		case RenderOutputFlags::OverlayMask:
-			return &m_overlayMask;
-		case RenderOutputFlags::None:
-		default:
-			return nullptr;
-	}
+	return const_cast<RenderProduct*>(std::as_const(*this).SelectProduct(output));
 }
 
 const RenderProduct* ViewportRenderProducts::SelectProduct(RenderOutputFlags output) const noexcept

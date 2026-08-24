@@ -23,6 +23,8 @@
 #include "Textures/TextureCache.h"
 #include "View/RenderViewBuilder.h"
 #include "View/RenderViewPreparation.h"
+#include "Viewport/ViewportCaptureService.h"
+#include "Viewport/ViewportRenderProductPublication.h"
 #include "Window/Window.h"
 
 FramePipeline::FramePipeline(
@@ -53,7 +55,8 @@ FramePipeline::FramePipeline(
     m_renderScene(renderScene),
     m_imageProviders(imageProviders),
     m_taskExecutor(taskExecutor),
-    m_uiFrameRenderer(std::make_unique<UiFrameRenderer>(deviceServices, enableUiRenderPackets))
+    m_uiFrameRenderer(std::make_unique<UiFrameRenderer>(deviceServices, enableUiRenderPackets)),
+    m_viewportCaptureService(std::make_unique<ViewportCaptureService>(deviceServices))
 {
 	m_windowExtent = {static_cast<std::uint32_t>(m_window.GetWidth()), static_cast<std::uint32_t>(m_window.GetHeight())};
 
@@ -86,6 +89,23 @@ void FramePipeline::InitializeRenderFrames()
 }
 
 FramePipeline::~FramePipeline() noexcept = default;
+
+bool FramePipeline::BeginViewportCapture(ViewportCaptureId id, const ViewportCaptureRequest& request) noexcept
+{
+	return m_viewportCaptureService->BeginCapture(
+	    id,
+	    request,
+	    m_viewportRenderProducts,
+	    m_frameGraph.get(),
+	    m_frameId,
+	    m_renderScene.GetSceneGeneration(),
+	    m_imageProviders.GetGeneration());
+}
+
+std::vector<ViewportCaptureReadback> FramePipeline::TakeCompletedViewportCaptures()
+{
+	return m_viewportCaptureService->TakeCompletedCaptures();
+}
 
 TextureDiagnosticsSnapshot FramePipeline::CaptureTextureDiagnostics()
 {
@@ -126,7 +146,7 @@ bool FramePipeline::BeginFrame(RenderFrameSubmission& submission) noexcept
 
 void FramePipeline::PollFrameServices() noexcept
 {
-	PollViewportCaptures();
+	m_viewportCaptureService->Poll();
 	m_frameExecutionRetirementQueue.Poll(m_deviceServices);
 	m_imageProviders.PollRetiredGenerations();
 	m_renderPassRuntimeCache.PollRetiredGenerations();
@@ -170,7 +190,15 @@ void FramePipeline::BeginBackendFrame() noexcept
 
 RenderRayTracingFrameBindings FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderFrameTime& time)
 {
-	RefreshViewportRenderProducts();
+	const RenderFrameGraphSettings viewportSettings =
+	    m_frameGraphSettings.OutputExtent.IsValid() && m_frameGraphSettings.RenderExtent.IsValid() ? m_frameGraphSettings
+	                                                                                               : ResolveFrameGraphSettings();
+	PublishViewportRenderProducts(
+	    m_viewportRenderProducts,
+	    m_viewportRenderRequest,
+	    m_frameResources.ViewportProducts,
+	    viewportSettings.RenderExtent,
+	    viewportSettings.OutputExtent);
 
 	RenderCommandList& graphicsCommandList = m_deviceServices.GetCurrentGraphicsCommandList();
 	m_gpuMeshCache.UploadReadyMeshes(graphicsCommandList);

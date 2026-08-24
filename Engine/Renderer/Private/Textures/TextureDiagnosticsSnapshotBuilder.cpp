@@ -33,7 +33,6 @@ void TextureDiagnosticsSnapshotBuilder::Add(
 	row.Kind = kind;
 	row.Dimension = texture.Dimension;
 	row.FormatIntent = texture.FormatIntent;
-	row.ResidencyState = TextureDiagnosticsResidencyState::Resident;
 	row.Width = texture.Width;
 	row.Height = texture.Height;
 	row.ArraySize = texture.ArraySize;
@@ -42,7 +41,6 @@ void TextureDiagnosticsSnapshotBuilder::Add(
 	row.EstimatedByteSize = texture.EstimatedByteSize;
 	const std::uint64_t nativeTextureId = m_descriptorService.GetResourceViewGpuHandle(texture.ShaderResourceView).Value;
 	row.PreviewTexture = m_resolvePreviewTexture ? m_resolvePreviewTexture(nativeTextureId) : EditorTextureHandle{};
-	row.Loaded = true;
 	row.StreamManaged = streamManaged;
 	m_snapshot.push_back(std::move(row));
 }

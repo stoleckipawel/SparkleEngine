@@ -222,71 +222,6 @@ public:
 		resolved.Bytecode.BytecodeLength = bytecode.Size;
 		return resolved;
 	}
-
-	static std::string_view GetDiagnosticSeverityLabel(ERhiDiagnosticMessageSeverity severity) noexcept
-	{
-		switch (severity)
-		{
-			case ERhiDiagnosticMessageSeverity::Fatal:
-				return "fatal";
-			case ERhiDiagnosticMessageSeverity::Error:
-				return "error";
-			case ERhiDiagnosticMessageSeverity::Warning:
-				return "warning";
-			case ERhiDiagnosticMessageSeverity::Info:
-				return "info";
-			case ERhiDiagnosticMessageSeverity::Verbose:
-			default:
-				return "verbose";
-		}
-	}
-
-	static std::string_view GetDiagnosticCategoryLabel(ERhiDiagnosticMessageCategory category) noexcept
-	{
-		switch (category)
-		{
-			case ERhiDiagnosticMessageCategory::Validation:
-				return "validation";
-			case ERhiDiagnosticMessageCategory::Performance:
-				return "performance";
-			case ERhiDiagnosticMessageCategory::ResourceLifetime:
-				return "resource-lifetime";
-			case ERhiDiagnosticMessageCategory::Shader:
-				return "shader";
-			case ERhiDiagnosticMessageCategory::Driver:
-				return "driver";
-			case ERhiDiagnosticMessageCategory::Capture:
-				return "capture";
-			case ERhiDiagnosticMessageCategory::General:
-			default:
-				return "general";
-		}
-	}
-
-	static void LogDiagnosticMessage(const RhiDiagnosticMessage& diagnosticMessage) noexcept
-	{
-		const std::string message = std::format(
-		    "D3D12 diagnostic [{}:{}] {}",
-		    GetDiagnosticSeverityLabel(diagnosticMessage.Severity),
-		    GetDiagnosticCategoryLabel(diagnosticMessage.Category),
-		    diagnosticMessage.Text);
-
-		switch (diagnosticMessage.Severity)
-		{
-			case ERhiDiagnosticMessageSeverity::Fatal:
-			case ERhiDiagnosticMessageSeverity::Error:
-				SPDLOG_LOGGER_ERROR(g_pipelineLogger, "{}", message);
-				break;
-			case ERhiDiagnosticMessageSeverity::Warning:
-				SPDLOG_LOGGER_WARN(g_pipelineLogger, "{}", message);
-				break;
-			case ERhiDiagnosticMessageSeverity::Info:
-				break;
-			case ERhiDiagnosticMessageSeverity::Verbose:
-			default:
-				break;
-		}
-	}
 };
 
 void D3D12Pipeline::SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiRasterizerState& rasterizer) noexcept
@@ -452,7 +387,7 @@ void D3D12Pipeline::HandlePsoCreateFailure(HRESULT hr) const noexcept
 	RhiDiagnosticMessage diagnosticMessage{};
 	while (m_rhi.TryPopDebugMessage(diagnosticMessage))
 	{
-		D3D12PipelineImplementation::LogDiagnosticMessage(diagnosticMessage);
+		SPDLOG_LOGGER_ERROR(g_pipelineLogger, "D3D12 pipeline validation: {}", diagnosticMessage.Text);
 	}
 
 	char buf[256];

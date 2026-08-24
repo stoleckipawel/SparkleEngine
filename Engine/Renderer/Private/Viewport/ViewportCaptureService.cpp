@@ -86,7 +86,11 @@ bool ViewportCaptureService::BeginCapture(
 	    .SceneGeneration = sceneGeneration,
 	    .ProviderGeneration = providerGeneration,
 	    .ArtifactPath = request.OutputPath};
-	if (!id || m_pendingCaptures.size() >= CaptureCapacity)
+	if (!id)
+	{
+		result.FailureReason = "Viewport capture identity is invalid";
+	}
+	else if (m_pendingCaptures.size() >= CaptureCapacity)
 	{
 		result.FailureReason = "Viewport capture capacity is exhausted";
 	}
@@ -104,7 +108,7 @@ bool ViewportCaptureService::BeginCapture(
 	    || !ViewportCaptureSourceResolver::Resolve(products, frameGraph, request.Output, source, result.FailureReason))
 	{
 		result.Status = ViewportCaptureStatus::Failed;
-		m_completedCaptures.push_back(ViewportCaptureReadback{.Id = id, .Result = std::move(result)});
+		PublishCompleted(ViewportCaptureReadback{.Id = id, .Result = std::move(result)});
 		return false;
 	}
 
@@ -125,16 +129,13 @@ bool ViewportCaptureService::BeginCapture(
 	{
 		result.Status = ViewportCaptureStatus::Failed;
 		result.FailureReason = "The render device services could not begin viewport readback";
-		m_completedCaptures.push_back(ViewportCaptureReadback{.Id = id, .Result = std::move(result)});
+		PublishCompleted(ViewportCaptureReadback{.Id = id, .Result = std::move(result)});
 		return false;
 	}
 
 	m_pendingCaptures.push_back(
-	    std::make_unique<PendingCapture>(PendingCapture{
-	        .Id = id,
-	        .Ticket = ticket,
-	        .SceneGeneration = sceneGeneration,
-	        .ProviderGeneration = providerGeneration}));
+	    std::make_unique<PendingCapture>(
+	        PendingCapture{.Id = id, .Ticket = ticket, .SceneGeneration = sceneGeneration, .ProviderGeneration = providerGeneration}));
 	return true;
 }
 
@@ -151,21 +152,18 @@ void ViewportCaptureService::Poll() noexcept
 			continue;
 		}
 
-		if (m_completedCaptures.size() >= CaptureCapacity)
-		{
-			m_completedCaptures.erase(m_completedCaptures.begin());
-		}
-		m_completedCaptures.push_back(
+		PublishCompleted(
 		    ViewportCaptureReadback{
 		        .Id = pending->Id,
-		        .Result = ViewportCaptureResult{
-		            .Status = rhiReadback.Result.Status == ERhiCaptureStatus::Succeeded ? ViewportCaptureStatus::Succeeded
-		                                                                                 : ViewportCaptureStatus::Failed,
-		            .FrameId = rhiReadback.Result.FrameId,
-		            .SceneGeneration = pending->SceneGeneration,
-		            .ProviderGeneration = pending->ProviderGeneration,
-		            .ArtifactPath = rhiReadback.Result.ArtifactPath,
-		            .FailureReason = rhiReadback.Result.FailureReason},
+		        .Result =
+		            ViewportCaptureResult{
+		                .Status = rhiReadback.Result.Status == ERhiCaptureStatus::Succeeded ? ViewportCaptureStatus::Succeeded
+		                                                                                    : ViewportCaptureStatus::Failed,
+		                .FrameId = rhiReadback.Result.FrameId,
+		                .SceneGeneration = pending->SceneGeneration,
+		                .ProviderGeneration = pending->ProviderGeneration,
+		                .ArtifactPath = rhiReadback.Result.ArtifactPath,
+		                .FailureReason = rhiReadback.Result.FailureReason},
 		        .Pixels = std::move(rhiReadback.Pixels),
 		        .Width = rhiReadback.Width,
 		        .Height = rhiReadback.Height,
@@ -178,4 +176,13 @@ void ViewportCaptureService::Poll() noexcept
 std::vector<ViewportCaptureReadback> ViewportCaptureService::TakeCompletedCaptures()
 {
 	return std::exchange(m_completedCaptures, std::vector<ViewportCaptureReadback>{});
+}
+
+void ViewportCaptureService::PublishCompleted(ViewportCaptureReadback readback)
+{
+	if (m_completedCaptures.size() >= CaptureCapacity)
+	{
+		m_completedCaptures.erase(m_completedCaptures.begin());
+	}
+	m_completedCaptures.push_back(std::move(readback));
 }

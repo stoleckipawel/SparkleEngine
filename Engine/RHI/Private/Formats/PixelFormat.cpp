@@ -88,18 +88,7 @@ bool PixelFormatHasStencilAspect(PixelFormat format) noexcept
 
 bool IsSrgbPixelFormat(PixelFormat format) noexcept
 {
-	switch (format)
-	{
-		case PixelFormat::R8G8B8A8_UNorm_Srgb:
-		case PixelFormat::BC1_UNorm_Srgb:
-		case PixelFormat::BC2_UNorm_Srgb:
-		case PixelFormat::BC3_UNorm_Srgb:
-		case PixelFormat::B8G8R8A8_UNorm_Srgb:
-		case PixelFormat::BC7_UNorm_Srgb:
-			return true;
-		default:
-			return false;
-	}
+	return PixelFormatToLinear(format) != format;
 }
 
 PixelFormat PixelFormatToLinear(PixelFormat format) noexcept
@@ -120,28 +109,6 @@ PixelFormat PixelFormatToLinear(PixelFormat format) noexcept
 			return PixelFormat::BC7_UNorm;
 		default:
 			return format;
-	}
-}
-
-std::uint32_t PixelFormatBytesPerTexel(PixelFormat format) noexcept
-{
-	switch (format)
-	{
-		case PixelFormat::R32G32B32A32_Float:
-			return 16u;
-		case PixelFormat::R16G16B16A16_Float:
-			return 8u;
-		case PixelFormat::R16G16_Float:
-		case PixelFormat::D32_Float:
-		case PixelFormat::R32_Float:
-		case PixelFormat::D24_UNorm_S8_UInt:
-		case PixelFormat::R8G8B8A8_UNorm:
-		case PixelFormat::R8G8B8A8_UNorm_Srgb:
-		case PixelFormat::B8G8R8A8_UNorm:
-		case PixelFormat::B8G8R8A8_UNorm_Srgb:
-			return 4u;
-		default:
-			return 0u;
 	}
 }
 

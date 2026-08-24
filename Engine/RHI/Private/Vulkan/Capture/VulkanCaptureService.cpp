@@ -114,19 +114,18 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(const RhiTextureCapt
 	const VkDevice device = m_rhi->GetDevice();
 	const VkPhysicalDevice physicalDevice = m_rhi->GetPhysicalDevice();
 	const VkImage sourceImage = static_cast<VkImage>(request.Resource.Value);
-	std::uint32_t bytesPerPixel = 0;
+	RhiCaptureFormat captureFormat;
 	if (device == VK_NULL_HANDLE || physicalDevice == VK_NULL_HANDLE || sourceImage == VK_NULL_HANDLE
-	    || !IsRhiCapturePixelFormat(request.SourceFormat))
+	    || !TryResolveRhiCaptureFormat(request.SourceFormat, captureFormat))
 	{
 		return {};
 	}
-	bytesPerPixel = PixelFormatBytesPerTexel(request.SourceFormat);
 
 	auto pending = std::make_unique<PendingReadback>();
 	pending->Ticket = RhiCaptureTicket{m_nextTicket++};
 	pending->Request = request;
 	pending->Format = request.SourceFormat;
-	pending->RowPitch = request.Width * bytesPerPixel;
+	pending->RowPitch = request.Width * captureFormat.BytesPerPixel;
 	pending->ByteCount = static_cast<std::uint64_t>(pending->RowPitch) * request.Height;
 	const VkBufferCreateInfo bufferInfo{
 	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,

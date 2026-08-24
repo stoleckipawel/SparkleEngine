@@ -76,16 +76,15 @@ void UsedTexturesPanel::DrawToolbar()
 	ImGui::InputTextWithHint("##UsedTexturesFilter", filterHint.c_str(), m_filterBuffer.data(), m_filterBuffer.size());
 	ImGui::SameLine();
 	ImGui::TextDisabled(
-	    "%zu texture(s), %zu loaded, %s estimated",
+	    "%zu texture(s), %s estimated",
 	    m_snapshot.size(),
-	    TextureDiagnosticsPresentation::CountLoadedTextures(m_snapshot),
 	    PanelDiagnosticsFormatting::FormatByteSize(TextureDiagnosticsPresentation::SumEstimatedTextureBytes(m_snapshot)).c_str());
 }
 
 void UsedTexturesPanel::DrawTextureTable(bool disableInteraction)
 {
-	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
-	                                   ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
+	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable
+	    | ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
 	if (!ImGui::BeginTable("##UsedTexturesTable", 9, tableFlags, ImVec2(0.0f, 0.0f)))
 	{
 		return;
@@ -173,7 +172,9 @@ void UsedTexturesPanel::DrawPreview(const TextureDiagnosticsRow& row) const
 	if (!row.PreviewTexture || row.Dimension != TextureResourceDimension::Texture2D)
 	{
 		ImGui::BeginChild("##TexturePreviewUnavailable", ImVec2(0.0f, availableRegion.y), ImGuiChildFlags_Borders);
-		ImGui::TextDisabled(row.Dimension == TextureResourceDimension::TextureCube ? "Cubemap preview is not available in v1." : "No preview texture is available.");
+		ImGui::TextDisabled(
+		    row.Dimension == TextureResourceDimension::TextureCube ? "Cubemap preview is not available in v1."
+		                                                           : "No preview texture is available.");
 		ImGui::EndChild();
 		return;
 	}
@@ -236,8 +237,9 @@ const TextureDiagnosticsRow* UsedTexturesPanel::GetSelectedRow() const noexcept
 bool UsedTexturesPanel::MatchesFilter(const TextureDiagnosticsRow& row) const noexcept
 {
 	const std::string_view filter(m_filterBuffer.data());
-	return filter.empty() || Strings::ContainsIgnoreCase(TextureDiagnosticsPresentation::FormatTextureDisplayName(row), filter) ||
-	       Strings::ContainsIgnoreCase(TextureDiagnosticsPresentation::FormatTexturePath(row), filter) || Strings::ContainsIgnoreCase(row.Key, filter) ||
-	       Strings::ContainsIgnoreCase(TextureDiagnosticsPresentation::FormatTextureFormat(row.Format), filter) ||
-	       Strings::ContainsIgnoreCase(TextureDiagnosticsPresentation::FormatTextureKind(row.Kind), filter);
+	return filter.empty() || Strings::ContainsIgnoreCase(TextureDiagnosticsPresentation::FormatTextureDisplayName(row), filter)
+	    || Strings::ContainsIgnoreCase(TextureDiagnosticsPresentation::FormatTexturePath(row), filter)
+	    || Strings::ContainsIgnoreCase(row.Key, filter)
+	    || Strings::ContainsIgnoreCase(TextureDiagnosticsPresentation::FormatTextureFormat(row.Format), filter)
+	    || Strings::ContainsIgnoreCase(TextureDiagnosticsPresentation::FormatTextureKind(row.Kind), filter);
 }

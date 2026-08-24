@@ -3,6 +3,7 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -36,6 +37,8 @@ private:
 		std::uint64_t SceneGeneration = 0;
 		std::uint64_t ProviderGeneration = 0;
 	};
+
+	void PublishCompleted(ViewportCaptureReadback readback);
 
 	RenderDeviceServices& m_deviceServices;
 	std::vector<std::unique_ptr<PendingCapture>> m_pendingCaptures;

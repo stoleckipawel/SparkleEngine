@@ -4,7 +4,6 @@
 #include "Frame/Retirement/FrameExecutionRetirementQueue.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Resources/History/FrameHistory.h"
-#include "RHI/Public/Capture/RhiCaptureService.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "Rendering/RenderFrameSubmission.h"
 #include "Renderer/Public/UI/UiRenderPacket.h"
@@ -32,6 +31,7 @@ class RenderViewBuilder;
 class RenderViewPreparation;
 class TaskExecutor;
 class TextureCache;
+class ViewportCaptureService;
 class Window;
 struct RenderFrameTime;
 struct RenderRayTracingFrameBindings;
@@ -89,8 +89,6 @@ private:
 	void ApplyPendingResize() noexcept;
 	void RefreshGraphForTopology() noexcept;
 	void BeginBackendFrame() noexcept;
-	void PollViewportCaptures() noexcept;
-	void RefreshViewportRenderProducts() noexcept;
 	RenderRayTracingFrameBindings PrepareFrame(const RenderViewInput& viewInput, const RenderFrameTime& time);
 	void ExecuteFrame(const RenderRayTracingFrameBindings& rayTracingBindings);
 	void SubmitAndPresent(const UiRenderPacket& packet) noexcept;
@@ -125,15 +123,7 @@ private:
 	std::uint64_t m_frameId = 0u;
 	std::uint64_t m_graphTopologyGeneration = 0u;
 	std::unique_ptr<UiFrameRenderer> m_uiFrameRenderer;
-	struct PendingViewportCapture final
-	{
-		ViewportCaptureId Id;
-		RhiCaptureTicket Ticket;
-		std::uint64_t SceneGeneration = 0;
-		std::uint64_t ProviderGeneration = 0;
-	};
-	std::vector<std::unique_ptr<PendingViewportCapture>> m_pendingViewportCaptures;
-	std::vector<ViewportCaptureReadback> m_completedViewportCaptures;
+	std::unique_ptr<ViewportCaptureService> m_viewportCaptureService;
 	bool m_resizePending = false;
 	bool m_windowMinimized = false;
 	ImageProviderGraphKey m_imageProviderFrameGraphKey = {};

@@ -84,6 +84,19 @@ DXGI_FORMAT D3D12TypeConversions::ToDxgiFormat(PixelFormat format) noexcept
 	}
 }
 
+DXGI_FORMAT D3D12TypeConversions::ToDxgiShaderResourceViewFormat(PixelFormat format) noexcept
+{
+	switch (format)
+	{
+		case PixelFormat::D32_Float:
+			return DXGI_FORMAT_R32_FLOAT;
+		case PixelFormat::D24_UNorm_S8_UInt:
+			return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		default:
+			return ToDxgiFormat(format);
+	}
+}
+
 D3D12_COMPARISON_FUNC D3D12TypeConversions::ToComparisonFunc(CompareOp compareOp) noexcept
 {
 	switch (compareOp)

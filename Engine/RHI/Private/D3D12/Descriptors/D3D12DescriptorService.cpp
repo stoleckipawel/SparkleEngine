@@ -10,28 +10,13 @@
 
 #include <d3d12.h>
 
-class D3D12DescriptorFormatSelection final
-{
-  public:
-	static DXGI_FORMAT ResolveTextureShaderResourceViewFormat(PixelFormat format) noexcept
-	{
-		switch (format)
-		{
-			case PixelFormat::D32_Float:
-				return DXGI_FORMAT_R32_FLOAT;
-			case PixelFormat::D24_UNorm_S8_UInt:
-				return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-			default:
-				return D3D12TypeConversions::ToDxgiFormat(format);
-		}
-	}
-};
-
 D3D12DescriptorService::D3D12DescriptorService(
     D3D12Rhi& rhi,
     D3D12DescriptorHeapManager& descriptorHeapManager,
     const RhiCapabilities& capabilities) noexcept :
-	m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_capabilities(&capabilities)
+    m_rhi(&rhi),
+    m_descriptorHeapManager(&descriptorHeapManager),
+    m_capabilities(&capabilities)
 {
 }
 
@@ -82,8 +67,8 @@ ID3D12DescriptorHeap* D3D12DescriptorService::GetShaderResourceDescriptorHeap() 
 
 std::unique_ptr<RenderBindingSet> D3D12DescriptorService::CreateBindingSet(const RenderBindingSetDesc& desc)
 {
-	return m_capabilities != nullptr ? std::make_unique<RenderBindingSet>(*m_capabilities, *this, desc) :
-	                                   std::unique_ptr<RenderBindingSet>{};
+	return m_capabilities != nullptr ? std::make_unique<RenderBindingSet>(*m_capabilities, *this, desc)
+	                                 : std::unique_ptr<RenderBindingSet>{};
 }
 
 void D3D12DescriptorService::BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept
@@ -127,9 +112,8 @@ RhiDescriptorTableHandle D3D12DescriptorService::AllocateDescriptorTable(
     ERhiDescriptorAllocatorType descriptorType,
     std::uint32_t descriptorCount)
 {
-	if (m_descriptorHeapManager == nullptr || descriptorCount == 0 ||
-	    (m_freeDescriptorTableIndices.empty() &&
-	     m_descriptorTableRecords.size() >= RhiDescriptorTableHandle::MaximumRecordCount))
+	if (m_descriptorHeapManager == nullptr || descriptorCount == 0
+	    || (m_freeDescriptorTableIndices.empty() && m_descriptorTableRecords.size() >= RhiDescriptorTableHandle::MaximumRecordCount))
 	{
 		return {};
 	}
@@ -237,9 +221,8 @@ void D3D12DescriptorService::SetSamplerTableHandle(RhiDescriptorTableHandle samp
 
 RhiResourceViewHandle D3D12DescriptorService::CreateResourceView(const RhiResourceViewDesc& desc)
 {
-	if (!RhiContract::IsResourceViewDescUsable(desc) || m_rhi == nullptr || m_descriptorHeapManager == nullptr ||
-	    (m_freeResourceViewIndices.empty() &&
-	     m_resourceViewRecords.size() >= RhiResourceViewHandle::MaximumRecordCount))
+	if (!RhiContract::IsResourceViewDescUsable(desc) || m_rhi == nullptr || m_descriptorHeapManager == nullptr
+	    || (m_freeResourceViewIndices.empty() && m_resourceViewRecords.size() >= RhiResourceViewHandle::MaximumRecordCount))
 	{
 		return {};
 	}
@@ -305,8 +288,8 @@ bool D3D12DescriptorService::WriteResourceView(
 {
 	const DescriptorTableRecord* const table = FindDescriptorTableRecord(tableHandle);
 	const ResourceViewRecord* const resourceView = FindResourceViewRecord(view);
-	if (m_rhi == nullptr || table == nullptr || resourceView == nullptr || descriptorIndex >= table->descriptorCount ||
-	    table->descriptorType != resourceView->descriptorType)
+	if (m_rhi == nullptr || table == nullptr || resourceView == nullptr || descriptorIndex >= table->descriptorCount
+	    || table->descriptorType != resourceView->descriptorType)
 	{
 		return false;
 	}
@@ -320,13 +303,9 @@ bool D3D12DescriptorService::WriteResourceView(
 	D3D12_CPU_DESCRIPTOR_HANDLE destination = table->nativeHandle.GetCPU();
 	destination.ptr += static_cast<SIZE_T>(descriptorIndex) * table->nativeHandle.GetIncrementSize();
 	const D3D12_CPU_DESCRIPTOR_HANDLE source = resourceView->copySourceHandle.IsValid()
-	                                                   ? resourceView->copySourceHandle.GetCPU()
-	                                                   : D3D12_CPU_DESCRIPTOR_HANDLE{resourceView->descriptorAllocation.CpuHandle.Value};
-	device->CopyDescriptorsSimple(
-	    1,
-	    destination,
-	    source,
-	    D3D12TypeConversions::ToDescriptorHeapType(table->descriptorType));
+	    ? resourceView->copySourceHandle.GetCPU()
+	    : D3D12_CPU_DESCRIPTOR_HANDLE{resourceView->descriptorAllocation.CpuHandle.Value};
+	device->CopyDescriptorsSimple(1, destination, source, D3D12TypeConversions::ToDescriptorHeapType(table->descriptorType));
 	return true;
 }
 
@@ -386,10 +365,7 @@ void D3D12DescriptorService::DestroyDescriptorTable(
 {
 	if (m_descriptorHeapManager != nullptr && nativeHandle.IsValid())
 	{
-		m_descriptorHeapManager->FreeContiguous(
-		    D3D12TypeConversions::ToDescriptorHeapType(descriptorType),
-		    nativeHandle,
-		    descriptorCount);
+		m_descriptorHeapManager->FreeContiguous(D3D12TypeConversions::ToDescriptorHeapType(descriptorType), nativeHandle, descriptorCount);
 	}
 }
 
@@ -478,8 +454,8 @@ RhiCpuDescriptorHandle D3D12DescriptorService::GetResourceViewCpuHandle(RhiResou
 	{
 		return {};
 	}
-	return record->copySourceHandle.IsValid() ? RhiCpuDescriptorHandle{record->copySourceHandle.GetCPU().ptr} :
-	                                           record->descriptorAllocation.CpuHandle;
+	return record->copySourceHandle.IsValid() ? RhiCpuDescriptorHandle{record->copySourceHandle.GetCPU().ptr}
+	                                          : record->descriptorAllocation.CpuHandle;
 }
 
 RhiGpuDescriptorHandle D3D12DescriptorService::GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept
@@ -489,17 +465,16 @@ RhiGpuDescriptorHandle D3D12DescriptorService::GetResourceViewGpuHandle(RhiResou
 }
 
 NativeTextureViewInfo D3D12DescriptorService::ResolveNativeTextureViewInfo(
-	RhiResourceViewHandle,
-	RhiResourceHandle resource,
-	ResourceState state) const noexcept
+    RhiResourceViewHandle,
+    RhiResourceHandle resource,
+    ResourceState state) const noexcept
 {
 	return NativeTextureViewInfo{
 	    .Resource = NativeResourceHandle{resource.Value},
 	    .NativeState = static_cast<std::uint32_t>(D3D12TypeConversions::ToResourceStates(state))};
 }
 
-ERhiDescriptorAllocatorType D3D12DescriptorService::ResolveResourceViewDescriptorAllocatorType(
-    ERhiResourceViewKind kind) noexcept
+ERhiDescriptorAllocatorType D3D12DescriptorService::ResolveResourceViewDescriptorAllocatorType(ERhiResourceViewKind kind) noexcept
 {
 	switch (kind)
 	{
@@ -516,9 +491,7 @@ ERhiDescriptorAllocatorType D3D12DescriptorService::ResolveResourceViewDescripto
 	}
 }
 
-bool D3D12DescriptorService::WriteResourceViewDescriptor(
-    const RhiResourceViewDesc& desc,
-    RhiCpuDescriptorHandle destination) noexcept
+bool D3D12DescriptorService::WriteResourceViewDescriptor(const RhiResourceViewDesc& desc, RhiCpuDescriptorHandle destination) noexcept
 {
 	if (m_rhi == nullptr || !destination)
 	{
@@ -569,7 +542,7 @@ bool D3D12DescriptorService::WriteResourceViewDescriptor(
 			}
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-			viewDesc.Format = D3D12DescriptorFormatSelection::ResolveTextureShaderResourceViewFormat(desc.Format);
+			viewDesc.Format = D3D12TypeConversions::ToDxgiShaderResourceViewFormat(desc.Format);
 			viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			if (desc.TextureDimension == TextureResourceDimension::TextureCube)
 			{
@@ -706,8 +679,7 @@ D3D12DescriptorService::ResourceViewRecord* D3D12DescriptorService::FindResource
 	return record.IsAllocated() && record.generation == generation ? &record : nullptr;
 }
 
-const D3D12DescriptorService::ResourceViewRecord* D3D12DescriptorService::FindResourceViewRecord(
-    RhiResourceViewHandle view) const noexcept
+const D3D12DescriptorService::ResourceViewRecord* D3D12DescriptorService::FindResourceViewRecord(RhiResourceViewHandle view) const noexcept
 {
 	std::uint32_t recordIndex = 0;
 	std::uint16_t generation = 0;

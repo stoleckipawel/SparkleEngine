@@ -3,7 +3,6 @@
 
 #include "Debug/RendererCVars.h"
 #include "Frame/Graph/RenderFrameGraphFactory.h"
-#include "Frame/Graph/RenderProductGraphHandle.h"
 #include "Frame/RenderFrame.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Providers/RendererImageProviderStack.h"
@@ -134,43 +133,5 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	{
 		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(settings);
-	}
-}
-
-void FramePipeline::RefreshViewportRenderProducts() noexcept
-{
-	const RenderFrameGraphSettings settings = m_frameGraphSettings.OutputExtent.IsValid() && m_frameGraphSettings.RenderExtent.IsValid()
-	    ? m_frameGraphSettings
-	    : ResolveFrameGraphSettings();
-
-	m_viewportRenderProducts.Clear();
-	m_viewportRenderProducts.SetGeneration(m_viewportRenderRequest.Generation);
-	m_viewportRenderProducts.SetProduct(
-	    RenderOutputFlags::SceneColor,
-	    RenderProduct{
-	        .Handle = ToRenderProductHandle(m_frameResources.ViewportProducts.FinalSceneColor),
-	        .Extent = settings.OutputExtent,
-	        .Format = RenderProductFormat::ColorLdr});
-
-	if (m_frameResources.ViewportProducts.SceneDepth.IsValid()
-	    && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
-	{
-		m_viewportRenderProducts.SetProduct(
-		    RenderOutputFlags::SceneDepth,
-		    RenderProduct{
-		        .Handle = ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth),
-		        .Extent = settings.RenderExtent,
-		        .Format = RenderProductFormat::Float});
-	}
-
-	if (m_frameResources.ViewportProducts.Normals.IsValid()
-	    && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::Normals))
-	{
-		m_viewportRenderProducts.SetProduct(
-		    RenderOutputFlags::Normals,
-		    RenderProduct{
-		        .Handle = ToRenderProductHandle(m_frameResources.ViewportProducts.Normals),
-		        .Extent = settings.RenderExtent,
-		        .Format = RenderProductFormat::ColorHdr});
 	}
 }

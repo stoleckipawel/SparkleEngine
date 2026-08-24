@@ -59,9 +59,7 @@ namespace TextureDiagnosticsPresentation
 	std::optional<std::string> FindAuthoredSourcePath(const TextureDiagnosticsRow& row)
 	{
 		const std::optional<TextureDiagnosticMetadata> metadata = FindTextureDiagnosticMetadata(row);
-		return metadata.has_value() && !metadata->SourcePath.empty()
-		           ? std::optional<std::string>(metadata->SourcePath)
-		           : std::nullopt;
+		return metadata.has_value() && !metadata->SourcePath.empty() ? std::optional<std::string>(metadata->SourcePath) : std::nullopt;
 	}
 
 	const char* FormatTextureKind(TextureDiagnosticsKind kind) noexcept
@@ -105,18 +103,6 @@ namespace TextureDiagnosticsPresentation
 		}
 	}
 
-	const char* FormatResidency(TextureDiagnosticsResidencyState state) noexcept
-	{
-		switch (state)
-		{
-			case TextureDiagnosticsResidencyState::Resident:
-				return "Resident";
-			case TextureDiagnosticsResidencyState::Unloaded:
-			default:
-				return "Unloaded";
-		}
-	}
-
 	const char* FormatTextureFormat(const std::string& format) noexcept
 	{
 		return format.empty() ? "Unknown" : format.c_str();
@@ -125,19 +111,6 @@ namespace TextureDiagnosticsPresentation
 	std::string FormatExtent(const TextureDiagnosticsRow& row)
 	{
 		return std::format("{} x {}", row.Width, row.Height);
-	}
-
-	std::size_t CountLoadedTextures(const TextureDiagnosticsSnapshot& snapshot) noexcept
-	{
-		std::size_t loadedCount = 0;
-		for (const TextureDiagnosticsRow& row : snapshot)
-		{
-			if (row.Loaded)
-			{
-				++loadedCount;
-			}
-		}
-		return loadedCount;
 	}
 
 	std::uint64_t SumEstimatedTextureBytes(const TextureDiagnosticsSnapshot& snapshot) noexcept

@@ -6,12 +6,6 @@
 #include <cstdint>
 #include <vector>
 
-enum class MeshDiagnosticsResidencyState : std::uint8_t
-{
-	Unloaded,
-	Resident,
-};
-
 struct SPARKLE_RENDERER_API MeshDiagnosticsBounds final
 {
 	std::array<float, 3> Min = {0.0f, 0.0f, 0.0f};
@@ -24,7 +18,6 @@ struct SPARKLE_RENDERER_API MeshDiagnosticsRow final
 	std::uintptr_t MeshRuntimeId = 0;
 	std::uintptr_t GpuMeshRuntimeId = 0;
 	std::uint64_t MeshAssetId = 0;
-	MeshDiagnosticsResidencyState ResidencyState = MeshDiagnosticsResidencyState::Unloaded;
 	std::uint32_t VertexCount = 0;
 	std::uint32_t IndexCount = 0;
 	std::uint32_t TriangleCount = 0;

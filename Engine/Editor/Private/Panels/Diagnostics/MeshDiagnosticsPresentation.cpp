@@ -68,26 +68,15 @@ namespace MeshDiagnosticsPresentation
 	std::optional<std::string> FindAuthoredSourcePath(const MeshDiagnosticsRow& row)
 	{
 		const std::optional<MeshDiagnosticMetadata> metadata = FindMeshDiagnosticMetadata(row);
-		return metadata.has_value() && !metadata->SourcePath.empty()
-		           ? std::optional<std::string>(metadata->SourcePath)
-		           : std::nullopt;
-	}
-
-	const char* FormatResidency(MeshDiagnosticsResidencyState state) noexcept
-	{
-		switch (state)
-		{
-			case MeshDiagnosticsResidencyState::Resident:
-				return "Resident";
-			case MeshDiagnosticsResidencyState::Unloaded:
-			default:
-				return "Unloaded";
-		}
+		return metadata.has_value() && !metadata->SourcePath.empty() ? std::optional<std::string>(metadata->SourcePath) : std::nullopt;
 	}
 
 	std::string FormatMemorySummary(const MeshDiagnosticsRow& row)
 	{
-		return std::format("GPU {} / CPU {}", PanelDiagnosticsFormatting::FormatByteSize(row.EstimatedGpuByteSize), PanelDiagnosticsFormatting::FormatByteSize(row.EstimatedCpuByteSize));
+		return std::format(
+		    "GPU {} / CPU {}",
+		    PanelDiagnosticsFormatting::FormatByteSize(row.EstimatedGpuByteSize),
+		    PanelDiagnosticsFormatting::FormatByteSize(row.EstimatedCpuByteSize));
 	}
 
 	std::string FormatMaterial(const MeshDiagnosticsRow& row)
@@ -186,4 +175,3 @@ namespace MeshDiagnosticsPresentation
 		return MeshPreviewVertex{yawX, (y * cosPitch) - (yawZ * sinPitch), (y * sinPitch) + (yawZ * cosPitch)};
 	}
 }
-

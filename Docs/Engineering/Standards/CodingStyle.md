@@ -89,10 +89,11 @@ Ownership/lifetime and inheritance rules belong to [Repository Structure and Own
 Placement is part of coding style. A `static` helper, private class, or short local switch is not correctly placed merely because it is hidden inside one source file.
 
 - A rule expressed entirely in neutral/domain vocabulary belongs to the narrow owner of that vocabulary. Format classification belongs with the format contract; descriptor validity belongs with the descriptor; graph-resource validity belongs with the graph resource.
+- Place a function where the governing contract changes, not beside whichever caller first needed it. A helper that accepts only another subsystem's types and uses no caller-local state, native API fact, or capability is presumed misplaced until its caller-specific responsibility is demonstrated.
 - Backend-private code owns native type translation, API/device capability queries, native-object construction, and evidence-backed backend workarounds. It must not independently redefine neutral format, descriptor, resource, shader-stage, or state validity.
 - Before adding a local helper or validation block, search sibling backends/providers and the neutral owner for the same cases, predicates, switches, or error meaning. A second implementation of one invariant is a placement defect, even when both copies currently agree.
 - Do not respond by creating `Common`, `Utilities`, a generic helper bag, or a forwarding wrapper. Move the invariant to its narrow semantic owner and leave each consumer with one direct call; keep genuinely native conversions local.
-- When touching one implementation in a backend/provider family, audit its siblings. Review evidence names which logic is shared policy and which remains local because its native type, capability, lifetime, or failure contract is genuinely different.
+- When touching one implementation in a backend/provider family, audit its siblings. Review evidence names which logic is shared policy and which remains local because its native type, capability, lifetime, or failure contract is genuinely different. A repair is incomplete while a mirrored enum/record, duplicated derived field, copied case list, conversion between identical concepts, or old helper remains reachable.
 
 Code review blocks a wrong-owner or duplicated invariant as an ownership/maintainability defect rather than dismissing it as optional style.
 

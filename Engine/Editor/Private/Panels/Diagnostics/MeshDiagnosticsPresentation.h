@@ -27,7 +27,6 @@ namespace MeshDiagnosticsPresentation
 	std::string FormatMeshDisplayName(const MeshDiagnosticsRow& row);
 	std::string FormatMeshSourcePath(const MeshDiagnosticsRow& row);
 	std::optional<std::string> FindAuthoredSourcePath(const MeshDiagnosticsRow& row);
-	const char* FormatResidency(MeshDiagnosticsResidencyState state) noexcept;
 	std::string FormatMemorySummary(const MeshDiagnosticsRow& row);
 	std::string FormatMaterial(const MeshDiagnosticsRow& row);
 	std::string FormatBoundsExtent(const MeshDiagnosticsBounds& bounds);

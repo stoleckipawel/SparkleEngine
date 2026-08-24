@@ -9,8 +9,9 @@
 
 class D3D12TypeConversions final
 {
-  public:
+public:
 	static DXGI_FORMAT ToDxgiFormat(PixelFormat format) noexcept;
+	static DXGI_FORMAT ToDxgiShaderResourceViewFormat(PixelFormat format) noexcept;
 	static D3D12_COMPARISON_FUNC ToComparisonFunc(CompareOp compareOp) noexcept;
 	static ID3D12GraphicsCommandList* ToGraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept;
 	static ID3D12Resource* ToResource(RhiResourceHandle handle) noexcept;
@@ -24,7 +25,7 @@ class D3D12TypeConversions final
 	static D3D12_RESOURCE_DESC BuildBufferResourceDesc(const RhiBufferResourceDesc& desc) noexcept;
 	static D3D12_CLEAR_VALUE BuildClearValue(const RhiOptimizedClearValue& clearValue) noexcept;
 
-  private:
+private:
 	D3D12TypeConversions() = delete;
 	~D3D12TypeConversions() = delete;
 };

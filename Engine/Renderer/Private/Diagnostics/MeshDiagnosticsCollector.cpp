@@ -138,15 +138,16 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 
 		const std::uint32_t drawIndex = static_cast<std::uint32_t>(primitives.size());
 		primitives.push_back(
-		    PreparedRenderPrimitive{.Object = primitive.Object,
+		    PreparedRenderPrimitive{
+		        .Object = primitive.Object,
 		        .Draw = MeshDraw{
-		        .Transform = MeshDrawTransform{.WorldMatrix = MathUtils::IdentityFloat4x4(), .WorldInvTranspose = {}},
-		        .MaterialSlot = primitive.Static.Material.IsValid() ? primitive.Static.Material.GetIndex() : 0u,
-		        .Skinning = MeshDrawSkinning{.SkeletonAssetId = primitive.Static.Skeleton.GetAssetId()},
-		        .Source = MeshDrawSourceIdentity{.GpuSceneSlot = primitive.GpuSceneSlot},
-		        .Geometry = MeshDrawGeometry{
-		            .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(primitive.Static.MeshKind),
-		            .Mesh = gpuMesh != nullptr ? gpuMesh->GetHandle() : GpuMeshHandle{}}}});
+		            .Transform = MeshDrawTransform{.WorldMatrix = MathUtils::IdentityFloat4x4(), .WorldInvTranspose = {}},
+		            .MaterialSlot = primitive.Static.Material.IsValid() ? primitive.Static.Material.GetIndex() : 0u,
+		            .Skinning = MeshDrawSkinning{.SkeletonAssetId = primitive.Static.Skeleton.GetAssetId()},
+		            .Source = MeshDrawSourceIdentity{.GpuSceneSlot = primitive.GpuSceneSlot},
+		            .Geometry = MeshDrawGeometry{
+		                .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(primitive.Static.MeshKind),
+		                .Mesh = gpuMesh != nullptr ? gpuMesh->GetHandle() : GpuMeshHandle{}}}});
 		renderItems.push_back(
 		    MeshRenderItem{
 		        .Object = primitive.Object,
@@ -251,7 +252,6 @@ void MeshDiagnosticsCollector::PopulateMeshRow(MeshDiagnosticsRow& row, const Me
 	{
 		row.GpuMeshRuntimeId = reinterpret_cast<std::uintptr_t>(gpuMesh);
 		row.GpuResident = gpuMesh->IsValid();
-		row.ResidencyState = row.GpuResident ? MeshDiagnosticsResidencyState::Resident : MeshDiagnosticsResidencyState::Unloaded;
 		row.EstimatedGpuByteSize = static_cast<std::uint64_t>(gpuMesh->GetVertexBufferView().SizeInBytes)
 		    + static_cast<std::uint64_t>(gpuMesh->GetIndexBufferView().SizeInBytes);
 	}
