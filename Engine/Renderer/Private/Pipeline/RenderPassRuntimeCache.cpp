@@ -66,7 +66,6 @@ void RenderPassRuntimeCache::ReloadShaders()
 		throw Diagnostics::Error(
 		    std::string("Shader runtime replacement validation failed; active generation remains unchanged. ") + error.what());
 	}
-
 }
 
 std::unique_ptr<RenderPassRuntimeCache::ShaderRuntimeGeneration> RenderPassRuntimeCache::OpenGeneration(std::uint64_t generation) const
@@ -85,8 +84,7 @@ void RenderPassRuntimeCache::ValidateGenerationContracts(const ShaderRuntimeGene
 	std::unordered_set<ShaderTypeId> registeredShaderTypes;
 	for (const ShaderRegistrationDesc& registration : GlobalShaderRegistry::GetRegistrations())
 	{
-		if (registration.TypeId == 0 || registration.BuildParameterStructDescriptor == nullptr
-		    || !registeredShaderTypes.insert(registration.TypeId).second)
+		if (registration.TypeId == 0 || !registeredShaderTypes.insert(registration.TypeId).second)
 		{
 			throw Diagnostics::Error("Renderer shader registration catalog contains an invalid or duplicate shader type.");
 		}
@@ -101,11 +99,14 @@ void RenderPassRuntimeCache::ValidateGenerationContracts(const ShaderRuntimeGene
 		const PassParameterLayout parameterLayout = BuildShaderParameterLayout(registration);
 		if (generation.Map.ResolveString(entry->ShaderName) != registration.ShaderName
 		    || generation.Map.ResolveString(entry->EntryPoint) != registration.EntryPoint || entry->Stage != registration.Stage
-		    || entry->Features != registration.Features
+		    || entry->Features != registration.Features || entry->RayPayloadSizeInBytes != registration.RayTracing.PayloadSizeInBytes
+		    || entry->RayAttributeSizeInBytes != registration.RayTracing.AttributeSizeInBytes
+		    || entry->MinimumRayRecursionDepth != registration.RayTracing.MinimumRecursionDepth
+		    || entry->LocalRecordSizeInBytes != registration.RayTracing.LocalRecordSizeInBytes
+		    || entry->LocalRecordSignature != registration.RayTracing.LocalRecordSignature
 		    || entry->ParameterSignature != BuildShaderParameterSignature(parameterLayout))
 		{
-			throw Diagnostics::Error(
-			    std::format("Shader '{}' map entry does not match its registered contract.", registration.ShaderName));
+			throw Diagnostics::Error(std::format("Shader '{}' map entry does not match its registered contract.", registration.ShaderName));
 		}
 	}
 }

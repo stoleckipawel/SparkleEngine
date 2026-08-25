@@ -12,6 +12,7 @@
 void RenderScene::PromoteResidentGpuMeshes() noexcept
 {
 	bool changed = false;
+	bool materialPolicyChanged = false;
 	for (RenderPrimitive& primitive : m_primitives)
 	{
 		if (primitive.HasPendingStatic)
@@ -29,6 +30,7 @@ void RenderScene::PromoteResidentGpuMeshes() noexcept
 				primitive.GpuMeshResident = true;
 				primitive.HasPendingStatic = false;
 				changed = true;
+				materialPolicyChanged = true;
 			}
 			continue;
 		}
@@ -48,6 +50,10 @@ void RenderScene::PromoteResidentGpuMeshes() noexcept
 	if (changed)
 	{
 		++m_structuralRevision;
+	}
+	if (materialPolicyChanged)
+	{
+		RefreshMaskedRayTracingGeometry();
 	}
 
 	RetainReferencedGpuMeshes();
@@ -84,6 +90,11 @@ void RenderScene::ApplyValidatedDelta(const RenderSceneDelta& delta)
 	ApplyUpdates(delta, updateMeshes);
 	PublishResources(delta);
 	RetainReferencedGpuMeshes();
+	if (delta.ResetScene || !delta.Creates.empty() || !delta.Updates.empty() || !delta.Destroys.empty() || delta.Materials
+	    || delta.InstanceGroups.Published)
+	{
+		RefreshMaskedRayTracingGeometry();
+	}
 
 	m_sceneGeneration = delta.SceneGeneration;
 	m_sequenceNumber = delta.SequenceNumber;
@@ -222,6 +233,32 @@ void RenderScene::RetainReferencedGpuMeshes() noexcept
 	}
 
 	m_gpuMeshCache->RetainOnly(handles);
+}
+
+void RenderScene::RefreshMaskedRayTracingGeometry() noexcept
+{
+	m_hasMaskedRayTracingGeometry = false;
+	const auto isMasked = [this](MaterialHandle material) noexcept
+	{
+		return material.IsValid() && material.GetGeneration() == m_materials.Generation && material.GetIndex() < m_materials.Values.size()
+		    && m_materials.Values[material.GetIndex()].alphaMode == AlphaMode::Mask;
+	};
+	for (const RenderPrimitive& primitive : m_primitives)
+	{
+		if (isMasked(primitive.Static.Material))
+		{
+			m_hasMaskedRayTracingGeometry = true;
+			return;
+		}
+	}
+	for (const RenderMeshInstanceGroupData& group : m_instanceGroups)
+	{
+		if (isMasked(group.Material))
+		{
+			m_hasMaskedRayTracingGeometry = true;
+			return;
+		}
+	}
 }
 
 bool RenderScene::IsObjectAvailable(RenderObjectId primitiveId, const RenderSceneDelta& delta) const noexcept

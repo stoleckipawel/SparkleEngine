@@ -15,6 +15,7 @@ struct ShaderContract final
 	std::string entryPoint;
 	ShaderStage stage = ShaderStage::Count;
 	ShaderFeatureFlags features = ShaderFeatureFlags::None;
+	RayTracingShaderMetadata rayTracing;
 	ShaderParameterStructDescriptor parameterStruct;
 	PassParameterLayout parameterLayout;
 	bool hasParameterStruct = false;

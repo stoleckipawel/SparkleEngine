@@ -4,6 +4,7 @@
 
 #include "Config/DepthConvention.h"
 #include "Core/Public/Math/WorldCoordinateSystem.h"
+#include "Debug/RendererCVars.h"
 #include "View/RenderView.h"
 #include "View/RenderViewState.h"
 
@@ -88,7 +89,7 @@ void RenderViewBuilder::Build(RenderView& output, RenderViewState& state, const 
 	const float renderHeight = static_cast<float>((std::max) (request.RenderExtent.Height, 1u));
 	output.uniform.ViewportSize = {renderWidth, renderHeight};
 	output.uniform.ViewportSizeInv = {1.0f / renderWidth, 1.0f / renderHeight};
-	output.uniform.ViewModeIndex = static_cast<std::uint32_t>(request.ViewMode);
+	output.uniform.ViewModeIndex = static_cast<std::uint32_t>(CVarRenderViewMode.Get());
 
 	output.temporalUniform = state.BuildTemporal(
 	    RenderViewStateBuildInput{

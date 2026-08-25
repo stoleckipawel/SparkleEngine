@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GameFramework/Public/Rendering/RenderViewInput.h"
-#include "Renderer/Public/Debug/RenderViewMode.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 
@@ -16,7 +15,6 @@ struct RenderViewBuildRequest final
 	const ViewportRenderRequest& ViewportRequest;
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
-	RenderViewMode ViewMode = RenderViewMode::Lit;
 	std::uint64_t FrameId = 0u;
 	std::uint64_t SceneGeneration = 0u;
 	std::uint64_t ShaderGeneration = 0u;

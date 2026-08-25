@@ -11,9 +11,8 @@
 #include <utility>
 #include <vector>
 
-class ShaderParameterLayoutAssembly final
+namespace ShaderParameterLayoutAssembly
 {
-public:
 	struct Entry final
 	{
 		PassParameterDesc Parameter;
@@ -21,34 +20,21 @@ public:
 		std::string ShaderName;
 	};
 
-	static ShaderStageVisibility GetDefaultVisibility(ShaderStage stage) noexcept
-	{
-		switch (stage)
-		{
-			case ShaderStage::Vertex: return ShaderStageVisibility::Vertex;
-			case ShaderStage::Pixel: return ShaderStageVisibility::Pixel;
-			case ShaderStage::Compute: return ShaderStageVisibility::Compute;
-			case ShaderStage::Geometry:
-			case ShaderStage::Hull:
-			case ShaderStage::Domain: return ShaderStageVisibility::AllGraphics;
-			case ShaderStage::Count:
-			default: return ShaderStageVisibility::None;
-		}
-	}
-
-	static PassParameterDesc BuildParameter(const ShaderParameterStructFieldDescriptor& field, ShaderStage stage)
+	PassParameterDesc BuildParameter(const ShaderParameterStructFieldDescriptor& field, ShaderStage stage)
 	{
 		return PassParameterDesc{
 		    .Name = field.Name,
 		    .Kind = field.SemanticKind,
 		    .ResourceDomain = field.ResourceDomain,
 		    .Access = field.Access,
-		    .Visibility = field.Visibility == ShaderStageVisibility::None ? GetDefaultVisibility(stage) : field.Visibility,
+		    .Visibility = field.Visibility == ShaderStageVisibility::None
+		        ? ShaderParameterLayoutBuilder::GetDefaultVisibility(stage)
+		        : field.Visibility,
 		    .ArrayCount = field.ArrayCount,
 		    .ValueSizeInBytes = field.ValueSizeInBytes};
 	}
 
-	static std::uint32_t Category(const PassParameterDesc& parameter) noexcept
+	std::uint32_t Category(const PassParameterDesc& parameter) noexcept
 	{
 		if (parameter.Kind == ShaderParameterSemanticKind::RenderTarget || parameter.Kind == ShaderParameterSemanticKind::DepthTarget)
 		{
@@ -57,14 +43,41 @@ public:
 		return parameter.Kind == ShaderParameterSemanticKind::SamplerSet ? 2u : 1u;
 	}
 
-	static bool Matches(const Entry& current, const PassParameterDesc& incoming, std::uint32_t alignment) noexcept
+	bool Matches(const Entry& current, const PassParameterDesc& incoming, std::uint32_t alignment) noexcept
 	{
 		return current.Parameter.Kind == incoming.Kind && current.Parameter.ResourceDomain == incoming.ResourceDomain
 		    && current.Parameter.Access == incoming.Access && current.Parameter.ArrayCount == incoming.ArrayCount
 		    && current.Parameter.ValueSizeInBytes == incoming.ValueSizeInBytes
 		    && (current.Parameter.Kind != ShaderParameterSemanticKind::UniformData || current.ValueAlignmentInBytes == alignment);
 	}
-};
+}
+
+ShaderStageVisibility ShaderParameterLayoutBuilder::GetDefaultVisibility(ShaderStage stage) noexcept
+{
+	switch (stage)
+	{
+		case ShaderStage::Vertex:
+			return ShaderStageVisibility::Vertex;
+		case ShaderStage::Pixel:
+			return ShaderStageVisibility::Pixel;
+		case ShaderStage::Compute:
+			return ShaderStageVisibility::Compute;
+		case ShaderStage::RayGeneration:
+		case ShaderStage::Miss:
+		case ShaderStage::ClosestHit:
+		case ShaderStage::AnyHit:
+		case ShaderStage::Intersection:
+		case ShaderStage::Callable:
+			return ShaderStageVisibility::RayTracing;
+		case ShaderStage::Geometry:
+		case ShaderStage::Hull:
+		case ShaderStage::Domain:
+			return ShaderStageVisibility::AllGraphics;
+		case ShaderStage::Count:
+		default:
+			return ShaderStageVisibility::None;
+	}
+}
 
 PassParameterLayout ShaderParameterLayoutBuilder::Build(std::span<const ShaderRegistrationDesc* const> shaders)
 {
@@ -77,7 +90,7 @@ PassParameterLayout ShaderParameterLayoutBuilder::Build(std::span<const ShaderRe
 	std::string debugName;
 	for (const ShaderRegistrationDesc* shader : shaders)
 	{
-		if (shader == nullptr || shader->BuildParameterStructDescriptor == nullptr)
+		if (shader == nullptr)
 		{
 			throw Diagnostics::Error("Shader parameter layout generation received an incomplete shader registration.");
 		}
@@ -86,6 +99,10 @@ PassParameterLayout ShaderParameterLayoutBuilder::Build(std::span<const ShaderRe
 			debugName += '+';
 		}
 		debugName += shader->ShaderName;
+		if (shader->BuildParameterStructDescriptor == nullptr)
+		{
+			continue;
+		}
 		const ShaderParameterStructDescriptor descriptor = shader->BuildParameterStructDescriptor();
 		for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 		{

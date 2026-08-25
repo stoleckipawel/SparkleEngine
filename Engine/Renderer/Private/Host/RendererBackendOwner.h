@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Host/RendererBackendConfiguration.h"
-#include "RHI/Public/Formats/PixelFormat.h"
-
 #include <memory>
 
 class RenderDeviceServices;
@@ -15,7 +13,6 @@ class RendererBackendOwner final
   public:
 	RendererBackendOwner(
 	    Window& window,
-	    PixelFormat backBufferFormat,
 	    const RendererBackendConfiguration& configuration) noexcept;
 	~RendererBackendOwner() noexcept;
 

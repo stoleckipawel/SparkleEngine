@@ -29,25 +29,24 @@ bool HasShaderFeature(ShaderFeatureFlags value, ShaderFeatureFlags flag) noexcep
 	return (static_cast<std::uint32_t>(value) & static_cast<std::uint32_t>(flag)) == static_cast<std::uint32_t>(flag);
 }
 
-class ShaderMapValidation final
+namespace ShaderMapValidation
 {
-public:
-	template <typename T> static bool ContainsRange(std::span<const T> values, std::uint32_t offset, std::uint32_t count) noexcept
+	template <typename T> bool ContainsRange(std::span<const T> values, std::uint32_t offset, std::uint32_t count) noexcept
 	{
 		return offset <= values.size() && count <= values.size() - offset;
 	}
 
-	static bool ContainsString(std::span<const std::uint8_t> table, ShaderMapStringRef ref) noexcept
+	bool ContainsString(std::span<const std::uint8_t> table, ShaderMapStringRef ref) noexcept
 	{
 		return ContainsRange(table, ref.OffsetInBytes, ref.SizeInBytes);
 	}
 
-	static bool ContainsCode(std::span<const std::uint8_t> blob, ShaderCodeBlobRef ref) noexcept
+	bool ContainsCode(std::span<const std::uint8_t> blob, ShaderCodeBlobRef ref) noexcept
 	{
 		return ref.IsValid() && ContainsRange(blob, ref.OffsetInBytes, ref.SizeInBytes);
 	}
 
-	static void ValidateReflection(
+	void ValidateReflection(
 	    const CookedShaderReflectionRecord& reflection,
 	    std::span<const CookedShaderResourceBindingRecord> resources,
 	    std::span<const CookedShaderConstantBufferRecord> constantBuffers,
@@ -113,7 +112,7 @@ public:
 			}
 		}
 	}
-};
+}
 
 CookedShaderLibrary CookedShaderLibrary::Open(const std::filesystem::path& path)
 {
@@ -238,6 +237,18 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 		if (entry.BinaryFormat != GetShaderBinaryFormat(entry.Target) || library.Find(entry.CodeHash) == nullptr)
 		{
 			throw Diagnostics::Error("Global shader map entry references missing or incompatible shader code.");
+		}
+		const bool hasLocalRecord = entry.LocalRecordSizeInBytes != 0 || entry.LocalRecordSignature != 0;
+		const bool hasSharedRayTracingContract = entry.RayPayloadSizeInBytes != 0 || entry.RayAttributeSizeInBytes != 0
+		    || entry.MinimumRayRecursionDepth != 0;
+		if ((entry.LocalRecordSizeInBytes == 0) != (entry.LocalRecordSignature == 0)
+		    || (entry.Stage == ShaderStage::RayGeneration
+		        && (entry.RayPayloadSizeInBytes == 0 || entry.RayAttributeSizeInBytes == 0 || entry.MinimumRayRecursionDepth == 0))
+		    || (IsRayTracingShaderStage(entry.Stage) && entry.Stage != ShaderStage::RayGeneration && hasSharedRayTracingContract)
+		    || (!IsRayTracingShaderStage(entry.Stage)
+		        && (hasSharedRayTracingContract || hasLocalRecord)))
+		{
+			throw Diagnostics::Error("Global shader map entry contains an invalid ray-tracing contract.");
 		}
 		if (!entry.ShaderName.IsValid() || !entry.EntryPoint.IsValid() || !entry.BackendName.IsValid() || !entry.CodegenTarget.IsValid()
 		    || !ShaderMapValidation::ContainsString(map.m_stringTable, entry.ShaderName)

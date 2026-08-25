@@ -60,7 +60,7 @@ class VulkanCommandQueue;
 
 class VulkanRhi final
 {
-  public:
+public:
 	VulkanRhi() noexcept;
 	~VulkanRhi() noexcept;
 
@@ -105,8 +105,11 @@ class VulkanRhi final
 	PFN_vkGetAccelerationStructureDeviceAddressKHR GetAccelerationStructureDeviceAddress() const noexcept;
 	PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV GetPartitionedAccelerationStructureBuildSizes() const noexcept;
 	PFN_vkCmdBuildPartitionedAccelerationStructuresNV GetCmdBuildPartitionedAccelerationStructures() const noexcept;
+	PFN_vkCreateRayTracingPipelinesKHR GetCreateRayTracingPipelines() const noexcept;
+	PFN_vkGetRayTracingShaderGroupHandlesKHR GetRayTracingShaderGroupHandles() const noexcept;
+	PFN_vkCmdTraceRaysKHR GetCmdTraceRays() const noexcept;
 
-  private:
+private:
 	struct PhysicalDeviceCandidate final
 	{
 		VkPhysicalDevice Device = VK_NULL_HANDLE;
@@ -173,6 +176,9 @@ class VulkanRhi final
 	PFN_vkGetAccelerationStructureDeviceAddressKHR m_getAccelerationStructureDeviceAddress = nullptr;
 	PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV m_getPartitionedAccelerationStructureBuildSizes = nullptr;
 	PFN_vkCmdBuildPartitionedAccelerationStructuresNV m_cmdBuildPartitionedAccelerationStructures = nullptr;
+	PFN_vkCreateRayTracingPipelinesKHR m_createRayTracingPipelines = nullptr;
+	PFN_vkGetRayTracingShaderGroupHandlesKHR m_getRayTracingShaderGroupHandles = nullptr;
+	PFN_vkCmdTraceRaysKHR m_cmdTraceRays = nullptr;
 	std::vector<std::string> m_enabledInstanceExtensions;
 	std::vector<std::string> m_enabledDeviceExtensions;
 	std::vector<std::string> m_enabledLayers;

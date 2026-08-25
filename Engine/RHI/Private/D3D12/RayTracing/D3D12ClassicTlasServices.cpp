@@ -16,7 +16,7 @@
 
 class D3D12ClassicTlasTranslation final
 {
-  public:
+public:
 	static std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName)
 	{
 		return debugName.empty() ? std::wstring(defaultDebugName) : std::wstring(debugName);
@@ -42,7 +42,8 @@ class D3D12ClassicTlasTranslation final
 };
 
 D3D12ClassicTlasServices::D3D12ClassicTlasServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator) noexcept :
-    m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
+    m_rhi(&rhi),
+    m_memoryAllocator(&memoryAllocator)
 {
 }
 
@@ -50,7 +51,7 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12ClassicTlasServices::GetClas
     std::uint32_t instanceCount,
     ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
-	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing)
+	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure)
 	{
 		return {};
 	}

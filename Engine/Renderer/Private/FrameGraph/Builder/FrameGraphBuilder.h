@@ -5,6 +5,7 @@
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "Pipeline/RasterPassRenderState.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cassert>
 #include <string>
@@ -17,6 +18,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
+#include "RHI/Public/Shaders/ShaderParameterLayoutBuilder.h"
 
 class FrameGraphBuilder final
 {
@@ -159,26 +161,65 @@ public:
 		    });
 	}
 
+	template <typename TRayGenerationShader> void TraceRays(
+	    std::string_view label,
+	    const RayTracingPipelineComposition& composition,
+	    TypedPassParameterInstance<typename TRayGenerationShader::Parameters>& parameters,
+	    const RayTracingDispatchDimensions& dimensions)
+	{
+		const ShaderRegistrationDesc& shader = GlobalShader<TRayGenerationShader>::GetRegistration();
+		m_renderPassRuntimeCache.MaterializeRayTracingRuntime<TRayGenerationShader>(composition);
+		const RayTracingPassPipelineRuntime runtime = m_renderPassRuntimeCache.GetRayTracingRuntime<TRayGenerationShader>(composition);
+		const auto regionEnd = [](const RhiRayTracingShaderTableRegion& region) noexcept
+		{
+			return region.OffsetInBytes + region.SizeInBytes;
+		};
+		const std::uint64_t tableSize = std::max(
+		    {regionEnd(runtime.ShaderTable.GetRayGenerationRegion()),
+		        regionEnd(runtime.ShaderTable.GetMissRegion()),
+		        regionEnd(runtime.ShaderTable.GetHitGroupRegion()),
+		        regionEnd(runtime.ShaderTable.GetCallableRegion())});
+		FrameGraphBufferHandle shaderTable = m_frameGraph.ReservePersistentBuffer(
+		    FrameGraphBufferDesc::Create(std::string(shader.ShaderName) + "ShaderTable", tableSize),
+		    ResourceState::RayTracingShaderTable);
+		m_frameGraph.BindPersistentBuffer(shaderTable, runtime.ShaderTable.GetResource(), ResourceState::RayTracingShaderTable);
+		const std::string diagnosticLabel(label);
+		m_frameGraph.AddRayTracingPass(
+		    diagnosticLabel,
+		    parameters,
+		    shaderTable,
+		    [runtime, dimensions, diagnosticLabel](
+		        PassCommandContext& context,
+		        TypedPassParameterInstance<typename TRayGenerationShader::Parameters>& passParameters)
+		    {
+			    const bool valid =
+			        passParameters.Sync() && ValidateShaderParameters(passParameters.GetPassParameterSet(), diagnosticLabel.c_str());
+			    assert(valid);
+			    BindRayTracingShaderPass(
+			        context.Commands,
+			        context.Resources,
+			        runtime.BindingLayout,
+			        runtime.Pipeline,
+			        passParameters.GetPassParameterSet());
+			    context.Commands.TraceRays(
+			        TraceRaysDesc{
+			            .Pipeline = &runtime.Pipeline,
+			            .ShaderTable = &runtime.ShaderTable,
+			            .RayGeneration = runtime.ShaderTable.GetRayGenerationRegion(),
+			            .Miss = runtime.ShaderTable.GetMissRegion(),
+			            .HitGroup = runtime.ShaderTable.GetHitGroupRegion(),
+			            .Callable = runtime.ShaderTable.GetCallableRegion(),
+			            .Width = dimensions.Width,
+			            .Height = dimensions.Height,
+			            .Depth = dimensions.Depth});
+		    });
+	}
+
 	template <typename TShader> TypedPassParameterInstance<typename TShader::Parameters>& AllocParameters()
 	{
 		const ShaderRegistrationDesc& shader = GlobalShader<TShader>::GetRegistration();
-		ShaderStageVisibility visibility = ShaderStageVisibility::None;
-		switch (shader.Stage)
-		{
-			case ShaderStage::Vertex:
-				visibility = ShaderStageVisibility::Vertex;
-				break;
-			case ShaderStage::Pixel:
-				visibility = ShaderStageVisibility::Pixel;
-				break;
-			case ShaderStage::Compute:
-				visibility = ShaderStageVisibility::Compute;
-				break;
-			case ShaderStage::Count:
-			default:
-				assert(false && "Graph parameters require a concrete shader stage.");
-				break;
-		}
+		const ShaderStageVisibility visibility = ShaderParameterLayoutBuilder::GetDefaultVisibility(shader.Stage);
+		assert(visibility != ShaderStageVisibility::None && "Graph parameters require a concrete shader stage.");
 		return m_frameGraph.AllocParameters<typename TShader::Parameters>(shader.ShaderName.data(), visibility);
 	}
 

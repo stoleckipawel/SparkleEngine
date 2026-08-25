@@ -23,6 +23,10 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	static std::unique_ptr<RenderDeviceServices> Create(Window& window, ERhiBackendApi backendApi) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,
+	    ERhiBackendApi backendApi,
+	    RhiInterposerHooks interposerHooks) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(
+	    Window& window,
 	    PixelFormat backBufferFormat) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,

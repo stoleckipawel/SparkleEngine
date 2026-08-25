@@ -15,12 +15,9 @@ static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("
 
 VulkanRenderCommandList::VulkanRenderCommandList()
 {
-	m_graphicsDescriptorSets.reserve(8);
-	m_computeDescriptorSets.reserve(8);
-	m_graphicsDirtyDescriptorSets.reserve(8);
-	m_computeDirtyDescriptorSets.reserve(8);
-	m_graphicsBoundDescriptorSets.reserve(8);
-	m_computeBoundDescriptorSets.reserve(8);
+	ReserveShaderBindingState(m_graphicsBindings, 8);
+	ReserveShaderBindingState(m_computeBindings, 8);
+	ReserveShaderBindingState(m_rayTracingBindings, 8);
 
 	m_retainedDescriptorTables.reserve(32);
 	m_retainedDescriptorHandles.reserve(32);
@@ -59,12 +56,9 @@ void VulkanRenderCommandList::SetNativeCommandBuffer(
 	m_depthStencil = VK_NULL_HANDLE;
 	m_depthStencilAspectMask = 0;
 	m_hasScissorRect = false;
-	m_graphicsDescriptorSets.clear();
-	m_computeDescriptorSets.clear();
-	m_graphicsDirtyDescriptorSets.clear();
-	m_computeDirtyDescriptorSets.clear();
-	m_graphicsBoundDescriptorSets.clear();
-	m_computeBoundDescriptorSets.clear();
+	ClearShaderBindingDescriptors(m_graphicsBindings);
+	ClearShaderBindingDescriptors(m_computeBindings);
+	ClearShaderBindingDescriptors(m_rayTracingBindings);
 	m_retainedDescriptorTables.clear();
 	m_retainedDescriptorHandles.clear();
 	m_retainedDescriptorBuffers.clear();
@@ -234,11 +228,11 @@ void VulkanRenderCommandList::SetPipeline(const RenderPipeline& pipeline) noexce
 	if (vulkanPipeline.GetBindPoint() == VK_PIPELINE_BIND_POINT_COMPUTE)
 	{
 		EndDynamicRenderingIfNeeded();
-		m_computePipelineLayout = vulkanPipeline.GetPipelineLayout();
+		m_computeBindings.PipelineLayout = vulkanPipeline.GetPipelineLayout();
 	}
 	else
 	{
-		m_graphicsPipelineLayout = vulkanPipeline.GetPipelineLayout();
+		m_graphicsBindings.PipelineLayout = vulkanPipeline.GetPipelineLayout();
 	}
 	vkCmdBindPipeline(m_commandBuffer, vulkanPipeline.GetBindPoint(), vulkanPipeline.GetPipeline());
 }

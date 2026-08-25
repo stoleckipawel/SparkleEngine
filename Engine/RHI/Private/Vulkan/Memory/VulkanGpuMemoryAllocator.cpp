@@ -101,7 +101,7 @@ VulkanGpuMemoryAllocator::VulkanGpuMemoryAllocator(VulkanRhi& rhi) noexcept :
 	    m_rhi.GetEnabledDeviceExtensions().end(),
 	    [](const std::string& extension) noexcept { return extension == VK_EXT_MEMORY_BUDGET_EXTENSION_NAME; });
 	VmaAllocatorCreateFlags allocatorFlags = memoryBudgetExtensionEnabled ? VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT : 0;
-	if (m_rhi.GetRayTracingCapabilities().SupportsRayTracing)
+	if (m_rhi.GetRayTracingCapabilities().SupportsAccelerationStructure)
 	{
 		allocatorFlags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 	}

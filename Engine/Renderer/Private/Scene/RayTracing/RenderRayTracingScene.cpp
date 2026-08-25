@@ -23,7 +23,7 @@ RenderRayTracingScene::RenderRayTracingScene(
 	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
 	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
 	m_performanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
-	if (!m_capabilityReport.SupportsRayTracing)
+	if (!m_capabilityReport.SupportsAccelerationStructure)
 	{
 		return;
 	}

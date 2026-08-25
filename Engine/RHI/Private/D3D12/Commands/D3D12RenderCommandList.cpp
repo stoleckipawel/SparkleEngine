@@ -19,7 +19,9 @@ D3D12RenderCommandList::D3D12RenderCommandList(
     D3D12RenderHardwareInterface& owner,
     ID3D12GraphicsCommandList7* commandList,
     ERhiQueueType queueType) noexcept :
-    m_owner(&owner), m_commandList(commandList), m_queueType(queueType)
+    m_owner(&owner),
+    m_commandList(commandList),
+    m_queueType(queueType)
 {
 	m_recordingResourceUses.reserve(32);
 }
@@ -159,4 +161,17 @@ void D3D12RenderCommandList::SetComputeBindingLayout(const RenderBindingLayout& 
 	m_commandList->SetComputeRootSignature(nativeBindingLayout.GetRootSignature().GetRaw());
 }
 
-void D3D12RenderCommandList::ResetBoundState() noexcept {}
+void D3D12RenderCommandList::SetRayTracingBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
+{
+	if (m_commandList == nullptr)
+	{
+		return;
+	}
+	const auto& nativeBindingLayout = static_cast<const D3D12BindingLayout&>(bindingLayout);
+	m_commandList->SetComputeRootSignature(nativeBindingLayout.GetRootSignature().GetRaw());
+}
+
+void D3D12RenderCommandList::ResetBoundState() noexcept
+{
+	m_boundRayTracingPipeline = nullptr;
+}

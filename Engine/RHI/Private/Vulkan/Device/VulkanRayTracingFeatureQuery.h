@@ -15,12 +15,13 @@ struct VulkanRayTracingFeatureStatus final
 	bool SupportsRayTracingPipelineFeature = false;
 	bool SupportsRayQueryFeature = false;
 	bool SupportsPartitionedAccelerationStructureFeature = false;
+	bool EnabledAccelerationStructure = false;
+	bool EnabledInlineRayQuery = false;
+	bool EnabledRayTracingPipeline = false;
 	bool EnabledPartitionedAccelerationStructure = false;
-	bool EnabledBackend = false;
 };
 
-class VulkanRayTracingFeatureQuery final
+namespace VulkanRayTracingFeatureQuery
 {
-  public:
-	static VulkanRayTracingFeatureStatus Query(VkPhysicalDevice physicalDevice) noexcept;
-};
+	VulkanRayTracingFeatureStatus Query(VkPhysicalDevice physicalDevice) noexcept;
+}

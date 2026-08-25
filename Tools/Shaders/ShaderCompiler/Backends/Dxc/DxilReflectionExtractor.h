@@ -3,10 +3,10 @@
 #include "ShaderReflection.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef NOMINMAX
-	#define NOMINMAX
+  #define NOMINMAX
 #endif
 #include <ObjIdl.h>
 #include <Unknwn.h>
@@ -21,16 +21,13 @@
 // DXC and D3D12 reflection symbols stay confined to Backends/Dxc/.
 class DxilReflectionExtractor final
 {
-  public:
+public:
 	DxilReflectionExtractor() = delete;
 
-	static ShaderReflection Extract(
-	    IDxcUtils& utils,
-	    IDxcResult* result,
-	    std::span<const std::uint8_t> bytecode,
-	    ShaderStage stage);
+	static ShaderReflection Extract(IDxcUtils& utils, IDxcResult* result, std::span<const std::uint8_t> bytecode, ShaderStage stage);
+	static ShaderReflection ExtractLibrary(IDxcUtils& utils, IDxcResult* result, std::string_view entryPoint);
 
-  private:
+private:
 	static CookedShaderResourceKind MapResourceKind(D3D_SHADER_INPUT_TYPE type, D3D_SRV_DIMENSION dim);
 	static CookedShaderResourceDimension MapDimension(D3D_SRV_DIMENSION dim);
 	static bool IsReadOnlyKind(CookedShaderResourceKind kind);

@@ -171,6 +171,18 @@ void BindRasterShaderPass(
 	    bindLayout);
 }
 
+void BindRayTracingShaderPass(
+    RenderCommandContext& commandContext,
+    const FrameGraphResourceCommands& resources,
+    const RenderBindingLayout& bindingLayout,
+    const RayTracingPipeline& pipeline,
+    const PassParameterSet& parameterSet) noexcept
+{
+	resources.BindGlobalDescriptorState(commandContext);
+	commandContext.SetRayTracingPipeline(pipeline);
+	PassBinder::BindRayTracing(commandContext, resources, bindingLayout, parameterSet);
+}
+
 void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept
 {
 	std::string message = "Shader pass parameter validation failed";

@@ -8,12 +8,12 @@
 
 ShaderStageVisibility operator|(ShaderStageVisibility lhs, ShaderStageVisibility rhs) noexcept
 {
-	return static_cast<ShaderStageVisibility>(static_cast<std::uint8_t>(lhs) | static_cast<std::uint8_t>(rhs));
+	return static_cast<ShaderStageVisibility>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
 }
 
 ShaderStageVisibility operator&(ShaderStageVisibility lhs, ShaderStageVisibility rhs) noexcept
 {
-	return static_cast<ShaderStageVisibility>(static_cast<std::uint8_t>(lhs) & static_cast<std::uint8_t>(rhs));
+	return static_cast<ShaderStageVisibility>(static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
 }
 
 ShaderStageVisibility& operator|=(ShaderStageVisibility& lhs, ShaderStageVisibility rhs) noexcept
@@ -24,7 +24,7 @@ ShaderStageVisibility& operator|=(ShaderStageVisibility& lhs, ShaderStageVisibil
 
 bool HasAnyShaderStageVisibility(ShaderStageVisibility value, ShaderStageVisibility flags) noexcept
 {
-	return static_cast<std::uint8_t>(value & flags) != 0;
+	return static_cast<std::uint16_t>(value & flags) != 0;
 }
 
 PassParameterLayout::PassParameterLayout() = default;

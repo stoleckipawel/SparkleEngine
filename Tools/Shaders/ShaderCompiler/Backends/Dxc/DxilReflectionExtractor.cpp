@@ -20,8 +20,7 @@ CookedShaderResourceKind DxilReflectionExtractor::MapResourceKind(D3D_SHADER_INP
 		case D3D_SIT_SAMPLER:
 			return CookedShaderResourceKind::Sampler;
 		case D3D_SIT_UAV_RWTYPED:
-			return (dim == D3D_SRV_DIMENSION_BUFFER) ? CookedShaderResourceKind::RWTypedBuffer
-			                                         : CookedShaderResourceKind::RWTexture;
+			return (dim == D3D_SRV_DIMENSION_BUFFER) ? CookedShaderResourceKind::RWTypedBuffer : CookedShaderResourceKind::RWTexture;
 		case D3D_SIT_STRUCTURED:
 			return CookedShaderResourceKind::StructuredBuffer;
 		case D3D_SIT_UAV_RWSTRUCTURED:
@@ -146,7 +145,7 @@ ShaderReflection DxilReflectionExtractor::Extract(
 {
 	ShaderReflection reflection;
 	ShaderReflection& outReflection = reflection;
-	(void)bytecode;
+	(void) bytecode;
 
 	if (result == nullptr)
 	{
@@ -156,8 +155,7 @@ ShaderReflection DxilReflectionExtractor::Extract(
 	// DXC exposes reflection as a separate output blob.
 	// Query DXC_OUT_REFLECTION directly instead of walking the container.
 	Microsoft::WRL::ComPtr<IDxcBlob> reflectionBlob;
-	HRESULT hr = result->GetOutput(
-	    DXC_OUT_REFLECTION, IID_PPV_ARGS(reflectionBlob.ReleaseAndGetAddressOf()), nullptr);
+	HRESULT hr = result->GetOutput(DXC_OUT_REFLECTION, IID_PPV_ARGS(reflectionBlob.ReleaseAndGetAddressOf()), nullptr);
 	if (FAILED(hr) || !reflectionBlob || reflectionBlob->GetBufferSize() == 0)
 	{
 		throw Diagnostics::Error("DXIL reflection: DXC produced no reflection part");
@@ -188,11 +186,15 @@ ShaderReflection DxilReflectionExtractor::Extract(
 	{
 		ID3D12ShaderReflectionConstantBuffer* cb = shaderReflection->GetConstantBufferByIndex(i);
 		if (cb == nullptr)
-			continue;
+		{
+			throw Diagnostics::Error("DXIL reflection could not read a constant-buffer declaration.");
+		}
 
 		D3D12_SHADER_BUFFER_DESC cbDesc{};
 		if (FAILED(cb->GetDesc(&cbDesc)))
-			continue;
+		{
+			throw Diagnostics::Error("DXIL reflection could not read a constant-buffer declaration.");
+		}
 
 		ShaderReflectionConstantBuffer outCb;
 		outCb.Name = cbDesc.Name ? cbDesc.Name : "";
@@ -203,16 +205,22 @@ ShaderReflection DxilReflectionExtractor::Extract(
 		{
 			ID3D12ShaderReflectionVariable* var = cb->GetVariableByIndex(v);
 			if (var == nullptr)
-				continue;
+			{
+				throw Diagnostics::Error("DXIL reflection could not read a constant-buffer member.");
+			}
 
 			D3D12_SHADER_VARIABLE_DESC vDesc{};
 			if (FAILED(var->GetDesc(&vDesc)))
-				continue;
+			{
+				throw Diagnostics::Error("DXIL reflection could not read a constant-buffer member.");
+			}
 
 			ID3D12ShaderReflectionType* type = var->GetType();
 			D3D12_SHADER_TYPE_DESC tDesc{};
-			if (type != nullptr)
-				type->GetDesc(&tDesc);
+			if (type == nullptr || FAILED(type->GetDesc(&tDesc)))
+			{
+				throw Diagnostics::Error("DXIL reflection could not read a constant-buffer member type.");
+			}
 
 			ShaderReflectionConstantBufferMember member;
 			member.Name = vDesc.Name ? vDesc.Name : "";
@@ -237,7 +245,9 @@ ShaderReflection DxilReflectionExtractor::Extract(
 	{
 		D3D12_SHADER_INPUT_BIND_DESC bindDesc{};
 		if (FAILED(shaderReflection->GetResourceBindingDesc(i, &bindDesc)))
-			continue;
+		{
+			throw Diagnostics::Error("DXIL reflection could not read a resource binding.");
+		}
 
 		ShaderReflectionResourceBinding binding;
 		binding.Name = bindDesc.Name ? bindDesc.Name : "";
@@ -261,8 +271,7 @@ ShaderReflection DxilReflectionExtractor::Extract(
 				}
 			}
 		}
-		else if (binding.Kind == CookedShaderResourceKind::StructuredBuffer ||
-		         binding.Kind == CookedShaderResourceKind::RWStructuredBuffer)
+		else if (binding.Kind == CookedShaderResourceKind::StructuredBuffer || binding.Kind == CookedShaderResourceKind::RWStructuredBuffer)
 		{
 			binding.SizeInBytes = bindDesc.NumSamples; // element stride
 		}
@@ -278,12 +287,16 @@ ShaderReflection DxilReflectionExtractor::Extract(
 		{
 			D3D12_SIGNATURE_PARAMETER_DESC paramDesc{};
 			if (FAILED(shaderReflection->GetInputParameterDesc(i, &paramDesc)))
-				continue;
+			{
+				throw Diagnostics::Error("DXIL reflection could not read a shader input parameter.");
+			}
 
 			// Skip system-value semantics (SV_*) that are not consumed from
 			// the input layout.
 			if (paramDesc.SystemValueType != D3D_NAME_UNDEFINED)
+			{
 				continue;
+			}
 
 			ShaderReflectionInputElement element;
 			element.Semantic = paramDesc.SemanticName ? paramDesc.SemanticName : "";

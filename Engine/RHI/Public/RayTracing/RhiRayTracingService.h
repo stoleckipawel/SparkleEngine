@@ -4,18 +4,20 @@
 #include "../RayTracing/RhiClassicTlasService.h"
 #include "../RayTracing/RhiPartitionedTlasService.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
+#include "../RayTracing/RhiRayTracingPipelineDesc.h"
 #include "../Resources/RhiResourceDesc.h"
 #include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>
+#include <memory>
 #include <string_view>
 
 class RenderCommandList;
 
 class SPARKLE_RHI_API RhiRayTracingService
 {
-  public:
+public:
 	virtual ~RhiRayTracingService() noexcept = default;
 
 	virtual RhiClassicTlasService& GetClassicTlasService() noexcept = 0;
@@ -46,4 +48,5 @@ class SPARKLE_RHI_API RhiRayTracingService
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,
 	    std::wstring_view debugName);
+	virtual std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(const RayTracingShaderTableDesc& desc) = 0;
 };

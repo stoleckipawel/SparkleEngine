@@ -9,14 +9,15 @@
 #include <utility>
 #include <vector>
 
-enum class ShaderStageVisibility : std::uint8_t
+enum class ShaderStageVisibility : std::uint16_t
 {
 	None = 0,
 	Vertex = 1 << 0,
 	Pixel = 1 << 1,
 	Compute = 1 << 2,
+	RayTracing = 1 << 3,
 	AllGraphics = (1 << 0) | (1 << 1),
-	All = (1 << 0) | (1 << 1) | (1 << 2),
+	All = (1 << 4) - 1,
 };
 
 SPARKLE_RHI_API ShaderStageVisibility operator|(ShaderStageVisibility lhs, ShaderStageVisibility rhs) noexcept;

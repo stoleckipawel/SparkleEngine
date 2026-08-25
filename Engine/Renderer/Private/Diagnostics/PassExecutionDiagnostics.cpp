@@ -23,25 +23,19 @@ ScopedGpuScope PassExecutionDiagnostics::BeginPassGpuScope() noexcept
 		return {};
 	}
 
-	return m_frameDiagnostics->BeginGpuScope(
-	    *m_commands,
-	    m_passScopeLabel,
-	    m_passColor);
+	return m_frameDiagnostics->BeginGpuScope(*m_commands, m_passScopeLabel, m_passColor);
 }
 
 ScopedGpuScope PassExecutionDiagnostics::BeginGpuScope(std::string_view label) noexcept
 {
-	if (m_frameDiagnostics == nullptr || m_commands == nullptr ||
-	    CVarRendererDiagnosticMarkerVerbosity.Get() != RendererDiagnosticMarkerVerbosity::Detailed)
+	if (m_frameDiagnostics == nullptr || m_commands == nullptr
+	    || CVarRendererDiagnosticMarkerVerbosity.Get() != RendererDiagnosticMarkerVerbosity::Detailed)
 	{
 		return {};
 	}
 
 	const std::string eventLabel = FormatEventScopeLabel(label);
-	return m_frameDiagnostics->BeginGpuScope(
-	    *m_commands,
-	    eventLabel,
-	    m_passColor);
+	return m_frameDiagnostics->BeginGpuScope(*m_commands, eventLabel, m_passColor);
 }
 
 RhiDiagnosticLabelColor PassExecutionDiagnostics::GetPassEventColor(EFrameGraphPassKind passKind) noexcept
@@ -52,6 +46,8 @@ RhiDiagnosticLabelColor PassExecutionDiagnostics::GetPassEventColor(EFrameGraphP
 			return RhiDiagnosticLabelColor{.Red = 76, .Green = 148, .Blue = 255, .Alpha = 255};
 		case EFrameGraphPassKind::Compute:
 			return RhiDiagnosticLabelColor{.Red = 255, .Green = 162, .Blue = 76, .Alpha = 255};
+		case EFrameGraphPassKind::RayTracing:
+			return RhiDiagnosticLabelColor{.Red = 238, .Green = 112, .Blue = 214, .Alpha = 255};
 		case EFrameGraphPassKind::Transfer:
 			return RhiDiagnosticLabelColor{.Red = 115, .Green = 204, .Blue = 122, .Alpha = 255};
 		case EFrameGraphPassKind::ExternalProvider:

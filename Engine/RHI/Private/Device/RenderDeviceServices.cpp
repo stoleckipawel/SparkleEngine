@@ -84,16 +84,24 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& windo
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
     Window& window,
+    ERhiBackendApi backendApi,
+    RhiInterposerHooks interposerHooks) noexcept
+{
+	return Create(window, backendApi, CVarBackBufferFormat.Get(), interposerHooks);
+}
+
+std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
+    Window& window,
     PixelFormat backBufferFormat) noexcept
 {
 	return Create(window, ResolveDefaultRhiBackendApi(), backBufferFormat);
 }
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
-	Window& window,
-	ERhiBackendApi backendApi,
-	PixelFormat backBufferFormat,
-	RhiInterposerHooks interposerHooks) noexcept
+    Window& window,
+    ERhiBackendApi backendApi,
+    PixelFormat backBufferFormat,
+    RhiInterposerHooks interposerHooks) noexcept
 {
 	ValidateBackBufferFormat(backBufferFormat);
 	const RhiPresentationConfiguration presentationConfiguration = ResolvePresentationConfiguration();

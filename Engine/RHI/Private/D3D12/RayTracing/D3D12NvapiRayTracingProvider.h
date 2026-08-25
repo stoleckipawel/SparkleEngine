@@ -10,7 +10,7 @@ struct ID3D12GraphicsCommandList7;
 
 class D3D12NvapiRayTracingProvider final
 {
-  public:
+public:
 	D3D12NvapiRayTracingProvider() noexcept;
 	~D3D12NvapiRayTracingProvider() noexcept;
 
@@ -22,7 +22,7 @@ class D3D12NvapiRayTracingProvider final
 	RhiPartitionedTlasCapabilities QueryPartitionedTlasCapabilities(
 	    ID3D12Device10* device,
 	    bool runsOnNvidiaDevice,
-	    bool supportsRayTracing) const noexcept;
+	    bool supportsAccelerationStructure) const noexcept;
 	RhiPartitionedTlasBuildSizes GetPartitionedTlasBuildSizes(
 	    ID3D12Device10* device,
 	    const RhiPartitionedTlasDesc& desc) const noexcept;
@@ -33,7 +33,7 @@ class D3D12NvapiRayTracingProvider final
 	bool IsRuntimeInitialized() const noexcept;
 	const char* GetRuntimeStatusReason() const noexcept;
 
-  private:
+private:
 	static std::uint64_t AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept;
 	static const char* ToNvapiStatusReason(int status) noexcept;
 

@@ -19,8 +19,8 @@ class PassParameterLayout;
 SPARKLE_RHI_API ShaderTypeId BuildShaderTypeId(std::string_view shaderName) noexcept;
 SPARKLE_RHI_API ShaderParameterSignature BuildShaderParameterSignature(const PassParameterLayout& layout) noexcept;
 
-inline constexpr std::uint32_t kGlobalShaderMapMagic = 0x50414D53u;
-inline constexpr std::uint32_t kCookedShaderLibraryMagic = 0x42494C53u;
+inline constexpr std::uint32_t kGlobalShaderMapMagic = 0x32414D53u;
+inline constexpr std::uint32_t kCookedShaderLibraryMagic = 0x32494C53u;
 
 enum class ShaderFeatureFlags : std::uint32_t
 {
@@ -28,6 +28,17 @@ enum class ShaderFeatureFlags : std::uint32_t
 	UsesInlineRayQuery = 1u << 0u,
 	UsesAccelerationStructure = 1u << 1u,
 	UsesDescriptorIndexing = 1u << 2u,
+};
+
+struct RayTracingShaderMetadata final
+{
+	std::uint32_t PayloadSizeInBytes = 0;
+	std::uint32_t AttributeSizeInBytes = 0;
+	std::uint32_t MinimumRecursionDepth = 0;
+	std::uint32_t LocalRecordSizeInBytes = 0;
+	ShaderParameterSignature LocalRecordSignature = 0;
+
+	constexpr bool operator==(const RayTracingShaderMetadata&) const noexcept = default;
 };
 
 SPARKLE_RHI_API ShaderFeatureFlags operator|(ShaderFeatureFlags lhs, ShaderFeatureFlags rhs) noexcept;
@@ -84,7 +95,11 @@ struct GlobalShaderMapEntry
 	std::uint32_t BindingRecordOffset = 0;
 	std::uint32_t BindingRecordCount = 0;
 	std::uint32_t ReflectionRecordIndex = 0;
-	std::uint32_t Reserved = 0;
+	std::uint32_t RayPayloadSizeInBytes = 0;
+	std::uint32_t RayAttributeSizeInBytes = 0;
+	std::uint32_t MinimumRayRecursionDepth = 0;
+	std::uint32_t LocalRecordSizeInBytes = 0;
+	ShaderParameterSignature LocalRecordSignature = 0;
 };
 
 struct ShaderMapBindingRecord
@@ -93,7 +108,9 @@ struct ShaderMapBindingRecord
 	ShaderParameterSemanticKind SemanticKind = ShaderParameterSemanticKind::ReadTexture;
 	ShaderParameterResourceDomain ResourceDomain = ShaderParameterResourceDomain::None;
 	ShaderParameterAccess Access = ShaderParameterAccess::None;
+	std::uint8_t Reserved0 = 0;
 	ShaderStageMask VisibilityMask = ShaderStageMask::None;
+	std::uint16_t Reserved1 = 0;
 	std::uint32_t LogicalBindingIndex = 0;
 	std::uint32_t ArrayCount = 1;
 	std::uint32_t ValueSizeInBytes = 0;
@@ -117,5 +134,6 @@ struct CookedShaderCodeRecord
 static_assert(std::is_trivially_copyable_v<GlobalShaderMapHeader>);
 static_assert(std::is_trivially_copyable_v<GlobalShaderMapEntry>);
 static_assert(std::is_trivially_copyable_v<ShaderMapBindingRecord>);
+static_assert(sizeof(ShaderMapBindingRecord) == 28, "serialized binding records must have no hidden padding.");
 static_assert(std::is_trivially_copyable_v<CookedShaderLibraryHeader>);
 static_assert(std::is_trivially_copyable_v<CookedShaderCodeRecord>);

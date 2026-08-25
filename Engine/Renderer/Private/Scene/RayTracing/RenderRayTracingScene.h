@@ -37,8 +37,9 @@ public:
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
 
-	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsRayTracing; }
+	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsAccelerationStructure; }
 	bool HasValidTlas() const noexcept;
+	const RayTracingCapabilityReport& GetCapabilityReport() const noexcept { return m_capabilityReport; }
 
 private:
 	RayTracingCapabilityReport m_capabilityReport = {};

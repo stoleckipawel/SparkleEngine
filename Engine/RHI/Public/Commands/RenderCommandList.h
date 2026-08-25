@@ -8,6 +8,7 @@
 #include "../Interop/RhiNativeHandles.h"
 #include "../Pipeline/RhiPipelineDesc.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
+#include "../RayTracing/RhiRayTracingPipelineDesc.h"
 #include "../Resources/RhiResourceDesc.h"
 #include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
@@ -36,6 +37,8 @@ public:
 	virtual void SetPipeline(const RenderPipeline& pipeline) noexcept = 0;
 	virtual void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
 	virtual void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
+	virtual void SetRayTracingBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
+	virtual void SetRayTracingPipeline(const RayTracingPipeline& pipeline) noexcept = 0;
 	virtual void ResetBoundState() noexcept = 0;
 	virtual void BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
@@ -55,6 +58,17 @@ public:
 	virtual void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
 	virtual void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
 	virtual void SetComputePushConstants(
+	    std::uint32_t bindingIndex,
+	    std::uint32_t num32BitValues,
+	    const void* data,
+	    std::uint32_t destOffsetIn32BitValues) noexcept = 0;
+	virtual void BindRayTracingConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
+	virtual void BindRayTracingShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
+	virtual void BindRayTracingUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
+	virtual void BindRayTracingAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept = 0;
+	virtual void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
+	virtual void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
+	virtual void SetRayTracingPushConstants(
 	    std::uint32_t bindingIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
@@ -84,6 +98,7 @@ public:
 	    std::uint32_t startVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept = 0;
 	virtual void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept = 0;
+	virtual void TraceRays(const TraceRaysDesc& desc) noexcept = 0;
 	virtual void BuildBottomLevelAccelerationStructure(
 	    const RhiRayTracingGeometryDesc& geometry,
 	    RhiGpuVirtualAddress scratchGpuAddress,

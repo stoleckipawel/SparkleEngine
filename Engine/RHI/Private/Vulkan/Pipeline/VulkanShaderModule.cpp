@@ -126,6 +126,18 @@ VkShaderStageFlagBits VulkanShaderModule::ToVkShaderStage(ShaderStage stage) noe
 			return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 		case ShaderStage::Domain:
 			return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+		case ShaderStage::RayGeneration:
+			return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+		case ShaderStage::Miss:
+			return VK_SHADER_STAGE_MISS_BIT_KHR;
+		case ShaderStage::ClosestHit:
+			return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+		case ShaderStage::AnyHit:
+			return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+		case ShaderStage::Intersection:
+			return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+		case ShaderStage::Callable:
+			return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
 		case ShaderStage::Count:
 		default:
 			return VK_SHADER_STAGE_ALL;

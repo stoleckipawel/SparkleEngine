@@ -17,6 +17,7 @@
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
 #include "Vulkan/Pipeline/VulkanPipeline.h"
+#include "Vulkan/Pipeline/VulkanRayTracingPipeline.h"
 #include "Presentation/RhiPresentationServiceAdapter.h"
 #include "Pipeline/RhiPipelineServiceAdapter.h"
 #include "Vulkan/RayTracing/VulkanRayTracingServices.h"
@@ -36,13 +37,15 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
     VulkanRhi& rhi,
     VulkanSwapChain& swapChain,
     VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-    m_rhi(&rhi), m_swapChain(&swapChain), m_memoryAllocator(&memoryAllocator)
+    m_rhi(&rhi),
+    m_swapChain(&swapChain),
+    m_memoryAllocator(&memoryAllocator)
 {
 	m_interopService = std::make_unique<VulkanInteropService>(*this);
 	m_captureService = std::make_unique<VulkanCaptureService>(rhi);
 	m_presentationService = std::make_unique<RhiPresentationServiceAdapter<VulkanRenderHardwareInterface>>(*this);
-	m_pipelineService = std::make_unique<
-	    RhiPipelineServiceAdapter<VulkanRhi, VulkanPipeline, VulkanBindingLayoutCompiler>>(rhi);
+	m_pipelineService =
+	    std::make_unique<RhiPipelineServiceAdapter<VulkanRhi, VulkanPipeline, VulkanRayTracingPipeline, VulkanBindingLayoutCompiler>>(rhi);
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
 	m_descriptorService = std::make_unique<VulkanDescriptorService>(rhi, memoryAllocator, m_capabilities);
 	m_resourceService = std::make_unique<VulkanResourceService>(rhi, memoryAllocator, m_capabilities);
@@ -188,8 +191,8 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	capabilities.DescriptorModel = ERhiDescriptorModel::DescriptorSets;
 	capabilities.BindingLimits = RhiBindingLimits{
 	    .MaxDescriptorSets = properties.limits.maxBoundDescriptorSets,
-	    .MaxShaderResourceDescriptors = properties.limits.maxDescriptorSetSampledImages + properties.limits.maxDescriptorSetStorageImages +
-	                                    properties.limits.maxDescriptorSetUniformBuffers + properties.limits.maxDescriptorSetStorageBuffers,
+	    .MaxShaderResourceDescriptors = properties.limits.maxDescriptorSetSampledImages + properties.limits.maxDescriptorSetStorageImages
+	        + properties.limits.maxDescriptorSetUniformBuffers + properties.limits.maxDescriptorSetStorageBuffers,
 	    .MaxSamplerDescriptors = properties.limits.maxDescriptorSetSamplers,
 	    .MaxDescriptorTableEntries = properties.limits.maxDescriptorSetSampledImages + properties.limits.maxDescriptorSetStorageImages,
 	    .MaxPushConstantBytes = properties.limits.maxPushConstantsSize};
@@ -264,9 +267,8 @@ RhiFormatSupport VulkanRenderHardwareInterface::QueryFormatSupport(PixelFormat f
 	VkFormatProperties properties{};
 	vkGetPhysicalDeviceFormatProperties(m_rhi->GetPhysicalDevice(), nativeFormat, &properties);
 	const VkFormatFeatureFlags optimal = properties.optimalTilingFeatures;
-	support.SupportsTexture = (optimal & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0 ||
-	                          (optimal & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0 ||
-	                          (optimal & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+	support.SupportsTexture = (optimal & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0
+	    || (optimal & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0 || (optimal & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
 	support.SupportsShaderResource = (optimal & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
 	support.SupportsUnorderedAccess = (optimal & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
 	support.SupportsRenderTarget = (optimal & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0;
@@ -532,10 +534,7 @@ void VulkanRenderHardwareInterface::PrepareCurrentBackBufferForPresentation(Vulk
 	const bool transitionedByCommandList = std::any_of(
 	    trackedResources.begin(),
 	    trackedResources.end(),
-	    [backBuffer](RhiResourceHandle resource)
-	    {
-		    return resource.Value == backBuffer.Value;
-	    });
+	    [backBuffer](RhiResourceHandle resource) { return resource.Value == backBuffer.Value; });
 	if (!transitionedByCommandList)
 	{
 		TransitionCurrentBackBuffer(commandList.GetVulkanCommandBuffer(), ResourceState::Present);
@@ -559,7 +558,11 @@ void VulkanRenderHardwareInterface::TransitionCurrentBackBuffer(VkCommandBuffer 
 {
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
-		Diagnostics::Fatal(g_vulkanRenderHardwareInterfaceLogger, __FILE__, __LINE__, "Vulkan back-buffer transition has no command buffer.");
+		Diagnostics::Fatal(
+		    g_vulkanRenderHardwareInterfaceLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan back-buffer transition has no command buffer.");
 	}
 
 	const std::uint32_t backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
@@ -580,12 +583,12 @@ void VulkanRenderHardwareInterface::TransitionCurrentBackBuffer(VkCommandBuffer 
 		return;
 	}
 
-	const ResourceState currentState = currentLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR            ? ResourceState::Present
-	                                   : currentLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ? ResourceState::RenderTarget
-	                                                                                               : ResourceState::Common;
+	const ResourceState currentState = currentLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR ? ResourceState::Present
+	    : currentLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL                     ? ResourceState::RenderTarget
+	                                                                                    : ResourceState::Common;
 	const VulkanResourceStateMapping sourceState = currentLayout == VK_IMAGE_LAYOUT_UNDEFINED
-	                                                   ? VulkanResourceStateMapping{}
-	                                                   : VulkanTypeConversions::ToResourceStateMapping(currentState);
+	    ? VulkanResourceStateMapping{}
+	    : VulkanTypeConversions::ToResourceStateMapping(currentState);
 	const VkImageMemoryBarrier2 imageBarrier{
 	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 	    .pNext = nullptr,

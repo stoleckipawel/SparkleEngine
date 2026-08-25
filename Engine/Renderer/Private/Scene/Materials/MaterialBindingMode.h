@@ -4,7 +4,7 @@
 
 enum class MaterialBindingMode : std::uint32_t
 {
-	RaytracingOnly = 0,
+	RayTracingOnly = 0,
 	Everything = 1,
 };
 
@@ -12,8 +12,8 @@ constexpr const char* MaterialBindingModeToString(MaterialBindingMode mode) noex
 {
 	switch (mode)
 	{
-		case MaterialBindingMode::RaytracingOnly:
-			return "RaytracingOnly";
+		case MaterialBindingMode::RayTracingOnly:
+			return "RayTracingOnly";
 		case MaterialBindingMode::Everything:
 			return "Everything";
 		default:

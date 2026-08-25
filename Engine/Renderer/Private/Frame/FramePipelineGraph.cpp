@@ -6,10 +6,12 @@
 #include "Frame/RenderFrame.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Providers/RendererImageProviderStack.h"
+#include "RayTracing/Effects/GBuffer/RayTracingGBufferExecutionPlan.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "Resources/History/FrameHistory.h"
+#include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "Scene/RenderScene.h"
 #include "View/ViewportDisplaySettings.h"
 
@@ -26,7 +28,7 @@ RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexcept
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
-	const LightingMode lighting = GetLightingMode();
+	const LightingMode lighting = CVarLightingMode.Get();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
 	const ImageProviderPipeline imagePipeline = lighting == LightingMode::RestirPathTraced ? ImageProviderPipeline::RayReconstruction
 	                                                                                       : ImageProviderPipeline::PresentationUpscaling;
@@ -36,8 +38,6 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 	    .OutputFormat = m_deviceServices.GetRenderHardwareInterface().GetPresentationService().GetPresentColorFormat(),
 	    .ExposureMeteringMethod = displaySettings.ExposureMeteringMethod,
 	    .PresentationTarget = ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct,
-	    .GBuffer = CVarGBufferMode.Get(),
-	    .Lighting = lighting,
 	    .RequestedOutputs = m_viewportRenderRequest.RequestedOutputs};
 }
 
@@ -57,7 +57,8 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	    .renderHardwareInterface = m_deviceServices.GetRenderHardwareInterface(),
 	    .renderPassRuntimeCache = m_renderPassRuntimeCache,
 	    .gpuMeshCache = m_gpuMeshCache,
-	    .rayTracingScene = m_renderScene.GetRayTracingSceneCapability(),
+	    .rayTracingScene = m_renderScene.GetRayTracingScene(),
+	    .hasMaskedRayTracingGeometry = m_renderScene.HasMaskedRayTracingGeometry(),
 	    .upscalerProvider = m_imageProviders.GetUpscalerProvider(),
 	    .rayReconstructionProvider = m_imageProviders.GetRayReconstructionProvider(),
 	    .window = m_window,
@@ -66,6 +67,11 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	RenderFrameGraphFactory frameGraphFactory(dependencies);
 	RenderFrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphSettings = settings;
+	m_builtLightingMode = CVarLightingMode.Get();
+	m_builtGBufferAlgorithm = CVarGBufferAlgorithm.Get();
+	m_builtGBufferExecutionPlan = ResolveRayTracingGBufferExecutionPlan(
+	    m_renderScene.HasMaskedRayTracingGeometry(),
+	    m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	m_frameResources = buildResult.Resources;
 	m_imageProviderFrameGraphKey = m_imageProviders.GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
@@ -129,7 +135,14 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	}
 
 	const RenderFrameGraphSettings settings = ResolveFrameGraphSettings();
-	if (providerChanged || settings != m_frameGraphSettings)
+	const LightingMode lightingMode = CVarLightingMode.Get();
+	const GBufferAlgorithm gBufferAlgorithm = CVarGBufferAlgorithm.Get();
+	const RayTracingGBufferExecutionPlan gBufferExecutionPlan = ResolveRayTracingGBufferExecutionPlan(
+	    m_renderScene.HasMaskedRayTracingGeometry(),
+	    m_renderScene.GetRayTracingScene().GetCapabilityReport());
+	if (providerChanged || settings != m_frameGraphSettings || lightingMode != m_builtLightingMode
+	    || gBufferAlgorithm != m_builtGBufferAlgorithm
+	    || gBufferExecutionPlan != m_builtGBufferExecutionPlan)
 	{
 		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(settings);

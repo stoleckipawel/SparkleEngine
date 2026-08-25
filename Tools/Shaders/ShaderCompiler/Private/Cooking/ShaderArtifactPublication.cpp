@@ -19,9 +19,8 @@
 #include <format>
 #include <map>
 
-class ShaderArtifactAssembly final
+namespace ShaderArtifactAssembly
 {
-public:
 	struct Binding final
 	{
 		std::string Name;
@@ -40,6 +39,7 @@ public:
 		ShaderTarget Target = kDefaultShaderTarget;
 		ShaderStage Stage = ShaderStage::Count;
 		ShaderFeatureFlags Features = ShaderFeatureFlags::None;
+		RayTracingShaderMetadata RayTracing;
 		ShaderCodeHash CodeHash = 0;
 		ShaderParameterSignature ParameterSignature = 0;
 		std::uint64_t CompileInputHash = 0;
@@ -53,7 +53,7 @@ public:
 		std::vector<std::uint8_t> Code;
 	};
 
-	static ShaderStageMask ToStageMask(ShaderStageVisibility visibility) noexcept
+	ShaderStageMask ToStageMask(ShaderStageVisibility visibility) noexcept
 	{
 		switch (visibility)
 		{
@@ -63,17 +63,19 @@ public:
 				return ShaderStageMask::Pixel;
 			case ShaderStageVisibility::Compute:
 				return ShaderStageMask::Compute;
+			case ShaderStageVisibility::RayTracing:
+				return ShaderStageMask::AllRayTracing;
 			case ShaderStageVisibility::AllGraphics:
 				return ShaderStageMask::Vertex | ShaderStageMask::Pixel;
 			case ShaderStageVisibility::All:
-				return ShaderStageMask::Vertex | ShaderStageMask::Pixel | ShaderStageMask::Compute;
+				return ShaderStageMask::Vertex | ShaderStageMask::Pixel | ShaderStageMask::Compute | ShaderStageMask::AllRayTracing;
 			case ShaderStageVisibility::None:
 			default:
 				return ShaderStageMask::None;
 		}
 	}
 
-	static std::uint32_t FindBindingIndex(const ShaderCookProduct& product, std::string_view name)
+	std::uint32_t FindBindingIndex(const ShaderCookProduct& product, std::string_view name)
 	{
 		const auto found =
 		    std::ranges::find_if(product.bindingRemaps, [name](const ShaderDescriptorBindingRemap& remap) { return remap.Name == name; });
@@ -84,7 +86,7 @@ public:
 		return found->Binding;
 	}
 
-	static Entry FromProduct(const ShaderCookDesc& shader, const ShaderCookProduct& product)
+	Entry FromProduct(const ShaderCookDesc& shader, const ShaderCookProduct& product)
 	{
 		if (product.compiled.bytecode.empty())
 		{
@@ -92,10 +94,11 @@ public:
 		}
 		const ShaderCodeHash codeHash = Hash::Fnv1a64(product.compiled.bytecode.data(), product.compiled.bytecode.size());
 		if (product.shaderTypeId != shader.shaderTypeId || !IsShaderTarget(product.target) || product.features != shader.features
-		    || product.compiled.stage != shader.stage || product.compiled.format != GetShaderBinaryFormat(product.target)
-		    || product.compiled.sourcePath != shader.sourcePath || product.compiled.entryPoint != shader.entryPoint
-		    || product.compiled.backendName.empty() || product.compiled.codegenTarget != GetShaderTargetName(product.target)
-		    || product.compiled.backendVersion == 0 || product.compiled.compileInputHash == 0 || product.compiled.bytecodeHash != codeHash
+		    || product.rayTracing != shader.rayTracing || product.compiled.stage != shader.stage
+		    || product.compiled.format != GetShaderBinaryFormat(product.target) || product.compiled.sourcePath != shader.sourcePath
+		    || product.compiled.entryPoint != shader.entryPoint || product.compiled.backendName.empty()
+		    || product.compiled.codegenTarget != GetShaderTargetName(product.target) || product.compiled.backendVersion == 0
+		    || product.compiled.compileInputHash == 0 || product.compiled.bytecodeHash != codeHash
 		    || BuildShaderParameterSignature(product.parameterLayout) != BuildShaderParameterSignature(shader.parameterLayout))
 		{
 			throw Diagnostics::Error(
@@ -107,6 +110,7 @@ public:
 		entry.Target = product.target;
 		entry.Stage = product.compiled.stage;
 		entry.Features = product.features;
+		entry.RayTracing = product.rayTracing;
 		entry.CodeHash = codeHash;
 		entry.ParameterSignature = BuildShaderParameterSignature(product.parameterLayout);
 		entry.CompileInputHash = product.compiled.compileInputHash;
@@ -133,12 +137,12 @@ public:
 		return entry;
 	}
 
-	static std::string Resolve(const GlobalShaderMap& map, std::uint32_t offset, std::uint32_t size)
+	std::string Resolve(const GlobalShaderMap& map, std::uint32_t offset, std::uint32_t size)
 	{
 		return std::string(map.ResolveString(ShaderMapStringRef{offset, size}));
 	}
 
-	static ShaderReflection DecodeReflection(const GlobalShaderMap& map, const GlobalShaderMapEntry& entry)
+	ShaderReflection DecodeReflection(const GlobalShaderMap& map, const GlobalShaderMapEntry& entry)
 	{
 		ShaderReflection result;
 		const CookedShaderReflectionRecord& record = map.GetReflection(entry);
@@ -227,13 +231,19 @@ public:
 		return result;
 	}
 
-	static Entry FromExisting(const GlobalShaderMap& map, const CookedShaderLibrary& library, const GlobalShaderMapEntry& source)
+	Entry FromExisting(const GlobalShaderMap& map, const CookedShaderLibrary& library, const GlobalShaderMapEntry& source)
 	{
 		Entry entry;
 		entry.ShaderType = source.ShaderType;
 		entry.Target = source.Target;
 		entry.Stage = source.Stage;
 		entry.Features = source.Features;
+		entry.RayTracing = RayTracingShaderMetadata{
+		    .PayloadSizeInBytes = source.RayPayloadSizeInBytes,
+		    .AttributeSizeInBytes = source.RayAttributeSizeInBytes,
+		    .MinimumRecursionDepth = source.MinimumRayRecursionDepth,
+		    .LocalRecordSizeInBytes = source.LocalRecordSizeInBytes,
+		    .LocalRecordSignature = source.LocalRecordSignature};
 		entry.CodeHash = source.CodeHash;
 		entry.ParameterSignature = source.ParameterSignature;
 		entry.CompileInputHash = source.CompileInputHash;
@@ -265,12 +275,25 @@ public:
 		entry.Code.assign(static_cast<const std::uint8_t*>(bytecode.Data), static_cast<const std::uint8_t*>(bytecode.Data) + bytecode.Size);
 		return entry;
 	}
-};
+}
 
-class ShaderArtifactWriter final
+namespace ShaderArtifactWriter
 {
-public:
-	static ShaderCookOutput Write(
+	ShaderMapStringRef ToStringRef(const Strings::StringTableEntry& entry) noexcept;
+	void WriteMap(
+	    const std::filesystem::path& path,
+	    const GlobalShaderMapHeader& header,
+	    const std::vector<GlobalShaderMapEntry>& entries,
+	    const std::vector<ShaderMapBindingRecord>& bindings,
+	    const ReflectionSerializer::Output& reflection,
+	    const std::vector<std::uint8_t>& strings);
+	void WriteLibrary(
+	    const std::filesystem::path& path,
+	    const CookedShaderLibraryHeader& header,
+	    const std::vector<CookedShaderCodeRecord>& records,
+	    const std::vector<std::uint8_t>& code);
+
+	ShaderCookOutput Write(
 	    std::vector<ShaderArtifactAssembly::Entry> entries,
 	    const std::filesystem::path& mapPath,
 	    const std::filesystem::path& libraryPath)
@@ -308,6 +331,11 @@ public:
 			entry.Stage = source.Stage;
 			entry.BinaryFormat = GetShaderBinaryFormat(source.Target);
 			entry.Features = source.Features;
+			entry.RayPayloadSizeInBytes = source.RayTracing.PayloadSizeInBytes;
+			entry.RayAttributeSizeInBytes = source.RayTracing.AttributeSizeInBytes;
+			entry.MinimumRayRecursionDepth = source.RayTracing.MinimumRecursionDepth;
+			entry.LocalRecordSizeInBytes = source.RayTracing.LocalRecordSizeInBytes;
+			entry.LocalRecordSignature = source.RayTracing.LocalRecordSignature;
 			entry.CodeHash = source.CodeHash;
 			entry.ParameterSignature = source.ParameterSignature;
 			entry.CompileInputHash = source.CompileInputHash;
@@ -393,13 +421,12 @@ public:
 		return result;
 	}
 
-private:
-	static ShaderMapStringRef ToStringRef(const Strings::StringTableEntry& entry) noexcept
+	ShaderMapStringRef ToStringRef(const Strings::StringTableEntry& entry) noexcept
 	{
 		return ShaderMapStringRef{entry.OffsetInBytes, entry.SizeInBytes};
 	}
 
-	static void WriteMap(
+	void WriteMap(
 	    const std::filesystem::path& path,
 	    const GlobalShaderMapHeader& header,
 	    const std::vector<GlobalShaderMapEntry>& entries,
@@ -425,7 +452,7 @@ private:
 		}
 	}
 
-	static void WriteLibrary(
+	void WriteLibrary(
 	    const std::filesystem::path& path,
 	    const CookedShaderLibraryHeader& header,
 	    const std::vector<CookedShaderCodeRecord>& records,
@@ -440,7 +467,7 @@ private:
 			throw Diagnostics::Error(std::move(error));
 		}
 	}
-};
+}
 
 ShaderCookOutput ShaderArtifactPublication::Publish(
     const ShaderCookPipelinePlan& plan,

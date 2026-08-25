@@ -7,13 +7,11 @@
 
 class PassParameterLayout;
 
-class SPARKLE_RHI_API ShaderParameterLayoutBuilder final
+namespace ShaderParameterLayoutBuilder
 {
-public:
-	ShaderParameterLayoutBuilder() = delete;
-
-	static PassParameterLayout Build(std::span<const ShaderRegistrationDesc* const> shaders);
-};
+	SPARKLE_RHI_API ShaderStageVisibility GetDefaultVisibility(ShaderStage stage) noexcept;
+	SPARKLE_RHI_API PassParameterLayout Build(std::span<const ShaderRegistrationDesc* const> shaders);
+}
 
 SPARKLE_RHI_API PassParameterLayout BuildShaderParameterLayout(const ShaderRegistrationDesc& shader);
 SPARKLE_RHI_API PassParameterLayout BuildShaderPipelineParameterLayout(std::span<const ShaderRegistrationDesc* const> shaders);

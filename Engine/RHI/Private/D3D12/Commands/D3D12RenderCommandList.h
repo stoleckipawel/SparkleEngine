@@ -34,6 +34,8 @@ public:
 	void SetPipeline(const RenderPipeline& pipeline) noexcept override;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
+	void SetRayTracingBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
+	void SetRayTracingPipeline(const RayTracingPipeline& pipeline) noexcept override;
 	void ResetBoundState() noexcept override;
 	void BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
 	void BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
@@ -53,6 +55,17 @@ public:
 	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
 	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
 	void SetComputePushConstants(
+	    std::uint32_t bindingIndex,
+	    std::uint32_t num32BitValues,
+	    const void* data,
+	    std::uint32_t destOffsetIn32BitValues) noexcept override;
+	void BindRayTracingConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindRayTracingShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindRayTracingUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindRayTracingAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept override;
+	void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
+	void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
+	void SetRayTracingPushConstants(
 	    std::uint32_t bindingIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
@@ -82,6 +95,7 @@ public:
 	    std::uint32_t startVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept override;
 	void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept override;
+	void TraceRays(const TraceRaysDesc& desc) noexcept override;
 	void BuildBottomLevelAccelerationStructure(
 	    const RhiRayTracingGeometryDesc& geometry,
 	    RhiGpuVirtualAddress scratchGpuAddress,
@@ -120,4 +134,5 @@ private:
 	RhiCommandRecordingOwner m_recordingOwner = {};
 	std::vector<RecordingResourceUse> m_recordingResourceUses;
 	std::size_t m_recordingResourceReleaseIndex = 0;
+	const RayTracingPipeline* m_boundRayTracingPipeline = nullptr;
 };

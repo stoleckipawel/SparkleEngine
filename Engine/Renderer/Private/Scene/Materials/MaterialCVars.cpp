@@ -3,5 +3,5 @@
 
 ConsoleVariable<MaterialBindingMode> CVarRendererMaterialBindingMode(
     "r.Material.BindingMode",
-    MaterialBindingMode::RaytracingOnly,
-    "Renderer material binding mode: 0=RaytracingOnly, 1=Everything.");
+    MaterialBindingMode::RayTracingOnly,
+    "Renderer material binding mode: 0=RayTracingOnly, 1=Everything.");

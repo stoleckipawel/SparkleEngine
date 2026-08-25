@@ -7,7 +7,6 @@ class FrameGraph;
 class FrameGraphBuilder;
 class RendererImageProviderStack;
 class RenderViewState;
-enum class LightingMode : std::uint8_t;
 struct PreparedRenderScene;
 struct RenderView;
 
@@ -35,7 +34,6 @@ void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryR
 void UpdateFrameHistory(
     FrameGraph& frameGraph,
     const FrameHistoryResourceLayout& history,
-    LightingMode lighting,
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
     RenderViewState& viewState,

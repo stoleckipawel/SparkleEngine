@@ -7,10 +7,9 @@
 #include <string_view>
 #include <vector>
 
-class VulkanExtensionQuery final
+namespace VulkanExtensionQuery
 {
-  public:
-	static bool IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept
+	bool IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept
 	{
 		std::uint32_t extensionCount = 0;
 		if (!VulkanResult::Succeeded(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr)))
@@ -24,11 +23,13 @@ class VulkanExtensionQuery final
 			return false;
 		}
 
-		return std::any_of(extensions.begin(), extensions.end(), [extensionName](const VkExtensionProperties& extension) noexcept {
-			return std::string_view(extension.extensionName) == extensionName;
-		});
+		return std::any_of(
+		    extensions.begin(),
+		    extensions.end(),
+		    [extensionName](const VkExtensionProperties& extension) noexcept
+		    { return std::string_view(extension.extensionName) == extensionName; });
 	}
-};
+}
 
 VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevice physicalDevice) noexcept
 {
@@ -91,8 +92,11 @@ VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevi
 	status.SupportsRayQueryFeature = rayQueryFeatures.rayQuery == VK_TRUE;
 	status.SupportsPartitionedAccelerationStructureFeature =
 	    partitionedAccelerationStructureFeatures.partitionedAccelerationStructure == VK_TRUE;
-	status.EnabledBackend = status.SupportsAccelerationStructureExtension && status.SupportsRayQueryExtension &&
-	                        status.SupportsDeferredHostOperationsExtension && status.SupportsBufferDeviceAddressFeature &&
-	                        status.SupportsAccelerationStructureFeature && status.SupportsRayQueryFeature;
+	status.EnabledAccelerationStructure = status.SupportsAccelerationStructureExtension && status.SupportsDeferredHostOperationsExtension
+	    && status.SupportsBufferDeviceAddressFeature && status.SupportsAccelerationStructureFeature;
+	status.EnabledInlineRayQuery =
+	    status.EnabledAccelerationStructure && status.SupportsRayQueryExtension && status.SupportsRayQueryFeature;
+	status.EnabledRayTracingPipeline =
+	    status.EnabledAccelerationStructure && status.SupportsRayTracingPipelineExtension && status.SupportsRayTracingPipelineFeature;
 	return status;
 }

@@ -1,20 +1,22 @@
 #include "PCH.h"
 #include "Passes/GBuffer/GBuffer.h"
 
+#include "Debug/RendererCVars.h"
 #include "Passes/GBuffer/GBufferFormats.h"
 #include "Passes/GBuffer/SceneDepth.h"
-#include "Passes/GBuffer/RaytracedGBuffer.h"
+#include "Passes/GBuffer/RayTracingGBuffer.h"
 #include "Passes/GBuffer/RasterizedGBuffer.h"
 #include "Passes/GBuffer/SkyMotionVectors.h"
+#include "Scene/RayTracing/RenderRayTracingScene.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 
 #include <array>
 
-class GBufferTargetFactory final
+namespace GBufferTargetCreation
 {
-public:
-	static FrameGraphTextureHandle CreateGBufferColor(
+	FrameGraphTextureHandle CreateColor(
 	    FrameGraphBuilder& builder,
 	    const char* name,
 	    RenderViewportExtent sceneExtent,
@@ -26,88 +28,103 @@ public:
 		return builder.CreateTexture(desc);
 	}
 
-	static FrameGraphTextureHandle CreateGBufferDeviceZ(
+	FrameGraphTextureHandle CreateDeviceZ(
 	    FrameGraphBuilder& builder,
-	    RenderViewportExtent sceneExtent,
-	    GBufferMode gBufferMode)
+	    RenderViewportExtent sceneExtent)
 	{
-		if (gBufferMode == GBufferMode::Raytraced)
+		switch (CVarGBufferAlgorithm.Get())
 		{
-			return builder.CreateTexture(
-			    FrameGraphTextureDesc::CreateColor(
-			        "GBufferDeviceZ",
-			        sceneExtent.Width,
-			        sceneExtent.Height,
-			        GBufferFormats::RaytracedDeviceZ));
+			case GBufferAlgorithm::RayTracing:
+				return builder.CreateTexture(
+				    FrameGraphTextureDesc::CreateColor(
+				        "GBufferDeviceZ",
+				        sceneExtent.Width,
+				        sceneExtent.Height,
+				        GBufferFormats::RayTracingDeviceZ));
+			case GBufferAlgorithm::Rasterized:
+				return builder.CreateTexture(
+				    FrameGraphTextureDesc::CreateDepthTarget(
+				        "GBufferDeviceZ",
+				        sceneExtent.Width,
+				        sceneExtent.Height,
+				        GBufferFormats::RasterizedDeviceZ));
+			default:
+				throw Diagnostics::Error("GBuffer target creation received an invalid algorithm.");
 		}
-
-		return builder.CreateTexture(
-		    FrameGraphTextureDesc::CreateDepthTarget(
-		        "GBufferDeviceZ",
-		        sceneExtent.Width,
-		        sceneExtent.Height,
-		        GBufferFormats::RasterizedDeviceZ));
 	}
-};
+}
 
-GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
+GBufferRenderTargets CreateGBufferRenderTargets(
+	FrameGraphBuilder& builder,
+	RenderViewportExtent sceneExtent)
 {
 	GBufferRenderTargets targets{};
-	targets.BaseColor = GBufferTargetFactory::CreateGBufferColor(
+	targets.BaseColor = GBufferTargetCreation::CreateColor(
 	    builder,
 	    "GBufferBaseColor",
 	    sceneExtent,
 	    GBufferFormats::BaseColor,
 	    {0.0f, 0.0f, 0.0f, 1.0f});
 	targets.Normal =
-	    GBufferTargetFactory::CreateGBufferColor(builder, "GBufferNormal", sceneExtent, GBufferFormats::Normal, {0.0f, 0.0f, 1.0f, 0.0f});
-	targets.Material = GBufferTargetFactory::CreateGBufferColor(
+	    GBufferTargetCreation::CreateColor(builder, "GBufferNormal", sceneExtent, GBufferFormats::Normal, {0.0f, 0.0f, 1.0f, 0.0f});
+	targets.Material = GBufferTargetCreation::CreateColor(
 	    builder,
 	    "GBufferMaterial",
 	    sceneExtent,
 	    GBufferFormats::Material,
 	    {0.0f, 1.0f, 1.0f, 0.04f});
-	targets.Emissive = GBufferTargetFactory::CreateGBufferColor(
+	targets.Emissive = GBufferTargetCreation::CreateColor(
 	    builder,
 	    "GBufferEmissive",
 	    sceneExtent,
 	    GBufferFormats::Emissive,
 	    {0.0f, 0.0f, 0.0f, 0.0f});
-	targets.Subsurface = GBufferTargetFactory::CreateGBufferColor(
+	targets.Subsurface = GBufferTargetCreation::CreateColor(
 	    builder,
 	    "GBufferSubsurface",
 	    sceneExtent,
 	    GBufferFormats::Subsurface,
 	    {0.0f, 0.0f, 0.0f, 0.0f});
-	targets.MotionVector = GBufferTargetFactory::CreateGBufferColor(
+	targets.MotionVector = GBufferTargetCreation::CreateColor(
 	    builder,
 	    "GBufferMotionVector",
 	    sceneExtent,
 	    GBufferFormats::MotionVector,
 	    {0.0f, 0.0f, 0.0f, 0.0f});
-	targets.DeviceZ = GBufferTargetFactory::CreateGBufferDeviceZ(builder, sceneExtent, gBufferMode);
+	targets.DeviceZ = GBufferTargetCreation::CreateDeviceZ(builder, sceneExtent);
 	return targets;
 }
 
 void AddGBufferMeshPasses(
     FrameGraphBuilder& builder,
     GpuMeshCache& gpuMeshCache,
-    GBufferMode mode,
+    const RenderRayTracingScene& rayTracingScene,
+    bool hasMaskedRayTracingGeometry,
     RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources)
+	RenderFrameGraphResources& resources)
 {
-	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent, mode);
+	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent);
 	resources.ViewportProducts.Normals = resources.Transient.GBuffer.Normal;
 
-	switch (mode)
+	switch (CVarGBufferAlgorithm.Get())
 	{
-		case GBufferMode::Rasterized:
-		default:
+		case GBufferAlgorithm::Rasterized:
 			AddRasterizedGBufferMeshPass(builder, gpuMeshCache, resources.Transient.GBuffer, resources.ImportedScene);
 			break;
-		case GBufferMode::Raytraced:
-			AddRaytracedGBufferMeshPass(builder, sceneExtent, resources.Transient.GBuffer, resources.SceneTlas, resources.ImportedScene);
+		case GBufferAlgorithm::RayTracing:
+		{
+			AddRayTracingGBufferMeshPass(
+			    builder,
+			    sceneExtent,
+			    resources.Transient.GBuffer,
+			    resources.SceneTlas,
+			    resources.ImportedScene,
+			    hasMaskedRayTracingGeometry,
+			    rayTracingScene.GetCapabilityReport());
 			break;
+		}
+		default:
+			throw Diagnostics::Error("GBuffer graph construction received an invalid algorithm.");
 	}
 
 	AddSkyMotionVectorPass(builder, sceneExtent, resources.Transient.GBuffer);

@@ -14,6 +14,7 @@ enum class ResourceState : std::uint8_t
 	ShaderResource,
 	UnorderedAccess,
 	RayTracingAccelerationStructure,
+	RayTracingShaderTable,
 	CopySource,
 	CopyDest,
 	Present,

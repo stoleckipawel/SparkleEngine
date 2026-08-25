@@ -21,13 +21,12 @@ bool VulkanRhi::AppendAvailableDeviceExtension(
     std::vector<const char*>& extensions,
     const char* extensionName) noexcept
 {
-	if (extensionName == nullptr || std::find_if(
-	                                    extensions.begin(),
-	                                    extensions.end(),
-	                                    [extensionName](const char* enabled) noexcept
-	                                    {
-		                                    return std::strcmp(enabled, extensionName) == 0;
-	                                    }) != extensions.end())
+	if (extensionName == nullptr
+	    || std::find_if(
+	           extensions.begin(),
+	           extensions.end(),
+	           [extensionName](const char* enabled) noexcept { return std::strcmp(enabled, extensionName) == 0; })
+	        != extensions.end())
 	{
 		return false;
 	}
@@ -50,9 +49,7 @@ bool VulkanRhi::AppendAvailableDeviceExtension(
 	    available.begin(),
 	    available.end(),
 	    [extensionName](const VkExtensionProperties& properties) noexcept
-	    {
-		    return std::strcmp(properties.extensionName, extensionName) == 0;
-	    });
+	    { return std::strcmp(properties.extensionName, extensionName) == 0; });
 	if (!availableOnDevice)
 	{
 		return false;
@@ -184,8 +181,8 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 		candidate.Features.pNext = &candidate.Features12;
 		candidate.Features12.pNext = &candidate.Features13;
 		vkGetPhysicalDeviceFeatures2(device, &candidate.Features);
-		if (candidate.Features.features.shaderStorageImageReadWithoutFormat != VK_TRUE ||
-		    candidate.Features.features.shaderStorageImageWriteWithoutFormat != VK_TRUE)
+		if (candidate.Features.features.shaderStorageImageReadWithoutFormat != VK_TRUE
+		    || candidate.Features.features.shaderStorageImageWriteWithoutFormat != VK_TRUE)
 		{
 			continue;
 		}
@@ -194,8 +191,8 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 			continue;
 		}
 		candidate.QueueTopology = VulkanQueueTopology::Select(device);
-		if (!candidate.QueueTopology.Supports(ERhiQueueType::Graphics) || !candidate.QueueTopology.Supports(ERhiQueueType::Compute) ||
-		    !candidate.QueueTopology.Supports(ERhiQueueType::Copy))
+		if (!candidate.QueueTopology.Supports(ERhiQueueType::Graphics) || !candidate.QueueTopology.Supports(ERhiQueueType::Compute)
+		    || !candidate.QueueTopology.Supports(ERhiQueueType::Copy))
 		{
 			continue;
 		}
@@ -215,10 +212,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	std::sort(
 	    candidates.begin(),
 	    candidates.end(),
-	    [](const PhysicalDeviceCandidate& lhs, const PhysicalDeviceCandidate& rhs) noexcept
-	    {
-		    return lhs.Score > rhs.Score;
-	    });
+	    [](const PhysicalDeviceCandidate& lhs, const PhysicalDeviceCandidate& rhs) noexcept { return lhs.Score > rhs.Score; });
 
 	const PhysicalDeviceCandidate& selected = candidates.front();
 	m_physicalDevice = selected.Device;
@@ -267,12 +261,15 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	{
 		deviceExtensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 	}
-	if (m_featureStatus.RayTracing.EnabledBackend)
+	if (m_featureStatus.RayTracing.EnabledAccelerationStructure)
 	{
 		deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-		deviceExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
 		deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension && m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature)
+		if (m_featureStatus.RayTracing.EnabledInlineRayQuery)
+		{
+			deviceExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+		}
+		if (m_featureStatus.RayTracing.EnabledRayTracingPipeline)
 		{
 			deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 		}
@@ -280,8 +277,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		{
 			deviceExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 		}
-		if (m_adapterInfo.VendorId == NvidiaVendorId && m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension &&
-		    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature)
+		if (m_adapterInfo.VendorId == NvidiaVendorId && m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
+		    && m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature)
 		{
 			deviceExtensions.push_back(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 			m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure = true;
@@ -336,26 +333,40 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	}
 	VkPhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR};
+	VkPhysicalDeviceBufferDeviceAddressFeatures enabledBufferDeviceAddressFeatures{
+	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES};
 	VkPhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingPipelineFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR};
 	VkPhysicalDeviceRayQueryFeaturesKHR enabledRayQueryFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR};
 	VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV enabledPartitionedAccelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV};
-	if (m_featureStatus.RayTracing.EnabledBackend)
+	if (m_featureStatus.RayTracing.EnabledAccelerationStructure)
 	{
-		enabledFeatures12.bufferDeviceAddress = VK_TRUE;
+		if (m_adapterInfo.ApiVersion >= VK_API_VERSION_1_2)
+		{
+			enabledFeatures12.bufferDeviceAddress = VK_TRUE;
+		}
+		else
+		{
+			enabledBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+			*enabledNext = &enabledBufferDeviceAddressFeatures;
+			enabledNext = &enabledBufferDeviceAddressFeatures.pNext;
+		}
 		enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
-		enabledRayQueryFeatures.rayQuery = VK_TRUE;
 		*enabledNext = &enabledAccelerationStructureFeatures;
 		enabledNext = &enabledAccelerationStructureFeatures.pNext;
-		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension && m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature)
+		if (m_featureStatus.RayTracing.EnabledRayTracingPipeline)
 		{
 			enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
 			*enabledNext = &enabledRayTracingPipelineFeatures;
 			enabledNext = &enabledRayTracingPipelineFeatures.pNext;
 		}
-		*enabledNext = &enabledRayQueryFeatures;
-		enabledNext = &enabledRayQueryFeatures.pNext;
+		if (m_featureStatus.RayTracing.EnabledInlineRayQuery)
+		{
+			enabledRayQueryFeatures.rayQuery = VK_TRUE;
+			*enabledNext = &enabledRayQueryFeatures;
+			enabledNext = &enabledRayQueryFeatures.pNext;
+		}
 		if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure)
 		{
 			enabledPartitionedAccelerationStructureFeatures.partitionedAccelerationStructure = VK_TRUE;
@@ -456,7 +467,8 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    "dynamicRendering supported/enabled={}/{}, "
 	    "samplerAnisotropy supported/enabled={}/{}, fillModeNonSolid supported/enabled={}/{}, "
 	    "rtExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}, bda={}, partitionedTlasNv={}), "
-	    "rtFeatures(as={}, pipeline={}, rayQuery={}, bda={}, partitionedTlasNv={}), rtBackendEnabled={}, ptlasNvEnabled={}",
+	    "rtFeatures(as={}, pipeline={}, rayQuery={}, bda={}, partitionedTlasNv={}), "
+	    "rtEnabled(as={}, pipeline={}, rayQuery={}, partitionedTlasNv={})",
 	    m_validationEnabled,
 	    m_featureStatus.SupportsSynchronization2,
 	    m_featureStatus.EnabledSynchronization2,
@@ -479,7 +491,9 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    m_featureStatus.RayTracing.SupportsRayQueryFeature,
 	    m_featureStatus.RayTracing.SupportsBufferDeviceAddressFeature,
 	    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature,
-	    m_featureStatus.RayTracing.EnabledBackend,
+	    m_featureStatus.RayTracing.EnabledAccelerationStructure,
+	    m_featureStatus.RayTracing.EnabledRayTracingPipeline,
+	    m_featureStatus.RayTracing.EnabledInlineRayQuery,
 	    m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure);
 	const std::string adapterSummary = std::format(
 	    "Vulkan adapter: name='{}', api={}, driver={}, queues(graphics={}:{}, compute={}:{}, copy={}:{}), independent(compute={}, copy={})",
@@ -508,7 +522,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Driver, instanceExtensions);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Driver, deviceExtensions);
 
-	if (!m_featureStatus.RayTracing.EnabledBackend)
+	if (!m_featureStatus.RayTracing.EnabledAccelerationStructure)
 	{
 		const std::string rayTracingSummary = std::format(
 		    "Vulkan ray query backend disabled: hardwareExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}, bda={}) "
@@ -522,9 +536,9 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 		    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature,
 		    m_featureStatus.RayTracing.SupportsRayQueryFeature,
 		    m_featureStatus.RayTracing.SupportsBufferDeviceAddressFeature,
-		    m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr && m_destroyAccelerationStructure != nullptr &&
-		        m_getAccelerationStructureBuildSizes != nullptr && m_cmdBuildAccelerationStructures != nullptr &&
-		        m_getAccelerationStructureDeviceAddress != nullptr);
+		    m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr && m_destroyAccelerationStructure != nullptr
+		        && m_getAccelerationStructureBuildSizes != nullptr && m_cmdBuildAccelerationStructures != nullptr
+		        && m_getAccelerationStructureDeviceAddress != nullptr);
 		SPDLOG_LOGGER_WARN(g_vulkanRhiLogger, "{}", rayTracingSummary);
 		PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Warning, ERhiDiagnosticMessageCategory::Validation, rayTracingSummary);
 	}
@@ -547,10 +561,7 @@ bool VulkanRhi::IsLayerAvailable(const char* layerName) noexcept
 	return std::any_of(
 	    layers.begin(),
 	    layers.end(),
-	    [layerName](const VkLayerProperties& layer) noexcept
-	    {
-		    return std::string_view(layer.layerName) == layerName;
-	    });
+	    [layerName](const VkLayerProperties& layer) noexcept { return std::string_view(layer.layerName) == layerName; });
 }
 
 bool VulkanRhi::IsInstanceExtensionAvailable(const char* extensionName) noexcept
@@ -571,9 +582,7 @@ bool VulkanRhi::IsInstanceExtensionAvailable(const char* extensionName) noexcept
 	    extensions.begin(),
 	    extensions.end(),
 	    [extensionName](const VkExtensionProperties& extension) noexcept
-	    {
-		    return std::string_view(extension.extensionName) == extensionName;
-	    });
+	    { return std::string_view(extension.extensionName) == extensionName; });
 }
 
 bool VulkanRhi::IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept
@@ -594,9 +603,7 @@ bool VulkanRhi::IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* 
 	    extensions.begin(),
 	    extensions.end(),
 	    [extensionName](const VkExtensionProperties& extension) noexcept
-	    {
-		    return std::string_view(extension.extensionName) == extensionName;
-	    });
+	    { return std::string_view(extension.extensionName) == extensionName; });
 }
 
 std::uint32_t VulkanRhi::ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept

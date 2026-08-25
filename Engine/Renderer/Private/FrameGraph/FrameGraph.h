@@ -158,6 +158,24 @@ public:
 		    std::forward<ExecuteFn>(executeFn));
 	}
 
+	template <typename TParameterBindings, typename ExecuteFn>
+	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
+	void AddRayTracingPass(std::string_view name, TParameterBindings& parameters, FrameGraphBufferHandle shaderTable, ExecuteFn&& executeFn)
+	{
+		AddTypedShaderPass(
+		    name,
+		    EFrameGraphPassKind::RayTracing,
+		    EFrameGraphQueuePreference::Graphics,
+		    parameters,
+		    [shaderTable](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    {
+			    const bool parametersValid = SetupShaderParameters(builder, typedParameters, passName);
+			    builder.Read(shaderTable, ResourceUsage::RayTracingShaderTableRead, "ShaderTable");
+			    return parametersValid;
+		    },
+		    std::forward<ExecuteFn>(executeFn));
+	}
+
 	void Setup();
 	void ApplyPassParameterDefaults();
 	void PreparePasses();

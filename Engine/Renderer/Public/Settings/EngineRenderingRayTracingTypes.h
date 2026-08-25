@@ -2,10 +2,17 @@
 
 #include <cstdint>
 
-enum class GBufferMode : std::uint8_t
+enum class GBufferAlgorithm : std::uint8_t
 {
 	Rasterized,
-	Raytraced
+	RayTracing
+};
+
+enum class RayTracingExecutionMode : std::uint8_t
+{
+	Automatic,
+	Inline,
+	Pipeline,
 };
 
 enum class LightingMode : std::uint8_t

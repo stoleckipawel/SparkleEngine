@@ -5,6 +5,7 @@
 #include "RHI/Public/Pipeline/RhiPipelineDesc.h"
 #include "RHI/Public/RayTracing/RhiPartitionedTlasDesc.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
+#include "RHI/Public/RayTracing/RhiRayTracingPipelineDesc.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 
@@ -23,4 +24,7 @@ namespace RhiContract
 	bool IsRayTracingBufferSizeUsable(std::uint64_t sizeInBytes, std::uint64_t alignmentInBytes) noexcept;
 	void ValidateGraphicsPipelineDesc(const GraphicsPipelineDesc& desc);
 	void ValidateComputePipelineDesc(const ComputePipelineDesc& desc);
+	void ValidateRayTracingPipelineDesc(const RayTracingPipelineDesc& desc);
+	void ValidateRayTracingShaderTableDesc(const RayTracingShaderTableDesc& desc);
+	void ValidateTraceRaysDesc(const TraceRaysDesc& desc, ERhiQueueType queueType);
 }

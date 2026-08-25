@@ -6,10 +6,9 @@
 
 static const auto g_d3d12TypeConversionsLogger = Logging::GetOrCreateLogger("RHI.D3D12.TypeConversions");
 
-class D3D12ResourceFormatTranslation final
+namespace D3D12ResourceFormatTranslation
 {
-public:
-	static DXGI_FORMAT ResolveTextureResourceFormat(const RhiTextureResourceDesc& desc) noexcept
+	DXGI_FORMAT ResolveTextureResourceFormat(const RhiTextureResourceDesc& desc) noexcept
 	{
 		if (!desc.AllowDepthStencil)
 		{
@@ -26,7 +25,7 @@ public:
 				return D3D12TypeConversions::ToDxgiFormat(desc.Format);
 		}
 	}
-};
+}
 
 DXGI_FORMAT D3D12TypeConversions::ToDxgiFormat(PixelFormat format) noexcept
 {
@@ -178,6 +177,8 @@ D3D12_RESOURCE_STATES D3D12TypeConversions::ToResourceStates(ResourceState state
 			return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 		case ResourceState::RayTracingAccelerationStructure:
 			return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+		case ResourceState::RayTracingShaderTable:
+			return D3D12_RESOURCE_STATE_GENERIC_READ;
 		case ResourceState::CopySource:
 			return D3D12_RESOURCE_STATE_COPY_SOURCE;
 		case ResourceState::CopyDest:

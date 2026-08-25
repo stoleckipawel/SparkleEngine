@@ -28,7 +28,6 @@ PFN_vkDestroyAccelerationStructureKHR VulkanRhi::GetDestroyAccelerationStructure
 	return m_destroyAccelerationStructure;
 }
 
-
 PFN_vkGetAccelerationStructureBuildSizesKHR VulkanRhi::GetAccelerationStructureBuildSizes() const noexcept
 {
 	return m_getAccelerationStructureBuildSizes;
@@ -54,9 +53,24 @@ PFN_vkCmdBuildPartitionedAccelerationStructuresNV VulkanRhi::GetCmdBuildPartitio
 	return m_cmdBuildPartitionedAccelerationStructures;
 }
 
+PFN_vkCreateRayTracingPipelinesKHR VulkanRhi::GetCreateRayTracingPipelines() const noexcept
+{
+	return m_createRayTracingPipelines;
+}
+
+PFN_vkGetRayTracingShaderGroupHandlesKHR VulkanRhi::GetRayTracingShaderGroupHandles() const noexcept
+{
+	return m_getRayTracingShaderGroupHandles;
+}
+
+PFN_vkCmdTraceRaysKHR VulkanRhi::GetCmdTraceRays() const noexcept
+{
+	return m_cmdTraceRays;
+}
+
 void VulkanRhi::LoadRayTracingFunctions() noexcept
 {
-	if (m_device == VK_NULL_HANDLE || !m_featureStatus.RayTracing.EnabledBackend)
+	if (m_device == VK_NULL_HANDLE || !m_featureStatus.RayTracing.EnabledAccelerationStructure)
 	{
 		return;
 	}
@@ -77,6 +91,14 @@ void VulkanRhi::LoadRayTracingFunctions() noexcept
 	    reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(m_device, "vkCmdBuildAccelerationStructuresKHR"));
 	m_getAccelerationStructureDeviceAddress = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
 	    vkGetDeviceProcAddr(m_device, "vkGetAccelerationStructureDeviceAddressKHR"));
+	if (m_featureStatus.RayTracing.EnabledRayTracingPipeline)
+	{
+		m_createRayTracingPipelines =
+		    reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(m_device, "vkCreateRayTracingPipelinesKHR"));
+		m_getRayTracingShaderGroupHandles = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(
+		    vkGetDeviceProcAddr(m_device, "vkGetRayTracingShaderGroupHandlesKHR"));
+		m_cmdTraceRays = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(m_device, "vkCmdTraceRaysKHR"));
+	}
 	if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure)
 	{
 		m_getPartitionedAccelerationStructureBuildSizes = reinterpret_cast<PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV>(
@@ -85,16 +107,22 @@ void VulkanRhi::LoadRayTracingFunctions() noexcept
 		    vkGetDeviceProcAddr(m_device, "vkCmdBuildPartitionedAccelerationStructuresNV"));
 	}
 
-	const bool loaded = m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr &&
-	                    m_destroyAccelerationStructure != nullptr && m_getAccelerationStructureBuildSizes != nullptr &&
-	                    m_cmdBuildAccelerationStructures != nullptr && m_getAccelerationStructureDeviceAddress != nullptr;
+	const bool loaded = m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr
+	    && m_destroyAccelerationStructure != nullptr && m_getAccelerationStructureBuildSizes != nullptr
+	    && m_cmdBuildAccelerationStructures != nullptr && m_getAccelerationStructureDeviceAddress != nullptr;
 	if (!loaded)
 	{
-		m_featureStatus.RayTracing.EnabledBackend = false;
+		m_featureStatus.RayTracing.EnabledAccelerationStructure = false;
+		m_featureStatus.RayTracing.EnabledInlineRayQuery = false;
+		m_featureStatus.RayTracing.EnabledRayTracingPipeline = false;
 		m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure = false;
 	}
-	if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
-	    (m_getPartitionedAccelerationStructureBuildSizes == nullptr || m_cmdBuildPartitionedAccelerationStructures == nullptr))
+	if (m_createRayTracingPipelines == nullptr || m_getRayTracingShaderGroupHandles == nullptr || m_cmdTraceRays == nullptr)
+	{
+		m_featureStatus.RayTracing.EnabledRayTracingPipeline = false;
+	}
+	if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure
+	    && (m_getPartitionedAccelerationStructureBuildSizes == nullptr || m_cmdBuildPartitionedAccelerationStructures == nullptr))
 	{
 		m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure = false;
 	}
@@ -110,42 +138,55 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .CurrentDeviceIsNvidia = m_adapterInfo.VendorId == NvidiaVendorId,
 	    .SupportsDescriptorAccess = false,
 	    .CapabilityStatusReason = m_adapterInfo.VendorId != NvidiaVendorId
-	                                  ? "vulkan-nv-ptlas-requires-nvidia-device"
-	                                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
-	                                         ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
-	                                         : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature
-	                                                ? "vulkan-nv-partitioned-acceleration-structure-feature-not-present"
-	                                                : "vulkan-ray-tracing-backend-not-enabled"))};
+	        ? "vulkan-nv-ptlas-requires-nvidia-device"
+	        : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
+	                  ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
+	                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature
+	                            ? "vulkan-nv-partitioned-acceleration-structure-feature-not-present"
+	                            : "vulkan-ray-tracing-backend-not-enabled"))};
 	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
 	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,
 	    .SelectedTopLevelProviderReason = "ray-tracing-not-enabled"};
-	if (m_physicalDevice == VK_NULL_HANDLE || !m_featureStatus.RayTracing.EnabledBackend)
+	if (m_physicalDevice == VK_NULL_HANDLE || !m_featureStatus.RayTracing.EnabledAccelerationStructure)
 	{
 		return;
 	}
 
 	VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR};
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR pipelineProperties{
+	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR};
 	VkPhysicalDeviceProperties2 properties{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
 	properties.pNext = &accelerationStructureProperties;
+	if (m_featureStatus.RayTracing.EnabledRayTracingPipeline)
+	{
+		pipelineProperties.pNext = properties.pNext;
+		properties.pNext = &pipelineProperties;
+	}
 	vkGetPhysicalDeviceProperties2(m_physicalDevice, &properties);
+	const bool pipelineReady = m_featureStatus.RayTracing.EnabledRayTracingPipeline && m_createRayTracingPipelines != nullptr
+	    && m_getRayTracingShaderGroupHandles != nullptr && m_cmdTraceRays != nullptr && pipelineProperties.shaderGroupHandleSize != 0
+	    && pipelineProperties.shaderGroupBaseAlignment != 0 && pipelineProperties.shaderGroupHandleAlignment != 0
+	    && pipelineProperties.maxShaderGroupStride != 0;
 
 	m_rayTracingCapabilities = RhiRayTracingCapabilities{
-	    .SupportsRayTracing = true,
-	    .SupportsInlineRayQuery = true,
-	    .MaxTraceRecursionDepth = 1,
-	    .MaxRayPayloadSizeInBytes = 0,
-	    .MaxRayAttributeSizeInBytes = 0,
-	    .ShaderGroupHandleSizeInBytes = 0,
-	    .ShaderTableAlignmentInBytes = 0,
-	    .ShaderTableRecordAlignmentInBytes = 0,
+	    .SupportsAccelerationStructure = true,
+	    .SupportsInlineRayQuery = m_featureStatus.RayTracing.EnabledInlineRayQuery,
+	    .SupportsRayTracingPipeline = pipelineReady,
+	    .MaxTraceRecursionDepth = pipelineReady ? pipelineProperties.maxRayRecursionDepth : 0,
+	    .MaxRayPayloadSizeInBytes = pipelineReady ? kRhiRayTracingMaxPayloadSizeInBytes : 0u,
+	    .MaxRayAttributeSizeInBytes = pipelineReady ? pipelineProperties.maxRayHitAttributeSize : 0,
+	    .ShaderGroupHandleSizeInBytes = pipelineReady ? pipelineProperties.shaderGroupHandleSize : 0,
+	    .ShaderTableAlignmentInBytes = pipelineReady ? pipelineProperties.shaderGroupBaseAlignment : 0,
+	    .ShaderTableRecordAlignmentInBytes = pipelineReady ? pipelineProperties.shaderGroupHandleAlignment : 0,
+	    .MaxShaderTableRecordStrideInBytes = pipelineReady ? pipelineProperties.maxShaderGroupStride : 0,
 	    .AccelerationStructureByteAlignment = 256,
 	    .ScratchBufferByteAlignment = accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment,
 	    .InstanceDescSizeInBytes = static_cast<std::uint32_t>(sizeof(VkAccelerationStructureInstanceKHR))};
 	PopulateStandardRayTracingCapabilityGroups(m_rayTracingCapabilities);
 	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
-	    .Supported = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
-	                 m_getPartitionedAccelerationStructureBuildSizes != nullptr && m_cmdBuildPartitionedAccelerationStructures != nullptr,
+	    .Supported = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure
+	        && m_getPartitionedAccelerationStructureBuildSizes != nullptr && m_cmdBuildPartitionedAccelerationStructures != nullptr,
 	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
 	    .NvidiaDeviceOnly = true,
 	    .CurrentDeviceIsNvidia = m_adapterInfo.VendorId == NvidiaVendorId,
@@ -166,24 +207,24 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .OperationDataSizeInBytes = static_cast<std::uint32_t>(sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV)),
 	    .OperationCountDataSizeInBytes = static_cast<std::uint32_t>(sizeof(std::uint32_t)),
 	    .CapabilityStatusReason = m_adapterInfo.VendorId != NvidiaVendorId
-	                                  ? "vulkan-nv-ptlas-requires-nvidia-device"
-	                                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
-	                                         ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
-	                                         : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature
-	                                                ? "vulkan-nv-partitioned-acceleration-structure-feature-not-present"
-	                                                : (!m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure
-	                                                       ? "vulkan-nv-partitioned-acceleration-structure-not-enabled"
-	                                                       : (m_getPartitionedAccelerationStructureBuildSizes == nullptr ||
-	                                                                  m_cmdBuildPartitionedAccelerationStructures == nullptr
-	                                                              ? "vulkan-nv-ptlas-functions-not-loaded"
-	                                                              : "vulkan-nv-ptlas-provider-ready"))))};
+	        ? "vulkan-nv-ptlas-requires-nvidia-device"
+	        : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
+	                  ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
+	                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature
+	                            ? "vulkan-nv-partitioned-acceleration-structure-feature-not-present"
+	                            : (!m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure
+	                                      ? "vulkan-nv-partitioned-acceleration-structure-not-enabled"
+	                                      : (m_getPartitionedAccelerationStructureBuildSizes == nullptr
+	                                                    || m_cmdBuildPartitionedAccelerationStructures == nullptr
+	                                                ? "vulkan-nv-ptlas-functions-not-loaded"
+	                                                : "vulkan-nv-ptlas-provider-ready"))))};
 	SelectRayTracingTopLevelProvider();
 }
 
 void VulkanRhi::SelectRayTracingTopLevelProvider() noexcept
 {
 	RhiRayTracingProviderCapabilities& provider = m_rayTracingCapabilities.Groups.Provider;
-	if (!m_rayTracingCapabilities.SupportsRayTracing)
+	if (!m_rayTracingCapabilities.SupportsAccelerationStructure)
 	{
 		provider = RhiRayTracingProviderCapabilities{
 		    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,

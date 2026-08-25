@@ -4,22 +4,10 @@
 
 void PopulateStandardRayTracingCapabilityGroups(RhiRayTracingCapabilities& capabilities) noexcept
 {
-	capabilities.Groups.AccelerationStructures = RhiAccelerationStructureCapabilities{
-	    .SupportsRayTracing = capabilities.SupportsRayTracing,
-	    .SupportsInlineRayQuery = capabilities.SupportsInlineRayQuery,
-	    .SupportsAccelerationStructureShaderBinding = capabilities.SupportsRayTracing,
-	    .MaxTraceRecursionDepth = capabilities.MaxTraceRecursionDepth,
-	    .MaxRayPayloadSizeInBytes = capabilities.MaxRayPayloadSizeInBytes,
-	    .MaxRayAttributeSizeInBytes = capabilities.MaxRayAttributeSizeInBytes,
-	    .ShaderGroupHandleSizeInBytes = capabilities.ShaderGroupHandleSizeInBytes,
-	    .ShaderTableAlignmentInBytes = capabilities.ShaderTableAlignmentInBytes,
-	    .ShaderTableRecordAlignmentInBytes = capabilities.ShaderTableRecordAlignmentInBytes,
-	    .AccelerationStructureByteAlignment = capabilities.AccelerationStructureByteAlignment,
-	    .ScratchBufferByteAlignment = capabilities.ScratchBufferByteAlignment};
 	capabilities.Groups.ClassicTlas = RhiClassicTlasCapabilities{
-	    .SupportsClassicTlasBuild = capabilities.SupportsRayTracing,
-	    .SupportsClassicTlasUpdate = capabilities.SupportsRayTracing,
-	    .SupportsGpuReadableInstanceBuffer = capabilities.SupportsRayTracing,
+	    .SupportsClassicTlasBuild = capabilities.SupportsAccelerationStructure,
+	    .SupportsClassicTlasUpdate = capabilities.SupportsAccelerationStructure,
+	    .SupportsGpuReadableInstanceBuffer = capabilities.SupportsAccelerationStructure,
 	    .InstanceDescSizeInBytes = capabilities.InstanceDescSizeInBytes};
 }
 

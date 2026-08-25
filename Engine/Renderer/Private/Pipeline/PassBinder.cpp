@@ -19,7 +19,7 @@ struct PassBinder::BindingRequest final
 	const CompiledBinding& Binding;
 	const PassParameterBinding* Parameters;
 	const PassBindingOverrides* Overrides;
-	bool IsCompute = false;
+	BindingDomain Domain = BindingDomain::Graphics;
 };
 
 void PassBinder::BindGraphics(
@@ -31,7 +31,7 @@ void PassBinder::BindGraphics(
     const PassBindingOverrides* overrides,
     bool bindLayout)
 {
-	BindImpl(commandContext, resources, layout, parameterSet, bindingNames, overrides, bindLayout, false);
+	BindImpl(commandContext, resources, layout, parameterSet, bindingNames, overrides, bindLayout, BindingDomain::Graphics);
 }
 
 void PassBinder::BindCompute(
@@ -43,7 +43,19 @@ void PassBinder::BindCompute(
     const PassBindingOverrides* overrides,
     bool bindLayout)
 {
-	BindImpl(commandContext, resources, layout, parameterSet, bindingNames, overrides, bindLayout, true);
+	BindImpl(commandContext, resources, layout, parameterSet, bindingNames, overrides, bindLayout, BindingDomain::Compute);
+}
+
+void PassBinder::BindRayTracing(
+    RenderCommandContext& commandContext,
+    const FrameGraphResourceCommands& resources,
+    const RenderBindingLayout& layout,
+    const PassParameterSet& parameterSet,
+    std::span<const char* const> bindingNames,
+    const PassBindingOverrides* overrides,
+    bool bindLayout)
+{
+	BindImpl(commandContext, resources, layout, parameterSet, bindingNames, overrides, bindLayout, BindingDomain::RayTracing);
 }
 
 void PassBinder::BindImpl(
@@ -54,7 +66,7 @@ void PassBinder::BindImpl(
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides,
     bool bindLayout,
-    bool isCompute)
+    BindingDomain domain)
 {
 	Require(parameterSet.HasLayout(), "Pass binding requires a parameter set with a compiled layout.");
 	if (bindingNames.empty())
@@ -65,9 +77,13 @@ void PassBinder::BindImpl(
 		Require(parameterLayout->Matches(compiledLayout), "Pass parameter layout does not match the compiled binding layout.");
 	}
 
-	if (bindLayout && isCompute)
+	if (bindLayout && domain == BindingDomain::Compute)
 	{
 		commandContext.SetComputeBindingLayout(layout);
+	}
+	else if (bindLayout && domain == BindingDomain::RayTracing)
+	{
+		commandContext.SetRayTracingBindingLayout(layout);
 	}
 	else if (bindLayout)
 	{
@@ -85,7 +101,7 @@ void PassBinder::BindImpl(
 			    compiledBinding,
 			    parameterSet.FindBinding(compiledBinding.Name),
 			    overrides,
-			    isCompute);
+			    domain);
 		}
 		return;
 	}
@@ -101,7 +117,7 @@ void PassBinder::BindImpl(
 				continue;
 			}
 
-			BindCompiledBinding(commandContext, resources, compiledBinding, parameterSet.FindBinding(bindingName), overrides, isCompute);
+			BindCompiledBinding(commandContext, resources, compiledBinding, parameterSet.FindBinding(bindingName), overrides, domain);
 			boundAny = true;
 		}
 
@@ -115,7 +131,7 @@ void PassBinder::BindCompiledBinding(
     const CompiledBinding& compiledBinding,
     const PassParameterBinding* parameterBinding,
     const PassBindingOverrides* overrides,
-    bool isCompute)
+    BindingDomain domain)
 {
 	const BindingRequest request{
 	    .CommandContext = commandContext,
@@ -124,7 +140,7 @@ void PassBinder::BindCompiledBinding(
 	    .Binding = compiledBinding,
 	    .Parameters = parameterBinding,
 	    .Overrides = overrides,
-	    .IsCompute = isCompute};
+	    .Domain = domain};
 	switch (compiledBinding.Type)
 	{
 		case CompiledBindingType::ConstantBuffer:
@@ -162,7 +178,7 @@ void PassBinder::BindConstantBuffer(const BindingRequest& request)
 	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::ConstantBufferView) : nullptr;
 	if (bindingOverride != nullptr)
 	{
-		BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.IsCompute);
+		BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.Domain);
 		return;
 	}
 
@@ -173,7 +189,7 @@ void PassBinder::BindConstantBuffer(const BindingRequest& request)
 	    request.CommandContext.GetRenderCommandList(),
 	    uniformData->Data,
 	    uniformData->SizeInBytes);
-	BindGpuAddress(request.CommandContext, request.Binding, gpuAddress, request.IsCompute);
+	BindGpuAddress(request.CommandContext, request.Binding, gpuAddress, request.Domain);
 }
 
 void PassBinder::BindReadOnlyAddress(const BindingRequest& request)
@@ -182,7 +198,7 @@ void PassBinder::BindReadOnlyAddress(const BindingRequest& request)
 	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::ShaderResourceView) : nullptr;
 	if (bindingOverride != nullptr)
 	{
-		BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.IsCompute);
+		BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.Domain);
 		return;
 	}
 
@@ -195,7 +211,7 @@ void PassBinder::BindReadWriteAddress(const BindingRequest& request)
 	const PassBindingOverride* bindingOverride =
 	    request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::UnorderedAccessView);
 	Require(bindingOverride != nullptr, "Read-write address binding has no unordered-access override.");
-	BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.IsCompute);
+	BindGpuAddress(request.CommandContext, request.Binding, bindingOverride->GpuAddress, request.Domain);
 }
 
 void PassBinder::BindAccelerationStructure(const BindingRequest& request)
@@ -205,9 +221,14 @@ void PassBinder::BindAccelerationStructure(const BindingRequest& request)
 	Require(accelerationStructure != nullptr, "Acceleration-structure binding has incompatible parameter data.");
 	const RhiResourceHandle resource = request.Resources.ResolveAccelerationStructure(*accelerationStructure);
 	Require(static_cast<bool>(resource), "Acceleration-structure binding resolved to no resource.");
-	if (request.IsCompute)
+	if (request.Domain == BindingDomain::Compute)
 	{
 		request.CommandContext.BindComputeAccelerationStructure(request.Binding.BindingIndex, resource);
+		return;
+	}
+	if (request.Domain == BindingDomain::RayTracing)
+	{
+		request.CommandContext.BindRayTracingAccelerationStructure(request.Binding.BindingIndex, resource);
 		return;
 	}
 	request.CommandContext.BindAccelerationStructure(request.Binding.BindingIndex, resource);
@@ -219,7 +240,7 @@ void PassBinder::BindResourceTable(const BindingRequest& request, bool readWrite
 	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::DescriptorTable) : nullptr;
 	if (bindingOverride != nullptr)
 	{
-		BindDescriptorTableOverride(request.CommandContext, request.Binding, *bindingOverride, request.IsCompute);
+		BindDescriptorTableOverride(request.CommandContext, request.Binding, *bindingOverride, request.Domain);
 		return;
 	}
 
@@ -231,11 +252,11 @@ void PassBinder::BindResourceTable(const BindingRequest& request, bool readWrite
 	{
 		if (descriptorTableData->Table)
 		{
-			BindDescriptorTable(request.CommandContext, request.Binding, descriptorTableData->Table, request.IsCompute);
+			BindDescriptorTable(request.CommandContext, request.Binding, descriptorTableData->Table, request.Domain);
 		}
 		else
 		{
-			BindDescriptorTable(request.CommandContext, request.Binding, descriptorTableData->GpuHandle, request.IsCompute);
+			BindDescriptorTable(request.CommandContext, request.Binding, descriptorTableData->GpuHandle, request.Domain);
 		}
 		return;
 	}
@@ -246,7 +267,7 @@ void PassBinder::BindResourceTable(const BindingRequest& request, bool readWrite
 		Require(textureData->Handles.size() == 1, "Texture binding must contain exactly one resource.");
 		const RhiGpuDescriptorHandle view = readWrite ? request.Resources.ResolveUnorderedAccessView(textureData->Handles[0])
 		                                              : request.Resources.ResolveShaderResourceView(textureData->Handles[0]);
-		BindDescriptorTable(request.CommandContext, request.Binding, view, request.IsCompute);
+		BindDescriptorTable(request.CommandContext, request.Binding, view, request.Domain);
 		return;
 	}
 
@@ -258,7 +279,7 @@ void PassBinder::BindResourceTable(const BindingRequest& request, bool readWrite
 	Require(bufferData->Handles.size() == 1, "Buffer binding must contain exactly one resource.");
 	const RhiGpuDescriptorHandle view = readWrite ? request.Resources.ResolveUnorderedAccessView(bufferData->Handles[0])
 	                                              : request.Resources.ResolveShaderResourceView(bufferData->Handles[0]);
-	BindDescriptorTable(request.CommandContext, request.Binding, view, request.IsCompute);
+	BindDescriptorTable(request.CommandContext, request.Binding, view, request.Domain);
 }
 
 void PassBinder::BindSamplerTable(const BindingRequest& request)
@@ -267,7 +288,7 @@ void PassBinder::BindSamplerTable(const BindingRequest& request)
 	    request.Overrides != nullptr ? request.Overrides->Find(request.Binding.Name, PassBindingOverrideType::DescriptorTable) : nullptr;
 	if (bindingOverride != nullptr)
 	{
-		BindDescriptorTableOverride(request.CommandContext, request.Binding, *bindingOverride, request.IsCompute);
+		BindDescriptorTableOverride(request.CommandContext, request.Binding, *bindingOverride, request.Domain);
 		return;
 	}
 
@@ -277,7 +298,7 @@ void PassBinder::BindSamplerTable(const BindingRequest& request)
 	const RhiDescriptorTableBinding samplerBinding =
 	    request.HardwareInterface.GetDescriptorService().GetSharedSamplerBinding(samplerData->Desc);
 	Require(static_cast<bool>(samplerBinding), "Sampler binding did not resolve a descriptor table.");
-	BindDescriptorTable(request.CommandContext, request.Binding, samplerBinding, request.IsCompute);
+	BindDescriptorTable(request.CommandContext, request.Binding, samplerBinding, request.Domain);
 }
 
 void PassBinder::BindPushConstantData(const BindingRequest& request)
@@ -291,7 +312,7 @@ void PassBinder::BindPushConstantData(const BindingRequest& request)
 		    request.Binding,
 		    bindingOverride->ConstantsData,
 		    bindingOverride->ConstantCount,
-		    request.IsCompute);
+		    request.Domain);
 		return;
 	}
 
@@ -303,7 +324,7 @@ void PassBinder::BindPushConstantData(const BindingRequest& request)
 	    request.Binding,
 	    uniformData->Data,
 	    uniformData->SizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t)),
-	    request.IsCompute);
+	    request.Domain);
 }
 
 void PassBinder::Require(bool condition, std::string_view message)

@@ -1,6 +1,7 @@
 #include "PCH.h"
 
 #include "D3D12/RayTracing/D3D12RayTracingServices.h"
+#include "D3D12/RayTracing/D3D12RayTracingShaderTable.h"
 
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Device/D3D12Rhi.h"
@@ -61,8 +62,8 @@ RhiRayTracingCapabilities D3D12RayTracingServices::GetCapabilities() const noexc
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(
     const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
-	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    !RhiContract::IsRayTracingGeometryDescUsable(geometry))
+	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure
+	    || !RhiContract::IsRayTracingGeometryDescUsable(geometry))
 	{
 		return {};
 	}
@@ -125,8 +126,7 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreatePartitionedTopLevelAcceler
 RhiOwnedResourceHandle D3D12RayTracingServices::CreateScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName)
 {
 	const std::uint64_t scratchAlignment = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().ScratchBufferByteAlignment : 0;
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, scratchAlignment))
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, scratchAlignment))
 	{
 		return {};
 	}
@@ -142,9 +142,7 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateScratchBuffer(std::uint64_
 	return ownedRecord != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
 }
 
-RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingScratchBuffer(
-    std::uint64_t sizeInBytes,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName)
 {
 	return CreateScratchBuffer(sizeInBytes, debugName);
 }
@@ -154,10 +152,8 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateAccelerationStructureBuffe
     ERhiRayTracingAccelerationStructureType,
     std::wstring_view debugName)
 {
-	const std::uint64_t asAlignment =
-	    m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().AccelerationStructureByteAlignment : 0;
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, asAlignment))
+	const std::uint64_t asAlignment = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().AccelerationStructureByteAlignment : 0;
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, asAlignment))
 	{
 		return {};
 	}
@@ -207,4 +203,13 @@ bool D3D12RayTracingServices::BuildPartitionedTopLevelAccelerationStructure(
 		return false;
 	}
 	return m_nvapiProvider != nullptr && m_nvapiProvider->BuildPartitionedTlas(commandList, desc);
+}
+
+std::unique_ptr<RayTracingShaderTable> D3D12RayTracingServices::CreateRayTracingShaderTable(const RayTracingShaderTableDesc& desc)
+{
+	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracingPipeline)
+	{
+		throw Diagnostics::Error("D3D12 ray-tracing shader-table creation requires complete pipeline readiness.");
+	}
+	return std::make_unique<D3D12RayTracingShaderTable>(*m_rhi, desc);
 }

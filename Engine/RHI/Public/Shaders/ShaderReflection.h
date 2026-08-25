@@ -132,7 +132,7 @@ struct CookedShaderPushConstantRangeRecord
 	std::uint32_t OffsetInBytes = 0;
 	std::uint32_t SizeInBytes = 0;
 	ShaderStageMask VisibilityMask = ShaderStageMask::None;
-	std::uint8_t Reserved0[3] = {};
+	std::uint8_t Reserved0[2] = {};
 };
 
 // SPIR-V specialization constant (id, type, default value bits).
@@ -172,5 +172,6 @@ static_assert(std::is_trivially_copyable_v<CookedShaderConstantBufferRecord>, "m
 static_assert(std::is_trivially_copyable_v<CookedShaderConstantBufferMemberRecord>, "must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<CookedShaderInputElementRecord>, "must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<CookedShaderPushConstantRangeRecord>, "must stay trivially copyable.");
+static_assert(sizeof(CookedShaderPushConstantRangeRecord) == 12, "serialized push-constant records must have no hidden padding.");
 static_assert(std::is_trivially_copyable_v<CookedShaderSpecializationConstantRecord>, "must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<CookedShaderReflectionRecord>, "must stay trivially copyable.");

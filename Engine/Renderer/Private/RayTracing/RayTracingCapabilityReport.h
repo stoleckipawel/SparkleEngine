@@ -20,7 +20,10 @@ struct RayTracingPartitionedTlasCapabilityReport final
 
 struct RayTracingCapabilityReport final
 {
-	bool SupportsRayTracing = false;
+	bool SupportsAccelerationStructure = false;
+	bool SupportsInlineRayQuery = false;
+	bool SupportsRayTracingPipeline = false;
+	bool SupportsDescriptorIndexing = false;
 	RayTracingTopLevelProviderCapabilityReport TopLevelProvider;
 	RayTracingPartitionedTlasCapabilityReport PartitionedTlas;
 };

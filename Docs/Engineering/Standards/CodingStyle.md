@@ -122,6 +122,14 @@ Enforcement is an exact definition/consumer audit in review. A raw field-count c
 
 C++ source must make ownership, mutability, error behavior, and cost visible in review. Module and subsystem owners decide where product policy, algorithms, lifetime, and host integration belong.
 
+#### Console-variable access
+
+Runtime code MUST NOT pass a console variable, or a value copied solely from a console variable, through application-defined function parameters, settings records, context objects, or forwarding helpers. A subsystem that consumes console-controlled policy queries the registered CVar directly at its narrow decision point. Pass only the non-CVar data or focused capability required to resolve that decision. Calls to standard-library algorithms and immediate construction of the owned output are ordinary value use, not CVar plumbing.
+
+Cached topology owners may retain the resolved topology they actually built so they can detect when reconstruction is required. That cache is observation state, not another policy authority, and MUST NOT be forwarded back into feature construction. Editor and persistence boundaries may capture or apply complete settings state because their responsibility is explicitly to present or serialize CVar values; this exception does not permit runtime CVar plumbing.
+
+Code review searches both direct calls such as `Consumer(CVarName.Get())` and indirect copies placed in `*Settings`, `*Context`, `*Options`, or similarly generic records. Remove the carrier and update the consumer to query its CVar owner in the same change.
+
 ### HLSL/HLSLI
 
 Shader formatting may use a scoped executable override when C++ parsing produces unsafe or unreadable output. A shader-style change requires representative DXIL and SPIR-V compilation, reflection/layout checks, and package validation. Shader semantic rules live in [Graphics Engineering](GraphicsEngineering.md).

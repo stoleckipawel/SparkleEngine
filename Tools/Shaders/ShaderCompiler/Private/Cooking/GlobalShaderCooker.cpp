@@ -49,6 +49,7 @@ ShaderCookResult GlobalShaderCooker::CookAll(const ShaderCookSettings& settings)
 		        .shaderTypeId = shader.shaderTypeId,
 		        .target = compiled.Target,
 		        .features = shader.features,
+		        .rayTracing = shader.rayTracing,
 		        .parameterLayout = shader.parameterLayout,
 		        .bindingRemaps = job.Request.DescriptorBindingRemaps,
 		        .compiled = std::move(compiled.Output)});

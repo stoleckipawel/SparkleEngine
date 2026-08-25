@@ -208,16 +208,19 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 	const HRESULT hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5));
 	if (SUCCEEDED(hr))
 	{
-		m_rayTracingCapabilities.SupportsRayTracing = options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
+		m_rayTracingCapabilities.SupportsAccelerationStructure = options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
 		m_rayTracingCapabilities.SupportsInlineRayQuery = options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_1;
-		if (m_rayTracingCapabilities.SupportsRayTracing)
+		m_rayTracingCapabilities.SupportsRayTracingPipeline = options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
+		if (m_rayTracingCapabilities.SupportsAccelerationStructure)
 		{
 			m_rayTracingCapabilities.MaxTraceRecursionDepth = D3D12_RAYTRACING_MAX_DECLARABLE_TRACE_RECURSION_DEPTH;
-			m_rayTracingCapabilities.MaxRayPayloadSizeInBytes = kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes;
+			m_rayTracingCapabilities.MaxRayPayloadSizeInBytes =
+			    std::min(kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes, kRhiRayTracingMaxPayloadSizeInBytes);
 			m_rayTracingCapabilities.MaxRayAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
 			m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 			m_rayTracingCapabilities.ShaderTableAlignmentInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 			m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+			m_rayTracingCapabilities.MaxShaderTableRecordStrideInBytes = D3D12_RAYTRACING_MAX_SHADER_RECORD_STRIDE;
 			m_rayTracingCapabilities.AccelerationStructureByteAlignment = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT;
 			m_rayTracingCapabilities.ScratchBufferByteAlignment = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT;
 			m_rayTracingCapabilities.InstanceDescSizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
@@ -233,7 +236,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		m_rayTracingCapabilities.Groups.PartitionedTlas = m_nvapiRayTracingProvider.QueryPartitionedTlasCapabilities(
 		    m_device.Get(),
 		    IsNvidiaAdapter(),
-		    m_rayTracingCapabilities.SupportsRayTracing);
+		    m_rayTracingCapabilities.SupportsAccelerationStructure);
 		SelectRayTracingTopLevelProvider();
 	}
 	else
@@ -251,7 +254,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 void D3D12Rhi::SelectRayTracingTopLevelProvider() noexcept
 {
 	RhiRayTracingProviderCapabilities& provider = m_rayTracingCapabilities.Groups.Provider;
-	if (!m_rayTracingCapabilities.SupportsRayTracing)
+	if (!m_rayTracingCapabilities.SupportsAccelerationStructure)
 	{
 		provider = RhiRayTracingProviderCapabilities{
 		    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,

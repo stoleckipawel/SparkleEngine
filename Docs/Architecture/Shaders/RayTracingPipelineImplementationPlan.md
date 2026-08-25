@@ -1,7 +1,7 @@
 # Ray-Tracing Pipeline and Dual-Execution Target Architecture
 
 Status: target proposal and semantic contract; not implementation authority or proof of runtime support
-Current-state audit provenance: 2026-08-23 source reconciliation is recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#ray-tracing-phase-0-extension)
+Current-state audit provenance: 2026-08-24 source reconciliation, the Phase 6 foundation verdict, and the Phase 7 product-slice verdict are recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#phase-7-source-consistency-evidence)
 Scope: ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, supported alternates, mandatory failure, and target completion invariants
 
 ## Purpose and authority boundary
@@ -10,7 +10,7 @@ This document describes the intended ray-tracing system as one coherent target. 
 
 It intentionally owns no implementation phases, prompts, phase references, CL boundaries, test order, or delivery gates. [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#implementation-contract) is the single implementation authority for the shader frontend, compiler, global shader map, code library, RHI/backend pipeline, shader table, frame graph, effects, tooling, and evidence. Its [unified implementation reference map](ShaderAuthoringAndCookedPrograms.md#unified-implementation-reference-map) owns the actionable external references.
 
-Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. Until the unified plan proves the complete path, the existing inline-query renderer is current and native pipeline execution is a target.
+Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. The current unstaged source contains the first dual-execution GBuffer product route, but native execution, parity, reload, and performance remain unproved until Phase 12.
 
 Related authority:
 
@@ -90,11 +90,13 @@ The revision-pinned current inventory lives in the implementation document. Its 
 ```text
 CURRENT
 
-typed compute shader -> global registration/package -> compute pipeline
-                                                    |
+typed compute shader -> GlobalShaderMap/code library -> compute pipeline
+                                                        |
 effect -> frame-graph compute pass -> Dispatch -> RayQuery + shared TLAS
 
-generic RT metadata -> package cook/inspection -> deliberate runtime rejection
+generic six-stage RT route -> typed composition -> neutral/native pipeline + table
+                                                -> typed graph TraceRays API
+                                                -X no concrete reachable stage consumer yet
 
 
 TARGET
@@ -198,14 +200,14 @@ Every RT stage is an ordinary concrete shader class in the same global-shader sy
 
 - the selected ray-generation shader's nested `Parameters` owns dispatch-global shader-visible input/output fields and is the frame-graph parameter schema;
 - miss, hit, intersection, and callable shaders do not repeat that root schema or declare an empty parameter carrier;
-- the focused composition owns its shared payload and attribute types once and validates every participating export against them;
+- the selected ray-generation shader owns its shared payload, attribute, and recursion compile contract once; the focused composition derives that ABI and never copies it into each participating stage;
 - optional local data has one bounded hit-group/stage record schema only where a shader actually consumes it;
 - implementation registration owns virtual source, entry/export, and stage;
 - the frozen catalog owns immutable type metadata;
 - compile jobs and the final map/library own target code and ABI records;
 - `ShaderRef<Shader>` owns typed runtime lookup.
 
-`RayTracingPipelineComposition` is the only RT-specific authoring composition. It exists because a native RT pipeline must relate several exports and hit groups. It contains typed references and policy—not code bytes, package names, source strings, native identifiers, graph resources, or effect runtime state.
+`RayTracingPipelineComposition` is the only RT-specific authoring composition. It exists because a native RT pipeline must relate several exports and hit groups. It contains typed identities and hit-group policy—not copied shader names, stages, ABI metadata, code bytes, package names, source strings, native identifiers, graph resources, or effect runtime state. Materialization reads dispatch-wide ABI from the selected ray-generation registration, while neutral export and hit-group descriptors derive local-record contracts from their resolved shader entries rather than accepting another caller-authored copy.
 
 A composition specifies only what is structurally required:
 
@@ -330,6 +332,8 @@ The first product effect is the ray-traced GBuffer:
 - one ray type, recursion depth one, global parameters, no local data, zero contribution mapping;
 - exact identity/sentinel comparisons and field-specific floating-point tolerances in the same frame;
 - rasterized GBuffer remains an explicit supported algorithm, not a fabricated ray-traced result.
+
+The Phase 7 source checkpoint realizes that slice with `GBufferAlgorithm::{Rasterized,RayTracing}`, independent `RayTracingExecutionMode::{Automatic,Inline,Pipeline}`, and one immutable graph-construction `RayTracingGBufferExecutionPlan`. The GBuffer owner reads both renderer CVars directly; frame-graph settings and feature APIs do not forward their values or the derived plan. `FramePipeline` retains only the topology it actually built for reconstruction detection. `RayTracingGBufferRGS::Parameters` is the single global parameter schema; `RayTracingGBufferInlineCS` reuses it rather than mirroring fields. `RayTracingGBufferCommon.hlsli` owns ray setup, hit reconstruction, material lookup, depth/motion, miss encoding, and all GBuffer stores. `RayTracingGBufferInline.hlsl` owns only `RayQuery` traversal, while `RayTracingGBufferPipeline.hlsl` owns only ray-generation/miss/opaque-closest-hit stage mechanics and a 24-byte payload. The graph creates one target set and schedules exactly one frontend. Until Phase 8 supplies any-hit, `RenderScene` derives whether referenced geometry uses masked materials; strict Pipeline rejects that scene before graph construction and Automatic records the reason before selecting Inline. This is implemented source shape, not native or parity evidence.
 
 The production hit slice adds:
 

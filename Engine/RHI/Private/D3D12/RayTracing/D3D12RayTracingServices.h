@@ -14,11 +14,8 @@ struct ID3D12GraphicsCommandList7;
 
 class D3D12RayTracingServices final : public RhiRayTracingService
 {
-  public:
-	D3D12RayTracingServices(
-	    D3D12Rhi& rhi,
-	    D3D12GpuMemoryAllocator& memoryAllocator,
-	    D3D12NvapiRayTracingProvider& nvapiProvider) noexcept;
+public:
+	D3D12RayTracingServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator, D3D12NvapiRayTracingProvider& nvapiProvider) noexcept;
 
 	RhiClassicTlasService& GetClassicTlasService() noexcept override;
 	const RhiClassicTlasService& GetClassicTlasService() const noexcept override;
@@ -59,8 +56,9 @@ class D3D12RayTracingServices final : public RhiRayTracingService
 	bool BuildPartitionedTopLevelAccelerationStructure(
 	    ID3D12GraphicsCommandList7* commandList,
 	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;
+	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(const RayTracingShaderTableDesc& desc) override;
 
-  private:
+private:
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 	D3D12NvapiRayTracingProvider* m_nvapiProvider = nullptr;

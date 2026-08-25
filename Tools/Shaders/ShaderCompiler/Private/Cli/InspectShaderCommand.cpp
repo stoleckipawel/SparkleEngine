@@ -26,8 +26,8 @@ int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 		const CookedShaderLibrary library = CookedShaderLibrary::Open(Filesystem::GetCookedShaderLibraryPath());
 		const GlobalShaderMap map = GlobalShaderMap::Open(Filesystem::GetGlobalShaderMapPath(), library);
 		std::cout << shader.shaderName << " type=" << Formatting::FormatPrefixedHexUInt64(shader.shaderTypeId)
-		          << " stage=" << GetShaderStagePrefix(shader.stage) << " source=" << shader.sourcePath
-		          << " entry=" << shader.entryPoint << " parameters=" << shader.parameterStruct.Fields.size() << "\n";
+		          << " stage=" << GetShaderStagePrefix(shader.stage) << " source=" << shader.sourcePath << " entry=" << shader.entryPoint
+		          << " parameters=" << shader.parameterStruct.Fields.size() << "\n";
 		for (const ShaderTarget target : {ShaderTarget::DxilSm66, ShaderTarget::SpirV16})
 		{
 			const GlobalShaderMapEntry* const entry = map.Find(shader.shaderTypeId, target);
@@ -35,10 +35,17 @@ int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 			{
 				continue;
 			}
-			std::cout << "  target=" << GetShaderTargetName(target)
-			          << " codeHash=" << Formatting::FormatPrefixedHexUInt64(entry->CodeHash)
+			std::cout << "  target=" << GetShaderTargetName(target) << " codeHash=" << Formatting::FormatPrefixedHexUInt64(entry->CodeHash)
 			          << " parameterSignature=" << Formatting::FormatPrefixedHexUInt64(entry->ParameterSignature)
-			          << " compileInputHash=" << Formatting::FormatPrefixedHexUInt64(entry->CompileInputHash) << "\n";
+			          << " compileInputHash=" << Formatting::FormatPrefixedHexUInt64(entry->CompileInputHash);
+			if (IsRayTracingShaderStage(entry->Stage))
+			{
+				std::cout << " payloadBytes=" << entry->RayPayloadSizeInBytes << " attributeBytes=" << entry->RayAttributeSizeInBytes
+				          << " minimumRecursion=" << entry->MinimumRayRecursionDepth
+				          << " localRecordBytes=" << entry->LocalRecordSizeInBytes
+				          << " localRecordSignature=" << Formatting::FormatPrefixedHexUInt64(entry->LocalRecordSignature);
+			}
+			std::cout << "\n";
 		}
 		return kExitCodeSuccess;
 	}

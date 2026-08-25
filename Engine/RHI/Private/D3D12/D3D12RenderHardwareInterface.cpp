@@ -18,6 +18,7 @@
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12Pipeline.h"
+#include "D3D12/Pipeline/D3D12RayTracingPipeline.h"
 #include "D3D12/RayTracing/D3D12RayTracingServices.h"
 #include "D3D12/Resources/D3D12ResourceService.h"
 #include "D3D12/Resources/D3D12UploadService.h"
@@ -36,13 +37,16 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12SwapChain& swapChain,
     D3D12UploadService& uploadService) noexcept :
-    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_uploadService(&uploadService)
+    m_rhi(&rhi),
+    m_descriptorHeapManager(&descriptorHeapManager),
+    m_swapChain(&swapChain),
+    m_uploadService(&uploadService)
 {
 	m_interopService = std::make_unique<D3D12InteropService>(*this);
 	m_captureService = std::make_unique<D3D12CaptureService>(rhi);
 	m_presentationService = std::make_unique<RhiPresentationServiceAdapter<D3D12RenderHardwareInterface>>(*this);
-	m_pipelineService = std::make_unique<
-	    RhiPipelineServiceAdapter<D3D12Rhi, D3D12Pipeline, D3D12BindingLayoutCompiler>>(rhi);
+	m_pipelineService =
+	    std::make_unique<RhiPipelineServiceAdapter<D3D12Rhi, D3D12Pipeline, D3D12RayTracingPipeline, D3D12BindingLayoutCompiler>>(rhi);
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
 	m_resourceService = std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, m_capabilities);
 	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, rhi.GetNvapiRayTracingProvider());
@@ -69,15 +73,15 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 {
 	RhiCapabilities capabilities{};
 	const D3D_FEATURE_LEVEL featureLevel = m_rhi->GetDeviceFeatureLevel();
-	const std::uint32_t featureLevelMajor = featureLevel >= D3D_FEATURE_LEVEL_12_0   ? 12u
-	                                        : featureLevel >= D3D_FEATURE_LEVEL_11_0 ? 11u
-	                                                                                 : 0u;
-	const std::uint32_t featureLevelMinor = featureLevel == D3D_FEATURE_LEVEL_12_2   ? 2u
-	                                        : featureLevel == D3D_FEATURE_LEVEL_12_1 ? 1u
-	                                        : featureLevel == D3D_FEATURE_LEVEL_12_0 ? 0u
-	                                        : featureLevel == D3D_FEATURE_LEVEL_11_1 ? 1u
-	                                        : featureLevel == D3D_FEATURE_LEVEL_11_0 ? 0u
-	                                                                                 : 0u;
+	const std::uint32_t featureLevelMajor = featureLevel >= D3D_FEATURE_LEVEL_12_0 ? 12u
+	    : featureLevel >= D3D_FEATURE_LEVEL_11_0                                   ? 11u
+	                                                                               : 0u;
+	const std::uint32_t featureLevelMinor = featureLevel == D3D_FEATURE_LEVEL_12_2 ? 2u
+	    : featureLevel == D3D_FEATURE_LEVEL_12_1                                   ? 1u
+	    : featureLevel == D3D_FEATURE_LEVEL_12_0                                   ? 0u
+	    : featureLevel == D3D_FEATURE_LEVEL_11_1                                   ? 1u
+	    : featureLevel == D3D_FEATURE_LEVEL_11_0                                   ? 0u
+	                                                                               : 0u;
 	capabilities.BackendApi = ERhiBackendApi::D3D12;
 	capabilities.RuntimeShaderBinaryFormat = ShaderBinaryFormat::Dxil;
 	capabilities.BackendVersion = RhiBackendVersionInfo{

@@ -18,7 +18,8 @@ CookedStageBuild StageCompiler::Compile(
 		throw Diagnostics::Error(
 		    std::string{"Active shader backend does not support target '"} + GetShaderTargetName(request.Target) + "'.");
 	}
-	if (request.UnitKind == ShaderCompileUnitKind::Library && !capabilities.SupportsRayTracingLibrary(request.Target))
+	if (HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::RayTracingPipeline)
+	    && !capabilities.SupportsRayTracingLibrary(request.Target))
 	{
 		throw Diagnostics::Error(
 		    std::string{"Active shader backend does not support shader libraries for target '"} + GetShaderTargetName(request.Target)

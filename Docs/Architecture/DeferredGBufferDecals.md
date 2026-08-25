@@ -23,7 +23,7 @@ This document owns decal semantics, data flow, pass placement, shared raster/ray
 The completed path supports box-projected, softly blended decals that alter base color, world normal, metallic/roughness/AO/F0, emissive, and subsurface material values before lighting. The same authored decal can therefore appear:
 
 - on a rasterized GBuffer receiver;
-- on a primary surface written by the inline ray-traced GBuffer;
+- on a primary surface written by either ray-tracing GBuffer frontend;
 - in a later ray-traced reflection;
 - in indirect-light material evaluation and bounce response.
 
@@ -33,9 +33,9 @@ It deliberately does not implement forward decals, mesh decals, transparent-surf
 
 The design extends the existing owner instead of adding a second renderer path:
 
-- [`Passes/GBuffer/GBuffer.cpp`](../../Engine/Renderer/Private/Passes/GBuffer/GBuffer.cpp) creates one `GBufferRenderTargets` set and selects either `AddRasterizedGBufferPass` or `AddRaytracedGBufferPass`. Both branches meet before sky motion vectors and device-depth linearization.
+- [`Passes/GBuffer/GBuffer.cpp`](../../Engine/Renderer/Private/Passes/GBuffer/GBuffer.cpp) creates one `GBufferRenderTargets` set and selects either rasterization or the one immutable ray-tracing GBuffer execution plan. Inline and pipeline frontends share that target set and meet before sky motion vectors and device-depth linearization.
 - [`GBufferFormats.h`](../../Engine/Renderer/Private/Passes/GBuffer/GBufferFormats.h) defines the shared BaseColor, Normal, Material, Emissive, Subsurface, DeviceZ, and MotionVector products.
-- [`GBufferPS.hlsl`](../../Engine/Assets/Shaders/Passes/GBuffer/GBufferPS.hlsl) and [`RaytracedGBuffer.hlsl`](../../Engine/Assets/Shaders/Passes/RayTracing/RaytracedGBuffer.hlsl) share [`GBufferPacking.hlsli`](../../Engine/Assets/Shaders/Passes/GBuffer/GBufferPacking.hlsli) through the canonical `/Engine` virtual shader namespace.
+- [`GBufferPS.hlsl`](../../Engine/Assets/Shaders/Passes/GBuffer/GBufferPS.hlsl) and [`RayTracingGBufferCommon.hlsli`](../../Engine/Assets/Shaders/Passes/RayTracing/RayTracingGBufferCommon.hlsli) share [`GBufferPacking.hlsli`](../../Engine/Assets/Shaders/Passes/GBuffer/GBufferPacking.hlsli) through the canonical `/Engine` virtual shader namespace. [`RayTracingGBufferInline.hlsl`](../../Engine/Assets/Shaders/Passes/RayTracing/RayTracingGBufferInline.hlsl) and [`RayTracingGBufferPipeline.hlsl`](../../Engine/Assets/Shaders/Passes/RayTracing/RayTracingGBufferPipeline.hlsl) are thin traversal/stage frontends over that common semantic owner.
 - [`MaterialCache.cpp`](../../Engine/Renderer/Private/Scene/Materials/MaterialCache.cpp) resolves semantic defaults, per-material raster tables, and one scene-wide material texture table beneath the persistent render-scene authority. The latter must remain a scene-material capability, not be described as ray-tracing-only.
 - [`RayTracingMaterialHit.hlsli`](../../Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli) is the central base-material reconstruction path for arbitrary ray hits. [`PathLighting.hlsli`](../../Engine/Assets/Shaders/RayTracing/PathLighting.hlsli) is one current secondary-hit consumer.
 - The frame graph already derives unordered-access allocation and barriers from declared use. Raster depth is shader-readable on both backends. No new public RHI operation is required by the selected primary path.
@@ -197,7 +197,7 @@ Create GBuffer targets
         |
         +-- RasterizedGBuffer VS/PS --------+
         |                                    |
-        `-- RaytracedGBuffer inline-query CS +
+        `-- RayTracing GBuffer Inline CS or Pipeline RGS +
                                              |
                               DeferredDecalResolve CS
                                              |
@@ -287,7 +287,7 @@ ShadeRayTracingHitSurface
 
 Call the middle operation for GI, reflection, and path-lighting material hits. Do not call it for:
 
-- primary `RaytracedGBuffer`, because the shared screen resolve owns primary decals;
+- primary `RayTracingGBuffer`, because the shared screen resolve owns primary decals;
 - shadow/visibility rays, because this decal contract changes material values, not geometry or alpha-test opacity;
 - misses or invalid surfaces.
 
@@ -383,17 +383,17 @@ If a scene contains decals but the required scene material table is unsupported,
 - write/read the receiver bit through the unused normal alpha channel;
 - build the per-view active-tile plan with deterministic ordering;
 - add one `DeferredDecalResolve` compute pass after the common GBuffer producer join;
-- enable and accept the feature first with `GBufferMode::Rasterized` on D3D12 and Vulkan;
+- enable and accept the feature first with `GBufferAlgorithm::Rasterized` on D3D12 and Vulkan;
 - use existing GBuffer visualization and a single pass marker for inspection.
 
 Exit: raster image tests pass for every channel group, overlap, near-plane/camera-inside volumes, projection edges, jitter, receiver opt-out, and zero-decal identity. The chosen tile plan meets the recorded CPU/GPU/memory budget on the fixture and an overlap stress case.
 
 ### Phase 3 - Ray-traced primary GBuffer parity
 
-- exercise the same post-producer pass with `GBufferMode::Raytraced`;
+- exercise the same post-producer pass with `GBufferAlgorithm::RayTracing` under both strict Inline and strict Pipeline execution;
 - reconcile any depth reconstruction or receiver-bit production difference at the producer adapters, not in a ray-specific decal shader;
 - compare the raster and ray-traced primary results from the same camera, scene, material table, ordering, and output formats on both backends;
-- keep `RaytracedGBuffer` base-hit reconstruction decal-free so primary decals are not applied twice.
+- keep `RayTracingGBuffer` base-hit reconstruction decal-free so primary decals are not applied twice.
 
 Exit: paired primary images agree within the recorded format/tolerance budget, pass ordering is identical, and there is still exactly one primary decal pass.
 

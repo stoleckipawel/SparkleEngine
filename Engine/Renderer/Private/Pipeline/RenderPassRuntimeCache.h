@@ -5,6 +5,7 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Pipeline/GraphicsPipelineMaterialization.h"
 #include "Pipeline/RenderPassShaderRuntime.h"
+#include "Pipeline/RayTracingPipelineRuntime.h"
 #include "RHI/Public/Commands/RhiQueue.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 #include "RHI/Public/Shaders/ShaderParameterLayoutBuilder.h"
@@ -28,6 +29,8 @@ class RenderPassRuntimeCache final
 private:
 	template <typename TVertexShader, typename TPixelShader> struct GraphicsRuntimeTypeTag;
 	template <typename TVertexShader, typename TPixelShader> struct GraphicsRuntimeStorageHolder;
+	template <typename TRayGenerationShader> struct RayTracingRuntimeTypeTag;
+	template <typename TRayGenerationShader> struct RayTracingRuntimeStorageHolder;
 
 public:
 	explicit RenderPassRuntimeCache(RenderDeviceServices& deviceServices);
@@ -98,6 +101,45 @@ public:
 			HandleRuntimeCreationFailure("Graphics pipeline materialization did not publish the requested key.");
 		}
 		return RasterPassRuntime{*bindingLayout, *pipeline};
+	}
+
+	template <typename TRayGenerationShader>
+	void MaterializeRayTracingRuntime(const RayTracingPipelineComposition& composition) const noexcept
+	{
+		RayTracingRuntimeStorageHolder<TRayGenerationShader>& holder = GetOrCreateRayTracingRuntimeStorageHolder<TRayGenerationShader>();
+		if (holder.Find(composition) == nullptr)
+		{
+			try
+			{
+				holder.Materialize(*m_renderHardwareInterface, *m_activeGeneration, composition);
+			}
+			catch (const Diagnostics::Error& error)
+			{
+				HandleRuntimeCreationFailure(error.what());
+			}
+		}
+	}
+
+	template <typename TRayGenerationShader>
+	RayTracingPassPipelineRuntime GetRayTracingRuntime(const RayTracingPipelineComposition& composition) const noexcept
+	{
+		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
+		const auto storage = m_activeGeneration->RuntimeStorageByShaderType.find(typeid(RuntimeType));
+		if (storage == m_activeGeneration->RuntimeStorageByShaderType.end())
+		{
+			HandleRuntimeCreationFailure("Ray-tracing runtime lookup preceded materialization.");
+		}
+		const auto* holder = static_cast<const RayTracingRuntimeStorageHolder<TRayGenerationShader>*>(storage->second.get());
+		const RayTracingPipelineRuntime* runtime = holder != nullptr ? holder->Find(composition) : nullptr;
+		if (runtime == nullptr)
+		{
+			HandleRuntimeCreationFailure("Ray-tracing composition lookup preceded exact materialization.");
+		}
+		return RayTracingPassPipelineRuntime{
+		    .BindingLayout = runtime->GetBindingLayout(),
+		    .Pipeline = runtime->GetPipeline(),
+		    .ShaderTable = runtime->GetShaderTable(),
+		    .Generation = runtime->GetGeneration()};
 	}
 
 private:
@@ -248,6 +290,60 @@ private:
 		std::unordered_map<GraphicsPipelineKey, std::unique_ptr<RenderPipeline>, GraphicsPipelineKeyHash> Pipelines;
 	};
 
+	template <typename TRayGenerationShader> struct RayTracingRuntimeTypeTag final
+	{
+	};
+
+	template <typename TRayGenerationShader> struct RayTracingRuntimeStorageHolder final : IRuntimeStorageHolder
+	{
+		struct Entry final
+		{
+			RayTracingPipelineComposition Definition;
+			std::unique_ptr<RayTracingPipelineRuntime> Runtime;
+		};
+
+		void Materialize(
+		    RenderHardwareInterface& renderHardwareInterface,
+		    const ShaderRuntimeGeneration& generation,
+		    const RayTracingPipelineComposition& composition)
+		{
+			if (composition.GetRayGeneration() != GlobalShader<TRayGenerationShader>::GetRegistration().TypeId)
+			{
+				throw Diagnostics::Error("Ray-tracing composition ray-generation type does not match its runtime key.");
+			}
+			Entries.push_back(
+			    Entry{
+			        .Definition = composition,
+			        .Runtime = RayTracingPipelineRuntime::Create(
+			            renderHardwareInterface,
+			            generation.Map,
+			            generation.Library,
+			            generation.Target,
+			            generation.Generation,
+			            composition)});
+		}
+
+		const RayTracingPipelineRuntime* Find(const RayTracingPipelineComposition& composition) const noexcept
+		{
+			const auto entry = std::ranges::find(Entries, composition, &Entry::Definition);
+			return entry != Entries.end() ? entry->Runtime.get() : nullptr;
+		}
+
+		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
+		    RenderHardwareInterface& renderHardwareInterface,
+		    const ShaderRuntimeGeneration& generation) const override
+		{
+			auto replacement = std::make_unique<RayTracingRuntimeStorageHolder<TRayGenerationShader>>();
+			for (const Entry& entry : Entries)
+			{
+				replacement->Materialize(renderHardwareInterface, generation, entry.Definition);
+			}
+			return replacement;
+		}
+
+		std::vector<Entry> Entries;
+	};
+
 	struct ShaderRuntimeGeneration final
 	{
 		std::uint64_t Generation = 1;
@@ -297,6 +393,21 @@ private:
 			    holders.emplace(typeid(RuntimeType), std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>()).first;
 		}
 		auto* const holder = static_cast<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>*>(runtime->second.get());
+		assert(holder != nullptr);
+		return *holder;
+	}
+
+	template <typename TRayGenerationShader>
+	RayTracingRuntimeStorageHolder<TRayGenerationShader>& GetOrCreateRayTracingRuntimeStorageHolder() const noexcept
+	{
+		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
+		auto& holders = m_activeGeneration->RuntimeStorageByShaderType;
+		auto runtime = holders.find(typeid(RuntimeType));
+		if (runtime == holders.end())
+		{
+			runtime = holders.emplace(typeid(RuntimeType), std::make_unique<RayTracingRuntimeStorageHolder<TRayGenerationShader>>()).first;
+		}
+		auto* holder = static_cast<RayTracingRuntimeStorageHolder<TRayGenerationShader>*>(runtime->second.get());
 		assert(holder != nullptr);
 		return *holder;
 	}

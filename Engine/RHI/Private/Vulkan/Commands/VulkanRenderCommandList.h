@@ -44,6 +44,8 @@ public:
 	void SetPipeline(const RenderPipeline& pipeline) noexcept override;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
+	void SetRayTracingBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
+	void SetRayTracingPipeline(const RayTracingPipeline& pipeline) noexcept override;
 	void ResetBoundState() noexcept override;
 	void BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
 	void BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
@@ -63,6 +65,17 @@ public:
 	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
 	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
 	void SetComputePushConstants(
+	    std::uint32_t bindingIndex,
+	    std::uint32_t num32BitValues,
+	    const void* data,
+	    std::uint32_t destOffsetIn32BitValues) noexcept override;
+	void BindRayTracingConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindRayTracingShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindRayTracingUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindRayTracingAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept override;
+	void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
+	void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
+	void SetRayTracingPushConstants(
 	    std::uint32_t bindingIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
@@ -92,6 +105,7 @@ public:
 	    std::uint32_t startVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept override;
 	void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept override;
+	void TraceRays(const TraceRaysDesc& desc) noexcept override;
 	void BuildBottomLevelAccelerationStructure(
 	    const RhiRayTracingGeometryDesc& geometry,
 	    RhiGpuVirtualAddress scratchGpuAddress,
@@ -123,6 +137,15 @@ private:
 	{
 		RhiResourceHandle Resource;
 		VulkanRecordingResourceUseToken Token;
+	};
+
+	struct ShaderBindingState final
+	{
+		const VulkanBindingLayout* Layout = nullptr;
+		VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
+		std::vector<VkDescriptorSet> DescriptorSets;
+		std::vector<bool> DirtyDescriptorSets;
+		std::vector<bool> BoundDescriptorSets;
 	};
 
 	void SetRhi(const VulkanRhi* rhi) noexcept { m_rhi = rhi; }
@@ -193,8 +216,38 @@ private:
 	    VkDescriptorSet sourceSet,
 	    VkDescriptorSet destinationSet) noexcept;
 	void MarkDescriptorSetDirty(std::uint32_t setIndex, std::vector<bool>& dirtySets) noexcept;
+	static void InitializeShaderBindingState(const VulkanBindingLayout& layout, ShaderBindingState& state);
+	static void ReserveShaderBindingState(ShaderBindingState& state, std::size_t descriptorSetCount);
+	static void ClearShaderBindingDescriptors(ShaderBindingState& state) noexcept;
+	static void ResetShaderBindingState(ShaderBindingState& state) noexcept;
+	void BindShaderBuffer(
+	    ShaderBindingState& state,
+	    std::uint32_t bindingIndex,
+	    RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindShaderAccelerationStructure(
+	    ShaderBindingState& state,
+	    std::uint32_t bindingIndex,
+	    RhiResourceHandle resource) noexcept;
+	void BindShaderDescriptorTable(
+	    ShaderBindingState& state,
+	    std::uint32_t bindingIndex,
+	    RhiDescriptorTableBinding tableBinding) noexcept;
+	void BindShaderDescriptorTable(
+	    ShaderBindingState& state,
+	    std::uint32_t bindingIndex,
+	    RhiGpuDescriptorHandle baseDescriptor) noexcept;
+	void SetShaderPushConstants(
+	    const ShaderBindingState& state,
+	    std::uint32_t bindingIndex,
+	    std::uint32_t num32BitValues,
+	    const void* data,
+	    std::uint32_t destOffsetIn32BitValues) noexcept;
+	void FlushShaderDescriptorSets(
+	    VkPipelineBindPoint bindPoint,
+	    ShaderBindingState& state) noexcept;
 	void FlushGraphicsDescriptorSets() noexcept;
 	void FlushComputeDescriptorSets() noexcept;
+	void FlushRayTracingDescriptorSets() noexcept;
 	VkImageAspectFlags ResolveDepthStencilAspectMask(VkImageView imageView) const noexcept;
 
 	static constexpr std::uint32_t MaxRenderTargets = 8;
@@ -207,16 +260,10 @@ private:
 	VulkanRecordingUploadPage* m_recordingUploadPage = nullptr;
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
-	const VulkanBindingLayout* m_graphicsBindingLayout = nullptr;
-	const VulkanBindingLayout* m_computeBindingLayout = nullptr;
-	VkPipelineLayout m_graphicsPipelineLayout = VK_NULL_HANDLE;
-	VkPipelineLayout m_computePipelineLayout = VK_NULL_HANDLE;
-	std::vector<VkDescriptorSet> m_graphicsDescriptorSets;
-	std::vector<VkDescriptorSet> m_computeDescriptorSets;
-	std::vector<bool> m_graphicsDirtyDescriptorSets;
-	std::vector<bool> m_computeDirtyDescriptorSets;
-	std::vector<bool> m_graphicsBoundDescriptorSets;
-	std::vector<bool> m_computeBoundDescriptorSets;
+	ShaderBindingState m_graphicsBindings;
+	ShaderBindingState m_computeBindings;
+	ShaderBindingState m_rayTracingBindings;
+	const RayTracingPipeline* m_boundRayTracingPipeline = nullptr;
 	std::vector<RhiDescriptorTableBinding> m_retainedDescriptorTables;
 	std::vector<RhiGpuDescriptorHandle> m_retainedDescriptorHandles;
 	std::vector<VkBuffer> m_retainedDescriptorBuffers;

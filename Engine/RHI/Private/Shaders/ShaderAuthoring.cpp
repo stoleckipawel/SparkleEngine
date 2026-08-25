@@ -45,7 +45,9 @@ static const std::vector<ShaderRegistrationDesc>& GlobalShaderRegistrationSnapsh
 	static const std::vector<ShaderRegistrationDesc> registrations = []
 	{
 		std::vector<ShaderRegistrationDesc> snapshot = MutableGlobalShaderRegistrations();
-		std::ranges::sort(snapshot, [](const ShaderRegistrationDesc& left, const ShaderRegistrationDesc& right) { return left.TypeId < right.TypeId; });
+		std::ranges::sort(
+		    snapshot,
+		    [](const ShaderRegistrationDesc& left, const ShaderRegistrationDesc& right) { return left.TypeId < right.TypeId; });
 		return snapshot;
 	}();
 	return registrations;
@@ -64,8 +66,21 @@ std::span<const ShaderRegistrationDesc> GlobalShaderRegistry::GetRegistrations()
 const ShaderRegistrationDesc* GlobalShaderRegistry::FindByName(std::string_view shaderName) noexcept
 {
 	const std::span<const ShaderRegistrationDesc> registrations = GetRegistrations();
-	const auto found = std::ranges::find_if(registrations, [shaderName](const ShaderRegistrationDesc& desc) { return desc.ShaderName == shaderName; });
+	const auto found = std::ranges::find_if(
+	    registrations,
+	    [shaderName](const ShaderRegistrationDesc& desc) { return desc.ShaderName == shaderName; });
 	return found != registrations.end() ? &*found : nullptr;
+}
+
+const ShaderRegistrationDesc* GlobalShaderRegistry::FindById(ShaderTypeId shaderType) noexcept
+{
+	const std::span<const ShaderRegistrationDesc> registrations = GetRegistrations();
+	const auto found = std::ranges::lower_bound(
+	    registrations,
+	    shaderType,
+	    {},
+	    &ShaderRegistrationDesc::TypeId);
+	return found != registrations.end() && found->TypeId == shaderType ? &*found : nullptr;
 }
 
 const ShaderRegistrationDesc* GlobalShaderRegistry::FindByType(const std::type_info& shaderType) noexcept

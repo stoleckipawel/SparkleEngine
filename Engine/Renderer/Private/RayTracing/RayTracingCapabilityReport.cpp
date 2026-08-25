@@ -8,7 +8,11 @@ RayTracingCapabilityReport BuildRayTracingCapabilityReport(const RhiCapabilities
 	const RhiRayTracingCapabilities& rayTracing = capabilities.RayTracing;
 	const bool supportsPartitionedDescriptorTlas = rayTracing.Groups.PartitionedTlas.SupportsDescriptorAccess;
 	return RayTracingCapabilityReport{
-	    .SupportsRayTracing = rayTracing.SupportsRayTracing,
+	    .SupportsAccelerationStructure = rayTracing.SupportsAccelerationStructure,
+	    .SupportsInlineRayQuery = rayTracing.SupportsInlineRayQuery,
+	    .SupportsRayTracingPipeline = rayTracing.SupportsRayTracingPipeline,
+	    .SupportsDescriptorIndexing = capabilities.DescriptorIndexing.SupportsSampledImageArrayNonUniformIndexing
+	        && capabilities.DescriptorIndexing.SupportsPartiallyBoundDescriptorArrays,
 	    .TopLevelProvider =
 	        RayTracingTopLevelProviderCapabilityReport{
 	            .SelectedProvider = rayTracing.Groups.Provider.SelectedTopLevelProvider,

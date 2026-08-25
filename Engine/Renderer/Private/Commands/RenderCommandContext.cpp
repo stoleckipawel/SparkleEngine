@@ -30,6 +30,16 @@ void RenderCommandContext::SetComputeBindingLayout(const RenderBindingLayout& bi
 	m_commandList->SetComputeBindingLayout(bindingLayout);
 }
 
+void RenderCommandContext::SetRayTracingBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
+{
+	m_commandList->SetRayTracingBindingLayout(bindingLayout);
+}
+
+void RenderCommandContext::SetRayTracingPipeline(const RayTracingPipeline& pipeline) noexcept
+{
+	m_commandList->SetRayTracingPipeline(pipeline);
+}
+
 void RenderCommandContext::SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept
 {
 	m_commandList->SetPrimitiveTopology(topology);
@@ -121,6 +131,45 @@ void RenderCommandContext::BindComputeUnorderedAccessAddress(std::uint32_t bindi
 void RenderCommandContext::BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept
 {
 	m_commandList->BindComputeAccelerationStructure(bindingIndex, resource);
+}
+
+void RenderCommandContext::BindRayTracingConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+{
+	m_commandList->BindRayTracingConstantBuffer(bindingIndex, gpuAddress);
+}
+
+void RenderCommandContext::BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
+{
+	m_commandList->BindRayTracingDescriptorTable(bindingIndex, baseDescriptor);
+}
+
+void RenderCommandContext::BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept
+{
+	m_commandList->BindRayTracingDescriptorTable(bindingIndex, tableBinding);
+}
+
+void RenderCommandContext::SetRayTracingPushConstants(
+    std::uint32_t bindingIndex,
+    std::uint32_t num32BitValues,
+    const void* data,
+    std::uint32_t destOffsetIn32BitValues) noexcept
+{
+	m_commandList->SetRayTracingPushConstants(bindingIndex, num32BitValues, data, destOffsetIn32BitValues);
+}
+
+void RenderCommandContext::BindRayTracingShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+{
+	m_commandList->BindRayTracingShaderResource(bindingIndex, gpuAddress);
+}
+
+void RenderCommandContext::BindRayTracingUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+{
+	m_commandList->BindRayTracingUnorderedAccess(bindingIndex, gpuAddress);
+}
+
+void RenderCommandContext::BindRayTracingAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept
+{
+	m_commandList->BindRayTracingAccelerationStructure(bindingIndex, resource);
 }
 
 void RenderCommandContext::SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil) noexcept
@@ -220,6 +269,15 @@ void RenderCommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t gro
 		EmitDispatchMarker(groupCountX, groupCountY, groupCountZ);
 	}
 	m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
+}
+
+void RenderCommandContext::TraceRays(const TraceRaysDesc& desc) noexcept
+{
+	if (m_drawDispatchDiagnosticsEnabled)
+	{
+		EmitDispatchMarker(desc.Width, desc.Height, desc.Depth);
+	}
+	m_commandList->TraceRays(desc);
 }
 
 void RenderCommandContext::BuildBottomLevelAccelerationStructure(

@@ -58,9 +58,13 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 
 	ImGui::BeginDisabled(disableInteraction);
 	using namespace RenderingSettingsPanelUi;
-	static constexpr ComboOption<GBufferMode> gBufferModeOptions[] = {
-	    {"Rasterized", GBufferMode::Rasterized},
-	    {"Ray traced", GBufferMode::Raytraced}};
+	static constexpr ComboOption<GBufferAlgorithm> gBufferAlgorithmOptions[] = {
+	    {"Rasterized", GBufferAlgorithm::Rasterized},
+	    {"Ray tracing", GBufferAlgorithm::RayTracing}};
+	static constexpr ComboOption<RayTracingExecutionMode> rayTracingExecutionOptions[] = {
+	    {"Automatic", RayTracingExecutionMode::Automatic},
+	    {"Inline ray query", RayTracingExecutionMode::Inline},
+	    {"Ray-tracing pipeline", RayTracingExecutionMode::Pipeline}};
 	static constexpr ComboOption<LightingMode> lightingModeOptions[] = {
 	    {"ReSTIR real-time path tracing", LightingMode::RestirPathTraced},
 	    {"Convergent reference path tracing", LightingMode::ReferencePathTraced}};
@@ -72,13 +76,22 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 		if (BeginSettingsTable("##RenderingGeometrySettings"))
 		{
 			DrawComboOptionRow(
-			    "##GBufferMode",
-			    "GBuffer mode",
-			    settings.GBuffer,
-			    gBufferModeOptions,
-			    [this](GBufferMode value)
+			    "##GBufferAlgorithm",
+			    "GBuffer algorithm",
+			    settings.SelectedGBufferAlgorithm,
+			    gBufferAlgorithmOptions,
+			    [this](GBufferAlgorithm value)
 			    {
-				    m_settings->SetGBufferMode(value);
+				    m_settings->SetGBufferAlgorithm(value);
+			    });
+			DrawComboOptionRow(
+			    "##GBufferRayTracingExecution",
+			    "Ray-tracing execution",
+			    settings.GBufferRayTracingExecutionMode,
+			    rayTracingExecutionOptions,
+			    [this](RayTracingExecutionMode value)
+			    {
+				    m_settings->SetGBufferRayTracingExecutionMode(value);
 			    });
 			DrawBooleanRow(
 			    "##MeshAutoBatching",

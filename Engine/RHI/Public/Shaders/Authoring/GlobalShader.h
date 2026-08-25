@@ -18,6 +18,7 @@ struct ShaderRegistrationDesc final
 	std::string_view EntryPoint;
 	ShaderStage Stage = ShaderStage::Count;
 	ShaderFeatureFlags Features = ShaderFeatureFlags::None;
+	RayTracingShaderMetadata RayTracing = {};
 	ShaderParameterStructDescriptor (*BuildParameterStructDescriptor)() = nullptr;
 };
 
@@ -29,6 +30,7 @@ public:
 	static void Register(ShaderRegistrationDesc desc);
 	static std::span<const ShaderRegistrationDesc> GetRegistrations() noexcept;
 	static const ShaderRegistrationDesc* FindByName(std::string_view shaderName) noexcept;
+	static const ShaderRegistrationDesc* FindById(ShaderTypeId shaderType) noexcept;
 	static const ShaderRegistrationDesc* FindByType(const std::type_info& shaderType) noexcept;
 };
 
@@ -55,6 +57,7 @@ public:
 
 	static ShaderParameterStructDescriptor GetParameterStructDescriptor()
 	{
+		static_assert(requires { typename TShader::Parameters; });
 		return TShader::Parameters::GetShaderParameterStructDescriptor();
 	}
 
@@ -73,6 +76,15 @@ public:
 		}
 		return ShaderFeatureFlags::None;
 	}
+
+	static constexpr RayTracingShaderMetadata GetRayTracingMetadata() noexcept
+	{
+		if constexpr (requires { TShader::kRayTracingMetadata; })
+		{
+			return TShader::kRayTracingMetadata;
+		}
+		return {};
+	}
 };
 
 template <typename TShader> class GlobalShaderAutoRegister final
@@ -90,7 +102,15 @@ public:
 		        .EntryPoint = entryPoint,
 		        .Stage = stage,
 		        .Features = GlobalShader<TShader>::GetFeatures(),
-		        .BuildParameterStructDescriptor = &GlobalShader<TShader>::GetParameterStructDescriptor});
+		        .RayTracing = GlobalShader<TShader>::GetRayTracingMetadata(),
+		        .BuildParameterStructDescriptor = []() -> ShaderParameterStructDescriptor (*)()
+		        {
+			        if constexpr (requires { typename TShader::Parameters; })
+			        {
+				        return &GlobalShader<TShader>::GetParameterStructDescriptor;
+			        }
+			        return nullptr;
+		        }()});
 	}
 };
 

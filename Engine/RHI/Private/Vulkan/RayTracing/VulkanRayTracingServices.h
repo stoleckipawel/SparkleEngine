@@ -13,7 +13,7 @@ class VulkanRhi;
 
 class VulkanRayTracingServices final : public RhiRayTracingService
 {
-  public:
+public:
 	VulkanRayTracingServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 
 	RhiClassicTlasService& GetClassicTlasService() noexcept override;
@@ -52,8 +52,9 @@ class VulkanRayTracingServices final : public RhiRayTracingService
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,
 	    std::wstring_view debugName) override;
+	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(const RayTracingShaderTableDesc& desc) override;
 
-  private:
+private:
 	static VkAccelerationStructureTypeKHR ToVkAccelerationStructureType(ERhiRayTracingAccelerationStructureType type) noexcept;
 	static VkAccelerationStructureGeometryKHR BuildBottomLevelGeometry(const RhiRayTracingGeometryDesc& geometry) noexcept;
 

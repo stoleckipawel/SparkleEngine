@@ -11,4 +11,4 @@ void AddRayTracingSceneBuildPasses(
     FrameGraphBuilder& builder,
     RenderRayTracingScene& rayTracingScene,
     FrameGraphAccelerationStructureHandle sceneTlas);
-void AddRaytracingScenePasses(FrameGraphBuilder& builder, RenderRayTracingScene& rayTracingScene, RenderFrameGraphResources& resources);
+void AddRayTracingScenePasses(FrameGraphBuilder& builder, RenderRayTracingScene& rayTracingScene, RenderFrameGraphResources& resources);

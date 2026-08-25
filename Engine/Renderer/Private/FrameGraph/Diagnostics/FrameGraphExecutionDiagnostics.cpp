@@ -16,24 +16,24 @@ class FrameGraphExecutionDiagnosticsConstants final
 FrameGraphExecutionDiagnostics::FrameGraphExecutionDiagnostics(
     FrameExecutionDiagnostics& frameDiagnostics,
     RenderCommandContext& commands) noexcept :
-    m_frameDiagnostics(&frameDiagnostics), m_commands(&commands), m_markerVerbosity(CVarRendererDiagnosticMarkerVerbosity.Get())
+    m_frameDiagnostics(&frameDiagnostics), m_commands(&commands)
 {
 }
 
 bool FrameGraphExecutionDiagnostics::ShouldEmitFramePassMarkers() const noexcept
 {
-	return m_markerVerbosity == RendererDiagnosticMarkerVerbosity::FramePass ||
-	       m_markerVerbosity == RendererDiagnosticMarkerVerbosity::Detailed;
+	const RendererDiagnosticMarkerVerbosity verbosity = GetMarkerVerbosity();
+	return verbosity == RendererDiagnosticMarkerVerbosity::FramePass || verbosity == RendererDiagnosticMarkerVerbosity::Detailed;
 }
 
 RendererDiagnosticMarkerVerbosity FrameGraphExecutionDiagnostics::GetMarkerVerbosity() const noexcept
 {
-	return m_markerVerbosity;
+	return CVarRendererDiagnosticMarkerVerbosity.Get();
 }
 
 bool FrameGraphExecutionDiagnostics::ShouldEmitDetailedMarkers() const noexcept
 {
-	return m_markerVerbosity == RendererDiagnosticMarkerVerbosity::Detailed;
+	return GetMarkerVerbosity() == RendererDiagnosticMarkerVerbosity::Detailed;
 }
 
 ScopedGpuScope FrameGraphExecutionDiagnostics::BeginPassScope(PassExecutionDiagnostics& passDiagnostics) const noexcept

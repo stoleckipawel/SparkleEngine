@@ -3,15 +3,18 @@
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 
 class FrameGraphBuilder;
 class GpuMeshCache;
+class RenderRayTracingScene;
 
-GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode);
+GBufferRenderTargets CreateGBufferRenderTargets(
+	FrameGraphBuilder& builder,
+	RenderViewportExtent sceneExtent);
 void AddGBufferMeshPasses(
     FrameGraphBuilder& builder,
     GpuMeshCache& gpuMeshCache,
-    GBufferMode mode,
+    const RenderRayTracingScene& rayTracingScene,
+    bool hasMaskedRayTracingGeometry,
     RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources);

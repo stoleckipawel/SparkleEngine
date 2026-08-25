@@ -29,5 +29,4 @@ class FrameGraphExecutionDiagnostics final
 
 	FrameExecutionDiagnostics* m_frameDiagnostics = nullptr;
 	RenderCommandContext* m_commands = nullptr;
-	RendererDiagnosticMarkerVerbosity m_markerVerbosity = RendererDiagnosticMarkerVerbosity::FramePass;
 };

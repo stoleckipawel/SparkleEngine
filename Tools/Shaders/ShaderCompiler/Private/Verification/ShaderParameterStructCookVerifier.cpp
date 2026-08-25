@@ -20,12 +20,6 @@ void ShaderParameterStructCookVerifier::Verify(
 		WriteSkippedReport(debugArtifacts, "no parameter-struct descriptor declared for this shader stage");
 		return;
 	}
-	if (job.Request.UnitKind == ShaderCompileUnitKind::Library)
-	{
-		WriteSkippedReport(debugArtifacts, "ray-tracing library compile units do not use pass parameter-struct validation");
-		return;
-	}
-
 	const ShaderParameterStructVerificationResult verificationResult =
 	    ShaderParameterStructVerifier::Verify(*job.Request.ParameterStruct, compiledStage.reflection);
 	if (debugArtifacts != nullptr)

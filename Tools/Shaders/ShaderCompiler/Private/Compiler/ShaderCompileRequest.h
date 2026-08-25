@@ -30,6 +30,7 @@ enum class ShaderCompileFeatureFlags : std::uint32_t
 	InlineRayQuery = 1u << 0u,
 	AccelerationStructure = 1u << 1u,
 	DescriptorIndexing = 1u << 2u,
+	RayTracingPipeline = 1u << 3u,
 };
 
 constexpr ShaderCompileFeatureFlags operator|(ShaderCompileFeatureFlags lhs, ShaderCompileFeatureFlags rhs) noexcept

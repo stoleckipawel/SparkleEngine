@@ -5,13 +5,11 @@
 
 RendererBackendOwner::RendererBackendOwner(
     Window& window,
-    PixelFormat backBufferFormat,
     const RendererBackendConfiguration& configuration) noexcept
 {
 	m_deviceServices = RenderDeviceServices::Create(
 	    window,
 	    configuration.BackendApi,
-	    backBufferFormat,
 	    configuration.InterposerHooks);
 }
 

@@ -12,7 +12,7 @@
 
 class D3D12BindingLayoutCompilerImpl final
 {
-  public:
+public:
 	static std::unique_ptr<D3D12BindingLayout> Compile(D3D12Rhi& rhi, const RenderBindingLayoutCompileDesc& desc)
 	{
 		assert(desc.ParameterLayout != nullptr);
@@ -36,13 +36,7 @@ class D3D12BindingLayoutCompilerImpl final
 			switch (bindingRecord.Kind)
 			{
 				case ShaderParameterSemanticKind::UniformData:
-					CompileUniformBinding(
-					    builder,
-					    bindings,
-					    bindingNames,
-					    bindingRecord,
-					    bindingName,
-					    desc);
+					CompileUniformBinding(builder, bindings, bindingNames, bindingRecord, bindingName, desc);
 					break;
 				case ShaderParameterSemanticKind::ReadTexture:
 				case ShaderParameterSemanticKind::ReadBuffer:
@@ -108,7 +102,7 @@ class D3D12BindingLayoutCompilerImpl final
 		    std::move(bindingNames));
 	}
 
-  private:
+private:
 	static void CompileUniformBinding(
 	    D3D12RootSignatureBuilder& builder,
 	    std::vector<CompiledBinding>& bindings,
@@ -118,11 +112,8 @@ class D3D12BindingLayoutCompilerImpl final
 	    const RenderBindingLayoutCompileDesc& desc)
 	{
 		assert(bindingRecord.ValueSizeInBytes > 0);
-		const std::vector<RhiReflectedBindingLocation> reflectedLocations = RhiShaderBindingReflection::ResolveLocations(
-		    desc.Shaders,
-		    *desc.ParameterLayout,
-		    bindingName,
-		    bindingRecord.Kind);
+		const std::vector<RhiReflectedBindingLocation> reflectedLocations =
+		    RhiShaderBindingReflection::ResolveLocations(desc.Shaders, *desc.ParameterLayout, bindingName, bindingRecord.Kind);
 
 		for (const RhiReflectedBindingLocation& reflectedLocation : reflectedLocations)
 		{
@@ -143,7 +134,7 @@ class D3D12BindingLayoutCompilerImpl final
 				    CompiledBinding{
 				        .Name = bindingNames.back().c_str(),
 				        .Type = CompiledBindingType::PushConstants,
-					    .SemanticKind = bindingRecord.Kind,
+				        .SemanticKind = bindingRecord.Kind,
 				        .BindingIndex = bindingIndex,
 				        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 				        .VisibilityMask = reflectedLocation.VisibilityMask,
@@ -176,11 +167,8 @@ class D3D12BindingLayoutCompilerImpl final
 	    CompiledBindingType bindingType)
 	{
 		const std::uint32_t descriptorCount = bindingRecord.ArrayCount;
-		const std::vector<RhiReflectedBindingLocation> reflectedLocations = RhiShaderBindingReflection::ResolveLocations(
-		    shaders,
-		    parameterLayout,
-		    bindingName,
-		    bindingRecord.Kind);
+		const std::vector<RhiReflectedBindingLocation> reflectedLocations =
+		    RhiShaderBindingReflection::ResolveLocations(shaders, parameterLayout, bindingName, bindingRecord.Kind);
 
 		for (const RhiReflectedBindingLocation& reflectedLocation : reflectedLocations)
 		{
@@ -211,11 +199,8 @@ class D3D12BindingLayoutCompilerImpl final
 	    std::span<const ResolvedShader> shaders,
 	    const PassParameterLayout& parameterLayout)
 	{
-		const std::vector<RhiReflectedBindingLocation> reflectedLocations = RhiShaderBindingReflection::ResolveLocations(
-		    shaders,
-		    parameterLayout,
-		    bindingName,
-		    bindingRecord.Kind);
+		const std::vector<RhiReflectedBindingLocation> reflectedLocations =
+		    RhiShaderBindingReflection::ResolveLocations(shaders, parameterLayout, bindingName, bindingRecord.Kind);
 
 		for (const RhiReflectedBindingLocation& reflectedLocation : reflectedLocations)
 		{
@@ -242,7 +227,8 @@ class D3D12BindingLayoutCompilerImpl final
 		const bool hasPixel = HasAnyShaderStageMask(visibilityMask, ShaderStageMask::Pixel);
 		const bool hasOther = HasAnyShaderStageMask(
 		    visibilityMask,
-		    ShaderStageMask::Geometry | ShaderStageMask::Hull | ShaderStageMask::Domain | ShaderStageMask::Compute);
+		    ShaderStageMask::Geometry | ShaderStageMask::Hull | ShaderStageMask::Domain | ShaderStageMask::Compute
+		        | ShaderStageMask::AllRayTracing);
 
 		if (hasVertex && !hasPixel && !hasOther)
 		{

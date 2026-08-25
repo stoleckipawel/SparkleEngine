@@ -7,11 +7,14 @@
 
 #include <memory>
 
-template <typename BackendRhi, typename BackendPipeline, typename BindingLayoutCompiler>
+template <typename BackendRhi, typename BackendPipeline, typename BackendRayTracingPipeline, typename BindingLayoutCompiler>
 class RhiPipelineServiceAdapter final : public RhiPipelineService
 {
-  public:
-	explicit RhiPipelineServiceAdapter(BackendRhi& rhi) noexcept : m_rhi(rhi) {}
+public:
+	explicit RhiPipelineServiceAdapter(BackendRhi& rhi) noexcept :
+	    m_rhi(rhi)
+	{
+	}
 
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override
 	{
@@ -40,7 +43,16 @@ class RhiPipelineServiceAdapter final : public RhiPipelineService
 		return std::make_unique<BackendPipeline>(m_rhi, desc);
 	}
 
-  private:
+	std::unique_ptr<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineDesc& desc) override
+	{
+		if (desc.GlobalBindingLayout == nullptr || desc.ShaderExports.empty() || desc.Generation == 0)
+		{
+			Fail("Ray-tracing pipeline creation received an incomplete pipeline description.");
+		}
+		return std::make_unique<BackendRayTracingPipeline>(m_rhi, desc);
+	}
+
+private:
 	[[noreturn]] static void Fail(const char* message)
 	{
 		static const auto logger = Logging::GetOrCreateLogger("RHI.Pipeline");

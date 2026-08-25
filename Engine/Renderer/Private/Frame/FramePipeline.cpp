@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "Frame/FramePipeline.h"
 
-#include "Debug/RendererCVars.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "UI/UiFrameRenderer.h"
 #include "Frame/RenderFrame.h"
@@ -208,7 +207,6 @@ RenderRayTracingFrameBindings FramePipeline::PrepareFrame(const RenderViewInput&
 	UpdateFrameHistory(
 	    *m_frameGraph,
 	    m_frameResources.History,
-	    m_frameGraphSettings.Lighting,
 	    frame.PreparedScene,
 	    frame.View,
 	    m_renderViewState,
@@ -256,7 +254,6 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	        .ViewportRequest = m_viewportRenderRequest,
 	        .RenderExtent = m_frameGraphSettings.RenderExtent,
 	        .OutputExtent = m_frameGraphSettings.OutputExtent,
-	        .ViewMode = CVarRenderViewMode.Get(),
 	        .FrameId = frame.Identity.FrameId,
 	        .SceneGeneration = scene.GetSceneGeneration(),
 	        .ShaderGeneration = frame.Identity.ShaderGeneration,

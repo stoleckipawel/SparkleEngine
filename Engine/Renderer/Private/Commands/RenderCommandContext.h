@@ -22,6 +22,8 @@ public:
 	void SetPipeline(const RenderPipeline& pipeline) noexcept;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept;
+	void SetRayTracingBindingLayout(const RenderBindingLayout& bindingLayout) noexcept;
+	void SetRayTracingPipeline(const RayTracingPipeline& pipeline) noexcept;
 
 	void SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept;
 
@@ -52,6 +54,17 @@ public:
 	void BindComputeShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindComputeUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept;
+	void BindRayTracingConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
+	void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept;
+	void SetRayTracingPushConstants(
+	    std::uint32_t bindingIndex,
+	    std::uint32_t num32BitValues,
+	    const void* data,
+	    std::uint32_t destOffsetIn32BitValues) noexcept;
+	void BindRayTracingShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindRayTracingUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindRayTracingAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept;
 
 	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 
@@ -85,6 +98,7 @@ public:
 	    std::uint32_t startInstanceLocation) noexcept;
 
 	void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
+	void TraceRays(const TraceRaysDesc& desc) noexcept;
 	void BuildBottomLevelAccelerationStructure(
 	    const RhiRayTracingGeometryDesc& geometry,
 	    RhiGpuVirtualAddress scratchGpuAddress,

@@ -11,12 +11,20 @@ class FrameGraphResourceCommands;
 class PassResourceBuilder;
 class RenderBindingLayout;
 class RenderPipeline;
+class RayTracingPipeline;
 
 struct ComputeDispatchDesc
 {
 	std::uint32_t GroupCountX = 1;
 	std::uint32_t GroupCountY = 1;
 	std::uint32_t GroupCountZ = 1;
+};
+
+struct RayTracingDispatchDimensions final
+{
+	std::uint32_t Width = 1;
+	std::uint32_t Height = 1;
+	std::uint32_t Depth = 1;
 };
 
 bool DeclareShaderPassParameterUsages(
@@ -52,6 +60,12 @@ void BindRasterShaderPass(
     std::uint32_t bindingNameCount = 0,
     const PassBindingOverrides* overrides = nullptr,
     bool bindLayout = true) noexcept;
+void BindRayTracingShaderPass(
+    RenderCommandContext& commandContext,
+    const FrameGraphResourceCommands& resources,
+    const RenderBindingLayout& bindingLayout,
+    const RayTracingPipeline& pipeline,
+    const PassParameterSet& parameterSet) noexcept;
 
 void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept;
 

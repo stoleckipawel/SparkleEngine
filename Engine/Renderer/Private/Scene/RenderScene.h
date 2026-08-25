@@ -55,7 +55,9 @@ public:
 	    const PreparedRenderScene& preparedScene,
 	    const RayTracingPtlasPartitionPlan& viewPlan) noexcept;
 	bool IsRayTracingAvailable() const noexcept;
-	RenderRayTracingScene& GetRayTracingSceneCapability() noexcept { return *m_renderRayTracingScene; }
+	bool HasMaskedRayTracingGeometry() const noexcept { return m_hasMaskedRayTracingGeometry; }
+	RenderRayTracingScene& GetRayTracingScene() noexcept { return *m_renderRayTracingScene; }
+	const RenderRayTracingScene& GetRayTracingScene() const noexcept { return *m_renderRayTracingScene; }
 	void CommitContinuity(std::span<const PreparedRenderPrimitive> primitives, const RenderDeformationWork& deformation);
 	void ResetContinuity() noexcept;
 	DirectX::XMFLOAT4X4 ResolvePreviousWorldMatrix(const RenderPrimitive& primitive) const noexcept;
@@ -91,6 +93,7 @@ private:
 	void ApplyUpdates(const RenderSceneDelta& delta, std::span<const GpuMeshHandle> meshes);
 	void PublishResources(const RenderSceneDelta& delta);
 	void RetainReferencedGpuMeshes() noexcept;
+	void RefreshMaskedRayTracingGeometry() noexcept;
 	void CommitPreviousWorldTransforms(std::span<const PreparedRenderPrimitive> primitives);
 	void CommitJointMatrixContinuity(const RenderDeformationWork& deformation);
 	void CommitMorphWeightContinuity(const RenderDeformationWork& deformation);
@@ -129,4 +132,5 @@ private:
 	std::uint64_t m_sequenceNumber = 0;
 	std::uint64_t m_structuralRevision = 0;
 	std::uint64_t m_materialRevision = 0;
+	bool m_hasMaskedRayTracingGeometry = false;
 };

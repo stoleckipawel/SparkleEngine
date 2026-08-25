@@ -31,7 +31,8 @@ struct EngineRenderingSettingsState final
 	EUpscalerProviderKind UpscalerProvider = EUpscalerProviderKind::Linear;
 	EUpscalerQualityMode UpscalerQualityMode = EUpscalerQualityMode::NativeAA;
 	EngineRayReconstructionMode RayReconstructionMode = EngineRayReconstructionMode::Off;
-	GBufferMode GBuffer = GBufferMode::Rasterized;
+	GBufferAlgorithm SelectedGBufferAlgorithm = GBufferAlgorithm::Rasterized;
+	RayTracingExecutionMode GBufferRayTracingExecutionMode = RayTracingExecutionMode::Automatic;
 	LightingMode Lighting = LightingMode::RestirPathTraced;
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
@@ -78,7 +79,8 @@ public:
 	void SetUpscalerProvider(EUpscalerProviderKind provider);
 	void SetUpscalerQualityMode(EUpscalerQualityMode mode);
 	void SetRayReconstructionMode(EngineRayReconstructionMode mode);
-	void SetGBufferMode(GBufferMode mode);
+	void SetGBufferAlgorithm(GBufferAlgorithm algorithm);
+	void SetGBufferRayTracingExecutionMode(RayTracingExecutionMode mode);
 	void SetLightingMode(LightingMode mode);
 	void SetMeshAutoBatching(bool enabled);
 	void SetRefitTlas(bool enabled);

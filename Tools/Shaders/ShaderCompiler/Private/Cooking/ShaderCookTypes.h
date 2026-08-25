@@ -6,6 +6,7 @@
 #include "RHI/Public/Shaders/ShaderMap.h"
 
 #include <string>
+#include <optional>
 #include <vector>
 
 struct ShaderCookDesc final
@@ -16,8 +17,9 @@ struct ShaderCookDesc final
 	std::string sourcePath;
 	std::string entryPoint;
 	ShaderFeatureFlags features = ShaderFeatureFlags::None;
+	RayTracingShaderMetadata rayTracing;
 	PassParameterLayout parameterLayout;
-	ShaderParameterStructDescriptor parameterStruct;
+	std::optional<ShaderParameterStructDescriptor> parameterStruct;
 };
 
 struct ShaderCookProduct final
@@ -25,6 +27,7 @@ struct ShaderCookProduct final
 	ShaderTypeId shaderTypeId = 0;
 	ShaderTarget target = kDefaultShaderTarget;
 	ShaderFeatureFlags features = ShaderFeatureFlags::None;
+	RayTracingShaderMetadata rayTracing;
 	PassParameterLayout parameterLayout;
 	std::vector<ShaderDescriptorBindingRemap> bindingRemaps;
 	CookedStageBuild compiled;

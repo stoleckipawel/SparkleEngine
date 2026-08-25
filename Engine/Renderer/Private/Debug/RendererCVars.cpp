@@ -3,26 +3,18 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 
 ConsoleVariable<RenderViewMode> CVarRenderViewMode("r.ViewMode", RenderViewMode::Lit, "Renderer debug view mode.");
-ConsoleVariable<GBufferMode> CVarGBufferMode(
-    "r.GBuffer.Mode",
-    GBufferMode::Rasterized,
-    "GBuffer producer mode: 0=rasterized, 1=raytraced.");
+ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm(
+	"r.GBuffer.Algorithm",
+	GBufferAlgorithm::Rasterized,
+	"GBuffer algorithm: 0=rasterized, 1=ray tracing.");
+ConsoleVariable<RayTracingExecutionMode> CVarGBufferRayTracingExecutionMode(
+	"r.GBuffer.RayTracingExecution",
+	RayTracingExecutionMode::Automatic,
+	"Ray-traced GBuffer execution: 0=automatic, 1=inline ray query, 2=ray-tracing pipeline.");
 ConsoleVariable<LightingMode> CVarLightingMode(
     "r.Lighting.Mode",
     LightingMode::RestirPathTraced,
     "Lighting pipeline: 0=ReSTIR real-time path tracing, 1=convergent reference path tracing.");
-
-LightingMode GetLightingMode() noexcept
-{
-	switch (CVarLightingMode.Get())
-	{
-		case LightingMode::ReferencePathTraced:
-			return LightingMode::ReferencePathTraced;
-		case LightingMode::RestirPathTraced:
-		default:
-			return LightingMode::RestirPathTraced;
-	}
-}
 
 ConsoleVariable<bool> CVarRendererMeshAutoBatching(
     "r.MeshAutoBatching",

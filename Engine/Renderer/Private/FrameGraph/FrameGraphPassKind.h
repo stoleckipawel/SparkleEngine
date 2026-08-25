@@ -7,6 +7,7 @@ enum class EFrameGraphPassKind : std::uint8_t
 	None,
 	Raster,
 	Compute,
+	RayTracing,
 	Transfer,
 	ExternalProvider,
 };
@@ -24,6 +25,8 @@ constexpr const char* FrameGraphPassKindToString(EFrameGraphPassKind kind) noexc
 			return "Raster";
 		case EFrameGraphPassKind::Compute:
 			return "Compute";
+		case EFrameGraphPassKind::RayTracing:
+			return "RayTracing";
 		case EFrameGraphPassKind::Transfer:
 			return "Transfer";
 		case EFrameGraphPassKind::ExternalProvider:

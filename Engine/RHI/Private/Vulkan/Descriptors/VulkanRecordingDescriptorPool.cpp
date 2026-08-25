@@ -7,7 +7,8 @@
 
 #include <array>
 
-VulkanRecordingDescriptorPool::VulkanRecordingDescriptorPool(VulkanRhi& rhi) noexcept : m_rhi(&rhi)
+VulkanRecordingDescriptorPool::VulkanRecordingDescriptorPool(VulkanRhi& rhi) noexcept :
+    m_rhi(&rhi)
 {
 	CreatePool();
 }
@@ -72,19 +73,14 @@ void VulkanRecordingDescriptorPool::CreatePool() noexcept
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 256}};
 	std::uint32_t poolSizeCount = 5;
 
-	if (m_rhi->GetRayTracingCapabilities().SupportsRayTracing)
+	if (m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure)
 	{
-		poolSizes[poolSizeCount++] =
-		    VkDescriptorPoolSize{
-		        .type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
-		        .descriptorCount = 128};
+		poolSizes[poolSizeCount++] = VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = 128};
 	}
 	if (m_rhi->GetFeatureStatus().RayTracing.EnabledPartitionedAccelerationStructure)
 	{
 		poolSizes[poolSizeCount++] =
-		    VkDescriptorPoolSize{
-		        .type = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV,
-		        .descriptorCount = 128};
+		    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, .descriptorCount = 128};
 	}
 
 	const VkDescriptorPoolCreateInfo createInfo{

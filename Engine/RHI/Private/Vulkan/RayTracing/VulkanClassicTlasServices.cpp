@@ -16,7 +16,7 @@
 
 class VulkanTlasInstanceTranslation final
 {
-  public:
+public:
 	static VkGeometryInstanceFlagsKHR ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
 	{
 		VkGeometryInstanceFlagsKHR nativeFlags = 0;
@@ -37,7 +37,8 @@ class VulkanTlasInstanceTranslation final
 };
 
 VulkanClassicTlasServices::VulkanClassicTlasServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-    m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
+    m_rhi(&rhi),
+    m_memoryAllocator(&memoryAllocator)
 {
 }
 
@@ -45,8 +46,8 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanClassicTlasServices::GetCla
     std::uint32_t instanceCount,
     ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
-	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    m_rhi->GetAccelerationStructureBuildSizes() == nullptr)
+	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure
+	    || m_rhi->GetAccelerationStructureBuildSizes() == nullptr)
 	{
 		return {};
 	}
@@ -63,10 +64,9 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanClassicTlasServices::GetCla
 	    .geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR,
 	    .geometry = VkAccelerationStructureGeometryDataKHR{.instances = instances},
 	    .flags = VK_GEOMETRY_OPAQUE_BIT_KHR};
-	const VkBuildAccelerationStructureFlagsKHR nativeBuildFlags =
-	    VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
-	    (HasFlag(buildFlags, ERhiClassicTlasBuildFlags::AllowUpdate) ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-	                                                                 : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
+	const VkBuildAccelerationStructureFlagsKHR nativeBuildFlags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR
+	    | (HasFlag(buildFlags, ERhiClassicTlasBuildFlags::AllowUpdate) ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+	                                                                   : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
 	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
 	    .pNext = nullptr,
@@ -97,8 +97,8 @@ RhiOwnedResourceHandle VulkanClassicTlasServices::CreateClassicTopLevelAccelerat
     std::uint32_t instanceCount,
     std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    !RhiContract::IsRayTracingInstanceListUsable(instances, instanceCount))
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure
+	    || !RhiContract::IsRayTracingInstanceListUsable(instances, instanceCount))
 	{
 		return {};
 	}
@@ -129,8 +129,8 @@ RhiOwnedResourceHandle VulkanClassicTlasServices::CreateClassicTopLevelAccelerat
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::HostUpload,
 	    debugName.empty() ? L"RayTracingClassicTlasInstanceBuffer" : debugName);
-	if (record == nullptr || record->Buffer == VK_NULL_HANDLE ||
-	    !m_memoryAllocator->WriteAllocation(*record, nativeInstances.data(), static_cast<std::size_t>(sizeInBytes)))
+	if (record == nullptr || record->Buffer == VK_NULL_HANDLE
+	    || !m_memoryAllocator->WriteAllocation(*record, nativeInstances.data(), static_cast<std::size_t>(sizeInBytes)))
 	{
 		return {};
 	}

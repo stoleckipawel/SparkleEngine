@@ -1,6 +1,8 @@
 #include "../../PCH.h"
 #include "Passes/Lighting/Lighting.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+#include "Debug/RendererCVars.h"
 #include "Frame/Graph/RenderFrameGraphFormats.h"
 #include "Passes/Lighting/LightingComposite.h"
 #include "Passes/Lighting/LightingRenderTargets.h"
@@ -15,10 +17,14 @@
 
 void AddLightingPasses(
     FrameGraphBuilder& builder,
-    LightingMode mode,
     RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources)
 {
+	const LightingMode mode = CVarLightingMode.Get();
+	if (mode != LightingMode::RestirPathTraced && mode != LightingMode::ReferencePathTraced)
+	{
+		throw Diagnostics::Error("Lighting graph construction received an invalid lighting mode.");
+	}
 	const PixelFormat radianceFormat =
 	    mode == LightingMode::ReferencePathTraced ? PixelFormat::R32G32B32A32_Float : RenderFrameGraphFormats::SceneColor;
 	const bool createRayReconstructionGuides = mode == LightingMode::RestirPathTraced && IsRayReconstructionEnabled();
@@ -28,11 +34,12 @@ void AddLightingPasses(
 	switch (mode)
 	{
 		case LightingMode::RestirPathTraced:
-		default:
 			AddRestirLightingProducerPasses(builder, sceneExtent, resources);
 			break;
 		case LightingMode::ReferencePathTraced:
 			AddReferenceLightingProducerPasses(builder, sceneExtent, resources);
+			break;
+		default:
 			break;
 	}
 
@@ -48,6 +55,7 @@ void AddLightingPasses(
 			FinalizeReferenceLightingPasses(builder, sceneExtent, lightingSample, resources);
 			break;
 		case LightingMode::RestirPathTraced:
+			break;
 		default:
 			break;
 	}
@@ -55,14 +63,19 @@ void AddLightingPasses(
 
 void AddLightingReconstructionPasses(
     FrameGraphBuilder& builder,
-    LightingMode mode,
     RenderViewportExtent sceneExtent,
     RenderViewportExtent outputExtent,
     IRayReconstructionProvider* rayReconstructionProvider,
     RenderFrameGraphResources& resources)
 {
-	if (mode == LightingMode::RestirPathTraced)
+	switch (CVarLightingMode.Get())
 	{
-		AddRestirRayReconstructionPass(builder, sceneExtent, outputExtent, rayReconstructionProvider, resources);
+		case LightingMode::RestirPathTraced:
+			AddRestirRayReconstructionPass(builder, sceneExtent, outputExtent, rayReconstructionProvider, resources);
+			break;
+		case LightingMode::ReferencePathTraced:
+			break;
+		default:
+			throw Diagnostics::Error("Lighting reconstruction received an invalid lighting mode.");
 	}
 }

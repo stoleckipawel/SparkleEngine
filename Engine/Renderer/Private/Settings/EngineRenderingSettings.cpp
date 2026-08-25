@@ -138,9 +138,14 @@ void EngineRenderingSettingsSection::SetRayReconstructionMode(EngineRayReconstru
 	SetValue(m_state.RayReconstructionMode, mode);
 }
 
-void EngineRenderingSettingsSection::SetGBufferMode(GBufferMode mode)
+void EngineRenderingSettingsSection::SetGBufferAlgorithm(GBufferAlgorithm algorithm)
 {
-	SetValue(m_state.GBuffer, mode);
+	SetValue(m_state.SelectedGBufferAlgorithm, algorithm);
+}
+
+void EngineRenderingSettingsSection::SetGBufferRayTracingExecutionMode(RayTracingExecutionMode mode)
+{
+	SetValue(m_state.GBufferRayTracingExecutionMode, mode);
 }
 
 void EngineRenderingSettingsSection::SetLightingMode(LightingMode mode)

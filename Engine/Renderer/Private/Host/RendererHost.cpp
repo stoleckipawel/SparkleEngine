@@ -10,8 +10,6 @@
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
-#include "RHI/Public/CVars/RHICVars.h"
 #include "Scene/RenderScene.h"
 #include "Scene/Preparation/RenderScenePreparation.h"
 #include "Textures/TextureCache.h"
@@ -48,7 +46,7 @@ void RendererHost::InitializeCoreRuntime(
     TaskExecutor& taskExecutor,
     TaskScope& applicationTaskScope) noexcept
 {
-	m_backendOwner = std::make_unique<RendererBackendOwner>(*m_window, CVarBackBufferFormat.Get(), backendConfiguration);
+	m_backendOwner = std::make_unique<RendererBackendOwner>(*m_window, backendConfiguration);
 	RenderHardwareInterface& renderHardwareInterface = GetDeviceServices().GetRenderHardwareInterface();
 	{
 		m_renderPassRuntimeCache = std::make_unique<RenderPassRuntimeCache>(GetDeviceServices());

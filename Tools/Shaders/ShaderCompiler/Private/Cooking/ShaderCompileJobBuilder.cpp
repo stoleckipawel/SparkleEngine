@@ -53,7 +53,8 @@ void ShaderCompileJobBuilder::BuildAndAdd(
 	if (before.sourceHash != closure.sourceHash || before.includeClosureHash != closure.includeClosureHash
 	    || before.virtualDependencies != closure.virtualDependencies)
 	{
-		throw Diagnostics::Error(std::format("Shader source closure changed while constructing compile job for '{}'.", shader.shaderTypeName));
+		throw Diagnostics::Error(
+		    std::format("Shader source closure changed while constructing compile job for '{}'.", shader.shaderTypeName));
 	}
 	const std::uint64_t sourceHash = Hash::Fnv1a64(request.SourceCode);
 	const std::uint64_t requestHash = ShaderCompileRequestHasher::Compute(request);
@@ -87,8 +88,12 @@ ShaderCompileRequest ShaderCompileJobBuilder::BuildRequest(
 	request.EntryPoint = shader.entryPoint;
 	request.Stage = shader.stage;
 	request.Target = target;
-	request.UnitKind = ShaderCompileUnitKind::EntryPoint;
+	request.UnitKind = IsRayTracingShaderStage(shader.stage) ? ShaderCompileUnitKind::Library : ShaderCompileUnitKind::EntryPoint;
 	request.RequiredFeatures = BuildRequiredFeatures(shader.features);
+	if (IsRayTracingShaderStage(shader.stage))
+	{
+		request.RequiredFeatures |= ShaderCompileFeatureFlags::RayTracingPipeline;
+	}
 	request.ParameterStruct = shader.parameterStruct;
 	request.CaptureDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	request.EnableDebugInfo = settings.enableDebugInfo;
@@ -182,8 +187,6 @@ ShaderCompileFeatureFlags ShaderCompileJobBuilder::BuildRequiredFeatures(ShaderF
 
 const ShaderSourceMountTable& ShaderCompileJobBuilder::GetSourceMounts()
 {
-	static const ShaderSourceMountTable mounts(
-	    Filesystem::GetShaderPath(PathRoot::Engine),
-	    Filesystem::GetShaderPath(PathRoot::Project));
+	static const ShaderSourceMountTable mounts(Filesystem::GetShaderPath(PathRoot::Engine), Filesystem::GetShaderPath(PathRoot::Project));
 	return mounts;
 }

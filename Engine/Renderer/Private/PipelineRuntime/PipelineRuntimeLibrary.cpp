@@ -20,23 +20,31 @@ void PipelineRuntimeLibrary::ValidateShaderCapabilities(
 	}
 	const RhiCapabilities& capabilities = renderHardwareInterface.GetCapabilities();
 	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesAccelerationStructure)
-	    && !capabilities.RayTracing.SupportsRayTracing)
+	    && !capabilities.RayTracing.SupportsAccelerationStructure)
 	{
 		throw Diagnostics::Error(
-		    std::format("Shader '{}' requires ray tracing, but backend '{}' does not support it.", shaderName, RhiBackendApiToString(capabilities.BackendApi)));
+		    std::format(
+		        "Shader '{}' requires ray tracing, but backend '{}' does not support it.",
+		        shaderName,
+		        RhiBackendApiToString(capabilities.BackendApi)));
 	}
-	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesInlineRayQuery)
-	    && !capabilities.RayTracing.SupportsInlineRayQuery)
+	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesInlineRayQuery) && !capabilities.RayTracing.SupportsInlineRayQuery)
 	{
 		throw Diagnostics::Error(
-		    std::format("Shader '{}' requires inline ray query, but backend '{}' does not support it.", shaderName, RhiBackendApiToString(capabilities.BackendApi)));
+		    std::format(
+		        "Shader '{}' requires inline ray query, but backend '{}' does not support it.",
+		        shaderName,
+		        RhiBackendApiToString(capabilities.BackendApi)));
 	}
 	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesDescriptorIndexing)
 	    && (!capabilities.DescriptorIndexing.SupportsSampledImageArrayNonUniformIndexing
 	        || !capabilities.DescriptorIndexing.SupportsPartiallyBoundDescriptorArrays))
 	{
 		throw Diagnostics::Error(
-		    std::format("Shader '{}' requires descriptor indexing, but backend '{}' does not support it.", shaderName, RhiBackendApiToString(capabilities.BackendApi)));
+		    std::format(
+		        "Shader '{}' requires descriptor indexing, but backend '{}' does not support it.",
+		        shaderName,
+		        RhiBackendApiToString(capabilities.BackendApi)));
 	}
 }
 

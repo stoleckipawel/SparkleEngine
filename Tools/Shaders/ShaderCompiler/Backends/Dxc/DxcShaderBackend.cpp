@@ -42,6 +42,7 @@ ShaderBackendCapabilities DxcShaderBackend::GetStaticCapabilities() noexcept
 	capabilities.SupportsDxil = true;
 	capabilities.SupportsSpirV = true;
 	capabilities.SupportsDxilRayTracingLibrary = true;
+	capabilities.SupportsSpirVRayTracingLibrary = true;
 	capabilities.SupportsDxilInlineRayQuery = true;
 	capabilities.SupportsSpirVInlineRayQuery = true;
 	return capabilities;
@@ -174,13 +175,10 @@ CompiledShader DxcShaderBackend::Compile(const ShaderCompileRequest& request)
 	const std::filesystem::path debugArtifactPath =
 	    SaveShaderSymbols(result.Get(), request.SourceMounts.get().ResolvePhysicalPath(request.VirtualSourcePath));
 
-	ShaderReflection reflection;
-	if (request.UnitKind != ShaderCompileUnitKind::Library)
-	{
-		reflection = IsSpirVTarget(request.Target)
-		    ? SpirVReflectionExtractor::Extract(bytecode, request.Stage)
-		    : DxilReflectionExtractor::Extract(*m_utils.Get(), result.Get(), bytecode, request.Stage);
-	}
+	ShaderReflection reflection = IsSpirVTarget(request.Target) ? SpirVReflectionExtractor::Extract(bytecode, request.Stage)
+	    : request.UnitKind == ShaderCompileUnitKind::Library
+	    ? DxilReflectionExtractor::ExtractLibrary(*m_utils.Get(), result.Get(), request.EntryPoint)
+	    : DxilReflectionExtractor::Extract(*m_utils.Get(), result.Get(), bytecode, request.Stage);
 
 	ShaderDebugArtifactSet debugArtifacts;
 	if (request.CaptureDebugArtifacts)
@@ -210,6 +208,11 @@ void DxcShaderBackend::BuildCompileArguments(
 	if (request.UnitKind != ShaderCompileUnitKind::Library)
 	{
 		outArgs.push_back(L"-E");
+		outArgs.push_back(wEntryPoint.c_str());
+	}
+	else
+	{
+		outArgs.push_back(L"-exports");
 		outArgs.push_back(wEntryPoint.c_str());
 	}
 
@@ -287,7 +290,8 @@ void DxcShaderBackend::BuildCompileArguments(
 		{
 			outArgs.push_back(L"-fspv-extension=SPV_KHR_ray_query");
 		}
-		if (HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::AccelerationStructure))
+		if (HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::AccelerationStructure)
+		    || HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::RayTracingPipeline))
 		{
 			outArgs.push_back(L"-fspv-extension=SPV_KHR_ray_tracing");
 		}

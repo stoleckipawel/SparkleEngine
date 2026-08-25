@@ -214,6 +214,7 @@ bool VulkanTypeConversions::IsBufferResourceStateSupported(ResourceState state) 
 		case ResourceState::ShaderResource:
 		case ResourceState::UnorderedAccess:
 		case ResourceState::RayTracingAccelerationStructure:
+		case ResourceState::RayTracingShaderTable:
 		case ResourceState::CopySource:
 		case ResourceState::CopyDest:
 			return true;
@@ -244,6 +245,7 @@ bool VulkanTypeConversions::IsImageResourceStateSupported(ResourceState state) n
 		case ResourceState::Present:
 			return true;
 		case ResourceState::RayTracingAccelerationStructure:
+		case ResourceState::RayTracingShaderTable:
 		case ResourceState::Count:
 		default:
 			return false;
@@ -282,19 +284,26 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 			    .ImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL};
 		case ResourceState::ShaderResource:
 			return VulkanResourceStateMapping{
-			    .StageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+			    .StageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+			        | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
 			    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 		case ResourceState::UnorderedAccess:
 			return VulkanResourceStateMapping{
-			    .StageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+			    .StageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+			        | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
 			    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 		case ResourceState::RayTracingAccelerationStructure:
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
-			        | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+			        | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
 			    .AccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
+		case ResourceState::RayTracingShaderTable:
+			return VulkanResourceStateMapping{
+			    .StageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+			    .AccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR,
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 		case ResourceState::CopySource:
 			return VulkanResourceStateMapping{
@@ -395,40 +404,21 @@ VkImageCreateInfo VulkanTypeConversions::BuildTextureCreateInfo(const RhiTexture
 
 VkImageAspectFlags VulkanTypeConversions::ResolveAspectMask(PixelFormat format) noexcept
 {
-	switch (format)
+	if (PixelFormatHasStencilAspect(format))
 	{
-		case PixelFormat::D32_Float:
-			return VK_IMAGE_ASPECT_DEPTH_BIT;
-		case PixelFormat::D24_UNorm_S8_UInt:
-			return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-		case PixelFormat::R32G32B32A32_Float:
-		case PixelFormat::R16G16B16A16_Float:
-		case PixelFormat::R16G16_Float:
-		case PixelFormat::R8G8B8A8_UNorm:
-		case PixelFormat::R8G8B8A8_UNorm_Srgb:
-		case PixelFormat::B8G8R8A8_UNorm:
-		case PixelFormat::B8G8R8A8_UNorm_Srgb:
-		case PixelFormat::R32_Float:
-		case PixelFormat::BC1_UNorm:
-		case PixelFormat::BC1_UNorm_Srgb:
-		case PixelFormat::BC2_UNorm:
-		case PixelFormat::BC2_UNorm_Srgb:
-		case PixelFormat::BC3_UNorm:
-		case PixelFormat::BC3_UNorm_Srgb:
-		case PixelFormat::BC4_UNorm:
-		case PixelFormat::BC4_SNorm:
-		case PixelFormat::BC5_UNorm:
-		case PixelFormat::BC5_SNorm:
-		case PixelFormat::BC6H_UF16:
-		case PixelFormat::BC7_UNorm:
-		case PixelFormat::BC7_UNorm_Srgb:
-			return VK_IMAGE_ASPECT_COLOR_BIT;
-		case PixelFormat::Unknown:
-		default:
-			Diagnostics::Fatal(
-			    g_vulkanTypeConversionsLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Cannot resolve an aspect mask for an unknown Vulkan format.");
+		return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 	}
+	if (IsDepthStencilPixelFormat(format))
+	{
+		return VK_IMAGE_ASPECT_DEPTH_BIT;
+	}
+	if (PixelFormatHasColorAspect(format))
+	{
+		return VK_IMAGE_ASPECT_COLOR_BIT;
+	}
+	Diagnostics::Fatal(
+	    g_vulkanTypeConversionsLogger,
+	    __FILE__,
+	    __LINE__,
+	    "Cannot resolve an aspect mask for an unknown Vulkan format.");
 }

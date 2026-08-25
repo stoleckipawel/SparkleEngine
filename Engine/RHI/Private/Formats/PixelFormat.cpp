@@ -76,6 +76,11 @@ bool IsColorAttachmentPixelFormat(PixelFormat format) noexcept
 	}
 }
 
+bool PixelFormatHasColorAspect(PixelFormat format) noexcept
+{
+	return format != PixelFormat::Unknown && !IsDepthStencilPixelFormat(format);
+}
+
 bool IsDepthStencilPixelFormat(PixelFormat format) noexcept
 {
 	return format == PixelFormat::D32_Float || format == PixelFormat::D24_UNorm_S8_UInt;

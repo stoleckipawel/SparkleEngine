@@ -134,3 +134,66 @@ void D3D12RenderCommandList::SetComputePushConstants(
 		m_commandList->SetComputeRoot32BitConstants(bindingIndex, num32BitValues, data, destOffsetIn32BitValues);
 	}
 }
+
+void D3D12RenderCommandList::BindRayTracingConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->SetComputeRootConstantBufferView(bindingIndex, gpuAddress);
+	}
+}
+
+void D3D12RenderCommandList::BindRayTracingShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->SetComputeRootShaderResourceView(bindingIndex, gpuAddress);
+	}
+}
+
+void D3D12RenderCommandList::BindRayTracingUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->SetComputeRootUnorderedAccessView(bindingIndex, gpuAddress);
+	}
+}
+
+void D3D12RenderCommandList::BindRayTracingAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept
+{
+	ID3D12Resource* const nativeResource = D3D12TypeConversions::ToResource(resource);
+	if (m_commandList != nullptr && nativeResource != nullptr)
+	{
+		m_commandList->SetComputeRootShaderResourceView(bindingIndex, nativeResource->GetGPUVirtualAddress());
+	}
+}
+
+void D3D12RenderCommandList::BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept
+{
+	if (m_commandList != nullptr && m_owner != nullptr && tableBinding)
+	{
+		m_commandList->SetComputeRootDescriptorTable(
+		    bindingIndex,
+		    m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
+	}
+}
+
+void D3D12RenderCommandList::BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->SetComputeRootDescriptorTable(bindingIndex, D3D12TypeConversions::ToGpuDescriptor(baseDescriptor));
+	}
+}
+
+void D3D12RenderCommandList::SetRayTracingPushConstants(
+    std::uint32_t bindingIndex,
+    std::uint32_t num32BitValues,
+    const void* data,
+    std::uint32_t destOffsetIn32BitValues) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->SetComputeRoot32BitConstants(bindingIndex, num32BitValues, data, destOffsetIn32BitValues);
+	}
+}

@@ -7,15 +7,15 @@ void PassBinder::BindDescriptorTableOverride(
     RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
     const PassBindingOverride& bindingOverride,
-    bool isCompute)
+    BindingDomain domain)
 {
 	if (bindingOverride.DescriptorTableKind == DescriptorTableOverrideKind::LogicalTable)
 	{
-		BindDescriptorTable(commandContext, compiledBinding, bindingOverride.LogicalDescriptorTable, isCompute);
+		BindDescriptorTable(commandContext, compiledBinding, bindingOverride.LogicalDescriptorTable, domain);
 	}
 	else
 	{
-		BindDescriptorTable(commandContext, compiledBinding, bindingOverride.DescriptorTable, isCompute);
+		BindDescriptorTable(commandContext, compiledBinding, bindingOverride.DescriptorTable, domain);
 	}
 }
 
@@ -23,15 +23,19 @@ void PassBinder::BindGpuAddress(
     RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
     RhiGpuVirtualAddress gpuAddress,
-    bool isCompute)
+    BindingDomain domain)
 {
 	Require(gpuAddress != 0, "Pass address binding resolved to a null GPU address.");
 	switch (compiledBinding.Type)
 	{
 		case CompiledBindingType::ConstantBuffer:
-			if (isCompute)
+			if (domain == BindingDomain::Compute)
 			{
 				commandContext.BindComputeConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
+			}
+			else if (domain == BindingDomain::RayTracing)
+			{
+				commandContext.BindRayTracingConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
 			}
 			else
 			{
@@ -39,9 +43,13 @@ void PassBinder::BindGpuAddress(
 			}
 			return;
 		case CompiledBindingType::ReadOnlyAddress:
-			if (isCompute)
+			if (domain == BindingDomain::Compute)
 			{
 				commandContext.BindComputeShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
+			}
+			else if (domain == BindingDomain::RayTracing)
+			{
+				commandContext.BindRayTracingShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
 			}
 			else
 			{
@@ -49,9 +57,13 @@ void PassBinder::BindGpuAddress(
 			}
 			return;
 		case CompiledBindingType::ReadWriteAddress:
-			if (isCompute)
+			if (domain == BindingDomain::Compute)
 			{
 				commandContext.BindComputeUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
+			}
+			else if (domain == BindingDomain::RayTracing)
+			{
+				commandContext.BindRayTracingUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
 			}
 			else
 			{
@@ -68,12 +80,17 @@ void PassBinder::BindDescriptorTable(
     RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
     RhiGpuDescriptorHandle descriptorTable,
-    bool isCompute)
+    BindingDomain domain)
 {
 	Require(static_cast<bool>(descriptorTable), "Pass resource binding resolved to a null GPU descriptor handle.");
-	if (isCompute)
+	if (domain == BindingDomain::Compute)
 	{
 		commandContext.BindComputeDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
+		return;
+	}
+	if (domain == BindingDomain::RayTracing)
+	{
+		commandContext.BindRayTracingDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 		return;
 	}
 
@@ -84,12 +101,17 @@ void PassBinder::BindDescriptorTable(
     RenderCommandContext& commandContext,
     const CompiledBinding& compiledBinding,
     RhiDescriptorTableBinding descriptorTable,
-    bool isCompute)
+    BindingDomain domain)
 {
 	Require(static_cast<bool>(descriptorTable), "Pass resource binding resolved to an invalid logical descriptor table.");
-	if (isCompute)
+	if (domain == BindingDomain::Compute)
 	{
 		commandContext.BindComputeDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
+		return;
+	}
+	if (domain == BindingDomain::RayTracing)
+	{
+		commandContext.BindRayTracingDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 		return;
 	}
 
@@ -101,14 +123,19 @@ void PassBinder::BindPushConstants(
     const CompiledBinding& compiledBinding,
     const void* data,
     std::uint32_t constantCount,
-    bool isCompute)
+    BindingDomain domain)
 {
 	Require(data != nullptr, "Push-constant binding has no data.");
 	Require(constantCount > 0, "Push-constant binding has no values.");
 
-	if (isCompute)
+	if (domain == BindingDomain::Compute)
 	{
 		commandContext.SetComputePushConstants(compiledBinding.BindingIndex, constantCount, data, 0);
+		return;
+	}
+	if (domain == BindingDomain::RayTracing)
+	{
+		commandContext.SetRayTracingPushConstants(compiledBinding.BindingIndex, constantCount, data, 0);
 		return;
 	}
 

@@ -58,8 +58,9 @@ std::vector<ShaderCookDesc> ShaderCookPlanner::BuildShaders(
 		        .sourcePath = contract.sourcePath,
 		        .entryPoint = contract.entryPoint,
 		        .features = contract.features,
+		        .rayTracing = contract.rayTracing,
 		        .parameterLayout = contract.parameterLayout,
-		        .parameterStruct = contract.parameterStruct});
+		        .parameterStruct = contract.hasParameterStruct ? std::optional(contract.parameterStruct) : std::nullopt});
 	}
 	if (!settings.shaderId.empty() && shaders.empty())
 	{

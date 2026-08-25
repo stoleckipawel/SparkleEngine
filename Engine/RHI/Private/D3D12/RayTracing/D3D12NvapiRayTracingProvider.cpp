@@ -95,7 +95,7 @@ const char* D3D12NvapiRayTracingProvider::GetRuntimeStatusReason() const noexcep
 RhiPartitionedTlasCapabilities D3D12NvapiRayTracingProvider::QueryPartitionedTlasCapabilities(
     ID3D12Device10* device,
     bool runsOnNvidiaDevice,
-    bool supportsRayTracing) const noexcept
+    bool supportsAccelerationStructure) const noexcept
 {
 	RhiPartitionedTlasCapabilities capabilities{
 	    .Supported = false,
@@ -104,7 +104,7 @@ RhiPartitionedTlasCapabilities D3D12NvapiRayTracingProvider::QueryPartitionedTla
 	    .CurrentDeviceIsNvidia = runsOnNvidiaDevice,
 	    .CapabilityStatusReason = "d3d12-nvapi-ptlas-not-queried"};
 
-	if (!supportsRayTracing)
+	if (!supportsAccelerationStructure)
 	{
 		capabilities.CapabilityStatusReason = "d3d12-ray-tracing-unavailable";
 		return capabilities;

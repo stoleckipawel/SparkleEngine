@@ -11,6 +11,7 @@ enum class ResourceUsage : std::uint8_t
 	UnorderedAccess,
 	AccelerationStructureRead,
 	AccelerationStructureBuild,
+	RayTracingShaderTableRead,
 	CopySource,
 	CopyDest,
 	Present,
@@ -34,6 +35,8 @@ constexpr const char* ResourceUsageToString(ResourceUsage usage) noexcept
 			return "AccelerationStructureRead";
 		case ResourceUsage::AccelerationStructureBuild:
 			return "AccelerationStructureBuild";
+		case ResourceUsage::RayTracingShaderTableRead:
+			return "RayTracingShaderTableRead";
 		case ResourceUsage::CopySource:
 			return "CopySource";
 		case ResourceUsage::CopyDest:
@@ -64,6 +67,7 @@ constexpr bool IsReadOnlyUsage(ResourceUsage usage) noexcept
 		case ResourceUsage::DepthRead:
 		case ResourceUsage::ShaderRead:
 		case ResourceUsage::AccelerationStructureRead:
+		case ResourceUsage::RayTracingShaderTableRead:
 		case ResourceUsage::CopySource:
 		case ResourceUsage::Present:
 			return true;
@@ -103,4 +107,9 @@ constexpr bool UsesUnorderedAccess(ResourceUsage usage) noexcept
 constexpr bool UsesAccelerationStructure(ResourceUsage usage) noexcept
 {
 	return usage == ResourceUsage::AccelerationStructureRead || usage == ResourceUsage::AccelerationStructureBuild;
+}
+
+constexpr bool UsesRayTracingShaderTable(ResourceUsage usage) noexcept
+{
+	return usage == ResourceUsage::RayTracingShaderTableRead;
 }

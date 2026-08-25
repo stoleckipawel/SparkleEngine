@@ -34,6 +34,7 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(ShaderContractSelectio
 		shader.entryPoint = registration.EntryPoint;
 		shader.stage = registration.Stage;
 		shader.features = registration.Features;
+		shader.rayTracing = registration.RayTracing;
 		if (registration.BuildParameterStructDescriptor != nullptr)
 		{
 			shader.parameterStruct = registration.BuildParameterStructDescriptor();

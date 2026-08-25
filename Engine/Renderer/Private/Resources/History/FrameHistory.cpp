@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "Resources/History/FrameHistory.h"
 
+#include "Core/Public/Diagnostics/Error.h"
+#include "Debug/RendererCVars.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
@@ -85,12 +87,16 @@ void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryR
 void UpdateFrameHistory(
     FrameGraph& frameGraph,
     const FrameHistoryResourceLayout& history,
-    LightingMode lighting,
     const PreparedRenderScene& preparedScene,
     const RenderView& view,
     RenderViewState& viewState,
     RendererImageProviderStack& imageProviders)
 {
+	const LightingMode lighting = CVarLightingMode.Get();
+	if (lighting != LightingMode::RestirPathTraced && lighting != LightingMode::ReferencePathTraced)
+	{
+		throw Diagnostics::Error("Frame-history update received an invalid lighting mode.");
+	}
 	if (lighting == LightingMode::RestirPathTraced)
 	{
 		if (viewState.UpdateRestirLightingHistory(BuildRestirLightingHistoryInvalidationHash(preparedScene)))
@@ -106,7 +112,6 @@ void UpdateFrameHistory(
 			frameGraph.InvalidateTextureHistory(history.ReferenceLighting);
 		}
 	}
-
 	if (view.temporalUniform.HistoryValid == 0u)
 	{
 		InvalidateFrameHistory(frameGraph, history);

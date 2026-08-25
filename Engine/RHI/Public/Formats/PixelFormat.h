@@ -33,6 +33,7 @@ enum class PixelFormat : std::uint16_t
 };
 
 SPARKLE_RHI_API const char* PixelFormatName(PixelFormat format) noexcept;
+SPARKLE_RHI_API bool PixelFormatHasColorAspect(PixelFormat format) noexcept;
 SPARKLE_RHI_API bool IsColorAttachmentPixelFormat(PixelFormat format) noexcept;
 SPARKLE_RHI_API bool IsDepthStencilPixelFormat(PixelFormat format) noexcept;
 SPARKLE_RHI_API bool PixelFormatHasStencilAspect(PixelFormat format) noexcept;
