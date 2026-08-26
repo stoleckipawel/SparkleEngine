@@ -12,6 +12,7 @@
 class RenderCommandContext;
 class RenderHardwareInterface;
 class RayTracingPerformanceDiagnostics;
+class RayTracingShaderTablePlan;
 struct MeshDraw;
 struct PreparedRenderScene;
 
@@ -40,6 +41,7 @@ public:
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
+	    const RayTracingShaderTablePlan& shaderTablePlan,
 	    RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
 	const TlasHandle& GetTlas() const noexcept { return m_tlas; }
 	void Clear() noexcept;
@@ -58,6 +60,7 @@ private:
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
+	    const RayTracingShaderTablePlan& shaderTablePlan,
 	    RayTracingPerformanceDiagnostics* diagnostics,
 	    BuildState& state) noexcept;
 	void PrepareBuild(BuildState& state) noexcept;

@@ -41,3 +41,25 @@ public:
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	END_SHADER_PARAMETER_STRUCT()
 };
+
+class DirectShadowSignalRGS final : public GlobalShader<DirectShadowSignalRGS>
+{
+public:
+	using Parameters = DirectShadowSignalCS::Parameters;
+	static constexpr RayTracingShaderMetadata kRayTracingMetadata{
+	    .PayloadSizeInBytes = 8u,
+	    .AttributeSizeInBytes = sizeof(float) * 2u,
+	    .MinimumRecursionDepth = 1u};
+};
+
+class DirectShadowSignalMiss final : public GlobalShader<DirectShadowSignalMiss>
+{
+};
+
+class DirectShadowSignalClosestHit final : public GlobalShader<DirectShadowSignalClosestHit>
+{
+};
+
+class DirectShadowSignalAnyHit final : public GlobalShader<DirectShadowSignalAnyHit>
+{
+};

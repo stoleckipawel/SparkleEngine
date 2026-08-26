@@ -13,8 +13,7 @@ GBufferRenderTargets CreateGBufferRenderTargets(
 	RenderViewportExtent sceneExtent);
 void AddGBufferMeshPasses(
     FrameGraphBuilder& builder,
-    GpuMeshCache& gpuMeshCache,
-    const RenderRayTracingScene& rayTracingScene,
-    bool hasMaskedRayTracingGeometry,
-    RenderViewportExtent sceneExtent,
+	GpuMeshCache& gpuMeshCache,
+	RenderRayTracingScene& rayTracingScene,
+	RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources);

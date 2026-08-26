@@ -10,6 +10,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingTransformPacking.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/RayTracing/RayTracingShaderTablePlan.h"
 
 #include <algorithm>
 #include <unordered_set>
@@ -131,9 +132,10 @@ void RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexc
 
 std::uint32_t RayTracingClassicTlasBuilder::Build(
     RenderCommandContext& commandContext,
-    const PreparedRenderScene& preparedScene,
-    RayTracingBlasCache& blasCache,
-    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+	const PreparedRenderScene& preparedScene,
+	RayTracingBlasCache& blasCache,
+	const RayTracingShaderTablePlan& shaderTablePlan,
+	RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -147,7 +149,7 @@ std::uint32_t RayTracingClassicTlasBuilder::Build(
 	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
 	BuildState state;
 	state.Instances.reserve(work.ClassicTlasBlasInputIndices.size());
-	CollectInstances(commandContext, preparedScene, blasCache, diagnostics, state);
+	CollectInstances(commandContext, preparedScene, blasCache, shaderTablePlan, diagnostics, state);
 	const std::uint32_t instanceCount = static_cast<std::uint32_t>(state.Instances.size());
 	PrepareBuild(state);
 
@@ -166,9 +168,10 @@ std::uint32_t RayTracingClassicTlasBuilder::Build(
 
 void RayTracingClassicTlasBuilder::CollectInstances(
     RenderCommandContext& commandContext,
-    const PreparedRenderScene& preparedScene,
-    RayTracingBlasCache& blasCache,
-    RayTracingPerformanceDiagnostics* diagnostics,
+	const PreparedRenderScene& preparedScene,
+	RayTracingBlasCache& blasCache,
+	const RayTracingShaderTablePlan& shaderTablePlan,
+	RayTracingPerformanceDiagnostics* diagnostics,
     BuildState& state) noexcept
 {
 	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
@@ -209,12 +212,21 @@ void RayTracingClassicTlasBuilder::CollectInstances(
 		{
 			state.BuiltBlasResources.insert(blas.resource.Value);
 		}
+		std::uint32_t instanceContribution = 0u;
+		if (!shaderTablePlan.ResolveInstanceContribution(input.GpuSceneSlot, instanceContribution))
+		{
+			Diagnostics::Fatal(
+			    g_rayTracingClassicTlasBuilderLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Classic TLAS instance has no authoritative scene shader-table contribution.");
+		}
 		state.Instances.push_back(
 		    RhiRayTracingInstanceDesc{
 		        .Transform = RhiRayTracingTransformPacking::PackCanonicalObjectToWorld(draw.Transform.WorldMatrix),
 		        .InstanceID = input.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,
-		        .InstanceContributionToHitGroupIndex = 0u,
+		        .InstanceContributionToHitGroupIndex = instanceContribution,
 		        .Flags = ResolveInstanceFlags(preparedScene, draw),
 		        .AccelerationStructure = blas.gpuAddress});
 	}

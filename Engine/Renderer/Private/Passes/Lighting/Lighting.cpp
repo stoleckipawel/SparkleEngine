@@ -16,8 +16,9 @@
 #include "RHI/Public/Formats/PixelFormat.h"
 
 void AddLightingPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
+	FrameGraphBuilder& builder,
+	RenderRayTracingScene& rayTracingScene,
+	RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources)
 {
 	const LightingMode mode = CVarLightingMode.Get();
@@ -34,7 +35,7 @@ void AddLightingPasses(
 	switch (mode)
 	{
 		case LightingMode::RestirPathTraced:
-			AddRestirLightingProducerPasses(builder, sceneExtent, resources);
+			AddRestirLightingProducerPasses(builder, rayTracingScene, sceneExtent, resources);
 			break;
 		case LightingMode::ReferencePathTraced:
 			AddReferenceLightingProducerPasses(builder, sceneExtent, resources);

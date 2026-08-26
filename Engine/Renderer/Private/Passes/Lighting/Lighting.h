@@ -7,10 +7,12 @@
 
 class FrameGraphBuilder;
 class IRayReconstructionProvider;
+class RenderRayTracingScene;
 
 void AddLightingPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
+	FrameGraphBuilder& builder,
+	RenderRayTracingScene& rayTracingScene,
+	RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources);
 void AddLightingReconstructionPasses(
     FrameGraphBuilder& builder,

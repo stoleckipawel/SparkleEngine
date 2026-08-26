@@ -43,16 +43,17 @@ RenderRayTracingFrameBindings RayTracingClassicTlasStrategy::Prepare(
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingClassicTlasStrategy::Build(
     RenderCommandContext& commandContext,
-    const PreparedRenderScene& preparedScene,
-    RayTracingBlasCache& blasCache,
-    const RayTracingPtlasPartitionPlan& viewPlan,
+	const PreparedRenderScene& preparedScene,
+	RayTracingBlasCache& blasCache,
+	const RayTracingShaderTablePlan& shaderTablePlan,
+	const RayTracingPtlasPartitionPlan& viewPlan,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	(void) viewPlan;
 	RayTracingTopLevelAccelerationStructureBuildResult result{};
 	result.ActiveProvider = GetActiveProvider();
 	result.ActiveProviderReason = GetActiveProviderReason();
-	result.InstanceCount = m_classicTlasBuilder.Build(commandContext, preparedScene, blasCache, diagnostics);
+	result.InstanceCount = m_classicTlasBuilder.Build(commandContext, preparedScene, blasCache, shaderTablePlan, diagnostics);
 	return result;
 }
 

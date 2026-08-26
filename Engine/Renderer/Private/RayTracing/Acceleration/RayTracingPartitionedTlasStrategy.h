@@ -31,6 +31,7 @@ public:
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
+	    const RayTracingShaderTablePlan& shaderTablePlan,
 	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
 	bool HasValidSceneTlas() const noexcept override;
@@ -76,6 +77,7 @@ private:
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
+	    const RayTracingShaderTablePlan& shaderTablePlan,
 	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
 	static void CollectPartitionedInstances(
@@ -83,6 +85,7 @@ private:
 	    const PreparedRenderScene& preparedScene,
 	    const RayTracingPtlasPartitionPlan* partitionPlan,
 	    RayTracingBlasCache& blasCache,
+	    const RayTracingShaderTablePlan& shaderTablePlan,
 	    RayTracingPerformanceDiagnostics* diagnostics,
 	    PartitionedBuildState& state) noexcept;
 	void PreparePartitionedOperationBuffer(PartitionedBuildState& state) noexcept;

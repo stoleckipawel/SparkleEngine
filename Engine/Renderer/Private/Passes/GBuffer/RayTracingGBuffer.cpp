@@ -103,15 +103,20 @@ namespace RayTracingGBufferPasses
 	    const GBufferRenderTargets& targets,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    const RenderFrameGraphImportedSceneResources& externalResources,
+	    RayTracingShaderTablePlan& shaderTablePlan,
 	    const char* reason)
 	{
 		auto& parameters = BuildParameters<RayTracingGBufferRGS>(builder, targets, sceneTlas, externalResources);
 		const RayTracingPipelineComposition composition = RayTracingPipelineComposition::Create<RayTracingGBufferRGS>(
 		    std::vector{RayTracingPipelineComposition::Shader<RayTracingGBufferMiss>()},
-		    std::vector{RayTracingHitGroupComposition::Triangles<RayTracingGBufferClosestHit>("RayTracingGBufferOpaqueHitGroup")});
+		    std::vector{
+		        RayTracingHitGroupComposition::Triangles<RayTracingGBufferClosestHit>("RayTracingGBufferOpaqueHitGroup"),
+		        RayTracingHitGroupComposition::Triangles<RayTracingGBufferClosestHit, RayTracingGBufferAnyHit>(
+		            "RayTracingGBufferAlphaTestedHitGroup")});
 		builder.TraceRays<RayTracingGBufferRGS>(
 		    BuildDiagnosticLabel("Pipeline", reason),
 		    composition,
+		    shaderTablePlan,
 		    parameters,
 		    RayTracingDispatchDimensions{.Width = sceneExtent.Width, .Height = sceneExtent.Height, .Depth = 1u});
 	}
@@ -123,11 +128,10 @@ void AddRayTracingGBufferMeshPass(
 	const GBufferRenderTargets& targets,
 	FrameGraphAccelerationStructureHandle sceneTlas,
 	const RenderFrameGraphImportedSceneResources& externalResources,
-	bool hasMaskedRayTracingGeometry,
+	RayTracingShaderTablePlan& shaderTablePlan,
 	const RayTracingCapabilityReport& capabilities)
 {
-	const RayTracingGBufferExecutionPlan executionPlan =
-	    ResolveRayTracingGBufferExecutionPlan(hasMaskedRayTracingGeometry, capabilities);
+	const RayTracingGBufferExecutionPlan executionPlan = ResolveRayTracingGBufferExecutionPlan(capabilities);
 	const char* reason = GetRayTracingExecutionReasonLabel(executionPlan.Reason);
 	switch (executionPlan.Active)
 	{
@@ -147,6 +151,7 @@ void AddRayTracingGBufferMeshPass(
 			    targets,
 			    sceneTlas,
 			    externalResources,
+			    shaderTablePlan,
 			    reason);
 			return;
 		case RayTracingExecutionFrontend::None:

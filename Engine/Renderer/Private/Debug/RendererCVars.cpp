@@ -11,6 +11,10 @@ ConsoleVariable<RayTracingExecutionMode> CVarGBufferRayTracingExecutionMode(
 	"r.GBuffer.RayTracingExecution",
 	RayTracingExecutionMode::Automatic,
 	"Ray-traced GBuffer execution: 0=automatic, 1=inline ray query, 2=ray-tracing pipeline.");
+ConsoleVariable<RayTracingExecutionMode> CVarShadowRayTracingExecutionMode(
+	"r.RayTracing.Shadows.Execution",
+	RayTracingExecutionMode::Automatic,
+	"Ray-traced shadow execution: 0=automatic, 1=inline ray query, 2=ray-tracing pipeline.");
 ConsoleVariable<LightingMode> CVarLightingMode(
     "r.Lighting.Mode",
     LightingMode::RestirPathTraced,

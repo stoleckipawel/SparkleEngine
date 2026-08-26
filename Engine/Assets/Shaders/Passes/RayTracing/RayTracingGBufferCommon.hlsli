@@ -11,6 +11,7 @@
 #include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
 #include "/Engine/Passes/GBuffer/MotionVector.hlsli"
 #include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
+#include "/Engine/RayTracing/RayTracingShaderTableLayout.hlsli"
 
 RWTexture2D<float4> GBufferBaseColor;
 RWTexture2D<float4> GBufferNormal;

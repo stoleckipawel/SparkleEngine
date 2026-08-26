@@ -7,6 +7,7 @@
 #include "PipelineRuntime/PipelineRuntimeLibrary.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Shaders/ShaderParameterLayoutBuilder.h"
+#include "Scene/RayTracing/RayTracingShaderTablePlan.h"
 
 #include <string_view>
 #include <unordered_set>
@@ -136,42 +137,124 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 		throw Diagnostics::Error("Ray-tracing native pipeline materialization failed.");
 	}
 
+	return runtime;
+}
+
+std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTable(
+    RenderHardwareInterface& renderHardwareInterface,
+    const RayTracingPipelineComposition& composition) const
+{
+	std::vector<const RayTracingHitGroupComposition*> recordGroups;
+	recordGroups.reserve(composition.GetHitGroups().size());
+	for (const RayTracingHitGroupComposition& group : composition.GetHitGroups())
+	{
+		recordGroups.push_back(&group);
+	}
+	return CreateShaderTable(renderHardwareInterface, composition, recordGroups);
+}
+
+std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTable(
+    RenderHardwareInterface& renderHardwareInterface,
+    const RayTracingPipelineComposition& composition,
+    const RayTracingShaderTablePlan& plan) const
+{
+	if (m_pipeline == nullptr || composition.GetRayGeneration() == 0u || !plan.Validate())
+	{
+		throw Diagnostics::Error("Ray-tracing shader-table materialization received an invalid pipeline or scene plan.");
+	}
+
+	const RayTracingHitGroupComposition* opaqueGroup = nullptr;
+	const RayTracingHitGroupComposition* alphaTestedGroup = nullptr;
+	for (const RayTracingHitGroupComposition& group : composition.GetHitGroups())
+	{
+		if (group.AnyHit == 0u)
+		{
+			if (opaqueGroup != nullptr)
+			{
+				throw Diagnostics::Error("Scene shader-table composition contains multiple opaque hit groups.");
+			}
+			opaqueGroup = &group;
+		}
+		else
+		{
+			if (alphaTestedGroup != nullptr)
+			{
+				throw Diagnostics::Error("Scene shader-table composition contains multiple alpha-tested hit groups.");
+			}
+			alphaTestedGroup = &group;
+		}
+	}
+	if (opaqueGroup == nullptr || alphaTestedGroup == nullptr)
+	{
+		throw Diagnostics::Error("Scene shader-table materialization requires one opaque and one alpha-tested hit group.");
+	}
+
+	std::vector<const RayTracingHitGroupComposition*> recordGroups;
+	recordGroups.reserve(plan.GetRecords().size());
+	for (const RayTracingShaderTableRecordPlan& record : plan.GetRecords())
+	{
+		recordGroups.push_back(
+		    record.HitGroup == RayTracingShaderTableHitGroup::AlphaTested ? alphaTestedGroup : opaqueGroup);
+	}
+	return CreateShaderTable(renderHardwareInterface, composition, recordGroups);
+}
+
+std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTable(
+    RenderHardwareInterface& renderHardwareInterface,
+    const RayTracingPipelineComposition& composition,
+    std::span<const RayTracingHitGroupComposition* const> recordGroups) const
+{
+	if (m_pipeline == nullptr || composition.GetRayGeneration() == 0u)
+	{
+		throw Diagnostics::Error("Ray-tracing shader-table materialization received an invalid pipeline composition.");
+	}
+	const ShaderRegistrationDesc& rayGenerationRegistration =
+	    RayTracingRuntimeMaterialization::GetRegistration(composition.GetRayGeneration());
 	std::vector<RhiRayTracingShaderRecord> rayGenerationRecords{
 	    RhiRayTracingShaderRecord{.ExportName = rayGenerationRegistration.EntryPoint}};
 	std::vector<RhiRayTracingShaderRecord> missRecords;
 	std::vector<RhiRayTracingShaderRecord> hitGroupRecords;
 	std::vector<RhiRayTracingShaderRecord> callableRecords;
+	missRecords.reserve(composition.GetMissShaders().size());
+	hitGroupRecords.reserve(recordGroups.size());
+	callableRecords.reserve(composition.GetCallableShaders().size());
 	for (ShaderTypeId miss : composition.GetMissShaders())
 	{
 		missRecords.push_back(
 		    RhiRayTracingShaderRecord{.ExportName = RayTracingRuntimeMaterialization::GetRegistration(miss).EntryPoint});
 	}
-	for (const RayTracingHitGroupComposition& group : composition.GetHitGroups())
+	for (const RayTracingHitGroupComposition* group : recordGroups)
 	{
-			hitGroupRecords.push_back(
+		if (group == nullptr)
+		{
+			throw Diagnostics::Error("Ray-tracing shader-table record has no hit-group composition.");
+		}
+		hitGroupRecords.push_back(
 		    RhiRayTracingShaderRecord{
-		        .ExportName = group.ExportName,
-		        .LocalData = group.LocalData,
+		        .ExportName = group->ExportName,
+		        .LocalData = group->LocalData,
 		        .LocalRecordSignature =
-		            RayTracingRuntimeMaterialization::GetRegistration(group.ClosestHit).RayTracing.LocalRecordSignature});
+		            RayTracingRuntimeMaterialization::GetRegistration(group->ClosestHit).RayTracing.LocalRecordSignature});
 	}
 	for (ShaderTypeId callable : composition.GetCallableShaders())
 	{
 		callableRecords.push_back(
 		    RhiRayTracingShaderRecord{.ExportName = RayTracingRuntimeMaterialization::GetRegistration(callable).EntryPoint});
 	}
+	std::wstring debugName = Strings::ToWide(rayGenerationRegistration.ShaderName);
 	RayTracingShaderTableDesc tableDesc{
-	    .Pipeline = runtime->m_pipeline.get(),
+	    .Pipeline = m_pipeline.get(),
 	    .RayGenerationRecords = rayGenerationRecords,
 	    .MissRecords = missRecords,
 	    .HitGroupRecords = hitGroupRecords,
 	    .CallableRecords = callableRecords,
-	    .Generation = generation,
+	    .Generation = m_generation,
 	    .DebugName = debugName.c_str()};
-	runtime->m_shaderTable = renderHardwareInterface.GetRayTracingService().CreateRayTracingShaderTable(tableDesc);
-	if (runtime->m_shaderTable == nullptr)
+	std::unique_ptr<RayTracingShaderTable> shaderTable =
+	    renderHardwareInterface.GetRayTracingService().CreateRayTracingShaderTable(tableDesc);
+	if (shaderTable == nullptr)
 	{
 		throw Diagnostics::Error("Ray-tracing shader-table materialization failed.");
 	}
-	return runtime;
+	return shaderTable;
 }

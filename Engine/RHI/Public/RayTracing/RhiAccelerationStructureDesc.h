@@ -5,6 +5,10 @@
 
 #include <cstdint>
 
+inline constexpr std::uint32_t kRhiRayTracingMaxInstanceId = 0x00FFFFFFu;
+inline constexpr std::uint32_t kRhiRayTracingMaxInstanceMask = 0x000000FFu;
+inline constexpr std::uint32_t kRhiRayTracingMaxInstanceContributionToHitGroupIndex = 0x00FFFFFFu;
+
 enum class ERhiRayTracingAccelerationStructureType : std::uint8_t
 {
 	BottomLevel,

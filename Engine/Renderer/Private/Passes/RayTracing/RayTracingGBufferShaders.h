@@ -64,3 +64,7 @@ class RayTracingGBufferMiss final : public GlobalShader<RayTracingGBufferMiss>
 class RayTracingGBufferClosestHit final : public GlobalShader<RayTracingGBufferClosestHit>
 {
 };
+
+class RayTracingGBufferAnyHit final : public GlobalShader<RayTracingGBufferAnyHit>
+{
+};

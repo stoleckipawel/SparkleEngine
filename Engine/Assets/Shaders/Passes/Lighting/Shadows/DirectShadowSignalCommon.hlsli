@@ -6,51 +6,60 @@
 #include "/Engine/Lighting/DirectLightReservoir.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
-#include "/Engine/RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
+#include "/Engine/RayTracing/Shadows/RayTracedShadowSemantics.hlsli"
 
 RWTexture2D<float4> ShadowVisibilitySignal;
 Texture2D<float4> CurrentReservoirSample;
 Texture2D<float4> CurrentReservoirWeight;
 
-void EvaluateDirectShadowSignal(uint3 dispatchThreadId)
+bool PrepareDirectShadowSignal(
+	uint2 pixelCoord,
+	out bool validPixel,
+	out RayTracedShadowRequest request,
+	out ShadowVisibilitySample immediateSignal)
 {
+	validPixel = false;
+	request = (RayTracedShadowRequest)0;
+	immediateSignal = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
 	uint width = 0;
 	uint height = 0;
 	ShadowVisibilitySignal.GetDimensions(width, height);
 
-	if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+	if (pixelCoord.x >= width || pixelCoord.y >= height)
 	{
-		return;
+		return false;
 	}
+	validPixel = true;
 
-	const float sceneDepth = LoadSceneDepth(dispatchThreadId.xy);
+	const float sceneDepth = LoadSceneDepth(pixelCoord);
 	if (IsSkyPixel(sceneDepth))
 	{
-		ShadowVisibilitySignal[dispatchThreadId.xy] =
-		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
-		return;
+		return false;
 	}
 
-	const float3 positionWorld = ReconstructGBufferWorldPosition(dispatchThreadId.xy, sceneDepth, InvViewMTX, InvProjectionMTX);
-	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(int3(dispatchThreadId.xy, 0)).xyz);
+	const float3 positionWorld = ReconstructGBufferWorldPosition(pixelCoord, sceneDepth, InvViewMTX, InvProjectionMTX);
+	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(int3(pixelCoord, 0)).xyz);
 	const DirectLightReservoir::Reservoir reservoir =
-	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(dispatchThreadId.xy, 0)),
-	                                          CurrentReservoirWeight.Load(int3(dispatchThreadId.xy, 0)));
+	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(pixelCoord, 0)),
+	                                          CurrentReservoirWeight.Load(int3(pixelCoord, 0)));
 	if (!DirectLightReservoir::IsValid(reservoir))
 	{
-		ShadowVisibilitySignal[dispatchThreadId.xy] =
-		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
-		return;
+		return false;
 	}
 
 	const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
-	const ShadowVisibilitySample shadowSignal =
-	    RayTracedShadowVisibility::TraceDirectLightSample(positionWorld,
-	                                                      normalWorld,
-	                                                      lightSample,
-	                                                      DirectLightSampling::CastsShadow(reservoir.Candidate.Light));
+	return RayTracedShadows::BuildDirectLightRequest(
+	    positionWorld,
+	    normalWorld,
+	    lightSample,
+	    DirectLightSampling::CastsShadow(reservoir.Candidate.Light),
+	    request,
+	    immediateSignal);
+}
 
-	ShadowVisibilitySignal[dispatchThreadId.xy] = RayTracedShadowSignalPacking::PackShadowSignal(shadowSignal);
+void StoreDirectShadowSignal(uint2 pixelCoord, ShadowVisibilitySample signal)
+{
+	ShadowVisibilitySignal[pixelCoord] = RayTracedShadowSignalPacking::PackShadowSignal(signal);
 }
 
 #endif

@@ -22,3 +22,8 @@ IMPLEMENT_GLOBAL_SHADER(
 	"/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl",
 	"RayTracingGBufferClosestHit",
 	ClosestHit);
+IMPLEMENT_GLOBAL_SHADER(
+	RayTracingGBufferAnyHit,
+	"/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl",
+	"RayTracingGBufferAnyHit",
+	AnyHit);

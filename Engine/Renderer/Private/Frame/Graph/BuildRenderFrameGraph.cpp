@@ -11,10 +11,9 @@
 RenderFrameGraphResources BuildRenderFrameGraph(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
-    GpuMeshCache& gpuMeshCache,
-    RenderRayTracingScene& rayTracingScene,
-    bool hasMaskedRayTracingGeometry,
-    IUpscalerProvider* upscalerProvider,
+	GpuMeshCache& gpuMeshCache,
+	RenderRayTracingScene& rayTracingScene,
+	IUpscalerProvider* upscalerProvider,
     IRayReconstructionProvider* rayReconstructionProvider)
 {
 	RenderFrameGraphResources resources = {};
@@ -24,10 +23,9 @@ RenderFrameGraphResources BuildRenderFrameGraph(
 	    builder,
 	    gpuMeshCache,
 	    rayTracingScene,
-	    hasMaskedRayTracingGeometry,
 	    settings.RenderExtent,
 	    resources);
-	AddLightingPasses(builder, settings.RenderExtent, resources);
+	AddLightingPasses(builder, rayTracingScene, settings.RenderExtent, resources);
 	AddPreReconstructionPostProcessingPasses(builder, settings, resources);
 	AddLightingReconstructionPasses(
 	    builder,

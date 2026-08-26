@@ -10,6 +10,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingTransformPacking.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/RayTracing/RayTracingShaderTablePlan.h"
 
 #include <array>
 #include <unordered_set>
@@ -51,9 +52,10 @@ RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstan
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStrategy::BuildPartitionedTlas(
     RenderCommandContext& commandContext,
-    const PreparedRenderScene& preparedScene,
-    RayTracingBlasCache& blasCache,
-    const RayTracingPtlasPartitionPlan& viewPlan,
+	const PreparedRenderScene& preparedScene,
+	RayTracingBlasCache& blasCache,
+	const RayTracingShaderTablePlan& shaderTablePlan,
+	const RayTracingPtlasPartitionPlan& viewPlan,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	RayTracingTopLevelAccelerationStructureBuildResult result{};
@@ -75,7 +77,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 
 	PartitionedBuildState state;
 	state.InstanceWrites.reserve(work.PartitionedTlasBlasInputIndices.size());
-	CollectPartitionedInstances(commandContext, preparedScene, partitionPlan, blasCache, diagnostics, state);
+	CollectPartitionedInstances(commandContext, preparedScene, partitionPlan, blasCache, shaderTablePlan, diagnostics, state);
 	const std::uint32_t nativeWriteCount = static_cast<std::uint32_t>(state.InstanceWrites.size());
 	result.InstanceCount = nativeWriteCount;
 	PreparePartitionedOperationBuffer(state);
@@ -89,9 +91,10 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
-    const RayTracingPtlasPartitionPlan* partitionPlan,
-    RayTracingBlasCache& blasCache,
-    RayTracingPerformanceDiagnostics* diagnostics,
+	const RayTracingPtlasPartitionPlan* partitionPlan,
+	RayTracingBlasCache& blasCache,
+	const RayTracingShaderTablePlan& shaderTablePlan,
+	RayTracingPerformanceDiagnostics* diagnostics,
     PartitionedBuildState& state) noexcept
 {
 	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;
@@ -144,13 +147,22 @@ void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
 			    "Partitioned TLAS work has no valid partition-plan entry.");
 		}
 
+		std::uint32_t instanceContribution = 0u;
+		if (!shaderTablePlan.ResolveInstanceContribution(input.GpuSceneSlot, instanceContribution))
+		{
+			Diagnostics::Fatal(
+			    g_rayTracingPartitionedTlasBuildLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Partitioned TLAS instance has no authoritative scene shader-table contribution.");
+		}
 		state.InstanceWrites.push_back(
 		    RhiPartitionedTlasInstanceWriteDesc{
 		        .Transform = RhiRayTracingTransformPacking::PackCanonicalObjectToWorld(draw.Transform.WorldMatrix),
 		        .ExplicitBoundingBox = {},
 		        .InstanceID = input.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,
-		        .InstanceContributionToHitGroupIndex = 0u,
+		        .InstanceContributionToHitGroupIndex = instanceContribution,
 		        .Flags = ResolveInstanceFlags(preparedScene, draw),
 		        .InstanceIndex = input.GpuSceneSlot,
 		        .PartitionIndex = entry->Assignment.PartitionId,

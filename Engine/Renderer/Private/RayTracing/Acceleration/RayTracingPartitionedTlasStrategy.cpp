@@ -132,12 +132,13 @@ RenderRayTracingFrameBindings RayTracingPartitionedTlasStrategy::Prepare(
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStrategy::Build(
     RenderCommandContext& commandContext,
-    const PreparedRenderScene& preparedScene,
-    RayTracingBlasCache& blasCache,
-    const RayTracingPtlasPartitionPlan& viewPlan,
+	const PreparedRenderScene& preparedScene,
+	RayTracingBlasCache& blasCache,
+	const RayTracingShaderTablePlan& shaderTablePlan,
+	const RayTracingPtlasPartitionPlan& viewPlan,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	return BuildPartitionedTlas(commandContext, preparedScene, blasCache, viewPlan, diagnostics);
+	return BuildPartitionedTlas(commandContext, preparedScene, blasCache, shaderTablePlan, viewPlan, diagnostics);
 }
 
 bool RayTracingPartitionedTlasStrategy::HasValidSceneTlas() const noexcept

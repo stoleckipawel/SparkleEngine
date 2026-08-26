@@ -23,7 +23,6 @@ struct RenderFrameGraphDependencies
 	const RenderPassRuntimeCache& renderPassRuntimeCache;
 	GpuMeshCache& gpuMeshCache;
 	RenderRayTracingScene& rayTracingScene;
-	bool hasMaskedRayTracingGeometry = false;
 	IUpscalerProvider* upscalerProvider = nullptr;
 	IRayReconstructionProvider* rayReconstructionProvider = nullptr;
 	Window& window;

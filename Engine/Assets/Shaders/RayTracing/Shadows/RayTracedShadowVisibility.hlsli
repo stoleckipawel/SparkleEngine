@@ -14,18 +14,11 @@ namespace RayTracedShadowVisibility
 	    LightSampling::DirectLightSample lightSample,
 	    bool castsShadow)
 	{
-		if (!lightSample.Valid)
-		{
-			return RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
-		}
-
-		return RayTracedShadows::TraceDirectLightSample(
-		    positionWorld,
-		    normalWorld,
-		    lightSample.DirectionWorld,
-		    lightSample.VisibilityDistance,
-		    lightSample.IsDirectional,
-		    castsShadow);
+		RayTracedShadowRequest request = (RayTracedShadowRequest)0;
+		ShadowVisibilitySample signal = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
+		return RayTracedShadows::BuildDirectLightRequest(positionWorld, normalWorld, lightSample, castsShadow, request, signal)
+		    ? RayTracedShadows::TraceShadowRay(request)
+		    : signal;
 	}
 }
 

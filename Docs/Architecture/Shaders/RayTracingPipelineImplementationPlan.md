@@ -1,7 +1,7 @@
 # Ray-Tracing Pipeline and Dual-Execution Target Architecture
 
 Status: target proposal and semantic contract; not implementation authority or proof of runtime support
-Current-state audit provenance: 2026-08-24 source reconciliation, the Phase 6 foundation verdict, and the Phase 7 product-slice verdict are recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#phase-7-source-consistency-evidence)
+Current-state audit provenance: 2026-08-26 source reconciliation through the Phase 8 hit/shadow/table slice is recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#phase-8-source-consistency-evidence)
 Scope: ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, supported alternates, mandatory failure, and target completion invariants
 
 ## Purpose and authority boundary
@@ -10,7 +10,7 @@ This document describes the intended ray-tracing system as one coherent target. 
 
 It intentionally owns no implementation phases, prompts, phase references, CL boundaries, test order, or delivery gates. [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#implementation-contract) is the single implementation authority for the shader frontend, compiler, global shader map, code library, RHI/backend pipeline, shader table, frame graph, effects, tooling, and evidence. Its [unified implementation reference map](ShaderAuthoringAndCookedPrograms.md#unified-implementation-reference-map) owns the actionable external references.
 
-Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. The current unstaged source contains the first dual-execution GBuffer product route, but native execution, parity, reload, and performance remain unproved until Phase 12.
+Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. The current unstaged source contains dual-execution GBuffer and shadow routes plus the shared scene table plan, but native execution, parity, reload, and performance remain unproved until Phase 12.
 
 Related authority:
 
@@ -273,7 +273,7 @@ recordIndex =
 
 Vulkan maps the same logical result to `sbtRecordOffset`, `sbtRecordStride`, and TLAS `instanceShaderBindingTableRecordOffset`. Renderer owns logical terms, ordering, and bounds. Backends own addresses, byte offsets, handle sizes, strides, alignment, and region packing.
 
-The opaque one-ray-type first effect intentionally uses zero contributions. The production alpha/shadow slice introduces nontrivial instance/geometry/two-ray-type indexing through one `RenderScene` plan shared by classic and partitioned TLAS. Material/geometry data remains in shared buffers; the table stores at most stable small indices.
+The Phase 7 opaque one-ray-type checkpoint intentionally used zero contributions. The current production slice uses nontrivial instance/geometry/two-ray-type indexing through one `RenderRayTracingScene` plan shared by classic and partitioned TLAS. Material/geometry data remains in shared buffers; current product records contain no local data.
 
 ## Capability and readiness contract
 
@@ -333,7 +333,7 @@ The first product effect is the ray-traced GBuffer:
 - exact identity/sentinel comparisons and field-specific floating-point tolerances in the same frame;
 - rasterized GBuffer remains an explicit supported algorithm, not a fabricated ray-traced result.
 
-The Phase 7 source checkpoint realizes that slice with `GBufferAlgorithm::{Rasterized,RayTracing}`, independent `RayTracingExecutionMode::{Automatic,Inline,Pipeline}`, and one immutable graph-construction `RayTracingGBufferExecutionPlan`. The GBuffer owner reads both renderer CVars directly; frame-graph settings and feature APIs do not forward their values or the derived plan. `FramePipeline` retains only the topology it actually built for reconstruction detection. `RayTracingGBufferRGS::Parameters` is the single global parameter schema; `RayTracingGBufferInlineCS` reuses it rather than mirroring fields. `RayTracingGBufferCommon.hlsli` owns ray setup, hit reconstruction, material lookup, depth/motion, miss encoding, and all GBuffer stores. `RayTracingGBufferInline.hlsl` owns only `RayQuery` traversal, while `RayTracingGBufferPipeline.hlsl` owns only ray-generation/miss/opaque-closest-hit stage mechanics and a 24-byte payload. The graph creates one target set and schedules exactly one frontend. Until Phase 8 supplies any-hit, `RenderScene` derives whether referenced geometry uses masked materials; strict Pipeline rejects that scene before graph construction and Automatic records the reason before selecting Inline. This is implemented source shape, not native or parity evidence.
+The Phase 7 source checkpoint establishes `GBufferAlgorithm::{Rasterized,RayTracing}`, independent `RayTracingExecutionMode::{Automatic,Inline,Pipeline}`, and one immutable graph-construction `RayTracingGBufferExecutionPlan`. The current Phase 8 source removes the masked-scene workaround: `RayTracingGBufferPipeline.hlsl` adds an any-hit adapter over the same `ResolveRayTracingCandidateAlpha` policy used by `RayQuery`, while opaque groups retain no empty any-hit stage. `DirectShadowSignal` now has inline and pipeline frontends over one request/visibility semantic kernel and one pre-graph execution plan; neither route can be replaced by a fabricated product. `RayTracingShaderTablePlan` fixes Surface then ShadowVisibility ordering, checked formula/bounds, material/geometry invalidation, bounded metrics, and the contribution read by both TLAS builders. Graph-owned immutable tables capture the exact pipeline and scene-plan generation and retire with their graph. This is implemented source shape, not native or parity evidence.
 
 The production hit slice adds:
 

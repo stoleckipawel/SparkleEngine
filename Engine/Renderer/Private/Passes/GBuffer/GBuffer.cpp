@@ -96,10 +96,9 @@ GBufferRenderTargets CreateGBufferRenderTargets(
 }
 
 void AddGBufferMeshPasses(
-    FrameGraphBuilder& builder,
-    GpuMeshCache& gpuMeshCache,
-    const RenderRayTracingScene& rayTracingScene,
-    bool hasMaskedRayTracingGeometry,
+	FrameGraphBuilder& builder,
+	GpuMeshCache& gpuMeshCache,
+	RenderRayTracingScene& rayTracingScene,
     RenderViewportExtent sceneExtent,
 	RenderFrameGraphResources& resources)
 {
@@ -119,7 +118,7 @@ void AddGBufferMeshPasses(
 			    resources.Transient.GBuffer,
 			    resources.SceneTlas,
 			    resources.ImportedScene,
-			    hasMaskedRayTracingGeometry,
+			    rayTracingScene.GetShaderTablePlan(),
 			    rayTracingScene.GetCapabilityReport());
 			break;
 		}

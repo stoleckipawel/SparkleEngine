@@ -69,7 +69,13 @@ void RenderRayTracingScene::Build(
 
 	m_blasCache->BeginFrame();
 	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild =
-	    m_topLevelAccelerationStructureStrategy->Build(commandContext, preparedScene, *m_blasCache, viewPlan, &performanceDiagnostics);
+	    m_topLevelAccelerationStructureStrategy->Build(
+	        commandContext,
+	        preparedScene,
+	        *m_blasCache,
+	        m_shaderTablePlan,
+	        viewPlan,
+	        &performanceDiagnostics);
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
 
 	m_performanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;
@@ -85,6 +91,7 @@ void RenderRayTracingScene::Build(
 
 void RenderRayTracingScene::Clear() noexcept
 {
+	m_shaderTablePlan.Clear();
 	if (m_topLevelAccelerationStructureStrategy != nullptr)
 	{
 		m_topLevelAccelerationStructureStrategy->Clear();
@@ -94,6 +101,13 @@ void RenderRayTracingScene::Clear() noexcept
 	{
 		m_blasCache->Clear();
 	}
+}
+
+void RenderRayTracingScene::SynchronizeShaderTablePlan(
+    std::span<const RenderPrimitive> primitives,
+    const RenderMaterialTable& materials) noexcept
+{
+	m_shaderTablePlan.Synchronize(primitives, materials);
 }
 
 bool RenderRayTracingScene::HasValidTlas() const noexcept

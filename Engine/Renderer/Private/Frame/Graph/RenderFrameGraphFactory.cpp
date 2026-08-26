@@ -62,7 +62,6 @@ RenderFrameGraphBuildResult RenderFrameGraphFactory::Build() const
 	    m_dependencies.settings,
 	    m_dependencies.gpuMeshCache,
 	    m_dependencies.rayTracingScene,
-	    m_dependencies.hasMaskedRayTracingGeometry,
 	    m_dependencies.upscalerProvider,
 	    m_dependencies.rayReconstructionProvider);
 

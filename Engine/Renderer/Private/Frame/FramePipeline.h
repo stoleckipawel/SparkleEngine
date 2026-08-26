@@ -4,6 +4,7 @@
 #include "Frame/Retirement/FrameExecutionRetirementQueue.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "RayTracing/Effects/GBuffer/RayTracingGBufferExecutionPlan.h"
+#include "RayTracing/Effects/Shadows/RayTracingShadowExecutionPlan.h"
 #include "Resources/History/FrameHistory.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "Rendering/RenderFrameSubmission.h"
@@ -120,6 +121,9 @@ private:
 	LightingMode m_builtLightingMode = LightingMode::RestirPathTraced;
 	GBufferAlgorithm m_builtGBufferAlgorithm = GBufferAlgorithm::Rasterized;
 	RayTracingGBufferExecutionPlan m_builtGBufferExecutionPlan = {};
+	RayTracingShadowExecutionPlan m_builtShadowExecutionPlan = {};
+	std::uint64_t m_builtShaderTablePlanGeneration = 0u;
+	std::uint64_t m_builtShaderGeneration = 0u;
 	RenderViewportExtent m_windowExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};

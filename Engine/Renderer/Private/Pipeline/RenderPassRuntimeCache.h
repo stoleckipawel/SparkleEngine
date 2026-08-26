@@ -23,6 +23,7 @@
 
 class RenderDeviceServices;
 class RenderHardwareInterface;
+class RayTracingShaderTablePlan;
 
 class RenderPassRuntimeCache final
 {
@@ -138,8 +139,60 @@ public:
 		return RayTracingPassPipelineRuntime{
 		    .BindingLayout = runtime->GetBindingLayout(),
 		    .Pipeline = runtime->GetPipeline(),
-		    .ShaderTable = runtime->GetShaderTable(),
 		    .Generation = runtime->GetGeneration()};
+	}
+
+	template <typename TRayGenerationShader>
+	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(
+	    const RayTracingPipelineComposition& composition) const noexcept
+	{
+		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
+		const auto storage = m_activeGeneration->RuntimeStorageByShaderType.find(typeid(RuntimeType));
+		if (storage == m_activeGeneration->RuntimeStorageByShaderType.end())
+		{
+			HandleRuntimeCreationFailure("Ray-tracing shader-table creation preceded pipeline materialization.");
+		}
+		const auto* holder = static_cast<const RayTracingRuntimeStorageHolder<TRayGenerationShader>*>(storage->second.get());
+		const RayTracingPipelineRuntime* runtime = holder != nullptr ? holder->Find(composition) : nullptr;
+		if (runtime == nullptr)
+		{
+			HandleRuntimeCreationFailure("Ray-tracing shader-table creation has no exact pipeline composition.");
+		}
+		try
+		{
+			return runtime->CreateShaderTable(*m_renderHardwareInterface, composition);
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			HandleRuntimeCreationFailure(error.what());
+		}
+	}
+
+	template <typename TRayGenerationShader>
+	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(
+	    const RayTracingPipelineComposition& composition,
+	    const RayTracingShaderTablePlan& plan) const noexcept
+	{
+		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
+		const auto storage = m_activeGeneration->RuntimeStorageByShaderType.find(typeid(RuntimeType));
+		if (storage == m_activeGeneration->RuntimeStorageByShaderType.end())
+		{
+			HandleRuntimeCreationFailure("Ray-tracing shader-table creation preceded pipeline materialization.");
+		}
+		const auto* holder = static_cast<const RayTracingRuntimeStorageHolder<TRayGenerationShader>*>(storage->second.get());
+		const RayTracingPipelineRuntime* runtime = holder != nullptr ? holder->Find(composition) : nullptr;
+		if (runtime == nullptr)
+		{
+			HandleRuntimeCreationFailure("Ray-tracing shader-table creation has no exact pipeline composition.");
+		}
+		try
+		{
+			return runtime->CreateShaderTable(*m_renderHardwareInterface, composition, plan);
+		}
+		catch (const Diagnostics::Error& error)
+		{
+			HandleRuntimeCreationFailure(error.what());
+		}
 	}
 
 private:

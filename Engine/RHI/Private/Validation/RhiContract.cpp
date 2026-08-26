@@ -89,7 +89,9 @@ bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc
 	for (std::uint32_t index = 0; index < instanceCount; ++index)
 	{
 		const RhiRayTracingInstanceDesc& instance = instances[index];
-		if (instance.AccelerationStructure == 0 || instance.InstanceMask == 0)
+		if (instance.AccelerationStructure == 0 || instance.InstanceID > kRhiRayTracingMaxInstanceId || instance.InstanceMask == 0
+		    || instance.InstanceMask > kRhiRayTracingMaxInstanceMask
+		    || instance.InstanceContributionToHitGroupIndex > kRhiRayTracingMaxInstanceContributionToHitGroupIndex)
 		{
 			return false;
 		}
@@ -100,10 +102,36 @@ bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc
 
 bool RhiContract::IsPartitionedTlasOperationPackUsable(const RhiPartitionedTlasOperationPackDesc& operationPack) noexcept
 {
-	return operationPack.OperationCount != 0 && operationPack.Operations != nullptr
-	    && (operationPack.InstanceWriteCount == 0 || operationPack.InstanceWrites != nullptr)
-	    && (operationPack.InstanceUpdateCount == 0 || operationPack.InstanceUpdates != nullptr)
-	    && (operationPack.PartitionTranslationCount == 0 || operationPack.PartitionTranslations != nullptr);
+	if (operationPack.OperationCount == 0 || operationPack.Operations == nullptr
+	    || (operationPack.InstanceWriteCount != 0 && operationPack.InstanceWrites == nullptr)
+	    || (operationPack.InstanceUpdateCount != 0 && operationPack.InstanceUpdates == nullptr)
+	    || (operationPack.PartitionTranslationCount != 0 && operationPack.PartitionTranslations == nullptr))
+	{
+		return false;
+	}
+
+	for (std::uint32_t index = 0; index < operationPack.InstanceWriteCount; ++index)
+	{
+		const RhiPartitionedTlasInstanceWriteDesc& instance = operationPack.InstanceWrites[index];
+		if (instance.AccelerationStructure == 0 || instance.InstanceID > kRhiRayTracingMaxInstanceId || instance.InstanceMask == 0
+		    || instance.InstanceMask > kRhiRayTracingMaxInstanceMask
+		    || instance.InstanceContributionToHitGroupIndex > kRhiRayTracingMaxInstanceContributionToHitGroupIndex)
+		{
+			return false;
+		}
+	}
+
+	for (std::uint32_t index = 0; index < operationPack.InstanceUpdateCount; ++index)
+	{
+		const RhiPartitionedTlasInstanceUpdateDesc& instance = operationPack.InstanceUpdates[index];
+		if (instance.AccelerationStructure == 0
+		    || instance.InstanceContributionToHitGroupIndex > kRhiRayTracingMaxInstanceContributionToHitGroupIndex)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool RhiContract::IsRayTracingGpuAddressPresent(RhiGpuVirtualAddress gpuAddress) noexcept

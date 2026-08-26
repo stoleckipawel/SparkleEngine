@@ -112,9 +112,9 @@ RhiOwnedResourceHandle VulkanClassicTlasServices::CreateClassicTopLevelAccelerat
 		{
 			nativeInstance.transform.matrix[transformIndex / 4][transformIndex % 4] = source.Transform[transformIndex];
 		}
-		nativeInstance.instanceCustomIndex = source.InstanceID & 0x00FFFFFFu;
-		nativeInstance.mask = source.InstanceMask & 0xFFu;
-		nativeInstance.instanceShaderBindingTableRecordOffset = source.InstanceContributionToHitGroupIndex & 0x00FFFFFFu;
+		nativeInstance.instanceCustomIndex = source.InstanceID;
+		nativeInstance.mask = source.InstanceMask;
+		nativeInstance.instanceShaderBindingTableRecordOffset = source.InstanceContributionToHitGroupIndex;
 		nativeInstance.flags = VulkanTlasInstanceTranslation::ToNativeInstanceFlags(source.Flags);
 		nativeInstance.accelerationStructureReference = source.AccelerationStructure;
 	}

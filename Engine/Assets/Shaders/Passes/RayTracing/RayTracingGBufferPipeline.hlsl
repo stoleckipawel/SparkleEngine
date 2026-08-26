@@ -18,8 +18,8 @@ struct RayTracingGBufferPayload
 	    SceneTlas,
 	    RayTracingGBuffer::CullFlags,
 	    RayTracingGBuffer::InstanceMask,
-	    0u,
-	    0u,
+	    RayTracingShaderTableLayout::SurfaceRayContribution,
+	    RayTracingShaderTableLayout::GeometryMultiplier,
 	    0u,
 	    ray.Description,
 	    payload);
@@ -31,6 +31,18 @@ struct RayTracingGBufferPayload
 	trace.PrimitiveIndex = payload.PrimitiveIndex;
 	trace.Barycentrics = payload.Barycentrics;
 	RayTracingGBuffer::StoreTraceResult(pixelCoord, trace, ray);
+}
+
+[shader("anyhit")] void RayTracingGBufferAnyHit(
+	inout RayTracingGBufferPayload payload,
+	BuiltInTriangleIntersectionAttributes attributes)
+{
+	float sampledAlpha = 1.0f;
+	float alphaCutoff = 0.5f;
+	if (!ResolveRayTracingCandidateAlpha(InstanceID(), PrimitiveIndex(), attributes.barycentrics, sampledAlpha, alphaCutoff))
+	{
+		IgnoreHit();
+	}
 }
 
 [shader("miss")] void RayTracingGBufferMiss(inout RayTracingGBufferPayload payload)

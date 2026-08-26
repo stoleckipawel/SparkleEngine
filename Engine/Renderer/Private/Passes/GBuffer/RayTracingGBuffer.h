@@ -5,6 +5,7 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+class RayTracingShaderTablePlan;
 struct RayTracingCapabilityReport;
 struct RenderFrameGraphImportedSceneResources;
 
@@ -14,5 +15,5 @@ void AddRayTracingGBufferMeshPass(
 	const GBufferRenderTargets& targets,
 	FrameGraphAccelerationStructureHandle sceneTlas,
 	const RenderFrameGraphImportedSceneResources& externalResources,
-	bool hasMaskedRayTracingGeometry,
+	RayTracingShaderTablePlan& shaderTablePlan,
 	const RayTracingCapabilityReport& capabilities);

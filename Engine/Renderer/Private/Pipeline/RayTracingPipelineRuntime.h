@@ -6,11 +6,13 @@
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include <memory>
+#include <span>
 #include <vector>
 
 class CookedShaderLibrary;
 class GlobalShaderMap;
 class RenderHardwareInterface;
+class RayTracingShaderTablePlan;
 
 class RayTracingPipelineRuntime final
 {
@@ -25,14 +27,24 @@ public:
 
 	RenderBindingLayout& GetBindingLayout() const noexcept { return *m_bindingLayout; }
 	RayTracingPipeline& GetPipeline() const noexcept { return *m_pipeline; }
-	RayTracingShaderTable& GetShaderTable() const noexcept { return *m_shaderTable; }
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+	std::unique_ptr<RayTracingShaderTable> CreateShaderTable(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RayTracingPipelineComposition& composition) const;
+	std::unique_ptr<RayTracingShaderTable> CreateShaderTable(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RayTracingPipelineComposition& composition,
+	    const RayTracingShaderTablePlan& plan) const;
 
 private:
+	std::unique_ptr<RayTracingShaderTable> CreateShaderTable(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RayTracingPipelineComposition& composition,
+	    std::span<const RayTracingHitGroupComposition* const> recordGroups) const;
+
 	std::uint64_t m_generation = 0;
 	PassParameterLayout m_parameterLayout;
 	std::vector<ResolvedShader> m_shaders;
 	std::unique_ptr<RenderBindingLayout> m_bindingLayout;
 	std::unique_ptr<RayTracingPipeline> m_pipeline;
-	std::unique_ptr<RayTracingShaderTable> m_shaderTable;
 };

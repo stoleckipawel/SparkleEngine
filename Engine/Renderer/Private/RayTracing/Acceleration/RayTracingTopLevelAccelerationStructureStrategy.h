@@ -7,6 +7,7 @@
 
 class RayTracingBlasCache;
 class RayTracingPerformanceDiagnostics;
+class RayTracingShaderTablePlan;
 class RenderCommandContext;
 class RenderHardwareInterface;
 struct RayTracingCapabilityReport;
@@ -40,6 +41,7 @@ public:
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
 	    RayTracingBlasCache& blasCache,
+	    const RayTracingShaderTablePlan& shaderTablePlan,
 	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
 	virtual bool HasValidSceneTlas() const noexcept = 0;

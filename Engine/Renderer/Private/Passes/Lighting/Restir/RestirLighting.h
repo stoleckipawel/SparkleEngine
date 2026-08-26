@@ -4,5 +4,10 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+class RenderRayTracingScene;
 
-void AddRestirLightingProducerPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);
+void AddRestirLightingProducerPasses(
+	FrameGraphBuilder& builder,
+	RenderRayTracingScene& rayTracingScene,
+	RenderViewportExtent sceneExtent,
+	RenderFrameGraphResources& resources);

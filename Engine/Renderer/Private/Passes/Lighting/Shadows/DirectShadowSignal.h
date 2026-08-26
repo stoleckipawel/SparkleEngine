@@ -5,6 +5,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 
 class FrameGraphBuilder;
+class RenderRayTracingScene;
 struct DirectShadowSignalResources;
 struct RenderFrameGraphImportedSceneResources;
 
@@ -13,6 +14,7 @@ void AddDirectShadowSignalPass(
     RenderViewportExtent sceneExtent,
     const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
-    FrameGraphAccelerationStructureHandle sceneTlas,
-    const DirectShadowSignalResources& shadowSignals,
-    const RenderFrameGraphImportedSceneResources& externalResources);
+	    FrameGraphAccelerationStructureHandle sceneTlas,
+	    const DirectShadowSignalResources& shadowSignals,
+	    const RenderFrameGraphImportedSceneResources& externalResources,
+	    RenderRayTracingScene& rayTracingScene);

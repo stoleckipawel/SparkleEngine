@@ -5,9 +5,7 @@
 #include "Debug/RendererCVars.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 
-RayTracingGBufferExecutionPlan ResolveRayTracingGBufferExecutionPlan(
-	bool hasMaskedGeometry,
-	const RayTracingCapabilityReport& capabilities) noexcept
+RayTracingGBufferExecutionPlan ResolveRayTracingGBufferExecutionPlan(const RayTracingCapabilityReport& capabilities) noexcept
 {
 	const GBufferAlgorithm algorithm = CVarGBufferAlgorithm.Get();
 	if (algorithm == GBufferAlgorithm::Rasterized)
@@ -23,9 +21,8 @@ RayTracingGBufferExecutionPlan ResolveRayTracingGBufferExecutionPlan(
 
 	const bool inlineReady =
 	    capabilities.SupportsAccelerationStructure && capabilities.SupportsInlineRayQuery && capabilities.SupportsDescriptorIndexing;
-	const bool pipelineMechanismReady =
+	const bool pipelineReady =
 	    capabilities.SupportsAccelerationStructure && capabilities.SupportsRayTracingPipeline && capabilities.SupportsDescriptorIndexing;
-	const bool pipelineReady = pipelineMechanismReady && !hasMaskedGeometry;
 	switch (CVarGBufferRayTracingExecutionMode.Get())
 	{
 		case RayTracingExecutionMode::Inline:
@@ -33,20 +30,9 @@ RayTracingGBufferExecutionPlan ResolveRayTracingGBufferExecutionPlan(
 			    .Active = inlineReady ? RayTracingExecutionFrontend::Inline : RayTracingExecutionFrontend::None,
 			    .Reason = inlineReady ? RayTracingExecutionReason::StrictInline : RayTracingExecutionReason::InlineUnavailable};
 		case RayTracingExecutionMode::Pipeline:
-		{
-			RayTracingExecutionReason reason = RayTracingExecutionReason::PipelineUnavailable;
-			if (pipelineReady)
-			{
-				reason = RayTracingExecutionReason::StrictPipeline;
-			}
-			else if (pipelineMechanismReady && hasMaskedGeometry)
-			{
-				reason = RayTracingExecutionReason::MaskedGeometryRequiresAnyHit;
-			}
 			return RayTracingGBufferExecutionPlan{
 			    .Active = pipelineReady ? RayTracingExecutionFrontend::Pipeline : RayTracingExecutionFrontend::None,
-			    .Reason = reason};
-		}
+			    .Reason = pipelineReady ? RayTracingExecutionReason::StrictPipeline : RayTracingExecutionReason::PipelineUnavailable};
 		case RayTracingExecutionMode::Automatic:
 			if (pipelineReady)
 			{
@@ -57,12 +43,9 @@ RayTracingGBufferExecutionPlan ResolveRayTracingGBufferExecutionPlan(
 			}
 			if (inlineReady)
 			{
-				const RayTracingExecutionReason reason = pipelineMechanismReady && hasMaskedGeometry
-				    ? RayTracingExecutionReason::AutomaticInlineBecauseMaskedGeometry
-				    : RayTracingExecutionReason::AutomaticInlineBecausePipelineUnavailable;
 				return RayTracingGBufferExecutionPlan{
 				    .Active = RayTracingExecutionFrontend::Inline,
-				    .Reason = reason};
+				    .Reason = RayTracingExecutionReason::AutomaticInlineBecausePipelineUnavailable};
 			}
 			return RayTracingGBufferExecutionPlan{
 			    .Reason = RayTracingExecutionReason::NoFrontendAvailable};
@@ -88,14 +71,10 @@ const char* GetRayTracingExecutionReasonLabel(RayTracingExecutionReason reason) 
 			return "AutomaticInlinePipelineUnavailable";
 		case RayTracingExecutionReason::AutomaticPipelineBecauseInlineUnavailable:
 			return "AutomaticPipelineInlineUnavailable";
-		case RayTracingExecutionReason::AutomaticInlineBecauseMaskedGeometry:
-			return "AutomaticInlineMaskedGeometry";
 		case RayTracingExecutionReason::InlineUnavailable:
 			return "InlineUnavailable";
 		case RayTracingExecutionReason::PipelineUnavailable:
 			return "PipelineUnavailable";
-		case RayTracingExecutionReason::MaskedGeometryRequiresAnyHit:
-			return "MaskedGeometryRequiresAnyHit";
 		case RayTracingExecutionReason::NoFrontendAvailable:
 			return "NoFrontendAvailable";
 		case RayTracingExecutionReason::InvalidAlgorithm:
