@@ -2,7 +2,7 @@
 
 Status: implementation plan; not proof of implementation or shipment
 
-Last code and document reconciliation: 2026-08-17
+Last code and document reconciliation: 2026-08-28 at committed `master` revision `99af6d5b`
 
 Scope: staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md)
 
@@ -68,7 +68,7 @@ Every candidate receives exactly one disposition:
 
 ### Known candidates and mandatory disposition
 
-This is the reconciled 2026-08-17 starting inventory. Revalidate it rather than treating it as permanent truth.
+This is the reconciled 2026-08-28 starting inventory. Revalidate it rather than treating it as permanent truth.
 
 | Concept | Current overlap/candidate | Required outcome |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ This is the reconciled 2026-08-17 starting inventory. Revalidate it rather than 
 | Console command semantics | Core `ConsoleCommandRegistry` is hosted separately by `EditorConsoleSystem` and `RuntimeConsoleOverlay`. | `KeepSeparateWithBoundary` for product-local registry/session/presentation lifetimes; `Merge` performance command registration and parsing into one Application-owned registration function that produces the same typed request for both. No UI-formatted command strings. |
 | Renderer request and publication transport | `RenderCoordinator`, its bounded control queue, and `PublishReadState` already cross the Renderer thread boundary. | `Extend` the existing route. Reject a second diagnostics mailbox, synchronous query facade, event bus, or UI callback channel. |
 | GPU events, markers, and timing | `FrameExecutionDiagnostics`, `PassExecutionDiagnostics`, and backend `RenderTimingDiagnostics` already form the production path; current timing uses dynamic labels/containers/completion and disables parallel recording when enabled. | `ReplaceAndDelete` inside this path: one fixed token catalog feeds both markers and timing, fixed records/ranges replace dynamic/mutexed completion, bounded loss replaces ordinary exhaustion fatality, and the topology-changing `!CVarRendererDiagnosticGpuTiming` path is removed before detailed timing is accepted. No second GPU profiler. |
-| GPU memory facts | RHI `RenderMemoryDiagnostics`, Renderer `RendererMemoryMonitor`, and a synchronous Renderer-to-Editor snapshot callback expose related facts. | `Reuse` RHI allocator facts and `Extend` the monitor using logical `FrameId`/monotonic cadence. Application retains sampled history. `ReplaceAndDelete` the overlapping synchronous performance callback after its consumers migrate; do not add another poller or allocation tracker. |
+| GPU memory facts | RHI `RenderMemoryDiagnostics`, Renderer `RendererMemoryMonitor`, and a synchronous Renderer-to-Editor snapshot callback expose related facts. `FramePipeline` now supplies the monitor's monotonic submission `FrameId`. | `Reuse` the corrected cadence and RHI allocator facts. `Extend` the existing monitor with the selected neutral segment product; Application retains sampled history. `ReplaceAndDelete` the overlapping synchronous performance callback after its consumers migrate; do not add another poller or allocation tracker. |
 | Process memory | No production sampler was found. | Add one narrow Platform-owned snapshot and let Application own cadence/high-water presentation. Reject duplicate OS samplers and any accidental allocation-profiler scope. |
 | Editor diagnostic providers | `UI` accepts broad Renderer callbacks, including `MemoryDiagnostics`; mesh/texture asset inspectors have different questions. | `ReplaceAndDelete` only the performance callback with the immutable Application model. `KeepSeparateWithBoundary` for asset inspectors whose data, owner, and interaction are not performance-session truth. |
 | Task detail | `TaskProfiler` already emits ETW task/dependency events from serial and scheduled executors. | `Reuse` ETW for deep traces. Live diagnostics may add bounded executor-owned lane aggregates, not another task-event store, dependency graph, timeline history, or scheduler instrumentation authority. |
@@ -434,7 +434,7 @@ In every example, the phase gates are still reviewed and closed in order. A pack
 
 ## Current-Code Reconciliation
 
-Revalidate this table with `rg` at the start of each phase and reconcile it into the mandatory authority/candidate ledger above. It records the 2026-08-17 route to extend, not permanent file-name policy.
+Revalidate this table with `rg` at the start of each phase and reconcile it into the mandatory authority/candidate ledger above. It records the 2026-08-28 route to extend, not permanent file-name policy.
 
 | Responsibility | Current owner/path | Delivery decision |
 | --- | --- | --- |
@@ -447,7 +447,7 @@ Revalidate this table with `rg` at the start of each phase and reconcile it into
 | Content/feature authoring | Levels/content, gameplay systems, tasks, frame-graph passes, resources, and draws already declare real work to their owners | Derive facts at orchestration/compile/submit/allocator boundaries. Require zero diagnostics maintenance from content/feature authors; allow only a sparse static semantic token for a genuinely new owner boundary. Remove manual/dynamic instrumentation instead of copying it. |
 | GPU timing | `FrameExecutionDiagnostics` and backend `RenderTimingDiagnostics` | Replace dynamic strings/vectors/mutex completion with stable tokens, fixed records, preassigned per-recording-chunk ranges, deterministic merge, and bounded loss for the accepted live/capture path. |
 | Parallel command recording | `FrameGraphRecordingExecutor::ShouldRecordBatchInParallel` | Remove the `!CVarRendererDiagnosticGpuTiming` topology change before accepting `CAP-00`, `INV-03`, or `CAP-01`. A captured profile must not silently serialize normal recording. |
-| GPU memory | RHI `RenderMemoryDiagnostics` and Renderer `RendererMemoryMonitor` | Reuse allocator facts. Correct the monitor to use logical `FrameId` or monotonic time rather than the wrapping frame-in-flight slot; preserve local/non-local and used/allocated/budget distinctions. |
+| GPU memory | RHI `RenderMemoryDiagnostics` and Renderer `RendererMemoryMonitor` | Reuse allocator facts and the corrected monotonic `FrameId` polling path. Preserve local/non-local and used/allocated/budget distinctions while adding only the selected neutral publication/history product. |
 | Process RAM | No current production sampler | Add the smallest Platform-owned process snapshot required by Application, initially Windows-backed. Do not build an allocation tracker or put Win32 types in Application. |
 | Task detail | `TaskProfiler` ETW provider and fixed task lanes | Reuse ETW for deep task traces. Live UI may publish bounded lane aggregates only when the executor already owns the counts/durations. |
 | Viewport summary | `ViewportTopPanel::BuildPerformanceStats` currently reads ImGui FPS/delta | Replace this source with the immutable diagnostics presentation. Do not retain two competing FPS truths. |
@@ -456,7 +456,7 @@ Revalidate this table with `rg` at the start of each phase and reconcile it into
 | Pre-device integrations | `RendererExternalRuntime` builds immutable `RendererBackendConfiguration` before `RenderCoordinator` creates the backend | Extend this existing process-facing owner with launch intent and capture bootstrap. Do not add a competing startup integration service. |
 | Backend diagnostics | `RenderHardwareInterface::GetDiagnostics()` returns neutral RHI diagnostic services | Add only the narrow neutral capture capability/request/result needed above RHI. Native APIs, handles, DLLs, SDK state, and provider objects remain in D3D12/Vulkan private adapters. |
 | Build membership | Canonical profiles already define `SPARKLE_BUILD_SHIPPING`; module `CMakeLists.txt` files glob owned Public/Private sources; RHI composes common/backend targets | Use the existing profile as one eligibility boundary: include diagnostic implementations/dependencies in Debug/Development and exclude them from Shipping target/link/package membership. Keep sparse owner seams compile-time empty and proven absent. Add optional SDK rules only inside eligible provider builds. Do not introduce a Diagnostics module or per-feature switches. |
-| Tests | Existing CTest executables are co-located under module `Tests` | Add small pure tests with the first testable contract in its owning module. Do not build a generic diagnostics test framework. |
+| Tests | No active CTest registration exists; `ShaderCompilerCliValidation` is a focused custom target rather than a repository test suite. | Use the narrowest existing owner validation surface. If a selected diagnostics contract requires a new executable test, keep it focused in its owning module and do not build a generic diagnostics test framework. |
 
 ## Target Shape
 
@@ -681,7 +681,7 @@ Fill one test card per selected `FND-*` package before editing. Add the named de
 | `FND-02` | `performance_diagnostics_host_timing`: injected clock, begin-to-begin interval, phase nesting, pause/minimize/discontinuity. | Collect 300 valid samples per map. FPS derives from the same unscaled interval; physical owner and logical Gameplay/Editor phases are correctly labeled. | Rank maps by CPU frame p95 and host/game/editor phase p95; compare Empty and Sponza and flag any phase whose meaning is still ambiguous. |
 | `FND-03` | `renderer_performance_diagnostics`: serial/threaded delayed publication, queue span, wrap, missing query, bounded loss. | Sweep every map on D3D12 and Vulkan. Each rendered frame has honest render/wait/present and supported queue-span state with its own `FrameId`; no panel synchronously queries Renderer. | Classify likely CPU-render, GPU, wait/present, mixed, or insufficient per map without adding pipelined columns as one total. |
 | `FND-04` | `process_memory_diagnostics`: injected values, unsupported platform, cadence, high-water reset semantics. | Observe at least 60 settled seconds per map or the complete quantitative run. Working set/private commit are nonzero on Windows, sampled at the declared cadence, aged visibly, and never mislabeled as allocation detail. | Rank current and session-high-water values; identify growth between start/end and distinguish working set from private commit. |
-| `FND-05` | `renderer_memory_monitor`: frame-slot wrap, monotonic cadence, unavailable budget, segment/category bounds. | Sweep all maps/backends. Tracked used does not exceed its corresponding allocated/block amount; local/non-local/budget/retirement fields are distinct or explicitly unavailable; polling survives frame-slot wrap. | Rank GPU current/high-water and pressure per map; compare Modern Sponza/Bistro families with Empty and name missing backend facts. |
+| `FND-05` | `renderer_memory_monitor`: monotonic cadence, regressed-frame handling, unavailable budget, segment/category bounds. | Sweep all maps/backends. Tracked used does not exceed its corresponding allocated/block amount; local/non-local/budget/retirement fields are distinct or explicitly unavailable; polling remains independent of wrapping RHI frame slots. | Rank GPU current/high-water and pressure per map; compare Modern Sponza/Bistro families with Empty and name missing backend facts. |
 
 Phase-2 instrumentation passes only if its Sponza and full-map records meet the universal AC and the selected metrics already expose a useful map-to-map difference or honestly show no difference. A test-only producer with no path to a selected Phase-3/4/5 consumer is not a shippable delivery.
 
@@ -725,11 +725,11 @@ Acceptance: supported/unsupported and injected-value tests; UI/export names neve
 
 #### `FND-05` GPU memory identity and segments
 
-Value: makes existing allocator diagnostics safe to consume over time and prevents a wrapping frame-slot index from corrupting the poll cadence.
+Value: turns the corrected monotonic polling path and existing allocator diagnostics into a bounded, semantically neutral product that is safe to consume over time.
 
-Change `RendererMemoryMonitor` polling to logical `FrameId` or monotonic time and add wrap/regression tests. Publish used, allocated/block, local, non-local, budget, transient, delayed-retirement, age, and availability only where backend facts support them. Preserve the existing allocator owner; do not copy its live vectors into every frame.
+Preserve `RendererMemoryMonitor` polling from logical `FrameId` and add cadence/regression tests that prove it remains independent of wrapping RHI frame slots. Publish used, allocated/block, local, non-local, budget, transient, delayed-retirement, age, and availability only where backend facts support them. Preserve the existing allocator owner; do not copy its live vectors into every frame.
 
-Acceptance: frame-in-flight wrap test, cadence test, unavailable-budget test, and paired backend field audit.
+Acceptance: cadence and regressed-frame tests, source inspection proving no frame-in-flight slot feeds polling identity, unavailable-budget tests, and a paired backend field audit.
 
 ### Positive guardrails
 

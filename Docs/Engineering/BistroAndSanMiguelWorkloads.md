@@ -92,11 +92,13 @@ San Miguel earns a permanent place because it exposes a different failure profil
 
 Supporting San Miguel means deterministic acquisition/import/cook/load of both variants, declared material coverage, frozen camera routes, correct raster/hybrid output, high-sample reference output, benchmark results, and a public high-detail hero result. The lower-polygon variant is a diagnostic control, not a second beauty target. Supporting San Miguel does not require duplicating every Bistro article or optimization study.
 
-## Repository Reality At Adoption
+## Repository Reality
+
+### Adoption snapshot
 
 The 2026-07-26 source audit found:
 
-| Area | Current evidence | Consequence |
+| Area | 2026-07-26 evidence | Consequence at adoption |
 | --- | --- | --- |
 | Catalog | `Projects/Showcase/Levels.catalog` declares an external, unavailable `Bistro` optional pack rooted at `Assets/Meshes/Bistro`. | The intent exists, but there is no runnable level or acceptance contract. |
 | Content | No Bistro asset directory or Bistro `.level` file is present. | Nothing currently proves download, import, cook, launch, or rendering. |
@@ -109,7 +111,21 @@ The 2026-07-26 source audit found:
 | Existing scene | Sponza is required and the startup default. | Preserve it as the short loop while Bistro becomes the long acceptance run. |
 | San Miguel | No catalog entry, assets, level, or verified import path is present. | Add it as an external optional pack after the shared provenance/inventory path is proven on Bistro. |
 
-No document may upgrade these facts into an implemented or verified Tier 1 claim until the corresponding gate below has evidence.
+This table is retained as the adoption baseline. It is not current repository state.
+
+### Current source reconciliation
+
+The 2026-08-28 static reconciliation at `99af6d5b` found:
+
+| Area | Current source-backed state | Remaining evidence boundary |
+| --- | --- | --- |
+| Catalog | `Projects/Showcase/Levels.catalog` contains 16 level records: 13 runtime-supported and three source-readiness-only records. `Empty` is the default/fallback; Sponza remains the short workload rather than startup authority. | Catalog state proves discoverability and declared support, not that every selected pack is locally present or has passed a fresh launch. |
+| Bistro | `BistroExterior.level` and `BistroInteriorWine.level` reference one downloadable, runtime-supported external `Bistro` pack with pinned archive bytes and SHA-256. The original interior remains publisher/reference material rather than a third exposed level. | The 2026-08-02 cook/launch record below is an integration smoke. Material fidelity, frozen routes, reference images, paired backends, timing distributions, and memory gates remain open. |
+| San Miguel | `SanMiguelHigh.level` and `SanMiguelLow.level` plus the external pack/acquisition record are present. Download is supported, but `RuntimeSupported = false` records the missing deterministic OBJ/MTL/PNG-to-glTF route. | Source acquisition is not runtime support. Neither San Miguel level may enter a runtime or performance claim until conversion/import, cook, load, and visual gates pass. |
+| Import and material path | glTF/GLB and FBX remain the production scene-import routes. Alpha mask is represented; transparent raster composition and the advanced material-lobe support matrix remain workload gates. | Do not infer Bistro material correctness from successful source import or loadability. |
+| Runtime roster | Six asset-pack-free levels plus seven runtime-supported external-pack levels form the current 13-level runnable roster. Jungle Ruins and both San Miguel variants remain excluded by catalog blockers. | Regenerate the roster from the catalog at validation time; selected state and local pack presence are separate facts. |
+
+No document may upgrade these current facts into an implemented or verified Tier 1 claim until the corresponding gate below has evidence.
 
 ## Product Scope And Non-Goals
 
@@ -207,7 +223,7 @@ This is an integration smoke record, not a quality, fidelity, or performance-gat
 
 | Workload | Acquisition/cook evidence | Launch evidence | Honest status and remaining gaps |
 | --- | --- | --- | --- |
-| Historical built-in seven-level set | The pre-cleanup combined scene stage passed; all 163 referenced textures cooked. | Every then-present built-in level remained responsive in a six-second per-level sweep; working set was 697–700 MiB and private memory was 4.07–4.28 GiB. | This evidence predates removal of the duplicate `SponzaPtlas` level. The current six repository-resident maps build and cook, but this row is not a replacement launch sweep or a frame-time/image-quality result. |
+| Historical built-in seven-level set | The pre-cleanup combined scene stage passed; all 163 referenced textures cooked. | Every then-present built-in level remained responsive in a six-second per-level sweep; working set was 697–700 MiB and private memory was 4.07–4.28 GiB. | This evidence predates removal of the duplicate `SponzaPtlas` level and addition of later catalog entries. The current catalog has six asset-pack-free levels and 13 runtime-supported levels in total, but this row is not a replacement sweep for either roster or a frame-time/image-quality result. |
 | Bistro source archive | NVIDIA archive byte count matched `894377473`; SHA-256 `0d50e3c724c6c5da19f8eb99ad3f53e36fec37ffa2df9621f9ccf0603f3934e1`. The isolated scene stage and 408-texture stage passed. | Exterior, original interior, and Wine interior all remained responsive for 12 seconds in the historical combined-registry validation; working set was 697–702 MiB and private memory was 4.03–4.05 GiB. | The product now exposes only Exterior and the superseding Wine interior. Legacy FBX specular-color and separate opacity maps currently use declared scalar/material fallbacks; camera/light intent and transparent-material fidelity remain unproven. |
 | Modern Sponza publisher base | Intel archive byte count matched `3987608266`; SHA-256 `b8bb853884ab1566b3beb35666bd09882a4e0dc16661e4684e103792cf0229b9`. The isolated scene stage and 104-texture stage passed. | Remained responsive for 12 seconds in the historical combined registry at about 697 MiB working set and 4.03 GiB private memory. | Retained as an internal source dependency, not a selectable level. Secondary UV sets and normal-strength scalars are accepted but not represented by the current material runtime; malformed authored tangents may be regenerated. |
 | Modern Sponza | Intel Curtains archive byte count matched `786898766`; SHA-256 `3ba96e967c8f5ad0a133309cedb342e3563f9cccb42d04e188f55c0f2125bb65`. Base-plus-curtains scene cook and 114-texture stage passed. | Remained responsive for 12 seconds at about 699 MiB working set and 4.03 GiB private memory. | This is now the single user-facing base composition. Transparency and reference-image fidelity remain open gates. |

@@ -6,6 +6,8 @@ Planning window: 2026-08-06 through 2027-01-31
 
 Planning baseline: repository reviewed at `9cf7b3bd` on 2026-08-06; revalidate code, builds, tests, captures, and external state before acting
 
+Current source reconciliation: 2026-08-28 static source/build audit at committed `master` revision `99af6d5b`; no build, cook, launch, capture, or performance result was added
+
 Governing requirements: [A. Principal Graphics Engineering Requirements](Requirements.md)
 
 Dated assessment: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
@@ -35,15 +37,15 @@ The public package should contain:
 
 This table routes the next work; it does not replace the dated assessment or prove a gate complete.
 
-| Area | Source-inspected state on 2026-08-06 | Planning consequence |
+| Area | Source-inspected state reconciled on 2026-08-28 | Planning consequence |
 | --- | --- | --- |
-| Renderer and execution foundation | D3D12/Vulkan, frame graph, task runtime, render coordination, persistent render data, capture/timestamp primitives, and bounded content work exist. | Measure and harden the existing path. Do not restart the renderer, scheduler, or concurrency architecture. |
-| Tests | CMake currently registers eight focused tests across Core and Launcher. | Run them from a clean configuration, preserve them in CI, and add only tests required by the flagship proof. |
-| Workload acquisition | Bistro and Modern Sponza acquisition/cook/launch smoke evidence exists; San Miguel acquisition is verified. | Treat smoke evidence as a starting point, not quality or performance acceptance. |
+| Renderer and execution foundation | D3D12/Vulkan, frame graph, task runtime, render coordination, persistent scene/view data, map/library shader delivery, capture/timestamp primitives, and inline/native RT source routes exist. | Measure and harden the existing path. Do not restart the renderer, shader lifecycle, scheduler, or concurrency architecture. Source reachability is not paired native execution evidence. |
+| Tests | No active CTest registration exists. `ShaderCompilerCliValidation` is a focused custom target, not a registered suite. | Re-establish only the automated checks required by the flagship proof and CI; do not infer test coverage from stale generated build artifacts. |
+| Workload acquisition | The catalog has 16 level records: 13 runtime-supported and three source-readiness-only. Bistro and supported Modern Sponza packs have acquisition metadata and historical smokes; San Miguel is downloadable but remains runtime-blocked on deterministic conversion/import. | Treat catalog/source and historical smoke evidence as starting points, not current quality or performance acceptance. |
 | Tier 1 readiness | Bistro material/camera/reference/performance gates remain open. San Miguel is source-ready but not runtime-ready because deterministic OBJ conversion/import is missing. | Close `WL-01` through `WL-04` before neural runtime work. |
 | Evidence harness | Fixed resolution, a published settled signal, named capture sidecars, timing export, and a unified run manifest remain incomplete. | `MAP-00` is the first implementation milestone. No benchmark claim precedes it. |
 | Reviewer trust | No root README or CI workflow exists and the license identity is still a placeholder. | Close the small trust surface in August; do not build a documentation portal. |
-| Python and neural graphics | Narrow asset-conversion scripts exist, but no benchmark-analysis/training package, trained model, model artifact, or shader inference path was found. | Build one analysis/training toolchain and one fixed neural feature. |
+| Python and neural graphics | No checked-in Python workflow, benchmark-analysis/training package, trained model, model artifact, or shader inference path was found. | Build one analysis/training toolchain and one fixed neural feature only after the earlier evidence/content gates close. |
 | Platform breadth | Windows is the current product/evidence platform; both graphics APIs are targets on Windows. | Native Linux and second-hardware work remain after this six-month gate unless required to resolve a result. |
 
 Any baseline row may be superseded only by current code and recorded evidence. Update this roadmap's status, not the historical assessment, when a planned gate changes.

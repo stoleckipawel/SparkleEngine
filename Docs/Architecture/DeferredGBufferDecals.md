@@ -2,6 +2,7 @@
 
 Status: target architecture and staged implementation plan; not implemented behavior
 Date: 2026-08-17
+Last source reconciliation: 2026-08-28 at committed `master` revision `99af6d5b`
 Scope: projected material decals on opaque and alpha-tested GBuffer receivers, raster and ray-traced primary visibility, later arbitrary ray hits used by GI and reflections, D3D12/Vulkan parity, authoring, ownership, validation, and evidence
 
 ## Decision
@@ -39,7 +40,7 @@ The design extends the existing owner instead of adding a second renderer path:
 - [`MaterialCache.cpp`](../../Engine/Renderer/Private/Scene/Materials/MaterialCache.cpp) resolves semantic defaults, per-material raster tables, and one scene-wide material texture table beneath the persistent render-scene authority. The latter must remain a scene-material capability, not be described as ray-tracing-only.
 - [`RayTracingMaterialHit.hlsli`](../../Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli) is the central base-material reconstruction path for arbitrary ray hits. [`PathLighting.hlsli`](../../Engine/Assets/Shaders/RayTracing/PathLighting.hlsli) is one current secondary-hit consumer.
 - The frame graph already derives unordered-access allocation and barriers from declared use. Raster depth is shader-readable on both backends. No new public RHI operation is required by the selected primary path.
-- Graphics pipeline blending is currently fixed off in both backends. Adding blend state would not solve the semantic problem: GBuffer alpha components contain independent material data, including receiver alpha and dielectric F0, so one hardware source-alpha blend cannot express the required per-field preservation and normalized-normal composition.
+- Neutral graphics descriptors and both backends now lower explicit blend state, while the only current raster GBuffer producer requests opaque blending. Enabling ordinary source-alpha blending would still not solve the decal semantic problem: GBuffer alpha components contain independent material data, including receiver alpha and dielectric F0, so one hardware blend cannot express the required per-field preservation and normalized-normal composition.
 - No decal component, cooked decal record, render-scene decal table, or decal shader exists today.
 
 The exact code must be re-inspected at the start of each implementation phase because this document describes a target over a changing repository.

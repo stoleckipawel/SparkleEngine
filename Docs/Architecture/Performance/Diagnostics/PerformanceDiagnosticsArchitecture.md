@@ -2,7 +2,7 @@
 
 Status: target proposal; not proof of current implementation
 
-Last source reconciliation: 2026-08-17
+Last source reconciliation: 2026-08-28 at committed `master` revision `99af6d5b`
 
 Scope: editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, benchmark evidence, external-profiler correlation, authoring isolation, and Shipping erasure
 
@@ -120,7 +120,7 @@ Primary precedent sources are Epic's [Stat Commands](https://dev.epicgames.com/d
 
 ## Current Source-Backed Starting Point
 
-The following is an observation reconciled with the 2026-08-15 worktree, not a completion claim:
+The following is a static observation reconciled with committed source on 2026-08-28, not a completion claim:
 
 | Surface | Current behavior | Consequence for the target |
 | --- | --- | --- |
@@ -137,7 +137,7 @@ The following is an observation reconciled with the 2026-08-15 worktree, not a c
 | GPU timing observer effect | `FrameGraphRecordingExecutor::ShouldRecordBatchInParallel` currently disables parallel command recording whenever `r.Diagnostics.GpuTiming` is enabled. | Current detailed timings alter CPU recording topology. A representative GPU Visualizer must preserve normal recording through preassigned task-local scope/query ranges or declare the capture non-representative. |
 | GPU timing storage | Current scope recording uses per-scope strings, vectors, a mutexed completion stream, and completion-time depth reconstruction; query-pool exhaustion is fatal. | Replace this as the live product path with fixed records/tokens, deterministic merge, and bounded loss. Keep fatal errors only for owner/API invariant violations. |
 | GPU memory | D3D12MA/VMA-backed snapshots track used/allocated bytes, categories, API usage/budget, transient allocation, and Vulkan delayed destruction. | The foundation is useful, but device-local and non-local heaps must be presented separately before anything is labeled "VRAM." |
-| Memory polling identity | `FramePipeline` currently passes the wrapping RHI frame-in-flight slot index to `RendererMemoryMonitor`, whose interval logic expects a monotonic value. | Periodic refresh cannot be treated as reliable until polling uses logical `FrameId` or monotonic time and is covered by a wrap test. |
+| Memory polling identity | `FramePipeline` passes its monotonic submission `FrameId` to `RendererMemoryMonitor`; the monitor uses checked frame-distance polling and retains the last sampled frame. | The earlier frame-slot wrap defect is closed in source. Poll cadence, unavailable-budget behavior, and long-run presentation still require executable validation. |
 | RAM | No production process-memory sampler exists in the engine. | Working set and private committed bytes are required; engine CPU allocation categories are a later measured need, not an initial fiction. |
 | Editor memory route | A renderer memory provider reaches `UI`, but no current editor panel consumes it. | The target should replace this broad/synchronous presentation route with one immutable diagnostics model published by Application. |
 | Attached external capture | D3D12 emits PIX events when `WinPixEventRuntime.dll` is available, but Sparkle has no `-Pix`/`-RenderDoc`/`-Nsight` launch intent, capture-layer bootstrap, attached-provider state, or viewport capture action. | Add a bounded capability-gated provider-set path; the current marker runtime alone does not prove that PIX frame capture is available. |

@@ -1,6 +1,7 @@
 # Renderer and RHI Architecture Boundary
 
 Status: canonical architecture decision
+Last source reconciliation: 2026-08-28 at `99af6d5b`
 Reference revisions: NVIDIA NVRHI `8e8c36e37558acec333204619b95d9d2fcdc4a79`; NVIDIA Donut `bfdebdd7dd5455c503b2737a1967a4ef651c145b`
 
 ## Dependency Direction
@@ -14,9 +15,11 @@ Application / Editor
         |
    public RHI contracts
         |
-   RHI common implementation
-      /     \
-  D3D12    Vulkan
+      RHI facade
+      /    |    \
+ common D3D12  Vulkan
+          \      /
+         diagnostics
 ```
 
 - Renderer never includes RHI private headers or native D3D12/Vulkan types.
@@ -72,11 +75,13 @@ The paired contract covers:
 - descriptors, resource views, samplers, binding layouts, graphics/compute pipelines;
 - graphics, compute, and copy recording/submission;
 - explicit transitions, UAV barriers, draw, dispatch, and copy;
-- classic BLAS/TLAS and capability-gated partitioned TLAS;
+- classic BLAS/TLAS, capability-gated partitioned TLAS, inline ray queries, and capability-gated native ray-tracing pipelines, shader tables, and trace dispatch;
 - presentation, capture, timestamps, debug markers/messages, and memory diagnostics;
 - native device, queue, command-list, and resource interop through neutral handles.
 
 Backend differences must be visible in `RhiCapabilities`. Current intentional differences include descriptor tables versus descriptor sets, feature level versus API version, queue topology, validation facilities, memory allocator, ray-tracing extensions, and external-provider bridge availability. Renderer-wide policy branches on those neutral facts; only a dedicated provider adapter may branch on `ERhiBackendApi`.
+
+The D3D12/Vulkan native ray-tracing pipeline and shader-table source routes are present at the reconciled revision. Source reachability is not paired native execution, output-parity, reload/retirement, or performance evidence; those claims remain blocked on the shader architecture's final executable-validation phase.
 
 ## NVIDIA Reference Mapping
 

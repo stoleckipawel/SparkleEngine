@@ -1,7 +1,7 @@
 # Ray-Tracing Pipeline and Dual-Execution Target Architecture
 
 Status: target proposal and semantic contract; not implementation authority or proof of runtime support
-Current-state audit provenance: 2026-08-26 source reconciliation through the Phase 8 hit/shadow/table slice is recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#phase-8-source-consistency-evidence)
+Current-state audit provenance: 2026-08-28 static source/build reconciliation at committed `master` revision `99af6d5b` through the Phase 8 hit/shadow/table slice is recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#phase-8-source-consistency-evidence)
 Scope: ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, supported alternates, mandatory failure, and target completion invariants
 
 ## Purpose and authority boundary
@@ -10,7 +10,7 @@ This document describes the intended ray-tracing system as one coherent target. 
 
 It intentionally owns no implementation phases, prompts, phase references, CL boundaries, test order, or delivery gates. [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#implementation-contract) is the single implementation authority for the shader frontend, compiler, global shader map, code library, RHI/backend pipeline, shader table, frame graph, effects, tooling, and evidence. Its [unified implementation reference map](ShaderAuthoringAndCookedPrograms.md#unified-implementation-reference-map) owns the actionable external references.
 
-Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. The current unstaged source contains dual-execution GBuffer and shadow routes plus the shared scene table plan, but native execution, parity, reload, and performance remain unproved until Phase 12.
+Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. Committed source contains dual-execution GBuffer and shadow routes plus the shared scene table plan, but native execution, parity, reload, and performance remain unproved until Phase 12.
 
 Related authority:
 

@@ -476,7 +476,7 @@ These are implementation workstreams. If delivered with the Scene/View/Frame ref
 ### Slice 2: make presentation obey resolved flags
 
 1. Replace the tone-map-only uniform with explicit exposure and tone-mapper application values derived from `RenderView.ShowFlags`.
-2. Rename the pass, shader, parameters, resource names, registrations, and cooked package identity together if the clean-break `DisplayMappingPass` rename is accepted.
+2. Rename the pass, shader class, parameters, resource names, typed registration, and graph label together if the clean-break `DisplayMappingPass` rename is accepted. Generated map/library identity follows the shader type and registration; do not reintroduce authored cooked-package identity.
 3. Preserve current scene-based exposure metering/history and keep output encoding unconditional.
 4. Remove local HDR preview curves from emissive and lighting contribution modes.
 5. Keep one exact mapping for scalar, normal, material-color, and instance-ID modes.
