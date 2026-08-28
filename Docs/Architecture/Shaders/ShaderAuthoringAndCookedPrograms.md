@@ -1,7 +1,7 @@
 # Shader Authoring and Cooked Shader Architecture
 
 Status: plan and implementation authority for unified shader, graphics-pipeline, and ray-tracing delivery; Phase 0 is frozen and committed `master` contains the Phase 1-6 source foundation, Phase 7 ray-traced GBuffer slice, and Phase 8 production hit/shadow/scene-table source slice; executable proof remains Phase 12 work, and the Phase 6 portable-local-record/all-six-stage conformance obligations remain blocked until their owning later validation slice
-Current audit: 2026-08-28 static source/build reconciliation at committed `master` revision `99af6d5b`
+Current audit: 2026-08-28 static source/build reconciliation at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Scope: one clean-break delivery covers virtual sources, lean shader classes and parameters, compilation/validation without persistent compile-result caching, global shader map/code library publication, typed raster/compute/ray-tracing lookup, granular raster intent and attachment-derived graphics pipeline materialization, paired D3D12/Vulkan ray-tracing pipelines and shader tables, graph draw/dispatch/trace, dual-execution effects, reload, diagnostics, and evidence; permutations, precaching/prewarming, preload/streaming, and native driver caches remain deferred follow-ups
 
 ## Purpose
@@ -57,11 +57,11 @@ The short answer is therefore:
 A filename answers "where is source text?" A pass name answers "what GPU operation is this?" Coupling them creates incorrect behavior in ordinary cases:
 
 - One source file can contain several entry points or stages.
-- One graphics pipeline can use shader stages from several files. Sparkle's current `GBuffer` package already uses `GBufferVS.hlsl` and `GBufferPS.hlsl`.
+- One graphics pipeline can use shader stages from several files. Sparkle's GBuffer pipeline uses `GBufferVS.hlsl` and `GBufferPS.hlsl`.
 - The same compiled shader can be reused by multiple semantic passes.
 - A pass type can be scheduled several times with instance-specific labels such as a mip number, eye, cascade, phase, or view.
 - Renaming or moving a source file should invalidate compilation, but it should not silently rename profiler history, GPU markers, frame-graph nodes, or the shader type that references it.
-- Two directories can contain the same source basename. Sparkle's current basename-derived fallback cannot distinguish them.
+- Two directories can contain the same source basename. Sparkle's Phase 0 basename-derived fallback could not distinguish them.
 - Include files and shader libraries are source dependencies but are not independently executable passes.
 
 Using a filename as a default shader debug name is reasonable. Using it as the durable shader-type, pass, pipeline, layout, and artifact identity is not.
@@ -802,15 +802,15 @@ Historical Phase 0 entry points deleted by Phase 4 were `RendererShaderPackages.
 
 ## Phase 0 Frozen Inventory and Deletion Ledger
 
-This section is the completed Phase 0 contract. Counts are exact for the unstaged `master` worktree at `5b0bd1469339897eef1fde3e5c9ab07137860d0f`; generated-artifact counts are a filesystem observation made on 2026-08-23 and are not attributed to that revision unless stated otherwise. Before this Phase 0 inventory edit, the staging area was empty and this document already contained unstaged, in-scope delivery-contract refinements; no unrelated dirty path existed, so the Phase 0 exclusion list is **empty**. The source/tool diff from the previous audit revision `44c2f192a82947d9dcdd0e4bbd7ba0cb1a7145e4` to the current revision is empty, but all counts and owner traces below were nevertheless re-run against the current worktree. Later phases must re-run `git status --short --branch` and establish their own exclusions rather than assuming that remains true.
+This section is the completed Phase 0 contract. Counts are exact for the unstaged `master` worktree at `5b0bd1469339897eef1fde3e5c9ab07137860d0f`; generated-artifact counts are a filesystem observation made on 2026-08-23 and are not attributed to that revision unless stated otherwise. Before this Phase 0 inventory edit, the staging area was empty and this document already contained unstaged, in-scope delivery-contract refinements; no unrelated dirty path existed, so the Phase 0 exclusion list is **empty**. The source/tool diff from the previous audit revision `44c2f192a82947d9dcdd0e4bbd7ba0cb1a7145e4` to the audited Phase 0 revision is empty, but all counts and owner traces below were nevertheless re-run against the Phase 0 worktree. Later phases must re-run `git status --short --branch` and establish their own exclusions rather than assuming that remains true.
 
-The inventory used `rg`, `rg --files`, file counts, and bounded reads over Renderer shader registrations and passes, RHI shader contracts/runtime, ShaderCompiler source/cook/publication/inspection, Application recook routing, Editor Shader Tools, CMake membership, ignored development artifacts, diagnostics, and current documentation. No configure, build, compiler invocation, cook, launch, test, capture, or runtime check contributed to this inventory.
+The inventory used `rg`, `rg --files`, file counts, and bounded reads over Renderer shader registrations and passes, RHI shader contracts/runtime, ShaderCompiler source/cook/publication/inspection, Application recook routing, Editor Shader Tools, CMake membership, ignored development artifacts, diagnostics, and then-current documentation. No configure, build, compiler invocation, cook, launch, test, capture, or runtime check contributed to this inventory.
 
 ### Exact count baseline
 
-| Surface | Exact current count | Frozen interpretation and deletion owner |
+| Surface | Exact Phase 0 count | Frozen interpretation and deletion owner |
 | --- | ---: | --- |
-| renderer shader-registration `.cpp` files / `IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE` calls | 29 / 29 | One registration per current stage. Phase 1 deletes the two shadow representation duplicates; Phase 2 replaces the macro on the remaining 27 declarations. |
+| renderer shader-registration `.cpp` files / `IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE` calls | 29 / 29 | One registration per then-current stage. Phase 1 deletes the two shadow representation duplicates; Phase 2 replaces the macro on the remaining 27 declarations. |
 | concrete shader classes / nested `FParameters` schemas | 29 / 29 | Phase 1 deletes the two catalog-only shadow variants; the remaining 27 are retained as authoring authorities and renamed to target `GlobalShader`/`Parameters` vocabulary in Phase 2. |
 | logical program/package IDs | 28 | `GBufferVS` and `GBufferPS` share `GBuffer`. Phase 1 deletes the two rejected shadow identities; Phase 4 deletes the remaining 26 handwritten package identities. |
 | `RendererShaderPackages` constants | 28 | Phase 1 deletes the two rejected shadow constants; Phase 4 deletes the remaining constants and then the header. |
@@ -830,9 +830,9 @@ The inventory used `rg`, `rg --files`, file counts, and bounded reads over Rende
 
 The parameter counts deliberately distinguish declarations from effective use. `352` is the number of authored duplicate shader-visible field declarations. `397` is the larger effective mirror-use count (`369` concrete compute fields plus `28` GBuffer pass/draw uses) after inheritance and reuse. Phase 1 removes the 32 rejected-shadow fields from both authorities; Phase 2 removes the remaining mirrors. Neither count includes the seven graph-only GBuffer attachments.
 
-The 2026-08-23 current-worktree PSO audit was run after the staged/unstaged Phase 2 checkpoint and is therefore separate from the revision-pinned pre-migration counts above. Exact runtime/build occurrence counts are: `GraphicsShaderPipelineState` 9, `RasterPassPipelineRuntime` 24, `GraphicsPipelineDesc` 15, `RhiVertexLayoutKind` 10, `RhiDepthTestDesc` 7, `RhiStencilTestDesc` 7, `WireframePipeline` 9, `TwoSidedPipeline` 8, `RenderTargetFormats` 8, `RenderTargetCount` 12, `DepthStencilFormat` 16, and `SetPrimitiveTopology` 11. There is one typed graphics graph call, `Draw<GBufferVS, GBufferPS>`, in `RasterizedGBuffer.cpp`. Phase 5 owns the complete field/consumer re-inventory at implementation time and the clean-break dispositions below; these occurrence counts are evidence of the reviewed checkpoint, not target quotas.
+The 2026-08-23 Phase 2 checkpoint-worktree PSO audit was run after the staged/unstaged Phase 2 checkpoint and is therefore separate from the revision-pinned pre-migration counts above. Exact runtime/build occurrence counts are: `GraphicsShaderPipelineState` 9, `RasterPassPipelineRuntime` 24, `GraphicsPipelineDesc` 15, `RhiVertexLayoutKind` 10, `RhiDepthTestDesc` 7, `RhiStencilTestDesc` 7, `WireframePipeline` 9, `TwoSidedPipeline` 8, `RenderTargetFormats` 8, `RenderTargetCount` 12, `DepthStencilFormat` 16, and `SetPrimitiveTopology` 11. There is one typed graphics graph call, `Draw<GBufferVS, GBufferPS>`, in `RasterizedGBuffer.cpp`. Phase 5 owns the complete field/consumer re-inventory at implementation time and the clean-break dispositions below; these occurrence counts are evidence of the reviewed checkpoint, not target quotas.
 
-| Current graphics-state owner/consumer | Current authority problem | Phase 5 disposition |
+| Phase 2 checkpoint owner/consumer | Checkpoint authority problem | Phase 5 disposition |
 | --- | --- | --- |
 | `RasterizedGBuffer.cpp` graph setup | graph attachments and the caller aggregate both state target compatibility; the aggregate also chooses mesh and pass facts | keep attachments and granular pass intent; delete the complete caller aggregate |
 | `FrameGraphBuilder::Draw` | accepts and forwards the aggregate | accept typed shaders, narrow render state, and prepared draws only |
@@ -844,9 +844,9 @@ The 2026-08-23 current-worktree PSO audit was run after the staged/unstaged Phas
 
 ### Complete shader-class and nested-parameter inventory
 
-Every live semantic row retains the concrete shader and its nested schema as the Phase 2 authority. The current `FParameters` spelling becomes `Parameters`; the corresponding pass schema, pass metadata accessor, package selector, and forwarding Execute body do not survive. The two catalog-only shadow variants are explicit Phase 1 deletions and never reach the target catalog.
+Every Phase 0 live semantic row retains the concrete shader and its nested schema as the Phase 2 authority. The then-current `FParameters` spelling becomes `Parameters`; the corresponding pass schema, pass metadata accessor, package selector, and forwarding Execute body do not survive. The two catalog-only shadow variants are explicit Phase 1 deletions and never reach the target catalog.
 
-| Shader class | Stage | Nested fields | Logical program | Current graph status |
+| Shader class | Stage | Nested fields | Logical program | Phase 0 graph status |
 | --- | --- | ---: | --- | --- |
 | `ComputeClearCS` | compute | 1 | `ComputeClear` | live, reused with instance labels |
 | `DirectLightingCS` | compute | 19 | `DirectLighting` | live |
@@ -878,13 +878,13 @@ Every live semantic row retains the concrete shader and its nested schema as the
 | `ToneMappingCS` | compute | 4 | `ToneMapping` | live presentation branch |
 | `VisualizeBuffersCS` | compute | 12 | `VisualizeBuffers` | live debug branch |
 
-The only current one-field pass schema is `ComputeClearPassParameters::Output`. It is not a justified strong handle, ABI wrapper, policy type, or extensible result: it duplicates `ComputeClearCS::FParameters::Output` and is deleted in Phase 2. Type-only shader parameter wrappers such as `StructuredBuffer<T>` are template vocabulary rather than one-property runtime records. No new one-field carrier is authorized by this plan.
+The only Phase 0 one-field pass schema was `ComputeClearPassParameters::Output`. It was not a justified strong handle, ABI wrapper, policy type, or extensible result: it duplicated `ComputeClearCS::FParameters::Output` and was deleted in Phase 2. Type-only shader parameter wrappers such as `StructuredBuffer<T>` are template vocabulary rather than one-property runtime records. No new one-field carrier is authorized by this plan.
 
 ### Pass, consumer, and collaborator dispositions
 
-| Classification | Complete current set | Frozen disposition |
+| Classification | Complete Phase 0 set | Frozen disposition |
 | --- | --- | --- |
-| direct one-shader compute wrappers | `ComputeClearPass`; `DirectLightingPass`; `DirectLightReservoirSpatialPass`; `DirectLightReservoirTemporalPass`; `DirectShadowSignalPass`; `DirectShadowSignalDeviceAddressPass`; `DirectShadowSignalNoRayQueryPass`; `ExposureDownsampleScenePass`; `ExposureDownsampleTexturePass`; `ExposureReduceScenePass`; `ExposureReduceTexturePass`; `ExposurePass`; `LightingCompositePass`; `LinearUpscalePass`; `OutputEncodingPass`; `PathTracedDirectLightingPass`; `PathTracedIndirectLightingPass`; `RaytracedGBufferPass`; `ReferenceLightingAccumulationPass`; `RestirIndirectResolvePass`; `RestirIndirectSpatialPass`; `RestirIndirectTemporalPass`; `SceneDepthPass`; `SkyMotionVectorPass`; `SkyPass`; `ToneMappingPass`; `VisualizeBuffersPass` | Phase 1 deletes the two catalog-only shadow variant wrappers with their shader roots. Phase 2 deletes the remaining 25 forwarding classes/files. Twenty-six current Execute bodies only call sized compute forwarding; `ExposurePass` forwards a fixed `1x1x1` dispatch. `AddComputeClearPass` may remain only as a narrow repeated graph-intent helper after it dispatches `ComputeClearCS` directly. |
+| direct one-shader compute wrappers | `ComputeClearPass`; `DirectLightingPass`; `DirectLightReservoirSpatialPass`; `DirectLightReservoirTemporalPass`; `DirectShadowSignalPass`; `DirectShadowSignalDeviceAddressPass`; `DirectShadowSignalNoRayQueryPass`; `ExposureDownsampleScenePass`; `ExposureDownsampleTexturePass`; `ExposureReduceScenePass`; `ExposureReduceTexturePass`; `ExposurePass`; `LightingCompositePass`; `LinearUpscalePass`; `OutputEncodingPass`; `PathTracedDirectLightingPass`; `PathTracedIndirectLightingPass`; `RaytracedGBufferPass`; `ReferenceLightingAccumulationPass`; `RestirIndirectResolvePass`; `RestirIndirectSpatialPass`; `RestirIndirectTemporalPass`; `SceneDepthPass`; `SkyMotionVectorPass`; `ToneMappingPass`; `VisualizeBuffersPass` | Phase 1 deletes the two catalog-only shadow variant wrappers with their shader roots. Phase 2 deletes the remaining 25 forwarding classes/files. Twenty-six Phase 0 Execute bodies only called sized compute forwarding; `ExposurePass` forwarded a fixed `1x1x1` dispatch. `AddComputeClearPass` may remain only as a narrow repeated graph-intent helper after it dispatches `ComputeClearCS` directly. |
 | multi-stage graphics | `GBufferPass` using `GBufferVS` and `GBufferPS` | Retain and narrow in Phase 2. It owns target clears/binds, viewport/scissor/topology, mesh-batch traversal, material table binding, skeletal validity, two-sided/wireframe pipeline choice, and draw calls. Remove its package/runtime-definition/metadata boilerplate and shader-visible copies. |
 | real focused collaborator | `GBufferMeshBatchDrawer` | Retain with explicit GBuffer draw inputs. It owns mesh/cache iteration and per-draw behavior; it must not become a shader/package/runtime service locator. |
 | shaderless graph work | texture copy, buffer copy, `LightingTargetClear`, `RaytracedGBufferTargetClear`, `RayTracingSceneBuild`, external upscaler evaluation, external ray-reconstruction evaluation | Retain as graph resource operations or focused provider/RT collaborators. They declare resources but do not need a fake shader class, shader parameters, or forwarding pass wrapper. |
@@ -903,7 +903,7 @@ Parameter-metadata consumers have one destination each:
 
 ### Field authority ledger
 
-| Current field family | Current producer and consumers | Target owner | Exact phase |
+| Phase 0 field family | Phase 0 producer and consumers | Target owner | Exact phase |
 | --- | --- | --- | --- |
 | every live semantic shader `FParameters` field | concrete shader class; registry/catalog/verifier; pass-side mirror | same concrete shader class as nested `Parameters`; graph and binding use the same metadata | Phase 2 retain/rename |
 | 103 authored `_NAMED` parameter declarations plus three `_NAMED` macro definitions; field/layout/shader name triples in parameter metadata | shader headers; Renderer metadata builder; RHI layout/package/reflection; ShaderCompiler verification/cooking | one member/binding `Name` from shader class through HLSL reflection and runtime binding | Phase 2 delete aliases and rename HLSL bindings atomically |
@@ -923,7 +923,7 @@ Parameter-metadata consumers have one destination each:
 
 ### Resource declaration and attachment ledger
 
-`FrameGraphBuilder` and `FrameGraph` currently each expose texture/buffer `Read` aliases beside texture/buffer `CreateSRV`, texture/buffer `CreateUAV`, acceleration-structure `Read`, `CreateRenderTarget`, and `CreateDepthTarget`. Production semantic graph setup contains 178 `CreateSRV`, 49 `CreateUAV` including the compute-clear graph helper, six `CreateRenderTarget`, one `CreateDepthTarget`, zero texture/buffer calls to `builder.Read`, and seven `builder.Read` calls that all bind `SceneTlas`. These author-facing counts exclude current `*Pass.cpp` recording/binding bodies; those are inventoried separately as forwarding surfaces. This confirms two separate clean breaks rather than a blanket rename:
+At the Phase 0 checkpoint, `FrameGraphBuilder` and `FrameGraph` each exposed texture/buffer `Read` aliases beside texture/buffer `CreateSRV`, texture/buffer `CreateUAV`, acceleration-structure `Read`, `CreateRenderTarget`, and `CreateDepthTarget`. Production semantic graph setup contained 178 `CreateSRV`, 49 `CreateUAV` including the compute-clear graph helper, six `CreateRenderTarget`, one `CreateDepthTarget`, zero texture/buffer calls to `builder.Read`, and seven `builder.Read` calls that all bound `SceneTlas`. These author-facing counts excluded the then-current `*Pass.cpp` recording/binding bodies; those were inventoried separately as forwarding surfaces. This confirmed two separate clean breaks rather than a blanket rename:
 
 - Phase 1 adds the one semantic `CreateAccelerationStructureBinding` route and updates all seven AS consumers. Backend descriptor type, address, and mutable-descriptor mechanics stay private to RHI lowering.
 - Phase 2 deletes the duplicate texture/buffer `Read` declarations from both graph surfaces and retains only `CreateSRV`/`CreateUAV` for shader views plus `CreateRenderTarget`/`CreateDepthTarget` for raster attachments.
@@ -935,7 +935,7 @@ Every old package definition, spelling, and consumer is owned below. A path name
 
 The frozen broad package floor, excluding documentation, third-party code, and generated artifacts, contains 942 matching lines across 187 source or build files for the exact case-insensitive expression `ShaderPackage|shader package|shader-package|\.sparkshader|ShaderPackageRegistry|ShaderRecookRequestType::PackageId|--package|inspect-package|PackageId|PackageKey|PackagePath`. The number is evidence for this revision, not a future API quota; the owner rows below are the stable deletion contract.
 
-| Owner surface | Exact current definitions/paths | Disposition |
+| Owner surface | Exact Phase 0 definitions/paths | Disposition |
 | --- | --- | --- |
 | Renderer authored identity | `RendererShaderPackages.h`, 28 constants, `IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE`, `ShaderPackageDefinition` references in registration/pass/runtime code | Phase 4 deletes package identity and changes remaining typed registrations/runtime lookup to map identity. Phase 2 may remove a containing pass bag but does not create a package replacement. |
 | Renderer pass facade | `RenderPassDefinition`, `RenderPassGraphicsPipelineDefinition`, `RenderPassDefinitionPipelineKind`, `RenderPassDefinitionRuntime`, `RenderPassShaderRuntimeDesc`, generic `GetDefinition`/`GetParameterMetadata`, `ComputePassOperations`, and package/debug forwarding fields | Phase 2 deletes these pass-facing bags and forwarding surfaces. This is the only deletion phase for these definitions. |
@@ -956,11 +956,11 @@ The frozen broad package floor, excluding documentation, third-party code, and g
 
 The 18 files under `Passes/Deferred` are `DirectLighting.hlsl`, `DirectLightReservoirSpatial.hlsl`, `DirectLightReservoirTemporal.hlsl`, `DirectShadowSignal.hlsl`, `DirectShadowSignalCommon.hlsli`, `DirectShadowSignalDeviceAddress.hlsl`, `DirectShadowSignalNoRayQuery.hlsl`, `GBufferPacking.hlsli`, `GBufferPS.hlsl`, `GBufferUtils.hlsli`, `GBufferVS.hlsl`, `LightingComposite.hlsl`, `MotionVector.hlsli`, `SceneDepth.hlsl`, `SceneDepthUtils.hlsli`, `Sky.hlsl`, `SkyMotionVector.hlsl`, and `VisualizeBuffers.hlsl`. Phase 1 deletes the two redundant shadow roots and moves the remaining sixteen files, registration source paths, root/relative includes, source resolver inputs, dependency/hash diagnostics, CMake/source-group presentation, and documentation spellings to semantic virtual-source ownership, then deletes `Passes/Deferred`.
 
-Current author-written identity/diagnostic repetition comprises 28 pass labels, 28 package constants, 28 binding-layout labels, and 28 pipeline labels. Phase 1 deletes the two rejected shadow identities completely; Phase 2 deletes or derives the remaining pass/layout/pipeline presentation; Phase 4 deletes the remaining package constants. Compiler/cook/runtime/frontend diagnostics that currently say package ID/key/path/generation change to shader type, virtual source, target, code hash, map/library record, renderer generation, and when applicable RT composition/pipeline/table/effect identity in Phases 3 through 9. Diagnostic labels remain bounded presentation and never become lookup keys.
+At Phase 0, author-written identity/diagnostic repetition comprised 28 pass labels, 28 package constants, 28 binding-layout labels, and 28 pipeline labels. Phase 1 deletes the two rejected shadow identities completely; Phase 2 deletes or derives the remaining pass/layout/pipeline presentation; Phase 4 deletes the remaining package constants. Compiler/cook/runtime/frontend diagnostics that then said package ID/key/path/generation change to shader type, virtual source, target, code hash, map/library record, renderer generation, and when applicable RT composition/pipeline/table/effect identity in Phases 3 through 9. Diagnostic labels remain bounded presentation and never become lookup keys.
 
 ### Legacy-eradication search floor
 
-The owning phase is incomplete while its exact floor returns a runtime/tool/build/current-document definition or consumer:
+The owning phase is incomplete while its exact floor returns a runtime/tool/build or active-document definition or consumer:
 
 - Phase 1: `Passes/Deferred`, physical authored registration roots, project-first source shadowing, basename fallback, absolute authored shader includes, `DirectShadowSignalDeviceAddress*`, `DirectShadowSignalNoRayQuery*`, `SPARKLE_RAY_TRACING_SCENE_TLAS_DEVICE_ADDRESS`, `SPARKLE_RAY_TRACED_SHADOWS_DISABLED`, `DeviceAddressRayQuery`, `UsesAccelerationStructureDeviceAddress`, `RayTracingSceneTlasShaderAccessMode`, `SupportsShaderDeviceAddress`, `SupportsShaderDeviceAddressAccess`, `SupportsMutableDescriptorType`, `EnabledMutableDescriptorType`, `VK_EXT_mutable_descriptor_type`, shader/effect `SceneTlasGpuAddress*` fields, shader-visible raw-address conversion, and `Read(FrameGraphAccelerationStructureHandle)` as a shader-binding spelling.
 - Phase 2: `TGlobalShader`, `TShaderRef`, nested `FParameters`, remaining `*PassParameters` mirrors, `RenderPassDefinition`, `RenderPassDefinitionRuntime`, `GetDefinition`, `GetParameterMetadata`, `ComputePassOperations`, the remaining 25 forwarding pass class names/files, authored `_BindingLayout`/`_Pipeline` strings, count-only parameter-layout acceptance, every `SHADER_PARAMETER_*_NAMED` / `SPARKLE_REGISTER_NAMED_GRAPH_SHADER_PARAMETER` spelling, parameter-field `LayoutName`/`ShaderName` aliases and reflection fallback, `Read(FrameGraphTextureHandle)`, `Read(FrameGraphBufferHandle)`, generic shader texture/buffer macros that conceal SRV/UAV kind, and neutral `RTV`/`DSV` authoring spellings.
@@ -984,9 +984,9 @@ No pre-edit, revision-pinned D3D12 runtime capture, Vulkan runtime capture, pair
 
 ### Ray-tracing Phase 0 extension
 
-The same revision-pinned source audit freezes the RT starting point:
+The same revision-pinned source audit froze the RT starting point. The table also records explicit post-Phase 6 through Phase 8 annotations where stated; those annotations describe source reachability, not executable proof:
 
-| Surface | Current source-backed state | Unified disposition |
+| Surface | Frozen starting point or explicit later source annotation | Unified disposition |
 | --- | --- | --- |
 | inline traversal | one shared `RayTracingTraceQuery.hlsli` implements `RayQuery`, `TraceRayInline`, and `Proceed`; GBuffer, shadow, path/reference, and ReSTIR HLSL reach it through `RayTracingSceneTlas`, `PathTrace`, `PathLighting`, and shadow helpers | preserve as the first-class inline frontend and parity oracle; semantic kernels become shared effect owners in Phases 7-9 |
 | renderer RT shader registrations | the generic `GlobalShader` path accepts all six RT stages; GBuffer and shadow product routes register ray-generation, miss, closest-hit, and alpha any-hit stages | Phase 12 owns focused intersection/callable and nonzero-local-record conformance without fake product stages or submitted test scaffolding |
@@ -1000,7 +1000,7 @@ The same revision-pinned source audit freezes the RT starting point:
 
 `RayTracingGBuffer` is the first product parity route. Both frontends use the same prepared scene, TLAS, geometry/material buffers, view, output attachments, hit reconstruction, motion/depth conventions, and explicit rasterized-GBuffer alternative. Its pipeline now uses ray generation, miss, opaque closest hit, and alpha-tested closest-hit/any-hit groups with recursion depth one, global resources, and no local SBT data. `DirectShadowSignal` has matching inline and pipeline frontends over one request/visibility semantic kernel and uses the second scene ray contribution. Procedural intersection and callable support are proved through existing validation surfaces or a temporary local conformance harness removed before handoff rather than by fake empty stages in product effects or submitted test scaffolding.
 
-No revision-pinned current inline D3D12/Vulkan parity capture, valid-library rejection transcript, compiler target matrix, native-feature absence report, or RT performance baseline with complete provenance was found. Those Phase 12 claims are blocked pending fresh final-candidate evidence.
+At Phase 0, no revision-pinned inline D3D12/Vulkan parity capture, valid-library rejection transcript, compiler target matrix, native-feature absence report, or RT performance baseline with complete provenance was found. Those Phase 12 claims remain blocked pending fresh final-candidate evidence.
 
 ### Phase 0 evidence and Code Review gate
 
@@ -1029,7 +1029,7 @@ rg -n "Passes/Deferred|ShaderPackage|sparkshader|RendererSceneViewFrameArchitect
 | every package reader/writer/cache/identity/generation spelling has one Phase 1 or Phase 4 disposition | the exact 942-line/187-file package floor and the Renderer/RHI/Core/ShaderCompiler/CLI/Application/Editor/generated-output owner rows | **PASS** - the two rejected shadow identities are deleted in Phase 1 and every remaining package producer/consumer/format/generation spelling is deleted or replaced atomically in Phase 4; Phase 10 owns only package-free workflow simplification |
 | every resource view/attachment, graphics-state, and RT item has one disposition | exact graph vocabulary, graphics state/key/variant/attachment/topology, RT macro/native-call, capability, TLAS contribution, direct-shadow, runtime-rejection, graph/runtime, and effect-selection searches plus bounded backend/consumer reads | **PASS** - resource routes are split between Phases 1 and 2; package-shaped RT scaffolding is deleted in Phase 4; graphics-state ownership is Phase 5; complete RT runtime/effect/table/selection work is owned by Phases 6-10; the target-state RT document owns no implementation task |
 | missing baseline evidence is explicit | ignored-artifact inventory and bounded inspection of candidate `artifacts/validation/renderer-scene-view-frame-phase7` logs against the provenance standard | **PASS** - generated files are inventory only; invalid/unbound candidate logs are rejected; all final runtime/backend/capture/retirement/performance claims remain blocked for Phase 12 |
-| frozen eradication floor covers exact and semantic leftovers | phase-by-phase exact floor plus alias/adapter/fallback/parallel authority/generated-format/build/frontend/document semantic searches required by the common delivery contract | **PASS** - every current match is assigned to one later phase; no generic cleanup owner, compatibility checkpoint, permutation, precache, or persistent compiler-result store is authorized |
+| frozen eradication floor covers exact and semantic leftovers | phase-by-phase exact floor plus alias/adapter/fallback/parallel authority/generated-format/build/frontend/document semantic searches required by the common delivery contract | **PASS** - every Phase 0 match is assigned to one later phase; no generic cleanup owner, compatibility checkpoint, permutation, precache, or persistent compiler-result store is authorized |
 | scoped documentation and review gate | documentation diff inspection, local target/anchor resolution for touched documents, staging/scope checks, and `git diff --check`; review route: [SparkleEngine Code Review](../../Engineering/CodeReview.md) | **PASS** - documentation-only scope, no P0-P2 finding, no runtime/tool/build/generated edit, and no executable evidence claimed |
 
 Phase 0 is documentation-only and has no runtime performance class. The target is not implemented by this evidence; it is now sufficiently owned, ordered, and falsifiable for Phase 1 to begin without an intermediate architecture or unassigned legacy cleanup.
@@ -1157,7 +1157,7 @@ The recommended base path is intentionally conventional at the API boundary: off
 
 ### Registered Shader Types and Actual Frame Consumption
 
-At `99af6d5b`, `Engine/Renderer/ShaderRegistrations` contains 35 typed `IMPLEMENT_GLOBAL_SHADER` registrations. A registration proves catalog/build reachability; it does not prove a successful cook, native materialization, dispatch, output, or parity result.
+At implementation revision `99af6d5b`, which remains the source state at `20814381`, `Engine/Renderer/ShaderRegistrations` contains 35 typed `IMPLEMENT_GLOBAL_SHADER` registrations. A registration proves catalog/build reachability; it does not prove a successful cook, native materialization, dispatch, output, or parity result.
 
 | Product group | Registered stages | Selection and current source status |
 | --- | --- | --- |
@@ -2349,7 +2349,7 @@ Suggested title: `Renderer: unify production ray hit semantics and SBT indexing`
 
 #### Phase 8 source-consistency evidence
 
-The 2026-08-28 reconciliation confirms that the Phase 8 source slice is present in committed `master` at `99af6d5b`. This is a static source/build-membership statement only: this documentation update adds no configure, build, shader compile, cook, launch, test, capture, native validation, parity, reload, or performance result.
+The 2026-08-28 reconciliation confirms that the Phase 8 source slice is present in the implementation state at `99af6d5b` and remains unchanged in committed `master` at `20814381`. This is a static source/build-membership statement only: this documentation update adds no configure, build, shader compile, cook, launch, test, capture, native validation, parity, reload, or performance result.
 
 | Claim | Current source evidence | Remaining proof boundary |
 | --- | --- | --- |

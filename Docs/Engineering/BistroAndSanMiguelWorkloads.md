@@ -115,7 +115,7 @@ This table is retained as the adoption baseline. It is not current repository st
 
 ### Current source reconciliation
 
-The 2026-08-28 static reconciliation at `99af6d5b` found:
+The 2026-08-28 static reconciliation at committed `master` revision `20814381`, whose source and executable build configuration are unchanged from implementation revision `99af6d5b`, found:
 
 | Area | Current source-backed state | Remaining evidence boundary |
 | --- | --- | --- |

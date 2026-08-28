@@ -2,6 +2,7 @@
 
 Status: target architecture and staged implementation plan; not implemented behavior
 Date: 2026-08-17
+Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Scope: Alembic-authored baked mesh animation, native cooking and streaming, playback, shared raster/ray-tracing deformation, D3D12/Vulkan parity, Modern Sponza Animated Knight acceptance, and evidence
 
 ## Decision

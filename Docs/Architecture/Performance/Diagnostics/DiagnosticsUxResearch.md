@@ -3,6 +3,7 @@
 Status: research reference; external precedent and option analysis, not proof of current implementation
 
 Research reconciliation: 2026-08-16
+Last local source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
 Scope: the visual and functional design of performance diagnostics for SparkleEngine, with emphasis on Epic Games, NVIDIA, and AMD products; data acquisition and implementation sequencing are intentionally secondary
 
@@ -346,9 +347,9 @@ The UX alone cannot prevent instrumentation clutter. The selected functionality 
 
 ## Current Sparkle UX Reconciliation
 
-The 2026-08-15 source reconciliation shows useful foundations but no joined performance product:
+The 2026-08-28 local source reconciliation at `20814381` shows useful foundations but no joined performance product:
 
-- `ViewportTopPanel::BuildPerformanceStats` displays ImGui's smoothed FPS and delta time only.
+- `ViewportTopPanel::BuildRightControls` displays ImGui's smoothed FPS and delta time only.
 - `MainMenuBarPanel` opens Settings, Shaders, Meshes, and Textures utility windows and has an explicit viewport-capture action, but no Performance workspace.
 - `UIWorkspace` has a clear fixed outliner/viewport/inspector composition and builds the current utility panels separately.
 - `UI.h` publicly includes renderer diagnostic snapshot types and stores mesh, texture, and memory provider callbacks. This is evidence to avoid extending that callback pattern for CPU/GPU performance.

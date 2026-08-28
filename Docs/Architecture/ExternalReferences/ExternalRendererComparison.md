@@ -2,7 +2,7 @@
 
 Status: source-linked external comparison; external patterns are precedent, not local implementation proof
 Research snapshot: 2026-07-24
-Last local reconciliation: 2026-08-15
+Last local reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Scope: vendor reference repositories/frameworks compared against SparkleEngine architecture, developer-technology transfer, path tracing, neural graphics, code construction, extensibility, productization, feature scope, and deletion-first improvement targets
 
 ## Intent
@@ -45,7 +45,7 @@ NvRTX code is gated behind Epic/GitHub access, so this document uses the public 
 
 ## Adversarial Local Reconciliation
 
-The 2026-08-15 pass treated every earlier Sparkle comparison as potentially stale. The durable external principles survive, but several local findings no longer do:
+The 2026-08-28 local pass treated every earlier Sparkle comparison as potentially stale. The durable external principles survive, but several local findings no longer do:
 
 | Earlier local statement | Reconciled result | Current owner |
 | --- | --- | --- |
@@ -213,7 +213,7 @@ Epic's shader workflow asks the developer to save edits and recompile changed sh
 
 Sparkle comparison:
 
-- Current backend ownership is stronger than the current frontend hierarchy. Shader Tools exposes package/layout/backend/artifact fields and several recovery operations before the common changed-shader intent; the proposed diagnostics menu can similarly become cluttered if every stat group is a first-level choice.
+- Current backend ownership is stronger than the current frontend hierarchy. Shader Tools leads with refresh, reload, and recook operations plus a nine-column catalog of shader identity, source, backend/target, generation, and artifact mechanics; the proposed diagnostics menu can similarly become cluttered if every stat group is a first-level choice.
 - Hiding detail must not mean deleting expert capability. It means deriving safe defaults and moving raw identities, manifests, hashes, compiler/capture settings, and specialized panes behind the selected task/object.
 
 Action:
@@ -221,7 +221,7 @@ Action:
 - Lead with a small task vocabulary: `Apply Changed`, `Quick Check`, `Investigate CPU/GPU/Memory`, and `Capture Evidence`.
 - Preserve one shader/frame/range/marker/configuration selection across summary, detail, retry, and external handoff.
 - Generate dependency closure, target/capability choice, cache use, collection mode, manifest identity, and validated publication in their backend owners.
-- Keep raw group selection, compiler jobs, package/chunk state, hashes, native handles, counters, and tool-specific settings searchable under contextual Diagnostics/Advanced surfaces.
+- Keep raw group selection, catalog rows, compiler requests, generations, hashes, native handles, counters, and tool-specific settings searchable under contextual Diagnostics/Advanced surfaces.
 - Do not copy Unreal Insights, Nsight, or RGP pane counts. Copy their progressive task-to-detail navigation and explicit state/failure behavior.
 
 ## Direct Comparison Matrix

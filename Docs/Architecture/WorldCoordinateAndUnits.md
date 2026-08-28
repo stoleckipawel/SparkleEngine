@@ -1,13 +1,14 @@
 # World Coordinate, Units, and Transform Contract
 
 Status: canonical architecture decision
-Adoption: accepted contract; code, cooked content, and executable tests prove conformance
+Adoption: accepted contract; current code and cooked schemas implement material portions, but the audited tree has no active executable source-test route proving complete conformance
+Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
 ## Responsibility
 
 This document is the single source of truth for SparkleEngine world axes, physical units, transform math, source normalization, animation and skinning spaces, and the boundary between canonical engine data and backend-specific representations.
 
-It owns semantic coordinate decisions. Source-format specifications own their source conventions; the [GameFramework and ECS standard](../Engineering/Standards/GameFrameworkAndEcs.md) owns world and animation integration rules; the [Graphics Engineering standard](../Engineering/Standards/GraphicsEngineering.md) owns graphics implementation and evidence; and the [Renderer/RHI boundary](RendererRhiBoundary.md) owns backend responsibilities. Code, cooked schemas, and tests remain the proof that this decision is implemented.
+It owns semantic coordinate decisions. Source-format specifications own their source conventions; the [GameFramework and ECS standard](../Engineering/Standards/GameFrameworkAndEcs.md) owns world and animation integration rules; the [Graphics Engineering standard](../Engineering/Standards/GraphicsEngineering.md) owns graphics implementation and evidence; and the [Renderer/RHI boundary](RendererRhiBoundary.md) owns backend responsibilities. Code, cooked schemas, and executable validation remain the proof that this decision is implemented; this document alone is not conformance evidence.
 
 No project, level, importer, renderer path, or future physics integration may define an alternate Sparkle world basis or unit scale.
 
@@ -248,6 +249,8 @@ The skinning invariant is that `JointMatrix` produces ObjectSpace/SkinReferenceS
 - A future physics integration stores gameplay authority in canonical metres with gravity toward `-Y` and adapts handedness, axes, units, shapes, transforms, velocities, normals, and query results inside the physics adapter.
 
 ## Conformance Gates
+
+The audited tree contains no active `enable_testing()` or `add_test()` route. The gates below are required acceptance evidence, not completed test results.
 
 ### Known-value math tests
 

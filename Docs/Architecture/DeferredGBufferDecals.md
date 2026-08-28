@@ -2,7 +2,7 @@
 
 Status: target architecture and staged implementation plan; not implemented behavior
 Date: 2026-08-17
-Last source reconciliation: 2026-08-28 at committed `master` revision `99af6d5b`
+Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Scope: projected material decals on opaque and alpha-tested GBuffer receivers, raster and ray-traced primary visibility, later arbitrary ray hits used by GI and reflections, D3D12/Vulkan parity, authoring, ownership, validation, and evidence
 
 ## Decision

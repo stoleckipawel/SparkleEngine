@@ -1,7 +1,7 @@
 # D. Whole Repository Architecture Map
 
 Status: current source-backed reviewer map; descriptive, not a normative architecture or strategy contract
-Last verified: 2026-08-28 at committed `master` revision `99af6d5b`
+Last verified: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Scope: implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
 
 ## Intent And Authority
@@ -226,7 +226,7 @@ The Launcher GUI uses the deployed `RepositoryRoot.txt` as its repository author
 - Generated build, cooked, log, capture, and validation artifacts are evidence only when their revision, configuration, command, hardware/runtime provenance, and result are recorded.
 - A responsive process, source reachability, successful configure, or one backend does not prove visual correctness, parity, performance, or shipment.
 
-This documentation reconciliation is a static source/build-configuration audit. It does not add build, cook, runtime, capture, or performance evidence for revision `99af6d5b`.
+This documentation reconciliation is a static source/build-configuration audit. It does not add build, cook, runtime, capture, or performance evidence for the implementation state at `99af6d5b` or the documentation-only repository state at `20814381`.
 
 ## Primary Source Routes
 

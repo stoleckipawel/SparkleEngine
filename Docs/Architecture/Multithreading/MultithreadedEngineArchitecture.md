@@ -223,7 +223,7 @@ Before implementing or resuming a stage:
 2. inventory thread owners, queues, waits, atomics, locks, scopes, and captured lifetimes;
 3. distinguish already-implemented behavior from target behavior;
 4. use this document only for concurrency topology and decisions;
-5. use K only for the concurrency sequence;
+5. use the Roadmap for broader sequencing; no separate K implementation plan remains;
 6. report current evidence rather than historical completion text.
 
 The target is complete only when current code and tests prove these concurrency contracts. This document is the decision map, not the proof.

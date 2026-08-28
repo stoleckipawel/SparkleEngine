@@ -2,7 +2,7 @@
 
 Status: target proposal; not proof of current implementation
 
-Last source reconciliation: 2026-08-28 at committed `master` revision `99af6d5b`
+Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
 Scope: editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, benchmark evidence, external-profiler correlation, authoring isolation, and Shipping erasure
 

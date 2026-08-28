@@ -1,7 +1,7 @@
 # Ray-Tracing Pipeline and Dual-Execution Target Architecture
 
 Status: target proposal and semantic contract; not implementation authority or proof of runtime support
-Current-state audit provenance: 2026-08-28 static source/build reconciliation at committed `master` revision `99af6d5b` through the Phase 8 hit/shadow/table slice is recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#phase-8-source-consistency-evidence)
+Current-state audit provenance: 2026-08-28 static source/build reconciliation at committed `master` revision `20814381`, whose source and executable build configuration are unchanged from implementation revision `99af6d5b`, through the Phase 8 hit/shadow/table slice is recorded in [Shader Authoring and Cooked Shader Architecture](ShaderAuthoringAndCookedPrograms.md#phase-8-source-consistency-evidence)
 Scope: ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, supported alternates, mandatory failure, and target completion invariants
 
 ## Purpose and authority boundary

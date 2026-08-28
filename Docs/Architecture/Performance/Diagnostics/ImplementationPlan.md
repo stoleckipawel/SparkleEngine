@@ -2,7 +2,7 @@
 
 Status: implementation plan; not proof of implementation or shipment
 
-Last code and document reconciliation: 2026-08-28 at committed `master` revision `99af6d5b`
+Last code and document reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
 Scope: staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md)
 
@@ -72,7 +72,7 @@ This is the reconciled 2026-08-28 starting inventory. Revalidate it rather than 
 
 | Concept | Current overlap/candidate | Required outcome |
 | --- | --- | --- |
-| Frame interval and FPS | `ViewportTopPanel::BuildPerformanceStats` reads ImGui `Framerate`/`DeltaTime`, while `Timer` is the host timing authority. | `ReplaceAndDelete`: derive FPS only from the valid Application-owned unscaled interval and remove the ImGui-derived product path. ImGui may retain its internal timing for ImGui itself, never as Sparkle performance truth. |
+| Frame interval and FPS | `ViewportTopPanel::BuildRightControls` reads ImGui `Framerate`/`DeltaTime`, while `Timer` is the host timing authority. | `ReplaceAndDelete`: derive FPS only from the valid Application-owned unscaled interval and remove the ImGui-derived product path. ImGui may retain its internal timing for ImGui itself, never as Sparkle performance truth. |
 | Diagnostics session and history | No accepted session exists yet; future groups, graphs, workspaces, and export could each be tempted to retain samples. | `Extend` Application once: one demand/generation/join/ring/snapshot authority. `UnitGraph`, workspace views, compact presenters, and export read that ring; none owns a second history. No Core global profiler singleton. |
 | Console command semantics | Core `ConsoleCommandRegistry` is hosted separately by `EditorConsoleSystem` and `RuntimeConsoleOverlay`. | `KeepSeparateWithBoundary` for product-local registry/session/presentation lifetimes; `Merge` performance command registration and parsing into one Application-owned registration function that produces the same typed request for both. No UI-formatted command strings. |
 | Renderer request and publication transport | `RenderCoordinator`, its bounded control queue, and `PublishReadState` already cross the Renderer thread boundary. | `Extend` the existing route. Reject a second diagnostics mailbox, synchronous query facade, event bus, or UI callback channel. |
@@ -450,7 +450,7 @@ Revalidate this table with `rg` at the start of each phase and reconcile it into
 | GPU memory | RHI `RenderMemoryDiagnostics` and Renderer `RendererMemoryMonitor` | Reuse allocator facts and the corrected monotonic `FrameId` polling path. Preserve local/non-local and used/allocated/budget distinctions while adding only the selected neutral publication/history product. |
 | Process RAM | No current production sampler | Add the smallest Platform-owned process snapshot required by Application, initially Windows-backed. Do not build an allocation tracker or put Win32 types in Application. |
 | Task detail | `TaskProfiler` ETW provider and fixed task lanes | Reuse ETW for deep task traces. Live UI may publish bounded lane aggregates only when the executor already owns the counts/durations. |
-| Viewport summary | `ViewportTopPanel::BuildPerformanceStats` currently reads ImGui FPS/delta | Replace this source with the immutable diagnostics presentation. Do not retain two competing FPS truths. |
+| Viewport summary | `ViewportTopPanel::BuildRightControls` currently reads ImGui FPS/delta | Replace this source with the immutable diagnostics presentation. Do not retain two competing FPS truths. |
 | Editor diagnostics providers | `UI` currently receives broad renderer snapshot callbacks | Migrate only overlapping performance responsibilities to the Application product and remove replaced callbacks. Asset inspector routes remain separate. |
 | Viewport screenshot | `EditorViewportCaptureCoordinator` plus Renderer/RHI readback | Keep it as image capture and reuse its nonblocking lifecycle lessons only. External profiler capture is a different operation and must not overload `RhiCaptureService`. |
 | Pre-device integrations | `RendererExternalRuntime` builds immutable `RendererBackendConfiguration` before `RenderCoordinator` creates the backend | Extend this existing process-facing owner with launch intent and capture bootstrap. Do not add a competing startup integration service. |
@@ -824,7 +824,7 @@ Render the existing joined ring. Do not allocate another history, resample away 
 
 #### `ORI-05` Editor Quick Check
 
-Replace `ViewportTopPanel::BuildPerformanceStats` as the source of truth. Implement the task-first Performance menu and compact summary from the wireframes, including Basic/Detailed, sample/loss, and invalid/stale states. The UI receives an immutable presentation model and submits semantic requests.
+Replace the ImGui-derived FPS/delta block in `ViewportTopPanel::BuildRightControls` as the source of truth. Implement the task-first Performance menu and compact summary from the wireframes, including Basic/Detailed, sample/loss, and invalid/stale states. The UI receives an immutable presentation model and submits semantic requests.
 
 #### `ORI-06` DevelopmentGame presenter
 

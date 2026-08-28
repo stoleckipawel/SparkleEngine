@@ -6,7 +6,7 @@ Planning window: 2026-08-06 through 2027-01-31
 
 Planning baseline: repository reviewed at `9cf7b3bd` on 2026-08-06; revalidate code, builds, tests, captures, and external state before acting
 
-Current source reconciliation: 2026-08-28 static source/build audit at committed `master` revision `99af6d5b`; no build, cook, launch, capture, or performance result was added
+Current source reconciliation: 2026-08-28 static source/build audit at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`, and no build, cook, launch, capture, or performance result was added
 
 Governing requirements: [A. Principal Graphics Engineering Requirements](Requirements.md)
 
@@ -153,7 +153,7 @@ The existing path-tracing and renderer work becomes one reproducible, measured D
 2. Capture the same frozen Bistro and San Miguel routes on D3D12 and Vulkan with native validation enabled where supported.
 3. Record CPU/GPU timelines, frame pacing, memory high-water, resource/barrier/descriptor/queue state, pipeline/cache state, and BLAS/TLAS behavior defined by the workload contract.
 4. Rank measured bottlenecks. Start the three required causal studies and finish at least one difficult incident with competing hypotheses, reduced reproducer, scoped fix, and regression gate.
-5. When a measured bottleneck is concurrent, apply K's `MT-12` through `MT-15` evidence and retention gates. Do not introduce unrelated concurrency work for a non-concurrency bottleneck.
+5. When a measured bottleneck is concurrent, apply the [concurrency evidence](../Architecture/Multithreading/MultithreadedEngineArchitecture.md#concurrency-evidence) and retention gates in J together with the binding concurrency and validation standards. Do not introduce unrelated concurrency work for a non-concurrency bottleneck.
 6. Draft `CASE-01`, `CASE-02`, and `CASE-03` from captured evidence. Do not wait until January to reconstruct the experiment history.
 
 ### Exit Gate - 2026-10-31

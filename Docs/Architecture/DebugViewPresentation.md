@@ -2,6 +2,7 @@
 
 Status: target proposal; design-only, not implementation proof
 Date: 2026-08-18
+Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Responsibility: per-view show-flag resolution, presentation-domain classification, and display routing
 
 ## Decision
@@ -50,10 +51,10 @@ The path is visible in these current owners:
 - [`Passes/Presentation/Presentation.cpp`](../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp) always schedules `ToneMappingPass` and `OutputEncodingPass`.
 - [`Passes/Presentation/ToneMapping.hlsl`](../../Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl) always multiplies by the exposure texture and applies the selected tone mapper.
 - [`Passes/Debug/VisualizeBuffers.hlsl`](../../Engine/Assets/Shaders/Passes/Debug/VisualizeBuffers.hlsl) maps HDR lighting and emissive values with `x / (1 + x)` before the global tone mapper runs.
-- [`Viewport/ViewportContracts.h`](../../Engine/Renderer/Public/Viewport/ViewportContracts.h) declares `RenderFeatureFlags`, but the current frame pipeline does not consume the request field; its entries also mix picking, view-mode, and overlay intents.
-- [`Frame/FramePipeline.cpp`](../../Engine/Renderer/Private/Frame/FramePipeline.cpp) reads `CVarRenderViewMode` directly, so the current view mode is process-wide rather than resolved from a viewport request.
+- [`Viewport/ViewportContracts.h`](../../Engine/Renderer/Public/Viewport/ViewportContracts.h) already separates view kind, selection, requested outputs, extent, and exposure; it has no `RenderFeatureFlags`, view-mode, or show-flag field.
+- [`View/RenderViewBuilder.cpp`](../../Engine/Renderer/Private/View/RenderViewBuilder.cpp) reads `CVarRenderViewMode` directly, so the current view mode is process-wide rather than resolved from a viewport request.
 
-The last two facts cause double mapping for HDR diagnostic views. The same global presentation step also changes bounded quantities and false colors: a roughness value, encoded normal, or instance-ID palette no longer reaches the display as the visualization shader authored it.
+The producer-local HDR preview curve followed by unconditional exposure and tone mapping causes double mapping for HDR diagnostic views. The same global presentation step also changes bounded quantities and false colors: a roughness value, encoded normal, or instance-ID palette no longer reaches the display as the visualization shader authored it.
 
 Exposure metering itself is already ordered usefully. It reads the original scene color before the debug pass overwrites final color. The implementation should preserve that ownership so diagnostics do not drive eye adaptation.
 
@@ -213,19 +214,11 @@ This is a default contract, not a hidden hard-coded branch. If a user changes ei
 
 Only the unmodified stock `DisplayLinearExact` preset may claim exact displayed diagnostics. Custom presentation flags are useful for investigation, but the **Custom** indicator and captured flag set prevent that result from being mistaken for the canonical view-mode contract. Output encoding remains unconditional in every row and is not exposed in the Show menu.
 
-### Clean break from `RenderFeatureFlags`
+### Clean break from process-global view-mode state
 
-The current public `RenderFeatureFlags` is not a viable second system: it is not consumed by `FramePipeline` and mixes four different kinds of intent. Replace it rather than adding `RenderShowFlagSet` beside it:
+The earlier generic `RenderFeatureFlags` representation no longer exists. `ViewportRenderRequest` already keeps selection and requested render products distinct from view kind, extent, and exposure. Do not recreate that removed mixed-purpose bitset when show flags are added.
 
-| Current entry | Target representation |
-| --- | --- |
-| `Picking` | A requested output/selection product, because it asks the renderer to produce data. |
-| `Wireframe` | `RenderViewMode::Wireframe` preset; a future mesh-edge overlay would be a separately named show flag. |
-| `LightingOnly` | A view-mode preset if Sparkle adds that mode, not an independent feature bit. |
-| `DebugOverlay` | `RenderShowFlag::DebugOverlay`. |
-| `GizmoOverlay` | `RenderShowFlag::GizmoOverlay`. |
-
-The same clean break moves `RenderViewMode` from direct `CVarRenderViewMode` consumption into the viewport/view request. The final request contains one mode, one show-flag override value, and one requested-output value with no compatibility alias or dual representation. A CVar may remain only as an explicit developer force resolved at the boundary, not as the renderer's normal source of truth. This aligns with the Scene/View/Frame target: editable intent crosses the viewport request boundary, while the complete resolved set lives only in the one-frame `RenderView`.
+The remaining clean break moves `RenderViewMode` from direct `CVarRenderViewMode` consumption into the viewport/view request and adds only the typed show-flag override value. The final request contains one mode, one show-flag override value, and one requested-output value with no compatibility alias or dual representation. A CVar may remain only as an explicit developer force resolved at the boundary, not as the renderer's normal source of truth. This aligns with the Scene/View/Frame target: editable intent crosses the viewport request boundary, while the complete resolved set lives only in the one-frame `RenderView`.
 
 ## Selected Architecture
 
@@ -468,7 +461,7 @@ These are implementation workstreams. If delivered with the Scene/View/Frame ref
 ### Slice 1: establish show-flag ownership
 
 1. Inventory the producer, consumer, disabled behavior, and graph impact of every proposed initial flag; remove any entry without a real first consumer.
-2. Replace unused `RenderFeatureFlags` in one clean break with viewport `RenderShowFlagOverrides`, move picking/view-mode intents to their correct categories, and stop using `CVarRenderViewMode` as normal renderer input.
+2. Extend `ViewportRenderRequest` in one clean break with `RenderViewMode` and `RenderShowFlagOverrides`, keep selection and `RenderOutputFlags` in their existing categories, and stop using `CVarRenderViewMode` as normal renderer input.
 3. Add the fixed `RenderShowFlag` enum, bitset operations, exhaustive editor metadata, kind baselines, and mode presets.
 4. Resolve the immutable final set in `RenderViewBuilder`; expose only narrow values to graph keys, pass parameters, and `ViewUniformData`.
 5. Add focused tests for precedence, non-overlapping overrides, mode selection, reset, invalid values, and two independent viewports.
@@ -505,7 +498,7 @@ Implementation is accepted only when all of the following are demonstrated:
 
 - every `RenderViewMode` other than `Count` has exactly one signal domain and one explicit show-flag preset;
 - every `RenderShowFlag` other than `Count` has exactly one metadata entry, a real producer/consumer path, deterministic disabled behavior, and classified graph impact;
-- no `RenderFeatureFlags` definition, field, helper, or consumer remains; picking, view-mode presets, requested outputs, and show flags each have one target representation;
+- no generic `RenderFeatureFlags` definition is reintroduced; selection, view-mode presets, requested outputs, and show flags each have one target representation;
 - the active mode and show-flag overrides arrive through the viewport/view request; normal pass behavior does not read `CVarRenderViewMode` or another process-global substitute;
 - `RenderViewBuilder` is the only resolver, and two viewports can resolve different show-flag sets without global-state races or cross-talk;
 - stock `Lit`, `GBufferEmissive`, and direct/indirect lighting modes enable Exposure and Tonemapper; changing exposure compensation or tone mapper changes them;
