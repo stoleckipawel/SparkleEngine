@@ -1,7 +1,6 @@
 #include "LauncherMainWindow.h"
 
 #include "LauncherLayoutWidgets.h"
-#include "LauncherOutputWidgets.h"
 #include "LauncherContentModel.h"
 #include "LauncherContextUiModel.h"
 #include "LauncherOperationRequestFactory.h"
@@ -34,9 +33,6 @@ namespace SparkleLauncher
 	static constexpr int kWorkflowRailWidth = LauncherUi::Shell::RailWidth;
 	static constexpr int kWorkflowGroupMinHeight = LauncherUi::Shell::RailItemMinHeight;
 	static constexpr int kWorkflowButtonMinHeight = LauncherUi::Shell::TabMinHeight;
-	static constexpr int kOperationOutputMinHeight = LauncherUi::OperationOutput::MinHeight;
-	static constexpr int kOperationOutputMaxHeight = LauncherUi::OperationOutput::MaxHeight;
-	static constexpr int kActivityPanelCollapsedHeight = LauncherUi::Activity::CollapsedHeight;
 	static constexpr int kLauncherIconSize = LauncherUi::Icon::DefaultSize;
 	static constexpr const char* kColorStateQueued = LauncherUi::Color::StateQueued;
 
@@ -391,39 +387,6 @@ namespace SparkleLauncher
 		layout->addStretch(1);
 		scrollArea->setWidget(content);
 		return scrollArea;
-	}
-
-	QWidget* LauncherMainWindow::CreateOutputPanel()
-	{
-		const LauncherOutputPanelWidgets widgets = CreateLauncherOutputPanel(
-		    this,
-		    m_icons.Icon(LauncherIcon::Copy, QColor(kColorStateQueued)),
-		    QSize(kLauncherIconSize, kLauncherIconSize),
-		    [this](QWidget* widget) { RegisterFocusable(widget); },
-		    [this]() { ToggleActivityLogPanel(); },
-		    [this]() { CopySelectedRunOutput(); },
-		    [this](QListWidgetItem* current, QListWidgetItem* previous) { DisplaySelectedRunOutput(current, previous); });
-
-		if (widgets.Root != nullptr)
-		{
-			widgets.Root->setObjectName("ActivityBottomPanel");
-			widgets.Root->setMinimumHeight(kActivityPanelCollapsedHeight);
-			widgets.Root->setMaximumHeight(kActivityPanelCollapsedHeight);
-		}
-		m_activityPanel = widgets.Root;
-		m_activityDetailsPanel = widgets.ActivityDetailsPanel;
-		m_activityList = widgets.ActivityList;
-		m_selectedRunSummary = widgets.SelectedRunSummary;
-		m_operationOutput = widgets.OperationOutput;
-		m_toggleOutputButton = widgets.ToggleOutputButton;
-		m_copyOutputButton = widgets.CopyOutputButton;
-		if (m_operationOutput != nullptr)
-		{
-			m_operationOutput->setMinimumHeight(kOperationOutputMinHeight);
-			m_operationOutput->setMaximumHeight(kOperationOutputMaxHeight);
-		}
-		SetActivityLogExpanded(false);
-		return widgets.Root;
 	}
 
 	QLabel* LauncherMainWindow::CreateSectionLabel(const QString& title) const

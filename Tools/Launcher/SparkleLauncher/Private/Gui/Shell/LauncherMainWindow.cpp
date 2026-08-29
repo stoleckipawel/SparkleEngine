@@ -1,6 +1,6 @@
 #include "LauncherMainWindow.h"
 
-#include "LauncherActionHistoryModel.h"
+#include "LauncherActivityPanel.h"
 #include "LauncherActionWidgets.h"
 #include "LauncherArtworkWidgets.h"
 #include "LauncherBackend.h"
@@ -13,7 +13,6 @@
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherOperationRequestMapping.h"
 #include "LauncherContentModel.h"
-#include "LauncherOutputWidgets.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"
@@ -150,7 +149,6 @@ namespace SparkleLauncher
 	    m_settings(settings),
 	    m_backend(backend)
 	{
-		m_actionHistory.Load(m_repositoryRoot);
 		setWindowTitle("Sparkle Launcher");
 		setMinimumSize(kLauncherMinimumWidth, kLauncherMinimumHeight);
 		resize(kLauncherInitialWidth, kLauncherInitialHeight);
@@ -165,7 +163,8 @@ namespace SparkleLauncher
 		rootLayout->setSpacing(0);
 
 		rootLayout->addWidget(CreateWorkflowSurface(), 1);
-		rootLayout->addWidget(CreateOutputPanel(), 0);
+		m_activityPanel = new LauncherActivityPanel(m_icons, [this](QWidget* widget) { RegisterFocusable(widget); }, centralWidget);
+		rootLayout->addWidget(m_activityPanel, 0);
 		rootLayout->addWidget(CreateFooterContextPanel(centralWidget), 0);
 		RefreshContextSelectors();
 		setCentralWidget(centralWidget);
@@ -187,7 +186,6 @@ namespace SparkleLauncher
 		connect(&m_backend, &LauncherBackend::OperationFinished, this, &LauncherMainWindow::DisplayOperationFinished);
 		connect(qApp, &QGuiApplication::applicationStateChanged, this, &LauncherMainWindow::HandleApplicationStateChanged);
 
-		RefreshActivityPanel();
 		QTimer::singleShot(0, this, &LauncherMainWindow::RefreshContent);
 	}
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "LauncherActionHistoryModel.h"
 #include "LauncherBackend.h"
 #include "LauncherCleanUiModel.h"
 #include "LauncherIconLibrary.h"
@@ -43,6 +42,7 @@ namespace SparkleLauncher
 	enum class WorkspaceCompiler;
 	class LauncherContentModel;
 	class LauncherSettings;
+	class LauncherActivityPanel;
 	struct ThirdPartyDependencyUiEntry;
 	struct ThirdPartyDependencyUiStatus;
 	struct LauncherLevelUiEntry;
@@ -69,9 +69,6 @@ namespace SparkleLauncher
 		void RefreshContent();
 		void SelectWorkflowGroupButton(QAbstractButton* button);
 		void SelectProcessButton(QAbstractButton* button);
-		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
-		void CopySelectedRunOutput();
-		void ToggleActivityLogPanel();
 		void HandleApplicationStateChanged(Qt::ApplicationState state);
 		void RunSelectedOperation();
 		void CleanSelectedOperation();
@@ -92,29 +89,11 @@ namespace SparkleLauncher
 			bool Selected = false;
 		};
 
-		struct ActivityRunWidgets
-		{
-			QWidget* Root = nullptr;
-			QFrame* Indicator = nullptr;
-			QLabel* TitleLabel = nullptr;
-			QLabel* StateLabel = nullptr;
-		};
-
-		enum class RunState
-		{
-			Queued,
-			Running,
-			Done,
-			Canceled,
-			Failed,
-		};
-
 		QWidget* CreateWorkflowSurface();
 		QWidget* CreateProcessPicker(QWidget* parent);
 		QPushButton* CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent);
 		QWidget* CreateOptionsPanel(QWidget* parent);
 		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
-		QWidget* CreateOutputPanel();
 		QWidget* CreateFooterContextPanel(QWidget* parent);
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
@@ -216,7 +195,6 @@ namespace SparkleLauncher
 		void ScheduleUiRefresh(bool refreshContent);
 		void ApplyScheduledUiRefresh();
 		QIcon WorkflowIconForPageKind(LauncherWorkflowPageKind pageKind) const;
-		QIcon ActivityIconForState(RunState state) const;
 		void RegisterFocusable(QWidget* widget);
 		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
@@ -237,13 +215,6 @@ namespace SparkleLauncher
 		QString CreateRunId();
 		QString StartOperation(LauncherOperationRequest request, const QString& title);
 		void SetSelectedOperation(const QString& operationId);
-		void RegisterRun(const QString& runId, const QString& title);
-		void SetRunState(const QString& runId, RunState state, const QString& title);
-		void AppendRunOutput(const QString& runId, const QString& text);
-		void ShowRunOutput(const QString& runId);
-		void SetActivityLogExpanded(bool expanded);
-		void UpdateActivityRunSelectionVisuals();
-		void RefreshActivityPanel();
 		void ApplyVisualStyle();
 
 		std::filesystem::path m_repositoryRoot;
@@ -265,22 +236,10 @@ namespace SparkleLauncher
 		QComboBox* m_shaderBackendCombo = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
-		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_cleanButton = nullptr;
 		QPushButton* m_runButton = nullptr;
-		QPushButton* m_toggleOutputButton = nullptr;
 		QFrame* m_actionMetaPanel = nullptr;
-		QWidget* m_activityPanel = nullptr;
-		QWidget* m_activityDetailsPanel = nullptr;
-		QListWidget* m_activityList = nullptr;
-		QLabel* m_selectedRunSummary = nullptr;
-		QPushButton* m_copyOutputButton = nullptr;
-		QHash<QString, QListWidgetItem*> m_runItems;
-		QHash<QString, ActivityRunWidgets> m_runItemWidgets;
-		QHash<QString, RunState> m_runStates;
-		QHash<QString, QString> m_runTitles;
-		QHash<QString, QString> m_runOutputs;
-		LauncherActionHistoryModel m_actionHistory;
+		LauncherActivityPanel* m_activityPanel = nullptr;
 		std::optional<LauncherQuickStartExecution> m_quickStartExecution;
 		QHash<QString, PendingLevelSelectionUpdate> m_pendingLevelSelectionUpdates;
 		QHash<QString, QPointer<QLabel>> m_levelStatusLabels;
@@ -289,18 +248,13 @@ namespace SparkleLauncher
 		QHash<QString, QPointer<QLabel>> m_sourceDependencyStatusLabels;
 		QHash<QString, QPointer<QPushButton>> m_sourceDependencyActionButtons;
 		QSet<QString> m_cleaningSourceDependencyRunIds;
-		QString m_activeRunId;
 		QString m_selectedOperationId;
 		bool m_isRebuildingOptions = false;
 		bool m_isApplyingUiRefresh = false;
 		bool m_uiRefreshQueued = false;
 		bool m_refreshContentRequested = false;
 		qint64 m_lastActivationRefreshMs = 0;
-		bool m_activityLogExpanded = false;
 		int m_nextRunIndex = 0;
-		int m_startedRunCount = 0;
-		int m_finishedRunCount = 0;
-		int m_failedRunCount = 0;
 		QStringList m_pendingRestartRunIds;
 	};
 }
