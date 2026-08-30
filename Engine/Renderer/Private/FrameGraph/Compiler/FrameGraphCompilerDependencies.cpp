@@ -9,7 +9,7 @@
 
 class FrameGraphDependencyRegistrar final
 {
-  public:
+public:
 	static void AddRawDependency(std::vector<FrameGraphPassIndex>& dependsOn, FrameGraphPassIndex dependency) noexcept
 	{
 		if (dependency == INVALID_FRAME_GRAPH_PASS_INDEX)

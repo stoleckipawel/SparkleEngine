@@ -8,11 +8,11 @@ class PassExecutionDiagnostics;
 
 class RayTracingPerformanceDiagnostics final
 {
-  public:
+public:
 	explicit RayTracingPerformanceDiagnostics(PassExecutionDiagnostics* passDiagnostics = nullptr) noexcept;
 
 	ScopedGpuScope BeginGpuScope(std::string_view label) noexcept;
 
-  private:
+private:
 	PassExecutionDiagnostics* m_passDiagnostics = nullptr;
 };

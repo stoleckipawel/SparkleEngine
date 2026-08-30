@@ -6,8 +6,11 @@
 
 class FrameGraphTransientAliasingPolicy final
 {
-  public:
-	static bool AreClearValuesEqual(const RhiOptimizedClearValue& lhs, const RhiOptimizedClearValue& rhs, FrameGraphResourceKind kind) noexcept
+public:
+	static bool AreClearValuesEqual(
+	    const RhiOptimizedClearValue& lhs,
+	    const RhiOptimizedClearValue& rhs,
+	    FrameGraphResourceKind kind) noexcept
 	{
 		if (lhs.ValueType != rhs.ValueType || lhs.Format != rhs.Format)
 		{
@@ -46,8 +49,8 @@ class FrameGraphTransientAliasingPolicy final
 			return false;
 		}
 
-		if (currentOwner.lifetime.lastExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX ||
-		    transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
+		if (currentOwner.lifetime.lastExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX
+		    || transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
 			return false;
 		}
@@ -57,8 +60,8 @@ class FrameGraphTransientAliasingPolicy final
 			return false;
 		}
 
-		if (ownerPhysicalPlan.alignment != physicalPlan.alignment || ownerPhysicalPlan.sizeInBytes < physicalPlan.sizeInBytes ||
-		    ownerPhysicalPlan.memoryBlockOffset != physicalPlan.memoryBlockOffset)
+		if (ownerPhysicalPlan.alignment != physicalPlan.alignment || ownerPhysicalPlan.sizeInBytes < physicalPlan.sizeInBytes
+		    || ownerPhysicalPlan.memoryBlockOffset != physicalPlan.memoryBlockOffset)
 		{
 			return false;
 		}
@@ -80,15 +83,14 @@ class FrameGraphTransientAliasingPolicy final
 			return false;
 		}
 
-		if (ownerPhysicalPlan.hasOptimizedClearValue &&
-		    !AreClearValuesEqual(ownerPhysicalPlan.optimizedClearValue, physicalPlan.optimizedClearValue, transientPlan.kind))
+		if (ownerPhysicalPlan.hasOptimizedClearValue
+		    && !AreClearValuesEqual(ownerPhysicalPlan.optimizedClearValue, physicalPlan.optimizedClearValue, transientPlan.kind))
 		{
 			return false;
 		}
 
 		return true;
 	}
-
 };
 
 void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
@@ -157,8 +159,10 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 			continue;
 		}
 
-		const auto stateIt =
-		    std::find(transientPlan->lifetime.requiredStates.begin(), transientPlan->lifetime.requiredStates.end(), productRoot.requiredState);
+		const auto stateIt = std::find(
+		    transientPlan->lifetime.requiredStates.begin(),
+		    transientPlan->lifetime.requiredStates.end(),
+		    productRoot.requiredState);
 		if (stateIt == transientPlan->lifetime.requiredStates.end())
 		{
 			transientPlan->lifetime.requiredStates.push_back(productRoot.requiredState);
@@ -175,9 +179,7 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 	    m_plan.transients.resources.begin(),
 	    m_plan.transients.resources.end(),
 	    [](const FrameGraphTransientResourcePlan& transientPlan) noexcept
-	    {
-		    return transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX;
-	    });
+	    { return transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX; });
 	m_plan.transients.resources.erase(unusedIt, m_plan.transients.resources.end());
 
 	for (const FrameGraphTransientResourcePlan& transientPlan : m_plan.transients.resources)
@@ -245,9 +247,7 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 		{
 			const std::uint32_t blockIndex = static_cast<std::uint32_t>(m_plan.transients.physicalBlocks.size());
 			m_plan.transients.physicalBlocks.push_back(
-			    FrameGraphTransientPhysicalBlockPlan{
-			        .physicalBlockIndex = blockIndex,
-			        .handles = {transientPlan->handle}});
+			    FrameGraphTransientPhysicalBlockPlan{.physicalBlockIndex = blockIndex, .handles = {transientPlan->handle}});
 			selectedBlock = &m_plan.transients.physicalBlocks.back();
 		}
 		else

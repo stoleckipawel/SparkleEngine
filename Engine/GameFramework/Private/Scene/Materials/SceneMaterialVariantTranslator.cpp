@@ -9,50 +9,52 @@
 namespace SceneMaterialVariantTranslator
 {
 
-		void AppendBindingsForMeshAsset(
-		    const SceneAssetPayload& sceneAssetPayload,
-		    const SceneAssetPayload::MaterialVariantMapping& mapping,
-		    MaterialHandle materialBaseHandle,
-		    SceneMeshInstanceIndex sceneMeshBaseIndex,
-		    const ECS::GameWorldState& world,
-		    std::vector<MaterialVariantBinding>& outBindings)
+	void AppendBindingsForMeshAsset(
+	    const SceneAssetPayload& sceneAssetPayload,
+	    const SceneAssetPayload::MaterialVariantMapping& mapping,
+	    MaterialHandle materialBaseHandle,
+	    SceneMeshInstanceIndex sceneMeshBaseIndex,
+	    const ECS::GameWorldState& world,
+	    std::vector<MaterialVariantBinding>& outBindings)
+	{
+		if (!mapping.material.IsValid() || !materialBaseHandle.IsValid())
+			return;
+
+		const MaterialHandle sceneMaterialHandle(
+		    materialBaseHandle.GetIndex() + mapping.material.GetIndex(),
+		    materialBaseHandle.GetGeneration());
+		SceneMeshInstanceIndex localMeshInstanceIndex = 0;
+		if (mapping.meshAssetKind == Assets::CookedMeshAssetKind::Static)
 		{
-			if (!mapping.material.IsValid() || !materialBaseHandle.IsValid())
-				return;
-
-			const MaterialHandle sceneMaterialHandle(
-			    materialBaseHandle.GetIndex() + mapping.material.GetIndex(), materialBaseHandle.GetGeneration());
-			SceneMeshInstanceIndex localMeshInstanceIndex = 0;
-			if (mapping.meshAssetKind == Assets::CookedMeshAssetKind::Static)
-			{
-				for (const SceneAssetPayload::StaticMeshInstance& meshInstance : sceneAssetPayload.staticMeshInstances)
-				{
-					if (meshInstance.meshAssetIndex == mapping.meshAssetIndex)
-					{
-						outBindings.push_back(MaterialVariantBinding{
-						    .Variant = mapping.variantIndex,
-						    .Entity = world.GetMeshEntity(sceneMeshBaseIndex + localMeshInstanceIndex),
-						    .Material = sceneMaterialHandle});
-					}
-					++localMeshInstanceIndex;
-				}
-				return;
-			}
-
-			localMeshInstanceIndex = static_cast<SceneMeshInstanceIndex>(sceneAssetPayload.staticMeshInstances.size());
-			for (const SceneAssetPayload::SkeletalMeshInstance& meshInstance : sceneAssetPayload.skeletalMeshInstances)
+			for (const SceneAssetPayload::StaticMeshInstance& meshInstance : sceneAssetPayload.staticMeshInstances)
 			{
 				if (meshInstance.meshAssetIndex == mapping.meshAssetIndex)
 				{
-					outBindings.push_back(MaterialVariantBinding{
-					    .Variant = mapping.variantIndex,
-					    .Entity = world.GetMeshEntity(sceneMeshBaseIndex + localMeshInstanceIndex),
-					    .Material = sceneMaterialHandle});
+					outBindings.push_back(
+					    MaterialVariantBinding{
+					        .Variant = mapping.variantIndex,
+					        .Entity = world.GetMeshEntity(sceneMeshBaseIndex + localMeshInstanceIndex),
+					        .Material = sceneMaterialHandle});
 				}
 				++localMeshInstanceIndex;
 			}
+			return;
 		}
 
+		localMeshInstanceIndex = static_cast<SceneMeshInstanceIndex>(sceneAssetPayload.staticMeshInstances.size());
+		for (const SceneAssetPayload::SkeletalMeshInstance& meshInstance : sceneAssetPayload.skeletalMeshInstances)
+		{
+			if (meshInstance.meshAssetIndex == mapping.meshAssetIndex)
+			{
+				outBindings.push_back(
+				    MaterialVariantBinding{
+				        .Variant = mapping.variantIndex,
+				        .Entity = world.GetMeshEntity(sceneMeshBaseIndex + localMeshInstanceIndex),
+				        .Material = sceneMaterialHandle});
+			}
+			++localMeshInstanceIndex;
+		}
+	}
 
 	std::vector<MaterialVariantDesc> BuildDescriptions(const SceneAssetPayload& sceneAssetPayload)
 	{

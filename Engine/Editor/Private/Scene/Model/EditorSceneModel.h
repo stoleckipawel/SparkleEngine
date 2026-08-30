@@ -21,7 +21,7 @@ struct EditorSceneEntry final
 
 class EditorSceneModel final
 {
-  public:
+public:
 	std::uint64_t GetModelGeneration() const noexcept { return m_modelGeneration; }
 	std::uint64_t GetWorldGeneration() const noexcept { return m_worldGeneration; }
 	WorldSequence GetWorldSequence() const noexcept { return m_worldSequence; }
@@ -41,7 +41,7 @@ class EditorSceneModel final
 	bool Contains(const SceneObjectSelection& selection) const noexcept;
 	const EditorSceneEntry* FindEntry(const SceneObjectSelection& selection) const noexcept;
 
-  private:
+private:
 	friend class EditorSceneModelBuilder;
 	void RebuildEntries();
 	std::uint64_t m_modelGeneration = 0;
@@ -57,4 +57,3 @@ class EditorSceneModel final
 	std::vector<EditorSceneEntry> m_meshEntries;
 	EditorSceneEntry m_skyEntry;
 };
-

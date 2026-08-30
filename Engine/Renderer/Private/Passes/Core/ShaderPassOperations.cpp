@@ -57,4 +57,4 @@ namespace ShaderPassOperations
 		return bindingNames;
 	}
 
-} // namespace ShaderPassOperations
+}

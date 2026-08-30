@@ -11,9 +11,7 @@ enum class EFrameGraphQueuePreference : std::uint8_t
 	Copy,
 };
 
-constexpr bool IsQueuePreferenceCompatible(
-	EFrameGraphPassKind passKind,
-	EFrameGraphQueuePreference queuePreference) noexcept
+constexpr bool IsQueuePreferenceCompatible(EFrameGraphPassKind passKind, EFrameGraphQueuePreference queuePreference) noexcept
 {
 	switch (queuePreference)
 	{

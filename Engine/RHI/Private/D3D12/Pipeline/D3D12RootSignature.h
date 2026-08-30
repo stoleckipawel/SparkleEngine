@@ -20,7 +20,7 @@ struct RootSignatureDesc
 
 class D3D12RootSignature
 {
-  public:
+public:
 	D3D12RootSignature(D3D12Rhi& rhi, const RootSignatureDesc& desc);
 	~D3D12RootSignature() noexcept;
 	D3D12RootSignature(const D3D12RootSignature&) = delete;
@@ -29,7 +29,7 @@ class D3D12RootSignature
 	ComPtr<ID3D12RootSignature> Get() noexcept { return m_rootSignature; }
 	ID3D12RootSignature* GetRaw() const noexcept { return m_rootSignature.Get(); }
 
-  private:
+private:
 	void Create(const RootSignatureDesc& desc);
 	D3D12Rhi& m_rhi;
 	ComPtr<ID3D12RootSignature> m_rootSignature = nullptr;

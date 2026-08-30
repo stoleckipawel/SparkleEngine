@@ -4,7 +4,10 @@
 
 #include "Core/Public/Strings/StringUtils.h"
 
-ConsoleHistoryBuffer::ConsoleHistoryBuffer(std::size_t maxEntries) : m_maxEntries(maxEntries == 0 ? kDefaultMaxEntries : maxEntries) {}
+ConsoleHistoryBuffer::ConsoleHistoryBuffer(std::size_t maxEntries) :
+    m_maxEntries(maxEntries == 0 ? kDefaultMaxEntries : maxEntries)
+{
+}
 
 void ConsoleHistoryBuffer::Add(std::string_view line)
 {

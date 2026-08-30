@@ -2,12 +2,12 @@
 #include "Scene/Meshes/Mesh.h"
 
 Mesh::Mesh(MeshData&& meshData) noexcept :
-	m_meshData(std::move(meshData))
+    m_meshData(std::move(meshData))
 {
 }
 
 Mesh::Mesh(const MeshData& meshData) :
-	m_meshData(meshData)
+    m_meshData(meshData)
 {
 }
 

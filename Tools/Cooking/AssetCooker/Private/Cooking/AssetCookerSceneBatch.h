@@ -13,12 +13,10 @@ struct TaskExecutorConfig;
 
 class AssetCookerSceneBatch final
 {
-  public:
-	static bool Execute(
-	    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-	    AssetCookerDiagnostics& diagnostics);
+public:
+	static bool Execute(const std::vector<AssetCookerSceneEntry>& sceneEntries, AssetCookerDiagnostics& diagnostics);
 
-  private:
+private:
 	struct Item;
 
 	static std::uint32_t ResolveWorkerCount() noexcept;
@@ -32,13 +30,7 @@ class AssetCookerSceneBatch final
 	    std::vector<Item>& items,
 	    std::uint32_t index,
 	    TaskExecutionContext& context);
-	static bool BuildProducts(
-	    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-	    std::vector<Item>& items);
-	static void MergeDiagnostics(
-	    std::vector<Item>& items,
-	    AssetCookerDiagnostics& diagnostics);
-	static bool PublishProducts(
-	    std::vector<Item>& items,
-	    AssetCookerDiagnostics& diagnostics);
+	static bool BuildProducts(const std::vector<AssetCookerSceneEntry>& sceneEntries, std::vector<Item>& items);
+	static void MergeDiagnostics(std::vector<Item>& items, AssetCookerDiagnostics& diagnostics);
+	static bool PublishProducts(std::vector<Item>& items, AssetCookerDiagnostics& diagnostics);
 };

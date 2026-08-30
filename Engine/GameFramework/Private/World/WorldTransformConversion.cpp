@@ -11,20 +11,15 @@ namespace ECS::WorldTransformConversion
 		LocalTransform local;
 		local.Translation = transform.GetTranslation();
 		local.Scale = transform.GetScale();
-		DirectX::XMStoreFloat4(
-		    &local.Rotation,
-		    DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z));
+		DirectX::XMStoreFloat4(&local.Rotation, DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z));
 		return local;
 	}
 
 	Transform ToPublic(const LocalTransform& transform) noexcept
 	{
-		const DirectX::XMMATRIX matrix = DirectX::XMMatrixScaling(transform.Scale.x, transform.Scale.y, transform.Scale.z) *
-		                                 DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.Rotation)) *
-		                                 DirectX::XMMatrixTranslation(
-		                                     transform.Translation.x,
-		                                     transform.Translation.y,
-		                                     transform.Translation.z);
+		const DirectX::XMMATRIX matrix = DirectX::XMMatrixScaling(transform.Scale.x, transform.Scale.y, transform.Scale.z)
+		    * DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.Rotation))
+		    * DirectX::XMMatrixTranslation(transform.Translation.x, transform.Translation.y, transform.Translation.z);
 		return Transform(matrix);
 	}
 

@@ -6,7 +6,8 @@
 
 namespace ECS
 {
-	EntityCommandBuffer::EntityCommandBuffer(EntityCommandBufferDesc desc) : m_desc(desc)
+	EntityCommandBuffer::EntityCommandBuffer(EntityCommandBufferDesc desc) :
+	    m_desc(desc)
 	{
 		m_commands.reserve(m_desc.MaxCommands);
 	}
@@ -48,8 +49,8 @@ namespace ECS
 
 	bool EntityCommandBuffer::CanRecord() noexcept
 	{
-		if (m_committed || m_overflowed || m_commands.size() >= m_desc.MaxCommands ||
-		    m_nextSequence == (std::numeric_limits<std::uint32_t>::max)())
+		if (m_committed || m_overflowed || m_commands.size() >= m_desc.MaxCommands
+		    || m_nextSequence == (std::numeric_limits<std::uint32_t>::max)())
 		{
 			m_overflowed = true;
 			return false;

@@ -20,4 +20,3 @@ struct RayTracingPerformanceMetrics final
 	RayTracingBlasMetrics Blas;
 	std::uint32_t TopLevelInstanceCount = 0;
 };
-

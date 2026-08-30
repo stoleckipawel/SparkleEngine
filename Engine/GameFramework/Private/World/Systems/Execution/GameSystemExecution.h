@@ -17,14 +17,14 @@ namespace ECS
 
 	class GameSystemExecution final
 	{
-	  public:
+	public:
 		static TaskResult ExecutePartition(
 		    std::uint32_t systemIndex,
 		    std::uint32_t partitionIndex,
 		    const ParallelForPolicy& policy,
 		    TaskExecutionContext& taskContext);
 
-	  private:
+	private:
 		static std::uint32_t ResolvePartitionCount(std::uint32_t itemCount, const ParallelForPolicy& policy) noexcept;
 	};
 }

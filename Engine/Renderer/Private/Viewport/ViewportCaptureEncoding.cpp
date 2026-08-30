@@ -4,8 +4,7 @@
 
 #include "RHI/Public/Capture/RhiCaptureService.h"
 
-bool WriteViewportCaptureBmp(
-    const ViewportCaptureReadback& readback) noexcept
+bool WriteViewportCaptureBmp(const ViewportCaptureReadback& readback) noexcept
 {
 	RhiCaptureReadback rhiReadback;
 	rhiReadback.Pixels = readback.Pixels;
@@ -13,7 +12,5 @@ bool WriteViewportCaptureBmp(
 	rhiReadback.Height = readback.Height;
 	rhiReadback.RowPitch = readback.RowPitch;
 	rhiReadback.Format = readback.Format;
-	return WriteRhiCaptureBmp(
-	    rhiReadback,
-	    readback.Result.ArtifactPath);
+	return WriteRhiCaptureBmp(rhiReadback, readback.Result.ArtifactPath);
 }

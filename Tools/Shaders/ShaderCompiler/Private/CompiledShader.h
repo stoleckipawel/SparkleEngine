@@ -14,10 +14,10 @@
 // ShaderBytecode stays under RHI public because runtime readers return it.
 class CompiledShader
 {
-  public:
-	CompiledShader(std::vector<std::uint8_t>&& bytecode, std::filesystem::path debugArtifactPath = {})
-	    : m_bytecode(std::move(bytecode))
-	    , m_debugArtifactPath(std::move(debugArtifactPath))
+public:
+	CompiledShader(std::vector<std::uint8_t>&& bytecode, std::filesystem::path debugArtifactPath = {}) :
+	    m_bytecode(std::move(bytecode)),
+	    m_debugArtifactPath(std::move(debugArtifactPath))
 	{
 	}
 
@@ -31,7 +31,7 @@ class CompiledShader
 	ShaderDebugArtifactSet&& TakeDebugArtifacts() noexcept { return std::move(m_debugArtifacts); }
 	void SetDebugArtifacts(ShaderDebugArtifactSet&& debugArtifacts) noexcept { m_debugArtifacts = std::move(debugArtifacts); }
 
-  private:
+private:
 	std::vector<std::uint8_t> m_bytecode;
 	std::filesystem::path m_debugArtifactPath;
 	ShaderReflection m_reflection;

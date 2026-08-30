@@ -11,7 +11,7 @@
 template <typename Signature, std::size_t Capacity = 8> class Event;
 template <typename... Args, std::size_t Capacity> class Event<void(Args...), Capacity>
 {
-  public:
+public:
 	using CallbackType = std::function<void(Args...)>;
 
 	Event() noexcept = default;
@@ -97,7 +97,7 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 
 	static constexpr std::size_t GetCapacity() noexcept { return Capacity; }
 
-  private:
+private:
 	struct Entry
 	{
 		EventHandle Handle;

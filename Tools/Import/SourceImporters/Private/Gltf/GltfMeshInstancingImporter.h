@@ -19,14 +19,10 @@ struct GltfMeshGpuInstancingTransforms
 
 class GltfMeshInstancingImporter final
 {
-	public:
-	static GltfMeshGpuInstancingTransforms ReadMeshGpuInstancingTransforms(
-	    const cgltf_node& node,
-	    std::string_view nodeLabel);
-	static DirectX::XMMATRIX BuildMeshGpuInstancingTransform(
-	    const GltfMeshGpuInstancingTransforms& transforms,
-	    std::size_t instanceIndex);
+public:
+	static GltfMeshGpuInstancingTransforms ReadMeshGpuInstancingTransforms(const cgltf_node& node, std::string_view nodeLabel);
+	static DirectX::XMMATRIX BuildMeshGpuInstancingTransform(const GltfMeshGpuInstancingTransforms& transforms, std::size_t instanceIndex);
 
-  private:
+private:
 	static const cgltf_accessor* FindMeshGpuInstancingAttribute(const cgltf_node& node, std::string_view attributeName);
 };

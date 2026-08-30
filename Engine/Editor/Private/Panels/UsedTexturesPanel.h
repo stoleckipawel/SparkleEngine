@@ -8,7 +8,7 @@
 
 class UsedTexturesPanel final
 {
-  public:
+public:
 	using DiagnosticsProvider = std::function<TextureDiagnosticsSnapshot()>;
 
 	void SetOpen(bool open) noexcept { m_isOpen = open; }
@@ -16,7 +16,7 @@ class UsedTexturesPanel final
 	void SetDiagnosticsProvider(DiagnosticsProvider provider);
 	void BuildUI(bool disableInteraction);
 
-  private:
+private:
 	void RefreshSnapshot();
 	void DrawToolbar();
 	void DrawTextureTable(bool disableInteraction);

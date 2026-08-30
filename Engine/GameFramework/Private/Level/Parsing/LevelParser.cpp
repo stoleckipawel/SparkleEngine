@@ -14,7 +14,7 @@
 
 class LevelDocumentCodec final
 {
-  public:
+public:
 	static void ParseLevelSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
 	{
 		if (parsedLine.key == "Name")
@@ -28,9 +28,7 @@ class LevelDocumentCodec final
 		throw Diagnostics::Error("Unsupported level field: " + parsedLine.key);
 	}
 
-	static void ParseSceneAssetsSectionField(
-	    const LevelParsing::ParsedLevelLine& parsedLine,
-	    LevelDesc& levelDesc)
+	static void ParseSceneAssetsSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
 	{
 		if (parsedLine.key != "Asset")
 			throw Diagnostics::Error("Unsupported scene-assets field: " + parsedLine.key);
@@ -136,8 +134,7 @@ std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::pat
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			throw Diagnostics::Error(
-			    std::format("{} ({}:{})", error.what(), filePath.string(), lineNumber));
+			throw Diagnostics::Error(std::format("{} ({}:{})", error.what(), filePath.string(), lineNumber));
 		}
 	}
 

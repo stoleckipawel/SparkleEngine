@@ -12,9 +12,9 @@
 #include <utility>
 
 #if defined(_WIN32)
-	#define WIN32_LEAN_AND_MEAN
-	#define NOMINMAX
-	#include <Windows.h>
+  #define WIN32_LEAN_AND_MEAN
+  #define NOMINMAX
+  #include <Windows.h>
 #endif
 
 namespace Filesystem::Private
@@ -298,9 +298,7 @@ namespace Filesystem
 
 		std::error_code errorCode;
 		const std::filesystem::path workingDirectory = std::filesystem::current_path(errorCode);
-		return !workingDirectory.empty() && !errorCode ?
-		           Paths::Normalize(workingDirectory) :
-		           Paths::Normalize(GetExecutableDirectory());
+		return !workingDirectory.empty() && !errorCode ? Paths::Normalize(workingDirectory) : Paths::Normalize(GetExecutableDirectory());
 	}
 
 	std::filesystem::path ResolveBuildOutputRootPath()

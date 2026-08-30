@@ -7,6 +7,6 @@
 
 class CookedMeshAssetBuilder final
 {
-  public:
+public:
 	static MeshCookOutput BuildMeshAssets(const SourceImportOutput& importOutput, std::string_view sceneAssetId);
 };

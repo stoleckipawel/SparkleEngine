@@ -21,10 +21,7 @@ namespace SparkleLauncher
 	class LauncherActivityPanel final : public QFrame
 	{
 	public:
-		LauncherActivityPanel(
-		    const LauncherIconLibrary& icons,
-		    std::function<void(QWidget*)> registerFocusable,
-		    QWidget* parent = nullptr);
+		LauncherActivityPanel(const LauncherIconLibrary& icons, std::function<void(QWidget*)> registerFocusable, QWidget* parent = nullptr);
 
 		void ShowMessage(const QString& message);
 		void RegisterRun(const QString& runId, const QString& title);
@@ -46,7 +43,6 @@ namespace SparkleLauncher
 			Queued,
 			Running,
 			Done,
-			Canceled,
 			Failed,
 		};
 
@@ -56,6 +52,15 @@ namespace SparkleLauncher
 			QFrame* Indicator = nullptr;
 			QLabel* TitleLabel = nullptr;
 			QLabel* StateLabel = nullptr;
+		};
+
+		struct RunRecord
+		{
+			QListWidgetItem* Item = nullptr;
+			RunWidgets Widgets;
+			RunState State = RunState::Queued;
+			QString Title;
+			QString Output;
 		};
 
 		RunWidgets CreateRunWidgets(const QString& title);
@@ -73,11 +78,7 @@ namespace SparkleLauncher
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_toggleOutputButton = nullptr;
 		QPushButton* m_copyOutputButton = nullptr;
-		QHash<QString, QListWidgetItem*> m_runItems;
-		QHash<QString, RunWidgets> m_runWidgets;
-		QHash<QString, RunState> m_runStates;
-		QHash<QString, QString> m_runTitles;
-		QHash<QString, QString> m_runOutputs;
+		QHash<QString, RunRecord> m_runs;
 		QIcon m_queuedIcon;
 		QIcon m_runningIcon;
 		QIcon m_doneIcon;

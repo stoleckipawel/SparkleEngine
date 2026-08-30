@@ -38,4 +38,4 @@ namespace FrameGraphCopyPasses
 		    },
 		    [destination, source](PassCommandContext& context) { context.Resources.CopyBuffer(context.Commands, destination, source); });
 	}
-} // namespace FrameGraphCopyPasses
+}

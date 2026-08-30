@@ -53,16 +53,14 @@ void ImGuiRenderPacketBuilder::AppendTextureUpdates(const ImDrawData& drawData)
 			continue;
 		}
 
-		const EditorTextureHandle handle =
-		    EditorTextureHandle::ImGuiTexture(static_cast<std::uint32_t>(texture->UniqueID));
+		const EditorTextureHandle handle = EditorTextureHandle::ImGuiTexture(static_cast<std::uint32_t>(texture->UniqueID));
 		switch (texture->Status)
 		{
 			case ImTextureStatus_WantCreate:
 			case ImTextureStatus_WantUpdates:
 				if (AppendTextureUpload(*texture, handle))
 				{
-					texture->SetTexID(
-					    static_cast<ImTextureID>(handle.Pack()));
+					texture->SetTexID(static_cast<ImTextureID>(handle.Pack()));
 					texture->SetStatus(ImTextureStatus_OK);
 				}
 				break;
@@ -77,19 +75,14 @@ void ImGuiRenderPacketBuilder::AppendTextureUpdates(const ImDrawData& drawData)
 	}
 }
 
-bool ImGuiRenderPacketBuilder::AppendTextureUpload(
-    ImTextureData& texture,
-    EditorTextureHandle handle)
+bool ImGuiRenderPacketBuilder::AppendTextureUpload(ImTextureData& texture, EditorTextureHandle handle)
 {
-	if (texture.Pixels == nullptr || texture.Width <= 0 ||
-	    texture.Height <= 0 || texture.BytesPerPixel <= 0)
+	if (texture.Pixels == nullptr || texture.Width <= 0 || texture.Height <= 0 || texture.BytesPerPixel <= 0)
 	{
 		return false;
 	}
 
-	const std::size_t pixelCount =
-	    static_cast<std::size_t>(texture.Width) *
-	    static_cast<std::size_t>(texture.Height);
+	const std::size_t pixelCount = static_cast<std::size_t>(texture.Width) * static_cast<std::size_t>(texture.Height);
 	const std::size_t pixelOffset = m_packet.TexturePixels.size();
 	if (texture.Format == ImTextureFormat_Alpha8)
 	{
@@ -99,29 +92,24 @@ bool ImGuiRenderPacketBuilder::AppendTextureUpload(
 			m_packet.TexturePixels.push_back(std::byte{0xff});
 			m_packet.TexturePixels.push_back(std::byte{0xff});
 			m_packet.TexturePixels.push_back(std::byte{0xff});
-			m_packet.TexturePixels.push_back(
-			    static_cast<std::byte>(texture.Pixels[pixelIndex]));
+			m_packet.TexturePixels.push_back(static_cast<std::byte>(texture.Pixels[pixelIndex]));
 		}
 	}
 	else
 	{
-		const std::byte* pixels =
-		    reinterpret_cast<const std::byte*>(texture.Pixels);
-		m_packet.TexturePixels.insert(
-		    m_packet.TexturePixels.end(),
-		    pixels,
-		    pixels + (pixelCount * 4));
+		const std::byte* pixels = reinterpret_cast<const std::byte*>(texture.Pixels);
+		m_packet.TexturePixels.insert(m_packet.TexturePixels.end(), pixels, pixels + (pixelCount * 4));
 	}
 
-	const std::size_t uploadPixelCount =
-	    m_packet.TexturePixels.size() - pixelOffset;
+	const std::size_t uploadPixelCount = m_packet.TexturePixels.size() - pixelOffset;
 
-	m_packet.TextureUploads.push_back(UiTextureUpload{
-	    .Texture = handle,
-	    .Width = static_cast<std::uint32_t>(texture.Width),
-	    .Height = static_cast<std::uint32_t>(texture.Height),
-	    .PixelOffset = static_cast<std::uint32_t>(pixelOffset),
-	    .PixelCount = static_cast<std::uint32_t>(uploadPixelCount)});
+	m_packet.TextureUploads.push_back(
+	    UiTextureUpload{
+	        .Texture = handle,
+	        .Width = static_cast<std::uint32_t>(texture.Width),
+	        .Height = static_cast<std::uint32_t>(texture.Height),
+	        .PixelOffset = static_cast<std::uint32_t>(pixelOffset),
+	        .PixelCount = static_cast<std::uint32_t>(uploadPixelCount)});
 	return true;
 }
 
@@ -153,10 +141,8 @@ void ImGuiRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 
 	for (const ImDrawVert& vertex : drawList.VtxBuffer)
 	{
-		m_packet.Vertices.push_back(UiDrawVertex{
-		    .Position = {vertex.pos.x, vertex.pos.y},
-		    .Uv = {vertex.uv.x, vertex.uv.y},
-		    .Color = vertex.col});
+		m_packet.Vertices.push_back(
+		    UiDrawVertex{.Position = {vertex.pos.x, vertex.pos.y}, .Uv = {vertex.uv.x, vertex.uv.y}, .Color = vertex.col});
 	}
 	for (ImDrawIdx index : drawList.IdxBuffer)
 	{
@@ -164,17 +150,16 @@ void ImGuiRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 	}
 	for (const ImDrawCmd& command : drawList.CmdBuffer)
 	{
-		const std::uint64_t packedTextureHandle =
-		    static_cast<std::uint64_t>(command.GetTexID());
-		m_packet.Commands.push_back(UiDrawCommand{
-		    .ClipRect = {command.ClipRect.x, command.ClipRect.y, command.ClipRect.z, command.ClipRect.w},
-		    .TextureHandle = EditorTextureHandle::Unpack(packedTextureHandle),
-		    .ElementCount = command.ElemCount,
-		    .IndexOffset = command.IdxOffset,
-		    .VertexOffset = static_cast<std::int32_t>(command.VtxOffset),
-		    .Kind = command.UserCallback == ImDrawCallback_ResetRenderState
-		                ? UiDrawCommandKind::ResetRenderState
-		                : UiDrawCommandKind::Draw});
+		const std::uint64_t packedTextureHandle = static_cast<std::uint64_t>(command.GetTexID());
+		m_packet.Commands.push_back(
+		    UiDrawCommand{
+		        .ClipRect = {command.ClipRect.x, command.ClipRect.y, command.ClipRect.z, command.ClipRect.w},
+		        .TextureHandle = EditorTextureHandle::Unpack(packedTextureHandle),
+		        .ElementCount = command.ElemCount,
+		        .IndexOffset = command.IdxOffset,
+		        .VertexOffset = static_cast<std::int32_t>(command.VtxOffset),
+		        .Kind = command.UserCallback == ImDrawCallback_ResetRenderState ? UiDrawCommandKind::ResetRenderState
+		                                                                        : UiDrawCommandKind::Draw});
 	}
 	m_packet.DrawLists.push_back(packetList);
 }

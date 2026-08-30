@@ -25,4 +25,6 @@ namespace Assets
 	};
 }
 
-static_assert(std::is_trivially_copyable_v<Assets::CookedTextureReferenceRecord>, "CookedTextureReferenceRecord must stay trivially copyable.");
+static_assert(
+    std::is_trivially_copyable_v<Assets::CookedTextureReferenceRecord>,
+    "CookedTextureReferenceRecord must stay trivially copyable.");

@@ -7,10 +7,10 @@ namespace Assets
 {
 	class CookedMaterialTranslator final
 	{
-	  public:
+	public:
 		MaterialDesc Translate(const LoadedMaterialAsset& materialAsset) const;
 
-	  private:
+	private:
 		static AlphaMode TranslateAlphaMode(CookedAlphaMode alphaMode);
 	};
 }

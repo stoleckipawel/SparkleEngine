@@ -19,9 +19,10 @@ struct EditorCommandPair final
 // Panels own widget behavior only and never reconstruct domain mutation rules.
 class SceneObjectCommandFactory final
 {
-  public:
+public:
 	static std::optional<EditorCommandPair> SetVisibility(
-	    const EditorSceneModel& model, const SceneObjectSelection& selection, bool visible);
-	static std::optional<EditorCommandPair> SetActiveCamera(
-	    const EditorSceneModel& model, EntityId camera);
+	    const EditorSceneModel& model,
+	    const SceneObjectSelection& selection,
+	    bool visible);
+	static std::optional<EditorCommandPair> SetActiveCamera(const EditorSceneModel& model, EntityId camera);
 };

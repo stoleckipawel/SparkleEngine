@@ -10,7 +10,7 @@ class RenderCommandList;
 
 class SPARKLE_RHI_API RhiCommandSubmissionService
 {
-  public:
+public:
 	virtual ~RhiCommandSubmissionService() noexcept;
 
 	virtual void PrepareCommandRecording() noexcept = 0;
@@ -27,8 +27,7 @@ class SPARKLE_RHI_API RhiCommandSubmissionService
 	virtual RhiSubmissionToken SubmitCommandRecordingBatch(
 	    std::span<RhiCommandRecordingLease> leases,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept = 0;
-	virtual RhiSubmissionToken SubmitCurrentGraphicsCommandList(
-	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept = 0;
+	virtual RhiSubmissionToken SubmitCurrentGraphicsCommandList(std::span<const RhiSubmissionToken> waitTokens = {}) noexcept = 0;
 	virtual void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept = 0;
 	virtual void WaitForSubmission(RhiSubmissionToken token) noexcept = 0;
 	virtual bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept = 0;

@@ -233,9 +233,7 @@ void ShaderRecookCoordinator::HandleManualReload(Renderer& renderer) noexcept
 	{
 		ReloadShaders(renderer);
 		PublishStatus(
-		    std::format(
-		        "Manual shader reload activated generation {} without a device-idle drain.",
-		        renderer.GetShaderGeneration()));
+		    std::format("Manual shader reload activated generation {} without a device-idle drain.", renderer.GetShaderGeneration()));
 	}
 	catch (const Diagnostics::Error& error)
 	{

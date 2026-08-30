@@ -6,7 +6,8 @@
 
 #include <utility>
 
-ScopedGpuEvent::ScopedGpuEvent(RenderCommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept : m_commands(&commands)
+ScopedGpuEvent::ScopedGpuEvent(RenderCommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept :
+    m_commands(&commands)
 {
 	if (label.empty())
 	{
@@ -27,7 +28,8 @@ bool ScopedGpuEvent::IsActive() const noexcept
 	return m_commands != nullptr;
 }
 
-ScopedGpuEvent::ScopedGpuEvent(ScopedGpuEvent&& other) noexcept : m_commands(other.m_commands)
+ScopedGpuEvent::ScopedGpuEvent(ScopedGpuEvent&& other) noexcept :
+    m_commands(other.m_commands)
 {
 	other.m_commands = nullptr;
 }
@@ -60,7 +62,11 @@ ScopedGpuTimer::ScopedGpuTimer(
     RhiTimestampQueryHandle beginQuery,
     RhiTimestampQueryHandle endQuery,
     ERhiQueueType queueType) noexcept :
-    m_owner(&owner), m_label(std::move(label)), m_beginQuery(beginQuery), m_endQuery(endQuery), m_queueType(queueType)
+    m_owner(&owner),
+    m_label(std::move(label)),
+    m_beginQuery(beginQuery),
+    m_endQuery(endQuery),
+    m_queueType(queueType)
 {
 	if (m_label.empty() || !m_beginQuery || !m_endQuery || !m_owner->WriteTimestamp(commands, m_beginQuery))
 	{
@@ -104,7 +110,7 @@ ScopedGpuTimer::ScopedGpuTimer(ScopedGpuTimer&& other) noexcept :
     m_label(std::move(other.m_label)),
     m_beginQuery(other.m_beginQuery),
     m_endQuery(other.m_endQuery),
-	m_queueType(other.m_queueType),
+    m_queueType(other.m_queueType),
     m_depth(other.m_depth)
 {
 	other.m_owner = nullptr;
@@ -160,7 +166,8 @@ void ScopedGpuTimer::Reset() noexcept
 }
 
 ScopedGpuScope::ScopedGpuScope(ScopedGpuEvent eventScope, ScopedGpuTimer timerScope) noexcept :
-    m_eventScope(std::move(eventScope)), m_timerScope(std::move(timerScope))
+    m_eventScope(std::move(eventScope)),
+    m_timerScope(std::move(timerScope))
 {
 }
 
@@ -170,7 +177,8 @@ bool ScopedGpuScope::IsActive() const noexcept
 }
 
 ScopedGpuScope::ScopedGpuScope(ScopedGpuScope&& other) noexcept :
-    m_eventScope(std::move(other.m_eventScope)), m_timerScope(std::move(other.m_timerScope))
+    m_eventScope(std::move(other.m_eventScope)),
+    m_timerScope(std::move(other.m_timerScope))
 {
 }
 

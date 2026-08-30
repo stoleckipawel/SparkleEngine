@@ -18,7 +18,7 @@ struct RhiPartitionedTlasNativeOperationLayout final
 
 class RhiPartitionedTlasOperationLayout final
 {
-  public:
+public:
 	static RhiPartitionedTlasOperationBufferLayout Build(
 	    std::uint32_t operationCount,
 	    std::uint32_t instanceWriteCount,

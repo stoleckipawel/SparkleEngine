@@ -13,7 +13,7 @@
 
 class PassResourceBuilder final
 {
-  public:
+public:
 	explicit PassResourceBuilder(std::vector<PassResourceDeclaration>& declarations) noexcept;
 	~PassResourceBuilder() noexcept = default;
 
@@ -45,7 +45,7 @@ class PassResourceBuilder final
 	    std::string_view label) noexcept;
 	bool DeclareParameterUsages(const PassParameterSet& parameterSet, std::string_view passName = {}) noexcept;
 
-  private:
+private:
 	void Record(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 	static ResourceUsage GetFrameGraphUsage(const PassParameterDesc& parameter) noexcept;
 	void DeclareTextureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;

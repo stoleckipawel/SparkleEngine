@@ -30,11 +30,10 @@ namespace Paths::Private
 		    PathFormatting::SanitizePathSegment(executableStem.empty() ? "Sparkle" : executableStem);
 		const std::filesystem::path logsRoot = Filesystem::ResolveLogsRootPath();
 		std::filesystem::path logDirectory;
-		if (PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Editor") ||
-		    PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Runtime"))
+		if (PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Editor")
+		    || PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Runtime"))
 		{
-			logDirectory =
-			    logsRoot / "Projects" / InferProjectNameFromExecutableStem(sanitizedExecutableStem) / "Full";
+			logDirectory = logsRoot / "Projects" / InferProjectNameFromExecutableStem(sanitizedExecutableStem) / "Full";
 		}
 		else
 		{

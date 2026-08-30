@@ -10,11 +10,11 @@ namespace ECS
 
 	class SystemChangeCommitter final
 	{
-	  public:
+	public:
 		static bool CommitSystemOutputs(GameWorldState& state);
 		static bool CommitExtraction(GameWorldState& state);
 
-	  private:
+	private:
 		static void SortUnique(std::vector<EntityId>& entities);
 		static void RecordTransformChanges(GameWorldState& state, std::vector<EntityId>& changes);
 	};

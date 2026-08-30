@@ -10,7 +10,7 @@
 
 class SPARKLE_ENGINE_API LevelAsset final
 {
-  public:
+public:
 	LevelAsset(LevelDesc levelDesc, std::filesystem::path sourcePath = {});
 	~LevelAsset() = default;
 
@@ -28,7 +28,7 @@ class SPARKLE_ENGINE_API LevelAsset final
 	const std::filesystem::path& GetSourcePath() const noexcept { return m_sourcePath; }
 	void SetSourcePath(std::filesystem::path sourcePath) noexcept { m_sourcePath = std::move(sourcePath); }
 
-  private:
+private:
 	LevelDesc m_levelDesc;
 	std::filesystem::path m_sourcePath;
 };

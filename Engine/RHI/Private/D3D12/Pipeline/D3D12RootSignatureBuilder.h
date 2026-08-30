@@ -10,7 +10,7 @@ class D3D12RootSignature;
 
 class D3D12RootSignatureBuilder final
 {
-  public:
+public:
 	std::uint32_t AddConstantBufferView(std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility);
 
 	std::uint32_t AddShaderResourceView(std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility);
@@ -34,7 +34,7 @@ class D3D12RootSignatureBuilder final
 
 	std::unique_ptr<D3D12RootSignature> Build(D3D12Rhi& rhi, const wchar_t* debugName) const;
 
-  private:
+private:
 	enum class ParamKind : std::uint8_t
 	{
 		CBV,

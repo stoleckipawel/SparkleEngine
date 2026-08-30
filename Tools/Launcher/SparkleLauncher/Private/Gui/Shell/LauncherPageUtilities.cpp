@@ -4,14 +4,11 @@
 
 namespace SparkleLauncher
 {
-	QString ToDisplayPath(
-	    const std::filesystem::path& repositoryRoot,
-	    const std::filesystem::path& path)
+	QString ToDisplayPath(const std::filesystem::path& repositoryRoot, const std::filesystem::path& path)
 	{
 		std::error_code errorCode;
 		const std::filesystem::path relative = std::filesystem::relative(path, repositoryRoot, errorCode);
-		return QString::fromStdString(
-		    (!errorCode && !relative.empty()) ? relative.generic_string() : path.generic_string());
+		return QString::fromStdString((!errorCode && !relative.empty()) ? relative.generic_string() : path.generic_string());
 	}
 
 	QString FormatDirectoryInventory(const std::filesystem::path& path)
@@ -67,8 +64,7 @@ namespace SparkleLauncher
 		{
 			return false;
 		}
-		return std::filesystem::directory_iterator(path, errorCode) !=
-		       std::filesystem::directory_iterator();
+		return std::filesystem::directory_iterator(path, errorCode) != std::filesystem::directory_iterator();
 	}
 
 	bool PathExists(const std::filesystem::path& path)
@@ -123,4 +119,4 @@ namespace SparkleLauncher
 		}
 		return {};
 	}
-}  // namespace SparkleLauncher
+}

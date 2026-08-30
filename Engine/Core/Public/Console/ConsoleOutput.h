@@ -13,7 +13,7 @@ struct SPARKLE_CORE_API ConsoleOutputRecord final
 
 class SPARKLE_CORE_API ConsoleOutputSink
 {
-  public:
+public:
 	virtual ~ConsoleOutputSink() = default;
 	virtual void Append(ConsoleOutputRecord record) = 0;
 };

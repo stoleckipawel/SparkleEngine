@@ -47,10 +47,7 @@ void UiFrameRenderer::BeginFrame() noexcept
 	}
 }
 
-void UiFrameRenderer::Render(
-    const UiRenderPacket& packet,
-    FrameGraph* frameGraph,
-    ViewportRenderProducts& viewportProducts) noexcept
+void UiFrameRenderer::Render(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept
 {
 	switch (packet.PresentationMode)
 	{
@@ -77,8 +74,8 @@ bool UiFrameRenderer::BeginViewportPresentation(FrameGraph& frameGraph, Viewport
 	RenderProduct publishedProduct = *product;
 	TransitionViewportProduct(frameGraph, viewportProducts, ResourceState::ShaderResource);
 	const FrameGraphResourceHandle resource = ToFrameGraphResourceHandle(product->Handle);
-	const std::uint64_t textureId = m_deviceServices.GetImGuiRenderer().ResolveTextureId(
-	    frameGraph.ResolveShaderResourceView(FrameGraphTextureHandle{resource}));
+	const std::uint64_t textureId =
+	    m_deviceServices.GetImGuiRenderer().ResolveTextureId(frameGraph.ResolveShaderResourceView(FrameGraphTextureHandle{resource}));
 	if (textureId == 0u)
 	{
 		TransitionViewportProduct(frameGraph, viewportProducts, ResourceState::Common);

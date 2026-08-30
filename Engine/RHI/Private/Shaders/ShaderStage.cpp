@@ -13,8 +13,7 @@ namespace ShaderStageFormatting
 		const char* Label;
 	};
 
-	constexpr std::array<const char*, 12> Prefixes =
-	    {"vs", "ps", "gs", "hs", "ds", "cs", "rgs", "miss", "chs", "ahs", "is", "callable"};
+	constexpr std::array<const char*, 12> Prefixes = {"vs", "ps", "gs", "hs", "ds", "cs", "rgs", "miss", "chs", "ahs", "is", "callable"};
 	constexpr std::array<ShaderStageLabel, 12> Labels = {{
 	    {ShaderStageMask::Vertex, "Vertex"},
 	    {ShaderStageMask::Pixel, "Pixel"},

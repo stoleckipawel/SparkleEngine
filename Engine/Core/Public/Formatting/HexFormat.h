@@ -13,4 +13,4 @@ namespace Formatting
 	SPARKLE_CORE_API std::string FormatHexUInt64(std::uint64_t value);
 	SPARKLE_CORE_API std::string FormatPrefixedHexUInt64(std::uint64_t value);
 	SPARKLE_CORE_API bool TryParseHexUInt64(std::string_view text, std::uint64_t& outValue) noexcept;
-}  // namespace Formatting
+}

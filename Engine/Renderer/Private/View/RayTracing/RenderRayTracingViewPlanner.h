@@ -12,9 +12,7 @@ struct PreparedRenderScene;
 class RenderRayTracingViewPlanner final
 {
 public:
-	RayTracingPtlasPartitionPlan Build(
-	    const PreparedRenderScene& preparedScene,
-	    const DirectX::XMFLOAT3& cameraPosition) noexcept;
+	RayTracingPtlasPartitionPlan Build(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	void Reset() noexcept;
 
 private:

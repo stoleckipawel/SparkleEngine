@@ -10,13 +10,11 @@ RayTracingGBufferExecutionPlan ResolveRayTracingGBufferExecutionPlan(const RayTr
 	const GBufferAlgorithm algorithm = CVarGBufferAlgorithm.Get();
 	if (algorithm == GBufferAlgorithm::Rasterized)
 	{
-		return RayTracingGBufferExecutionPlan{
-		    .Reason = RayTracingExecutionReason::RasterizedAlgorithm};
+		return RayTracingGBufferExecutionPlan{.Reason = RayTracingExecutionReason::RasterizedAlgorithm};
 	}
 	if (algorithm != GBufferAlgorithm::RayTracing)
 	{
-		return RayTracingGBufferExecutionPlan{
-		    .Reason = RayTracingExecutionReason::InvalidAlgorithm};
+		return RayTracingGBufferExecutionPlan{.Reason = RayTracingExecutionReason::InvalidAlgorithm};
 	}
 
 	const bool inlineReady =
@@ -47,11 +45,9 @@ RayTracingGBufferExecutionPlan ResolveRayTracingGBufferExecutionPlan(const RayTr
 				    .Active = RayTracingExecutionFrontend::Inline,
 				    .Reason = RayTracingExecutionReason::AutomaticInlineBecausePipelineUnavailable};
 			}
-			return RayTracingGBufferExecutionPlan{
-			    .Reason = RayTracingExecutionReason::NoFrontendAvailable};
+			return RayTracingGBufferExecutionPlan{.Reason = RayTracingExecutionReason::NoFrontendAvailable};
 		default:
-			return RayTracingGBufferExecutionPlan{
-			    .Reason = RayTracingExecutionReason::InvalidExecutionMode};
+			return RayTracingGBufferExecutionPlan{.Reason = RayTracingExecutionReason::InvalidExecutionMode};
 	}
 }
 

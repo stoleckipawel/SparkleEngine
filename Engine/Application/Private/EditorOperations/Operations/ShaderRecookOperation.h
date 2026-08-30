@@ -18,7 +18,7 @@ struct ShaderRecookExecutionResult final
 // but owns no task scope, publication slot, or editor workflow state.
 class ShaderRecookOperation final
 {
-  public:
+public:
 	static ShaderRecookExecutionResult Execute(
 	    std::uint64_t requestId,
 	    std::uint64_t baselinePublicationId,

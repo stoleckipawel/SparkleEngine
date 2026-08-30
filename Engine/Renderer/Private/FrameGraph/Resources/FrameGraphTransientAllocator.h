@@ -11,7 +11,7 @@ class RenderHardwareInterface;
 
 class FrameGraphTransientAllocator final
 {
-  public:
+public:
 	struct AllocationRecord
 	{
 		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
@@ -37,7 +37,7 @@ class FrameGraphTransientAllocator final
 	AllocationRecord& Materialize(const FrameGraphTransientResourcePlan& transientPlan);
 	const AllocationRecord* FindAllocation(FrameGraphResourceHandle handle) const noexcept;
 
-  private:
+private:
 	struct PlanEntry
 	{
 		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();

@@ -22,7 +22,7 @@ struct RegisteredShaderRow final
 
 class RegisteredShaderListModel final
 {
-  public:
+public:
 	using GenerationProvider = std::function<std::uint64_t()>;
 
 	void SetGenerationProvider(GenerationProvider provider);
@@ -30,7 +30,7 @@ class RegisteredShaderListModel final
 
 	const std::vector<RegisteredShaderRow>& GetRows() const noexcept { return m_rows; }
 
-  private:
+private:
 	static std::filesystem::path FindDebugArtifactDirectoryFor(std::string_view shaderId);
 
 	GenerationProvider m_generationProvider;

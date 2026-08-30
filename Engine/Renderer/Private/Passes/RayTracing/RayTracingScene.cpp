@@ -38,8 +38,7 @@ void AddRayTracingSceneBuildPasses(
 	auto input = std::make_shared<RayTracingSceneBuildPassInput>();
 	builder.AddParameterSetup<PreparedRenderScene>(
 	    [input](const PreparedRenderScene& preparedScene) { input->PreparedScene = std::cref(preparedScene); });
-	builder.AddParameterSetup<RenderView>(
-	    [input](const RenderView& view) { input->ViewPlan = std::cref(view.rayTracingPlan); });
+	builder.AddParameterSetup<RenderView>([input](const RenderView& view) { input->ViewPlan = std::cref(view.rayTracingPlan); });
 	builder.AddPass(
 	    RayTracingSceneFrameGraphContract::kSceneBuildPassName,
 	    EFrameGraphPassKind::Compute,

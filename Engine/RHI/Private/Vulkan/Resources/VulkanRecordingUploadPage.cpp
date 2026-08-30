@@ -14,8 +14,8 @@ VulkanRecordingUploadPage::VulkanRecordingUploadPage(
     VulkanRhi& rhi,
     VulkanGpuMemoryAllocator& memoryAllocator,
     std::uint64_t capacityInBytes) noexcept :
-	m_memoryAllocator(&memoryAllocator),
-	m_capacityInBytes(capacityInBytes)
+    m_memoryAllocator(&memoryAllocator),
+    m_capacityInBytes(capacityInBytes)
 {
 	VkPhysicalDeviceProperties properties{};
 	vkGetPhysicalDeviceProperties(rhi.GetPhysicalDevice(), &properties);
@@ -37,8 +37,7 @@ VulkanRecordingUploadPage::VulkanRecordingUploadPage(
 	    L"Vulkan Recording Upload Page");
 	if (m_buffer != nullptr)
 	{
-		m_mappedData = static_cast<std::byte*>(
-		    memoryAllocator.MapUploadPage(*m_buffer));
+		m_mappedData = static_cast<std::byte*>(memoryAllocator.MapUploadPage(*m_buffer));
 	}
 }
 
@@ -56,12 +55,10 @@ void VulkanRecordingUploadPage::Reset() noexcept
 	m_offset = 0;
 }
 
-RhiGpuVirtualAddress VulkanRecordingUploadPage::AllocateAndCopy(
-    const void* data,
-    std::uint32_t sizeInBytes) noexcept
+RhiGpuVirtualAddress VulkanRecordingUploadPage::AllocateAndCopy(const void* data, std::uint32_t sizeInBytes) noexcept
 {
-	if (m_buffer == nullptr || m_buffer->Buffer == VK_NULL_HANDLE || data == nullptr || sizeInBytes == 0 ||
-	    m_mappedData == nullptr || m_allocationCount >= MaximumAllocations)
+	if (m_buffer == nullptr || m_buffer->Buffer == VK_NULL_HANDLE || data == nullptr || sizeInBytes == 0 || m_mappedData == nullptr
+	    || m_allocationCount >= MaximumAllocations)
 	{
 		return {};
 	}
@@ -78,39 +75,29 @@ RhiGpuVirtualAddress VulkanRecordingUploadPage::AllocateAndCopy(
 	}
 
 	const std::size_t allocationIndex = m_allocationCount++;
-	m_allocations[allocationIndex] =
-	    Allocation{.Offset = alignedOffset, .Size = sizeInBytes};
+	m_allocations[allocationIndex] = Allocation{.Offset = alignedOffset, .Size = sizeInBytes};
 	m_offset = alignedOffset + sizeInBytes;
-	return reinterpret_cast<RhiGpuVirtualAddress>(
-	    &m_allocations[allocationIndex]);
+	return reinterpret_cast<RhiGpuVirtualAddress>(&m_allocations[allocationIndex]);
 }
 
-bool VulkanRecordingUploadPage::Resolve(
-    RhiGpuVirtualAddress address,
-    VkBuffer& buffer,
-    VkDeviceSize& offset,
-    VkDeviceSize& range) const noexcept
+bool VulkanRecordingUploadPage::Resolve(RhiGpuVirtualAddress address, VkBuffer& buffer, VkDeviceSize& offset, VkDeviceSize& range)
+    const noexcept
 {
 	if (address == 0 || m_buffer == nullptr)
 	{
 		return false;
 	}
 
-	const std::uintptr_t allocationAddress =
-	    static_cast<std::uintptr_t>(address);
-	const std::uintptr_t allocationBegin =
-	    reinterpret_cast<std::uintptr_t>(m_allocations.data());
-	const std::uintptr_t allocationEnd =
-	    allocationBegin + m_allocationCount * sizeof(Allocation);
-	if (allocationAddress < allocationBegin ||
-	    allocationAddress >= allocationEnd ||
-	    (allocationAddress - allocationBegin) % sizeof(Allocation) != 0)
+	const std::uintptr_t allocationAddress = static_cast<std::uintptr_t>(address);
+	const std::uintptr_t allocationBegin = reinterpret_cast<std::uintptr_t>(m_allocations.data());
+	const std::uintptr_t allocationEnd = allocationBegin + m_allocationCount * sizeof(Allocation);
+	if (allocationAddress < allocationBegin || allocationAddress >= allocationEnd
+	    || (allocationAddress - allocationBegin) % sizeof(Allocation) != 0)
 	{
 		return false;
 	}
 
-	const std::size_t allocationIndex =
-	    (allocationAddress - allocationBegin) / sizeof(Allocation);
+	const std::size_t allocationIndex = (allocationAddress - allocationBegin) / sizeof(Allocation);
 	const Allocation& allocation = m_allocations[allocationIndex];
 	buffer = m_buffer->Buffer;
 	offset = allocation.Offset;

@@ -4,6 +4,6 @@
 
 class GltfMeshTangentGenerator final
 {
-  public:
+public:
 	static void GenerateTangents(ImportedMeshGeometry& geometry);
 };

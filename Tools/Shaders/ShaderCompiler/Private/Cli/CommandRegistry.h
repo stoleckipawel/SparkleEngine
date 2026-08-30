@@ -9,12 +9,12 @@
 
 class CommandRegistry final
 {
-  public:
+public:
 	CommandRegistry();
 	const ICommand* Find(std::string_view verb) const noexcept;
 	void PrintUsage(std::ostream& output) const;
 
-  private:
+private:
 	struct Registration final
 	{
 		std::vector<std::string_view> verbs;

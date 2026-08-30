@@ -6,7 +6,7 @@ class VulkanRenderHardwareInterface;
 
 class VulkanInteropService final : public RhiInteropService
 {
-  public:
+public:
 	explicit VulkanInteropService(VulkanRenderHardwareInterface& owner) noexcept;
 
 	RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept override;
@@ -16,6 +16,6 @@ class VulkanInteropService final : public RhiInteropService
 	    ResourceState state,
 	    const RhiNativeInteropRequest& request) const noexcept override;
 
-  private:
+private:
 	VulkanRenderHardwareInterface* m_owner = nullptr;
 };

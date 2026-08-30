@@ -13,10 +13,10 @@ struct SpotLightDesc;
 
 class SceneLightInspector final
 {
-  public:
+public:
 	static void Build(const SceneLightDesc&, EntityId, EditorTransactionHistory&, std::uint64_t, const std::string&) noexcept;
 
-  private:
+private:
 	static void BuildGenericLight(
 	    EditorTransactionHistory& transactionHistory,
 	    std::uint64_t worldGeneration,

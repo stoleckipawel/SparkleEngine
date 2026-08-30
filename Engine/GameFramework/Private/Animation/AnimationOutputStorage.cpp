@@ -47,11 +47,7 @@ namespace ECS
 					continue;
 				const AuthoredIdentity* authored = registry.Get<AuthoredIdentity>(entity);
 				const std::uint64_t sourceInstanceId = authored == nullptr ? 0 : authored->SourceInstanceId;
-				PoseWorkSlot work{
-				    .Entity = entity,
-				    .Clip = clipHandle,
-				    .Skeleton = clip.Skeleton,
-				    .SourceInstanceId = sourceInstanceId};
+				PoseWorkSlot work{.Entity = entity, .Clip = clipHandle, .Skeleton = clip.Skeleton, .SourceInstanceId = sourceInstanceId};
 				const SkeletonEvaluationData skeleton = skeletons.Resolve(clip.Skeleton);
 				if (skeleton.IsValid())
 				{
@@ -85,7 +81,7 @@ namespace ECS
 
 		EntityId::Slot largestSlot = 0;
 		for (const PoseWorkSlot& work : m_poseWork)
-			largestSlot = (std::max)(largestSlot, work.Entity.GetSlot());
+			largestSlot = (std::max) (largestSlot, work.Entity.GetSlot());
 		if (!m_poseWork.empty())
 			m_workIndexByEntitySlot.resize(static_cast<std::size_t>(largestSlot) + 1u);
 		for (std::uint32_t index = 0; index < m_poseWork.size(); ++index)
@@ -118,9 +114,7 @@ namespace ECS
 		    m_morphBindings.begin(),
 		    m_morphBindings.end(),
 		    [](const MorphTargetBinding& lhs, const MorphTargetBinding& rhs)
-		    {
-			    return std::tie(lhs.SampleIndex, lhs.TargetEntity) < std::tie(rhs.SampleIndex, rhs.TargetEntity);
-		    });
+		    { return std::tie(lhs.SampleIndex, lhs.TargetEntity) < std::tie(rhs.SampleIndex, rhs.TargetEntity); });
 
 		const ComponentStorage<SkinningState>* skinnedMeshes = registry.FindStorage<SkinningState>();
 		if (skinnedMeshes != nullptr)
@@ -132,9 +126,9 @@ namespace ECS
 				const AuthoredIdentity* targetIdentity = registry.Get<AuthoredIdentity>(skinnedMeshes->GetEntities()[index]);
 				for (const PoseWorkSlot& work : m_poseWork)
 				{
-					if (targetIdentity != nullptr && work.SourceInstanceId == targetIdentity->SourceInstanceId &&
-					    work.PoseOutputIndex < m_output.poses.size() &&
-					    m_output.poses[work.PoseOutputIndex].skeletonAssetId == updated.SkeletonAssetId)
+					if (targetIdentity != nullptr && work.SourceInstanceId == targetIdentity->SourceInstanceId
+					    && work.PoseOutputIndex < m_output.poses.size()
+					    && m_output.poses[work.PoseOutputIndex].skeletonAssetId == updated.SkeletonAssetId)
 					{
 						updated.Pose = AnimationOutputSlotHandle{work.PoseOutputIndex, targetGeneration};
 						break;

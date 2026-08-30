@@ -6,7 +6,7 @@ namespace Diagnostics
 {
 	class Error final : public std::runtime_error
 	{
-	  public:
+	public:
 		using std::runtime_error::runtime_error;
 	};
 }

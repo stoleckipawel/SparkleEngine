@@ -9,7 +9,7 @@ namespace ECS
 
 	class StructureFrozenEpoch final
 	{
-	  public:
+	public:
 		StructureFrozenEpoch() noexcept = default;
 		~StructureFrozenEpoch();
 
@@ -20,11 +20,13 @@ namespace ECS
 
 		bool IsValid() const noexcept { return m_registry != nullptr && m_generation != 0; }
 
-	  private:
+	private:
 		friend class EntityRegistry;
 		template <typename... AccessSpecs> friend class Query;
 
-		StructureFrozenEpoch(EntityRegistry& registry, std::uint64_t generation) noexcept : m_registry(&registry), m_generation(generation)
+		StructureFrozenEpoch(EntityRegistry& registry, std::uint64_t generation) noexcept :
+		    m_registry(&registry),
+		    m_generation(generation)
 		{
 		}
 

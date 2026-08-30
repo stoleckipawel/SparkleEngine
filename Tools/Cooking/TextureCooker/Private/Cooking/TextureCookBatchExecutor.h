@@ -16,9 +16,7 @@ struct TextureCookBatchItemResult final
 
 class TextureCookBatchExecutor final
 {
-  public:
+public:
 	TextureCookBatchExecutor() = delete;
-	static std::vector<TextureCookBatchItemResult> Execute(
-	    const std::vector<TextureCookRequest>& requests,
-	    std::size_t memoryBudgetBytes);
+	static std::vector<TextureCookBatchItemResult> Execute(const std::vector<TextureCookRequest>& requests, std::size_t memoryBudgetBytes);
 };

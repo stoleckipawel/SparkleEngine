@@ -28,7 +28,7 @@ struct TaskScopeDesc final
 
 class SPARKLE_TASKS_API TaskScope final
 {
-  public:
+public:
 	explicit TaskScope(TaskScopeDesc desc, TaskScope* parent = nullptr);
 	~TaskScope();
 
@@ -44,7 +44,7 @@ class SPARKLE_TASKS_API TaskScope final
 	TaskScopeKind GetKind() const noexcept;
 	std::string_view GetName() const noexcept;
 
-  private:
+private:
 	friend class TaskExecutor;
 	struct State;
 	std::shared_ptr<State> m_state;

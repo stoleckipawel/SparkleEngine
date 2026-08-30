@@ -13,7 +13,10 @@
 
 static const auto g_d3d12ImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.D3D12.ImGui");
 
-D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(renderHardwareInterface) {}
+D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept :
+    m_renderHardwareInterface(renderHardwareInterface)
+{
+}
 
 void D3D12ImGuiBackend::Initialize()
 {
@@ -34,8 +37,7 @@ void D3D12ImGuiBackend::Initialize()
 	ImGui_ImplDX12_InitInfo initInfo = {};
 	initInfo.Device = ToD3D12Device(m_renderHardwareInterface.GetDeviceHandle());
 	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardwareInterface.GetGraphicsQueueHandle());
-	initInfo.NumFramesInFlight = static_cast<int>(
-	    m_renderHardwareInterface.GetCapabilities().Presentation.MaximumFramesInFlight);
+	initInfo.NumFramesInFlight = static_cast<int>(m_renderHardwareInterface.GetCapabilities().Presentation.MaximumFramesInFlight);
 	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface.GetPresentColorFormat());
 	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardwareInterface.GetPresentDepthStencilFormat());
 	initInfo.SrvDescriptorHeap = m_renderHardwareInterface.GetD3D12ShaderResourceDescriptorHeap();
@@ -88,8 +90,7 @@ void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	RestoreContext(previousContext);
 }
 
-void D3D12ImGuiBackend::ReleaseTexture(
-    ImTextureData& texture) noexcept
+void D3D12ImGuiBackend::ReleaseTexture(ImTextureData& texture) noexcept
 {
 	ImGuiContext* previousContext = ActivateContext();
 	texture.UnusedFrames = (std::numeric_limits<int>::max)();
@@ -155,14 +156,12 @@ void D3D12ImGuiBackend::AllocateDescriptor(
 void D3D12ImGuiBackend::ReleaseDescriptor(
     ImGui_ImplDX12_InitInfo* info,
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
 	auto* renderHardwareInterface = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
 	renderHardwareInterface->GetDescriptorService().ReleaseDescriptor(
 	    ERhiDescriptorAllocatorType::ShaderResource,
-	    RhiDescriptorAllocation{
-	        .CpuHandle = RhiCpuDescriptorHandle{cpuHandle.ptr},
-	        .GpuHandle = RhiGpuDescriptorHandle{gpuHandle.ptr}});
+	    RhiDescriptorAllocation{.CpuHandle = RhiCpuDescriptorHandle{cpuHandle.ptr}, .GpuHandle = RhiGpuDescriptorHandle{gpuHandle.ptr}});
 }
 
 ID3D12Device* D3D12ImGuiBackend::ToD3D12Device(NativeGraphicsDeviceHandle handle) noexcept

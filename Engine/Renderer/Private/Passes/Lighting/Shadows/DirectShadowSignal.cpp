@@ -22,8 +22,7 @@
 
 namespace DirectShadowSignalPasses
 {
-	template <typename TShader>
-	auto& BuildParameters(
+	template <typename TShader> auto& BuildParameters(
 	    FrameGraphBuilder& builder,
 	    const SceneRenderTargets& sceneTargets,
 	    const GBufferRenderTargets& gbuffer,
@@ -83,20 +82,12 @@ namespace DirectShadowSignalPasses
 	    const RenderFrameGraphImportedSceneResources& externalResources,
 	    const char* reason)
 	{
-		auto& parameters = BuildParameters<DirectShadowSignalCS>(
-		    builder,
-		    sceneTargets,
-		    gbuffer,
-		    sceneTlas,
-		    shadowSignals,
-		    externalResources);
+		auto& parameters =
+		    BuildParameters<DirectShadowSignalCS>(builder, sceneTargets, gbuffer, sceneTlas, shadowSignals, externalResources);
 		builder.Dispatch<DirectShadowSignalCS>(
 		    std::string("DirectShadowSignal.Inline.") + reason,
 		    parameters,
-		    ComputeDispatchDesc{
-		        MathUtils::DivideRoundUp(sceneExtent.Width, 8u),
-		        MathUtils::DivideRoundUp(sceneExtent.Height, 8u),
-		        1u});
+		    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 	}
 
 	void AddPipeline(
@@ -110,13 +101,8 @@ namespace DirectShadowSignalPasses
 	    RayTracingShaderTablePlan& shaderTablePlan,
 	    const char* reason)
 	{
-		auto& parameters = BuildParameters<DirectShadowSignalRGS>(
-		    builder,
-		    sceneTargets,
-		    gbuffer,
-		    sceneTlas,
-		    shadowSignals,
-		    externalResources);
+		auto& parameters =
+		    BuildParameters<DirectShadowSignalRGS>(builder, sceneTargets, gbuffer, sceneTlas, shadowSignals, externalResources);
 		const RayTracingPipelineComposition composition = RayTracingPipelineComposition::Create<DirectShadowSignalRGS>(
 		    std::vector{RayTracingPipelineComposition::Shader<DirectShadowSignalMiss>()},
 		    std::vector{

@@ -7,7 +7,7 @@ namespace Assets
 {
 	class SceneAssetPayloadCameraLightAppender final
 	{
-	  public:
+	public:
 		static void Append(const LoadedSceneManifest& sceneManifest, SceneAssetPayload& sceneAssetPayload);
 	};
 }

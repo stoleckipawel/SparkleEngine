@@ -11,7 +11,7 @@ struct CookedAnimationAssetBuild;
 
 class CookedAnimationAssetWriter final
 {
-  public:
+public:
 	static void StageAnimationAssets(
 	    const std::vector<CookedAnimationAssetBuild>& animationAssets,
 	    std::vector<Files::FilePublication>& outPublication);

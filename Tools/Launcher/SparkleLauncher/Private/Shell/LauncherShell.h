@@ -6,7 +6,7 @@ namespace SparkleLauncher
 {
 	class LauncherShell final
 	{
-	  public:
+	public:
 		int Run(int argc, char** argv, std::ostream& output, std::ostream& error) const;
 	};
 }

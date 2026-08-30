@@ -18,8 +18,6 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
-#include <utility>
-
 namespace SparkleLauncher
 {
 	static constexpr int kMaxOperationOutputCharacters = 1000000;
@@ -160,11 +158,8 @@ namespace SparkleLauncher
 		item->setText(QString());
 		const RunWidgets rowWidgets = CreateRunWidgets(title);
 		m_runList->setItemWidget(item, rowWidgets.Root);
-		m_runItems.insert(runId, item);
-		m_runWidgets.insert(runId, rowWidgets);
-		m_runTitles.insert(runId, title);
+		m_runs.insert(runId, {item, rowWidgets, RunState::Queued, title, title + " queued.\n"});
 		SetRunState(runId, RunState::Queued, title);
-		m_runOutputs.insert(runId, title + " queued.\n");
 		m_runList->setCurrentItem(item);
 		m_activeRunId = runId;
 		SetExpanded(m_expanded);
@@ -172,7 +167,8 @@ namespace SparkleLauncher
 
 	void LauncherActivityPanel::DisplayOperationStarted(const QString& runId, const QString& title)
 	{
-		const QString effectiveTitle = m_runTitles.value(runId, title);
+		const auto run = m_runs.constFind(runId);
+		const QString effectiveTitle = run == m_runs.constEnd() ? title : run->Title;
 		SetRunState(runId, RunState::Running, effectiveTitle);
 		AppendRunOutput(runId, effectiveTitle + " started.\n");
 		ShowRunOutput(runId);
@@ -196,7 +192,8 @@ namespace SparkleLauncher
 	    const QString& recoveryHint)
 	{
 		const bool succeeded = exitCode == 0;
-		const QString effectiveTitle = m_runTitles.value(runId, title);
+		auto run = m_runs.find(runId);
+		const QString effectiveTitle = run == m_runs.end() ? title : run->Title;
 		SetRunState(runId, succeeded ? RunState::Done : RunState::Failed, effectiveTitle);
 
 		if (succeeded)
@@ -205,12 +202,15 @@ namespace SparkleLauncher
 		}
 		else
 		{
-			const QString existingOutput = m_runOutputs.value(runId);
+			run = m_runs.find(runId);
+			if (run == m_runs.end())
+			{
+				return effectiveTitle;
+			}
+			const QString existingOutput = run->Output;
 			const QString recoveryText = recoveryHint.isEmpty() ? QString() : QStringLiteral("Recovery: %1\n\n").arg(recoveryHint);
-			m_runOutputs.insert(
-			    runId,
-			    QStringLiteral("Failed: %1 (exit code %2)\n").arg(statusText).arg(exitCode) + recoveryText + "\n" + existingOutput + "\n"
-			        + effectiveTitle + " finished: " + statusText + "\n");
+			run->Output = QStringLiteral("Failed: %1 (exit code %2)\n").arg(statusText).arg(exitCode) + recoveryText + "\n" + existingOutput
+			    + "\n" + effectiveTitle + " finished: " + statusText + "\n";
 		}
 
 		ShowRunOutput(runId);
@@ -229,22 +229,32 @@ namespace SparkleLauncher
 
 	void LauncherActivityPanel::AppendRunOutput(const QString& runId, const QString& text)
 	{
-		QString output = m_runOutputs.value(runId);
-		output += text;
-		const int overflowCharacters = output.size() - kMaxOperationOutputCharacters;
+		auto run = m_runs.find(runId);
+		if (run == m_runs.end())
+		{
+			return;
+		}
+
+		run->Output += text;
+		const int overflowCharacters = run->Output.size() - kMaxOperationOutputCharacters;
 		if (overflowCharacters > 0)
 		{
-			output.remove(0, overflowCharacters);
+			run->Output.remove(0, overflowCharacters);
 		}
-		m_runOutputs.insert(runId, output);
 	}
 
 	void LauncherActivityPanel::ShowRunOutput(const QString& runId)
 	{
+		const auto run = m_runs.constFind(runId);
+		if (run == m_runs.constEnd())
+		{
+			return;
+		}
+
 		m_activeRunId = runId;
 		UpdateRunSelectionVisuals();
-		const RunState state = m_runStates.value(runId, RunState::Queued);
-		const QString title = m_runTitles.value(runId, "Selected run");
+		const RunState state = run->State;
+		const QString& title = run->Title;
 		switch (state)
 		{
 			case RunState::Queued:
@@ -256,20 +266,17 @@ namespace SparkleLauncher
 			case RunState::Done:
 				m_selectedRunSummary->setText("Done: " + title + ". Output is available below.");
 				break;
-			case RunState::Canceled:
-				m_selectedRunSummary->setText("Canceled: " + title + ". Cleanup is continuing as a separate run.");
-				break;
 			case RunState::Failed:
 				m_selectedRunSummary->setText("Failed: " + title + ". Review the summary and raw output below.");
 				break;
 		}
 
-		const bool compactOutput = state == RunState::Done || state == RunState::Canceled;
+		const bool compactOutput = state == RunState::Done;
 		m_operationOutput->setMinimumHeight(
 		    compactOutput ? LauncherUi::OperationOutput::MinHeight : LauncherUi::OperationOutput::ProminentMinHeight);
 		m_operationOutput->setMaximumHeight(
 		    compactOutput ? LauncherUi::OperationOutput::CompactMaxHeight : LauncherUi::OperationOutput::MaxHeight);
-		m_operationOutput->setPlainText(m_runOutputs.value(runId));
+		m_operationOutput->setPlainText(run->Output);
 		m_operationOutput->moveCursor(QTextCursor::End);
 
 		const bool canCopyOutput = m_expanded && !m_operationOutput->toPlainText().isEmpty();
@@ -319,7 +326,6 @@ namespace SparkleLauncher
 		switch (state)
 		{
 			case RunState::Queued:
-			case RunState::Canceled:
 				return m_queuedIcon;
 			case RunState::Running:
 				return m_runningIcon;
@@ -341,7 +347,8 @@ namespace SparkleLauncher
 
 		const QString runId = currentItem->data(Qt::UserRole).toString();
 		ShowRunOutput(runId);
-		const RunState state = m_runStates.value(runId, RunState::Done);
+		const auto run = m_runs.constFind(runId);
+		const RunState state = run == m_runs.constEnd() ? RunState::Done : run->State;
 		if (state == RunState::Running || state == RunState::Failed)
 		{
 			SetExpanded(true);
@@ -355,7 +362,7 @@ namespace SparkleLauncher
 
 	void LauncherActivityPanel::ToggleExpanded()
 	{
-		if (m_runItems.isEmpty())
+		if (m_runs.isEmpty())
 		{
 			return;
 		}
@@ -364,14 +371,14 @@ namespace SparkleLauncher
 
 	void LauncherActivityPanel::SetRunState(const QString& runId, RunState state, const QString& title)
 	{
-		QListWidgetItem* item = m_runItems.value(runId, nullptr);
-		if (item == nullptr)
+		auto run = m_runs.find(runId);
+		if (run == m_runs.end() || run->Item == nullptr)
 		{
 			return;
 		}
 
-		m_runStates.insert(runId, state);
-		m_runTitles.insert(runId, title);
+		run->State = state;
+		run->Title = title;
 
 		QString stateText;
 		switch (state)
@@ -385,22 +392,19 @@ namespace SparkleLauncher
 			case RunState::Done:
 				stateText = "Done";
 				break;
-			case RunState::Canceled:
-				stateText = "Canceled";
-				break;
 			case RunState::Failed:
 				stateText = "Failed";
 				break;
 		}
 
-		item->setText(QString());
-		item->setIcon(IconForState(state));
-		item->setData(Qt::UserRole + 1, stateText);
-		item->setData(Qt::AccessibleTextRole, stateText + ": " + title);
-		item->setData(Qt::AccessibleDescriptionRole, "Launcher activity run " + stateText.toLower());
-		item->setToolTip(stateText + ": " + title);
+		run->Item->setText(QString());
+		run->Item->setIcon(IconForState(state));
+		run->Item->setData(Qt::UserRole + 1, stateText);
+		run->Item->setData(Qt::AccessibleTextRole, stateText + ": " + title);
+		run->Item->setData(Qt::AccessibleDescriptionRole, "Launcher activity run " + stateText.toLower());
+		run->Item->setToolTip(stateText + ": " + title);
 
-		const RunWidgets widgets = m_runWidgets.value(runId);
+		const RunWidgets& widgets = run->Widgets;
 		if (widgets.Root != nullptr)
 		{
 			widgets.Root->setProperty("RunState", stateText.toLower());
@@ -426,7 +430,7 @@ namespace SparkleLauncher
 
 	void LauncherActivityPanel::SetExpanded(bool expanded)
 	{
-		const bool hasRuns = !m_runItems.isEmpty();
+		const bool hasRuns = !m_runs.isEmpty();
 		expanded = expanded && hasRuns;
 		m_expanded = expanded;
 		setMinimumHeight(expanded ? LauncherUi::Activity::ExpandedHeight : LauncherUi::Activity::CollapsedHeight);
@@ -451,14 +455,14 @@ namespace SparkleLauncher
 
 	void LauncherActivityPanel::UpdateRunSelectionVisuals()
 	{
-		for (auto it = m_runWidgets.begin(); it != m_runWidgets.end(); ++it)
+		for (auto it = m_runs.begin(); it != m_runs.end(); ++it)
 		{
 			const bool selected = it.key() == m_activeRunId;
-			if (it.value().Root != nullptr)
+			if (it->Widgets.Root != nullptr)
 			{
-				it.value().Root->setProperty("Selected", selected);
-				it.value().Root->style()->unpolish(it.value().Root);
-				it.value().Root->style()->polish(it.value().Root);
+				it->Widgets.Root->setProperty("Selected", selected);
+				it->Widgets.Root->style()->unpolish(it->Widgets.Root);
+				it->Widgets.Root->style()->polish(it->Widgets.Root);
 			}
 		}
 	}

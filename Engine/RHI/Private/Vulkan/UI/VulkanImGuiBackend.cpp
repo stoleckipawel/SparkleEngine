@@ -16,7 +16,8 @@ static const auto g_vulkanImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.V
 VulkanImGuiBackend::VulkanImGuiBackend(
     VulkanRenderHardwareInterface& renderHardwareInterface,
     VulkanDescriptorService& descriptorService) noexcept :
-    m_renderHardwareInterface(renderHardwareInterface), m_descriptorService(descriptorService)
+    m_renderHardwareInterface(renderHardwareInterface),
+    m_descriptorService(descriptorService)
 {
 }
 
@@ -74,8 +75,8 @@ void VulkanImGuiBackend::Initialize()
 		}
 	};
 
-	if (initInfo.Instance == VK_NULL_HANDLE || initInfo.PhysicalDevice == VK_NULL_HANDLE || initInfo.Device == VK_NULL_HANDLE ||
-	    initInfo.Queue == VK_NULL_HANDLE || initInfo.QueueFamily == UINT32_MAX)
+	if (initInfo.Instance == VK_NULL_HANDLE || initInfo.PhysicalDevice == VK_NULL_HANDLE || initInfo.Device == VK_NULL_HANDLE
+	    || initInfo.Queue == VK_NULL_HANDLE || initInfo.QueueFamily == UINT32_MAX)
 	{
 		RestoreContext(previousContext);
 		Diagnostics::Fatal(g_vulkanImGuiBackendLogger, __FILE__, __LINE__, "Cannot initialize ImGui with incomplete Vulkan device state.");
@@ -142,11 +143,11 @@ void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 
 	ImGuiContext* previousContext = ActivateContext();
 	RenderCommandList& commandList = m_renderHardwareInterface.GetGraphicsCommandList(m_renderHardwareInterface.GetCurrentFrameIndex());
-	VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(
-	    commandList.GetNativeHandle(
-	        RhiNativeInteropRequest{
-	            .Consumer = ERhiNativeInteropConsumer::Presentation,
-	            .Reason = "Render ImGui draw data through Vulkan backend"})
+	VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(commandList
+	        .GetNativeHandle(
+	            RhiNativeInteropRequest{
+	                .Consumer = ERhiNativeInteropConsumer::Presentation,
+	                .Reason = "Render ImGui draw data through Vulkan backend"})
 	        .Value);
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
@@ -158,8 +159,7 @@ void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	RestoreContext(previousContext);
 }
 
-void VulkanImGuiBackend::ReleaseTexture(
-    ImTextureData& texture) noexcept
+void VulkanImGuiBackend::ReleaseTexture(ImTextureData& texture) noexcept
 {
 	ImGuiContext* previousContext = ActivateContext();
 	texture.UnusedFrames = (std::numeric_limits<int>::max)();
@@ -184,8 +184,7 @@ std::uint64_t VulkanImGuiBackend::GetTextureId(VkImageView imageView) noexcept
 		}
 	}
 
-	const VkDescriptorSet descriptorSet =
-	    ImGui_ImplVulkan_AddTexture(m_imguiSampler, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	const VkDescriptorSet descriptorSet = ImGui_ImplVulkan_AddTexture(m_imguiSampler, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	if (descriptorSet == VK_NULL_HANDLE)
 	{
 		return 0;

@@ -12,14 +12,14 @@ struct cgltf_texture_view;
 
 class GltfMaterialTextureMapper final
 {
-  public:
+public:
 	static void Apply(
 	    const cgltf_material& material,
 	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
 	    ImportedMaterial& importedMaterial);
 
-  private:
+private:
 	static void AssignPackedMetallicRoughness(
 	    const cgltf_material& material,
 	    ImportedMaterialIndex materialIndex,

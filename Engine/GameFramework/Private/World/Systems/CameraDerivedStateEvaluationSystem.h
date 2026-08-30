@@ -7,7 +7,7 @@ namespace ECS
 
 	class CameraDerivedStateEvaluationSystem final
 	{
-	  public:
+	public:
 		static void Evaluate(const LocalTransform& local, CameraDerivedState& derived) noexcept;
 	};
 }

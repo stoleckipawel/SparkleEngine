@@ -36,17 +36,11 @@ namespace Hash
 
 	SPARKLE_CORE_API uint64_t Fnv1a64(std::string_view str) noexcept;
 	SPARKLE_CORE_API uint64_t Fnv1a64(const void* data, size_t size) noexcept;
-	SPARKLE_CORE_API bool TryFnv1a64File(
-	    const std::filesystem::path& path,
-	    uint64_t& outHash,
-	    std::string& outErrorMessage);
-	SPARKLE_CORE_API bool TrySha256Hex(
-	    std::string_view text,
-	    std::string& outHashHex,
-	    std::string& outErrorMessage);
+	SPARKLE_CORE_API bool TryFnv1a64File(const std::filesystem::path& path, uint64_t& outHash, std::string& outErrorMessage);
+	SPARKLE_CORE_API bool TrySha256Hex(std::string_view text, std::string& outHashHex, std::string& outErrorMessage);
 
 	inline constexpr uint32_t kFnv32OffsetBasis = 2166136261u;
 	inline constexpr uint32_t kFnv32Prime = 16777619u;
 
 	SPARKLE_CORE_API uint32_t Fnv1a32(std::string_view str) noexcept;
-}  // namespace Hash
+}

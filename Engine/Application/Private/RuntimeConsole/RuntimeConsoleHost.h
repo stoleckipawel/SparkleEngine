@@ -10,7 +10,7 @@ class Window;
 
 class RuntimeConsoleHost final
 {
-  public:
+public:
 	using RuntimeUpdate = std::function<void()>;
 
 	RuntimeConsoleHost(Timer& timer, Window& window);
@@ -23,6 +23,6 @@ class RuntimeConsoleHost final
 
 	void TickFrame(Renderer& renderer, RuntimeUpdate updateRuntime);
 
-  private:
+private:
 	std::unique_ptr<RuntimeConsoleOverlay> m_overlay;
 };

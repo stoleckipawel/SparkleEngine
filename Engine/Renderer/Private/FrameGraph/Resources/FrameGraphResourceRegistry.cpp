@@ -123,9 +123,7 @@ void FrameGraphResourceRegistry::SetBoundaryStates(
 	metadata.finalState = finalState;
 }
 
-void FrameGraphResourceRegistry::SetExternalContentsProduced(
-    FrameGraphResourceHandle handle,
-    bool hasBeenProduced) noexcept
+void FrameGraphResourceRegistry::SetExternalContentsProduced(FrameGraphResourceHandle handle, bool hasBeenProduced) noexcept
 {
 	GetMetadata(handle).hasExternalContents = hasBeenProduced;
 }

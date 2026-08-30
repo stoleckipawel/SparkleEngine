@@ -19,9 +19,7 @@ struct RhiQueueCapabilities final
 			return;
 		}
 
-		Entries[RhiQueueTypeToIndex(queue)] = RhiQueueCapability{
-		    .Supported = supported,
-		    .Independent = supported && independent};
+		Entries[RhiQueueTypeToIndex(queue)] = RhiQueueCapability{.Supported = supported, .Independent = supported && independent};
 	}
 
 	constexpr RhiQueueCapability Get(ERhiQueueType queue) const noexcept

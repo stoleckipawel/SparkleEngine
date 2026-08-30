@@ -7,7 +7,7 @@
 
 class RhiDiagnosticsComposition final : public RenderDiagnostics
 {
-  public:
+public:
 	RhiDiagnosticsComposition(
 	    std::unique_ptr<RenderObjectDiagnostics> objectDiagnostics,
 	    std::unique_ptr<RenderTimingDiagnostics> timingDiagnostics,
@@ -74,11 +74,11 @@ class RhiDiagnosticsComposition final : public RenderDiagnostics
 	RenderMemoryDiagnostics* GetMemoryDiagnostics() noexcept override { return m_memoryDiagnostics.get(); }
 	const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept override { return m_memoryDiagnostics.get(); }
 
-  private:
+private:
 	bool HasFailureDiagnostics() const noexcept
 	{
-		return m_failureDiagnostics != nullptr &&
-		       (m_failureDiagnostics->SupportsLiveObjectReports() || m_failureDiagnostics->SupportsCrashDiagnostics());
+		return m_failureDiagnostics != nullptr
+		    && (m_failureDiagnostics->SupportsLiveObjectReports() || m_failureDiagnostics->SupportsCrashDiagnostics());
 	}
 
 	std::unique_ptr<RenderObjectDiagnostics> m_objectDiagnostics;

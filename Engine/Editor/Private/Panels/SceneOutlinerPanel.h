@@ -10,11 +10,17 @@ class EditorTransactionHistory;
 struct EditorSceneEntry;
 struct SceneObjectSelection;
 
-enum class SceneOutlinerFilter { All, Cameras, Lights, Meshes };
+enum class SceneOutlinerFilter
+{
+	All,
+	Cameras,
+	Lights,
+	Meshes
+};
 
 class SceneOutlinerPanel final
 {
-  public:
+public:
 	SceneOutlinerPanel(SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels = 320.0f) noexcept;
 	void SetWidth(float widthPixels) noexcept;
 	float GetWidth() const noexcept { return m_widthPixels; }
@@ -22,7 +28,7 @@ class SceneOutlinerPanel final
 	void SetModel(std::shared_ptr<const EditorSceneModel> model) noexcept { m_model = std::move(model); }
 	void BuildUI(bool disableInteraction = false);
 
-  private:
+private:
 	void BuildToolbar() noexcept;
 	void BuildFooter() noexcept;
 	bool IsSelectionValid() const noexcept;
@@ -31,8 +37,7 @@ class SceneOutlinerPanel final
 	void BuildSkySection() noexcept;
 	void BuildLightSection() noexcept;
 	void BuildMeshSection() noexcept;
-	void DrawEntrySection(const char* id, const char* label, const char* emptyText,
-	                      const std::vector<EditorSceneEntry>& entries) noexcept;
+	void DrawEntrySection(const char* id, const char* label, const char* emptyText, const std::vector<EditorSceneEntry>& entries) noexcept;
 	bool PassesActiveFilter(const SceneObjectSelection& selection) const noexcept;
 	bool MatchesSearch(const char* label, const char* typeLabel) const noexcept;
 	std::size_t CountVisibleEntries() const noexcept;

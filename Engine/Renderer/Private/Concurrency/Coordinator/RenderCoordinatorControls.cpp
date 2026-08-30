@@ -151,9 +151,7 @@ void RenderCoordinator::PublishReadState()
 			m_publishedViewportCaptures.push_back(std::move(capture));
 		}
 	}
-	m_shaderGeneration.store(
-	    m_context->GetRendererHost().GetRenderPassRuntimeCache().GetShaderGeneration(),
-	    std::memory_order_release);
+	m_shaderGeneration.store(m_context->GetRendererHost().GetRenderPassRuntimeCache().GetShaderGeneration(), std::memory_order_release);
 }
 
 void RenderCoordinator::SubmitControl(RenderControlPayload payload)

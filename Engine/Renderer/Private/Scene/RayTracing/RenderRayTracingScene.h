@@ -40,9 +40,7 @@ public:
 	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
-	void SynchronizeShaderTablePlan(
-	    std::span<const RenderPrimitive> primitives,
-	    const RenderMaterialTable& materials) noexcept;
+	void SynchronizeShaderTablePlan(std::span<const RenderPrimitive> primitives, const RenderMaterialTable& materials) noexcept;
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsAccelerationStructure; }
 	bool HasValidTlas() const noexcept;

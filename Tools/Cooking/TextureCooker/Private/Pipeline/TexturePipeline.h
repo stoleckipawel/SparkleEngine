@@ -5,8 +5,6 @@
 
 class TexturePipeline final
 {
-  public:
-	static TextureLoadResult Process(
-	    const TextureCookRequest& request,
-	    TextureLoadResult sourceTexture);
+public:
+	static TextureLoadResult Process(const TextureCookRequest& request, TextureLoadResult sourceTexture);
 };

@@ -7,6 +7,6 @@
 
 class ListBackendsCommand final : public ICommand
 {
-  public:
+public:
 	int Run(std::span<const std::string_view> args) const override;
 };

@@ -6,7 +6,7 @@
 
 class SPARKLE_ENGINE_API CookedMesh final : public Mesh
 {
-  public:
+public:
 	explicit CookedMesh(MeshData&& meshData) noexcept;
 	CookedMesh(MeshData&& meshData, Assets::CookedAssetId assetId) noexcept;
 
@@ -19,6 +19,6 @@ class SPARKLE_ENGINE_API CookedMesh final : public Mesh
 
 	Assets::CookedAssetId GetAssetId() const noexcept { return m_assetId; }
 
-  private:
+private:
 	Assets::CookedAssetId m_assetId = Assets::InvalidCookedAssetId;
 };

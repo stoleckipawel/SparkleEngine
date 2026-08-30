@@ -25,44 +25,34 @@ void GpuSkinInfluenceBuffer::Upload(
 	if (skinInfluences.empty())
 		Diagnostics::Fatal(g_gpuSkinInfluenceBufferLogger, __FILE__, __LINE__, "GPU mesh has no skin influence payload.");
 
-	RhiResourceService& resources =
-	    m_renderHardwareInterface->GetResourceService();
+	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
 	m_buffer = resources.CreateBufferResource(
 	    RhiBufferResourceDesc{
-	        .SizeInBytes =
-	            skinInfluences.size_bytes(),
-	        .StrideInBytes =
-	            sizeof(VertexSkinInfluenceData),
+	        .SizeInBytes = skinInfluences.size_bytes(),
+	        .StrideInBytes = sizeof(VertexSkinInfluenceData),
 	        .Kind = RhiBufferKind::Structured},
 	    ResourceState::CopyDest,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"GpuMesh_SkinInfluences");
-	if (!m_buffer ||
-	    !m_renderHardwareInterface->GetUploadService()
-	         .UploadBuffer(
-	             commandList,
-	             m_buffer,
-	             std::as_bytes(skinInfluences),
-	             ResourceState::ShaderResource,
-	             L"GpuMesh_SkinInfluencesUpload"))
+	if (!m_buffer
+	    || !m_renderHardwareInterface->GetUploadService().UploadBuffer(
+	        commandList,
+	        m_buffer,
+	        std::as_bytes(skinInfluences),
+	        ResourceState::ShaderResource,
+	        L"GpuMesh_SkinInfluencesUpload"))
 	{
 		Release();
 		Diagnostics::Fatal(g_gpuSkinInfluenceBufferLogger, __FILE__, __LINE__, "GPU skin influence upload failed.");
 	}
 
-	m_view =
-	    m_renderHardwareInterface->GetDescriptorService()
-	        .CreateResourceView(
-	            RhiResourceViewDesc::BufferShaderResource(
-	                resources.GetResourceHandle(
-	                    m_buffer),
-	                skinInfluences.size_bytes(),
-	                sizeof(
-	                    VertexSkinInfluenceData)));
-	m_shaderResourceView =
-	    m_renderHardwareInterface->GetDescriptorService()
-	        .GetResourceViewGpuHandle(m_view);
+	m_view = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
+	    RhiResourceViewDesc::BufferShaderResource(
+	        resources.GetResourceHandle(m_buffer),
+	        skinInfluences.size_bytes(),
+	        sizeof(VertexSkinInfluenceData)));
+	m_shaderResourceView = m_renderHardwareInterface->GetDescriptorService().GetResourceViewGpuHandle(m_view);
 	if (!m_shaderResourceView)
 	{
 		Release();

@@ -19,4 +19,4 @@ namespace Paths
 	SPARKLE_CORE_API std::filesystem::path CookedAnimationAsset(std::uint64_t animationAssetId);
 	SPARKLE_CORE_API std::filesystem::path ImportedTextureCacheRoot();
 	SPARKLE_CORE_API std::filesystem::path ShaderRecookSignal(const std::filesystem::path& cookedShaderRoot);
-}  // namespace Paths
+}

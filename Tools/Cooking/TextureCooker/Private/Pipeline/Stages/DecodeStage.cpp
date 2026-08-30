@@ -62,9 +62,7 @@ namespace TextureCookPipeline
 		return workingMip;
 	}
 
-	WorkingTexture BuildWorkingTexture(
-	    const TextureCookRequest& request,
-	    const TextureLoadResult& sourceTexture)
+	WorkingTexture BuildWorkingTexture(const TextureCookRequest& request, const TextureLoadResult& sourceTexture)
 	{
 		if (!IsByteRgbaFormat(sourceTexture.dxgiFormat) && !IsFloatFormat(sourceTexture.dxgiFormat))
 		{
@@ -87,10 +85,8 @@ namespace TextureCookPipeline
 
 			for (std::uint32_t mipIndex = 0; mipIndex < mipCountToDecode; ++mipIndex)
 			{
-				workingSlice.push_back(DecodeMipLevel(
-				    sourceSlice[mipIndex],
-				    sourceTexture.dxgiFormat,
-				    request.policy.colorProcessingPolicy));
+				workingSlice.push_back(
+				    DecodeMipLevel(sourceSlice[mipIndex], sourceTexture.dxgiFormat, request.policy.colorProcessingPolicy));
 			}
 		}
 

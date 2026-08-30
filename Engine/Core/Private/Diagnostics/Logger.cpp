@@ -18,9 +18,9 @@
 #include <spdlog/sinks/stdout_sinks.h>
 
 #if defined(_WIN32)
-	#define WIN32_LEAN_AND_MEAN
-	#define NOMINMAX
-	#include <windows.h>
+  #define WIN32_LEAN_AND_MEAN
+  #define NOMINMAX
+  #include <windows.h>
 #endif
 
 namespace Logging
@@ -88,7 +88,7 @@ namespace Logging
 #if defined(_WIN32)
 	class DebugOutputSink final : public spdlog::sinks::base_sink<std::mutex>
 	{
-	  protected:
+	protected:
 		void sink_it_(const spdlog::details::log_msg& msg) override
 		{
 			spdlog::memory_buf_t formatted;

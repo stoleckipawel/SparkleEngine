@@ -12,15 +12,18 @@ class Mesh;
 
 template <typename TDomain> class RenderAssetHandle final
 {
-  public:
+public:
 	constexpr RenderAssetHandle() noexcept = default;
-	constexpr explicit RenderAssetHandle(Assets::CookedAssetId assetId) noexcept : m_assetId(assetId) {}
+	constexpr explicit RenderAssetHandle(Assets::CookedAssetId assetId) noexcept :
+	    m_assetId(assetId)
+	{
+	}
 
 	constexpr bool IsValid() const noexcept { return m_assetId != Assets::InvalidCookedAssetId; }
 	constexpr Assets::CookedAssetId GetAssetId() const noexcept { return m_assetId; }
 	constexpr auto operator<=>(const RenderAssetHandle&) const noexcept = default;
 
-  private:
+private:
 	Assets::CookedAssetId m_assetId = Assets::InvalidCookedAssetId;
 };
 
@@ -39,7 +42,7 @@ struct RenderTextureAssetHandle final
 
 class SPARKLE_ENGINE_API ImmutableRenderMeshHandle final
 {
-  public:
+public:
 	ImmutableRenderMeshHandle() noexcept = default;
 	ImmutableRenderMeshHandle(Assets::CookedAssetId assetId, std::uint32_t generation, std::shared_ptr<const Mesh> resource) noexcept;
 	bool IsValid() const noexcept;
@@ -48,7 +51,7 @@ class SPARKLE_ENGINE_API ImmutableRenderMeshHandle final
 	const std::shared_ptr<const Mesh>& GetResource() const noexcept { return m_resource; }
 	bool RefersToSameResource(const ImmutableRenderMeshHandle& other) const noexcept;
 
-  private:
+private:
 	Assets::CookedAssetId m_assetId = Assets::InvalidCookedAssetId;
 	std::uint32_t m_generation = 0;
 	std::shared_ptr<const Mesh> m_resource;

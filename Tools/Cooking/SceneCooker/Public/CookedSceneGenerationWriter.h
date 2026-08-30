@@ -6,6 +6,6 @@ struct CookedSceneBuild;
 
 class CookedSceneGenerationWriter final
 {
-  public:
+public:
 	static void Publish(std::span<const CookedSceneBuild* const> builds);
 };

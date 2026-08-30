@@ -3,7 +3,8 @@
 
 #include <algorithm>
 
-D3D12DescriptorAllocator::D3D12DescriptorAllocator(D3D12DescriptorHeap* heap) noexcept : m_heap(heap)
+D3D12DescriptorAllocator::D3D12DescriptorAllocator(D3D12DescriptorHeap* heap) noexcept :
+    m_heap(heap)
 {
 }
 
@@ -51,11 +52,7 @@ D3D12DescriptorHandle D3D12DescriptorAllocator::AllocateContiguousFromLinearRang
 {
 	if (m_currentOffset + count > m_heap->GetNumDescriptors())
 	{
-		Diagnostics::Fatal(
-		    Logger(),
-		    __FILE__,
-		    __LINE__,
-		    "Descriptor heap cannot allocate contiguous block (insufficient space).");
+		Diagnostics::Fatal(Logger(), __FILE__, __LINE__, "Descriptor heap cannot allocate contiguous block (insufficient space).");
 	}
 
 	const UINT startIndex = m_currentOffset;

@@ -2,7 +2,4 @@
 
 #include "Passes/Presentation/ToneMappingShader.h"
 
-IMPLEMENT_GLOBAL_SHADER(
-    ToneMappingCS, "/Engine/Passes/Presentation/ToneMapping.hlsl",
-    "main",
-    Compute);
+IMPLEMENT_GLOBAL_SHADER(ToneMappingCS, "/Engine/Passes/Presentation/ToneMapping.hlsl", "main", Compute);

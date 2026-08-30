@@ -10,11 +10,11 @@
 class Window;
 
 std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
-	Window& window,
-	PixelFormat backBufferFormat,
-	const RhiPresentationConfiguration& presentationConfiguration,
-	RhiInterposerHooks interposerHooks) noexcept;
+    Window& window,
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration,
+    RhiInterposerHooks interposerHooks) noexcept;
 std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(
-	Window& window,
-	PixelFormat backBufferFormat,
-	const RhiPresentationConfiguration& presentationConfiguration) noexcept;
+    Window& window,
+    PixelFormat backBufferFormat,
+    const RhiPresentationConfiguration& presentationConfiguration) noexcept;

@@ -153,9 +153,8 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	    || m_builtGBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || m_builtShadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline;
 	if (providerChanged || settings != m_frameGraphSettings || lightingMode != m_builtLightingMode
-	    || gBufferAlgorithm != m_builtGBufferAlgorithm
-	    || gBufferExecutionPlan != m_builtGBufferExecutionPlan || shadowExecutionPlan != m_builtShadowExecutionPlan
-	    || shaderGeneration != m_builtShaderGeneration
+	    || gBufferAlgorithm != m_builtGBufferAlgorithm || gBufferExecutionPlan != m_builtGBufferExecutionPlan
+	    || shadowExecutionPlan != m_builtShadowExecutionPlan || shaderGeneration != m_builtShaderGeneration
 	    || (usesSceneShaderTable && shaderTablePlanGeneration != m_builtShaderTablePlanGeneration))
 	{
 		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);

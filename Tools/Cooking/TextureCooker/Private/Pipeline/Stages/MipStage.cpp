@@ -28,9 +28,9 @@ namespace TextureCookPipeline
 				float sumAlpha = 0.0f;
 				std::uint32_t sampleCount = 0;
 
-				for (std::uint32_t sourceY = y * 2u; sourceY < (std::min)(sourceMip.height, (y * 2u) + 2u); ++sourceY)
+				for (std::uint32_t sourceY = y * 2u; sourceY < (std::min) (sourceMip.height, (y * 2u) + 2u); ++sourceY)
 				{
-					for (std::uint32_t sourceX = x * 2u; sourceX < (std::min)(sourceMip.width, (x * 2u) + 2u); ++sourceX)
+					for (std::uint32_t sourceX = x * 2u; sourceX < (std::min) (sourceMip.width, (x * 2u) + 2u); ++sourceX)
 					{
 						const std::size_t sourceOffset = (static_cast<std::size_t>(sourceY) * sourceMip.width + sourceX) * 4u;
 						const float normalX = (sourceMip.pixels[sourceOffset + 0u] * 2.0f) - 1.0f;
@@ -55,10 +55,7 @@ namespace TextureCookPipeline
 		}
 	}
 
-	static void ResizeFloatMipLevel(
-	    TextureMipFilter mipFilter,
-	    const WorkingMipLevel& sourceMip,
-	    WorkingMipLevel& outMip)
+	static void ResizeFloatMipLevel(TextureMipFilter mipFilter, const WorkingMipLevel& sourceMip, WorkingMipLevel& outMip)
 	{
 		outMip.pixels.resize(static_cast<std::size_t>(outMip.width) * static_cast<std::size_t>(outMip.height) * 4u);
 
@@ -92,13 +89,11 @@ namespace TextureCookPipeline
 		}
 	}
 
-	static WorkingMipLevel GenerateNextMip(
-	    TextureMipFilter mipFilter,
-	    const WorkingMipLevel& sourceMip)
+	static WorkingMipLevel GenerateNextMip(TextureMipFilter mipFilter, const WorkingMipLevel& sourceMip)
 	{
 		WorkingMipLevel mip;
-		mip.width = (std::max)(1u, sourceMip.width >> 1u);
-		mip.height = (std::max)(1u, sourceMip.height >> 1u);
+		mip.width = (std::max) (1u, sourceMip.width >> 1u);
+		mip.height = (std::max) (1u, sourceMip.height >> 1u);
 
 		if (mipFilter == TextureMipFilter::NormalAware)
 		{

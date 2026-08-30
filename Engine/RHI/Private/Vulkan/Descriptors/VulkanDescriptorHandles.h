@@ -7,7 +7,7 @@
 
 class VulkanDescriptorHandles final
 {
-  public:
+public:
 	static constexpr std::uint32_t MaximumCpuDescriptorCount = 0xFFFFu;
 
 	static RhiDescriptorTableHandle MakeTableHandle(std::uint32_t index, std::uint16_t generation) noexcept;
@@ -24,7 +24,7 @@ class VulkanDescriptorHandles final
 	VulkanDescriptorHandles() = delete;
 	~VulkanDescriptorHandles() = delete;
 
-  private:
+private:
 	static constexpr std::uint64_t GpuDescriptorMagic = 0x5350564B00000000ull;
 	static constexpr std::uintptr_t CpuDescriptorMagic = static_cast<std::uintptr_t>(0x4350000000000000ull);
 	static constexpr std::uintptr_t CpuDescriptorMagicMask = static_cast<std::uintptr_t>(0xFFFF000000000000ull);

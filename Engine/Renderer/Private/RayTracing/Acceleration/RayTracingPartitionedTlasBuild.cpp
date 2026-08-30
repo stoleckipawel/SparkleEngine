@@ -52,10 +52,10 @@ RhiPartitionedTlasInstanceFlags RayTracingPartitionedTlasStrategy::ResolveInstan
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStrategy::BuildPartitionedTlas(
     RenderCommandContext& commandContext,
-	const PreparedRenderScene& preparedScene,
-	RayTracingBlasCache& blasCache,
-	const RayTracingShaderTablePlan& shaderTablePlan,
-	const RayTracingPtlasPartitionPlan& viewPlan,
+    const PreparedRenderScene& preparedScene,
+    RayTracingBlasCache& blasCache,
+    const RayTracingShaderTablePlan& shaderTablePlan,
+    const RayTracingPtlasPartitionPlan& viewPlan,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	RayTracingTopLevelAccelerationStructureBuildResult result{};
@@ -91,10 +91,10 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
     RenderCommandContext& commandContext,
     const PreparedRenderScene& preparedScene,
-	const RayTracingPtlasPartitionPlan* partitionPlan,
-	RayTracingBlasCache& blasCache,
-	const RayTracingShaderTablePlan& shaderTablePlan,
-	RayTracingPerformanceDiagnostics* diagnostics,
+    const RayTracingPtlasPartitionPlan* partitionPlan,
+    RayTracingBlasCache& blasCache,
+    const RayTracingShaderTablePlan& shaderTablePlan,
+    RayTracingPerformanceDiagnostics* diagnostics,
     PartitionedBuildState& state) noexcept
 {
 	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;

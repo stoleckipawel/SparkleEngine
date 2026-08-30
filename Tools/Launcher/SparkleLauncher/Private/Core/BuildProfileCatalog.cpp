@@ -54,12 +54,12 @@ namespace SparkleLauncher
 	{
 		switch (state)
 		{
-		case BuildProfileState::Debug:
-			return "Debug";
-		case BuildProfileState::Development:
-			return "Development";
-		case BuildProfileState::Shipping:
-			return "Shipping";
+			case BuildProfileState::Debug:
+				return "Debug";
+			case BuildProfileState::Development:
+				return "Development";
+			case BuildProfileState::Shipping:
+				return "Shipping";
 		}
 
 		return "Unknown";
@@ -69,10 +69,10 @@ namespace SparkleLauncher
 	{
 		switch (target)
 		{
-		case BuildProfileTarget::Editor:
-			return "Editor";
-		case BuildProfileTarget::Game:
-			return "Game";
+			case BuildProfileTarget::Editor:
+				return "Editor";
+			case BuildProfileTarget::Game:
+				return "Game";
 		}
 
 		return "Unknown";

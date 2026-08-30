@@ -15,7 +15,7 @@ namespace spdlog
 
 class D3D12DescriptorAllocator final
 {
-  public:
+public:
 	explicit D3D12DescriptorAllocator(D3D12DescriptorHeap* heap) noexcept;
 
 	D3D12DescriptorHandle Allocate();
@@ -26,7 +26,7 @@ class D3D12DescriptorAllocator final
 
 	void FreeContiguous(const D3D12DescriptorHandle& firstHandle, uint32_t count) noexcept;
 
-  private:
+private:
 	std::optional<UINT> TryAllocateContiguousFromFreeListLocked(uint32_t count);
 	D3D12DescriptorHandle AllocateContiguousFromLinearRangeLocked(uint32_t count);
 	static const std::shared_ptr<spdlog::logger>& Logger() noexcept;

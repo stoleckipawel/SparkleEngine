@@ -7,9 +7,9 @@
 
 class ShaderRecookPublicationReader final
 {
-  public:
+public:
 	static ShaderRecookPublicationReadResult Read(const std::filesystem::path& publicationPath) noexcept;
 
-  private:
+private:
 	static ShaderRecookPublicationReadResult Parse(std::string_view text) noexcept;
 };

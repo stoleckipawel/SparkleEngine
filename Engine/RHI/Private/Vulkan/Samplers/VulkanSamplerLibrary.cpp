@@ -11,7 +11,8 @@
 static const auto g_vulkanSamplerLibraryLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Samplers");
 
 VulkanSamplerLibrary::VulkanSamplerLibrary(VulkanRhi& rhi, VulkanDescriptorService& descriptorService) noexcept :
-    m_rhi(rhi), m_descriptorService(descriptorService)
+    m_rhi(rhi),
+    m_descriptorService(descriptorService)
 {
 }
 
@@ -120,11 +121,7 @@ VkSampler VulkanSamplerLibrary::CreateSampler(const RhiSamplerDesc& desc) const
 	const VkResult result = vkCreateSampler(m_rhi.GetDevice(), &createInfo, nullptr, &sampler);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanSamplerLibraryLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkCreateSampler", result));
+		Diagnostics::Fatal(g_vulkanSamplerLibraryLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSampler", result));
 	}
 	return sampler;
 }

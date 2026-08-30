@@ -3,7 +3,7 @@
 #include "RayReconstruction/RayReconstructionProvider.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-#include <sl.h>
+  #include <sl.h>
 
 sl::Result TagRayReconstructionResourcesForFrame(
     const sl::FrameToken& frameToken,

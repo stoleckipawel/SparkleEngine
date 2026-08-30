@@ -20,7 +20,8 @@ namespace SparkleLauncher
 		{
 			if (step.Id == "cook-shaders")
 			{
-				return "ShaderCompiler could not start because its DXC/Slang runtime support bundle is incomplete. Rebuild cooking tools after "
+				return "ShaderCompiler could not start because its DXC/Slang runtime support bundle is incomplete. Rebuild cooking tools "
+				       "after "
 				       "Sync confirms the Vulkan SDK, then retry. Log: "
 				    + step.Request.LogPath.string();
 			}
@@ -69,7 +70,8 @@ namespace SparkleLauncher
 
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Cook operation is not ready to run." : plan.ReadinessMessages.front();
+			operation.FailureSummary =
+			    plan.ReadinessMessages.empty() ? "Cook operation is not ready to run." : plan.ReadinessMessages.front();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -96,7 +98,8 @@ namespace SparkleLauncher
 			}
 
 			const ProcessOutputCallback existingCallback = request.OutputCallback;
-			request.OutputCallback = [existingCallback, outputCallback](std::string_view output) {
+			request.OutputCallback = [existingCallback, outputCallback](std::string_view output)
+			{
 				if (existingCallback)
 				{
 					existingCallback(output);

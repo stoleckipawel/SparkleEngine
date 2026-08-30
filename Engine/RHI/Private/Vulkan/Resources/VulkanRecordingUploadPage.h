@@ -14,11 +14,8 @@ struct VulkanGpuAllocationRecord;
 
 class VulkanRecordingUploadPage final
 {
-  public:
-	VulkanRecordingUploadPage(
-	    VulkanRhi& rhi,
-	    VulkanGpuMemoryAllocator& memoryAllocator,
-	    std::uint64_t capacityInBytes) noexcept;
+public:
+	VulkanRecordingUploadPage(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, std::uint64_t capacityInBytes) noexcept;
 	~VulkanRecordingUploadPage() noexcept;
 
 	VulkanRecordingUploadPage(const VulkanRecordingUploadPage&) = delete;
@@ -28,15 +25,11 @@ class VulkanRecordingUploadPage final
 
 	void Reset() noexcept;
 	RhiGpuVirtualAddress AllocateAndCopy(const void* data, std::uint32_t sizeInBytes) noexcept;
-	bool Resolve(
-	    RhiGpuVirtualAddress address,
-	    VkBuffer& buffer,
-	    VkDeviceSize& offset,
-	    VkDeviceSize& range) const noexcept;
+	bool Resolve(RhiGpuVirtualAddress address, VkBuffer& buffer, VkDeviceSize& offset, VkDeviceSize& range) const noexcept;
 
 	std::uint64_t GetCapacityInBytes() const noexcept { return m_capacityInBytes; }
 
-  private:
+private:
 	struct Allocation final
 	{
 		VkDeviceSize Offset = 0;

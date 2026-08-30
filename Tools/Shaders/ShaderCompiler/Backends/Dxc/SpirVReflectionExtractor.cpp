@@ -9,9 +9,9 @@
 #include <vector>
 
 CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(
-	SpvReflectDescriptorType type,
-	SpvDim dim,
-	SpvReflectDecorationFlags decorationFlags)
+    SpvReflectDescriptorType type,
+    SpvDim dim,
+    SpvReflectDecorationFlags decorationFlags)
 {
 	switch (type)
 	{
@@ -19,11 +19,9 @@ CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(
 			return CookedShaderResourceKind::Sampler;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
 		case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-			return (dim == SpvDimBuffer) ? CookedShaderResourceKind::TypedBuffer
-			                             : CookedShaderResourceKind::Texture;
+			return (dim == SpvDimBuffer) ? CookedShaderResourceKind::TypedBuffer : CookedShaderResourceKind::Texture;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-			return (dim == SpvDimBuffer) ? CookedShaderResourceKind::RWTypedBuffer
-			                             : CookedShaderResourceKind::RWTexture;
+			return (dim == SpvDimBuffer) ? CookedShaderResourceKind::RWTypedBuffer : CookedShaderResourceKind::RWTexture;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
 			return CookedShaderResourceKind::TypedBuffer;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
@@ -33,9 +31,8 @@ CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(
 			return CookedShaderResourceKind::ConstantBuffer;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
 		case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-			return (decorationFlags & SPV_REFLECT_DECORATION_NON_WRITABLE) != 0u
-			           ? CookedShaderResourceKind::StructuredBuffer
-			           : CookedShaderResourceKind::RWStructuredBuffer;
+			return (decorationFlags & SPV_REFLECT_DECORATION_NON_WRITABLE) != 0u ? CookedShaderResourceKind::StructuredBuffer
+			                                                                     : CookedShaderResourceKind::RWStructuredBuffer;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
 			return CookedShaderResourceKind::AccelerationStructure;
 		default:
@@ -43,25 +40,20 @@ CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(
 	}
 }
 
-CookedShaderResourceDimension SpirVReflectionExtractor::MapImageDim(
-    SpvDim dim, std::uint32_t arrayed, std::uint32_t ms)
+CookedShaderResourceDimension SpirVReflectionExtractor::MapImageDim(SpvDim dim, std::uint32_t arrayed, std::uint32_t ms)
 {
 	switch (dim)
 	{
 		case SpvDim1D:
-			return arrayed ? CookedShaderResourceDimension::Texture1DArray
-			               : CookedShaderResourceDimension::Texture1D;
+			return arrayed ? CookedShaderResourceDimension::Texture1DArray : CookedShaderResourceDimension::Texture1D;
 		case SpvDim2D:
 			if (ms != 0u)
-				return arrayed ? CookedShaderResourceDimension::Texture2DMSArray
-				               : CookedShaderResourceDimension::Texture2DMS;
-			return arrayed ? CookedShaderResourceDimension::Texture2DArray
-			               : CookedShaderResourceDimension::Texture2D;
+				return arrayed ? CookedShaderResourceDimension::Texture2DMSArray : CookedShaderResourceDimension::Texture2DMS;
+			return arrayed ? CookedShaderResourceDimension::Texture2DArray : CookedShaderResourceDimension::Texture2D;
 		case SpvDim3D:
 			return CookedShaderResourceDimension::Texture3D;
 		case SpvDimCube:
-			return arrayed ? CookedShaderResourceDimension::TextureCubeArray
-			               : CookedShaderResourceDimension::TextureCube;
+			return arrayed ? CookedShaderResourceDimension::TextureCubeArray : CookedShaderResourceDimension::TextureCube;
 		case SpvDimBuffer:
 			return CookedShaderResourceDimension::Buffer;
 		default:
@@ -69,8 +61,7 @@ CookedShaderResourceDimension SpirVReflectionExtractor::MapImageDim(
 	}
 }
 
-CookedShaderScalarType SpirVReflectionExtractor::MapInputFormat(
-    SpvReflectFormat format, std::uint8_t& outComponentCount)
+CookedShaderScalarType SpirVReflectionExtractor::MapInputFormat(SpvReflectFormat format, std::uint8_t& outComponentCount)
 {
 	switch (format)
 	{
@@ -161,8 +152,7 @@ CookedShaderScalarType SpirVReflectionExtractor::MapInputFormat(
 	}
 }
 
-CookedShaderScalarType SpirVReflectionExtractor::MapNumericScalar(
-    const SpvReflectNumericTraits& traits, bool isSigned)
+CookedShaderScalarType SpirVReflectionExtractor::MapNumericScalar(const SpvReflectNumericTraits& traits, bool isSigned)
 {
 	const std::uint32_t width = traits.scalar.width;
 	if (width == 32u)
@@ -192,9 +182,9 @@ void SpirVReflectionExtractor::FlattenBlockMembers(
 		{
 			member.ArrayCount *= (m.array.dims[d] == 0u ? 1u : m.array.dims[d]);
 		}
-		member.ArrayStrideInBytes = (m.array.stride != 0u) ? m.array.stride
-		                                                   : ((member.ArrayCount > 0u) ? member.SizeInBytes / member.ArrayCount
-		                                                                               : member.SizeInBytes);
+		member.ArrayStrideInBytes = (m.array.stride != 0u)
+		    ? m.array.stride
+		    : ((member.ArrayCount > 0u) ? member.SizeInBytes / member.ArrayCount : member.SizeInBytes);
 
 		// Map the type. Prefer numeric traits + type flags.
 		if (m.type_description != nullptr)
@@ -204,8 +194,8 @@ void SpirVReflectionExtractor::FlattenBlockMembers(
 			{
 				const std::uint32_t width = m.numeric.scalar.width;
 				member.ScalarType = (width == 16u) ? CookedShaderScalarType::Float16
-				                                   : (width == 64u) ? CookedShaderScalarType::Float64
-				                                                    : CookedShaderScalarType::Float32;
+				    : (width == 64u)               ? CookedShaderScalarType::Float64
+				                                   : CookedShaderScalarType::Float32;
 			}
 			else if (flags & SPV_REFLECT_TYPE_FLAG_INT)
 			{
@@ -249,9 +239,7 @@ void SpirVReflectionExtractor::FlattenBlockMembers(
 	}
 }
 
-ShaderReflection SpirVReflectionExtractor::Extract(
-    std::span<const std::uint8_t> bytecode,
-    ShaderStage stage)
+ShaderReflection SpirVReflectionExtractor::Extract(std::span<const std::uint8_t> bytecode, ShaderStage stage)
 {
 	ShaderReflection reflection;
 	ShaderReflection& outReflection = reflection;
@@ -286,9 +274,8 @@ ShaderReflection SpirVReflectionExtractor::Extract(
 
 		ShaderReflectionResourceBinding binding;
 		binding.Name = (b->name && b->name[0] != '\0')
-		                   ? b->name
-		                   : (b->type_description && b->type_description->type_name ? b->type_description->type_name
-		                                                                            : "");
+		    ? b->name
+		    : (b->type_description && b->type_description->type_name ? b->type_description->type_name : "");
 		binding.Kind = MapDescriptorType(b->descriptor_type, b->image.dim, b->decoration_flags);
 		binding.Dimension = MapImageDim(b->image.dim, b->image.arrayed, b->image.ms);
 		switch (binding.Kind)
@@ -305,10 +292,10 @@ ShaderReflection SpirVReflectionExtractor::Extract(
 			default:
 				break;
 		}
-		binding.IsReadOnly = (binding.Kind != CookedShaderResourceKind::RWTexture &&
-		                     binding.Kind != CookedShaderResourceKind::RWStructuredBuffer &&
-		                     binding.Kind != CookedShaderResourceKind::RWByteAddressBuffer &&
-		                     binding.Kind != CookedShaderResourceKind::RWTypedBuffer);
+		binding.IsReadOnly =
+		    (binding.Kind != CookedShaderResourceKind::RWTexture && binding.Kind != CookedShaderResourceKind::RWStructuredBuffer
+		        && binding.Kind != CookedShaderResourceKind::RWByteAddressBuffer
+		        && binding.Kind != CookedShaderResourceKind::RWTypedBuffer);
 		binding.Set = b->set;
 		binding.Slot = b->binding;
 		binding.ArrayCount = (b->count == 0u) ? 1u : b->count;
@@ -347,9 +334,7 @@ ShaderReflection SpirVReflectionExtractor::Extract(
 				continue;
 
 			ShaderReflectionInputElement element;
-			element.Semantic = (v->semantic && v->semantic[0] != '\0')
-			                       ? v->semantic
-			                       : (v->name ? v->name : "");
+			element.Semantic = (v->semantic && v->semantic[0] != '\0') ? v->semantic : (v->name ? v->name : "");
 			element.SemanticIndex = 0;
 			element.Location = v->location;
 			std::uint8_t componentCount = 0;

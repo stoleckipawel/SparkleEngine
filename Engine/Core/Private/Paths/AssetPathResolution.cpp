@@ -11,7 +11,7 @@
 
 class AssetPathSearch final
 {
-  public:
+public:
 	static std::optional<std::filesystem::path> TryResolveIn(
 	    const std::filesystem::path& searchDirectory,
 	    const std::filesystem::path& relativePath,
@@ -55,13 +55,13 @@ namespace Filesystem
 
 		switch (root)
 		{
-			case PathRoot::Project: return state.projectTypedPaths[typeIndex];
-			case PathRoot::Engine: return state.engineTypedPaths[typeIndex];
+			case PathRoot::Project:
+				return state.projectTypedPaths[typeIndex];
+			case PathRoot::Engine:
+				return state.engineTypedPaths[typeIndex];
 			case PathRoot::Any:
 			default:
-				return state.projectTypedPaths[typeIndex].empty() ?
-			           state.engineTypedPaths[typeIndex] :
-			           state.projectTypedPaths[typeIndex];
+				return state.projectTypedPaths[typeIndex].empty() ? state.engineTypedPaths[typeIndex] : state.projectTypedPaths[typeIndex];
 		}
 	}
 
@@ -70,8 +70,7 @@ namespace Filesystem
 		return GetTypedPath(AssetType::Shader, root);
 	}
 
-	std::optional<std::filesystem::path> ResolveAssetPathNormalized(
-	    const std::filesystem::path& inputPath, AssetType type)
+	std::optional<std::filesystem::path> ResolveAssetPathNormalized(const std::filesystem::path& inputPath, AssetType type)
 	{
 		if (const auto resolvedPath = ResolveAssetPath(inputPath, type))
 		{
@@ -87,8 +86,7 @@ namespace Filesystem
 	{
 		for (const std::filesystem::path& inputPath : inputPaths)
 		{
-			std::filesystem::path normalizedPath =
-			    ResolveAssetPathNormalized(inputPath, type).value_or(Paths::Normalize(inputPath));
+			std::filesystem::path normalizedPath = ResolveAssetPathNormalized(inputPath, type).value_or(Paths::Normalize(inputPath));
 			if (!normalizedPath.empty())
 			{
 				destination.push_back(std::move(normalizedPath));

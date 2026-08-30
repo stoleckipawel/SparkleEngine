@@ -5,6 +5,6 @@
 
 class CookedSceneMaterialVariantBuilder final
 {
-  public:
+public:
 	static void BuildMaterialVariants(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 };

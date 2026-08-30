@@ -19,4 +19,4 @@ namespace FrameGraphCopyPasses
 	    std::string_view name,
 	    FrameGraphBufferHandle destination,
 	    FrameGraphBufferHandle source);
-}  // namespace FrameGraphCopyPasses
+}

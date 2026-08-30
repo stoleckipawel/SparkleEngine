@@ -13,7 +13,7 @@ namespace ECS
 {
 	class WorldChangeJournal final
 	{
-	  public:
+	public:
 		static constexpr std::size_t MaxRetainedBatches = 64;
 		static constexpr std::size_t MaxChangesPerBatch = 4096;
 
@@ -21,7 +21,7 @@ namespace ECS
 		WorldChangeBatch ReadAfter(WorldSequence acknowledgedSequence) const;
 		WorldSequence GetLatestSequence() const;
 
-	  private:
+	private:
 		mutable std::mutex m_mutex;
 		std::deque<std::shared_ptr<const WorldChangeBatch::Storage>> m_batches;
 		WorldSequence m_latestSequence = 0;

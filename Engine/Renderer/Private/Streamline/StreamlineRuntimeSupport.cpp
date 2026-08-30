@@ -2,20 +2,20 @@
 #include "Streamline/StreamlineRuntimeSupport.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	#include <sl_dlss.h>
-	#include <sl_dlss_d.h>
-	#include <sl_helpers.h>
-	#include <sl_pcl.h>
-	#include <sl_reflex.h>
+  #include <sl_dlss.h>
+  #include <sl_dlss_d.h>
+  #include <sl_helpers.h>
+  #include <sl_pcl.h>
+  #include <sl_reflex.h>
 
-	#include <condition_variable>
-	#include <mutex>
+  #include <condition_variable>
+  #include <mutex>
 
 static const auto g_streamlineRuntimeLogger = Logging::GetOrCreateLogger("Renderer.Streamline.Runtime");
 
 class StreamlineRuntime final
 {
-  public:
+public:
 	static bool Initialize(ERhiBackendApi backendApi)
 	{
 		if (backendApi != ERhiBackendApi::D3D12)
@@ -67,12 +67,7 @@ class StreamlineRuntime final
 		{
 			std::unique_lock lock(s_mutex);
 			s_shuttingDown = true;
-			s_idle.wait(
-			    lock,
-			    []
-			    {
-				    return s_activeCalls == 0 && !s_initializing;
-			    });
+			s_idle.wait(lock, [] { return s_activeCalls == 0 && !s_initializing; });
 			initialized = s_initialized;
 		}
 		if (initialized)
@@ -115,7 +110,7 @@ class StreamlineRuntime final
 		SetFrameMarker(marker, frameId, nullptr);
 	}
 
-  private:
+private:
 	enum class CallRequirement : std::uint8_t
 	{
 		Initialized,
@@ -125,7 +120,7 @@ class StreamlineRuntime final
 
 	class CallLease final
 	{
-	  public:
+	public:
 		explicit CallLease(CallRequirement requirement) noexcept
 		{
 			std::lock_guard lock(s_mutex);
@@ -149,7 +144,7 @@ class StreamlineRuntime final
 
 		explicit operator bool() const noexcept { return m_acquired; }
 
-	  private:
+	private:
 		bool m_acquired = false;
 	};
 
@@ -164,10 +159,7 @@ class StreamlineRuntime final
 		return requirement == CallRequirement::DeviceBound || s_presentationReady;
 	}
 
-	static bool SetNativeDevice(
-	    NativeGraphicsDeviceHandle nativeDevice,
-	    const RhiAdapterIdentity& adapter,
-	    void*) noexcept
+	static bool SetNativeDevice(NativeGraphicsDeviceHandle nativeDevice, const RhiAdapterIdentity& adapter, void*) noexcept
 	{
 		CallLease call(CallRequirement::Initialized);
 		if (!call || !nativeDevice)
@@ -210,15 +202,11 @@ class StreamlineRuntime final
 		return call && nativeInterface != nullptr && slUpgradeInterface(nativeInterface) == sl::Result::eOk;
 	}
 
-	static bool ResolveNativeInterface(
-	    ERhiInterposerInterfaceKind,
-	    void* externalInterface,
-	    void** nativeInterface,
-	    void*) noexcept
+	static bool ResolveNativeInterface(ERhiInterposerInterfaceKind, void* externalInterface, void** nativeInterface, void*) noexcept
 	{
 		CallLease call(CallRequirement::Initialized);
-		return call && externalInterface != nullptr && nativeInterface != nullptr &&
-		       slGetNativeInterface(externalInterface, nativeInterface) == sl::Result::eOk;
+		return call && externalInterface != nullptr && nativeInterface != nullptr
+		    && slGetNativeInterface(externalInterface, nativeInterface) == sl::Result::eOk;
 	}
 
 	static void SetPresentationReady(bool ready, void*) noexcept
@@ -247,10 +235,7 @@ class StreamlineRuntime final
 		Diagnostics::Fatal(g_streamlineRuntimeLogger, __FILE__, __LINE__, "Unknown external frame marker.");
 	}
 
-	static void SetFrameMarker(
-	    ERhiFrameLatencyMarker marker,
-	    std::uint64_t frameId,
-	    void*) noexcept
+	static void SetFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId, void*) noexcept
 	{
 		CallLease call(CallRequirement::RuntimeReady);
 		if (!call || !s_pclSupported)
@@ -264,8 +249,7 @@ class StreamlineRuntime final
 		{
 			Diagnostics::Fatal(g_streamlineRuntimeLogger, __FILE__, __LINE__, "Streamline could not resolve the logical frame token.");
 		}
-		if (marker == ERhiFrameLatencyMarker::SimulationStart && s_reflexSupported &&
-		    slReflexSleep(*frameToken) != sl::Result::eOk)
+		if (marker == ERhiFrameLatencyMarker::SimulationStart && s_reflexSupported && slReflexSleep(*frameToken) != sl::Result::eOk)
 		{
 			Diagnostics::Fatal(g_streamlineRuntimeLogger, __FILE__, __LINE__, "Streamline Reflex sleep failed for the active frame.");
 		}
@@ -275,10 +259,7 @@ class StreamlineRuntime final
 		}
 	}
 
-	static void ShutdownFromInterposer(void*) noexcept
-	{
-		Shutdown();
-	}
+	static void ShutdownFromInterposer(void*) noexcept { Shutdown(); }
 
 	static void FillPreferences(sl::Preferences& preferences)
 	{
@@ -286,9 +267,9 @@ class StreamlineRuntime final
 		preferences = {};
 		preferences.featuresToLoad = features;
 		preferences.numFeaturesToLoad = static_cast<std::uint32_t>(std::size(features));
-		preferences.flags = sl::PreferenceFlags::eDisableCLStateTracking | sl::PreferenceFlags::eUseManualHooking |
-		                    sl::PreferenceFlags::eUseFrameBasedResourceTagging | sl::PreferenceFlags::eAllowOTA |
-		                    sl::PreferenceFlags::eLoadDownloadedPlugins;
+		preferences.flags = sl::PreferenceFlags::eDisableCLStateTracking | sl::PreferenceFlags::eUseManualHooking
+		    | sl::PreferenceFlags::eUseFrameBasedResourceTagging | sl::PreferenceFlags::eAllowOTA
+		    | sl::PreferenceFlags::eLoadDownloadedPlugins;
 		preferences.engine = sl::EngineType::eCustom;
 		preferences.engineVersion = "SparkleEngine-Development";
 		preferences.projectId = "535041524B4C45454E47494E45303031";
@@ -303,9 +284,8 @@ class StreamlineRuntime final
 	static bool ValidateBackend(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) noexcept
 	{
 		const RhiExternalFeatureInteropCapabilities& interop = capabilities.ExternalFeatureInterop;
-		const bool commonInterop = interop.ExposesNativeDevice && interop.ExposesNativeGraphicsQueue &&
-		                           interop.ExposesNativeGraphicsCommandList && interop.ExposesNativeResources &&
-		                           interop.SupportsExternalProviderEvaluation;
+		const bool commonInterop = interop.ExposesNativeDevice && interop.ExposesNativeGraphicsQueue
+		    && interop.ExposesNativeGraphicsCommandList && interop.ExposesNativeResources && interop.SupportsExternalProviderEvaluation;
 		return capabilities.BackendApi == ERhiBackendApi::D3D12 && commonInterop && nativeInterop && HasAdapterLuid(interop.Adapter);
 	}
 

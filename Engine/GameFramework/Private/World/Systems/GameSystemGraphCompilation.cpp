@@ -19,7 +19,7 @@ namespace ECS
 {
 	class GameSystemGraphCompiler final
 	{
-	  public:
+	public:
 		explicit GameSystemGraphCompiler(const std::vector<GameSystemDesc>& systems) :
 		    m_data(std::make_unique<CompiledGameSystemGraphData>())
 		{
@@ -48,7 +48,7 @@ namespace ECS
 			return std::move(m_data);
 		}
 
-	  private:
+	private:
 		struct ResourcePhaseRange final
 		{
 			GameSystemPhase First;
@@ -238,8 +238,8 @@ namespace ECS
 
 		bool ValidateExecutionPolicy(const GameSystemDesc& system)
 		{
-			if (system.Execution.Mode == GameSystemExecutionMode::ParallelRanges &&
-			    (system.Execution.RangePolicy.GrainSize == 0 || system.Execution.RangePolicy.MaximumPartitions == 0))
+			if (system.Execution.Mode == GameSystemExecutionMode::ParallelRanges
+			    && (system.Execution.RangePolicy.GrainSize == 0 || system.Execution.RangePolicy.MaximumPartitions == 0))
 			{
 				m_data->Error = {
 				    GameSystemGraphErrorCode::TaskGraphRejected,
@@ -343,8 +343,8 @@ namespace ECS
 			for (const GameSystemDesc& system : m_data->Systems)
 			{
 				taskCount += system.Execution.Mode == GameSystemExecutionMode::ParallelRanges
-				                 ? 1u + system.Execution.RangePolicy.MaximumPartitions
-				                 : 1u;
+				    ? 1u + system.Execution.RangePolicy.MaximumPartitions
+				    : 1u;
 			}
 
 			std::uint32_t edgeCount = 0;
@@ -395,12 +395,7 @@ namespace ECS
 				return;
 			}
 
-			const TaskNodeHandle group = tasks.Add(
-			    descriptor,
-			    [](TaskExecutionContext&)
-			    {
-				    return TaskResult::Success();
-			    });
+			const TaskNodeHandle group = tasks.Add(descriptor, [](TaskExecutionContext&) { return TaskResult::Success(); });
 			systemNodes.push_back(group);
 			for (std::uint32_t partition = 0; partition < system.Execution.RangePolicy.MaximumPartitions; ++partition)
 			{
@@ -409,9 +404,7 @@ namespace ECS
 				    group,
 				    TaskDesc{TaskName(taskName), TaskLane::FrameCritical},
 				    [systemIndex, partition, policy = system.Execution.RangePolicy](TaskExecutionContext& context)
-				    {
-					    return GameSystemExecution::ExecutePartition(systemIndex, partition, policy, context);
-				    });
+				    { return GameSystemExecution::ExecutePartition(systemIndex, partition, policy, context); });
 			}
 		}
 

@@ -35,19 +35,16 @@ void DrawDisplaySettingsSection(
 	if (!MatchesFilter(
 	        filterText,
 	        "Display",
-	        "display vsync high-performance adapter gpu back buffer format tone mapper aces reinhard exposure automatic manual metering reduction downsample pyramid compensation luminance sdr srgb output encoding") ||
-	    !BeginSettingsCategory("Display"))
+	        "display vsync high-performance adapter gpu back buffer format tone mapper aces reinhard exposure automatic manual metering "
+	        "reduction downsample pyramid compensation luminance sdr srgb output encoding")
+	    || !BeginSettingsCategory("Display"))
 	{
 		return;
 	}
 
 	if (BeginSettingsTable("##RenderingDisplaySettings"))
 	{
-		DrawBooleanRow(
-		    "##VSync",
-		    "VSync",
-		    settings.VSync,
-		    [&settingsSection](bool value) { settingsSection.SetVSync(value); });
+		DrawBooleanRow("##VSync", "VSync", settings.VSync, [&settingsSection](bool value) { settingsSection.SetVSync(value); });
 		DrawComboOptionRow(
 		    "##BackBufferFormat",
 		    "Back buffer format",

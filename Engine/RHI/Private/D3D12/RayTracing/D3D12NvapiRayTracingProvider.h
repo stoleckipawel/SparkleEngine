@@ -23,12 +23,8 @@ public:
 	    ID3D12Device10* device,
 	    bool runsOnNvidiaDevice,
 	    bool supportsAccelerationStructure) const noexcept;
-	RhiPartitionedTlasBuildSizes GetPartitionedTlasBuildSizes(
-	    ID3D12Device10* device,
-	    const RhiPartitionedTlasDesc& desc) const noexcept;
-	bool BuildPartitionedTlas(
-	    ID3D12GraphicsCommandList7* commandList,
-	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;
+	RhiPartitionedTlasBuildSizes GetPartitionedTlasBuildSizes(ID3D12Device10* device, const RhiPartitionedTlasDesc& desc) const noexcept;
+	bool BuildPartitionedTlas(ID3D12GraphicsCommandList7* commandList, const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;
 
 	bool IsRuntimeInitialized() const noexcept;
 	const char* GetRuntimeStatusReason() const noexcept;

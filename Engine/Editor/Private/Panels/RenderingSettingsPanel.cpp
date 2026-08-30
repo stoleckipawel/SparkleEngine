@@ -80,27 +80,18 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    "GBuffer algorithm",
 			    settings.SelectedGBufferAlgorithm,
 			    gBufferAlgorithmOptions,
-			    [this](GBufferAlgorithm value)
-			    {
-				    m_settings->SetGBufferAlgorithm(value);
-			    });
+			    [this](GBufferAlgorithm value) { m_settings->SetGBufferAlgorithm(value); });
 			DrawComboOptionRow(
 			    "##GBufferRayTracingExecution",
 			    "Ray-tracing execution",
 			    settings.GBufferRayTracingExecutionMode,
 			    rayTracingExecutionOptions,
-			    [this](RayTracingExecutionMode value)
-			    {
-				    m_settings->SetGBufferRayTracingExecutionMode(value);
-			    });
+			    [this](RayTracingExecutionMode value) { m_settings->SetGBufferRayTracingExecutionMode(value); });
 			DrawBooleanRow(
 			    "##MeshAutoBatching",
 			    "Mesh auto batching",
 			    settings.MeshAutoBatching,
-			    [this](bool value)
-			    {
-				    m_settings->SetMeshAutoBatching(value);
-			    });
+			    [this](bool value) { m_settings->SetMeshAutoBatching(value); });
 			ImGui::EndTable();
 		}
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));
@@ -115,10 +106,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    "Lighting mode",
 			    settings.Lighting,
 			    lightingModeOptions,
-			    [this](LightingMode value)
-			    {
-				    m_settings->SetLightingMode(value);
-			    });
+			    [this](LightingMode value) { m_settings->SetLightingMode(value); });
 			ImGui::EndTable();
 		}
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));

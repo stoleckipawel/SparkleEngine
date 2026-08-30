@@ -17,14 +17,15 @@ void DrawRayTracingSceneSettingsSection(
 	static constexpr ComboOption<RayTracingPtlasPartitionUpdateMode> partitionUpdateModeOptions[] = {
 	    {"Always update partition", RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition},
 	    {"Always move dynamic to global", RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal},
-	    {"Update partition nearby, move to global otherwise", RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise},
+	    {"Update partition nearby, move to global otherwise",
+	        RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise},
 	};
 
 	if (!MatchesFilter(
 	        filterText,
 	        "Ray Tracing Scene",
-	        "ray tracing scene tlas refit ptlas active partition update mode partitions dynamic distance acceleration structure") ||
-	    !BeginSettingsCategory("Ray Tracing Scene"))
+	        "ray tracing scene tlas refit ptlas active partition update mode partitions dynamic distance acceleration structure")
+	    || !BeginSettingsCategory("Ray Tracing Scene"))
 	{
 		return;
 	}

@@ -6,6 +6,6 @@ struct cgltf_data;
 
 class GltfCameraImporter final
 {
-  public:
+public:
 	static void ImportCameras(const cgltf_data* data, SourceImportOutput& output);
 };

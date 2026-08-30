@@ -7,7 +7,7 @@
 
 class FrameGraphResourceRegistry final
 {
-  public:
+public:
 	FrameGraphResourceRegistry() = default;
 	~FrameGraphResourceRegistry() = default;
 
@@ -42,7 +42,7 @@ class FrameGraphResourceRegistry final
 	const FrameGraphResourceMetadata& GetMetadata(FrameGraphResourceHandle handle) const noexcept;
 	const std::vector<FrameGraphResourceHandle>& GetRegisteredHandles() const noexcept { return m_registeredHandles; }
 
-  private:
+private:
 	void EnsureStorage(FrameGraphResourceHandle handle) noexcept;
 	FrameGraphResourceMetadata& RegisterMetadata(
 	    FrameGraphResourceHandle handle,

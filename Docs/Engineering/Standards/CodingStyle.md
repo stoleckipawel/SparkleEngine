@@ -46,6 +46,19 @@ Two accepted source-format rules are outside clang-format's reliable enforcement
 1. **No namespace-end comments.** Close named namespaces with `}` only. `FixNamespaceComments: false` prevents automatic additions but does not delete existing comments; remove existing `// namespace ...` suffixes in the dedicated format migration and reject new ones in review or a repository check.
 2. **HLSL attributes use their own line.** Place `[numthreads]`, `[loop]`, `[unroll]`, and equivalent shader attributes immediately above the declaration or statement they govern. clang-format 22.1.3 parses HLSL through its C++ fallback and does not reliably move these attributes, so shader review or a repository check owns enforcement.
 
+### Repository Commands
+
+The repository entry point builds its manifest from tracked owned C++, headers, HLSL, and HLSLI under `Engine`, `Tools`, and `Projects`. It excludes only `Engine/RHI/Private/D3D12/ThirdParty`; build, artifact, generated, cache, and fetched-dependency trees are not tracked inputs.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File CMake/CodeStyle.ps1 -Mode Check
+powershell -NoProfile -ExecutionPolicy Bypass -File CMake/CodeStyle.ps1 -Mode Format
+```
+
+The equivalent configured targets are `code_style_check` and `code_style_format`. Pass `-ClangFormatPath <path>` to the script, set `SPARKLE_CLANG_FORMAT`, or configure `SPARKLE_CLANG_FORMAT_EXECUTABLE`; every route rejects versions other than 22.1.3. The check also rejects namespace-end comments, anonymous namespaces, multiple inheritance, and shader attributes that share a line with their declaration or statement. Clang-tidy and compiler targets remain the semantic diagnostic owners; the format target does not substitute for compiling affected code.
+
+`-SourceFamily Cpp` and `-SourceFamily Shaders` narrow an explicit migration or diagnostic pass. Normal repository acceptance uses the default `All` manifest.
+
 ```cpp
 namespace Renderer
 {

@@ -6,7 +6,7 @@
 
 class SPARKLE_ENGINE_API Transform
 {
-  public:
+public:
 	Transform() noexcept;
 	explicit Transform(const DirectX::XMMATRIX& worldTransform) noexcept;
 	Transform(
@@ -34,7 +34,7 @@ class SPARKLE_ENGINE_API Transform
 	DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept;
 	DirectX::XMFLOAT3X3 GetRotationMatrix3x3() const noexcept;
 
-  private:
+private:
 	DirectX::XMFLOAT3 m_translation{0.0f, 0.0f, 0.0f};
 	DirectX::XMFLOAT3 m_rotationEuler{0.0f, 0.0f, 0.0f};
 	DirectX::XMFLOAT3 m_scale{1.0f, 1.0f, 1.0f};

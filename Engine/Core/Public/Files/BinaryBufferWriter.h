@@ -13,7 +13,7 @@ namespace Files
 {
 	class SPARKLE_CORE_API BinaryBufferWriter final
 	{
-	  public:
+	public:
 		explicit BinaryBufferWriter(std::vector<std::uint8_t>& bytes) noexcept;
 
 		template <typename T> void WriteValue(const T& value)
@@ -38,7 +38,7 @@ namespace Files
 		void WriteBytes(std::span<const std::uint8_t> values);
 		bool WriteStringWithUInt32Length(std::string_view value, std::string& outErrorMessage);
 
-	  private:
+	private:
 		std::vector<std::uint8_t>& m_bytes;
 	};
-}  // namespace Files
+}

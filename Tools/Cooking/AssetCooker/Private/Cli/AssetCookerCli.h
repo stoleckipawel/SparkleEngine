@@ -9,10 +9,10 @@ struct AssetCookerServiceResult;
 
 class AssetCookerCli final
 {
-  public:
+public:
 	int Run(int argc, char** argv) const;
 
-  private:
+private:
 	struct Arguments;
 
 	static bool IsHelp(std::string_view argument) noexcept;

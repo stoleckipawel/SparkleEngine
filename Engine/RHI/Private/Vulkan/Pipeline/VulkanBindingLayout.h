@@ -11,7 +11,7 @@ class VulkanRhi;
 
 class VulkanBindingLayout final : public RenderBindingLayout
 {
-  public:
+public:
 	VulkanBindingLayout(
 	    VkDevice device,
 	    const PassParameterLayout& parameterLayout,
@@ -30,7 +30,7 @@ class VulkanBindingLayout final : public RenderBindingLayout
 	const std::vector<VkDescriptorSetLayout>& GetDescriptorSetLayouts() const noexcept { return m_descriptorSetLayouts; }
 	const std::vector<VkPushConstantRange>& GetPushConstantRanges() const noexcept { return m_pushConstantRanges; }
 
-  private:
+private:
 	VkDevice m_device = VK_NULL_HANDLE;
 	std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
 	std::vector<VkSampler> m_immutableSamplers;
@@ -39,6 +39,6 @@ class VulkanBindingLayout final : public RenderBindingLayout
 
 class VulkanBindingLayoutCompiler final
 {
-  public:
+public:
 	static std::unique_ptr<VulkanBindingLayout> Compile(VulkanRhi& rhi, const RenderBindingLayoutCompileDesc& desc);
 };

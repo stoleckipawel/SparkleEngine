@@ -35,7 +35,7 @@ class FrameExecutionDiagnostics;
 
 class ScopedGpuEvent final
 {
-  public:
+public:
 	ScopedGpuEvent() noexcept = default;
 	~ScopedGpuEvent() noexcept;
 
@@ -46,7 +46,7 @@ class ScopedGpuEvent final
 
 	bool IsActive() const noexcept;
 
-  private:
+private:
 	friend class FrameExecutionDiagnostics;
 
 	ScopedGpuEvent(RenderCommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept;
@@ -57,7 +57,7 @@ class ScopedGpuEvent final
 
 class ScopedGpuTimer final
 {
-  public:
+public:
 	ScopedGpuTimer() noexcept = default;
 	~ScopedGpuTimer() noexcept;
 
@@ -68,7 +68,7 @@ class ScopedGpuTimer final
 
 	bool IsActive() const noexcept;
 
-  private:
+private:
 	friend class FrameExecutionDiagnostics;
 
 	ScopedGpuTimer(
@@ -91,7 +91,7 @@ class ScopedGpuTimer final
 
 class ScopedGpuScope final
 {
-  public:
+public:
 	ScopedGpuScope() noexcept = default;
 	ScopedGpuScope(ScopedGpuEvent eventScope, ScopedGpuTimer timerScope) noexcept;
 	~ScopedGpuScope() noexcept = default;
@@ -103,14 +103,14 @@ class ScopedGpuScope final
 
 	bool IsActive() const noexcept;
 
-  private:
+private:
 	ScopedGpuEvent m_eventScope;
 	ScopedGpuTimer m_timerScope;
 };
 
 class FrameExecutionDiagnostics final
 {
-  public:
+public:
 	explicit FrameExecutionDiagnostics(RenderDiagnostics& backendDiagnostics) noexcept;
 	~FrameExecutionDiagnostics() noexcept;
 
@@ -125,7 +125,7 @@ class FrameExecutionDiagnostics final
 
 	const std::vector<ResolvedGpuTiming>& GetResolvedTimings() const noexcept;
 
-  private:
+private:
 	friend class ScopedGpuTimer;
 	friend class FrameGraphExecutionDiagnostics;
 

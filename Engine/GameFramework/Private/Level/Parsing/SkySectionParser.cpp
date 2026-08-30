@@ -56,4 +56,4 @@ namespace LevelParsing
 		output << "Brightness = " << sky.brightness << "\n";
 		output << "Texture = " << sky.skyTexture.texturePath << "\n\n";
 	}
-}  // namespace LevelParsing
+}

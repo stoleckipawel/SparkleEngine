@@ -17,7 +17,7 @@ struct IDXGIAdapter;
 
 class D3D12GpuMemoryAllocator final
 {
-  public:
+public:
 	explicit D3D12GpuMemoryAllocator(IDXGIAdapter* adapter, ID3D12Device* device) noexcept;
 	~D3D12GpuMemoryAllocator() noexcept;
 
@@ -61,7 +61,7 @@ class D3D12GpuMemoryAllocator final
 	    D3D12_RESOURCE_STATES initialState,
 	    std::wstring_view debugName) noexcept;
 
-  private:
+private:
 	friend class D3D12RenderDeviceServices;
 	friend class D3D12ResourceService;
 

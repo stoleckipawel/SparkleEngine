@@ -19,11 +19,11 @@ struct GltfMeshGpuInstancingTransforms;
 
 class GltfGeometryImporter final
 {
-  public:
+public:
 	static std::size_t CountImportedMeshInstances(const cgltf_data* data);
 	static void ImportGeometry(const cgltf_data* data, SourceImportOutput& output);
 
-  private:
+private:
 	struct NodeImportContext;
 
 	static void ImportNode(const cgltf_data& data, const cgltf_node& node, std::uint32_t nodeIndex, SourceImportOutput& output);

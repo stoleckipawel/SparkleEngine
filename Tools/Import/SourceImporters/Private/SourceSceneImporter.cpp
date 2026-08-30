@@ -47,10 +47,9 @@ SourceImportOutput SourceSceneImporter::Import(const std::filesystem::path& file
 		return importer->Import(filePath);
 	}
 
-	throw Diagnostics::Error(std::format(
-	    "No source scene importer supports extension '{}' for '{}'.",
-	    extension.empty() ? std::string("<none>") : Strings::ToNarrow(extension),
-	    filePath.string()));
+	throw Diagnostics::Error(
+	    std::format(
+	        "No source scene importer supports extension '{}' for '{}'.",
+	        extension.empty() ? std::string("<none>") : Strings::ToNarrow(extension),
+	        filePath.string()));
 }
-
-

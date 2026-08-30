@@ -18,9 +18,7 @@ namespace Environment
 
 		char* rawValue = nullptr;
 		size_t requiredLength = 0;
-		if (_dupenv_s(&rawValue, &requiredLength, name) != 0 ||
-		    rawValue == nullptr ||
-		    requiredLength <= 1)
+		if (_dupenv_s(&rawValue, &requiredLength, name) != 0 || rawValue == nullptr || requiredLength <= 1)
 		{
 			if (rawValue != nullptr)
 			{
@@ -51,4 +49,4 @@ namespace Environment
 		std::uint32_t parsedValue = fallbackValue;
 		return Strings::TryParseNumber(value, parsedValue) ? parsedValue : fallbackValue;
 	}
-}  // namespace Environment
+}

@@ -10,9 +10,7 @@
 
 namespace Assets
 {
-	LoadedSceneManifest SceneManifestLoader::Decode(
-	    const std::filesystem::path& path,
-	    std::span<const std::uint8_t> bytes) const
+	LoadedSceneManifest SceneManifestLoader::Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const
 	{
 		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedSceneManifest");
 

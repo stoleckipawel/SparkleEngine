@@ -10,7 +10,7 @@
 
 class SPARKLE_CORE_API ConsoleHistoryBuffer final
 {
-  public:
+public:
 	explicit ConsoleHistoryBuffer(std::size_t maxEntries = kDefaultMaxEntries);
 
 	void Add(std::string_view line);
@@ -22,7 +22,7 @@ class SPARKLE_CORE_API ConsoleHistoryBuffer final
 
 	const std::vector<std::string>& GetEntries() const noexcept { return m_entries; }
 
-  private:
+private:
 	static constexpr std::size_t kDefaultMaxEntries = 128;
 
 	std::vector<std::string> m_entries;

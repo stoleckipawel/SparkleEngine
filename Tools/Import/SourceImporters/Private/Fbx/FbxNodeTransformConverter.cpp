@@ -69,9 +69,7 @@ DirectX::XMFLOAT4X4 FbxNodeTransformConverter::ConvertAssimpTransformToEngine(co
 	return transform;
 }
 
-DirectX::XMFLOAT4X4 FbxNodeTransformConverter::BuildNodeAttachedTranslation(
-    const aiNode& node,
-    const aiVector3D& position) noexcept
+DirectX::XMFLOAT4X4 FbxNodeTransformConverter::BuildNodeAttachedTranslation(const aiNode& node, const aiVector3D& position) noexcept
 {
 	const DirectX::XMMATRIX nodeWorld = ConvertAssimpMatrixToEngine(ComputeNodeWorldTransform(node));
 	const DirectX::XMMATRIX worldTransform = DirectX::XMMatrixTranslation(position.x, position.y, position.z) * nodeWorld;
@@ -90,9 +88,9 @@ DirectX::XMFLOAT4X4 FbxNodeTransformConverter::BuildNodeAttachedOrientation(
 	const DirectX::XMVECTOR localPosition = DirectX::XMVectorSet(position.x, position.y, position.z, 1.0f);
 	const DirectX::XMVECTOR localDirection = DirectX::XMVectorSet(direction.x, direction.y, direction.z, 0.0f);
 	const DirectX::XMVECTOR localUp = DirectX::XMVectorSet(up.x, up.y, up.z, 0.0f);
-	if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(localDirection)) <= 1.0e-8f ||
-	    DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(localUp)) <= 1.0e-8f ||
-	    DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(DirectX::XMVector3Cross(localUp, localDirection))) <= 1.0e-8f)
+	if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(localDirection)) <= 1.0e-8f
+	    || DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(localUp)) <= 1.0e-8f
+	    || DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(DirectX::XMVector3Cross(localUp, localDirection))) <= 1.0e-8f)
 	{
 		throw Diagnostics::Error("FBX node attachment has no usable orientation basis.");
 	}

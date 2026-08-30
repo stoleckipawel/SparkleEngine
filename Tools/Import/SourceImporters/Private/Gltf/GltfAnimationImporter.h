@@ -6,6 +6,6 @@ struct cgltf_data;
 
 class GltfAnimationImporter final
 {
-  public:
+public:
 	static void ImportAnimations(const cgltf_data* data, SourceImportOutput& output);
 };

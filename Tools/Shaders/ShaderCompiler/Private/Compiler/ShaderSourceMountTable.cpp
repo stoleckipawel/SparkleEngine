@@ -13,10 +13,7 @@
 std::string ShaderSourceMountTable::FoldAsciiCase(std::string_view value)
 {
 	std::string folded(value);
-	std::ranges::transform(
-	    folded,
-	    folded.begin(),
-	    [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+	std::ranges::transform(folded, folded.begin(), [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 	return folded;
 }
 
@@ -45,11 +42,10 @@ void ShaderSourceMountTable::ValidatePhysicalPathCase(
 		if (caseCollision)
 		{
 			throw Diagnostics::Error(
-			    exactMatch
-			        ? std::format(
-			              "Shader source path '{}' collides with another authored file under the virtual-path case policy.",
-			              virtualPath)
-			        : std::format("Shader source path '{}' does not match the authored file casing.", virtualPath));
+			    exactMatch ? std::format(
+			                     "Shader source path '{}' collides with another authored file under the virtual-path case policy.",
+			                     virtualPath)
+			               : std::format("Shader source path '{}' does not match the authored file casing.", virtualPath));
 		}
 		if (!exactMatch)
 		{
@@ -82,24 +78,24 @@ ShaderSourceMountTable::ShaderSourceMountTable(
 			return;
 		}
 
-		Mount mount{
-		    .VirtualRoot = CanonicalizeMountRoot(virtualRoot),
-		    .PhysicalRoot = CanonicalizePhysicalRoot(physicalRoot)};
+		Mount mount{.VirtualRoot = CanonicalizeMountRoot(virtualRoot), .PhysicalRoot = CanonicalizePhysicalRoot(physicalRoot)};
 		for (const Mount& existing : m_mounts)
 		{
 			if (FoldAsciiCase(existing.VirtualRoot) == FoldAsciiCase(mount.VirtualRoot))
 			{
-				throw Diagnostics::Error(std::format(
-				    "Shader source mounts '{}' and '{}' collide under the virtual-path case policy.",
-				    existing.VirtualRoot,
-				    mount.VirtualRoot));
+				throw Diagnostics::Error(
+				    std::format(
+				        "Shader source mounts '{}' and '{}' collide under the virtual-path case policy.",
+				        existing.VirtualRoot,
+				        mount.VirtualRoot));
 			}
 			if (IsWithinRoot(existing.PhysicalRoot, mount.PhysicalRoot) || IsWithinRoot(mount.PhysicalRoot, existing.PhysicalRoot))
 			{
-				throw Diagnostics::Error(std::format(
-				    "Shader source mounts '{}' and '{}' have overlapping physical ownership.",
-				    existing.VirtualRoot,
-				    mount.VirtualRoot));
+				throw Diagnostics::Error(
+				    std::format(
+				        "Shader source mounts '{}' and '{}' have overlapping physical ownership.",
+				        existing.VirtualRoot,
+				        mount.VirtualRoot));
 			}
 		}
 		m_mounts.push_back(std::move(mount));
@@ -121,9 +117,7 @@ ShaderSourceMountTable::ShaderSourceMountTable(
 		throw Diagnostics::Error("The /Engine shader source mount requires a physical root.");
 	}
 
-	std::ranges::sort(
-	    m_mounts,
-	    [](const Mount& lhs, const Mount& rhs) { return lhs.VirtualRoot.size() > rhs.VirtualRoot.size(); });
+	std::ranges::sort(m_mounts, [](const Mount& lhs, const Mount& rhs) { return lhs.VirtualRoot.size() > rhs.VirtualRoot.size(); });
 }
 
 std::string ShaderSourceMountTable::CanonicalizeVirtualPath(std::string_view path) const
@@ -147,8 +141,7 @@ std::string ShaderSourceMountTable::CanonicalizeVirtualPath(std::string_view pat
 	while (segmentStart <= canonical.size())
 	{
 		const std::size_t segmentEnd = canonical.find('/', segmentStart);
-		const std::size_t segmentLength =
-		    (segmentEnd == std::string::npos ? canonical.size() : segmentEnd) - segmentStart;
+		const std::size_t segmentLength = (segmentEnd == std::string::npos ? canonical.size() : segmentEnd) - segmentStart;
 		const std::string_view segment(canonical.data() + segmentStart, segmentLength);
 		if (segment.empty() || segment == "." || segment == "..")
 		{
@@ -195,7 +188,8 @@ std::filesystem::path ShaderSourceMountTable::ResolvePhysicalPath(std::string_vi
 		relative.remove_prefix(1u);
 	}
 	ValidatePhysicalPathCase(mount.PhysicalRoot, std::filesystem::path(relative), canonical);
-	const std::filesystem::path physical = ShaderCompilerPaths::CanonicalizeForCompiler(mount.PhysicalRoot / std::filesystem::path(relative));
+	const std::filesystem::path physical =
+	    ShaderCompilerPaths::CanonicalizeForCompiler(mount.PhysicalRoot / std::filesystem::path(relative));
 	if (!IsWithinRoot(physical, mount.PhysicalRoot))
 	{
 		throw Diagnostics::Error(std::format("Shader source path '{}' escapes mount '{}'.", canonical, mount.VirtualRoot));
@@ -205,8 +199,8 @@ std::filesystem::path ShaderSourceMountTable::ResolvePhysicalPath(std::string_vi
 
 std::string ShaderSourceMountTable::CanonicalizeMountRoot(std::string_view root)
 {
-	if (root.empty() || root.front() != '/' || root.back() == '/' || root.find('\\') != std::string_view::npos ||
-	    root.find("//") != std::string_view::npos)
+	if (root.empty() || root.front() != '/' || root.back() == '/' || root.find('\\') != std::string_view::npos
+	    || root.find("//") != std::string_view::npos)
 	{
 		throw Diagnostics::Error(std::format("Shader source mount '{}' is not canonical.", root));
 	}
@@ -220,18 +214,17 @@ std::filesystem::path ShaderSourceMountTable::CanonicalizePhysicalRoot(const std
 
 bool ShaderSourceMountTable::IsPluginNameValid(std::string_view name) noexcept
 {
-	return !name.empty() && std::ranges::all_of(
-	                            name,
-	                            [](unsigned char value) { return std::isalnum(value) != 0 || value == '_' || value == '-'; });
+	return !name.empty()
+	    && std::ranges::all_of(name, [](unsigned char value) { return std::isalnum(value) != 0 || value == '_' || value == '-'; });
 }
 
 const ShaderSourceMountTable::Mount& ShaderSourceMountTable::ResolveMount(std::string_view canonicalVirtualPath) const
 {
 	for (const Mount& mount : m_mounts)
 	{
-		if (canonicalVirtualPath == mount.VirtualRoot ||
-		    (canonicalVirtualPath.starts_with(mount.VirtualRoot) && canonicalVirtualPath.size() > mount.VirtualRoot.size() &&
-		     canonicalVirtualPath[mount.VirtualRoot.size()] == '/'))
+		if (canonicalVirtualPath == mount.VirtualRoot
+		    || (canonicalVirtualPath.starts_with(mount.VirtualRoot) && canonicalVirtualPath.size() > mount.VirtualRoot.size()
+		        && canonicalVirtualPath[mount.VirtualRoot.size()] == '/'))
 		{
 			return mount;
 		}

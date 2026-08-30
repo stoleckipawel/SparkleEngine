@@ -67,8 +67,7 @@ TextureColorProcessingPolicy TextureCookPolicyCodec::ParseColorProcessingPolicy(
 	{
 		return TextureColorProcessingPolicy::SrgbLinearize;
 	}
-	throw Diagnostics::Error(
-	    "Texture cook request entry has an unknown color processing policy '" + std::string(value) + "'.");
+	throw Diagnostics::Error("Texture cook request entry has an unknown color processing policy '" + std::string(value) + "'.");
 }
 
 TextureGroup TextureCookPolicyCodec::ParseTextureGroup(std::string_view value)
@@ -77,9 +76,9 @@ TextureGroup TextureCookPolicyCodec::ParseTextureGroup(std::string_view value)
 	{
 		return TextureGroup::Default;
 	}
-	if (Strings::EqualsIgnoreCase(value, "diffuse") || Strings::EqualsIgnoreCase(value, "albedo") ||
-	    Strings::EqualsIgnoreCase(value, "base-color") || Strings::EqualsIgnoreCase(value, "basecolor") ||
-	    Strings::EqualsIgnoreCase(value, "color"))
+	if (Strings::EqualsIgnoreCase(value, "diffuse") || Strings::EqualsIgnoreCase(value, "albedo")
+	    || Strings::EqualsIgnoreCase(value, "base-color") || Strings::EqualsIgnoreCase(value, "basecolor")
+	    || Strings::EqualsIgnoreCase(value, "color"))
 	{
 		return TextureGroup::Diffuse;
 	}
@@ -91,9 +90,9 @@ TextureGroup TextureCookPolicyCodec::ParseTextureGroup(std::string_view value)
 	{
 		return TextureGroup::Metallic;
 	}
-	if (Strings::EqualsIgnoreCase(value, "ambient-occlusion") ||
-	    Strings::EqualsIgnoreCase(value, "ambientocclusion") || Strings::EqualsIgnoreCase(value, "occlusion") ||
-	    Strings::EqualsIgnoreCase(value, "ao") || Strings::EqualsIgnoreCase(value, "masks"))
+	if (Strings::EqualsIgnoreCase(value, "ambient-occlusion") || Strings::EqualsIgnoreCase(value, "ambientocclusion")
+	    || Strings::EqualsIgnoreCase(value, "occlusion") || Strings::EqualsIgnoreCase(value, "ao")
+	    || Strings::EqualsIgnoreCase(value, "masks"))
 	{
 		return TextureGroup::AmbientOcclusion;
 	}
@@ -109,13 +108,11 @@ TextureGroup TextureCookPolicyCodec::ParseTextureGroup(std::string_view value)
 	{
 		return TextureGroup::Emissive;
 	}
-	if (Strings::EqualsIgnoreCase(value, "subsurface-color") ||
-	    Strings::EqualsIgnoreCase(value, "subsurfacecolor"))
+	if (Strings::EqualsIgnoreCase(value, "subsurface-color") || Strings::EqualsIgnoreCase(value, "subsurfacecolor"))
 	{
 		return TextureGroup::SubsurfaceColor;
 	}
-	if (Strings::EqualsIgnoreCase(value, "subsurface-strength") ||
-	    Strings::EqualsIgnoreCase(value, "subsurfacestrength"))
+	if (Strings::EqualsIgnoreCase(value, "subsurface-strength") || Strings::EqualsIgnoreCase(value, "subsurfacestrength"))
 	{
 		return TextureGroup::SubsurfaceStrength;
 	}
@@ -137,8 +134,7 @@ TextureDimension TextureCookPolicyCodec::ParseDimension(std::string_view value)
 
 TextureChannelMask TextureCookPolicyCodec::ParseChannelMask(std::string_view value)
 {
-	if (Strings::EqualsIgnoreCase(value, "rgba") || Strings::EqualsIgnoreCase(value, "all") ||
-	    Strings::EqualsIgnoreCase(value, "none"))
+	if (Strings::EqualsIgnoreCase(value, "rgba") || Strings::EqualsIgnoreCase(value, "all") || Strings::EqualsIgnoreCase(value, "none"))
 	{
 		return TextureChannelMask::Rgba;
 	}
@@ -165,8 +161,10 @@ const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept
 {
 	switch (colorSpace)
 	{
-		case TextureColorSpace::Linear: return "linear";
-		case TextureColorSpace::Srgb: return "srgb";
+		case TextureColorSpace::Linear:
+			return "linear";
+		case TextureColorSpace::Srgb:
+			return "srgb";
 	}
 	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture color space.");
 }
@@ -175,9 +173,12 @@ const char* GetTextureMipPolicyName(TextureMipPolicy mipPolicy) noexcept
 {
 	switch (mipPolicy)
 	{
-		case TextureMipPolicy::Generate: return "generate";
-		case TextureMipPolicy::PreserveExisting: return "preserve-existing";
-		case TextureMipPolicy::NoMips: return "no-mips";
+		case TextureMipPolicy::Generate:
+			return "generate";
+		case TextureMipPolicy::PreserveExisting:
+			return "preserve-existing";
+		case TextureMipPolicy::NoMips:
+			return "no-mips";
 	}
 	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture mip policy.");
 }
@@ -186,10 +187,14 @@ const char* GetTextureMipFilterName(TextureMipFilter mipFilter) noexcept
 {
 	switch (mipFilter)
 	{
-		case TextureMipFilter::Regular: return "regular";
-		case TextureMipFilter::Kaiser: return "kaiser";
-		case TextureMipFilter::NormalAware: return "normal-aware";
-		case TextureMipFilter::Angular: return "angular";
+		case TextureMipFilter::Regular:
+			return "regular";
+		case TextureMipFilter::Kaiser:
+			return "kaiser";
+		case TextureMipFilter::NormalAware:
+			return "normal-aware";
+		case TextureMipFilter::Angular:
+			return "angular";
 	}
 	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture mip filter.");
 }
@@ -198,8 +203,10 @@ const char* GetTextureColorProcessingPolicyName(TextureColorProcessingPolicy pol
 {
 	switch (policy)
 	{
-		case TextureColorProcessingPolicy::Linear: return "linear";
-		case TextureColorProcessingPolicy::SrgbLinearize: return "srgb-linearize";
+		case TextureColorProcessingPolicy::Linear:
+			return "linear";
+		case TextureColorProcessingPolicy::SrgbLinearize:
+			return "srgb-linearize";
 	}
 	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture color processing policy.");
 }
@@ -208,16 +215,26 @@ const char* GetTextureGroupName(TextureGroup textureGroup) noexcept
 {
 	switch (textureGroup)
 	{
-		case TextureGroup::Default: return "default";
-		case TextureGroup::Diffuse: return "diffuse";
-		case TextureGroup::NormalMap: return "normal-map";
-		case TextureGroup::Roughness: return "roughness";
-		case TextureGroup::Metallic: return "metallic";
-		case TextureGroup::AmbientOcclusion: return "ambient-occlusion";
-		case TextureGroup::Emissive: return "emissive";
-		case TextureGroup::SubsurfaceColor: return "subsurface-color";
-		case TextureGroup::SubsurfaceStrength: return "subsurface-strength";
-		case TextureGroup::HdrColor: return "hdr-color";
+		case TextureGroup::Default:
+			return "default";
+		case TextureGroup::Diffuse:
+			return "diffuse";
+		case TextureGroup::NormalMap:
+			return "normal-map";
+		case TextureGroup::Roughness:
+			return "roughness";
+		case TextureGroup::Metallic:
+			return "metallic";
+		case TextureGroup::AmbientOcclusion:
+			return "ambient-occlusion";
+		case TextureGroup::Emissive:
+			return "emissive";
+		case TextureGroup::SubsurfaceColor:
+			return "subsurface-color";
+		case TextureGroup::SubsurfaceStrength:
+			return "subsurface-strength";
+		case TextureGroup::HdrColor:
+			return "hdr-color";
 	}
 	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture group.");
 }
@@ -226,8 +243,10 @@ const char* GetTextureDimensionName(TextureDimension dimension) noexcept
 {
 	switch (dimension)
 	{
-		case TextureDimension::Texture2D: return "2d";
-		case TextureDimension::TextureCube: return "cube";
+		case TextureDimension::Texture2D:
+			return "2d";
+		case TextureDimension::TextureCube:
+			return "cube";
 	}
 	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture dimension.");
 }
@@ -236,11 +255,16 @@ const char* GetTextureChannelMaskName(TextureChannelMask channelMask) noexcept
 {
 	switch (channelMask)
 	{
-		case TextureChannelMask::Rgba: return "rgba";
-		case TextureChannelMask::Red: return "red";
-		case TextureChannelMask::Green: return "green";
-		case TextureChannelMask::Blue: return "blue";
-		case TextureChannelMask::Alpha: return "alpha";
+		case TextureChannelMask::Rgba:
+			return "rgba";
+		case TextureChannelMask::Red:
+			return "red";
+		case TextureChannelMask::Green:
+			return "green";
+		case TextureChannelMask::Blue:
+			return "blue";
+		case TextureChannelMask::Alpha:
+			return "alpha";
 	}
 	Diagnostics::Fatal(g_textureCookPolicyCodecLogger, __FILE__, __LINE__, "Unknown texture channel mask.");
 }

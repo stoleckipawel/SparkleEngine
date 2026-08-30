@@ -13,7 +13,7 @@
 
 class CookedAnimationTranslation final
 {
-  public:
+public:
 	static Assets::CookedAssetId BuildAnimationAssetId(std::string_view sceneAssetId, std::uint32_t sourceAnimationIndex)
 	{
 		return Hash::Fnv1a64(std::string(sceneAssetId) + "#animation#" + std::to_string(sourceAnimationIndex));
@@ -78,9 +78,9 @@ CookedAnimationAssetBuild CookedAnimationTranslation::BuildAsset(
     std::size_t clipIndex,
     const CookedSceneBuild& build)
 {
-	if (!importedClip.IsValid() || importedClip.name.size() >= sizeof(Assets::CookedAnimationAssetHeader::name) ||
-	    importedClip.targetSkeletonIndex >= build.outputs.skeletonAssets.size() ||
-	    importedClip.targetSkeletonIndex >= build.manifest.skeletonRefs.size())
+	if (!importedClip.IsValid() || importedClip.name.size() >= sizeof(Assets::CookedAnimationAssetHeader::name)
+	    || importedClip.targetSkeletonIndex >= build.outputs.skeletonAssets.size()
+	    || importedClip.targetSkeletonIndex >= build.manifest.skeletonRefs.size())
 	{
 		throw Diagnostics::Error(std::format("Imported animation clip {} is invalid.", clipIndex));
 	}
@@ -101,13 +101,7 @@ CookedAnimationAssetBuild CookedAnimationTranslation::BuildAsset(
 	const CookedSkeletonAssetBuild& skeleton = build.outputs.skeletonAssets[importedClip.targetSkeletonIndex];
 	for (std::size_t channelIndex = 0; channelIndex < importedClip.channels.size(); ++channelIndex)
 	{
-		AppendChannel(
-		    importedClip,
-		    importedClip.channels[channelIndex],
-		    clipIndex,
-		    channelIndex,
-		    skeleton,
-		    asset);
+		AppendChannel(importedClip, importedClip.channels[channelIndex], clipIndex, channelIndex, skeleton, asset);
 	}
 	return asset;
 }
@@ -139,18 +133,16 @@ void CookedAnimationTranslation::AppendChannel(
 		throw Diagnostics::Error(
 		    std::format("Imported animation clip {} channel {} references an invalid target joint.", clipIndex, channelIndex));
 	}
-	if (asset.keyframes.size() > (std::numeric_limits<std::uint32_t>::max)() ||
-	    sampler.keyframes.size() > (std::numeric_limits<std::uint32_t>::max)() - asset.keyframes.size())
+	if (asset.keyframes.size() > (std::numeric_limits<std::uint32_t>::max)()
+	    || sampler.keyframes.size() > (std::numeric_limits<std::uint32_t>::max)() - asset.keyframes.size())
 	{
-		throw Diagnostics::Error(
-		    std::format("Imported animation clip {} channel {} has too many keyframes.", clipIndex, channelIndex));
+		throw Diagnostics::Error(std::format("Imported animation clip {} channel {} has too many keyframes.", clipIndex, channelIndex));
 	}
 
 	float previousTime = -1.0f;
 	for (const ImportedAnimationKeyframe& keyframe : sampler.keyframes)
 	{
-		if (keyframe.timeSeconds < 0.0f || keyframe.timeSeconds <= previousTime ||
-		    keyframe.timeSeconds > importedClip.durationSeconds)
+		if (keyframe.timeSeconds < 0.0f || keyframe.timeSeconds <= previousTime || keyframe.timeSeconds > importedClip.durationSeconds)
 		{
 			throw Diagnostics::Error(
 			    std::format("Imported animation clip {} channel {} has invalid keyframe timing.", clipIndex, channelIndex));
@@ -163,23 +155,20 @@ void CookedAnimationTranslation::AppendChannel(
 	{
 		asset.keyframes.push_back(
 		    {.timeSeconds = importedKeyframe.timeSeconds,
-		     .value = importedKeyframe.value,
-		     .inTangent = importedKeyframe.inTangent,
-		     .outTangent = importedKeyframe.outTangent});
+		        .value = importedKeyframe.value,
+		        .inTangent = importedKeyframe.inTangent,
+		        .outTangent = importedKeyframe.outTangent});
 	}
 	asset.channels.push_back(
 	    {.targetPath = targetPath,
-	     .interpolation = interpolation,
-	     .targetNodeIndex = importedChannel.targetNodeIndex,
-	     .targetJointIndex = importedChannel.targetJointIndex,
-	     .firstKeyframe = firstKeyframe,
-	     .keyframeCount = static_cast<std::uint32_t>(sampler.keyframes.size())});
+	        .interpolation = interpolation,
+	        .targetNodeIndex = importedChannel.targetNodeIndex,
+	        .targetJointIndex = importedChannel.targetJointIndex,
+	        .firstKeyframe = firstKeyframe,
+	        .keyframeCount = static_cast<std::uint32_t>(sampler.keyframes.size())});
 }
 
-void CookedAnimationAssetBuilder::Build(
-    const SourceImportOutput& importOutput,
-    std::string_view sceneAssetId,
-    CookedSceneBuild& outBuild)
+void CookedAnimationAssetBuilder::Build(const SourceImportOutput& importOutput, std::string_view sceneAssetId, CookedSceneBuild& outBuild)
 {
 	outBuild.outputs.animationAssets.clear();
 	outBuild.manifest.animationReferences.clear();
@@ -192,8 +181,7 @@ void CookedAnimationAssetBuilder::Build(
 		const ImportedAnimationClip& importedClip = importOutput.scene.animations[clipIndex];
 		if (!sourceAnimationIndices.insert(importedClip.sourceAnimationIndex).second)
 		{
-			throw Diagnostics::Error(
-			    std::format("Imported animation clip {} duplicates a source animation index.", clipIndex));
+			throw Diagnostics::Error(std::format("Imported animation clip {} duplicates a source animation index.", clipIndex));
 		}
 
 		CookedAnimationAssetBuild animationAsset =

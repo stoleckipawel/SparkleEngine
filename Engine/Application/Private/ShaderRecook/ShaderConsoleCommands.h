@@ -16,7 +16,7 @@ struct ConsoleCommandResult;
 
 class ShaderConsoleCommands final
 {
-  public:
+public:
 	struct Handlers final
 	{
 		std::function<void(ShaderRecookRequest)> RequestRecook;
@@ -26,7 +26,7 @@ class ShaderConsoleCommands final
 	static void Register(ConsoleCommandRegistry& commandRegistry, Handlers handlers);
 	static void ConnectEditor(UI& ui, ShaderRecookCoordinator& coordinator);
 
-  private:
+private:
 	static ConsoleCommandResult ExecuteRecompileShaders(const Handlers& handlers, std::span<const std::string_view> arguments);
 	static ConsoleCommandResult ExecuteReloadShaders(const Handlers& handlers);
 	static ConsoleCommandResult ExecuteListShaders();

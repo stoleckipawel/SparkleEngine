@@ -6,15 +6,12 @@
 #include "EditorOperations/EditorOperationService.h"
 #include "Renderer.h"
 
-EditorViewportCaptureCoordinator::EditorViewportCaptureCoordinator(
-    EditorOperationService& operations) noexcept :
-	m_operations(&operations)
+EditorViewportCaptureCoordinator::EditorViewportCaptureCoordinator(EditorOperationService& operations) noexcept :
+    m_operations(&operations)
 {
 }
 
-void EditorViewportCaptureCoordinator::Request(
-    Renderer& renderer,
-    std::uint64_t frameId)
+void EditorViewportCaptureCoordinator::Request(Renderer& renderer, std::uint64_t frameId)
 {
 	if (m_activeCapture)
 	{
@@ -46,9 +43,7 @@ void EditorViewportCaptureCoordinator::Update(Renderer& renderer)
 		}
 
 		std::string errorMessage;
-		if (!m_operations->StartViewportCaptureWrite(
-		        std::move(readback),
-		        errorMessage))
+		if (!m_operations->StartViewportCaptureWrite(std::move(readback), errorMessage))
 		{
 			m_lastResult.Status = ViewportCaptureStatus::Failed;
 			m_lastResult.FailureReason = std::move(errorMessage);
@@ -62,9 +57,7 @@ void EditorViewportCaptureCoordinator::Update(Renderer& renderer)
 	}
 }
 
-std::filesystem::path EditorViewportCaptureCoordinator::BuildOutputPath(
-    std::uint64_t frameId) const
+std::filesystem::path EditorViewportCaptureCoordinator::BuildOutputPath(std::uint64_t frameId) const
 {
-	return Filesystem::GetWorkspaceRootPath() / "Saved" / "Captures" /
-	       ("Viewport_" + std::to_string(frameId) + ".bmp");
+	return Filesystem::GetWorkspaceRootPath() / "Saved" / "Captures" / ("Viewport_" + std::to_string(frameId) + ".bmp");
 }

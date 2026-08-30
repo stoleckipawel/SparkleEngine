@@ -7,7 +7,7 @@ class FrameGraphBuilder;
 class RenderRayTracingScene;
 
 void AddRestirLightingProducerPasses(
-	FrameGraphBuilder& builder,
-	RenderRayTracingScene& rayTracingScene,
-	RenderViewportExtent sceneExtent,
-	RenderFrameGraphResources& resources);
+    FrameGraphBuilder& builder,
+    RenderRayTracingScene& rayTracingScene,
+    RenderViewportExtent sceneExtent,
+    RenderFrameGraphResources& resources);

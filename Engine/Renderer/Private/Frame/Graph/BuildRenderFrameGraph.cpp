@@ -11,28 +11,18 @@
 RenderFrameGraphResources BuildRenderFrameGraph(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
-	GpuMeshCache& gpuMeshCache,
-	RenderRayTracingScene& rayTracingScene,
-	IUpscalerProvider* upscalerProvider,
+    GpuMeshCache& gpuMeshCache,
+    RenderRayTracingScene& rayTracingScene,
+    IUpscalerProvider* upscalerProvider,
     IRayReconstructionProvider* rayReconstructionProvider)
 {
 	RenderFrameGraphResources resources = {};
 	CreateRenderFrameGraphResources(builder, settings, resources);
 	AddRayTracingScenePasses(builder, rayTracingScene, resources);
-	AddGBufferMeshPasses(
-	    builder,
-	    gpuMeshCache,
-	    rayTracingScene,
-	    settings.RenderExtent,
-	    resources);
+	AddGBufferMeshPasses(builder, gpuMeshCache, rayTracingScene, settings.RenderExtent, resources);
 	AddLightingPasses(builder, rayTracingScene, settings.RenderExtent, resources);
 	AddPreReconstructionPostProcessingPasses(builder, settings, resources);
-	AddLightingReconstructionPasses(
-	    builder,
-	    settings.RenderExtent,
-	    settings.OutputExtent,
-	    rayReconstructionProvider,
-	    resources);
+	AddLightingReconstructionPasses(builder, settings.RenderExtent, settings.OutputExtent, rayReconstructionProvider, resources);
 
 	AddPostProcessingPasses(builder, settings, upscalerProvider, resources);
 

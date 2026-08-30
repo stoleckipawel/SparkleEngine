@@ -118,4 +118,4 @@ namespace UiUtil
 	bool EditDetailsColor3(const char* label, float values[3], const float* resetValues = nullptr);
 	bool EditDetailsCheckbox(const char* label, bool& value, const bool* resetValue = nullptr);
 	bool EditDetailsText(const char* label, std::string& value, const std::string* resetValue = nullptr);
-}  // namespace UiUtil
+}

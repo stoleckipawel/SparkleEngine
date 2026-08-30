@@ -13,7 +13,7 @@ struct ConsoleOutputRecord;
 
 class SPARKLE_EDITOR_API EditorConsoleSystem final
 {
-  public:
+public:
 	EditorConsoleSystem();
 	~EditorConsoleSystem() noexcept;
 
@@ -32,7 +32,7 @@ class SPARKLE_EDITOR_API EditorConsoleSystem final
 	float GetDockHeight(float availableHeight) noexcept;
 	void BuildDockedUI(float left, float bottom, float width, float availableHeight, bool disableInteraction);
 
-  private:
+private:
 	std::unique_ptr<ConsoleCommandRegistry> m_commandRegistry;
 	std::unique_ptr<ConsoleSession> m_session;
 	std::unique_ptr<EditorConsolePanel> m_consolePanel;

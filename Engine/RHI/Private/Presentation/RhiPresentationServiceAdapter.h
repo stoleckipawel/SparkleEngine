@@ -5,18 +5,17 @@
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
 
-template <typename Owner>
-class RhiPresentationServiceAdapter final : public RhiPresentationService
+template <typename Owner> class RhiPresentationServiceAdapter final : public RhiPresentationService
 {
-  public:
-	explicit RhiPresentationServiceAdapter(Owner& owner) noexcept : m_owner(owner) {}
+public:
+	explicit RhiPresentationServiceAdapter(Owner& owner) noexcept :
+	    m_owner(owner)
+	{
+	}
 
 	RhiViewport GetBackBufferViewport() const noexcept override { return m_owner.GetBackBufferViewport(); }
 	RhiRect GetBackBufferScissorRect() const noexcept override { return m_owner.GetBackBufferScissorRect(); }
-	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override
-	{
-		return m_owner.GetBackBufferRenderTargetView();
-	}
+	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override { return m_owner.GetBackBufferRenderTargetView(); }
 	RhiResourceHandle GetBackBufferResource() const noexcept override { return m_owner.GetBackBufferResource(); }
 	void BeginPresentRenderPass(const float clearColor[4]) noexcept override
 	{
@@ -39,7 +38,7 @@ class RhiPresentationServiceAdapter final : public RhiPresentationService
 	}
 	PixelFormat GetPresentColorFormat() const noexcept override { return m_owner.GetPresentColorFormat(); }
 
-  private:
+private:
 	void Begin() noexcept
 	{
 		if (m_rendering)

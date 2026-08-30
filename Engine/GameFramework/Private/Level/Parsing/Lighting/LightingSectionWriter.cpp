@@ -12,7 +12,7 @@ namespace LevelParsing
 {
 	class LightingSectionSerialization final
 	{
-	  public:
+	public:
 		static void WriteDirectional(
 		    std::ofstream& output,
 		    std::string_view prefix,
@@ -22,17 +22,11 @@ namespace LevelParsing
 		static void WriteSpot(std::ofstream& output, std::string_view prefix, const SceneLightDesc& light, const SpotLightDesc& value);
 		static void WriteRect(std::ofstream& output, std::string_view prefix, const SceneLightDesc& light, const RectLightDesc& value);
 
-	  private:
-		static void WriteCommonFields(
-		    std::ofstream& output,
-		    std::string_view prefix,
-		    const SceneLightCommonDesc& common);
+	private:
+		static void WriteCommonFields(std::ofstream& output, std::string_view prefix, const SceneLightCommonDesc& common);
 	};
 
-	void LightingSectionSerialization::WriteCommonFields(
-	    std::ofstream& output,
-	    std::string_view prefix,
-	    const SceneLightCommonDesc& common)
+	void LightingSectionSerialization::WriteCommonFields(std::ofstream& output, std::string_view prefix, const SceneLightCommonDesc& common)
 	{
 		if (!common.name.empty())
 			output << prefix << "Name = " << common.name << "\n";
@@ -102,7 +96,6 @@ namespace LevelParsing
 		output << prefix << "Height = " << value.height << "\n";
 		output << prefix << "CastShadow = " << (value.castShadow ? "true" : "false") << "\n";
 	}
-
 
 	void WriteLightingSectionValues(std::ofstream& output, const LevelDesc& levelDesc)
 	{

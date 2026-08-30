@@ -42,8 +42,7 @@ namespace Formatting
 			return false;
 		}
 
-		const std::from_chars_result result =
-		    std::from_chars(trimmed.data(), trimmed.data() + trimmed.size(), outValue, 16);
-		return result.ec == std::errc {} && result.ptr == trimmed.data() + trimmed.size();
+		const std::from_chars_result result = std::from_chars(trimmed.data(), trimmed.data() + trimmed.size(), outValue, 16);
+		return result.ec == std::errc{} && result.ptr == trimmed.data() + trimmed.size();
 	}
-}  // namespace Formatting
+}

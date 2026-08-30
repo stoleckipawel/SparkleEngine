@@ -23,9 +23,8 @@ namespace ECS
 			return entity;
 		}
 		const LocalTransform local = WorldTransformConversion::ToLocal(instance.LocalTransform);
-		const AnimationOutputSlotHandle morphState = instance.Kind == SceneMeshKind::Skeletal
-		                                                ? m_morphWeights.Add(instance.InitialMorphWeights)
-		                                                : AnimationOutputSlotHandle{};
+		const AnimationOutputSlotHandle morphState =
+		    instance.Kind == SceneMeshKind::Skeletal ? m_morphWeights.Add(instance.InitialMorphWeights) : AnimationOutputSlotHandle{};
 		const MeshInstance mesh{
 		    .Resource = resource,
 		    .MeshAssetId = instance.MeshAssetId,
@@ -35,23 +34,20 @@ namespace ECS
 		    .MeshAssetIndex = instance.MeshAssetIndex,
 		    .InstanceGroupIndex = instance.InstanceGroupIndex,
 		    .SourceNodeIndex = instance.SourceNodeIndex};
-		bool added = m_registry.Add(entity, local) &&
-		                   m_registry.Add(entity, WorldTransform{}) &&
-		                   m_registry.Add(entity, mesh) &&
-		                   m_registry.Add(entity, Visibility{}) &&
-		                   m_registry.Add(
-		                       entity,
-		                       AuthoredIdentity{
-		                           .SourceAssetId = instance.MeshAssetId,
-		                           .SourceInstanceId = instance.SourceInstanceId,
-		                           .SourceObjectId = static_cast<std::uint64_t>(instance.SourceNodeIndex),
-		                           .Kind = AuthoredObjectKind::MeshInstance}) &&
-		                   m_registry.Add(entity, EditorMetadata{});
+		bool added = m_registry.Add(entity, local) && m_registry.Add(entity, WorldTransform{}) && m_registry.Add(entity, mesh)
+		    && m_registry.Add(entity, Visibility{})
+		    && m_registry.Add(
+		        entity,
+		        AuthoredIdentity{
+		            .SourceAssetId = instance.MeshAssetId,
+		            .SourceInstanceId = instance.SourceInstanceId,
+		            .SourceObjectId = static_cast<std::uint64_t>(instance.SourceNodeIndex),
+		            .Kind = AuthoredObjectKind::MeshInstance})
+		    && m_registry.Add(entity, EditorMetadata{});
 		if (added && instance.Kind == SceneMeshKind::Skeletal)
 		{
-			added = morphState.IsValid() &&
-			        m_registry.Add(entity, MorphState{.Weights = morphState}) &&
-			        m_registry.Add(entity, SkinningState{.SkeletonAssetId = instance.SkeletonAssetId});
+			added = morphState.IsValid() && m_registry.Add(entity, MorphState{.Weights = morphState})
+			    && m_registry.Add(entity, SkinningState{.SkeletonAssetId = instance.SkeletonAssetId});
 		}
 		if (!added)
 		{
@@ -70,8 +66,14 @@ namespace ECS
 		return entity;
 	}
 
-	std::size_t GameWorldState::GetMeshCount() const noexcept { return Count<MeshInstance>(); }
-	EntityId GameWorldState::GetMeshEntity(std::size_t index) const noexcept { return EntityAt<MeshInstance>(index); }
+	std::size_t GameWorldState::GetMeshCount() const noexcept
+	{
+		return Count<MeshInstance>();
+	}
+	EntityId GameWorldState::GetMeshEntity(std::size_t index) const noexcept
+	{
+		return EntityAt<MeshInstance>(index);
+	}
 
 	const Mesh* GameWorldState::ResolveMesh(EntityId entity) const noexcept
 	{

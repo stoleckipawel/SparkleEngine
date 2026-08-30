@@ -13,42 +13,43 @@
 
 class CookedMeshMetadataReader final
 {
-  public:
-
-static std::filesystem::path BuildCookedMeshMetadataPath(std::uint64_t meshAssetId)
-{
-	std::filesystem::path metadataPath = Paths::CookedMeshAsset(meshAssetId);
-	metadataPath += ".meta.json";
-	return metadataPath;
-}
-
-static std::optional<MeshDiagnosticMetadata> LoadCookedMeshMetadata(std::uint64_t meshAssetId)
-{
-	std::string metadataText;
-	std::string readError;
-	if (!Files::TryReadAllText(BuildCookedMeshMetadataPath(meshAssetId), metadataText, readError))
+public:
+	static std::filesystem::path BuildCookedMeshMetadataPath(std::uint64_t meshAssetId)
 	{
-		return std::nullopt;
+		std::filesystem::path metadataPath = Paths::CookedMeshAsset(meshAssetId);
+		metadataPath += ".meta.json";
+		return metadataPath;
 	}
 
-	std::string schema;
-	if (!Json::TryReadStringProperty(metadataText, "schema", schema) || schema != "cooked-mesh-metadata")
+	static std::optional<MeshDiagnosticMetadata> LoadCookedMeshMetadata(std::uint64_t meshAssetId)
 	{
-		return std::nullopt;
-	}
+		std::string metadataText;
+		std::string readError;
+		if (!Files::TryReadAllText(BuildCookedMeshMetadataPath(meshAssetId), metadataText, readError))
+		{
+			return std::nullopt;
+		}
 
-	MeshDiagnosticMetadata metadata;
-	Json::TryReadStringProperty(metadataText, "displayName", metadata.DisplayName);
-	Json::TryReadStringProperty(metadataText, "source", metadata.SourcePath);
-	return metadata;
-}
+		std::string schema;
+		if (!Json::TryReadStringProperty(metadataText, "schema", schema) || schema != "cooked-mesh-metadata")
+		{
+			return std::nullopt;
+		}
+
+		MeshDiagnosticMetadata metadata;
+		Json::TryReadStringProperty(metadataText, "displayName", metadata.DisplayName);
+		Json::TryReadStringProperty(metadataText, "source", metadata.SourcePath);
+		return metadata;
+	}
 };
 
 std::optional<MeshDiagnosticMetadata> FindMeshDiagnosticMetadata(const MeshDiagnosticsRow& row)
 {
-	if (row.MeshAssetId == 0) return std::nullopt;
+	if (row.MeshAssetId == 0)
+		return std::nullopt;
 	static std::unordered_map<std::uint64_t, std::optional<MeshDiagnosticMetadata>> metadataCache;
 	auto [metadataIt, inserted] = metadataCache.try_emplace(row.MeshAssetId);
-	if (inserted) metadataIt->second = CookedMeshMetadataReader::LoadCookedMeshMetadata(row.MeshAssetId);
+	if (inserted)
+		metadataIt->second = CookedMeshMetadataReader::LoadCookedMeshMetadata(row.MeshAssetId);
 	return metadataIt->second;
 }

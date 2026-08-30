@@ -69,13 +69,8 @@ void RenderRayTracingScene::Build(
 
 	m_blasCache->BeginFrame();
 	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild =
-	    m_topLevelAccelerationStructureStrategy->Build(
-	        commandContext,
-	        preparedScene,
-	        *m_blasCache,
-	        m_shaderTablePlan,
-	        viewPlan,
-	        &performanceDiagnostics);
+	    m_topLevelAccelerationStructureStrategy
+	        ->Build(commandContext, preparedScene, *m_blasCache, m_shaderTablePlan, viewPlan, &performanceDiagnostics);
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
 
 	m_performanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;

@@ -2,10 +2,7 @@
 
 #include "Cooking/ReflectionSerializer.h"
 
-void ReflectionSerializer::Build(
-    std::span<const ShaderReflection> reflections,
-    Strings::StringTableBuilder& stringTable,
-    Output& outOutput)
+void ReflectionSerializer::Build(std::span<const ShaderReflection> reflections, Strings::StringTableBuilder& stringTable, Output& outOutput)
 {
 	outOutput.reflectionRecords.clear();
 	outOutput.resourceBindings.clear();

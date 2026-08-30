@@ -10,10 +10,10 @@ struct RayTracingCapabilityReport;
 struct RenderFrameGraphImportedSceneResources;
 
 void AddRayTracingGBufferMeshPass(
-	FrameGraphBuilder& builder,
-	RenderViewportExtent sceneExtent,
-	const GBufferRenderTargets& targets,
-	FrameGraphAccelerationStructureHandle sceneTlas,
-	const RenderFrameGraphImportedSceneResources& externalResources,
-	RayTracingShaderTablePlan& shaderTablePlan,
-	const RayTracingCapabilityReport& capabilities);
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    const GBufferRenderTargets& targets,
+    FrameGraphAccelerationStructureHandle sceneTlas,
+    const RenderFrameGraphImportedSceneResources& externalResources,
+    RayTracingShaderTablePlan& shaderTablePlan,
+    const RayTracingCapabilityReport& capabilities);

@@ -18,10 +18,10 @@ D3D12CommandRecordingContext::D3D12CommandRecordingContext(
     D3D12RenderHardwareInterface& hardwareInterface,
     D3D12DescriptorHeapManager& descriptorHeapManager,
     std::uint32_t maximumFramesInFlight) noexcept :
-	m_rhi(&rhi),
-	m_hardwareInterface(&hardwareInterface),
-	m_descriptorHeapManager(&descriptorHeapManager),
-	m_frames(maximumFramesInFlight)
+    m_rhi(&rhi),
+    m_hardwareInterface(&hardwareInterface),
+    m_descriptorHeapManager(&descriptorHeapManager),
+    m_frames(maximumFramesInFlight)
 {
 	InitializeSlots();
 }
@@ -66,10 +66,11 @@ RhiCommandRecordingLease D3D12CommandRecordingContext::Acquire(
 	    .FrameSlot = slot.FrameSlot,
 	    .ContextId = RhiCommandRecordingContextId{.Value = slot.ContextIndex},
 	    .Owner = owner,
-	    .DescriptorPage = RhiCommandRecordingDescriptorPage{
-	        .CpuBase = RhiCpuDescriptorHandle{.Value = slot.DescriptorPage.GetCPU().ptr},
-	        .GpuBase = RhiGpuDescriptorHandle{.Value = slot.DescriptorPage.GetGPU().ptr},
-	        .Capacity = DescriptorPageCapacity},
+	    .DescriptorPage =
+	        RhiCommandRecordingDescriptorPage{
+	            .CpuBase = RhiCpuDescriptorHandle{.Value = slot.DescriptorPage.GetCPU().ptr},
+	            .GpuBase = RhiGpuDescriptorHandle{.Value = slot.DescriptorPage.GetGPU().ptr},
+	            .Capacity = DescriptorPageCapacity},
 	    .RetirementToken = reusableAfter,
 	    .Begin = &BeginLease,
 	    .Close = &CloseLease,
@@ -91,8 +92,7 @@ RhiSubmissionToken D3D12CommandRecordingContext::SubmitBatch(
     std::span<RhiCommandRecordingLease> leases,
     std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
-	if (leases.empty() ||
-	    leases.size() > MaximumContextsPerFrameQueue)
+	if (leases.empty() || leases.size() > MaximumContextsPerFrameQueue)
 	{
 		return {};
 	}
@@ -108,10 +108,8 @@ RhiSubmissionToken D3D12CommandRecordingContext::SubmitBatch(
 			leases[index].Close();
 		}
 
-		CommandSlot* const slot =
-		    ConsumeClosedLease(std::move(leases[index]));
-		if (slot == nullptr ||
-		    slot->QueueType != queueType)
+		CommandSlot* const slot = ConsumeClosedLease(std::move(leases[index]));
+		if (slot == nullptr || slot->QueueType != queueType)
 		{
 			return {};
 		}
@@ -120,12 +118,8 @@ RhiSubmissionToken D3D12CommandRecordingContext::SubmitBatch(
 		nativeCommandLists[index] = slot->NativeCommandList.Get();
 	}
 
-	const RhiSubmissionToken token = m_rhi->SubmitCommandLists(
-	    queueType,
-	    std::span<ID3D12CommandList* const>(
-	        nativeCommandLists.data(),
-	        leases.size()),
-	    waitTokens);
+	const RhiSubmissionToken token =
+	    m_rhi->SubmitCommandLists(queueType, std::span<ID3D12CommandList* const>(nativeCommandLists.data(), leases.size()), waitTokens);
 
 	for (std::size_t index = 0; index < leases.size(); ++index)
 	{
@@ -135,27 +129,22 @@ RhiSubmissionToken D3D12CommandRecordingContext::SubmitBatch(
 	return token;
 }
 
-RenderCommandList& D3D12CommandRecordingContext::BeginCurrentGraphicsCommandList(
-    std::uint32_t frameIndex) noexcept
+RenderCommandList& D3D12CommandRecordingContext::BeginCurrentGraphicsCommandList(std::uint32_t frameIndex) noexcept
 {
 	QueueFrameState& frameState = GetQueueFrameState(ERhiQueueType::Graphics, frameIndex);
 	frameState.CurrentLease.emplace(Acquire(ERhiQueueType::Graphics, frameIndex, RhiCommandRecordingOwner{}));
 	return frameState.CurrentLease->GetCommandList();
 }
 
-RhiCommandRecordingLease
-D3D12CommandRecordingContext::TakeCurrentGraphicsCommandRecordingLease(
-    std::uint32_t frameIndex) noexcept
+RhiCommandRecordingLease D3D12CommandRecordingContext::TakeCurrentGraphicsCommandRecordingLease(std::uint32_t frameIndex) noexcept
 {
-	QueueFrameState& frameState =
-	    GetQueueFrameState(ERhiQueueType::Graphics, frameIndex);
+	QueueFrameState& frameState = GetQueueFrameState(ERhiQueueType::Graphics, frameIndex);
 	if (!frameState.CurrentLease.has_value())
 	{
 		return {};
 	}
 
-	RhiCommandRecordingLease lease(
-	    std::move(*frameState.CurrentLease));
+	RhiCommandRecordingLease lease(std::move(*frameState.CurrentLease));
 	frameState.CurrentLease.reset();
 	return lease;
 }
@@ -164,8 +153,7 @@ RhiSubmissionToken D3D12CommandRecordingContext::SubmitCurrentGraphicsCommandLis
     std::uint32_t frameIndex,
     std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
-	RhiCommandRecordingLease lease =
-	    TakeCurrentGraphicsCommandRecordingLease(frameIndex);
+	RhiCommandRecordingLease lease = TakeCurrentGraphicsCommandRecordingLease(frameIndex);
 	if (!lease.IsValid())
 	{
 		return {};
@@ -174,23 +162,17 @@ RhiSubmissionToken D3D12CommandRecordingContext::SubmitCurrentGraphicsCommandLis
 	return Submit(std::move(lease), waitTokens);
 }
 
-RenderCommandList& D3D12CommandRecordingContext::GetCurrentCommandList(
-    ERhiQueueType queueType,
-    std::uint32_t frameIndex) noexcept
+RenderCommandList& D3D12CommandRecordingContext::GetCurrentCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
 {
 	RenderCommandList* const commandList = TryGetCurrentCommandList(queueType, frameIndex);
 	assert(commandList != nullptr);
 	return *commandList;
 }
 
-RenderCommandList* D3D12CommandRecordingContext::TryGetCurrentCommandList(
-	ERhiQueueType queueType,
-	std::uint32_t frameIndex) noexcept
+RenderCommandList* D3D12CommandRecordingContext::TryGetCurrentCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
 {
 	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
-	return frameState.CurrentLease.has_value()
-	           ? &frameState.CurrentLease->GetCommandList()
-	           : nullptr;
+	return frameState.CurrentLease.has_value() ? &frameState.CurrentLease->GetCommandList() : nullptr;
 }
 
 D3D12CommandRecordingContext::QueueFrameState& D3D12CommandRecordingContext::GetQueueFrameState(
@@ -225,15 +207,13 @@ void D3D12CommandRecordingContext::InitializeSlots()
 			const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
 			for (std::uint32_t contextIndex = 0; contextIndex < MaximumContextsPerFrameQueue; ++contextIndex)
 			{
-				(void)CreateSlot(queueType, frameIndex);
+				(void) CreateSlot(queueType, frameIndex);
 			}
 		}
 	}
 }
 
-D3D12CommandRecordingContext::CommandSlot& D3D12CommandRecordingContext::CreateSlot(
-    ERhiQueueType queueType,
-    std::uint32_t frameIndex)
+D3D12CommandRecordingContext::CommandSlot& D3D12CommandRecordingContext::CreateSlot(ERhiQueueType queueType, std::uint32_t frameIndex)
 {
 	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
 	const std::uint32_t contextIndex = static_cast<std::uint32_t>(frameState.Slots.size());
@@ -264,42 +244,30 @@ void D3D12CommandRecordingContext::CreateNativeCommandObjects(CommandSlot& slot)
 	    IID_PPV_ARGS(slot.NativeCommandList.ReleaseAndGetAddressOf())));
 	CHECK(slot.NativeCommandList->Close());
 
-	slot.CommandList =
-	    std::make_unique<D3D12RenderCommandList>(*m_hardwareInterface, slot.NativeCommandList.Get(), slot.QueueType);
+	slot.CommandList = std::make_unique<D3D12RenderCommandList>(*m_hardwareInterface, slot.NativeCommandList.Get(), slot.QueueType);
 }
 
 void D3D12CommandRecordingContext::InitializeSlotResources(CommandSlot& slot)
 {
-	slot.DescriptorPage =
-	    m_descriptorHeapManager->AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, DescriptorPageCapacity);
+	slot.DescriptorPage = m_descriptorHeapManager->AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, DescriptorPageCapacity);
 
-	const std::wstring uploadName = std::format(
-	    L"Sparkle {} Recording Upload Frame {} Context {}",
-	    QueueTypeName(slot.QueueType),
-	    slot.FrameSlot,
-	    slot.ContextIndex);
+	const std::wstring uploadName =
+	    std::format(L"Sparkle {} Recording Upload Frame {} Context {}", QueueTypeName(slot.QueueType), slot.FrameSlot, slot.ContextIndex);
 	slot.UploadPage.Initialize(*m_rhi, UploadPageCapacityInBytes, uploadName.c_str());
 	slot.CommandList->SetRecordingUploadPage(slot.UploadPage);
 }
 
 void D3D12CommandRecordingContext::NameSlotObjects(CommandSlot& slot) const noexcept
 {
-	const std::wstring allocatorName = std::format(
-	    L"Sparkle {} Command Allocator Frame {} Context {}",
-	    QueueTypeName(slot.QueueType),
-	    slot.FrameSlot,
-	    slot.ContextIndex);
-	const std::wstring commandListName = std::format(
-	    L"Sparkle {} Command List Frame {} Context {}",
-	    QueueTypeName(slot.QueueType),
-	    slot.FrameSlot,
-	    slot.ContextIndex);
-	(void)slot.Allocator->SetName(allocatorName.c_str());
-	(void)slot.NativeCommandList->SetName(commandListName.c_str());
+	const std::wstring allocatorName =
+	    std::format(L"Sparkle {} Command Allocator Frame {} Context {}", QueueTypeName(slot.QueueType), slot.FrameSlot, slot.ContextIndex);
+	const std::wstring commandListName =
+	    std::format(L"Sparkle {} Command List Frame {} Context {}", QueueTypeName(slot.QueueType), slot.FrameSlot, slot.ContextIndex);
+	(void) slot.Allocator->SetName(allocatorName.c_str());
+	(void) slot.NativeCommandList->SetName(commandListName.c_str());
 }
 
-void D3D12CommandRecordingContext::WaitForFrameStateRetirement(
-    const QueueFrameState& frameState) noexcept
+void D3D12CommandRecordingContext::WaitForFrameStateRetirement(const QueueFrameState& frameState) noexcept
 {
 	RhiSubmissionState retirement;
 	for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
@@ -375,28 +343,19 @@ void D3D12CommandRecordingContext::ReleaseSlot(CommandSlot& slot) noexcept
 	}
 }
 
-D3D12CommandRecordingContext::CommandSlot*
-D3D12CommandRecordingContext::ConsumeClosedLease(
-    RhiCommandRecordingLease&& lease) noexcept
+D3D12CommandRecordingContext::CommandSlot* D3D12CommandRecordingContext::ConsumeClosedLease(RhiCommandRecordingLease&& lease) noexcept
 {
-	return RhiCommandRecordingLeaseAccess::ConsumeClosed<CommandSlot>(
-	    std::move(lease),
-	    this,
-	    SlotState::Closed);
+	return RhiCommandRecordingLeaseAccess::ConsumeClosed<CommandSlot>(std::move(lease), this, SlotState::Closed);
 }
 
-void D3D12CommandRecordingContext::ResolveSubmittedSlot(
-    CommandSlot& slot,
-    RhiSubmissionToken token) noexcept
+void D3D12CommandRecordingContext::ResolveSubmittedSlot(CommandSlot& slot, RhiSubmissionToken token) noexcept
 {
 	slot.CommandList->ResolveTrackedResources(token);
 	slot.RetirementToken = token;
 	slot.State = SlotState::Submitted;
 }
 
-RhiTransientDescriptorRange D3D12CommandRecordingContext::AllocateDescriptors(
-    CommandSlot& slot,
-    std::uint32_t count) noexcept
+RhiTransientDescriptorRange D3D12CommandRecordingContext::AllocateDescriptors(CommandSlot& slot, std::uint32_t count) noexcept
 {
 	assert(slot.State == SlotState::Recording);
 	assert(slot.RecordingThread == std::this_thread::get_id());
@@ -460,9 +419,7 @@ void D3D12CommandRecordingContext::ReleaseLease(void* state, bool) noexcept
 	slot.Owner->ReleaseSlot(slot);
 }
 
-RhiTransientDescriptorRange D3D12CommandRecordingContext::AllocateLeaseDescriptors(
-    void* state,
-    std::uint32_t count) noexcept
+RhiTransientDescriptorRange D3D12CommandRecordingContext::AllocateLeaseDescriptors(void* state, std::uint32_t count) noexcept
 {
 	auto& slot = *static_cast<CommandSlot*>(state);
 	return slot.Owner->AllocateDescriptors(slot, count);
@@ -510,9 +467,7 @@ const wchar_t* D3D12CommandRecordingContext::QueueTypeName(ERhiQueueType queueTy
 	std::terminate();
 }
 
-[[noreturn]] void D3D12CommandRecordingContext::FailExhausted(
-    ERhiQueueType queueType,
-    std::uint32_t frameIndex) noexcept
+[[noreturn]] void D3D12CommandRecordingContext::FailExhausted(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
 {
 	const auto logger = Logging::GetOrCreateLogger("RHI.D3D12.Commands");
 	Diagnostics::Fatal(

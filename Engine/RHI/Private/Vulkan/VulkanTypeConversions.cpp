@@ -416,9 +416,5 @@ VkImageAspectFlags VulkanTypeConversions::ResolveAspectMask(PixelFormat format) 
 	{
 		return VK_IMAGE_ASPECT_COLOR_BIT;
 	}
-	Diagnostics::Fatal(
-	    g_vulkanTypeConversionsLogger,
-	    __FILE__,
-	    __LINE__,
-	    "Cannot resolve an aspect mask for an unknown Vulkan format.");
+	Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Cannot resolve an aspect mask for an unknown Vulkan format.");
 }

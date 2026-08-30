@@ -40,10 +40,7 @@ public:
 	const CookedShaderReflectionRecord& GetReflection(const GlobalShaderMapEntry& entry) const noexcept;
 	std::span<const CookedShaderResourceBindingRecord> GetResourceBindings() const noexcept { return m_resourceBindings; }
 	std::span<const CookedShaderConstantBufferRecord> GetConstantBuffers() const noexcept { return m_constantBuffers; }
-	std::span<const CookedShaderConstantBufferMemberRecord> GetConstantBufferMembers() const noexcept
-	{
-		return m_constantBufferMembers;
-	}
+	std::span<const CookedShaderConstantBufferMemberRecord> GetConstantBufferMembers() const noexcept { return m_constantBufferMembers; }
 	std::span<const CookedShaderInputElementRecord> GetInputElements() const noexcept { return m_inputElements; }
 	std::span<const CookedShaderPushConstantRangeRecord> GetPushConstantRanges() const noexcept { return m_pushConstantRanges; }
 	std::span<const CookedShaderSpecializationConstantRecord> GetSpecializationConstants() const noexcept

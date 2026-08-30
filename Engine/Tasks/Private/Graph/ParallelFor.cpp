@@ -8,7 +8,7 @@
 
 class ParallelForTaskNaming final
 {
-  public:
+public:
 	static TaskName DerivedTaskName(const TaskName& base, std::string suffix)
 	{
 		std::string value(base.Get());
@@ -42,9 +42,7 @@ TaskNodeHandle ParallelFor(
 		return graph.Add(
 		    std::move(desc),
 		    [itemCount, function = std::move(function)](TaskExecutionContext& context)
-		    {
-			return function ? function(0, itemCount, context) : TaskResult::Success();
-		    });
+		    { return function ? function(0, itemCount, context) : TaskResult::Success(); });
 	}
 
 	TaskDesc groupDesc = desc;
@@ -71,17 +69,12 @@ TaskNodeHandle ParallelFor(
 		}
 
 		TaskDesc partitionDesc = desc;
-		partitionDesc.Name =
-		    ParallelForTaskNaming::DerivedTaskName(
-		        desc.Name,
-		        ".Range" + std::to_string(partition));
+		partitionDesc.Name = ParallelForTaskNaming::DerivedTaskName(desc.Name, ".Range" + std::to_string(partition));
 		graph.AddNested(
 		    group,
 		    std::move(partitionDesc),
 		    [begin, end, function](TaskExecutionContext& context)
-		    {
-			return function ? function(begin, end, context) : TaskResult::Success();
-		    });
+		    { return function ? function(begin, end, context) : TaskResult::Success(); });
 	}
 	return group;
 }

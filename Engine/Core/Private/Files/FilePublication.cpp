@@ -11,7 +11,7 @@ namespace Files
 {
 	class FileSetPublisher final
 	{
-	  public:
+	public:
 		bool Publish(std::span<const FilePublication> files, std::string& outErrorMessage)
 		{
 			if (!BuildPublicationPlan(files, outErrorMessage))
@@ -29,7 +29,7 @@ namespace Files
 			return true;
 		}
 
-	  private:
+	private:
 		struct PublicationState final
 		{
 			FilePublication File;
@@ -45,8 +45,8 @@ namespace Files
 			for (const FilePublication& file : files)
 			{
 				std::error_code errorCode;
-				if (file.StagedPath.empty() || file.PublishedPath.empty() ||
-				    !std::filesystem::is_regular_file(file.StagedPath, errorCode) || errorCode)
+				if (file.StagedPath.empty() || file.PublishedPath.empty() || !std::filesystem::is_regular_file(file.StagedPath, errorCode)
+				    || errorCode)
 				{
 					outErrorMessage = std::format("Publication input '{}' is missing or is not a file", file.StagedPath.string());
 					return false;

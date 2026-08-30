@@ -204,13 +204,7 @@ RenderRayTracingFrameBindings FramePipeline::PrepareFrame(const RenderViewInput&
 	m_textureCache.UpdateSceneTextures(m_renderScene.GetTextures(), m_deviceServices);
 
 	const RenderFrame& frame = PrepareRenderFrame(viewInput, time);
-	UpdateFrameHistory(
-	    *m_frameGraph,
-	    m_frameResources.History,
-	    frame.PreparedScene,
-	    frame.View,
-	    m_renderViewState,
-	    m_imageProviders);
+	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, m_renderViewState, m_imageProviders);
 	SetupImageProviderFrame(frame);
 	return m_renderScene.PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
 }

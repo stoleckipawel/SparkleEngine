@@ -10,7 +10,7 @@
 
 class DefaultTextureCookCatalog final
 {
-  public:
+public:
 	struct DefaultTextureCookDesc final
 	{
 		std::string_view SourceRelativePath;
@@ -89,9 +89,7 @@ class DefaultTextureCookCatalog final
 	        TextureDimension::Texture2D},
 	};
 
-	static void AppendRequest(
-	    const DefaultTextureCookDesc& description,
-	    TextureCookRequestSet& requestSet)
+	static void AppendRequest(const DefaultTextureCookDesc& description, TextureCookRequestSet& requestSet)
 	{
 		const std::filesystem::path sourcePath =
 		    (Filesystem::GetEnginePath() / std::filesystem::path(description.SourceRelativePath)).lexically_normal();
@@ -102,8 +100,7 @@ class DefaultTextureCookCatalog final
 		}
 
 		TextureCookRequest request;
-		request.assetId = Hash::Fnv1a64(
-		    std::string("engine-default-texture:") + std::string(description.OutputRelativePath));
+		request.assetId = Hash::Fnv1a64(std::string("engine-default-texture:") + std::string(description.OutputRelativePath));
 		request.sourcePath = sourcePath;
 		request.outputPath =
 		    (Filesystem::GetCookedTextureRootPath() / std::filesystem::path(description.OutputRelativePath)).lexically_normal();

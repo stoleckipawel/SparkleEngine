@@ -5,6 +5,6 @@
 
 class CookedSceneMetadataBuilder final
 {
-  public:
+public:
 	static void BuildMetadata(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 };

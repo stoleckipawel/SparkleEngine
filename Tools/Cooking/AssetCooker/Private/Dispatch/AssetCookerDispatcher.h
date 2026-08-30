@@ -7,7 +7,7 @@
 
 class AssetCookerDispatcher final
 {
-  public:
+public:
 	static bool DispatchPlan(
 	    const AssetCookerProjectCookPlan& plan,
 	    AssetCookerDiagnostics& diagnostics,

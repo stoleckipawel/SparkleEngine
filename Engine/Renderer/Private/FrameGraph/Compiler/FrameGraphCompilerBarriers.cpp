@@ -30,9 +30,7 @@ void FrameGraphCompiler::InitializeBarrierDependencies() noexcept
 	}
 }
 
-void FrameGraphCompiler::BuildPassResourceBarriers(
-    FrameGraphPassIndex passIndex,
-    LastResourceAccessTable& lastResourceAccesses) noexcept
+void FrameGraphCompiler::BuildPassResourceBarriers(FrameGraphPassIndex passIndex, LastResourceAccessTable& lastResourceAccesses) noexcept
 {
 	FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
 	for (const PassResourceDeclaration& declaration : passRecord.declarations)
@@ -55,12 +53,7 @@ void FrameGraphCompiler::BuildResourceBarrier(
     FrameGraphResourceNode& compiledResource,
     LastResourceAccess& lastAccess) noexcept
 {
-	BuildQueueOwnershipBarriers(
-	    passIndex,
-	    passRecord,
-	    declaration,
-	    compiledResource,
-	    lastAccess);
+	BuildQueueOwnershipBarriers(passIndex, passRecord, declaration, compiledResource, lastAccess);
 	BuildRequiredResourceBarriers(passRecord, declaration, compiledResource);
 
 	lastAccess.Pass = passIndex;
@@ -74,14 +67,13 @@ void FrameGraphCompiler::BuildQueueOwnershipBarriers(
     FrameGraphResourceNode& compiledResource,
     const LastResourceAccess& lastAccess) noexcept
 {
-	const bool crossesQueue = lastAccess.Pass != INVALID_FRAME_GRAPH_PASS_INDEX &&
-	                          lastAccess.Pass != passIndex &&
-	                          lastAccess.Queue != passRecord.queue;
+	const bool crossesQueue =
+	    lastAccess.Pass != INVALID_FRAME_GRAPH_PASS_INDEX && lastAccess.Pass != passIndex && lastAccess.Queue != passRecord.queue;
 	if (crossesQueue)
 	{
 		AddSynchronizationDependency(passRecord, lastAccess.Pass);
-		if (compiledResource.currentState != ResourceState::Common &&
-		    compiledResource.currentState != ResourceState::RayTracingAccelerationStructure)
+		if (compiledResource.currentState != ResourceState::Common
+		    && compiledResource.currentState != ResourceState::RayTracingAccelerationStructure)
 		{
 			m_plan.passes[lastAccess.Pass].compiledReleaseBarriers.push_back(
 			    FrameGraphBarrier{
@@ -96,12 +88,9 @@ void FrameGraphCompiler::BuildQueueOwnershipBarriers(
 		return;
 	}
 
-	const bool startsOnNonGraphicsQueue =
-	    lastAccess.Pass == INVALID_FRAME_GRAPH_PASS_INDEX &&
-	    passRecord.queue != ERhiQueueType::Graphics;
-	if (startsOnNonGraphicsQueue &&
-	    compiledResource.currentState != ResourceState::Common &&
-	    compiledResource.currentState != ResourceState::RayTracingAccelerationStructure)
+	const bool startsOnNonGraphicsQueue = lastAccess.Pass == INVALID_FRAME_GRAPH_PASS_INDEX && passRecord.queue != ERhiQueueType::Graphics;
+	if (startsOnNonGraphicsQueue && compiledResource.currentState != ResourceState::Common
+	    && compiledResource.currentState != ResourceState::RayTracingAccelerationStructure)
 	{
 		m_plan.initialBarriers.push_back(
 		    FrameGraphBarrier{
@@ -119,13 +108,10 @@ void FrameGraphCompiler::BuildRequiredResourceBarriers(
     const PassResourceDeclaration& declaration,
     FrameGraphResourceNode& compiledResource) noexcept
 {
-	const ResourceState requiredState =
-	    InferRequiredResourceState(declaration, compiledResource);
+	const ResourceState requiredState = InferRequiredResourceState(declaration, compiledResource);
 	if (FrameGraphCompilerRayTracing::UsesRayTracingState(declaration))
 	{
-		if (FrameGraphCompilerRayTracing::RequiresTransitionBarrier(
-		        compiledResource.currentState,
-		        requiredState))
+		if (FrameGraphCompilerRayTracing::RequiresTransitionBarrier(compiledResource.currentState, requiredState))
 		{
 			passRecord.compiledBarriers.push_back(
 			    FrameGraphBarrier{
@@ -138,11 +124,8 @@ void FrameGraphCompiler::BuildRequiredResourceBarriers(
 			m_resourceStateTracker.UpdateCurrentState(declaration.handle, requiredState);
 		}
 
-		if (compiledResource.pendingAccelerationStructureBarrier &&
-		    !HasCompiledBarrier(
-		        passRecord,
-		        declaration.handle,
-		        FrameGraphBarrier::Type::AccelerationStructure))
+		if (compiledResource.pendingAccelerationStructureBarrier
+		    && !HasCompiledBarrier(passRecord, declaration.handle, FrameGraphBarrier::Type::AccelerationStructure))
 		{
 			passRecord.compiledBarriers.push_back(
 			    FrameGraphBarrier{
@@ -153,8 +136,7 @@ void FrameGraphCompiler::BuildRequiredResourceBarriers(
 			        .label = declaration.label});
 		}
 
-		compiledResource.pendingAccelerationStructureBarrier =
-		    declaration.usage == ResourceUsage::AccelerationStructureBuild;
+		compiledResource.pendingAccelerationStructureBarrier = declaration.usage == ResourceUsage::AccelerationStructureBuild;
 		return;
 	}
 
@@ -172,13 +154,8 @@ void FrameGraphCompiler::BuildRequiredResourceBarriers(
 		return;
 	}
 
-	const bool requiresUnorderedAccessBarrier =
-	    requiredState == ResourceState::UnorderedAccess &&
-	    WritesToUsage(declaration.usage) &&
-	    !HasCompiledBarrier(
-	        passRecord,
-	        declaration.handle,
-	        FrameGraphBarrier::Type::UnorderedAccess);
+	const bool requiresUnorderedAccessBarrier = requiredState == ResourceState::UnorderedAccess && WritesToUsage(declaration.usage)
+	    && !HasCompiledBarrier(passRecord, declaration.handle, FrameGraphBarrier::Type::UnorderedAccess);
 	if (requiresUnorderedAccessBarrier)
 	{
 		passRecord.compiledBarriers.push_back(
@@ -191,8 +168,7 @@ void FrameGraphCompiler::BuildRequiredResourceBarriers(
 	}
 }
 
-void FrameGraphCompiler::BuildFinalResourceBarriers(
-    const LastResourceAccessTable& lastResourceAccesses) noexcept
+void FrameGraphCompiler::BuildFinalResourceBarriers(const LastResourceAccessTable& lastResourceAccesses) noexcept
 {
 	for (FrameGraphResourceNode& compiledResource : m_plan.resources)
 	{
@@ -201,14 +177,11 @@ void FrameGraphCompiler::BuildFinalResourceBarriers(
 			continue;
 		}
 
-		const FrameGraphResourceMetadata& entry =
-		    m_resourceRegistry.GetMetadata(compiledResource.handle);
-		const LastResourceAccess& lastAccess =
-		    lastResourceAccesses[compiledResource.index];
-		if (lastAccess.Pass != INVALID_FRAME_GRAPH_PASS_INDEX &&
-		    lastAccess.Queue != ERhiQueueType::Graphics &&
-		    compiledResource.currentState != ResourceState::Common &&
-		    compiledResource.currentState != ResourceState::RayTracingAccelerationStructure)
+		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(compiledResource.handle);
+		const LastResourceAccess& lastAccess = lastResourceAccesses[compiledResource.index];
+		if (lastAccess.Pass != INVALID_FRAME_GRAPH_PASS_INDEX && lastAccess.Queue != ERhiQueueType::Graphics
+		    && compiledResource.currentState != ResourceState::Common
+		    && compiledResource.currentState != ResourceState::RayTracingAccelerationStructure)
 		{
 			m_plan.passes[lastAccess.Pass].compiledReleaseBarriers.push_back(
 			    FrameGraphBarrier{
@@ -245,8 +218,6 @@ bool FrameGraphCompiler::HasCompiledBarrier(
 	return std::find_if(
 	           passRecord.compiledBarriers.begin(),
 	           passRecord.compiledBarriers.end(),
-	           [handle, type](const FrameGraphBarrier& barrier)
-	           {
-		           return barrier.handle == handle && barrier.type == type;
-	           }) != passRecord.compiledBarriers.end();
+	           [handle, type](const FrameGraphBarrier& barrier) { return barrier.handle == handle && barrier.type == type; })
+	    != passRecord.compiledBarriers.end();
 }

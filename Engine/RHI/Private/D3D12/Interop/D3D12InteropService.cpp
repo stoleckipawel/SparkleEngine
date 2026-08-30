@@ -3,7 +3,10 @@
 #include "D3D12/D3D12RenderHardwareInterface.h"
 #include "D3D12/Descriptors/D3D12DescriptorService.h"
 
-D3D12InteropService::D3D12InteropService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
+D3D12InteropService::D3D12InteropService(D3D12RenderHardwareInterface& owner) noexcept :
+    m_owner(&owner)
+{
+}
 
 RhiNativeDeviceQueueInterop D3D12InteropService::GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept
 {
@@ -19,10 +22,10 @@ RhiNativeDeviceQueueInterop D3D12InteropService::GetDeviceQueueInterop(RhiNative
 }
 
 NativeTextureViewInfo D3D12InteropService::GetNativeTextureViewInfo(
-	RhiResourceViewHandle view,
-	RhiResourceHandle resource,
-	ResourceState state,
-	const RhiNativeInteropRequest& request) const noexcept
+    RhiResourceViewHandle view,
+    RhiResourceHandle resource,
+    ResourceState state,
+    const RhiNativeInteropRequest& request) const noexcept
 {
 	if (!IsRhiNativeInteropRequestValid(request) || m_owner == nullptr || m_owner->m_descriptorService == nullptr)
 	{

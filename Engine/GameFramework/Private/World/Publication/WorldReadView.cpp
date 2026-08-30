@@ -2,8 +2,14 @@
 #include "GameFramework/Public/World/WorldReadView.h"
 #include "World/Publication/WorldReadViewStorage.h"
 
-std::uint64_t WorldReadView::GetGeneration() const noexcept { return m_storage != nullptr ? m_storage->Generation : 0; }
-WorldSequence WorldReadView::GetSequence() const noexcept { return m_storage != nullptr ? m_storage->Sequence : 0; }
+std::uint64_t WorldReadView::GetGeneration() const noexcept
+{
+	return m_storage != nullptr ? m_storage->Generation : 0;
+}
+WorldSequence WorldReadView::GetSequence() const noexcept
+{
+	return m_storage != nullptr ? m_storage->Sequence : 0;
+}
 
 std::span<const WorldCameraReadData> WorldReadView::GetCameras() const noexcept
 {

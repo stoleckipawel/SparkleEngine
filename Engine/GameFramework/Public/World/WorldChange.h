@@ -61,24 +61,24 @@ enum class WorldChangeReadStatus : std::uint8_t
 
 class SPARKLE_ENGINE_API WorldChangeCursor final
 {
-  public:
+public:
 	WorldSequence GetAcknowledgedSequence() const noexcept { return m_acknowledgedSequence; }
 
-  private:
+private:
 	friend class GameWorld;
 	WorldSequence m_acknowledgedSequence = 0;
 };
 
 class SPARKLE_ENGINE_API WorldChangeBatch final
 {
-  public:
+public:
 	WorldChangeBatch() noexcept = default;
 	WorldChangeReadStatus GetStatus() const noexcept { return m_status; }
 	WorldSequence GetOldestAvailableSequence() const noexcept { return m_oldestAvailableSequence; }
 	WorldSequence GetLatestSequence() const noexcept { return m_latestSequence; }
 	std::span<const WorldChange> GetChanges() const noexcept;
 
-  private:
+private:
 	struct Storage;
 	friend class ECS::WorldChangeJournal;
 	WorldChangeBatch(

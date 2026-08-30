@@ -9,9 +9,7 @@
 
 #include <sstream>
 
-CookedShaderStatsReport CookedShaderStatsPass::WriteCsv(
-    const ShaderCookOutput& output,
-    const std::filesystem::path& analysisDirectory)
+CookedShaderStatsReport CookedShaderStatsPass::WriteCsv(const ShaderCookOutput& output, const std::filesystem::path& analysisDirectory)
 {
 	CookedShaderStatsReport report{.outputPath = analysisDirectory / "CookedShaderStats.csv"};
 	std::ostringstream csv;
@@ -19,7 +17,8 @@ CookedShaderStatsReport CookedShaderStatsPass::WriteCsv(
 	for (const ShaderCookedEntry& entry : output.entries)
 	{
 		csv << Formatting::FormatHexUInt64(entry.shaderType) << ',' << Strings::EscapeCsvField(entry.shaderName) << ','
-		    << GetShaderTargetName(entry.target) << ',' << Formatting::FormatHexUInt64(entry.codeHash) << ',' << entry.codeSizeInBytes << '\n';
+		    << GetShaderTargetName(entry.target) << ',' << Formatting::FormatHexUInt64(entry.codeHash) << ',' << entry.codeSizeInBytes
+		    << '\n';
 		++report.rowCount;
 	}
 	std::string error;

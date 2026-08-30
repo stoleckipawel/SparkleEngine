@@ -16,7 +16,7 @@
 
 class SceneLoadLimits final
 {
-  public:
+public:
 	static constexpr std::size_t kMaximumAssetsPerRequest = 256;
 };
 
@@ -27,7 +27,8 @@ namespace Assets
 	struct SceneLoadExecutor::ControlState final
 	{
 		ControlState(TaskExecutor& executor, TaskScope& applicationScope) :
-		    Executor(executor), ApplicationScope(applicationScope)
+		    Executor(executor),
+		    ApplicationScope(applicationScope)
 		{
 		}
 
@@ -41,9 +42,7 @@ namespace Assets
 		std::uint64_t RequestId = 0;
 	};
 
-	SceneLoadExecutor::SceneLoadExecutor(
-	    TaskExecutor& executor,
-	    TaskScope& applicationScope) :
+	SceneLoadExecutor::SceneLoadExecutor(TaskExecutor& executor, TaskScope& applicationScope) :
 	    m_control(std::make_unique<ControlState>(executor, applicationScope))
 	{
 	}
@@ -55,11 +54,7 @@ namespace Assets
 			m_control->Scope->JoinFor(std::chrono::milliseconds::max());
 	}
 
-	void SceneLoadExecutor::Start(
-	    std::uint64_t requestId,
-	    std::uint64_t worldGeneration,
-	    std::uint64_t documentGeneration,
-	    LevelDesc level)
+	void SceneLoadExecutor::Start(std::uint64_t requestId, std::uint64_t worldGeneration, std::uint64_t documentGeneration, LevelDesc level)
 	{
 		if (m_control->Scope)
 		{
@@ -100,11 +95,12 @@ namespace Assets
 			const std::optional<std::filesystem::path> manifest = m_control->Catalog->Resolve(id.GetCatalogValue());
 			if (!manifest)
 			{
-				throw Diagnostics::Error(std::format(
-				    "Scene asset catalog ID '{}' for instance '{}' is absent from catalog generation {}.",
-				    id.GetCatalogValue(),
-				    id.value,
-				    m_control->Catalog->GetGeneration()));
+				throw Diagnostics::Error(
+				    std::format(
+				        "Scene asset catalog ID '{}' for instance '{}' is absent from catalog generation {}.",
+				        id.GetCatalogValue(),
+				        id.value,
+				        m_control->Catalog->GetGeneration()));
 			}
 			shared->Assets.push_back(SceneAssetLoadWork{.Id = id, .ManifestPath = *manifest});
 		}
@@ -148,8 +144,8 @@ namespace Assets
 		completion.RequestId = m_control->RequestId;
 		const TaskResult result = m_control->Execution.GetResult();
 		completion.Stage = result.Succeeded()
-		                       ? LevelLoadOperationStage::Ready
-		                       : (result.WasCancelled() ? LevelLoadOperationStage::Cancelled : LevelLoadOperationStage::Failed);
+		    ? LevelLoadOperationStage::Ready
+		    : (result.WasCancelled() ? LevelLoadOperationStage::Cancelled : LevelLoadOperationStage::Failed);
 		completion.Diagnostic = std::string(result.GetMessage());
 		if (result.Succeeded())
 		{

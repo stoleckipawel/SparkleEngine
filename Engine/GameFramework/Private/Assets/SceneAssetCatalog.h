@@ -12,16 +12,17 @@ namespace Assets
 {
 	class SceneAssetCatalog final
 	{
-	  public:
+	public:
 		SceneAssetCatalog(std::uint64_t generation, std::map<std::string, std::filesystem::path, std::less<>> entries) :
-		    m_generation(generation), m_entries(std::move(entries))
+		    m_generation(generation),
+		    m_entries(std::move(entries))
 		{
 		}
 
 		std::uint64_t GetGeneration() const noexcept { return m_generation; }
 		std::optional<std::filesystem::path> Resolve(std::string_view sceneAssetId) const;
 
-	  private:
+	private:
 		std::uint64_t m_generation = 0;
 		std::map<std::string, std::filesystem::path, std::less<>> m_entries;
 	};

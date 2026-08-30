@@ -16,7 +16,7 @@ namespace ECS
 
 	class ComponentTypeRegistry final
 	{
-	  public:
+	public:
 		template <typename T> static RuntimeComponentTypeId GetTypeId() noexcept { return GetRuntimeComponentTypeId<T>(); }
 
 		template <ComponentStorageCompatible T> ComponentStorage<T>& GetOrCreate()
@@ -57,7 +57,7 @@ namespace ECS
 
 		void Clear() noexcept { m_storages.clear(); }
 
-	  private:
+	private:
 		static RuntimeComponentTypeId AllocateRuntimeComponentTypeId() noexcept
 		{
 			static std::uint32_t nextTypeId = 0;

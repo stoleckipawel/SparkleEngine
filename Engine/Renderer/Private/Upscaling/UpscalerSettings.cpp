@@ -3,7 +3,7 @@
 
 ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider(
     "r.Upscaler.Provider",
-	EUpscalerProviderKind::Linear,
+    EUpscalerProviderKind::Linear,
     "Renderer upscaler provider: 0=Linear, 1=NVIDIA DLSS.");
 ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode(
     "r.Upscaler.QualityMode",

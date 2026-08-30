@@ -55,7 +55,7 @@ namespace Assets
 		std::uint32_t variantIndex = 0;
 		std::uint32_t materialAssetIndex = 0;
 	};
-}  // namespace Assets
+}
 
 static_assert(std::is_trivially_copyable_v<Assets::CookedSceneSkeletonRef>, "CookedSceneSkeletonRef must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationReference>, "CookedAnimationReference must stay trivially copyable.");

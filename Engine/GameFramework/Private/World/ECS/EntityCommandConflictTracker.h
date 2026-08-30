@@ -11,7 +11,7 @@ namespace ECS::EntityCommandDetail
 {
 	class EntityCommandConflictTracker final
 	{
-	  public:
+	public:
 		void Reserve(std::size_t commandCount);
 		bool TryClaim(
 		    EntityId entity,
@@ -20,7 +20,7 @@ namespace ECS::EntityCommandDetail
 		    RuntimeComponentTypeId componentType,
 		    bool hasComponentType);
 
-	  private:
+	private:
 		struct ComponentOwner final
 		{
 			RuntimeComponentTypeId Type;

@@ -5,8 +5,6 @@
 
 class SourceTexturePathResolver final
 {
-  public:
-	static std::filesystem::path ResolveExistingFile(
-	    const std::filesystem::path& sourceDirectory,
-	    std::string_view authoredPath);
+public:
+	static std::filesystem::path ResolveExistingFile(const std::filesystem::path& sourceDirectory, std::string_view authoredPath);
 };

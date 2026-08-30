@@ -88,9 +88,9 @@ bool CookShadersArgumentParser::ConsumeFlag(std::string_view argument)
 
 bool CookShadersArgumentParser::ConsumeValueOption(std::string_view argument)
 {
-	if (argument != "--shader-id" && argument != "--changed" && argument != "--cancellation-signal"
-	    && argument != "--target" && argument != "--backend" && argument != "--debug-artifacts" && argument != "--analysis"
-	    && argument != "--parallel-compiles" && argument != "--warnings-as-errors" && argument != "--strip-debug")
+	if (argument != "--shader-id" && argument != "--changed" && argument != "--cancellation-signal" && argument != "--target"
+	    && argument != "--backend" && argument != "--debug-artifacts" && argument != "--analysis" && argument != "--parallel-compiles"
+	    && argument != "--warnings-as-errors" && argument != "--strip-debug")
 	{
 		return false;
 	}
@@ -221,8 +221,8 @@ std::string_view CookShadersArgumentParser::TakeValue(std::string_view argument)
 
 void CookShadersArgumentParser::ValidateSelection() const
 {
-	const std::uint32_t selectionCount = static_cast<std::uint32_t>(!m_settings.shaderId.empty())
-	    + static_cast<std::uint32_t>(!m_settings.changedVirtualPaths.empty());
+	const std::uint32_t selectionCount =
+	    static_cast<std::uint32_t>(!m_settings.shaderId.empty()) + static_cast<std::uint32_t>(!m_settings.changedVirtualPaths.empty());
 	if (selectionCount > 1)
 	{
 		throw Diagnostics::Error("Use one selection: --shader-id or one or more --changed paths");

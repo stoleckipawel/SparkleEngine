@@ -13,7 +13,10 @@
 #include <algorithm>
 #include <optional>
 
-EditorConsolePanel::EditorConsolePanel(ConsoleSession& session) noexcept : m_session(&session) {}
+EditorConsolePanel::EditorConsolePanel(ConsoleSession& session) noexcept :
+    m_session(&session)
+{
+}
 
 void EditorConsolePanel::RequestFocus() noexcept
 {

@@ -14,9 +14,5 @@ struct ParallelForPolicy final
 
 using ParallelForFunction = std::function<TaskResult(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context)>;
 
-SPARKLE_TASKS_API TaskNodeHandle ParallelFor(
-    TaskGraphBuilder& graph,
-    TaskDesc desc,
-    std::uint32_t itemCount,
-    ParallelForPolicy policy,
-    ParallelForFunction function);
+SPARKLE_TASKS_API TaskNodeHandle
+ParallelFor(TaskGraphBuilder& graph, TaskDesc desc, std::uint32_t itemCount, ParallelForPolicy policy, ParallelForFunction function);

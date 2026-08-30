@@ -34,9 +34,7 @@ enum class RhiRayTracingInstanceFlags : std::uint8_t
 	ForceNonOpaque = 1 << 2,
 };
 
-constexpr ERhiClassicTlasBuildFlags operator|(
-    ERhiClassicTlasBuildFlags lhs,
-    ERhiClassicTlasBuildFlags rhs) noexcept
+constexpr ERhiClassicTlasBuildFlags operator|(ERhiClassicTlasBuildFlags lhs, ERhiClassicTlasBuildFlags rhs) noexcept
 {
 	return static_cast<ERhiClassicTlasBuildFlags>(static_cast<std::uint8_t>(lhs) | static_cast<std::uint8_t>(rhs));
 }
@@ -46,9 +44,7 @@ constexpr bool HasFlag(ERhiClassicTlasBuildFlags flags, ERhiClassicTlasBuildFlag
 	return (static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(flag)) != 0;
 }
 
-constexpr RhiRayTracingInstanceFlags operator|(
-    RhiRayTracingInstanceFlags lhs,
-    RhiRayTracingInstanceFlags rhs) noexcept
+constexpr RhiRayTracingInstanceFlags operator|(RhiRayTracingInstanceFlags lhs, RhiRayTracingInstanceFlags rhs) noexcept
 {
 	return static_cast<RhiRayTracingInstanceFlags>(static_cast<std::uint8_t>(lhs) | static_cast<std::uint8_t>(rhs));
 }

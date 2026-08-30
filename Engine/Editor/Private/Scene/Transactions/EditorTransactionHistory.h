@@ -10,11 +10,14 @@
 
 class EditorTransactionHistory final
 {
-  public:
+public:
 	using SubmitFunction = std::function<WorldEditResult(WorldEditCommand, std::uint64_t)>;
 
 	EditorTransactionHistory() = default;
-	explicit EditorTransactionHistory(SubmitFunction submit) : m_submit(std::move(submit)) {}
+	explicit EditorTransactionHistory(SubmitFunction submit) :
+	    m_submit(std::move(submit))
+	{
+	}
 
 	WorldEditResult Execute(
 	    WorldEditCommand forward,
@@ -28,7 +31,7 @@ class EditorTransactionHistory final
 	bool CanRedo() const noexcept { return !m_redo.empty(); }
 	const std::optional<WorldEditResult>& GetLastResult() const noexcept { return m_lastResult; }
 
-  private:
+private:
 	struct Transaction final
 	{
 		WorldEditCommand Forward;
@@ -43,4 +46,3 @@ class EditorTransactionHistory final
 	std::uint64_t m_nextRequestId = 1;
 	std::uint64_t m_worldGeneration = 0;
 };
-

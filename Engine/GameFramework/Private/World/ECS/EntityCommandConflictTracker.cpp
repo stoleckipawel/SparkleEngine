@@ -20,13 +20,11 @@ namespace ECS::EntityCommandDetail
 		EntityConflictState& state = m_entities[PackEntity(entity)];
 		if (kind == EntityCommandKind::Destroy)
 		{
-			if ((state.HasEntityWideOwner && state.EntityWideOwner != bufferId) || std::any_of(
-			                                                                           state.ComponentOwners.begin(),
-			                                                                           state.ComponentOwners.end(),
-			                                                                           [&](const ComponentOwner& owner)
-			                                                                           {
-				                                                                           return owner.Buffer != bufferId;
-			                                                                           }))
+			if ((state.HasEntityWideOwner && state.EntityWideOwner != bufferId)
+			    || std::any_of(
+			        state.ComponentOwners.begin(),
+			        state.ComponentOwners.end(),
+			        [&](const ComponentOwner& owner) { return owner.Buffer != bufferId; }))
 			{
 				return false;
 			}
@@ -64,10 +62,7 @@ namespace ECS::EntityCommandDetail
 		const auto owner = std::find_if(
 		    state.ComponentOwners.begin(),
 		    state.ComponentOwners.end(),
-		    [&](const ComponentOwner& candidate)
-		    {
-			    return candidate.Type == type;
-		    });
+		    [&](const ComponentOwner& candidate) { return candidate.Type == type; });
 		return owner == state.ComponentOwners.end() ? nullptr : &*owner;
 	}
 }

@@ -16,9 +16,9 @@
 #include "RHI/Public/Formats/PixelFormat.h"
 
 void AddLightingPasses(
-	FrameGraphBuilder& builder,
-	RenderRayTracingScene& rayTracingScene,
-	RenderViewportExtent sceneExtent,
+    FrameGraphBuilder& builder,
+    RenderRayTracingScene& rayTracingScene,
+    RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources)
 {
 	const LightingMode mode = CVarLightingMode.Get();

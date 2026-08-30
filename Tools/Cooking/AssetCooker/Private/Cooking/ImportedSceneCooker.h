@@ -8,11 +8,11 @@
 
 class ImportedSceneCooker final
 {
-  public:
+public:
 	static SourceImportOutput Import(const AssetCookerSceneEntry& sceneEntry);
 	static CookedSceneBuild Build(const AssetCookerSceneEntry& sceneEntry, AssetCookerDiagnostics& diagnostics);
 
-  private:
+private:
 	static CookedSceneBuild BuildCookedScene(
 	    const AssetCookerSceneEntry& sceneEntry,
 	    const SourceImportOutput& importOutput,

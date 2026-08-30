@@ -16,13 +16,12 @@ RayTracingShadowExecutionPlan ResolveRayTracingShadowExecutionPlan(const RayTrac
 		case RayTracingExecutionMode::Inline:
 			return RayTracingShadowExecutionPlan{
 			    .Active = inlineReady ? RayTracingExecutionFrontend::Inline : RayTracingExecutionFrontend::None,
-			    .Reason = inlineReady ? RayTracingShadowExecutionReason::StrictInline
-			                          : RayTracingShadowExecutionReason::InlineUnavailable};
+			    .Reason = inlineReady ? RayTracingShadowExecutionReason::StrictInline : RayTracingShadowExecutionReason::InlineUnavailable};
 		case RayTracingExecutionMode::Pipeline:
 			return RayTracingShadowExecutionPlan{
 			    .Active = pipelineReady ? RayTracingExecutionFrontend::Pipeline : RayTracingExecutionFrontend::None,
-			    .Reason = pipelineReady ? RayTracingShadowExecutionReason::StrictPipeline
-			                            : RayTracingShadowExecutionReason::PipelineUnavailable};
+			    .Reason =
+			        pipelineReady ? RayTracingShadowExecutionReason::StrictPipeline : RayTracingShadowExecutionReason::PipelineUnavailable};
 		case RayTracingExecutionMode::Automatic:
 			if (pipelineReady)
 			{

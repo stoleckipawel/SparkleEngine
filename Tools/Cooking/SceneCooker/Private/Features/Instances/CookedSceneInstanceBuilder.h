@@ -5,6 +5,6 @@
 
 class CookedSceneInstanceBuilder final
 {
-  public:
+public:
 	static void BuildInstances(const SourceImportOutput& importOutput, CookedSceneBuild& build);
 };

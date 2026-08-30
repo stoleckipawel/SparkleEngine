@@ -10,6 +10,6 @@ class D3D12Rhi;
 
 class D3D12UploadBuffer
 {
-  public:
+public:
 	static std::unique_ptr<D3D12GpuAllocationRecord> Upload(D3D12Rhi& rhi, const void* data, size_t dataSize);
 };

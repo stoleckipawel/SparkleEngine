@@ -30,10 +30,7 @@ AssetCookerService::AssetCookerService(
 	}
 }
 
-AssetCookerServiceResult AssetCookerService::Cook(
-    const char* projectName,
-    const char* configuration,
-    AssetCookerCategory category)
+AssetCookerServiceResult AssetCookerService::Cook(const char* projectName, const char* configuration, AssetCookerCategory category)
 {
 	AssetCookerDiagnostics diagnostics;
 	std::filesystem::path repositoryRoot;
@@ -147,9 +144,7 @@ AssetCookerServiceResult AssetCookerService::Finish(
 	return result;
 }
 
-bool AssetCookerService::ResolveRepositoryRoot(
-    AssetCookerDiagnostics& diagnostics,
-    std::filesystem::path& outRepositoryRoot) const
+bool AssetCookerService::ResolveRepositoryRoot(AssetCookerDiagnostics& diagnostics, std::filesystem::path& outRepositoryRoot) const
 {
 	if (!m_configuredRepositoryRoot.empty())
 	{

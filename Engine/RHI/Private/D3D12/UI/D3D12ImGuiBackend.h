@@ -13,7 +13,7 @@ class D3D12RenderHardwareInterface;
 
 class D3D12ImGuiBackend final : public RhiImGuiRenderer
 {
-  public:
+public:
 	explicit D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept;
 
 	void Initialize() override;
@@ -24,7 +24,7 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
 	void Render(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept;
 	void Shutdown() noexcept override;
 
-  private:
+private:
 	static void AllocateDescriptor(
 	    ImGui_ImplDX12_InitInfo* info,
 	    D3D12_CPU_DESCRIPTOR_HANDLE* outCpuHandle,

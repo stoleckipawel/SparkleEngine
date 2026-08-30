@@ -7,7 +7,7 @@
 
 class VulkanQueueSelection final
 {
-  public:
+public:
 	static bool SupportsQueueWork(VkQueueFlags flags, ERhiQueueType queueType) noexcept
 	{
 		switch (queueType)
@@ -50,9 +50,9 @@ class VulkanQueueSelection final
 	}
 
 	static VulkanQueueLocation SelectUnusedQueue(
-		std::span<const VkQueueFamilyProperties> families,
-		std::vector<std::uint32_t>& usedQueueCounts,
-		ERhiQueueType queueType) noexcept
+	    std::span<const VkQueueFamilyProperties> families,
+	    std::vector<std::uint32_t>& usedQueueCounts,
+	    ERhiQueueType queueType) noexcept
 	{
 		std::uint32_t selectedFamily = UINT32_MAX;
 		std::uint32_t selectedScore = std::numeric_limits<std::uint32_t>::max();
@@ -77,15 +77,13 @@ class VulkanQueueSelection final
 			return {};
 		}
 
-		return VulkanQueueLocation{
-		    .FamilyIndex = selectedFamily,
-		    .QueueIndex = usedQueueCounts[selectedFamily]++};
+		return VulkanQueueLocation{.FamilyIndex = selectedFamily, .QueueIndex = usedQueueCounts[selectedFamily]++};
 	}
 
 	static VulkanQueueLocation SelectFallbackQueue(
-		std::span<const VkQueueFamilyProperties> families,
-		ERhiQueueType queueType,
-		std::span<const VulkanQueueLocation> selectedLocations) noexcept
+	    std::span<const VkQueueFamilyProperties> families,
+	    ERhiQueueType queueType,
+	    std::span<const VulkanQueueLocation> selectedLocations) noexcept
 	{
 		for (auto location = selectedLocations.rbegin(); location != selectedLocations.rend(); ++location)
 		{
@@ -148,6 +146,5 @@ bool VulkanQueueTopology::Supports(ERhiQueueType queueType) const noexcept
 
 bool VulkanQueueTopology::HasIndependentQueue(ERhiQueueType queueType) const noexcept
 {
-	return Supports(queueType) &&
-	       (queueType == ERhiQueueType::Graphics || Get(queueType) != Get(ERhiQueueType::Graphics));
+	return Supports(queueType) && (queueType == ERhiQueueType::Graphics || Get(queueType) != Get(ERhiQueueType::Graphics));
 }

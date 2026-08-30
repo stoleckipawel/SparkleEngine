@@ -9,8 +9,8 @@ namespace SparkleLauncher
 	static std::filesystem::path ResolveLauncherUserDataRoot()
 	{
 		std::string configuredPath;
-		if (Environment::TryGetVariable("SPARKLE_LAUNCHER_STATE_DIR", configuredPath) ||
-		    Environment::TryGetVariable("SPARKLE_LAUNCHER_STATE_DIRECTORY", configuredPath))
+		if (Environment::TryGetVariable("SPARKLE_LAUNCHER_STATE_DIR", configuredPath)
+		    || Environment::TryGetVariable("SPARKLE_LAUNCHER_STATE_DIRECTORY", configuredPath))
 		{
 			return std::filesystem::path(configuredPath);
 		}
@@ -48,8 +48,8 @@ namespace SparkleLauncher
 	static std::filesystem::path ResolveConfiguredBuildDirectory(const std::filesystem::path& repositoryRoot)
 	{
 		std::string configuredPath;
-		if (Environment::TryGetVariable("SPARKLE_BUILD_DIR", configuredPath) ||
-		    Environment::TryGetVariable("SPARKLE_BUILD_DIRECTORY", configuredPath))
+		if (Environment::TryGetVariable("SPARKLE_BUILD_DIR", configuredPath)
+		    || Environment::TryGetVariable("SPARKLE_BUILD_DIRECTORY", configuredPath))
 		{
 			const std::filesystem::path candidate(configuredPath);
 			return candidate.is_absolute() ? candidate : (repositoryRoot / candidate);
@@ -64,7 +64,6 @@ namespace SparkleLauncher
 		paths.RootDirectory = GetLauncherStateDirectory(repositoryRoot);
 		paths.LogsDirectory = paths.RootDirectory / "Logs";
 		paths.ActivityPath = paths.RootDirectory / "Activity.json";
-		paths.ActionHistoryPath = paths.RootDirectory / "ActionHistory.tsv";
 		paths.SettingsPath = paths.RootDirectory / "Settings.json";
 		return paths;
 	}
@@ -97,7 +96,10 @@ namespace SparkleLauncher
 		return GetArtifactDirectory(repositoryRoot) / "dev";
 	}
 
-	std::filesystem::path GetDeveloperLibraryDirectory(const std::filesystem::path& repositoryRoot, std::string_view owner, std::string_view profileName)
+	std::filesystem::path GetDeveloperLibraryDirectory(
+	    const std::filesystem::path& repositoryRoot,
+	    std::string_view owner,
+	    std::string_view profileName)
 	{
 		return GetDeveloperArtifactDirectory(repositoryRoot) / "libraries" / std::string(owner) / std::string(profileName);
 	}

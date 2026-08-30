@@ -11,7 +11,7 @@
 
 class FrameGraphResourceContractFailureReporter final
 {
-  public:
+public:
 	inline static const auto g_frameGraphContractLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 	static bool ReportValidationFailure(std::string_view passName, std::string_view message) noexcept
@@ -62,7 +62,9 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(
 	const FrameGraphAccelerationStructureHandle* accelerationStructure = binding.AsAccelerationStructureHandle();
 	if (accelerationStructure == nullptr)
 	{
-		return FrameGraphResourceContractFailureReporter::ReportValidationFailure(passName, "acceleration-structure parameter binding type did not match the reflected layout.");
+		return FrameGraphResourceContractFailureReporter::ReportValidationFailure(
+		    passName,
+		    "acceleration-structure parameter binding type did not match the reflected layout.");
 	}
 
 	if (!accelerationStructure->IsValid())

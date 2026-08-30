@@ -15,16 +15,19 @@
 
 class SceneLightInspectorConstants final
 {
-  public:
+public:
 	static constexpr float kAngularSizeDragSpeedDegrees = 0.1f;
 	static constexpr float kAngularSizeSliderMaxDegrees = 30.0f;
 	static constexpr float kRadiusSliderMax = 25.0f;
 	static constexpr float kAreaLightSizeSliderMax = 100.0f;
 };
 
-void SceneLightInspector::Build(const SceneLightDesc& sceneLight, EntityId lightEntity,
-                                EditorTransactionHistory& transactionHistory, std::uint64_t worldGeneration,
-                                const std::string& filterText) noexcept
+void SceneLightInspector::Build(
+    const SceneLightDesc& sceneLight,
+    EntityId lightEntity,
+    EditorTransactionHistory& transactionHistory,
+    std::uint64_t worldGeneration,
+    const std::string& filterText) noexcept
 {
 	BuildGenericLight(transactionHistory, worldGeneration, lightEntity, sceneLight, filterText);
 }
@@ -34,7 +37,7 @@ void SceneLightInspector::BuildGenericLight(
     std::uint64_t worldGeneration,
     EntityId lightEntity,
     const SceneLightDesc& sceneLight,
-	const std::string& filterText) noexcept
+    const std::string& filterText) noexcept
 {
 	SceneLightDesc lightDesc = sceneLight;
 	bool changed = BuildLightCommonCategory(filterText, lightDesc);
@@ -57,7 +60,8 @@ void SceneLightInspector::BuildGenericLight(
 		changed |= BuildRectLightCategory(filterText, *rect);
 	}
 
-	if (!changed) return;
+	if (!changed)
+		return;
 	(void) transactionHistory.Execute(
 	    {0, SetLightDescriptionCommand{lightEntity, std::move(lightDesc)}},
 	    {0, SetLightDescriptionCommand{lightEntity, sceneLight}},
@@ -98,7 +102,9 @@ bool SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 	return changed;
 }
 
-bool SceneLightInspector::BuildDirectionalLightTransformCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept
+bool SceneLightInspector::BuildDirectionalLightTransformCategory(
+    const std::string& filterText,
+    SceneDirectionalLightDesc& lightDesc) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Transform", "rotation direction transform"))
 	{
@@ -196,14 +202,7 @@ bool SceneLightInspector::BuildPointLightCategory(const std::string& filterText,
 
 	float luminousIntensity = lightDesc.luminousIntensity;
 	constexpr float kDefaultLuminousIntensity = 1.0f;
-	if (UiUtil::EditDetailsFloat(
-	        "Luminous Intensity (candela)",
-	        luminousIntensity,
-	        10.0f,
-	        0.0f,
-	        0.0f,
-	        "%.3f",
-	        &kDefaultLuminousIntensity))
+	if (UiUtil::EditDetailsFloat("Luminous Intensity (candela)", luminousIntensity, 10.0f, 0.0f, 0.0f, "%.3f", &kDefaultLuminousIntensity))
 	{
 		lightDesc.luminousIntensity = luminousIntensity;
 		changed = true;
@@ -219,14 +218,7 @@ bool SceneLightInspector::BuildPointLightCategory(const std::string& filterText,
 
 	float radius = lightDesc.radius;
 	constexpr float kDefaultRadius = 0.05f;
-	if (UiUtil::EditDetailsFloat(
-	        "Radius",
-	        radius,
-	        0.01f,
-	        0.0f,
-	        SceneLightInspectorConstants::kRadiusSliderMax,
-	        "%.3f",
-	        &kDefaultRadius))
+	if (UiUtil::EditDetailsFloat("Radius", radius, 0.01f, 0.0f, SceneLightInspectorConstants::kRadiusSliderMax, "%.3f", &kDefaultRadius))
 	{
 		lightDesc.radius = radius;
 		changed = true;
@@ -254,14 +246,7 @@ bool SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 
 	float luminousIntensity = lightDesc.luminousIntensity;
 	constexpr float kDefaultLuminousIntensity = 1.0f;
-	if (UiUtil::EditDetailsFloat(
-	        "Luminous Intensity (candela)",
-	        luminousIntensity,
-	        10.0f,
-	        0.0f,
-	        0.0f,
-	        "%.3f",
-	        &kDefaultLuminousIntensity))
+	if (UiUtil::EditDetailsFloat("Luminous Intensity (candela)", luminousIntensity, 10.0f, 0.0f, 0.0f, "%.3f", &kDefaultLuminousIntensity))
 	{
 		lightDesc.luminousIntensity = luminousIntensity;
 		changed = true;
@@ -285,14 +270,7 @@ bool SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 
 	float radius = lightDesc.radius;
 	constexpr float kDefaultRadius = 0.05f;
-	if (UiUtil::EditDetailsFloat(
-	        "Radius",
-	        radius,
-	        0.01f,
-	        0.0f,
-	        SceneLightInspectorConstants::kRadiusSliderMax,
-	        "%.3f",
-	        &kDefaultRadius))
+	if (UiUtil::EditDetailsFloat("Radius", radius, 0.01f, 0.0f, SceneLightInspectorConstants::kRadiusSliderMax, "%.3f", &kDefaultRadius))
 	{
 		lightDesc.radius = radius;
 		changed = true;
@@ -367,7 +345,14 @@ bool SceneLightInspector::BuildRectLightCategory(const std::string& filterText, 
 	}
 
 	float height = lightDesc.height;
-	if (UiUtil::EditDetailsFloat("Height", height, 0.05f, 0.0f, SceneLightInspectorConstants::kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
+	if (UiUtil::EditDetailsFloat(
+	        "Height",
+	        height,
+	        0.05f,
+	        0.0f,
+	        SceneLightInspectorConstants::kAreaLightSizeSliderMax,
+	        "%.3f",
+	        &kDefaultSize))
 	{
 		lightDesc.height = height;
 		changed = true;

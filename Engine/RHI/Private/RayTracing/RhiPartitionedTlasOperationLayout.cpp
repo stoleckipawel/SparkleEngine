@@ -16,23 +16,18 @@ RhiPartitionedTlasOperationBufferLayout RhiPartitionedTlasOperationLayout::Build
 	    .InstanceUpdateStrideInBytes = nativeLayout.InstanceUpdateStrideInBytes,
 	    .PartitionTranslationStrideInBytes = nativeLayout.PartitionTranslationStrideInBytes};
 
-	layout.OperationHeadersOffsetInBytes = AlignUp(
-	    nativeLayout.OperationCountSizeInBytes,
-	    nativeLayout.OperationHeaderAlignmentInBytes);
+	layout.OperationHeadersOffsetInBytes = AlignUp(nativeLayout.OperationCountSizeInBytes, nativeLayout.OperationHeaderAlignmentInBytes);
 	layout.InstanceWriteRecordsOffsetInBytes = AlignUp(
 	    layout.OperationHeadersOffsetInBytes + layout.OperationHeaderStrideInBytes * operationCount,
 	    nativeLayout.InstanceWriteAlignmentInBytes);
 
 	std::uint64_t cursor = layout.InstanceWriteRecordsOffsetInBytes + layout.InstanceWriteStrideInBytes * instanceWriteCount;
-	layout.InstanceUpdateRecordsOffsetInBytes = instanceUpdateCount > 0
-	                                                ? AlignUp(cursor, nativeLayout.InstanceUpdateAlignmentInBytes)
-	                                                : cursor;
+	layout.InstanceUpdateRecordsOffsetInBytes =
+	    instanceUpdateCount > 0 ? AlignUp(cursor, nativeLayout.InstanceUpdateAlignmentInBytes) : cursor;
 	cursor = layout.InstanceUpdateRecordsOffsetInBytes + layout.InstanceUpdateStrideInBytes * instanceUpdateCount;
-	layout.PartitionTranslationRecordsOffsetInBytes = partitionTranslationCount > 0
-	                                                       ? AlignUp(cursor, nativeLayout.PartitionTranslationAlignmentInBytes)
-	                                                       : cursor;
-	cursor = layout.PartitionTranslationRecordsOffsetInBytes +
-	         layout.PartitionTranslationStrideInBytes * partitionTranslationCount;
+	layout.PartitionTranslationRecordsOffsetInBytes =
+	    partitionTranslationCount > 0 ? AlignUp(cursor, nativeLayout.PartitionTranslationAlignmentInBytes) : cursor;
+	cursor = layout.PartitionTranslationRecordsOffsetInBytes + layout.PartitionTranslationStrideInBytes * partitionTranslationCount;
 	layout.TotalSizeInBytes = AlignUp(cursor, nativeLayout.BufferAlignmentInBytes);
 	return layout;
 }

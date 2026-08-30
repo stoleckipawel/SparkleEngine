@@ -7,15 +7,15 @@
 
 bool TextureCookPoliciesMatch(const TextureCookPolicy& lhs, const TextureCookPolicy& rhs) noexcept
 {
-	return lhs.colorSpace == rhs.colorSpace && lhs.mipPolicy == rhs.mipPolicy && lhs.mipFilter == rhs.mipFilter &&
-	       lhs.colorProcessingPolicy == rhs.colorProcessingPolicy && lhs.textureGroup == rhs.textureGroup &&
-	       lhs.dimension == rhs.dimension && lhs.channelMask == rhs.channelMask;
+	return lhs.colorSpace == rhs.colorSpace && lhs.mipPolicy == rhs.mipPolicy && lhs.mipFilter == rhs.mipFilter
+	    && lhs.colorProcessingPolicy == rhs.colorProcessingPolicy && lhs.textureGroup == rhs.textureGroup && lhs.dimension == rhs.dimension
+	    && lhs.channelMask == rhs.channelMask;
 }
 
 bool TextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
 {
-	return lhs.assetId == rhs.assetId && lhs.sourcePath == rhs.sourcePath && lhs.outputPath == rhs.outputPath &&
-	       TextureCookPoliciesMatch(lhs.policy, rhs.policy);
+	return lhs.assetId == rhs.assetId && lhs.sourcePath == rhs.sourcePath && lhs.outputPath == rhs.outputPath
+	    && TextureCookPoliciesMatch(lhs.policy, rhs.policy);
 }
 
 void ValidateTextureCookRequest(const TextureCookRequest& request)
@@ -52,8 +52,7 @@ void TextureCookRequestSet::Add(const TextureCookRequest& request)
 	}
 	if (!TextureCookRequestsMatch(existingRequest->second, request))
 	{
-		throw Diagnostics::Error(
-		    "Texture cook request conflict for asset id '" + Formatting::FormatHexUInt64(request.assetId) + "'.");
+		throw Diagnostics::Error("Texture cook request conflict for asset id '" + Formatting::FormatHexUInt64(request.assetId) + "'.");
 	}
 }
 

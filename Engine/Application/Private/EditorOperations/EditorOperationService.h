@@ -14,7 +14,7 @@ class TaskScope;
 // never the executor, scope, task graph, or worker completion callback.
 class EditorOperationService final
 {
-  public:
+public:
 	EditorOperationService(TaskExecutor& executor, TaskScope& applicationScope);
 	~EditorOperationService();
 
@@ -31,7 +31,7 @@ class EditorOperationService final
 	bool TryConsumeViewportCapture(ViewportCaptureResult& outResult) noexcept;
 	void CancelDocument() noexcept;
 
-  private:
+private:
 	struct ControlState;
 	std::unique_ptr<ControlState> m_control;
 };

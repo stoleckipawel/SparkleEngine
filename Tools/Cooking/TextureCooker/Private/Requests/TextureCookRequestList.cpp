@@ -13,16 +13,15 @@
 
 class TextureCookRequestOrdering final
 {
-  public:
+public:
 	static void SortForSerialization(std::vector<TextureCookRequest>& requests)
 	{
 		std::ranges::sort(
 		    requests,
 		    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs)
 		    {
-			    return lhs.assetId != rhs.assetId ?
-			               lhs.assetId < rhs.assetId :
-			               lhs.outputPath.generic_string() < rhs.outputPath.generic_string();
+			    return lhs.assetId != rhs.assetId ? lhs.assetId < rhs.assetId
+			                                      : lhs.outputPath.generic_string() < rhs.outputPath.generic_string();
 		    });
 	}
 
@@ -30,16 +29,11 @@ class TextureCookRequestOrdering final
 	{
 		std::ranges::sort(
 		    requests,
-		    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
-		    {
-			    return lhs.assetId < rhs.assetId;
-		    });
+		    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept { return lhs.assetId < rhs.assetId; });
 	}
 };
 
-void WriteTextureCookRequestList(
-    const std::filesystem::path& outputPath,
-    const std::vector<TextureCookRequest>& requests)
+void WriteTextureCookRequestList(const std::filesystem::path& outputPath, const std::vector<TextureCookRequest>& requests)
 {
 	if (outputPath.empty())
 	{

@@ -6,7 +6,7 @@ class D3D12Rhi;
 
 class D3D12DescriptorHandle
 {
-  public:
+public:
 	explicit D3D12DescriptorHandle(
 	    D3D12Rhi& rhi,
 	    UINT idx,
@@ -27,7 +27,7 @@ class D3D12DescriptorHandle
 
 	static constexpr UINT InvalidIndex = ~0u;
 
-  private:
+private:
 	UINT m_index = InvalidIndex;
 	UINT m_incrementSize = 0;
 	D3D12_DESCRIPTOR_HEAP_TYPE m_descriptorType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;

@@ -9,18 +9,15 @@ class D3D12Rhi;
 
 class D3D12CaptureService final : public RhiCaptureService
 {
-  public:
+public:
 	explicit D3D12CaptureService(D3D12Rhi& rhi) noexcept;
 	~D3D12CaptureService() noexcept override;
 
-	RhiCaptureTicket BeginTextureReadback(
-	    const RhiTextureCaptureRequest& request) noexcept override;
-	bool TryTakeTextureReadback(
-	    RhiCaptureTicket ticket,
-	    RhiCaptureReadback& readback) noexcept override;
+	RhiCaptureTicket BeginTextureReadback(const RhiTextureCaptureRequest& request) noexcept override;
+	bool TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCaptureReadback& readback) noexcept override;
 	void CancelTextureReadback(RhiCaptureTicket ticket) noexcept override;
 
-  private:
+private:
 	struct PendingReadback;
 	PendingReadback* FindPending(RhiCaptureTicket ticket) noexcept;
 	void DrainCancelledReadbacks() noexcept;

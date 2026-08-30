@@ -5,10 +5,10 @@
 #include "Passes/Lighting/Restir/RestirIndirectLighting.h"
 
 void AddRestirLightingProducerPasses(
-	FrameGraphBuilder& builder,
-	RenderRayTracingScene& rayTracingScene,
-	RenderViewportExtent sceneExtent,
-	RenderFrameGraphResources& resources)
+    FrameGraphBuilder& builder,
+    RenderRayTracingScene& rayTracingScene,
+    RenderViewportExtent sceneExtent,
+    RenderFrameGraphResources& resources)
 {
 	AddRestirDirectLightingPasses(builder, rayTracingScene, sceneExtent, resources);
 	AddRestirIndirectLightingPasses(builder, sceneExtent, resources);

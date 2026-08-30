@@ -32,16 +32,16 @@ bool RhiContract::IsBindingSetDescriptorIndexValid(std::uint32_t descriptorIndex
 
 bool RhiContract::IsTextureResourceDescUsable(const RhiCapabilities& capabilities, const RhiTextureResourceDesc& desc) noexcept
 {
-	if (desc.Width == 0 || desc.Height == 0 || desc.MipLevels == 0 || desc.ArraySize == 0 || desc.Format == PixelFormat::Unknown ||
-	    (desc.Dimension == TextureResourceDimension::TextureCube && desc.ArraySize != 6))
+	if (desc.Width == 0 || desc.Height == 0 || desc.MipLevels == 0 || desc.ArraySize == 0 || desc.Format == PixelFormat::Unknown
+	    || (desc.Dimension == TextureResourceDimension::TextureCube && desc.ArraySize != 6))
 	{
 		return false;
 	}
 
 	const RhiFormatSupport* const formatSupport = capabilities.FindFormatSupport(desc.Format);
-	return formatSupport != nullptr && formatSupport->SupportsTexture && (!desc.AllowRenderTarget || formatSupport->SupportsRenderTarget) &&
-	       (!desc.AllowDepthStencil || formatSupport->SupportsDepthStencil) &&
-	       (!desc.AllowUnorderedAccess || formatSupport->SupportsUnorderedAccess);
+	return formatSupport != nullptr && formatSupport->SupportsTexture && (!desc.AllowRenderTarget || formatSupport->SupportsRenderTarget)
+	    && (!desc.AllowDepthStencil || formatSupport->SupportsDepthStencil)
+	    && (!desc.AllowUnorderedAccess || formatSupport->SupportsUnorderedAccess);
 }
 
 bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noexcept
@@ -71,8 +71,8 @@ bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noex
 
 bool RhiContract::IsRayTracingGeometryDescUsable(const RhiRayTracingGeometryDesc& geometry) noexcept
 {
-	return geometry.VertexBuffer.Resource && geometry.IndexBuffer.Resource && geometry.VertexStrideInBytes >= sizeof(float) * 3u &&
-	       geometry.VertexCount != 0 && geometry.IndexCount != 0 && geometry.IndexCount % 3u == 0;
+	return geometry.VertexBuffer.Resource && geometry.IndexBuffer.Resource && geometry.VertexStrideInBytes >= sizeof(float) * 3u
+	    && geometry.VertexCount != 0 && geometry.IndexCount != 0 && geometry.IndexCount % 3u == 0;
 }
 
 bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount) noexcept

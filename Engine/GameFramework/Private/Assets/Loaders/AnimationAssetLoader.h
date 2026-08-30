@@ -10,9 +10,7 @@ namespace Assets
 
 	class AnimationAssetLoader final
 	{
-	  public:
-		LoadedAnimationAsset Decode(
-		    const std::filesystem::path& path,
-		    std::span<const std::uint8_t> bytes) const;
+	public:
+		LoadedAnimationAsset Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const;
 	};
 }

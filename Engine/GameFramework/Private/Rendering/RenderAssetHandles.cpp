@@ -8,7 +8,9 @@ ImmutableRenderMeshHandle::ImmutableRenderMeshHandle(
     Assets::CookedAssetId assetId,
     std::uint32_t generation,
     std::shared_ptr<const Mesh> resource) noexcept :
-    m_assetId(assetId), m_generation(generation), m_resource(std::move(resource))
+    m_assetId(assetId),
+    m_generation(generation),
+    m_resource(std::move(resource))
 {
 }
 

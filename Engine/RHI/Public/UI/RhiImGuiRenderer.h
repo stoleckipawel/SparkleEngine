@@ -10,7 +10,7 @@ struct ImTextureData;
 
 class SPARKLE_RHI_API RhiImGuiRenderer
 {
-  public:
+public:
 	virtual ~RhiImGuiRenderer() noexcept = default;
 
 	virtual void Initialize() = 0;

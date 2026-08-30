@@ -15,7 +15,7 @@ namespace Json
 
 	class SPARKLE_CORE_API ObjectWriter final
 	{
-	  public:
+	public:
 		explicit ObjectWriter(std::string indent = "  ");
 
 		void WriteString(std::string_view name, std::string_view value);
@@ -24,7 +24,7 @@ namespace Json
 		void WriteHexUInt64(std::string_view name, std::uint64_t value);
 		std::string Finish();
 
-	  private:
+	private:
 		void WritePrefix(std::string_view name);
 
 		std::ostringstream m_stream;
@@ -33,4 +33,4 @@ namespace Json
 	};
 
 	SPARKLE_CORE_API std::string WriteStringArray(std::span<const std::string> values);
-}  // namespace Json
+}

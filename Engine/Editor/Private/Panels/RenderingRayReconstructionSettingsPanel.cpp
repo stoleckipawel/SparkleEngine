@@ -19,8 +19,8 @@ void DrawRayReconstructionSettingsSection(
 	    {"NVIDIA DLSS Ray Reconstruction", EngineRayReconstructionMode::NvidiaDlssRayReconstruction},
 	};
 
-	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlss ray reconstruction indirect specular diffuse") ||
-	    !BeginSettingsCategory("Ray Reconstruction"))
+	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlss ray reconstruction indirect specular diffuse")
+	    || !BeginSettingsCategory("Ray Reconstruction"))
 	{
 		return;
 	}

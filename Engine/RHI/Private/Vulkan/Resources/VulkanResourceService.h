@@ -13,11 +13,8 @@ class VulkanRhi;
 
 class VulkanResourceService final : public RhiResourceService
 {
-  public:
-	VulkanResourceService(
-	    VulkanRhi& rhi,
-	    VulkanGpuMemoryAllocator& memoryAllocator,
-	    const RhiCapabilities& capabilities) noexcept;
+public:
+	VulkanResourceService(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, const RhiCapabilities& capabilities) noexcept;
 	~VulkanResourceService() noexcept;
 
 	VulkanResourceService(const VulkanResourceService&) = delete;
@@ -85,7 +82,7 @@ class VulkanResourceService final : public RhiResourceService
 	    std::wstring_view debugName) override;
 	bool SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept override;
 
-  private:
+private:
 	friend class VulkanRenderHardwareInterface;
 	void DrainCompletedResourceReleases() noexcept;
 	void FlushDeferredResourceReleases() noexcept;

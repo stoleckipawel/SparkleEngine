@@ -7,14 +7,13 @@ class Renderer;
 
 class EditorViewportCaptureCoordinator final
 {
-  public:
-	explicit EditorViewportCaptureCoordinator(
-	    EditorOperationService& operations) noexcept;
+public:
+	explicit EditorViewportCaptureCoordinator(EditorOperationService& operations) noexcept;
 
 	void Request(Renderer& renderer, std::uint64_t frameId);
 	void Update(Renderer& renderer);
 
-  private:
+private:
 	std::filesystem::path BuildOutputPath(std::uint64_t frameId) const;
 
 	EditorOperationService* m_operations = nullptr;

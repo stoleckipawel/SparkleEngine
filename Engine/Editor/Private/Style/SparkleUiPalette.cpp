@@ -243,16 +243,16 @@ namespace SparkleUiPalette
 	// ---- Categorical color palette ----
 	// Inspired by Tableau 10 / Chrome DevTools — muted but distinguishable on dark backgrounds.
 	static constexpr ImU32 kCategoricalPalette[] = {
-	    IM_COL32(0x4E, 0x79, 0xA7, 255),  // blue
-	    IM_COL32(0xF2, 0x8E, 0x2B, 255),  // orange
-	    IM_COL32(0x59, 0xA1, 0x4F, 255),  // green
-	    IM_COL32(0xE1, 0x57, 0x59, 255),  // red
-	    IM_COL32(0xB0, 0x7A, 0xA1, 255),  // purple
-	    IM_COL32(0xED, 0xC9, 0x49, 255),  // yellow
-	    IM_COL32(0x76, 0xB7, 0xB2, 255),  // teal
-	    IM_COL32(0xFF, 0x9D, 0xA7, 255),  // pink
-	    IM_COL32(0x9C, 0x75, 0x5F, 255),  // brown
-	    IM_COL32(0xBA, 0xB0, 0xAC, 255),  // gray
+	    IM_COL32(0x4E, 0x79, 0xA7, 255), // blue
+	    IM_COL32(0xF2, 0x8E, 0x2B, 255), // orange
+	    IM_COL32(0x59, 0xA1, 0x4F, 255), // green
+	    IM_COL32(0xE1, 0x57, 0x59, 255), // red
+	    IM_COL32(0xB0, 0x7A, 0xA1, 255), // purple
+	    IM_COL32(0xED, 0xC9, 0x49, 255), // yellow
+	    IM_COL32(0x76, 0xB7, 0xB2, 255), // teal
+	    IM_COL32(0xFF, 0x9D, 0xA7, 255), // pink
+	    IM_COL32(0x9C, 0x75, 0x5F, 255), // brown
+	    IM_COL32(0xBA, 0xB0, 0xAC, 255), // gray
 	};
 
 	std::size_t CategoricalColorCount() noexcept
@@ -282,4 +282,4 @@ namespace SparkleUiPalette
 		rgb.w = 1.0f;
 		return ImGui::ColorConvertFloat4ToU32(rgb);
 	}
-}  // namespace SparkleUiPalette
+}

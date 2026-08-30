@@ -11,7 +11,7 @@
 
 class GltfMeshInstanceAppender final
 {
-  public:
+public:
 	static void AppendMeshInstance(
 	    SourceImportOutput& output,
 	    ImportedMeshPrimitiveIndex importedPrimitiveIndex,

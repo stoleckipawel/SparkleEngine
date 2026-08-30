@@ -13,7 +13,7 @@ VulkanResourceService::VulkanResourceService(
     const RhiCapabilities& capabilities) noexcept :
     m_rhi(&rhi),
     m_memoryAllocator(&memoryAllocator),
-	m_capabilities(&capabilities)
+    m_capabilities(&capabilities)
 {
 }
 
@@ -82,8 +82,8 @@ bool VulkanResourceService::CreateVertexBuffer(
 	    .AllowRayTracingBuildInput = true};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
-	    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-	        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+	    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+	        | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
 	    RhiMemoryCategory::Mesh,
@@ -115,10 +115,7 @@ bool VulkanResourceService::CreateStructuredBufferResource(
 		return false;
 	}
 
-	const RhiBufferResourceDesc desc{
-	    .SizeInBytes = sizeInBytes,
-	    .StrideInBytes = strideInBytes,
-	    .Kind = RhiBufferKind::Structured};
+	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes, .Kind = RhiBufferKind::Structured};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
@@ -140,14 +137,9 @@ bool VulkanResourceService::WriteBufferResource(
     const void* data,
     std::size_t sizeInBytes) noexcept
 {
-	VulkanGpuAllocationRecord* const record =
-	    GetVulkanGpuAllocationRecord(resource);
-	return record != nullptr && m_memoryAllocator != nullptr &&
-	       m_memoryAllocator->WriteAllocation(
-	           *record,
-	           data,
-	           sizeInBytes,
-	           destinationOffsetInBytes);
+	VulkanGpuAllocationRecord* const record = GetVulkanGpuAllocationRecord(resource);
+	return record != nullptr && m_memoryAllocator != nullptr
+	    && m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes, destinationOffsetInBytes);
 }
 
 bool VulkanResourceService::CreateIndexBuffer(
@@ -165,14 +157,11 @@ bool VulkanResourceService::CreateIndexBuffer(
 		return false;
 	}
 
-	const RhiBufferResourceDesc desc{
-	    .SizeInBytes = sizeInBytes,
-	    .Kind = RhiBufferKind::Index,
-	    .AllowRayTracingBuildInput = true};
+	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .Kind = RhiBufferKind::Index, .AllowRayTracingBuildInput = true};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
-	    VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-	        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+	    VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+	        | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
 	    RhiMemoryCategory::Mesh,
@@ -228,8 +217,7 @@ void VulkanResourceService::DrainCompletedResourceReleases() noexcept
 		std::array<std::uint64_t, RhiQueueTypeCount> completedValues{};
 		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 		{
-			completedValues[queueIndex] = m_rhi->GetCommandQueue(
-			    static_cast<ERhiQueueType>(queueIndex)).GetCompletedSubmissionValue();
+			completedValues[queueIndex] = m_rhi->GetCommandQueue(static_cast<ERhiQueueType>(queueIndex)).GetCompletedSubmissionValue();
 		}
 		m_memoryAllocator->DrainCompletedReleases(completedValues);
 	}
@@ -335,8 +323,8 @@ RhiOwnedResourceHandle VulkanResourceService::CreateAliasingTextureResource(
 {
 	(void) desc.InitialState;
 	(void) desc.ClearValue;
-	if (m_memoryAllocator == nullptr || m_capabilities == nullptr || !memoryBlock ||
-	    !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc.ResourceDesc))
+	if (m_memoryAllocator == nullptr || m_capabilities == nullptr || !memoryBlock
+	    || !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc.ResourceDesc))
 	{
 		return {};
 	}

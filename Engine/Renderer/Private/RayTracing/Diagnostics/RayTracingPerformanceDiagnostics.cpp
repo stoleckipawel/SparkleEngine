@@ -13,4 +13,3 @@ ScopedGpuScope RayTracingPerformanceDiagnostics::BeginGpuScope(std::string_view 
 {
 	return m_passDiagnostics != nullptr ? m_passDiagnostics->BeginGpuScope(label) : ScopedGpuScope{};
 }
-

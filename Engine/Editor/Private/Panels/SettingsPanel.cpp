@@ -83,7 +83,7 @@ void SettingsPanel::BuildUI(bool disableInteraction)
 		ImGui::BeginChild("##SettingsFooter", ImVec2(0.0f, restartBarHeight - 6.0f));
 		ImGui::BeginDisabled(!m_restartHandler);
 		const float buttonWidth = 96.0f;
-		ImGui::SetCursorPosX((std::max)(0.0f, ImGui::GetContentRegionAvail().x - buttonWidth));
+		ImGui::SetCursorPosX((std::max) (0.0f, ImGui::GetContentRegionAvail().x - buttonWidth));
 		if (ImGui::Button("Restart", ImVec2(buttonWidth, 0.0f)) && m_restartHandler)
 		{
 			m_restartHandler();
@@ -101,7 +101,7 @@ void SettingsPanel::BuildUI(bool disableInteraction)
 void SettingsPanel::DrawToolbar()
 {
 	std::array<char, 128> filterBuffer{};
-	const std::size_t copyLength = (std::min)(m_filterText.size(), filterBuffer.size() - 1);
+	const std::size_t copyLength = (std::min) (m_filterText.size(), filterBuffer.size() - 1);
 	if (copyLength > 0)
 	{
 		m_filterText.copy(filterBuffer.data(), copyLength);

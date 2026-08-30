@@ -27,7 +27,7 @@ struct SPARKLE_ENGINE_API LevelChangedEventArgs
 
 class SPARKLE_ENGINE_API LevelChangeEvents final
 {
-  public:
+public:
 	Event<void(const LevelChangeStartedEventArgs&), 16> OnLevelChangeStarted;
 	Event<void(const LevelWillUnloadEventArgs&), 16> OnLevelWillUnload;
 	Event<void(std::string_view), 16> OnLevelUnloaded;

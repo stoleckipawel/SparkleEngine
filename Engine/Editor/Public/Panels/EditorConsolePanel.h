@@ -10,7 +10,7 @@ struct ImGuiInputTextCallbackData;
 
 class EditorConsolePanel final
 {
-  public:
+public:
 	explicit EditorConsolePanel(ConsoleSession& session) noexcept;
 
 	void SetOpen(bool open) noexcept { m_isOpen = open; }
@@ -20,7 +20,7 @@ class EditorConsolePanel final
 	void BuildUI(bool disableInteraction);
 	void BuildContent(bool disableInteraction);
 
-  private:
+private:
 	static int HandleInputTextCallback(ImGuiInputTextCallbackData* data);
 	static std::size_t FindCompletionTokenStart(const std::string& input) noexcept;
 	static void ReplaceInputText(ImGuiInputTextCallbackData& data, const std::string& text);

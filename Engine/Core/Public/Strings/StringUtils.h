@@ -61,4 +61,4 @@ namespace Strings
 	SPARKLE_CORE_API std::wstring ToWide(std::string_view str);
 	SPARKLE_CORE_API std::wstring ToWide(const std::filesystem::path& path);
 	SPARKLE_CORE_API std::string ToNarrow(std::wstring_view str);
-}  // namespace Strings
+}

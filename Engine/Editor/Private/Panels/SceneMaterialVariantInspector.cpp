@@ -44,11 +44,15 @@ namespace SceneMaterialVariantInspector
 				{
 					const MaterialVariantIndex selected = static_cast<MaterialVariantIndex>(variantIndex);
 					if (activeVariantIndex != kInvalidMaterialVariantIndex)
-						(void) transactionHistory.Execute({0, SetMaterialVariantCommand{selected}},
-						                           {0, SetMaterialVariantCommand{activeVariantIndex}}, generation);
+						(void) transactionHistory.Execute(
+						    {0, SetMaterialVariantCommand{selected}},
+						    {0, SetMaterialVariantCommand{activeVariantIndex}},
+						    generation);
 					else
-						(void) transactionHistory.Execute({0, SetMaterialVariantCommand{selected}},
-						                           {0, SetMaterialVariantCommand{selected}}, generation);
+						(void) transactionHistory.Execute(
+						    {0, SetMaterialVariantCommand{selected}},
+						    {0, SetMaterialVariantCommand{selected}},
+						    generation);
 				}
 
 				if (selected)

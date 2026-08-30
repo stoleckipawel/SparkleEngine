@@ -10,10 +10,8 @@ class Window;
 // lifetime is established before this object receives its immutable bootstrap.
 class RendererBackendOwner final
 {
-  public:
-	RendererBackendOwner(
-	    Window& window,
-	    const RendererBackendConfiguration& configuration) noexcept;
+public:
+	RendererBackendOwner(Window& window, const RendererBackendConfiguration& configuration) noexcept;
 	~RendererBackendOwner() noexcept;
 
 	RendererBackendOwner(const RendererBackendOwner&) = delete;
@@ -24,6 +22,6 @@ class RendererBackendOwner final
 	RenderDeviceServices& GetDeviceServices() noexcept { return *m_deviceServices; }
 	const RenderDeviceServices& GetDeviceServices() const noexcept { return *m_deviceServices; }
 
-  private:
+private:
 	std::unique_ptr<RenderDeviceServices> m_deviceServices;
 };

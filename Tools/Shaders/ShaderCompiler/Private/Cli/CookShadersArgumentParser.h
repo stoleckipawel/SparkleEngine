@@ -11,11 +11,11 @@
 
 class CookShadersArgumentParser final
 {
-  public:
+public:
 	static ShaderCookSettings Parse(std::span<const std::string_view> arguments);
 	static void PrintHelp(std::ostream& output);
 
-  private:
+private:
 	explicit CookShadersArgumentParser(std::span<const std::string_view> arguments) noexcept;
 
 	ShaderCookSettings ParseAll();
@@ -29,9 +29,7 @@ class CookShadersArgumentParser final
 	std::string_view TakeValue(std::string_view argument);
 	void ValidateSelection() const;
 
-	static bool ContainsTarget(
-	    std::span<const ShaderTarget> targets,
-	    ShaderTarget target) noexcept;
+	static bool ContainsTarget(std::span<const ShaderTarget> targets, ShaderTarget target) noexcept;
 	static std::optional<ShaderTarget> ParseTarget(std::string_view value) noexcept;
 	static std::optional<bool> ParseBoolean(std::string_view value) noexcept;
 

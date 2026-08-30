@@ -9,7 +9,10 @@ struct FrameGraphAccelerationStructureHandle
 	FrameGraphResourceHandle resource = FrameGraphResourceHandle::Invalid();
 
 	constexpr FrameGraphAccelerationStructureHandle() noexcept = default;
-	explicit constexpr FrameGraphAccelerationStructureHandle(FrameGraphResourceHandle handle) noexcept : resource(handle) {}
+	explicit constexpr FrameGraphAccelerationStructureHandle(FrameGraphResourceHandle handle) noexcept :
+	    resource(handle)
+	{
+	}
 
 	static constexpr FrameGraphAccelerationStructureHandle Invalid() noexcept { return FrameGraphAccelerationStructureHandle{}; }
 

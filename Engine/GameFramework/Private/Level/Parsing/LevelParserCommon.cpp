@@ -12,11 +12,16 @@ namespace LevelParsing
 	LevelFileSection ParseSection(std::string_view line)
 	{
 		const std::string sectionName = Strings::TrimCopy(line.substr(1, line.size() - 2));
-		if (sectionName == "Level") return LevelFileSection::Level;
-		if (sectionName == "Camera") return LevelFileSection::Camera;
-		if (sectionName == "Sky") return LevelFileSection::Sky;
-		if (sectionName == "Lighting") return LevelFileSection::Lighting;
-		if (sectionName == "SceneAssets") return LevelFileSection::SceneAssets;
+		if (sectionName == "Level")
+			return LevelFileSection::Level;
+		if (sectionName == "Camera")
+			return LevelFileSection::Camera;
+		if (sectionName == "Sky")
+			return LevelFileSection::Sky;
+		if (sectionName == "Lighting")
+			return LevelFileSection::Lighting;
+		if (sectionName == "SceneAssets")
+			return LevelFileSection::SceneAssets;
 		throw Diagnostics::Error(std::format("Unsupported level section '{}'.", sectionName));
 	}
 
@@ -52,4 +57,4 @@ namespace LevelParsing
 			throw Diagnostics::Error(std::format("Invalid {}.", fieldName));
 		return parsed;
 	}
-}  // namespace LevelParsing
+}

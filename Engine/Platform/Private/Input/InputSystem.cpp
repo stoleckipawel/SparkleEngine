@@ -5,7 +5,7 @@
 #include "Window/Window.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
 
@@ -18,12 +18,13 @@ std::unique_ptr<InputSystem> InputSystem::Create()
 	auto backend = std::make_unique<Win32InputBackend>();
 	return std::make_unique<InputSystem>(std::move(backend));
 #else
-	#error "No input backend available for this platform"
+  #error "No input backend available for this platform"
 #endif
 }
 
 InputSystem::InputSystem(std::unique_ptr<IInputBackend> Backend) :
-    m_Backend(std::move(Backend)), m_eventDispatcher(std::make_unique<InputEventDispatcher>())
+    m_Backend(std::move(Backend)),
+    m_eventDispatcher(std::make_unique<InputEventDispatcher>())
 {
 }
 
@@ -69,11 +70,7 @@ void InputSystem::ProcessDeferredEvents()
 void InputSystem::SubscribeToWindow(Window& window)
 {
 	m_OwnerThread.AssertAccess();
-	auto handle = window.OnWindowMessage.Add(
-	    [this](WindowMessageEvent& event)
-	    {
-		    HandleWindowMessage(event);
-	    });
+	auto handle = window.OnWindowMessage.Add([this](WindowMessageEvent& event) { HandleWindowMessage(event); });
 	m_windowMessageHandle = ScopedEventHandle(window.OnWindowMessage, handle);
 }
 

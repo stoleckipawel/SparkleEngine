@@ -15,14 +15,14 @@ struct RhiTimestampQueryLocation final
 
 class RhiTimestampQueryAllocator final
 {
-  public:
+public:
 	RhiTimestampQueryAllocator(std::uint32_t poolCount, std::uint32_t queriesPerPool);
 
 	RhiTimestampQueryHandle Allocate(std::uint32_t poolIndex);
 	void Release(RhiTimestampQueryHandle query) noexcept;
 	RhiTimestampQueryLocation Resolve(RhiTimestampQueryHandle query) const noexcept;
 
-  private:
+private:
 	std::vector<std::vector<std::uint32_t>> m_freeQueryIndices;
 	std::unordered_map<std::uint32_t, RhiTimestampQueryLocation> m_queryLocations;
 	std::uint32_t m_nextHandleValue = 1;

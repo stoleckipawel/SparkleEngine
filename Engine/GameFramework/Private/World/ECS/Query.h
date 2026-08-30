@@ -22,9 +22,11 @@ namespace ECS
 
 		using StorageTuple = std::tuple<ComponentStorage<typename QueryAccessTraits<AccessSpecs>::Component>*...>;
 
-	  public:
+	public:
 		Query(EntityRegistry& registry, const StructureFrozenEpoch& epoch) noexcept :
-		    m_registry(&registry), m_epochGeneration(epoch.m_generation), m_registryStructureVersion(registry.GetStructureVersion())
+		    m_registry(&registry),
+		    m_epochGeneration(epoch.m_generation),
+		    m_registryStructureVersion(registry.GetStructureVersion())
 		{
 			if (epoch.m_registry != &registry || !registry.IsFrozenEpochCurrent(m_epochGeneration))
 			{
@@ -51,25 +53,25 @@ namespace ECS
 		template <typename T> static consteval bool ReadsComponent() noexcept
 		{
 			return (
-			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component> &&
-			     QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Read) ||
-			    ...);
+			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component>
+			        && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Read)
+			    || ...);
 		}
 
 		template <typename T> static consteval bool WritesComponent() noexcept
 		{
 			return (
-			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component> &&
-			     QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Write) ||
-			    ...);
+			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component>
+			        && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Write)
+			    || ...);
 		}
 
 		template <typename T> static consteval bool ExcludesComponent() noexcept
 		{
 			return (
-			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component> &&
-			     QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Exclude) ||
-			    ...);
+			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component>
+			        && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Exclude)
+			    || ...);
 		}
 
 		bool IsValid() const noexcept { return GetValidity() == QueryIterationStatus::Success; }
@@ -104,12 +106,7 @@ namespace ECS
 					writesMarked = true;
 				}
 				auto arguments = BuildArguments(entity, std::index_sequence_for<AccessSpecs...>{});
-				std::apply(
-				    [&](auto&... components)
-				    {
-					    std::invoke(function, entity, components...);
-				    },
-				    arguments);
+				std::apply([&](auto&... components) { std::invoke(function, entity, components...); }, arguments);
 				++entityCount;
 			}
 
@@ -117,8 +114,7 @@ namespace ECS
 			return {.Status = finalStatus, .EntityCount = entityCount};
 		}
 
-		template <typename Function>
-		QueryIterationResult ForEachRange(std::size_t begin, std::size_t end, Function&& function) const
+		template <typename Function> QueryIterationResult ForEachRange(std::size_t begin, std::size_t end, Function&& function) const
 		{
 			const QueryIterationStatus initialStatus = GetValidity();
 			if (initialStatus != QueryIterationStatus::Success)
@@ -133,19 +129,13 @@ namespace ECS
 				if (!Matches(entity, std::index_sequence_for<AccessSpecs...>{}))
 					continue;
 				auto arguments = BuildArguments(entity, std::index_sequence_for<AccessSpecs...>{});
-				std::apply(
-				    [&](auto&... components)
-				    {
-					    std::invoke(function, leadingIndex, entity, components...);
-				    },
-				    arguments);
+				std::apply([&](auto&... components) { std::invoke(function, leadingIndex, entity, components...); }, arguments);
 				++entityCount;
 			}
 			return {.Status = GetValidity(), .EntityCount = entityCount};
 		}
 
-		template <typename Function>
-		QueryIterationResult ForEachEntityRange(
+		template <typename Function> QueryIterationResult ForEachEntityRange(
 		    std::span<const EntityId> entities,
 		    std::size_t begin,
 		    std::size_t end,
@@ -164,18 +154,13 @@ namespace ECS
 				if (!Matches(entity, std::index_sequence_for<AccessSpecs...>{}))
 					continue;
 				auto arguments = BuildArguments(entity, std::index_sequence_for<AccessSpecs...>{});
-				std::apply(
-				    [&](auto&... components)
-				    {
-					    std::invoke(function, targetIndex, entity, components...);
-				    },
-				    arguments);
+				std::apply([&](auto&... components) { std::invoke(function, targetIndex, entity, components...); }, arguments);
 				++entityCount;
 			}
 			return {.Status = GetValidity(), .EntityCount = entityCount};
 		}
 
-	  private:
+	private:
 		template <typename AccessSpec>
 		void ConsiderLeadingStorage(ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) noexcept
 		{
@@ -207,9 +192,9 @@ namespace ECS
 			}
 		}
 
-		template <typename AccessSpec>
-		bool MatchesAccess(EntityId entity, const ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage)
-		    const noexcept
+		template <typename AccessSpec> bool MatchesAccess(
+		    EntityId entity,
+		    const ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) const noexcept
 		{
 			if constexpr (QueryAccessTraits<AccessSpec>::Included)
 			{
@@ -271,8 +256,8 @@ namespace ECS
 			{
 				return QueryIterationStatus::InvalidEpoch;
 			}
-			if (m_registry->GetStructureVersion() != m_registryStructureVersion ||
-			    !StorageVersionsMatch(std::index_sequence_for<AccessSpecs...>{}))
+			if (m_registry->GetStructureVersion() != m_registryStructureVersion
+			    || !StorageVersionsMatch(std::index_sequence_for<AccessSpecs...>{}))
 			{
 				return QueryIterationStatus::StaleView;
 			}
@@ -282,9 +267,9 @@ namespace ECS
 		template <std::size_t... Indices> bool StorageVersionsMatch(std::index_sequence<Indices...>) const noexcept
 		{
 			return (
-			    (std::get<Indices>(m_storages) == nullptr ||
-			     std::get<Indices>(m_storages)->GetVersion().Structure == m_storageStructureVersions[Indices]) &&
-			    ...);
+			    (std::get<Indices>(m_storages) == nullptr
+			        || std::get<Indices>(m_storages)->GetVersion().Structure == m_storageStructureVersions[Indices])
+			    && ...);
 		}
 
 		EntityRegistry* m_registry = nullptr;

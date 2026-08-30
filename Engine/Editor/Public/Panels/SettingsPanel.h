@@ -9,7 +9,7 @@ class RenderingSettingsPanel;
 
 class SettingsPanel final
 {
-  public:
+public:
 	SettingsPanel();
 	~SettingsPanel();
 
@@ -19,7 +19,7 @@ class SettingsPanel final
 	void SetRestartHandler(std::function<void()> restartHandler);
 	void BuildUI(bool disableInteraction);
 
-  private:
+private:
 	void DrawToolbar();
 	bool HasPendingRestart() const noexcept;
 

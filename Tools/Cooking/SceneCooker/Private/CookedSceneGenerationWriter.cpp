@@ -15,12 +15,9 @@
 
 class CookedSceneGenerationStager final
 {
-  public:
-	static void StageAssets(
-	    std::span<const CookedSceneBuild* const> builds,
-	    std::vector<Files::FilePublication>& outPublication);
-	static void Cleanup(
-	    std::span<const Files::FilePublication> publication) noexcept;
+public:
+	static void StageAssets(std::span<const CookedSceneBuild* const> builds, std::vector<Files::FilePublication>& outPublication);
+	static void Cleanup(std::span<const Files::FilePublication> publication) noexcept;
 };
 
 void CookedSceneGenerationWriter::Publish(std::span<const CookedSceneBuild* const> builds)
@@ -61,8 +58,7 @@ void CookedSceneGenerationStager::StageAssets(
 	}
 }
 
-void CookedSceneGenerationStager::Cleanup(
-    std::span<const Files::FilePublication> publication) noexcept
+void CookedSceneGenerationStager::Cleanup(std::span<const Files::FilePublication> publication) noexcept
 {
 	for (const Files::FilePublication& file : publication)
 	{

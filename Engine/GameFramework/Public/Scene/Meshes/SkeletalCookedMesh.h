@@ -7,10 +7,8 @@
 
 class SPARKLE_ENGINE_API SkeletalCookedMesh final : public Mesh
 {
-  public:
-	SkeletalCookedMesh(
-	    SkeletalMeshData&& meshData,
-	    Assets::CookedAssetId assetId) noexcept;
+public:
+	SkeletalCookedMesh(SkeletalMeshData&& meshData, Assets::CookedAssetId assetId) noexcept;
 	~SkeletalCookedMesh() override;
 
 	SkeletalCookedMesh(const SkeletalCookedMesh&) = delete;
@@ -21,7 +19,7 @@ class SPARKLE_ENGINE_API SkeletalCookedMesh final : public Mesh
 	Assets::CookedAssetId GetAssetId() const noexcept { return m_assetId; }
 	const SkeletalMeshData& GetSkeletalMeshData() const noexcept { return m_skeletalData; }
 
-  private:
+private:
 	SkeletalMeshData m_skeletalData;
 	Assets::CookedAssetId m_assetId = Assets::InvalidCookedAssetId;
 };

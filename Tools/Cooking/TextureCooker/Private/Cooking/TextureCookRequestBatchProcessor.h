@@ -9,16 +9,13 @@ struct TextureCookBatchItemResult;
 
 class TextureCookRequestBatchProcessor final
 {
-  public:
+public:
 	int CookRequestFile(const std::filesystem::path& requestFilePath) const;
 
-  private:
+private:
 	static std::size_t ReportFailures(
 	    const std::vector<TextureCookRequest>& requests,
 	    const std::vector<TextureCookBatchItemResult>& results);
-	static void PublishGeneration(
-	    const std::vector<TextureCookRequest>& requests,
-	    const std::vector<TextureCookBatchItemResult>& results);
-	static void CleanupStagedOutputs(
-	    const std::vector<TextureCookBatchItemResult>& results);
+	static void PublishGeneration(const std::vector<TextureCookRequest>& requests, const std::vector<TextureCookBatchItemResult>& results);
+	static void CleanupStagedOutputs(const std::vector<TextureCookBatchItemResult>& results);
 };

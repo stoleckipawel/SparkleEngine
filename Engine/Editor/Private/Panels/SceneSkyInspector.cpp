@@ -7,12 +7,15 @@
 
 #include <algorithm>
 
-void SceneSkyInspector::Build(const std::optional<SkyEnvironment>& current, EditorTransactionHistory& transactionHistory,
-                              std::uint64_t generation, const std::string& filter) noexcept
+void SceneSkyInspector::Build(
+    const std::optional<SkyEnvironment>& current,
+    EditorTransactionHistory& transactionHistory,
+    std::uint64_t generation,
+    const std::string& filter) noexcept
 {
 	bool hasSky = current.has_value();
-	if (UiUtil::MatchesDetailsFilter(filter, "Sky", "override default texture color brightness enabled visible") &&
-	    UiUtil::BeginDetailsCategory("Sky"))
+	if (UiUtil::MatchesDetailsFilter(filter, "Sky", "override default texture color brightness enabled visible")
+	    && UiUtil::BeginDetailsCategory("Sky"))
 	{
 		const bool defaultHasSky = false;
 		if (UiUtil::EditDetailsCheckbox("Override Default", hasSky, &defaultHasSky))
@@ -20,37 +23,45 @@ void SceneSkyInspector::Build(const std::optional<SkyEnvironment>& current, Edit
 			std::optional<SkyEnvironment> after = hasSky ? std::optional<SkyEnvironment>{SkyEnvironment{}} : std::nullopt;
 			(void) transactionHistory.Execute({0, SetSkyEnvironmentCommand{after}}, {0, SetSkyEnvironmentCommand{current}}, generation);
 		}
-		if (!hasSky) UiUtil::DrawDetailsValueRow("Source", "Engine Default");
+		if (!hasSky)
+			UiUtil::DrawDetailsValueRow("Source", "Engine Default");
 		UiUtil::EndDetailsCategory();
 	}
-	if (!hasSky || !current) return;
+	if (!hasSky || !current)
+		return;
 
 	SceneSkyDesc after = current->Description;
 	bool changed = false;
-	if (UiUtil::MatchesDetailsFilter(filter, "Rendering", "sky texture color brightness enabled visible") &&
-	    UiUtil::BeginDetailsCategory("Rendering"))
+	if (UiUtil::MatchesDetailsFilter(filter, "Rendering", "sky texture color brightness enabled visible")
+	    && UiUtil::BeginDetailsCategory("Rendering"))
 	{
 		const bool defaultEnabled = true;
 		changed |= UiUtil::EditDetailsCheckbox("Enabled", after.enabled, &defaultEnabled);
-		float color[3] = {after.color.x, after.color.y, after.color.z}; const float defaultColor[3] = {1.0f, 1.0f, 1.0f};
+		float color[3] = {after.color.x, after.color.y, after.color.z};
+		const float defaultColor[3] = {1.0f, 1.0f, 1.0f};
 		if (UiUtil::EditDetailsColor3("Color", color, defaultColor))
 		{
-			after.color = {(std::max)(0.0f, color[0]), (std::max)(0.0f, color[1]), (std::max)(0.0f, color[2])}; changed = true;
+			after.color = {(std::max) (0.0f, color[0]), (std::max) (0.0f, color[1]), (std::max) (0.0f, color[2])};
+			changed = true;
 		}
 		const float defaultBrightness = 1.0f;
-		if (UiUtil::EditDetailsFloat(
-		        "Brightness", after.brightness, 0.01f, 0.0f, 0.0f, "%.3f", &defaultBrightness))
+		if (UiUtil::EditDetailsFloat("Brightness", after.brightness, 0.01f, 0.0f, 0.0f, "%.3f", &defaultBrightness))
 		{
-			after.brightness = (std::max)(0.0f, after.brightness); changed = true;
+			after.brightness = (std::max) (0.0f, after.brightness);
+			changed = true;
 		}
 		const std::string defaultTexture;
 		if (UiUtil::EditDetailsText("Texture", after.skyTexture.texturePath, &defaultTexture))
 		{
-			after.skyTexture.textureGroup = TextureGroup::HdrColor; changed = true;
+			after.skyTexture.textureGroup = TextureGroup::HdrColor;
+			changed = true;
 		}
 		UiUtil::EndDetailsCategory();
 	}
 	if (changed)
-		(void) transactionHistory.Execute({0, SetSkyEnvironmentCommand{SkyEnvironment{after}}},
-		                           {0, SetSkyEnvironmentCommand{current}}, generation, "sky-environment");
+		(void) transactionHistory.Execute(
+		    {0, SetSkyEnvironmentCommand{SkyEnvironment{after}}},
+		    {0, SetSkyEnvironmentCommand{current}},
+		    generation,
+		    "sky-environment");
 }

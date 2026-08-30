@@ -14,7 +14,7 @@ void AddDirectShadowSignalPass(
     RenderViewportExtent sceneExtent,
     const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
-	    FrameGraphAccelerationStructureHandle sceneTlas,
-	    const DirectShadowSignalResources& shadowSignals,
-	    const RenderFrameGraphImportedSceneResources& externalResources,
-	    RenderRayTracingScene& rayTracingScene);
+    FrameGraphAccelerationStructureHandle sceneTlas,
+    const DirectShadowSignalResources& shadowSignals,
+    const RenderFrameGraphImportedSceneResources& externalResources,
+    RenderRayTracingScene& rayTracingScene);

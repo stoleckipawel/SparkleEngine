@@ -14,13 +14,10 @@ namespace LevelParsing
 {
 	class LightFieldParsing final
 	{
-	  public:
-		static void Parse(
-		    const ParsedLightFieldKey& key,
-		    const ParsedLevelLine& parsedLine,
-		    std::vector<SceneLightDesc>& lights);
+	public:
+		static void Parse(const ParsedLightFieldKey& key, const ParsedLevelLine& parsedLine, std::vector<SceneLightDesc>& lights);
 
-	  private:
+	private:
 		static void SetLightPosition(SceneLightCommonDesc& common, const DirectX::XMFLOAT3& position) noexcept;
 		static bool IsLightKind(const SceneLightDesc& light, SceneLightKind kind) noexcept;
 		static std::string_view GetLightKindName(SceneLightKind kind) noexcept;
@@ -101,10 +98,7 @@ namespace LevelParsing
 		}
 	}
 
-	SceneLightDesc& LightFieldParsing::ResolveLight(
-	    std::vector<SceneLightDesc>& lights,
-	    SceneLightKind kind,
-	    std::size_t kindIndex)
+	SceneLightDesc& LightFieldParsing::ResolveLight(std::vector<SceneLightDesc>& lights, SceneLightKind kind, std::size_t kindIndex)
 	{
 		std::size_t currentKindIndex = 0;
 		for (SceneLightDesc& light : lights)
@@ -127,10 +121,7 @@ namespace LevelParsing
 		return field == "Name" || field == "Color" || field == "Visible" || field == "Position";
 	}
 
-	void LightFieldParsing::ParseCommonField(
-	    std::string_view field,
-	    const ParsedLevelLine& line,
-	    SceneLightCommonDesc& common)
+	void LightFieldParsing::ParseCommonField(std::string_view field, const ParsedLevelLine& line, SceneLightCommonDesc& common)
 	{
 		if (field == "Name")
 		{
@@ -157,10 +148,7 @@ namespace LevelParsing
 		Diagnostics::Fatal(g_lightFieldParserLogger, __FILE__, __LINE__, "Common light field parser received another field kind.");
 	}
 
-	void LightFieldParsing::ParseDirectionalField(
-	    std::string_view field,
-	    const ParsedLevelLine& line,
-	    SceneLightDesc& light)
+	void LightFieldParsing::ParseDirectionalField(std::string_view field, const ParsedLevelLine& line, SceneLightDesc& light)
 	{
 		const SceneDirectionalLightDesc* current = light.GetDirectional();
 		if (current == nullptr)
@@ -181,10 +169,7 @@ namespace LevelParsing
 		light.payload = value;
 	}
 
-	void LightFieldParsing::ParsePointField(
-	    std::string_view field,
-	    const ParsedLevelLine& line,
-	    SceneLightDesc& light)
+	void LightFieldParsing::ParsePointField(std::string_view field, const ParsedLevelLine& line, SceneLightDesc& light)
 	{
 		const PointLightDesc* current = light.GetPoint();
 		if (current == nullptr)
@@ -207,10 +192,7 @@ namespace LevelParsing
 		light.payload = value;
 	}
 
-	void LightFieldParsing::ParseSpotField(
-	    std::string_view field,
-	    const ParsedLevelLine& line,
-	    SceneLightDesc& light)
+	void LightFieldParsing::ParseSpotField(std::string_view field, const ParsedLevelLine& line, SceneLightDesc& light)
 	{
 		const SpotLightDesc* current = light.GetSpot();
 		if (current == nullptr)
@@ -239,10 +221,7 @@ namespace LevelParsing
 		light.payload = value;
 	}
 
-	void LightFieldParsing::ParseRectField(
-	    std::string_view field,
-	    const ParsedLevelLine& line,
-	    SceneLightDesc& light)
+	void LightFieldParsing::ParseRectField(std::string_view field, const ParsedLevelLine& line, SceneLightDesc& light)
 	{
 		const RectLightDesc* current = light.GetRect();
 		if (current == nullptr)
@@ -272,10 +251,7 @@ namespace LevelParsing
 		throw Diagnostics::Error(std::format("Unsupported {} light field '{}'.", GetLightKindName(kind), field));
 	}
 
-	void LightFieldParsing::Parse(
-	    const ParsedLightFieldKey& key,
-	    const ParsedLevelLine& parsedLine,
-	    std::vector<SceneLightDesc>& lights)
+	void LightFieldParsing::Parse(const ParsedLightFieldKey& key, const ParsedLevelLine& parsedLine, std::vector<SceneLightDesc>& lights)
 	{
 		SceneLightDesc& light = ResolveLight(lights, key.Kind, key.Index);
 		switch (key.Kind)
@@ -298,10 +274,7 @@ namespace LevelParsing
 		}
 	}
 
-	void ParseLightField(
-	    const ParsedLightFieldKey& key,
-	    const ParsedLevelLine& parsedLine,
-	    std::vector<SceneLightDesc>& lights)
+	void ParseLightField(const ParsedLightFieldKey& key, const ParsedLevelLine& parsedLine, std::vector<SceneLightDesc>& lights)
 	{
 		LightFieldParsing::Parse(key, parsedLine, lights);
 	}

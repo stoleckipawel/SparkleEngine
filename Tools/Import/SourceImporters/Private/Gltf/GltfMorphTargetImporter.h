@@ -11,7 +11,7 @@ struct cgltf_primitive;
 
 class GltfMorphTargetImporter final
 {
-  public:
+public:
 	static std::vector<ImportedMorphTarget> ImportMorphTargets(
 	    const cgltf_mesh& mesh,
 	    const cgltf_primitive& primitive,

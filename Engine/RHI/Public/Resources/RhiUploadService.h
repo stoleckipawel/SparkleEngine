@@ -14,7 +14,7 @@ class RenderCommandList;
 
 class SPARKLE_RHI_API RhiUploadService
 {
-  public:
+public:
 	virtual ~RhiUploadService() noexcept;
 
 	virtual RhiGpuVirtualAddress AllocateUniformConstantBuffer(

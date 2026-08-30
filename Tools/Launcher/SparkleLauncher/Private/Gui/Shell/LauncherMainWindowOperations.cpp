@@ -1,5 +1,6 @@
 #include "LauncherMainWindow.h"
 
+#include "LauncherActivityPanel.h"
 #include "LauncherActionWidgets.h"
 #include "LauncherBackend.h"
 #include "LauncherDependencyUiModel.h"
@@ -29,10 +30,7 @@ namespace SparkleLauncher
 	{
 		if (m_selectedOperationId.isEmpty())
 		{
-			if (m_operationOutput != nullptr)
-			{
-				m_operationOutput->setPlainText("Choose a workflow before running.");
-			}
+			m_activityPanel->ShowMessage("Choose a workflow before running.");
 			return;
 		}
 
@@ -45,10 +43,7 @@ namespace SparkleLauncher
 		if (OperationNeedsContent(m_selectedOperationId) && m_contentModel.ContentId().isEmpty())
 		{
 			const QString message = "Repository content is unavailable. Confirm this is a complete Sparkle workspace.";
-			if (m_operationOutput != nullptr)
-			{
-				m_operationOutput->setPlainText(message);
-			}
+			m_activityPanel->ShowMessage(message);
 			return;
 		}
 
@@ -114,10 +109,7 @@ namespace SparkleLauncher
 			const QString message = OperationNeedsContent(m_selectedOperationId) && m_contentModel.ContentId().isEmpty()
 			    ? "Repository content is unavailable for this workflow's generated outputs."
 			    : "No generated outputs were resolved for this workflow.";
-			if (m_operationOutput != nullptr)
-			{
-				m_operationOutput->setPlainText(message);
-			}
+			m_activityPanel->ShowMessage(message);
 			return;
 		}
 
@@ -413,7 +405,7 @@ namespace SparkleLauncher
 		{
 			m_pendingRestartRunIds.push_back(runId);
 		}
-		RegisterRun(request.RunId, title);
+		m_activityPanel->RegisterRun(request.RunId, title);
 		TrackSourceDependencyRun(request, runId);
 		m_backend.RunOperation(std::move(request));
 		return runId;

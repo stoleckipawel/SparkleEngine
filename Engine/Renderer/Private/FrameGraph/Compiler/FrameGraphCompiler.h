@@ -10,7 +10,7 @@ class FrameGraphResourceStateTracker;
 
 class FrameGraphCompiler final
 {
-  public:
+public:
 	FrameGraphCompiler(
 	    FrameGraphPlan& plan,
 	    FrameGraphResourceRegistry& resourceRegistry,
@@ -19,7 +19,7 @@ class FrameGraphCompiler final
 
 	void Compile() noexcept;
 
-  private:
+private:
 	struct LastResourceAccess final
 	{
 		FrameGraphPassIndex Pass = INVALID_FRAME_GRAPH_PASS_INDEX;
@@ -48,9 +48,7 @@ class FrameGraphCompiler final
 	void BuildTransientAliasingBarriers() noexcept;
 	void BuildResourceBarriers() noexcept;
 	void InitializeBarrierDependencies() noexcept;
-	void BuildPassResourceBarriers(
-	    FrameGraphPassIndex passIndex,
-	    LastResourceAccessTable& lastResourceAccesses) noexcept;
+	void BuildPassResourceBarriers(FrameGraphPassIndex passIndex, LastResourceAccessTable& lastResourceAccesses) noexcept;
 	void BuildResourceBarrier(
 	    FrameGraphPassIndex passIndex,
 	    FrameGraphPassNode& passRecord,
@@ -67,15 +65,15 @@ class FrameGraphCompiler final
 	    FrameGraphPassNode& passRecord,
 	    const PassResourceDeclaration& declaration,
 	    FrameGraphResourceNode& compiledResource) noexcept;
-	void BuildFinalResourceBarriers(
-	    const LastResourceAccessTable& lastResourceAccesses) noexcept;
+	void BuildFinalResourceBarriers(const LastResourceAccessTable& lastResourceAccesses) noexcept;
 	static bool HasCompiledBarrier(
 	    const FrameGraphPassNode& passRecord,
 	    FrameGraphResourceHandle handle,
 	    FrameGraphBarrier::Type type) noexcept;
 	void ResetCompiledResourceStatesForBarrierPlanning() noexcept;
-	ResourceState InferRequiredResourceState(const PassResourceDeclaration& declaration, const FrameGraphResourceNode& resource)
-	    const noexcept;
+	ResourceState InferRequiredResourceState(
+	    const PassResourceDeclaration& declaration,
+	    const FrameGraphResourceNode& resource) const noexcept;
 	bool ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept;
 	void BuildPassResourceVersionDependencies(FrameGraphPassNode& passRecord) noexcept;
 	void RegisterReadDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept;

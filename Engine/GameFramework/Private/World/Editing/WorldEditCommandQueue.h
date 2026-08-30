@@ -15,20 +15,17 @@ struct GameWorldResourceStores;
 // GameWorld only establishes the boundary at which this capability runs.
 class WorldEditCommandQueue final
 {
-  public:
+public:
 	WorldEditResult Submit(
 	    WorldEditCommand command,
 	    std::uint64_t expectedGeneration,
 	    std::uint64_t currentGeneration,
 	    const ECS::GameWorldState& state,
 	    const GameWorldResourceStores& resources);
-	void Apply(
-	    std::uint64_t currentGeneration,
-	    ECS::GameWorldState& state,
-	    GameWorldResourceStores& resources);
+	void Apply(std::uint64_t currentGeneration, ECS::GameWorldState& state, GameWorldResourceStores& resources);
 	void Clear() noexcept;
 
-  private:
+private:
 	struct PendingEdit final
 	{
 		std::uint64_t ExpectedGeneration = 0;
@@ -39,10 +36,7 @@ class WorldEditCommandQueue final
 	    const WorldEditPayload& payload,
 	    const ECS::GameWorldState& state,
 	    const GameWorldResourceStores& resources);
-	static void ApplyPayload(
-	    WorldEditPayload& payload,
-	    ECS::GameWorldState& state,
-	    GameWorldResourceStores& resources);
+	static void ApplyPayload(WorldEditPayload& payload, ECS::GameWorldState& state, GameWorldResourceStores& resources);
 
 	static constexpr std::size_t MaximumPendingEditCount = 4096;
 	std::vector<PendingEdit> m_pendingEdits;

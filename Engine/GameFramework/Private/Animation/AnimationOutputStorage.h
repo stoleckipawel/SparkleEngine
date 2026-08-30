@@ -18,7 +18,7 @@ namespace ECS
 
 	class AnimationOutputStorage final
 	{
-	  public:
+	public:
 		struct PoseWorkSlot final
 		{
 			EntityId Entity;
@@ -62,7 +62,7 @@ namespace ECS
 		const AnimationOutput& GetOutput() const noexcept { return m_output; }
 		std::uint32_t GetTargetGeneration() const noexcept { return m_targetGeneration; }
 
-	  private:
+	private:
 		struct EntityWorkIndex final
 		{
 			EntityId Entity;

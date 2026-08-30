@@ -23,7 +23,7 @@ struct VmaAllocator_T;
 
 class VulkanGpuMemoryAllocator final
 {
-  public:
+public:
 	explicit VulkanGpuMemoryAllocator(VulkanRhi& rhi) noexcept;
 	~VulkanGpuMemoryAllocator() noexcept;
 
@@ -74,7 +74,7 @@ class VulkanGpuMemoryAllocator final
 	void DrainCompletedReleases(const std::array<std::uint64_t, RhiQueueTypeCount>& completedValues) noexcept;
 	void FlushPendingReleases() noexcept;
 
-  private:
+private:
 	friend class VulkanRenderCommandList;
 	friend class VulkanRenderDeviceServices;
 	friend class VulkanRenderTimingDiagnostics;
@@ -84,33 +84,18 @@ class VulkanGpuMemoryAllocator final
 	struct PendingMemoryBlockRelease;
 
 	void PublishRecordingReadView() noexcept;
-	bool ResolveRecordingResource(
-	    RhiResourceHandle resource,
-	    VulkanRecordingResource& outResource) const noexcept;
-	bool ResolveRecordingAddress(
-	    RhiGpuVirtualAddress address,
-	    VulkanRecordingResource& outResource) const noexcept;
-	bool ResolveCoordinatorRecordingResource(
-	    RhiResourceHandle resource,
-	    VulkanRecordingResource& outResource) const noexcept;
-	bool ResolveCoordinatorRecordingAddress(
-	    RhiGpuVirtualAddress address,
-	    VulkanRecordingResource& outResource) const noexcept;
+	bool ResolveRecordingResource(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept;
+	bool ResolveRecordingAddress(RhiGpuVirtualAddress address, VulkanRecordingResource& outResource) const noexcept;
+	bool ResolveCoordinatorRecordingResource(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept;
+	bool ResolveCoordinatorRecordingAddress(RhiGpuVirtualAddress address, VulkanRecordingResource& outResource) const noexcept;
 	VulkanRecordingResourceUseToken RetainRecordingResource(RhiResourceHandle resource) const noexcept;
 	VulkanRecordingResourceUseToken RetainCoordinatorRecordingResource(RhiResourceHandle resource) const noexcept;
-	void ReleaseRecordingResource(
-	    VulkanRecordingResourceUseToken use,
-	    RhiSubmissionToken submissionToken) const noexcept;
+	void ReleaseRecordingResource(VulkanRecordingResourceUseToken use, RhiSubmissionToken submissionToken) const noexcept;
 	void DestroyAllocation(VulkanGpuAllocationRecord& record) noexcept;
 	void DestroyMemoryBlock(VulkanGpuMemoryBlockRecord& record) noexcept;
 	void* MapUploadPage(VulkanGpuAllocationRecord& record) noexcept;
-	bool FlushUploadPage(
-	    VulkanGpuAllocationRecord& record,
-	    std::size_t offsetInBytes,
-	    std::size_t sizeInBytes) noexcept;
-	void* MapHostAllocation(
-	    VulkanGpuAllocationRecord& record,
-	    RhiMemoryResidencyClass residencyClass) noexcept;
+	bool FlushUploadPage(VulkanGpuAllocationRecord& record, std::size_t offsetInBytes, std::size_t sizeInBytes) noexcept;
+	void* MapHostAllocation(VulkanGpuAllocationRecord& record, RhiMemoryResidencyClass residencyClass) noexcept;
 	void UnmapAllocation(VulkanGpuAllocationRecord& record) noexcept;
 	void SetAllocationDebugName(VulkanGpuAllocationRecord& record, std::wstring_view debugName) noexcept;
 	void SetMemoryBlockDebugName(VulkanGpuMemoryBlockRecord& record, std::wstring_view debugName) noexcept;
@@ -137,7 +122,9 @@ class VulkanGpuMemoryAllocator final
 	    VkImage image,
 	    VulkanGpuMemoryBlockRecord& memoryBlock,
 	    std::wstring_view debugName) noexcept;
-	static std::uint32_t ResolveMemoryHeapIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties, std::uint32_t memoryTypeIndex) noexcept;
+	static std::uint32_t ResolveMemoryHeapIndex(
+	    const VkPhysicalDeviceMemoryProperties& memoryProperties,
+	    std::uint32_t memoryTypeIndex) noexcept;
 	static VkImageAspectFlags ResolveImageAspectMask(VkFormat format) noexcept;
 
 	friend struct VulkanGpuAllocationRecord;

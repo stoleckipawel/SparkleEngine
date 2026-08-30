@@ -11,7 +11,7 @@ class VulkanRhi;
 
 class VulkanPipelineLayout final
 {
-  public:
+public:
 	VulkanPipelineLayout() noexcept = default;
 	VulkanPipelineLayout(VkDevice device, VkPipelineLayout layout) noexcept;
 	~VulkanPipelineLayout() noexcept;
@@ -24,7 +24,7 @@ class VulkanPipelineLayout final
 	VkPipelineLayout Get() const noexcept { return m_layout; }
 	explicit operator bool() const noexcept { return m_layout != VK_NULL_HANDLE; }
 
-  private:
+private:
 	void Reset() noexcept;
 
 	VkDevice m_device = VK_NULL_HANDLE;
@@ -33,11 +33,11 @@ class VulkanPipelineLayout final
 
 class VulkanPipelineLayoutBuilder final
 {
-  public:
+public:
 	void SetBindingLayout(const RenderBindingLayout* bindingLayout) noexcept;
 	std::unique_ptr<VulkanPipelineLayout> Build(VulkanRhi& rhi, std::string_view debugName) const;
 
-  private:
+private:
 	std::span<const VkDescriptorSetLayout> m_descriptorSetLayouts;
 	std::span<const VkPushConstantRange> m_pushConstantRanges;
 };

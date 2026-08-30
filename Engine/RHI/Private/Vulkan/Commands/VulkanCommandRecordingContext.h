@@ -23,7 +23,7 @@ class VulkanRhi;
 
 class VulkanCommandRecordingContext final
 {
-  public:
+public:
 	static constexpr std::uint32_t MaximumContextsPerFrameQueue = 8;
 	static constexpr std::uint64_t UploadPageCapacityInBytes = 256 * 1024;
 
@@ -40,10 +40,7 @@ class VulkanCommandRecordingContext final
 	VulkanCommandRecordingContext& operator=(VulkanCommandRecordingContext&&) = delete;
 
 	void BeginFrame(std::uint32_t frameIndex) noexcept;
-	RhiCommandRecordingLease Acquire(
-	    ERhiQueueType queueType,
-	    std::uint32_t frameIndex,
-	    RhiCommandRecordingOwner owner) noexcept;
+	RhiCommandRecordingLease Acquire(ERhiQueueType queueType, std::uint32_t frameIndex, RhiCommandRecordingOwner owner) noexcept;
 	RhiSubmissionToken Submit(
 	    RhiCommandRecordingLease&& lease,
 	    std::span<const RhiSubmissionToken> waitTokens = {},
@@ -57,8 +54,7 @@ class VulkanCommandRecordingContext final
 	    VkPipelineStageFlags binaryWaitStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 	    VkSemaphore binarySignalSemaphore = VK_NULL_HANDLE) noexcept;
 	RenderCommandList& BeginCurrentGraphicsCommandList(std::uint32_t frameIndex) noexcept;
-	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease(
-	    std::uint32_t frameIndex) noexcept;
+	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease(std::uint32_t frameIndex) noexcept;
 	RhiSubmissionToken SubmitCurrentGraphicsCommandList(
 	    std::uint32_t frameIndex,
 	    std::span<const RhiSubmissionToken> waitTokens = {},
@@ -67,14 +63,10 @@ class VulkanCommandRecordingContext final
 	    VkSemaphore binarySignalSemaphore = VK_NULL_HANDLE) noexcept;
 	void CancelFrame(std::uint32_t frameIndex) noexcept;
 
-	RenderCommandList& GetCurrentCommandList(
-	    ERhiQueueType queueType,
-	    std::uint32_t frameIndex) noexcept;
-	RenderCommandList* TryGetCurrentCommandList(
-	    ERhiQueueType queueType,
-	    std::uint32_t frameIndex) noexcept;
+	RenderCommandList& GetCurrentCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
+	RenderCommandList* TryGetCurrentCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
 
-  private:
+private:
 	enum class SlotState : std::uint8_t
 	{
 		Available,
@@ -108,43 +100,29 @@ class VulkanCommandRecordingContext final
 		std::optional<RhiCommandRecordingLease> CurrentLease;
 	};
 
-	QueueFrameState& GetQueueFrameState(
-	    ERhiQueueType queueType,
-	    std::uint32_t frameIndex) noexcept;
-	CommandSlot& AcquireSlot(
-	    ERhiQueueType queueType,
-	    std::uint32_t frameIndex) noexcept;
+	QueueFrameState& GetQueueFrameState(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
+	CommandSlot& AcquireSlot(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
 	void InitializeSlots();
-	CommandSlot& CreateSlot(
-	    ERhiQueueType queueType,
-	    std::uint32_t frameIndex);
+	CommandSlot& CreateSlot(ERhiQueueType queueType, std::uint32_t frameIndex);
 	void CreateCommandPool(CommandSlot& slot);
 	void AllocateCommandBuffer(CommandSlot& slot);
 	void InitializeRecordingResources(CommandSlot& slot);
 	void NameSlotObjects(const CommandSlot& slot) const noexcept;
-	void WaitForFrameStateRetirement(
-	    const QueueFrameState& frameState) noexcept;
+	void WaitForFrameStateRetirement(const QueueFrameState& frameState) noexcept;
 	void ResetSlot(CommandSlot& slot) noexcept;
 	void ResetCommandPool(CommandSlot& slot) noexcept;
 	void BeginSlot(CommandSlot& slot) noexcept;
 	void CloseSlot(CommandSlot& slot) noexcept;
 	void ReleaseSlot(CommandSlot& slot) noexcept;
-	CommandSlot* ConsumeClosedLease(
-	    RhiCommandRecordingLease&& lease) noexcept;
-	void ResolveSubmittedSlot(
-	    CommandSlot& slot,
-	    RhiSubmissionToken token) noexcept;
+	CommandSlot* ConsumeClosedLease(RhiCommandRecordingLease&& lease) noexcept;
+	void ResolveSubmittedSlot(CommandSlot& slot, RhiSubmissionToken token) noexcept;
 	void DestroySlots() noexcept;
 
 	static void BeginLease(void* state) noexcept;
 	static void CloseLease(void* state) noexcept;
 	static void ReleaseLease(void* state, bool closed) noexcept;
-	[[noreturn]] void FailExhausted(
-	    ERhiQueueType queueType,
-	    std::uint32_t frameIndex) noexcept;
-	[[noreturn]] static void FailOwnershipViolation(
-	    const CommandSlot& slot,
-	    const char* operation) noexcept;
+	[[noreturn]] void FailExhausted(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
+	[[noreturn]] static void FailOwnershipViolation(const CommandSlot& slot, const char* operation) noexcept;
 
 	Threading::OwnerThread m_owner{"Vulkan command recording coordinator"};
 	VulkanRhi* m_rhi = nullptr;

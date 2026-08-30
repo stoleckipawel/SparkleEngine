@@ -24,4 +24,4 @@ namespace Assets
 		camera.desc.projectionKind = CameraProjectionKind::Perspective;
 		return camera;
 	}
-}  // namespace Assets
+}

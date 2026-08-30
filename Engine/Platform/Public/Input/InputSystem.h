@@ -37,7 +37,7 @@ using InputCaptureQuery = std::function<bool()>;
 
 class SPARKLE_PLATFORM_API InputSystem
 {
-  public:
+public:
 	static std::unique_ptr<InputSystem> Create();
 
 	explicit InputSystem(std::unique_ptr<IInputBackend> Backend);
@@ -113,7 +113,7 @@ class SPARKLE_PLATFORM_API InputSystem
 
 	void CenterCursor(void* windowHandle);
 
-  private:
+private:
 	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
 	InputLayer ResolveTargetLayer(const InputBackendResult& Result);
 	void CancelLayer(InputLayer Layer);

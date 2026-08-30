@@ -31,8 +31,8 @@ RendererMemoryMonitor::RendererMemoryMonitor(RenderDiagnostics& diagnostics, std
 
 void RendererMemoryMonitor::Tick(std::uint64_t frameIndex)
 {
-	if (m_diagnostics == nullptr ||
-	    (m_hasPolled && !HasReachedPollInterval(frameIndex, m_latestSnapshot.LastPollFrame, m_latestSnapshot.PollIntervalFrames)))
+	if (m_diagnostics == nullptr
+	    || (m_hasPolled && !HasReachedPollInterval(frameIndex, m_latestSnapshot.LastPollFrame, m_latestSnapshot.PollIntervalFrames)))
 	{
 		return;
 	}
@@ -57,17 +57,18 @@ void RendererMemoryMonitor::Tick(std::uint64_t frameIndex)
 	for (const RhiMemoryCategoryStats& categoryStats : snapshot.MemoryUsage.CategoryStats)
 	{
 		const float budgetUsageRatio = categoryStats.BudgetBytes != 0
-		                                 ? static_cast<float>(categoryStats.UsedBytes) / static_cast<float>(categoryStats.BudgetBytes)
-		                                 : 0.0f;
+		    ? static_cast<float>(categoryStats.UsedBytes) / static_cast<float>(categoryStats.BudgetBytes)
+		    : 0.0f;
 		const RendererMemoryPressureLevel pressure = ClassifyPressure(budgetUsageRatio);
 		overallPressure = MaxPressure(overallPressure, pressure);
-		snapshot.CategoryPressure.push_back(RendererMemoryCategoryPressure{
-		    .Category = categoryStats.Category,
-		    .ResidencyClass = categoryStats.ResidencyClass,
-		    .UsedBytes = categoryStats.UsedBytes,
-		    .BudgetBytes = categoryStats.BudgetBytes,
-		    .BudgetUsageRatio = budgetUsageRatio,
-		    .Pressure = pressure});
+		snapshot.CategoryPressure.push_back(
+		    RendererMemoryCategoryPressure{
+		        .Category = categoryStats.Category,
+		        .ResidencyClass = categoryStats.ResidencyClass,
+		        .UsedBytes = categoryStats.UsedBytes,
+		        .BudgetBytes = categoryStats.BudgetBytes,
+		        .BudgetUsageRatio = budgetUsageRatio,
+		        .Pressure = pressure});
 	}
 
 	snapshot.OverallPressure = overallPressure;
@@ -95,9 +96,7 @@ RendererMemoryPressureLevel RendererMemoryMonitor::ClassifyPressure(float usageR
 	return RendererMemoryPressureLevel::Normal;
 }
 
-RendererMemoryPressureLevel RendererMemoryMonitor::MaxPressure(
-    RendererMemoryPressureLevel lhs,
-    RendererMemoryPressureLevel rhs) noexcept
+RendererMemoryPressureLevel RendererMemoryMonitor::MaxPressure(RendererMemoryPressureLevel lhs, RendererMemoryPressureLevel rhs) noexcept
 {
 	return static_cast<std::uint8_t>(lhs) >= static_cast<std::uint8_t>(rhs) ? lhs : rhs;
 }
@@ -123,10 +122,10 @@ TextureStreamingMemoryPolicySnapshot RendererMemoryMonitor::BuildTextureStreamin
 	return TextureStreamingMemoryPolicySnapshot{
 	    .OverallPressure = overallPressure,
 	    .TexturePressure = texturePressure,
-	    .ShouldConserveTextureMemory = IsAtLeast(texturePressure, RendererMemoryPressureLevel::Watch) ||
-	                                  IsAtLeast(overallPressure, RendererMemoryPressureLevel::Pressure),
-	    .ShouldPreferMipDemotion = IsAtLeast(texturePressure, RendererMemoryPressureLevel::Pressure) ||
-	                               IsAtLeast(overallPressure, RendererMemoryPressureLevel::Critical),
+	    .ShouldConserveTextureMemory = IsAtLeast(texturePressure, RendererMemoryPressureLevel::Watch)
+	        || IsAtLeast(overallPressure, RendererMemoryPressureLevel::Pressure),
+	    .ShouldPreferMipDemotion = IsAtLeast(texturePressure, RendererMemoryPressureLevel::Pressure)
+	        || IsAtLeast(overallPressure, RendererMemoryPressureLevel::Critical),
 	    .ShouldBlockMipPromotion = IsAtLeast(texturePressure, RendererMemoryPressureLevel::Critical)};
 }
 

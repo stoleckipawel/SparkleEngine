@@ -51,9 +51,7 @@ namespace Filesystem
 	{
 		Private::AssetPathState& state = Private::GetAssetPathState();
 		state.projectPath = Paths::Normalize(projectRoot);
-		state.projectAssetsPath = state.projectPath.empty() ?
-		                              std::filesystem::path{} :
-		                              Paths::Normalize(state.projectPath / "Assets");
+		state.projectAssetsPath = state.projectPath.empty() ? std::filesystem::path{} : Paths::Normalize(state.projectPath / "Assets");
 		Private::RebuildProjectPaths(state);
 	}
 

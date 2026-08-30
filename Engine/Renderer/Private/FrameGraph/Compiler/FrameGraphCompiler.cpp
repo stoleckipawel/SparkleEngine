@@ -11,7 +11,7 @@
 
 class FrameGraphResourceVersionValidator final
 {
-  public:
+public:
 	static void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
 	{
 		for (const FrameGraphResourceNode& resource : plan.resources)
@@ -40,14 +40,14 @@ class FrameGraphResourceVersionValidator final
 };
 
 FrameGraphCompiler::FrameGraphCompiler(
-	FrameGraphPlan& plan,
-	FrameGraphResourceRegistry& resourceRegistry,
-	FrameGraphResourceStateTracker& resourceStateTracker,
-	const RhiQueueCapabilities& queueCapabilities) noexcept :
-	m_plan(plan),
-	m_resourceRegistry(resourceRegistry),
-	m_resourceStateTracker(resourceStateTracker),
-	m_queueCapabilities(queueCapabilities)
+    FrameGraphPlan& plan,
+    FrameGraphResourceRegistry& resourceRegistry,
+    FrameGraphResourceStateTracker& resourceStateTracker,
+    const RhiQueueCapabilities& queueCapabilities) noexcept :
+    m_plan(plan),
+    m_resourceRegistry(resourceRegistry),
+    m_resourceStateTracker(resourceStateTracker),
+    m_queueCapabilities(queueCapabilities)
 {
 }
 
@@ -109,7 +109,8 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		        .currentState = runtimeState,
 		        .debugName = entry.debugName,
 		        .currentVersion = 0,
-		        .versions = {FrameGraphResourceVersion{.handle = entry.handle, .version = 0, .writerPass = INVALID_FRAME_GRAPH_PASS_INDEX}}});
+		        .versions = {
+		            FrameGraphResourceVersion{.handle = entry.handle, .version = 0, .writerPass = INVALID_FRAME_GRAPH_PASS_INDEX}}});
 	}
 }
 
@@ -185,8 +186,8 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
 
 bool FrameGraphCompiler::ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept
 {
-	return resource.finalState != ResourceState::Undefined &&
-	       (resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil);
+	return resource.finalState != ResourceState::Undefined
+	    && (resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil);
 }
 
 FrameGraphResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(FrameGraphResourceNode& resource) noexcept
@@ -224,10 +225,7 @@ FrameGraphTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(F
 	const auto it = std::find_if(
 	    m_plan.transients.resources.begin(),
 	    m_plan.transients.resources.end(),
-	    [handle](const FrameGraphTransientResourcePlan& transientPlan)
-	    {
-		    return transientPlan.handle == handle;
-	    });
+	    [handle](const FrameGraphTransientResourcePlan& transientPlan) { return transientPlan.handle == handle; });
 
 	return it != m_plan.transients.resources.end() ? &(*it) : nullptr;
 }
@@ -237,10 +235,7 @@ const FrameGraphTransientResourcePlan* FrameGraphCompiler::FindTransientResource
 	const auto it = std::find_if(
 	    m_plan.transients.resources.begin(),
 	    m_plan.transients.resources.end(),
-	    [handle](const FrameGraphTransientResourcePlan& transientPlan)
-	    {
-		    return transientPlan.handle == handle;
-	    });
+	    [handle](const FrameGraphTransientResourcePlan& transientPlan) { return transientPlan.handle == handle; });
 
 	return it != m_plan.transients.resources.end() ? &(*it) : nullptr;
 }

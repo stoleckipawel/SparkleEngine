@@ -38,7 +38,7 @@ struct RhiMemoryUsageSnapshot
 
 class SPARKLE_RHI_API RenderMemoryDiagnostics
 {
-  public:
+public:
 	virtual ~RenderMemoryDiagnostics() noexcept = default;
 
 	virtual bool SupportsBudgetQueries() const noexcept = 0;

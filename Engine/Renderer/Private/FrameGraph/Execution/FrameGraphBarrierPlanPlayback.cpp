@@ -11,7 +11,7 @@
 
 class FrameGraphBarrierFailureReporter final
 {
-  public:
+public:
 	static std::string FormatResourceLabel(const FrameGraphResourceHandle handle) noexcept
 	{
 		if (!handle.IsValid())
@@ -33,7 +33,8 @@ class FrameGraphBarrierFailureReporter final
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "FrameGraph aliasing barrier validation failed: pass='{}' block={} beforeHandle={} beforeResource='{}' afterHandle={} afterResource='{}' remediation='verify transient resource lifetimes and materialization before barrier playback'",
+		        "FrameGraph aliasing barrier validation failed: pass='{}' block={} beforeHandle={} beforeResource='{}' afterHandle={} "
+		        "afterResource='{}' remediation='verify transient resource lifetimes and materialization before barrier playback'",
 		        passName,
 		        barrier.physicalBlockIndex,
 		        FormatResourceLabel(barrier.beforeHandle),
@@ -52,7 +53,9 @@ class FrameGraphBarrierFailureReporter final
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "FrameGraph resource barrier validation failed: pass='{}' handle={} resource='{}' label='{}' beforeState={} afterState={} remediation='declare the resource in setup and ensure the resource is imported, persistent-bound, or transient-materialized before execution'",
+		        "FrameGraph resource barrier validation failed: pass='{}' handle={} resource='{}' label='{}' beforeState={} afterState={} "
+		        "remediation='declare the resource in setup and ensure the resource is imported, persistent-bound, or "
+		        "transient-materialized before execution'",
 		        passName,
 		        FormatResourceLabel(barrier.handle),
 		        resourceName,
@@ -61,7 +64,7 @@ class FrameGraphBarrierFailureReporter final
 		        ResourceStateToString(barrier.after)));
 	}
 
-  private:
+private:
 	static const std::shared_ptr<spdlog::logger>& Logger() noexcept
 	{
 		static const auto logger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
@@ -74,8 +77,9 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& commandContext, cons
 	EmitCompiledBarriers(commandContext, "Unknown", barriers);
 }
 
-void FrameGraph::EmitTransientAliasingBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphAliasingBarrier>& barriers)
-    const noexcept
+void FrameGraph::EmitTransientAliasingBarriers(
+    RenderCommandContext& commandContext,
+    const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept
 {
 	EmitTransientAliasingBarriers(commandContext, "Unknown", barriers);
 }
@@ -114,8 +118,10 @@ void FrameGraph::EmitTransientAliasingBarriers(
 	}
 }
 
-void FrameGraph::EmitCompiledBarriers(RenderCommandContext& commandContext, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
-    const noexcept
+void FrameGraph::EmitCompiledBarriers(
+    RenderCommandContext& commandContext,
+    std::string_view passName,
+    const std::vector<FrameGraphBarrier>& barriers) const noexcept
 {
 	for (const FrameGraphBarrier& barrier : barriers)
 	{

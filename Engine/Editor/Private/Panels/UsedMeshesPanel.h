@@ -11,7 +11,7 @@
 
 class UsedMeshesPanel final
 {
-  public:
+public:
 	using DiagnosticsProvider = std::function<MeshDiagnosticsSnapshot()>;
 	using PreviewGeometryProvider = std::function<MeshPreviewGeometry(std::uintptr_t)>;
 
@@ -21,7 +21,7 @@ class UsedMeshesPanel final
 	void SetPreviewGeometryProvider(PreviewGeometryProvider provider);
 	void BuildUI(bool disableInteraction);
 
-  private:
+private:
 	void RefreshSnapshot();
 	void RefreshPreviewGeometry(const MeshDiagnosticsRow& row);
 	void DrawToolbar();

@@ -19,10 +19,7 @@ namespace ECS::EntityCommandDetail
 		const auto mapping = std::find_if(
 		    mappings.begin(),
 		    mappings.end(),
-		    [&](const TemporaryEntityMapping& candidate)
-		    {
-			    return candidate.Temporary == temporary;
-		    });
+		    [&](const TemporaryEntityMapping& candidate) { return candidate.Temporary == temporary; });
 		return mapping == mappings.end() ? EntityId::Invalid() : mapping->Entity;
 	}
 
@@ -99,13 +96,7 @@ namespace ECS
 				commands.push_back(&command);
 			}
 		}
-		std::sort(
-		    commands.begin(),
-		    commands.end(),
-		    [](const auto* left, const auto* right)
-		    {
-			    return left->Key < right->Key;
-		    });
+		std::sort(commands.begin(), commands.end(), [](const auto* left, const auto* right) { return left->Key < right->Key; });
 		result.Commands.reserve(commands.size());
 
 		EntityCommandDetail::EntityCommandConflictTracker conflicts;
@@ -114,10 +105,7 @@ namespace ECS
 		    static_cast<std::size_t>(std::count_if(
 		        commands.begin(),
 		        commands.end(),
-		        [](const EntityCommandDetail::EntityCommandRecord* command)
-		        {
-			        return command->Kind == EntityCommandKind::Create;
-		        })));
+		        [](const EntityCommandDetail::EntityCommandRecord* command) { return command->Kind == EntityCommandKind::Create; })));
 		for (EntityCommandDetail::EntityCommandRecord* command : commands)
 		{
 			EntityCommandResult commandResult{.Key = command->Key, .Kind = command->Kind};
@@ -130,8 +118,8 @@ namespace ECS
 			if (command->Kind == EntityCommandKind::Create)
 			{
 				const TemporaryEntityId temporary = command->Target.Temporary;
-				if (!command->Target.IsTemporary || !temporary.IsValid() ||
-				    temporary.GetBufferId() != EntityCommandDetail::GetBufferId(command->Key))
+				if (!command->Target.IsTemporary || !temporary.IsValid()
+				    || temporary.GetBufferId() != EntityCommandDetail::GetBufferId(command->Key))
 				{
 					commandResult.Status = EntityCommandStatus::InvalidTemporaryEntity;
 				}
@@ -149,8 +137,8 @@ namespace ECS
 			else
 			{
 				commandResult.Entity = command->Target.IsTemporary
-				                           ? EntityCommandDetail::ResolveTemporary(command->Target.Temporary, result.TemporaryMappings)
-				                           : command->Target.Entity;
+				    ? EntityCommandDetail::ResolveTemporary(command->Target.Temporary, result.TemporaryMappings)
+				    : command->Target.Entity;
 				if (!commandResult.Entity.IsValid())
 				{
 					commandResult.Status =
@@ -160,9 +148,8 @@ namespace ECS
 				{
 					commandResult.Status = EntityCommandStatus::StaleTarget;
 				}
-				else if (
-				    conflictPolicy == EntityCommandConflictPolicy::RejectLaterDeterministicKey && !command->Target.IsTemporary &&
-				    !conflicts.TryClaim(
+				else if (conflictPolicy == EntityCommandConflictPolicy::RejectLaterDeterministicKey && !command->Target.IsTemporary
+				    && !conflicts.TryClaim(
 				        commandResult.Entity,
 				        EntityCommandDetail::GetBufferId(command->Key),
 				        command->Kind,

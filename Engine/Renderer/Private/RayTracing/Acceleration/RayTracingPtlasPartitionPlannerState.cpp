@@ -12,7 +12,7 @@ static const auto g_rayTracingPtlasPartitionPlannerStateLogger =
 
 class RayTracingPtlasPartitionPlannerStateConstants final
 {
-  public:
+public:
 	static constexpr std::uint32_t kMaxPlannerPartitionsPerAxis = 64;
 };
 
@@ -24,9 +24,9 @@ void RayTracingPtlasPartitionPlanner::Clear() noexcept
 
 void RayTracingPtlasPartitionPlanner::ValidateConfig(const RayTracingPtlasPartitionPlannerConfig& config) noexcept
 {
-	if (config.PartitionsPerAxis == 0u ||
-	    config.PartitionsPerAxis > RayTracingPtlasPartitionPlannerStateConstants::kMaxPlannerPartitionsPerAxis ||
-	    config.ModeChangeDistance < 0.0f || config.TransformDirtyEpsilon < 0.0f)
+	if (config.PartitionsPerAxis == 0u
+	    || config.PartitionsPerAxis > RayTracingPtlasPartitionPlannerStateConstants::kMaxPlannerPartitionsPerAxis
+	    || config.ModeChangeDistance < 0.0f || config.TransformDirtyEpsilon < 0.0f)
 	{
 		Diagnostics::Fatal(
 		    g_rayTracingPtlasPartitionPlannerStateLogger,

@@ -18,16 +18,14 @@ struct RhiPresentationConfiguration;
 
 class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionService
 {
-  public:
+public:
 	static std::unique_ptr<RenderDeviceServices> Create(Window& window) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(Window& window, ERhiBackendApi backendApi) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,
 	    ERhiBackendApi backendApi,
 	    RhiInterposerHooks interposerHooks) noexcept;
-	static std::unique_ptr<RenderDeviceServices> Create(
-	    Window& window,
-	    PixelFormat backBufferFormat) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(Window& window, PixelFormat backBufferFormat) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,
 	    ERhiBackendApi backendApi,
@@ -68,7 +66,7 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	void SubmitFrame(std::uint64_t frameId) noexcept;
 	void AdvanceFrameInFlight() noexcept;
 
-  private:
+private:
 	RenderDeviceServices() noexcept;
 	static void FailCreation(std::string_view message) noexcept;
 	static void FailUnsupportedBackend(ERhiBackendApi api) noexcept;

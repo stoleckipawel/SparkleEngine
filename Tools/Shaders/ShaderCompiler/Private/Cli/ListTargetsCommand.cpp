@@ -16,8 +16,8 @@ int ListTargetsCommand::Run(std::span<const std::string_view> args) const
 	}
 
 	for (std::uint16_t candidate = static_cast<std::uint16_t>(ShaderTarget::DxilSm60);
-	     candidate <= static_cast<std::uint16_t>(ShaderTarget::SpirV16);
-	     ++candidate)
+	    candidate <= static_cast<std::uint16_t>(ShaderTarget::SpirV16);
+	    ++candidate)
 	{
 		std::cout << GetShaderTargetName(static_cast<ShaderTarget>(candidate)) << '\n';
 	}

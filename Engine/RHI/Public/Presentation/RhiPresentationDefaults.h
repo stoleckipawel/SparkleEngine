@@ -15,11 +15,8 @@ namespace RhiPresentationDefaults
 	inline constexpr std::uint32_t MinFramesInFlight = 1u;
 	inline constexpr std::uint32_t MaxFramesInFlight = RhiFrameConstants::MaxFrameSlotCount;
 
-	inline constexpr std::array<PixelFormat, 4> SupportedBackBufferFormats = {
-	    PixelFormat::R8G8B8A8_UNorm,
-	    PixelFormat::R8G8B8A8_UNorm_Srgb,
-	    PixelFormat::B8G8R8A8_UNorm,
-	    PixelFormat::B8G8R8A8_UNorm_Srgb};
+	inline constexpr std::array<PixelFormat, 4> SupportedBackBufferFormats =
+	    {PixelFormat::R8G8B8A8_UNorm, PixelFormat::R8G8B8A8_UNorm_Srgb, PixelFormat::B8G8R8A8_UNorm, PixelFormat::B8G8R8A8_UNorm_Srgb};
 
 	constexpr bool IsSupportedBackBufferFormat(PixelFormat format) noexcept
 	{

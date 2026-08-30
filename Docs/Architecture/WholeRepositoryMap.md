@@ -1,7 +1,7 @@
 # D. Whole Repository Architecture Map
 
 Status: current source-backed reviewer map; descriptive, not a normative architecture or strategy contract
-Last verified: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+Last verified: repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-30 against the current worktree based on committed `master` revision `a033c251`
 Scope: implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
 
 ## Intent And Authority
@@ -214,24 +214,26 @@ The catalog also records disabled future Modern Sponza add-ons for Ivy, Trees, F
 | `Tools/Cooking/*Cooker` | texture, mesh, material, scene, and project cook products |
 | `Tools/Support/ToolConsoleSupport` | shared host-tool console support |
 
-The Launcher GUI uses the deployed `RepositoryRoot.txt` as its repository authority. Quick Start projects the level catalog and resolves a requested level/run mode through existing typed sync, build, cook, and final-run capabilities. The Build, Cook, Sync, and Clean pages project those same backend operations; they do not own parallel implementations.
+The Launcher GUI uses the deployed `RepositoryRoot.txt` as its repository authority. `LauncherMainWindow` remains the lifecycle and composition shell; `LauncherWorkflowPanel` owns workflow-catalog navigation and selection state, while `LauncherActivityPanel` owns the in-memory run list and output presentation. Quick Start projects the level catalog and resolves a requested level/run mode through existing typed sync, build, cook, and final-run capabilities. The Build, Cook, Sync, and Clean pages project those same backend operations; they do not own parallel implementations.
 
 `ShowcaseEditor` links the editor host and `ShowcaseRuntime` links the runtime host. Distribution packaging remains manual and outside Launcher ownership.
 
 ## Validation And Evidence Boundaries
 
 - `architecture_boundary_check` is mandatory when Renderer/RHI boundaries change.
+- `code_style_check` checks present tracked owned C++, headers, HLSL, and HLSLI with clang-format 22.1.3 plus the authored rules clang-format cannot enforce. The C/C++ subset is baseline-clean; the all-source target intentionally remains failing until the shader acceptance gate permits shader migration.
 - `ShaderCompilerCliValidation` is a focused custom target owned by the ShaderCompiler build.
 - No active CTest registration is present in the verified source tree; do not infer an automated suite from local generated build artifacts.
 - Generated build, cooked, log, capture, and validation artifacts are evidence only when their revision, configuration, command, hardware/runtime provenance, and result are recorded.
 - A responsive process, source reachability, successful configure, or one backend does not prove visual correctness, parity, performance, or shipment.
 
-This documentation reconciliation is a static source/build-configuration audit. It does not add build, cook, runtime, capture, or performance evidence for the implementation state at `99af6d5b` or the documentation-only repository state at `20814381`.
+The repository-wide documentation reconciliation remains a static source/build-configuration audit. The 2026-08-30 Launcher ownership update adds a focused `SparkleLauncher` `DevelopmentEditor` target-build result, and the code-style migration adds a passing C/C++ format check. Shader validation is blocked before migration, so neither update adds shader-cook, runtime, capture, performance, or whole-repository build evidence.
 
 ## Primary Source Routes
 
 - `CMakeLists.txt`, `Engine/CMakeLists.txt`, and each module/tool `CMakeLists.txt`
 - `CMake/ArchitectureBoundaryCheck.cmake`
+- `CMake/CodeStyle.ps1`
 - `Engine/Application/Public/RuntimeApplication.h`
 - `Engine/GameFramework/Public/World/GameWorld.h`
 - `Engine/GameFramework/Public/Rendering/RenderFrameSubmission.h`

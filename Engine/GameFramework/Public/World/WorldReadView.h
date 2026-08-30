@@ -57,7 +57,7 @@ struct WorldMeshReadData final
 
 class SPARKLE_ENGINE_API WorldReadView final
 {
-  public:
+public:
 	WorldReadView() noexcept = default;
 	bool IsValid() const noexcept { return m_storage != nullptr; }
 	std::uint64_t GetGeneration() const noexcept;
@@ -67,9 +67,12 @@ class SPARKLE_ENGINE_API WorldReadView final
 	std::span<const WorldMeshReadData> GetMeshes() const noexcept;
 	const std::optional<SkyEnvironment>& GetSkyEnvironment() const noexcept;
 
-  private:
+private:
 	struct Storage;
 	friend class ECS::GameWorldState;
-	explicit WorldReadView(std::shared_ptr<const Storage> storage) noexcept : m_storage(std::move(storage)) {}
+	explicit WorldReadView(std::shared_ptr<const Storage> storage) noexcept :
+	    m_storage(std::move(storage))
+	{
+	}
 	std::shared_ptr<const Storage> m_storage;
 };

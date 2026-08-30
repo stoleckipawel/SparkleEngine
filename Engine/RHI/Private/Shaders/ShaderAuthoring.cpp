@@ -12,8 +12,7 @@
 ShaderTypeId BuildShaderTypeId(std::string_view shaderName) noexcept
 {
 	constexpr std::string_view shaderTypeDomain = "Sparkle.ShaderType|";
-	std::uint64_t hash =
-	    Hash::ContinueFnv1a64(Hash::kFnv64OffsetBasis, shaderTypeDomain.data(), shaderTypeDomain.size());
+	std::uint64_t hash = Hash::ContinueFnv1a64(Hash::kFnv64OffsetBasis, shaderTypeDomain.data(), shaderTypeDomain.size());
 	hash = Hash::ContinueFnv1a64(hash, shaderName.data(), shaderName.size());
 	return Hash::FinalizeFnv1a64(hash);
 }
@@ -66,20 +65,15 @@ std::span<const ShaderRegistrationDesc> GlobalShaderRegistry::GetRegistrations()
 const ShaderRegistrationDesc* GlobalShaderRegistry::FindByName(std::string_view shaderName) noexcept
 {
 	const std::span<const ShaderRegistrationDesc> registrations = GetRegistrations();
-	const auto found = std::ranges::find_if(
-	    registrations,
-	    [shaderName](const ShaderRegistrationDesc& desc) { return desc.ShaderName == shaderName; });
+	const auto found =
+	    std::ranges::find_if(registrations, [shaderName](const ShaderRegistrationDesc& desc) { return desc.ShaderName == shaderName; });
 	return found != registrations.end() ? &*found : nullptr;
 }
 
 const ShaderRegistrationDesc* GlobalShaderRegistry::FindById(ShaderTypeId shaderType) noexcept
 {
 	const std::span<const ShaderRegistrationDesc> registrations = GetRegistrations();
-	const auto found = std::ranges::lower_bound(
-	    registrations,
-	    shaderType,
-	    {},
-	    &ShaderRegistrationDesc::TypeId);
+	const auto found = std::ranges::lower_bound(registrations, shaderType, {}, &ShaderRegistrationDesc::TypeId);
 	return found != registrations.end() && found->TypeId == shaderType ? &*found : nullptr;
 }
 

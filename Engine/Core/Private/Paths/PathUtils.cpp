@@ -125,8 +125,8 @@ namespace Paths
 		result.reserve(value.size());
 		for (const char character : value)
 		{
-			const bool allowed = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ||
-			                     (character >= '0' && character <= '9') || character == '_' || character == '-' || character == '.';
+			const bool allowed = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z')
+			    || (character >= '0' && character <= '9') || character == '_' || character == '-' || character == '.';
 			result.push_back(allowed ? character : '_');
 		}
 		return result;
@@ -141,14 +141,7 @@ namespace Paths
 		}
 
 		std::wstring key = normalizedPath.generic_wstring();
-		std::transform(
-		    key.begin(),
-		    key.end(),
-		    key.begin(),
-		    [](wchar_t value)
-		    {
-			    return static_cast<wchar_t>(std::towlower(value));
-		    });
+		std::transform(key.begin(), key.end(), key.begin(), [](wchar_t value) { return static_cast<wchar_t>(std::towlower(value)); });
 		return key;
 	}
 
@@ -159,10 +152,7 @@ namespace Paths
 		    extension.begin(),
 		    extension.end(),
 		    extension.begin(),
-		    [](wchar_t value)
-		    {
-			    return static_cast<wchar_t>(std::towlower(value));
-		    });
+		    [](wchar_t value) { return static_cast<wchar_t>(std::towlower(value)); });
 		return extension;
 	}
 }

@@ -18,9 +18,9 @@ struct SPARKLE_CORE_API ConsoleParsedInput final
 
 class SPARKLE_CORE_API ConsoleInputParser final
 {
-  public:
+public:
 	static ConsoleParsedInput Parse(std::string_view input);
 
-  private:
+private:
 	static ConsoleParsedInput Fail(std::string errorMessage);
 };

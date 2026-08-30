@@ -80,10 +80,7 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 		const GlobalShaderMapEntry* entry = map.Find(selection, target);
 		const CookedShaderCodeRecord* code = entry != nullptr ? library.Find(entry->CodeHash) : nullptr;
 		runtime->m_shaders.push_back(ResolvedShader{.Map = &map, .Library = &library, .Entry = entry, .Code = code});
-		exports.push_back(
-		    RhiRayTracingShaderExportDesc{
-		        .Shader = &runtime->m_shaders.back(),
-		        .ExportName = registration.EntryPoint});
+		exports.push_back(RhiRayTracingShaderExportDesc{.Shader = &runtime->m_shaders.back(), .ExportName = registration.EntryPoint});
 		PipelineRuntimeLibrary::ValidateShaderCapabilities(renderHardwareInterface, registration.ShaderName, runtime->m_shaders.back());
 	}
 
@@ -107,12 +104,10 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 	for (const RayTracingHitGroupComposition& group : composition.GetHitGroups())
 	{
 		const ShaderRegistrationDesc& closestHit = RayTracingRuntimeMaterialization::GetRegistration(group.ClosestHit);
-		const ShaderRegistrationDesc* anyHit = group.AnyHit != 0
-		    ? &RayTracingRuntimeMaterialization::GetRegistration(group.AnyHit)
-		    : nullptr;
-		const ShaderRegistrationDesc* intersection = group.Intersection != 0
-		    ? &RayTracingRuntimeMaterialization::GetRegistration(group.Intersection)
-		    : nullptr;
+		const ShaderRegistrationDesc* anyHit =
+		    group.AnyHit != 0 ? &RayTracingRuntimeMaterialization::GetRegistration(group.AnyHit) : nullptr;
+		const ShaderRegistrationDesc* intersection =
+		    group.Intersection != 0 ? &RayTracingRuntimeMaterialization::GetRegistration(group.Intersection) : nullptr;
 		hitGroups.push_back(
 		    RhiRayTracingHitGroupDesc{
 		        .ExportName = group.ExportName,
@@ -193,8 +188,7 @@ std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTa
 	recordGroups.reserve(plan.GetRecords().size());
 	for (const RayTracingShaderTableRecordPlan& record : plan.GetRecords())
 	{
-		recordGroups.push_back(
-		    record.HitGroup == RayTracingShaderTableHitGroup::AlphaTested ? alphaTestedGroup : opaqueGroup);
+		recordGroups.push_back(record.HitGroup == RayTracingShaderTableHitGroup::AlphaTested ? alphaTestedGroup : opaqueGroup);
 	}
 	return CreateShaderTable(renderHardwareInterface, composition, recordGroups);
 }
@@ -220,8 +214,7 @@ std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTa
 	callableRecords.reserve(composition.GetCallableShaders().size());
 	for (ShaderTypeId miss : composition.GetMissShaders())
 	{
-		missRecords.push_back(
-		    RhiRayTracingShaderRecord{.ExportName = RayTracingRuntimeMaterialization::GetRegistration(miss).EntryPoint});
+		missRecords.push_back(RhiRayTracingShaderRecord{.ExportName = RayTracingRuntimeMaterialization::GetRegistration(miss).EntryPoint});
 	}
 	for (const RayTracingHitGroupComposition* group : recordGroups)
 	{

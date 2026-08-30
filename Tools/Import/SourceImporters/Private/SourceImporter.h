@@ -7,12 +7,10 @@
 
 class SourceImporter
 {
-  public:
+public:
 	virtual ~SourceImporter();
 
 	virtual std::string_view GetImporterId() const noexcept = 0;
 	virtual bool SupportsExtension(std::wstring_view extension) const noexcept = 0;
 	virtual SourceImportOutput Import(const std::filesystem::path& filePath) const = 0;
 };
-
-

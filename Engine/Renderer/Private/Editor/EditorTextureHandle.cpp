@@ -13,9 +13,7 @@ std::uint64_t EditorTextureHandle::Pack() const noexcept
 
 EditorTextureHandle EditorTextureHandle::Unpack(std::uint64_t value) noexcept
 {
-	return EditorTextureHandle{
-	    .Slot = static_cast<std::uint32_t>(value),
-	    .Generation = static_cast<std::uint32_t>(value >> 32u)};
+	return EditorTextureHandle{.Slot = static_cast<std::uint32_t>(value), .Generation = static_cast<std::uint32_t>(value >> 32u)};
 }
 
 EditorTextureHandle EditorTextureHandle::ImGuiTexture(std::uint32_t uniqueId) noexcept
@@ -34,9 +32,7 @@ EditorTextureHandle EditorTextureHandle::Viewport(std::uint64_t generation) noex
 	{
 		return {};
 	}
-	return EditorTextureHandle{
-	    .Slot = 2,
-	    .Generation = static_cast<std::uint32_t>(generation)};
+	return EditorTextureHandle{.Slot = 2, .Generation = static_cast<std::uint32_t>(generation)};
 }
 
 bool EditorTextureHandle::IsImGuiTexture() const noexcept

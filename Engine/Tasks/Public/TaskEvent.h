@@ -7,13 +7,13 @@
 
 class SPARKLE_TASKS_API TaskEventToken final
 {
-  public:
+public:
 	TaskEventToken() noexcept;
 	bool IsValid() const noexcept { return m_identity != 0 && m_generation != 0; }
 	explicit operator bool() const noexcept { return IsValid(); }
 	bool operator==(const TaskEventToken&) const noexcept;
 
-  private:
+private:
 	friend class TaskEvent;
 	TaskEventToken(std::uint64_t identity, std::uint64_t generation) noexcept;
 
@@ -23,7 +23,7 @@ class SPARKLE_TASKS_API TaskEventToken final
 
 class SPARKLE_TASKS_API TaskEvent final
 {
-  public:
+public:
 	TaskEvent();
 	~TaskEvent();
 
@@ -37,7 +37,7 @@ class SPARKLE_TASKS_API TaskEvent final
 	TaskEventToken Reset() noexcept;
 	TaskResult Wait(TaskEventToken token, TaskExecutionContext& context);
 
-  private:
+private:
 	struct State;
 	std::shared_ptr<State> m_state;
 };

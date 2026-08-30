@@ -7,7 +7,7 @@
 
 class VulkanDebugNames final
 {
-  public:
+public:
 	VulkanDebugNames() = delete;
 
 	static bool SetObjectName(

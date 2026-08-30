@@ -6,12 +6,11 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
 
-static const auto g_sceneAssetMeshInstanceBuilderLogger =
-    Logging::GetOrCreateLogger("GameFramework.SceneAssetMeshInstanceBuilder");
+static const auto g_sceneAssetMeshInstanceBuilderLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssetMeshInstanceBuilder");
 
 class SceneAssetMaterialResolution final
 {
-  public:
+public:
 	static MaterialHandle ResolveMaterial(
 	    MaterialHandle payloadMaterial,
 	    MaterialHandle materialBaseHandle,
@@ -49,9 +48,7 @@ class SceneAssetMaterialResolution final
 		return MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex(), materialBaseHandle.GetGeneration());
 	}
 
-	static Assets::CookedAssetId ResolveGroupAsset(
-	    const SceneAssetPayload& payload,
-	    const SceneAssetPayload::MeshInstanceGroup& group)
+	static Assets::CookedAssetId ResolveGroupAsset(const SceneAssetPayload& payload, const SceneAssetPayload::MeshInstanceGroup& group)
 	{
 		if (group.meshAssetKind == Assets::CookedMeshAssetKind::Skeletal)
 		{
@@ -107,8 +104,8 @@ namespace SceneAssetMeshInstanceBuilder
 			}
 			const SceneAssetPayload::StaticMeshAsset& asset = payload.staticMeshAssets[instance.meshAssetIndex];
 			const SceneMeshInstanceGroupIndex groupIndex = instance.groupIndex == kInvalidSceneMeshInstanceGroupIndex
-			                                                   ? kInvalidSceneMeshInstanceGroupIndex
-			                                                   : groupBaseIndex + instance.groupIndex;
+			    ? kInvalidSceneMeshInstanceGroupIndex
+			    : groupBaseIndex + instance.groupIndex;
 			instances.push_back(
 			    ECS::SceneMeshInstanceData{
 			        .Resource = std::make_unique<CookedMesh>(MeshData(asset.mesh.geometry), asset.assetId),

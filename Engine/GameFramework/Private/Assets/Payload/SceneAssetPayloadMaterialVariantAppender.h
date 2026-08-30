@@ -7,7 +7,7 @@ namespace Assets
 {
 	class SceneAssetPayloadMaterialVariantAppender final
 	{
-	  public:
+	public:
 		static void AppendMaterialVariants(
 		    const LoadedSceneManifest& sceneManifest,
 		    std::span<const SceneAssetPayloadMeshBinding> meshAssetBindings,

@@ -13,8 +13,11 @@ namespace Files
 {
 	class BinarySpanReader final
 	{
-	  public:
-		explicit BinarySpanReader(std::span<const std::uint8_t> bytes) noexcept : m_bytes(bytes) {}
+	public:
+		explicit BinarySpanReader(std::span<const std::uint8_t> bytes) noexcept :
+		    m_bytes(bytes)
+		{
+		}
 
 		template <typename T> bool ReadValue(T& outValue, std::string& outErrorMessage)
 		{
@@ -128,7 +131,7 @@ namespace Files
 		std::size_t GetOffset() const noexcept { return m_offset; }
 		std::size_t GetRemainingByteCount() const noexcept { return m_bytes.size() - m_offset; }
 
-	  private:
+	private:
 		template <typename T> static bool TryGetArrayByteCount(std::size_t elementCount, std::string& outErrorMessage)
 		{
 			if constexpr (sizeof(T) > 0)
@@ -147,4 +150,4 @@ namespace Files
 		std::span<const std::uint8_t> m_bytes;
 		std::size_t m_offset = 0;
 	};
-}  // namespace Files
+}

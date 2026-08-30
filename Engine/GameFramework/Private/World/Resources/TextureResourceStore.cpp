@@ -6,10 +6,8 @@
 
 class RenderTextureTableBuilder final
 {
-  public:
-	static RenderTextureTable BuildRenderTextureTable(
-	    std::span<const std::filesystem::path> paths,
-	    std::uint32_t generation)
+public:
+	static RenderTextureTable BuildRenderTextureTable(std::span<const std::filesystem::path> paths, std::uint32_t generation)
 	{
 		RenderTextureTable table;
 		table.Generation = generation;
@@ -34,7 +32,8 @@ void TextureResourceStore::AppendPaths(std::span<const std::filesystem::path> pa
 {
 	const std::size_t previousCount = m_paths.size();
 	Filesystem::AppendNormalizedAssetPaths(paths, AssetType::Texture, m_paths);
-	if (m_paths.size() != previousCount) ++m_contentRevision;
+	if (m_paths.size() != previousCount)
+		++m_contentRevision;
 }
 
 RenderTextureTable TextureResourceStore::CaptureRenderTable() const

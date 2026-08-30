@@ -27,17 +27,18 @@ static const auto g_d3d12RenderDiagnosticsLogger = Logging::GetOrCreateLogger("R
 
 class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 {
-  public:
+public:
 	bool SupportsObjectNames() const noexcept override { return true; }
 
 	void SetDebugName(const RenderCommandList& commandList, std::wstring_view debugName) noexcept override
 	{
 		SetD3D12ObjectDebugName(
-		    static_cast<ID3D12Object*>(commandList.GetNativeHandle(
-		                                       RhiNativeInteropRequest{
-		                                           .Consumer = ERhiNativeInteropConsumer::Diagnostics,
-		                                           .Reason = "Assign D3D12 command list debug name"})
-		                                       .Value),
+		    static_cast<ID3D12Object*>(commandList
+		            .GetNativeHandle(
+		                RhiNativeInteropRequest{
+		                    .Consumer = ERhiNativeInteropConsumer::Diagnostics,
+		                    .Reason = "Assign D3D12 command list debug name"})
+		            .Value),
 		    debugName);
 	}
 
@@ -65,7 +66,7 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 		}
 	}
 
-  private:
+private:
 	static void SetD3D12ObjectDebugName(ID3D12Object* object, std::wstring_view debugName) noexcept
 	{
 		if (object == nullptr || debugName.empty())
@@ -80,7 +81,7 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 
 class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 {
-  public:
+public:
 	D3D12RenderTimingDiagnostics(D3D12Rhi& rhi, std::uint32_t maximumFramesInFlight) noexcept :
 	    m_rhi(rhi),
 	    m_maximumFramesInFlight(maximumFramesInFlight),
@@ -105,7 +106,11 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 		const std::uint32_t frameIndex = m_rhi.GetCurrentFrameIndex();
 		if (frameIndex >= m_maximumFramesInFlight)
 		{
-			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query addressed an invalid frame slot.");
+			Diagnostics::Fatal(
+			    g_d3d12RenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "D3D12 timestamp query addressed an invalid frame slot.");
 		}
 
 		const std::uint32_t poolIndex = GetPoolIndex(frameIndex, queueType);
@@ -128,14 +133,15 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 		PoolTimingState& poolState = m_poolStates[location.PoolIndex];
 		if (commandList.GetQueueType() != poolState.QueueType)
 		{
-			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query was written on a different queue than it was allocated for.");
+			Diagnostics::Fatal(
+			    g_d3d12RenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "D3D12 timestamp query was written on a different queue than it was allocated for.");
 		}
 
-		ID3D12GraphicsCommandList* const nativeCommandList =
-		    D3D12TypeConversions::ToGraphicsCommandList(commandList.GetNativeHandle(
-		        RhiNativeInteropRequest{
-		            .Consumer = ERhiNativeInteropConsumer::Diagnostics,
-		            .Reason = "Write D3D12 timestamp query"}));
+		ID3D12GraphicsCommandList* const nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(commandList.GetNativeHandle(
+		    RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Diagnostics, .Reason = "Write D3D12 timestamp query"}));
 		if (nativeCommandList == nullptr)
 		{
 			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query has no native command list.");
@@ -166,7 +172,7 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 	}
 	std::uint32_t GetTimestampValidBits(RhiTimestampQueryHandle) const noexcept override { return 64; }
 
-  private:
+private:
 	static constexpr std::uint32_t kQueriesPerQueuePerFrame = 4096;
 
 	struct PoolTimingState
@@ -203,10 +209,14 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 	{
 		PoolTimingState& poolState = m_poolStates[GetPoolIndex(frameIndex, queueType)];
 		poolState.QueueType = queueType;
-		if (FAILED(m_rhi.GetCommandQueue(queueType)->GetTimestampFrequency(&poolState.TimestampFrequencyHz)) ||
-		    poolState.TimestampFrequencyHz == 0)
+		if (FAILED(m_rhi.GetCommandQueue(queueType)->GetTimestampFrequency(&poolState.TimestampFrequencyHz))
+		    || poolState.TimestampFrequencyHz == 0)
 		{
-			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 command queue does not expose a timestamp frequency.");
+			Diagnostics::Fatal(
+			    g_d3d12RenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "D3D12 command queue does not expose a timestamp frequency.");
 		}
 
 		const D3D12_QUERY_HEAP_DESC queryHeapDesc{
@@ -254,8 +264,11 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 
 class D3D12RenderMessageDiagnostics final : public RenderMessageDiagnostics
 {
-  public:
-	explicit D3D12RenderMessageDiagnostics(D3D12Rhi& rhi) noexcept : m_rhi(rhi) {}
+public:
+	explicit D3D12RenderMessageDiagnostics(D3D12Rhi& rhi) noexcept :
+	    m_rhi(rhi)
+	{
+	}
 
 	bool SupportsDebugMessages() const noexcept override { return m_rhi.SupportsDebugMessages(); }
 
@@ -263,14 +276,17 @@ class D3D12RenderMessageDiagnostics final : public RenderMessageDiagnostics
 
 	void ClearMessages() noexcept override { m_rhi.ClearDebugMessages(); }
 
-  private:
+private:
 	D3D12Rhi& m_rhi;
 };
 
 class D3D12RenderFailureDiagnostics final : public RenderFailureDiagnostics
 {
-  public:
-	explicit D3D12RenderFailureDiagnostics(D3D12Rhi& rhi) noexcept : m_rhi(rhi) {}
+public:
+	explicit D3D12RenderFailureDiagnostics(D3D12Rhi& rhi) noexcept :
+	    m_rhi(rhi)
+	{
+	}
 
 	bool SupportsLiveObjectReports() const noexcept override { return m_rhi.SupportsLiveObjectReports(); }
 
@@ -280,14 +296,17 @@ class D3D12RenderFailureDiagnostics final : public RenderFailureDiagnostics
 
 	void CollectCrashDiagnostics() noexcept override { m_rhi.CollectCrashDiagnostics(); }
 
-  private:
+private:
 	D3D12Rhi& m_rhi;
 };
 
 class D3D12RenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 {
-  public:
-	explicit D3D12RenderMemoryDiagnostics(D3D12GpuMemoryAllocator& allocator) noexcept : m_allocator(allocator) {}
+public:
+	explicit D3D12RenderMemoryDiagnostics(D3D12GpuMemoryAllocator& allocator) noexcept :
+	    m_allocator(allocator)
+	{
+	}
 
 	bool SupportsBudgetQueries() const noexcept override { return m_allocator.SupportsBudgetQueries(); }
 
@@ -295,13 +314,11 @@ class D3D12RenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 
 	RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const override { return m_allocator.CreateMemoryUsageSnapshot(); }
 
-  private:
+private:
 	D3D12GpuMemoryAllocator& m_allocator;
 };
 
-std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(
-    D3D12Rhi& rhi,
-    std::uint32_t maximumFramesInFlight)
+std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(D3D12Rhi& rhi, std::uint32_t maximumFramesInFlight)
 {
 	return CreateRhiDiagnosticsComposition(
 	    std::make_unique<D3D12RenderObjectDiagnostics>(),

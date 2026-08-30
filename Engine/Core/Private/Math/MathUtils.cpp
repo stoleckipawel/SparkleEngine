@@ -20,10 +20,7 @@ namespace MathUtils
 		return (value + alignment - 1) & ~(alignment - 1);
 	}
 
-	DirectX::XMFLOAT3 Normalize3(
-	    const DirectX::XMFLOAT3& value,
-	    const DirectX::XMFLOAT3& fallback,
-	    float epsilon)
+	DirectX::XMFLOAT3 Normalize3(const DirectX::XMFLOAT3& value, const DirectX::XMFLOAT3& fallback, float epsilon)
 	{
 		const float lengthSquared = value.x * value.x + value.y * value.y + value.z * value.z;
 		if (lengthSquared < epsilon)
@@ -57,11 +54,7 @@ namespace MathUtils
 
 	DirectX::XMFLOAT4X4 IdentityFloat4x4() noexcept
 	{
-		return {
-		    1.0f, 0.0f, 0.0f, 0.0f,
-		    0.0f, 1.0f, 0.0f, 0.0f,
-		    0.0f, 0.0f, 1.0f, 0.0f,
-		    0.0f, 0.0f, 0.0f, 1.0f};
+		return {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 	}
 
 	DirectX::XMFLOAT3 DirectionToRotationDegrees(const DirectX::XMFLOAT3& direction) noexcept
@@ -99,4 +92,4 @@ namespace MathUtils
 
 		return {pitch, yaw, roll};
 	}
-}  // namespace MathUtils
+}

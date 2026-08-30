@@ -55,11 +55,12 @@ bool VulkanUploadService::CopyTextureUploadData(
 			        .bufferOffset = offset,
 			        .bufferRowLength = 0,
 			        .bufferImageHeight = 0,
-			        .imageSubresource = VkImageSubresourceLayers{
-			            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-			            .mipLevel = mipIndex,
-			            .baseArrayLayer = arrayLayer,
-			            .layerCount = 1},
+			        .imageSubresource =
+			            VkImageSubresourceLayers{
+			                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			                .mipLevel = mipIndex,
+			                .baseArrayLayer = arrayLayer,
+			                .layerCount = 1},
 			        .imageOffset = {},
 			        .imageExtent = VkExtent3D{.width = mipLevel.Width, .height = mipLevel.Height, .depth = 1}});
 			offset += mipLevel.Data.size();
@@ -68,9 +69,8 @@ bool VulkanUploadService::CopyTextureUploadData(
 	return regions.size() == textureUpload.GetSubresourceCount();
 }
 
-VulkanUploadService::VulkanUploadService(
-    VulkanGpuMemoryAllocator& memoryAllocator) :
-	m_memoryAllocator(&memoryAllocator)
+VulkanUploadService::VulkanUploadService(VulkanGpuMemoryAllocator& memoryAllocator) :
+    m_memoryAllocator(&memoryAllocator)
 {
 }
 
@@ -86,8 +86,7 @@ RhiGpuVirtualAddress VulkanUploadService::AllocateUniformConstantBuffer(
 		return {};
 	}
 
-	return static_cast<VulkanRenderCommandList&>(commandList)
-	    .AllocateUniformConstantBuffer(data, sizeInBytes);
+	return static_cast<VulkanRenderCommandList&>(commandList).AllocateUniformConstantBuffer(data, sizeInBytes);
 }
 
 bool VulkanUploadService::UploadBuffer(
@@ -97,42 +96,24 @@ bool VulkanUploadService::UploadBuffer(
     ResourceState finalState,
     std::wstring_view debugName)
 {
-	VulkanGpuAllocationRecord* const destinationRecord =
-	    GetVulkanGpuAllocationRecord(destination);
-	if (!ValidateBufferUploadRequest(
-	        commandList,
-	        destinationRecord,
-	        data))
+	VulkanGpuAllocationRecord* const destinationRecord = GetVulkanGpuAllocationRecord(destination);
+	if (!ValidateBufferUploadRequest(commandList, destinationRecord, data))
 	{
 		return false;
 	}
 
-	auto stagingResource =
-	    CreateBufferStagingResource(
-	        data,
-	        debugName);
+	auto stagingResource = CreateBufferStagingResource(data, debugName);
 	if (stagingResource == nullptr)
 	{
 		return false;
 	}
 
-	auto& vulkanCommandList =
-	    static_cast<VulkanRenderCommandList&>(
-	        commandList);
-	RecordBufferUpload(
-	    vulkanCommandList,
-	    *destinationRecord,
-	    *stagingResource,
-	    data.size(),
-	    finalState);
+	auto& vulkanCommandList = static_cast<VulkanRenderCommandList&>(commandList);
+	RecordBufferUpload(vulkanCommandList, *destinationRecord, *stagingResource, data.size(), finalState);
 
-	commandList.TrackResource(
-	    RhiResourceHandle{
-	        destinationRecord->Buffer});
-	vulkanCommandList.TrackTransientAllocation(
-	    *stagingResource);
-	m_memoryAllocator->QueueDestroyResource(
-	    std::move(stagingResource));
+	commandList.TrackResource(RhiResourceHandle{destinationRecord->Buffer});
+	vulkanCommandList.TrackTransientAllocation(*stagingResource);
+	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource));
 	return true;
 }
 
@@ -151,21 +132,14 @@ bool VulkanUploadService::UploadTexture(
 
 	std::vector<VkBufferImageCopy> copyRegions;
 	copyRegions.reserve(textureUpload.GetSubresourceCount());
-	std::unique_ptr<VulkanGpuAllocationRecord> stagingResource =
-	    CreateTextureStagingResource(textureUpload, debugName, copyRegions);
+	std::unique_ptr<VulkanGpuAllocationRecord> stagingResource = CreateTextureStagingResource(textureUpload, debugName, copyRegions);
 	if (stagingResource == nullptr)
 	{
 		return false;
 	}
 
 	auto& vulkanCommandList = static_cast<VulkanRenderCommandList&>(commandList);
-	RecordTextureUpload(
-	    vulkanCommandList,
-	    *destinationRecord,
-	    *stagingResource,
-	    textureUpload,
-	    copyRegions,
-	    finalState);
+	RecordTextureUpload(vulkanCommandList, *destinationRecord, *stagingResource, textureUpload, copyRegions, finalState);
 
 	commandList.TrackResource(RhiResourceHandle{destinationRecord->Image});
 	vulkanCommandList.TrackTransientAllocation(*stagingResource);
@@ -178,58 +152,37 @@ bool VulkanUploadService::ValidateBufferUploadRequest(
     const VulkanGpuAllocationRecord* destination,
     std::span<const std::byte> data) const noexcept
 {
-	if (m_memoryAllocator == nullptr ||
-	    destination == nullptr ||
-	    destination->Buffer == VK_NULL_HANDLE ||
-	    data.empty() ||
-	    data.size() >
-	        destination->ResourceSizeInBytes ||
-	    commandList.GetBackendApi() !=
-	        ERhiBackendApi::Vulkan)
+	if (m_memoryAllocator == nullptr || destination == nullptr || destination->Buffer == VK_NULL_HANDLE || data.empty()
+	    || data.size() > destination->ResourceSizeInBytes || commandList.GetBackendApi() != ERhiBackendApi::Vulkan)
 	{
 		return false;
 	}
 
-	const auto& vulkanCommandList =
-	    static_cast<
-	        const VulkanRenderCommandList&>(
-	        commandList);
-	return vulkanCommandList.GetVulkanCommandBuffer() !=
-	           VK_NULL_HANDLE &&
-	       vulkanCommandList.IsRecording() &&
-	       vulkanCommandList.IsCoordinatorRecording();
+	const auto& vulkanCommandList = static_cast<const VulkanRenderCommandList&>(commandList);
+	return vulkanCommandList.GetVulkanCommandBuffer() != VK_NULL_HANDLE && vulkanCommandList.IsRecording()
+	    && vulkanCommandList.IsCoordinatorRecording();
 }
 
-std::unique_ptr<VulkanGpuAllocationRecord>
-VulkanUploadService::CreateBufferStagingResource(
+std::unique_ptr<VulkanGpuAllocationRecord> VulkanUploadService::CreateBufferStagingResource(
     std::span<const std::byte> data,
     std::wstring_view debugName)
 {
 	const VkBufferCreateInfo desc{
-	    .sType =
-	        VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 	    .pNext = nullptr,
 	    .flags = 0,
 	    .size = data.size(),
 	    .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-	    .sharingMode =
-	        VK_SHARING_MODE_EXCLUSIVE,
+	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	    .queueFamilyIndexCount = 0,
 	    .pQueueFamilyIndices = nullptr};
-	auto stagingResource =
-	    m_memoryAllocator->CreateBuffer(
-	        desc,
-	        RhiMemoryCategory::Upload,
-	        RhiMemoryResidencyClass::HostUpload,
-	        debugName.empty()
-	            ? L"BufferUpload"
-	            : debugName);
-	if (stagingResource == nullptr ||
-	    stagingResource->Buffer == VK_NULL_HANDLE ||
-	    !m_memoryAllocator->WriteAllocation(
-	        *stagingResource,
-	        data.data(),
-	        data.size()))
+	auto stagingResource = m_memoryAllocator->CreateBuffer(
+	    desc,
+	    RhiMemoryCategory::Upload,
+	    RhiMemoryResidencyClass::HostUpload,
+	    debugName.empty() ? L"BufferUpload" : debugName);
+	if (stagingResource == nullptr || stagingResource->Buffer == VK_NULL_HANDLE
+	    || !m_memoryAllocator->WriteAllocation(*stagingResource, data.data(), data.size()))
 	{
 		return {};
 	}
@@ -244,55 +197,30 @@ void VulkanUploadService::RecordBufferUpload(
     std::uint64_t sizeInBytes,
     ResourceState finalState) noexcept
 {
-	const VkCommandBuffer commandBuffer =
-	    commandList.GetVulkanCommandBuffer();
-	const VkBufferCopy region{
-	    .srcOffset = 0,
-	    .dstOffset = 0,
-	    .size = sizeInBytes};
-	vkCmdCopyBuffer(
-	    commandBuffer,
-	    stagingResource.Buffer,
-	    destination.Buffer,
-	    1,
-	    &region);
+	const VkCommandBuffer commandBuffer = commandList.GetVulkanCommandBuffer();
+	const VkBufferCopy region{.srcOffset = 0, .dstOffset = 0, .size = sizeInBytes};
+	vkCmdCopyBuffer(commandBuffer, stagingResource.Buffer, destination.Buffer, 1, &region);
 
-	const ResourceState submittedFinalState =
-	    commandList.GetQueueType() ==
-	            ERhiQueueType::Copy
-	        ? ResourceState::Common
-	        : finalState;
-	const VulkanResourceStateMapping finalStateMapping =
-	    VulkanTypeConversions::ToResourceStateMapping(
-	        submittedFinalState);
+	const ResourceState submittedFinalState = commandList.GetQueueType() == ERhiQueueType::Copy ? ResourceState::Common : finalState;
+	const VulkanResourceStateMapping finalStateMapping = VulkanTypeConversions::ToResourceStateMapping(submittedFinalState);
 	const VkBufferMemoryBarrier2 barrier{
-	    .sType =
-	        VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+	    .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
 	    .pNext = nullptr,
-	    .srcStageMask =
-	        VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-	    .srcAccessMask =
-	        VK_ACCESS_2_TRANSFER_WRITE_BIT,
-	    .dstStageMask =
-	        finalStateMapping.StageMask,
-	    .dstAccessMask =
-	        finalStateMapping.AccessMask,
-	    .srcQueueFamilyIndex =
-	        VK_QUEUE_FAMILY_IGNORED,
-	    .dstQueueFamilyIndex =
-	        VK_QUEUE_FAMILY_IGNORED,
+	    .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+	    .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+	    .dstStageMask = finalStateMapping.StageMask,
+	    .dstAccessMask = finalStateMapping.AccessMask,
+	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	    .buffer = destination.Buffer,
 	    .offset = 0,
 	    .size = sizeInBytes};
 	const VkDependencyInfo dependency{
-	    .sType =
-	        VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
 	    .bufferMemoryBarrierCount = 1,
 	    .pBufferMemoryBarriers = &barrier};
-	vkCmdPipelineBarrier2(
-	    commandBuffer,
-	    &dependency);
+	vkCmdPipelineBarrier2(commandBuffer, &dependency);
 }
 
 bool VulkanUploadService::ValidateTextureUploadRequest(
@@ -300,20 +228,15 @@ bool VulkanUploadService::ValidateTextureUploadRequest(
     const VulkanGpuAllocationRecord* destination,
     const RhiTextureUploadDesc& textureUpload) const noexcept
 {
-	if (m_memoryAllocator == nullptr ||
-	    destination == nullptr ||
-	    destination->Image == VK_NULL_HANDLE ||
-	    !textureUpload.IsValid() ||
-	    commandList.GetBackendApi() != ERhiBackendApi::Vulkan)
+	if (m_memoryAllocator == nullptr || destination == nullptr || destination->Image == VK_NULL_HANDLE || !textureUpload.IsValid()
+	    || commandList.GetBackendApi() != ERhiBackendApi::Vulkan)
 	{
 		return false;
 	}
 
-	const auto& vulkanCommandList =
-	    static_cast<const VulkanRenderCommandList&>(commandList);
-	return vulkanCommandList.GetVulkanCommandBuffer() != VK_NULL_HANDLE &&
-	       vulkanCommandList.IsRecording() &&
-	       vulkanCommandList.IsCoordinatorRecording();
+	const auto& vulkanCommandList = static_cast<const VulkanRenderCommandList&>(commandList);
+	return vulkanCommandList.GetVulkanCommandBuffer() != VK_NULL_HANDLE && vulkanCommandList.IsRecording()
+	    && vulkanCommandList.IsCoordinatorRecording();
 }
 
 std::unique_ptr<VulkanGpuAllocationRecord> VulkanUploadService::CreateTextureStagingResource(
@@ -343,8 +266,8 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanUploadService::CreateTextureSta
 	}
 
 	std::vector<std::uint8_t> uploadBytes(static_cast<std::size_t>(uploadBufferBytes));
-	if (!CopyTextureUploadData(textureUpload, uploadBytes, copyRegions) ||
-	    !m_memoryAllocator->WriteAllocation(*stagingResource, uploadBytes.data(), uploadBytes.size()))
+	if (!CopyTextureUploadData(textureUpload, uploadBytes, copyRegions)
+	    || !m_memoryAllocator->WriteAllocation(*stagingResource, uploadBytes.data(), uploadBytes.size()))
 	{
 		return {};
 	}
@@ -394,8 +317,7 @@ void VulkanUploadService::RecordTextureUpload(
 	    static_cast<std::uint32_t>(copyRegions.size()),
 	    copyRegions.data());
 
-	const ResourceState submittedFinalState =
-	    commandList.GetQueueType() == ERhiQueueType::Copy ? ResourceState::Common : finalState;
+	const ResourceState submittedFinalState = commandList.GetQueueType() == ERhiQueueType::Copy ? ResourceState::Common : finalState;
 	const VulkanResourceStateMapping finalStateMapping = VulkanTypeConversions::ToResourceStateMapping(submittedFinalState);
 	const VkImageMemoryBarrier2 toFinalState{
 	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,

@@ -19,7 +19,8 @@ namespace Json
 		return QuoteString(Formatting::FormatHexUInt64(value));
 	}
 
-	ObjectWriter::ObjectWriter(std::string indent) : m_indent(std::move(indent))
+	ObjectWriter::ObjectWriter(std::string indent) :
+	    m_indent(std::move(indent))
 	{
 		m_stream << "{\n";
 	}
@@ -80,4 +81,4 @@ namespace Json
 		stream << "]\n";
 		return stream.str();
 	}
-}  // namespace Json
+}

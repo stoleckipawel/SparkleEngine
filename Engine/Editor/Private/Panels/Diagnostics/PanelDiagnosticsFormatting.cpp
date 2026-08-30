@@ -13,9 +13,12 @@ namespace PanelDiagnosticsFormatting
 		constexpr double KiB = 1024.0;
 		constexpr double MiB = KiB * 1024.0;
 		constexpr double GiB = MiB * 1024.0;
-		if (bytes >= static_cast<std::uint64_t>(GiB)) return std::format("{:.2f} GiB", static_cast<double>(bytes) / GiB);
-		if (bytes >= static_cast<std::uint64_t>(MiB)) return std::format("{:.2f} MiB", static_cast<double>(bytes) / MiB);
-		if (bytes >= static_cast<std::uint64_t>(KiB)) return std::format("{:.1f} KiB", static_cast<double>(bytes) / KiB);
+		if (bytes >= static_cast<std::uint64_t>(GiB))
+			return std::format("{:.2f} GiB", static_cast<double>(bytes) / GiB);
+		if (bytes >= static_cast<std::uint64_t>(MiB))
+			return std::format("{:.2f} MiB", static_cast<double>(bytes) / MiB);
+		if (bytes >= static_cast<std::uint64_t>(KiB))
+			return std::format("{:.1f} KiB", static_cast<double>(bytes) / KiB);
 		return std::format("{} B", bytes);
 	}
 

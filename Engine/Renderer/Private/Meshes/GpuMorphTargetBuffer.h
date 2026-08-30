@@ -16,7 +16,7 @@ struct MeshMorphData;
 // Owns one immutable mesh generation's morph deltas in CPU and GPU forms.
 class GpuMorphTargetBuffer final
 {
-  public:
+public:
 	GpuMorphTargetBuffer() noexcept;
 	~GpuMorphTargetBuffer() noexcept;
 
@@ -37,7 +37,7 @@ class GpuMorphTargetBuffer final
 	std::uint32_t GetTargetCount() const noexcept { return m_targetCount; }
 	bool HasTargets() const noexcept { return m_targetCount > 0u; }
 
-  private:
+private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	RhiOwnedResourceHandle m_buffer = {};
 	RhiResourceViewHandle m_view = {};

@@ -10,12 +10,12 @@ namespace ECS
 
 class GameWorldSceneAssetCommitter final
 {
-  public:
+public:
 	GameWorldSceneAssetCommitter(ECS::GameWorldState& world, GameWorldResourceStores& resources) noexcept;
 
 	void Commit(SceneAssetPayload&& sceneAssetPayload);
 
-  private:
+private:
 	ECS::GameWorldState& m_state;
 	GameWorldResourceStores& m_resources;
 };

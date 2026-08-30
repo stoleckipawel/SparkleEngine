@@ -16,11 +16,11 @@ class CookedSceneGenerationWriter;
 
 class SceneCooker final
 {
-  public:
+public:
 	static CookedSceneIdentity ResolveSceneIdentity(const std::filesystem::path& sourceScenePath);
 	static void BuildManifest(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 
-  private:
+private:
 	friend class CookedSceneGenerationWriter;
 
 	static void StageManifestsAndRegistry(

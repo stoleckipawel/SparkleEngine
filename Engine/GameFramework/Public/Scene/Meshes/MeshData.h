@@ -23,11 +23,18 @@ struct VertexData
 	    const DirectX::XMFLOAT4& col,
 	    const DirectX::XMFLOAT3& norm,
 	    const DirectX::XMFLOAT4& tan) noexcept :
-	    position(pos), uv(tex), color(col), normal(norm), tangent(tan)
+	    position(pos),
+	    uv(tex),
+	    color(col),
+	    normal(norm),
+	    tangent(tan)
 	{
 	}
 
-	constexpr explicit VertexData(const DirectX::XMFLOAT3& pos) noexcept : position(pos) {}
+	constexpr explicit VertexData(const DirectX::XMFLOAT3& pos) noexcept :
+	    position(pos)
+	{
+	}
 };
 
 static_assert(std::is_trivially_copyable_v<VertexData>, "VertexData must be trivially copyable for GPU upload");

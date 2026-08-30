@@ -16,11 +16,11 @@ struct ConsoleCommandResult;
 
 class SPARKLE_CORE_API ConsoleBuiltinCommands final
 {
-  public:
+public:
 	static void Register(ConsoleCommandRegistry& commandRegistry, ConsoleVariableRegistry& cvarRegistry);
 	static void Register(ConsoleCommandRegistry& commandRegistry);
 
-  private:
+private:
 	static ConsoleCommandResult ExecuteHelp(
 	    const ConsoleCommandRegistry& commandRegistry,
 	    ConsoleCommandScope scope,

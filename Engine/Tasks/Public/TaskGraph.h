@@ -17,14 +17,14 @@ class TaskExecutor;
 
 class SPARKLE_TASKS_API TaskNodeHandle final
 {
-  public:
+public:
 	TaskNodeHandle() noexcept;
 
 	bool IsValid() const noexcept { return m_indexPlusOne != 0; }
 	explicit operator bool() const noexcept { return IsValid(); }
 	bool operator==(const TaskNodeHandle&) const noexcept;
 
-  private:
+private:
 	friend class TaskGraphBuilder;
 	friend class TaskExecution;
 	friend class TaskExecutor;
@@ -76,7 +76,7 @@ struct TaskGraphError final
 
 class SPARKLE_TASKS_API CompiledTaskGraph final
 {
-  public:
+public:
 	CompiledTaskGraph() noexcept;
 
 	bool IsValid() const noexcept;
@@ -86,7 +86,7 @@ class SPARKLE_TASKS_API CompiledTaskGraph final
 	std::uint32_t GetTaskCount() const noexcept;
 	std::uint32_t GetEdgeCount() const noexcept;
 
-  private:
+private:
 	friend class TaskGraphBuilder;
 	friend class TaskExecutor;
 
@@ -97,7 +97,7 @@ class SPARKLE_TASKS_API CompiledTaskGraph final
 
 class SPARKLE_TASKS_API TaskGraphBuilder final
 {
-  public:
+public:
 	explicit TaskGraphBuilder(TaskGraphLimits limits = {});
 	~TaskGraphBuilder();
 
@@ -118,7 +118,7 @@ class SPARKLE_TASKS_API TaskGraphBuilder final
 
 	const TaskGraphError& GetError() const noexcept;
 
-  private:
+private:
 	friend struct TaskGraphAccess;
 	struct State;
 	std::unique_ptr<State> m_state;

@@ -220,31 +220,17 @@ private:
 	static void ReserveShaderBindingState(ShaderBindingState& state, std::size_t descriptorSetCount);
 	static void ClearShaderBindingDescriptors(ShaderBindingState& state) noexcept;
 	static void ResetShaderBindingState(ShaderBindingState& state) noexcept;
-	void BindShaderBuffer(
-	    ShaderBindingState& state,
-	    std::uint32_t bindingIndex,
-	    RhiGpuVirtualAddress gpuAddress) noexcept;
-	void BindShaderAccelerationStructure(
-	    ShaderBindingState& state,
-	    std::uint32_t bindingIndex,
-	    RhiResourceHandle resource) noexcept;
-	void BindShaderDescriptorTable(
-	    ShaderBindingState& state,
-	    std::uint32_t bindingIndex,
-	    RhiDescriptorTableBinding tableBinding) noexcept;
-	void BindShaderDescriptorTable(
-	    ShaderBindingState& state,
-	    std::uint32_t bindingIndex,
-	    RhiGpuDescriptorHandle baseDescriptor) noexcept;
+	void BindShaderBuffer(ShaderBindingState& state, std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindShaderAccelerationStructure(ShaderBindingState& state, std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept;
+	void BindShaderDescriptorTable(ShaderBindingState& state, std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept;
+	void BindShaderDescriptorTable(ShaderBindingState& state, std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
 	void SetShaderPushConstants(
 	    const ShaderBindingState& state,
 	    std::uint32_t bindingIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
 	    std::uint32_t destOffsetIn32BitValues) noexcept;
-	void FlushShaderDescriptorSets(
-	    VkPipelineBindPoint bindPoint,
-	    ShaderBindingState& state) noexcept;
+	void FlushShaderDescriptorSets(VkPipelineBindPoint bindPoint, ShaderBindingState& state) noexcept;
 	void FlushGraphicsDescriptorSets() noexcept;
 	void FlushComputeDescriptorSets() noexcept;
 	void FlushRayTracingDescriptorSets() noexcept;

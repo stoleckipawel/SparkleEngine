@@ -16,7 +16,7 @@ struct ShaderParameterStructVerificationResult final
 
 class ShaderParameterStructVerifier final
 {
-  public:
+public:
 	ShaderParameterStructVerifier() = delete;
 
 	static ShaderParameterStructVerificationResult Verify(

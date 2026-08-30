@@ -11,7 +11,7 @@
 // Strings are interned through the caller-owned StringTableBuilder.
 class ReflectionSerializer final
 {
-  public:
+public:
 	struct Output
 	{
 		std::vector<CookedShaderReflectionRecord> reflectionRecords;
@@ -23,8 +23,5 @@ class ReflectionSerializer final
 		std::vector<CookedShaderSpecializationConstantRecord> specializationConstants;
 	};
 
-	static void Build(
-	    std::span<const ShaderReflection> reflections,
-	    Strings::StringTableBuilder& stringTable,
-	    Output& outOutput);
+	static void Build(std::span<const ShaderReflection> reflections, Strings::StringTableBuilder& stringTable, Output& outOutput);
 };

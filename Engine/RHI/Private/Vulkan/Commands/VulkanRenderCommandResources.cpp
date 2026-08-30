@@ -27,8 +27,8 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 
 	VulkanRecordingResource destination;
 	VulkanRecordingResource source;
-	if (!ResolveResource(destinationResource, destination) || !ResolveResource(sourceResource, source) ||
-	    destination.ResourceKind != source.ResourceKind)
+	if (!ResolveResource(destinationResource, destination) || !ResolveResource(sourceResource, source)
+	    || destination.ResourceKind != source.ResourceKind)
 	{
 		Diagnostics::Fatal(
 		    g_vulkanRenderCommandListLogger,
@@ -37,8 +37,8 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 		    "Vulkan CopyResource requires two resolved resources of the same kind.");
 	}
 
-	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Buffer && destination.Buffer != VK_NULL_HANDLE &&
-	    source.Buffer != VK_NULL_HANDLE)
+	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Buffer && destination.Buffer != VK_NULL_HANDLE
+	    && source.Buffer != VK_NULL_HANDLE)
 	{
 		if (destination.ResourceSizeInBytes == 0 || destination.ResourceSizeInBytes != source.ResourceSizeInBytes)
 		{
@@ -53,12 +53,12 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 		return;
 	}
 
-	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Image && destination.Image != VK_NULL_HANDLE &&
-	    source.Image != VK_NULL_HANDLE)
+	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Image && destination.Image != VK_NULL_HANDLE
+	    && source.Image != VK_NULL_HANDLE)
 	{
-		if (destination.Extent.width == 0 || destination.Extent.height == 0 || destination.Extent.depth == 0 ||
-		    destination.Extent.width != source.Extent.width || destination.Extent.height != source.Extent.height ||
-		    destination.Extent.depth != source.Extent.depth || destination.AspectMask != source.AspectMask)
+		if (destination.Extent.width == 0 || destination.Extent.height == 0 || destination.Extent.depth == 0
+		    || destination.Extent.width != source.Extent.width || destination.Extent.height != source.Extent.height
+		    || destination.Extent.depth != source.Extent.depth || destination.AspectMask != source.AspectMask)
 		{
 			Diagnostics::Fatal(
 			    g_vulkanRenderCommandListLogger,
@@ -367,9 +367,9 @@ VkBuffer VulkanRenderCommandList::ResolveBuffer(RhiGpuVirtualAddress gpuAddress)
 
 bool VulkanRenderCommandList::ResolveResource(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept
 {
-	if (m_memoryAllocator != nullptr &&
-	    (m_memoryAllocator->ResolveRecordingResource(resource, outResource) ||
-	     (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingResource(resource, outResource))))
+	if (m_memoryAllocator != nullptr
+	    && (m_memoryAllocator->ResolveRecordingResource(resource, outResource)
+	        || (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingResource(resource, outResource))))
 	{
 		return true;
 	}
@@ -383,8 +383,8 @@ bool VulkanRenderCommandList::ResolveAddress(RhiGpuVirtualAddress address, Vulka
 		return false;
 	}
 
-	return m_memoryAllocator->ResolveRecordingAddress(address, outResource) ||
-	       (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingAddress(address, outResource));
+	return m_memoryAllocator->ResolveRecordingAddress(address, outResource)
+	    || (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingAddress(address, outResource));
 }
 
 VulkanRenderCommandList::BufferBinding VulkanRenderCommandList::ResolveBufferBinding(RhiGpuVirtualAddress gpuAddress) const noexcept

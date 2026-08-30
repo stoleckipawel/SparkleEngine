@@ -6,6 +6,6 @@
 
 class FbxAnimationImporter final
 {
-  public:
+public:
 	static void ImportAnimations(const aiScene& scene, SourceImportOutput& output);
 };

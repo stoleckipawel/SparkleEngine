@@ -9,9 +9,7 @@
 
 namespace Assets
 {
-	LoadedMaterialAsset MaterialAssetLoader::Decode(
-	    const std::filesystem::path& path,
-	    std::span<const std::uint8_t> bytes) const
+	LoadedMaterialAsset MaterialAssetLoader::Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const
 	{
 		const CookedAssetLoaderDiagnostics diagnostics(path, "CookedMaterialAsset");
 
@@ -21,10 +19,7 @@ namespace Assets
 
 		if (!materialAsset.header.fileHeader.HasMagic(kCookedMaterialAssetMagic))
 		{
-			throw diagnostics.MakeError(
-			    "header",
-			    "material magic",
-			    "Invalid cooked material asset header");
+			throw diagnostics.MakeError("header", "material magic", "Invalid cooked material asset header");
 		}
 
 		materialAsset.name = reader.ReadString(materialAsset.header.nameByteCount);

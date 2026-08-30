@@ -47,16 +47,16 @@ namespace SparkleLauncher
 	{
 		switch (tool)
 		{
-		case KnownTool::CMake:
-			return {"cmake.exe", "cmake"};
-		case KnownTool::MSBuild:
-			return {"MSBuild.exe", "msbuild.exe", "MSBuild"};
-		case KnownTool::Ninja:
-			return {"ninja.exe", "ninja"};
-		case KnownTool::Rider:
-			return {"rider64.exe", "rider.exe", "rider.bat", "rider"};
-		case KnownTool::Git:
-			return {"git.exe", "git"};
+			case KnownTool::CMake:
+				return {"cmake.exe", "cmake"};
+			case KnownTool::MSBuild:
+				return {"MSBuild.exe", "msbuild.exe", "MSBuild"};
+			case KnownTool::Ninja:
+				return {"ninja.exe", "ninja"};
+			case KnownTool::Rider:
+				return {"rider64.exe", "rider.exe", "rider.bat", "rider"};
+			case KnownTool::Git:
+				return {"git.exe", "git"};
 		}
 
 		return {};
@@ -66,22 +66,25 @@ namespace SparkleLauncher
 	{
 		switch (tool)
 		{
-		case KnownTool::CMake:
-			return {"SPARKLE_CMAKE_EXE"};
-		case KnownTool::MSBuild:
-			return {"SPARKLE_MSBUILD_EXE"};
-		case KnownTool::Ninja:
-			return {"SPARKLE_NINJA_EXE"};
-		case KnownTool::Rider:
-			return {"SPARKLE_RIDER_EXE"};
-		case KnownTool::Git:
-			return {"SPARKLE_GIT_EXE"};
+			case KnownTool::CMake:
+				return {"SPARKLE_CMAKE_EXE"};
+			case KnownTool::MSBuild:
+				return {"SPARKLE_MSBUILD_EXE"};
+			case KnownTool::Ninja:
+				return {"SPARKLE_NINJA_EXE"};
+			case KnownTool::Rider:
+				return {"SPARKLE_RIDER_EXE"};
+			case KnownTool::Git:
+				return {"SPARKLE_GIT_EXE"};
 		}
 
 		return {};
 	}
 
-	static void AddProgramFilesCandidate(std::vector<std::filesystem::path>& candidates, const char* environmentName, std::filesystem::path relativePath)
+	static void AddProgramFilesCandidate(
+	    std::vector<std::filesystem::path>& candidates,
+	    const char* environmentName,
+	    std::filesystem::path relativePath)
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
 		if (root.has_value())
@@ -137,9 +140,7 @@ namespace SparkleLauncher
 		std::ranges::sort(
 		    matches,
 		    [](const std::filesystem::path& left, const std::filesystem::path& right)
-		    {
-			    return BuildPathSortKey(left) < BuildPathSortKey(right);
-		    });
+		    { return BuildPathSortKey(left) < BuildPathSortKey(right); });
 		candidates.insert(candidates.end(), matches.begin(), matches.end());
 	}
 
@@ -152,7 +153,10 @@ namespace SparkleLauncher
 		}
 	}
 
-	static void AddEnvironmentRootIfPresent(std::vector<std::filesystem::path>& roots, const char* environmentName, std::filesystem::path relativePath = {})
+	static void AddEnvironmentRootIfPresent(
+	    std::vector<std::filesystem::path>& roots,
+	    const char* environmentName,
+	    std::filesystem::path relativePath = {})
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
 		if (root.has_value())
@@ -165,22 +169,23 @@ namespace SparkleLauncher
 	{
 		std::string pathFilename = path.filename().string();
 		std::string expected(filename);
-		std::transform(pathFilename.begin(), pathFilename.end(), pathFilename.begin(), [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
-		std::transform(expected.begin(), expected.end(), expected.begin(), [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+		std::transform(
+		    pathFilename.begin(),
+		    pathFilename.end(),
+		    pathFilename.begin(),
+		    [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+		std::transform(
+		    expected.begin(),
+		    expected.end(),
+		    expected.begin(),
+		    [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
 		return pathFilename == expected;
 	}
 
 	static std::string BuildPathSortKey(const std::filesystem::path& path)
 	{
 		std::string key = path.lexically_normal().generic_string();
-		std::transform(
-		    key.begin(),
-		    key.end(),
-		    key.begin(),
-		    [](unsigned char value)
-		    {
-			    return static_cast<char>(std::tolower(value));
-		    });
+		std::transform(key.begin(), key.end(), key.begin(), [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
 		return key;
 	}
 
@@ -197,10 +202,7 @@ namespace SparkleLauncher
 		}
 
 		std::vector<std::filesystem::path> matches;
-		std::filesystem::recursive_directory_iterator iterator(
-		    root,
-		    std::filesystem::directory_options::skip_permission_denied,
-		    errorCode);
+		std::filesystem::recursive_directory_iterator iterator(root, std::filesystem::directory_options::skip_permission_denied, errorCode);
 		const std::filesystem::recursive_directory_iterator end;
 		while (iterator != end)
 		{
@@ -228,9 +230,7 @@ namespace SparkleLauncher
 		std::ranges::sort(
 		    matches,
 		    [](const std::filesystem::path& left, const std::filesystem::path& right)
-		    {
-			    return BuildPathSortKey(left) < BuildPathSortKey(right);
-		    });
+		    { return BuildPathSortKey(left) < BuildPathSortKey(right); });
 		candidates.insert(candidates.end(), matches.begin(), matches.end());
 	}
 
@@ -254,8 +254,14 @@ namespace SparkleLauncher
 	{
 		AddLocalAppDataCandidate(candidates, std::filesystem::path("Programs") / "Rider" / "bin" / "rider64.exe");
 		AddLocalAppDataCandidate(candidates, std::filesystem::path("JetBrains") / "Toolbox" / "scripts" / "rider.cmd");
-		AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
-		AddProgramFilesCandidate(candidates, "ProgramFiles(x86)", std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
+		AddProgramFilesCandidate(
+		    candidates,
+		    "ProgramFiles",
+		    std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
+		AddProgramFilesCandidate(
+		    candidates,
+		    "ProgramFiles(x86)",
+		    std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
 		AddProgramFilesDirectoryMatches(candidates, "ProgramFiles", "JetBrains Rider", std::filesystem::path("bin") / "rider64.exe");
 		AddProgramFilesDirectoryMatches(candidates, "ProgramFiles(x86)", "JetBrains Rider", std::filesystem::path("bin") / "rider64.exe");
 
@@ -288,21 +294,21 @@ namespace SparkleLauncher
 
 		switch (tool)
 		{
-		case KnownTool::CMake:
-			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("CMake") / "bin" / "cmake.exe");
-			break;
-		case KnownTool::MSBuild:
-			AddVisualStudioMSBuildCandidates(candidates);
-			break;
-		case KnownTool::Ninja:
-			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("CMake") / "bin" / "ninja.exe");
-			break;
-		case KnownTool::Rider:
-			AddJetBrainsRiderCandidates(candidates);
-			break;
-		case KnownTool::Git:
-			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("Git") / "cmd" / "git.exe");
-			break;
+			case KnownTool::CMake:
+				AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("CMake") / "bin" / "cmake.exe");
+				break;
+			case KnownTool::MSBuild:
+				AddVisualStudioMSBuildCandidates(candidates);
+				break;
+			case KnownTool::Ninja:
+				AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("CMake") / "bin" / "ninja.exe");
+				break;
+			case KnownTool::Rider:
+				AddJetBrainsRiderCandidates(candidates);
+				break;
+			case KnownTool::Git:
+				AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("Git") / "cmd" / "git.exe");
+				break;
 		}
 
 		return candidates;
@@ -331,16 +337,16 @@ namespace SparkleLauncher
 	{
 		switch (tool)
 		{
-		case KnownTool::CMake:
-			return "CMake";
-		case KnownTool::MSBuild:
-			return "MSBuild";
-		case KnownTool::Ninja:
-			return "Ninja";
-		case KnownTool::Rider:
-			return "Rider";
-		case KnownTool::Git:
-			return "Git";
+			case KnownTool::CMake:
+				return "CMake";
+			case KnownTool::MSBuild:
+				return "MSBuild";
+			case KnownTool::Ninja:
+				return "Ninja";
+			case KnownTool::Rider:
+				return "Rider";
+			case KnownTool::Git:
+				return "Git";
 		}
 
 		return "Unknown";

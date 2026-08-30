@@ -14,7 +14,7 @@ struct VulkanDebugEventFunctions final
 
 class VulkanDebugEvents final
 {
-  public:
+public:
 	static bool SupportsScopes(VkCommandBuffer commandBuffer, const VulkanDebugEventFunctions& functions) noexcept;
 	static void BeginScope(
 	    VkCommandBuffer commandBuffer,
@@ -31,6 +31,6 @@ class VulkanDebugEvents final
 	VulkanDebugEvents() = delete;
 	~VulkanDebugEvents() = delete;
 
-  private:
+private:
 	static VkDebugUtilsLabelEXT BuildLabel(const char* label, RhiDiagnosticLabelColor color) noexcept;
 };

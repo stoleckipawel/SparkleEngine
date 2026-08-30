@@ -9,7 +9,8 @@
 
 void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedMaterial& importedMaterial)
 {
-	importedMaterial.emissiveColor = DirectX::XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
+	importedMaterial.emissiveColor =
+	    DirectX::XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
 	if (material.has_emissive_strength)
 	{
 		importedMaterial.emissiveColor.x *= material.emissive_strength.emissive_strength;

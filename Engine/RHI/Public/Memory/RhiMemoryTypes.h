@@ -26,5 +26,4 @@ enum class RhiMemoryResidencyClass : std::uint8_t
 };
 
 SPARKLE_RHI_API std::string_view RhiMemoryCategoryName(RhiMemoryCategory category) noexcept;
-SPARKLE_RHI_API std::string_view RhiMemoryResidencyClassName(
-    RhiMemoryResidencyClass residencyClass) noexcept;
+SPARKLE_RHI_API std::string_view RhiMemoryResidencyClassName(RhiMemoryResidencyClass residencyClass) noexcept;

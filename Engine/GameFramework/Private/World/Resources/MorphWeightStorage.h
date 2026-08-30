@@ -9,7 +9,7 @@ namespace ECS
 {
 	class MorphWeightStorage final
 	{
-	  public:
+	public:
 		AnimationOutputSlotHandle Add(std::span<const float> weights);
 		bool PrepareWriteSize(AnimationOutputSlotHandle handle, std::size_t weightCount);
 		bool Write(AnimationOutputSlotHandle handle, std::span<const float> weights) noexcept;
@@ -17,7 +17,7 @@ namespace ECS
 		bool Remove(AnimationOutputSlotHandle handle) noexcept;
 		void Clear() noexcept;
 
-	  private:
+	private:
 		struct Entry final
 		{
 			std::vector<float> Weights;

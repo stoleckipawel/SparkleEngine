@@ -10,16 +10,13 @@ namespace ECS
 
 	class MeshExtractionSystemExecution final
 	{
-	  public:
-		MeshExtractionSystemExecution(
-		    GameWorldState& state,
-		    const SkeletonResourceStore& skeletons,
-		    const StructureFrozenEpoch& epoch);
+	public:
+		MeshExtractionSystemExecution(GameWorldState& state, const SkeletonResourceStore& skeletons, const StructureFrozenEpoch& epoch);
 
 		std::uint32_t GetMeshCount() const noexcept;
 		bool Run(std::uint32_t begin, std::uint32_t end);
 
-	  private:
+	private:
 		GameWorldState& m_state;
 		const SkeletonResourceStore& m_skeletons;
 		MeshExtractionQuery m_query;

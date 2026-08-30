@@ -28,10 +28,7 @@ struct TextureLoadResult
 	TextureFormatIntent formatIntent = TextureFormatIntent::Unknown;
 	std::vector<TextureArraySliceData> arraySlices;
 
-	std::uint16_t GetMipCount() const noexcept
-	{
-		return static_cast<std::uint16_t>(arraySlices.front().size());
-	}
+	std::uint16_t GetMipCount() const noexcept { return static_cast<std::uint16_t>(arraySlices.front().size()); }
 
 	std::uint16_t GetArraySize() const noexcept { return static_cast<std::uint16_t>(arraySize); }
 

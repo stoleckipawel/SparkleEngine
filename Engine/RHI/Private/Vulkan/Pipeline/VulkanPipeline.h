@@ -11,7 +11,7 @@ class VulkanPipelineLayout;
 
 class VulkanPipeline final : public RenderPipeline
 {
-  public:
+public:
 	VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc);
 	VulkanPipeline(VulkanRhi& rhi, const ComputePipelineDesc& desc);
 	~VulkanPipeline() noexcept override;
@@ -25,7 +25,7 @@ class VulkanPipeline final : public RenderPipeline
 	VkPipelineLayout GetPipelineLayout() const noexcept;
 	VkPipelineBindPoint GetBindPoint() const noexcept { return m_bindPoint; }
 
-  private:
+private:
 	void Reset() noexcept;
 
 	VkDevice m_device = VK_NULL_HANDLE;

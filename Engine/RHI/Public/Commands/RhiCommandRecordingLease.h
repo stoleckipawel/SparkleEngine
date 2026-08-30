@@ -44,7 +44,7 @@ struct RhiTransientDescriptorRange final
 
 class SPARKLE_RHI_API RhiCommandRecordingLease final
 {
-  public:
+public:
 	RhiCommandRecordingLease() noexcept;
 	~RhiCommandRecordingLease() noexcept;
 
@@ -66,7 +66,7 @@ class SPARKLE_RHI_API RhiCommandRecordingLease final
 	RhiTransientDescriptorRange AllocateTransientDescriptors(std::uint32_t count) noexcept;
 	void Close() noexcept;
 
-  private:
+private:
 	friend class RhiCommandRecordingLeaseAccess;
 
 	using BeginFunction = void (*)(void*) noexcept;

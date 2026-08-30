@@ -9,17 +9,16 @@
 #include <utility>
 
 #if defined(_WIN32)
-	#define WIN32_LEAN_AND_MEAN
-	#define NOMINMAX
-	#include <windows.h>
+  #define WIN32_LEAN_AND_MEAN
+  #define NOMINMAX
+  #include <windows.h>
 #endif
 
 namespace Threading
 {
 
-		thread_local std::string g_currentThreadRole = "Sparkle.UnlabeledThread";
-		auto g_threadOwnershipLogger = Logging::GetOrCreateLogger("Threading.Ownership");
-
+	thread_local std::string g_currentThreadRole = "Sparkle.UnlabeledThread";
+	auto g_threadOwnershipLogger = Logging::GetOrCreateLogger("Threading.Ownership");
 
 	void SetCurrentThreadRole(std::string_view role) noexcept
 	{
@@ -37,7 +36,10 @@ namespace Threading
 		}
 	}
 
-	OwnerThread::OwnerThread(std::string ownerDescription) noexcept : m_ownerDescription(std::move(ownerDescription)) {}
+	OwnerThread::OwnerThread(std::string ownerDescription) noexcept :
+	    m_ownerDescription(std::move(ownerDescription))
+	{
+	}
 
 	void OwnerThread::AssertAccess(std::source_location location) const noexcept
 	{

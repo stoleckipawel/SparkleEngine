@@ -11,8 +11,7 @@ namespace RenderingSettingsPanelUi
 {
 	inline constexpr float kLabelColumnWidth = 340.0f;
 
-	template <typename ValueType>
-	struct ComboOption final
+	template <typename ValueType> struct ComboOption final
 	{
 		const char* Label = "";
 		ValueType Value{};
@@ -22,8 +21,7 @@ namespace RenderingSettingsPanelUi
 	bool BeginSettingsCategory(const char* label);
 	bool BeginSettingsTable(const char* id);
 
-	template <typename OnChanged>
-	void DrawBooleanRow(const char* id, const char* label, bool value, OnChanged&& onChanged)
+	template <typename OnChanged> void DrawBooleanRow(const char* id, const char* label, bool value, OnChanged&& onChanged)
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -38,8 +36,7 @@ namespace RenderingSettingsPanelUi
 		}
 	}
 
-	template <typename ValueType, std::size_t OptionCount, typename OnChanged>
-	void DrawComboOptionRow(
+	template <typename ValueType, std::size_t OptionCount, typename OnChanged> void DrawComboOptionRow(
 	    const char* id,
 	    const char* label,
 	    ValueType value,
@@ -82,11 +79,7 @@ namespace RenderingSettingsPanelUi
 	}
 
 	template <typename OnChanged>
-	void DrawUnsignedIntInputRow(
-	    const char* id,
-	    const char* label,
-	    std::uint32_t value,
-	    OnChanged&& onChanged)
+	void DrawUnsignedIntInputRow(const char* id, const char* label, std::uint32_t value, OnChanged&& onChanged)
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -98,12 +91,11 @@ namespace RenderingSettingsPanelUi
 		int updatedValue = static_cast<int>(value);
 		if (ImGui::InputInt(id, &updatedValue, 1, 16))
 		{
-			onChanged(static_cast<std::uint32_t>((std::max)(updatedValue, 0)));
+			onChanged(static_cast<std::uint32_t>((std::max) (updatedValue, 0)));
 		}
 	}
 
-	template <typename OnChanged>
-	void DrawUnsignedIntSliderRow(
+	template <typename OnChanged> void DrawUnsignedIntSliderRow(
 	    const char* id,
 	    const char* label,
 	    std::uint32_t value,
@@ -127,8 +119,7 @@ namespace RenderingSettingsPanelUi
 		}
 	}
 
-	template <typename OnChanged>
-	void DrawFloatInputRow(
+	template <typename OnChanged> void DrawFloatInputRow(
 	    const char* id,
 	    const char* label,
 	    float value,

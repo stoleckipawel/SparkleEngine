@@ -2,11 +2,11 @@
 
 class TaskWorkerContext final
 {
-  public:
+public:
 	static void Enter(const void* executorIdentity) noexcept;
 	static void Leave() noexcept;
 	static bool IsWorkerFor(const void* executorIdentity) noexcept;
 
-  private:
+private:
 	static thread_local const void* s_executorIdentity;
 };

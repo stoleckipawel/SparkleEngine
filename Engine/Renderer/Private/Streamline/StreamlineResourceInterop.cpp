@@ -4,22 +4,15 @@
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 class StreamlineResourceTranslation final
 {
-  public:
-	static sl::Resource BuildStreamlineTextureResource(
-	    ERhiBackendApi backendApi,
-	    const NativeTextureViewInfo& view) noexcept
+public:
+	static sl::Resource BuildStreamlineTextureResource(ERhiBackendApi backendApi, const NativeTextureViewInfo& view) noexcept
 	{
 		if (backendApi != ERhiBackendApi::Vulkan)
 		{
 			return sl::Resource{sl::ResourceType::eTex2d, view.Resource.Value, view.NativeState};
 		}
 
-		sl::Resource resource{
-		    sl::ResourceType::eTex2d,
-		    view.Resource.Value,
-		    nullptr,
-		    view.View.Value,
-		    view.NativeState};
+		sl::Resource resource{sl::ResourceType::eTex2d, view.Resource.Value, nullptr, view.View.Value, view.NativeState};
 		resource.width = view.Width;
 		resource.height = view.Height;
 		resource.nativeFormat = view.NativeFormat;
@@ -42,10 +35,8 @@ class StreamlineResourceTranslation final
 	}
 };
 
-StreamlineTaggedTextureResource::StreamlineTaggedTextureResource(
-    ERhiBackendApi backendApi,
-    const NativeTextureViewInfo& view) noexcept :
-	m_resource(StreamlineResourceTranslation::BuildStreamlineTextureResource(backendApi, view)),
+StreamlineTaggedTextureResource::StreamlineTaggedTextureResource(ERhiBackendApi backendApi, const NativeTextureViewInfo& view) noexcept :
+    m_resource(StreamlineResourceTranslation::BuildStreamlineTextureResource(backendApi, view)),
     m_subresourceRange(StreamlineResourceTranslation::BuildStreamlineSubresourceRange(view))
 {
 	if (backendApi == ERhiBackendApi::Vulkan)
@@ -59,9 +50,7 @@ sl::Extent BuildStreamlineExtent(RenderViewportExtent extent) noexcept
 	return sl::Extent{.top = 0, .left = 0, .width = extent.Width, .height = extent.Height};
 }
 
-bool IsStreamlineTextureViewValid(
-    ERhiBackendApi backendApi,
-    const NativeTextureViewInfo& view) noexcept
+bool IsStreamlineTextureViewValid(ERhiBackendApi backendApi, const NativeTextureViewInfo& view) noexcept
 {
 	return backendApi == ERhiBackendApi::Vulkan ? static_cast<bool>(view) : static_cast<bool>(view.Resource);
 }

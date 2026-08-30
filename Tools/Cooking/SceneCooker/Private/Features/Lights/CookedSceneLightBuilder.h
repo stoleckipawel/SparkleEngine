@@ -5,6 +5,6 @@
 
 class CookedSceneLightBuilder final
 {
-  public:
+public:
 	static void BuildLights(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 };

@@ -67,9 +67,7 @@ struct RayTracingShaderTableMetrics final
 class RayTracingShaderTablePlan final
 {
 public:
-	void Synchronize(
-	    std::span<const RenderPrimitive> primitives,
-	    const RenderMaterialTable& materials) noexcept;
+	void Synchronize(std::span<const RenderPrimitive> primitives, const RenderMaterialTable& materials) noexcept;
 	void Clear() noexcept;
 
 	bool ResolveInstanceContribution(std::uint32_t gpuSceneSlot, std::uint32_t& contribution) const noexcept;

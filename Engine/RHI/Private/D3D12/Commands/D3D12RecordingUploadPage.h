@@ -13,7 +13,7 @@ struct D3D12GpuAllocationRecord;
 
 class D3D12RecordingUploadPage final
 {
-  public:
+public:
 	D3D12RecordingUploadPage() noexcept;
 	~D3D12RecordingUploadPage() noexcept;
 
@@ -31,7 +31,7 @@ class D3D12RecordingUploadPage final
 	std::uint64_t GetCapacityInBytes() const noexcept { return m_capacityInBytes; }
 	std::uint64_t GetUsedBytes() const noexcept { return m_offset; }
 
-  private:
+private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_resource;
 	std::unique_ptr<D3D12GpuAllocationRecord> m_allocation;
 	std::uint8_t* m_cpuBase = nullptr;

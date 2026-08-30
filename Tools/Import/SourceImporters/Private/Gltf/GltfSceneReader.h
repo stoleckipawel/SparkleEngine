@@ -18,10 +18,10 @@ struct GltfScene
 
 class GltfSceneReader final
 {
-	public:
+public:
 	static void LoadScene(const std::filesystem::path& filePath, GltfScene& scene);
 
-  private:
+private:
 	static void ValidateInputPath(const std::filesystem::path& filePath);
 	static void ParseGltfFile(cgltf_options& options, const std::string& path, cgltf_data*& outData);
 	static void LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& path);

@@ -9,11 +9,11 @@
 #include <utility>
 
 WorldEditResult WorldEditCommandQueue::Submit(
-	WorldEditCommand command,
-	std::uint64_t expectedGeneration,
-	std::uint64_t currentGeneration,
-	const ECS::GameWorldState& state,
-	const GameWorldResourceStores& resources)
+    WorldEditCommand command,
+    std::uint64_t expectedGeneration,
+    std::uint64_t currentGeneration,
+    const ECS::GameWorldState& state,
+    const GameWorldResourceStores& resources)
 {
 	WorldEditResult result{.RequestId = command.RequestId};
 	if (expectedGeneration != currentGeneration)
@@ -40,8 +40,7 @@ WorldEditResult WorldEditCommandQueue::Submit(
 	return result;
 }
 
-void WorldEditCommandQueue::Apply(
-	std::uint64_t currentGeneration, ECS::GameWorldState& state, GameWorldResourceStores& resources)
+void WorldEditCommandQueue::Apply(std::uint64_t currentGeneration, ECS::GameWorldState& state, GameWorldResourceStores& resources)
 {
 	for (PendingEdit& pending : m_pendingEdits)
 		if (pending.ExpectedGeneration == currentGeneration)
@@ -55,19 +54,17 @@ void WorldEditCommandQueue::Clear() noexcept
 }
 
 bool WorldEditCommandQueue::IsTargetAvailable(
-	const WorldEditPayload& payload,
-	const ECS::GameWorldState& state,
-	const GameWorldResourceStores& resources)
+    const WorldEditPayload& payload,
+    const ECS::GameWorldState& state,
+    const GameWorldResourceStores& resources)
 {
 	return std::visit(
 	    [&state, &resources](const auto& command)
 	    {
 		    using T = std::decay_t<decltype(command)>;
-		    if constexpr (std::is_same_v<T, SetActiveCameraCommand> ||
-		                  std::is_same_v<T, SetCameraDescriptionCommand>)
+		    if constexpr (std::is_same_v<T, SetActiveCameraCommand> || std::is_same_v<T, SetCameraDescriptionCommand>)
 			    return state.IsCamera(command.Entity);
-		    else if constexpr (std::is_same_v<T, SetLocalTransformCommand> ||
-		                       std::is_same_v<T, SetEntityVisibilityCommand>)
+		    else if constexpr (std::is_same_v<T, SetLocalTransformCommand> || std::is_same_v<T, SetEntityVisibilityCommand>)
 			    return state.IsAlive(command.Entity);
 		    else if constexpr (std::is_same_v<T, SetLightDescriptionCommand>)
 			    return state.ReadLight(command.Entity).has_value();
@@ -79,8 +76,7 @@ bool WorldEditCommandQueue::IsTargetAvailable(
 	    payload);
 }
 
-void WorldEditCommandQueue::ApplyPayload(
-	WorldEditPayload& payload, ECS::GameWorldState& state, GameWorldResourceStores& resources)
+void WorldEditCommandQueue::ApplyPayload(WorldEditPayload& payload, ECS::GameWorldState& state, GameWorldResourceStores& resources)
 {
 	std::visit(
 	    [&state, &resources](auto& command)

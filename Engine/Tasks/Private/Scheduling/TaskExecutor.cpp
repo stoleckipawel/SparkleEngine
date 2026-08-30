@@ -5,7 +5,10 @@
 
 #include <utility>
 
-TaskExecutor::TaskExecutor(TaskExecutorConfig config) : m_implementation(std::make_unique<Implementation>(config)) {}
+TaskExecutor::TaskExecutor(TaskExecutorConfig config) :
+    m_implementation(std::make_unique<Implementation>(config))
+{
+}
 
 TaskExecutor::~TaskExecutor() = default;
 
@@ -22,9 +25,8 @@ TaskExecution TaskExecutor::Submit(const CompiledTaskGraph& graph, TaskExecution
 TaskExecution TaskExecutor::Submit(TaskDesc desc, TaskFunction function, TaskExecutionContext& context)
 {
 	const TaskExecutorConfig& config = m_implementation->GetConfig();
-	TaskGraphBuilder builder(TaskGraphLimits{
-	    .MaximumTasks = config.MaximumTasksPerExecution,
-	    .MaximumEdges = config.MaximumEdgesPerExecution});
+	TaskGraphBuilder builder(
+	    TaskGraphLimits{.MaximumTasks = config.MaximumTasksPerExecution, .MaximumEdges = config.MaximumEdgesPerExecution});
 	builder.Add(std::move(desc), std::move(function));
 	return Submit(builder.Compile(), context);
 }
@@ -37,9 +39,8 @@ TaskExecution TaskExecutor::Launch(TaskScope& scope, const CompiledTaskGraph& gr
 TaskExecution TaskExecutor::Launch(TaskScope& scope, TaskDesc desc, TaskFunction function, TaskExecutionContext context)
 {
 	const TaskExecutorConfig& config = m_implementation->GetConfig();
-	TaskGraphBuilder builder(TaskGraphLimits{
-	    .MaximumTasks = config.MaximumTasksPerExecution,
-	    .MaximumEdges = config.MaximumEdgesPerExecution});
+	TaskGraphBuilder builder(
+	    TaskGraphLimits{.MaximumTasks = config.MaximumTasksPerExecution, .MaximumEdges = config.MaximumEdgesPerExecution});
 	builder.Add(std::move(desc), std::move(function));
 	return Launch(scope, builder.Compile(), std::move(context));
 }

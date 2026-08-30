@@ -13,14 +13,14 @@
 
 class FbxMaterialImporter final
 {
-  public:
+public:
 	static void ImportMaterials(
 	    const aiScene& scene,
 	    const std::filesystem::path& sourceDirectory,
 	    std::span<const std::filesystem::path> embeddedTexturePaths,
 	    SourceImportOutput& output);
 
-  private:
+private:
 	struct TextureResolutionContext
 	{
 		const aiScene& scene;

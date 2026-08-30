@@ -77,4 +77,4 @@ namespace Filesystem
 	std::optional<std::filesystem::path> ResolveAssetPath(const std::filesystem::path& inputPath, AssetType type);
 	std::filesystem::path ResolveAssetPathValidated(const std::filesystem::path& inputPath, AssetType type);
 	const std::filesystem::path& GetShaderSymbolsOutputPath();
-}  // namespace Filesystem
+}

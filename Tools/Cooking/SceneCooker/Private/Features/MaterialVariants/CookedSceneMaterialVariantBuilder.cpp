@@ -11,7 +11,7 @@
 
 class CookedMaterialVariantTranslation final
 {
-  public:
+public:
 	static void CopyVariantName(std::string_view sourceName, char (&outName)[Assets::kCookedSceneMaterialVariantNameCapacity]) noexcept
 	{
 		std::memcpy(outName, sourceName.data(), sourceName.size());
@@ -32,17 +32,18 @@ class CookedMaterialVariantTranslation final
 		for (std::size_t primitiveIndex = 0; primitiveIndex < importOutput.scene.meshPrimitives.size(); ++primitiveIndex)
 		{
 			const ImportedMeshPrimitive& primitive = importOutput.scene.meshPrimitives[primitiveIndex];
-			if (primitive.sourceMeshIndex == importedMapping.sourceMeshIndex &&
-			    primitive.sourcePrimitiveIndex == importedMapping.sourcePrimitiveIndex)
+			if (primitive.sourceMeshIndex == importedMapping.sourceMeshIndex
+			    && primitive.sourcePrimitiveIndex == importedMapping.sourcePrimitiveIndex)
 			{
 				return static_cast<std::uint32_t>(primitiveIndex);
 			}
 		}
 
-		throw Diagnostics::Error(std::format(
-		    "Imported material variant mapping references source mesh {} primitive {}, but no cooked mesh asset was produced.",
-		    importedMapping.sourceMeshIndex,
-		    importedMapping.sourcePrimitiveIndex));
+		throw Diagnostics::Error(
+		    std::format(
+		        "Imported material variant mapping references source mesh {} primitive {}, but no cooked mesh asset was produced.",
+		        importedMapping.sourceMeshIndex,
+		        importedMapping.sourcePrimitiveIndex));
 	}
 
 	static Assets::CookedSceneMaterialVariantMappingRecord BuildMappingRecord(
@@ -52,22 +53,19 @@ class CookedMaterialVariantTranslation final
 	{
 		if (importedMapping.variantIndex >= build.manifest.materialVariants.size())
 		{
-			throw Diagnostics::Error(
-			    "Imported material variant mapping references a variant outside the cooked variant set.");
+			throw Diagnostics::Error("Imported material variant mapping references a variant outside the cooked variant set.");
 		}
 
 		if (importedMapping.materialIndex >= build.outputs.materialAssets.size())
 		{
-			throw Diagnostics::Error(
-			    "Imported material variant mapping references a material outside the cooked material set.");
+			throw Diagnostics::Error("Imported material variant mapping references a material outside the cooked material set.");
 		}
 
 		const std::uint32_t meshAssetIndex = ResolveCookedMeshAssetIndex(importOutput, importedMapping);
 
 		if (meshAssetIndex >= build.manifest.meshAssetReferences.size())
 		{
-			throw Diagnostics::Error(
-			    "Imported material variant mapping resolved to a mesh asset outside the cooked mesh asset set.");
+			throw Diagnostics::Error("Imported material variant mapping resolved to a mesh asset outside the cooked mesh asset set.");
 		}
 
 		return Assets::CookedSceneMaterialVariantMappingRecord{
@@ -77,9 +75,7 @@ class CookedMaterialVariantTranslation final
 	}
 };
 
-void CookedSceneMaterialVariantBuilder::BuildMaterialVariants(
-    const SourceImportOutput& importOutput,
-    CookedSceneBuild& outBuild)
+void CookedSceneMaterialVariantBuilder::BuildMaterialVariants(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild)
 {
 	outBuild.manifest.materialVariants.clear();
 	outBuild.manifest.materialVariantMappings.clear();

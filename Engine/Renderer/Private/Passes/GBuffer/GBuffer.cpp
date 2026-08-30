@@ -28,9 +28,7 @@ namespace GBufferTargetCreation
 		return builder.CreateTexture(desc);
 	}
 
-	FrameGraphTextureHandle CreateDeviceZ(
-	    FrameGraphBuilder& builder,
-	    RenderViewportExtent sceneExtent)
+	FrameGraphTextureHandle CreateDeviceZ(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent)
 	{
 		switch (CVarGBufferAlgorithm.Get())
 		{
@@ -54,37 +52,19 @@ namespace GBufferTargetCreation
 	}
 }
 
-GBufferRenderTargets CreateGBufferRenderTargets(
-	FrameGraphBuilder& builder,
-	RenderViewportExtent sceneExtent)
+GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent)
 {
 	GBufferRenderTargets targets{};
-	targets.BaseColor = GBufferTargetCreation::CreateColor(
-	    builder,
-	    "GBufferBaseColor",
-	    sceneExtent,
-	    GBufferFormats::BaseColor,
-	    {0.0f, 0.0f, 0.0f, 1.0f});
+	targets.BaseColor =
+	    GBufferTargetCreation::CreateColor(builder, "GBufferBaseColor", sceneExtent, GBufferFormats::BaseColor, {0.0f, 0.0f, 0.0f, 1.0f});
 	targets.Normal =
 	    GBufferTargetCreation::CreateColor(builder, "GBufferNormal", sceneExtent, GBufferFormats::Normal, {0.0f, 0.0f, 1.0f, 0.0f});
-	targets.Material = GBufferTargetCreation::CreateColor(
-	    builder,
-	    "GBufferMaterial",
-	    sceneExtent,
-	    GBufferFormats::Material,
-	    {0.0f, 1.0f, 1.0f, 0.04f});
-	targets.Emissive = GBufferTargetCreation::CreateColor(
-	    builder,
-	    "GBufferEmissive",
-	    sceneExtent,
-	    GBufferFormats::Emissive,
-	    {0.0f, 0.0f, 0.0f, 0.0f});
-	targets.Subsurface = GBufferTargetCreation::CreateColor(
-	    builder,
-	    "GBufferSubsurface",
-	    sceneExtent,
-	    GBufferFormats::Subsurface,
-	    {0.0f, 0.0f, 0.0f, 0.0f});
+	targets.Material =
+	    GBufferTargetCreation::CreateColor(builder, "GBufferMaterial", sceneExtent, GBufferFormats::Material, {0.0f, 1.0f, 1.0f, 0.04f});
+	targets.Emissive =
+	    GBufferTargetCreation::CreateColor(builder, "GBufferEmissive", sceneExtent, GBufferFormats::Emissive, {0.0f, 0.0f, 0.0f, 0.0f});
+	targets.Subsurface =
+	    GBufferTargetCreation::CreateColor(builder, "GBufferSubsurface", sceneExtent, GBufferFormats::Subsurface, {0.0f, 0.0f, 0.0f, 0.0f});
 	targets.MotionVector = GBufferTargetCreation::CreateColor(
 	    builder,
 	    "GBufferMotionVector",
@@ -96,11 +76,11 @@ GBufferRenderTargets CreateGBufferRenderTargets(
 }
 
 void AddGBufferMeshPasses(
-	FrameGraphBuilder& builder,
-	GpuMeshCache& gpuMeshCache,
-	RenderRayTracingScene& rayTracingScene,
+    FrameGraphBuilder& builder,
+    GpuMeshCache& gpuMeshCache,
+    RenderRayTracingScene& rayTracingScene,
     RenderViewportExtent sceneExtent,
-	RenderFrameGraphResources& resources)
+    RenderFrameGraphResources& resources)
 {
 	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent);
 	resources.ViewportProducts.Normals = resources.Transient.GBuffer.Normal;

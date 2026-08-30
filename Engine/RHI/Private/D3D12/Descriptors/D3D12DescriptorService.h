@@ -17,11 +17,8 @@ struct ID3D12DescriptorHeap;
 
 class D3D12DescriptorService final : public RhiDescriptorService
 {
-  public:
-	D3D12DescriptorService(
-	    D3D12Rhi& rhi,
-	    D3D12DescriptorHeapManager& descriptorHeapManager,
-	    const RhiCapabilities& capabilities) noexcept;
+public:
+	D3D12DescriptorService(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager, const RhiCapabilities& capabilities) noexcept;
 	~D3D12DescriptorService() noexcept override;
 
 	ID3D12DescriptorHeap* GetShaderResourceDescriptorHeap() const noexcept;
@@ -49,7 +46,7 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
 
-  private:
+private:
 	friend class D3D12InteropService;
 
 	NativeTextureViewInfo ResolveNativeTextureViewInfo(

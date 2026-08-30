@@ -3,6 +3,41 @@
 ###############################################################################
 * text=auto
 
+# Owned source formatting is pinned to LF by the repository code-style policy.
+Engine/**/*.c text eol=lf
+Engine/**/*.cc text eol=lf
+Engine/**/*.cpp text eol=lf
+Engine/**/*.cxx text eol=lf
+Engine/**/*.h text eol=lf
+Engine/**/*.hh text eol=lf
+Engine/**/*.hpp text eol=lf
+Engine/**/*.hxx text eol=lf
+Engine/**/*.hlsl text eol=lf
+Engine/**/*.hlsli text eol=lf
+Tools/**/*.c text eol=lf
+Tools/**/*.cc text eol=lf
+Tools/**/*.cpp text eol=lf
+Tools/**/*.cxx text eol=lf
+Tools/**/*.h text eol=lf
+Tools/**/*.hh text eol=lf
+Tools/**/*.hpp text eol=lf
+Tools/**/*.hxx text eol=lf
+Tools/**/*.hlsl text eol=lf
+Tools/**/*.hlsli text eol=lf
+Projects/**/*.c text eol=lf
+Projects/**/*.cc text eol=lf
+Projects/**/*.cpp text eol=lf
+Projects/**/*.cxx text eol=lf
+Projects/**/*.h text eol=lf
+Projects/**/*.hh text eol=lf
+Projects/**/*.hpp text eol=lf
+Projects/**/*.hxx text eol=lf
+Projects/**/*.hlsl text eol=lf
+Projects/**/*.hlsli text eol=lf
+
+# The code-style manifest excludes the vendored D3D12 subtree.
+Engine/RHI/Private/D3D12/ThirdParty/** text=auto !eol
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #

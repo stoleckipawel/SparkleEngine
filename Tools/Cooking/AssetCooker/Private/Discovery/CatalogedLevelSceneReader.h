@@ -6,12 +6,9 @@
 
 class CatalogedLevelSceneReader final
 {
-  public:
-	static bool AppendSceneIds(
-	    const std::filesystem::path& levelPath,
-	    std::vector<std::string>& outSceneIds,
-	    std::string& outErrorMessage);
+public:
+	static bool AppendSceneIds(const std::filesystem::path& levelPath, std::vector<std::string>& outSceneIds, std::string& outErrorMessage);
 
-  private:
+private:
 	static std::string ResolveSourceSceneId(std::string assetBinding);
 };

@@ -143,8 +143,7 @@ public:
 	}
 
 	template <typename TRayGenerationShader>
-	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(
-	    const RayTracingPipelineComposition& composition) const noexcept
+	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(const RayTracingPipelineComposition& composition) const noexcept
 	{
 		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
 		const auto storage = m_activeGeneration->RuntimeStorageByShaderType.find(typeid(RuntimeType));
@@ -168,8 +167,7 @@ public:
 		}
 	}
 
-	template <typename TRayGenerationShader>
-	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(
+	template <typename TRayGenerationShader> std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(
 	    const RayTracingPipelineComposition& composition,
 	    const RayTracingShaderTablePlan& plan) const noexcept
 	{

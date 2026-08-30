@@ -19,11 +19,8 @@ struct ID3D12Resource;
 
 class D3D12ResourceService final : public RhiResourceService
 {
-  public:
-	D3D12ResourceService(
-	    D3D12Rhi& rhi,
-	    D3D12GpuMemoryAllocator& memoryAllocator,
-	    const RhiCapabilities& capabilities) noexcept;
+public:
+	D3D12ResourceService(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator, const RhiCapabilities& capabilities) noexcept;
 
 	RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
@@ -85,16 +82,12 @@ class D3D12ResourceService final : public RhiResourceService
 	    std::wstring_view debugName) override;
 	bool SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept override;
 
-  private:
+private:
 	friend class D3D12RenderHardwareInterface;
 	void DrainCompletedResourceReleases() noexcept;
 	void FlushDeferredResourceReleases() noexcept;
-	D3D12RecordingResourceUseToken BeginResourceTracking(
-	    RhiResourceHandle resource,
-	    bool coordinatorRecording) noexcept;
-	void EndResourceTracking(
-	    D3D12RecordingResourceUseToken use,
-	    RhiSubmissionToken submissionToken) noexcept;
+	D3D12RecordingResourceUseToken BeginResourceTracking(RhiResourceHandle resource, bool coordinatorRecording) noexcept;
+	void EndResourceTracking(D3D12RecordingResourceUseToken use, RhiSubmissionToken submissionToken) noexcept;
 
 	static std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName);
 	static RhiOwnedResourceHandle WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;

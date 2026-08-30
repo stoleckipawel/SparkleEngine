@@ -7,7 +7,7 @@
 static const auto g_rhiTimestampQueryAllocatorLogger = Logging::GetOrCreateLogger("RHI.Diagnostics.TimestampAllocator");
 
 RhiTimestampQueryAllocator::RhiTimestampQueryAllocator(std::uint32_t poolCount, std::uint32_t queriesPerPool) :
-	m_freeQueryIndices(poolCount)
+    m_freeQueryIndices(poolCount)
 {
 	for (std::vector<std::uint32_t>& freeQueryIndices : m_freeQueryIndices)
 	{
@@ -22,9 +22,8 @@ RhiTimestampQueryAllocator::RhiTimestampQueryAllocator(std::uint32_t poolCount, 
 RhiTimestampQueryHandle RhiTimestampQueryAllocator::Allocate(std::uint32_t poolIndex)
 {
 	std::lock_guard lock(m_mutex);
-	if (poolIndex >= m_freeQueryIndices.size() ||
-	    m_freeQueryIndices[poolIndex].empty() ||
-	    m_queryLocations.size() >= std::numeric_limits<std::uint32_t>::max() - 1)
+	if (poolIndex >= m_freeQueryIndices.size() || m_freeQueryIndices[poolIndex].empty()
+	    || m_queryLocations.size() >= std::numeric_limits<std::uint32_t>::max() - 1)
 	{
 		Diagnostics::Fatal(
 		    g_rhiTimestampQueryAllocatorLogger,
@@ -43,9 +42,7 @@ RhiTimestampQueryHandle RhiTimestampQueryAllocator::Allocate(std::uint32_t poolI
 		handleValue = m_nextHandleValue++;
 	}
 
-	m_queryLocations.emplace(
-	    handleValue,
-	    RhiTimestampQueryLocation{.PoolIndex = poolIndex, .QueryIndex = queryIndex});
+	m_queryLocations.emplace(handleValue, RhiTimestampQueryLocation{.PoolIndex = poolIndex, .QueryIndex = queryIndex});
 	return RhiTimestampQueryHandle{.Value = handleValue};
 }
 

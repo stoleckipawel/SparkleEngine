@@ -10,7 +10,7 @@ class ConsoleVariableBase;
 
 class SPARKLE_CORE_API ConsoleVariableRegistry final
 {
-  public:
+public:
 	static ConsoleVariableRegistry& Get() noexcept;
 
 	void Register(ConsoleVariableBase& variable) noexcept;
@@ -20,7 +20,7 @@ class SPARKLE_CORE_API ConsoleVariableRegistry final
 
 	const std::vector<ConsoleVariableBase*>& GetVariables() const noexcept { return m_variables; }
 
-  private:
+private:
 	std::unordered_map<std::string_view, ConsoleVariableBase*> m_variablesByName;
 	std::vector<ConsoleVariableBase*> m_variables;
 };

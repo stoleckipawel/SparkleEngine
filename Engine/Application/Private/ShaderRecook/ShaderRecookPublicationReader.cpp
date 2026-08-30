@@ -12,8 +12,7 @@
 #include <utility>
 #include <vector>
 
-ShaderRecookPublicationReadResult ShaderRecookPublicationReader::Read(
-    const std::filesystem::path& publicationPath) noexcept
+ShaderRecookPublicationReadResult ShaderRecookPublicationReader::Read(const std::filesystem::path& publicationPath) noexcept
 {
 	ShaderRecookPublicationReadResult result;
 	std::error_code errorCode;
@@ -28,16 +27,14 @@ ShaderRecookPublicationReadResult ShaderRecookPublicationReader::Read(
 	if (!Files::TryReadAllBytes(publicationPath, bytes, readErrorMessage))
 	{
 		result.Diagnostic =
-		    "Shader recook publication could not be read; reload rejected before touching active shaders. " +
-		    readErrorMessage;
+		    "Shader recook publication could not be read; reload rejected before touching active shaders. " + readErrorMessage;
 		return result;
 	}
 
 	const std::string text(bytes.begin(), bytes.end());
 	if (text.empty())
 	{
-		result.Diagnostic =
-		    "Shader recook publication is empty or partially written; reload rejected before touching active shaders.";
+		result.Diagnostic = "Shader recook publication is empty or partially written; reload rejected before touching active shaders.";
 		return result;
 	}
 
@@ -87,19 +84,17 @@ ShaderRecookPublicationReadResult ShaderRecookPublicationReader::Parse(std::stri
 	std::uint64_t publishedAtUnixMs = 0;
 	std::uint64_t globalShaderMapHash = 0;
 	std::uint64_t cookedShaderLibraryHash = 0;
-	if (!Json::TryReadStringProperty(text, "schema", schema) ||
-	    !Json::TryReadStringProperty(text, "status", status) ||
-	    !Json::TryReadUInt64Property(text, "publicationId", publicationId) ||
-	    !Json::TryReadUInt64Property(text, "publishedAtUnixMs", publishedAtUnixMs) ||
-	    !Json::TryReadStringProperty(text, "globalShaderMap", globalShaderMap) ||
-	    !Json::TryReadStringProperty(text, "globalShaderMapHash", globalShaderMapHashText) ||
-	    !Json::TryReadStringProperty(text, "cookedShaderLibrary", cookedShaderLibrary) ||
-	    !Json::TryReadStringProperty(text, "cookedShaderLibraryHash", cookedShaderLibraryHashText) ||
-	    !Json::TryParseHexUInt64(globalShaderMapHashText, globalShaderMapHash) ||
-	    !Json::TryParseHexUInt64(cookedShaderLibraryHashText, cookedShaderLibraryHash))
+	if (!Json::TryReadStringProperty(text, "schema", schema) || !Json::TryReadStringProperty(text, "status", status)
+	    || !Json::TryReadUInt64Property(text, "publicationId", publicationId)
+	    || !Json::TryReadUInt64Property(text, "publishedAtUnixMs", publishedAtUnixMs)
+	    || !Json::TryReadStringProperty(text, "globalShaderMap", globalShaderMap)
+	    || !Json::TryReadStringProperty(text, "globalShaderMapHash", globalShaderMapHashText)
+	    || !Json::TryReadStringProperty(text, "cookedShaderLibrary", cookedShaderLibrary)
+	    || !Json::TryReadStringProperty(text, "cookedShaderLibraryHash", cookedShaderLibraryHashText)
+	    || !Json::TryParseHexUInt64(globalShaderMapHashText, globalShaderMapHash)
+	    || !Json::TryParseHexUInt64(cookedShaderLibraryHashText, cookedShaderLibraryHash))
 	{
-		result.Diagnostic =
-		    "Shader recook publication is invalid or partially written; reload rejected before touching active shaders.";
+		result.Diagnostic = "Shader recook publication is invalid or partially written; reload rejected before touching active shaders.";
 		return result;
 	}
 
@@ -111,12 +106,12 @@ ShaderRecookPublicationReadResult ShaderRecookPublicationReader::Parse(std::stri
 
 	if (status != "succeeded")
 	{
-		result.Diagnostic = "Shader recook publication status is '" + status +
-		                    "', not 'succeeded'; reload rejected before touching active shaders.";
+		result.Diagnostic =
+		    "Shader recook publication status is '" + status + "', not 'succeeded'; reload rejected before touching active shaders.";
 		return result;
 	}
 
-	result.Publication = ShaderRecookPublication {
+	result.Publication = ShaderRecookPublication{
 	    .PublicationId = publicationId,
 	    .PublishedAtUnixMs = publishedAtUnixMs,
 	    .GlobalShaderMapHash = globalShaderMapHash,

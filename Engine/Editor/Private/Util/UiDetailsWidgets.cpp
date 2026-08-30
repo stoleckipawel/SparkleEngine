@@ -37,7 +37,9 @@ namespace UiUtil
 		return open;
 	}
 
-	void EndDetailsCategory() {}
+	void EndDetailsCategory()
+	{
+	}
 
 	void DrawDetailsEmptyState(const char* text)
 	{

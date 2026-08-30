@@ -26,10 +26,10 @@ struct VulkanRecordingResource final
 
 class VulkanRecordingResourceUseToken final
 {
-  public:
+public:
 	constexpr explicit operator bool() const noexcept { return m_value != 0; }
 
-  private:
+private:
 	friend class VulkanRecordingResourceTable;
 
 	std::uintptr_t m_value = 0;

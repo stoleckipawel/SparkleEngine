@@ -150,7 +150,7 @@ namespace ECS
 
 	class CompiledGameSystemGraph final
 	{
-	  public:
+	public:
 		CompiledGameSystemGraph() noexcept;
 		~CompiledGameSystemGraph();
 		CompiledGameSystemGraph(CompiledGameSystemGraph&&) noexcept;
@@ -164,7 +164,7 @@ namespace ECS
 		std::span<const GameSystemDesc> GetSystems() const noexcept;
 		bool Execute(TaskExecutor& executor, std::span<const GameSystemExecutionBinding> bindings, GameSystemGraphError& error) const;
 
-	  private:
+	private:
 		friend class GameSystemGraph;
 		explicit CompiledGameSystemGraph(std::unique_ptr<CompiledGameSystemGraphData> data) noexcept;
 		std::unique_ptr<CompiledGameSystemGraphData> m_data;
@@ -172,11 +172,11 @@ namespace ECS
 
 	class GameSystemGraph final
 	{
-	  public:
+	public:
 		void Add(GameSystemDesc descriptor);
 		CompiledGameSystemGraph Compile() const;
 
-	  private:
+	private:
 		std::vector<GameSystemDesc> m_systems;
 	};
 }

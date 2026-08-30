@@ -13,7 +13,8 @@ struct MaterialHandle
 
 	constexpr MaterialHandle() noexcept = default;
 	explicit constexpr MaterialHandle(std::uint32_t slot, std::uint32_t resourceGeneration = 0) noexcept :
-	    index(slot), generation(resourceGeneration)
+	    index(slot),
+	    generation(resourceGeneration)
 	{
 	}
 

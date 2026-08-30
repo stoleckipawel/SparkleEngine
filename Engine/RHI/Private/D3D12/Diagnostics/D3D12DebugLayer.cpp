@@ -3,9 +3,9 @@
 
 #if ENGINE_GPU_VALIDATION
 
-	#include "Core/Public/Formatting/HexFormat.h"
+  #include "Core/Public/Formatting/HexFormat.h"
 
-	#include <format>
+  #include <format>
 
 static const auto g_d3d12DiagnosticsLogger = Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics");
 
@@ -197,15 +197,15 @@ namespace D3D12DebugLayerDiagnostics
 	{
 		std::size_t reportedNodes = 0;
 		for (const D3D12_AUTO_BREADCRUMB_NODE1* currentNode = node; currentNode != nullptr && reportedNodes < kMaxBreadcrumbNodes;
-		     currentNode = currentNode->pNext, ++reportedNodes)
+		    currentNode = currentNode->pNext, ++reportedNodes)
 		{
 			const UINT completedOperations = currentNode->pLastBreadcrumbValue != nullptr ? *currentNode->pLastBreadcrumbValue : 0u;
 			const UINT historyIndex = completedOperations > 0 && currentNode->BreadcrumbCount > 0
-			                              ? (std::min) (completedOperations, currentNode->BreadcrumbCount) - 1
-			                              : 0u;
+			    ? (std::min) (completedOperations, currentNode->BreadcrumbCount) - 1
+			    : 0u;
 			const D3D12_AUTO_BREADCRUMB_OP lastOperation = currentNode->pCommandHistory != nullptr && currentNode->BreadcrumbCount > 0
-			                                                   ? currentNode->pCommandHistory[historyIndex]
-			                                                   : D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION;
+			    ? currentNode->pCommandHistory[historyIndex]
+			    : D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION;
 			const std::string commandListName =
 			    ResolveDebugName(currentNode->pCommandListDebugNameA, currentNode->pCommandListDebugNameW, "UnnamedCommandList");
 			const std::string commandQueueName =
@@ -250,15 +250,14 @@ namespace D3D12DebugLayerDiagnostics
 		}
 	}
 
-	template <typename TAllocationNode>
-	void AppendAllocationMessages(
+	template <typename TAllocationNode> void AppendAllocationMessages(
 	    std::deque<RhiDiagnosticMessage>& messages,
 	    const TAllocationNode* node,
 	    std::string_view allocationListName) noexcept
 	{
 		std::size_t reportedAllocations = 0;
 		for (const TAllocationNode* currentNode = node; currentNode != nullptr && reportedAllocations < kMaxAllocationNodes;
-		     currentNode = currentNode->pNext, ++reportedAllocations)
+		    currentNode = currentNode->pNext, ++reportedAllocations)
 		{
 			AppendDiagnosticMessage(
 			    messages,
@@ -372,11 +371,11 @@ void D3D12DebugLayer::ClearMessages() noexcept
 
 bool D3D12DebugLayer::SupportsLiveObjectReports() const noexcept
 {
-	#if ENGINE_REPORT_LIVE_OBJECTS
+  #if ENGINE_REPORT_LIVE_OBJECTS
 	return m_dxgiDebug != nullptr;
-	#else
+  #else
 	return false;
-	#endif
+  #endif
 }
 
 bool D3D12DebugLayer::SupportsCrashDiagnostics() const noexcept
@@ -445,11 +444,11 @@ void D3D12DebugLayer::CollectCrashDiagnostics(ID3D12Device* device) noexcept
 			{
 				const UINT completedOperations = currentNode->pLastBreadcrumbValue != nullptr ? *currentNode->pLastBreadcrumbValue : 0u;
 				const UINT historyIndex = completedOperations > 0 && currentNode->BreadcrumbCount > 0
-				                              ? (std::min) (completedOperations, currentNode->BreadcrumbCount) - 1
-				                              : 0u;
+				    ? (std::min) (completedOperations, currentNode->BreadcrumbCount) - 1
+				    : 0u;
 				const D3D12_AUTO_BREADCRUMB_OP lastOperation = currentNode->pCommandHistory != nullptr && currentNode->BreadcrumbCount > 0
-				                                                   ? currentNode->pCommandHistory[historyIndex]
-				                                                   : D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION;
+				    ? currentNode->pCommandHistory[historyIndex]
+				    : D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION;
 				AppendDiagnosticMessage(
 				    m_messages,
 				    ERhiDiagnosticMessageSeverity::Error,
@@ -575,24 +574,24 @@ void D3D12DebugLayer::DrainStoredMessages() noexcept
 
 void D3D12DebugLayer::ReportLiveDeviceObjects(ID3D12Device* device)
 {
-	#if ENGINE_REPORT_LIVE_OBJECTS
+  #if ENGINE_REPORT_LIVE_OBJECTS
 	ComPtr<ID3D12DebugDevice> debugDevice;
 	if (device && SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(debugDevice.ReleaseAndGetAddressOf()))))
 	{
 		OutputDebugStringW(L"D3D12 Live Device Objects (detail + summary):\n");
 		debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL | D3D12_RLDO_SUMMARY);
 	}
-	#endif
+  #endif
 }
 
 void D3D12DebugLayer::ReportLiveDXGIObjects()
 {
-	#if ENGINE_REPORT_LIVE_OBJECTS
+  #if ENGINE_REPORT_LIVE_OBJECTS
 	if (m_dxgiDebug)
 	{
 		OutputDebugStringW(L"DXGI Live Objects (all flags):\n");
 		m_dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_ALL));
 	}
-	#endif
+  #endif
 }
 #endif

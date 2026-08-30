@@ -25,7 +25,7 @@ struct VulkanQueueFamilyRequest final
 
 class VulkanQueueTopology final
 {
-  public:
+public:
 	static VulkanQueueTopology Select(VkPhysicalDevice physicalDevice);
 
 	const VulkanQueueLocation& Get(ERhiQueueType queueType) const noexcept;
@@ -34,7 +34,7 @@ class VulkanQueueTopology final
 	std::span<const VulkanQueueFamilyRequest> GetFamilyRequests() const noexcept { return m_familyRequests; }
 	std::span<const std::uint32_t> GetFamilyIndices() const noexcept { return m_familyIndices; }
 
-  private:
+private:
 	std::array<VulkanQueueLocation, RhiQueueTypeCount> m_locations{};
 	std::vector<VulkanQueueFamilyRequest> m_familyRequests;
 	std::vector<std::uint32_t> m_familyIndices;

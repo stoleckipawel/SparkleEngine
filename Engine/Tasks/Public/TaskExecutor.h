@@ -27,7 +27,7 @@ enum class TaskExecutorShutdownMode : std::uint8_t
 
 class SPARKLE_TASKS_API TaskExecutor final
 {
-  public:
+public:
 	explicit TaskExecutor(TaskExecutorConfig config = {});
 	~TaskExecutor();
 
@@ -46,7 +46,7 @@ class SPARKLE_TASKS_API TaskExecutor final
 	bool Shutdown(TaskExecutorShutdownMode mode = TaskExecutorShutdownMode::Drain) noexcept;
 	std::uint32_t GetWorkerCount(TaskLane lane) const noexcept;
 
-  private:
+private:
 	struct Implementation;
 	std::unique_ptr<Implementation> m_implementation;
 };

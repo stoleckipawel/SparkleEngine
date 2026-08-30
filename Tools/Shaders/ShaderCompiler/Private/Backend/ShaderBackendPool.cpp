@@ -7,10 +7,7 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 
-IShaderBackend& ShaderBackendPool::ResolveAndAcquire(
-    std::string_view sourcePath,
-    ShaderTarget target,
-    std::string_view requestedName)
+IShaderBackend& ShaderBackendPool::ResolveAndAcquire(std::string_view sourcePath, ShaderTarget target, std::string_view requestedName)
 {
 	const std::string backendName = ResolveShaderBackendName(sourcePath, target, requestedName);
 	return Acquire(backendName, target);
@@ -36,8 +33,7 @@ IShaderBackend& ShaderBackendPool::Acquire(std::string_view backendName, ShaderT
 	if (!backend->GetCapabilities().SupportsTarget(target))
 	{
 		throw Diagnostics::Error(
-		    std::string{"Shader backend '"} + resolvedName + "' does not support target '" +
-		    GetShaderTargetName(target) + "'.");
+		    std::string{"Shader backend '"} + resolvedName + "' does not support target '" + GetShaderTargetName(target) + "'.");
 	}
 
 	IShaderBackend& backendReference = *backend;

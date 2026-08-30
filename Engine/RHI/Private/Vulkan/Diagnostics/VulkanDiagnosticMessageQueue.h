@@ -8,7 +8,7 @@
 
 class VulkanDiagnosticMessageQueue final
 {
-  public:
+public:
 	VulkanDiagnosticMessageQueue() noexcept;
 	~VulkanDiagnosticMessageQueue() noexcept;
 
@@ -21,7 +21,7 @@ class VulkanDiagnosticMessageQueue final
 	bool TryPop(RhiDiagnosticMessage& outMessage) noexcept;
 	void Clear() noexcept;
 
-  private:
+private:
 	static constexpr std::size_t Capacity = 256;
 
 	std::deque<RhiDiagnosticMessage> m_messages;

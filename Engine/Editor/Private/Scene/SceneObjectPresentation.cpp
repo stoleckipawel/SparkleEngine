@@ -74,4 +74,4 @@ namespace SceneObjectPresentation
 	{
 		return selection != nullptr ? BuildSelectionIcon(*selection, lightKind) : UiUtil::EditorIcon::None;
 	}
-}  // namespace SceneObjectPresentation
+}

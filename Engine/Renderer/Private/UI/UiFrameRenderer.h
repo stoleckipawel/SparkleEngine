@@ -29,10 +29,7 @@ public:
 private:
 	bool BeginViewportPresentation(FrameGraph& frameGraph, ViewportRenderProducts& viewportProducts) noexcept;
 	void EndViewportPresentation(FrameGraph& frameGraph, const ViewportRenderProducts& viewportProducts) noexcept;
-	void RenderEditorViewport(
-	    const UiRenderPacket& packet,
-	    FrameGraph* frameGraph,
-	    ViewportRenderProducts& viewportProducts) noexcept;
+	void RenderEditorViewport(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept;
 	void RenderHostOverlay(const UiRenderPacket& packet) noexcept;
 	void Play(const UiRenderPacket& packet) noexcept;
 	void TransitionViewportProduct(

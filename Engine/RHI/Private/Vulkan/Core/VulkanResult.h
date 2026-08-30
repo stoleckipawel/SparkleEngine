@@ -7,7 +7,7 @@
 
 class VulkanResult final
 {
-  public:
+public:
 	VulkanResult() = delete;
 
 	static bool Succeeded(VkResult result) noexcept;

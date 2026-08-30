@@ -13,7 +13,7 @@
 
 class SPARKLE_CORE_API ConsoleSession final : public ConsoleOutputSink
 {
-  public:
+public:
 	ConsoleSession(ConsoleCommandRegistry& commandRegistry, ConsoleCommandScope scope = ConsoleCommandScope::Runtime);
 
 	void SubmitLine(std::string_view line);
@@ -33,7 +33,7 @@ class SPARKLE_CORE_API ConsoleSession final : public ConsoleOutputSink
 	ConsoleCommandScope GetScope() const noexcept { return m_scope; }
 	void SetScope(ConsoleCommandScope scope) noexcept { m_scope = scope; }
 
-  private:
+private:
 	static constexpr std::size_t kMaxOutputRecords = 512;
 
 	ConsoleCommandRegistry* m_commandRegistry = nullptr;

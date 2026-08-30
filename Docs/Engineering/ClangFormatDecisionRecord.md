@@ -286,7 +286,7 @@ Preprocessor indentation, include preservation, Allman braces, tabs, namespace i
 
 ### Shader acceptance gate
 
-Before formatting all 113 shader files:
+Before formatting the tracked owned shader manifest:
 
 1. select a corpus covering compute, deferred, ray tracing, BRDF, resource ABI, nested preprocessor conditionals, semantics, and attributes;
 2. capture the pre-format source identities, compiled DXIL/SPIR-V blobs, reflection, package keys, and binding-layout hashes;
@@ -299,16 +299,19 @@ Before formatting all 113 shader files:
 
 ## Remaining Rollout
 
-Keep policy work separate from the eventual repository-wide format change:
+The 2026-08-30 migration pass completed the following repository-owned pieces:
 
-1. Add a pinned format entry point and a check-only command; make the file manifest explicit and based on tracked owned files.
-2. Include checks for prohibited namespace-end comments, multiple inheritance, and inline HLSL attributes because clang-format cannot enforce those rules.
-3. Run the shader acceptance gate.
-4. Produce a no-write impact report by module and source family.
-5. Land one dedicated mechanical formatting change, including removal of existing namespace-end comments and normalization of HLSL attribute placement, with no semantic edits.
-6. Rebuild owned targets, run architecture boundaries and tests, and repeat shader compile/package validation.
-7. Enable CI check-only enforcement after the formatted baseline lands.
+1. `CMake/CodeStyle.ps1` now provides pinned check and format entry points over a tracked owned-source manifest, with matching `code_style_check` and `code_style_format` CMake targets.
+2. The check covers namespace-end comments, anonymous namespaces, multiple inheritance, and inline HLSL attributes in addition to clang-format drift.
+3. A no-write inventory was reviewed by module and source family. The current worktree manifest contains 1,917 present tracked C/C++ files and 120 present tracked shader files after excluding D3D12 third-party source and tracked files already deleted by the in-progress Launcher change.
+4. The C/C++ subset was migrated with clang-format 22.1.3, existing namespace-end comments were removed, and the check-only C/C++ pass is clean. Existing Launcher implementation edits were preserved rather than replaced or reverted.
+5. Post-format `DevelopmentEditor` builds passed for Core, Tasks, Platform, GameFramework, SourceImporters, Launcher, AssetCooker, MaterialCooker, MeshCooker, SceneCooker, and ToolConsoleSupport. The architecture-boundary check also passed.
 
-A whole-repository format should not be mixed into the currently modified implementation files or any feature change. The worktree was already dirty during this research, so this record intentionally did not alter or normalize engine or shader source files.
+The shader and final enforcement steps remain open:
 
-The accepted executable YAML and representative examples must still receive a no-write, real-file diff review before any repository-wide formatting run.
+1. Establish a passing pre-format ShaderCompiler baseline. The current source build stops in existing RHI compilation errors, while the deployed ShaderCompiler artifact is stale and cannot resolve the current shader catalog. No shader source was formatted without this gate. The current no-write shader check reports formatter drift in 44 of 120 files and 79 authored-policy violations.
+2. Run the DXIL/SPIR-V shader acceptance gate, normalize HLSL attributes, and migrate the shader subset only after its compile, reflection, binding-layout, and package-identity evidence passes.
+3. Rebuild the remaining RHI-dependent owned targets, repeat the shader validation, and run applicable tests after the current RHI compilation defects are resolved. Generated test projects do not substitute for tests present and registered in source.
+4. Enable CI check-only enforcement only after both source families have a clean accepted baseline. Until then, `-SourceFamily Cpp` is the passing migration check; the normal `All` check must continue to expose shader drift.
+
+The repository-wide format remains a mechanical migration, not authorization for semantic cleanup. This pass was applied in an already dirty worktree only after explicit continuation approval; no commit or staging boundary was created by the tooling.

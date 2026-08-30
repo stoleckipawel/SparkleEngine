@@ -9,9 +9,9 @@
 
 constexpr std::uint32_t MakeCookedTextureAssetMagic(char a, char b, char c, char d) noexcept
 {
-	return static_cast<std::uint32_t>(static_cast<std::uint8_t>(a)) | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(b)) << 8u) |
-	       (static_cast<std::uint32_t>(static_cast<std::uint8_t>(c)) << 16u) |
-	       (static_cast<std::uint32_t>(static_cast<std::uint8_t>(d)) << 24u);
+	return static_cast<std::uint32_t>(static_cast<std::uint8_t>(a)) | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(b)) << 8u)
+	    | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(c)) << 16u)
+	    | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(d)) << 24u);
 }
 
 inline constexpr std::string_view kCookedTextureAssetExtension = ".stex";

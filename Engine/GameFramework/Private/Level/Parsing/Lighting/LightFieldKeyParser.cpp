@@ -13,7 +13,7 @@ namespace LevelParsing
 {
 	class LightFieldKeyParsing final
 	{
-	  private:
+	private:
 		struct LightFieldPrefix final
 		{
 			std::string_view Text;
@@ -27,9 +27,7 @@ namespace LevelParsing
 		    {"RectLight", SceneLightKind::Rect},
 		}};
 
-		static ParsedLightFieldKey ParseIndexedField(
-		    std::string_view key,
-		    const LightFieldPrefix& prefix)
+		static ParsedLightFieldKey ParseIndexedField(std::string_view key, const LightFieldPrefix& prefix)
 		{
 			std::size_t cursor = prefix.Text.size();
 			if (cursor >= key.size() || !std::isdigit(static_cast<unsigned char>(key[cursor])))
@@ -49,7 +47,7 @@ namespace LevelParsing
 			return ParsedLightFieldKey{.Kind = prefix.Kind, .Index = index, .Field = key.substr(cursor)};
 		}
 
-	  public:
+	public:
 		static ParsedLightFieldKey Parse(std::string_view key)
 		{
 			for (const LightFieldPrefix& prefix : kPrefixes)

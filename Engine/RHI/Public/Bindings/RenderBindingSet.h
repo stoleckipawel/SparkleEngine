@@ -17,8 +17,11 @@ struct RenderBindingSetDesc
 
 class SPARKLE_RHI_API RenderBindingSet final
 {
-  public:
-	RenderBindingSet(const RhiCapabilities& capabilities, RhiDescriptorService& descriptorService, const RenderBindingSetDesc& desc) noexcept;
+public:
+	RenderBindingSet(
+	    const RhiCapabilities& capabilities,
+	    RhiDescriptorService& descriptorService,
+	    const RenderBindingSetDesc& desc) noexcept;
 	~RenderBindingSet() noexcept;
 
 	RenderBindingSet(const RenderBindingSet&) = delete;
@@ -34,7 +37,7 @@ class SPARKLE_RHI_API RenderBindingSet final
 	RhiDescriptorTableBinding GetTableBinding(std::uint32_t descriptorIndex = 0) const noexcept;
 	bool WriteResourceView(std::uint32_t descriptorIndex, RhiResourceViewHandle view) noexcept;
 
-  private:
+private:
 	void Reset() noexcept;
 
 	RhiDescriptorService* m_descriptorService = nullptr;

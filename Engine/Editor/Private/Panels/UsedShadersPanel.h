@@ -9,7 +9,7 @@
 
 class UsedShadersPanel final
 {
-  public:
+public:
 	using RecookHandler = std::function<void(std::string)>;
 	using CommandHandler = std::function<void()>;
 
@@ -21,7 +21,7 @@ class UsedShadersPanel final
 	void SetRecookHandler(RecookHandler handler);
 	void BuildUI(bool disableInteraction);
 
-  private:
+private:
 	struct ArtifactTexts final
 	{
 		std::string Source;

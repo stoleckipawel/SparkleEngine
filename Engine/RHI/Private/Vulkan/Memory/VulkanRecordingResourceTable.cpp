@@ -46,21 +46,15 @@ VulkanRecordingResourceTable::ReadView::~ReadView() noexcept
 VulkanRecordingResourceTable::VulkanRecordingResourceTable() noexcept = default;
 VulkanRecordingResourceTable::~VulkanRecordingResourceTable() noexcept = default;
 
-void VulkanRecordingResourceTable::Publish(
-    std::span<VulkanGpuAllocationRecord* const> records) noexcept
+void VulkanRecordingResourceTable::Publish(std::span<VulkanGpuAllocationRecord* const> records) noexcept
 {
 	std::shared_ptr<ReadView> readView = BuildReadView(records);
-	m_readView.store(
-	    std::shared_ptr<const ReadView>(std::move(readView)),
-	    std::memory_order_release);
+	m_readView.store(std::shared_ptr<const ReadView>(std::move(readView)), std::memory_order_release);
 }
 
-bool VulkanRecordingResourceTable::Resolve(
-    RhiResourceHandle resource,
-    VulkanRecordingResource& outResource) const noexcept
+bool VulkanRecordingResourceTable::Resolve(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept
 {
-	const std::shared_ptr<const ReadView> readView =
-	    m_readView.load(std::memory_order_acquire);
+	const std::shared_ptr<const ReadView> readView = m_readView.load(std::memory_order_acquire);
 	if (readView == nullptr)
 	{
 		return false;
@@ -76,9 +70,7 @@ bool VulkanRecordingResourceTable::Resolve(
 	return true;
 }
 
-bool VulkanRecordingResourceTable::Resolve(
-    RhiGpuVirtualAddress address,
-    VulkanRecordingResource& outResource) const noexcept
+bool VulkanRecordingResourceTable::Resolve(RhiGpuVirtualAddress address, VulkanRecordingResource& outResource) const noexcept
 {
 	if (address == 0)
 	{
@@ -89,8 +81,7 @@ bool VulkanRecordingResourceTable::Resolve(
 		return true;
 	}
 
-	const std::shared_ptr<const ReadView> readView =
-	    m_readView.load(std::memory_order_acquire);
+	const std::shared_ptr<const ReadView> readView = m_readView.load(std::memory_order_acquire);
 	if (readView == nullptr)
 	{
 		return false;
@@ -110,24 +101,19 @@ bool VulkanRecordingResourceTable::Resolve(
 	return true;
 }
 
-VulkanRecordingResourceUseToken VulkanRecordingResourceTable::Retain(
-    RhiResourceHandle resource) const noexcept
+VulkanRecordingResourceUseToken VulkanRecordingResourceTable::Retain(RhiResourceHandle resource) const noexcept
 {
-	const std::shared_ptr<const ReadView> readView =
-	    m_readView.load(std::memory_order_acquire);
+	const std::shared_ptr<const ReadView> readView = m_readView.load(std::memory_order_acquire);
 	if (readView == nullptr)
 	{
 		return {};
 	}
 
 	const ResourceEntry* const entry = FindResource(*readView, resource);
-	return entry != nullptr && entry->Record != nullptr
-	           ? Retain(*entry->Record)
-	           : VulkanRecordingResourceUseToken{};
+	return entry != nullptr && entry->Record != nullptr ? Retain(*entry->Record) : VulkanRecordingResourceUseToken{};
 }
 
-VulkanRecordingResourceUseToken VulkanRecordingResourceTable::Retain(
-    VulkanGpuAllocationRecord& record) const noexcept
+VulkanRecordingResourceUseToken VulkanRecordingResourceTable::Retain(VulkanGpuAllocationRecord& record) const noexcept
 {
 	RetainReference(record);
 
@@ -136,22 +122,18 @@ VulkanRecordingResourceUseToken VulkanRecordingResourceTable::Retain(
 	return use;
 }
 
-void VulkanRecordingResourceTable::Release(
-    VulkanRecordingResourceUseToken use,
-    RhiSubmissionToken submissionToken) const noexcept
+void VulkanRecordingResourceTable::Release(VulkanRecordingResourceUseToken use, RhiSubmissionToken submissionToken) const noexcept
 {
 	if (!use)
 	{
 		return;
 	}
 
-	auto* const record =
-	    reinterpret_cast<VulkanGpuAllocationRecord*>(use.m_value);
+	auto* const record = reinterpret_cast<VulkanGpuAllocationRecord*>(use.m_value);
 	ReleaseReference(*record, submissionToken);
 }
 
-std::shared_ptr<VulkanRecordingResourceTable::ReadView>
-VulkanRecordingResourceTable::BuildReadView(
+std::shared_ptr<VulkanRecordingResourceTable::ReadView> VulkanRecordingResourceTable::BuildReadView(
     std::span<VulkanGpuAllocationRecord* const> records)
 {
 	auto readView = std::make_shared<ReadView>();
@@ -163,24 +145,15 @@ VulkanRecordingResourceTable::BuildReadView(
 	std::ranges::sort(
 	    readView->ResourcesByHandle,
 	    {},
-	    [](const ResourceEntry& entry) noexcept
-	    {
-		    return entry.Resource.ResourceHandleValue;
-	    });
+	    [](const ResourceEntry& entry) noexcept { return entry.Resource.ResourceHandleValue; });
 
 	BuildAddressProjections(*readView);
-	std::ranges::sort(
-	    readView->ResourcesByExactAddress,
-	    &AddressEntryPrecedes);
-	std::ranges::sort(
-	    readView->ResourcesByBufferAddress,
-	    &AddressEntryPrecedes);
+	std::ranges::sort(readView->ResourcesByExactAddress, &AddressEntryPrecedes);
+	std::ranges::sort(readView->ResourcesByBufferAddress, &AddressEntryPrecedes);
 	return readView;
 }
 
-void VulkanRecordingResourceTable::CollectPublishedResources(
-    std::span<VulkanGpuAllocationRecord* const> records,
-    ReadView& readView)
+void VulkanRecordingResourceTable::CollectPublishedResources(std::span<VulkanGpuAllocationRecord* const> records, ReadView& readView)
 {
 	std::size_t publicationOrder = 0;
 	for (VulkanGpuAllocationRecord* record : records)
@@ -192,15 +165,11 @@ void VulkanRecordingResourceTable::CollectPublishedResources(
 
 		RetainReference(*record);
 		readView.ResourcesByHandle.push_back(
-		    ResourceEntry{
-		        .Resource = BuildResource(*record),
-		        .Record = record,
-		        .PublicationOrder = publicationOrder++});
+		    ResourceEntry{.Resource = BuildResource(*record), .Record = record, .PublicationOrder = publicationOrder++});
 	}
 }
 
-void VulkanRecordingResourceTable::BuildAddressProjections(
-    ReadView& readView)
+void VulkanRecordingResourceTable::BuildAddressProjections(ReadView& readView)
 {
 	for (std::size_t resourceIndex = 0; resourceIndex < readView.ResourcesByHandle.size(); ++resourceIndex)
 	{
@@ -225,8 +194,7 @@ void VulkanRecordingResourceTable::BuildAddressProjections(
 	}
 }
 
-const VulkanRecordingResourceTable::ResourceEntry*
-VulkanRecordingResourceTable::FindResource(
+const VulkanRecordingResourceTable::ResourceEntry* VulkanRecordingResourceTable::FindResource(
     const ReadView& readView,
     RhiResourceHandle resource) noexcept
 {
@@ -235,63 +203,39 @@ VulkanRecordingResourceTable::FindResource(
 		return nullptr;
 	}
 
-	const std::uintptr_t resourceValue =
-	    reinterpret_cast<std::uintptr_t>(resource.Value);
+	const std::uintptr_t resourceValue = reinterpret_cast<std::uintptr_t>(resource.Value);
 	const auto found = std::ranges::lower_bound(
 	    readView.ResourcesByHandle,
 	    resourceValue,
 	    {},
-	    [](const ResourceEntry& entry) noexcept
-	    {
-		    return entry.Resource.ResourceHandleValue;
-	    });
-	return found != readView.ResourcesByHandle.end() &&
-	               found->Resource.ResourceHandleValue == resourceValue
-	           ? &*found
-	           : nullptr;
+	    [](const ResourceEntry& entry) noexcept { return entry.Resource.ResourceHandleValue; });
+	return found != readView.ResourcesByHandle.end() && found->Resource.ResourceHandleValue == resourceValue ? &*found : nullptr;
 }
 
-const VulkanRecordingResourceTable::ResourceEntry*
-VulkanRecordingResourceTable::FindExactAddress(
+const VulkanRecordingResourceTable::ResourceEntry* VulkanRecordingResourceTable::FindExactAddress(
     const ReadView& readView,
     RhiGpuVirtualAddress address) noexcept
 {
-	const auto found = std::ranges::lower_bound(
-	    readView.ResourcesByExactAddress,
-	    address,
-	    {},
-	    &AddressEntry::LookupAddress);
-	return found != readView.ResourcesByExactAddress.end() &&
-	               found->LookupAddress == address &&
-	               found->ResourceIndex < readView.ResourcesByHandle.size()
-	           ? &readView.ResourcesByHandle[found->ResourceIndex]
-	           : nullptr;
+	const auto found = std::ranges::lower_bound(readView.ResourcesByExactAddress, address, {}, &AddressEntry::LookupAddress);
+	return found != readView.ResourcesByExactAddress.end() && found->LookupAddress == address
+	        && found->ResourceIndex < readView.ResourcesByHandle.size()
+	    ? &readView.ResourcesByHandle[found->ResourceIndex]
+	    : nullptr;
 }
 
-const VulkanRecordingResourceTable::ResourceEntry*
-VulkanRecordingResourceTable::FindBufferAddress(
+const VulkanRecordingResourceTable::ResourceEntry* VulkanRecordingResourceTable::FindBufferAddress(
     const ReadView& readView,
     RhiGpuVirtualAddress address) noexcept
 {
-	const auto after = std::ranges::upper_bound(
-	    readView.ResourcesByBufferAddress,
-	    address,
-	    {},
-	    &AddressEntry::LookupAddress);
+	const auto after = std::ranges::upper_bound(readView.ResourcesByBufferAddress, address, {}, &AddressEntry::LookupAddress);
 	if (after == readView.ResourcesByBufferAddress.begin())
 	{
 		return nullptr;
 	}
 
 	const VkDeviceAddress baseAddress = std::prev(after)->LookupAddress;
-	const auto firstAtBase = std::ranges::lower_bound(
-	    readView.ResourcesByBufferAddress,
-	    baseAddress,
-	    {},
-	    &AddressEntry::LookupAddress);
-	for (auto candidate = firstAtBase;
-	     candidate != after && candidate->LookupAddress == baseAddress;
-	     ++candidate)
+	const auto firstAtBase = std::ranges::lower_bound(readView.ResourcesByBufferAddress, baseAddress, {}, &AddressEntry::LookupAddress);
+	for (auto candidate = firstAtBase; candidate != after && candidate->LookupAddress == baseAddress; ++candidate)
 	{
 		if (candidate->ResourceIndex >= readView.ResourcesByHandle.size())
 		{
@@ -308,9 +252,7 @@ VulkanRecordingResourceTable::FindBufferAddress(
 	return nullptr;
 }
 
-bool VulkanRecordingResourceTable::AddressEntryPrecedes(
-    const AddressEntry& left,
-    const AddressEntry& right) noexcept
+bool VulkanRecordingResourceTable::AddressEntryPrecedes(const AddressEntry& left, const AddressEntry& right) noexcept
 {
 	if (left.LookupAddress != right.LookupAddress)
 	{
@@ -320,8 +262,7 @@ bool VulkanRecordingResourceTable::AddressEntryPrecedes(
 	return left.PublicationOrder < right.PublicationOrder;
 }
 
-VulkanRecordingResource VulkanRecordingResourceTable::BuildResource(
-    const VulkanGpuAllocationRecord& record) noexcept
+VulkanRecordingResource VulkanRecordingResourceTable::BuildResource(const VulkanGpuAllocationRecord& record) noexcept
 {
 	return VulkanRecordingResource{
 	    .Buffer = record.Buffer,
@@ -337,44 +278,32 @@ VulkanRecordingResource VulkanRecordingResourceTable::BuildResource(
 	    .Usage = record.Usage,
 	    .AccelerationStructureType = record.AccelerationStructureType,
 	    .ResourceKind = record.ResourceKind,
-	    .IsPartitionedAccelerationStructure =
-	        record.IsPartitionedAccelerationStructure};
+	    .IsPartitionedAccelerationStructure = record.IsPartitionedAccelerationStructure};
 }
 
-void VulkanRecordingResourceTable::RetainReference(
-    VulkanGpuAllocationRecord& record) noexcept
+void VulkanRecordingResourceTable::RetainReference(VulkanGpuAllocationRecord& record) noexcept
 {
 	record.RecordingReferenceCount.fetch_add(1, std::memory_order_relaxed);
 	if (record.ParentMemoryBlock != nullptr)
 	{
-		record.ParentMemoryBlock->RecordingReferenceCount.fetch_add(
-		    1,
-		    std::memory_order_relaxed);
+		record.ParentMemoryBlock->RecordingReferenceCount.fetch_add(1, std::memory_order_relaxed);
 	}
 }
 
-void VulkanRecordingResourceTable::ReleaseReference(
-    VulkanGpuAllocationRecord& record) noexcept
+void VulkanRecordingResourceTable::ReleaseReference(VulkanGpuAllocationRecord& record) noexcept
 {
-	const std::uint32_t previousReferences =
-	    record.RecordingReferenceCount.fetch_sub(
-	        1,
-	        std::memory_order_relaxed);
+	const std::uint32_t previousReferences = record.RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
 	assert(previousReferences != 0);
 
 	if (record.ParentMemoryBlock != nullptr)
 	{
 		const std::uint32_t previousBlockReferences =
-		    record.ParentMemoryBlock->RecordingReferenceCount.fetch_sub(
-		        1,
-		        std::memory_order_relaxed);
+		    record.ParentMemoryBlock->RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
 		assert(previousBlockReferences != 0);
 	}
 }
 
-void VulkanRecordingResourceTable::ReleaseReference(
-    VulkanGpuAllocationRecord& record,
-    RhiSubmissionToken submissionToken) noexcept
+void VulkanRecordingResourceTable::ReleaseReference(VulkanGpuAllocationRecord& record, RhiSubmissionToken submissionToken) noexcept
 {
 	record.LastUse.MarkUsed(submissionToken);
 	if (record.ParentMemoryBlock != nullptr)

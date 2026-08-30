@@ -25,9 +25,7 @@ struct FrameHistoryResourceLayout final
 	FrameGraphReservoirHistoryHandles RestirIndirectReservoir = {};
 };
 
-FrameHistoryResourceLayout DeclareFrameHistoryResources(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent);
+FrameHistoryResourceLayout DeclareFrameHistoryResources(FrameGraphBuilder& builder, RenderViewportExtent renderExtent);
 
 void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept;
 void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept;

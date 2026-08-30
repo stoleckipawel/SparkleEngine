@@ -10,7 +10,6 @@ namespace SparkleLauncher
 		std::filesystem::path RootDirectory;
 		std::filesystem::path LogsDirectory;
 		std::filesystem::path ActivityPath;
-		std::filesystem::path ActionHistoryPath;
 		std::filesystem::path SettingsPath;
 	};
 
@@ -23,7 +22,10 @@ namespace SparkleLauncher
 	std::filesystem::path GetBuildDirectory(const std::filesystem::path& repositoryRoot);
 	std::filesystem::path GetArtifactDirectory(const std::filesystem::path& repositoryRoot);
 	std::filesystem::path GetDeveloperArtifactDirectory(const std::filesystem::path& repositoryRoot);
-	std::filesystem::path GetDeveloperLibraryDirectory(const std::filesystem::path& repositoryRoot, std::string_view owner, std::string_view profileName);
+	std::filesystem::path GetDeveloperLibraryDirectory(
+	    const std::filesystem::path& repositoryRoot,
+	    std::string_view owner,
+	    std::string_view profileName);
 	std::filesystem::path GetLauncherArtifactDirectory(const std::filesystem::path& repositoryRoot, std::string_view profileName);
 	std::filesystem::path GetDevelopmentToolArtifactDirectory(
 	    const std::filesystem::path& repositoryRoot,

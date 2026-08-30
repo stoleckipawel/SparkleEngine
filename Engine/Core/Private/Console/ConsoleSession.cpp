@@ -5,7 +5,8 @@
 #include "Core/Public/Strings/StringUtils.h"
 
 ConsoleSession::ConsoleSession(ConsoleCommandRegistry& commandRegistry, ConsoleCommandScope scope) :
-    m_commandRegistry(&commandRegistry), m_scope(scope)
+    m_commandRegistry(&commandRegistry),
+    m_scope(scope)
 {
 }
 

@@ -9,7 +9,10 @@ struct FrameGraphTextureHandle
 	FrameGraphResourceHandle resource = FrameGraphResourceHandle::Invalid();
 
 	constexpr FrameGraphTextureHandle() noexcept = default;
-	explicit constexpr FrameGraphTextureHandle(FrameGraphResourceHandle handle) noexcept : resource(handle) {}
+	explicit constexpr FrameGraphTextureHandle(FrameGraphResourceHandle handle) noexcept :
+	    resource(handle)
+	{
+	}
 
 	static constexpr FrameGraphTextureHandle Invalid() noexcept { return FrameGraphTextureHandle{}; }
 

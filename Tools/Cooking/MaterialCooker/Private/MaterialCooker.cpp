@@ -23,49 +23,30 @@
 
 class MaterialCookPipeline final
 {
-  public:
+public:
 	static std::string BuildCookedTextureReferencePath(const TextureCookRequest& request);
 	static CookedMaterialAssetBuild BuildMaterialAsset(
 	    const ImportedMaterial& importedMaterial,
 	    std::string_view sceneAssetId,
 	    std::size_t materialIndex);
-	static void AppendTextureReference(
-	    const ImportedTextureSource& textureSource,
-	    CookedMaterialAssetBuild& materialAsset);
-	static void AppendTextureRequest(
-	    const ImportedTextureSource& textureSource,
-	    TextureCookRequestSet& requestSet);
-	static void StageMaterialAsset(
-	    const CookedMaterialAssetBuild& materialAsset,
-	    std::vector<Files::FilePublication>& outPublication);
-	static void WriteMaterialAsset(
-	    const CookedMaterialAssetBuild& materialAsset,
-	    const std::filesystem::path& stagedOutputPath);
-	static void WriteMaterialName(
-	    std::ofstream& output,
-	    const CookedMaterialAssetBuild& materialAsset);
-	static std::vector<Assets::CookedTextureReferenceRecord> BuildTextureReferenceRecords(
-	    const CookedMaterialAssetBuild& materialAsset);
-	static void WriteTextureReferencePaths(
-	    std::ofstream& output,
-	    const CookedMaterialAssetBuild& materialAsset);
-	static Assets::CookedAssetId BuildMaterialAssetId(
-	    std::string_view sceneAssetId,
-	    std::size_t materialIndex) noexcept;
+	static void AppendTextureReference(const ImportedTextureSource& textureSource, CookedMaterialAssetBuild& materialAsset);
+	static void AppendTextureRequest(const ImportedTextureSource& textureSource, TextureCookRequestSet& requestSet);
+	static void StageMaterialAsset(const CookedMaterialAssetBuild& materialAsset, std::vector<Files::FilePublication>& outPublication);
+	static void WriteMaterialAsset(const CookedMaterialAssetBuild& materialAsset, const std::filesystem::path& stagedOutputPath);
+	static void WriteMaterialName(std::ofstream& output, const CookedMaterialAssetBuild& materialAsset);
+	static std::vector<Assets::CookedTextureReferenceRecord> BuildTextureReferenceRecords(const CookedMaterialAssetBuild& materialAsset);
+	static void WriteTextureReferencePaths(std::ofstream& output, const CookedMaterialAssetBuild& materialAsset);
+	static Assets::CookedAssetId BuildMaterialAssetId(std::string_view sceneAssetId, std::size_t materialIndex) noexcept;
 	static Assets::CookedAlphaMode TranslateAlphaMode(ImportedAlphaMode alphaMode);
 };
 
 std::string MaterialCookPipeline::BuildCookedTextureReferencePath(const TextureCookRequest& request)
 {
 	const std::optional<std::filesystem::path> relativePath =
-	    Paths::TryMakeRelativeUnderRoot(
-	        request.outputPath,
-	        Filesystem::GetCookedAssetRootPath());
+	    Paths::TryMakeRelativeUnderRoot(request.outputPath, Filesystem::GetCookedAssetRootPath());
 	if (!relativePath)
 	{
-		throw Diagnostics::Error(
-		    "Cooked texture output path is outside the cooked asset root: '" +
-		    request.outputPath.string() + "'.");
+		throw Diagnostics::Error("Cooked texture output path is outside the cooked asset root: '" + request.outputPath.string() + "'.");
 	}
 
 	return relativePath->generic_string();
@@ -77,13 +58,10 @@ CookedMaterialAssetBuild MaterialCookPipeline::BuildMaterialAsset(
     std::size_t materialIndex)
 {
 	CookedMaterialAssetBuild materialAsset;
-	materialAsset.assetId =
-	    BuildMaterialAssetId(sceneAssetId, materialIndex);
+	materialAsset.assetId = BuildMaterialAssetId(sceneAssetId, materialIndex);
 	materialAsset.name = importedMaterial.name;
-	materialAsset.header.nameByteCount =
-	    static_cast<std::uint32_t>(materialAsset.name.size());
-	materialAsset.header.alphaMode =
-	    TranslateAlphaMode(importedMaterial.alphaMode);
+	materialAsset.header.nameByteCount = static_cast<std::uint32_t>(materialAsset.name.size());
+	materialAsset.header.alphaMode = TranslateAlphaMode(importedMaterial.alphaMode);
 	materialAsset.header.baseColor = importedMaterial.baseColor;
 	materialAsset.header.metallic = importedMaterial.metallic;
 	materialAsset.header.roughness = importedMaterial.roughness;
@@ -99,42 +77,32 @@ CookedMaterialAssetBuild MaterialCookPipeline::BuildMaterialAsset(
 		AppendTextureReference(textureSource, materialAsset);
 	}
 
-	materialAsset.header.textureReferenceCount =
-	    static_cast<std::uint32_t>(materialAsset.textureReferences.size());
+	materialAsset.header.textureReferenceCount = static_cast<std::uint32_t>(materialAsset.textureReferences.size());
 	return materialAsset;
 }
 
-void MaterialCookPipeline::AppendTextureReference(
-    const ImportedTextureSource& textureSource,
-    CookedMaterialAssetBuild& materialAsset)
+void MaterialCookPipeline::AppendTextureReference(const ImportedTextureSource& textureSource, CookedMaterialAssetBuild& materialAsset)
 {
 	if (textureSource.sourcePath.empty())
 	{
 		return;
 	}
 
-	const TextureCookRequest request = TextureCookRequestBuilder::Build(
-	    textureSource.sourcePath,
-	    textureSource.textureGroup,
-	    textureSource.channelMask);
+	const TextureCookRequest request =
+	    TextureCookRequestBuilder::Build(textureSource.sourcePath, textureSource.textureGroup, textureSource.channelMask);
 
-	materialAsset.textureReferences.push_back(
-	    {BuildCookedTextureReferencePath(request), textureSource.textureGroup});
+	materialAsset.textureReferences.push_back({BuildCookedTextureReferencePath(request), textureSource.textureGroup});
 }
 
-void MaterialCookPipeline::AppendTextureRequest(
-    const ImportedTextureSource& textureSource,
-    TextureCookRequestSet& requestSet)
+void MaterialCookPipeline::AppendTextureRequest(const ImportedTextureSource& textureSource, TextureCookRequestSet& requestSet)
 {
 	if (textureSource.sourcePath.empty())
 	{
 		return;
 	}
 
-	const TextureCookRequest request = TextureCookRequestBuilder::Build(
-	    textureSource.sourcePath,
-	    textureSource.textureGroup,
-	    textureSource.channelMask);
+	const TextureCookRequest request =
+	    TextureCookRequestBuilder::Build(textureSource.sourcePath, textureSource.textureGroup, textureSource.channelMask);
 	requestSet.Add(request);
 }
 
@@ -142,10 +110,8 @@ void MaterialCookPipeline::StageMaterialAsset(
     const CookedMaterialAssetBuild& materialAsset,
     std::vector<Files::FilePublication>& outPublication)
 {
-	const std::filesystem::path outputPath =
-	    Paths::CookedMaterialAsset(materialAsset.assetId);
-	const std::filesystem::path stagedOutputPath =
-	    Files::BuildTemporaryPath(outputPath, ".cook-generation");
+	const std::filesystem::path outputPath = Paths::CookedMaterialAsset(materialAsset.assetId);
+	const std::filesystem::path stagedOutputPath = Files::BuildTemporaryPath(outputPath, ".cook-generation");
 
 	Files::CleanupTemporaryFile(stagedOutputPath);
 	outPublication.push_back({stagedOutputPath, outputPath});
@@ -153,9 +119,7 @@ void MaterialCookPipeline::StageMaterialAsset(
 	WriteMaterialAsset(materialAsset, stagedOutputPath);
 }
 
-void MaterialCookPipeline::WriteMaterialAsset(
-    const CookedMaterialAssetBuild& materialAsset,
-    const std::filesystem::path& stagedOutputPath)
+void MaterialCookPipeline::WriteMaterialAsset(const CookedMaterialAssetBuild& materialAsset, const std::filesystem::path& stagedOutputPath)
 {
 	std::string errorMessage;
 	std::ofstream output;
@@ -181,18 +145,14 @@ void MaterialCookPipeline::WriteMaterialAsset(
 	}
 }
 
-void MaterialCookPipeline::WriteMaterialName(
-    std::ofstream& output,
-    const CookedMaterialAssetBuild& materialAsset)
+void MaterialCookPipeline::WriteMaterialName(std::ofstream& output, const CookedMaterialAssetBuild& materialAsset)
 {
 	if (materialAsset.name.empty())
 	{
 		return;
 	}
 
-	output.write(
-	    materialAsset.name.data(),
-	    static_cast<std::streamsize>(materialAsset.name.size()));
+	output.write(materialAsset.name.data(), static_cast<std::streamsize>(materialAsset.name.size()));
 	if (!output.good())
 	{
 		throw Diagnostics::Error("Failed to write cooked material asset name payload.");
@@ -212,43 +172,30 @@ std::vector<Assets::CookedTextureReferenceRecord> MaterialCookPipeline::BuildTex
 		}
 
 		records.push_back(
-		    {.texturePathByteCount = static_cast<std::uint32_t>(reference.texturePath.size()),
-		     .textureGroup = reference.textureGroup});
+		    {.texturePathByteCount = static_cast<std::uint32_t>(reference.texturePath.size()), .textureGroup = reference.textureGroup});
 	}
 
 	return records;
 }
 
-void MaterialCookPipeline::WriteTextureReferencePaths(
-    std::ofstream& output,
-    const CookedMaterialAssetBuild& materialAsset)
+void MaterialCookPipeline::WriteTextureReferencePaths(std::ofstream& output, const CookedMaterialAssetBuild& materialAsset)
 {
 	std::string errorMessage;
 	for (const Assets::CookedTextureReference& reference : materialAsset.textureReferences)
 	{
-		if (!Files::BinaryStreamWriter::WriteBytes(
-		        output,
-		        reference.texturePath.data(),
-		        reference.texturePath.size(),
-		        errorMessage))
+		if (!Files::BinaryStreamWriter::WriteBytes(output, reference.texturePath.data(), reference.texturePath.size(), errorMessage))
 		{
 			throw Diagnostics::Error(std::move(errorMessage));
 		}
 	}
 }
 
-Assets::CookedAssetId MaterialCookPipeline::BuildMaterialAssetId(
-    std::string_view sceneAssetId,
-    std::size_t materialIndex) noexcept
+Assets::CookedAssetId MaterialCookPipeline::BuildMaterialAssetId(std::string_view sceneAssetId, std::size_t materialIndex) noexcept
 {
-	return Hash::Fnv1a64(
-	    std::string(sceneAssetId) +
-	    "#material#" +
-	    std::to_string(materialIndex));
+	return Hash::Fnv1a64(std::string(sceneAssetId) + "#material#" + std::to_string(materialIndex));
 }
 
-Assets::CookedAlphaMode MaterialCookPipeline::TranslateAlphaMode(
-    ImportedAlphaMode alphaMode)
+Assets::CookedAlphaMode MaterialCookPipeline::TranslateAlphaMode(ImportedAlphaMode alphaMode)
 {
 	switch (alphaMode)
 	{
@@ -263,9 +210,7 @@ Assets::CookedAlphaMode MaterialCookPipeline::TranslateAlphaMode(
 	throw Diagnostics::Error("Imported material uses an unsupported alpha mode.");
 }
 
-MaterialCookOutput MaterialCooker::BuildMaterialAssets(
-    const SourceImportOutput& importOutput,
-    std::string_view sceneAssetId)
+MaterialCookOutput MaterialCooker::BuildMaterialAssets(const SourceImportOutput& importOutput, std::string_view sceneAssetId)
 {
 	MaterialCookOutput output;
 	output.assets.reserve(importOutput.scene.materials.size());

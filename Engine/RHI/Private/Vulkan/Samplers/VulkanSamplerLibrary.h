@@ -10,7 +10,7 @@ class VulkanRhi;
 
 class VulkanSamplerLibrary final
 {
-  public:
+public:
 	VulkanSamplerLibrary(VulkanRhi& rhi, VulkanDescriptorService& descriptorService) noexcept;
 	~VulkanSamplerLibrary() noexcept;
 
@@ -21,7 +21,7 @@ class VulkanSamplerLibrary final
 
 	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) noexcept;
 
-  private:
+private:
 	struct SamplerRecord final
 	{
 		RhiSamplerDesc Desc = {};

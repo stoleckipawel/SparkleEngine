@@ -7,7 +7,9 @@
 static const auto g_cvarRegistryLogger = Logging::GetOrCreateLogger("Core.Console");
 
 ConsoleVariableBase::ConsoleVariableBase(std::string_view name, std::string_view description, std::type_index valueType) noexcept :
-    m_name(name), m_description(description), m_valueType(valueType)
+    m_name(name),
+    m_description(description),
+    m_valueType(valueType)
 {
 }
 

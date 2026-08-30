@@ -8,7 +8,7 @@
 
 class ShaderSourceMountTable final
 {
-  public:
+public:
 	struct PluginMount final
 	{
 		std::string Name;
@@ -24,7 +24,7 @@ class ShaderSourceMountTable final
 	std::string ResolveInclude(std::string_view includerPath, std::string_view includePath) const;
 	std::filesystem::path ResolvePhysicalPath(std::string_view virtualPath) const;
 
-  private:
+private:
 	struct Mount final
 	{
 		std::string VirtualRoot;

@@ -43,9 +43,7 @@ public:
 	}
 };
 
-ExposureUniformData BuildExposureUniformData(
-    const ResolvedViewportDisplaySettings& settings,
-    float frameDeltaSeconds) noexcept
+ExposureUniformData BuildExposureUniformData(const ResolvedViewportDisplaySettings& settings, float frameDeltaSeconds) noexcept
 {
 	return ExposureUniformData{
 	    .ExposureMode = ToneMappingValueTranslation::ToShaderExposureMode(settings.ExposureMode),

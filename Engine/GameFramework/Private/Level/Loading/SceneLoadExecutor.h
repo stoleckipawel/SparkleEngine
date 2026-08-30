@@ -24,24 +24,20 @@ namespace Assets
 
 	class SceneLoadExecutor final
 	{
-	  public:
+	public:
 		SceneLoadExecutor(TaskExecutor& executor, TaskScope& applicationScope);
 		~SceneLoadExecutor();
 
 		SceneLoadExecutor(const SceneLoadExecutor&) = delete;
 		SceneLoadExecutor& operator=(const SceneLoadExecutor&) = delete;
 
-		void Start(
-		    std::uint64_t requestId,
-		    std::uint64_t worldGeneration,
-		    std::uint64_t documentGeneration,
-		    LevelDesc level);
+		void Start(std::uint64_t requestId, std::uint64_t worldGeneration, std::uint64_t documentGeneration, LevelDesc level);
 		void Cancel() noexcept;
 		std::optional<SceneLoadCompletion> ConsumeSettled();
 		LevelLoadOperationProgress GetProgress() const noexcept;
 		std::uint64_t GetCatalogGeneration() const noexcept;
 
-	  private:
+	private:
 		struct ControlState;
 		std::unique_ptr<ControlState> m_control;
 	};

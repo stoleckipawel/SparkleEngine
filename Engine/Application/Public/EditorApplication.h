@@ -16,7 +16,7 @@ struct EditorHostServices;
 
 class SPARKLE_APPLICATION_API EditorApplication final : public Application
 {
-  public:
+public:
 	EditorApplication();
 	explicit EditorApplication(RuntimeApplicationOptions options) noexcept;
 	~EditorApplication();
@@ -30,13 +30,11 @@ class SPARKLE_APPLICATION_API EditorApplication final : public Application
 	bool Tick() override;
 	void Shutdown() override;
 
-  private:
+private:
 	void InitializeRuntimeApplication();
 	void InitializeEditorOperations();
 	void InitializeUi();
-	EditorHostServices BuildUiHostServices(
-	    Renderer& renderer,
-	    GameWorld& world);
+	EditorHostServices BuildUiHostServices(Renderer& renderer, GameWorld& world);
 	void ConfigureUiDiagnostics(Renderer& renderer);
 	void UpdateEditorOperations(Renderer& renderer);
 	void RenderEditorFrame(Renderer& renderer);

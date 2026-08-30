@@ -17,7 +17,7 @@ class TaskScope;
 
 class ShaderRecookCoordinator final
 {
-  public:
+public:
 	using StatusHandler = std::function<void(std::string)>;
 	explicit ShaderRecookCoordinator(EditorOperationService& operations);
 	~ShaderRecookCoordinator();
@@ -29,7 +29,7 @@ class ShaderRecookCoordinator final
 	void Update(Renderer& renderer, bool reloadRequested) noexcept;
 	static std::string DescribeRequest(const ShaderRecookRequest& request);
 
-  private:
+private:
 	void StartRecook(ShaderRecookRequest request) noexcept;
 	void CompleteRecook(Renderer& renderer, ShaderRecookExecutionResult result) noexcept;
 	void ReloadShaders(Renderer& renderer);

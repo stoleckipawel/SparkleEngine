@@ -4,7 +4,6 @@
 #include "LauncherCleanUiModel.h"
 #include "LauncherIconLibrary.h"
 #include "LauncherQuickStartExecution.h"
-#include "LauncherWorkflowCatalog.h"
 
 #include <QtCore/QString>
 #include <QtCore/QVector>
@@ -12,10 +11,7 @@
 #include <QtCore/QPointer>
 #include <QtCore/QSet>
 #include <QtGui/QColor>
-#include <QtGui/QIcon>
 #include <QtCore/QStringList>
-#include <QtWidgets/QAbstractButton>
-#include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFrame>
@@ -43,6 +39,7 @@ namespace SparkleLauncher
 	class LauncherContentModel;
 	class LauncherSettings;
 	class LauncherActivityPanel;
+	class LauncherWorkflowPanel;
 	struct ThirdPartyDependencyUiEntry;
 	struct ThirdPartyDependencyUiStatus;
 	struct LauncherLevelUiEntry;
@@ -67,8 +64,6 @@ namespace SparkleLauncher
 
 	private slots:
 		void RefreshContent();
-		void SelectWorkflowGroupButton(QAbstractButton* button);
-		void SelectProcessButton(QAbstractButton* button);
 		void HandleApplicationStateChanged(Qt::ApplicationState state);
 		void RunSelectedOperation();
 		void CleanSelectedOperation();
@@ -89,9 +84,6 @@ namespace SparkleLauncher
 			bool Selected = false;
 		};
 
-		QWidget* CreateWorkflowSurface();
-		QWidget* CreateProcessPicker(QWidget* parent);
-		QPushButton* CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent);
 		QWidget* CreateOptionsPanel(QWidget* parent);
 		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
 		QWidget* CreateFooterContextPanel(QWidget* parent);
@@ -194,9 +186,7 @@ namespace SparkleLauncher
 		void RebuildOptionsPages();
 		void ScheduleUiRefresh(bool refreshContent);
 		void ApplyScheduledUiRefresh();
-		QIcon WorkflowIconForPageKind(LauncherWorkflowPageKind pageKind) const;
 		void RegisterFocusable(QWidget* widget);
-		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
 		QPushButton* CreateStatusActionButton(
@@ -222,11 +212,7 @@ namespace SparkleLauncher
 		LauncherSettings& m_settings;
 		LauncherBackend& m_backend;
 		LauncherIconLibrary m_icons;
-		QButtonGroup* m_workflowGroupButtonGroup = nullptr;
-		QButtonGroup* m_processButtonGroup = nullptr;
-		QStackedWidget* m_operationStack = nullptr;
-		QHash<QString, int> m_workflowPageByOperation;
-		QHash<int, QString> m_lastOperationByWorkflowIndex;
+		LauncherWorkflowPanel* m_workflowPanel = nullptr;
 		QVector<QWidget*> m_tabOrderWidgets;
 		QComboBox* m_runModeCombo = nullptr;
 		QComboBox* m_buildConfigurationCombo = nullptr;

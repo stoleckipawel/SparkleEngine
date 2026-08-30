@@ -8,10 +8,8 @@
 
 class FbxImporter final : public SourceImporter
 {
-  public:
+public:
 	std::string_view GetImporterId() const noexcept override;
 	bool SupportsExtension(std::wstring_view extension) const noexcept override;
 	SourceImportOutput Import(const std::filesystem::path& filePath) const override;
 };
-
-

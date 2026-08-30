@@ -6,7 +6,7 @@
 
 class FrameGraphResourceStateTracker final
 {
-  public:
+public:
 	FrameGraphResourceStateTracker() = default;
 	~FrameGraphResourceStateTracker() = default;
 
@@ -22,7 +22,7 @@ class FrameGraphResourceStateTracker final
 
 	ResourceState GetRuntimeState(FrameGraphResourceHandle handle) const noexcept;
 
-  private:
+private:
 	void EnsureStorage(FrameGraphResourceHandle handle) noexcept;
 
 	std::vector<ResourceState> m_runtimeStates;

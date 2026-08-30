@@ -43,7 +43,7 @@ namespace Process
 
 	class SPARKLE_CORE_API ChildProcess final
 	{
-	  public:
+	public:
 		ChildProcess() = delete;
 		static ChildProcessResult Run(const ChildProcessRequest& request);
 	};

@@ -12,21 +12,21 @@
 
 static constexpr std::string_view kAutoShaderBackendName = "auto";
 static constexpr std::array<ShaderBinaryFormatDescriptor, 2> kShaderBinaryFormats = {{
-	{.Name = "Dxil", .IsAvailable = true},
-	{.Name = "SpirV", .IsAvailable = true},
+    {.Name = "Dxil", .IsAvailable = true},
+    {.Name = "SpirV", .IsAvailable = true},
 }};
 static constexpr std::array<ShaderCodegenTargetDescriptor, 11> kShaderCodegenTargets = {{
-	{.Target = ShaderTarget::DxilSm60, .BinaryFormat = "Dxil", .IsAvailable = true},
-	{.Target = ShaderTarget::DxilSm61, .BinaryFormat = "Dxil", .IsAvailable = true},
-	{.Target = ShaderTarget::DxilSm62, .BinaryFormat = "Dxil", .IsAvailable = true},
-	{.Target = ShaderTarget::DxilSm63, .BinaryFormat = "Dxil", .IsAvailable = true},
-	{.Target = ShaderTarget::DxilSm64, .BinaryFormat = "Dxil", .IsAvailable = true},
-	{.Target = ShaderTarget::DxilSm65, .BinaryFormat = "Dxil", .IsAvailable = true},
-	{.Target = ShaderTarget::DxilSm66, .BinaryFormat = "Dxil", .IsAvailable = true},
-	{.Target = ShaderTarget::DxilSm67, .BinaryFormat = "Dxil", .IsAvailable = true},
-	{.Target = ShaderTarget::SpirV14, .BinaryFormat = "SpirV", .IsAvailable = true},
-	{.Target = ShaderTarget::SpirV15, .BinaryFormat = "SpirV", .IsAvailable = true},
-	{.Target = ShaderTarget::SpirV16, .BinaryFormat = "SpirV", .IsAvailable = true},
+    {.Target = ShaderTarget::DxilSm60, .BinaryFormat = "Dxil", .IsAvailable = true},
+    {.Target = ShaderTarget::DxilSm61, .BinaryFormat = "Dxil", .IsAvailable = true},
+    {.Target = ShaderTarget::DxilSm62, .BinaryFormat = "Dxil", .IsAvailable = true},
+    {.Target = ShaderTarget::DxilSm63, .BinaryFormat = "Dxil", .IsAvailable = true},
+    {.Target = ShaderTarget::DxilSm64, .BinaryFormat = "Dxil", .IsAvailable = true},
+    {.Target = ShaderTarget::DxilSm65, .BinaryFormat = "Dxil", .IsAvailable = true},
+    {.Target = ShaderTarget::DxilSm66, .BinaryFormat = "Dxil", .IsAvailable = true},
+    {.Target = ShaderTarget::DxilSm67, .BinaryFormat = "Dxil", .IsAvailable = true},
+    {.Target = ShaderTarget::SpirV14, .BinaryFormat = "SpirV", .IsAvailable = true},
+    {.Target = ShaderTarget::SpirV15, .BinaryFormat = "SpirV", .IsAvailable = true},
+    {.Target = ShaderTarget::SpirV16, .BinaryFormat = "SpirV", .IsAvailable = true},
 }};
 
 static std::string NormalizeShaderBackendName(std::string_view name)
@@ -42,8 +42,8 @@ static std::string NormalizeShaderBackendName(std::string_view name)
 
 static bool HasSourceExtension(const ShaderBackendStaticDescriptor& descriptor, std::string_view extension) noexcept
 {
-	return std::find(descriptor.SourceExtensions.begin(), descriptor.SourceExtensions.end(), extension) !=
-	       descriptor.SourceExtensions.end();
+	return std::find(descriptor.SourceExtensions.begin(), descriptor.SourceExtensions.end(), extension)
+	    != descriptor.SourceExtensions.end();
 }
 
 static std::string GetVirtualSourceExtension(std::string_view sourcePath)
@@ -141,10 +141,7 @@ std::unique_ptr<IShaderBackend> CreateShaderBackend(std::string_view name)
 	return backend;
 }
 
-std::string ResolveShaderBackendName(
-    std::string_view sourcePath,
-    ShaderTarget target,
-    std::string_view requestedName)
+std::string ResolveShaderBackendName(std::string_view sourcePath, ShaderTarget target, std::string_view requestedName)
 {
 	std::string normalizedRequestedName = NormalizeShaderBackendName(requestedName);
 	if (normalizedRequestedName.empty())
@@ -159,8 +156,8 @@ std::string ResolveShaderBackendName(
 		if (selectedName.empty())
 		{
 			throw Diagnostics::Error(
-			    "Unable to auto-select a shader backend for source '" + std::string(sourcePath) +
-			    "' and target '" + GetShaderTargetName(target) + "'.");
+			    "Unable to auto-select a shader backend for source '" + std::string(sourcePath) + "' and target '"
+			    + GetShaderTargetName(target) + "'.");
 		}
 	}
 
@@ -183,8 +180,7 @@ std::string ResolveShaderBackendName(
 
 	if (!registration->Descriptor.Capabilities.SupportsTarget(target))
 	{
-		throw Diagnostics::Error(
-		    "Shader backend '" + selectedName + "' does not support target '" + GetShaderTargetName(target) + "'.");
+		throw Diagnostics::Error("Shader backend '" + selectedName + "' does not support target '" + GetShaderTargetName(target) + "'.");
 	}
 
 	return std::string(registration->Descriptor.Name);

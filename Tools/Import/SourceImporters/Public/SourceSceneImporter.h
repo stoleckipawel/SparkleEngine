@@ -6,12 +6,10 @@
 
 class SourceSceneImporter final
 {
-  public:
+public:
 	static bool SupportsSourceScenePath(const std::filesystem::path& filePath);
 	static SourceImportOutput Import(const std::filesystem::path& filePath);
 
 	SourceSceneImporter() = delete;
 	~SourceSceneImporter() = delete;
 };
-
-

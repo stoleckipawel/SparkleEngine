@@ -22,14 +22,14 @@ struct MaterialVariantBinding final
 
 class MaterialVariantResourceStore final
 {
-  public:
+public:
 	void Append(std::vector<MaterialVariantDesc>&& variants, std::vector<MaterialVariantBinding>&& bindings);
 	bool Apply(MaterialVariantIndex index, ECS::GameWorldState& world);
 	std::size_t GetCount() const noexcept { return m_variants.size(); }
 	std::string_view GetName(std::size_t index) const noexcept;
 	MaterialVariantIndex GetActive() const noexcept { return m_active; }
 
-  private:
+private:
 	std::vector<MaterialVariantDesc> m_variants;
 	std::vector<MaterialVariantBinding> m_bindings;
 	MaterialVariantIndex m_active = kInvalidMaterialVariantIndex;

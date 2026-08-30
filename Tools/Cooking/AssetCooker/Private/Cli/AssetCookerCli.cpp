@@ -27,22 +27,13 @@ bool AssetCookerCli::IsHelp(std::string_view argument) noexcept
 
 bool AssetCookerCli::IsConfiguration(std::string_view argument) noexcept
 {
-	static constexpr std::array<std::string_view, 6> Profiles = {
-	    "DebugEditor",
-	    "DebugGame",
-	    "DevelopmentEditor",
-	    "DevelopmentGame",
-	    "ShippingEditor",
-	    "ShippingGame"};
+	static constexpr std::array<std::string_view, 6> Profiles =
+	    {"DebugEditor", "DebugGame", "DevelopmentEditor", "DevelopmentGame", "ShippingEditor", "ShippingGame"};
 
 	return std::ranges::find(Profiles, argument) != Profiles.end();
 }
 
-bool AssetCookerCli::ParseCommonArguments(
-    int argc,
-    char** argv,
-    int startIndex,
-    Arguments& arguments)
+bool AssetCookerCli::ParseCommonArguments(int argc, char** argv, int startIndex, Arguments& arguments)
 {
 	for (int index = startIndex; index < argc; ++index)
 	{

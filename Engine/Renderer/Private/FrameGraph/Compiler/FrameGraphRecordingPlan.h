@@ -10,10 +10,8 @@
 using RecordingGroupIndex = std::uint32_t;
 using RecordingChunkIndex = std::uint32_t;
 
-static constexpr RecordingGroupIndex InvalidRecordingGroupIndex =
-    static_cast<RecordingGroupIndex>(-1);
-static constexpr RecordingChunkIndex InvalidRecordingChunkIndex =
-    static_cast<RecordingChunkIndex>(-1);
+static constexpr RecordingGroupIndex InvalidRecordingGroupIndex = static_cast<RecordingGroupIndex>(-1);
+static constexpr RecordingChunkIndex InvalidRecordingChunkIndex = static_cast<RecordingChunkIndex>(-1);
 
 struct SubmissionOrderKey final
 {

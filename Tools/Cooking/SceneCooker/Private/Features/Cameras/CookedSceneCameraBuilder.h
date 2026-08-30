@@ -5,6 +5,6 @@
 
 class CookedSceneCameraBuilder final
 {
-  public:
+public:
 	static void BuildCameras(const SourceImportOutput& importOutput, CookedSceneBuild& outBuild);
 };

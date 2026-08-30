@@ -6,6 +6,6 @@ struct cgltf_data;
 
 class GltfMaterialVariantImporter final
 {
-  public:
+public:
 	static void ImportMaterialVariants(const cgltf_data* data, SourceImportOutput& output);
 };

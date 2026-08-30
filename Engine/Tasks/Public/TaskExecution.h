@@ -19,7 +19,7 @@ enum class TaskExecutionStatus : std::uint8_t
 
 class SPARKLE_TASKS_API TaskExecution final
 {
-  public:
+public:
 	TaskExecution() noexcept;
 	~TaskExecution();
 
@@ -38,7 +38,7 @@ class SPARKLE_TASKS_API TaskExecution final
 	std::optional<TaskResult> GetTaskResult(TaskNodeHandle handle) const;
 	std::uint32_t GetSettledTaskCount() const noexcept;
 
-  private:
+private:
 	friend class TaskExecutor;
 	friend class TaskScope;
 	struct State;

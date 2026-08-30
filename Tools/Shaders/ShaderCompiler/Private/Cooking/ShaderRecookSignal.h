@@ -4,7 +4,7 @@
 
 class ShaderRecookSignal final
 {
-  public:
+public:
 	ShaderRecookSignal() = delete;
 
 	static void Write(

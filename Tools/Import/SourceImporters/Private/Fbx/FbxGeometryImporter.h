@@ -10,11 +10,11 @@
 
 class FbxGeometryImporter final
 {
-  public:
+public:
 	static std::size_t CountImportedMeshInstances(const aiNode& node) noexcept;
 	static void ImportGeometry(const aiScene& scene, SourceImportOutput& output);
 
-  private:
+private:
 	static void ExtractNodeMeshes(
 	    const aiScene& scene,
 	    const aiNode& node,

@@ -3,7 +3,7 @@
 #include "Upscaling/UpscalerProvider.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-#include <sl.h>
+  #include <sl.h>
 
 sl::Result TagDlssResourcesForFrame(
     const sl::FrameToken& frameToken,

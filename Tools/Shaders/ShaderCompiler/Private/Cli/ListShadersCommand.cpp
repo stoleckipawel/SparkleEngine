@@ -46,8 +46,8 @@ int ListShadersCommand::Run(std::span<const std::string_view> args) const
 	for (const ShaderContract& shader : catalog)
 	{
 		std::cout << shader.shaderName << " type=" << Formatting::FormatPrefixedHexUInt64(shader.shaderTypeId)
-		          << " stage=" << GetShaderStagePrefix(shader.stage) << " source=" << shader.sourcePath
-		          << " entry=" << shader.entryPoint << " parameters=" << shader.parameterStruct.Fields.size() << "\n";
+		          << " stage=" << GetShaderStagePrefix(shader.stage) << " source=" << shader.sourcePath << " entry=" << shader.entryPoint
+		          << " parameters=" << shader.parameterStruct.Fields.size() << "\n";
 	}
 	return kExitCodeSuccess;
 }

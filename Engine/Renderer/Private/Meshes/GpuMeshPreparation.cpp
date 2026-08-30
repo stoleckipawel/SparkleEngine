@@ -11,16 +11,16 @@
 
 std::uint64_t GpuMeshPreparedData::GetDecodedByteSize() const noexcept
 {
-	return RayTracingVertices.size() * sizeof(RayTracingHitVertex) + RayTracingIndices.size() * sizeof(std::uint32_t) +
-	       SkinInfluences.size() * sizeof(VertexSkinInfluence) + GpuSkinInfluences.size() * sizeof(VertexSkinInfluenceData) +
-	       MorphTargetDeltas.size() * sizeof(MorphTargetDeltaData);
+	return RayTracingVertices.size() * sizeof(RayTracingHitVertex) + RayTracingIndices.size() * sizeof(std::uint32_t)
+	    + SkinInfluences.size() * sizeof(VertexSkinInfluence) + GpuSkinInfluences.size() * sizeof(VertexSkinInfluenceData)
+	    + MorphTargetDeltas.size() * sizeof(MorphTargetDeltaData);
 }
 
 std::uint64_t GpuMeshPreparedData::GetResidentByteSize() const noexcept
 {
 	const MeshData& meshData = Source.GetResource()->GetMeshData();
-	return GetDecodedByteSize() + meshData.GetVertexBufferSize() + meshData.GetIndexBufferSize() +
-	       (std::max<std::size_t>(MorphTargetDeltas.size(), 1u) * sizeof(MorphTargetDeltaData));
+	return GetDecodedByteSize() + meshData.GetVertexBufferSize() + meshData.GetIndexBufferSize()
+	    + (std::max<std::size_t>(MorphTargetDeltas.size(), 1u) * sizeof(MorphTargetDeltaData));
 }
 
 GpuMeshPreparedData GpuMeshPreparation::Build(const ImmutableRenderMeshHandle& source)
@@ -37,8 +37,8 @@ GpuMeshPreparedData GpuMeshPreparation::Build(const ImmutableRenderMeshHandle& s
 	BuildBoundsAndRayTracing(output);
 	BuildSkinInfluences(output);
 	BuildMorphTargets(output);
-	if (output.RayTracingVertices.empty() || output.RayTracingIndices.size() < 3u ||
-	    output.GpuSkinInfluences.size() != output.RayTracingVertices.size())
+	if (output.RayTracingVertices.empty() || output.RayTracingIndices.size() < 3u
+	    || output.GpuSkinInfluences.size() != output.RayTracingVertices.size())
 		throw Diagnostics::Error("GPU mesh preparation produced incomplete geometry.");
 	return output;
 }

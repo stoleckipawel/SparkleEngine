@@ -4,7 +4,7 @@
 
 class DefaultTextureCookRequestBuilder final
 {
-  public:
+public:
 	DefaultTextureCookRequestBuilder() = delete;
 
 	static void AppendTo(TextureCookRequestSet& requestSet);

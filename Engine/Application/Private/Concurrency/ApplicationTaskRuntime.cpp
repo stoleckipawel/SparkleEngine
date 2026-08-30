@@ -37,6 +37,12 @@ ApplicationTaskRuntime::~ApplicationTaskRuntime()
 	m_applicationScope->JoinFor(std::chrono::milliseconds::zero());
 }
 
-TaskExecutor& ApplicationTaskRuntime::GetExecutor() noexcept { return *m_executor; }
+TaskExecutor& ApplicationTaskRuntime::GetExecutor() noexcept
+{
+	return *m_executor;
+}
 
-TaskScope& ApplicationTaskRuntime::GetApplicationScope() noexcept { return *m_applicationScope; }
+TaskScope& ApplicationTaskRuntime::GetApplicationScope() noexcept
+{
+	return *m_applicationScope;
+}

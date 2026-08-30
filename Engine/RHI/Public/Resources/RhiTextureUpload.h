@@ -26,10 +26,7 @@ struct RhiTextureUploadDesc
 	PixelFormat Format = PixelFormat::Unknown;
 	std::vector<RhiTextureArraySliceUploadData> ArraySlices;
 
-	std::uint16_t GetMipCount() const noexcept
-	{
-		return ArraySlices.empty() ? 0 : static_cast<std::uint16_t>(ArraySlices.front().size());
-	}
+	std::uint16_t GetMipCount() const noexcept { return ArraySlices.empty() ? 0 : static_cast<std::uint16_t>(ArraySlices.front().size()); }
 
 	std::uint16_t GetArraySize() const noexcept { return static_cast<std::uint16_t>(ArraySize); }
 

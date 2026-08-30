@@ -19,17 +19,22 @@ public:
 		{
 			case ShaderParameterSemanticKind::UniformData:
 				return kind == CookedShaderResourceKind::ConstantBuffer || kind == CookedShaderResourceKind::PushConstantBlock;
-			case ShaderParameterSemanticKind::ReadTexture: return kind == CookedShaderResourceKind::Texture;
+			case ShaderParameterSemanticKind::ReadTexture:
+				return kind == CookedShaderResourceKind::Texture;
 			case ShaderParameterSemanticKind::ReadBuffer:
 				return kind == CookedShaderResourceKind::StructuredBuffer || kind == CookedShaderResourceKind::ByteAddressBuffer
 				    || kind == CookedShaderResourceKind::TypedBuffer;
-			case ShaderParameterSemanticKind::AccelerationStructure: return kind == CookedShaderResourceKind::AccelerationStructure;
-			case ShaderParameterSemanticKind::RWTexture: return kind == CookedShaderResourceKind::RWTexture;
+			case ShaderParameterSemanticKind::AccelerationStructure:
+				return kind == CookedShaderResourceKind::AccelerationStructure;
+			case ShaderParameterSemanticKind::RWTexture:
+				return kind == CookedShaderResourceKind::RWTexture;
 			case ShaderParameterSemanticKind::RWBuffer:
 				return kind == CookedShaderResourceKind::RWStructuredBuffer || kind == CookedShaderResourceKind::RWByteAddressBuffer
 				    || kind == CookedShaderResourceKind::RWTypedBuffer;
-			case ShaderParameterSemanticKind::SamplerSet: return kind == CookedShaderResourceKind::Sampler;
-			default: return false;
+			case ShaderParameterSemanticKind::SamplerSet:
+				return kind == CookedShaderResourceKind::Sampler;
+			default:
+				return false;
 		}
 	}
 
@@ -75,9 +80,7 @@ std::vector<RhiReflectedBindingLocation> RhiShaderBindingReflection::ResolveLoca
 			if (existing == locations.end())
 			{
 				locations.push_back(
-				    RhiReflectedBindingLocation{
-				        .BindingPoint = point,
-				        .VisibilityMask = ToShaderStageMask(shader.Entry->Stage)});
+				    RhiReflectedBindingLocation{.BindingPoint = point, .VisibilityMask = ToShaderStageMask(shader.Entry->Stage)});
 			}
 			else
 			{

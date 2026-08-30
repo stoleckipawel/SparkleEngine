@@ -9,6 +9,6 @@ struct SkyEnvironment;
 
 class SceneSkyInspector final
 {
-  public:
+public:
 	static void Build(const std::optional<SkyEnvironment>&, EditorTransactionHistory&, std::uint64_t, const std::string&) noexcept;
 };

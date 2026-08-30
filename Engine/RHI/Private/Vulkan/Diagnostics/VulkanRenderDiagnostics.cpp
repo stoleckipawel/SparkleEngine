@@ -23,8 +23,11 @@ static const auto g_vulkanRenderDiagnosticsLogger = Logging::GetOrCreateLogger("
 
 class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 {
-  public:
-	explicit VulkanRenderObjectDiagnostics(VulkanRhi& rhi) noexcept : m_rhi(rhi) {}
+public:
+	explicit VulkanRenderObjectDiagnostics(VulkanRhi& rhi) noexcept :
+	    m_rhi(rhi)
+	{
+	}
 
 	bool SupportsObjectNames() const noexcept override { return m_rhi.GetSetDebugUtilsObjectName() != nullptr; }
 
@@ -32,11 +35,12 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 	{
 		SetDebugName(
 		    VK_OBJECT_TYPE_COMMAND_BUFFER,
-		    reinterpret_cast<std::uint64_t>(commandList.GetNativeHandle(
-		                                        RhiNativeInteropRequest{
-		                                            .Consumer = ERhiNativeInteropConsumer::Diagnostics,
-		                                            .Reason = "Assign Vulkan command buffer debug name"})
-		                                        .Value),
+		    reinterpret_cast<std::uint64_t>(commandList
+		            .GetNativeHandle(
+		                RhiNativeInteropRequest{
+		                    .Consumer = ERhiNativeInteropConsumer::Diagnostics,
+		                    .Reason = "Assign Vulkan command buffer debug name"})
+		            .Value),
 		    debugName);
 	}
 
@@ -63,7 +67,7 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 		}
 	}
 
-  private:
+private:
 	void SetDebugName(VkObjectType objectType, std::uint64_t objectHandle, std::wstring_view debugName) noexcept
 	{
 		if (objectHandle == 0 || debugName.empty())
@@ -72,12 +76,7 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 		}
 
 		const std::string narrowName = Strings::ToNarrow(debugName);
-		(void)VulkanDebugNames::SetObjectName(
-		    m_rhi.GetSetDebugUtilsObjectName(),
-		    m_rhi.GetDevice(),
-		    objectType,
-		    objectHandle,
-		    narrowName);
+		(void) VulkanDebugNames::SetObjectName(m_rhi.GetSetDebugUtilsObjectName(), m_rhi.GetDevice(), objectType, objectHandle, narrowName);
 	}
 
 	VulkanRhi& m_rhi;
@@ -85,9 +84,10 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 
 class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 {
-  public:
+public:
 	explicit VulkanRenderTimingDiagnostics(VulkanRhi& rhi) noexcept :
-	    m_rhi(rhi), m_queryAllocator(static_cast<std::uint32_t>(RhiQueueTypeCount), kQueriesPerQueue)
+	    m_rhi(rhi),
+	    m_queryAllocator(static_cast<std::uint32_t>(RhiQueueTypeCount), kQueriesPerQueue)
 	{
 		Initialize();
 	}
@@ -117,7 +117,11 @@ class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 	{
 		if (!IsRhiQueueTypeValid(queueType))
 		{
-			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Timestamp query requested for an invalid Vulkan queue.");
+			Diagnostics::Fatal(
+			    g_vulkanRenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Timestamp query requested for an invalid Vulkan queue.");
 		}
 
 		const std::uint32_t poolIndex = static_cast<std::uint32_t>(RhiQueueTypeToIndex(queueType));
@@ -138,10 +142,7 @@ class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 		return query;
 	}
 
-	void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept override
-	{
-		m_queryAllocator.Release(query);
-	}
+	void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept override { m_queryAllocator.Release(query); }
 
 	bool WriteTimestamp(RenderCommandList& commandList, RhiTimestampQueryHandle query) noexcept override
 	{
@@ -149,14 +150,16 @@ class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 		const ERhiQueueType queueType = static_cast<ERhiQueueType>(location.PoolIndex);
 		if (commandList.GetQueueType() != queueType)
 		{
-			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan timestamp query was written on a different queue than it was allocated for.");
+			Diagnostics::Fatal(
+			    g_vulkanRenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Vulkan timestamp query was written on a different queue than it was allocated for.");
 		}
 
-		const VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(
-		    commandList.GetNativeHandle(
-		                   RhiNativeInteropRequest{
-		                       .Consumer = ERhiNativeInteropConsumer::Diagnostics,
-		                       .Reason = "Write Vulkan timestamp query"})
+		const VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(commandList
+		        .GetNativeHandle(
+		            RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Diagnostics, .Reason = "Write Vulkan timestamp query"})
 		        .Value);
 		if (commandBuffer == VK_NULL_HANDLE)
 		{
@@ -210,7 +213,7 @@ class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 		return m_queueStates[m_queryAllocator.Resolve(query).PoolIndex].TimestampValidBits;
 	}
 
-  private:
+private:
 	static constexpr std::uint32_t kQueriesPerQueue = 8192;
 
 	struct QueueTimingState final
@@ -223,7 +226,11 @@ class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 	{
 		if (m_rhi.GetPhysicalDevice() == VK_NULL_HANDLE || m_rhi.GetDevice() == VK_NULL_HANDLE)
 		{
-			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Cannot initialize Vulkan timing without a physical device and logical device.");
+			Diagnostics::Fatal(
+			    g_vulkanRenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Cannot initialize Vulkan timing without a physical device and logical device.");
 		}
 
 		VkPhysicalDeviceProperties physicalDeviceProperties = {};
@@ -235,7 +242,11 @@ class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 		vkGetPhysicalDeviceQueueFamilyProperties(m_rhi.GetPhysicalDevice(), &queueFamilyCount, queueFamilyProperties.data());
 		if (physicalDeviceProperties.limits.timestampPeriod <= 0.0f)
 		{
-			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan physical device reported an invalid timestamp period.");
+			Diagnostics::Fatal(
+			    g_vulkanRenderDiagnosticsLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Vulkan physical device reported an invalid timestamp period.");
 		}
 
 		const VkQueryPoolCreateInfo queryPoolCreateInfo{
@@ -270,7 +281,7 @@ class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 				    VulkanResult::FormatFailure("vkCreateQueryPool", result));
 			}
 			const std::string queryPoolName = std::string("VulkanTimestampQueryPool_") + RhiQueueTypeToString(queueType);
-			(void)VulkanDebugNames::SetObjectName(
+			(void) VulkanDebugNames::SetObjectName(
 			    m_rhi.GetSetDebugUtilsObjectName(),
 			    m_rhi.GetDevice(),
 			    VK_OBJECT_TYPE_QUERY_POOL,
@@ -290,8 +301,11 @@ class VulkanRenderTimingDiagnostics final : public RenderTimingDiagnostics
 
 class VulkanRenderMessageDiagnostics final : public RenderMessageDiagnostics
 {
-  public:
-	explicit VulkanRenderMessageDiagnostics(VulkanRhi& rhi) noexcept : m_rhi(rhi) {}
+public:
+	explicit VulkanRenderMessageDiagnostics(VulkanRhi& rhi) noexcept :
+	    m_rhi(rhi)
+	{
+	}
 
 	bool SupportsDebugMessages() const noexcept override { return m_rhi.IsValidationEnabled(); }
 
@@ -299,14 +313,17 @@ class VulkanRenderMessageDiagnostics final : public RenderMessageDiagnostics
 
 	void ClearMessages() noexcept override { m_rhi.ClearDiagnosticMessages(); }
 
-  private:
+private:
 	VulkanRhi& m_rhi;
 };
 
 class VulkanRenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 {
-  public:
-	explicit VulkanRenderMemoryDiagnostics(VulkanGpuMemoryAllocator& allocator) noexcept : m_allocator(allocator) {}
+public:
+	explicit VulkanRenderMemoryDiagnostics(VulkanGpuMemoryAllocator& allocator) noexcept :
+	    m_allocator(allocator)
+	{
+	}
 
 	bool SupportsBudgetQueries() const noexcept override { return m_allocator.SupportsBudgetQueries(); }
 
@@ -314,16 +331,14 @@ class VulkanRenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 
 	RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const override { return m_allocator.CreateMemoryUsageSnapshot(); }
 
-  private:
+private:
 	VulkanGpuMemoryAllocator& m_allocator;
 };
 
 std::unique_ptr<RenderDiagnostics> CreateVulkanRenderDiagnostics(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator)
 {
-	const bool supportsGpuEvents = rhi.GetSetDebugUtilsObjectName() != nullptr &&
-	                               rhi.GetCmdBeginDebugUtilsLabel() != nullptr &&
-	                               rhi.GetCmdEndDebugUtilsLabel() != nullptr &&
-	                               rhi.GetCmdInsertDebugUtilsLabel() != nullptr;
+	const bool supportsGpuEvents = rhi.GetSetDebugUtilsObjectName() != nullptr && rhi.GetCmdBeginDebugUtilsLabel() != nullptr
+	    && rhi.GetCmdEndDebugUtilsLabel() != nullptr && rhi.GetCmdInsertDebugUtilsLabel() != nullptr;
 	return CreateRhiDiagnosticsComposition(
 	    std::make_unique<VulkanRenderObjectDiagnostics>(rhi),
 	    std::make_unique<VulkanRenderTimingDiagnostics>(rhi),

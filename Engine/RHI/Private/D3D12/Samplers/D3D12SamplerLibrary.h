@@ -9,7 +9,7 @@ class D3D12Rhi;
 
 class D3D12SamplerLibrary
 {
-  public:
+public:
 	enum class Slot : uint32_t
 	{
 		PointMipPointWrap = 0,
@@ -64,7 +64,7 @@ class D3D12SamplerLibrary
 	static constexpr uint32_t GetSamplerCount() noexcept { return static_cast<uint32_t>(Slot::Count); }
 	static bool TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& outSlot) noexcept;
 
-  private:
+private:
 	void CreateSampler(Slot slot, const RhiSamplerDesc& desc);
 	static RhiSamplerDesc MakeSamplerDesc(
 	    RhiSamplerMinMagFilter minMagFilter,

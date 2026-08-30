@@ -36,7 +36,7 @@ struct TimeInfo
 
 class SPARKLE_CORE_API Timer final
 {
-  public:
+public:
 	Timer() noexcept;
 	~Timer() = default;
 
@@ -61,7 +61,7 @@ class SPARKLE_CORE_API Timer final
 	void Resume() noexcept { m_bPaused = false; }
 	bool IsPaused() const noexcept { return m_bPaused; }
 
-  private:
+private:
 	static double ToUnit(Duration d, TimeUnit u) noexcept;
 
 	TimePoint m_start{};

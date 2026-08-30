@@ -13,7 +13,7 @@ class VulkanRhi;
 
 class VulkanPartitionedTlasServices final : public RhiPartitionedTlasService
 {
-  public:
+public:
 	VulkanPartitionedTlasServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 
 	RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(
@@ -27,9 +27,8 @@ class VulkanPartitionedTlasServices final : public RhiPartitionedTlasService
 	RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
 	    const RhiPartitionedTlasDesc& desc) const noexcept override;
 
-  private:
-	static VkPartitionedAccelerationStructureInstanceFlagsNV ToVkPartitionedInstanceFlags(
-	    RhiPartitionedTlasInstanceFlags flags) noexcept;
+private:
+	static VkPartitionedAccelerationStructureInstanceFlagsNV ToVkPartitionedInstanceFlags(RhiPartitionedTlasInstanceFlags flags) noexcept;
 	static VkPartitionedAccelerationStructureOpTypeNV ToVkPartitionedOperationType(ERhiPartitionedTlasOperationType type) noexcept;
 	static void ConfigurePartitionedTlasInput(
 	    const RhiPartitionedTlasDesc& desc,

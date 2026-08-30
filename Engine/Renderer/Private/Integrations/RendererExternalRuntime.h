@@ -7,7 +7,7 @@
 // thread. RenderCoordinator receives only the immutable device bootstrap value.
 class RendererExternalRuntime final
 {
-  public:
+public:
 	RendererExternalRuntime() noexcept;
 	~RendererExternalRuntime() noexcept;
 
@@ -18,7 +18,7 @@ class RendererExternalRuntime final
 	void BeginSimulationFrame(std::uint64_t frameId) noexcept;
 	void EndSimulationFrame(std::uint64_t frameId) noexcept;
 
-  private:
+private:
 	Threading::OwnerThread m_owner{"Renderer external runtime"};
 	RendererBackendConfiguration m_backendConfiguration;
 };

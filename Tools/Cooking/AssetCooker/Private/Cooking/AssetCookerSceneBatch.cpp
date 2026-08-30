@@ -15,9 +15,7 @@ struct AssetCookerSceneBatch::Item final
 	AssetCookerDiagnostics Diagnostics;
 };
 
-bool AssetCookerSceneBatch::Execute(
-    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-    AssetCookerDiagnostics& diagnostics)
+bool AssetCookerSceneBatch::Execute(const std::vector<AssetCookerSceneEntry>& sceneEntries, AssetCookerDiagnostics& diagnostics)
 {
 	std::vector<Item> items(sceneEntries.size());
 	const bool built = BuildProducts(sceneEntries, items);
@@ -25,9 +23,7 @@ bool AssetCookerSceneBatch::Execute(
 	MergeDiagnostics(items, diagnostics);
 	if (!built)
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory_SceneAssets,
-		    "Scene asset generation failed before publication.");
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, "Scene asset generation failed before publication.");
 		return false;
 	}
 
@@ -55,21 +51,13 @@ CompiledTaskGraph AssetCookerSceneBatch::BuildTaskGraph(
     std::vector<Item>& items,
     std::uint32_t taskCapacity)
 {
-	TaskGraphBuilder builder(
-	    TaskGraphLimits{
-	        .MaximumTasks = taskCapacity,
-	        .MaximumEdges = 1u});
+	TaskGraphBuilder builder(TaskGraphLimits{.MaximumTasks = taskCapacity, .MaximumEdges = 1u});
 
 	for (std::uint32_t index = 0; index < sceneEntries.size(); ++index)
 	{
 		builder.Add(
-		    TaskDesc{
-		        .Name = TaskName("Build cataloged scene"),
-		        .Lane = TaskLane::Background},
-		    [&sceneEntries, &items, index](TaskExecutionContext& context)
-		    {
-			    return BuildProduct(sceneEntries, items, index, context);
-		    });
+		    TaskDesc{.Name = TaskName("Build cataloged scene"), .Lane = TaskLane::Background},
+		    [&sceneEntries, &items, index](TaskExecutionContext& context) { return BuildProduct(sceneEntries, items, index, context); });
 	}
 
 	return builder.Compile();
@@ -98,23 +86,17 @@ TaskResult AssetCookerSceneBatch::BuildProduct(
 	}
 }
 
-bool AssetCookerSceneBatch::BuildProducts(
-    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-    std::vector<Item>& items)
+bool AssetCookerSceneBatch::BuildProducts(const std::vector<AssetCookerSceneEntry>& sceneEntries, std::vector<Item>& items)
 {
-	const std::uint32_t taskCapacity =
-	    static_cast<std::uint32_t>(std::max<std::size_t>(sceneEntries.size(), 1u));
+	const std::uint32_t taskCapacity = static_cast<std::uint32_t>(std::max<std::size_t>(sceneEntries.size(), 1u));
 
 	TaskExecutor executor(BuildExecutorConfig(taskCapacity));
 	TaskExecutionContext context;
-	const TaskExecution execution =
-	    executor.Submit(BuildTaskGraph(sceneEntries, items, taskCapacity), context);
+	const TaskExecution execution = executor.Submit(BuildTaskGraph(sceneEntries, items, taskCapacity), context);
 	return execution.GetStatus() == TaskExecutionStatus::Succeeded;
 }
 
-void AssetCookerSceneBatch::MergeDiagnostics(
-    std::vector<Item>& items,
-    AssetCookerDiagnostics& diagnostics)
+void AssetCookerSceneBatch::MergeDiagnostics(std::vector<Item>& items, AssetCookerDiagnostics& diagnostics)
 {
 	for (Item& item : items)
 	{
@@ -122,9 +104,7 @@ void AssetCookerSceneBatch::MergeDiagnostics(
 	}
 }
 
-bool AssetCookerSceneBatch::PublishProducts(
-    std::vector<Item>& items,
-    AssetCookerDiagnostics& diagnostics)
+bool AssetCookerSceneBatch::PublishProducts(std::vector<Item>& items, AssetCookerDiagnostics& diagnostics)
 {
 	std::vector<const CookedSceneBuild*> builds;
 	builds.reserve(items.size());
@@ -140,9 +120,7 @@ bool AssetCookerSceneBatch::PublishProducts(
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory_SceneAssets,
-		    error.what());
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what());
 		return false;
 	}
 }

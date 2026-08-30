@@ -13,12 +13,18 @@ struct TaskExecutionContextBinding;
 
 class SPARKLE_TASKS_API TaskExecutionContext final
 {
-  public:
+public:
 	TaskExecutionContext() noexcept;
 
-	template <typename T> explicit TaskExecutionContext(T& value) noexcept : m_userData(&value), m_userType(&typeid(T)) {}
+	template <typename T> explicit TaskExecutionContext(T& value) noexcept :
+	    m_userData(&value),
+	    m_userType(&typeid(T))
+	{
+	}
 	template <typename T> explicit TaskExecutionContext(std::shared_ptr<T> value) noexcept :
-	    m_userData(value.get()), m_userType(&typeid(T)), m_userOwner(std::move(value))
+	    m_userData(value.get()),
+	    m_userType(&typeid(T)),
+	    m_userOwner(std::move(value))
 	{
 	}
 
@@ -39,7 +45,7 @@ class SPARKLE_TASKS_API TaskExecutionContext final
 	bool HasUserData() const noexcept { return m_userData != nullptr; }
 	bool HasOwnedUserData() const noexcept { return m_userOwner != nullptr; }
 
-  private:
+private:
 	friend class TaskExecutor;
 	friend class TaskEvent;
 	friend struct TaskExecutionContextBinding;
@@ -54,9 +60,5 @@ class SPARKLE_TASKS_API TaskExecutionContext final
 
 struct TaskExecutionContextBinding final
 {
-	static void Bind(
-	    TaskExecutionContext& context,
-	    std::uint64_t generation,
-	    TaskLane lane,
-	    std::stop_token cancellation) noexcept;
+	static void Bind(TaskExecutionContext& context, std::uint64_t generation, TaskLane lane, std::stop_token cancellation) noexcept;
 };

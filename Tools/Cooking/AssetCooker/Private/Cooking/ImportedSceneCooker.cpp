@@ -13,18 +13,19 @@
 
 class ImportedSceneComApartment final
 {
-  public:
+public:
 	ImportedSceneComApartment();
 	~ImportedSceneComApartment();
 
 	ImportedSceneComApartment(const ImportedSceneComApartment&) = delete;
 	ImportedSceneComApartment& operator=(const ImportedSceneComApartment&) = delete;
 
-  private:
+private:
 	HRESULT m_result;
 };
 
-ImportedSceneComApartment::ImportedSceneComApartment() : m_result(CoInitializeEx(nullptr, COINIT_MULTITHREADED))
+ImportedSceneComApartment::ImportedSceneComApartment() :
+    m_result(CoInitializeEx(nullptr, COINIT_MULTITHREADED))
 {
 	if (!SUCCEEDED(m_result) && m_result != RPC_E_CHANGED_MODE)
 	{
@@ -46,9 +47,7 @@ SourceImportOutput ImportedSceneCooker::Import(const AssetCookerSceneEntry& scen
 	return SourceSceneImporter::Import(sceneEntry.sourcePath);
 }
 
-CookedSceneBuild ImportedSceneCooker::Build(
-    const AssetCookerSceneEntry& sceneEntry,
-    AssetCookerDiagnostics& diagnostics)
+CookedSceneBuild ImportedSceneCooker::Build(const AssetCookerSceneEntry& sceneEntry, AssetCookerDiagnostics& diagnostics)
 {
 	SourceImportOutput importOutput;
 	try

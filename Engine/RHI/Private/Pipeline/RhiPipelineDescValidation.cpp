@@ -140,12 +140,9 @@ void RhiContract::ValidateRayTracingPipelineDesc(const RayTracingPipelineDesc& d
 		    || (shaderExport.Shader->Entry->RayPayloadSizeInBytes == desc.MaxPayloadSizeInBytes
 		        && shaderExport.Shader->Entry->RayAttributeSizeInBytes == desc.MaxAttributeSizeInBytes
 		        && shaderExport.Shader->Entry->MinimumRayRecursionDepth <= desc.MaxRecursionDepth);
+		RhiPipelineDescValidation::Require(sharedContractMatches, "Ray-tracing pipeline export metadata does not match its map contract.");
 		RhiPipelineDescValidation::Require(
-		    sharedContractMatches,
-		    "Ray-tracing pipeline export metadata does not match its map contract.");
-		RhiPipelineDescValidation::Require(
-		    (shaderExport.Shader->Entry->LocalRecordSizeInBytes == 0)
-		        == (shaderExport.Shader->Entry->LocalRecordSignature == 0),
+		    (shaderExport.Shader->Entry->LocalRecordSizeInBytes == 0) == (shaderExport.Shader->Entry->LocalRecordSignature == 0),
 		    "Ray-tracing pipeline export has an incomplete local-record contract.");
 		rayGenerationCount += stage == ShaderStage::RayGeneration ? 1u : 0u;
 	}

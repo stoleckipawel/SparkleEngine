@@ -25,8 +25,7 @@ namespace SparkleLauncher
 			LevelOperationStep step;
 			step.Id = processStep.Id;
 			step.DisplayName = processStep.DisplayName;
-			step.DisplayCommandLine =
-			    BuildDisplayCommandLine(processStep.Request.ExecutablePath, processStep.Request.Arguments);
+			step.DisplayCommandLine = BuildDisplayCommandLine(processStep.Request.ExecutablePath, processStep.Request.Arguments);
 			step.LogPath = processStep.Request.LogPath;
 			plan.Steps.push_back(std::move(step));
 		}
@@ -110,7 +109,8 @@ namespace SparkleLauncher
 		}
 
 		plan.PlannedEffects.push_back(
-		    "Acquire asset packs referenced by selected maps into gitignored content roots; unselected and disabled packs remain untouched.");
+		    "Acquire asset packs referenced by selected maps into gitignored content roots; unselected and disabled packs remain "
+		    "untouched.");
 		if (cmake.Found && !request.ContentId.empty())
 		{
 			try
@@ -133,8 +133,9 @@ namespace SparkleLauncher
 		}
 		if (plan.Steps.empty())
 		{
-			dryRun << (plan.CanRun ? "\n  All requested level asset packs are already present."
-			                           : "\n  No acquisition step available until readiness issues are resolved.");
+			dryRun
+			    << (plan.CanRun ? "\n  All requested level asset packs are already present."
+			                    : "\n  No acquisition step available until readiness issues are resolved.");
 		}
 		plan.Operation.DryRunText = dryRun.str();
 		return plan;

@@ -11,7 +11,7 @@ class VulkanRhi;
 
 class VulkanClassicTlasServices final : public RhiClassicTlasService
 {
-  public:
+public:
 	VulkanClassicTlasServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 
 	RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(
@@ -22,7 +22,7 @@ class VulkanClassicTlasServices final : public RhiClassicTlasService
 	    std::uint32_t instanceCount,
 	    std::wstring_view debugName) override;
 
-  private:
+private:
 	VulkanRhi* m_rhi = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 };

@@ -4,9 +4,7 @@
 
 #include <algorithm>
 
-ShaderReflection SlangReflectionExtractor::Extract(
-    slang::ProgramLayout& programLayout,
-    ShaderStage stage)
+ShaderReflection SlangReflectionExtractor::Extract(slang::ProgramLayout& programLayout, ShaderStage stage)
 {
 	ShaderReflection outReflection;
 
@@ -37,10 +35,7 @@ ShaderReflection SlangReflectionExtractor::Extract(
 	return outReflection;
 }
 
-void SlangReflectionExtractor::VisitScope(
-    slang::VariableLayoutReflection* scopeLayout,
-    ShaderStage stage,
-    ShaderReflection& outReflection)
+void SlangReflectionExtractor::VisitScope(slang::VariableLayoutReflection* scopeLayout, ShaderStage stage, ShaderReflection& outReflection)
 {
 	if (scopeLayout == nullptr)
 		return;
@@ -85,10 +80,7 @@ void SlangReflectionExtractor::VisitVariable(
 	VisitTypeFields(variableLayout->getTypeLayout(), stage, outReflection);
 }
 
-void SlangReflectionExtractor::VisitTypeFields(
-    slang::TypeLayoutReflection* typeLayout,
-    ShaderStage stage,
-    ShaderReflection& outReflection)
+void SlangReflectionExtractor::VisitTypeFields(slang::TypeLayoutReflection* typeLayout, ShaderStage stage, ShaderReflection& outReflection)
 {
 	if (typeLayout == nullptr)
 		return;
@@ -137,10 +129,8 @@ void SlangReflectionExtractor::AddResourceBinding(
 	binding.Name = bindingName ? bindingName : "";
 	binding.Kind = MapResourceKind(variableLayout.getTypeLayout(), category);
 	binding.Dimension = MapResourceDimension(variableLayout.getTypeLayout());
-	binding.IsReadOnly = binding.Kind != CookedShaderResourceKind::RWTexture &&
-	                    binding.Kind != CookedShaderResourceKind::RWStructuredBuffer &&
-	                    binding.Kind != CookedShaderResourceKind::RWByteAddressBuffer &&
-	                    binding.Kind != CookedShaderResourceKind::RWTypedBuffer;
+	binding.IsReadOnly = binding.Kind != CookedShaderResourceKind::RWTexture && binding.Kind != CookedShaderResourceKind::RWStructuredBuffer
+	    && binding.Kind != CookedShaderResourceKind::RWByteAddressBuffer && binding.Kind != CookedShaderResourceKind::RWTypedBuffer;
 	binding.Set = static_cast<std::uint32_t>(variableLayout.getBindingSpace(category));
 	binding.Slot = static_cast<std::uint32_t>(variableLayout.getOffset(category));
 	binding.ArrayCount = NormalizeArrayCount(variableLayout.getTypeLayout()->getElementCount());
@@ -154,8 +144,8 @@ void SlangReflectionExtractor::AddResourceBinding(
 	    outReflection.Bindings,
 	    [&binding](const ShaderReflectionResourceBinding& existing)
 	    {
-		    return existing.Name == binding.Name && existing.Kind == binding.Kind && existing.Set == binding.Set &&
-		        existing.Slot == binding.Slot;
+		    return existing.Name == binding.Name && existing.Kind == binding.Kind && existing.Set == binding.Set
+		        && existing.Slot == binding.Slot;
 	    });
 	if (!duplicate)
 	{
@@ -195,9 +185,7 @@ void SlangReflectionExtractor::AddPushConstantBlock(
 	outReflection.PushConstants.push_back(range);
 }
 
-void SlangReflectionExtractor::AddVaryingInput(
-    slang::VariableLayoutReflection& variableLayout,
-    ShaderReflection& outReflection)
+void SlangReflectionExtractor::AddVaryingInput(slang::VariableLayoutReflection& variableLayout, ShaderReflection& outReflection)
 {
 	ShaderReflectionInputElement element;
 	element.Semantic = variableLayout.getSemanticName() ? variableLayout.getSemanticName() : variableLayout.getName();
@@ -227,8 +215,7 @@ void SlangReflectionExtractor::FlattenMembers(
 		member.OffsetInBytes = parentOffset + static_cast<std::uint32_t>(field->getOffset(slang::ParameterCategory::Uniform));
 		member.SizeInBytes = static_cast<std::uint32_t>(field->getTypeLayout()->getSize(slang::ParameterCategory::Uniform));
 		member.ArrayCount = NormalizeArrayCount(field->getTypeLayout()->getElementCount());
-		member.ArrayStrideInBytes = static_cast<std::uint32_t>(
-		    field->getTypeLayout()->getElementStride(SLANG_PARAMETER_CATEGORY_UNIFORM));
+		member.ArrayStrideInBytes = static_cast<std::uint32_t>(field->getTypeLayout()->getElementStride(SLANG_PARAMETER_CATEGORY_UNIFORM));
 		member.ScalarType = MapScalarType(field->getTypeLayout()->getScalarType());
 		member.RowCount = static_cast<std::uint8_t>(field->getTypeLayout()->getRowCount());
 		member.ColumnCount = static_cast<std::uint8_t>(field->getTypeLayout()->getColumnCount());
@@ -321,8 +308,7 @@ CookedShaderScalarType SlangReflectionExtractor::MapScalarType(slang::TypeReflec
 	}
 }
 
-slang::TypeLayoutReflection* SlangReflectionExtractor::UnwrapSingleElementContainer(
-    slang::TypeLayoutReflection* typeLayout)
+slang::TypeLayoutReflection* SlangReflectionExtractor::UnwrapSingleElementContainer(slang::TypeLayoutReflection* typeLayout)
 {
 	if (typeLayout == nullptr)
 		return nullptr;

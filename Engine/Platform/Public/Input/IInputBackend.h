@@ -30,19 +30,22 @@ struct InputBackendResult
 		MouseWheelEvent MouseWheel;
 	};
 
-	InputBackendResult() : Keyboard{} {}
+	InputBackendResult() :
+	    Keyboard{}
+	{
+	}
 
 	bool IsValid() const noexcept { return Type != InputEventType::None; }
 };
 
 class SPARKLE_PLATFORM_API IInputBackend
 {
-  public:
+public:
 	virtual ~IInputBackend() = default;
 
 	virtual InputBackendResult ProcessMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2) = 0;
 
-  protected:
+protected:
 	IInputBackend() = default;
 	IInputBackend(const IInputBackend&) = default;
 	IInputBackend& operator=(const IInputBackend&) = default;

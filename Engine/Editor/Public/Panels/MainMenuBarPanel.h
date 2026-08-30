@@ -10,7 +10,7 @@ class Window;
 
 class MainMenuBarPanel final
 {
-  public:
+public:
 	MainMenuBarPanel(LevelSession* levelSession = nullptr, Window* window = nullptr) noexcept;
 	~MainMenuBarPanel() = default;
 
@@ -29,7 +29,7 @@ class MainMenuBarPanel final
 	void BuildUI() noexcept;
 	float GetHeight() const noexcept { return m_heightPixels; }
 
-  private:
+private:
 	void BuildFileMenu() noexcept;
 	void BuildWindowsMenu() noexcept;
 	void BuildOpenLevelMenu() noexcept;

@@ -6,7 +6,7 @@ namespace Assets
 
 	class SceneManifestValidator final
 	{
-	  public:
+	public:
 		static void ValidateHeader(const LoadedSceneManifest& manifest);
 		static void ValidateRecords(const LoadedSceneManifest& manifest);
 	};

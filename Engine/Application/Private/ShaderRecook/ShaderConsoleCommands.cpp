@@ -18,7 +18,7 @@
 
 class ShaderRecookStatusPresentation final
 {
-  public:
+public:
 	static ConsoleCommandSeverity ResolveRecookStatusSeverity(const std::string& status) noexcept
 	{
 		return status.find("failed") != std::string::npos ? ConsoleCommandSeverity::Error : ConsoleCommandSeverity::Info;
@@ -33,16 +33,9 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Help = "Queues an out-of-process shader recook. Targets: Global, Changed, or Shader <shader-id>.",
 	        .ArgumentSyntax = "Global|Changed|Shader <shader-id>",
 	        .Scope = ConsoleCommandScope::Editor,
-	        .Execute =
-	            [handlers](ConsoleCommandScope, std::span<const std::string_view> arguments)
-	        {
-		        return ExecuteRecompileShaders(handlers, arguments);
-	        },
-	        .Complete =
-	            [](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
-	        {
-		        return CompleteRecompileShaders(request);
-	        },
+	        .Execute = [handlers](ConsoleCommandScope, std::span<const std::string_view> arguments)
+	        { return ExecuteRecompileShaders(handlers, arguments); },
+	        .Complete = [](ConsoleCommandScope, const ConsoleAutocompleteRequest& request) { return CompleteRecompileShaders(request); },
 	    });
 
 	commandRegistry.Register(
@@ -50,11 +43,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Name = "ReloadShaders",
 	        .Help = "Reloads the current cooked shader map and code library without recooking.",
 	        .Scope = ConsoleCommandScope::Editor,
-	        .Execute =
-	            [handlers](ConsoleCommandScope, std::span<const std::string_view>)
-	        {
-		        return ExecuteReloadShaders(handlers);
-	        },
+	        .Execute = [handlers](ConsoleCommandScope, std::span<const std::string_view>) { return ExecuteReloadShaders(handlers); },
 	    });
 
 	commandRegistry.Register(
@@ -62,11 +51,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Name = "ListShaders",
 	        .Help = "Lists registered global shaders from the typed shader registry.",
 	        .Scope = ConsoleCommandScope::Editor,
-	        .Execute =
-	            [](ConsoleCommandScope, std::span<const std::string_view>)
-	        {
-		        return ExecuteListShaders();
-	        },
+	        .Execute = [](ConsoleCommandScope, std::span<const std::string_view>) { return ExecuteListShaders(); },
 	    });
 
 	commandRegistry.Register(
@@ -74,11 +59,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Name = "ListShaderBackends",
 	        .Help = "Lists shader compiler backends mirrored from the tool surface.",
 	        .Scope = ConsoleCommandScope::Editor,
-	        .Execute =
-	            [](ConsoleCommandScope, std::span<const std::string_view>)
-	        {
-		        return ExecuteListShaderBackends();
-	        },
+	        .Execute = [](ConsoleCommandScope, std::span<const std::string_view>) { return ExecuteListShaderBackends(); },
 	    });
 
 	commandRegistry.Register(
@@ -86,11 +67,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	        .Name = "ListShaderTargets",
 	        .Help = "Lists shader target names accepted by the shader compiler.",
 	        .Scope = ConsoleCommandScope::Editor,
-	        .Execute =
-	            [](ConsoleCommandScope, std::span<const std::string_view>)
-	        {
-		        return ExecuteListShaderTargets();
-	        },
+	        .Execute = [](ConsoleCommandScope, std::span<const std::string_view>) { return ExecuteListShaderTargets(); },
 	    });
 }
 
@@ -112,16 +89,8 @@ void ShaderConsoleCommands::ConnectEditor(UI& ui, ShaderRecookCoordinator& coord
 		Register(
 		    consoleSystem->GetCommandRegistry(),
 		    Handlers{
-		        .RequestRecook =
-		            [&coordinator](ShaderRecookRequest request)
-		        {
-			        coordinator.RequestRecook(std::move(request));
-		        },
-		        .RequestReload =
-		            [&coordinator]()
-		        {
-			        coordinator.RequestReload();
-		        },
+		        .RequestRecook = [&coordinator](ShaderRecookRequest request) { coordinator.RequestRecook(std::move(request)); },
+		        .RequestReload = [&coordinator]() { coordinator.RequestReload(); },
 		    });
 	}
 }

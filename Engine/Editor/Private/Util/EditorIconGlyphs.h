@@ -53,4 +53,4 @@ namespace EditorIconGlyphs
 		inline constexpr const char* CompileRequest = "\xef\x91\xad";
 		inline constexpr const char* Sort = "\xef\x85\xa0";
 	}
-}  // namespace EditorIconGlyphs
+}

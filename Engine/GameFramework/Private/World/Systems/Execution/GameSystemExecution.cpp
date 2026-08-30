@@ -59,7 +59,7 @@ namespace ECS
 		const std::uint32_t begin = partitionIndex * partitionSize;
 		const std::uint32_t end = (std::min) (itemCount, begin + partitionSize);
 		return begin == end || binding.ExecuteRange(begin, end)
-		           ? TaskResult::Success()
-		           : TaskResult::Failure("Game-system range rejected its declared access or target range.");
+		    ? TaskResult::Success()
+		    : TaskResult::Failure("Game-system range rejected its declared access or target range.");
 	}
 }

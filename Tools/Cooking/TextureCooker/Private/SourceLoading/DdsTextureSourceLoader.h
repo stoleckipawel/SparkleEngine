@@ -10,11 +10,11 @@
 
 class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 {
-  public:
+public:
 	bool SupportsFormat(TextureSourceFormat format) const noexcept override;
 	TextureLoadResult Load(const std::filesystem::path& sourcePath) const override;
 
-  private:
+private:
 	struct DdsPixelFormat
 	{
 		std::uint32_t size = 0;
@@ -68,19 +68,15 @@ class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 
 	static constexpr std::uint32_t MakeFourCc(char a, char b, char c, char d) noexcept
 	{
-		return static_cast<std::uint32_t>(static_cast<unsigned char>(a)) |
-		       (static_cast<std::uint32_t>(static_cast<unsigned char>(b)) << 8u) |
-		       (static_cast<std::uint32_t>(static_cast<unsigned char>(c)) << 16u) |
-		       (static_cast<std::uint32_t>(static_cast<unsigned char>(d)) << 24u);
+		return static_cast<std::uint32_t>(static_cast<unsigned char>(a)) | (static_cast<std::uint32_t>(static_cast<unsigned char>(b)) << 8u)
+		    | (static_cast<std::uint32_t>(static_cast<unsigned char>(c)) << 16u)
+		    | (static_cast<std::uint32_t>(static_cast<unsigned char>(d)) << 24u);
 	}
 
 	static DdsHeader ReadHeader(const std::vector<std::uint8_t>& fileBytes);
 	static bool HasDx10Header(const DdsHeader& header) noexcept;
 	static DdsHeaderDx10 ReadDx10Header(const std::vector<std::uint8_t>& fileBytes);
-	static void ValidateHeader(
-	    const DdsHeader& header,
-	    const DdsHeaderDx10* dx10Header,
-	    const std::filesystem::path& resolvedPath);
+	static void ValidateHeader(const DdsHeader& header, const DdsHeaderDx10* dx10Header, const std::filesystem::path& resolvedPath);
 	static DXGI_FORMAT ResolveDxgiFormat(
 	    const DdsHeader& header,
 	    const DdsHeaderDx10* dx10Header,
@@ -91,10 +87,7 @@ class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 	static bool IsCubemap(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept;
 	static std::uint32_t ResolveArraySize(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept;
 	static bool IsBlockCompressed(DXGI_FORMAT format) noexcept;
-	static std::uint32_t ComputeRowPitch(
-	    DXGI_FORMAT format,
-	    std::uint32_t width,
-	    const std::filesystem::path& resolvedPath);
+	static std::uint32_t ComputeRowPitch(DXGI_FORMAT format, std::uint32_t width, const std::filesystem::path& resolvedPath);
 	static std::uint32_t ComputeSlicePitch(
 	    DXGI_FORMAT format,
 	    std::uint32_t width,

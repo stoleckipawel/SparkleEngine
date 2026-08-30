@@ -125,8 +125,7 @@ void RhiCommandRecordingLease::BeginRecording() noexcept
 	}
 }
 
-RhiCommandRecordingLease RhiCommandRecordingLeaseAccess::Create(
-    const RhiCommandRecordingLeaseInitialization& initialization) noexcept
+RhiCommandRecordingLease RhiCommandRecordingLeaseAccess::Create(const RhiCommandRecordingLeaseInitialization& initialization) noexcept
 {
 	RhiCommandRecordingLease lease;
 	lease.m_backendState = initialization.BackendState;
@@ -144,8 +143,7 @@ RhiCommandRecordingLease RhiCommandRecordingLeaseAccess::Create(
 	return lease;
 }
 
-RhiCommandRecordingLeaseBackendState RhiCommandRecordingLeaseAccess::Consume(
-    RhiCommandRecordingLease&& lease) noexcept
+RhiCommandRecordingLeaseBackendState RhiCommandRecordingLeaseAccess::Consume(RhiCommandRecordingLease&& lease) noexcept
 {
 	RhiCommandRecordingLeaseBackendState state{
 	    .State = lease.m_backendState,
@@ -163,12 +161,8 @@ bool RhiCommandRecordingLeaseAccess::Matches(
     const RhiCommandRecordingLeaseBackendState& state,
     const RhiCommandRecordingLeaseBackendState& expected) noexcept
 {
-	return state.State == expected.State &&
-	       state.CommandList == expected.CommandList &&
-	       state.QueueType == expected.QueueType &&
-	       state.FrameSlot == expected.FrameSlot &&
-	       state.ContextId.Value == expected.ContextId.Value &&
-	       state.Owner.PartitionIndex == expected.Owner.PartitionIndex &&
-	       state.Owner.TaskIdentity == expected.Owner.TaskIdentity &&
-	       state.Closed == expected.Closed;
+	return state.State == expected.State && state.CommandList == expected.CommandList && state.QueueType == expected.QueueType
+	    && state.FrameSlot == expected.FrameSlot && state.ContextId.Value == expected.ContextId.Value
+	    && state.Owner.PartitionIndex == expected.Owner.PartitionIndex && state.Owner.TaskIdentity == expected.Owner.TaskIdentity
+	    && state.Closed == expected.Closed;
 }

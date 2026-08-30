@@ -10,28 +10,34 @@
 #include <utility>
 
 #if defined(_WIN32)
-	#define NOMINMAX
-	#ifndef WIN32_LEAN_AND_MEAN
-		#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <Windows.h>
+  #define NOMINMAX
+  #ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+  #endif
+  #include <Windows.h>
 #endif
 
 class ChildProcessWindowsImplementation final
 {
-  public:
+public:
 #if defined(_WIN32)
 	static constexpr DWORD ProcessTerminationTimeoutMilliseconds = 5'000;
 	class Win32Handle final
 	{
-	  public:
+	public:
 		Win32Handle() noexcept = default;
-		explicit Win32Handle(HANDLE handle) noexcept : m_handle(handle) {}
+		explicit Win32Handle(HANDLE handle) noexcept :
+		    m_handle(handle)
+		{
+		}
 		~Win32Handle() { Reset(); }
 
 		Win32Handle(const Win32Handle&) = delete;
 		Win32Handle& operator=(const Win32Handle&) = delete;
-		Win32Handle(Win32Handle&& other) noexcept : m_handle(std::exchange(other.m_handle, nullptr)) {}
+		Win32Handle(Win32Handle&& other) noexcept :
+		    m_handle(std::exchange(other.m_handle, nullptr))
+		{
+		}
 		Win32Handle& operator=(Win32Handle&& other) noexcept
 		{
 			if (this != &other)
@@ -51,7 +57,7 @@ class ChildProcessWindowsImplementation final
 			m_handle = handle;
 		}
 
-	  private:
+	private:
 		HANDLE m_handle = nullptr;
 	};
 
@@ -71,13 +77,8 @@ class ChildProcessWindowsImplementation final
 	{
 		if (argument.empty())
 			return L"\"\"";
-		const bool needsQuotes = std::any_of(
-		    argument.begin(),
-		    argument.end(),
-		    [](wchar_t value)
-		    {
-			    return std::iswspace(value) || value == L'\"';
-		    });
+		const bool needsQuotes =
+		    std::any_of(argument.begin(), argument.end(), [](wchar_t value) { return std::iswspace(value) || value == L'\"'; });
 		if (!needsQuotes)
 			return argument;
 
@@ -132,13 +133,8 @@ class ChildProcessWindowsImplementation final
 		{
 			const std::wstring prefix = Utf8ToWide(overrideValue.Name) + L"=";
 			const std::wstring replacement = prefix + Utf8ToWide(overrideValue.Value);
-			auto entry = std::find_if(
-			    entries.begin(),
-			    entries.end(),
-			    [&prefix](const std::wstring& value)
-			    {
-				    return value.rfind(prefix, 0) == 0;
-			    });
+			auto entry =
+			    std::find_if(entries.begin(), entries.end(), [&prefix](const std::wstring& value) { return value.rfind(prefix, 0) == 0; });
 			if (entry == entries.end())
 				entries.push_back(replacement);
 			else
@@ -204,8 +200,8 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 	}
 
 	static std::atomic_uint64_t nextPipeIdentity{1};
-	const std::wstring pipeName = L"\\\\.\\pipe\\Sparkle.ChildProcess." + std::to_wstring(GetCurrentProcessId()) + L"." +
-	                              std::to_wstring(nextPipeIdentity.fetch_add(1, std::memory_order_relaxed));
+	const std::wstring pipeName = L"\\\\.\\pipe\\Sparkle.ChildProcess." + std::to_wstring(GetCurrentProcessId()) + L"."
+	    + std::to_wstring(nextPipeIdentity.fetch_add(1, std::memory_order_relaxed));
 	ChildProcessWindowsImplementation::Win32Handle readPipe(CreateNamedPipeW(
 	    pipeName.c_str(),
 	    PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
@@ -222,7 +218,8 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 	}
 
 	SECURITY_ATTRIBUTES security{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
-	ChildProcessWindowsImplementation::Win32Handle writePipe(CreateFileW(pipeName.c_str(), GENERIC_WRITE, 0, &security, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+	ChildProcessWindowsImplementation::Win32Handle writePipe(
+	    CreateFileW(pipeName.c_str(), GENERIC_WRITE, 0, &security, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
 	if (!writePipe)
 	{
 		result.FailureReason = "Failed to open child output pipe: " + ChildProcessWindowsImplementation::FormatError(GetLastError());
@@ -273,14 +270,15 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 	ChildProcessWindowsImplementation::Win32Handle processJob(CreateJobObjectW(nullptr, nullptr));
 	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobLimits{};
 	jobLimits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-	if (!processJob ||
-	    !SetInformationJobObject(processJob.Get(), JobObjectExtendedLimitInformation, &jobLimits, static_cast<DWORD>(sizeof(jobLimits))) ||
-	    !AssignProcessToJobObject(processJob.Get(), process.Get()))
+	if (!processJob
+	    || !SetInformationJobObject(processJob.Get(), JobObjectExtendedLimitInformation, &jobLimits, static_cast<DWORD>(sizeof(jobLimits)))
+	    || !AssignProcessToJobObject(processJob.Get(), process.Get()))
 	{
 		const DWORD ownershipError = GetLastError();
 		TerminateProcess(process.Get(), 1);
 		WaitForSingleObject(process.Get(), ChildProcessWindowsImplementation::ProcessTerminationTimeoutMilliseconds);
-		result.FailureReason = "Failed to establish child process tree ownership: " + ChildProcessWindowsImplementation::FormatError(ownershipError);
+		result.FailureReason =
+		    "Failed to establish child process tree ownership: " + ChildProcessWindowsImplementation::FormatError(ownershipError);
 		return result;
 	}
 	if (ResumeThread(processThread.Get()) == static_cast<DWORD>(-1))
@@ -300,15 +298,11 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 		const DWORD eventError = GetLastError();
 		TerminateJobObject(processJob.Get(), 1);
 		WaitForSingleObject(process.Get(), ChildProcessWindowsImplementation::ProcessTerminationTimeoutMilliseconds);
-		result.FailureReason = "Failed to create child process completion events: " + ChildProcessWindowsImplementation::FormatError(eventError);
+		result.FailureReason =
+		    "Failed to create child process completion events: " + ChildProcessWindowsImplementation::FormatError(eventError);
 		return result;
 	}
-	std::stop_callback cancellationWake(
-	    request.Cancellation,
-	    [event = cancelEvent.Get()]
-	    {
-		    SetEvent(event);
-	    });
+	std::stop_callback cancellationWake(request.Cancellation, [event = cancelEvent.Get()] { SetEvent(event); });
 
 	std::array<char, 4096> buffer{};
 	OVERLAPPED readOperation{};
@@ -368,7 +362,8 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 		const DWORD waitResult = WaitForMultipleObjects(count, waits.data(), FALSE, INFINITE);
 		if (waitResult == WAIT_FAILED)
 		{
-			result.FailureReason = "Failed while waiting for child process completion: " + ChildProcessWindowsImplementation::FormatError(GetLastError());
+			result.FailureReason =
+			    "Failed while waiting for child process completion: " + ChildProcessWindowsImplementation::FormatError(GetLastError());
 			TerminateJobObject(processJob.Get(), 1);
 			WaitForSingleObject(process.Get(), ChildProcessWindowsImplementation::ProcessTerminationTimeoutMilliseconds);
 			break;
@@ -396,7 +391,8 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 				pipeClosed = true;
 			else
 			{
-				result.FailureReason = "Failed while completing child output read: " + ChildProcessWindowsImplementation::FormatError(GetLastError());
+				result.FailureReason =
+				    "Failed while completing child output read: " + ChildProcessWindowsImplementation::FormatError(GetLastError());
 				pipeClosed = true;
 			}
 		}

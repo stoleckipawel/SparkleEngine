@@ -21,7 +21,7 @@ struct CompiledBinding;
 
 class VulkanDescriptorAllocator final
 {
-  public:
+public:
 	explicit VulkanDescriptorAllocator(VulkanRhi& rhi) noexcept;
 	~VulkanDescriptorAllocator() noexcept = default;
 
@@ -34,8 +34,9 @@ class VulkanDescriptorAllocator final
 	void BeginFrame(std::uint32_t frameIndex) noexcept;
 	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept;
 	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount);
-	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
-	    const noexcept;
+	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(
+	    RhiDescriptorTableHandle tableHandle,
+	    std::uint32_t descriptorIndex = 0) const noexcept;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept;
 
 	RhiGpuDescriptorHandle RegisterImageDescriptor(ERhiResourceViewKind viewKind, VkImageView imageView);
@@ -68,7 +69,7 @@ class VulkanDescriptorAllocator final
 	    const CompiledBinding& binding,
 	    VkDeviceAddress accelerationStructureAddress) noexcept;
 
-  private:
+private:
 	friend class VulkanDescriptorService;
 
 	enum class EntryKind : std::uint8_t

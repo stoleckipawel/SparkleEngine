@@ -21,10 +21,7 @@ public:
 	    ShaderCookPipelinePlan& plan);
 
 private:
-	static ShaderCompileRequest BuildRequest(
-	    const ShaderCookSettings& settings,
-	    const ShaderCookDesc& shader,
-	    ShaderTarget target);
+	static ShaderCompileRequest BuildRequest(const ShaderCookSettings& settings, const ShaderCookDesc& shader, ShaderTarget target);
 	static void AppendDescriptorBindingRemaps(const ShaderCookDesc& shader, ShaderCompileRequest& request);
 	static ShaderCompileFeatureFlags BuildRequiredFeatures(ShaderFeatureFlags features) noexcept;
 	static const ShaderSourceMountTable& GetSourceMounts();

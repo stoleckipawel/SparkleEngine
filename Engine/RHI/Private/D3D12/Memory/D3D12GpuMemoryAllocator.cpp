@@ -35,7 +35,7 @@ struct D3D12GpuMemoryAllocator::Impl
 
 class D3D12GpuMemoryAllocatorImplementation final
 {
-  public:
+public:
 	using CategoryAggregation = RhiMemoryCategoryAggregation<ID3D12Heap*>;
 
 	static std::uint64_t GetBudgetBytesForResidency(
@@ -106,7 +106,8 @@ class D3D12GpuMemoryAllocatorImplementation final
 };
 
 D3D12GpuMemoryAllocator::D3D12GpuMemoryAllocator(IDXGIAdapter* adapter, ID3D12Device* device) noexcept :
-    m_impl(std::make_unique<Impl>()), m_recordingResources(std::make_unique<D3D12RecordingResourceTable>())
+    m_impl(std::make_unique<Impl>()),
+    m_recordingResources(std::make_unique<D3D12RecordingResourceTable>())
 {
 	if (adapter == nullptr || device == nullptr)
 	{
@@ -479,9 +480,7 @@ D3D12GpuAllocationRecord* D3D12GpuMemoryAllocator::FindAllocationRecord(ID3D12Re
 	    m_impl->liveRecords.begin(),
 	    m_impl->liveRecords.end(),
 	    [resource](const D3D12GpuAllocationRecord* candidate) noexcept
-	    {
-		    return candidate != nullptr && !candidate->PendingRelease && candidate->Resource.Get() == resource;
-	    });
+	    { return candidate != nullptr && !candidate->PendingRelease && candidate->Resource.Get() == resource; });
 	return record != m_impl->liveRecords.end() ? *record : nullptr;
 }
 
@@ -511,8 +510,9 @@ D3D12RecordingResourceUseToken D3D12GpuMemoryAllocator::RetainCoordinatorRecordi
 	return record != nullptr ? m_recordingResources->Retain(*record) : D3D12RecordingResourceUseToken{};
 }
 
-void D3D12GpuMemoryAllocator::ReleaseRecordingResource(D3D12RecordingResourceUseToken use, RhiSubmissionToken submissionToken)
-    const noexcept
+void D3D12GpuMemoryAllocator::ReleaseRecordingResource(
+    D3D12RecordingResourceUseToken use,
+    RhiSubmissionToken submissionToken) const noexcept
 {
 	m_recordingResources->Release(use, submissionToken);
 }

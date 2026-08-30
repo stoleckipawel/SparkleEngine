@@ -34,10 +34,11 @@ TextureLoadResult HdrTextureSourceLoader::Load(const std::filesystem::path& sour
 	    &stbi_image_free);
 	if (!pixels)
 	{
-		throw Diagnostics::Error(std::format(
-		    "Failed to decode HDR texture '{}': {}",
-		    sourceFile.ResolvedPath.string(),
-		    stbi_failure_reason() != nullptr ? stbi_failure_reason() : "unknown stb_image error"));
+		throw Diagnostics::Error(
+		    std::format(
+		        "Failed to decode HDR texture '{}': {}",
+		        sourceFile.ResolvedPath.string(),
+		        stbi_failure_reason() != nullptr ? stbi_failure_reason() : "unknown stb_image error"));
 	}
 
 	return TextureSourceLoadStages::BuildFloatTextureLoadResult(

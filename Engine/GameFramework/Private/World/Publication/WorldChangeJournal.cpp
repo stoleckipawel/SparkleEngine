@@ -12,13 +12,13 @@ WorldChangeBatch::WorldChangeBatch(
     WorldChangeReadStatus status,
     WorldSequence oldestAvailableSequence,
     WorldSequence latestSequence,
-	std::shared_ptr<const Storage> storage,
-	std::size_t firstChangeIndex) noexcept :
+    std::shared_ptr<const Storage> storage,
+    std::size_t firstChangeIndex) noexcept :
     m_status(status),
     m_oldestAvailableSequence(oldestAvailableSequence),
     m_latestSequence(latestSequence),
-	m_storage(std::move(storage)),
-	m_firstChangeIndex(firstChangeIndex)
+    m_storage(std::move(storage)),
+    m_firstChangeIndex(firstChangeIndex)
 {
 }
 

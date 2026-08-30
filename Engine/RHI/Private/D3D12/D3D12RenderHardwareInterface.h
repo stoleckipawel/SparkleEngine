@@ -25,7 +25,7 @@ class RhiImGuiRenderer;
 
 class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 {
-  public:
+public:
 	D3D12RenderHardwareInterface(
 	    D3D12Rhi& rhi,
 	    D3D12GpuMemoryAllocator& memoryAllocator,
@@ -91,20 +91,18 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	PixelFormat GetPresentDepthStencilFormat() const noexcept;
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
 
-  private:
+private:
 	friend class D3D12InteropService;
 	friend class D3D12RenderCommandList;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
-	    const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
-	    const noexcept;
-	D3D12RecordingResourceUseToken BeginResourceTracking(
-	    RhiResourceHandle resource,
-	    bool coordinatorRecording) noexcept;
-	void EndResourceTracking(
-	    D3D12RecordingResourceUseToken use,
-	    RhiSubmissionToken submissionToken) noexcept;
+	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(
+	    RhiDescriptorTableHandle tableHandle,
+	    std::uint32_t descriptorIndex = 0) const noexcept;
+	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(
+	    RhiDescriptorTableHandle tableHandle,
+	    std::uint32_t descriptorIndex = 0) const noexcept;
+	D3D12RecordingResourceUseToken BeginResourceTracking(RhiResourceHandle resource, bool coordinatorRecording) noexcept;
+	void EndResourceTracking(D3D12RecordingResourceUseToken use, RhiSubmissionToken submissionToken) noexcept;
 	bool BuildPartitionedTopLevelAccelerationStructure(
 	    ID3D12GraphicsCommandList7* commandList,
 	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;

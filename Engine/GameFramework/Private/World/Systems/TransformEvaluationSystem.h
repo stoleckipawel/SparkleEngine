@@ -7,7 +7,7 @@ namespace ECS
 
 	class TransformEvaluationSystem final
 	{
-	  public:
+	public:
 		static void Evaluate(const LocalTransform& local, WorldTransform& world) noexcept;
 	};
 }

@@ -3,9 +3,7 @@
 
 #include <limits>
 
-EditorTextureHandle EditorTextureRegistry::PublishViewportTexture(
-    std::uint64_t nativeTextureId,
-    std::uint64_t viewportGeneration) noexcept
+EditorTextureHandle EditorTextureRegistry::PublishViewportTexture(std::uint64_t nativeTextureId, std::uint64_t viewportGeneration) noexcept
 {
 	const EditorTextureHandle handle = EditorTextureHandle::Viewport(viewportGeneration);
 	if (nativeTextureId == 0 || !handle)
@@ -43,9 +41,7 @@ EditorTextureHandle EditorTextureRegistry::Register(std::uint64_t nativeTextureI
 	{
 		return {};
 	}
-	const EditorTextureHandle handle{
-	    .Slot = static_cast<std::uint32_t>(m_bindings.size() + 3),
-	    .Generation = 1};
+	const EditorTextureHandle handle{.Slot = static_cast<std::uint32_t>(m_bindings.size() + 3), .Generation = 1};
 	m_bindings.push_back(Binding{.Handle = handle, .NativeTextureId = nativeTextureId});
 	return handle;
 }

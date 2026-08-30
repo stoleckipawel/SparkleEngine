@@ -9,7 +9,7 @@
 
 class CookedCameraTranslation final
 {
-  public:
+public:
 	static Assets::CookedSceneCameraProjectionKind ToCookedCameraProjectionKind(ImportedCameraProjectionKind projectionKind) noexcept
 	{
 		switch (projectionKind)
@@ -49,8 +49,8 @@ void CookedSceneCameraBuilder::BuildCameras(const SourceImportOutput& importOutp
 	for (std::size_t cameraIndex = 0; cameraIndex < importOutput.scene.cameras.size(); ++cameraIndex)
 	{
 		const ImportedCamera& importedCamera = importOutput.scene.cameras[cameraIndex];
-		if (importedCamera.name.size() >= Assets::kCookedSceneCameraNameCapacity ||
-		    importedCamera.projectionKind != ImportedCameraProjectionKind::Perspective)
+		if (importedCamera.name.size() >= Assets::kCookedSceneCameraNameCapacity
+		    || importedCamera.projectionKind != ImportedCameraProjectionKind::Perspective)
 		{
 			throw Diagnostics::Error(std::format("Imported camera {} exceeds the cooked camera contract.", cameraIndex));
 		}

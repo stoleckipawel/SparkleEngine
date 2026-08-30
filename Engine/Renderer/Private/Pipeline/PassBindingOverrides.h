@@ -37,7 +37,7 @@ struct PassBindingOverride
 
 class PassBindingOverrides final
 {
-  public:
+public:
 	void SetConstantBufferView(const char* name, RhiGpuVirtualAddress gpuAddress);
 	void SetShaderResourceView(const char* name, RhiGpuVirtualAddress gpuAddress);
 	void SetUnorderedAccessView(const char* name, RhiGpuVirtualAddress gpuAddress);
@@ -48,6 +48,6 @@ class PassBindingOverrides final
 	std::span<const PassBindingOverride> GetOverrides() const noexcept { return m_overrides; }
 	const PassBindingOverride* Find(const char* name, PassBindingOverrideType type) const noexcept;
 
-  private:
+private:
 	std::vector<PassBindingOverride> m_overrides;
 };

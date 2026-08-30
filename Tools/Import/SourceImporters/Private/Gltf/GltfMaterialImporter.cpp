@@ -12,7 +12,7 @@
 
 class GltfMaterialFeatureReporting final
 {
-  public:
+public:
 	static void AppendFeatureName(std::string& unsupportedFeatures, std::string_view featureName)
 	{
 		if (!unsupportedFeatures.empty())
@@ -64,8 +64,7 @@ class GltfMaterialFeatureReporting final
 
 		if (!unsupportedFeatures.empty())
 		{
-			throw Diagnostics::Error(
-			    std::format("glTF material {} uses unsupported features [{}].", materialIndex, unsupportedFeatures));
+			throw Diagnostics::Error(std::format("glTF material {} uses unsupported features [{}].", materialIndex, unsupportedFeatures));
 		}
 	}
 };

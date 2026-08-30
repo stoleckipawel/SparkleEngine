@@ -3,8 +3,7 @@
 #include <cstdint>
 #include <limits>
 
-template <typename Tag>
-struct RhiGenerationalHandle
+template <typename Tag> struct RhiGenerationalHandle
 {
 	std::uint32_t Value = 0;
 
@@ -15,9 +14,8 @@ struct RhiGenerationalHandle
 
 	static constexpr RhiGenerationalHandle Make(std::uint32_t index, std::uint16_t generation) noexcept
 	{
-		return index < MaximumRecordCount
-		           ? RhiGenerationalHandle{(static_cast<std::uint32_t>(generation) << IndexBitCount) | (index + 1u)}
-		           : RhiGenerationalHandle{};
+		return index < MaximumRecordCount ? RhiGenerationalHandle{(static_cast<std::uint32_t>(generation) << IndexBitCount) | (index + 1u)}
+		                                  : RhiGenerationalHandle{};
 	}
 
 	constexpr bool Decode(std::uint32_t& outIndex, std::uint16_t& outGeneration) const noexcept

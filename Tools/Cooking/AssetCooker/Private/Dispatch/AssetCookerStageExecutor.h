@@ -10,7 +10,7 @@
 
 class AssetCookerStageExecutor final
 {
-  public:
+public:
 	AssetCookerStageExecutor() = delete;
 
 	static const char* GetStepName(AssetCookerPlanStep step) noexcept;
@@ -21,7 +21,7 @@ class AssetCookerStageExecutor final
 	    AssetCookerDiagnostics& diagnostics,
 	    std::vector<AssetCookerOutputRecord>& outOutputs);
 
-  private:
+private:
 	static bool FileExists(const std::filesystem::path& path);
 	static bool PlanUsesStep(const AssetCookerProjectCookPlan& plan, AssetCookerPlanStep step) noexcept;
 	static std::filesystem::path ResolveToolPath(const AssetCookerProjectCookPlan& plan, std::string_view executableName);

@@ -125,8 +125,7 @@ ShaderReflection DxilReflectionExtractor::ExtractLibrary(IDxcUtils& utils, IDxcR
 				}
 			}
 		}
-		else if (binding.Kind == CookedShaderResourceKind::StructuredBuffer
-		         || binding.Kind == CookedShaderResourceKind::RWStructuredBuffer)
+		else if (binding.Kind == CookedShaderResourceKind::StructuredBuffer || binding.Kind == CookedShaderResourceKind::RWStructuredBuffer)
 		{
 			binding.SizeInBytes = bindingDesc.NumSamples;
 		}

@@ -13,7 +13,7 @@
 
 class AssetCookerTemporaryFile final
 {
-  public:
+public:
 	explicit AssetCookerTemporaryFile(std::filesystem::path path);
 	~AssetCookerTemporaryFile();
 
@@ -22,7 +22,7 @@ class AssetCookerTemporaryFile final
 	AssetCookerTemporaryFile(const AssetCookerTemporaryFile&) = delete;
 	AssetCookerTemporaryFile& operator=(const AssetCookerTemporaryFile&) = delete;
 
-  private:
+private:
 	std::filesystem::path m_path;
 };
 
@@ -46,10 +46,14 @@ const char* AssetCookerStageExecutor::GetStepName(AssetCookerPlanStep step) noex
 {
 	switch (step)
 	{
-		case AssetCookerPlanStep::Shaders: return "shaders";
-		case AssetCookerPlanStep::Textures: return "textures";
-		case AssetCookerPlanStep::SceneAssets: return "scene-assets";
-		default: return "unknown";
+		case AssetCookerPlanStep::Shaders:
+			return "shaders";
+		case AssetCookerPlanStep::Textures:
+			return "textures";
+		case AssetCookerPlanStep::SceneAssets:
+			return "scene-assets";
+		default:
+			return "unknown";
 	}
 }
 
@@ -59,8 +63,7 @@ bool AssetCookerStageExecutor::FileExists(const std::filesystem::path& path)
 	return std::filesystem::exists(path, errorCode);
 }
 
-bool AssetCookerStageExecutor::PlanUsesStep(
-    const AssetCookerProjectCookPlan& plan, AssetCookerPlanStep step) noexcept
+bool AssetCookerStageExecutor::PlanUsesStep(const AssetCookerProjectCookPlan& plan, AssetCookerPlanStep step) noexcept
 {
 	return std::ranges::find(plan.steps, step) != plan.steps.end();
 }
@@ -76,8 +79,8 @@ std::filesystem::path AssetCookerStageExecutor::MakeTemporaryPath(
     std::string_view extension)
 {
 	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-	return plan.repositoryRoot / "artifacts" / "dev" / "tools" / "AssetCooker" / "Temp" /
-	       (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
+	return plan.repositoryRoot / "artifacts" / "dev" / "tools" / "AssetCooker" / "Temp"
+	    / (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
 }
 
 void AssetCookerStageExecutor::AppendOutput(
@@ -93,8 +96,7 @@ void AssetCookerStageExecutor::AppendOutput(
 	outputs.push_back(std::move(output));
 }
 
-bool AssetCookerStageExecutor::ValidateCapabilities(
-    const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics)
+bool AssetCookerStageExecutor::ValidateCapabilities(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics)
 {
 	bool valid = true;
 	if (PlanUsesStep(plan, AssetCookerPlanStep::Shaders))
@@ -195,9 +197,13 @@ bool AssetCookerStageExecutor::Execute(
 {
 	switch (step)
 	{
-		case AssetCookerPlanStep::Shaders: return RunShaders(plan, diagnostics, outOutputs);
-		case AssetCookerPlanStep::Textures: return RunTextures(plan, diagnostics, outOutputs);
-		case AssetCookerPlanStep::SceneAssets: return RunSceneAssets(plan, diagnostics, outOutputs);
-		default: return false;
+		case AssetCookerPlanStep::Shaders:
+			return RunShaders(plan, diagnostics, outOutputs);
+		case AssetCookerPlanStep::Textures:
+			return RunTextures(plan, diagnostics, outOutputs);
+		case AssetCookerPlanStep::SceneAssets:
+			return RunSceneAssets(plan, diagnostics, outOutputs);
+		default:
+			return false;
 	}
 }

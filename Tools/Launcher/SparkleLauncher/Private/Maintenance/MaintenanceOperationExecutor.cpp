@@ -10,38 +10,37 @@
 namespace SparkleLauncher
 {
 
-		std::filesystem::path NormalizePathForCompare(const std::filesystem::path& path)
-		{
-			std::error_code errorCode;
-			const std::filesystem::path absolutePath = std::filesystem::absolute(path, errorCode);
-			return (errorCode ? path : absolutePath).lexically_normal();
-		}
+	std::filesystem::path NormalizePathForCompare(const std::filesystem::path& path)
+	{
+		std::error_code errorCode;
+		const std::filesystem::path absolutePath = std::filesystem::absolute(path, errorCode);
+		return (errorCode ? path : absolutePath).lexically_normal();
+	}
 
-		bool PathsEqual(const std::filesystem::path& left, const std::filesystem::path& right)
-		{
+	bool PathsEqual(const std::filesystem::path& left, const std::filesystem::path& right)
+	{
 #if defined(_WIN32)
-			return Strings::ToLowerCopy(left.generic_string()) == Strings::ToLowerCopy(right.generic_string());
+		return Strings::ToLowerCopy(left.generic_string()) == Strings::ToLowerCopy(right.generic_string());
 #else
-			return left == right;
+		return left == right;
 #endif
-		}
+	}
 
-		bool IsSameOrDescendantPath(const std::filesystem::path& candidate, const std::filesystem::path& ancestor)
+	bool IsSameOrDescendantPath(const std::filesystem::path& candidate, const std::filesystem::path& ancestor)
+	{
+		const std::filesystem::path normalizedCandidate = NormalizePathForCompare(candidate);
+		const std::filesystem::path normalizedAncestor = NormalizePathForCompare(ancestor);
+		auto candidateIt = normalizedCandidate.begin();
+		auto ancestorIt = normalizedAncestor.begin();
+		for (; ancestorIt != normalizedAncestor.end(); ++ancestorIt, ++candidateIt)
 		{
-			const std::filesystem::path normalizedCandidate = NormalizePathForCompare(candidate);
-			const std::filesystem::path normalizedAncestor = NormalizePathForCompare(ancestor);
-			auto candidateIt = normalizedCandidate.begin();
-			auto ancestorIt = normalizedAncestor.begin();
-			for (; ancestorIt != normalizedAncestor.end(); ++ancestorIt, ++candidateIt)
+			if (candidateIt == normalizedCandidate.end() || !PathsEqual(*candidateIt, *ancestorIt))
 			{
-				if (candidateIt == normalizedCandidate.end() || !PathsEqual(*candidateIt, *ancestorIt))
-				{
-					return false;
-				}
+				return false;
 			}
-			return true;
 		}
-
+		return true;
+	}
 
 	static std::filesystem::path MakePlatformDeletePath(const std::filesystem::path& path)
 	{
@@ -169,7 +168,9 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool RemoveBuildDirectoryContentsPreservingDependencies(const std::filesystem::path& buildDirectory, std::string& outErrorMessage)
+	static bool RemoveBuildDirectoryContentsPreservingDependencies(
+	    const std::filesystem::path& buildDirectory,
+	    std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
 		if (!std::filesystem::is_directory(buildDirectory, errorCode))
@@ -199,11 +200,10 @@ namespace SparkleLauncher
 		const std::string extension = path.extension().string();
 		const std::string filename = path.filename().string();
 		static constexpr std::string_view kRiderSettingsSuffix = ".DotSettings.user";
-		const bool isRiderSettingsFile =
-		    filename.size() >= kRiderSettingsSuffix.size() &&
-		    filename.compare(filename.size() - kRiderSettingsSuffix.size(), kRiderSettingsSuffix.size(), kRiderSettingsSuffix) == 0;
-		return extension == ".sln" || extension == ".slnx" || extension == ".vcxproj" || extension == ".filters" || extension == ".user" ||
-		    filename == "CMakeCache.txt" || filename == "cmake_install.cmake" || filename == "Makefile" || isRiderSettingsFile;
+		const bool isRiderSettingsFile = filename.size() >= kRiderSettingsSuffix.size()
+		    && filename.compare(filename.size() - kRiderSettingsSuffix.size(), kRiderSettingsSuffix.size(), kRiderSettingsSuffix) == 0;
+		return extension == ".sln" || extension == ".slnx" || extension == ".vcxproj" || extension == ".filters" || extension == ".user"
+		    || filename == "CMakeCache.txt" || filename == "cmake_install.cmake" || filename == "Makefile" || isRiderSettingsFile;
 	}
 
 	static bool RemoveRootGeneratedFiles(const std::filesystem::path& repositoryRoot, std::string& outErrorMessage)
@@ -242,9 +242,11 @@ namespace SparkleLauncher
 		}
 
 		std::vector<std::filesystem::path> directories;
-		for (std::filesystem::recursive_directory_iterator iterator(root, std::filesystem::directory_options::skip_permission_denied, errorCode), end;
-		     iterator != end;
-		     iterator.increment(errorCode))
+		for (std::filesystem::recursive_directory_iterator
+		         iterator(root, std::filesystem::directory_options::skip_permission_denied, errorCode),
+		    end;
+		    iterator != end;
+		    iterator.increment(errorCode))
 		{
 			if (errorCode)
 			{
@@ -258,9 +260,11 @@ namespace SparkleLauncher
 			errorCode.clear();
 		}
 
-		std::sort(directories.begin(), directories.end(), [](const std::filesystem::path& left, const std::filesystem::path& right) {
-			return left.native().size() > right.native().size();
-		});
+		std::sort(
+		    directories.begin(),
+		    directories.end(),
+		    [](const std::filesystem::path& left, const std::filesystem::path& right)
+		    { return left.native().size() > right.native().size(); });
 
 		for (const std::filesystem::path& directory : directories)
 		{
@@ -284,20 +288,23 @@ namespace SparkleLauncher
 	{
 		switch (step.CleanBehavior)
 		{
-		case MaintenanceCleanBehavior::RemovePath:
-			return preservedPaths.empty() ? RemovePath(step.DestructivePath, outErrorMessage) :
-			                                RemovePathPreservingChildren(step.DestructivePath, preservedPaths, outErrorMessage);
-		case MaintenanceCleanBehavior::RemoveBuildDirectoryContentsPreservingDependencies:
-			return RemoveBuildDirectoryContentsPreservingDependencies(step.DestructivePath, outErrorMessage);
-		case MaintenanceCleanBehavior::RemoveRootGeneratedFiles:
-			return RemoveRootGeneratedFiles(step.DestructivePath, outErrorMessage);
+			case MaintenanceCleanBehavior::RemovePath:
+				return preservedPaths.empty() ? RemovePath(step.DestructivePath, outErrorMessage)
+				                              : RemovePathPreservingChildren(step.DestructivePath, preservedPaths, outErrorMessage);
+			case MaintenanceCleanBehavior::RemoveBuildDirectoryContentsPreservingDependencies:
+				return RemoveBuildDirectoryContentsPreservingDependencies(step.DestructivePath, outErrorMessage);
+			case MaintenanceCleanBehavior::RemoveRootGeneratedFiles:
+				return RemoveRootGeneratedFiles(step.DestructivePath, outErrorMessage);
 		}
 
 		outErrorMessage = "Unknown clean behavior.";
 		return false;
 	}
 
-	static std::string MakeCleanFailureSummary(const MaintenanceOperationProcessStep& step, const OperationRecord& operation, const std::string& errorMessage)
+	static std::string MakeCleanFailureSummary(
+	    const MaintenanceOperationProcessStep& step,
+	    const OperationRecord& operation,
+	    const std::string& errorMessage)
 	{
 		std::string summary = errorMessage.empty() ? "Clean blocked by locked files or permissions." : errorMessage;
 		summary += " Scope: " + step.DestructivePath.string();
@@ -308,17 +315,21 @@ namespace SparkleLauncher
 		return summary;
 	}
 
-	OperationRecord RunMaintenanceOperationPlan(MaintenanceOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback)
+	OperationRecord RunMaintenanceOperationPlan(
+	    MaintenanceOperationPlan plan,
+	    IProcessRunner& processRunner,
+	    ProcessOutputCallback outputCallback)
 	{
-		(void)processRunner;
-		(void)outputCallback;
+		(void) processRunner;
+		(void) outputCallback;
 
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);
 
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Clean operation is not ready to run." : plan.ReadinessMessages.front();
+			operation.FailureSummary =
+			    plan.ReadinessMessages.empty() ? "Clean operation is not ready to run." : plan.ReadinessMessages.front();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}

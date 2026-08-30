@@ -14,9 +14,7 @@
 
 static const auto g_sceneAssetCommitterLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssetCommitter");
 
-GameWorldSceneAssetCommitter::GameWorldSceneAssetCommitter(
-    ECS::GameWorldState& world,
-    GameWorldResourceStores& resources) noexcept :
+GameWorldSceneAssetCommitter::GameWorldSceneAssetCommitter(ECS::GameWorldState& world, GameWorldResourceStores& resources) noexcept :
     m_state(world),
     m_resources(resources)
 {
@@ -24,9 +22,9 @@ GameWorldSceneAssetCommitter::GameWorldSceneAssetCommitter(
 
 void GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 {
-	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty() &&
-	    sceneAssetPayload.skeletons.empty() && sceneAssetPayload.animations.empty() && sceneAssetPayload.materials.empty() &&
-	    sceneAssetPayload.materialVariants.empty())
+	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty()
+	    && sceneAssetPayload.skeletons.empty() && sceneAssetPayload.animations.empty() && sceneAssetPayload.materials.empty()
+	    && sceneAssetPayload.materialVariants.empty())
 	{
 		Diagnostics::Fatal(
 		    g_sceneAssetCommitterLogger,
@@ -48,25 +46,18 @@ void GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 		m_resources.Textures.AppendMaterialReferences(sceneAssetPayload.materials);
 
 	const MaterialHandle materialBaseHandle = sceneAssetPayload.materials.empty()
-	                                              ? MaterialHandle::Invalid()
-	                                              : m_resources.Materials.Append(std::move(sceneAssetPayload.materials));
+	    ? MaterialHandle::Invalid()
+	    : m_resources.Materials.Append(std::move(sceneAssetPayload.materials));
 	const auto sceneMeshBaseIndex = static_cast<SceneMeshInstanceIndex>(m_state.GetMeshCount());
 	const auto sceneGroupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(m_state.GetMeshInstanceGroupCount());
 
-	std::vector<ECS::SceneMeshInstanceData> meshInstances = SceneAssetMeshInstanceBuilder::BuildInstances(
-	    sceneAssetPayload,
-	    m_resources.Materials,
-	    materialBaseHandle,
-	    sceneGroupBaseIndex);
+	std::vector<ECS::SceneMeshInstanceData> meshInstances =
+	    SceneAssetMeshInstanceBuilder::BuildInstances(sceneAssetPayload, m_resources.Materials, materialBaseHandle, sceneGroupBaseIndex);
 	for (const ECS::SceneMeshInstanceData& meshInstance : meshInstances)
 	{
 		if (!m_resources.Materials.Contains(meshInstance.Material))
 		{
-			Diagnostics::Fatal(
-			    g_sceneAssetCommitterLogger,
-			    __FILE__,
-			    __LINE__,
-			    "A validated mesh instance resolved an absent material.");
+			Diagnostics::Fatal(g_sceneAssetCommitterLogger, __FILE__, __LINE__, "A validated mesh instance resolved an absent material.");
 		}
 	}
 
@@ -78,12 +69,10 @@ void GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 		}
 	}
 
-	m_state.AppendMeshInstanceGroups(
-	    SceneAssetMeshInstanceBuilder::BuildGroups(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
+	m_state.AppendMeshInstanceGroups(SceneAssetMeshInstanceBuilder::BuildGroups(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
 	m_resources.MaterialVariants.Append(
 	    SceneMaterialVariantTranslator::BuildDescriptions(sceneAssetPayload),
-	    SceneMaterialVariantTranslator::BuildBindings(
-	        sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex, m_state));
+	    SceneMaterialVariantTranslator::BuildBindings(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex, m_state));
 
 	for (SceneAssetPayload::Camera& camera : sceneAssetPayload.cameras)
 	{

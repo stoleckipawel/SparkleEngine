@@ -9,4 +9,4 @@ namespace LevelParsing
 	void ParseLightingSectionField(const ParsedLevelLine& parsedLine, LevelDesc& levelDesc);
 	void ValidateLightingSection(const LevelDesc& levelDesc);
 	void WriteLightingSection(std::ofstream& output, const LevelDesc& levelDesc);
-}  // namespace LevelParsing
+}

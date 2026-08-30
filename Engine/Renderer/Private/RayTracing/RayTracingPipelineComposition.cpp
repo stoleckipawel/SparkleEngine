@@ -56,30 +56,17 @@ RayTracingPipelineComposition::RayTracingPipelineComposition(
     m_hitGroups(std::move(hitGroups)),
     m_callableShaders(std::move(callableShaders))
 {
-	const RayTracingShaderMetadata& rayGenerationMetadata =
-	    RayTracingCompositionValidation::GetRayGenerationMetadata(m_rayGeneration);
+	const RayTracingShaderMetadata& rayGenerationMetadata = RayTracingCompositionValidation::GetRayGenerationMetadata(m_rayGeneration);
 	std::unordered_map<ShaderTypeId, ShaderStage> shadersByType;
 	std::unordered_map<std::string, ShaderTypeId> shaderTypesByExport;
-	RayTracingCompositionValidation::ValidateShader(
-	    m_rayGeneration,
-	    ShaderStage::RayGeneration,
-	    shadersByType,
-	    shaderTypesByExport);
+	RayTracingCompositionValidation::ValidateShader(m_rayGeneration, ShaderStage::RayGeneration, shadersByType, shaderTypesByExport);
 	for (ShaderTypeId miss : m_missShaders)
 	{
-		RayTracingCompositionValidation::ValidateShader(
-		    miss,
-		    ShaderStage::Miss,
-		    shadersByType,
-		    shaderTypesByExport);
+		RayTracingCompositionValidation::ValidateShader(miss, ShaderStage::Miss, shadersByType, shaderTypesByExport);
 	}
 	for (ShaderTypeId callable : m_callableShaders)
 	{
-		RayTracingCompositionValidation::ValidateShader(
-		    callable,
-		    ShaderStage::Callable,
-		    shadersByType,
-		    shaderTypesByExport);
+		RayTracingCompositionValidation::ValidateShader(callable, ShaderStage::Callable, shadersByType, shaderTypesByExport);
 	}
 	std::unordered_set<std::string> hitGroupNames;
 	for (const RayTracingHitGroupComposition& group : m_hitGroups)
@@ -88,18 +75,10 @@ RayTracingPipelineComposition::RayTracingPipelineComposition(
 		    !group.ExportName.empty() && shaderTypesByExport.find(group.ExportName) == shaderTypesByExport.end()
 		        && hitGroupNames.insert(group.ExportName).second,
 		    "Ray-tracing composition contains an invalid or duplicate hit-group export.");
-		RayTracingCompositionValidation::ValidateShader(
-		    group.ClosestHit,
-		    ShaderStage::ClosestHit,
-		    shadersByType,
-		    shaderTypesByExport);
+		RayTracingCompositionValidation::ValidateShader(group.ClosestHit, ShaderStage::ClosestHit, shadersByType, shaderTypesByExport);
 		if (group.AnyHit != 0)
 		{
-			RayTracingCompositionValidation::ValidateShader(
-			    group.AnyHit,
-			    ShaderStage::AnyHit,
-			    shadersByType,
-			    shaderTypesByExport);
+			RayTracingCompositionValidation::ValidateShader(group.AnyHit, ShaderStage::AnyHit, shadersByType, shaderTypesByExport);
 		}
 		if (group.Kind == ERhiRayTracingHitGroupKind::Procedural)
 		{

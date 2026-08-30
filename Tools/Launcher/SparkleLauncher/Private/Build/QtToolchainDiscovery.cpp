@@ -17,10 +17,7 @@ namespace SparkleLauncher
 		    value.begin(),
 		    value.end(),
 		    value.begin(),
-		    [](unsigned char character)
-		    {
-			    return static_cast<char>(std::tolower(character));
-		    });
+		    [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 		return value;
 	}
 
@@ -32,8 +29,8 @@ namespace SparkleLauncher
 	static bool PathLooksLikeMsvcKitRoot(const std::filesystem::path& path)
 	{
 		const std::string directoryName = ToLower(path.filename().string());
-		return directoryName.find("msvc") != std::string::npos && directoryName.find("64") != std::string::npos &&
-		       directoryName.find("arm64") == std::string::npos;
+		return directoryName.find("msvc") != std::string::npos && directoryName.find("64") != std::string::npos
+		    && directoryName.find("arm64") == std::string::npos;
 	}
 
 	static bool PathLooksLikeMingwKitRoot(const std::filesystem::path& path)
@@ -56,8 +53,8 @@ namespace SparkleLauncher
 			{
 				const std::filesystem::path root = path.parent_path().parent_path();
 				return std::filesystem::exists(root / "lib" / "cmake" / "Qt6" / "Qt6Config.cmake", errorCode)
-				           ? std::optional<std::filesystem::path>(root)
-				           : std::nullopt;
+				    ? std::optional<std::filesystem::path>(root)
+				    : std::nullopt;
 			}
 			return std::nullopt;
 		}
@@ -78,8 +75,8 @@ namespace SparkleLauncher
 		if (ToLower(path.filename().string()) == "qt6")
 		{
 			const std::filesystem::path root = path.parent_path().parent_path();
-			if (std::filesystem::exists(root / "bin" / "qmake.exe", errorCode) &&
-			    std::filesystem::exists(root / "lib" / "cmake" / "Qt6" / "Qt6Config.cmake", errorCode))
+			if (std::filesystem::exists(root / "bin" / "qmake.exe", errorCode)
+			    && std::filesystem::exists(root / "lib" / "cmake" / "Qt6" / "Qt6Config.cmake", errorCode))
 			{
 				return root;
 			}

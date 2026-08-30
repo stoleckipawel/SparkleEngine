@@ -14,7 +14,7 @@ namespace Threading
 
 	class SPARKLE_CORE_API OwnerThread final
 	{
-	  public:
+	public:
 		explicit OwnerThread(std::string ownerDescription) noexcept;
 
 		OwnerThread(const OwnerThread&) = delete;
@@ -24,7 +24,7 @@ namespace Threading
 
 		void AssertAccess(std::source_location location = std::source_location::current()) const noexcept;
 
-	  private:
+	private:
 		std::thread::id m_thread = std::this_thread::get_id();
 		std::string m_ownerDescription;
 	};

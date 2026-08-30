@@ -7,7 +7,7 @@
 
 class ShaderBackendRegistrationStore final
 {
-  public:
+public:
 	ShaderBackendRegistrationStore() = delete;
 
 	static std::vector<ShaderBackendRegistration>& MutableRegistrations()
@@ -24,9 +24,7 @@ class ShaderBackendRegistrationStore final
 			std::ranges::sort(
 			    snapshot,
 			    [](const ShaderBackendRegistration& left, const ShaderBackendRegistration& right)
-			    {
-				    return left.Descriptor.Name < right.Descriptor.Name;
-			    });
+			    { return left.Descriptor.Name < right.Descriptor.Name; });
 			return snapshot;
 		}();
 		return registrations;

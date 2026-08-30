@@ -27,9 +27,8 @@ namespace ShaderParameterLayoutAssembly
 		    .Kind = field.SemanticKind,
 		    .ResourceDomain = field.ResourceDomain,
 		    .Access = field.Access,
-		    .Visibility = field.Visibility == ShaderStageVisibility::None
-		        ? ShaderParameterLayoutBuilder::GetDefaultVisibility(stage)
-		        : field.Visibility,
+		    .Visibility = field.Visibility == ShaderStageVisibility::None ? ShaderParameterLayoutBuilder::GetDefaultVisibility(stage)
+		                                                                  : field.Visibility,
 		    .ArrayCount = field.ArrayCount,
 		    .ValueSizeInBytes = field.ValueSizeInBytes};
 	}

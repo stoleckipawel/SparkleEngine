@@ -67,7 +67,7 @@ struct RhiDiagnosticsCapabilities
 
 class SPARKLE_RHI_API RenderObjectDiagnostics
 {
-  public:
+public:
 	virtual ~RenderObjectDiagnostics() noexcept = default;
 
 	virtual bool SupportsObjectNames() const noexcept = 0;
@@ -79,7 +79,7 @@ class SPARKLE_RHI_API RenderObjectDiagnostics
 
 class SPARKLE_RHI_API RenderTimingDiagnostics
 {
-  public:
+public:
 	virtual ~RenderTimingDiagnostics() noexcept = default;
 
 	virtual bool SupportsTimestampQueries() const noexcept = 0;
@@ -93,7 +93,7 @@ class SPARKLE_RHI_API RenderTimingDiagnostics
 
 class SPARKLE_RHI_API RenderMessageDiagnostics
 {
-  public:
+public:
 	virtual ~RenderMessageDiagnostics() noexcept = default;
 
 	virtual bool SupportsDebugMessages() const noexcept = 0;
@@ -103,7 +103,7 @@ class SPARKLE_RHI_API RenderMessageDiagnostics
 
 class SPARKLE_RHI_API RenderFailureDiagnostics
 {
-  public:
+public:
 	virtual ~RenderFailureDiagnostics() noexcept = default;
 
 	virtual bool SupportsLiveObjectReports() const noexcept = 0;
@@ -114,7 +114,7 @@ class SPARKLE_RHI_API RenderFailureDiagnostics
 
 class SPARKLE_RHI_API RenderDiagnostics
 {
-  public:
+public:
 	virtual ~RenderDiagnostics() noexcept = default;
 
 	virtual RhiDiagnosticsCapabilities GetCapabilities() const noexcept = 0;

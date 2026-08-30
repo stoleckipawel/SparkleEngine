@@ -10,9 +10,9 @@
 #include <string_view>
 
 #if defined(_WIN32)
-	#define WIN32_LEAN_AND_MEAN
-	#define NOMINMAX
-	#include <windows.h>
+  #define WIN32_LEAN_AND_MEAN
+  #define NOMINMAX
+  #include <windows.h>
 #endif
 
 namespace Diagnostics

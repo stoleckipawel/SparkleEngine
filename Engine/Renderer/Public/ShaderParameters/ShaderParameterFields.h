@@ -55,7 +55,7 @@ namespace ShaderParameterFields
 	private:
 		std::array<THandle, ArrayCount> m_values = {};
 	};
-} // namespace ShaderParameterFields
+}
 
 template <typename TValue = void, std::size_t ArrayCount = 1> class ShaderTexture2D final
     : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>

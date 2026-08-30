@@ -19,7 +19,7 @@ struct CookedTextureFilePayload final
 
 class CookedTextureLoader final
 {
-  public:
+public:
 	static CookedTextureFilePayload Read(const std::filesystem::path& texturePath);
 	static LoadedTextureData Decode(const CookedTextureFilePayload& payload);
 

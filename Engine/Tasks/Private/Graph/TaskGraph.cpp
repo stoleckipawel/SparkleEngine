@@ -11,7 +11,9 @@
 TaskNodeHandle::TaskNodeHandle() noexcept = default;
 
 TaskNodeHandle::TaskNodeHandle(std::uint64_t builderIdentity, std::uint32_t builderGeneration, std::uint32_t index) noexcept :
-    m_builderIdentity(builderIdentity), m_builderGeneration(builderGeneration), m_indexPlusOne(index + 1u)
+    m_builderIdentity(builderIdentity),
+    m_builderGeneration(builderGeneration),
+    m_indexPlusOne(index + 1u)
 {
 }
 
@@ -54,7 +56,10 @@ void TaskGraphAccess::RecordError(TaskGraphBuilder& builder, TaskGraphErrorCode 
 	builder.m_state->RecordError(code, std::move(message));
 }
 
-CompiledTaskGraph::CompiledTaskGraph(std::shared_ptr<const TaskGraphStorage> data) noexcept : m_data(std::move(data)) {}
+CompiledTaskGraph::CompiledTaskGraph(std::shared_ptr<const TaskGraphStorage> data) noexcept :
+    m_data(std::move(data))
+{
+}
 
 bool CompiledTaskGraph::IsValid() const noexcept
 {
@@ -79,7 +84,10 @@ std::uint32_t CompiledTaskGraph::GetEdgeCount() const noexcept
 	return m_data != nullptr ? m_data->EdgeCount : 0;
 }
 
-TaskGraphBuilder::TaskGraphBuilder(TaskGraphLimits limits) : m_state(std::make_unique<State>(limits)) {}
+TaskGraphBuilder::TaskGraphBuilder(TaskGraphLimits limits) :
+    m_state(std::make_unique<State>(limits))
+{
+}
 
 TaskGraphBuilder::~TaskGraphBuilder() = default;
 
@@ -182,12 +190,7 @@ bool TaskGraphBuilder::DependsOn(TaskNodeHandle task, TaskNodeHandle prerequisit
 
 TaskNodeHandle TaskGraphBuilder::WhenAll(TaskDesc desc, std::span<const TaskNodeHandle> prerequisites)
 {
-	TaskNodeHandle barrier =
-	    Add(std::move(desc),
-	        [](TaskExecutionContext&)
-	        {
-		        return TaskResult::Success();
-	        });
+	TaskNodeHandle barrier = Add(std::move(desc), [](TaskExecutionContext&) { return TaskResult::Success(); });
 	for (const TaskNodeHandle prerequisite : prerequisites)
 	{
 		DependsOn(barrier, prerequisite);

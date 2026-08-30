@@ -3,7 +3,7 @@
 
 class DefaultTexturesConstants final
 {
-  public:
+public:
 	static constexpr DefaultTextureDesc kDefaultTextureDescs[] = {
 	    {"Checkerboard", "Defaults/default_checkerboard.stex"},
 	    {"White", "Defaults/default_white.stex"},

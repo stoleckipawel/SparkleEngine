@@ -8,14 +8,14 @@ class RenderDiagnostics;
 
 class RendererMemoryMonitor final
 {
-  public:
+public:
 	explicit RendererMemoryMonitor(RenderDiagnostics& diagnostics, std::uint32_t pollIntervalFrames = 30) noexcept;
 
 	void Tick(std::uint64_t frameIndex);
 
 	const RendererMemoryDiagnosticsSnapshot& GetLatestSnapshot() const noexcept { return m_latestSnapshot; }
 
-  private:
+private:
 	static RendererMemoryPressureLevel ClassifyPressure(float usageRatio) noexcept;
 	static RendererMemoryPressureLevel MaxPressure(RendererMemoryPressureLevel lhs, RendererMemoryPressureLevel rhs) noexcept;
 	static bool IsAtLeast(RendererMemoryPressureLevel value, RendererMemoryPressureLevel threshold) noexcept;

@@ -33,23 +33,18 @@ struct RhiCommandRecordingLeaseBackendState final
 
 class RhiCommandRecordingLeaseAccess final
 {
-  public:
+public:
 	static RhiCommandRecordingLease Create(const RhiCommandRecordingLeaseInitialization& initialization) noexcept;
 	static RhiCommandRecordingLeaseBackendState Consume(RhiCommandRecordingLease&& lease) noexcept;
-	static bool Matches(
-	    const RhiCommandRecordingLeaseBackendState& state,
-	    const RhiCommandRecordingLeaseBackendState& expected) noexcept;
+	static bool Matches(const RhiCommandRecordingLeaseBackendState& state, const RhiCommandRecordingLeaseBackendState& expected) noexcept;
 
 	template <typename Slot, typename RecordingContext, typename SlotState>
-	static Slot* ConsumeClosed(
-	    RhiCommandRecordingLease&& lease,
-	    RecordingContext* recordingContext,
-	    SlotState closedState) noexcept
+	static Slot* ConsumeClosed(RhiCommandRecordingLease&& lease, RecordingContext* recordingContext, SlotState closedState) noexcept
 	{
 		const RhiCommandRecordingLeaseBackendState leaseState = Consume(std::move(lease));
 		auto* const slot = static_cast<Slot*>(leaseState.State);
-		if (slot == nullptr || slot->Owner != recordingContext || slot->State != closedState ||
-		    !Matches(
+		if (slot == nullptr || slot->Owner != recordingContext || slot->State != closedState
+		    || !Matches(
 		        leaseState,
 		        RhiCommandRecordingLeaseBackendState{
 		            .State = slot,

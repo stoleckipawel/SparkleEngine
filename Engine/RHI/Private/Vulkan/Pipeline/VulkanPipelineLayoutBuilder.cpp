@@ -11,14 +11,20 @@
 
 static const auto g_vulkanPipelineLayoutBuilderLogger = Logging::GetOrCreateLogger("RHI.Vulkan.PipelineLayout");
 
-VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, VkPipelineLayout layout) noexcept : m_device(device), m_layout(layout) {}
+VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, VkPipelineLayout layout) noexcept :
+    m_device(device),
+    m_layout(layout)
+{
+}
 
 VulkanPipelineLayout::~VulkanPipelineLayout() noexcept
 {
 	Reset();
 }
 
-VulkanPipelineLayout::VulkanPipelineLayout(VulkanPipelineLayout&& other) noexcept : m_device(other.m_device), m_layout(other.m_layout)
+VulkanPipelineLayout::VulkanPipelineLayout(VulkanPipelineLayout&& other) noexcept :
+    m_device(other.m_device),
+    m_layout(other.m_layout)
 {
 	other.m_device = VK_NULL_HANDLE;
 	other.m_layout = VK_NULL_HANDLE;
@@ -79,7 +85,10 @@ std::unique_ptr<VulkanPipelineLayout> VulkanPipelineLayoutBuilder::Build(VulkanR
 		    g_vulkanPipelineLayoutBuilderLogger,
 		    __FILE__,
 		    __LINE__,
-		    std::format("Failed to create Vulkan pipeline layout '{}': {}", debugName, VulkanResult::FormatFailure("vkCreatePipelineLayout", result)));
+		    std::format(
+		        "Failed to create Vulkan pipeline layout '{}': {}",
+		        debugName,
+		        VulkanResult::FormatFailure("vkCreatePipelineLayout", result)));
 	}
 
 	VulkanDebugNames::SetObjectName(

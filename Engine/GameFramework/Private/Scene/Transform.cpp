@@ -30,7 +30,9 @@ Transform::Transform(const DirectX::XMMATRIX& worldTransform) noexcept
 
 Transform::Transform(const DirectX::XMFLOAT3& translation, const DirectX::XMFLOAT3& rotationEuler, const DirectX::XMFLOAT3& scale) noexcept
     :
-    m_translation(translation), m_rotationEuler(rotationEuler), m_scale(scale)
+    m_translation(translation),
+    m_rotationEuler(rotationEuler),
+    m_scale(scale)
 {
 }
 

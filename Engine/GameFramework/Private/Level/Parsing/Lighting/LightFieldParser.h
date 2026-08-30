@@ -7,8 +7,5 @@
 
 namespace LevelParsing
 {
-	void ParseLightField(
-	    const ParsedLightFieldKey& key,
-	    const ParsedLevelLine& parsedLine,
-	    std::vector<SceneLightDesc>& lights);
+	void ParseLightField(const ParsedLightFieldKey& key, const ParsedLevelLine& parsedLine, std::vector<SceneLightDesc>& lights);
 }

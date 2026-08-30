@@ -35,10 +35,11 @@ TextureLoadResult RasterTextureSourceLoader::Load(const std::filesystem::path& s
 	    &stbi_image_free);
 	if (!pixels)
 	{
-		throw Diagnostics::Error(std::format(
-		    "Failed to decode raster texture '{}': {}",
-		    sourceFile.ResolvedPath.string(),
-		    stbi_failure_reason() != nullptr ? stbi_failure_reason() : "unknown stb_image error"));
+		throw Diagnostics::Error(
+		    std::format(
+		        "Failed to decode raster texture '{}': {}",
+		        sourceFile.ResolvedPath.string(),
+		        stbi_failure_reason() != nullptr ? stbi_failure_reason() : "unknown stb_image error"));
 	}
 
 	return TextureSourceLoadStages::BuildByteTextureLoadResult(

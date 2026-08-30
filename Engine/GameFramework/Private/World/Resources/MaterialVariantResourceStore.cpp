@@ -4,9 +4,7 @@
 
 #include "World/GameWorldState.h"
 
-void MaterialVariantResourceStore::Append(
-    std::vector<MaterialVariantDesc>&& variants,
-    std::vector<MaterialVariantBinding>&& bindings)
+void MaterialVariantResourceStore::Append(std::vector<MaterialVariantDesc>&& variants, std::vector<MaterialVariantBinding>&& bindings)
 {
 	const MaterialVariantIndex base = static_cast<MaterialVariantIndex>(m_variants.size());
 	for (MaterialVariantDesc& variant : variants)

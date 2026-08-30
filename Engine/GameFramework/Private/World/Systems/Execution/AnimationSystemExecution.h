@@ -10,7 +10,7 @@ namespace ECS
 
 	class AnimationSystemExecution final
 	{
-	  public:
+	public:
 		AnimationSystemExecution(
 		    GameWorldState& state,
 		    GameWorldResourceStores& resources,
@@ -27,7 +27,7 @@ namespace ECS
 		bool RunSkinning(std::uint32_t begin, std::uint32_t end);
 		bool CommitMorphOutputs(std::uint32_t begin, std::uint32_t end);
 
-	  private:
+	private:
 		GameWorldState& m_state;
 		GameWorldResourceStores& m_resources;
 		float m_deltaSeconds = 0.0f;

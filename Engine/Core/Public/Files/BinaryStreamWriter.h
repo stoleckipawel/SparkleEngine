@@ -12,7 +12,7 @@ namespace Files
 {
 	class BinaryStreamWriter final
 	{
-	  public:
+	public:
 		static SPARKLE_CORE_API bool WriteBytes(
 		    std::ofstream& output,
 		    const void* bytes,

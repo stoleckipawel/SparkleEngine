@@ -6,8 +6,11 @@
 
 class TaskGraphBuilder::State::Compilation final
 {
-  public:
-	explicit Compilation(const State& builder) noexcept : m_builder(builder) {}
+public:
+	explicit Compilation(const State& builder) noexcept :
+	    m_builder(builder)
+	{
+	}
 
 	std::shared_ptr<TaskGraphStorage> Build() const
 	{
@@ -30,7 +33,7 @@ class TaskGraphBuilder::State::Compilation final
 		return graph;
 	}
 
-  private:
+private:
 	static bool HasCycle(const std::vector<std::vector<std::uint32_t>>& adjacency)
 	{
 		std::vector<std::uint32_t> incoming(adjacency.size(), 0);
@@ -135,8 +138,8 @@ class TaskGraphBuilder::State::Compilation final
 		}
 
 		const TaskGraphNode& parent = graph.Nodes[*node.Parent];
-		if (node.Desc.Lane == parent.Desc.Lane ||
-		    (node.Desc.Lane != TaskLane::FrameCritical && parent.Desc.Lane != TaskLane::FrameCritical))
+		if (node.Desc.Lane == parent.Desc.Lane
+		    || (node.Desc.Lane != TaskLane::FrameCritical && parent.Desc.Lane != TaskLane::FrameCritical))
 		{
 			return true;
 		}

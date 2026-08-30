@@ -54,20 +54,20 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 		}
 
 #if defined(SPARKLE_SHADER_CONTRACTS_ONLY)
-#define SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, Visibility)
-#define SPARKLE_REGISTER_EXTERNAL_GRAPH_SHADER_PARAMETER(Name, Visibility)
+  #define SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, Visibility)
+  #define SPARKLE_REGISTER_EXTERNAL_GRAPH_SHADER_PARAMETER(Name, Visibility)
 #else
-#define SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, Visibility)                                                                       \
-	inline static const ::ShaderParameterFieldAutoRegister<ThisShaderParameterStruct, decltype(Name)> AutoRegisterGraphParameter_##Name \
-	{                                                                                                                                   \
-		#Name, &ThisShaderParameterStruct::Name, Visibility                                                                             \
-	}
+  #define SPARKLE_REGISTER_GRAPH_SHADER_PARAMETER(Name, Visibility)                                                                       \
+	  inline static const ::ShaderParameterFieldAutoRegister<ThisShaderParameterStruct, decltype(Name)> AutoRegisterGraphParameter_##Name \
+	  {                                                                                                                                   \
+		  #Name, &ThisShaderParameterStruct::Name, Visibility                                                                             \
+	  }
 
-#define SPARKLE_REGISTER_EXTERNAL_GRAPH_SHADER_PARAMETER(Name, Visibility)                                                              \
-	inline static const ::ShaderParameterFieldAutoRegister<ThisShaderParameterStruct, decltype(Name)> AutoRegisterGraphParameter_##Name \
-	{                                                                                                                                   \
-		#Name, &ThisShaderParameterStruct::Name, Visibility, false                                                                      \
-	}
+  #define SPARKLE_REGISTER_EXTERNAL_GRAPH_SHADER_PARAMETER(Name, Visibility)                                                              \
+	  inline static const ::ShaderParameterFieldAutoRegister<ThisShaderParameterStruct, decltype(Name)> AutoRegisterGraphParameter_##Name \
+	  {                                                                                                                                   \
+		  #Name, &ThisShaderParameterStruct::Name, Visibility, false                                                                      \
+	  }
 #endif
 
 #define SHADER_PARAMETER_CBUFFER(UniformType, Name)                                                                      \

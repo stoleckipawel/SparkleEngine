@@ -11,7 +11,7 @@ namespace ECS
 
 class EntityId final
 {
-  public:
+public:
 	using Slot = std::uint32_t;
 	using Generation = std::uint32_t;
 
@@ -28,10 +28,14 @@ class EntityId final
 
 	constexpr auto operator<=>(const EntityId&) const noexcept = default;
 
-  private:
+private:
 	friend class ECS::EntityRegistry;
 
-	constexpr EntityId(Slot slot, Generation generation) noexcept : m_slot(slot), m_generation(generation) {}
+	constexpr EntityId(Slot slot, Generation generation) noexcept :
+	    m_slot(slot),
+	    m_generation(generation)
+	{
+	}
 
 	Slot m_slot = InvalidSlot;
 	Generation m_generation = InvalidGeneration;

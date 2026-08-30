@@ -158,13 +158,8 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 		m_levelSession->SaveActiveLevel();
 	}
 
-	const std::string captureLabel =
-	    UiUtil::MakeIconLabel(UiUtil::EditorIcon::Save, "Capture Viewport");
-	if (ImGui::MenuItem(
-	        captureLabel.c_str(),
-	        nullptr,
-	        false,
-	        static_cast<bool>(m_viewportCaptureHandler)))
+	const std::string captureLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Save, "Capture Viewport");
+	if (ImGui::MenuItem(captureLabel.c_str(), nullptr, false, static_cast<bool>(m_viewportCaptureHandler)))
 	{
 		m_viewportCaptureHandler();
 	}

@@ -6,6 +6,6 @@ class TaskExecutionContext;
 
 class TaskFunctionInvoker final
 {
-  public:
+public:
 	static TaskResult Invoke(const TaskGraphNode& node, TaskExecutionContext& context);
 };

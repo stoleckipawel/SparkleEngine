@@ -16,7 +16,7 @@ RhiCpuDescriptorHandle FrameGraph::ResolveRenderTargetView(FrameGraphResourceHan
 	if (metadata.kind == FrameGraphResourceKind::BackBuffer)
 	{
 		return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetPresentationService().GetBackBufferRenderTargetView()
-		                                          : RhiCpuDescriptorHandle{};
+		                                            : RhiCpuDescriptorHandle{};
 	}
 
 	assert(access.renderTargetView);
@@ -102,7 +102,7 @@ RhiResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle) c
 	{
 		case FrameGraphResourceKind::BackBuffer:
 			return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetPresentationService().GetBackBufferResource()
-			                                          : RhiResourceHandle{};
+			                                            : RhiResourceHandle{};
 		case FrameGraphResourceKind::DepthStencil:
 		case FrameGraphResourceKind::ColorRenderTarget:
 		case FrameGraphResourceKind::Buffer:
@@ -113,9 +113,9 @@ RhiResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle) c
 }
 
 NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(
-	FrameGraphResourceHandle handle,
-	ResourceState state,
-	const RhiNativeInteropRequest& request) const noexcept
+    FrameGraphResourceHandle handle,
+    ResourceState state,
+    const RhiNativeInteropRequest& request) const noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -158,11 +158,8 @@ NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(
 		return {};
 	}
 
-	NativeTextureViewInfo nativeView = m_renderHardwareInterface->GetInteropService().GetNativeTextureViewInfo(
-	    view,
-	    ResolveResource(handle),
-	    state,
-	    request);
+	NativeTextureViewInfo nativeView =
+	    m_renderHardwareInterface->GetInteropService().GetNativeTextureViewInfo(view, ResolveResource(handle), state, request);
 	if (nativeView.Width == 0u || nativeView.Height == 0u)
 	{
 		nativeView.Width = metadata.textureDesc.width;

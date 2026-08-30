@@ -9,9 +9,7 @@
 #include <algorithm>
 #include <cstring>
 
-void SpirVBindingNormalizer::Normalize(
-    std::vector<std::uint8_t>& bytecode,
-    std::span<const ShaderDescriptorBindingRemap> remaps)
+void SpirVBindingNormalizer::Normalize(std::vector<std::uint8_t>& bytecode, std::span<const ShaderDescriptorBindingRemap> remaps)
 {
 	if (bytecode.empty() || remaps.empty())
 	{

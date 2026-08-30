@@ -4,7 +4,7 @@
 
 class VulkanDebugLayer final
 {
-  public:
+public:
 	VulkanDebugLayer() noexcept = default;
 	~VulkanDebugLayer() noexcept;
 
@@ -18,7 +18,7 @@ class VulkanDebugLayer final
 
 	VkDebugUtilsMessengerEXT GetMessenger() const noexcept { return m_messenger; }
 
-  private:
+private:
 	VkInstance m_instance = VK_NULL_HANDLE;
 	VkDebugUtilsMessengerEXT m_messenger = VK_NULL_HANDLE;
 	PFN_vkDestroyDebugUtilsMessengerEXT m_destroyMessenger = nullptr;

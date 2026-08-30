@@ -2,10 +2,10 @@
 
 #include <filesystem>
 
-	class TextureCookerCommand
-	{
-	  public:
-		virtual ~TextureCookerCommand() = default;
+class TextureCookerCommand
+{
+public:
+	virtual ~TextureCookerCommand() = default;
 
-		virtual int Execute(const std::filesystem::path& requestFilePath) const = 0;
-	};
+	virtual int Execute(const std::filesystem::path& requestFilePath) const = 0;
+};

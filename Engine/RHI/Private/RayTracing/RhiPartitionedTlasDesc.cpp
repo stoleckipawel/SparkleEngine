@@ -4,9 +4,7 @@
 
 #include <cstdint>
 
-RhiPartitionedTlasInstanceFlags operator|(
-    RhiPartitionedTlasInstanceFlags lhs,
-    RhiPartitionedTlasInstanceFlags rhs) noexcept
+RhiPartitionedTlasInstanceFlags operator|(RhiPartitionedTlasInstanceFlags lhs, RhiPartitionedTlasInstanceFlags rhs) noexcept
 {
 	return static_cast<RhiPartitionedTlasInstanceFlags>(static_cast<std::uint32_t>(lhs) | static_cast<std::uint32_t>(rhs));
 }

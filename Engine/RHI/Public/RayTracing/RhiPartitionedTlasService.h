@@ -10,7 +10,7 @@ class RenderCommandList;
 
 class SPARKLE_RHI_API RhiPartitionedTlasService
 {
-  public:
+public:
 	virtual ~RhiPartitionedTlasService() noexcept = default;
 
 	virtual RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(

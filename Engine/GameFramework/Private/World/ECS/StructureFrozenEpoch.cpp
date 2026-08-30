@@ -13,7 +13,8 @@ namespace ECS
 	}
 
 	StructureFrozenEpoch::StructureFrozenEpoch(StructureFrozenEpoch&& other) noexcept :
-	    m_registry(std::exchange(other.m_registry, nullptr)), m_generation(std::exchange(other.m_generation, 0))
+	    m_registry(std::exchange(other.m_registry, nullptr)),
+	    m_generation(std::exchange(other.m_generation, 0))
 	{
 	}
 

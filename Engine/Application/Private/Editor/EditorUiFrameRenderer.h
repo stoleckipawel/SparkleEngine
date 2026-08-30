@@ -6,9 +6,9 @@ class UI;
 
 class EditorUiFrameRenderer final
 {
-  public:
+public:
 	static void Render(RuntimeApplication& runtime, Renderer& renderer, UI& ui);
 
-  private:
+private:
 	EditorUiFrameRenderer() = delete;
 };

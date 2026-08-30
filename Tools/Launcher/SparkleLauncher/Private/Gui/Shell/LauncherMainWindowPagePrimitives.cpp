@@ -7,7 +7,6 @@
 #include "LauncherHomeWidgets.h"
 #include "LauncherLayoutWidgets.h"
 #include "LauncherOperationRequestFactory.h"
-#include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"

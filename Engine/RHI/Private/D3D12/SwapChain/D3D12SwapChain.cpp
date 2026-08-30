@@ -33,7 +33,11 @@ D3D12SwapChain::D3D12SwapChain(
 	m_waitableObject = GetPresentationInterface()->GetFrameLatencyWaitableObject();
 	if (m_waitableObject == nullptr)
 	{
-		Diagnostics::Fatal(g_d3d12SwapChainLogger, __FILE__, __LINE__, "D3D12 swap chain did not expose its frame-latency waitable object.");
+		Diagnostics::Fatal(
+		    g_d3d12SwapChainLogger,
+		    __FILE__,
+		    __LINE__,
+		    "D3D12 swap chain did not expose its frame-latency waitable object.");
 	}
 
 	UpdateCurrentBackBufferIndex();
@@ -102,9 +106,8 @@ void D3D12SwapChain::Create()
 		    &swapChainFullsceenDesc,
 		    nullptr,
 		    externalSwapChain.ReleaseAndGetAddressOf());
-		if (SUCCEEDED(createResult) &&
-		    SUCCEEDED(externalSwapChain.As(&m_externalSwapChain)) &&
-		    m_rhi.TryResolveNativeInterface(
+		if (SUCCEEDED(createResult) && SUCCEEDED(externalSwapChain.As(&m_externalSwapChain))
+		    && m_rhi.TryResolveNativeInterface(
 		        ERhiInterposerInterfaceKind::PresentationSurface,
 		        m_externalSwapChain.Get(),
 		        IID_PPV_ARGS(m_swapChain.ReleaseAndGetAddressOf())))
@@ -144,12 +147,13 @@ void D3D12SwapChain::Resize()
 
 void D3D12SwapChain::ResizeBuffersToWindow()
 {
-	CHECK(GetPresentationInterface()->ResizeBuffers(
-	    m_backBufferCount,
-	    GetWindowWidth(),
-	    GetWindowHeight(),
-	    D3D12TypeConversions::ToDxgiFormat(m_backBufferFormat),
-	    ComputeSwapChainFlags()));
+	CHECK(
+	    GetPresentationInterface()->ResizeBuffers(
+	        m_backBufferCount,
+	        GetWindowWidth(),
+	        GetWindowHeight(),
+	        D3D12TypeConversions::ToDxgiFormat(m_backBufferFormat),
+	        ComputeSwapChainFlags()));
 }
 
 void D3D12SwapChain::AllocateHandles()

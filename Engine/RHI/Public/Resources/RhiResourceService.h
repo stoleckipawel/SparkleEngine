@@ -12,7 +12,7 @@
 
 class SPARKLE_RHI_API RhiResourceService
 {
-  public:
+public:
 	virtual ~RhiResourceService() noexcept = default;
 
 	virtual RhiOwnedResourceHandle CreateTextureResource(

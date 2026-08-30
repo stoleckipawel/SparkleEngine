@@ -8,8 +8,7 @@
 
 using ImportedMaterialVariantIndex = std::uint32_t;
 
-constexpr ImportedMaterialVariantIndex kInvalidImportedMaterialVariantIndex =
-    (std::numeric_limits<ImportedMaterialVariantIndex>::max)();
+constexpr ImportedMaterialVariantIndex kInvalidImportedMaterialVariantIndex = (std::numeric_limits<ImportedMaterialVariantIndex>::max)();
 
 struct ImportedMaterialVariant
 {

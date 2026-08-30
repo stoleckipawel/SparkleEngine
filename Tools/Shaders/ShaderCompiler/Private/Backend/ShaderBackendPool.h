@@ -10,15 +10,12 @@
 
 class ShaderBackendPool final
 {
-  public:
-	IShaderBackend& ResolveAndAcquire(
-	    std::string_view sourcePath,
-	    ShaderTarget target,
-	    std::string_view requestedName);
+public:
+	IShaderBackend& ResolveAndAcquire(std::string_view sourcePath, ShaderTarget target, std::string_view requestedName);
 
 	IShaderBackend* Find(std::string_view backendName) const noexcept;
 
-  private:
+private:
 	IShaderBackend& Acquire(std::string_view backendName, ShaderTarget target);
 
 	std::unordered_map<std::string, std::unique_ptr<IShaderBackend>> m_backends;

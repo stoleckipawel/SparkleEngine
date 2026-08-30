@@ -84,7 +84,7 @@ namespace FrameGraphTextureRegistration
 		        ResourceStateToString(state),
 		        hasResource));
 	}
-} // namespace FrameGraphTextureRegistration
+}
 
 FrameGraphTextureHandle FrameGraph::ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {

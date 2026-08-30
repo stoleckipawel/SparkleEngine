@@ -2,9 +2,9 @@
 #include "Upscaling/NvidiaDlss/StreamlineDlssResourceTags.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-#include "Streamline/StreamlineResourceInterop.h"
+  #include "Streamline/StreamlineResourceInterop.h"
 
-#include <array>
+  #include <array>
 
 sl::Result TagDlssResourcesForFrame(
     const sl::FrameToken& frameToken,
@@ -14,21 +14,11 @@ sl::Result TagDlssResourcesForFrame(
 	sl::Extent renderExtent = BuildStreamlineExtent(evaluation.RenderExtent);
 	sl::Extent outputExtent = BuildStreamlineExtent(evaluation.OutputExtent);
 	sl::Extent exposureExtent = BuildStreamlineExtent(RenderViewportExtent{1u, 1u});
-	StreamlineTaggedTextureResource colorIn(
-	    evaluation.BackendApi,
-	    evaluation.NativeScalingInputColorView);
-	StreamlineTaggedTextureResource colorOut(
-	    evaluation.BackendApi,
-	    evaluation.NativeScalingOutputColorView);
-	StreamlineTaggedTextureResource depth(
-	    evaluation.BackendApi,
-	    evaluation.NativeDepthView);
-	StreamlineTaggedTextureResource motionVectors(
-	    evaluation.BackendApi,
-	    evaluation.NativeMotionVectorsView);
-	StreamlineTaggedTextureResource exposure(
-	    evaluation.BackendApi,
-	    evaluation.NativeExposureView);
+	StreamlineTaggedTextureResource colorIn(evaluation.BackendApi, evaluation.NativeScalingInputColorView);
+	StreamlineTaggedTextureResource colorOut(evaluation.BackendApi, evaluation.NativeScalingOutputColorView);
+	StreamlineTaggedTextureResource depth(evaluation.BackendApi, evaluation.NativeDepthView);
+	StreamlineTaggedTextureResource motionVectors(evaluation.BackendApi, evaluation.NativeMotionVectorsView);
+	StreamlineTaggedTextureResource exposure(evaluation.BackendApi, evaluation.NativeExposureView);
 
 	std::array<sl::ResourceTag, 5> tags = {
 	    sl::ResourceTag{colorIn.Get(), sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},

@@ -10,7 +10,7 @@ class D3D12Rhi;
 
 class D3D12ClassicTlasServices final : public RhiClassicTlasService
 {
-  public:
+public:
 	D3D12ClassicTlasServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator) noexcept;
 
 	RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(
@@ -21,7 +21,7 @@ class D3D12ClassicTlasServices final : public RhiClassicTlasService
 	    std::uint32_t instanceCount,
 	    std::wstring_view debugName) override;
 
-  private:
+private:
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 };

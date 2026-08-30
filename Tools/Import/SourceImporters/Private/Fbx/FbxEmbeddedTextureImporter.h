@@ -7,6 +7,6 @@
 
 class FbxEmbeddedTextureImporter final
 {
-  public:
+public:
 	static std::vector<std::filesystem::path> ExtractTextures(const aiScene& scene);
 };

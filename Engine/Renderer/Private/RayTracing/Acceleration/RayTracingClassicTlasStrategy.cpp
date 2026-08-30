@@ -43,10 +43,10 @@ RenderRayTracingFrameBindings RayTracingClassicTlasStrategy::Prepare(
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingClassicTlasStrategy::Build(
     RenderCommandContext& commandContext,
-	const PreparedRenderScene& preparedScene,
-	RayTracingBlasCache& blasCache,
-	const RayTracingShaderTablePlan& shaderTablePlan,
-	const RayTracingPtlasPartitionPlan& viewPlan,
+    const PreparedRenderScene& preparedScene,
+    RayTracingBlasCache& blasCache,
+    const RayTracingShaderTablePlan& shaderTablePlan,
+    const RayTracingPtlasPartitionPlan& viewPlan,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	(void) viewPlan;

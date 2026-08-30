@@ -8,12 +8,10 @@ class FrameGraphBuilder;
 class GpuMeshCache;
 class RenderRayTracingScene;
 
-GBufferRenderTargets CreateGBufferRenderTargets(
-	FrameGraphBuilder& builder,
-	RenderViewportExtent sceneExtent);
+GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent);
 void AddGBufferMeshPasses(
     FrameGraphBuilder& builder,
-	GpuMeshCache& gpuMeshCache,
-	RenderRayTracingScene& rayTracingScene,
-	RenderViewportExtent sceneExtent,
+    GpuMeshCache& gpuMeshCache,
+    RenderRayTracingScene& rayTracingScene,
+    RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources);

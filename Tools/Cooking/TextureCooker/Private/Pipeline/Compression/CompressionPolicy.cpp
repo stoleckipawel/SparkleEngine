@@ -56,8 +56,9 @@ namespace TextureCookPipeline
 			case CompressionTarget::BC6H:
 				return DXGI_FORMAT_BC6H_UF16;
 			case CompressionTarget::BC7:
-				if (request.policy.textureGroup == TextureGroup::Roughness || request.policy.textureGroup == TextureGroup::Metallic ||
-				    request.policy.textureGroup == TextureGroup::AmbientOcclusion || request.policy.textureGroup == TextureGroup::SubsurfaceStrength)
+				if (request.policy.textureGroup == TextureGroup::Roughness || request.policy.textureGroup == TextureGroup::Metallic
+				    || request.policy.textureGroup == TextureGroup::AmbientOcclusion
+				    || request.policy.textureGroup == TextureGroup::SubsurfaceStrength)
 				{
 					return DXGI_FORMAT_BC7_UNORM;
 				}
@@ -94,11 +95,7 @@ namespace TextureCookPipeline
 				    __LINE__,
 				    "Block-compressed row pitch was requested without a compression target.");
 			default:
-				Diagnostics::Fatal(
-				    g_textureCompressionPolicyLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Unknown texture compression target.");
+				Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Unknown texture compression target.");
 		}
 		return (std::max) (1u, (width + 3u) / 4u) * blockBytes;
 	}

@@ -1,11 +1,11 @@
 #include "TaskProfiler.h"
 
 #if defined(_WIN32)
-	#ifndef WIN32_LEAN_AND_MEAN
-		#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <Windows.h>
-	#include <TraceLoggingProvider.h>
+  #ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+  #endif
+  #include <Windows.h>
+  #include <TraceLoggingProvider.h>
 
 TRACELOGGING_DEFINE_PROVIDER(
     g_sparkleTasksProvider,
@@ -15,7 +15,7 @@ TRACELOGGING_DEFINE_PROVIDER(
 
 class TaskTraceProvider final
 {
-  public:
+public:
 	static const char* LaneName(TaskLane lane) noexcept
 	{
 		switch (lane)
@@ -55,10 +55,7 @@ class TaskTraceProvider final
 #endif
 };
 
-void TaskProfiler::RecordDependency(
-    std::uint64_t generation,
-    std::uint32_t prerequisite,
-    std::uint32_t dependent) noexcept
+void TaskProfiler::RecordDependency(std::uint64_t generation, std::uint32_t prerequisite, std::uint32_t dependent) noexcept
 {
 #if defined(_WIN32)
 	if (!TraceLoggingProviderEnabled(g_sparkleTasksProvider, 0, 0))
@@ -72,9 +69,9 @@ void TaskProfiler::RecordDependency(
 	    TraceLoggingUInt32(prerequisite, "Prerequisite"),
 	    TraceLoggingUInt32(dependent, "Dependent"));
 #else
-	(void)generation;
-	(void)prerequisite;
-	(void)dependent;
+	(void) generation;
+	(void) prerequisite;
+	(void) dependent;
 #endif
 }
 
@@ -99,10 +96,10 @@ TaskProfiler::TimePoint TaskProfiler::Begin(
 	    TraceLoggingUInt32(taskIndex, "Task"),
 	    TraceLoggingUInt32(laneWorkerIndex, "Worker"));
 #else
-	(void)desc;
-	(void)generation;
-	(void)taskIndex;
-	(void)laneWorkerIndex;
+	(void) desc;
+	(void) generation;
+	(void) taskIndex;
+	(void) laneWorkerIndex;
 	const TimePoint start{};
 #endif
 	return start;
@@ -120,9 +117,7 @@ void TaskProfiler::End(
 	{
 		return;
 	}
-	const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-	                          std::chrono::steady_clock::now() - start)
-	                          .count();
+	const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count();
 #if defined(_WIN32)
 	TraceLoggingWrite(
 	    g_sparkleTasksProvider,
@@ -135,11 +130,11 @@ void TaskProfiler::End(
 	    TraceLoggingInt64(duration, "DurationNs"),
 	    TraceLoggingString(TaskTraceProvider::OutcomeName(result.GetOutcome()), "Status"));
 #else
-	(void)desc;
-	(void)generation;
-	(void)taskIndex;
-	(void)laneWorkerIndex;
-	(void)result;
-	(void)duration;
+	(void) desc;
+	(void) generation;
+	(void) taskIndex;
+	(void) laneWorkerIndex;
+	(void) result;
+	(void) duration;
 #endif
 }

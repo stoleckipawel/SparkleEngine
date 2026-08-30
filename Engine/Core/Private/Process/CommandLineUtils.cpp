@@ -25,4 +25,4 @@ namespace CommandLine
 	{
 		return QuoteArgument(path.string());
 	}
-}  // namespace CommandLine
+}

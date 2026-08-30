@@ -4,7 +4,7 @@
 
 class SPARKLE_APPLICATION_API Application
 {
-  public:
+public:
 	virtual ~Application() = default;
 
 	Application(const Application&) = delete;
@@ -19,6 +19,6 @@ class SPARKLE_APPLICATION_API Application
 	virtual bool Tick() = 0;
 	virtual void Shutdown() = 0;
 
-  protected:
+protected:
 	Application() = default;
 };

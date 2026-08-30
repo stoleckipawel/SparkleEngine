@@ -7,10 +7,10 @@
 
 class GltfTangentVertexRemapper final
 {
-  public:
+public:
 	static void Apply(ImportedMeshGeometry& geometry, const GltfGeneratedTangentFrameSet& frames);
 
-  private:
+private:
 	static constexpr float kTangentEqualityTolerance = 1.0e-6f;
 
 	GltfTangentVertexRemapper(ImportedMeshGeometry& geometry, const GltfGeneratedTangentFrameSet& frames);

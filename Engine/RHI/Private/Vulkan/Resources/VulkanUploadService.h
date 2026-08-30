@@ -12,7 +12,7 @@ struct VulkanGpuAllocationRecord;
 
 class VulkanUploadService final : public RhiUploadService
 {
-  public:
+public:
 	explicit VulkanUploadService(VulkanGpuMemoryAllocator& memoryAllocator);
 	~VulkanUploadService() noexcept;
 
@@ -38,7 +38,7 @@ class VulkanUploadService final : public RhiUploadService
 	    ResourceState finalState,
 	    std::wstring_view debugName) override;
 
-  private:
+private:
 	static constexpr VkDeviceSize TextureUploadAlignment = 4;
 
 	static VkDeviceSize AlignTextureUploadOffset(VkDeviceSize offset) noexcept;
@@ -51,9 +51,7 @@ class VulkanUploadService final : public RhiUploadService
 	    const RenderCommandList& commandList,
 	    const VulkanGpuAllocationRecord* destination,
 	    std::span<const std::byte> data) const noexcept;
-	std::unique_ptr<VulkanGpuAllocationRecord> CreateBufferStagingResource(
-	    std::span<const std::byte> data,
-	    std::wstring_view debugName);
+	std::unique_ptr<VulkanGpuAllocationRecord> CreateBufferStagingResource(std::span<const std::byte> data, std::wstring_view debugName);
 	static void RecordBufferUpload(
 	    VulkanRenderCommandList& commandList,
 	    const VulkanGpuAllocationRecord& destination,

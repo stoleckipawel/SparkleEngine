@@ -11,7 +11,7 @@ class RenderCommandContext;
 
 class FrameGraphExecutionDiagnostics final
 {
-  public:
+public:
 	FrameGraphExecutionDiagnostics(FrameExecutionDiagnostics& frameDiagnostics, RenderCommandContext& commands) noexcept;
 
 	RendererDiagnosticMarkerVerbosity GetMarkerVerbosity() const noexcept;
@@ -24,7 +24,7 @@ class FrameGraphExecutionDiagnostics final
 	void InsertFrameBeginAliasingBarrierMarker() const;
 	void InsertFrameEndResourceBarrierMarker() const;
 
-  private:
+private:
 	void InsertDetailedMarker(std::string_view label) const;
 
 	FrameExecutionDiagnostics* m_frameDiagnostics = nullptr;

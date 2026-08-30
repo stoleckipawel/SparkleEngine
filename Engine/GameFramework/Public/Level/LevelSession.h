@@ -22,11 +22,8 @@ class TaskScope;
 
 class SPARKLE_ENGINE_API LevelSession final
 {
-  public:
-	LevelSession(
-	    GameWorld& world,
-	    TaskExecutor& taskExecutor,
-	    TaskScope& applicationScope);
+public:
+	LevelSession(GameWorld& world, TaskExecutor& taskExecutor, TaskScope& applicationScope);
 	~LevelSession() noexcept;
 
 	LevelSession(const LevelSession&) = delete;
@@ -49,7 +46,7 @@ class SPARKLE_ENGINE_API LevelSession final
 	const LevelAsset* GetActiveLevel() const noexcept { return m_activeLevel; }
 	bool SaveActiveLevel() noexcept;
 
-  private:
+private:
 	void CaptureSceneToLevel() noexcept;
 	void InitializeStartupLevel() noexcept;
 	void StartLevelChange(LevelAsset& requestedLevel) noexcept;

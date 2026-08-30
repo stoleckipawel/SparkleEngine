@@ -2,24 +2,23 @@
 
 #include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 
-
 #include <d3d12.h>
 
 #if SPARKLE_RHI_WITH_D3D12_NVAPI
-	#include <nvapi.h>
+  #include <nvapi.h>
 #endif
 
 static const auto g_d3d12NvapiRayTracingLogger = Logging::GetOrCreateLogger("RHI.D3D12.NVAPI.RayTracing");
 
 #if SPARKLE_RHI_WITH_D3D12_NVAPI
-	#if defined(NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER) && \
-	    defined(NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_VER)
-		#define SPARKLE_RHI_D3D12_NVAPI_HAS_PARTITIONED_TLAS 1
-	#else
-		#define SPARKLE_RHI_D3D12_NVAPI_HAS_PARTITIONED_TLAS 0
-	#endif
-#else
+  #if defined(NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER) \
+	  && defined(NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_VER)
+	#define SPARKLE_RHI_D3D12_NVAPI_HAS_PARTITIONED_TLAS 1
+  #else
 	#define SPARKLE_RHI_D3D12_NVAPI_HAS_PARTITIONED_TLAS 0
+  #endif
+#else
+  #define SPARKLE_RHI_D3D12_NVAPI_HAS_PARTITIONED_TLAS 0
 #endif
 
 D3D12NvapiRayTracingProvider::D3D12NvapiRayTracingProvider() noexcept
@@ -131,11 +130,8 @@ RhiPartitionedTlasCapabilities D3D12NvapiRayTracingProvider::QueryPartitionedTla
 	}
 
 	NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAPS nativeCaps = NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_NONE;
-	const NvAPI_Status status = NvAPI_D3D12_GetRaytracingCaps(
-	    device,
-	    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS,
-	    &nativeCaps,
-	    sizeof(nativeCaps));
+	const NvAPI_Status status =
+	    NvAPI_D3D12_GetRaytracingCaps(device, NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS, &nativeCaps, sizeof(nativeCaps));
 	if (status != NVAPI_OK)
 	{
 		capabilities.CapabilityStatusReason = ToNvapiStatusReason(status);
@@ -182,9 +178,9 @@ RhiPartitionedTlasBuildSizes D3D12NvapiRayTracingProvider::GetPartitionedTlasBui
 #else
 	NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_INPUTS inputs{};
 	inputs.flags = static_cast<NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAGS>(
-	    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_FAST_TRACE |
-	    (desc.AllowPartitionTranslation ? NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_ENABLE_PARTITION_TRANSLATION
-	                                    : NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_NONE));
+	    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_FAST_TRACE
+	    | (desc.AllowPartitionTranslation ? NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_ENABLE_PARTITION_TRANSLATION
+	                                      : NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_NONE));
 	inputs.instanceCount = desc.InstanceCapacity;
 	inputs.maxInstancePerPartitionCount = desc.MaxInstancesPerPartition;
 	inputs.partitionCount = desc.PartitionCount;
@@ -212,16 +208,15 @@ RhiPartitionedTlasBuildSizes D3D12NvapiRayTracingProvider::GetPartitionedTlasBui
 	        sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP) * static_cast<std::uint64_t>(desc.MaxOperations),
 	    .OperationCountSizeInBytes = sizeof(NvU32),
 	    .InstanceWriteInfoSizeInBytes =
-	        sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE) *
-	        static_cast<std::uint64_t>(desc.InstanceCapacity),
-	    .InstanceUpdateInfoSizeInBytes =
-	        desc.AllowInstanceUpdates ? sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE) *
-	                                        static_cast<std::uint64_t>(desc.InstanceCapacity)
-	                                  : 0u,
-	    .PartitionWriteInfoSizeInBytes =
-	        desc.AllowPartitionTranslation ? sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION) *
-	                                             static_cast<std::uint64_t>(desc.PartitionCount + 1u)
-	                                       : 0u};
+	        sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE) * static_cast<std::uint64_t>(desc.InstanceCapacity),
+	    .InstanceUpdateInfoSizeInBytes = desc.AllowInstanceUpdates
+	        ? sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE)
+	            * static_cast<std::uint64_t>(desc.InstanceCapacity)
+	        : 0u,
+	    .PartitionWriteInfoSizeInBytes = desc.AllowPartitionTranslation
+	        ? sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION)
+	            * static_cast<std::uint64_t>(desc.PartitionCount + 1u)
+	        : 0u};
 #endif
 }
 
@@ -229,8 +224,8 @@ bool D3D12NvapiRayTracingProvider::BuildPartitionedTlas(
     ID3D12GraphicsCommandList7* commandList,
     const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept
 {
-	if (commandList == nullptr || !m_runtimeInitialized || desc.DestinationAccelerationStructure == 0 || desc.Scratch == 0 ||
-	    desc.OperationHeaders == 0 || desc.OperationCount == 0)
+	if (commandList == nullptr || !m_runtimeInitialized || desc.DestinationAccelerationStructure == 0 || desc.Scratch == 0
+	    || desc.OperationHeaders == 0 || desc.OperationCount == 0)
 	{
 		return false;
 	}
@@ -239,9 +234,9 @@ bool D3D12NvapiRayTracingProvider::BuildPartitionedTlas(
 #else
 	NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_INPUTS inputs{};
 	inputs.flags = static_cast<NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAGS>(
-	    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_FAST_TRACE |
-	    (desc.Layout.AllowPartitionTranslation ? NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_ENABLE_PARTITION_TRANSLATION
-	                                           : NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_NONE));
+	    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_FAST_TRACE
+	    | (desc.Layout.AllowPartitionTranslation ? NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_ENABLE_PARTITION_TRANSLATION
+	                                             : NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_NONE));
 	inputs.instanceCount = desc.Layout.InstanceCapacity;
 	inputs.maxInstancePerPartitionCount = desc.Layout.MaxInstancesPerPartition;
 	inputs.partitionCount = desc.Layout.PartitionCount;

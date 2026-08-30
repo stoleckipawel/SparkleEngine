@@ -19,12 +19,12 @@ namespace Assets
 
 	class SceneAssetRegistryReader final
 	{
-	  public:
+	public:
 		explicit SceneAssetRegistryReader(std::filesystem::path registryPath);
 
 		SceneAssetRegistryEntries Read() const;
 
-	  private:
+	private:
 		SceneAssetRegistryEntries ParseEntries(std::istream& input) const;
 		std::pair<std::string, std::filesystem::path> ParseEntry(std::string_view value, std::size_t lineNumber) const;
 
@@ -92,7 +92,10 @@ namespace Assets
 				if (!foundRegistryHeader || foundEntriesHeader)
 				{
 					throw Diagnostics::Error(
-					    std::format("Scene asset registry '{}' has an invalid entries section at line {}.", m_registryPath.string(), lineNumber));
+					    std::format(
+					        "Scene asset registry '{}' has an invalid entries section at line {}.",
+					        m_registryPath.string(),
+					        lineNumber));
 				}
 				foundEntriesHeader = true;
 				inEntriesSection = true;
@@ -101,8 +104,7 @@ namespace Assets
 
 			std::string_view key;
 			std::string_view value;
-			if (!inEntriesSection || !Strings::TrySplitKeyValue(trimmedLine, '=', key, value) ||
-			    !Strings::EqualsIgnoreCase(key, "Entry"))
+			if (!inEntriesSection || !Strings::TrySplitKeyValue(trimmedLine, '=', key, value) || !Strings::EqualsIgnoreCase(key, "Entry"))
 			{
 				throw Diagnostics::Error(
 				    std::format("Scene asset registry '{}' has an invalid field at line {}.", m_registryPath.string(), lineNumber));
@@ -172,7 +174,10 @@ namespace Assets
 		if (errorCode)
 		{
 			throw Diagnostics::Error(
-			    std::format("Could not create scene asset registry directory '{}': {}.", outputPath.parent_path().string(), errorCode.message()));
+			    std::format(
+			        "Could not create scene asset registry directory '{}': {}.",
+			        outputPath.parent_path().string(),
+			        errorCode.message()));
 		}
 
 		std::ofstream output(outputPath, std::ios::trunc);

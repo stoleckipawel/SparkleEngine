@@ -8,15 +8,12 @@ struct ImTextureData;
 
 class SPARKLE_RENDERER_API ImGuiRenderPacketBuilder final
 {
-  public:
+public:
 	static void ConfigureProducerContext() noexcept;
 
-	UiRenderPacket Build(
-	    const ImDrawData& drawData,
-	    UiPresentationMode presentationMode,
-	    std::uint64_t viewportGeneration = 0);
+	UiRenderPacket Build(const ImDrawData& drawData, UiPresentationMode presentationMode, std::uint64_t viewportGeneration = 0);
 
-  private:
+private:
 	void Reserve(const ImDrawData& drawData);
 	void AppendTextureUpdates(const ImDrawData& drawData);
 	bool AppendTextureUpload(ImTextureData& texture, EditorTextureHandle handle);

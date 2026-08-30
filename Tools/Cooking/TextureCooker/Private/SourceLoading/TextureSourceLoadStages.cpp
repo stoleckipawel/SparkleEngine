@@ -22,20 +22,17 @@ TextureSourceFile TextureSourceLoadStages::ReadSourceFile(const std::filesystem:
 	std::string fileError;
 	if (!Files::TryReadAllBytes(sourceFile.ResolvedPath, sourceFile.Bytes, fileError))
 	{
-		throw Diagnostics::Error(std::format(
-		    "Failed to read source texture '{}': {}",
-		    sourceFile.ResolvedPath.string(),
-		    fileError));
+		throw Diagnostics::Error(std::format("Failed to read source texture '{}': {}", sourceFile.ResolvedPath.string(), fileError));
 	}
 
 	return sourceFile;
 }
 
 TextureLoadResult TextureSourceLoadStages::BuildByteTextureLoadResult(
-	int width,
-	int height,
-	const std::uint8_t* pixelBytes,
-	std::size_t pixelByteCount)
+    int width,
+    int height,
+    const std::uint8_t* pixelBytes,
+    std::size_t pixelByteCount)
 {
 	if (pixelBytes == nullptr || width <= 0 || height <= 0)
 	{
@@ -69,10 +66,10 @@ TextureLoadResult TextureSourceLoadStages::BuildByteTextureLoadResult(
 }
 
 TextureLoadResult TextureSourceLoadStages::BuildFloatTextureLoadResult(
-	int width,
-	int height,
-	const float* pixelBytes,
-	std::size_t pixelFloatCount)
+    int width,
+    int height,
+    const float* pixelBytes,
+    std::size_t pixelFloatCount)
 {
 	if (pixelBytes == nullptr || width <= 0 || height <= 0)
 	{

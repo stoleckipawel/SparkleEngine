@@ -78,8 +78,7 @@ namespace ECS
 		static constexpr bool Writable = false;
 	};
 
-	template <typename T>
-	concept QueryAccessSpec = requires {
+	template <typename T> concept QueryAccessSpec = requires {
 		typename QueryAccessTraits<T>::Component;
 		{ QueryAccessTraits<T>::Mode } -> std::convertible_to<ComponentAccessMode>;
 	};
@@ -93,8 +92,8 @@ namespace ECS
 		}
 		else
 		{
-			return ((!std::is_same_v<Component, typename QueryAccessTraits<Rest>::Component>) && ...) &&
-			       HaveUniqueQueryComponents<Rest...>();
+			return ((!std::is_same_v<Component, typename QueryAccessTraits<Rest>::Component>) && ...)
+			    && HaveUniqueQueryComponents<Rest...>();
 		}
 	}
 }

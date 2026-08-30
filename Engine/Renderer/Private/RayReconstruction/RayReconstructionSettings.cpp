@@ -2,9 +2,9 @@
 #include "RayReconstruction/RayReconstructionSettings.h"
 
 ConsoleVariable<EngineRayReconstructionMode> CVarRayReconstructionMode(
-	"r.RayReconstruction.Mode",
-	EngineRayReconstructionMode::Off,
-	"Renderer ray reconstruction mode: 0=Off, 1=NVIDIA DLSS Ray Reconstruction.");
+    "r.RayReconstruction.Mode",
+    EngineRayReconstructionMode::Off,
+    "Renderer ray reconstruction mode: 0=Off, 1=NVIDIA DLSS Ray Reconstruction.");
 
 bool IsRayReconstructionEnabled() noexcept
 {

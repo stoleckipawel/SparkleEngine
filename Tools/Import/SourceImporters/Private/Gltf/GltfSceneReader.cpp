@@ -36,8 +36,7 @@ void GltfSceneReader::LoadGltfBuffers(cgltf_options& options, cgltf_data* data, 
 	const cgltf_result bufferResult = cgltf_load_buffers(&options, data, path.c_str());
 	if (bufferResult != cgltf_result_success)
 	{
-		throw Diagnostics::Error(
-		    std::format("Cannot load glTF buffers for '{}' (cgltf error {}).", path, static_cast<int>(bufferResult)));
+		throw Diagnostics::Error(std::format("Cannot load glTF buffers for '{}' (cgltf error {}).", path, static_cast<int>(bufferResult)));
 	}
 }
 

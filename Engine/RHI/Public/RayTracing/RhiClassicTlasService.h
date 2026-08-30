@@ -9,7 +9,7 @@
 
 class SPARKLE_RHI_API RhiClassicTlasService
 {
-  public:
+public:
 	virtual ~RhiClassicTlasService() noexcept = default;
 
 	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(

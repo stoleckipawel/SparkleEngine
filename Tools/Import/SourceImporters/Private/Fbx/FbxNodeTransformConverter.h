@@ -9,7 +9,7 @@
 
 class FbxNodeTransformConverter final
 {
-  public:
+public:
 	static const aiNode* FindNode(const aiScene& scene, const aiString& name) noexcept;
 	static std::uint32_t FindNodeIndex(const aiScene& scene, const aiNode& target) noexcept;
 	static aiMatrix4x4 ComputeNodeWorldTransform(const aiNode& node) noexcept;
@@ -22,7 +22,7 @@ class FbxNodeTransformConverter final
 	    const aiVector3D& direction,
 	    const aiVector3D& up);
 
-  private:
+private:
 	static const aiNode* FindNode(const aiNode& node, const aiString& name) noexcept;
 	static bool FindNodeIndex(const aiNode& node, const aiNode& target, std::uint32_t& nextIndex, std::uint32_t& outIndex) noexcept;
 };

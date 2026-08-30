@@ -9,16 +9,11 @@ class TextureCookRequestSet;
 
 class TextureRequestPlanBuilder final
 {
-  public:
+public:
 	TextureRequestPlanBuilder() = delete;
 
-	static bool Build(
-	    const AssetCookerProjectCookPlan& plan,
-	    AssetCookerDiagnostics& diagnostics,
-	    const std::filesystem::path& outputPath);
+	static bool Build(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, const std::filesystem::path& outputPath);
 
-  private:
-	static void CollectSceneRequests(
-	    const AssetCookerSceneEntry& sceneEntry,
-	    TextureCookRequestSet& requestSet);
+private:
+	static void CollectSceneRequests(const AssetCookerSceneEntry& sceneEntry, TextureCookRequestSet& requestSet);
 };

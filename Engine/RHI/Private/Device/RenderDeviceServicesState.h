@@ -9,7 +9,7 @@ class RenderDeviceBackendServices;
 
 class RenderDeviceServicesState final
 {
-  public:
+public:
 	RenderDeviceServicesState() noexcept;
 	~RenderDeviceServicesState() noexcept;
 
@@ -19,12 +19,10 @@ class RenderDeviceServicesState final
 	RenderDeviceServicesState& operator=(RenderDeviceServicesState&&) = delete;
 
 	void SetBackendServices(std::unique_ptr<RenderDeviceBackendServices> backendServices) noexcept;
-	RenderDeviceBackendServices& GetBackendServices(
-	    std::source_location location = std::source_location::current()) noexcept;
-	const RenderDeviceBackendServices& GetBackendServices(
-	    std::source_location location = std::source_location::current()) const noexcept;
+	RenderDeviceBackendServices& GetBackendServices(std::source_location location = std::source_location::current()) noexcept;
+	const RenderDeviceBackendServices& GetBackendServices(std::source_location location = std::source_location::current()) const noexcept;
 
-  private:
+private:
 	Threading::OwnerThread m_owner{"RenderDeviceServices"};
 	std::unique_ptr<RenderDeviceBackendServices> m_backendServices;
 };

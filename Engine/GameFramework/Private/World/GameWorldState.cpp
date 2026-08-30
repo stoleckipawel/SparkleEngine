@@ -13,7 +13,8 @@
 
 namespace ECS
 {
-	GameWorldState::GameWorldState() : m_systemGraph(BuildGameWorldSystemGraph())
+	GameWorldState::GameWorldState() :
+	    m_systemGraph(BuildGameWorldSystemGraph())
 	{
 		if (!m_systemGraph)
 			throw std::runtime_error(m_systemGraph.GetError().Message);

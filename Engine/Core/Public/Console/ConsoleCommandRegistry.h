@@ -43,8 +43,7 @@ struct SPARKLE_CORE_API ConsoleAutocompleteRequest final
 };
 
 using ConsoleCommandCallback = std::function<ConsoleCommandResult(ConsoleCommandScope, std::span<const std::string_view>)>;
-using ConsoleAutocompleteCallback =
-    std::function<std::vector<std::string>(ConsoleCommandScope, const ConsoleAutocompleteRequest&)>;
+using ConsoleAutocompleteCallback = std::function<std::vector<std::string>(ConsoleCommandScope, const ConsoleAutocompleteRequest&)>;
 
 struct SPARKLE_CORE_API ConsoleCommandDescriptor final
 {
@@ -58,7 +57,7 @@ struct SPARKLE_CORE_API ConsoleCommandDescriptor final
 
 class SPARKLE_CORE_API ConsoleCommandRegistry final
 {
-  public:
+public:
 	bool Register(ConsoleCommandDescriptor descriptor);
 
 	const ConsoleCommandDescriptor* Find(std::string_view commandName) const;
@@ -67,7 +66,7 @@ class SPARKLE_CORE_API ConsoleCommandRegistry final
 	ConsoleCommandResult ExecuteLine(std::string_view input, ConsoleCommandScope scope) const;
 	std::vector<std::string> CompleteLine(std::string_view input, ConsoleCommandScope scope) const;
 
-  private:
+private:
 	static bool IsScopeAllowed(ConsoleCommandScope commandScope, ConsoleCommandScope contextScope) noexcept;
 	static std::vector<std::string_view> BuildArgumentViews(const std::vector<std::string>& arguments);
 

@@ -23,7 +23,7 @@ class RenderCommandList;
 
 class D3D12CommandRecordingContext final
 {
-  public:
+public:
 	static constexpr std::uint32_t MaximumContextsPerFrameQueue = 8;
 	static constexpr std::uint64_t UploadPageCapacityInBytes = 256 * 1024;
 	static constexpr std::uint32_t DescriptorPageCapacity = 256;
@@ -41,26 +41,21 @@ class D3D12CommandRecordingContext final
 	D3D12CommandRecordingContext& operator=(D3D12CommandRecordingContext&&) = delete;
 
 	void BeginFrame(std::uint32_t frameIndex) noexcept;
-	RhiCommandRecordingLease Acquire(
-	    ERhiQueueType queueType,
-	    std::uint32_t frameIndex,
-	    RhiCommandRecordingOwner owner) noexcept;
-	RhiSubmissionToken Submit(
-	    RhiCommandRecordingLease&& lease,
-	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
+	RhiCommandRecordingLease Acquire(ERhiQueueType queueType, std::uint32_t frameIndex, RhiCommandRecordingOwner owner) noexcept;
+	RhiSubmissionToken Submit(RhiCommandRecordingLease&& lease, std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
 	RhiSubmissionToken SubmitBatch(
 	    std::span<RhiCommandRecordingLease> leases,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
 	RenderCommandList& BeginCurrentGraphicsCommandList(std::uint32_t frameIndex) noexcept;
-	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease(
-	    std::uint32_t frameIndex) noexcept;
+	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease(std::uint32_t frameIndex) noexcept;
 	RhiSubmissionToken SubmitCurrentGraphicsCommandList(
 	    std::uint32_t frameIndex,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
 
 	RenderCommandList& GetCurrentCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
 	RenderCommandList* TryGetCurrentCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
-  private:
+
+private:
 	enum class SlotState : std::uint8_t
 	{
 		Available,
@@ -100,17 +95,13 @@ class D3D12CommandRecordingContext final
 	void CreateNativeCommandObjects(CommandSlot& slot);
 	void InitializeSlotResources(CommandSlot& slot);
 	void NameSlotObjects(CommandSlot& slot) const noexcept;
-	void WaitForFrameStateRetirement(
-	    const QueueFrameState& frameState) noexcept;
+	void WaitForFrameStateRetirement(const QueueFrameState& frameState) noexcept;
 	void ResetSlot(CommandSlot& slot) noexcept;
 	void BeginSlot(CommandSlot& slot) noexcept;
 	void CloseSlot(CommandSlot& slot) noexcept;
 	void ReleaseSlot(CommandSlot& slot) noexcept;
-	CommandSlot* ConsumeClosedLease(
-	    RhiCommandRecordingLease&& lease) noexcept;
-	void ResolveSubmittedSlot(
-	    CommandSlot& slot,
-	    RhiSubmissionToken token) noexcept;
+	CommandSlot* ConsumeClosedLease(RhiCommandRecordingLease&& lease) noexcept;
+	void ResolveSubmittedSlot(CommandSlot& slot, RhiSubmissionToken token) noexcept;
 	RhiTransientDescriptorRange AllocateDescriptors(CommandSlot& slot, std::uint32_t count) noexcept;
 	void ReleaseDescriptorPages() noexcept;
 

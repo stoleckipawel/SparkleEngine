@@ -6,7 +6,7 @@ namespace TextureCookPipeline
 {
 	class BCCompressor final
 	{
-	  public:
+	public:
 		explicit BCCompressor(CompressionTarget target) noexcept;
 		~BCCompressor();
 
@@ -14,11 +14,9 @@ namespace TextureCookPipeline
 		BCCompressor& operator=(const BCCompressor&) = delete;
 
 		void Initialize(bool srgbOutput, bool imageNeedsAlpha);
-		TextureMipLevelData CompressMip(
-		    const TextureCookRequest& request,
-		    const WorkingMipLevel& sourceMip) const;
+		TextureMipLevelData CompressMip(const TextureCookRequest& request, const WorkingMipLevel& sourceMip) const;
 
-	  private:
+	private:
 		void Destroy() noexcept;
 
 		CompressionTarget target_ = CompressionTarget::None;

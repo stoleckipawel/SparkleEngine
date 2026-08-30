@@ -15,7 +15,7 @@ class InputSystem;
 
 class SPARKLE_CORE_API InputState
 {
-  public:
+public:
 	InputState() = default;
 	~InputState() = default;
 
@@ -67,7 +67,7 @@ class SPARKLE_CORE_API InputState
 
 	bool IsCursorHidden() const noexcept;
 
-  private:
+private:
 	friend class InputSystem;
 
 	void SetKeyState(Key InKey, ButtonState InState) noexcept;

@@ -13,18 +13,10 @@ struct TextureSourceFile final
 
 class TextureSourceLoadStages final
 {
-  public:
+public:
 	static TextureSourceFile ReadSourceFile(const std::filesystem::path& sourcePath);
 
-	static TextureLoadResult BuildByteTextureLoadResult(
-	    int width,
-	    int height,
-	    const std::uint8_t* pixelBytes,
-	    std::size_t pixelByteCount);
+	static TextureLoadResult BuildByteTextureLoadResult(int width, int height, const std::uint8_t* pixelBytes, std::size_t pixelByteCount);
 
-	static TextureLoadResult BuildFloatTextureLoadResult(
-	    int width,
-	    int height,
-	    const float* pixelBytes,
-	    std::size_t pixelFloatCount);
+	static TextureLoadResult BuildFloatTextureLoadResult(int width, int height, const float* pixelBytes, std::size_t pixelFloatCount);
 };

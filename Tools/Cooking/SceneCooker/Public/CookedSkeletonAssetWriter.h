@@ -11,7 +11,7 @@ struct CookedSkeletonAssetBuild;
 
 class CookedSkeletonAssetWriter final
 {
-  public:
+public:
 	static void StageSkeletonAssets(
 	    const std::vector<CookedSkeletonAssetBuild>& skeletonAssets,
 	    std::vector<Files::FilePublication>& outPublication);

@@ -13,10 +13,8 @@ struct D3D12GpuAllocationRecord;
 
 class D3D12UploadService final : public RhiUploadService
 {
-  public:
-	D3D12UploadService(
-	    D3D12Rhi& rhi,
-	    D3D12GpuMemoryAllocator& memoryAllocator) noexcept;
+public:
+	D3D12UploadService(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator) noexcept;
 	~D3D12UploadService() noexcept;
 
 	D3D12UploadService(const D3D12UploadService&) = delete;
@@ -42,14 +40,12 @@ class D3D12UploadService final : public RhiUploadService
 	    ResourceState finalState,
 	    std::wstring_view debugName) override;
 
-  private:
+private:
 	bool ValidateBufferUploadRequest(
 	    const RenderCommandList& commandList,
 	    const D3D12GpuAllocationRecord* destination,
 	    std::span<const std::byte> data) const noexcept;
-	std::unique_ptr<D3D12GpuAllocationRecord> CreateBufferStagingResource(
-	    std::span<const std::byte> data,
-	    std::wstring_view debugName);
+	std::unique_ptr<D3D12GpuAllocationRecord> CreateBufferStagingResource(std::span<const std::byte> data, std::wstring_view debugName);
 	static void RecordBufferUpload(
 	    D3D12RenderCommandList& commandList,
 	    D3D12GpuAllocationRecord& destination,

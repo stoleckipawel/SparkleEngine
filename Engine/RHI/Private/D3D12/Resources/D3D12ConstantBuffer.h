@@ -17,7 +17,7 @@ class D3D12Rhi;
 
 template <typename T> class D3D12ConstantBuffer
 {
-  public:
+public:
 	explicit D3D12ConstantBuffer(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) :
 	    m_rhi(&rhi),
 	    m_descriptorHeapManager(&descriptorHeapManager),
@@ -59,7 +59,7 @@ template <typename T> class D3D12ConstantBuffer
 		}
 	}
 
-  private:
+private:
 	void CreateResource()
 	{
 		D3D12_RESOURCE_DESC resourceDesc = {};
@@ -105,7 +105,7 @@ template <typename T> class D3D12ConstantBuffer
 		m_rhi->GetDevice()->CreateConstantBufferView(&m_constantBufferViewDesc, GetCPUHandle());
 	}
 
-  private:
+private:
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	ComPtr<ID3D12Resource2> m_resource = nullptr;

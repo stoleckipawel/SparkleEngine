@@ -34,18 +34,17 @@ namespace ECS
 
 	class ComponentStorageBase
 	{
-	  public:
+	public:
 		virtual ~ComponentStorageBase() = default;
 		virtual void Remove(EntityId entity) = 0;
 	};
 
-	template <typename T>
-	concept ComponentStorageCompatible = std::copy_constructible<T> && std::is_copy_assignable_v<T> &&
-	                                     std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
+	template <typename T> concept ComponentStorageCompatible = std::copy_constructible<T> && std::is_copy_assignable_v<T>
+	    && std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
 
 	template <ComponentStorageCompatible T> class ComponentStorage final : public ComponentStorageBase
 	{
-	  public:
+	public:
 		bool Add(EntityId entity, T component)
 		{
 			if (!entity.IsValid() || IsSlotOccupied(entity.GetSlot()) || m_entities.size() >= InvalidDenseIndex)
@@ -146,7 +145,7 @@ namespace ECS
 		ComponentStorageVersion GetVersion() const noexcept { return m_version; }
 		ComponentQueryVersion CaptureQueryVersion() const noexcept { return ComponentQueryVersion{m_version}; }
 
-	  private:
+	private:
 		friend class EntityRegistry;
 		template <typename... AccessSpecs> friend class Query;
 

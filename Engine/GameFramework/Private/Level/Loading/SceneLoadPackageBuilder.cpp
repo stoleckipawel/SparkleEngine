@@ -200,10 +200,10 @@ namespace Assets
 		        SceneLoadPackageAssembly::Schemas<
 		            ECS::LocalTransform,
 		            ECS::WorldTransform,
-			            ECS::Camera,
-			            ECS::CameraDerivedState,
-			            ECS::Visibility,
-			            ECS::Name,
+		            ECS::Camera,
+		            ECS::CameraDerivedState,
+		            ECS::Visibility,
+		            ECS::Name,
 		            ECS::AuthoredIdentity,
 		            ECS::EditorMetadata>()});
 		for (std::size_t index = 0; index < state.Package->Level.lights.size(); ++index)

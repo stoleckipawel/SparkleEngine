@@ -6,6 +6,6 @@ class Window;
 
 class SPARKLE_EDITOR_API EditorRestartService final
 {
-  public:
+public:
 	bool Restart(Window& hostWindow) const;
 };

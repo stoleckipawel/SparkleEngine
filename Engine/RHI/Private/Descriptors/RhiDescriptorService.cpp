@@ -6,10 +6,14 @@ const char* RhiDescriptorAllocatorTypeToString(ERhiDescriptorAllocatorType type)
 {
 	switch (type)
 	{
-		case ERhiDescriptorAllocatorType::ShaderResource: return "ShaderResource";
-		case ERhiDescriptorAllocatorType::Sampler: return "Sampler";
-		case ERhiDescriptorAllocatorType::RenderTarget: return "RenderTarget";
-		case ERhiDescriptorAllocatorType::DepthStencil: return "DepthStencil";
+		case ERhiDescriptorAllocatorType::ShaderResource:
+			return "ShaderResource";
+		case ERhiDescriptorAllocatorType::Sampler:
+			return "Sampler";
+		case ERhiDescriptorAllocatorType::RenderTarget:
+			return "RenderTarget";
+		case ERhiDescriptorAllocatorType::DepthStencil:
+			return "DepthStencil";
 	}
 	return "Unknown";
 }

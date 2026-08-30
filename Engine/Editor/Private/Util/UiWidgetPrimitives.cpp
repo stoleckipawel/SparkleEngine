@@ -125,8 +125,8 @@ namespace UiUtil
 
 	bool IsDifferentFromDefault(const float values[3], const float defaultValues[3]) noexcept
 	{
-		return IsDifferentFromDefault(values[0], defaultValues[0]) || IsDifferentFromDefault(values[1], defaultValues[1]) ||
-		       IsDifferentFromDefault(values[2], defaultValues[2]);
+		return IsDifferentFromDefault(values[0], defaultValues[0]) || IsDifferentFromDefault(values[1], defaultValues[1])
+		    || IsDifferentFromDefault(values[2], defaultValues[2]);
 	}
 
 	ImVec4 WithAlpha(ImVec4 color, float alpha) noexcept

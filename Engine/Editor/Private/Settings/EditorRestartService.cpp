@@ -12,7 +12,7 @@
 
 class EditorRelaunchCommandBuilder final
 {
-  public:
+public:
 	static std::wstring QuoteCommandLineArgument(const std::wstring& argument)
 	{
 		const bool needsQuotes = argument.find_first_of(L" \t\"") != std::wstring::npos;

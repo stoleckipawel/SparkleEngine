@@ -19,13 +19,11 @@ namespace ECS
 			return {};
 		const Entry& entry = m_entries[handle.Slot];
 		return entry.Generation == handle.Generation
-		           ? ResolvedAnimationClip{&entry.Resource, entry.Skeleton, entry.MorphChannelIndices, entry.TargetGeneration}
-		           : ResolvedAnimationClip{};
+		    ? ResolvedAnimationClip{&entry.Resource, entry.Skeleton, entry.MorphChannelIndices, entry.TargetGeneration}
+		    : ResolvedAnimationClip{};
 	}
 
-	bool AnimationClipResourceStore::ResolveTargets(
-	    const SkeletonResourceStore& skeletons,
-	    std::uint32_t targetGeneration) noexcept
+	bool AnimationClipResourceStore::ResolveTargets(const SkeletonResourceStore& skeletons, std::uint32_t targetGeneration) noexcept
 	{
 		if (targetGeneration == 0)
 			return false;
@@ -44,5 +42,8 @@ namespace ECS
 		return true;
 	}
 
-	void AnimationClipResourceStore::Clear() noexcept { m_entries.clear(); }
+	void AnimationClipResourceStore::Clear() noexcept
+	{
+		m_entries.clear();
+	}
 }

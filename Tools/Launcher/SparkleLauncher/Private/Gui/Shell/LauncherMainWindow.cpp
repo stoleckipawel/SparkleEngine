@@ -1,6 +1,7 @@
 #include "LauncherMainWindow.h"
 
 #include "LauncherActivityPanel.h"
+#include "LauncherWorkflowPanel.h"
 #include "LauncherActionWidgets.h"
 #include "LauncherArtworkWidgets.h"
 #include "LauncherBackend.h"
@@ -18,7 +19,6 @@
 #include "LauncherUiDesign.h"
 #include "LauncherUiModel.h"
 #include "LauncherVisualStyle.h"
-#include "LauncherWorkflowCatalog.h"
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
@@ -50,7 +50,6 @@
 #include <QtGui/QResizeEvent>
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocument>
-#include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QMessageBox>
@@ -70,29 +69,18 @@
 
 namespace SparkleLauncher
 {
-	static constexpr int kMaxOperationOutputCharacters = 1000000;
 	static constexpr int kSpaceTiny = LauncherUi::Space::Tiny;
 	static constexpr int kSpaceSmall = LauncherUi::Space::Small;
 	static constexpr int kSpaceMedium = LauncherUi::Space::Medium;
 	static constexpr int kSpaceLarge = LauncherUi::Space::Large;
 	static constexpr int kPanelHorizontalMargin = LauncherUi::Shell::PanelHorizontalMargin;
 	static constexpr int kPanelVerticalMargin = LauncherUi::Shell::PanelVerticalMargin;
-	static constexpr int kWorkflowRailWidth = LauncherUi::Shell::RailWidth;
-	static constexpr int kWorkflowGroupMinHeight = LauncherUi::Shell::RailItemMinHeight;
-	static constexpr int kWorkflowButtonMinHeight = LauncherUi::Shell::TabMinHeight;
 	static constexpr int kFieldLabelWidth = LauncherUi::Row::FieldLabelWidth;
-	static constexpr int kOperationOutputMinHeight = LauncherUi::OperationOutput::MinHeight;
-	static constexpr int kOperationOutputCompactMaxHeight = LauncherUi::OperationOutput::CompactMaxHeight;
-	static constexpr int kOperationOutputProminentMinHeight = LauncherUi::OperationOutput::ProminentMinHeight;
-	static constexpr int kOperationOutputMaxHeight = LauncherUi::OperationOutput::MaxHeight;
-	static constexpr int kActivityPanelCollapsedHeight = LauncherUi::Activity::CollapsedHeight;
-	static constexpr int kActivityPanelExpandedHeight = LauncherUi::Activity::ExpandedHeight;
 	static constexpr int kLauncherIconSize = LauncherUi::Icon::DefaultSize;
 	static constexpr int kLauncherMinimumWidth = LauncherUi::Window::MinimumWidth;
 	static constexpr int kLauncherMinimumHeight = LauncherUi::Window::MinimumHeight;
 	static constexpr int kLauncherInitialWidth = LauncherUi::Window::InitialWidth;
 	static constexpr int kLauncherInitialHeight = LauncherUi::Window::InitialHeight;
-	static constexpr const char* kColorStateQueued = LauncherUi::Color::StateQueued;
 	static constexpr const char* kColorStateRunning = LauncherUi::Color::StateRunning;
 	static constexpr const char* kColorStateSuccess = LauncherUi::Color::StateSuccess;
 	static constexpr const char* kColorStateDestructive = LauncherUi::Color::StateDestructive;
@@ -162,16 +150,23 @@ namespace SparkleLauncher
 		rootLayout->setContentsMargins(0, 0, 0, 0);
 		rootLayout->setSpacing(0);
 
-		rootLayout->addWidget(CreateWorkflowSurface(), 1);
+		m_workflowPanel = new LauncherWorkflowPanel(
+		    m_icons,
+		    [this](const QString& operationId) { return DisplayNameForOperation(operationId); },
+		    [this](QWidget* widget) { RegisterFocusable(widget); },
+		    [this](QWidget* parent) { return CreateOptionsPanel(parent); },
+		    centralWidget);
+		connect(m_workflowPanel, &LauncherWorkflowPanel::OperationSelected, this, &LauncherMainWindow::SetSelectedOperation);
+		rootLayout->addWidget(m_workflowPanel, 1);
 		m_activityPanel = new LauncherActivityPanel(m_icons, [this](QWidget* widget) { RegisterFocusable(widget); }, centralWidget);
 		rootLayout->addWidget(m_activityPanel, 0);
 		rootLayout->addWidget(CreateFooterContextPanel(centralWidget), 0);
 		RefreshContextSelectors();
 		setCentralWidget(centralWidget);
-		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
-		if (!workflows.empty() && !workflows.front().OperationIds.empty())
+		const QString initialOperationId = m_workflowPanel->InitialOperationId();
+		if (!initialOperationId.isEmpty())
 		{
-			SetSelectedOperation(workflows.front().OperationIds.front());
+			SetSelectedOperation(initialOperationId);
 		}
 
 		ConfigureTabOrder();
@@ -256,41 +251,6 @@ namespace SparkleLauncher
 		{
 			ScheduleUiRefresh(false);
 		}
-	}
-
-	void LauncherMainWindow::SelectWorkflowGroupButton(QAbstractButton* button)
-	{
-		if (button == nullptr || m_operationStack == nullptr)
-		{
-			return;
-		}
-
-		const int workflowIndex = button->property("WorkflowIndex").toInt();
-		if (workflowIndex >= 0 && workflowIndex < m_operationStack->count())
-		{
-			m_operationStack->setCurrentIndex(workflowIndex);
-			SetActiveWorkflowGroup(workflowIndex);
-
-			const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
-			if (workflowIndex < workflows.size() && !workflows[workflowIndex].OperationIds.empty())
-			{
-				m_operationStack->setVisible(workflows[workflowIndex].OperationIds.size() > 1);
-				const QString lastOperationId = m_lastOperationByWorkflowIndex.value(workflowIndex);
-				SetSelectedOperation(
-				    workflows[workflowIndex].OperationIds.contains(lastOperationId) ? lastOperationId
-				                                                                    : workflows[workflowIndex].OperationIds.front());
-			}
-		}
-	}
-
-	void LauncherMainWindow::SelectProcessButton(QAbstractButton* button)
-	{
-		if (button == nullptr)
-		{
-			return;
-		}
-
-		SetSelectedOperation(button->property("OperationId").toString());
 	}
 
 	void LauncherMainWindow::SetControlsEnabled(bool enabled)
@@ -396,26 +356,6 @@ namespace SparkleLauncher
 		m_optionsStack->setCurrentIndex(pageIndex);
 	}
 
-	QIcon LauncherMainWindow::WorkflowIconForPageKind(LauncherWorkflowPageKind pageKind) const
-	{
-		switch (pageKind)
-		{
-			case LauncherWorkflowPageKind::Home:
-				return m_icons.Icon(LauncherIcon::Start, QColor(kColorStateQueued));
-			case LauncherWorkflowPageKind::Sync:
-				return m_icons.Icon(LauncherIcon::Sync, QColor(kColorStateQueued));
-			case LauncherWorkflowPageKind::Build:
-				return m_icons.Icon(LauncherIcon::Build, QColor(kColorStateQueued));
-			case LauncherWorkflowPageKind::Cook:
-				return m_icons.Icon(LauncherIcon::Cook, QColor(kColorStateQueued));
-			case LauncherWorkflowPageKind::Clean:
-				return m_icons.Icon(LauncherIcon::Clean, QColor(kColorStateQueued));
-			case LauncherWorkflowPageKind::Unknown:
-				return {};
-		}
-		return {};
-	}
-
 	void LauncherMainWindow::RegisterFocusable(QWidget* widget)
 	{
 		if (widget == nullptr)
@@ -425,23 +365,6 @@ namespace SparkleLauncher
 
 		widget->setFocusPolicy(Qt::StrongFocus);
 		m_tabOrderWidgets.push_back(widget);
-	}
-
-	void LauncherMainWindow::SetActiveWorkflowGroup(int workflowIndex)
-	{
-		if (m_workflowGroupButtonGroup == nullptr)
-		{
-			return;
-		}
-
-		for (QAbstractButton* button : m_workflowGroupButtonGroup->buttons())
-		{
-			const bool active = button != nullptr && button->property("WorkflowIndex").toInt() == workflowIndex;
-			button->setProperty("ActiveState", active ? "true" : "false");
-			button->style()->unpolish(button);
-			button->style()->polish(button);
-			button->update();
-		}
 	}
 
 	void LauncherMainWindow::ConfigureTabOrder()
@@ -596,7 +519,6 @@ namespace SparkleLauncher
 	void LauncherMainWindow::SetSelectedOperation(const QString& operationId)
 	{
 		m_selectedOperationId = operationId;
-		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 		SetControlsEnabled(true);
 		if (m_actionMetaPanel != nullptr)
 		{
@@ -656,24 +578,9 @@ namespace SparkleLauncher
 			}
 		}
 
-		if (m_processButtonGroup != nullptr)
+		if (m_workflowPanel != nullptr)
 		{
-			for (QAbstractButton* button : m_processButtonGroup->buttons())
-			{
-				button->setChecked(button->property("OperationId").toString() == operationId);
-			}
-		}
-
-		if (m_operationStack != nullptr && m_workflowPageByOperation.contains(operationId))
-		{
-			const int workflowIndex = m_workflowPageByOperation.value(operationId);
-			m_lastOperationByWorkflowIndex.insert(workflowIndex, operationId);
-			m_operationStack->setCurrentIndex(workflowIndex);
-			SetActiveWorkflowGroup(workflowIndex);
-			if (workflowIndex >= 0 && workflowIndex < workflows.size())
-			{
-				m_operationStack->setVisible(workflows[workflowIndex].OperationIds.size() > 1);
-			}
+			m_workflowPanel->SetSelectedOperation(operationId);
 		}
 
 		UpdateRunAvailability();

@@ -29,4 +29,4 @@ namespace LevelParsing
 	float ParseFloat(std::string_view value, std::string_view fieldName);
 	DirectX::XMFLOAT3 ParseFloat3(std::string_view value, std::string_view fieldName);
 	bool ParseBool(std::string_view value, std::string_view fieldName);
-}  // namespace LevelParsing
+}

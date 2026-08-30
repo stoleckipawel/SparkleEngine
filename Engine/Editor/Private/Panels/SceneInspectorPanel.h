@@ -9,7 +9,7 @@ struct SceneObjectSelection;
 
 class SceneInspectorPanel final
 {
-  public:
+public:
 	SceneInspectorPanel(SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels = 560.0f) noexcept;
 	void SetWidth(float widthPixels) noexcept;
 	float GetWidth() const noexcept { return m_widthPixels; }
@@ -17,7 +17,7 @@ class SceneInspectorPanel final
 	void SetModel(std::shared_ptr<const EditorSceneModel> model) noexcept { m_model = std::move(model); }
 	void BuildUI(bool disableInteraction = false);
 
-  private:
+private:
 	std::string BuildSelectionTitle() const;
 	const char* BuildSelectionSubtitle() const noexcept;
 	void BuildSelectionHeader() noexcept;

@@ -18,7 +18,7 @@ namespace ECS::EntityCommandDetail
 
 	class ComponentCommandOperation
 	{
-	  public:
+	public:
 		virtual ~ComponentCommandOperation() = default;
 		virtual RuntimeComponentTypeId GetComponentType() const noexcept = 0;
 		virtual EntityCommandStatus Apply(EntityRegistry& registry, EntityId entity, EntityCommandKind kind) = 0;
@@ -26,9 +26,12 @@ namespace ECS::EntityCommandDetail
 
 	template <ComponentStorageCompatible T> class TypedComponentCommandOperation final : public ComponentCommandOperation
 	{
-	  public:
+	public:
 		TypedComponentCommandOperation() = default;
-		explicit TypedComponentCommandOperation(T value) : m_value(std::move(value)) {}
+		explicit TypedComponentCommandOperation(T value) :
+		    m_value(std::move(value))
+		{
+		}
 
 		RuntimeComponentTypeId GetComponentType() const noexcept override { return ComponentTypeRegistry::GetTypeId<T>(); }
 
@@ -70,7 +73,7 @@ namespace ECS::EntityCommandDetail
 			return EntityCommandStatus::StaleTarget;
 		}
 
-	  private:
+	private:
 		std::optional<T> m_value;
 	};
 

@@ -9,7 +9,7 @@ struct cgltf_primitive;
 
 class GltfPrimitiveMaterialResolver final
 {
-  public:
+public:
 	static ImportedMaterialIndex Resolve(
 	    const cgltf_primitive& primitive,
 	    const cgltf_data* data,

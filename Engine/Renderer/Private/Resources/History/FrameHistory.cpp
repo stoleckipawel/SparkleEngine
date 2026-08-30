@@ -19,7 +19,7 @@
 
 class ReservoirFrameHistory final
 {
-  public:
+public:
 	static FrameGraphReservoirHistoryHandles DeclareReservoirHistory(
 	    FrameGraphBuilder& builder,
 	    RenderViewportExtent extent,
@@ -42,29 +42,20 @@ class ReservoirFrameHistory final
 		frameGraph.InvalidateTextureHistory(history.Weight);
 		frameGraph.InvalidateTextureHistory(history.Surface);
 	}
-
 };
 
-FrameHistoryResourceLayout DeclareFrameHistoryResources(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent)
+FrameHistoryResourceLayout DeclareFrameHistoryResources(FrameGraphBuilder& builder, RenderViewportExtent renderExtent)
 {
 	return FrameHistoryResourceLayout{
-	    .Exposure = builder.CreateTextureHistory(
-	        FrameGraphTextureDesc::CreateColor("Exposure", 1u, 1u, PixelFormat::R32G32B32A32_Float)),
+	    .Exposure = builder.CreateTextureHistory(FrameGraphTextureDesc::CreateColor("Exposure", 1u, 1u, PixelFormat::R32G32B32A32_Float)),
 	    .ReferenceLighting = builder.CreateTextureHistory(
 	        FrameGraphTextureDesc::CreateColor(
-	            "ReferenceLighting", renderExtent.Width, renderExtent.Height, PixelFormat::R32G32B32A32_Float)),
-	    .DirectLightReservoir =
-	        ReservoirFrameHistory::DeclareReservoirHistory(
-	            builder,
-	            renderExtent,
-	            "DirectLightReservoir"),
-	    .RestirIndirectReservoir =
-	        ReservoirFrameHistory::DeclareReservoirHistory(
-	            builder,
-	            renderExtent,
-	            "RestirIndirectReservoir")};
+	            "ReferenceLighting",
+	            renderExtent.Width,
+	            renderExtent.Height,
+	            PixelFormat::R32G32B32A32_Float)),
+	    .DirectLightReservoir = ReservoirFrameHistory::DeclareReservoirHistory(builder, renderExtent, "DirectLightReservoir"),
+	    .RestirIndirectReservoir = ReservoirFrameHistory::DeclareReservoirHistory(builder, renderExtent, "RestirIndirectReservoir")};
 }
 
 void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept
@@ -76,12 +67,8 @@ void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLa
 
 void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept
 {
-	ReservoirFrameHistory::InvalidateReservoir(
-	    frameGraph,
-	    history.DirectLightReservoir);
-	ReservoirFrameHistory::InvalidateReservoir(
-	    frameGraph,
-	    history.RestirIndirectReservoir);
+	ReservoirFrameHistory::InvalidateReservoir(frameGraph, history.DirectLightReservoir);
+	ReservoirFrameHistory::InvalidateReservoir(frameGraph, history.RestirIndirectReservoir);
 }
 
 void UpdateFrameHistory(

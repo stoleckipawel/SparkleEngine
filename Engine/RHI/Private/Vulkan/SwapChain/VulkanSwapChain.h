@@ -14,7 +14,7 @@ class Window;
 
 class VulkanSwapChain final
 {
-  public:
+public:
 	VulkanSwapChain(
 	    VulkanRhi& rhi,
 	    Window& window,
@@ -48,7 +48,7 @@ class VulkanSwapChain final
 	PixelFormat GetBackBufferFormat() const noexcept { return m_backBufferFormat; }
 	VkFormat GetNativeBackBufferFormat() const noexcept { return m_surfaceFormat.format; }
 
-  private:
+private:
 	struct BackBufferRecord final
 	{
 		VkImage Image = VK_NULL_HANDLE;

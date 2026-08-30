@@ -7,7 +7,7 @@
 
 class SPARKLE_RHI_API DepthConvention
 {
-  public:
+public:
 	static float GetClearDepth() noexcept;
 
 	static CompareOp GetDepthComparisonLessEqualFunc() noexcept;
@@ -27,7 +27,7 @@ class SPARKLE_RHI_API DepthConvention
 
 	static float DepthToNDC(float linearZ, float nearZ, float farZ) noexcept;
 
-  private:
+private:
 	static constexpr bool IsReversedZ() noexcept { return true; }
 
 	DepthConvention() = delete;

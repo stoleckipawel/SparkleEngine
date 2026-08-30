@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Core/Public/Strings/StringUtils.h"
 
@@ -98,10 +98,7 @@ namespace Strings
 		    lowered.begin(),
 		    lowered.end(),
 		    lowered.begin(),
-		    [](unsigned char ch)
-		    {
-			    return static_cast<char>(std::tolower(ch));
-		    });
+		    [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
 		return lowered;
 	}
 
@@ -315,4 +312,4 @@ namespace Strings
 		}
 		return result;
 	}
-}  // namespace Strings
+}

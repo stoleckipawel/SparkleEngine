@@ -11,12 +11,12 @@
 #include <typeinfo>
 #include <utility>
 
-template <typename T>
-concept CVarValueType = std::is_default_constructible_v<T> && std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>;
+template <typename T> concept CVarValueType =
+    std::is_default_constructible_v<T> && std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>;
 
 class SPARKLE_CORE_API ConsoleVariableBase
 {
-  public:
+public:
 	ConsoleVariableBase(std::string_view name, std::string_view description, std::type_index valueType) noexcept;
 	virtual ~ConsoleVariableBase() = default;
 
@@ -33,7 +33,7 @@ class SPARKLE_CORE_API ConsoleVariableBase
 	virtual std::string GetValueTypeName() const = 0;
 	virtual bool TrySetValueFromString(std::string_view value, std::string& errorMessage) = 0;
 
-  private:
+private:
 	std::string_view m_name;
 	std::string_view m_description;
 	std::type_index m_valueType;
@@ -41,9 +41,10 @@ class SPARKLE_CORE_API ConsoleVariableBase
 
 template <CVarValueType T> class ConsoleVariable final : public ConsoleVariableBase
 {
-  public:
+public:
 	ConsoleVariable(std::string_view name, T defaultValue, std::string_view description = {}) noexcept :
-	    ConsoleVariableBase(name, description, std::type_index(typeid(T))), m_value(std::move(defaultValue))
+	    ConsoleVariableBase(name, description, std::type_index(typeid(T))),
+	    m_value(std::move(defaultValue))
 	{
 		ConsoleVariableRegistry::Get().Register(*this);
 	}
@@ -75,7 +76,7 @@ template <CVarValueType T> class ConsoleVariable final : public ConsoleVariableB
 		return true;
 	}
 
-  private:
+private:
 	static std::string FormatValue(const T& value)
 	{
 		if constexpr (std::is_same_v<T, bool>)

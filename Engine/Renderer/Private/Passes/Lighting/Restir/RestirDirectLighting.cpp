@@ -7,10 +7,10 @@
 #include "Passes/Lighting/Shadows/DirectShadowSignal.h"
 
 void AddRestirDirectLightingPasses(
-	FrameGraphBuilder& builder,
-	RenderRayTracingScene& rayTracingScene,
-	RenderViewportExtent sceneExtent,
-	RenderFrameGraphResources& resources)
+    FrameGraphBuilder& builder,
+    RenderRayTracingScene& rayTracingScene,
+    RenderViewportExtent sceneExtent,
+    RenderFrameGraphResources& resources)
 {
 	const DirectShadowSignalResources shadowSignals = CreateDirectShadowSignalResources(builder, sceneExtent, resources);
 	AddDirectLightReservoirPasses(

@@ -6,7 +6,7 @@
 
 class VulkanExternalFeatureAdapterIdentity final
 {
-  public:
+public:
 	static RhiAdapterIdentity BuildVulkanAdapterIdentity(const VulkanRhi* rhi)
 	{
 		if (rhi == nullptr)

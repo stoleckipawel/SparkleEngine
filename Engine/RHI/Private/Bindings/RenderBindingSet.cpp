@@ -12,7 +12,7 @@ RenderBindingSet::RenderBindingSet(
     const RhiCapabilities& capabilities,
     RhiDescriptorService& descriptorService,
     const RenderBindingSetDesc& desc) noexcept :
-	m_descriptorService(&descriptorService)
+    m_descriptorService(&descriptorService)
 {
 	if (!RhiContract::IsBindingSetDescUsable(capabilities, desc))
 	{
@@ -30,9 +30,9 @@ RenderBindingSet::~RenderBindingSet() noexcept
 }
 
 RenderBindingSet::RenderBindingSet(RenderBindingSet&& other) noexcept :
-	m_descriptorService(std::exchange(other.m_descriptorService, nullptr)),
-	m_tableHandle(std::exchange(other.m_tableHandle, RhiDescriptorTableHandle{})),
-	m_descriptorCount(std::exchange(other.m_descriptorCount, 0))
+    m_descriptorService(std::exchange(other.m_descriptorService, nullptr)),
+    m_tableHandle(std::exchange(other.m_tableHandle, RhiDescriptorTableHandle{})),
+    m_descriptorCount(std::exchange(other.m_descriptorCount, 0))
 {
 }
 
@@ -56,8 +56,8 @@ RhiCpuDescriptorHandle RenderBindingSet::GetCpuDescriptorHandle(std::uint32_t de
 		return {};
 	}
 
-	return m_descriptorService != nullptr ? m_descriptorService->GetDescriptorTableCpuHandle(m_tableHandle, descriptorIndex) :
-	                                       RhiCpuDescriptorHandle{};
+	return m_descriptorService != nullptr ? m_descriptorService->GetDescriptorTableCpuHandle(m_tableHandle, descriptorIndex)
+	                                      : RhiCpuDescriptorHandle{};
 }
 
 RhiDescriptorTableBinding RenderBindingSet::GetTableBinding(std::uint32_t descriptorIndex) const noexcept
@@ -84,6 +84,6 @@ void RenderBindingSet::Reset() noexcept
 
 bool RenderBindingSet::WriteResourceView(std::uint32_t descriptorIndex, RhiResourceViewHandle view) noexcept
 {
-	return m_descriptorService != nullptr && RhiContract::IsBindingSetDescriptorIndexValid(descriptorIndex, m_descriptorCount) &&
-	       m_descriptorService->WriteResourceView(m_tableHandle, descriptorIndex, view);
+	return m_descriptorService != nullptr && RhiContract::IsBindingSetDescriptorIndexValid(descriptorIndex, m_descriptorCount)
+	    && m_descriptorService->WriteResourceView(m_tableHandle, descriptorIndex, view);
 }

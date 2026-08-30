@@ -12,8 +12,7 @@ namespace SparkleLauncher
 	static ProcessRequest MakeAssetPackSyncRequest(const LevelOperationPlan& plan, const ProjectAssetPack& pack)
 	{
 		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
-		const std::filesystem::path cacheRoot =
-		    GetLauncherStateDirectory(plan.RepositoryRoot) / "ContentArchives" / plan.Request.ContentId;
+		const std::filesystem::path cacheRoot = GetLauncherStateDirectory(plan.RepositoryRoot) / "ContentArchives" / plan.Request.ContentId;
 		const std::filesystem::path rootRelativeToExtraction = pack.rootPath.lexically_relative(pack.extractionPath);
 
 		ProcessRequest process;

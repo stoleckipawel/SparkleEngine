@@ -15,7 +15,7 @@
 
 class EditorConsoleSystemConstants final
 {
-  public:
+public:
 	static constexpr std::uint32_t kWindowsKeyDownMessage = 0x0100;
 	static constexpr std::uintptr_t kTildeKey = 0xC0;
 	static constexpr float kMinimumDockHeight = 160.0f;
@@ -69,7 +69,8 @@ void EditorConsoleSystem::OpenConsole() noexcept
 
 bool EditorConsoleSystem::HandleShortcut(std::uint32_t message, std::uintptr_t key, bool wantsTextInput) noexcept
 {
-	if (message == EditorConsoleSystemConstants::kWindowsKeyDownMessage && key == EditorConsoleSystemConstants::kTildeKey && !wantsTextInput)
+	if (message == EditorConsoleSystemConstants::kWindowsKeyDownMessage && key == EditorConsoleSystemConstants::kTildeKey
+	    && !wantsTextInput)
 	{
 		RequestConsoleFocus();
 		return true;

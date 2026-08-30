@@ -25,11 +25,8 @@ class RhiImGuiRenderer;
 
 class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 {
-  public:
-	VulkanRenderHardwareInterface(
-	    VulkanRhi& rhi,
-	    VulkanSwapChain& swapChain,
-	    VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
+public:
+	VulkanRenderHardwareInterface(VulkanRhi& rhi, VulkanSwapChain& swapChain, VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 	~VulkanRenderHardwareInterface() noexcept override;
 
 	VulkanRenderHardwareInterface(const VulkanRenderHardwareInterface&) = delete;
@@ -96,7 +93,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void ResetTransientFrameResources() noexcept;
 	void RebuildSwapChainBackBufferViews() noexcept;
 
-  private:
+private:
 	friend class VulkanInteropService;
 	friend class VulkanRenderDeviceServices;
 
@@ -109,8 +106,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void EndCurrentBackBufferRendering() noexcept;
 	void PrepareCurrentBackBufferForPresentation(VulkanRenderCommandList& commandList) noexcept;
 	void TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, ResourceState newState) noexcept;
-	void SetCommandRecordingContext(
-	    VulkanCommandRecordingContext& commandRecordingContext) noexcept;
+	void SetCommandRecordingContext(VulkanCommandRecordingContext& commandRecordingContext) noexcept;
 
 	std::unique_ptr<VulkanInteropService> m_interopService;
 	std::unique_ptr<VulkanCaptureService> m_captureService;

@@ -8,7 +8,7 @@
 
 class SPARKLE_RHI_API RhiPresentationService
 {
-  public:
+public:
 	virtual ~RhiPresentationService() noexcept = default;
 
 	virtual RhiViewport GetBackBufferViewport() const noexcept = 0;

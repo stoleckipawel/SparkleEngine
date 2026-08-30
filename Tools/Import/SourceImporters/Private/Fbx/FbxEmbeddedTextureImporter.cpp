@@ -18,7 +18,7 @@
 
 class FbxEmbeddedTextureEncoding final
 {
-  public:
+public:
 	struct Payload final
 	{
 		std::vector<std::uint8_t> Bytes;
@@ -46,8 +46,8 @@ class FbxEmbeddedTextureEncoding final
 			return payload;
 		}
 
-		if (texture.mWidth > (std::numeric_limits<std::uint16_t>::max)() || texture.mHeight > (std::numeric_limits<std::uint16_t>::max)() ||
-		    texture.mWidth > (std::numeric_limits<std::size_t>::max)() / texture.mHeight)
+		if (texture.mWidth > (std::numeric_limits<std::uint16_t>::max)() || texture.mHeight > (std::numeric_limits<std::uint16_t>::max)()
+		    || texture.mWidth > (std::numeric_limits<std::size_t>::max)() / texture.mHeight)
 		{
 			throw Diagnostics::Error("Embedded FBX texture dimensions exceed the import cache format.");
 		}
@@ -70,7 +70,7 @@ class FbxEmbeddedTextureEncoding final
 		return payload;
 	}
 
-  private:
+private:
 	static void WriteUInt16(std::vector<std::uint8_t>& bytes, std::size_t offset, std::uint16_t value) noexcept
 	{
 		bytes[offset] = static_cast<std::uint8_t>(value & 0xFFu);
@@ -136,8 +136,8 @@ class FbxEmbeddedTextureEncoding final
 		{
 			return ".exr";
 		}
-		if (StartsWith(bytes, {0x23u, 0x3Fu, 0x52u, 0x41u, 0x44u, 0x49u, 0x41u, 0x4Eu, 0x43u, 0x45u}) ||
-		    StartsWith(bytes, {0x23u, 0x3Fu, 0x52u, 0x47u, 0x42u, 0x45u}))
+		if (StartsWith(bytes, {0x23u, 0x3Fu, 0x52u, 0x41u, 0x44u, 0x49u, 0x41u, 0x4Eu, 0x43u, 0x45u})
+		    || StartsWith(bytes, {0x23u, 0x3Fu, 0x52u, 0x47u, 0x42u, 0x45u}))
 		{
 			return ".hdr";
 		}
@@ -175,8 +175,7 @@ std::vector<std::filesystem::path> FbxEmbeddedTextureImporter::ExtractTextures(c
 		const bool cacheEntryExists = std::filesystem::exists(cachePath, errorCode);
 		if (errorCode)
 		{
-			throw Diagnostics::Error(
-			    "Failed to inspect embedded texture cache entry '" + cachePath.string() + "': " + errorCode.message());
+			throw Diagnostics::Error("Failed to inspect embedded texture cache entry '" + cachePath.string() + "': " + errorCode.message());
 		}
 
 		std::string fileError;

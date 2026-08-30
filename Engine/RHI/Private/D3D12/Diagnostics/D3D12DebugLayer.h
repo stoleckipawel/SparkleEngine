@@ -1,18 +1,18 @@
 #pragma once
 
 #if ENGINE_GPU_VALIDATION
-	#include "Device/RenderHardwareInterface.h"
+  #include "Device/RenderHardwareInterface.h"
 
-	#include <deque>
-	#include <wrl/client.h>
-	#include <d3d12.h>
-	#include <dxgidebug.h>
+  #include <deque>
+  #include <wrl/client.h>
+  #include <d3d12.h>
+  #include <dxgidebug.h>
 
 using Microsoft::WRL::ComPtr;
 
 class D3D12DebugLayer final
 {
-  public:
+public:
 	D3D12DebugLayer();
 
 	~D3D12DebugLayer() noexcept;
@@ -35,7 +35,7 @@ class D3D12DebugLayer final
 
 	void ReportLiveDXGIObjects();
 
-  private:
+private:
 	void DrainStoredMessages() noexcept;
 	void InitDredSettings() noexcept;
 	void InitD3D12Debug();

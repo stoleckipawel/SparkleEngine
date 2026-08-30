@@ -7,9 +7,6 @@
 
 class CookedAnimationAssetBuilder final
 {
-  public:
-	static void Build(
-	    const SourceImportOutput& importOutput,
-	    std::string_view sceneAssetId,
-	    CookedSceneBuild& outBuild);
+public:
+	static void Build(const SourceImportOutput& importOutput, std::string_view sceneAssetId, CookedSceneBuild& outBuild);
 };

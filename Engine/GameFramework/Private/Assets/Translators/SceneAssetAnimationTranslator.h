@@ -5,7 +5,5 @@
 
 namespace Assets
 {
-	AnimationClipResource BuildSceneAssetAnimation(
-	    const LoadedAnimationAsset& animationAsset,
-	    CookedAssetId animationAssetId);
+	AnimationClipResource BuildSceneAssetAnimation(const LoadedAnimationAsset& animationAsset, CookedAssetId animationAssetId);
 }

@@ -9,14 +9,12 @@ struct cgltf_material;
 
 class GltfMaterialImporter final
 {
-  public:
+public:
 	static void ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportOutput& output);
 
-  private:
+private:
 	static ImportedMaterial ExtractMaterial(
 	    const cgltf_material& material,
 	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory);
 };
-
-

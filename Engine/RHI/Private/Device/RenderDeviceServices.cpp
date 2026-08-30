@@ -23,19 +23,14 @@ void RenderDeviceServices::FailCreation(std::string_view message) noexcept
 
 void RenderDeviceServices::FailUnsupportedBackend(ERhiBackendApi api) noexcept
 {
-	FailCreation(
-	    std::string("RHI backend '") +
-	    RhiBackendApiToString(api) +
-	    "' is not available in this RenderDeviceServices build.");
+	FailCreation(std::string("RHI backend '") + RhiBackendApiToString(api) + "' is not available in this RenderDeviceServices build.");
 }
 
 void RenderDeviceServices::ValidateBackBufferFormat(PixelFormat backBufferFormat) noexcept
 {
 	if (!RhiPresentationDefaults::IsSupportedBackBufferFormat(backBufferFormat))
 	{
-		FailCreation(
-		    std::string("Unsupported back buffer format for present swapchain: ") +
-		    PixelFormatName(backBufferFormat));
+		FailCreation(std::string("Unsupported back buffer format for present swapchain: ") + PixelFormatName(backBufferFormat));
 	}
 }
 
@@ -44,31 +39,35 @@ RhiPresentationConfiguration RenderDeviceServices::ResolvePresentationConfigurat
 	const RhiPresentationConfiguration configuration{
 	    .BackBufferCount = CVarBackBufferCount.Get(),
 	    .MaximumFramesInFlight = CVarMaximumFramesInFlight.Get()};
-	if (configuration.BackBufferCount < RhiPresentationDefaults::MinBackBufferCount ||
-	    configuration.BackBufferCount > RhiPresentationDefaults::MaxBackBufferCount)
+	if (configuration.BackBufferCount < RhiPresentationDefaults::MinBackBufferCount
+	    || configuration.BackBufferCount > RhiPresentationDefaults::MaxBackBufferCount)
 	{
-		FailCreation(std::format(
-		    "r.BackBufferCount={} is outside the DXGI flip-model and Sparkle presentation range [2, 3]. Use r.MaximumFramesInFlight=1 for single-frame pacing.",
-		    configuration.BackBufferCount));
+		FailCreation(
+		    std::format(
+		        "r.BackBufferCount={} is outside the DXGI flip-model and Sparkle presentation range [2, 3]. Use r.MaximumFramesInFlight=1 "
+		        "for single-frame pacing.",
+		        configuration.BackBufferCount));
 	}
-	if (configuration.MaximumFramesInFlight < RhiPresentationDefaults::MinFramesInFlight ||
-	    configuration.MaximumFramesInFlight > RhiPresentationDefaults::MaxFramesInFlight)
+	if (configuration.MaximumFramesInFlight < RhiPresentationDefaults::MinFramesInFlight
+	    || configuration.MaximumFramesInFlight > RhiPresentationDefaults::MaxFramesInFlight)
 	{
-		FailCreation(std::format(
-		    "r.MaximumFramesInFlight={} is outside the supported range [1, 3].",
-		    configuration.MaximumFramesInFlight));
+		FailCreation(std::format("r.MaximumFramesInFlight={} is outside the supported range [1, 3].", configuration.MaximumFramesInFlight));
 	}
 	if (configuration.MaximumFramesInFlight > configuration.BackBufferCount)
 	{
-		FailCreation(std::format(
-		    "r.MaximumFramesInFlight={} exceeds r.BackBufferCount={}.",
-		    configuration.MaximumFramesInFlight,
-		    configuration.BackBufferCount));
+		FailCreation(
+		    std::format(
+		        "r.MaximumFramesInFlight={} exceeds r.BackBufferCount={}.",
+		        configuration.MaximumFramesInFlight,
+		        configuration.BackBufferCount));
 	}
 	return configuration;
 }
 
-RenderDeviceServices::RenderDeviceServices() noexcept : m_state(std::make_unique<RenderDeviceServicesState>()) {}
+RenderDeviceServices::RenderDeviceServices() noexcept :
+    m_state(std::make_unique<RenderDeviceServicesState>())
+{
+}
 
 RenderDeviceServices::~RenderDeviceServices() noexcept = default;
 
@@ -90,9 +89,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 	return Create(window, backendApi, CVarBackBufferFormat.Get(), interposerHooks);
 }
 
-std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
-    Window& window,
-    PixelFormat backBufferFormat) noexcept
+std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window, PixelFormat backBufferFormat) noexcept
 {
 	return Create(window, ResolveDefaultRhiBackendApi(), backBufferFormat);
 }
@@ -110,27 +107,26 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 	switch (backendApi)
 	{
 		case ERhiBackendApi::D3D12:
-		#if SPARKLE_RHI_WITH_D3D12
+#if SPARKLE_RHI_WITH_D3D12
 			services->m_state->SetBackendServices(
 			    CreateD3D12RenderDeviceServices(window, backBufferFormat, presentationConfiguration, interposerHooks));
 			break;
-		#else
+#else
 			FailUnsupportedBackend(backendApi);
 			break;
-		#endif
+#endif
 		case ERhiBackendApi::Vulkan:
-		#if SPARKLE_RHI_WITH_VULKAN
+#if SPARKLE_RHI_WITH_VULKAN
 			if (static_cast<bool>(interposerHooks))
 			{
 				FailCreation("Vulkan device creation received interposer hooks that only the D3D12 bridge implements.");
 			}
-			services->m_state->SetBackendServices(
-			    CreateVulkanRenderDeviceServices(window, backBufferFormat, presentationConfiguration));
+			services->m_state->SetBackendServices(CreateVulkanRenderDeviceServices(window, backBufferFormat, presentationConfiguration));
 			break;
-		#else
+#else
 			FailUnsupportedBackend(backendApi);
 			break;
-		#endif
+#endif
 		case ERhiBackendApi::Unknown:
 		default:
 			FailUnsupportedBackend(backendApi);
@@ -225,8 +221,7 @@ RhiSubmissionToken RenderDeviceServices::SubmitCommandRecordingBatch(
 	return m_state->GetBackendServices().SubmitCommandRecordingBatch(leases, waitTokens);
 }
 
-RhiSubmissionToken RenderDeviceServices::SubmitCurrentGraphicsCommandList(
-    std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiSubmissionToken RenderDeviceServices::SubmitCurrentGraphicsCommandList(std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	return m_state->GetBackendServices().SubmitCurrentGraphicsCommandList(waitTokens);
 }

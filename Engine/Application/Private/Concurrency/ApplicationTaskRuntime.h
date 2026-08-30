@@ -8,7 +8,7 @@ struct TaskExecutorConfig;
 
 class ApplicationTaskRuntime final
 {
-  public:
+public:
 	ApplicationTaskRuntime();
 	~ApplicationTaskRuntime();
 
@@ -18,7 +18,7 @@ class ApplicationTaskRuntime final
 	TaskExecutor& GetExecutor() noexcept;
 	TaskScope& GetApplicationScope() noexcept;
 
-  private:
+private:
 	static TaskExecutorConfig BuildExecutorConfig() noexcept;
 
 	std::unique_ptr<TaskExecutor> m_executor;

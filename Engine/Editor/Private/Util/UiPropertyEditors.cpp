@@ -155,8 +155,8 @@ namespace UiUtil
 			changed = ImGui::ColorEdit3(
 			    "##color",
 			    values,
-			    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
-			        ImGuiColorEditFlags_PickerHueBar);
+			    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB
+			        | ImGuiColorEditFlags_PickerHueBar);
 
 			ImGui::EndTable();
 		}

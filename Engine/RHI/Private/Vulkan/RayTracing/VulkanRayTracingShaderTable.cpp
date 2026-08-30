@@ -29,8 +29,7 @@ std::vector<std::byte> VulkanRayTracingShaderTable::CollectShaderIdentifiers(
 	{
 		const RhiRayTracingShaderRecord& record = records[index];
 		const std::uint32_t groupIndex = pipeline.FindShaderGroup(record.ExportName);
-		if (groupIndex == std::numeric_limits<std::uint32_t>::max()
-		    || groupIndex > std::numeric_limits<std::uint64_t>::max() / handleSize)
+		if (groupIndex == std::numeric_limits<std::uint32_t>::max() || groupIndex > std::numeric_limits<std::uint64_t>::max() / handleSize)
 		{
 			throw Diagnostics::Error("Vulkan shader-table record references an export absent from its pipeline generation.");
 		}
@@ -84,38 +83,22 @@ VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(
 	std::vector<std::byte> bytes;
 	m_rayGeneration = RhiRayTracingShaderTablePacking::AppendRegion(
 	    desc.RayGenerationRecords,
-	    CollectShaderIdentifiers(
-	        *pipeline,
-	        desc.RayGenerationRecords,
-	        groupHandles,
-	        capabilities.ShaderGroupHandleSizeInBytes),
+	    CollectShaderIdentifiers(*pipeline, desc.RayGenerationRecords, groupHandles, capabilities.ShaderGroupHandleSizeInBytes),
 	    packingRules,
 	    bytes);
 	m_miss = RhiRayTracingShaderTablePacking::AppendRegion(
 	    desc.MissRecords,
-	    CollectShaderIdentifiers(
-	        *pipeline,
-	        desc.MissRecords,
-	        groupHandles,
-	        capabilities.ShaderGroupHandleSizeInBytes),
+	    CollectShaderIdentifiers(*pipeline, desc.MissRecords, groupHandles, capabilities.ShaderGroupHandleSizeInBytes),
 	    packingRules,
 	    bytes);
 	m_hitGroup = RhiRayTracingShaderTablePacking::AppendRegion(
 	    desc.HitGroupRecords,
-	    CollectShaderIdentifiers(
-	        *pipeline,
-	        desc.HitGroupRecords,
-	        groupHandles,
-	        capabilities.ShaderGroupHandleSizeInBytes),
+	    CollectShaderIdentifiers(*pipeline, desc.HitGroupRecords, groupHandles, capabilities.ShaderGroupHandleSizeInBytes),
 	    packingRules,
 	    bytes);
 	m_callable = RhiRayTracingShaderTablePacking::AppendRegion(
 	    desc.CallableRecords,
-	    CollectShaderIdentifiers(
-	        *pipeline,
-	        desc.CallableRecords,
-	        groupHandles,
-	        capabilities.ShaderGroupHandleSizeInBytes),
+	    CollectShaderIdentifiers(*pipeline, desc.CallableRecords, groupHandles, capabilities.ShaderGroupHandleSizeInBytes),
 	    packingRules,
 	    bytes);
 

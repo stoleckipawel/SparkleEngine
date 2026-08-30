@@ -15,10 +15,10 @@ struct GltfGeneratedTangentFrameSet final
 
 class GltfTangentFrameSetGenerator final
 {
-  public:
+public:
 	static GltfGeneratedTangentFrameSet Generate(const ImportedMeshGeometry& geometry);
 
-  private:
+private:
 	static std::vector<ImportedVertex> BuildMorphVertices(const ImportedMeshGeometry& geometry, const ImportedMorphTarget& morphTarget);
 	static std::vector<DirectX::XMFLOAT3> BuildMorphTangentDeltas(
 	    const std::vector<DirectX::XMFLOAT4>& baseTangents,

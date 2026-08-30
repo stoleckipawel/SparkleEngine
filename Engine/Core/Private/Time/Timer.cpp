@@ -1,7 +1,11 @@
 #include "PCH.h"
 #include "Timer.h"
 
-Timer::Timer() noexcept : m_start{Clock::now()}, m_last{m_start} {}
+Timer::Timer() noexcept :
+    m_start{Clock::now()},
+    m_last{m_start}
+{
+}
 
 void Timer::Tick() noexcept
 {

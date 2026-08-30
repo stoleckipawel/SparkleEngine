@@ -11,7 +11,7 @@ struct cgltf_primitive;
 
 class GltfAccessorReader final
 {
-	public:
+public:
 	static const cgltf_accessor* FindAttribute(const cgltf_primitive& primitive, int type, int index = 0);
 	static std::vector<std::uint32_t> ReadIndices(const cgltf_accessor* accessor);
 	static DirectX::XMFLOAT2 ReadFloat2(const cgltf_accessor* accessor, std::size_t index);

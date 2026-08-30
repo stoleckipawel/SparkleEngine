@@ -3,7 +3,9 @@
 #include <atomic>
 #include <utility>
 
-TaskGraphBuilder::State::State(TaskGraphLimits requestedLimits) : Limits(requestedLimits), BuilderIdentity(AcquireBuilderIdentity())
+TaskGraphBuilder::State::State(TaskGraphLimits requestedLimits) :
+    Limits(requestedLimits),
+    BuilderIdentity(AcquireBuilderIdentity())
 {
 	if (!AreValidLimits(Limits))
 	{
@@ -22,8 +24,8 @@ std::uint64_t TaskGraphBuilder::State::AcquireBuilderIdentity() noexcept
 
 bool TaskGraphBuilder::State::AreValidLimits(TaskGraphLimits limits) noexcept
 {
-	return limits.MaximumTasks > 0 && limits.MaximumTasks <= TaskGraphLimits::HardMaximumTasks &&
-	       limits.MaximumEdges <= TaskGraphLimits::HardMaximumEdges;
+	return limits.MaximumTasks > 0 && limits.MaximumTasks <= TaskGraphLimits::HardMaximumTasks
+	    && limits.MaximumEdges <= TaskGraphLimits::HardMaximumEdges;
 }
 
 bool TaskGraphBuilder::State::IsValidCompletionPolicy(TaskCompletionPolicy policy) noexcept

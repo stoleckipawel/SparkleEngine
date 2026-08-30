@@ -5,7 +5,5 @@
 
 namespace TextureCookPipeline
 {
-	WorkingTexture BuildWorkingTexture(
-	    const TextureCookRequest& request,
-	    const TextureLoadResult& sourceTexture);
+	WorkingTexture BuildWorkingTexture(const TextureCookRequest& request, const TextureLoadResult& sourceTexture);
 }

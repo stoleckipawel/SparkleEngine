@@ -12,7 +12,8 @@ public:
 	using Metadata = ShaderParameterStructMetadata<TParameters>;
 
 	explicit TypedPassParameterInstance(const Metadata& metadata) :
-	    m_metadata(&metadata), m_parameterSet(metadata.GetLayout(), metadata.GetGraphResourceParameters())
+	    m_metadata(&metadata),
+	    m_parameterSet(metadata.GetLayout(), metadata.GetGraphResourceParameters())
 	{
 	}
 

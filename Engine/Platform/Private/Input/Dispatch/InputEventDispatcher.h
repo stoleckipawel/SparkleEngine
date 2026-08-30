@@ -11,7 +11,7 @@
 
 class InputEventDispatcher final
 {
-  public:
+public:
 	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
 	using LayerAvailability = std::array<bool, LayerCount>;
 
@@ -32,22 +32,11 @@ class InputEventDispatcher final
 		auto removeByHandle = [&handle](auto& callbacks)
 		{
 			callbacks.erase(
-			    std::remove_if(
-			        callbacks.begin(),
-			        callbacks.end(),
-			        [&handle](const auto& entry)
-			        {
-				        return entry.Handle == handle;
-			        }),
+			    std::remove_if(callbacks.begin(), callbacks.end(), [&handle](const auto& entry) { return entry.Handle == handle; }),
 			    callbacks.end());
 		};
 
-		std::apply(
-		    [&removeByHandle](auto&... callbacks)
-		    {
-			    (removeByHandle(callbacks), ...);
-		    },
-		    m_callbacks);
+		std::apply([&removeByHandle](auto&... callbacks) { (removeByHandle(callbacks), ...); }, m_callbacks);
 	}
 
 	template <typename TEvent>
@@ -101,7 +90,7 @@ class InputEventDispatcher final
 		GetDeferredQueue<MouseWheelEvent>().clear();
 	}
 
-  private:
+private:
 	template <typename TEvent> struct CallbackEntry final
 	{
 		InputCallback<TEvent> Callback;
@@ -156,8 +145,7 @@ class InputEventDispatcher final
 		return std::get<std::vector<RoutedInputEvent<TEvent>>>(m_deferredQueues);
 	}
 
-	template <typename TEvent>
-	void DispatchToCallbacks(
+	template <typename TEvent> void DispatchToCallbacks(
 	    const TEvent& event,
 	    DispatchMode targetMode,
 	    InputLayer targetLayer,

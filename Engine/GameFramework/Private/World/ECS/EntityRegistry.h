@@ -15,7 +15,7 @@ namespace ECS
 
 	class EntityRegistry final
 	{
-	  public:
+	public:
 		EntityId Create();
 		bool Destroy(EntityId entity);
 		bool IsAlive(EntityId entity) const noexcept;
@@ -94,7 +94,7 @@ namespace ECS
 			return m_componentTypes.Find<T>();
 		}
 
-	  private:
+	private:
 		friend class StructureFrozenEpoch;
 		template <typename... AccessSpecs> friend class Query;
 

@@ -20,7 +20,7 @@ struct FrameGraphResourceAccess
 
 class FrameGraphResourceResolver final
 {
-  public:
+public:
 	FrameGraphResourceResolver() = default;
 	~FrameGraphResourceResolver() = default;
 
@@ -37,7 +37,7 @@ class FrameGraphResourceResolver final
 	FrameGraphResourceAccess& GetResolvedAccess(FrameGraphResourceHandle handle) noexcept;
 	const FrameGraphResourceAccess& GetResolvedAccess(FrameGraphResourceHandle handle) const noexcept;
 
-  private:
+private:
 	void EnsureStorage(FrameGraphResourceHandle handle) noexcept;
 
 	std::vector<FrameGraphResourceAccess> m_resolvedAccessEntries;

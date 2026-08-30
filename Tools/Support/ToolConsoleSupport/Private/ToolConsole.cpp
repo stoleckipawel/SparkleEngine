@@ -72,16 +72,13 @@ void ToolConsole::Progress(
     std::string_view name,
     std::initializer_list<ToolConsoleField> fields)
 {
-	output << GetSeverityPrefix(ToolConsoleSeverity::Info) << ' ' << action << ' ' << assetType << " [" << index << '/'
-	       << total << "] name='" << name << "'";
+	output << GetSeverityPrefix(ToolConsoleSeverity::Info) << ' ' << action << ' ' << assetType << " [" << index << '/' << total
+	       << "] name='" << name << "'";
 	WriteFields(output, fields);
 	output << '\n';
 }
 
-void ToolConsole::Summary(
-    std::ostream& output,
-    std::string_view title,
-    std::initializer_list<ToolConsoleField> fields)
+void ToolConsole::Summary(std::ostream& output, std::string_view title, std::initializer_list<ToolConsoleField> fields)
 {
 	output << GetSeverityPrefix(ToolConsoleSeverity::Info) << ' ' << title << ":\n";
 	for (const ToolConsoleField& field : fields)
@@ -108,14 +105,14 @@ const char* ToolConsole::GetSeverityPrefix(ToolConsoleSeverity severity) noexcep
 {
 	switch (severity)
 	{
-	case ToolConsoleSeverity::Info:
-		return "[LOG]";
-	case ToolConsoleSeverity::Warning:
-		return "[WARN]";
-	case ToolConsoleSeverity::Error:
-		return "[ERROR]";
-	default:
-		return "[LOG]";
+		case ToolConsoleSeverity::Info:
+			return "[LOG]";
+		case ToolConsoleSeverity::Warning:
+			return "[WARN]";
+		case ToolConsoleSeverity::Error:
+			return "[ERROR]";
+		default:
+			return "[LOG]";
 	}
 }
 

@@ -14,7 +14,7 @@ namespace ECS
 
 	class EntityCommandBuffer final
 	{
-	  public:
+	public:
 		explicit EntityCommandBuffer(EntityCommandBufferDesc desc);
 
 		EntityCommandBuffer(const EntityCommandBuffer&) = delete;
@@ -36,10 +36,11 @@ namespace ECS
 
 		template <ComponentStorageCompatible T> bool Add(TemporaryEntityId temporary, T component)
 		{
-			return Owns(temporary) && RecordComponent(
-			                              EntityCommandKind::Add,
-			                              MakeTarget(temporary),
-			                              std::make_unique<EntityCommandDetail::TypedComponentCommandOperation<T>>(std::move(component)));
+			return Owns(temporary)
+			    && RecordComponent(
+			        EntityCommandKind::Add,
+			        MakeTarget(temporary),
+			        std::make_unique<EntityCommandDetail::TypedComponentCommandOperation<T>>(std::move(component)));
 		}
 
 		template <ComponentStorageCompatible T> bool Remove(EntityId entity)
@@ -52,10 +53,11 @@ namespace ECS
 
 		template <ComponentStorageCompatible T> bool Remove(TemporaryEntityId temporary)
 		{
-			return Owns(temporary) && RecordComponent(
-			                              EntityCommandKind::Remove,
-			                              MakeTarget(temporary),
-			                              std::make_unique<EntityCommandDetail::TypedComponentCommandOperation<T>>());
+			return Owns(temporary)
+			    && RecordComponent(
+			        EntityCommandKind::Remove,
+			        MakeTarget(temporary),
+			        std::make_unique<EntityCommandDetail::TypedComponentCommandOperation<T>>());
 		}
 
 		template <ComponentStorageCompatible T> bool Replace(EntityId entity, T component)
@@ -68,10 +70,11 @@ namespace ECS
 
 		template <ComponentStorageCompatible T> bool Replace(TemporaryEntityId temporary, T component)
 		{
-			return Owns(temporary) && RecordComponent(
-			                              EntityCommandKind::Replace,
-			                              MakeTarget(temporary),
-			                              std::make_unique<EntityCommandDetail::TypedComponentCommandOperation<T>>(std::move(component)));
+			return Owns(temporary)
+			    && RecordComponent(
+			        EntityCommandKind::Replace,
+			        MakeTarget(temporary),
+			        std::make_unique<EntityCommandDetail::TypedComponentCommandOperation<T>>(std::move(component)));
 		}
 
 		template <ComponentStorageCompatible T> bool Set(EntityId entity, T component)
@@ -84,10 +87,11 @@ namespace ECS
 
 		template <ComponentStorageCompatible T> bool Set(TemporaryEntityId temporary, T component)
 		{
-			return Owns(temporary) && RecordComponent(
-			                              EntityCommandKind::Set,
-			                              MakeTarget(temporary),
-			                              std::make_unique<EntityCommandDetail::TypedComponentCommandOperation<T>>(std::move(component)));
+			return Owns(temporary)
+			    && RecordComponent(
+			        EntityCommandKind::Set,
+			        MakeTarget(temporary),
+			        std::make_unique<EntityCommandDetail::TypedComponentCommandOperation<T>>(std::move(component)));
 		}
 
 		EntityCommandBufferId GetId() const noexcept { return m_desc.Id; }
@@ -95,7 +99,7 @@ namespace ECS
 		bool HasBeenCommitted() const noexcept { return m_committed; }
 		std::size_t GetCommandCount() const noexcept { return m_commands.size(); }
 
-	  private:
+	private:
 		friend class EntityCommandCommit;
 
 		EntityCommandKey NextKey() noexcept;

@@ -12,7 +12,7 @@ class D3D12Rhi;
 
 class D3D12PartitionedTlasServices final : public RhiPartitionedTlasService
 {
-  public:
+public:
 	D3D12PartitionedTlasServices(
 	    D3D12Rhi& rhi,
 	    D3D12GpuMemoryAllocator& memoryAllocator,
@@ -29,7 +29,7 @@ class D3D12PartitionedTlasServices final : public RhiPartitionedTlasService
 	RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
 	    const RhiPartitionedTlasDesc& desc) const noexcept override;
 
-  private:
+private:
 	static std::uint32_t ToNvapiPartitionedInstanceFlags(RhiPartitionedTlasInstanceFlags flags) noexcept;
 	static std::uint32_t ToNvapiPartitionedOperationType(ERhiPartitionedTlasOperationType type) noexcept;
 	static RhiPartitionedTlasNativeOperationLayout GetNativeOperationLayout() noexcept;

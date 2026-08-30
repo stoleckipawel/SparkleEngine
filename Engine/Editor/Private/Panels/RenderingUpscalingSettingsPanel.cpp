@@ -25,11 +25,8 @@ void DrawUpscalingSettingsSection(
 	    {"Performance", EUpscalerQualityMode::Performance},
 	    {"Ultra performance", EUpscalerQualityMode::UltraPerformance},
 	};
-	if (!MatchesFilter(
-	        filterText,
-	        "Upscaling",
-	        "upscaler upscaling linear bilinear dlss quality native aa balanced performance") ||
-	    !BeginSettingsCategory("Upscaling"))
+	if (!MatchesFilter(filterText, "Upscaling", "upscaler upscaling linear bilinear dlss quality native aa balanced performance")
+	    || !BeginSettingsCategory("Upscaling"))
 	{
 		return;
 	}

@@ -21,7 +21,6 @@ public:
 		    .ProjectionKind = desc.projectionKind,
 		    .Active = active};
 	}
-
 };
 
 namespace ECS
@@ -38,8 +37,7 @@ namespace ECS
 		const LocalTransform local = WorldTransformConversion::ToLocal(transform);
 		const bool added = m_registry.Add(entity, local) && m_registry.Add(entity, WorldTransform{})
 		    && m_registry.Add(entity, CameraComponentTranslation::ToCameraData(entry.desc, 16.0f / 9.0f, active))
-		    && m_registry.Add(entity, CameraDerivedState{})
-		    && m_registry.Add(entity, Visibility{})
+		    && m_registry.Add(entity, CameraDerivedState{}) && m_registry.Add(entity, Visibility{})
 		    && m_registry.Add(entity, Name{std::move(entry.name)})
 		    && m_registry.Add(entity, AuthoredIdentity{.SourceObjectId = ++m_nextCameraIdentity, .Kind = AuthoredObjectKind::Camera})
 		    && m_registry.Add(entity, EditorMetadata{});

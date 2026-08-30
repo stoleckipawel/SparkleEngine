@@ -4,7 +4,10 @@
 #include <cassert>
 #include <string>
 
-PassResourceBuilder::PassResourceBuilder(std::vector<PassResourceDeclaration>& declarations) noexcept : m_declarations(&declarations) {}
+PassResourceBuilder::PassResourceBuilder(std::vector<PassResourceDeclaration>& declarations) noexcept :
+    m_declarations(&declarations)
+{
+}
 
 FrameGraphResourceHandle PassResourceBuilder::Read(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {

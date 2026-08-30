@@ -11,7 +11,7 @@ class RhiResourceService;
 
 class OwnedStructuredBuffer final
 {
-  public:
+public:
 	OwnedStructuredBuffer() noexcept = default;
 	~OwnedStructuredBuffer() noexcept;
 
@@ -28,17 +28,9 @@ class OwnedStructuredBuffer final
 	    std::wstring_view debugName);
 
 	template <typename TValue>
-	static OwnedStructuredBuffer Upload(
-	    RhiResourceService& resourceService,
-	    std::span<const TValue> values,
-	    std::wstring_view debugName)
+	static OwnedStructuredBuffer Upload(RhiResourceService& resourceService, std::span<const TValue> values, std::wstring_view debugName)
 	{
-		return Upload(
-		    resourceService,
-		    values.data(),
-		    values.size_bytes(),
-		    static_cast<std::uint32_t>(sizeof(TValue)),
-		    debugName);
+		return Upload(resourceService, values.data(), values.size_bytes(), static_cast<std::uint32_t>(sizeof(TValue)), debugName);
 	}
 
 	bool IsValid() const noexcept { return m_resource && m_sizeInBytes > 0 && m_strideInBytes > 0; }
@@ -46,13 +38,10 @@ class OwnedStructuredBuffer final
 	RhiOwnedResourceHandle GetResource() const noexcept { return m_resource; }
 	std::uint64_t GetSizeInBytes() const noexcept { return m_sizeInBytes; }
 	std::uint32_t GetStrideInBytes() const noexcept { return m_strideInBytes; }
-	bool Write(
-	    std::size_t destinationOffsetInBytes,
-	    const void* data,
-	    std::size_t sizeInBytes) noexcept;
+	bool Write(std::size_t destinationOffsetInBytes, const void* data, std::size_t sizeInBytes) noexcept;
 	void Reset() noexcept;
 
-  private:
+private:
 	RhiResourceService* m_resourceService = nullptr;
 	RhiOwnedResourceHandle m_resource = {};
 	std::uint64_t m_sizeInBytes = 0;

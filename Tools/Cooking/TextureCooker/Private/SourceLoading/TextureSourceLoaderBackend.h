@@ -16,7 +16,7 @@ enum class TextureSourceFormat : std::uint8_t
 
 class TextureSourceLoaderBackend
 {
-  public:
+public:
 	virtual ~TextureSourceLoaderBackend() = default;
 
 	virtual bool SupportsFormat(TextureSourceFormat format) const noexcept = 0;

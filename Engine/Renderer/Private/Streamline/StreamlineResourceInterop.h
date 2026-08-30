@@ -5,16 +5,14 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-#include <sl.h>
+  #include <sl.h>
 
 // Keeps a Streamline resource and its optional Vulkan subresource range in one
 // stable object so feature-specific tag builders do not duplicate backend rules.
 class StreamlineTaggedTextureResource final
 {
-  public:
-	StreamlineTaggedTextureResource(
-	    ERhiBackendApi backendApi,
-	    const NativeTextureViewInfo& view) noexcept;
+public:
+	StreamlineTaggedTextureResource(ERhiBackendApi backendApi, const NativeTextureViewInfo& view) noexcept;
 
 	StreamlineTaggedTextureResource(const StreamlineTaggedTextureResource&) = delete;
 	StreamlineTaggedTextureResource& operator=(const StreamlineTaggedTextureResource&) = delete;
@@ -23,17 +21,14 @@ class StreamlineTaggedTextureResource final
 
 	sl::Resource* Get() noexcept { return &m_resource; }
 
-  private:
+private:
 	sl::Resource m_resource = {};
 	sl::SubresourceRange m_subresourceRange = {};
 };
 
-bool IsStreamlineTextureViewValid(
-    ERhiBackendApi backendApi,
-    const NativeTextureViewInfo& view) noexcept;
+bool IsStreamlineTextureViewValid(ERhiBackendApi backendApi, const NativeTextureViewInfo& view) noexcept;
 
-template <typename... TViews>
-bool AreStreamlineTextureViewsValid(ERhiBackendApi backendApi, const TViews&... views) noexcept
+template <typename... TViews> bool AreStreamlineTextureViewsValid(ERhiBackendApi backendApi, const TViews&... views) noexcept
 {
 	return (IsStreamlineTextureViewValid(backendApi, views) && ...);
 }

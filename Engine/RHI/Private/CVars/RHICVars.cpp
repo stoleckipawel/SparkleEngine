@@ -28,4 +28,5 @@ ConsoleVariable<std::uint32_t> CVarBackBufferCount(
 ConsoleVariable<std::uint32_t> CVarMaximumFramesInFlight(
     "r.MaximumFramesInFlight",
     RhiPresentationDefaults::DefaultMaximumFramesInFlight,
-    "Maximum submitted frames awaiting GPU retirement. Supported values are 1 through 3 and cannot exceed r.BackBufferCount; recreate the renderer to apply.");
+    "Maximum submitted frames awaiting GPU retirement. Supported values are 1 through 3 and cannot exceed r.BackBufferCount; recreate the "
+    "renderer to apply.");

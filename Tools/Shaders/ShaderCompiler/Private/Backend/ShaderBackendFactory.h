@@ -39,7 +39,4 @@ std::vector<ShaderBackendDescriptor> ListShaderBackends();
 std::span<const ShaderBinaryFormatDescriptor> ListShaderBinaryFormats() noexcept;
 std::span<const ShaderCodegenTargetDescriptor> ListShaderCodegenTargets() noexcept;
 std::unique_ptr<IShaderBackend> CreateShaderBackend(std::string_view name);
-std::string ResolveShaderBackendName(
-	std::string_view sourcePath,
-	ShaderTarget target,
-	std::string_view requestedName);
+std::string ResolveShaderBackendName(std::string_view sourcePath, ShaderTarget target, std::string_view requestedName);

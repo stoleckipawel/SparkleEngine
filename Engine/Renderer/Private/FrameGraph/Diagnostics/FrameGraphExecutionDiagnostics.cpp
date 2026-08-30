@@ -9,14 +9,15 @@
 
 class FrameGraphExecutionDiagnosticsConstants final
 {
-  public:
+public:
 	static constexpr RhiDiagnosticLabelColor kFrameGraphDetailMarkerColor{.Red = 120, .Green = 160, .Blue = 220, .Alpha = 255};
 };
 
 FrameGraphExecutionDiagnostics::FrameGraphExecutionDiagnostics(
     FrameExecutionDiagnostics& frameDiagnostics,
     RenderCommandContext& commands) noexcept :
-    m_frameDiagnostics(&frameDiagnostics), m_commands(&commands)
+    m_frameDiagnostics(&frameDiagnostics),
+    m_commands(&commands)
 {
 }
 

@@ -36,8 +36,8 @@ namespace Paths
 		}
 
 		const std::string executableStem = PathFormatting::SanitizePathSegment(Filesystem::GetExecutablePath().stem().string());
-		return Private::DefaultLogDirectory(ensureParentExists, executableStem) /
-		       PathFormatting::TimestampedFileName(executableStem, ".log");
+		return Private::DefaultLogDirectory(ensureParentExists, executableStem)
+		    / PathFormatting::TimestampedFileName(executableStem, ".log");
 	}
 
 	std::filesystem::path CookedSceneManifest(std::string_view sceneAssetId)
@@ -81,4 +81,4 @@ namespace Paths
 	{
 		return Filesystem::BuildShaderRecookSignalPath(cookedShaderRoot);
 	}
-}  // namespace Paths
+}

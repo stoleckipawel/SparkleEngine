@@ -9,10 +9,10 @@ struct cgltf_mesh;
 
 class GltfMeshGeometryExtractor final
 {
-  public:
+public:
 	static ImportedMeshGeometry ExtractMeshGeometry(const cgltf_mesh& mesh, const cgltf_primitive& primitive);
 
-  private:
+private:
 	struct Attributes;
 
 	static Attributes CollectAttributes(const cgltf_primitive& primitive) noexcept;

@@ -20,16 +20,11 @@ using RhiDeviceCreatedCallback =
 
 // On replacement, UpgradeInterface transfers one native-interface ownership
 // reference to the caller. ResolveNativeInterface does the same.
-using RhiInterfaceUpgradeCallback =
-    bool (*)(ERhiInterposerInterfaceKind kind, void** nativeInterface, void* userData) noexcept;
-using RhiInterfaceResolveCallback = bool (*)(
-    ERhiInterposerInterfaceKind kind,
-    void* externalInterface,
-    void** nativeInterface,
-    void* userData) noexcept;
+using RhiInterfaceUpgradeCallback = bool (*)(ERhiInterposerInterfaceKind kind, void** nativeInterface, void* userData) noexcept;
+using RhiInterfaceResolveCallback =
+    bool (*)(ERhiInterposerInterfaceKind kind, void* externalInterface, void** nativeInterface, void* userData) noexcept;
 using RhiPresentationReadyCallback = void (*)(bool ready, void* userData) noexcept;
-using RhiFrameMarkerCallback =
-    void (*)(ERhiFrameLatencyMarker marker, std::uint64_t frameId, void* userData) noexcept;
+using RhiFrameMarkerCallback = void (*)(ERhiFrameLatencyMarker marker, std::uint64_t frameId, void* userData) noexcept;
 using RhiRuntimeShutdownCallback = void (*)(void* userData) noexcept;
 
 struct RhiInterposerHooks final
@@ -44,7 +39,7 @@ struct RhiInterposerHooks final
 
 	constexpr explicit operator bool() const noexcept
 	{
-		return DeviceCreated != nullptr || UpgradeInterface != nullptr || ResolveNativeInterface != nullptr ||
-		       PresentationReady != nullptr || FrameMarker != nullptr || RuntimeShutdown != nullptr;
+		return DeviceCreated != nullptr || UpgradeInterface != nullptr || ResolveNativeInterface != nullptr || PresentationReady != nullptr
+		    || FrameMarker != nullptr || RuntimeShutdown != nullptr;
 	}
 };

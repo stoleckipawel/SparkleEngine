@@ -5,7 +5,7 @@
 
 class SPARKLE_ENGINE_API Mesh
 {
-  public:
+public:
 	virtual ~Mesh();
 	Mesh(const Mesh&) = delete;
 	Mesh& operator=(const Mesh&) = delete;
@@ -14,10 +14,10 @@ class SPARKLE_ENGINE_API Mesh
 
 	const MeshData& GetMeshData() const noexcept;
 
-  protected:
+protected:
 	explicit Mesh(MeshData&& meshData) noexcept;
 	explicit Mesh(const MeshData& meshData);
 
-  private:
+private:
 	MeshData m_meshData;
 };

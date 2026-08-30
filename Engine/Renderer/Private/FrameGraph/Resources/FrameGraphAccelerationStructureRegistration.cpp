@@ -11,7 +11,7 @@ static const auto g_frameGraphAccelerationStructureLogger = Logging::GetOrCreate
 
 class FrameGraphAccelerationStructureBindingValidator final
 {
-  public:
+public:
 	static std::string ResolveName(std::string_view name, std::string_view defaultName)
 	{
 		return std::string(name.empty() ? defaultName : name);
@@ -48,8 +48,7 @@ FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationS
     std::string_view name,
     ResourceState initialState) noexcept
 {
-	const std::string resolvedName =
-	    FrameGraphAccelerationStructureBindingValidator::ResolveName(name, "PersistentAccelerationStructure");
+	const std::string resolvedName = FrameGraphAccelerationStructureBindingValidator::ResolveName(name, "PersistentAccelerationStructure");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_resourceRegistry.RegisterPersistentAccelerationStructure(handle, resolvedName, initialState);
 	m_resourceStateTracker.RegisterResource(handle, initialState);
@@ -123,10 +122,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 		    false);
 	}
 
-	BindPersistentAccelerationStructure(
-	    handle,
-	    m_renderHardwareInterface->GetResourceService().GetResourceHandle(resource),
-	    currentState);
+	BindPersistentAccelerationStructure(handle, m_renderHardwareInterface->GetResourceService().GetResourceHandle(resource), currentState);
 }
 
 void FrameGraph::ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept

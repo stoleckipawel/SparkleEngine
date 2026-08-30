@@ -10,9 +10,7 @@ namespace Assets
 
 	class SceneManifestLoader final
 	{
-	  public:
-		LoadedSceneManifest Decode(
-		    const std::filesystem::path& path,
-		    std::span<const std::uint8_t> bytes) const;
+	public:
+		LoadedSceneManifest Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const;
 	};
 }

@@ -7,7 +7,7 @@ using Microsoft::WRL::ComPtr;
 
 class D3D12DescriptorHeap
 {
-  public:
+public:
 	explicit D3D12DescriptorHeap(
 	    D3D12Rhi& rhi,
 	    D3D12_DESCRIPTOR_HEAP_TYPE type,
@@ -28,7 +28,7 @@ class D3D12DescriptorHeap
 
 	D3D12DescriptorHandle GetHandleAt(UINT index) const;
 
-  private:
+private:
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12_DESCRIPTOR_HEAP_DESC m_desc = {};
 	ComPtr<ID3D12DescriptorHeap> m_heap;

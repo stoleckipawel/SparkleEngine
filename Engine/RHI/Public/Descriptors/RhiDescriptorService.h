@@ -17,7 +17,7 @@ SPARKLE_RHI_API const char* RhiDescriptorAllocatorTypeToString(ERhiDescriptorAll
 
 class SPARKLE_RHI_API RhiDescriptorService
 {
-  public:
+public:
 	virtual ~RhiDescriptorService() noexcept;
 
 	virtual std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) = 0;
@@ -25,8 +25,9 @@ class SPARKLE_RHI_API RhiDescriptorService
 	virtual RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) = 0;
 	virtual void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept = 0;
 	virtual RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount) = 0;
-	virtual RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
-	    const noexcept = 0;
+	virtual RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(
+	    RhiDescriptorTableHandle tableHandle,
+	    std::uint32_t descriptorIndex = 0) const noexcept = 0;
 	virtual void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept = 0;
 	virtual RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept = 0;
 	virtual RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) = 0;
@@ -38,7 +39,7 @@ class SPARKLE_RHI_API RhiDescriptorService
 	virtual RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept = 0;
 	virtual RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept = 0;
 
-  private:
+private:
 	friend class RenderDeviceServices;
 	virtual void BeginFrame(std::uint32_t frameIndex) noexcept = 0;
 };

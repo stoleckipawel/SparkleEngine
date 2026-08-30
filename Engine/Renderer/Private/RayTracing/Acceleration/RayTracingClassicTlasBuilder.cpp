@@ -132,10 +132,10 @@ void RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexc
 
 std::uint32_t RayTracingClassicTlasBuilder::Build(
     RenderCommandContext& commandContext,
-	const PreparedRenderScene& preparedScene,
-	RayTracingBlasCache& blasCache,
-	const RayTracingShaderTablePlan& shaderTablePlan,
-	RayTracingPerformanceDiagnostics* diagnostics) noexcept
+    const PreparedRenderScene& preparedScene,
+    RayTracingBlasCache& blasCache,
+    const RayTracingShaderTablePlan& shaderTablePlan,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -168,10 +168,10 @@ std::uint32_t RayTracingClassicTlasBuilder::Build(
 
 void RayTracingClassicTlasBuilder::CollectInstances(
     RenderCommandContext& commandContext,
-	const PreparedRenderScene& preparedScene,
-	RayTracingBlasCache& blasCache,
-	const RayTracingShaderTablePlan& shaderTablePlan,
-	RayTracingPerformanceDiagnostics* diagnostics,
+    const PreparedRenderScene& preparedScene,
+    RayTracingBlasCache& blasCache,
+    const RayTracingShaderTablePlan& shaderTablePlan,
+    RayTracingPerformanceDiagnostics* diagnostics,
     BuildState& state) noexcept
 {
 	const RenderRayTracingWorkPlan& work = preparedScene.rayTracingWork;

@@ -11,7 +11,7 @@
 
 class D3D12ExternalFeatureAdapterIdentity final
 {
-  public:
+public:
 	static std::string NarrowAdapterDescription(std::wstring_view value)
 	{
 		std::string result;
@@ -62,9 +62,8 @@ RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabiliti
     bool hasGraphicsCommandList) noexcept
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
-	capabilities.BridgeKind = rhi != nullptr && rhi->IsInterposerActive()
-	                              ? ERhiExternalFeatureBridgeKind::Interposer
-	                              : ERhiExternalFeatureBridgeKind::None;
+	capabilities.BridgeKind =
+	    rhi != nullptr && rhi->IsInterposerActive() ? ERhiExternalFeatureBridgeKind::Interposer : ERhiExternalFeatureBridgeKind::None;
 	capabilities.Adapter = BuildD3D12AdapterIdentity(rhi);
 	capabilities.ExposesNativeDevice = rhi != nullptr && rhi->GetDevice() != nullptr;
 	capabilities.ExposesNativeGraphicsQueue = rhi != nullptr && rhi->GetCommandQueue() != nullptr;

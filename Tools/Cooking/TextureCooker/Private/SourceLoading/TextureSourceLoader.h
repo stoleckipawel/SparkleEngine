@@ -6,9 +6,9 @@
 
 class TextureSourceLoader final
 {
-  public:
+public:
 	static TextureLoadResult Load(const std::filesystem::path& sourcePath);
 
-  private:
+private:
 	static TextureSourceFormat ResolveFormat(const std::filesystem::path& sourcePath) noexcept;
 };

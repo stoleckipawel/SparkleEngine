@@ -10,7 +10,7 @@
 
 class SPARKLE_PLATFORM_API InputFocusRouter final
 {
-  public:
+public:
 	InputFocusRouter() noexcept = default;
 	~InputFocusRouter() = default;
 
@@ -25,7 +25,7 @@ class SPARKLE_PLATFORM_API InputFocusRouter final
 	InputLayer ResolveTargetLayer(const InputBackendResult& result, InputLayer fallbackLayer) noexcept;
 	InputLayer GetActiveTargetLayer() const noexcept;
 
-  private:
+private:
 	struct TargetRegion final
 	{
 		float Left = 0.0f;

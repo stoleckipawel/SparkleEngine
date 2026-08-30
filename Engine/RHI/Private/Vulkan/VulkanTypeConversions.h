@@ -15,7 +15,7 @@ struct VulkanResourceStateMapping final
 
 class VulkanTypeConversions final
 {
-  public:
+public:
 	VulkanTypeConversions() = delete;
 
 	static VkFormat ToVkFormat(PixelFormat format) noexcept;

@@ -26,13 +26,7 @@ TextureLoadResult ExrTextureSourceLoader::Load(const std::filesystem::path& sour
 	int width = 0;
 	int height = 0;
 	const char* errorMessage = nullptr;
-	const int result = LoadEXRFromMemory(
-	    &decodedPixels,
-	    &width,
-	    &height,
-	    sourceFile.Bytes.data(),
-	    sourceFile.Bytes.size(),
-	    &errorMessage);
+	const int result = LoadEXRFromMemory(&decodedPixels, &width, &height, sourceFile.Bytes.data(), sourceFile.Bytes.size(), &errorMessage);
 	if (result != TINYEXR_SUCCESS || decodedPixels == nullptr)
 	{
 		std::string diagnostic = std::format("Failed to decode EXR texture '{}'", sourceFile.ResolvedPath.string());

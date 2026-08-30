@@ -16,7 +16,7 @@
 
 class SPARKLE_RHI_API RenderHardwareInterface
 {
-  public:
+public:
 	virtual ~RenderHardwareInterface() noexcept = default;
 
 	virtual const RhiCapabilities& GetCapabilities() const noexcept = 0;

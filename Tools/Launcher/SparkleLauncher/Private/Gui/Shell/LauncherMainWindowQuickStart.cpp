@@ -1,12 +1,12 @@
 #include "LauncherMainWindow.h"
 
+#include "LauncherActivityPanel.h"
 #include "LauncherContentModel.h"
 #include "LauncherLevelUiModel.h"
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherQuickStartPlanner.h"
 #include "LauncherSettings.h"
 
-#include <QtCore/QDateTime>
 #include <QtCore/QStringList>
 #include <QtWidgets/QPushButton>
 
@@ -27,8 +27,8 @@ namespace SparkleLauncher
 		{
 			if (!m_quickStartExecution->ActiveRunId().isEmpty())
 			{
-				AppendRunOutput(m_quickStartExecution->ActiveRunId(), "Quick Start is already preparing a level.\n");
-				ShowRunOutput(m_quickStartExecution->ActiveRunId());
+				m_activityPanel->AppendRunOutput(m_quickStartExecution->ActiveRunId(), "Quick Start is already preparing a level.\n");
+				m_activityPanel->ShowRunOutput(m_quickStartExecution->ActiveRunId());
 			}
 			return;
 		}
@@ -112,15 +112,17 @@ namespace SparkleLauncher
 		}
 
 		StartOperation(std::move(*resolution.OperationRequest), stepTitle);
-		AppendRunOutput(
+		m_activityPanel->AppendRunOutput(
 		    runId,
 		    QStringLiteral("Quick Start is preparing every registered prerequisite needed to run %1.\nCapability path: %2\nOperation: %3\n")
 		        .arg(goalName, dependencyPath.join(" -> "), operationId));
 		if (!invalidatedCapabilities.isEmpty())
 		{
-			AppendRunOutput(runId, QStringLiteral("Invalidates after success: %1\n").arg(invalidatedCapabilities.join(", ")));
+			m_activityPanel->AppendRunOutput(
+			    runId,
+			    QStringLiteral("Invalidates after success: %1\n").arg(invalidatedCapabilities.join(", ")));
 		}
-		ShowRunOutput(runId);
+		m_activityPanel->ShowRunOutput(runId);
 	}
 
 	void LauncherMainWindow::HandleQuickStartOperationFinished(
@@ -140,15 +142,17 @@ namespace SparkleLauncher
 			case LauncherQuickStartCompletion::Ignored:
 				return;
 			case LauncherQuickStartCompletion::Failed:
-				AppendRunOutput(runId, QStringLiteral("\nQuick Start stopped because this prerequisite failed: %1\n").arg(statusText));
-				ShowRunOutput(runId);
+				m_activityPanel->AppendRunOutput(
+				    runId,
+				    QStringLiteral("\nQuick Start stopped because this prerequisite failed: %1\n").arg(statusText));
+				m_activityPanel->ShowRunOutput(runId);
 				m_quickStartExecution.reset();
 				SetQuickStartButtonsEnabled(true);
 				ScheduleUiRefresh(true);
 				return;
 			case LauncherQuickStartCompletion::Completed:
-				AppendRunOutput(runId, "\nQuick Start completed. The requested level was started.\n");
-				ShowRunOutput(runId);
+				m_activityPanel->AppendRunOutput(runId, "\nQuick Start completed. The requested level was started.\n");
+				m_activityPanel->ShowRunOutput(runId);
 				m_quickStartExecution.reset();
 				SetQuickStartButtonsEnabled(true);
 				ScheduleUiRefresh(true);
@@ -175,16 +179,7 @@ namespace SparkleLauncher
 		SetQuickStartButtonsEnabled(true);
 
 		const QString runId = CreateRunId();
-		RegisterRun(runId, title);
-		SetRunState(runId, RunState::Failed, title);
-		AppendRunOutput(runId, QStringLiteral("Quick Start is blocked.\n\n%1\n").arg(message));
-		++m_finishedRunCount;
-		++m_failedRunCount;
-		m_actionHistory.RecordCompletion(goalRequest.OperationId, QDateTime::currentDateTimeUtc().toString(Qt::ISODate), message, 1);
-		m_actionHistory.Save(m_repositoryRoot);
-		ShowRunOutput(runId);
-		SetActivityLogExpanded(true);
-		RefreshActivityPanel();
+		m_activityPanel->DisplayBlockedOperation(runId, title, message);
 		ScheduleUiRefresh(true);
 	}
 

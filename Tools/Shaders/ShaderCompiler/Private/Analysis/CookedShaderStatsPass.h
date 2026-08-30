@@ -15,7 +15,5 @@ class CookedShaderStatsPass final
 public:
 	CookedShaderStatsPass() = delete;
 
-	static CookedShaderStatsReport WriteCsv(
-	    const ShaderCookOutput& output,
-	    const std::filesystem::path& analysisDirectory);
+	static CookedShaderStatsReport WriteCsv(const ShaderCookOutput& output, const std::filesystem::path& analysisDirectory);
 };

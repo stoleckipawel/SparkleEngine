@@ -24,9 +24,10 @@ namespace SparkleLauncher
 	{
 		static const std::array<std::string_view, 9> extensions = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx", ".inl"};
 		const std::string extension = Strings::ToLowerCopy(path.extension().string());
-		return std::any_of(extensions.begin(), extensions.end(), [&extension](std::string_view candidate) {
-			return extension == candidate;
-		});
+		return std::any_of(
+		    extensions.begin(),
+		    extensions.end(),
+		    [&extension](std::string_view candidate) { return extension == candidate; });
 	}
 
 	static bool IsUnderThirdParty(const std::filesystem::path& path)
@@ -62,7 +63,10 @@ namespace SparkleLauncher
 				continue;
 			}
 
-			std::filesystem::recursive_directory_iterator iterator(root, std::filesystem::directory_options::skip_permission_denied, errorCode);
+			std::filesystem::recursive_directory_iterator iterator(
+			    root,
+			    std::filesystem::directory_options::skip_permission_denied,
+			    errorCode);
 			const std::filesystem::recursive_directory_iterator endIterator;
 			while (iterator != endIterator)
 			{
@@ -92,7 +96,10 @@ namespace SparkleLauncher
 				continue;
 			}
 
-			std::filesystem::recursive_directory_iterator iterator(root, std::filesystem::directory_options::skip_permission_denied, errorCode);
+			std::filesystem::recursive_directory_iterator iterator(
+			    root,
+			    std::filesystem::directory_options::skip_permission_denied,
+			    errorCode);
 			const std::filesystem::recursive_directory_iterator endIterator;
 			while (iterator != endIterator)
 			{

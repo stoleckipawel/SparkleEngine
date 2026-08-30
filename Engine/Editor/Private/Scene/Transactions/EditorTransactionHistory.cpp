@@ -5,7 +5,7 @@
 
 class EditorTransactionHistoryLimits final
 {
-  public:
+public:
 	static constexpr std::size_t MaximumTransactions = 256;
 };
 
@@ -19,7 +19,8 @@ WorldEditResult EditorTransactionHistory::Submit(WorldEditCommand command, std::
 
 void EditorTransactionHistory::InvalidateForWorldGeneration(std::uint64_t worldGeneration) noexcept
 {
-	if (m_worldGeneration == worldGeneration) return;
+	if (m_worldGeneration == worldGeneration)
+		return;
 	m_worldGeneration = worldGeneration;
 	m_undo.clear();
 	m_redo.clear();
@@ -35,7 +36,8 @@ WorldEditResult EditorTransactionHistory::Execute(
 	InvalidateForWorldGeneration(worldGeneration);
 	WorldEditResult result = Submit(forward, worldGeneration);
 	m_lastResult = result;
-	if (!result.IsAccepted()) return result;
+	if (!result.IsAccepted())
+		return result;
 
 	if (!coalescingKey.empty() && !m_undo.empty() && m_undo.back().CoalescingKey == coalescingKey)
 	{
@@ -43,7 +45,8 @@ WorldEditResult EditorTransactionHistory::Execute(
 	}
 	else
 	{
-		if (m_undo.size() == EditorTransactionHistoryLimits::MaximumTransactions) m_undo.erase(m_undo.begin());
+		if (m_undo.size() == EditorTransactionHistoryLimits::MaximumTransactions)
+			m_undo.erase(m_undo.begin());
 		m_undo.push_back({std::move(forward), std::move(inverse), std::move(coalescingKey)});
 	}
 	m_redo.clear();

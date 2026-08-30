@@ -21,9 +21,7 @@ sl::DLSSMode ToStreamlineDlssMode(EUpscalerQualityMode mode) noexcept
 	return sl::DLSSMode::eMaxQuality;
 }
 
-sl::DLSSOptions BuildStreamlineDlssOptions(
-    EUpscalerQualityMode qualityMode,
-    RenderViewportExtent outputExtent) noexcept
+sl::DLSSOptions BuildStreamlineDlssOptions(EUpscalerQualityMode qualityMode, RenderViewportExtent outputExtent) noexcept
 {
 	sl::DLSSOptions options{};
 	options.mode = ToStreamlineDlssMode(qualityMode);

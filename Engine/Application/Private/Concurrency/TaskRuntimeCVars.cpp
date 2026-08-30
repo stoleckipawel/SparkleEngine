@@ -6,20 +6,30 @@
 
 class TaskRuntimeCVarsState final
 {
-  public:
+public:
 	inline static ConsoleVariable<std::uint32_t> g_frameCriticalWorkerCount{
-	    "task.FrameCriticalWorkerCount", 1, "Frame-critical task workers. Sweep explicitly before changing the product default."};
+	    "task.FrameCriticalWorkerCount",
+	    1,
+	    "Frame-critical task workers. Sweep explicitly before changing the product default."};
 	inline static ConsoleVariable<std::uint32_t> g_backgroundWorkerCount{
-	    "task.BackgroundWorkerCount", 1, "Background task workers. Sweep independently from frame-critical work."};
+	    "task.BackgroundWorkerCount",
+	    1,
+	    "Background task workers. Sweep independently from frame-critical work."};
 	inline static ConsoleVariable<std::uint32_t> g_blockingIoWorkerCount{
-	    "task.BlockingIoWorkerCount", 1, "Blocking-I/O task workers. Keep bounded independently from CPU task lanes."};
+	    "task.BlockingIoWorkerCount",
+	    1,
+	    "Blocking-I/O task workers. Keep bounded independently from CPU task lanes."};
 	inline static ConsoleVariable<bool> g_serialExecution{
-	    "task.SerialExecution", false, "Run SparkleTasks on the deterministic caller-thread reference executor."};
+	    "task.SerialExecution",
+	    false,
+	    "Run SparkleTasks on the deterministic caller-thread reference executor."};
 };
 
 namespace TaskRuntimeCVars
 {
-	void Register() noexcept {}
+	void Register() noexcept
+	{
+	}
 	std::uint32_t ResolveFrameCriticalWorkerCount() noexcept
 	{
 		return TaskRuntimeCVarsState::g_frameCriticalWorkerCount.Get();
@@ -35,5 +45,8 @@ namespace TaskRuntimeCVars
 		return TaskRuntimeCVarsState::g_blockingIoWorkerCount.Get();
 	}
 
-	bool UseSerialExecution() noexcept { return TaskRuntimeCVarsState::g_serialExecution.Get(); }
+	bool UseSerialExecution() noexcept
+	{
+		return TaskRuntimeCVarsState::g_serialExecution.Get();
+	}
 }

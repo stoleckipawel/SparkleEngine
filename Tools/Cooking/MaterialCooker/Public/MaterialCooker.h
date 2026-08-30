@@ -15,7 +15,7 @@ struct TextureCookRequest;
 
 class MaterialCooker final
 {
-  public:
+public:
 	static MaterialCookOutput BuildMaterialAssets(const SourceImportOutput& importOutput, std::string_view sceneAssetId);
 	static std::vector<TextureCookRequest> CollectTextureCookRequests(const SourceImportOutput& importOutput);
 	static void StageMaterialAssets(

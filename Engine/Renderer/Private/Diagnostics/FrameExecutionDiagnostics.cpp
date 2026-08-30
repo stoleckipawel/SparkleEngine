@@ -11,7 +11,8 @@
 static const auto g_frameExecutionDiagnosticsLogger = Logging::GetOrCreateLogger("Renderer.FrameExecutionDiagnostics");
 
 FrameExecutionDiagnostics::FrameExecutionDiagnostics(RenderDiagnostics& backendDiagnostics) noexcept :
-    m_backendDiagnostics(&backendDiagnostics), m_timingDiagnostics(backendDiagnostics.GetTimingDiagnostics())
+    m_backendDiagnostics(&backendDiagnostics),
+    m_timingDiagnostics(backendDiagnostics.GetTimingDiagnostics())
 {
 }
 
@@ -81,8 +82,10 @@ ScopedGpuScope FrameExecutionDiagnostics::BeginGpuScope(
 	return ScopedGpuScope{BeginGpuEvent(commands, label, color), BeginTimer(commands, label)};
 }
 
-void FrameExecutionDiagnostics::InsertGpuMarker(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color)
-    const noexcept
+void FrameExecutionDiagnostics::InsertGpuMarker(
+    RenderCommandContext& commands,
+    std::string_view label,
+    RhiDiagnosticLabelColor color) const noexcept
 {
 	if (!SupportsGpuEvents() || label.empty())
 	{
@@ -120,8 +123,8 @@ void FrameExecutionDiagnostics::ResolveTimings() noexcept
 		const std::uint32_t timestampValidBits = m_timingDiagnostics->GetTimestampValidBits(record.BeginQuery);
 		std::uint64_t beginTicks = 0;
 		std::uint64_t endTicks = 0;
-		if (!m_timingDiagnostics->TryResolveTimestamp(record.BeginQuery, beginTicks) ||
-		    !m_timingDiagnostics->TryResolveTimestamp(record.EndQuery, endTicks))
+		if (!m_timingDiagnostics->TryResolveTimestamp(record.BeginQuery, beginTicks)
+		    || !m_timingDiagnostics->TryResolveTimestamp(record.EndQuery, endTicks))
 		{
 			Diagnostics::Fatal(
 			    g_frameExecutionDiagnosticsLogger,
@@ -202,7 +205,7 @@ void FrameExecutionDiagnostics::RecordCompletedTimer(
     std::string label,
     RhiTimestampQueryHandle beginQuery,
     RhiTimestampQueryHandle endQuery,
-	ERhiQueueType queueType,
+    ERhiQueueType queueType,
     std::uint16_t depth) noexcept
 {
 	std::lock_guard lock(m_recordedTimersMutex);

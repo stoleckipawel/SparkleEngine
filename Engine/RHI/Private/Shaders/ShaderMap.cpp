@@ -239,14 +239,13 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 			throw Diagnostics::Error("Global shader map entry references missing or incompatible shader code.");
 		}
 		const bool hasLocalRecord = entry.LocalRecordSizeInBytes != 0 || entry.LocalRecordSignature != 0;
-		const bool hasSharedRayTracingContract = entry.RayPayloadSizeInBytes != 0 || entry.RayAttributeSizeInBytes != 0
-		    || entry.MinimumRayRecursionDepth != 0;
+		const bool hasSharedRayTracingContract =
+		    entry.RayPayloadSizeInBytes != 0 || entry.RayAttributeSizeInBytes != 0 || entry.MinimumRayRecursionDepth != 0;
 		if ((entry.LocalRecordSizeInBytes == 0) != (entry.LocalRecordSignature == 0)
 		    || (entry.Stage == ShaderStage::RayGeneration
 		        && (entry.RayPayloadSizeInBytes == 0 || entry.RayAttributeSizeInBytes == 0 || entry.MinimumRayRecursionDepth == 0))
 		    || (IsRayTracingShaderStage(entry.Stage) && entry.Stage != ShaderStage::RayGeneration && hasSharedRayTracingContract)
-		    || (!IsRayTracingShaderStage(entry.Stage)
-		        && (hasSharedRayTracingContract || hasLocalRecord)))
+		    || (!IsRayTracingShaderStage(entry.Stage) && (hasSharedRayTracingContract || hasLocalRecord)))
 		{
 			throw Diagnostics::Error("Global shader map entry contains an invalid ray-tracing contract.");
 		}

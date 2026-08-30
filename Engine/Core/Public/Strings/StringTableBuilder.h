@@ -19,14 +19,14 @@ namespace Strings
 
 	class SPARKLE_CORE_API StringTableBuilder final
 	{
-	  public:
+	public:
 		StringTableEntry Add(std::string_view value);
 
 		const std::vector<std::uint8_t>& GetBytes() const noexcept { return m_bytes; }
 		std::vector<std::uint8_t>& GetBytes() noexcept { return m_bytes; }
 		std::uint32_t SizeInBytes() const noexcept { return static_cast<std::uint32_t>(m_bytes.size()); }
 
-	  private:
+	private:
 		std::vector<std::uint8_t> m_bytes;
 	};
 }

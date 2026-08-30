@@ -2,20 +2,14 @@
 
 #include "Core/Public/Files/BinaryStreamWriter.h"
 
-bool Files::BinaryStreamWriter::WriteBytes(
-    std::ofstream& output,
-    const void* bytes,
-    std::size_t byteCount,
-    std::string& outErrorMessage)
+bool Files::BinaryStreamWriter::WriteBytes(std::ofstream& output, const void* bytes, std::size_t byteCount, std::string& outErrorMessage)
 {
 	if (byteCount == 0)
 	{
 		return true;
 	}
 
-	output.write(
-	    reinterpret_cast<const char*>(bytes),
-	    static_cast<std::streamsize>(byteCount));
+	output.write(reinterpret_cast<const char*>(bytes), static_cast<std::streamsize>(byteCount));
 	if (output.good())
 	{
 		return true;

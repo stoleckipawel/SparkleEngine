@@ -20,8 +20,5 @@ struct RendererTexture final
 	std::uint16_t MipCount = 0;
 	std::uint64_t EstimatedByteSize = 0;
 
-	constexpr explicit operator bool() const noexcept
-	{
-		return Resource && ShaderResourceView;
-	}
+	constexpr explicit operator bool() const noexcept { return Resource && ShaderResourceView; }
 };

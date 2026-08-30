@@ -10,7 +10,7 @@ namespace ECS
 {
 	class MeshResourceStore final
 	{
-	  public:
+	public:
 		MeshResourceHandle Add(std::unique_ptr<Mesh>&& mesh);
 		Mesh* Resolve(MeshResourceHandle handle) noexcept;
 		const Mesh* Resolve(MeshResourceHandle handle) const noexcept;
@@ -18,7 +18,7 @@ namespace ECS
 		bool Remove(MeshResourceHandle handle) noexcept;
 		void Clear() noexcept;
 
-	  private:
+	private:
 		struct Entry final
 		{
 			std::shared_ptr<Mesh> Resource;

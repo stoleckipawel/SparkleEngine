@@ -26,11 +26,7 @@ namespace OutputEncodingSettings
 		const PixelFormat linearFormat = PixelFormatToLinear(backBufferFormat);
 		if (linearFormat != PixelFormat::R8G8B8A8_UNorm && linearFormat != PixelFormat::B8G8R8A8_UNorm)
 		{
-			Diagnostics::Fatal(
-			    g_logger,
-			    __FILE__,
-			    __LINE__,
-			    "Automatic output encoding received an unsupported back-buffer format.");
+			Diagnostics::Fatal(g_logger, __FILE__, __LINE__, "Automatic output encoding received an unsupported back-buffer format.");
 		}
 		return IsSrgbPixelFormat(backBufferFormat) ? 0u : 1u;
 	}
@@ -38,6 +34,5 @@ namespace OutputEncodingSettings
 
 OutputEncodingUniformData BuildOutputEncodingUniformData() noexcept
 {
-	return OutputEncodingUniformData{
-	    .OutputColorEncoding = OutputEncodingSettings::ResolveShaderValue()};
+	return OutputEncodingUniformData{.OutputColorEncoding = OutputEncodingSettings::ResolveShaderValue()};
 }

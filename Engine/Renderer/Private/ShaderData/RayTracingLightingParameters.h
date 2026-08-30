@@ -29,9 +29,7 @@ void RegisterRayTracingLightingParameterSetups(FrameGraphBuilder& builder, TPara
 
 	if constexpr (requires { parameterFields->Frame; })
 	{
-		builder.AddParameterSetup<FrameUniformData>(
-		    parameters,
-		    [](auto& fields, const FrameUniformData& frame) { fields.Frame = frame; });
+		builder.AddParameterSetup<FrameUniformData>(parameters, [](auto& fields, const FrameUniformData& frame) { fields.Frame = frame; });
 	}
 	builder.AddParameterSetup<RenderView>(
 	    parameters,

@@ -13,7 +13,7 @@ class VulkanRenderHardwareInterface;
 
 class VulkanImGuiBackend final : public RhiImGuiRenderer
 {
-  public:
+public:
 	VulkanImGuiBackend(VulkanRenderHardwareInterface& renderHardwareInterface, VulkanDescriptorService& descriptorService) noexcept;
 
 	void Initialize() override;
@@ -23,7 +23,7 @@ class VulkanImGuiBackend final : public RhiImGuiRenderer
 	void ReleaseTexture(ImTextureData& texture) noexcept override;
 	void Shutdown() noexcept override;
 
-  private:
+private:
 	struct TextureBinding final
 	{
 		VkImageView ImageView = VK_NULL_HANDLE;

@@ -1,10 +1,10 @@
 #pragma once
 
 #ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef NOMINMAX
-	#define NOMINMAX
+  #define NOMINMAX
 #endif
 #include <Windows.h>
 #include <d3d12.h>
@@ -26,7 +26,7 @@ class D3D12Rhi;
 
 class D3D12SwapChain final
 {
-  public:
+public:
 	D3D12SwapChain(
 	    D3D12Rhi& rhi,
 	    Window& window,
@@ -70,7 +70,7 @@ class D3D12SwapChain final
 
 	UINT ComputeSwapChainFlags() const;
 
-  private:
+private:
 	UINT GetWindowWidth() const noexcept;
 	UINT GetWindowHeight() const noexcept;
 	bool HasValidWindowSize() const noexcept;

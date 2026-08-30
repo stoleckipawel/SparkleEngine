@@ -8,7 +8,7 @@ class VulkanRhi;
 
 class VulkanRecordingDescriptorPool final
 {
-  public:
+public:
 	static constexpr std::uint32_t DescriptorSetCapacity = 256;
 
 	explicit VulkanRecordingDescriptorPool(VulkanRhi& rhi) noexcept;
@@ -25,7 +25,7 @@ class VulkanRecordingDescriptorPool final
 	std::uint32_t GetCapacity() const noexcept { return DescriptorSetCapacity; }
 	VkDescriptorPool GetNativePool() const noexcept { return m_pool; }
 
-  private:
+private:
 	void CreatePool() noexcept;
 
 	VulkanRhi* m_rhi = nullptr;

@@ -10,18 +10,15 @@ class VulkanRhi;
 
 class VulkanCaptureService final : public RhiCaptureService
 {
-  public:
+public:
 	explicit VulkanCaptureService(VulkanRhi& rhi) noexcept;
 	~VulkanCaptureService() noexcept override;
 
-	RhiCaptureTicket BeginTextureReadback(
-	    const RhiTextureCaptureRequest& request) noexcept override;
-	bool TryTakeTextureReadback(
-	    RhiCaptureTicket ticket,
-	    RhiCaptureReadback& readback) noexcept override;
+	RhiCaptureTicket BeginTextureReadback(const RhiTextureCaptureRequest& request) noexcept override;
+	bool TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCaptureReadback& readback) noexcept override;
 	void CancelTextureReadback(RhiCaptureTicket ticket) noexcept override;
 
-  private:
+private:
 	struct PendingReadback;
 	PendingReadback* FindPending(RhiCaptureTicket ticket) noexcept;
 	void DrainCancelledReadbacks() noexcept;

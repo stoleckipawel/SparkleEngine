@@ -68,4 +68,4 @@ namespace SparkleUiPalette
 	// Returns the same hue with reduced saturation, useful for low-contrast tints
 	// (e.g. table row backgrounds) that should not distract from foreground text.
 	ImU32 CategoricalColorDesaturated(std::size_t index, float saturation) noexcept;
-}  // namespace SparkleUiPalette
+}

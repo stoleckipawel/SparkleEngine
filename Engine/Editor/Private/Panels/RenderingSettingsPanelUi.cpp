@@ -35,9 +35,7 @@ namespace RenderingSettingsPanelUi
 	bool BeginSettingsTable(const char* id)
 	{
 		const ImGuiTableFlags tableFlags =
-		    ImGuiTableFlags_SizingStretchProp |
-		    ImGuiTableFlags_BordersInnerV |
-		    ImGuiTableFlags_BordersInnerH;
+		    ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH;
 		if (!ImGui::BeginTable(id, 2, tableFlags))
 		{
 			return false;
@@ -47,4 +45,4 @@ namespace RenderingSettingsPanelUi
 		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 		return true;
 	}
-}  // namespace RenderingSettingsPanelUi
+}

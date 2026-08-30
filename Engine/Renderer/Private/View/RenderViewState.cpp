@@ -47,9 +47,7 @@ RayTracingPtlasPartitionPlan RenderViewState::BuildRayTracingPlan(
 	return m_rayTracingPlanner->Build(preparedScene, cameraPosition);
 }
 
-bool RenderViewState::UpdateHistoryInvalidationHash(
-    std::optional<std::uint64_t>& previousHash,
-    std::uint64_t currentHash) noexcept
+bool RenderViewState::UpdateHistoryInvalidationHash(std::optional<std::uint64_t>& previousHash, std::uint64_t currentHash) noexcept
 {
 	const bool invalidated = !previousHash || *previousHash != currentHash;
 	previousHash = currentHash;

@@ -19,15 +19,12 @@
 
 namespace RayTracingGBufferPasses
 {
-	std::string BuildDiagnosticLabel(
-		const char* frontend,
-		const char* reason)
+	std::string BuildDiagnosticLabel(const char* frontend, const char* reason)
 	{
 		return std::string("RayTracingGBuffer.") + frontend + "." + reason;
 	}
 
-	template <typename TShader>
-	auto& BuildParameters(
+	template <typename TShader> auto& BuildParameters(
 	    FrameGraphBuilder& builder,
 	    const GBufferRenderTargets& targets,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
@@ -91,10 +88,7 @@ namespace RayTracingGBufferPasses
 		builder.Dispatch<RayTracingGBufferInlineCS>(
 		    BuildDiagnosticLabel("Inline", reason),
 		    parameters,
-		    ComputeDispatchDesc{
-		        MathUtils::DivideRoundUp(sceneExtent.Width, 8u),
-		        MathUtils::DivideRoundUp(sceneExtent.Height, 8u),
-		        1u});
+		    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 	}
 
 	void AddPipeline(
@@ -123,36 +117,23 @@ namespace RayTracingGBufferPasses
 }
 
 void AddRayTracingGBufferMeshPass(
-	FrameGraphBuilder& builder,
-	RenderViewportExtent sceneExtent,
-	const GBufferRenderTargets& targets,
-	FrameGraphAccelerationStructureHandle sceneTlas,
-	const RenderFrameGraphImportedSceneResources& externalResources,
-	RayTracingShaderTablePlan& shaderTablePlan,
-	const RayTracingCapabilityReport& capabilities)
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    const GBufferRenderTargets& targets,
+    FrameGraphAccelerationStructureHandle sceneTlas,
+    const RenderFrameGraphImportedSceneResources& externalResources,
+    RayTracingShaderTablePlan& shaderTablePlan,
+    const RayTracingCapabilityReport& capabilities)
 {
 	const RayTracingGBufferExecutionPlan executionPlan = ResolveRayTracingGBufferExecutionPlan(capabilities);
 	const char* reason = GetRayTracingExecutionReasonLabel(executionPlan.Reason);
 	switch (executionPlan.Active)
 	{
 		case RayTracingExecutionFrontend::Inline:
-			RayTracingGBufferPasses::AddInline(
-			    builder,
-			    sceneExtent,
-			    targets,
-			    sceneTlas,
-			    externalResources,
-			    reason);
+			RayTracingGBufferPasses::AddInline(builder, sceneExtent, targets, sceneTlas, externalResources, reason);
 			return;
 		case RayTracingExecutionFrontend::Pipeline:
-			RayTracingGBufferPasses::AddPipeline(
-			    builder,
-			    sceneExtent,
-			    targets,
-			    sceneTlas,
-			    externalResources,
-			    shaderTablePlan,
-			    reason);
+			RayTracingGBufferPasses::AddPipeline(builder, sceneExtent, targets, sceneTlas, externalResources, shaderTablePlan, reason);
 			return;
 		case RayTracingExecutionFrontend::None:
 		default:

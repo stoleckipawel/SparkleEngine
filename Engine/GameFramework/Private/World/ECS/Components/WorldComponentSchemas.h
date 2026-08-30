@@ -19,7 +19,8 @@ namespace ECS
 	template <> struct ComponentSchemaTraits<CameraDerivedState> final
 	{
 		static constexpr ComponentSchema Schema{
-		    MakeComponentSchemaId("sparkle.world.CameraDerivedState"), "sparkle.world.CameraDerivedState"};
+		    MakeComponentSchemaId("sparkle.world.CameraDerivedState"),
+		    "sparkle.world.CameraDerivedState"};
 	};
 	template <> struct ComponentSchemaTraits<MeshInstance> final
 	{

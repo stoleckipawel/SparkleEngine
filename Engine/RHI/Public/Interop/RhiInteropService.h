@@ -38,7 +38,7 @@ struct RhiNativeDeviceQueueInterop final
 
 class SPARKLE_RHI_API RhiInteropService
 {
-  public:
+public:
 	virtual ~RhiInteropService() noexcept = default;
 
 	virtual RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept = 0;

@@ -467,9 +467,7 @@ void VulkanRenderCommandList::SetShaderPushConstants(
 	    data);
 }
 
-void VulkanRenderCommandList::FlushShaderDescriptorSets(
-    VkPipelineBindPoint bindPoint,
-    ShaderBindingState& state) noexcept
+void VulkanRenderCommandList::FlushShaderDescriptorSets(VkPipelineBindPoint bindPoint, ShaderBindingState& state) noexcept
 {
 	for (std::uint32_t setIndex = 0; setIndex < state.DescriptorSets.size() && setIndex < state.DirtyDescriptorSets.size(); ++setIndex)
 	{

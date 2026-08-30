@@ -9,13 +9,13 @@ class TaskExecutionContext;
 
 class SerialTaskExecution final
 {
-  public:
+public:
 	static TaskExecutionCompletion Execute(
 	    const TaskGraphStorage& graph,
 	    TaskExecutionContext& context,
 	    std::uint64_t generation,
 	    std::stop_token cancellation);
 
-  private:
+private:
 	class RunState;
 };

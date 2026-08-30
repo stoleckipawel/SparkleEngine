@@ -10,9 +10,7 @@ namespace Assets
 
 	class SkeletonAssetLoader final
 	{
-	  public:
-		LoadedSkeletonAsset Decode(
-		    const std::filesystem::path& path,
-		    std::span<const std::uint8_t> bytes) const;
+	public:
+		LoadedSkeletonAsset Decode(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) const;
 	};
 }

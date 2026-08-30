@@ -15,10 +15,7 @@ D3D12RecordingUploadPage::D3D12RecordingUploadPage() noexcept = default;
 
 D3D12RecordingUploadPage::~D3D12RecordingUploadPage() noexcept = default;
 
-void D3D12RecordingUploadPage::Initialize(
-    D3D12Rhi& rhi,
-    std::uint64_t capacityInBytes,
-    const wchar_t* debugName)
+void D3D12RecordingUploadPage::Initialize(D3D12Rhi& rhi, std::uint64_t capacityInBytes, const wchar_t* debugName)
 {
 	assert(capacityInBytes != 0);
 
@@ -67,9 +64,7 @@ void D3D12RecordingUploadPage::Reset() noexcept
 	m_offset = 0;
 }
 
-RhiGpuVirtualAddress D3D12RecordingUploadPage::AllocateAndCopy(
-    const void* data,
-    std::uint32_t sizeInBytes)
+RhiGpuVirtualAddress D3D12RecordingUploadPage::AllocateAndCopy(const void* data, std::uint32_t sizeInBytes)
 {
 	assert(data != nullptr);
 	assert(sizeInBytes != 0);

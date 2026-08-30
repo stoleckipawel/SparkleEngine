@@ -231,8 +231,7 @@ public:
 		    { setup(parameterInstance->GetFields(), value); });
 	}
 
-	template <typename TParameters, typename TCallback>
-	void AddResourceProductionSetup(
+	template <typename TParameters, typename TCallback> void AddResourceProductionSetup(
 	    TypedPassParameterInstance<TParameters>& parameters,
 	    FrameGraphTextureHandle resource,
 	    TCallback&& callback)
@@ -308,8 +307,7 @@ private:
 		        regionEnd(shaderTable.GetCallableRegion())});
 	}
 
-	template <typename TRayGenerationShader>
-	void AddRayTracingPass(
+	template <typename TRayGenerationShader> void AddRayTracingPass(
 	    std::string_view label,
 	    const RayTracingPassPipelineRuntime& runtime,
 	    std::shared_ptr<RayTracingShaderTable> shaderTable,

@@ -57,8 +57,8 @@ std::filesystem::path RegisteredShaderListModel::FindDebugArtifactDirectoryFor(s
 		}
 
 		const std::string directoryName = it->path().filename().generic_string();
-		if (Strings::ContainsIgnoreCase(directoryName, shaderId) &&
-		    std::filesystem::exists(it->path() / "compile-request.json", errorCode) && !errorCode)
+		if (Strings::ContainsIgnoreCase(directoryName, shaderId) && std::filesystem::exists(it->path() / "compile-request.json", errorCode)
+		    && !errorCode)
 		{
 			return it->path();
 		}

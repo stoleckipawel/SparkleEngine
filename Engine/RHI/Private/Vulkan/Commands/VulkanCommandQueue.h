@@ -12,7 +12,7 @@ class VulkanRhi;
 
 namespace spdlog
 {
-class logger;
+	class logger;
 }
 
 struct VulkanQueueSubmission final
@@ -31,11 +31,8 @@ struct VulkanNativeQueue final
 
 class VulkanCommandQueue final
 {
-  public:
-	VulkanCommandQueue(
-	    VulkanRhi& rhi,
-	    ERhiQueueType queueType,
-	    std::shared_ptr<VulkanNativeQueue> nativeQueue) noexcept;
+public:
+	VulkanCommandQueue(VulkanRhi& rhi, ERhiQueueType queueType, std::shared_ptr<VulkanNativeQueue> nativeQueue) noexcept;
 	~VulkanCommandQueue() noexcept;
 
 	VulkanCommandQueue(const VulkanCommandQueue&) = delete;
@@ -56,14 +53,12 @@ class VulkanCommandQueue final
 	VkQueue GetNativeQueue() const noexcept;
 	VkSemaphore GetTimelineSemaphore() const noexcept;
 
-  private:
+private:
 	struct NativeSubmission;
 
 	static const std::shared_ptr<spdlog::logger>& GetLogger();
 	static std::uint64_t GetWaitTimeoutNanoseconds() noexcept;
-	bool ResolveWaitState(
-	    std::span<const RhiSubmissionToken> waitTokens,
-	    RhiSubmissionState& waitState) const noexcept;
+	bool ResolveWaitState(std::span<const RhiSubmissionToken> waitTokens, RhiSubmissionState& waitState) const noexcept;
 	void BuildNativeSubmission(
 	    const VulkanQueueSubmission& submission,
 	    const RhiSubmissionState& waitState,

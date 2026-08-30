@@ -10,9 +10,7 @@
 #include <string>
 #include <vector>
 
-void TextureRequestPlanBuilder::CollectSceneRequests(
-    const AssetCookerSceneEntry& sceneEntry,
-    TextureCookRequestSet& requestSet)
+void TextureRequestPlanBuilder::CollectSceneRequests(const AssetCookerSceneEntry& sceneEntry, TextureCookRequestSet& requestSet)
 {
 	const SourceImportOutput importOutput = ImportedSceneCooker::Import(sceneEntry);
 	const std::vector<TextureCookRequest> sceneRequests = MaterialCooker::CollectTextureCookRequests(importOutput);

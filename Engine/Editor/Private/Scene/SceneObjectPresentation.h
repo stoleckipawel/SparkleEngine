@@ -15,7 +15,9 @@ namespace SceneObjectPresentation
 	const char* GetLightTypeLabel(SceneLightKind kind) noexcept;
 	std::string BuildLightLabel(const SceneLightDesc& light, std::size_t lightIndex);
 	UiUtil::EditorIcon BuildSelectionIcon(
-	    const SceneObjectSelection& selection, SceneLightKind lightKind = SceneLightKind::Unknown) noexcept;
+	    const SceneObjectSelection& selection,
+	    SceneLightKind lightKind = SceneLightKind::Unknown) noexcept;
 	UiUtil::EditorIcon BuildSelectionIcon(
-	    const SceneObjectSelection* selection, SceneLightKind lightKind = SceneLightKind::Unknown) noexcept;
-}  // namespace SceneObjectPresentation
+	    const SceneObjectSelection* selection,
+	    SceneLightKind lightKind = SceneLightKind::Unknown) noexcept;
+}

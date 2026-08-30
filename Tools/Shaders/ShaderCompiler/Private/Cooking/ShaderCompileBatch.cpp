@@ -17,9 +17,7 @@
 #include <thread>
 #include <unordered_map>
 
-std::vector<ShaderCompileResult> ShaderCompileBatch::Execute(
-    const ShaderCookSettings& settings,
-    std::span<const ShaderCompileJob> jobs)
+std::vector<ShaderCompileResult> ShaderCompileBatch::Execute(const ShaderCookSettings& settings, std::span<const ShaderCompileJob> jobs)
 {
 	if (jobs.empty())
 	{

@@ -8,12 +8,12 @@
 #include <sstream>
 
 #if defined(_WIN32)
-	#define NOMINMAX
-	#ifndef WIN32_LEAN_AND_MEAN
-		#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <Windows.h>
-	#include <bcrypt.h>
+  #define NOMINMAX
+  #ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+  #endif
+  #include <Windows.h>
+  #include <bcrypt.h>
 #endif
 
 namespace Hash
@@ -105,8 +105,13 @@ namespace Hash
 			return false;
 		}
 
-		const bool hashed = BCryptHashData(hashHandle, reinterpret_cast<unsigned char*>(const_cast<char*>(text.data())), static_cast<unsigned long>(text.size()), 0) == 0 &&
-		    BCryptFinishHash(hashHandle, hash.data(), static_cast<unsigned long>(hash.size()), 0) == 0;
+		const bool hashed = BCryptHashData(
+		                        hashHandle,
+		                        reinterpret_cast<unsigned char*>(const_cast<char*>(text.data())),
+		                        static_cast<unsigned long>(text.size()),
+		                        0)
+		        == 0
+		    && BCryptFinishHash(hashHandle, hash.data(), static_cast<unsigned long>(hash.size()), 0) == 0;
 		BCryptDestroyHash(hashHandle);
 		BCryptCloseAlgorithmProvider(algorithmHandle, 0);
 		if (!hashed)
@@ -125,7 +130,7 @@ namespace Hash
 		outHashHex = stream.str();
 		return true;
 #else
-		(void)text;
+		(void) text;
 		outErrorMessage = "SHA-256 hashing is not implemented for this platform.";
 		return false;
 #endif
@@ -141,4 +146,4 @@ namespace Hash
 		}
 		return hash;
 	}
-}  // namespace Hash
+}

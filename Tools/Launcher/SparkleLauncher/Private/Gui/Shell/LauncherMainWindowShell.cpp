@@ -12,7 +12,6 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include <QtGui/QColor>
-#include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFrame>
@@ -24,17 +23,12 @@
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QStackedWidget>
 #include <QtWidgets/QTextEdit>
-#include <QtWidgets/QToolButton>
 #include <QtWidgets/QVBoxLayout>
 
 namespace SparkleLauncher
 {
 	static constexpr int kSpaceTiny = LauncherUi::Space::Tiny;
-	static constexpr int kWorkflowRailWidth = LauncherUi::Shell::RailWidth;
-	static constexpr int kWorkflowGroupMinHeight = LauncherUi::Shell::RailItemMinHeight;
-	static constexpr int kWorkflowButtonMinHeight = LauncherUi::Shell::TabMinHeight;
 	static constexpr int kLauncherIconSize = LauncherUi::Icon::DefaultSize;
-	static constexpr const char* kColorStateQueued = LauncherUi::Color::StateQueued;
 
 	static void ApplyFooterContextComboMetrics(QComboBox& combo, int minWidth, int maxWidth)
 	{
@@ -63,102 +57,6 @@ namespace SparkleLauncher
 		}
 	}
 
-	QWidget* LauncherMainWindow::CreateWorkflowSurface()
-	{
-		QFrame* surface = new QFrame(this);
-		surface->setObjectName("WorkflowSurface");
-		QHBoxLayout* layout = new QHBoxLayout(surface);
-		layout->setContentsMargins(0, 0, 0, 0);
-		layout->setSpacing(0);
-		layout->addWidget(CreateProcessPicker(surface), 0);
-		layout->addWidget(CreateOptionsPanel(surface), 1);
-		return surface;
-	}
-
-	QWidget* LauncherMainWindow::CreateProcessPicker(QWidget* parent)
-	{
-		QFrame* panel = new QFrame(parent);
-		panel->setObjectName("ProcessPanel");
-		panel->setFixedWidth(kWorkflowRailWidth);
-		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(0, LauncherUi::Shell::RailTopPadding, 0, LauncherUi::Shell::RailBottomPadding);
-		layout->setSpacing(LauncherUi::Space::XSmall);
-
-		QVBoxLayout* groupLayout = new QVBoxLayout();
-		groupLayout->setContentsMargins(0, 0, 0, 0);
-		groupLayout->setSpacing(LauncherUi::Shell::RailGroupSpacing);
-
-		m_workflowGroupButtonGroup = new QButtonGroup(this);
-		m_workflowGroupButtonGroup->setExclusive(true);
-		m_processButtonGroup = new QButtonGroup(this);
-		m_processButtonGroup->setExclusive(true);
-
-		m_operationStack = new QStackedWidget(panel);
-		m_operationStack->setObjectName("OperationStack");
-
-		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
-		for (int workflowIndex = 0; workflowIndex < workflows.size(); ++workflowIndex)
-		{
-			const LauncherWorkflowDefinition& workflow = workflows[workflowIndex];
-			const QString workflowTitle = LauncherWorkflowPageKindName(workflow.PageKind);
-			QToolButton* groupButton = new QToolButton(panel);
-			groupButton->setText(workflowTitle);
-			groupButton->setObjectName("WorkflowGroupButton");
-			groupButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-			groupButton->setMinimumHeight(kWorkflowGroupMinHeight);
-			groupButton->setMaximumHeight(kWorkflowGroupMinHeight);
-			groupButton->setMinimumWidth(kWorkflowRailWidth);
-			groupButton->setMaximumWidth(kWorkflowRailWidth);
-			groupButton->setProperty("WorkflowIndex", workflowIndex);
-			groupButton->setProperty("ActiveState", "false");
-			groupButton->setAccessibleName(workflowTitle + " workflow group");
-			groupButton->setIcon(WorkflowIconForPageKind(workflow.PageKind));
-			groupButton->setIconSize(QSize(LauncherUi::Shell::RailIconSize, LauncherUi::Shell::RailIconSize));
-			RegisterFocusable(groupButton);
-			m_workflowGroupButtonGroup->addButton(groupButton);
-			groupLayout->addWidget(groupButton);
-
-			QWidget* tabPage = new QWidget(m_operationStack);
-			QHBoxLayout* actionLayout = new QHBoxLayout();
-			actionLayout->setContentsMargins(0, 0, 0, 0);
-			actionLayout->setSpacing(LauncherUi::Shell::WorkflowTabSpacing);
-			if (workflow.OperationIds.size() > 1)
-			{
-				for (int index = 0; index < workflow.OperationIds.size(); ++index)
-				{
-					const QString& operationId = workflow.OperationIds[index];
-					QPushButton* button = CreateProcessButton(DisplayNameForOperation(operationId), operationId, tabPage);
-					m_processButtonGroup->addButton(button);
-					actionLayout->addWidget(button);
-				}
-			}
-			actionLayout->addStretch(1);
-			tabPage->setLayout(actionLayout);
-			const int pageIndex = m_operationStack->addWidget(tabPage);
-			for (const QString& operationId : workflow.OperationIds)
-			{
-				m_workflowPageByOperation.insert(operationId, pageIndex);
-			}
-		}
-		groupLayout->addStretch(1);
-		connect(m_workflowGroupButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectWorkflowGroupButton);
-		connect(m_processButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectProcessButton);
-		layout->addLayout(groupLayout, 1);
-		return panel;
-	}
-
-	QPushButton* LauncherMainWindow::CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent)
-	{
-		QPushButton* button = new QPushButton(label, parent);
-		button->setObjectName("WorkflowButton");
-		button->setCheckable(true);
-		button->setMinimumHeight(kWorkflowButtonMinHeight);
-		button->setProperty("OperationId", operationId);
-		button->setAccessibleName(label + " workflow");
-		RegisterFocusable(button);
-		return button;
-	}
-
 	QWidget* LauncherMainWindow::CreateOptionsPanel(QWidget* parent)
 	{
 		QFrame* panel = new QFrame(parent);
@@ -166,12 +64,6 @@ namespace SparkleLauncher
 		QVBoxLayout* layout = new QVBoxLayout(panel);
 		layout->setContentsMargins(0, 0, 0, 0);
 		layout->setSpacing(0);
-
-		if (m_operationStack != nullptr)
-		{
-			m_operationStack->setParent(panel);
-			layout->addWidget(m_operationStack, 0);
-		}
 
 		m_optionsStack = new QStackedWidget(panel);
 		m_optionsStack->setObjectName("OptionsStack");

@@ -11,26 +11,21 @@ struct ImTextureData;
 
 class UiRenderPacketPlayer final
 {
-  public:
+public:
 	UiRenderPacketPlayer();
 	~UiRenderPacketPlayer() noexcept;
 
 	UiRenderPacketPlayer(const UiRenderPacketPlayer&) = delete;
 	UiRenderPacketPlayer& operator=(const UiRenderPacketPlayer&) = delete;
 
-	void Render(
-	    const UiRenderPacket& packet,
-	    const EditorTextureRegistry& textures,
-	    RhiImGuiRenderer& renderer);
+	void Render(const UiRenderPacket& packet, const EditorTextureRegistry& textures, RhiImGuiRenderer& renderer);
 	void Shutdown(RhiImGuiRenderer& renderer) noexcept;
 
-  private:
+private:
 	struct PlaybackStorage;
 
 	void ApplyTextureUpdates(const UiRenderPacket& packet);
-	void ApplyTextureUpload(
-	    const UiRenderPacket& packet,
-	    const UiTextureUpload& upload);
+	void ApplyTextureUpload(const UiRenderPacket& packet, const UiTextureUpload& upload);
 	void QueueTextureRelease(EditorTextureHandle handle) noexcept;
 	ImTextureData* FindTexture(EditorTextureHandle handle) const noexcept;
 	void RetireReleasedTextures() noexcept;

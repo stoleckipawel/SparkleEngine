@@ -84,8 +84,6 @@ const char* GetTextureGroupName(TextureGroup textureGroup) noexcept;
 const char* GetTextureDimensionName(TextureDimension dimension) noexcept;
 const char* GetTextureChannelMaskName(TextureChannelMask channelMask) noexcept;
 
-void WriteTextureCookRequestList(
-    const std::filesystem::path& outputPath,
-    const std::vector<TextureCookRequest>& requests);
+void WriteTextureCookRequestList(const std::filesystem::path& outputPath, const std::vector<TextureCookRequest>& requests);
 
 std::vector<TextureCookRequest> LoadTextureCookRequestList(const std::filesystem::path& inputPath);

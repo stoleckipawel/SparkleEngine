@@ -22,4 +22,4 @@ namespace MathUtils
 	SPARKLE_CORE_API DirectX::XMFLOAT3 DirectionToRotationDegrees(const DirectX::XMFLOAT3& direction) noexcept;
 	SPARKLE_CORE_API DirectX::XMFLOAT3 RotationDegreesToDirection(const DirectX::XMFLOAT3& rotationDegrees) noexcept;
 	SPARKLE_CORE_API DirectX::XMFLOAT3 ExtractEulerRadians(const DirectX::XMFLOAT4X4& rotationMatrix) noexcept;
-}  // namespace MathUtils
+}

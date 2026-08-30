@@ -12,7 +12,7 @@ namespace Assets
 {
 	class SceneAssetLightTranslation final
 	{
-	  public:
+	public:
 		static SceneLightPayload BuildPayload(const CookedSceneLightRecord& lightRecord)
 		{
 			switch (lightRecord.kind)
@@ -80,4 +80,4 @@ namespace Assets
 		light.payload = SceneAssetLightTranslation::BuildPayload(lightRecord);
 		return light;
 	}
-}  // namespace Assets
+}

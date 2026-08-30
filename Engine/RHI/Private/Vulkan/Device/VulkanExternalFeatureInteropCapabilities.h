@@ -7,4 +7,3 @@ class VulkanRhi;
 RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilities(
     const VulkanRhi* rhi,
     bool hasGraphicsCommandContext) noexcept;
-

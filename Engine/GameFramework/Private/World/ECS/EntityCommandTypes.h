@@ -32,7 +32,7 @@ namespace ECS
 
 	class TemporaryEntityId final
 	{
-	  public:
+	public:
 		static constexpr std::uint32_t InvalidLocalIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 		constexpr TemporaryEntityId() noexcept = default;
@@ -41,11 +41,12 @@ namespace ECS
 		constexpr std::uint32_t GetLocalIndex() const noexcept { return m_localIndex; }
 		constexpr auto operator<=>(const TemporaryEntityId&) const noexcept = default;
 
-	  private:
+	private:
 		friend class EntityCommandBuffer;
 
 		constexpr TemporaryEntityId(EntityCommandBufferId bufferId, std::uint32_t localIndex) noexcept :
-		    m_bufferId(bufferId), m_localIndex(localIndex)
+		    m_bufferId(bufferId),
+		    m_localIndex(localIndex)
 		{
 		}
 

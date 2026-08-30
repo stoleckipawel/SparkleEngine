@@ -13,9 +13,7 @@ bool CatalogedLevelSceneReader::AppendSceneIds(
 	std::ifstream input(levelPath);
 	if (!input.is_open())
 	{
-		outErrorMessage =
-		    "Cataloged level file was not found: " +
-		    levelPath.string();
+		outErrorMessage = "Cataloged level file was not found: " + levelPath.string();
 		return false;
 	}
 
@@ -41,14 +39,12 @@ bool CatalogedLevelSceneReader::AppendSceneIds(
 
 		std::string_view key;
 		std::string_view value;
-		if (!Strings::TrySplitKeyValue(line, '=', key, value) ||
-		    key != "Asset")
+		if (!Strings::TrySplitKeyValue(line, '=', key, value) || key != "Asset")
 		{
 			continue;
 		}
 
-		std::string sceneId =
-		    ResolveSourceSceneId(Strings::UnquoteCopy(value));
+		std::string sceneId = ResolveSourceSceneId(Strings::UnquoteCopy(value));
 		if (!sceneId.empty())
 		{
 			outSceneIds.push_back(std::move(sceneId));
@@ -59,8 +55,7 @@ bool CatalogedLevelSceneReader::AppendSceneIds(
 	return true;
 }
 
-std::string CatalogedLevelSceneReader::ResolveSourceSceneId(
-    std::string assetBinding)
+std::string CatalogedLevelSceneReader::ResolveSourceSceneId(std::string assetBinding)
 {
 	const std::size_t sourceSeparator = assetBinding.rfind('|');
 	if (sourceSeparator != std::string::npos)

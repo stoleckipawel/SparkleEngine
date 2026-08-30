@@ -48,10 +48,7 @@ struct RhiSubmissionToken final
 	ERhiQueueType Queue = ERhiQueueType::Graphics;
 	std::uint64_t Value = 0;
 
-	constexpr bool IsValid() const noexcept
-	{
-		return IsRhiQueueTypeValid(Queue) && Value != 0;
-	}
+	constexpr bool IsValid() const noexcept { return IsRhiQueueTypeValid(Queue) && Value != 0; }
 
 	constexpr explicit operator bool() const noexcept { return IsValid(); }
 
@@ -75,9 +72,8 @@ struct RhiSubmissionState final
 
 	constexpr RhiSubmissionToken GetToken(ERhiQueueType queue) const noexcept
 	{
-		return IsRhiQueueTypeValid(queue)
-		           ? RhiSubmissionToken{.Queue = queue, .Value = Values[RhiQueueTypeToIndex(queue)]}
-		           : RhiSubmissionToken{};
+		return IsRhiQueueTypeValid(queue) ? RhiSubmissionToken{.Queue = queue, .Value = Values[RhiQueueTypeToIndex(queue)]}
+		                                  : RhiSubmissionToken{};
 	}
 
 	constexpr std::size_t CopyTokens(std::span<RhiSubmissionToken> destination) const noexcept
@@ -88,9 +84,7 @@ struct RhiSubmissionState final
 			const std::uint64_t value = Values[queueIndex];
 			if (value != 0)
 			{
-				destination[count++] = RhiSubmissionToken{
-				    .Queue = static_cast<ERhiQueueType>(queueIndex),
-				    .Value = value};
+				destination[count++] = RhiSubmissionToken{.Queue = static_cast<ERhiQueueType>(queueIndex), .Value = value};
 			}
 		}
 		return count;

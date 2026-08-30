@@ -9,7 +9,7 @@
 
 class PassExecutionDiagnostics final
 {
-  public:
+public:
 	PassExecutionDiagnostics(
 	    FrameExecutionDiagnostics& frameDiagnostics,
 	    RenderCommandContext& commands,
@@ -19,7 +19,7 @@ class PassExecutionDiagnostics final
 	ScopedGpuScope BeginPassGpuScope() noexcept;
 	ScopedGpuScope BeginGpuScope(std::string_view label) noexcept;
 
-  private:
+private:
 	static RhiDiagnosticLabelColor GetPassEventColor(EFrameGraphPassKind passKind) noexcept;
 	std::string FormatEventScopeLabel(std::string_view label) const;
 

@@ -12,7 +12,7 @@ class TaskExecutionContext;
 
 class SPARKLE_TASKS_API TaskName final
 {
-  public:
+public:
 	static constexpr std::size_t MaximumLength = 96;
 
 	TaskName();
@@ -23,7 +23,7 @@ class SPARKLE_TASKS_API TaskName final
 
 	bool operator==(const TaskName&) const noexcept;
 
-  private:
+private:
 	std::string m_value;
 };
 
@@ -49,7 +49,7 @@ enum class TaskOutcome : std::uint8_t
 
 class SPARKLE_TASKS_API TaskResult final
 {
-  public:
+public:
 	static constexpr std::size_t MaximumMessageLength = 512;
 	TaskResult() noexcept;
 
@@ -65,7 +65,7 @@ class SPARKLE_TASKS_API TaskResult final
 
 	bool operator==(const TaskResult&) const noexcept;
 
-  private:
+private:
 	TaskResult(TaskOutcome outcome, std::string_view message);
 
 	TaskOutcome m_outcome = TaskOutcome::Succeeded;

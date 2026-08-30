@@ -21,11 +21,11 @@ namespace Pixel
 		// Out-of-range exponent maps to Inf/0
 		if (exponent > 15)
 		{
-			return static_cast<std::uint16_t>((sign << 15) | 0x7C00);  // Inf
+			return static_cast<std::uint16_t>((sign << 15) | 0x7C00); // Inf
 		}
 		if (exponent < -24)
 		{
-			return static_cast<std::uint16_t>(sign << 15);  // 0
+			return static_cast<std::uint16_t>(sign << 15); // 0
 		}
 
 		// Subnormal handling

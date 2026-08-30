@@ -5,7 +5,7 @@
 
 class ICommand
 {
-  public:
+public:
 	virtual ~ICommand() = default;
 	virtual int Run(std::span<const std::string_view> args) const = 0;
 };

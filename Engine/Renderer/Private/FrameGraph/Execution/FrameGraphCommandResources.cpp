@@ -89,14 +89,20 @@ RhiResourceHandle FrameGraph::ResolveAccelerationStructure(FrameGraphAcceleratio
 	return ResolveResource(handle.GetResourceHandle());
 }
 
-void FrameGraph::CopyTexture(RenderCommandContext& commandContext, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept
+void FrameGraph::CopyTexture(
+    RenderCommandContext& commandContext,
+    FrameGraphTextureHandle destinationHandle,
+    FrameGraphTextureHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());
 	CopyResource(commandContext, destinationHandle.GetResourceHandle(), sourceHandle.GetResourceHandle());
 }
 
-void FrameGraph::CopyBuffer(RenderCommandContext& commandContext, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept
+void FrameGraph::CopyBuffer(
+    RenderCommandContext& commandContext,
+    FrameGraphBufferHandle destinationHandle,
+    FrameGraphBufferHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());
@@ -123,15 +129,18 @@ RhiResourceHandle FrameGraph::ResolveResource(FrameGraphTextureHandle handle) co
 }
 
 NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(
-	FrameGraphTextureHandle handle,
-	ResourceState state,
-	const RhiNativeInteropRequest& request) const noexcept
+    FrameGraphTextureHandle handle,
+    ResourceState state,
+    const RhiNativeInteropRequest& request) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveNativeTextureView(handle.GetResourceHandle(), state, request);
 }
 
-void FrameGraph::CopyResource(RenderCommandContext& commandContext, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept
+void FrameGraph::CopyResource(
+    RenderCommandContext& commandContext,
+    FrameGraphResourceHandle destinationHandle,
+    FrameGraphResourceHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());
@@ -140,8 +149,9 @@ void FrameGraph::CopyResource(RenderCommandContext& commandContext, FrameGraphRe
 	const FrameGraphResourceMetadata& sourceMetadata = m_resourceRegistry.GetMetadata(sourceHandle);
 	assert(destinationMetadata.resourceClass == sourceMetadata.resourceClass);
 	assert(
-	    destinationMetadata.kind == sourceMetadata.kind || (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture &&
-	                                                        sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
+	    destinationMetadata.kind == sourceMetadata.kind
+	    || (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture
+	        && sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
 
 	const RhiResourceHandle destinationResource = ResolveResource(destinationHandle);
 	const RhiResourceHandle sourceResource = ResolveResource(sourceHandle);

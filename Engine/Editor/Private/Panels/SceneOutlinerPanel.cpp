@@ -16,8 +16,12 @@
 #include <imgui.h>
 
 SceneOutlinerPanel::SceneOutlinerPanel(
-    SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels) noexcept :
-    m_transactionHistory(&transactionHistory), m_selection(&selection), m_widthPixels(widthPixels)
+    SceneObjectSelection& selection,
+    EditorTransactionHistory& transactionHistory,
+    float widthPixels) noexcept :
+    m_transactionHistory(&transactionHistory),
+    m_selection(&selection),
+    m_widthPixels(widthPixels)
 {
 }
 
@@ -100,9 +104,8 @@ void SceneOutlinerPanel::EnsureValidSelection() noexcept
 
 	if (!IsSelectionValid())
 	{
-		*m_selection = m_model && !m_model->GetCameras().empty()
-		                   ? SceneObjectSelection::Camera(m_model->GetCameras().front().Entity)
-		                   : SceneObjectSelection::None();
+		*m_selection = m_model && !m_model->GetCameras().empty() ? SceneObjectSelection::Camera(m_model->GetCameras().front().Entity)
+		                                                         : SceneObjectSelection::None();
 	}
 }
 
@@ -211,10 +214,12 @@ std::size_t SceneOutlinerPanel::CountVisibleEntries() const noexcept
 		return visibleCount;
 	};
 
-	if (!m_model) return 0;
+	if (!m_model)
+		return 0;
 	count += countVisible(m_model->GetCameraEntries());
 	const EditorSceneEntry& sky = m_model->GetSkyEntry();
-	if (PassesActiveFilter(sky.Selection) && MatchesSearch(sky.Label.c_str(), sky.TypeLabel.c_str())) ++count;
+	if (PassesActiveFilter(sky.Selection) && MatchesSearch(sky.Label.c_str(), sky.TypeLabel.c_str()))
+		++count;
 	count += countVisible(m_model->GetLightEntries());
 	count += countVisible(m_model->GetMeshEntries());
 
@@ -229,11 +234,15 @@ bool SceneOutlinerPanel::IsEntryVisible(const SceneObjectSelection& selection) c
 
 void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selection) noexcept
 {
-	if (!m_model || !m_transactionHistory) return;
+	if (!m_model || !m_transactionHistory)
+		return;
 	auto commands = SceneObjectCommandFactory::SetVisibility(*m_model, selection, !IsEntryVisible(selection));
-	if (!commands) return;
+	if (!commands)
+		return;
 	(void) m_transactionHistory->Execute(
-	    std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration(),
+	    std::move(commands->Forward),
+	    std::move(commands->Inverse),
+	    m_model->GetWorldGeneration(),
 	    std::move(commands->CoalescingKey));
 }
 
@@ -249,8 +258,7 @@ void SceneOutlinerPanel::SelectEntry(const SceneObjectSelection& selection) noex
 	{
 		auto commands = SceneObjectCommandFactory::SetActiveCamera(*m_model, selection.entity);
 		if (commands)
-			(void) m_transactionHistory->Execute(
-			    std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration());
+			(void) m_transactionHistory->Execute(std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration());
 	}
 }
 
@@ -293,7 +301,10 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	ImGui::TableSetColumnIndex(1);
 	ImGui::Indent(16.0f);
 	const EditorSceneEntry* entry = m_model ? m_model->FindEntry(selection) : nullptr;
-	UiUtil::DrawEditorIcon(SceneObjectPresentation::BuildSelectionIcon(selection, entry ? entry->LightKind : SceneLightKind::Unknown), typeLabel, !isSelected);
+	UiUtil::DrawEditorIcon(
+	    SceneObjectPresentation::BuildSelectionIcon(selection, entry ? entry->LightKind : SceneLightKind::Unknown),
+	    typeLabel,
+	    !isSelected);
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 	{
 		SelectEntry(selection);
@@ -385,8 +396,8 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 	if (ImGui::BeginTable(
 	        "##OutlinerTable",
 	        3,
-	        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY |
-	            ImGuiTableFlags_NoPadOuterX,
+	        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY
+	            | ImGuiTableFlags_NoPadOuterX,
 	        ImVec2(0.0f, -28.0f)))
 	{
 		ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20.0f);
