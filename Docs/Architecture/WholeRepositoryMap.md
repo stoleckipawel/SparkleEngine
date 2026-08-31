@@ -1,7 +1,7 @@
 # D. Whole Repository Architecture Map
 
 Status: current source-backed reviewer map; descriptive, not a normative architecture or strategy contract
-Last verified: repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-30 against the current worktree based on committed `master` revision `a033c251`
+Last verified: repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-31 at committed `master` revision `61fe39d9`
 Scope: implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
 
 ## Intent And Authority

@@ -303,7 +303,7 @@ The 2026-08-30 migration pass completed the following repository-owned pieces:
 
 1. `CMake/CodeStyle.ps1` now provides pinned check and format entry points over a tracked owned-source manifest, with matching `code_style_check` and `code_style_format` CMake targets.
 2. The check covers namespace-end comments, anonymous namespaces, multiple inheritance, and inline HLSL attributes in addition to clang-format drift.
-3. A no-write inventory was reviewed by module and source family. The current worktree manifest contains 1,917 present tracked C/C++ files and 120 present tracked shader files after excluding D3D12 third-party source and tracked files already deleted by the in-progress Launcher change.
+3. A no-write inventory was reviewed by module and source family. At committed revision `61fe39d9`, the manifest contains 1,919 tracked C/C++ files and 120 tracked shader files after excluding D3D12 third-party source.
 4. The C/C++ subset was migrated with clang-format 22.1.3, existing namespace-end comments were removed, and the check-only C/C++ pass is clean. Existing Launcher implementation edits were preserved rather than replaced or reverted.
 5. Post-format `DevelopmentEditor` builds passed for Core, Tasks, Platform, GameFramework, SourceImporters, Launcher, AssetCooker, MaterialCooker, MeshCooker, SceneCooker, and ToolConsoleSupport. The architecture-boundary check also passed.
 
@@ -314,4 +314,4 @@ The shader and final enforcement steps remain open:
 3. Rebuild the remaining RHI-dependent owned targets, repeat the shader validation, and run applicable tests after the current RHI compilation defects are resolved. Generated test projects do not substitute for tests present and registered in source.
 4. Enable CI check-only enforcement only after both source families have a clean accepted baseline. Until then, `-SourceFamily Cpp` is the passing migration check; the normal `All` check must continue to expose shader drift.
 
-The repository-wide format remains a mechanical migration, not authorization for semantic cleanup. This pass was applied in an already dirty worktree only after explicit continuation approval; no commit or staging boundary was created by the tooling.
+The repository-wide format remains a mechanical migration, not authorization for semantic cleanup. It was applied in an already dirty worktree only after explicit continuation approval. Committed revision `61fe39d9` contains both the pre-existing Launcher ownership change and the migration; the style tooling did not create that commit or a staging boundary.
