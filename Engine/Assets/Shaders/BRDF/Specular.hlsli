@@ -54,5 +54,5 @@ namespace BRDF
 			return prefilteredEnv * (F * brdf.x + brdf.y);
 		}
 
-	}  // namespace Specular
-}  // namespace BRDF
+	}
+}

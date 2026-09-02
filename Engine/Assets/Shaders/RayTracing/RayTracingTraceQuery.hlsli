@@ -2,14 +2,13 @@
 
 #include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
 
-RayTracingTraceResult TraceRayQueryWithAlphaTest(
-    RaytracingAccelerationStructure sceneTlas,
-    float3 originWorld,
-    float3 directionWorld,
-    float tMin,
-    float tMax,
-    uint rayFlags,
-    uint instanceMask)
+RayTracingTraceResult TraceRayQueryWithAlphaTest(RaytracingAccelerationStructure sceneTlas,
+                                                 float3 originWorld,
+                                                 float3 directionWorld,
+                                                 float tMin,
+                                                 float tMax,
+                                                 uint rayFlags,
+                                                 uint instanceMask)
 {
 	RayDesc ray;
 	ray.Direction = normalize(directionWorld);
@@ -29,12 +28,11 @@ RayTracingTraceResult TraceRayQueryWithAlphaTest(
 		if (query.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE)
 		{
 			alphaCandidateSeen = true;
-			const bool commitCandidate = ResolveRayTracingCandidateAlpha(
-			    query.CandidateInstanceID(),
-			    query.CandidatePrimitiveIndex(),
-			    query.CandidateTriangleBarycentrics(),
-			    alphaCandidateValue,
-			    alphaCandidateCutoff);
+			const bool commitCandidate = ResolveRayTracingCandidateAlpha(query.CandidateInstanceID(),
+			                                                             query.CandidatePrimitiveIndex(),
+			                                                             query.CandidateTriangleBarycentrics(),
+			                                                             alphaCandidateValue,
+			                                                             alphaCandidateCutoff);
 			if (commitCandidate)
 			{
 				alphaCandidateAccepted = true;

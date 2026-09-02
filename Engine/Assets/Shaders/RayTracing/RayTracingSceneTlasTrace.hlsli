@@ -7,13 +7,12 @@ RaytracingAccelerationStructure SceneTlas;
 
 namespace RayTracingSceneTlas
 {
-	RayTracingTraceResult TraceRayQueryWithAlphaTest(
-	    float3 originWorld,
-	    float3 directionWorld,
-	    float tMin,
-	    float tMax,
-	    uint rayFlags,
-	    uint instanceMask)
+	RayTracingTraceResult TraceRayQueryWithAlphaTest(float3 originWorld,
+	                                                 float3 directionWorld,
+	                                                 float tMin,
+	                                                 float tMax,
+	                                                 uint rayFlags,
+	                                                 uint instanceMask)
 	{
 		return ::TraceRayQueryWithAlphaTest(SceneTlas, originWorld, directionWorld, tMin, tMax, rayFlags, instanceMask);
 	}

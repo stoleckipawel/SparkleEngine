@@ -46,6 +46,7 @@ class DirectShadowSignalRGS final : public GlobalShader<DirectShadowSignalRGS>
 {
 public:
 	using Parameters = DirectShadowSignalCS::Parameters;
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 	static constexpr RayTracingShaderMetadata kRayTracingMetadata{
 	    .PayloadSizeInBytes = 8u,
 	    .AttributeSizeInBytes = sizeof(float) * 2u,
@@ -54,12 +55,18 @@ public:
 
 class DirectShadowSignalMiss final : public GlobalShader<DirectShadowSignalMiss>
 {
+public:
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 };
 
 class DirectShadowSignalClosestHit final : public GlobalShader<DirectShadowSignalClosestHit>
 {
+public:
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 };
 
 class DirectShadowSignalAnyHit final : public GlobalShader<DirectShadowSignalAnyHit>
 {
+public:
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 };

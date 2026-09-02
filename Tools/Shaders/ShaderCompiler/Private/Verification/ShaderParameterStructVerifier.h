@@ -21,5 +21,6 @@ public:
 
 	static ShaderParameterStructVerificationResult Verify(
 	    const ShaderParameterStructDescriptor& descriptor,
-	    const ShaderReflection& reflection);
+	    const ShaderReflection& reflection,
+	    bool allowUnreflectedDeclarations = false);
 };

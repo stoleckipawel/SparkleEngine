@@ -34,10 +34,7 @@ namespace CommonSampling
 		float3 tangent;
 		float3 bitangent;
 		BuildOrthonormalBasis(normalizedAxis, tangent, bitangent);
-		return SafeNormalize(
-		    tangent * (cos(phi) * sinTheta) +
-		    bitangent * (sin(phi) * sinTheta) +
-		    normalizedAxis * cosTheta);
+		return SafeNormalize(tangent * (cos(phi) * sinTheta) + bitangent * (sin(phi) * sinTheta) + normalizedAxis * cosTheta);
 	}
 
 	float3 SampleSpherePoint(float3 center, float radius, float3 referenceDirection, float2 sample)
@@ -54,10 +51,7 @@ namespace CommonSampling
 		float3 bitangent;
 		const float3 axis = length(referenceDirection) > EPSILON ? SafeNormalize(referenceDirection) : float3(0.0f, 1.0f, 0.0f);
 		BuildOrthonormalBasis(axis, tangent, bitangent);
-		const float3 offset =
-		    tangent * (radial * cos(phi)) +
-		    bitangent * (radial * sin(phi)) +
-		    axis * z;
+		const float3 offset = tangent * (radial * cos(phi)) + bitangent * (radial * sin(phi)) + axis * z;
 		return center + offset * radius;
 	}
 
@@ -94,11 +88,9 @@ namespace CommonSampling
 		BuildOrthonormalBasis(normal, tangent, bitangent);
 
 		CosineHemisphereSample result;
-		result.DirectionWorld = SafeNormalize(
-		    tangent * (cos(phi) * sinTheta) +
-		    bitangent * (sin(phi) * sinTheta) +
-		    SafeNormalize(normal) * cosTheta,
-		    SafeNormalize(normal));
+		result.DirectionWorld =
+		    SafeNormalize(tangent * (cos(phi) * sinTheta) + bitangent * (sin(phi) * sinTheta) + SafeNormalize(normal) * cosTheta,
+		                  SafeNormalize(normal));
 		result.Cosine = saturate(dot(SafeNormalize(normal), result.DirectionWorld));
 		result.Pdf = max(result.Cosine * INV_PI, 1.0e-4f);
 		return result;

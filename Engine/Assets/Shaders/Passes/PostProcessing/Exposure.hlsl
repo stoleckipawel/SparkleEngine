@@ -21,7 +21,8 @@ cbuffer ExposureConstants
 	uint ExposurePadding1;
 };
 
-[numthreads(1, 1, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(1, 1, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	const float averageLuminance = Exposure::ResolveAverageLuminance(LuminanceMoments.Load(int3(0, 0, 0)).xy);
 

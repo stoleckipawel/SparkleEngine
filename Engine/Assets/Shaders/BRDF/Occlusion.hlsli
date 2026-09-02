@@ -38,7 +38,6 @@ namespace BRDF
 			return saturate(pow(NoV + ao, roughness * roughness) - 1.0f + ao);
 		}
 
-
 		float SpecularOcclusion(float NoV, float ao, float roughness)
 		{
 #if BRDF_SO_MODEL == BRDF_SO_NONE
@@ -51,5 +50,5 @@ namespace BRDF
 			return SpecularOcclusion_GTAO(NoV, ao, roughness);
 #endif
 		}
-	}  // namespace Occlusion
-}  // namespace BRDF
+	}
+}

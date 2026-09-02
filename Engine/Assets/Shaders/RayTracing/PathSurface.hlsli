@@ -15,14 +15,13 @@ struct RayTracingPathSurface
 	float DielectricF0;
 };
 
-RayTracingPathSurface BuildPrimaryRayTracingPathSurface(
-    float3 positionWorld,
-    float3 normalWorld,
-    float3 viewDirWorld,
-    float3 baseColor,
-    float roughness,
-    float metallic,
-    float dielectricF0)
+RayTracingPathSurface BuildPrimaryRayTracingPathSurface(float3 positionWorld,
+                                                        float3 normalWorld,
+                                                        float3 viewDirWorld,
+                                                        float3 baseColor,
+                                                        float roughness,
+                                                        float metallic,
+                                                        float dielectricF0)
 {
 	RayTracingPathSurface surface;
 	surface.Valid = true;
@@ -36,9 +35,7 @@ RayTracingPathSurface BuildPrimaryRayTracingPathSurface(
 	return surface;
 }
 
-RayTracingPathSurface BuildHitRayTracingPathSurface(
-    RayTracingHitSurfaceData hitSurface,
-    float3 incomingRayDirectionWorld)
+RayTracingPathSurface BuildHitRayTracingPathSurface(RayTracingHitSurfaceData hitSurface, float3 incomingRayDirectionWorld)
 {
 	RayTracingPathSurface surface;
 	surface.Valid = hitSurface.Valid;

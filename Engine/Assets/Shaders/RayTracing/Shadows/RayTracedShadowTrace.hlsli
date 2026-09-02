@@ -1,8 +1,8 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 
-#include "/Engine/RayTracing/RayTracingSceneTlasTrace.hlsli"
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSemantics.hlsli"
+#include "/Engine/RayTracing/RayTracingSceneTlasTrace.hlsli"
 
 namespace RayTracedShadows
 {

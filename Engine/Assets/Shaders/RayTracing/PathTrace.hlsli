@@ -36,20 +36,18 @@ namespace RayTracingPathTrace
 
 	RayTracingTraceResult TraceSceneRay(float3 originWorld, float3 directionWorld, TraceSettings settings)
 	{
-		return RayTracingSceneTlas::TraceRayQueryWithAlphaTest(
-		    originWorld,
-		    directionWorld,
-		    settings.MinT,
-		    max(settings.MaxDistance, settings.MinT),
-		    settings.RayFlags,
-		    settings.InstanceMask);
+		return RayTracingSceneTlas::TraceRayQueryWithAlphaTest(originWorld,
+		                                                       directionWorld,
+		                                                       settings.MinT,
+		                                                       max(settings.MaxDistance, settings.MinT),
+		                                                       settings.RayFlags,
+		                                                       settings.InstanceMask);
 	}
 
-	RayTracingTraceResult TraceSurfaceRay(
-	    RayTracingPathSurface surface,
-	    float3 directionWorld,
-	    TraceSettings settings,
-	    out float3 rayOriginWorld)
+	RayTracingTraceResult TraceSurfaceRay(RayTracingPathSurface surface,
+	                                      float3 directionWorld,
+	                                      TraceSettings settings,
+	                                      out float3 rayOriginWorld)
 	{
 		rayOriginWorld = ComputeRayOrigin(surface, directionWorld, settings);
 		return TraceSceneRay(rayOriginWorld, directionWorld, settings);

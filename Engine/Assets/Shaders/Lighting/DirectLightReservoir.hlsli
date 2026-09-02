@@ -269,7 +269,8 @@ namespace DirectLightReservoir
 
 		Reservoir reservoir = EmptyReservoir();
 		uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0xC0FFEEu);
-		[unroll] for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
+		[unroll]
+		for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
 		{
 			const DirectLightSampling::LightCandidate candidate =
 			    DirectLightSampling::SampleUniformLightCandidate(CommonRandom::Random01(rng));

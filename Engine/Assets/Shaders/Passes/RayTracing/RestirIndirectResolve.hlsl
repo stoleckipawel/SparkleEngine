@@ -9,7 +9,8 @@ SamplerState SamplerLinearClamp;
 #include "/Engine/Lighting/IndirectLightingOutputs.hlsli"
 #include "/Engine/Lighting/RayReconstructionGuides.hlsli"
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0u;
 	uint height = 0u;

@@ -5,6 +5,7 @@
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/Descriptors/VulkanRecordingDescriptorPool.h"
 #include "Vulkan/Device/VulkanRhi.h"
+#include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
 #include "Vulkan/Resources/VulkanRecordingUploadPage.h"
 #include "Core/Public/Diagnostics/Verify.h"

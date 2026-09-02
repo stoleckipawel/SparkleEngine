@@ -10,7 +10,8 @@ struct DirectShadowSignalPayload
 	uint Occluded;
 };
 
-[shader("raygeneration")] void DirectShadowSignalRayGeneration()
+[shader("raygeneration")]
+void DirectShadowSignalRayGeneration()
 {
 	const uint2 pixelCoord = DispatchRaysIndex().xy;
 	RayTracedShadowRequest request = (RayTracedShadowRequest)0;
@@ -26,15 +27,14 @@ struct DirectShadowSignalPayload
 		ray.Direction = normalize(request.DirectionWorld);
 		ray.TMin = RayTracedShadows::MinimumShadowTMin;
 		ray.TMax = request.MaxDistance;
-		TraceRay(
-		    SceneTlas,
-		    RayTracedShadows::ShadowRayFlags,
-		    RayTracedShadows::ShadowInstanceMask,
-		    RayTracingShaderTableLayout::ShadowVisibilityRayContribution,
-		    RayTracingShaderTableLayout::GeometryMultiplier,
-		    0u,
-		    ray,
-		    payload);
+		TraceRay(SceneTlas,
+		         RayTracedShadows::ShadowRayFlags,
+		         RayTracedShadows::ShadowInstanceMask,
+		         RayTracingShaderTableLayout::ShadowVisibilityRayContribution,
+		         RayTracingShaderTableLayout::GeometryMultiplier,
+		         0u,
+		         ray,
+		         payload);
 		signal = RayTracedShadows::ResolveTrace(payload.Occluded != 0u, payload.HitDistance, request.MaxDistance);
 	}
 	if (validPixel)
@@ -43,13 +43,14 @@ struct DirectShadowSignalPayload
 	}
 }
 
-[shader("miss")] void DirectShadowSignalMiss(inout DirectShadowSignalPayload payload)
+[shader("miss")]
+void DirectShadowSignalMiss(inout DirectShadowSignalPayload payload)
 {
 	payload.Occluded = 0u;
 }
 
-[shader("closesthit")] void DirectShadowSignalClosestHit(
-	inout DirectShadowSignalPayload payload,
+[shader("closesthit")]
+void DirectShadowSignalClosestHit(inout DirectShadowSignalPayload payload,
 	BuiltInTriangleIntersectionAttributes attributes)
 {
 	(void)attributes;
@@ -57,8 +58,8 @@ struct DirectShadowSignalPayload
 	payload.Occluded = 1u;
 }
 
-[shader("anyhit")] void DirectShadowSignalAnyHit(
-	inout DirectShadowSignalPayload payload,
+[shader("anyhit")]
+void DirectShadowSignalAnyHit(inout DirectShadowSignalPayload payload,
 	BuiltInTriangleIntersectionAttributes attributes)
 {
 	(void)payload;

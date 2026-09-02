@@ -11,7 +11,8 @@ namespace ExposureReduce
 		ExposureReduceSharedMoments[linearThreadIndex] = moments;
 		GroupMemoryBarrierWithGroupSync();
 
-		[unroll] for (uint stride = 128u; stride > 0u; stride >>= 1u)
+		[unroll]
+		for (uint stride = 128u; stride > 0u; stride >>= 1u)
 		{
 			if (linearThreadIndex < stride)
 			{

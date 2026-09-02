@@ -26,16 +26,13 @@ namespace BRDF
 			CommonSampling::BuildOrthonormalBasis(normalWorld, tangentWorld, bitangentWorld);
 
 			const float alpha = roughness * roughness;
-			const float3 localView = float3(
-			    dot(viewDirWorld, tangentWorld),
-			    dot(viewDirWorld, bitangentWorld),
-			    max(dot(viewDirWorld, normalWorld), 1.0e-5f));
+			const float3 localView =
+			    float3(dot(viewDirWorld, tangentWorld), dot(viewDirWorld, bitangentWorld), max(dot(viewDirWorld, normalWorld), 1.0e-5f));
 			const float3 stretchedView = normalize(float3(alpha * localView.xy, localView.z));
 
 			const float lensq = dot(stretchedView.xy, stretchedView.xy);
-			const float3 basis1 = lensq > 1.0e-8f
-			                          ? float3(-stretchedView.y, stretchedView.x, 0.0f) * rsqrt(lensq)
-			                          : float3(1.0f, 0.0f, 0.0f);
+			const float3 basis1 =
+			    lensq > 1.0e-8f ? float3(-stretchedView.y, stretchedView.x, 0.0f) * rsqrt(lensq) : float3(1.0f, 0.0f, 0.0f);
 			const float3 basis2 = cross(stretchedView, basis1);
 			const float radius = sqrt(saturate(sample.x));
 			const float phi = TWO_PI * sample.y;
@@ -46,17 +43,11 @@ namespace BRDF
 			const float projectedZ = sqrt(saturate(1.0f - diskX * diskX - diskY * diskY));
 			const float3 visibleNormal = diskX * basis1 + diskY * basis2 + projectedZ * stretchedView;
 			const float3 localHalfVector = normalize(float3(alpha * visibleNormal.xy, max(visibleNormal.z, 0.0f)));
-			return SafeNormalize(
-			    tangentWorld * localHalfVector.x + bitangentWorld * localHalfVector.y + normalWorld * localHalfVector.z,
-			    normalWorld);
+			return SafeNormalize(tangentWorld * localHalfVector.x + bitangentWorld * localHalfVector.y + normalWorld * localHalfVector.z,
+			                     normalWorld);
 		}
 
-		LobeSample SampleReflectionLobe(
-		    float3 normalWorld,
-		    float3 viewDirWorld,
-		    float roughness,
-		    uint sampleMode,
-		    float2 randomSample)
+		LobeSample SampleReflectionLobe(float3 normalWorld, float3 viewDirWorld, float roughness, uint sampleMode, float2 randomSample)
 		{
 			const float3 mirrorDirection = SafeNormalize(reflect(-viewDirWorld, normalWorld), normalWorld);
 			if (sampleMode == 0u || roughness <= 0.0f)

@@ -65,4 +65,4 @@ namespace MotionVectors
 		const float4 previousClipPosition = mul(previousDirectionView, PreviousViewToClipMatrix);
 		return Compute(currentClipPosition, previousClipPosition, viewportSize);
 	}
-} // namespace MotionVectors
+}

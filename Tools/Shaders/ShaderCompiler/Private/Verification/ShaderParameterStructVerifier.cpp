@@ -134,7 +134,8 @@ std::string ShaderParameterStructVerificationResult::BuildJsonReport() const
 
 ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
     const ShaderParameterStructDescriptor& descriptor,
-    const ShaderReflection& reflection)
+    const ShaderReflection& reflection,
+    bool allowUnreflectedDeclarations)
 {
 	ShaderParameterStructVerificationResult result;
 
@@ -148,6 +149,17 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		const ShaderReflectionResourceBinding* binding = FindReflectionBinding(reflection, field);
 		if (binding == nullptr)
 		{
+			if (allowUnreflectedDeclarations)
+			{
+				result.diagnostics.push_back(
+				    std::format(
+				        "SC2006 declared binding is not referenced by this library export: name='{}' declaredKind='{}' "
+				        "declaredDimension='{}'",
+				        field.Name,
+				        GetResourceKindName(field.Kind),
+				        GetResourceDimensionName(field.Dimension)));
+				continue;
+			}
 			result.mismatches.push_back(
 			    std::format(
 			        "SC2001 missing reflected binding: name='{}' declaredKind='{}' declaredDimension='{}'",

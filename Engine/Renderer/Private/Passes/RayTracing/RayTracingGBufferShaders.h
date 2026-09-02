@@ -59,12 +59,18 @@ public:
 
 class RayTracingGBufferMiss final : public GlobalShader<RayTracingGBufferMiss>
 {
+public:
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 };
 
 class RayTracingGBufferClosestHit final : public GlobalShader<RayTracingGBufferClosestHit>
 {
+public:
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 };
 
 class RayTracingGBufferAnyHit final : public GlobalShader<RayTracingGBufferAnyHit>
 {
+public:
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 };

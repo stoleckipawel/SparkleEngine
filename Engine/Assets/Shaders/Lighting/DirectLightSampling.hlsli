@@ -231,7 +231,8 @@ namespace DirectLightSampling
 		}
 
 		float totalWeight = 0.0f;
-		[loop] for (uint linearIndex = 0u; linearIndex < lightCount; ++linearIndex)
+		[loop]
+		for (uint linearIndex = 0u; linearIndex < lightCount; ++linearIndex)
 		{
 			totalWeight += EstimateLightWeight(GetDirectLightId(linearIndex), positionWorld, normalWorld);
 		}
@@ -244,7 +245,8 @@ namespace DirectLightSampling
 		const float target = min(saturate(random), 0.999999f) * totalWeight;
 		float accumulatedWeight = 0.0f;
 		LightCandidate lastCandidate = InvalidLightCandidate();
-		[loop] for (uint linearIndex = 0u; linearIndex < lightCount; ++linearIndex)
+		[loop]
+		for (uint linearIndex = 0u; linearIndex < lightCount; ++linearIndex)
 		{
 			const LightId light = GetDirectLightId(linearIndex);
 			const float weight = EstimateLightWeight(light, positionWorld, normalWorld);

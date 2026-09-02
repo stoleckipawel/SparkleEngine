@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Commands/RenderCommandContext.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/Core/ShaderPass.h"
 #include "Pipeline/RenderPassRuntimeCache.h"

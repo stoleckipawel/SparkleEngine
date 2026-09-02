@@ -9,7 +9,8 @@ RWTexture2D<float4> CurrentReservoirSurface;
 static const int2 SpatialOffsets[8] =
     {int2(1, 0), int2(-1, 0), int2(0, 1), int2(0, -1), int2(2, 1), int2(-2, 1), int2(2, -1), int2(-2, -1)};
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0;
 	uint height = 0;
@@ -36,7 +37,8 @@ static const int2 SpatialOffsets[8] =
 
 	uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0x5A71A1u);
 	const uint offsetStart = (uint)(CommonRandom::Random01(rng) * 8.0f) & 7u;
-	[unroll] for (uint sampleIndex = 0u; sampleIndex < RestirReservoirCommon::SpatialNeighborCount; ++sampleIndex)
+	[unroll]
+	for (uint sampleIndex = 0u; sampleIndex < RestirReservoirCommon::SpatialNeighborCount; ++sampleIndex)
 	{
 		const int2 neighborCoord = int2(pixelCoord) + SpatialOffsets[(offsetStart + sampleIndex * 2u) & 7u];
 		if (neighborCoord.x < 0 || neighborCoord.y < 0 || neighborCoord.x >= (int)width || neighborCoord.y >= (int)height)

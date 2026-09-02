@@ -60,7 +60,8 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface,
 	const uint spotLightCount = SceneLighting.SpotLightCount;
 	const uint rectLightCount = SceneLighting.RectLightCount;
 
-	[loop] for (uint lightIndex = 0u; lightIndex < directionalLightCount; ++lightIndex)
+	[loop]
+	for (uint lightIndex = 0u; lightIndex < directionalLightCount; ++lightIndex)
 	{
 		AccumulateRayTracingHitDirectLightSample(
 		    surface,
@@ -74,7 +75,8 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface,
 		    incidentRadiance);
 	}
 
-	[loop] for (uint lightIndex = 0u; lightIndex < pointLightCount; ++lightIndex)
+	[loop]
+	for (uint lightIndex = 0u; lightIndex < pointLightCount; ++lightIndex)
 	{
 		AccumulateRayTracingHitDirectLightSample(
 		    surface,
@@ -89,7 +91,8 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface,
 		    incidentRadiance);
 	}
 
-	[loop] for (uint lightIndex = 0u; lightIndex < spotLightCount; ++lightIndex)
+	[loop]
+	for (uint lightIndex = 0u; lightIndex < spotLightCount; ++lightIndex)
 	{
 		AccumulateRayTracingHitDirectLightSample(
 		    surface,
@@ -104,7 +107,8 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface,
 		    incidentRadiance);
 	}
 
-	[loop] for (uint lightIndex = 0u; lightIndex < rectLightCount; ++lightIndex)
+	[loop]
+	for (uint lightIndex = 0u; lightIndex < rectLightCount; ++lightIndex)
 	{
 		AccumulateRayTracingHitDirectLightSample(
 		    surface,

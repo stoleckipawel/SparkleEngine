@@ -15,4 +15,4 @@ namespace InstanceView
 		}
 		return baseColor;
 	}
-} // namespace InstanceView
+}

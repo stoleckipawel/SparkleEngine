@@ -3,6 +3,7 @@
 #include "D3D12/RayTracing/D3D12RayTracingServices.h"
 #include "D3D12/RayTracing/D3D12RayTracingShaderTable.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"

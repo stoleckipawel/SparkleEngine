@@ -43,8 +43,8 @@ float3 RayTracingDebugGeometryClassColor(uint geometryFlags)
 	{
 		return float3(0.65f, 0.2f, 1.0f);
 	}
-	if ((geometryFlags & RayTracingHitSurface::GeometryFlagAlphaTested) != 0u ||
-	    (geometryFlags & RayTracingHitSurface::GeometryFlagAlphaBlended) != 0u)
+	if ((geometryFlags & RayTracingHitSurface::GeometryFlagAlphaTested) != 0u
+	    || (geometryFlags & RayTracingHitSurface::GeometryFlagAlphaBlended) != 0u)
 	{
 		return float3(1.0f, 0.2f, 0.05f);
 	}

@@ -14,13 +14,17 @@ namespace Diagnostics
 	    std::uint32_t line,
 	    std::string_view message) noexcept;
 	SPARKLE_CORE_API void BreakInDebuggerIfAttached() noexcept;
-	[[noreturn]] SPARKLE_CORE_API void CheckHResult(long hr, const char* expression, const char* file, std::uint32_t line) noexcept;
+	[[noreturn]] SPARKLE_CORE_API void CheckHResult(
+	    std::int32_t result,
+	    const char* expression,
+	    const char* file,
+	    std::uint32_t line) noexcept;
 }
 
-#define CHECK(hr)                                                      \
-	do                                                                 \
-	{                                                                  \
-		const long _hr = static_cast<long>(hr);                        \
-		if (_hr < 0)                                                   \
-			::Diagnostics::CheckHResult(_hr, #hr, __FILE__, __LINE__); \
+#define CHECK(hr)                                                          \
+	do                                                                     \
+	{                                                                      \
+		const std::int32_t _result = static_cast<std::int32_t>(hr);        \
+		if (_result < 0)                                                   \
+			::Diagnostics::CheckHResult(_result, #hr, __FILE__, __LINE__); \
 	} while (0)

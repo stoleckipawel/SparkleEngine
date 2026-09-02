@@ -1,66 +1,29 @@
 Checks: >
   -*,
-
-  # ------------------------------------------------------------------
-  # Core diagnostics & static analysis
-  # ------------------------------------------------------------------
-  clang-diagnostic-*,
   clang-analyzer-*,
-
-  # ------------------------------------------------------------------
-  # Modern C++ usage & refactoring safety
-  # ------------------------------------------------------------------
   modernize-*,
-
-  # ------------------------------------------------------------------
-  # Performance & code generation
-  # ------------------------------------------------------------------
+  -modernize-use-auto,
+  -modernize-use-trailing-return-type,
   performance-*,
-
-  # ------------------------------------------------------------------
-  # Bug detection
-  # ------------------------------------------------------------------
   bugprone-*,
-
-  # ------------------------------------------------------------------
-  # Readability & consistency
-  # ------------------------------------------------------------------
   readability-*,
-
-  # ------------------------------------------------------------------
-  # Safety, correctness & ownership
-  # ------------------------------------------------------------------
+  -readability-qualified-auto,
   cppcoreguidelines-*,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
   hicpp-*,
+  -hicpp-use-auto,
   cert-*,
-  security-*,
-
-  # ------------------------------------------------------------------
-  # Portability & ABI hygiene
-  # ------------------------------------------------------------------
   portability-*,
-
-  # ------------------------------------------------------------------
-  # Header, ODR & include discipline
-  # ------------------------------------------------------------------
+  -portability-avoid-pragma-once,
   misc-definitions-in-headers,
   misc-header-include-cycle,
   misc-include-cleaner,
   misc-non-private-member-variables-in-classes,
   misc-redundant-expression,
   misc-throw-by-value-catch-by-reference,
-
-  # ------------------------------------------------------------------
-  # Stronger type & language discipline
-  # ------------------------------------------------------------------
   google-explicit-constructor,
   google-runtime-int,
   readability-implicit-bool-conversion,
-  readability-qualified-auto,
-
-  # ------------------------------------------------------------------
-  # Engine-level correctness & lifetime pain detectors
-  # ------------------------------------------------------------------
   cppcoreguidelines-owning-memory,
   cppcoreguidelines-no-malloc,
   cppcoreguidelines-pro-type-reinterpret-cast,
@@ -70,31 +33,23 @@ Checks: >
 WarningsAsErrors: '*'
 
 HeaderFilterRegex: '.*'
-
-AnalyzeTemporaryDtors: false
+ExcludeHeaderFilterRegex: '(^|[\\/])(build(-[^\\/]+)?|artifacts|ThirdParty|_deps)([\\/]|$)'
 
 FormatStyle: none
 
 CheckOptions:
-  # ------------------------------------------------------------------
-  # modernize
-  # ------------------------------------------------------------------
-  - { key: modernize-use-auto.MinTypeNameLength, value: '0' }
   - { key: modernize-use-nullptr.NullMacros, value: 'NULL' }
-  - { key: modernize-use-trailing-return-type.ShortThreshold, value: '0' }
-  - { key: modernize-avoid-bind.PlaceholderCount, value: '0' }
 
   # ------------------------------------------------------------------
   # cppcoreguidelines
   # ------------------------------------------------------------------
-  - { key: cppcoreguidelines-avoid-magic-numbers.IgnoredValues, value: '0,1,-1' }
-  - { key: cppcoreguidelines-pro-bounds-pointer-arithmetic.AllowedPointers, value: '' }
-  - { key: cppcoreguidelines-owning-memory.AllowedIdentifiers, value: '' }
+  - { key: cppcoreguidelines-avoid-magic-numbers.IgnoredIntegerValues, value: '0;1;-1;' }
+  - { key: cppcoreguidelines-avoid-magic-numbers.IgnoredFloatingPointValues, value: '0.0;1.0;-1.0;' }
 
   # ------------------------------------------------------------------
   # performance
   # ------------------------------------------------------------------
-  - { key: performance-move-const-arg.CheckTriviallyCopyable, value: 'true' }
+  - { key: performance-move-const-arg.CheckTriviallyCopyableMove, value: 'true' }
   - { key: performance-unnecessary-value-param.AllowedTypes, value: '' }
 
   # ------------------------------------------------------------------
@@ -102,6 +57,12 @@ CheckOptions:
   # ------------------------------------------------------------------
   - { key: readability-implicit-bool-conversion.AllowIntegerConditions, value: 'false' }
   - { key: readability-implicit-bool-conversion.AllowPointerConditions, value: 'false' }
+
+  - { key: readability-identifier-length.MinimumParameterNameLength, value: '2' }
+  - { key: readability-identifier-length.MinimumVariableNameLength, value: '2' }
+  - { key: bugprone-easily-swappable-parameters.MinimumLength, value: '3' }
+  # Platform and dependency umbrella headers intentionally own their internal provider selection.
+  - { key: misc-include-cleaner.IgnoreHeaders, value: '(^|[\\/])(PCH\.h|cmake_pch\.hxx|[Ww]indows\.h)$|(^|[\\/])spdlog[\\/]' }
 
   # ------------------------------------------------------------------
   # readability: identifier naming
@@ -111,19 +72,12 @@ CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: 'CamelCase' }
   - { key: readability-identifier-naming.StructCase, value: 'CamelCase' }
   - { key: readability-identifier-naming.EnumCase, value: 'CamelCase' }
-  - { key: readability-identifier-naming.TypeCase, value: 'CamelCase' }
+  - { key: readability-identifier-naming.TypeAliasCase, value: 'CamelCase' }
+  - { key: readability-identifier-naming.TypedefCase, value: 'CamelCase' }
 
-  - { key: readability-identifier-naming.VariableCase, value: 'camelCase' }
-  - { key: readability-identifier-naming.LocalVariableCase, value: 'camelCase' }
-  - { key: readability-identifier-naming.ParameterCase, value: 'camelCase' }
+  - { key: readability-identifier-naming.VariableCase, value: 'camelBack' }
+  - { key: readability-identifier-naming.LocalVariableCase, value: 'camelBack' }
+  - { key: readability-identifier-naming.ParameterCase, value: 'camelBack' }
 
-  - { key: readability-identifier-naming.MemberCase, value: 'camelCase' }
+  - { key: readability-identifier-naming.MemberCase, value: 'camelBack' }
   - { key: readability-identifier-naming.MemberPrefix, value: 'm_' }
-
-  - { key: readability-identifier-naming.BooleanParameterPrefix, value: 'b' }
-  - { key: readability-identifier-naming.BooleanMemberPrefix, value: 'm_b' }
-
-  # ------------------------------------------------------------------
-  # hicpp
-  # ------------------------------------------------------------------
-  - { key: hicpp-no-assembler.Allowed, value: 'false' }

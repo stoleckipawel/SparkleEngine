@@ -94,5 +94,5 @@ namespace BRDF
 #endif
 		}
 
-	}  // namespace Geometry
-}  // namespace BRDF
+	}
+}

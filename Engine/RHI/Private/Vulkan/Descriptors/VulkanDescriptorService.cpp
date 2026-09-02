@@ -20,8 +20,7 @@ static const auto g_vulkanDescriptorServiceLogger = Logging::GetOrCreateLogger("
 
 bool VulkanDescriptorService::ResourceViewRecord::IsAllocated() const noexcept
 {
-	return Image != VK_NULL_HANDLE || Buffer != VK_NULL_HANDLE || AccelerationStructure != VK_NULL_HANDLE || ImageView != VK_NULL_HANDLE
-	    || static_cast<bool>(DescriptorHandle);
+	return Image != VK_NULL_HANDLE || Buffer != VK_NULL_HANDLE || ImageView != VK_NULL_HANDLE || static_cast<bool>(DescriptorHandle);
 }
 
 VulkanDescriptorService::VulkanDescriptorService(

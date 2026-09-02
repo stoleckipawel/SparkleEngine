@@ -41,5 +41,5 @@ namespace BRDF
 #endif
 		}
 
-	}  // namespace Subsurface
-}  // namespace BRDF
+	}
+}

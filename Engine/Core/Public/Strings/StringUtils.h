@@ -6,6 +6,7 @@
 
 #include <charconv>
 #include <filesystem>
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -50,8 +51,8 @@ namespace Strings
 			return false;
 		}
 
-		const char* begin = trimmed.data();
-		const char* end = trimmed.data() + trimmed.size();
+		const char* begin = std::to_address(trimmed.begin());
+		const char* end = std::to_address(trimmed.end());
 		const std::from_chars_result result = std::from_chars(begin, end, outValue);
 		return result.ec == std::errc{} && result.ptr == end;
 	}

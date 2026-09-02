@@ -1,6 +1,7 @@
 RWTexture2D<float4> Output;
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0;
 	uint height = 0;

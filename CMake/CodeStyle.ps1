@@ -4,7 +4,8 @@ param(
     [string] $Mode = "Check",
     [ValidateSet("All", "Cpp", "Shaders")]
     [string] $SourceFamily = "All",
-    [string] $ClangFormatPath = ""
+    [string] $ClangFormatPath = "",
+    [string] $ClangTidyPath = ""
 )
 
 Set-StrictMode -Version Latest
@@ -59,6 +60,48 @@ function Resolve-ClangFormatExecutable
     throw "clang-format $requiredClangFormatVersion was not found. Pass -ClangFormatPath or set SPARKLE_CLANG_FORMAT."
 }
 
+function Resolve-ClangTidyExecutable
+{
+    param([string] $ConfiguredPath)
+
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    if (-not [string]::IsNullOrWhiteSpace($ConfiguredPath))
+    {
+        $candidates.Add($ConfiguredPath)
+    }
+
+    $environmentPath = [Environment]::GetEnvironmentVariable("SPARKLE_CLANG_TIDY")
+    if (-not [string]::IsNullOrWhiteSpace($environmentPath))
+    {
+        $candidates.Add($environmentPath)
+    }
+
+    $pathCommand = Get-Command clang-tidy -ErrorAction SilentlyContinue
+    if ($null -ne $pathCommand)
+    {
+        $candidates.Add($pathCommand.Source)
+    }
+
+    foreach ($visualStudioVersion in @("18", "17"))
+    {
+        foreach ($visualStudioEdition in @("Community", "Professional", "Enterprise", "BuildTools"))
+        {
+            $candidates.Add(
+                "C:\Program Files\Microsoft Visual Studio\$visualStudioVersion\$visualStudioEdition\VC\Tools\Llvm\x64\bin\clang-tidy.exe")
+        }
+    }
+
+    foreach ($candidate in $candidates)
+    {
+        if (Test-Path -LiteralPath $candidate -PathType Leaf)
+        {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+
+    throw "clang-tidy $requiredClangFormatVersion was not found. Pass -ClangTidyPath or set SPARKLE_CLANG_TIDY."
+}
+
 function Test-TopLevelComma
 {
     param([string] $Text)
@@ -101,11 +144,83 @@ function Add-PolicyViolation
     $Violations.Add("${RelativePath}:${LineNumber}: $Message")
 }
 
+function ConvertTo-CanonicalShaderText
+{
+    param([string] $Text)
+
+    $canonicalText = $Text.Replace("`r`n", "`n").Replace("`r", "`n")
+    $canonicalText = [regex]::Replace(
+        $canonicalText,
+        '^(?<Indent>[\t ]*)}\s*//\s*namespace(?:\s+\S+)?\s*$',
+        '${Indent}}',
+        [Text.RegularExpressions.RegexOptions]::Multiline)
+    $canonicalText = [regex]::Replace(
+        $canonicalText,
+        '^[\t ]*(?<Attribute>\[(?:shader|numthreads)[^\]\r\n]*\])[\t ]+(?<Code>\S[^\r\n]*)$',
+        '${Attribute}' + "`n" + '${Code}',
+        [Text.RegularExpressions.RegexOptions]::Multiline)
+    $canonicalText = [regex]::Replace(
+        $canonicalText,
+        '^(?<Indent>[\t ]*)(?<Attribute>\[[^\]\r\n]+\])[\t ]+(?<Code>\S[^\r\n]*)$',
+        '${Indent}${Attribute}' + "`n" + '${Indent}${Code}',
+        [Text.RegularExpressions.RegexOptions]::Multiline)
+
+    $lines = $canonicalText.Split([string[]] @("`n"), [StringSplitOptions]::None)
+    for ($lineIndex = 0; $lineIndex -lt $lines.Count; ++$lineIndex)
+    {
+        if ($lines[$lineIndex] -notmatch '^\[(?:shader|numthreads)')
+        {
+            continue
+        }
+
+        $signatureLineIndex = $lineIndex + 1
+        if ($signatureLineIndex -ge $lines.Count)
+        {
+            continue
+        }
+
+        $lines[$signatureLineIndex] = $lines[$signatureLineIndex].TrimStart()
+        for (++$signatureLineIndex; $signatureLineIndex -lt $lines.Count -and $lines[$signatureLineIndex].Trim() -ne "{"; ++$signatureLineIndex)
+        {
+            $lines[$signatureLineIndex] = "`t" + $lines[$signatureLineIndex].TrimStart()
+        }
+    }
+
+    $canonicalText = $lines -join "`n"
+
+    return $canonicalText
+}
+
 $clangFormat = Resolve-ClangFormatExecutable -ConfiguredPath $ClangFormatPath
 $clangFormatVersion = (& $clangFormat --version 2>&1 | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or $clangFormatVersion -notmatch "version $([regex]::Escape($requiredClangFormatVersion))(?:\s|$)")
 {
     throw "Expected clang-format $requiredClangFormatVersion, got '$clangFormatVersion'."
+}
+
+$clangTidy = $null
+if ($Mode -eq "Check" -and $SourceFamily -ne "Shaders")
+{
+    $clangTidy = Resolve-ClangTidyExecutable -ConfiguredPath $ClangTidyPath
+    $clangTidyVersion = (& $clangTidy --version 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $clangTidyVersion -notmatch "version $([regex]::Escape($requiredClangFormatVersion))(?:\s|$)")
+    {
+        throw "Expected clang-tidy $requiredClangFormatVersion, got '$clangTidyVersion'."
+    }
+
+    Push-Location $repositoryRoot
+    try
+    {
+        & $clangTidy --verify-config
+        if ($LASTEXITCODE -ne 0)
+        {
+            throw ".clang-tidy is invalid for clang-tidy $requiredClangFormatVersion."
+        }
+    }
+    finally
+    {
+        Pop-Location
+    }
 }
 
 $trackedPaths = @(& git -C $repositoryRoot ls-files -- Engine Tools Projects)
@@ -130,6 +245,68 @@ $ownedSourcePaths = @(
 if ($ownedSourcePaths.Count -eq 0)
 {
     throw "The tracked owned-source manifest is empty."
+}
+
+$ownedCppPaths = @($ownedSourcePaths | Where-Object { [IO.Path]::GetExtension($_) -notin @(".hlsl", ".hlsli") })
+$ownedShaderPaths = @($ownedSourcePaths | Where-Object { [IO.Path]::GetExtension($_) -in @(".hlsl", ".hlsli") })
+
+$formatFailed = $false
+Push-Location $repositoryRoot
+try
+{
+    for ($offset = 0; $offset -lt $ownedCppPaths.Count; $offset += 64)
+    {
+        $lastIndex = [Math]::Min($offset + 63, $ownedCppPaths.Count - 1)
+        $batch = $ownedCppPaths[$offset..$lastIndex]
+        $arguments = if ($Mode -eq "Check")
+        {
+            @("--dry-run", "--Werror", "--style=file") + $batch
+        }
+        else
+        {
+            @("-i", "--Werror", "--style=file") + $batch
+        }
+
+        & $clangFormat $arguments
+        if ($LASTEXITCODE -ne 0)
+        {
+            $formatFailed = $true
+        }
+    }
+
+    $utf8WithoutBom = [Text.UTF8Encoding]::new($false)
+    foreach ($relativePath in $ownedShaderPaths)
+    {
+        $absolutePath = Join-Path $repositoryRoot ($relativePath -replace "/", [IO.Path]::DirectorySeparatorChar)
+        $formattedLines = @(& $clangFormat --Werror --style=file $absolutePath)
+        if ($LASTEXITCODE -ne 0)
+        {
+            $formatFailed = $true
+            continue
+        }
+
+        $formattedText = ($formattedLines -join "`n") + "`n"
+        $canonicalText = ConvertTo-CanonicalShaderText -Text $formattedText
+        $currentText = ([IO.File]::ReadAllText($absolutePath)).Replace("`r`n", "`n").Replace("`r", "`n")
+        if ($currentText -ceq $canonicalText)
+        {
+            continue
+        }
+
+        if ($Mode -eq "Format")
+        {
+            [IO.File]::WriteAllText($absolutePath, $canonicalText, $utf8WithoutBom)
+        }
+        else
+        {
+            [Console]::Error.WriteLine("${relativePath}: code should be formatted with the canonical shader policy")
+            $formatFailed = $true
+        }
+    }
+}
+finally
+{
+    Pop-Location
 }
 
 $policyViolations = [System.Collections.Generic.List[string]]::new()
@@ -175,35 +352,6 @@ foreach ($relativePath in $ownedSourcePaths)
     }
 }
 
-$formatFailed = $false
-Push-Location $repositoryRoot
-try
-{
-    for ($offset = 0; $offset -lt $ownedSourcePaths.Count; $offset += 64)
-    {
-        $lastIndex = [Math]::Min($offset + 63, $ownedSourcePaths.Count - 1)
-        $batch = $ownedSourcePaths[$offset..$lastIndex]
-        $arguments = if ($Mode -eq "Check")
-        {
-            @("--dry-run", "--Werror", "--style=file") + $batch
-        }
-        else
-        {
-            @("-i", "--Werror", "--style=file") + $batch
-        }
-
-        & $clangFormat $arguments
-        if ($LASTEXITCODE -ne 0)
-        {
-            $formatFailed = $true
-        }
-    }
-}
-finally
-{
-    Pop-Location
-}
-
 foreach ($violation in $policyViolations)
 {
     [Console]::Error.WriteLine($violation)
@@ -214,4 +362,5 @@ if ($formatFailed -or $policyViolations.Count -gt 0)
     throw "Code-style $($Mode.ToLowerInvariant()) failed: formatterFailure=$formatFailed; policyViolations=$($policyViolations.Count)."
 }
 
-Write-Host "Code-style $($Mode.ToLowerInvariant()) passed for $($ownedSourcePaths.Count) tracked owned $($SourceFamily.ToLowerInvariant()) files with clang-format $requiredClangFormatVersion."
+$semanticPolicySummary = if ($null -ne $clangTidy) { "; .clang-tidy configuration verified" } else { "" }
+Write-Host "Code-style $($Mode.ToLowerInvariant()) passed for $($ownedSourcePaths.Count) tracked owned $($SourceFamily.ToLowerInvariant()) files with clang-format $requiredClangFormatVersion$semanticPolicySummary."

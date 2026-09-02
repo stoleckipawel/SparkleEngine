@@ -51,8 +51,8 @@ private:
 		std::uint32_t InstanceCount;
 		PerObjectPSConstantBufferData MaterialParameters;
 		RhiDescriptorTableHandle MaterialTextures;
-		std::reference_wrapper<RenderBindingLayout> BindingLayout;
-		std::reference_wrapper<RenderPipeline> Pipeline;
+		std::reference_wrapper<const RenderBindingLayout> BindingLayout;
+		std::reference_wrapper<const RenderPipeline> Pipeline;
 	};
 
 	static void BindMaterial(GBufferMeshPass::DrawParameterInstance& drawParameters, const PreparedDraw& draw);

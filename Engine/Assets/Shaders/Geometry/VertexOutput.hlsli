@@ -1,7 +1,7 @@
 #pragma once
 
-	namespace VS
-	{
+namespace VS
+{
 	struct Output
 	{
 		float4 Position : SV_POSITION;
@@ -12,4 +12,4 @@
 		float4 PrevClipPosition : TEXCOORD7;
 		nointerpolation uint GpuSceneSlot : TEXCOORD8;
 	};
-}  // namespace VS
+}

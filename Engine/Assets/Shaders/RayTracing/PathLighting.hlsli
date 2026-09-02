@@ -97,7 +97,8 @@ namespace RayTracingPathLighting
 		float3 throughput = 1.0f.xxx;
 		const uint sanitizedBounceCount = max(bounceCount, 1u);
 
-		[loop] for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
+		[loop]
+		for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
 		{
 			const RayTracingPathSampling::RandomSamples randomSamples =
 			    RayTracingPathSampling::GenerateRandomSamples(pixelCoord, bounceIndex, sampleIndex, randomFrameIndex);

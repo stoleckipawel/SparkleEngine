@@ -9,20 +9,20 @@ struct RayTracingGBufferPayload
 	uint Hit;
 };
 
-[shader("raygeneration")] void RayTracingGBufferRayGeneration()
+[shader("raygeneration")]
+void RayTracingGBufferRayGeneration()
 {
 	const uint2 pixelCoord = DispatchRaysIndex().xy;
 	const RayTracingGBuffer::PrimaryRay ray = RayTracingGBuffer::BuildPrimaryRay(pixelCoord);
 	RayTracingGBufferPayload payload = (RayTracingGBufferPayload)0;
-	TraceRay(
-	    SceneTlas,
-	    RayTracingGBuffer::CullFlags,
-	    RayTracingGBuffer::InstanceMask,
-	    RayTracingShaderTableLayout::SurfaceRayContribution,
-	    RayTracingShaderTableLayout::GeometryMultiplier,
-	    0u,
-	    ray.Description,
-	    payload);
+	TraceRay(SceneTlas,
+	         RayTracingGBuffer::CullFlags,
+	         RayTracingGBuffer::InstanceMask,
+	         RayTracingShaderTableLayout::SurfaceRayContribution,
+	         RayTracingShaderTableLayout::GeometryMultiplier,
+	         0u,
+	         ray.Description,
+	         payload);
 
 	RayTracingTraceResult trace = (RayTracingTraceResult)0;
 	trace.Hit = payload.Hit != 0u;
@@ -33,8 +33,8 @@ struct RayTracingGBufferPayload
 	RayTracingGBuffer::StoreTraceResult(pixelCoord, trace, ray);
 }
 
-[shader("anyhit")] void RayTracingGBufferAnyHit(
-	inout RayTracingGBufferPayload payload,
+[shader("anyhit")]
+void RayTracingGBufferAnyHit(inout RayTracingGBufferPayload payload,
 	BuiltInTriangleIntersectionAttributes attributes)
 {
 	float sampledAlpha = 1.0f;
@@ -45,13 +45,14 @@ struct RayTracingGBufferPayload
 	}
 }
 
-[shader("miss")] void RayTracingGBufferMiss(inout RayTracingGBufferPayload payload)
+[shader("miss")]
+void RayTracingGBufferMiss(inout RayTracingGBufferPayload payload)
 {
 	payload.Hit = 0u;
 }
 
-[shader("closesthit")] void RayTracingGBufferClosestHit(
-	inout RayTracingGBufferPayload payload,
+[shader("closesthit")]
+void RayTracingGBufferClosestHit(inout RayTracingGBufferPayload payload,
 	BuiltInTriangleIntersectionAttributes attributes)
 {
 	payload.RayT = RayTCurrent();

@@ -14,7 +14,8 @@ void ClearPathTracedIndirectLightingPixel(uint2 pixelCoord)
 	IndirectLightingOutputs::Clear(pixelCoord, true);
 }
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0u;
 	uint height = 0u;
@@ -37,7 +38,8 @@ void ClearPathTracedIndirectLightingPixel(uint2 pixelCoord)
 	float3 indirectDiffuse = 0.0f.xxx;
 	float3 indirectSpecular = 0.0f.xxx;
 	const uint sampleCount = max(PathTracedLightingSamplesPerPixel, 1u);
-	[loop] for (uint sampleIndex = 0u; sampleIndex < sampleCount; ++sampleIndex)
+	[loop]
+	for (uint sampleIndex = 0u; sampleIndex < sampleCount; ++sampleIndex)
 	{
 		const RayTracingPathLighting::Result path =
 		    RayTracingPathLighting::TraceSurfacePath(SkyTexture,

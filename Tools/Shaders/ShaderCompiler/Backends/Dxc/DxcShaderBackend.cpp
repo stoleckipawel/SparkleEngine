@@ -151,7 +151,14 @@ CompiledShader DxcShaderBackend::Compile(const ShaderCompileRequest& request)
 	{
 		if (errorMsg.empty())
 			errorMsg = "Compilation failed with no error message";
-		SPDLOG_LOGGER_ERROR(g_dxcShaderBackendLogger, "Shader compilation failed: {}", errorMsg);
+		SPDLOG_LOGGER_ERROR(
+		    g_dxcShaderBackendLogger,
+		    "Shader compilation failed for type '{}' source '{}' entry '{}' target '{}': {}",
+		    request.ShaderTypeName,
+		    request.VirtualSourcePath,
+		    request.EntryPoint,
+		    GetShaderTargetName(request.Target),
+		    errorMsg);
 		throw Diagnostics::Error(std::move(errorMsg));
 	}
 
@@ -271,7 +278,6 @@ void DxcShaderBackend::BuildCompileArguments(
 	if (IsSpirVTarget(request.Target))
 	{
 		outArgs.push_back(L"-spirv");
-		outArgs.push_back(L"-fspv-use-unknown-image-format");
 		switch (request.Target)
 		{
 			case ShaderTarget::SpirV14:

@@ -78,4 +78,4 @@ namespace ViewMode
 				return lit;
 		}
 	}
-} // namespace ViewMode
+}

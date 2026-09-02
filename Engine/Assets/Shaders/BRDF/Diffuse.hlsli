@@ -35,9 +35,7 @@ namespace BRDF
 			const float sinThetaV = sqrt(max(0.0f, 1.0f - NoV * NoV));
 			const float sinThetaL = sqrt(max(0.0f, 1.0f - NoL * NoL));
 			const float sinAlpha = max(sinThetaV, sinThetaL);
-			const float tanBeta = min(
-			    sinThetaV / max(NoV, EPSILON),
-			    sinThetaL / max(NoL, EPSILON));
+			const float tanBeta = min(sinThetaV / max(NoV, EPSILON), sinThetaL / max(NoL, EPSILON));
 
 			return albedo * INV_PI * (A + B * cosPhiDiff * sinAlpha * tanBeta);
 		}
@@ -79,5 +77,5 @@ namespace BRDF
 			return Lambert(albedo);
 		}
 
-	}  // namespace Diffuse
-}  // namespace BRDF
+	}
+}

@@ -2,7 +2,8 @@
 
 Texture2D SceneColor;
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	const uint2 outputPixel = dispatchThreadId.xy;
 	if (ExposureDownsample::IsOutsideOutput(outputPixel))

@@ -41,10 +41,10 @@ The [Clang-Format Decision Record](../ClangFormatDecisionRecord.md) preserves th
 
 clang-format owns whitespace and line layout. It MUST NOT insert or remove braces, reorder qualifiers, remove parentheses, sort includes or `using` declarations, or perform other semantic-looking rewrites. Run version 22.1.3 with `--Werror`; a version change is a deliberate formatting migration.
 
-Two accepted source-format rules are outside clang-format's reliable enforcement boundary:
+Two accepted source-format rules are outside clang-format alone and are canonicalized by the repository entry point after shader formatting:
 
-1. **No namespace-end comments.** Close named namespaces with `}` only. `FixNamespaceComments: false` prevents automatic additions but does not delete existing comments; remove existing `// namespace ...` suffixes in the dedicated format migration and reject new ones in review or a repository check.
-2. **HLSL attributes use their own line.** Place `[numthreads]`, `[loop]`, `[unroll]`, and equivalent shader attributes immediately above the declaration or statement they govern. clang-format 22.1.3 parses HLSL through its C++ fallback and does not reliably move these attributes, so shader review or a repository check owns enforcement.
+1. **No namespace-end comments.** Close named namespaces with `}` only. `FixNamespaceComments: false` prevents automatic additions but does not delete existing comments; `CodeStyle.ps1` removes them in `Format` mode and rejects them in `Check` mode.
+2. **HLSL attributes use their own line.** Place `[numthreads]`, `[loop]`, `[unroll]`, and equivalent shader attributes immediately above the declaration or statement they govern. clang-format 22.1.3 parses HLSL through its C++ fallback and can join these attributes to the governed construct; `CodeStyle.ps1` restores the accepted shader layout before writing or comparing canonical text.
 
 ### Repository Commands
 
@@ -55,7 +55,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File CMake/CodeStyle.ps1 -Mode Ch
 powershell -NoProfile -ExecutionPolicy Bypass -File CMake/CodeStyle.ps1 -Mode Format
 ```
 
-The equivalent configured targets are `code_style_check` and `code_style_format`. Pass `-ClangFormatPath <path>` to the script, set `SPARKLE_CLANG_FORMAT`, or configure `SPARKLE_CLANG_FORMAT_EXECUTABLE`; every route rejects versions other than 22.1.3. The check also rejects namespace-end comments, anonymous namespaces, multiple inheritance, and shader attributes that share a line with their declaration or statement. Clang-tidy and compiler targets remain the semantic diagnostic owners; the format target does not substitute for compiling affected code.
+The equivalent configured targets are `code_style_check` and `code_style_format`. Pass `-ClangFormatPath <path>` to the script, set `SPARKLE_CLANG_FORMAT`, or configure `SPARKLE_CLANG_FORMAT_EXECUTABLE`; every route rejects versions other than 22.1.3. For the default or `Cpp` check, pass `-ClangTidyPath <path>`, set `SPARKLE_CLANG_TIDY`, or configure `SPARKLE_CLANG_TIDY_EXECUTABLE`; the check requires clang-tidy 22.1.3 and verifies that [`.clang-tidy`](../../../.clang-tidy) is valid for that toolchain. The check also rejects namespace-end comments, anonymous namespaces, multiple inheritance, and shader attributes that share a line with their declaration or statement. Configuration verification does not analyze translation units: clang-tidy invocations and compiler targets remain the semantic diagnostic owners, and the format target does not substitute for compiling affected code.
 
 `-SourceFamily Cpp` and `-SourceFamily Shaders` narrow an explicit migration or diagnostic pass. Normal repository acceptance uses the default `All` manifest.
 

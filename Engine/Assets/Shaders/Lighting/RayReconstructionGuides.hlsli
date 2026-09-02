@@ -24,27 +24,9 @@ namespace RayReconstructionGuides
 		const float4 X = float4(1.0f, NoV, NoV * NoV, NoV * NoV * NoV);
 		const float4 Y = float4(1.0f, alpha, alpha * alpha, alpha * alpha * alpha);
 		const float2x2 M1 = float2x2(0.99044f, -1.28514f, 1.29678f, -0.755907f);
-		const float3x3 M2 = float3x3(
-		    1.0f,
-		    2.92338f,
-		    59.4188f,
-		    20.3225f,
-		    -27.0302f,
-		    222.592f,
-		    121.563f,
-		    626.13f,
-		    316.627f);
+		const float3x3 M2 = float3x3(1.0f, 2.92338f, 59.4188f, 20.3225f, -27.0302f, 222.592f, 121.563f, 626.13f, 316.627f);
 		const float2x2 M3 = float2x2(0.0365463f, 3.32707f, 9.0632f, -9.04756f);
-		const float3x3 M4 = float3x3(
-		    1.0f,
-		    3.59685f,
-		    -1.36772f,
-		    9.04401f,
-		    -16.3174f,
-		    9.22949f,
-		    5.56589f,
-		    19.7886f,
-		    -20.2123f);
+		const float3x3 M4 = float3x3(1.0f, 3.59685f, -1.36772f, 9.04401f, -16.3174f, 9.22949f, 5.56589f, 19.7886f, -20.2123f);
 
 		float bias = dot(mul(M1, X.xy), Y.xy) * rcp(dot(mul(M2, X.xyw), Y.xyw));
 		const float scale = dot(mul(M3, X.xy), Y.xy) * rcp(dot(mul(M4, X.xzw), Y.xyw));
@@ -81,16 +63,10 @@ namespace RayReconstructionGuides
 		RayReconstructionRoughness[pixelCoord] = saturate(gBuffer.Roughness);
 	}
 
-	void WriteSpecularHitDistance(
-	    uint2 pixelCoord,
-	    RayTracingPathLighting::Result path,
-	    float3 primaryPositionWorld,
-	    bool specularSelected)
+	void WriteSpecularHitDistance(uint2 pixelCoord, RayTracingPathLighting::Result path, float3 primaryPositionWorld, bool specularSelected)
 	{
 		const bool validSpecularHit = specularSelected && path.FirstLighting.Hit;
-		const float hitDistance = validSpecularHit
-		                              ? length(path.FirstLighting.HitPositionWorld - primaryPositionWorld)
-		                              : 0.0f;
+		const float hitDistance = validSpecularHit ? length(path.FirstLighting.HitPositionWorld - primaryPositionWorld) : 0.0f;
 		RayReconstructionSpecularHitDistance[pixelCoord] = hitDistance;
 	}
 }

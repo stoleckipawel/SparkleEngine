@@ -95,7 +95,7 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 	runtime->m_bindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(
 	    renderHardwareInterface,
 	    runtime->m_parameterLayout,
-	    std::span<const ResolvedShader>(runtime->m_shaders).first(1),
+	    runtime->m_shaders,
 	    false,
 	    debugName.c_str());
 

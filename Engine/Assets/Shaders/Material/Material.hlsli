@@ -183,4 +183,4 @@ namespace Material
 		props.Emissive = SampleEmissive(Input.TexCoord);
 		return props;
 	}
-} // namespace Material
+}

@@ -6,9 +6,27 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <format>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <wrl/client.h>
+
+static bool IsRequestedLibraryExport(std::string_view reflectedName, std::string_view entryPoint)
+{
+	if (reflectedName == entryPoint)
+	{
+		return true;
+	}
+
+	constexpr std::string_view mangledNamePrefix{"\x01?"};
+	if (!reflectedName.starts_with(mangledNamePrefix))
+	{
+		return false;
+	}
+	reflectedName.remove_prefix(mangledNamePrefix.size());
+	return reflectedName.starts_with(entryPoint) && reflectedName.substr(entryPoint.size()).starts_with("@@");
+}
 
 ShaderReflection DxilReflectionExtractor::ExtractLibrary(IDxcUtils& utils, IDxcResult* result, std::string_view entryPoint)
 {
@@ -37,12 +55,21 @@ ShaderReflection DxilReflectionExtractor::ExtractLibrary(IDxcUtils& utils, IDxcR
 
 	ID3D12FunctionReflection* function = nullptr;
 	D3D12_FUNCTION_DESC functionDesc{};
+	std::string reflectedFunctionNames;
 	for (UINT functionIndex = 0; functionIndex < libraryDesc.FunctionCount; ++functionIndex)
 	{
 		ID3D12FunctionReflection* candidate = library->GetFunctionByIndex(functionIndex);
 		D3D12_FUNCTION_DESC candidateDesc{};
-		if (candidate != nullptr && SUCCEEDED(candidate->GetDesc(&candidateDesc)) && candidateDesc.Name != nullptr
-		    && std::string_view(candidateDesc.Name) == entryPoint)
+		if (candidate == nullptr || FAILED(candidate->GetDesc(&candidateDesc)) || candidateDesc.Name == nullptr)
+		{
+			continue;
+		}
+		if (!reflectedFunctionNames.empty())
+		{
+			reflectedFunctionNames += ", ";
+		}
+		reflectedFunctionNames += candidateDesc.Name;
+		if (IsRequestedLibraryExport(candidateDesc.Name, entryPoint))
 		{
 			function = candidate;
 			functionDesc = candidateDesc;
@@ -51,7 +78,11 @@ ShaderReflection DxilReflectionExtractor::ExtractLibrary(IDxcUtils& utils, IDxcR
 	}
 	if (function == nullptr)
 	{
-		throw Diagnostics::Error("DXIL library reflection did not contain the requested export.");
+		throw Diagnostics::Error(
+		    std::format(
+		        "DXIL library reflection did not contain requested export '{}'; reflected functions: {}.",
+		        entryPoint,
+		        reflectedFunctionNames.empty() ? "<none>" : reflectedFunctionNames));
 	}
 
 	ShaderReflection reflection;

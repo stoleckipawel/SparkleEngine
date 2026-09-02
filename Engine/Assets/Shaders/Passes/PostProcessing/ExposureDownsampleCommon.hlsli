@@ -20,9 +20,11 @@ namespace ExposureDownsample
 		inputTexture.GetDimensions(inputWidth, inputHeight);
 
 		float2 moments = 0.0f.xx;
-		[unroll] for (uint y = 0u; y < 2u; ++y)
+		[unroll]
+		for (uint y = 0u; y < 2u; ++y)
 		{
-			[unroll] for (uint x = 0u; x < 2u; ++x)
+			[unroll]
+			for (uint x = 0u; x < 2u; ++x)
 			{
 				const uint2 pixel = outputPixel * 2u + uint2(x, y);
 				if (pixel.x < inputWidth && pixel.y < inputHeight)

@@ -20,8 +20,10 @@ void ShaderParameterStructCookVerifier::Verify(
 		WriteSkippedReport(debugArtifacts, "no parameter-struct descriptor declared for this shader stage");
 		return;
 	}
-	const ShaderParameterStructVerificationResult verificationResult =
-	    ShaderParameterStructVerifier::Verify(*job.Request.ParameterStruct, compiledStage.reflection);
+	const ShaderParameterStructVerificationResult verificationResult = ShaderParameterStructVerifier::Verify(
+	    *job.Request.ParameterStruct,
+	    compiledStage.reflection,
+	    job.Request.UnitKind == ShaderCompileUnitKind::Library);
 	if (debugArtifacts != nullptr)
 	{
 		debugArtifacts->ParameterMatchReportJson = verificationResult.BuildJsonReport();

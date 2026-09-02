@@ -35,14 +35,9 @@ namespace ToneMapping
 
 	float3 AcesFilmic(float3 color)
 	{
-		const float3x3 acesInputMatrix = float3x3(
-		    0.59719f, 0.35458f, 0.04823f,
-		    0.07600f, 0.90834f, 0.01566f,
-		    0.02840f, 0.13383f, 0.83777f);
-		const float3x3 acesOutputMatrix = float3x3(
-		    1.60475f, -0.53108f, -0.07367f,
-		    -0.10208f, 1.10813f, -0.00605f,
-		    -0.00327f, -0.07276f, 1.07602f);
+		const float3x3 acesInputMatrix = float3x3(0.59719f, 0.35458f, 0.04823f, 0.07600f, 0.90834f, 0.01566f, 0.02840f, 0.13383f, 0.83777f);
+		const float3x3 acesOutputMatrix =
+		    float3x3(1.60475f, -0.53108f, -0.07367f, -0.10208f, 1.10813f, -0.00605f, -0.00327f, -0.07276f, 1.07602f);
 
 		float3 fittedColor = mul(acesInputMatrix, CommonColor::ClampPositive(color));
 		fittedColor = RrtAndOdtFit(fittedColor);

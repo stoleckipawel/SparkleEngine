@@ -11,4 +11,4 @@ namespace VS
 		uint VertexId : SV_VertexID;
 		uint InstanceId : SV_InstanceID;
 	};
-}  // namespace VS
+}

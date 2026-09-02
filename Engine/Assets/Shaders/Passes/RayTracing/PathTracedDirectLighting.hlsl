@@ -66,7 +66,8 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 	diffuse = 0.0f.xxx;
 	specular = 0.0f.xxx;
 	subsurface = 0.0f.xxx;
-	[loop] for (uint i = 0u; i < SceneLighting.DirectionalLightCount; ++i)
+	[loop]
+	for (uint i = 0u; i < SceneLighting.DirectionalLightCount; ++i)
 	{
 		AccumulatePathTracedDirectLight(
 		    surface,
@@ -79,7 +80,8 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 		    subsurface);
 	}
 
-	[loop] for (uint i = 0u; i < SceneLighting.PointLightCount; ++i)
+	[loop]
+	for (uint i = 0u; i < SceneLighting.PointLightCount; ++i)
 	{
 		AccumulatePathTracedDirectLight(
 		    surface,
@@ -92,7 +94,8 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 		    subsurface);
 	}
 
-	[loop] for (uint i = 0u; i < SceneLighting.SpotLightCount; ++i)
+	[loop]
+	for (uint i = 0u; i < SceneLighting.SpotLightCount; ++i)
 	{
 		AccumulatePathTracedDirectLight(
 		    surface,
@@ -105,7 +108,8 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 		    subsurface);
 	}
 
-	[loop] for (uint i = 0u; i < SceneLighting.RectLightCount; ++i)
+	[loop]
+	for (uint i = 0u; i < SceneLighting.RectLightCount; ++i)
 	{
 		AccumulatePathTracedDirectLight(
 		    surface,
@@ -119,7 +123,8 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 	}
 }
 
-[numthreads(8, 8, 1)] void main(uint3 id : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 id : SV_DispatchThreadID)
 {
 	uint width = 0u;
 	uint height = 0u;
@@ -145,7 +150,8 @@ void EvaluatePathTracedDirectLighting(GBufferData surface,
 	float3 subsurface = 0.0f.xxx;
 	const uint sampleCount = max(PathTracedLightingSamplesPerPixel, 1u);
 
-	[loop] for (uint sampleIndex = 0u; sampleIndex < sampleCount; ++sampleIndex)
+	[loop]
+	for (uint sampleIndex = 0u; sampleIndex < sampleCount; ++sampleIndex)
 	{
 		float3 sampleDiffuse;
 		float3 sampleSpecular;

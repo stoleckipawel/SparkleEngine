@@ -10,6 +10,13 @@
 #include "/Engine/Geometry/Transforms.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
 #include "/Engine/Passes/GBuffer/MotionVector.hlsli"
+
+cbuffer RayTracingGBufferConstants
+{
+	uint RayTracingHitInstanceCount;
+	uint RayTracingHitMaterialCount;
+};
+
 #include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
 #include "/Engine/RayTracing/RayTracingShaderTableLayout.hlsli"
 
@@ -21,12 +28,6 @@ RWTexture2D<float4> GBufferSubsurface;
 RWTexture2D<float> GBufferDeviceZ;
 RWTexture2D<float2> GBufferMotionVector;
 RaytracingAccelerationStructure SceneTlas;
-
-cbuffer RayTracingGBufferConstants
-{
-	uint RayTracingHitInstanceCount;
-	uint RayTracingHitMaterialCount;
-};
 
 namespace RayTracingGBuffer
 {

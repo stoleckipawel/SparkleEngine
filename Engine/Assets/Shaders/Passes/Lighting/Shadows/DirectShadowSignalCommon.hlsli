@@ -12,11 +12,10 @@ RWTexture2D<float4> ShadowVisibilitySignal;
 Texture2D<float4> CurrentReservoirSample;
 Texture2D<float4> CurrentReservoirWeight;
 
-bool PrepareDirectShadowSignal(
-	uint2 pixelCoord,
-	out bool validPixel,
-	out RayTracedShadowRequest request,
-	out ShadowVisibilitySample immediateSignal)
+bool PrepareDirectShadowSignal(uint2 pixelCoord,
+                               out bool validPixel,
+                               out RayTracedShadowRequest request,
+                               out ShadowVisibilitySample immediateSignal)
 {
 	validPixel = false;
 	request = (RayTracedShadowRequest)0;
@@ -48,13 +47,12 @@ bool PrepareDirectShadowSignal(
 	}
 
 	const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
-	return RayTracedShadows::BuildDirectLightRequest(
-	    positionWorld,
-	    normalWorld,
-	    lightSample,
-	    DirectLightSampling::CastsShadow(reservoir.Candidate.Light),
-	    request,
-	    immediateSignal);
+	return RayTracedShadows::BuildDirectLightRequest(positionWorld,
+	                                                 normalWorld,
+	                                                 lightSample,
+	                                                 DirectLightSampling::CastsShadow(reservoir.Candidate.Light),
+	                                                 request,
+	                                                 immediateSignal);
 }
 
 void StoreDirectShadowSignal(uint2 pixelCoord, ShadowVisibilitySample signal)

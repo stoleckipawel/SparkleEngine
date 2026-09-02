@@ -2,9 +2,18 @@
 
 #include "Core/Public/Strings/StringUtils.h"
 
+#include <DirectXMath.h>
+
+#include <algorithm>
+#include <array>
 #include <cctype>
-#include <cmath>
+#include <cstddef>
+#include <filesystem>
+#include <span>
 #include <sstream>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace Strings
 {
@@ -15,26 +24,12 @@ namespace Strings
 
 	bool ContainsAsciiWhitespace(std::string_view str) noexcept
 	{
-		for (const char character : str)
-		{
-			if (IsAsciiWhitespace(character))
-			{
-				return true;
-			}
-		}
-		return false;
+		return std::ranges::any_of(str, IsAsciiWhitespace);
 	}
 
 	bool IsNullTerminated(std::span<const char> buffer) noexcept
 	{
-		for (const char character : buffer)
-		{
-			if (character == '\0')
-			{
-				return true;
-			}
-		}
-		return false;
+		return std::ranges::any_of(buffer, [](const char character) { return character == '\0'; });
 	}
 
 	std::string_view TrimAsciiWhitespace(std::string_view str) noexcept
@@ -51,9 +46,10 @@ namespace Strings
 
 	std::string_view Unquote(std::string_view str) noexcept
 	{
-		if (str.size() >= 2 && str.front() == '"' && str.back() == '"')
+		constexpr std::size_t quoteCharacterCount = 2;
+		if (str.size() >= quoteCharacterCount && str.front() == '"' && str.back() == '"')
 		{
-			return str.substr(1, str.size() - 2);
+			return str.substr(1, str.size() - quoteCharacterCount);
 		}
 		return str;
 	}
@@ -94,18 +90,18 @@ namespace Strings
 	std::string ToLowerCopy(std::string_view str)
 	{
 		std::string lowered(str);
-		std::transform(
+		std::ranges::transform(
+		    lowered,
 		    lowered.begin(),
-		    lowered.end(),
-		    lowered.begin(),
-		    [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+		    [](const unsigned char character) { return static_cast<char>(std::tolower(character)); });
 		return lowered;
 	}
 
 	std::string EscapeCsvField(std::string_view str)
 	{
+		constexpr std::size_t surroundingQuoteCount = 2;
 		std::string result;
-		result.reserve(str.size() + 2);
+		result.reserve(str.size() + surroundingQuoteCount);
 		result.push_back('"');
 		for (const char character : str)
 		{
@@ -121,8 +117,9 @@ namespace Strings
 
 	std::string EscapeJsonString(std::string_view str)
 	{
+		constexpr std::size_t escapeCapacitySlack = 8;
 		std::string result;
-		result.reserve(str.size() + 8);
+		result.reserve(str.size() + escapeCapacitySlack);
 		for (const char character : str)
 		{
 			switch (character)
@@ -196,9 +193,33 @@ namespace Strings
 			return true;
 		}
 
-		const std::string loweredHaystack = ToLowerCopy(haystack);
-		const std::string loweredNeedle = ToLowerCopy(needle);
-		return loweredHaystack.find(loweredNeedle) != std::string::npos;
+		if (needle.size() > haystack.size())
+		{
+			return false;
+		}
+
+		const std::size_t finalStartIndex = haystack.size() - needle.size();
+		for (std::size_t startIndex = 0; startIndex <= finalStartIndex; ++startIndex)
+		{
+			bool matches = true;
+			for (std::size_t needleIndex = 0; needleIndex < needle.size(); ++needleIndex)
+			{
+				const unsigned char haystackCharacter = static_cast<unsigned char>(haystack[startIndex + needleIndex]);
+				const unsigned char needleCharacter = static_cast<unsigned char>(needle[needleIndex]);
+				if (std::tolower(haystackCharacter) != std::tolower(needleCharacter))
+				{
+					matches = false;
+					break;
+				}
+			}
+
+			if (matches)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	bool TryParseBool(std::string_view str, bool& outValue)
@@ -273,12 +294,13 @@ namespace Strings
 
 	bool TryParseFloat3(std::string_view str, DirectX::XMFLOAT3& outValue)
 	{
+		constexpr std::size_t componentCount = 3;
 		std::stringstream stream{std::string(str)};
 		std::string segment;
-		float values[3] = {};
-		for (int index = 0; index < 3; ++index)
+		std::array<float, componentCount> values{};
+		for (float& value : values)
 		{
-			if (!std::getline(stream, segment, ',') || !TryParseFloat(segment, values[index]))
+			if (!std::getline(stream, segment, ',') || !TryParseFloat(segment, value))
 			{
 				return false;
 			}
@@ -288,13 +310,13 @@ namespace Strings
 			return false;
 		}
 
-		outValue = {values[0], values[1], values[2]};
+		outValue = {values.front(), values[1], values.back()};
 		return true;
 	}
 
 	std::wstring ToWide(std::string_view str)
 	{
-		return std::wstring(str.begin(), str.end());
+		return {str.begin(), str.end()};
 	}
 
 	std::wstring ToWide(const std::filesystem::path& path)

@@ -2,7 +2,8 @@ Texture2D ScalingInputColor;
 SamplerState SamplerLinearClamp;
 RWTexture2D<float4> ScalingOutputColor;
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width;
 	uint height;

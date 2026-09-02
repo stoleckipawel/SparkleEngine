@@ -10,19 +10,19 @@ class RayTracingPipeline;
 
 struct RasterPassRuntime
 {
-	RenderBindingLayout& BindingLayout;
-	RenderPipeline& Pipeline;
+	const RenderBindingLayout& BindingLayout;
+	const RenderPipeline& Pipeline;
 };
 
 struct ComputePassPipelineRuntime
 {
-	RenderBindingLayout& BindingLayout;
-	RenderPipeline& Pipeline;
+	const RenderBindingLayout& BindingLayout;
+	const RenderPipeline& Pipeline;
 };
 
 struct RayTracingPassPipelineRuntime
 {
-	RenderBindingLayout& BindingLayout;
-	RayTracingPipeline& Pipeline;
+	const RenderBindingLayout& BindingLayout;
+	const RayTracingPipeline& Pipeline;
 	std::uint64_t Generation = 0;
 };

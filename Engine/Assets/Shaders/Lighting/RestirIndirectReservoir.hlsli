@@ -187,7 +187,8 @@ namespace RestirIndirectReservoir
 			return reservoir;
 		}
 		uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0x1D1EEC7u);
-		[unroll] for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
+		[unroll]
+		for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
 		{
 			Candidate candidate;
 			candidate.RandomPixel = pixelCoord;

@@ -41,5 +41,5 @@ namespace BRDF
 			return GGX(NoH, alpha);
 #endif
 		}
-	}  // namespace Distribution
-}  // namespace BRDF
+	}
+}

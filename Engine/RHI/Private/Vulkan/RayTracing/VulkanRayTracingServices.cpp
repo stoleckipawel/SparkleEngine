@@ -3,6 +3,7 @@
 #include "Vulkan/RayTracing/VulkanRayTracingServices.h"
 #include "Vulkan/RayTracing/VulkanRayTracingShaderTable.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Validation/RhiContract.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
