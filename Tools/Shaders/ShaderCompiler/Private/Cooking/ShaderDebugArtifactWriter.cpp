@@ -16,7 +16,7 @@ void ShaderDebugArtifactWriter::WriteText(const std::filesystem::path& path, std
 	std::string fileError;
 	if (!Files::TryWriteAllText(path, contents, fileError))
 	{
-		throw Diagnostics::Error(std::move(fileError));
+		throw Diagnostics::Error(fileError);
 	}
 }
 

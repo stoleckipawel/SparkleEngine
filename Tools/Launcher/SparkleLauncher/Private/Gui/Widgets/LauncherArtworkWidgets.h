@@ -7,18 +7,20 @@
 #include <QtGui/QPixmap>
 #include <QtWidgets/QWidget>
 
+#include <cstdint>
+
 class QPainter;
 class QPaintEvent;
 
 namespace SparkleLauncher
 {
-	enum class LauncherArtworkPreset
+	enum class LauncherArtworkPreset : std::uint8_t
 	{
 		HeroPanorama,
 		WorkflowBanner,
 	};
 
-	enum class LauncherArtworkGradientAxis
+	enum class LauncherArtworkGradientAxis : std::uint8_t
 	{
 		Horizontal,
 		Vertical,

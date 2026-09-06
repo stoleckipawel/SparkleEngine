@@ -3,6 +3,7 @@
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
 #include "FrameGraph/Execution/FrameGraphRecordingExecutor.h"
 
+#include <cstddef>
 #include <array>
 #include <span>
 

@@ -9,7 +9,7 @@ namespace SparkleLauncher
 	OperationRecord RunLevelRunOperationPlan(
 	    LevelRunOperationPlan plan,
 	    IProcessRunner& processRunner,
-	    ProcessOutputCallback outputCallback)
+	    const ProcessOutputCallback& outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);

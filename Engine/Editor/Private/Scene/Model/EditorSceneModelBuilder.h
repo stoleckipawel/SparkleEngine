@@ -2,6 +2,8 @@
 
 #include "Scene/Model/EditorSceneModel.h"
 
+#include <cstdint>
+#include <utility>
 #include <functional>
 #include <memory>
 

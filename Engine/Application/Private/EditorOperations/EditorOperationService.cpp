@@ -55,7 +55,7 @@ bool EditorOperationService::StartShaderRecook(
 		TaskGraphBuilder graph;
 		graph.Add(
 		    TaskDesc{TaskName("Run shader compiler"), TaskLane::BlockingIo},
-		    [requestId, baselinePublicationId, request = std::move(request), result](TaskExecutionContext& context)
+		    [requestId, baselinePublicationId, request = std::move(request), result](TaskExecutionContext& context) mutable
 		    {
 			    *result =
 			        ShaderRecookOperation::Execute(requestId, baselinePublicationId, std::move(request), context.GetCancellationToken());

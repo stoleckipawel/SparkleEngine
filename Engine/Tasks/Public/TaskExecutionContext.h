@@ -2,6 +2,7 @@
 
 #include "TaskTypes.h"
 
+#include <utility>
 #include <cstdint>
 #include <memory>
 #include <stop_token>

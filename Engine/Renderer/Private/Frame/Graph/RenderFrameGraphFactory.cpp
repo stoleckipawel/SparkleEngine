@@ -6,9 +6,6 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Window/Window.h"
-
 #include <string_view>
 #include <utility>
 
@@ -68,7 +65,7 @@ RenderFrameGraphBuildResult RenderFrameGraphFactory::Build() const
 	ExportFrameProductRoots(builder, m_dependencies.settings, resources);
 
 	RenderFrameGraphBuildResult result{};
-	result.Resources = std::move(resources);
+	result.Resources = resources;
 	result.Graph = std::move(frameGraph);
 	return result;
 }

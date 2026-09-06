@@ -427,7 +427,7 @@ namespace SparkleLauncher
 	OperationRecord RunBuildWorkspaceOperationPlan(
 	    BuildWorkspaceOperationPlan plan,
 	    IProcessRunner& processRunner,
-	    ProcessOutputCallback outputCallback)
+	    const ProcessOutputCallback& outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);

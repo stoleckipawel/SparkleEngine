@@ -5,6 +5,7 @@
 #include "ToolConsole.h"
 
 #include <iostream>
+#include <utility>
 
 int AssetCookerToolProcess::Run(
     const std::filesystem::path& executablePath,
@@ -20,7 +21,7 @@ int AssetCookerToolProcess::Run(
 	        .Arguments = arguments,
 	        .WorkingDirectory = workingDirectory,
 	        .OutputCallback = [](std::string_view output) { std::cout.write(output.data(), static_cast<std::streamsize>(output.size())); },
-	        .Cancellation = cancellation});
+	        .Cancellation = std::move(cancellation)});
 	if (!result.Launched)
 	{
 		ToolConsole::Message(

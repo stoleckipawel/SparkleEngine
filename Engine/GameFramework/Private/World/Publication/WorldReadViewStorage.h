@@ -2,6 +2,8 @@
 
 #include "GameFramework/Public/World/WorldReadView.h"
 
+#include <cstdint>
+#include <optional>
 #include <vector>
 
 struct WorldReadView::Storage final

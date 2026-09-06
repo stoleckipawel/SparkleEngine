@@ -4,6 +4,7 @@
 #include "D3D12/Memory/D3D12RecordingResourceUseToken.h"
 #include "Device/RenderHardwareInterface.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -84,7 +85,7 @@ public:
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,
 	    std::wstring_view debugName);
-	void BeginPresentRenderPass(const float clearColor[4]) noexcept;
+	void BeginPresentRenderPass(RhiClearColorView clearColor) noexcept;
 	void BeginPresentOverlayPass() noexcept;
 	void EndPresentRenderPass() noexcept;
 	PixelFormat GetPresentColorFormat() const noexcept;

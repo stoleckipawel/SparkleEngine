@@ -3,6 +3,7 @@
 #include "Interop/RhiNativeHandles.h"
 #include "UI/RhiImGuiRenderer.h"
 
+#include <cstdint>
 #include <d3d12.h>
 
 struct ImDrawData;

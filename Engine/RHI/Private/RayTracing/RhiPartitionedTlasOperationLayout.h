@@ -2,6 +2,8 @@
 
 #include "RayTracing/RhiPartitionedTlasDesc.h"
 
+#include <cstdint>
+
 struct RhiPartitionedTlasNativeOperationLayout final
 {
 	std::uint64_t OperationCountSizeInBytes = 0;

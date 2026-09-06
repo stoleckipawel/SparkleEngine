@@ -2,6 +2,7 @@
 
 #include "Animation/AnimationClipResource.h"
 
+#include <cstdint>
 #include <span>
 
 namespace MorphWeightEvaluator

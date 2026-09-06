@@ -2,6 +2,7 @@
 
 #include "Core/Public/Assets/AssetTypes.h"
 
+#include <cstddef>
 #include <array>
 #include <filesystem>
 

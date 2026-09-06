@@ -11,6 +11,8 @@
 #include "GameFramework/Public/World/SkyEnvironment.h"
 #include "GameFramework/Public/World/WorldChange.h"
 
+#include <cstdint>
+#include <utility>
 #include <DirectXMath.h>
 #include <memory>
 #include <limits>

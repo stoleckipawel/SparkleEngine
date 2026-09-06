@@ -17,7 +17,7 @@ struct AssetCookerCli::Arguments final
 	std::string Configuration = "DevelopmentGame";
 	std::string ToolProfile;
 	std::string RepositoryRoot;
-	AssetCookerCategory Category = AssetCookerCategory_All;
+	AssetCookerCategory Category = AssetCookerCategory::All;
 };
 
 bool AssetCookerCli::IsHelp(std::string_view argument) noexcept
@@ -90,21 +90,21 @@ bool AssetCookerCli::Parse(int argc, char** argv, Arguments& arguments)
 	arguments.Command = argv[1];
 	if (arguments.Command == "cook-project")
 	{
-		arguments.Category = AssetCookerCategory_All;
+		arguments.Category = AssetCookerCategory::All;
 		return ParseCommonArguments(argc, argv, 2, arguments);
 	}
 
 	if (arguments.Command == "cook-shaders")
 	{
-		arguments.Category = AssetCookerCategory_Shaders;
+		arguments.Category = AssetCookerCategory::Shaders;
 	}
 	else if (arguments.Command == "cook-textures")
 	{
-		arguments.Category = AssetCookerCategory_Textures;
+		arguments.Category = AssetCookerCategory::Textures;
 	}
 	else if (arguments.Command == "cook-assets")
 	{
-		arguments.Category = AssetCookerCategory_SceneAssets;
+		arguments.Category = AssetCookerCategory::SceneAssets;
 	}
 	else
 	{

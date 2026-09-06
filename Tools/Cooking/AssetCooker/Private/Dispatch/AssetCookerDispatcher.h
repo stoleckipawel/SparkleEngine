@@ -3,6 +3,7 @@
 #include "../Diagnostics/AssetCookerDiagnostics.h"
 #include "../Planning/ProjectCookPlan.h"
 
+#include <vector>
 #include <filesystem>
 
 class AssetCookerDispatcher final

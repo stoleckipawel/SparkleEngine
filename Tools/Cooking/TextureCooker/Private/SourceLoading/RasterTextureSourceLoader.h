@@ -2,6 +2,8 @@
 
 #include "SourceLoading/TextureSourceLoaderBackend.h"
 
+#include <filesystem>
+
 class RasterTextureSourceLoader final : public TextureSourceLoaderBackend
 {
 public:

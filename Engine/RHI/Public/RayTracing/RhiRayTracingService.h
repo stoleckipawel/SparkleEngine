@@ -19,6 +19,10 @@ class SPARKLE_RHI_API RhiRayTracingService
 {
 public:
 	virtual ~RhiRayTracingService() noexcept = default;
+	RhiRayTracingService(const RhiRayTracingService&) = delete;
+	RhiRayTracingService& operator=(const RhiRayTracingService&) = delete;
+	RhiRayTracingService(RhiRayTracingService&&) = delete;
+	RhiRayTracingService& operator=(RhiRayTracingService&&) = delete;
 
 	virtual RhiClassicTlasService& GetClassicTlasService() noexcept = 0;
 	virtual const RhiClassicTlasService& GetClassicTlasService() const noexcept = 0;
@@ -49,4 +53,7 @@ public:
 	    std::uint32_t instanceCount,
 	    std::wstring_view debugName);
 	virtual std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(const RayTracingShaderTableDesc& desc) = 0;
+
+protected:
+	RhiRayTracingService() noexcept = default;
 };

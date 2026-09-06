@@ -9,6 +9,7 @@ void ShutdownSharedStreamlineRuntime() noexcept;
 void SetSharedStreamlineFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept;
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
+  #include <cstdint>
   #include <sl.h>
 
 bool IsStreamlineFeatureSupported(

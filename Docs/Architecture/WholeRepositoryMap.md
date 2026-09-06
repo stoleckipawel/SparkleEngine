@@ -1,7 +1,7 @@
 # D. Whole Repository Architecture Map
 
 Status: current source-backed reviewer map; descriptive, not a normative architecture or strategy contract
-Last verified: repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-31 at committed `master` revision `61fe39d9`
+Last verified: repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-31 at committed `master` revision `61fe39d9`; build-module dependency visibility reverified 2026-09-03 against the current working tree
 Scope: implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
 
 ## Intent And Authority
@@ -46,7 +46,7 @@ The top-level CMake project requires C++20, loads the Sparkle build profiles and
 | `Engine/RHI` | `SparkleRHICommon`, `SparkleRHIDiagnostics`, backend targets, `SparkleRHI` | public `SparkleCore`; private Platform and selected backends |
 | `Engine/GameFramework` | `SparkleGameFramework` | public Core, Platform, and Tasks; no Renderer dependency |
 | `Engine/Renderer` | registration/provider targets and `SparkleRenderer` | public Core and RHI; private Platform, GameFramework, Tasks, providers, and ImGui |
-| `Engine/Editor` | `SparkleEditor` | public Core, RHI, and Renderer; private GameFramework, Platform, and ImGui |
+| `Engine/Editor` | `SparkleEditor` | public Core, RHI, Renderer, GameFramework, and Platform; private ImGui |
 | `Engine/Application` | `SparkleApplication`, `SparkleApplicationEditor` | runtime host publishes Renderer; editor host layers Editor over the runtime host |
 | `Projects/Showcase` | `ShowcaseEditor`, `ShowcaseRuntime` | explicit editor and runtime launch products |
 
@@ -221,7 +221,7 @@ The Launcher GUI uses the deployed `RepositoryRoot.txt` as its repository author
 ## Validation And Evidence Boundaries
 
 - `architecture_boundary_check` is mandatory when Renderer/RHI boundaries change.
-- `code_style_check` checks present tracked owned C++, headers, HLSL, and HLSLI with clang-format 22.1.3 plus the authored rules clang-format cannot enforce. The C/C++ subset is baseline-clean; the all-source target intentionally remains failing until the shader acceptance gate permits shader migration.
+- `code_style_check` checks tracked owned C++, headers, HLSL, and HLSLI with clang-format 22.1.3 plus authored structural rules, and verifies the `.clang-tidy` configuration. It currently passes across the tracked owned source set; it does not claim that clang-tidy has run cleanly over every translation unit.
 - `ShaderCompilerCliValidation` is a focused custom target owned by the ShaderCompiler build.
 - No active CTest registration is present in the verified source tree; do not infer an automated suite from local generated build artifacts.
 - Generated build, cooked, log, capture, and validation artifacts are evidence only when their revision, configuration, command, hardware/runtime provenance, and result are recorded.

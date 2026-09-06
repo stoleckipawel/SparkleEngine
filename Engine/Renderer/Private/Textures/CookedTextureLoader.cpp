@@ -99,14 +99,14 @@ LoadedTextureData CookedTextureLoader::Decode(const CookedTextureFilePayload& pa
 	CookedTextureAssetHeader header;
 	std::string errorMessage;
 	if (!reader.ReadValue(header, errorMessage))
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	CookedTextureDecoder::ValidateHeader(header, payload.ResolvedPath);
 
 	const TextureFormatIntent formatIntent = CookedTextureDecoder::ResolveFormatIntent(header.formatIntent);
 
 	std::vector<CookedTextureMipHeader> mipHeaders;
 	if (!reader.ReadArray(header.mipCount * header.GetArraySize(), mipHeaders, errorMessage))
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 
 	for (std::uint32_t mipIndex = 0; mipIndex < static_cast<std::uint32_t>(mipHeaders.size()); ++mipIndex)
 	{

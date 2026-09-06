@@ -61,6 +61,13 @@ private:
 	struct AllocatedParameterInstanceBase
 	{
 		virtual ~AllocatedParameterInstanceBase() noexcept;
+		AllocatedParameterInstanceBase(const AllocatedParameterInstanceBase&) = delete;
+		AllocatedParameterInstanceBase& operator=(const AllocatedParameterInstanceBase&) = delete;
+		AllocatedParameterInstanceBase(AllocatedParameterInstanceBase&&) = delete;
+		AllocatedParameterInstanceBase& operator=(AllocatedParameterInstanceBase&&) = delete;
+
+	protected:
+		AllocatedParameterInstanceBase() noexcept = default;
 	};
 
 	template <typename TParameters> struct AllocatedParameterInstance final : AllocatedParameterInstanceBase

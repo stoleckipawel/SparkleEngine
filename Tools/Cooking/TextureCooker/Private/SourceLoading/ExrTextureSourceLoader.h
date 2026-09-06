@@ -2,6 +2,8 @@
 
 #include "SourceLoading/TextureSourceLoaderBackend.h"
 
+#include <filesystem>
+
 class ExrTextureSourceLoader final : public TextureSourceLoaderBackend
 {
 public:

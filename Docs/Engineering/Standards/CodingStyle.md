@@ -37,6 +37,8 @@ Executable configuration wins for exact behavior. The accepted baseline is:
 
 The [Clang-Format Decision Record](../ClangFormatDecisionRecord.md) preserves the evidence, alternatives, and accepted ballot. [`.clang-format`](../../../.clang-format) and the inherited [shader override](../../../Engine/Assets/Shaders/.clang-format) remain authoritative for exact formatter behavior.
 
+The clang-tidy naming configuration follows the binding scope in [Naming and Vocabulary](NamingAndVocabulary.md): it checks lower-camel locals and parameters and the `m_` convention for non-public implementation state, but it does not impose one casing rule on public aggregate or ABI fields. Established lowercase literal suffixes remain accepted. Repository-wide `[[nodiscard]]` adoption remains a candidate rather than an active gate, as recorded in [Deciding New Rules](#deciding-new-rules).
+
 ### Formatter Enforcement Boundary
 
 clang-format owns whitespace and line layout. It MUST NOT insert or remove braces, reorder qualifiers, remove parentheses, sort includes or `using` declarations, or perform other semantic-looking rewrites. Run version 22.1.3 with `--Werror`; a version change is a deliberate formatting migration.
@@ -96,6 +98,12 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 - Use designated initialization where it improves contract readability and matches the type.
 
 Ownership/lifetime and inheritance rules belong to [Repository Structure and Ownership](RepositoryStructureAndOwnership.md); units, domains, and ABI vocabulary belong to [Naming and Vocabulary](NamingAndVocabulary.md).
+
+### Scoped-enum storage
+
+Every owned scoped enum declares an explicit underlying type. A bounded internal state or selector uses `std::uint8_t` when its complete value set fits. A wider type requires a current contract: sufficient flag bits, imported/cooked representation, CPU/shader mirror, native API value, serialized field, or another named ABI boundary. Do not widen an enum for hypothetical values or rely on compiler-default `int` storage.
+
+The `performance-enum-size` ignore list contains the intentional wider contract families. Adding an exception requires reviewing every producer, consumer, serialized or shader mirror, and size/layout use. Changing an owned persisted width follows the clean-break policy and regenerates its artifacts; external or native widths remain exact.
 
 ### Owner-local helper placement
 
@@ -235,6 +243,8 @@ Indent every named namespace. Do not place a trailing `// namespace ...` comment
 - Backend-native headers remain backend-private.
 - Remove dead includes after moves/refactors.
 - Preserve repository-owned include groups/order; current `.clang-format` does not sort includes.
+
+On Windows, owned files include `Windows.h` or the repository platform wrapper directly. The configured include-cleaner exception suppresses suggestions for Windows SDK implementation headers reached through that supported umbrella; owned and standard-library dependencies remain subject to direct-include diagnostics.
 
 Detailed include ordering remains open. Follow strong local module precedent without broad reorder-only churn until an accepted rule and enforcement path exist.
 

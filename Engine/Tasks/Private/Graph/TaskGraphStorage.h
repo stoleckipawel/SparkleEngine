@@ -2,6 +2,8 @@
 
 #include "TaskGraph.h"
 
+#include <cstdint>
+#include <string>
 #include <optional>
 #include <vector>
 

@@ -3,6 +3,7 @@
 #include "../Formats/PixelFormat.h"
 #include "../Frame/RhiFrameConstants.h"
 
+#include <cstdint>
 #include <array>
 
 namespace RhiPresentationDefaults

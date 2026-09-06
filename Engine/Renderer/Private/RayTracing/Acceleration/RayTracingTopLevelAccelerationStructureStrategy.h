@@ -3,6 +3,7 @@
 #include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
+#include <cstdint>
 #include <memory>
 
 class RayTracingBlasCache;

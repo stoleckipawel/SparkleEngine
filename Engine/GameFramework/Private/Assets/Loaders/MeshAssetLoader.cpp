@@ -38,8 +38,8 @@ namespace Assets
 			    "Invalid cooked mesh asset header; recook the asset");
 		}
 
-		const bool hasSkinInfluences = (header.flags & CookedMeshAssetFlag_HasSkinInfluences) != 0u;
-		const bool hasMorphTargets = (header.flags & CookedMeshAssetFlag_HasMorphTargets) != 0u;
+		const bool hasSkinInfluences = (header.flags & static_cast<std::uint32_t>(CookedMeshAssetFlag::HasSkinInfluences)) != 0u;
+		const bool hasMorphTargets = (header.flags & static_cast<std::uint32_t>(CookedMeshAssetFlag::HasMorphTargets)) != 0u;
 		const bool isSkeletal = header.assetKind == CookedMeshAssetKind::Skeletal;
 		if (header.assetKind != CookedMeshAssetKind::Static && header.assetKind != CookedMeshAssetKind::Skeletal)
 		{

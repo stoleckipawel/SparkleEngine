@@ -77,7 +77,7 @@ public:
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,
 	    std::wstring_view debugName);
-	void BeginPresentRenderPass(const float clearColor[4]) noexcept;
+	void BeginPresentRenderPass(RhiClearColorView clearColor) noexcept;
 	void BeginPresentOverlayPass() noexcept;
 	void EndPresentRenderPass() noexcept;
 	PixelFormat GetPresentColorFormat() const noexcept;

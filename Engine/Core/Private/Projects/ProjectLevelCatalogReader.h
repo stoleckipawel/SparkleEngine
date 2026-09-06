@@ -3,6 +3,7 @@
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <iosfwd>
 #include <string>
@@ -16,7 +17,7 @@ public:
 	static void ValidateText(const std::filesystem::path& projectRoot, std::string_view text);
 
 private:
-	enum class Section
+	enum class Section : std::uint8_t
 	{
 		None,
 		Level,

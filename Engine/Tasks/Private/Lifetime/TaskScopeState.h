@@ -3,6 +3,9 @@
 #include "Execution/TaskExecutionState.h"
 #include "TaskScope.h"
 
+#include <chrono>
+#include <cstdint>
+#include <memory>
 #include <condition_variable>
 #include <mutex>
 #include <thread>

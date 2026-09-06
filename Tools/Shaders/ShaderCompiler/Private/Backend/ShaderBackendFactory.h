@@ -3,6 +3,7 @@
 #include "Backend/IShaderBackend.h"
 #include "Backend/ShaderBackendCapabilities.h"
 
+#include <cstdint>
 #include <memory>
 #include <span>
 #include <string>

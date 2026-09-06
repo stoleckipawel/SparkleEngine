@@ -6,7 +6,6 @@
 #include "Diagnostics/MeshPreviewGeometry.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
-#include "Rendering/RenderFrameSubmission.h"
 #include "Concurrency/RendererExecutionConfig.h"
 #include "UI/UiRenderPacket.h"
 #include "Settings/EngineRenderingSettings.h"
@@ -17,6 +16,7 @@
 class Timer;
 class Window;
 class RendererFacadeState;
+struct RenderFrameSubmission;
 
 class SPARKLE_RENDERER_API Renderer final
 {

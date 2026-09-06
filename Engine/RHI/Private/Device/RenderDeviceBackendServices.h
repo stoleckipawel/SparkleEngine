@@ -13,6 +13,10 @@ class RenderDeviceBackendServices
 {
 public:
 	virtual ~RenderDeviceBackendServices() noexcept;
+	RenderDeviceBackendServices(const RenderDeviceBackendServices&) = delete;
+	RenderDeviceBackendServices& operator=(const RenderDeviceBackendServices&) = delete;
+	RenderDeviceBackendServices(RenderDeviceBackendServices&&) = delete;
+	RenderDeviceBackendServices& operator=(RenderDeviceBackendServices&&) = delete;
 
 	virtual RenderHardwareInterface& GetRenderHardwareInterface() noexcept = 0;
 	virtual const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept = 0;
@@ -39,4 +43,7 @@ public:
 	virtual RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept = 0;
 	virtual void SubmitFrame(std::uint64_t frameId) noexcept = 0;
 	virtual void AdvanceFrameInFlight() noexcept = 0;
+
+protected:
+	RenderDeviceBackendServices() noexcept = default;
 };

@@ -16,6 +16,10 @@ class SPARKLE_RHI_API RhiUploadService
 {
 public:
 	virtual ~RhiUploadService() noexcept;
+	RhiUploadService(const RhiUploadService&) = delete;
+	RhiUploadService& operator=(const RhiUploadService&) = delete;
+	RhiUploadService(RhiUploadService&&) = delete;
+	RhiUploadService& operator=(RhiUploadService&&) = delete;
 
 	virtual RhiGpuVirtualAddress AllocateUniformConstantBuffer(
 	    RenderCommandList& commandList,
@@ -33,4 +37,7 @@ public:
 	    const RhiTextureUploadDesc& textureUpload,
 	    ResourceState finalState,
 	    std::wstring_view debugName) = 0;
+
+protected:
+	RhiUploadService() noexcept = default;
 };

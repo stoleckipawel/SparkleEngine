@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "Concurrency/Coordinator/RenderCoordinator.h"
 
-#include "Core/Public/Diagnostics/Error.h"
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 #include "Frame/FramePipeline.h"
 #include "Time/Timer.h"
@@ -72,7 +71,7 @@ void RenderCoordinator::SubmitRenderingSettings(EngineRenderingSettingsState set
 	m_producerOwner.AssertAccess();
 	if (m_config.IsThreaded())
 	{
-		SubmitControl(RenderSettingsChangedCommand{std::move(settings)});
+		SubmitControl(RenderSettingsChangedCommand{settings});
 		return;
 	}
 	ApplyEngineRenderingSettingsStateToCVars(settings);
@@ -83,11 +82,11 @@ void RenderCoordinator::SubmitViewportRequest(ViewportRenderRequest request)
 	m_producerOwner.AssertAccess();
 	if (m_config.IsThreaded())
 	{
-		SubmitControl(RenderViewportCommand{std::move(request)});
+		SubmitControl(RenderViewportCommand{request});
 	}
 	else
 	{
-		GetSerialContext().GetPipeline().SubmitViewportRenderRequest(std::move(request));
+		GetSerialContext().GetPipeline().SubmitViewportRenderRequest(request);
 	}
 }
 

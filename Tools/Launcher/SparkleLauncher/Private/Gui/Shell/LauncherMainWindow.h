@@ -24,6 +24,7 @@
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -35,7 +36,7 @@ namespace SparkleLauncher
 {
 	struct LauncherOperationDescriptor;
 	struct ToolchainItemStatus;
-	enum class WorkspaceCompiler;
+	enum class WorkspaceCompiler : std::uint8_t;
 	class LauncherContentModel;
 	class LauncherSettings;
 	class LauncherActivityPanel;
@@ -46,7 +47,7 @@ namespace SparkleLauncher
 	struct LauncherLevelUiModel;
 	class ResponsiveCardGridWidget;
 	struct LauncherContentSummary;
-	enum class LauncherArtworkPreset;
+	enum class LauncherArtworkPreset : std::uint8_t;
 
 	class LauncherMainWindow final : public QMainWindow
 	{

@@ -13,7 +13,7 @@ namespace ShaderCompilerPaths
 
 		std::error_code errorCode;
 		const std::filesystem::path absolutePath = std::filesystem::absolute(path, errorCode);
-		const std::filesystem::path normalizedPath = (errorCode ? path : absolutePath).lexically_normal();
+		std::filesystem::path normalizedPath = (errorCode ? path : absolutePath).lexically_normal();
 
 		if (const std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(normalizedPath, errorCode); !errorCode)
 		{

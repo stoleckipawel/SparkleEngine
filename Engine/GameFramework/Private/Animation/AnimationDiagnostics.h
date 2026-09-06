@@ -2,6 +2,8 @@
 
 #include "Animation/AnimationClipResource.h"
 
+#include <cstdint>
+
 namespace AnimationDiagnostics
 {
 	std::uint32_t CountUnsupportedRuntimeChannels(const AnimationClipResource& clip) noexcept;

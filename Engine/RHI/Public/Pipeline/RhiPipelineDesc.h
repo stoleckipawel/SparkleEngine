@@ -129,6 +129,10 @@ class SPARKLE_RHI_API RenderBindingLayout
 {
 public:
 	virtual ~RenderBindingLayout() noexcept;
+	RenderBindingLayout(const RenderBindingLayout&) = delete;
+	RenderBindingLayout& operator=(const RenderBindingLayout&) = delete;
+	RenderBindingLayout(RenderBindingLayout&&) = delete;
+	RenderBindingLayout& operator=(RenderBindingLayout&&) = delete;
 
 	const PassParameterLayout& GetParameterLayout() const noexcept;
 	const CompiledBinding* GetBindings() const noexcept;
@@ -314,4 +318,11 @@ class SPARKLE_RHI_API RenderPipeline
 {
 public:
 	virtual ~RenderPipeline() noexcept = default;
+	RenderPipeline(const RenderPipeline&) = delete;
+	RenderPipeline& operator=(const RenderPipeline&) = delete;
+	RenderPipeline(RenderPipeline&&) = delete;
+	RenderPipeline& operator=(RenderPipeline&&) = delete;
+
+protected:
+	RenderPipeline() noexcept = default;
 };

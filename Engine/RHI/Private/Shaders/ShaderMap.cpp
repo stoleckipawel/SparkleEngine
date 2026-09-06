@@ -10,7 +10,6 @@
 
 #include <algorithm>
 #include <format>
-#include <limits>
 #include <string>
 
 ShaderFeatureFlags operator|(ShaderFeatureFlags lhs, ShaderFeatureFlags rhs) noexcept
@@ -120,7 +119,7 @@ CookedShaderLibrary CookedShaderLibrary::Open(const std::filesystem::path& path)
 	std::string error;
 	if (!Files::TryReadAllBytes(path, fileBytes, error))
 	{
-		throw Diagnostics::Error(std::move(error));
+		throw Diagnostics::Error(error);
 	}
 
 	CookedShaderLibrary library;
@@ -132,7 +131,11 @@ CookedShaderLibrary CookedShaderLibrary::Open(const std::filesystem::path& path)
 	if (library.m_header.PublicationHash == 0 || !reader.ReadArray(library.m_header.RecordCount, library.m_records, error)
 	    || !reader.ReadArray(library.m_header.CodeBlobSizeInBytes, library.m_codeBlob, error))
 	{
-		throw Diagnostics::Error(error.empty() ? "Cooked shader library has no publication identity." : std::move(error));
+		if (error.empty())
+		{
+			throw Diagnostics::Error("Cooked shader library has no publication identity.");
+		}
+		throw Diagnostics::Error(error);
 	}
 	if (reader.GetRemainingByteCount() != 0)
 	{
@@ -186,7 +189,7 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 	std::string error;
 	if (!Files::TryReadAllBytes(path, fileBytes, error))
 	{
-		throw Diagnostics::Error(std::move(error));
+		throw Diagnostics::Error(error);
 	}
 
 	GlobalShaderMap map;
@@ -210,7 +213,7 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 	    || !reader.ReadArray(map.m_header.SpecializationConstantRecordCount, map.m_specializationConstants, error)
 	    || !reader.ReadArray(map.m_header.StringTableSizeInBytes, map.m_stringTable, error))
 	{
-		throw Diagnostics::Error(std::move(error));
+		throw Diagnostics::Error(error);
 	}
 	if (reader.GetRemainingByteCount() != 0)
 	{

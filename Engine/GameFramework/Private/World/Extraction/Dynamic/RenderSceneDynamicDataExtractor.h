@@ -3,6 +3,7 @@
 #include "GameFramework/Public/Rendering/RenderSceneDynamicData.h"
 #include "World/Extraction/WorldExtractionStorage.h"
 
+#include <cstdint>
 #include <limits>
 #include <span>
 #include <vector>

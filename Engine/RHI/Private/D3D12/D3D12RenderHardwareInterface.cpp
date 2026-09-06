@@ -9,7 +9,6 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "D3D12/D3D12TypeConversions.h"
-#include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
@@ -29,7 +28,6 @@
 #include "Shaders/ShaderTarget.h"
 
 #include <d3d12.h>
-#include <string>
 
 D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12Rhi& rhi,
@@ -359,7 +357,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
 	return m_rayTracingServices->CreateInstanceBuffer(instances, instanceCount, debugName);
 }
 
-void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept
+void D3D12RenderHardwareInterface::BeginPresentRenderPass(RhiClearColorView clearColor) noexcept
 {
 	RhiResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
 	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
@@ -369,8 +367,7 @@ void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor
 	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
 	commandList.SetRenderTarget(renderTargetView);
 
-	static constexpr float defaultClearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-	commandList.ClearRenderTarget(renderTargetView, clearColor != nullptr ? clearColor : defaultClearColor);
+	commandList.ClearRenderTarget(renderTargetView, clearColor);
 }
 
 void D3D12RenderHardwareInterface::BeginPresentOverlayPass() noexcept

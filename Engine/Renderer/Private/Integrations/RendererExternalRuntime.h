@@ -3,6 +3,8 @@
 #include "Core/Public/Threading/ThreadOwnership.h"
 #include "Host/RendererBackendConfiguration.h"
 
+#include <cstdint>
+
 // Owns process-facing renderer integration initialization on the application
 // thread. RenderCoordinator receives only the immutable device bootstrap value.
 class RendererExternalRuntime final

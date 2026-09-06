@@ -2,7 +2,9 @@
 
 #include "UI.h"
 
-#include "Console/EditorConsoleSystem.h"
+#include "Console/EditorConsoleSystem.h" // IWYU pragma: keep
+#include "GameFramework/Public/Rendering/RenderViewCameraData.h"
+#include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "Panels/MainMenuBarPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
@@ -12,8 +14,12 @@
 #include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Panels/ViewportTopPanel.h"
+#include "Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
+#include "Renderer/Public/Editor/EditorTextureHandle.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
+#include "Renderer/Public/UI/UiRenderPacket.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"
 #include "Scene/Transactions/EditorTransactionHistory.h"
@@ -24,6 +30,7 @@
 #include <backends/imgui_impl_win32.h>
 #include <imgui.h>
 
+#include <memory>
 #include <utility>
 
 const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept

@@ -66,7 +66,7 @@ private:
 	friend class LevelSession;
 	void CommitWorldChanges();
 	void InitializeStagedLevel(const LevelDesc& desc);
-	void CommitSceneLoadPackage(Assets::SceneLoadPackage&& package);
+	void CommitSceneLoadPackage(Assets::SceneLoadPackage package);
 	void FinalizeSceneLoadCommit();
 
 	std::unique_ptr<ECS::GameWorldState> m_state;

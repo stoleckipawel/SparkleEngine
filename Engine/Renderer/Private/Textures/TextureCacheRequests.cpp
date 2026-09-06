@@ -3,12 +3,8 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Diagnostics/Verify.h"
-#include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Paths/PathUtils.h"
 #include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Resources/RhiResourceService.h"
-#include "Tasks/Public/TaskExecutor.h"
-#include "Tasks/Public/TaskScope.h"
 #include "Textures/CookedTextureLoader.h"
 
 #include <algorithm>
@@ -59,7 +55,7 @@ void TextureCache::LoadDefaultTextures(RenderCommandList& commandList, std::vect
 
 		RendererTexture texture = m_textureFactory.Create(source->Path, decodedTexture, commandList);
 		uploadedResources.push_back(m_resourceService.GetResourceHandle(texture.Resource));
-		m_defaultTextures.emplace(source->CacheKey, std::move(texture));
+		m_defaultTextures.emplace(source->CacheKey, texture);
 	}
 
 	const std::optional<ResolvedTexturePath> checker = ResolveTexturePath(DefaultTextures::GetPath(DefaultTexture::Checkerboard));
@@ -156,7 +152,7 @@ void TextureCache::SynchronizeSceneTextures(const RenderTextureTable& textures)
 			continue;
 		}
 
-		QueueTextureRetirement(std::move(texture->second), nextBindingRevision);
+		QueueTextureRetirement(texture->second, nextBindingRevision);
 		texture = m_pathTextures.erase(texture);
 		retiredTexture = true;
 	}

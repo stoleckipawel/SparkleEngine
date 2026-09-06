@@ -5,6 +5,7 @@
 #include "../FrameGraph/FrameGraphAttachment.h"
 #include "Renderer/Public/RendererAPI.h"
 
+#include <cstdint>
 #include <array>
 #include <cstddef>
 #include <type_traits>

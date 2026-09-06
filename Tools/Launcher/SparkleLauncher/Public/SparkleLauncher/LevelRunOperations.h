@@ -5,6 +5,7 @@
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -13,7 +14,7 @@
 
 namespace SparkleLauncher
 {
-	enum class LevelRunMode
+	enum class LevelRunMode : std::uint8_t
 	{
 		Editor,
 		Game
@@ -77,5 +78,5 @@ namespace SparkleLauncher
 	OperationRecord RunLevelRunOperationPlan(
 	    LevelRunOperationPlan plan,
 	    IProcessRunner& processRunner,
-	    ProcessOutputCallback outputCallback = {});
+	    const ProcessOutputCallback& outputCallback = {});
 }

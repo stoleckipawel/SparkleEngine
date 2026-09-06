@@ -2,9 +2,14 @@
 
 #include "SparkleLauncher/MaintenanceOperations.h"
 
+#include <filesystem>
+#include <string>
+#include <vector>
+#include <cstdint>
+
 namespace SparkleLauncher
 {
-	enum class MaintenanceCleanBehavior
+	enum class MaintenanceCleanBehavior : std::uint8_t
 	{
 		RemovePath,
 		RemoveBuildDirectoryContentsPreservingDependencies,

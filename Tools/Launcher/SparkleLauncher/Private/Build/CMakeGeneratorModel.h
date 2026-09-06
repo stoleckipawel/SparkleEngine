@@ -2,12 +2,13 @@
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
 namespace SparkleLauncher
 {
-	enum class CMakeGeneratorFamily
+	enum class CMakeGeneratorFamily : std::uint8_t
 	{
 		VisualStudio,
 		Ninja,

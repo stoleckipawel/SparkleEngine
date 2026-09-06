@@ -3,7 +3,6 @@
 #include "RayTracing/RayTracingHitData.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
-#include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/LightGpuData.h"
 #include "ShaderData/SceneLightingUniformData.h"
 

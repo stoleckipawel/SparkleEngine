@@ -2,6 +2,8 @@
 
 #include "ShaderRecookOperation.h"
 
+#include <utility>
+
 ShaderRecookExecutionResult ShaderRecookOperation::Execute(
     std::uint64_t requestId,
     std::uint64_t baselinePublicationId,
@@ -12,6 +14,6 @@ ShaderRecookExecutionResult ShaderRecookOperation::Execute(
 	result.RequestId = requestId;
 	result.BaselinePublicationId = baselinePublicationId;
 	result.Request = std::move(request);
-	result.Process = ShaderCompilerProcess::RunCook(result.Request, cancellationToken);
+	result.Process = ShaderCompilerProcess::RunCook(result.Request, std::move(cancellationToken));
 	return result;
 }

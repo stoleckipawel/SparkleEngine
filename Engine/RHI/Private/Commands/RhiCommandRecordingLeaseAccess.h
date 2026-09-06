@@ -2,6 +2,7 @@
 
 #include "Commands/RhiCommandRecordingLease.h"
 
+#include <cstdint>
 #include <utility>
 
 struct RhiCommandRecordingLeaseInitialization final

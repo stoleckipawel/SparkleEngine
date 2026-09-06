@@ -8,6 +8,7 @@
 #include "Mouse/MousePosition.h"
 #include "State/ButtonState.h"
 
+#include <cstddef>
 #include <array>
 #include <cstdint>
 

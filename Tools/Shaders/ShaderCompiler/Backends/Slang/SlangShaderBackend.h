@@ -2,6 +2,8 @@
 
 #include "Backend/IShaderBackend.h"
 
+#include <cstdint>
+#include <string_view>
 #include <slang-com-ptr.h>
 #include <slang.h>
 

@@ -57,7 +57,7 @@ namespace SparkleLauncher
 	private:
 		void PopulateOperationCatalog();
 		void QueueOperationOutput(QString runId, QString operationId, QString outputText);
-		void QueueOperationFinished(QString runId, QString operationId, QString title, OperationRecord record);
+		void QueueOperationFinished(QString runId, QString operationId, QString title, const OperationRecord& record);
 		const LauncherOperationDescriptor* FindOperation(const QString& operationId) const;
 
 		QVector<LauncherOperationDescriptor> m_operations;

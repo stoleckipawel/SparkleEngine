@@ -3,6 +3,7 @@
 #include "Renderer/Public/Meshes/GpuMeshHandle.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
+#include <cstddef>
 #include <DirectXMath.h>
 
 #include <cstdint>

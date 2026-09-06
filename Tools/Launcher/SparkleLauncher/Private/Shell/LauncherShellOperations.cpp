@@ -239,8 +239,7 @@ namespace SparkleLauncher
 		{
 			const OperationRecord operation = RunMaintenanceOperationPlan(
 			    PlanMaintenanceOperation(arguments.RunOperationId, BuildMaintenanceShellRequest(model, arguments)),
-			    processRunner,
-			    [&output](std::string_view text) { output << text; });
+			    processRunner);
 			return ReportLauncherShellOperationResult(operation, output, error);
 		}
 

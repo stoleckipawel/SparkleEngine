@@ -85,9 +85,9 @@ void VulkanRenderCommandList::SetRenderTargets(
 	}
 }
 
-void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept
+void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, RhiClearColorView color) noexcept
 {
-	if (m_commandBuffer == VK_NULL_HANDLE || color == nullptr || !m_hasScissorRect)
+	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect)
 	{
 		return;
 	}

@@ -3,6 +3,7 @@
 #include "World/ECS/Components/RenderingComponents.h"
 #include "GameFramework/Public/Scene/Meshes/Mesh.h"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 

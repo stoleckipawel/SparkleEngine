@@ -3,6 +3,7 @@
 #include "Core/Public/CoreAPI.h"
 #include "Logger.h"
 
+#include <memory>
 #include <cstdint>
 #include <string_view>
 

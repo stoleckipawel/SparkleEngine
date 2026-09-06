@@ -15,6 +15,7 @@
 #include "Input/Routing/InputFocusRouter.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
+#include <cstddef>
 #include <array>
 #include <cstdint>
 #include <functional>

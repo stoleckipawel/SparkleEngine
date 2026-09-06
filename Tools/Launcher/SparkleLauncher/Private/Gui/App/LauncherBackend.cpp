@@ -152,8 +152,8 @@ namespace SparkleLauncher
 		    title.toStdString(),
 		    [this, runId, operationIdText](std::string_view output)
 		    { QueueOperationOutput(runId, operationIdText, QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size()))); },
-		    [this, runId, operationIdText, title](OperationRecord record)
-		    { QueueOperationFinished(runId, operationIdText, title, std::move(record)); });
+		    [this, runId, operationIdText, title](const OperationRecord& record)
+		    { QueueOperationFinished(runId, operationIdText, title, record); });
 	}
 
 	bool LauncherBackend::CancelOperation(const QString& runId)
@@ -170,7 +170,7 @@ namespace SparkleLauncher
 		    Qt::QueuedConnection);
 	}
 
-	void LauncherBackend::QueueOperationFinished(QString runId, QString operationId, QString title, OperationRecord record)
+	void LauncherBackend::QueueOperationFinished(QString runId, QString operationId, QString title, const OperationRecord& record)
 	{
 		const QString status = FormatOperationCompletion(record);
 		const int exitCode = record.ExitCode.value_or(-1);

@@ -358,7 +358,7 @@ namespace SparkleLauncher
 			}
 
 			const ProjectAssetPack& pack = packIt->second;
-			const auto appendExistingTarget = [&targets](std::string displayName, const std::filesystem::path& path, QString detail)
+			const auto appendExistingTarget = [&targets](const std::string& displayName, const std::filesystem::path& path, QString detail)
 			{
 				std::error_code existsError;
 				if (path.empty() || !std::filesystem::exists(path, existsError) || existsError)
@@ -367,7 +367,7 @@ namespace SparkleLauncher
 				}
 
 				LauncherCleanTarget target;
-				target.DisplayName = QString::fromStdString(std::move(displayName));
+				target.DisplayName = QString::fromStdString(displayName);
 				target.Path = QString::fromStdString(path.string());
 				target.Detail = std::move(detail);
 				targets.push_back(std::move(target));

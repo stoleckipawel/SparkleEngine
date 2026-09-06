@@ -4,11 +4,21 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "CookedMeshAssetBuild.h"
+#include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
+#include "GameFramework/Public/Assets/Cooked/CookedMeshAsset.h"
+#include "SourceImportOutput.h"
+#include "Types/ImportedGeometry.h"
+#include "Types/ImportedMorphTarget.h"
+#include "Types/ImportedSkin.h"
 
+#include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <format>
 #include <limits>
 #include <string>
+#include <string_view>
 #include <utility>
 
 class CookedMeshAssetTranslation final

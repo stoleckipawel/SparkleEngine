@@ -9,7 +9,6 @@
 #include <imgui.h>
 
 #include <cfloat>
-#include <utility>
 
 class ViewportCameraPropertyTable final
 {
@@ -156,7 +155,7 @@ void ViewportCameraProperties::BuildPopup(
 	ViewportExposureOverrides exposureDraft = settings.Exposure;
 	if (ExposureSettingsEditor::DrawOverrides(exposureDraft, renderingDefaults))
 	{
-		viewportSession.SetExposureOverrides(std::move(exposureDraft));
+		viewportSession.SetExposureOverrides(exposureDraft);
 	}
 
 	ImGui::EndPopup();

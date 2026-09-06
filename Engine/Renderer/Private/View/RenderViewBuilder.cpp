@@ -5,10 +5,16 @@
 #include "Config/DepthConvention.h"
 #include "Core/Public/Math/WorldCoordinateSystem.h"
 #include "Debug/RendererCVars.h"
+#include "GameFramework/Public/Scene/Camera/CameraDesc.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "RHI/Public/Resources/RhiResourceDesc.h"
 #include "View/RenderView.h"
 #include "View/RenderViewState.h"
 
+#include <DirectXMath.h>
+
 #include <algorithm>
+#include <cstdint>
 
 using namespace DirectX;
 

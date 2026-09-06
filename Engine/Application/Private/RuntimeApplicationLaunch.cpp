@@ -16,7 +16,7 @@ int RunRuntimeApplication(RuntimeApplicationOptions options)
 	Threading::SetCurrentThreadRole("Sparkle.GameThread");
 	Application::ConfigureProcessFromCommandLine();
 
-	RuntimeApplication app(std::move(options));
+	RuntimeApplication app(options);
 	app.Run();
 	return 0;
 }

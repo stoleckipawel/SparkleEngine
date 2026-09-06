@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreAPI.h"
+#include <cstddef>
 #include <cstdint>
 
 using int8 = std::int8_t;

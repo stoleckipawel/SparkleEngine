@@ -4,6 +4,7 @@
 #include "GameFramework/Public/World/EntityId.h"
 #include "World/Extraction/WorldExtractionStorage.h"
 
+#include <cstddef>
 #include <span>
 #include <vector>
 

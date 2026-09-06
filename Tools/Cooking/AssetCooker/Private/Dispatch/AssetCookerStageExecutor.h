@@ -33,7 +33,7 @@ private:
 	    std::vector<AssetCookerOutputRecord>& outputs,
 	    AssetCookerCategory category,
 	    std::string assetId,
-	    std::filesystem::path path);
+	    const std::filesystem::path& path);
 	static bool RunShaders(
 	    const AssetCookerProjectCookPlan& plan,
 	    AssetCookerDiagnostics& diagnostics,

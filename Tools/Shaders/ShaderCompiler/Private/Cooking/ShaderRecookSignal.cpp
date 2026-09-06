@@ -6,7 +6,6 @@
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Json/JsonWriter.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <chrono>
 
@@ -43,6 +42,6 @@ void ShaderRecookSignal::Write(
 
 	if (!Files::TryWriteAllTextAtomic(signalStoragePath, contents, fileError))
 	{
-		throw Diagnostics::Error(std::move(fileError));
+		throw Diagnostics::Error(fileError);
 	}
 }

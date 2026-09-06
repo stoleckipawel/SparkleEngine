@@ -2,6 +2,7 @@
 
 #include "TaskGraph.h"
 
+#include <string>
 #include <cstdint>
 #include <chrono>
 #include <memory>

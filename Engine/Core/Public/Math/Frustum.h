@@ -4,20 +4,14 @@
 
 #include <DirectXMath.h>
 
+#include <array>
+#include <cstddef>
+
 struct SPARKLE_CORE_API Frustum
 {
-	enum Plane
-	{
-		Left = 0,
-		Right,
-		Bottom,
-		Top,
-		Near,
-		Far,
-		Count
-	};
+	inline static constexpr std::size_t kPlaneCount = 6;
 
-	DirectX::XMFLOAT4 planes[Count];
+	std::array<DirectX::XMFLOAT4, kPlaneCount> planes;
 
 	void ExtractFromViewProjection(const DirectX::XMFLOAT4X4& viewProj) noexcept;
 };

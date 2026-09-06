@@ -3,7 +3,6 @@
 #include "LauncherOperationRequestMapping.h"
 #include "Tasks/Public/TaskExecutionContext.h"
 
-#include <memory>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -55,7 +54,7 @@ namespace SparkleLauncher
 
 	OperationRecord ExecuteLauncherOperation(
 	    LauncherOperationCategory category,
-	    std::string operationId,
+	    std::string_view operationId,
 	    const LauncherOperationRequest& request,
 	    IProcessRunner& processRunner,
 	    TaskExecutionContext& context,
@@ -94,7 +93,7 @@ namespace SparkleLauncher
 			    }
 			    else
 			    {
-				    return RunMaintenanceOperationPlan(std::move(typedPlan), taskProcessRunner, outputCallback);
+				    return RunMaintenanceOperationPlan(std::move(typedPlan), taskProcessRunner);
 			    }
 		    },
 		    std::move(plan));

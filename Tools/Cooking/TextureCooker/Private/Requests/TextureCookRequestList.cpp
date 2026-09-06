@@ -2,13 +2,11 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "TextureCookRequestCodec.h"
 
 #include <algorithm>
 #include <fstream>
-#include <ranges>
 #include <sstream>
 
 class TextureCookRequestOrdering final
@@ -53,7 +51,7 @@ void WriteTextureCookRequestList(const std::filesystem::path& outputPath, const 
 	std::string fileError;
 	if (!Files::TryWriteAllText(outputPath, output.str(), fileError))
 	{
-		throw Diagnostics::Error(std::move(fileError));
+		throw Diagnostics::Error(fileError);
 	}
 }
 

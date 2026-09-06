@@ -21,7 +21,7 @@ LevelRegistry::~LevelRegistry() noexcept = default;
 
 void LevelRegistry::DiscoverLevels()
 {
-	const std::filesystem::path projectRoot = Filesystem::GetProjectPath();
+	const std::filesystem::path& projectRoot = Filesystem::GetProjectPath();
 	try
 	{
 		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(projectRoot);

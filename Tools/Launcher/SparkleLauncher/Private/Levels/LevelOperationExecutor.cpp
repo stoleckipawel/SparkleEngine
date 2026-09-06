@@ -5,7 +5,6 @@
 #include "Core/Public/Diagnostics/Error.h"
 
 #include <algorithm>
-#include <utility>
 
 namespace SparkleLauncher
 {
@@ -37,7 +36,10 @@ namespace SparkleLauncher
 		        { return MatchesPlannedStep(planned, executable); });
 	}
 
-	OperationRecord RunLevelOperationPlan(LevelOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback)
+	OperationRecord RunLevelOperationPlan(
+	    LevelOperationPlan plan,
+	    IProcessRunner& processRunner,
+	    const ProcessOutputCallback& outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);

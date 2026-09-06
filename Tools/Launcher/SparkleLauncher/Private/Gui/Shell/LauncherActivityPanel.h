@@ -5,6 +5,7 @@
 #include <QtGui/QIcon>
 #include <QtWidgets/QFrame>
 
+#include <cstdint>
 #include <functional>
 
 class QLabel;
@@ -21,7 +22,10 @@ namespace SparkleLauncher
 	class LauncherActivityPanel final : public QFrame
 	{
 	public:
-		LauncherActivityPanel(const LauncherIconLibrary& icons, std::function<void(QWidget*)> registerFocusable, QWidget* parent = nullptr);
+		LauncherActivityPanel(
+		    const LauncherIconLibrary& icons,
+		    const std::function<void(QWidget*)>& registerFocusable,
+		    QWidget* parent = nullptr);
 
 		void ShowMessage(const QString& message);
 		void RegisterRun(const QString& runId, const QString& title);
@@ -38,7 +42,7 @@ namespace SparkleLauncher
 		void ShowRunOutput(const QString& runId);
 
 	private:
-		enum class RunState
+		enum class RunState : std::uint8_t
 		{
 			Queued,
 			Running,

@@ -76,7 +76,7 @@ private:
 
 	void Reset() noexcept;
 	void Release() noexcept;
-	void MoveFrom(RhiCommandRecordingLease&& other) noexcept;
+	void MoveFrom(RhiCommandRecordingLease& other) noexcept;
 	void BeginRecording() noexcept;
 
 	void* m_backendState = nullptr;

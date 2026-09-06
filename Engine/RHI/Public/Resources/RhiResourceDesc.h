@@ -5,9 +5,13 @@
 #include "TextureTypes.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <span>
 
 using RhiGpuVirtualAddress = std::uint64_t;
+inline constexpr std::size_t RhiClearColorComponentCount = 4;
+using RhiClearColorView = std::span<const float, RhiClearColorComponentCount>;
 
 enum class RhiPrimitiveTopology : std::uint8_t
 {
@@ -110,7 +114,7 @@ struct RhiOptimizedClearValue
 
 	Type ValueType = Type::None;
 	PixelFormat Format = PixelFormat::Unknown;
-	std::array<float, 4> Color = {0.0f, 0.0f, 0.0f, 1.0f};
+	std::array<float, RhiClearColorComponentCount> Color = {0.0f, 0.0f, 0.0f, 1.0f};
 	float Depth = 1.0f;
 	std::uint8_t Stencil = 0;
 };

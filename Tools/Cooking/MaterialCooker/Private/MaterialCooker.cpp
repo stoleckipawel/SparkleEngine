@@ -4,9 +4,14 @@
 #include "MaterialCooker.h"
 
 #include "CookedMaterialAssetBuild.h"
+#include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
+#include "GameFramework/Public/Assets/Cooked/CookedMaterialAsset.h"
+#include "GameFramework/Public/Assets/Cooked/CookedTextureReference.h"
 #include "SourceImportOutput.h"
 #include "TextureCookRequestBuilder.h"
 #include "TextureCookRequestList.h"
+#include "Types/ImportedMaterial.h"
+#include "Types/ImportedTextureSource.h"
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
@@ -15,11 +20,17 @@
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <limits>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 class MaterialCookPipeline final
 {
@@ -125,23 +136,23 @@ void MaterialCookPipeline::WriteMaterialAsset(const CookedMaterialAssetBuild& ma
 	std::ofstream output;
 	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 	if (!Files::BinaryStreamWriter::WriteValue(output, materialAsset.header, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 
 	WriteMaterialName(output, materialAsset);
 	const std::vector<Assets::CookedTextureReferenceRecord> records = BuildTextureReferenceRecords(materialAsset);
 	if (!Files::BinaryStreamWriter::WriteArray(output, records, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 	WriteTextureReferencePaths(output, materialAsset);
 	if (!Files::TryCloseOutput(output, stagedOutputPath, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 }
 
@@ -185,7 +196,7 @@ void MaterialCookPipeline::WriteTextureReferencePaths(std::ofstream& output, con
 	{
 		if (!Files::BinaryStreamWriter::WriteBytes(output, reference.texturePath.data(), reference.texturePath.size(), errorMessage))
 		{
-			throw Diagnostics::Error(std::move(errorMessage));
+			throw Diagnostics::Error(errorMessage);
 		}
 	}
 }

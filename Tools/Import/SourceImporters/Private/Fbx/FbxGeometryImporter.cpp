@@ -235,8 +235,8 @@ ImportedMaterialIndex FbxGeometryImporter::ResolveMaterialIndex(const aiMesh& me
 
 std::string FbxGeometryImporter::BuildMeshDisplayName(const aiNode& node, const aiMesh& mesh)
 {
-	const std::string nodeName = GetNodeName(node);
-	const std::string meshName = GetMeshName(mesh);
+	std::string nodeName = GetNodeName(node);
+	std::string meshName = GetMeshName(mesh);
 	if (nodeName == meshName || meshName == "<unnamed-mesh>")
 	{
 		return nodeName;

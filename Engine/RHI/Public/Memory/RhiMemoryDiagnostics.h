@@ -40,8 +40,15 @@ class SPARKLE_RHI_API RenderMemoryDiagnostics
 {
 public:
 	virtual ~RenderMemoryDiagnostics() noexcept = default;
+	RenderMemoryDiagnostics(const RenderMemoryDiagnostics&) = delete;
+	RenderMemoryDiagnostics& operator=(const RenderMemoryDiagnostics&) = delete;
+	RenderMemoryDiagnostics(RenderMemoryDiagnostics&&) = delete;
+	RenderMemoryDiagnostics& operator=(RenderMemoryDiagnostics&&) = delete;
 
 	virtual bool SupportsBudgetQueries() const noexcept = 0;
 	virtual bool SupportsDelayedDestructionTracking() const noexcept = 0;
 	virtual RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const = 0;
+
+protected:
+	RenderMemoryDiagnostics() noexcept = default;
 };

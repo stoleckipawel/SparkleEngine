@@ -22,6 +22,10 @@ class SPARKLE_RHI_API RenderCommandList
 {
 public:
 	virtual ~RenderCommandList() noexcept;
+	RenderCommandList(const RenderCommandList&) = delete;
+	RenderCommandList& operator=(const RenderCommandList&) = delete;
+	RenderCommandList(RenderCommandList&&) = delete;
+	RenderCommandList& operator=(RenderCommandList&&) = delete;
 
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
 	virtual ERhiQueueType GetQueueType() const noexcept = 0;
@@ -81,7 +85,7 @@ public:
 	    std::uint32_t renderTargetCount,
 	    const RhiCpuDescriptorHandle* renderTargets,
 	    const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept = 0;
-	virtual void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept = 0;
+	virtual void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, RhiClearColorView color) noexcept = 0;
 	virtual void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept = 0;
 	virtual void EndRasterPass() noexcept = 0;
 	virtual void SetViewport(const RhiViewport& viewport) noexcept = 0;
@@ -116,6 +120,7 @@ public:
 	virtual void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept = 0;
 
 protected:
+	RenderCommandList() noexcept = default;
 	virtual void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept = 0;
 	virtual void OnResourceTrackingFinished(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept = 0;
 

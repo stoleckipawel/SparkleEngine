@@ -9,6 +9,7 @@
 #include "Textures/RendererTexture.h"
 #include "Textures/RendererTextureFactory.h"
 
+#include <cstddef>
 #include <array>
 #include <cstdint>
 #include <filesystem>
@@ -127,7 +128,7 @@ private:
 	TextureRequest* FindRequest(const TextureKey& cacheKey, std::uint32_t generation) noexcept;
 	const TextureRequest* FindRequest(const TextureKey& cacheKey, std::uint32_t generation) const noexcept;
 	void ActivateResidentRequests() noexcept;
-	void QueueTextureRetirement(ActiveTexture&& texture, std::uint64_t bindingRevision);
+	void QueueTextureRetirement(ActiveTexture texture, std::uint64_t bindingRevision);
 	void ReleaseActiveTexture(ActiveTexture& texture) noexcept;
 	RhiSubmissionState CaptureLastSubmittedState() const noexcept;
 	const RendererTexture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;

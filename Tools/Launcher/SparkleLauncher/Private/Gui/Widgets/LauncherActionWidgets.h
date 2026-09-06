@@ -2,12 +2,14 @@
 
 #include <QtCore/QString>
 
+#include <cstdint>
+
 class QLabel;
 class QPushButton;
 
 namespace SparkleLauncher
 {
-	enum class SyncItemState
+	enum class SyncItemState : std::uint8_t
 	{
 		Missing,
 		Syncing,

@@ -18,6 +18,10 @@ class SPARKLE_RHI_API RenderHardwareInterface
 {
 public:
 	virtual ~RenderHardwareInterface() noexcept = default;
+	RenderHardwareInterface(const RenderHardwareInterface&) = delete;
+	RenderHardwareInterface& operator=(const RenderHardwareInterface&) = delete;
+	RenderHardwareInterface(RenderHardwareInterface&&) = delete;
+	RenderHardwareInterface& operator=(RenderHardwareInterface&&) = delete;
 
 	virtual const RhiCapabilities& GetCapabilities() const noexcept = 0;
 	virtual std::uint32_t GetCurrentFrameIndex() const noexcept = 0;
@@ -38,4 +42,7 @@ public:
 	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
 	virtual RhiPresentationService& GetPresentationService() noexcept = 0;
 	virtual const RhiPresentationService& GetPresentationService() const noexcept = 0;
+
+protected:
+	RenderHardwareInterface() noexcept = default;
 };

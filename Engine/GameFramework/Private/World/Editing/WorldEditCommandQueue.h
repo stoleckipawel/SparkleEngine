@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/World/WorldEditCommand.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 

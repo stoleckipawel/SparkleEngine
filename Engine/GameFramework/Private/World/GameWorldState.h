@@ -17,6 +17,10 @@
 #include "World/SceneMeshInstanceData.h"
 #include "World/Systems/GameSystemGraph.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <vector>
 #include <atomic>
 #include <memory>
 #include <optional>
@@ -70,7 +74,7 @@ namespace ECS
 		Assets::CookedAssetId ReadMeshAssetId(EntityId entity) const noexcept;
 		Assets::CookedAssetId ReadSkeletonAssetId(EntityId entity) const noexcept;
 		std::uint32_t ReadMeshSourceNodeIndex(EntityId entity) const noexcept;
-		void AppendMeshInstanceGroups(std::vector<SceneMeshInstanceGroupData>&& groups);
+		void AppendMeshInstanceGroups(std::vector<SceneMeshInstanceGroupData> groups);
 		std::size_t GetMeshInstanceGroupCount() const noexcept { return m_meshInstanceGroups.size(); }
 		std::span<const WorldExtractionStorage::MeshSlot> GetExtractedMeshes() const noexcept { return m_extraction.GetExtractedMeshes(); }
 		std::span<const SceneMeshInstanceGroupData> GetExtractedMeshGroups() const noexcept { return m_extraction.GetMeshGroups(); }
@@ -83,7 +87,7 @@ namespace ECS
 		std::vector<SceneLightDesc> CaptureLightsToDesc() const;
 
 		void AppendAnimationClips(
-		    std::vector<AnimationClipResource>&& clips,
+		    std::vector<AnimationClipResource> clips,
 		    AnimationClipResourceStore& resources,
 		    std::uint64_t sourceInstanceId);
 		bool PrepareSystemResources(GameWorldResourceStores& resources);

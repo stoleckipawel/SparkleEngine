@@ -9,7 +9,7 @@ MaterialDesc MaterialResourceStore::CreateDefault()
 	return material;
 }
 
-MaterialHandle MaterialResourceStore::Append(std::vector<MaterialDesc>&& descriptions)
+MaterialHandle MaterialResourceStore::Append(std::vector<MaterialDesc> descriptions)
 {
 	if (descriptions.empty())
 		return MaterialHandle::Invalid();

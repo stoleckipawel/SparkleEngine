@@ -30,7 +30,7 @@ void CookedSceneGenerationWriter::Publish(std::span<const CookedSceneBuild* cons
 		std::string errorMessage;
 		if (!Files::TryPublishFileSet(publication, errorMessage))
 		{
-			throw Diagnostics::Error(std::move(errorMessage));
+			throw Diagnostics::Error(errorMessage);
 		}
 	}
 	catch (...)

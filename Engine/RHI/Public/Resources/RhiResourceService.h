@@ -14,6 +14,10 @@ class SPARKLE_RHI_API RhiResourceService
 {
 public:
 	virtual ~RhiResourceService() noexcept = default;
+	RhiResourceService(const RhiResourceService&) = delete;
+	RhiResourceService& operator=(const RhiResourceService&) = delete;
+	RhiResourceService(RhiResourceService&&) = delete;
+	RhiResourceService& operator=(RhiResourceService&&) = delete;
 
 	virtual RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
@@ -74,4 +78,7 @@ public:
 	    const RhiTransientBufferAllocationDesc& desc,
 	    std::wstring_view debugName) = 0;
 	virtual bool SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept = 0;
+
+protected:
+	RhiResourceService() noexcept = default;
 };

@@ -2,6 +2,7 @@
 
 #include "RHI/Public/Resources/RhiTextureUpload.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <vector>
 

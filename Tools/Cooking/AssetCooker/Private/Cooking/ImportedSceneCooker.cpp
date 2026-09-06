@@ -7,7 +7,6 @@
 #include "SourceSceneImporter.h"
 
 #include <string>
-#include <utility>
 
 #include <objbase.h>
 
@@ -56,7 +55,7 @@ CookedSceneBuild ImportedSceneCooker::Build(const AssetCookerSceneEntry& sceneEn
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what(), sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory::SceneAssets, error.what(), sceneEntry.sourcePath);
 		throw;
 	}
 	return BuildCookedScene(sceneEntry, importOutput, diagnostics);
@@ -74,7 +73,7 @@ CookedSceneBuild ImportedSceneCooker::BuildCookedScene(
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what(), sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory::SceneAssets, error.what(), sceneEntry.sourcePath);
 		throw;
 	}
 	try
@@ -83,7 +82,7 @@ CookedSceneBuild ImportedSceneCooker::BuildCookedScene(
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(AssetCookerCategory_Meshes, error.what(), sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory::Meshes, error.what(), sceneEntry.sourcePath);
 		throw;
 	}
 
@@ -93,7 +92,7 @@ CookedSceneBuild ImportedSceneCooker::BuildCookedScene(
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(AssetCookerCategory_Materials, error.what(), sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory::Materials, error.what(), sceneEntry.sourcePath);
 		throw;
 	}
 
@@ -103,7 +102,7 @@ CookedSceneBuild ImportedSceneCooker::BuildCookedScene(
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what(), sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory::SceneAssets, error.what(), sceneEntry.sourcePath);
 		throw;
 	}
 	return build;

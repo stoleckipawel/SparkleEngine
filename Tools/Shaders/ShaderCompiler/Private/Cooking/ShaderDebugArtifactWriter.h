@@ -4,6 +4,7 @@
 #include "Cooking/CookedStageBuild.h"
 #include "ShaderDebugArtifactSet.h"
 
+#include <string_view>
 #include <filesystem>
 #include <string>
 

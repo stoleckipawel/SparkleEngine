@@ -1,6 +1,8 @@
 #include "PCH.h"
 
 #include "CookedSceneBuild.h"
+#include "CookedMaterialAssetBuild.h"
+#include "CookedMeshAssetBuild.h"
 
 #include <utility>
 

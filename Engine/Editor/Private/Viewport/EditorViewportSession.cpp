@@ -101,5 +101,5 @@ void EditorViewportSession::SetOrthographicHeight(float heightMeters) noexcept
 
 void EditorViewportSession::SetExposureOverrides(ViewportExposureOverrides overrides) noexcept
 {
-	(void) m_settings.SetExposureOverrides(std::move(overrides));
+	(void) m_settings.SetExposureOverrides(overrides);
 }

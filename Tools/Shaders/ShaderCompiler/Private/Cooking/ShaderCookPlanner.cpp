@@ -30,6 +30,7 @@ std::vector<ShaderCookDesc> ShaderCookPlanner::BuildShaders(
 		    Filesystem::GetShaderPath(PathRoot::Engine),
 		    Filesystem::GetShaderPath(PathRoot::Project));
 		std::vector<std::string> canonicalChangedPaths;
+		canonicalChangedPaths.reserve(settings.changedVirtualPaths.size());
 		for (const std::string& changedPath : settings.changedVirtualPaths)
 		{
 			canonicalChangedPaths.push_back(sourceMounts.CanonicalizeVirtualPath(changedPath));

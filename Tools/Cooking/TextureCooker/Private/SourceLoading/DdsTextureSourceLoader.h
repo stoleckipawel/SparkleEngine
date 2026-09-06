@@ -2,6 +2,7 @@
 
 #include "SourceLoading/TextureSourceLoaderBackend.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <vector>

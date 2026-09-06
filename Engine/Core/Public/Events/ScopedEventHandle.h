@@ -3,6 +3,7 @@
 #include "Core/Public/CoreAPI.h"
 #include "EventHandle.h"
 
+#include <cstddef>
 #include <functional>
 #include <utility>
 

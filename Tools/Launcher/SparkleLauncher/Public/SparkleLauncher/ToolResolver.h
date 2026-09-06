@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -8,7 +9,7 @@
 
 namespace SparkleLauncher
 {
-	enum class KnownTool
+	enum class KnownTool : std::uint8_t
 	{
 		CMake,
 		MSBuild,

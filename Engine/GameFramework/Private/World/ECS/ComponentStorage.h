@@ -36,7 +36,15 @@ namespace ECS
 	{
 	public:
 		virtual ~ComponentStorageBase() = default;
+		ComponentStorageBase(const ComponentStorageBase&) = delete;
+		ComponentStorageBase& operator=(const ComponentStorageBase&) = delete;
+		ComponentStorageBase(ComponentStorageBase&&) = delete;
+		ComponentStorageBase& operator=(ComponentStorageBase&&) = delete;
+
 		virtual void Remove(EntityId entity) = 0;
+
+	protected:
+		ComponentStorageBase() = default;
 	};
 
 	template <typename T> concept ComponentStorageCompatible = std::copy_constructible<T> && std::is_copy_assignable_v<T>

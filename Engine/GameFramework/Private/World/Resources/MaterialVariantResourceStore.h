@@ -5,6 +5,7 @@
 #include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
 #include "GameFramework/Public/World/EntityId.h"
 
+#include <cstddef>
 #include <string_view>
 #include <vector>
 
@@ -23,7 +24,7 @@ struct MaterialVariantBinding final
 class MaterialVariantResourceStore final
 {
 public:
-	void Append(std::vector<MaterialVariantDesc>&& variants, std::vector<MaterialVariantBinding>&& bindings);
+	void Append(std::vector<MaterialVariantDesc> variants, std::vector<MaterialVariantBinding> bindings);
 	bool Apply(MaterialVariantIndex index, ECS::GameWorldState& world);
 	std::size_t GetCount() const noexcept { return m_variants.size(); }
 	std::string_view GetName(std::size_t index) const noexcept;

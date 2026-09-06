@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Application.h"
-#include "../../GameFramework/Public/Rendering/RenderViewCameraData.h"
-#include "../../GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -20,6 +18,8 @@ class TaskScope;
 class ApplicationTaskRuntime;
 class CameraInputIntentCollector;
 class EditorApplication;
+struct CameraInputIntent;
+struct RenderViewCameraData;
 
 enum class RuntimeApplicationFrameResult : std::uint8_t
 {

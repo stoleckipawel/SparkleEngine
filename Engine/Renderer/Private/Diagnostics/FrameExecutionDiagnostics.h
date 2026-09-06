@@ -49,7 +49,7 @@ public:
 private:
 	friend class FrameExecutionDiagnostics;
 
-	ScopedGpuEvent(RenderCommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept;
+	ScopedGpuEvent(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color) noexcept;
 	void Reset() noexcept;
 
 	RenderCommandContext* m_commands = nullptr;

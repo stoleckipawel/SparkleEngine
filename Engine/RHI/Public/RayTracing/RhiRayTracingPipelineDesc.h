@@ -58,6 +58,10 @@ public:
 
 	explicit RayTracingPipeline(const RayTracingPipelineDesc& desc);
 	virtual ~RayTracingPipeline() noexcept;
+	RayTracingPipeline(const RayTracingPipeline&) = delete;
+	RayTracingPipeline& operator=(const RayTracingPipeline&) = delete;
+	RayTracingPipeline(RayTracingPipeline&&) = delete;
+	RayTracingPipeline& operator=(RayTracingPipeline&&) = delete;
 
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
 	const RecordContract* FindRecordContract(std::string_view exportName) const noexcept;
@@ -92,6 +96,10 @@ class SPARKLE_RHI_API RayTracingShaderTable
 public:
 	RayTracingShaderTable(std::uint64_t generation, std::uint64_t pipelineGeneration) noexcept;
 	virtual ~RayTracingShaderTable() noexcept;
+	RayTracingShaderTable(const RayTracingShaderTable&) = delete;
+	RayTracingShaderTable& operator=(const RayTracingShaderTable&) = delete;
+	RayTracingShaderTable(RayTracingShaderTable&&) = delete;
+	RayTracingShaderTable& operator=(RayTracingShaderTable&&) = delete;
 
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
 	std::uint64_t GetPipelineGeneration() const noexcept { return m_pipelineGeneration; }

@@ -3,6 +3,8 @@
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
+#include <cstdint>
+
 constexpr RenderProductHandle ToRenderProductHandle(FrameGraphTextureHandle handle) noexcept
 {
 	return handle.IsValid() ? RenderProductHandle{static_cast<std::uint64_t>(handle.GetResourceHandle().index) + 1ull}

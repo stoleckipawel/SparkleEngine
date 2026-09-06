@@ -2,12 +2,10 @@
 
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
-#include "Frame/RhiFrameConstants.h"
 #include "Shaders/ShaderTarget.h"
 #include "Vulkan/Capture/VulkanCaptureService.h"
 #include "Vulkan/Commands/VulkanCommandRecordingContext.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
-#include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/Descriptors/VulkanDescriptorService.h"
 #include "Vulkan/Device/VulkanRhi.h"
@@ -29,7 +27,6 @@
 #include "Vulkan/VulkanTypeConversions.h"
 
 #include <array>
-#include <format>
 
 static const auto g_vulkanRenderHardwareInterfaceLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Interface");
 
@@ -345,10 +342,9 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateRayTracingInstanceBu
 	return m_rayTracingServices->CreateInstanceBuffer(instances, instanceCount, debugName);
 }
 
-void VulkanRenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept
+void VulkanRenderHardwareInterface::BeginPresentRenderPass(RhiClearColorView clearColor) noexcept
 {
-	static constexpr float defaultClearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-	BeginCurrentBackBufferRendering(clearColor != nullptr ? clearColor : defaultClearColor, true);
+	BeginCurrentBackBufferRendering(clearColor.data(), true);
 }
 
 void VulkanRenderHardwareInterface::BeginPresentOverlayPass() noexcept

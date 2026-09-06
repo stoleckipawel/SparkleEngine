@@ -8,7 +8,6 @@
 #include "Core/Public/Process/ChildProcess.h"
 #include "Core/Public/Process/CommandLineUtils.h"
 
-#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -17,6 +16,7 @@
 #include <functional>
 #include <sstream>
 #include <system_error>
+#include <utility>
 
 class ShaderCompilerCommandPresentation final
 {
@@ -43,7 +43,7 @@ class ShaderCompilerCancellationSignal final
 public:
 	explicit ShaderCompilerCancellationSignal(std::stop_token cancellation) :
 	    m_path(BuildPath()),
-	    m_callback(cancellation, [this] { Signal(); })
+	    m_callback(std::move(cancellation), [this] { Signal(); })
 	{
 	}
 
@@ -101,7 +101,7 @@ private:
 
 ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookRequest& request, std::stop_token cancellation) noexcept
 {
-	ShaderCompilerCancellationSignal cancellationSignal(cancellation);
+	ShaderCompilerCancellationSignal cancellationSignal(std::move(cancellation));
 	if (cancellationSignal.GetPath().empty())
 	{
 		return ShaderCompilerProcessResult{.Output = "Failed to create the shader cooker cancellation signal path."};
@@ -152,7 +152,7 @@ std::filesystem::path ShaderCompilerProcess::ResolveExecutable() noexcept
 
 std::filesystem::path ShaderCompilerProcess::ResolveProjectDirectory() noexcept
 {
-	const std::filesystem::path projectDirectory = Filesystem::GetProjectPath();
+	const std::filesystem::path& projectDirectory = Filesystem::GetProjectPath();
 	std::error_code error;
 	return std::filesystem::exists(projectDirectory, error) && !error ? projectDirectory : std::filesystem::path{};
 }

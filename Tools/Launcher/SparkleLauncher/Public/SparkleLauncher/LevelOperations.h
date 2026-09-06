@@ -4,6 +4,7 @@
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -12,7 +13,7 @@
 
 namespace SparkleLauncher
 {
-	enum class LevelOperationKind
+	enum class LevelOperationKind : std::uint8_t
 	{
 		Sync
 	};
@@ -61,5 +62,5 @@ namespace SparkleLauncher
 	OperationRecord RunLevelOperationPlan(
 	    LevelOperationPlan plan,
 	    IProcessRunner& processRunner,
-	    ProcessOutputCallback outputCallback = {});
+	    const ProcessOutputCallback& outputCallback = {});
 }

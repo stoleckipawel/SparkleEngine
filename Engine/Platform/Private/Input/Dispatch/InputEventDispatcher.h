@@ -2,6 +2,8 @@
 
 #include "Input/InputSystem.h"
 
+#include <cstddef>
+#include <type_traits>
 #include <algorithm>
 #include <array>
 #include <cstdint>

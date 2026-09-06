@@ -35,7 +35,7 @@ namespace Paths
 		}
 
 		std::error_code ec;
-		const std::filesystem::path relativePath = std::filesystem::relative(path, root, ec);
+		std::filesystem::path relativePath = std::filesystem::relative(path, root, ec);
 		if (ec || relativePath.empty())
 		{
 			return std::nullopt;

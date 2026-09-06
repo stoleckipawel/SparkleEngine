@@ -5,6 +5,7 @@
 #include "World/WorldMaterialVariantView.h"
 #include "World/WorldReadView.h"
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>

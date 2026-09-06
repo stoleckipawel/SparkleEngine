@@ -12,7 +12,7 @@
 namespace ECS
 {
 	void GameWorldState::AppendAnimationClips(
-	    std::vector<AnimationClipResource>&& clips,
+	    std::vector<AnimationClipResource> clips,
 	    AnimationClipResourceStore& resources,
 	    std::uint64_t sourceInstanceId)
 	{

@@ -2,6 +2,7 @@
 
 #include "Core/Public/Process/ChildProcess.h"
 
+#include <stop_token>
 #include <chrono>
 #include <filesystem>
 #include <functional>
@@ -39,7 +40,15 @@ namespace SparkleLauncher
 	{
 	public:
 		virtual ~IProcessRunner() = default;
+		IProcessRunner(const IProcessRunner&) = delete;
+		IProcessRunner& operator=(const IProcessRunner&) = delete;
+		IProcessRunner(IProcessRunner&&) = delete;
+		IProcessRunner& operator=(IProcessRunner&&) = delete;
+
 		virtual ProcessResult Run(const ProcessRequest& request) = 0;
+
+	protected:
+		IProcessRunner() = default;
 	};
 
 	class NativeProcessRunner final : public IProcessRunner

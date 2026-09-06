@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <optional>
@@ -10,7 +11,7 @@
 
 namespace SparkleLauncher
 {
-	enum class CapabilityState
+	enum class CapabilityState : std::uint8_t
 	{
 		Ready,
 		NeedsDependencies,
@@ -64,7 +65,7 @@ namespace SparkleLauncher
 
 	template <typename RequestT> struct CapabilityResolution
 	{
-		enum class Kind
+		enum class Kind : std::uint8_t
 		{
 			Ready,
 			RunOperation,

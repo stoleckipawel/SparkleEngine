@@ -1,6 +1,9 @@
 #include "PCH.h"
 #include "World/GameWorldState.h"
 
+#include <algorithm>
+#include <iterator>
+
 #include "Scene/Meshes/Mesh.h"
 #include "World/ECS/Components/EditorComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
@@ -128,13 +131,10 @@ namespace ECS
 		return mesh == nullptr ? Assets::kInvalidCookedSceneSourceNodeIndex : mesh->SourceNodeIndex;
 	}
 
-	void GameWorldState::AppendMeshInstanceGroups(std::vector<SceneMeshInstanceGroupData>&& groups)
+	void GameWorldState::AppendMeshInstanceGroups(std::vector<SceneMeshInstanceGroupData> groups)
 	{
 		m_meshInstanceGroups.reserve(m_meshInstanceGroups.size() + groups.size());
-		for (SceneMeshInstanceGroupData& group : groups)
-		{
-			m_meshInstanceGroups.push_back(std::move(group));
-		}
+		std::ranges::move(groups, std::back_inserter(m_meshInstanceGroups));
 		RecordChange(EntityId::Invalid(), WorldChangeKind::ResourceChanged, WorldDataKind::MeshInstance);
 	}
 

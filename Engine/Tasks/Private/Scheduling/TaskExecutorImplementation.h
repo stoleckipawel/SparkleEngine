@@ -2,6 +2,7 @@
 
 #include "TaskExecutor.h"
 
+#include <cstdint>
 #include <memory>
 
 struct TaskExecutor::Implementation final

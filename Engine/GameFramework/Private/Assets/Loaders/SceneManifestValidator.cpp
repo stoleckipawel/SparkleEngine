@@ -24,7 +24,7 @@ namespace Assets
 		{
 			return name[0] != '\0' && HasTerminatedName(name);
 		}
-		[[noreturn]] static void Invalid(std::string message) { throw Diagnostics::Error(std::move(message)); }
+		[[noreturn]] static void Invalid(const std::string& message) { throw Diagnostics::Error(message); }
 		static bool HasFeatureFlag(std::uint32_t flags, CookedSceneFeatureFlags feature) noexcept;
 		static void ValidateFeatures(const LoadedSceneManifest& manifest);
 		static void ValidateMeshReferences(const LoadedSceneManifest& manifest);

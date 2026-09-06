@@ -2,6 +2,7 @@
 
 #include "Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
 
+#include <vector>
 #include <cstdint>
 
 class RenderDiagnostics;

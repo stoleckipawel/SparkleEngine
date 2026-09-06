@@ -1,10 +1,22 @@
 #include "TaskExecution.h"
 
+#include "Graph/TaskGraphStorage.h"
 #include "TaskExecutionState.h"
+#include "TaskGraph.h"
+#include "TaskTypes.h"
 #include "Scheduling/TaskWorkerContext.h"
 
+#include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
 
+#include <chrono>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <thread>
 #include <utility>
 
 static const auto g_taskExecutionLogger = Logging::GetOrCreateLogger("Tasks.Execution");
@@ -24,7 +36,7 @@ void TaskExecution::State::Publish(TaskExecutionCompletion completion)
 {
 	std::function<void()> onSettled;
 	{
-		std::lock_guard lock(Mutex);
+		std::scoped_lock lock(Mutex);
 		if (Settled)
 		{
 			Diagnostics::Fatal(g_taskExecutionLogger, __FILE__, __LINE__, "Task execution completion was published more than once.");
@@ -64,7 +76,7 @@ bool TaskExecution::IsSettled() const noexcept
 	{
 		return false;
 	}
-	std::lock_guard lock(m_state->Mutex);
+	std::scoped_lock lock(m_state->Mutex);
 	return m_state->Settled;
 }
 
@@ -85,7 +97,7 @@ std::uint64_t TaskExecution::GetGeneration() const noexcept
 	{
 		return 0;
 	}
-	std::lock_guard lock(m_state->Mutex);
+	std::scoped_lock lock(m_state->Mutex);
 	return m_state->Data.Generation;
 }
 
@@ -95,7 +107,7 @@ TaskExecutionStatus TaskExecution::GetStatus() const noexcept
 	{
 		return TaskExecutionStatus::Invalid;
 	}
-	std::lock_guard lock(m_state->Mutex);
+	std::scoped_lock lock(m_state->Mutex);
 	return m_state->Data.Status;
 }
 
@@ -106,7 +118,7 @@ TaskResult TaskExecution::GetResult() const
 	{
 		return invalidResult;
 	}
-	std::lock_guard lock(m_state->Mutex);
+	std::scoped_lock lock(m_state->Mutex);
 	return m_state->Data.Result;
 }
 
@@ -116,7 +128,7 @@ std::string TaskExecution::GetFirstFailureTaskName() const
 	{
 		return {};
 	}
-	std::lock_guard lock(m_state->Mutex);
+	std::scoped_lock lock(m_state->Mutex);
 	return m_state->Data.FirstFailureTaskName;
 }
 
@@ -127,7 +139,7 @@ std::optional<TaskResult> TaskExecution::GetTaskResult(TaskNodeHandle handle) co
 		return std::nullopt;
 	}
 
-	std::lock_guard lock(m_state->Mutex);
+	std::scoped_lock lock(m_state->Mutex);
 	const auto& data = m_state->Data;
 	std::uint32_t index = 0;
 	if (!TaskGraphAccess::Decode(
@@ -149,6 +161,6 @@ std::uint32_t TaskExecution::GetSettledTaskCount() const noexcept
 	{
 		return 0;
 	}
-	std::lock_guard lock(m_state->Mutex);
+	std::scoped_lock lock(m_state->Mutex);
 	return m_state->Data.SettledTaskCount;
 }

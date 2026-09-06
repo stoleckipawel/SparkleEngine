@@ -3,12 +3,17 @@
 #include "Contracts/ShaderContractCatalogBuilder.h"
 
 #include "Core/Public/Diagnostics/Error.h"
+#include "RHI/Public/Shaders/ShaderMap.h"
+#include "ShaderContractCatalog.h"
 #include "Shaders/Authoring/GlobalShader.h"
 #include "Shaders/ShaderParameterLayoutBuilder.h"
 
 #include <algorithm>
 #include <format>
+#include <string>
+#include <string_view>
 #include <unordered_map>
+#include <utility>
 
 ShaderContractCatalog ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind selectionKind, std::string_view requestedId)
 {

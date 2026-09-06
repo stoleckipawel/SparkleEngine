@@ -2,6 +2,10 @@
 
 #include "SparkleLauncher/CookOperations.h"
 
+#include <filesystem>
+#include <string>
+#include <vector>
+
 namespace SparkleLauncher
 {
 	struct CookOperationProcessStep

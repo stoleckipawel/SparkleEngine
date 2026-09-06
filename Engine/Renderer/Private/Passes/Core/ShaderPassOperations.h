@@ -7,6 +7,7 @@
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
+#include <cstdint>
 #include <vector>
 
 namespace ShaderPassOperations

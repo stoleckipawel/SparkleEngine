@@ -2,6 +2,7 @@
 
 #include "Core/Public/CoreAPI.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <span>

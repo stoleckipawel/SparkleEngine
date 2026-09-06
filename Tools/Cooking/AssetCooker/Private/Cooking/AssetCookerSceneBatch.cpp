@@ -7,7 +7,6 @@
 
 #include <algorithm>
 #include <thread>
-#include <utility>
 
 struct AssetCookerSceneBatch::Item final
 {
@@ -23,7 +22,7 @@ bool AssetCookerSceneBatch::Execute(const std::vector<AssetCookerSceneEntry>& sc
 	MergeDiagnostics(items, diagnostics);
 	if (!built)
 	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, "Scene asset generation failed before publication.");
+		diagnostics.AddError(AssetCookerCategory::SceneAssets, "Scene asset generation failed before publication.");
 		return false;
 	}
 
@@ -120,7 +119,7 @@ bool AssetCookerSceneBatch::PublishProducts(std::vector<Item>& items, AssetCooke
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, error.what());
+		diagnostics.AddError(AssetCookerCategory::SceneAssets, error.what());
 		return false;
 	}
 }

@@ -3,6 +3,7 @@
 #include "Graph/TaskGraphStorage.h"
 #include "TaskExecutorRuntime.h"
 
+#include <cstdint>
 #include <atomic>
 #include <memory>
 #include <mutex>

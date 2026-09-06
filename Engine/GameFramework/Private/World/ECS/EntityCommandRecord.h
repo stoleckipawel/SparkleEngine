@@ -20,8 +20,16 @@ namespace ECS::EntityCommandDetail
 	{
 	public:
 		virtual ~ComponentCommandOperation() = default;
+		ComponentCommandOperation(const ComponentCommandOperation&) = delete;
+		ComponentCommandOperation& operator=(const ComponentCommandOperation&) = delete;
+		ComponentCommandOperation(ComponentCommandOperation&&) = delete;
+		ComponentCommandOperation& operator=(ComponentCommandOperation&&) = delete;
+
 		virtual RuntimeComponentTypeId GetComponentType() const noexcept = 0;
 		virtual EntityCommandStatus Apply(EntityRegistry& registry, EntityId entity, EntityCommandKind kind) = 0;
+
+	protected:
+		ComponentCommandOperation() = default;
 	};
 
 	template <ComponentStorageCompatible T> class TypedComponentCommandOperation final : public ComponentCommandOperation

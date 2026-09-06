@@ -2,6 +2,7 @@
 
 #include "World/WorldEditCommand.h"
 
+#include <utility>
 #include <cstdint>
 #include <functional>
 #include <optional>

@@ -27,7 +27,7 @@ namespace SparkleLauncher
 
 	OperationRecord ExecuteLauncherOperation(
 	    LauncherOperationCategory category,
-	    std::string operationId,
+	    std::string_view operationId,
 	    const LauncherOperationRequest& request,
 	    IProcessRunner& processRunner,
 	    TaskExecutionContext& context,

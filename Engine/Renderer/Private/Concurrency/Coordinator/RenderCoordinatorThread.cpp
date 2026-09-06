@@ -75,7 +75,7 @@ void RenderCoordinator::RenderThreadMain()
 		m_startedCondition.notify_one();
 		PublishReadState();
 
-		while (const std::optional<RenderControlCommand> command = m_controlQueue->WaitPop())
+		while (std::optional<RenderControlCommand> command = m_controlQueue->WaitPop())
 		{
 			const bool shutdown = std::holds_alternative<RenderShutdownCommand>(command->Payload);
 			ProcessThreadedCommand(std::move(*command));

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -7,14 +8,14 @@
 
 namespace SparkleLauncher
 {
-	enum class BuildProfileState
+	enum class BuildProfileState : std::uint8_t
 	{
 		Debug,
 		Development,
 		Shipping
 	};
 
-	enum class BuildProfileTarget
+	enum class BuildProfileTarget : std::uint8_t
 	{
 		Editor,
 		Game

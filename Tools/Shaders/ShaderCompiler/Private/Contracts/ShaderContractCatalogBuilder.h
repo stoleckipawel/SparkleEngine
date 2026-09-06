@@ -2,10 +2,11 @@
 
 #include "ShaderContractCatalog.h"
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
-enum class ShaderContractSelectionKind
+enum class ShaderContractSelectionKind : std::uint8_t
 {
 	All,
 	ShaderId,

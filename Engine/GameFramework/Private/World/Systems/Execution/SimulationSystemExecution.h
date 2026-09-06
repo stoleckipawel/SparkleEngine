@@ -3,6 +3,8 @@
 #include "World/Systems/CameraMovementSystem.h"
 #include "World/Systems/Descriptors/GameWorldSystemContract.h"
 
+#include <cstdint>
+
 namespace ECS
 {
 	class GameWorldState;

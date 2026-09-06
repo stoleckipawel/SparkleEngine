@@ -113,7 +113,7 @@ void FrameGraph::ClearRenderTarget(RenderCommandContext& commandContext, FrameGr
 {
 	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
 	const std::array<float, 4> clearColor = GetClearColor(resourceHandle);
-	commandContext.ClearRenderTarget(ResolveRenderTargetView(resourceHandle), clearColor.data());
+	commandContext.ClearRenderTarget(ResolveRenderTargetView(resourceHandle), clearColor);
 }
 
 void FrameGraph::ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept

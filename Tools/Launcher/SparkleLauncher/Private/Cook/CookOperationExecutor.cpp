@@ -63,7 +63,7 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	OperationRecord RunCookOperationPlan(CookOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback)
+	OperationRecord RunCookOperationPlan(CookOperationPlan plan, IProcessRunner& processRunner, const ProcessOutputCallback& outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);

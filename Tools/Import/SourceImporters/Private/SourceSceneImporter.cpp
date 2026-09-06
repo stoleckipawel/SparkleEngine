@@ -2,6 +2,7 @@
 
 #include "SourceSceneImporter.h"
 
+#include "SourceImportOutput.h"
 #include "SourceImporter.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Fbx/FbxImporter.h"
@@ -9,8 +10,11 @@
 #include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
+#include <algorithm>
 #include <array>
+#include <filesystem>
 #include <format>
+#include <string>
 
 bool SourceSceneImporter::SupportsSourceScenePath(const std::filesystem::path& filePath)
 {
@@ -19,15 +23,7 @@ bool SourceSceneImporter::SupportsSourceScenePath(const std::filesystem::path& f
 	static const FbxImporter fbxImporter;
 	const std::array<const SourceImporter*, 2> importers = {&gltfImporter, &fbxImporter};
 
-	for (const SourceImporter* importer : importers)
-	{
-		if (importer->SupportsExtension(extension))
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return std::ranges::any_of(importers, [&extension](const SourceImporter* importer) { return importer->SupportsExtension(extension); });
 }
 
 SourceImportOutput SourceSceneImporter::Import(const std::filesystem::path& filePath)

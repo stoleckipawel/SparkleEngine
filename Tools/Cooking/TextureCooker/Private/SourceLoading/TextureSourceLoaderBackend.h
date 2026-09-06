@@ -18,7 +18,14 @@ class TextureSourceLoaderBackend
 {
 public:
 	virtual ~TextureSourceLoaderBackend() = default;
+	TextureSourceLoaderBackend(const TextureSourceLoaderBackend&) = delete;
+	TextureSourceLoaderBackend& operator=(const TextureSourceLoaderBackend&) = delete;
+	TextureSourceLoaderBackend(TextureSourceLoaderBackend&&) = delete;
+	TextureSourceLoaderBackend& operator=(TextureSourceLoaderBackend&&) = delete;
 
 	virtual bool SupportsFormat(TextureSourceFormat format) const noexcept = 0;
 	virtual TextureLoadResult Load(const std::filesystem::path& sourcePath) const = 0;
+
+protected:
+	TextureSourceLoaderBackend() = default;
 };

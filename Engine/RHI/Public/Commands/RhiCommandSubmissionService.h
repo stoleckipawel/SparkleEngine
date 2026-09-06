@@ -12,6 +12,10 @@ class SPARKLE_RHI_API RhiCommandSubmissionService
 {
 public:
 	virtual ~RhiCommandSubmissionService() noexcept;
+	RhiCommandSubmissionService(const RhiCommandSubmissionService&) = delete;
+	RhiCommandSubmissionService& operator=(const RhiCommandSubmissionService&) = delete;
+	RhiCommandSubmissionService(RhiCommandSubmissionService&&) = delete;
+	RhiCommandSubmissionService& operator=(RhiCommandSubmissionService&&) = delete;
 
 	virtual void PrepareCommandRecording() noexcept = 0;
 	virtual RenderCommandList& GetCurrentGraphicsCommandList() noexcept = 0;
@@ -32,4 +36,7 @@ public:
 	virtual void WaitForSubmission(RhiSubmissionToken token) noexcept = 0;
 	virtual bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept = 0;
 	virtual RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept = 0;
+
+protected:
+	RhiCommandSubmissionService() noexcept = default;
 };

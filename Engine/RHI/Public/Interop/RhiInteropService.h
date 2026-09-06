@@ -40,6 +40,10 @@ class SPARKLE_RHI_API RhiInteropService
 {
 public:
 	virtual ~RhiInteropService() noexcept = default;
+	RhiInteropService(const RhiInteropService&) = delete;
+	RhiInteropService& operator=(const RhiInteropService&) = delete;
+	RhiInteropService(RhiInteropService&&) = delete;
+	RhiInteropService& operator=(RhiInteropService&&) = delete;
 
 	virtual RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept = 0;
 	virtual NativeTextureViewInfo GetNativeTextureViewInfo(
@@ -47,4 +51,7 @@ public:
 	    RhiResourceHandle resource,
 	    ResourceState state,
 	    const RhiNativeInteropRequest& request) const noexcept = 0;
+
+protected:
+	RhiInteropService() noexcept = default;
 };

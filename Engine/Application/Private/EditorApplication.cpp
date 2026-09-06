@@ -18,7 +18,7 @@
 EditorApplication::EditorApplication() = default;
 
 EditorApplication::EditorApplication(RuntimeApplicationOptions options) noexcept :
-    m_runtimeOptions(std::move(options))
+    m_runtimeOptions(options)
 {
 }
 
@@ -44,7 +44,7 @@ void EditorApplication::InitializeRuntimeApplication()
 		RuntimeApplicationOptions runtimeOptions = m_runtimeOptions;
 		runtimeOptions.EnableRuntimeConsole = false;
 		runtimeOptions.EnableUiRenderPackets = true;
-		m_runtimeApplication = std::make_unique<RuntimeApplication>(std::move(runtimeOptions));
+		m_runtimeApplication = std::make_unique<RuntimeApplication>(runtimeOptions);
 	}
 
 	m_runtimeApplication->Initialize();
@@ -100,8 +100,7 @@ EditorHostServices EditorApplication::BuildUiHostServices(Renderer& renderer, Ga
 	    .MaterialVariants = [&world]() { return world.CaptureMaterialVariants(); },
 	    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation)
 	    { return world.SubmitEdit(std::move(command), generation); },
-	    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings)
-	    { renderer.SubmitRenderingSettings(std::move(settings)); },
+	    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings) { renderer.SubmitRenderingSettings(settings); },
 	    .HostWindow = m_runtimeApplication->GetWindow(),
 	    .Input = m_runtimeApplication->GetInputSystem()};
 }

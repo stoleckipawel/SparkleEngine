@@ -1,12 +1,13 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include <imgui.h>
 
 namespace UiUtil
 {
-	enum class EditorIcon
+	enum class EditorIcon : std::uint8_t
 	{
 		None,
 		Folder,

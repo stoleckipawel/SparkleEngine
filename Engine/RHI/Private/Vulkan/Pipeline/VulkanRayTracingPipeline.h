@@ -3,6 +3,7 @@
 #include "RayTracing/RhiRayTracingPipelineDesc.h"
 #include "Vulkan/VulkanIncludes.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>

@@ -3,6 +3,7 @@
 #include "../Formats/PixelFormat.h"
 #include "TextureTypes.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 

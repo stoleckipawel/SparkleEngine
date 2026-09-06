@@ -42,11 +42,13 @@ class SPARKLE_PLATFORM_API IInputBackend
 {
 public:
 	virtual ~IInputBackend() = default;
+	IInputBackend(const IInputBackend&) = delete;
+	IInputBackend& operator=(const IInputBackend&) = delete;
+	IInputBackend(IInputBackend&&) = delete;
+	IInputBackend& operator=(IInputBackend&&) = delete;
 
 	virtual InputBackendResult ProcessMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2) = 0;
 
 protected:
 	IInputBackend() = default;
-	IInputBackend(const IInputBackend&) = default;
-	IInputBackend& operator=(const IInputBackend&) = default;
 };

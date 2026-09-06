@@ -2,6 +2,9 @@
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
+#include <string>
+#include <vector>
+
 namespace SparkleLauncher
 {
 	struct BuildWorkspaceProcessStep

@@ -2,6 +2,7 @@
 
 #include "SparkleLauncher/LevelRunOperations.h"
 
+#include <string>
 #include <vector>
 
 namespace SparkleLauncher

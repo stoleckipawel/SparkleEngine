@@ -36,7 +36,7 @@ TextureLoadResult ExrTextureSourceLoader::Load(const std::filesystem::path& sour
 			diagnostic += errorMessage;
 			FreeEXRErrorMessage(errorMessage);
 		}
-		throw Diagnostics::Error(std::move(diagnostic));
+		throw Diagnostics::Error(diagnostic);
 	}
 
 	std::unique_ptr<float, decltype(&std::free)> pixels(decodedPixels, &std::free);

@@ -388,7 +388,6 @@ void UsedMeshesPanel::DrawSelectedMeshDetails(const MeshDiagnosticsRow& row) con
 	}
 	UiUtil::DrawKeyValueRow("CPU Loaded", row.CpuLoaded ? "yes" : "no");
 	UiUtil::DrawKeyValueRow("GPU Resident", row.GpuResident ? "yes" : "no");
-	UiUtil::DrawKeyValueRow("Residency", MeshDiagnosticsPresentation::FormatResidency(row.ResidencyState));
 	UiUtil::DrawKeyValueRow("Vertices", vertices.c_str());
 	UiUtil::DrawKeyValueRow("Indices", indices.c_str());
 	UiUtil::DrawKeyValueRow("Triangles", triangles.c_str());
@@ -434,11 +433,10 @@ bool UsedMeshesPanel::MatchesFilter(const MeshDiagnosticsRow& row) const
 	const std::string meshAssetId =
 	    row.MeshAssetId != 0 ? MeshDiagnosticsPresentation::FormatAssetId(row.MeshAssetId) : std::string("none");
 	const std::string sourcePath = MeshDiagnosticsPresentation::FormatMeshSourcePath(row);
-	const std::string residency = MeshDiagnosticsPresentation::FormatResidency(row.ResidencyState);
 	const std::string material = MeshDiagnosticsPresentation::FormatMaterial(row);
 	const std::string memory = MeshDiagnosticsPresentation::FormatMemorySummary(row);
 	return Strings::ContainsIgnoreCase(displayName, filter) || Strings::ContainsIgnoreCase(sourcePath, filter)
 	    || Strings::ContainsIgnoreCase(meshAssetId, filter) || Strings::ContainsIgnoreCase(meshRuntimeId, filter)
-	    || Strings::ContainsIgnoreCase(gpuRuntimeId, filter) || Strings::ContainsIgnoreCase(residency, filter)
-	    || Strings::ContainsIgnoreCase(material, filter) || Strings::ContainsIgnoreCase(memory, filter);
+	    || Strings::ContainsIgnoreCase(gpuRuntimeId, filter) || Strings::ContainsIgnoreCase(material, filter)
+	    || Strings::ContainsIgnoreCase(memory, filter);
 }

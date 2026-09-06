@@ -2,6 +2,7 @@
 
 #include "Backend/IShaderBackend.h"
 
+#include <cstdint>
 #include <memory>
 #include <span>
 #include <string>

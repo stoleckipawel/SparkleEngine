@@ -3,6 +3,9 @@
 #include "../../../RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "ShaderParameterFields.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <utility>
 #include <algorithm>
 #include <functional>
 #include <string>

@@ -2,6 +2,8 @@
 
 #include "Resources/RhiUploadService.h"
 
+#include <cstddef>
+#include <span>
 #include <cstdint>
 #include <memory>
 #include <vector>

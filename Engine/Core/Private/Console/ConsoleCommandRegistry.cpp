@@ -5,6 +5,11 @@
 #include "Core/Public/Console/ConsoleInputParser.h"
 #include "Core/Public/Strings/StringUtils.h"
 
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
 ConsoleCommandResult ConsoleCommandResult::Success(std::string message)
 {
 	return ConsoleCommandResult{.Succeeded = true, .Severity = ConsoleCommandSeverity::Info, .Message = std::move(message)};

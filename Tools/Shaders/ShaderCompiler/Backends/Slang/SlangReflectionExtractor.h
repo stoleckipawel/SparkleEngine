@@ -2,6 +2,8 @@
 
 #include "ShaderReflection.h"
 
+#include <cstddef>
+#include <vector>
 #include <slang.h>
 
 #include <cstdint>

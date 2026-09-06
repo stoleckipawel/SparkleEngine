@@ -2,6 +2,8 @@
 
 #include "Pipeline/TextureLoadResult.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <vector>
 

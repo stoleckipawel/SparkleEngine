@@ -41,6 +41,10 @@ Start with [SparkleEngine Code Review](Engineering/CodeReview.md). It is the con
 
 Start with the [Strategy index](Strategy/README.md). Requirements, assessment, roadmap, persona, and source archive are planning/audit material; they are not all part of the external reviewer path.
 
+### Preparing The First Release
+
+Start with the [Release-First Principal Graphics Roadmap](Strategy/Roadmap.md) for order and stop rules, then use the [First Release Acceptance Contract](Engineering/FirstReleaseAcceptance.md) for feature, map, package, clean-machine, and publication evidence. The [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) continue to own detailed graphics-workload proof.
+
 ### Multithreading Work
 
 Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the concurrency target design and the [Principal Graphics Roadmap](Strategy/Roadmap.md) for broader sequencing.

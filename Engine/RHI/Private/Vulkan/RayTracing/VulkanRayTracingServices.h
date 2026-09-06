@@ -5,6 +5,7 @@
 #include "Vulkan/RayTracing/VulkanPartitionedTlasServices.h"
 #include "Vulkan/VulkanIncludes.h"
 
+#include <memory>
 #include <cstdint>
 #include <string_view>
 

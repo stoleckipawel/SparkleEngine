@@ -2,6 +2,7 @@
 
 #include "Animation/SkeletonResource.h"
 
+#include <cstdint>
 #include <DirectXMath.h>
 
 #include <span>

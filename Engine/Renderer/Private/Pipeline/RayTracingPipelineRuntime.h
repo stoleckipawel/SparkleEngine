@@ -5,6 +5,7 @@
 #include "RHI/Public/RayTracing/RhiRayTracingPipelineDesc.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
+#include <cstdint>
 #include <memory>
 #include <span>
 #include <vector>

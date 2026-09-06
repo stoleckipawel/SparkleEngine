@@ -184,7 +184,7 @@ std::vector<std::filesystem::path> FbxEmbeddedTextureImporter::ExtractTextures(c
 			std::uint64_t cachedHash = 0;
 			if (!Hash::TryFnv1a64File(cachePath, cachedHash, fileError))
 			{
-				throw Diagnostics::Error(std::move(fileError));
+				throw Diagnostics::Error(fileError);
 			}
 			if (cachedHash != contentHash)
 			{
@@ -198,18 +198,18 @@ std::vector<std::filesystem::path> FbxEmbeddedTextureImporter::ExtractTextures(c
 			if (!Files::TryWriteAllBytes(temporaryPath, payload.Bytes, fileError))
 			{
 				Files::CleanupTemporaryFile(temporaryPath);
-				throw Diagnostics::Error(std::move(fileError));
+				throw Diagnostics::Error(fileError);
 			}
 			if (!Files::TryFinalizeTemporaryFileIfMissing(temporaryPath, cachePath, fileError))
 			{
 				Files::CleanupTemporaryFile(temporaryPath);
-				throw Diagnostics::Error(std::move(fileError));
+				throw Diagnostics::Error(fileError);
 			}
 
 			std::uint64_t finalizedHash = 0;
 			if (!Hash::TryFnv1a64File(cachePath, finalizedHash, fileError))
 			{
-				throw Diagnostics::Error(std::move(fileError));
+				throw Diagnostics::Error(fileError);
 			}
 			if (finalizedHash != contentHash)
 			{

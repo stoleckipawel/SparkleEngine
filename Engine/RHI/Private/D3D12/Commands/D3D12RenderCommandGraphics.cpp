@@ -87,11 +87,11 @@ void D3D12RenderCommandList::SetRenderTargets(
 	m_commandList->OMSetRenderTargets(renderTargetCount, nativeRtvs.data(), FALSE, depthStencil != nullptr ? &nativeDsv : nullptr);
 }
 
-void D3D12RenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept
+void D3D12RenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, RhiClearColorView color) noexcept
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList->ClearRenderTargetView(D3D12TypeConversions::ToCpuDescriptor(renderTarget), color, 0, nullptr);
+		m_commandList->ClearRenderTargetView(D3D12TypeConversions::ToCpuDescriptor(renderTarget), color.data(), 0, nullptr);
 	}
 }
 

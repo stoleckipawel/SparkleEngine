@@ -8,6 +8,8 @@
 #ifndef NOMINMAX
   #define NOMINMAX
 #endif
+#include <cstdint>
+#include <string_view>
 #include <ObjIdl.h>
 #include <Unknwn.h>
 

@@ -10,6 +10,7 @@
 #include "../FrameGraph/FrameGraphTextureHandle.h"
 #include "../RendererAPI.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <type_traits>

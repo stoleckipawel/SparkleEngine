@@ -21,7 +21,7 @@ public:
 	RuntimeConsoleHost(RuntimeConsoleHost&&) = delete;
 	RuntimeConsoleHost& operator=(RuntimeConsoleHost&&) = delete;
 
-	void TickFrame(Renderer& renderer, RuntimeUpdate updateRuntime);
+	void TickFrame(Renderer& renderer, const RuntimeUpdate& updateRuntime);
 
 private:
 	std::unique_ptr<RuntimeConsoleOverlay> m_overlay;

@@ -5,6 +5,7 @@
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -13,7 +14,7 @@
 
 namespace SparkleLauncher
 {
-	enum class CookOperationKind
+	enum class CookOperationKind : std::uint8_t
 	{
 		CookWorkspace,
 		CookShaders,
@@ -22,14 +23,14 @@ namespace SparkleLauncher
 		CookAllAssets
 	};
 
-	enum class CookWorkspaceScope
+	enum class CookWorkspaceScope : std::uint8_t
 	{
 		Shaders,
 		Textures,
 		SceneAssets
 	};
 
-	enum class CookMode
+	enum class CookMode : std::uint8_t
 	{
 		Incremental,
 		Force
@@ -94,5 +95,8 @@ namespace SparkleLauncher
 	const std::vector<CookOperationDefinition>& GetCookOperationDefinitions();
 	std::optional<CookOperationDefinition> FindCookOperationDefinition(std::string_view operationId);
 	CookOperationPlan PlanCookOperation(std::string_view operationId, const CookOperationRequest& request);
-	OperationRecord RunCookOperationPlan(CookOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback = {});
+	OperationRecord RunCookOperationPlan(
+	    CookOperationPlan plan,
+	    IProcessRunner& processRunner,
+	    const ProcessOutputCallback& outputCallback = {});
 }

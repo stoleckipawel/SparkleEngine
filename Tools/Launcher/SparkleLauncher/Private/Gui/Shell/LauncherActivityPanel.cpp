@@ -24,7 +24,7 @@ namespace SparkleLauncher
 
 	LauncherActivityPanel::LauncherActivityPanel(
 	    const LauncherIconLibrary& icons,
-	    std::function<void(QWidget*)> registerFocusable,
+	    const std::function<void(QWidget*)>& registerFocusable,
 	    QWidget* parent) :
 	    QFrame(parent),
 	    m_queuedIcon(icons.Icon(LauncherIcon::Queued, QColor(LauncherUi::Color::StateQueued))),

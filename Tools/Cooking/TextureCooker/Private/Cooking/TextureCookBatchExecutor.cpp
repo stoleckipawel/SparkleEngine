@@ -5,21 +5,37 @@
 #include "Cooking/TextureAssetCooker.h"
 #include "Cooking/TextureCookMemoryLimiter.h"
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Core/Public/Files/FileUtils.h"
+#include "TaskExecution.h"
+#include "TaskExecutionContext.h"
 #include "TaskExecutor.h"
+#include "TaskGraph.h"
+#include "TaskTypes.h"
+#include "TextureCookRequestList.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
 #include <objbase.h>
+#include <optional>
 #include <thread>
 #include <utility>
+#include <vector>
 
 static const auto g_textureCookBatchExecutorLogger = Logging::GetOrCreateLogger("TextureCooker.BatchExecutor");
 
 class TextureSourceComApartment final
 {
 public:
+	TextureSourceComApartment() = default;
 	~TextureSourceComApartment();
+	TextureSourceComApartment(const TextureSourceComApartment&) = delete;
+	TextureSourceComApartment& operator=(const TextureSourceComApartment&) = delete;
+	TextureSourceComApartment(TextureSourceComApartment&&) = delete;
+	TextureSourceComApartment& operator=(TextureSourceComApartment&&) = delete;
 
 	void Initialize();
 
@@ -35,6 +51,8 @@ public:
 	std::vector<TextureCookBatchItemResult> Execute();
 
 private:
+	static constexpr std::uint32_t kMaximumBackgroundWorkerCount = 4;
+
 	TaskExecutorConfig BuildExecutorConfig() const;
 	CompiledTaskGraph BuildTaskGraph(std::vector<TaskNodeHandle>& outTaskHandles);
 	TaskResult CookRequest(std::uint32_t index);
@@ -120,7 +138,7 @@ CompiledTaskGraph TextureCookBatchRun::BuildTaskGraph(std::vector<TaskNodeHandle
 	for (std::uint32_t index = 0; index < m_requests.size(); ++index)
 	{
 		outTaskHandles.push_back(graph.Add(
-		    TaskDesc{TaskName("Cook texture request"), TaskLane::Background},
+		    TaskDesc{.Name = TaskName("Cook texture request"), .Lane = TaskLane::Background},
 		    [this, index](TaskExecutionContext&) { return CookRequest(index); }));
 	}
 
@@ -144,7 +162,7 @@ TaskResult TextureCookBatchRun::CookRequest(std::uint32_t index)
 std::uint32_t TextureCookBatchRun::ResolveBackgroundWorkerCount()
 {
 	const std::uint32_t hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
-	return std::clamp(hardwareThreads > 1 ? hardwareThreads - 1 : 1u, 1u, 4u);
+	return std::clamp(hardwareThreads > 1 ? hardwareThreads - 1 : 1u, 1u, kMaximumBackgroundWorkerCount);
 }
 
 std::filesystem::path TextureCookBatchRun::BuildStagedOutputPath(const std::filesystem::path& outputPath)

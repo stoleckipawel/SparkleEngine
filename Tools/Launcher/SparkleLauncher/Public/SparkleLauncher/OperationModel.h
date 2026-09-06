@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -8,7 +9,7 @@
 
 namespace SparkleLauncher
 {
-	enum class LauncherOperationCategory
+	enum class LauncherOperationCategory : std::uint8_t
 	{
 		Workspace,
 		Levels,
@@ -17,7 +18,7 @@ namespace SparkleLauncher
 		Maintenance
 	};
 
-	enum class OperationStatus
+	enum class OperationStatus : std::uint8_t
 	{
 		Pending,
 		Running,
@@ -27,7 +28,7 @@ namespace SparkleLauncher
 		Canceled
 	};
 
-	enum class OperationDestructiveScope
+	enum class OperationDestructiveScope : std::uint8_t
 	{
 		None,
 		CookedOutputs,

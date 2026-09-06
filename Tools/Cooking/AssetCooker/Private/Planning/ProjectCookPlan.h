@@ -2,11 +2,12 @@
 
 #include "Api/AssetCookerTypes.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
 
-enum class AssetCookerPlanStep
+enum class AssetCookerPlanStep : std::uint8_t
 {
 	Shaders,
 	Textures,

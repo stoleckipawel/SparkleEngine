@@ -4,6 +4,8 @@
 #include "../Formats/PixelFormat.h"
 #include "../RHIAPI.h"
 
+#include <cstdint>
+
 extern SPARKLE_RHI_API ConsoleVariable<bool> CVarVSync;
 extern SPARKLE_RHI_API ConsoleVariable<bool> CVarPreferHighPerformanceAdapter;
 extern SPARKLE_RHI_API ConsoleVariable<bool> CVarRayTracingPreferPartitionedTlas;

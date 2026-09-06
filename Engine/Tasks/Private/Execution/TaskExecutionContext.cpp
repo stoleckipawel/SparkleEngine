@@ -1,5 +1,7 @@
 #include "TaskExecutionContext.h"
 
+#include <utility>
+
 TaskExecutionContext::TaskExecutionContext() noexcept = default;
 
 void TaskExecutionContextBinding::Bind(
@@ -10,5 +12,5 @@ void TaskExecutionContextBinding::Bind(
 {
 	context.m_executionGeneration = generation;
 	context.m_lane = lane;
-	context.m_cancellation = cancellation;
+	context.m_cancellation = std::move(cancellation);
 }

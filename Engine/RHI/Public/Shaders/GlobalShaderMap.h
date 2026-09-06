@@ -4,6 +4,7 @@
 #include "ShaderBytecode.h"
 #include "ShaderMap.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <span>
 #include <string_view>

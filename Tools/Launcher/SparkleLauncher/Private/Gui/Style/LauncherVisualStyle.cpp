@@ -38,9 +38,9 @@ namespace SparkleLauncher
 		const QString divider = UiColor(LauncherUi::Color::Divider);
 		const QString accent = UiColor(LauncherUi::Color::Accent);
 		const QString accentHover = UiColor(LauncherUi::Color::AccentHover);
-		const QString focus = accent;
-		const QString primary = accent;
-		const QString primaryHover = accentHover;
+		const QString& focus = accent;
+		const QString& primary = accent;
+		const QString& primaryHover = accentHover;
 		const QString selection = UiColor(LauncherUi::Color::Selection);
 		const QString warning = UiColor(LauncherUi::Color::StateWarning);
 		const QString destructive = UiColor(LauncherUi::Color::StateDestructive);

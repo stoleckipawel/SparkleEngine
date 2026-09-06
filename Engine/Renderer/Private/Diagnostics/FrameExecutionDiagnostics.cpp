@@ -51,7 +51,7 @@ ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
 		return {};
 	}
 
-	return ScopedGpuEvent(commands, std::string(label), color);
+	return ScopedGpuEvent(commands, label, color);
 }
 
 ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(RenderCommandContext& commands, std::string_view label) noexcept

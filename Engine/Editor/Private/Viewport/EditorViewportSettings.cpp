@@ -227,7 +227,7 @@ bool EditorViewportSettings::SetExposureOverrides(ViewportExposureOverrides over
 	{
 		return true;
 	}
-	m_state.Exposure = std::move(overrides);
+	m_state.Exposure = overrides;
 	return Save();
 }
 
@@ -238,7 +238,7 @@ bool EditorViewportSettings::Reload() noexcept
 	if (!input.is_open())
 	{
 		Sanitize(loaded);
-		m_state = std::move(loaded);
+		m_state = loaded;
 		return true;
 	}
 
@@ -269,7 +269,7 @@ bool EditorViewportSettings::Reload() noexcept
 		}
 	}
 	Sanitize(loaded);
-	m_state = std::move(loaded);
+	m_state = loaded;
 	return true;
 }
 

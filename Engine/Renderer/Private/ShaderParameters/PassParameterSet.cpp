@@ -342,7 +342,7 @@ bool PassParameterSet::SetDescriptorTable(
 		return false;
 	}
 
-	m_bindings[index].SetValue(std::move(binding));
+	m_bindings[index].SetValue(binding);
 	return true;
 }
 

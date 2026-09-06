@@ -1,6 +1,8 @@
 #pragma once
 
+#include <utility>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -10,7 +12,7 @@ class EditorTransactionHistory;
 struct EditorSceneEntry;
 struct SceneObjectSelection;
 
-enum class SceneOutlinerFilter
+enum class SceneOutlinerFilter : std::uint8_t
 {
 	All,
 	Cameras,

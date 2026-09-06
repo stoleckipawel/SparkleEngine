@@ -66,10 +66,10 @@ namespace Assets
 		CookedMeshAssetKind assetKind = CookedMeshAssetKind::Static;
 	};
 
-	enum CookedMeshAssetFlags : std::uint32_t
+	enum class CookedMeshAssetFlag : std::uint32_t
 	{
-		CookedMeshAssetFlag_HasSkinInfluences = 1u << 0u,
-		CookedMeshAssetFlag_HasMorphTargets = 1u << 1u,
+		HasSkinInfluences = 1u << 0u,
+		HasMorphTargets = 1u << 1u,
 	};
 }
 

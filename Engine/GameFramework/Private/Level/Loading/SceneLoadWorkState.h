@@ -4,6 +4,7 @@
 #include "Assets/Cooked/LoadedSceneManifest.h"
 #include "Assets/Loaders/CookedAssetFileSet.h"
 
+#include <cstdint>
 #include <atomic>
 #include <filesystem>
 #include <memory>

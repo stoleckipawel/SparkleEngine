@@ -2,9 +2,11 @@
 
 #include <QtCore/QString>
 
+#include <cstdint>
+
 namespace SparkleLauncher
 {
-	enum class LauncherWorkflowPageKind
+	enum class LauncherWorkflowPageKind : std::uint8_t
 	{
 		Home,
 		Sync,
@@ -14,7 +16,7 @@ namespace SparkleLauncher
 		Unknown
 	};
 
-	enum class LauncherActionImpactKind
+	enum class LauncherActionImpactKind : std::uint8_t
 	{
 		None,
 		SourceDependencies,

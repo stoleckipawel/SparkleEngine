@@ -4,7 +4,6 @@
 #include "DefaultTextureCookRequestBuilder.h"
 #include "ImportedSceneCooker.h"
 #include "MaterialCooker.h"
-#include "SourceSceneImporter.h"
 #include "TextureCookRequestList.h"
 
 #include <string>
@@ -37,7 +36,7 @@ bool TextureRequestPlanBuilder::Build(
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			diagnostics.AddError(AssetCookerCategory_Textures, error.what(), sceneEntry.sourcePath);
+			diagnostics.AddError(AssetCookerCategory::Textures, error.what(), sceneEntry.sourcePath);
 			++failedSceneCount;
 		}
 	}
@@ -45,7 +44,7 @@ bool TextureRequestPlanBuilder::Build(
 	if (failedSceneCount != 0)
 	{
 		diagnostics.AddError(
-		    AssetCookerCategory_Textures,
+		    AssetCookerCategory::Textures,
 		    "Texture request collection failed for " + std::to_string(failedSceneCount) + " scene(s).");
 		return false;
 	}
@@ -56,7 +55,7 @@ bool TextureRequestPlanBuilder::Build(
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(AssetCookerCategory_Textures, error.what());
+		diagnostics.AddError(AssetCookerCategory::Textures, error.what());
 		return false;
 	}
 
@@ -67,7 +66,7 @@ bool TextureRequestPlanBuilder::Build(
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		diagnostics.AddError(AssetCookerCategory_Textures, error.what(), outputPath);
+		diagnostics.AddError(AssetCookerCategory::Textures, error.what(), outputPath);
 		return false;
 	}
 

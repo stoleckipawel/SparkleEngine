@@ -2,6 +2,7 @@
 
 #include "Cooking/ShaderCookContext.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 

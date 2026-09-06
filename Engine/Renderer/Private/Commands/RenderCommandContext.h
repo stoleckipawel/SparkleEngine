@@ -73,13 +73,13 @@ public:
 	    const RhiCpuDescriptorHandle* renderTargets,
 	    const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 
-	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept;
+	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, RhiClearColorView color) noexcept;
 
 	void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept;
 	void EndRasterPass() noexcept;
 	void SetViewport(const RhiViewport& viewport) noexcept;
 
-	void SetViewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f) noexcept;
+	void SetViewport(float xPosition, float yPosition, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f) noexcept;
 	void SetScissorRect(const RhiRect& scissorRect) noexcept;
 
 	void SetScissorRect(std::int32_t left, std::int32_t top, std::int32_t right, std::int32_t bottom) noexcept;

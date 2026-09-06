@@ -4,7 +4,11 @@
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Core/Public/Strings/StringUtils.h"
+#include "Core/RhiBackendApi.h"
 
+#include <Windows.h>
+
+#include <cstddef>
 #include <cwctype>
 #include <string>
 #include <string_view>

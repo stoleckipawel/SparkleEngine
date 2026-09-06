@@ -108,7 +108,7 @@ void SceneCookPipeline::StageManifest(const CookedSceneBuild& build, std::vector
 	std::string errorMessage;
 	if (!Files::TryOpenBinaryOutput(stagedPath, manifestOutput, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 
 	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifest.header, errorMessage)
@@ -124,12 +124,12 @@ void SceneCookPipeline::StageManifest(const CookedSceneBuild& build, std::vector
 	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariants, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariantMappings, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 
 	if (!Files::TryCloseOutput(manifestOutput, stagedPath, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 }
 
@@ -176,7 +176,7 @@ void SceneCookPipeline::StageRegistry(std::span<const CookedSceneBuild* const> b
 		registry.Upsert(build->identity.assetId, ResolveManifestRelativePath(*build));
 	}
 
-	const std::filesystem::path registryPath = Filesystem::GetSceneAssetRegistryPath();
+	const std::filesystem::path& registryPath = Filesystem::GetSceneAssetRegistryPath();
 	const std::filesystem::path stagedPath = Files::BuildTemporaryPath(registryPath, ".cook-generation");
 
 	Files::CleanupTemporaryFile(stagedPath);

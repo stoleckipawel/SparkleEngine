@@ -47,8 +47,8 @@ namespace SparkleLauncher
 #if defined(_WIN32)
 		std::error_code errorCode;
 		const std::filesystem::path absolutePath = std::filesystem::absolute(path, errorCode);
-		const std::filesystem::path candidate = errorCode ? path : absolutePath;
-		const std::wstring nativePath = candidate.native();
+		std::filesystem::path candidate = errorCode ? path : absolutePath;
+		const std::wstring& nativePath = candidate.native();
 		if (nativePath.rfind(LR"(\\?\)", 0) == 0)
 		{
 			return candidate;
@@ -315,13 +315,9 @@ namespace SparkleLauncher
 		return summary;
 	}
 
-	OperationRecord RunMaintenanceOperationPlan(
-	    MaintenanceOperationPlan plan,
-	    IProcessRunner& processRunner,
-	    ProcessOutputCallback outputCallback)
+	OperationRecord RunMaintenanceOperationPlan(MaintenanceOperationPlan plan, IProcessRunner& processRunner)
 	{
 		(void) processRunner;
-		(void) outputCallback;
 
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);

@@ -4,14 +4,17 @@ Checks: >
   modernize-*,
   -modernize-use-auto,
   -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
   performance-*,
   bugprone-*,
   readability-*,
   -readability-qualified-auto,
+  -readability-uppercase-literal-suffix,
   cppcoreguidelines-*,
   -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
   hicpp-*,
   -hicpp-use-auto,
+  -hicpp-uppercase-literal-suffix,
   cert-*,
   portability-*,
   -portability-avoid-pragma-once,
@@ -51,6 +54,9 @@ CheckOptions:
   # ------------------------------------------------------------------
   - { key: performance-move-const-arg.CheckTriviallyCopyableMove, value: 'true' }
   - { key: performance-unnecessary-value-param.AllowedTypes, value: '' }
+  - { key: cppcoreguidelines-rvalue-reference-param-not-moved.AllowPartialMove, value: 'true' }
+  # Wider enum storage is intentional for flags, imported/cooked records, CPU/GPU mirrors, and native or serialized contracts.
+  - { key: performance-enum-size.EnumIgnoreList, value: '.*Flags;Imported.*;Cooked.*;Key;SceneMeshKind;SceneMeshInstanceGroupKind;ShaderTarget;ShaderStageMask;ShaderStageVisibility;PixelFormat;RenderViewMode;RenderViewInvalidationReason;RenderMeshKind;RenderMeshInstanceGroupKind;MeshInstanceBatchSource;SceneLightKind;AlphaMode;Slot;MaterialBindingMode;RayTracingSceneRayType' }
 
   # ------------------------------------------------------------------
   # readability (implicit conversions)
@@ -61,8 +67,10 @@ CheckOptions:
   - { key: readability-identifier-length.MinimumParameterNameLength, value: '2' }
   - { key: readability-identifier-length.MinimumVariableNameLength, value: '2' }
   - { key: bugprone-easily-swappable-parameters.MinimumLength, value: '3' }
+  - { key: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals, value: 'true' }
   # Platform and dependency umbrella headers intentionally own their internal provider selection.
-  - { key: misc-include-cleaner.IgnoreHeaders, value: '(^|[\\/])(PCH\.h|cmake_pch\.hxx|[Ww]indows\.h)$|(^|[\\/])spdlog[\\/]' }
+  - { key: misc-include-cleaner.IgnoreHeaders, value: '(^|[\\/])(PCH\.h|VulkanPCH\.h|cmake_pch\.hxx|[Ww]indows\.h)$|.*[\\/]Windows Kits[\\/].*|(^|[\\/])spdlog[\\/]' }
+  - { key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic, value: 'true' }
 
   # ------------------------------------------------------------------
   # readability: identifier naming
@@ -75,9 +83,10 @@ CheckOptions:
   - { key: readability-identifier-naming.TypeAliasCase, value: 'CamelCase' }
   - { key: readability-identifier-naming.TypedefCase, value: 'CamelCase' }
 
-  - { key: readability-identifier-naming.VariableCase, value: 'camelBack' }
   - { key: readability-identifier-naming.LocalVariableCase, value: 'camelBack' }
   - { key: readability-identifier-naming.ParameterCase, value: 'camelBack' }
 
-  - { key: readability-identifier-naming.MemberCase, value: 'camelBack' }
-  - { key: readability-identifier-naming.MemberPrefix, value: 'm_' }
+  - { key: readability-identifier-naming.PrivateMemberCase, value: 'camelBack' }
+  - { key: readability-identifier-naming.PrivateMemberPrefix, value: 'm_' }
+  - { key: readability-identifier-naming.ProtectedMemberCase, value: 'camelBack' }
+  - { key: readability-identifier-naming.ProtectedMemberPrefix, value: 'm_' }

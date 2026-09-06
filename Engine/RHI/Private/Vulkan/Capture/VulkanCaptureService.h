@@ -3,6 +3,8 @@
 #include "Capture/RhiCaptureService.h"
 #include "Vulkan/VulkanIncludes.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 

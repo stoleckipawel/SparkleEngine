@@ -2,6 +2,9 @@
 
 #include "SparkleLauncher/LevelOperations.h"
 
+#include <string>
+#include <vector>
+
 namespace SparkleLauncher
 {
 	struct LevelOperationProcessStep

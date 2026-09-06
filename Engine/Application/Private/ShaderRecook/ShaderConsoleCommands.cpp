@@ -25,7 +25,7 @@ public:
 	}
 };
 
-void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Handlers handlers)
+void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, const Handlers& handlers)
 {
 	commandRegistry.Register(
 	    ConsoleCommandDescriptor{

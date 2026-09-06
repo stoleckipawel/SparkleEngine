@@ -87,7 +87,7 @@ void AssetCookerStageExecutor::AppendOutput(
     std::vector<AssetCookerOutputRecord>& outputs,
     AssetCookerCategory category,
     std::string assetId,
-    std::filesystem::path path)
+    const std::filesystem::path& path)
 {
 	AssetCookerOutputRecord output;
 	output.category = category;
@@ -104,7 +104,7 @@ bool AssetCookerStageExecutor::ValidateCapabilities(const AssetCookerProjectCook
 		const std::filesystem::path compilerPath = ResolveToolPath(plan, "ShaderCompiler");
 		if (!FileExists(compilerPath))
 		{
-			diagnostics.AddError(AssetCookerCategory_Shaders, "ShaderCompiler executable was not found.", compilerPath);
+			diagnostics.AddError(AssetCookerCategory::Shaders, "ShaderCompiler executable was not found.", compilerPath);
 			valid = false;
 		}
 	}
@@ -113,7 +113,7 @@ bool AssetCookerStageExecutor::ValidateCapabilities(const AssetCookerProjectCook
 		const std::filesystem::path cookerPath = ResolveToolPath(plan, "TextureCooker");
 		if (!FileExists(cookerPath))
 		{
-			diagnostics.AddError(AssetCookerCategory_Textures, "TextureCooker executable was not found.", cookerPath);
+			diagnostics.AddError(AssetCookerCategory::Textures, "TextureCooker executable was not found.", cookerPath);
 			valid = false;
 		}
 	}
@@ -127,12 +127,12 @@ bool AssetCookerStageExecutor::RunShaders(
 {
 	if (AssetCookerToolProcess::Run(ResolveToolPath(plan, "ShaderCompiler"), {"cook"}, plan.projectRoot) != 0)
 	{
-		diagnostics.AddError(AssetCookerCategory_Shaders, "Shader cooking failed.");
+		diagnostics.AddError(AssetCookerCategory::Shaders, "Shader cooking failed.");
 		return false;
 	}
 
-	AppendOutput(outputs, AssetCookerCategory_Shaders, "global-shader-map", plan.cookedRoot / "Shaders" / "GlobalShaderMap.smap");
-	AppendOutput(outputs, AssetCookerCategory_Shaders, "cooked-shader-library", plan.cookedRoot / "Shaders" / "CookedShaderLibrary.slib");
+	AppendOutput(outputs, AssetCookerCategory::Shaders, "global-shader-map", plan.cookedRoot / "Shaders" / "GlobalShaderMap.smap");
+	AppendOutput(outputs, AssetCookerCategory::Shaders, "cooked-shader-library", plan.cookedRoot / "Shaders" / "CookedShaderLibrary.slib");
 	return true;
 }
 
@@ -148,7 +148,7 @@ bool AssetCookerStageExecutor::RunTextures(
 	if (errorCode)
 	{
 		diagnostics.AddError(
-		    AssetCookerCategory_Textures,
+		    AssetCookerCategory::Textures,
 		    "Failed to create texture-request temp directory.",
 		    requestFile.GetPath().parent_path());
 		return false;
@@ -165,11 +165,11 @@ bool AssetCookerStageExecutor::RunTextures(
 	    plan.projectRoot);
 	if (exitCode != 0)
 	{
-		diagnostics.AddError(AssetCookerCategory_Textures, "Texture asset cooking failed.");
+		diagnostics.AddError(AssetCookerCategory::Textures, "Texture asset cooking failed.");
 		return false;
 	}
 
-	AppendOutput(outputs, AssetCookerCategory_Textures, "textures", plan.cookedRoot / "Textures");
+	AppendOutput(outputs, AssetCookerCategory::Textures, "textures", plan.cookedRoot / "Textures");
 	return true;
 }
 
@@ -183,9 +183,9 @@ bool AssetCookerStageExecutor::RunSceneAssets(
 		return false;
 	}
 
-	AppendOutput(outputs, AssetCookerCategory_SceneAssets, "scene-manifests", plan.cookedRoot / "SceneManifests");
-	AppendOutput(outputs, AssetCookerCategory_Meshes, "meshes", plan.cookedRoot / "Meshes");
-	AppendOutput(outputs, AssetCookerCategory_Materials, "materials", plan.cookedRoot / "Materials");
+	AppendOutput(outputs, AssetCookerCategory::SceneAssets, "scene-manifests", plan.cookedRoot / "SceneManifests");
+	AppendOutput(outputs, AssetCookerCategory::Meshes, "meshes", plan.cookedRoot / "Meshes");
+	AppendOutput(outputs, AssetCookerCategory::Materials, "materials", plan.cookedRoot / "Materials");
 	return true;
 }
 

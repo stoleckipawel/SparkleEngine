@@ -18,7 +18,6 @@
 #include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"
-#include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Settings/EditorRestartService.h"
 #include "Style/SparkleUiTheme.h"
 #include "Viewport/EditorViewportSession.h"
@@ -108,7 +107,7 @@ void UI::InitializeAssetPanels()
 	m_usedShadersPanel->SetReloadHandler([this]() { m_shaderReloadRequested = true; });
 	m_usedShadersPanel->SetRecookAllHandler([this]() { m_shaderRecookRequested = true; });
 	m_usedShadersPanel->SetRecookHandler(
-	    [this](std::string shaderId)
+	    [this](const std::string& shaderId)
 	    {
 		    if (m_editorConsoleSystem)
 		    {

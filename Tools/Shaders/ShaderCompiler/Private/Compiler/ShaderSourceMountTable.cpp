@@ -67,11 +67,11 @@ bool ShaderSourceMountTable::IsWithinRoot(const std::filesystem::path& path, con
 }
 
 ShaderSourceMountTable::ShaderSourceMountTable(
-    std::filesystem::path engineRoot,
-    std::filesystem::path projectRoot,
+    const std::filesystem::path& engineRoot,
+    const std::filesystem::path& projectRoot,
     std::span<const PluginMount> pluginMounts)
 {
-	auto addMount = [this](std::string virtualRoot, const std::filesystem::path& physicalRoot)
+	auto addMount = [this](std::string_view virtualRoot, const std::filesystem::path& physicalRoot)
 	{
 		if (physicalRoot.empty())
 		{

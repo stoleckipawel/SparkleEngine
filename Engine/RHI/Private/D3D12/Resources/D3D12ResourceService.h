@@ -4,6 +4,7 @@
 #include "D3D12/Memory/D3D12RecordingResourceUseToken.h"
 #include "Resources/RhiResourceService.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>

@@ -448,7 +448,7 @@ namespace ShaderArtifactWriter
 		    || !Files::BinaryStreamWriter::WriteArray(output, reflection.specializationConstants, error)
 		    || !Files::BinaryStreamWriter::WriteArray(output, strings, error) || !Files::TryCloseOutput(output, path, error))
 		{
-			throw Diagnostics::Error(std::move(error));
+			throw Diagnostics::Error(error);
 		}
 	}
 
@@ -464,7 +464,7 @@ namespace ShaderArtifactWriter
 		    || !Files::BinaryStreamWriter::WriteArray(output, records, error) || !Files::BinaryStreamWriter::WriteArray(output, code, error)
 		    || !Files::TryCloseOutput(output, path, error))
 		{
-			throw Diagnostics::Error(std::move(error));
+			throw Diagnostics::Error(error);
 		}
 	}
 }
@@ -474,8 +474,8 @@ ShaderCookOutput ShaderArtifactPublication::Publish(
     const std::filesystem::path& outputDirectory,
     bool replaceCompleteCatalog)
 {
-	const std::filesystem::path mapPath = Filesystem::GetGlobalShaderMapPath();
-	const std::filesystem::path libraryPath = Filesystem::GetCookedShaderLibraryPath();
+	const std::filesystem::path& mapPath = Filesystem::GetGlobalShaderMapPath();
+	const std::filesystem::path& libraryPath = Filesystem::GetCookedShaderLibraryPath();
 	const std::filesystem::path stagedMapPath = Files::BuildTemporaryPath(mapPath, ".cook-generation");
 	const std::filesystem::path stagedLibraryPath = Files::BuildTemporaryPath(libraryPath, ".cook-generation");
 	const std::filesystem::path dependencyPath = ShaderDependencyManifest::GetPath(outputDirectory);
@@ -539,7 +539,7 @@ ShaderCookOutput ShaderArtifactPublication::Publish(
 		std::string error;
 		if (!Files::TryPublishFileSet(files, error))
 		{
-			throw Diagnostics::Error(std::move(error));
+			throw Diagnostics::Error(error);
 		}
 		return result;
 	}

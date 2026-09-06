@@ -23,7 +23,7 @@ public:
 		std::function<void()> RequestReload;
 	};
 
-	static void Register(ConsoleCommandRegistry& commandRegistry, Handlers handlers);
+	static void Register(ConsoleCommandRegistry& commandRegistry, const Handlers& handlers);
 	static void ConnectEditor(UI& ui, ShaderRecookCoordinator& coordinator);
 
 private:

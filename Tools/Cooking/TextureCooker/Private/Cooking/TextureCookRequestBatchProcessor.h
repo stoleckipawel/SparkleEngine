@@ -2,6 +2,7 @@
 
 #include "TextureCookRequestList.h"
 
+#include <cstddef>
 #include <filesystem>
 #include <vector>
 

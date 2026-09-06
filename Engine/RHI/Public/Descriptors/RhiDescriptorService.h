@@ -19,6 +19,10 @@ class SPARKLE_RHI_API RhiDescriptorService
 {
 public:
 	virtual ~RhiDescriptorService() noexcept;
+	RhiDescriptorService(const RhiDescriptorService&) = delete;
+	RhiDescriptorService& operator=(const RhiDescriptorService&) = delete;
+	RhiDescriptorService(RhiDescriptorService&&) = delete;
+	RhiDescriptorService& operator=(RhiDescriptorService&&) = delete;
 
 	virtual std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) = 0;
 	virtual void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept = 0;
@@ -38,6 +42,9 @@ public:
 	virtual void ReleaseResourceView(RhiResourceViewHandle view) noexcept = 0;
 	virtual RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept = 0;
 	virtual RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept = 0;
+
+protected:
+	RhiDescriptorService() noexcept = default;
 
 private:
 	friend class RenderDeviceServices;

@@ -3,18 +3,13 @@
 #include "LauncherActivityPanel.h"
 #include "LauncherActionWidgets.h"
 #include "LauncherBackend.h"
-#include "LauncherDependencyUiModel.h"
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherOperationRequestMapping.h"
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"
-#include "LauncherUiDesign.h"
 #include "LauncherWorkflowCatalog.h"
 
-#include "SparkleLauncher/BuildWorkspaceOperations.h"
-#include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
-#include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QProcess>
@@ -175,7 +170,7 @@ namespace SparkleLauncher
 
 	QString LauncherMainWindow::DisplayNameForOperation(const QString& operationId) const
 	{
-		const QString overrideName = LauncherOperationDisplayNameOverride(operationId);
+		QString overrideName = LauncherOperationDisplayNameOverride(operationId);
 		if (!overrideName.isEmpty())
 		{
 			return overrideName;

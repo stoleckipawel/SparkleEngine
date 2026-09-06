@@ -175,7 +175,7 @@ std::string ResolveShaderBackendName(std::string_view sourcePath, ShaderTarget t
 		{
 			diagnostic += ": " + unavailableReason;
 		}
-		throw Diagnostics::Error(std::move(diagnostic));
+		throw Diagnostics::Error(diagnostic);
 	}
 
 	if (!registration->Descriptor.Capabilities.SupportsTarget(target))

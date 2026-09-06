@@ -4,7 +4,9 @@
 
 #include <DirectXMath.h>
 
-enum class CameraProjectionKind
+#include <cstdint>
+
+enum class CameraProjectionKind : std::uint8_t
 {
 	Perspective = 0,
 	Orthographic,

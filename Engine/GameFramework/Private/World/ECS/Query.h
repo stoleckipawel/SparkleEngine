@@ -3,6 +3,7 @@
 #include "World/ECS/EntityRegistry.h"
 #include "World/ECS/QueryAccess.h"
 
+#include <cstdint>
 #include <array>
 #include <cstddef>
 #include <functional>

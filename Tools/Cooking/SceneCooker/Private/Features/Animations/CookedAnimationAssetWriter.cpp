@@ -47,12 +47,12 @@ void CookedAnimationAssetStager::StageAnimationAsset(
 	    || !Files::BinaryStreamWriter::WriteArray(output, animationAsset.channels, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(output, animationAsset.keyframes, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 
 	if (!Files::TryCloseOutput(output, stagedOutputPath, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 }
 

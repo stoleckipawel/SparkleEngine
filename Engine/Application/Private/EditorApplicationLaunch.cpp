@@ -16,7 +16,7 @@ int RunEditorApplication(RuntimeApplicationOptions options)
 	Threading::SetCurrentThreadRole("Sparkle.EditorThread");
 	Application::ConfigureProcessFromCommandLine();
 
-	EditorApplication app(std::move(options));
+	EditorApplication app(options);
 	app.Run();
 	return 0;
 }

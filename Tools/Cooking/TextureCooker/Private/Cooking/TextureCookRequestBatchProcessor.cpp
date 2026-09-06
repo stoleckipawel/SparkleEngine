@@ -96,7 +96,7 @@ void TextureCookRequestBatchProcessor::PublishGeneration(
 	std::string fileError;
 	if (!Files::TryPublishFileSet(publication, fileError))
 	{
-		throw Diagnostics::Error(std::move(fileError));
+		throw Diagnostics::Error(fileError);
 	}
 }
 

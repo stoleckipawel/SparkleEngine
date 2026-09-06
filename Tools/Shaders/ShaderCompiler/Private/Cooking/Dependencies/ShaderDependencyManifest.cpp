@@ -144,7 +144,7 @@ void ShaderDependencyManifest::Write(const ShaderDependencyManifest& manifest, c
 	std::string fileError;
 	if (!Files::TryOpenTextOutput(temporaryPath, output, fileError))
 	{
-		throw Diagnostics::Error(std::move(fileError));
+		throw Diagnostics::Error(fileError);
 	}
 
 	output << kShaderDependencyManifestHeader << '\n';
@@ -174,12 +174,12 @@ void ShaderDependencyManifest::Write(const ShaderDependencyManifest& manifest, c
 	if (!Files::TryCloseOutput(output, temporaryPath, fileError))
 	{
 		Files::CleanupTemporaryFile(temporaryPath);
-		throw Diagnostics::Error(std::move(fileError));
+		throw Diagnostics::Error(fileError);
 	}
 	if (!Files::TryFinalizeTemporaryFile(temporaryPath, path, fileError))
 	{
 		Files::CleanupTemporaryFile(temporaryPath);
-		throw Diagnostics::Error(std::move(fileError));
+		throw Diagnostics::Error(fileError);
 	}
 }
 

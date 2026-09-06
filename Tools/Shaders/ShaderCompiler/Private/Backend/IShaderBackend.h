@@ -13,6 +13,10 @@ class IShaderBackend
 {
 public:
 	virtual ~IShaderBackend() = default;
+	IShaderBackend(const IShaderBackend&) = delete;
+	IShaderBackend& operator=(const IShaderBackend&) = delete;
+	IShaderBackend(IShaderBackend&&) = delete;
+	IShaderBackend& operator=(IShaderBackend&&) = delete;
 
 	virtual ShaderBackendCapabilities GetCapabilities() const = 0;
 
@@ -22,4 +26,7 @@ public:
 	virtual std::uint64_t GetBackendVersion() const = 0;
 
 	virtual CompiledShader Compile(const ShaderCompileRequest& request) = 0;
+
+protected:
+	IShaderBackend() = default;
 };

@@ -4,6 +4,7 @@
 #include "Memory/RhiMemoryTypes.h"
 #include "Commands/RhiQueue.h"
 
+#include <cstdint>
 #include <d3d12.h>
 #include <wrl/client.h>
 

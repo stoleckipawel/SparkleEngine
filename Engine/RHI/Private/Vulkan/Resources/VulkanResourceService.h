@@ -3,6 +3,7 @@
 #include "Core/RhiCapabilities.h"
 #include "Resources/RhiResourceService.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string_view>

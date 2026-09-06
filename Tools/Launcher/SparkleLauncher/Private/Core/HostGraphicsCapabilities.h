@@ -1,10 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace SparkleLauncher
 {
-	enum class HostGraphicsVendor
+	enum class HostGraphicsVendor : std::uint8_t
 	{
 		Unknown,
 		Nvidia,

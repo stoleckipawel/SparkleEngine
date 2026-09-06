@@ -75,7 +75,7 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 	{
 		if (!Files::TryOpenBinaryOutput(temporaryOutputPath, output, fileError))
 		{
-			throw Diagnostics::Error(std::move(fileError));
+			throw Diagnostics::Error(fileError);
 		}
 
 		if (!Files::BinaryStreamWriter::WriteValue(output, header, fileError)
@@ -85,7 +85,7 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 		        sizeof(CookedTextureMipHeader) * mipHeaders.size(),
 		        fileError))
 		{
-			throw Diagnostics::Error(std::move(fileError));
+			throw Diagnostics::Error(fileError);
 		}
 
 		for (const TextureArraySliceData& arraySlice : cookedTexture.arraySlices)
@@ -94,7 +94,7 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 			{
 				if (!Files::BinaryStreamWriter::WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), fileError))
 				{
-					throw Diagnostics::Error(std::move(fileError));
+					throw Diagnostics::Error(fileError);
 				}
 			}
 		}
@@ -107,12 +107,12 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 
 		if (!Files::TryCloseOutput(output, temporaryOutputPath, fileError))
 		{
-			throw Diagnostics::Error(std::move(fileError));
+			throw Diagnostics::Error(fileError);
 		}
 
 		if (!Files::TryFinalizeTemporaryFile(temporaryOutputPath, request.outputPath, fileError))
 		{
-			throw Diagnostics::Error(std::move(fileError));
+			throw Diagnostics::Error(fileError);
 		}
 	}
 	catch (...)

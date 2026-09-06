@@ -65,10 +65,17 @@ class SPARKLE_RHI_API RhiCaptureService
 {
 public:
 	virtual ~RhiCaptureService() noexcept;
+	RhiCaptureService(const RhiCaptureService&) = delete;
+	RhiCaptureService& operator=(const RhiCaptureService&) = delete;
+	RhiCaptureService(RhiCaptureService&&) = delete;
+	RhiCaptureService& operator=(RhiCaptureService&&) = delete;
 
 	virtual RhiCaptureTicket BeginTextureReadback(const RhiTextureCaptureRequest& request) noexcept = 0;
 	virtual bool TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCaptureReadback& readback) noexcept = 0;
 	virtual void CancelTextureReadback(RhiCaptureTicket ticket) noexcept = 0;
+
+protected:
+	RhiCaptureService() noexcept = default;
 };
 
 SPARKLE_RHI_API bool WriteRhiCaptureBmp(const RhiCaptureReadback& readback, const std::filesystem::path& outputPath) noexcept;

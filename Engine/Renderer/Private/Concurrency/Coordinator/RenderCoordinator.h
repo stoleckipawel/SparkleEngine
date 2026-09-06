@@ -7,6 +7,7 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
+#include <cstddef>
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>

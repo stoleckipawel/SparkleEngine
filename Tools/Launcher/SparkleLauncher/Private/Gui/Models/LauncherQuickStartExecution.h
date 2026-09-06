@@ -4,12 +4,13 @@
 
 #include <QtCore/QString>
 
+#include <cstdint>
 #include <set>
 #include <string>
 
 namespace SparkleLauncher
 {
-	enum class LauncherQuickStartCompletion
+	enum class LauncherQuickStartCompletion : std::uint8_t
 	{
 		Ignored,
 		Continue,

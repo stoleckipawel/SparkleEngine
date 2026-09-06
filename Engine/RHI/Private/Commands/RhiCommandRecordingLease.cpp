@@ -6,7 +6,6 @@
 
 #include <cassert>
 #include <type_traits>
-#include <utility>
 
 static_assert(!std::is_copy_constructible_v<RhiCommandRecordingLease>);
 static_assert(!std::is_copy_assignable_v<RhiCommandRecordingLease>);
@@ -24,7 +23,7 @@ RhiCommandRecordingLease::~RhiCommandRecordingLease() noexcept
 
 RhiCommandRecordingLease::RhiCommandRecordingLease(RhiCommandRecordingLease&& other) noexcept
 {
-	MoveFrom(std::move(other));
+	MoveFrom(other);
 }
 
 RhiCommandRecordingLease& RhiCommandRecordingLease::operator=(RhiCommandRecordingLease&& other) noexcept
@@ -32,7 +31,7 @@ RhiCommandRecordingLease& RhiCommandRecordingLease::operator=(RhiCommandRecordin
 	if (this != &other)
 	{
 		Release();
-		MoveFrom(std::move(other));
+		MoveFrom(other);
 	}
 
 	return *this;
@@ -98,7 +97,7 @@ void RhiCommandRecordingLease::Release() noexcept
 	Reset();
 }
 
-void RhiCommandRecordingLease::MoveFrom(RhiCommandRecordingLease&& other) noexcept
+void RhiCommandRecordingLease::MoveFrom(RhiCommandRecordingLease& other) noexcept
 {
 	m_backendState = other.m_backendState;
 	m_commandList = other.m_commandList;
@@ -143,6 +142,8 @@ RhiCommandRecordingLease RhiCommandRecordingLeaseAccess::Create(const RhiCommand
 	return lease;
 }
 
+// The move-only lease is transferred field-wise and reset to prevent a second release.
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 RhiCommandRecordingLeaseBackendState RhiCommandRecordingLeaseAccess::Consume(RhiCommandRecordingLease&& lease) noexcept
 {
 	RhiCommandRecordingLeaseBackendState state{

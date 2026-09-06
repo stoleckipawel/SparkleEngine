@@ -26,10 +26,17 @@ class IUpscalerProvider
 {
 public:
 	virtual ~IUpscalerProvider() = default;
+	IUpscalerProvider(const IUpscalerProvider&) = delete;
+	IUpscalerProvider& operator=(const IUpscalerProvider&) = delete;
+	IUpscalerProvider(IUpscalerProvider&&) = delete;
+	IUpscalerProvider& operator=(IUpscalerProvider&&) = delete;
 
 	virtual bool Initialize(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) = 0;
 	virtual RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept = 0;
 	virtual void SetupFrame(const ImageProviderFrameInput& frameInput) = 0;
 	virtual bool Evaluate(const UpscalerEvaluationDesc& evaluation) = 0;
 	virtual void Shutdown() noexcept = 0;
+
+protected:
+	IUpscalerProvider() = default;
 };

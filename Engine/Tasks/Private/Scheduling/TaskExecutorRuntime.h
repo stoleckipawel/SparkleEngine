@@ -4,6 +4,7 @@
 #include "Lifetime/TaskScopeState.h"
 #include "TaskExecutorImplementation.h"
 
+#include <cstddef>
 #include <array>
 #include <atomic>
 #include <condition_variable>

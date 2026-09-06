@@ -5,6 +5,7 @@
 #include "D3D12/RayTracing/D3D12PartitionedTlasServices.h"
 #include "RayTracing/RhiRayTracingService.h"
 
+#include <memory>
 #include <cstdint>
 #include <string_view>
 

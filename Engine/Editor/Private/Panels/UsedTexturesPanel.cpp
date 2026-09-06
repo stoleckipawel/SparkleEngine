@@ -85,7 +85,7 @@ void UsedTexturesPanel::DrawTextureTable(bool disableInteraction)
 {
 	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable
 	    | ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
-	if (!ImGui::BeginTable("##UsedTexturesTable", 9, tableFlags, ImVec2(0.0f, 0.0f)))
+	if (!ImGui::BeginTable("##UsedTexturesTable", 7, tableFlags, ImVec2(0.0f, 0.0f)))
 	{
 		return;
 	}
@@ -94,8 +94,6 @@ void UsedTexturesPanel::DrawTextureTable(bool disableInteraction)
 	ImGui::TableSetupColumn("Texture");
 	ImGui::TableSetupColumn("Source");
 	ImGui::TableSetupColumn("Kind");
-	ImGui::TableSetupColumn("Loaded");
-	ImGui::TableSetupColumn("Resident");
 	ImGui::TableSetupColumn("Format");
 	ImGui::TableSetupColumn("Size");
 	ImGui::TableSetupColumn("Mips");
@@ -124,10 +122,6 @@ void UsedTexturesPanel::DrawTextureTable(bool disableInteraction)
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(TextureDiagnosticsPresentation::FormatTextureKind(row.Kind));
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(row.Loaded ? "yes" : "no");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(TextureDiagnosticsPresentation::FormatResidency(row.ResidencyState));
-		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(TextureDiagnosticsPresentation::FormatTextureFormat(row.Format));
 		ImGui::TableNextColumn();
 		const std::string extent = TextureDiagnosticsPresentation::FormatExtent(row);
@@ -147,7 +141,7 @@ void UsedTexturesPanel::DrawSelectedTextureInspector(bool disableInteraction)
 	const TextureDiagnosticsRow* selectedRow = GetSelectedRow();
 	if (selectedRow == nullptr)
 	{
-		ImGui::TextDisabled("Select a texture to inspect preview, dimensions, format, memory, and runtime residency.");
+		ImGui::TextDisabled("Select a texture to inspect preview, dimensions, format, streaming, and memory.");
 		return;
 	}
 
@@ -208,8 +202,6 @@ void UsedTexturesPanel::DrawSelectedTextureDetails(const TextureDiagnosticsRow& 
 		UiUtil::DrawKeyValueRow("Source", sourcePath->c_str());
 	}
 	UiUtil::DrawKeyValueRow("Kind", TextureDiagnosticsPresentation::FormatTextureKind(row.Kind));
-	UiUtil::DrawKeyValueRow("Loaded", row.Loaded ? "yes" : "no");
-	UiUtil::DrawKeyValueRow("Resident", TextureDiagnosticsPresentation::FormatResidency(row.ResidencyState));
 	UiUtil::DrawKeyValueRow("Streamed", row.StreamManaged ? "yes" : "no");
 	UiUtil::DrawKeyValueRow("Default", row.Kind == TextureDiagnosticsKind::Scene ? "no" : "yes");
 	UiUtil::DrawKeyValueRow("Dimension", TextureDiagnosticsPresentation::FormatTextureDimension(row.Dimension));

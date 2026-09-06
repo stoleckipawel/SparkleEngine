@@ -10,6 +10,7 @@
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 #include "RHI/Public/Shaders/ShaderParameterLayoutBuilder.h"
 
+#include <cstddef>
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -198,9 +199,17 @@ private:
 	struct IRuntimeStorageHolder
 	{
 		virtual ~IRuntimeStorageHolder() noexcept;
+		IRuntimeStorageHolder(const IRuntimeStorageHolder&) = delete;
+		IRuntimeStorageHolder& operator=(const IRuntimeStorageHolder&) = delete;
+		IRuntimeStorageHolder(IRuntimeStorageHolder&&) = delete;
+		IRuntimeStorageHolder& operator=(IRuntimeStorageHolder&&) = delete;
+
 		virtual std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
 		    RenderHardwareInterface& renderHardwareInterface,
 		    const ShaderRuntimeGeneration& generation) const = 0;
+
+	protected:
+		IRuntimeStorageHolder() noexcept = default;
 	};
 
 	template <typename TShader> struct RuntimeStorageHolder final : IRuntimeStorageHolder

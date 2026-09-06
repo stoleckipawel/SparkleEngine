@@ -3,6 +3,7 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/World/EntityId.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <span>

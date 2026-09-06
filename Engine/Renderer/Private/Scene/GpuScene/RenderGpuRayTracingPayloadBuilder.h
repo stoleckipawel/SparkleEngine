@@ -2,6 +2,8 @@
 
 #include "Scene/GpuScene/RenderGpuScenePayloads.h"
 
+#include <cstdint>
+
 class GpuMeshCache;
 struct MaterialData;
 struct MeshDraw;

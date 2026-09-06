@@ -1,10 +1,17 @@
 #include "AssetCookerService.h"
 
+#include "AssetCookerTypes.h"
+#include "../Diagnostics/AssetCookerDiagnostics.h"
 #include "../Discovery/AssetCookerDiscovery.h"
 #include "../Dispatch/AssetCookerDispatcher.h"
+#include "../Planning/ProjectCookPlan.h"
 
+#include <filesystem>
 #include <optional>
+#include <string_view>
+#include <system_error>
 #include <utility>
+#include <vector>
 
 AssetCookerService::AssetCookerService(
     const char* repositoryRoot,
@@ -43,14 +50,14 @@ AssetCookerServiceResult AssetCookerService::Cook(const char* projectName, const
 	const std::optional<std::string_view> expectedToolProfile = AssetCookerDiscovery::ResolveToolProfile(resolvedConfiguration);
 	if (!expectedToolProfile.has_value())
 	{
-		diagnostics.AddError(AssetCookerCategory_All, "Unsupported configuration '" + resolvedConfiguration + "'.");
+		diagnostics.AddError(AssetCookerCategory::All, "Unsupported configuration '" + resolvedConfiguration + "'.");
 		return Finish(false, diagnostics);
 	}
 	const std::string resolvedToolProfile = ResolveToolProfile(*expectedToolProfile);
 	if (resolvedToolProfile != *expectedToolProfile)
 	{
 		diagnostics.AddError(
-		    AssetCookerCategory_All,
+		    AssetCookerCategory::All,
 		    "Tool profile '" + resolvedToolProfile + "' does not match runtime profile '" + resolvedConfiguration + "'.");
 		return Finish(false, diagnostics);
 	}
@@ -156,7 +163,7 @@ bool AssetCookerService::ResolveRepositoryRoot(AssetCookerDiagnostics& diagnosti
 	const std::filesystem::path currentPath = std::filesystem::current_path(currentPathError);
 	if (currentPathError || !AssetCookerDiscovery::TryFindRepositoryRoot(currentPath, outRepositoryRoot))
 	{
-		diagnostics.AddError(AssetCookerCategory_All, "Failed to resolve repository root. Pass --root or set repositoryRoot.");
+		diagnostics.AddError(AssetCookerCategory::All, "Failed to resolve repository root. Pass --root or set repositoryRoot.");
 		return false;
 	}
 

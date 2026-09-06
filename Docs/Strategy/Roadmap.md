@@ -1,74 +1,342 @@
-# F. August 2026-January 2027 Principal Graphics Roadmap
+# F. Release-First Principal Graphics Roadmap
 
 Status: execution plan; gates are targets, not completion claims
 
-Planning window: 2026-08-06 through 2027-01-31
+Planning baseline: repository and release surfaces statically reconciled on 2026-09-06 at `master` revision `f61cabc4` with 331 changed worktree paths; no build, cook, package, launch, capture, clean-machine, or performance result was added by this reconciliation
 
-Planning baseline: repository reviewed at `9cf7b3bd` on 2026-08-06; revalidate code, builds, tests, captures, and external state before acting
+First-release acceptance authority: [First Release Acceptance Contract](../Engineering/FirstReleaseAcceptance.md)
 
-Current source reconciliation: 2026-08-28 static source/build audit at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`, and no build, cook, launch, capture, or performance result was added
+Governing graphics requirements: [A. Principal Graphics Engineering Requirements](Requirements.md)
 
-Governing requirements: [A. Principal Graphics Engineering Requirements](Requirements.md)
+Dated graphics assessment: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
 
-Dated assessment: [C. Candidate and Repository Gap Assessment](GapAssessment.md)
-
-Canonical workload: [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md)
+Canonical graphics workload: [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md)
 
 Concurrency architecture and execution contract: [J. Multithreaded Engine Architecture](../Architecture/Multithreading/MultithreadedEngineArchitecture.md)
 
-## Six-Month Outcome
+## Roadmap Decision
 
-By the end of January 2027, SparkleEngine should present one compact, reproducible body of evidence:
+SparkleEngine is release-first until `REL-10` passes for `v0.1.0`.
 
-> A reviewer can acquire the declared workloads, build and run the engine, reproduce a measured D3D12/Vulkan path-tracing result, inspect one trained neural denoising feature running through Sparkle's shader path, compare it with a classical fallback, and understand the quality, latency, memory, failure, and ownership tradeoffs without private guidance.
+No new engine feature, render effect, backend, content family, general framework, or platform enters implementation while an earlier first-release gate is red. Existing capability work is not discarded: it is classified, completed with evidence, exposed as experimental with an honest boundary, or removed/excluded from the public product. The previously planned Bistro/San Miguel, paired-API, path-tracing, neural, and publication work remains in this roadmap after the first release gate.
 
-Bistro exterior and wine interior are the narrative spine. San Miguel is the supported cross-scene and held-out generalization workload. Sponza remains the short regression loop. The six-month result is not a broader engine, a general ML framework, or a collection of unrelated effects.
+This is a sequencing change, not a change to the long-term graphics plan. It closes the current product before expanding it.
 
-The public package should contain:
+## First-Release Outcome
 
-- a clean reviewer path and known-good Windows configuration;
-- deterministic workload acquisition, cook, launch, capture, and benchmark records;
-- paired D3D12/Vulkan classical rendering evidence;
-- a fixed-topology neural diffuse-indirect denoiser with a versioned artifact and classical fallback;
-- three concise specialist case studies plus one adoption/reproduction record;
-- exact limitations, negative results, and deleted or rejected alternatives.
+The first release is complete when a person who did not build the engine can:
+
+1. download a versioned Windows x64 archive and verify its checksum;
+2. extract it outside the repository on a clean standard-user machine;
+3. launch the `ShippingGame` Showcase runtime without build tools or network access;
+4. run every shipped example map and advertised graphics/backend option end to end;
+5. see PBR-correct, temporally stable images with no unresolved release-blocking artifacts;
+6. receive at least 30 FPS on the declared minimum machine under the frozen measurement contract;
+7. switch maps, resize/minimize/restore, repeat runs, and exit without crash, hang, device removal, stale content, or unbounded memory growth;
+8. locate controls, requirements, licenses/notices, known issues, support, and crash-report instructions;
+9. reproduce the recorded result from the release instructions and exact artifact hashes.
+
+Only linked evidence can move a row to `Verified`, `Release candidate`, `Shippable`, or `Published`. Source presence, a successful compile, historical logs, a responsive process, an attractive screenshot, or average FPS cannot.
 
 ## Current Planning Baseline
 
-This table routes the next work; it does not replace the dated assessment or prove a gate complete.
+The repository has substantial engine breadth. The release problem is closure and delivery evidence, not lack of features.
 
-| Area | Source-inspected state reconciled on 2026-08-28 | Planning consequence |
+| Area | Current source-inspected state | Release-first consequence |
 | --- | --- | --- |
-| Renderer and execution foundation | D3D12/Vulkan, frame graph, task runtime, render coordination, persistent scene/view data, map/library shader delivery, capture/timestamp primitives, and inline/native RT source routes exist. | Measure and harden the existing path. Do not restart the renderer, shader lifecycle, scheduler, or concurrency architecture. Source reachability is not paired native execution evidence. |
-| Tests | No active CTest registration exists. `ShaderCompilerCliValidation` is a focused custom target, not a registered suite. | Re-establish only the automated checks required by the flagship proof and CI; do not infer test coverage from stale generated build artifacts. |
-| Workload acquisition | The catalog has 16 level records: 13 runtime-supported and three source-readiness-only. Bistro and supported Modern Sponza packs have acquisition metadata and historical smokes; San Miguel is downloadable but remains runtime-blocked on deterministic conversion/import. | Treat catalog/source and historical smoke evidence as starting points, not current quality or performance acceptance. |
-| Tier 1 readiness | Bistro material/camera/reference/performance gates remain open. San Miguel is source-ready but not runtime-ready because deterministic OBJ conversion/import is missing. | Close `WL-01` through `WL-04` before neural runtime work. |
-| Evidence harness | Fixed resolution, a published settled signal, named capture sidecars, timing export, and a unified run manifest remain incomplete. | `MAP-00` is the first implementation milestone. No benchmark claim precedes it. |
-| Reviewer trust | No root README or CI workflow exists and the license identity is still a placeholder. | Close the small trust surface in August; do not build a documentation portal. |
-| Python and neural graphics | No checked-in Python workflow, benchmark-analysis/training package, trained model, model artifact, or shader inference path was found. | Build one analysis/training toolchain and one fixed neural feature only after the earlier evidence/content gates close. |
-| Platform breadth | Windows is the current product/evidence platform; both graphics APIs are targets on Windows. | Native Linux and second-hardware work remain after this six-month gate unless required to resolve a result. |
+| Engine foundation | Core, platform, tasks, application, world, editor, renderer, RHI, import, cooking, shader compiler, launcher, and Showcase owners exist. | Inventory current public surfaces and close or exclude each one. Do not start replacement frameworks. |
+| Graphics | D3D12/Vulkan; raster/deferred PBR; debug views; exposure/tone/output; upscaling; ray/path and ReSTIR routes; scene/view/frame and GPU-scene infrastructure are present. | Source-present is the initial state. Each selectable mode needs feature, map, backend, failure, quality, and performance evidence. |
+| Build | Six Debug/Development/Shipping editor/game profiles exist; Showcase editor/runtime and launcher targets exist. | Freeze `ShippingGame` as the runtime release product and prove a clean reproducible build. |
+| Package | Runtime source recognizes a package manifest, and development dependency/artifact staging exists. | Add one owned Build-Cook-Stage-Package route. No repository `install()`/CPack contract or release archive is currently proven. |
+| Content | The Showcase catalog has 16 level records; the workload audit describes 13 as runtime-supported and three as source-readiness-only. | Curate a smaller legally redistributable `ReleaseMapSet`; do not ship the whole catalog by implication. |
+| Visual acceptance | Detailed map/PBR/reference/performance gates exist in the Bistro/San Miguel workload. | Reuse `MAP-A` through `MAP-H` and add release-package acceptance; do not create a second map-quality vocabulary. |
+| Evidence | Level-selected launch, manual capture, native validation switches, and timing primitives exist. | Finish `MAP-00`: fixed resolution, authoritative settled identity, named sidecars, timing export, and unified manifest. |
+| Verification | No active CTest registration, root CI workflow, or complete release matrix was found. | Record the validation policy and obtain explicit authorization before adding permanent submitted tests; automate approved build/static/package gates first. |
+| Identity/trust | No root README, no declared CMake project version, placeholder license identity, and no Windows version resource were found. | Freeze identity, license, notices, version metadata, system requirements, support, and known issues before a candidate. |
+| Worktree | The audit observed 331 changed paths. | Reconcile intended changes into a clean candidate commit; dirty-tree evidence cannot become final release evidence. |
 
-Any baseline row may be superseded only by current code and recorded evidence. Update this roadmap's status, not the historical assessment, when a planned gate changes.
-
-## Capacity And Allocation
-
-Plan against the conservative end of 12-15 focused hours per week: about 300 hours across the window. Keep approximately 10% unallocated for build, driver, content, and experiment failures.
-
-| Workstream | Planned hours | Share | Boundary |
-| --- | ---: | ---: | --- |
-| Evidence spine and Tier 1 correctness | 75 | 25% | Clean build/test path, `MAP-00`, deterministic workloads, references, material/failure records. |
-| Classical path tracing and workload analysis | 70 | 23% | Paired APIs, benchmark analysis, captures, incident, and causal bottleneck studies. |
-| Neural model and GPU inference | 95 | 32% | Data, training, artifact, conformance, shader inference, ablations, and fallback. |
-| Reproduction, writing, release, and application material | 30 | 10% | Reviewer routing, case studies, external review, release, CV/profile update. |
-| Contingency | 30 | 10% | Unplanned correctness or environment blockers only. |
-
-Editor, launcher, import, and general engine work share one rule: they enter the roadmap only when they directly block the current acceptance gate. Do not spend more than 10% of the six-month budget on usability or content breadth.
+Any row may be superseded only by current code, executable configuration, and recorded evidence. Update this roadmap's tracker when a gate changes; do not rewrite historical assessments to imply completion.
 
 ## Dependency And Work-In-Progress Rule
 
 ```text
-clean baseline
-    -> MAP-00 evidence harness
+REL-00 scope and freeze
+    -> REL-01 identity, rights, and release maps
+    -> REL-02 clean reproducible baseline
+    -> REL-03 Build-Cook-Stage-Package spine
+    -> REL-04 close or exclude every current feature
+    -> REL-05 artifact-free PBR map acceptance
+    -> REL-06 30 FPS and stability acceptance
+    -> REL-07 native backend diagnostics
+    -> REL-08 clean-machine candidate
+    -> REL-09 independent approval
+    -> REL-10 publish and verify
+    -> retained advanced graphics roadmap
+```
+
+Only one gate is the primary implementation objective. Documentation, defect triage, evidence review, and preparation for the next gate may run alongside it, but later capability implementation does not start while an earlier gate is red.
+
+Scope may shrink when a feature or map cannot meet the bar in reasonable time. The evidence threshold does not shrink. A release date is forecast only after `REL-03` produces a repeatable package and `REL-04` exposes the actual closure queue.
+
+## Release Plan At A Glance
+
+| Stage | Primary outcome | Exit artifact | Stop rule |
+| --- | --- | --- | --- |
+| 0. Define | Exact product, platform, support matrix, feature disposition, and non-goals. | Approved scope and inventory. | No implementation before the surface is finite. |
+| 1. Trust | Real identity/license/notices, clean baseline, reviewer route, and executable checks. | Reproducible clean build record. | Do not package ambiguous ownership or rights. |
+| 2. Package | One repeatable Build-Cook-Stage-Package route. | Install/stage manifest and first archive. | Do not validate a development-tree substitute. |
+| 3. Close features | Every current capability is included, experimental, excluded, or removed. | Feature-closure matrix. | No unclassified selectable feature. |
+| 4. Prove maps | Cleared examples are complete, PBR-correct, and artifact-free. | Per-map evidence packages. | One release-blocking visual/content defect stops the next map. |
+| 5. Prove delivery | 30 FPS floor, stability, memory, both advertised APIs, and actionable failures. | Performance/native-validation/stability records. | No averaging away stalls, warnings, or backend failures. |
+| 6. Candidate | Frozen package works on a clean minimum machine and for a non-author. | Signed go/no-go record. | Any package fix creates new bytes and invalidates affected gates. |
+| 7. Publish | Immutable tag/assets/checksums, fresh-download smoke, and support ownership. | `v0.1.0` release record. | Do not announce before uploaded bytes are retrieved and verified. |
+
+## Stage 0 - Define The Release
+
+### Outcome
+
+The first release is a bounded product rather than “everything currently in the repository.”
+
+### Work
+
+1. Create the `REL-00` scope record from the [acceptance contract](../Engineering/FirstReleaseAcceptance.md#release-scope-freeze): version, Windows/GPU/API support, minimum/reference machines, executable, default configuration, features, maps, tools, support, and non-goals.
+2. Build a repository-wide feature inventory from current public UI/options, runtime configuration, map catalog, modules, executables, and documentation. Assign one owner and one release classification to every row.
+3. Select `ShippingGame` Showcase runtime as the required public binary. Decide separately whether a developer archive containing launcher/editor/tools is worth delaying for; default to source-build documentation until its own gates pass.
+4. Freeze the initial renderer surface. Every selectable raster/ray/path, lighting, upscaling, exposure/output, debug, and backend option is included, experimental, or excluded.
+5. Write explicit first-release non-goals. Candidate defaults are Linux/macOS, installer/updater, marketplace/plugin ecosystem, new scene families, new render effects, and neural inference unless already release-ready by evidence.
+
+### Exit Gate - `REL-00`
+
+- The release scope and feature inventory are approved and version controlled.
+- Every user-reachable current capability has an owner and classification.
+- Minimum/reference machines and the 30 FPS profile are named.
+- No feature is accepted from source inspection alone.
+
+## Stage 1 - Identity, Rights, And Trustworthy Baseline
+
+### Outcome
+
+A clean checkout has a real product identity, legally reviewable content scope, and a reproducible Shipping build route.
+
+### Work
+
+1. Replace placeholder publisher/license data; declare project version; add executable/file version metadata; create root quick start, system requirements, support, third-party notices, privacy/crash-data disposition, and known-issues entry points.
+2. Audit every candidate release map and dependency for source, archive hash, license text, attribution, modification, and redistribution permission. Freeze only the cleared `ReleaseMapSet`; keep uncleared large scenes as download recipes.
+3. Reconcile the current worktree. Produce the baseline from a clean worktree/checkout and record commit, compiler, CMake/generator, Windows/SDK, dependency revisions, GPU, driver, and commands.
+4. Run the smallest current credibility gates applicable to the release baseline: configure, Shipping target build, code-style/static checks, documentation/link checks, and architecture boundary checks. Record exact outcomes and unavailable checks.
+5. Record whether the user explicitly authorizes a minimal permanent automated regression suite. The binding [submitted-test policy](../Engineering/Standards/ValidationPerformanceAndEvidence.md#submitted-test-code) remains in force; absence of authorization is not permission to add test scaffolding.
+6. Add fresh-checkout automation only for approved deterministic gates. GPU/map/package evidence remains hardware-labelled and must not be represented by a compile-only job.
+
+### Exit Gates - `REL-01` And `REL-02`
+
+- Product/version/publisher/license/notices and `ReleaseMapSet` are real and reviewed.
+- A clean checkout reproduces the named Shipping build and approved credibility checks.
+- Every command, environment identity, raw result, failure, and limitation is retained.
+- No package or map depends on unreviewed redistribution rights.
+
+## Stage 2 - Build, Cook, Stage, Package
+
+### Outcome
+
+One command transforms the clean tagged source inputs into a self-contained, versioned, checksummed runtime archive.
+
+### Work
+
+1. Define the install/stage tree as a build-owned contract: executable, DLLs/runtime redistributables, cooked assets, cooked shaders, configuration, package manifest, notices, README, and licenses.
+2. Make Build, Cook, Stage, and Package explicit steps with raw logs and failure propagation. The package MUST be generated from the stage/install manifest, not from an ad-hoc copy of development outputs.
+3. Prohibit source assets, repository-relative paths, build caches, temporary files, authoring/training dependencies, private diagnostics, credentials, or unrelated executables from the runtime archive.
+4. Generate the authoritative `manifests/sparkle-package-manifest.json`, per-file SHA-256, archive checksum, build identity, content identity, dependency list, and package size.
+5. Extract the first archive into a non-repository path and prove offline default launch/map/exit before feature acceptance begins.
+
+### Exit Gate - `REL-03`
+
+- A clean run produces identical logical package membership; byte nondeterminism is explained.
+- The archive starts without the repository, source tree, compiler, CMake, or network.
+- Every runtime dependency and notice is present; every unexpected file is absent.
+- Package discovery uses the staged manifest and documented writable locations.
+
+## Stage 3 - Close Every Current Feature
+
+### Outcome
+
+There is no ambiguous gap between source-present capability and the product that users can select.
+
+### Work
+
+1. Populate the [subsystem feature-closure matrix](../Engineering/FirstReleaseAcceptance.md#subsystem-feature-closure-matrix) for Core/Platform, Tasks, Application/World, source import/cooking, shader delivery, D3D12, Vulkan, Renderer, Editor/Launcher if distributed, packaging, and documentation/support.
+2. Trace each feature's owner, producers, consumers, lifetime, build membership, configuration/UI reachability, compatible maps, and failure path.
+3. For every included feature, capture the smallest evidence that proves the feature and then its interaction in the staged product. Include negative/capability rejection, not only a happy path.
+4. Fix release-blocking behavior within existing ownership. If closure would require a new subsystem or open-ended redesign, exclude the feature cleanly and document the limitation.
+5. Remove or disable stale UI/configuration/documentation routes for excluded features. Do not leave a selectable path that silently falls back or fails later.
+6. Finish `MAP-00` through the existing evidence owner before claiming any broad map or performance result.
+
+### Exit Gate - `REL-04`
+
+- Every current surface has one classification and linked evidence/disposition.
+- Every included or experimental feature builds, runs, fails safely, and has a named supported matrix.
+- Excluded features are unreachable from the release package and are not advertised.
+- `MAP-00` provides fixed resolution, settled identity, named capture sidecars, timing export, and unified manifests.
+
+## Stage 4 - Ship PBR-Correct, Artifact-Free Example Maps
+
+### Outcome
+
+The shipped examples are curated demonstrations a user can trust, not a menu of partially working test assets.
+
+### Work
+
+1. Run every `ReleaseMapSet` member through `MAP-A` to `MAP-H` from the staged package, one map at a time. Stop and classify each defect before advancing.
+2. Capture frozen lit views and applicable albedo, normal, roughness, metallic, depth, motion, direct, indirect, and output views on every advertised backend.
+3. Verify source-to-cooked material/texture semantics, geometry/transforms, tangent/normal orientation, UVs, alpha/double-sided behavior, skinning/animation, lights/shadows, exposure/tone/output, and temporal stability.
+4. Compare against declared high-sample or publisher/reference views with identical camera/exposure/encoding assumptions. Keep raw captures, thresholds, observation sheets, and failure gallery.
+5. Resolve every `S0`/`S1` artifact. An `S2` requires an explicit owner/impact/workaround/target waiver; a pleasant final screenshot does not erase a failed debug view or temporal route.
+6. Repeat acquire/cook/stage/offline launch/load/settle/map switch/exit to prove the result is part of the delivered product.
+
+### Exit Gate - `REL-05`
+
+- Every release map has complete provenance, cook, package, visual/PBR, reference, temporal, and backend evidence.
+- Zero unresolved `S0`/`S1` content or visual defects remain.
+- No missing asset/shader, uncategorized warning, silent fallback, NaN/Inf output, stale history, or backend-only corruption remains.
+- Review decisions and known limitations are public and map-specific.
+
+## Stage 5 - Performance, Stability, And Native Backend Proof
+
+### Outcome
+
+The candidate sustains the promised experience and produces actionable evidence when it fails.
+
+### Work
+
+1. Measure every release map on the minimum and reference machines using the [30 FPS contract](../Engineering/FirstReleaseAcceptance.md#thirty-fps-performance-floor): 1920x1080, `ShippingGame`, fixed quality, VSync off, fixed route, 300 warm-up plus 300 measured frames, three runs, per backend.
+2. Require presented/application frame-time p95 at or below 33.33 ms, record CPU and GPU p95 separately, and require neither to exceed 33.33 ms. Report p50/p95/p99, worst frame, one-percent low, load/warm-up, memory high-water, excluded samples, variance, and limitations.
+3. Profile failures before optimizing. Remove unnecessary work and ownership/lifetime defects before adding parallelism or backend-specific complexity.
+4. Run the [candidate stability matrix](../Engineering/FirstReleaseAcceptance.md#candidate-stability-matrix): repeat launch/load/exit, map-switch loop, soak, resize/minimize/restore/alt-tab, cold/warm caches, standard user, unusual paths, offline operation, and controlled corrupt/missing-file failures.
+5. Run focused D3D12 debug/GPU validation and Vulkan core/synchronization/GPU-assisted/best-practices validation where supported. Resolve or classify every message; keep validation out of performance numbers.
+6. Verify crash/device-removal evidence includes build ID, backend, adapter/driver, active map/mode, logs, and DRED or Vulkan diagnostic context as applicable.
+
+### Exit Gates - `REL-06` And `REL-07`
+
+- Every release map/backend meets the presented/application, CPU, and GPU p95 33.33 ms floors on the named minimum machine.
+- No recurring hitch cluster, unbounded memory growth, crash, hang, device removal, stale scene, or shutdown leak remains.
+- Native validation has zero uncategorized findings and all waivers have owners and user-impact records.
+- Performance claims bind exact candidate, content, hardware, driver, settings, and raw data.
+
+## Stage 6 - Candidate And Independent Approval
+
+### Outcome
+
+The exact bytes intended for publication work for a standard user who has no private repository knowledge.
+
+### Work
+
+1. Freeze a clean commit, version, content, dependencies, package manifest, archive, checksums, documentation, known issues, and release notes. Assign a candidate ID.
+2. On a clean minimum-spec machine, extract to spaced/Unicode and non-system paths, run offline as a standard user, exercise default launch and every release map/backend, take a capture, verify logs/writable locations, exit, and remove the product.
+3. Ask a non-author to repeat the shortest acceptance path using only packaged/public instructions. Record confusion, failure, elapsed time, and one technical criticism.
+4. Triage all open defects. Zero `S0`/`S1`; every accepted `S2` waiver is explicit and user-visible where relevant.
+5. Rerun every gate invalidated by a fix. Never patch a staged archive manually or reuse evidence from different bytes.
+
+### Exit Gates - `REL-08` And `REL-09`
+
+- Clean-machine and independent reproduction records bind the candidate hashes.
+- Package contents, prerequisites, controls, support, notices, known issues, and removal are understandable without private help.
+- All required gates are green, all unavailable checks are explicit, and the release owner signs the go/no-go record.
+
+## Stage 7 - Publish And Stabilize
+
+### Outcome
+
+The public release is immutable, retrievable, supportable, and verified after upload.
+
+### Work
+
+1. Create the final signed tag and draft release with source snapshot, runtime archive, optional symbols/developer archive, checksums, manifest, release notes, notices, system requirements, known issues, and support link.
+2. Upload the exact approved candidate bytes. Compare remote downloads against local SHA-256 and tag identity.
+3. From a fresh location, follow the public quick start and run the shortest launch/default-map/exit smoke against the downloaded archive.
+4. Announce only supported, evidenced features. Distinguish experimental and source-only work.
+5. Open a bounded stabilization window. Classify reports against `S0`-`S3`, preserve reproduction data, and decide patch release versus known issue without reopening feature work.
+6. Record lessons, actual gate duration, escapes, support load, and evidence gaps before scheduling the retained advanced roadmap.
+
+### Exit Gate - `REL-10`
+
+- Tag, uploaded bytes, checksums, manifest, notes, notices, and support route agree.
+- Fresh-download verification passes on the published artifact.
+- The release page makes supported platform/features/maps and limitations unambiguous.
+- A post-release owner and patch/rollback decision path are named.
+
+## First-Release Tracker
+
+Update a row only when the required evidence is linked. `Implemented` without acceptance evidence remains `In progress` or `Blocked`.
+
+| Gate | Status on 2026-09-06 | Evidence/blocker |
+| --- | --- | --- |
+| `REL-00` Scope and freeze | In progress | This roadmap and acceptance contract define the process; approved scope/feature inventory is still pending. |
+| `REL-01` Identity, rights, and map set | Blocked | Placeholder license identity, no frozen version/publisher, and no cleared redistributable map set. |
+| `REL-02` Clean reproducible baseline | Blocked | Audit observed 331 changed paths; no current clean Shipping build/check record. |
+| `REL-03` Package spine | Blocked | No owned install/CPack/stage contract or produced release archive found. |
+| `REL-04` Current feature closure | Blocked | No complete feature classification/evidence matrix; `MAP-00` remains open. |
+| `REL-05` Map correctness and PBR | Blocked | No staged-package per-map artifact/PBR acceptance evidence. |
+| `REL-06` Performance and stability | Blocked | No current named-hardware three-run 30 FPS package evidence. |
+| `REL-07` Native backend diagnostics | Blocked | No current candidate-bound D3D12/Vulkan validation record. |
+| `REL-08` Clean-machine candidate | Blocked | No candidate archive. |
+| `REL-09` Independent approval | Blocked | Requires an accepted clean-machine candidate. |
+| `REL-10` Publish and verify | Blocked | Requires signed approval and immutable artifacts. |
+
+## Immediate Execution Queue
+
+Do these in order; do not begin with renderer polish:
+
+1. approve `v0.1.0` product/platform/support/non-goals and create the complete feature inventory;
+2. choose the exact `ReleaseMapSet` after redistribution review;
+3. settle publisher/license/version/root quick start/notices/support identity;
+4. reconcile the dirty worktree and reproduce a clean `ShippingGame` build;
+5. establish the package stage/install manifest and generate the first archive;
+6. finish `MAP-00` and populate the feature-closure matrix from the packaged product;
+7. close maps, then performance/stability, then native validation;
+8. freeze, clean-machine test, independently reproduce, publish, and retrieve the exact approved bytes.
+
+## Release Operating Rhythm
+
+Keep one backlog of at most 20 items in `Now`, `Next`, and `After Release`. Every `Now` or `Next` item names the current `REL-*` gate, the claim and evidence it will produce, owner, estimate, prerequisites, and what remains unchanged or is excluded. Reject work with no release-gate effect.
+
+For a 12-hour focused week:
+
+| Work | Hours |
+| --- | ---: |
+| Current release-gate implementation or defect closure | 6 |
+| Correctness, package, map, performance, or native-validation evidence | 3 |
+| Focused study for the next gate decision | 1.5 |
+| User/reviewer documentation and evidence routing | 1 |
+| Backlog review, deletion, and retrospective | 0.5 |
+
+Every week ends with one demonstrable result or falsified assumption, exact evidence and limitations, a green or explicitly blocked release path, one short decision record, and at most one primary item carried forward. Review the gate before planning more work; elapsed time does not change status.
+
+## Retained Advanced Graphics Roadmap
+
+The following plan is unchanged in intent. It starts only after `REL-10`; calendar dates are rebaselined from actual capacity at that point rather than pretending the missed August 2026 gate passed.
+
+### Retained Outcome
+
+A reviewer can acquire the declared workloads, build and run the engine, reproduce a measured D3D12/Vulkan path-tracing result, inspect one trained neural denoising feature running through Sparkle's shader path, compare it with a classical fallback, and understand quality, latency, memory, failure, and ownership tradeoffs without private guidance.
+
+Bistro exterior and wine interior remain the narrative spine. San Miguel remains the supported cross-scene and held-out generalization workload. Sponza remains the short regression loop. The result is not a general ML framework or a collection of unrelated effects.
+
+### Retained Capacity Envelope
+
+After release, plan against about 300 focused hours and keep 10% unallocated:
+
+| Workstream | Planned hours | Share | Boundary |
+| --- | ---: | ---: | --- |
+| Evidence spine and Tier 1 correctness | 75 | 25% | `MAP-00`, deterministic workloads, references, material/failure records. Reuse release evidence where still valid. |
+| Classical path tracing and workload analysis | 70 | 23% | Paired APIs, analysis, captures, incident, and causal bottleneck studies. |
+| Neural model and GPU inference | 95 | 32% | Data, training, artifact, conformance, shader inference, ablations, and fallback. |
+| Reproduction, writing, and publication | 30 | 10% | Reviewer routing, case studies, external review, evidence release, profile updates. |
+| Contingency | 30 | 10% | Unplanned correctness or environment blockers only. |
+
+### Retained Dependency Sequence
+
+```text
+published v0.1.0 baseline
+    -> MAP-00 evidence harness retained/extended
     -> correct Bistro + San Miguel workloads
     -> paired-API measured classical result
     -> frozen neural data + trained model
@@ -76,222 +344,81 @@ clean baseline
     -> held-out evaluation + external reproduction + publication
 ```
 
-Only one box is the primary implementation objective at a time. Learning, writing, and test maintenance may accompany it, but a later implementation box does not start while an earlier exit gate is red. Completion order is governed by evidence, not by elapsed calendar time.
+### Phase A - Evidence And Tier 1 Content
 
-## Roadmap At A Glance
+- Revalidate `MAP-00` against the published product path; extend it only for requirements not already proven by release evidence.
+- Close `WL-01`: Bistro/San Miguel provenance, archive identity, deterministic inspection, and complete loss/warning inventory.
+- Close `WL-02` and `WL-03`: deterministic conversion/import/cook/load, frozen cameras/settings, material matrices, high-sample references, and explicit fallback lists.
+- Keep Bistro flagship and San Miguel held-out/high-low roles. Do not create scene-specific renderer or shader forks.
 
-| Month | Primary outcome | Workload target | Principal evidence focus | Exit artifact |
-| --- | --- | --- | --- | --- |
-| August 2026 | Trustworthy clean baseline and accepted evidence harness | `WL-01`, `MAP-00`, `MAP-01` | `PGE-07`, `PGE-09`, `PGE-13` | Known-good build/test record, CI, reviewer README, Sponza calibration evidence package |
-| September 2026 | Correct deterministic Tier 1 content | `WL-02`, `WL-03`; sequential map review | `PGE-02`, `PGE-07`, `PGE-08`, `PGE-09` | Bistro/San Miguel inventories, frozen routes, material matrix, reference baseline |
-| October 2026 | Measured classical result across both APIs | `WL-04` | `PGE-02`, `PGE-05`, `PGE-06`, `PGE-09`, `PGE-10` | Benchmark CLI, paired captures, ranked bottlenecks, incident report, case-study drafts |
-| November 2026 | Reproducible neural training baseline | `WL-05` | `PGE-03`, `PGE-08`, `PGE-11`, `PGE-12` | Dataset manifest, model card, trained baseline, ablations, immutable export candidate |
-| December 2026 | Correct model-to-shader runtime path | `WL-06` | `PGE-03`, `PGE-04`, `PGE-09`, `PGE-10`, `PGE-12` | Versioned artifact, conformance tests, D3D12/Vulkan inference, classical fallback |
-| January 2027 | Frozen result, reproduction, and publication | `WL-07`, `WL-08` | `PGE-01`, `PGE-05`, `PGE-13`, `PGE-15` | Evidence release, three case studies, final video/report, peer reproduction record |
+Exit: correct deterministic Tier 1 content with complete reference and material evidence.
 
-The `PGE-*` columns identify intended coverage, not promised evidence levels. Grade changes require the evidence defined in [Requirements](Requirements.md).
+Primary requirements: `PGE-02`, `PGE-07`, `PGE-08`, `PGE-09`, and `PGE-13`.
 
-## August - Baseline And Evidence Spine
+### Phase B - Measured Classical Result
 
-### Outcome
+- Close `WL-04` with versioned benchmark records, warm-up/sample policy, p50/p95/p99 and uncertainty, paired D3D12/Vulkan captures, memory/high-water, frame/queue/barrier/descriptor/BLAS/TLAS records, and ranked bottlenecks.
+- Build only the narrow analysis CLI required for comparability and useful plots.
+- Complete at least one difficult incident and one causal optimization or measured negative result.
+- Draft the three specialist cases from captured evidence rather than reconstructing them later.
 
-One documented Windows configuration can build, test, launch, settle, measure, and capture Sponza from a fresh checkout. A reviewer can find the result and limitations immediately.
+Exit: reproducible paired-API classical configuration, quality result, latency distribution, memory result, bottleneck record, and limitations.
 
-### Work
+Primary requirements: `PGE-02`, `PGE-05`, `PGE-06`, `PGE-09`, and `PGE-10`.
 
-1. Record the exact repository revision, Windows build, compiler/CMake/Ninja or Visual Studio versions, SDKs, GPU, driver, and selected D3D12/Vulkan configuration.
-2. Configure and build from a clean checkout or clean worktree; run all registered tests, formatting checks, and the architecture boundary check. Fix only failures on the reviewer path.
-3. Add a small root reviewer README, correct the license identity, add required notices, and add Windows CI for configure, non-GPU build/tests, formatting, and boundary checks.
-4. Implement `MAP-00` exactly through the workload owner: fixed launch resolution, authoritative active/settled identity, named capture plus sidecar, CPU/GPU sample export, and a unified manifest.
-5. Prove the harness on Sponza, then complete `MAP-01` without upgrading Sponza into Tier 1 evidence.
-6. Reconcile Bistro and San Miguel provenance, archive identity, transformation warnings, and deterministic inspection output to close `WL-01`.
+### Phase C - Neural Data And Training
 
-### Exit Gate - 2026-08-31
+- Freeze one diffuse-indirect denoising input/output contract, tensor layout, normalization, exposure/demodulation rules, sample target, and small fixed topology.
+- Generate immutable train/validation/test identities; keep final San Miguel views held out.
+- Close `WL-05` with deterministic training, environment lock, overfit-one-batch check, noisy/classical baselines, model card, dataset manifest, operator note, ablations, metrics, and failure cases.
+- Remove weak inputs/layers/losses. Do not grow a general training framework or broad architecture search.
 
-- Clean configure/build/test commands and results are recorded for one supported configuration.
-- CI runs the non-GPU credibility gates from a fresh checkout.
-- `MAP-00` and `MAP-01` are accepted with raw artifacts and an honest limitation list.
-- The README routes a reviewer to build/run, architecture, workload, evidence, and limitations in under two minutes.
-- Bistro and San Miguel provenance and loss inventories satisfy `WL-01`.
+Exit: reproducible selected model and immutable export candidate with an evidence-backed path to the quality/performance target.
 
-If this gate is red, September continues August work. Do not compensate with more launcher polish, maps, or neural scaffolding.
+Primary requirements: `PGE-03`, `PGE-08`, `PGE-11`, and `PGE-12`.
 
-## September - Tier 1 Correctness And Deterministic Content
+### Phase D - Model-To-Shader Runtime
 
-### Outcome
+- Export one minimal versioned artifact and reject incompatible version, shape, layout, operator, and precision combinations.
+- Establish PyTorch/export/GPU reference-tensor conformance.
+- Implement fixed operators through existing shader cook, frame graph, renderer, and backend ownership. Do not embed a general tensor runtime.
+- Establish FP32 correctness, then profile FP16/layout/dispatch/tiling/fusion/packing/bandwidth/register/occupancy decisions.
+- Close `WL-06` on D3D12/Vulkan and both Tier 1 families with explicit capability failure, history policy, latency, memory, cold start, whole-frame interference, and classical fallback.
 
-Bistro exterior/wine interior and San Miguel high/low travel through one deterministic content path and have frozen, reviewable correctness baselines.
+Exit: correct bounded shader inference on both APIs, or a documented negative result with the classical path preserved as default.
 
-### Work
+Primary requirements: `PGE-03`, `PGE-04`, `PGE-09`, `PGE-10`, and `PGE-12`.
 
-1. Follow the canonical one-map review order and finish each checkpoint before opening the next. Reuse the accepted harness; do not create per-map evidence code.
-2. Complete the Bistro material/texture inventory and classify every material as exact, converted, approximated, or rejected.
-3. Fix transparency, lighting, camera, importer, or renderer behavior only where a frozen Tier 1 view proves it blocks correctness. Preserve one backend-neutral production path.
-4. Add a pinned deterministic San Miguel OBJ/MTL/PNG-to-glTF conversion and before/after semantic inventory. Add direct OBJ import only if evidence proves it is simpler or more faithful.
-5. Freeze the required Bistro and San Miguel cameras, seeds, reference settings, exposure policy, material/debug views, and high/low matched route.
-6. Generate the first high-sample references and record unsupported material/lighting behavior without hiding fallbacks.
+### Phase E - Evaluation, Reproduction, And Publication
 
-### Exit Gate - 2026-09-30
+- Freeze code/model/manifests/cameras/settings/hardware/driver/benchmark/capture identities.
+- Close `WL-07` and `WL-08`: held-out San Miguel evaluation, quality/performance/memory frontier, temporal failure gallery, three bottleneck studies including a rejected optimization, and independent reproduction.
+- Publish content-to-correct-pixel, paired-API/path-tracing analysis, and model-to-shader cases plus an evidence release, technical report, integration guide, model card, comparison video, and support/limitations matrix.
+- Update public profiles only with frozen supported claims.
 
-- `WL-02` and `WL-03` pass for both Tier 1 families.
-- Bistro and San Miguel acquire, convert/import, cook, launch, settle, and capture deterministically.
-- Frozen routes produce correct baseline images and explicit material/fallback matrices.
-- San Miguel high/low share matched cameras and settings.
-- No scene-specific renderer or shader fork exists.
+Exit: another engineer reproduces at least one result without private guidance and a reviewer can reach the headline code, evidence, artifacts, limitations, and adoption record within the time budgets in [Requirements](Requirements.md#portfolio-review-contract).
 
-If the full compatibility-map sequence consumes the month, cut extra cameras and polish before cutting Tier 1 correctness or San Miguel support.
+Primary requirements: `PGE-01`, `PGE-05`, `PGE-13`, and `PGE-15`.
 
-## October - Classical Rendering And Workload Analysis
+### Retained Milestone Identities
 
-### Outcome
+The earlier milestone IDs remain valid so existing evidence and references do not lose meaning. Their old calendar targets were missed and are not silently rewritten; targets are re-estimated after `REL-10`.
 
-The existing path-tracing and renderer work becomes one reproducible, measured D3D12/Vulkan result rather than an architecture claim.
-
-### Work
-
-1. Emit one versioned benchmark record and build one narrow Python CLI that validates comparability, applies warm-up/sample policy, calculates p50/p95/p99 and uncertainty, and produces a comparison table plus two useful plots.
-2. Capture the same frozen Bistro and San Miguel routes on D3D12 and Vulkan with native validation enabled where supported.
-3. Record CPU/GPU timelines, frame pacing, memory high-water, resource/barrier/descriptor/queue state, pipeline/cache state, and BLAS/TLAS behavior defined by the workload contract.
-4. Rank measured bottlenecks. Start the three required causal studies and finish at least one difficult incident with competing hypotheses, reduced reproducer, scoped fix, and regression gate.
-5. When a measured bottleneck is concurrent, apply the [concurrency evidence](../Architecture/Multithreading/MultithreadedEngineArchitecture.md#concurrency-evidence) and retention gates in J together with the binding concurrency and validation standards. Do not introduce unrelated concurrency work for a non-concurrency bottleneck.
-6. Draft `CASE-01`, `CASE-02`, and `CASE-03` from captured evidence. Do not wait until January to reconstruct the experiment history.
-
-### Exit Gate - 2026-10-31
-
-- `WL-04` passes with paired captures and comparable records.
-- The Python tool runs from a checked-in small sample and has fewer than five user-facing commands.
-- At least one incident and one causal optimization or negative result are complete.
-- Backend differences above the declared threshold are explained or explicitly open; none are hidden.
-- The classical case has a reproducible configuration, quality result, latency distribution, memory result, and limitations.
-
-## November - Neural Data And Training Baseline
-
-### Outcome
-
-A small fixed neural diffuse-indirect denoiser is trained reproducibly from declared data and evaluated against noisy and classical baselines without contaminating held-out San Miguel routes.
-
-### Work
-
-1. Freeze input/output meaning, tensor layout, normalization, color/exposure/demodulation rules, target sample count, and the spatial MVP topology before broad data generation.
-2. Generate immutable training/validation/test identities. Keep final San Miguel cameras out of training and model selection.
-3. Implement a deterministic PyTorch training path with a small public sample or documented generator, an overfit-one-batch check, loss curves, and exact environment lock.
-4. Establish noisy and classical baselines, parameter/FLOP estimates, held-out metrics, and failure cases.
-5. Run only decision-making ablations: input guides, width, loss, and precision proxy. Do not search architecture space broadly.
-6. Produce the model card, dataset manifest, operator/math note, and immutable export candidate required by `PGE-03`, `PGE-04`, `PGE-11`, `PGE-12`, and `WL-05`.
-
-### Exit Gate - 2026-11-30
-
-- `WL-05` passes.
-- Training is reproducible and train/validation/test identities are disjoint.
-- The selected model beats the noisy input and has an evidence-backed path toward the classical quality/performance target.
-- The topology and artifact contract are frozen for runtime integration.
-- Weak inputs, layers, or losses are removed and retained only as concise negative results.
-
-If the model does not justify runtime work, simplify inputs or width once. Do not respond by creating a larger topology, general training framework, or hand-picked test set.
-
-## December - Model-To-Shader Runtime
-
-### Outcome
-
-The frozen artifact executes through Sparkle's existing shader cook/runtime ABI on D3D12 and Vulkan with numerical conformance, bounded memory, and a classical fallback.
-
-### Work
-
-1. Export weights and graph metadata into one minimal versioned artifact; reject incompatible version, shape, layout, operator, and precision combinations.
-2. Add reference tensors and conformance checks across PyTorch, the export/reference runner, and GPU output.
-3. Implement the fixed operators in HLSL or Slang and integrate them through the existing frame graph and renderer ownership path. Do not embed a general ONNX or tensor runtime.
-4. Establish the FP32 correctness baseline, then evaluate FP16, layout, dispatch size, tiling, fusion, weight packing, bandwidth, register pressure, and occupancy only from profiles.
-5. Run the same artifact on both APIs and both Tier 1 scene families. Preserve explicit capability failure, history invalidation where applicable, and the classical fallback.
-6. Complete the `WL-06` runtime-inference gate and begin profile-driven tuning only after correctness and whole-frame cost are known.
-
-### Exit Gate - 2026-12-31
-
-- `WL-06` passes.
-- Numerical tolerances are defined and pass on both backends.
-- Inference latency, memory, cold start, and whole-frame interference are measured.
-- Bistro quality/performance results and the classical fallback are available from the product path.
-- Any backend or provider limitation is explicit and reproducible.
-
-If the neural path loses at an honest budget, keep the classical path as default and preserve the neural work as a measured negative result. Do not tune away a correctness or generalization failure.
-
-## January - Evaluation, Transfer, And Publication
-
-### Outcome
-
-The result is frozen, independently exercised, and packaged for recruiter, hiring-manager, graphics-specialist, and adopter review paths.
-
-### Work
-
-1. Freeze code, model, manifests, cameras, settings, hardware/driver record, benchmark schema, and capture versions by 2027-01-15.
-2. Run final Bistro and held-out San Miguel evaluation: objective and perceptual quality, temporal errors, latency distribution, memory, operator timings, failure gallery, and quality/performance/memory frontier.
-3. Complete all three measured bottleneck studies, including at least one rejected optimization where the evidence supports rejection.
-4. Ask one graphics engineer who did not implement the feature to clone/build/run, reproduce one result row, switch classical/neural paths, locate the artifact/fallback contract, and record one technical criticism.
-5. Fix adoption blockers without opening new infrastructure and satisfy the `PGE-01`, `PGE-13`, and `PGE-15` transfer evidence required by the portfolio review contract.
-6. Publish three concise specialist cases: content-to-correct-pixel, paired-API/path-tracing workload analysis, and model-to-shader. Link the adoption record as supporting evidence.
-7. Produce one evidence release, an eight-to-twelve-page technical report or equivalent article series, a two-page integration guide, a model card, a short comparison video, and an honest support/limitations matrix.
-8. Update the CV, public profile, and website only with claims supported by the frozen evidence.
-
-### Exit Gate - 2027-01-31
-
-- `WL-07` and `WL-08` pass, or each remaining miss is named with evidence and a bounded follow-up.
-- Another engineer reproduces at least one result without private implementation guidance.
-- The repository builds from the documented clean path and the release contains or links every required small artifact.
-- Classical and neural outcomes state whether they won, lost, or traded quality, latency, and memory.
-- A reviewer reaches the headline result, code, captures, data, reproduction steps, and limitations within the time budgets in [Requirements](Requirements.md#portfolio-review-contract).
-
-## Monthly Tracker
-
-Update a row only when its exit evidence is linked. `Implemented` without the required gate evidence remains `In progress`.
-
-| Milestone | Target | Status | Evidence |
+| Milestone | Retained outcome | Current status | Prerequisite |
 | --- | --- | --- | --- |
-| `M0` Clean baseline and reviewer trust | 2026-08-31 | Not started | Pending |
-| `M1` Accepted evidence harness and `WL-01` | 2026-08-31 | Not started | Pending |
-| `M2` Tier 1 deterministic correctness | 2026-09-30 | Not started | Pending |
-| `M3` Paired-API classical evidence | 2026-10-31 | Not started | Pending |
-| `M4` Neural training baseline | 2026-11-30 | Not started | Pending |
-| `M5` Runtime shader inference | 2026-12-31 | Not started | Pending |
-| `M6` Reproduction and evidence release | 2027-01-31 | Not started | Pending |
+| `M0` | Clean baseline and reviewer trust | Not started | Reuse valid `REL-01`/`REL-02` evidence, then close graphics-reviewer-specific gaps. |
+| `M1` | Accepted evidence harness and `WL-01` | Not started | `REL-10`; revalidate `MAP-00`. |
+| `M2` | Tier 1 deterministic correctness | Not started | `M1`. |
+| `M3` | Paired-API classical evidence | Not started | `M2`. |
+| `M4` | Neural training baseline | Not started | `M3`. |
+| `M5` | Runtime shader inference | Not started | `M4`. |
+| `M6` | Reproduction and evidence release | Not started | `M5`. |
 
-Allowed status values are `Not started`, `In progress`, `Passed`, `Blocked`, `Deferred`, and `Rejected`. A blocked row names the blocker, owner, next decision date, and evidence gathered so far.
+Allowed status values remain `Not started`, `In progress`, `Passed`, `Blocked`, `Deferred`, and `Rejected`. Any blocked row names blocker, owner, next decision, and evidence gathered so far.
 
-## Weekly Operating Rhythm
+### Retained Scope Cuts
 
-For a 12-hour week:
-
-| Work | Hours |
-| --- | ---: |
-| Current gated implementation or experiment | 6 |
-| Correctness tests, benchmark, capture, and evidence review | 3 |
-| Targeted math/ML/GPU study for the next decision | 1.5 |
-| Case-study notes and reviewer-path maintenance | 1 |
-| Backlog review and deletion/retrospective | 0.5 |
-
-Every week ends with:
-
-- one demonstrable result or falsified hypothesis;
-- exact commands/configuration and raw evidence where applicable;
-- a green or explicitly blocked default path;
-- one short record of what changed, what was learned, what was deleted, and what gate is next;
-- at most one primary implementation item carried into the next week.
-
-At month end, review the gate before planning the next month. Never mark a calendar phase complete merely because its month ended.
-
-## Backlog And Scope Control
-
-Keep one backlog of at most 20 items in three lanes: `Now`, `Next`, and `After January`. Every `Now` or `Next` item names:
-
-- the current roadmap gate and `PGE-*` requirement it advances;
-- the expected artifact or falsifiable result;
-- its owner and estimated focused hours;
-- prerequisite evidence;
-- what will be deleted, rejected, or left unchanged.
-
-Prioritize work that closes an absent/weak requirement, strengthens the three public stories, produces causal evidence, enables reproduction, or removes code. Penalize new subsystems, broad UI/tooling, unowned hardware/SDK dependencies, screenshot-only output, and duplicate mechanisms. Reject any task with no evidence output.
-
-## Scope Cuts And Decision Dates
-
-Never cut correctness, deterministic identity, both Windows graphics APIs, the classical fallback, San Miguel held-out evaluation, or honest limitations. If capacity drops, cut in this order:
+Do not cut correctness, deterministic identity, both Windows graphics APIs, the classical fallback, San Miguel held-out evaluation, or honest limitations from the retained advanced program. If its capacity drops, cut in this order:
 
 1. extra cameras, videos, and presentation polish;
 2. Modern Sponza compatibility polish beyond required regression coverage;
@@ -300,40 +427,31 @@ Never cut correctness, deterministic identity, both Windows graphics APIs, the c
 5. native Linux/Vulkan and upstream contribution work;
 6. generalization of any tool, model topology, importer, or runtime interface.
 
-Decision triggers:
+The minimum honest advanced package remains a correct measured paired-API classical result, one real fixed neural shader path with an honest win/loss result, and one external reproduction. If it cannot be completed, publish the strongest passed gates and name the remaining gap; do not substitute breadth.
 
-| Date | Trigger | Response |
-| --- | --- | --- |
-| 2026-08-31 | `MAP-00` or clean baseline is red | Hold Tier 1 expansion; fix the evidence spine. |
-| 2026-09-30 | San Miguel is not runtime-ready | Do not claim cross-scene or held-out readiness; close conversion/import before neural dataset freeze. |
-| 2026-10-31 | `WL-04` is red | Continue classical measurement; do not hide missing baselines behind ML work. |
-| 2026-11-30 | Model does not beat noisy input credibly | Simplify once or publish a training negative result; do not widen the model search. |
-| 2026-12-31 | GPU conformance is red | Keep classical default and fix correctness before performance tuning or publication. |
-| 2027-01-15 | New feature request appears after freeze | Move it to `After January` unless it blocks reproduction or corrects a material claim. |
+### After The Advanced Program
 
-The minimum honest six-month package is a correct measured paired-API classical result, one real fixed neural shader path with an honest win/loss result, and one external reproduction. If that package cannot be completed, publish the strongest passed gates and name the remaining gap; do not substitute breadth.
+Choose later work from measured adoption gaps: native Linux/Vulkan build-run-capture, a materially different GPU architecture study, one upstream graphics/compiler/tool contribution, a public technical submission, or a second adopter with longer-lived maintenance evidence. Physics, networking, audio, scripting, marketplace work, general ML runtime work, USD/virtual geometry, and broad editor expansion remain outside this strategy until the retained evidence package passes and a real user demonstrates the need.
 
-## After January - Direction, Not Commitment
+## Scope Protection
 
-Choose later work from measured adoption gaps, not from the old calendar:
+Before `REL-10`, defer unless a release gate proves the work necessary:
 
-- native Linux/Vulkan build-run-capture;
-- a materially different GPU architecture study;
-- one upstream graphics/compiler/tool contribution;
-- public talk or technical-series submission;
-- a second adopter and longer-lived maintenance evidence.
+- new render effects, algorithms, backends, platforms, scene families, editor products, or generalized tooling;
+- Linux/macOS/native mobile support;
+- installer, auto-updater, account, telemetry, marketplace, plugin ecosystem, or cloud service;
+- new neural topology or runtime;
+- broad UI polish, dashboard, benchmark suite, or content breadth;
+- architecture refactors that do not remove a release blocker or measurable risk.
 
-Physics, networking, audio, scripting, marketplace work, general ML runtime work, USD/virtual geometry, and broad editor expansion remain outside the strategy until the six-month evidence package passes and a real user demonstrates the need.
+Do not defer release correctness, legal review, package ownership, safe failures, native validation, PBR/map quality, frame pacing, memory stability, clean-machine proof, or honest documentation as “polish.” Those are delivery work.
 
-## Final Acceptance
+## Final Decision Rule
 
-The roadmap passes only when current evidence supports the outcome at the top of this document. A visually attractive image, a merged feature, an architecture document, or an elapsed deadline is a milestone, not completion.
+There are only three valid outcomes for a release candidate:
 
-At handoff, report:
+- **Go** — `REL-00` through `REL-09` pass for the exact candidate bytes; publish and complete `REL-10`.
+- **No-go and fix** — a frozen-scope requirement failed; repair it and rerun every affected gate.
+- **No-go and reduce scope** — exclude the feature/map/backend cleanly, update the approved scope and public claims, then rerun every gate affected by the change.
 
-1. passed, rejected, deferred, and blocked milestones;
-2. exact build/test/capture/benchmark commands and configurations;
-3. linked raw and reviewed evidence;
-4. `PGE-*` and `WL-*` transitions justified by that evidence;
-5. deleted alternatives and remaining limitations;
-6. the first recommended post-January decision.
+Time spent, code volume, a planned date, or enthusiasm cannot override failed evidence. The first trustworthy small release is preferable to a larger package containing unproven choices.

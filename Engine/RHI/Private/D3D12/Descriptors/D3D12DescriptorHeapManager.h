@@ -5,6 +5,8 @@
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorAllocator.h"
 
+#include <memory>
+
 class D3D12RenderCommandList;
 
 class D3D12DescriptorHeapManager final

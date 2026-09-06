@@ -2,6 +2,8 @@
 
 #include "UiRenderPacket.h"
 
+#include <cstdint>
+
 struct ImDrawData;
 struct ImDrawList;
 struct ImTextureData;

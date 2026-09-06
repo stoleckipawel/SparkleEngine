@@ -1,18 +1,31 @@
 #include "SparkleLauncher/BuildProfileCatalog.h"
 
 #include <algorithm>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace SparkleLauncher
 {
 	const std::vector<BuildProfile>& GetBuildProfileCatalog()
 	{
 		static const std::vector<BuildProfile> profiles = {
-		    {"DevelopmentEditor", BuildProfileState::Development, BuildProfileTarget::Editor, "Editor"},
-		    {"DevelopmentGame", BuildProfileState::Development, BuildProfileTarget::Game, "Runtime"},
-		    {"DebugEditor", BuildProfileState::Debug, BuildProfileTarget::Editor, "Editor"},
-		    {"DebugGame", BuildProfileState::Debug, BuildProfileTarget::Game, "Runtime"},
-		    {"ShippingEditor", BuildProfileState::Shipping, BuildProfileTarget::Editor, "Editor"},
-		    {"ShippingGame", BuildProfileState::Shipping, BuildProfileTarget::Game, "Runtime"},
+		    {.Name = "DevelopmentEditor",
+		        .State = BuildProfileState::Development,
+		        .Target = BuildProfileTarget::Editor,
+		        .TargetSuffix = "Editor"},
+		    {.Name = "DevelopmentGame",
+		        .State = BuildProfileState::Development,
+		        .Target = BuildProfileTarget::Game,
+		        .TargetSuffix = "Runtime"},
+		    {.Name = "DebugEditor", .State = BuildProfileState::Debug, .Target = BuildProfileTarget::Editor, .TargetSuffix = "Editor"},
+		    {.Name = "DebugGame", .State = BuildProfileState::Debug, .Target = BuildProfileTarget::Game, .TargetSuffix = "Runtime"},
+		    {.Name = "ShippingEditor",
+		        .State = BuildProfileState::Shipping,
+		        .Target = BuildProfileTarget::Editor,
+		        .TargetSuffix = "Editor"},
+		    {.Name = "ShippingGame", .State = BuildProfileState::Shipping, .Target = BuildProfileTarget::Game, .TargetSuffix = "Runtime"},
 		};
 		return profiles;
 	}
@@ -20,7 +33,7 @@ namespace SparkleLauncher
 	std::optional<BuildProfile> FindBuildProfile(std::string_view profileName)
 	{
 		const auto& profiles = GetBuildProfileCatalog();
-		const auto found = std::find_if(
+		const auto found = std::ranges::find_if(
 		    profiles.begin(),
 		    profiles.end(),
 		    [profileName](const BuildProfile& profile) { return profile.Name == profileName; });

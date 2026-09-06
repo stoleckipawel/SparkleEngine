@@ -123,7 +123,7 @@ namespace Assets
 				staticMeshInstance.groupIndex = instanceRecord.groupIndex == kInvalidCookedSceneInstanceGroupIndex
 				    ? kInvalidSceneMeshInstanceGroupIndex
 				    : instanceRecord.groupIndex;
-				sceneAssetPayload.staticMeshInstances.push_back(std::move(staticMeshInstance));
+				sceneAssetPayload.staticMeshInstances.push_back(staticMeshInstance);
 			}
 		}
 	}

@@ -3,14 +3,15 @@
 #include "../Editor/EditorTextureHandle.h"
 #include "../RendererAPI.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
 struct UiDrawVertex final
 {
-	float Position[2] = {};
-	float Uv[2] = {};
+	std::array<float, 2> Position = {};
+	std::array<float, 2> Uv = {};
 	std::uint32_t Color = 0;
 };
 
@@ -22,7 +23,7 @@ enum class UiDrawCommandKind : std::uint8_t
 
 struct UiDrawCommand final
 {
-	float ClipRect[4] = {};
+	std::array<float, 4> ClipRect = {};
 	EditorTextureHandle TextureHandle = {};
 	std::uint32_t ElementCount = 0;
 	std::uint32_t IndexOffset = 0;
@@ -61,9 +62,9 @@ struct SPARKLE_RENDERER_API UiRenderPacket final
 	std::uint64_t UiFrameId = 0;
 	std::uint64_t ViewportGeneration = 0;
 	UiPresentationMode PresentationMode = UiPresentationMode::None;
-	float DisplayPosition[2] = {};
-	float DisplaySize[2] = {};
-	float FramebufferScale[2] = {1.0f, 1.0f};
+	std::array<float, 2> DisplayPosition = {};
+	std::array<float, 2> DisplaySize = {};
+	std::array<float, 2> FramebufferScale = {1.0f, 1.0f};
 	std::vector<UiDrawVertex> Vertices;
 	std::vector<std::uint32_t> Indices;
 	std::vector<UiDrawCommand> Commands;

@@ -5,6 +5,7 @@
 #include "Frame/RhiFrameConstants.h"
 #include "Interop/RhiNativeHandles.h"
 
+#include <memory>
 #include <array>
 #include <cstdint>
 #include <vector>

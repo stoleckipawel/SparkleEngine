@@ -3,10 +3,7 @@
 #include "Textures/TextureCache.h"
 
 #include "Assets/Cooked/CookedTextureReference.h"
-#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Diagnostics/Verify.h"
-#include "Core/Public/Paths/PathUtils.h"
-#include "Core/Public/FileSystemUtils.h"
 #include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Commands/RhiQueue.h"
 #include "RHI/Public/Commands/RhiCommandSubmissionService.h"
@@ -17,14 +14,11 @@
 #include "RHI/Public/Resources/RhiUploadService.h"
 #include "Tasks/Public/TaskExecutor.h"
 #include "Tasks/Public/TaskScope.h"
-#include "Textures/CookedTextureLoader.h"
 #include "Textures/TextureDiagnosticsSnapshotBuilder.h"
 
 #include <algorithm>
 #include <array>
 #include <chrono>
-#include <format>
-#include <functional>
 #include <utility>
 
 static const auto g_textureCacheLogger = Logging::GetOrCreateLogger("Renderer.TextureCache");
@@ -172,7 +166,7 @@ void TextureCache::UnloadSceneTextures() noexcept
 
 	for (auto texture = m_pathTextures.begin(); texture != m_pathTextures.end();)
 	{
-		QueueTextureRetirement(std::move(texture->second), nextBindingRevision);
+		QueueTextureRetirement(texture->second, nextBindingRevision);
 		texture = m_pathTextures.erase(texture);
 		removedTexture = true;
 	}

@@ -2,6 +2,8 @@
 
 #include "RHI/Public/Shaders/ShaderMap.h"
 
+#include <cstdint>
+
 namespace RayTracingShaderFeatureFlags
 {
 	inline constexpr ShaderFeatureFlags InlineRayQuery = static_cast<ShaderFeatureFlags>(

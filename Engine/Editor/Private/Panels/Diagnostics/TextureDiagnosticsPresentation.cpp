@@ -1,23 +1,13 @@
 #include "PCH.h"
-#include "Core/Public/FileSystemUtils.h"
-
 #include "Panels/Diagnostics/TextureDiagnosticsPresentation.h"
 
-#include "Core/Public/Formatting/HexFormat.h"
-#include "Core/Public/Json/JsonReader.h"
-#include "Core/Public/Strings/StringUtils.h"
-#include "Panels/Diagnostics/PanelDiagnosticsFormatting.h"
 #include "Panels/Diagnostics/TextureDiagnosticMetadataCatalog.h"
 
 #include <algorithm>
 #include <filesystem>
 #include <format>
-#include <fstream>
 #include <optional>
 #include <string>
-#include <string_view>
-#include <unordered_map>
-#include <utility>
 
 #include <imgui.h>
 
@@ -34,7 +24,7 @@ namespace TextureDiagnosticsPresentation
 			}
 		}
 
-		const std::string filename = std::filesystem::path(row.Key).filename().generic_string();
+		std::string filename = std::filesystem::path(row.Key).filename().generic_string();
 		if (!filename.empty())
 		{
 			return filename;

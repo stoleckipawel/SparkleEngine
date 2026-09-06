@@ -3,6 +3,7 @@
 #include "../RHIAPI.h"
 #include "ShaderParameterSemantics.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>

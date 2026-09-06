@@ -12,7 +12,7 @@ RuntimeConsoleHost::RuntimeConsoleHost(Timer& timer, Window& window)
 
 RuntimeConsoleHost::~RuntimeConsoleHost() noexcept = default;
 
-void RuntimeConsoleHost::TickFrame(Renderer& renderer, RuntimeUpdate updateRuntime)
+void RuntimeConsoleHost::TickFrame(Renderer& renderer, const RuntimeUpdate& updateRuntime)
 {
 	if (updateRuntime)
 	{

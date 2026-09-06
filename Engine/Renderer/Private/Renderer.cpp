@@ -2,6 +2,7 @@
 #include "Renderer.h"
 
 #include "Concurrency/Coordinator/RenderCoordinator.h"
+#include "GameFramework/Public/Rendering/RenderFrameSubmission.h"
 #include "Integrations/RendererExternalRuntime.h"
 
 class RendererFacadeState final
@@ -25,7 +26,7 @@ Renderer::~Renderer() noexcept = default;
 
 void Renderer::SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept
 {
-	m_state->Coordinator.SubmitViewportRequest(std::move(request));
+	m_state->Coordinator.SubmitViewportRequest(request);
 }
 
 ViewportRenderProducts Renderer::GetViewportRenderProducts() const
@@ -75,7 +76,7 @@ void Renderer::SubmitUiRenderPacket(UiRenderPacket packet) noexcept
 
 void Renderer::SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept
 {
-	m_state->Coordinator.SubmitRenderingSettings(std::move(settings));
+	m_state->Coordinator.SubmitRenderingSettings(settings);
 }
 
 void Renderer::BeginSimulationFrame(std::uint64_t frameId) noexcept

@@ -55,7 +55,7 @@ SerialTaskExecution::RunState::RunState(
     m_graph(graph),
     m_context(context),
     m_generation(generation),
-    m_cancellation(cancellation),
+    m_cancellation(std::move(cancellation)),
     m_tasks(graph.Nodes.size())
 {
 	m_completion.Generation = generation;
@@ -227,5 +227,5 @@ TaskExecutionCompletion SerialTaskExecution::Execute(
     std::uint64_t generation,
     std::stop_token cancellation)
 {
-	return RunState(graph, context, generation, cancellation).Execute();
+	return RunState(graph, context, generation, std::move(cancellation)).Execute();
 }

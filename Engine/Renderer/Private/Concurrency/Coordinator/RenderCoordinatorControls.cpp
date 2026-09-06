@@ -17,7 +17,7 @@ template <typename TResult> TResult RenderCoordinator::ExtractControlResult(Rend
 {
 	if (RenderControlError* error = std::get_if<RenderControlError>(&result))
 	{
-		throw Diagnostics::Error(std::move(error->Message));
+		throw Diagnostics::Error(error->Message);
 	}
 	if (TResult* value = std::get_if<TResult>(&result))
 	{

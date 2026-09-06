@@ -5,6 +5,7 @@
 #include "SparkleLauncher/LauncherContentDefaults.h"
 #include "SparkleLauncher/SourceDependencyState.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -13,14 +14,14 @@
 
 namespace SparkleLauncher
 {
-	enum class ToolchainItemState
+	enum class ToolchainItemState : std::uint8_t
 	{
 		Found,
 		Missing,
 		Warning
 	};
 
-	enum class WorkspaceCompiler
+	enum class WorkspaceCompiler : std::uint8_t
 	{
 		Msvc,
 		ClangCl
@@ -72,13 +73,13 @@ namespace SparkleLauncher
 		bool NvidiaStreamlineEnabled = false;
 	};
 
-	enum class WorkspaceIde
+	enum class WorkspaceIde : std::uint8_t
 	{
 		VisualStudio,
 		Rider
 	};
 
-	enum class BuildFilesFreshnessState
+	enum class BuildFilesFreshnessState : std::uint8_t
 	{
 		Current,
 		BuildDirectoryMissing,
@@ -104,7 +105,7 @@ namespace SparkleLauncher
 		std::string Summary;
 	};
 
-	enum class BuildWorkspaceOperationKind
+	enum class BuildWorkspaceOperationKind : std::uint8_t
 	{
 		SyncCode,
 		GenerateBuildFiles,
@@ -116,7 +117,7 @@ namespace SparkleLauncher
 		InstallHostTool
 	};
 
-	enum class BuildWorkspaceScope
+	enum class BuildWorkspaceScope : std::uint8_t
 	{
 		Editor,
 		Runtime,
@@ -206,5 +207,5 @@ namespace SparkleLauncher
 	OperationRecord RunBuildWorkspaceOperationPlan(
 	    BuildWorkspaceOperationPlan plan,
 	    IProcessRunner& processRunner,
-	    ProcessOutputCallback outputCallback = {});
+	    const ProcessOutputCallback& outputCallback = {});
 }

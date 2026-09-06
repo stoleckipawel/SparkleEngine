@@ -24,7 +24,7 @@ CookedShaderStatsReport CookedShaderStatsPass::WriteCsv(const ShaderCookOutput& 
 	std::string error;
 	if (!Files::TryWriteAllText(report.outputPath, csv.str(), error))
 	{
-		throw Diagnostics::Error(std::move(error));
+		throw Diagnostics::Error(error);
 	}
 	return report;
 }

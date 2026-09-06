@@ -2,6 +2,9 @@
 
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
+#include <cstdint>
+#include <filesystem>
+
 class EditorOperationService;
 class Renderer;
 

@@ -24,7 +24,7 @@ public:
 	}
 };
 
-void SkeletonResourceStore::Append(std::vector<SkeletonResource>&& skeletons)
+void SkeletonResourceStore::Append(std::vector<SkeletonResource> skeletons)
 {
 	m_entries.reserve(m_entries.size() + skeletons.size());
 	for (SkeletonResource& skeleton : skeletons)

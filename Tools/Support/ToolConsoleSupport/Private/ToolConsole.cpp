@@ -1,7 +1,11 @@
 #include "ToolConsole.h"
 
+#include <cstddef>
+#include <filesystem>
+#include <initializer_list>
 #include <iostream>
 #include <ostream>
+#include <string_view>
 
 ToolConsoleField ToolConsole::Field(std::string_view name, std::string_view value)
 {

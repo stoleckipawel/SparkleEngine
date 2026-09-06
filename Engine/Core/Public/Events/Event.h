@@ -2,6 +2,7 @@
 
 #include "EventHandle.h"
 
+#include <cstddef>
 #include <array>
 #include <cassert>
 #include <cstdint>

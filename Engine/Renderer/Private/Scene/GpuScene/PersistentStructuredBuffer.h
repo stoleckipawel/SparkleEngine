@@ -3,6 +3,7 @@
 #include "Resources/OwnedStructuredBuffer.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 
+#include <cstdint>
 #include <cstddef>
 #include <span>
 #include <string_view>

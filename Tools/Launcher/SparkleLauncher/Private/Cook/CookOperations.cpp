@@ -7,7 +7,6 @@
 #include "SparkleLauncher/ToolResolver.h"
 
 #include <algorithm>
-#include <array>
 #include <optional>
 #include <sstream>
 #include <system_error>
@@ -234,11 +233,13 @@ namespace SparkleLauncher
 			case CookOperationKind::CookWorkspace:
 			{
 				std::vector<std::string> scopeNames;
+				scopeNames.reserve(plan.Request.SelectedScopes.size());
 				for (const CookWorkspaceScope scope : plan.Request.SelectedScopes)
 				{
 					scopeNames.push_back(DisplayName(scope));
 				}
 				std::vector<std::string_view> scopeNameViews;
+				scopeNameViews.reserve(scopeNames.size());
 				for (const std::string& scopeName : scopeNames)
 				{
 					scopeNameViews.push_back(scopeName);
@@ -463,11 +464,13 @@ namespace SparkleLauncher
 		if (plan.Kind == CookOperationKind::CookWorkspace && !plan.Request.SelectedScopes.empty())
 		{
 			std::vector<std::string> scopeNames;
+			scopeNames.reserve(plan.Request.SelectedScopes.size());
 			for (const CookWorkspaceScope scope : plan.Request.SelectedScopes)
 			{
 				scopeNames.push_back(ToString(scope));
 			}
 			std::vector<std::string_view> scopeNameViews;
+			scopeNameViews.reserve(scopeNames.size());
 			for (const std::string& scopeName : scopeNames)
 			{
 				scopeNameViews.push_back(scopeName);

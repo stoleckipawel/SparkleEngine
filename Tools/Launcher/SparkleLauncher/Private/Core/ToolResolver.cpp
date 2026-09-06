@@ -84,7 +84,7 @@ namespace SparkleLauncher
 	static void AddProgramFilesCandidate(
 	    std::vector<std::filesystem::path>& candidates,
 	    const char* environmentName,
-	    std::filesystem::path relativePath)
+	    const std::filesystem::path& relativePath)
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
 		if (root.has_value())
@@ -99,7 +99,7 @@ namespace SparkleLauncher
 	    std::vector<std::filesystem::path>& candidates,
 	    const char* environmentName,
 	    std::string_view directoryPrefix,
-	    std::filesystem::path relativeExecutablePath)
+	    const std::filesystem::path& relativeExecutablePath)
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
 		if (!root.has_value())
@@ -144,7 +144,7 @@ namespace SparkleLauncher
 		candidates.insert(candidates.end(), matches.begin(), matches.end());
 	}
 
-	static void AddLocalAppDataCandidate(std::vector<std::filesystem::path>& candidates, std::filesystem::path relativePath)
+	static void AddLocalAppDataCandidate(std::vector<std::filesystem::path>& candidates, const std::filesystem::path& relativePath)
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable("LocalAppData");
 		if (root.has_value())
@@ -156,7 +156,7 @@ namespace SparkleLauncher
 	static void AddEnvironmentRootIfPresent(
 	    std::vector<std::filesystem::path>& roots,
 	    const char* environmentName,
-	    std::filesystem::path relativePath = {})
+	    const std::filesystem::path& relativePath = {})
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
 		if (root.has_value())
@@ -314,7 +314,7 @@ namespace SparkleLauncher
 		return candidates;
 	}
 
-	static std::optional<std::filesystem::path> FindExistingExecutable(std::vector<std::filesystem::path> candidates)
+	static std::optional<std::filesystem::path> FindExistingExecutable(const std::vector<std::filesystem::path>& candidates)
 	{
 		std::error_code errorCode;
 		for (const std::filesystem::path& candidate : candidates)
@@ -384,7 +384,7 @@ namespace SparkleLauncher
 		std::error_code errorCode;
 		for (const std::filesystem::path& directory : GetExecutableSearchPath())
 		{
-			const std::filesystem::path candidate = directory / std::string(executableName);
+			std::filesystem::path candidate = directory / std::string(executableName);
 			if (std::filesystem::exists(candidate, errorCode) && std::filesystem::is_regular_file(candidate, errorCode))
 			{
 				return candidate;

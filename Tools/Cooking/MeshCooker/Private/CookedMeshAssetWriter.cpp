@@ -54,12 +54,12 @@ void CookedMeshAssetStager::WriteMeshAsset(const CookedMeshAssetBuild& meshAsset
 	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargets, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargetDeltas, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 
 	if (!Files::TryCloseOutput(output, outputPath, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 }
 
@@ -73,7 +73,7 @@ void CookedMeshAssetStager::WriteMeshMetadata(const CookedMeshAssetBuild& meshAs
 	std::string errorMessage;
 	if (!Files::TryWriteAllText(outputPath, writer.Finish(), errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 }
 
@@ -91,8 +91,8 @@ Assets::CookedMeshAssetHeader CookedMeshAssetStager::BuildHeader(const CookedMes
 	    .morphTargetDeltaCount = static_cast<std::uint32_t>(meshAsset.morphTargetDeltas.size()),
 	    .morphTargetRecordStride = sizeof(Assets::CookedMeshMorphTargetRecord),
 	    .morphTargetDeltaStride = sizeof(Assets::CookedMeshMorphTargetDelta),
-	    .flags = (meshAsset.HasSkinInfluences() ? Assets::CookedMeshAssetFlag_HasSkinInfluences : 0u)
-	        | (meshAsset.HasMorphTargets() ? Assets::CookedMeshAssetFlag_HasMorphTargets : 0u),
+	    .flags = (meshAsset.HasSkinInfluences() ? static_cast<std::uint32_t>(Assets::CookedMeshAssetFlag::HasSkinInfluences) : 0u)
+	        | (meshAsset.HasMorphTargets() ? static_cast<std::uint32_t>(Assets::CookedMeshAssetFlag::HasMorphTargets) : 0u),
 	    .assetKind = meshAsset.assetKind};
 }
 

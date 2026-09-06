@@ -7,7 +7,7 @@ option(SPARKLE_BUILD_SHARED "Build Sparkle modules as shared libraries (DLLs)" O
 # All third-party dependencies are fetched automatically via FetchContent.
 # See CMake/Dependencies/FetchDependencies.cmake for the full list and pinned versions.
 # Sources are cached in build/_deps/ - no manual download or vendoring needed.
-include(${CMAKE_SOURCE_DIR}/CMake/Dependencies/FetchDependencies.cmake)
+include(${CMAKE_SOURCE_DIR}/CMake/Dependencies/FetchDependencies.cmake NO_POLICY_SCOPE)
 
 # ============================================================================
 # CORE MODULES (always built - the foundation of the engine)

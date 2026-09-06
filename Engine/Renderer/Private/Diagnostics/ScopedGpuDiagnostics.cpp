@@ -6,7 +6,7 @@
 
 #include <utility>
 
-ScopedGpuEvent::ScopedGpuEvent(RenderCommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept :
+ScopedGpuEvent::ScopedGpuEvent(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color) noexcept :
     m_commands(&commands)
 {
 	if (label.empty())

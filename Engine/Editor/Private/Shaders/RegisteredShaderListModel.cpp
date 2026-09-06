@@ -41,7 +41,7 @@ void RegisteredShaderListModel::Refresh()
 
 std::filesystem::path RegisteredShaderListModel::FindDebugArtifactDirectoryFor(std::string_view shaderId)
 {
-	const std::filesystem::path root = Filesystem::GetShaderSymbolsOutputPath();
+	const std::filesystem::path& root = Filesystem::GetShaderSymbolsOutputPath();
 	std::error_code errorCode;
 	if (!std::filesystem::exists(root, errorCode) || errorCode)
 	{

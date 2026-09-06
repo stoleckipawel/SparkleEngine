@@ -2,6 +2,7 @@
 
 #include "Capture/RhiCaptureService.h"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 

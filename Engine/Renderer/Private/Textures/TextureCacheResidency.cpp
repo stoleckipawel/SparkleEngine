@@ -72,7 +72,7 @@ void TextureCache::ActivateResidentRequests() noexcept
 		auto active = m_pathTextures.find(request.Source.CacheKey);
 		if (active != m_pathTextures.end() && active->second.Generation.Generation > request.Generation.Generation)
 		{
-			ActiveTexture staleTexture{.Generation = request.Generation, .Texture = std::move(*request.Uploaded)};
+			ActiveTexture staleTexture{.Generation = request.Generation, .Texture = *request.Uploaded};
 			ReleaseActiveTexture(staleTexture);
 			request.Uploaded.reset();
 			continue;
@@ -80,15 +80,13 @@ void TextureCache::ActivateResidentRequests() noexcept
 		if (active != m_pathTextures.end())
 		{
 			const std::uint64_t nextBindingRevision = m_bindingRevision + 1u;
-			QueueTextureRetirement(std::move(active->second), nextBindingRevision);
-			active->second = ActiveTexture{.Generation = request.Generation, .Texture = std::move(*request.Uploaded)};
+			QueueTextureRetirement(active->second, nextBindingRevision);
+			active->second = ActiveTexture{.Generation = request.Generation, .Texture = *request.Uploaded};
 			m_bindingRevision = nextBindingRevision;
 		}
 		else
 		{
-			m_pathTextures.emplace(
-			    request.Source.CacheKey,
-			    ActiveTexture{.Generation = request.Generation, .Texture = std::move(*request.Uploaded)});
+			m_pathTextures.emplace(request.Source.CacheKey, ActiveTexture{.Generation = request.Generation, .Texture = *request.Uploaded});
 			++m_bindingRevision;
 		}
 		request.Uploaded.reset();
@@ -103,9 +101,9 @@ void TextureCache::ActivateResidentRequests() noexcept
 	    m_requests.end());
 }
 
-void TextureCache::QueueTextureRetirement(ActiveTexture&& texture, std::uint64_t bindingRevision)
+void TextureCache::QueueTextureRetirement(ActiveTexture texture, std::uint64_t bindingRevision)
 {
-	m_retiredTextures.push_back(RetiredTexture{.BindingRevision = bindingRevision, .Active = std::move(texture)});
+	m_retiredTextures.push_back(RetiredTexture{.BindingRevision = bindingRevision, .Active = texture});
 }
 
 void TextureCache::ReleaseActiveTexture(ActiveTexture& texture) noexcept

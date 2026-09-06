@@ -124,8 +124,9 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 {
 	const std::uint64_t requestId = m_nextRequestId++;
 	const std::uint64_t baselinePublicationId = ReadCurrentPublicationId();
+	const std::string requestDescription = DescribeRequest(request);
 	std::string errorMessage;
-	if (!m_operations->StartShaderRecook(requestId, baselinePublicationId, request, errorMessage))
+	if (!m_operations->StartShaderRecook(requestId, baselinePublicationId, std::move(request), errorMessage))
 	{
 		PublishStatus("Shader recook failed before launch: " + errorMessage);
 		return;
@@ -136,7 +137,7 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 	    std::format(
 	        "Shader recook #{} started for {} through the shader compiler process (baselinePublicationId={}).",
 	        requestId,
-	        DescribeRequest(request),
+	        requestDescription,
 	        baselinePublicationId));
 }
 

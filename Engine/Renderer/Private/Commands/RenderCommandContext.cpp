@@ -185,7 +185,7 @@ void RenderCommandContext::SetRenderTargets(
 	m_commandList->SetRenderTargets(renderTargetCount, renderTargets, depthStencil);
 }
 
-void RenderCommandContext::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, const float color[4]) noexcept
+void RenderCommandContext::ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, RhiClearColorView color) noexcept
 {
 	m_commandList->ClearRenderTarget(renderTarget, color);
 }
@@ -205,9 +205,9 @@ void RenderCommandContext::SetViewport(const RhiViewport& viewport) noexcept
 	m_commandList->SetViewport(viewport);
 }
 
-void RenderCommandContext::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) noexcept
+void RenderCommandContext::SetViewport(float xPosition, float yPosition, float width, float height, float minDepth, float maxDepth) noexcept
 {
-	SetViewport(RhiViewport{.X = x, .Y = y, .Width = width, .Height = height, .MinDepth = minDepth, .MaxDepth = maxDepth});
+	SetViewport(RhiViewport{.X = xPosition, .Y = yPosition, .Width = width, .Height = height, .MinDepth = minDepth, .MaxDepth = maxDepth});
 }
 
 void RenderCommandContext::SetScissorRect(const RhiRect& scissorRect) noexcept

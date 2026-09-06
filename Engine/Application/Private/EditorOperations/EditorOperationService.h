@@ -4,6 +4,7 @@
 #include "ShaderRecook/ShaderRecookRequest.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 

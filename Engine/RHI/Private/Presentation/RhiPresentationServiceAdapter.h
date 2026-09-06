@@ -17,7 +17,7 @@ public:
 	RhiRect GetBackBufferScissorRect() const noexcept override { return m_owner.GetBackBufferScissorRect(); }
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override { return m_owner.GetBackBufferRenderTargetView(); }
 	RhiResourceHandle GetBackBufferResource() const noexcept override { return m_owner.GetBackBufferResource(); }
-	void BeginPresentRenderPass(const float clearColor[4]) noexcept override
+	void BeginPresentRenderPass(RhiClearColorView clearColor) noexcept override
 	{
 		Begin();
 		m_owner.BeginPresentRenderPass(clearColor);

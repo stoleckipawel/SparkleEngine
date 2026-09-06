@@ -4,9 +4,11 @@
 #include <QtGui/QIcon>
 #include <QtCore/QString>
 
+#include <cstdint>
+
 namespace SparkleLauncher
 {
-	enum class LauncherIcon
+	enum class LauncherIcon : std::uint8_t
 	{
 		Start,
 		Sync,

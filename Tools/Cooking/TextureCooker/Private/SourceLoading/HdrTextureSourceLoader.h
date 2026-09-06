@@ -2,6 +2,8 @@
 
 #include "SourceLoading/TextureSourceLoaderBackend.h"
 
+#include <filesystem>
+
 class HdrTextureSourceLoader final : public TextureSourceLoaderBackend
 {
 public:

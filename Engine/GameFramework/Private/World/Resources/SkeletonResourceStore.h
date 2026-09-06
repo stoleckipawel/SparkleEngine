@@ -2,6 +2,7 @@
 
 #include "Animation/AnimationEvaluationTypes.h"
 
+#include <cstddef>
 #include <compare>
 #include <cstdint>
 #include <limits>
@@ -21,7 +22,7 @@ struct SkeletonResourceHandle final
 class SkeletonResourceStore final
 {
 public:
-	void Append(std::vector<SkeletonResource>&& skeletons);
+	void Append(std::vector<SkeletonResource> skeletons);
 	SkeletonResourceHandle Find(Assets::CookedAssetId skeletonAssetId) const noexcept;
 	ECS::SkeletonEvaluationData Resolve(SkeletonResourceHandle handle) const noexcept;
 	std::size_t GetCount() const noexcept { return m_entries.size(); }

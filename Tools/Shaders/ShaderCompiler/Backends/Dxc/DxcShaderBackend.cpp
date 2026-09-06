@@ -5,7 +5,6 @@
 
 #include "SpirVBindingNormalizer.h"
 
-#include "Backend/ShaderBackendFactory.h"
 #include "Compiler/ShaderCompileProfile.h"
 #include "Compiler/ShaderSourceMountTable.h"
 #include "Constants/ShaderCompilerConstants.h"
@@ -159,7 +158,7 @@ CompiledShader DxcShaderBackend::Compile(const ShaderCompileRequest& request)
 		    request.EntryPoint,
 		    GetShaderTargetName(request.Target),
 		    errorMsg);
-		throw Diagnostics::Error(std::move(errorMsg));
+		throw Diagnostics::Error(errorMsg);
 	}
 
 	if (!errorMsg.empty())
@@ -476,7 +475,7 @@ std::filesystem::path DxcShaderBackend::SaveShaderSymbols(IDxcResult* result, co
 		return {};
 
 	std::wstring pdbName(pdbNameBlob->GetStringPointer());
-	const std::filesystem::path pdbPath = Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();
+	std::filesystem::path pdbPath = Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();
 
 	FILE* fp = nullptr;
 	_wfopen_s(&fp, pdbPath.c_str(), L"wb");

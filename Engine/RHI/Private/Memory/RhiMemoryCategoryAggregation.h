@@ -2,6 +2,7 @@
 
 #include "Memory/RhiMemoryDiagnostics.h"
 
+#include <cstdint>
 #include <algorithm>
 #include <vector>
 

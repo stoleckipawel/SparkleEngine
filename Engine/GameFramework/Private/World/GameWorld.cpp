@@ -2,10 +2,18 @@
 #include "World/GameWorld.h"
 
 #include "Assets/SceneAssetPayload.h"
+#include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include "GameFramework/Public/Rendering/RenderFrameSubmission.h"
 #include "GameFramework/Public/Scene/Camera/CameraNavigation.h"
+#include "GameFramework/Public/Scene/Camera/SceneCameraEntry.h"
+#include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
+#include "GameFramework/Public/Scene/Materials/MaterialVariant.h"
+#include "GameFramework/Public/World/SkyEnvironment.h"
+#include "GameFramework/Public/World/WorldChange.h"
+#include "GameFramework/Public/World/WorldEditCommand.h"
+#include "GameFramework/Public/World/WorldMaterialVariantView.h"
 #include "World/GameWorldSceneAssetCommitter.h"
-#include "Level/Level.h"
 #include "Level/LevelDesc.h"
 #include "World/GameWorldState.h"
 #include "World/Extraction/RenderFrameSubmissionExtractor.h"
@@ -14,6 +22,10 @@
 #include "World/Resources/GameWorldResourceStores.h"
 #include "World/Systems/GameWorldSystems.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <optional>
 #include <utility>
 
 static const auto g_gameWorldLogger = Logging::GetOrCreateLogger("GameFramework.GameWorld");
@@ -103,7 +115,7 @@ void GameWorld::PublishCameraInputIntent(const CameraInputIntent& intent) noexce
 	m_cameraInputIntent = intent;
 }
 
-void GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package)
+void GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage package)
 {
 	std::size_t expectedEntityCount = 1 + package.Level.lights.size();
 	for (const SceneAssetPayload& payload : package.AssetPayloads)

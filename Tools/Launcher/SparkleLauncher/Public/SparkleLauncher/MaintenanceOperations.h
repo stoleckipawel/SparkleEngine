@@ -14,12 +14,12 @@
 
 namespace SparkleLauncher
 {
-	enum class MaintenanceOperationKind
+	enum class MaintenanceOperationKind : std::uint8_t
 	{
 		CleanWorkspace
 	};
 
-	enum class CleanScope
+	enum class CleanScope : std::uint8_t
 	{
 		CookedOutputs,
 		BuildTree,
@@ -99,8 +99,5 @@ namespace SparkleLauncher
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions();
 	std::optional<MaintenanceOperationDefinition> FindMaintenanceOperationDefinition(std::string_view operationId);
 	MaintenanceOperationPlan PlanMaintenanceOperation(std::string_view operationId, const MaintenanceOperationRequest& request);
-	OperationRecord RunMaintenanceOperationPlan(
-	    MaintenanceOperationPlan plan,
-	    IProcessRunner& processRunner,
-	    ProcessOutputCallback outputCallback = {});
+	OperationRecord RunMaintenanceOperationPlan(MaintenanceOperationPlan plan, IProcessRunner& processRunner);
 }

@@ -2,6 +2,7 @@
 
 #include "ShaderReflection.h"
 
+#include <vector>
 #include <cstdint>
 #include <span>
 #include <string>

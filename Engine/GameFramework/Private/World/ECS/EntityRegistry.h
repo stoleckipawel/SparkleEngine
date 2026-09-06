@@ -4,6 +4,7 @@
 #include "World/ECS/ComponentTypeRegistry.h"
 #include "World/ECS/StructureFrozenEpoch.h"
 
+#include <cstdint>
 #include <cstddef>
 #include <span>
 #include <utility>

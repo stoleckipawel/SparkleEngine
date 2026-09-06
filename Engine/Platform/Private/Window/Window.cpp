@@ -1,9 +1,17 @@
 #include "PCH.h"
 #include "Window/Window.h"
 
-#include <dwmapi.h>
+#include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/Verify.h"
 
-static std::shared_ptr<spdlog::logger> g_platformLogger = Logging::GetOrCreateLogger("Platform");
+#include <Windows.h>
+
+#include <atomic>
+#include <cstdint>
+#include <dwmapi.h>
+#include <string>
+
+static const auto g_platformLogger = Logging::GetOrCreateLogger("Platform");
 
 Window::Window(std::string_view windowTitle)
 {

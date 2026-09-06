@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "RuntimeApplication.h"
 
+#include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Window/Window.h"
 #include "Renderer.h"
 #include "RuntimeConsole/RuntimeConsoleHost.h"
@@ -12,9 +14,17 @@
 #include "Concurrency/ApplicationTaskRuntime.h"
 #include "Concurrency/ConcurrencyLaunchCVars.h"
 #include "CVars/RHICVars.h"
+#include "GameFramework/Public/Rendering/RenderFrameSubmission.h"
+#include "GameFramework/Public/Rendering/RenderViewCameraData.h"
+#include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <imgui.h>
+
+#include <cstdint>
+#include <memory>
+#include <utility>
 
 bool RuntimeApplication::WantsImGuiInputCapture() noexcept
 {
@@ -219,7 +229,7 @@ void RuntimeApplication::SubmitViewportRenderRequest(ViewportRenderRequest reque
 {
 	if (m_renderer)
 	{
-		m_renderer->SubmitViewportRenderRequest(std::move(request));
+		m_renderer->SubmitViewportRenderRequest(request);
 	}
 }
 

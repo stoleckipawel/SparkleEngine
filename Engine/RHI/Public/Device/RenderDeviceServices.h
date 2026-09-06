@@ -7,6 +7,7 @@
 #include "../RHIAPI.h"
 #include "RenderHardwareInterface.h"
 
+#include <span>
 #include <cstdint>
 #include <memory>
 #include <string_view>

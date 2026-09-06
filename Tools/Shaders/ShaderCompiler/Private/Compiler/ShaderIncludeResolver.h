@@ -2,6 +2,7 @@
 
 #include "Compiler/ShaderCompileRequest.h"
 
+#include <string_view>
 #include <optional>
 #include <string>
 

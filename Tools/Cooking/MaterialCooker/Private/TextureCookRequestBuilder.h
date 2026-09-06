@@ -2,6 +2,7 @@
 
 #include "TextureCookRequestList.h"
 
+#include <string>
 #include <filesystem>
 #include <optional>
 #include <string_view>

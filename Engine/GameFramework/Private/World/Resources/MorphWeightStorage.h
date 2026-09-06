@@ -2,6 +2,8 @@
 
 #include "World/ECS/Components/AnimationComponents.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <span>
 #include <vector>
 

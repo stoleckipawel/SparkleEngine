@@ -151,7 +151,7 @@ namespace Filesystem::Private
 				continue;
 			}
 
-			const std::filesystem::path projectRoot = entry.path();
+			const std::filesystem::path& projectRoot = entry.path();
 			if (!std::filesystem::exists(projectRoot / Filesystem::kProjectMarker, ec) || ec)
 			{
 				ec.clear();

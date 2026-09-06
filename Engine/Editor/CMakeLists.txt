@@ -56,16 +56,16 @@ sparkle_target_precompile_headers(SparkleEditor
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# Editor publicly exposes Core utilities plus the renderer and RHI contracts used
-# by its UI surface. Runtime scene and window types remain forward-declared.
+# Editor publicly exposes the renderer, RHI, world, and input contracts used by
+# its UI surface. ImGui remains an implementation dependency.
 target_link_libraries(SparkleEditor 
     PUBLIC
         SparkleCore
         SparkleRHI
         SparkleRenderer
-    PRIVATE
         SparkleGameFramework
         SparklePlatform
+    PRIVATE
         imgui
 )
 

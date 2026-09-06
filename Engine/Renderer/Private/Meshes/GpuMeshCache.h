@@ -5,6 +5,8 @@
 #include "Resources/Residency/AssetResidency.h"
 #include "Tasks/Public/TaskExecution.h"
 
+#include <cstddef>
+#include <utility>
 #include <cstdint>
 #include <map>
 #include <memory>

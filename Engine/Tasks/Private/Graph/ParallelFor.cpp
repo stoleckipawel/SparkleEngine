@@ -9,7 +9,7 @@
 class ParallelForTaskNaming final
 {
 public:
-	static TaskName DerivedTaskName(const TaskName& base, std::string suffix)
+	static TaskName DerivedTaskName(const TaskName& base, std::string_view suffix)
 	{
 		std::string value(base.Get());
 		if (value.size() + suffix.size() > TaskName::MaximumLength)

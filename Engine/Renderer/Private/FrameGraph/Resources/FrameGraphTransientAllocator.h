@@ -4,6 +4,7 @@
 #include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 

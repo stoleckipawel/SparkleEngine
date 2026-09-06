@@ -2,6 +2,7 @@
 
 #include "Scene/Materials/MaterialHandle.h"
 
+#include <cstdint>
 #include <cstddef>
 
 namespace MaterialHandleResolver

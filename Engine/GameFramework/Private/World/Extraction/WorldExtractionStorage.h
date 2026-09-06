@@ -3,6 +3,7 @@
 #include "GameFramework/Public/Rendering/RenderSceneDelta.h"
 #include "GameFramework/Public/World/EntityId.h"
 
+#include <cstdint>
 #include <DirectXMath.h>
 
 #include <span>

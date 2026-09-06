@@ -16,8 +16,8 @@ public:
 	};
 
 	ShaderSourceMountTable(
-	    std::filesystem::path engineRoot,
-	    std::filesystem::path projectRoot,
+	    const std::filesystem::path& engineRoot,
+	    const std::filesystem::path& projectRoot,
 	    std::span<const PluginMount> pluginMounts = {});
 
 	std::string CanonicalizeVirtualPath(std::string_view path) const;

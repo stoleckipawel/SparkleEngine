@@ -2,6 +2,7 @@
 
 #include "Pipeline/TextureLoadResult.h"
 
+#include <cstdint>
 #include <vector>
 
 namespace TextureCookPipeline

@@ -2,6 +2,7 @@
 
 #include "Cooking/ShaderCookOutput.h"
 
+#include <cstdint>
 #include <filesystem>
 
 struct CookedShaderStatsReport final

@@ -2,6 +2,8 @@
 
 #include "World/Systems/Descriptors/GameWorldSystemContract.h"
 
+#include <cstdint>
+
 namespace ECS
 {
 	class GameWorldState;

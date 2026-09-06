@@ -4,6 +4,7 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Renderer/Public/UI/UiRenderPacket.h"
 
+#include <cstddef>
 #include <Windows.h>
 #include <array>
 #include <memory>

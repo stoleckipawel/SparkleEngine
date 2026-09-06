@@ -48,11 +48,11 @@ void CookedSkeletonAssetStager::StageSkeletonAsset(
 	    || !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(output, skeletonAsset.joints, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 
 	if (!Files::TryCloseOutput(output, stagedOutputPath, errorMessage))
 	{
-		throw Diagnostics::Error(std::move(errorMessage));
+		throw Diagnostics::Error(errorMessage);
 	}
 }

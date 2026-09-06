@@ -20,7 +20,7 @@ struct SPARKLE_PLATFORM_API WindowMessageEvent
 class SPARKLE_PLATFORM_API Window final
 {
 public:
-	enum class State
+	enum class State : std::uint8_t
 	{
 		Normal,
 		Minimized,
