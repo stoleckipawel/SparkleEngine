@@ -1,6 +1,6 @@
 # Showcase Product Capability Inventory
 
-Status: current product/catalog snapshot; not evidence that every level is downloaded, cooked, runnable, or releasable
+Status: capability snapshot; current product/catalog view, not evidence that every level is downloaded, cooked, runnable, or releasable
 
 Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; Showcase marker/CMake/entry points, level catalog, authored level files, tracked source content, Launcher use, and runtime startup path inspected; evidence `S` only
 
@@ -72,4 +72,3 @@ Launcher loads `Levels.catalog` -> selected level/pack readiness is evaluated ->
 - A catalog description is product intent, not implementation proof. In particular, “Diffuse Transmission” and future volume/water/foliage descriptions exceed current Renderer capability.
 - Catalog Selected does not guarantee source pack presence, successful cook, registered runtime level, or release disposition.
 - No level in this pass was built, cooked, launched, captured, timed, or tested from packaged bytes.
-

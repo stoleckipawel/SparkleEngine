@@ -1,10 +1,19 @@
 # Performance Diagnostics Architecture
 
-Status: target architecture; not proof of current implementation
+Status: feature dossier; target architecture, not proof of current implementation
 
 Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
 Scope: editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, external-profiler correlation, authoring isolation, and Shipping erasure
+
+## Dossier Route
+
+| Concern | Owner |
+| --- | --- |
+| target diagnostic semantics and system shape | this page |
+| dated current-source capability and gaps | [Capability](Capability.md) |
+| feature-local evidence, failures, checks, and completion | [Acceptance](Acceptance.md) |
+| delivery order and phase exits | [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md) |
 
 ## Purpose And Authority Boundary
 
@@ -18,19 +27,19 @@ This document owns the target system design for answering four questions:
 It does not claim that the target is implemented, set performance targets for a particular scene, or replace a profiler.
 
 - Current implementation truth remains in code and executable configuration.
-- [Validation, Performance, and Evidence](../../Engineering/Verification/ValidationAndEvidence.md) owns measurement and claim rules.
-- [Tasks Engineering](../../Engineering/Modules/Tasks.md) owns thread, task, wait, and publication rules.
-- [Renderer Engineering](../../Engineering/Modules/Renderer.md) owns graphics profiling semantics; [RHI Engineering](../../Engineering/Modules/RHI.md) owns backend and hardware-specific evidence rules.
-- [Editor Engineering](../../Engineering/Modules/Editor.md) owns editor presentation and cross-thread UI products; [Tools Engineering](../../Engineering/Modules/Tools.md) owns tool execution and publication.
-- [J. Multithreaded Engine Architecture](MultithreadedEngine.md) owns the target concurrency topology and frame concurrency lifecycle.
-- [Renderer and RHI Architecture Boundary](../Decisions/RendererRhiBoundary.md) owns renderer, frame-graph, and RHI authority.
-- [I. Acceptance Workloads](../../Acceptance/GraphicsWorkloads.md) owns `MAP-00`, scene routes, warm-up/sample policy, and portfolio gates.
-- [A. Principal Graphics Engineering Requirements](../../Strategy/Requirements.md) owns the `PGE-05`, `PGE-06`, `PGE-10`, and reviewer-evidence meaning advanced by this system.
-- [Diagnostics Product And UX Research](../../Research/PerformanceDiagnosticsProductAndUx.md) records the Epic/NVIDIA/AMD product study and rejected UX options behind the selected presentation; it is research, not implementation authority.
-- [External Performance Profiler Runbook](../../Engineering/Verification/ExternalProfiling.md) owns version-sensitive tool capabilities, capture preparation, marker interoperability, and operational playbooks; it does not define Sparkle metrics or prove a benchmark claim.
-- [Performance Diagnostics Delivery Plan](../../Plans/CrossModule/PerformanceDiagnostics.md) owns ordered, feature-selectable implementation packages and completion gates; it does not redefine this architecture.
-- [Performance Diagnostics Capability Inventory](PerformanceDiagnosticsCapability.md) owns the dated current-source snapshot and reconciliation gaps.
-- [Performance Diagnostics Acceptance Contract](../../Acceptance/CrossModule/PerformanceDiagnostics.md) owns workload evidence, baseline experiments, reviewer artifacts, and verification gates.
+- [Validation, Performance, and Evidence](../../../Engineering/Verification/ValidationAndEvidence.md) owns measurement and claim rules.
+- [Tasks Engineering](../../../Engineering/Modules/Tasks.md) owns thread, task, wait, and publication rules.
+- [Renderer Engineering](../../../Engineering/Modules/Renderer.md) owns graphics profiling semantics; [RHI Engineering](../../../Engineering/Modules/RHI.md) owns backend and hardware-specific evidence rules.
+- [Editor Engineering](../../../Engineering/Modules/Editor.md) owns editor presentation and cross-thread UI products; [Tools Engineering](../../../Engineering/Modules/Tools.md) owns tool execution and publication.
+- [J. Multithreaded Engine Architecture](../MultithreadedEngine.md) owns the target concurrency topology and frame concurrency lifecycle.
+- [Renderer and RHI Architecture Boundary](../../Decisions/RendererRhiBoundary.md) owns renderer, frame-graph, and RHI authority.
+- [I. Acceptance Workloads](../../../Acceptance/GraphicsWorkloads.md) owns `MAP-00`, scene routes, warm-up/sample policy, and portfolio gates.
+- [A. Principal Graphics Engineering Requirements](../../../Strategy/Requirements.md) owns the `PGE-05`, `PGE-06`, `PGE-10`, and reviewer-evidence meaning advanced by this system.
+- [Diagnostics Product And UX Research](../../../Research/PerformanceDiagnosticsProductAndUx.md) records the Epic/NVIDIA/AMD product study and rejected UX options behind the selected presentation; it is research, not implementation authority.
+- [External Performance Profiler Runbook](../../../Engineering/Verification/ExternalProfiling.md) owns version-sensitive tool capabilities, capture preparation, marker interoperability, and operational playbooks; it does not define Sparkle metrics or prove a benchmark claim.
+- [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md) owns ordered, feature-selectable implementation packages and phase exits; it does not redefine this architecture or the adjacent feature acceptance contract.
+- [Performance Diagnostics Capability Inventory](Capability.md) owns the dated current-source snapshot and reconciliation gaps.
+- The adjacent [Performance Diagnostics — Acceptance](Acceptance.md) contract owns feature-local workload evidence requirements, baseline experiments, reviewer artifacts, and verification gates.
 
 Application owns the presentation-neutral live diagnostics product, cross-domain session orchestration, active stat-view selection, and the bounded runtime serialization mechanism used by an explicit benchmark. The acceptance workload owns the benchmark schema, route, destination/name, sample policy, analysis, and claim. Editor owns its viewport menu/window presentation. DevelopmentGame owns a compact presenter through its existing runtime console/UI packet path. Each engine domain remains the authority for its own measurements. These concrete product consumers justify compact stat views; they do not justify a general task browser, allocation explorer, or trace-viewer product.
 
@@ -302,7 +311,7 @@ One private backend adapter fans each semantic scope out to Sparkle timing and s
 - aggregation identity never includes `FrameId`, pointer values, transient graph indices, resource paths, or per-frame formatted text;
 - duration scopes are balanced RAII objects and remain inside one CPU task and one command-list/command-buffer recording lifetime; task-local and command-recording-local stacks prevent cross-thread or cross-command-buffer push/pop pairs;
 - duration regions, point annotations, and resource/object names are distinct operations. A backend/tool may support only a subset without changing semantic scope identity;
-- D3D12 PIX marker strings use the static/aligned storage required by the selected PIX event runtime path; Vulkan uses `VK_EXT_debug_utils` when available. Tool/version-specific fallbacks and limitations belong to the [profiler runbook](../../Engineering/Verification/ExternalProfiling.md#marker-interoperability-contract).
+- D3D12 PIX marker strings use the static/aligned storage required by the selected PIX event runtime path; Vulkan uses `VK_EXT_debug_utils` when available. Tool/version-specific fallbacks and limitations belong to the [profiler runbook](../../../Engineering/Verification/ExternalProfiling.md#marker-interoperability-contract).
 
 ## System Ownership And Data Flow
 
@@ -906,7 +915,7 @@ The fixed catalog is a bounded option set, not a commitment to implement every g
 
 ### Visual Design Handoff
 
-The canonical `Unit` and `GpuPasses` presentations live in [Performance Diagnostics Visual Design And Tool Wireframes](../../Research/PerformanceDiagnosticsVisualDesign.md#compact-stat-tools). Their values are illustrative. The pass hierarchy, counts, and timings must come from one correlated frame; the display must not combine rolling CPU values with an unrelated latest GPU frame without labeling both identities.
+The canonical `Unit` and `GpuPasses` presentations live in [Performance Diagnostics Visual Design And Tool Wireframes](../../../Research/PerformanceDiagnosticsVisualDesign.md#compact-stat-tools). Their values are illustrative. The pass hierarchy, counts, and timings must come from one correlated frame; the display must not combine rolling CPU values with an unrelated latest GPU frame without labeling both identities.
 
 ### What Built-In Stats Can Settle
 
@@ -1084,7 +1093,7 @@ The frozen capture supports four bounded views over the same records:
 
 ### GPU Visualizer Presentation
 
-The captured-frame layout, columns, inspector, and navigation controls live in the [GPU Captured Frame wireframe](../../Research/PerformanceDiagnosticsVisualDesign.md#gpu-captured-frame). The visual example does not establish Sponza's actual pass cost; the architecture in this section remains authoritative for record and calculation semantics.
+The captured-frame layout, columns, inspector, and navigation controls live in the [GPU Captured Frame wireframe](../../../Research/PerformanceDiagnosticsVisualDesign.md#gpu-captured-frame). The visual example does not establish Sponza's actual pass cost; the architecture in this section remains authoritative for record and calculation semantics.
 
 ### Relationship To Live Stats And External Tools
 
@@ -1100,7 +1109,7 @@ Selecting a captured-frame node exposes `Copy marker path` so the same stable la
 
 ### Viewport Summary
 
-The existing top-right FPS text becomes the compact `Stat Unit` summary when that group is active. Milliseconds lead; FPS remains a derived convenience. A nearby Performance menu leads with `Quick Check` and `Investigate CPU/GPU/Memory`; it shows the active task preset and automatically derived collection cost. `Customize Stats...` is the searchable expert route to the fixed group catalog used by the console command. Requested or detected external frame-capture providers contribute their compact icons to one far-right viewport-header group without entering the Performance menu or workspace toolbar. The canonical [viewport controls and compact `Unit` layouts](../../Research/PerformanceDiagnosticsVisualDesign.md#shared-controls) live in the visual-design document.
+The existing top-right FPS text becomes the compact `Stat Unit` summary when that group is active. Milliseconds lead; FPS remains a derived convenience. A nearby Performance menu leads with `Quick Check` and `Investigate CPU/GPU/Memory`; it shows the active task preset and automatically derived collection cost. `Customize Stats...` is the searchable expert route to the fixed group catalog used by the console command. Requested or detected external frame-capture providers contribute their compact icons to one far-right viewport-header group without entering the Performance menu or workspace toolbar. The canonical [viewport controls and compact `Unit` layouts](../../../Research/PerformanceDiagnosticsVisualDesign.md#shared-controls) live in the visual-design document.
 
 Rules:
 
@@ -1114,7 +1123,7 @@ Rules:
 
 ### Performance Window
 
-One window serves the Editor presenter and expands the same immutable model used by compact stat groups. DevelopmentGame uses compact overlays only. The window is not a dockable general diagnostics platform and does not own a second group catalog. The visual-design document owns the [workspace shell and fixed view layouts](../../Research/PerformanceDiagnosticsVisualDesign.md#performance-workspace-tools). All values in those layouts are illustrative only; they are not measurements of the supplied Sponza screenshot or evidence of a Sparkle bottleneck.
+One window serves the Editor presenter and expands the same immutable model used by compact stat groups. DevelopmentGame uses compact overlays only. The window is not a dockable general diagnostics platform and does not own a second group catalog. The visual-design document owns the [workspace shell and fixed view layouts](../../../Research/PerformanceDiagnosticsVisualDesign.md#performance-workspace-tools). All values in those layouts are illustrative only; they are not measurements of the supplied Sponza screenshot or evidence of a Sparkle bottleneck.
 
 ### Interpretation Examples
 
@@ -1157,7 +1166,7 @@ Without this banner, a number is orientation only and cannot be promoted into po
 
 ## External Profiler Handoff Contract
 
-Sparkle's built-in diagnostics orient the investigation and preserve stable identities; external tools own OS scheduling, call stacks, API/resource state, hardware counters, shader/ISA analysis, allocation maps, BVH inspection, and crash artifacts. The version-sensitive [External Performance Profiler Runbook](../../Engineering/Verification/ExternalProfiling.md) owns the question-to-tool map, current capability record, capture preparation, detailed playbooks, and operational tradeoffs.
+Sparkle's built-in diagnostics orient the investigation and preserve stable identities; external tools own OS scheduling, call stacks, API/resource state, hardware counters, shader/ISA analysis, allocation maps, BVH inspection, and crash artifacts. The version-sensitive [External Performance Profiler Runbook](../../../Engineering/Verification/ExternalProfiling.md) owns the question-to-tool map, current capability record, capture preparation, detailed playbooks, and operational tradeoffs.
 
 Every external investigation must:
 
@@ -1231,7 +1240,7 @@ For attached frame-capture providers, every viewport icon is only a trigger and 
 
 ## Measurement Semantic References
 
-Version-sensitive profiler sources and the current capability matrix live in the [External Performance Profiler Runbook](../../Engineering/Verification/ExternalProfiling.md#source-and-version-reconciliation). The stable API sources behind this architecture's timing, memory, and presentation semantics are:
+Version-sensitive profiler sources and the current capability matrix live in the [External Performance Profiler Runbook](../../../Engineering/Verification/ExternalProfiling.md#source-and-version-reconciliation). The stable API sources behind this architecture's timing, memory, and presentation semantics are:
 
 - [D3D12 timing, queue frequency, bottom-of-pipe meaning, and calibration](https://learn.microsoft.com/en-us/windows/win32/direct3d12/timing)
 - [`ID3D12CommandQueue::GetClockCalibration`](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-getclockcalibration)

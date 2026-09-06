@@ -4,17 +4,17 @@ Status: implementation plan; not proof of implementation or shipment
 
 Last code and document reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
-Scope: staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics.md)
+Scope: staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics/README.md)
 
 ## Purpose And Authority Boundary
 
-This plan turns the target architecture into independently reviewable vertical deliveries. It owns order, package dependencies, selection states, implementation prompts, and completion gates. It is deliberately the only performance-diagnostics implementation-plan document: phase notes, speculative class diagrams, and separate checklists should not be added unless they acquire a genuinely different owner and audience.
+This plan turns the target architecture into independently reviewable vertical deliveries. It owns order, package dependencies, selection states, implementation prompts, and phase exits. It is deliberately the only performance-diagnostics implementation-plan document: phase notes, speculative class diagrams, and separate checklists should not be added unless they acquire a genuinely different owner and audience.
 
 The following documents remain authoritative for their subjects:
 
-- [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics.md) owns metric meaning, identity, validity, data flow, product behavior, collection modes, bounded records, and rejected designs.
-- [Performance Diagnostics Capability Inventory](../../Architecture/CrossModule/PerformanceDiagnosticsCapability.md) owns the dated source snapshot and reconciliation gaps; refresh it before treating an implementation assumption as current.
-- [Performance Diagnostics Acceptance Contract](../../Acceptance/CrossModule/PerformanceDiagnostics.md) owns workload evidence, baseline experiments, reviewer artifacts, and verification gates.
+- [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics/README.md) owns metric meaning, identity, validity, data flow, product behavior, collection modes, bounded records, and rejected designs.
+- [Performance Diagnostics Capability Inventory](../../Architecture/CrossModule/PerformanceDiagnostics/Capability.md) owns the dated source snapshot and reconciliation gaps; refresh it before treating an implementation assumption as current.
+- [Performance Diagnostics — Acceptance](../../Architecture/CrossModule/PerformanceDiagnostics/Acceptance.md) owns feature-local workload evidence requirements, baseline experiments, reviewer artifacts, and verification gates.
 - [Performance Diagnostics Visual Design And Tool Wireframes](../../Research/PerformanceDiagnosticsVisualDesign.md) owns layouts, interaction details, responsive states, and the multi-provider viewport icon group.
 - [Diagnostics Product And UX Research](../../Research/PerformanceDiagnosticsProductAndUx.md) owns external precedent, option analysis, and the reasons for the selected product depth.
 - [External Performance Profiler Runbook](../../Engineering/Verification/ExternalProfiling.md) owns version-sensitive provider support, profiler operations, marker compatibility, and installed-tool revalidation.
@@ -117,7 +117,7 @@ A package remains `In progress` until reviewers can trace one coherent path, acc
 
 ## Zero Authoring Tax And Shipping Erasure Gate
 
-The binding [Intent-First Instrumentation And Shipping Erasure](../../Architecture/CrossModule/PerformanceDiagnostics.md#intent-first-instrumentation-and-shipping-erasure) architecture applies to every package. Its operational rule is simple:
+The binding [Intent-First Instrumentation And Shipping Erasure](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#intent-first-instrumentation-and-shipping-erasure) architecture applies to every package. Its operational rule is simple:
 
 > Real content and feature code expresses product intent. Existing low-level owners derive and collect diagnostic facts automatically. Optional performance diagnostics disappear from Shipping.
 
@@ -436,7 +436,7 @@ In every example, the phase gates are still reviewed and closed in order. A pack
 
 ## Suggested Vertical Slices
 
-The [architecture](../../Architecture/CrossModule/PerformanceDiagnostics.md) defines the product decomposition; this plan owns its required dependency order. After the baseline, external capture is the first implementation slice and later internal features remain selectable.
+The [architecture](../../Architecture/CrossModule/PerformanceDiagnostics/README.md) defines the product decomposition; this plan owns its required dependency order. After the baseline, external capture is the first implementation slice and later internal features remain selectable.
 
 1. Freeze metric names, units, validity, `FrameId` join behavior, and a source-backed baseline trace using existing thread/ETW/GPU markers.
 2. Prove the attached external frame-capture product end to end: bounded process-wide provider-set selection before device creation; PIX D3D12, RenderDoc D3D12/Vulkan, and Nsight Graphics D3D12/Vulkan private adapters; marker-only correlation; one conditional far-right icon per capable provider in each viewport; stable target binding; global exclusive request arbitration; pairwise/multi-provider compatibility evidence; native artifact handoff; absent-tool, failure, observer-cost, and Shipping-erasure evidence. Nsight remains explicitly experimental until its current SDK/tool matrix passes, but its accept-or-evidence-backed-reject decision is completed here rather than deferred behind internal work.
@@ -1277,14 +1277,14 @@ The `dumpbin` examples apply to the current Windows/MSVC environment; use the eq
 | --- | --- |
 | How is duplicate authority prevented and proven absent? | [Zero-Duplicate-Authority Contract](#zero-duplicate-authority-contract), [Change Integration](../../Engineering/Workflow/ChangeIntegration.md), and [Change Lifecycle](../../Engineering/Workflow/ChangeLifecycle.md) |
 | How is the complete production path reviewed? | [Touched-Path Integration](#touched-path-integration), [Engineering task map](../../Engineering/README.md#choose-by-task), and [Change Lifecycle](../../Engineering/Workflow/ChangeLifecycle.md) |
-| How do production/content code stay intent-first and optional diagnostics disappear from Shipping? | [Zero Authoring Tax And Shipping Erasure Gate](#zero-authoring-tax-and-shipping-erasure-gate) and [Intent-First Instrumentation And Shipping Erasure](../../Architecture/CrossModule/PerformanceDiagnostics.md#intent-first-instrumentation-and-shipping-erasure) |
-| What does a metric mean and who owns it? | [Measurement Vocabulary](../../Architecture/CrossModule/PerformanceDiagnostics.md#measurement-vocabulary), [Owners](../../Architecture/CrossModule/PerformanceDiagnostics.md#owners), and [Publication Rules](../../Architecture/CrossModule/PerformanceDiagnostics.md#publication-rules) |
-| What is the bounded data/cost model? | [Collection Modes And Cost Budget](../../Architecture/CrossModule/PerformanceDiagnostics.md#collection-modes-and-cost-budget), [Bounded Data Model](../../Architecture/CrossModule/PerformanceDiagnostics.md#bounded-data-model), and [Demand, Cost, And Composition](../../Architecture/CrossModule/PerformanceDiagnostics.md#demand-cost-and-composition) |
-| Which stat groups are candidates and what does Tier A/B/C mean? | [Fixed Group Catalog](../../Architecture/CrossModule/PerformanceDiagnostics.md#fixed-group-catalog) and [Delivery Tiers](../../Architecture/CrossModule/PerformanceDiagnostics.md#delivery-tiers) |
+| How do production/content code stay intent-first and optional diagnostics disappear from Shipping? | [Zero Authoring Tax And Shipping Erasure Gate](#zero-authoring-tax-and-shipping-erasure-gate) and [Intent-First Instrumentation And Shipping Erasure](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#intent-first-instrumentation-and-shipping-erasure) |
+| What does a metric mean and who owns it? | [Measurement Vocabulary](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#measurement-vocabulary), [Owners](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#owners), and [Publication Rules](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#publication-rules) |
+| What is the bounded data/cost model? | [Collection Modes And Cost Budget](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#collection-modes-and-cost-budget), [Bounded Data Model](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#bounded-data-model), and [Demand, Cost, And Composition](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#demand-cost-and-composition) |
+| Which stat groups are candidates and what does Tier A/B/C mean? | [Fixed Group Catalog](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#fixed-group-catalog) and [Delivery Tiers](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#delivery-tiers) |
 | How should the viewport, workspace, capture, and failure states look? | [Performance Diagnostics Visual Design And Tool Wireframes](../../Research/PerformanceDiagnosticsVisualDesign.md) |
 | Why this product depth and not a general profiler? | [Selected Direction And Canonical Handoff](../../Research/PerformanceDiagnosticsProductAndUx.md#selected-direction-and-canonical-handoff) and [Low-Clutter Integration Principles](../../Research/PerformanceDiagnosticsProductAndUx.md#low-clutter-integration-principles) |
-| How do internal GPU capture records work? | [On-Demand GPU Visualizer](../../Architecture/CrossModule/PerformanceDiagnostics.md#on-demand-gpu-visualizer) |
-| How do viewport provider icons and requests work? | [Attached External Frame Capture](../../Architecture/CrossModule/PerformanceDiagnostics.md#attached-external-frame-capture) and [Attached Profiler Capture Icons](../../Research/PerformanceDiagnosticsVisualDesign.md#attached-profiler-capture-icons) |
+| How do internal GPU capture records work? | [On-Demand GPU Visualizer](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#on-demand-gpu-visualizer) |
+| How do viewport provider icons and requests work? | [Attached External Frame Capture](../../Architecture/CrossModule/PerformanceDiagnostics/README.md#attached-external-frame-capture) and [Attached Profiler Capture Icons](../../Research/PerformanceDiagnosticsVisualDesign.md#attached-profiler-capture-icons) |
 | Which provider/tool is currently supported and how is it operated? | [External Performance Profiler Runbook](../../Engineering/Verification/ExternalProfiling.md) |
 | What proves `MAP-00` and measured-frame readiness? | [Incremental Per-Level Verification Program](../../Acceptance/GraphicsWorkloads.md#incremental-per-level-verification-program), [Performance Contract](../../Acceptance/GraphicsWorkloads.md#performance-contract), and [Workload Gate Sequence](../../Acceptance/GraphicsWorkloads.md#workload-gate-sequence) |
 | What is required for implementation and evidence quality? | [Engineering task map](../../Engineering/README.md#choose-by-task) |

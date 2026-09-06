@@ -4,9 +4,9 @@ Status: implementation plan; not proof of implementation or acceptance
 
 Scope: clean-break delivery of per-view show flags, presentation routing, editor controls, capture metadata, and focused verification
 
-Architecture authority: [Debug View Presentation Contract](../../Architecture/Modules/Engine/Renderer/DebugViewPresentation.md)
+Architecture authority: [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md)
 
-Acceptance authority: [Debug View Presentation Acceptance Contract](../../Acceptance/Renderer/DebugViewPresentation.md)
+Feature acceptance: [Debug View Presentation — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md)
 
 This plan owns implementation slices and their delivery order. It does not redefine signal domains, show-flag semantics, display routing, or final acceptance.
 

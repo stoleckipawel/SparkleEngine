@@ -10,7 +10,9 @@ Owners: the concrete producer and consumer modules named in each trace; this doc
 
 Horizontal companion: [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md)
 
-Module inventories: [RHI](../Modules/Engine/RHI/README.md), [Renderer](../Modules/Engine/Renderer/README.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
+Module inventories: [RHI](../Modules/Engine/RHI/README.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
+
+Renderer-local frame intent, stage order, resource flow, and design tradeoffs: [Rendering a Sparkle Frame](../Modules/Engine/Renderer/RenderingASparkleFrame.md). This cross-module document owns only the handoffs among GameFramework, Renderer, ShaderCompiler, and RHI.
 
 ## Common Frame Spine
 
@@ -19,7 +21,7 @@ Every render mode enters the same frame owner. This is the shortest trace for lo
 | Stage | Current owner and operation | Published boundary | Failure/lifetime behavior |
 | --- | --- | --- | --- |
 | 1. Submission | Gameplay/Application supplies `RenderFrameSubmission`, `RenderViewInput`, timing, and optional UI packet to Renderer | Immutable/movable submission crosses into `RenderCoordinator` | Serial and threaded execution are separate coordinator modes; parity is unexecuted |
-| 2. Frame admission | `FramePipeline::BeginFrame` polls services, applies resize/topology changes, accepts the newest scene generation, and begins the backend frame | Current frame ID and in-flight slot | A scene reset unloads scene textures and invalidates view/history |
+| 2. Frame admission | `FramePipeline::BeginFrame` polls services, accepts the monotonic submission and scene delta, applies pending resize/topology changes, then begins the backend frame | Current frame ID and in-flight slot | A scene reset unloads scene textures and invalidates view/history |
 | 3. Persistent scene update | `RenderScene` applies submission deltas; `GpuMeshCache` uploads ready meshes; `TextureCache` reconciles scene textures | Scene-owned persistent CPU/GPU identity | Missing persistent GPU publication is fatal at frame-graph binding |
 | 4. Scene preparation | `RenderScenePreparation::Execute` creates frame-local `PreparedRenderScene` from the persistent scene | Prepared scene references/counts/derived lighting data | Prepared data is frame-owned; it does not become a second persistent scene authority |
 | 5. View preparation | `RenderViewBuilder` and `RenderViewPreparation` derive camera, temporal, display, ray-plan, and viewport data in `RenderView`/`RenderViewState` | View-owned uniforms and history validity | Camera/topology/scene invalidation resets temporal validity rather than mutating scene ownership |
@@ -43,7 +45,7 @@ The source ownership rule is concrete: `RenderScene` owns persistent scene data,
 | Draw | Batch drawer -> graphics command list | Indexed triangle draws write the GBuffer | Alpha mask can discard; no blend pass follows |
 | Derived buffers | `SkyMotionVectorCS` and `SceneDepthCS` | Completes background motion and writes linear `R32_Float` scene depth | Runs after either raster or ray GBuffer frontend |
 | Lighting | Selected lighting producers -> composite -> sky | Reads common GBuffer semantics and produces HDR `SceneColor` | Raster GBuffer does not imply non-ray lighting: both current lighting modes still trace rays |
-| Presentation | exposure -> optional upscale/reconstruction -> debug -> tone map -> encode -> copy | Output extent/color format becomes back buffer or viewport product | Current debug views still pass through presentation semantics |
+| Post Processing | exposure -> optional reconstruction/upscale -> debug -> tone map -> encode -> copy | Output extent/color format becomes back buffer or viewport product | Current debug views still pass through presentation semantics; color grading, chromatic aberration, and frame generation are absent |
 
 Vertical completeness risk: importer/cooker fidelity for every material role remains a separate asset-pipeline audit. This trace proves the Renderer-side consumer path exists, not that every source format populates it correctly.
 
@@ -78,6 +80,8 @@ The native shader-table plan has exactly two current ray types, `Surface` and `S
 
 ReSTIR history invalidates when the prepared-scene invalidation hash changes, when temporal view validity is zero, or when the graph topology changes. The same invalidation also resets image-provider history.
 
+The [Direct Lighting dossier](../Modules/Engine/Renderer/Features/Lighting/DirectLighting.md) owns the direct reservoir/visibility/BRDF result. The [Indirect Lighting dossier](../Modules/Engine/Renderer/Features/Lighting/IndirectLighting.md) owns secondary transport and its histories. No Volumetric Lighting stage participates in this trace; its [negative capability dossier](../Modules/Engine/Renderer/Features/Lighting/VolumetricLighting.md) records the missing media/atmosphere ownership.
+
 ## Trace 4: Convergent Reference Path
 
 | Step | Operation | Exact contract | Boundary |
@@ -87,7 +91,7 @@ ReSTIR history invalidates when the prepared-scene invalidation hash changes, wh
 | Indirect sample | `PathTracedIndirectLightingCS` | GBuffer, sky, TLAS, deformation/hit/material buffers, fixed texture table -> indirect diffuse/specular | Inline only; bounce-control behavior unexecuted |
 | Sample validity | Reference sample descriptor carries sample color/validity for accumulation | Current lighting sample -> validity-aware accumulation inputs | Exact invalid sample behavior needs numeric test |
 | Accumulation | `ReferenceLightingAccumulationCS` | Current sample + previous RGBA32F history + motion + validity -> current history and scene sample | Prepared-scene/view invalidation hash resets history |
-| Composite/present | Common composite, sky, exposure, upscale, debug, presentation | High-precision lobes eventually become RGBA16F scene/output intermediates | It is a convergence/reference feature, not yet an accepted correctness oracle |
+| Composite/present | Common composite, sky, exposure, upscale, debug, presentation | High-precision lobes eventually become RGBA16F scene/output intermediates | It is a convergence/reference feature, not yet an accepted correctness oracle; see [`PTD-00`](../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) |
 
 ## Trace 5: External Image Provider Lifecycle
 
@@ -101,7 +105,21 @@ ReSTIR history invalidates when the prepared-scene invalidation hash changes, wh
 | Graph evaluation | External pass receives tagged color/depth/motion/exposure and, for RR, lighting/reconstruction-guide inputs | Engine creates a valid resolved-color target around the provider path |
 | Reconfiguration | Old providers move to a retired generation with last-use tokens; new stack initializes and generation increments | Destruction waits until every relevant queue token completes |
 
-## Trace 6: Shader Authoring To Runtime Generation
+## Trace 6: Post Processing To Published Output
+
+| Step | Owner and operation | Input -> output | Boundary |
+| --- | --- | --- | --- |
+| Exposure | manual or automatic metering/adaptation | scene-linear `SceneColor` + per-view settings/history -> 1x1 exposure | Runs before debug replacement; two metering methods and optional async compute are source-present but unproved |
+| Ray Reconstruction | optional NVIDIA DLSS RR for the ReSTIR topology | scene/depth/motion/lobes/guides/exposure -> output-extent `ResolvedSceneColor` | D3D12/Streamline/capability gated; unavailable provider resolves Off |
+| Upscaling | Linear or NVIDIA DLSS SR when reconstruction did not produce resolved color | render-extent scene/depth/motion/exposure -> output-extent `ResolvedSceneColor` | Exactly one resolution owner; NVIDIA failure resets to Linear |
+| Debug handoff | selected visualization may replace resolved scene color | requested GBuffer/lighting/scene product -> visualization color | Current diagnostics still flow through tone mapping and encoding |
+| Tone mapping | exposure plus Reinhard, ACES approximation, or ACES fitted filmic | resolved scene-referred HDR -> display-linear `ToneMappedSceneColor` | No public None/bypass; fixed operators are not a color-grading system |
+| Output | Automatic/Linear/sRGB encoding, then copy or product publication | display-linear color -> encoded back buffer or `FinalSceneColor` | No PQ/scRGB/HDR10/display-nit contract |
+| Explicit absent stages | no graph owner | no color-grading/LUT transform, chromatic-aberration lens effect, or generated-frame synthesis occurs | Reflex/PCL latency coordination and temporal reconstruction are not frame generation |
+
+The [Post Processing family dossier](../Modules/Engine/Renderer/Features/PostProcessing/README.md) owns this order. Its child dossiers keep each supported or absent capability independently reviewable.
+
+## Trace 7: Shader Authoring To Runtime Generation
 
 | Step | Owner | Exact transition | Failure boundary |
 | --- | --- | --- | --- |
@@ -116,9 +134,9 @@ ReSTIR history invalidates when the prepared-scene invalidation hash changes, wh
 | Materialization | Renderer runtime pass cache | Complete registration set for the selected backend target -> RHI programs, layouts, graphics/compute/ray pipelines and shader tables | Missing target/registration/signature/composition prevents generation publication |
 | Swap/retire | Renderer | Whole validated generation becomes active; previous generation records queue last-use | Old pipelines/programs retire only after GPU completion |
 
-The exact 35-program registration set is listed in [Shader Program Catalog](../Modules/Engine/Renderer/ShaderProgramCatalog.md).
+The exact 35-program registration set is listed in [Shader Program Catalog](../Modules/Engine/Renderer/Features/ShaderPrograms.md).
 
-## Trace 7: Viewport Product Capture
+## Trace 8: Viewport Product Capture
 
 | Step | Producer -> consumer | Exact behavior |
 | --- | --- | --- |

@@ -1,12 +1,14 @@
 # SparkleEngine Code Review
 
-Status: summary and code-review entry point; owning standards control
+Status: workflow index; code-review entry point whose owning standards control
 
 Applies to: human or AI review of a SparkleEngine changelist
 
 ## Responsibility
 
 This playbook makes repository review repeatable. It defines review order, evidence expectations, finding shape, and the compact prompt used to start an AI review. It does not create alternative implementation policy.
+
+When a change adds, removes, advertises, or reclassifies a capability, also apply the [Capability Documentation Review](CapabilityReview.md) to its module dossier, horizontal matrix cells, vertical path, and evidence/report mappings.
 
 The binding owners are:
 
@@ -23,7 +25,7 @@ Review is read-only unless the user explicitly asks for fixes. Never modify the 
 Use this prompt as written or append the intended outcome and comparison base:
 
 ```text
-Review the complete SparkleEngine changelist using Docs/Engineering/CodeReview.md.
+Review the complete SparkleEngine changelist using Docs/Engineering/Workflow/CodeReview.md.
 Treat the review as read-only unless I explicitly ask for fixes. Inspect tracked,
 staged, unstaged, and relevant untracked changes, then inspect the directly affected
 owners, producers, consumers, lifetimes, build membership, tests, configuration, and

@@ -12,9 +12,10 @@ Target capability belongs to [Principal Graphics Requirements](../Strategy/Requi
 
 - [Renderer and RHI Architecture Boundary](Decisions/RendererRhiBoundary.md) owns Renderer/RHI dependency and mechanism rules.
 - [Module Architecture And Capability Inventory](Modules/README.md) owns module navigation plus the dated, feature-level source inventory and explicit coverage/limitations; it does not own target architecture, release classification, or executable evidence.
+- [Product Workflow Coverage](CrossModule/ProductWorkflowCoverage.md) and [Product Execution Traces](CrossModule/ProductExecutionTraces.md) own the horizontal actor-journey comparison and vertical non-graphics handoff map; they do not prove usability or release readiness.
 - [World Coordinate, Units, and Transform Contract](Decisions/WorldCoordinateAndUnits.md) owns spatial semantics.
 - [Editor Viewport Camera Architecture](Decisions/EditorViewportCamera.md) owns the editor-view and scene-camera split.
-- [Shader System Architecture](CrossModule/ShaderSystem.md) owns the enduring authoring, compilation, cooked-artifact, runtime-materialization, and graph-use design. The [capability inventory](Modules/Tools/ShaderCompiler/README.md) owns the dated current-source view, and the [delivery plan](../Plans/CrossModule/ShaderSystem.md) owns phase order.
+- [Shader System Architecture](CrossModule/ShaderSystem/README.md) owns the enduring authoring, compilation, cooked-artifact, runtime-materialization, and graph-use design. The [capability inventory](Modules/Tools/ShaderCompiler/README.md) owns the dated current-source view, and the [delivery plan](../Plans/CrossModule/ShaderSystem.md) owns phase order.
 - [Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) owns workload gates and evidence meaning.
 
 Dated assessments retain the source state they observed. They are not silently rewritten into current architecture claims.
@@ -95,6 +96,8 @@ SparkleRHI_D3D12 or SparkleRHI_Vulkan
 
 ## Current Renderer Navigation Overlay
 
+For the current frame in execution order, start with [Rendering a Sparkle Frame](Modules/Engine/Renderer/RenderingASparkleFrame.md). For explicit feature contracts, use the [Renderer feature dossiers](Modules/Engine/Renderer/Features/README.md). The overlay below remains the repository/source ownership view.
+
 The current Renderer owner map is:
 
 | Concern | Current owner |
@@ -132,17 +135,30 @@ The `FrameGraph` object is rebuilt when output/topology, provider selection, lig
 
 | Feature | Current source owner and state |
 | --- | --- |
-| GBuffer | `Passes/GBuffer`; explicit rasterized and ray-traced algorithms |
-| Lighting | `Passes/Lighting`; ReSTIR direct/indirect and reference path-traced branches feed shared composite/sky/presentation products |
-| Exposure and presentation | `Passes/PostProcessing` and `Passes/Presentation`; exposure, upscaling, optional visualization, tone mapping, output encoding |
+| GBuffer | `Passes/GBuffer`; explicit rasterized and ray-traced algorithms. [Feature dossier](Modules/Engine/Renderer/Features/GeometryMaterialsAndGBuffer.md). |
+| Lighting | `Passes/Lighting` plus ReSTIR/reference producers; one family contract owns mode selection, lobe composition, sky boundary, and the Direct/Indirect/Volumetric taxonomy. [Family dossier](Modules/Engine/Renderer/Features/Lighting/README.md). |
+| Direct lighting | `Passes/Lighting/Direct`, `Passes/Lighting/Shadows`, and the direct portions of ReSTIR/reference; four analytic light kinds feed direct diffuse/specular/subsurface lobes. [Feature dossier](Modules/Engine/Renderer/Features/Lighting/DirectLighting.md). |
+| Indirect lighting | ReSTIR indirect and reference secondary-path owners feed indirect diffuse/specular lobes; sky is the environment/background boundary. [Feature dossier](Modules/Engine/Renderer/Features/Lighting/IndirectLighting.md). |
+| Volumetric lighting | No participating-media, fog, scattering/transmittance, atmosphere, aerial-perspective product, pass, shader, or scene representation exists. [Negative capability dossier](Modules/Engine/Renderer/Features/Lighting/VolumetricLighting.md). |
+| Deferred decals | No current authoring, scene/GPU data, primary GBuffer composition, or secondary-ray evaluation path exists; target design is kept separate from current state. [Feature-gap dossier](Modules/Engine/Renderer/Features/DeferredDecals/README.md). |
+| Post Processing | `Passes/PostProcessing`, `Passes/Presentation`, provider stacks, and output publication form one ordered family. [Family dossier](Modules/Engine/Renderer/Features/PostProcessing/README.md). |
+| Exposure | `Passes/PostProcessing/Exposure`; per-view manual/automatic metering and adaptation. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/Exposure.md). |
+| Image reconstruction/upscaling | `Passes/Presentation/Upscaling`, provider stack, and ReSTIR reconstruction; one output-extent resolved product. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/ImageReconstructionAndUpscaling.md). |
+| Tone mapping | `Passes/Presentation/ToneMapping`; exposure-weighted HDR to display-linear mapping through three fixed operators. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/ToneMapping.md). |
+| Color grading | No grading controls, LUT workflow, transform, pass, shader, or selector exists. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/ColorGrading.md). |
+| Chromatic aberration | No lens/channel model, pass, shader, viewport setting, or selector exists. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/ChromaticAberration.md). |
+| Frame generation | No synthesis provider, DLSS-G registration, optical-flow input, generated-frame identity, pacing, UI, or present route exists; Reflex is latency infrastructure. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/FrameGeneration.md). |
+| Presentation/output | `Passes/Debug` and `Passes/Presentation`; debug handoff, output encoding, and output publication after tone mapping. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/PresentationAndOutput.md). |
+| UI/viewport composition | `Private/UI` and `Private/Editor`; immutable packets, host overlay, editor viewport texture binding, and generation checks. [Feature dossier](Modules/Engine/Renderer/Features/UiAndViewportComposition.md). |
 | Persistent GPU scene | `Scene/GpuScene`; geometry, material, lighting, and ray-tracing bindings derived from `RenderScene` |
 | Ray-tracing scene | `Scene/RayTracing` plus `RayTracing/Acceleration`; classic and capability-gated partitioned TLAS share scene identity |
-| Dual RT execution | GBuffer and direct-shadow effects have typed inline-query and native-pipeline source frontends selected before graph construction |
+| Dual RT execution | GBuffer and direct-shadow effects have typed inline-query and native-pipeline source frontends selected before graph construction. [Feature dossier](Modules/Engine/Renderer/Features/RayTracing/README.md). |
 | Shader-table mapping | `RayTracingShaderTablePlan` owns Surface/ShadowVisibility order, checked record indexing, instance contributions, invalidation, and bounded metrics |
 | Image providers | Renderer-owned provider stack with NVIDIA Streamline/DLSS adapters and non-provider presentation paths |
-| Diagnostics and capture | bounded Renderer/RHI snapshots plus viewport capture; generated evidence is not implementation authority |
+| Debug views | 16 final/material/GBuffer/lighting/scene modes; current common presentation can alter diagnostic values. [Feature dossier](Modules/Engine/Renderer/Features/DebugViews/README.md). |
+| Diagnostics and capture | bounded Renderer/RHI snapshots plus viewport capture; generated evidence is not implementation authority. [Feature dossier](Modules/Engine/Renderer/Features/DiagnosticsAndCapture.md). |
 
-The native D3D12/Vulkan ray-tracing pipeline, shader-table, and trace-command source paths are present, as are reachable GBuffer and shadow compositions. Current documentation does not claim paired native execution, output parity, reload/retirement behavior, or performance proof; those remain explicit Phase 12 obligations in the shader implementation authority.
+The native D3D12/Vulkan ray-tracing pipeline, shader-table, and trace-command source paths are present, as are reachable GBuffer and shadow compositions. Current documentation does not claim paired native execution, output parity, reload/retirement behavior, or performance proof; those remain open in the [Shader System feature acceptance contract](CrossModule/ShaderSystem/Acceptance.md).
 
 ## RHI Map
 

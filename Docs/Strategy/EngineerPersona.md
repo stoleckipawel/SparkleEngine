@@ -1,6 +1,6 @@
 # H. Advanced Graphics Engineer Persona
 
-Status: personal operating model; not an implementation standard or evidence matrix
+Status: operating model; personal target, not an implementation standard or evidence matrix
 
 Date: 2026-08-02
 

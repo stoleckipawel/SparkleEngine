@@ -1,4 +1,4 @@
-# Debug View Presentation Contract
+# Debug View Presentation Architecture
 
 Status: target architecture; design-only, not implementation proof
 Date: 2026-08-18
@@ -24,17 +24,17 @@ Output encoding is mandatory for both domains. An sRGB swap chain still needs a 
 
 The stock view-mode preset owns the correct `Exposure` and `Tonemapper` defaults. A user may deliberately override an exposed flag for the current viewport, as in Unreal, but that creates a visibly customized view and the full resolved flag set must travel with captures. Selecting another mode reapplies that mode's presentation defaults. Correctness therefore never depends on a process-global editor toggle or a name heuristic.
 
-This proposal does not change code. The current implementation remains authoritative until the [delivery plan](../../../../Plans/Renderer/DebugViewPresentation.md) is implemented and the [acceptance contract](../../../../Acceptance/Renderer/DebugViewPresentation.md) passes.
+This proposal does not change code. The current implementation remains authoritative until the [delivery plan](../../../../../../Plans/Renderer/DebugViewPresentation.md) is implemented and the adjacent [feature acceptance contract](Acceptance.md) passes.
 
 ## Authority Boundary
 
-This document owns the target show-flag semantics, signal-domain classification, and presentation routing for view modes. The [current renderer navigation overlay](../../../WholeRepositoryMap.md#current-renderer-navigation-overlay) records the broader implemented placement of view mode, resolved display settings, view state, and narrow pass inputs. The generic resolved view-feature values become the resolved `RenderShowFlagSet`; during that refactor, place them in `RenderView` and focused pass parameters rather than preserving access through a broad runtime context.
+This document owns the target show-flag semantics, signal-domain classification, and presentation routing for view modes. The [current renderer navigation overlay](../../../../../WholeRepositoryMap.md#current-renderer-navigation-overlay) records the broader implemented placement of view mode, resolved display settings, view state, and narrow pass inputs. The generic resolved view-feature values become the resolved `RenderShowFlagSet`; during that refactor, place them in `RenderView` and focused pass parameters rather than preserving access through a broad runtime context.
 
-[Editor Viewport Camera Architecture](../../../Decisions/EditorViewportCamera.md) continues to own per-viewport exposure overrides. [Renderer and RHI Architecture Boundary](../../../Decisions/RendererRhiBoundary.md) continues to own frame-graph and backend responsibility. The [Debug View Presentation Delivery Plan](../../../../Plans/Renderer/DebugViewPresentation.md) owns implementation slices; the [Debug View Presentation Acceptance Contract](../../../../Acceptance/Renderer/DebugViewPresentation.md) owns feature proof. Engineering requirements and evidence rules are routed by the [Engineering task map](../../../../Engineering/README.md#choose-by-task).
+[Editor Viewport Camera Architecture](../../../../../Decisions/EditorViewportCamera.md) continues to own per-viewport exposure overrides. [Renderer and RHI Architecture Boundary](../../../../../Decisions/RendererRhiBoundary.md) continues to own frame-graph and backend responsibility. The [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md) owns implementation slices; the adjacent [feature acceptance contract](Acceptance.md) owns feature proof. Engineering requirements and evidence rules are routed by the [Engineering task map](../../../../../../Engineering/README.md#choose-by-task).
 
 ## Implementation Snapshot
 
-The dated presentation path, current owners, and observed double-mapping problem live in the [Debug View Presentation Capability Snapshot](DebugViewPresentationCapability.md). Refresh that snapshot before beginning delivery; this architecture owns the target correction, not the current implementation claim.
+The current presentation path, owners, and observed double-mapping problem live in the [Debug Views feature dossier](README.md). Refresh that dossier before beginning delivery; this architecture owns the target correction, not the current implementation claim.
 
 ## Terms And Invariants
 
@@ -338,7 +338,7 @@ The Show menu exposes `Exposure` and `Tonemapper` separately. These overrides ar
 
 ## Reference-Engine Findings
 
-These sources are already in Sparkle's [external renderer reference set](../../../../Research/RendererRepositories.md). They are precedent, not local authority.
+These sources are already in Sparkle's [external renderer reference set](../../../../../../Research/RendererRepositories.md). They are precedent, not local authority.
 
 ### Unreal Engine
 

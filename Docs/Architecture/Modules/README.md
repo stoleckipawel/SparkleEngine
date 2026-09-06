@@ -35,7 +35,27 @@ This inventory answers four different questions without collapsing them into one
 
 Code and executable build configuration remain the authority for implementation. These files are a dated reviewer map. Reconcile a row with current producers, consumers, build membership, and public selection surfaces whenever any of those change.
 
+## Use The Inventory By Question
+
+| Reader question | Shortest route |
+| --- | --- |
+| What does one module support and explicitly not support? | Open its detailed inventory below; capability rows and non-capabilities are the source snapshot. |
+| Where is the implementation owner or build boundary? | Start with [Engine](Engine/README.md), [Tools](Tools/README.md), [Projects](Projects/README.md), or [Build And Packaging](BuildAndPackaging.md), then verify source/CMake. |
+| How does a graphics feature vary across backend or execution mode? | Use the [Graphics Feature Coverage Matrix](../CrossModule/GraphicsCoverageMatrix.md). |
+| How does a graphics feature execute end to end? | Use the [Graphics Feature Execution Traces](../CrossModule/FeatureExecutionTraces.md). |
+| Can a developer or user complete a build/content/editor/runtime/delivery journey? | Use [Product Workflow Coverage](../CrossModule/ProductWorkflowCoverage.md). |
+| Where does that product journey cross owners and fail or settle? | Use [Product Execution Traces](../CrossModule/ProductExecutionTraces.md). |
+| What question is still unanswered and what is the smallest next check? | Use the [Capability Evidence Plan](../../Plans/CapabilityEvidence.md). |
+| What must this capability prove, and can it ship? | Use its Architecture feature dossier for the local proof contract, then its `FCR-*` report and the [First Release Acceptance Contract](../../Acceptance/FirstRelease.md) for actual approval. |
+| How do I harden or review this dossier? | Follow [Capability Documentation Review](../../Engineering/Workflow/CapabilityReview.md). |
+
 ## How To Read A Row
+
+### Capability identity
+
+Every independently referenceable inventory row has a durable capability ID. Module inventories use `<module>-<family>-NN` so the identifier states both the owner and the local subject, for example `RHI-BIND-05`, `REN-LGT-03`, or `SHD-PUB-05`. Evidence work uses the separate `<module>-ENN` namespace, such as `RHI-E06`; an evidence item may cover several capability rows and a capability may require several evidence items.
+
+Keep an ID with its semantic capability when rows move or tables are reordered. Append new IDs within the owning family. Do not reuse an identifier after a capability is removed or split; record its replacement or terminal disposition in the applicable candidate report before removing the current-snapshot row. Cross-module workflows (`WF-*`) and candidate reports (`FCR-*`) remain separate identities and must map back to capability IDs rather than replace them.
 
 ### Implementation state
 
@@ -75,63 +95,44 @@ The initial detailed inventories carry `S` only. No `B`, `R`, `N`, `P`, or `A` e
 | Asset cooking | Detailed | [Asset Cooking Capability Inventory](Tools/Cooking/README.md) | Asset/texture/mesh/material/scene cooking, validation, concurrency, publication, runtime handoff, and build membership reconciled; source-only. |
 | Platform | Detailed | [Platform Capability Inventory](Engine/Platform/README.md) | Window, DPI, message, input, routing, capture, cursor, and build surfaces reconciled; source-only. |
 | RHI | Detailed | [RHI Capability Inventory](Engine/RHI/README.md) | Public contracts, both backend implementations, build switches, and Renderer consumers reconciled; source-only. |
-| Renderer | Detailed | [Renderer Capability Inventory](Engine/Renderer/README.md) | Public settings/facade, Scene/View/Frame ownership, frame graph, passes, providers, and shader registrations reconciled; source-only. |
+| Renderer | Detailed | [Renderer Capability Inventory](Engine/Renderer/CapabilityInventory.md), reached through the [Renderer module route](Engine/Renderer/README.md) | Whole-frame ownership plus feature families for surface production, Direct/Indirect/Volumetric Lighting, Ray Tracing, and Post Processing with distinct exposure, reconstruction/upscaling, tone mapping, color grading, chromatic aberration, frame generation, and output boundaries; source-only. |
 | Shader compilation and delivery | Detailed | [Shader Compilation Capability Inventory](Tools/ShaderCompiler/README.md) | Tool build, CLI, typed registrations, compiler backends, validation, publication, editor recook, and runtime loading reconciled; source-only. |
 | Showcase products | Detailed | [Showcase Product Capability Inventory](Projects/Showcase/README.md) | Editor/runtime targets, startup/selection, all 16 catalog levels, asset-pack readiness, and workload coverage reconciled; source-only. |
 | Source importers | Detailed | [Source Importers Capability Inventory](Tools/SourceImporters/README.md) | Formats, geometry, transforms, materials, textures, cameras, lights, deformation, animation, validation, dependencies, and known losses reconciled; source-only. |
 | Tasks | Detailed | [Tasks Capability Inventory](Engine/Tasks/README.md) | Task graphs, lanes, parallel ranges, cancellation, handles, events, shutdown, failure propagation, and tracing reconciled; source-only. |
 | Shared tool support | Detailed | [Shared Tool Support Capability Inventory](Tools/ToolSupport/README.md) | Common cooker/compiler console messages, fields, progress, summaries, consumers, and game-profile isolation reconciled; source-only. |
 | Persona/roadmap/gap coverage | Strategy crosswalk | [Capability Coverage Against Persona, Roadmap, And Gap Assessment](../CrossModule/StrategyCoverage.md) | All current module inventories mapped to `NS-*`, `PGE-*`, release subsystems, and refreshed volatile gap observations; source-only. |
-| Performance diagnostics | Focused dated snapshot | [Performance Diagnostics Capability Inventory](../CrossModule/PerformanceDiagnosticsCapability.md) | Existing timing, marker, memory, editor, and external-capture surfaces reconciled at the document's stated snapshot; source-only and due for refresh before implementation. |
-| Geometry-cache animation | Focused dated snapshot | [Geometry Cache Animation Capability Snapshot](../CrossModule/GeometryCacheAnimationCapability.md) | Existing import, cook, animation, scene-publication, deformation, residency, and workload-source seams reconciled; source-only. |
-| Deferred GBuffer decals | Focused dated snapshot | [Deferred GBuffer Decals Capability Snapshot](Engine/Renderer/DeferredGBufferDecalsCapability.md) | Existing GBuffer, material, ray-hit, frame-graph, blend, and absent decal surfaces reconciled; source-only. |
-| Debug-view presentation | Focused dated snapshot | [Debug View Presentation Capability Snapshot](Engine/Renderer/DebugViewPresentationCapability.md) | Existing visualization, exposure, tone-mapping, encoding, viewport, and view-mode seams reconciled; source-only. |
+| Performance diagnostics | Focused dated snapshot | [Performance Diagnostics Capability Inventory](../CrossModule/PerformanceDiagnostics/Capability.md) | Existing timing, marker, memory, editor, and external-capture surfaces reconciled at the document's stated snapshot; source-only and due for refresh before implementation. |
+| Geometry-cache animation | Focused dated snapshot | [Geometry Cache Animation Capability Snapshot](../CrossModule/GeometryCacheAnimation/Capability.md) | Existing import, cook, animation, scene-publication, deformation, residency, and workload-source seams reconciled; source-only. |
+| Deferred GBuffer decals | Current feature-gap dossier | [Deferred Decals](Engine/Renderer/Features/DeferredDecals/README.md) | No current decal feature; existing extension seams and separately labeled target architecture are reconciled without implying implementation. |
+| Debug-view presentation | Current feature dossier | [Debug Views](Engine/Renderer/Features/DebugViews/README.md) | Existing modes, visualization products, exposure/tone/encoding limitation, viewport ownership, and target-presentation boundary reconciled; source-only. |
 | Cross-system graphics coverage | Deep horizontal | [Graphics Feature Coverage Matrix](../CrossModule/GraphicsCoverageMatrix.md) | Feature-by-feature selectors, passes, shaders, RHI gates, backend asymmetries, fallbacks, resources, and negative coverage reconciled; source-only. |
 | Feature execution | Deep vertical | [Graphics Feature Execution Traces](../CrossModule/FeatureExecutionTraces.md) | Frame, raster, ray GBuffer, ReSTIR, reference, provider, shader-delivery, and capture paths traced producer-to-consumer; source-only. |
-| Registered Renderer programs | Exact catalog | [Renderer Shader Program Catalog](Engine/Renderer/ShaderProgramCatalog.md) | All 35 registrations mapped to source, entry, stage, consumer, and binding/traversal boundary; source-only. |
+| Product/developer workflow coverage | Deep horizontal | [Product And Developer Workflow Coverage](../CrossModule/ProductWorkflowCoverage.md) | Discovery, build, content, cook, launch, editor, runtime, diagnostics, cancellation, package, release, and support journeys compared actor-by-actor; source-only. |
+| Product/developer execution | Deep vertical | [Product And Developer Execution Traces](../CrossModule/ProductExecutionTraces.md) | Quick Start, asset-to-frame, editor transaction, settings, shader reload, capture, and settlement paths traced across owners; source-only. |
+| Registered Renderer programs | Exact catalog | [Renderer Shader Program Catalog](Engine/Renderer/Features/ShaderPrograms.md) | All 35 registrations mapped to source, entry, stage, consumer, and binding/traversal boundary; source-only. |
 | Evidence closure | Plan | [Capability Evidence Plan](../../Plans/CapabilityEvidence.md) | Missing source audits and the smallest proof needed to promote individual claims. It does not replace release gates or roadmap order. |
 
-## Repository-Wide Module Ledger
+## Current Coverage Boundary
 
-Detailed inventories are linked above. Every roadmap product area now has a source-depth owner, horizontal coverage statement, vertical trace, negative boundary, and evidence backlog route. This is documentation completeness, not release completeness.
+Every top-level implementation owner is routed above and has a source-depth capability inventory. That closes the first navigation skeleton, not the release or the dossier audit. Horizontal graphics and product-workflow matrices, vertical execution traces, and the evidence plan own the remaining cross-module questions. [Inventory hardening items `INV-009` through `INV-012`](../../Plans/CapabilityEvidence.md#inventory-expansion) deliberately remain Open until every capability has all dossier dimensions, journeys, proof destinations, and reverse mappings reconciled. Any new public selector, executable, catalog entry, backend/mode, generated product, or module must enter those routes before it can be treated as inventoried.
 
-| Area | Current owner/build surface | Inventory state | Next evidence or release action |
-| --- | --- | --- | --- |
-| Core | `Engine/Core`; common containers, files, logging, math, module/config facilities | Detailed (`S`) | See [Core](Engine/Core/README.md); build representative consumers and execute failure, path, process, configuration, and Shipping checks. |
-| Tasks | `Engine/Tasks`; task graph and parallel work used by Renderer and tools | Detailed (`S`) | See [Tasks](Engine/Tasks/README.md); execute serial/parallel, cancellation, wait, failure, shutdown, tracing, and stress evidence. |
-| Platform | `Engine/Platform`; Windows application/window/filesystem/process integration | Detailed (`S`) | See [Platform](Engine/Platform/README.md); execute window/input/DPI/capture behavior and package portability checks. |
-| RHI | `Engine/RHI`; common contracts, diagnostics, D3D12, Vulkan, facade | Detailed (`S`) | See [RHI](Engine/RHI/README.md); execute the backend/device matrix. |
-| Renderer | `Engine/Renderer`; renderer facade, persistent scene, prepared views, frame execution and passes | Detailed (`S`) | See [Renderer](Engine/Renderer/README.md); freeze selectable surface and execute feature/backend evidence. |
-| Game framework and world | `Engine/GameFramework`; scenes, levels, components, systems, render submission | Detailed (`S`) | See [GameFramework](Engine/GameFramework/README.md); execute activation/reload, edit, animation, extraction, and failure evidence. |
-| Application runtime | `Engine/Application`; runtime/editor host and content startup | Detailed (`S`) | See [Application](Engine/Application/README.md); execute startup/shutdown, configuration, console, threaded-render, recook, capture, and Shipping checks. |
-| Editor | `Engine/Editor`; editor UI, viewport sessions, settings and asset/tool entry points | Detailed (`S`) | See [Editor](Engine/Editor/README.md); execute user workflows, persistence, undo/error paths, capture, restart, and runtime-separation checks. |
-| Engine asset corpus | `Engine/Assets`; shader source, default textures, sky environments, and fixtures | Detailed (`S`) | See [Engine Assets](Engine/Assets/README.md); prove cook, package, integrity, license, and runtime consumption for included assets. |
-| Importers | `Tools/Import/SourceImporters`; source-format ingestion | Detailed (`S`) | See [Source Importers](Tools/SourceImporters/README.md); execute format/fidelity fixtures, malformed-input failures, provenance, and end-to-end cook evidence. |
-| Cooking | `Tools/Cooking`; project, scene, mesh, material, texture, and animation products | Detailed (`S`) | See [Asset Cooking](Tools/Cooking/README.md); execute deterministic, partial/failure, concurrency, publication, and runtime-handoff evidence. |
-| Shader compiler | `Tools/Shaders` plus Renderer registrations | Detailed (`S`) | See [Shader Compilation](Tools/ShaderCompiler/README.md); run deterministic cook and runtime-consumer proof. |
-| Shared tool support | `Tools/Support/ToolConsoleSupport`; common CLI presentation for cookers and ShaderCompiler | Detailed (`S`) | See [Shared Tool Support](Tools/ToolSupport/README.md); execute stream/layout/escaping/Unicode and game-product isolation evidence. |
-| Launcher | `Tools/Launcher`; configure/build/cook/run front end | Detailed (`S`) | See [Launcher](Tools/Launcher/README.md); execute readiness, configure/build/cook/acquire/run/clean, cancellation, handoff, history, and packaged-workflow checks. |
-| Showcase products | `Projects/Showcase`; editor/game executables and level catalog | Detailed (`S`) | See [Showcase](Projects/Showcase/README.md); execute both products, every included level, fallback honesty, required content, repeat load/switch/exit, and workload gates. |
-| Build and packaging | root/module CMake, presets, dependency/staging logic | Detailed (`S`) | See [Build And Packaging](BuildAndPackaging.md); execute supported profiles/toolchains, reproducibility, install/stage/package, clean-source, and CI/test evidence. |
+## Claims That Require The Deeper Route
 
-## Cross-Cutting Findings Already Visible
+| Claim or reviewer concern | Owning detail |
+| --- | --- |
+| D3D12/Vulkan coverage or parity | [RHI](Engine/RHI/README.md), [graphics matrix](../CrossModule/GraphicsCoverageMatrix.md), and candidate evidence |
+| Ray tracing, inline/native pipelines, shader tables, classic/PTLAS | [Renderer ray-tracing dossier](Engine/Renderer/Features/RayTracing/README.md), [RHI](Engine/RHI/README.md), and [graphics traces](../CrossModule/FeatureExecutionTraces.md) |
+| Bindless/material binding coverage | [graphics matrix](../CrossModule/GraphicsCoverageMatrix.md#binding-and-material-coverage) |
+| PBR/material/direct-light coverage | [Geometry, Materials, and GBuffer](Engine/Renderer/Features/GeometryMaterialsAndGBuffer.md), [Direct Lighting](Engine/Renderer/Features/Lighting/DirectLighting.md), and the [exact inventory](Engine/Renderer/CapabilityInventory.md) |
+| Indirect-light/history/environment coverage | [Indirect Lighting](Engine/Renderer/Features/Lighting/IndirectLighting.md) and the [whole-frame route](Engine/Renderer/RenderingASparkleFrame.md) |
+| Volumetric/fog/atmosphere coverage | [Volumetric Lighting](Engine/Renderer/Features/Lighting/VolumetricLighting.md), which currently records an explicit absence |
+| Exposure, tone mapping, color grading, chromatic aberration, reconstruction/upscaling, frame generation, and output | [Post Processing](Engine/Renderer/Features/PostProcessing/README.md), including explicit negative dossiers for unsupported stages |
+| Shader language/stage/compiler/target/runtime coverage | [ShaderCompiler](Tools/ShaderCompiler/README.md) and [program catalog](Engine/Renderer/Features/ShaderPrograms.md) |
+| Build/cook/editor/runtime/package user journey | [product workflow matrix](../CrossModule/ProductWorkflowCoverage.md) and [product traces](../CrossModule/ProductExecutionTraces.md) |
+| Persona, roadmap, and gap completeness | [strategy coverage](../CrossModule/StrategyCoverage.md) |
+| Release inclusion or exclusion | [feature reports](../../Acceptance/FeatureCompletionReports.md) and [release acceptance](../../Acceptance/FirstRelease.md) |
 
-- “D3D12 and Vulkan” currently means two backend implementations behind one RHI contract. It does not yet mean paired behavioral parity, native validation, or equal device coverage.
-- “Ray tracing” is several distinct paths: acceleration-structure construction, inline ray queries, native ray-tracing pipelines, shader tables, classic TLAS, and vendor/API-gated partitioned TLAS. Renderer coverage differs per effect.
-- “Bindless” is not engine-wide. The detailed inventory found a fixed-capacity material texture descriptor array used by specific ray/path lighting paths, while raster GBuffer material sampling remains an eight-slot bindful layout.
-- “PBR” currently names a concrete deferred material and lighting model, not every modern material lobe. The implemented components and missing lobes are listed in the Renderer inventory.
-- “Shader support” separates authored language, compiler backend, target binary, registered stage, reflection/contract validation, cooked publication, runtime loading, and editor recook. Having a stage enum or compiler target does not prove a registered runtime program.
-- Selectability is a release obligation. Any backend, render mode, provider, debug view, map, command, or setting reachable by a release user must receive a disposition and evidence or be made unreachable in that product.
-- The [strategy crosswalk](../CrossModule/StrategyCoverage.md) is the completeness check: it maps every roadmap subsystem and all `PGE-*` requirements to current capability evidence or an explicit gap without counting scaffolding as support.
+## Maintenance Route
 
-## Maintenance Contract
-
-When a capability changes:
-
-1. update its implementation and all producers/consumers first;
-2. update the corresponding detailed row and its limitations;
-3. add or retire the matching capability-evidence plan item;
-4. update release disposition only through the acceptance contract and recorded evidence;
-5. update this module ledger when a new area receives a detailed audit.
-
-Do not mark a row `B`, `R`, `N`, `P`, or `A` from documentation review, a responsive process, an uninspected screenshot, or an unrecorded local result.
+Use [Capability Documentation Review](../../Engineering/Workflow/CapabilityReview.md) to audit a changed dossier, [Documentation Organization](../../Engineering/Workflow/DocumentationOrganization.md) for placement and ownership, and the [Capability Evidence Plan](../../Plans/CapabilityEvidence.md) for unanswered checks. Do not mark a row `B`, `R`, `N`, `P`, or `A` from documentation review, a responsive process, an uninspected screenshot, or an unrecorded local result.

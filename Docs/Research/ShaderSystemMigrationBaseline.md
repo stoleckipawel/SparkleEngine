@@ -4,7 +4,7 @@ Status: archive; dated migration snapshot, not current architecture, implementat
 
 Responsibility: preserve the frozen Phase 0 shader-system findings, counts, and deletion ledger as migration provenance
 
-Architecture authority: [Shader System Architecture](../Architecture/CrossModule/ShaderSystem.md)
+Architecture authority: [Shader System Architecture](../Architecture/CrossModule/ShaderSystem/README.md)
 
 Delivery authority: [Shader System Delivery Plan](../Plans/CrossModule/ShaderSystem.md)
 

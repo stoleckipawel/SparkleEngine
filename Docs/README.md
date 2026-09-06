@@ -16,7 +16,8 @@ Code and executable build configuration prove implemented behavior. Documentatio
 | implement a repository change | [Change Integration](Engineering/Workflow/ChangeIntegration.md), then the [Engineering task map](Engineering/README.md#choose-by-task) |
 | open or close a release iteration | [Change Lifecycle control record](Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record), then the [Roadmap traceability table](Strategy/Roadmap.md#stage-target-and-evidence-traceability) |
 | review a changelist | [Code Review](Engineering/Workflow/CodeReview.md) |
-| prove a feature or release is complete | [Acceptance](Acceptance/README.md) |
+| define or review one feature's completion contract | the owning [Architecture](Architecture/README.md) feature dossier |
+| track workload, feature-report, or release completion | [Acceptance](Acceptance/README.md) |
 | execute an approved multi-step delivery | [Plans](Plans/README.md) |
 | inspect external precedent, option analysis, or historical migration evidence | [Research](Research/README.md) |
 
@@ -25,9 +26,9 @@ Code and executable build configuration prove implemented behavior. Documentatio
 | Area | Owns | Must not own |
 | --- | --- | --- |
 | [Strategy](Strategy/README.md) | desired capabilities, priorities, roadmap, operating model, dated assessments | implementation rules or system internals |
-| [Architecture](Architecture/README.md) | module-oriented current maps, capability inventories, canonical decisions, cross-module and target system shape | phase sequencing, general coding rules, or external precedent |
+| [Architecture](Architecture/README.md) | module-oriented current maps, capability inventories, canonical decisions, cross-module and target system shape, and feature-local acceptance contracts | phase sequencing, general coding rules, release evidence, or external precedent |
 | [Engineering](Engineering/README.md) | task-oriented workflow, foundations, module rules, verification, and technical decision records | release scope, system design, or research |
-| [Acceptance](Acceptance/README.md) | completion definitions, workload gates, feature reports, release evidence | priority or implementation design |
+| [Acceptance](Acceptance/README.md) | shared completion vocabulary, workload/release gates, feature-report orchestration, and high-level progress | feature design or duplicate feature-local criteria, failure modes, and checks |
 | [Plans](Plans/README.md) | ordered delivery phases, dependencies, stop conditions, migration ledgers | enduring architecture or claims of completion |
 | [Research](Research/README.md) | source-backed precedent, explorations, visual studies, dated migration baselines | local decisions, rules, or evidence grades |
 
@@ -47,7 +48,7 @@ Code and executable build configuration prove implemented behavior. Documentatio
 2. Select every applicable foundation, module, and verification document from the [Engineering task map](Engineering/README.md#choose-by-task).
 3. Read the affected module route or cross-module route from [Architecture](Architecture/README.md).
 4. Use [Plans](Plans/README.md) only when an approved plan owns the requested sequence.
-5. Use [Acceptance](Acceptance/README.md) only for affected gates and claims.
+5. Use the owning Architecture feature dossier for feature-local criteria and [Acceptance](Acceptance/README.md) for affected workload, report, and release claims.
 
 ## Documentation Rules
 

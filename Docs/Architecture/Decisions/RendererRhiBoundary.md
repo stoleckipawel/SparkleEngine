@@ -82,7 +82,7 @@ The paired contract covers:
 
 Backend differences must be visible in `RhiCapabilities`. Current intentional differences include descriptor tables versus descriptor sets, feature level versus API version, queue topology, validation facilities, memory allocator, ray-tracing extensions, and external-provider bridge availability. Renderer-wide policy branches on those neutral facts; only a dedicated provider adapter may branch on `ERhiBackendApi`.
 
-The D3D12/Vulkan native ray-tracing pipeline and shader-table source routes are present at the reconciled revision. Source reachability is not paired native execution, output-parity, reload/retirement, or performance evidence; those claims remain blocked on the shader architecture's final executable-validation phase.
+The D3D12/Vulkan native ray-tracing pipeline and shader-table source routes are present at the reconciled revision. Source reachability is not paired native execution, output-parity, reload/retirement, or performance evidence; those claims remain blocked on the [Shader System feature acceptance contract](../CrossModule/ShaderSystem/Acceptance.md).
 
 ## NVIDIA Reference Mapping
 

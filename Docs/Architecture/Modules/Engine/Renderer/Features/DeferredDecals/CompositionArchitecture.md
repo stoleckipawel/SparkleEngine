@@ -1,4 +1,4 @@
-# Deferred GBuffer Decal Pipeline
+# Deferred GBuffer Decal Composition Architecture
 
 Status: target architecture; not implemented behavior
 Date: 2026-08-17
@@ -17,7 +17,7 @@ Sparkle should implement decals as material overlays, never as a forward-lit col
 
 This is a target design. Code, cooked schemas, build configuration, and executable tests remain the authority for what exists today.
 
-This document owns decal semantics, data flow, pass placement, and shared raster/ray composition. The [Deferred GBuffer Decals Delivery Plan](../../../../Plans/Renderer/DeferredGBufferDecals.md) owns feature-local phase order; the [Deferred GBuffer Decals Acceptance Contract](../../../../Acceptance/Renderer/DeferredGBufferDecals.md) owns the validation fixture and completion gates. [Shader System Architecture](../../../CrossModule/ShaderSystem.md) owns shader identity and publication; the [Shader System Delivery Plan](../../../../Plans/CrossModule/ShaderSystem.md) owns the cross-system native RT pipeline/SBT/RHI sequence. The [Ray-Tracing Pipeline and Dual-Execution Target Architecture](RayTracingExecution.md) owns the enduring inline-versus-pipeline and SBT semantics; adding decals must not create a third execution contract.
+This document owns decal semantics, data flow, pass placement, and shared raster/ray composition. The adjacent [feature acceptance contract](Acceptance.md) owns the validation fixture, controlled failures, checks, and completion gates; the [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md) owns feature-local phase order. [Shader System Architecture](../../../../../CrossModule/ShaderSystem/README.md) owns shader identity and publication; the [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md) owns the cross-system native RT pipeline/SBT/RHI sequence. The [Ray-Tracing Execution Architecture](../RayTracing/ExecutionArchitecture.md) owns the enduring inline-versus-pipeline and SBT semantics; adding decals must not create a third execution contract.
 
 ## Outcome
 
@@ -32,7 +32,7 @@ It deliberately does not implement forward decals, mesh decals, transparent-surf
 
 ## Implementation Snapshot
 
-The dated source inventory, existing GBuffer/material seams, and absent decal path live in the [Deferred GBuffer Decals Capability Snapshot](DeferredGBufferDecalsCapability.md). Refresh that snapshot before beginning a delivery phase; this architecture does not claim the path is implemented.
+The current source inventory, existing GBuffer/material seams, and absent decal path live in the [Deferred Decals feature dossier](README.md). Refresh that dossier before beginning a delivery phase; this architecture does not claim the path is implemented.
 
 ## Requirements And Boundaries
 
@@ -57,7 +57,7 @@ The dated source inventory, existing GBuffer/material seams, and absent decal pa
 - A dedicated decal acceleration structure, procedural AABB BLAS, or second TLAS.
 - A decal editor panel, decal-specific material graph, runtime feature CVar, or per-frame log stream.
 
-The first content is static by contract. Dynamic decals must not be advertised until motion, candidate invalidation, and temporal history behavior have their own accepted phase.
+The first content is static by contract. Dynamic decals must not be advertised until motion, candidate invalidation, and temporal history behavior have their own accepted feature extension.
 
 ## Reference Findings And Local Choice
 
@@ -66,7 +66,7 @@ The first content is static by contract. Dynamic decals must not be advertised u
 | Epic documents projected decal boxes, ordered overlap, receiver response, and GBuffer application after the Base Pass and before lighting. Its DBuffer path exists partly to interact correctly with baked lighting and adds receiver-material work and extra buffers. | Keep projected volumes, ordering, receiver opt-out, and pre-lighting material composition. Do not add a DBuffer while Sparkle has no baked-lighting requirement that justifies its storage and material-path cost. |
 | Frostbite's classic deferred method reconstructs a world/local position from depth inside a convex volume, samples the decal, and blends GBuffer data. The presentation also identifies fixed-function alpha limitations when GBuffer alpha stores unrelated values and notes derivative/LOD hazards. | Use the proven depth-reconstructed projection model, but use programmable read/modify/write composition and explicit gradient-based texture sampling. |
 | The i3D ray-tracing decal work shows that view-frustum grids do not serve arbitrary reflection hits and that a ray-tracing acceleration structure can enumerate decals anywhere, at higher cost than classic deferred decals. | Keep the screen-space primary path. For arbitrary hits, begin with receiver candidate spans built from existing world bounds. Consider a dedicated AABB AS only if measured candidate counts make that simpler or faster overall. |
-| Ray Tracing Gems II surveys triangle and procedural decal approaches, single and multiple overlaps, and their costs. | Treat mesh/procedural AS decals as measured alternatives for the later ray phase, not as a prerequisite or a second implementation now. |
+| Ray Tracing Gems II surveys triangle and procedural decal approaches, single and multiple overlaps, and their costs. | Treat mesh/procedural AS decals as measured alternatives for later ray support, not as a prerequisite or a second implementation now. |
 | Intel's Modern Sponza is a high-resolution PBR workload with 4K textures and separately listed add-ons; the published list does not include a decal package. | Add a small Sparkle-authored decal fixture and label it as such. Do not attribute those decals to Intel's content. |
 
 Sources:
@@ -198,7 +198,7 @@ Create GBuffer targets
 
 The pass modifies BaseColor, Normal, Material, Emissive, and Subsurface as UAVs. It samples DeviceZ and leaves DeviceZ and MotionVector unchanged. The frame graph owns render-target/depth-to-SRV/UAV transitions and the transition back to lighting reads.
 
-This placement is producer-independent. Phase 2 accepts raster behavior first; Phase 3 then proves the already-shared pass against the ray-traced primary producer. Do not add a temporary duplicate ray decal pass or a mode-specific shader.
+This placement is producer-independent: raster and ray-traced primary visibility must exercise the same shared pass. Do not add a temporary duplicate ray decal pass or a mode-specific shader; the delivery plan owns which producer is proven first.
 
 ### One dispatch, no pixel races
 
@@ -224,7 +224,7 @@ One compute group owns one active tile. One thread owns one pixel, loads the rec
 - stable layering independent of command scheduling;
 - one visible frame-graph/GPU marker.
 
-The tile size is a compile-time implementation constant selected during Phase 2 measurement, not a user CVar. If CPU binning becomes measurable, replace it with one demonstrated better owner and delete the old builder; do not retain two selectable planners.
+The tile size is a compile-time implementation constant selected from measurement, not a user CVar. If CPU binning becomes measurable, replace it with one demonstrated better owner and delete the old builder; do not retain two selectable planners.
 
 ### Per-pixel sequence
 
@@ -243,7 +243,7 @@ The pass must use the same jitter convention as the GBuffer depth sample. A proj
 
 ## Arbitrary Ray Hits For GI And Reflections
 
-A screen tile cannot answer which decals overlap a reflection hit outside the camera frustum. The later ray phase therefore shares decal data and evaluation but uses a view-independent candidate lookup.
+A screen tile cannot answer which decals overlap a reflection hit outside the camera frustum. Secondary-ray support therefore shares decal data and evaluation but uses a view-independent candidate lookup.
 
 ### Initial lookup
 
@@ -261,9 +261,9 @@ RayTracingDecalCandidateIndices
 
 At a shaded hit, the shader walks only that receiver span, performs the exact projection/facing test at the hit position, samples the same material table, and calls the same composition function.
 
-Secondary texture filtering must receive an explicit surface footprint. If the ray path still uses the current fixed LOD-zero material sampling when Phase 4 begins, introduce one reusable ray-cone/differential or conservative explicit-LOD contract for ordinary ray-hit materials and decals together. Do not add a decal-only filtering model, and do not accept a reflection path that aliases because every decal sample silently uses mip zero.
+Secondary texture filtering must receive an explicit surface footprint. If the ray path still uses the current fixed LOD-zero material sampling when secondary-ray decal work begins, introduce one reusable ray-cone/differential or conservative explicit-LOD contract for ordinary ray-hit materials and decals together. Do not add a decal-only filtering model, and do not accept a reflection path that aliases because every decal sample silently uses mip zero.
 
-The first implementation may rebuild the flat candidate product when decal topology/transforms or receiver bounds change. That is correct for the static initial contract. Candidate count per receiver, total links, rebuild CPU time, and buffer high-water are evidence fields for the phase; they are not a permanent UI product.
+The first implementation may rebuild the flat candidate product when decal topology/transforms or receiver bounds change. That is correct for the static initial contract. Candidate count per receiver, total links, rebuild CPU time, and buffer high-water are delivery evidence fields; they are not a permanent UI product.
 
 ### Integration rule
 
@@ -281,7 +281,7 @@ Call the middle operation for GI, reflection, and path-lighting material hits. D
 - shadow/visibility rays, because this decal contract changes material values, not geometry or alpha-test opacity;
 - misses or invalid surfaces.
 
-Phase 4 must inventory every `ReconstructRayTracingHitSurface` consumer and classify it explicitly as primary material, arbitrary shaded material, shadow/visibility, or unsupported. No effect gets a private decal implementation.
+Before secondary-ray decals are accepted, the implementation must inventory every `ReconstructRayTracingHitSurface` consumer and classify it explicitly as primary material, arbitrary shaded material, shadow/visibility, or unsupported. No effect gets a private decal implementation.
 
 ### Why no decal TLAS first
 
@@ -332,7 +332,7 @@ Engine/Assets/Shaders
 
 Do not create separate `RasterDecal`, `RayDecal`, `DecalMaterial`, or `DecalTextureCache` directories/classes. The later ray lookup belongs beside existing ray scene preparation and adds no second copy of the shared files above.
 
-The currently unconsumed `r.Material.BindingMode`/`MaterialBindingMode` path should be rechecked in Phase 1. If it remains unconsumed, delete it while renaming the capability around the scene material texture table needed by both ray materials and decals. Do not add a new decal binding-mode switch on top.
+The currently unconsumed `r.Material.BindingMode`/`MaterialBindingMode` path must be rechecked before implementation. If it remains unconsumed, delete it while renaming the capability around the scene material texture table needed by both ray materials and decals. Do not add a new decal binding-mode switch on top.
 
 ## Rejected Alternatives
 

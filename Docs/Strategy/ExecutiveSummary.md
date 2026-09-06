@@ -1,6 +1,6 @@
 # G. Advanced Graphics Engine Executive Summary
 
-Status: non-normative orientation and decision summary
+Status: orientation; non-normative decision summary
 
 Date: 2026-08-02
 

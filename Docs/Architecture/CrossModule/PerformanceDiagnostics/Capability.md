@@ -6,11 +6,11 @@ Snapshot: 2026-08-28 at committed `master` revision `20814381`; source and execu
 
 Scope: current timing, marker, memory, editor, benchmark-export, and attached-capture surfaces relevant to the target diagnostics system
 
-Architecture authority: [Performance Diagnostics Architecture](PerformanceDiagnostics.md)
+Architecture authority: [Performance Diagnostics Architecture](README.md)
 
-Delivery authority: [Performance Diagnostics Delivery Plan](../../Plans/CrossModule/PerformanceDiagnostics.md)
+Delivery authority: [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md)
 
-Acceptance authority: [Performance Diagnostics Acceptance Contract](../../Acceptance/CrossModule/PerformanceDiagnostics.md)
+Feature acceptance: [Performance Diagnostics — Acceptance](Acceptance.md)
 
 This inventory records current source/build surfaces and the reconciliation gaps known when the diagnostics design was written. Code and executable build configuration remain authoritative.
 
@@ -58,7 +58,7 @@ Primary code landmarks for revalidation:
 
 ## Reconciliation Gaps
 
-Revalidate this table with `rg` at the start of each phase and reconcile it into the mandatory authority/candidate ledger above. It records the 2026-08-28 route to extend, not permanent file-name policy.
+Revalidate this table with `rg` before implementation work and reconcile it into the mandatory authority/candidate ledger above. It records the 2026-08-28 route to extend, not permanent file-name policy.
 
 | Responsibility | Current owner/path | Delivery decision |
 | --- | --- | --- |

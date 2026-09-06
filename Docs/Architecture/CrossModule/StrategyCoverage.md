@@ -1,6 +1,6 @@
 # Capability Coverage Against Persona, Roadmap, And Gap Assessment
 
-Status: current strategy crosswalk; not a replacement for strategy authority, release acceptance, or candidate evidence
+Status: capability snapshot; current strategy crosswalk, not a replacement for strategy authority, release acceptance, or candidate evidence
 
 Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; capability inventories reconciled with the [Engineer Persona](../../Strategy/EngineerPersona.md), [Requirements](../../Strategy/Requirements.md), [Gap Assessment](../../Strategy/Assessments/GapAssessment.md), and [Roadmap](../../Strategy/Roadmap.md); source evidence only
 
@@ -38,11 +38,11 @@ Unused enums, empty registries, future interfaces, and source files with no curr
 | `PGE-02` ray tracing/GI/path tracing | BLAS/TLAS, inline and native pipeline traversal, ray GBuffer/shadows, ReSTIR direct/indirect, reference path mode | [RHI](../Modules/Engine/RHI/README.md), [Renderer](../Modules/Engine/Renderer/README.md), [execution traces](FeatureExecutionTraces.md) | Strong source slice; no correctness/convergence/backend/performance evidence yet. |
 | `PGE-03` neural graphics feature | DLSS Super Resolution and Ray Reconstruction providers through Streamline | [Renderer](../Modules/Engine/Renderer/README.md), [coverage matrix](GraphicsCoverageMatrix.md) | External inference integration only; no owned neural algorithm/model/training and D3D12/vendor gating applies. |
 | `PGE-04` model-to-kernel implementation | No owned model/kernel/training path found | Negative coverage in this document | Gap. Shader kernels are graphics kernels, not evidence of ML model productization. |
-| `PGE-05` whole-system performance | CPU/GPU timing, memory diagnostics, task trace, heavy workload catalog, bounded queues/cook memory | [Diagnostics](PerformanceDiagnosticsCapability.md), [Tasks](../Modules/Engine/Tasks/README.md), [Showcase](../Modules/Projects/Showcase/README.md) | Partial: instrumentation/source paths exist; no measured bottleneck study or accepted optimization result. |
+| `PGE-05` whole-system performance | CPU/GPU timing, memory diagnostics, task trace, heavy workload catalog, bounded queues/cook memory | [Diagnostics](PerformanceDiagnostics/Capability.md), [Tasks](../Modules/Engine/Tasks/README.md), [Showcase](../Modules/Projects/Showcase/README.md) | Partial: instrumentation/source paths exist; no measured bottleneck study or accepted optimization result. |
 | `PGE-06` hard debugging | RHI validation/DRED, capture, shader reflection/ABI validation, diagnostics UI, failure propagation | [RHI](../Modules/Engine/RHI/README.md), [Shader compilation](../Modules/Tools/ShaderCompiler/README.md), [Editor](../Modules/Engine/Editor/README.md) | Partial: facilities exist; no retained difficult-defect narrative with hypothesis/observation/fix evidence. |
 | `PGE-07` C++ and Python | C++20 modular engine/tools; two project conversion scripts | [Build](../Modules/BuildAndPackaging.md), [Showcase](../Modules/Projects/Showcase/README.md) | C++ strong; Python is narrow offline conversion, not engineering/tooling depth. |
 | `PGE-08` 3D math/numerics | transforms/frustum, coordinate conversion, animation interpolation, BRDF/sampling/reservoir/exposure math | [Core](../Modules/Engine/Core/README.md), [Importers](../Modules/Tools/SourceImporters/README.md), [Renderer](../Modules/Engine/Renderer/README.md) | Source present; numerical stability/oracle evidence missing. |
-| `PGE-09` graphics APIs/shaders/ABI | D3D12/Vulkan, DXIL/SPIR-V, HLSL/Slang, reflection, typed registrations, explicit resources/barriers/descriptors | [RHI](../Modules/Engine/RHI/README.md), [Shader compilation](../Modules/Tools/ShaderCompiler/README.md), [shader catalog](../Modules/Engine/Renderer/ShaderProgramCatalog.md) | Strong source slice; paired native validation and final ABI evidence open. |
+| `PGE-09` graphics APIs/shaders/ABI | D3D12/Vulkan, DXIL/SPIR-V, HLSL/Slang, reflection, typed registrations, explicit resources/barriers/descriptors | [RHI](../Modules/Engine/RHI/README.md), [Shader compilation](../Modules/Tools/ShaderCompiler/README.md), [shader catalog](../Modules/Engine/Renderer/Features/ShaderPrograms.md) | Strong source slice; paired native validation and final ABI evidence open. |
 | `PGE-10` CPU/GPU/concurrency | Tasks DAG/lanes, world parallel systems, render thread, GPU queues, frame graph, upload/retirement | [Tasks](../Modules/Engine/Tasks/README.md), [GameFramework](../Modules/Engine/GameFramework/README.md), [Renderer](../Modules/Engine/Renderer/README.md) | Strong source architecture; race/deadlock/overlap/scaling evidence open. |
 | `PGE-11` ML fundamentals | No owned learning/training/evaluation implementation found | Negative coverage | Gap; vendor SDK integration is not equivalent. |
 | `PGE-12` training/inference | Streamline DLSS inference integration | [Renderer](../Modules/Engine/Renderer/README.md) | Partial external inference only; no datasets, training, model evaluation, deployment optimization, or owned runtime. |
@@ -54,22 +54,22 @@ Unused enums, empty registries, future interfaces, and source files with no curr
 
 | Roadmap subsystem | Detailed inventory | Horizontal links | Vertical path | Evidence backlog | Coverage verdict |
 | --- | --- | --- | --- | --- | --- |
-| Core | [Core](../Modules/Engine/Core/README.md) | paths/config/diagnostics used across modules | config/path/publication/process traces | `CORE-*` in evidence plan | Covered at source depth |
-| Tasks | [Tasks](../Modules/Engine/Tasks/README.md) | Application/world/renderer/tools consumers | graph-to-settlement trace | `TASK-*` | Covered at source depth |
+| Core | [Core](../Modules/Engine/Core/README.md) | paths/config/diagnostics used across modules | [product traces](ProductExecutionTraces.md) for publication/process consumers | `CORE-*` in evidence plan | Covered at source depth |
+| Tasks | [Tasks](../Modules/Engine/Tasks/README.md) | Application/world/renderer/tools consumers | [settlement trace](ProductExecutionTraces.md#trace-7-cancellation-failure-and-shutdown-settlement) | `TASK-*` | Covered at source depth |
 | Platform | [Platform](../Modules/Engine/Platform/README.md) | Application/Editor/RHI window boundary | Win32-to-layered-input trace | `PLAT-*` | Covered at source depth |
 | RHI | [RHI](../Modules/Engine/RHI/README.md) | [graphics matrix](GraphicsCoverageMatrix.md) | [graphics traces](FeatureExecutionTraces.md) | `RHI-*` | Covered at source depth |
 | Renderer | [Renderer](../Modules/Engine/Renderer/README.md) | graphics matrix/shader catalog | graphics traces | `REN-*` | Covered at source depth |
-| GameFramework/world | [GameFramework](../Modules/Engine/GameFramework/README.md) | Tasks/assets/Application/Renderer boundary | world-to-render submission trace | `GF-*` | Covered at source depth |
-| Application | [Application](../Modules/Engine/Application/README.md) | Platform/world/renderer/editor composition | product frame/shutdown trace | `APP-*` | Covered at source depth |
+| GameFramework/world | [GameFramework](../Modules/Engine/GameFramework/README.md) | Tasks/assets/Application/Renderer boundary | [asset-to-frame](ProductExecutionTraces.md#trace-2-authored-asset-to-rendered-result) and graphics frame traces | `GF-*` | Covered at source depth |
+| Application | [Application](../Modules/Engine/Application/README.md) | [product workflow matrix](ProductWorkflowCoverage.md) | Quick Start, settings, capture, and shutdown in [product traces](ProductExecutionTraces.md) | `APP-*` | Covered at source depth |
 | Engine source assets | [Engine Assets](../Modules/Engine/Assets/README.md) | shader/import/cook consumers | source-to-cooked routes | `EASSET-*` | Covered as source corpus |
-| Source import | [Importers](../Modules/Tools/SourceImporters/README.md) | per-format semantic matrix | parser-to-cook trace | `IMP-*` | Covered at source depth |
-| Asset cooking | [Cooking](../Modules/Tools/Cooking/README.md) | product/format matrix | project cook trace | `COOK-*` | Covered at source depth |
+| Source import | [Importers](../Modules/Tools/SourceImporters/README.md) | per-format semantic matrix plus [workflow matrix](ProductWorkflowCoverage.md) | [authored asset to rendered result](ProductExecutionTraces.md#trace-2-authored-asset-to-rendered-result) | `IMP-*` | Covered at source depth |
+| Asset cooking | [Cooking](../Modules/Tools/Cooking/README.md) | product/format matrix plus [workflow matrix](ProductWorkflowCoverage.md) | Quick Start and asset-publication [product traces](ProductExecutionTraces.md) | `COOK-*` | Covered at source depth |
 | Shader delivery | [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md) | shader catalog/backend matrix | compile-to-runtime trace | `SHD-*` | Covered at source depth |
 | Shared tool support | [Tool Support](../Modules/Tools/ToolSupport/README.md) | AssetCooker/TextureCooker/ShaderCompiler consumers | operation-to-captured-output trace | `TOOL-*` | Covered at source depth |
-| Editor | [Editor](../Modules/Engine/Editor/README.md) | world/renderer/tool selectors | edit-to-publication trace | `ED-*` | Covered at source depth |
-| Launcher | [Launcher](../Modules/Tools/Launcher/README.md) | build/cook/catalog/product operations | Quick Start trace | `LAUNCH-*` | Covered at source depth |
-| Showcase | [Showcase](../Modules/Projects/Showcase/README.md) | workload-to-feature matrix | launch-to-scene trace | `SHOW-*` | Covered at source depth |
-| Build/package | [Build And Packaging](../Modules/BuildAndPackaging.md) | all target memberships | build-to-development-product trace | `BUILD-*` | Build covered; formal package absent |
+| Editor | [Editor](../Modules/Engine/Editor/README.md) | world/renderer/tool selectors plus [workflow matrix](ProductWorkflowCoverage.md) | [editor inspection and transaction](ProductExecutionTraces.md#trace-3-editor-inspection-and-transaction) | `ED-*` | Covered at source depth |
+| Launcher | [Launcher](../Modules/Tools/Launcher/README.md) | build/cook/catalog/product operations plus [workflow matrix](ProductWorkflowCoverage.md) | [Quick Start to live level](ProductExecutionTraces.md#trace-1-quick-start-to-a-live-level) | `LAUNCH-*` | Covered at source depth |
+| Showcase | [Showcase](../Modules/Projects/Showcase/README.md) | workload-to-feature matrix plus actor journeys | Quick Start and asset-to-frame product traces | `SHOW-*` | Covered at source depth |
+| Build/package | [Build And Packaging](../Modules/BuildAndPackaging.md) | all target memberships plus [workflow matrix](ProductWorkflowCoverage.md) | Quick Start trace stops explicitly before formal package ownership | `BUILD-*` | Build covered; formal package absent |
 
 No roadmap subsystem remains “Not yet audited” in this snapshot. That means the documentation map is complete at source depth; it does not mean any subsystem is approved for release.
 

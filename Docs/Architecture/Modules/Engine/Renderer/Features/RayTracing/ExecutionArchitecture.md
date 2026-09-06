@@ -1,22 +1,22 @@
-# Ray-Tracing Pipeline and Dual-Execution Target Architecture
+# Ray-Tracing Execution Architecture
 
 Status: target architecture; semantic contract, not proof of runtime support
-Current-state audit provenance: 2026-08-28 static source/build reconciliation at committed `master` revision `20814381`, whose source and executable build configuration are unchanged from implementation revision `99af6d5b`, through the Phase 8 hit/shadow/table slice is recorded in the [Shader System Delivery Plan](../../../../Plans/CrossModule/ShaderSystem.md#phase-8-source-consistency-evidence)
+Current-state audit provenance: 2026-08-28 static source/build reconciliation at committed `master` revision `20814381`, whose source and executable build configuration are unchanged from implementation revision `99af6d5b`; migration history is recorded in the [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md)
 Scope: ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, supported alternates, mandatory failure, and target completion invariants
 
 ## Purpose and authority boundary
 
 This document describes the intended ray-tracing system as one coherent target. It answers what inline ray query and native ray-tracing pipelines mean, what they share, what must remain distinct, who owns each decision, how shader tables map scene identity to native records, and what makes an effect genuinely dual-execution.
 
-It intentionally owns no implementation phases, prompts, phase references, CL boundaries, test order, or delivery gates. The [Shader System Delivery Plan](../../../../Plans/CrossModule/ShaderSystem.md#implementation-contract) is the single delivery authority for the shader frontend, compiler, global shader map, code library, RHI/backend pipeline, shader table, frame graph, effects, tooling, and evidence. Its [unified implementation reference map](../../../../Plans/CrossModule/ShaderSystem.md#unified-implementation-reference-map) owns the actionable external references.
+It intentionally owns no implementation phases, prompts, CL boundaries, test order, or delivery gates. The [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md#implementation-contract) is the single delivery authority for the shader frontend, compiler, global shader map, code library, RHI/backend pipeline, shader table, frame graph, effects, tooling, and validation sequence. Its [unified implementation reference map](../../../../../../Plans/CrossModule/ShaderSystem.md#unified-implementation-reference-map) owns the actionable external references; the [Shader System feature acceptance contract](../../../../../CrossModule/ShaderSystem/Acceptance.md) owns final proof.
 
-Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. Committed source contains dual-execution GBuffer and shadow routes plus the shared scene table plan, but native execution, parity, reload, and performance remain unproved until Phase 12.
+Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. Committed source contains dual-execution GBuffer and shadow routes plus the shared scene table plan, but native execution, parity, reload, and performance remain unproved under the feature acceptance contract.
 
 Related authority:
 
-- [Renderer/RHI Boundary](../../../Decisions/RendererRhiBoundary.md) owns the dependency boundary between Renderer policy and backend mechanism.
-- [Renderer Engineering](../../../../Engineering/Modules/Renderer.md), [RHI Engineering](../../../../Engineering/Modules/RHI.md), [Change Integration](../../../../Engineering/Workflow/ChangeIntegration.md), [Change Lifecycle](../../../../Engineering/Workflow/ChangeLifecycle.md), and [Validation And Evidence](../../../../Engineering/Verification/ValidationAndEvidence.md) govern implementation and review.
-- [Strategy Requirements](../../../../Strategy/Requirements.md) owns `PGE-02`, `PGE-05`, `PGE-06`, and `PGE-09`; this target does not replace their workload or evidence gates.
+- [Renderer/RHI Boundary](../../../../../Decisions/RendererRhiBoundary.md) owns the dependency boundary between Renderer policy and backend mechanism.
+- [Renderer Engineering](../../../../../../Engineering/Modules/Renderer.md), [RHI Engineering](../../../../../../Engineering/Modules/RHI.md), [Change Integration](../../../../../../Engineering/Workflow/ChangeIntegration.md), [Change Lifecycle](../../../../../../Engineering/Workflow/ChangeLifecycle.md), and [Validation And Evidence](../../../../../../Engineering/Verification/ValidationAndEvidence.md) govern implementation and review.
+- [Strategy Requirements](../../../../../../Strategy/Requirements.md) owns `PGE-02`, `PGE-05`, `PGE-06`, and `PGE-09`; this target does not replace their workload or evidence gates.
 
 ## Target outcome
 
@@ -221,7 +221,7 @@ A composition specifies only what is structurally required:
 
 Compute and ordinary graphics never use this type. Graphics continues to name concrete vertex/pixel shader refs with the actual draw pipeline description. There is no universal `ShaderProgram`, `TShaderProgram`, pass-registration macro, or string-only export registry.
 
-The graph frontend is `TraceRays<RayGenerationShader>(composition, parameters, dimensions)` with an optional diagnostic-label overload. It mirrors Unreal's separation among global shader class, ray-tracing pipeline initializer, and ray dispatch while hiding Sparkle's materialized pipeline, shader table, native identifiers, global binding writer, addresses, and strides behind the frame-graph/runtime/RHI owners. The exact class and call-site example lives in the [unified authoring document](../../../CrossModule/ShaderSystem.md#proposed-authoring-experience) so this target contract does not duplicate implementation guidance.
+The graph frontend is `TraceRays<RayGenerationShader>(composition, parameters, dimensions)` with an optional diagnostic-label overload. It mirrors Unreal's separation among global shader class, ray-tracing pipeline initializer, and ray dispatch while hiding Sparkle's materialized pipeline, shader table, native identifiers, global binding writer, addresses, and strides behind the frame-graph/runtime/RHI owners. The exact class and call-site example lives in the [unified authoring document](../../../../../CrossModule/ShaderSystem/README.md#proposed-authoring-experience) so this target contract does not duplicate implementation guidance.
 
 ## Pipeline ABI and shader-table contract
 
@@ -273,7 +273,7 @@ recordIndex =
 
 Vulkan maps the same logical result to `sbtRecordOffset`, `sbtRecordStride`, and TLAS `instanceShaderBindingTableRecordOffset`. Renderer owns logical terms, ordering, and bounds. Backends own addresses, byte offsets, handle sizes, strides, alignment, and region packing.
 
-The Phase 7 opaque one-ray-type checkpoint intentionally used zero contributions. The current production slice uses nontrivial instance/geometry/two-ray-type indexing through one `RenderRayTracingScene` plan shared by classic and partitioned TLAS. Material/geometry data remains in shared buffers; current product records contain no local data.
+The earlier opaque one-ray-type checkpoint intentionally used zero contributions. The current production slice uses nontrivial instance/geometry/two-ray-type indexing through one `RenderRayTracingScene` plan shared by classic and partitioned TLAS. Material/geometry data remains in shared buffers; current product records contain no local data. The delivery plan retains the checkpoint history.
 
 ## Capability and readiness contract
 
@@ -333,7 +333,7 @@ The first product effect is the ray-traced GBuffer:
 - exact identity/sentinel comparisons and field-specific floating-point tolerances in the same frame;
 - rasterized GBuffer remains an explicit supported algorithm, not a fabricated ray-traced result.
 
-The Phase 7 source checkpoint establishes `GBufferAlgorithm::{Rasterized,RayTracing}`, independent `RayTracingExecutionMode::{Automatic,Inline,Pipeline}`, and one immutable graph-construction `RayTracingGBufferExecutionPlan`. The current Phase 8 source removes the masked-scene workaround: `RayTracingGBufferPipeline.hlsl` adds an any-hit adapter over the same `ResolveRayTracingCandidateAlpha` policy used by `RayQuery`, while opaque groups retain no empty any-hit stage. `DirectShadowSignal` now has inline and pipeline frontends over one request/visibility semantic kernel and one pre-graph execution plan; neither route can be replaced by a fabricated product. `RayTracingShaderTablePlan` fixes Surface then ShadowVisibility ordering, checked formula/bounds, material/geometry invalidation, bounded metrics, and the contribution read by both TLAS builders. Graph-owned immutable tables capture the exact pipeline and scene-plan generation and retire with their graph. This is implemented source shape, not native or parity evidence.
+Current source establishes `GBufferAlgorithm::{Rasterized,RayTracing}`, independent `RayTracingExecutionMode::{Automatic,Inline,Pipeline}`, and one immutable graph-construction `RayTracingGBufferExecutionPlan`. `RayTracingGBufferPipeline.hlsl` removes the earlier masked-scene workaround through an any-hit adapter over the same `ResolveRayTracingCandidateAlpha` policy used by `RayQuery`, while opaque groups retain no empty any-hit stage. `DirectShadowSignal` has inline and pipeline frontends over one request/visibility semantic kernel and one pre-graph execution plan; neither route can be replaced by a fabricated product. `RayTracingShaderTablePlan` fixes Surface then ShadowVisibility ordering, checked formula/bounds, material/geometry invalidation, bounded metrics, and the contribution read by both TLAS builders. Graph-owned immutable tables capture the exact pipeline and scene-plan generation and retire with their graph. This is implemented source shape, not native or parity evidence.
 
 The production hit slice adds:
 
@@ -360,4 +360,4 @@ The target is realized only when implementation evidence proves all of the follo
 - explicit supported alternate algorithms remain functional, missing mandatory products fail before scheduling, and every single-mode effect is documented honestly;
 - no package compatibility, compiler-only RT replacement, ambiguous capability/mode, backend/graph bypass, universal shader-program layer, duplicate owner, permanent migration diagnostics, or unearned precache/permutation framework remains.
 
-The exact implementation prompts, phase ordering, validation matrix, references, and final evidence contract are intentionally centralized in the [Shader System Delivery Plan](../../../../Plans/CrossModule/ShaderSystem.md#implementation-contract).
+The exact implementation prompts, phase ordering, validation sequence, and references are centralized in the [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md#implementation-contract). Final proof is centralized in the [Shader System feature acceptance contract](../../../../../CrossModule/ShaderSystem/Acceptance.md).

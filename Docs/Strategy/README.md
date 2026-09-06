@@ -26,6 +26,6 @@ Assessments must be revalidated before acting; they do not silently become curre
 ## Neighboring Authorities
 
 - [Architecture](../Architecture/README.md) owns current maps, decisions, and system shape.
-- [Acceptance](../Acceptance/README.md) owns release, feature, and workload proof.
+- [Architecture](../Architecture/README.md) owns feature-local proof contracts; [Acceptance](../Acceptance/README.md) owns candidate reports, workload/release gates, and high-level progress.
 - [Engineering guidance](../Engineering/README.md#choose-by-task) owns implementation rules and routes them by task.
 - [Plans](../Plans/README.md) own subsystem delivery sequences; the release-wide roadmap remains here because it sets product priority and ordering.

@@ -4,11 +4,11 @@ Status: implementation plan; not proof of implementation or acceptance
 
 Scope: staged delivery of decal authoring, scene/GPU data, deferred composition, ray-hit reuse, and validation
 
-Architecture authority: [Deferred GBuffer Decal Pipeline](../../Architecture/Modules/Engine/Renderer/DeferredGBufferDecals.md)
+Architecture authority: [Deferred GBuffer Decal Composition Architecture](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/CompositionArchitecture.md)
 
 Cross-system shader sequence: [Shader System Delivery Plan](../CrossModule/ShaderSystem.md)
 
-Acceptance authority: [Deferred GBuffer Decals Acceptance Contract](../../Acceptance/Renderer/DeferredGBufferDecals.md)
+Feature acceptance: [Deferred GBuffer Decals — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md)
 
 This plan owns feature-local delivery order, dependencies, and phase exit sequence. It does not redefine decal semantics, own the final acceptance criteria, or prove that any phase is complete.
 
@@ -77,7 +77,7 @@ Exit: paired primary images agree within the recorded format/tolerance budget, p
 
 Exit: the same authored decal appears on the visible receiver and in an off-screen reflection, changes indirect material response where expected, and matches the CPU projection/composition reference. Candidate spans meet the recorded budget on Modern Sponza and the overlap stress case.
 
-### Phase 5 - Acceptance preparation and cleanup
+### Phase 5 - Evidence preparation and cleanup
 
 - run the full raster/ray-primary/ray-secondary matrix on D3D12 and Vulkan;
 - capture the fixed Modern Sponza cameras and one adversarial overlap/near-plane scene;
@@ -85,4 +85,4 @@ Exit: the same authored decal appears on the visible receiver and in an off-scre
 - remove temporary guards, duplicate structs, abandoned planners, unused flags, and stale documentation discovered by the migration;
 - reconcile the capability snapshot and architecture with proven behavior, record the acceptance result in its owning contract/report, and retire this plan when no active delivery consumer remains.
 
-Exit: the candidate is ready for judgment under the [Deferred GBuffer Decals Acceptance Contract](../../Acceptance/Renderer/DeferredGBufferDecals.md), with one authored contract, one runtime decal table, one primary resolve, one shared shader composition path, and one selected secondary lookup. Unavailable checks and unsupported surfaces remain stated rather than hidden by fallbacks.
+Exit: the candidate is ready for judgment under [Deferred GBuffer Decals — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md), with one authored contract, one runtime decal table, one primary resolve, one shared shader composition path, and one selected secondary lookup. Unavailable checks and unsupported surfaces remain stated rather than hidden by fallbacks.

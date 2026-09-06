@@ -55,14 +55,14 @@ Graphics companion: [Graphics Feature Execution Traces](FeatureExecutionTraces.m
 | Stage | Owner and transition | Contract crossing the boundary | Open evidence/failure boundary |
 | --- | --- | --- | --- |
 | Request | DefaultEngine.ini, command-line CVar, editor settings, or runtime console selects a value | Requested setting with source/scope | Command-line unknown/parse failures are currently silent; precedence and malformed persistence need evidence. |
-| Persist/apply | Renderer settings persistence writes its fixed section; Application applies persisted values before host creation; editor commits runtime changes | Typed CVar/settings state | View mode is session-only; adapter preference and back-buffer format require restart. Write failure/package path behavior is open. |
+| Persist/apply | Renderer settings persistence writes its fixed section; Application registers launch CVars, applies persisted values, then applies command-line assignments before host creation; editor commits runtime changes | Typed CVar/settings state with command line taking precedence over persisted values | View mode is session-only; adapter preference and back-buffer format require restart. Write failure/package path behavior is open. |
 | Resolve | Renderer combines settings with RHI/provider/device capability | Active GBuffer/lighting/traversal/provider/presentation plan or unavailable reason | Every selector needs requested-versus-active reporting; silent substitution blocks inclusion. |
 | Reconfigure | Coordinator sends control state; FramePipeline rebuilds topology or provider/shader generation where needed | New graph/generation and invalidated history | In-flight settings changes, retirement, resize, and failure rollback require evidence. |
 | Execute | Frame graph materializes passes/pipelines and RHI lowers work to the selected backend | Presented/captured output plus diagnostics | Each unlike backend/mode cell retains an independent verdict. |
 
 ## Trace 5: Shader Change To Safe Runtime Generation
 
-The complete graphics-side trace is [Shader Authoring To Runtime Generation](FeatureExecutionTraces.md#trace-6-shader-authoring-to-runtime-generation). From the developer's workflow perspective:
+The complete graphics-side trace is [Shader Authoring To Runtime Generation](FeatureExecutionTraces.md#trace-7-shader-authoring-to-runtime-generation). From the developer's workflow perspective:
 
 | Stage | Owner and transition | Required visible behavior |
 | --- | --- | --- |
@@ -93,6 +93,30 @@ The complete graphics-side trace is [Shader Authoring To Runtime Generation](Fea
 | Process shutdown | Application | Are console, Renderer, level/world, Tasks, input/window, and timer destroyed in dependency order without new work starting? |
 
 These questions are intentionally retained as evidence placeholders. Source contains partial settlement mechanisms, but only controlled cancellation/failure injection and repeat shutdown can answer them.
+
+## Trace 8: New Project To Runnable Product
+
+| Stage | Current owner and transition | Current boundary or missing owner |
+| --- | --- | --- |
+| Declare | A direct child of `Projects` supplies `.sparkle-project` and module CMake | Root project discovery recognizes the project; TemplateProject is intentionally skipped. No supported scaffolding command or public template lifecycle is defined. |
+| Compose | Project CMake defines `<Project>Editor` and/or `<Project>Runtime` and links the corresponding Application product | Showcase proves one in-repository convention, not a stable external SDK/API/ABI promise. |
+| Describe content | Project catalog/level documents identify startup levels, scenes, packs, hashes, licenses, and support flags | Schema ownership exists in Core/Showcase; authoring guidance, compatibility/versioning, and validation UX remain incomplete. |
+| Author/import | Project assets and supported glTF/GLB/FBX sources enter shader/content pipelines | Unsupported formats/material semantics and source provenance must be visible before release. |
+| Build/cook/run | CMake/Launcher produces development artifacts and cooked products, then launches from project context | A project-specific end-to-end route exists; independent project creation and clean reproduction are unproven. |
+| Distribute | Project products enter formal package/install/public integration | No current package owner or external consumption contract exists, so the trace stops here. |
+
+## Trace 9: Changed Claim To Reviewable Evidence
+
+| Stage | Owner and transition | Required output |
+| --- | --- | --- |
+| Scope | Developer maps changed behavior to module capability/`WF-*`, owner, producers, consumers, build membership, and applicable persona/roadmap/acceptance targets | One finite claim and affected matrix cells. |
+| Select check | Validation standard and capability evidence plan choose the cheapest check capable of falsifying that claim | Named `CHK-*`, predeclared oracle, environment, artifact, and escalation trigger. |
+| Execute | Owning target/product/tool runs the focused check | Exact command or UI route, revision/dirty state, observation, warnings/errors, duration, and raw artifact. |
+| Escalate | A passing prerequisite permits broader runtime/native/performance/package evidence; a failure stops unrelated broad work | No broad suite is used to hide a failed prerequisite. |
+| Record | Candidate `FCR-*` report maps result to risks, criteria, failures, checks, artifacts, defects, and waivers | Evidence grade reflects what actually ran. |
+| Review/approve | Evidence reviewer and release owner accept, block, exclude, or remove the exact surface | Decision and invalidation trigger are explicit; Architecture changes only if implementation truth changed. |
+
+This route is procedurally documented but operationally incomplete: there is no CTest/CI inventory or generated affected-check map. The [Capability Documentation Review](../../Engineering/Workflow/CapabilityReview.md) owns dossier review; [Validation And Evidence](../../Engineering/Verification/ValidationAndEvidence.md) owns check design.
 
 ## Trace Closure Rule
 

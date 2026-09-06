@@ -1,16 +1,16 @@
-# Deferred GBuffer Decals Acceptance Contract
+# Deferred GBuffer Decals — Acceptance
 
-Status: acceptance contract; not proof that deferred decals have passed
+Status: feature-local acceptance contract; not proof that deferred decals have passed
 
-Scope: validation fixture, producer/consumer matrix, and completion gates for deferred GBuffer decals
+Scope: validation fixture, producer/consumer matrix, controlled failures, and completion gates for deferred GBuffer decals
 
-Architecture authority: [Deferred GBuffer Decal Pipeline](../../Architecture/Modules/Engine/Renderer/DeferredGBufferDecals.md)
+Feature architecture: [Deferred GBuffer Decal Composition Architecture](CompositionArchitecture.md)
 
-Delivery authority: [Deferred GBuffer Decals Delivery Plan](../../Plans/Renderer/DeferredGBufferDecals.md)
+Delivery authority: [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md)
 
-Workload authority: [Graphics Workloads](../GraphicsWorkloads.md)
+Release/workload orchestration: [Graphics Workloads](../../../../../../Acceptance/GraphicsWorkloads.md)
 
-This contract owns the feature proof required after delivery. Results must retain exact commands, configurations, artifacts, and limitations.
+This file is part of the Deferred Decals feature dossier and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 
 ## Traceability And Current Disposition
 
@@ -44,20 +44,20 @@ Intel's source package remains external and unmodified. Add a small repository-o
 | Two-layer repair/mark stack | Stable overlap order and all producer parity |
 | Volume crossing an opted-out receiver | Exact box test and `ReceivesDecals` behavior |
 
-The fixture must state its own texture license/provenance. Illustrative values or captures are not Intel reference measurements. Modern Sponza remains a compatibility workload under [Graphics Workloads](../GraphicsWorkloads.md), not a replacement for its larger acceptance gates.
+The fixture must state its own texture license/provenance. Illustrative values or captures are not Intel reference measurements. Modern Sponza remains a compatibility workload under [Graphics Workloads](../../../../../../Acceptance/GraphicsWorkloads.md), not a replacement for its larger acceptance gates.
 
 ## Validation Matrix
 
 | Surface | Raster primary | Ray primary | Ray reflection/GI hit |
 |---|---:|---:|---:|
-| Opaque static mesh | Phase 2 | Phase 3 | Phase 4 |
-| Alpha-tested static mesh | Phase 2 | Phase 3 | Phase 4 |
+| Opaque static mesh | Required | Required | Required |
+| Alpha-tested static mesh | Required | Required | Required |
 | Receiver opted out | Unchanged | Unchanged | Unchanged |
 | Sky/miss | Unchanged | Unchanged | Unchanged |
 | Alpha-blended/transparent | Unsupported | Unsupported | Unsupported |
 | Skinned or moving receiver | Static-frame appearance only; temporal support deferred | Same | Candidate update support deferred |
 
-Minimum key-check coverage follows the [check and test design contract](../../Engineering/Verification/ValidationAndEvidence.md#check-and-test-design-contract). These identities do not authorize new permanent test code:
+Minimum key-check coverage follows the [check and test design contract](../../../../../../Engineering/Verification/ValidationAndEvidence.md#check-and-test-design-contract). These identities do not authorize new permanent test code:
 
 - `CHK-DECAL-01` — projection inside/outside, orientation, UV, edge/facing fade, negative/degenerate transform rejection;
 - `CHK-DECAL-02` — composition masks, zero/one/intermediate coverage, normal normalization, receiver alpha preservation, and F0 preservation when the Material group is disabled;

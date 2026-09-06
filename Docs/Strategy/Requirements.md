@@ -1,6 +1,6 @@
 # A. Principal Graphics Engineering Requirements
 
-Status: canonical, vendor-neutral capability baseline
+Status: strategy contract; canonical vendor-neutral capability baseline
 Date: 2026-07-26
 Scope: principal-level real-time graphics, developer technology, GPU systems, rendering research productization, workload tooling, and neural graphics
 

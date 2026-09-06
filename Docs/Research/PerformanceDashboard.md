@@ -12,7 +12,7 @@ Should historical performance comparison remain a command-line workflow, live in
 
 This document owns only that future product-boundary question and its promotion gates. It does not redefine:
 
-- metric meaning, collection, identity, or live presentation from [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics.md);
+- metric meaning, collection, identity, or live presentation from [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics/README.md);
 - delivery order or package state from the [Performance Diagnostics Delivery Plan](../Plans/CrossModule/PerformanceDiagnostics.md);
 - Editor interaction from [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsVisualDesign.md);
 - profiler operation from the [External Performance Profiler Runbook](../Engineering/Verification/ExternalProfiling.md);

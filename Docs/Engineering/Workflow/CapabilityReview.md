@@ -4,7 +4,7 @@ Status: operational review runbook
 
 Scope: evaluate whether a SparkleEngine capability is discoverable, accurately bounded, traceable through its real owners, and ready to receive executable evidence
 
-Authority boundary: module and cross-module Architecture documents own current source claims; Acceptance owns completion and release disposition; Plans own unanswered checks; this runbook owns only the review workflow
+Authority boundary: module and cross-module Architecture feature dossiers own current source claims and feature-local completion contracts; Acceptance owns candidate reports, workload/release orchestration, and release disposition; Plans own unanswered delivery/evidence sequence; this runbook owns only the review workflow
 
 ## Start From The Reader's Question
 
@@ -13,21 +13,22 @@ Authority boundary: module and cross-module Architecture documents own current s
 | What does this module currently contain? | [Module Architecture And Capability Inventory](../../Architecture/Modules/README.md) |
 | How does a graphics feature differ across modes or backends? | [Graphics Feature Coverage Matrix](../../Architecture/CrossModule/GraphicsCoverageMatrix.md) |
 | How does a graphics result travel from request to GPU retirement? | [Graphics Feature Execution Traces](../../Architecture/CrossModule/FeatureExecutionTraces.md) |
-| Can a developer or user complete an end-to-end product journey? | Start with the [Whole Repository Architecture Map](../../Architecture/WholeRepositoryMap.md) and affected [module inventories](../../Architecture/Modules/README.md); record any missing dedicated cross-module route in the [Capability Evidence Plan](../../Plans/CapabilityEvidence.md). |
-| Where does a non-graphics journey cross module boundaries? | Trace the affected [module inventories](../../Architecture/Modules/README.md) owner by owner; record an unowned trace as an explicit [Capability Evidence](../../Plans/CapabilityEvidence.md) gap rather than linking to a document that does not exist. |
+| Can a developer or user complete an end-to-end product journey? | [Product Workflow Coverage](../../Architecture/CrossModule/ProductWorkflowCoverage.md) |
+| Where does a non-graphics journey cross module boundaries? | [Product Execution Traces](../../Architecture/CrossModule/ProductExecutionTraces.md) |
 | What evidence is still missing? | [Capability Evidence Plan](../../Plans/CapabilityEvidence.md) |
-| Is the feature complete or allowed to ship? | [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md) and [First Release Acceptance](../../Acceptance/FirstRelease.md) |
+| What must this feature prove? | Its owning [Architecture](../../Architecture/README.md) feature dossier and adjacent acceptance contract, when split for size |
+| Did this candidate prove it, and may it ship? | [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md) and [First Release Acceptance](../../Acceptance/FirstRelease.md) |
 | How should a change be implemented and reviewed? | [Change Lifecycle](ChangeLifecycle.md), [Change Integration](ChangeIntegration.md), and [Code Review](CodeReview.md) |
 
 Do not answer a release question from an Architecture snapshot and do not answer an implementation question from a plan. Follow the owning route.
 
 ## Capability Dossier Contract
 
-For each advertised capability or independently selectable mode, the documentation set must make every applicable dimension below discoverable. One document need not contain everything; links may cross to the owning module, decision, plan, or acceptance report.
+For each advertised capability or independently selectable mode, the documentation set must make every applicable dimension below discoverable. The feature dossier owns the cohesive feature definition and local proof contract; links may cross to current module maps, decisions, plans, candidate reports, workload gates, or release acceptance.
 
 | Dimension | Question the dossier must answer | If the answer is not known yet |
 | --- | --- | --- |
-| Identity and promise | What exact result is offered, to whom, and what is deliberately not promised? | Mark `Unknown` or `Pending`; add an inventory/evidence item before advertising it. |
+| Identity and promise | Which durable capability ID names the exact result, to whom is it offered, and what is deliberately not promised? | Assign an owner/family ID, mark `Unknown` or `Pending`, and add an inventory/evidence item before advertising it. |
 | Reachability | Which executable, API, CLI argument, setting, CVar, editor control, catalog entry, or package surface selects it? | Add it to the selector audit; an unenumerated reachable control blocks scope freeze. |
 | Owner and build membership | Which module/target owns policy and which targets compile/link the path? | Trace CMake and source membership; do not infer from directory names. |
 | Inputs and outputs | What semantic data enters, what representation crosses each boundary, and what observable product exits? | Record the missing producer/consumer in the evidence plan. |
@@ -44,11 +45,11 @@ For each advertised capability or independently selectable mode, the documentati
 | Evidence and disposition | Which `INV-*`/module evidence, `FCR-*`, `AC-*`, `FM-*`, and `CHK-*` rows own proof and approval? | Keep the release disposition Pending; never embed an unreviewed pass claim in Architecture. |
 | Change and retirement | What invalidates prior evidence, and when should the capability, fallback, or scaffolding be removed or reconsidered? | Add an invalidation/deletion trigger rather than retaining it indefinitely. |
 
-Use four documentation answers consistently: **Answered**, **Partial**, **Unknown**, and **Not applicable**. `Unknown` is acceptable during inventory hardening only when it links to a named evidence or architecture action. Blank space, “should work,” and an uncited future intention are not states.
+Use four dossier-field answers consistently: **Answered**, **Partial**, **Unknown**, and **Not applicable**. These describe documentation completeness only; they do not replace the inventory implementation states, evidence grades, or release dispositions. `Unknown` is acceptable during inventory hardening only when it links to a named evidence or architecture action. Blank space, “should work,” and an uncited future intention are not states.
 
 ## Developer Workflow
 
-1. Start at the nearest module inventory and select the exact capability row or create one if a reachable path has no row.
+1. Start at the nearest module inventory and select the exact capability ID or create one if a reachable path has no row. Keep the ID with the semantic capability when reorganizing tables; never renumber existing rows for presentation.
 2. Enumerate every producer of selection/configuration and every runtime/tool consumer. Include CMake membership and generated products.
 3. Walk the relevant vertical trace. At every boundary record representation, ownership, mutability, identity, lifetime, failure, and observability.
 4. Compare all independently meaningful horizontal cells: backend, mode, shader target, material/geometry variant, product profile, map, and supported/unsupported hardware.

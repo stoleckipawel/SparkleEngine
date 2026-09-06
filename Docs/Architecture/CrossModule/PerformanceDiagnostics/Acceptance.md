@@ -1,18 +1,18 @@
-# Performance Diagnostics Acceptance Contract
+# Performance Diagnostics — Acceptance
 
-Status: acceptance contract; not proof that diagnostics or workloads have passed
+Status: feature-local acceptance contract; not proof that diagnostics or workloads have passed
 
-Scope: diagnostic evidence fields, baseline experiments, benchmark artifacts, reviewer paths, and verification gates for accepted workloads
+Scope: feature-local diagnostic evidence fields, baseline experiments, benchmark artifacts, reviewer paths, and verification gates
 
-Architecture authority: [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics.md)
+Feature architecture: [Performance Diagnostics Architecture](README.md)
 
-Delivery authority: [Performance Diagnostics Delivery Plan](../../Plans/CrossModule/PerformanceDiagnostics.md)
+Delivery authority: [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md)
 
-Workload authority: [Graphics Workloads](../GraphicsWorkloads.md)
+Release/workload orchestration: [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
 
-Engineering evidence rules: [Validation, Performance, and Evidence](../../Engineering/Verification/ValidationAndEvidence.md)
+Engineering evidence rules: [Validation, Performance, and Evidence](../../../Engineering/Verification/ValidationAndEvidence.md)
 
-This contract owns the diagnostic evidence expected from acceptance workloads, baseline experiments, reviewer artifacts, and verification gates. Results must retain exact commands, configuration, environment, artifacts, and limitations.
+This file is part of the Performance Diagnostics architecture set and owns the diagnostic evidence expected from workloads, baseline experiments, reviewer artifacts, and verification gates. Candidate results remain in the release-level completion report and must retain exact commands, configuration, environment, artifacts, and limitations.
 
 ## Acceptance-Workload Diagnostic Contract
 
@@ -58,7 +58,7 @@ Candidate paths have different evidence strength:
 | Vendor latency SDK | May expose a deeper engine-to-display chain on supported hardware. | Vendor dependency, configuration coupling, and cross-vendor semantic gaps. Defer until an accepted workload needs it. |
 | Optical/high-speed measurement | Measures photons and can validate the complete external path. | Specialized equipment and route automation; difficult to attribute internal stages. Use as validation evidence, not a live metric owner. |
 
-Current tool/version caveats and source links live in the [profiler runbook](../../Engineering/Verification/ExternalProfiling.md#input-to-display-options).
+Current tool/version caveats and source links live in the [profiler runbook](../../../Engineering/Verification/ExternalProfiling.md#input-to-display-options).
 
 ### Comparison And Regression Contract
 
@@ -99,7 +99,7 @@ The screenshot's visible approximately 6 FPS is enough to justify measurement, b
 
 ## Benchmark And Portfolio Evidence
 
-The live Editor screenshot is one portfolio artifact, not the result. Conceptually, a reviewer-ready performance case includes the following files under the workload-owned run directory; [Graphics Workloads](../GraphicsWorkloads.md) remains authoritative for exact names and placement:
+The live Editor screenshot is one portfolio artifact, not the result. Conceptually, a reviewer-ready performance case includes the following files under the workload-owned run directory; [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md) remains authoritative for exact names and placement:
 
 ```text
 artifacts/validation/showcase-levels/<run-id>/<level-id>/
@@ -258,3 +258,42 @@ Every vertical slice passes the [authoring-isolation and Shipping-erasure](#auth
 - Enabling groups with the same minimum mode does not duplicate collection, memory polling, GPU timestamp pairs, or history storage.
 - Export failure preserves the previous accepted evidence and reports one actionable error.
 - `git diff --check`, applicable builds/tests, architecture boundary check, and exact unavailable hardware/tool paths are reported.
+
+## Stable Completion Mapping
+
+The detailed contracts above remain the authority for fields, statistics, workloads, and reviewer artifacts. The stable IDs below make those obligations traceable from a candidate report without copying the matrices elsewhere.
+
+| Criterion | Pass condition | Checks |
+| --- | --- | --- |
+| `AC-PERF-01` | Every displayed/exported metric names its physical or logical owner, unit, interval, validity, age, and unavailable state; no neighboring metric is used as a substitute. | `CHK-PERF-01`, `CHK-PERF-04` |
+| `AC-PERF-02` | Off, live, detailed, profile, benchmark, and external-capture modes collect only their declared bounded products and Shipping erases development-only collection. | `CHK-PERF-02`, `CHK-PERF-06` |
+| `AC-PERF-03` | The live product, focused capture, benchmark record, and specialist artifact remain separate evidence depths joined by immutable frame/run/configuration identity. | `CHK-PERF-01`, `CHK-PERF-03` |
+| `AC-PERF-04` | Accepted comparisons retain raw samples, run counts, uncertainty/variation, thresholds, comparability controls, and `Pass`/`Regression`/`Inconclusive` disposition. | `CHK-PERF-03` |
+| `AC-PERF-05` | CPU, GPU, memory, loading/compilation, concurrency, ray tracing, and workload-cardinality families are recorded or explicitly classified unavailable. | `CHK-PERF-01`, `CHK-PERF-05` |
+| `AC-PERF-06` | Input-to-display remains `NotInstrumented` until a bounded input/simulation/present/display identity chain exists and is correlated independently. | `CHK-PERF-04` |
+| `AC-PERF-07` | D3D12, Vulkan, DevelopmentEditor, and DevelopmentGame routes expose honest requested/active capability, comparable semantic markers, and explicit provider limitations. | `CHK-PERF-04`, `CHK-PERF-05` |
+| `AC-PERF-08` | Instrumentation, UI, capture, and export remain within declared CPU/GPU/memory/storage bounds and do not alter the measured ownership or scheduling route without disclosure. | `CHK-PERF-02`, `CHK-PERF-06` |
+| `AC-PERF-09` | A second engineer or clean environment can reproduce the documented capture/investigation route using only retained configuration, commands, artifacts, and limitations. | `CHK-PERF-03`, `CHK-PERF-05` |
+| `AC-PERF-10` | Candidate evidence satisfies the workload protocol without promoting source presence, a responsive process, one screenshot, or one profiler number into causal or release proof. | `CHK-PERF-03`, `CHK-PERF-05` |
+
+| Failure ID | Injected condition | Required safe result | Check |
+| --- | --- | --- | --- |
+| `FM-PERF-01` | missing, delayed, invalid, discontinuous, or unsupported measurement | UI/export shows the exact validity state and excludes it from incompatible aggregation or classification | `CHK-PERF-01` |
+| `FM-PERF-02` | overflow a ring, query pool, queue, label table, export bound, or capture request | collection rejects or truncates by declared policy without corruption, unbounded growth, or plausible complete evidence | `CHK-PERF-02` |
+| `FM-PERF-03` | compare mismatched resolution, route, settings, readiness, backend, observer mode, or sample population | comparison becomes `Inconclusive` or rejected and identifies every mismatch | `CHK-PERF-03` |
+| `FM-PERF-04` | capture unavailable/busy/wrong viewport, missing provider, device loss, minimize/resize, or shutdown | request reaches a bounded explicit terminal state and never returns another window/frame as success | `CHK-PERF-04` |
+| `FM-PERF-05` | engine metric and external trace/counter disagree beyond tolerance | candidate remains blocked while identities, domains, and limitations are reconciled | `CHK-PERF-05` |
+| `FM-PERF-06` | enable overlapping groups or detailed capture under load | collection deduplicates shared work, reports observer cost, and preserves bounded allocation/recording behavior | `CHK-PERF-06` |
+
+| Check ID | Claim-falsifying action | Primary route |
+| --- | --- | --- |
+| `CHK-PERF-01` | schema-validate live/focused/benchmark records with missing, delayed, invalid, unsupported, and discontinuous fields | metric semantics and evidence families |
+| `CHK-PERF-02` | force capacity, export, cancellation, shutdown, and Shipping-erasure cases | bounds and controlled failure |
+| `CHK-PERF-03` | run `MAP-00`, repeated warm samples, mismatch controls, synthetic uncertainty data, and clean-environment replay | comparison and reproducibility |
+| `CHK-PERF-04` | exercise supported/unavailable capture providers, viewport identity, input-to-display classification, and external marker correlation | capture and latency truth |
+| `CHK-PERF-05` | correlate representative CPU, GPU, memory, ray-tracing, and hard-incident evidence with WPA/PIX/RenderDoc/vendor tools as applicable | attribution and causality |
+| `CHK-PERF-06` | measure Off/live/detail/profile/export overhead, fixed storage, duplicate-group collection, query capacity, and parallel-recording disturbance | observer cost and noninterference |
+
+## Completion Definition
+
+Performance Diagnostics is complete only when `AC-PERF-01` through `AC-PERF-10` pass, every applicable `FM-PERF-*` is deliberately exercised through its named `CHK-PERF-*`, candidate evidence is recorded in the release-level completion report, and unavailable tools or hardware remain explicit blockers rather than inferred passes.

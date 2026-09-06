@@ -15,19 +15,21 @@ Code and executable build configuration own implemented behavior. A document MUS
 | Area | Place here | Do not place here |
 | --- | --- | --- |
 | `Strategy` | desired capabilities, priority, roadmap, operating model, dated executive assessments | implementation rules or system design |
-| `Architecture` | current maps, capability snapshots, accepted decisions, current/target system shape | phase execution, runbooks, or external studies |
+| `Architecture` | current maps, capability snapshots, accepted decisions, current/target system shape, and feature-local acceptance criteria, controlled failures, checks, and completion definition | phase execution, runbooks, release-result ledgers, or external studies |
 | `Engineering` | binding standards, change/review procedure, accepted technical decision records, operational runbooks | product scope or acceptance gates |
-| `Acceptance` | completion vocabulary, feature/release/workload gates, report schemas | architecture or priority |
+| `Acceptance` | shared completion vocabulary, cross-feature workload and release gates, report schemas, candidate reports, and high-level progress | architecture, priority, or duplicate feature-local proof contracts |
 | `Plans` | ordered delivery slices, dependencies, stop rules, migration and validation sequence | enduring decisions or completion claims |
 | `Research` | external precedent, option studies, visual exploration, dated migration baselines | binding local policy or current-state authority |
 
-When one subject needs independently maintained knowledge types, split it and cross-link the owners. Small rationale, delivery notes, or validation checklists may remain with an owning contract when they exist only to explain or verify that contract and have no independent lifecycle. Do not hide a standalone plan, runbook, or research report in an Architecture folder because it shares a subject with an architecture document.
+Feature definition and feature-local acceptance form one ownership unit: keep the criteria, controlled failure modes, checks, and definition of done in the owning Architecture feature dossier or beside it in the same feature folder. `Docs/Acceptance` may index those contracts and record high-level candidate progress, but MUST NOT reproduce their detailed matrices. Actual candidate results belong in the release-level completion report and retained evidence.
+
+When one subject needs other independently maintained knowledge types, split and cross-link them. Small rationale, delivery notes, or validation checklists may remain with an owning contract when they exist only to explain or verify that contract and have no independent lifecycle. Do not hide a standalone plan, runbook, research report, or release-result ledger in an Architecture folder because it shares a subject with an architecture document.
 
 ## Placement By Module Ownership
 
 Architecture MUST make the repository's durable module boundaries visible in its physical hierarchy:
 
-- current module maps, capability snapshots, catalogs, and module-owned designs live under `Architecture/Modules/<repository-boundary>/<module>`;
+- current module maps, capability snapshots, catalogs, module-owned designs, and feature-local acceptance contracts live under `Architecture/Modules/<repository-boundary>/<module>`;
 - `Architecture/Modules/Engine`, `Tools`, and `Projects` mirror their repository boundaries; repository-wide build and packaging knowledge remains directly under `Architecture/Modules`;
 - a document that primarily belongs to one module stays with that module even when it calls, configures, or consumes another module; use links to explain those relationships;
 - `Architecture/CrossModule` is reserved for a system with several durable owners and no coherent primary module owner;
@@ -56,15 +58,17 @@ Every non-index document MUST make these facts obvious before its first substant
 - verification date and revision for current-state maps or snapshots;
 - explicit non-claims when source inspection could be mistaken for executable evidence.
 
-Use one primary type: **canonical decision**, **standard**, **current map**, **target architecture**, **capability snapshot**, **plan**, **acceptance contract**, **runbook**, **research**, **dated assessment**, or **archive**. “Summary” and “index” are navigation roles, not second authorities.
+Use one primary type: **strategy contract**, **roadmap**, **operating model**, **orientation**, **canonical decision**, **standard**, **current map**, **target architecture**, **capability snapshot**, **feature dossier**, **plan**, **acceptance contract**, **runbook**, **research**, **dated assessment**, or **archive**. A feature dossier may route separate current-state and target-design pages while owning or colocating its feature-local acceptance contract. “Summary” and “index” are navigation roles, not second authorities.
 
 ## Granularity
 
-Split a document when sections have different owners, audiences, lifecycles, authority types, or independent reasons to change. Keep sections together when they enforce one invariant and normally change in the same review.
+Split a document when sections have different owners, audiences, lifecycles, authority types, or independent reasons to change. Keep sections together when they enforce one invariant and normally change in the same review. Feature-local acceptance is not a reason to create a parallel `Acceptance` taxonomy: keep it in the feature dossier, or use an adjacent `Acceptance.md` only when size makes the dossier materially harder to navigate.
 
-Length alone is not a split rule. A short file without an independent responsibility is fragmentation; a long file containing architecture, phase history, research, and acceptance is mixed authority. Prefer one cohesive owner over both extremes.
+Length alone is not a split rule. A short file without an independent responsibility is fragmentation; a long file containing architecture, phase history, research, and acceptance is mixed authority. Prefer one cohesive owner over both extremes. Delivery plans call their intermediate gates **phase exit criteria**; they must not label those gates feature acceptance or retain a second final definition of done.
 
-A subfolder MUST represent a durable subject, repository module, or document class. A module folder MAY contain only its `README.md` when it mirrors a durable source/build module and that page owns the module inventory; this consistency is intentional, not fragmentation. Other categorization folders need at least two owned documents. Every multi-document folder needs a short `README.md` if its contents are not completely routed by the parent index.
+A subfolder MUST represent a durable subject, repository module, or document class. A module folder MAY contain only its `README.md` when it mirrors a durable source/build module and that page owns the module inventory; this consistency is intentional, not fragmentation. `Acceptance` MAY likewise use a single-`README.md` module progress folder when it mirrors a durable module and contains only high-level dossier/report/disposition routing. Other categorization folders need at least two owned documents. When a durable feature has two or more independently maintained files in one area, group them under `<Feature>/`: use `README.md` as the feature dossier and role names such as `Capability.md` or `Acceptance.md` for companions instead of repeating the feature name across flat siblings. Every multi-document folder needs a `README.md`; it may own the dossier when the folder path names the subject, otherwise it is a short route whose contents are not already completely routed by the parent index.
+
+A feature family with child capabilities that have different inputs/results, selectors, capability states, failure modes, or proof obligations SHOULD use one named folder. Its `README.md` owns shared ordering and invariants; each independently reviewable child owns a descriptive document. Do not represent one family partly as loose peer files and partly as a same-level folder. Expected but absent capabilities receive explicit negative dossiers when omission could be mistaken for support from an adjacent feature.
 
 ## Naming
 
@@ -86,7 +90,7 @@ An index routes. It SHOULD NOT reproduce large status tables, requirements, phas
 ## Lifecycle
 
 - Reconcile current maps and capability snapshots whenever their named owners, consumers, build membership, or public selection surface changes.
-- Update architecture and its directly affected plans, acceptance gates, and indexes in one change when a contract moves.
+- Update a feature's architecture, local acceptance contract, directly affected plans, release/workload tracking, and indexes in one change when its contract moves.
 - Delete superseded content when traceability has no active consumer.
 - Move content to an archive only when provenance, legal traceability, or an active migration audit requires retention; archives are never default reviewer paths.
 - Record completion in evidence or a current-state owner. Do not turn a plan into a permanent mixed plan/status diary.

@@ -11,7 +11,7 @@ Scope: the visual and functional design of performance diagnostics for SparkleEn
 
 This document maps the diagnostic product space before implementation. It asks what information a developer needs, at what depth, in which visual form, and how the views should connect without turning the engine or Editor into a profiler framework.
 
-The selected Sparkle behavior belongs to [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics.md). This document records precedent, alternatives, and reasons. It does not override:
+The selected Sparkle behavior belongs to [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics/README.md). This document records precedent, alternatives, and reasons. It does not override:
 
 - [A. Principal Graphics Engineering Requirements](../Strategy/Requirements.md), including `PGE-05`, `PGE-06`, `PGE-10`, and `PGE-13`;
 - [Gap Assessment](../Strategy/Assessments/GapAssessment.md), which owns the role-source/profile audit, current evidence grade, and principal-readiness gaps;
@@ -321,12 +321,12 @@ The hybrid diagnostics ladder is the selected result of this research: cheap com
 
 | Selected concern | Adopted boundary | Canonical owner |
 | --- | --- | --- |
-| Product depth and surfaces | Task-first Quick/CPU/GPU/Memory entry, an initially bounded compact-overlay set, one fixed Overview/CPU/GPU/Memory workspace, and external tools for causal depth. Raw stat groups remain expert customization, not the first menu. | [Product information architecture](../Architecture/CrossModule/PerformanceDiagnostics.md#diagnostics-product-information-architecture) |
-| Physical/logical ownership and metric meaning | Physical CPU thread rows, logical phases inside their real owners, independent GPU queues, distinct memory definitions, explicit validity. | [Measurement and view contracts](../Architecture/CrossModule/PerformanceDiagnostics.md#measurement-vocabulary) |
-| Selection and interaction | One shared frame/range/object selection; hitches are frame selections; Sparkle GPU capture stays inside the GPU view; an attached external provider may add one targeted viewport action; filtering never changes totals. | [Workspace interaction contract](../Architecture/CrossModule/PerformanceDiagnostics.md#workspace-interaction-contract) |
-| Visual and failure behavior | Milliseconds lead, color is never the only signal, configuration remains visible, and pending/stale/unsupported/lost states never masquerade as zero. | [Visual and accessibility rules](../Architecture/CrossModule/PerformanceDiagnostics.md#visual-validity-and-accessibility-rules) |
+| Product depth and surfaces | Task-first Quick/CPU/GPU/Memory entry, an initially bounded compact-overlay set, one fixed Overview/CPU/GPU/Memory workspace, and external tools for causal depth. Raw stat groups remain expert customization, not the first menu. | [Product information architecture](../Architecture/CrossModule/PerformanceDiagnostics/README.md#diagnostics-product-information-architecture) |
+| Physical/logical ownership and metric meaning | Physical CPU thread rows, logical phases inside their real owners, independent GPU queues, distinct memory definitions, explicit validity. | [Measurement and view contracts](../Architecture/CrossModule/PerformanceDiagnostics/README.md#measurement-vocabulary) |
+| Selection and interaction | One shared frame/range/object selection; hitches are frame selections; Sparkle GPU capture stays inside the GPU view; an attached external provider may add one targeted viewport action; filtering never changes totals. | [Workspace interaction contract](../Architecture/CrossModule/PerformanceDiagnostics/README.md#workspace-interaction-contract) |
+| Visual and failure behavior | Milliseconds lead, color is never the only signal, configuration remains visible, and pending/stale/unsupported/lost states never masquerade as zero. | [Visual and accessibility rules](../Architecture/CrossModule/PerformanceDiagnostics/README.md#visual-validity-and-accessibility-rules) |
 | Concrete product presentation | Integrated graphical mockups, every compact group, fixed workspace views, evidence actions, keyboard baseline, and failure states. | [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsVisualDesign.md) |
-| Resource inspector boundary | Existing shader, mesh, and texture tools remain asset inspectors unless an accepted migration removes the old route; they do not own system performance truth. | [Product surfaces and depth boundary](../Architecture/CrossModule/PerformanceDiagnostics.md#product-surfaces-and-depth-boundary) |
+| Resource inspector boundary | Existing shader, mesh, and texture tools remain asset inspectors unless an accepted migration removes the old route; they do not own system performance truth. | [Product surfaces and depth boundary](../Architecture/CrossModule/PerformanceDiagnostics/README.md#product-surfaces-and-depth-boundary) |
 
 This handoff preserves the adopted decisions while keeping research focused on precedents, options, tradeoffs, and why the hybrid direction won. The following low-clutter principles remain here because they summarize the implementation consequences drawn from the research.
 

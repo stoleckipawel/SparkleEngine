@@ -1,6 +1,6 @@
 # Change Lifecycle
 
-Status: binding implementation and review process
+Status: binding workflow standard
 
 Applies to: every material owned repository change; scale the record to risk and scope
 

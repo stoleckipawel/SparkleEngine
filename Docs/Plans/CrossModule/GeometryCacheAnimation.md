@@ -4,9 +4,9 @@ Status: implementation plan; not proof of implementation or acceptance
 
 Scope: staged delivery of geometry-cache import, cooking, playback, residency, shared deformation, ray integration, and validation
 
-Architecture authority: [Geometry Cache Animation Pipeline](../../Architecture/CrossModule/GeometryCacheAnimation.md)
+Architecture authority: [Geometry Cache Animation Pipeline](../../Architecture/CrossModule/GeometryCacheAnimation/README.md)
 
-Acceptance authority: [Geometry Cache Animation Acceptance Contract](../../Acceptance/CrossModule/GeometryCacheAnimation.md)
+Feature acceptance: [Geometry Cache Animation — Acceptance](../../Architecture/CrossModule/GeometryCacheAnimation/Acceptance.md)
 
 This plan owns delivery order, dependencies, and phase exit sequence. It does not redefine the architecture, own the final acceptance criteria, or prove that any phase is complete.
 
@@ -88,6 +88,6 @@ Exit: raster and ray-primary surfaces agree within the recorded tolerance; the a
 - remove temporary import dumps, reference decoders, duplicate structs, abandoned codec experiments, stale static-animation claims, and any unused compatibility branches;
 - reconcile the capability snapshot and architecture with proven behavior, record the acceptance result in its owning contract/report, and retire this plan when no active delivery consumer remains.
 
-Exit: the candidate is ready for judgment under the [Geometry Cache Animation Acceptance Contract](../../Acceptance/CrossModule/GeometryCacheAnimation.md), with one tools source path, one cooked asset contract, one runtime playback state, one streamed residency owner, and one shared deformed-geometry product. Unavailable or failed checks remain recorded.
+Exit: the candidate is ready for judgment under [Geometry Cache Animation — Acceptance](../../Architecture/CrossModule/GeometryCacheAnimation/Acceptance.md), with one tools source path, one cooked asset contract, one runtime playback state, one streamed residency owner, and one shared deformed-geometry product. Unavailable or failed checks remain recorded.
 
 Only after this exit should the paused deferred-decal implementation proceed.

@@ -2,7 +2,7 @@
 
 Status: engineering navigation index
 
-Engineering owns the rules and procedures used to change SparkleEngine safely. It is organized by why a reader comes here, not as one undifferentiated standards folder. System shape belongs in [Architecture](../Architecture/README.md); completion gates belong in [Acceptance](../Acceptance/README.md).
+Engineering owns the rules and procedures used to change SparkleEngine safely. It is organized by why a reader comes here, not as one undifferentiated standards folder. System shape and feature-local completion contracts belong with the owning feature in [Architecture](../Architecture/README.md); cross-feature workload, report, and release orchestration belongs in [Acceptance](../Acceptance/README.md).
 
 ## The Short Route
 

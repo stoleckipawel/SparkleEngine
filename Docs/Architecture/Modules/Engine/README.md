@@ -12,7 +12,7 @@ This index mirrors the durable modules under `Engine`. Open the owning module fi
 | Editor | workspace, viewport sessions, editing UX, settings, and editor tool entry points | [Editor](Editor/README.md) |
 | GameFramework | levels, worlds, ECS, editing, publication, and render extraction | [GameFramework](GameFramework/README.md) |
 | Platform | Windows application, window, DPI, message, input, cursor, and capture integration | [Platform](Platform/README.md) |
-| Renderer | scene/view/frame policy, frame graph, render passes, providers, and shader registrations | [Renderer](Renderer/README.md) |
+| Renderer | whole-frame production plus explicit scene/view, geometry/GBuffer, ray tracing, Direct/Indirect/Volumetric Lighting, Post Processing subfeatures, presentation/UI, scheduling, shader-program, and diagnostic boundaries | [Renderer](Renderer/README.md) |
 | RHI | backend-neutral GPU contracts and D3D12/Vulkan implementations | [RHI](RHI/README.md) |
 | Tasks | task graphs, lanes, parallel ranges, cancellation, events, failure, and shutdown | [Tasks](Tasks/README.md) |
 

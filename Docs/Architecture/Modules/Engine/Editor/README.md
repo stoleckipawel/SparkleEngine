@@ -37,9 +37,9 @@ Evidence and disposition: [Capability Evidence Plan](../../../../Plans/Capabilit
 | ID | Capability | State | Exact current coverage and limit | Evidence |
 | --- | --- | --- | --- | --- |
 | `ED-013` | Editor viewport | Implemented path | Publishes requested extent, renders Renderer scene-color products into ImGui, registers exact input bounds, and owns a separate navigable viewport camera. | `S` |
-| `ED-014` | View modes | Implemented path | Top panel exposes the Renderer view-mode catalog, including lit and diagnostic modes. Exact 16-mode semantics/availability live in [Renderer](../Renderer/README.md). | `S` |
+| `ED-014` | View modes | Implemented path | Top panel exposes the Renderer view-mode catalog, including lit and diagnostic modes. Exact 16-mode semantics/availability live in [Debug Views](../Renderer/Features/DebugViews/README.md). | `S` |
 | `ED-015` | Exposure overrides | Implemented path | Per-viewport manual/automatic exposure controls override view presentation without changing scene state. | `S` |
-| `ED-016` | Rendering settings | Implemented path | Searchable sections expose implemented renderer selectors: display/tone/output, exposure, upscaling, ray reconstruction, ray-tracing scene/provider, and broader render settings. Apply/restart behavior follows each setting owner. | `S` |
+| `ED-016` | Rendering settings | Implemented path | Searchable sections expose implemented renderer selectors: display/tone/output, exposure, upscaling, ray reconstruction, ray-tracing scene/provider, and broader render settings. Color grading, chromatic aberration, and frame generation have no settings because those features are absent. Apply/restart behavior follows each setting owner. | `S` |
 | `ED-017` | Restart service | Implemented path | Settings can request an editor restart when a process-level setting requires it. Recovery/session restoration is not a current documented capability. | `S` |
 | `ED-018` | Viewport capture | Implemented path | File menu queues a viewport capture through Application/Renderer coordination and reports completion. Format/path/content correctness remains open evidence. | `S` |
 

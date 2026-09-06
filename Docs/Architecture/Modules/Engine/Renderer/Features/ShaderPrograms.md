@@ -8,9 +8,9 @@ Scope: the Renderer global-program set linked into the shader-contract target, i
 
 Owners: `Engine/Renderer/ShaderRegistrations` for registration membership, typed declarations and pass consumers in `Engine/Renderer`, and `Tools/Shaders` for compilation/publication
 
-Compilation inventory: [Shader Compilation Capability Inventory](../../Tools/ShaderCompiler/README.md)
+Compilation inventory: [Shader Compilation Capability Inventory](../../../Tools/ShaderCompiler/README.md)
 
-Cross-system coverage: [Graphics Feature Coverage Matrix](../../../CrossModule/GraphicsCoverageMatrix.md)
+Cross-system coverage: [Graphics Feature Coverage Matrix](../../../../CrossModule/GraphicsCoverageMatrix.md)
 
 ## Count And Meaning
 
@@ -45,18 +45,25 @@ There are exactly 35 registrations: 25 Compute, one Vertex, one Pixel, two RayGe
 | `DirectShadowSignalAnyHit` | `/Engine/Passes/Lighting/Shadows/DirectShadowSignalPipeline.hlsl` | `DirectShadowSignalAnyHit` | AnyHit | Native alpha-mask occluder rejection. |
 | `DirectLightingCS` | `/Engine/Passes/Lighting/Direct/DirectLighting.hlsl` | `main` | Compute | Resolves reservoir plus visibility against directional, point, spot, and rect light buffers into direct lobes. |
 
-## ReSTIR Indirect And Reference Lighting
+## ReSTIR Indirect Lighting
 
 | Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
 | --- | --- | --- | --- | --- |
 | `RestirIndirectTemporalCS` | `/Engine/Passes/RayTracing/RestirIndirectTemporal.hlsl` | `main` | Compute | Inline-query indirect temporal stage; reads history, TLAS, hit/deformation/material/light/sky resources. |
 | `RestirIndirectSpatialCS` | `/Engine/Passes/RayTracing/RestirIndirectSpatial.hlsl` | `main` | Compute | Inline-query spatial reuse stage over the current indirect reservoir. |
 | `RestirIndirectResolveCS` | `/Engine/Passes/RayTracing/RestirIndirectResolve.hlsl` | `main` | Compute | Inline-query resolve; writes indirect lobes and the four DLSS RR guide targets. |
+
+See [Indirect Lighting](Lighting/IndirectLighting.md) for the algorithm, history, inputs, limits, and evidence boundary.
+
+## Reference Direct And Indirect Lighting
+
+| Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
+| --- | --- | --- | --- | --- |
 | `PathTracedDirectLightingCS` | `/Engine/Passes/RayTracing/PathTracedDirectLighting.hlsl` | `main` | Compute | Reference direct sampler; inline ray query and fixed material texture table. |
 | `PathTracedIndirectLightingCS` | `/Engine/Passes/RayTracing/PathTracedIndirectLighting.hlsl` | `main` | Compute | Reference indirect sampler; inline ray query, sky, deformation/hit/material inputs. |
 | `ReferenceLightingAccumulationCS` | `/Engine/Passes/RayTracing/ReferenceLightingAccumulation.hlsl` | `main` | Compute | Motion/validity-aware RGBA32F reference-history accumulation; does not trace rays itself. |
 
-These five indirect/reference traversal programs have no registered RayGeneration/Miss/Hit equivalents. The native-pipeline claim must therefore remain limited to GBuffer and direct-shadow visibility.
+The three ReSTIR-indirect and three reference traversal/accumulation programs have no registered RayGeneration/Miss/Hit equivalents. The native-pipeline claim must therefore remain limited to GBuffer and direct-shadow visibility. See the [Offline Path Tracer](Lighting/OfflinePathTracer/README.md) for why the reference route is not yet an accepted oracle.
 
 ## Lighting Composite And Sky
 
@@ -65,7 +72,7 @@ These five indirect/reference traversal programs have no registered RayGeneratio
 | `LightingCompositeCS` | `/Engine/Passes/Lighting/LightingComposite.hlsl` | `main` | Compute | Combines direct diffuse/specular/subsurface, indirect diffuse/specular, and GBuffer material/emissive data into HDR scene color. |
 | `SkyCS` | `/Engine/Passes/Lighting/Sky/Sky.hlsl` | `main` | Compute | Fills background using linear scene depth, sky texture, and view/sky uniforms. |
 
-## Exposure And Presentation
+## Exposure
 
 | Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
 | --- | --- | --- | --- | --- |
@@ -74,9 +81,38 @@ These five indirect/reference traversal programs have no registered RayGeneratio
 | `ExposureDownsampleSceneCS` | `/Engine/Passes/PostProcessing/ExposureDownsampleScene.hlsl` | `main` | Compute | First mip-chain metering downsample from scene color. |
 | `ExposureDownsampleTextureCS` | `/Engine/Passes/PostProcessing/ExposureDownsampleTexture.hlsl` | `main` | Compute | Subsequent mip-chain downsample over intermediate moments. |
 | `ExposureCS` | `/Engine/Passes/PostProcessing/Exposure.hlsl` | `main` | Compute | Resolves manual/automatic settings, luminance moments, prior history, clamps, compensation, and adaptation into current 1x1 exposure/history. |
+
+See [Exposure](PostProcessing/Exposure.md) for metering, history, scheduling, and evidence ownership.
+
+## Image Reconstruction And Upscaling
+
+| Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
+| --- | --- | --- | --- | --- |
 | `LinearUpscaleCS` | `/Engine/Passes/Presentation/LinearUpscale.hlsl` | `main` | Compute | Engine baseline render-extent to output-extent resolve. External providers are not represented by a shader registration. |
+
+DLSS Super Resolution and DLSS Ray Reconstruction are external provider evaluations rather than global shader registrations. See [Image Reconstruction and Upscaling](PostProcessing/ImageReconstructionAndUpscaling.md).
+
+## Tone Mapping
+
+| Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
+| --- | --- | --- | --- | --- |
 | `ToneMappingCS` | `/Engine/Passes/Presentation/ToneMapping.hlsl` | `main` | Compute | Exposure plus selected mapper converts HDR resolved scene color to display-linear RGBA16F. |
+
+See [Tone Mapping](PostProcessing/ToneMapping.md) for the three operators and current no-bypass boundary.
+
+## Presentation And Output
+
+| Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
+| --- | --- | --- | --- | --- |
 | `OutputEncodingCS` | `/Engine/Passes/Presentation/OutputEncoding.hlsl` | `main` | Compute | Applies Automatic/Linear/sRGB encoding into the linear-format counterpart of the selected output target before copy. |
+
+## Explicitly Unregistered Post-Processing Stages
+
+| Feature | Current program coverage | Owning dossier |
+| --- | --- | --- |
+| Color grading | No grading or LUT shader registration | [Color Grading](PostProcessing/ColorGrading.md) |
+| Chromatic aberration | No lens/channel-distortion shader registration | [Chromatic Aberration](PostProcessing/ChromaticAberration.md) |
+| Frame generation | No engine shader or external DLSS-G/frame-generation evaluation | [Frame Generation](PostProcessing/FrameGeneration.md) |
 
 ## Registered Stage Coverage Versus Vocabulary
 
@@ -106,6 +142,6 @@ When adding, removing, or changing a program:
 
 1. update the typed declaration and `ShaderRegistrations` entry;
 2. update every frame-graph producer/consumer and pipeline composition;
-3. update this exact catalog and the stage counts in [Shader Compilation](../../Tools/ShaderCompiler/README.md);
+3. update this exact catalog and the stage counts in [Shader Compilation](../../../Tools/ShaderCompiler/README.md);
 4. run registration validation, both runtime-target cooks, reflection/ABI checks, and the smallest consuming runtime path;
-5. record candidate-bound results through [Capability Evidence](../../../../Plans/CapabilityEvidence.md) and [Feature Completion Reports](../../../../Acceptance/FeatureCompletionReports.md).
+5. record candidate-bound results through [Capability Evidence](../../../../../Plans/CapabilityEvidence.md) and [Feature Completion Reports](../../../../../Acceptance/FeatureCompletionReports.md).

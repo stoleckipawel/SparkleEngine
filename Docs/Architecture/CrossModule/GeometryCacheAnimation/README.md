@@ -1,9 +1,18 @@
 # Geometry Cache Animation Pipeline
 
-Status: target architecture; not implemented behavior
+Status: feature dossier; target architecture, not implemented behavior
 Date: 2026-08-17
 Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Scope: Alembic-authored baked mesh animation, native cooking and streaming, playback, shared raster/ray-tracing deformation, and D3D12/Vulkan parity
+
+## Dossier Route
+
+| Concern | Owner |
+| --- | --- |
+| target feature semantics and system shape | this page |
+| dated current-source capability and gaps | [Capability](Capability.md) |
+| feature-local criteria, failures, checks, and completion | [Acceptance](Acceptance.md) |
+| delivery order and phase exits | [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) |
 
 ## Decision
 
@@ -15,11 +24,11 @@ Sparkle should support baked vertex animation as a first-class geometry-cache ca
 4. GameFramework owns instance playback state and publishes requested current and previous times through the existing render-scene identity and extraction lifecycle.
 5. The Renderer owns chunk residency, decoding, GPU upload, deformation materialization, temporal history, and bounds used for rendering.
 6. One renderer-owned `DeformedGeometry` product is generated before both ray-scene construction and GBuffer rasterization. Raster vertex fetch, ray-tracing BLAS geometry, and ray-hit material reconstruction consume that same product.
-7. The first supported profile requires constant topology and stable vertex identity per track. Changing topology is rejected during cooking until a named workload justifies a separate accepted phase.
+7. The first supported profile requires constant topology and stable vertex identity per track. Changing topology is rejected during cooking until a named workload justifies a separately accepted feature extension.
 
 This is a target design, not proof that geometry caches are implemented. Code, cooked schemas, build configuration, tests, captures, and measurements remain the authority for implemented behavior.
 
-This document owns geometry-cache source semantics, cooked data, playback-to-render extraction, streaming, shared deformation, and ray-tracing integration. The [Geometry Cache Animation Delivery Plan](../../Plans/CrossModule/GeometryCacheAnimation.md) owns phase order. The [Geometry Cache Animation Acceptance Contract](../../Acceptance/CrossModule/GeometryCacheAnimation.md) owns feature completion, while [Graphics Workloads](../../Acceptance/GraphicsWorkloads.md) owns map-wide evidence status. [World Coordinate, Units, and Transform Contract](../Decisions/WorldCoordinateAndUnits.md) owns canonical spatial conventions. [Renderer and RHI Architecture Boundary](../Decisions/RendererRhiBoundary.md) owns the feature/backend boundary.
+This document owns geometry-cache source semantics, cooked data, playback-to-render extraction, streaming, shared deformation, and ray-tracing integration. The adjacent [feature acceptance contract](Acceptance.md) owns criteria, controlled failures, checks, and completion; the [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) owns phase order, while [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md) owns map-wide evidence status. [World Coordinate, Units, and Transform Contract](../../Decisions/WorldCoordinateAndUnits.md) owns canonical spatial conventions. [Renderer and RHI Architecture Boundary](../../Decisions/RendererRhiBoundary.md) owns the feature/backend boundary.
 
 ## Outcome
 
@@ -37,7 +46,7 @@ It deliberately does not turn geometry caches into skeletal clips, morph-target 
 
 ## Implementation Snapshot
 
-The dated source inventory, absent capability, existing extension seams, and Modern Sponza Knight source facts live in the [Geometry Cache Animation Capability Snapshot](GeometryCacheAnimationCapability.md). Refresh that snapshot before beginning a delivery phase; this architecture does not claim the path is implemented.
+The dated source inventory, absent capability, existing extension seams, and Modern Sponza Knight source facts live in the [Geometry Cache Animation Capability Snapshot](Capability.md). Refresh that snapshot before implementation begins; this architecture does not claim the path is implemented.
 
 ## Requirements And Boundaries
 
@@ -108,7 +117,7 @@ GeometryCacheSource
   DefaultPlayback           play rate, start offset, loop, initially active
 ```
 
-The exact text syntax and extension are frozen in [Phase 0](../../Plans/CrossModule/GeometryCacheAnimation.md#phase-0---freeze-source-authoring-and-evidence-contracts) after the Modern Sponza Alembic face sets and metadata are inventoried. That decision must reuse the repository's existing level/discovery path and must not create a general asset database.
+The [delivery plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) freezes the exact text syntax and extension after the Modern Sponza Alembic face sets and metadata are inventoried. That decision must reuse the repository's existing level/discovery path and must not create a general asset database.
 
 Every used face set has exactly one explicit material binding. The material library is imported through the existing material translation and cooker path; the geometry-cache importer does not grow a second PBR model. Empty slots are allowed only when the source description explicitly selects the ordinary default material. Missing textures retain the existing semantic checker/default behavior, but a missing slot mapping is an authoring error, not a residency fallback.
 
@@ -163,7 +172,7 @@ The file is published atomically with the scene generation. Header, directory, o
 
 Static UVs, indices, and material sections are stored once. Each section names one ordinary material slot and an index range; all sections of a track reference the same sampled vertex range. Sampled attributes are chunked by time. Chunk boundaries are independently decodable so a seek does not require replay from frame zero. Bounds are stored per sample or conservatively per chunk and interpolated conservatively.
 
-[Phase 2](../../Plans/CrossModule/GeometryCacheAnimation.md#phase-2---native-cook-codec-and-range-reader) selects one production codec and chunk duration from deterministic Knight and synthetic-fixture measurements. The file records the one current schema and codec identity so stale output is rejected and regenerated; it does not dispatch to legacy readers or codecs. Uncompressed sample data may exist as a test oracle only; it is not a runtime fallback and is deleted from product code before the phase exits.
+The [delivery plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) selects one production codec and chunk duration from deterministic Knight and synthetic-fixture measurements. The file records the one current schema and codec identity so stale output is rejected and regenerated; it does not dispatch to legacy readers or codecs. Uncompressed sample data may exist as a test oracle only; it is not a runtime fallback and is absent from the completed product path.
 
 ## Playback, Streaming, And Failure Semantics
 
@@ -245,7 +254,7 @@ This design intentionally does not migrate skeletal deformation in the geometry-
 
 ## Ray-Tracing Integration
 
-Constant topology allows reusable BLAS allocations for geometry-cache sections. The current RHI accepts one triangle geometry and one opacity classification per BLAS, so the first path uses one BLAS/TLAS instance per stable material section while all sections share the track's deformed vertex range. It does not add multi-geometry BLAS support unless Phase 5 measurements prove that the generic capability reduces total cost and complexity. The current RHI also exposes BLAS build but not update/refit. The ray phase therefore adds only the missing generic bottom-level build mode and flags, with matching D3D12 and Vulkan behavior:
+Constant topology allows reusable BLAS allocations for geometry-cache sections. The current RHI accepts one triangle geometry and one opacity classification per BLAS, so the first path uses one BLAS/TLAS instance per stable material section while all sections share the track's deformed vertex range. It does not add multi-geometry BLAS support unless measurements prove that the generic capability reduces total cost and complexity. The current RHI also exposes BLAS build but not update/refit. Ray-tracing support therefore adds only the missing generic bottom-level build mode and flags, with matching D3D12 and Vulkan behavior:
 
 - initial build allows update;
 - continuous playback updates/refits from the current deformed vertex range;

@@ -4,7 +4,7 @@ Status: research; target-product visual design, not proof of current implementat
 
 Last reconciled with the target architecture: 2026-08-16
 
-Scope: graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics.md)
+Scope: graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics/README.md)
 
 ## Purpose And Authority Boundary
 
