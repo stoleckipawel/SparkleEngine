@@ -8,7 +8,7 @@ Scope: how each selectable graphics capability crosses user/configuration entry 
 
 Owners: `Engine/RHI`, `Engine/Renderer`, `Tools/Shaders`, and their current producer modules named per row
 
-Module inventories: [RHI](../Modules/Engine/RHI/README.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
+Module inventories: [RHI](../Modules/Engine/RHI/CapabilityInventory.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
 
 Vertical companion: [Feature Execution Traces](FeatureExecutionTraces.md)
 

@@ -2,7 +2,7 @@
 
 Status: capability snapshot; not release approval, visual validation, or performance evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; current `Engine/Renderer` public surface, CMake membership, Scene/View/Frame path, frame graph, passes, ray-tracing paths, providers, and shader registrations inspected; evidence `S` only
+Snapshot: 2026-09-06 at committed `master` revision `baa0adc9`; current `Engine/Renderer` public surface, CMake membership, Scene/View/Frame path, frame graph, passes, ray-tracing paths, providers, and shader registrations inspected; executable source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
 Scope: render-side ownership, frame production, geometry/material/lighting algorithms, ray execution, post processing, providers, debug products, diagnostics, and known coverage gaps
 
@@ -32,7 +32,7 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
-| `REN-OWN-01` | Public renderer facade | Implemented path | Viewport render requests, immutable submitted frames, UI packets, settings, viewport products, shader reload/generation, mesh/texture/memory diagnostics, mesh preview, capture, and render entry points are exposed through the Renderer module. | `S` | Pending |
+| `REN-OWN-01` | Public renderer facade | Implemented path | Viewport render requests, immutable submitted frames, UI packets, settings, simulation-frame latency markers, viewport products, shader reload/generation, mesh/texture/memory diagnostics, mesh preview, capture, and render entry points are exposed through the Renderer module. | `S` | Pending |
 | `REN-OWN-02` | Scene ownership | Implemented path | `RenderScene` is the persistent render-side mirror. It consumes structural/dynamic deltas and owns render meshes, materials, textures, lights, GPU-scene data, ray-tracing scene state, and history-invalidating scene resets. | `S` | Pending |
 | `REN-OWN-03` | View ownership | Implemented path | A prepared `RenderView` owns view/projection-derived state, viewport/output selection, presentation/debug choices, exposure/upscaling settings, and per-view history inputs. | `S` | Pending |
 | `REN-OWN-04` | Frame ownership | Implemented path | `FramePipeline` sequences one-way submitted data through scene update, preparation, graph selection/build, execution, provider work, presentation, and retirement. Non-monotonic frame identities are rejected. | `S` | Pending |
@@ -52,6 +52,16 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 | `REN-FG-07` | Parallel command recording | Implemented path | A recording plan groups independent chunks for task-based recording before ordered submission. Scaling, determinism, and failure behavior remain runtime evidence items. | `S` | Pending |
 | `REN-FG-08` | Graph rebuild and retirement | Implemented path | Extent, output, provider, lighting, GBuffer frontend, shader generation, and shader-table-plan changes invalidate graph products; retired graph/provider/shader resources wait on recorded queue submissions. | `S` | Pending |
 
+## Pipeline Materialization And Typed Binding
+
+| Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
+| --- | --- | --- | --- | --- | --- |
+| `REN-PIPE-01` | Typed pass parameter contract | Implemented path | Registered C++ parameter structures describe uniform, texture/buffer, sampler, acceleration-structure, push-constant, and attachment fields; their computed signature must match cooked shader-map metadata. | `S` | Pending |
+| `REN-PIPE-02` | Runtime shader and binding-layout validation | Implemented path | Active map/library entries are checked for type, entry, stage, features, ray metadata, local-record contract, and parameter signature before an RHI binding layout is created. Unsupported RT/inline/descriptor-indexing requirements are rejected. | `S` | Pending |
+| `REN-PIPE-03` | Graphics and compute materialization | Implemented path | Compute runtimes are typed per shader/generation. Graphics pipelines are cached by shader generation/code, binding layout, blend/raster/depth/stencil/topology/vertex input, attachment formats, and sample count. Cache/native correctness is unproved. | `S` | Pending |
+| `REN-PIPE-04` | Native ray-pipeline and table materialization | Capability-gated | Registered raygen/miss/hit/callable composition becomes an RHI pipeline and table; scene tables require a valid plan plus exactly one opaque and one alpha-tested hit-group composition. | `S` | Pending |
+| `REN-PIPE-05` | Atomic shader-generation replacement | Implemented path | Reload opens/validates a complete generation, recreates every already-materialized holder, preserves the active generation on failure, swaps only after success, and retires the prior generation after all queue tokens complete. | `S` | Pending |
+
 ## Scene Preparation, Geometry, And Residency
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
@@ -66,6 +76,16 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 | `REN-SCENE-08` | Mesh residency | Implemented path | Asynchronous mesh preparation/upload/residency tracking is bounded to 16 concurrent preparations in the inspected implementation. Budget/stall behavior is unmeasured. | `S` | Pending |
 | `REN-SCENE-09` | Texture residency | Implemented path | Asynchronous read/decode/upload/residency tracking is bounded to 16 concurrent loads in the inspected implementation. The limit is concurrency, not total decoded-memory capacity. | `S` | Pending |
 | `REN-SCENE-10` | Automatic mesh batching | Implemented path | A public rendering setting selects automatic mesh batching. Visual identity and CPU/GPU benefit need workload evidence. | `S` | Pending |
+
+## Temporal Sampling And History
+
+| Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
+| --- | --- | --- | --- | --- | --- |
+| `REN-TEMP-01` | Per-view previous-camera state | Implemented path | `RenderViewState` owns previous matrices/pose/jitter independently for the active view identity and publishes them only with a valid common-history flag. Multi-view isolation is unproved. | `S` | Pending |
+| `REN-TEMP-02` | Active temporal jitter | Implemented path | The active path uses a deterministic base-2/base-3 Halton sequence over 16 frames and converts centered samples to NDC with an inverted Y sign. MSAA/R2/white-noise/None implementations are source vocabulary without a current selector. | `S` | Pending |
+| `REN-TEMP-03` | Common history invalidation | Implemented path | View identity, scene/shader/provider/topology generation, explicit cut/teleport/reset, inferred camera discontinuity, and projection change invalidate common history and reset narrower lighting/RT planning state. | `S` | Pending |
+| `REN-TEMP-04` | Motion and reprojection convention | Implemented path | Raster position is jittered; motion vectors are emitted unjittered; ReSTIR reprojection applies the current-to-previous jitter-grid delta; invalid history emits no geometric motion history. Cross-consumer numerical parity is unproved. | `S` | Pending |
+| `REN-TEMP-05` | Provider temporal constants | Capability-gated | Streamline receives pixel-space jitter, previous/current transforms, unjittered-motion declaration, and reset state from the same view temporal uniform. Provider/backend/resize behavior is unproved. | `S` | Pending |
 
 ## Deferred Material And GBuffer Contract
 
@@ -255,6 +275,16 @@ Each selectable mode needs a representative screenshot/capture, expected-value d
 | `REN-UI-03` | Editor viewport presentation | Implemented path | The final viewport scene-color product is transitioned for shader read, resolved to an ImGui texture, checked against viewport generation, drawn inside a present render pass, and transitioned back. Missing product/texture or generation mismatch refuses the draw. | `S` | Pending |
 | `REN-UI-04` | Editor texture handles | Partial | A Renderer registry maps viewport-generation handles and other native texture IDs to UI texture bindings. Non-viewport registrations are append-only in the inspected owner; long-session lifecycle/bounds and stale-handle behavior need evidence. | `S` | Pending |
 
+## Latency Coordination
+
+| Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
+| --- | --- | --- | --- | --- | --- |
+| `REN-LAT-01` | Logical frame latency markers | Implemented public path | The facade exposes simulation start/end; D3D12 device services emit render-submit start/end and present start/end around the corresponding frame operations. Correct host bracketing and one-ID ordering are unproved. | `S` | Pending |
+| `REN-LAT-02` | Streamline PCL marker route | Capability-gated | When the optional runtime is initialized, device-bound, presentation-ready, and PCL-supported on D3D12, all six markers map to Streamline PCL. Unsupported/unready cells do no provider work. | `S` | Pending |
+| `REN-LAT-03` | Reflex simulation sleep | Capability-gated | When Reflex is supported, `slReflexSleep` runs at SimulationStart before the PCL marker. Only default Reflex options are configured; no public latency-mode setting or active-state product was found. | `S` | Pending |
+| `REN-LAT-04` | Provider call/shutdown lifetime | Implemented path | Mutex-protected call leases reject work during shutdown; shutdown waits for active calls before resetting runtime/device/presentation/feature state. Boundedness and race safety are unproved. | `S` | Pending |
+| `REN-LAT-05` | Frame-token identity | Partial | Public logical IDs are 64-bit but the Streamline token request narrows them to 32-bit. Correct supported run length or wrap enforcement is not established. | `S` | Pending |
+
 ## Diagnostics, Capture, Preview, And Hot Reload
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
@@ -268,11 +298,21 @@ Each selectable mode needs a representative screenshot/capture, expected-value d
 | `REN-DIAG-07` | Mesh preview | Implemented path | Renderer exposes a mesh-preview product/handle route for editor consumers. | `S` | Pending |
 | `REN-DIAG-08` | Shader hot reload | Implemented path | A newly published shader map/library is fully validated and materialized before generation swap; prior pipelines/programs retire after their queue submissions complete. | `S` | Pending |
 
+## Settings State And Persistence
+
+| Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
+| --- | --- | --- | --- | --- | --- |
+| `REN-SET-01` | Aggregate public settings state | Implemented path | A 28-field value snapshot spans presentation/device, tone/output, exposure, reconstruction/upscaling, GBuffer/RT, lighting, batching/TLAS/PTLAS, and view mode; it records requested values, not resolved provider/capability state. | `S` | Pending |
+| `REN-SET-02` | Owned settings persistence | Partial | Twenty-seven CVar names are loaded from and rewrite one owned section in workspace `Config/DefaultEngine.ini`; view mode is session-only. Writes truncate in place and return no error, so durability/concurrent edit/package behavior is not established. | `S` | Pending |
+| `REN-SET-03` | Startup and editor commit | Implemented path | Application loads persisted values before command-line CVar overrides. Editor changes persist the whole state and submit it through a bound host callback; malformed parse diagnostics are currently discarded. | `S` | Pending |
+| `REN-SET-04` | Serial/threaded settings handoff | Implemented path | Serial coordination applies changed CVars directly; threaded coordination queues the whole snapshot to the render execution context. Ordering, backpressure, shutdown, and next-frame equivalence are unproved. | `S` | Pending |
+| `REN-SET-05` | Live versus restart-active state | Partial | Adapter preference and back-buffer format produce a pending-restart message relative to session-start state; other values apply to CVars, but requested/CVar/resolved/session-active state and fallback reason are not unified in one report. | `S` | Pending |
+
 ## Public And Developer Selection Surface
 
 The inspected public settings cover VSync, back-buffer format, adapter preference, tone mapper, exposure, output encoding, upscaler and quality, ray reconstruction, GBuffer frontend, ray-tracing execution, lighting mode, automatic mesh batching, classic TLAS refit, partitioned TLAS activation/planning controls, and view mode. Direct-shadow traversal also has a console-variable surface even where it is not mirrored by the same public settings object. `r.BackBufferCount` and `r.MaximumFramesInFlight` are RHI console controls outside the Renderer settings state/persistence. `r.Material.BindingMode` is registered but has no inspected runtime consumer; its `Everything` value is vocabulary, not an active selectable result.
 
-The settings section persists 27 named Renderer CVars in `/Script/SparkleRenderer.EngineRenderingSettings` inside workspace `Config/DefaultEngine.ini`, replacing that section while retaining other sections. View mode is session state and is not in that persisted set. Adapter preference and back-buffer format are written immediately but reported as pending restart; the other section values are applied to Renderer CVars on commit. File-write failure reporting, concurrent edits, malformed-value diagnostics, and packaged writable-location behavior still require evidence.
+The settings section persists 27 named Renderer CVars in `/Script/SparkleRenderer.EngineRenderingSettings` inside workspace `Config/DefaultEngine.ini`, replacing that section while retaining other sections. View mode is session state and is not in that persisted set. Adapter preference and back-buffer format are written immediately but reported as pending restart; the other section values are applied to Renderer CVars on commit. The full lifecycle and known in-place-write/diagnostic gaps are owned by [Settings State and Persistence](Features/RenderingSettingsLifecycle.md).
 
 Release inventory must be generated from both UI/public settings and console/config surfaces. A hidden but reachable command or CVar is still a selectable capability unless Shipping erases or locks it.
 
@@ -289,6 +329,11 @@ No current selector exists for Volumetric Lighting, deferred decals, color gradi
 - Partitioned TLAS has a richer low-level RHI contract than the Renderer currently exercises.
 - Optional NVIDIA providers require exact binary, adapter, driver, interposer, feature, and fallback evidence before advertisement.
 - Async compute and parallel recording are implemented scheduling paths, not proven speedups.
+- Typed parameter validation and pipeline caches are implemented mechanisms, not native pipeline correctness or hot-reload stress evidence.
+- The active temporal jitter is the 16-frame Halton route. Other source pattern implementations are not public modes, and common-history correctness is unproved.
+- Mesh and texture caches have separate fixed residency budgets and concurrency limits; they do not constitute global memory-pressure streaming, prioritization, LRU eviction, or graceful degradation.
+- Streamline PCL/Reflex is optional, D3D12-only in the inspected route, has no public active-mode report, narrows the 64-bit frame ID for provider tokens, and has no measured latency claim.
+- Settings persistence rewrites a workspace INI section in place and reports no write/parse failure; package-safe durable persistence is not established.
 - Current debug views do not yet have the target exact display-linear presentation split.
 - No current HDR-display output contract was found.
 - No participating-media, fog-volume, volumetric-lighting, atmosphere, or aerial-perspective path was found; sky and wrap-subsurface lighting do not imply those capabilities.
@@ -300,11 +345,15 @@ No current selector exists for Volumetric Lighting, deferred decals, color gradi
 - Public facade and settings: `Engine/Renderer/Public`.
 - Runtime owner and frame sequencing: `Engine/Renderer/Private/Host`, `Engine/Renderer/Private/Concurrency`, and `Engine/Renderer/Private/Frame`.
 - Persistent scene/view preparation: `Engine/Renderer/Private/Scene` and `Engine/Renderer/Private/View`.
+- Temporal sampling/history: `Engine/Renderer/Private/Temporal`, `Engine/Renderer/Private/View/RenderViewState.*`, `Engine/Renderer/Private/Resources/History`, and temporal shader/provider consumers.
 - Frame graph: `Engine/Renderer/Private/FrameGraph`.
+- Pipeline materialization/binding: `Engine/Renderer/Private/Pipeline`, `Engine/Renderer/Private/PipelineRuntime`, `Engine/Renderer/Private/ShaderParameters`, and `Engine/Renderer/Public/ShaderParameters`.
 - Geometry/residency: `Engine/Renderer/Private/Meshes`, `Engine/Renderer/Private/Textures`, and `Engine/Renderer/Private/Scene/GpuScene`.
 - Raster/ray GBuffer: `Engine/Renderer/Private/Passes/GBuffer`.
 - Lighting: `Engine/Renderer/Private/Passes/Lighting` and `Engine/Assets/Shaders/Lighting`, `Engine/Assets/Shaders/BRDF`, and `Engine/Assets/Shaders/Passes/Lighting`.
 - Ray scene and execution: `Engine/Renderer/Private/Scene/RayTracing`, `Engine/Renderer/Private/RayTracing`, and `Engine/Renderer/Private/Passes/Lighting/Shadows`.
 - Post/output/providers: `Engine/Renderer/Private/Passes/PostProcessing`, `Engine/Renderer/Private/Passes/Presentation`, and `Engine/Renderer/Private/Providers`.
 - Diagnostics/editor products: `Engine/Renderer/Private/Diagnostics`, `Engine/Renderer/Private/Editor`, and public Renderer diagnostic/product contracts.
+- Settings lifecycle: `Engine/Renderer/Private/Settings`, public settings contracts, `Engine/Application` startup, and `Engine/Editor` commit wiring.
+- Latency coordination: `Engine/Renderer/Private/Integrations`, `Engine/Renderer/Private/Streamline`, Renderer facade simulation calls, and RHI frame-marker hooks.
 - Build and shader registration membership: `Engine/Renderer/CMakeLists.txt`.

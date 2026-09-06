@@ -2,7 +2,7 @@
 
 Status: current feature dossier; source-backed, not release approval or executable evidence
 
-Snapshot: implementation behavior rechecked 2026-09-06 against source revision `8414b5dc`; current `HEAD` contains later documentation-only commits and no intervening Renderer/RHI/shader-source change
+Snapshot: implementation behavior rechecked 2026-09-06 against source revision `d236da11`; Renderer/RHI/shader source is unchanged from the earlier `8414b5dc` audit
 
 Scope: `REN-DBG-01` through `REN-DBG-04` and `REN-POST-10`; current debug-visualization modes, source products, tone/output interaction, viewport resolution, limitations, and the boundary to the target presentation architecture
 

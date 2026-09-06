@@ -94,7 +94,7 @@ The initial detailed inventories carry `S` only. No `B`, `R`, `N`, `P`, or `A` e
 | Launcher | Detailed | [Launcher Capability Inventory](Tools/Launcher/README.md) | Discovery, readiness, configure/build/cook/acquire/run/clean workflows, history, cancellation, GUI/shell access, and build membership reconciled; source-only. |
 | Asset cooking | Detailed | [Asset Cooking Capability Inventory](Tools/Cooking/README.md) | Asset/texture/mesh/material/scene cooking, validation, concurrency, publication, runtime handoff, and build membership reconciled; source-only. |
 | Platform | Detailed | [Platform Capability Inventory](Engine/Platform/README.md) | Window, DPI, message, input, routing, capture, cursor, and build surfaces reconciled; source-only. |
-| RHI | Detailed | [RHI Capability Inventory](Engine/RHI/README.md) | Public contracts, both backend implementations, build switches, and Renderer consumers reconciled; source-only. |
+| RHI | Detailed | [RHI Capability Inventory](Engine/RHI/CapabilityInventory.md), reached through the [RHI module route](Engine/RHI/README.md) | Public contracts, both backend implementations, build switches, and Renderer consumers reconciled; source-only. |
 | Renderer | Detailed | [Renderer Capability Inventory](Engine/Renderer/CapabilityInventory.md), reached through the [Renderer module route](Engine/Renderer/README.md) | Whole-frame ownership plus feature families for surface production, Direct/Indirect/Volumetric Lighting, Ray Tracing, and Post Processing with distinct exposure, reconstruction/upscaling, tone mapping, color grading, chromatic aberration, frame generation, and output boundaries; source-only. |
 | Shader compilation and delivery | Detailed | [Shader Compilation Capability Inventory](Tools/ShaderCompiler/README.md) | Tool build, CLI, typed registrations, compiler backends, validation, publication, editor recook, and runtime loading reconciled; source-only. |
 | Showcase products | Detailed | [Showcase Product Capability Inventory](Projects/Showcase/README.md) | Editor/runtime targets, startup/selection, all 16 catalog levels, asset-pack readiness, and workload coverage reconciled; source-only. |
@@ -121,8 +121,8 @@ Every top-level implementation owner is routed above and has a source-depth capa
 
 | Claim or reviewer concern | Owning detail |
 | --- | --- |
-| D3D12/Vulkan coverage or parity | [RHI](Engine/RHI/README.md), [graphics matrix](../CrossModule/GraphicsCoverageMatrix.md), and candidate evidence |
-| Ray tracing, inline/native pipelines, shader tables, classic/PTLAS | [Renderer ray-tracing dossier](Engine/Renderer/Features/RayTracing/README.md), [RHI](Engine/RHI/README.md), and [graphics traces](../CrossModule/FeatureExecutionTraces.md) |
+| D3D12/Vulkan coverage or parity | [RHI capability inventory](Engine/RHI/CapabilityInventory.md), [RHI feature dossiers](Engine/RHI/Features/README.md), [graphics matrix](../CrossModule/GraphicsCoverageMatrix.md), and candidate evidence |
+| Ray tracing, inline/native pipelines, shader tables, classic/PTLAS | [Renderer ray-tracing dossier](Engine/Renderer/Features/RayTracing/README.md), [RHI ray-tracing dossier](Engine/RHI/Features/RayTracing.md), and [graphics traces](../CrossModule/FeatureExecutionTraces.md) |
 | Bindless/material binding coverage | [graphics matrix](../CrossModule/GraphicsCoverageMatrix.md#binding-and-material-coverage) |
 | PBR/material/direct-light coverage | [Geometry, Materials, and GBuffer](Engine/Renderer/Features/GeometryMaterialsAndGBuffer.md), [Direct Lighting](Engine/Renderer/Features/Lighting/DirectLighting.md), and the [exact inventory](Engine/Renderer/CapabilityInventory.md) |
 | Indirect-light/history/environment coverage | [Indirect Lighting](Engine/Renderer/Features/Lighting/IndirectLighting.md) and the [whole-frame route](Engine/Renderer/RenderingASparkleFrame.md) |

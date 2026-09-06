@@ -44,8 +44,8 @@ The shader clamps alpha with `saturate` while mapping RGB. Current source does n
 
 ## Controlled Failure Modes And Checks
 
-| Failure ID | Injection and safe state | Detecting check |
-| --- | --- | --- |
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
 | `FM-TMO-01` | invalid operator enum | resolve rejects before dispatch and identifies the invalid value | `CHK-TMO-02` |
 | `FM-TMO-02` | NaN/Inf/extreme RGB or alpha | output follows the predeclared finite/non-finite policy; no unclassified value is accepted | `CHK-TMO-01` |
 | `FM-TMO-03` | exposure or output transfer is accidentally applied twice | reference chain comparison fails at the first incorrect stage | `CHK-TMO-01`, `CHK-TMO-03` |

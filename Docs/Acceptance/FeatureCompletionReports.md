@@ -238,7 +238,7 @@ The family rows above keep the source map readable; they are not permission to h
 | Diagnostics and views | Every reachable view mode, final/intermediate capture, frame/pass timing, mesh/texture/memory diagnostics, mesh preview, shader recook/reload, unavailable-resource display, and Shipping erasure of developer-only surfaces. |
 | Maps | One report per accepted `ReleaseMapSet` member, then rows per advertised backend/mode/quality preset on that map. |
 
-Use the detailed [RHI](../Architecture/Modules/Engine/RHI/README.md), [Renderer](../Architecture/Modules/Engine/Renderer/CapabilityInventory.md), and [shader-compilation](../Architecture/Modules/Tools/ShaderCompiler/README.md) inventories for the source-level rows behind these axes, and the [capability evidence plan](../Plans/CapabilityEvidence.md) for the smallest next checks. A matrix subsection is sufficient when the owner/path is shared and each cell retains an independent verdict, artifact link, failure, and waiver; otherwise create separate reports.
+Use the detailed [RHI](../Architecture/Modules/Engine/RHI/CapabilityInventory.md), [Renderer](../Architecture/Modules/Engine/Renderer/CapabilityInventory.md), and [shader-compilation](../Architecture/Modules/Tools/ShaderCompiler/README.md) inventories for the source-level rows behind these axes, and the [capability evidence plan](../Plans/CapabilityEvidence.md) for the smallest next checks. A matrix subsection is sufficient when the owner/path is shared and each cell retains an independent verdict, artifact link, failure, and waiver; otherwise create separate reports.
 
 ### Release Maps
 

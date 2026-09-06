@@ -2,7 +2,7 @@
 
 Status: feature dossier; current negative capability and source-backed absence, not a delivery plan
 
-Verified: 2026-09-06 against source revision `8414b5dc`
+Verified: 2026-09-06 against source revision `d236da11`; inspected Renderer/shader/asset paths are unchanged from the earlier `8414b5dc` audit
 
 Scope: `REN-POST-11`; artistic and technical color adjustments distinct from exposure, tone mapping, and output encoding
 
@@ -31,3 +31,10 @@ Until those owners exist, documentation and UI must report color grading as unav
 - `REN-E26` owns the negative source/build/selector/pass/shader/asset/editor/documentation audit for color grading.
 - No runtime test is implied by this source-only absence finding.
 - Adjacent source routes inspected: [`PostProcessing.cpp`](../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp), [`Presentation.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp), and [`EngineRenderingDisplayTypes.h`](../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h).
+
+### Current Negative Acceptance
+
+- `AC-CGR-NEG-01` — no selector, per-view setting, asset/import/cook type, LUT, shader/pass, debug product, or editor control advertises color grading.
+- `AC-CGR-NEG-02` — tone-mapper and output-encoding choices remain labeled as fixed display mapping/transfer, not an artistic or technical grading stack.
+
+`FM-CGR-NEG-01` occurs when any reachable grading-like vocabulary lacks a real owner/result or when a neighboring transform is mislabeled. `CHK-CGR-NEG-01`/`REN-E26` covers `AC-CGR-NEG-01`, `AC-CGR-NEG-02`, and `FM-CGR-NEG-01` by searching source, build membership, shaders, settings, assets/tools, editor UI, package surfaces, and documentation; any unmatched result fails the negative contract and requires a new current/target dossier before advertisement.

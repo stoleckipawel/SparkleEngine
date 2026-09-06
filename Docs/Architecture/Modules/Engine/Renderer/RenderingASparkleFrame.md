@@ -1,6 +1,6 @@
 # Rendering a Sparkle Frame
 
-Status: current Renderer frame map; source-backed architecture explanation, not build, runtime, visual, native-validation, performance, or release evidence
+Status: feature dossier; current Renderer frame map and local completion contract, not build, runtime, visual, native-validation, performance, or release evidence
 
 Verified: 2026-09-06 against committed `master` revision `8414b5dc` and the live `Engine/Renderer` and RHI service boundaries named below
 
@@ -56,7 +56,7 @@ The arrows above describe semantic dependency. Declaration order helps readers, 
 | Stage | Intent and current operation | Input -> owned output | Why it exists | Detail |
 | --- | --- | --- | --- | --- |
 | `FRAME-00` Submit | GameFramework publishes `RenderFrameSubmission` containing structural scene delta, moved dynamic scene data, view input, and increasing frame ID. `RenderCoordinator` queues or executes it according to serial/threaded configuration. | World-owned data -> immutable renderer request | Renderer never reaches into mutable ECS storage; producer and consumer lifetimes are explicit. | [Scene and View](Features/SceneAndViewPreparation.md) |
-| `FRAME-01` Settle | `PollFrameServices` completes capture polling, retired graphs, provider/shader generations, mesh/texture residency, and mesh promotion before touching the next frame. | Prior submission tokens -> reclaimed or newly resident state | GPU completion, not CPU scope exit, decides when resources can be reused or destroyed. | [Diagnostics and Capture](Features/DiagnosticsAndCapture.md) |
+| `FRAME-01` Settle | `PollFrameServices` completes capture polling, retired graphs, provider/shader generations, mesh/texture residency, and mesh promotion before touching the next frame. | Prior submission tokens -> reclaimed or newly resident state | GPU completion, not CPU scope exit, decides when resources can be reused or destroyed. | [Diagnostics, Products, and Capture](Features/DiagnosticsProductsAndCapture.md) |
 | `FRAME-02` Admit | Reject non-monotonic frame IDs. Apply structural and dynamic scene changes to persistent `RenderScene`; a scene reset unloads scene textures and invalidates view/provider/history state. | Submission scene payload -> new render-scene generation | Persistent resources survive ordinary frames, while explicit reset prevents old scene/history identity leaking into a replacement level. | [Scene and View](Features/SceneAndViewPreparation.md) |
 | `FRAME-03` Topology | Resolve output/render extents, output format/target, GBuffer and lighting modes, ray execution plans, provider key, shader generation, and used shader-table generation. Resize or a changed topology retires/rebuilds the graph and invalidates history. | Requested settings + capability reports -> immutable graph configuration | Expensive structural choice is made before recording. Requested and active ray/provider paths can differ only through explicit resolution/failure policy. | [Frame Graph](Features/FrameGraphAndScheduling.md) |
 | `FRAME-04` Begin backend | Apply a non-minimized pending swapchain resize, call `RenderDeviceServices::BeginFrame`, begin UI frame state, tick memory diagnostics, and resolve prior timings. | Frame ID + output state -> active frame-in-flight slot and command services | Backend acquisition and frame-slot ownership stay below Renderer policy. | [Frame Graph](Features/FrameGraphAndScheduling.md) |
@@ -67,7 +67,7 @@ The arrows above describe semantic dependency. Declaration order helps readers, 
 | `FRAME-09` Bind graph | Bind current TLAS, sky, and GPU-scene buffers; apply defaults plus frame, scene, view, exposure, tone-map, and shadow parameters. Run pass setup and resource-production setup. | Current frame objects -> typed graph parameters and imported resources | The graph shape can persist while per-frame values and native resources change safely. | [Frame Graph](Features/FrameGraphAndScheduling.md) |
 | `FRAME-10` Compile and execute | Compile resource versions/dependencies, queue assignment, transient lifetimes/aliasing, barriers, submission batches, and recording plan; materialize transients; record/submit batches; commit texture histories. | Declared graph -> RHI command batches and new histories | Features declare semantic uses; one compiler owns synchronization and lifetime instead of each pass hand-authoring global barriers. | [Frame Graph](Features/FrameGraphAndScheduling.md) |
 | `FRAME-11` Produce image | The active graph builds/updates the scene TLAS, writes a raster or ray GBuffer, computes Direct and Indirect surface lighting through the selected ReSTIR/reference mode, composites/sky-fills scene color, meters exposure, optionally reconstructs/upscales, optionally visualizes a debug quantity, tone maps, encodes, and copies to the back buffer or exports a viewport product. There is no Volumetric Lighting, Color Grading, Chromatic Aberration, or Frame Generation stage. | Scene-linear surface/lighting data -> encoded final color | Every implemented feature branch rejoins one presentation boundary, while absent domains remain visible rather than implied. | [Lighting](Features/Lighting/README.md) and [Post Processing](Features/PostProcessing/README.md) |
-| `FRAME-12` Submit and retire | Render the UI packet, call `SubmitFrame`, record the graphics token for uploads, advance the frame-in-flight index, and later retire graphs/providers/shaders/resources only when all recorded queue tokens complete. | Recorded GPU work + UI -> presented/product frame and completion state | CPU ownership changes cannot free objects still referenced by any GPU queue. | [Diagnostics and Capture](Features/DiagnosticsAndCapture.md) |
+| `FRAME-12` Submit and retire | Render the UI packet, call `SubmitFrame`, record the graphics token for uploads, advance the frame-in-flight index, and later retire graphs/providers/shaders/resources only when all recorded queue tokens complete. | Recorded GPU work + UI -> presented/product frame and completion state | CPU ownership changes cannot free objects still referenced by any GPU queue. | [Diagnostics, Products, and Capture](Features/DiagnosticsProductsAndCapture.md) |
 
 ## What The Graph Declares
 
@@ -165,7 +165,37 @@ Resize, scene reset, topology/provider/shader changes, and relevant table-plan c
 - A replacement shader generation is not activated until complete runtime materialization succeeds; the previous generation remains active/retired by queue state.
 - Minimized or invalid-size windows do not perform a swapchain resize; history is invalidated around a real topology resize.
 
-These are source-level policies. The corresponding controlled failure, recovery, and diagnostic observations remain open in the [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md#renderer-evidence).
+These source-level policies become the stable feature contract below. The [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md#renderer-evidence) selects the smallest candidate checks; it does not redefine the pass conditions.
+
+## Acceptance Criteria
+
+- `AC-FRM-01` — monotonic immutable submissions produce the same accepted frame IDs, scene/view state, graph plan, products, and terminal result with serial and threaded Renderer coordination.
+- `AC-FRM-02` — every admitted frame follows the documented stage order and every listed product has exactly one producer, declared format/extent/identity, and only its documented consumers.
+- `AC-FRM-03` — scene data remains persistent and scene-owned, view state remains view-owned, frame preparation remains frame-local, and no Renderer stage queries mutable world/editor state after submission.
+- `AC-FRM-04` — feature, provider, traversal, and topology choices resolve before graph construction; invalid or unavailable strict choices fail explicitly and Automatic exposes its selected supported route.
+- `AC-FRM-05` — scene, view, extent, shader, provider, graph-topology, and shader-table identities invalidate only their affected histories and never mix data from incompatible generations.
+- `AC-FRM-06` — graph execution submits the declared queue batches once, advances the reusable frame slot only under its completion contract, and retires every old graph/resource/provider/shader generation after all recorded queue tokens complete.
+- `AC-FRM-07` — the final encoded result reaches exactly the selected swapchain or viewport product with matching frame/view/extent/format metadata; minimized or invalid-size windows never publish a fabricated frame.
+- `AC-FRM-08` — shutdown, scene reset, resize, provider failure, failed preparation, failed replacement, and delayed GPU completion settle owned work within declared bounds without partial publication, use-after-free, stale history, or unbounded retirement growth.
+
+## Controlled Failure Modes And Checks
+
+| Failure ID | Injection and safe state | Detecting check |
+| --- | --- | --- |
+| `FM-FRM-01` | repeat or regress a submission ID | request is ignored before active frame or scene/view state changes | `CHK-FRM-01` |
+| `FM-FRM-02` | fail scene/view preparation or provide an invalid GBuffer/lighting/topology choice | no partial prepared state or arbitrary mode reaches graph execution; exact failure is observable | `CHK-FRM-01`, `CHK-FRM-02` |
+| `FM-FRM-03` | remove strict traversal/provider/program/SBT capability or fail provider/replacement initialization | strict request fails before graph construction; documented Automatic fallback or prior valid generation remains inspectable | `CHK-FRM-02` |
+| `FM-FRM-04` | resize, reset scene, switch provider/shader/table plan, or reuse a stale viewport/product while prior work is in flight | incompatible history/product is rejected or reset and generations remain isolated | `CHK-FRM-03` |
+| `FM-FRM-05` | delay graphics/compute/copy completion while churning frames, graphs, providers, shaders, resize, and shutdown | resources remain alive through last use, retirement stays bounded by declared policy, and shutdown drains exactly once | `CHK-FRM-04` |
+
+| Check | Exercise and oracle | Covers |
+| --- | --- | --- |
+| `CHK-FRM-01` | replay identical immutable submissions through serial/threaded coordination, duplicate/regressed IDs, and failed preparation; compare accepted IDs, prepared state, graph/product manifests, and terminal result | `AC-FRM-01`–`AC-FRM-03`; `FM-FRM-01`, `FM-FRM-02` |
+| `CHK-FRM-02` | enumerate/force valid, invalid, Automatic, and unavailable feature/provider/traversal/topology cells; inspect pre-graph plan and requested/active diagnostics | `AC-FRM-02`, `AC-FRM-04`; `FM-FRM-02`, `FM-FRM-03` |
+| `CHK-FRM-03` | dual-view sequence across camera cut, scene reset, resize/minimize/restore, provider/shader/table changes, and stale product injection; compare identity, history resets, and final metadata | `AC-FRM-05`, `AC-FRM-07`; `FM-FRM-04` |
+| `CHK-FRM-04` | paired-backend run with delayed queue completion, frame-slot pressure, generation churn, device/provider failure, and shutdown; assert submissions, queue tokens, retained-generation high-water, reclamation, and native validation | `AC-FRM-06`, `AC-FRM-08`; `FM-FRM-03`, `FM-FRM-05` |
+
+This contract is **defined but unproved**. Completion requires every `AC-FRM-*` to pass, every applicable `FM-FRM-*` to be deliberately exercised through its named `CHK-FRM-*`, all affected child feature contracts to pass, and the candidate report to retain exact revision/configuration/backend/evidence and limitations.
 
 ## Where To Go Deeper
 
@@ -188,7 +218,7 @@ These are source-level policies. The corresponding controlled failure, recovery,
 | Explicit absence of frame generation | [Frame Generation](Features/PostProcessing/FrameGeneration.md) |
 | Debug handoff, encoding, and output targets | [Presentation and Output](Features/PostProcessing/PresentationAndOutput.md) and [Debug Views](Features/DebugViews/README.md) |
 | Host UI and editor viewport composition | [UI and Viewport Composition](Features/UiAndViewportComposition.md) |
-| Timing, memory, product publication and asynchronous capture | [Diagnostics and Capture](Features/DiagnosticsAndCapture.md) |
+| Timing, memory, product publication and asynchronous capture | [Diagnostics, Products, and Capture](Features/DiagnosticsProductsAndCapture.md) |
 | Every exact feature row and known absence | [Renderer Capability Inventory](CapabilityInventory.md) |
 | Cross-module/backend comparison | [Graphics Feature Coverage Matrix](../../../CrossModule/GraphicsCoverageMatrix.md) |
 | End-to-end GameFramework/ShaderCompiler/RHI handoffs | [Graphics Feature Execution Traces](../../../CrossModule/FeatureExecutionTraces.md) |

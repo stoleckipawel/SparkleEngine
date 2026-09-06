@@ -2,7 +2,7 @@
 
 Status: feature dossier; current negative capability and source-backed absence, not a delivery plan
 
-Verified: 2026-09-06 against source revision `8414b5dc`
+Verified: 2026-09-06 against source revision `d236da11`; inspected Renderer/Streamline/frame paths are unchanged from the earlier `8414b5dc` audit
 
 Scope: `REN-POST-13`; generation and presentation of interpolated frames between normally rendered frames
 
@@ -32,3 +32,10 @@ Until those owners exist, Sparkle must report frame generation as unavailable ev
 - `REN-E28` owns the negative provider/build/runtime/selector/frame-pacing/presentation/documentation audit.
 - No runtime test is implied by this source-only absence finding.
 - Adjacent source routes inspected: [`StreamlineRuntimeSupport.cpp`](../../../../../../../Engine/Renderer/Private/Streamline/StreamlineRuntimeSupport.cpp), [`RendererImageProviderStack.cpp`](../../../../../../../Engine/Renderer/Private/Providers/RendererImageProviderStack.cpp), and [`FramePipeline.cpp`](../../../../../../../Engine/Renderer/Private/Frame/FramePipeline.cpp).
+
+### Current Negative Acceptance
+
+- `AC-FGN-NEG-01` — no provider registration/evaluation, generated-frame resource/identity, selector, pacing/present route, UI policy, diagnostic, or package claim advertises frame generation.
+- `AC-FGN-NEG-02` — DLSS SR, DLSS RR, PCL, Reflex, temporal history, and ordinary multi-buffered presentation remain explicitly distinguished from synthesized frames.
+
+`FM-FGN-NEG-01` occurs when a provider symbol/control or extra present-like path appears without generated-versus-rendered identity and complete ownership, or adjacent NVIDIA functionality is mislabeled. `CHK-FGN-NEG-01`/`REN-E28` covers `AC-FGN-NEG-01`, `AC-FGN-NEG-02`, and `FM-FGN-NEG-01` by auditing registrations, binaries, runtime support, providers, frame/present counting, UI/capture identity, settings, package surfaces, and documentation; any unmatched result fails the negative contract.

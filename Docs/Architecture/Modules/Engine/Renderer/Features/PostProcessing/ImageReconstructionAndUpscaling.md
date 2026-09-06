@@ -60,8 +60,8 @@ NativeAA and render-to-output scaling ratios need separate quality/cost cells. U
 
 ## Controlled Failure Modes And Checks
 
-| Failure ID | Injection and safe state | Detecting check |
-| --- | --- | --- |
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
 | `FM-IRU-01` | SDK/interposer/binary/capability absent or initialization fails | SR resolves Linear; RR resolves Off; reason and requested/active state remain visible | `CHK-IRU-02` |
 | `FM-IRU-02` | missing/wrong-format/wrong-extent/stale guide or motion/depth/exposure input | provider evaluation rejects before publication; no stale product is presented | `CHK-IRU-02`, `CHK-IRU-03` |
 | `FM-IRU-03` | resize/cut/provider or lighting-mode switch while work is in flight | temporal state resets, graph generation changes, and old provider retires by completion | `CHK-IRU-03` |

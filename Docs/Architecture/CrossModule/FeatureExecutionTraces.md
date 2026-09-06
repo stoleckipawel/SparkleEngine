@@ -10,7 +10,7 @@ Owners: the concrete producer and consumer modules named in each trace; this doc
 
 Horizontal companion: [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md)
 
-Module inventories: [RHI](../Modules/Engine/RHI/README.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
+Module inventories: [RHI](../Modules/Engine/RHI/CapabilityInventory.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
 
 Renderer-local frame intent, stage order, resource flow, and design tradeoffs: [Rendering a Sparkle Frame](../Modules/Engine/Renderer/RenderingASparkleFrame.md). This cross-module document owns only the handoffs among GameFramework, Renderer, ShaderCompiler, and RHI.
 

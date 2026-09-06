@@ -54,8 +54,8 @@ The current debug handoff makes `REN-POST-10` Partial: bounded, false-color, and
 
 ## Controlled Failure Modes And Checks
 
-| Failure ID | Injection and safe state | Detecting check |
-| --- | --- | --- |
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
 | `FM-OUT-01` | invalid encoding or incompatible format pair | graph/settings resolution rejects before copy/present and names both values | `CHK-OUT-01` |
 | `FM-OUT-02` | stale viewport/product generation after resize/recreate | product/draw/capture is refused or retired; stale image is not current output | `CHK-OUT-02` |
 | `FM-OUT-03` | minimize/zero extent or unavailable back buffer | no out-of-bounds dispatch/copy occurs; recovery rebuilds on valid extent | `CHK-OUT-02` |

@@ -2,7 +2,7 @@
 
 Status: capability snapshot; current selector catalog, source-backed but not proof that every valid/invalid value activates, persists, recovers, or ships correctly
 
-Verified: 2026-09-06 against committed `master` revision `8414b5dc`
+Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` and the routed RHI controls are unchanged from the earlier `8414b5dc` source audit
 
 Scope: every Renderer feature CVar discovered in current Renderer source plus RHI presentation/adapter/TLAS controls consumed by the Renderer settings surface; maps request, persistence, active consumer, restart/topology effect, and feature dossier
 
@@ -44,8 +44,8 @@ The settings writer replaces only its owned INI section. Loading silently ignore
 | `r.RayTracing.PathTracedLighting.Bounces` | 8 requested; active clamp 1..16 | reference secondary bounce count | console only | [Indirect Lighting](Lighting/IndirectLighting.md) |
 | `r.RayTracing.PathTracedLighting.NormalBias` | 0.01 requested; active minimum 0 | reference ray spawn | console only | [Indirect Lighting](Lighting/IndirectLighting.md) |
 | `r.RayTracing.PathTracedLighting.MaxDistance` | 100000 requested; active minimum 0.001 | reference traversal | console only | [Indirect Lighting](Lighting/IndirectLighting.md) |
-| `r.Diagnostics.MarkerVerbosity` | FramePass; Off/FramePass/Detailed | frame/pass/detailed GPU marker emission | developer console; package exposure must be classified | [Diagnostics](DiagnosticsAndCapture.md) |
-| `r.Diagnostics.GpuTiming` | off | timestamp collection/resolution | developer console; observer cost unmeasured | [Diagnostics](DiagnosticsAndCapture.md) |
+| `r.Diagnostics.MarkerVerbosity` | FramePass; Off/FramePass/Detailed | frame/pass/detailed GPU marker emission | developer console; package exposure must be classified | [Diagnostics](DiagnosticsProductsAndCapture.md) |
+| `r.Diagnostics.GpuTiming` | off | timestamp collection/resolution | developer console; observer cost unmeasured | [Diagnostics](DiagnosticsProductsAndCapture.md) |
 | `r.FrameGraph.ParallelRecording` | on | Tasks-backed recording chunks | developer console; equivalence/scaling unproved | [Frame Graph](FrameGraphAndScheduling.md) |
 | `r.Material.BindingMode` | RayTracingOnly; also registers Everything | no runtime consumer found; capability report supports RayTracingOnly only | ineffective registered selector; `Everything` is not a feature | [Geometry/Materials](GeometryMaterialsAndGBuffer.md#material-contract) |
 
@@ -80,6 +80,34 @@ When adding or changing a selector:
 2. verify the producer, parser/domain, runtime consumer, requested/active diagnostic, topology/history/restart effect, and Shipping reachability;
 3. add or update the smallest `REN-E23` case and the feature-specific evidence item;
 4. remove unused names/values rather than retaining misleading compatibility vocabulary under the current clean-break policy.
+
+## Acceptance Criteria
+
+- `AC-SEL-01` — every Renderer-owned registered CVar and every RHI control surfaced by Renderer settings has exactly one catalog row with parser/domain, default, producer, active consumer or explicit no-consumer state, persistence, restart/topology/history effect, and dossier.
+- `AC-SEL-02` — every enum value and numeric boundary is accepted, clamped, rejected, or marked vocabulary-only exactly as documented; malformed values produce actionable diagnostics rather than disappearing silently.
+- `AC-SEL-03` — requested and active state remain separately inspectable for capability-gated traversal/provider/PTLAS choices, including fallback/refusal reason.
+- `AC-SEL-04` — the 27-name owned INI section round-trips valid settings without modifying other sections; non-persisted/session/RHI-only controls remain absent by design.
+- `AC-SEL-05` — live changes apply on the next permitted frame, topology/history changes rebuild/reset their owners, and restart-required changes do not claim live activation.
+- `AC-SEL-06` — Editor, Runtime, Debug/Development/Shipping, workspace/package, D3D12/Vulkan reachability is independently classified; hidden console reachability still counts unless erased/locked.
+- `AC-SEL-07` — absent feature selectors remain absent and ineffective `r.Material.BindingMode` vocabulary is removed or visibly nonfunctional, never advertised as an active feature.
+
+## Controlled Failure Modes And Checks
+
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
+| `FM-SEL-01` | malformed/unknown persisted name or value | load reports/records the invalid input according to the declared policy and does not mutate unrelated state | `CHK-SEL-02` |
+| `FM-SEL-02` | strict capability-gated request unavailable | active state reports unavailable/refused; Automatic only uses documented fallback | `CHK-SEL-03` |
+| `FM-SEL-03` | concurrent file edit/write failure or packaged unwritable location | save fails visibly and preserves a valid previous file/section | `CHK-SEL-02` |
+| `FM-SEL-04` | selector registered without consumer or undocumented control becomes reachable | source/runtime enumeration reports orphan and scope freeze fails | `CHK-SEL-01` |
+| `FM-SEL-05` | restart/topology/history-affecting value is treated as ordinary live state | lifecycle check detects mismatched requested/active generation and holds the cell | `CHK-SEL-03` |
+
+| Check | Exercise and oracle | Covers |
+| --- | --- | --- |
+| `CHK-SEL-01` | mechanically enumerate Renderer CVars, Renderer-settings allowlist/state/UI, and routed RHI controls; compare names/domains/defaults/consumers to every catalog row and negative selector | `AC-SEL-01`, `AC-SEL-06`, `AC-SEL-07`; `FM-SEL-04` |
+| `CHK-SEL-02` | round-trip exact 27-name section with boundary/malformed/unknown values, unrelated sections, concurrent edit, write failure, and packaged path cases | `AC-SEL-02`, `AC-SEL-04`; `FM-SEL-01`, `FM-SEL-03` |
+| `CHK-SEL-03` | runtime matrix over valid/invalid/strict/Automatic/restart/topology/history changes; compare requested/active state, reason, graph/history generation, and next-frame result | `AC-SEL-02`, `AC-SEL-03`, `AC-SEL-05`; `FM-SEL-02`, `FM-SEL-05` |
+
+This selector contract is **defined but unproved**. A registered or persisted name is not feature evidence; release results must demonstrate the active consumer and observable result in every advertised cell.
 
 ## Primary Source Routes
 

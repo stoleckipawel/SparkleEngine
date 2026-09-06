@@ -2,7 +2,7 @@
 
 Status: capability snapshot; exact registered-program ledger; not a successful cook, pipeline-creation record, or release approval
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; all files in `Engine/Renderer/ShaderRegistrations` reconciled with their typed shader declarations and principal frame-graph consumers; evidence `S` only
+Snapshot: 2026-09-06 at committed `master` revision `d236da11`; all files in `Engine/Renderer/ShaderRegistrations` reconciled with their typed shader declarations and principal frame-graph consumers, and `Engine/Renderer` is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
 Scope: the Renderer global-program set linked into the shader-contract target, including source, entry point, stage, consumer, traversal model, and important binding boundary
 
@@ -135,6 +135,47 @@ See [Tone Mapping](PostProcessing/ToneMapping.md) for the three operators and cu
 Each one of the 35 logical registrations must have both `DxilSm66` and `SpirV16` cooked entries before the current paired-backend runtime publication is complete. That is 70 logical registration-target entries, subject to content-blob deduplication in `CookedShaderLibrary.slib`. Other tool targets are explicit compiler vocabulary, not required runtime variants.
 
 For native ray compositions, registration count is not sufficient. Runtime materialization additionally checks compatible ray metadata, the global parameter owner, hit-group composition, recursion/payload/attribute limits, and shader-table records. Miss/hit programs do not own an independent pass or root parameter structure.
+
+## Publication And Lifetime
+
+```text
+typed declaration + registration membership + virtual source/entry/stage
+  -> ShaderCompiler discovery and both runtime-target variants
+  -> reflected parameter/RT metadata validation
+  -> transactional cooked library publication
+  -> Renderer whole-generation materialization
+  -> graph/pipeline rebuild and atomic active-generation swap
+  -> old program/pipeline/library retirement after last queue completion
+```
+
+The compiler/tool owns deterministic compilation and library publication. Renderer owns whether a complete published generation satisfies its typed pass and pipeline contracts. A registration row is therefore neither a cooked artifact nor a runtime-ready program by itself.
+
+## Acceptance Criteria
+
+- `AC-SHD-01` — the catalog contains every and only CMake-linked Renderer registration, with unique logical name/source/entry/stage identity and an owning typed declaration/consumer or explicit utility role.
+- `AC-SHD-02` — the derived stage totals equal the registration ledger and both required runtime targets exist for every logical program before paired-backend publication.
+- `AC-SHD-03` — reflected bindings, constant layout, formats, thread-group/stage metadata, and ray payload/attribute/recursion/hit-group contracts match the typed Renderer owner before materialization.
+- `AC-SHD-04` — a cook publishes the complete library transactionally; missing, duplicate, stale, or malformed entries make publication fail without replacing the last valid library.
+- `AC-SHD-05` — Renderer materializes the whole generation before atomic activation, rebuilds affected graphs/pipelines, and never mixes program generations in one frame.
+- `AC-SHD-06` — old shader/program/pipeline/library generations remain alive through last-use queue tokens and are reclaimed after completion during reload churn and shutdown.
+- `AC-SHD-07` — absent Geometry/Hull/Domain/Intersection/Callable/Mesh/Task stages remain explicit zero-registration capability cells and are not inferred from compiler/RHI vocabulary.
+
+## Controlled Failure Modes And Checks
+
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
+| `FM-SHD-01` | duplicate/remove registration or change source/entry/stage without catalog/consumer update | reconciliation fails before cook/publication | `CHK-SHD-01` |
+| `FM-SHD-02` | omit one DXIL/SPIR-V variant or corrupt reflection/RT metadata | compiler/runtime validation rejects the generation; prior library remains active | `CHK-SHD-02` |
+| `FM-SHD-03` | cook or materialization fails mid-publication | no partial library/generation becomes discoverable or active | `CHK-SHD-02`, `CHK-SHD-03` |
+| `FM-SHD-04` | reload while frames using old generation are in flight | frames stay generation-consistent; retirement waits on all queue tokens | `CHK-SHD-03` |
+
+| Check | Exercise and oracle | Covers |
+| --- | --- | --- |
+| `CHK-SHD-01` | mechanically enumerate CMake-linked registration objects and compare unique name/source/entry/stage/consumer rows and totals to this catalog | `AC-SHD-01`, `AC-SHD-02`, `AC-SHD-07`; `FM-SHD-01` |
+| `CHK-SHD-02` | focused registration validation and two-target cook with one omitted/corrupted variant/metadata fixture; inspect transactional publication | `AC-SHD-02`–`AC-SHD-04`; `FM-SHD-02`, `FM-SHD-03` |
+| `CHK-SHD-03` | consuming runtime smoke plus successful/failed hot reload while work is in flight; inspect active generation, graph/pipeline rebuild, queue tokens, and reclamation | `AC-SHD-05`, `AC-SHD-06`; `FM-SHD-03`, `FM-SHD-04` |
+
+This catalog contract is **defined but unproved**. Tool-side build/cook checks and Renderer-side consuming/runtime checks are both required; neither can stand in for the other.
 
 ## Change Checklist
 

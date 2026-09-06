@@ -2,7 +2,7 @@
 
 Status: feature dossier; current negative capability and source-backed absence, not a delivery plan
 
-Verified: 2026-09-06 against source revision `8414b5dc`
+Verified: 2026-09-06 against source revision `d236da11`; inspected Renderer/shader/view paths are unchanged from the earlier `8414b5dc` audit
 
 Scope: `REN-POST-12`; intentional wavelength/channel-dependent lens distortion as a post-processing effect
 
@@ -31,3 +31,10 @@ Until those owners exist, the feature remains unavailable rather than Experiment
 - `REN-E27` owns the negative source/build/selector/pass/shader/asset/editor/documentation audit for chromatic aberration.
 - No runtime test is implied by this source-only absence finding.
 - Adjacent source routes inspected: [`PostProcessing.cpp`](../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp), [`Presentation.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp), and [`ViewportDisplaySettings.h`](../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.h).
+
+### Current Negative Acceptance
+
+- `AC-CHR-NEG-01` — no selector, view/camera setting, lens model, shader/pass, history, diagnostic, editor control, or package claim advertises chromatic aberration.
+- `AC-CHR-NEG-02` — reconstruction, filtering, motion, sampling, and encoding fringes remain classified as defects/artifacts rather than intentional feature output.
+
+`FM-CHR-NEG-01` occurs when a reachable aberration-like control/path lacks the complete owner/result contract or an artifact is advertised as support. `CHK-CHR-NEG-01`/`REN-E27` covers `AC-CHR-NEG-01`, `AC-CHR-NEG-02`, and `FM-CHR-NEG-01` by auditing source, CMake, shaders, settings, frame graph, view/editor UI, diagnostics, packages, and documentation; any unmatched result fails the negative contract.

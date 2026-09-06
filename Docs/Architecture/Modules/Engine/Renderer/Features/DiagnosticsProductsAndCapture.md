@@ -2,7 +2,7 @@
 
 Status: current feature dossier; source-backed, not proof that diagnostics are correct, complete, low-overhead, or release-safe
 
-Verified: 2026-09-06 against committed `master` revision `8414b5dc`
+Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
 Scope: `REN-DIAG-01` through `REN-DIAG-08`; defines Renderer observability, viewport products, asynchronous capture, previews, and shader-generation reload from the frame owner's perspective
 
@@ -65,6 +65,36 @@ This sequence makes diagnostics causally attachable to a frame, but correlation 
 - Bounded snapshots protect runtime memory but require visible truncation/drop semantics and support-oriented prioritization.
 
 Primary evidence: `REN-E19`, `REN-E21`, `RHI-E13`, `RHI-E14`, `ED-E03`, and the external-capture workflow in `WF-011`/`WF-017`.
+
+## Acceptance Criteria
+
+- `AC-DAC-01` — frame/pass/marker/timing observations identify the actual frame, pass, queue, backend, and diagnostic configuration; disabled features emit no misleading partial values.
+- `AC-DAC-02` — mesh, texture, and memory snapshots are bounded, internally consistent, generation/timestamp identified, and explicitly report truncation, unavailable categories, and pressure thresholds.
+- `AC-DAC-03` — viewport products identify viewport/request generation, frame, scene, provider, extent, format, and semantic product; missing shader/topology/color provenance remains visibly Unknown rather than inferred.
+- `AC-DAC-04` — capture accepts only an available matching product, remains asynchronous, reports Pending/Completed/Failed distinctly, and moves one result to the caller without stale duplication.
+- `AC-DAC-05` — the exact pending/completed bounds are enforced; overflow/drop policy identifies which request/result was rejected or dropped and never manufactures success.
+- `AC-DAC-06` — captured row pitch, format, extent, channel/color interpretation, and pixels match the source product within a predeclared oracle on D3D12 and Vulkan.
+- `AC-DAC-07` — shader reload validates/materializes the complete new generation before atomic publication; old graph/pipeline/program state retires only after last-use queue completion and failures keep the prior valid generation active.
+- `AC-DAC-08` — marker/timing/capture observer cost is measured or classified for performance evidence, and Shipping/package audits contain only deliberately supported diagnostics/artifacts.
+
+## Controlled Failure Modes And Checks
+
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
+| `FM-DAC-01` | request absent/stale product, mismatched frame, or unsupported readback format | capture completes Failed with identity/reason; empty or prior pixels are not success | `CHK-DAC-02` |
+| `FM-DAC-02` | exceed pending/completed queue bound | documented request/drop result is observable and retained state remains within bounds | `CHK-DAC-02` |
+| `FM-DAC-03` | GPU timing unsupported, invalid, or unresolved | observation reports unavailable/pending; zero/stale duration is not presented as measurement | `CHK-DAC-01` |
+| `FM-DAC-04` | shader cook/library/materialization fails or reload races in-flight frames | prior generation remains active; failure is visible; partial generation never publishes | `CHK-DAC-03` |
+| `FM-DAC-05` | diagnostic buffer truncates or Shipping contains private artifacts/paths | truncation/package audit fails explicitly | `CHK-DAC-01`, `CHK-DAC-04` |
+
+| Check | Exercise and oracle | Covers |
+| --- | --- | --- |
+| `CHK-DAC-01` | toggle marker/timing modes, force unsupported/unresolved timing, overflow diagnostic rows, correlate with an external capture, and record observer-cost state | `AC-DAC-01`, `AC-DAC-02`, `AC-DAC-08`; `FM-DAC-03`, `FM-DAC-05` |
+| `CHK-DAC-02` | capture known final/depth/normal patterns across pending/completed limits, stale/missing identity, unsupported format, resize, and both backends; decode metadata/pixels | `AC-DAC-03`–`AC-DAC-06`; `FM-DAC-01`, `FM-DAC-02` |
+| `CHK-DAC-03` | successful and deliberately broken shader-generation reload while frames are in flight; inspect atomic active generation and completion-owned retirement | `AC-DAC-07`; `FM-DAC-04` |
+| `CHK-DAC-04` | Development versus Shipping package manifest/string/path audit plus focused diagnostic-off performance baseline | `AC-DAC-08`; `FM-DAC-05` |
+
+This contract is **defined but unproved**. Diagnostic presence proves observability only; it cannot substitute for the visual, numerical, synchronization, performance, or release contract of the feature being observed.
 
 ## Primary Source Routes
 

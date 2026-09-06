@@ -59,8 +59,8 @@ Color grading, chromatic aberration, and frame generation do not enter this path
 - `AC-POST-03` — scene/view/extent/provider/shader/topology changes reset only affected temporal stages, never bind mixed generations, and retire old resources after queue completion.
 - `AC-POST-04` — absent color grading, chromatic aberration, frame generation, and HDR-display features remain absent from selectors, graph passes, shader/provider registration, UI, and product claims.
 
-| Failure ID | Injection and safe state | Detecting check |
-| --- | --- | --- |
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
 | `FM-POST-01` | two stages claim `ResolvedSceneColor` or a color-domain/extent edge is missing | topology/contract audit rejects the graph/change before evidence use | `CHK-POST-01` |
 | `FM-POST-02` | provider/debug/output combination is unavailable or changes generation mid-flight | active state reports fallback/refusal; no stale or double-processed product publishes | `CHK-POST-02` |
 | `FM-POST-03` | neighboring functionality or SDK vocabulary is advertised as an absent feature | selector/source/package audit fails `AC-POST-04` | `CHK-POST-03` |

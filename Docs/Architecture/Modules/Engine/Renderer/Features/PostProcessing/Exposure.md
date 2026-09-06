@@ -49,8 +49,8 @@ Default exposure is Automatic with ParallelReduction. Default multiplier bounds 
 
 ## Controlled Failure Modes And Checks
 
-| Failure ID | Injection and safe state | Detecting check |
-| --- | --- | --- |
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
 | `FM-EXP-01` | min greater than max, non-finite setting, zero/negative target, or extreme luminance | resolve rejects or clamps by documented policy and never publishes non-finite history | `CHK-EXP-01` |
 | `FM-EXP-02` | camera cut/resize/mode/view identity changes without reset | history oracle detects stale adaptation and candidate fails | `CHK-EXP-02` |
 | `FM-EXP-03` | async queue unavailable or cross-queue dependency omitted | graph selects supported queue or rejects; no stale/uninitialized exposure reaches consumers | `CHK-EXP-03` |

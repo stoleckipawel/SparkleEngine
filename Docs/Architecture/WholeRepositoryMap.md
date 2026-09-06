@@ -156,7 +156,7 @@ The `FrameGraph` object is rebuilt when output/topology, provider selection, lig
 | Shader-table mapping | `RayTracingShaderTablePlan` owns Surface/ShadowVisibility order, checked record indexing, instance contributions, invalidation, and bounded metrics |
 | Image providers | Renderer-owned provider stack with NVIDIA Streamline/DLSS adapters and non-provider presentation paths |
 | Debug views | 16 final/material/GBuffer/lighting/scene modes; current common presentation can alter diagnostic values. [Feature dossier](Modules/Engine/Renderer/Features/DebugViews/README.md). |
-| Diagnostics and capture | bounded Renderer/RHI snapshots plus viewport capture; generated evidence is not implementation authority. [Feature dossier](Modules/Engine/Renderer/Features/DiagnosticsAndCapture.md). |
+| Diagnostics, products, and capture | bounded Renderer/RHI snapshots plus viewport-product publication and capture; generated evidence is not implementation authority. [Feature dossier](Modules/Engine/Renderer/Features/DiagnosticsProductsAndCapture.md). |
 
 The native D3D12/Vulkan ray-tracing pipeline, shader-table, and trace-command source paths are present, as are reachable GBuffer and shadow compositions. Current documentation does not claim paired native execution, output parity, reload/retirement behavior, or performance proof; those remain open in the [Shader System feature acceptance contract](CrossModule/ShaderSystem/Acceptance.md).
 
