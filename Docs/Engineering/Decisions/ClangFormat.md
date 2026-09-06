@@ -39,7 +39,7 @@ The selected 140-column limit preserves SparkleEngine's established baseline and
 
 ## Decision Boundary
 
-This record preserves the considered options and accepted decision. The executable policy is [the root `.clang-format`](../../.clang-format), its shader-subtree override, and the [binding coding-style standard](Standards/CodingStyle.md).
+This record preserves the considered options and accepted decision. The executable policy is [the root `.clang-format`](../../../.clang-format), its shader-subtree override, and the [binding coding-style standard](../Foundations/CodeStyle.md).
 
 Accepting the profile does not authorize an unreviewed whole-repository rewrite. C++, shader, CMake, package, generated artifact, third-party source, and D3D12/Vulkan behavior remain unchanged until the dedicated migration passes its no-write review and validation gates.
 
@@ -158,7 +158,7 @@ The selected values below were accepted on 2026-08-02. Values under “Exact eff
 | `B1` | attached; Allman; custom hybrid | **Allman** | `BreakBeforeBraces: Allman`; matches the binding guide and existing code. |
 | `B2` | multiline control flow; short single-line control flow | **multiline** | `AllowShortIfStatementsOnASingleLine: Never`, short loops `false`, short blocks `Never`, short case labels `false`. |
 | `B3` | short enum one line; enum values vertical | **vertical** | `AllowShortEnumsOnASingleLine: false`; enum additions remain one-line diffs. |
-| `B4` | no short functions; class-only; all short | **class-only** | `AllowShortFunctionsOnASingleLine: InlineOnly`; supports trivial header accessors without merging top-level functions. The [coding-style standard](Standards/CodingStyle.md#headers) still decides which header bodies are allowed. |
+| `B4` | no short functions; class-only; all short | **class-only** | `AllowShortFunctionsOnASingleLine: InlineOnly`; supports trivial header accessors without merging top-level functions. The [coding-style standard](../Foundations/CodeStyle.md#headers) still decides which header bodies are allowed. |
 | `B5` | no short lambdas; empty; callback-only; all | **callback-only** | `AllowShortLambdasOnASingleLine: Inline`; permits concise algorithms/callbacks such as `[this] { SubmitResize(); }` while keeping stored multi-step lambdas expanded. |
 | `B6` | formatter inserts braces; formatter leaves structure | **leave structure** | `InsertBraces: false`, `RemoveBracesLLVM: false`; clang-tidy and review enforce braces without formatter AST-like edits. |
 

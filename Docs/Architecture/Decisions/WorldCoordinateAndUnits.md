@@ -1,6 +1,7 @@
 # World Coordinate, Units, and Transform Contract
 
 Status: canonical architecture decision
+Responsibility: define the single engine-wide world basis, units, transform, animation, skinning, and backend-conversion contract
 Adoption: accepted contract; current code and cooked schemas implement material portions, but the audited tree has no active executable source-test route proving complete conformance
 Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
@@ -8,7 +9,7 @@ Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`
 
 This document is the single source of truth for SparkleEngine world axes, physical units, transform math, source normalization, animation and skinning spaces, and the boundary between canonical engine data and backend-specific representations.
 
-It owns semantic coordinate decisions. Source-format specifications own their source conventions; the [GameFramework and ECS standard](../Engineering/Standards/GameFrameworkAndEcs.md) owns world and animation integration rules; the [Graphics Engineering standard](../Engineering/Standards/GraphicsEngineering.md) owns graphics implementation and evidence; and the [Renderer/RHI boundary](RendererRhiBoundary.md) owns backend responsibilities. Code, cooked schemas, and executable validation remain the proof that this decision is implemented; this document alone is not conformance evidence.
+It owns semantic coordinate decisions. Source-format specifications own their source conventions; [GameFramework Engineering](../../Engineering/Modules/GameFramework.md) owns world and animation integration rules; [Renderer Engineering](../../Engineering/Modules/Renderer.md) owns render-side implementation and graphics evidence; [RHI Engineering](../../Engineering/Modules/RHI.md) owns backend contracts; and the [Renderer/RHI boundary](RendererRhiBoundary.md) owns their responsibility split. Code, cooked schemas, and executable validation remain the proof that this decision is implemented; this document alone is not conformance evidence.
 
 No project, level, importer, renderer path, or future physics integration may define an alternate Sparkle world basis or unit scale.
 

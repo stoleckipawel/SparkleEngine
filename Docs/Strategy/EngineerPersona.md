@@ -11,9 +11,10 @@ Scope: principal-level advanced graphics, developer technology, rendering, GPU s
 This document describes how the target engineer thinks, builds, reviews, and communicates. It does not redefine:
 
 - the canonical [`PGE-01` through `PGE-15` capabilities and evidence](Requirements.md);
-- the [Sponza/Bistro/San Miguel acceptance workloads](../Engineering/BistroAndSanMiguelWorkloads.md);
+- the [Sponza/Bistro/San Miguel acceptance workloads](../Acceptance/GraphicsWorkloads.md);
 - the [delivery sequence](Roadmap.md);
-- the [repository implementation standards](../Engineering/Standards/README.md);
+- the [repository implementation standards](../Engineering/README.md);
+- the [first-release feature completion report contract](../Acceptance/FeatureCompletionReports.md), which applies this operating model to per-feature polish and explanation;
 - subsystem architecture under `Docs/Architecture`.
 
 Those documents own what must be achieved and how repository changes are accepted. This persona owns the professional operating model used to reach that bar.
@@ -145,3 +146,16 @@ Avoid becoming the engineer who:
 For Sparkle, the target engineer can truthfully say:
 
 > This feature is real. The math and data are understood. The CPU/GPU, API, compiler, driver, and quality evidence is reproducible. Ownership and fallback are explicit. Another engineer can adopt it. The repository became simpler after the change.
+
+Use these stable outcomes in iteration records; the quote above remains the complete standard and the facets below make omissions visible:
+
+| ID | Required outcome | Rejected substitute |
+| --- | --- | --- |
+| `NS-REAL` | A current consumer reaches the complete production path and receives the promised result. | Source presence, scaffolding, a selectable noun, or an author-only demo. |
+| `NS-MATH-DATA` | Semantics, mathematics, numerical assumptions, data transformations, identity, and lifetime are understood and reviewable. | Unexplained constants, opaque payloads, or equations disconnected from implementation. |
+| `NS-EVIDENCE` | Correctness, quality, CPU/GPU, API/compiler/driver, failure, and limitation claims are reproducible on the declared matrix. | A build, responsive process, beauty capture, average FPS, or unsupported generalization. |
+| `NS-OWNERSHIP` | Mutable state, publication, synchronization, fallback, failure, recovery, and retirement each have one explicit owner. | Coordination objects, retries, logs, or compatibility paths that conceal ambiguous authority. |
+| `NS-ADOPTION` | A non-author can discover, use, diagnose, reproduce, and retire the capability without private repair. | Author knowledge, undocumented environment state, or instructions corrected during acceptance. |
+| `NS-SIMPLIFY` | The delivered path removes superseded code/data/configuration and leaves a smaller authority and maintenance surface. | File-count reduction, renamed duplication, speculative abstraction, or deferred cleanup. |
+
+Every material iteration selects the applicable `NS-*` outcomes before implementation and records `advance`, `preserve`, `not applicable`, or `blocked` at handoff through the [Change Lifecycle iteration control record](../Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record). A feature cannot pass by excelling at one facet while failing another applicable facet.

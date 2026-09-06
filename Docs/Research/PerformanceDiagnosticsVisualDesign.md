@@ -1,10 +1,10 @@
 # Performance Diagnostics Visual Design And Tool Wireframes
 
-Status: design visualization of a target proposal; not proof of current implementation or measured performance
+Status: research; target-product visual design, not proof of current implementation or measured performance
 
 Last reconciled with the target architecture: 2026-08-16
 
-Scope: graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md)
+Scope: graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics.md)
 
 ## Purpose And Authority Boundary
 
@@ -26,7 +26,7 @@ Read the mockups from broad orientation to focused evidence:
 
 ### Integrated Performance Overview
 
-![SparkleEngine Performance Overview mockup](Images/sparkle-performance-overview-mockup-v2.png)
+![SparkleEngine Performance Overview mockup](Images/PerformanceDiagnostics/sparkle-performance-overview-mockup-v2.png)
 
 This is the first reviewer and triage screen: fixed configuration, frame navigator, aligned CPU/GPU/memory facts, one likely-domain explanation, and one next action. It does not claim causal proof.
 
@@ -38,19 +38,19 @@ Physical Sparkle threads are the rows. Gameplay and renderer phases remain logic
 
 ### GPU Captured Frame Mockup
 
-![SparkleEngine GPU captured-frame mockup](Images/sparkle-performance-gpu-capture-mockup.png)
+![SparkleEngine GPU captured-frame mockup](Images/PerformanceDiagnostics/sparkle-performance-gpu-capture-mockup.png)
 
 Queue lanes, frame-graph marker hierarchy, and adjacent inclusive/exclusive columns answer marker-level attribution. The selected marker carries its stable path into PIX, RenderDoc, Nsight, or RGP for API, resource, shader, and hardware evidence.
 
 ### RAM, GPU Memory, And Residency
 
-![SparkleEngine memory diagnostics mockup](Images/sparkle-performance-memory-mockup.png)
+![SparkleEngine memory diagnostics mockup](Images/PerformanceDiagnostics/sparkle-performance-memory-mockup.png)
 
 Working set, private commit, tracked resources, allocator blocks, local/non-local API usage and budget, and retirement remain distinct. The A/B/C checkpoint workflow supports controlled load/unload analysis without prematurely declaring a leak.
 
 ### Complete System Scope
 
-![SparkleEngine diagnostics system-scope visualization](Images/sparkle-performance-system-scope.png)
+![SparkleEngine diagnostics system-scope visualization](Images/PerformanceDiagnostics/sparkle-performance-system-scope.png)
 
 Sparkle owns bounded collection, immutable correlation, quick orientation, stable semantic identity, and benchmark linkage. External profilers continue to own call stacks, OS scheduling, API/resource state, hardware counters, ISA, allocation maps, BVH inspection, and crash dumps.
 

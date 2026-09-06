@@ -1,6 +1,6 @@
 # E. External Renderer Repository Comparison
 
-Status: source-linked external comparison; external patterns are precedent, not local implementation proof
+Status: research; source-linked external comparison whose patterns are precedent, not local implementation proof
 Research snapshot: 2026-07-24
 Last local reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Scope: vendor reference repositories/frameworks compared against SparkleEngine architecture, developer-technology transfer, path tracing, neural graphics, code construction, extensibility, productization, feature scope, and deletion-first improvement targets
@@ -9,13 +9,13 @@ Scope: vendor reference repositories/frameworks compared against SparkleEngine a
 
 This document compares SparkleEngine against top-tier rendering repositories and SDKs. The purpose is not to copy their code. The purpose is to identify what makes those repositories production-grade or reviewable, then use that standard to slim and sharpen Sparkle.
 
-This document owns source-linked precedent analysis only. Local architecture decisions are routed from the [Whole Repository Architecture Map](../WholeRepositoryMap.md), implementation rules belong in [Engineering Standards](../../Engineering/Standards/README.md), and capability grades belong in [Principal Graphics Requirements](../../Strategy/Requirements.md).
+This document owns source-linked precedent analysis only. Local architecture decisions are routed from the [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md), implementation rules are routed by the [Engineering task map](../Engineering/README.md#choose-by-task), and capability grades belong in [Principal Graphics Requirements](../Strategy/Requirements.md).
 
 Repository links below may track mutable default branches. They prove only the narrow reviewed pattern as of the research snapshot; a specific API, capability, performance, or support claim must be revalidated against a pinned revision or current primary manual before use. A vendor design becomes good Sparkle practice only after its problem exists here, the owning local document accepts it, a simpler option is considered, and workload evidence validates the practical result.
 
 The main lesson is not "add more features." It is "make scope and ownership painfully clear."
 
-The supplied principal graphics engineering role set adds a second comparison lens. The repository must eventually demonstrate the canonical `PGE-01` through `PGE-15` requirements in [A. Principal Graphics Engineering Requirements](../../Strategy/Requirements.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
+The supplied principal graphics engineering role set adds a second comparison lens. The repository must eventually demonstrate the canonical `PGE-01` through `PGE-15` requirements in [A. Principal Graphics Engineering Requirements](../Strategy/Requirements.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
 
 ## Sources Reviewed
 
@@ -49,13 +49,13 @@ The 2026-08-28 local pass treated every earlier Sparkle comparison as potentiall
 
 | Earlier local statement | Reconciled result | Current owner |
 | --- | --- | --- |
-| Sparkle lacks a crisp product identity. | Resolved in documentation: Sparkle is a compact renderer-first engine and evidence platform. Implementation/evidence still determines whether the repository behaves consistently with that identity. | [Executive Summary](../../Strategy/ExecutiveSummary.md) |
-| Renderer/RHI policy is implicit and needs a one-page policy. | Resolved as a documentation action; the explicit RHI/frame-graph boundary now exists. | [Renderer and RHI Architecture Boundary](../RendererRhiBoundary.md) |
-| Heavy Showcase/Bistro content lives in the main depot. | Stale: acceptance content is cataloged/externalized. Future media must continue through the workload/content-pack policy. | [Acceptance Workloads](../../Engineering/BistroAndSanMiguelWorkloads.md) and [Whole Repository Map](../WholeRepositoryMap.md) |
-| Renderer public API exposes direct RHI access. | Stale: the reconciled `Renderer` public surface exposes bounded resource/memory/capture snapshots but no direct RHI accessor. Those remaining observation surfaces still require current consumers and bounded cost. | Code and [Renderer/RHI Boundary](../RendererRhiBoundary.md) |
+| Sparkle lacks a crisp product identity. | Resolved in documentation: Sparkle is a compact renderer-first engine and evidence platform. Implementation/evidence still determines whether the repository behaves consistently with that identity. | [Executive Summary](../Strategy/ExecutiveSummary.md) |
+| Renderer/RHI policy is implicit and needs a one-page policy. | Resolved as a documentation action; the explicit RHI/frame-graph boundary now exists. | [Renderer and RHI Architecture Boundary](../Architecture/Decisions/RendererRhiBoundary.md) |
+| Heavy Showcase/Bistro content lives in the main depot. | Stale: acceptance content is cataloged/externalized. Future media must continue through the workload/content-pack policy. | [Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) and [Whole Repository Map](../Architecture/WholeRepositoryMap.md) |
+| Renderer public API exposes direct RHI access. | Stale: the reconciled `Renderer` public surface exposes bounded resource/memory/capture snapshots but no direct RHI accessor. Those remaining observation surfaces still require current consumers and bounded cost. | Code and [Renderer/RHI Boundary](../Architecture/Decisions/RendererRhiBoundary.md) |
 | Vendor branch separation implies Sparkle should create product/research branches. | Overreach: the transferable requirement is explicit maturity/capability status and safe defaults. Branch topology is one vendor delivery choice, not a required Sparkle architecture. | Focused feature Architecture and executable capability policy |
 
-This table is a dated reconciliation, not a replacement readiness grade. [Gap Assessment](../../Strategy/GapAssessment.md) remains the owner of current grading.
+This table is a dated reconciliation, not a replacement readiness grade. [Gap Assessment](../Strategy/Assessments/GapAssessment.md) remains the owner of current grading.
 
 ## External Repository Patterns
 
@@ -107,7 +107,7 @@ Sparkle comparison:
 
 Action:
 
-- Keep [Renderer and RHI Architecture Boundary](../RendererRhiBoundary.md) as the single policy owner for what RHI tracks, what the frame graph automates, what passes state, native interop, and lifetime protection.
+- Keep [Renderer and RHI Architecture Boundary](../Architecture/Decisions/RendererRhiBoundary.md) as the single policy owner for what RHI tracks, what the frame graph automates, what passes state, native interop, and lifetime protection.
 - Prove the written boundary through architecture checks and representative D3D12/Vulkan paths; do not create another abstraction or duplicate policy here.
 
 ### 3. SDK Integrations Keep Application Ownership
@@ -324,7 +324,7 @@ Across the reviewed sources, the reusable evaluation rubric is:
 - reproducible adoption material another engineer can use without private context;
 - deletion of superseded paths and tooling that no longer serves a product workflow.
 
-This research does not grade Sparkle or own its backlog. Current readiness belongs to [C. Gap Assessment](../../Strategy/GapAssessment.md), priority and sequence belong to [F. Roadmap](../../Strategy/Roadmap.md), and accepted local design belongs to focused Architecture documents.
+This research does not grade Sparkle or own its backlog. Current readiness belongs to [C. Gap Assessment](../Strategy/Assessments/GapAssessment.md), priority and sequence belong to [F. Roadmap](../Strategy/Roadmap.md), and accepted local design belongs to focused Architecture documents.
 
 ## What Not To Copy
 

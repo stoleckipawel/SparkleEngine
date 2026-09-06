@@ -8,14 +8,30 @@ Scope: principal-level real-time graphics, developer technology, GPU systems, re
 
 This is the canonical requirements contract for SparkleEngine and the target engineering persona. The stable identifiers are `PGE-01` through `PGE-15`.
 
-- [B. Role Source Archive](RoleSourceArchive.md) preserves the supplied screenshots and CV in normalized text and maps every source bullet to these identifiers.
-- [C. Candidate and Repository Gap Assessment](GapAssessment.md) grades current evidence.
-- [F. August 2026-January 2027 Execution Roadmap](Roadmap.md) converts the gaps into sequenced work.
+- [B. Role Source Archive](RoleSources.md) preserves the supplied screenshots and CV in normalized text and maps every source bullet to these identifiers.
+- [C. Candidate and Repository Gap Assessment](Assessments/GapAssessment.md) grades current evidence.
+- [F. Release-First Principal Graphics Roadmap](Roadmap.md) converts the gaps into sequenced work.
 - [G. Advanced Graphics Engine Executive Summary](ExecutiveSummary.md) is the short engine decision document.
 - [H. Advanced Graphics Engineer Persona](EngineerPersona.md) describes who the engineer must become.
-- [I. Bistro and San Miguel Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.
+- [I. Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.
+- [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md) applies these targets to per-feature polish and explanation; it cannot assign a higher `PGE-*` evidence level without the proof required here.
 
 When another document conflicts with this matrix, this matrix controls the capability target and the evidence meaning. Architecture documents may impose stricter implementation rules.
+
+## North-Star Requirement Crosswalk
+
+The persona's [`NS-*` North Star outcomes](EngineerPersona.md#north-star) and these capability requirements are complementary. `NS-*` asks whether an iteration behaves like trustworthy principal engineering; `PGE-*` asks which capability and evidence level it advances. Every material iteration marks both, but only when applicable.
+
+| North Star outcome | Primary capability targets | Iteration question |
+| --- | --- | --- |
+| `NS-REAL` | `PGE-01`, `PGE-02`, `PGE-03`, `PGE-07`, `PGE-09`, `PGE-13`, `PGE-15` | Is there a complete consumer-visible or adopter-visible production result rather than vocabulary or scaffolding? |
+| `NS-MATH-DATA` | `PGE-02`, `PGE-03`, `PGE-04`, `PGE-08`, `PGE-09`, `PGE-10`, `PGE-11`, `PGE-12` | Are semantics, math, numerical behavior, data transformations, layouts, and cost understood and tested? |
+| `NS-EVIDENCE` | `PGE-02` through `PGE-12`, `PGE-14` | Do the declared correctness, quality, performance, API/compiler/driver, neural, and failure claims have reproducible evidence? |
+| `NS-OWNERSHIP` | `PGE-01`, `PGE-05`, `PGE-07`, `PGE-09`, `PGE-10`, `PGE-12`, `PGE-15` | Are authority, lifetime, synchronization, capability selection, fallback, failure, and retirement explicit? |
+| `NS-ADOPTION` | `PGE-01`, `PGE-06`, `PGE-07`, `PGE-13`, `PGE-14`, `PGE-15` | Can a non-author discover, integrate, reproduce, diagnose, support, and communicate the result? |
+| `NS-SIMPLIFY` | `PGE-07`, `PGE-10`, `PGE-13`, `PGE-15` | Did the work delete superseded authority and reduce maintenance or public surface without losing capability? |
+
+The crosswalk is a routing aid, not evidence. An iteration records each selected `PGE-*` as `advance`, `preserve`, `not applicable`, or `blocked`; a grouped range never hides an individual target's result. [Change Lifecycle](../Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record) owns the iteration record format.
 
 ## Target Proposition
 
@@ -42,7 +58,7 @@ The product workload decision is fixed for this planning horizon:
 2. Bistro exterior/interior is the Tier 1 primary flagship;
 3. San Miguel 2.0 is the Tier 1 secondary supported scene and cross-scene quality/generalization test.
 
-The engine is not permitted to substitute Sponza-only proof for a Tier 1 requirement. The detailed acquisition, material, quality, performance, neural, and presentation gates are binding in [I](../Engineering/BistroAndSanMiguelWorkloads.md).
+The engine is not permitted to substitute Sponza-only proof for a Tier 1 requirement. The detailed acquisition, material, quality, performance, neural, and presentation gates are binding in [I](../Acceptance/GraphicsWorkloads.md).
 
 ## Evidence Scale
 
@@ -119,7 +135,7 @@ The portfolio is ready only when all four review paths work:
 
 The whole engine is not the portfolio. It is the evidence substrate. The public surface must select and explain the small parts that prove the matrix.
 
-Scene-specific assets, routes, `CASE-01` through `CASE-05`, and presentation gates belong to [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md). This document owns only the reviewer/evidence meaning above.
+Scene-specific assets, routes, `CASE-01` through `CASE-05`, and presentation gates belong to [I. Acceptance Workloads](../Acceptance/GraphicsWorkloads.md). This document owns only the reviewer/evidence meaning above.
 
 ### Case-Study Structure
 

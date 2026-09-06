@@ -1,99 +1,54 @@
 # SparkleEngine Documentation
 
-Status: documentation root and authority map
+Status: documentation entry point and authority map
 
-SparkleEngine documentation is organized by responsibility, not by chronology or author.
+Use this page to choose the owning knowledge area. Do not read `Docs` as one linear manual.
 
-## Areas
+Code and executable build configuration prove implemented behavior. Documentation explains intent, design, rules, plans, evidence requirements, and historical context; each document must state which of those it owns.
 
-| Area | Owns | Does not own |
+## Start By Intent
+
+| I need to... | Start here |
+| --- | --- |
+| understand the product direction or priorities | [Strategy](Strategy/README.md) |
+| understand the current repository, one module, or a system design | [Architecture](Architecture/README.md) |
+| find what a capability supports, how it works end to end, or what remains unknown | [Module Capability Inventory](Architecture/Modules/README.md), then [Capability Documentation Review](Engineering/Workflow/CapabilityReview.md) |
+| implement a repository change | [Change Integration](Engineering/Workflow/ChangeIntegration.md), then the [Engineering task map](Engineering/README.md#choose-by-task) |
+| open or close a release iteration | [Change Lifecycle control record](Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record), then the [Roadmap traceability table](Strategy/Roadmap.md#stage-target-and-evidence-traceability) |
+| review a changelist | [Code Review](Engineering/Workflow/CodeReview.md) |
+| prove a feature or release is complete | [Acceptance](Acceptance/README.md) |
+| execute an approved multi-step delivery | [Plans](Plans/README.md) |
+| inspect external precedent, option analysis, or historical migration evidence | [Research](Research/README.md) |
+
+## Knowledge Areas
+
+| Area | Owns | Must not own |
 | --- | --- | --- |
-| [Strategy](Strategy/README.md) | capability targets, priorities, dated assessments, roadmaps, persona | implementation rules or system design |
-| [Architecture](Architecture/WholeRepositoryMap.md) | current-system maps, target designs, decisions, rationale, external architecture research | coding conventions or evidence grades |
-| [Engineering](Engineering/README.md) | binding implementation standards, decision briefs, validation contracts | product strategy or duplicate architecture descriptions |
+| [Strategy](Strategy/README.md) | desired capabilities, priorities, roadmap, operating model, dated assessments | implementation rules or system internals |
+| [Architecture](Architecture/README.md) | module-oriented current maps, capability inventories, canonical decisions, cross-module and target system shape | phase sequencing, general coding rules, or external precedent |
+| [Engineering](Engineering/README.md) | task-oriented workflow, foundations, module rules, verification, and technical decision records | release scope, system design, or research |
+| [Acceptance](Acceptance/README.md) | completion definitions, workload gates, feature reports, release evidence | priority or implementation design |
+| [Plans](Plans/README.md) | ordered delivery phases, dependencies, stop conditions, migration ledgers | enduring architecture or claims of completion |
+| [Research](Research/README.md) | source-backed precedent, explorations, visual studies, dated migration baselines | local decisions, rules, or evidence grades |
 
-Code and build configuration remain the authority for implemented behavior. Documentation must identify whether it is a standard, canonical decision, target proposal, plan, snapshot, research reference, or archive.
-
-## Reviewer Paths
+## Short Reviewer Paths
 
 ### External Technical Review
 
 1. [Advanced Graphics Engine Executive Summary](Strategy/ExecutiveSummary.md)
 2. [Whole Repository Architecture Map](Architecture/WholeRepositoryMap.md)
-3. [Renderer and RHI Architecture Boundary](Architecture/RendererRhiBoundary.md)
-4. [Engineering Standards](Engineering/Standards/README.md)
-5. [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md)
+3. [Current Capability Inventory](Architecture/Modules/README.md)
+4. [Engineering task map](Engineering/README.md#choose-by-task)
+5. [Acceptance](Acceptance/README.md)
 
-An external reviewer should follow code, captures, tests, and measurements from these entry points rather than read every planning or research document.
+### Owned Repository Change
 
-### Implementing a Change
+1. Read [Change Integration](Engineering/Workflow/ChangeIntegration.md) and [Change Lifecycle](Engineering/Workflow/ChangeLifecycle.md).
+2. Select every applicable foundation, module, and verification document from the [Engineering task map](Engineering/README.md#choose-by-task).
+3. Read the affected module route or cross-module route from [Architecture](Architecture/README.md).
+4. Use [Plans](Plans/README.md) only when an approved plan owns the requested sequence.
+5. Use [Acceptance](Acceptance/README.md) only for affected gates and claims.
 
-1. Start with [L. Integration Style Guide](Engineering/Standards/IntegrationStyleGuide.md).
-2. Select the applicable focused standards from the [standards map](Engineering/Standards/README.md#standards-map).
-3. Read the relevant canonical architecture decision.
-4. Use the acceptance workload only when the change affects its gates.
+## Documentation Rules
 
-### Reviewing a Changelist
-
-Start with [SparkleEngine Code Review](Engineering/CodeReview.md). It is the concise review procedure and reusable AI-review prompt; the Integration Style Guide, Change Process, applicable subject standards, canonical architecture, code, and executable configuration remain the authorities it applies.
-
-### Principal Graphics Planning
-
-Start with the [Strategy index](Strategy/README.md). Requirements, assessment, roadmap, persona, and source archive are planning/audit material; they are not all part of the external reviewer path.
-
-### Preparing The First Release
-
-Start with the [Release-First Principal Graphics Roadmap](Strategy/Roadmap.md) for order and stop rules, then use the [First Release Acceptance Contract](Engineering/FirstReleaseAcceptance.md) for feature, map, package, clean-machine, and publication evidence. The [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) continue to own detailed graphics-workload proof.
-
-### Multithreading Work
-
-Use [J. Multithreaded Engine Architecture](Architecture/Multithreading/MultithreadedEngineArchitecture.md) for the concurrency target design and the [Principal Graphics Roadmap](Strategy/Roadmap.md) for broader sequencing.
-
-### World, Transform, Import, Animation, or Physics Work
-
-Start with [World Coordinate, Units, and Transform Contract](Architecture/WorldCoordinateAndUnits.md) for canonical axes, units, matrix semantics, source normalization, camera/light forward, animation, skinning, object placement, backend adaptation, and future physics boundaries. For Alembic-authored baked vertex animation, use the [Geometry Cache Animation Pipeline](Architecture/GeometryCacheAnimationImplementationPlan.md) for the tools-only source route, native cook/streaming contract, shared raster/ray deformation, and Modern Sponza Animated Knight delivery gates.
-
-### Performance Diagnostics Work
-
-Start with [Diagnostics Product and UX Research](Architecture/Performance/Diagnostics/DiagnosticsUxResearch.md) for the Epic/NVIDIA/AMD precedent and requirements audit. Use [Performance Diagnostics Visual Design And Tool Wireframes](Architecture/Performance/Diagnostics/PerformanceDiagnosticsAsciiWireframes.md) for the mockups and tool layouts, then [Performance Diagnostics Architecture](Architecture/Performance/Diagnostics/PerformanceDiagnosticsArchitecture.md) for the selected product, metric, ownership, evidence, and stable profiler-handoff contracts. Use the feature-selectable [Performance Diagnostics Delivery Plan](Architecture/Performance/Diagnostics/ImplementationPlan.md) for ordered implementation. Use [Performance Dashboard And Efficiency Hub Idea](Architecture/Performance/Diagnostics/PerformanceDashboardIdea.md) only when evaluating historical automation, anomaly analysis, or whether a separate dashboard application has become justified; it is exploration, not implementation authority. Before taking an external capture, use the version-sensitive [External Performance Profiler Runbook](Architecture/Performance/Diagnostics/DiagnosticsProfilerRunbook.md). [Bistro and San Miguel Acceptance Workloads](Engineering/BistroAndSanMiguelWorkloads.md) remains the authority for benchmark gates and case-study deliverables.
-
-### Editor Viewport And Camera Work
-
-Start with [Editor Viewport Camera Architecture](Architecture/EditorViewportCamera.md) for the implemented separation between scene cameras, the free editor view, persisted navigation preferences, per-viewport exposure overrides, and the final render-view boundary.
-
-### Renderer Scene, View, And Frame Work
-
-Start with the [current renderer navigation overlay](Architecture/WholeRepositoryMap.md#current-renderer-navigation-overlay) for the implemented Scene/View/Frame owner map and source routes. The completed migration plan is no longer a current authority; code remains the implementation authority and the overlay is its reviewer map.
-
-### Renderer Debug View Work
-
-Start with [Debug View Presentation Contract](Architecture/DebugViewPresentation.md) for the target Unreal-like per-view show-flag model, view-mode presets, the split between scene-referred HDR mapping and exact display-linear visualization, and the invariant output-encoding boundary.
-
-### Shader And Ray-Tracing Work
-
-Start with [Shader Authoring and Cooked Shader Architecture](Architecture/Shaders/ShaderAuthoringAndCookedPrograms.md) as the sole implementation plan for the lean shader-class frontend, compile-every-selected-input policy, global shader map/code library, typed graph draw/dispatch/trace, native D3D12/Vulkan ray-tracing pipelines and shader tables, dual-execution effects, tooling, and final evidence. Use [Ray-Tracing Pipeline and Dual-Execution Target Architecture](Architecture/Shaders/RayTracingPipelineImplementationPlan.md) for the enduring inline-versus-pipeline semantics, ownership, capability, SBT indexing, lifetime, and effect contract; it intentionally contains no competing phases or prompts.
-
-### Deferred Decal Work
-
-Start with [Deferred GBuffer Decal Pipeline](Architecture/DeferredGBufferDecals.md) for the shared authored/material contract, post-GBuffer raster and ray-primary resolve, later GI/reflection hit integration, ownership, staging, and Modern Sponza validation fixture.
-
-## Document Status Vocabulary
-
-- **Canonical** — current authoritative decision for its named subject.
-- **Standard** — binding repository implementation/review rule.
-- **Target proposal** — intended architecture not automatically proven implemented.
-- **Plan** — sequencing and work definition; not proof of completion.
-- **Snapshot** — dated observation that must be revalidated before use.
-- **Research** — source-backed precedent or comparison; never local authority by itself.
-- **Archive** — retained traceability/history; not a current entry point.
-- **Summary** — orientation only; owning documents control conflicts.
-
-## Maintenance Rules
-
-- Keep one owner for each decision or rule; link instead of paraphrasing it elsewhere.
-- Put current state in maps, intended system shape in architecture, implementation rules in standards, evidence gates in validation, and priorities/sequencing in strategy.
-- Give every document a status and one named responsibility; state an authority boundary wherever another document could be mistaken for the owner.
-- Add a file only when it has an independent audience and reason to change; otherwise add a navigable section to its owner.
-- Create a subfolder only when multiple documents share a durable local context; add a local index only when the parent index cannot route them clearly. Keep a single clearly named document at the area root.
-- Keep indices short and update them when files move, merge, or retire.
-- Preserve stable A–L document IDs where they remain useful cross-document references.
+The binding placement, module hierarchy, naming, status, granularity, navigation, linking, and lifecycle rules are in [Documentation Organization](Engineering/Workflow/DocumentationOrganization.md). Area indexes route readers; they do not duplicate the documents they list.

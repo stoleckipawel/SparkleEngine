@@ -1,6 +1,6 @@
 # Diagnostics Product And UX Research
 
-Status: research reference; external precedent and option analysis, not proof of current implementation
+Status: research; external precedent and option analysis, not proof of current implementation
 
 Research reconciliation: 2026-08-16
 Last local source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
@@ -11,15 +11,15 @@ Scope: the visual and functional design of performance diagnostics for SparkleEn
 
 This document maps the diagnostic product space before implementation. It asks what information a developer needs, at what depth, in which visual form, and how the views should connect without turning the engine or Editor into a profiler framework.
 
-The selected Sparkle behavior belongs to [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md). This document records precedent, alternatives, and reasons. It does not override:
+The selected Sparkle behavior belongs to [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics.md). This document records precedent, alternatives, and reasons. It does not override:
 
-- [A. Principal Graphics Engineering Requirements](../../../Strategy/Requirements.md), including `PGE-05`, `PGE-06`, `PGE-10`, and `PGE-13`;
-- [Gap Assessment](../../../Strategy/GapAssessment.md), which owns the role-source/profile audit, current evidence grade, and principal-readiness gaps;
-- [Validation, Performance, and Evidence](../../../Engineering/Standards/ValidationPerformanceAndEvidence.md), which owns measurement and claim discipline;
-- [Editor and Tools](../../../Engineering/Standards/EditorAndTools.md), which rejects UI-owned engine truth and incidental public diagnostic APIs;
-- [Graphics Engineering](../../../Engineering/Standards/GraphicsEngineering.md), which owns graphics evidence expectations;
-- [I. Acceptance Workloads](../../../Engineering/BistroAndSanMiguelWorkloads.md), including `MAP-00`, reproducible captures, and reviewer routes.
-- [External Performance Profiler Runbook](DiagnosticsProfilerRunbook.md), which owns version-sensitive tool capability, capture-build preparation, marker interoperability, and source revalidation.
+- [A. Principal Graphics Engineering Requirements](../Strategy/Requirements.md), including `PGE-05`, `PGE-06`, `PGE-10`, and `PGE-13`;
+- [Gap Assessment](../Strategy/Assessments/GapAssessment.md), which owns the role-source/profile audit, current evidence grade, and principal-readiness gaps;
+- [Validation, Performance, and Evidence](../Engineering/Verification/ValidationAndEvidence.md), which owns measurement and claim discipline;
+- [Editor Engineering](../Engineering/Modules/Editor.md), which rejects UI-owned engine truth and incidental public diagnostic APIs;
+- [Renderer Engineering](../Engineering/Modules/Renderer.md) and [RHI Engineering](../Engineering/Modules/RHI.md), which own graphics and backend evidence expectations;
+- [I. Acceptance Workloads](../Acceptance/GraphicsWorkloads.md), including `MAP-00`, reproducible captures, and reviewer routes.
+- [External Performance Profiler Runbook](../Engineering/Verification/ExternalProfiling.md), which owns version-sensitive tool capability, capture-build preparation, marker interoperability, and source revalidation.
 
 The research deliberately separates product design from collection design. A compelling screen is not evidence that its fields can be measured cheaply or correctly. Every selected view therefore states its minimum semantic inputs and escalation boundary, but leaves concrete data structures and thread-safe publication to the owning architecture.
 
@@ -321,12 +321,12 @@ The hybrid diagnostics ladder is the selected result of this research: cheap com
 
 | Selected concern | Adopted boundary | Canonical owner |
 | --- | --- | --- |
-| Product depth and surfaces | Task-first Quick/CPU/GPU/Memory entry, an initially bounded compact-overlay set, one fixed Overview/CPU/GPU/Memory workspace, and external tools for causal depth. Raw stat groups remain expert customization, not the first menu. | [Product information architecture](PerformanceDiagnosticsArchitecture.md#diagnostics-product-information-architecture) |
-| Physical/logical ownership and metric meaning | Physical CPU thread rows, logical phases inside their real owners, independent GPU queues, distinct memory definitions, explicit validity. | [Measurement and view contracts](PerformanceDiagnosticsArchitecture.md#measurement-vocabulary) |
-| Selection and interaction | One shared frame/range/object selection; hitches are frame selections; Sparkle GPU capture stays inside the GPU view; an attached external provider may add one targeted viewport action; filtering never changes totals. | [Workspace interaction contract](PerformanceDiagnosticsArchitecture.md#workspace-interaction-contract) |
-| Visual and failure behavior | Milliseconds lead, color is never the only signal, configuration remains visible, and pending/stale/unsupported/lost states never masquerade as zero. | [Visual and accessibility rules](PerformanceDiagnosticsArchitecture.md#visual-validity-and-accessibility-rules) |
-| Concrete product presentation | Integrated graphical mockups, every compact group, fixed workspace views, evidence actions, keyboard baseline, and failure states. | [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsAsciiWireframes.md) |
-| Resource inspector boundary | Existing shader, mesh, and texture tools remain asset inspectors unless an accepted migration removes the old route; they do not own system performance truth. | [Product surfaces and depth boundary](PerformanceDiagnosticsArchitecture.md#product-surfaces-and-depth-boundary) |
+| Product depth and surfaces | Task-first Quick/CPU/GPU/Memory entry, an initially bounded compact-overlay set, one fixed Overview/CPU/GPU/Memory workspace, and external tools for causal depth. Raw stat groups remain expert customization, not the first menu. | [Product information architecture](../Architecture/CrossModule/PerformanceDiagnostics.md#diagnostics-product-information-architecture) |
+| Physical/logical ownership and metric meaning | Physical CPU thread rows, logical phases inside their real owners, independent GPU queues, distinct memory definitions, explicit validity. | [Measurement and view contracts](../Architecture/CrossModule/PerformanceDiagnostics.md#measurement-vocabulary) |
+| Selection and interaction | One shared frame/range/object selection; hitches are frame selections; Sparkle GPU capture stays inside the GPU view; an attached external provider may add one targeted viewport action; filtering never changes totals. | [Workspace interaction contract](../Architecture/CrossModule/PerformanceDiagnostics.md#workspace-interaction-contract) |
+| Visual and failure behavior | Milliseconds lead, color is never the only signal, configuration remains visible, and pending/stale/unsupported/lost states never masquerade as zero. | [Visual and accessibility rules](../Architecture/CrossModule/PerformanceDiagnostics.md#visual-validity-and-accessibility-rules) |
+| Concrete product presentation | Integrated graphical mockups, every compact group, fixed workspace views, evidence actions, keyboard baseline, and failure states. | [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsVisualDesign.md) |
+| Resource inspector boundary | Existing shader, mesh, and texture tools remain asset inspectors unless an accepted migration removes the old route; they do not own system performance truth. | [Product surfaces and depth boundary](../Architecture/CrossModule/PerformanceDiagnostics.md#product-surfaces-and-depth-boundary) |
 
 This handoff preserves the adopted decisions while keeping research focused on precedents, options, tradeoffs, and why the hybrid direction won. The following low-clutter principles remain here because they summarize the implementation consequences drawn from the research.
 
@@ -401,7 +401,7 @@ Specific reconciliations from this study:
 - The 2022 AMD capture-overhead article remains good method precedent, but its versions and support statements are historical.
 - PIX Comparison is useful precedent for exposing selected sample `N`, histograms, p-values, and low-sample warnings. Sparkle adopts visibility of population and distribution, not a p-value-only regression policy; the canonical architecture owns practical effect bands, per-run results, correlation-aware uncertainty, and `Inconclusive`.
 
-When a source changes, record the narrow claim, source section, version/date, adopted behavior, what was not inferred, and revalidation trigger. The [profiler runbook's current matrix](DiagnosticsProfilerRunbook.md#source-and-version-reconciliation) owns operational versions; this research keeps only the durable product lesson.
+When a source changes, record the narrow claim, source section, version/date, adopted behavior, what was not inferred, and revalidation trigger. The [profiler runbook's current matrix](../Engineering/Verification/ExternalProfiling.md#source-and-version-reconciliation) owns operational versions; this research keeps only the durable product lesson.
 
 ## Source Catalog
 

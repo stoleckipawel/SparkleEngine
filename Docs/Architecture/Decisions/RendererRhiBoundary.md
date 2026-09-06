@@ -1,6 +1,7 @@
 # Renderer and RHI Architecture Boundary
 
 Status: canonical architecture decision
+Responsibility: module authority and dependency direction among Renderer, public RHI contracts, the RHI facade, backends, diagnostics, and external-provider adapters
 Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 Reference revisions: NVIDIA NVRHI `8e8c36e37558acec333204619b95d9d2fcdc4a79`; NVIDIA Donut `bfdebdd7dd5455c503b2737a1967a4ef651c145b`
 

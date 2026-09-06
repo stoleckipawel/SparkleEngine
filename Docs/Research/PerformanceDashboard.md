@@ -1,6 +1,6 @@
 # Performance Dashboard And Efficiency Hub Idea
 
-Status: target proposal; exploration only, not implementation authority or proof of current behavior
+Status: research; target-product exploration only, not implementation authority or proof of current behavior
 
 Date: 2026-08-17
 
@@ -12,12 +12,12 @@ Should historical performance comparison remain a command-line workflow, live in
 
 This document owns only that future product-boundary question and its promotion gates. It does not redefine:
 
-- metric meaning, collection, identity, or live presentation from [Performance Diagnostics Architecture](PerformanceDiagnosticsArchitecture.md);
-- delivery order or package state from the [Performance Diagnostics Delivery Plan](ImplementationPlan.md);
-- Editor interaction from [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsAsciiWireframes.md);
-- profiler operation from the [External Performance Profiler Runbook](DiagnosticsProfilerRunbook.md);
-- benchmark routes, samples, and acceptance evidence from [Bistro And San Miguel Acceptance Workloads](../../../Engineering/BistroAndSanMiguelWorkloads.md);
-- roadmap priority from the [Principal Graphics Roadmap](../../../Strategy/Roadmap.md).
+- metric meaning, collection, identity, or live presentation from [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics.md);
+- delivery order or package state from the [Performance Diagnostics Delivery Plan](../Plans/CrossModule/PerformanceDiagnostics.md);
+- Editor interaction from [Performance Diagnostics Visual Design And Tool Wireframes](PerformanceDiagnosticsVisualDesign.md);
+- profiler operation from the [External Performance Profiler Runbook](../Engineering/Verification/ExternalProfiling.md);
+- benchmark routes, samples, and acceptance evidence from [Bistro And San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md);
+- roadmap priority from the [Principal Graphics Roadmap](../Strategy/Roadmap.md).
 
 Code, CMake, tests, generated artifacts, and observed captures remain the authority for implemented behavior.
 
@@ -122,7 +122,7 @@ Reject or remove the dashboard direction if it produces any of these outcomes:
 
 ## Sequencing Constraint
 
-The [Performance Diagnostics Delivery Plan](ImplementationPlan.md) remains the only diagnostics implementation sequence. This proposal cannot move a package to `Selected`, add a project, or change acceptance scope. Any future dashboard package must first update that plan and the repository ownership map, then satisfy the normal Engineering standards and change process.
+The [Performance Diagnostics Delivery Plan](../Plans/CrossModule/PerformanceDiagnostics.md) remains the only diagnostics implementation sequence. This proposal cannot move a package to `Selected`, add a project, or change acceptance scope. Any future dashboard package must first update that plan and the repository ownership map, then satisfy the normal Engineering standards and change process.
 
 Until the promotion gates pass, the selected product boundary is:
 

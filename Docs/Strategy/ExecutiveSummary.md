@@ -24,12 +24,12 @@ The engine should make it easy for a reviewer to answer:
 This summary does not restate detailed contracts:
 
 - [A. Requirements](Requirements.md) owns `PGE-01` through `PGE-15` and evidence meaning.
-- [C. Gap Assessment](GapAssessment.md) is the dated state assessment.
+- [C. Gap Assessment](Assessments/GapAssessment.md) is the dated state assessment.
 - [F. Roadmap](Roadmap.md) owns sequencing and allocation.
 - [H. Engineer Persona](EngineerPersona.md) owns the operating model.
-- [I. Acceptance Workloads](../Engineering/BistroAndSanMiguelWorkloads.md) owns scene, quality, performance, and evidence gates.
+- [I. Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) owns scene, quality, performance, and evidence gates.
 - The [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md) routes system decisions and repository maps.
-- [Engineering Standards](../Engineering/Standards/README.md) own implementation and review rules.
+- [Engineering guidance](../Engineering/README.md#choose-by-task) owns implementation and review rules.
 
 If this summary conflicts with an owning document, the owning document controls.
 
@@ -94,7 +94,7 @@ Do not optimize the portfolio or engine for:
 An external reviewer should not read the whole repository documentation:
 
 1. read this summary;
-2. inspect the [repository map](../Architecture/WholeRepositoryMap.md) and [Renderer/RHI boundary](../Architecture/RendererRhiBoundary.md);
+2. inspect the [repository map](../Architecture/WholeRepositoryMap.md) and [Renderer/RHI boundary](../Architecture/Decisions/RendererRhiBoundary.md);
 3. inspect one completed case study and its code, capture, measurements, and limitations;
 4. use [Requirements](Requirements.md) only to evaluate the full principal-level evidence target;
 5. use the remaining strategy, research, and implementation-plan documents only when auditing rationale or history.

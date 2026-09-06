@@ -1,6 +1,8 @@
 # Repository Quality and Complexity Executive Assessment
 
-Status: dated strategy assessment and refactoring decision brief
+Status: dated assessment; strategy and refactoring decision brief
+
+Responsibility: assess how to preserve current capabilities while reducing structural complexity and improving repository credibility
 
 Snapshot date: 2026-08-23
 
@@ -10,13 +12,13 @@ Source revision: `1a70a64c` (`shader & rt doc merge`); engine and tool source re
 
 This document answers one executive question: **how should SparkleEngine preserve its current capability set while becoming materially thinner, easier to reason about, and more credible as a production graphics-engineering repository?** It assesses current structure and prioritizes refactoring. It does not redefine requirements, architecture, engineering rules, workload gates, or the roadmap.
 
-- [Principal Graphics Engineering Requirements](Requirements.md) owns the capability and evidence target.
-- [Advanced Graphics Engine Executive Summary](ExecutiveSummary.md) owns the product identity.
-- [Advanced Graphics Engineer Persona](EngineerPersona.md) owns the expected engineering behavior.
+- [Principal Graphics Engineering Requirements](../Requirements.md) owns the capability and evidence target.
+- [Advanced Graphics Engine Executive Summary](../ExecutiveSummary.md) owns the product identity.
+- [Advanced Graphics Engineer Persona](../EngineerPersona.md) owns the expected engineering behavior.
 - [Candidate and Repository Gap Assessment](GapAssessment.md) owns the dated readiness assessment at its stated revision.
-- [Principal Graphics Roadmap](Roadmap.md) owns feature and evidence sequence.
-- [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md) and focused architecture documents own accepted system boundaries.
-- [Engineering Standards](../Engineering/Standards/README.md) own implementation and review rules.
+- [Principal Graphics Roadmap](../Roadmap.md) owns feature and evidence sequence.
+- [Whole Repository Architecture Map](../../Architecture/WholeRepositoryMap.md) and focused architecture documents own accepted system boundaries.
+- [Engineering guidance](../../Engineering/README.md#choose-by-task) owns implementation and review rules.
 - Code, CMake, cooked artifacts, runtime behavior, captures, and measurements remain proof of what is implemented.
 
 The source scan used committed code at the revision above. Pre-existing or concurrent uncommitted edits under `Docs/Architecture/Shaders` were treated as provisional context, not implementation proof, and were not modified by this assessment.
@@ -148,9 +150,9 @@ This is the architecture to keep. `RuntimeApplication`, `GameWorld`, the submiss
 
 Several exported surfaces rely on types from modules that CMake marks private:
 
-- [Renderer.h](../../Engine/Renderer/Public/Renderer.h) exposes `RenderFrameSubmission`, which physically lives in GameFramework, while Renderer links GameFramework privately.
-- [RuntimeApplication.h](../../Engine/Application/Public/RuntimeApplication.h) includes GameFramework camera types, while Application describes and links GameFramework as implementation-only. Showcase explicitly links GameFramework, which masks the mismatch for the current product.
-- [UI.h](../../Engine/Editor/Public/UI.h) directly includes GameFramework world/edit/view types, while Editor links GameFramework privately.
+- [Renderer.h](../../../Engine/Renderer/Public/Renderer.h) exposes `RenderFrameSubmission`, which physically lives in GameFramework, while Renderer links GameFramework privately.
+- [RuntimeApplication.h](../../../Engine/Application/Public/RuntimeApplication.h) includes GameFramework camera types, while Application describes and links GameFramework as implementation-only. Showcase explicitly links GameFramework, which masks the mismatch for the current product.
+- [UI.h](../../../Engine/Editor/Public/UI.h) directly includes GameFramework world/edit/view types, while Editor links GameFramework privately.
 - GameFramework publicly links Platform even though its public headers do not expose a Platform contract; Tasks is a real public dependency because public constructors use `TaskExecutor` and `TaskScope`.
 
 These are not cosmetic CMake details. They make the public API appear narrower than it is, force top-level projects to compensate, and weaken shared-library/adoption credibility. Every public header should compile from the dependencies its target publishes, and every published dependency should be required by the public contract.
@@ -180,9 +182,9 @@ Keep deterministic phase ordering, declared access, hazard checks, serial/parall
 
 ### 6. God objects have been distributed across files without distributing ownership
 
-[LauncherMainWindow.h](../../Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindow.h) owns workflow navigation, build/cook/clean options, dependency sync, level sync, quick start, operation confirmation, process state, activity history, output, styling, focus order, and large widget/state maps. Its methods are spread across many translation units, but all mutate one class. The navigation burden fell; the change-coupling burden did not.
+[LauncherMainWindow.h](../../../Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindow.h) owns workflow navigation, build/cook/clean options, dependency sync, level sync, quick start, operation confirmation, process state, activity history, output, styling, focus order, and large widget/state maps. Its methods are spread across many translation units, but all mutate one class. The navigation burden fell; the change-coupling burden did not.
 
-[UI.h](../../Engine/Editor/Public/UI.h) similarly presents host services, world read/edit callbacks, renderer diagnostic providers, viewport requests/products, shader operations, capture, panel ownership, input routing, scene models, transactions, and render-packet production through one exported type.
+[UI.h](../../../Engine/Editor/Public/UI.h) similarly presents host services, world read/edit callbacks, renderer diagnostic providers, viewport requests/products, shader operations, capture, panel ownership, input routing, scene models, transactions, and render-packet production through one exported type.
 
 The production target is not more wrappers. It is a small composition root plus durable task owners:
 
