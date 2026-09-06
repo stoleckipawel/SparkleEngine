@@ -4,7 +4,7 @@ Status: feature dossier for eventual `FCR-REN-08`; its embedded acceptance contr
 
 Responsibility: keep the offline path tracer's expected feature definition, acceptance criteria, runtime failure modes, evidence checks, and definition of done together under the Renderer lighting architecture
 
-Authority boundary: the [NVIDIA completion study](../../../../../../../Research/OfflinePathTracerCompletion.md#primary-nvidia-reference-ledger) owns external precedent, [`PTD-00`](Discovery.md) owns discovery and planning authorization, the [roadmap](../../../../../../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, code owns implemented behavior, and the eventual [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) report owns results
+Authority boundary: the [NVIDIA completion study](../../../../../../../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md#primary-nvidia-reference-ledger) owns external precedent, [`PTD-00`](Discovery.md) owns discovery and planning authorization, the [roadmap](../../../../../../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, code owns implemented behavior, and the eventual [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) report owns results
 
 Current disposition: **BLOCKED** on 2026-09-06. This document defines what eventual completion must prove; it does not accept the current `ReferencePathTraced` implementation, freeze unresolved `PTD-D0` decisions, authorize implementation, or report executable evidence.
 

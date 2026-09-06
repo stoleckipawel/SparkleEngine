@@ -2,7 +2,7 @@
 
 Status: capability snapshot; vertical producer-to-consumer traces; not runtime proof or release approval
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; current source and build membership inspected; evidence `S` only
+Snapshot: 2026-09-06 at committed `master` revision `c28b33bd`; current source and build membership inspected; executable Renderer source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
 Scope: ownership, selection, data production, frame-graph scheduling, shader/RHI consumption, output, history, retirement, and failure behavior for the principal RHI/Renderer/shader-delivery paths
 
@@ -134,7 +134,7 @@ The [Post Processing family dossier](../Modules/Engine/Renderer/Features/PostPro
 | Materialization | Renderer runtime pass cache | Complete registration set for the selected backend target -> RHI programs, layouts, graphics/compute/ray pipelines and shader tables | Missing target/registration/signature/composition prevents generation publication |
 | Swap/retire | Renderer | Whole validated generation becomes active; previous generation records queue last-use | Old pipelines/programs retire only after GPU completion |
 
-The exact 35-program registration set is listed in [Shader Program Catalog](../Modules/Engine/Renderer/Features/ShaderPrograms.md).
+The exact 35-program registration set is listed in [Shader Program Catalog](../Modules/Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md).
 
 ## Trace 8: Viewport Product Capture
 
@@ -146,6 +146,98 @@ The exact 35-program registration set is listed in [Shader Program Catalog](../M
 | Poll | `FramePipeline::PollFrameServices` | Polls capture completion alongside retirement and residency services |
 | Publication | Pipeline -> coordinator read state | Completed captures are moved to producer-facing queue; coordinator retains at most three completed captures and drops the oldest beyond that |
 | Take | Caller -> `TryTakeViewportCapture` | Moves one completed result out; no response means pending or absent, not success |
+
+## Trace 9: Temporal Sample And History Identity
+
+| Step | Producer -> consumer | Exact transition | Failure/invalidation boundary |
+| --- | --- | --- | --- |
+| Identity | submitted `RenderViewInput` + frame/scene/shader/provider/topology generations -> `RenderViewState` | viewport/selection/kind plus camera and render extent select the persistent view state | first frame or any identity/generation mismatch invalidates common history |
+| Sample | `RenderViewState` -> `TemporalJitterPatterns` | frame ID modulo 16 selects the active base-2/base-3 Halton sample; centered offset becomes NDC with inverted Y | invalid extent returns zero; other source patterns have no active selector |
+| Previous view | `RenderViewState` -> `ViewTemporalUniformData` | current/previous jitter, prior matrices, and `HistoryValid` publish together | explicit cut/teleport/reset, inferred discontinuity, or projection change suppresses previous matrices as valid history |
+| Raster/motion | temporal uniform -> GBuffer vertex and motion shader | raster clip position is jittered while output motion excludes current jitter | invalid history produces zero motion; rigid/skin/morph/sky agreement is unproved |
+| Reprojection/history | motion + temporal uniform -> ReSTIR/reference/exposure/frame histories | geometric motion and jitter-grid delta map current pixels to prior history; feature hashes may invalidate further | common invalidity resets all affected histories before temporal reuse |
+| Provider | temporal uniform -> Streamline view constants | NDC jitter becomes pixels; transforms/reset and unjittered-motion declaration are published | D3D12 provider-only cell; wrong sign/unit or stale provider generation invalidates reconstruction evidence |
+
+The [Temporal Sampling and History dossier](../Modules/Engine/Renderer/Features/FrameExecution/TemporalSamplingAndHistory.md) owns exact thresholds, acceptance criteria, and controlled failures.
+
+## Trace 10: Mesh Or Texture Generation To Residency
+
+| Step | Producer -> consumer | Mesh route | Texture route |
+| --- | --- | --- | --- |
+| publication | GameFramework immutable resource table -> `RenderScene` cache request | asset ID + generation requests a stable GPU mesh handle | normalized cooked path + scene texture generation requests a texture |
+| admission | cache -> cache-owned `AssetResidency` | backlog exhaustion can return no mesh handle; invalid handle/state failures are explicit | invalid path/generation or failed residency admission is fatal in the inspected route |
+| CPU work | Tasks/background owner -> ready payload | immutable mesh preparation builds upload data and decoded/resident sizes | cooked file read and strict header/mip/layout decode build upload data |
+| GPU work | cache -> RHI upload/graphics commands | buffers/geometry/BLAS-related work records, then receives submission token | resource/texture upload records, then receives submission token |
+| activation | RHI completion -> cache maps/binding revision | handle resolves only after uploading becomes Resident | path generation becomes active and binding revision advances only after completion |
+| replacement/eviction | scene wanted set + last-use state -> RHI completion | retain-set removal or newer generation cannot free/rebind stale in-flight data | stale completion is released; replaced texture waits for binding/queue use before release |
+| diagnostics | cache/residency/RHI -> Renderer facade | mesh state/count/bytes/preview observations | texture state/count/bytes/preview plus combined memory observations |
+
+The per-cache defaults and absence of global priority/LRU/pressure arbitration are recorded in [Mesh and Texture Residency](../Modules/Engine/Renderer/Features/GeometryAndResources/MeshAndTextureResidency.md).
+
+## Trace 11: Rendering Settings Save To Active Frame
+
+| Step | Producer -> consumer | Current transition | Gap or failure boundary |
+| --- | --- | --- | --- |
+| startup restore | `Application` -> settings persistence -> CVar registry | allowlisted values from the owned INI section apply before command-line overrides | missing file is ignored; malformed parse diagnostics are discarded |
+| editor edit | Editor panel -> `EngineRenderingSettingsSection` | one setter mutates the 28-field snapshot and commits | view mode is state/session-only; only 27 names persist |
+| save | section -> workspace `Config/DefaultEngine.ini` | first matching owned section is replaced; other loaded lines/sections are retained | truncate-and-rewrite returns no open/write/flush status and is not concurrency-safe/atomic |
+| handoff | commit callback -> host -> `Renderer::SubmitRenderingSettings` | whole value snapshot crosses the public facade | no callback applies CVars directly; editor binds the host callback |
+| execution | coordinator -> CVar owners | serial applies directly; threaded mode queues `RenderSettingsChangedCommand` to render context | queue ordering/backpressure/shutdown equivalence is unproved |
+| resolution | CVar owners -> view/topology/provider/device | live values affect the next permitted frame; topology/history owners rebuild/reset; adapter/format report pending restart | requested/CVar/resolved/session-active states and reasons are not one unified result |
+
+The exact names/domains remain in the [Feature Selector Catalog](../Modules/Engine/Renderer/Features/RuntimeConfiguration/FeatureSelectorCatalog.md); aggregate transport and durability criteria are in [Settings State and Persistence](../Modules/Engine/Renderer/Features/RuntimeConfiguration/SettingsStateAndPersistence.md).
+
+## Trace 12: Host Simulation To Latency Provider Marker
+
+| Step | Producer -> consumer | Current transition | Capability/failure boundary |
+| --- | --- | --- | --- |
+| simulation start | host -> Renderer facade -> `RendererExternalRuntime` | owner-thread call forwards SimulationStart with 64-bit logical ID | active supported Reflex sleeps first; host ordering/identity is not validated by Renderer |
+| simulation end | host -> Renderer facade -> external runtime | owner-thread call forwards SimulationEnd | omitted/duplicate/mismatched host calls can only be judged by an evidence trace today |
+| render start | D3D12 `BeginFrame` -> RHI interposer hook | after presentation-slot wait, RenderSubmitStart reaches the same optional provider runtime | no inspected Vulkan producer/equivalent provider route |
+| submit/present | D3D12 `SubmitFrame` -> interposer hook -> swapchain | final graphics submit emits RenderSubmitEnd; PresentStart/End bracket `Present` | absent/unready/unsupported PCL route does no provider work |
+| provider token | Streamline runtime -> PCL/Reflex | marker maps to PCL using a frame token; active calls hold shutdown leases | 64-bit ID narrows to 32-bit; token/sleep/marker failure is fatal |
+| shutdown | external runtime/RHI interposer -> Streamline | new leases stop, active calls drain, runtime state resets | race boundedness and repeated-shutdown behavior need fault evidence |
+
+[Latency Coordination](../Modules/Engine/Renderer/Features/FrameExecution/LatencyCoordination.md) owns the six-marker contract. PCL/Reflex is not frame generation and marker presence is not a measured latency benefit.
+
+## Trace 13: RHI Device Aggregate Lifecycle
+
+| Step | Producer -> consumer | Current transition | Capability/failure boundary |
+| --- | --- | --- | --- |
+| request | build/runtime backend choice -> `RenderDeviceServices::Create` | validates compiled backend, config, window and optional interposer hooks | unavailable/invalid request does not silently activate another backend |
+| composition | concrete backend service -> RHI facade | native device precedes dependent presentation, command, resource, descriptor, pipeline, diagnostic, interop and UI services | public use must see a complete composition, never partial construction |
+| publication/use | `RenderDeviceServicesState` -> Renderer owner thread | stable non-copyable aggregate supplies frame and service operations | wrong-thread or post-settlement use is outside the legal lifecycle |
+| swapchain recovery | resize/out-of-date -> queues/presentation -> Renderer graph/view | drain relevant work, recreate dependent images/views, invalidate old consumers, resume or remain minimized | same device remains active; this is not device-loss recovery |
+| settle/destroy | Renderer shutdown -> RHI queues/services/device | stop frame work, wait real completion/idle, clear recording lifetime state, destroy dependents before device | wait/device failure cannot fabricate completion or safe retirement |
+| device loss | native D3D12/Vulkan result -> diagnostics/fatal boundary | DRED/removal reason or Vulkan result can attribute the fault | no inspected device-generation/recreation path resumes the process |
+
+[Device Lifecycle and Failure Recovery](../Modules/Engine/RHI/Features/DeviceAndResources/DeviceLifecycleAndFailureRecovery.md) owns `AC-RHI-LIFE-*`, the distinction between recoverable presentation change and terminal device loss, and `RHI-E16`.
+
+## Trace 14: Prepared Primitive To Raster Batch
+
+| Step | Producer -> consumer | Current transition | Capability/failure boundary |
+| --- | --- | --- | --- |
+| input | prepared scene + current view -> visibility tasks | one item per prepared primitive carries bounds, alpha class, draw/material/group identity and camera distance | input belongs to one scene/view generation |
+| spatial/material classification | bounded parallel task -> item table | valid AABB intersects the frustum; invalid bounds stay conservative; alpha becomes opaque/alpha-tested/transparent/rejected | no occlusion/LOD/GPU-driven decision participates |
+| candidate validation | item table -> batch builder | reject out-of-range draw/group, missing GPU mesh/material, or rejected class | invalid identity cannot publish a partial valid-looking batch |
+| preserved groups | authored/shared group -> batch result | compatible visible non-transparent groups with at least two items remain grouped | incompatible groups fall back; transparent never enters a group batch |
+| ordinary sorting/batching | remaining items -> ordered index/batch arrays | opaque/alpha-tested stable-sort by complete key/object and may auto-batch; transparent stable-sort far-to-near/object and remains single | selector changes compatible grouping, not the visible surface identity |
+| publication | view preparation -> GBuffer batch drawer/diagnostics | publish raster indices, batch descriptors and workload together | task failure clears all three; source counters do not prove production observability |
+
+[Visibility and Draw Preparation](../Modules/Engine/Renderer/Features/GeometryAndResources/VisibilityAndDrawPreparation.md) owns the exact compatibility key, deterministic ledger, task limits, negative capability boundary, and `REN-E32`.
+
+## Trace 15: Viewport Extent To Sampled Output
+
+| Step | Producer -> consumer | Current transition | Capability/failure boundary |
+| --- | --- | --- | --- |
+| output extent | viewport request/window -> `FramePipeline` | valid viewport extent wins; otherwise window extent becomes the output grid | invalid/minimized states cannot create a fabricated output |
+| render extent | output extent + lighting/provider/quality -> image-provider stack | Linear/no provider returns output extent; eligible DLSS SR/RR resolves provider optimal internal extent | requested quality must not masquerade as active provider/ratio after fallback |
+| topology/view | resolved extents -> graph resources, viewport/scissor and `RenderViewState` | render/output extent enters graph identity; active Halton jitter normalizes by render extent | provider/extent/topology change resets incompatible history |
+| sample contract | graph attachment descriptions -> materialized graphics pipelines | current Renderer route is single-sample and attachment/pipeline counts must match | RHI 2/4/8 vocabulary and source-only MSAA jitter are not Renderer MSAA |
+| resolution output | lighting -> RR or upscaling -> `ResolvedSceneColor` | exactly one producer writes output-extent color, then common presentation continues | no standalone TAA/FXAA/SMAA or dynamic-resolution controller was found |
+| retirement/publication | queue completion -> old graph/provider resources; output -> product/swapchain | old generations retire after last use and current product carries matching extent/identity | mixed extents, stale history or implicit resolve blocks the route |
+
+[Resolution, Sampling, and Anti-Aliasing](../Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) owns `REN-RESO-*` and `REN-E33`; the temporal and provider dossiers retain their narrower algorithms.
 
 ## Trace Closure Rule
 

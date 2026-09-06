@@ -4,7 +4,7 @@ Status: current feature dossier; source-backed, not upload, capacity, raster/ray
 
 Verified: 2026-09-06 against committed `master` revision `d236da11`
 
-Scope: `REN-SCENE-01` and GPU-publication portions of `REN-SCENE-03` through `REN-SCENE-09`; persistent/frame-indexed GPU-scene storage, binding identity, upload, publication, and completion-safe replacement
+Scope: `REN-SCENE-01` and GPU-publication portions of `REN-SCENE-03` through `REN-SCENE-07`; persistent/frame-indexed GPU-scene storage, binding identity, upload, publication, and completion-safe replacement
 
 ## Feature Promise
 
@@ -24,7 +24,7 @@ Persistent scene resources and frame-indexed storage have distinct lifetimes. Ha
 ## Publication Boundaries
 
 - Publication occurs only after complete scene and view preparation, preserving one semantic identity across GBuffer, lighting, and ray work.
-- Pending/failed/evicted resources cannot masquerade as the prior generation; placeholder/refusal and stale-completion behavior is explicit.
+- Publication consumes only active generations from [Mesh and Texture Residency](../GeometryAndResources/MeshAndTextureResidency.md); pending/failed/evicted resources cannot masquerade as the prior generation.
 - Fixed descriptor/light/resource capacities reject before upload/dispatch, never by truncating into plausible output.
 - Scene reset, resource reload, shader/provider change, and frame-slot reuse retire affected resources through completion authority.
 - Equal layouts or successful upload do not prove raster/ray deformation, material, or backend parity.
@@ -35,4 +35,4 @@ Feature-family proof is owned by [Acceptance](Acceptance.md), especially `AC-SVP
 
 - [`RenderGpuScene.cpp`](../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuScene.cpp)
 - `Engine/Renderer/Private/Scene/GpuScene`, `Engine/Renderer/Private/Scene/Materials`, and `Engine/Renderer/Private/ShaderData`
-- [Geometry, Materials, and GBuffer](../GeometryMaterialsAndGBuffer.md) and [Ray Tracing](../RayTracing/README.md)
+- [Geometry, Materials, and GBuffer](../GeometryAndResources/GeometryMaterialsAndGBuffer.md) and [Ray Tracing](../RayTracing/README.md)

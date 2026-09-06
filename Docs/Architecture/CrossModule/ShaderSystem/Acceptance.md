@@ -16,7 +16,7 @@ This contract defines what the completed feature must prove. The delivery plan m
 
 ## Evidence Contract
 
-The [Strategy Coverage crosswalk](../StrategyCoverage.md) owns portfolio-wide requirement status. The [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md), [Renderer Shader Programs catalog](../../Modules/Engine/Renderer/Features/ShaderPrograms.md), and [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md) own current source claims and delivery reconciliation. The [Shader System Migration Baseline](../../../Research/ShaderSystemMigrationBaseline.md) preserves the former pre-migration inventory. This contract keeps only the shader-system evidence requirements below.
+The [Strategy Coverage crosswalk](../StrategyCoverage.md) owns portfolio-wide requirement status. The [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md), [Renderer Shader Programs catalog](../../Modules/Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md), and [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md) own current source claims and delivery reconciliation. The [Shader System Migration Baseline](../../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md) preserves the former pre-migration inventory. This contract keeps only the shader-system evidence requirements below.
 
 ### Required Evidence Pack
 

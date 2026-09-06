@@ -22,8 +22,8 @@ RenderFrameSubmission
 
 | Owner | Lifetime and result | Document |
 | --- | --- | --- |
-| `RenderScene` and `RenderScenePreparation` | persistent scene generation plus one frame-slot prepared scene; structural/dynamic inputs become resolved primitives, deformation continuity, lights, and resource identity | [Scene Preparation](ScenePreparation.md) |
-| `RenderViewBuilder`, `RenderViewPreparation`, and `RenderViewState` | one view/frame-slot result plus persistent per-view temporal state; camera/output intent becomes matrices, visibility, batches, temporal identity, and RT partition plan | [View Preparation](ViewPreparation.md) |
+| `RenderScene` and `RenderScenePreparation` | persistent scene generation plus one frame-slot prepared scene; structural/dynamic inputs become resolved primitives, deformation continuity, lights, and references to active resources | [Scene Preparation](ScenePreparation.md) |
+| `RenderViewBuilder` and `RenderViewPreparation` | one view/frame-slot result; camera/output intent and shared temporal input become matrices, visibility, batches, and RT partition plan | [View Preparation](ViewPreparation.md) |
 | `RenderGpuScene` and `RenderSceneGpuBindings` | persistent plus frame-indexed GPU storage; prepared semantic data becomes coherent buffers/tables for raster and ray consumers | [GPU-Scene Publication](GpuScenePublication.md) |
 | feature family | cross-owner identity, failure, backend, reset, capacity, and completion requirements | [Acceptance](Acceptance.md) |
 
@@ -36,4 +36,6 @@ These pages are separate because their state owners, lifetimes, outputs, and inv
 - Scene reset, view discontinuity, resource completion, provider/shader changes, and graph-topology changes invalidate only their named histories/generations.
 - GPU completion, not CPU scope exit, authorizes frame-slot and GPU-resource reuse.
 
-See [Geometry, Materials, and GBuffer](../GeometryMaterialsAndGBuffer.md) for the next semantic consumer and [Rendering a Sparkle Frame](../../RenderingASparkleFrame.md) for whole-frame order.
+Mesh/texture lifecycle is owned by [Mesh and Texture Residency](../GeometryAndResources/MeshAndTextureResidency.md). Per-view culling, classification, sorting, and batching semantics are owned by [Visibility and Draw Preparation](../GeometryAndResources/VisibilityAndDrawPreparation.md). Per-view sampling and history semantics are owned by [Temporal Sampling and History](../FrameExecution/TemporalSamplingAndHistory.md). This family consumes those active identities without duplicating their state machines or proof contracts.
+
+See [Geometry, Materials, and GBuffer](../GeometryAndResources/GeometryMaterialsAndGBuffer.md) for the next semantic consumer and [Rendering a Sparkle Frame](../../RenderingASparkleFrame.md) for whole-frame order.

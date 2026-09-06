@@ -4,7 +4,7 @@ Status: implementation plan; not proof of implementation or acceptance
 
 Scope: clean-break delivery of per-view show flags, presentation routing, editor controls, capture metadata, and focused verification
 
-Architecture authority: [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md)
+Architecture authority: [View Modes And Show Flags](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md)
 
 Feature acceptance: [Debug View Presentation — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md)
 

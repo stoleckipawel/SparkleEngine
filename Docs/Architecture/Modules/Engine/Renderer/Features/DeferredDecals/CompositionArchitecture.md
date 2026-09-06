@@ -47,7 +47,7 @@ The current source inventory, existing GBuffer/material seams, and absent decal 
 - Source-located validation failures for invalid material references, transforms, masks, and capacity.
 - Existing frame-graph markers, captures, and GBuffer view modes remain the primary debugging surfaces.
 
-### Not in the first delivery
+### Not In The First Delivery
 
 - Forward or scene-color decal fallback.
 - Decals on alpha-blended/translucent surfaces, because those surfaces do not own a complete GBuffer receiver record.
@@ -59,27 +59,13 @@ The current source inventory, existing GBuffer/material seams, and absent decal 
 
 The first content is static by contract. Dynamic decals must not be advertised until motion, candidate invalidation, and temporal history behavior have their own accepted feature extension.
 
-## Reference Findings And Local Choice
+## External Precedent
 
-| Reference finding | Sparkle decision |
-|---|---|
-| Epic documents projected decal boxes, ordered overlap, receiver response, and GBuffer application after the Base Pass and before lighting. Its DBuffer path exists partly to interact correctly with baked lighting and adds receiver-material work and extra buffers. | Keep projected volumes, ordering, receiver opt-out, and pre-lighting material composition. Do not add a DBuffer while Sparkle has no baked-lighting requirement that justifies its storage and material-path cost. |
-| Frostbite's classic deferred method reconstructs a world/local position from depth inside a convex volume, samples the decal, and blends GBuffer data. The presentation also identifies fixed-function alpha limitations when GBuffer alpha stores unrelated values and notes derivative/LOD hazards. | Use the proven depth-reconstructed projection model, but use programmable read/modify/write composition and explicit gradient-based texture sampling. |
-| The i3D ray-tracing decal work shows that view-frustum grids do not serve arbitrary reflection hits and that a ray-tracing acceleration structure can enumerate decals anywhere, at higher cost than classic deferred decals. | Keep the screen-space primary path. For arbitrary hits, begin with receiver candidate spans built from existing world bounds. Consider a dedicated AABB AS only if measured candidate counts make that simpler or faster overall. |
-| Ray Tracing Gems II surveys triangle and procedural decal approaches, single and multiple overlaps, and their costs. | Treat mesh/procedural AS decals as measured alternatives for later ray support, not as a prerequisite or a second implementation now. |
-| Intel's Modern Sponza is a high-resolution PBR workload with 4K textures and separately listed add-ons; the published list does not include a decal package. | Add a small Sparkle-authored decal fixture and label it as such. Do not attribute those decals to Intel's content. |
-
-Sources:
-
-- Epic Games, [Decal Materials](https://dev.epicgames.com/documentation/en-us/unreal-engine/decal-materials-in-unreal-engine) and [Decal Actors](https://dev.epicgames.com/documentation/unreal-engine/decal-actors-in-unreal-engine?lang=en-US)
-- Johan Andersson and Daniel Kihl, [Destruction in Frostbite](https://advances.realtimerendering.com/s2010/Kihl-Destruction%20in%20Frostbite%28SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course%29.pdf), SIGGRAPH 2010 course material
-- Sidney Hansen and Christoph Peters, [Rendering Decals and Many Lights with Ray Tracing Acceleration Structures](https://i3dsymposium.org/2021/posters/hansen2021_rendering_decals_and_many_lights_paper.pdf), i3D 2021
-- Wessam Bahnassi, [Ray Tracing Decals](https://link.springer.com/chapter/10.1007/978-1-4842-7185-8_27), Ray Tracing Gems II
-- Intel, [GPU Research Samples](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html)
+[Deferred Decal Composition Precedent](../../../../../../Research/GraphicsArchitecture/DeferredDecalCompositionPrecedent.md) owns the Epic, Frostbite, i3D, Ray Tracing Gems II, and Intel findings that informed this design. The local choices below remain Architecture authority: projected ordered volumes, programmable pre-lighting GBuffer composition, receiver candidate spans before a dedicated decal AS, and a clearly labeled Sparkle-authored workload fixture.
 
 ## One Decal Contract
 
-### Authored value
+### Authored Value
 
 Add one first-class `Decal` component to the existing ECS and cooked scene path. Its world transform maps a canonical unit box into the projection volume; scale is the volume size, so extents are not repeated in another field.
 
@@ -101,7 +87,7 @@ The projector points along local `+Z`. A receiver faces the projector when its o
 
 One receiver bit, `ReceivesDecals`, is added to mesh-instance data and defaults to true. The raster GBuffer writes it into the currently unused `GBufferNormal.w`; the ray hit instance carries the equivalent flag. Sky and invalid pixels store false. No layer-mask taxonomy is added until a real scene needs more than receive/ignore.
 
-### Runtime identity and lifetime
+### Runtime Identity And Lifetime
 
 Decals use the existing `RenderObjectId`, world transform, visibility, create/update/destroy sequence, and render-scene generation. Evolve `RenderObjectStaticData` into an explicit mesh-or-decal payload rather than creating a second object delta protocol. An entity that attempts to publish both payload kinds fails validation until a real combined-object use case exists.
 
@@ -114,7 +100,7 @@ The Renderer owns:
 
 The GPU decal record contains only stable indices and POD: world-to-decal transform, projector basis or the data needed to derive it, material slot, opacity/fades, channel mask, sort order, and object-id tie-break value. It contains no descriptors, native handles, owning pointers, or duplicated material constants.
 
-### Deterministic order
+### Deterministic Order
 
 All producers sort bottom-to-top by:
 
@@ -226,7 +212,7 @@ One compute group owns one active tile. One thread owns one pixel, loads the rec
 
 The tile size is a compile-time implementation constant selected from measurement, not a user CVar. If CPU binning becomes measurable, replace it with one demonstrated better owner and delete the old builder; do not retain two selectable planners.
 
-### Per-pixel sequence
+### Per-Pixel Sequence
 
 For an active pixel:
 
@@ -245,7 +231,7 @@ The pass must use the same jitter convention as the GBuffer depth sample. A proj
 
 A screen tile cannot answer which decals overlap a reflection hit outside the camera frustum. Secondary-ray support therefore shares decal data and evaluation but uses a view-independent candidate lookup.
 
-### Initial lookup
+### Initial Lookup
 
 During ray-scene preparation, conservatively intersect each traceable receiver's world bounds with decal oriented-box bounds. Emit candidate decal indices in the same stable order into one flat buffer:
 
@@ -265,7 +251,7 @@ Secondary texture filtering must receive an explicit surface footprint. If the r
 
 The first implementation may rebuild the flat candidate product when decal topology/transforms or receiver bounds change. That is correct for the static initial contract. Candidate count per receiver, total links, rebuild CPU time, and buffer high-water are delivery evidence fields; they are not a permanent UI product.
 
-### Integration rule
+### Integration Rule
 
 Keep base hit reconstruction separate from decal application:
 
@@ -283,7 +269,7 @@ Call the middle operation for GI, reflection, and path-lighting material hits. D
 
 Before secondary-ray decals are accepted, the implementation must inventory every `ReconstructRayTracingHitSurface` consumer and classify it explicitly as primary material, arbitrary shaded material, shadow/visibility, or unsupported. No effect gets a private decal implementation.
 
-### Why no decal TLAS first
+### Why No Decal TLAS First
 
 A procedural AABB acceleration structure can enumerate arbitrary overlaps and remains a valid measured alternative. It is not the initial choice because Sparkle currently owns triangle BLAS/TLAS products, while procedural decal geometry would add RHI geometry contracts, build inputs, hit-group/pipeline considerations, another lifetime product, and backend validation before proving that Modern Sponza needs them.
 

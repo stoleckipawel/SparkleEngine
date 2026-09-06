@@ -128,6 +128,7 @@ If the smallest check falsifies the claim, stop and record the defect. Do not co
 | `RHI-E13` | `RHI-RES-05`, `RHI-CMD-07`, `RHI-DIAG-01` through `RHI-DIAG-06` |
 | `RHI-E14` | `RHI-RES-04`, `RHI-RES-06` through `RHI-RES-08` |
 | `RHI-E15` | `RHI-DEV-07`, `RHI-DEV-08`, `RHI-BIND-07`, `RHI-PIPE-02`, `RHI-PIPE-03`, `RHI-PIPE-07`, `RHI-PIPE-09`, `RHI-PIPE-10`, `RHI-RT-02`, `RHI-RTC-03`, `RHI-RTC-04`, `RHI-PRES-05`, `RHI-DIAG-07` |
+| `RHI-E16` | `RHI-LIFE-01` through `RHI-LIFE-06` |
 
 This map names the primary RHI proof destination, not the whole release chain. Each executed item still requires the cross-module `WF-*`, `FCR-*`, `AC-*`, `FM-*`, `CHK-*`, risk, environment, and invalidation mappings required above.
 
@@ -148,6 +149,7 @@ This map names the primary RHI proof destination, not the whole release chain. E
 | `RHI-E13` | Capture and diagnostic paths are trustworthy. | Capture a known-color/depth-compatible product, verify dimensions/channel encoding, and provoke one validation/DRED-friendly failure in a development build. | Misleading/empty diagnostics block public diagnostic claims even if rendering continues. | Open |
 | `RHI-E14` | Resource budgets and delayed retirement remain bounded. | Record RHI/renderer allocation and retirement over repeat load/switch/resize for a representative scene. | Monotonic growth or budget oversubscription triggers allocation-lifetime capture before performance work. | Open |
 | `RHI-E15` | Unsupported RHI vocabulary, partial modes, and backend-asymmetric paths remain unreachable or visibly bounded. | Enumerate public selectors/capability reports, request unsupported mesh/task/stage/topology/blend/bindless/HDR/refit/native-traversal/provider combinations, and verify rejection or explicit requested-versus-active reporting. | Any selectable path that silently substitutes, appears supported, or enters an unimplemented contract must be removed, disabled, or assigned a narrower release disposition. | Open |
+| `RHI-E16` | Device-service creation, publication, resize recovery, settlement, destruction, and terminal device-loss behavior are complete and honestly distinguished. | Execute `CHK-RHI-LIFE-*`: inject every partial-create stage, wrong-thread/settlement misuse, resize/out-of-date churn, wait failure, D3D12 removal, and Vulkan device loss; inspect cleanup, generations, diagnostics, and every post-loss caller. | Partial publication, use after settlement/loss, stale swapchain identity, false completion, leak, hang, or any undocumented recovery claim blocks the backend lifecycle. | Open |
 
 ## Renderer Evidence
 
@@ -173,16 +175,21 @@ This map names the primary RHI proof destination, not the whole release chain. E
 | `REN-E16` | `REN-POST-06` |
 | `REN-E17` | `REN-POST-07` through `REN-POST-10` |
 | `REN-E18` | `REN-FRONT-06`, `REN-DBG-01` through `REN-DBG-04`, `REN-POST-10` |
-| `REN-E19` | `REN-FG-01` through `REN-FG-08`, `REN-RT-06`, `REN-DIAG-08` |
+| `REN-E19` | `REN-FG-01` through `REN-FG-08`, `REN-PIPE-01` through `REN-PIPE-05`, `REN-RT-06`, `REN-DIAG-08` |
 | `REN-E20` | `REN-SCENE-08` through `REN-SCENE-10`, `REN-DIAG-02` through `REN-DIAG-04` |
 | `REN-E21` | `REN-OWN-01`, `REN-UI-01` through `REN-UI-04`, `REN-DIAG-01` through `REN-DIAG-07` |
 | `REN-E22` | All Renderer capability IDs admitted to the frozen release profile; this is a terminal aggregate gate, not a substitute for the narrower items above. |
-| `REN-E23` | `REN-FRONT-07` plus every Renderer CVar, public settings field, viewport request, editor control, and provider selector discovered by the selector audit. |
+| `REN-E23` | `REN-SET-01` through `REN-SET-05`, `REN-FRONT-07`, plus every Renderer CVar, public settings field, viewport request, editor control, and provider selector discovered by the selector audit. |
 | `REN-E24` | `REN-VOL-01` through `REN-VOL-03` |
 | `REN-E25` | `REN-DECAL-01` through `REN-DECAL-03` |
 | `REN-E26` | `REN-POST-11` |
 | `REN-E27` | `REN-POST-12` |
 | `REN-E28` | `REN-POST-13` |
+| `REN-E29` | `REN-TEMP-01` through `REN-TEMP-05` |
+| `REN-E30` | `REN-LAT-01` through `REN-LAT-05` |
+| `REN-E31` | `REN-PIPE-01` through `REN-PIPE-05`, `REN-DIAG-08` |
+| `REN-E32` | `REN-VIS-01` through `REN-VIS-09` |
+| `REN-E33` | `REN-RESO-01` through `REN-RESO-07`, with shared `REN-TEMP-01` through `REN-TEMP-05` and `REN-POST-04` through `REN-POST-06` joins |
 
 | ID | Claim to establish | Smallest next check | Escalation trigger | State |
 | --- | --- | --- | --- | --- |
@@ -214,6 +221,11 @@ This map names the primary RHI proof destination, not the whole release chain. E
 | `REN-E26` | Color grading remains explicit absence rather than an effect inferred from tone mapping or output encoding. | Audit display/view settings, CVars, editor controls, grading parameters, 1D/3D LUT asset/import/cook types, color-space transforms, shader registrations, pass construction, graph products, captures, and public claims. | Any reachable setting, data, pass, product, or claim requires an owned grading contract; a tone-mapper curve may not silently stand in for grading. | Open; negative capability audit |
 | `REN-E27` | Chromatic aberration remains explicit absence rather than an effect inferred from reconstruction or filtering artifacts. | Audit view/lens settings, CVars, editor controls, channel/radial models, shader registrations, pass construction, guard-band and viewport behavior, graph products, captures, and public claims. | Any reachable setting, pass, product, or claim requires an owned lens-effect contract; accidental color fringing may not be advertised as the feature. | Open; negative capability audit |
 | `REN-E28` | Frame generation remains explicit absence and Reflex/PCL or temporal reconstruction is never presented as generated-frame support. | Audit Streamline feature registration/evaluation, provider factories, RHI interop, motion/depth/optical-flow resources, frame tokens, UI composition, pacing, swapchain/present, capture/provenance, settings, packaging, and public claims for a generated-frame route. | Any synthesis/provider route requires rendered-versus-generated identity and complete latency/presentation/failure contracts; SDK or Reflex presence alone may not produce a claim. | Open; negative capability audit |
+| `REN-E29` | Per-view temporal sampling, previous-camera publication, history invalidation, motion, reprojection, and provider constants share one exact convention. | Run the `CHK-TMP-*` sequence: exact 16-frame samples, dual-view continuity, every invalidation cause, static/camera/rigid/skin/morph/sky motion, ReSTIR reprojection, and reachable provider constants on both native backends. | Wrong sign/unit, stale history, cross-view state, consumer divergence, or an exposed undocumented jitter pattern blocks the affected temporal consumer. | Open |
+| `REN-E30` | Optional latency markers are correctly attributed and bounded without becoming a false Reflex, backend-parity, frame-generation, or latency-benefit claim. | Run the `CHK-LAT-*` matrix for host marker order/identity, Streamline on/off, D3D12/Vulkan, PCL/Reflex support/readiness, provider failures/shutdown, and 32-bit token-wrap boundary; measure benefit only after correctness. | Wrong/missing marker identity, silent active claim, wrap collision, provider failure/deadlock, or unqualified latency marketing blocks the capability. | Open |
+| `REN-E31` | Registered/cooked shader identity, typed bindings, complete pipeline keys, backend materialization, build membership, and whole-generation replacement agree. | Exercise the `CHK-PIP-*` matrix: registration/metadata enumeration, one-field key mutations, every binding domain and failure, in-flight reload, smallest shared/static/contract-only build consumers, and native validation. | Missing/duplicate registration, ABI drift, incompatible cache reuse, partial generation activation, early retirement, or backend semantic mismatch blocks the affected pipeline family. | Open |
+| `REN-E32` | Per-view visibility, candidate validation, authored grouping, deterministic sorting/batching, workload facts, and negative advanced-draw boundaries are correct. | Execute `CHK-VIS-*`: analytic frustum/bounds cases, exact synthetic candidate/batch ledgers, batching on/off raw-product equivalence, task boundary/failure injection, and selector/source reachability for occlusion/LOD/indirect/stereo/multiview. | Missing/duplicate/wrongly ordered identity, partial failure publication, visual mismatch, misleading diagnostics, or reachable unowned draw mode blocks the affected path. | Open |
+| `REN-E33` | Output/render extents, provider resolution, temporal sampling, active attachment sample count, resize invalidation, and absent AA/dynamic-resolution claims agree end to end. | Execute `CHK-RESO-*`: dimension ledger over unity/odd/minimum/provider ratios, requested/active provider matrix, resize/provider churn, attachment/pipeline sample-count enumeration and negative selector/source audit. | Mixed extents, stale history, wrong dispatch/product metadata, implicit resolve, false MSAA/post-AA/dynamic-resolution claim, or dishonest provider mode blocks the affected route. | Open |
 
 ## Shader Compilation And Delivery Evidence
 

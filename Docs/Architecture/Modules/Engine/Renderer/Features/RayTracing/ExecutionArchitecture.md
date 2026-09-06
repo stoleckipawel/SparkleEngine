@@ -4,7 +4,7 @@ Status: target architecture; semantic contract, not proof of runtime support
 Current-state audit provenance: 2026-08-28 static source/build reconciliation at committed `master` revision `20814381`, whose source and executable build configuration are unchanged from implementation revision `99af6d5b`; migration history is recorded in the [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md)
 Scope: ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, supported alternates, mandatory failure, and target completion invariants
 
-## Purpose and authority boundary
+## Purpose And Authority Boundary
 
 This document describes the intended ray-tracing system as one coherent target. It answers what inline ray query and native ray-tracing pipelines mean, what they share, what must remain distinct, who owns each decision, how shader tables map scene identity to native records, and what makes an effect genuinely dual-execution.
 
@@ -18,7 +18,7 @@ Related authority:
 - [Renderer Engineering](../../../../../../Engineering/Modules/Renderer.md), [RHI Engineering](../../../../../../Engineering/Modules/RHI.md), [Change Integration](../../../../../../Engineering/Workflow/ChangeIntegration.md), [Change Lifecycle](../../../../../../Engineering/Workflow/ChangeLifecycle.md), and [Validation And Evidence](../../../../../../Engineering/Verification/ValidationAndEvidence.md) govern implementation and review.
 - [Strategy Requirements](../../../../../../Strategy/Requirements.md) owns `PGE-02`, `PGE-05`, `PGE-06`, and `PGE-09`; this target does not replace their workload or evidence gates.
 
-## Target outcome
+## Target Outcome
 
 A selected ray-traced effect can run through an inline ray-query frontend or a native ray-tracing-pipeline frontend without changing its prepared scene, TLAS, material/geometry data, view, output, temporal, or supported-alternate contract.
 
@@ -41,7 +41,7 @@ A selected ray-traced effect can run through an inline ray-query frontend or a n
 
 Portability belongs to the effect contract, not to arbitrary shader entry points. A compute shader cannot be switched into ray generation or a hit stage at runtime: invocation, control flow, payload, attributes, recursion, and binding ABI differ. An effect is dual-execution only when it owns and proves both thin frontends over shared semantics.
 
-## Terms and invariants
+## Terms And Invariants
 
 | Term | Target meaning |
 | --- | --- |
@@ -68,7 +68,7 @@ The enduring invariants are:
 10. Map/library/pipeline/table/resource generations publish atomically and retire by all-queue submission token, never CPU frame age or device-idle convenience.
 11. Classic versus partitioned TLAS and descriptor versus device-address storage never create another shader class, HLSL root, parameter schema, or effect branch. Shaders declare one semantic AS parameter; private RHI lowers it to the selected provider's exact native descriptor representation.
 
-## Non-goals
+## Non-Goals
 
 - Do not emulate ray-generation, miss, hit, intersection, or callable stages inside a generic compute shader.
 - Do not force every effect to support both modes or every legal RT stage.
@@ -83,7 +83,7 @@ The enduring invariants are:
 - Do not require any-hit, intersection, callable, recursion, collections, pipeline libraries, GPU-generated tables, permutations, or precaching where a real effect or the explicitly required all-stage evidence does not need them.
 - Do not submit permanent test-only shaders, fixtures, executables, registrations, or conformance routes. Use existing validation surfaces or a temporary local harness removed before handoff unless the user separately authorizes submitted test code.
 
-## Current-to-target reconciliation
+## Current-To-Target Reconciliation
 
 The revision-pinned current inventory lives in the implementation document. Its architectural meaning is:
 
@@ -115,7 +115,7 @@ effect request -> immutable execution plan -> exactly one frontend
 
 The target replaces the compiler-only RT package scaffolding rather than adapting it. RT declarations enter the final map/library representation only with their complete native and typed-graph consumer.
 
-## Target ownership
+## Target Ownership
 
 | Owner | Owns | Must not own |
 | --- | --- | --- |
@@ -128,7 +128,7 @@ The target replaces the compiler-only RT package scaffolding rather than adaptin
 | frame graph / `RenderPassRuntimeCache` | typed trace resource declarations, queue/state/dependency rules, pre-execute pipeline/table materialization, exact generation capture, atomic reload, submission-token retirement | shader authoring, mutable scene semantics, editor policy |
 | Application/Editor | one `Apply Changed` intent, bounded immutable status/provenance presentation, requested renderer setting | compiler scheduling, map mutation, RHI objects, native construction, table bytes |
 
-## Effect-level dual-execution contract
+## Effect-Level Dual-Execution Contract
 
 Each dual effect has one semantic record, not a plugin registry or second pass framework:
 
@@ -143,7 +143,7 @@ Readiness and supported alternate or mandatory failure
 Correctness/quality comparison policy
 ```
 
-### Selection semantics
+### Selection Semantics
 
 The closed request vocabulary is:
 
@@ -171,7 +171,7 @@ Exact placement may follow current Renderer settings style, but the meaning is f
 
 A strict whole-frame request preflights every selected effect, lists every incompatibility, and schedules nothing if any selected effect cannot honor the request. `Automatic` may mix modes, but never hides the result. Algorithm choices such as raster/ray GBuffer, Reference/ReSTIR lighting, or denoising remain independent axes from the execution API.
 
-### Shared HLSL boundary
+### Shared HLSL Boundary
 
 Share one semantic owner for:
 
@@ -194,7 +194,7 @@ Thin frontends are siblings beside their semantic effect owner. They do not dupl
 
 Acceleration-structure binding representation is not frontend-specific. Inline compute and RT ray generation declare the same semantic scene-AS parameter shape used by their effect. Whether the active scene uses classic TLAS or partitioned TLAS, and whether the native API carries that opaque resource through a descriptor containing a handle or device address, is resolved below shader/effect code. The shader never reconstructs an acceleration structure from address words.
 
-## Shader authoring and pipeline composition
+## Shader Authoring And Pipeline Composition
 
 Every RT stage is an ordinary concrete shader class in the same global-shader system, but stage classes expose only the contracts they consume:
 
@@ -223,9 +223,9 @@ Compute and ordinary graphics never use this type. Graphics continues to name co
 
 The graph frontend is `TraceRays<RayGenerationShader>(composition, parameters, dimensions)` with an optional diagnostic-label overload. It mirrors Unreal's separation among global shader class, ray-tracing pipeline initializer, and ray dispatch while hiding Sparkle's materialized pipeline, shader table, native identifiers, global binding writer, addresses, and strides behind the frame-graph/runtime/RHI owners. The exact class and call-site example lives in the [unified authoring document](../../../../../CrossModule/ShaderSystem/README.md#proposed-authoring-experience) so this target contract does not duplicate implementation guidance.
 
-## Pipeline ABI and shader-table contract
+## Pipeline ABI And Shader-Table Contract
 
-### Stage support
+### Stage Support
 
 Full pipeline support means every legal stage can traverse source, compilation, map/library, typed lookup/composition, native materialization, table region, graph dispatch, capture, reload, and retirement:
 
@@ -240,7 +240,7 @@ Full pipeline support means every legal stage can traverse source, compilation, 
 
 No product effect adds an empty stage merely to claim coverage. Procedural and callable support may remain conformance-only when no product workload benefits; that limitation is explicit.
 
-### Binding and local data
+### Binding And Local Data
 
 - The selected ray-generation shader's typed `Parameters` schema is the authoritative global binding layout; other stages do not mirror it.
 - Every scene traversal parameter is one semantic acceleration-structure field. Graph setup converts one AS handle through `CreateAccelerationStructureBinding`; it does not use a generic texture/buffer `Read` or pretend the cross-API AS descriptor is an SRV. Private RHI selects and validates the classic/partitioned native descriptor kind and write operation fixed for the active provider before layout/pipeline materialization.
@@ -251,7 +251,7 @@ No product effect adds an empty stage merely to claim coverage. Procedural and c
 - Payload and attribute contracts have named C++/HLSL schemas, exact byte limits/alignment assumptions, and stage visibility.
 - Recursion depth is the minimum required by the composition and validated against device limits; initial product effects use depth one.
 
-### SBT organization and index formula
+### SBT Organization And Index Formula
 
 The logical regions are:
 
@@ -275,7 +275,7 @@ Vulkan maps the same logical result to `sbtRecordOffset`, `sbtRecordStride`, and
 
 The earlier opaque one-ray-type checkpoint intentionally used zero contributions. The current production slice uses nontrivial instance/geometry/two-ray-type indexing through one `RenderRayTracingScene` plan shared by classic and partitioned TLAS. Material/geometry data remains in shared buffers; current product records contain no local data. The delivery plan retains the checkpoint history.
 
-## Capability and readiness contract
+## Capability And Readiness Contract
 
 Capability is not one `SupportsRayTracing` boolean. The target distinguishes:
 
@@ -297,7 +297,7 @@ This binding choice is not a shader permutation. One `(ShaderTypeId, Target)` co
 
 Every unavailable result identifies the missing owner-level requirement: compiler target, export/group ABI, backend feature/function, layout/limit, native pipeline/table creation, graph queue/resource rule, generation mismatch, effect frontend, supported alternate, or mandatory producer.
 
-## Runtime, graph, and lifetime contract
+## Runtime, Graph, And Lifetime Contract
 
 ```text
 active map/library generation
@@ -323,7 +323,7 @@ submission token -> retirement
 - Scene logical changes create a new immutable table plan/generation or bounded dirty update. Readers never observe partial record content.
 - Table reuse identity includes typed composition, shader/map generation, exact native pipeline generation, logical records, backend, and every layout-affecting capability. This is correctness reuse, not a precache/prewarm subsystem.
 
-## Product effect contract
+## Product Effect Contract
 
 The first product effect is the ray-traced GBuffer:
 
@@ -344,7 +344,7 @@ The production hit slice adds:
 
 Every remaining current ray-query effect is classified `Dual`, `InlineOnly`, `PipelineOnly`, or `SupportedAlternate`. A `SupportedAlternate` is a real algorithm with its own contract and evidence; shadow visibility has none. Migration requires a useful pipeline design and accepted correctness/quality/history oracle. A global mega-pipeline and forced migration for API coverage are rejected.
 
-## Target completion invariants
+## Target Completion Invariants
 
 The target is realized only when implementation evidence proves all of the following together:
 

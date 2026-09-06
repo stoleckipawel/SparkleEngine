@@ -4,7 +4,7 @@ Status: current feature dossier; source-backed, not task, continuity, residency,
 
 Verified: 2026-09-06 against committed `master` revision `d236da11`
 
-Scope: scene-owned portions of `REN-SCENE-02` through `REN-SCENE-09`; persistent `RenderScene` mutation, frame-slot preparation, deformation continuity, light preparation, resource state, and failure before publication
+Scope: scene-owned portions of `REN-SCENE-02` through `REN-SCENE-07`; persistent `RenderScene` mutation, frame-slot preparation, deformation continuity, light preparation, active-resource references, and failure before publication
 
 ## Feature Promise
 
@@ -30,11 +30,11 @@ Capacities round to a power of two beyond the serial threshold to reuse the comp
 - Non-monotonic frame identity rejects before scene mutation/publication.
 - Preparation failure/cancellation resets continuity and publishes no partial result; success commits continuity before moving merged output into the frame slot.
 - Scene reset unloads scene textures and invalidates dependent scene/view/provider/frame history.
-- Missing, pending, failed, evicted, or stale-completing mesh/texture resources follow explicit placeholder/refusal/generation policy.
+- Scene preparation consumes only the active generation exposed by [Mesh and Texture Residency](../GeometryAndResources/MeshAndTextureResidency.md); it does not own admission, decode, upload, eviction, or their budgets.
 - Light payload limits are 2 directional and 1024 each for point, spot, and rect; overflow rejects before GPU upload.
 - Static BLAS reuse and deforming BLAS rebuild are downstream RT consequences; this page does not claim BLAS refit.
 
-Feature-family proof is owned by [Acceptance](Acceptance.md), especially `AC-SVP-01` through `AC-SVP-04`, `AC-SVP-06` through `AC-SVP-08`, and `CHK-SVP-01`/`03`/`04`.
+Feature-family proof is owned by [Acceptance](Acceptance.md), especially `AC-SVP-01` through `AC-SVP-04`, `AC-SVP-06` through `AC-SVP-08`, and `CHK-SVP-01`/`03`/`04`. Residency state-machine proof stays in [Mesh and Texture Residency](../GeometryAndResources/MeshAndTextureResidency.md).
 
 ## Primary Source Routes
 

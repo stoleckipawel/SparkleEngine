@@ -12,9 +12,9 @@ For one prepared scene and one viewport/view identity, Renderer produces one fra
 
 ## Build And Prepare
 
-`RenderViewBuilder` resolves perspective or orthographic matrices under the engine coordinate/depth convention, render/output extents, viewport/scissor, display settings, debug mode, and temporal data. `RenderViewState` keys continuity by viewport/selection/kind plus frame, scene, shader, provider, and graph-topology generations.
+`RenderViewBuilder` resolves perspective or orthographic matrices under the engine coordinate/depth convention, render/output extents, viewport/scissor, display settings, debug mode, and the temporal data produced by [Temporal Sampling and History](../FrameExecution/TemporalSamplingAndHistory.md). That dossier owns `RenderViewState`, jitter, previous matrices, history validity, and invalidation semantics; view preparation only consumes their current result.
 
-`RenderViewPreparation` evaluates frustum visibility through a reusable Tasks graph (threshold 128, grain 64, at most 8 partitions), classifies material alpha as opaque, alpha-tested, transparent, or rejected, produces visible raster indices, optionally forms compatible flat-instance batches through `r.MeshAutoBatching`, records workload counts, and builds a view-relative RT partition plan.
+`RenderViewPreparation` produces the visible raster indices, compatible batches, workload counts, and view-relative RT partition plan. [Visibility and Draw Preparation](../GeometryAndResources/VisibilityAndDrawPreparation.md) owns the exact frustum, classification, validation, authored-group, sort/batch, task-capacity, failure, and absent advanced-culling contract.
 
 Transparency classification is routing vocabulary, not evidence of a completed transparent rendering feature. Automatic batching is a current path, but its draw-count benefit, ordering behavior, and CPU/GPU cost remain unmeasured.
 
@@ -25,7 +25,7 @@ Transparency classification is routing vocabulary, not evidence of a completed t
 - Failed/cancelled culling or batching publishes no partial `RenderView`; another view is never modified.
 - View preparation cannot promote missing scene resources, exceed scene-owned capacities, or redefine material/geometry identity.
 
-Feature-family proof is owned by [Acceptance](Acceptance.md), especially `AC-SVP-03`, `AC-SVP-05`, `AC-SVP-08`, `AC-SVP-09`, and `CHK-SVP-02`/`04`.
+Feature-family proof is owned by [Acceptance](Acceptance.md), especially `AC-SVP-03`, `AC-SVP-05`, `AC-SVP-08`, `AC-SVP-09`, and `CHK-SVP-02`/`04`. Exact temporal proof stays in [Temporal Sampling and History](../FrameExecution/TemporalSamplingAndHistory.md).
 
 ## Primary Source Routes
 

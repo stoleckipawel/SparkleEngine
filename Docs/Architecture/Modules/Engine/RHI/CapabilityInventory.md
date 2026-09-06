@@ -4,7 +4,7 @@ Status: capability snapshot; not release approval or executable backend evidence
 
 Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; current `Engine/RHI` public contracts, common implementation, diagnostics, D3D12/Vulkan backends, CMake membership, and representative Renderer consumers inspected; evidence `S` only
 
-Scope: backend-neutral and backend-specific device, queue, resource, descriptor, pipeline, command, ray-tracing, presentation, diagnostics, capture, memory, and interop capabilities
+Scope: backend-neutral and backend-specific device, lifecycle/recovery, queue, resource, descriptor, pipeline, command, ray-tracing, presentation, diagnostics, capture, memory, and interop capabilities
 
 Owner: `Engine/RHI`
 
@@ -56,6 +56,17 @@ The capability rows below remain a compact ledger. Explanatory mechanisms and lo
 | `RHI-DEV-07` | Mesh shaders | Reported false | Reported false in the current capability surface | Mesh/task stage vocabulary must not be advertised as a working pipeline. | `S` |
 | `RHI-DEV-08` | Task shaders | Reported false | Reported false in the current capability surface | No current graphics-pipeline binding path. | `S` |
 | `RHI-DEV-09` | Adapter preference | D3D12 exposes high-performance/minimum-power selection | Vulkan scores physical devices during selection | These are not identical user contracts and need explicit release UX. | `S` |
+
+## Device Lifecycle And Failure Recovery
+
+| Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
+| --- | --- | --- | --- | --- | --- |
+| `RHI-LIFE-01` | Aggregate service ownership | Implemented path | Non-copyable/non-movable `RenderDeviceServices` owns one concrete backend composition through `RenderDeviceServicesState`; direct service use is tied to one `Threading::OwnerThread`. | `S` | Pending |
+| `RHI-LIFE-02` | Atomic creation/publication | Implemented path | Requested backend/config/window/interposer requirements are checked while constructing the native device and dependent services. Invalid or uncompiled requests fail rather than publishing a different backend. Partial-construction cleanup remains unproved. | `S` | Pending |
+| `RHI-LIFE-03` | Ordered settlement and destruction | Implemented path | Both backends expose `SettleForShutdown`; D3D12 waits RHI idle and clears allocator recording state, while Vulkan clears acquire state and waits device idle. Dependent services are destroyed before their native device owner. Boundedness and fault behavior are unproved. | `S` | Pending |
+| `RHI-LIFE-04` | Swapchain recovery | Implemented path | Resize/out-of-date handling drains relevant presentation/graphics work and recreates swapchain-dependent images/views without replacing the device aggregate. This is presentation recovery, not device-loss recovery. | `S` | Pending |
+| `RHI-LIFE-05` | Device-loss diagnostics | Capability-gated | D3D12 can report removal through DRED/device-removed reason; Vulkan result formatting identifies `VK_ERROR_DEVICE_LOST`. Availability and actionable fault evidence differ by backend. | `S` | Pending |
+| `RHI-LIFE-06` | In-process device recreation | Not found | No coordinator was found that creates a new device/service aggregate, generations every dependent resource/descriptor/pipeline/provider/UI/product identity, invalidates Renderer work, and resumes after D3D12 removal or Vulkan device loss. Current claims must remain terminal. | `S` | Excluded unless later admitted |
 
 ## Resources, Views, Upload, And Memory
 
@@ -185,6 +196,7 @@ Ray tracing is not one boolean. The current contract separates acceleration stru
 - Native RT pipeline support does not cover every ray-using Renderer effect.
 - The RHI has procedural/callable/advanced stage vocabulary beyond current Renderer production paths. Such vocabulary is not a shippable feature.
 - No current HDR presentation contract was found.
+- Swapchain resize/recreation is implemented; whole-device recreation after D3D12 removal or Vulkan device loss is not. DRED/result diagnostics are not recovery.
 - Rich partitioned-TLAS operation vocabulary exceeds the current Renderer strategy. Advertise only the actually selected and exercised subset.
 
 ## Primary Source Routes

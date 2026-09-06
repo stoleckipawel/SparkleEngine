@@ -14,8 +14,7 @@ Strategy owns desired capabilities, priority, release-wide sequencing, dated exe
 
 ## Dated Assessments
 
-- [C. Candidate And Repository Gap Assessment](Assessments/GapAssessment.md) — evidence/readiness at one repository snapshot.
-- [Repository Quality And Complexity Assessment](Assessments/RepositoryQualityAndComplexity.md) — feature-preserving structural quality and prioritized refactoring direction at one snapshot.
+- [Strategy Assessments](Assessments/README.md) routes the candidate/repository gap assessment and repository quality/complexity assessment by their snapshot-bound purpose.
 
 Assessments must be revalidated before acting; they do not silently become current architecture or implementation status.
 

@@ -16,7 +16,7 @@ Canonical graphics workload: [I. Bistro and San Miguel Acceptance Workloads](../
 
 Per-feature polish and how-it-works contract: [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md)
 
-Offline path-tracer discovery: [completion study](../Research/OfflinePathTracerCompletion.md) and [`PTD-00` acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md)
+Offline path-tracer discovery: [completion study](../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) and [`PTD-00` acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md)
 
 Concurrency architecture and execution contract: [J. Multithreaded Engine Architecture](../Architecture/CrossModule/MultithreadedEngine.md)
 
@@ -401,7 +401,7 @@ Update a row only when the required evidence is linked. `Implemented` without ac
 
 | Gate | Status on 2026-09-06 | Evidence/blocker |
 | --- | --- | --- |
-| `PTD-00` Offline path-tracer completion discovery | In progress | The initial [NVIDIA/current-source study](../Research/OfflinePathTracerCompletion.md) and [discovery contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) exist. Exit is blocked on accepted transport/feature scope, estimator derivation, oracle and fixture design, target-shape decision, plan-ready backlog, and independent review. |
+| `PTD-00` Offline path-tracer completion discovery | In progress | The initial [NVIDIA/current-source study](../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) and [discovery contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) exist. Exit is blocked on accepted transport/feature scope, estimator derivation, oracle and fixture design, target-shape decision, plan-ready backlog, and independent review. |
 | `PTD-01` Offline path-tracer implementation plan | Blocked | Intentionally absent until every `AC-PTD-*` criterion passes. |
 | `PTD-02` / `FCR-REN-08` implementation and candidate closure | Blocked | Requires `PTD-00`, `PTD-01`, and `REL-03`, then every applicable [feature acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) row; current source presence is not oracle evidence. |
 | `PTD-03` Release-map reference adoption | Blocked | Requires accepted `FCR-REN-08` plus per-camera raw HDR, convergence/uncertainty, provenance, and dependency-independence evidence. |

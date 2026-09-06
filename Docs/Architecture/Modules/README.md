@@ -110,7 +110,7 @@ The initial detailed inventories carry `S` only. No `B`, `R`, `N`, `P`, or `A` e
 | Feature execution | Deep vertical | [Graphics Feature Execution Traces](../CrossModule/FeatureExecutionTraces.md) | Frame, raster, ray GBuffer, ReSTIR, reference, provider, shader-delivery, and capture paths traced producer-to-consumer; source-only. |
 | Product/developer workflow coverage | Deep horizontal | [Product And Developer Workflow Coverage](../CrossModule/ProductWorkflowCoverage.md) | Discovery, build, content, cook, launch, editor, runtime, diagnostics, cancellation, package, release, and support journeys compared actor-by-actor; source-only. |
 | Product/developer execution | Deep vertical | [Product And Developer Execution Traces](../CrossModule/ProductExecutionTraces.md) | Quick Start, asset-to-frame, editor transaction, settings, shader reload, capture, and settlement paths traced across owners; source-only. |
-| Registered Renderer programs | Exact catalog | [Renderer Shader Program Catalog](Engine/Renderer/Features/ShaderPrograms.md) | All 35 registrations mapped to source, entry, stage, consumer, and binding/traversal boundary; source-only. |
+| Registered Renderer programs | Exact catalog | [Renderer Shader Program Catalog](Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md) | All 35 registrations mapped to source, entry, stage, consumer, and binding/traversal boundary; source-only. |
 | Evidence closure | Plan | [Capability Evidence Plan](../../Plans/CapabilityEvidence.md) | Missing source audits and the smallest proof needed to promote individual claims. It does not replace release gates or roadmap order. |
 
 ## Current Coverage Boundary
@@ -122,13 +122,13 @@ Every top-level implementation owner is routed above and has a source-depth capa
 | Claim or reviewer concern | Owning detail |
 | --- | --- |
 | D3D12/Vulkan coverage or parity | [RHI capability inventory](Engine/RHI/CapabilityInventory.md), [RHI feature dossiers](Engine/RHI/Features/README.md), [graphics matrix](../CrossModule/GraphicsCoverageMatrix.md), and candidate evidence |
-| Ray tracing, inline/native pipelines, shader tables, classic/PTLAS | [Renderer ray-tracing dossier](Engine/Renderer/Features/RayTracing/README.md), [RHI ray-tracing dossier](Engine/RHI/Features/RayTracing.md), and [graphics traces](../CrossModule/FeatureExecutionTraces.md) |
+| Ray tracing, inline/native pipelines, shader tables, classic/PTLAS | [Renderer ray-tracing dossier](Engine/Renderer/Features/RayTracing/README.md), [RHI ray-tracing dossier](Engine/RHI/Features/PipelineAndExecution/RayTracing.md), and [graphics traces](../CrossModule/FeatureExecutionTraces.md) |
 | Bindless/material binding coverage | [graphics matrix](../CrossModule/GraphicsCoverageMatrix.md#binding-and-material-coverage) |
-| PBR/material/direct-light coverage | [Geometry, Materials, and GBuffer](Engine/Renderer/Features/GeometryMaterialsAndGBuffer.md), [Direct Lighting](Engine/Renderer/Features/Lighting/DirectLighting.md), and the [exact inventory](Engine/Renderer/CapabilityInventory.md) |
+| PBR/material/direct-light coverage | [Geometry, Materials, and GBuffer](Engine/Renderer/Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md), [Direct Lighting](Engine/Renderer/Features/Lighting/DirectLighting.md), and the [exact inventory](Engine/Renderer/CapabilityInventory.md) |
 | Indirect-light/history/environment coverage | [Indirect Lighting](Engine/Renderer/Features/Lighting/IndirectLighting.md) and the [whole-frame route](Engine/Renderer/RenderingASparkleFrame.md) |
 | Volumetric/fog/atmosphere coverage | [Volumetric Lighting](Engine/Renderer/Features/Lighting/VolumetricLighting.md), which currently records an explicit absence |
 | Exposure, tone mapping, color grading, chromatic aberration, reconstruction/upscaling, frame generation, and output | [Post Processing](Engine/Renderer/Features/PostProcessing/README.md), including explicit negative dossiers for unsupported stages |
-| Shader language/stage/compiler/target/runtime coverage | [ShaderCompiler](Tools/ShaderCompiler/README.md) and [program catalog](Engine/Renderer/Features/ShaderPrograms.md) |
+| Shader language/stage/compiler/target/runtime coverage | [ShaderCompiler](Tools/ShaderCompiler/README.md) and [program catalog](Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md) |
 | Build/cook/editor/runtime/package user journey | [product workflow matrix](../CrossModule/ProductWorkflowCoverage.md) and [product traces](../CrossModule/ProductExecutionTraces.md) |
 | Persona, roadmap, and gap completeness | [strategy coverage](../CrossModule/StrategyCoverage.md) |
 | Release inclusion or exclusion | [feature reports](../../Acceptance/FeatureCompletionReports.md) and [release acceptance](../../Acceptance/FirstRelease.md) |

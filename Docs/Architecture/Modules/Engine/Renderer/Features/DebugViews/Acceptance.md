@@ -4,7 +4,7 @@ Status: feature-local acceptance contract; not proof that debug-view presentatio
 
 Scope: feature-local acceptance for mode classification, show-flag resolution, presentation mapping, viewport isolation, capture metadata, backend parity, and repository checks
 
-Feature architecture: [Debug View Presentation Architecture](PresentationArchitecture.md)
+Feature architecture: [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
 Delivery authority: [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md)
 

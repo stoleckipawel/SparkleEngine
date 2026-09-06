@@ -16,17 +16,18 @@ The inventory is an exact source ledger. The feature dossiers explain cohesive m
 
 | Contract family | What the RHI owns | Owning document |
 | --- | --- | --- |
-| Backend selection and device capabilities | compiled-backend availability, requested backend, adapter/device creation, queue topology, and neutral capability reporting | [Backend Selection and Device Capabilities](Features/BackendSelectionAndDeviceCapabilities.md) |
-| Resource lifetime and memory | formats, textures, buffers, samplers, upload/readback, allocation, transient aliasing, residency, and completion-safe reclamation | [Resource Lifetime and Memory](Features/ResourceLifetimeAndMemory.md) |
-| Descriptor binding | layouts, descriptor handles, writes, bindful arrays, bounded bindless capability, and recording lifetime | [Descriptor Binding](Features/DescriptorBinding.md) |
-| Pipeline and shader contracts | graphics/compute descriptors, shader bytecode/reflection, parameter layout, validation, materialization, and cache identity | [Pipeline and Shader Contracts](Features/PipelineAndShaderContracts.md) |
-| Command submission and synchronization | recording leases, command operations, queue batches, waits, completion tokens, barriers, and retirement authority | [Command Submission and Synchronization](Features/CommandSubmissionAndSynchronization.md) |
-| Ray tracing | acceleration structures, inline queries, native pipelines, shader tables, classic TLAS, and partitioned TLAS | [Ray Tracing](Features/RayTracing.md) |
-| Presentation | swapchain ownership, back-buffer acquisition/state, resize, pacing, VSync, present, and the explicit HDR gap | [Presentation](Features/Presentation.md) |
-| Diagnostics | object names, GPU events/timestamps, native validation/crash data, live objects, and bounded diagnostic delivery | [Diagnostics](Features/Diagnostics.md) |
-| Texture capture | asynchronous texture readback, format/layout conversion, polling, result delivery, and cleanup | [Texture Capture](Features/TextureCapture.md) |
-| External interop | narrow native handles, resource states, capability reports, and hooks for optional providers | [External Interop](Features/ExternalInterop.md) |
-| ImGui rendering | backend device objects, texture descriptors, draw-data lowering, clipping, resize, and retirement | [ImGui Rendering](Features/ImGuiRendering.md) |
+| Backend selection and device capabilities | compiled-backend availability, requested backend, adapter/device creation, queue topology, and neutral capability reporting | [Backend Selection and Device Capabilities](Features/DeviceAndResources/BackendSelectionAndDeviceCapabilities.md) |
+| Device lifecycle and failure recovery | owner-thread service composition, atomic publication, steady-state lifetime, resize versus device loss, shutdown settlement, reverse destruction, and the explicit no-recreation boundary | [Device Lifecycle and Failure Recovery](Features/DeviceAndResources/DeviceLifecycleAndFailureRecovery.md) |
+| Resource lifetime and memory | formats, textures, buffers, samplers, upload/readback, allocation, transient aliasing, residency, and completion-safe reclamation | [Resource Lifetime and Memory](Features/DeviceAndResources/ResourceLifetimeAndMemory.md) |
+| Descriptor binding | layouts, descriptor handles, writes, bindful arrays, bounded bindless capability, and recording lifetime | [Descriptor Binding](Features/DeviceAndResources/DescriptorBinding.md) |
+| Pipeline and shader contracts | graphics/compute descriptors, shader bytecode/reflection, parameter layout, validation, materialization, and cache identity | [Pipeline and Shader Contracts](Features/PipelineAndExecution/PipelineAndShaderContracts.md) |
+| Command submission and synchronization | recording leases, command operations, queue batches, waits, completion tokens, barriers, and retirement authority | [Command Submission and Synchronization](Features/PipelineAndExecution/CommandSubmissionAndSynchronization.md) |
+| Ray tracing | acceleration structures, inline queries, native pipelines, shader tables, classic TLAS, and partitioned TLAS | [Ray Tracing](Features/PipelineAndExecution/RayTracing.md) |
+| Presentation | swapchain ownership, back-buffer acquisition/state, resize, pacing, VSync, present, and the explicit HDR gap | [Presentation](Features/PresentationAndInterop/Presentation.md) |
+| Diagnostics | object names, GPU events/timestamps, native validation/crash data, live objects, and bounded diagnostic delivery | [Diagnostics](Features/DiagnosticsAndCapture/Diagnostics.md) |
+| Texture capture | asynchronous texture readback, format/layout conversion, polling, result delivery, and cleanup | [Texture Capture](Features/DiagnosticsAndCapture/TextureCapture.md) |
+| External interop | narrow native handles, resource states, capability reports, and hooks for optional providers | [External Interop](Features/PresentationAndInterop/ExternalInterop.md) |
+| ImGui rendering | backend device objects, texture descriptors, draw-data lowering, clipping, resize, and retirement | [ImGui Rendering](Features/PresentationAndInterop/ImGuiRendering.md) |
 
 ## Choose By Question
 

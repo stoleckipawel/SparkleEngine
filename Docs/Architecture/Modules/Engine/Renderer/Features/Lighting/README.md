@@ -63,7 +63,7 @@ The composite owns the join point. Direct and indirect producers do not independ
 - Absence of required ray capability means neither current surface-lighting mode can truthfully activate.
 - Direct-shadow strict traversal cannot silently substitute; Automatic may choose only a documented supported frontend and must report the resolved choice.
 - Debug views expose the five lobe products, but current presentation can modify them through exposure, tone mapping, and encoding.
-- Exact selectors and persistence live in [Feature Selectors](../FeatureSelectors.md). Row-level states live in the [Capability Inventory](../../CapabilityInventory.md). Release proof remains in `REN-E06` through `REN-E10`, `REN-E18`, and the dedicated volumetric absence check `REN-E24`.
+- Exact selectors and persistence live in [Feature Selector Catalog](../RuntimeConfiguration/FeatureSelectorCatalog.md). Row-level states live in the [Capability Inventory](../../CapabilityInventory.md). Release proof remains in `REN-E06` through `REN-E10`, `REN-E18`, and the dedicated volumetric absence check `REN-E24`.
 
 The family is complete only when the selected surface-lighting mode passes both [Direct Lighting](DirectLighting.md#acceptance-criteria) and [Indirect Lighting](IndirectLighting.md#acceptance-criteria), the common composite/sky join preserves their documented scene-linear products, and the active mode/capability limitations remain visible. [Volumetric Lighting](VolumetricLighting.md) and [Offline Path Tracer](OfflinePathTracer/README.md) retain independent negative/blocked dispositions and cannot inherit that verdict.
 

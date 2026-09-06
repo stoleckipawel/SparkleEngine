@@ -35,7 +35,7 @@ It does not claim that the target is implemented, set performance targets for a 
 - [Renderer and RHI Architecture Boundary](../../Decisions/RendererRhiBoundary.md) owns renderer, frame-graph, and RHI authority.
 - [I. Acceptance Workloads](../../../Acceptance/GraphicsWorkloads.md) owns `MAP-00`, scene routes, warm-up/sample policy, and portfolio gates.
 - [A. Principal Graphics Engineering Requirements](../../../Strategy/Requirements.md) owns the `PGE-05`, `PGE-06`, `PGE-10`, and reviewer-evidence meaning advanced by this system.
-- [Diagnostics Product And UX Research](../../../Research/PerformanceDiagnosticsProductAndUx.md) records the Epic/NVIDIA/AMD product study and rejected UX options behind the selected presentation; it is research, not implementation authority.
+- [Diagnostics Product And UX Research](../../../Research/PerformanceDiagnostics/PerformanceDiagnosticsProductAndUx.md) records the Epic/NVIDIA/AMD product study and rejected UX options behind the selected presentation; it is research, not implementation authority.
 - [External Performance Profiler Runbook](../../../Engineering/Verification/ExternalProfiling.md) owns version-sensitive tool capabilities, capture preparation, marker interoperability, and operational playbooks; it does not define Sparkle metrics or prove a benchmark claim.
 - [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md) owns ordered, feature-selectable implementation packages and phase exits; it does not redefine this architecture or the adjacent feature acceptance contract.
 - [Performance Diagnostics Capability Inventory](Capability.md) owns the dated current-source snapshot and reconciliation gaps.
@@ -915,7 +915,7 @@ The fixed catalog is a bounded option set, not a commitment to implement every g
 
 ### Visual Design Handoff
 
-The canonical `Unit` and `GpuPasses` presentations live in [Performance Diagnostics Visual Design And Tool Wireframes](../../../Research/PerformanceDiagnosticsVisualDesign.md#compact-stat-tools). Their values are illustrative. The pass hierarchy, counts, and timings must come from one correlated frame; the display must not combine rolling CPU values with an unrelated latest GPU frame without labeling both identities.
+The canonical `Unit` and `GpuPasses` presentations live in [Performance Diagnostics Visual Design And Tool Wireframes](../../../Research/PerformanceDiagnostics/PerformanceDiagnosticsVisualDesign.md#compact-stat-tools). Their values are illustrative. The pass hierarchy, counts, and timings must come from one correlated frame; the display must not combine rolling CPU values with an unrelated latest GPU frame without labeling both identities.
 
 ### What Built-In Stats Can Settle
 
@@ -1093,7 +1093,7 @@ The frozen capture supports four bounded views over the same records:
 
 ### GPU Visualizer Presentation
 
-The captured-frame layout, columns, inspector, and navigation controls live in the [GPU Captured Frame wireframe](../../../Research/PerformanceDiagnosticsVisualDesign.md#gpu-captured-frame). The visual example does not establish Sponza's actual pass cost; the architecture in this section remains authoritative for record and calculation semantics.
+The captured-frame layout, columns, inspector, and navigation controls live in the [GPU Captured Frame wireframe](../../../Research/PerformanceDiagnostics/PerformanceDiagnosticsVisualDesign.md#gpu-captured-frame). The visual example does not establish Sponza's actual pass cost; the architecture in this section remains authoritative for record and calculation semantics.
 
 ### Relationship To Live Stats And External Tools
 
@@ -1109,7 +1109,7 @@ Selecting a captured-frame node exposes `Copy marker path` so the same stable la
 
 ### Viewport Summary
 
-The existing top-right FPS text becomes the compact `Stat Unit` summary when that group is active. Milliseconds lead; FPS remains a derived convenience. A nearby Performance menu leads with `Quick Check` and `Investigate CPU/GPU/Memory`; it shows the active task preset and automatically derived collection cost. `Customize Stats...` is the searchable expert route to the fixed group catalog used by the console command. Requested or detected external frame-capture providers contribute their compact icons to one far-right viewport-header group without entering the Performance menu or workspace toolbar. The canonical [viewport controls and compact `Unit` layouts](../../../Research/PerformanceDiagnosticsVisualDesign.md#shared-controls) live in the visual-design document.
+The existing top-right FPS text becomes the compact `Stat Unit` summary when that group is active. Milliseconds lead; FPS remains a derived convenience. A nearby Performance menu leads with `Quick Check` and `Investigate CPU/GPU/Memory`; it shows the active task preset and automatically derived collection cost. `Customize Stats...` is the searchable expert route to the fixed group catalog used by the console command. Requested or detected external frame-capture providers contribute their compact icons to one far-right viewport-header group without entering the Performance menu or workspace toolbar. The canonical [viewport controls and compact `Unit` layouts](../../../Research/PerformanceDiagnostics/PerformanceDiagnosticsVisualDesign.md#shared-controls) live in the visual-design document.
 
 Rules:
 
@@ -1123,7 +1123,7 @@ Rules:
 
 ### Performance Window
 
-One window serves the Editor presenter and expands the same immutable model used by compact stat groups. DevelopmentGame uses compact overlays only. The window is not a dockable general diagnostics platform and does not own a second group catalog. The visual-design document owns the [workspace shell and fixed view layouts](../../../Research/PerformanceDiagnosticsVisualDesign.md#performance-workspace-tools). All values in those layouts are illustrative only; they are not measurements of the supplied Sponza screenshot or evidence of a Sparkle bottleneck.
+One window serves the Editor presenter and expands the same immutable model used by compact stat groups. DevelopmentGame uses compact overlays only. The window is not a dockable general diagnostics platform and does not own a second group catalog. The visual-design document owns the [workspace shell and fixed view layouts](../../../Research/PerformanceDiagnostics/PerformanceDiagnosticsVisualDesign.md#performance-workspace-tools). All values in those layouts are illustrative only; they are not measurements of the supplied Sponza screenshot or evidence of a Sparkle bottleneck.
 
 ### Interpretation Examples
 

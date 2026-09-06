@@ -2,9 +2,9 @@
 
 Status: capability snapshot; not release approval, visual validation, or performance evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `baa0adc9`; current `Engine/Renderer` public surface, CMake membership, Scene/View/Frame path, frame graph, passes, ray-tracing paths, providers, and shader registrations inspected; executable source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
+Snapshot: 2026-09-06 through committed `master` revision `c28b33bd`; current `Engine/Renderer` public surface, CMake membership, Scene/View/Frame path, frame graph, passes, ray-tracing paths, providers, and shader registrations inspected; executable source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
-Scope: render-side ownership, frame production, geometry/material/lighting algorithms, ray execution, post processing, providers, debug products, diagnostics, and known coverage gaps
+Scope: render-side ownership, frame production, graph scheduling, pipeline materialization and typed binding, scene/view and temporal preparation, residency, geometry/material/lighting algorithms, ray execution, post processing, providers, UI, latency coordination, settings lifecycle, debug products, diagnostics, and known coverage gaps
 
 Owner: `Engine/Renderer`
 
@@ -14,7 +14,7 @@ Evidence plan and release disposition: [Capability Evidence Plan](../../../../Pl
 
 Traceability: capability rows use durable `REN-<family>-NN` identities; their primary proof destinations are listed in the [Renderer capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map).
 
-Deeper routes: [Rendering a Sparkle Frame](RenderingASparkleFrame.md), [Renderer feature dossiers](Features/README.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), [producer-to-consumer execution traces](../../../CrossModule/FeatureExecutionTraces.md), and the [exact shader program catalog](Features/ShaderPrograms.md)
+Deeper routes: [Rendering a Sparkle Frame](RenderingASparkleFrame.md), [Renderer feature dossiers](Features/README.md), [pipeline materialization and typed binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md), [scene and view preparation](Features/SceneAndViewPreparation/README.md), [mesh and texture residency](Features/GeometryAndResources/MeshAndTextureResidency.md), [temporal sampling and history](Features/FrameExecution/TemporalSamplingAndHistory.md), [latency coordination](Features/FrameExecution/LatencyCoordination.md), [settings lifecycle](Features/RuntimeConfiguration/SettingsStateAndPersistence.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), [producer-to-consumer execution traces](../../../CrossModule/FeatureExecutionTraces.md), and the [exact shader program catalog](Features/ShaderRuntime/ShaderProgramCatalog.md)
 
 ## Module Documentation
 
@@ -61,6 +61,7 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 | `REN-PIPE-03` | Graphics and compute materialization | Implemented path | Compute runtimes are typed per shader/generation. Graphics pipelines are cached by shader generation/code, binding layout, blend/raster/depth/stencil/topology/vertex input, attachment formats, and sample count. Cache/native correctness is unproved. | `S` | Pending |
 | `REN-PIPE-04` | Native ray-pipeline and table materialization | Capability-gated | Registered raygen/miss/hit/callable composition becomes an RHI pipeline and table; scene tables require a valid plan plus exactly one opaque and one alpha-tested hit-group composition. | `S` | Pending |
 | `REN-PIPE-05` | Atomic shader-generation replacement | Implemented path | Reload opens/validates a complete generation, recreates every already-materialized holder, preserves the active generation on failure, swaps only after success, and retires the prior generation after all queue tokens complete. | `S` | Pending |
+| `REN-DIAG-08` | Shader hot reload | Implemented path | A newly published shader map/library is fully validated and materialized before generation swap; prior pipelines/programs retire after their queue submissions complete. This stable ID predates the pipeline-family split and remains here with its semantic owner. | `S` | Pending |
 
 ## Scene Preparation, Geometry, And Residency
 
@@ -73,9 +74,23 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 | `REN-SCENE-05` | Morph targets | Implemented path | Morph weights and GPU morph buffers contribute to raster deformation and motion; ray-tracing vertex positions are also updated. | `S` | Pending |
 | `REN-SCENE-06` | Ray-traced deforming geometry | Partial | Skinned/morphed ray-tracing positions are prepared on CPU, a dynamic vertex buffer is replaced, and the BLAS is fully rebuilt for each deforming instance. No BLAS refit/update producer was found. | `S` | Pending |
 | `REN-SCENE-07` | Static BLAS reuse | Implemented path | Unchanged static geometry reuses cached bottom-level acceleration structures. | `S` | Pending |
-| `REN-SCENE-08` | Mesh residency | Implemented path | Asynchronous mesh preparation/upload/residency tracking is bounded to 16 concurrent preparations in the inspected implementation. Budget/stall behavior is unmeasured. | `S` | Pending |
-| `REN-SCENE-09` | Texture residency | Implemented path | Asynchronous read/decode/upload/residency tracking is bounded to 16 concurrent loads in the inspected implementation. The limit is concurrency, not total decoded-memory capacity. | `S` | Pending |
+| `REN-SCENE-08` | Mesh residency | Implemented path | Mesh-owned residency defaults to 16 concurrent preparations, 256 requests, 512 MiB decoded, 256 MiB pending upload, and 2 GiB resident; activation and eviction wait on submission completion. Limits are fixed per cache, and pressure/stall/fallback behavior is unproved. | `S` | Pending |
+| `REN-SCENE-09` | Texture residency | Implemented path | Texture-owned residency uses the same separate defaults with 16 concurrent loads; cooked read/decode, upload, binding revision, generation replacement, and completion-safe eviction are implemented. Default textures use a synchronous bootstrap route; global memory-pressure behavior is absent. | `S` | Pending |
 | `REN-SCENE-10` | Automatic mesh batching | Implemented path | A public rendering setting selects automatic mesh batching. Visual identity and CPU/GPU benefit need workload evidence. | `S` | Pending |
+
+## Visibility And Draw Preparation
+
+| Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
+| --- | --- | --- | --- | --- | --- |
+| `REN-VIS-01` | Per-view frustum visibility | Implemented path | Prepared primitive world AABBs are tested against the current view frustum in a bounded parallel task graph. Invalid bounds conservatively remain visible. Correctness and cost are unproved. | `S` | Pending |
+| `REN-VIS-02` | Material visibility classification | Partial | Alpha modes classify as opaque, alpha-tested, transparent, or rejected before batching. Opaque/alpha-tested feed the established deferred path; transparent classification and ordering do not constitute complete blended-transparency support. | `S` | Pending |
+| `REN-VIS-03` | Raster candidate validation | Implemented path | Draw index, GPU mesh, instance-group range, material binding, and classification are checked before a candidate enters a batch. Normal view preparation disables optional detailed batch diagnostics. | `S` | Pending |
+| `REN-VIS-04` | Authored/preserved groups | Implemented path | Compatible non-transparent authored and shared-mesh-reference groups with at least two visible items remain grouped; incompatible groups fall back to ordinary batching. | `S` | Pending |
+| `REN-VIS-05` | Opaque sorting and auto batching | Implemented path | Remaining opaque/alpha-tested work is stably sorted by complete current batch key plus object tie-break and contiguous equal keys batch when `r.MeshAutoBatching` is enabled. Equivalence and benefit are unproved. | `S` | Pending |
+| `REN-VIS-06` | Transparent draw preparation | Partial | Transparent candidates are stable-sorted back-to-front by squared bounds-center distance with object tie-break and emitted as single batches. No complete blend/order-independent/refraction/transmission product is claimed. | `S` | Pending |
+| `REN-VIS-07` | Visibility task/failure bounds | Implemented path | Capacity is at least 128 then next-power-of-two of bounded primitive count; grain 64, serial threshold 128, at most 8 partitions. Task failure clears indices, batches, and workload rather than publishing a prefix. | `S` | Pending |
+| `REN-VIS-08` | Visibility/batch workload facts | Partial | View workload records static/skinned visible instances and batches; optional builder diagnostics can count rejection/group/batch details and estimated saved draws, but the normal path does not collect them. | `S` | Pending |
+| `REN-VIS-09` | Advanced visibility/draw generation | Not found | No occlusion/HZB, portal, cluster/meshlet, LOD selection, GPU-driven/indirect/multi-draw, stereo-instancing, or multiview route was found. | `S` | Excluded unless later admitted |
 
 ## Temporal Sampling And History
 
@@ -87,9 +102,21 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 | `REN-TEMP-04` | Motion and reprojection convention | Implemented path | Raster position is jittered; motion vectors are emitted unjittered; ReSTIR reprojection applies the current-to-previous jitter-grid delta; invalid history emits no geometric motion history. Cross-consumer numerical parity is unproved. | `S` | Pending |
 | `REN-TEMP-05` | Provider temporal constants | Capability-gated | Streamline receives pixel-space jitter, previous/current transforms, unjittered-motion declaration, and reset state from the same view temporal uniform. Provider/backend/resize behavior is unproved. | `S` | Pending |
 
+## Resolution, Sampling, And Anti-Aliasing
+
+| Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
+| --- | --- | --- | --- | --- | --- |
+| `REN-RESO-01` | Output extent resolution | Implemented path | A valid viewport request extent wins; otherwise `FramePipeline` uses the window extent. Output extent enters graph settings and swapchain/offscreen product selection. Boundary and resize behavior are unproved. | `S` | Pending |
+| `REN-RESO-02` | Render extent resolution | Implemented/capability-gated | With no external provider the render extent equals output extent. Active DLSS SR/RR providers may resolve an optimal internal extent from output extent and quality. Requested/active extent reporting is incomplete. | `S` | Pending |
+| `REN-RESO-03` | Extent-driven topology and history | Implemented path | Render/output extent differences enter graph resources, view state, provider inputs and topology comparison; resize/topology invalidates common/provider history and retires old graph/provider generations by completion. | `S` | Pending |
+| `REN-RESO-04` | Active raster sample count | Implemented path | Current Renderer graph/pass attachment descriptions resolve to the default single-sample path and materialized pipelines match attachment sample count. A complete enumeration/runtime proof remains open. | `S` | Pending |
+| `REN-RESO-05` | Renderer MSAA | Not found | RHI resource/pipeline validation admits sample counts 1/2/4/8 and a source-only MSAA jitter table exists, but no Renderer selector, multisampled pass topology, compatible resolve, or active `RenderViewState` selection was found. | `S` | Excluded unless later admitted |
+| `REN-RESO-06` | Standalone post-process AA | Not found | No independently selected TAA, FXAA, or SMAA pass/algorithm was found. The active Halton jitter and DLSS `NativeAA` quality mode must not be advertised as a generic standalone AA implementation. | `S` | Excluded unless later admitted |
+| `REN-RESO-07` | Dynamic resolution | Not found | No frame-time controller, automatic resolution scaler, target budget, min/max percentage, hysteresis, selector, or telemetry route was found. Provider-chosen extent for a requested quality mode is not dynamic resolution. | `S` | Excluded unless later admitted |
+
 ## Deferred Material And GBuffer Contract
 
-### Material components consumed today
+### Material Components Consumed Today
 
 | Capability ID | Component | Authored/GPU coverage | Raster GBuffer | Ray GBuffer and ray/path consumers |
 | --- | --- | --- | --- | --- |
@@ -106,7 +133,7 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 
 No complete clear-coat, sheen, transmission/refraction, authored index-of-refraction, or anisotropic-material-lobe path was found in this inventory. Those terms must not be included under a generic “PBR supported” claim.
 
-### GBuffer outputs
+### GBuffer Outputs
 
 | Capability ID | Output | Stored semantics |
 | --- | --- | --- |
@@ -119,7 +146,7 @@ No complete clear-coat, sheen, transmission/refraction, authored index-of-refrac
 | `REN-GBUF-07` | Device depth | Depth attachment produced by the GBuffer frontend. |
 | `REN-GBUF-08` | Scene depth | Linearized depth derived after GBuffer production. |
 
-### Frontends and limits
+### Frontends And Limits
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
@@ -153,7 +180,7 @@ Capacities above are hard implementation limits from this snapshot, not recommen
 | Capability ID | Mode/effect | State | Exact algorithm and traversal coverage | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
 | `REN-LGT-01` | ReSTIR path-traced lighting | Capability-gated | Primary GBuffer plus direct-light reservoir generation, temporal reuse, spatial reuse, and ray-traced visibility; indirect reservoir temporal/spatial/resolve; shared lighting composite and sky. | `S` | Pending |
-| `REN-LGT-04` | Reference path-traced lighting | Capability-gated | A GBuffer-seeded inline path sample produces direct and indirect radiance into RGBA32F accumulation/history before shared composite/sky. It shares primary surface, material/light/shadow, frame-history, and presentation dependencies; the [completion study](../../../../Research/OfflinePathTracerCompletion.md) therefore classifies current output as a candidate comparison, not an accepted unbiased oracle. | `S` | Pending; `PTD-00` |
+| `REN-LGT-04` | Reference path-traced lighting | Capability-gated | A GBuffer-seeded inline path sample produces direct and indirect radiance into RGBA32F accumulation/history before shared composite/sky. It shares primary surface, material/light/shadow, frame-history, and presentation dependencies; the [completion study](../../../../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) therefore classifies current output as a candidate comparison, not an accepted unbiased oracle. | `S` | Pending; `PTD-00` |
 | `REN-LGT-05` | Accumulation invalidation | Implemented path | Scene, camera/view, settings, extent, and relevant lighting state contribute to reference/ReSTIR history validity. Completeness under every editor action requires runtime testing. | `S` | Pending |
 | `REN-LGT-06` | Lighting composite | Implemented path | Direct diffuse, direct specular, direct subsurface, indirect diffuse, indirect specular, and GBuffer emissive are combined before post processing. | `S` | Pending |
 
@@ -296,7 +323,6 @@ Each selectable mode needs a representative screenshot/capture, expected-value d
 | `REN-DIAG-05` | Viewport products | Implemented path | Viewports can target the swapchain or offscreen products used by editor/UI consumers. Product lifetime follows frame retirement. | `S` | Pending |
 | `REN-DIAG-06` | Async captures | Partial | Requested viewport/final or intermediate products flow through RHI readback and later completion polling. Results record frame, scene, and provider generations, dimensions, row pitch, pixel format, artifact, and failure; shader/graph-topology generation plus requested-versus-resolved product and color/encoding provenance are not carried. Format/color correctness needs runtime proof. | `S` | Pending |
 | `REN-DIAG-07` | Mesh preview | Implemented path | Renderer exposes a mesh-preview product/handle route for editor consumers. | `S` | Pending |
-| `REN-DIAG-08` | Shader hot reload | Implemented path | A newly published shader map/library is fully validated and materialized before generation swap; prior pipelines/programs retire after their queue submissions complete. | `S` | Pending |
 
 ## Settings State And Persistence
 
@@ -312,11 +338,11 @@ Each selectable mode needs a representative screenshot/capture, expected-value d
 
 The inspected public settings cover VSync, back-buffer format, adapter preference, tone mapper, exposure, output encoding, upscaler and quality, ray reconstruction, GBuffer frontend, ray-tracing execution, lighting mode, automatic mesh batching, classic TLAS refit, partitioned TLAS activation/planning controls, and view mode. Direct-shadow traversal also has a console-variable surface even where it is not mirrored by the same public settings object. `r.BackBufferCount` and `r.MaximumFramesInFlight` are RHI console controls outside the Renderer settings state/persistence. `r.Material.BindingMode` is registered but has no inspected runtime consumer; its `Everything` value is vocabulary, not an active selectable result.
 
-The settings section persists 27 named Renderer CVars in `/Script/SparkleRenderer.EngineRenderingSettings` inside workspace `Config/DefaultEngine.ini`, replacing that section while retaining other sections. View mode is session state and is not in that persisted set. Adapter preference and back-buffer format are written immediately but reported as pending restart; the other section values are applied to Renderer CVars on commit. The full lifecycle and known in-place-write/diagnostic gaps are owned by [Settings State and Persistence](Features/RenderingSettingsLifecycle.md).
+The settings section persists 27 named Renderer CVars in `/Script/SparkleRenderer.EngineRenderingSettings` inside workspace `Config/DefaultEngine.ini`, replacing that section while retaining other sections. View mode is session state and is not in that persisted set. Adapter preference and back-buffer format are written immediately but reported as pending restart; the other section values are applied to Renderer CVars on commit. The full lifecycle and known in-place-write/diagnostic gaps are owned by [Settings State and Persistence](Features/RuntimeConfiguration/SettingsStateAndPersistence.md).
 
 Release inventory must be generated from both UI/public settings and console/config surfaces. A hidden but reachable command or CVar is still a selectable capability unless Shipping erases or locks it.
 
-No current selector exists for Volumetric Lighting, deferred decals, color grading, chromatic aberration, frame generation, HDR display output, or a non-ray lighting fallback because those product paths are absent. The exact current route, defaults, clamps, persistence, known unused selector, and deliberately absent selector set are in the [Feature Selector Catalog](Features/FeatureSelectors.md).
+No current selector exists for Volumetric Lighting, deferred decals, color grading, chromatic aberration, frame generation, HDR display output, or a non-ray lighting fallback because those product paths are absent. The exact current route, defaults, clamps, persistence, known unused selector, and deliberately absent selector set are in the [Feature Selector Catalog](Features/RuntimeConfiguration/FeatureSelectorCatalog.md).
 
 ## Explicit Non-Claims And Shipping Risks
 
@@ -331,6 +357,8 @@ No current selector exists for Volumetric Lighting, deferred decals, color gradi
 - Async compute and parallel recording are implemented scheduling paths, not proven speedups.
 - Typed parameter validation and pipeline caches are implemented mechanisms, not native pipeline correctness or hot-reload stress evidence.
 - The active temporal jitter is the 16-frame Halton route. Other source pattern implementations are not public modes, and common-history correctness is unproved.
+- The current Renderer is single-sample at its active raster attachments. RHI 2/4/8 sample-count vocabulary and an unused MSAA jitter helper do not establish MSAA; no standalone TAA/FXAA/SMAA or dynamic-resolution controller was found.
+- Visibility is CPU frustum/AABB plus deterministic classification/sort/batch preparation. No occlusion, LOD selection, GPU-driven/indirect draw, stereo, or multiview route was found.
 - Mesh and texture caches have separate fixed residency budgets and concurrency limits; they do not constitute global memory-pressure streaming, prioritization, LRU eviction, or graceful degradation.
 - Streamline PCL/Reflex is optional, D3D12-only in the inspected route, has no public active-mode report, narrows the 64-bit frame ID for provider tokens, and has no measured latency claim.
 - Settings persistence rewrites a workspace INI section in place and reports no write/parse failure; package-safe durable persistence is not established.

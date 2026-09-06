@@ -6,7 +6,7 @@ Snapshot: implementation behavior rechecked 2026-09-06 against source revision `
 
 Scope: `REN-DBG-01` through `REN-DBG-04` and `REN-POST-10`; current debug-visualization modes, source products, tone/output interaction, viewport resolution, limitations, and the boundary to the target presentation architecture
 
-Target architecture: [Debug View Presentation Architecture](PresentationArchitecture.md)
+Target architecture: [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
 Delivery authority: [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md)
 
@@ -55,5 +55,5 @@ Exposure metering itself is already ordered usefully. It reads the original scen
 
 - The selected `RenderViewMode` is view intent; `VisualizeBuffers` owns conversion from the requested source product to visualization color; the shared presentation chain owns exposure, tone mapping, and output encoding.
 - Missing or inapplicable source products must not be presented as a valid diagnostic result. Requested mode, resolved mode/product, viewport/frame/scene identity, and presentation transform need capture-visible provenance.
-- Current `REN-POST-10` state is Partial because diagnostic color still passes through the common presentation transform. The [target architecture](PresentationArchitecture.md) defines scene-referred HDR versus exact display-linear domains; it is not implemented merely because this dossier links it.
+- Current `REN-POST-10` state is Partial because diagnostic color still passes through the common presentation transform. [Debug View Presentation Architecture](PresentationArchitecture.md) defines scene-referred HDR versus exact display-linear domains, while [View Modes And Show Flags](ViewModesAndShowFlags.md) owns viewport resolution; neither is implemented merely because this dossier links it.
 - `REN-E18` owns representative output and transform checks for all modes. `REN-E21` owns product attribution and capture provenance. The acceptance contract owns the completion verdict.

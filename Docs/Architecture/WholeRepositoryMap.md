@@ -135,28 +135,28 @@ The `FrameGraph` object is rebuilt when output/topology, provider selection, lig
 
 | Feature | Current source owner and state |
 | --- | --- |
-| GBuffer | `Passes/GBuffer`; explicit rasterized and ray-traced algorithms. [Feature dossier](Modules/Engine/Renderer/Features/GeometryMaterialsAndGBuffer.md). |
+| GBuffer | `Passes/GBuffer`; explicit rasterized and ray-traced algorithms. [Feature dossier](Modules/Engine/Renderer/Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md). |
 | Lighting | `Passes/Lighting` plus ReSTIR/reference producers; one family contract owns mode selection, lobe composition, sky boundary, and the Direct/Indirect/Volumetric taxonomy. [Family dossier](Modules/Engine/Renderer/Features/Lighting/README.md). |
 | Direct lighting | `Passes/Lighting/Direct`, `Passes/Lighting/Shadows`, and the direct portions of ReSTIR/reference; four analytic light kinds feed direct diffuse/specular/subsurface lobes. [Feature dossier](Modules/Engine/Renderer/Features/Lighting/DirectLighting.md). |
 | Indirect lighting | ReSTIR indirect and reference secondary-path owners feed indirect diffuse/specular lobes; sky is the environment/background boundary. [Feature dossier](Modules/Engine/Renderer/Features/Lighting/IndirectLighting.md). |
 | Volumetric lighting | No participating-media, fog, scattering/transmittance, atmosphere, aerial-perspective product, pass, shader, or scene representation exists. [Negative capability dossier](Modules/Engine/Renderer/Features/Lighting/VolumetricLighting.md). |
 | Deferred decals | No current authoring, scene/GPU data, primary GBuffer composition, or secondary-ray evaluation path exists; target design is kept separate from current state. [Feature-gap dossier](Modules/Engine/Renderer/Features/DeferredDecals/README.md). |
 | Post Processing | `Passes/PostProcessing`, `Passes/Presentation`, provider stacks, and output publication form one ordered family. [Family dossier](Modules/Engine/Renderer/Features/PostProcessing/README.md). |
-| Exposure | `Passes/PostProcessing/Exposure`; per-view manual/automatic metering and adaptation. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/Exposure.md). |
-| Image reconstruction/upscaling | `Passes/Presentation/Upscaling`, provider stack, and ReSTIR reconstruction; one output-extent resolved product. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/ImageReconstructionAndUpscaling.md). |
-| Tone mapping | `Passes/Presentation/ToneMapping`; exposure-weighted HDR to display-linear mapping through three fixed operators. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/ToneMapping.md). |
-| Color grading | No grading controls, LUT workflow, transform, pass, shader, or selector exists. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/ColorGrading.md). |
-| Chromatic aberration | No lens/channel model, pass, shader, viewport setting, or selector exists. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/ChromaticAberration.md). |
-| Frame generation | No synthesis provider, DLSS-G registration, optical-flow input, generated-frame identity, pacing, UI, or present route exists; Reflex is latency infrastructure. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/FrameGeneration.md). |
-| Presentation/output | `Passes/Debug` and `Passes/Presentation`; debug handoff, output encoding, and output publication after tone mapping. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/PresentationAndOutput.md). |
-| UI/viewport composition | `Private/UI` and `Private/Editor`; immutable packets, host overlay, editor viewport texture binding, and generation checks. [Feature dossier](Modules/Engine/Renderer/Features/UiAndViewportComposition.md). |
+| Exposure | `Passes/PostProcessing/Exposure`; per-view manual/automatic metering and adaptation. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/Exposure.md). |
+| Image reconstruction/upscaling | `Passes/Presentation/Upscaling`, provider stack, and ReSTIR reconstruction; one output-extent resolved product. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md). |
+| Tone mapping | `Passes/Presentation/ToneMapping`; exposure-weighted HDR to display-linear mapping through three fixed operators. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ToneMapping.md). |
+| Color grading | No grading controls, LUT workflow, transform, pass, shader, or selector exists. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ColorGrading.md). |
+| Chromatic aberration | No lens/channel model, pass, shader, viewport setting, or selector exists. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration.md). |
+| Frame generation | No synthesis provider, DLSS-G registration, optical-flow input, generated-frame identity, pacing, UI, or present route exists; Reflex is latency infrastructure. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md). |
+| Presentation/output | `Passes/Debug` and `Passes/Presentation`; debug handoff, output encoding, and output publication after tone mapping. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/PresentationAndOutput.md). |
+| UI/viewport composition | `Private/UI` and `Private/Editor`; immutable packets, host overlay, editor viewport texture binding, and generation checks. [Feature dossier](Modules/Engine/Renderer/Features/ViewportAndDiagnostics/UiAndViewportComposition.md). |
 | Persistent GPU scene | `Scene/GpuScene`; geometry, material, lighting, and ray-tracing bindings derived from `RenderScene` |
 | Ray-tracing scene | `Scene/RayTracing` plus `RayTracing/Acceleration`; classic and capability-gated partitioned TLAS share scene identity |
 | Dual RT execution | GBuffer and direct-shadow effects have typed inline-query and native-pipeline source frontends selected before graph construction. [Feature dossier](Modules/Engine/Renderer/Features/RayTracing/README.md). |
 | Shader-table mapping | `RayTracingShaderTablePlan` owns Surface/ShadowVisibility order, checked record indexing, instance contributions, invalidation, and bounded metrics |
 | Image providers | Renderer-owned provider stack with NVIDIA Streamline/DLSS adapters and non-provider presentation paths |
 | Debug views | 16 final/material/GBuffer/lighting/scene modes; current common presentation can alter diagnostic values. [Feature dossier](Modules/Engine/Renderer/Features/DebugViews/README.md). |
-| Diagnostics, products, and capture | bounded Renderer/RHI snapshots plus viewport-product publication and capture; generated evidence is not implementation authority. [Feature dossier](Modules/Engine/Renderer/Features/DiagnosticsProductsAndCapture.md). |
+| Diagnostics, products, and capture | bounded Renderer/RHI snapshots plus viewport-product publication and capture; generated evidence is not implementation authority. [Feature dossier](Modules/Engine/Renderer/Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md). |
 
 The native D3D12/Vulkan ray-tracing pipeline, shader-table, and trace-command source paths are present, as are reachable GBuffer and shadow compositions. Current documentation does not claim paired native execution, output parity, reload/retirement behavior, or performance proof; those remain open in the [Shader System feature acceptance contract](CrossModule/ShaderSystem/Acceptance.md).
 

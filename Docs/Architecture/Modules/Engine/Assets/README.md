@@ -16,7 +16,7 @@ Evidence and disposition: [Capability Evidence Plan](../../../../Plans/Capabilit
 
 | ID | Family | Current content and purpose | Coverage boundary | Evidence |
 | --- | --- | --- | --- | --- |
-| `EASSET-001` | Shader entry sources | 29 `.hlsl` files implement registered compute, raster, ray-tracing, lighting, post, presentation, and debug entry points. Exact registrations are in the [Shader Program Catalog](../Renderer/Features/ShaderPrograms.md). | An `.hlsl` file without a typed registration is not a runtime shader capability. | `S` |
+| `EASSET-001` | Shader entry sources | 29 `.hlsl` files implement registered compute, raster, ray-tracing, lighting, post, presentation, and debug entry points. Exact registrations are in the [Shader Program Catalog](../Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md). | An `.hlsl` file without a typed registration is not a runtime shader capability. | `S` |
 | `EASSET-002` | Shader includes/contracts | 91 `.hlsli` files cover BRDF, common math/color/random/sampling, geometry/skinning/morphing, light/reservoir logic, materials, GBuffer packing, ray traversal/hit semantics, and CPU/GPU uniform layouts. | Macro alternatives and unused includes are not advertised features. | `S` |
 | `EASSET-003` | Default textures | Eight PNGs: black, blue, checkerboard, cubemap, green, normal, red, and white. Asset cooking supplies fallback texture products and Renderer binds them when material slots are absent. | Fallback correctness and package presence require execution/package evidence. | `S` |
 | `EASSET-004` | Sky environments | Four 4K EXR panoramas: autumn hill, evening road, Goegap road, and red church. | Presence does not prove every level uses or packages them. | `S` |

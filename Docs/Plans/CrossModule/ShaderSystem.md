@@ -8,7 +8,7 @@ Architecture authority: [Shader System Architecture](../../Architecture/CrossMod
 
 Feature acceptance: [Shader System — Acceptance](../../Architecture/CrossModule/ShaderSystem/Acceptance.md)
 
-Migration provenance: [Shader System Migration Baseline](../../Research/ShaderSystemMigrationBaseline.md)
+Migration provenance: [Shader System Migration Baseline](../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md)
 
 ## Purpose And Authority
 
@@ -37,7 +37,7 @@ Mandatory references for every phase:
 - [Renderer/RHI boundary](../../Architecture/Decisions/RendererRhiBoundary.md)
 - [Whole Repository Architecture Map](../../Architecture/WholeRepositoryMap.md)
 - [Ray-tracing target architecture](../../Architecture/Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md)
-- [External Renderer Repository Comparison](../../Research/RendererRepositories.md)
+- [External Renderer Repository Comparison](../../Research/GraphicsArchitecture/RendererRepositories.md)
 
 Before editing, the implementer must record the phase outcome, current authority being replaced or extended, mutable and lifetime owners, producer-to-product-to-consumer route, build/generated-artifact membership, copy and complexity budget, performance classification, selected standards/workload gates, exact rejected-name search set, semantic-equivalent search set, and unrelated dirty-path exclusions. The inventory must walk definitions to all uses and representative uses back to their owner; a name-only list is insufficient.
 
@@ -1055,7 +1055,7 @@ Local authority and workloads:
 
 - [Ray-tracing target architecture](../../Architecture/Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md)
 - [Renderer/RHI boundary](../../Architecture/Decisions/RendererRhiBoundary.md)
-- [External Renderer Repository Comparison](../../Research/RendererRepositories.md)
+- [External Renderer Repository Comparison](../../Research/GraphicsArchitecture/RendererRepositories.md)
 - [Strategy Requirements](../../Strategy/Requirements.md)
 - [Renderer Engineering](../../Engineering/Modules/Renderer.md) and [RHI Engineering](../../Engineering/Modules/RHI.md)
 - [Validation, Performance, and Evidence](../../Engineering/Verification/ValidationAndEvidence.md)

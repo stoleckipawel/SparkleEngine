@@ -6,5 +6,5 @@ These plans are primarily owned by `Engine/Renderer`. Links name collaborating m
 
 | Plan | Delivers | Architecture owner |
 | --- | --- | --- |
-| [Debug View Presentation](DebugViewPresentation.md) | per-view show flags, display mapping, editor controls, and capture metadata | [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md) |
+| [Debug View Presentation](DebugViewPresentation.md) | per-view show flags, display mapping, editor controls, and capture metadata | [View Modes And Show Flags](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md) |
 | [Deferred GBuffer Decals](DeferredGBufferDecals.md) | decal authoring, scene/GPU data, raster composition, and ray integration | [Deferred Decal Composition Architecture](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/CompositionArchitecture.md) |
