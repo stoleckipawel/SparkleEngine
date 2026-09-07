@@ -4,6 +4,9 @@
 
 Acceptance orchestrates progress across features, workloads, and releases. It owns shared completion vocabulary, candidate-report structure, workload gates, release gates, and high-level status; it does not maintain a second feature-documentation tree.
 
+> [!IMPORTANT]
+> Open [Current Feature Readiness](CurrentReadiness.md) when you need to know what exists now, what is partial or missing, and why a feature is not further along. Its 0–100 score is an orientation projection; the binary feature and release gates remain authoritative.
+
 The owning [Architecture](../Architecture/README.md) feature dossier defines each feature together with its local criteria, controlled failure modes, checks, and definition of done. Acceptance links to those definitions and records what a release candidate actually proved. It does not set priority, prescribe implementation design, or duplicate feature matrices.
 
 ## At A Glance
@@ -28,6 +31,7 @@ The current first release remains `Blocked`. Source presence and registry covera
 
 | Contract | Responsibility |
 | --- | --- |
+| [Current Feature Readiness](CurrentReadiness.md) | current 0–100 implementation, integration, verification, and delivery grade for every tracked family plus explicit missing capabilities |
 | [First Release Acceptance](FirstRelease.md) | whole-release scope, consumer/source-adopter, packaging, security, failure, clean-machine, publication, and stabilization gates |
 | [Feature Completion Reports](FeatureCompletionReports.md) | per-feature polish, complete-path explanation, evidence record, and approval schema |
 | [Graphics Workloads](GraphicsWorkloads.md) | Bistro, San Miguel, scene-quality, performance, and evidence workloads |
@@ -42,6 +46,7 @@ The current first release remains `Blocked`. Source presence and registry covera
 | Which scenes and workload thresholds exercise several features together? | [Graphics Workloads](GraphicsWorkloads.md) |
 | Is the complete release acceptable? | [First Release Acceptance](FirstRelease.md) |
 | What did this exact candidate prove, fail, exclude, or leave blocked? | its `FCR-*` entry/report and retained evidence |
+| How far along is the current source/evidence position? | [Current Feature Readiness](CurrentReadiness.md); use the component breakdown, not the headline number alone |
 
 Do not add a feature-specific contract under `Docs/Acceptance`. Add it to the owning Architecture feature dossier, then link its stable IDs from the relevant report registry, workload, and release gate. Acceptance may summarize a disposition, but the summary must link to the feature owner and must not restate the detailed criteria or failure matrix.
 

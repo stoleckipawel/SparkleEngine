@@ -6,6 +6,22 @@
 
 **Authority boundary:** [Scene Preparation](ScenePreparation.md), [View Preparation](ViewPreparation.md), and [GPU-Scene Publication](GpuScenePublication.md) own their mechanisms. [Mesh and Texture Residency](../GeometryAndResources/MeshAndTextureResidency.md) owns resource state/budgets; [Temporal Sampling and History](../FrameExecution/TemporalSamplingAndHistory.md) owns jitter/history semantics. This page owns only the joins needed for one coherent prepared publication. Candidate results and release disposition remain in [Acceptance reporting](../../../../../../Acceptance/FeatureCompletionReports.md).
 
+## Acceptance At A Glance
+
+```mermaid
+flowchart LR
+    Submission[Accepted immutable submission] --> Scene[One prepared scene generation]
+    Submission --> ViewA[View A state]
+    Submission --> ViewB[View B state]
+    Scene --> Publish[Atomic GPU-scene publication]
+    ViewA --> Publish
+    ViewB --> Publish
+    Publish --> Consumers[Raster and ray consumers]
+    Failure[Cancellation, stale resource,<br/>capacity or identity failure] -. publishes nothing partial .-> Scene
+```
+
+The contract proves a join, not three isolated implementations. Scene data must remain shared, view data must remain independent, and publication must describe exactly one accepted identity across CPU preparation, residency, GPU buffers, and ray work. Serial/threaded and D3D12/Vulkan checks are equivalence obligations; successful execution on one route is not enough.
+
 ## Horizontal Coverage
 
 | Axis | Independently meaningful cells | Shared invariant |

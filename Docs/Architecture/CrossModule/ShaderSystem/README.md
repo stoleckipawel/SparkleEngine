@@ -10,6 +10,8 @@
 
 **Current source inventory:** [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md)
 
+**Current readiness:** **50/100** — the source-integrated shader route is substantial; candidate compiler/backend/ABI, failure, performance, package, and adoption evidence remains absent. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
 ## At A Glance
 
 | Current/reconciled foundation | Chosen architecture | Explicitly deferred or rejected |

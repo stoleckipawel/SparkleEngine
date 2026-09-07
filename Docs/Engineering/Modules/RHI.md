@@ -6,6 +6,18 @@
 
 This standard owns RHI and backend change guardrails. The canonical [Renderer and RHI Architecture Boundary](../../Architecture/Decisions/RendererRhiBoundary.md) owns the dependency and responsibility split. [Renderer Engineering](Renderer.md) owns scene/view/frame policy, render products, frame-graph semantics, and graphics feature selection.
 
+## Boundary Decisions At A Glance
+
+| Question | Renderer owns | RHI owns |
+| --- | --- | --- |
+| should a feature or pass run? | requested/active policy, semantic products, fallback or mandatory failure | reports neutral capability; does not select the feature |
+| what resources and dependencies exist? | frame-graph declarations, semantic uses, queue intent | validated native resources, transitions, waits, submissions, and completion |
+| what pipeline is needed? | complete neutral shader/geometry/attachment/fixed-state intent | native materialization and full-identity cache lifetime |
+| how is output presented? | output product and display intent | swapchain acquisition, resize, encoding-compatible native path, and present result |
+| why did native work fail? | preserves requesting feature/pass/resource identity | engine invariant rejection, API validation, device/driver diagnostics, and native error context |
+
+If an implementation needs a vendor name, native handle, swapchain image, or API enum above this boundary, first prove that the public neutral contract cannot express the real semantic difference. If backend code chooses lighting, quality, graph topology, or fallback, the policy is already too low.
+
 ## Neutral Contract Ownership
 
 - Public RHI contracts express backend-neutral resources, descriptors, commands, queues, synchronization, presentation, diagnostics, and capabilities without exposing native object types.

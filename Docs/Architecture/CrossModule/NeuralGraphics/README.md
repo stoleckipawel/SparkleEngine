@@ -8,6 +8,32 @@
 
 **Strategy sources:** [`PGE-03`, `PGE-04`, `PGE-11`, `PGE-12`](../../../Strategy/Requirements.md), [Executive Summary](../../../Strategy/ExecutiveSummary.md), [Gap Assessment](../../../Strategy/Assessments/GapAssessment.md), and [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
 
+**Current readiness:** **0/100** — target only; no owned dataset/training, model publication, lowering, generated kernel, or runtime inference feature was found. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## At A Glance
+
+| Layer | Current state | Required owned result |
+| --- | --- | --- |
+| problem and dataset | Not found | one bounded graphics problem, licensed/provenanced data, immutable splits, and a classical/reference target |
+| model and training | Not found | owned operator/model, reproducible recipe, checkpoints, metrics, and accepted artifact |
+| evaluation | Not found | independent quality, temporal, robustness, cost, and distribution-shift comparison |
+| export/lowering/kernel | Not found | inspectable legalization, fusion, layout/precision decisions, kernel identity, and numerical equivalence |
+| Renderer/RHI runtime | Not found | typed inputs/output/history, capability selection, classical fallback, dispatch, synchronization, and retirement |
+| product delivery | Not found | manifested model/kernel/runtime bytes, licenses, compatibility, clean-machine result, and support boundary |
+
+```mermaid
+flowchart LR
+    Problem[Bounded graphics problem and oracle] --> Data[Provenanced dataset and frozen splits]
+    Data --> Train[Owned model and reproducible training]
+    Train --> Evaluate[Independent quality and cost evaluation]
+    Evaluate --> Lower[Export, legalize, optimize, and generate/select kernels]
+    Lower --> Runtime[Renderer/RHI typed inference with classical fallback]
+    Runtime --> Package[Manifested product artifact]
+    Package --> Workload[Bistro/San Miguel evidence]
+```
+
+Existing NVIDIA reconstruction providers enter at an external runtime-inference boundary only. They are valuable integrations, but they do not satisfy any owned data, training, model, lowering, kernel, or evaluation row above.
+
 ## Capability Identity
 
 | ID family | Capability | Current state |
@@ -41,3 +67,12 @@ No arrow in this route is implemented merely because this target dossier exists.
 - Renderer owns requested/active feature selection, inputs, output/history identity, fallback, and user-facing diagnostics. RHI owns neutral GPU mechanisms and backend lowering.
 - Build/Packaging owns immutable model/kernel delivery and redistribution. Showcase owns only representative workload selection, not feature truth.
 - Classical and neural paths share one observable output contract so quality/performance comparisons are meaningful.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or constraint |
+| --- | --- | --- |
+| Start from one bounded user-visible problem | Success and non-goals can be measured | Does not create a generic ML platform |
+| Keep model semantics separate from backend kernels | One oracle can validate several optimized implementations | Export/lowering ABI and numerical drift become explicit contracts |
+| Require a classical fallback with one output contract | Quality, latency, memory, and failure comparisons are meaningful | Both paths must remain maintained and semantically aligned |
+| Publish immutable model/kernel generations | Reproduction, rollback, and completion-safe runtime use remain possible | Artifacts, compatibility, retention, and packaging add product complexity |

@@ -10,7 +10,20 @@
 
 **Release/workload orchestration:** [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
 
+**Current readiness:** **0/100** — this is a future proof contract for a feature whose implementation is not present or roadmap-admitted. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 This file is part of the Geometry Cache Animation architecture set and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
+
+## Acceptance At A Glance
+
+| The gate joins | Defect it must expose |
+| --- | --- |
+| source metadata -> normalized cooked samples | plausible geometry with wrong axis, units, handedness, topology, time, or material slots |
+| cooked samples -> bounded playback/residency | unbounded expansion, stale generation publication, cancellation leaks, or random-seek stalls |
+| current/previous deformation -> raster and ray consumers | frozen animation, invalid motion, mismatched bounds, or raster/ray geometry divergence |
+| representative Knight fixture -> retained evidence | a beauty-only result that cannot distinguish importer, codec, lifetime, material, or shading faults |
+
+No visual pass can compensate for a failed metadata, determinism, capacity, retirement, or consumer-parity check. Until roadmap admission and implementation occur, every row remains a planned contract rather than candidate evidence.
 
 ## Traceability And Current Disposition
 

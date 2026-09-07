@@ -6,10 +6,14 @@
 
 **Current-state basis:** source and build configuration inspected 2026-09-06 at committed `master` revision `8414b5dc`
 
+**Current readiness:** **45/100** portfolio average (`I/R` present; `V/D = 0/0`); all six tracked RHI families remain Blocked. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
 The Render Hardware Interface (RHI) translates backend-neutral GPU work into one active D3D12 or Vulkan implementation. It owns GPU mechanisms; Renderer owns what those mechanisms mean for a frame.
 
 > [!IMPORTANT]
 > **Current state:** D3D12 and Vulkan source paths cover device creation, resources, descriptors, pipelines, commands, ray tracing, presentation, diagnostics, and capture.
+>
+> **Readiness:** **45/100** — broad source paths exist, but there is no candidate-bound backend execution, native-validation, parity, or delivery evidence.
 >
 > **Main limitation:** No current candidate has proved the backend matrix with builds, device runs, native validation, parity, fault injection, performance, or packaged operation.
 >

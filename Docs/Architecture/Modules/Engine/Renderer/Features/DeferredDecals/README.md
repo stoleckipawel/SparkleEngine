@@ -12,6 +12,17 @@
 
 **Feature acceptance:** [Deferred GBuffer Decals — Acceptance](Acceptance.md)
 
+## At A Glance
+
+| Required capability | Current state | Existing seam is not the feature |
+| --- | --- | --- |
+| authored/imported/cooked decal data | Not found | ordinary materials and mesh components do not describe projected decal volumes |
+| scene/GPU-scene decal publication | Not found | the existing material texture table carries base-material data only |
+| primary raster/ray GBuffer composition | Not found | blend-state support cannot express per-field GBuffer composition by itself |
+| arbitrary secondary-ray decal evaluation | Not found | current ray-hit material reconstruction evaluates the base material only |
+
+The selected future shape is one material-overlay contract shared by raster and ray visibility, with composition before lighting. Until all four rows have real owners and reachability, this page remains a negative-capability record rather than a feature plan or support claim.
+
 Code and executable build configuration remain authoritative. Reinspect every listed owner and absence before using this dated snapshot for implementation or release claims.
 
 ## Source-Backed Snapshot

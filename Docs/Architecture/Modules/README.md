@@ -10,6 +10,8 @@
 
 **Per-feature candidate report authority:** [First Release Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md)
 
+**Current readiness authority:** [Current Feature Readiness](../../Acceptance/CurrentReadiness.md)
+
 **Sequencing authority:** [Release-First Principal Graphics Roadmap](../../Strategy/Roadmap.md)
 
 ## At A Glance
@@ -35,6 +37,7 @@ flowchart LR
 | who owns a source capability | the Engine, Tools, Projects, or Build page below |
 | how a capability travels across owners | [Cross-Module Architecture](../CrossModule/README.md) |
 | whether a candidate actually passed | [Acceptance](../../Acceptance/README.md) |
+| how far implementation, integration, verification, and delivery have progressed | [Current Feature Readiness](../../Acceptance/CurrentReadiness.md) |
 
 ## Browse By Repository Boundary
 

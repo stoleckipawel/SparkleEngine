@@ -10,6 +10,32 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **45/100** — runtime/editor host integration exists in source; candidate lifecycle, failure, performance, package, and adoption evidence is absent. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
+
+## At A Glance
+
+| Responsibility | Current route | Important limit |
+| --- | --- | --- |
+| product composition | separate runtime and editor hosts share one application lifecycle | editor-only code is build-separated, but final package isolation remains unproved |
+| frame loop | input -> window -> time -> level/world simulation -> render submission -> Renderer | shutdown, minimize, and failure behavior need executable evidence |
+| render execution | serial or dedicated render-thread coordination; pipeline depth 0..2 under frames-in-flight bound | equivalence, backpressure, and long-run settlement unproved |
+| developer interaction | command-line CVars, optional runtime console, editor operations, shader recook, viewport capture | malformed command-line assignments are currently ignored by the adapter |
+| ownership | Application constructs and destroys platform, tasks, world, level, Renderer, and UI hosts in explicit order | it coordinates modules but must not become their implementation authority |
+
+```mermaid
+flowchart LR
+    Entry[Runtime or editor entry] --> Configure[Apply process configuration]
+    Configure --> Owners[Construct platform, tasks, world, level, and Renderer owners]
+    Owners --> Loop[Poll input and advance time]
+    Loop --> World[Update world and extract immutable submission]
+    World --> Render[Submit through serial or threaded Renderer route]
+    Render --> Product[Present viewport/UI products]
+    Product --> Loop
+    Loop --> Shutdown[Settle and destroy in reverse dependency order]
+```
+
+The module is a composition root. Its quality depends on preserving the boundaries below rather than absorbing world, rendering, tool, or editor policy into the host loop.
+
 ## Product Split
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

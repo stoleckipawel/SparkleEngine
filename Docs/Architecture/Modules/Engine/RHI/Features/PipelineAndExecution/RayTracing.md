@@ -6,6 +6,34 @@
 
 **Scope:** `RHI-RT-*` and RHI-side `RHI-RTC-*`; acceleration structures, inline queries, native pipelines, shader tables, classic TLAS, partitioned TLAS, transforms, capability gates, and native lowering
 
+**Current readiness:** **40/100** — AS, inline, native-pipeline, shader-table, and partitioned vocabulary/routes exist but remain capability-gated and unproved across devices/backends/effects. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
+## At A Glance
+
+| Capability | Current RHI contract | Does not imply |
+| --- | --- | --- |
+| triangle BLAS and classic TLAS | neutral geometry/instance descriptions, sizing, build, address, and completion lifetime | procedural geometry, every update/refit mode, or valid Renderer scene mapping |
+| inline ray queries | capability-gated traversal from compute/pixel shader contracts | native ray-pipeline support or parity for every effect |
+| native ray pipelines | exports, hit groups, pipeline creation, `TraceRays`, and shader-table regions | correct logical record mapping or inline-path equivalence |
+| shader binding table (SBT) | alignment, stride, regions, and record bytes | correct Renderer material/instance semantics without the higher-level plan |
+| partitioned TLAS | vendor/API/capability-gated provider vocabulary and operations | general PTLAS availability, unrestricted updates, or backend symmetry |
+
+## Ray Work Lifecycle
+
+```mermaid
+flowchart LR
+    Geometry[Triangle geometry and instance descriptions] --> AS[Build BLAS and selected TLAS form]
+    AS --> Capability{Selected traversal supported?}
+    Capability -->|inline| Query[Record inline ray-query shader work]
+    Capability -->|native pipeline| SBT[Validate pipeline exports and SBT records]
+    SBT --> Trace[Record TraceRays]
+    Query --> Token[Completion token]
+    Trace --> Token
+    Token --> Retire[Retire AS, pipeline, and table generations]
+```
+
+RHI guarantees native mechanism validity; Renderer owns why a ray is traced and how scene/material identity maps into instances and records.
+
 ## Feature Promise
 
 RHI exposes separable capabilities for triangle acceleration structures, inline traversal, native ray pipelines, shader tables, classic TLAS update, and optional partitioned TLAS. Each request succeeds only when its exact contract is complete; one supported ray mechanism never implies support for every Renderer effect.
@@ -16,6 +44,15 @@ RHI exposes separable capabilities for triangle acceleration structures, inline 
 - Inline queries and native pipelines are distinct capabilities. Native pipelines own exports/hit groups and raygen/miss/hit/callable SBT regions.
 - Classic TLAS and partitioned TLAS are independent services. PTLAS remains vendor/API/capability gated and its public vocabulary exceeds the current Renderer-selected subset.
 - RHI owns native object, layout, and command validity. Renderer owns scene mapping, SBT record semantics, effect selection, and fallback/rejection policy.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| Model inline and native traversal separately | Devices/effects can use only the mechanism they actually support | Every shared effect needs semantic parity checks across frontends |
+| Keep scene/SBT semantics in Renderer | RHI remains a reusable mechanism layer | Native layout bugs and logical mapping bugs cross an ownership boundary |
+| Capability-gate every AS/traversal operation | Unsupported work fails before recording | Support matrices become multi-dimensional by API, adapter, provider, and operation |
+| Retire all ray generations by queue completion | Prevents stale AS/pipeline/SBT use | Dynamic scenes can retain large overlapping generations and need bounds |
 
 ## Acceptance Criteria
 

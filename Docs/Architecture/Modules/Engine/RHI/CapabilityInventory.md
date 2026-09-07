@@ -21,6 +21,8 @@
 > [!TIP]
 > This file is an exact backend/reference ledger, not the best introduction. Start with the [RHI overview](README.md), then search by `RHI-*` ID or contract heading. A neutral API row, a D3D12 cell, and a Vulkan cell are separate claims; read their limits and evidence before inferring support or parity.
 
+**Current readiness:** **45/100** across the tracked RHI portfolio; this ledger proves source coverage only and adds no verification or delivery credit. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
 ## Module Documentation
 
 | Reader need | Owner |

@@ -6,6 +6,8 @@
 
 **Authority boundary:** the [Capability Inventory](../CapabilityInventory.md) owns exact `RHI-*` state and evidence rows. These dossiers own mechanism, ownership, lifetime, failure, and feature-local completion contracts. Renderer owns feature policy; Acceptance owns candidate results and release disposition.
 
+**Current readiness:** **45/100** across the tracked RHI portfolio — source implementation/integration exists, while candidate verification and delivery remain `0`. See [Current Feature Readiness](../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
 ## At A Glance
 
 This is the detailed contract map behind the [RHI overview](../README.md). Follow the lifecycle from device creation to completed GPU work, then use the family pages for D3D12/Vulkan lowering, failure behavior, and proof obligations.

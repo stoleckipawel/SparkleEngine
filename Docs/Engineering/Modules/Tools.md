@@ -8,6 +8,18 @@ Tools transform source or user intent into deterministic products; runtime loadi
 
 Interactive tool frontends also follow the [intent-first workflow rules](Editor.md#intent-first-frontend-workflows); this document owns tool execution and publication rather than duplicating those UI rules.
 
+## Choose The Owning Route
+
+| Change | Primary owner | Boundary that must remain visible |
+| --- | --- | --- |
+| discover or normalize source | SourceImporters/importer registry | source parsing ends at a deterministic imported product; runtime never reads authoring formats |
+| create runtime artifacts | Cooking and the asset/shader-specific cooker | validation and atomic publication precede replacement of the accepted generation |
+| compile shaders | ShaderCompiler plus its compiler subprocess boundary | registration/dependency intent stays distinct from compiler-native execution and diagnostics |
+| build, cook, or launch a project | Launcher operation owner | immutable request, explicit stage/result, cancellation, process lifetime, and retained log identity |
+| shared file/process helpers | ToolSupport or Platform when genuinely reusable | helpers do not become a second workflow, task, publication, or status authority |
+
+When one user action crosses several rows, the frontend coordinates narrow requests and results; it does not absorb each operation's internal state or create a parallel artifact lifecycle.
+
 ## Operation Ownership
 
 - Keep each operation's immutable request, progress, cancellation, result, and cleanup under one tool owner.

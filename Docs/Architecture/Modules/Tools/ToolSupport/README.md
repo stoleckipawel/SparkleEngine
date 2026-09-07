@@ -10,6 +10,20 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **50/100** — shared console products have real tool consumers; script, Unicode/path, progress, failure, and compatibility evidence remains open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## At A Glance
+
+| Facility | Current result | Deliberate non-claim |
+| --- | --- | --- |
+| severity lines | readable `[LOG]`, `[WARN]`, and `[ERROR]` prefixes to chosen streams | not a machine-readable diagnostic event schema |
+| named/path fields | ordered `name=value` display with optional quoting | does not escape every quote/newline, normalize paths, or redact secrets |
+| progress | one-line action/type/index/total/name records | no cursor UI, rate estimate, cancellation, or progress protocol |
+| summaries/lists | consistent human-oriented multi-line output | no versioned parser-compatibility contract |
+| consumer integration | current cookers and ShaderCompiler share formatting | exit status and expected artifacts—not text—remain success authority |
+
+The library standardizes presentation only. Keeping process control and result semantics in each tool avoids a hidden orchestration layer, but consumers must not parse these human lines as an API.
+
 ## Module Boundary
 
 `ToolConsoleSupport` is a C++20 static host-tool library. CMake includes it only when the content pipeline or ShaderCompiler is enabled and excludes it from default game-profile builds. AssetCooker, TextureCooker, and ShaderCompiler link it; runtime and Editor logging remain separate Core/Application facilities.

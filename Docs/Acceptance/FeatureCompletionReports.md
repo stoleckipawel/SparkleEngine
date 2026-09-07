@@ -18,6 +18,8 @@
 
 **Current feature-level source inventory:** [Current Capability Inventory](../Architecture/Modules/README.md)
 
+**Current readiness dashboard:** [Current Feature Readiness](CurrentReadiness.md)
+
 ## At A Glance
 
 | You have | You still need for each included or experimental feature |
@@ -36,6 +38,8 @@ flowchart LR
 ```
 
 The registry is routing infrastructure. It does not mean any feature is complete.
+
+The readiness dashboard provides the 0–100 orientation view. Its score keeps implementation, integration, candidate verification, and delivery/adoption separate; it never replaces the conjunctive acceptance verdict defined here.
 
 ## Purpose And Boundary
 

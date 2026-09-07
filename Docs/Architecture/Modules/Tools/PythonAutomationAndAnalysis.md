@@ -10,6 +10,19 @@
 
 **Strategy sources:** [`PGE-07`](../../../Strategy/Requirements.md), [Gap Assessment](../../../Strategy/Assessments/GapAssessment.md), and `NS-EVIDENCE`/`NS-SIMPLIFY` in the [Engineer Persona](../../../Strategy/EngineerPersona.md)
 
+**Current readiness:** **10/100** for reusable Python automation — two project conversion scripts exist, but no repository automation, analysis product, binding, or editor/runtime Python layer exists. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## At A Glance
+
+| Capability | Current state | Correct interpretation |
+| --- | --- | --- |
+| LPS Head conversion | one Showcase-owned script exists | a project content conversion, not reusable engine automation |
+| Cornell Box conversion | one Showcase-owned script exists | a project content conversion, not an analysis framework |
+| repository automation/result analysis | Not found | future tools need one named workflow, schema, owner, and consumer |
+| editor/runtime Python or public bindings | Not found and not promised | separate product capabilities, not implied by offline scripts |
+
+The preferred direction is workflow-first rather than “add Python.” A deterministic workload analyzer or data-preparation tool is justified only when its native consumer validates the published schema and partial/cancelled output cannot become current.
+
 ## Capability Identity
 
 | ID | Capability | Current state |

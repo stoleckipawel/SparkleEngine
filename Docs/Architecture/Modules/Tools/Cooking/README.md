@@ -10,6 +10,30 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **50/100** — the cooked-only asset pipeline is source-integrated; deterministic, transactional, bounded, failure, package-relative, and clean-run proof remains open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## At A Glance
+
+| Route | Input | Published product | Important limit |
+| --- | --- | --- | --- |
+| project/category orchestration | project/catalog plus selected shader/texture/asset scope | one planned tool invocation set and result | orchestration does not own each product schema |
+| textures | source image plus semantic intent and format policy | validated mips/compressed cooked texture | KTX/format capability and fidelity vary; memory/concurrency need evidence |
+| scenes/assets | importer output plus project identities | meshes, materials, scene manifest, skeletons, animations, and dependencies | support is bounded by importer and runtime schemas |
+| shaders | registered programs and compilation configuration | shader map/library, reflection, symbols/provenance | owned by the separate ShaderCompiler route |
+| publication | complete temporary product set | atomically visible generation and manifest | interrupted or mixed generation must never remain readable |
+
+```mermaid
+flowchart LR
+    Request[Project cook request] --> Plan[Validate scope, catalog, inputs, and tools]
+    Plan --> Import[Import and translate source when required]
+    Import --> Cook[Cook typed products with bounded work]
+    Cook --> Validate[Validate schema, references, and complete set]
+    Validate --> Publish[Publish generation transactionally]
+    Publish --> Runtime[LevelSession, assets, and Renderer consume]
+```
+
+Cooking is a product boundary, not a collection of file converters. A successful child process is insufficient unless every declared output is present, mutually compatible, and published as one generation.
+
 ## Orchestration And Products
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

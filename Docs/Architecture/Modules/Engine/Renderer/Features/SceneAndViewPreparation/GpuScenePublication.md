@@ -6,6 +6,30 @@
 
 **Scope:** `REN-SCENE-01` and GPU-publication portions of `REN-SCENE-03` through `REN-SCENE-07`; persistent/frame-indexed GPU-scene storage, binding identity, upload, publication, and completion-safe replacement
 
+## At A Glance
+
+| Published family | Consumers | Identity/lifetime concern |
+| --- | --- | --- |
+| lights and mesh-instance/slot tables | deferred geometry and lighting | counts, slots, and scene generation must agree |
+| current/previous joint and morph data | deformed raster/ray geometry and motion | continuity and frame-slot identity cannot mix |
+| ray vertices/indices/influences/hit instances/materials | BLAS/TLAS, ray GBuffer, shadows, and indirect paths | scene-to-hit/SBT mapping must use the matching generation |
+| material texture table and binding revision | eligible ray material evaluation | fixed capacity and completion-safe texture-generation replacement |
+| per-view instance/partition payload | selected classic/PTLAS strategy | view identity joins shared scene identity without becoming scene authority |
+
+```mermaid
+flowchart LR
+    Scene[Complete PreparedRenderScene] --> Join[Join matching RenderView and active resources]
+    Join --> Upload[Upload frame-indexed buffers and tables]
+    Upload --> Publish[Publish one RenderSceneGpuBindings generation]
+    Publish --> Raster[Raster consumers]
+    Publish --> Ray[Ray-scene and lighting consumers]
+    Raster --> Tokens[Queue completion]
+    Ray --> Tokens
+    Tokens --> Retire[Retire replaced bindings and resources]
+```
+
+The publication object is a coherence boundary, not a second copy of scene truth. It trades broader up-front preparation/upload for simple downstream binding: passes either receive one complete matching generation or fail before dispatch.
+
 ## Feature Promise
 
 After scene and view preparation agree on one admitted identity, `RenderGpuScene` publishes one coherent `RenderSceneGpuBindings` generation. Raster, ray GBuffer, lighting, and RT-scene consumers cannot observe a mixture of old and new geometry, deformation, material, texture, light, or partition state.

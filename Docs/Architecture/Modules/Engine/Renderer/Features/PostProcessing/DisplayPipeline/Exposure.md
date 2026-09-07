@@ -8,6 +8,18 @@
 
 **Parent family:** [Post Processing](../README.md)
 
+## At A Glance
+
+| Mode or boundary | Current behavior | Main limitation |
+| --- | --- | --- |
+| Manual | fixed requested multiplier plus compensation and bounds | requires authored intent; no colorimetric acceptance |
+| Automatic / parallel reduction | meters scene luminance to the configured target | numerical and temporal agreement remain unproved |
+| Automatic / downsample pyramid | alternate luminance reduction path | quality/cost equivalence to parallel reduction unproved |
+| Adaptation | asymmetric EV-per-second history for brightening/darkening | cuts, resize, view/provider changes must reset correctly |
+| Async scheduling | may run on a capable non-graphics queue | queue assignment does not prove overlap or benefit |
+
+Exposure is measured from pre-debug scene-linear color and resolved per view. Its single multiplier then feeds reconstruction providers and tone mapping, so stale or cross-viewport history can affect several downstream stages even when their own code is correct.
+
 ## Feature Promise
 
 Sparkle produces one bounded 1x1 exposure multiplier from resolved per-view settings and the scene-linear lighting result. Exposure is measured before debug visualization can replace scene color, so diagnostic selection does not itself drive eye adaptation.

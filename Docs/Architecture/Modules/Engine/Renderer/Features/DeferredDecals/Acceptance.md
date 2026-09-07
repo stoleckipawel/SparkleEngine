@@ -12,6 +12,18 @@
 
 This file is part of the Deferred Decals feature dossier and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 
+## Acceptance At A Glance
+
+| Proof dimension | Required conclusion |
+| --- | --- |
+| material correctness | projected overlays compose GBuffer/PBR channels through one declared ordering and normal/material rule, not independent visually tuned blends |
+| receiver coverage | opaque and alpha-tested receivers, exclusions, overlap, edge fade, and missing resources have explicit outcomes |
+| producer parity | raster primary, ray primary, and any admitted secondary-hit route consume the same decal semantics |
+| bounded execution | zero-content cost is negligible and candidate/tile/list growth has measured capacity, overflow, memory, and frame-time behavior |
+| backend evidence | every advertised D3D12/Vulkan and producer row is captured and compared; an unsupported row is excluded rather than silently substituted |
+
+The small Modern Sponza fixture is only the representative end of the oracle ladder. CPU composition checks, raw GBuffer inspection, adversarial overlap/capacity cases, and controlled failure must catch defects before a beauty image can count as evidence.
+
 ## Traceability And Current Disposition
 
 | Dimension | Binding target |

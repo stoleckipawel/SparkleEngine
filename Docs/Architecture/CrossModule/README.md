@@ -4,6 +4,19 @@
 
 Use this folder only when a system has several durable owners and no single module can own the whole contract. Each document must name its participating modules and link back to their module pages. A relationship between two modules alone does not justify moving their module-owned knowledge here.
 
+## At A Glance
+
+| Cross-cut | Why no single module owns it | First useful view |
+| --- | --- | --- |
+| runtime/content pipelines | import/cook/world/Renderer/RHI or shader/tool/runtime lifecycles form one product result | feature dossier and its owner/lifetime diagram |
+| engine concurrency | tasks, application, world, Renderer, RHI, and tools publish through different threads/queues | shared topology and shutdown contract |
+| product journeys | launcher/build/tools/content/application/delivery combine for one actor outcome | horizontal workflow matrix then vertical trace |
+| graphics coverage | Renderer semantics cross shader, RHI backend, selector, and evidence boundaries | backend/mode matrix then selected execution trace |
+| performance diagnostics | measurement, UI, external tools, evidence, and shipping cost cross many owners | capability/delivery split and bounded data flow |
+| documentation traceability | strategy, plans, acceptance, research, and Architecture must route without duplicate truth | coverage ledgers, then the owning dossier |
+
+Cross-module pages own the *join*. They must name what each participant contributes and must not absorb the participant's module-local mechanics.
+
 ## Runtime And Content Systems
 
 | Document | Participating owners | Read it when... |

@@ -12,6 +12,17 @@
 
 **Feature acceptance:** [Debug View Presentation — Acceptance](Acceptance.md)
 
+## At A Glance
+
+| You can inspect | Current behavior | Principal problem |
+| --- | --- | --- |
+| Lit and raster wireframe | selects the normal lit result or raster fill mode | wireframe has no ray-GBuffer equivalent |
+| GBuffer channels | visualizes base color, normal, roughness, metallic, emissive, AO, and subsurface values | bounded/exact quantities still pass through exposure and tone mapping |
+| lighting lobes | visualizes five direct/indirect products | HDR lobes can be mapped twice before display |
+| GPU-scene instances | maps instance identity to diagnostic color | capture lacks the complete resolved-mode/presentation provenance contract |
+
+The feature exists and is useful, but its presentation is only partial: source selection and visualization happen before the unconditional shared exposure, tone-mapping, and encoding chain. The target design separates scene-referred HDR diagnostics from exact display-linear diagnostics and resolves intent per viewport.
+
 Code and executable build configuration remain authoritative. Reinspect every listed owner and behavior before using this dated snapshot for implementation or release claims.
 
 ## Source-Backed Snapshot And Problem

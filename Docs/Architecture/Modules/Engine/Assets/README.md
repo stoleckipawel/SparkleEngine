@@ -12,6 +12,27 @@
 
 `Engine/Assets` is a source corpus, not a C++ module or asset-manager implementation. Its capabilities are useful only when the corresponding cook and runtime consumer are present.
 
+**Current readiness:** **45/100** — the source corpus and consumers exist; release allowlist, provenance, corrupt/missing behavior, cooked identity, and package proof remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## At A Glance
+
+| Source family | What exists | What presence does not prove |
+| --- | --- | --- |
+| shader entries and includes | registered graphics/compute/ray entries plus shared BRDF, geometry, material, lighting, ray, display, and ABI code | successful compile/cook, active pipeline, or correct output |
+| default textures | small semantic fallback set | that every missing material input resolves correctly or ships in a package |
+| sky environments | four 4K EXR panoramas | level use, cooked presence, color correctness, or redistribution disposition |
+| cube/instancing fixtures | compact glTF/GLB and instancing sources | broad importer, scene, or performance coverage |
+
+```mermaid
+flowchart LR
+    Source[Tracked source asset] --> Tool[Owning compiler or cooker]
+    Tool --> Product[Validated cooked product and manifest]
+    Product --> Runtime[GameFramework/Renderer consumer]
+    Runtime --> Evidence[Observed feature result]
+```
+
+Every arrow is owned elsewhere. The corpus owns source bytes and licenses only; it must not accumulate cooking, residency, dependency, or runtime truth.
+
 ## Tracked Corpus
 
 | ID | Family | Current content and purpose | Coverage boundary | Evidence |

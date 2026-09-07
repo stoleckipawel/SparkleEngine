@@ -8,6 +8,30 @@
 
 **Snapshot:** 2026-09-07; the live non-documentation source/build tree was searched for owned training/data/model paths; source evidence `S` only
 
+**Current readiness:** **0/100** — target only; no production dataset, training, evaluation, or accepted model-publication path was found. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## At A Glance
+
+| Contract | Required answer | Failure if omitted |
+| --- | --- | --- |
+| problem | exact user-visible signal, inputs, output/color domain, valid range, scenes/hardware, and non-goals | model metrics cannot be tied to a product outcome |
+| data | source/license/provenance, scene/camera/frame identity, generator revision, hashes, and immutable splits | leakage or unlicensed output invalidates evaluation |
+| training | model/operator, preprocessing, augmentation, seeds, precision, losses, optimizer, schedule, and checkpoints | results cannot be reproduced or attributed |
+| evaluation | frozen numerical/image/sequence, temporal, robustness, and cost comparisons against classical/reference routes | a faster or prettier cherry-picked output can pass without an oracle |
+| publication | immutable artifact schema, normalization, weights, metrics, provenance, compatibility, and generation | partial/corrupt work can replace the last accepted model |
+
+```mermaid
+flowchart LR
+    Sources[Licensed source and reference generation] --> Dataset[Deterministic dataset and frozen splits]
+    Dataset --> Training[Reproducible training run]
+    Training --> Candidate[Versioned candidate checkpoint]
+    Candidate --> Evaluation[Independent frozen evaluation]
+    Evaluation -->|passes| Publish[Atomically publish accepted model artifact]
+    Evaluation -->|fails| Reject[Retain diagnostics; do not publish]
+```
+
+The cost of this strict boundary is additional data/provenance infrastructure and slower iteration. The benefit is that a runtime result can be traced back to data, training, evaluation, and artifact identity instead of an opaque weight file.
+
 ## Problem And Output Contract
 
 The first owned neural feature must solve one bounded graphics problem with an explicit classical/reference target. Candidate examples are reconstruction, denoising, sampling guidance, compression, or material/light approximation; choosing one is a roadmap decision, not made by this document.

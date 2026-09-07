@@ -6,6 +6,8 @@
 
 **Scope:** `RHI-LIFE-01` through `RHI-LIFE-06`; service composition, owner-thread access, publication, steady-state frame use, swapchain recovery, shutdown settlement, device loss, diagnostics, and the explicit absence of in-process device recreation
 
+**Current readiness:** **45/100** — aggregate creation, resize settlement, shutdown, and terminal device-loss boundaries exist in source; fault-injection, leak, post-loss, and recovery evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
 ## Feature Promise And Non-Promise
 
 A successful RHI creation request publishes one complete backend service composition to its owner thread. Its device, queues, presentation, resources, descriptors, pipelines, diagnostics, interop, capture, and UI services remain valid through frame execution and settle before reverse-order destruction.

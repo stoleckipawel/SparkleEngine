@@ -10,6 +10,29 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **45/100** — the development Editor is source-integrated; usability, correctness, performance, distribution classification, and non-author evidence remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
+
+## At A Glance
+
+| Workflow | Current result | Main limitation |
+| --- | --- | --- |
+| workspace and level | fixed ImGui workspace, registered-level open, progress gating, and Save All | no general docking, new/Save As, or dirty-document workflow |
+| scene inspection/editing | outliner plus typed camera/light/mesh/sky/variant commands with generation checks | not a full content/model/material authoring environment |
+| history | command-based undo/redo for owned world edits | multi-document persistence and conflict behavior unproved |
+| rendering controls | viewport camera, display/settings controls, diagnostics, console, and capture | requested/active feature truth and per-viewport isolation still need evidence |
+| developer operations | shader recook and mesh/texture diagnostic tools through editor host services | workspace/tool availability and cancellation remain product constraints |
+
+```mermaid
+flowchart LR
+    Intent[Editor UI intent] --> Command[Typed generation-checked command]
+    Command --> World[World or settings owner commits]
+    World --> ReadModel[Rebuild immutable editor read model]
+    ReadModel --> Viewport[Renderer product and diagnostics]
+    Viewport --> UI[Present result and operation state]
+```
+
+The Editor should expose owner commands and read models, not mutate Renderer/RHI/native state directly. That makes undo, concurrency, and failure tractable at the cost of explicit command/result plumbing.
+
 ## Workspace And Level Surface
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

@@ -6,6 +6,18 @@
 
 **Scope:** the image-space stages that turn scene-linear lighting into a resolved display image, including explicit negative coverage for commonly expected stages that Sparkle does not currently implement
 
+## At A Glance
+
+| Pipeline question | Current answer |
+| --- | --- |
+| How many final image paths exist? | One ordered path from scene-linear color to one resolved, tone-mapped, encoded current-frame output. |
+| Which reconstruction exists? | Linear reconstruction plus capability-gated NVIDIA DLSS Super Resolution and Ray Reconstruction routes. |
+| Which presentation transforms exist? | Exposure, selectable tone mapping, and SDR-oriented output encoding/publication. |
+| Which commonly expected features are absent? | Color grading, chromatic aberration, frame generation, HDR display output, dynamic resolution, Renderer MSAA, and standalone TAA/FXAA/SMAA. |
+| What is the central risk? | Extent, history, provider, debug, color-domain, and output identity can disagree even when each stage exists in isolation. |
+
+Read the family in execution order below. A neighboring stage never grants another feature: latency markers are not frame generation, tone curves are not color grading, and temporal jitter is not a complete anti-aliasing product.
+
 ## Family Promise
 
 Sparkle has one ordered post-processing path. Each stage owns one transformation and may not be inferred from a neighboring stage:

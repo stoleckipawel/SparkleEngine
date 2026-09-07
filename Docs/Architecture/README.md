@@ -12,6 +12,7 @@ Architecture explains what each system does, how data and responsibility move th
 | Reading depth | Use it for | Start here |
 | --- | --- | --- |
 | 2-minute orientation | What exists, what is missing, and the largest tradeoffs | [Engine At A Glance](EngineAtAGlance.md) |
+| Current readiness | How far each tracked feature has progressed from implementation through delivery | [Current Feature Readiness](../Acceptance/CurrentReadiness.md) |
 | System understanding | Major owners and dependency direction | [Whole Repository Map](WholeRepositoryMap.md) |
 | Module understanding | One Engine, Tools, Projects, or build boundary | [Module Architecture](Modules/README.md) |
 | Feature understanding | One result, its selection, design, limits, and proof contract | [Renderer Features](Modules/Engine/Renderer/Features/README.md), [RHI Features](Modules/Engine/RHI/Features/README.md), or the owning module |
@@ -33,7 +34,7 @@ The module hierarchy mirrors [Engine](Modules/Engine/README.md), [Tools](Modules
 
 ## How To Read A Feature Page
 
-1. Read **At A Glance** to understand the result and current state.
+1. Read **At A Glance** and **Current readiness** to distinguish implemented, partial, missing, and unproved behavior.
 2. Use the diagram and **How It Works** section to form the execution/ownership model.
 3. Check the support matrix and tradeoffs before assuming a backend, mode, or content type works.
 4. Read limitations and failure behavior before using the feature in a product claim.
@@ -43,7 +44,7 @@ Feature architecture owns the feature-local completion contract—criteria, cont
 
 ## Evidence Boundary
 
-An Architecture page may prove that a source/build route exists and define what must be tested. It does not prove that the route built, ran, produced a correct image, met performance targets, or may ship. Read the current evidence state in [Acceptance](../Acceptance/README.md) and the missing checks in the [Capability Evidence Plan](../Plans/CapabilityEvidence.md).
+An Architecture page may prove that a source/build route exists and define what must be tested. It does not prove that the route built, ran, produced a correct image, met performance targets, or may ship. Read the projected percentage in [Current Feature Readiness](../Acceptance/CurrentReadiness.md), the current evidence state in [Acceptance](../Acceptance/README.md), and the missing checks in the [Capability Evidence Plan](../Plans/CapabilityEvidence.md).
 
 ## Writing And Placement
 

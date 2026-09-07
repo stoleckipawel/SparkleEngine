@@ -14,6 +14,21 @@
 
 This inventory records current source/build surfaces and the reconciliation gaps known when the diagnostics design was written. Code and executable build configuration remain authoritative.
 
+**Current readiness:** **20/100** — useful timing, marker, and memory seams exist; they are not yet one bounded, consumer-visible diagnostics/evidence product. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## Capability At A Glance
+
+| Area | Current useful seam | Missing product-level capability |
+| --- | --- | --- |
+| CPU | host timer, named engine threads, task ETW events | one immutable frame-correlated phase/wait model and benchmark distribution export |
+| GPU | stable markers and delayed per-scope timestamps | representative normal-topology capture records with explicit identity, validity, bounded loss, and no mutex/string-heavy hot path |
+| memory | D3D12MA/VMA categories, budgets, transient and retirement data | process RAM sampling, honest heap separation, joined high-water identity, and editor consumption |
+| UI | viewport FPS and existing console/panel composition | one progressive Stats/Performance/Hitches workflow over a published diagnostics model |
+| external analysis | thread descriptions, ETW task provider, conditional PIX events | explicit PIX/RenderDoc/Nsight/RGP/WPA launch and capture intent with availability, provenance, and artifact handoff |
+| evidence | stable pass labels and several useful counters | repeatable workload manifests, raw samples, uncertainty, thresholds, and capture links |
+
+The key architectural gap is not the absence of all instrumentation. It is the absence of one bounded, frame-correlated publication and evidence route that preserves normal execution semantics. Existing timings and memory snapshots are foundations; they are not yet a coherent diagnostics product or benchmark verdict.
+
 ## Source-Backed Snapshot
 
 The following is a static observation reconciled with committed source on 2026-08-28, not a completion claim:

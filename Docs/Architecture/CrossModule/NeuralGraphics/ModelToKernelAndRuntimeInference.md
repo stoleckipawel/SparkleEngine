@@ -8,6 +8,21 @@
 
 **Snapshot:** 2026-09-07; the live non-documentation source/build tree was searched for owned model export/lowering/kernel/inference-runtime paths; source evidence `S` only
 
+**Current readiness:** **0/100** — target only; no model lowering, generated kernel, runtime activation, or packaged neural product was found. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## At A Glance
+
+| Stage | Owned decision | Required observable |
+| --- | --- | --- |
+| export/IR | accepted model/operator becomes a validated immutable schema | source/artifact hashes, shapes, operators, normalization, and compatibility |
+| legalization/optimization | unsupported operators reject; fusion, layout, and precision choices remain inspectable | exact decisions plus numerical comparison to the accepted model |
+| kernel production | generate or select backend/capability-specific kernels | code/kernel hash, target, workgroup/layout, resource/workspace contract |
+| runtime activation | Renderer resolves requested/active neural or classical path | reason, inputs/output/history identity, and one complete generation |
+| GPU execution | RHI materializes resources/pipeline/dispatch/barriers | attributable timing, memory, queue, and completion tokens |
+| delivery | Build/Packaging manifests model/kernel/runtime bytes and licenses | clean product readiness or explicit unavailable state |
+
+The target is not “compile a model somehow.” It is a reversible, inspectable chain in which every optimization can be compared numerically and every runtime artifact can be tied to the accepted model.
+
 ## Capability Boundary
 
 This dossier owns the boundary from one accepted model/operator artifact to executable GPU work in the product. It is distinct from ordinary hand-written graphics shaders and from integrating a vendor provider. A credible model-to-kernel claim requires observable lowering decisions, validated numerical equivalence, hardware-aware optimization, one runtime ABI, and a product consumer.
@@ -23,6 +38,15 @@ Accepted model/operator -> validated intermediate/export schema -> operator/lega
 - Renderer owns semantic inputs/output and classical fallback. The lowering owner chooses legal kernels. RHI exposes mechanisms and capability truth without neural-policy vocabulary.
 - Runtime scheduling declares resources, dependencies, queues, history, scratch/workspace, synchronization, and in-flight generation lifetime. Replacement retires only after every consuming queue completes.
 - Evidence separates translation time, cold/warm materialization, CPU submission, GPU latency/throughput, memory/workspace, artifact size, and output quality.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| One explicit intermediate/export schema | Lowering decisions and compatibility become reviewable | Schema ownership and invalidation must be maintained |
+| Specialize kernels below stable model semantics | Hardware performance can improve without forking the feature oracle | Precision/layout/fusion can introduce numerical drift |
+| Use typed Renderer inputs and output | Neural and classical paths remain comparable | Dynamic shapes and ad hoc tensors are deliberately constrained |
+| Retire model/kernel generations by GPU completion | Reload cannot use freed artifacts or workspace | In-flight generations retain model/kernel/scratch memory |
 
 ## Current Classification
 

@@ -8,6 +8,18 @@
 
 **Current state:** **In progress / blocked for exit** on 2026-09-06. Initial source research exists; accepted transport scope, estimator derivation, executable evidence design, target architecture decision, and independent review do not.
 
+## Gate At A Glance
+
+| Discovery must freeze | Why planning cannot safely infer it later |
+| --- | --- |
+| exact transport target, measures, units, supported scene/camera/material/light domain, and meaning of “unbiased” | these choices determine the estimator and whether the eventual oracle claim is truthful |
+| complete current route and shared-dependency inventory | a reference path that shares the subject's defect can agree while both are wrong |
+| estimator derivation, sampling identity, numeric policy, and accumulation/job state machine | implementation order and data ownership depend on them; post-hoc fixes can invalidate all produced references |
+| analytic through representative oracle ladder with thresholds, budgets, artifacts, and reviewers | a beauty scene cannot localize bias, lifecycle, determinism, robustness, or backend defects |
+| chosen target shape, rejected alternatives, owners, clean breaks, and plan-ready work packages | otherwise the plan would be architecture discovery disguised as delivery |
+
+`PASS` authorizes creation of `PTD-01`; it does not accept the feature, approve a release claim, or make the current route trustworthy. Any unresolved question that can change the target integral, supported domain, architecture, or evidence validity keeps this gate blocked.
+
 ## Iteration Control Record
 
 | Field | `ITER-PTD-00` |

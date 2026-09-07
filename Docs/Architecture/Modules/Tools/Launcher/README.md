@@ -10,6 +10,31 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **50/100** — a broad developer workflow exists in source; clean-machine execution, cancellation/failure truth, distribution classification, and adoption evidence remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
+
+## At A Glance
+
+| User intent | Launcher responsibility | Success boundary |
+| --- | --- | --- |
+| prepare workspace | discover repository/project, inspect toolchain/dependencies, and propose the exact missing operation | readiness is revalidated immediately before execution |
+| configure/build | select generator, compiler, profile, features, and focused targets; track freshness | final target exit plus expected attributable artifacts |
+| acquire/cook content | resolve catalog dependencies, download/verify/extract, and run scoped cooks | selected content products and manifests are ready, not merely downloaded |
+| run product | verify executable/runtime/cooked prerequisites and launch from project context | follow the live child/handoff and product log, not only the initial process ID |
+| clean/repair | preview exact contained targets, preserve declared paths, require confirmation for destructive scopes | only approved roots are changed and downstream readiness invalidates |
+
+```mermaid
+flowchart LR
+    Intent[User selects a capability] --> Evaluate[Capability registry evaluates prerequisites]
+    Evaluate -->|ready| Run[Launch requested operation or product]
+    Evaluate -->|blocked| Next[Return one concrete prerequisite operation]
+    Next --> Execute[Run bounded background operation]
+    Execute --> Invalidate[Invalidate affected readiness facts]
+    Invalidate --> Evaluate
+    Run --> History[Publish logs, exit, artifacts, and recovery hints]
+```
+
+Launcher is a capability planner and operation host. It is not a package manager, CI service, release installer, or proof that the product it launched remained healthy.
+
 ## Frontend And Planning Model
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

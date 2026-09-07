@@ -8,6 +8,19 @@
 
 **Related owners:** [Temporal Sampling and History](../../FrameExecution/TemporalSamplingAndHistory.md) owns jitter/history semantics; [Image Reconstruction and Upscaling](ImageReconstructionAndUpscaling.md) owns Linear/DLSS/RR evaluation; [Presentation and Output](../DisplayPipeline/PresentationAndOutput.md) owns the final target
 
+## At A Glance
+
+| Concept | Current state | Must not be conflated with |
+| --- | --- | --- |
+| output extent | requested/published final image dimensions | internal render extent |
+| render extent | resolved from output plus active reconstruction provider/quality | a dynamic-resolution controller |
+| temporal sample | deterministic Halton jitter carried by view/history identity | a complete standalone TAA feature |
+| attachment samples | active Renderer attachments are single-sample | RHI sample-count vocabulary or Renderer MSAA |
+| reconstruction | Linear or eligible provider produces one output-extent image | frame generation |
+| anti-aliasing modes | no standalone TAA, FXAA, or SMAA route found | incidental filtering or temporal provider behavior |
+
+Keeping these concepts separate makes resize, capture, motion, provider selection, and cost interpretable. It also prevents dormant helper/API vocabulary from becoming an accidental feature claim.
+
 ## Feature Promise And Motivation
 
 For each view, Renderer resolves one output extent and one render extent before graph materialization, constructs view/raster state on that pixel grid, applies one shared temporal sample policy, and produces exactly one output-extent scene color through the selected image-provider route.

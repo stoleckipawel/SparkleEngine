@@ -14,6 +14,20 @@
 
 This contract defines what the completed feature must prove. The delivery plan may sequence phase exits, but it does not redefine these final criteria or record a release verdict.
 
+**Current readiness:** **50/100** — source implementation and integration exist; this contract contains no candidate verification or delivery result. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## Acceptance At A Glance
+
+```mermaid
+flowchart LR
+    Author[Typed authoring and registration] --> Cook[Deterministic compile, cook,<br/>map and library]
+    Cook --> Materialize[Complete graphics, compute<br/>and ray pipeline identity]
+    Materialize --> Runtime[Selection, binding, dispatch<br/>and generation lifetime]
+    Runtime --> Evidence[Replayable failures, captures,<br/>metrics and adoption]
+```
+
+Every arrow is part of the feature. “The shader compiles” does not prove deterministic dependency selection, reflected layout parity, cooked availability, complete pipeline identity, recording-time freedom from creation, safe reload/retirement, or dual ray-execution behavior. The final gate therefore requires both positive paths and deliberately broken authoring, binding, package, capability, and generation cases.
+
 ## Evidence Contract
 
 The [Strategy Coverage crosswalk](../StrategyCoverage.md) owns portfolio-wide requirement status. The [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md), [Renderer Shader Programs catalog](../../Modules/Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md), and [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md) own current source claims and delivery reconciliation. The [Shader System Migration Baseline](../../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md) preserves the former pre-migration inventory. This contract keeps only the shader-system evidence requirements below.

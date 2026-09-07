@@ -6,6 +6,31 @@
 
 **Scope:** `RHI-DIAG-01` through `RHI-DIAG-05`; native object identity, GPU events, timestamps, validation messages, D3D12 crash data, live-object reporting, bounded delivery, and observer configuration
 
+**Current readiness:** **35/100** — messages, names, timestamps, memory, and backend diagnostic facts exist; joined bounded consumption, loss/observer cost, and device-failure evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
+## At A Glance
+
+| Observation | What it can establish | What it cannot establish |
+| --- | --- | --- |
+| object names and GPU events | which engine object/pass was lowered to named native work | that the work produced correct pixels |
+| timestamps | measured interval on a supported queue after valid resolve | useful overlap, low latency, or a representative workload by itself |
+| native validation messages | a native API or synchronization problem detected by the enabled layer | correctness when the stream is quiet or the layer is unavailable |
+| D3D12 DRED / Vulkan fault context | best available native context for a failed device operation | recovery or continued device validity |
+| live-object reporting | native objects still visible at the reporting boundary | leak ownership without correlated engine identity and lifecycle context |
+
+## Observation Flow
+
+```mermaid
+flowchart LR
+    Identity[Frame, queue, pass, and object identity] --> Annotate[Attach event names and native labels]
+    Annotate --> Execute[Native command or object use]
+    Execute --> Observe[Timestamp, validation, fault, or live-object fact]
+    Observe --> Correlate[Correlate to engine identity and availability]
+    Correlate --> Report[Bounded diagnostic record]
+```
+
+The trustworthy result is an attributable observation with an explicit availability state. Zero messages, zero milliseconds, or a truncated buffer are never silently interpreted as success.
+
 ## Feature Promise
 
 RHI diagnostic records identify the neutral request and native work that actually executed. Unsupported, disabled, unresolved, truncated, and dropped observations remain explicit; completion or a quiet validation stream never becomes a correctness claim.
@@ -16,6 +41,15 @@ RHI diagnostic records identify the neutral request and native work that actuall
 - Timestamp values require the correct queue frequency and resolve ordering. Unsupported or unresolved timing is unavailable, not zero.
 - Native validation, D3D12 DRED, Vulkan messages, and live-object reporting remain backend facts linked to neutral identity where available; asymmetry is reported rather than normalized away.
 - D3D12 and Vulkan expose different native facilities. The diagnostic owner reports that asymmetry and availability; it does not fabricate a common observation the backend did not produce.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| Preserve backend-specific facts | Reports remain truthful about what the native API actually exposed | Tooling and evidence cannot assume identical D3D12/Vulkan detail |
+| Correlate through neutral stable identity | A native message can be traced back to a frame/pass/resource owner | Every producer must propagate identity consistently |
+| Treat unavailable and dropped data as states | Quiet output cannot masquerade as validation success | Consumers must handle partial diagnostic records explicitly |
+| Bound collection and measure observer cost | Diagnostics remain usable in representative runs | Fine-grained detail may be sampled or disabled and must say so |
 
 ## Acceptance Criteria
 

@@ -12,6 +12,19 @@
 
 **Platform expansion route:** [Linux Platform Support](LinuxPlatformSupport.md) explicitly records that Vulkan-on-Windows is not a Linux product path and owns the target/exclusion contract.
 
+**Current readiness:** **50/100** for the tracked Windows platform scope — Win32 window/input paths exist; lifecycle/runtime/package proof remains open and native Linux is separately **0/100**. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## At A Glance
+
+| Surface | Current implementation | Explicit gap |
+| --- | --- | --- |
+| host platform | one Win32 top-level window, message pump, size/state, borderless fullscreen, DPI handling | no Linux/macOS/headless or multi-window platform route |
+| input acquisition | Win32 keyboard/mouse/wheel translation | no gamepad, touch, pen, IME, raw-device catalog, or hotplug |
+| routing | immediate/deferred typed events across Gameplay/UI/System layers with capture and viewport bounds | focus loss, alt-tab, DPI/multi-monitor, and cancellation behavior unproved |
+| cursor/window control | capture, visibility, centering, native drag/minimize/maximize/restore | public contracts expose Win32 types and are not yet portable |
+
+The module separates native event acquisition from Core input vocabulary and Application/editor consumers. That keeps routing consistent, but the present public window seam still makes Windows the effective product platform.
+
 ## Platform Boundary
 
 The present implementation is Windows-only: public `Window` exposes `HWND` and Win32 message types, the input backend is `Win32InputBackend`, the application manifest is Windows-specific, and `dwmapi` is linked privately. There is no Linux/macOS backend in this snapshot.

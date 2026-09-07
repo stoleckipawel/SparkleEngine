@@ -6,6 +6,22 @@
 
 **Owner:** Neural Graphics feature family; [First Release](../../../Acceptance/FirstRelease.md) owns release disposition and [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md) owns candidate results
 
+**Current readiness:** **0/100** — this is a future proof contract; neither the training/evaluation nor runtime inference feature exists. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## At A Glance
+
+This contract answers one decision: can Sparkle claim an **owned**, reproducible neural-graphics feature rather than an external inference integration or research artifact?
+
+| Gate | Passing evidence must join |
+| --- | --- |
+| semantic value | bounded user problem, output contract, classical/reference comparison, and supported matrix |
+| ownership and reproducibility | licensed dataset, frozen splits, model/operator, training recipe, evaluation, and immutable artifact identity |
+| compiler/runtime integrity | inspectable lowering/kernel decisions, numerical equivalence, typed Renderer/RHI execution, fallback, and lifetime |
+| product quality and cost | frozen workload quality/temporal/robustness plus CPU/GPU/memory/artifact/package results |
+| failure and delivery | corrupt/unsupported/non-finite/reload/shutdown cases plus manifested licenses/hashes and non-author reproduction |
+
+Every gate is conjunctive. High image quality cannot compensate for unlicensed data, fast kernels cannot compensate for numerical mismatch, and a clean fallback does not prove the requested neural path.
+
 ## Binary Criteria
 
 | ID | Criterion |

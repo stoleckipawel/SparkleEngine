@@ -6,6 +6,18 @@
 
 **Scope:** `REN-TEMP-01` through `REN-TEMP-05`; owns per-view jitter, previous-camera publication, history validity, invalidation causes, and the motion/reprojection convention shared by temporal consumers
 
+## At A Glance
+
+| Contract part | Current behavior | Main risk |
+| --- | --- | --- |
+| sample sequence | deterministic Halton jitter derived for the active view/frame | extent and projection convention must match every consumer |
+| previous camera/transforms | one view-owned current/previous uniform | camera cut or identity discontinuity can make valid-looking history stale |
+| history validity | scene/view/extent/topology/provider/shader generations participate | an omitted generation contaminates exposure, ReSTIR, reference, or reconstruction state |
+| motion/reprojection | shared current/previous geometry and camera convention | raster/ray/deformation/frontend disagreement creates ghosting or bias |
+| consumer ownership | each algorithm owns its history resources but not a new temporal convention | multiple local jitter/history authorities are forbidden |
+
+Temporal sampling is shared infrastructure. It does not itself establish a complete TAA feature, dynamic resolution, frame generation, or visual stability.
+
 ## Feature Contract
 
 Temporal sampling is a view-owned contract, not an implementation detail of one upscaler. `RenderViewState` turns frame/view/scene/provider/topology identity into one current/previous temporal uniform. GBuffer, motion-vector, ReSTIR, reference accumulation, exposure history, and external reconstruction consume that shared identity; no consumer may invent a second camera-history or jitter convention.

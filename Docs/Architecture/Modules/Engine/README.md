@@ -4,6 +4,29 @@
 
 This index mirrors the durable modules under `Engine`. Open the owning module first; use hyperlinks to follow producer/consumer relationships without relocating that knowledge into a mixed folder.
 
+## At A Glance
+
+```mermaid
+flowchart LR
+    Core[Core] --> Platform[Platform]
+    Core --> Tasks[Tasks]
+    Platform --> App[Application]
+    Tasks --> App
+    Assets[Engine Assets] --> Tools[Compiler and cooking tools]
+    Tools --> Game[GameFramework]
+    Game --> Renderer[Renderer]
+    App --> Game
+    App --> Renderer
+    Renderer --> RHI[RHI]
+    Editor[Editor] --> App
+    Editor --> Game
+    Editor --> Renderer
+```
+
+Read the graph as responsibility flow rather than exact link visibility. Core and Tasks provide mechanisms; Platform/Application host the process; GameFramework publishes immutable world state; Renderer defines the frame; RHI executes GPU mechanisms; Editor composes authoring/inspection workflows without becoming a runtime dependency.
+
+## Module Routes
+
 | Module | Owns | Module documentation |
 | --- | --- | --- |
 | Application | runtime/editor host composition, configuration, loop, startup, and shutdown | [Application](Application/README.md) |

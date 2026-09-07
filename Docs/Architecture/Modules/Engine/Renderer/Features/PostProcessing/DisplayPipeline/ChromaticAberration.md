@@ -8,6 +8,17 @@
 
 **Parent family:** [Post Processing](../README.md)
 
+## At A Glance
+
+| Question | Current answer |
+| --- | --- |
+| Is there an intentional chromatic-aberration effect? | No selector, setting, pass, shader, lens model, or editor control exists. |
+| Are colored reconstruction/filtering fringes the feature? | No. They are artifacts unless produced by a named lens model with authored controls. |
+| Where would a future effect live? | After the image has the intended reconstruction/display-domain input and before final encoding/UI according to an explicit color-domain decision. |
+| What is the main design cost? | The effect needs guard-band sampling, stable center/aspect behavior, extra texture reads, and resolution-independent tuning without contaminating alpha or UI. |
+
+A credible implementation must make zero strength an exact identity transform and keep artifacts from being mislabeled as deliberate output. This negative dossier therefore protects both feature claims and image-quality bug classification.
+
 ## Current Capability
 
 Chromatic aberration was not found. Sparkle has no per-view lens/aberration settings, selector, pass, shader, radial or spectral distortion model, center/falloff controls, edge sampling policy, history, diagnostic mode, or editor authoring surface.

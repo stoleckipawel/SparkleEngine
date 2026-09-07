@@ -6,6 +6,17 @@
 
 **Scope:** `REN-POST-13`; generation and presentation of interpolated frames between normally rendered frames
 
+## At A Glance
+
+| Question | Current answer |
+| --- | --- |
+| Does Sparkle generate interpolated display frames? | No. There is no frame-generation provider, synthetic-frame product, selector, pacing policy, or presentation integration. |
+| Does DLSS Super Resolution or Ray Reconstruction count? | No. Both reconstruct one image for the currently rendered frame. |
+| Does Reflex/PCL count? | No. It coordinates/observes latency markers and does not synthesize pixels or present an extra frame. |
+| What new contract would be required? | Motion/depth/input provenance, synthetic frame identity, UI composition policy, input sampling, pacing, capture, latency, failure/fallback, and package/provider readiness. |
+
+Frame generation changes the product model from “one admitted simulation/render frame produces one presented frame” to a sequence containing synthetic presentations. That affects input latency, UI, capture, telemetry, history, and swapchain ownership; it cannot be hidden inside the existing upscaler abstraction.
+
 **Parent family:** [Post Processing](../README.md)
 
 ## Current Capability

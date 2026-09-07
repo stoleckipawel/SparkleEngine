@@ -14,6 +14,21 @@
 
 This file is part of the Performance Diagnostics architecture set and owns the diagnostic evidence expected from workloads, baseline experiments, reviewer artifacts, and verification gates. Candidate results remain in the release-level completion report and must retain exact commands, configuration, environment, artifacts, and limitations.
 
+**Current readiness:** **20/100** — foundations only; this acceptance contract contains no executed candidate result. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## Acceptance At A Glance
+
+| A trustworthy result must answer | Required evidence shape |
+| --- | --- |
+| what interval and work were measured? | stable frame/range identity, mode, queue/thread/phase, validity, counts, and raw samples |
+| is the run representative? | observer-state disclosure, normal-topology proof, warm-up/readiness, background-work state, and rejected-sample reasons |
+| is the result repeatable and comparable? | exact build/hardware/driver/API/workload/configuration plus p50/p95/p99/worst and variance/uncertainty |
+| what caused the cost? | engine correlation first, then a linked native capture whose identity joins the same frame/range and configuration |
+| did measurement remain bounded and honest? | overhead/loss accounting, queue/ring capacity, memory high-water, unavailable states, and no fabricated zeros |
+| can a reviewer act on it? | concise verdict, threshold and regression direction, artifact links, limitations, and next diagnostic question |
+
+The live dashboard is orientation, not benchmark proof. A benchmark summary without raw samples and provenance is not reproducible; a native capture without matching engine identity is not attributable; a faster result obtained only because instrumentation changed the execution topology is not representative.
+
 ## Acceptance-Workload Diagnostic Contract
 
 The Performance workspace is a live diagnostic product. The acceptance-workload package is a stricter evidence product. They share metric definitions and immutable identities, but they are not the same schema and must not be forced into the same screen.

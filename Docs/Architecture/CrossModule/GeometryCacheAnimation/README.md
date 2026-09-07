@@ -8,6 +8,8 @@
 
 **Scope:** Alembic-authored baked mesh animation, native cooking and streaming, playback, shared raster/ray-tracing deformation, and D3D12/Vulkan parity
 
+**Current readiness:** **0/100** — target only; no geometry-cache import, cook, runtime playback, residency, or rendering implementation was found. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Dossier Route
 
 | Concern | Owner |
@@ -16,6 +18,25 @@
 | dated current-source capability and gaps | [Capability](Capability.md) |
 | feature-local criteria, failures, checks, and completion | [Acceptance](Acceptance.md) |
 | delivery order and phase exits | [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) |
+
+## At A Glance
+
+```mermaid
+flowchart LR
+    Source[Alembic source<br/>tools only] --> Import[Normalized imported cache]
+    Import --> Cook[Range-readable native asset]
+    Cook --> Play[Game-owned playback request]
+    Play --> Resident[Renderer-owned chunk residency]
+    Resident --> Deform[One current/previous<br/>deformed-geometry product]
+    Deform --> Raster[Raster GBuffer]
+    Deform --> Ray[BLAS and ray-hit consumers]
+```
+
+| Current state | Intended result | Governing constraint |
+| --- | --- | --- |
+| no geometry-cache source/cooked/runtime type or selector is implemented | bounded baked vertex animation with identical raster and ray deformation | Alembic stays out of runtime; constant topology and stable vertex identity are the first profile |
+| static/skinned/morph seams already exist | reuse scene identity, residency, current/previous data, and completion-driven retirement | no second world, material, ray, or task system |
+| representative Knight source exists externally | deterministic source/cooked oracle plus a small controlled fixture | beauty output never substitutes for axis, topology, time, capacity, lifetime, or parity checks |
 
 ## Decision
 

@@ -6,6 +6,33 @@
 
 **Scope:** `RHI-BIND-*`; descriptor layouts, handles, allocation, resource/sampler writes, binding sets/tables, arrays, indexing capabilities, recording lifetime, and bounded Renderer material-table consumption
 
+**Current readiness:** **50/100** — neutral and backend descriptor source routes exist; capacity, invalid-use, lifetime, native-validation, parity, and pressure evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
+## At A Glance
+
+| Concern | Current contract | Important limit |
+| --- | --- | --- |
+| ABI | Reflected shader bindings and the neutral layout must agree before a set/table is usable | A registered shader or allocated descriptor alone is not ABI compatibility |
+| Writes | Resource, view, sampler, type, index, and array count are validated together | Missing, stale, mismatched, and out-of-range writes must reject before recording |
+| Arrays/indexing | Fixed arrays and capability-gated non-uniform indexing are represented | This is not an unbounded, engine-wide bindless model |
+| Lifetime | Recording and submission retain every referenced descriptor and resource | CPU handle destruction cannot authorize native-slot reuse in flight |
+| Backends | D3D12 heaps/tables and Vulkan pools/sets lower one neutral contract | Capacity and semantic parity remain unproved |
+
+## Binding Lifecycle
+
+```mermaid
+flowchart LR
+    Reflect[Shader reflection] --> Layout[Validate neutral binding layout]
+    Layout --> Allocate[Allocate backend storage]
+    Resource[Live resource or sampler generation] --> Write[Validate and write descriptor]
+    Allocate --> Write
+    Write --> Bind[Bind set or table while recording]
+    Bind --> Submit[Retain through submission]
+    Submit --> Complete[Queue completion authorizes reuse]
+```
+
+The shader ABI, resource generation, descriptor allocation, and recording lifetime meet here. Treating any one of them as sufficient creates the classic failure where a syntactically valid slot points at the wrong object or is recycled before the GPU finishes.
+
 ## Feature Promise
 
 A complete neutral binding layout plus type-correct writes becomes backend descriptor state that matches shader reflection and remains valid through every recording/submission consumer. Fixed arrays and capability-gated non-uniform indexing are explicit; they do not imply an unbounded engine-wide bindless model.
@@ -16,6 +43,15 @@ A complete neutral binding layout plus type-correct writes becomes backend descr
 - Shader reflection and pipeline validation define the expected ABI; Renderer owns which semantic resources occupy the bindings.
 - D3D12 heaps/tables and Vulkan pools/sets are backend lowerings of the neutral contract. Recording-local allocations cannot escape their completion lifetime.
 - The current Renderer material table is fixed-capacity and ray-path-specific; raster materials remain bindful. Exact reachability stays in the Renderer dossier and inventory.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| Keep semantic resource choice in Renderer | RHI remains reusable and does not learn material meaning | Higher layers must maintain exact reflected binding identity |
+| Validate through one neutral layout | Backend behavior can be compared against one contract | Native APIs expose different pool/heap pressure and update restrictions |
+| Make indexed binding capability-gated | Unsupported devices never enter a path they cannot execute | Feature availability varies by adapter and needs requested-versus-active reporting |
+| Retain descriptors by GPU completion | Prevents stale native references | Delayed work can retain heap/pool capacity and must remain bounded |
 
 ## Acceptance Criteria
 

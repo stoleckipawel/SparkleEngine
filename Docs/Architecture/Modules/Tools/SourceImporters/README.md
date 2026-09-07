@@ -10,6 +10,28 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **50/100** — glTF/GLB/FBX import routes are source-integrated; fidelity, determinism, provenance, adversarial-input, and product proof remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## At A Glance
+
+| Source family | Current coverage | Principal exclusions |
+| --- | --- | --- |
+| glTF 2.0 / GLB | triangle geometry, instances, transforms, metallic-roughness materials, textures, cameras, punctual lights, skins, morphs, animations, variants | embedded GLB material images, nonzero UV sets, texture transforms, many material extensions, Draco/Meshopt/BasisU/WebP |
+| FBX through Assimp | triangle scenes, units/left-handed normalization, instances, compact materials/textures, cameras/lights, skeleton and transform animation | morph targets, broad shading fidelity, node-only animation playback, every embedded image encoding |
+| OBJ/USD/Alembic/OpenVDB | Not found in the current importer selector | catalog/research names remain future workload intent only |
+| downstream rendering | imported Opaque/Mask routes align with current deferred surface support | imported Blend vocabulary exceeds current Renderer transparency support |
+
+```mermaid
+flowchart LR
+    File[Source file and declared units] --> Parse[Select parser and validate document]
+    Parse --> Normalize[Normalize coordinates, units, winding, and identities once]
+    Normalize --> Translate[Translate supported semantic records]
+    Translate --> Output[Publish one complete SourceImportOutput]
+    Output --> Cook[Mesh, material, and scene cookers]
+```
+
+Import is intentionally strict at semantic boundaries. Rejecting unsupported or lossy data costs source breadth, but prevents plausible-looking cooked scenes whose coordinate, material, skin, or animation meaning silently changed.
+
 ## Format Boundary
 
 | ID | Source format | State | Parser/dependency | Exact boundary | Evidence |

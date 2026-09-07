@@ -6,6 +6,31 @@
 
 **Scope:** `REN-RT-01` through `REN-RT-06`, the ray portions of `REN-FRONT-02` through `REN-FRONT-04`, and `REN-LGT-02` through `REN-LGT-04`; defines current acceleration-scene, traversal-frontend, shader-table, and effect coverage
 
+## At A Glance
+
+| Layer | Current route | Critical limit |
+| --- | --- | --- |
+| geometry acceleration | triangle BLAS cache; classic TLAS plus restricted capability-gated PTLAS strategy | deforming BLAS rebuild rather than a proved update/refit strategy |
+| traversal frontends | inline ray query and native ray pipeline where exact capabilities/programs exist | effects do not all implement both frontends |
+| shader-table mapping | checked Renderer plan maps logical scene/hit/material identity to native records | mapping and retirement remain unproved under churn |
+| primary visibility | raster or ray GBuffer share one deferred material-result contract | raster/ray semantic parity is unproved |
+| lighting use | direct visibility can resolve inline/pipeline; reference and ReSTIR indirect retain narrower routes | ray support does not imply effect or backend parity |
+| evidence | source/build membership and exact negative boundaries | no candidate-bound native-validation, raw-output, lifetime, or performance proof |
+
+```mermaid
+flowchart LR
+    Scene[Prepared geometry, instances, and materials] --> Plan[Renderer scene and SBT plan]
+    Plan --> AS[BLAS plus selected TLAS strategy]
+    AS --> Select{Effect resolves frontend}
+    Select --> Inline[Inline ray-query adapter]
+    Select --> Pipeline[Native pipeline and SBT adapter]
+    Inline --> Product[One semantic effect product]
+    Pipeline --> Product
+    Product --> Complete[Queue completion retires all generations]
+```
+
+Traversal is an implementation choice beneath the effect contract. Strict unavailable modes reject; Automatic may select only a complete alternate and must expose what became active.
+
 Target semantic invariants and their rationale are owned by [Ray-Tracing Execution Architecture](ExecutionArchitecture.md). This dossier states the current feature shape.
 
 ## Feature Promise

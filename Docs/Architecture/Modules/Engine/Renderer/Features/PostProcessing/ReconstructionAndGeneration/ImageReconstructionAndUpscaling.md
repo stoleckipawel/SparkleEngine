@@ -6,6 +6,16 @@
 
 **Scope:** `REN-POST-04` through `REN-POST-06`; render-to-output extent resolution through Linear upscale, NVIDIA DLSS Super Resolution, or NVIDIA DLSS Ray Reconstruction
 
+## At A Glance
+
+| Active producer | Eligibility | Output contract | Main limitation |
+| --- | --- | --- | --- |
+| Linear | built-in fallback/current route | one current-frame `ResolvedSceneColor` at output extent | filter/edge/alpha quality and scale range unproved |
+| DLSS Super Resolution | D3D12 plus built/runtime/device/interposer/provider readiness | one reconstructed current-frame output from color, depth, motion, exposure, camera, and extent tags | vendor/hardware/package constraints and no Vulkan route |
+| DLSS Ray Reconstruction | D3D12 provider readiness plus ReSTIR-specific guides | replaces the ordinary reconstruction producer for the supported lighting route | mode/guide restrictions and quality/history proof open |
+
+Only one producer may own `ResolvedSceneColor` for a frame. Requested vendor mode can resolve to an explicit built-in fallback, but the active result and reason must remain visible; fallback success does not prove the requested provider.
+
 **Parent family:** [Post Processing](../README.md)
 
 Cross-feature resolution/sample contract: [Resolution, Sampling, and Anti-Aliasing](ResolutionSamplingAndAntiAliasing.md). This dossier owns provider evaluation and output identity; it does not promote RHI sample-count or jitter vocabulary into a separate AA feature.

@@ -6,6 +6,18 @@
 
 **Scope:** `REN-FG-01` through `REN-FG-08` and the frame-graph portion of `REN-OWN-04`/`REN-OWN-06`; defines how Renderer feature declarations become resources, dependencies, barriers, queue submissions, and retirement
 
+## At A Glance
+
+| What the graph owns | Current strength | Open proof boundary |
+| --- | --- | --- |
+| pass/resource declaration and versioned dependencies | one central execution authority for Renderer feature work | missing-producer, dead-work, and dependency fixtures not accepted |
+| queue assignment, barriers, waits, and recording chunks | explicit graphics/compute/copy/native-ray scheduling vocabulary | cross-queue correctness, useful overlap, and parallel equivalence unproved |
+| transient lifetime and alias placement | compiled first/last use plus alias/state barriers | aliased/non-aliased output equivalence and pressure benefit unproved |
+| topology keys, graph generations, and history invalidation | rebuilds on relevant extent/mode/provider/shader/SBT changes | churn safety, bounded retained generations, and exact invalidation unproved |
+| submission tokens and retirement | old graphs/frame slots wait for all used queues | failure/shutdown settlement remains unproved |
+
+The frame graph is infrastructure rather than a visible effect. Its success criterion is that every enabled feature product is produced exactly once with valid ordering and lifetime; performance claims require separate timing evidence.
+
 ## Feature Contract
 
 The frame graph is Renderer-owned scheduling policy over RHI mechanisms. A feature pass declares its kind, typed shader parameters, resource reads/writes, and queue preference. The graph compiler derives executable order, resource versions, queue placement, transient lifetimes and aliases, state transitions, cross-queue waits, recording chunks, and submission batches. RHI records/submits the resulting commands without choosing Renderer technique order.

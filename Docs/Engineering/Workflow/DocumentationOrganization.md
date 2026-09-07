@@ -11,7 +11,7 @@ Documentation MUST first help a reader form a useful mental model. Authority, ev
 A feature, system, or module overview follows this reading order unless a shorter page does not need every section:
 
 1. **Plain-language purpose** — one or two sentences naming the result and intended reader.
-2. **At a glance** — current state, supported path, important missing capability, and evidence boundary visible without scrolling through a ledger.
+2. **At a glance** — current state, projected 0–100 readiness when the page owns or describes a feature, supported path, important missing capability, and evidence boundary visible without scrolling through a ledger.
 3. **How it fits** — a small diagram showing owners, data flow, or execution order when three or more relationships matter.
 4. **How to use or select it** — the public executable, API, setting, CVar, editor control, or explicit statement that no user route exists.
 5. **How it works** — the shortest end-to-end explanation before class, method, and capability-ID detail.
@@ -21,6 +21,21 @@ A feature, system, or module overview follows this reading order unless a shorte
 9. **Evidence and reference** — exact capability/acceptance/check IDs, source paths, snapshots, and neighboring authorities.
 
 This is progressive disclosure: the first screen provides orientation, middle sections explain the system, and bottom sections serve implementation and review. Do not begin a reader-facing page with a multi-page inventory, source-directory audit, acceptance ledger, or history unless that exact ledger is the document’s sole purpose.
+
+### Feature Depth Test
+
+Section names alone do not satisfy the page contract. A feature page is deep enough only when a reader can follow one concrete request or input to its observable result and answer:
+
+- who owns the request, mutable state, produced data, and final decision;
+- which selector or caller makes the route reachable and how requested state becomes active state;
+- what crosses each module, thread, frame, process, CPU/GPU, or source/runtime boundary;
+- what identity, generation, completion, reset, cancellation, capacity, and retirement mean;
+- how modes, backends, content classes, and unavailable combinations differ;
+- which design choice was made, what it buys, and what cost or alternative it accepts;
+- what failure looks like, what remains valid, and whether recovery, retry, fallback, refusal, or restart occurs;
+- what source presence proves and which build, runtime, visual, performance, package, adoption, or release claims remain unproved.
+
+Do not fill missing depth with generic headings or repeat the same overview in every child. The family page owns shared flow and invariants; a leaf explains the behavior and proof boundary that is unique to that capability. A long ledger without an end-to-end mental model is incomplete, as is a polished overview without exact limitations and evidence.
 
 Use the [Documentation Page Template](DocumentationPageTemplate.md) when creating or materially restructuring a page.
 
@@ -32,6 +47,7 @@ Use the [Documentation Page Template](DocumentationPageTemplate.md) when creatin
 - Expand an acronym on first use unless the landing page defines it. Use exact code names only after explaining their role in ordinary language.
 - State costs honestly. Every meaningful design choice SHOULD pair its benefit with a drawback, constraint, or rejected alternative.
 - Use `Implemented path`, `Partial`, `Capability-gated`, `Not found`, and `Unproved` consistently. Do not use vague states such as “supported” or “complete” without the matrix and evidence scope.
+- Use the [Current Feature Readiness scoring model](../../Acceptance/CurrentReadiness.md#scoring-model) for numeric progress. A percentage MUST expose its `I/R/V/D` components and snapshot, MUST link to the central owning row, and MUST NOT be described as an acceptance percentage.
 - Put long source lists, capability IDs, failure/check matrices, and audit tables under clearly labeled reference sections near the end.
 - Render header metadata as short bold labels separated by blank lines. Put the current state, main limitation, and evidence boundary in one callout when those facts are easy to confuse.
 
@@ -49,6 +65,8 @@ Every visual MUST have a sentence explaining what the reader should notice. Keep
 ## One Knowledge Owner
 
 Every rule, decision, plan item, evidence gate, current-state fact, and historical claim MUST have one owning document. Other documents link to the owner and state only the context needed by their own responsibility. Repeated tables, phase lists, status summaries, and definitions are duplicate authority unless they are generated projections or clearly labeled snapshots.
+
+[Current Feature Readiness](../../Acceptance/CurrentReadiness.md) owns readiness percentages and their component breakdown. A feature dossier may project its current number near the top for reader orientation, but the projection names the same snapshot and links back to that dashboard. Plans and research link to the owning feature score; writing a plan or study does not increase implementation readiness.
 
 Code and executable build configuration own implemented behavior. A document MUST NOT upgrade source presence into build, runtime, visual, performance, or release proof.
 
@@ -99,6 +117,7 @@ Every non-index document MUST make these facts obvious before its first substant
 - authority boundary when a neighboring document could be mistaken for the owner;
 - verification date and revision for current-state maps or snapshots;
 - explicit non-claims when source inspection could be mistaken for executable evidence.
+- a projected `Current readiness` value and plain-language state for feature, module, and current-capability pages; target-only pages state `0/100 — target only` when no implementation exists, while non-feature standards and pure research use `Not applicable` and link to the feature owner where needed.
 
 Render these facts as short bold metadata labels with one fact per paragraph. Do not compress several metadata fields into a dense prose sentence.
 
@@ -136,6 +155,7 @@ An index routes. It SHOULD NOT reproduce large status tables, requirements, phas
 ## Lifecycle
 
 - Reconcile current maps and capability snapshots whenever their named owners, consumers, build membership, or public selection surface changes.
+- Reconcile the central readiness row and every local projection whenever implementation, reachability, candidate evidence, or delivery/adoption state changes.
 - Update a feature's architecture, local acceptance contract, directly affected plans, release/workload tracking, and indexes in one change when its contract moves.
 - Delete superseded content when traceability has no active consumer.
 - Move content to an archive only when provenance, legal traceability, or an active migration audit requires retention; archives are never default reviewer paths.
@@ -152,4 +172,5 @@ Before handoff, verify:
 5. no old path, duplicate authority, or stale paraphrase remains;
 6. all local links and linked anchors resolve;
 7. current-state claims name their snapshot and evidence boundary;
-8. UTF-8, whitespace, and `git diff --check` pass.
+8. every materially changed feature passes the feature depth test rather than merely matching the template;
+9. UTF-8, whitespace, and `git diff --check` pass.

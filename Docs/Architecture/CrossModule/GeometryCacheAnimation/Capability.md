@@ -12,7 +12,22 @@
 
 **Feature acceptance:** [Geometry Cache Animation — Acceptance](Acceptance.md)
 
+**Current readiness:** **0/100** — the inspected seams are adjacent foundations, not a geometry-cache implementation. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 Code and executable build configuration remain authoritative. Reinspect every listed owner and absence before using this dated snapshot for implementation or release claims.
+
+## At A Glance
+
+| Pipeline stage | Current reusable seam | Missing geometry-cache capability |
+| --- | --- | --- |
+| import | glTF/FBX selector and structured imported scene/deformation records | Alembic dependency, cache tracks/samples/topology/material validation |
+| cook/publication | atomic scene generation writer and typed scene products | chunked native cache schema, codec, directory, checksums, range-read identity |
+| load/playback | level activation plus skeletal/morph animation components | header/directory-only activation and cache-specific time/sample playback state |
+| residency | shared bounded read/decode/upload/retirement machinery | cache chunk scheduling, interpolation windows, seek/cancel policy, CPU/GPU budgets |
+| Renderer geometry | raster skin/morph paths and CPU ray-deformation reconstruction | one GPU-produced current/previous vertex product shared by raster, motion, BLAS, and ray hits |
+| workload | Modern Sponza Knight Alembic/USD/Maya sources exist | no scene-specific fallback; provenance, scale, material, playback, backend, and cost evidence |
+
+The target extends existing owners but changes the deformation data shape: sampled vertex streams are neither skeleton poses nor morph-weight arrays. Treating frames as morph targets would multiply storage by vertex count times sample count and create the wrong runtime owner.
 
 ## Source-Backed Snapshot
 

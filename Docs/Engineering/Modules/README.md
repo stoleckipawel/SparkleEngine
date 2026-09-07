@@ -4,6 +4,20 @@
 
 These standards add rules for a particular implementation domain. Read the document for every affected domain; a cross-module change may require more than one.
 
+## Cross-Module Selection
+
+| Change crosses... | Minimum module rule set |
+| --- | --- |
+| world/ECS -> immutable render publication | GameFramework + Renderer |
+| Renderer feature -> native GPU command/resource | Renderer + RHI |
+| task graph -> owning subsystem publication | Tasks + the producing module |
+| editor intent -> world/settings/render result | Editor + affected GameFramework/Renderer owner |
+| source asset -> cooked/runtime product | Tools + consuming GameFramework/Renderer/RHI owner |
+
+Module rules compose; selecting the primary owner does not waive the rules of another boundary the data or lifetime actually crosses.
+
+## Domain Rules
+
 | Domain | Source boundaries commonly covered | Read it when... |
 | --- | --- | --- |
 | [Tasks](Tasks.md) | `Engine/Tasks` and concurrent producers/consumers | changing task graphs, lanes, synchronization, cancellation, failure propagation, or shutdown |

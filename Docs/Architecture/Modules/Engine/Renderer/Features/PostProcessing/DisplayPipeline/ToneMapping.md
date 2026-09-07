@@ -8,6 +8,16 @@
 
 **Parent family:** [Post Processing](../README.md)
 
+## At A Glance
+
+| Operator | Intended role | Current proof boundary |
+| --- | --- | --- |
+| Reinhard | simple compressive reference curve | numeric implementation, highlight behavior, and backend agreement unproved |
+| ACES approximation | default ACES-inspired display mapping | name does not establish standards conformance |
+| ACES fitted filmic | alternate fitted filmic curve | output/colorimetric agreement and artistic suitability unproved |
+
+Exactly one operator consumes exposure-weighted HDR `ResolvedSceneColor` and produces display-linear `ToneMappedSceneColor`. Output transfer encoding and publication happen later; color grading is absent rather than folded into these curves.
+
 ## Feature Promise
 
 Sparkle multiplies output-extent `ResolvedSceneColor` by the current 1x1 exposure value and applies exactly one selected operator into `ToneMappedSceneColor`. The result remains display-linear; [Presentation and Output](PresentationAndOutput.md) owns later transfer encoding and publication.

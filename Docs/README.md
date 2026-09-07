@@ -5,7 +5,7 @@
 Use this documentation to understand what SparkleEngine currently contains, how its systems fit together, what is missing, and what still needs evidence.
 
 > [!IMPORTANT]
-> Start with [SparkleEngine At A Glance](Architecture/EngineAtAGlance.md). It summarizes the engine, Renderer, RHI, major strengths, missing capabilities, tradeoffs, and first-release blockers without requiring you to read the detailed ledgers.
+> Start with [SparkleEngine At A Glance](Architecture/EngineAtAGlance.md). It summarizes the engine, Renderer, RHI, major strengths, missing capabilities, tradeoffs, and first-release blockers without requiring you to read the detailed ledgers. Open [Current Feature Readiness](Acceptance/CurrentReadiness.md) for the evidence-weighted 0–100 view.
 
 ## Start Here
 
@@ -15,6 +15,7 @@ Use this documentation to understand what SparkleEngine currently contains, how 
 | Understand how a frame is rendered | [Renderer](Architecture/Modules/Engine/Renderer/README.md) | [Rendering A Sparkle Frame](Architecture/Modules/Engine/Renderer/RenderingASparkleFrame.md) |
 | Understand D3D12/Vulkan and GPU services | [RHI](Architecture/Modules/Engine/RHI/README.md) | [RHI Feature Guide](Architecture/Modules/Engine/RHI/Features/README.md) |
 | See exactly what exists or is missing | [Module Capability Inventory](Architecture/Modules/README.md) | [Capability Evidence Plan](Plans/CapabilityEvidence.md) |
+| Compare current feature readiness | [Current Feature Readiness](Acceptance/CurrentReadiness.md) | Open the linked Architecture dossier for the implementation and missing-work detail |
 | Build, cook, or launch Showcase | [Launcher Architecture](Architecture/Modules/Tools/Launcher/README.md) | [Build And Packaging](Architecture/Modules/BuildAndPackaging/README.md) |
 | Make an implementation change | [Change Integration](Engineering/Workflow/ChangeIntegration.md) | [Engineering Task Map](Engineering/README.md#choose-by-task) |
 | Open or close a release iteration | [Change Lifecycle control record](Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record) | [Roadmap traceability](Strategy/Roadmap.md#stage-target-and-evidence-traceability) |
@@ -69,6 +70,8 @@ Code and executable build configuration are the authority for implemented behavi
 | `Not found` | The targeted source/build audit found no current implementation owner. |
 | `Unproved` | The architecture is documented, but its required executable evidence has not been accepted. |
 | `Blocked` | A named prerequisite prevents the next acceptance or delivery decision. |
+
+The numeric readiness score is separate from these state labels. It adds implementation, integration, verification, and delivery components for orientation; it does not turn acceptance into an average. See the [scoring model](Acceptance/CurrentReadiness.md#scoring-model).
 
 ## Short Reviewer Routes
 

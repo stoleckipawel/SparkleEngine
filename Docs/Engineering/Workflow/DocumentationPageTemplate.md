@@ -15,10 +15,14 @@ Use only the sections that answer a real reader question. A compact feature may 
 
 **Verified:** date and revision when the page records a current-state snapshot
 
+**Current readiness:** **NN/100** (`I/R/V/D = NN/NN/NN/NN`) — plain-language current state; [score basis](../../Acceptance/CurrentReadiness.md)
+
 One or two plain-language sentences explain what result this system produces and why a reader should care.
 
 > [!IMPORTANT]
 > **Current state:** Implemented path / Partial / Capability-gated / Not found.
+>
+> **Readiness:** **NN/100** — explain which component is holding the score down.
 >
 > **Main limitation:** The most important missing or restricted behavior.
 >
@@ -48,7 +52,11 @@ Name the executable, API, editor control, setting, CVar, or CLI route. If none e
 
 ## How It Works
 
-Explain the shortest producer-to-result route. Introduce source types only after their purpose is clear.
+Explain one concrete producer-to-result route. Name request, owner, transformation, publication, consumer, result, and the completion or invalidation edge. Introduce source types only after their purpose is clear.
+
+## State And Lifetime
+
+Describe requested versus active state, stable identity/generation, mutable owner, cross-thread or CPU/GPU publication, reset/cancellation, capacity, and retirement where they matter. Omit this section only when none of those concepts exists for the subject.
 
 ## Support Matrix
 
@@ -80,6 +88,8 @@ Separate implemented source shape from build, runtime, visual, native-validation
 - Feature-local acceptance and evidence-plan links.
 - Related concepts and next/previous reading.
 ````
+
+Before using the structure, apply the [feature depth test](DocumentationOrganization.md#feature-depth-test). Do not retain a heading with generic filler, and do not duplicate family-wide flow in every leaf; show the leaf's distinct decision, state, failure, and evidence boundary.
 
 ## Index-Page Variant
 

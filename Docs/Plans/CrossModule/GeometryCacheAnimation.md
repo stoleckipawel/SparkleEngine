@@ -10,6 +10,20 @@
 
 This plan owns delivery order, dependencies, and phase exit sequence. It does not redefine the architecture, own the final acceptance criteria, or prove that any phase is complete.
 
+## Delivery At A Glance
+
+```mermaid
+flowchart LR
+    P0[0 Freeze contracts] --> P1[1 Tools import]
+    P1 --> P2[2 Native cook and range read]
+    P2 --> P3[3 Playback, residency,<br/>shared deformation]
+    P3 --> P4[4 Raster and temporal]
+    P4 --> P5[5 Ray consumers]
+    P5 --> P6[6 Representative proof<br/>and cleanup]
+```
+
+The order follows the cheapest trustworthy oracle: normalized source samples must be provable before compression, seek, playback, GPU deformation, or visual output can be believed. Each phase leaves one usable lower layer but does not advertise later capability. A static pose, full-file memory expansion, or separate raster/ray deformation is a failed exit rather than a temporary feature claim.
+
 ## Staged Delivery
 
 Each phase is independently reviewable. A later phase starts only after the preceding exit gate is recorded. No phase may advertise animation from a frozen pose or a static fallback. Temporary reference code is deleted in the phase that replaces it.

@@ -18,6 +18,8 @@
 
 **Deeper routes:** [exact Renderer shader program catalog](../../Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), and [shader authoring-to-runtime trace](../../../CrossModule/FeatureExecutionTraces.md#trace-7-shader-authoring-to-runtime-generation)
 
+**Current readiness:** **50/100** — the compile/cook/map/library/runtime route is integrated in source; candidate compiler/backend/ABI, failure, reload, performance, package, and adoption evidence remains absent. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
 > [!TIP]
 > This is a source capability ledger. Start with the [Shader System Architecture](../../../CrossModule/ShaderSystem/README.md) for the mental model, then search here by `SHD-*` ID, authored language, stage, target, or product. Registration, compilation, publication, runtime loading, and executable use are separate claims.
 

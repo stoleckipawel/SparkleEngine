@@ -10,6 +10,30 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **25/100** across build-to-release delivery — development build/staging foundations exist, but CI, package/install, verification, and operated delivery are absent. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
+
+## At A Glance
+
+| Outcome | Current state | What is still missing |
+| --- | --- | --- |
+| configure and build developer profiles | six Editor/Game profiles, modular targets, dependency/toolchain options, and development artifact layout exist | a clean reproducible build result is not retained by this snapshot |
+| prepare runnable development products | declared runtime support is copied beside Launcher/Showcase targets | development staging still depends on workspace conventions |
+| inspect architecture/style | custom boundary and code-style targets exist | no general automated regression runner or CI gate |
+| stage and distribute a release | not found | immutable manifest, licenses/SBOM, signing, archive/installer, relocation, and clean-machine proof |
+| operate a released product | partial developer onboarding only | public first-use, support/security intake, incident, patch, and withdrawal operation |
+
+```mermaid
+flowchart LR
+    Source[Frozen source and dependency identities] --> Configure[Configure profile, toolchain, and features]
+    Configure --> Build[Build engine, tools, and product targets]
+    Build --> Dev[Publish development artifacts]
+    Dev -. missing owner .-> Stage[Immutable release stage and manifest]
+    Stage -. missing owner .-> Package[Sign, package, install, and verify]
+    Package -. missing owner .-> Support[Operate support and incident response]
+```
+
+The current build graph is useful engineering infrastructure, not yet a product-delivery system. The dossiers below separate those outcomes so a successful local executable cannot be mistaken for a distributable, supportable release.
+
 ## Capability Dossiers
 
 | Surface | Owner and current boundary |

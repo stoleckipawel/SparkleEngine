@@ -8,6 +8,17 @@
 
 **Parent family:** [Post Processing](../README.md)
 
+## At A Glance
+
+| Question | Current answer |
+| --- | --- |
+| Can a user author a look or technical color transform? | No grading parameters, LUT assets, import/cook path, blend stack, pass, shader, or per-view controls exist. |
+| Is tone-mapper selection color grading? | No. The current operators are fixed HDR-to-display mappings, not an authored look. |
+| Is Linear/sRGB output selection grading? | No. It selects transfer encoding, not color adjustment or gamut conversion. |
+| What is the unresolved architectural choice? | Scene-referred versus display-referred placement, working/display gamut, LUT representation, precision, and per-view override ownership. |
+
+The useful future contract is larger than a saturation slider: it must carry authored color-space metadata from asset/import/cook through a deterministic per-view transform and a measurable display result.
+
 ## Current Capability
 
 Color grading was not found. Sparkle has no grading pass or shader, per-view grading settings, lift/gamma/gain or slope/offset/power controls, saturation/contrast/hue controls, 1D or 3D grading LUT asset/import/cook path, LUT blend stack, working/display gamut selection, or grading selector/debug product.

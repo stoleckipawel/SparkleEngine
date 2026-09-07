@@ -6,6 +6,8 @@
 
 **Scope:** `RHI-RES-*` and `RHI-FMT-*`; resource/view descriptions, formats, samplers, upload/readback, allocation, transient aliasing, memory diagnostics, recording use, and reclamation
 
+**Current readiness:** **50/100** — resource/allocation/use/retirement source paths are broad; pressure, aliasing, delayed-completion, format/use, leak, and backend evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
 ## Feature Promise
 
 A valid neutral resource description becomes backend storage with explicit format, usage, state, allocation, and view identity. CPU ownership changes never reclaim storage while a recorded or submitted queue consumer can still reference it.

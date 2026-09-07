@@ -6,6 +6,28 @@
 
 **Scope:** `REN-UI-01` through `REN-UI-04`; immutable UI packets, host overlays, editor viewport presentation, texture handles, and the post-graph/pre-submit composition boundary
 
+## At A Glance
+
+| Mode | Scene result | UI/product result | Main risk |
+| --- | --- | --- | --- |
+| None | graph output proceeds unchanged | no UI work | a stale prior UI result must not be implied |
+| HostOverlay | scene output remains the composition target | immutable packet is replayed through the RHI ImGui route | blend/color/DPI and packet lifetime unproved |
+| EditorViewport | final graph color becomes a typed viewport product | matching generation is registered and drawn by editor presentation | stale/wrong viewport texture or unbounded registration growth |
+
+```mermaid
+flowchart LR
+    Graph[Complete scene graph output] --> Product{Composition mode}
+    Packet[Immutable UI packet] --> Product
+    Product -->|None| Submit[Submit scene result]
+    Product -->|Host overlay| Overlay[Replay packet over host target]
+    Product -->|Editor viewport| Register[Publish matching viewport texture generation]
+    Register --> Editor[Draw editor presentation packet]
+    Overlay --> Submit
+    Editor --> Submit
+```
+
+Composition occurs after the scene graph and before final submit. This gives host and editor one backend lowering path, but it makes packet, product, texture, viewport, and frame generations part of the correctness contract.
+
 ## Feature Promise
 
 `UiFrameRenderer` consumes one immutable UI packet after scene graph execution and before final frame submission.

@@ -6,6 +6,18 @@
 
 **Responsibility:** define the shared lighting boundary and route Direct, Indirect, Volumetric, and offline-reference lighting without treating them as one undifferentiated capability
 
+## At A Glance
+
+| What Sparkle currently has | What remains absent or blocked |
+| --- | --- |
+| Ray-dependent direct lighting for directional, point, spot, and rectangular lights | Shadow-map or other fully non-ray direct-light fallback |
+| ReSTIR direct/indirect products and an accumulating interactive reference branch | Accepted numerical, convergence, temporal, visual, or performance proof |
+| Five separate scene-linear lobe products joined with emissive and sky | Participating-media/volumetric lighting |
+| Debug access to direct and indirect lobe products | Exact presentation for every diagnostic lobe |
+| A defined offline path-tracer target and discovery gate | An authorized, implemented, independent offline reference oracle |
+
+The most important design choice is product separation: direct diffuse, direct specular, direct subsurface, indirect diffuse, and indirect specular remain distinct until one composite. That improves diagnosis and comparison, at the cost of more resources, histories, bandwidth, and synchronization.
+
 ## Lighting Taxonomy
 
 | Domain | Current result | State | Owning dossier |

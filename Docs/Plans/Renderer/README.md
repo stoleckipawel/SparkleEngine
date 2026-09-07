@@ -4,6 +4,17 @@
 
 These plans are primarily owned by `Engine/Renderer`. Links name collaborating modules without obscuring the primary delivery owner.
 
+## Choose By Outcome
+
+| Outcome | Current architecture state | Plan purpose |
+| --- | --- | --- |
+| trustworthy per-view debug presentation | debug modes exist but exact-display/HDR domain handling and viewport show flags are partial/target | order the clean break from process-global intent to typed per-view presentation |
+| deferred GBuffer decals | current capability is absent; target composition design and feature-local acceptance exist | deliver authored data, scene/GPU publication, raster/ray composition, and evidence in bounded slices |
+
+Plans do not upgrade either feature. Candidate results remain in release-level completion reports after the feature-local contract is executed.
+
+## Plans
+
 | Plan | Delivers | Architecture owner |
 | --- | --- | --- |
 | [Debug View Presentation](DebugViewPresentation.md) | per-view show flags, display mapping, editor controls, and capture metadata | [View Modes And Show Flags](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md) |

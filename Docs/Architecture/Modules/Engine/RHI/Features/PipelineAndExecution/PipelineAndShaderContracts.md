@@ -6,6 +6,32 @@
 
 **Scope:** `RHI-PIPE-*` plus RHI shader bytecode, target, reflection, parameter-layout, and authoring contracts used to materialize graphics and compute pipelines
 
+**Current readiness:** **50/100** — neutral graphics/compute pipeline and backend materialization paths exist; full-key/ABI/capability/native/parity/cache evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
+## At A Glance
+
+| Input | Required agreement | Produced result |
+| --- | --- | --- |
+| shader bytecode and stage/target identity | selected backend target and declared program stage | backend shader module/bytecode reference eligible for one pipeline |
+| reflection and typed parameter layout | binding indices, kinds, arrays, visibility, sizes, and ABI signature | validated binding/pipeline layout |
+| render state and attachment descriptions | formats, sample count, vertex layout, raster, depth/stencil, and blend state | complete graphics pipeline identity |
+| compute program and layout | compute stage, ABI, and device limits | complete compute pipeline identity |
+| shader generation | every cached identity and in-flight owner | old/new generations cannot be mixed or reclaimed early |
+
+The active graphics surface is vertex-plus-pixel, while compute has its own complete descriptor. Geometry, hull, domain, mesh, and task shader vocabulary does not currently form an executable Renderer pipeline.
+
+## Materialization Flow
+
+```mermaid
+flowchart LR
+    Program[Cooked program and reflection] --> Validate[Validate target, stage, and typed ABI]
+    State[Complete neutral pipeline state] --> Validate
+    Validate --> Key[Build semantic cache identity]
+    Key --> Lower[D3D12 or Vulkan materialization]
+    Lower --> Bind[Use only with matching parameters and attachments]
+    Bind --> Retire[Retire by last queue completion]
+```
+
 ## Feature Promise
 
 A complete validated neutral descriptor—shader programs, reflected bindings, parameter layout, render/depth formats, geometry layout, raster/depth/stencil/blend state, and sample count—materializes one semantically equivalent native pipeline. RHI does not invent Renderer formats, stages, feature defaults, or fallback policy.
@@ -17,6 +43,15 @@ A complete validated neutral descriptor—shader programs, reflected bindings, p
 - D3D12 root signatures/PSOs and Vulkan layouts/modules/pipelines are lowerings, not separate feature contracts.
 - The current graphics contract binds vertex and pixel programs. Geometry/hull/domain and mesh/task vocabulary is not an active pipeline route.
 - Shader authoring macros/types are compile-time contract vocabulary; the ShaderCompiler owns offline compilation/publication and Renderer owns program selection/reload.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| Require complete neutral descriptors | Cache identity and native creation are deterministic and reviewable | Callers must supply every semantic field rather than rely on backend defaults |
+| Validate reflected and typed ABI before native creation | Layout defects fail close to their source | Generated metadata and C++ declarations must evolve atomically |
+| Lower one contract to both APIs | Backend comparison tests semantics instead of two public designs | D3D12/Vulkan native differences remain substantial implementation work |
+| Include shader generation in identity and retirement | Hot replacement cannot mix new metadata with old native pipelines | Reload retains old generations until all GPU users finish |
 
 ## Acceptance Criteria
 

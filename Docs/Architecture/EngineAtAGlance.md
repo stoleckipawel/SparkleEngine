@@ -6,10 +6,14 @@
 
 **Summary basis:** Architecture inventories reviewed 2026-09-07; their individual snapshot revisions and evidence limits remain authoritative
 
+**Current readiness:** **43/100** across 45 tracked feature families; all remain Blocked and none has candidate-bound verification or delivery credit. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+
 SparkleEngine is a compact, renderer-first C++ engine built around a cooked-content runtime, a multithreaded Renderer, and backend-neutral GPU services with D3D12 and Vulkan implementations.
 
 > [!IMPORTANT]
 > **Current state:** Broad implementation paths exist in source, but the first release is blocked.
+>
+> **Readiness:** **43/100** — source implementation and integration account for the score; candidate verification and delivery/adoption are both still `0`.
 >
 > **Biggest gaps:** No accepted clean build/run record, formal package, automated regression/CI, clean-machine proof, or release approval.
 >
@@ -62,16 +66,16 @@ The important boundary is that GameFramework publishes immutable scene/view inpu
 
 ## System Status
 
-| System | Current state | What exists | Main missing or unproved result |
-| --- | --- | --- | --- |
-| Build and delivery | Partial | Six build profiles, dependency acquisition, module/product targets, development artifacts | Formal stage/sign/verify/package/install, CI/tests, clean-source and clean-machine evidence |
-| Core and Tasks | Implemented path; unproved | paths, files, diagnostics, process support, task graphs, lanes, cancellation vocabulary | Stress, failure, shutdown, capacity, and package-location proof |
-| Platform and Application | Partial | Win32 window/input/DPI, runtime/editor hosts, serial/threaded frame loop | Non-Windows host, broad lifecycle tests, packaged standard-user behavior |
-| Assets, import, and cooking | Implemented path; unproved | glTF/GLB/FBX subsets, textures, meshes, materials, scenes, animation, shader products | Full fidelity, deterministic publication, malformed-input, license, and package completeness evidence |
-| GameFramework | Implemented path; unproved | levels, cooked loading, ECS/world updates, editing, render extraction | Cancellation/reload, malformed content, numerical and cross-worker determinism evidence |
-| Renderer | Broad implemented path; capability-gated | raster/ray GBuffer, direct/indirect lighting, frame graph, post processing, diagnostics | Feature correctness, visual/temporal quality, backend parity, performance, missing feature families |
-| RHI | Broad implemented path; capability-gated | D3D12/Vulkan resources, descriptors, pipelines, commands, ray tracing, presentation, diagnostics | Native validation, device/queue/lifetime faults, parity, performance, device-recovery scope |
-| Tools and products | Partial | Launcher, cookers, ShaderCompiler, editor, Showcase runtime/editor | polished first use, public support route, independent adoption, packaged operation |
+| System | Readiness | Current state | What exists | Main missing or unproved result |
+| --- | ---: | --- | --- | --- |
+| Build and delivery | **33/100** | Partial | Six build profiles, dependency acquisition, module/product targets, development artifacts | Formal stage/sign/verify/package/install, CI/tests, clean-source and clean-machine evidence |
+| Core and Tasks | **50/100** | Implemented path; unproved | paths, files, diagnostics, process support, task graphs, lanes, cancellation vocabulary | Stress, failure, shutdown, capacity, and package-location proof |
+| Platform and Application | **50/100** | Partial | Win32 window/input/DPI, runtime/editor hosts, serial/threaded frame loop | Non-Windows host, broad lifecycle tests, packaged standard-user behavior |
+| Assets, import, and cooking | **49/100** | Implemented path; unproved | glTF/GLB/FBX subsets, textures, meshes, materials, scenes, animation, shader products | Full fidelity, deterministic publication, malformed-input, license, and package completeness evidence |
+| GameFramework | **48/100** | Implemented path; unproved | levels, cooked loading, ECS/world updates, editing, render extraction | Cancellation/reload, malformed content, numerical and cross-worker determinism evidence |
+| Renderer | **43/100** | Broad implemented path; capability-gated | raster/ray GBuffer, direct/indirect lighting, frame graph, post processing, diagnostics | Feature correctness, visual/temporal quality, backend parity, performance, missing feature families |
+| RHI | **45/100** | Broad implemented path; capability-gated | D3D12/Vulkan resources, descriptors, pipelines, commands, ray tracing, presentation, diagnostics | Native validation, device/queue/lifetime faults, parity, performance, device-recovery scope |
+| Tools and products | **45/100** | Partial | Launcher, cookers, ShaderCompiler, editor, Showcase runtime/editor | polished first use, public support route, independent adoption, packaged operation |
 
 `Implemented path` means source and build membership contain the route. `Unproved` means its required executable evidence has not been retained and accepted.
 
@@ -96,18 +100,18 @@ For the detailed lifecycle, read [Rendering A Sparkle Frame](Modules/Engine/Rend
 
 ## Graphics Feature Snapshot
 
-| Feature family | State | Important boundary |
-| --- | --- | --- |
-| Scene/view preparation and GPU scene | Implemented path; unproved | Persistent scene data and view-local state are separate; capacity and lifetime checks remain open. |
-| Visibility and draw preparation | Partial | CPU frustum classification/sort/batch exists; occlusion, LOD, indirect/GPU-driven draw, stereo, and multiview are absent. |
-| Raster GBuffer | Implemented path; unproved | Static/instanced/skinned/morphed opaque and masked geometry; transparent blending and broad material models are absent. |
-| Ray GBuffer and shadows | Capability-gated; unproved | Inline and native pipeline frontends exist; supported semantics and backend parity remain unproved. |
-| Direct and indirect lighting | Implemented path; unproved | ReSTIR/reference surface-lighting paths currently require ray tracing; no shadow-map or non-ray fallback exists. |
-| Offline path-tracing reference | Defined but blocked | Discovery must establish estimator/oracle credibility before it can approve other lighting. |
-| Exposure, reconstruction, and upscaling | Partial/capability-gated | Manual/automatic exposure and Linear/DLSS routes exist; provider availability and temporal behavior need proof. |
-| Tone mapping and SDR output | Implemented path; unproved | Three tone-map choices feed display encoding; no public bypass or HDR display contract exists. |
-| Debug views and capture | Implemented path; unproved | Intermediate products are selectable/capturable; semantic display correctness and attribution remain open. |
-| Volumetrics, decals, grading, chromatic aberration, frame generation | Not found | Explicit negative dossiers prevent adjacent features or SDK presence from being mistaken for support. |
+| Feature family | Readiness | State | Important boundary |
+| --- | ---: | --- | --- |
+| Scene/view preparation and GPU scene | **50/100** | Implemented path; unproved | Persistent scene data and view-local state are separate; capacity and lifetime checks remain open. |
+| Visibility and draw preparation | **45/100** | Partial | CPU frustum classification/sort/batch exists; occlusion, LOD, indirect/GPU-driven draw, stereo, and multiview are absent. |
+| Raster GBuffer | **50/100** | Implemented path; unproved | Static/instanced/skinned/morphed opaque and masked geometry; transparent blending and broad material models are absent. |
+| Ray GBuffer and shadows | **40/100** | Capability-gated; unproved | Inline and native pipeline frontends exist; supported semantics and backend parity remain unproved. |
+| Direct and indirect lighting | **45/100** | Implemented path; unproved | ReSTIR/reference surface-lighting paths currently require ray tracing; no shadow-map or non-ray fallback exists. |
+| Offline path-tracing reference | **20/100** | Defined but blocked | Discovery must establish estimator/oracle credibility before it can approve other lighting. |
+| Exposure, reconstruction, and upscaling | **40/100** | Partial/capability-gated | Manual/automatic exposure and Linear/DLSS routes exist; provider availability and temporal behavior need proof. |
+| Tone mapping and SDR output | **45/100** | Implemented path; unproved | Three tone-map choices feed display encoding; no public bypass or HDR display contract exists. |
+| Debug views and capture | **40/100** | Implemented path; unproved | Intermediate products are selectable/capturable; semantic display correctness and attribution remain open. |
+| Volumetrics, decals, grading, chromatic aberration, frame generation | **0/100** | Not found | Explicit negative dossiers prevent adjacent features or SDK presence from being mistaken for support. |
 
 See [Renderer Features](Modules/Engine/Renderer/Features/README.md) for the complete feature map and local proof contracts.
 
@@ -144,4 +148,5 @@ Current gate state lives in [First Release Acceptance](../Acceptance/FirstReleas
 | Compare D3D12, Vulkan, raster, inline, and native ray paths | [Graphics Feature Coverage](CrossModule/GraphicsCoverageMatrix.md) |
 | Follow a request through execution and retirement | [Feature Execution Traces](CrossModule/FeatureExecutionTraces.md) |
 | See what remains to prove | [Capability Evidence Plan](../Plans/CapabilityEvidence.md) |
+| Compare 0–100 readiness across all tracked features | [Current Feature Readiness](../Acceptance/CurrentReadiness.md) |
 | See release progress | [Acceptance](../Acceptance/README.md) |

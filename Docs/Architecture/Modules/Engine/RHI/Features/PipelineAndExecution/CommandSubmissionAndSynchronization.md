@@ -6,6 +6,36 @@
 
 **Scope:** `RHI-CMD-*`; recording leases/lists, graphics/compute/copy/ray operations, barriers, queue batches, waits, completion tokens, frame identity, and retirement authority
 
+**Current readiness:** **50/100** — recording, submission, waits, tokens, and retirement exist in source; ordering/state/failure/resize/shutdown/native evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
+## At A Glance
+
+| Question | Current answer |
+| --- | --- |
+| Who decides dependencies and queue preference? | Renderer frame-graph policy declares them; RHI validates and lowers them. |
+| What is recorded? | Neutral raster, compute, copy, barrier, diagnostic, and capability-gated ray operations inside one queue-specific lease. |
+| What orders queues? | Explicit batch waits plus resource/UAV/alias transitions—not CPU submission order alone. |
+| What proves completion? | A real per-queue token and the aggregate token derived from every queue used by the work. |
+| What remains unproved? | Cross-backend synchronization correctness, useful overlap, stall/deadlock bounds, failure settlement, and shutdown stress. |
+
+## Submission Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant FG as Renderer frame graph
+    participant RHI as RHI command service
+    participant Q as Native queue
+    participant Life as Resource owners
+    FG->>RHI: lease queue context and record ordered operations
+    RHI->>RHI: validate states, barriers, waits, and lease state
+    RHI->>Q: submit batch with explicit dependencies
+    Q-->>RHI: signal real completion value
+    RHI-->>Life: publish completion token
+    Life->>Life: retire only after all relevant tokens complete
+```
+
+Queue assignment is a correctness decision first. A compute or copy queue in a plan says nothing about concurrent hardware execution or performance until timestamp evidence demonstrates it.
+
 ## Feature Promise
 
 Validated recorded operations become explicit ordered submissions on capable queues. Dependencies, resource/UAV/alias state, and cross-queue waits are represented before native submission, and aggregate completion is the sole authority for reclaiming shared GPU state.
@@ -17,6 +47,15 @@ Validated recorded operations become explicit ordered submissions on capable que
 - Submission batches carry explicit waits and produce completion tokens. Queue availability does not prove independent hardware execution or useful overlap.
 - D3D12 command queues/fences and Vulkan queues/timeline synchronization lower the same ordering contract.
 - Renderer frame-graph compilation owns intended dependencies and queue choice; RHI validates and executes that plan without reconstructing render policy.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| Use queue-specific recording leases | Temporary descriptors/uploads and command state get one lifetime owner | Lease misuse must be rejected as a state-machine error |
+| Make waits and barriers explicit | Dependencies remain reviewable and backend-neutral | Every producer/consumer hazard must be classified correctly |
+| Retire through aggregate completion | Shared resources cannot be freed after only one queue finishes | Slow or failed queues retain state and need bounded failure handling |
+| Keep scheduling policy out of RHI | RHI does not duplicate Renderer graph semantics | RHI still needs enough validation to reject impossible native work |
 
 ## Acceptance Criteria
 

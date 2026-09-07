@@ -6,10 +6,14 @@
 
 **Current-state basis:** source and build configuration rechecked 2026-09-06 through committed `master` revision `c28b33bd`; executable Renderer source is unchanged from the earlier `8414b5dc` audit
 
+**Current readiness:** **43/100** portfolio average (`I/R` present; `V/D = 0/0`); all 22 tracked Renderer families remain Blocked. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
+
 The Renderer turns an immutable world submission into a lit, post-processed, presented frame. It owns scene/view/frame meaning; the RHI owns low-level GPU mechanisms and backend translation.
 
 > [!IMPORTANT]
 > **Current state:** Broad Renderer paths exist in source for raster and ray rendering, ReSTIR lighting, post processing, diagnostics, and serial/render-thread execution.
+>
+> **Readiness:** **43/100** — most of the score is source implementation and integration; no Renderer family has candidate verification or delivery credit.
 >
 > **Main limitation:** These paths are not release-proved, lighting currently depends on ray tracing, and several familiar rendering features are explicitly absent.
 >

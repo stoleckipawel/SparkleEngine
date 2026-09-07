@@ -12,6 +12,18 @@
 
 This file is part of the Debug Views feature dossier and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 
+## Acceptance At A Glance
+
+| The gate proves | Why a plausible screenshot is insufficient |
+| --- | --- |
+| every mode and flag has one exhaustive semantic classification | an image can look reasonable while exposure, tone mapping, or a feature contribution is applied twice |
+| requests are resolved per viewport into immutable view state | a single-viewport smoke cannot reveal process-global state or cross-viewport contamination |
+| exact and scene-referred signals follow different display mapping but one output encoding contract | bypassing all presentation can produce numerically wrong display output while appearing “unmodified” |
+| unavailable resources and custom overrides remain explicit in UI and capture metadata | a capture without the resolved state cannot be trusted, compared, or replayed |
+| advertised D3D12/Vulkan, extent, format, and encoding rows meet declared tolerances | source parity and matching pass names do not establish equivalent pixels |
+
+The gate is conjunctive: classification, isolation, numeric behavior, failure behavior, replay metadata, and advertised backend coverage must all pass. A candidate result belongs in `FCR-REN-11`; this page defines the checks but never records them as passed.
+
 ## Traceability And Current Disposition
 
 | Dimension | Binding target |

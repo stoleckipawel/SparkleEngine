@@ -10,6 +10,29 @@
 
 **Strategy and acceptance sources:** `NS-EVIDENCE`, `NS-ADOPTION`, and `NS-OWNERSHIP` in the [Engineer Persona](../../../Strategy/EngineerPersona.md); [`PGE-01`, `PGE-05`, `PGE-06`, `PGE-13`](../../../Strategy/Requirements.md); [First Release](../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **0/100** — target only; no tracked CI workflow or registered CMake test service was found. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## At A Glance
+
+| Capability | Current state | Target behavior |
+| --- | --- | --- |
+| automation entry point | Not found | clean, reproducible invocation from frozen revision/toolchain/dependencies |
+| check selection | documented manual principle only | change and claim select the cheapest falsifying checks plus required escalation |
+| execution matrix | Not found | isolated profile/backend/module jobs with bounded concurrency and cancellation |
+| aggregation | Not found | pass, fail, unavailable, skipped, flaky, timeout, and inconclusive remain distinct |
+| retained evidence | Not found | machine-readable result plus attributable logs/artifacts and expiry policy |
+
+```mermaid
+flowchart LR
+    Change[Revision, dirty policy, and changed claims] --> Select[Select required checks and matrix]
+    Select --> Isolate[Create isolated build/artifact/user roots]
+    Isolate --> Run[Run bounded jobs with timeout and cancellation]
+    Run --> Aggregate[Aggregate without evidence inflation]
+    Aggregate --> Retain[Retain logs, manifests, captures, and terminal result]
+```
+
+CI is not a new test authority: each module owns what its check means, while automation owns reproducible selection, isolation, scheduling, failure propagation, and retention.
+
 ## Capability Identity
 
 | ID | Capability | Current state |

@@ -10,6 +10,30 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **50/100** — the shared task runtime and consumers exist in source; stress, failure, shutdown, capacity, and causal-performance proof remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## At A Glance
+
+| Contract | Current behavior | Important limit |
+| --- | --- | --- |
+| topology | FrameCritical, Background, and BlockingIo lanes with local/injection queues and within-lane stealing | no intra-lane priority; cross-lane dependencies are deliberately restricted |
+| work graph | compiled DAG, continuations, `WhenAll`, nested completion, and bounded parallel ranges | graph capacities and policies reject before launch |
+| serial reference | zero-worker configuration executes on the caller | mixed invalid worker configurations reject |
+| failure/cancellation | exceptions become failure; descendants suppress; cleanup settles; cancellation is cooperative | already-running tasks must observe stop and return |
+| structured lifetime | typed parent/child scopes cancel and join before owner destruction | worker-side waits/shutdown that could self-deadlock reject |
+| observation | generation/status/result/per-node data and Windows ETW tracing | no portable trace provider or accepted stress/performance result |
+
+```mermaid
+flowchart LR
+    Build[Describe bounded nodes, edges, lanes, and policies] --> Compile[Validate DAG, capacity, and lane safety]
+    Compile --> Scope[Attach execution to owner scope]
+    Scope --> Schedule[Run ready work serially or on lane workers]
+    Schedule --> Settle[Propagate success, failure, cancellation, and cleanup]
+    Settle --> Join[Join scope before owner destruction]
+```
+
+Tasks supplies execution mechanics, not subsystem state ownership. Parallel work must still publish through the module that owns the result.
+
 ## Scheduler Contract
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

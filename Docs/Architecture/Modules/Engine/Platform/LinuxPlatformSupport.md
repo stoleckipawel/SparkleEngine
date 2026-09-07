@@ -10,6 +10,20 @@
 
 **Strategy sources:** [`PGE-14`](../../../../Strategy/Requirements.md), [Gap Assessment](../../../../Strategy/Assessments/GapAssessment.md), and [First Release](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **0/100** — target only; no native Linux configure/build/run/package product path was found. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## At A Glance
+
+| Required Linux surface | Current state | Why Vulkan-on-Windows is insufficient |
+| --- | --- | --- |
+| configure/build/toolchain | Not found | compiler flag branches do not provide Linux source ownership or product targets |
+| window/input/application host | Not found | current public Platform contracts expose Win32/`HWND` behavior |
+| Vulkan surface/presentation | Not found as a Linux product path | backend GPU commands do not create a Linux window/surface lifecycle |
+| host tools/content pipeline | Not found as supported Linux products | tool process, filesystem, SDK, and dependency behavior remain Windows-oriented |
+| stage/package/clean-machine run | Not found | there is no general release package on Windows or Linux |
+
+Linux support is an end-to-end product matrix, not a preprocessor symbol. It becomes a feature only when a Linux user can obtain, configure, build or install, launch, render, interact, diagnose, and exit through documented owners.
+
 ## Capability Identity
 
 | ID | Capability | Current state |

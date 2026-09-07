@@ -10,6 +10,28 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **48/100** — level/world/publication paths are broadly integrated; content-class, cancellation, reload, determinism, and runtime proof remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## At A Glance
+
+| Layer | Current capability | Main boundary |
+| --- | --- | --- |
+| level/session | registered cooked level activation, cancellation/stale-generation rejection, and save of authored level state | source import/cook and package acquisition remain tool/product owners |
+| world/ECS | generation-aware entities, fixed component schemas, typed queries, deferred structure, and compiled system graph | purpose-built internal ECS, not a public arbitrary component framework |
+| simulation | transforms, camera, lights, material variants, skeletal animation, morph animation, and extraction | deterministic parallel equivalence and broad gameplay systems unproved |
+| render handoff | immutable `RenderFrameSubmission` carries current world result to Renderer | Renderer never reads live ECS; world never owns GPU resources or render technique |
+
+```mermaid
+flowchart LR
+    Level[Cooked level generation] --> Activate[Validate and activate into world]
+    Activate --> Systems[Run compiled simulation systems]
+    Systems --> Commit[Commit structural and derived state]
+    Commit --> Extract[Extract immutable render submission]
+    Extract --> Renderer[Renderer scene/view preparation]
+```
+
+This boundary trades direct Renderer access for deterministic publication and clearer threading. A failed load/system/extraction generation cannot expose a partly updated world or frame submission.
+
 ## Module Boundary
 
 GameFramework depends on Core, Platform, and Tasks but not Renderer or RHI. It owns simulation/world truth and publishes Renderer-neutral `RenderFrameSubmission` data. This separation is a current implemented boundary, not merely an intended layering rule.

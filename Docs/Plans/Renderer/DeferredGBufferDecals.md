@@ -12,6 +12,19 @@
 
 This plan owns feature-local delivery order, dependencies, and phase exit sequence. It does not redefine decal semantics, own the final acceptance criteria, or prove that any phase is complete.
 
+## Delivery At A Glance
+
+| Phase | New trustworthy boundary | Dependency that blocks the next phase |
+| --- | --- | --- |
+| 0. contracts | projection/composition oracle, fixture, budgets, and consumer inventory | no runtime work before semantics and defect-detecting checks are frozen |
+| 1. data | authored/cooked/scene/GPU identity and zero-content behavior | no render claim before lifecycle and capacity are correct |
+| 2. raster | one pre-lighting GBuffer composition path | ray reuse waits for shared functions and primary material correctness |
+| 3. ray primary | ray-produced primary GBuffer consumes the same deferred composition | primary parity does not yet claim reflection or GI hits |
+| 4. secondary ray hits | reflections and GI reuse projection/material semantics with an admitted arbitrary-hit lookup | unsupported producer rows remain excluded, never silently omitted |
+| 5. closeout | backend, overlap, failure, performance, fixture, and deletion evidence | only the feature report can record completion |
+
+This ordering prevents a visually convincing blend pass from hardening the wrong material, ordering, residency, or ray-consumer contract.
+
 ## Staged Delivery
 
 Each phase is independently reviewable. A later phase starts only after the preceding exit gate is recorded. A phase that replaces a temporary path deletes it in the same change.

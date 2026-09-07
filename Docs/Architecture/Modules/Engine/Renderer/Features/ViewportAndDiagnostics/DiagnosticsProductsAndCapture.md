@@ -6,6 +6,18 @@
 
 **Scope:** `REN-DIAG-01` through `REN-DIAG-07`; defines Renderer observability, viewport products, asynchronous capture, and previews from the frame owner's perspective
 
+## At A Glance
+
+| Product or observation | Current purpose | Trust boundary |
+| --- | --- | --- |
+| frame/pass diagnostics | expose active path, pass identity, timing, workload, and failure context | source counters and quiet logs do not prove correctness or low observer cost |
+| memory/residency snapshots | report the owning caches/RHI memory facts rather than recalculate them | attribution, timing, and cross-owner reconciliation unproved |
+| viewport products | publish named output with extent, format, frame, view, and generation identity | a texture handle without semantic identity is insufficient |
+| asynchronous capture | request a product and receive a typed result after RHI readback | byte delivery does not prove intended color or feature semantics |
+| preview/hot-reload observations | expose generation and replacement state | partial generation must never be presented as active success |
+
+Diagnostics are observers of the existing owners. They may summarize or correlate facts, but must not become a shadow frame graph, memory authority, feature selector, or acceptance verdict.
+
 ## Feature Promise
 
 Renderer exposes bounded observations of the frame it actually prepared/submitted and publishes named render products that editor and capture consumers can identify. Diagnostics must describe active state and failure; they are not allowed to become a second implementation authority or imply that a frame was correct merely because it completed.

@@ -6,6 +6,18 @@
 
 **Scope:** `REN-SET-01` through `REN-SET-05`; owns the lifecycle of the aggregate rendering-settings state, editor commit, workspace persistence, startup restore, render-thread handoff, live versus restart-required application, and requested-state limitations. [Feature Selector Catalog](FeatureSelectorCatalog.md) remains the exact per-selector ledger.
 
+## At A Glance
+
+| Question | Current answer |
+| --- | --- |
+| what is edited? | one aggregate `EngineRenderingSettingsState`; 28 fields describe requested rendering configuration |
+| what is persisted? | 27 allowlisted `r.*` values in the workspace `Config/DefaultEngine.ini`; view mode remains session-only |
+| how does it reach rendering? | startup applies the section before command-line overrides; editor commits go through the Renderer facade and serial or render-thread control path |
+| what becomes active immediately? | only settings whose feature owner can apply them without recreation; adapter and back-buffer format changes require restart |
+| what is missing? | atomic/user-scoped packaged persistence, surfaced parse/write errors, and a structured requested-versus-active/fallback status model |
+
+The aggregate exists to make an editor commit coherent, not to centralize feature policy. Each feature still resolves capability, fallback, topology, and active state at its own owner.
+
 ## Feature Contract
 
 The settings layer coordinates many feature owners without becoming their implementation owner. `EngineRenderingSettingsState` is a value snapshot. `EngineRenderingSettingsSection` edits that snapshot, persists its owned names, and sends the whole state through an optional commit callback. The editor binds that callback to the host Renderer service; serial execution applies CVars directly, while threaded execution queues a `RenderSettingsChangedCommand` for the render execution context.

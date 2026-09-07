@@ -10,6 +10,20 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **50/100** for the tracked runtime product route — project/catalog/source integration exists; content readiness, executable workloads, package, first-use, and release evidence remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
+
+## At A Glance
+
+| Product concern | Current state | Evidence boundary |
+| --- | --- | --- |
+| project products | separate minimal ShowcaseEditor and ShowcaseRuntime targets | source/build membership, not a successful or packaged launch |
+| selection | environment/Launcher selects only registered ready catalog levels; unknown falls back to Empty with warning | fallback can hide missing content unless diagnostics are reviewed |
+| content ladder | compact tracked scenes plus larger downloadable Modern Sponza, Bistro, LPS Head, and Cornell Box routes | selection/download support is not cook/runtime/readiness evidence |
+| future workloads | Jungle Ruins and San Miguel catalog targets remain runtime unsupported | catalog vocabulary does not establish USD/OBJ conversion or out-of-core features |
+| acceptance role | levels exercise import, world, Renderer/RHI, diagnostics, performance, and product journeys | one visible level cannot approve the whole feature matrix |
+
+The project should stay thin: it selects content and composes engine/application products, while engine modules and tools retain feature ownership. Scene-specific fixes belong in the owning importer, world, Renderer, or RHI contract unless the behavior is intentionally authored content.
+
 ## Product Surface
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

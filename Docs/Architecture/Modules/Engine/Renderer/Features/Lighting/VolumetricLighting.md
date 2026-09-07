@@ -6,6 +6,17 @@
 
 **Scope:** `REN-VOL-01` through `REN-VOL-03`; explicitly defines what Sparkle does not currently implement for participating media, fog, atmospheric scattering, and volumetric composition
 
+## At A Glance
+
+| Reader question | Answer |
+| --- | --- |
+| Can Sparkle render fog, smoke, atmosphere, or light shafts as participating media? | No. No authored medium, transport integration, volumetric product, pass, shader, history, or selector was found. |
+| Does the sky background count? | No. It fills background radiance but does not integrate extinction, in-scattering, or transmittance along the camera ray. |
+| Do alpha, subsurface, or importer volume terms count? | No. They are surface behavior or discarded vocabulary without a medium owner. |
+| What would make this a real feature? | One end-to-end authored/cooked/scene/view/transport/composition/diagnostic/evidence contract with explicit quality and cost bounds. |
+
+The missing capability affects more than lighting: it also means there is no current visibility attenuation, aerial perspective, volumetric shadow, temporal volumetric reconstruction, or material-to-medium bridge. Adding only a fog shader would leave those joins unowned.
+
 ## Current State
 
 Sparkle does not currently implement volumetric lighting.

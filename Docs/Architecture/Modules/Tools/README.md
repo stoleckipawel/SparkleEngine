@@ -4,6 +4,27 @@
 
 This index mirrors the durable tool ownership boundaries under `Tools`.
 
+## At A Glance
+
+```mermaid
+flowchart LR
+    Source[Source scenes, images, and shaders] --> Import[Source importers]
+    Import --> Cook[Asset cooking]
+    Source --> Shader[ShaderCompiler]
+    Shader --> Products[Validated cooked products]
+    Cook --> Products
+    Console[ToolSupport presentation] -. used by .-> Cook
+    Console -. used by .-> Shader
+    Launcher[Launcher orchestration] --> Import
+    Launcher --> Cook
+    Launcher --> Shader
+    Products --> Runtime[Project runtime/editor]
+```
+
+Tools transform or orchestrate offline products. They do not become runtime semantic owners: every cooked schema is validated by its owning consumer, and Launcher success requires the expected product rather than only a child-process exit.
+
+## Module Routes
+
 | Module | Owns | Module documentation |
 | --- | --- | --- |
 | Cooking | project, scene, mesh, material, texture, and animation cooking | [Cooking](Cooking/README.md) |

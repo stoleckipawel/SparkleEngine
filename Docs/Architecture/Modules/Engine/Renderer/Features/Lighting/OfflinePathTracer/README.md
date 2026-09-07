@@ -8,6 +8,24 @@
 
 **Current disposition:** **BLOCKED** on 2026-09-06. This document defines what eventual completion must prove; it does not accept the current `ReferencePathTraced` implementation, freeze unresolved `PTD-D0` decisions, authorize implementation, or report executable evidence.
 
+## At A Glance
+
+```mermaid
+flowchart LR
+    Freeze[Freeze scene, camera,<br/>transport and provenance] --> Sample[Deterministic path samples]
+    Sample --> Accumulate[Exact-count raw HDR<br/>accumulation]
+    Accumulate --> Export[Raw radiance, AOVs,<br/>statistics and manifest]
+    Export --> Compare[Independent oracle ladder<br/>and release-map comparison]
+    Discovery[PTD-00 discovery] -. must pass before planning .-> Freeze
+```
+
+| What exists now | What completion would mean | What remains prohibited as evidence |
+| --- | --- | --- |
+| a `ReferencePathTraced` source route and an external completion study | a bounded, deterministic, transport-defined offline oracle with explicit scene coverage, lifecycle, backend behavior, and retained proof | treating source presence, a converged-looking screenshot, denoised/tonemapped output, or a shared-dependency comparison as ground truth |
+| feature and discovery contracts | accepted `PTD-D0`, an authorized delivery plan, implementation, and every conjunctive criterion passing | starting implementation or freezing unresolved math/coverage choices from this dossier alone |
+
+The product is a correctness oracle, not simply a slower render mode. Its raw result must remain independent of real-time reconstruction, denoising, display mapping, and any approximation it is intended to judge.
+
 ## Acceptance Identity
 
 | Field | Required value |

@@ -4,6 +4,18 @@
 
 This page tracks high-level acceptance routing for features primarily owned by `Engine/Renderer`. [Renderer Architecture](../../Architecture/Modules/Engine/Renderer/Features/README.md) owns feature description and detailed proof contracts; [Feature Completion Reports](../FeatureCompletionReports.md) owns candidate results and approval. This page owns neither detailed criteria nor evidence artifacts.
 
+## At A Glance
+
+| Portfolio state | Feature families |
+| --- | --- |
+| source path exists but candidate proof remains open | debug views, exposure, reconstruction/upscaling, tone mapping, presentation/output, pipeline materialization, residency, temporal state, settings, latency coordination, visibility, and resolution/sampling |
+| discovery blocked before implementation/acceptance can proceed | independent offline path-tracing oracle (`PTD-00`) |
+| not implemented and not admitted to first release | deferred decals, color grading, chromatic aberration, and frame generation |
+
+No Renderer row is promoted by this summary. Follow the feature contract for what must pass and the `FCR-REN-*` result route for what a specific candidate actually proved.
+
+## Progress Routes
+
 | Feature/progress route | Feature-owned contract | Result route |
 | --- | --- | --- |
 | Offline path tracer; `PTD-00` discovery remains blocked and `FCR-REN-08` cannot yet accept oracle status | [Feature dossier](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) and [discovery gate](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) | [`FCR-REN-08`](../FeatureCompletionReports.md#initial-completion-report-registry) |

@@ -10,6 +10,20 @@
 
 **Strategy and acceptance sources:** [`PGE-01`, `PGE-13`, `PGE-14`, `PGE-15`](../../../Strategy/Requirements.md), [First Release](../../../Acceptance/FirstRelease.md), and `FCR-PROD-02`/`FCR-PROD-05` in [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md)
 
+**Current readiness:** **0/100** — target only; no public stage/sign/verify/package/install product path was found. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
+## At A Glance
+
+| Product boundary | Current state | Required result |
+| --- | --- | --- |
+| development artifacts | implemented workspace-oriented output/copy routes | remain inputs only; never advertised as a release package |
+| immutable staging | Not found | declared membership and one manifest account for every byte, permission, hash, and license |
+| trust/publication | Not found | SBOM/provenance, signing identity, integrity verification, and quarantined failure |
+| installation and writable state | Not found | standard-user install/update/uninstall plus explicit per-user state outside immutable bytes |
+| relocation and clean-machine use | Not found | offline operation without repository, build tree, SDK, or private path dependencies |
+
+The target route is one directional transaction: Build -> Cook -> Stage -> Verify/Sign -> Package -> Install/Run. Each step consumes a declared predecessor product and must never scan unrelated development directories to infer missing membership.
+
 ## Capability Identity
 
 | ID | Capability | Current state |
@@ -39,6 +53,15 @@ Packaging is currently **absent**, not Experimental or Included. A development a
 ## Failure, Capacity, And Observability
 
 Missing, extra, unsigned, hash-mismatched, license-incomplete, path-escaping, source-tree-dependent, or package-mutating bytes fail verification. Unsupported standard-user paths and unavailable optional providers must produce bounded actionable failures. The report records archive size, installed size, file count, peak stage/package memory, cold/warm duration, and deletion/update behavior.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or constraint |
+| --- | --- | --- |
+| manifest-driven membership | reproducibility and review do not depend on directory scans | every contributing target must declare its runtime products |
+| immutable installed bytes plus separate user state | verification, update, and uninstall behavior stay deterministic | paths/configuration must be designed for relocation and standard users |
+| verify before candidate publication | corrupt, unsigned, or license-incomplete output cannot escape as a release | staging adds time, storage, signing, and provenance infrastructure |
+| classify editor/runtime/tools/symbols independently | product contents match the intended audience and redistribution policy | multiple product profiles need explicit package matrices |
 
 ## Acceptance Handoff
 

@@ -6,6 +6,19 @@
 
 **Scope:** `REN-SCENE-08`, `REN-SCENE-09`, and the residency mechanics observed by `REN-DIAG-02` through `REN-DIAG-04`; owns asynchronous mesh/texture admission, CPU preparation/decode, upload, activation, generation replacement, cancellation, and completion-safe eviction
 
+## At A Glance
+
+| Lifecycle | Required truth | Current limitation |
+| --- | --- | --- |
+| request/admit | asset key, generation, wanted set, and capacity decide one pending identity | fixed limits; no priority or global pressure arbitration |
+| read/decode | bounded tasks produce complete immutable payloads | mesh/texture failure policy is not fully symmetric |
+| upload | validated payload records copy work and a real completion token | submitted is not resident |
+| activate/replace | only completed current generation becomes resolvable | stale completion must be discarded without replacing newer state |
+| evict/reset/shutdown | last-use tokens retain native storage until every consumer finishes | delayed completion and long-session retained high-water unproved |
+| observe | one owner snapshot reports states, counts, and bytes | diagnostic correlation and observer cost unproved |
+
+Residency optimizes loading without weakening identity: a semantic default can stand in only where the consuming feature explicitly permits it, never to manufacture a successful asset generation.
+
 ## Feature Contract
 
 Residency converts immutable asset generations into GPU resources without publishing a resource before its upload completes or destroying it before its last use completes. `GpuMeshCache` and `TextureCache` each own an `AssetResidency` state machine. Scene/view preparation consumes only the cache's active generation; diagnostics observe the same state and counters rather than creating another authority.

@@ -6,6 +6,32 @@
 
 **Scope:** `RHI-DIAG-06`; asynchronous texture readback, staging lifetime, supported-format conversion, bitmap writing, polling, result delivery, failure, and cleanup
 
+**Current readiness:** **35/100** — asynchronous readback source paths exist; format/row/orientation, capacity, cancellation, resize/device loss, semantic interpretation, and backend evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
+## At A Glance
+
+| Request stage | Owned result | Failure boundary |
+| --- | --- | --- |
+| identify source | exact texture, subresource, frame/generation, dimensions, format, and intended result | stale identity, unsupported state, format, or subresource rejects |
+| schedule readback | transitions, copy command, staging allocation, and queue token | allocation, transition, copy, or submit failure produces no success |
+| complete and decode | mapped bytes with explicit row pitch/channel/orientation handling | mapping or conversion failure becomes a terminal Failed result |
+| publish or cancel | one immutable image/byte result or one explicit failure/cancellation | prior or empty output is never reused as a new capture |
+| retire | source and staging survive through completion, then release once | shutdown cannot outlive callbacks or destroy in-flight storage |
+
+## End-To-End Capture
+
+```mermaid
+flowchart LR
+    Request[Product and subresource request] --> Validate[Validate identity, format, and state]
+    Validate --> Copy[Transition and copy to staging]
+    Copy --> Wait[Poll real queue completion]
+    Wait --> Decode[Map rows and convert channels]
+    Decode --> Publish[Publish typed terminal result]
+    Publish --> Retire[Release retained source and staging]
+```
+
+Capture is deliberately asynchronous so the frame does not require a global GPU idle. The corresponding cost is explicit queueing, staging-memory, polling, cancellation, and shutdown ownership.
+
 ## Feature Promise
 
 A request for a supported neutral texture/subresource becomes one asynchronous readback result with explicit dimensions, row layout, format, identity, and terminal status. An empty buffer, stale prior image, unsupported conversion, or merely submitted copy is never capture success.
@@ -16,6 +42,15 @@ A request for a supported neutral texture/subresource becomes one asynchronous r
 - The active backend transitions/copies the exact source, retains it and staging memory through queue completion, then maps and converts only after completion.
 - Common capture-format and bitmap code defines shared byte/layout behavior. Backend code retains only native resource/copy details.
 - Cancellation, backend failure, map/encode failure, and shutdown have one terminal result and completion-safe cleanup.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| Renderer selects semantic product; RHI reads bytes | Color/provenance meaning stays with the feature that produced the texture | A byte-perfect capture can still be semantically misidentified by its caller |
+| Complete asynchronously | Avoids unconditional frame stalls | Results arrive later and need bounded queue/memory policy |
+| Share conversion rules above backend copies | D3D12 and Vulkan can be checked against one byte contract | Backend row pitch and native format differences still require fixtures |
+| Publish exactly one terminal result | Callers cannot confuse stale or empty data with success | Every cancellation and shutdown race must converge on the same state machine |
 
 ## Acceptance Criteria
 

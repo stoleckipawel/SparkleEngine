@@ -6,6 +6,18 @@
 
 **Scope:** `REN-PIPE-01` through `REN-PIPE-05` and retained identity `REN-DIAG-08`; owns the bridge from registered typed pass contracts and cooked shader metadata to binding layouts, graphics/compute/ray pipelines, per-pass bindings, runtime caches, and completion-safe shader-generation replacement
 
+## At A Glance
+
+| Join | Required agreement | Safe failure |
+| --- | --- | --- |
+| typed pass to cooked metadata | parameter name/type/size/array/signature, program identity, stage, and backend target | reject before layout/pipeline publication |
+| metadata to RHI layout | reflection and typed parameter layout produce the same binding contract | identify the mismatched parameter/binding |
+| pass state to native pipeline | shader generation, formats, geometry, depth/raster/blend/sample state, and capabilities form complete identity | no partial cache entry or implicit backend default |
+| runtime values to recording | every required binding matches its declared kind and current resource generation | reject before draw/dispatch |
+| reload to retirement | a complete new shader-map generation activates atomically; old pipelines remain through completion | retain old valid generation or fail activation explicitly |
+
+The bridge deliberately duplicates no shader semantics: registrations own membership, cooked artifacts own compiled metadata, Renderer owns pass intent, and RHI owns native materialization. The cost is strict cross-owner identity that must be validated at every transition.
+
 ## Feature Contract
 
 Frame-graph declarations describe semantic work; cooked shader artifacts contain backend code and reflected metadata; RHI owns native pipeline objects. Renderer pipeline materialization is the checked bridge between them. A pass may record only after its typed parameter layout, registered shader contract, active cooked-map entry, backend capabilities, render state, attachments, and binding values agree.

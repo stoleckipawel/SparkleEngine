@@ -10,6 +10,17 @@
 
 This plan owns implementation slices and their delivery order. It does not redefine signal domains, show-flag semantics, display routing, or final acceptance.
 
+## Delivery At A Glance
+
+| Slice | Makes true | Must not claim yet |
+| --- | --- | --- |
+| 1. ownership | typed per-viewport mode/flag intent has one resolver and real consumers | pixel correctness or usable editor workflow |
+| 2. presentation | exposure, tone mapping, exact diagnostic mapping, and output encoding are explicit | all scene/lighting flags or capture replay |
+| 3. integration | accepted flags reach their owners, editor controls, and capture state | feature acceptance or backend parity |
+| 4. proof | numeric, visual, isolation, extent, replay, and D3D12/Vulkan evidence is retained | release completion until the feature report records it |
+
+The slices deliberately move ownership before appearance. Keeping the old process-global CVar as a normal input or retaining local preview curves would create two authorities and fail the clean break even if screenshots look unchanged.
+
 ## Delivery Plan
 
 These are implementation workstreams. If delivered with the Scene/View/Frame refactor, they follow that document's atomic-migration contract rather than landing as dual old/new systems.

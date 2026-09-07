@@ -10,6 +10,19 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **50/100** — broad integrated source foundations exist; verification and delivery/adoption credit remain zero. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
+## At A Glance
+
+| Foundation | Current role | Deliberate boundary |
+| --- | --- | --- |
+| diagnostics and console | logging/fatal/verify, typed CVars, commands, bounded interactive session | product hosts decide reachability; Core does not persist settings or define feature policy |
+| files, paths, processes, serialization | validated paths, transactional publication helpers, bounded byte decoding, lightweight JSON, child execution | no general asset database, schema migration system, or package manager |
+| events, input vocabulary, time, ownership | synchronous typed events, platform-neutral input state, timer, thread-role assertions | not an async bus, fixed-step simulation scheduler, or automatic thread safety |
+| math, pixels, hashing/string tables | shared transforms, sampling helpers, linear/sRGB conversion, deterministic identifiers | consuming schemas own units, collision policy, formats, and numerical oracles |
+
+Core keeps dependencies pointed downward by owning only reusable mechanisms. That reduces duplication, but it also means a higher-level feature must own every semantic policy, lifetime, capacity, and user-visible failure built from those mechanisms.
+
 ## Module Boundary
 
 `SparkleCore` is the base engine library. It has no other engine dependency; it publicly carries the header-only `spdlog` contract and links Windows `bcrypt` privately. It can be static or shared. Logging compile level is Trace in Debug, Info in Development, and Warning in Shipping profiles.

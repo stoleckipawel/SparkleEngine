@@ -6,6 +6,26 @@
 
 **Scope:** scene-owned portions of `REN-SCENE-02` through `REN-SCENE-07`; persistent `RenderScene` mutation, frame-slot preparation, deformation continuity, light preparation, active-resource references, and failure before publication
 
+## At A Glance
+
+| Input | Persistent owner | Frame result | Refusal boundary |
+| --- | --- | --- | --- |
+| structural add/update/remove changes | `RenderScene` scene generation and object/resource identity | resolved primitives and groups for one frame slot | non-monotonic identity or invalid structural change rejects before publication |
+| current dynamic transforms, joints, and morph weights | scene deformation continuity | current/previous deformation pairs | failed or cancelled preparation resets continuity and publishes no partial state |
+| directional, point, spot, and rectangular lights | scene light identity | bounded GPU-ready light records | more than 2 directional or 1024 of another kind rejects before upload |
+| active mesh/texture generations | residency owners remain authoritative | references to safe active resources | pending, stale, failed, or evicted generations cannot masquerade as current |
+
+```mermaid
+flowchart LR
+    Submission[Immutable world submission] --> Apply[Apply structural and dynamic changes]
+    Apply --> Tasks[Prepare primitives, deformation, groups, and lights]
+    Tasks --> Validate[Validate identity, capacity, and active resources]
+    Validate --> Commit[Commit continuity and complete PreparedRenderScene]
+    Tasks -->|failure or cancellation| Clear[Publish nothing and reset affected continuity]
+```
+
+The owner keeps scene continuity so downstream raster and ray paths share the same current/previous geometry meaning. The cost is strict transactional publication: partial task work is discarded rather than exposed for best-effort rendering.
+
 ## Feature Promise
 
 An admitted immutable submission updates one persistent Renderer scene generation, then produces one complete `PreparedRenderScene`. The owner commits deformation continuity only after all required work succeeds; failure or cancellation leaves no partial prepared scene visible.

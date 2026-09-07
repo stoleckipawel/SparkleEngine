@@ -8,6 +8,19 @@
 
 **Parents and consumers:** [Scene and View Preparation](../SceneAndViewPreparation/README.md) owns scene/view construction; [Geometry, Materials, and GBuffer](GeometryMaterialsAndGBuffer.md) owns what accepted batches draw and publish
 
+## At A Glance
+
+| Stage | Current behavior | Explicit non-capability |
+| --- | --- | --- |
+| spatial visibility | CPU world-AABB test against six planes of one view frustum | no occlusion/HZB, portal, cluster/meshlet, stereo, or multiview culling |
+| material routing | opaque, alpha-tested, transparent, or rejected classification | transparent preparation is not complete blended-transparency support |
+| validation | reject stale/out-of-range draw, mesh, group, and material identity | no best-effort partial publication after task failure |
+| grouping/batching | preserve compatible authored/shared groups; stable-sort and auto-batch compatible opaque work | no GPU-driven, indirect, multi-draw, or LOD selection path |
+| transparency ordering | stable far-to-near single-instance batches | no proof of order-independent or physically correct transparency |
+| observability | publishes visible/batch/workload counts; optional detailed batch diagnostics exist | normal preparation currently does not request the detailed collector |
+
+The feature reduces submitted work only after preserving exact visible surface identity. A lower draw count is a useful observation, not acceptance, unless GBuffer, depth, motion, and identity remain equivalent.
+
 ## Feature Promise And Motivation
 
 For one prepared scene and one view, Renderer turns prepared primitives into a deterministic list of valid raster instance indices and compatible draw batches. It rejects invalid identity, removes bounds-frustum misses, preserves eligible authored grouping, reduces compatible opaque draw changes when enabled, and orders transparent candidates conservatively as single batches.

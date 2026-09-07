@@ -6,6 +6,35 @@
 
 **Scope:** `RHI-PRES-*`; swapchain construction, back-buffer identity/state, acquire, resize, frame count, pacing, VSync, submit/present, and the explicit HDR output gap
 
+**Current readiness:** **50/100** for the current SDR scope — acquire/resize/present routes exist for both backends; executable pacing, failure, parity, format, and packaged evidence does not. HDR output is separately **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
+## At A Glance
+
+| State | Observable behavior | Important boundary |
+| --- | --- | --- |
+| ready window and swapchain | acquire exposes one current back buffer and generation | acquiring is not presenting; identity must reach the submitted frame |
+| normal frame | submit finishes rendering, then present advances the visible surface | success requires the current frame/present result, not a prior image |
+| VSync or pacing request | backend activates, rejects, or reports the effective mode | configuration intent is not proof of timing behavior |
+| resize/minimize/out-of-date | pause/drain and replace swapchain-dependent objects without replacing the device | this is presentation recovery, not whole-device recovery |
+| device or surface failure | exact failure reaches a recoverable presentation state or bounded terminal path | no stale back buffer may be reported as a fresh present |
+| HDR request | unavailable in the current contract | SDR swapchain support does not imply HDR format/color-space/metadata support |
+
+## Swapchain Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Ready: create valid swapchain
+    Ready --> Acquired: begin frame / acquire image
+    Acquired --> Submitted: render and submit current image
+    Submitted --> Ready: present succeeds
+    Ready --> Paused: zero extent or minimized
+    Paused --> Ready: nonzero extent and rebuild
+    Ready --> Rebuilding: resize or out of date
+    Rebuilding --> Ready: drain and replace dependent objects
+    Ready --> Terminal: device or unrecoverable surface failure
+    Terminal --> [*]
+```
+
 ## Feature Promise
 
 For a valid native window and supported configuration, RHI owns one swapchain lifecycle that acquires a current back buffer, exposes its neutral render state, submits/presents it in order, and rebuilds safely on size changes. The current contract is SDR-oriented and does not claim HDR negotiation or output.
@@ -16,6 +45,15 @@ For a valid native window and supported configuration, RHI owns one swapchain li
 - Backend swapchains own native buffers, views, acquisition state, present mode/flags, and pacing primitives.
 - Resize/minimize must settle or preserve in-flight ownership before replacing buffers; a zero-sized window is not a renderable surface.
 - Renderer owns what color it writes and when UI composition occurs. RHI owns swapchain format/state and present mechanics, not tone mapping or output encoding policy.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| Separate Renderer encoding from RHI presentation | Color policy does not become API-specific | End-to-end SDR/HDR evidence must join two owners |
+| Treat back buffers as generated identities | Resize cannot silently leave stale views in flight | Consumers must propagate and invalidate the generation |
+| Drain only the presentation-dependent boundary when possible | Resize can recover without rebuilding the whole device | Incorrectly retained swapchain resources cause stalls or stale use |
+| Expose requested and active pacing modes | Unsupported configuration is visible | Backend timing policies differ and need measured evidence |
 
 ## Acceptance Criteria
 

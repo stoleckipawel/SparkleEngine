@@ -6,6 +6,33 @@
 
 **Scope:** `RHI-DIAG-07`; narrow native device/resource/command handles, resource states, capability reporting, and interposer hooks for optional external providers
 
+**Current readiness:** **35/100** — narrow provider/native access seams exist; provider/backend/device/package matrices, misuse rejection, lifetime, and executable evidence remain incomplete. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+
+## At A Glance
+
+| Question | Current answer |
+| --- | --- |
+| Why does interop exist? | A named optional provider sometimes needs native device, resource, command, state, or present hooks that the neutral RHI cannot express. |
+| Who may request it? | A known provider integration with an explicit build/runtime capability path—not arbitrary Renderer code. |
+| What is currently active? | D3D12 contains the inspected Streamline interposer/manual seams; Vulkan vocabulary does not establish an equivalent active provider. |
+| What must survive the call? | Resource state, queue order, generation identity, provider/device lifetime, and completion-safe retirement. |
+| What is not proved? | Provider compatibility, Vulkan parity, resize/reload/device-loss behavior, package contents, and output correctness. |
+
+## Provider Activation And Use
+
+```mermaid
+flowchart LR
+    Build[SDK and provider target present] --> Ready[Backend, device, runtime, and feature ready]
+    Ready --> Select[Renderer selects provider as active]
+    Select --> Lease[Lease exact native handles and state]
+    Lease --> Call[Provider records or intercepts work]
+    Call --> Restore[Restore declared RHI ordering/state]
+    Restore --> Complete[Retain generations through completion]
+    Ready -->|not eligible| Fallback[Explicit neutral fallback or unavailable result]
+```
+
+The decisive state is *active provider readiness*, not SDK registration. A provider route that fails eligibility must remain observably inactive.
+
 ## Feature Promise
 
 An active external provider receives only the native identity and hooks it requires, with explicit backend, capability, state, queue, generation, and lifetime constraints. Interop is a named escape hatch, not a general native-object API or evidence that an equivalent provider exists on every backend.
@@ -16,6 +43,15 @@ An active external provider receives only the native identity and hooks it requi
 - D3D12 currently carries active Streamline interposer/manual seams. Vulkan neutral/native interop types do not imply equivalent active provider support.
 - Renderer owns provider selection, required semantic inputs, requested-versus-active fallback, and feature output. RHI owns valid native access and restoration of resource/queue invariants.
 - External use cannot bypass generation identity or GPU-completion retirement.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or risk |
+| --- | --- | --- |
+| Keep interop narrow and consumer-named | Native escape hatches do not spread through the Renderer/RHI boundary | Each provider requires explicit integration and evidence |
+| Preserve requested-versus-active selection in Renderer | Feature fallback remains semantic and user-visible | RHI cannot decide whether provider absence is acceptable |
+| Expose exact state/queue context | External work can coexist with RHI transitions and submissions | Incorrect restoration can corrupt later neutral work |
+| Tie handles to device/resource/provider generations | Reload and shutdown cannot use stale native objects | More lifetime coordination across third-party code |
 
 ## Acceptance Criteria
 

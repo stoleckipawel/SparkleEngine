@@ -6,6 +6,18 @@
 
 **Scope:** `REN-POST-08` through `REN-POST-10`; debug-to-presentation handoff, output encoding, back-buffer copy, viewport-product publication, and the explicit absence of HDR-display output
 
+## At A Glance
+
+| Destination or transform | Current result | Important boundary |
+| --- | --- | --- |
+| output encoding | display-linear color becomes the selected Linear or sRGB-oriented encoded result | this is transfer encoding, not grading or HDR display management |
+| game/host back buffer | encoded output is copied into the acquired presentation target | RHI owns acquire/present mechanics and format capability |
+| editor viewport | final color becomes a typed viewport product and registered texture generation | product/generation must match the UI packet and viewport |
+| debug result | shares the common exposure/tone/encode chain today | exact/bounded diagnostics can be distorted; target architecture remains unimplemented |
+| HDR display | absent | no format/color-space negotiation, metadata, display policy, or evidence |
+
+This stage is the semantic handoff from Renderer image processing to an external consumer. A visible image is not enough: the destination, encoding, extent, alpha, frame, viewport, and generation must all identify the product that was actually published.
+
 **Parent family:** [Post Processing](../README.md); [Tone Mapping](ToneMapping.md) owns the preceding HDR-to-display-linear transform
 
 ## Feature Promise

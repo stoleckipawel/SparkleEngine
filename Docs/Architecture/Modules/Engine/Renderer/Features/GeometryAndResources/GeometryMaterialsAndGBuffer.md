@@ -6,6 +6,18 @@
 
 **Scope:** `REN-SCENE-03` through `REN-SCENE-10`, `REN-MAT-01` through `REN-MAT-10`, `REN-GBUF-01` through `REN-GBUF-08`, and `REN-FRONT-01` through `REN-FRONT-07`
 
+## At A Glance
+
+| Axis | Current coverage | Explicit limit |
+| --- | --- | --- |
+| geometry | static, instanced, skinned, morphed, and combined skin/morph triangle meshes | no procedural/intersection, tessellation, mesh/task, or general non-triangle path |
+| material | opaque and alpha-tested base color, normal, roughness/metallic/F0, emissive, AO, subsurface, textures | transparent/transmissive and broader lobes are incomplete or absent |
+| frontend | raster GBuffer or capability-gated ray primary visibility | wireframe is raster-only; raster/ray parity remains unproved |
+| products | shared BaseColor, Normal, Material, Emissive, Subsurface, DeviceZ, MotionVector meanings | successful attachment writes do not establish PBR or motion correctness |
+| downstream join | lighting, temporal reconstruction, debug views, and capture consume the same semantics | every consumer depends on consistent identity, extent, format, and generation |
+
+The core design deliberately shares the deferred *result* rather than forcing raster and ray traversal to share implementation. This enables semantic comparison but leaves alpha testing, deformation, motion, and hit/material mapping as explicit parity obligations.
+
 ## Feature Promise
 
 Sparkle converts visible triangle meshes and their current/previous deformation/material state into one deferred surface contract. The frontend is selected by `r.GBuffer.Algorithm`: rasterized geometry or ray-traced primary visibility. Both are intended to produce the same base-color, normal, material, emissive, subsurface, motion, and depth meanings for downstream lighting.

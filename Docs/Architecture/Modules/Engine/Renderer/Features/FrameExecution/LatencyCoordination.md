@@ -6,6 +6,18 @@
 
 **Scope:** `REN-LAT-01` through `REN-LAT-05`; owns application simulation markers, optional Streamline PCL/Reflex coordination, and the Renderer-to-RHI marker identity that joins simulation, render submission, and presentation
 
+## At A Glance
+
+| Route | Current state | Important limitation |
+| --- | --- | --- |
+| host simulation bracketing | public begin/end calls accept one logical frame ID | caller ordering/mismatch is not currently repaired by Renderer |
+| render-submit/present markers | D3D12 interposer path brackets actual submit and present boundaries | no equivalent inspected Vulkan provider route |
+| PCL marker emission | capability-gated by build, runtime, device, presentation readiness, and PCL support | absent readiness produces no provider work, not a successful low-latency mode |
+| Reflex sleep | occurs at SimulationStart only when Reflex is supported | no public Reflex mode/settings surface; benefit unmeasured |
+| frame identity | 64-bit public identity joins six marker kinds | provider token request narrows to 32-bit; wrap behavior unproved |
+
+The capability improves attribution and can enable provider coordination. It is not a frame pacer, frame generator, or latency result; end-to-end measurements must include the same logical frame and display boundary.
+
 ## Feature Contract
 
 Sparkle exposes `Renderer::BeginSimulationFrame(frameId)` and `EndSimulationFrame(frameId)` so host simulation can share one logical frame identity with render-submit and present markers. When the optional NVIDIA Streamline runtime is built, initialized, device-bound, presentation-ready, and PCL-supported, the six markers become Streamline PCL events. Reflex sleep runs only at SimulationStart when Reflex is supported.

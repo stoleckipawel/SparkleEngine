@@ -6,6 +6,16 @@
 
 **Scope:** `REN-SCENE-01` through `REN-SCENE-10` plus scene/view portions of `REN-OWN-02` through `REN-OWN-04`; routes the three distinct owners that turn immutable world data into prepared scene, prepared view, and published GPU-scene state
 
+## At A Glance
+
+| Owner | Keeps across frames | Produces for this frame | Must never own |
+| --- | --- | --- | --- |
+| scene preparation | scene generation, primitive/material/light identity, deformation continuity | one complete `PreparedRenderScene` for an admitted frame slot | camera, viewport, or per-view history policy |
+| view preparation | per-view persistent temporal state | matrices, extents, visibility, batches, display intent, and RT partition plan | shared scene mutation or another view's state |
+| GPU-scene publication | persistent/frame-indexed GPU storage and binding generations | one coherent binding set consumed by raster and ray work | feature selection or an independently recomputed scene truth |
+
+The visible invariant is simple: every pass for a frame must observe one compatible scene generation, one view identity, and one GPU binding generation. Preparation failure publishes none of the partial result.
+
 ## Family Contract
 
 GameFramework owns live world/ECS state and publishes `RenderFrameSubmission`. Renderer never queries ECS storage. One admitted submission updates the persistent scene, derives frame-slot scene and view state, then publishes one GPU-scene generation consumed by raster and ray passes.

@@ -10,6 +10,20 @@
 
 **Strategy and acceptance sources:** `NS-ADOPTION`, `NS-EVIDENCE`, and `NS-OWNERSHIP` in the [Engineer Persona](../../../Strategy/EngineerPersona.md); `FCR-PROD-01`, `FCR-PROD-02`, `FCR-PROD-06`; [First Release](../../../Acceptance/FirstRelease.md)
 
+**Current readiness:** **15/100** — developer diagnostics and partial onboarding exist; public adoption, support/security intake, incident, patch, and withdrawal operation do not. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
+
+## At A Glance
+
+| User journey | Current state | Missing closure |
+| --- | --- | --- |
+| discover prerequisites and first-use route | partial Launcher/Docs developer path | public product identity, supported environment, controls, reset, and expected result |
+| recover from startup/content/backend failure | partial local diagnostics | stable public error categories, recovery steps, and verified first-user comprehension |
+| report a crash, hang, defect, or security issue | Not found | privacy/consent policy, support bundle, redaction, intake channels, and ownership |
+| receive response or product correction | Not found | severity model, response targets, advisory/patch/withdrawal and supported-version policy |
+| reproduce independently | Not found | clean public bytes, package identity, evidence bundle, and non-author result |
+
+The capability begins before launch and continues after failure. A polished internal tool is only one component; adoption closes when a non-author can reach the result or produce an actionable privacy-safe report and understand what happens next.
+
 ## Capability Identity
 
 | ID | Capability | Current state |

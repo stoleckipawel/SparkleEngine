@@ -6,6 +6,8 @@
 
 **Scope:** editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, external-profiler correlation, authoring isolation, and Shipping erasure
 
+**Current readiness:** **20/100** — instrumentation foundations exist, but the joined diagnostics product, benchmark export, external-capture workflow, and acceptance evidence do not. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## At A Glance
 
 | Current source surface | Target product | Deliberate boundary |

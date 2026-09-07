@@ -6,6 +6,18 @@
 
 **Scope:** indirect-light portions of `REN-PBR-05`, `REN-LGT-01`, and `REN-LGT-03` through `REN-LGT-07`; distinguishes bounced surface transport, environment background, accumulation, and reconstruction inputs
 
+## At A Glance
+
+| Concern | Current contract | Important limit |
+| --- | --- | --- |
+| real-time route | ReSTIR temporal/spatial reuse and inline-ray resolve | bias, stability, disocclusion, and useful performance unproved |
+| reference route | one inline indirect sample accumulated in history | current branch is not an accepted independent offline oracle |
+| surface result | separate indirect diffuse and indirect specular scene-linear products | no volumetric transport and limited material-lobe coverage |
+| environment | sky/background is composed separately from bounced surface lighting | background fill is not atmospheric or volumetric scattering |
+| temporal ownership | per-view histories keyed by scene/view/extent/topology identity | stale history can contaminate convergence and reconstruction |
+
+The Renderer keeps interactive reuse and reference accumulation behind the same semantic lobe outputs so they can be compared. Their estimators and histories remain independent and require separate verdicts.
+
 ## Feature Promise
 
 Indirect lighting produces `IndirectDiffuse` and `IndirectSpecular` scene-linear radiance from secondary surface transport. Sparkle currently provides a real-time ReSTIR branch and an accumulating reference branch. Both are seeded by the primary GBuffer and use inline ray traversal for secondary paths.

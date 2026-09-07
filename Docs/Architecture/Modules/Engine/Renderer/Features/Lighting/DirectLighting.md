@@ -6,6 +6,18 @@
 
 **Scope:** direct-light portions of `REN-PBR-01` through `REN-PBR-04`, `REN-PBR-06` through `REN-PBR-10`, `REN-LGT-01`, `REN-LGT-02`, `REN-LGT-04`, and `REN-LGT-06`
 
+## At A Glance
+
+| Concern | Current contract | Important limit |
+| --- | --- | --- |
+| light inventory | directional, point, spot, and rectangular analytic lights | capacity, units, attenuation, cone/area edge behavior need numerical proof |
+| surface model | shared deferred material inputs produce diffuse, specular, and wrap-subsurface lobes | broader transmission, clear-coat, anisotropy, and volumetric transport are absent |
+| candidate selection | selected-light/ReSTIR or reference-path candidate according to lighting mode | estimator correctness, bias, and stability unproved |
+| visibility | ray traced; direct route can resolve inline or native pipeline where ready | no shadow-map or fully non-ray fallback |
+| output | three separate scene-linear textures joined later by LightingComposite | debug/presentation transforms can alter how raw lobes appear |
+
+Separating direct lobes makes failures attributable and supports raw comparisons. It costs bandwidth and synchronization and does not by itself prove energy conservation or agreement between traversal frontends.
+
 ## Feature Promise
 
 Direct lighting evaluates one selected analytic light against the primary GBuffer surface and produces three scene-linear products: `DirectDiffuse`, `DirectSpecular`, and `DirectSubsurface`. The current light inventory is directional, point, spot, and rectangular area lights. Visibility is ray traced; Sparkle has no shadow-map or non-ray direct-lighting fallback.
