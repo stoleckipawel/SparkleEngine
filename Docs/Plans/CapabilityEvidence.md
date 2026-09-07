@@ -2,7 +2,7 @@
 
 Status: implementation plan; not proof, release classification, or release-wide sequencing authority
 
-Snapshot: expanded 2026-09-06 from the repository-wide source-only capability inventory at committed `master` revision `8414b5dc`
+Snapshot: expanded 2026-09-07 from the repository-wide source-only capability inventory; original implementation baseline `8414b5dc`, with current documentation-owner and negative-capability routes reconciled against the live tree
 
 Responsibility: release-surface reconciliation, inventory refresh, and the claim-falsifying checks required to promote individual source-present capability claims
 
@@ -42,11 +42,28 @@ If the smallest check falsifies the claim, stop and record the defect. Do not co
 | `INV-005` | Platform and Application source capabilities are understood. | Reconcile [Platform](../Architecture/Modules/Engine/Platform/README.md) and [Application](../Architecture/Modules/Engine/Application/README.md) against live owners after relevant changes. | Package or privilege-sensitive paths move to clean-machine/package gates. | Source audit complete; executable evidence open below. |
 | `INV-006` | GameFramework/world and Editor source capabilities are understood. | Reconcile [GameFramework](../Architecture/Modules/Engine/GameFramework/README.md) and [Editor](../Architecture/Modules/Engine/Editor/README.md) after world/editor contract changes. | Any data-owner ambiguity triggers architecture reconciliation before evidence. | Source audit complete; executable evidence open below. |
 | `INV-007` | Assets, import, and cooking source capabilities are understood. | Reconcile [Engine Assets](../Architecture/Modules/Engine/Assets/README.md), [Importers](../Architecture/Modules/Tools/SourceImporters/README.md), and [Cooking](../Architecture/Modules/Tools/Cooking/README.md) after format/product changes. | Each advertised format/content family receives a clean import/cook/runtime fixture. | Source audit complete; executable evidence open below. |
-| `INV-008` | Launcher, Showcase, build, and package source capabilities are understood. | Reconcile [Launcher](../Architecture/Modules/Tools/Launcher/README.md), [Showcase](../Architecture/Modules/Projects/Showcase/README.md), and [Build](../Architecture/Modules/BuildAndPackaging.md) after workflow/product changes. | Any route dependent on workspace/private state moves to package correction before release proof. | Source audit complete; formal package path absent and evidence open below. |
+| `INV-008` | Launcher, Showcase, build, and package source capabilities are understood. | Reconcile [Launcher](../Architecture/Modules/Tools/Launcher/README.md), [Showcase](../Architecture/Modules/Projects/Showcase/README.md), and [Build](../Architecture/Modules/BuildAndPackaging/README.md) after workflow/product changes. | Any route dependent on workspace/private state moves to package correction before release proof. | Source audit complete; formal package path absent and evidence open below. |
 | `INV-009` | Every advertised capability has a complete reviewer dossier. | Apply the [Capability Documentation Review dossier contract](../Engineering/Workflow/CapabilityReview.md#capability-dossier-contract) to every independently selectable capability; mark Answered, Partial, Unknown, or Not applicable and link unresolved dimensions. | A blank owner, selector, input/output, lifetime, limit, backend, failure, diagnostic, evidence, or invalidation field blocks inventory closure. | Open |
 | `INV-010` | Every vital developer/user journey is represented horizontally. | Reconcile all executables, Launcher actions, editor workflows, runtime controls, importer/cooker commands, package/support operations, and catalog selections against [Product Workflow Coverage](../Architecture/CrossModule/ProductWorkflowCoverage.md). | An unmatched journey or materially different actor outcome creates a new `WF-*` row and corresponding `FCR-*` coverage. | Open |
 | `INV-011` | Every vital journey has a complete vertical owner-to-outcome trace. | Apply the vertical template to build/cook/run, source-to-render, editor transaction, settings activation, shader reload, capture, cancellation/shutdown, and any newly admitted journey in [Product Execution Traces](../Architecture/CrossModule/ProductExecutionTraces.md). | An unowned representation, silent fallback, undefined safe state, or unobservable final outcome blocks the journey. | Open |
 | `INV-012` | Capability, evidence, acceptance, and release records have no orphans. | Map every capability/`WF-*` row to its smallest evidence item, `FCR-*`, applicable `AC-*`/`FM-*`/`CHK-*`, release gate, owner, and invalidation trigger; run the reverse check from every report/plan row. | Any row with no proof destination, or any evidence/report with no current promise, blocks disposition. | Open |
+| `INV-013` | Every feature or target introduced by strategy, acceptance, plans, or research has one Architecture owner. | Reconcile the 18-source [Feature Documentation Coverage](../Architecture/CrossModule/FeatureDocumentation/README.md) audit and exact stable-identifier ledger against the live documentation graph. | An unmatched feature/topic/identifier requires an owning current or explicit negative/target dossier before the source document is complete. | Source-document routing complete 2026-09-07; maintenance check remains required. |
+
+## Target And Negative Capability Evidence Map
+
+These routes keep explicitly absent capabilities traceable without treating them as current features, scheduled work, or executable evidence.
+
+| Evidence item | Exact Architecture capability scope |
+| --- | --- |
+| `PLAT-E03` | `PLAT-LINUX-01`, `PLAT-LINUX-02`, `PLAT-LINUX-03`, `PLAT-LINUX-04` |
+| `PY-E01` | `PY-01`, `PY-02`, `PY-03`, `PY-04` |
+| `BUILD-E03` | `PKG-01`, `PKG-02`, `PKG-03`, `PKG-04` |
+| `BUILD-E04` | `CI-01`, `CI-02`, `CI-03`, `CI-04` |
+| `BUILD-E05` | `ADOPT-01`, `ADOPT-02`, `ADOPT-03`, `ADOPT-04` |
+| `NG-E01` | `NG-TRAIN-01`, `NG-EVAL-01` |
+| `NG-E02` | `NG-TRAIN-02`, `NG-TRAIN-03`, `NG-EVAL-01` |
+| `NG-E03` | `NG-LOWER-01`, `NG-LOWER-02`, `NG-KERNEL-01`, `NG-RUNTIME-01` |
+| `NG-E04` | `NG-RUNTIME-02` plus the accepted generation from the preceding neural evidence items |
 
 ## Foundation And Host Evidence
 
@@ -62,6 +79,7 @@ If the smallest check falsifies the claim, stop and record the defect. Do not co
 | `TASK-E04` | Lane scheduling and ETW data support performance diagnosis. | Run imbalanced frame/background/IO work, inspect worker/steal/trace events, and compare throughput without claiming deterministic completion order. | Starvation, missing trace identity, or unbounded queueing blocks performance claims. | Open |
 | `PLAT-E01` | Window lifecycle is stable across all public state transitions. | Repeat create, resize, DPI move, minimize/wait/restore, maximize, borderless fullscreen, alt-tab, close on minimum/reference displays. | Hang, invalid extent, lost state, or DPI drift expands to native message trace. | Open |
 | `PLAT-E02` | Layered input sends each event to exactly the intended consumer. | Controlled keyboard/mouse/wheel fixture across Gameplay/UI/System, deferred/immediate, text input, disabled interaction, overlapping regions, capture/focus loss. | Double delivery, stuck key/button, or capture leak blocks editor/runtime input. | Open |
+| `PLAT-E03` | `PLAT-LINUX-01..04`: Linux remains an explicit unsupported boundary until every admitted native product layer exists. | Audit build profiles/targets, Platform/Application native types, Vulkan surface/presentation, host tools, package routes, selectors, and public claims against [Linux Platform Support](../Architecture/Modules/Engine/Platform/LinuxPlatformSupport.md). | Any Linux-specific build/source/product path or public claim triggers a dedicated implementation iteration and the complete `AC-LINUX-*`/`FM-LINUX-*` matrix; Vulkan-on-Windows is not closure. | Open; negative capability audit. |
 | `APP-E01` | Runtime serial/threaded modes and pipeline depths preserve lifecycle and output. | Run Empty plus one scene with serial and threaded depth 0/1/2, minimize/restore, level switch, and repeated exit. | World/render divergence, deadlock, or invalid slot ownership blocks affected mode. | Open |
 | `APP-E02` | Invalid process configuration fails visibly. | Supply valid, unknown, malformed, out-of-range, quoted, and duplicate CVar assignments; compare reported/effective state. | Silently ignored release-relevant typo requires diagnostic/UX correction. | Open |
 | `APP-E03` | Runtime product is editor/tool-free. | Inspect link/import/file manifest for ShippingGame and run with Editor, source assets, cooker, and shader compiler trees unavailable. | Hidden dependency or missing cooked-only failure blocks runtime release. | Open |
@@ -85,6 +103,7 @@ If the smallest check falsifies the claim, stop and record the defect. Do not co
 | `COOK-E04` | Multi-file scene publication is atomic and stale products are handled. | Cook multi-scene generation, then inject one asset failure/lock/interruption and remove a source item; inspect old/new registry and files. | Mixed generation or reachable stale asset blocks cooking. | Open |
 | `EASSET-E01` | Every included Engine asset is cooked, licensed, and packaged intentionally. | Generate source-to-product-to-package manifest for registered shaders, eight defaults, selected skies, and fixtures; verify hashes/notices. | Unowned/missing/unlicensed asset blocks package acceptance. | Open |
 | `TOOL-E01` | Shared tool output remains readable, unambiguous, and correctly isolated. | Drive all three severities, raw/quoted/path fields, progress, summary, and list output through direct and Launcher-captured streams using Unicode, whitespace, quote, newline, and long-path inputs; inspect game imports/files. | Ambiguous output, lost/reordered diagnostics, or game-product linkage requires contract correction. | Open |
+| `PY-E01` | `PY-01..04`: the two current conversion scripts and the absence of a reusable Python layer are represented honestly. | Inspect and run each Showcase conversion on frozen disposable input twice; record interpreter/dependencies, schemas, outputs/hashes, failure cleanup, and consumers, then audit CLI/editor/runtime/docs for any broader Python claim against [Python Automation And Analysis](../Architecture/Modules/Tools/PythonAutomationAndAnalysis.md). | Nondeterminism, partial output, private prerequisite, unvalidated consumer data, or a broader reachable claim requires a scoped Python feature contract and evidence route. | Open; current scope is two project scripts. |
 
 ## Product, Workflow, And Delivery Evidence
 
@@ -104,8 +123,9 @@ If the smallest check falsifies the claim, stop and record the defect. Do not co
 | `SHOW-E03` | Repeat level switching does not leak or retain stale generations. | Cycle compact/large/animated/Empty levels with cancellation and resize; record CPU/GPU memory, IDs, load times and exit. | Monotonic growth or ghost data triggers lifetime capture. | Open |
 | `BUILD-E01` | Supported configure/build matrix is reproducible. | From clean source/cache states configure and build only the frozen profile/compiler/backend/product matrix; retain dependency refs and logs. | Host-specific/manual state narrows matrix or blocks release. | Open |
 | `BUILD-E02` | Shared/static and editor/game membership match claims. | Build selected static/shared editor/game targets and inspect linked modules/imports; run architecture boundary check. | Editor/tool/backend leakage blocks the configuration. | Open |
-| `BUILD-E03` | A formal staged package is dependency-complete. | First implement the owned Stage/Package manifest path; then inspect allowlisted files/imports and run relocated/read-only/outside-repository. | This item is blocked until packaging capability exists. | Open; implementation gap. |
-| `BUILD-E04` | CI and automated regression guard the release contract. | First add an approved minimal configure/build/static-check/test workflow; then demonstrate clean failure/pass artifacts. | This item is blocked until CI/test capability exists. | Open; implementation gap. |
+| `BUILD-E03` | `PKG-01..04`: a formal staged package is dependency-complete. | First implement the owned Stage/Package manifest path; then inspect allowlisted files/imports and run relocated/read-only/outside-repository. | This item is blocked until packaging capability exists. | Open; implementation gap. |
+| `BUILD-E04` | `CI-01..04`: CI and automated regression guard the release contract. | First add an approved minimal configure/build/static-check/test workflow; then demonstrate clean failure/pass artifacts. | This item is blocked until CI/test capability exists. | Open; implementation gap. |
+| `BUILD-E05` | `ADOPT-01..04`: a non-author can adopt the product and use an owned support/security/incident route. | First freeze the public audience, support/security intake, privacy/consent, bundle schema, severity/response, patch/advisory/withdrawal, and supported-version contract; then run one independent success journey and the controlled failure matrix in [Adoption, Support, And Incident Response](../Architecture/Modules/BuildAndPackaging/AdoptionSupportAndIncidentResponse.md). | Undocumented intervention, false readiness, unactionable or privacy-unsafe diagnostics, missing response owner, or an unserviceable published version blocks adoption and publication. | Open; implementation and operating-model gap. |
 
 ## RHI Evidence
 
@@ -260,6 +280,24 @@ This map names the primary RHI proof destination, not the whole release chain. E
 | `SHD-E10` | Editor cancellation and process handoff are correct. | Cancel before compile, during compile, and before publish; close/reopen editor; inspect child status, artifacts, and user diagnostics. | Orphaned process or ambiguous success blocks editor workflow. | Open |
 | `SHD-E11` | Shipping contains no shader compiler/source/private diagnostics. | Inspect final package manifest/imports/files and run it outside the repository with source/tool trees unavailable. | Any hidden source/compiler dependency blocks package acceptance. | Open |
 | `SHD-E12` | Unsupported compiler/stage claims remain unreachable. | Audit UI/CLI/docs/package for non-runtime targets and Slang ray-stage claims; request unsupported combinations and verify rejection. | Reachable unsupported option must be removed, disabled, or classified honestly. | Open |
+
+## Neural Graphics Evidence
+
+These rows track the explicit absent/target [Neural Graphics](../Architecture/CrossModule/NeuralGraphics/README.md) family. They do not authorize feature work ahead of the Roadmap and cannot be executed until one bounded neural graphics problem is admitted.
+
+| Evidence item | Direct capability scope |
+| --- | --- |
+| `NG-E01` | `NG-TRAIN-01`, `NG-EVAL-01` |
+| `NG-E02` | `NG-TRAIN-02`, `NG-TRAIN-03`, `NG-EVAL-01` |
+| `NG-E03` | `NG-LOWER-01`, `NG-LOWER-02`, `NG-KERNEL-01`, `NG-RUNTIME-01` |
+| `NG-E04` | `NG-RUNTIME-02`, plus the accepted training/evaluation/lowering artifact generation |
+
+| ID | Claim to establish | Smallest next check | Escalation trigger | State |
+| --- | --- | --- | --- | --- |
+| `NG-E01` | One bounded user-visible problem, classical/reference oracle, dataset contract, provenance, and disjoint evaluation protocol are credible before training. | After roadmap admission, freeze `AC-NG-01`/`AC-NG-02`; generate a small manifest twice and independently inspect licenses, hashes, split leakage, preprocessing, tensors, and reference outputs. | Ambiguous product result, shared/biased oracle, missing rights/provenance, leakage, or nondeterministic data blocks model work. | Deferred; absent capability and roadmap admission required. |
+| `NG-E02` | The owned model/operator and training recipe reproduce quality within declared tolerance. | Execute `CHK-NG-01` on the bounded dataset with frozen seeds/configuration, retain checkpoints/metrics, and compare independent runs plus held-out/reference outputs. | Non-reproducible training, non-finite state, unexplained variance, or failure to beat the approved classical baseline blocks export/runtime work. | Deferred; `NG-E01` and implementation required. |
+| `NG-E03` | Model lowering and runtime inference preserve numerics, identity, capability truth, synchronization, and generation lifetime. | Execute `CHK-NG-02`: reverse-trace one accepted model through IR/operators/layout/precision/kernels/artifacts/Renderer/RHI commands and inject schema, capability, compile, allocation, dispatch, and stale-generation failures. | Numerical mismatch, silent fallback, unowned operator/kernel choice, backend leakage, or early retirement blocks the runtime feature. | Deferred; `NG-E02` and implementation required. |
+| `NG-E04` | The packaged neural product has an honest quality/performance/memory frontier and independent reproduction. | Execute `CHK-NG-03` and `CHK-NG-04` on the frozen Bistro/San Miguel or approved replacement matrix; compare classical fallback, inspect package licenses/hashes/bytes, and repeat from clean standard-user state. | Quality/temporal regression, budget miss, missing artifact/license, private dependency, unsupported silent activation, or failed reproduction blocks productization. | Deferred; `NG-E03`, package capability, and roadmap gate required. |
 
 ## Evidence Handoff
 

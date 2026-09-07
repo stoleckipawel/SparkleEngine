@@ -157,7 +157,9 @@ Every report also applies the persona's seven starting questions: owner, frame/p
 
 All entries below are `Source present / Blocked` at this snapshot unless a candidate-bound report later links sufficient evidence. The “how it works” column is a source-navigation summary, not proof that the path builds or behaves correctly.
 
-Current completion snapshot: 34 family rows identified; 34 blocked; zero candidate-bound feature reports found under the required release-artifact path; zero release-map reports because the `ReleaseMapSet` is not frozen. The family count is a navigation measure, not a feature-completeness score, and will increase when the mandatory result axes below are assigned independent verdicts.
+Current completion snapshot: 45 family rows identified; 45 blocked; zero candidate-bound feature reports found under the required release-artifact path; zero release-map reports because the `ReleaseMapSet` is not frozen. The family count is a navigation measure, not a feature-completeness score, and will increase when the mandatory result axes below are assigned independent verdicts. Every current row has an explicit Architecture owner in the [stable identifier coverage ledger](../Architecture/CrossModule/FeatureDocumentation/StableIdentifierCoverage.md#feature-completion-report-families).
+
+Architecture also contains explicit target/negative dossiers for capabilities such as owned neural graphics, native Linux support, formal packaging/CI, and broader Python tooling. They are tracked by the [source-document coverage audit](../Architecture/CrossModule/FeatureDocumentation/SourceDocumentCoverage.md) and [Capability Evidence Plan](../Plans/CapabilityEvidence.md), but they do not enter this source-present registry until the Roadmap admits a reachable product/tool promise. Admission requires a new `FCR-*` family and complete feature-local `AC-*`/`FM-*`/`CHK-*` mapping in the same change; an architecture target alone cannot inflate current feature counts.
 
 ### Product, Build, And Delivery
 

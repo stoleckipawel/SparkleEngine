@@ -31,4 +31,8 @@ Source presence, a successful build, a responsive process, and an uninspected ca
 
 Before opening a candidate report, use [Product Workflow Coverage](../Architecture/CrossModule/ProductWorkflowCoverage.md) for actor-visible journeys, [Product Execution Traces](../Architecture/CrossModule/ProductExecutionTraces.md) for their ownership boundaries, and the [Capability Documentation Review](../Engineering/Workflow/CapabilityReview.md) to expose unanswered dossier fields. Those are source maps and review procedure, not acceptance evidence.
 
+Use [Feature Documentation Coverage](../Architecture/CrossModule/FeatureDocumentation/README.md) to verify that every report family, release/workload identifier, or newly mentioned feature has an Architecture owner. That ledger provides routing only and does not replace candidate evidence.
+
+Target-only and explicit-negative dossiers remain visible through Architecture and the evidence backlog without becoming current `FCR-*` families. A roadmap admission or new reachable selector must add the report family and its local proof mapping; merely documenting a future capability is not progress toward release acceptance.
+
 For every material iteration, start with the [Change Lifecycle control record](../Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record), select the persona `NS-*`/`PGE-*` targets and roadmap gate/risk, then use the owning feature dossier's binary criteria and controlled failures with checks designed under [Validation And Evidence](../Engineering/Verification/ValidationAndEvidence.md#check-and-test-design-contract). Acceptance remains `Blocked` when any required link or artifact is missing.

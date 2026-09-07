@@ -11,6 +11,7 @@ Strategy owns desired capabilities, priority, release-wide sequencing, dated exe
 - [F. Release-First Principal Graphics Roadmap](Roadmap.md) — current release sequence, work-in-progress limits, and stop rules.
 - [H. Advanced Graphics Engineer Persona](EngineerPersona.md) — target operating model and judgment standard.
 - [Capability Coverage Crosswalk](../Architecture/CrossModule/StrategyCoverage.md) — dated source-backed mapping from current module capabilities to the persona, `PGE-*` requirements, roadmap release surfaces, and refreshed gap observations.
+- [Feature Documentation Coverage](../Architecture/CrossModule/FeatureDocumentation/README.md) — exact document and identifier routing from strategy/acceptance/plans/research to each owning Architecture dossier, including explicit absent targets.
 
 ## Dated Assessments
 

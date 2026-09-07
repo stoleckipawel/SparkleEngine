@@ -13,6 +13,7 @@ Feature architecture also owns its feature-local completion contract: acceptance
 | the repository's major owners and dependency flow | [Whole Repository Architecture Map](WholeRepositoryMap.md) |
 | one Engine, Tools, Projects, or build module, including a feature's completion contract | [Module Architecture](Modules/README.md) |
 | a design or capability spanning multiple modules without one primary owner | [Cross-Module Architecture](CrossModule/README.md) |
+| whether a strategy, acceptance, plan, or research feature has an Architecture owner | [Feature Documentation Coverage](CrossModule/FeatureDocumentation/README.md) |
 | a developer/user journey across build, content, editor, runtime, or delivery | [Product Workflow Coverage](CrossModule/ProductWorkflowCoverage.md) and [Product Execution Traces](CrossModule/ProductExecutionTraces.md) |
 | an accepted architectural invariant | [Architecture Decisions](Decisions/README.md) |
 
@@ -21,7 +22,7 @@ Feature architecture also owns its feature-local completion contract: acceptance
 - [Engine](Modules/Engine/README.md) — Application, Assets, Core, Editor, GameFramework, Platform, Renderer, RHI, and Tasks.
 - [Tools](Modules/Tools/README.md) — Cooking, Launcher, ShaderCompiler, SourceImporters, and shared ToolSupport.
 - [Projects](Modules/Projects/README.md) — product-owned composition and workloads, currently Showcase.
-- [Build And Packaging](Modules/BuildAndPackaging.md) — repository-wide executable build, staging, installation, and packaging surfaces.
+- [Build And Packaging](Modules/BuildAndPackaging/README.md) — repository-wide executable build, staging, installation, and packaging surfaces.
 
 Renderer-specific designs and catalogs are physically located under [Engine/Renderer](Modules/Engine/Renderer/README.md); RHI capability and boundary links are under [Engine/RHI](Modules/Engine/RHI/README.md). Their hyperlinks may cross, but their owning documents remain visibly separate.
 

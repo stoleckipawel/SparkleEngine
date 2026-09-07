@@ -8,7 +8,16 @@ Scope: build profiles, toolchains, options, dependency acquisition, targets, art
 
 Owner: root/module `CMakeLists.txt` and `CMake/`; Launcher is the user-facing workspace orchestrator
 
-Evidence and disposition: [Capability Evidence Plan](../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../Acceptance/FirstRelease.md)
+Evidence and disposition: [Capability Evidence Plan](../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../Acceptance/FirstRelease.md)
+
+## Capability Dossiers
+
+| Surface | Owner and current boundary |
+| --- | --- |
+| Build graph, profiles, dependencies, development artifacts | This inventory |
+| Public stage, package, signing, installation, and clean-machine operation | [Packaging And Installation](PackagingAndInstallation.md) |
+| Continuous integration, automated regression, and retained results | [Continuous Integration And Regression](ContinuousIntegrationAndRegression.md) |
+| First-run adoption, support, crash/security intake, patching, and withdrawal | [Adoption Support And Incident Response](AdoptionSupportAndIncidentResponse.md) |
 
 ## Build Contract
 

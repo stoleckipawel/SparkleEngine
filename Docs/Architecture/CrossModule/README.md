@@ -10,6 +10,7 @@ Use this folder only when a system has several durable owners and no single modu
 | --- | --- | --- |
 | [Geometry Cache Animation](GeometryCacheAnimation/README.md) | SourceImporters, Cooking, GameFramework, Renderer, RHI | entering the feature dossier for its target pipeline, current capability, and local completion contract |
 | [Shader System](ShaderSystem/README.md) | Renderer, RHI, ShaderCompiler, Cooking, Editor | entering the feature dossier for architecture and its local completion contract |
+| [Neural Graphics](NeuralGraphics/README.md) | future training/export tools, Assets, Renderer, RHI, Showcase, Build/Packaging | distinguishing current vendor inference from the absent owned training, model-to-kernel, and runtime feature |
 | [Multithreaded Engine](MultithreadedEngine.md) | Tasks plus runtime, Renderer, RHI, and tools | understanding shared threading, publication, shutdown, and failure boundaries |
 | [Product Workflow Coverage](ProductWorkflowCoverage.md) | Application, Editor, Launcher, tools, content, build, Showcase, and delivery | comparing developer/user journeys horizontally, including incomplete packaging and support paths |
 | [Product Execution Traces](ProductExecutionTraces.md) | the same product and tool owners | tracing vital non-graphics workflows vertically from request through result, failure, recovery, and settlement |
@@ -22,5 +23,6 @@ Use this folder only when a system has several durable owners and no single modu
 | [Graphics Feature Execution Traces](FeatureExecutionTraces.md) | Application, GameFramework, Renderer, RHI, ShaderCompiler | tracing selected features vertically from producer to consumer |
 | [Performance Diagnostics](PerformanceDiagnostics/README.md) | Core, Platform, Application, Editor, Renderer, RHI, and external tools | entering the feature dossier for its target model, current capability, and local completion contract |
 | [Strategy Coverage](StrategyCoverage.md) | all inventoried modules | reconciling module inventories with persona, roadmap, and gap requirements |
+| [Feature Documentation Coverage](FeatureDocumentation/README.md) | all strategy, acceptance, plan, research, and Architecture owners | auditing every named source document and stable target/report identifier back to one feature dossier |
 
 Renderer-owned feature designs remain under [Engine/Renderer](../Modules/Engine/Renderer/README.md), even when they consume RHI services.

@@ -10,6 +10,8 @@ Owner: `Engine/Platform` / `SparklePlatform`
 
 Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
+Platform expansion route: [Linux Platform Support](LinuxPlatformSupport.md) explicitly records that Vulkan-on-Windows is not a Linux product path and owns the target/exclusion contract.
+
 ## Platform Boundary
 
 The present implementation is Windows-only: public `Window` exposes `HWND` and Win32 message types, the input backend is `Win32InputBackend`, the application manifest is Windows-specific, and `dwmapi` is linked privately. There is no Linux/macOS backend in this snapshot.
