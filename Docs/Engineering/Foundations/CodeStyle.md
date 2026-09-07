@@ -120,7 +120,7 @@ Code review blocks a wrong-owner or duplicated invariant as an ownership/maintai
 
 ### One-field types
 
-Status: binding for owned C++ and shader-facing records.
+**Status:** binding for owned C++ and shader-facing records.
 
 Do not introduce a nominal struct whose only instance field is immediately unwrapped by every consumer. Pass the value directly, query the authoritative owner, or put the field on the record that owns its lifetime. A distinct name is not enough justification for another carrier, snapshot, result, settings, validity, or context type.
 

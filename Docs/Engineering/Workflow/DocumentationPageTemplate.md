@@ -9,6 +9,12 @@ Use only the sections that answer a real reader question. A compact feature may 
 ````markdown
 # Descriptive Feature Or System Name
 
+**Status:** one primary type and its current authority state
+
+**Scope:** one sentence naming the responsibility and its boundary
+
+**Verified:** date and revision when the page records a current-state snapshot
+
 One or two plain-language sentences explain what result this system produces and why a reader should care.
 
 > [!IMPORTANT]

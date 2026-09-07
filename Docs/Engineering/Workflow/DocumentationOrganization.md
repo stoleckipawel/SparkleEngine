@@ -33,6 +33,7 @@ Use the [Documentation Page Template](DocumentationPageTemplate.md) when creatin
 - State costs honestly. Every meaningful design choice SHOULD pair its benefit with a drawback, constraint, or rejected alternative.
 - Use `Implemented path`, `Partial`, `Capability-gated`, `Not found`, and `Unproved` consistently. Do not use vague states such as “supported” or “complete” without the matrix and evidence scope.
 - Put long source lists, capability IDs, failure/check matrices, and audit tables under clearly labeled reference sections near the end.
+- Render header metadata as short bold labels separated by blank lines. Put the current state, main limitation, and evidence boundary in one callout when those facts are easy to confuse.
 
 ## Visual Elements
 
@@ -98,6 +99,8 @@ Every non-index document MUST make these facts obvious before its first substant
 - authority boundary when a neighboring document could be mistaken for the owner;
 - verification date and revision for current-state maps or snapshots;
 - explicit non-claims when source inspection could be mistaken for executable evidence.
+
+Render these facts as short bold metadata labels with one fact per paragraph. Do not compress several metadata fields into a dense prose sentence.
 
 Use one primary type: **strategy contract**, **roadmap**, **operating model**, **orientation**, **canonical decision**, **standard**, **current map**, **target architecture**, **capability snapshot**, **feature dossier**, **plan**, **acceptance contract**, **runbook**, **research**, **dated assessment**, or **archive**. A feature dossier may route separate current-state and target-design pages while owning or colocating its feature-local acceptance contract. “Summary” and “index” are navigation roles, not second authorities.
 
